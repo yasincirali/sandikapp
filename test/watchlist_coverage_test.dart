@@ -104,9 +104,15 @@ void main() {
       expect(PortfolioSeries.isPortfolio('THYAO.IS'), isFalse);
     });
 
+    // 2026-09-28: sembol → kimlik eşlemesi `VarlikKimligi.fromSymbolHit`'e
+    // taşındı (varlık sayfası dört giriş noktasından aynı kimlikle açılır).
+    // Takip ekranı eşlemeyi oradan alır; kurallar orada kilitlenir.
     test('takip ekranı bunları ELER', () async {
-      final src = _yorumsuz(
+      final ekran = _yorumsuz(
           await File('lib/screens/add_watchlist_screen.dart').readAsString());
+      expect(ekran.contains('VarlikKimligi.fromSymbolHit'), isTrue);
+      final src = _yorumsuz(
+          await File('lib/models/varlik_kimligi.dart').readAsString());
       expect(src.contains('PortfolioSeries.isPortfolio'), isTrue,
           reason: 'sanal ticker takip listesine girerse fiyatı çekilemez');
     });
@@ -117,7 +123,7 @@ void main() {
     // yol açar. Eşleme ticker biçiminden yapılıyor; kuralları kilitliyoruz.
     test('eşleme kuralları kaynakta tanımlı', () async {
       final src = _yorumsuz(
-          await File('lib/screens/add_watchlist_screen.dart').readAsString());
+          await File('lib/models/varlik_kimligi.dart').readAsString());
       // TEFAS → fon
       expect(src.contains("t.startsWith('TEFAS:')"), isTrue);
       expect(src.contains('AssetType.fon'), isTrue);
@@ -137,7 +143,7 @@ void main() {
       // Yahoo XAUUSD=X ve GC=F USD kote döner; TRY demek fiyatı ~40× yanlış
       // gösterirdi.
       final src = _yorumsuz(
-          await File('lib/screens/add_watchlist_screen.dart').readAsString());
+          await File('lib/models/varlik_kimligi.dart').readAsString());
       expect(src.contains("t == 'XAUUSD=X'"), isTrue);
       expect(src.contains("currency: 'USD'"), isTrue);
     });

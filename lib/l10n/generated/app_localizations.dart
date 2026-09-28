@@ -6139,6 +6139,132 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fiyat gecikmeli, son güncelleme {time}'**
   String priceDelayedSemantics(String time);
+
+  /// No description provided for @period5Y.
+  ///
+  /// In tr, this message translates to:
+  /// **'5Y'**
+  String get period5Y;
+
+  /// No description provided for @vsPeriodReturnUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'DÖNEM GETİRİSİ'**
+  String get vsPeriodReturnUpper;
+
+  /// No description provided for @vsTodayUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'BUGÜN'**
+  String get vsTodayUpper;
+
+  /// No description provided for @vsMaxDrawdownUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'EN BÜYÜK DÜŞÜŞ'**
+  String get vsMaxDrawdownUpper;
+
+  /// No description provided for @vsVolatilityUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'OYNAKLIK (YILLIK)'**
+  String get vsVolatilityUpper;
+
+  /// No description provided for @vsPeriodLow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem düşüğü'**
+  String get vsPeriodLow;
+
+  /// No description provided for @vsPeriodHigh.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem yükseği'**
+  String get vsPeriodHigh;
+
+  /// No description provided for @vsRangePosition.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat dönem aralığının %{pct} noktasında'**
+  String vsRangePosition(String pct);
+
+  /// No description provided for @vsVolatilityShortNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.'**
+  String get vsVolatilityShortNote;
+
+  /// No description provided for @vsWatch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip et'**
+  String get vsWatch;
+
+  /// No description provided for @vsSelect.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bunu seç'**
+  String get vsSelect;
+
+  /// No description provided for @vsGoToPosition.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pozisyonuma git'**
+  String get vsGoToPosition;
+
+  /// No description provided for @vsOwnedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu varlık portföyünde. Al ve sat pozisyon ekranından yapılır.'**
+  String get vsOwnedNote;
+
+  /// No description provided for @vsRemovedFromWatchlist.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} takipten çıkarıldı'**
+  String vsRemovedFromWatchlist(String name);
+
+  /// No description provided for @vsUndo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri al'**
+  String get vsUndo;
+
+  /// No description provided for @vsChartSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyat grafiği, {period}'**
+  String vsChartSemantics(String name, String period);
+
+  /// No description provided for @vsOpenDetailSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} grafiğini ve istatistiklerini gör'**
+  String vsOpenDetailSemantics(String name);
+
+  /// No description provided for @vsWatchSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} takibe al'**
+  String vsWatchSemantics(String name);
+
+  /// No description provided for @vsUnwatchSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} takipten çıkar'**
+  String vsUnwatchSemantics(String name);
+
+  /// No description provided for @vsLoadFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat geçmişi alınamadı. Bağlantını kontrol edip dönemi yeniden seç.'**
+  String get vsLoadFailed;
+
+  /// No description provided for @vsSheetSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} varlık sayfası'**
+  String vsSheetSemantics(String name);
 }
 
 class _AppLocalizationsDelegate

@@ -28,7 +28,7 @@ void main() {
       'lib/screens/asset_detail_screen.dart',
       'lib/screens/portfolio_performance_screen.dart',
       'lib/screens/signal_settings_screen.dart',
-      'lib/screens/watchlist_detail_screen.dart',
+      'lib/screens/varlik_sayfasi.dart',
     ];
 
     for (final yol in yuzeyler) {

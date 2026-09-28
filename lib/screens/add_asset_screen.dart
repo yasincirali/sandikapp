@@ -9,6 +9,7 @@ import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
+import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/kripto_provider.dart';
@@ -23,6 +24,7 @@ import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
+import 'varlik_sayfasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
@@ -2230,6 +2232,7 @@ class _Bist100PickerState extends State<_Bist100Picker> {
                   color: AssetType.hisse.color,
                   cs: cs,
                   onTap: () => widget.onSelect(e.key),
+                  kimlik: VarlikKimligi.hisse(e.key, e.value),
                 );
               },
             ),
@@ -2322,6 +2325,7 @@ class _GoldPickerState extends State<_GoldPicker> {
                   color: AssetType.altin.color,
                   cs: cs,
                   onTap: () => widget.onSelect(g),
+                  kimlik: VarlikKimligi.fromGold(g),
                 );
               },
             ),
@@ -2522,6 +2526,7 @@ class _TefasPickerState extends State<_TefasPicker> {
                           color: AssetType.fon.color,
                           cs: cs,
                           onTap: () => widget.onSelect(f),
+                          kimlik: VarlikKimligi.fon(f.code, f.name),
                         );
                       },
                     ),
@@ -2636,6 +2641,7 @@ class _KriptoPickerState extends ConsumerState<_KriptoPicker> {
                           color: renk,
                           cs: cs,
                           onTap: () => widget.onSelect(o),
+                          kimlik: VarlikKimligi.kripto(o.kod, o.gorunenAd),
                         );
                       },
                     ),
@@ -2816,6 +2822,13 @@ class _PickerRow extends StatelessWidget {
   final ColorScheme cs;
   final VoidCallback onTap;
 
+  /// Verilirse satırın sağında "grafiği gör" düğmesi çıkar ve varlık sayfasını
+  /// açar (kullanıcı isteği, 2026-09-28: "varlık ekle kısmında da varlığın
+  /// detayını izlemek isteyecekler"). Satırın kendisi SEÇMEYE devam eder —
+  /// seçim listesinin HIG sözleşmesi bozulmaz; sayfanın birincil eylemi de
+  /// "Bunu seç" olur, akış aynı yere çıkar.
+  final VarlikKimligi? kimlik;
+
   const _PickerRow({
     required this.badgeText,
     this.logoUrl,
@@ -2825,6 +2838,7 @@ class _PickerRow extends StatelessWidget {
     required this.color,
     required this.cs,
     required this.onTap,
+    this.kimlik,
   });
 
   // HIG seçim listesi: seçili satırda onay işareti, diğerlerinde HİÇBİR
@@ -2898,6 +2912,15 @@ class _PickerRow extends StatelessWidget {
                   ],
                 ),
               ),
+              if (kimlik case final k?)
+                IconButton(
+                  tooltip: context.l10n.vsOpenDetailSemantics(title),
+                  onPressed: () => showVarlikSayfasi(context, k, onSec: onTap),
+                  icon: Icon(Icons.insights_rounded,
+                      size: 20, color: context.c.text58),
+                  constraints: const BoxConstraints(
+                      minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+                ),
               if (isSelected) ...[
                 const SizedBox(width: SandikSpace.sm),
                 Icon(Icons.check_rounded, size: 22, color: color),

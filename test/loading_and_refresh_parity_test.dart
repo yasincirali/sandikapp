@@ -67,7 +67,10 @@ void main() {
       'lib/screens/portfolio_performance_screen.dart',
       'lib/screens/asset_detail_screen.dart',
       'lib/screens/watchlist_screen.dart',
-      'lib/screens/watchlist_detail_screen.dart',
+      // Takip detay ekranı 2026-09-28'de varlık sayfasına (alttan açılan,
+      // sürüklenebilir sayfa) dönüştü ve listeden çıktı: sayfada aşağı
+      // çekmek sayfayı KÜÇÜLTÜR/KAPATIR, yenileme jestiyle çakışır. Seriler
+      // her açılışta çekilir; hatalı dönem yeniden seçilince yeniden dener.
       'lib/screens/price_alerts_screen.dart',
       'lib/screens/all_transactions_screen.dart',
       'lib/screens/comparison_screen.dart',

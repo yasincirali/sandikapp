@@ -475,7 +475,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
 /// **Bir `Asset` İSTEMEZ** — yalnızca sembol, tür ve alt kategori. Göstergeler
 /// miktar/maliyet okumaz; sahiplikle ilgisi yoktur. Bu sayede aynı panel hem
 /// sahip olunan varlıkta (`AssetDetailScreen`) hem de yalnızca izlenen
-/// varlıkta (`WatchlistDetailScreen`) kullanılabiliyor — panelin ~400 satırlık
+/// varlıkta (varlık sayfası, `varlik_sayfasi.dart`) kullanılabiliyor — panelin ~400 satırlık
 /// gösterge arayüzü kopyalanmadan.
 class TechnicalSignalPanel extends ConsumerStatefulWidget {
   final String ticker;
