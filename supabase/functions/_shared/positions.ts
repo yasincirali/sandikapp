@@ -98,7 +98,18 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
 ///     netten de düşülür).
 ///
 /// Temettü miktara ASLA girmez (`dividend` satırı nakit hareketidir).
-export function acikPozisyonLotlari<T extends PozisyonLot>(rows: T[]): T[] {
+/// [secenekler.mezarTasi] `false`: `delete_log` satırları TAMAMEN yok
+/// sayılır; yalnız `deleted_at` (çağıranın sorgusu) ve buy/sell netlemesi.
+/// Yarış snapshot'ı (2026-09-29) bunu ister: istemci `aggregatePositions`
+/// mezar taşına bakmaz (`Asset.isActive` = deleted_at null && kind != deleteLog);
+/// "sil → geri al" sonrası lot yaşar ama mezar taşı defterde kalır. Push
+/// tarafı sezgiyi KORUR (yanlış pozitif bildirim daha pahalı); değerleme
+/// tarafı kullanıcının ekranda gördüğüyle aynı olmalı (uydurma sayı yasağı).
+export function acikPozisyonLotlari<T extends PozisyonLot>(
+  rows: T[],
+  secenekler: { mezarTasi?: boolean } = {},
+): T[] {
+  const mezarTasi = secenekler.mezarTasi ?? true;
   const net = new Map<string, number>();
   // Pozisyonun tamamını silen mezar taşlarının EN YENİSİ (epoch ms).
   const pozisyonSilmeAni = new Map<string, number>();
@@ -110,6 +121,7 @@ export function acikPozisyonLotlari<T extends PozisyonLot>(rows: T[]): T[] {
     const key = pozisyonAnahtari(r);
 
     if (kind === 'delete_log') {
+      if (!mezarTasi) continue;
       // ## Mezar taşı neden ayrıca dinlenir
       // Silmenin ASIL mekanizması `deleted_at` damgasıdır ve çağıran sorgu
       // onu zaten eliyor. Ama damga her zaman yerine ulaşmıyor: istemci

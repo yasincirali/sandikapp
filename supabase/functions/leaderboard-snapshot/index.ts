@@ -39,7 +39,7 @@
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { acikPozisyonLotlari, PozisyonLot } from '../_shared/positions.ts';
+import { acikPozisyonLotlari, pozisyonAnahtari, PozisyonLot } from '../_shared/positions.ts';
 import { fiyatAninda, loadDatedHistories, Seri } from '../_shared/dated_history.ts';
 
 const corsHeaders = {
@@ -123,6 +123,18 @@ function paraBirimi(lot: Lot): string {
   return (lot.currency ?? 'TRY').trim().toUpperCase() || 'TRY';
 }
 
+/// Fon kodu bazı kayıtlarda öneksiz ("AFT"); seri kaynağı `TEFAS:` ister
+/// (istemci `history_service` aynı normalizasyonu yapar). Diğer türlerde
+/// ticker olduğu gibi.
+export function seriSembolu(lot: Lot): string {
+  const t = (lot.ticker ?? '').trim();
+  if (t === '') return '';
+  if (lot.type === 'fon' && !t.startsWith('TEFAS:') && !t.includes(':')) {
+    return `TEFAS:${t.toUpperCase()}`;
+  }
+  return t;
+}
+
 /// Lotun değerlenmesi için gereken seriler. Elle fiyatlı lot hiçbir seri
 /// istemez.
 export function lotSembolleri(lot: Lot): string[] {
@@ -133,7 +145,7 @@ export function lotSembolleri(lot: Lot): string[] {
     if (kod === 'XAUUSD=X') return ['XAUUSD=X', USDTRY];
     return [GC_F, USDTRY];
   }
-  const t = (lot.ticker ?? '').trim();
+  const t = seriSembolu(lot);
   if (t === '') return [];
   const out = [t];
   const cur = paraBirimi(lot);
@@ -171,7 +183,7 @@ export function lotTryFiyati(
     const gram22 = gc * kur / ONS_GRAM / GRAM24_BOLEN;
     return gram22 * agirlik;
   }
-  const t = (lot.ticker ?? '').trim();
+  const t = seriSembolu(lot);
   if (t === '') return null;
   const p = fiyat(t);
   if (p === null) return null;
@@ -181,11 +193,65 @@ export function lotTryFiyati(
   return kur === null ? null : p * kur;
 }
 
+/// Açık pozisyonları NET miktarlı tek lota indirger.
+///
+/// `acikPozisyonLotlari` bir FİLTREDİR: pozisyon açıksa onun bütün alım
+/// lotlarını döndürür, satışı lot miktarından düşmez (push için "açık mı"
+/// yeter). Değerleme için yanlış: 1000+620+620 alım, 1620 satış → 620 net,
+/// ama üç lot toplamı 2240 sayılırdı (a968, 2026-09-29 kuru koşu). İstemci
+/// `aggregatePositions` net = Σbuy − Σsell ile tek görünüm kurar; burada da
+/// pozisyon başına tek lot: şablon en yeni alım (ticker/tür/para birimi/
+/// current_price), miktar net. Hangi lotun satıldığı değeri değiştirmez —
+/// aynı pozisyonun lotları aynı fiyattan değerlenir.
+export function netLotlar<T extends Lot>(acikLotlar: T[], tumSatirlar: T[]): T[] {
+  const net = new Map<string, number>();
+  for (const r of tumSatirlar) {
+    const kind = r.kind ?? 'buy';
+    if (kind !== 'buy' && kind !== 'sell') continue;
+    const q = Number(r.quantity ?? 0);
+    if (!Number.isFinite(q)) continue;
+    const key = pozisyonAnahtari(r);
+    net.set(key, (net.get(key) ?? 0) + (kind === 'sell' ? -q : q));
+  }
+  const sablon = new Map<string, T>();
+  for (const l of acikLotlar) {
+    const key = pozisyonAnahtari(l);
+    const mevcut = sablon.get(key);
+    if (!mevcut || String(l.added_date ?? '') > String(mevcut.added_date ?? '')) {
+      sablon.set(key, l);
+    }
+  }
+  const out: T[] = [];
+  for (const [key, l] of sablon) {
+    const q = net.get(key) ?? 0;
+    if (q <= 1e-7) continue;
+    out.push({ ...l, quantity: q });
+  }
+  return out;
+}
+
 export interface Degerleme {
   /// Fiyatı bulunan lotların toplam TL değeri.
   deger: number;
   /// Fiyatı bulunan lot kimlikleri.
   kapsanan: Set<string>;
+  /// Serisi olmayan lotların `current_price` ile tahmini TL değeri — kapsama
+  /// kararı için (bugünkü değerin ne kadarı karanlıkta?).
+  karanlik: number;
+}
+
+/// Serisi olmayan lot için uygulamanın son bilinen fiyatı (`current_price`,
+/// TL'ye çevrilmiş sayılır — istemci `current_price`'ı varlığın para
+/// biriminde tutar; TRY dışı için kur bilinmiyorsa 0). Yalnız kapsama ve
+/// dağılım için; ROI'ye girmez (geçmişi yok).
+export function yedekTryFiyati(lot: Lot, seriler: Map<string, Seri>, tMs: number): number {
+  const p = Number(lot.current_price ?? 0);
+  if (!Number.isFinite(p) || p <= 0) return 0;
+  const cur = paraBirimi(lot);
+  if (cur === 'TRY') return p;
+  const kurSeri = seriler.get(`${cur}TRY=X`);
+  const kur = kurSeri ? fiyatAninda(kurSeri, tMs) : null;
+  return kur === null ? 0 : p * kur;
 }
 
 /// Portföyün `t` anındaki TL değeri. Fiyatı olmayan lot atlanır (kapsama
@@ -197,26 +263,31 @@ export function portfoyDegeri(
   yalnizca?: Set<string>,
 ): Degerleme {
   let deger = 0;
+  let karanlik = 0;
   const kapsanan = new Set<string>();
   for (const lot of lots) {
     if (yalnizca && !yalnizca.has(lot.id)) continue;
     const miktar = Number(lot.quantity ?? 0);
     if (!Number.isFinite(miktar) || miktar <= 0) continue;
     const p = lotTryFiyati(lot, seriler, tMs);
-    if (p === null) continue;
+    if (p === null) {
+      karanlik += miktar * yedekTryFiyati(lot, seriler, tMs);
+      continue;
+    }
     deger += miktar * p;
     kapsanan.add(lot.id);
   }
-  return { deger, kapsanan };
+  return { deger, kapsanan, karanlik };
 }
 
 export function donemBaslangici(nowMs: number, gun: number): number {
   return nowMs - gun * GUN_MS;
 }
 
-/// Dönem getirisi (%): iki uçta da fiyatlanan lotlar üzerinden. Bu küme
-/// bugünkü değerin [KAPSAMA_ESIGI]'nden azını kapsıyorsa null. Sonuç
-/// tablonun CHECK aralığına kırpılır (−100 … 100 000).
+/// Dönem getirisi (%): iki uçta da fiyatlanan lotlar üzerinden. Serisi
+/// olmayan lotlar (`karanlik`, current_price tahmini) bugünkü toplamın
+/// [KAPSAMA_ESIGI] dışında kalan payını aşıyorsa null — yarım portföyün
+/// getirisi yazılmaz. Sonuç tablonun CHECK aralığına kırpılır.
 export function donemRoi(
   lots: Lot[],
   seriler: Map<string, Seri>,
@@ -225,6 +296,7 @@ export function donemRoi(
 ): number | null {
   const simdi = portfoyDegeri(lots, seriler, nowMs);
   if (simdi.deger <= 0) return null;
+  if (simdi.deger < (simdi.deger + simdi.karanlik) * KAPSAMA_ESIGI) return null;
   const t0 = donemBaslangici(nowMs, gun);
   const bas = portfoyDegeri(lots, seriler, t0, simdi.kapsanan);
   if (bas.kapsanan.size === 0 || bas.deger <= 0) return null;
@@ -241,7 +313,9 @@ export interface Dagilim {
   type_count: number;
 }
 
-/// Bugünkü TL değerinin tür payı (%, 1 ondalık). Fiyatlanan lot yoksa null.
+/// Bugünkü TL değerinin tür payı (%, 1 ondalık). Serisi olmayan lot
+/// `current_price` yedeğiyle girer (bugünkü değer için yeterli). Hiçbir
+/// lot değerlenemiyorsa null.
 export function dagilim(
   lots: Lot[],
   seriler: Map<string, Seri>,
@@ -252,8 +326,8 @@ export function dagilim(
   for (const lot of lots) {
     const miktar = Number(lot.quantity ?? 0);
     if (!Number.isFinite(miktar) || miktar <= 0) continue;
-    const p = lotTryFiyati(lot, seriler, nowMs);
-    if (p === null) continue;
+    const p = lotTryFiyati(lot, seriler, nowMs) ?? yedekTryFiyati(lot, seriler, nowMs);
+    if (p <= 0) continue;
     const v = miktar * p;
     toplam += v;
     turDegeri.set(lot.type, (turDegeri.get(lot.type) ?? 0) + v);
@@ -322,7 +396,11 @@ Deno.serve(async (request) => {
       .in('user_id', userIds)
       .is('deleted_at', null);
     if (assetError) throw new Error(`Varliklar alinamadi: ${assetError.message}`);
-    const acik = acikPozisyonLotlari((assetRows ?? []) as AssetRow[]);
+    // Mezar taşı YOK: kullanıcının ekranda gördüğü portföy `deleted_at` +
+    // buy/sell netlemesidir (istemci `aggregatePositions`); "sil → geri al"
+    // sonrası defterde kalan mezar taşı lotu öldürmez (bkz. positions.ts).
+    const tum = (assetRows ?? []) as AssetRow[];
+    const acik = netLotlar(acikPozisyonLotlari(tum, { mezarTasi: false }), tum);
     const lotlariOf = new Map<string, Lot[]>();
     for (const a of acik) {
       const list = lotlariOf.get(a.user_id) ?? [];

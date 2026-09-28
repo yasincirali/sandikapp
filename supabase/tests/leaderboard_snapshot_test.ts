@@ -19,7 +19,10 @@ import {
   Lot,
   lotSembolleri,
   lotTryFiyati,
+  netLotlar,
   portfoyDegeri,
+  seriSembolu,
+  yedekTryFiyati,
 } from '../functions/leaderboard-snapshot/index.ts';
 
 const G = GUN_MS;
@@ -107,23 +110,38 @@ Deno.test('dönem ROI: bugünkü miktar sabit, yalnız fiyat etkisi', () => {
   assertAlmostEquals(donemRoi(lots, seriler, NOW, 30)!, 10, 1e-9);
 });
 
-Deno.test('kapsama: fiyatsız lot bugünkü değerin %20\'sinden fazlaysa satır yok', () => {
+Deno.test('kapsama: serisi olmayan lot (current_price ile) %20\'yi aşarsa ROI yazılmaz', () => {
   const lots = [
     lot({ id: 'h', type: 'hisse', ticker: 'THYAO.IS', quantity: 10 }),
-    lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10 }),
+    lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10, current_price: 50 }),
   ];
-  // Yalnız THYAO fiyatlı; YOK.IS için seri yok → bugünkü değer bilinmez ve
-  // fiyatlı küme bugünkü değerin tamamı sayılır. Bu durumda kapsama
-  // eşiği geçilir (bilinmeyen lot "yok" gibi davranır)...
   const seriler = new Map<string, Seri>([['THYAO.IS', seri([30, 100], [0, 110])]]);
-  assertAlmostEquals(donemRoi(lots, seriler, NOW, 30)!, 10, 1e-9);
-  // ...ama dönem BAŞINDA fiyatı olmayan bir lot bugünkü değerin %20'sini
-  // aşıyorsa satır yazılmaz: seri bugünden başlıyor değil, tamamen yok.
-  const kismi = new Map<string, Seri>([
-    ['THYAO.IS', seri([30, 100], [0, 100])],
-    ['YOK.IS', seri([0, 100])], // yalnız bugün → geriye taşınır, sorun yok
-  ]);
-  assertAlmostEquals(donemRoi(lots, kismi, NOW, 30)!, 0, 1e-9);
+  // THYAO 1100 fiyatlı, YOK.IS 500 karanlıkta → 1100 < 1600 × 0.8 → null.
+  assertEquals(donemRoi(lots, seriler, NOW, 30), null);
+  // Karanlık pay küçükse (current_price 5 → 50) ROI yazılır.
+  const kucuk = [lots[0], lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10, current_price: 5 })];
+  assertAlmostEquals(donemRoi(kucuk, seriler, NOW, 30)!, 10, 1e-9);
+  // current_price da yoksa lot görünmezdir (uygulama da fiyatsız gösterir).
+  const fiyatsiz = [lots[0], lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10 })];
+  assertAlmostEquals(donemRoi(fiyatsiz, seriler, NOW, 30)!, 10, 1e-9);
+});
+
+Deno.test('fon kodu öneksizse TEFAS: eklenir; diğer türler dokunulmaz', () => {
+  assertEquals(seriSembolu(lot({ id: 'f', type: 'fon', ticker: 'AFT' })), 'TEFAS:AFT');
+  assertEquals(seriSembolu(lot({ id: 'f', type: 'fon', ticker: 'TEFAS:AFT' })), 'TEFAS:AFT');
+  assertEquals(seriSembolu(lot({ id: 'h', type: 'hisse', ticker: 'AFT.IS' })), 'AFT.IS');
+  assertEquals(lotSembolleri(lot({ id: 'f', type: 'fon', ticker: 'aft' })), ['TEFAS:AFT']);
+});
+
+Deno.test('yedek fiyat: current_price, TRY dışı kurla; kur yoksa 0', () => {
+  const tl = lot({ id: 'a', type: 'hisse', ticker: 'X', current_price: 12 });
+  assertEquals(yedekTryFiyati(tl, new Map(), NOW), 12);
+  const usd = lot({ id: 'b', type: 'emtia', ticker: 'Y', currency: 'USD', current_price: 2 });
+  assertEquals(yedekTryFiyati(usd, new Map(), NOW), 0);
+  assertEquals(yedekTryFiyati(usd, new Map([['USDTRY=X', seri([0, 40])]]), NOW), 80);
+  // Dağılıma yedekle girer.
+  const d = dagilim([tl], new Map(), NOW)!;
+  assertEquals(d.allocation_pct, { hisse: 100 });
 });
 
 Deno.test('ROI: başlangıç değeri sıfırsa null; aralık kırpılır', () => {
@@ -169,4 +187,40 @@ Deno.test('dağılım: tür payları 1 ondalık, toplam ≈ 100, tür sayısı',
 Deno.test('dağılım: fiyatlanan lot yoksa null', () => {
   const lots = [lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 5 })];
   assertEquals(dagilim(lots, new Map(), NOW), null);
+});
+
+
+// ── Net lot ───────────────────────────────────────────────────────────────
+
+Deno.test('netLotlar: satış lot miktarından düşülür, pozisyon başına tek lot', () => {
+  const tum = [
+    lot({ id: 'k1', type: 'hisse', ticker: 'KCHOL.IS', quantity: 1000, added_date: '2023-09-13T21:00:00Z' }),
+    lot({ id: 'k2', type: 'hisse', ticker: 'KCHOL.IS', quantity: 620, added_date: '2025-09-25T21:00:00Z', current_price: 216.5 }),
+    lot({ id: 'k3', type: 'hisse', ticker: 'KCHOL.IS', quantity: 620, added_date: '2025-09-25T21:00:00Z' }),
+    lot({ id: 's1', type: 'hisse', ticker: 'KCHOL.IS', quantity: 1620, kind: 'sell', added_date: '2026-09-16T13:40:00Z' }),
+    lot({ id: 'm1', type: 'hisse', ticker: 'KCHOL.IS', quantity: 500, kind: 'delete_log' }),
+    lot({ id: 'a1', type: 'hisse', ticker: 'AVOD.IS', quantity: 1000 }),
+    lot({ id: 'a2', type: 'hisse', ticker: 'AVOD.IS', quantity: 1000, kind: 'sell' }),
+  ];
+  const acik = tum.filter((l) => (l.kind ?? 'buy') === 'buy');
+  const out = netLotlar(acik, tum);
+  assertEquals(out.length, 1);
+  assertEquals(out[0].ticker, 'KCHOL.IS');
+  assertAlmostEquals(out[0].quantity as number, 620, 1e-9);
+  // Şablon en yeni alım: k2/k3 aynı tarihli, ilk gelen kalır; current_price taşınır.
+  assertEquals(out[0].id, 'k2');
+  assertEquals(out[0].current_price, 216.5);
+});
+
+Deno.test('netLotlar: farklı para birimi / tür ayrı pozisyon, mezar taşı miktara girmez', () => {
+  const tum = [
+    lot({ id: 'g1', type: 'altin', sub_category: 'Çeyrek Altın', quantity: 30 }),
+    lot({ id: 'g2', type: 'altin', sub_category: 'Çeyrek Altın', quantity: 25 }),
+    lot({ id: 'gs', type: 'altin', sub_category: 'Çeyrek Altın', quantity: 20, kind: 'sell' }),
+    lot({ id: 'gm', type: 'altin', sub_category: 'Çeyrek Altın', quantity: 55, kind: 'delete_log' }),
+    lot({ id: 'u1', type: 'doviz', ticker: 'USDTRY=X', quantity: 2200 }),
+  ];
+  const acik = tum.filter((l) => (l.kind ?? 'buy') === 'buy');
+  const out = netLotlar(acik, tum).sort((a, b) => a.type.localeCompare(b.type));
+  assertEquals(out.map((l) => [l.type, l.quantity]), [['altin', 35], ['doviz', 2200]]);
 });

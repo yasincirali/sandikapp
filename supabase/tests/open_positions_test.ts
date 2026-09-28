@@ -351,3 +351,25 @@ Deno.test('silinen lot sonrası TEKRAR alım bildirim hakkı verir', () => {
   const out = acikPozisyonLotlari(lots);
   assertEquals(out.map((l) => l.id), ['b2']);
 });
+
+// ── mezarTasi: false — yarış değerlemesi istemciyle birebir (2026-09-29) ──
+
+Deno.test('mezarTasi:false — pozisyon mezar taşı eski alımları SUSTURMAZ', () => {
+  const rows = [
+    alim({ id: 'a1', quantity: 100, added_date: '2025-01-01T00:00:00Z' }),
+    alim({ id: 'm1', quantity: 100, kind: 'delete_log', added_date: '2026-09-16T12:00:00Z', ref_asset_id: null }),
+  ];
+  assertEquals(acikPozisyonLotlari(rows).map((r) => r.id), []);
+  assertEquals(acikPozisyonLotlari(rows, { mezarTasi: false }).map((r) => r.id), ['a1']);
+});
+
+Deno.test('mezarTasi:false — ref_asset_id işaret ettiği lot yaşar; satış yine netlenir', () => {
+  const rows = [
+    alim({ id: 'a1', quantity: 100 }),
+    alim({ id: 'a2', quantity: 50 }),
+    alim({ id: 'm1', quantity: 100, kind: 'delete_log', ref_asset_id: 'a1' }),
+    alim({ id: 's1', quantity: 120, kind: 'sell' }),
+  ];
+  // 150 − 120 = 30 > 0 → pozisyon açık, iki alım da listede.
+  assertEquals(acikPozisyonLotlari(rows, { mezarTasi: false }).map((r) => r.id).sort(), ['a1', 'a2']);
+});
