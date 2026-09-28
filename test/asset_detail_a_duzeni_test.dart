@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
+import 'package:portfoy_takip/services/history_service.dart';
+import 'package:portfoy_takip/widgets/varlik_iskeleti.dart';
 import 'package:portfoy_takip/utils/tr_format.dart';
 import 'package:portfoy_takip/widgets/donem_istatistik.dart';
 
@@ -97,6 +100,53 @@ void main() {
     final pozisyonY = tester.getTopLeft(find.text('POZİSYONUN')).dy;
     expect(fiyatY, lessThan(pozisyonY));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('açılış: seriler gelene kadar tek iskelet, sonra hepsi birden',
+      (tester) async {
+    tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+    HistoryService.clearCache();
+    final bekleyen = <Completer<List<(int, double)>>>[];
+    HistoryService.seriCekici = (sym, range, interval) {
+      final c = Completer<List<(int, double)>>();
+      bekleyen.add(c);
+      return c.future;
+    };
+    addTearDown(() =>
+        HistoryService.seriCekici = HistoryService.varsayilanSeriCekici);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        authProvider.overrideWith(_FakeAuth.new),
+        portfolioProvider.overrideWith(_FakePortfolio.new),
+      ],
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        home: AssetDetailScreen(asset: _asset(), showBackButton: true),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 200));
+    // Başlık hemen, geri kalan tek iskelet.
+    expect(find.text('THYAO'), findsOneWidget);
+    expect(find.byType(VarlikIskeleti), findsOneWidget);
+    expect(find.text('GÜNCEL FİYAT'), findsNothing);
+    expect(find.text('POZİSYONUN'), findsNothing);
+
+    final now = DateTime.now();
+    for (final c in bekleyen) {
+      c.complete([
+        (now.subtract(const Duration(days: 2000)).millisecondsSinceEpoch, 280.0),
+        (now.subtract(const Duration(minutes: 5)).millisecondsSinceEpoch, 312.4),
+      ]);
+    }
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byType(VarlikIskeleti), findsNothing);
+    expect(find.text('GÜNCEL FİYAT'), findsOneWidget);
+    expect(find.text('POZİSYONUN'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 10));
   });
 
   testWidgets('dönem aralığı 320pt\'de büyük tutarla taşmaz', (tester) async {

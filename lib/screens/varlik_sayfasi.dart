@@ -12,13 +12,16 @@ import '../services/history_service.dart';
 import '../services/son_bakilanlar.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
+import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/fiyat_grafigi.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/takip_yildizi.dart';
-import 'asset_detail_screen.dart' show TechnicalSignalPanel;
+import '../widgets/varlik_iskeleti.dart';
+import 'asset_detail_screen.dart'
+    show TechnicalSignalPanel, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
 
 /// Varlık sayfası — bir varlığı portföye EKLEMEDEN incelemek.
@@ -159,6 +162,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   bool _takipIslemi = false;
 
+  /// Açılış kapısı açıldı mı (bkz. `utils/acilis_kapisi.dart`): altı dönem
+  /// ve sinyal serisi geldi ya da süre doldu. Bir kez `true` olur.
+  bool _acildi = false;
+
   @override
   void initState() {
     super.initState();
@@ -189,11 +196,21 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // çizilir (`_yukle` her dönemi bağımsız `setState` eder); ötekileri
     // beklemez. Aşırı yük kaygısı yok: `HistoryService` aynı anahtardaki
     // uçuşan isteği tekilleştirir, önbellekte olan dönem ağa hiç çıkmaz.
-    await Future.wait([
+    //
+    // Açılış kapısı (kullanıcı kararı 2026-09-28): dönemler ve sinyal
+    // panelinin serisi aynı anda istenir, sayfa hepsi gelince BİRLİKTE
+    // dolar — çipler birer birer, panel en son dolmaz. Panel aynı seriyi
+    // `HistoryService` önbelleğinden alır. Testte yükleyici verilmişse
+    // (ağsız) sinyal serisi burada istenmez.
+    await acilisKapisi([
       _yukle(_gun),
       for (final g in varlikSayfasiDonemleri)
         if (g != _gun) _yukle(g),
+      if (widget.seriYukleyici == null && widget.kimlik.ticker.isNotEmpty)
+        HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
+            periodDays: kSinyalPenceresiGun),
     ]);
+    if (mounted) setState(() => _acildi = true);
   }
 
   Future<void> _yukle(int gun) async {
@@ -414,6 +431,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         digits: 2, symbol: currencySymbolFor(k.ticker, k.currency) ?? '₺');
     final bayat = cizilen != null && cizilen != _gun;
 
+    if (!_acildi) {
+      return const [VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi)];
+    }
     return [
       _fiyatBlogu(ist, bicim, cizilen),
       const SizedBox(height: SandikSpace.smd),

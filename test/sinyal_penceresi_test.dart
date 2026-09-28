@@ -62,10 +62,14 @@ void main() {
       // Ham sayı kalmamalı — iki çağrı da sabite bağlı olmalı.
       expect(kaynak.contains('periodDays: 180'), isFalse,
           reason: 'Bir çağrı hâlâ 180 gün istiyor.');
+      // Üç çağrı: şerit, panel ve açılış kapısının ön çekimi (2026-09-28,
+      // `acilis_kapisi.dart`) — ön çekim de AYNI anahtarı ister ki şerit ve
+      // panel seriyi önbellekten alsın, ağa ikinci kez çıkmasın.
       expect(
         'periodDays: kSinyalPenceresiGun'.allMatches(kaynak).length,
-        2,
-        reason: 'Şerit ve panelden biri sabite bağlı değil.',
+        3,
+        reason: 'Şerit, panel ya da açılış ön çekiminden biri sabite '
+            'bağlı değil.',
       );
     });
   });

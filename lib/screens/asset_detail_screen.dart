@@ -47,6 +47,8 @@ import '../models/varlik_kimligi.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
 import '../widgets/donem_istatistik.dart';
+import '../widgets/varlik_iskeleti.dart';
+import '../utils/acilis_kapisi.dart';
 import '../widgets/takip_yildizi.dart';
 
 part 'asset_detail/eylemler.dart';
@@ -109,6 +111,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       alarmSembolu(widget.asset.ticker, widget.asset.subCategory);
 
   late int _selectedPeriodIdx;
+
+  /// Açılış kapısı açıldı mı — seçili dönem, öteki dönemler ve sinyal
+  /// serisi geldi (ya da `acilisSiniri` doldu). Bir kez `true` olur; dönem
+  /// değişimi ve nabız tazelemesi ekranı yeniden iskelete DÖNDÜRMEZ.
+  bool _acildi = false;
   String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
   late Future<Map<int, double>> _historyFuture;
   late ScrollController _scrollController;
@@ -209,8 +216,29 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
-    CrashReporter.arkaPlan(_digerDonemleriYukle(),
-        reason: 'AssetDetail.digerDonemler');
+    final digerleri = _digerDonemleriYukle();
+    CrashReporter.arkaPlan(digerleri, reason: 'AssetDetail.digerDonemler');
+    // Açılış kapısı (kullanıcı kararı 2026-09-28, `acilis_kapisi.dart`):
+    // ekran parça parça değil, hepsi gelince BİRLİKTE dolar. Sinyal şeridi
+    // ve paneli aynı sembol serisini okur; burada aynı anda istenir,
+    // `HistoryService` önbelleği onlara ağa çıkmadan verir.
+    final sinyalSerisi =
+        seviyeGorunurlugu(ref.read(yatirimciSeviyesiProvider))
+                    .teknikSinyaller &&
+                widget.asset.ticker.trim().isNotEmpty
+            ? HistoryService.instance.getSymbolHistory(widget.asset.ticker,
+                periodDays: kSinyalPenceresiGun)
+            : null;
+    CrashReporter.arkaPlan(
+      acilisKapisi([
+        _historyFuture,
+        digerleri,
+        if (sinyalSerisi != null) sinyalSerisi,
+      ]).then<void>((_) {
+        if (mounted) setState(() => _acildi = true);
+      }),
+      reason: 'AssetDetail.acilis',
+    );
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
     _nabziBirak = TazelikRitmi.nabiz.dinle(_nabizGeldi);
@@ -668,6 +696,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
                 Align(alignment: Alignment.centerLeft, child: _baslik()),
                 const SizedBox(height: SandikSpace.md),
+                // Başlık yerelden gelir, hemen yazılır; geri kalan her şey
+                // açılış kapısı açılınca BİRLİKTE (bkz. `_acildi`).
+                if (!_acildi)
+                  const VarlikIskeleti()
+                else ...[
                 Align(
                   alignment: Alignment.centerLeft,
                   child: _fiyatBlogu(pnl, baz),
@@ -1842,6 +1875,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // taşır (varlık sayfasıyla aynı).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
+                ],
                 ],
               ],
             ),
