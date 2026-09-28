@@ -2567,5 +2567,21 @@
   "searchShowAll": "All ({count})",
   "searchInPortfolioTag": "In portfolio",
   "searchAssetsSemantics": "Search assets",
-  "searchShortHint": "Stocks, funds, gold, FX, crypto"
+  "searchShortHint": "Stocks, funds, gold, FX, crypto",
+  "kullaniciAdiBaslik": "Choose your username",
+  "kullaniciAdiAciklama": "Your partner sees you by this name, and it's the name shown in the app. You can change it later in Settings > Account.",
+  "kullaniciAdiEtiket": "Username",
+  "kullaniciAdiKurallar": "3–20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.",
+  "kullaniciAdiHataBicim": "Must be 3–20 characters, start with a letter and contain only letters, digits, . and _.",
+  "kullaniciAdiHataUygunsuz": "This name isn't allowed. Try another one.",
+  "kullaniciAdiHataAyrilmis": "This name is reserved. Try another one.",
+  "kullaniciAdiHataAlinmis": "This name is taken. Try another one.",
+  "kullaniciAdiHataBilinmiyor": "Couldn't save. Try again in a moment.",
+  "kullaniciAdiUygun": "This name is available.",
+  "kullaniciAdiDevam": "Continue",
+  "kullaniciAdiKaydet": "Save",
+  "kullaniciAdiKaydedildi": "Your username was updated.",
+  "kullaniciAdiSecilmedi": "Not chosen yet",
+  "kullaniciAdiCikis": "Sign out",
+  "registerUsernameMissing": "Enter a username."
 }

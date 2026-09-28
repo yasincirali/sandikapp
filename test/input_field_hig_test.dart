@@ -36,7 +36,9 @@ void main() {
       final s = oku('lib/screens/register_screen.dart');
       // `password` DEĞİL `newPassword`: güçlü şifre önerisini bu tetikler.
       expect(s.contains('AutofillHints.newPassword'), isTrue);
-      expect(s.contains('AutofillHints.name'), isTrue);
+      // Ad alanı 2026-09-28'den beri KULLANICI ADI (0079): `name` değil
+      // `newUsername` — sistem kişi kartındaki "Ad Soyad"ı önermesin.
+      expect(s.contains('AutofillHints.newUsername'), isTrue);
       expect(s.contains('AutofillHints.email'), isTrue);
     });
 

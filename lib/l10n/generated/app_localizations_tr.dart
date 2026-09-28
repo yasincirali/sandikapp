@@ -3713,4 +3713,57 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
+
+  @override
+  String get kullaniciAdiBaslik => 'Kullanıcı adını seç';
+
+  @override
+  String get kullaniciAdiAciklama =>
+      'Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap\'tan değiştirebilirsin.';
+
+  @override
+  String get kullaniciAdiEtiket => 'Kullanıcı adı';
+
+  @override
+  String get kullaniciAdiKurallar =>
+      '3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.';
+
+  @override
+  String get kullaniciAdiHataBicim =>
+      '3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.';
+
+  @override
+  String get kullaniciAdiHataUygunsuz =>
+      'Bu ad uygun değil. Başka bir ad dene.';
+
+  @override
+  String get kullaniciAdiHataAyrilmis => 'Bu ad ayrılmış. Başka bir ad dene.';
+
+  @override
+  String get kullaniciAdiHataAlinmis => 'Bu ad alınmış. Başka bir ad dene.';
+
+  @override
+  String get kullaniciAdiHataBilinmiyor =>
+      'Kaydedilemedi. Biraz sonra tekrar dene.';
+
+  @override
+  String get kullaniciAdiUygun => 'Bu ad kullanılabilir.';
+
+  @override
+  String get kullaniciAdiDevam => 'Devam et';
+
+  @override
+  String get kullaniciAdiKaydet => 'Kaydet';
+
+  @override
+  String get kullaniciAdiKaydedildi => 'Kullanıcı adın güncellendi.';
+
+  @override
+  String get kullaniciAdiSecilmedi => 'Henüz seçilmedi';
+
+  @override
+  String get kullaniciAdiCikis => 'Çıkış yap';
+
+  @override
+  String get registerUsernameMissing => 'Kullanıcı adı girin.';
 }

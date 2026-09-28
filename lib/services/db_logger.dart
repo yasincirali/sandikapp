@@ -161,6 +161,8 @@ class DbLogger {
     'email', 'password', 'token', 'access_token', 'refresh_token',
     'apikey', 'api_key', 'authorization', 'phone', 'tc', 'tcno',
     'display_name', 'displayName',
+    // Kullanıcı adı (0079) görünen addır — aynı gizlilik.
+    'username', 'p_ad',
   };
 
   Map<String, dynamic> _maskSensitive(Map<String, dynamic> input) {

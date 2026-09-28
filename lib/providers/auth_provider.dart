@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/kullanici_adi.dart';
 import '../models/user_model.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
@@ -60,6 +61,8 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       a.email == b.email &&
       a.displayName == b.displayName &&
       a.onboardingCompleted == b.onboardingCompleted &&
+      a.username == b.username &&
+      a.eksikProfil == b.eksikProfil &&
       a.createdAt.millisecondsSinceEpoch == b.createdAt.millisecondsSinceEpoch;
 
   Future<void> login({
@@ -110,6 +113,20 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
     }
   }
 
+  /// Kullanıcı adını kaydeder; başarılıysa state yeni adla güncellenir
+  /// (giriş kapısı kapanır, ortak ve ana ekran yeni adı görür).
+  Future<KullaniciAdiSonuc> kullaniciAdiKaydet(String ad) async {
+    final mevcut = state.valueOrNull;
+    if (mevcut == null) return KullaniciAdiSonuc.bilinmiyor;
+    final r = await AuthService.instance.kullaniciAdiAyarla(ad, mevcut);
+    final profil = r.profil;
+    // Bu arada çıkış / hesap değişimi olduysa yanıt bayattır.
+    if (profil != null && state.valueOrNull?.id == profil.id) {
+      state = AsyncData(profil);
+    }
+    return r.sonuc;
+  }
+
   /// Ağ geri geldiğinde minimal (offline) profili gerçeğiyle değiştirir.
   ///
   /// `getSessionUser` ağ yokken token'dan minimal bir kullanıcı kuruyor —
@@ -117,7 +134,10 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   /// Başarısız olursa mevcut state korunur: kullanıcı oturumdan atılmaz.
   Future<void> refreshProfileIfStale() async {
     final current = state.valueOrNull;
-    if (current == null || current.displayName.isNotEmpty) return;
+    if (current == null ||
+        (!current.eksikProfil && current.displayName.isNotEmpty)) {
+      return;
+    }
     try {
       final fresh = await AuthService.instance.refreshProfile();
       if (fresh != null) state = AsyncData(fresh);

@@ -33,6 +33,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/friendly_error.dart';
+import 'kullanici_adi_screen.dart';
 import 'legal_doc_screen.dart';
 import 'onboarding_screen.dart';
 import 'push_diagnostics_screen.dart';
@@ -707,6 +708,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _hesap() => [
             const SizedBox(height: 4),
+            // Kullanıcı adı (0079): ortağın gördüğü ad. İlk girişte zorunlu
+            // seçilir, buradan değiştirilir — aynı ekran, geri oklu.
+            _SettingsTile(
+              icon: Icons.alternate_email_rounded,
+              title: context.l10n.kullaniciAdiEtiket,
+              subtitle: ref.watch(authProvider).valueOrNull?.username ??
+                  context.l10n.kullaniciAdiSecilmedi,
+              onTap: () => pushGuarded(
+                context,
+                adaptiveRoute<void>(builder: (_) => const KullaniciAdiScreen()),
+              ),
+            ),
             _SwitchTile(
               icon: Icons.fingerprint_rounded,
               title: context.l10n.biometricLock,

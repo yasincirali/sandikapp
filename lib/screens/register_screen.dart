@@ -9,6 +9,7 @@ import 'package:flutter/material.dart'
         Material,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/kullanici_adi.dart';
 import '../providers/auth_provider.dart';
 import '../services/sunucu_secimi.dart';
 import '../services/auth_service.dart';
@@ -53,7 +54,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 
   bool get _canSubmit =>
-      _nameCtrl.text.trim().isNotEmpty &&
+      KullaniciAdi.bicimDenetle(_nameCtrl.text) == null &&
       _isValidEmail(_emailCtrl.text) &&
       AuthService.validatePassword(_passCtrl.text) == null &&
       _passCtrl.text == _passConfirmCtrl.text &&
@@ -63,7 +64,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// First missing requirement, in the order the user filled the form.
   /// null → form is valid.
   String? _firstMissingRequirement() {
-    if (_nameCtrl.text.trim().isEmpty) return context.l10n.registerNameMissing;
+    if (_nameCtrl.text.trim().isEmpty) {
+      return context.l10n.registerUsernameMissing;
+    }
+    if (KullaniciAdi.bicimDenetle(_nameCtrl.text) != null) {
+      return context.l10n.kullaniciAdiHataBicim;
+    }
     if (!_isValidEmail(_emailCtrl.text)) return context.l10n.registerEmailInvalid;
     final passError = AuthService.validatePassword(_passCtrl.text);
     if (passError != null) return passError;
@@ -248,25 +254,38 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Ad Soyad
+              // Kullanıcı adı (0079, 2026-09-28) — eskiden "Ad Soyad"dı.
+              // Görünen ad artık kullanıcı adıdır (ortak da bunu görür);
+              // iki ayrı alan sormak yerine kayıtta doğrudan o istenir.
+              // Biçim burada, uygunluk/benzersizlik OTP doğrulamasından
+              // sonra sunucuda denetlenir; reddedilirse giriş kapısı sorar.
               TextFormField(
                 controller: _nameCtrl,
-                textCapitalization: TextCapitalization.words,
+                textCapitalization: TextCapitalization.none,
+                autocorrect: false,
+                maxLength: KullaniciAdi.enUzun,
                 // Klavyede "Return" yerine "İleri" çıkar; 4 alanlı formda
                 // her alandan sonra klavyeyi kapatıp elle dokunma zorunluluğu
                 // ciddi sürtünmeydi.
                 textInputAction: TextInputAction.next,
-                autofillHints: const [AutofillHints.name],
+                autofillHints: const [AutofillHints.newUsername],
                 style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                 decoration: context.inputDecoration('',
-                    labelText: context.l10n.fullName,
+                    labelText: context.l10n.kullaniciAdiEtiket,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.person_outline,
+                      child: Icon(Icons.alternate_email_rounded,
                           color: context.c.text36, size: 20),
-                    )),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? context.l10n.fullNameRequired : null,
+                    )).copyWith(
+                  helperText: context.l10n.kullaniciAdiKurallar,
+                  helperMaxLines: 2,
+                  counterText: '',
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? context.l10n.registerUsernameMissing
+                    : (KullaniciAdi.bicimDenetle(v) != null
+                        ? context.l10n.kullaniciAdiHataBicim
+                        : null),
               ),
               const SizedBox(height: 14),
 
