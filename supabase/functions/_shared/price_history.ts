@@ -16,6 +16,7 @@
 // ölçeklenir — ücretsiz katmanda kalmanın anahtarı bu.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { kriptoKodu, mumlariCek, tlSerisi } from './kripto.ts';
 
 /// Teknik göstergeler için gereken minimum nokta sayısı.
 /// En uzun pencere EMA(50) — güvenli tarafta 60 istiyoruz.
@@ -121,8 +122,46 @@ async function fetchTefas(code: string): Promise<number[]> {
   return points.map((p) => p[1]);
 }
 
-async function fetchFromSource(symbol: string): Promise<number[]> {
+/// Kripto günlük kapanışları (6 ay), TL'ye çevrilmiş.
+///
+/// Kaynak Binance (kullanıcı kararı 2026-09-25: kripto tamamen Binance).
+/// USDT paritelerinde her mum aynı günün USDTTRY kapanışıyla çarpılır —
+/// grafik (`kripto-seri`) de aynı dönüşümü yapıyor; sinyal ile grafik aynı
+/// eğriye bakmalı. Kod katalogda yoksa Binance'e gidilmez.
+export async function fetchKripto(
+  client: SupabaseClient,
+  symbol: string,
+  f: typeof fetch = fetch,
+): Promise<number[]> {
+  const kod = kriptoKodu(symbol);
+  if (!kod) return [];
+  const { data: coin } = await client
+    .from('kripto_varlik')
+    .select('parite, binance_sembol')
+    .eq('kod', kod)
+    .maybeSingle();
+  if (!coin) return [];
+  const simdi = Date.now();
+  const baslangic = simdi - 183 * 24 * 60 * 60 * 1000;
+  const [ham, kur] = await Promise.all([
+    mumlariCek(String(coin.binance_sembol), '1d', baslangic, simdi, f),
+    coin.parite === 'USDT'
+      ? mumlariCek('USDTTRY', '1d', baslangic, simdi, f)
+      : Promise.resolve(null),
+  ]);
+  if (ham === null) return [];
+  const noktalar = coin.parite === 'USDT'
+    ? (kur === null ? [] : tlSerisi(ham, kur))
+    : ham;
+  return noktalar.map((p) => p[1]).filter((c) => Number.isFinite(c) && c > 0);
+}
+
+async function fetchFromSource(
+  client: SupabaseClient,
+  symbol: string,
+): Promise<number[]> {
   try {
+    if (kriptoKodu(symbol)) return await fetchKripto(client, symbol);
     if (symbol.startsWith(TEFAS_PREFIX)) {
       return await fetchTefas(symbol.slice(TEFAS_PREFIX.length));
     }
@@ -186,7 +225,7 @@ export async function loadPriceHistories(
     const results = await Promise.all(
       batch.map(async (symbol) => ({
         symbol,
-        closes: await fetchFromSource(symbol),
+        closes: await fetchFromSource(client, symbol),
       })),
     );
     fresh.push(...results);

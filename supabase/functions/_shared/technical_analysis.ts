@@ -18,6 +18,7 @@ export type AssetType =
   | 'altin'
   | 'doviz'
   | 'emtia'
+  | 'kripto'
   | 'diger';
 
 export interface TechnicalIndicator {
