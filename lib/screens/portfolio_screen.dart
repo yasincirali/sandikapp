@@ -182,18 +182,23 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
           child: Column(
             children: [
               // ── Header ────────────────────────────────────────────────────
+              // Ölçüler Performans ekranının başlık çubuğuyla BİREBİR
+              // (2026-09-28): dikey xs, başlık `headlineMedium`. Eskiden
+              // 12/`headlineLarge`+22pt idi ve sekmeler arasında üst
+              // şerit zıplıyordu.
               Padding(
-                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 12),
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                    SandikSpace.xs, SandikSpace.screenH(context), SandikSpace.xs),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         context.l10n.portfolio,
-                        style: context.t.headlineLarge?.copyWith(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: context.c.text90,
-                        ),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
+                        style: context.t.headlineMedium
+                            ?.copyWith(color: context.c.text90),
                       ),
                     ),
                     _SortButton(

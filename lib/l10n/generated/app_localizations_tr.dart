@@ -315,15 +315,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noAssetsYet => 'Henüz varlık eklenmemiş';
 
   @override
-  String get noAssetsOfType => 'Bu türde varlık yok';
-
-  @override
   String get noAssetsYetHint =>
       'İlk varlığını ekleyerek sandığını oluşturmaya başla.';
-
-  @override
-  String get noAssetsOfTypeHint =>
-      'Filtreyi değiştir ya da bu türden bir varlık ekle.';
 
   @override
   String get addFirstAsset => 'İlk Varlığını Ekle';
@@ -439,9 +432,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get refreshPrices => 'Fiyatları yenile';
-
-  @override
-  String get assetAllocation => 'VARLIK DAĞILIMI';
 
   @override
   String get portfolioActivity => 'PORTFÖY HAREKETLERİ';

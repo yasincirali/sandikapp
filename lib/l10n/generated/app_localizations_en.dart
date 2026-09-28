@@ -314,15 +314,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noAssetsYet => 'No assets added yet';
 
   @override
-  String get noAssetsOfType => 'No assets of this type';
-
-  @override
   String get noAssetsYetHint =>
       'Start building your sandık by adding your first asset.';
-
-  @override
-  String get noAssetsOfTypeHint =>
-      'Change the filter or add an asset of this type.';
 
   @override
   String get addFirstAsset => 'Add Your First Asset';
@@ -438,9 +431,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refreshPrices => 'Refresh prices';
-
-  @override
-  String get assetAllocation => 'ASSET ALLOCATION';
 
   @override
   String get portfolioActivity => 'PORTFOLIO ACTIVITY';

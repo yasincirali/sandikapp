@@ -6,7 +6,6 @@ import '../models/app_notification.dart';
 import '../models/price_alert_notification.dart';
 import '../models/bildirim_akisi.dart';
 import '../models/asset.dart';
-import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -34,7 +33,6 @@ import 'price_alerts_screen.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/transaction_row.dart';
-import '../widgets/h_scroll_with_fade.dart';
 import 'add_asset_screen.dart';
 import 'csv_import_screen.dart';
 import 'main_navigation_screen.dart' show MainNavigationScreen;
@@ -56,7 +54,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _view = '';
-  AssetType? _typeFilter;
+  // Tür filtresi (çipler) ve "Varlık dağılımı" listesi 2026-09-28'de
+  // kaldırıldı (kullanıcı kararı): dağılım halkası Portföy sekmesinde,
+  // tür filtresi Performans ekranında zaten var; ana sayfa aynı bilgiyi
+  // üçüncü kez taşıyordu ve toplam kartıyla hareket listesinin arasını
+  // uzatıyordu. Ana sayfadaki toplam/hareketler artık filtresizdir.
   final _scrollCtrl = ScrollController();
   bool _reloading = false;
 
@@ -305,7 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final allActivePartners = ref.watch(activePartnersProvider);
 
     // Ham `assets` transaction ledger'ıdır — buy/sell/deleteLog hepsi karışık.
-    // Ana sayfadaki summary, dağılım, mini card, hareket listesi ve kâr/zarar
+    // Ana sayfadaki summary, mini card, hareket listesi ve kâr/zarar
     // portföy ekranı ile birebir tutarlı olmalı. Portföy ekranı
     // `aggregatePositions` kullanıyor: sell lot'ları buy qty'sinden düşer,
     // deleteLog skip edilir, totalQty <= 0 pozisyonlar liste dışı kalır.
@@ -361,7 +363,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     //
     // `positionedAssets` her varlığı tek bir sentetik pozisyona indirger:
     // sell lot'ları buy miktarından düşer, temettü ve deleteLog satırları
-    // tamamen elenir. Summary/dağılım için doğru olan bu davranış, hareket
+    // tamamen elenir. Summary için doğru olan bu davranış, hareket
     // listesi için yanlıştı — kullanıcı Al/Sat/Temettü yaptığında listede
     // yeni bir kayıt GÖRÜNMÜYORDU; yalnızca mevcut satırın miktarı değişiyordu.
     //
@@ -389,10 +391,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ];
     }
 
-    final filteredForSummary = _typeFilter == null
-        ? displayedAssets
-        : displayedAssets.where((a) => a.type == _typeFilter).toList();
-
     // "Ben" mini card'ı — kendi net pozisyon toplamı (satışlar düşülmüş).
     final myBuyTotal = positionedAssets(myState.assets)
         .fold<double>(0, (s, a) => s + myState.toTRY(a.totalValue, a.currency));
@@ -404,7 +402,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           gbpTry: myState.gbpTry,
           lastUpdated: myState.lastUpdated,
         );
-    final displayedState = gorunumDurumu(filteredForSummary);
+    final displayedState = gorunumDurumu(displayedAssets);
 
     final bool showRightCard = _view != '';
     String rightLabel = '';
@@ -456,9 +454,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     // Hareket sayısı — "Tümünü Gör" rozeti ve eşiği için. Ledger'dan
     // sayılır; aggregate edilmiş pozisyon sayısı hareket sayısı DEĞİLDİR.
-    final ledgerCount = _typeFilter == null
-        ? ledgerAssets.length
-        : ledgerAssets.where((a) => a.type == _typeFilter).length;
+    final ledgerCount = ledgerAssets.length;
 
     // Kendi görünümü + sıfır varlık = ilk kullanım boş durumu. Eskiden
     // özet (₺0), üç şerit, iki kişi kartı, filtre çipleri ve iki boş
@@ -502,7 +498,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             backgroundColor: context.c.background,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
-            toolbarHeight: 66,
+            // Yükseklik Performans ekranındaki başlık çubuğuyla BİREBİR:
+            // 44pt dokunma hedefi + 2×xs (2026-09-28, "diğer ekranlar
+            // Performans'la aynı hizaya"). 66 iken ana sayfa tek başına
+            // daha kalın bir üst şerit taşıyordu.
+            toolbarHeight: SandikTouch.min + SandikSpace.xs * 2,
             titleSpacing: 0,
             title: Padding(
               padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
@@ -590,11 +590,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ),
+          // ── Dikey ritim (2026-09-28, "bileşen araları tutarlı olmalı") ──
+          // Blok → blok: `SandikSpace.md`. Bölüm başlığı: üstünde `lg`,
+          // altında `smd` (hareket satırlarının kendi aralığı da 12 —
+          // `TransactionRow` alt 12). Her sliver YALNIZCA üst boşluğunu
+          // taşır; alt boşluk yazmaz — böylece iki komşunun payı
+          // toplanıp 44pt'lik çukurlar oluşmaz (eski hâl: mini kart alt
+          // 20 + başlık üst 24). Koşullu bloklar (Bugün, mini kartlar)
+          // gizlenince ritim bozulmaz çünkü her blok kendi üstünü getirir.
           // Offline / price error banner
           if (myState.errorMessage != null)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
+                padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -642,7 +650,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: TourAnchor(
                 target: TourTarget.piyasaSeridi,
                 child: PiyasaSeridi(
-                  padding: EdgeInsets.symmetric(horizontal: hp),
+                  // Şeridin kendi 7pt tamponu var (44pt dokunma alanı,
+                  // 30pt bant); alt `sm` ile hero karta 15pt — blok
+                  // aralığına (md) en yakın ölçek değeri.
+                  padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
                   onAra: _aramayiAc,
                 ),
               ),
@@ -650,7 +661,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           else
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: hp),
+                padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: PiyasaAramaDugmesi(
@@ -727,7 +738,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (isEmptyOwn)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 24, hp, 0),
+                padding: EdgeInsets.fromLTRB(hp, SandikSpace.lg, hp, 0),
                 child: const _EmptyPortfolioCta(),
               ),
             ),
@@ -779,7 +790,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   state: benGorunumu ? myState : gorunumDurumu(ledgerAssets),
                   kisisel: benGorunumu,
                   etiket: _bugunEtiketi(allActivePartners),
-                  padding: EdgeInsets.fromLTRB(hp, 12, hp, 0),
+                  padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
               ),
             ),
@@ -787,7 +798,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (!isEmptyOwn)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 16, hp, 20),
+                padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 child: Row(
                   children: [
                     Expanded(
@@ -821,68 +832,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           // Görünüm seçici (Ben / ortak / Birlikte) 2026-09-21'de toplam
           // kartının başlığına taşındı (`GorunumCipi`); kendi satırı yok.
-          // Asset type filter chips
-          if (!isEmptyOwn)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 0, hp, 0),
-                child: HScrollWithFade(
-                  child: Row(
-                    children: [
-                      _typeChip(null, context.l10n.allTypes),
-                      for (final t
-                          in AssetType.values)
-                        _typeChip(t, t.labelOf(context.l10n)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          // Distribution header
-          if (!isEmptyOwn)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 16, hp, 8),
-                child: SandikSectionHeader(title: context.l10n.assetAllocation),
-              ),
-            ),
-          if (!isEmptyOwn)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: hp),
-                child: _buildDistributionList(displayedState),
-              ),
-            ),
+          // Tür çipleri + "Varlık dağılımı" listesi de 2026-09-28'de
+          // kaldırıldı (bkz. sınıf başındaki not) — hareketler doğrudan
+          // kişi kartlarının altına gelir.
           // Recent transactions header
           if (!isEmptyOwn)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 24, hp, 8),
+                padding: EdgeInsets.fromLTRB(
+                    hp, SandikSpace.lg, hp, SandikSpace.smd),
                 child: SandikSectionHeader(title: context.l10n.portfolioActivity),
               ),
             ),
           // Recent transaction list (show individual asset transactions newest -> oldest)
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
+              padding: EdgeInsets.symmetric(horizontal: hp),
               child: Builder(builder: (_) {
-                // Tür filtresi hareketlere de uygulanır, ama liste ham
-                // ledger'dan gelir — her Al/Sat/Temettü kaydı ayrı satır.
-                final recentAssets = (_typeFilter == null
-                    ? ledgerAssets.toList()
-                    : ledgerAssets.where((a) => a.type == _typeFilter).toList())
+                // Liste ham ledger'dan gelir — her Al/Sat/Temettü kaydı
+                // ayrı satır. Tür filtresi yok (2026-09-28).
+                final recentAssets = ledgerAssets.toList()
                   ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
 
-                if (recentAssets.isEmpty) {
-                  // Hiç varlık yoksa CTA ZATEN özetin hemen altında
-                  // (_EmptyPortfolioCta) — burada ikinci kez gösterme.
-                  if (isEmptyOwn) return const SizedBox.shrink();
-                  // Tür filtresi boş: kullanıcıya nedenini ve çıkışı söyle.
-                  return const Padding(
-                    padding: EdgeInsets.fromLTRB(0, 16, 0, 8),
-                    child: _EmptyPortfolioCta(filtered: true),
-                  );
-                }
+                // Boşsa hiçbir şey çizme: kendi defterinde CTA ZATEN özetin
+                // hemen altında (_EmptyPortfolioCta); ortak görünümünde
+                // "ilk varlığını ekle" demek yanlış olurdu — ortak eklemez.
+                if (recentAssets.isEmpty) return const SizedBox.shrink();
 
                 // Ana sayfa yalnızca son 3 kaydı gösterir; tamamı için
                 // `AllTransactionsScreen` (filtre + sayfalama). Burada
@@ -912,7 +887,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (ledgerCount > 3)
             SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 8, hp, 0),
+                // Üst 0: son satırın alt 12'si aralığı verir — düğme
+                // listenin bir satırı gibi durur, ayrı bir blok gibi değil.
+                padding: EdgeInsets.symmetric(horizontal: hp),
                 child: SandikTappable(
                   semanticLabel: context.l10n.seeAllTransactions,
                   onTap: () => pushGuarded(
@@ -922,7 +899,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         allPartnerAssets: allPartnerAssets,
                         partners: partners,
                         initialView: _view,
-                        initialTypeFilter: _typeFilter,
                       ),
                     ),
                   ),
@@ -953,36 +929,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           const SliverToBoxAdapter(child: SizedBox(height: SandikSpace.xxl)),
         ],
-      ),
-    );
-  }
-
-  Widget _typeChip(AssetType? type, String label) {
-    final selected = _typeFilter == type;
-    final color = type?.color ?? context.c.amberText;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: SandikTappable(
-        onTap: () => setState(() => _typeFilter = type),
-        semanticLabel: label,
-        child: AnimatedContainer(
-          duration: SandikMotion.stateOf(context),
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(
-              horizontal: SandikSpace.md, vertical: SandikSpace.sm),
-          decoration: context.chip(
-            selected: selected,
-            accent: color,
-            radius: SandikRadius.lg,
-          ),
-          child: Text(
-            label,
-            style: context.t.titleSmall?.copyWith(
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: selected ? color : context.c.text58,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1026,85 +972,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDistributionList(PortfolioState state) {
-    // Dağılım, TOPLAMLA aynı kümeden beslenmeli.
-    //
-    // **Denetim bulgusu (2026-09-22):** burası ham `state.assets` üzerinden
-    // topluyordu, payda (`state.totalValue`) ise net pozisyonlardan
-    // geliyordu. Satış lot'u hem kendi türüne ekleniyor hem de paydadan
-    // düşük olduğu için oran 1.0'ı AŞIYORDU — ölçüldü: kısmi satışta 2,33;
-    // iki sahipli defterde 1,5. Yani yüzdeler %100'ü aşıyor ve çubuklar
-    // taşıyordu.
-    //
-    // `aggregatePositionsByOwner` + `aktifLotlar`: satışı düşer, sahip
-    // sınırını korur — `totalValue` ile AYNI kural
-    // (bkz. `ownerScopedTotalValue`).
-    final totals = <AssetType, double>{};
-    for (final p in aggregatePositionsByOwner(
-        [for (final lots in lotlarSahibeGore(state.assets)) aktifLotlar(lots)])) {
-      final a = p.asDisplayAsset();
-      totals[a.type] =
-          (totals[a.type] ?? 0) + state.toTRY(a.totalValue, a.currency);
-    }
-    final sorted = totals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return Column(
-      children: sorted.take(3).map((e) {
-        final ratio = e.value / (state.totalValue > 0 ? state.totalValue : 1);
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
-          child: Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration:
-                    BoxDecoration(color: e.key.color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: SandikSpace.sm),
-              Expanded(
-                flex: 2,
-                child: Text(e.key.labelOf(context.l10n),
-                    style: context.t.titleMedium
-                        ?.copyWith(color: context.c.text90)),
-              ),
-              Expanded(
-                flex: 5,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  // Fiyat yenilendiğinde çubuk zıplamak yerine akar.
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: ratio),
-                    duration: const Duration(milliseconds: 520),
-                    curve: Curves.easeOutCubic,
-                    builder: (_, v, __) => LinearProgressIndicator(
-                      value: v,
-                      backgroundColor: context.c.overlay,
-                      color: e.key.color,
-                      minHeight: 6,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: SandikSpace.sm),
-              SizedBox(
-                width: 52,
-                child: Text(
-                  fmtPct(ratio * 100, digits: 1),
-                  textAlign: TextAlign.right,
-                  // Sabit 52pt kolonda sağa dayalı — tabular figür şart.
-                  style: context.t.numSmall.copyWith(
-                      color: context.c.text58, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 }
@@ -1839,11 +1706,10 @@ class _SignalBadgeButton extends ConsumerWidget {
   }
 }
 
-/// Boş portföy çağrısı. [filtered] true ise "bu türde varlık yok" dilinde.
+/// Boş portföy çağrısı. ("Bu türde varlık yok" dili ana sayfadaki tür
+/// filtresiyle birlikte kalktı, 2026-09-28.)
 class _EmptyPortfolioCta extends StatelessWidget {
-  const _EmptyPortfolioCta({this.filtered = false});
-
-  final bool filtered;
+  const _EmptyPortfolioCta();
 
   @override
   Widget build(BuildContext context) {
@@ -1852,14 +1718,12 @@ class _EmptyPortfolioCta extends StatelessWidget {
         Icon(Icons.savings_outlined, color: context.c.text36, size: 48),
         const SizedBox(height: SandikSpace.md),
         Text(
-          filtered ? context.l10n.noAssetsOfType : context.l10n.noAssetsYet,
+          context.l10n.noAssetsYet,
           style: context.t.titleLarge?.copyWith(color: context.c.text90),
         ),
         const SizedBox(height: SandikSpace.sm),
         Text(
-          filtered
-              ? context.l10n.noAssetsOfTypeHint
-              : context.l10n.noAssetsYetHint,
+          context.l10n.noAssetsYetHint,
           textAlign: TextAlign.center,
           style: context.t.bodyMedium?.copyWith(color: context.c.text36),
         ),
@@ -1890,7 +1754,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
                   Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
                   const SizedBox(width: SandikSpace.sm),
                   Text(
-                    filtered ? context.l10n.addAssetTitle : context.l10n.addFirstAsset,
+                    context.l10n.addFirstAsset,
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.c.amberText),
@@ -1902,9 +1766,10 @@ class _EmptyPortfolioCta extends StatelessWidget {
         ),
         // İkinci yol: ekstre yapıştır (2026-09-20). Portföyünü ilk kez kuran
         // kullanıcı için en hızlı yol bu; eskiden yalnızca + › Toplu › Yapıştır
-        // ile üç dokunuş derindeydi ve ilk 10 dakikada bulunmuyordu. Yalnızca
-        // gerçekten boş portföyde — tür filtresi boş çıkınca anlamsız.
-        if (!filtered) ...[
+        // ile üç dokunuş derindeydi ve ilk 10 dakikada bulunmuyordu. (Eskiden
+        // `!filtered` koşuluyla gizlenirdi; tür filtresi 2026-09-28'de
+        // kalktı, bu widget artık yalnızca gerçekten boş portföyde çizilir.)
+        ...[
           const SizedBox(height: SandikSpace.md),
           TextButton.icon(
             onPressed: () => pushGuarded(
