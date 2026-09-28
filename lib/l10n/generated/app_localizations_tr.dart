@@ -3645,6 +3645,14 @@ class AppLocalizationsTr extends AppLocalizations {
       'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.';
 
   @override
+  String get adPositionUpper => 'POZİSYONUN';
+
+  @override
+  String adPositionLine(String amount, String pct) {
+    return 'Pozisyonun: $amount ($pct)';
+  }
+
+  @override
   String get vsWatch => 'Takip et';
 
   @override

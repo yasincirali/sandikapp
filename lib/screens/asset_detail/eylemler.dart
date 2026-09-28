@@ -1,8 +1,8 @@
 part of '../asset_detail_screen.dart';
 
 /// Ekran eylemleri ve seri hazırlığı: sinyal paneline geçiş, dönem seçimi,
-/// karşılaştırma seçici, silme onayı, segment üretimi, dönem anahtarı, eksen
-/// yuvarlama. `asset_detail_screen.dart`'ın part'ı (2026-09-14): aynı
+/// karşılaştırma seçici, silme onayı, segment üretimi, eksen yuvarlama.
+/// (Dönem çipleri 2026-09-28'de `ozet.dart`'a taşındı.) `asset_detail_screen.dart`'ın part'ı (2026-09-14): aynı
 /// kütüphane, davranış AYNEN; `setState` yerine `_guncelle`.
 extension _DetayEylemler on _AssetDetailScreenState {
   /// Y/X ekseni interval'i için TradingView tarzı "nice number" —
@@ -54,12 +54,25 @@ extension _DetayEylemler on _AssetDetailScreenState {
       // slot, öteki gün kapanışı. Birinden ötekine geçerken eski seriyi
       // taşımak, yeni eksene ait olmayan noktalar çizerdi.
       if ((days == 0) != oncekiGunIci) _lastHistory = null;
-      _historyFuture = _loadHistory(days);
+      // Dönem önbellekteyse (çipler açılışta paralel yüklendi) seri HEMEN
+      // çizilir — bekleme çubuğu yok. Gün içi seri yine de sessizce
+      // tazelenir (aşağıda `_nabizGeldi`); öteki dönemler günlük veridir.
+      final onbellek = _donemSerileri[days];
+      if (onbellek != null && onbellek.length >= 2) {
+        if (days == 0) _gunIciBaslangic = _gunIciSeansOnbellek;
+        _lastHistory = onbellek;
+        _historyFuture = SynchronousFuture(onbellek);
+      } else {
+        _historyFuture = _loadHistory(days);
+      }
       // Compare aktifse aynı yeni periyot için compare history'yi de yenile.
       if (_compareAsset != null) {
         _compareHistoryFuture = _karsilastirmaSerisi(_compareAsset!, days);
       }
     });
+    if (_gunIciMi && _donemSerileri.containsKey(0)) {
+      CrashReporter.arkaPlan(_nabizGeldi(), reason: 'AssetDetail.gunIciTazele');
+    }
   }
 
   void _openComparePicker() {
@@ -200,58 +213,5 @@ extension _DetayEylemler on _AssetDetailScreenState {
     }
 
     return segments;
-  }
-
-  Widget _buildPeriodToggle() {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: List.generate(_periods.length, (i) {
-          final isSelected = _selectedPeriodIdx == i;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => _selectPeriod(i),
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedContainer(
-                duration: SandikMotion.of(context, const Duration(milliseconds: 200)),
-                curve: SandikMotion.enter,
-                decoration: BoxDecoration(
-                  color: isSelected ? context.c.surface2 : Colors.transparent,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-                child: Center(
-                  // Sekme sayısı 4'ten 5'e çıktı (GÜNLÜK eklendi) ve
-                  // "GÜNLÜK" en uzun etiket. 375pt'lik bir ekranda sekme
-                  // başına ~72pt kalıyor; sistem yazı tipi büyütülmüşse
-                  // (Dynamic Type 1,5×–2×) etiket bu kutuya sığmıyor.
-                  // `FittedBox` küçülterek sığdırır — kırpmak, hangi
-                  // dönemde olduğunu okunmaz hâle getirirdi.
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      donemEtiketi(context.l10n, _periods[i].label),
-                      maxLines: 1,
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected
-                            ? context.c.gold
-                            : context.c.text36,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
   }
 }

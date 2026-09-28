@@ -35,6 +35,7 @@ String donemEtiketi(AppLocalizations l, String kimlik) => switch (kimlik) {
       '1A' => l.period1M,
       '6A' => l.period6M,
       '1Y' => l.period1Y,
+      '5Y' => l.period5Y,
       _ => kimlik,
     };
 

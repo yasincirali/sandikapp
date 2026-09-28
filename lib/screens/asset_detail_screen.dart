@@ -43,11 +43,17 @@ import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../models/varlik_kimligi.dart';
+import '../services/crash_reporter.dart';
+import '../services/varlik_istatistik.dart';
+import '../widgets/donem_istatistik.dart';
+import '../widgets/takip_yildizi.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
 part 'asset_detail/seritler.dart';
 part 'asset_detail/karsilastirma_secici.dart';
+part 'asset_detail/ozet.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -117,12 +123,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Etiketler portföy performans ekranıyla AYNI: iki ekran aynı soruyu
   /// soruyor, farklı kelimelerle sormamalı. Ayrıca beş uzun etiket
   /// ("HAFTALIK", "6 AYLIK"…) 360pt genişlikte yan yana sığmıyordu.
+  ///
+  /// 5Y (A tasarımı, 2026-09-28): varlık sayfasıyla aynı dönem kümesi —
+  /// "bu varlık uzun vadede ne yaptı" portföydeki varlık için de sorulur.
+  /// Haftalık katman zaten 5 yıllık seri çeker (`yahooRange: 5y`), ek istek
+  /// yok. Performans ekranı 5Y taşımaz; oranın dönem penceresi takvim
+  /// kuralına düşer (`_donemBaslangici`).
   static const List<({String label, int days})> _allPeriods = [
     (label: 'GÜNLÜK', days: 0),
     (label: '1H', days: 7),
     (label: '1A', days: 30),
     (label: '6A', days: 180),
     (label: '1Y', days: 365),
+    (label: '5Y', days: 1825),
   ];
 
   /// Bu varlık için gün içi fiyat verisi ANLAMLI mı?
@@ -168,6 +181,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   // alanı "yükleniyor" hissi verir ve filtreler tıklanabilir kalır.
   Map<int, double>? _lastHistory;
 
+  /// Dönem (gün) → birim seri, dönem başı ve istatistik — çip getirileri,
+  /// başlık ve istatistik ızgarası buradan okur (bkz. `asset_detail/ozet.dart`).
+  final Map<int, Map<int, double>> _donemSerileri = {};
+  final Map<int, double?> _donemIlk = {};
+  final Map<int, DonemIstatistigi?> _donemIstatistikleri = {};
+  DateTime? _gunIciSeansOnbellek;
+
   @override
   void initState() {
     super.initState();
@@ -188,6 +208,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       if (idx >= 0) _selectedPeriodIdx = idx;
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
+    // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
+    CrashReporter.arkaPlan(_digerDonemleriYukle(),
+        reason: 'AssetDetail.digerDonemler');
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
     _nabziBirak = TazelikRitmi.nabiz.dinle(_nabizGeldi);
@@ -276,6 +299,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     if (mounted && sira == _yuklemeSirasi) {
       if (days == 0) _gunIciBaslangic = birim.seansGunu;
       if (birim.total.isNotEmpty) _lastHistory = birim.total;
+    }
+    // Dönem önbelleği sıradan bağımsız: geç dönen eski dönemin serisi de
+    // KENDİ çipine yazılır, seçili dönemi ezmez.
+    if (mounted) {
+      _guncelle(() => _donemKaydet(days, birim.total, birim.seansGunu));
     }
     return birim.total;
   }
@@ -537,14 +565,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
+    final pnl = _pnlOzeti(pState);
 
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        title: context.l10n.assetPerformanceSemantics(widget.asset.name),
+        // Başlık artık gövdede (kısa etiket + ad · tür, varlık sayfasıyla
+        // aynı); üst çubukta ikinci kez yazılmaz.
         transparent: true,
         showBack: widget.showBackButton,
         actions: [
+          TakipYildizi(kimlik: _kimlik),
           // Fiyat alarmı BURADAN kurulur (2026-09-14): alarm varlığa aittir,
           // Ayarlar'daki liste yalnızca gösterir. Sembolü olmayan (manuel
           // fiyatlı) varlıkta zil yok — sunucu fiyatını izleyemez.
@@ -634,7 +665,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     },
                     orElse: () => const SizedBox.shrink(),
                   ),
-                // Sinyal özeti EN ÜSTTE.
+                // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
+                Align(alignment: Alignment.centerLeft, child: _baslik()),
+                const SizedBox(height: SandikSpace.md),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _fiyatBlogu(pnl, baz),
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // Sinyal özeti fiyatın hemen altında — dokununca aşağıdaki
+                // panele kaydırır (kullanıcı: "işlevi güzel").
                 //
                 // Şerit ÖNCE canlı göstergeleri okur, kayıtlı bildirimi
                 // beklemez. İlk sürümde yalnızca `signal_notifications`
@@ -664,8 +704,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     ad: widget.asset.name,
                     guncelFiyat: _canli.asset.currentPrice,
                   ),
-                _buildPeriodToggle(),
-                const SizedBox(height: 24),
+                const SizedBox(height: SandikSpace.sm),
                 FutureBuilder<Map<int, double>>(
                   future: _historyFuture,
                   builder: (context, snapshot) {
@@ -729,15 +768,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // Grafiğin son noktasını da bu canlı değerle sabitliyoruz
                     // (aşağıdaki `currentUnitPriceOverride`) — böylece grafik
                     // bitiş noktası ve chip her zaman aynı sayıyı gösterir.
-                    // Canlı görünüm — açılış anının kopyası değil (bkz. `_canli`).
-                    final asset = _canli.asset;
-                    final qty = asset.quantity;
-                    final anchorUnitTRY =
-                        asset.purchasePrice * asset.purchaseFxRate;
-                    final currentValueTRY = pState != null
-                        ? pState.toTRY(asset.totalValue, asset.currency)
-                        : asset.totalValue;
-                    final currentUnitTRY = qty > 0 ? currentValueTRY / qty : 0.0;
+                    // Canlı görünüm — `_pnlOzeti` (asset_detail/ozet.dart):
+                    // başlıktaki satır, PnL şeridi ve uç rengi aynı sayılar.
+                    final currentUnitTRY = pnl.currentUnitTRY;
 
                     // Compare mode devrede mi? Öncelikli — log-scale ile
                     // aynı anda anlamlı değil (biri % biri log), compare
@@ -846,66 +879,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
-                    // Seçili periyodun değişimi.
-                    //
-                    // ## İki sayı, iki soru (kullanıcı kararı, 2026-09-23)
-                    // *"Zaman aralığına göre 1 gram ya da bir lot varlığın
-                    // grafiğini göstermeli, diğer alanlarda da kazanç
-                    // hesaplanarak yazılmalı."*
-                    //
-                    //   · YÜZDE → ÜRÜNÜN hareketi: birim serinin (grafiğin)
-                    //     başı ile sonu. Sahibin alımı, satımı, maliyeti onu
-                    //     oynatamaz; iki ortak aynı ürüne aynı dönemde bakınca
-                    //     aynı yüzdeyi görür.
-                    //   · TUTAR → SAHİBİN kazancı: pozisyonun PİYASA ETKİSİ,
-                    //     `son miktar × son birim − baş miktar × baş birim −
-                    //     dönem içi net alım` (`birimPiyasaEtkisi`). Dönem
-                    //     başında elde olan lot'lar için Performans'ın tür
-                    //     filtresindeki payıyla aynıdır (Σ parça == bütün);
-                    //     dönem içinde açılan lot ALIŞ fiyatından ölçülür.
-                    //     Dönem içinde alım yoksa tutar = miktar × birim
-                    //     fark, yani yüzdeyle de tutarlı.
-                    //
-                    // Eskiden tutar `(son − baş) × SON miktar` idi: bugün
-                    // alınan lot dönemin tamamını yaşamış sayılıyordu, alım
-                    // fiyatıyla dönem başı fiyatı arasındaki fark "kazanç"
-                    // yazılıyordu.
-                    //
-                    // `v <= 0` slotlar `uclar` içinde ELENİR (ölçüldü
-                    // 2026-09-23: boş ilk slot 22 ayar gramda +₺612.621,
-                    // gram fiyatının tam 100 katı yazdırıyordu).
-                    double? periodChangeTRY;
-                    double? periodChangePct;
-                    {
-                      final u = PeriodSummaryService.uclar(historyMap,
-                          fromMs: startDate.millisecondsSinceEpoch,
-                          toMs: endDate.millisecondsSinceEpoch);
-                      if (u != null && u.firstTs != u.lastTs) {
-                        // Son = grafiğin sağ ucu (canlı birim fiyat) —
-                        // "grafik başı ile sonu arasındaki fark".
-                        final son =
-                            currentUnitTRY > 0 ? currentUnitTRY : u.last;
-                        periodChangePct = (son / u.first - 1) * 100;
-                        periodChangeTRY =
-                            PeriodSummaryService.birimPiyasaEtkisi(
-                          birimSeri: historyMap,
-                          lotlar: _seriDefteri,
-                          start: startDate,
-                          end: endDate,
-                          canliBirim: son,
-                        )?.piyasa;
-                      }
-                    }
-
                     final anchorY = anchorSpot?.y ?? 0.0;
-                    final totalCostTRY = asset.totalCostTRY;
-                    final totalPnlTRY = currentValueTRY - totalCostTRY;
-                    final pnlPct = totalCostTRY > 0
-                        ? (totalPnlTRY / totalCostTRY) * 100
-                        : 0.0;
-                    final gainPositive = totalPnlTRY >= 0;
                     final endpointColor =
-                        gainPositive ? context.c.gain : context.c.loss;
+                        pnl.gainPositive ? context.c.gain : context.c.loss;
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
                     // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
@@ -1054,33 +1030,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               color: context.c.amberFill,
                             ),
                           ),
-                        if (anchorSpot != null && lastSpot != null)
-                          _PnlSummaryStrip(
-                            baz: baz,
-                            anchorUnitPrice: anchorUnitTRY,
-                            currentUnitPrice: currentUnitTRY,
-                            pnlPct: pnlPct,
-                            totalPnl: totalPnlTRY,
-                            unitLabel: widget.asset.unitLabel,
-                            isPositive: gainPositive,
-                          ),
-                        if (anchorSpot != null && lastSpot != null)
-                          const SizedBox(height: SandikSpace.sm),
-                        // Seçili periyodun değişimi — üstteki strip alış→bugün
-                        // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
-                        // sorusunu yanıtlar. İkisi farklı sorular.
-                        // Bayat seride GİZLENİR: rakam hâlâ eski periyoda ait
-                        // olurdu ama etiket yeni periyodu yazardı — yanıltıcı.
-                        // (Üstteki strip periyottan bağımsız, o kalır.)
-                        if (periodChangeTRY != null && !isStale)
-                          _PeriodChangeRow(
-                            baz: baz,
-                            label: _periods[_selectedPeriodIdx].label,
-                            changeTRY: periodChangeTRY,
-                            changePct: periodChangePct,
-                          ),
-                        if (anchorSpot != null && lastSpot != null)
-                          const SizedBox(height: 12),
+                        // PnL şeridi ve dönem değişimi satırı grafiğin
+                        // ALTINDAKİ pozisyon bölümüne taşındı (A tasarımı,
+                        // 2026-09-28); ikisi de artık seri beklemeden durur.
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -1791,9 +1743,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 24),
-                if (widget.asset.type == AssetType.kripto)
-                  KriptoGecikmeEtiketi(sembol: widget.asset.ticker),
+                const SizedBox(height: SandikSpace.smd),
+                _donemCipleri(pnl.currentUnitTRY),
+                const SizedBox(height: SandikSpace.lg),
+                // ── Pozisyon ── (A tasarımı): miktar, alış → bugün ve
+                // seçili dönemin değişimi tek bölümde, grafiğin altında.
+                SandikSectionHeader(title: context.l10n.adPositionUpper),
+                const SizedBox(height: SandikSpace.sm),
                 // Miktar Bilgisi
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -1850,10 +1806,42 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: SandikSpace.sm),
+                _PnlSummaryStrip(
+                  baz: baz,
+                  anchorUnitPrice: pnl.anchorUnitTRY,
+                  currentUnitPrice: pnl.currentUnitTRY,
+                  pnlPct: pnl.pnlPct,
+                  totalPnl: pnl.totalPnlTRY,
+                  unitLabel: widget.asset.unitLabel,
+                  isPositive: pnl.gainPositive,
+                ),
+                // Seçili periyodun değişimi — üstteki strip alış→bugün
+                // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
+                // sorusunu yanıtlar. İkisi farklı sorular. Seçili dönemin
+                // serisi gelmeden çizilmez: rakam eski periyoda ait olurdu
+                // ama etiket yeni periyodu yazardı — yanıltıcı.
+                if (_donemDegisimi(period.days, startDate, endDate,
+                        pnl.currentUnitTRY)
+                    case final d?) ...[
+                  const SizedBox(height: SandikSpace.sm),
+                  _PeriodChangeRow(
+                    baz: baz,
+                    label: _periods[_selectedPeriodIdx].label,
+                    changeTRY: d.tutar,
+                    changePct: d.yuzde,
+                  ),
+                ],
+                const SizedBox(height: SandikSpace.lg),
+                ..._istatistikler(pnl.currentUnitTRY),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),
                   TechnicalSignalPanel.forAsset(widget.asset,
                       key: _sinyalPaneliKey, detayli: true),
+                  // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
+                  // taşır (varlık sayfasıyla aynı).
+                  const SizedBox(height: SandikSpace.sm),
+                  const DisclaimerWidget(),
                 ],
               ],
             ),

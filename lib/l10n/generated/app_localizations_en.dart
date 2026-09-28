@@ -3654,6 +3654,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Volatility is computed for periods of 1 month or longer.';
 
   @override
+  String get adPositionUpper => 'YOUR POSITION';
+
+  @override
+  String adPositionLine(String amount, String pct) {
+    return 'Your position: $amount ($pct)';
+  }
+
+  @override
   String get vsWatch => 'Watch';
 
   @override

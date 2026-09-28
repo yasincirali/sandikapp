@@ -6176,6 +6176,18 @@ abstract class AppLocalizations {
   /// **'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.'**
   String get vsVolatilityShortNote;
 
+  /// No description provided for @adPositionUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'POZİSYONUN'**
+  String get adPositionUpper;
+
+  /// No description provided for @adPositionLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pozisyonun: {amount} ({pct})'**
+  String adPositionLine(String amount, String pct);
+
   /// No description provided for @vsWatch.
   ///
   /// In tr, this message translates to:
