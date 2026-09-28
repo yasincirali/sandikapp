@@ -587,20 +587,28 @@ void main() {
     test('sıra ve etiketler _periods ile birebir', () {
       expect(
         SummaryPeriod.values.map((e) => e.label).toList(),
-        ['GÜNLÜK', '1H', '1A', '6A', '1Y'],
+        ['GÜNLÜK', '1H', '1A', '3A', '6A', '1Y', '5Y'],
         reason: 'iki sekme tek _selectedPeriodIdx paylaşıyor — sıra kayarsa '
             'Grafik\'te 6A seçen kullanıcı Özet\'te başka pencere görür',
       );
       expect(SummaryPeriod.values.map((e) => e.days).toList(),
-          [0, 7, 30, 180, 365]);
-      expect(SummaryPeriod.values.length, 5,
-          reason: '3A EKLENMEYECEK — kilitli karar');
+          [0, 7, 30, 90, 180, 365, 1825]);
+      // Eski kilit "3A EKLENMEYECEK"ti: yalnızca Grafik'e eklenirse indeks
+      // kayardı. 2026-09-28 kullanıcı kararı ("seçimler aynı olmalı, data
+      // kaybı olmasın") tüm ekranlara birleşim kümesini getirdi; Grafik
+      // `_periods`'u artık bu enum'dan TÜRETİLDİĞİ için kayma imkânsız.
+      expect(SummaryPeriod.values.length, 7);
+    });
+
+    test('takvim dönemleri ayGeri taşır, 1H ve GÜNLÜK taşımaz', () {
+      expect(SummaryPeriod.values.map((e) => e.ayGeri).toList(),
+          [null, null, 1, 3, 6, 12, 60]);
     });
 
     test('fromIndex sınır dışını kırpar', () {
       expect(SummaryPeriod.fromIndex(0), SummaryPeriod.gunluk);
-      expect(SummaryPeriod.fromIndex(4), SummaryPeriod.birYil);
-      expect(SummaryPeriod.fromIndex(99), SummaryPeriod.birYil);
+      expect(SummaryPeriod.fromIndex(5), SummaryPeriod.birYil);
+      expect(SummaryPeriod.fromIndex(99), SummaryPeriod.besYil);
       expect(SummaryPeriod.fromIndex(-1), SummaryPeriod.gunluk);
     });
 

@@ -318,68 +318,55 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           drawVerticalLine: intraday,
           verticalInterval: intraday ? gunIciEksenAdimiDk : null,
           horizontalInterval: yInterval,
-          getDrawingHorizontalLine: (_) => FlLine(
-            color: context.c.overlay,
-            strokeWidth: 1,
-          ),
-          getDrawingVerticalLine: (_) => FlLine(
-            color: context.c.overlay,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (_) => GrafikStili.izgara(context),
+          getDrawingVerticalLine: (_) => GrafikStili.izgara(context),
         ),
-        // Sağ Y ekseni band'ı görsel olarak plot area'dan ayrılsın diye
-        // sadece sağ kenara ince dikey çizgi. TradingView'de plot | Y ayrık.
-        borderData: FlBorderData(
-          show: true,
-          border: Border(
-            right: BorderSide(
-              color: context.c.overlay,
-              width: 1,
-            ),
-          ),
-        ),
-        extraLinesData: intraday
+        // Izgara, eksen ayracı, eksen yazısı, dönem başı ve "şimdi"
+        // işaretleri ORTAK grafik stilinden (`grafik_stili.dart`): bu ekranın
+        // görünüşü 2026-09-28'de tüm grafiklerin standardı seçildi.
+        borderData: GrafikStili.eksenAyraci(context),
+        extraLinesData: ExtraLinesData(
+          // Dönem başı: yatay kesikli çizgi + tarih ve değer etiketi — varlık
+          // detayı ve varlık sayfasıyla aynı (2026-09-28). Yüzde ve "Getiri"
+          // bu değere göre okunur.
+          horizontalLines: primarySeg.spots.isEmpty || _simulate
+              ? const []
+              : [
+                  GrafikStili.donemBasi(
+                    context,
+                    primarySeg.spots.first.y,
+                    etiket: GrafikStili.donemBasiEtiketi(
+                      context,
+                      an: intraday
+                          ? dayKey(start).add(Duration(
+                              minutes: primarySeg.spots.first.x.round()))
+                          : start.add(Duration(
+                              minutes:
+                                  (primarySeg.spots.first.x * 1440).round())),
+                      deger: ref
+                          .read(bazParaProvider)
+                          .fmt(primarySeg.spots.first.y),
+                      gunIci: intraday,
+                    ),
+                  ),
+                ],
+          verticalLines: intraday
             // Gün içi grafikte dikey "ŞİMDİ" çizgisi KALDIRILDI
             // (kullanıcı isteği 2026-09-12): X ekseni etiketleriyle
             // çakışıyordu ve bilgi zaten iki yerde daha var — serinin
             // ucundaki nokta (piyasa kapalıyken gri) ve üstteki kartın
             // "11 Eyl → bugün · PİYASA KAPALI" başlığı.
-            ? const ExtraLinesData(verticalLines: [])
-            : ExtraLinesData(
-                verticalLines: primarySeg.spots.isEmpty
-                    ? const []
-                    : [
-                        // Dönem başı için dikey kesikli işaret KALDIRILDI
-                        // (kullanıcı isteği 2026-09-12): "başlangıcın
-                        // dikine kesikli çizgilerle gösterilmesini
-                        // istemiyorum, tüm grafikler aynı deneyimi
-                        // sunmalı."
-                        //
-                        // Dönem başı bilgisi kaybolmadı — üstteki değişim
-                        // kartı "5 Eyl → 12 Eyl" aralığını zaten yazıyor
-                        // ve X ekseninin ilk etiketi de aynı tarihi
-                        // gösteriyor.
-                        // Son nokta (bugün / şimdi) için dashed marker.
-                        // Etiket çizginin SOLUNA (grafik içine) yaslanır.
-                        VerticalLine(
-                          x: primarySeg.spots.last.x,
-                          color: context.c.gain.withValues(alpha: 0.55),
-                          strokeWidth: 1.2,
-                          dashArray: const [4, 4],
-                          label: VerticalLineLabel(
-                            show: true,
-                            alignment: Alignment.topLeft,
-                            padding: const EdgeInsets.only(bottom: 8, right: 6),
-                            style: context.t.labelMedium?.copyWith(
-                              letterSpacing: 0,
-                              fontWeight: FontWeight.w700,
-                              color: context.c.gain,
-                            ),
-                            labelResolver: (_) => 'ŞİMDİ',
-                          ),
-                        ),
-                      ],
-              ),
+            ? const []
+            : [
+                // Dönem başı için DİKEY kesikli işaret KALDIRILDI
+                // (kullanıcı isteği 2026-09-12): "başlangıcın dikine
+                // kesikli çizgilerle gösterilmesini istemiyorum, tüm
+                // grafikler aynı deneyimi sunmalı." Dönem başı artık
+                // yatay çizginin etiketinde (tarih + değer).
+                if (primarySeg.spots.isNotEmpty)
+                  GrafikStili.simdiCizgisi(context, primarySeg.spots.last.x),
+              ],
+        ),
         titlesData: FlTitlesData(
           show: true,
           topTitles:
@@ -403,11 +390,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   child: Text(
                     _fmtY(val),
                     textAlign: TextAlign.left,
-                    style: context.t.numSmall.copyWith(
-                      color: context.c.text58,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: GrafikStili.eksenYazisi(context),
                   ),
                 );
               },
@@ -613,13 +596,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                         // görüyor" derdi (kullanıcı isteği 2026-09-12: "şu an
                         // noktası piyasa kapalı andaysa gri şekilde kesikli
                         // çizginin ucunda konumlanmalı").
-                        final kapali = seg.piyasaKapali;
-                        return FlDotCirclePainter(
-                          radius: 5.0,
-                          color: kapali ? context.c.text36 : context.c.gain,
-                          strokeColor: context.c.text90,
-                          strokeWidth: 1.6,
-                        );
+                        return GrafikStili.simdiNoktasi(context,
+                            piyasaKapali: seg.piyasaKapali);
                       }
                       // Başlangıç dot'u kaldırıldı — "orada alım yapılmış" gibi
                       // yanıltıcı görünüyordu. Başlangıç zaten dashed marker +
@@ -632,14 +610,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                           strokeWidth: 0,
                         );
                       }
-                      if (isLast) {
-                        return FlDotCirclePainter(
-                          radius: 6.0,
-                          color: context.c.gain,
-                          strokeColor: context.c.text90,
-                          strokeWidth: 2.5,
-                        );
-                      }
+                      if (isLast) return GrafikStili.simdiNoktasi(context);
                       // Ortadaki işlem noktaları — "şimdi" noktasından belirgin
                       // şekilde küçük. Önceki 4.5px + 2px halka (toplam ~8.5px çap)
                       // yoğun alım yapılan aylarda çizgiyi boncuk dizisine
@@ -858,12 +829,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     final showVolume = volumeBars.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 20, 16, 12),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: context.c.hairline),
-      ),
+      padding: GrafikStili.kartDolgusu,
+      decoration: GrafikStili.kart(context),
       // Stack: grafik araçları kartın köşelerinde, akışın dışında. Tam
       // ekran sağ üstte (2026-09-15, "vertical butonu da grafiğin sağ
       // üstünde olmalı"), tip seçici altta. `clipBehavior: none` — çip
@@ -879,7 +846,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             // 328'den 296'ya (2026-09-15, "grafik layoutunun yüksekliği
             // biraz azaltılabilir"). Daha azı Y ekseninde iki etiketi
             // birbirine yaklaştırıp gün içi bandı (%0,5) okunmaz yapar.
-            height: 296,
+            height: GrafikStili.grafikYuksekligi,
             builder: buildData,
             viewportController: viewport,
             // Sağdaki Y ekseni rezervi (rightTitles.reservedSize ile aynı).

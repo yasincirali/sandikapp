@@ -7,6 +7,7 @@ import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
+import 'grafik_stili.dart';
 import 'zoomable_chart.dart';
 
 /// Tek varlığın FİYAT grafiği — varlık sayfasının (portföye eklemeden
@@ -31,9 +32,8 @@ class FiyatGrafigi extends StatelessWidget {
     required this.seri,
     required this.periodDays,
     required this.bicim,
-    required this.renk,
     required this.semanticLabel,
-    this.height = 220,
+    this.height = GrafikStili.grafikYuksekligi,
   });
 
   /// `epoch ms → fiyat`.
@@ -47,15 +47,13 @@ class FiyatGrafigi extends StatelessWidget {
   /// başlık aynı sayıyı iki farklı ondalıkla yazmasın.
   final NumberFormat bicim;
 
-  /// Çizgi rengi — dönem yönünden gelir (başlıktaki yüzdeyle aynı kaynak).
-  final Color renk;
-
   final String semanticLabel;
   final double height;
 
-  /// `rightTitles.reservedSize` ile AYNI — crosshair etiket bandına girmez.
-  static const _yEkseniGenisligi = 56.0;
-  static const _altEksenYuksekligi = 26.0;
+  /// Eksen bantları ortak grafik stilinden — `rightTitles.reservedSize`
+  /// ile [ZoomableChart.plotPaddingRight] aynı (crosshair banda girmez).
+  static const _yEkseniGenisligi = GrafikStili.yEkseniGenisligi;
+  static const _altEksenYuksekligi = GrafikStili.altEksenYuksekligi;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +61,10 @@ class FiyatGrafigi extends StatelessWidget {
       for (final k in (seri.keys.toList()..sort()))
         FlSpot(k.toDouble(), seri[k]!),
     ];
-    if (spots.length < 2) return SizedBox(height: height);
+    if (spots.length < 2) {
+      return SizedBox(
+          height: height + GrafikStili.kartDolgusu.vertical);
+    }
 
     final eksenX = zamanEkseni(
       ilkMs: spots.first.x,
@@ -72,11 +73,20 @@ class FiyatGrafigi extends StatelessWidget {
     );
     final ilk = spots.first.y;
 
-    return ZoomableChart(
+    // Kart, çizgi, dolgu, ızgara ve "şimdi" işareti ortak grafik stilinden
+    // (Performans stili, kullanıcı kararı 2026-09-28). Eskiden bu grafik
+    // çerçevesizdi ve çizgi dönemin yönüne göre kırmızı/yeşildi; yön artık
+    // başlıktaki yüzdede ve çip getirilerinde, çizgi her ekranda amber.
+    return Container(
+      decoration: GrafikStili.kart(context),
+      padding: GrafikStili.kartDolgusu,
+      child: ZoomableChart(
       semanticLabel: semanticLabel,
       height: height,
       fullMinX: eksenX.min,
-      fullMaxX: eksenX.max,
+      // Sağda küçük pay: "şimdi" noktası (r=6) ve ŞİMDİ etiketi eksen
+      // ayracına yapışıp kırpılmasın (varlık detayı aynı işi +%8 ile yapar).
+      fullMaxX: eksenX.max + (eksenX.max - eksenX.min) * 0.04,
       bottomAxisHeight: _altEksenYuksekligi,
       plotPaddingRight: _yEkseniGenisligi,
       crosshairSnapX: (x) {
@@ -113,6 +123,7 @@ class FiyatGrafigi extends StatelessWidget {
       },
       builder: (minX, maxX) =>
           _data(context, spots, eksenX, minX, maxX),
+      ),
     );
   }
 
@@ -124,7 +135,6 @@ class FiyatGrafigi extends StatelessWidget {
     double minX,
     double maxX,
   ) {
-    final p = context.c;
     final gorunur = _gorunur(tam, minX, maxX);
 
     var mn = gorunur.first.y, mx = gorunur.first.y, top = 0.0;
@@ -144,7 +154,9 @@ class FiyatGrafigi extends StatelessWidget {
         : bant.interval < 10
             ? 1
             : 0;
-    final eksenBicimi = tryFormatter(digits: ondalik, symbol: '');
+    // Eksende para simgesi var (₺320) — Performans ve varlık detayıyla aynı.
+    final eksenBicimi =
+        tryFormatter(digits: ondalik, symbol: bicim.currencySymbol);
     final span = maxX - minX;
 
     return LineChartData(
@@ -159,46 +171,49 @@ class FiyatGrafigi extends StatelessWidget {
       lineBarsData: [
         LineChartBarData(
           spots: gorunur,
-          color: renk,
+          color: GrafikStili.cizgi(context),
           // Kalınlık döneme bağlı — performans ekranıyla aynı merdiven.
           barWidth: donemCizgiKalinligi(periodDays),
           // Eğri interpolasyon veride olmayan tepe ve dip uydurur.
           isCurved: false,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(
+          // Yalnızca "şimdi" (serinin son) noktası — Performans stili.
+          dotData: FlDotData(
             show: true,
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                renk.withValues(alpha: 0.18),
-                renk.withValues(alpha: 0.0),
-              ],
-            ),
+            checkToShowDot: (spot, _) => spot.x == tam.last.x,
+            getDotPainter: (_, __, ___, ____) =>
+                GrafikStili.simdiNoktasi(context),
           ),
+          belowBarData: GrafikStili.dolgu(context),
         ),
       ],
-      // Dönem başı çizgisi: yüzdenin neye göre okunacağını gösterir.
+      // Dönem başı çizgisi (tarih + değer etiketli) ve gün içi dışında
+      // "ŞİMDİ" işareti — varlık detayı ve Performans ile aynı.
       extraLinesData: ExtraLinesData(
         horizontalLines: [
-          HorizontalLine(
-            y: tam.first.y,
-            color: p.text36.withValues(alpha: 0.4),
-            strokeWidth: 1,
-            dashArray: [4, 4],
+          GrafikStili.donemBasi(
+            context,
+            tam.first.y,
+            etiket: GrafikStili.donemBasiEtiketi(
+              context,
+              an: DateTime.fromMillisecondsSinceEpoch(tam.first.x.round()),
+              deger: bicim.format(tam.first.y),
+              gunIci: eksenX.gunIci,
+            ),
           ),
+        ],
+        verticalLines: [
+          if (!eksenX.gunIci) GrafikStili.simdiCizgisi(context, tam.last.x),
         ],
       ),
       gridData: FlGridData(
         show: true,
         drawVerticalLine: eksenX.gunIci,
         verticalInterval: eksenX.interval,
-        getDrawingVerticalLine: (_) => FlLine(color: p.hairline, strokeWidth: 1),
+        getDrawingVerticalLine: (_) => GrafikStili.izgara(context),
         horizontalInterval: bant.interval,
-        getDrawingHorizontalLine: (_) =>
-            FlLine(color: p.hairline, strokeWidth: 1),
+        getDrawingHorizontalLine: (_) => GrafikStili.izgara(context),
       ),
-      borderData: FlBorderData(show: false),
+      borderData: GrafikStili.eksenAyraci(context),
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -212,11 +227,11 @@ class FiyatGrafigi extends StatelessWidget {
                 return const SizedBox.shrink();
               }
               return Padding(
-                padding: const EdgeInsets.only(left: SandikSpace.xs2),
+                padding: const EdgeInsets.only(left: SandikSpace.sm),
                 child: Text(
                   eksenBicimi.format(value).trim(),
                   maxLines: 1,
-                  style: context.t.labelSmall?.copyWith(color: p.text58),
+                  style: GrafikStili.eksenYazisi(context),
                 ),
               );
             },
@@ -233,13 +248,13 @@ class FiyatGrafigi extends StatelessWidget {
               }
               final t = DateTime.fromMillisecondsSinceEpoch(value.round());
               return Padding(
-                padding: const EdgeInsets.only(top: SandikSpace.xs2),
+                padding: const EdgeInsets.only(top: SandikSpace.sm2),
                 child: Text(
                   zamanEtiketi(t,
                       spanGun: span / const Duration(days: 1).inMilliseconds,
                       gunIci: eksenX.gunIci),
                   maxLines: 1,
-                  style: context.t.labelSmall?.copyWith(color: p.text36),
+                  style: GrafikStili.eksenYazisi(context),
                 ),
               );
             },

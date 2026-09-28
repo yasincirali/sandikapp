@@ -1,6 +1,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
+import 'package:portfoy_takip/services/period_summary_service.dart' show SummaryPeriod;
 import 'helpers/kaynak.dart';
 
 /// Aylık dönemler TAKVİMDEN hesaplanır — sabit gün sayısıyla değil.
@@ -104,12 +105,22 @@ void main() {
     final kaynak = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
-    test('1A/6A/1Y takvim kullanır, 1H gün sayısı', () {
-      expect(kaynak.contains("(label: '1A', days: 30, ayGeri: 1"), isTrue);
-      expect(kaynak.contains("(label: '6A', days: 180, ayGeri: 6"), isTrue);
-      expect(kaynak.contains("(label: '1Y', days: 365, ayGeri: 12"), isTrue);
+    test('1A/3A/6A/1Y/5Y takvim kullanır, 1H gün sayısı', () {
+      // 2026-09-28: `_periods` tek dönem kümesinden ([SummaryPeriod])
+      // türetiliyor; ayGeri enum'da, ekran onu aynen taşıyor.
+      expect(
+          kaynak.contains('for (final p in SummaryPeriod.values)') &&
+              kaynak.contains('ayGeri: p.ayGeri'),
+          isTrue,
+          reason: 'Performans dönemleri tek kümeden türetilmiyor.');
+      expect(SummaryPeriod.birAy.ayGeri, 1);
+      expect(SummaryPeriod.ucAy.ayGeri, 3);
+      expect(SummaryPeriod.altiAy.ayGeri, 6);
+      expect(SummaryPeriod.birYil.ayGeri, 12);
+      expect(SummaryPeriod.besYil.ayGeri, 60);
       // Haftalık takvim ayı DEĞİL: "1 hafta" zaten tam 7 gündür.
-      expect(kaynak.contains("(label: '1H', days: 7, ayGeri: null"), isTrue);
+      expect(SummaryPeriod.birHafta.ayGeri, isNull);
+      expect(SummaryPeriod.birHafta.days, 7);
     });
 
     test('startDate takvim dalını KULLANIR', () {
@@ -140,8 +151,20 @@ void main() {
 
     expect(kaynak.contains('x: primarySeg.spots.first.x'), isFalse,
         reason: 'Başlangıç dikey işareti geri gelmiş.');
-    // "ŞİMDİ" çizgisi KALIR — son noktanın yerini gösterir.
-    expect(kaynak.contains("labelResolver: (_) => 'ŞİMDİ'"), isTrue,
+    // "ŞİMDİ" çizgisi KALIR — son noktanın yerini gösterir. 2026-09-28'den
+    // beri ortak grafik stilinden gelir (`GrafikStili.simdiCizgisi`).
+    expect(kaynak.contains('GrafikStili.simdiCizgisi('), isTrue,
         reason: 'Son nokta işareti de silinmiş; istenen bu değildi.');
+    // Aynı kural artık üç grafikte: hiçbiri dönem başına DİKEY işaret
+    // koymaz; dönem başı yatay çizginin etiketinde (tarih + değer).
+    for (final yol in [
+      'lib/screens/asset_detail_screen.dart',
+      'lib/widgets/fiyat_grafigi.dart',
+    ]) {
+      final k = ekranKaynagiSync(yol);
+      expect(k.contains('x: anchorSpot.x') || k.contains('x: tam.first.x'),
+          isFalse,
+          reason: '$yol: dönem başı dikey işareti geri gelmiş.');
+    }
   });
 }

@@ -50,6 +50,8 @@ import '../widgets/period_summary_view.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
+import '../widgets/grafik_stili.dart';
+import '../widgets/donem_secici.dart';
 import '../models/grafik_tipi.dart';
 import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
@@ -316,13 +318,15 @@ class _PortfolioPerformanceScreenState
   /// gösteriyordu. [days] yine taşınıyor çünkü veri katmanı (çözünürlük
   /// merdiveni, önbellek anahtarı) gün cinsinden çalışıyor — takvim
   /// başlangıcı `donemBaslangici` ile hesaplanıp gün farkına çevriliyor.
-  static const List<({String label, int days, int? ayGeri, bool intraday})>
+  ///
+  /// Liste artık [SummaryPeriod]'dan TÜRETİLİR (tek dönem kümesi,
+  /// 2026-09-28): 3A ve 5Y eklendi, çünkü diğer ekranlarda vardı ve
+  /// seçiciler birebir aynı olmalı. Özet sekmesi aynı indeksi paylaştığı
+  /// için iki dizi zaten aynı kaynaktan gelmek zorunda.
+  static final List<({String label, int days, int? ayGeri, bool intraday})>
       _periods = [
-    (label: 'GÜNLÜK', days: 0, ayGeri: null, intraday: true),
-    (label: '1H', days: 7, ayGeri: null, intraday: false),
-    (label: '1A', days: 30, ayGeri: 1, intraday: false),
-    (label: '6A', days: 180, ayGeri: 6, intraday: false),
-    (label: '1Y', days: 365, ayGeri: 12, intraday: false),
+    for (final p in SummaryPeriod.values)
+      (label: p.label, days: p.days, ayGeri: p.ayGeri, intraday: p.intraday),
   ];
 
   // ── Logic ──────────────────────────────────────────────────────────────────

@@ -403,6 +403,7 @@
   "periodDaily": "DAILY",
   "period1W": "1W",
   "period1M": "1M",
+  "period3M": "3M",
   "period6M": "6M",
   "period1Y": "1Y",
   "assetPerformanceSemantics": "Performance: {name}",
@@ -750,6 +751,11 @@
   "sixMonthExtremes": "Six-month extremes",
   "lastYearPeriod": "the last year",
   "yearCurve": "Year curve",
+  "last3MonthsPeriod": "the last 3 months",
+  "threeMonthExtremes": "Three-month extremes",
+  "last5YearsPeriod": "the last 5 years",
+  "fiveYearExtremes": "Five-year extremes",
+  "fiveYearCurve": "Five-year curve",
   "periodMarketReturn": "{period} market return",
   "@periodMarketReturn": {
     "placeholders": {
@@ -2544,6 +2550,20 @@
   "vsRangePosition": "Price is at {pct}% of the period range",
   "@vsRangePosition": {"placeholders": {"pct": {"type": "String"}}},
   "vsVolatilityShortNote": "Volatility is computed for periods of 1 month or longer.",
+  "adPositionUpper": "YOUR POSITION",
+  "adPositionLine": "Your position: {amount} ({pct})",
+  "@adPositionLine": {"placeholders": {"amount": {"type": "String"}, "pct": {"type": "String"}}},
+  "chartOpenLabel": "OPEN · {time} · {value}",
+  "@chartOpenLabel": {
+    "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",
+    "placeholders": {"time": {"type": "String"}, "value": {"type": "String"}}
+  },
+  "chartStartLabel": "START · {date} · {value}",
+  "@chartStartLabel": {
+    "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
+    "placeholders": {"date": {"type": "String"}, "value": {"type": "String"}}
+  },
+  "chartNowLabel": "NOW",
   "vsWatch": "Watch",
   "vsSelect": "Select this",
   "vsGoToPosition": "Go to my position",

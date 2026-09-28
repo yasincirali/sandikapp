@@ -11,6 +11,9 @@ import 'package:portfoy_takip/models/watchlist_item.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
 import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
+import 'package:portfoy_takip/widgets/donem_istatistik.dart';
+import 'package:portfoy_takip/widgets/donem_secici.dart';
+import 'package:portfoy_takip/widgets/varlik_iskeleti.dart';
 
 /// Varlık sayfası — alt çubuğun duruma göre doğru eylemi göstermesi ve
 /// sayıların seriden gelmesi.
@@ -116,6 +119,37 @@ Future<void> _kur(
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
+  });
+
+  // Açılış kapısı (kullanıcı kararı 2026-09-28): "ekranı açtığımda tek tek
+  // değil tümden dolmalı". Bir dönem gecikirken sayfa iskelette kalır;
+  // o da gelince çipler, grafik ve istatistik BİRLİKTE çizilir.
+  testWidgets('açılış: hepsi gelmeden iskelet, gelince birlikte dolar',
+      (t) async {
+    final gec = Completer<Map<int, double>>();
+    await _kur(t, yukleyici: (tk, gun) => gun == 1825 ? gec.future : _seri(tk, gun));
+    expect(find.byType(VarlikIskeleti), findsOneWidget);
+    expect(find.byType(DonemSecici), findsNothing,
+        reason: 'hızlı dönemler gelse de çipler tek tek dolmamalı');
+
+    gec.complete(await _seri('THYAO.IS', 1825));
+    await t.pump();
+    await t.pump();
+    expect(find.byType(VarlikIskeleti), findsNothing);
+    expect(find.byType(DonemSecici), findsOneWidget);
+    expect(find.byType(DonemIstatistikIzgarasi), findsOneWidget);
+  });
+
+  testWidgets('açılış: yavaş dönem sayfayı süre sınırından fazla tutmaz',
+      (t) async {
+    await _kur(t,
+        yukleyici: (tk, gun) =>
+            gun == 1825 ? Completer<Map<int, double>>().future : _seri(tk, gun));
+    expect(find.byType(VarlikIskeleti), findsOneWidget);
+    await t.pump(const Duration(seconds: 3));
+    await t.pump();
+    expect(find.byType(VarlikIskeleti), findsNothing);
+    expect(find.byType(DonemSecici), findsOneWidget);
   });
 
   testWidgets('portföyde değil: Takip et + Portföyüme ekle', (t) async {

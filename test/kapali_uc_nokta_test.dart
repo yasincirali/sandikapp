@@ -56,10 +56,14 @@ void main() {
 
   group('uç nokta rengi', () {
     test('piyasa kapalıyken GRİ', () {
-      expect(kaynak.contains('final kapali = seg.piyasaKapali;'), isTrue,
+      // Nokta 2026-09-28'den beri ortak grafik stilinden
+      // (`GrafikStili.simdiNoktasi`); kuyruk bilgisi ona geçirilir.
+      final tek = kaynak.replaceAll(RegExp(r'\s+'), ' ');
+      expect(tek.contains('piyasaKapali: seg.piyasaKapali'), isTrue,
           reason: 'Kuyruk bilgisi okunmuyor.');
+      final stil = ekranKaynagiSync('lib/widgets/grafik_stili.dart');
       expect(
-        kaynak.contains('color: kapali ? context.c.text36 : context.c.gain'),
+        stil.contains('piyasaKapali ? context.c.text36 : context.c.gain'),
         isTrue,
         reason: 'Kapalı uçta yeşil nokta "şu anda işlem görüyor" der — '
             'oysa son kapanış taşınıyor.',
@@ -85,7 +89,13 @@ void main() {
     // gösteriyor, üstteki kart da "11 Eyl → bugün · PİYASA KAPALI"
     // yazıyor.
     test('gün içi dalda dikey çizgi yok', () {
-      expect(kaynak.contains('const ExtraLinesData(verticalLines: [])'), isTrue,
+      // Dönem başı yatay çizgisi eklenince (2026-09-28) dikey liste ayrı
+      // alana taşındı: gün içinde BOŞ.
+      final tek = kaynak.replaceAll(RegExp(r'\s+'), ' ');
+      expect(
+          RegExp(r'verticalLines: intraday (//[^\n]*)?').hasMatch(tek) &&
+              tek.contains('? const [] : [ // Dönem başı için DİKEY'),
+          isTrue,
           reason: 'Gün içi dikey çizgi geri gelmiş — etiketlerle çakışır.');
     });
 
@@ -96,7 +106,7 @@ void main() {
 
     test('non-intraday "ŞİMDİ" çizgisi KORUNUR', () {
       // Orada X ekseni etiketleri seyrek (5 tick) ve çakışma yok.
-      expect(kaynak.contains("labelResolver: (_) => 'ŞİMDİ'"), isTrue,
+      expect(kaynak.contains('GrafikStili.simdiCizgisi('), isTrue,
           reason: 'Gün dışı dönemlerdeki işaret de silinmiş.');
     });
   });

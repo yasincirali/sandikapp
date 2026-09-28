@@ -43,11 +43,22 @@ import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../models/varlik_kimligi.dart';
+import '../services/crash_reporter.dart';
+import '../services/varlik_istatistik.dart';
+import '../widgets/donem_istatistik.dart';
+import '../widgets/donem_secici.dart';
+import '../widgets/varlik_iskeleti.dart';
+import '../widgets/grafik_stili.dart';
+import '../utils/acilis_kapisi.dart';
+import '../utils/chart_axis.dart';
+import '../widgets/takip_yildizi.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
 part 'asset_detail/seritler.dart';
 part 'asset_detail/karsilastirma_secici.dart';
+part 'asset_detail/ozet.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -103,6 +114,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       alarmSembolu(widget.asset.ticker, widget.asset.subCategory);
 
   late int _selectedPeriodIdx;
+
+  /// Açılış kapısı açıldı mı — seçili dönem, öteki dönemler ve sinyal
+  /// serisi geldi (ya da `acilisSiniri` doldu). Bir kez `true` olur; dönem
+  /// değişimi ve nabız tazelemesi ekranı yeniden iskelete DÖNDÜRMEZ.
+  bool _acildi = false;
   String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
   late Future<Map<int, double>> _historyFuture;
   late ScrollController _scrollController;
@@ -117,12 +133,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Etiketler portföy performans ekranıyla AYNI: iki ekran aynı soruyu
   /// soruyor, farklı kelimelerle sormamalı. Ayrıca beş uzun etiket
   /// ("HAFTALIK", "6 AYLIK"…) 360pt genişlikte yan yana sığmıyordu.
-  static const List<({String label, int days})> _allPeriods = [
-    (label: 'GÜNLÜK', days: 0),
-    (label: '1H', days: 7),
-    (label: '1A', days: 30),
-    (label: '6A', days: 180),
-    (label: '1Y', days: 365),
+  ///
+  /// 5Y (A tasarımı, 2026-09-28): varlık sayfasıyla aynı dönem kümesi —
+  /// "bu varlık uzun vadede ne yaptı" portföydeki varlık için de sorulur.
+  /// Haftalık katman zaten 5 yıllık seri çeker (`yahooRange: 5y`), ek istek
+  /// yok. Dönem penceresi takvimden (`_donemBaslangici`).
+  ///
+  /// 3A ve tek kaynak (2026-09-28): liste uygulamanın tek dönem kümesinden
+  /// ([SummaryPeriod]) türetilir; 3A Karşılaştır'da vardı, burada yoktu.
+  /// 3A'nın dönem başı da takvimden (`_donemBaslangici` → `ucAy`).
+  static final List<({String label, int days})> _allPeriods = [
+    for (final p in SummaryPeriod.values) (label: p.label, days: p.days),
   ];
 
   /// Bu varlık için gün içi fiyat verisi ANLAMLI mı?
@@ -168,6 +189,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   // alanı "yükleniyor" hissi verir ve filtreler tıklanabilir kalır.
   Map<int, double>? _lastHistory;
 
+  /// Dönem (gün) → birim seri, dönem başı ve istatistik — çip getirileri,
+  /// başlık ve istatistik ızgarası buradan okur (bkz. `asset_detail/ozet.dart`).
+  final Map<int, Map<int, double>> _donemSerileri = {};
+  final Map<int, double?> _donemIlk = {};
+  final Map<int, DonemIstatistigi?> _donemIstatistikleri = {};
+  DateTime? _gunIciSeansOnbellek;
+
   @override
   void initState() {
     super.initState();
@@ -188,6 +216,30 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       if (idx >= 0) _selectedPeriodIdx = idx;
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
+    // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
+    final digerleri = _digerDonemleriYukle();
+    CrashReporter.arkaPlan(digerleri, reason: 'AssetDetail.digerDonemler');
+    // Açılış kapısı (kullanıcı kararı 2026-09-28, `acilis_kapisi.dart`):
+    // ekran parça parça değil, hepsi gelince BİRLİKTE dolar. Sinyal şeridi
+    // ve paneli aynı sembol serisini okur; burada aynı anda istenir,
+    // `HistoryService` önbelleği onlara ağa çıkmadan verir.
+    final sinyalSerisi =
+        seviyeGorunurlugu(ref.read(yatirimciSeviyesiProvider))
+                    .teknikSinyaller &&
+                widget.asset.ticker.trim().isNotEmpty
+            ? HistoryService.instance.getSymbolHistory(widget.asset.ticker,
+                periodDays: kSinyalPenceresiGun)
+            : null;
+    CrashReporter.arkaPlan(
+      acilisKapisi([
+        _historyFuture,
+        digerleri,
+        if (sinyalSerisi != null) sinyalSerisi,
+      ]).then<void>((_) {
+        if (mounted) setState(() => _acildi = true);
+      }),
+      reason: 'AssetDetail.acilis',
+    );
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
     _nabziBirak = TazelikRitmi.nabiz.dinle(_nabizGeldi);
@@ -276,6 +328,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     if (mounted && sira == _yuklemeSirasi) {
       if (days == 0) _gunIciBaslangic = birim.seansGunu;
       if (birim.total.isNotEmpty) _lastHistory = birim.total;
+    }
+    // Dönem önbelleği sıradan bağımsız: geç dönen eski dönemin serisi de
+    // KENDİ çipine yazılır, seçili dönemi ezmez.
+    if (mounted) {
+      _guncelle(() => _donemKaydet(days, birim.total, birim.seansGunu));
     }
     return birim.total;
   }
@@ -537,14 +594,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
+    final pnl = _pnlOzeti(pState);
 
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        title: context.l10n.assetPerformanceSemantics(widget.asset.name),
+        // Başlık artık gövdede (kısa etiket + ad · tür, varlık sayfasıyla
+        // aynı); üst çubukta ikinci kez yazılmaz.
         transparent: true,
         showBack: widget.showBackButton,
         actions: [
+          TakipYildizi(kimlik: _kimlik),
           // Fiyat alarmı BURADAN kurulur (2026-09-14): alarm varlığa aittir,
           // Ayarlar'daki liste yalnızca gösterir. Sembolü olmayan (manuel
           // fiyatlı) varlıkta zil yok — sunucu fiyatını izleyemez.
@@ -634,7 +694,21 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     },
                     orElse: () => const SizedBox.shrink(),
                   ),
-                // Sinyal özeti EN ÜSTTE.
+                // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
+                Align(alignment: Alignment.centerLeft, child: _baslik()),
+                const SizedBox(height: SandikSpace.md),
+                // Başlık yerelden gelir, hemen yazılır; geri kalan her şey
+                // açılış kapısı açılınca BİRLİKTE (bkz. `_acildi`).
+                if (!_acildi)
+                  const VarlikIskeleti()
+                else ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _fiyatBlogu(pnl, baz),
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // Sinyal özeti fiyatın hemen altında — dokununca aşağıdaki
+                // panele kaydırır (kullanıcı: "işlevi güzel").
                 //
                 // Şerit ÖNCE canlı göstergeleri okur, kayıtlı bildirimi
                 // beklemez. İlk sürümde yalnızca `signal_notifications`
@@ -664,8 +738,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     ad: widget.asset.name,
                     guncelFiyat: _canli.asset.currentPrice,
                   ),
-                _buildPeriodToggle(),
-                const SizedBox(height: 24),
+                const SizedBox(height: SandikSpace.sm),
                 FutureBuilder<Map<int, double>>(
                   future: _historyFuture,
                   builder: (context, snapshot) {
@@ -706,7 +779,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       // dürüst bir mesaj. Sonsuz spinner, veri hiç
                       // gelmeyecekken bile "birazdan gelir" der.
                       return SizedBox(
-                        height: 400,
+                        height: GrafikStili.kartYuksekligi,
                         child: waiting
                             ? const CustomLoadingView()
                             : Center(
@@ -729,15 +802,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // Grafiğin son noktasını da bu canlı değerle sabitliyoruz
                     // (aşağıdaki `currentUnitPriceOverride`) — böylece grafik
                     // bitiş noktası ve chip her zaman aynı sayıyı gösterir.
-                    // Canlı görünüm — açılış anının kopyası değil (bkz. `_canli`).
-                    final asset = _canli.asset;
-                    final qty = asset.quantity;
-                    final anchorUnitTRY =
-                        asset.purchasePrice * asset.purchaseFxRate;
-                    final currentValueTRY = pState != null
-                        ? pState.toTRY(asset.totalValue, asset.currency)
-                        : asset.totalValue;
-                    final currentUnitTRY = qty > 0 ? currentValueTRY / qty : 0.0;
+                    // Canlı görünüm — `_pnlOzeti` (asset_detail/ozet.dart):
+                    // başlıktaki satır, PnL şeridi ve uç rengi aynı sayılar.
+                    final currentUnitTRY = pnl.currentUnitTRY;
 
                     // Compare mode devrede mi? Öncelikli — log-scale ile
                     // aynı anda anlamlı değil (biri % biri log), compare
@@ -846,66 +913,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
-                    // Seçili periyodun değişimi.
-                    //
-                    // ## İki sayı, iki soru (kullanıcı kararı, 2026-09-23)
-                    // *"Zaman aralığına göre 1 gram ya da bir lot varlığın
-                    // grafiğini göstermeli, diğer alanlarda da kazanç
-                    // hesaplanarak yazılmalı."*
-                    //
-                    //   · YÜZDE → ÜRÜNÜN hareketi: birim serinin (grafiğin)
-                    //     başı ile sonu. Sahibin alımı, satımı, maliyeti onu
-                    //     oynatamaz; iki ortak aynı ürüne aynı dönemde bakınca
-                    //     aynı yüzdeyi görür.
-                    //   · TUTAR → SAHİBİN kazancı: pozisyonun PİYASA ETKİSİ,
-                    //     `son miktar × son birim − baş miktar × baş birim −
-                    //     dönem içi net alım` (`birimPiyasaEtkisi`). Dönem
-                    //     başında elde olan lot'lar için Performans'ın tür
-                    //     filtresindeki payıyla aynıdır (Σ parça == bütün);
-                    //     dönem içinde açılan lot ALIŞ fiyatından ölçülür.
-                    //     Dönem içinde alım yoksa tutar = miktar × birim
-                    //     fark, yani yüzdeyle de tutarlı.
-                    //
-                    // Eskiden tutar `(son − baş) × SON miktar` idi: bugün
-                    // alınan lot dönemin tamamını yaşamış sayılıyordu, alım
-                    // fiyatıyla dönem başı fiyatı arasındaki fark "kazanç"
-                    // yazılıyordu.
-                    //
-                    // `v <= 0` slotlar `uclar` içinde ELENİR (ölçüldü
-                    // 2026-09-23: boş ilk slot 22 ayar gramda +₺612.621,
-                    // gram fiyatının tam 100 katı yazdırıyordu).
-                    double? periodChangeTRY;
-                    double? periodChangePct;
-                    {
-                      final u = PeriodSummaryService.uclar(historyMap,
-                          fromMs: startDate.millisecondsSinceEpoch,
-                          toMs: endDate.millisecondsSinceEpoch);
-                      if (u != null && u.firstTs != u.lastTs) {
-                        // Son = grafiğin sağ ucu (canlı birim fiyat) —
-                        // "grafik başı ile sonu arasındaki fark".
-                        final son =
-                            currentUnitTRY > 0 ? currentUnitTRY : u.last;
-                        periodChangePct = (son / u.first - 1) * 100;
-                        periodChangeTRY =
-                            PeriodSummaryService.birimPiyasaEtkisi(
-                          birimSeri: historyMap,
-                          lotlar: _seriDefteri,
-                          start: startDate,
-                          end: endDate,
-                          canliBirim: son,
-                        )?.piyasa;
-                      }
-                    }
-
                     final anchorY = anchorSpot?.y ?? 0.0;
-                    final totalCostTRY = asset.totalCostTRY;
-                    final totalPnlTRY = currentValueTRY - totalCostTRY;
-                    final pnlPct = totalCostTRY > 0
-                        ? (totalPnlTRY / totalCostTRY) * 100
-                        : 0.0;
-                    final gainPositive = totalPnlTRY >= 0;
-                    final endpointColor =
-                        gainPositive ? context.c.gain : context.c.loss;
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
                     // ÜZERİNDE; gerçek işlem fiyatı crosshair'da yazılır
@@ -940,103 +948,47 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
                     // Y sınırlarını görünür X aralığındaki spot'lara göre
                     // hesaplayan closure — zoom sırasında yeniden çağrılır.
-                    ({double minY, double maxY}) computeY(
+                    // Fiyat bandı Performans ile AYNI kuraldan (`gorunurYBandi`,
+                    // grafik stili kararı 2026-09-28): eskiden bu ekran bandı
+                    // dönem başına ortalayıp %35 pay bırakıyordu; çizgi kartın
+                    // ortasında ince bir şeride sıkışıyor ve iki ekran aynı
+                    // seriyi farklı ölçekte çiziyordu. Karşılaştırma ve
+                    // işlem işaretleri de banda girer (`extraSpots`).
+                    // Asgari bant %2: fiyat grafiği (varlık sayfasıyla
+                    // aynı); Performans'ın %8'i portföy DEĞERİ içindir ve
+                    // tek hissenin haftalık hareketini düzleştirirdi.
+                    ({double minY, double maxY, double interval}) computeY(
                         double viewMinX, double viewMaxX,
                         {List<FlSpot>? extraSpots}) {
                       double minY = double.infinity;
                       double maxY = -double.infinity;
+                      double top = 0;
+                      int adet = 0;
+                      void kat(FlSpot spot) {
+                        if (spot.x < viewMinX || spot.x > viewMaxX) return;
+                        if (spot.y > maxY) maxY = spot.y;
+                        if (spot.y < minY) minY = spot.y;
+                        top += spot.y;
+                        adet++;
+                      }
                       for (final seg in segments) {
-                        for (final spot in seg.spots) {
-                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
-                          if (spot.y > maxY) maxY = spot.y;
-                          if (spot.y < minY) minY = spot.y;
-                        }
+                        seg.spots.forEach(kat);
                       }
-                      // Compare barı da Y aralığına dahil edilsin ki
-                      // 2. varlığın çizgisi grafik dışına düşmesin.
-                      if (extraSpots != null) {
-                        for (final spot in extraSpots) {
-                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
-                          if (spot.y > maxY) maxY = spot.y;
-                          if (spot.y < minY) minY = spot.y;
-                        }
+                      extraSpots?.forEach(kat);
+                      if (adet == 0) {
+                        final y = anchorY > 0 ? anchorY : 1.0;
+                        minY = y;
+                        maxY = y;
+                        top = y;
+                        adet = 1;
                       }
-                      if (minY == double.infinity) minY = 0;
-                      if (maxY == -double.infinity) maxY = 1000;
-
-                      // Compare modda anchor 100 (normalize base). Aksi
-                      // halde anchorY (ham ilk noktanın normalize hali).
-                      final center = compareOn
-                          ? 100.0
-                          : (anchorY > 0 ? anchorY : (minY + maxY) / 2);
-                      double maxAbsDev = 0;
-                      for (final seg in segments) {
-                        for (final spot in seg.spots) {
-                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
-                          final dev = (spot.y - center).abs();
-                          if (dev > maxAbsDev) maxAbsDev = dev;
-                        }
-                      }
-                      if (extraSpots != null) {
-                        for (final spot in extraSpots) {
-                          if (spot.x < viewMinX || spot.x > viewMaxX) continue;
-                          final dev = (spot.y - center).abs();
-                          if (dev > maxAbsDev) maxAbsDev = dev;
-                        }
-                      }
-                      // Asgari yarı-bant. Eksen yalnızca veriye göre
-                      // ölçeklenirse yatay giden bir fiyatın kuruşluk
-                      // dalgalanması tuvale yayılır ve olmayan bir "çöküş"
-                      // çizilir; taban bunu keser.
-                      //
-                      // GÜN İÇİNDE taban DARDIR: bir hissenin günlük
-                      // hareketi tipik olarak ±%0,5–2'dir ve %1'lik yarı-bant
-                      // (yani %2'lik tam bant) o hareketi grafiğin onda
-                      // birine sıkıştırıp çizgiyi DÜMDÜZ gösterir. Portföy
-                      // performans ekranı aynı dersi `gunIciAsgariBantOrani`
-                      // ile öğrenmişti (tam bant %0,5) — burada da yarısı,
-                      // yani %0,25 yarı-bant kullanılır.
-                      //
-                      // Mutlak 1 TL tabanı gün içinde UYGULANMAZ: birim
-                      // fiyatı 10 TL olan bir fonda ±1 TL, ±%10'luk bir
-                      // bant demektir ve fonun gerçek günlük değişimini
-                      // (binde birkaç) yine görünmez kılardı.
-                      final oransalTaban =
-                          center * (isIntraday ? 0.0025 : 0.01);
-                      final minDev = isIntraday
-                          ? (oransalTaban > 0 ? oransalTaban : 1.0)
-                          : oransalTaban.clamp(1.0, double.infinity);
-                      final halfRange =
-                          maxAbsDev < minDev ? minDev : maxAbsDev;
-                      final yPad = halfRange * 0.35;
-                      final rawMaxY = center + halfRange + yPad;
-                      // Compare modda negatif % olabilir (varlık düşmüş) —
-                      // 0'a clamp'lemeyelim; ham hesabı bırak.
-                      final rawMinY = compareOn
-                          ? (center - halfRange - yPad)
-                          : (center - halfRange - yPad)
-                              .clamp(0, double.infinity)
-                              .toDouble();
-                      // TradingView tarzı nice-round Y bound: label'lar temiz
-                      // yuvarlak sayılar olsun ve grid çizgilerine denk gelsin.
-                      final rawInterval = (rawMaxY - rawMinY) / 4;
-                      if (rawInterval <= 0) {
-                        return (
-                          minY: rawMinY.toDouble(),
-                          maxY: rawMaxY.toDouble()
-                        );
-                      }
-                      final niceInterval = _niceRound(rawInterval);
-                      final niceMin = compareOn
-                          ? (rawMinY / niceInterval).floor() * niceInterval
-                          : ((rawMinY / niceInterval).floor() *
-                                  niceInterval)
-                              .clamp(0.0, double.infinity);
-                      final niceMax =
-                          (rawMaxY / niceInterval).ceil() * niceInterval;
-                      return (
-                        minY: niceMin.toDouble(),
-                        maxY: niceMax.toDouble()
+                      return gorunurYBandi(
+                        dataMinY: minY,
+                        dataMaxY: maxY,
+                        avgY: top / adet,
+                        asgariBantOrani: isIntraday
+                            ? gunIciAsgariBantOrani
+                            : (compareOn || logOn ? 0.0 : 0.02),
                       );
                     }
 
@@ -1054,33 +1006,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               color: context.c.amberFill,
                             ),
                           ),
-                        if (anchorSpot != null && lastSpot != null)
-                          _PnlSummaryStrip(
-                            baz: baz,
-                            anchorUnitPrice: anchorUnitTRY,
-                            currentUnitPrice: currentUnitTRY,
-                            pnlPct: pnlPct,
-                            totalPnl: totalPnlTRY,
-                            unitLabel: widget.asset.unitLabel,
-                            isPositive: gainPositive,
-                          ),
-                        if (anchorSpot != null && lastSpot != null)
-                          const SizedBox(height: SandikSpace.sm),
-                        // Seçili periyodun değişimi — üstteki strip alış→bugün
-                        // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
-                        // sorusunu yanıtlar. İkisi farklı sorular.
-                        // Bayat seride GİZLENİR: rakam hâlâ eski periyoda ait
-                        // olurdu ama etiket yeni periyodu yazardı — yanıltıcı.
-                        // (Üstteki strip periyottan bağımsız, o kalır.)
-                        if (periodChangeTRY != null && !isStale)
-                          _PeriodChangeRow(
-                            baz: baz,
-                            label: _periods[_selectedPeriodIdx].label,
-                            changeTRY: periodChangeTRY,
-                            changePct: periodChangePct,
-                          ),
-                        if (anchorSpot != null && lastSpot != null)
-                          const SizedBox(height: 12),
+                        // PnL şeridi ve dönem değişimi satırı grafiğin
+                        // ALTINDAKİ pozisyon bölümüne taşındı (A tasarımı,
+                        // 2026-09-28); ikisi de artık seri beklemeden durur.
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -1176,15 +1104,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
                               curve: SandikMotion.enter,
                               child: Container(
-                          height: 400,
-                          decoration: BoxDecoration(
-                            color: context.c.surface1,
-                            borderRadius: BorderRadius.circular(SandikRadius.md),
-                            border: Border.all(
-                                color: context.c.overlay),
-                          ),
-                          padding: const EdgeInsets.only(
-                              top: 36, right: 16, left: 8, bottom: 16),
+                          // Kart Performans'la AYNI (ortak grafik stili).
+                          height: GrafikStili.kartYuksekligi,
+                          decoration: GrafikStili.kart(context),
+                          padding: GrafikStili.kartDolgusu,
                           child: Builder(builder: (_) {
                             // Aktif segment (alış → bugün) tüm dönemin
                             // %25'inden azsa viewport'u aktif segmentin
@@ -1232,8 +1155,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             return ZoomableChart(
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
-                            height: 400 - 36 - 16,
-                            plotPaddingRight: 60,
+                            height: GrafikStili.grafikYuksekligi,
+                            plotPaddingRight: GrafikStili.yEkseniGenisligi,
                             builder: (viewMinX, viewMaxX) {
                               final yBounds = computeY(
                                 viewMinX,
@@ -1249,6 +1172,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               );
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
+                              final yInterval = yBounds.interval;
                               // Lot marker'ları piksel bazlı seyreltmeden
                               // geçer — arka arkaya alım yapılan günlerde
                               // dot'lar üst üste binip yığın gibi
@@ -1286,30 +1210,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                           minY: viewMinY,
                           maxY: viewMaxY,
                           clipData: const FlClipData.all(),
+                          // Izgara, eksen ayracı ve eksen yazısı ortak
+                          // grafik stilinden (Performans stili, 2026-09-28).
                           gridData: FlGridData(
                             show: true,
                             drawVerticalLine: false,
-                            horizontalInterval: (viewMaxY - viewMinY) > 0
-                                ? _niceRound(
-                                    (viewMaxY - viewMinY) / 4)
-                                : 50000,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: context.c.overlay,
-                              strokeWidth: 1,
-                            ),
+                            horizontalInterval: yInterval,
+                            getDrawingHorizontalLine: (_) =>
+                                GrafikStili.izgara(context),
                           ),
-                          // TradingView paritesi: plot area sağ kenarına
-                          // ince Y-ekseni ayraç çizgisi — Y bandı görsel
-                          // olarak plot area'dan ayrılsın.
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border(
-                              right: BorderSide(
-                                color: context.c.overlay,
-                                width: 1,
-                              ),
-                            ),
-                          ),
+                          borderData: GrafikStili.eksenAyraci(context),
                           titlesData: FlTitlesData(
                             show: true,
                             topTitles: const AxisTitles(
@@ -1322,11 +1232,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             rightTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 60,
-                                interval: (viewMaxY - viewMinY) > 0
-                                    ? _niceRound(
-                                        (viewMaxY - viewMinY) / 4)
-                                    : 50000,
+                                reservedSize: GrafikStili.yEkseniGenisligi,
+                                interval: yInterval,
                                 getTitlesWidget: (value, meta) {
                                   if (value == meta.min ||
                                       value == meta.max) {
@@ -1340,13 +1247,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     child: Text(
                                       label,
                                       textAlign: TextAlign.left,
-                                      // Eksen etiketi — tabular figür, tik
-                                      // değerleri değişince kaymasın.
-                                      style: context.t.numSmall.copyWith(
-                                        color: context.c.text58,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: GrafikStili.eksenYazisi(context),
                                     ),
                                   );
                                 },
@@ -1415,13 +1316,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         softWrap: false,
-                                        // Eksen etiketi — tabular figür, tik
-                                        // değerleri değişince kaymasın.
-                                        style: context.t.numSmall.copyWith(
-                                          color: context.c.text58,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style:
+                                            GrafikStili.eksenYazisi(context),
                                       ),
                                     ),
                                   );
@@ -1429,91 +1325,38 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               ),
                             ),
                           ),
+                          // Performans stili (2026-09-28): dönem başı
+                          // YATAY kesikli çizgi + etiketi (tarih ve değer
+                          // birlikte — eskiden tarih ayrı bir DİKEY
+                          // işaretteydi, Performans'ta 2026-09-12'de
+                          // kaldırılan desen); "ŞİMDİ" dikey işareti
+                          // Performans'taki gibi gün içi DIŞINDA.
+                          // Çapa ALIŞ FİYATI DEĞİL, dönemin ilk birim
+                          // fiyatıdır (2026-09-23); alış→bugün pozisyon
+                          // bölümünde ayrıca durur. Değer HAM fiyattır
+                          // (`normBase`): LOG ve karşılaştırmada çizginin
+                          // Y'si dönüştürülmüş olsa da etiket fiyatı yazar.
                           extraLinesData: anchorSpot != null
                               ? ExtraLinesData(
                                   horizontalLines: [
-                                    HorizontalLine(
-                                      y: anchorY,
-                                      color: context.c.text36,
-                                      strokeWidth: 1,
-                                      dashArray: const [4, 4],
-                                      label: HorizontalLineLabel(
-                                        show: true,
-                                        alignment: Alignment.topLeft,
-                                        padding: const EdgeInsets.only(
-                                            left: 8, bottom: 2),
-                                        style: context.t.labelMedium?.copyWith(
-                                          letterSpacing: 0,
-                                          fontWeight: FontWeight.w800,
-                                          color: context.c.text90
-                                              .withValues(alpha: 0.75),
-                                        ),
-                                        // Çapa ALIŞ FİYATI DEĞİL, dönemin
-                                        // ilk birim fiyatıdır (2026-09-23:
-                                        // grafik artık maliyetle
-                                        // başlamıyor). Dönem satırının
-                                        // yüzdesi bu çizgiye göredir.
-                                        // Alış→bugün şeritte ayrıca durur.
-                                        labelResolver: (_) =>
-                                            '${isIntraday ? 'AÇILIŞ' : 'BAŞLANGIÇ'}  ${fixedFormatter(2).format(anchorY)} ₺',
+                                    GrafikStili.donemBasi(
+                                      context,
+                                      anchorY,
+                                      etiket: GrafikStili.donemBasiEtiketi(
+                                        context,
+                                        an: startDate.add(Duration(
+                                            minutes: (anchorSpot.x * 1440)
+                                                .round())),
+                                        deger:
+                                            '${fixedFormatter(2).format(normBase)} ₺',
+                                        gunIci: isIntraday,
                                       ),
                                     ),
                                   ],
                                   verticalLines: [
-                                    // Dönem başı X'i — tarih etiketli
-                                    // dashed vertical marker.
-                                    VerticalLine(
-                                      x: anchorSpot.x,
-                                      color: context.c.amberText
-                                          .withValues(alpha: 0.4),
-                                      strokeWidth: 1.2,
-                                      dashArray: const [4, 4],
-                                      label: VerticalLineLabel(
-                                        show: true,
-                                        alignment: Alignment.topRight,
-                                        padding: const EdgeInsets.only(
-                                            bottom: 8, left: 6),
-                                        style: context.t.labelMedium?.copyWith(
-                                          letterSpacing: 0,
-                                          fontWeight: FontWeight.w700,
-                                          color: context.c.amberText,
-                                        ),
-                                        labelResolver: (_) {
-                                          final baslangic = startDate.add(
-                                              Duration(
-                                                  minutes:
-                                                      (anchorSpot.x * 1440)
-                                                          .round()));
-                                          if (isIntraday) {
-                                            return 'AÇILIŞ ${DateFormat('HH:mm', 'tr_TR').format(baslangic)}';
-                                          }
-                                          return DateFormat('d MMM', 'tr_TR')
-                                              .format(baslangic);
-                                        },
-                                      ),
-                                    ),
-                                    // Bitiş (bugün) X'i — "ŞİMDİ" etiketi
-                                    // ile net görünsün.
-                                    if (lastSpot != null)
-                                      VerticalLine(
-                                        x: lastSpot.x,
-                                        color: endpointColor
-                                            .withValues(alpha: 0.55),
-                                        strokeWidth: 1.2,
-                                        dashArray: const [4, 4],
-                                        label: VerticalLineLabel(
-                                          show: true,
-                                          alignment: Alignment.topLeft,
-                                          padding: const EdgeInsets.only(
-                                              bottom: 8, right: 6),
-                                          style: context.t.labelMedium?.copyWith(
-                                            letterSpacing: 0,
-                                            fontWeight: FontWeight.w700,
-                                            color: endpointColor,
-                                          ),
-                                          labelResolver: (_) => 'ŞİMDİ',
-                                        ),
-                                      ),
+                                    if (lastSpot != null && !isIntraday)
+                                      GrafikStili.simdiCizgisi(
+                                          context, lastSpot.x),
                                   ],
                                 )
                               : const ExtraLinesData(),
@@ -1552,75 +1395,26 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       show: !seg.piyasaKapali,
                                       checkToShowDot: (spot, barData) {
                                         if (seg.piyasaKapali) return false;
-                                        if (anchorSpot != null &&
-                                            spot.x == anchorSpot.x &&
-                                            spot.y == anchorSpot.y) {
-                                          return true;
-                                        }
-                                        if (lastSpot != null &&
+                                        // Yalnızca "şimdi" noktası
+                                        // (Performans stili). Dönem başı
+                                        // noktası YOK: "orada alım yapılmış"
+                                        // gibi okunuyordu (Performans,
+                                        // 2026-09-12); tarihi ve değeri
+                                        // dönem başı çizgisinin etiketinde.
+                                        // İşlem noktaları ayrı katmanda.
+                                        return lastSpot != null &&
                                             spot.x == lastSpot.x &&
-                                            spot.y == lastSpot.y) {
-                                          return true;
-                                        }
-                                        // İşlem noktaları ÇİZGİDE değil,
-                                        // aşağıdaki işaret katmanında.
-                                        return false;
+                                            spot.y == lastSpot.y;
                                       },
-                                      getDotPainter:
-                                          (spot, percent, barData, index) {
-                                        // Dönem başı: beyaz halkalı amber.
-                                        if (anchorSpot != null &&
-                                            spot.x == anchorSpot.x &&
-                                            spot.y == anchorSpot.y) {
-                                          return FlDotCirclePainter(
-                                            radius: 5.5,
-                                            color: context.c.amberText,
-                                            strokeColor: context.c.text90,
-                                            strokeWidth: 2,
-                                          );
-                                        }
-                                        // Son (şimdi): kar/zarar rengi.
-                                        if (lastSpot != null &&
-                                            spot.x == lastSpot.x &&
-                                            spot.y == lastSpot.y) {
-                                          return FlDotCirclePainter(
-                                            radius: 5.5,
-                                            color: endpointColor,
-                                            strokeColor: context.c.text90
-                                                .withValues(alpha: 0.85),
-                                            strokeWidth: 1.5,
-                                          );
-                                        }
-                                        return FlDotCirclePainter(
-                                          radius: 3.0,
-                                          color: context.c.amberText,
-                                          strokeColor: context.c.background,
-                                          strokeWidth: 1.5,
-                                        );
-                                      },
+                                      getDotPainter: (spot, percent,
+                                              barData, index) =>
+                                          GrafikStili.simdiNoktasi(context,
+                                              piyasaKapali: segments
+                                                  .any((s) => s.piyasaKapali)),
                                     ),
-                                    belowBarData: BarAreaData(
-                                      show: true,
-                                      gradient: LinearGradient(
-                                        colors: seg.piyasaKapali
-                                            ? [
-                                                seg.areaGradientStart,
-                                                seg.areaGradientEnd,
-                                              ]
-                                            : [
-                                                context.c.amberText
-                                                    .withValues(alpha: 0.22),
-                                                context.c.amberText
-                                                    .withValues(alpha: 0.06),
-                                                Colors.transparent,
-                                              ],
-                                        stops: seg.piyasaKapali
-                                            ? null
-                                            : const [0.0, 0.5, 1.0],
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                      ),
-                                    ),
+                                    belowBarData: seg.piyasaKapali
+                                        ? BarAreaData(show: false)
+                                        : GrafikStili.dolgu(context),
                                   );
                               }),
                             // İşlem işaretleri — gerçek an × çizgi üstü
@@ -1791,9 +1585,13 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 24),
-                if (widget.asset.type == AssetType.kripto)
-                  KriptoGecikmeEtiketi(sembol: widget.asset.ticker),
+                const SizedBox(height: SandikSpace.smd),
+                _donemCipleri(pnl.currentUnitTRY),
+                const SizedBox(height: SandikSpace.lg),
+                // ── Pozisyon ── (A tasarımı): miktar, alış → bugün ve
+                // seçili dönemin değişimi tek bölümde, grafiğin altında.
+                SandikSectionHeader(title: context.l10n.adPositionUpper),
+                const SizedBox(height: SandikSpace.sm),
                 // Miktar Bilgisi
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -1850,10 +1648,43 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: SandikSpace.sm),
+                _PnlSummaryStrip(
+                  baz: baz,
+                  anchorUnitPrice: pnl.anchorUnitTRY,
+                  currentUnitPrice: pnl.currentUnitTRY,
+                  pnlPct: pnl.pnlPct,
+                  totalPnl: pnl.totalPnlTRY,
+                  unitLabel: widget.asset.unitLabel,
+                  isPositive: pnl.gainPositive,
+                ),
+                // Seçili periyodun değişimi — üstteki strip alış→bugün
+                // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
+                // sorusunu yanıtlar. İkisi farklı sorular. Seçili dönemin
+                // serisi gelmeden çizilmez: rakam eski periyoda ait olurdu
+                // ama etiket yeni periyodu yazardı — yanıltıcı.
+                if (_donemDegisimi(period.days, startDate, endDate,
+                        pnl.currentUnitTRY)
+                    case final d?) ...[
+                  const SizedBox(height: SandikSpace.sm),
+                  _PeriodChangeRow(
+                    baz: baz,
+                    label: _periods[_selectedPeriodIdx].label,
+                    changeTRY: d.tutar,
+                    changePct: d.yuzde,
+                  ),
+                ],
+                const SizedBox(height: SandikSpace.lg),
+                ..._istatistikler(pnl.currentUnitTRY),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),
                   TechnicalSignalPanel.forAsset(widget.asset,
                       key: _sinyalPaneliKey, detayli: true),
+                  // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
+                  // taşır (varlık sayfasıyla aynı).
+                  const SizedBox(height: SandikSpace.sm),
+                  const DisclaimerWidget(),
+                ],
                 ],
               ],
             ),

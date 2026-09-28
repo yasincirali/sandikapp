@@ -12,10 +12,12 @@ import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
+import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/donem_secici.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
@@ -69,15 +71,16 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// noktadan az veri. Kullanıcı boş bir çizgi yerine sebebini görmeli.
   final Set<String> _failed = {};
 
-  int _periodIdx = 2;
+  /// Açılış dönemi 3A — eski varsayılan korunur (sıra değişse de adla).
+  int _periodIdx = SummaryPeriod.ucAy.index;
 
-  /// Periyotlar `getSymbolHistory`'nin range eşlemesiyle uyumlu seçildi.
-  static const _periods = <({String label, int days})>[
-    (label: '1H', days: 7),
-    (label: '1A', days: 30),
-    (label: '3A', days: 90),
-    (label: '1Y', days: 365),
-    (label: '5Y', days: 1825),
+  /// Periyotlar uygulamanın tek dönem kümesinden ([SummaryPeriod]) —
+  /// 2026-09-28'e kadar burada GÜNLÜK ve 6A yoktu, 3A yalnızca buradaydı.
+  /// Gün değeri `sembolGunu`: GÜNLÜK `getSymbolHistory`'de `1d` aralığıdır.
+  /// TÜFE aylık basamaktır; GÜNLÜK'te iki noktası olmaz ve satır "veri yok"
+  /// der — uydurma düz çizgi çizilmez.
+  static final _periods = <({String label, int days})>[
+    for (final p in SummaryPeriod.values) (label: p.label, days: p.sembolGunu),
   ];
 
   /// Seri renkleri — marka paletinden, birbirinden ayırt edilebilir sırada.
@@ -267,39 +270,16 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   // ── Periyot seçici ────────────────────────────────────────────────────────
 
+  /// Ortak [DonemSecici] (tek görünüş, 2026-09-28). Eski amber dolgulu
+  /// şerit yalnızca bu ekrandaydı ve ham `fontSize` taşıyordu.
   Widget _periodSelector(SandikPalette p) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: p.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < _periods.length; i++)
-            Expanded(
-              child: GestureDetector(
-                onTap: () => _changePeriod(i),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: i == _periodIdx ? p.amberFill : Colors.transparent,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  child: Text(
-                    _periods[i].label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: i == _periodIdx ? p.onAmber : p.text58,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          SandikSpace.md, SandikSpace.sm, SandikSpace.md, 0),
+      child: DonemSecici(
+        donemler: SummaryPeriod.values,
+        secili: _periodIdx,
+        onSec: _changePeriod,
       ),
     );
   }

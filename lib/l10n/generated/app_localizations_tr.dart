@@ -830,6 +830,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get period1M => '1A';
 
   @override
+  String get period3M => '3A';
+
+  @override
   String get period6M => '6A';
 
   @override
@@ -1512,6 +1515,21 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yearCurve => 'Yıl eğrisi';
+
+  @override
+  String get last3MonthsPeriod => 'son 3 ay';
+
+  @override
+  String get threeMonthExtremes => 'Üç ayın uçları';
+
+  @override
+  String get last5YearsPeriod => 'son 5 yıl';
+
+  @override
+  String get fiveYearExtremes => 'Beş yılın uçları';
+
+  @override
+  String get fiveYearCurve => 'Beş yıl eğrisi';
 
   @override
   String periodMarketReturn(String period) {
@@ -3643,6 +3661,27 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get vsVolatilityShortNote =>
       'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.';
+
+  @override
+  String get adPositionUpper => 'POZİSYONUN';
+
+  @override
+  String adPositionLine(String amount, String pct) {
+    return 'Pozisyonun: $amount ($pct)';
+  }
+
+  @override
+  String chartOpenLabel(String time, String value) {
+    return 'AÇILIŞ · $time · $value';
+  }
+
+  @override
+  String chartStartLabel(String date, String value) {
+    return 'BAŞLANGIÇ · $date · $value';
+  }
+
+  @override
+  String get chartNowLabel => 'ŞİMDİ';
 
   @override
   String get vsWatch => 'Takip et';

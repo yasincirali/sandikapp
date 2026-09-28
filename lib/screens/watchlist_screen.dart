@@ -18,10 +18,12 @@ import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/preferences_provider.dart' show watchlistLimitProvider;
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
+import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/donem_secici.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
@@ -81,58 +83,20 @@ class WatchlistBody extends ConsumerWidget {
   }
 }
 
-/// Dönem seçici — `portfolio_performance_screen.dart`'taki `_buildPeriodToggle`
-/// ile AYNI dil: 44pt yükseklik, `surface1` zemin, seçili olan `surface2`.
-///
-/// Kullanıcı iki ekranda aynı bileşeni görmeli; farklı bir seçici çizmek
-/// "bunlar farklı şeyler mi?" sorusunu doğururdu.
+/// Dönem seçici — ortak [DonemSecici] (tek dönem kümesi ve tek görünüş,
+/// 2026-09-28). Eskiden Performans'ın 44pt eşit paylı bir kopyasıydı ve
+/// etiketi çevirmeden basıyordu; kopya ilk düzeltmede ayrışmıştı.
 class _PeriodToggle extends ConsumerWidget {
   const _PeriodToggle();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(watchlistPeriodProvider);
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
-      child: Container(
-        height: 44,
-        decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.md)),
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: List.generate(watchlistPeriods.length, (i) {
-            final isSelected = selected == i;
-            return Expanded(
-              child: CupertinoButton(
-                minimumSize: SandikTouch.minSize,
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  if (isSelected) return;
-                  SandikHaptic.selection.perform();
-                  ref.read(watchlistPeriodProvider.notifier).state = i;
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? context.c.surface2 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  child: Center(
-                    child: Text(
-                      watchlistPeriods[i].label,
-                      style: context.t.bodyMedium?.copyWith(
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color:
-                            isSelected ? context.c.amberText : context.c.text36,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
+      child: DonemSecici(
+        donemler: SummaryPeriod.values,
+        secili: ref.watch(watchlistPeriodProvider),
+        onSec: (i) => ref.read(watchlistPeriodProvider.notifier).state = i,
       ),
     );
   }

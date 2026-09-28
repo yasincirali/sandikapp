@@ -243,93 +243,17 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
-  /// Dönem seçici — kabuk TAM GENİŞLİK, segmentler İÇERİK ORANINDA pay alır.
-  ///
-  /// ## Neden eşit pay (`Expanded`) DEĞİL
-  /// 2026-09-15'e kadar beş segment `Expanded` ile eşit bölünüyordu; 390pt
-  /// ekranda her biri ~63pt ve altı harfli "GÜNLÜK" oraya sığmıyordu. İkinci
-  /// deneme (`Flexible` + `softWrap: false`) da kesti: içerideki `Center` boş
-  /// alanı doldurup segmentleri yine eşitliyordu. Emülatör render edemediği
-  /// için UI ağacından okunan ölçümler yanıltmıştı; hata gerçek cihaz
-  /// görüntüsünde göründü ("GÜNLÜ" diye kırpılmış).
-  ///
-  /// ## Neden içerik ORANI
-  /// Üçüncü deneme içerik genişliğinde bir kabuktu (kayan satır); bu kez
-  /// kabuk üstündeki iki satırdan dar kalıyor ve sağında asimetrik boşluk
-  /// bırakıyordu ("time interval da ortalanmalı, tasarımda garip
-  /// gözüküyor"). Şimdi kabuk satırı dolduruyor ama pay eşit değil:
-  /// `flex` her segmentin ÖLÇÜLEN metin genişliğinden (+ yan boşluk)
-  /// türetiliyor, yani GÜNLÜK payın ~%29'unu, iki harfliler ~%18'ini alıyor.
-  /// Hem hizalı hem kırpılmasız.
-  ///
-  /// `flex` tam sayı ister; ölçüm 100 ile çarpılıp yuvarlanıyor. Metin
-  /// ölçeği (Dynamic Type) ve dil değişince oranlar kendiliğinden yeniden
-  /// hesaplanır — sabit bir oran tablosu EN "DAILY"de bozulurdu.
+  /// Dönem seçici — ortak [DonemSecici] (tek dönem kümesi ve tek görünüş,
+  /// 2026-09-28). İçerik oranlı pay kararı ve gerekçesi o bileşene taşındı;
+  /// bu ekran yalnızca seçimi ve gün içi zamanlayıcıyı yönetir.
   Widget _buildPeriodToggle() {
-    final periods = _PortfolioPerformanceScreenState._periods;
-    final stil = context.t.bodyMedium;
-    // Seçili segment w600 çizilir; ölçüm en GENİŞ hâlle yapılır ki seçim
-    // değiştikçe segmentler yatay zıplamasın.
-    final olcumStili = stil?.copyWith(fontWeight: FontWeight.w600);
-    final olcek = MediaQuery.textScalerOf(context);
-
-    int paySayisi(int i) {
-      final tp = TextPainter(
-        text: TextSpan(
-            text: donemEtiketi(context.l10n, periods[i].label),
-            style: olcumStili),
-        textDirection: Directionality.of(context),
-        textScaler: olcek,
-      )..layout();
-      // + iki yandan 10pt: segmentin kendi nefes payı.
-      return ((tp.width + 2 * SandikSpace.sm2) * 100).round();
-    }
-
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: List.generate(periods.length, (i) {
-          final isSelected = _selectedPeriodIdx == i;
-          return Flexible(
-            flex: paySayisi(i),
-            child: CupertinoButton(
-              minimumSize: SandikTouch.minSize,
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                _guncelle(() => _selectedPeriodIdx = i);
-                _startIntradayTickIfNeeded();
-              },
-              child: Container(
-                height: double.infinity,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected ? context.c.surface2 : Colors.transparent,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-                child: Text(
-                  donemEtiketi(context.l10n, periods[i].label),
-                  maxLines: 1,
-                  softWrap: false,
-                  // Pay metne göre verildiği için taşma beklenmez; çok
-                  // büyük metin ölçeğinde son çare olarak küçültülür —
-                  // kırpmak (`clip`) etiketi okunmaz yapardı.
-                  overflow: TextOverflow.visible,
-                  style: stil?.copyWith(
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color:
-                        isSelected ? context.c.amberText : context.c.text36,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
+    return DonemSecici(
+      donemler: SummaryPeriod.values,
+      secili: _selectedPeriodIdx,
+      onSec: (i) {
+        _guncelle(() => _selectedPeriodIdx = i);
+        _startIntradayTickIfNeeded();
+      },
     );
   }
 

@@ -1604,6 +1604,12 @@ abstract class AppLocalizations {
   /// **'1A'**
   String get period1M;
 
+  /// No description provided for @period3M.
+  ///
+  /// In tr, this message translates to:
+  /// **'3A'**
+  String get period3M;
+
   /// No description provided for @period6M.
   ///
   /// In tr, this message translates to:
@@ -2809,6 +2815,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yıl eğrisi'**
   String get yearCurve;
+
+  /// No description provided for @last3MonthsPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'son 3 ay'**
+  String get last3MonthsPeriod;
+
+  /// No description provided for @threeMonthExtremes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üç ayın uçları'**
+  String get threeMonthExtremes;
+
+  /// No description provided for @last5YearsPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'son 5 yıl'**
+  String get last5YearsPeriod;
+
+  /// No description provided for @fiveYearExtremes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beş yılın uçları'**
+  String get fiveYearExtremes;
+
+  /// No description provided for @fiveYearCurve.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beş yıl eğrisi'**
+  String get fiveYearCurve;
 
   /// No description provided for @periodMarketReturn.
   ///
@@ -6175,6 +6211,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Oynaklık 1 ay ve daha uzun dönemlerde hesaplanır.'**
   String get vsVolatilityShortNote;
+
+  /// No description provided for @adPositionUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'POZİSYONUN'**
+  String get adPositionUpper;
+
+  /// No description provided for @adPositionLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pozisyonun: {amount} ({pct})'**
+  String adPositionLine(String amount, String pct);
+
+  /// Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'AÇILIŞ · {time} · {value}'**
+  String chartOpenLabel(String time, String value);
+
+  /// Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'BAŞLANGIÇ · {date} · {value}'**
+  String chartStartLabel(String date, String value);
+
+  /// No description provided for @chartNowLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'ŞİMDİ'**
+  String get chartNowLabel;
 
   /// No description provided for @vsWatch.
   ///

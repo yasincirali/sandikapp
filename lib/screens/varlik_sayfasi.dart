@@ -9,15 +9,22 @@ import '../providers/auth_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
+import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../services/son_bakilanlar.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
-import '../utils/sandik_snack.dart';
+import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../widgets/donem_istatistik.dart';
+import '../widgets/donem_secici.dart';
 import '../widgets/fiyat_grafigi.dart';
+import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
-import 'asset_detail_screen.dart' show TechnicalSignalPanel;
+import '../widgets/takip_yildizi.dart';
+import '../widgets/varlik_iskeleti.dart';
+import 'asset_detail_screen.dart'
+    show TechnicalSignalPanel, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
 
 /// Varlık sayfası — bir varlığı portföye EKLEMEDEN incelemek.
@@ -92,11 +99,13 @@ bool _acik = false;
 
 /// Sayfanın dönemleri (gün). `1` = GÜNLÜK (takvim günü, 5 dakikalık seri).
 ///
-/// Performans ekranı ve takip listesiyle AYNI etiketler; 5Y yalnızca burada
-/// — "bu varlık uzun vadede ne yaptı" sorusu almadan önce sorulur, sahip
-/// olunan varlıkta sorulmaz. Servis `5y` aralığını zaten destekliyor
-/// (`HistoryService.rangeForPeriod`).
-const varlikSayfasiDonemleri = <int>[1, 7, 30, 180, 365, 1825];
+/// Uygulamanın tek dönem kümesinden ([SummaryPeriod]) türetilir
+/// (2026-09-28): önceden burada 3A yoktu, Performans'ta 5Y yoktu; seçiciler
+/// artık her ekranda birebir aynı. Servis `3mo`/`5y` aralıklarını zaten
+/// destekliyor (`HistoryService.rangeForPeriod`).
+final varlikSayfasiDonemleri = <int>[
+  for (final p in SummaryPeriod.values) p.sembolGunu,
+];
 
 /// Seri yükleyici — testte ağ yerine sahte seri verilir.
 typedef SeriYukleyici = Future<Map<int, double>> Function(
@@ -139,7 +148,9 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
 class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   static const _yarim = 0.7;
   static const _tam = 0.94;
-  static const _grafikYuksekligi = 220.0;
+  /// Grafik kartının dış yüksekliği — ortak grafik stilinden (Performans
+  /// stili, 2026-09-28); yükleme/hata kutuları da aynı yükseklikte.
+  static const _grafikYuksekligi = GrafikStili.kartYuksekligi;
 
   final _sayfa = DraggableScrollableController();
 
@@ -157,6 +168,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   final Set<int> _hatali = {};
 
   bool _takipIslemi = false;
+
+  /// Açılış kapısı açıldı mı (bkz. `utils/acilis_kapisi.dart`): altı dönem
+  /// ve sinyal serisi geldi ya da süre doldu. Bir kez `true` olur.
+  bool _acildi = false;
 
   @override
   void initState() {
@@ -188,11 +203,21 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // çizilir (`_yukle` her dönemi bağımsız `setState` eder); ötekileri
     // beklemez. Aşırı yük kaygısı yok: `HistoryService` aynı anahtardaki
     // uçuşan isteği tekilleştirir, önbellekte olan dönem ağa hiç çıkmaz.
-    await Future.wait([
+    //
+    // Açılış kapısı (kullanıcı kararı 2026-09-28): dönemler ve sinyal
+    // panelinin serisi aynı anda istenir, sayfa hepsi gelince BİRLİKTE
+    // dolar — çipler birer birer, panel en son dolmaz. Panel aynı seriyi
+    // `HistoryService` önbelleğinden alır. Testte yükleyici verilmişse
+    // (ağsız) sinyal serisi burada istenmez.
+    await acilisKapisi([
       _yukle(_gun),
       for (final g in varlikSayfasiDonemleri)
         if (g != _gun) _yukle(g),
+      if (widget.seriYukleyici == null && widget.kimlik.ticker.isNotEmpty)
+        HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
+            periodDays: kSinyalPenceresiGun),
     ]);
+    if (mounted) setState(() => _acildi = true);
   }
 
   Future<void> _yukle(int gun) async {
@@ -286,17 +311,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     }
   }
 
-  String _donemEtiketi(int gun) {
-    final l = context.l10n;
-    return switch (gun) {
-      1 => l.periodDaily,
-      7 => l.period1W,
-      30 => l.period1M,
-      180 => l.period6M,
-      365 => l.period1Y,
-      _ => l.period5Y,
-    };
-  }
+  String _donemEtiketi(int gun) => donemEtiketi(
+      context.l10n,
+      SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(gun).clamp(
+              0, SummaryPeriod.values.length - 1)]
+          .label);
 
   @override
   Widget build(BuildContext context) {
@@ -413,6 +432,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         digits: 2, symbol: currencySymbolFor(k.ticker, k.currency) ?? '₺');
     final bayat = cizilen != null && cizilen != _gun;
 
+    if (!_acildi) {
+      return const [VarlikIskeleti(grafikYuksekligi: _grafikYuksekligi)];
+    }
     return [
       _fiyatBlogu(ist, bicim, cizilen),
       const SizedBox(height: SandikSpace.smd),
@@ -522,9 +544,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       }
       return const SandikSkeletonChart(height: _grafikYuksekligi);
     }
-    final renk = ist.isFlat
-        ? context.c.text36
-        : context.signColor(ist.degisimPct);
     return AnimatedOpacity(
       opacity: bayat ? 0.35 : 1.0,
       duration: SandikMotion.of(context, SandikMotion.state),
@@ -533,221 +552,43 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         seri: seri,
         periodDays: cizilen!,
         bicim: bicim,
-        renk: renk,
-        height: _grafikYuksekligi,
         semanticLabel: context.l10n
             .vsChartSemantics(widget.kimlik.name, _donemEtiketi(cizilen)),
       ),
     );
   }
 
-  /// Dönem çipleri — her çipin altında o dönemin getirisi. Çipler böylece
-  /// aynı zamanda bir getiri şeridi olur: "son bir yılda ne yaptı" sorusu
-  /// dokunmadan cevaplanır.
+  /// Dönem seçici — ortak [DonemSecici]; her segmentin altında o dönemin
+  /// getirisi. Seçici böylece aynı zamanda bir getiri şeridi olur: "son bir
+  /// yılda ne yaptı" sorusu dokunmadan cevaplanır (eski çiplerin işi,
+  /// tek görünüş kararıyla kabuğa taşındı, 2026-09-28).
   Widget _donemCipleri() {
-    return Row(
-      children: [
-        for (final g in varlikSayfasiDonemleri)
-          Expanded(child: _cip(g)),
+    return DonemSecici(
+      donemler: SummaryPeriod.values,
+      secili: varlikSayfasiDonemleri.indexOf(_gun),
+      getiriler: [
+        for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
       ],
+      onSec: (i) => _donemSec(varlikSayfasiDonemleri[i]),
     );
   }
 
-  Widget _cip(int gun) {
-    final secili = gun == _gun;
-    final ist = _istatistik[gun];
-    final etiket = _donemEtiketi(gun);
-    return SandikTappable(
-      onTap: secili ? null : () => _donemSec(gun),
-      semanticLabel: ist == null
-          ? etiket
-          : '$etiket, ${fmtPct(ist.degisimPct, showSign: true)}',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        margin: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-        padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
-        decoration: context.chip(selected: secili),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              etiket,
-              maxLines: 1,
-              style: context.t.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: secili ? context.c.amberText : context.c.text58,
-              ),
-            ),
-            Text(
-              ist == null ? ' ' : fmtPct(ist.degisimPct, digits: 1, showSign: true),
-              maxLines: 1,
-              style: context.t.labelSmall?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-                color: ist == null || ist.isFlat
-                    ? context.c.text36
-                    : context.signColor(ist.degisimPct),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _istatistikIzgarasi(DonemIstatistigi ist, int gun) {
-    final bugun = _istatistik[1];
-    final l = context.l10n;
-    Color yon(double v, {bool duz = false}) =>
-        duz ? context.c.text58 : context.signColor(v);
-
-    final hucreler = <(String, String, Color)>[
-      (
-        l.vsPeriodReturnUpper,
-        fmtPct(ist.degisimPct, showSign: true),
-        yon(ist.degisimPct, duz: ist.isFlat),
-      ),
-      (
-        l.vsTodayUpper,
-        bugun == null ? '—' : fmtPct(bugun.degisimPct, showSign: true),
-        bugun == null
-            ? context.c.text58
-            : yon(bugun.degisimPct, duz: bugun.isFlat),
-      ),
-      (
-        l.vsMaxDrawdownUpper,
-        fmtPct(ist.enBuyukDususPct, showSign: true),
-        ist.enBuyukDususPct.abs() < 0.005 ? context.c.text58 : context.c.loss,
-      ),
-      (
-        l.vsVolatilityUpper,
-        ist.oynaklikPct == null ? '—' : fmtPct(ist.oynaklikPct!),
-        context.c.text90,
-      ),
-    ];
-
-    Widget hucre((String, String, Color) h) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(SandikSpace.smd),
-            decoration: context.surfaceCard(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(h.$1,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w700,
-                        color: context.c.text36)),
-                const SizedBox(height: SandikSpace.xs),
-                Text(h.$2,
-                    maxLines: 1,
-                    style: context.t.numSmall.copyWith(color: h.$3)),
-              ],
-            ),
-          ),
-        );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          hucre(hucreler[0]),
-          const SizedBox(width: SandikSpace.sm),
-          hucre(hucreler[1]),
-        ]),
-        const SizedBox(height: SandikSpace.sm),
-        Row(children: [
-          hucre(hucreler[2]),
-          const SizedBox(width: SandikSpace.sm),
-          hucre(hucreler[3]),
-        ]),
-        if (ist.oynaklikPct == null &&
-            gun < DonemIstatistigi.oynaklikIcinAsgariDonemGun) ...[
-          const SizedBox(height: SandikSpace.xs2),
-          Text(l.vsVolatilityShortNote,
-              style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-        ],
-      ],
-    );
-  }
+  Widget _istatistikIzgarasi(DonemIstatistigi ist, int gun) =>
+      DonemIstatistikIzgarasi(
+        ist: ist,
+        gun: gun,
+        donemPct: ist.degisimPct,
+        bugunPct: _istatistik[1]?.degisimPct,
+      );
 
   /// Dönem aralığı: dip ve zirve arasında bugünkü fiyatın yeri.
-  Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim) {
-    final l = context.l10n;
-    final konumYuzde = (ist.konum * 100).round();
-    return Container(
-      padding: const EdgeInsets.all(SandikSpace.smd),
-      decoration: context.surfaceCard(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l.vsPeriodLow,
-                  style: context.t.labelSmall
-                      ?.copyWith(color: context.c.text36)),
-              Text(l.vsPeriodHigh,
-                  style: context.t.labelSmall
-                      ?.copyWith(color: context.c.text36)),
-            ],
-          ),
-          const SizedBox(height: SandikSpace.xs2),
-          LayoutBuilder(
-            builder: (context, c) => SizedBox(
-              height: SandikSpace.smd,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.centerLeft,
-                children: [
-                  Container(
-                    height: SandikSpace.xs2,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      gradient: LinearGradient(colors: [
-                        context.c.loss.withValues(alpha: 0.7),
-                        context.c.amberFill.withValues(alpha: 0.7),
-                        context.c.gain.withValues(alpha: 0.7),
-                      ]),
-                    ),
-                  ),
-                  Positioned(
-                    left: (c.maxWidth * ist.konum - SandikSpace.xs2)
-                        .clamp(0.0, c.maxWidth - SandikSpace.smd),
-                    child: Container(
-                      width: SandikSpace.smd,
-                      height: SandikSpace.smd,
-                      decoration: BoxDecoration(
-                        color: context.c.text90,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: Theme.of(context).colorScheme.surface,
-                            width: 2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: SandikSpace.xs2),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(bicim.format(ist.dusuk),
-                  style: context.t.numSmall.copyWith(color: context.c.text90)),
-              Text(bicim.format(ist.yuksek),
-                  style: context.t.numSmall.copyWith(color: context.c.text90)),
-            ],
-          ),
-          const SizedBox(height: SandikSpace.xs),
-          Text(l.vsRangePosition('$konumYuzde'),
-              style: context.t.bodySmall?.copyWith(color: context.c.text58)),
-        ],
-      ),
-    );
-  }
+  Widget _aralikCubugu(DonemIstatistigi ist, NumberFormat bicim) =>
+      DonemAralikCubugu(
+        dusuk: ist.dusuk,
+        yuksek: ist.yuksek,
+        konum: ist.konum,
+        bicim: bicim,
+      );
 
   // ── Alt çubuk ─────────────────────────────────────────────────────────────
 
@@ -880,50 +721,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     );
   }
 
-  /// Takibe al / takipten çıkar.
-  ///
-  /// Başarı mesajı YOK (kullanıcı kararı, 2026-09-16): düğmenin durumu
-  /// değişir, onay orada. Takipten çıkarma geri alınabilir ("Geri al"),
-  /// limit ve ağ hataları mesaj verir — orada geri bildirim tek kanal.
+  /// Takibe al / takipten çıkar — kural ve mesajlar `takipDegistir`'de
+  /// (portföy varlık detayıyla ortak).
   Future<void> _takipDegistir(bool takipte) async {
-    final k = widget.kimlik;
-    final notifier = ref.read(watchlistProvider.notifier);
     setState(() => _takipIslemi = true);
     try {
-      if (takipte) {
-        final kayit = (ref.read(watchlistProvider).valueOrNull ?? const [])
-            .where((w) => w.key == k.key)
-            .firstOrNull;
-        if (kayit == null) return;
-        await notifier.remove(kayit.id);
-        if (!mounted) return;
-        sandikSnack(
-          context,
-          context.l10n.vsRemovedFromWatchlist(k.kisaEtiket),
-          onUndo: () => CrashReporter.arkaPlan(_takibeAl(notifier),
-              reason: 'VarlikSayfasi.geriAl'),
-        );
-      } else {
-        await _takibeAl(notifier);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      sandikSnackError(context, e,
-          prefix: takipte ? context.l10n.removeFromWatchlistFailed : null);
+      await takipDegistir(context, ref, widget.kimlik, takipte: takipte);
     } finally {
       if (mounted) setState(() => _takipIslemi = false);
-    }
-  }
-
-  Future<void> _takibeAl(WatchlistNotifier notifier) async {
-    final user = ref.read(authProvider).valueOrNull;
-    if (user == null) return;
-    try {
-      await notifier.add(widget.kimlik.toWatchlistItem(userId: user.id));
-    } on WatchlistLimitException catch (e) {
-      if (!mounted) return;
-      sandikSnack(context, context.l10n.watchlistLimitReached(e.limit),
-          kind: SandikSnackKind.warning);
     }
   }
 }
