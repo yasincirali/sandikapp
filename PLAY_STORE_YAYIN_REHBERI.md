@@ -28,7 +28,7 @@ tarayıcıda ve elden yapacakların.
 | Ekran görüntüleri | ✅ **Üretildi (2026-09-15)** — Console'a **`set_b`** yüklenir, **05 ve 07 hariç** (6 kare): 05 Al/Sat düğmeli (işlem yapılıyor izlenimi, §5.4) ve başlığı ekranla uyuşmuyor; 07 Canlı Etkinlik **yalnızca iOS** — Android'de olmayan özelliği göstermek yanıltıcı meta veri (§6.2) |
 | Feature graphic (1024×500) + ikon (512×512) | ✅ **Üretildi (2026-09-15)** — `store_listing/android/graphics/`, betikle tekrar üretilebilir (§6.1, §6.3) |
 | Supabase `0027_soft_delete_lots.sql` migration | ✅ **Canlıda uygulanmış** (`YAPMAN_GEREKENLER.md` KAPANDI 2026-08-11; §7.1 tarihçe) |
-| Kapalı test (12 testçi × 14 gün) | 🔄 **2026-09-27 incelemeye gönderildi** — Kapalı test - Alpha, 7 (1.1.6), yalnız TR, testçi grubu `sandik-testers@googlegroups.com` (katılım `https://groups.google.com/g/sandik-testers`, opt-in `https://play.google.com/apps/testing/com.sandik.app`). Sayaç 12 testçi kayıtlı olunca başlar (§8.2) |
+| Kapalı test (12 testçi × 14 gün) | 🔄 **Yayınlandı (gönderim 2026-09-27, onay Console'da "Yayınlandı" 2026-09-28)** — Kapalı test - Alpha, 7 (1.1.6), yalnız TR, testçi grubu `sandik-testers@googlegroups.com` (katılım `https://groups.google.com/g/sandik-testers`, opt-in `https://play.google.com/apps/testing/com.sandik.app`). Sayaç 12 testçi kayıtlı olunca başlar (§8.2). ⚠️ Opt-in'de "App not available" görülürse (2026-09-28 bir testçide yaşandı): testçi önce gruba katılmalı, Play'de gruba katıldığı hesapla oturum açmış olmalı ve Play ülkesi TR olmalı; yayından sonraki ilk saatlerde yayılma gecikmesi de aynı mesajı verir |
 
 **Kritik yol (2026-09-26 itibarıyla kalan):** görselleri yükle → kalan
 Console beyanları → AAB'yi kapalı teste yükle → 12 testçi × 14 gün →
