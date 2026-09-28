@@ -390,7 +390,13 @@ export function shouldNotifyNow(
 }
 
 /// Sinyal üretilebilen türler ('diger' elle fiyatlanır, seri yoktur).
-const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia']);
+///
+/// Kripto 2026-09-28'de eklendi (kullanıcı isteği: "kripto ve eklenecek tüm
+/// yeni kategoriler için sinyal ayarları olmalı"). Seri Binance günlük
+/// mumlarından, TL'ye çevrilmiş (`price_history.ts` → `fetchKripto`).
+/// İstemcideki `sinyal_turleri_test` bu kümeyi `AssetType` ile karşılaştırır:
+/// yeni tür eklenince burası da güncellenmezse test kırılır.
+export const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia', 'kripto']);
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {

@@ -85,6 +85,7 @@ Future<void> _kur(
   List<WatchlistItem> takip = const [],
   VoidCallback? onSec,
   SeriYukleyici? yukleyici,
+  bool tamAcilis = true,
 }) async {
   t.view.physicalSize = const Size(1170, 2532);
   t.view.devicePixelRatio = 3;
@@ -98,7 +99,7 @@ Future<void> _kur(
       home: Scaffold(
         body: VarlikSayfasi(
           kimlik: _thy,
-          tamAcilis: true,
+          tamAcilis: tamAcilis,
           onSec: onSec,
           seriYukleyici: yukleyici ?? _seri,
         ),
@@ -183,5 +184,26 @@ void main() {
       c.complete(const {});
     }
     await t.pump();
+  });
+
+  testWidgets('tutamaçtan YUKARI çekmek sayfayı büyütür, aşağısı küçültür',
+      (t) async {
+    // Kullanıcı bildirimi (2026-09-28): tutamaç aşağı çekiliyor ama yukarı
+    // çekilip kart büyütülemiyordu — sayfa yalnızca listeden sürükleniyordu.
+    await _kur(t, tamAcilis: false);
+    final baslik = find.text('THYAO').first;
+    // Testte sayfa üste yaslı (modal yok); boyu içerik listesinin
+    // yüksekliğinden okunur.
+    double boy() => t.getSize(find.byType(ListView).first).height;
+    final yarim = boy();
+
+    await t.drag(baslik, const Offset(0, -300));
+    await t.pumpAndSettle();
+    expect(boy(), greaterThan(yarim + 100), reason: 'sayfa tam boya büyümeli');
+
+    await t.drag(baslik, const Offset(0, 150));
+    await t.pumpAndSettle();
+    expect(boy(), closeTo(yarim, 2),
+        reason: 'aşağı çekince yarım boya döner');
   });
 }

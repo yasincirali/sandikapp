@@ -244,6 +244,48 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     }
   }
 
+  /// Tutamaçtan sürükleme: parmağın dikey hareketi sayfa oranına çevrilir.
+  /// Yarım boyutun altına inen çekiş kapatmaya sayılır (modalın kendi
+  /// jestiyle aynı his).
+  double _asagiTasma = 0;
+
+  void _surukle(DragUpdateDetails d) {
+    if (!_sayfa.isAttached) return;
+    final h = MediaQuery.sizeOf(context).height;
+    if (h <= 0) return;
+    final yeni = _sayfa.size - d.delta.dy / h;
+    if (yeni < _yarim) {
+      _asagiTasma += d.delta.dy;
+      _sayfa.jumpTo(_yarim);
+      return;
+    }
+    _asagiTasma = 0;
+    _sayfa.jumpTo(yeni.clamp(_yarim, _tam));
+  }
+
+  void _birak(DragEndDetails d) {
+    if (!_sayfa.isAttached) return;
+    final hiz = d.primaryVelocity ?? 0; // + aşağı
+    final tasma = _asagiTasma;
+    _asagiTasma = 0;
+    final yarimda = _sayfa.size <= _yarim + 0.01;
+    if (yarimda && (tasma > SandikTouch.min * 2 || hiz > 700)) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    final hedef = hiz < -300
+        ? _tam
+        : hiz > 300
+            ? _yarim
+            : (_sayfa.size < (_yarim + _tam) / 2 ? _yarim : _tam);
+    final sure = SandikMotion.of(context, SandikMotion.surface);
+    if (sure == Duration.zero) {
+      _sayfa.jumpTo(hedef);
+    } else {
+      _sayfa.animateTo(hedef, duration: sure, curve: SandikMotion.enter);
+    }
+  }
+
   String _donemEtiketi(int gun) {
     final l = context.l10n;
     return switch (gun) {
@@ -274,8 +316,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
           children: [
             Column(
               children: [
-                _tutamac(),
-                _baslik(),
+                // Tutamaç + başlık sayfayı İKİ YÖNE de sürükler (kullanıcı
+                // bildirimi 2026-09-28): `DraggableScrollableSheet` yalnızca
+                // kendi kaydırma denetleyicisine bağlı listeden büyür;
+                // liste dışındaki tutamaçta aşağı çekmek modalın kapatma
+                // jestine düşüyor, yukarı çekmek hiçbir şey yapmıyordu.
+                GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onVerticalDragUpdate: _surukle,
+                  onVerticalDragEnd: _birak,
+                  child: Column(children: [_tutamac(), _baslik()]),
+                ),
                 Expanded(
                   child: ListView(
                     controller: sc,
