@@ -2687,14 +2687,26 @@ class HistoryService {
       return clipToPeriod(out, periodDays);
     }
 
-    final raw = await series(sym);
-    if (raw.isEmpty) return {};
-
     // TRY kote olanlar (BIST `.IS`, TEFAS fonları, `*TRY=X` pariteleri)
     // doğrudan döner; kalanlar USD kabul edilip çevrilir.
-    if (_isTryQuoted(sym)) return clipToPeriod(raw, periodDays);
+    if (_isTryQuoted(sym)) {
+      final raw = await series(sym);
+      if (raw.isEmpty) return {};
+      return clipToPeriod(raw, periodDays);
+    }
 
-    final usd = kurSerisiniHizala(await series(FiyatKaynagi.usdTry), canliKur());
+    // USD kote sembolün serisi ile kur serisi PARALEL çekilir: kur,
+    // sembolün cevabına bağlı değil. Eskiden ardışıktı ve emtia/ons
+    // grafiği iki ağ turu bekliyordu. Sembol boş dönerse kur çekimi boşa
+    // gider ama ucuzdur — `USDTRY=X` neredeyse her ekranda zaten
+    // önbellekte ya da uçuşta (tekilleştirilir).
+    final ikili = await Future.wait([
+      series(sym),
+      series(FiyatKaynagi.usdTry),
+    ]);
+    final raw = ikili[0];
+    if (raw.isEmpty) return {};
+    final usd = kurSerisiniHizala(ikili[1], canliKur());
     if (usd.isEmpty) return {};
     final out = <int, double>{};
     for (final e in raw.entries) {

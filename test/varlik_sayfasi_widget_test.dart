@@ -84,6 +84,7 @@ Future<void> _kur(
   PortfolioNotifier Function()? portfoy,
   List<WatchlistItem> takip = const [],
   VoidCallback? onSec,
+  SeriYukleyici? yukleyici,
 }) async {
   t.view.physicalSize = const Size(1170, 2532);
   t.view.devicePixelRatio = 3;
@@ -99,7 +100,7 @@ Future<void> _kur(
           kimlik: _thy,
           tamAcilis: true,
           onSec: onSec,
-          seriYukleyici: _seri,
+          seriYukleyici: yukleyici ?? _seri,
         ),
       ),
     ),
@@ -162,5 +163,25 @@ void main() {
     expect(find.text('%+3,0'), findsOneWidget);
     // Varsayılan dönem 1Y — başlıktaki fiyat 1Y serisinin son noktası.
     expect(find.textContaining('136,50'), findsWidgets);
+  });
+
+  testWidgets('altı dönem AYNI ANDA istenir — dalga dalga değil', (t) async {
+    // Hiçbiri yanıtlanmaz: ardışık ya da ikişerli yükleme olsaydı ilk
+    // yanıt gelmeden ikinci dalga başlamaz, istek sayısı 1 ya da 2'de kalırdı.
+    final istenen = <int>[];
+    final bekleyen = <Completer<Map<int, double>>>[];
+    await _kur(t, yukleyici: (ticker, gun) {
+      istenen.add(gun);
+      final c = Completer<Map<int, double>>();
+      bekleyen.add(c);
+      return c.future;
+    });
+    expect(istenen.toSet(), varlikSayfasiDonemleri.toSet());
+    expect(istenen.first, 365,
+        reason: 'seçili dönem (varsayılan 1Y) ilk başlatılan olmalı');
+    for (final c in bekleyen) {
+      c.complete(const {});
+    }
+    await t.pump();
   });
 }
