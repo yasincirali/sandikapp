@@ -2561,5 +2561,11 @@
   "@vsUnwatchSemantics": {"placeholders": {"name": {"type": "String"}}},
   "vsLoadFailed": "Couldn't load price history. Check your connection and pick the period again.",
   "vsSheetSemantics": "{name} asset page",
-  "@vsSheetSemantics": {"placeholders": {"name": {"type": "String"}}}
+  "@vsSheetSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "searchRecentUpper": "RECENTLY VIEWED",
+  "searchMarketsUpper": "MARKETS",
+  "searchShowAll": "All ({count})",
+  "searchInPortfolioTag": "In portfolio",
+  "searchAssetsSemantics": "Search assets",
+  "searchShortHint": "Stocks, funds, gold, FX, crypto"
 }

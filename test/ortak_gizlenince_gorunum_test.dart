@@ -160,5 +160,13 @@ void main() {
     expect(find.textContaining('31.240'), findsWidgets);
     expect(find.textContaining('10.000'), findsNothing,
         reason: 'gizlenen ortağın rakamı hiçbir yerde kalmamalı');
+
+    // Kaydırma ipucunun (`KaydirmaliGecis._gozKirp`) gecikmeleri bitsin.
+    // 2026-09-28'den beri ortak görünümünde de piyasa satırı (tek başına
+    // arama büyüteci) var; sliver sayısı görünümle değişmediği için hero
+    // kart yeniden KURULMUYOR, ilk açılıştaki ipucu zamanlayıcısı canlı
+    // kalıyor. Eskiden görünüm değişimi kartı baştan kurduğu için
+    // zamanlayıcı yarıda ölüyordu.
+    await tester.pump(const Duration(seconds: 3));
   });
 }

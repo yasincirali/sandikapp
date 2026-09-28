@@ -6247,6 +6247,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name} varlık sayfası'**
   String vsSheetSemantics(String name);
+
+  /// No description provided for @searchRecentUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'SON BAKTIKLARIN'**
+  String get searchRecentUpper;
+
+  /// No description provided for @searchMarketsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'PİYASALAR'**
+  String get searchMarketsUpper;
+
+  /// No description provided for @searchShowAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü ({count})'**
+  String searchShowAll(int count);
+
+  /// No description provided for @searchInPortfolioTag.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünde'**
+  String get searchInPortfolioTag;
+
+  /// No description provided for @searchAssetsSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık ara'**
+  String get searchAssetsSemantics;
+
+  /// No description provided for @searchShortHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hisse, fon, altın, döviz, kripto'**
+  String get searchShortHint;
 }
 
 class _AppLocalizationsDelegate

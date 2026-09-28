@@ -30,6 +30,14 @@
 // Yenileme 30 sn (ön planda; hero kartla aynı ritim). Fiyat servisinin
 // 45 sn'lik önbelleği ağa fiilen ~45 sn'de bir çıkarır. Fiyat gelmezse bant
 // HİÇ çizilmez (boş kabuk yer işgal etmez).
+//
+// ## Arama büyüteci (kullanıcı onayı, 2026-09-28)
+// Bandın sağ ucunda sabit, soluk bir büyüteç varlık arama ekranını açar —
+// yalnızca izlemeye gelen kullanıcının yolu. Yer seçimi: alt çubuk
+// simetrisi bozulmasın, üst çubuğa 5. düğme taşma yapar (çıkış düğmesi
+// yerinde kalır), ayrı bir arama alanı ana ekranda satır çalardı. Bant
+// zaten "piyasa" bağlamı; büyüteç SIFIR piksel ekler ve dikkat çekmez.
+// Fiyat gelmese de büyüteç kalır — arama fiyata bağlı değil.
 import 'package:flutter/foundation.dart';
 import '../services/tazelik_ritmi.dart';
 import 'package:flutter/material.dart';
@@ -43,9 +51,12 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
 class PiyasaSeridi extends StatefulWidget {
-  const PiyasaSeridi({super.key, this.padding = EdgeInsets.zero});
+  const PiyasaSeridi({super.key, this.padding = EdgeInsets.zero, this.onAra});
 
   final EdgeInsets padding;
+
+  /// Verilirse bandın sağ ucunda arama büyüteci çizilir.
+  final VoidCallback? onAra;
 
   /// Sırası sabit: en çok bakılan en solda.
   static const semboller = <String>[
@@ -145,11 +156,70 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
             degisimPct: _kotasyon[s]?.regularMarketChangePercent,
           ),
     ];
-    if (ogeler.isEmpty) return const SizedBox.shrink();
+    final ara = widget.onAra;
+    if (ogeler.isEmpty) {
+      if (ara == null) return const SizedBox.shrink();
+      return Padding(
+        padding: widget.padding,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: PiyasaAramaDugmesi(onTap: ara, cerceveli: false),
+        ),
+      );
+    }
 
     return Padding(
       padding: widget.padding,
-      child: KayanBant(ogeler: ogeler),
+      child: Row(
+        children: [
+          Expanded(child: KayanBant(ogeler: ogeler)),
+          if (ara != null) PiyasaAramaDugmesi(onTap: ara),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bandın sağ ucundaki arama büyüteci.
+///
+/// Dokunma alanı 44pt (HIG); görünen kısım bandın 30pt'lik şeridiyle aynı
+/// çizgilerde, solunda ince bir ayraç — bandın parçası gibi durur, ayrı bir
+/// düğme gibi bağırmaz. Renk `text58`: bant metniyle aynı ağırlıkta.
+/// [cerceveli] `false` iken (fiyat yok, ortak görünüm) yalnızca ikon.
+class PiyasaAramaDugmesi extends StatelessWidget {
+  const PiyasaAramaDugmesi(
+      {super.key, required this.onTap, this.cerceveli = true});
+
+  final VoidCallback onTap;
+  final bool cerceveli;
+
+  @override
+  Widget build(BuildContext context) => SandikTappable(
+        onTap: onTap,
+        semanticLabel: context.l10n.searchAssetsSemantics,
+        child: Container(
+          width: SandikTouch.min,
+          height: SandikTouch.min,
+          alignment: Alignment.center,
+          child: _AramaSeridi(cerceveli: cerceveli),
+        ),
+      );
+}
+
+class _AramaSeridi extends StatelessWidget {
+  const _AramaSeridi({required this.cerceveli});
+  final bool cerceveli;
+
+  @override
+  Widget build(BuildContext context) {
+    final cizgi = BorderSide(color: context.c.hairline);
+    return Container(
+      height: 30,
+      alignment: Alignment.center,
+      decoration: cerceveli
+          ? BoxDecoration(border: Border(top: cizgi, bottom: cizgi, left: cizgi))
+          : null,
+      child: Icon(Icons.search_rounded, size: 18, color: context.c.text58),
     );
   }
 }

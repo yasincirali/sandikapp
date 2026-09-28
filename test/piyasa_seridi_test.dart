@@ -121,4 +121,29 @@ void main() {
     expect(identical(tester.widget(find.text('Dolar')), onceki), isTrue,
         reason: 'Kayma değişince metin widget\'ı yeniden kurulmamalı.');
   });
+
+  testWidgets('büyüteç: 44pt dokunma alanı, dokununca aramayı açar',
+      (tester) async {
+    var acildi = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: Row(children: [
+            const Expanded(child: KayanBant(ogeler: ogeler)),
+            PiyasaAramaDugmesi(onTap: () => acildi++),
+          ]),
+        ),
+      ),
+    );
+    await tester.pump();
+    final boyut = tester.getSize(find.byType(PiyasaAramaDugmesi));
+    expect(boyut.width, greaterThanOrEqualTo(44));
+    expect(boyut.height, greaterThanOrEqualTo(44));
+    await tester.tap(find.byType(PiyasaAramaDugmesi));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(acildi, 1);
+    // Bant kendi dokunuşunu korur: büyütece dokunmak bandı durdurmaz.
+    expect(bant(tester).akiyor, isTrue);
+  });
 }

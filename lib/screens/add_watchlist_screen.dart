@@ -9,35 +9,61 @@ import 'package:flutter/material.dart'
         SnackBarAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/arama_gruplari.dart';
+import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/watchlist_provider.dart';
+import '../services/crash_reporter.dart';
+import '../services/fiyat_kaynagi.dart';
+import '../services/price_service.dart';
+import '../services/son_bakilanlar.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
+import '../utils/tr_format.dart';
+import '../utils/tr_katla.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
-/// Takibe alınacak varlığı seçme ekranı.
+/// Varlık arama ekranı — takibe alma ve "sadece bakma" TEK ekranda.
+///
+/// ## Giriş noktaları (arama tasarımı, kullanıcı onayı 2026-09-28)
+/// - Ana ekrandaki piyasa bandının sağ ucundaki büyüteç: yalnızca izlemeye
+///   gelen kullanıcının yolu. Alt çubuk (simetri) ve üst çubuk (çıkış
+///   düğmesi, 5. düğmede taşma) bilinçli olarak değiştirilmedi.
+/// - Takip listesindeki "Takibe al": aynı ekran; satırdaki "+" hızlı ekler.
 ///
 /// Arama, karşılaştırma ekranıyla AYNI `SymbolSearchService` üzerinden
 /// yapılır: BIST hisseleri, TEFAS fonları (kurucu-only fonlar dahil),
-/// altın ürünleri, döviz, **endeksler** ve **emtia**.
+/// altın ürünleri, döviz, **endeksler**, **emtia** ve kripto. Eskiden bu
+/// ekran kendi listesini tutuyordu ve endeksler/emtia takip listesine HİÇ
+/// eklenemiyordu; tek kaynak bu ayrışmayı yapısal olarak engelliyor.
 ///
-/// Eskiden bu ekran kendi listesini tutuyordu ve iki ekran ayrışmıştı —
-/// endeksler (XU100/XU030) ile emtia (ons altın, gümüş, Brent/WTI petrol,
-/// doğalgaz) takip listesine HİÇ eklenemiyordu. Tek kaynak bu ayrışmayı
-/// yapısal olarak engelliyor.
+/// ## Yerleşim
+/// - **Boş sorgu:** "Son baktıkların" (cihazda, en çok 8, temizlenebilir) +
+///   "Piyasalar" (servisin öneri listesi). Kullanıcı yazmadan bir şey görür.
+/// - **Sorgu:** sonuçlar türe göre gruplanır, grup başına 3 satır +
+///   "Tümü (n)" (`aramaGrupla`). Tür çipleri tek türe odaklar.
+/// - **Satır:** ad, sembol · tür, fiyat ve günlük değişim. Fiyat görünen
+///   satırlar için TEK toplu `fetchQuotes` ile gelir (piyasa bandıyla aynı
+///   yol); bilinmeyen fiyat/yüzde yazılmaz, yer tutucu sayı uydurulmaz.
 ///
-/// **Portföyde olan varlık ayrı grupta ve pasif gösterilir** — aynı şeyi hem
-/// sahiplenip hem takip etmenin anlamı yok, ama gizlemek de yanlış olurdu
-/// (kullanıcı aradığını bulamayınca uygulamanın onu tanımadığını sanır).
+/// **Portföyde olan varlık** kendi grubunda "Portföyünde" etiketiyle kalır —
+/// gizlemek yanlış olurdu (kullanıcı aradığını bulamayınca uygulamanın onu
+/// tanımadığını sanır), takip "+"sı ise anlamsız (aynı şeyi hem sahiplenip
+/// hem takip etmek). Eskiden ayrı, soluk bir grupta duruyordu; türe göre
+/// gruplamada ayrı grup aynı varlığı türünden koparırdı.
 class AddWatchlistScreen extends ConsumerStatefulWidget {
-  const AddWatchlistScreen({super.key});
+  const AddWatchlistScreen({super.key, this.baslangicKotasyon = const {}});
+
+  /// Testte ağ yerine verilen kotasyonlar (sembol büyük harf → kotasyon).
+  /// Uygulamada boş; fiyatlar `PriceService`'ten gelir.
+  final Map<String, YahooQuote> baslangicKotasyon;
 
   @override
   ConsumerState<AddWatchlistScreen> createState() => _AddWatchlistScreenState();
@@ -48,6 +74,13 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
   String _q = '';
   List<VarlikKimligi> _results = const [];
   bool _loading = true;
+
+  /// Seçili tür çipi; `null` = Tümü. Yeni sorguda sıfırlanmaz — kullanıcı
+  /// "Fon" seçip yazmaya devam ederse fonlarda kalmak ister.
+  AssetType? _tur;
+
+  /// Görünen satırların kotasyonu — sembol (büyük harf) → kotasyon.
+  late Map<String, YahooQuote> _kotasyon = widget.baslangicKotasyon;
 
   /// Yalnızca EN SON aramanın sonucu uygulanır.
   ///
@@ -61,6 +94,15 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
   void initState() {
     super.initState();
     _ara(''); // boş sorgu → popüler öneriler
+    // Oturum henüz çözülmemiş olabilir (soğuk açılış): kimlik gelince yükle.
+    ref.listenManual(authProvider, (_, next) {
+      final uid = next.valueOrNull?.id;
+      if (uid == null) return;
+      CrashReporter.arkaPlan(
+          SonBakilanlar.instance.yukle(uid).then((_) => _fiyatla(
+              SonBakilanlar.instance.liste.value.map((k) => k.ticker))),
+          reason: 'Arama.sonBakilanlar');
+    }, fireImmediately: true);
   }
 
   @override
@@ -80,22 +122,67 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
 
   Future<void> _ara(String q) async {
     final id = ++_seq;
-    if (mounted) setState(() => _loading = true);
-    try {
-      final hits = await SymbolSearchService.instance.search(q);
-      if (!mounted || id != _seq) return;
-      setState(() {
-        _results = [
+    List<VarlikKimligi> kimlikler(List<SymbolHit> hits) => [
           for (final h in hits)
             if (VarlikKimligi.fromSymbolHit(h) case final c?) c,
         ];
-        _loading = false;
+    // Yerleşik sonuçlar ANINDA; fon/kripto katmanı gelince tam liste yerine
+    // geçer. Soğuk TEFAS önbelleğinde ilk arama saniyeler sürebiliyor.
+    final yerel = kimlikler(SymbolSearchService.instance.yerelAra(q));
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _results = yerel;
       });
+    }
+    try {
+      final hits = await SymbolSearchService.instance.search(q);
+      if (!mounted || id != _seq) return;
+      final sonuc = kimlikler(hits);
+      setState(() {
+        _results = sonuc;
+        _loading = false;
+        // Seçili tür yeni sonuçta yoksa çip boşa düşmesin.
+        if (_tur != null && !sonuc.any((c) => c.type == _tur)) _tur = null;
+      });
+      // Yalnızca GÖRÜNECEK satırların fiyatı istenir: gruplar 3'er satır,
+      // ya da seçili türün tamamı. Binlerce fondan 20'si bile tek istek.
+      CrashReporter.arkaPlan(
+        _fiyatla([
+          for (final g in aramaGrupla(sonuc, filtre: _tur))
+            for (final c in g.ogeler) c.ticker,
+        ]),
+        reason: 'Arama.fiyat',
+      );
     } catch (_) {
       if (!mounted || id != _seq) return;
       // Arama başarısızsa liste boş kalır; kullanıcı yeniden yazabilir.
       setState(() => _loading = false);
     }
+  }
+
+  /// Eksik kotasyonları TEK toplu istekle çeker. `PriceService` önbellekli:
+  /// aynı sembol tekrar sorulursa ağa çıkmaz.
+  Future<void> _fiyatla(Iterable<String> semboller) async {
+    final eksik = [
+      for (final s in semboller.toSet())
+        if (!_kotasyon.containsKey(s.toUpperCase())) s,
+    ];
+    if (eksik.isEmpty) return;
+    final q = await PriceService.instance.fetchQuotes(eksik);
+    if (!mounted || q.isEmpty) return;
+    setState(() => _kotasyon = {..._kotasyon, ...q});
+  }
+
+  void _turSec(AssetType? t) {
+    setState(() => _tur = t);
+    CrashReporter.arkaPlan(
+      _fiyatla([
+        for (final g in aramaGrupla(_results, filtre: t))
+          for (final c in g.ogeler) c.ticker,
+      ]),
+      reason: 'Arama.fiyat',
+    );
   }
 
   // Sembol → tür/alt kategori/para birimi kuralı `VarlikKimligi.fromSymbolHit`
@@ -107,7 +194,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     final watchlist = ref.watch(watchlistProvider).valueOrNull ?? const [];
     final watchedKeys = {for (final w in watchlist) w.key};
 
-    // Portföydeki varlıkların anahtarları — pasif göstermek için.
+    // Portföydeki varlıkların anahtarları — "Portföyünde" etiketi için.
     //
     // `aktifLotlar`: tamamen satılmış pozisyon "portföyde var" sayılmamalı.
     // Ham `isActive` ile kullanıcı, elinden çıkardığı bir hisseyi takip
@@ -119,10 +206,17 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
         '${a.type.name}|${(a.subCategory?.trim().isNotEmpty ?? false) ? 'sub:${a.subCategory!.trim().toUpperCase()}' : a.ticker.trim().toUpperCase()}',
     };
 
-    final results = _results;
-    final available = results.where((c) => !ownedKeys.contains(c.key)).toList();
-    final inPortfolio =
-        results.where((c) => ownedKeys.contains(c.key)).toList();
+    Widget satir(VarlikKimligi c) => Padding(
+          padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+          child: _tile(context, c,
+              watched: watchedKeys.contains(c.key),
+              owned: ownedKeys.contains(c.key)),
+        );
+
+    final bos = _q.trim().isEmpty;
+    final gruplar = bos ? const <AramaGrubu>[] : aramaGrupla(_results, filtre: _tur);
+    final turler = bos ? const <AssetType>[] : aramaTurleri(_results);
+    final hp = SandikSpace.screenH(context);
 
     return DefaultTextStyle(
       style: sandikFont(
@@ -134,50 +228,72 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
           child: SafeArea(
             child: Column(
               children: [
-                _header(context),
                 _searchField(context),
-                if (_loading)
+                if (turler.length > 1) _turCipleri(context, turler),
+                if (_loading && !bos)
                   Padding(
-                    padding: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.only(top: SandikSpace.xs2),
                     child: Text(context.l10n.searchingEllipsis,
                         style: context.t.bodySmall
                             ?.copyWith(color: context.c.text36)),
                   ),
                 Expanded(
                   child: ListView(
-                    padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 20),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lgs),
                     children: [
-                      if (available.isEmpty && inPortfolio.isEmpty && !_loading)
+                      if (bos) ...[
+                        ValueListenableBuilder<List<VarlikKimligi>>(
+                          valueListenable: SonBakilanlar.instance.liste,
+                          builder: (context, son, _) => son.isEmpty
+                              ? const SizedBox.shrink()
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _Baslik(SandikSectionHeader(
+                                      title: context.l10n.searchRecentUpper,
+                                      trailing: _MetinDugmesi(
+                                        metin: context.l10n.clearVerb,
+                                        onTap: _sonBakilanlariTemizle,
+                                      ),
+                                    )),
+                                    for (final c in son) satir(c),
+                                    const SizedBox(height: SandikSpace.md),
+                                  ],
+                                ),
+                        ),
+                        if (_results.isNotEmpty) ...[
+                          _Baslik(SandikSectionHeader(
+                              title: context.l10n.searchMarketsUpper)),
+                          for (final c in _results) satir(c),
+                        ],
+                      ] else if (gruplar.isEmpty && !_loading)
                         Padding(
-                          padding: const EdgeInsets.only(top: 40),
+                          padding: const EdgeInsets.only(top: SandikSpace.xxl),
                           child: Text(
-                            _q.trim().isEmpty
-                                ? context.l10n.startTypingToSearch
-                                : context.l10n.noResultForQuery(_q.trim()),
+                            context.l10n.noResultForQuery(_q.trim()),
                             textAlign: TextAlign.center,
                             style: context.t.bodyMedium
                                 ?.copyWith(color: context.c.text58),
                           ),
-                        ),
-                      for (final c in available) ...[
-                        _tile(context, c, watched: watchedKeys.contains(c.key)),
-                        const SizedBox(height: SandikSpace.sm),
-                      ],
-                      if (inPortfolio.isNotEmpty) ...[
-                        const SizedBox(height: SandikSpace.sm),
-                        Text(
-                          context.l10n.inYourPortfolioUpper,
-                          style: context.t.labelSmall?.copyWith(
-                              letterSpacing: 0.9,
-                              fontWeight: FontWeight.w700,
-                              color: context.c.text36),
-                        ),
-                        const SizedBox(height: SandikSpace.sm),
-                        for (final c in inPortfolio) ...[
-                          _tile(context, c, owned: true),
+                        )
+                      else
+                        for (final g in gruplar) ...[
+                          _Baslik(SandikSectionHeader(
+                            title: buyukHarf(g.tur.labelOf(context.l10n),
+                                turkce: context.l10n.localeName
+                                    .startsWith('tr')),
+                            trailing: g.kisaltildi
+                                ? _MetinDugmesi(
+                                    metin: context.l10n.searchShowAll(g.toplam),
+                                    onTap: () => _turSec(g.tur),
+                                  )
+                                : null,
+                          )),
+                          for (final c in g.ogeler) satir(c),
                           const SizedBox(height: SandikSpace.sm),
                         ],
-                      ],
                     ],
                   ),
                 ),
@@ -189,59 +305,81 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     );
   }
 
-  Widget _header(BuildContext context) => Padding(
-        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 8),
+  Future<void> _sonBakilanlariTemizle() async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null) return;
+    await SonBakilanlar.instance.temizle(uid);
+  }
+
+  /// Arama alanı + "Vazgeç". Başlık YOK: ekranın ne olduğunu alanın kendisi
+  /// söylüyor; başlık satırı klavye açıkken sonuçlardan bir satır çalardı.
+  Widget _searchField(BuildContext context) => Padding(
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+            SandikSpace.smd, 0, SandikSpace.xs),
         child: Row(
           children: [
-            SizedBox(
-              // Ölçek içi (`SandikSpace`): 36 ölçek dışıydı ve
-              // `spacing_scale_test` bunu yakaladı. Dokunma hedefi
-              // `height: 44` ile zaten HIG minimumunda.
-              width: SandikTouch.min,
-              height: SandikTouch.min,
-              child: CupertinoButton(
-                minimumSize: SandikTouch.minSize,
-                padding: EdgeInsets.zero,
-                alignment: Alignment.centerLeft,
-                onPressed: () => Navigator.pop(context),
-                child: Icon(Icons.close_rounded,
-                    size: 22, color: context.c.text90),
+            Expanded(
+              child: CupertinoTextField(
+                controller: _ctrl,
+                onChanged: _sorguDegisti,
+                autofocus: true,
+                autocorrect: false,
+                textInputAction: TextInputAction.search,
+                placeholder: context.l10n.searchShortHint,
+                placeholderStyle:
+                    context.t.bodyMedium?.copyWith(color: context.c.text36),
+                style: context.t.bodyMedium?.copyWith(color: context.c.text90),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: SandikSpace.smd, vertical: SandikSpace.smd),
+                clearButtonMode: OverlayVisibilityMode.editing,
+                prefix: Padding(
+                  padding: const EdgeInsets.only(left: SandikSpace.sm2),
+                  child: Icon(Icons.search_rounded,
+                      size: 18, color: context.c.text58),
+                ),
+                decoration: BoxDecoration(
+                  // Seçici alt sayfasıyla aynı dolgu (tema `inputFill`).
+                  color: context.inputFill,
+                  borderRadius: BorderRadius.circular(SandikRadius.md),
+                  border: Border.all(color: context.c.hairline),
+                ),
               ),
             ),
-            Expanded(
-              child: Text('Takibe Al',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90)),
+            CupertinoButton(
+              minimumSize: SandikTouch.minSize,
+              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
+              onPressed: () => Navigator.pop(context),
+              child: Text(context.l10n.cancel,
+                  style: context.t.bodyMedium
+                      ?.copyWith(color: context.c.amberText)),
             ),
           ],
         ),
       );
 
-  Widget _searchField(BuildContext context) => Padding(
-        padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
-        child: CupertinoTextField(
-          controller: _ctrl,
-          onChanged: _sorguDegisti,
-          placeholder: context.l10n.searchAllAssetsHint,
-          placeholderStyle:
-              context.t.bodyMedium?.copyWith(color: context.c.text36),
-          style: context.t.bodyMedium?.copyWith(color: context.c.text90),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          prefix: Padding(
-            padding: const EdgeInsets.only(left: 10),
-            child:
-                Icon(Icons.search_rounded, size: 18, color: context.c.text58),
+  Widget _turCipleri(BuildContext context, List<AssetType> turler) {
+    final hp = SandikSpace.screenH(context);
+    return SizedBox(
+      height: SandikTouch.min,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: hp),
+        children: [
+          _TurCipi(
+            metin: context.l10n.allTypes,
+            secili: _tur == null,
+            onTap: () => _turSec(null),
           ),
-          decoration: BoxDecoration(
-            // Seçici alt sayfasıyla aynı dolgu (tema `inputFill`).
-            color: context.inputFill,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: context.c.hairline),
-          ),
-        ),
-      );
+          for (final t in turler)
+            _TurCipi(
+              metin: t.labelOf(context.l10n),
+              secili: _tur == t,
+              onTap: () => _turSec(_tur == t ? null : t),
+            ),
+        ],
+      ),
+    );
+  }
 
   /// Arama sonucu satırı.
   ///
@@ -252,65 +390,28 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
   /// Portföydeki varlık da önizlenebilir; sayfa onu pozisyona yönlendirir.
   Widget _tile(BuildContext context, VarlikKimligi c,
       {bool watched = false, bool owned = false}) {
-    return Opacity(
-      opacity: owned ? 0.5 : 1.0,
-      child: SandikTappable(
-        onTap: () => showVarlikSayfasi(context, c),
-        semanticLabel: context.l10n.vsOpenDetailSemantics(c.name),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          padding: const EdgeInsets.only(left: 12),
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: context.c.hairline),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration:
-                    BoxDecoration(color: c.type.color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 11),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(c.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.bodyMedium
-                              ?.copyWith(color: context.c.text90)),
-                      Text('${c.ticker} · ${c.type.labelOf(context.l10n)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.bodySmall?.copyWith(
-                              color: context.c.text36, fontSize: 11)),
-                    ],
+    return SandikTappable(
+      onTap: () => showVarlikSayfasi(context, c),
+      semanticLabel: context.l10n.vsOpenDetailSemantics(c.name),
+      child: _SatirKutusu(
+        kimlik: c,
+        kotasyon: _kotasyon[c.ticker.toUpperCase()],
+        sonu: owned
+            ? _SatirSonu(
+                child: Text(context.l10n.searchInPortfolioTag,
+                    style: context.t.labelSmall
+                        ?.copyWith(color: context.c.text36)),
+              )
+            : watched
+                ? _SatirSonu(
+                    child: Text(context.l10n.watchlistInListLabel,
+                        style: context.t.labelSmall
+                            ?.copyWith(color: context.c.text36)),
+                  )
+                : _HizliTakipDugmesi(
+                    semanticLabel: context.l10n.vsWatchSemantics(c.name),
+                    onTap: () => _add(c),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (owned)
-                const _SatirSonu(child: _SahipIsareti())
-              else if (watched)
-                _SatirSonu(
-                  child: Text(context.l10n.watchlistInListLabel,
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text36, fontSize: 11)),
-                )
-              else
-                _HizliTakipDugmesi(
-                  semanticLabel: context.l10n.vsWatchSemantics(c.name),
-                  onTap: () => _add(c),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -372,12 +473,222 @@ class _SatirSonu extends StatelessWidget {
       );
 }
 
-class _SahipIsareti extends StatelessWidget {
-  const _SahipIsareti();
+/// Satırın gövdesi: tür noktası, ad, sembol · tür, fiyat + günlük değişim.
+class _SatirKutusu extends StatelessWidget {
+  const _SatirKutusu({
+    required this.kimlik,
+    required this.kotasyon,
+    required this.sonu,
+  });
+
+  final VarlikKimligi kimlik;
+  final YahooQuote? kotasyon;
+  final Widget sonu;
 
   @override
-  Widget build(BuildContext context) =>
-      Icon(Icons.check_rounded, size: 18, color: context.c.text36);
+  Widget build(BuildContext context) {
+    final c = kimlik;
+    final fiyat = aramaFiyatMetni(c, kotasyon);
+    final pct = aramaGunlukYuzde(c, kotasyon);
+    return Container(
+      constraints: const BoxConstraints(minHeight: SandikTouch.min),
+      padding: const EdgeInsets.only(left: SandikSpace.smd),
+      decoration: BoxDecoration(
+        color: context.c.surface1,
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+        border: Border.all(color: context.c.hairline),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: SandikSpace.sm,
+            height: SandikSpace.sm,
+            decoration:
+                BoxDecoration(color: c.type.color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: SandikSpace.sm2),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(c.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.bodyMedium
+                          ?.copyWith(color: context.c.text90)),
+                  Text(
+                      [
+                        if (aramaSembolEtiketi(c) case final e?) e,
+                        c.type.labelOf(context.l10n),
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.labelSmall
+                          ?.copyWith(color: context.c.text36)),
+                ],
+              ),
+            ),
+          ),
+          if (fiyat != null)
+            Padding(
+              padding: const EdgeInsets.only(left: SandikSpace.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(fiyat,
+                      maxLines: 1,
+                      style: context.t.bodySmall?.copyWith(
+                          color: context.c.text90,
+                          fontFeatures: const [FontFeature.tabularFigures()])),
+                  if (pct != null)
+                    Text(fmtPct(pct, showSign: true),
+                        maxLines: 1,
+                        style: context.t.labelSmall?.copyWith(
+                            color: pct.abs() < 0.005
+                                ? context.c.text36
+                                : context.signColor(pct),
+                            fontFeatures: const [
+                              FontFeature.tabularFigures()
+                            ])),
+                ],
+              ),
+            ),
+          const SizedBox(width: SandikSpace.xs),
+          sonu,
+        ],
+      ),
+    );
+  }
+}
+
+/// Satırın ikinci satırındaki sembol; adı tekrar edecekse `null`.
+///
+/// Altın ürününde ad zaten "Çeyrek Altın"dır, sembol (`ALTIN_CEYREK`) bir
+/// şey eklemez; kurda `USDTRY=X` Yahoo sözdizimidir, kullanıcı "USD" okur;
+/// emtia vadelisinin kodu (`BZ=F`) anlamsızdır.
+@visibleForTesting
+String? aramaSembolEtiketi(VarlikKimligi c) {
+  final t = c.ticker;
+  if (t.startsWith('ALTIN_')) return null;
+  if (t.endsWith('TRY=X')) return t.replaceAll('TRY=X', '');
+  if (t.endsWith('=F')) return null;
+  return c.kisaEtiket;
+}
+
+/// Satırda gösterilecek fiyat; bilinmiyorsa `null` (yazılmaz).
+///
+/// Endeks puandır: para simgesi ve kuruş anlamsız (piyasa bandıyla aynı
+/// kural). Diğerleri kotasyonun kendi para birimiyle — emtia `$`, kalanı `₺`.
+@visibleForTesting
+String? aramaFiyatMetni(VarlikKimligi c, YahooQuote? q) {
+  final f = q?.regularMarketPrice;
+  if (f == null || !f.isFinite || f <= 0) return null;
+  if (c.ticker.startsWith('XU') && c.ticker.endsWith('.IS')) {
+    return fmtNum(f, digits: 0);
+  }
+  return tryFormatter(
+          digits: 2, symbol: currencySymbolFor(c.ticker, c.currency) ?? '₺')
+      .format(f);
+}
+
+/// Satırda gösterilecek günlük yüzde; bilinmiyorsa `null`.
+///
+/// Altında `altinGunlukYuzdeTam` kuralı: bir ayar bile yüzde taşımıyorsa
+/// HİÇBİR altın ürün yüzdesi gösterilmez — yoksa aynı altın bu ekranda ve
+/// Performans'ta iki farklı yüzde gösterirdi (bkz. `PriceService`).
+@visibleForTesting
+double? aramaGunlukYuzde(VarlikKimligi c, YahooQuote? q) {
+  final p = q?.regularMarketChangePercent;
+  if (p == null || !p.isFinite) return null;
+  if (FiyatKaynagi.altinMi(c.ticker) &&
+      !PriceService.instance.altinGunlukYuzdeTam) {
+    return null;
+  }
+  return p;
+}
+
+/// Bölüm başlığı satırı — eylemli ya da eylemsiz, hep 44pt: "Tümü (n)"
+/// olan grupla olmayan grup arasında satır aralığı zıplamasın.
+class _Baslik extends StatelessWidget {
+  const _Baslik(this.child);
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: SandikTouch.min),
+        child: Align(alignment: Alignment.centerLeft, child: child),
+      );
+}
+
+/// Bölüm başlığının sağındaki metin eylemi ("Temizle", "Tümü (n)").
+class _MetinDugmesi extends StatelessWidget {
+  const _MetinDugmesi({required this.metin, required this.onTap});
+  final String metin;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SandikTappable(
+        onTap: onTap,
+        semanticLabel: metin,
+        child: Container(
+          constraints: const BoxConstraints(
+              minWidth: SandikTouch.min, minHeight: SandikTouch.min),
+          alignment: Alignment.centerRight,
+          child: Text(metin,
+              style: context.t.labelLarge?.copyWith(
+                  color: context.c.amberText, fontWeight: FontWeight.w600)),
+        ),
+      );
+}
+
+/// Tür çipi — seçiliyse amber dolgu.
+class _TurCipi extends StatelessWidget {
+  const _TurCipi(
+      {required this.metin, required this.secili, required this.onTap});
+  final String metin;
+  final bool secili;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        selected: secili,
+        child: SandikTappable(
+          onTap: onTap,
+          semanticLabel: metin,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            padding: const EdgeInsets.only(right: SandikSpace.xs2),
+            alignment: Alignment.center,
+            child: _CipGovdesi(metin: metin, secili: secili),
+          ),
+        ),
+      );
+}
+
+class _CipGovdesi extends StatelessWidget {
+  const _CipGovdesi({required this.metin, required this.secili});
+  final String metin;
+  final bool secili;
+
+  @override
+  Widget build(BuildContext context) => AnimatedContainer(
+        duration: SandikMotion.stateOf(context),
+        curve: SandikMotion.move,
+        padding: const EdgeInsets.symmetric(
+            horizontal: SandikSpace.smd, vertical: SandikSpace.xs2),
+        decoration: BoxDecoration(
+          color: secili ? context.c.amberFill : context.c.surface1,
+          borderRadius: BorderRadius.circular(SandikRadius.lg),
+          border: Border.all(
+              color: secili ? context.c.amberFill : context.c.hairline),
+        ),
+        child: Text(metin,
+            style: context.t.labelLarge?.copyWith(
+                color: secili ? context.c.onAmber : context.c.text58,
+                fontWeight: FontWeight.w600)),
+      );
 }
 
 /// "+ Takip" — satırın içinde AYRI bir dokunma hedefi. Satırın geri kalanı

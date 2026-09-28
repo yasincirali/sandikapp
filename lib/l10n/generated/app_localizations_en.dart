@@ -3702,4 +3702,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String vsSheetSemantics(String name) {
     return '$name asset page';
   }
+
+  @override
+  String get searchRecentUpper => 'RECENTLY VIEWED';
+
+  @override
+  String get searchMarketsUpper => 'MARKETS';
+
+  @override
+  String searchShowAll(int count) {
+    return 'All ($count)';
+  }
+
+  @override
+  String get searchInPortfolioTag => 'In portfolio';
+
+  @override
+  String get searchAssetsSemantics => 'Search assets';
+
+  @override
+  String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 }

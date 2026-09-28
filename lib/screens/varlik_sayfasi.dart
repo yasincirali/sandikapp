@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
+import '../services/son_bakilanlar.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -51,9 +52,10 @@ import 'pozisyona_git.dart';
 /// ## Performans
 ///   · Sayfa grafik beklemeden açılır; grafik yeri aynı yükseklikte iskeletle
 ///     ayrılır, yerleşim zıplamaz.
-///   · Seçili dönem önce, kalanlar ardından ikişer ikişer çekilir. Dönem
-///     değiştirmek çoğu zaman bekleme göstermez; bekletirse eski çizgi
-///     soluk kalır, dönen tekerlek gösterilmez.
+///   · Altı dönemin serisi AYNI ANDA istenir; seçili dönem kendi yanıtı
+///     gelince ötekileri beklemeden çizilir. Dönem değiştirmek çoğu zaman
+///     bekleme göstermez; bekletirse eski çizgi soluk kalır, dönen tekerlek
+///     gösterilmez.
 ///   · Çip altındaki getiriler o dönemin KENDİ serisinden gelir — başka bir
 ///     seriden türetilseydi çip ile başlık aynı dönem için iki sayı yazardı.
 Future<void> showVarlikSayfasi(
@@ -160,6 +162,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   void initState() {
     super.initState();
     CrashReporter.arkaPlan(_ilkYukleme(), reason: 'VarlikSayfasi.ilkYukleme');
+    // Arama ekranının "Son baktıkların" şeridi — hangi girişten açıldıysa
+    // (arama, takip, karşılaştır, ekleme seçicisi) bakılan varlık odur.
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid != null) {
+      CrashReporter.arkaPlan(
+          SonBakilanlar.instance.kaydet(uid, widget.kimlik),
+          reason: 'VarlikSayfasi.sonBakilan');
+    }
   }
 
   @override
@@ -169,20 +179,20 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   }
 
   Future<void> _ilkYukleme() async {
-    await _yukle(_gun);
-    // Kalan dönemler ikişer ikişer: altın gibi üç seriden türeyen varlıkta
-    // altısını birden istemek ilk dönemin cevabını geciktirmesin diye
-    // seçili dönem ÖNCE, tek başına çekilir.
-    final kalan = [
+    // Altı dönem AYNI ANDA istenir (kullanıcı kararı 2026-09-28: "tüm
+    // varlıklar için paralel çağrı"). İlk sürüm seçili dönemi tek başına,
+    // kalanları ikişer ikişer çekiyordu — dört dalga ardı ardına bekliyordu
+    // ve son çip getirisi ancak dördüncü yanıttan sonra doluyordu.
+    //
+    // Seçili dönem yine ÖNCE başlatılır ve kendi yanıtı gelir gelmez
+    // çizilir (`_yukle` her dönemi bağımsız `setState` eder); ötekileri
+    // beklemez. Aşırı yük kaygısı yok: `HistoryService` aynı anahtardaki
+    // uçuşan isteği tekilleştirir, önbellekte olan dönem ağa hiç çıkmaz.
+    await Future.wait([
+      _yukle(_gun),
       for (final g in varlikSayfasiDonemleri)
-        if (g != _gun) g,
-    ];
-    for (var i = 0; i < kalan.length; i += 2) {
-      if (!mounted) return;
-      await Future.wait([
-        for (final g in kalan.skip(i).take(2)) _yukle(g),
-      ]);
-    }
+        if (g != _gun) _yukle(g),
+    ]);
   }
 
   Future<void> _yukle(int gun) async {
