@@ -149,9 +149,17 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           ),
                   ),
                   if (kuresel) ...[
-                    _GlobalPercentileTeaser(
-                      periodDays: _periods[_periodIdx].days,
-                    ),
+                    // Genel sıralama (yüzdelik dilim) GEÇİCİ olarak kapalı
+                    // (kullanıcı kararı 2026-09-29): havuz k_min'i geçene kadar
+                    // "sıran açılacak" kartı boş vaat. Bayrak yeni değil —
+                    // aynı kavramın ana ekran şeridiyle ortak anahtarı
+                    // `percentile_strip_enabled`; ikisi birlikte açılır,
+                    // yayın gerekmez. Zirve portföyler ayrı: sunucu snapshot'ı
+                    // havuzu doldurdukça kendiliğinden görünür.
+                    if (RemoteConfigService.instance.percentileStripEnabled)
+                      _GlobalPercentileTeaser(
+                        periodDays: _periods[_periodIdx].days,
+                      ),
                     _TopGainersAllocationCard(
                       periodDays: _periods[_periodIdx].days,
                     ),
