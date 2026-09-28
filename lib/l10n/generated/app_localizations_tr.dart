@@ -2097,6 +2097,20 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get txDeleted => 'Silindi';
+
+  @override
+  String get txVoided => 'silindi';
+
+  @override
+  String get seeAllShort => 'Tümünü gör';
+
+  @override
+  String nTransactions(int n) {
+    return '$n hareket';
+  }
+
+  @override
   String get txSell => 'Satım';
 
   @override
@@ -3751,6 +3765,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get searchAssetsSemantics => 'Varlık ara';
 
   @override
+  String get searchChip => 'Ara';
+
+  @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 
   @override
@@ -3759,6 +3776,13 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get kullaniciAdiAciklama =>
       'Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap\'tan değiştirebilirsin.';
+
+  @override
+  String get kullaniciAdiZorunluNot =>
+      'Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.';
+
+  @override
+  String get kullaniciAdiUygunDevam => 'Bu ad uygun. Devam edebilirsin.';
 
   @override
   String get kullaniciAdiEtiket => 'Kullanıcı adı';

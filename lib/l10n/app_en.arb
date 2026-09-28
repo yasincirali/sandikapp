@@ -1182,6 +1182,17 @@
       }
     }
   },
+  "txDeleted": "Deleted",
+  "txVoided": "removed",
+  "seeAllShort": "See all",
+  "nTransactions": "{n} transactions",
+  "@nTransactions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "txSell": "Sale",
   "txDividend": "Dividend",
   "txBuy": "Purchase",
@@ -2587,9 +2598,12 @@
   "searchShowAll": "All ({count})",
   "searchInPortfolioTag": "In portfolio",
   "searchAssetsSemantics": "Search assets",
+  "searchChip": "Search",
   "searchShortHint": "Stocks, funds, gold, FX, crypto",
   "kullaniciAdiBaslik": "Choose your username",
   "kullaniciAdiAciklama": "Your partner sees you by this name, and it's the name shown in the app. You can change it later in Settings > Account.",
+  "kullaniciAdiZorunluNot": "You need a username to continue. As soon as you pick an available one, you can go on.",
+  "kullaniciAdiUygunDevam": "This name is available. You can continue.",
   "kullaniciAdiEtiket": "Username",
   "kullaniciAdiKurallar": "3–20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.",
   "kullaniciAdiHataBicim": "Must be 3–20 characters, start with a letter and contain only letters, digits, . and _.",

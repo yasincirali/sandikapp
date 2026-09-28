@@ -331,7 +331,35 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
                 style: context.t.bodyMedium?.copyWith(color: context.c.text90),
                 padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.smd, vertical: SandikSpace.smd),
-                clearButtonMode: OverlayVisibilityMode.editing,
+                // Cupertino'nun hazır silme düğmesi (gri dolu daire,
+                // `systemGrey`) sandık paletine yabancı kalıyordu — koyu
+                // zeminde açık gri bir yumru. Kendi düğmemiz: 20pt
+                // saydam-beyaz daire, 12pt çarpı, 44pt dokunma alanı.
+                // `_ctrl.clear()` onChanged tetiklemez; sorgu elle
+                // sıfırlanır ki sonuçlar ve "son bakılanlar" geri gelsin.
+                suffixMode: OverlayVisibilityMode.editing,
+                suffix: SandikTappable(
+                  semanticLabel: context.l10n.clearSearch,
+                  onTap: () {
+                    _ctrl.clear();
+                    _sorguDegisti('');
+                  },
+                  child: Container(
+                    width: SandikTouch.min,
+                    height: SandikTouch.min,
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: context.c.text36.withValues(alpha: 0.35),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.close_rounded,
+                          size: 12, color: context.c.text90),
+                    ),
+                  ),
+                ),
                 prefix: Padding(
                   padding: const EdgeInsets.only(left: SandikSpace.sm2),
                   child: Icon(Icons.search_rounded,

@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'crash_reporter.dart';
+import 'supabase_service.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
 import 'history_service.dart';
@@ -245,7 +248,28 @@ class LeaderboardService {
   /// Sunucuda bu kullanıcı için daha önce bir ROI snapshot atıldı mı?
   /// True ise kullanıcı bir cihazda opt-in yapmış demektir — uygulama
   /// yeniden kurulsa bile lokal bayrağı buradan hydrate ederiz.
+  /// Opt-in tercihini sunucuya yansıtır (0081). Arka planda; hata
+  /// non-fatal raporlanır, kullanıcı akışı beklemez. Çağıran taraf cihaz
+  /// tercihini zaten yazdı; burası yalnızca sunucu bayrağı.
+  void optInSunucuyaYaz(String? userId, bool acik) {
+    if (userId == null || userId.isEmpty) return;
+    CrashReporter.arkaPlan(
+      SupabaseService.instance.yarisOptInYaz(userId, acik),
+      reason: 'LeaderboardService.optInSunucuyaYaz',
+    );
+  }
+
   Future<bool> hasServerSideOptIn(String userId) async {
+    // Önce sunucu bayrağı (0081); yoksa/okunamazsa eski kanıt: daha önce
+    // atılmış bir snapshot satırı (sütun eklenmeden önceki cihazlar).
+    try {
+      final p = await Supabase.instance.client
+          .from('profiles')
+          .select('leaderboard_opt_in')
+          .eq('id', userId)
+          .maybeSingle();
+      if (p != null && p['leaderboard_opt_in'] == true) return true;
+    } catch (_) {}
     try {
       final res = await Supabase.instance.client
           .from('user_roi_snapshots')

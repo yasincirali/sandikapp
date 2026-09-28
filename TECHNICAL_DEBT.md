@@ -436,6 +436,28 @@ göre küçük (%5 eşiğini nadiren geçer), eşik fon için ayrı (%2) olmalı
 
 ---
 
+## 🟡 AÇIK — Yarış: kendi satırı istemci ROI'si, havuz sunucu ROI'si (2026-09-28)
+
+**Ne.** 0081 ile yarış snapshot'larını sunucu (`leaderboard-snapshot`) her
+gün atıyor; küresel havuz ve zirve portföyler sunucu hesabıdır. Kullanıcının
+kendi satırı ve ortak karşılaştırması ise hâlâ istemci `HistoryService`
+serisinden (`LeaderboardService.computeROI`). Tanım aynı (miktar sabit,
+yalnız fiyat etkisi) ama kaynak farklı: altın istemcide truncgil/XAUTRY,
+sunucuda GC=F × USDTRY; TEFAS/BIST aynı. Küçük yüzde farkı mümkün.
+
+**Neden ertelendi.** Kendi satırını sunucu snapshot'ından okumak "az önce
+aldım, hemen görmek istiyorum" beklentisini bozar (snapshot günde bir).
+Doğru çözüm: istemci kendi ROI'sini gösterir, yanına "havuzdaki değerin"
+sunucu satırını yazar ya da sunucu hesabı gün içi de istenebilir hale gelir.
+
+**Ayrıca.** `_shared/dated_history.ts` önbelleksiz (sembol başına günde bir
+istek); sembol sayısı yüzleri bulursa tarihli önbellek tablosu gerekir.
+
+**Ne zaman.** Havuz k_min'i geçip sıralama gerçekten görünmeye başlayınca;
+o zaman kullanıcı iki sayıyı yan yana görecek.
+
+---
+
 ## 🟡 AÇIK — `RealReturnStrip` ve `WeeklySummaryChip` ana ekrandan kalktı; widget'lar dosyada duruyor
 
 **Ne.** 2026-09-21 "Bugün kartı kapsamı izler" kararıyla iki şerit ana

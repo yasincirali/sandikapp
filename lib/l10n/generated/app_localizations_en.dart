@@ -2098,6 +2098,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get txDeleted => 'Deleted';
+
+  @override
+  String get txVoided => 'removed';
+
+  @override
+  String get seeAllShort => 'See all';
+
+  @override
+  String nTransactions(int n) {
+    return '$n transactions';
+  }
+
+  @override
   String get txSell => 'Sale';
 
   @override
@@ -3760,6 +3774,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchAssetsSemantics => 'Search assets';
 
   @override
+  String get searchChip => 'Search';
+
+  @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 
   @override
@@ -3768,6 +3785,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get kullaniciAdiAciklama =>
       'Your partner sees you by this name, and it\'s the name shown in the app. You can change it later in Settings > Account.';
+
+  @override
+  String get kullaniciAdiZorunluNot =>
+      'You need a username to continue. As soon as you pick an available one, you can go on.';
+
+  @override
+  String get kullaniciAdiUygunDevam =>
+      'This name is available. You can continue.';
 
   @override
   String get kullaniciAdiEtiket => 'Username';

@@ -3776,6 +3776,30 @@ abstract class AppLocalizations {
   /// **'Silindi · {n} kayıt'**
   String deletedNRecords(int n);
 
+  /// No description provided for @txDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silindi'**
+  String get txDeleted;
+
+  /// No description provided for @txVoided.
+  ///
+  /// In tr, this message translates to:
+  /// **'silindi'**
+  String get txVoided;
+
+  /// No description provided for @seeAllShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünü gör'**
+  String get seeAllShort;
+
+  /// No description provided for @nTransactions.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} hareket'**
+  String nTransactions(int n);
+
   /// No description provided for @txSell.
   ///
   /// In tr, this message translates to:
@@ -6344,6 +6368,12 @@ abstract class AppLocalizations {
   /// **'Varlık ara'**
   String get searchAssetsSemantics;
 
+  /// No description provided for @searchChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get searchChip;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:
@@ -6361,6 +6391,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap\'tan değiştirebilirsin.'**
   String get kullaniciAdiAciklama;
+
+  /// No description provided for @kullaniciAdiZorunluNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.'**
+  String get kullaniciAdiZorunluNot;
+
+  /// No description provided for @kullaniciAdiUygunDevam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad uygun. Devam edebilirsin.'**
+  String get kullaniciAdiUygunDevam;
 
   /// No description provided for @kullaniciAdiEtiket.
   ///

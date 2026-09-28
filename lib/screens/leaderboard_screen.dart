@@ -68,6 +68,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                 );
                 if (ok) {
                   await ref.read(leaderboardOptInProvider.notifier).set(false);
+                  LeaderboardService.instance.optInSunucuyaYaz(me?.id, false);
                 }
               },
               itemBuilder: (_) => [
@@ -99,8 +100,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       body: SafeArea(
         child: !optIn
             ? _OptInPrompt(
-                onEnable: () =>
-                    ref.read(leaderboardOptInProvider.notifier).set(true),
+                onEnable: () {
+                  ref.read(leaderboardOptInProvider.notifier).set(true);
+                  // Sunucu da bilsin: günlük snapshot bu bayrağa bakar (0081).
+                  LeaderboardService.instance.optInSunucuyaYaz(me?.id, true);
+                },
               )
             : Column(
                 children: [

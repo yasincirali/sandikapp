@@ -8,6 +8,38 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-28 Yarış snapshot'ı sunucuda — 0081 + `leaderboard-snapshot` (iki proje)
+
+Zirve portföyler / küresel sıralama havuzu artık sunucuda günlük dolar.
+Merge sonrası, **her iki projede** (Frankfurt → Tokyo):
+
+1. **Vault secret:** `leaderboard_snapshot_cron_secret` — rastgele 32+ karakter
+   (Dashboard → Project Settings → Vault → New secret). `cron_headers()` bunu
+   okur; yoksa cron işi her gün "Vault secret bulunamadi" ile düşer (fail-closed).
+2. **Edge function secret:** `LEADERBOARD_SNAPSHOT_CRON_SECRET` = aynı değer
+   (Dashboard → Edge Functions → Secrets). Fonksiyon bu env yoksa 503 döner.
+3. **Actions → Supabase deploy → hedef `ikisi`, functions `leaderboard-snapshot`**
+   (migration 0081 aynı koşuda gider: `profiles.leaderboard_opt_in` sütunu,
+   günlük 18:40 TR cron, 400 günlük saklama).
+4. Frankfurt'ta cron işleri geçişe kadar kapalı tutuluyorsa (`cron.job.active`),
+   `leaderboard-snapshot` ve `leaderboard-snapshot-retention` için de aynı
+   bayrağı uygula; şema eşitliği (`sema_esitlik.py`) cron `active` farkını
+   zaten bilinçli sayıyor.
+5. İlk koşuyu elle tetikleyip yanıtı kontrol et (SQL Editor, hedef projede):
+   `select public.trigger_leaderboard_snapshot();` → `net._http_response`
+   içinde `{"ok":true,"users":N,"roi_rows":…}`. Uygun havuz 5 gün sonra
+   dolmaya başlar (0059 kuralı: 5 farklı gün).
+
+## ✅ 2026-09-28 Küresel yarış bayrağı — Firebase Remote Config (KAPANDI 2026-09-28: console'da parametre yok, uygulama varsayılanı geçerli)
+
+Uygulama içi varsayılan `global_leaderboard_enabled` artık **true**
+(`remote_config_service.dart`). Firebase Console → Remote Config'de bu
+parametre **tanımlıysa** oradaki değer uygulama varsayılanını ezer:
+`false` duruyorsa `true` yap ve yayınla (ya da parametreyi sil; varsayılan
+devreye girer). `percentile_strip_enabled` bilinçli olarak kapalı kalıyor.
+Ayrıca 0080 migration'ı (kayıt formunda anonim kullanıcı adı denetimi) merge
+sonrası **Actions → Supabase deploy → hedef `ikisi`** ile iki sunucuya gider.
+
 ## ⏳ 2026-09-28 Kullanıcı adı — 0079 (ikisi)
 
 Merge sonrası **Actions → Supabase deploy → hedef `ikisi`, functions `none`**.

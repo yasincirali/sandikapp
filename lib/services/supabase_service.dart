@@ -126,6 +126,21 @@ class SupabaseService {
     return KullaniciAdi.sonucCoz(kod);
   }
 
+  /// Kayıt formu — oturum YOK (0080 `kullanici_adi_kayitta_uygun_mu`).
+  /// Anonim yüzey 'ayrilmis'i 'alinmis'e katlar; kullanıcıya "alınmış"
+  /// denir, gerekçe migration notunda.
+  Future<KullaniciAdiSonuc> kullaniciAdiKayittaUygunMu(String ad) async {
+    final kod = await _log.log<dynamic>(
+      source: 'SupabaseService.kullaniciAdiKayittaUygunMu',
+      table: 'rpc/kullanici_adi_kayitta_uygun_mu',
+      op: 'RPC',
+      request: {'p_ad': ad},
+      call: () =>
+          _db.rpc('kullanici_adi_kayitta_uygun_mu', params: {'p_ad': ad}),
+    );
+    return KullaniciAdi.sonucCoz(kod);
+  }
+
   /// Kullanıcı adını kaydeder (0079 `kullanici_adi_ayarla`). Sunucu
   /// `display_name`'i de eşitler; ret nedeni istisna değil sonuçtur.
   Future<KullaniciAdiSonuc> kullaniciAdiAyarla(String ad) async {
@@ -137,6 +152,24 @@ class SupabaseService {
       call: () => _db.rpc('kullanici_adi_ayarla', params: {'p_ad': ad}),
     );
     return KullaniciAdi.sonucCoz(kod);
+  }
+
+  /// Yarış opt-in'ini sunucuya yazar (0081 `profiles.leaderboard_opt_in`).
+  ///
+  /// Günlük snapshot cron'u (`leaderboard-snapshot`) yalnızca bu bayrağı
+  /// açık kullanıcıları hesaplar; cihaz tercihi tek kaynak olmaktan çıktı.
+  /// Yazım RLS `profiles_update_own` ile kendi satırına sınırlı.
+  Future<void> yarisOptInYaz(String userId, bool acik) async {
+    await _log.log<void>(
+      source: 'SupabaseService.yarisOptInYaz',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'leaderboard_opt_in': acik},
+      call: () => _db
+          .from('profiles')
+          .update({'leaderboard_opt_in': acik})
+          .eq('id', userId),
+    );
   }
 
   Future<void> markOnboardingCompleted(String userId) async {

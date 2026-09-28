@@ -447,8 +447,13 @@ class _PortfolioPerformanceScreenState
                     // Yarış bir GEZİNME girişi, grafik aracı değil: eskiden
                     // grafik araç satırında duruyordu ve o satırın tamamı
                     // kaldırıldı. Yeri üst çubuk.
-                    if (ref.watch(leaderboardOptInProvider) &&
-                        activePartners.isNotEmpty) ...[
+                    // Kupa: küresel yarış açıkken HERKESE (ortak ya da opt-in
+                    // şartı yok — kullanıcı kararı 2026-09-28: yarış ortaktan
+                    // bağımsız bir özellik, giriş noktası da öyle). Küresel
+                    // kapalıyken eski kural: opt-in + aktif ortak.
+                    if (RemoteConfigService.instance.globalLeaderboardEnabled ||
+                        (ref.watch(leaderboardOptInProvider) &&
+                            activePartners.isNotEmpty)) ...[
                       Semantics(
                         button: true,
                         label: context.l10n.raceTitle,

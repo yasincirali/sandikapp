@@ -1182,6 +1182,17 @@
       }
     }
   },
+  "txDeleted": "Silindi",
+  "txVoided": "silindi",
+  "seeAllShort": "Tümünü gör",
+  "nTransactions": "{n} hareket",
+  "@nTransactions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "txSell": "Satım",
   "txDividend": "Temettü",
   "txBuy": "Alım",
@@ -2591,9 +2602,12 @@
   "@searchShowAll": {"placeholders": {"count": {"type": "int"}}},
   "searchInPortfolioTag": "Portföyünde",
   "searchAssetsSemantics": "Varlık ara",
+  "searchChip": "Ara",
   "searchShortHint": "Hisse, fon, altın, döviz, kripto",
   "kullaniciAdiBaslik": "Kullanıcı adını seç",
   "kullaniciAdiAciklama": "Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap'tan değiştirebilirsin.",
+  "kullaniciAdiZorunluNot": "Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.",
+  "kullaniciAdiUygunDevam": "Bu ad uygun. Devam edebilirsin.",
   "kullaniciAdiEtiket": "Kullanıcı adı",
   "kullaniciAdiKurallar": "3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.",
   "kullaniciAdiHataBicim": "3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.",

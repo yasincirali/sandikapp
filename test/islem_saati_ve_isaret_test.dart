@@ -162,8 +162,10 @@ void main() {
         .replaceAll(RegExp(r'\s+'), ' ');
 
     test('hareket satırı saati fmtTarihSaat ile yazar', () {
+      // Kapanış parantezi aranmaz: satır 2026-09-28'den beri `yilsiz:`
+      // argümanı da geçirir; aranan şey tarihin bu formatlayıcıdan geçmesi.
       expect(kod('lib/widgets/transaction_row.dart')
-          .contains('fmtTarihSaat(asset.addedDate)'), isTrue);
+          .contains('fmtTarihSaat(asset.addedDate'), isTrue);
     });
 
     test('grafik etiketleri gün içi dışında da saat gösterebilir', () {

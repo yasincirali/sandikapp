@@ -82,13 +82,18 @@ class RemoteConfigService {
     // verisi gerekiyordu; hepsi birden açıldığı için Sprint 1'in etkisi
     // taban çizgisine karşı ölçülemeyecek.
 
-    // Ana ekranda anonim yüzdelik dilim şeridi. Yalnızca yarış opt-in'i
-    // açık olan kullanıcıya görünür; k-anonimlik eşiği sunucuda.
-    // 2026-09-21: küresel sıralama PARAMETRİK KAPALI (kullanıcı kararı):
-    // havuz 3 kişi, "N kişi katıldı" sayısı yanlış anlaşılıyor. Ortaklar
-    // arası yarış açık kalır. Açmak için Remote Config'de iki anahtar da
-    // true: `global_leaderboard_enabled`, `percentile_strip_enabled`.
-    'global_leaderboard_enabled': false,
+    // Küresel yarış (haftanın/ayın portföyleri): 2026-09-21'de havuz 3
+    // kişiyken parametrik KAPATILMIŞTI ("N kişi katıldı" yanlış anlaşılıyor).
+    // 2026-09-28 kullanıcı kararı: AÇIK — özellik ortaktan bağımsız, kendi
+    // sayfası (LeaderboardScreen) ortak şartı olmadan ulaşılabilir. Havuz
+    // dolana kadar sıralama yerine "yeterli katılımcı olunca" metni çıkar;
+    // k-anonimlik eşiği (k_min=8) sunucuda, bayrak onu gevşetmez.
+    // Console'da parametre tanımlıysa o değer bu varsayılanı EZER —
+    // YAPMAN_GEREKENLER'de kayıtlı.
+    'global_leaderboard_enabled': true,
+    // Ana ekranda anonim yüzdelik dilim şeridi: yalnızca yarış opt-in'i
+    // açık kullanıcıya. "N kişi" sayısı sorunu bu şeritteydi; havuz dolana
+    // kadar KAPALI kalır (küresel bayraktan bağımsız karar).
     'percentile_strip_enabled': false,
 
     // İlk varlık eklendikten sonra ana ekran widget'ı önerisi.

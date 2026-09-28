@@ -642,33 +642,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Piyasa şeridi — dolar/euro/gram altın/BIST 100 (2026-09-20).
           // Portföyden ÖNCE: günlük girişin ilk sorusu "dolar ne oldu".
           //
-          // Bandın sağ ucundaki büyüteç varlık aramasını açar (2026-09-28).
-          // Ortağın görünümünde bant yok; arama yine erişilebilir kalsın
-          // diye büyüteç aynı yerde tek başına durur.
-          if (ownView)
-            SliverToBoxAdapter(
-              child: TourAnchor(
-                target: TourTarget.piyasaSeridi,
-                child: PiyasaSeridi(
-                  // Şeridin kendi 7pt tamponu var (44pt dokunma alanı,
-                  // 30pt bant); alt `sm` ile hero karta 15pt — blok
-                  // aralığına (md) en yakın ölçek değeri.
-                  padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
-                  onAra: _aramayiAc,
-                ),
-              ),
-            )
-          else
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: PiyasaAramaDugmesi(
-                      onTap: _aramayiAc, cerceveli: false),
-                ),
+          // HER görünümde (Ben / ortak / Birlikte) ve KOŞULSUZ (kullanıcı
+          // kararı 2026-09-28): piyasa verisi kimin portföyüne bakıldığından
+          // bağımsız, "Ara" da öyle. Eskiden `if (ownView)` ile sarılıydı
+          // (9a6a9f7'den gerekçesiz devralınan kalıp): ortağa kaydırınca
+          // bant kayboluyor, geri dönünce SIFIRDAN kuruluyordu — kotasyon
+          // yeniden çekiliyor, akış baştan başlıyordu.
+          //
+          // `key`: bu sliver'dan önce koşullu bir sliver var (fiyat hatası
+          // şeridi). O girip çıktığında bandın indeksi kayar; anahtarsız
+          // Flutter aynı indeksteki farklı çocuğu yeni element sayar ve
+          // bant yine sıfırlanırdı. Bant kendi ritmi (`TazelikRitmi.nabiz`)
+          // dışında yeniden yüklenmez; görünüm değişimi yalnızca yeniden
+          // ÇİZER (`KayanBant` fazı ValueNotifier'da, state korunur).
+          SliverToBoxAdapter(
+            key: const ValueKey('piyasa-seridi'),
+            child: TourAnchor(
+              target: TourTarget.piyasaSeridi,
+              child: PiyasaSeridi(
+                // Şerit kartı 44pt kutuda ortalı 36pt (bkz.
+                // `piyasa_seridi.dart`): üst 8 + kutu payı 4 = başlıktan
+                // 12pt; alt 10 + 4 = hero karta 14pt (seçenek C).
+                padding: EdgeInsets.fromLTRB(
+                    hp, SandikSpace.sm, hp, SandikSpace.sm2),
+                onAra: _aramayiAc,
               ),
             ),
+          ),
           // Portfolio summary
           SliverToBoxAdapter(
             child: Padding(
@@ -844,7 +844,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: SandikSectionHeader(title: context.l10n.portfolioActivity),
               ),
             ),
-          // Recent transaction list (show individual asset transactions newest -> oldest)
+          // Son hareketler — tek kap (seçenek A "gruplu liste", 2026-09-28).
+          //
+          // Eskiden her satır kendi kartıydı ve "Tümünü Gör" ayrı bir
+          // düğme kartıydı: üç kayıt için dört kutu. Şimdi üç düz satır
+          // + saç teli ayraç + kabın son satırı olarak "Tümünü gör", hepsi
+          // bir SandikCard içinde (`TransactionRow` başındaki not).
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: hp),
@@ -866,67 +871,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final count = recentAssets.length > 3 ? 3 : recentAssets.length;
 
                 final hideBalance = ref.watch(balanceHiddenProvider);
-                return Column(
-                  children: List.generate(
-                      count,
-                      (i) => TransactionRow(
-                            baz: baz,
-                            asset: recentAssets[i],
-                            portfolioState: myState,
-                            hideBalance: hideBalance,
-                          )),
+                return SandikCard(
+                  padding: EdgeInsets.zero,
+                  radius: SandikRadius.lg,
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < count; i++) ...[
+                        if (i > 0) const HareketAyraci(),
+                        TransactionRow(
+                          baz: baz,
+                          asset: recentAssets[i],
+                          portfolioState: myState,
+                          hideBalance: hideBalance,
+                        ),
+                      ],
+                      // "Tümünü gör" — hareket ekranına götürür. Kabın son
+                      // satırı: ayrı bir düğme değil, listenin devamı.
+                      //
+                      // Sayı ledger'dan okunur, aggregate edilmiş
+                      // pozisyonlardan DEĞİL: pozisyon sayısı hareket
+                      // sayısını olduğundan az gösterirdi (3 lot + 1 satış
+                      // = 1 pozisyon ama 4 hareket).
+                      if (ledgerCount > 3)
+                        SandikTappable(
+                          semanticLabel: context.l10n.seeAllTransactions,
+                          onTap: () => pushGuarded(
+                            context,
+                            adaptiveRoute<void>(
+                              builder: (_) => AllTransactionsScreen(
+                                allPartnerAssets: allPartnerAssets,
+                                partners: partners,
+                                initialView: _view,
+                              ),
+                            ),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: TransactionRow.yatayBosluk,
+                              vertical: SandikSpace.smd,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: context.c.hairline),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    context.l10n.seeAllShort,
+                                    style: context.t.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: context.c.amberText,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '$ledgerCount',
+                                  style: context.t.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures()
+                                    ],
+                                    color: context.c.amberText,
+                                  ),
+                                ),
+                                const SizedBox(width: SandikSpace.xs),
+                                Icon(Icons.arrow_forward_ios_rounded,
+                                    size: 13, color: context.c.amberText),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 );
               }),
             ),
           ),
-          // "Tümünü Gör" — hareket ekranına götürür.
-          //
-          // Sayı ledger'dan okunur, aggregate edilmiş pozisyonlardan DEĞİL:
-          // pozisyon sayısı hareket sayısını olduğundan az gösterirdi
-          // (3 lot + 1 satış = 1 pozisyon ama 4 hareket).
-          if (ledgerCount > 3)
-            SliverToBoxAdapter(
-              child: Padding(
-                // Üst 0: son satırın alt 12'si aralığı verir — düğme
-                // listenin bir satırı gibi durur, ayrı bir blok gibi değil.
-                padding: EdgeInsets.symmetric(horizontal: hp),
-                child: SandikTappable(
-                  semanticLabel: context.l10n.seeAllTransactions,
-                  onTap: () => pushGuarded(
-                    context,
-                    adaptiveRoute<void>(
-                      builder: (_) => AllTransactionsScreen(
-                        allPartnerAssets: allPartnerAssets,
-                        partners: partners,
-                        initialView: _view,
-                      ),
-                    ),
-                  ),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: SandikSpace.md),
-                    decoration: context.surfaceCard(),
-                    child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            context.l10n.seeAllCount(ledgerCount),
-                            style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: context.c.amberText,
-                            ),
-                          ),
-                          const SizedBox(width: SandikSpace.xs),
-                          Icon(Icons.arrow_forward_ios_rounded,
-                              size: 13, color: context.c.amberText),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           const SliverToBoxAdapter(child: SizedBox(height: SandikSpace.xxl)),
         ],
       ),

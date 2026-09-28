@@ -177,4 +177,74 @@ void main() {
     // Gecikmeli sunucu sorusu biçim hatasında hiç kurulmaz.
     await tester.pump(const Duration(seconds: 1));
   });
+
+  // ── Ortalı, odaklı düzen (kullanıcı isteği 2026-09-28) ─────────────────
+  //
+  // Ekran tek bir işe odaklanır: alan ortada, metin ortalı, kapı kuralı
+  // ("adsız geçiş yok, ad seçilince bekleme yok") açık yazılı. Ayarlar
+  // varyantı aynı düzeni paylaşır ama kapı notu göstermez.
+  Future<ProviderContainer> kapiKur(WidgetTester tester) async {
+    final user = AppUser(
+      id: 'u1', email: 'a@b.c', displayName: 'Yasin Dirali', createdAt: DateTime(2026),
+    );
+    final container = ProviderContainer(
+      overrides: [authProvider.overrideWith(() => _FakeAuth(user))],
+    );
+    addTearDown(container.dispose);
+    await tester.runAsync(() => container.read(authProvider.future));
+    return container;
+  }
+
+  testWidgets('zorunlu ekran: kapı notu görünür, alan ortalı', (tester) async {
+    final container = await kapiKur(tester);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: KullaniciAdiScreen(zorunlu: true)),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Devam etmek için bir kullanıcı adı gerekiyor'),
+        findsOneWidget);
+    expect(find.textContaining('seçtiğin an devam edebilirsin'), findsOneWidget);
+    expect(find.text('Devam et'), findsOneWidget);
+    final alan = tester.widget<TextField>(find.byType(TextField));
+    expect(alan.textAlign, TextAlign.center);
+    // Uzun metinlerin hepsi ortalı; sola yaslı bir başlık kalmadı.
+    for (final t in tester.widgetList<Text>(find.byType(Text))) {
+      if (t.data == 'Devam et' || t.data == 'Çıkış yap') continue;
+      expect(t.textAlign, TextAlign.center, reason: t.data);
+    }
+  });
+
+  testWidgets('ayarlar varyantı: kapı notu yok, Kaydet var', (tester) async {
+    final container = await kapiKur(tester);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: KullaniciAdiScreen()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Devam etmek için'), findsNothing);
+    expect(find.text('Kaydet'), findsOneWidget);
+    expect(find.text('Çıkış yap'), findsNothing);
+  });
+
+  testWidgets('dar ekran + klavye: blok kayar, taşmaz', (tester) async {
+    tester.view.physicalSize = const Size(320 * 3, 568 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    // Klavye açık: görünür alanın yarısı gider.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300 * 3);
+    addTearDown(tester.view.reset);
+
+    final container = await kapiKur(tester);
+    await tester.pumpWidget(UncontrolledProviderScope(
+      container: container,
+      child: const MaterialApp(home: KullaniciAdiScreen(zorunlu: true)),
+    ));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    // Çıkış alt kenarda sabit; ortalanan bloğun içinde değil.
+    expect(find.text('Çıkış yap'), findsOneWidget);
+    expect(find.byType(SingleChildScrollView), findsOneWidget);
+  });
 }

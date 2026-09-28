@@ -11,6 +11,7 @@ import '../providers/preferences_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
@@ -51,6 +52,32 @@ class AllTransactionsScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<AllTransactionsScreen> createState() =>
       _AllTransactionsScreenState();
+}
+
+/// Bir aya düşen hareketler; `ay` o ayın ilk günü (yerel saat).
+class HareketAyGrubu {
+  const HareketAyGrubu(this.ay, this.kayitlar);
+  final DateTime ay;
+  final List<Asset> kayitlar;
+}
+
+/// Sıralı (yeni → eski) kayıtları aya böler; kayıt sırası korunur.
+///
+/// Giriş zaten tarihe göre sıralı olmalı — burada yeniden sıralanmaz,
+/// çünkü sıralama ve filtre ekranın işi; bu fonksiyon yalnızca ardışık
+/// kayıtları ay sınırından keser. Sırasız giriş aynı ayı iki kaba bölerdi.
+List<HareketAyGrubu> hareketleriAylaGrupla(List<Asset> kayitlar) {
+  final out = <HareketAyGrubu>[];
+  for (final a in kayitlar) {
+    final t = a.addedDate.toLocal();
+    final ay = DateTime(t.year, t.month);
+    if (out.isNotEmpty && out.last.ay == ay) {
+      out.last.kayitlar.add(a);
+    } else {
+      out.add(HareketAyGrubu(ay, [a]));
+    }
+  }
+  return out;
 }
 
 /// Tarih aralığı ön ayarları — mutlak tarih seçtirmek yerine yaygın
@@ -335,33 +362,93 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                     onRefresh: () => ref
                         .read(portfolioProvider.notifier)
                         .refreshPrices(force: true),
-                    child: ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      controller: _scrollCtrl,
-                      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 16, SandikSpace.screenH(context), 32),
-                      // +1: son satırda "yükleniyor" göstergesi (daha var ise).
-                      itemCount: shown + (shown < rows.length ? 1 : 0),
-                      itemBuilder: (ctx, i) {
-                        if (i >= shown) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: Center(
-                              child: Text(
-                                context.l10n.loadingEllipsis,
-                                style: context.t.bodySmall
-                                    ?.copyWith(color: context.c.text36),
+                    child: Builder(builder: (context) {
+                      // Ay kapları (seçenek A, 2026-09-28): satırlar düz,
+                      // her ay bir SandikCard. 125 kaydı tek kapta
+                      // göstermek kabı anlamsızlaştırırdı; ay hem doğal
+                      // kronoloji hem de "geçen ay ne yaptım" sorusunun
+                      // birimi. Yıl kap başlığında olduğu için satırlar
+                      // yılsız tarih yazar (`yilGoster: false`).
+                      final gruplar =
+                          hareketleriAylaGrupla(rows.take(shown).toList());
+                      final dahaVar = shown < rows.length;
+                      final hp = SandikSpace.screenH(context);
+                      final ayAdi = DateFormat(
+                          'LLLL yyyy', Localizations.localeOf(context).languageCode);
+                      final tr = Localizations.localeOf(context).languageCode == 'tr';
+                      return ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        controller: _scrollCtrl,
+                        padding: EdgeInsets.fromLTRB(hp, 16, hp, 32),
+                        // +1: son satırda "yükleniyor" göstergesi (daha var ise).
+                        itemCount: gruplar.length + (dahaVar ? 1 : 0),
+                        itemBuilder: (ctx, i) {
+                          if (i >= gruplar.length) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              child: Center(
+                                child: Text(
+                                  context.l10n.loadingEllipsis,
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: context.c.text36),
+                                ),
                               ),
+                            );
+                          }
+                          final g = gruplar[i];
+                          final baslik = ayAdi.format(g.ay);
+                          return Padding(
+                            padding: EdgeInsets.only(
+                                bottom: i == gruplar.length - 1
+                                    ? 0
+                                    : SandikSpace.lg),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: SandikSpace.xxs,
+                                      right: SandikSpace.xxs,
+                                      bottom: SandikSpace.sm),
+                                  child: SandikSectionHeader(
+                                    title: tr
+                                        ? trBuyukHarf(baslik)
+                                        : baslik.toUpperCase(),
+                                    trailing: Text(
+                                      context.l10n
+                                          .nTransactions(g.kayitlar.length),
+                                      style: context.t.bodySmall
+                                          ?.copyWith(color: context.c.text36),
+                                    ),
+                                  ),
+                                ),
+                                SandikCard(
+                                  padding: EdgeInsets.zero,
+                                  radius: SandikRadius.lg,
+                                  child: Column(
+                                    children: [
+                                      for (var k = 0;
+                                          k < g.kayitlar.length;
+                                          k++) ...[
+                                        if (k > 0) const HareketAyraci(),
+                                        TransactionRow(
+                                          baz: ref.watch(bazParaProvider),
+                                          asset: g.kayitlar[k],
+                                          portfolioState:
+                                              pState ?? const PortfolioState(),
+                                          hideBalance: hideBalance,
+                                          yilGoster: false,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           );
-                        }
-                        return TransactionRow(
-                          baz: ref.watch(bazParaProvider),
-                          asset: rows[i],
-                          portfolioState: pState ?? const PortfolioState(),
-                          hideBalance: hideBalance,
-                        );
-                      },
-                    ),
+                        },
+                      );
+                    }),
                   ),
           ),
         ],

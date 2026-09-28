@@ -31,13 +31,24 @@
 // 45 sn'lik önbelleği ağa fiilen ~45 sn'de bir çıkarır. Fiyat gelmezse bant
 // HİÇ çizilmez (boş kabuk yer işgal etmez).
 //
-// ## Arama büyüteci (kullanıcı onayı, 2026-09-28)
-// Bandın sağ ucunda sabit, soluk bir büyüteç varlık arama ekranını açar —
-// yalnızca izlemeye gelen kullanıcının yolu. Yer seçimi: alt çubuk
-// simetrisi bozulmasın, üst çubuğa 5. düğme taşma yapar (çıkış düğmesi
-// yerinde kalır), ayrı bir arama alanı ana ekranda satır çalardı. Bant
-// zaten "piyasa" bağlamı; büyüteç SIFIR piksel ekler ve dikkat çekmez.
-// Fiyat gelmese de büyüteç kalır — arama fiyata bağlı değil.
+// ## Şerit kartı + "Ara" çipi (kullanıcı kararı, 2026-09-28, seçenek C)
+// İlk sürüm (2026-09-28 sabahı) başlığa yapışık 30pt çizgili bant ve sağ
+// uçta 18pt soluk bir büyüteçti: "sıfır piksel, dikkat çekmez" diye
+// seçilmişti. Kullanıcı iki şey istedi: bant başlıktan ayrılsın, arama
+// bulunur olsun ama yeni satır açmasın. Dört seçenekten (daire düğme,
+// arama satırı, şerit+çip, önce arama) şerit+çip seçildi:
+//   · bant 36pt, `surface1` zeminli bir ŞERİT KARTI (köşe `SandikRadius.md`:
+//     alttaki kartlarla aynı; `lg` 36pt'te tam hap oluyordu, kullanıcı
+//     "kartlarla aynı olsun" dedi) —
+//     çizgiler arasında akan metin değil, kendi nesnesi; başlığın 12pt
+//     altında (dolgu ana sayfada);
+//   · sağ uçta etiketli çip: büyüteç + "Ara", amber ton. İkona kelime
+//     eklemek keşfedilebilirliği çözer, yer maliyeti sıfır;
+//   · toplam +18pt (12 boşluk + 6 yükseklik); hero kart neredeyse yerinde.
+// Yer seçimi gerekçesi aynı: alt çubuk simetrisi bozulmasın, üst çubuğa
+// 5. düğme 320pt'de taşar, ayrı arama satırı 52pt çalardı.
+// Fiyat gelmese de çip kalır (tek başına tam yuvarlak) — arama fiyata
+// bağlı değil.
 import 'package:flutter/foundation.dart';
 import '../services/tazelik_ritmi.dart';
 import 'package:flutter/material.dart';
@@ -168,11 +179,15 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
       );
     }
 
+    // Şerit kartı: bant sol yarıyı (köşeleri solda yuvarlak), çip sağ
+    // ucu (köşeleri sağda yuvarlak) çizer; ikisi 44pt'lik ortak kutuda
+    // ortalanır, görünen şerit 36pt. Kart tek Container olsaydı çipin
+    // 44pt dokunma alanı 36pt'lik klibin dışında kalırdı (HIG #37).
     return Padding(
       padding: widget.padding,
       child: Row(
         children: [
-          Expanded(child: KayanBant(ogeler: ogeler)),
+          Expanded(child: KayanBant(ogeler: ogeler, sagKose: ara == null)),
           if (ara != null) PiyasaAramaDugmesi(onTap: ara),
         ],
       ),
@@ -180,12 +195,13 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
   }
 }
 
-/// Bandın sağ ucundaki arama büyüteci.
+/// Şeridin sağ ucundaki "Ara" çipi.
 ///
-/// Dokunma alanı 44pt (HIG); görünen kısım bandın 30pt'lik şeridiyle aynı
-/// çizgilerde, solunda ince bir ayraç — bandın parçası gibi durur, ayrı bir
-/// düğme gibi bağırmaz. Renk `text58`: bant metniyle aynı ağırlıkta.
-/// [cerceveli] `false` iken (fiyat yok, ortak görünüm) yalnızca ikon.
+/// Dokunma alanı 44pt (HIG); görünen çip şeritle aynı 36pt, ortalı.
+/// Amber ton dolgu (`amberFill`, zemin — `amberText` zemin olamaz), amber
+/// metin + büyüteç. [cerceveli] `true` iken şeridin devamıdır: sol kenar
+/// ayraç, sağ köşeler yuvarlak. `false` iken (fiyat yok, ortak görünüm)
+/// tek başına dört köşesi yuvarlak kart.
 class PiyasaAramaDugmesi extends StatelessWidget {
   const PiyasaAramaDugmesi(
       {super.key, required this.onTap, this.cerceveli = true});
@@ -198,28 +214,49 @@ class PiyasaAramaDugmesi extends StatelessWidget {
         onTap: onTap,
         semanticLabel: context.l10n.searchAssetsSemantics,
         child: Container(
-          width: SandikTouch.min,
           height: SandikTouch.min,
+          constraints: const BoxConstraints(minWidth: SandikTouch.min),
           alignment: Alignment.center,
-          child: _AramaSeridi(cerceveli: cerceveli),
+          child: _AramaCipi(cerceveli: cerceveli),
         ),
       );
 }
 
-class _AramaSeridi extends StatelessWidget {
-  const _AramaSeridi({required this.cerceveli});
+class _AramaCipi extends StatelessWidget {
+  const _AramaCipi({required this.cerceveli});
   final bool cerceveli;
 
   @override
   Widget build(BuildContext context) {
     final cizgi = BorderSide(color: context.c.hairline);
+    const kose = Radius.circular(SandikRadius.md);
     return Container(
-      height: 30,
-      alignment: Alignment.center,
-      decoration: cerceveli
-          ? BoxDecoration(border: Border(top: cizgi, bottom: cizgi, left: cizgi))
-          : null,
-      child: Icon(Icons.search_rounded, size: 18, color: context.c.text58),
+      height: KayanBant.seritYuksekligi,
+      padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
+      decoration: BoxDecoration(
+        color: context.c.amberFill.withValues(alpha: 0.12),
+        borderRadius: cerceveli
+            ? const BorderRadius.horizontal(right: kose)
+            : const BorderRadius.all(kose),
+        border: cerceveli
+            ? Border(top: cizgi, right: cizgi, bottom: cizgi, left: cizgi)
+            : Border.fromBorderSide(cizgi),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search_rounded, size: 16, color: context.c.amberText),
+          const SizedBox(width: SandikSpace.xs2),
+          Text(
+            context.l10n.searchChip,
+            style: context.t.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.2,
+              color: context.c.amberText,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -231,9 +268,17 @@ class _AramaSeridi extends StatelessWidget {
 /// değeri bir [ValueNotifier]'da yaşar: kare başına `setState` yok, widget
 /// ağacı hiç yeniden kurulmaz.
 class KayanBant extends StatefulWidget {
-  const KayanBant({super.key, required this.ogeler});
+  const KayanBant({super.key, required this.ogeler, this.sagKose = true});
 
   final List<PiyasaOgesi> ogeler;
+
+  /// Sağ köşeler de yuvarlak mı. Yanında "Ara" çipi varken `false`: şerit
+  /// çipe düz kenarla bitişir, yuvarlağı çip tamamlar.
+  final bool sagKose;
+
+  /// Görünen şerit yüksekliği (pt). 30'dan 36'ya (2026-09-28): köşeli bir
+  /// kartın yazıya nefes payı bırakması için; dokunma kutusu yine 44.
+  static const double seritYuksekligi = 36;
 
   @override
   State<KayanBant> createState() => KayanBantState();
@@ -316,17 +361,33 @@ class KayanBantState extends State<KayanBant>
         onTap: _dokunus,
         onHorizontalDragUpdate: akiyor ? null : _surukle,
         behavior: HitTestBehavior.opaque,
-        // Dokunma alanı 44pt (HIG); görünen bant 30pt, dikey 7pt'lik
-        // tampon ana ekranın satır boşluğunu doldurur — ek yer yok.
+        // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —
+        // 4pt'lik dikey tamponlar ana sayfa dolgusuyla birlikte 12pt üst
+        // boşluğu verir (seçenek C, 2026-09-28). Önceki sürüm 30pt bandı
+        // kutunun üstüne yaslıyordu; şerit kartı artık başlıktan ayrı
+        // durduğu için ortalama doğru.
         child: Container(
           height: 44,
           alignment: Alignment.center,
           child: Container(
-            height: 30,
+            height: KayanBant.seritYuksekligi,
+            // Şerit kartı: surface1 zemin, saç teli kenar, sol köşeler
+            // yuvarlak; sağ köşeler çip yoksa. Metin kenardan taşmasın
+            // diye klip — akan öğe köşeden çıkarken kırpılır.
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              border: Border.symmetric(
-                horizontal: BorderSide(color: context.c.hairline),
-              ),
+              color: context.c.surface1,
+              borderRadius: widget.sagKose
+                  ? BorderRadius.circular(SandikRadius.md)
+                  : const BorderRadius.horizontal(
+                      left: Radius.circular(SandikRadius.md)),
+              border: widget.sagKose
+                  ? Border.all(color: context.c.hairline)
+                  : Border(
+                      left: BorderSide(color: context.c.hairline),
+                      top: BorderSide(color: context.c.hairline),
+                      bottom: BorderSide(color: context.c.hairline),
+                    ),
             ),
             // RepaintBoundary: bant her karede boyanır; sınır olmadan hero
             // kart ve üst çubuk da her karede yeniden boyanırdı (GPU).
