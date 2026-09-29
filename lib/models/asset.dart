@@ -193,6 +193,16 @@ class Asset {
   /// GİRMEZ — bkz. [isActive].
   final DateTime? deletedAt;
 
+  /// Sunucudaki `ticker` sütununun OKUNDUĞU hâli — yalnızca [kanonikTicker]
+  /// onu değiştirdiyse dolu (öneksiz eski fon kodu `AFT` → `TEFAS:AFT`).
+  ///
+  /// Neden: düzeltme OKUMA tarafında (bulgu #2, 2026-09-29). [updateAsset]
+  /// gövdenin tamamını yazıyor; bu alan olmasa her fiyat turu eski satırı
+  /// sessizce `TEFAS:AFT`'ye çevirirdi — istenmeyen bir veri göçü. Kullanıcı
+  /// sembolü elle değiştirirse ([ticker] artık bu kaydın kanonik biçimi
+  /// değilse) yeni değer yazılır; bkz. [toSupabase].
+  String? _kayitliTicker;
+
   Asset({
     required this.id,
     required this.userId,
@@ -413,7 +423,7 @@ class Asset {
         dividendAmount: dividendAmount,
         deletedCount: deletedCount,
         deletedAt: deletedAt,
-      );
+      ).._kayitliTicker = _kayitliTicker;
 
   /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
   /// (tam alan listesi; yeni alan eklendiğinde buraya da eklenmeli).
@@ -434,7 +444,7 @@ class Asset {
         'id': id,
         'user_id': userId,
         'name': name,
-        'ticker': ticker,
+        'ticker': _yazilacakTicker,
         'type': type.name,
         'sub_category': subCategory,
         'unit_type': unitType,
@@ -456,7 +466,36 @@ class Asset {
         'deleted_at': deletedAt?.toUtc().toIso8601String(),
       };
 
-  factory Asset.fromSupabase(Map<String, dynamic> m) => Asset(
+  /// Sunucu satırından okur — sembolü [kanonikTicker] biçimine çevirerek.
+  ///
+  /// Okuma sınırı tek giriş kapısıdır (kendi varlıkları, ortaklar, yerel
+  /// önbellek hepsi buradan geçer); öneksiz eski fon kodu fiyat, seri ve
+  /// kimlik yollarının HİÇBİRİNE ulaşmaz. Tek tek tüketicide (38 `a.ticker`
+  /// kullanımı yalnızca `HistoryService`'te) düzeltmek, sözleşmenin (1)
+  /// maddesinin önlediği ayrışmayı yeniden üretirdi. Kayıtlı biçim
+  /// [_kayitliTicker]'da saklanır, yazarken geri konur.
+  factory Asset.fromSupabase(Map<String, dynamic> m) {
+    final a = _satirdan(m);
+    final kanonik = kanonikTicker(
+        type: a.type, ticker: a.ticker, isManualPrice: a.isManualPrice);
+    if (kanonik != a.ticker) {
+      a._kayitliTicker = a.ticker;
+      a.ticker = kanonik;
+    }
+    return a;
+  }
+
+  /// [toSupabase]'in yazacağı sembol: okunduğu gibi kaldıysa KAYITLI biçim.
+  String get _yazilacakTicker {
+    final kayitli = _kayitliTicker;
+    if (kayitli == null) return ticker;
+    final degismedi = kanonikTicker(
+            type: type, ticker: kayitli, isManualPrice: isManualPrice) ==
+        ticker;
+    return degismedi ? kayitli : ticker;
+  }
+
+  static Asset _satirdan(Map<String, dynamic> m) => Asset(
         id: m['id'] as String,
         userId: (m['user_id'] as String?) ?? '',
         name: m['name'] as String,

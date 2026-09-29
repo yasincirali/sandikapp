@@ -125,7 +125,13 @@ class FiyatKaynagi {
   static List<String> seriSembolleri(Asset a) {
     if (a.isManualPrice) return const [];
     if (a.type == AssetType.altin) return const [xauTry, xauUsd, usdTry];
-    final t = a.ticker.trim();
+    // Kanonik biçim (bulgu #2, 2026-09-29): öneksiz eski fon kodu (`AFT`)
+    // Yahoo'ya DEĞİL TEFAS'a gider. Sunucudan okunan lot zaten bu biçimde
+    // gelir (`Asset.fromSupabase`); burada yeniden uygulanması bellekte
+    // elle kurulmuş lot'u da aynı kaynağa bağlar (idempotent).
+    final t = kanonikTicker(
+            type: a.type, ticker: a.ticker, isManualPrice: a.isManualPrice)
+        .trim();
     if (t.isEmpty) return const [];
     final gerekli = <String>[t];
     if (usdKote(a)) gerekli.add(usdTry);

@@ -342,8 +342,14 @@ class CsvImportService {
         );
       case AssetType.fon:
         return (
-          ticker: t,
-          name: t,
+          // `TEFAS:` önekiyle — ekleme formunun yazdığı biçim
+          // (`AddAssetFormNotifier.selectFund`). 2026-09-29'a kadar çıplak
+          // kod (`TCD`) yazılıyordu: fiyat servisi fonu yalnızca önekten
+          // tanıdığı için satır Yahoo'ya gidiyor, fiyatlanmıyordu (bulgu #2;
+          // okuma tarafı `kanonikTicker` eski satırları da çevirir).
+          ticker: kanonikTicker(
+              type: AssetType.fon, ticker: t, isManualPrice: false),
+          name: t.replaceFirst(tefasOneki, ''),
           subCategory: null,
           unitType: 'piece',
           currency: 'TRY',

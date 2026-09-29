@@ -45,8 +45,8 @@ Future<Map<String, YahooQuote>> _sabitKotasyon(
     'EURTRY=X': 48.1,
     'GBPTRY=X': 55.3,
     'ALTIN_CEYREK': 10800,
-    'DLY': 6.2,
-    'AFT': 0.98,
+    'TEFAS:DLY': 6.2,
+    'TEFAS:AFT': 0.98,
     'KCHOL.IS': 206.1,
     'SAHOL.IS': 86.0,
   };
@@ -179,13 +179,19 @@ void main() {
     final state = ProviderScope.containerOf(ctx).read(portfolioProvider).value!;
     expect(state.ownerId, kDemoKullaniciId);
     final lotlar = state.assets;
+    // Fonlar `TEFAS:` önekli (bulgu #2, 2026-09-29): CSV eskiden çıplak kod
+    // yazıyordu ve demo fonları Yahoo'ya gidip fiyatsız kalıyordu.
     expect(lotlar.map((a) => a.ticker).toSet(), {
-      'ALTIN_CEYREK', 'DLY', 'AFT', 'KCHOL.IS', 'USDTRY=X', 'SAHOL.IS',
+      'ALTIN_CEYREK', 'TEFAS:DLY', 'TEFAS:AFT', 'KCHOL.IS', 'USDTRY=X',
+      'SAHOL.IS',
     });
     // Güncel fiyat kotasyondan; alış fiyatı CSV'den (uydurma yok).
     final kchol = lotlar.firstWhere((a) => a.ticker == 'KCHOL.IS');
     expect(kchol.purchasePrice, 148.0);
     expect(kchol.currentPrice, 206.1);
+    // Fon da fiyatlanır — önekli sembol TEFAS yuvasına gider.
+    expect(lotlar.firstWhere((a) => a.ticker == 'TEFAS:AFT').currentPrice,
+        0.98);
     expect(state.totalValue, greaterThan(0));
 
     await _sok(tester);

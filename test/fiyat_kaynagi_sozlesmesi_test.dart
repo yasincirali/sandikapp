@@ -160,6 +160,42 @@ void main() {
     });
   });
 
+  group('1b) öneksiz fon kodu TEFAS\'a gider (bulgu #2, 2026-09-29)', () {
+    test('eski fon kaydı (`AFT`) TEFAS serisini ister, Yahoo\'yu DEĞİL', () {
+      expect(
+          FiyatKaynagi.seriSembolleri(
+              varlik(type: AssetType.fon, ticker: 'AFT')),
+          ['TEFAS:AFT'],
+          reason: 'Fiyat servisi fonu yalnızca `TEFAS:` önekinden tanır; '
+              'öneksiz kod Yahoo\'ya gidip fiyatsız kalıyordu (portföy '
+              '~₺24.500 eksik, sessiz).');
+    });
+
+    test('elle fiyatlı fon hâlâ HİÇBİR seri istemez', () {
+      expect(
+          FiyatKaynagi.seriSembolleri(
+              varlik(type: AssetType.fon, ticker: 'AFT', manuel: true)),
+          isEmpty);
+    });
+
+    test('okuma sınırı kanonikleştirir — tüketiciler tek tek düzeltmez', () {
+      final src = File('lib/models/asset.dart').readAsStringSync();
+      final i = src.indexOf('factory Asset.fromSupabase');
+      expect(i, greaterThan(-1));
+      expect(src.substring(i, i + 400).contains('kanonikTicker('), isTrue,
+          reason: 'Öneksiz fon kodu fiyat/seri/kimlik yollarına okuma '
+              'sınırında kanonik biçimde girmeli; `HistoryService` tek '
+              'başına 38 yerde `a.ticker` okuyor.');
+    });
+
+    test('CSV içe aktarma fonu önekli yazar (üretici tarafı)', () {
+      final src =
+          File('lib/services/csv_import_service.dart').readAsStringSync();
+      final i = src.indexOf('case AssetType.fon:', src.indexOf('normalizeTicker'));
+      expect(src.substring(i, i + 700).contains('kanonikTicker('), isTrue);
+    });
+  });
+
   group('kaynak sözleşmesinin DIŞINDA kalan yüzey yok', () {
     final servisler = {
       for (final f in Directory('lib/services')
