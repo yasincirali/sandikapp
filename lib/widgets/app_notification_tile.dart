@@ -54,6 +54,11 @@ class AppNotificationTile extends StatelessWidget {
           Icons.trending_up_rounded,
           l10n.notifTypeInflation
         ),
+      // 0086: temettü önerisi — dokununca ön dolu temettü diyaloğu.
+      AppNotification.temettu => (
+          Icons.savings_outlined,
+          l10n.notifTypeDividend
+        ),
       _ => (Icons.event_note_rounded, l10n.notifTypeReminder),
     };
     // Bilgi bildirimi: yön/kazanç anlamı yok, marka vurgusu (amber).

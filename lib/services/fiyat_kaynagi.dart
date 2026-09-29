@@ -139,6 +139,21 @@ class FiyatKaynagi {
   /// ayrı bir kural var: TRY kote olmayan her şey USD kabul edilir.)
   static bool usdKote(Asset a) => a.currency.trim().toUpperCase() == 'USD';
 
+  /// Temettü olaylarının (Yahoo `events=div`) çekileceği sembol; olay
+  /// aranmayacaksa `null`.
+  ///
+  /// Yalnızca TRY kote BIST hissesi (`.IS`): Yahoo'nun `amount`'u o sembolün
+  /// KOTASYON para biriminde, TL/pay. USD kote hissenin temettüsü USD/pay
+  /// olurdu ve TL'ye çevirmek için ödeme günü kuru gerekir — bilinmeyen
+  /// kurla tutar üretilmez (madde 3). Elle fiyatlanan kaydın yayımlanmış
+  /// olayı yoktur. Sunucu eşi `temettu-yakala` › `bistHissesiMi` (0086).
+  static String? temettuSembolu(Asset a) {
+    if (a.type != AssetType.hisse || a.isManualPrice) return null;
+    if (a.currency.trim().toUpperCase() != 'TRY') return null;
+    final t = a.ticker.trim().toUpperCase();
+    return t.endsWith('.IS') && t.length > 3 ? t : null;
+  }
+
   /// [a]'nın BİRİM fiyat serisini (1 gram / 1 adet / 1 pay) çekmek için
   /// sentetik lot: miktar 1, seçilebilecek her pencereden ÖNCE alınmış.
   ///

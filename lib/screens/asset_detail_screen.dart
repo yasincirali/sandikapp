@@ -55,6 +55,7 @@ import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/temettu_gecmisi_karti.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -1607,6 +1608,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
+                if (isOwnAsset && pState != null) _temettuKarti(pState),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),
                   TechnicalSignalPanel.forAsset(widget.asset,

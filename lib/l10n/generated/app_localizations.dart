@@ -1490,6 +1490,78 @@ abstract class AppLocalizations {
   /// **'Neden aldın, hedefin ne? Kısa bir not yaz.'**
   String get noteAddHint;
 
+  /// No description provided for @notifTypeDividend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü'**
+  String get notifTypeDividend;
+
+  /// No description provided for @dividendHistoryUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'SON 12 AY TEMETTÜ'**
+  String get dividendHistoryUpper;
+
+  /// No description provided for @dividendRecordedTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydettiğin: {amount}'**
+  String dividendRecordedTotal(String amount);
+
+  /// No description provided for @dividendEventLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'{lot} lot × {perShare}'**
+  String dividendEventLine(String lot, String perShare);
+
+  /// No description provided for @dividendGrossAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} brüt'**
+  String dividendGrossAmount(String amount);
+
+  /// No description provided for @dividendRecorded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedildi'**
+  String get dividendRecorded;
+
+  /// No description provided for @dividendRecordAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get dividendRecordAction;
+
+  /// No description provided for @dividendSourceNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.'**
+  String get dividendSourceNote;
+
+  /// No description provided for @dividendSuggestionLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ticker} · hak tarihi {date}'**
+  String dividendSuggestionLine(String ticker, String date);
+
+  /// No description provided for @dividendSuggestionGross.
+  ///
+  /// In tr, this message translates to:
+  /// **'{lot} lot × {perShare} = {gross} brüt'**
+  String dividendSuggestionGross(String lot, String perShare, String gross);
+
+  /// No description provided for @dividendWithholdingAssumed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj {rate} varsayıldı, düzeltebilirsin.'**
+  String dividendWithholdingAssumed(String rate);
+
+  /// No description provided for @dividendEnterNet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj oranı bilinmiyor: tutar brüt, ele geçen net tutarı gir.'**
+  String get dividendEnterNet;
+
   /// No description provided for @noteReadOnlyPartner.
   ///
   /// In tr, this message translates to:

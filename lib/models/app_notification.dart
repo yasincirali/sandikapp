@@ -15,7 +15,13 @@ class AppNotification {
   static const watchlistMove = 'watchlist_move';
   /// TÜİK açıklama günü (0068, `fetch-inflation`).
   static const inflationDay = 'inflation_day';
+  /// Takvim anı; hangisi olduğu `data.occasion`'da (`inflation_day` 0048,
+  /// `year_end_recap` 0087).
   static const calendarNudge = 'calendar_nudge';
+
+  /// Temettü önerisi (0086, `temettu-yakala`); `data` push'la aynı
+  /// (`ticker`, `hak_tarihi`, `tutar_pay`, `lot`).
+  static const temettu = 'temettu';
 
   final String id;
   final String type;

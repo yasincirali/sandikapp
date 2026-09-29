@@ -17,13 +17,14 @@ import {
 // Fonksiyon modülleri İMPORT EDİLMEZ: her biri yüklenince `Deno.serve`
 // kurar ve ikinci modül `AddrInUse` ile test koşucusunu düşürür. Kopyanın
 // geri gelmediği kaynak metninden denetlenir.
-Deno.test('beş fonksiyon aynı kaynağı kullanıyor — yerel kopya kalmadı', async () => {
+Deno.test('push gönderen fonksiyonlar aynı kaynağı kullanıyor — yerel kopya kalmadı', async () => {
   const fonksiyonlar = [
     'daily-brief',
     'weekly-summary',
     'calendar-nudge',
     'check-price-alerts',
     'analyze-signals',
+    'temettu-yakala', // 0086
   ];
   for (const f of fonksiyonlar) {
     const src = await Deno.readTextFile(

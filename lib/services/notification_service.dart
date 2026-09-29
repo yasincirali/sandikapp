@@ -23,8 +23,11 @@ import '../config/pref_keys.dart';
 // `alarmSembolu`: alarm kurarken kullanılan sembol kuralı. Bildirimi
 // varlığa geri eşlemek için AYNI fonksiyon kullanılmalı.
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
+import '../widgets/dividend_dialog.dart' show showDividendDialog;
 import 'analytics_service.dart';
 import 'crash_reporter.dart';
+import 'fiyat_kaynagi.dart';
+import 'temettu_gecmisi.dart';
 import 'kilit_kapisi.dart';
 import 'retention_tracker.dart';
 import 'period_summary_service.dart' show SummaryPeriod;
@@ -60,6 +63,15 @@ class NotificationService {
   static const watchlistMoveType = 'watchlist_move';
   static const inflationDayType = 'inflation_day';
   static const priceAlertType = 'price_alert';
+
+  /// Temettü önerisi (0086, `temettu-yakala`): ön dolu temettü diyaloğu.
+  static const temettuType = 'temettu';
+
+  /// Takvim anı (`calendar-nudge`); hangi an olduğu `data.occasion`'da.
+  static const calendarNudgeType = 'calendar_nudge';
+
+  /// Yıl sonu özeti anı (0087) — Profil sekmesindeki özet afişine gider.
+  static const yilSonuOccasion = 'year_end_recap';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
 
@@ -506,6 +518,24 @@ class NotificationService {
       return;
     }
 
+    // Temettü önerisi → ön dolu temettü diyaloğu (kayıt yine kullanıcı
+    // onayıyla, `addDividend` yolundan). Bozuk veri → hiçbir şey açılmaz.
+    if (type == temettuType) {
+      final oneri = TemettuOnerisi.fromPush(data);
+      if (oneri != null) openTemettuOnerisi(oneri);
+      return;
+    }
+
+    // Yıl sonu özeti anı → Profil sekmesi: özet afişi orada ve kendi
+    // takvim kapısıyla açılır (`RecapBanner`). TÜFE günü anı ana ekranda
+    // kalır (eski davranış).
+    if (type == calendarNudgeType &&
+        data['occasion']?.toString() == yilSonuOccasion) {
+      MainNavigationScreen.sekmeIstegi.value =
+          MainNavigationScreen.profilSekmesi;
+      return;
+    }
+
     // Fiyat alarmı: alarmın kurulduğu varlığın ekranı, GÜNLÜK sekmesinde.
     //
     // ÖNCEKİ KARAR ve neden değişti (2026-09-15, kullanıcı isteği): bildirim
@@ -812,6 +842,53 @@ class NotificationService {
       // sessizce varsayılana düşer.
       initialPeriodDays: 0,
     );
+  }
+
+  /// Temettü önerisinden (push ya da çan) ön dolu temettü diyaloğunu açar.
+  ///
+  /// Öneri `ticker` taşır, `asset_id` değil (sunucu pozisyonu sembolden
+  /// tanır). Varlık, `FiyatKaynagi.temettuSembolu` ile — kartın ve sunucunun
+  /// kullandığı AYNI kuralla — oturum sahibinin defterinden bulunur.
+  /// Pozisyon bugün kapalıysa (öneriden sonra satıldı) ham lot kullanılır:
+  /// temettü hak tarihinde tutulan lota aittir, bugünkü mülkiyete değil.
+  /// Bulunamazsa sessiz (silinmiş varlığın eski önerisi için hata ekranı
+  /// yanıltıcı olur — [openAssetPerformance] ile aynı karar).
+  void openTemettuOnerisi(TemettuOnerisi oneri, {int deneme = 0}) {
+    if (kilitKapisi.ertele(() => openTemettuOnerisi(oneri))) return;
+    final navigator = _navigatorKey?.currentState;
+    final context = navigator?.overlay?.context;
+    if (navigator == null || context == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(_yenidenDenemeAraligi,
+          () => openTemettuOnerisi(oneri, deneme: deneme + 1));
+      return;
+    }
+
+    final container = ProviderScope.containerOf(context, listen: false);
+    final assets = container.read(portfolioProvider).valueOrNull?.assets;
+    final me = container.read(authProvider).valueOrNull?.id;
+    if (assets == null || assets.isEmpty || me == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(_yenidenDenemeAraligi,
+          () => openTemettuOnerisi(oneri, deneme: deneme + 1));
+      return;
+    }
+
+    Asset? lot;
+    for (final a in assets) {
+      if (a.userId == me &&
+          a.isActive &&
+          a.isBuy &&
+          FiyatKaynagi.temettuSembolu(a) == oneri.ticker) {
+        lot = a;
+        break;
+      }
+    }
+    if (lot == null) return;
+    final gorunum = pozisyonGorunumu(assets, lot);
+
+    unawaited(AnalyticsService.instance.logDividendSuggestion(action: 'shown'));
+    showDividendDialog(context, asset: gorunum?.asset ?? lot, oneri: oneri);
   }
 
   /// Dış bağlantının hedefi bulunamadığında hata ekranı. Navigator hazır
