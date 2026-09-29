@@ -18,7 +18,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get email => 'E-posta';
 
   @override
-  String get emailInvalid => 'Geçerli e-posta girin';
+  String get emailInvalid => 'Geçerli bir e-posta gir';
 
   @override
   String get password => 'Şifre';
@@ -45,7 +45,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get signIn => 'Giriş Yap';
 
   @override
-  String get noAccountRegister => 'Hesabınız yok mu? Kayıt olun';
+  String get noAccountRegister => 'Hesabın yok mu? Kayıt ol';
 
   @override
   String get register => 'Kayıt Ol';
@@ -60,7 +60,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fullName => 'Ad Soyad';
 
   @override
-  String get fullNameRequired => 'Ad soyad girin';
+  String get fullNameRequired => 'Ad soyad gir';
 
   @override
   String get passwordRepeat => 'Şifre Tekrar';
@@ -78,7 +78,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sifreKuralRakam => 'En az bir rakam';
 
   @override
-  String get haveAccountSignIn => 'Zaten hesabınız var mı? Giriş yapın';
+  String get haveAccountSignIn => 'Zaten hesabın var mı? Giriş yap';
 
   @override
   String get exitAppTitle => 'Uygulamadan çık';
@@ -141,7 +141,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get disclaimerIntro =>
-      'Uygulamayı kullanmaya devam etmek için lütfen aşağıdaki yasal uyarıyı okuyun ve onaylayın.';
+      'Uygulamayı kullanmaya devam etmek için aşağıdaki yasal uyarıyı oku ve onayla.';
 
   @override
   String get disclaimerAcceptRow =>
@@ -200,7 +200,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get otpExpired => 'Kodun süresi doldu. Yeni kod iste.';
 
   @override
-  String get otpEnterFull => 'Lütfen 6 haneli kodu tam olarak girin.';
+  String get otpEnterFull => '6 haneli kodun tamamını gir.';
 
   @override
   String get otpSentTitle => 'Kod gönderildi';
@@ -424,10 +424,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get otpSentSuffix => '\nadresine gönderdik.';
 
   @override
-  String get registerNameMissing => 'Ad soyad girin.';
+  String get registerNameMissing => 'Ad soyad gir.';
 
   @override
-  String get registerEmailInvalid => 'Geçerli bir e-posta girin.';
+  String get registerEmailInvalid => 'Geçerli bir e-posta gir.';
 
   @override
   String get registerPasswordsMismatch => 'Şifreler eşleşmiyor.';
@@ -627,11 +627,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tickerHintStock =>
-      'Örn: THYAO.IS, GARAN.IS  (Borsa İstanbul için .IS ekleyin)';
+      'Örn: THYAO.IS, GARAN.IS  (Borsa İstanbul için .IS ekle)';
 
   @override
   String get tickerHintFund =>
-      'Yahoo Finance kodu yoksa boş bırakın, fiyatı manuel girin';
+      'Yahoo Finance kodu yoksa boş bırak, fiyatı elle gir';
 
   @override
   String get tickerHintFx => 'Örn: USDTRY=X, EURTRY=X, GBPTRY=X';
@@ -697,7 +697,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get addNote => 'Not ekle';
 
   @override
-  String get notesHint => 'Notlarınız...';
+  String get notesHint => 'Notların...';
 
   @override
   String get txHasNote => 'Not var';
@@ -728,6 +728,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noteNone => 'Bu işleme not yazılmamış.';
 
   @override
+  String get noteAddHint => 'Neden aldın, hedefin ne? Kısa bir not yaz.';
+
+  @override
   String get noteReadOnlyPartner =>
       'Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.';
 
@@ -755,7 +758,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get quickEntryHelp =>
-      'Her satıra bir varlık yazın. Fiyat opsiyonel — boş bırakırsanız güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet';
+      'Her satıra bir varlık yaz. Fiyat opsiyonel — boş bırakırsan güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet';
 
   @override
   String get quickEntryPlaceholder =>
@@ -779,7 +782,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fundsLoading => 'Fonlar yükleniyor...';
 
   @override
-  String get pleaseWait => 'Lütfen bekleyin';
+  String get pleaseWait => 'Lütfen bekle';
 
   @override
   String get fundsLoadFailed => 'Fonlar yüklenemedi';
@@ -797,7 +800,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickStock => 'Hisse seç';
 
   @override
-  String get pickStockTap => 'Hisse seçmek için dokunun...';
+  String get pickStockTap => 'Hisse seçmek için dokun...';
 
   @override
   String get pickFundPrompt => 'Bir fon seç';
@@ -806,7 +809,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickFund => 'Fon seç';
 
   @override
-  String get pickFundTap => 'Fon seçmek için dokunun...';
+  String get pickFundTap => 'Fon seçmek için dokun...';
 
   @override
   String get noResults => 'Sonuç bulunamadı';
@@ -966,7 +969,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get feedbackTitle => 'Şikayet & Tavsiye';
 
   @override
-  String get feedbackHint => 'Mesajınızı yazın…';
+  String get feedbackHint => 'Mesajını yaz…';
 
   @override
   String get send => 'Gönder';
@@ -1116,7 +1119,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonunuz açılmadan görülebildiği için varsayılan olarak kapalıdır.';
+      'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.';
 
   @override
   String get partnerActivityNotifications => 'Ortak hareketi bildirimleri';
@@ -1174,14 +1177,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get generateInviteCodeBody =>
-      'Kodu ortağınıza gönderin. Ortak kodu girince size onay isteği gelir.';
+      'Kodu ortağına gönder. Ortağın kodu girince sana onay isteği gelir.';
 
   @override
   String get enterPartnerCode => 'Ortak Kodunu Gir';
 
   @override
   String get enterPartnerCodeBody =>
-      'Ortağınızın size gönderdiği kodu girin (örn: KRHNJ-8P2SW). Onay vermesi beklenir.';
+      'Ortağının sana gönderdiği kodu gir (örn: KRHNJ-8P2SW). Onay vermesi beklenir.';
 
   @override
   String tooManyAttempts(String wait) {
@@ -1197,7 +1200,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cancelWord => 'İptal';
 
   @override
-  String get noPartnersYet => 'Henüz ortağınız yok';
+  String get noPartnersYet => 'Henüz ortağın yok';
 
   @override
   String get removePartnerSemantics => 'Ortağı sil';
@@ -1763,11 +1766,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notInPortfolioNote => 'Bu varlıklar portföyüne dahil değildir.';
 
   @override
-  String get addAssetsToCompare => 'Karşılaştırmak için varlık ekleyin';
+  String get addAssetsToCompare => 'Karşılaştırmak için varlık ekle';
 
   @override
   String get addAssetsToCompareBody =>
-      'Portföyünüzde olmayan varlıkları da ekleyebilirsiniz.';
+      'Portföyünde olmayan varlıkları da ekleyebilirsin.';
 
   @override
   String get inMyPortfolio => 'Portföyümde';
@@ -2280,7 +2283,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get undoFailed => 'Geri alınamadı';
 
   @override
-  String get enterValidAmount => 'Geçerli bir tutar girin';
+  String get enterValidAmount => 'Geçerli bir tutar gir';
 
   @override
   String get dividendSaved => 'Temettü kaydedildi';
@@ -2893,7 +2896,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String hiddenOutsideWindow(String start, String end) {
-    return 'Şu an görünmüyor: saat $start–$end aralığının dışındasınız. Banner $start\'da görünecek. Hemen görmek için \"Gün boyu göster\"i açın.';
+    return 'Şu an görünmüyor: saat $start–$end aralığının dışındasın. Banner $start\'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.';
   }
 
   @override
@@ -3885,10 +3888,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kullaniciAdiCikis => 'Çıkış yap';
 
   @override
-  String get registerUsernameMissing => 'Kullanıcı adı girin.';
+  String get registerUsernameMissing => 'Kullanıcı adı gir.';
 
   @override
   String get deletedFilter => 'Silinenler';
+
+  @override
+  String get deletedEmptyTitle => 'Silinmiş kayıt yok';
+
+  @override
+  String get deletedEmptyBody =>
+      'Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.';
 
   @override
   String txDateLabeled(String tur, String tarih) {

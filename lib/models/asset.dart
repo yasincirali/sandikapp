@@ -282,7 +282,14 @@ class Asset {
   /// Temizlenmiş ticker kodu — sadece fon ve hisse için anlamlı
   String? get displayTicker {
     if (ticker.trim().isEmpty) return null;
-    final t = ticker.replaceAll('.IS', '').replaceAll('=X', '').trim();
+    // `TEFAS:` öneki de atılır (2026-09-29): eski fon kayıtları kodu
+    // `TEFAS:IJC` biçiminde taşıyor, yenileri öneksiz (`DLY`). Aynı listede
+    // biri önekli biri öneksiz görünüyordu (Silinenler, hareketler).
+    final t = ticker
+        .replaceFirst(RegExp(r'^TEFAS:', caseSensitive: false), '')
+        .replaceAll('.IS', '')
+        .replaceAll('=X', '')
+        .trim();
     return t.isEmpty ? null : t;
   }
 

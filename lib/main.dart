@@ -306,7 +306,7 @@ class _ConfigErrorApp extends StatelessWidget {
                 const SizedBox(height: 12),
                 const Text(
                   'Bu build eksik Supabase kimlik bilgileriyle derlenmiş. '
-                  'Sorun geliştirici tarafında; yeni bir sürüm bekleyin.',
+                  'Sorun geliştirici tarafında; yeni bir sürümü bekle.',
                   style: TextStyle(color: Colors.white70, fontSize: 15),
                 ),
                 const SizedBox(height: 24),

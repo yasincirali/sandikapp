@@ -104,7 +104,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
         loading: () => const SandikSkeletonList(rows: 5),
         data: (liste) {
           if (liste.isEmpty) return _bosDurum(c);
-          return RefreshIndicator(
+          return RefreshIndicator.adaptive(
             color: c.amberText,
             onRefresh: () => ref.read(priceAlertsProvider.notifier).refresh(),
             child: ListView.separated(

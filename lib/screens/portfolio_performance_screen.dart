@@ -60,7 +60,6 @@ import '../providers/preferences_provider.dart'
 import 'leaderboard_screen.dart';
 import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';

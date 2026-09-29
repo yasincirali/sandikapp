@@ -18,7 +18,7 @@ import '../screens/main_navigation_screen.dart';
 /// Bir ara "günlük grafik için ayrı bir parametre GEREKMEZ, ekran zaten
 /// `_selectedPeriodIdx = 0` ile açılıyor" deniyordu. Bu varsayım YALNIZCA
 /// ekran o dokunuşla İLK KEZ kurulduğunda doğru: sekmeler `IndexedStack`
-/// içinde yaşıyor ve state korunuyor (bkz. `_AnimatedIndexedStack`). Ekranı
+/// içinde yaşıyor ve state korunuyor (bkz. `_SekmeYigini`). Ekranı
 /// daha önce açıp 1Y'de ya da Özet sekmesinde bırakan kullanıcı, kilit
 /// ekranındaki GÜNLÜK rakamına dokunduğunda bambaşka bir dönemin kartına
 /// düşüyordu — dokunuşun tek vaadi olan "aynı sayıyı büyük gör" kırılıyordu.

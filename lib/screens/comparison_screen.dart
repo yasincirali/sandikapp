@@ -242,7 +242,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           children: [
             _periodSelector(p),
             Expanded(
-              child: RefreshIndicator(
+              child: RefreshIndicator.adaptive(
                   color: p.amberText,
                   // Periyot değişimiyle aynı yol: tüm seriler yeniden çekilir.
                   onRefresh: () => _changePeriod(_periodIdx),

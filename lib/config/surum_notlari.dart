@@ -114,6 +114,23 @@ const List<SurumNotu> surumNotlari = [
             've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim olarak '
             'havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
       ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'İşlem notların artık görünüyor',
+        aciklama: "Varlık eklerken yazdığın not kayboluyordu. Artık notu olan "
+            "işlemin tarihinin yanında küçük bir işaret var; harekete "
+            "dokununca notu okur, düzeltir ya da yeni not yazarsın. Notlar "
+            "Portföy'de varlık kartını açınca da görünür, Tüm Hareketler'de "
+            "aranır.",
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.genel,
+        baslik: 'Daha okunaklı, daha hızlı',
+        aciklama: 'Koyu temada ikincil yazılar daha okunaklı; sekmeler '
+            'arasında geçiş anında. Grafiklerde eksen yazıları artık hiç '
+            'iki satıra kırılmıyor. Fiyatlar yenilenince ana sayfadaki '
+            'toplam, değişimin yönünü kısa bir renkle gösterir.',
+      ),
       // Kripto (2026-09-25) ayrı bir 1.1.7 notu olarak yazılmıştı; ASC'de
       // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump
       // yapıyor, yani derleme 1.1.6 çıkacak. '1.1.7' notu hiç gösterilmezdi

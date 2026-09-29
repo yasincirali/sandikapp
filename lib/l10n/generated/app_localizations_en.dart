@@ -727,6 +727,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteNone => 'No note on this transaction.';
 
   @override
+  String get noteAddHint =>
+      'Why did you buy it, what\'s your target? Write a short note.';
+
+  @override
   String get noteReadOnlyPartner =>
       'This record belongs to your partner; only they can edit its note.';
 
@@ -3901,6 +3905,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deletedFilter => 'Deleted';
+
+  @override
+  String get deletedEmptyTitle => 'No deleted records';
+
+  @override
+  String get deletedEmptyBody =>
+      'When you delete an asset, its buys, sells and deletion date stay here; they don\'t count toward your portfolio.';
 
   @override
   String txDateLabeled(String tur, String tarih) {

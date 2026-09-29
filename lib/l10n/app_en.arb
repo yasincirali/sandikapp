@@ -357,6 +357,7 @@
   "noteSaveFailed": "Couldn't save the note",
   "noteRemove": "Remove note",
   "noteNone": "No note on this transaction.",
+  "noteAddHint": "Why did you buy it, what's your target? Write a short note.",
   "noteReadOnlyPartner": "This record belongs to your partner; only they can edit its note.",
   "noteReadOnlyDeleted": "A deleted record's note can't be edited.",
   "notesSection": "Notes",
@@ -1188,17 +1189,6 @@
   },
   "deletedNRecords": "Deleted · {n} records",
   "@deletedNRecords": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "txDeleted": "Deleted",
-  "txVoided": "removed",
-  "seeAllShort": "See all",
-  "nTransactions": "{n} transactions",
-  "@nTransactions": {
     "placeholders": {
       "n": {
         "type": "int"
@@ -2655,6 +2645,8 @@
   "kullaniciAdiCikis": "Sign out",
   "registerUsernameMissing": "Enter a username.",
   "deletedFilter": "Deleted",
+  "deletedEmptyTitle": "No deleted records",
+  "deletedEmptyBody": "When you delete an asset, its buys, sells and deletion date stay here; they don't count toward your portfolio.",
   "txDateLabeled": "{tur}: {tarih}",
   "@txDateLabeled": {
     "placeholders": {

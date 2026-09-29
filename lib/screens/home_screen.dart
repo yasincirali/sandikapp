@@ -515,7 +515,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // duruyor ve doğrusu da bu.
     final isEmptyOwn = ownView && aktifLotlar(myState.assets).isEmpty;
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       color: context.c.amberText,
       // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
       onRefresh: () =>
@@ -741,6 +741,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     state: displayedState,
                     hideBalance: ref.watch(balanceHiddenProvider),
                     baz: baz,
+                    // Görünüm değişince toplam vurgusu yakılmaz.
+                    vurguKimligi: _view ?? 'birlikte',
                     // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
                     trailing: allActivePartners.isEmpty
                         ? null
@@ -896,7 +898,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final count = recentAssets.length > 3 ? 3 : recentAssets.length;
 
                 final hideBalance = ref.watch(balanceHiddenProvider);
-                return SandikCard(
+                // Tur hedefi: satırların dokunulabilir olduğunu (işlem notu)
+                // satırın kendisi göstermiyor; tur anlatır.
+                return TourAnchor(
+                  target: TourTarget.hareketler,
+                  child: SandikCard(
                   padding: EdgeInsets.zero,
                   radius: SandikRadius.lg,
                   child: Column(
@@ -973,6 +979,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                         ),
                     ],
+                  ),
                   ),
                 );
               }),

@@ -715,7 +715,13 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
     surface1: Color(0xFF112E28),
     surface2: Color(0xFF1A3D2E),
     text90: Color(0xE1FFFFFF),
-    text58: Color(0x8CFFFFFF),
+    // 0xB0 (7.65:1). Eskiden 0x8C (5.43:1) idi ve text36'nın AA
+    // düzeltmesinden (0x94, 5.86:1) SONRA ondan soluk kalmıştı: koyu temada
+    // "ikincil" etiket "üçüncül" tarihten/dipnottan sönük görünüyordu —
+    // hiyerarşi ters (hareket/UX denetimi 2026-09-29). Sıra artık
+    // 90 (11.57) > 58 (7.65) > 36 (5.86); açık temanın 6.90'ına yakın.
+    // `metin_hiyerarsisi_test` iki temada sırayı kilitler.
+    text58: Color(0xB0FFFFFF),
     // 0x59 (0.35 opak) surface1 üzerinde yalnızca 2.91:1 veriyordu — AA'nın
     // büyük-metin eşiğinin (3:1) bile altında. Bu ton gerçek metinde
     // kullanıldığı için opaklık yükseltildi.
@@ -1116,7 +1122,7 @@ class Sandik {
 
   // ── Sabit opaklıklar (dark zemin üzeri metin) ──────────────────────────────
   static const Color text90    = Color(0xE1FFFFFF); // 0.88 opak (Ana başlık)
-  static const Color text58    = Color(0x8CFFFFFF); // 0.55 (İkincil etiket)
+  static const Color text58    = Color(0xB0FFFFFF); // 7.65:1 (İkincil etiket; text36'dan parlak — bkz. SandikPalette.dark)
   // 0x59 surface1 üzerinde 2.91:1 veriyordu (AA büyük-metin eşiği 3:1'in
   // bile altında) ve bu ton gerçek metinde kullanılıyor. Yükseltildi.
   static const Color text36    = Color(0x94FFFFFF); // 5.17:1

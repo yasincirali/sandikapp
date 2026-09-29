@@ -376,6 +376,22 @@ List<_Adim> _adimlariKur() {
       dokunulabilir: false,
     ),
     _Adim(
+      id: 'islem_notu',
+      hedef: TourTarget.hareketler,
+      rozet: 'YENİ',
+      baslik: 'İşlem notların',
+      govde: 'Bir harekete dokun: o işleme not yaz ya da yazdığını oku '
+          '("maaştan aldım", "hedef 400"). Notu olan işlemin tarihinin '
+          "yanında küçük bir işaret durur. Notlar Portföy'de varlık kartını "
+          "açınca da görünür, Tüm Hareketler'de aranır.",
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+      // Hareket kabı yalnız kayıt varken çizilir (`home_screen.dart`).
+      kosul: (ref) => aktifLotlar(
+              ref.read(portfolioProvider).valueOrNull?.assets ?? const [])
+          .isNotEmpty,
+    ),
+    _Adim(
       id: 'bildirimler',
       hedef: TourTarget.bildirimCani,
       rozet: 'YENİ',

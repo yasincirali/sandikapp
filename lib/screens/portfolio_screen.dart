@@ -1,5 +1,6 @@
 import 'dart:async' show FutureOr, unawaited;
 
+import '../widgets/sandik_skeleton.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -36,7 +37,6 @@ import 'comparison_screen.dart';
 import 'asset_detail_screen.dart';
 import 'watchlist_screen.dart';
 import '../providers/watchlist_provider.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../services/islem_notu.dart';
@@ -278,7 +278,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                   error: (e, _) => SandikErrorView(
                       error: e,
                       onRetry: () => ref.invalidate(portfolioProvider)),
-                  data: (pState) => RefreshIndicator(
+                  data: (pState) => RefreshIndicator.adaptive(
                     color: context.c.amberText,
                     // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
                     onRefresh: () => ref
@@ -321,7 +321,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                         ref.invalidate(portfolioProvider))
                                 : const SizedBox(
                                     height: 300,
-                                    child: CustomLoadingView(),
+                                    child: SandikSkeletonList(
+                                        rows: 4, padding: EdgeInsets.zero),
                                   ))
                             : ((Map<String, List<Asset>> partnerMap) {
                                 // Sahiplik sınırı KORUNMALI: `positionKey` sahip

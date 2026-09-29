@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,7 +11,6 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/polling.dart';
 import '../utils/sandik_snack.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 
 class PartnershipRequestsScreen extends ConsumerStatefulWidget {
@@ -106,7 +106,7 @@ class _PartnershipRequestsScreenState
         title: context.l10n.partnershipApprovalTitle,
         transparent: true,
       ),
-      body: RefreshIndicator(
+      body: RefreshIndicator.adaptive(
         color: context.c.amberText,
         onRefresh: _load,
         child: ListView(
@@ -120,9 +120,12 @@ class _PartnershipRequestsScreenState
             ),
             const SizedBox(height: 20),
             if (loading)
-              const Padding(
-                padding: EdgeInsets.only(top: 40),
-                child: CustomLoadingView(),
+              // Kaydırılan sütunda: iskelet sabit yükseklikte (liste
+              // iskeleti kendi kaydırmasını yönetir, sınırsız yükseklik almaz).
+              const SizedBox(
+                height: 140,
+                child:
+                    SandikSkeletonList(rows: 2, padding: EdgeInsets.zero),
               )
             else if (pendingInvites.isEmpty)
               Container(

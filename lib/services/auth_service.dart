@@ -310,7 +310,7 @@ class AuthService {
   }) async {
     final normalizedEmail = email.toLowerCase().trim();
     if (normalizedEmail.isEmpty || !normalizedEmail.contains('@')) {
-      throw const AuthException('Geçerli bir e-posta girin.');
+      throw const AuthException('Geçerli bir e-posta gir.');
     }
     if (displayName.trim().isEmpty) {
       throw const AuthException('Ad soyad boş olamaz.');
@@ -337,7 +337,7 @@ class AuthService {
           ));
 
       if (response != null && response.user == null) {
-        throw const AuthException('Kayıt başarısız. Lütfen tekrar deneyin.');
+        throw const AuthException('Kayıt başarısız. Lütfen tekrar dene.');
       }
 
       // NOT: identities.isEmpty kontrolü kaldırıldı. Confirm-email AÇIKKEN
@@ -434,7 +434,7 @@ class AuthService {
       );
 
       if (response.user == null) {
-        throw const AuthException('Kod doğrulanamadı. Tekrar deneyin.');
+        throw const AuthException('Kod doğrulanamadı. Tekrar dene.');
       }
 
       // Register sırasında kaydettiğimiz displayName'i çek; profile upsert.
@@ -598,7 +598,7 @@ class AuthService {
       }
       if (e.message.contains('Email not confirmed')) {
         throw const AuthException(
-            'E-posta adresinizi doğrulayın. Gelen kutunuzu kontrol edin.');
+            'E-posta adresini doğrula. Gelen kutunu kontrol et.');
       }
       // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
       throw AuthException(friendlyError(e));
@@ -698,7 +698,7 @@ class AuthService {
   Future<void> sendPasswordResetOtp(String email) async {
     final normalized = email.toLowerCase().trim();
     if (normalized.isEmpty || !normalized.contains('@')) {
-      throw const AuthException('Geçerli bir e-posta girin.');
+      throw const AuthException('Geçerli bir e-posta gir.');
     }
     try {
       await _log.log<void>(
@@ -746,7 +746,7 @@ class AuthService {
     if (passError != null) throw AuthException(passError);
     final cleanOtp = otp.trim();
     if (cleanOtp.isEmpty) {
-      throw const AuthException('Kod girin.');
+      throw const AuthException('Kod gir.');
     }
     // Kayıt OTP'siyle aynı biçim kuralı — sunucuya biçimsiz kod gitmesin.
     if (cleanOtp.length != 6 || int.tryParse(cleanOtp) == null) {
@@ -1044,7 +1044,7 @@ class AuthService {
     final codePattern = RegExp(r'^([A-Z2-9]{5}-[A-Z2-9]{5})$');
     if (!codePattern.hasMatch(trimmed)) {
       throw const AuthException(
-          'Geçersiz kod formatı. XXXXX-XXXXX biçiminde girin.');
+          'Geçersiz kod formatı. XXXXX-XXXXX biçiminde gir.');
     }
 
     // Rate-limit: son 10 dakikada 5 başarısız deneme → blokla
@@ -1314,7 +1314,7 @@ class AuthService {
       final seconds = (remainingMs / 1000).ceil().clamp(1, windowMs ~/ 1000);
       throw RateLimitedException(
         'Çok fazla başarısız deneme. '
-        '${_formatDuration(seconds)} sonra tekrar deneyin.',
+        '${_formatDuration(seconds)} sonra tekrar dene.',
         seconds,
       );
     }

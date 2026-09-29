@@ -656,7 +656,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         ],
       ),
       body: SafeArea(
-        child: RefreshIndicator(
+        child: RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () => ref.read(portfolioProvider.notifier).refreshPrices(force: true),
       child: SingleChildScrollView(
@@ -782,7 +782,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       return SizedBox(
                         height: GrafikStili.kartYuksekligi,
                         child: waiting
-                            ? const CustomLoadingView()
+                            ? const SandikSkeletonChart(
+                                height: GrafikStili.kartYuksekligi)
                             : Center(
                                 child: Padding(
                                   padding: const EdgeInsets.all(SandikSpace.lg),

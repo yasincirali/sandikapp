@@ -148,7 +148,11 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
         maxLines: 5,
         textCapitalization: TextCapitalization.sentences,
         style: context.t.bodyLarge?.copyWith(color: context.c.text90),
-        decoration: context.inputDecoration(l10n.notesHint),
+        // Boş alan ne yazılacağını söyler (UX denetimi 2026-09-29): satırın
+        // dokunulabilir olduğunu keşfeden kullanıcıya notun işe yarar
+        // örneğini verir.
+        decoration: context.inputDecoration(
+            widget.not == null ? l10n.noteAddHint : l10n.notesHint),
       ),
       const SizedBox(height: SandikSpace.md),
       FilledButton(

@@ -1101,21 +1101,25 @@ class _GirisState extends State<_Giris> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
+  // Eğri bir kez kurulur; `FadeTransition` katman opaklığını doğrudan
+  // değiştirir — `AnimatedBuilder` içindeki `Opacity` her karede yeniden
+  // kuruluyordu (hareket denetimi 2026-09-29). Kayma piksel cinsinden
+  // (`SandikSpace.md`) kaldığı için `Transform.translate` korunur.
+  late final Animation<double> _egri =
+      CurvedAnimation(parent: _c, curve: SandikMotion.enter);
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _c,
-      child: widget.child,
-      builder: (_, child) {
-        final t = SandikMotion.enter.transform(_c.value);
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, (1 - t) * SandikSpace.md),
-            child: child,
-          ),
-        );
-      },
+    return FadeTransition(
+      opacity: _egri,
+      child: AnimatedBuilder(
+        animation: _egri,
+        child: widget.child,
+        builder: (_, child) => Transform.translate(
+          offset: Offset(0, (1 - _egri.value) * SandikSpace.md),
+          child: child,
+        ),
+      ),
     );
   }
 }

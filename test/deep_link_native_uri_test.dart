@@ -123,7 +123,7 @@ void main() {
   // kapsamda (ortak sekmesi, tür filtresi) ya da Özet sekmesinde açılırsa
   // kullanıcı iki rakamı yan yana görüp hangisine güveneceğini bilemez.
   //
-  // Ekran state'i `IndexedStack` içinde KORUNUYOR (bkz. `_AnimatedIndexedStack`),
+  // Ekran state'i `IndexedStack` içinde KORUNUYOR (bkz. `_SekmeYigini`),
   // yani `initialPeriodIdx` varsayılanına güvenmek yetmez — istek açıkça
   // taşınmalı ve tüketilmeli.
   group('dokunuş → GÜNLÜK görünüm', () {

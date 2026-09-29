@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -426,7 +427,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Expanded(
                   child: AbsorbPointer(
                     absorbing: _busy,
-                    child: RefreshIndicator(
+                    child: RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () async {
         await ref.read(partnersProvider.notifier).refresh();
@@ -461,7 +462,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SandikSectionHeader(title: context.l10n.myPartnersUpper),
                         const SizedBox(height: 16),
                         partnersAsync.when(
-                          loading: () => const CustomLoadingView(),
+                          loading: () => const SizedBox(
+                            height: 140,
+                            child: SandikSkeletonList(
+                                rows: 2, padding: EdgeInsets.zero),
+                          ),
                           error: (e, _) => SandikErrorView(error: e),
                           data: (partners) => partners.isEmpty
                               ? _buildEmptyPartners()

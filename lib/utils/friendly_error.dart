@@ -255,38 +255,33 @@ Future<bool> showSandikConfirm({
     barrierDismissible: barrierDismissible,
     barrierLabel: 'Sandık onay',
     barrierColor: _barrierColor(isLight),
-    transitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: SandikMotion.surface,
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
-    transitionBuilder: (ctx, anim, _, __) {
-      final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
-      return Opacity(
-        opacity: curved.value,
-        child: Transform.scale(
-          scale: 0.94 + 0.06 * curved.value,
-          child: _SandikDialogShell(
-            accent: accent,
-            icon: icon,
-            title: title,
-            message: message,
-            detail: detail,
-            actions: [
-              _DialogButton(
-                label: cancelLabel,
-                color: palette.text58,
-                filled: false,
-                onTap: () => Navigator.of(ctx).pop(false),
-              ),
-              _DialogButton(
-                label: confirmLabel,
-                color: accent,
-                filled: true,
-                onTap: () => Navigator.of(ctx).pop(true),
-              ),
-            ],
+    transitionBuilder: (ctx, anim, _, __) => _diyalogGecisi(
+      ctx,
+      anim,
+      _SandikDialogShell(
+        accent: accent,
+        icon: icon,
+        title: title,
+        message: message,
+        detail: detail,
+        actions: [
+          _DialogButton(
+            label: cancelLabel,
+            color: palette.text58,
+            filled: false,
+            onTap: () => Navigator.of(ctx).pop(false),
           ),
-        ),
-      );
-    },
+          _DialogButton(
+            label: confirmLabel,
+            color: accent,
+            filled: true,
+            onTap: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    ),
   );
   return result == true;
 }
@@ -489,25 +484,20 @@ Future<void> showSandikDialog({
     barrierDismissible: true,
     barrierLabel: 'Sandık dialog',
     barrierColor: _barrierColor(isLight),
-    transitionDuration: const Duration(milliseconds: 220),
+    transitionDuration: SandikMotion.surface,
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
-    transitionBuilder: (ctx, anim, _, __) {
-      final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
-      return Opacity(
-        opacity: curved.value,
-        child: Transform.scale(
-          scale: 0.94 + 0.06 * curved.value,
-          child: _SandikDialog(
-            accent: accent,
-            icon: icon,
-            title: title,
-            message: message,
-            actionLabel: actionLabel,
-            liveMessage: liveMessage,
-          ),
-        ),
-      );
-    },
+    transitionBuilder: (ctx, anim, _, __) => _diyalogGecisi(
+      ctx,
+      anim,
+      _SandikDialog(
+        accent: accent,
+        icon: icon,
+        title: title,
+        message: message,
+        actionLabel: actionLabel,
+        liveMessage: liveMessage,
+      ),
+    ),
   );
 }
 
@@ -600,4 +590,27 @@ String _humanize(String raw) {
   // tür üzerinden geçer (U13); bu satır ona güvenmez.
   if (RegExp(r'[ğüşıöçĞÜŞİÖÇ]').hasMatch(stripped)) return stripped;
   return 'Bir şeyler ters gitti, tekrar dene.';
+}
+
+/// Sandık diyaloglarının giriş/çıkışı — iki diyalog (onay, bilgi) AYNI geçiş.
+///
+/// %94'ten büyüyerek + solarak gelir (hiçlikten değil; modal ortada kalır).
+/// "Hareketi azalt" açıkken büyüme KALKAR, solma kalır: azaltılmış hareket
+/// sıfır hareket değil, konum/ölçek değişimi olmayan hareket (hareket
+/// denetimi 2026-09-29 — eskiden azaltılmış harekette de büyüyordu).
+/// `FadeTransition`/`ScaleTransition`: her karede `Opacity` yeniden
+/// kurulmaz, katmanın opaklığı doğrudan değişir.
+Widget _diyalogGecisi(
+    BuildContext ctx, Animation<double> anim, Widget child) {
+  final egri = CurvedAnimation(parent: anim, curve: SandikMotion.enter);
+  if (MediaQuery.disableAnimationsOf(ctx)) {
+    return FadeTransition(opacity: egri, child: child);
+  }
+  return FadeTransition(
+    opacity: egri,
+    child: ScaleTransition(
+      scale: Tween<double>(begin: 0.94, end: 1).animate(egri),
+      child: child,
+    ),
+  );
 }

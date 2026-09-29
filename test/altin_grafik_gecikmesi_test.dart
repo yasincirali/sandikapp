@@ -105,8 +105,8 @@ void main() {
               'çizilmez, kullanıcı bunu hata sanar.');
     });
 
-    test('çekim SÜRERKEN spinner gösterilir', () {
-      expect(ekran.contains('waiting\n                            ? const CustomLoadingView()'),
+    test('çekim SÜRERKEN yükleme iskeleti gösterilir', () {
+      expect(ekran.contains('waiting\n                            ? const SandikSkeletonChart('),
           isTrue,
           reason: 'Bekleme görünmüyor.');
     });

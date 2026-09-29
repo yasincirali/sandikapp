@@ -34,7 +34,7 @@ void main() {
   });
 
   test('dal yükleme ile grafik ARASINDA — boş durumları gölgelemiyor', () {
-    final yukleme = kaynak.indexOf('child: CustomLoadingView())');
+    final yukleme = kaynak.indexOf('const SandikSkeletonChart(height: 300)');
     final genc = kaynak.indexOf('context.l10n.youngPortfolioTitle');
     final grafik = kaynak.indexOf('builder: (context, _, __) => _buildChartContainer(');
     expect(yukleme, greaterThan(0));

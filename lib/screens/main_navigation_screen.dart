@@ -291,7 +291,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       },
       child: Scaffold(
         backgroundColor: context.c.background,
-        body: _AnimatedIndexedStack(
+        body: _SekmeYigini(
           index: _currentIndex,
           children: _screens,
         ),
@@ -369,13 +369,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               // rengin yanı sıra boyutla da okunur.
               AnimatedScale(
                 scale: isSelected ? 1.08 : 1.0,
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
+                // Token + "hareketi azalt" (hareket denetimi 2026-09-29):
+                // ham 200 ms ölçek, azaltılmış harekette de büyüyordu.
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
                 child: Icon(icon, color: color, size: 26),
               ),
               const SizedBox(height: SandikSpace.xs),
               AnimatedDefaultTextStyle(
-                duration: SandikMotion.state,
+                duration: SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 style: context.t.labelMedium!.copyWith(
                   letterSpacing: 0,
@@ -428,19 +430,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 }
 
-/// Sekme değişiminde çapraz sönümleme yapan [IndexedStack].
+/// Sekmeleri ağaçta tutan [IndexedStack] — geçiş ANLIK.
 ///
 /// Neden düz `AnimatedSwitcher` değil: AnimatedSwitcher eski çocuğu ağaçtan
 /// söker, bu da her sekme dönüşünde ekranların baştan kurulmasına (scroll
 /// pozisyonu sıfırlanması, provider'ların yeniden tetiklenmesi) yol açardı.
-/// Burada tüm ekranlar `IndexedStack` gibi ağaçta kalır — yalnızca opaklık
-/// animasyonlanır. State koruması aynen sürer.
+/// Burada tüm ekranlar `IndexedStack` gibi ağaçta kalır. State koruması
+/// aynen sürer.
 ///
-/// Görsel davranış: giden sekme sönerken gelen sekme belirir; ikisi de
-/// çizilirken üstteki (gelen) tıklamaları alır, alttaki `IgnorePointer`
-/// altındadır — geçiş sırasında yanlış sekmeye dokunma olmaz.
-class _AnimatedIndexedStack extends StatefulWidget {
-  const _AnimatedIndexedStack({
+/// ## Neden çapraz sönüm KALDIRILDI (hareket denetimi, 2026-09-29)
+/// Eskiden giden sekme 260 ms'de sönerken gelen belirirdi. Sekme çubuğu
+/// uygulamanın en sık dokunulan öğesi (günde onlarca kez) ve geçişin
+/// ortasında iki TAM EKRAN yarı saydam üst üste görünüyordu; tam ekran
+/// opaklık animasyonu da her karede iki ekranı ara katmana boyuyordu.
+/// iOS'ta sekme geçişi anlıktır (HIG, Tab bars). Sık tekrarlanan eylem
+/// hareket istemez; "hangi sekmedeyim" bilgisini sekme çubuğu verir.
+/// Pasif sekme `Offstage`: ağaçta kalır, çizilmez, dokunuş almaz.
+/// Ekran okuyucu ağacı için `ExcludeSemantics` ayrıca korunur.
+class _SekmeYigini extends StatefulWidget {
+  const _SekmeYigini({
     required this.index,
     required this.children,
   });
@@ -449,12 +457,10 @@ class _AnimatedIndexedStack extends StatefulWidget {
   final List<Widget> children;
 
   @override
-  State<_AnimatedIndexedStack> createState() => _AnimatedIndexedStackState();
+  State<_SekmeYigini> createState() => _SekmeYiginiState();
 }
 
-class _AnimatedIndexedStackState extends State<_AnimatedIndexedStack> {
-  static const _duration = Duration(milliseconds: 260);
-
+class _SekmeYiginiState extends State<_SekmeYigini> {
   /// Henüz hiç görüntülenmemiş sekmeler inşa edilmez — ilk açılışta beş
   /// ekranın birden kurulması gecikme yaratırdı. IndexedStack'in kendi
   /// davranışı da budur (lazy değil ama görünmeyen çocuk layout almaz),
@@ -462,7 +468,7 @@ class _AnimatedIndexedStackState extends State<_AnimatedIndexedStack> {
   late final Set<int> _visited = {widget.index};
 
   @override
-  void didUpdateWidget(covariant _AnimatedIndexedStack oldWidget) {
+  void didUpdateWidget(covariant _SekmeYigini oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!_visited.contains(widget.index)) {
       _visited.add(widget.index);
@@ -471,9 +477,6 @@ class _AnimatedIndexedStackState extends State<_AnimatedIndexedStack> {
 
   @override
   Widget build(BuildContext context) {
-    // Erişilebilirlik: "hareketi azalt" açıkken anında geçiş.
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-
     return Stack(
       children: List.generate(widget.children.length, (i) {
         final isActive = i == widget.index;
@@ -483,10 +486,8 @@ class _AnimatedIndexedStackState extends State<_AnimatedIndexedStack> {
           return const SizedBox.shrink();
         }
 
-        return AnimatedOpacity(
-          opacity: isActive ? 1 : 0,
-          duration: reduceMotion ? Duration.zero : _duration,
-          curve: Curves.easeOut,
+        return Offstage(
+          offstage: !isActive,
           child: IgnorePointer(
             ignoring: !isActive,
             // Pasif sekmeler ağaçta kalır (state korunur) ama ne çizim

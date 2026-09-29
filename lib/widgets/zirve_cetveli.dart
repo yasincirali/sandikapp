@@ -17,10 +17,15 @@ import '../utils/tr_format.dart';
 /// bir sapla eksene bağlanır (`ZirveKiyas.katlar`).
 ///
 /// ## Hareket (2026-09-29, "daha göz alıcı ve akışkan")
-/// - Seçilen işaretin arkasında bir ışık halkası (imleç) durur; seçim
-///   değişince halka yeni işarete YAYLANARAK kayar ([SandikMotion.spring]).
-///   Göz nereden nereye gidildiğini izler.
-/// - Seçilen işaret yaylanarak büyür, bırakılan küçülür.
+/// - Seçilen işaretin arkasında bir ışık halkası (imleç) durur. Seçim
+///   değişince halka YENİ işarette doğar: [SandikMotion.surface] (240 ms)
+///   içinde yaylanarak belirir, cetvel boyunca KAYMAZ.
+/// - Seçilen işaret yaylanarak büyür, bırakılan küçülür (yine 240 ms).
+///
+///   Neden (hareket denetimi 2026-09-29): seçim bir DOKUNUŞ YANITI; eskiden
+///   halka 560 ms ([SandikMotion.flow]) boyunca taşarak kayıyordu ve
+///   bakılan an — seçimin kendisi — gecikiyordu. Dokunuş yanıtı 300 ms
+///   altında kalır; halkanın cetveli boydan boya geçmesi seçimde süstü.
 /// - Dönem değişince işaretler, saplar ve sıfır çizgisi yeni yerine
 ///   süzülür ([SandikMotion.glide]) — "bu hafta önümdeydi, bu ay gerimde".
 /// "Hareketi azalt" açıkken hepsi anında.
@@ -126,26 +131,44 @@ class ZirveCetveli extends StatelessWidget {
                       color: context.c.text36,
                     ),
                   ),
-              // Işık halkası (imleç): seçili işaretin arkasında, yaylanarak
-              // kayar. Dokunuşu yutmaz.
+              // Işık halkası (imleç): seçili işaretin arkasında. Dokunuşu
+              // yutmaz.
+              //
+              // Anahtar SEÇİME bağlı: seçim değişince eski halka söner, yenisi
+              // yeni işarette doğar (kayma yok — dokunuş yanıtı). Seçim aynı
+              // kalıp DÖNEM değişince aynı halka işaretle BİRLİKTE süzülür:
+              // süre ve eğri işaretlerinkiyle aynı ([flow] + [glide]),
+              // yoksa halka işaretinden önce varıp kopardı.
               if (seciliIdx >= 0)
                 AnimatedPositioned(
-                  key: const ValueKey('zirve-imlec'),
+                  key: ValueKey('zirve-imlec-${isaretler[seciliIdx].anahtar}'),
                   duration: SandikMotion.flowOf(context),
-                  curve: SandikMotion.spring,
+                  curve: SandikMotion.glide,
                   left: x(isaretler[seciliIdx].roi) - _haleCap / 2,
                   top: _eksenY - katlar[seciliIdx] * _katAdimi - _haleCap / 2,
                   child: IgnorePointer(
-                    child: Container(
-                      width: _haleCap,
-                      height: _haleCap,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            context.c.amberFill.withValues(alpha: 0.45),
-                            context.c.amberFill.withValues(alpha: 0),
-                          ],
+                    child: TweenAnimationBuilder<double>(
+                      key: const ValueKey('zirve-imlec'),
+                      tween: Tween<double>(begin: 0.6, end: 1),
+                      duration: SandikMotion.surfaceOf(context),
+                      curve: SandikMotion.spring,
+                      // Opaklık katmanı yerine degradenin kendi alfası: küçük
+                      // bir daire için ara katman açmaya gerek yok.
+                      builder: (context, t, _) => Transform.scale(
+                        scale: t,
+                        child: Container(
+                          width: _haleCap,
+                          height: _haleCap,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                context.c.amberFill.withValues(
+                                    alpha: 0.45 * ((t - 0.6) / 0.4).clamp(0, 1)),
+                                context.c.amberFill.withValues(alpha: 0),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -224,10 +247,11 @@ class ZirveCetveli extends StatelessWidget {
                   width: SandikTouch.min,
                   height: SandikTouch.min,
                   child: Center(
-                    // Seçilen işaret yaylanarak büyür.
+                    // Seçilen işaret yaylanarak büyür — dokunuş yanıtı,
+                    // 240 ms (bkz. sınıf notu "Hareket").
                     child: AnimatedScale(
                       scale: seciliMi ? 1.22 : 1,
-                      duration: SandikMotion.flowOf(context),
+                      duration: SandikMotion.surfaceOf(context),
                       curve: SandikMotion.spring,
                       child: AnimatedContainer(
                         duration: SandikMotion.stateOf(context),

@@ -113,7 +113,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // Hafta sonu kuyruğu: kapanıştan sonrası gri + kesikli çizilir.
         piyasaKapaliBaslangicTs: breakdown.piyasaKapaliBaslangicTs);
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () async {
         // Kullanıcı yenilemesi — fiyat önbelleği atlanır, gün içi future sıfırlanır.
@@ -282,7 +282,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               ),
             )
           else if (!hasData)
-            const SizedBox(height: 300, child: CustomLoadingView())
+            // Grafik yüklenirken grafik biçimli iskelet (UX denetimi
+            // 2026-09-29): ortada dönen halka "bozuk" okunur.
+            const SandikSkeletonChart(height: 300)
           // Portföy seçili dönemden GENÇ: ilk varlık bugün eklendiyse 1H/1A/
           // 6A/1Y serisi bugünün bir-iki noktasına iner. Eskiden grafik yine
           // çiziliyordu — yalnız fiyat ekseni, tarih ekseni yok, düz çizgi;
