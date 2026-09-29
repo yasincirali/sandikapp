@@ -126,6 +126,55 @@ String? kriptoKodu(String ticker) {
 /// `BTC` → `KRIPTO:BTC`.
 String kriptoSembolu(String kod) => '$kriptoOneki${kod.trim().toUpperCase()}';
 
+/// TEFAS fon sembol öneki — `assets.ticker` = `TEFAS:AFT`.
+///
+/// Fiyat servisi fonu YALNIZCA bu önekten tanır (`PriceService.fetchQuotes`
+/// `tefasList`); öneksiz kod Yahoo'ya düşer.
+const String tefasOneki = 'TEFAS:';
+
+/// TEFAS fon kodu: üç büyük harf/rakam (AFT, TTE, IPB…). Sunucu eşi
+/// `leaderboard-snapshot` › `TEFAS_KODU`.
+final RegExp _tefasKodDeseni = RegExp(r'^[A-Z0-9]{3}$');
+
+/// Varlığın KANONİK sembolü — fiyat, seri ve kimlik (`positionKey`,
+/// "Portföyünde" rozeti) hep bu biçimle çalışır.
+///
+/// ## Neden (emülatör bulgusu #2, 2026-09-29)
+/// Eski fon kayıtları kodu öneksiz taşıyor (`AFT`; CSV içe aktarma da
+/// 2026-09-29'a kadar öyle yazıyordu), yeni kayıtlar `TEFAS:AFT`. Öneksiz
+/// kod fiyat servisinde Yahoo'ya gidiyor ve fiyat DÖNMÜYORDU: 70.000 paylık
+/// fon eski `current_price` ile kaldı, portföy ~₺24.500 eksikti ve bunu
+/// hiçbir şey söylemiyordu. Aynı kod aramada `TEFAS:AFT` kimliğiyle
+/// eşleşmediği için "Portföyünde" rozeti de çıkmıyordu. Daha kötüsü: bir
+/// fon kodu tesadüfen bir ABD sembolüyle çakışsa Yahoo o hissenin USD
+/// fiyatını döndürür ve fona yazılırdı — uydurma sayı (sözleşme madde 3).
+///
+/// ## Kural
+/// Tür `fon` + elle fiyatlı DEĞİL + önek yok + kod TEFAS biçiminde (3 harf/
+/// rakam) → `TEFAS:KOD`. Başka her şey olduğu gibi döner (idempotent).
+///
+///   * Elle fiyatlı fon dışarıda: kod orada fiyat kaynağı değil, etikettir;
+///     yayımlanmış NAV'la birleştirilirse iki fiyat rejimi tek pozisyonda
+///     karışırdı.
+///   * 3 harf şartı sunucudan (`seriSembolu`) bilerek DAR: `.IS`'li ya da
+///     uzun kodlu eski bir "fon" kaydı bugün Yahoo'dan fiyat alıyor olabilir;
+///     onu TEFAS'a çevirmek çalışanı bozmaktır. TEFAS kodu olmayan şey TEFAS'a
+///     yönlendirilmez.
+///
+/// Veri DEĞİŞTİRİLMEZ (okuma tarafı): `Asset.fromSupabase` bu biçime
+/// çevirir, `toSupabase` satırın kayıtlı biçimini geri yazar. Sunucu
+/// tarafının eşi `leaderboard-snapshot` › `seriSembolu`.
+String kanonikTicker({
+  required AssetType type,
+  required String ticker,
+  required bool isManualPrice,
+}) {
+  if (type != AssetType.fon || isManualPrice) return ticker;
+  final t = ticker.trim().toUpperCase();
+  if (t.startsWith(tefasOneki) || !_tefasKodDeseni.hasMatch(t)) return ticker;
+  return '$tefasOneki$t';
+}
+
 // Döviz kodu → para sembolü
 const _currencySymbols = <String, String>{
   'USD': '\$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',

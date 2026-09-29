@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'helpers/kaynak.dart';
+import 'package:portfoy_takip/models/asset_categories.dart';
 import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
 
 /// Kayan bant — erişilebilirlik ve döngü kuralları.
@@ -240,5 +241,18 @@ void main() {
         reason: 'bant her görünümde çizilir (kullanıcı kararı 2026-09-28)');
     expect(kodSatirlari.contains('PiyasaAramaDugmesi('), isFalse,
         reason: 'arama artık şeridin içinde, ayrı dal yok');
+  });
+
+  // Emülatör bulgusu #14 (2026-09-29): bant "Gram altın" diye 22 ayar
+  // (`ALTIN_GRAM`) fiyatı gösteriyordu; portföydeki "Gram Altın (24 Ayar)"
+  // başka bir sayıydı. "Gram altın" gündelik dilde 24 ayardır.
+  test('banttaki gram altın, "Gram Altın (24 Ayar)" varlığıyla AYNI sembol',
+      () {
+    expect(PiyasaSeridi.semboller, contains(PiyasaSeridi.altinSembolu));
+    expect(PiyasaSeridi.altinSembolu,
+        goldTickerMap[GoldSubCategory.gr24.label],
+        reason: 'Bant ile portföydeki 24 ayar gram aynı fiyatı göstermeli.');
+    expect(PiyasaSeridi.semboller, isNot(contains('ALTIN_GRAM')),
+        reason: '`ALTIN_GRAM` 22 ayardır; "Gram altın" etiketiyle yanıltır.');
   });
 }

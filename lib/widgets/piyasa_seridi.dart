@@ -70,12 +70,30 @@ class PiyasaSeridi extends StatefulWidget {
   final VoidCallback? onAra;
 
   /// Sırası sabit: en çok bakılan en solda.
+  ///
+  /// Altın **24 ayar** gram (`ALTIN_GRAM24`), 22 ayar `ALTIN_GRAM` DEĞİL
+  /// (emülatör bulgusu #14, 2026-09-29). Bant "Gram altın 5.974" diyordu —
+  /// 22 ayar fiyatı — ama aynı kullanıcının portföyündeki "Gram Altın
+  /// (24 Ayar)" 6.568/gr, Özet'teki "Gram altın (24 ayar)" de başka bir
+  /// yüzde gösteriyordu. İki seçenek vardı: etiketi "Gram altın (22 ayar)"
+  /// yapmak ya da fiyatı 24 ayara çekmek. İkincisi seçildi, çünkü:
+  ///   * Bandın sorusu "altın ne oldu"; Türkiye'de bankada ve kuyumcuda
+  ///     "gram altın" 24 ayar (995) demektir (`GoldSubCategory.gr24`
+  ///     açıklaması). Etiketi değiştirmek başlığı doğru ama İLGİSİZ yapardı.
+  ///   * Portföydeki 24 ayar gram ile bant aynı sayıyı gösterir; kullanıcı
+  ///     iki sayıyı yan yana koyduğunda şaşırmaz.
+  /// `ALTIN_GRAM`'ın 22 ayar kalması ayrı ve bilinçli bir karar (sikke
+  /// ailesi 22 ayar kote edilir; bkz. `PriceService._truncgilGoldKeys`);
+  /// burada yalnızca bandın HANGİ ürünü gösterdiği değişti.
   static const semboller = <String>[
     'USDTRY=X',
     'EURTRY=X',
-    'ALTIN_GRAM',
+    altinSembolu,
     'XU100.IS',
   ];
+
+  /// Banttaki "Gram altın" — 24 ayar (bkz. [semboller]).
+  static const altinSembolu = 'ALTIN_GRAM24';
 
   /// Yenileme aralığı — hero kartla aynı ritim (30 sn), seans dışında da
   /// zararsız (ön planda değilken poller durur).
@@ -161,7 +179,7 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
             etiket: switch (s) {
               'USDTRY=X' => l10n.marketDollar,
               'EURTRY=X' => l10n.marketEuro,
-              'ALTIN_GRAM' => l10n.marketGold,
+              PiyasaSeridi.altinSembolu => l10n.marketGold,
               _ => l10n.marketBist,
             },
             // Endeks puan, diğerleri ₺: endekste kuruş anlamsız.
