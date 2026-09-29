@@ -158,8 +158,11 @@ class _ZirveKartiState extends State<ZirveKarti> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${widget.donem.ad} zirvedeki portföy '
-          '${ZirveKiyas.getiriParcasi(birinci.roiPct)}.',
+          birinci.ben
+              ? '${widget.donem.ad} zirvedeki portföy senin: '
+                  '${ZirveKiyas.getiriParcasi(birinci.roiPct)}.'
+              : '${widget.donem.ad} zirvedeki portföy '
+                  '${ZirveKiyas.getiriParcasi(birinci.roiPct)}.',
           style: context.t.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
             color: context.c.text90,

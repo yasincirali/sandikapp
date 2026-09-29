@@ -111,7 +111,7 @@ const List<SurumNotu> surumNotlari = [
             'ekran: haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
             'üstünde. Bir portföye dokun, neye yatırdığını (fonlarda hangi '
             'fonlar, ne oranda) ve senden farkını oku. Portföyü 5 günden eski '
-            'herkes kendiliğinden ve anonim olarak '
+            've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim olarak '
             'havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
       ),
       // Kripto (2026-09-25) ayrı bir 1.1.7 notu olarak yazılmıştı; ASC'de

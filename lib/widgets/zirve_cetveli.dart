@@ -178,7 +178,8 @@ class ZirveCetveli extends StatelessWidget {
             button: true,
             selected: seciliMi,
             label: i.sen
-                ? 'Sen, ${ZirveKiyas.getiriParcasi(i.roi)}'
+                ? 'Sen${i.sira == null ? '' : ', ${i.sira}. sırada'}, '
+                    '${ZirveKiyas.getiriParcasi(i.roi)}'
                 : '${i.sira}. portföy, ${ZirveKiyas.getiriParcasi(i.roi)}',
             child: ExcludeSemantics(
               child: GestureDetector(
@@ -213,7 +214,8 @@ class ZirveCetveli extends StatelessWidget {
                         ],
                       ),
                       child: Text(
-                        i.sen ? 'S' : '${i.sira}',
+                        // Havuzdaysan amber daire sıranı taşır; değilsen "S".
+                        i.sen && i.sira == null ? 'S' : '${i.sira}',
                         style: context.t.numSmall.copyWith(
                           fontWeight: FontWeight.w900,
                           color: yaziRengi,

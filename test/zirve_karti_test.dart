@@ -103,4 +103,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(acildi, 1);
   });
+
+  testWidgets('zirvedeki portföy seninse kart bunu söyler', (tester) async {
+    await pump(tester, satirlar: const [
+      TopGainerAllocation(
+          rank: 1, roiPct: 3.1, allocation: {'fon': 100.0}, ben: true),
+    ]);
+    expect(find.text('Bu ay zirvedeki portföy senin: %3,1 kazandı.'),
+        findsOneWidget);
+  });
 }

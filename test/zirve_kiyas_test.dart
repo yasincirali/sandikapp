@@ -189,4 +189,29 @@ void main() {
       expect(ZirveKiyas.fonOzeti(const {}), '');
     });
   });
+
+  group('ben işareti (0085)', () {
+    test('zirvedeki portföy seninse cümle bunu söyler', () {
+      expect(
+          ZirveKiyas.getiriCumlesi(
+              donem: ZirveDonem.ay, zirveRoi: 3.1, senRoi: 3.1, benSira: 1),
+          'Bu ay zirvedeki portföy senin: %3,1 kazandı.');
+      expect(
+          ZirveKiyas.konumCumlesi(
+              senRoi: 3.1, zirveRoileri: const [3.1, 2.8], benSira: 1),
+          'Zirvenin tepesindesin');
+    });
+
+    test('2. sıradaysan sıra ve mesafe', () {
+      expect(
+          ZirveKiyas.getiriCumlesi(
+              donem: ZirveDonem.ay, zirveRoi: 3.1, senRoi: 2.8, benSira: 2),
+          'Bu ay zirvedeki portföy %3,1 kazandı; seninki %2,8 kazandı ve '
+          'zirvede 2. sıradasın. Zirveye 0,3 puan uzaksın.');
+      expect(
+          ZirveKiyas.konumCumlesi(
+              senRoi: 2.8, zirveRoileri: const [3.1, 2.8, -0.6], benSira: 2),
+          'Zirvede 2. sıradasın');
+    });
+  });
 }

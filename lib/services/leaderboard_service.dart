@@ -30,13 +30,28 @@ class TopGainerAllocation {
   /// Fon türünün TEFAS kodu bazında kırılımı, TOPLAM portföyün yüzdesi
   /// (Σ ≈ allocation['fon']); "DIGER" toplu kalem (0084). Fon yoksa boş.
   final Map<String, double> fonDetay;
+
+  /// Bu satır çağıranın kendi portföyü mü (0085, `auth.uid()`). Başkasına
+  /// bir şey söylemez; ekran bu satırı "Sen" diye çizer, ikinci bir "Sen"
+  /// işareti koymaz.
+  final bool ben;
   const TopGainerAllocation({
     required this.rank,
     required this.roiPct,
     required this.allocation,
     this.fonDetay = const {},
+    this.ben = false,
   });
 }
+
+/// Çağıranın zirve havuzundaki kendi değeri (0085 `zirve_benim`).
+/// Havuzdaysa Zirve ekranı "Sen"i bununla çizer: zirveyle AYNI kaynak ve
+/// saat, iki ayrı sayı yok.
+typedef ZirveBenim = ({
+  double roiPct,
+  Map<String, double> allocation,
+  Map<String, double> fonDetay,
+});
 
 /// `get_percentile_bucket` yanıtı.
 ///
@@ -457,6 +472,7 @@ class LeaderboardService {
                     e.key as String: (e.value as num).toDouble(),
                 }
               : const {},
+          ben: row['ben'] == true,
         ));
       }
       return out;
@@ -513,6 +529,38 @@ class LeaderboardService {
         params: {'p_period_days': periodDays},
       );
       return (r as num?)?.toInt();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Çağıranın havuzdaki kendi getirisi/dağılımı; havuzda değilse (ya da
+  /// hata) null — ekran istemci hesabına düşer.
+  Future<ZirveBenim?> fetchZirveBenim({required int periodDays}) async {
+    try {
+      final res = await Supabase.instance.client.rpc<dynamic>(
+        'zirve_benim',
+        params: {'p_period_days': periodDays},
+      );
+      if (res is! List || res.isEmpty) return null;
+      final row = res.first as Map<String, dynamic>;
+      final roi = (row['roi_pct'] as num?)?.toDouble();
+      final alloc = row['allocation_pct'];
+      if (roi == null || alloc is! Map) return null;
+      final fon = row['fon_detay'];
+      return (
+        roiPct: roi,
+        allocation: {
+          for (final e in alloc.entries)
+            e.key as String: (e.value as num).toDouble(),
+        },
+        fonDetay: fon is Map
+            ? {
+                for (final e in fon.entries)
+                  e.key as String: (e.value as num).toDouble(),
+              }
+            : const <String, double>{},
+      );
     } catch (_) {
       return null;
     }

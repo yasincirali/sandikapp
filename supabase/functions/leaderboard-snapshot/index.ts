@@ -403,6 +403,28 @@ export function fonDetayi(
   return Object.keys(out).length > 0 ? out : null;
 }
 
+/// Portföydeki FARKLI varlık sayısı: bugün değeri olan açık pozisyonların
+/// tekil anahtarı (`pozisyonAnahtari` — aynı sembolün lotları tek sayılır).
+///
+/// Kullanıcı kararı (2026-09-29): "portföyde minimum 2 farklı varlık varsa
+/// [zirve havuzuna] eklenmeli". Defterdeki (kapanmış pozisyonlar dahil)
+/// kayıt sayısı değil, bugünkü portföy — satılmış bir hisse sayılmaz.
+export function varlikSayisi(
+  lots: Lot[],
+  seriler: Map<string, Seri>,
+  nowMs: number,
+): number {
+  const anahtarlar = new Set<string>();
+  for (const lot of lots) {
+    const miktar = Number(lot.quantity ?? 0);
+    if (!Number.isFinite(miktar) || miktar <= 0) continue;
+    const p = lotTryFiyati(lot, seriler, nowMs) ?? yedekTryFiyati(lot, seriler, nowMs);
+    if (p <= 0) continue;
+    anahtarlar.add(pozisyonAnahtari(lot));
+  }
+  return anahtarlar.size;
+}
+
 type AssetRow = Lot & { deleted_at?: string | null };
 
 /// 0073 tetikleyicisinin reddi: dakikada bir snapshot. Mesaj metnine bakılır
@@ -530,6 +552,7 @@ Deno.serve(async (request) => {
       allocation_pct: Record<string, number>;
       type_count: number;
       fon_detay: Record<string, number> | null;
+      varlik_sayisi: number;
     }> = [];
     let atlanan = 0;
     for (const uid of userIds) {
@@ -545,7 +568,12 @@ Deno.serve(async (request) => {
       const d = dagilim(lots, seriler, nowMs);
       if (d !== null) {
         allocRows.push({ user_id: uid, ...d });
-        zirveAllocRows.push({ user_id: uid, ...d, fon_detay: fonDetayi(lots, seriler, nowMs) });
+        zirveAllocRows.push({
+          user_id: uid,
+          ...d,
+          fon_detay: fonDetayi(lots, seriler, nowMs),
+          varlik_sayisi: varlikSayisi(lots, seriler, nowMs),
+        });
         yazildi = true;
       }
       if (!yazildi) atlanan++;

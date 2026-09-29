@@ -516,8 +516,8 @@ List<_Adim> _adimlariKur() {
           'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
           'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
           'neye yatırdığını ve senden farkını oku. Portföyü 5 günden eski '
-          'herkes kendiliğinden ve anonim olarak havuzda; kimlik, miktar ve '
-          'TL asla paylaşılmaz.',
+          've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim '
+          'olarak havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(

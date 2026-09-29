@@ -30,6 +30,9 @@ Senin yapacakların:
    TEFAS listesinden, kullanıcının notu asla). Metinler buna göre
    güncellendi; somut fon karışımı parmak izine yaklaştığı için bunu
    hukukçuya ayrıca göster.
+   **0085:** havuz şartına "portföyde en az 2 farklı varlık" eklendi
+   (kullanıcı kararı); metinler güncellendi. Bu şartla Tokyo havuzu 6
+   (eşik 8): zirve iki portföy daha şartı sağlayana kadar boş durumda.
 2. **Web yayını:** `legal/*.md` değişikliklerini
    `yasincirali.github.io/sandikapp`'a yayınla (uygulama içi metin sürümle gider).
 3. **Mağaza gizlilik beyanları:** App Store "App Privacy" ve Play "Veri

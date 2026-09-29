@@ -23,6 +23,7 @@ import {
   portfoyDegeri,
   seriSembolu,
   fonDetayi,
+  varlikSayisi,
   yazimPlani,
   yedekTryFiyati,
 } from '../functions/leaderboard-snapshot/index.ts';
@@ -290,4 +291,16 @@ Deno.test('fonDetayi: fon yoksa null; TEFAS: öneki kırpılır', () => {
     { ...fonLot('X', 1, 1), type: 'hisse', ticker: 'THYAO', current_price: 300 } as Lot,
   ], new Map(), NOW), null);
   assertEquals(fonDetayi([fonLot('TEFAS:aft', 10, 10)], new Map(), NOW), { AFT: 100 });
+});
+
+// ── 0085: en az 2 farklı varlık ─────────────────────────────────────────────
+Deno.test('varlikSayisi: aynı sembolün lotları tek, değersiz/sıfır miktar sayılmaz', () => {
+  const lots = [
+    fonLot('AFT', 10, 10),
+    fonLot('AFT', 5, 10), // aynı fon, ikinci lot
+    fonLot('TTE', 0, 10), // miktar sıfır (satılmış)
+    fonLot('IPB', 3, 0), // değeri yok
+  ];
+  assertEquals(varlikSayisi(lots, new Map(), NOW), 1);
+  assertEquals(varlikSayisi([...lots, fonLot('TTE', 2, 10)], new Map(), NOW), 2);
 });

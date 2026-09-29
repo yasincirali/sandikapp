@@ -86,4 +86,32 @@ void main() {
     expect(find.textContaining('−%'), findsOneWidget);
     expect(find.textContaining('+%'), findsOneWidget);
   });
+
+  testWidgets('havuzdaki kullanıcı: tek Sen işareti, sırasıyla', (tester) async {
+    tester.view.physicalSize = const Size(360 * 3, 240 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: ZirveCetveli(
+            isaretler: const [
+              ZirveIsaret(anahtar: '1', etiket: '1.', roi: 3.1, sira: 1),
+              ZirveIsaret(
+                  anahtar: '2', etiket: 'Sen', roi: 2.8, sira: 2, sen: true),
+              ZirveIsaret(anahtar: '3', etiket: '3.', roi: -0.6, sira: 3),
+            ],
+            secili: '2',
+            onSec: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Sen, 2. sırada, %2,8 kazandı'),
+        findsOneWidget);
+    expect(find.text('S'), findsNothing);
+    expect(find.text('Sen'), findsOneWidget);
+  });
 }

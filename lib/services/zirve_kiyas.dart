@@ -141,12 +141,23 @@ abstract final class ZirveKiyas {
   /// "Bu ay zirvedeki portföy %2,7 kazandı; seninki %6,4 kaybetti. Zirveye
   /// 9,1 puan uzaksın." Kullanıcının getirisi yoksa (yeni portföy, seri
   /// alınamadı) ikinci yarı dürüstçe söylenir; uydurma sayı yok.
+  ///
+  /// [benSira]: kullanıcı zirve satırlarından birindeyse sırası (sunucu
+  /// `ben` işareti, 0085). 1 ise zirvedeki portföy onun.
   static String getiriCumlesi({
     required ZirveDonem donem,
     required double zirveRoi,
     required double? senRoi,
+    int? benSira,
   }) {
+    if (benSira == 1) {
+      return '${donem.ad} zirvedeki portföy senin: ${getiriParcasi(zirveRoi)}.';
+    }
     final bas = '${donem.ad} zirvedeki portföy ${getiriParcasi(zirveRoi)}';
+    if (benSira != null && senRoi != null) {
+      return '$bas; seninki ${getiriParcasi(senRoi)} ve zirvede $benSira. '
+          'sıradasın. ${mesafeCumlesi(senRoi: senRoi, zirveRoi: zirveRoi)}';
+    }
     if (senRoi == null) {
       return '$bas. Senin bu dönem getirin henüz hesaplanamıyor.';
     }
@@ -183,7 +194,10 @@ abstract final class ZirveKiyas {
   static String konumCumlesi({
     required double? senRoi,
     required List<double> zirveRoileri,
+    int? benSira,
   }) {
+    if (benSira == 1) return 'Zirvenin tepesindesin';
+    if (benSira != null) return 'Zirvede $benSira. sıradasın';
     final s = sira(senRoi: senRoi, zirveRoileri: zirveRoileri);
     if (s == null) return 'Getirin henüz yok';
     if (s == 1) return 'Zirvenin önündesin';

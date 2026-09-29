@@ -54,6 +54,10 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   late Future<List<TopGainerAllocation>> _satirlar = _cek();
   late Future<int?> _havuz = _havuzCek();
   double? _senRoi;
+
+  /// "Sen" değerleri sunucudan mı (havuzdasın, 0085 `zirve_benim`)? Öyleyse
+  /// zirveyle aynı kaynak; değilse istemci hesabı.
+  bool _senSunucuda = false;
   Map<String, double> _senPay = const {};
   Map<String, double> _senFonDetay = const {};
   late final ForegroundPoller _tik = ForegroundPoller(
@@ -102,6 +106,11 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   /// Kullanıcının getirisi ve dağılımı. Önce önbellekteki (bayat) değer
   /// gösterilir, hesap arka planda biter; dönem bu arada değiştiyse eski
   /// sonuç yazılmaz.
+  ///
+  /// Havuzdaysan (sunucu `zirve_benim` satır döndürür) değerler SUNUCUDAN
+  /// alınır — açık bulgu 2026-09-29: aynı portföy "Sen" −%3,2 (istemci) ve
+  /// "2." +%2,8 (sunucu) olarak iki kez görünüyordu. Havuzda değilsen
+  /// (yeni portföy, tek varlık) istemci hesabı kalır.
   Future<void> _senYenile() async {
     final me = ref.read(authProvider).valueOrNull;
     final p = ref.read(portfolioProvider).valueOrNull;
@@ -113,15 +122,29 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
       _senFonDetay = servis.computeFonDetay(p.assets, p.toTRY);
       _senRoi = servis.staleROI(userId: me.id, periodDays: donem.gun);
     });
-    final roi = await servis.computeROI(
-      assets: p.assets,
-      periodDays: donem.gun,
-      currentValueTRY: servis.totalValueTRY(p.assets, p.toTRY),
-      toTRY: p.toTRY,
-      cacheKey: me.id,
-    );
+    final sonuc = await Future.wait<Object?>([
+      servis.fetchZirveBenim(periodDays: donem.gun),
+      servis.computeROI(
+        assets: p.assets,
+        periodDays: donem.gun,
+        currentValueTRY: servis.totalValueTRY(p.assets, p.toTRY),
+        toTRY: p.toTRY,
+        cacheKey: me.id,
+      ),
+    ]);
     if (!mounted || donem != _donem) return;
-    setState(() => _senRoi = roi);
+    final benim = sonuc[0] as ZirveBenim?;
+    final roi = sonuc[1] as double?;
+    setState(() {
+      _senSunucuda = benim != null;
+      if (benim != null) {
+        _senRoi = benim.roiPct;
+        _senPay = benim.allocation;
+        _senFonDetay = benim.fonDetay;
+      } else {
+        _senRoi = roi;
+      }
+    });
   }
 
   void _ayrintiAc(TopGainerAllocation? satir) {
@@ -140,6 +163,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         senPay: _senPay,
         senFonDetay: _senFonDetay,
         senRoi: _senRoi,
+        senHavuzda: _senSunucuda,
       ),
     );
   }
@@ -182,15 +206,20 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     final zirve = satirlar.first;
     final roiler = [for (final s in satirlar) s.roiPct];
     final senRoi = _senRoi;
+    // Zirve satırlarından biri senin mi (sunucu `ben`)? Öyleyse o işaret
+    // "Sen" olur ve ikinci bir Sen işareti konmaz.
+    final benSatiri = satirlar.where((s) => s.ben).firstOrNull;
+    final benSira = benSatiri?.rank;
     final isaretler = [
       for (final s in satirlar)
         ZirveIsaret(
           anahtar: '${s.rank}',
-          etiket: '${s.rank}.',
+          etiket: s.ben ? 'Sen' : '${s.rank}.',
           roi: s.roiPct,
           sira: s.rank,
+          sen: s.ben,
         ),
-      if (senRoi != null)
+      if (senRoi != null && benSatiri == null)
         ZirveIsaret(
           anahtar: ZirveKiyas.senAnahtari,
           etiket: 'Sen',
@@ -202,7 +231,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         isaretler.any((i) => i.anahtar == _secili) ? _secili : '${zirve.rank}';
     final seciliSatir =
         satirlar.where((s) => '${s.rank}' == gecerli).firstOrNull;
-    final senMi = seciliSatir == null;
+    final senMi = seciliSatir == null || seciliSatir.ben;
     final seciliPay = seciliSatir?.allocation ?? _senPay;
     final seciliFon = seciliSatir?.fonDetay ?? _senFonDetay;
     final seciliRoi = seciliSatir?.roiPct ?? senRoi;
@@ -215,6 +244,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         zirveRoi: zirve.roiPct,
         senRoi: senRoi,
         zirveRoileri: roiler,
+        benSira: benSira,
       ),
       const SizedBox(height: SandikSpace.lg),
       SandikSectionHeader(
@@ -245,7 +275,10 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
       const SizedBox(height: SandikSpace.smd),
       _FarkNotu(
         metin: senMi
-            ? 'Bir zirve işaretine dokun, farkı burada söyleyelim.'
+            ? (benSira != null
+                ? 'Zirvedesin: $benSira. sıradasın. Başka bir işarete dokun, '
+                    'farkı burada söyleyelim.'
+                : 'Bir zirve işaretine dokun, farkı burada söyleyelim.')
             : ZirveKiyas.farkCumlesi(
                 senPay: _senPay,
                 zirvePay: seciliSatir.allocation,
@@ -343,12 +376,16 @@ class _Hero extends StatelessWidget {
     required this.zirveRoi,
     required this.senRoi,
     required this.zirveRoileri,
+    required this.benSira,
   });
 
   final ZirveDonem donem;
   final double zirveRoi;
   final double? senRoi;
   final List<double> zirveRoileri;
+
+  /// Zirve satırlarında senin sıran (varsa).
+  final int? benSira;
 
   @override
   Widget build(BuildContext context) {
@@ -357,7 +394,10 @@ class _Hero extends StatelessWidget {
       children: [
         Text(
           ZirveKiyas.getiriCumlesi(
-              donem: donem, zirveRoi: zirveRoi, senRoi: senRoi),
+              donem: donem,
+              zirveRoi: zirveRoi,
+              senRoi: senRoi,
+              benSira: benSira),
           style: context.t.bodyLarge?.copyWith(
             color: context.c.text90,
             height: 1.4,
@@ -372,7 +412,9 @@ class _Hero extends StatelessWidget {
                 senIsareti: true,
                 deger: senRoi,
                 alt: ZirveKiyas.konumCumlesi(
-                    senRoi: senRoi, zirveRoileri: zirveRoileri),
+                    senRoi: senRoi,
+                    zirveRoileri: zirveRoileri,
+                    benSira: benSira),
               ),
             ),
             const SizedBox(width: SandikSpace.sm),
@@ -381,7 +423,7 @@ class _Hero extends StatelessWidget {
                 etiket: 'ZİRVE',
                 senIsareti: false,
                 deger: zirveRoi,
-                alt: '1. portföy',
+                alt: benSira == 1 ? 'senin portföyün' : '1. portföy',
               ),
             ),
           ],
@@ -697,8 +739,9 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                'Portföyü 5 günden eski herkes kendiliğinden ve anonim olarak '
-                'havuzdadır; ayrıca katılman gerekmez. Kimlik, miktar ve TL '
+                'Portföyü 5 günden eski ve en az 2 farklı varlığı olan herkes '
+                'kendiliğinden ve anonim olarak havuzdadır; ayrıca katılman '
+                'gerekmez. Kimlik, miktar ve TL '
                 'paylaşılmaz; yalnız getiri, tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
@@ -749,27 +792,32 @@ class _PortfoyAyrintisi extends StatelessWidget {
     required this.senPay,
     required this.senFonDetay,
     required this.senRoi,
+    required this.senHavuzda,
   });
 
   final ZirveDonem donem;
 
-  /// null → kullanıcının kendi portföyü.
+  /// null ya da `ben` → kullanıcının kendi portföyü.
   final TopGainerAllocation? satir;
   final Map<String, double> senPay;
   final Map<String, double> senFonDetay;
   final double? senRoi;
 
+  /// Kullanıcının portföyü havuzda mı (sunucu `zirve_benim`)?
+  final bool senHavuzda;
+
   @override
   Widget build(BuildContext context) {
     final s = satir;
-    final senMi = s == null;
+    final senMi = s == null || s.ben;
     final pay = s?.allocation ?? senPay;
     final fonDetay = s?.fonDetay ?? senFonDetay;
     final roi = s?.roiPct ?? senRoi;
     final baslik = senMi ? 'Senin portföyün' : '${s.rank}. portföy';
+    final siraEki = s != null && s.ben ? ' · zirvede ${s.rank}. sıradasın' : '';
     final altBaslik = roi == null
         ? 'Getirin henüz hesaplanamıyor'
-        : '${donem.ad} ${ZirveKiyas.getiriParcasi(roi)}';
+        : '${donem.ad} ${ZirveKiyas.getiriParcasi(roi)}$siraEki';
     final turler = ZirveKiyas.sirali(pay);
     final farklar = senMi
         ? const <({String tur, double sen, double zirve})>[]
@@ -878,10 +926,14 @@ class _PortfoyAyrintisi extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           Text(
             senMi
-                ? 'Portföyün de havuzda, anonim. İlk üçe girersen başkaları '
-                    'getirini, tür payını ve fonlarının TEFAS kodu ile payını '
-                    'görür; kimliğin, tutarın ve diğer varlıkların asla '
-                    'görünmez.'
+                ? (senHavuzda || (s != null && s.ben)
+                    ? 'Portföyün havuzda, anonim. İlk üçe girersen başkaları '
+                        'getirini, tür payını ve fonlarının TEFAS kodu ile '
+                        'payını görür; kimliğin, tutarın ve diğer varlıkların '
+                        'asla görünmez.'
+                    : 'Portföyün henüz havuzda değil: portföy 5 günden eski '
+                        'olmalı ve en az 2 farklı varlık içermeli. Şart '
+                        'sağlanınca kendiliğinden ve anonim olarak girer.')
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '
                     'payı. Fon adları resmi TEFAS listesinden.',
