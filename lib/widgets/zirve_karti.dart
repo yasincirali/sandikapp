@@ -8,7 +8,7 @@ import 'sandik_skeleton.dart';
 import 'zirve_dagilim_seridi.dart';
 
 typedef ZirveYukleyici = Future<List<TopGainerAllocation>> Function(int gun);
-typedef HavuzYukleyici = Future<int?> Function();
+typedef HavuzYukleyici = Future<int?> Function(int gun);
 
 /// Performans › tür dökümünün altındaki küçük "Zirvedeki Portföyler" kartı.
 ///
@@ -16,7 +16,9 @@ typedef HavuzYukleyici = Future<int?> Function();
 /// (`ZirvePortfoylerScreen`). Yarış ekranındaki eski kart 2026-09-29'da
 /// buraya taşındı: zirve bir KIYAS verisidir, yarış değil; kıyas ekranı
 /// Performans'tır. Ortak ya da yarışa katılım şartı yok — küresel bayrak
-/// (`global_leaderboard_enabled`) yeter.
+/// (`global_leaderboard_enabled`) yeter. Havuz da beyana dayanmaz (0083):
+/// portföyü 5 günden eski herkes anonim olarak içindedir; kart kimseyi
+/// "katılmaya" çağırmaz.
 ///
 /// Dönem Performans'ın seçicisini izler (`ZirveDonem.yakin`); ekran o
 /// dönemle açılır. Kart kendi başına yenilenmez (poller yok): Performans
@@ -51,8 +53,6 @@ class _ZirveKartiState extends State<ZirveKarti> {
   void initState() {
     super.initState();
     _yukle();
-    _havuz = (widget.havuzYukleyici ??
-        LeaderboardService.instance.fetchPoolSize)();
   }
 
   @override
@@ -66,6 +66,10 @@ class _ZirveKartiState extends State<ZirveKarti> {
         (gun) => LeaderboardService.instance
             .fetchTopGainersAllocation(periodDays: gun, topN: 3);
     _satirlar = y(widget.donem.gun);
+    final h = widget.havuzYukleyici ??
+        (gun) => LeaderboardService.instance
+            .fetchZirveHavuzBoyutu(periodDays: gun);
+    _havuz = h(widget.donem.gun);
   }
 
   @override

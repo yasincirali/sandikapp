@@ -515,8 +515,9 @@ List<_Adim> _adimlariKur() {
       govde: 'Tür dökümünün altındaki kart, dönemin en çok kazanan anonim '
           'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
           'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
-          'neye yatırdığını ve senden farkını oku. Kimlik, miktar ve TL '
-          'asla paylaşılmaz.',
+          'neye yatırdığını ve senden farkını oku. Portföyü 5 günden eski '
+          'herkes kendiliğinden ve anonim olarak havuzda; kimlik, miktar ve '
+          'TL asla paylaşılmaz.',
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(

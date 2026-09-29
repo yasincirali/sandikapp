@@ -463,6 +463,24 @@ class LeaderboardService {
     }
   }
 
+  /// Zirve havuzunda kaç portföy var (0083 `zirve_havuz_boyutu`).
+  ///
+  /// Zirve havuzu beyana dayanmaz: portföyü 5 günden, hesabı 7 günden eski
+  /// herkes anonim olarak içindedir. Yarış'ın [fetchPoolSize]'ından AYRI —
+  /// o yalnız yarışa katılanları sayar ve Yarış ekranı onu kullanmaya
+  /// devam eder. Hata → null; UI sayı yazmaz (uydurma sayı yok).
+  Future<int?> fetchZirveHavuzBoyutu({int periodDays = 30}) async {
+    try {
+      final r = await Supabase.instance.client.rpc<dynamic>(
+        'zirve_havuz_boyutu',
+        params: {'p_period_days': periodDays},
+      );
+      return (r as num?)?.toInt();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// k-anonimlik eşiği — `get_percentile_bucket` / `get_top_gainers`
   /// (migration 0031, `k_min`). Sunucudaki sayı değişirse burası da.
   static const kMinKatilimci = 8;

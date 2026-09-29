@@ -110,7 +110,8 @@ const List<SurumNotu> surumNotlari = [
             'en çok kazanan anonim portföylerini gösterir. Dokununca yeni '
             'ekran: haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
             'üstünde. Bir portföye dokun, neye yatırdığını ve senden farkını '
-            'oku. Kimlik, miktar ve TL asla paylaşılmaz.',
+            'oku. Portföyü 5 günden eski herkes kendiliğinden ve anonim olarak '
+            'havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
       ),
       // Kripto (2026-09-25) ayrı bir 1.1.7 notu olarak yazılmıştı; ASC'de
       // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump

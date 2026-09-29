@@ -1,7 +1,7 @@
 # Terms of Service — sandık
 
 **Effective date:** May 11, 2026
-**Last updated:** May 11, 2026
+**Last updated:** September 29, 2026
 **Version:** 1.0
 
 ---
@@ -25,6 +25,8 @@ sandık is a personal portfolio tracking tool for the following asset types:
 - Cryptocurrencies (where supported)
 
 The App displays portfolio value, allocation, performance and (optionally) technical-analysis signals. The partnership feature allows two users to share their portfolios with mutual consent.
+
+**Top Portfolios:** The period return and asset-type shares of every user whose portfolio is older than 5 days are evaluated in an anonymous comparison pool; only the rank, return and type shares of top-gaining portfolios are shown to all users, without identity or amounts (details: Privacy Policy §5.1). This is a standard part of the service and requires no separate opt-in.
 
 ---
 

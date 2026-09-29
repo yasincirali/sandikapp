@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../providers/preferences_provider.dart' show leaderboardOptInProvider;
 import '../services/leaderboard_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
@@ -13,7 +12,6 @@ import '../widgets/sandik_skeleton.dart';
 import '../widgets/zirve_cetveli.dart';
 import '../widgets/zirve_dagilim_seridi.dart';
 import '../widgets/zirve_karti.dart';
-import 'leaderboard_screen.dart';
 
 /// Zirvedeki Portföyler — tam ekran (kullanıcı seçimi 2026-09-29, "A ·
 /// Cetvel önde").
@@ -28,6 +26,9 @@ import 'leaderboard_screen.dart';
 /// - Zirve: `get_top_gainers_allocation` (sıra, getiri, tür payı; anonim).
 ///   Sunucu snapshot'ı günde iki kez (0081/0082); ekran 45 sn'de bir
 ///   yeniden sorar ki dönem değişimi ve cron sonrası taze olsun.
+/// - Havuz beyana dayanmaz (0083): portföyü 5 günden, hesabı 7 günden eski
+///   herkes anonim olarak içinde. Ekran kimseyi "katılmaya" çağırmaz;
+///   Yarış ekranı ve onun katılım anahtarı bundan bağımsız.
 /// - Sen: getiri istemcide `LeaderboardService.computeROI` (Yarış
 ///   ekranıyla AYNI formül), dağılım `computeAllocation`. Sunucuya bir şey
 ///   yazılmaz — snapshot'ı artık sunucu alıyor.
@@ -50,7 +51,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   late ZirveDonem _donem = widget.baslangic;
   String _secili = '1';
   late Future<List<TopGainerAllocation>> _satirlar = _cek();
-  late final Future<int?> _havuz = LeaderboardService.instance.fetchPoolSize();
+  late Future<int?> _havuz = _havuzCek();
   double? _senRoi;
   Map<String, double> _senPay = const {};
   late final ForegroundPoller _tik = ForegroundPoller(
@@ -70,6 +71,9 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         topN: 3,
       );
 
+  Future<int?> _havuzCek() =>
+      LeaderboardService.instance.fetchZirveHavuzBoyutu(periodDays: _donem.gun);
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +92,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     setState(() {
       _donem = d;
       _satirlar = _cek();
+      _havuz = _havuzCek();
     });
     _senYenile();
   }
@@ -135,15 +140,9 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     );
   }
 
-  void _yarisaGit() => pushGuarded(
-        context,
-        adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
-      );
-
   @override
   Widget build(BuildContext context) {
     ref.listen(portfolioProvider, (_, __) => _senYenile());
-    final optIn = ref.watch(leaderboardOptInProvider);
     final hp = SandikSpace.screenH(context);
     return Scaffold(
       backgroundColor: context.c.background,
@@ -164,11 +163,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
                 if (yukleniyor)
                   const _Iskelet()
                 else if (satirlar.isEmpty)
-                  _BosDurum(
-                    havuz: _havuz,
-                    optIn: optIn,
-                    onYaris: _yarisaGit,
-                  )
+                  _BosDurum(havuz: _havuz)
                 else
                   ..._dolu(context, satirlar),
               ],
@@ -637,17 +632,12 @@ class _AltNot extends StatelessWidget {
   }
 }
 
-/// Havuz eşiği dolmamış: ilerleme + sonraki adım. "Yakında" yok.
+/// Havuz eşiği dolmamış: ilerleme + nasıl dolduğu. "Yakında" yok, çağrı
+/// düğmesi de yok — havuz beyana dayanmaz, kullanıcının yapacağı bir şey yok.
 class _BosDurum extends StatelessWidget {
-  const _BosDurum({
-    required this.havuz,
-    required this.optIn,
-    required this.onYaris,
-  });
+  const _BosDurum({required this.havuz});
 
   final Future<int?> havuz;
-  final bool optIn;
-  final VoidCallback onYaris;
 
   @override
   Widget build(BuildContext context) {
@@ -685,28 +675,14 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                optIn
-                    ? 'Portföyün havuzda; başkaları katıldıkça zirve oluşur.'
-                    : "Yarış'a katılırsan portföyün de havuza girer. Kimlik, "
-                        'miktar ve TL paylaşılmaz; yalnız getiri ve tür payı.',
+                'Portföyü 5 günden eski herkes kendiliğinden ve anonim olarak '
+                'havuzdadır; ayrıca katılman gerekmez. Kimlik, miktar ve TL '
+                'paylaşılmaz; yalnız getiri ve tür payı.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,
                   height: 1.4,
                 ),
-              ),
-              const SizedBox(height: SandikSpace.md),
-              FilledButton(
-                onPressed: onYaris,
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.c.amberFill,
-                  foregroundColor: context.c.onAmber,
-                  minimumSize: const Size.fromHeight(SandikTouch.min),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                  ),
-                ),
-                child: Text(optIn ? "Yarış'a git" : "Yarış'a katıl"),
               ),
             ],
           );
@@ -865,8 +841,9 @@ class _PortfoyAyrintisi extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           Text(
             senMi
-                ? 'Bu dağılım yalnız sana görünür; yarışa katıldıysan '
-                    'başkaları senin de yalnız tür payını görür.'
+                ? 'Portföyün de havuzda, anonim. İlk üçe girersen başkaları '
+                    'yalnız getirini ve tür payını görür; kimliğin, tutarın '
+                    've varlıkların asla görünmez.'
                 : 'Anonim: bu portföyün kimliği, tutarı ve varlıkları '
                     'paylaşılmaz; yalnız tür payı.',
             style: context.t.labelMedium?.copyWith(

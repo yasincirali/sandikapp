@@ -8,6 +8,34 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-29 Zirvedeki Portföyler anonim havuz — 0083 (iki projede dağıtıldı)
+
+> **Durum 2026-09-29 (Claude):** 0083 + `leaderboard-snapshot` yerel CLI ile
+> Frankfurt → Tokyo; `sema_esitlik.py`: **ŞEMA EŞİT**. Yeni cron yok (mevcut
+> haftalık temizlik işi zirve tablolarını da siler). Havuz beyana dayanmaz
+> (kullanıcı kararı): portföyü 5 günden, hesabı 7 günden eski herkes anonim
+> olarak içinde. Yarış tabloları ve kuralları değişmedi.
+
+Senin yapacakların:
+
+1. **Hukuki gözden geçirme.** "Zirvedeki Portföyler" şu metinlere eklendi:
+   Gizlilik Politikası §3.2, §4, **§5.1**, §7; KVKK Aydınlatma §2.3, §3,
+   §4.2, **§5.3**, §6; Kullanım Koşulları §2 (uygulama içi
+   `lib/screens/legal_doc_screen.dart` + `legal/tr|en/*.md`, GDPR Notice §3–4).
+   Hukuki dayanak **KVKK 5(2)(c) + 5(2)(f)** yazıldı, açık rıza DEĞİL (katılım
+   beyana dayanmaz). Hukukçuya göster; özellikle 8 kişilik küçük havuzda
+   tanınabilirlik ve meşru menfaate itiraz hakkı (GDPR 21) ifadesi.
+2. **Web yayını:** `legal/*.md` değişikliklerini
+   `yasincirali.github.io/sandikapp`'a yayınla (uygulama içi metin sürümle gider).
+3. **Mağaza gizlilik beyanları:** App Store "App Privacy" ve Play "Veri
+   güvenliği" formunda finansal bilginin (getiri %, tür payı %) diğer
+   kullanıcılara anonim çıktı olarak gösterilmesinin mevcut beyanlarla uyumunu
+   kontrol et.
+4. **Bilinen tutarsızlık (önceden vardı):** Yarış snapshot tabloları 400 gün
+   saklanıyor (0081), politika "son 365 gün" diyor. Zirve tabloları 365 gün.
+   Yarış tarafına dokunulmadı (Yarış mekaniği değişmesin kararı); hangisini
+   düzelteceğine sen karar ver.
+
 ## ⏳ 2026-09-28 Yarış snapshot'ı sunucuda — 0081 + `leaderboard-snapshot` (iki proje)
 
 Zirve portföyler / küresel sıralama havuzu artık sunucuda günlük dolar.

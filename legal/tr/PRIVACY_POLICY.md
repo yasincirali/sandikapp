@@ -1,7 +1,7 @@
 ﻿# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 11 Mayıs 2026
-**Son güncelleme:** 11 Mayıs 2026
+**Son güncelleme:** 29 Eylül 2026
 **Sürüm:** 1.0
 
 ---
@@ -41,6 +41,7 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 |---|---|
 | Varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not) | Portföy takibi (Uygulamanın ana işlevi) |
 | Portföy snapshot geçmişi | Performans grafikleri |
+| Dönemsel getiri (%) ve varlık türü payları (%) — sunucuda hesaplanır | Zirvedeki Portföyler (anonim karşılaştırma, bkz. §5.1) |
 | Ortaklık davet kodları ve karşılıklı bağlantılar | Çoklu kullanıcı paylaşımı özelliği |
 
 ### 3.3 Cihaz ve Bildirim Verileri
@@ -81,6 +82,7 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 6. Yasal yükümlülüklerimizi yerine getirmek (disclaimer kanıtı, yetkili merci talepleri)
 7. Hata teşhisi ve servis kalitesinin iyileştirilmesi
 8. Kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)
+9. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını anonim olarak göstermek (KVKK 5(2)(c) ve 5(2)(f))
 
 ---
 
@@ -94,6 +96,10 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 | Hisse/fon fiyat bilgisi | Yahoo Finance, TEFAS, finans.truncgil.com | YOK — sadece sembol query'si gönderilir | Fiyat çekme | Küresel |
 
 **Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.**
+
+### 5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)
+
+Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.
 
 ---
 
@@ -115,6 +121,7 @@ Aktarım yapılan ülke (ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sah
 | Hesap verileri | Hesap silinene kadar |
 | Varlık kayıtları | Hesap silinene kadar |
 | Snapshot geçmişi | Son 365 gün rolling (eski kayıtlar otomatik silinir) |
+| Zirve havuzu ölçümleri (getiri %, tür payı %) | Son 365 gün rolling; hesap silinince hemen |
 | Disclaimer onay logu | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
 | Push token | Cihaz uygulamayı sildiğinde veya logout'ta otomatik silinir |
 | Hata raporları | 90 gün |

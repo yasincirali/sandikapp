@@ -11,8 +11,14 @@
 // Kullanıcı kararı: snapshot'ı sunucu her gün, opt-in yapmış herkes için
 // atar; havuz uygulama açılışına bağlı olmaktan çıkar.
 //
+// ## 2026-09-29: zirve havuzu beyana dayanmaz (0083)
+// Portföyü olan HERKES ölçülür ve `zirve_*_snapshots` tablolarına yazılır
+// (anonim, RLS kapalı kutu; yalnız RPC okur). Yarış tablolarına yine
+// YALNIZ opt-in kullanıcılar yazılır — Yarış ekranının mekaniği değişmesin
+// diye (`yazimPlani`). Aynı hesap iki yere gider; ikinci bir fiyat turu yok.
+//
 // ## Ne hesaplar
-// Opt-in kullanıcının (`profiles.leaderboard_opt_in`, 0081) AÇIK lotları
+// Her kullanıcının (yarış tablosu için yalnız opt-in, 0081) AÇIK lotları
 // (`_shared/positions.ts`, satış ve silme düşülmüş) bugünkü miktarlarıyla
 // dönem başında ve bugün TL'ye değerlenir; ROI = (bugün − başlangıç) /
 // başlangıç. İstemcinin yarış ROI'si de aynı tanımdır (`HistoryService`
@@ -352,6 +358,52 @@ export function throttleMu(mesaj: string | null | undefined): boolean {
   return (mesaj ?? '').includes('snapshot_throttled');
 }
 
+/// Hangi satır hangi tabloya (0083, 2026-09-29).
+///
+/// Zirve havuzu BEYANA DAYANMAZ: ölçülen herkes `zirve_*` tablolarına
+/// yazılır. Yarış tabloları (`user_*_snapshots`) yalnızca yarışa katılanlar
+/// için yazılır — Yarış ekranının mekaniği değişmesin (kullanıcı kararı):
+/// katılmamış bir ortak sıralamada görünmez, genel yüzdelik havuzu
+/// genişlemez.
+export function yazimPlani<R extends { user_id: string }, A extends { user_id: string }>(
+  roiRows: R[],
+  allocRows: A[],
+  optIn: Set<string>,
+): { zirveRoi: R[]; zirveAlloc: A[]; yarisKullanicilari: string[] } {
+  const olculen = new Set<string>();
+  for (const r of roiRows) olculen.add(r.user_id);
+  for (const a of allocRows) olculen.add(a.user_id);
+  return {
+    zirveRoi: roiRows,
+    zirveAlloc: allocRows,
+    yarisKullanicilari: [...olculen].filter((u) => optIn.has(u)),
+  };
+}
+
+const VARLIK_SUTUNLARI =
+  'id, user_id, name, ticker, type, is_manual_price, current_price, kind, quantity, sub_category, currency, added_date, ref_asset_id';
+
+/// PostgREST tek yanıtta en fazla `max_rows` (varsayılan 1000) satır döner.
+/// Sayfalamasız okuma, defter büyüdükçe kullanıcıları SESSİZCE düşürürdü —
+/// zirve artık yalnız yarışanları değil herkesi okuduğu için sınır yakın.
+async function tumAktifVarliklar(admin: SupabaseClient): Promise<AssetRow[]> {
+  const SAYFA = 1000;
+  const out: AssetRow[] = [];
+  for (let bas = 0; ; bas += SAYFA) {
+    const { data, error } = await admin
+      .from('assets')
+      .select(VARLIK_SUTUNLARI)
+      .is('deleted_at', null)
+      .order('id')
+      .range(bas, bas + SAYFA - 1);
+    if (error) throw new Error(`Varliklar alinamadi: ${error.message}`);
+    const satirlar = (data ?? []) as AssetRow[];
+    out.push(...satirlar);
+    if (satirlar.length < SAYFA) break;
+  }
+  return out;
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -382,30 +434,25 @@ Deno.serve(async (request) => {
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1) Opt-in kullanıcılar.
+    // 1) Yarışa katılanlar — yalnız Yarış tablolarına kimin yazılacağını
+    // belirler. Ölçülecek küme bu DEĞİL: zirve havuzu beyana dayanmaz
+    // (0083), portföyü olan herkes ölçülür.
     const { data: profilRows, error: profilError } = await admin
       .from('profiles')
       .select('id')
       .eq('leaderboard_opt_in', true);
     if (profilError) throw new Error(`Profiller alinamadi: ${profilError.message}`);
-    const userIds = (profilRows ?? []).map((r: { id: string }) => String(r.id));
-    if (userIds.length === 0) {
-      return jsonResponse({ ok: true, reason: 'Opt-in kullanici yok.', users: 0 });
-    }
+    const optIn = new Set((profilRows ?? []).map((r: { id: string }) => String(r.id)));
 
-    // 2) Açık lotlar.
-    const { data: assetRows, error: assetError } = await admin
-      .from('assets')
-      .select(
-        'id, user_id, name, ticker, type, is_manual_price, current_price, kind, quantity, sub_category, currency, added_date, ref_asset_id',
-      )
-      .in('user_id', userIds)
-      .is('deleted_at', null);
-    if (assetError) throw new Error(`Varliklar alinamadi: ${assetError.message}`);
+    // 2) Herkesin aktif defteri (sayfalı).
     // Mezar taşı YOK: kullanıcının ekranda gördüğü portföy `deleted_at` +
     // buy/sell netlemesidir (istemci `aggregatePositions`); "sil → geri al"
     // sonrası defterde kalan mezar taşı lotu öldürmez (bkz. positions.ts).
-    const tum = (assetRows ?? []) as AssetRow[];
+    const tum = await tumAktifVarliklar(admin);
+    const userIds = [...new Set(tum.map((a) => String(a.user_id)))];
+    if (userIds.length === 0) {
+      return jsonResponse({ ok: true, reason: 'Portfoyu olan kullanici yok.', users: 0 });
+    }
     const acik = netLotlar(acikPozisyonLotlari(tum, { mezarTasi: false }), tum);
     const lotlariOf = new Map<string, Lot[]>();
     for (const a of acik) {
@@ -448,11 +495,22 @@ Deno.serve(async (request) => {
     // dakikada attığı istemci snapshot'ı (Yarış ekranı açık) BÜTÜN partiyi
     // düşürüyordu — ilk canlı koşuda görüldü. Throttle "atlandı" sayılır
     // (o dakikadaki değer zaten taze), başka hata yükselir.
+    const plan = yazimPlani(roiRows, allocRows, optIn);
     let throttled = 0;
     let yazilanRoi = 0;
     let yazilanAlloc = 0;
     if (!dryRun) {
-      for (const uid of userIds) {
+      // Zirve tabloları: throttle tetikleyicisi yok (yalnız bu cron yazar),
+      // toplu insert güvenli.
+      if (plan.zirveRoi.length > 0) {
+        const { error } = await admin.from('zirve_roi_snapshots').insert(plan.zirveRoi);
+        if (error) throw new Error(`Zirve ROI yazilamadi: ${error.message}`);
+      }
+      if (plan.zirveAlloc.length > 0) {
+        const { error } = await admin.from('zirve_allocation_snapshots').insert(plan.zirveAlloc);
+        if (error) throw new Error(`Zirve dagilim yazilamadi: ${error.message}`);
+      }
+      for (const uid of plan.yarisKullanicilari) {
         const roi = roiRows.filter((r) => r.user_id === uid);
         const alloc = allocRows.filter((r) => r.user_id === uid);
         if (roi.length > 0) {
@@ -475,6 +533,9 @@ Deno.serve(async (request) => {
     return jsonResponse({
       ok: true,
       users: userIds.length,
+      opt_in_users: plan.yarisKullanicilari.length,
+      zirve_roi_rows: plan.zirveRoi.length,
+      zirve_alloc_rows: plan.zirveAlloc.length,
       roi_rows: dryRun ? roiRows.length : yazilanRoi,
       alloc_rows: dryRun ? allocRows.length : yazilanAlloc,
       skipped: atlanan,

@@ -125,6 +125,10 @@ class LegalDocs {
       'Portföy takibi'
     ]),
     LegalBlock.tableRow(['Portföy snapshot geçmişi', 'Performans grafikleri']),
+    LegalBlock.tableRow([
+      'Dönemsel getiri (%) ve varlık türü payları (%) — sunucuda hesaplanır',
+      'Zirvedeki Portföyler (anonim karşılaştırma, bkz. 5.1)'
+    ]),
     LegalBlock.tableRow(
         ['Ortaklık davet kodları ve bağlantılar', 'Çoklu kullanıcı paylaşımı']),
     LegalBlock.h3('3.3 Cihaz ve Bildirim Verileri'),
@@ -149,7 +153,9 @@ class LegalDocs {
       '4. Ortaklık davetlerinizi diğer kullanıcılara iletmek\n'
       '5. Bildirim göndermek (yalnızca açıkça izin verdiyseniz)\n'
       '6. Yasal yükümlülüklerimizi yerine getirmek\n'
-      '7. Hata teşhisi ve servis kalitesinin iyileştirilmesi',
+      '7. Hata teşhisi ve servis kalitesinin iyileştirilmesi\n'
+      '8. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin '
+      'getirisini ve varlık türü dağılımını anonim olarak göstermek',
     ),
     LegalBlock.h2('5. Üçüncü Taraflarla Paylaşım'),
     LegalBlock.tableHeader(['Hizmet', 'Sağlayıcı', 'Amaç', 'Yer']),
@@ -176,6 +182,12 @@ class LegalDocs {
     LegalBlock.p(
       'Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder.',
     ),
+    // 2026-09-29 (0083): zirve havuzu beyana dayanmaz — kullanıcı kararı:
+    // "anonim bir alan olduğundan rıza metinlerine eklenmeli".
+    LegalBlock.h3('5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)'),
+    LegalBlock.p(
+      'Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.',
+    ),
     LegalBlock.h2('6. Yurt Dışına Veri Aktarımı'),
     LegalBlock.p(
       'Supabase verileri $_ulkede, Firebase verileri ABD\'de barındırıldığından verileriniz Türkiye dışına aktarılır. '
@@ -187,6 +199,10 @@ class LegalDocs {
     LegalBlock.tableRow(['Hesap verileri', 'Hesap silinene kadar']),
     LegalBlock.tableRow(['Varlık kayıtları', 'Hesap silinene kadar']),
     LegalBlock.tableRow(['Snapshot geçmişi', 'Son 365 gün (rolling)']),
+    LegalBlock.tableRow([
+      'Zirve havuzu ölçümleri (getiri %, tür payı %)',
+      'Son 365 gün (rolling); hesap silinince hemen'
+    ]),
     LegalBlock.tableRow(
         ['Disclaimer onay logu', 'Hesap silindikten sonra 3 yıl (TBK 146)']),
     LegalBlock.tableRow(['Push token', 'Logout / uninstall\'a kadar']),
@@ -246,7 +262,11 @@ class LegalDocs {
       '· Döviz (USD, EUR, GBP, vb.)\n'
       '· Kıymetli madenler (altın)\n\n'
       'Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz '
-      'sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.',
+      'sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.\n\n'
+      'Zirvedeki Portföyler: portföyü 5 günden eski her kullanıcının dönemsel getirisi ve varlık türü '
+      'payları anonim bir karşılaştırma havuzunda değerlendirilir; en çok kazanan portföylerin yalnızca '
+      'sırası, getirisi ve tür payları, kimlik ve tutar olmadan tüm kullanıcılara gösterilir (ayrıntı: '
+      'Gizlilik Politikası 5.1). Bu işlev hizmetin standart parçasıdır; ayrı bir katılım beyanı gerektirmez.',
     ),
     LegalBlock.h2('3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi'),
     LegalBlock.p(
@@ -367,7 +387,8 @@ class LegalDocs {
     LegalBlock.p('· Push bildirim için kayıtlı cihaz token\'ı'),
     LegalBlock.h3('2.3 Müşteri İşlem Verisi'),
     LegalBlock.p(
-        '· Portföy varlık kayıtları\n· Snapshot geçmişi\n· Ortaklık bağlantıları ve davet kodları'),
+        '· Portföy varlık kayıtları\n· Snapshot geçmişi\n· Ortaklık bağlantıları ve davet kodları\n'
+        '· Dönemsel getiri yüzdesi ve varlık türü payları (Zirvedeki Portföyler anonim havuzu)'),
     LegalBlock.h3('2.4 İşlem Güvenliği Verisi'),
     LegalBlock.p(
         '· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
@@ -377,18 +398,26 @@ class LegalDocs {
     LegalBlock.tableHeader(['Amaç', 'Veri Kategorileri']),
     LegalBlock.tableRow(['Hesap oluşturma ve oturum yönetimi', '2.1, 2.4']),
     LegalBlock.tableRow(['Portföy takibi (uygulamanın ana işlevi)', '2.3']),
+    LegalBlock.tableRow(['Zirvedeki Portföyler — anonim karşılaştırma', '2.3']),
     LegalBlock.tableRow(['Performans grafiklerinin hesaplanması', '2.3']),
     LegalBlock.tableRow(['Ortaklık özelliği', '2.1, 2.3']),
     LegalBlock.tableRow(['Push bildirim gönderimi', '2.2']),
     LegalBlock.tableRow(
         ['Yasal yükümlülüklerin yerine getirilmesi', '2.5, 2.4']),
     LegalBlock.tableRow(['Hata teşhisi ve uygulama güvenliği', '2.4']),
+    LegalBlock.p(
+      'Zirvedeki Portföyler: Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.',
+    ),
     LegalBlock.h2('4. Hukuki Dayanak'),
     LegalBlock.tableHeader(['Veri', 'Hukuki Sebep']),
     LegalBlock.tableRow(
         ['E-posta, şifre, display name', 'KVKK 5(2)(c) — sözleşmenin ifası']),
     LegalBlock.tableRow(
         ['Portföy verileri', 'KVKK 5(2)(c) — sözleşmenin ifası']),
+    LegalBlock.tableRow([
+      'Zirve havuzu ölçümleri (getiri %, tür payı %)',
+      'KVKK 5(2)(c) — sözleşmenin ifası; 5(2)(f) — meşru menfaat'
+    ]),
     LegalBlock.tableRow(['Push token', 'KVKK 5(1) — açık rıza']),
     LegalBlock.tableRow(
         ['IP, cihaz bilgisi', 'KVKK 5(2)(f) — meşru menfaat (güvenlik)']),
@@ -431,6 +460,11 @@ class LegalDocs {
     ]),
     LegalBlock.tableRow(
         ['Snapshot geçmişi', 'Son 365 gün rolling', 'Servis ihtiyacı']),
+    LegalBlock.tableRow([
+      'Zirve havuzu ölçümleri',
+      'Son 365 gün rolling; hesap silinince hemen',
+      'Servis ihtiyacı'
+    ]),
     LegalBlock.tableRow(
         ['Push token', 'Logout / uninstall\'a kadar', 'Sözleşme süresi']),
     LegalBlock.tableRow([

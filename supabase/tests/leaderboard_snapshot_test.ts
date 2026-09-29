@@ -22,6 +22,7 @@ import {
   netLotlar,
   portfoyDegeri,
   seriSembolu,
+  yazimPlani,
   yedekTryFiyati,
 } from '../functions/leaderboard-snapshot/index.ts';
 
@@ -223,4 +224,31 @@ Deno.test('netLotlar: farklı para birimi / tür ayrı pozisyon, mezar taşı mi
   const acik = tum.filter((l) => (l.kind ?? 'buy') === 'buy');
   const out = netLotlar(acik, tum).sort((a, b) => a.type.localeCompare(b.type));
   assertEquals(out.map((l) => [l.type, l.quantity]), [['altin', 35], ['doviz', 2200]]);
+});
+
+// ── 0083: zirve herkese, yarış yalnız katılana ─────────────────────────────
+Deno.test('yazimPlani: zirve ölçülen herkesi alır, yarış yalnız opt-in', () => {
+  const roi = [
+    { user_id: 'a', period_days: 30, roi_pct: 2.7 },
+    { user_id: 'b', period_days: 30, roi_pct: -3.3 },
+  ];
+  const alloc = [
+    { user_id: 'b', allocation_pct: { altin: 100 }, type_count: 1 },
+    { user_id: 'c', allocation_pct: { fon: 100 }, type_count: 1 },
+  ];
+  const plan = yazimPlani(roi, alloc, new Set(['b', 'z']));
+  assertEquals(plan.zirveRoi.length, 2);
+  assertEquals(plan.zirveAlloc.length, 2);
+  // 'z' opt-in ama ölçülmedi → yazılacak satırı yok; 'a' ve 'c' opt-in değil.
+  assertEquals(plan.yarisKullanicilari, ['b']);
+});
+
+Deno.test('yazimPlani: kimse yarışa katılmamışsa yarış tablosuna yazım yok', () => {
+  const plan = yazimPlani(
+    [{ user_id: 'a', period_days: 7, roi_pct: 1 }],
+    [{ user_id: 'a', allocation_pct: { hisse: 100 }, type_count: 1 }],
+    new Set<string>(),
+  );
+  assertEquals(plan.yarisKullanicilari, []);
+  assertEquals(plan.zirveRoi.length, 1);
 });

@@ -1,6 +1,7 @@
 ﻿# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 11 Mayıs 2026
+**Son güncelleme:** 29 Eylül 2026
 **Sürüm:** 1.0
 
 ---
@@ -33,6 +34,7 @@
 ### 2.3 Müşteri İşlem Verisi
 - Portföy varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)
 - Snapshot geçmişi (toplam değer, getiri yüzdesi)
+- Dönemsel getiri yüzdesi ve varlık türü payları (Zirvedeki Portföyler anonim havuzu)
 - Ortaklık bağlantıları ve davet kodları
 
 ### 2.4 İşlem Güvenliği Verisi
@@ -52,6 +54,7 @@
 |---|---|
 | Hesap oluşturma ve oturum yönetimi | 2.1, 2.4 |
 | Portföy takibi (uygulamanın ana işlevi) | 2.3 |
+| Zirvedeki Portföyler — anonim karşılaştırma | 2.3 |
 | Performans grafiklerinin hesaplanması | 2.3 |
 | Ortaklık özelliği (kullanıcılar arası paylaşım) | 2.1, 2.3 |
 | Push bildirim gönderimi | 2.2 |
@@ -73,6 +76,7 @@
 |---|---|
 | E-posta, şifre, display name | KVKK 5(2)(c) — sözleşmenin kurulması ve ifası için zorunlu |
 | Portföy verileri | KVKK 5(2)(c) — sözleşmenin ifası |
+| Zirve havuzu ölçümleri (getiri %, tür payı %) | KVKK 5(2)(c) — sözleşmenin ifası; 5(2)(f) — meşru menfaat |
 | Push token | KVKK 5(1) — açık rıza |
 | IP, cihaz bilgisi | KVKK 5(2)(f) — meşru menfaat (güvenlik) |
 | Disclaimer onayı | KVKK 5(2)(a) — kanunlarda öngörülmesi (SPK) |
@@ -97,6 +101,10 @@ ABD, Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli koru
 
 Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içerisinde belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
+### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
+
+Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.
+
 ---
 
 ## 6. Kişisel Verilerin Saklanma Süresi
@@ -106,6 +114,7 @@ Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içe
 | Hesap verileri (e-posta, display name) | Hesap silinene kadar | Sözleşme süresi |
 | Portföy varlık kayıtları | Hesap silinene kadar | Sözleşme süresi |
 | Snapshot geçmişi | Son 365 gün rolling | Servis ihtiyacı |
+| Zirve havuzu ölçümleri | Son 365 gün rolling; hesap silinince hemen | Servis ihtiyacı |
 | Push token | Logout veya uninstall'a kadar | Sözleşme süresi |
 | Disclaimer onay logu | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
 | Oturum logları (IP, cihaz) | 90 gün | KVKK 5(2)(f) meşru menfaat |
