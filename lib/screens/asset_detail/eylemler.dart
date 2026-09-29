@@ -155,7 +155,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
     //     nokta ALIŞ fiyatına çekiliyordu: bir yıl önce alınmış altının 1H
     //     grafiği ₺4.000'den başlayıp ₺6.100'e "sıçrıyordu" — o sıçrama bu
     //     haftaya ait değildi. Alış→bugün kâr/zararı üstteki şeritte
-    //     (`_PnlSummaryStrip`) ayrıca duruyor.
+    //     (`_PozisyonKarti`) ayrıca duruyor.
     //   · **Miktara bölmek** (`miktarDamgada`/`bolenDamgada`). Pozisyon
     //     serisini birime indirmeye çalışıyordu; motorun tarih kapısıyla
     //     uyuşmadığı için alım slotunda fiyat iki katına çıkıyordu (ölçüldü:

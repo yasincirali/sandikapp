@@ -487,7 +487,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       quantity: quantity,
       purchasePrice: asset.purchasePrice,
       currency: asset.currency,
-      notes: asset.notes,
+      // Not KOPYALANMAZ: not işleme aittir ("maaştan aldım"). Alış lot'unun
+      // notu satışa kopyalanınca aynı cümle satış satırında da görünüyordu
+      // (bkz. `islem_notu.dart` — eski kopyalar orada ayıklanır).
+      notes: '',
       isManualPrice: asset.isManualPrice,
       subCategory: asset.subCategory,
       unitType: asset.unitType,
@@ -575,6 +578,24 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
   }
 
+  /// Bir işlemin notunu değiştirir (hareket satırından açılan not sayfası).
+  ///
+  /// [updateAsset] DEĞİL: o tüm satırı yazar; burada tek sütun
+  /// (`SupabaseService.updateAssetNotes`). Seri/özet hesabına not girmez,
+  /// bu yüzden gün içi seri düşürülmez.
+  Future<void> updateNotes(Asset asset, String notes) async {
+    final temiz = notes.trim();
+    await SupabaseService.instance.updateAssetNotes(asset.id, temiz);
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(
+        assets: current.assets
+            .map((a) => a.id == asset.id ? a.copyWithNotes(temiz) : a)
+            .toList(),
+      ));
+    }
+  }
+
   Future<void> deleteAsset(String id) async {
     final current = state.valueOrNull;
     Asset? deleted;
@@ -597,7 +618,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         quantity: deleted.quantity,
         purchasePrice: deleted.purchasePrice,
         currency: deleted.currency,
-        notes: deleted.notes,
+        // Silme kaydı (mezar taşı) not taşımaz — `addSellTransaction` notu.
+        notes: '',
         isManualPrice: deleted.isManualPrice,
         subCategory: deleted.subCategory,
         unitType: deleted.unitType,
@@ -682,7 +704,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         quantity: netQty > 0 ? netQty : 0,
         purchasePrice: unitPrice,
         currency: rep.currency,
-        notes: rep.notes,
+        // Silme kaydı (mezar taşı) not taşımaz — `addSellTransaction` notu.
+        notes: '',
         isManualPrice: rep.isManualPrice,
         subCategory: rep.subCategory,
         unitType: rep.unitType,

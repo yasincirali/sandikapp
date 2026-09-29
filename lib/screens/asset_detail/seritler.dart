@@ -1,283 +1,175 @@
 part of '../asset_detail_screen.dart';
 
-/// Dönem değişim satırı, PnL şeridi, overlay çipi, karşılaştırma şeridi,
+/// Pozisyon kartı, overlay çipi, karşılaştırma şeridi,
 /// lejant rozeti. `asset_detail_screen.dart`'ın part'ı (2026-09-14).
-/// Seçili periyodun değişimi — tek satır, üstteki [_PnlSummaryStrip]'in
-/// altında durur.
+/// Pozisyon kartı — "kaçtan aldım, ne oldu" (2026-09-28).
 ///
-/// İkisi farklı soruları yanıtlar ve bilerek ayrı tutulmuştur:
-/// - [_PnlSummaryStrip]: "aldığımdan bugüne ne kazandım?" (toplam PnL)
-/// - Bu satır: "seçtiğim dönemde ne oldu?" (dönemsel değişim)
+/// Yedi düz satır, hepsi "etiket · değer":
+///   · miktar, alış fiyatın (ortalama), bugünkü fiyat          → birim
+///   · ödediğin toplam, bugünkü değer                          → tutar
+///   · toplam kâr/zarar                                        → alıştan bugüne
+///   · {dönem} kâr/zarar                                       → seçili dönem
 ///
-/// Değişim ham fiyat farkıdır (son − ilk) × miktar. Grafikteki çizginin iki
-/// ucuyla birebir tutarlıdır.
-class _PeriodChangeRow extends StatelessWidget {
-  /// Değişim TUTARI portföy değeridir → baz para biriminde (3.2).
-  final BazPara baz;
-  final String label;
-  final double changeTRY;
-  final double? changePct;
-
-  const _PeriodChangeRow({
+/// Son ikisi farklı soruları yanıtlar ve ikisi de durur: "aldığımdan bugüne
+/// ne kazandım?" ile "seçtiğim dönemde ne oldu?". Eskiden iki ayrı şerit
+/// (`_PnlSummaryStrip`, `_PeriodChangeRow`) ok işareti, rozet ve 10pt
+/// sayılarla anlatıyordu; kullanıcı "okunaklı, basit ibare" istedi.
+///
+/// Birim fiyat ₺ kalır (borsadaki sayı; `money_format_scope_test` değer/
+/// fiyat ayrımı), tutarlar baz para biriminde. Dönem tutarı pozisyonun
+/// PİYASA ETKİSİ, yüzdesi birim serinin başı/sonu — bkz. `_donemDegisimi`
+/// ve "Varlık Ekranı Birim Seri" kararı.
+class _PozisyonKarti extends StatelessWidget {
+  const _PozisyonKarti({
     required this.baz,
-    required this.label,
-    required this.changeTRY,
-    required this.changePct,
+    required this.pnl,
+    required this.miktarMetni,
+    required this.birimEtiketi,
+    required this.birimBicim,
+    required this.donemEtiketi,
+    required this.donem,
   });
+
+  final BazPara baz;
+  final _PnlOzeti pnl;
+  final String miktarMetni;
+  final String birimEtiketi;
+  final NumberFormat birimBicim;
+  final String donemEtiketi;
+
+  /// Seçili dönemin değişimi; seri gelmediyse `null` → satır "—".
+  final ({double tutar, double yuzde})? donem;
 
   @override
   Widget build(BuildContext context) {
-    // Yuvarlanmış tutar ve yüzde ikisi de sıfırsa nötr — yeşil/kırmızı
-    // göstermek "hareket var" yanılgısı yaratır.
-    final isFlat =
-        changeTRY.abs().round() == 0 && (changePct?.abs() ?? 0) < 0.005;
-    final positive = changeTRY >= 0;
-    final color =
-        isFlat ? context.c.text36 : (positive ? context.c.gain : context.c.loss);
-    final tryFmt = baz.formatter(digits: 0);
+    final l = context.l10n;
+    final tutar = baz.formatter(digits: 0);
+    String birim(double v) => '${birimBicim.format(v)} / $birimEtiketi';
 
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.symmetric(
-          horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
+          horizontal: SandikSpace.md, vertical: SandikSpace.xs),
+      child: Column(
         children: [
-          // Etiket de kırpılabilmeli: dar ekranda tam genişliği alıp sağdaki
-          // tutarı taşırıyordu (320pt'de 54px). Değer zaten Flexible.
-          Flexible(
+          _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
+          _PozisyonSatiri(
+              etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
+          _PozisyonSatiri(
+              etiket: l.posTodayPrice,
+              deger: pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
+          Divider(height: SandikSpace.sm, color: context.c.hairline),
+          _PozisyonSatiri(
+              etiket: l.posTotalCost, deger: tutar.format(pnl.totalCostTRY)),
+          _PozisyonSatiri(
+              etiket: l.posCurrentValue,
+              deger: tutar.format(pnl.currentValueTRY)),
+          _PozisyonSatiri.kazanc(
+            etiket: l.posTotalPnl,
+            tutar: pnl.totalPnlTRY,
+            yuzde: pnl.pnlPct,
+            bicim: tutar,
+            vurgulu: true,
+          ),
+          if (donem case final d?)
+            _PozisyonSatiri.kazanc(
+              etiket: l.posPeriodPnl(donemEtiketi),
+              tutar: d.tutar,
+              yuzde: d.yuzde,
+              bicim: tutar,
+            )
+          else
+            _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kartın bir satırı: solda etiket, sağda değer. Etiket iki satıra
+/// sarabilir; değer `FittedBox` ile küçülür, kırpılmaz (rakam kırpmak
+/// yanlış okutur).
+class _PozisyonSatiri extends StatelessWidget {
+  const _PozisyonSatiri({
+    required this.etiket,
+    required this.deger,
+    this.renk,
+    this.vurgulu = false,
+  });
+
+  /// Kâr/zarar satırı: işaretli tutar + yüzde, yeşil/kırmızı; yuvarlanmış
+  /// tutar ve yüzde ikisi de sıfırsa nötr "Değişim yok".
+  factory _PozisyonSatiri.kazanc({
+    required String etiket,
+    required double tutar,
+    required double yuzde,
+    required ParaBicimi bicim,
+    bool vurgulu = false,
+  }) {
+    final duz = tutar.abs().round() == 0 && donemDuzMu(yuzde);
+    if (duz) {
+      return _PozisyonSatiri(
+          etiket: etiket, deger: null, vurgulu: vurgulu, renk: null);
+    }
+    final isaret = tutar >= 0 ? '+' : '−';
+    return _PozisyonSatiri(
+      etiket: etiket,
+      deger: '$isaret${bicim.format(tutar.abs())} · '
+          '$isaret${fmtPct(yuzde.abs(), digits: 2)}',
+      renk: tutar >= 0 ? _KazancRengi.gain : _KazancRengi.loss,
+      vurgulu: vurgulu,
+    );
+  }
+
+  final String etiket;
+
+  /// `null` → nötr "Değişim yok".
+  final String? deger;
+  final _KazancRengi? renk;
+  final bool vurgulu;
+
+  @override
+  Widget build(BuildContext context) {
+    final degerRengi = switch (renk) {
+      _KazancRengi.gain => context.c.gain,
+      _KazancRengi.loss => context.c.loss,
+      null => deger == null ? context.c.text36 : context.c.text90,
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
             child: Text(
-              context.l10n.periodChangeUpper(label),
-              maxLines: 1,
+              etiket,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: context.t.labelSmall?.copyWith(
-                letterSpacing: 0.8,
-                fontWeight: FontWeight.w700,
-                color: context.c.text36,
-              ),
+              style: context.t.bodyMedium?.copyWith(
+                  color: vurgulu ? context.c.text90 : context.c.text58,
+                  fontWeight: vurgulu ? FontWeight.w600 : FontWeight.w500),
             ),
           ),
-          const Spacer(),
-          if (!isFlat) ...[
-            Icon(
-              positive
-                  ? Icons.arrow_upward_rounded
-                  : Icons.arrow_downward_rounded,
-              size: 13,
-              color: color,
-            ),
-            const SizedBox(width: 3),
-          ],
+          const SizedBox(width: SandikSpace.smd),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerRight,
               child: Text(
-                isFlat
-                    ? 'Değişim yok'
-                    : '${positive ? '+' : '−'}${tryFmt.format(changeTRY.abs())}',
+                deger ?? context.l10n.noChange,
                 maxLines: 1,
-                style: context.t.numSmall.copyWith(color: color),
+                style: context.t.numSmall.copyWith(
+                    color: degerRengi,
+                    fontWeight: vurgulu ? FontWeight.w800 : FontWeight.w600),
               ),
             ),
           ),
-          if (changePct != null && !isFlat) ...[
-            const SizedBox(width: SandikSpace.sm),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.14),
-                borderRadius: SandikRadius.smAll,
-              ),
-              child: Text(
-                fmtPct(changePct!.abs(), digits: 2),
-                style: context.t.numSmall.copyWith(color: color),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _PnlSummaryStrip extends StatelessWidget {
-  final double anchorUnitPrice;
-  final double currentUnitPrice;
-  final double pnlPct;
-  final double totalPnl;
-  final String unitLabel;
-  final bool isPositive;
-
-  /// Gösterim birimi (Faz 3.2).
-  final BazPara baz;
-
-  const _PnlSummaryStrip({
-    required this.baz,
-    required this.anchorUnitPrice,
-    required this.currentUnitPrice,
-    required this.pnlPct,
-    required this.totalPnl,
-    required this.unitLabel,
-    required this.isPositive,
-  });
-
-  /// Birim FİYAT ₺ kalır: bir hissenin TL fiyatını dolara çevirmek borsadaki
-  /// sayıyla çelişir (bkz. `money_format_scope_test` değer/fiyat ayrımı).
-  /// Ondalık korunur ki kullanıcı per-unit farkı algılayabilsin.
-  String _fmtPrice(double v) {
-    final f = fixedFormatter(2);
-    return '${f.format(v)} ₺';
-  }
-
-  /// Toplam kâr/zarar bir portföy DEĞERİdir → baz para biriminde.
-  String _fmtTotal(double v) => baz.compact(v);
-
-  @override
-  Widget build(BuildContext context) {
-    // Değişim yoksa (yuvarlanmış tutar ve yüzde ikisi de sıfırsa) nötr göster.
-    final bool isFlat =
-        totalPnl.abs().round() == 0 && pnlPct.abs() < 0.005;
-    final Color accent = isFlat
-        ? context.c.text36
-        : (isPositive ? context.c.gain : context.c.loss);
-    final String sign = isPositive ? '+' : '−';
-    final IconData arrow = isPositive
-        ? Icons.trending_up_rounded
-        : Icons.trending_down_rounded;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border(
-          left: BorderSide(color: accent.withValues(alpha: 0.8), width: 3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.l10n.buyPerUnit(unitLabel),
-                    style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.8,
-                        fontWeight: FontWeight.w700,
-                        color: context.c.text36)),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(_fmtPrice(anchorUnitPrice),
-                      maxLines: 1,
-                      style: context.t.numSmall.copyWith(
-                          color: context.c.text58)),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Icon(Icons.arrow_forward_rounded,
-                size: 14, color: context.c.text36),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(context.l10n.todayPerUnit(unitLabel),
-                    style: context.t.labelSmall?.copyWith(
-                        letterSpacing: 0.8,
-                        fontWeight: FontWeight.w700,
-                        color: context.c.text36)),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(_fmtPrice(currentUnitPrice),
-                      maxLines: 1,
-                      style: context.t.numSmall.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: context.c.text90)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          if (isFlat)
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: context.c.overlay,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border:
-                    Border.all(color: context.c.hairline),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.horizontal_rule_rounded,
-                      size: 14, color: context.c.text58),
-                  const SizedBox(width: 4),
-                  Text('Değişim yok',
-                      style: context.t.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: context.c.text58)),
-                ],
-              ),
-            )
-          else
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(color: accent.withValues(alpha: 0.4)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(arrow, size: 14, color: accent),
-                  const SizedBox(width: 4),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('$sign${_fmtTotal(totalPnl.abs())}',
-                          style: context.t.numSmall.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: accent,
-                              height: 1.0)),
-                      const SizedBox(height: 2),
-                      Text(
-                          '$sign${_fmtPrice((currentUnitPrice - anchorUnitPrice).abs())} / $unitLabel',
-                          style: context.t.numSmall.copyWith(
-                              fontSize: 10,
-                              color: accent.withValues(alpha: 0.85),
-                              height: 1.2)),
-                      const SizedBox(height: 1),
-                      Text(fmtPct(pnlPct.abs(), digits: 2),
-                          style: context.t.numSmall.copyWith(
-                              fontSize: 10,
-                              color: accent.withValues(alpha: 0.85),
-                              height: 1.0)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+enum _KazancRengi { gain, loss }
 
 /// Fullscreen landscape moduna geçiren küçük ikon buton.
 /// Grafik üzerine çizilen göstergeleri açıp kapatan küçük toggle chip.

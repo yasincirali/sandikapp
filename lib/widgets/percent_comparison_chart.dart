@@ -8,6 +8,7 @@ import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
+import 'grafik_stili.dart';
 import 'zoomable_chart.dart';
 
 /// Yüzde bazlı karşılaştırma grafiği — **Karşılaştır ve Takip ekranlarının
@@ -451,14 +452,12 @@ class PercentComparisonChart extends StatelessWidget {
                 return const SizedBox.shrink();
               }
               final t = DateTime.fromMillisecondsSinceEpoch(value.round());
-              return Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  zamanEtiketi(t,
-                      spanGun: span / const Duration(days: 1).inMilliseconds,
-                      gunIci: ciz.eksenX.gunIci),
-                  style: TextStyle(fontSize: 9, color: p.text36),
-                ),
+              return GrafikStili.xEtiketi(
+                zamanEtiketi(t,
+                    spanGun: span / const Duration(days: 1).inMilliseconds,
+                    gunIci: ciz.eksenX.gunIci),
+                dolgu: const EdgeInsets.only(top: 6),
+                stil: TextStyle(fontSize: 9, color: p.text36),
               );
             },
           ),
@@ -478,10 +477,11 @@ class PercentComparisonChart extends StatelessWidget {
               // Kayan nokta hatası: 15.000000000000002 gibi değerler ondalık
               // gösterimde "15,0" yerine gürültü üretir.
               final v = (value / eksen.interval).round() * eksen.interval;
-              return Text(
+              return GrafikStili.yEtiketi(
                 '${v >= 0 ? '+' : ''}'
                 '${v.toStringAsFixed(eksen.ondalik).replaceAll('.', ',')}%',
-                style: TextStyle(fontSize: 10, color: p.text58),
+                dolgu: EdgeInsets.zero,
+                stil: TextStyle(fontSize: 10, color: p.text58),
               );
             },
           ),

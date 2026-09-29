@@ -352,6 +352,31 @@ class SupabaseService {
     );
   }
 
+  /// Yalnızca bir işlemin notunu yazar.
+  ///
+  /// [updateAsset] tüm gövdeyi yazar (fiyat, miktar…); notu düzenlemek için
+  /// satırın geri kalanını istemcideki kopyayla ezmek gereksiz risk — o an
+  /// bayat bir `current_price` sunucudakinin üstüne yazılırdı. Tek sütun.
+  ///
+  /// [softDeleteAssets] gibi dönen satırla doğrulanır: RLS eşleşmeyen
+  /// UPDATE'i hata vermeden 0 satırla geçer, kullanıcı "kaydedildi" sanardı.
+  Future<void> updateAssetNotes(String id, String notes) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.updateAssetNotes',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {'id': id, 'len': notes.length},
+      call: () => _db
+          .from('assets')
+          .update({'notes': notes})
+          .eq('id', id)
+          .select('id'),
+    );
+    if (rows.isEmpty) {
+      throw StateError('Not hiçbir satıra yazılamadı.');
+    }
+  }
+
   Future<void> deleteAsset(String id) async {
     await _log.log<void>(
       source: 'SupabaseService.deleteAsset',

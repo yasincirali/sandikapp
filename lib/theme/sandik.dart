@@ -1100,6 +1100,20 @@ class Sandik {
   static const Color medalBronze = Color(0xFFE0A574); // 3.
   static const Color medalBronzeDark = Color(0xFFC07E3F);
 
+  // ── Yarışçı renkleri (Yarış ekranı, 2026-09-29) ───────────────────────────
+  //
+  // Ortakların avatar/çizgi rengi. "Sen" her zaman marka amberidir; ortaklar
+  // bu listeden SIRAYLA alır (ortak listesindeki yerine göre, sıralamaya göre
+  // değil — sıra değişince kişinin rengi değişmesin). Tonlar amber'den,
+  // kazanç yeşilinden ve kayıp kırmızısından uzak: renk kimlik anlatır,
+  // kâr/zarar değil.
+  static const List<Color> yarisci = [
+    info, // gök mavisi
+    Color(0xFF7EC8A9), // nane
+    Color(0xFFC97B4F), // bakır
+    Color(0xFFB98AE0), // orkide
+  ];
+
   // ── Sabit opaklıklar (dark zemin üzeri metin) ──────────────────────────────
   static const Color text90    = Color(0xE1FFFFFF); // 0.88 opak (Ana başlık)
   static const Color text58    = Color(0x8CFFFFFF); // 0.55 (İkincil etiket)

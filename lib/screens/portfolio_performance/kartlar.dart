@@ -127,8 +127,12 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       // 2026-09-15: 20'den indi — kullanıcı bildirimi, kart kenarındaki
       // boşluk "sağdan ve soldan azaltılmalı"; başlıkla kart kenarı artık
       // aynı hizada, grafik 8pt daha geniş.
-      padding: EdgeInsets.symmetric(
-          horizontal: SandikSpace.screenH(context), vertical: SandikSpace.smd),
+      // Üst dolgu 0: içerik başlık bloğunun hemen altında başlar — dört
+      // sekmede aynı çizgi (kullanıcı bildirimi 2026-09-28: "Performans
+      // biraz daha boşluk bırakıp başlıyor"). Portföy'de ilk kontrol
+      // başlığın 4pt alt dolgusundan hemen sonra; burada 12 daha vardı.
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 0,
+          SandikSpace.screenH(context), SandikSpace.smd),
       children: [
         // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
         //
@@ -169,6 +173,15 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         _buildScopeBar(),
         _buildScopePanel(isIntraday),
         const SizedBox(height: SandikSpace.sm),
+        // Dönem seçici grafiğin ÜSTÜNDE — üç grafik ekranında da (kullanıcı
+        // kararı 2026-09-28, aynı gün içinde iki adım): önce "üç ekranda
+        // aynı yerde olsun" denince seçici grafiğin altına indirilmişti;
+        // sonra "üstte olsun: GÜNLÜK'ten öteki dönemlere geçerken grafiğin
+        // boyu değişiyor, altındaki seçici zıplıyor, profesyonel durmuyor".
+        // Üstteki seçici grafiğin altındaki hiçbir değişimden etkilenmez.
+        // Varlık sayfası ve varlık detayı da aynı sırayı kullanır:
+        // fiyat → seçici → grafik. Dönem değişince yalnızca grafik ve ona
+        // bağlı kartlar yenilenir (bayat seri soluk kalır, iskelet yok).
         _buildPeriodRow(),
         const SizedBox(height: SandikSpace.md),
         // ── ÖZET sekmesi ──────────────────────────────────────────────────

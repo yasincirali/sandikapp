@@ -102,6 +102,53 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('pozisyon kartı: alış fiyatı, toplam ve dönem kâr/zararı düz dille',
+      (tester) async {
+    // Kullanıcı şartı (2026-09-28): "kaçtan aldığım, toplam kâr/zarar ve
+    // dönem içindeki kâr/zarar KESİNLİKLE olmalı; okunaklı, basit
+    // ibarelerle." Eski "ALIŞ / LOT → BUGÜN / LOT" oku ve rozet içindeki
+    // üç minik sayı yerine etiket · değer satırları.
+    tester.view.physicalSize = const Size(390 * 3, 2400 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        authProvider.overrideWith(_FakeAuth.new),
+        portfolioProvider.overrideWith(_FakePortfolio.new),
+      ],
+      child: MaterialApp(
+        theme: ThemeData.dark(),
+        home: AssetDetailScreen(asset: _asset(), showBackButton: true),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    for (final etiket in [
+      'Miktar',
+      'Alış fiyatın (ortalama)',
+      'Bugünkü fiyat',
+      'Ödediğin toplam',
+      'Bugünkü değer',
+      'Toplam kâr/zarar',
+    ]) {
+      expect(find.text(etiket), findsOneWidget, reason: '$etiket satırı yok');
+    }
+    // Seçili dönemin satırı: "{dönem} kâr/zarar" — toplamla birlikte iki.
+    expect(find.textContaining('kâr/zarar'), findsNWidgets(2));
+    // Alış 250,75 → bugün 312,40: kâr; tutar ve yüzde işaretli, tek satırda.
+    expect(find.text('₺250,75 / lot'), findsOneWidget, reason: 'alış fiyatı');
+    // Büyük güncel fiyat da 312,40 yazar; kart satırı birimiyle aranır.
+    expect(find.text('₺312,40 / lot'), findsOneWidget, reason: 'bugünkü fiyat');
+    expect(find.textContaining('+₺6.165 · +%24,59'), findsOneWidget,
+        reason: 'toplam kâr/zarar: (312,40−250,75)×100 = 6.165, %24,59');
+    // Eski sıkışık dil gitti.
+    expect(find.textContaining('ALIŞ /'), findsNothing);
+    expect(find.textContaining('DEĞİŞİM'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('açılış: seriler gelene kadar tek iskelet, sonra hepsi birden',
       (tester) async {
     tester.view.physicalSize = const Size(390 * 3, 2400 * 3);

@@ -332,6 +332,40 @@
   "transactionDate": "Transaction date",
   "addNote": "Add a note",
   "notesHint": "Your notes...",
+  "txHasNote": "Has a note",
+  "txOpenNote": "{name} transaction, add a note",
+  "@txOpenNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "txOpenNoteWithNote": "{name} transaction, has a note, open note",
+  "@txOpenNoteWithNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noteSaved": "Note saved",
+  "noteRemoved": "Note removed",
+  "noteSaveFailed": "Couldn't save the note",
+  "noteRemove": "Remove note",
+  "noteNone": "No note on this transaction.",
+  "noteReadOnlyPartner": "This record belongs to your partner; only they can edit its note.",
+  "noteReadOnlyDeleted": "A deleted record's note can't be edited.",
+  "notesSection": "Notes",
+  "moreNotesCount": "+{count} more notes · in All Transactions",
+  "@moreNotesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchAssetSymbolOrNote": "Search asset, symbol or note",
   "quantitySemantics": "Quantity {value}",
   "@quantitySemantics": {
     "placeholders": {
@@ -359,10 +393,10 @@
   "fundsLoadFailed": "Could not load funds",
   "searchEllipsis": "Search...",
   "clearSearch": "Clear search",
-  "pickStockPrompt": "Please pick a stock",
+  "pickStockPrompt": "Pick a stock from the list or type its symbol",
   "pickStock": "Pick a stock",
   "pickStockTap": "Tap to pick a stock...",
-  "pickFundPrompt": "Please pick a fund",
+  "pickFundPrompt": "Pick a fund",
   "pickFund": "Pick a fund",
   "pickFundTap": "Tap to pick a fund...",
   "noResults": "No results",
@@ -416,32 +450,7 @@
   },
   "setPriceAlert": "Set a price alert",
   "priceHistoryFailed": "This asset's price history could not be fetched. Check your connection and try again.",
-  "totalQuantityUpper": "TOTAL QUANTITY",
   "otherTab": "Other",
-  "periodChangeUpper": "{period} CHANGE",
-  "@periodChangeUpper": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "buyPerUnit": "BUY / {unit}",
-  "@buyPerUnit": {
-    "placeholders": {
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "todayPerUnit": "TODAY / {unit}",
-  "@todayPerUnit": {
-    "placeholders": {
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
   "noResultsShort": "No results.",
   "compare": "Compare",
   "clearShort": "Clear",
@@ -1193,6 +1202,17 @@
       }
     }
   },
+  "txDeleted": "Deleted",
+  "txVoided": "removed",
+  "seeAllShort": "See all",
+  "nTransactions": "{n} transactions",
+  "@nTransactions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "txSell": "Sale",
   "txDividend": "Dividend",
   "txBuy": "Purchase",
@@ -1924,7 +1944,6 @@
   "rangeLast90": "Last 90 days",
   "rangeThisYear": "This year",
   "rangeCustom": "Custom",
-  "searchAssetOrSymbol": "Search asset name or symbol",
   "noRecords": "No records",
   "nRecords": "{n} records",
   "@nRecords": {
@@ -2569,6 +2588,20 @@
     "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",
     "placeholders": {"time": {"type": "String"}, "value": {"type": "String"}}
   },
+  "posQuantity": "Quantity",
+  "posBuyPrice": "Your buy price (avg.)",
+  "posTodayPrice": "Today's price",
+  "posTotalCost": "Total paid",
+  "posCurrentValue": "Value today",
+  "posTotalPnl": "Total profit/loss",
+  "posPeriodPnl": "{period} profit/loss",
+  "@posPeriodPnl": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "chartStartLabel": "START · {date} · {value}",
   "@chartStartLabel": {
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
@@ -2617,5 +2650,48 @@
   "kullaniciAdiKaydedildi": "Your username was updated.",
   "kullaniciAdiSecilmedi": "Not chosen yet",
   "kullaniciAdiCikis": "Sign out",
-  "registerUsernameMissing": "Enter a username."
+  "registerUsernameMissing": "Enter a username.",
+  "deletedFilter": "Deleted",
+  "txDateLabeled": "{tur}: {tarih}",
+  "@txDateLabeled": {
+    "placeholders": {
+      "tur": {
+        "type": "String"
+      },
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedOnDate": "Deleted: {tarih}",
+  "@deletedOnDate": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "pickGoldPrompt": "Pick a gold type",
+  "pickCurrencyPrompt": "Pick a currency",
+  "raceLive": "Live",
+  "raceLiveJustNow": "Live · updated just now",
+  "raceLiveSecondsAgo": "Live · updated {n}s ago",
+  "raceLiveMinutesAgo": "Live · updated {n}m ago",
+  "raceYou": "You",
+  "raceYouTag": "YOU",
+  "raceVs": "VS",
+  "raceGapToLeader": "{fark} pts behind the leader",
+  "duelTied": "Neck and neck",
+  "duelAhead": "{fark} pts ahead of {ad}",
+  "duelBehind": "{fark} pts behind {ad}",
+  "raceRankUp": "Up {n}",
+  "raceRankDown": "Down {n}",
+  "filterButton": "Filter",
+  "filterButtonActive": "Filter, {n} active",
+  "filterReset": "Reset",
+  "filterPeriodHeader": "PERIOD",
+  "filterTypeHeader": "TYPE",
+  "filterShowN": "Show {n} records",
+  "filterNoMatch": "No matching records",
+  "filterRemove": "Remove {ad} filter"
 }

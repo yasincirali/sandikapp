@@ -310,6 +310,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         onTap: _klavyeyiKapat,
         child: Form(
           key: _formKey,
+          // Gerekçe `AddAssetFormState.denendi`'de.
+          autovalidateMode: _s.denendi
+              ? AutovalidateMode.always
+              : AutovalidateMode.disabled,
           child: Column(
             children: [
               Expanded(
@@ -383,12 +387,54 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   // ── Kimlik bölümü: hisse/fon → picker; altın → chip grid; döviz → 4 kart
+  //
+  // Seçim gerektiren türlerde varlık seçilmeden kayıt YOK (kullanıcı
+  // bildirimi 2026-09-29: hisse seçmeden "Ekle" adsız bir lot yazıyordu).
+  // Kural `AddAssetFormState.kimlikEksigi`'nde; burada tek bir FormField
+  // onu doğrular ve uyarıyı alanın ALTINDA satır içi yazar. Eskiden hisse
+  // (BIST seçili değilken), altın ve döviz hiç doğrulanmıyordu; fon ve
+  // kripto doğrulanıyor ama yalnızca kenar kırmızıya dönüyordu — metin
+  // yoktu, "Ekle" neden çalışmıyor belli değildi.
   Widget _identitySection(ColorScheme cs) {
-    if (_type == AssetType.hisse) return _stockIdentityBlock(cs);
-    if (_isFon) return _tefasSelectorField(cs);
-    if (_type == AssetType.altin) return _goldChipGrid(cs);
+    return FormField<void>(
+      validator: (_) => _kimlikUyarisi(_s.kimlikEksigi(
+        tickerText: _ticker.text,
+        muaf: _isEditing,
+      )),
+      builder: (state) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _kimlikAlani(cs, hata: state.hasError),
+          if (state.hasError) ...[
+            const SizedBox(height: SandikSpace.xs2),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+              child: Text(
+                state.errorText!,
+                style: context.t.bodySmall?.copyWith(color: context.c.loss),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String? _kimlikUyarisi(KimlikEksigi? e) => switch (e) {
+        null => null,
+        KimlikEksigi.hisse => context.l10n.pickStockPrompt,
+        KimlikEksigi.fon => context.l10n.pickFundPrompt,
+        KimlikEksigi.altin => context.l10n.pickGoldPrompt,
+        KimlikEksigi.doviz => context.l10n.pickCurrencyPrompt,
+        KimlikEksigi.kripto => context.l10n.pickCryptoPrompt,
+      };
+
+  Widget _kimlikAlani(ColorScheme cs, {required bool hata}) {
+    if (_type == AssetType.hisse) return _stockIdentityBlock(cs, hata: hata);
+    if (_isFon) return _tefasSelectorField(cs, hata: hata);
+    if (_type == AssetType.altin) return _goldChipGrid(cs, hata: hata);
     if (_isDoviz) return _dovizSelector(cs);
-    if (_type == AssetType.kripto) return _kriptoSelectorField(cs);
+    if (_type == AssetType.kripto) return _kriptoSelectorField(cs, hata: hata);
     // Emtia / Diğer — manuel ad + opsiyonel sembol
     return Column(
       children: [
@@ -417,10 +463,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   //
   // BIST100 seçilirse subCategory = "BIST 100 Hisseleri" yazılır (data korunur).
   // Manuel sembol → subCategory = "Diğer Hisseler".
-  Widget _stockIdentityBlock(ColorScheme cs) {
+  Widget _stockIdentityBlock(ColorScheme cs, {required bool hata}) {
     return Column(
       children: [
-        _bist100SelectorField(cs),
+        _bist100SelectorField(cs, hata: hata),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -472,7 +518,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // üç alternatif arasından seçtiği düzen (C): hisse/fon seçicisiyle aynı
   // alan (tümü aramalı, gruplu alt sayfada) + altında 5 kısayol. Kısayolların
   // kuralı `altinKisayollari`'nda (portföydeki türler, 5'e popülerle tamamla).
-  Widget _goldChipGrid(ColorScheme cs) {
+  Widget _goldChipGrid(ColorScheme cs, {required bool hata}) {
     final secili = _seciliAltin;
     final kisayollar = altinKisayollari(
         ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
@@ -489,7 +535,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             child: _selectorContainer(
               cs: cs,
               hasValue: secili != null,
-              hasError: false,
+              hasError: hata,
               badgeText: secili == null ? null : _altinBirimi(secili),
               mainText: secili?.label ?? context.l10n.pickGoldTap,
               color: AssetType.altin.color,
@@ -1434,32 +1480,29 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── BIST100 seçici ─────────────────────────────────────────────────────────
 
-  Widget _bist100SelectorField(ColorScheme cs) {
+  Widget _bist100SelectorField(ColorScheme cs, {required bool hata}) {
     final selectedName = _bist100SelectedTicker != null
         ? bist100StocksMap[_bist100SelectedTicker!] ?? _bist100SelectedTicker!
         : null;
     final ticker = _bist100SelectedTicker?.replaceAll('.IS', '');
 
-    return FormField<String>(
-      validator: (_) => _isBist100 && _bist100SelectedTicker == null
-          ? context.l10n.pickStockPrompt
-          : null,
-      builder: (state) => Semantics(
-        button: true,
-        label: selectedName == null
-            ? context.l10n.pickStock
-            : 'Seçili hisse: $selectedName. Değiştirmek için çift dokun.',
-        child: GestureDetector(
+    // Doğrulama kimlik bölümünün FormField'ında (`_identitySection`).
+    return Semantics(
+      button: true,
+      label: selectedName == null
+          ? context.l10n.pickStock
+          : 'Seçili hisse: $selectedName. Değiştirmek için çift dokun.',
+      child: GestureDetector(
         onTap: _showBist100Picker,
         child: _selectorContainer(
           cs: cs,
           hasValue: _bist100SelectedTicker != null,
-          hasError: state.hasError,
+          hasError: hata,
           badgeText: ticker,
           mainText: selectedName ?? context.l10n.pickStockTap,
           color: AssetType.hisse.color,
         ),
-      )),
+      ),
     );
   }
 
@@ -1485,26 +1528,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   // ── TEFAS fon seçici ───────────────────────────────────────────────────────
 
-  Widget _tefasSelectorField(ColorScheme cs) {
-    return FormField<String>(
-      validator: (_) =>
-          _isFon && _selectedFund == null ? context.l10n.pickFundPrompt : null,
-      builder: (state) => Semantics(
-        button: true,
-        label: _selectedFund == null
-            ? context.l10n.pickFund
-            : 'Seçili fon: ${_selectedFund!.name}. Değiştirmek için çift dokun.',
-        child: GestureDetector(
+  Widget _tefasSelectorField(ColorScheme cs, {required bool hata}) {
+    return Semantics(
+      button: true,
+      label: _selectedFund == null
+          ? context.l10n.pickFund
+          : 'Seçili fon: ${_selectedFund!.name}. Değiştirmek için çift dokun.',
+      child: GestureDetector(
         onTap: _showTefasPicker,
         child: _selectorContainer(
           cs: cs,
           hasValue: _selectedFund != null,
-          hasError: state.hasError,
+          hasError: hata,
           badgeText: _selectedFund?.code,
           mainText: _selectedFund?.name ?? context.l10n.pickFundTap,
           color: AssetType.fon.color,
         ),
-      )),
+      ),
     );
   }
 
@@ -1534,28 +1574,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // Fon seçicisiyle aynı alan + alt sayfa. Sembol serbest yazılmaz; yalnız
   // `kripto_varlik` kataloğundan seçilir, böylece her kayıt sunucunun
   // fiyatladığı bir koda bağlanır (fiyat kaynağı sözleşmesi madde 1).
-  Widget _kriptoSelectorField(ColorScheme cs) {
+  Widget _kriptoSelectorField(ColorScheme cs, {required bool hata}) {
     final kod = kriptoKodu(_ticker.text);
     final ad = _name.text.trim().isEmpty ? kod : _name.text.trim();
-    return FormField<String>(
-      validator: (_) => _type == AssetType.kripto && kod == null
-          ? context.l10n.pickCryptoPrompt
-          : null,
-      builder: (state) => Semantics(
-        button: true,
-        label: kod == null
-            ? context.l10n.pickCryptoTap
-            : context.l10n.cryptoSelectedSemantics(ad ?? kod),
-        child: GestureDetector(
-          onTap: _showKriptoPicker,
-          child: _selectorContainer(
-            cs: cs,
-            hasValue: kod != null,
-            hasError: state.hasError,
-            badgeText: kod,
-            mainText: kod == null ? context.l10n.pickCryptoTap : (ad ?? kod),
-            color: AssetType.kripto.color,
-          ),
+    return Semantics(
+      button: true,
+      label: kod == null
+          ? context.l10n.pickCryptoTap
+          : context.l10n.cryptoSelectedSemantics(ad ?? kod),
+      child: GestureDetector(
+        onTap: _showKriptoPicker,
+        child: _selectorContainer(
+          cs: cs,
+          hasValue: kod != null,
+          hasError: hata,
+          badgeText: kod,
+          mainText: kod == null ? context.l10n.pickCryptoTap : (ad ?? kod),
+          color: AssetType.kripto.color,
         ),
       ),
     );
@@ -1776,6 +1811,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // çözülür — `fiyatCoz`'un bayrağı kendi indirmesi tam da açığın kaynağıydı.
   Future<void> _save() async {
     if (_saving) return;
+    _n.kayitDenendi();
     if (!_formKey.currentState!.validate()) return;
     _n.setSaving(true);
     var sonu = _KayitSonu.kaldi;

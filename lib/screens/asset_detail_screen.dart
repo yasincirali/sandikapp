@@ -47,6 +47,7 @@ import '../models/varlik_kimligi.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
 import '../widgets/donem_istatistik.dart';
+import '../widgets/sandik_skeleton.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/grafik_stili.dart';
@@ -1009,6 +1010,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // PnL şeridi ve dönem değişimi satırı grafiğin
                         // ALTINDAKİ pozisyon bölümüne taşındı (A tasarımı,
                         // 2026-09-28); ikisi de artık seri beklemeden durur.
+                        //
+                        // Dönem seçici grafiğin ÜSTÜNDE — Performans ve
+                        // varlık sayfasıyla aynı sıra (kullanıcı kararı
+                        // 2026-09-28: altındayken GÜNLÜK ↔ diğer geçişinde
+                        // grafik boyu değişince seçici zıplıyordu; gerekçe
+                        // `portfolio_performance/kartlar.dart`). Getiri
+                        // satırı çipin altında kalır — veri kaybı yok.
+                        _donemCipleri(pnl.currentUnitTRY),
+                        const SizedBox(height: SandikSpace.sm),
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -1242,14 +1252,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   final label = compareOn
                                       ? '${(value - 100).toStringAsFixed(1)}%'
                                       : fmtTRYCompact(fromY(value));
-                                  return Padding(
-                                    padding: const EdgeInsets.only(left: 8),
-                                    child: Text(
-                                      label,
-                                      textAlign: TextAlign.left,
-                                      style: GrafikStili.eksenYazisi(context),
-                                    ),
-                                  );
+                                  return GrafikStili.yEtiketi(label,
+                                      stil: GrafikStili.eksenYazisi(context));
                                 },
                               ),
                             ),
@@ -1303,24 +1307,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                                           : 'd MMM',
                                                       'tr_TR')
                                                   .format(date);
-                                  return Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 10),
-                                    // Sabit genişlik + ortalama: taşan metin
-                                    // ellipsis olur, komşu etiketle çakışmaz.
-                                    child: SizedBox(
-                                      width: 74,
-                                      child: Text(
-                                        label,
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false,
-                                        style:
-                                            GrafikStili.eksenYazisi(context),
-                                      ),
-                                    ),
-                                  );
+                                  // Sabit genişlik + ortalama: taşan metin
+                                  // ellipsis olur, komşu etiketle çakışmaz.
+                                  return GrafikStili.xEtiketi(label,
+                                      stil: GrafikStili.eksenYazisi(context));
                                 },
                               ),
                             ),
@@ -1585,95 +1575,33 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: SandikSpace.smd),
-                _donemCipleri(pnl.currentUnitTRY),
                 const SizedBox(height: SandikSpace.lg),
-                // ── Pozisyon ── (A tasarımı): miktar, alış → bugün ve
-                // seçili dönemin değişimi tek bölümde, grafiğin altında.
+                // ── Pozisyon ── (A tasarımı): grafiğin altında, tek kart.
+                //
+                // 2026-09-28 (kullanıcı): "kaçtan aldığım, toplam kâr/zarar
+                // ve dönem içindeki kâr/zarar KESİNLİKLE olmalı; okunaklı,
+                // basit ibarelerle." Aynı sayılar zaten vardı ama üç ayrı
+                // kabukta ve sıkışık dilde: "ALIŞ / LOT → BUGÜN / LOT" oku,
+                // bir rozette üst üste üç minik sayı, ayrı bir "1H DEĞİŞİM"
+                // şeridi. Şimdi tek kart, her satır "etiket · değer"
+                // (`_PozisyonKarti`); sayılar yine `_pnlOzeti` ve
+                // `_donemDegisimi`'nden — hesap değişmedi, yalnızca dil.
                 SandikSectionHeader(title: context.l10n.adPositionUpper),
                 const SizedBox(height: SandikSpace.sm),
-                // Miktar Bilgisi
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: context.c.overlay,
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    border: Border.all(color: context.c.hairline),
-                  ),
-                  // Etiket + değer yan yana; ikisi de sınırsızdı ve büyük
-                  // miktarlarda satır taşıyordu (105px). Etiket kırpılabilir,
-                  // değer ise FittedBox ile küçülerek sığar — rakam kırpmak
-                  // yanlış okumaya yol açar.
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          context.l10n.totalQuantityUpper,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.labelLarge?.copyWith(
-                              color: context.c.amberText,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.2),
-                        ),
-                      ),
-                      const SizedBox(width: SandikSpace.sm),
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            // `unitLabel`, ham `unitType` DEĞİL.
-                            //
-                            // `unitType` bir DB sabitidir ('piece', 'gram',
-                            // 'ounce') ve ekrana basılmak için değildir;
-                            // kullanıcı "15.603,00 piece" görüyordu.
-                            // `unitLabel` türe göre Türkçe karşılığını verir:
-                            // hisse/fon → "lot", gram altın → "gr", çeyrek →
-                            // "adet", döviz → para sembolü ($, €).
-                            //
-                            // `unitIsPrefix`: döviz sembolü ÖNE gelir
-                            // ("$100"), diğerleri sona ("15.603,00 lot").
-                            widget.asset.miktarMetni(_currentQuantity,
-                                (v, d) => fmtNum(v, digits: d)),
-                            maxLines: 1,
-                            style: context.t.numLarge.copyWith(
-                                color: context.c.gold,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: SandikSpace.sm),
-                _PnlSummaryStrip(
+                _PozisyonKarti(
                   baz: baz,
-                  anchorUnitPrice: pnl.anchorUnitTRY,
-                  currentUnitPrice: pnl.currentUnitTRY,
-                  pnlPct: pnl.pnlPct,
-                  totalPnl: pnl.totalPnlTRY,
-                  unitLabel: widget.asset.unitLabel,
-                  isPositive: pnl.gainPositive,
+                  pnl: pnl,
+                  miktarMetni: widget.asset.miktarMetni(
+                      _currentQuantity, (v, d) => fmtNum(v, digits: d)),
+                  birimEtiketi: widget.asset.unitLabel,
+                  birimBicim: _birimBicim,
+                  donemEtiketi: donemEtiketi(
+                      context.l10n, _periods[_selectedPeriodIdx].label),
+                  // Seçili dönemin serisi gelmeden `null`: satır "—" yazar,
+                  // eski dönemin rakamı yeni dönemin etiketiyle yazılmaz.
+                  donem: _donemDegisimi(period.days, startDate, endDate,
+                      pnl.currentUnitTRY),
                 ),
-                // Seçili periyodun değişimi — üstteki strip alış→bugün
-                // toplam PnL'i gösterir, bu satır "bu dönemde ne oldu"
-                // sorusunu yanıtlar. İkisi farklı sorular. Seçili dönemin
-                // serisi gelmeden çizilmez: rakam eski periyoda ait olurdu
-                // ama etiket yeni periyodu yazardı — yanıltıcı.
-                if (_donemDegisimi(period.days, startDate, endDate,
-                        pnl.currentUnitTRY)
-                    case final d?) ...[
-                  const SizedBox(height: SandikSpace.sm),
-                  _PeriodChangeRow(
-                    baz: baz,
-                    label: _periods[_selectedPeriodIdx].label,
-                    changeTRY: d.tutar,
-                    changePct: d.yuzde,
-                  ),
-                ],
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 if (_sinyalYuzeyleri) ...[

@@ -80,7 +80,15 @@ Future<void> showVarlikSayfasi(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      // Zemin `background` — varlık detayıyla AYNI katman sırası.
+      // `colorScheme.surface` (= surface2) iken sayfa, kartlarından ve
+      // dönem seçicinin kabuğundan (surface1) daha AÇIKTI: kabuk zeminde
+      // kayboluyor, seçili segment (surface2) zeminle aynı tona düşüyor,
+      // istatistik kartları çukur gibi duruyordu. Aynı düzeni paylaşan iki
+      // ekran iki farklı yükseklik hiyerarşisi çiziyordu (kullanıcı
+      // bildirimi 2026-09-28). Sayfa tam yükseklikte açıldığı için sheet
+      // yükselti ipucu kaybolmaz: köşe yuvarlağı ve karartma yeter.
+      backgroundColor: context.c.background,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
       builder: (_) => VarlikSayfasi(
         kimlik: kimlik,
@@ -438,9 +446,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     return [
       _fiyatBlogu(ist, bicim, cizilen),
       const SizedBox(height: SandikSpace.smd),
-      _grafik(ist, bicim, cizilen, bayat),
-      const SizedBox(height: SandikSpace.sm),
+      // Seçici grafiğin ÜSTÜNDE — Performans ve varlık detayıyla aynı sıra
+      // (kullanıcı kararı 2026-09-28; gerekçe
+      // `portfolio_performance/kartlar.dart` kontrol yığını notu).
       _donemCipleri(),
+      const SizedBox(height: SandikSpace.sm),
+      _grafik(ist, bicim, cizilen, bayat),
       const SizedBox(height: SandikSpace.md),
       if (ist != null) ...[
         _istatistikIzgarasi(ist, cizilen!),

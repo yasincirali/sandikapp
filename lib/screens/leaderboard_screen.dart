@@ -13,6 +13,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/yaris_sahnesi.dart';
 import '../utils/polling.dart';
 import '../l10n/l10n.dart';
 
@@ -752,6 +753,11 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   // ekran anında bu satırlarla açılır; Future dolunca setState ile
   // yenilenir. Kullanıcı "her girdiğimde hesaplanıyor" hissi almaz.
   List<_LeaderboardRow>? _staleRows;
+
+  /// Her tamamlanan hesapta artar; sahne nabzı ve "lider değişti" olayı
+  /// bunu izler (`YarisSahnesi.yenileme`).
+  int _yenileme = 0;
+  DateTime? _sonGuncelleme;
   // "Anlık" hissi için düzenli tick — her tetikte kendi ROI'sini
   // yeniden hesaplayıp upload eder, sonra partner ROI'lerini
   // Supabase'ten tazeler.
@@ -797,20 +803,25 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   List<_LeaderboardRow>? _readCachedRows() {
     if (widget.me == null) return null;
     final rows = <_LeaderboardRow>[];
+    // "(sen)" artık addan değil etiketten gelir (`YarisSahnesi`, "SEN").
     rows.add(_LeaderboardRow(
       userId: widget.me!.id,
-      displayName: '${widget.me!.displayName} (sen)',
+      displayName: widget.me!.displayName,
       isMe: true,
+      donemGun: widget.periodDays,
       roi: LeaderboardService.instance.staleROI(
         userId: widget.me!.id,
         periodDays: widget.periodDays,
       ),
     ));
-    for (final p in widget.partners) {
+    for (var i = 0; i < widget.partners.length; i++) {
+      final p = widget.partners[i];
       rows.add(_LeaderboardRow(
         userId: p.id,
         displayName: p.displayName,
         isMe: false,
+        renkSirasi: i + 1,
+        donemGun: widget.periodDays,
         roi: LeaderboardService.instance.staleROI(
           userId: p.id,
           periodDays: widget.periodDays,
@@ -846,6 +857,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     // Snapshot upload'ı SÜRÜYOR — global yüzdelik dilim (`get_percentile_
     // bucket`) ve top-gainers özellikleri onu okuyor.
     final me = widget.me;
+    final donem = widget.periodDays;
     double? myRoi;
     if (me != null) {
       final myCurrentTRY = LeaderboardService.instance
@@ -889,8 +901,9 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     if (me != null) {
       rows.add(_LeaderboardRow(
         userId: me.id,
-        displayName: '${me.displayName} (sen)',
+        displayName: me.displayName,
         isMe: true,
+        donemGun: donem,
         roi: myRoi,
       ));
     }
@@ -908,6 +921,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         userId: p.id,
         displayName: p.displayName,
         isMe: false,
+        renkSirasi: i + 1,
+        donemGun: donem,
         roi: partnerRois[i],
       ));
     }
@@ -918,6 +933,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       if (b.roi == null) return -1;
       return b.roi!.compareTo(a.roi!);
     });
+    _yenileme++;
+    _sonGuncelleme = DateTime.now();
     return rows;
   }
 
@@ -940,26 +957,30 @@ class _LeaderboardListState extends State<_LeaderboardList> {
             ),
           );
         }
-        // Leader ROI + maxAbsRoi — bar normalize için
-        final validRois =
-            rows.where((r) => r.roi != null).map((r) => r.roi!).toList();
-        final leaderRoi = validRois.isEmpty ? null : validRois.first;
-        final maxAbsRoi = validRois.isEmpty
-            ? null
-            : validRois.map((v) => v.abs()).reduce((a, b) => a > b ? a : b);
-
         return Stack(
           children: [
-            ListView.separated(
-              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 20),
-              itemCount: rows.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _LeaderRow(
-                row: rows[i],
-                rank: i + 1,
-                leaderRoi: leaderRoi,
-                maxAbsRoi: maxAbsRoi,
-              ),
+            // Sahne (canlı liste + düello/kürsü) `widgets/yaris_sahnesi.dart`
+            // — kullanıcı kararı 2026-09-29, gerekçe orada.
+            ListView(
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                  SandikSpace.smd, SandikSpace.screenH(context), SandikSpace.lgs),
+              children: [
+                YarisSahnesi(
+                  katilimcilar: [
+                    for (final r in rows)
+                      YarisKatilimci(
+                        id: r.userId,
+                        ad: r.displayName,
+                        ben: r.isMe,
+                        roi: r.roi,
+                        renkSirasi: r.renkSirasi,
+                      ),
+                  ],
+                  yenileme: _yenileme,
+                  sonGuncelleme: _sonGuncelleme,
+                  donemGun: rows.first.donemGun,
+                ),
+              ],
             ),
             // Stale gösterirken üstte ince progress bar — yeni veri
             // geldiğinde otomatik kaybolur, kullanıcıyı bekletmez.
@@ -989,272 +1010,23 @@ class _LeaderboardRow {
   final String displayName;
   final bool isMe;
   final double? roi;
+
+  /// Ortak listesindeki yer (sen 0) — sahnede kişinin rengi.
+  final int renkSirasi;
+
+  /// Bu satırın hesaplandığı dönem. `widget.periodDays` DEĞİL: dönem
+  /// değişince FutureBuilder yeni veri gelene kadar ESKİ dönemin satırlarını
+  /// gösterir; sahne dönemi ekrandan okusaydı yeni veri gelişini "canlı
+  /// sıra değişimi" sanıp ▲ çipi ve konfeti patlatırdı.
+  final int donemGun;
   const _LeaderboardRow({
     required this.userId,
     required this.displayName,
     required this.isMe,
     required this.roi,
+    required this.donemGun,
+    this.renkSirasi = 0,
   });
-}
-
-/// Bir satır: rank badge (madalya) + isim + ROI% + hızlı görsel fark barı.
-///
-/// Rekabet öğeleri:
-/// - Lider satırında ince "LİDER" mikro rozet
-/// - Sen ve lider değilsen: sağ altta "+X.X arayla 1." teaser
-/// - Fark barı: liderin ROI'sine göre normalize edilmiş uzunluk;
-///   negatif ROI'ler bar göstermez (shame azaltıcı — sadece rakam)
-class _LeaderRow extends StatelessWidget {
-  final _LeaderboardRow row;
-  final int rank;
-  final double? leaderRoi;
-  final double? maxAbsRoi; // barı normalize etmek için
-  const _LeaderRow({
-    required this.row,
-    required this.rank,
-    required this.leaderRoi,
-    required this.maxAbsRoi,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final roi = row.roi;
-    final positive = roi != null && roi >= 0;
-    final roiColor = roi == null
-        ? context.c.text36
-        : (positive ? context.c.gain : context.c.loss);
-    final roiText = roi == null
-        ? 'Veri yok'
-        : '${positive ? '+' : ''}${fmtNum(roi, digits: 1)}%';
-
-    final isLeader = rank == 1 && roi != null;
-    final isMe = row.isMe;
-
-    // Sen değilse lider değilsen fark ölçüsü — motive edici teaser
-    String? gapTeaser;
-    if (isMe && !isLeader && roi != null && leaderRoi != null) {
-      final gap = leaderRoi! - roi;
-      if (gap > 0.05) {
-        gapTeaser = '+${fmtNum(gap, digits: 1)}% arayla 1.';
-      }
-    }
-
-    // Bar oranı: max(|roi|) baz alınır, negatif ROI için bar yok
-    final barRatio =
-        (roi != null && roi >= 0 && maxAbsRoi != null && maxAbsRoi! > 0.01)
-            ? (roi / maxAbsRoi!).clamp(0.0, 1.0)
-            : 0.0;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: isMe
-            ? context.c.amberFill.withValues(alpha: 0.10)
-            : context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(
-          color: isMe
-              ? context.c.amberFill.withValues(alpha: 0.55)
-              : isLeader
-                  ? context.c.gold.withValues(alpha: 0.35)
-                  : context.c.overlay,
-          width: isLeader && !isMe ? 1.2 : 1.0,
-        ),
-        boxShadow: isLeader
-            ? [
-                BoxShadow(
-                  color: context.c.gold.withValues(alpha: 0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              _rankBadge(context),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            row.displayName,
-                            style: context.t.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: context.c.text90,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isLeader) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: context.c.gold.withValues(alpha: 0.18),
-                              borderRadius:
-                                  BorderRadius.circular(SandikRadius.sm),
-                            ),
-                            child: Text(
-                              context.l10n.leaderUpper,
-                              style: context.t.labelSmall?.copyWith(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w900,
-                                color: context.c.gold,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (gapTeaser != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        gapTeaser,
-                        style: context.t.labelMedium?.copyWith(
-                          fontSize: 10.5,
-                          letterSpacing: 0,
-                          fontWeight: FontWeight.w600,
-                          // `amberFill` MARKA DOLGU rengidir (#F5A623) ve
-                          // light/dark'ta değişmez — zemin olarak doğru,
-                          // METİN olarak değil: light yüzeyde 1.77:1 veriyordu
-                          // (AA eşiği 4.5:1), yani cümle neredeyse görünmezdi.
-                          // `amberText` tam da bunun için var: aynı marka
-                          // ailesinin okunabilir tonu (light'ta 10.98:1).
-                          color: context.c.amberText,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                roiText,
-                style: context.t.numSmall.copyWith(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: roiColor,
-                ),
-              ),
-            ],
-          ),
-          if (barRatio > 0) ...[
-            const SizedBox(height: 10),
-            _DiffBar(ratio: barRatio, color: roiColor),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _rankBadge(BuildContext context) {
-    // 1-3: gradient madalyalar; 4+: sade amber outlined
-    if (rank <= 3) {
-      // Tonlar [Sandik] madalya token'larından gelir — gradient'in her iki
-      // ucunda da koyu rakamın okunabilmesi için kalibre edildi (bkz. token
-      // dokümantasyonu). Yerinde renk yazmak o kalibrasyonu bozar.
-      final (Color light, Color dark) = switch (rank) {
-        1 => (Sandik.medalGold, Sandik.medalGoldDark),
-        2 => (Sandik.medalSilver, Sandik.medalSilverDark),
-        _ => (Sandik.medalBronze, Sandik.medalBronzeDark),
-      };
-      return Container(
-        width: 34,
-        height: 34,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [light, dark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: light.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Text(
-          '$rank',
-          style: context.t.numSmall.copyWith(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: context.c.onAmber.withValues(alpha: 0.85),
-          ),
-        ),
-      );
-    }
-    return Container(
-      width: 34,
-      height: 34,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: context.c.overlay,
-        ),
-      ),
-      child: Text(
-        '$rank',
-        style: context.t.numSmall.copyWith(
-          fontWeight: FontWeight.w800,
-          color: context.c.text58,
-        ),
-      ),
-    );
-  }
-}
-
-/// Sıralamayı görsel olarak destekleyen mini bar. Liderin barı tam
-/// dolu; diğerleri ROI'lerine göre oranlı. Negatif ROI için gösterilmez.
-class _DiffBar extends StatelessWidget {
-  final double ratio; // 0..1
-  final Color color;
-  const _DiffBar({required this.ratio, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(SandikRadius.sm),
-      child: Container(
-        height: 4,
-        color: context.c.overlay,
-        child: FractionallySizedBox(
-          alignment: Alignment.centerLeft,
-          widthFactor: ratio.clamp(0.0, 1.0),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.5),
-                  color,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Tüm Sandık kullanıcıları arasında anonim percentile göstergesi.

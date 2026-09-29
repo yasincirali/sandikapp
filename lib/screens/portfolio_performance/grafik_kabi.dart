@@ -64,6 +64,20 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     final noktalar = _islemNoktalari(crosshairSpots, txAssets, start,
         intraday: intraday);
 
+    // Dönem başı (taban) — ÜST KARTLA AYNI nokta: dönem penceresi içindeki
+    // ilk dolu nokta (`_periodEndpoints`).
+    //
+    // Eskiden `primarySeg.spots.first` alınıyordu ve 1Y'de dönem başı
+    // çizgisi HİÇ görünmüyordu (kullanıcı bildirimi 2026-09-28): seri çekme
+    // penceresi dönem penceresinden geniş olabiliyor (`rangeForPeriod`
+    // merdiveni) ve ilk nokta dönem başından ÖNCEKİ bir güne (x < 0)
+    // düşüyordu. `computeY` yalnızca görünür X aralığındaki noktalara
+    // bakar; o nokta aralık dışı kaldığından çizgi Y bandının dışına
+    // düşüp kırpılıyordu, etiketi de yanlış günü yazardı. 1A/3A/6A'da
+    // pencere çekilen aralıkla örtüştüğü için belirti yoktu. Aynı çizgi
+    // artık kartın "birikim değişimi" tabanıyla birebir.
+    final taban = _periodEndpoints(segments, start: start, intraday: intraday);
+
     // Görünür X aralığındaki spot'lara göre Y sınırlarını hesapla. Zoom
     // sırasında X daraldıkça Y ekseni otomatik yeniden fit olur — kullanıcı
     // dar bir zaman diliminde küçük dalgalanmayı okuyabilir.
@@ -87,12 +101,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       // o değerden başlıyor ve taban pencerenin dışında kalırsa alt uçları
       // kırpılır — yarım çubuklar "veri yok" gibi okunur. Diğer tiplerde
       // aralık dokunulmadan kalır (dar bant gün içi hassasiyeti için şart).
-      if (grafikTipiNotifier.value == GrafikTipi.bar &&
-          segments.isNotEmpty &&
-          segments.first.spots.isNotEmpty) {
-        final taban = segments.first.spots.first.y;
-        if (taban < minY) minY = taban;
-        if (taban > maxY) maxY = taban;
+      if (grafikTipiNotifier.value == GrafikTipi.bar && taban != null) {
+        if (taban.first < minY) minY = taban.first;
+        if (taban.first > maxY) maxY = taban.first;
       }
 
       final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
@@ -329,23 +340,18 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // Dönem başı: yatay kesikli çizgi + tarih ve değer etiketi — varlık
           // detayı ve varlık sayfasıyla aynı (2026-09-28). Yüzde ve "Getiri"
           // bu değere göre okunur.
-          horizontalLines: primarySeg.spots.isEmpty || _simulate
+          // Nokta seçimi yukarıdaki `taban` notunda: pencere içindeki ilk
+          // dolu nokta, kartla aynı.
+          horizontalLines: taban == null || _simulate
               ? const []
               : [
                   GrafikStili.donemBasi(
                     context,
-                    primarySeg.spots.first.y,
+                    taban.first,
                     etiket: GrafikStili.donemBasiEtiketi(
                       context,
-                      an: intraday
-                          ? dayKey(start).add(Duration(
-                              minutes: primarySeg.spots.first.x.round()))
-                          : start.add(Duration(
-                              minutes:
-                                  (primarySeg.spots.first.x * 1440).round())),
-                      deger: ref
-                          .read(bazParaProvider)
-                          .fmt(primarySeg.spots.first.y),
+                      an: DateTime.fromMillisecondsSinceEpoch(taban.firstTs!),
+                      deger: ref.read(bazParaProvider).fmt(taban.first),
                       gunIci: intraday,
                     ),
                   ),
@@ -385,14 +391,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 if (val == meta.min || val == meta.max) {
                   return const SizedBox.shrink();
                 }
-                return Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Text(
-                    _fmtY(val),
-                    textAlign: TextAlign.left,
-                    style: GrafikStili.eksenYazisi(context),
-                  ),
-                );
+                return GrafikStili.yEtiketi(_fmtY(val),
+                    stil: GrafikStili.eksenYazisi(context));
               },
             ),
           ),
@@ -435,32 +435,19 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                       : (meta.max - meta.min).abs(),
                   gunIci: intraday,
                 );
-                return Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  // Sabit genişlik + ortalama: fl_chart etiketi tick'te
-                  // ortalar, taşan metin ellipsis olur ve komşu etiketle
-                  // çakışmaz.
-                  //
-                  // Genişlik etiketin EN UZUN hâline göre: çok günlü gün
-                  // içi eksende "11 Eyl 04:00" yazılıyor ve 74px'e
-                  // sığmayıp kırpılıyordu.
-                  child: SizedBox(
-                    width: intraday && (meta.max - meta.min).abs() > 1440
-                        ? 88
-                        : 74,
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      style: context.t.numSmall.copyWith(
-                        color: context.c.text58,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                // Sabit genişlik + ortalama: fl_chart etiketi tick'te
+                // ortalar, taşan metin ellipsis olur ve komşu etiketle
+                // çakışmaz (`GrafikStili.xEtiketi`).
+                //
+                // Genişlik etiketin EN UZUN hâline göre: çok günlü gün
+                // içi eksende "11 Eyl 04:00" yazılıyor ve 74px'e
+                // sığmayıp kırpılıyordu.
+                return GrafikStili.xEtiketi(
+                  label,
+                  stil: GrafikStili.eksenYazisi(context),
+                  genislik: intraday && (meta.max - meta.min).abs() > 1440
+                      ? 88
+                      : 74,
                 );
               },
             ),
@@ -477,15 +464,14 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
         // Yoğun serilerde (169 nokta) çubuklar birbirine girmesin diye
         // seyreltiliyor; sınır grafiğin okunabilir kaldığı yoğunluk.
         //
-        // Taban DÖNEM BAŞI (ilk noktanın değeri), pencere dibi değil —
-        // gerekçe `_cubukSegmentleri` doküman yorumunda.
+        // Taban DÖNEM BAŞI (pencere içindeki ilk dolu nokta, kartla aynı —
+        // bkz. `taban`), pencere dibi değil — gerekçe `_cubukSegmentleri`
+        // doküman yorumunda.
         lineBarsData: tip == GrafikTipi.bar
             ? _cubukSegmentleri(
                 context,
                 segments,
-                segments.isEmpty || segments.first.spots.isEmpty
-                    ? viewMinY
-                    : segments.first.spots.first.y,
+                taban?.first ?? viewMinY,
                 plotWidthPx,
                 viewMinX,
                 viewMaxX,
@@ -673,10 +659,12 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             getTooltipItems: (spots) {
               final tryFmt0 = ref.read(bazParaProvider).formatter(digits: 0);
-              // Primary segmentteki ilk ve son x — anchor / bugün tespiti.
-              final firstX = primarySeg.spots.first.x;
+              // Anchor = dönem başı (pencere içindeki ilk dolu nokta,
+              // `taban`); son x/y = bugün. Anchor eskiden serinin ilk
+              // noktasıydı ve 1Y'de dönem penceresinin dışında kalıyordu.
+              final firstX = taban?.firstX ?? primarySeg.spots.first.x;
               final lastX = primarySeg.spots.last.x;
-              final firstY = primarySeg.spots.first.y;
+              final firstY = taban?.first ?? primarySeg.spots.first.y;
               final lastY = primarySeg.spots.last.y;
 
               return spots.map((s) {

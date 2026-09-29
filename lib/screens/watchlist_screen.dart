@@ -473,7 +473,12 @@ class _Row extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Flexible(
+                  // Expanded (sıkı), Flexible (gevşek) DEĞİL: gevşek hâlde
+                  // sütun fiyat metni kadar daralıyor, artan boşluk satırın
+                  // SONUNA düşüyordu — + düğmesi fiyatın hemen ardına yapışıp
+                  // her satırda başka x'te duruyordu. Sıkı sütun + sağa yaslı
+                  // FittedBox ile + her satırda kartın sağ kenarında hizalı.
+                  Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,

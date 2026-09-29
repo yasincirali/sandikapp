@@ -46,6 +46,17 @@ Senin yapacakların:
 
 ## ⏳ 2026-09-28 Yarış snapshot'ı sunucuda — 0081 + `leaderboard-snapshot` (iki proje)
 
+> **Durum 2026-09-29 akşam (Claude):** secret'lar iki projede de üretilip yazıldı (function env + Vault), canlı koşu 200: 4 kullanıcı, dağılımlar uygulamayla örtüşüyor. Bu maddede yapılacak iş KALMADI; kart havuz 8 uygun kullanıcıya ulaşınca açılır (bugün 4).
+>
+> **Durum 2026-09-29 (Claude):** 0080 + 0081 iki projeye de yerel CLI ile
+> push edildi (Frankfurt → Tokyo), `leaderboard-snapshot` iki projede dağıtıldı,
+> `sema_esitlik.py`: **ŞEMA EŞİT**. Tokyo'da 4 kullanıcı opt-in olarak geri
+> dolduruldu. **Açık kalan (senin):** madde 1 ve 2'deki secret'lar iki projede
+> de YOK (`secrets list` 0, Vault 0) — cron secret'sız 503/"Vault secret
+> bulunamadi" ile düşer. Madde 3 ve 4 tamam (Frankfurt'ta iki yeni cron
+> `cron.alter_job(jobid, active := false)` ile kapatıldı — `update cron.job`
+> postgres rolünde de 42501 verir, resmi yol alter_job). Madde 5 sende.
+
 Zirve portföyler / küresel sıralama havuzu artık sunucuda günlük dolar.
 Merge sonrası, **her iki projede** (Frankfurt → Tokyo):
 
@@ -56,7 +67,7 @@ Merge sonrası, **her iki projede** (Frankfurt → Tokyo):
    (Dashboard → Edge Functions → Secrets). Fonksiyon bu env yoksa 503 döner.
 3. **Actions → Supabase deploy → hedef `ikisi`, functions `leaderboard-snapshot`**
    (migration 0081 aynı koşuda gider: `profiles.leaderboard_opt_in` sütunu,
-   günlük 18:40 TR cron, 400 günlük saklama).
+   cron günde iki: 10:00 ve 15:00 TR — 0082, 400 günlük saklama).
 4. Frankfurt'ta cron işleri geçişe kadar kapalı tutuluyorsa (`cron.job.active`),
    `leaderboard-snapshot` ve `leaderboard-snapshot-retention` için de aynı
    bayrağı uygula; şema eşitliği (`sema_esitlik.py`) cron `active` farkını
@@ -76,12 +87,35 @@ devreye girer). `percentile_strip_enabled` bilinçli olarak kapalı kalıyor.
 Ayrıca 0080 migration'ı (kayıt formunda anonim kullanıcı adı denetimi) merge
 sonrası **Actions → Supabase deploy → hedef `ikisi`** ile iki sunucuya gider.
 
-## ⏳ 2026-09-28 Kullanıcı adı — 0079 (ikisi)
+## ✅ 2026-09-28 Kullanıcı adı — 0079 + analyze-signals/daily-brief (ikisi) (TAMAMLANDI 2026-09-28)
 
-Merge sonrası **Actions → Supabase deploy → hedef `ikisi`, functions `none`**.
-Edge function değişmedi; yalnız şema (kolon `profiles.username`, yasaklı
-sözcük tablosu, tetikleyici, iki RPC). Migration kendi filtresini sınar
+> Uygulandı: yerel CLI ile Frankfurt → Tokyo sırasıyla 0079 push + iki fonksiyon
+> deploy; `sema_esitlik.py`: **ŞEMA EŞİT** (cron bayrağı hariç). Android Release
+> AAB (#28) ağ hatasından düşmüştü, yeniden koşuldu ve geçti. **Açık kalan:**
+> GitHub `SUPABASE_ACCESS_TOKEN` hâlâ Frankfurt'ta 403 (aşağıdaki eşitleme
+> maddesine bak) — yenilenene kadar `sema-esitlik.yml` kırmızı döner.
+
+Merge sonrası **Actions → Supabase deploy → hedef `ikisi`,
+functions `analyze-signals daily-brief`**. Şema: kolon `profiles.username`,
+yasaklı sözcük tablosu, tetikleyici, iki RPC. Migration kendi filtresini sınar
 (`isik` geçer, `s1ktir` düşer…); öz-denetim kırılırsa deploy durur.
+Fonksiyonlar: #27 (cc84cfd, 2026-09-28 15:37) `analyze-signals` ve paylaşılan
+`_shared/price_history.ts`'i değiştirdi (kripto + tüm türler sinyalde);
+`daily-brief` aynı paylaşılan dosyayı içe aldığı için bundle'ı değişti. Son
+başarılı deploy 2026-09-25 (47069a5) ve Frankfurt Faz 2 (2026-09-27) bu
+değişikliği taşımıyor — iki sunucuda da eski.
+
+**Durum 2026-09-28 (Claude):** yerel CLI ile Frankfurt'a `db push --dry-run`
+yalnızca 0079'u bekliyor; gerçek push otomatik modun "canlı dağıtım" kapısına
+takıldı, elle koşulmalı. GitHub yolu Frankfurt'ta 403 veriyor (kısıtlı token,
+aşağıdaki maddeye bak); token yenilenene kadar yerel CLI tek çalışan yol:
+```bash
+supabase link --project-ref ynwymnpdiwudrlxfrmuo && supabase db push        # Frankfurt (kanarya)
+supabase functions deploy analyze-signals daily-brief --project-ref ynwymnpdiwudrlxfrmuo
+supabase link --project-ref ybdbzouzhzwthjgwlbmk && supabase db push        # Tokyo (canlı) — link burada kalsın
+supabase functions deploy analyze-signals daily-brief --project-ref ybdbzouzhzwthjgwlbmk
+python tool/sema_esitlik.py                                                 # ŞEMA EŞİT görmeli
+```
 
 Sıra esnek: uygulama migration'dan ÖNCE yayına çıkarsa zorunlu ekran
 açılmaz (sunucuda kolon yoksa istemci "bilinmiyor" sayar), deploy olunca

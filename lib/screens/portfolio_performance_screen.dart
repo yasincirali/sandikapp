@@ -469,12 +469,24 @@ class _PortfolioPerformanceScreenState
                               adaptiveRoute<void>(
                                   builder: (_) => const LeaderboardScreen()),
                             ),
-                            child: Icon(Icons.emoji_events_rounded,
-                                size: 20, color: context.c.amberText),
+                            // Üst çubuk düğmeleri her ekranda aynı kabuk
+                            // (44pt kutu) ve aynı aralık (`SandikSpace.sm`)
+                            // — kullanıcı bildirimi 2026-09-28: "chip'ler
+                            // standart aralıkta, hizalı olmalı". Çıplak
+                            // ikon çıkış kutusunun yanında hizasız duruyordu.
+                            child: Container(
+                              width: SandikTouch.min,
+                              height: SandikTouch.min,
+                              decoration: context.chip(selected: false),
+                              child: Center(
+                                child: Icon(Icons.emoji_events_rounded,
+                                    size: 20, color: context.c.amberText),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: SandikSpace.xs2),
+                      const SizedBox(width: SandikSpace.sm),
                     ],
                     // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
                     // beklenmeyen bir eylem olurdu.

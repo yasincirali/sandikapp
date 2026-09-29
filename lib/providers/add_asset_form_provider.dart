@@ -255,6 +255,7 @@ class AddAssetFormState {
     this.bist100Ticker,
     this.selectedFund,
     this.notesExpanded = false,
+    this.denendi = false,
   });
 
   /// Açılış değerleri. Öncelik: düzenlenen kayıt > sepet öğesi > prefill
@@ -318,6 +319,12 @@ class AddAssetFormState {
   final String? bist100Ticker;
   final TefasFund? selectedFund;
   final bool notesExpanded;
+
+  /// "Ekle"ye en az bir kez basıldı mı. Bundan sonra form her değişimde
+  /// yeniden doğrulanır: uyarı, kullanıcı varlığı seçtiği anda kalkar (bir
+  /// sonraki dokunuşu beklemez). Denemeden önce doğrulama yok — boş formu
+  /// açar açmaz kırmızı göstermek suçlayıcı olurdu.
+  final bool denendi;
 
   bool get isBist100 =>
       type == AssetType.hisse && subCategory == StockSubCategory.bist100.label;
@@ -397,6 +404,41 @@ class AddAssetFormState {
     return (ticker: ticker, name: name, manual: manual);
   }
 
+  /// Seçim gerektiren türde varlık seçilmemişse hangi uyarı; seçildiyse
+  /// (ya da tür serbest adlıysa) null.
+  ///
+  /// **Kullanıcı bildirimi 2026-09-29:** hisse seçmeden "Ekle" adsız,
+  /// sembolsüz bir lot kaydediyordu; altında da aynısı. Hisse/kripto için
+  /// ölçü, kaydın gerçekten alacağı semboldür ([resolveIdentity]) —
+  /// ekrandaki seçim değil: ikisi ayrışırsa (ör. elle fiyat bayrağı açık
+  /// kalmış) seçim görünür ama boş sembol yazılırdı.
+  ///
+  /// Emtia / diğer serbest adla eklenir; onların kuralı ad alanında
+  /// (`nameRequired`). [muaf]: var olan bir kaydı düzenlemek. Eski kayıtlar
+  /// sembolsüz ya da elle fiyat bayraklı olabilir; tutarı/tarihi düzeltmek
+  /// varlığı yeniden seçmeye zorlamamalı. Kural YENİ kayıt içindir.
+  KimlikEksigi? kimlikEksigi({required String tickerText, bool muaf = false}) {
+    if (muaf) return null;
+    switch (type) {
+      case AssetType.hisse:
+      case AssetType.kripto:
+        final ticker =
+            resolveIdentity(nameText: '', tickerText: tickerText).ticker;
+        if (ticker.isNotEmpty) return null;
+        return type == AssetType.hisse
+            ? KimlikEksigi.hisse
+            : KimlikEksigi.kripto;
+      case AssetType.fon:
+        return selectedFund == null ? KimlikEksigi.fon : null;
+      case AssetType.altin:
+        return (subCategory ?? '').isEmpty ? KimlikEksigi.altin : null;
+      case AssetType.doviz:
+        return (subCategory ?? '').isEmpty ? KimlikEksigi.doviz : null;
+      default:
+        return null;
+    }
+  }
+
   AddAssetFormState copyWith({
     AssetType? type,
     Object? subCategory = _keep,
@@ -411,6 +453,7 @@ class AddAssetFormState {
     Object? bist100Ticker = _keep,
     Object? selectedFund = _keep,
     bool? notesExpanded,
+    bool? denendi,
   }) =>
       AddAssetFormState(
         type: type ?? this.type,
@@ -434,10 +477,14 @@ class AddAssetFormState {
             ? this.selectedFund
             : selectedFund as TefasFund?,
         notesExpanded: notesExpanded ?? this.notesExpanded,
+        denendi: denendi ?? this.denendi,
       );
 }
 
 const _keep = Object();
+
+/// Kaydı engelleyen eksik seçim — ekran uyarı metnini buna göre seçer.
+enum KimlikEksigi { hisse, fon, altin, doviz, kripto }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
 
@@ -486,6 +533,9 @@ class AddAssetFormNotifier
   // ── Basit alanlar ──────────────────────────────────────────────────────
 
   void setSaving(bool v) => _set(state.copyWith(saving: v));
+  void kayitDenendi() {
+    if (!state.denendi) _set(state.copyWith(denendi: true));
+  }
   void setCurrency(String v) => _set(state.copyWith(currency: v));
   void setDate(DateTime v) => _set(state.copyWith(addedDate: v));
   void setManualPrice(bool v) => _set(state.copyWith(isManualPrice: v));
@@ -538,8 +588,11 @@ class AddAssetFormNotifier
     return AlanYazimi(ticker: opt.ticker, name: opt.name);
   }
 
+  /// Elle fiyat bayrağı da iner: sembol alanı yazılıp silindiyse bayrak
+  /// açık kalıyor ve [resolveIdentity] seçilen hisseyi boş sembolle
+  /// kaydediyordu.
   AlanYazimi selectBist100(String ticker) {
-    _set(state.copyWith(bist100Ticker: ticker));
+    _set(state.copyWith(bist100Ticker: ticker, isManualPrice: false));
     return AlanYazimi(
       ticker: ticker,
       name: bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', ''),

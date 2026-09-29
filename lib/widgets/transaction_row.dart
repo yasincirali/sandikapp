@@ -31,6 +31,9 @@ class TransactionRow extends StatelessWidget {
     this.hideBalance = false,
     this.baz = const BazPara.lira(),
     this.yilGoster = true,
+    this.silinenGorunumu = false,
+    this.not,
+    this.onTap,
   });
 
   final Asset asset;
@@ -46,6 +49,28 @@ class TransactionRow extends StatelessWidget {
   /// gerekir. Tüm hareketler ekranında satırlar ay kaplarında ("EYLÜL
   /// 2026") toplanır; yıl başlıkta olduğu için satırda tekrarı gürültüdür.
   final bool yilGoster;
+
+  /// "Silinenler" alanında mı (kullanıcı kararı 2026-09-29). Satır işlem
+  /// tarihinin yerine iki tarih yazar: işlemin kendisi ("Alım: 12 Mar
+  /// 2026") ve silinme anı ("Silinme: 3 Eyl 2026"). Alanın başlığı zaten
+  /// "silindi" dediği için soluklaştırma ve "· silindi" eki yok; tutar
+  /// renk sinyali taşımaz (artık portföyde olmayan bir kazanç/kayıp).
+  final bool silinenGorunumu;
+
+  /// Kullanıcının bu işleme yazdığı not — çağıran `islemNotu(...)` ile
+  /// hesaplar (eski kopyalar orada ayıklanır). Doluysa tarih satırının
+  /// sonunda soluk bir not ikonu çizilir; metin satırda YAZMAZ.
+  ///
+  /// Neden yalnızca ikon (kullanıcı isteği 2026-09-29: "çok göz önünde
+  /// olmamalı ama tamamen de kaybolmamalı"): not metni üçüncü bir satır
+  /// olsaydı notlu satırlar notsuzlardan uzun olur, gruplu listenin ritmi
+  /// bozulurdu. İkon satır yüksekliğini değiştirmez; metin dokununca açılan
+  /// not sayfasında okunur.
+  final String? not;
+
+  /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
+  /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
+  final VoidCallback? onTap;
 
   /// Avatar çapı. 36pt: 44pt dokunma hedefinden küçük (satır dokunulabilir
   /// değil), ikonun 18pt'i etrafında nefes payı bırakır. [HareketAyraci]
@@ -84,39 +109,14 @@ class TransactionRow extends StatelessWidget {
     // Tek renk sinyali: tutar. Alım yeşil, satım kırmızı, temettü amber,
     // silme kaydı soluk. Başka hiçbir öğe renkle tür anlatmaz — eski
     // tasarımda şerit + pil + tutar üçü birden anlatıyordu.
-    final Color tutarRengi = isDelete
+    final Color tutarRengi = isDelete || silinenGorunumu
         ? context.c.text58
         : (isSell
             ? context.c.loss
             : (isDividend ? context.c.amberText : context.c.gain));
     final String sign = isSell || isDelete ? '−' : '+';
 
-    // "Eklendi/Çıkarıldı" envanter diliydi; kayıtlar aslında fiyatlı
-    // alım/satım işlemleri. Swipe aksiyonları ve hızlı işlem dialogu da
-    // "Al/Sat" diline geçti — geçmiş listesi onlarla aynı dili konuşmalı.
-    //
-    // Silme artık pozisyon başına TEK kayıttır ve kaç ledger satırının
-    // gittiğini taşır. Tek kayıt silindiyse sayı bilgi vermez ("Silindi ·
-    // 1 kayıt" gürültü olurdu); eski kayıtlarda `deletedCount` 0'dır, o da
-    // sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
-    //
-    // Miktar artık rozet değil, tür etiketinin devamı: "Alım · 5 gr".
-    // Temettüde miktar 0'dır — "· 0 adet" anlamsız olurdu, yalnızca tür.
-    final String turEtiketi;
-    if (isDelete) {
-      turEtiketi = asset.deletedCount > 1
-          ? l10n.deletedNRecords(asset.deletedCount)
-          : l10n.txDeleted;
-    } else if (isDividend) {
-      turEtiketi = l10n.txDividend;
-    } else {
-      final miktar =
-          qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity);
-      final miktarMetni = asset.unitIsPrefix
-          ? '${asset.unitLabel}$miktar'
-          : '$miktar ${asset.unitLabel}';
-      turEtiketi = '${isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
-    }
+    final String turEtiketi = hareketTurEtiketi(l10n, asset);
 
     // Yumuşak silinmiş lot: kayıt geçmişte DURUR ama artık portföye
     // dahil değil. Satırı soluklaştırıyoruz — okunabilir kalır, aktif
@@ -124,7 +124,7 @@ class TransactionRow extends StatelessWidget {
     // ne sattım, sonra sildim" zincirini görebilmeli. Opacity tek başına
     // yetmez (renk körlüğü, parlak ekran); etiketin sonuna metinle de
     // yazılır. Eski köşe rozeti + Stack/Positioned bunun içindi, kalktı.
-    final bool isVoided = asset.isDeleted;
+    final bool isVoided = asset.isDeleted && !silinenGorunumu;
     final String sagAltEtiket =
         isVoided ? '$turEtiketi · ${l10n.txVoided}' : turEtiketi;
 
@@ -168,12 +168,32 @@ class TransactionRow extends StatelessWidget {
                 // Saat de yazılır (kullanıcı isteği 2026-09-24); tarih
                 // seçiciyle girilen işlemde saat bilinmediği için yalnızca
                 // tarih kalır (`fmtTarihSaat`).
-                Text(
-                  fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
-                ),
+                if (silinenGorunumu) ...[
+                  // Mezar taşının (fiziksel silmeden kalan iz) kendi tarihi
+                  // silinme anıdır; işlem tarihi bilinmez, yazılmaz.
+                  if (!isDelete)
+                    _tarihSatiri(
+                      context,
+                      l10n.txDateLabeled(
+                        isSell
+                            ? l10n.txSell
+                            : (isDividend ? l10n.txDividend : l10n.txBuy),
+                        fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
+                      ),
+                    ),
+                  _tarihSatiri(
+                    context,
+                    l10n.deletedOnDate(fmtTarihSaat(
+                        asset.deletedAt ?? asset.addedDate,
+                        yilsiz: !yilGoster)),
+                    notIsareti: not != null,
+                  ),
+                ] else
+                  _tarihSatiri(
+                    context,
+                    fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
+                    notIsareti: not != null,
+                  ),
               ],
             ),
           ),
@@ -226,8 +246,47 @@ class TransactionRow extends StatelessWidget {
       ),
     );
 
-    if (!isVoided) return row;
-    return Opacity(opacity: 0.55, child: row);
+    final Widget gorunen =
+        isVoided ? Opacity(opacity: 0.55, child: row) : row;
+    if (onTap == null) return gorunen;
+    return SandikTappable(
+      semanticLabel: not != null
+          ? l10n.txOpenNoteWithNote(
+              asset.showTicker ? asset.displayTicker! : asset.name)
+          : l10n.txOpenNote(
+              asset.showTicker ? asset.displayTicker! : asset.name),
+      onTap: onTap,
+      child: gorunen,
+    );
+  }
+
+  /// Tarih satırı; [notIsareti] ise sonunda not ikonu.
+  ///
+  /// İkon ekleme formundaki "Not ekle" satırının ikonuyla AYNI
+  /// (`Icons.notes_rounded`) — kullanıcı yazdığı yerde gördüğü işareti
+  /// burada tanır. Renk tarihle aynı `text36`: satırda yeni bir vurgu
+  /// değil, tarihin bir parçası gibi okunur.
+  Widget _tarihSatiri(BuildContext context, String metin,
+      {bool notIsareti = false}) {
+    final metinW = Text(
+      metin,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.t.bodySmall?.copyWith(color: context.c.text36),
+    );
+    if (!notIsareti) return metinW;
+    return Row(
+      children: [
+        Flexible(child: metinW),
+        const SizedBox(width: SandikSpace.xs),
+        Icon(
+          Icons.notes_rounded,
+          size: 13,
+          color: context.c.text36,
+          semanticLabel: context.l10n.txHasNote,
+        ),
+      ],
+    );
   }
 }
 
@@ -291,4 +350,34 @@ class HareketAyraci extends StatelessWidget {
       child: Divider(height: 1, thickness: 1, color: context.c.hairline),
     );
   }
+}
+
+/// Satırın sağ altındaki tür etiketi ("Alım · 5 gr", "Satım · 2 adet",
+/// "Temettü", "Silindi"). İşlem notu sayfasının başlığında da aynı etiket
+/// kullanılır — iki yerde ayrı yazılsaydı ilk değişiklikte ayrışırdı.
+///
+/// "Eklendi/Çıkarıldı" envanter diliydi; kayıtlar aslında fiyatlı
+/// alım/satım işlemleri. Swipe aksiyonları ve hızlı işlem dialogu da
+/// "Al/Sat" diline geçti — geçmiş listesi onlarla aynı dili konuşmalı.
+///
+/// Silme artık pozisyon başına TEK kayıttır ve kaç ledger satırının
+/// gittiğini taşır. Tek kayıt silindiyse sayı bilgi vermez ("Silindi ·
+/// 1 kayıt" gürültü olurdu); eski kayıtlarda `deletedCount` 0'dır, o da
+/// sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
+///
+/// Miktar artık rozet değil, tür etiketinin devamı: "Alım · 5 gr".
+/// Temettüde miktar 0'dır — "· 0 adet" anlamsız olurdu, yalnızca tür.
+String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
+  if (asset.isDeleteLog) {
+    return asset.deletedCount > 1
+        ? l10n.deletedNRecords(asset.deletedCount)
+        : l10n.txDeleted;
+  }
+  if (asset.isDividend) return l10n.txDividend;
+  final miktar =
+      qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity);
+  final miktarMetni = asset.unitIsPrefix
+      ? '${asset.unitLabel}$miktar'
+      : '$miktar ${asset.unitLabel}';
+  return '${asset.isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
 }

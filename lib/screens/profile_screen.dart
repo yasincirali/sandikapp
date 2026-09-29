@@ -391,7 +391,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ),
                       const _ThemeToggleButton(),
-                      const SizedBox(width: 8),
+                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
+                      const SizedBox(width: SandikSpace.sm),
                       TourAnchor(
                         target: TourTarget.ayarlar,
                         child: CupertinoButton(
@@ -413,7 +414,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: SandikSpace.sm),
                       SandikLogoutButton(
                         onPressed: _logout,
                         disabled: _busy,
@@ -435,8 +436,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
       child: ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(
-                          horizontal: SandikSpace.screenH(context), vertical: 4),
+                      // Üst dolgu 0: ilk kart başlık bloğunun hemen altında,
+                      // dört sekmede aynı çizgi (2026-09-28).
+                      padding: EdgeInsets.fromLTRB(
+                          SandikSpace.screenH(context), 0,
+                          SandikSpace.screenH(context), SandikSpace.xs),
                       children: [
                         // Oturum çözülmeden bu ekran kurulmaz; null yalnızca
                         // çıkış anındaki son karede görülebilir.

@@ -31,8 +31,12 @@ void main() {
   group('çubuk tabanı', () {
     test('taban dönem başından alınır (viewMinY değil)', () {
       // Çağrı, ilk segmentin ilk noktasını taban olarak geçmeli.
+      // 2026-09-28: taban artık `_periodEndpoints` (dönem penceresi içindeki
+      // ilk dolu nokta) — `segments.first.spots.first.y` 1Y'de pencerenin
+      // dışında kalıyordu (bkz. `ozet_grafik_donem_basi_test`).
       expect(
-        kaynak.contains('segments.first.spots.first.y'),
+        kaynak.contains('_cubukSegmentleri( context, segments, '
+            'taban?.first ?? viewMinY,'),
         isTrue,
         reason: 'Çubuk tabanı dönem başı olmalı — grafiğin anlattığı şey '
             'değişim; pencere dibi taban alınırsa çubuklar eşitlenir.',
@@ -43,7 +47,7 @@ void main() {
       // Taban pencere dışında kalırsa çubukların altı kesilir ve yarım
       // çubuklar "veri yok" gibi okunur.
       expect(
-        kaynak.contains('if (taban < minY) minY = taban;'),
+        kaynak.contains('if (taban.first < minY) minY = taban.first;'),
         isTrue,
         reason: 'computeY çubuk tipinde tabanı Y aralığına katmalı.',
       );

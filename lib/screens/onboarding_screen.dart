@@ -481,9 +481,12 @@ List<_Adim> _adimlariKur() {
       baslik: 'Dönem seç',
       // 2026-09-28: 3A ve 5Y eklendi; aynı seçici artık Takip,
       // Karşılaştır ve varlık ekranlarında da var.
-      govde: 'GÜNLÜK gün içini saat saat çizer; 1H / 1A / 3A / 6A / 1Y / 5Y '
-          'daha geniş pencereler. Aynı seçici Takip, Karşılaştır ve varlık '
-          'ekranlarında da aynı. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+      // 2026-09-28: seçici üç grafik ekranında da grafiğin ÜSTÜNDE
+      // (bkz. `kartlar.dart` kontrol yığını notu).
+      govde: 'Grafiğin üstündeki seçici: GÜNLÜK gün içini saat saat çizer; '
+          '1H / 1A / 3A / 6A / 1Y / 5Y daha geniş pencereler. Aynı seçici '
+          'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
+          'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
           'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
       // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
       // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam

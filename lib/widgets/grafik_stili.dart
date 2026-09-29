@@ -91,6 +91,74 @@ abstract final class GrafikStili {
         fontWeight: FontWeight.w500,
       );
 
+  /// Değer (Y) ekseni etiketi — TEK SATIR, asla sarmaz, asla kırpılmaz.
+  ///
+  /// ## Neden (kullanıcı, 2026-09-29: "tüm grafiklerde labellar aşağı
+  /// sarkmamalı, kaymamalı — garanti altına aldık mı?")
+  /// Almamıştık: X ekseni Performans'ta ve varlık detayında korunuyordu
+  /// (`eksen_etiket_cakismasi_test`) ama Y ekseni hiçbir grafikte değil.
+  /// Etiketin yeri [yEkseniGenisligi] − dolgu ≈ 52pt; "₺12,5 Mn" büyük yazı
+  /// ayarında buna sığmaz ve `Text` ikinci satıra kırılır — etiket
+  /// tick'inden aşağı sarkar, altındaki etiketle çakışır.
+  ///
+  /// Sığmayan sayı KÜÇÜLÜR (`FittedBox.scaleDown`), kırpılmaz: "₺12,5 M…"
+  /// bir değeri yanlış okuturdu; biraz küçük ama tam sayı okunur.
+  /// `softWrap: false` sarmayı, `maxLines: 1` satır sonu içeren metni de
+  /// kapatır. Sola hizalı + tabular rakam: değer değişince yatayda kaymaz.
+  ///
+  /// Her `getTitlesWidget` bu ya da [xEtiketi]'nden geçer —
+  /// `grafik_eksen_etiketi_test` kaynakta tarar. `BuildContext` almaz:
+  /// takip listesi grafiği renkleri hazır paletten okur, context'i yok.
+  /// Stil çoğu yerde [eksenYazisi].
+  static Widget yEtiketi(
+    String metin, {
+    required TextStyle stil,
+    EdgeInsets dolgu = const EdgeInsets.only(left: SandikSpace.sm),
+  }) =>
+      Padding(
+        padding: dolgu,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            metin,
+            textAlign: TextAlign.left,
+            maxLines: 1,
+            softWrap: false,
+            style: stil,
+          ),
+        ),
+      );
+
+  /// Zaman (X) ekseni etiketi — SABİT genişlikte kutu, tick'e ortalı, tek
+  /// satır; sığmayan metin "…" olur.
+  ///
+  /// Sabit genişlik "kaymama"nın kendisi: fl_chart etiketi tick'in
+  /// ortasına koyar, genişlik metne göre değişseydi her etiketin merkezi
+  /// başka yere düşerdi. Y ekseninden farkı: burada metin küçülmez —
+  /// yan yana etiketlerin punto farkı ekseni dalgalı gösterirdi; tarih
+  /// etiketi zaten kısalır (`zamanEtiketi`), "…" nadir ve bilgi kaybı az.
+  static Widget xEtiketi(
+    String metin, {
+    required TextStyle stil,
+    double genislik = 74,
+    EdgeInsets dolgu = const EdgeInsets.only(top: SandikSpace.sm2),
+  }) =>
+      Padding(
+        padding: dolgu,
+        child: SizedBox(
+          width: genislik,
+          child: Text(
+            metin,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            style: stil,
+          ),
+        ),
+      );
+
   /// Dönem başı: yatay kesikli çizgi + etiket. Yüzde bu çizgiye göre
   /// okunur. Etiket dönem başının TARİHİNİ ve DEĞERİNİ birlikte yazar
   /// (ör. "BAŞLANGIÇ · 21 Eyl · 309,63 ₺"): varlık detayında tarih eskiden
