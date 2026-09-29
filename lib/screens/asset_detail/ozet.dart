@@ -376,6 +376,15 @@ extension _DetayOzet on _AssetDetailScreenState {
     ];
   }
 
+  /// Fon karnesi (F4) — istatistiklerin hemen altında. Bayrak kapalıysa,
+  /// varlık fon değilse ya da karne kurulamıyorsa kart hiç yer kaplamaz
+  /// (boşluk `dis` ile kartın içinde; çizilmezse o da yok). Hub'a yalnızca
+  /// çağrı satırı girer — gövde bu part'ta (CLAUDE.md: yeni kod part'a).
+  Widget _fonKarnesi() => FonKarnesiKarti(
+      tur: widget.asset.type,
+      ticker: widget.asset.ticker,
+      dis: const EdgeInsets.only(top: SandikSpace.lg));
+
   /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
   /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni).
   Widget _istatistikIskeleti() {

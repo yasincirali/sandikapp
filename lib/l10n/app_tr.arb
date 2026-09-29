@@ -293,6 +293,75 @@
   "sortHighestFirst": "En Yüksek Önce",
   "sortLowestFirst": "En Düşük Önce",
   "assetFullName": "Tam Adı",
+  "fundReportTitleUpper": "FON KARNESİ",
+  "fundReportCategory": "{category} · {count} fon",
+  "@fundReportCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportPeriod1m": "1 ay",
+  "fundReportPeriodYtd": "Yılbaşından beri",
+  "fundReportPeriod1y": "1 yıl",
+  "fundReportRank": "{count} fondan {rank}.",
+  "@fundReportRank": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportReturnVsMedian": "Getirisi {ret} · kategori ortancası {median}",
+  "@fundReportReturnVsMedian": {
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAboveMedian": "Ortancanın {pts} puan üstünde",
+  "@fundReportAboveMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportBelowMedian": "Ortancanın {pts} puan altında",
+  "@fundReportBelowMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAtMedian": "Ortancayla aynı",
+  "fundReportFootnote": "Kaynak: TEFAS. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.",
+  "fundReportPanelLine": "Kategorisinde {count} fondan {rank}. ({period})",
+  "@fundReportPanelLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "assetTypeStock": "Hisse",
   "assetTypeFund": "Fon",
   "assetTypeFx": "Döviz",

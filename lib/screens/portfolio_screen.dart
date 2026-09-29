@@ -41,6 +41,7 @@ import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
+import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/transaction_row.dart' show hareketTurEtiketi;
 
 enum _SortOrder {
@@ -1605,6 +1606,7 @@ class _AssetDetailsPanel extends StatelessWidget {
                   color: context.c.text36, fontWeight: FontWeight.w500),
             ),
           ],
+          FonKarnesiSatiri(tur: rep.type, ticker: rep.ticker),
           _NotlarBolumu(lotlar: position.lots),
         ],
       ),

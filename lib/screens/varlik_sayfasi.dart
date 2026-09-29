@@ -19,6 +19,7 @@ import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/fiyat_grafigi.dart';
+import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/takip_yildizi.dart';
@@ -459,6 +460,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         _aralikCubugu(ist, bicim),
         const SizedBox(height: SandikSpace.lg),
       ],
+      FonKarnesiKarti(tur: k.type, ticker: k.ticker),
       // Sahip olunmayan varlık için de teknik göstergeler hesaplanır; panel
       // bir `Asset` istemez.
       TechnicalSignalPanel(

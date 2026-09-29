@@ -35,4 +35,12 @@ void main() {
     expect(kaynak.contains("setString('tefas_funds_cache"), isFalse);
     expect(kaynak.contains('getApplicationSupportDirectory'), isTrue);
   });
+
+  // F4 (2026-09-29): kayda kategori eklendi → dosya adı v2. v1 dosyası
+  // okunsaydı katalog 24 saat kategorisiz kalır, fon karnesi görünmezdi.
+  test('katalog dosyası v2; v1 yalnız silinmek için anılır', () {
+    final kaynak = ekranKaynagiSync('lib/services/tefas_service.dart');
+    expect(kaynak, contains("_dosyaAdi = 'tefas_funds_cache_v2.json'"));
+    expect(kaynak, contains("_eskiDosyaAdlari = ['tefas_funds_cache_v1.json']"));
+  });
 }
