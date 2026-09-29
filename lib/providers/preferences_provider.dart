@@ -978,6 +978,18 @@ const _kLeaderboardOptInKey = PrefKeys.leaderboardOptIn;
 final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLeaderboardOptInKey, false, perUser: true));
 
+/// Çan rozetinin "görüldü" damgası (ms epoch; 0 = hiç açılmadı).
+///
+/// Rozet eskiden AKTİF (temizlenmemiş) bildirim sayısıydı: çan sayfası
+/// açılıp bildirim okunsa bile "1 yeni bildirim" kalıyordu, çünkü okumak
+/// hiçbir durumu değiştirmiyordu (emülatör testi #26, 2026-09-29). Aktif /
+/// Geçmiş ayrımı (Temizle) kullanıcının bilinçli arşividir, okundu değil;
+/// o yüzden sunucuya "okundu" yazılmaz, yalnız bu cihaz-içi damga tutulur
+/// ve rozet damgadan SONRA gelen aktif kayıtları sayar
+/// (`yeniBildirimSayisi`).
+final bildirimSonGorulenProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.bildirimSonGorulen, 0, perUser: true));
+
 // ─── Kullanıcıya özel tercihlerin TAM listesi ─────────────────────────────────
 //
 // `setPreferencesUser` yalnızca anahtar ÖN EKİNİ değiştirir; provider'ın
@@ -1010,4 +1022,5 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   liveActivityEndProvider,
   liveActivityWeekendProvider,
   leaderboardOptInProvider,
+  bildirimSonGorulenProvider,
 ];

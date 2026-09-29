@@ -804,6 +804,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noteAddHint => 'Neden aldın, hedefin ne? Kısa bir not yaz.';
 
   @override
+  String get alertTargetAtCurrent =>
+      'Hedef güncel fiyata eşit, alarm hemen çalışır. Biraz üstünü ya da altını yaz.';
+
+  @override
   String get notifTypeDividend => 'Temettü';
 
   @override
@@ -850,8 +854,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get dividendEnterNet =>
-      'Stopaj oranı bilinmiyor: tutar brüt, ele geçen net tutarı gir.';
+  String dividendEnterNet(String gross) {
+    return 'Brüt $gross — stopaj sonrası eline geçeni yaz.';
+  }
 
   @override
   String get noteReadOnlyPartner =>

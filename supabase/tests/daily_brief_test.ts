@@ -13,6 +13,8 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
+  briefAdayiSec,
+  briefVerisi,
   buildBriefMessage,
   buildPartnerMessage,
   collapseTokens,
@@ -84,14 +86,80 @@ Deno.test('mesaj EYLEM önermez — yalnızca durum bildirir', () => {
   }
 });
 
-Deno.test('tek hisse varken "diğer" cümlesi kurulmaz', () => {
+Deno.test('başka hareketli hisse yokken ek cümle kurulmaz', () => {
   const m = buildBriefMessage('ASELS', 3.0, 0);
-  assertEquals(m.body.includes('diğer'), false, m.body);
+  assertEquals(m.body.includes('daha'), false, m.body);
 });
 
-Deno.test('birden çok hisse varken kalan sayısı verilir', () => {
+Deno.test('eşiği geçen başka hisse varsa NE olduğu açıkça söylenir (#16)', () => {
+  // Eski metin "Portföyündeki diğer 4 hisse daha var." ne demek istediği
+  // belli olmayan bir cümleydi (emülatör testi #16, 2026-09-29).
   const m = buildBriefMessage('ASELS', 3.0, 4);
-  assertEquals(m.body.includes('diğer 4 hisse'), true, m.body);
+  assertEquals(m.body.includes('Portföyündeki 4 hisse daha hareketli.'), true, m.body);
+  assertEquals(m.body.includes('daha var'), false, m.body);
+});
+
+// ── briefAdayiSec ───────────────────────────────────────────────────────────
+
+Deno.test('en çok hareket eden hisse (mutlak değer) seçilir', () => {
+  const s = briefAdayiSec([
+    { label: 'A', sembol: 'A.IS', changePct: 2 },
+    { label: 'B', sembol: 'B.IS', changePct: -5.8 },
+    { label: 'C', sembol: 'C.IS', changePct: 3 },
+  ], 1.5)!;
+  assertEquals(s.en.sembol, 'B.IS');
+  assertEquals(s.digerHareketli, 2);
+});
+
+Deno.test('diğer sayısı yalnız EŞİĞİ geçenleri sayar', () => {
+  const s = briefAdayiSec([
+    { label: 'A', sembol: 'A.IS', changePct: 5.8 },
+    { label: 'B', sembol: 'B.IS', changePct: 0.4 },
+    { label: 'C', sembol: 'C.IS', changePct: -1.49 },
+    { label: 'D', sembol: 'D.IS', changePct: 1.5 },
+  ], 1.5)!;
+  assertEquals(s.en.sembol, 'A.IS');
+  assertEquals(s.digerHareketli, 1);
+});
+
+Deno.test('aynı hissenin iki lot\'u iki hisse sayılmaz', () => {
+  const s = briefAdayiSec([
+    { label: 'A', sembol: 'A.IS', changePct: 5.8 },
+    { label: 'A', sembol: 'A.IS', changePct: 5.8 },
+    { label: 'B', sembol: 'B.IS', changePct: 3 },
+    { label: 'B', sembol: 'B.IS', changePct: 3 },
+  ], 1.5)!;
+  assertEquals(s.digerHareketli, 1);
+});
+
+Deno.test('boş girdi → null (uydurma konu yok)', () => {
+  assertEquals(briefAdayiSec([], 1.5), null);
+});
+
+// ── briefVerisi ─────────────────────────────────────────────────────────────
+//
+// Push ve çan kaydı AYNI veriyi taşır; istemci iki yolda da aynı hedefe
+// gider: hisse mesajı → o varlığın ekranı, ortak mesajı → Özet (#16).
+
+Deno.test('hisse mesajı ticker taşır', () => {
+  assertEquals(briefVerisi('2026-09-29', 'mover', ' ARDYZ.IS '), {
+    type: 'daily_brief',
+    sent_on: '2026-09-29',
+    variant: 'mover',
+    ticker: 'ARDYZ.IS',
+  });
+});
+
+Deno.test('ortak mesajı ticker taşımaz (NE eklendiği söylenmez)', () => {
+  const d = briefVerisi('2026-09-29', 'partner', 'ARDYZ.IS');
+  assertEquals('ticker' in d, false);
+  assertEquals(d.variant, 'partner');
+});
+
+Deno.test('FCM data yalnız string taşır', () => {
+  for (const v of Object.values(briefVerisi('2026-09-29', 'mover', 'X.IS'))) {
+    assertEquals(typeof v, 'string');
+  }
 });
 
 // ── collapseTokens ──────────────────────────────────────────────────────────

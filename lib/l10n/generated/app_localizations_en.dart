@@ -804,6 +804,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Why did you buy it, what\'s your target? Write a short note.';
 
   @override
+  String get alertTargetAtCurrent =>
+      'Target equals the current price, so the alert would fire right away. Enter a price above or below it.';
+
+  @override
   String get notifTypeDividend => 'Dividend';
 
   @override
@@ -850,8 +854,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get dividendEnterNet =>
-      'Withholding rate unknown: the amount is gross, enter the net amount you received.';
+  String dividendEnterNet(String gross) {
+    return 'Gross $gross — enter what you received after withholding tax.';
+  }
 
   @override
   String get noteReadOnlyPartner =>

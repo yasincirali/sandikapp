@@ -16,6 +16,7 @@ import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/notification_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
@@ -121,6 +122,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // sunucuda silinse bile LİSTE EKRANDA DEĞİŞMİYORDU. "Silmiyor"
     // şikâyetinin görünür sebebi buydu.
     // Sheet artık `ConsumerWidget` ve provider'ı kendisi izliyor.
+    // Sayfa açılınca ve kapanınca "görüldü" damgası (#26): rozet yalnız
+    // bundan sonra gelenleri "yeni" sayar. Kapanışta da yazılır: sayfa
+    // açıkken düşen bildirim listede görüldü, rozette yeniden belirmesin.
+    _bildirimleriGorulduSay();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -200,13 +205,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
       ),
+    ).whenComplete(() {
+      if (mounted) _bildirimleriGorulduSay();
+    });
+  }
+
+  void _bildirimleriGorulduSay() {
+    final akis = bildirimAkisi(
+      ref.read(signalProvider).valueOrNull ?? const [],
+      ref.read(priceAlertNotificationProvider).valueOrNull ?? const [],
+      ref.read(appNotificationProvider).valueOrNull ?? const [],
+    );
+    CrashReporter.arkaPlan(
+      ref.read(bildirimSonGorulenProvider.notifier).set(
+          gorulduDamgasi(akis, DateTime.now()).millisecondsSinceEpoch),
+      reason: 'home.bildirimGoruldu',
     );
   }
 
   /// Genel bildirime dokunuş — push'a dokunulmuş gibi aynı yere (0066).
   ///
-  /// Ortaklık → davet akışı; günlük/haftalık özet → Performans "Özet"
-  /// (bildirimin anlattığı rakam orada); takvim hatırlatması → ana ekran
+  /// Ortaklık → davet akışı; günlük brifing → `openDailyBrief` (push'la tek
+  /// fonksiyon); haftalık özet → Performans "Özet" (bildirimin anlattığı
+  /// rakam orada); takvim hatırlatması → ana ekran
   /// (zaten buradayız, yalnızca liste kapanır).
   void _genelBildirimeGit(AppNotification b) {
     switch (b.type) {
@@ -215,7 +236,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (inviteId.isNotEmpty) {
           NotificationService.instance.openPartnerInvite(inviteId);
         }
-      case AppNotification.dailyBrief || AppNotification.weeklySummary:
+      case AppNotification.dailyBrief:
+        // Push'la AYNI fonksiyon (#16): hisse brifingi → o hissenin ekranı,
+        // ortak / eski kayıt → Özet. Eskiden çan Özet'e, push ana ekrana
+        // gidiyordu; anlatılan hisse ikisinde de yoktu.
+        NotificationService.instance.openDailyBrief(b.data);
+      case AppNotification.weeklySummary:
         Navigator.push(
           context,
           adaptiveRoute<void>(
@@ -1723,12 +1749,21 @@ class _SignalBadgeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Rozet İKİ türü birden sayar: kullanıcı için çan tek bir yer ve
-    // "3 bildirim" dediğinde açtığında üçünü de görmeli. Yalnızca
-    // sinyalleri saymak, alarm gelince rozetin kıpırdamaması demekti.
-    final count = ref.watch(activeSignalsProvider).length +
-        ref.watch(activePriceAlertNotificationsProvider).length +
-        ref.watch(activeAppNotificationsProvider).length;
+    // Rozet ÜÇ kaynağı birden sayar: kullanıcı için çan tek bir yer.
+    // Yalnızca sinyalleri saymak, alarm gelince rozetin kıpırdamaması
+    // demekti. Sayılan şey "YENİ": çan sayfası en son açıldıktan sonra
+    // gelen aktif kayıtlar (#26 — okunduktan sonra da "1 yeni" kalıyordu).
+    final sonGorulenMs = ref.watch(bildirimSonGorulenProvider);
+    final count = yeniBildirimSayisi(
+      bildirimAkisi(
+        ref.watch(activeSignalsProvider),
+        ref.watch(activePriceAlertNotificationsProvider),
+        ref.watch(activeAppNotificationsProvider),
+      ),
+      sonGorulenMs <= 0
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(sonGorulenMs),
+    );
 
     return SandikTappable(
       onTap: onTap,

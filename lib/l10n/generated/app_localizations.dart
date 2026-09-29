@@ -1526,6 +1526,12 @@ abstract class AppLocalizations {
   /// **'Neden aldın, hedefin ne? Kısa bir not yaz.'**
   String get noteAddHint;
 
+  /// No description provided for @alertTargetAtCurrent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef güncel fiyata eşit, alarm hemen çalışır. Biraz üstünü ya da altını yaz.'**
+  String get alertTargetAtCurrent;
+
   /// No description provided for @notifTypeDividend.
   ///
   /// In tr, this message translates to:
@@ -1595,8 +1601,8 @@ abstract class AppLocalizations {
   /// No description provided for @dividendEnterNet.
   ///
   /// In tr, this message translates to:
-  /// **'Stopaj oranı bilinmiyor: tutar brüt, ele geçen net tutarı gir.'**
-  String get dividendEnterNet;
+  /// **'Brüt {gross} — stopaj sonrası eline geçeni yaz.'**
+  String dividendEnterNet(String gross);
 
   /// No description provided for @noteReadOnlyPartner.
   ///

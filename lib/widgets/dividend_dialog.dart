@@ -25,9 +25,11 @@ import '../l10n/l10n.dart';
 ///
 /// ## Öneriyle açılış (temettü yakalama, 2026-09-29)
 /// [oneri] verilirse (push `type: 'temettu'`, çan kaydı ya da "Son 12 ay
-/// temettü" kartı) alan ÖN DOLU açılır: brüt = lot × TL/pay; Remote Config
-/// stopaj oranı biliniyorsa net öneri ve "stopaj %x varsayıldı" notu,
-/// bilinmiyorsa brüt ve "net tutarı gir" notu. Kayıt yine AYNI yoldan
+/// temettü" kartı) dayanak satırları görünür: brüt = lot × TL/pay; Remote
+/// Config stopaj oranı biliniyorsa alan net öneriyle ÖN DOLU ve "stopaj %x
+/// varsayıldı" notu, bilinmiyorsa alan BOŞ ve "Brüt ₺x — stopaj sonrası
+/// eline geçeni yaz" notu (#12: brütle ön dolu alan tek dokunuşla brütü
+/// net diye kaydediyordu). Kayıt yine AYNI yoldan
 /// (`addDividend`) ve kullanıcı "Kaydet"e basınca gider — öneri hiçbir şeyi
 /// kendiliğinden yazmaz. Tarih hak tarihi olur (BIST'te ödeme çoğunlukla o
 /// gün); kullanıcı değiştirebilir.
@@ -100,7 +102,10 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
       final t = TemettuGecmisi.oneriTutari(o.brut, widget.stopaj);
       _oneriNet = t.net;
       // Alan `parseTrNumber` ile okunur; `fmtInputTr` gidiş-dönüşte kayıpsız.
-      _amount.text = fmtInputTr(t.tutar, maxDigits: 2);
+      // Stopaj bilinmiyorsa alan BOŞ kalır (#12): "ele geçen NET" alanına
+      // brüt yazmak tek dokunuşla yanlış kayıt demekti.
+      final tutar = t.tutar;
+      if (tutar != null) _amount.text = fmtInputTr(tutar, maxDigits: 2);
       // Öğlen: cihaz hangi saat diliminde olursa olsun kayıt TR takviminde
       // hak gününe düşsün (gece yarısı bir gün geri kayabilirdi).
       final h = o.hakTarihi;
@@ -257,13 +262,15 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
           ),
           if (widget.oneri != null) ...[
             const SizedBox(height: 6),
-            // Tutarın ne olduğunu SÖYLE: net mi (varsayılan oranla) brüt mü.
-            // Kullanıcı düzeltmeden kaydederse bile neyi onayladığını bilir.
+            // Tutarın ne olduğunu SÖYLE: net öneri mi (varsayılan oranla),
+            // yoksa boş alan + brüt dayanak mı. Kullanıcı düzeltmeden
+            // kaydederse bile neyi onayladığını bilir.
             Text(
               _oneriNet
                   ? context.l10n.dividendWithholdingAssumed(
                       fmtPct(widget.stopaj! * 100, digits: 0))
-                  : context.l10n.dividendEnterNet,
+                  : context.l10n
+                      .dividendEnterNet(fmtTRY(widget.oneri!.brut, digits: 2)),
               style: context.t.bodySmall?.copyWith(color: context.c.amberText),
             ),
           ],

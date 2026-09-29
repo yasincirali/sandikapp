@@ -283,7 +283,19 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   /// Filtre değişince sayfalama başa sarmalı; aksi halde kullanıcı dar bir
   /// sonuç kümesinde "zaten hepsi yüklü" sanır ya da tersi.
-  void _resetPaging() => _visible = _pageSize;
+  ///
+  /// Kaydırma konumu da başa sarar (emülatör testi #25, 2026-09-29): liste
+  /// eski ofsette kalıyordu — Silinenler'in dibinden dönem filtresine
+  /// geçince yeni sonucun ilk 7 kaydı ekranın üstünde, görünmez kalıyordu.
+  /// Anında `jumpTo` (animasyon değil): yeni sonuç kümesi eski konumla
+  /// ilişkili değil, oraya "kayarak" gelmek bir süreklilik ima ederdi.
+  /// Tüm filtre değişiklikleri bu tek noktadan geçer.
+  void _resetPaging() {
+    _visible = _pageSize;
+    if (_scrollCtrl.hasClients && _scrollCtrl.offset != 0) {
+      _scrollCtrl.jumpTo(0);
+    }
+  }
 
   /// Sahiplik sekmesine göre ham ledger.
   List<Asset> get _ledger {
