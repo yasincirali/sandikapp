@@ -118,29 +118,11 @@ class BazPara {
     final sign = v < 0 ? '-' : '';
     final s = etkinBirim.sembol;
     final gold = etkinBirim == BaseCurrency.gold;
-    String yaz(String govde) => gold ? '$sign$govde $s' : '$sign$s$govde';
-    // Mr/Tn basamakları `fmtTRYAxis` ile aynı (U14, 2026-09-23 denetimi).
-    if (abs >= 1e12) {
-      final spanTn = span / 1e12;
-      final digits = spanTn >= 0.02 ? 2 : (spanTn >= 0.002 ? 3 : 4);
-      return yaz('${fmtNum(abs / 1e12, digits: digits)}Tn');
-    }
-    if (abs >= 1e9) {
-      final spanMr = span / 1e9;
-      final digits = spanMr >= 0.02 ? 2 : (spanMr >= 0.002 ? 3 : 4);
-      return yaz('${fmtNum(abs / 1e9, digits: digits)}Mr');
-    }
-    if (abs >= 1000000) {
-      final spanM = span / 1000000;
-      final digits = spanM >= 0.02 ? 2 : (spanM >= 0.002 ? 3 : 4);
-      return yaz('${fmtNum(abs / 1000000, digits: digits)}M');
-    }
-    if (abs >= 1000) {
-      final spanK = span / 1000;
-      final digits = spanK >= 0.2 ? 1 : 2;
-      return yaz('${fmtNum(abs / 1000, digits: digits)}K');
-    }
-    return yaz(fmtNum(abs, digits: span < 10 ? 2 : 0));
+    // Kademe kuralı (Mr/Tn dahil) `fmtTRYAxis` ile TEK yerden:
+    // `eksenGovdesi` — ayrı kopya ızgara adımı düzeltmesini (2026-09-29
+    // emülatör testi #7) kaçırırdı.
+    final govde = eksenGovdesi(abs, span);
+    return gold ? '$sign$govde $s' : '$sign$s$govde';
   }
 }
 

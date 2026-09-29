@@ -64,7 +64,8 @@ void main() {
     });
 
     test('uzun dönem', () {
-      expect(zamanEtiketi(t, spanGun: 500, gunIci: false), 'Eyl 26');
+      // Kısa yıl kesmeyle: "Eyl 26" gün gibi okunuyordu (2026-09-29 #21).
+      expect(zamanEtiketi(t, spanGun: 500, gunIci: false), "Eyl '26");
     });
   });
 

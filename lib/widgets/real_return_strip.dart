@@ -251,8 +251,10 @@ class RealReturnBadge extends StatelessWidget {
               // varsayılanı); iki yüzey aynı sayıyı farklı yuvarlarsa
               // kullanıcı hangisine güveneceğini bilemez.
               Text(
-                '${l.realReturnYours} %${fmtNum(nominal, digits: 2)}'
-                '  ·  ${l.realReturnCpi} %${fmtNum(inflation, digits: 2)}'
+                // Getiri YÖNLÜ ("−%5,00"; eskiden "%-5,00"), TÜFE yönsüz
+                // (enflasyon pratikte hep pozitif; bkz. `tufePct`).
+                '${l.realReturnYours} ${fmtPctIsaretli(nominal, digits: 2)}'
+                '  ·  ${l.realReturnCpi} ${fmtPct(inflation, digits: 2)}'
                 '  ·  ${pencere == null ? l.realReturnLastYear : _aralik(context, pencere!)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

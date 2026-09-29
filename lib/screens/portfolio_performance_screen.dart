@@ -803,7 +803,16 @@ class _PortfolioPerformanceScreenState
 
   /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900) — baz
   /// birimde (Faz 3.2). Seri TRY kalır, yalnızca etiket çevrilir.
-  String _fmtY(double val) => ref.read(gosterimBazParaProvider).compact(val);
+  ///
+  /// Hane [adim]a (ızgara adımı) göre: `compact` iki ondalıkta sabitti ve
+  /// GÜNLÜK'te ~₺2.500'lük adımla "₺1,39M" dört kez yazılıyordu (2026-09-29
+  /// emülatör testi #7). `axis` komşu iki etiketi ayırt edecek kadar hane
+  /// ekler, geniş bantta `compact` ile aynı kısa biçimde kalır.
+  ///
+  /// `gosterimBazParaProvider`: "bakiyeyi gizle" açıkken eksen de maskeli
+  /// (emülatör testi #3).
+  String _fmtY(double val, double adim) =>
+      ref.read(gosterimBazParaProvider).axis(val, adim);
 
   /// Seçili periyodun değişim özeti — grafiğin hemen üstünde.
   ///

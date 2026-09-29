@@ -244,7 +244,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       degisimRenk = context.c.text36;
     } else {
       final fark = canli - ilk;
-      degisim = '${pct >= 0 ? '+' : '−'}${fmtPct(pct.abs())} · '
+      degisim = '${fmtPctIsaretli(pct)} · '
           '${fark >= 0 ? '+' : '−'}${bicim.format(fark.abs())} · $etiket';
       degisimRenk = context.signColor(pct);
     }
@@ -300,7 +300,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         Text(
           l.adPositionLine(
             '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
-            '$isaret${fmtPct(pnl.pnlPct.abs())}',
+            pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

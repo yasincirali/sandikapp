@@ -85,7 +85,7 @@ void main() {
     // 1 yıl: CCC %30 → 3.; ortanca (30+40)/2 = 35 → 5 puan altında.
     expect(find.text('4 fondan 3.'), findsNWidgets(2)); // 1 yıl ve 1 ay
     expect(find.text('4 fondan 1.'), findsOneWidget); // yılbaşı %30
-    expect(find.text('Getirisi %30,00 · kategori ortancası %35,00'),
+    expect(find.text('Getirisi +%30,00 · kategori ortancası +%35,00'),
         findsOneWidget);
     expect(find.text('Ortancanın 5,0 puan altında'), findsOneWidget);
     expect(find.text('Ortancanın 15,0 puan üstünde'), findsOneWidget);

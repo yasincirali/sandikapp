@@ -1189,6 +1189,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
                               final yInterval = yBounds.interval;
+                              // Komşu iki Y etiketinin GERÇEK değer farkı —
+                              // log ölçekte en dar aralık en alttadır. Etiket
+                              // hanesi buna göre seçilir: `fmtTRYCompact`
+                              // "₺1 | ₺1" yazıyordu (2026-09-29 emülatör
+                              // testi #7; adım etiketin hassasiyetinden
+                              // küçüktü).
+                              final yEtiketAdimi =
+                                  (fromY(viewMinY + yInterval) - fromY(viewMinY))
+                                      .abs();
                               // Lot marker'ları piksel bazlı seyreltmeden
                               // geçer — arka arkaya alım yapılan günlerde
                               // dot'lar üst üste binip yığın gibi
@@ -1256,8 +1265,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     return const SizedBox.shrink();
                                   }
                                   final label = compareOn
-                                      ? '${(value - 100).toStringAsFixed(1)}%'
-                                      : fmtTRYCompact(fromY(value));
+                                      ? fmtPctIsaretli(value - 100,
+                                          digits: eksenOndaligi(yInterval,
+                                              enAz: 1, enCok: 3))
+                                      : fmtTRYAxis(
+                                          fromY(value), yEtiketAdimi);
                                   return GrafikStili.yEtiketi(label,
                                       stil: GrafikStili.eksenYazisi(context));
                                 },
@@ -1289,30 +1301,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   final date = startDate.add(Duration(
                                       minutes:
                                           (value * 60 * 24).round()));
-                                  final showYearOnly = span > 400;
-                                  final showTime = span < 3;
-                                  final showYear = !showYearOnly &&
-                                      date.year != DateTime.now().year;
                                   // Gün içi sekmesinde tek bir gün çizilir;
                                   // her etikette aynı tarihi tekrarlamak
                                   // 74pt'lik etiketi kırpar ve okunması
-                                  // gereken SAATİ gölgeler.
+                                  // gereken SAATİ gölgeler. Diğer dönemler
+                                  // ortak `zamanEtiketi`nden: bu ekran aynı
+                                  // kuralın kopyasını taşıyordu ve yıl
+                                  // düzeltmesini ("Oca '26", 2026-09-29
+                                  // emülatör testi #21) kaçırırdı.
                                   final label = isIntraday
                                       ? DateFormat('HH:mm', 'tr_TR')
                                           .format(date)
-                                      : showYearOnly
-                                          ? DateFormat('MMM yy', 'tr_TR')
-                                              .format(date)
-                                          : showTime
-                                              ? DateFormat('d MMM HH:mm',
-                                                      'tr_TR')
-                                                  .format(date)
-                                              : DateFormat(
-                                                      showYear
-                                                          ? 'd MMM yy'
-                                                          : 'd MMM',
-                                                      'tr_TR')
-                                                  .format(date);
+                                      : zamanEtiketi(date,
+                                          spanGun: span, gunIci: false);
                                   // Sabit genişlik + ortalama: taşan metin
                                   // ellipsis olur, komşu etiketle çakışmaz.
                                   return GrafikStili.xEtiketi(label,
@@ -1477,7 +1478,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       minutes: (spot.x * 1440).round()));
                                   final dateLabel = fmtTarihSaat(date);
                                   final tipText = compareOn
-                                      ? '${(spot.y - 100).toStringAsFixed(2)}%'
+                                      ? fmtPctIsaretli(spot.y - 100)
                                       : '${valueFmt.format(fromY(spot.y))} ₺';
                                   return LineTooltipItem(
                                     tipText,
@@ -1521,7 +1522,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   minutes:
                                       (snapped.x * 1440).round()));
                               final title = compareOn
-                                  ? '${(snapped.y - 100).toStringAsFixed(2)}%'
+                                  ? fmtPctIsaretli(snapped.y - 100)
                                   : tryFormatter(digits: 2)
                                       .format(fromY(snapped.y));
                               // Gün içinde okunacak bilgi SAATTİR; tarih

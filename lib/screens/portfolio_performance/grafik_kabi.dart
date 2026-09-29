@@ -391,7 +391,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 if (val == meta.min || val == meta.max) {
                   return const SizedBox.shrink();
                 }
-                return GrafikStili.yEtiketi(_fmtY(val),
+                return GrafikStili.yEtiketi(_fmtY(val, yInterval),
                     stil: GrafikStili.eksenYazisi(context));
               },
             ),
@@ -413,7 +413,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   return const SizedBox.shrink();
                 }
                 // Dinamik format — dar viewport'ta gün+ay, geniş
-                // viewport'ta (365+ gün) sadece "MMM yy". Çok dar (<3 gün)
+                // viewport'ta (365+ gün) sadece ay ve yıl ("Oca '26"). Çok dar (<3 gün)
                 // görünümde saat de göster.
                 // Biçim kuralı `chart_axis.dart`'ta — takip listesi grafiği
                 // de aynı fonksiyonu çağırır.

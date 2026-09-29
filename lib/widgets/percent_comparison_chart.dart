@@ -175,7 +175,7 @@ class PercentComparisonChart extends StatelessWidget {
         // `fmtTarihSaat`); günlük nokta 00:00'dır, yalnızca tarih yazılır.
         final span = ciz.maxX - ciz.minX;
         return (
-          fmtPct(s.y, digits: 1, showSign: true),
+          fmtPctIsaretli(s.y, digits: 1),
           span < const Duration(days: 2).inMilliseconds
               ? DateFormat('d MMM HH:mm', 'tr_TR').format(tarih)
               : fmtTarihSaat(tarih),
@@ -188,7 +188,7 @@ class PercentComparisonChart extends StatelessWidget {
           if (_degerAt(ciz.bars[i].spots, x) case final y?)
             (
               '${labelOf(ciz.cizilenler[i])}  '
-                  '${fmtPct(y, digits: 1, showSign: true)}',
+                  '${fmtPctIsaretli(y, digits: 1)}',
               colorOf(ciz.cizilenler[i])
             ),
       ],
@@ -477,9 +477,11 @@ class PercentComparisonChart extends StatelessWidget {
               // Kayan nokta hatası: 15.000000000000002 gibi değerler ondalık
               // gösterimde "15,0" yerine gürültü üretir.
               final v = (value / eksen.interval).round() * eksen.interval;
+              // Türkçe yönlü yüzde: "−%10 · %0 · +%10" (eskiden "-10% |
+              // +0% | +10%": İngilizce sıra, tire eksi ve yönsüz sıfıra
+              // "+" — 2026-09-29 emülatör testi #5).
               return GrafikStili.yEtiketi(
-                '${v >= 0 ? '+' : ''}'
-                '${v.toStringAsFixed(eksen.ondalik).replaceAll('.', ',')}%',
+                fmtPctIsaretli(v, digits: eksen.ondalik),
                 dolgu: EdgeInsets.zero,
                 stil: TextStyle(fontSize: 10, color: p.text58),
               );
@@ -518,7 +520,7 @@ class PercentComparisonChart extends StatelessWidget {
                 : null;
             return LineTooltipItem(
               '${key == null ? '' : labelOf(key)}  '
-              '${fmtPct(s.y, digits: 1, showSign: true)}',
+              '${fmtPctIsaretli(s.y, digits: 1)}',
               TextStyle(
                 color: key == null ? p.text90 : colorOf(key),
                 fontSize: 11,

@@ -54,17 +54,17 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     final hucreler = <(String, String, Color)>[
       (
         l.vsPeriodReturnUpper,
-        fmtPct(donemPct, showSign: true),
+        fmtPctIsaretli(donemPct),
         yon(donemPct),
       ),
       (
         l.vsTodayUpper,
-        bugun == null ? '—' : fmtPct(bugun, showSign: true),
+        bugun == null ? '—' : fmtPctIsaretli(bugun),
         bugun == null ? context.c.text58 : yon(bugun),
       ),
       (
         l.vsMaxDrawdownUpper,
-        fmtPct(ist.enBuyukDususPct, showSign: true),
+        fmtPctIsaretli(ist.enBuyukDususPct),
         ist.enBuyukDususPct.abs() < 0.005 ? context.c.text58 : context.c.loss,
       ),
       (

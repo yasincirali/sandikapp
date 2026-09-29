@@ -728,6 +728,12 @@ abstract class AppLocalizations {
   /// **'Kaydet'**
   String get save;
 
+  /// Varlık ekranı pozisyon kartında dönem kâr/zarar satırının yüzdesi: tutar sahibin piyasa etkisi, yüzde ise 1 birimin (ürünün) fiyat hareketi. Etiket iki sayının farklı tabanı olduğunu söyler.
+  ///
+  /// In tr, this message translates to:
+  /// **'fiyat {pct}'**
+  String posPeriodPriceMove(String pct);
+
   /// No description provided for @assetType.
   ///
   /// In tr, this message translates to:
@@ -1289,7 +1295,7 @@ abstract class AppLocalizations {
   /// No description provided for @fundReportFootnote.
   ///
   /// In tr, this message translates to:
-  /// **'Kaynak: TEFAS. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.'**
+  /// **'Kaynak: TEFAS. Getiriler TEFAS\'ın açıkladığı rakamlardır; TEFAS\'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.'**
   String get fundReportFootnote;
 
   /// No description provided for @fundReportPanelLine.

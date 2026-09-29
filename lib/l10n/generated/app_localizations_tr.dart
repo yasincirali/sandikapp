@@ -346,6 +346,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get save => 'Kaydet';
 
   @override
+  String posPeriodPriceMove(String pct) {
+    return 'fiyat $pct';
+  }
+
+  @override
   String get assetType => 'Varlık Türü';
 
   @override
@@ -665,7 +670,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get fundReportFootnote =>
-      'Kaynak: TEFAS. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.';
+      'Kaynak: TEFAS. Getiriler TEFAS\'ın açıkladığı rakamlardır; TEFAS\'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.';
 
   @override
   String fundReportPanelLine(String count, String rank, String period) {

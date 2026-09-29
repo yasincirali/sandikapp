@@ -308,10 +308,14 @@ String zamanEtiketi(
     if (spanGun > 1) return DateFormat('d MMM HH:mm', 'tr_TR').format(t);
     return DateFormat('HH:mm', 'tr_TR').format(t);
   }
-  if (spanGun > 400) return DateFormat('MMM yy', 'tr_TR').format(t);
+  // Kısa yıl KESME İŞARETİYLE: "Oca '26". Çıplak "Oca 26" gün gibi
+  // okunuyordu — "26 Ocak mı?" (2026-09-29 emülatör testi #21). DateFormat
+  // kalıbında `''` tek bir kesme işareti basar. "Oca 2026" daha uzun ve
+  // 74pt'lik X etiketinde küçülüyor; kesme Türkçede yaygın kısaltma.
+  if (spanGun > 400) return DateFormat("MMM ''yy", 'tr_TR').format(t);
   if (spanGun < 3) return DateFormat('d MMM HH:mm', 'tr_TR').format(t);
   final yilFarkli = t.year != DateTime.now().year;
-  return DateFormat(yilFarkli ? 'd MMM yy' : 'd MMM', 'tr_TR').format(t);
+  return DateFormat(yilFarkli ? "d MMM ''yy" : 'd MMM', 'tr_TR').format(t);
 }
 
 /// Eksenin iki ucundaki etiket ÇİZİLMEZ.
