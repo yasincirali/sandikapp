@@ -427,6 +427,7 @@
   "noteRemove": "Remove note",
   "noteNone": "No note on this transaction.",
   "noteAddHint": "Why did you buy it, what's your target? Write a short note.",
+  "alertTargetAtCurrent": "Target equals the current price, so the alert would fire right away. Enter a price above or below it.",
   "notifTypeDividend": "Dividend",
   "dividendHistoryUpper": "DIVIDENDS · LAST 12 MONTHS",
   "dividendRecordedTotal": "Recorded: {amount}",
@@ -492,7 +493,14 @@
       }
     }
   },
-  "dividendEnterNet": "Withholding rate unknown: the amount is gross, enter the net amount you received.",
+  "dividendEnterNet": "Gross {gross} — enter what you received after withholding tax.",
+  "@dividendEnterNet": {
+    "placeholders": {
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
   "noteReadOnlyPartner": "This record belongs to your partner; only they can edit its note.",
   "noteReadOnlyDeleted": "A deleted record's note can't be edited.",
   "notesSection": "Notes",

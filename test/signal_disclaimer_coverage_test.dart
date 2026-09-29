@@ -43,6 +43,32 @@ void main() {
     }
   });
 
+  group('tekrar yok — panel ibareyi barındıran ekrana bırakır', () {
+    // Emülatör testi #20 (2026-09-29): varlık ekranında aynı uyarı ÜÇ kez
+    // vardı (panelin üstü, panelin altı, ekranın kendi ibaresi). Kural
+    // "sinyal gösteren her yüzey ibare taşır"dır, "her katman" değil:
+    // ibare panelin hemen altında, onu barındıran ekranda TEK kez durur.
+    const panel = 'lib/screens/asset_detail/sinyal_widgetlari.dart';
+    int sayi(String kaynak) =>
+        RegExp(r'DisclaimerWidget\(').allMatches(kaynak).length;
+
+    test('TechnicalSignalPanel kendi içinde ibare basmaz', () {
+      expect(sayi(oku(panel)), 0,
+          reason: 'panel ibaresi ekranın ibaresiyle üst üste biner');
+    });
+
+    for (final yol in const [
+      'lib/screens/asset_detail_screen.dart',
+      'lib/screens/varlik_sayfasi.dart',
+    ]) {
+      test('$yol paneli gösterir ve ibareyi TEK kez taşır', () {
+        final k = oku(yol);
+        expect(k.contains('TechnicalSignalPanel'), isTrue);
+        expect(sayi(k), 1);
+      });
+    }
+  });
+
   test('uyarı metni üç şeyi birden söyler', () {
     final w = oku('lib/widgets/disclaimer_widget.dart');
     // 3.20: metin sözlüğe taşındı; widget doğru ANAHTARI kullanmalı ve o

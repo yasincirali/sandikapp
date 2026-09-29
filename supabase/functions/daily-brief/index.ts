@@ -121,6 +121,13 @@ export function lastChangePct(closes: number[]): number | null {
 /// önerilmez ("yükseldi" ✓ / "al" ✗) ve SPK'nın beklediği ibare eklenir.
 /// Yön oku başlıkta en solda — kilit ekranında kullanıcı önce sol kenarı
 /// tarar; ▲▼ her yazı tipinde aynı görünür ve VoiceOver düzgün okur.
+///
+/// [otherCount] = eşiği (`minMovePct`) AYRICA geçen DİĞER hisse sayısı
+/// (tekil sembol). Eskiden "portföydeki diğer lot sayısı"ydı ve metin
+/// "Portföyündeki diğer 2 hisse daha var." diyordu: ne söylediği belli
+/// değildi (emülatör testi #16, 2026-09-29) ve aynı hissenin iki lot'u
+/// "diğer hisse" sayılıyordu. Şimdi söylenen şey doğrulanabilir: o hisseler
+/// de bugün eşik üstü hareket etti.
 export function buildBriefMessage(
   label: string,
   changePct: number,
@@ -129,7 +136,7 @@ export function buildBriefMessage(
   const yukari = changePct >= 0;
   const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
   const kalan = otherCount > 0
-    ? `Portföyündeki diğer ${otherCount} hisse daha var. `
+    ? `Portföyündeki ${otherCount} hisse daha hareketli. `
     : '';
   return {
     title: `${yukari ? '▲' : '▼'} ${label} son kapanışta %${mutlak} ` +
@@ -137,6 +144,60 @@ export function buildBriefMessage(
     body: `Portföyünde en çok hareket eden hisse. ${kalan}` +
       'Yatırım tavsiyesi değildir.',
   };
+}
+
+export type BriefAdayi = { label: string; sembol: string; changePct: number };
+
+/// Kullanıcının hisse satırlarından brifingin konusu: en çok hareket eden
+/// hisse ve eşiği ayrıca geçen DİĞER hisse sayısı.
+///
+/// Satırlar LOT düzeyindedir (aynı hissenin birden çok alımı ayrı satır);
+/// sayım sembol başına TEKİLLEŞTİRİLİR — iki lot iki "hisse" değildir.
+/// Boş girdi → null (uydurma konu yok).
+export function briefAdayiSec(
+  satirlar: BriefAdayi[],
+  minMovePct: number,
+): { en: BriefAdayi; digerHareketli: number } | null {
+  const tekil = new Map<string, BriefAdayi>();
+  for (const s of satirlar) {
+    if (!tekil.has(s.sembol)) tekil.set(s.sembol, s);
+  }
+  let en: BriefAdayi | null = null;
+  for (const a of tekil.values()) {
+    if (!en || Math.abs(a.changePct) > Math.abs(en.changePct)) en = a;
+  }
+  if (!en) return null;
+  let digerHareketli = 0;
+  for (const a of tekil.values()) {
+    if (a.sembol !== en.sembol && Math.abs(a.changePct) >= minMovePct) {
+      digerHareketli += 1;
+    }
+  }
+  return { en, digerHareketli };
+}
+
+/// Bildirim `data`'sı — push ve çan kaydı AYNI veriyi taşır ki iki dokunuş
+/// yolu (push → `NotificationService.handleRemoteMessageData`, çan →
+/// `home_screen._genelBildirimeGit`) aynı hedefe gidebilsin.
+///
+/// Hisse mesajı ('mover') `ticker` taşır: istemci o varlığın ekranını
+/// GÜNLÜK'te açar (#16: push ana ekranda, çan Özet'te kalıyordu — anlatılan
+/// hisse ikisinde de yoktu). Ortak mesajı ticker taşımaz (NE eklendiği
+/// söylenmez, bkz. [buildPartnerMessage]); istemci Özet'i açar.
+export function briefVerisi(
+  bugun: string,
+  variant: 'mover' | 'partner',
+  ticker?: string,
+): Record<string, string> {
+  const d: Record<string, string> = {
+    type: 'daily_brief',
+    sent_on: bugun,
+    variant,
+  };
+  if (variant === 'mover' && ticker && ticker.trim().length > 0) {
+    d.ticker = ticker.trim();
+  }
+  return d;
 }
 
 /// Ortak hareketi mesajı.
@@ -309,8 +370,7 @@ Deno.serve(async (request) => {
     const histories = await loadPriceHistories(admin, semboller);
 
     // ── 5) Kullanıcı başına en çok hareket eden hisse ───────────────────────
-    type Aday = { label: string; changePct: number };
-    const kullaniciAdaylari = new Map<string, { en: Aday; toplam: number }>();
+    const kullaniciSatirlari = new Map<string, BriefAdayi[]>();
 
     for (const a of assets) {
       if (zatenGonderildi.has(a.user_id)) continue;
@@ -322,18 +382,17 @@ Deno.serve(async (request) => {
       if (degisim === null) continue;
 
       const label = shortLabel(a.name, a.ticker ?? '');
-      const mevcut = kullaniciAdaylari.get(a.user_id);
-      if (!mevcut) {
-        kullaniciAdaylari.set(a.user_id, {
-          en: { label, changePct: degisim },
-          toplam: 1,
-        });
-        continue;
-      }
-      mevcut.toplam += 1;
-      if (Math.abs(degisim) > Math.abs(mevcut.en.changePct)) {
-        mevcut.en = { label, changePct: degisim };
-      }
+      const satir: BriefAdayi = { label, sembol, changePct: degisim };
+      const liste = kullaniciSatirlari.get(a.user_id);
+      if (liste) liste.push(satir); else kullaniciSatirlari.set(a.user_id, [satir]);
+    }
+    const kullaniciAdaylari = new Map<
+      string,
+      { en: BriefAdayi; digerHareketli: number }
+    >();
+    for (const [uid, satirlar] of kullaniciSatirlari) {
+      const secim = briefAdayiSec(satirlar, minMovePct);
+      if (secim) kullaniciAdaylari.set(uid, secim);
     }
 
     // ── 5b) Ortak hareketi ──────────────────────────────────────────────────
@@ -460,9 +519,10 @@ Deno.serve(async (request) => {
         : buildBriefMessage(
           aday!.en.label,
           aday!.en.changePct,
-          Math.max(0, aday!.toplam - 1),
+          aday!.digerHareketli,
         );
       if (ortak) partnerSayisi += 1;
+      const veri = briefVerisi(bugun, variant, ortak ? undefined : aday!.en.sembol);
 
       if (dryRun) {
         sent += 1;
@@ -477,7 +537,7 @@ Deno.serve(async (request) => {
           type: 'daily_brief',
           title: mesaj.title,
           body: mesaj.body,
-          data: { sent_on: bugun, variant },
+          data: veri,
         }),
         cankaydi,
       );
@@ -490,7 +550,7 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
-        data: { type: 'daily_brief', sent_on: bugun, variant },
+        data: veri,
       });
 
       if (r.ok) {

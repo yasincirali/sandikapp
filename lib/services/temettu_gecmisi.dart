@@ -291,10 +291,16 @@ abstract final class TemettuGecmisi {
   /// Diyaloğa önerilecek tutar.
   ///
   /// [stopaj] 0..1 aralığındaysa NET (`brüt × (1 − stopaj)`), değilse
-  /// (`null` = bilinmiyor) BRÜT — oran uydurulmaz; kullanıcı düzeltir.
-  static ({double tutar, bool net}) oneriTutari(double brut, double? stopaj) {
+  /// (`null` = bilinmiyor) tutar YOK (`null`) — oran uydurulmaz.
+  ///
+  /// Eskiden bilinmeyen oranda BRÜT dönüyordu ve diyalog "ele geçen NET
+  /// tutar" alanını brütle ön dolduruyordu: tek dokunuş "Kaydet" brütü net
+  /// diye yazıyordu (emülatör testi #12, 2026-09-29) — uydurma sayının
+  /// kılık değiştirmiş hâli. Bilinmiyorsa alan boş açılır, brüt yalnız
+  /// yardımcı metinde durur; neti kullanıcı yazar.
+  static ({double? tutar, bool net}) oneriTutari(double brut, double? stopaj) {
     if (stopaj == null || !stopaj.isFinite || stopaj < 0 || stopaj >= 1) {
-      return (tutar: brut, net: false);
+      return (tutar: null, net: false);
     }
     return (tutar: brut * (1 - stopaj), net: true);
   }

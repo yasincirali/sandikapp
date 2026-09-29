@@ -220,7 +220,7 @@ temettü.**
 - **Tekrarı önleme tablosu** `temettu_bildirimleri(user_id, ticker, hak_tarihi,
   primary key (user_id, ticker, hak_tarihi))`: RLS ile kişi yalnızca kendi
   satırını okur; yazma yalnızca servis rolüyle.
-- Push → derin bağlantı → mevcut temettü diyaloğu, **brüt tutar ön dolu**.
+- Push → derin bağlantı → mevcut temettü diyaloğu; stopaj biliniyorsa **net öneri ön dolu**, bilinmiyorsa alan boş + brüt yardımcı metinde (emülatör testi #12, 2026-09-29).
   Stopaj oranı sabit kodlanmaz: Remote Config `temettu_stopaj_orani` gelir,
   kullanıcı onaylar ve düzeltebilir (uydurma sayı yasağı).
 - **Uygulama içi "Son 12 ay temettü gelirin":** Kaydedilmiş temettülerin

@@ -1615,7 +1615,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   TechnicalSignalPanel.forAsset(widget.asset,
                       key: _sinyalPaneliKey, detayli: true),
                   // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
-                  // taşır (varlık sayfasıyla aynı).
+                  // taşır (varlık sayfasıyla aynı). Sayfadaki TEK ibare
+                  // budur — panel kendi içinde basmaz (#20: üç kez
+                  // tekrarlanıyordu).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
                 ],

@@ -13,8 +13,10 @@ import 'package:portfoy_takip/widgets/temettu_gecmisi_karti.dart';
 ///
 /// Kart: bayrak kapalıyken / hisse değilken / olay yokken TEK PİKSEL yer
 /// kaplamaz; dar ekranda (320pt) ve büyük metinde taşmaz. Diyalog: stopaj
-/// bilinmiyorsa BRÜT + "net tutarı gir", biliniyorsa NET + "stopaj %x
-/// varsayıldı"; tarih hak tarihi.
+/// bilinmiyorsa alan BOŞ + "Brüt ₺x — stopaj sonrası eline geçeni yaz"
+/// (emülatör testi #12: brütle ön dolu "net" alanı tek dokunuşla brütü net
+/// diye kaydediyordu), biliniyorsa NET + "stopaj %x varsayıldı"; tarih hak
+/// tarihi.
 
 Asset _satir({
   required String id,
@@ -193,7 +195,8 @@ void main() {
       });
     }
 
-    testWidgets('"Kaydet" ön dolu diyaloğu açar (brüt, hak tarihi)', (t) async {
+    testWidgets('"Kaydet" öneri diyaloğunu açar (boş net alan, hak tarihi)',
+        (t) async {
       await _pump(
         t,
         TemettuGecmisiKarti(
@@ -207,8 +210,10 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byType(AlertDialog), findsOneWidget);
       final alan = t.widget<TextField>(find.byType(TextField));
-      // Remote Config testte varsayılan: stopaj -1 → bilinmiyor → BRÜT.
-      expect(alan.controller!.text, '344,2');
+      // Remote Config testte varsayılan: stopaj -1 → bilinmiyor → alan BOŞ,
+      // brüt yalnız yardımcı metinde.
+      expect(alan.controller!.text, isEmpty);
+      expect(find.textContaining('Brüt ₺344,20'), findsOneWidget);
       expect(find.textContaining('Ödeme tarihi: ${_g(_yakin, '/')}'),
           findsOneWidget);
     });
@@ -242,17 +247,30 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('stopaj BİLİNMİYOR → brüt + "net tutarı gir"', (t) async {
+    testWidgets('stopaj BİLİNMİYOR → alan BOŞ, brüt yardımcı metinde', (t) async {
       await ac(t, o: oneri);
       final alan = t.widget<TextField>(find.byType(TextField));
-      expect(alan.controller!.text, '344,2');
-      expect(find.textContaining('Stopaj oranı bilinmiyor'), findsOneWidget);
+      // #12: "ele geçen NET" alanına brüt yazılmaz — tek dokunuş yanlış kayıt.
+      expect(alan.controller!.text, isEmpty);
+      expect(
+          find.text('Brüt ₺344,20 — stopaj sonrası eline geçeni yaz.'),
+          findsOneWidget);
       expect(find.textContaining('varsayıldı'), findsNothing);
       expect(find.textContaining('THYAO · hak tarihi 16/06/2025'),
           findsOneWidget);
       expect(find.textContaining('100 lot × ₺3,442 = ₺344,20 brüt'),
           findsOneWidget);
       expect(find.textContaining('16/06/2025'), findsNWidgets(2));
+    });
+
+    testWidgets('stopaj BİLİNMİYOR → dokunmadan "Kaydet" kayıt YAZMAZ',
+        (t) async {
+      await ac(t, o: oneri);
+      await t.tap(find.widgetWithText(FilledButton, 'Kaydet'));
+      await t.pump();
+      // Boş alan → geçerli tutar iste; diyalog açık kalır, addDividend yok.
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Geçerli bir tutar gir'), findsOneWidget);
     });
 
     testWidgets('stopaj %15 → net 292,57 + "stopaj %15 varsayıldı"', (t) async {

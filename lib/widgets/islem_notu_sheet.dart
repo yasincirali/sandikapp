@@ -17,6 +17,7 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/islem_notu.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -55,14 +56,50 @@ Future<void> showIslemNotuSheet(
   final yeni = sonuc.trim();
   if (yeni == (not ?? '')) return;
   final l10n = context.l10n;
+  // Notifier ŞİMDİ alınır: "Geri al" snackbar'ı çağıran ekran kapandıktan
+  // sonra da dokunulabilir; o an `ref` ölmüş olabilir.
+  final notifier = ref.read(portfolioProvider.notifier);
   try {
-    await ref.read(portfolioProvider.notifier).updateNotes(asset, yeni);
+    await notifier.updateNotes(asset, yeni);
     if (!context.mounted) return;
-    sandikSnack(context, yeni.isEmpty ? l10n.noteRemoved : l10n.noteSaved,
-        kind: SandikSnackKind.success);
+    // Silme onaysızdı ve geri alınamıyordu (emülatör testi #25, 2026-09-29).
+    // Onay diyaloğu yerine "Geri al": silme nadiren yanlışlıkla olur, her
+    // silmede ek dokunuş istemek hafif olanı ağırlaştırırdı. Alanı boşaltıp
+    // "Kaydet"e basmak da silmedir — aynı geri alma onu da kapsar.
+    final eski = not;
+    sandikSnack(
+      context,
+      yeni.isEmpty ? l10n.noteRemoved : l10n.noteSaved,
+      kind: SandikSnackKind.success,
+      onUndo: yeni.isEmpty && eski != null && eski.isNotEmpty
+          ? () => CrashReporter.arkaPlan(
+              _notuGeriYaz(context, notifier, asset, eski,
+                  hataOnEki: l10n.noteSaveFailed),
+              reason: 'islemNotu.geriAl')
+          : null,
+    );
   } catch (e) {
     if (!context.mounted) return;
     sandikSnackError(context, e, prefix: l10n.noteSaveFailed);
+  }
+}
+
+/// Silinen notu geri yazar. Hata kullanıcıya söylenir (sessiz "geri alındı"
+/// sanısı, notu ikinci kez kaybettirirdi).
+Future<void> _notuGeriYaz(
+  BuildContext context,
+  PortfolioNotifier notifier,
+  Asset asset,
+  String not, {
+  required String hataOnEki,
+}) async {
+  // `hataOnEki` önceden çözülür: dokunuş anında çağıran ekran kapanmış
+  // olabilir, ölü context'ten l10n okunamaz.
+  try {
+    await notifier.updateNotes(asset, not);
+  } catch (e) {
+    if (!context.mounted) return;
+    sandikSnackError(context, e, prefix: hataOnEki);
   }
 }
 

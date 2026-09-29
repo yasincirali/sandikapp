@@ -15,7 +15,7 @@ import 'helpers/kaynak.dart';
 /// Kilitlenenler: (1) Yahoo olayı → öneri, geçersiz tutar öneri doğurmaz;
 /// (2) hak tarihinde lot — o gün alan almaz, o gün satan alır, temettü
 /// miktara girmez, başka sahip/sembol karışmaz; (3) kayıt eşleme bire bir;
-/// (4) stopaj bilinmiyorsa öneri BRÜT (uydurma oran yok).
+/// (4) stopaj bilinmiyorsa öneri tutarı YOK: alan boş, brüt yalnız dayanak (#12).
 
 Asset _satir({
   required String id,
@@ -288,9 +288,9 @@ void main() {
   });
 
   group('öneri tutarı', () {
-    test('stopaj bilinmiyorsa BRÜT (uydurma oran yok)', () {
+    test('stopaj bilinmiyorsa tutar YOK (brüt "net" diye önerilmez, #12)', () {
       final t = TemettuGecmisi.oneriTutari(344.2, null);
-      expect(t.tutar, 344.2);
+      expect(t.tutar, isNull);
       expect(t.net, isFalse);
     });
 
@@ -300,8 +300,9 @@ void main() {
       expect(t.net, isTrue);
     });
 
-    test('geçersiz oran brüte düşer', () {
+    test('geçersiz oran → öneri tutarı yok', () {
       expect(TemettuGecmisi.oneriTutari(100, 1.5).net, isFalse);
+      expect(TemettuGecmisi.oneriTutari(100, 1.5).tutar, isNull);
       expect(TemettuGecmisi.oneriTutari(100, -0.1).net, isFalse);
       expect(TemettuGecmisi.oneriTutari(100, double.nan).net, isFalse);
     });

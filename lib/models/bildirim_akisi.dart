@@ -72,6 +72,30 @@ class GenelOgesi extends BildirimOgesi {
   String get kimlik => bildirim.id;
 }
 
+/// Rozetteki "yeni" sayısı: çan sayfası en son açıldıktan ([sonGorulen])
+/// SONRA gelen ve temizlenmemiş kayıtlar. [sonGorulen] null → sayfa hiç
+/// açılmadı, aktiflerin hepsi yeni.
+///
+/// Eskiden rozet aktif sayısıydı; sayfa açılıp okunduktan sonra da "1 yeni
+/// bildirim" kalıyordu (emülatör testi #26, 2026-09-29).
+int yeniBildirimSayisi(Iterable<BildirimOgesi> akis, DateTime? sonGorulen) =>
+    akis
+        .where((e) =>
+            !e.dismissEdilmis &&
+            (sonGorulen == null || e.zaman.isAfter(sonGorulen)))
+        .length;
+
+/// Çan sayfası açılınca yazılacak "görüldü" damgası: [simdi] ya da akıştaki
+/// en yeni kaydın zamanı, hangisi İLERİDEYSE. Sunucu saati cihazdan ileride
+/// olabilir; yalnız `simdi` yazılsaydı az önce görülen kayıt "yeni" kalırdı.
+DateTime gorulduDamgasi(Iterable<BildirimOgesi> akis, DateTime simdi) {
+  var d = simdi;
+  for (final e in akis) {
+    if (e.zaman.isAfter(d)) d = e.zaman;
+  }
+  return d;
+}
+
 /// İki bildirim türünü TEK zaman akışında birleştirir — en yeni önce.
 ///
 /// Saf fonksiyon: provider'a, context'e, servise dokunmaz. Sıralama kuralı

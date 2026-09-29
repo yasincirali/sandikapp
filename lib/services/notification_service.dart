@@ -491,10 +491,17 @@ class NotificationService {
       }
     }
 
-    // Brifingin varış yeri ana ekrandır — uygulamanın açılması yeterli,
-    // ayrıca bir yere yönlendirilmez. Bildirim tek bir varlığa değil
-    // portföyün geneline dair.
-    if (type == dailyBriefType) return;
+    // Brifing → [openDailyBrief] (çan sayfasıyla AYNI fonksiyon).
+    //
+    // ÖNCEKİ KARAR ve neden değişti (emülatör testi #16, 2026-09-29):
+    // "brifingin varış yeri ana ekrandır, bildirim portföyün geneline dair"
+    // deniyordu; oysa hisse brifingi TEK bir hisseyi anlatır ("ARDYZ son
+    // kapanışta %5,8 yükseldi") ve ana ekranda o hisse yoktu. Üstelik çan
+    // aynı bildirimi Özet'e götürüyordu: iki yol, iki davranış.
+    if (type == dailyBriefType) {
+      openDailyBrief(data);
+      return;
+    }
 
     // Haftalık/aylık özet → Performans › Özet: bildirimin anlattığı rakam
     // orada. Aylıkta 1A dönemi. Çan sayfasındaki dokunuşla aynı hedef
@@ -601,6 +608,27 @@ class NotificationService {
   /// Çan sayfasındaki ortaklık bildirimine dokunuş — push'a dokunulmuş
   /// gibi aynı davet akışı (0066).
   void openPartnerInvite(String inviteId) => _openPartnerInvite(inviteId);
+
+  /// Günlük brifingin varış yeri — push ve çan AYNI fonksiyonu çağırır.
+  ///
+  /// Hisse brifingi (`variant: 'mover'`, sunucu `ticker` ekler — bkz.
+  /// `daily-brief/index.ts` `briefVerisi`) → anlatılan hissenin ekranı,
+  /// GÜNLÜK'te (bildirim son kapanıştaki GÜNLÜK hareketi anlatır). Eşleme
+  /// fiyat alarmıyla aynı yoldan ([openPriceAlertAsset]): brifing yalnız
+  /// BIST hissesini anlatır, hissede alarm sembolü ticker'ın kendisidir.
+  /// Hisse o arada satıldıysa hata ekranı değil Özet açılır — bildirim
+  /// portföy hakkında konuşuyordu, boş ekran yanıltıcı olur.
+  ///
+  /// Ortak brifingi, ticker'sız eski kayıtlar (çan geçmişi) ve bilinmeyen
+  /// varyant → Performans › Özet.
+  void openDailyBrief(Map<String, dynamic> data) {
+    final ticker = data['ticker']?.toString().trim() ?? '';
+    if (data['variant']?.toString() == 'mover' && ticker.isNotEmpty) {
+      openPriceAlertAsset(ticker, onNotFound: () => _openOzet());
+      return;
+    }
+    _openOzet();
+  }
 
   /// Dönem özeti push'undan Performans › Özet'e.
   ///

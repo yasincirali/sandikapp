@@ -427,6 +427,7 @@
   "noteRemove": "Notu sil",
   "noteNone": "Bu işleme not yazılmamış.",
   "noteAddHint": "Neden aldın, hedefin ne? Kısa bir not yaz.",
+  "alertTargetAtCurrent": "Hedef güncel fiyata eşit, alarm hemen çalışır. Biraz üstünü ya da altını yaz.",
   "notifTypeDividend": "Temettü",
   "dividendHistoryUpper": "SON 12 AY TEMETTÜ",
   "dividendRecordedTotal": "Kaydettiğin: {amount}",
@@ -492,7 +493,14 @@
       }
     }
   },
-  "dividendEnterNet": "Stopaj oranı bilinmiyor: tutar brüt, ele geçen net tutarı gir.",
+  "dividendEnterNet": "Brüt {gross} — stopaj sonrası eline geçeni yaz.",
+  "@dividendEnterNet": {
+    "placeholders": {
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
   "noteReadOnlyPartner": "Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.",
   "noteReadOnlyDeleted": "Silinmiş kaydın notu düzenlenemez.",
   "notesSection": "Notlar",

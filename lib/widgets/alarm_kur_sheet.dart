@@ -43,6 +43,19 @@ String? alarmSembolu(String ticker, String? subCategory) {
   return t.isEmpty ? null : t;
 }
 
+/// Hedef, kullanıcının GÖRDÜĞÜ güncel fiyata eşit mi.
+///
+/// Yön güncel fiyattan türetildiği için "yönüne göre zaten geçmiş" hedef
+/// kurulamaz; kalan tek boş alarm EŞİT hedeftir: sunucu `price >= target`
+/// ile tetikler (`check-price-alerts` `isTriggered`), yani alarm ilk
+/// kontrolde, fiyat hiç kıpırdamadan çalışır (emülatör testi #24,
+/// 2026-09-29: TUPRS 383,25'e 383,25 hedef kabul edildi). Karşılaştırma
+/// ekrandaki hassasiyette ([fmtTRYFiyat]) yapılır: kullanıcının "aynı"
+/// gördüğü iki sayı aynı sayılır, ham çiftin son hanesi değil. Fiyat
+/// bilinmiyorsa (0) karar verilemez → `false`.
+bool alarmHedefiGuncelFiyatta(double hedef, double guncelFiyat) =>
+    guncelFiyat > 0 && fmtTRYFiyat(hedef) == fmtTRYFiyat(guncelFiyat);
+
 /// Alarm kurma akışı — limit denetimi, sheet, sunucuya yazma, geri bildirim.
 ///
 /// 2026-09-14: bu akış yalnızca Fiyat Alarmları ekranındaydı; alarm artık
@@ -163,6 +176,12 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       setState(() => _hata = context.l10n.enterValidPrice);
       return;
     }
+    // Girdi kuralı istemcide, basmadan ÖNCE de görünür (aşağıdaki uyarı
+    // satırı); burada yalnız kaydı durdurur.
+    if (alarmHedefiGuncelFiyatta(hedef, _secili.guncelFiyat)) {
+      setState(() => _hata = context.l10n.alertTargetAtCurrent);
+      return;
+    }
     // Yön otomatik: güncel fiyatın üstündeki hedef "yükselince", altındaki
     // "düşünce" demektir. Kullanıcıya ayrıca sormak, yanlış seçimde alarmın
     // hiç çalışmaması ve sebebinin anlaşılmaması riskini getirirdi.
@@ -182,6 +201,8 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
         : PriceAlert.suggestDirection(
             currentPrice: _secili.guncelFiyat, targetPrice: hedef);
     final fiyatVar = _secili.guncelFiyat > 0;
+    final esit =
+        hedef != null && alarmHedefiGuncelFiyatta(hedef, _secili.guncelFiyat);
 
     return Padding(
       padding:
@@ -286,7 +307,14 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
               ),
             ],
             const SizedBox(height: SandikSpace.smd),
-            if (yon != null)
+            // Eşit hedef: "çıkınca haber vereceğiz" demek yalan olurdu —
+            // alarm hemen çalışır. Yön cümlesinin yerine uyarı (#24).
+            if (esit && _hata == null)
+              Text(
+                context.l10n.alertTargetAtCurrent,
+                style: context.t.bodyMedium?.copyWith(color: c.danger),
+              )
+            else if (yon != null && !esit)
               Text(
                 yon == 'above'
                     ? context.l10n.notifyWhenAbove
