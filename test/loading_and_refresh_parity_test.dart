@@ -79,8 +79,22 @@ void main() {
     ];
     for (final p in dataScreens) {
       final src = ekranKaynagiSync(p);
-      expect(src.contains('RefreshIndicator('), isTrue,
+      expect(src.contains('RefreshIndicator.adaptive('), isTrue,
           reason: '$p: aşağı çekince yenileme yok');
     }
+  });
+
+  // UX denetimi (2026-09-29): iOS ağırlıklı, Cupertino iskeletli uygulamada
+  // yenileme göstergesi Android'in yuvarlak "damla"sıydı. `.adaptive` iOS'ta
+  // yerel etkinlik göstergesini çizer; düz `RefreshIndicator(` yazılmaz.
+  test("pull-to-refresh uyarlanabilir (iOS'ta yerel gösterge)", () {
+    final hits = <String>[];
+    for (final f in Directory('lib').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final src = ekranKaynagiSync(f.path);
+      if (RegExp(r'\bRefreshIndicator\(').hasMatch(src)) hits.add(f.path);
+    }
+    expect(hits, isEmpty,
+        reason: 'düz RefreshIndicator( — .adaptive kullan: ${hits.join(', ')}');
   });
 }

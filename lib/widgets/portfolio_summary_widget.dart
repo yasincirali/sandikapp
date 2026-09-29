@@ -5,6 +5,7 @@ import '../utils/money_format.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
+import 'degisim_vurgusu.dart';
 
 class PortfolioSummaryWidget extends StatelessWidget {
   final PortfolioState state;
@@ -17,12 +18,17 @@ class PortfolioSummaryWidget extends StatelessWidget {
   /// Başlık satırının sağı — görünüm çipi (Ben/ortak/Birlikte). Yoksa boş.
   final Widget? trailing;
 
+  /// Toplamın kime ait olduğu (Ben / ortak / Birlikte). Değişince toplam
+  /// değer vurgusu YAKILMAZ — görünüm değişimi fiyat hareketi değildir.
+  final Object? vurguKimligi;
+
   const PortfolioSummaryWidget({
     super.key,
     required this.state,
     this.hideBalance = false,
     this.baz = const BazPara.lira(),
     this.trailing,
+    this.vurguKimligi,
   });
 
   @override
@@ -130,13 +136,22 @@ class PortfolioSummaryWidget extends StatelessWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      hideBalance ? '••••••' : tryFmt.format(state.totalValue),
-                      style: context.t.numLarge.copyWith(
-                        fontSize: heroFontSize,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.5,
-                        color: context.c.gold,
+                    // Fiyat turu toplamı değiştirince kısa renk vurgusu
+                    // (`DegisimVurgusu`, 2026-09-29). Karşılaştırma TRY
+                    // toplamı üzerinden: gösterim birimi değişimi yakmaz.
+                    child: DegisimVurgusu(
+                      deger: state.totalValue,
+                      renk: context.c.gold,
+                      kimlik: vurguKimligi,
+                      etkin: !hideBalance,
+                      builder: (context, renk) => Text(
+                        hideBalance ? '••••••' : tryFmt.format(state.totalValue),
+                        style: context.t.numLarge.copyWith(
+                          fontSize: heroFontSize,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
+                          color: renk,
+                        ),
                       ),
                     ),
                   ),

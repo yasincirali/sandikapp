@@ -115,29 +115,60 @@ void main() {
     expect(find.text('Sen'), findsOneWidget);
   });
 
-  testWidgets('ışık halkası seçilen işarete kayar', (tester) async {
-    await pump(tester, secili: '1');
-    Offset hale() =>
-        tester.getCenter(find.byKey(const ValueKey('zirve-imlec')));
-    Offset nokta(String k) =>
-        tester.getCenter(find.byKey(ValueKey('zirve-dokun-$k')));
-    expect((hale() - nokta('1')).distance, lessThan(1));
-    await tester.pumpWidget(
-      MaterialApp(
+  // Hareket denetimi (2026-09-29): seçim bir dokunuş yanıtı — halka yeni
+  // işarette DOĞAR, cetvel boyunca 560 ms kaymaz (eski test "yolda" olmasını
+  // istiyordu). Dönem değişince ise işaretiyle BİRLİKTE süzülür.
+  Widget cetvel(List<ZirveIsaret> liste, String secili) => MaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
           body: Padding(
             padding: const EdgeInsets.all(16),
-            child: ZirveCetveli(
-                isaretler: isaretler, secili: 'sen', onSec: (_) {}),
+            child: ZirveCetveli(isaretler: liste, secili: secili, onSec: (_) {}),
           ),
         ),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 100));
-    // Yolda: ne eski ne yeni yerde.
-    expect((hale() - nokta('sen')).distance, greaterThan(5));
+      );
+  Offset hale(WidgetTester t) =>
+      t.getCenter(find.byKey(const ValueKey('zirve-imlec')));
+  Offset nokta(WidgetTester t, String k) =>
+      t.getCenter(find.byKey(ValueKey('zirve-dokun-$k')));
+
+  testWidgets('seçim değişince halka yeni işarette doğar (kaymaz)',
+      (tester) async {
+    await pump(tester, secili: '1');
+    expect((hale(tester) - nokta(tester, '1')).distance, lessThan(1));
+    await tester.pumpWidget(cetvel(isaretler, 'sen'));
+    await tester.pump(const Duration(milliseconds: 16));
+    // İlk karede bile yeni işaretin üstünde — yolda değil.
+    expect((hale(tester) - nokta(tester, 'sen')).distance, lessThan(1));
     await tester.pumpAndSettle();
-    expect((hale() - nokta('sen')).distance, lessThan(1));
+    expect((hale(tester) - nokta(tester, 'sen')).distance, lessThan(1));
+  });
+
+  testWidgets('seçim 300 ms içinde oturur (dokunuş yanıtı)', (tester) async {
+    await pump(tester, secili: '1');
+    await tester.pumpWidget(cetvel(isaretler, 'sen'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.hasRunningAnimations, isFalse,
+        reason: "seçim hareketi 300 ms'yi aşıyor");
+  });
+
+  testWidgets('dönem değişince halka işaretle birlikte süzülür',
+      (tester) async {
+    await tester.pumpWidget(cetvel(isaretler, '1'));
+    await tester.pumpAndSettle();
+    final eski = nokta(tester, '1');
+    final yeni = [
+      for (final i in isaretler)
+        i.anahtar == '1'
+            ? const ZirveIsaret(anahtar: '1', etiket: '1.', roi: -1, sira: 1)
+            : i,
+    ];
+    await tester.pumpWidget(cetvel(yeni, '1'));
+    await tester.pump(const Duration(milliseconds: 150));
+    // Yolda: işaret de halka da yer değiştiriyor ve BİRLİKTE.
+    expect((nokta(tester, '1') - eski).distance, greaterThan(5));
+    expect((hale(tester) - nokta(tester, '1')).distance, lessThan(1));
+    await tester.pumpAndSettle();
+    expect((hale(tester) - nokta(tester, '1')).distance, lessThan(1));
   });
 }

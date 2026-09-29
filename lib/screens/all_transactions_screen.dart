@@ -130,8 +130,78 @@ DateTime _islemTarihi(Asset a) => a.addedDate;
     }
   }
   aktif.sort((a, b) => b.addedDate.compareTo(a.addedDate));
-  silinen.sort((a, b) => silinmeAni(b).compareTo(silinmeAni(a)));
-  return (aktif: aktif, silinen: silinen);
+  final birlesik = eskiMezarTaslariniBirlestir(silinen)
+    ..sort((a, b) => silinmeAni(b).compareTo(silinmeAni(a)));
+  return (aktif: aktif, silinen: birlesik);
+}
+
+/// ESKİ tip mezar taşlarını tek satırda toplar.
+///
+/// ## Neden (kullanıcı bildirimi 2026-09-29: "silinenler doğru şekilde
+/// gözükmeli")
+/// Yumuşak silmeden (`deleted_at`) ve pozisyon başına tek mezar taşından
+/// ÖNCE, pozisyon silmek her lot için AYRI bir `deleteLog` yazıyordu
+/// (`deletedCount` 0) ve lot'ları fiziksel siliyordu. Canlı defterde bir
+/// silme işlemi böylece 17 ayrı "Silindi" satırı olarak duruyor (ölçüldü:
+/// AVOD, 2026-08-10, aynı dakikada 17 taş). Liste bunları alt alta
+/// basınca silinenler tekrarlı ve okunmaz görünüyordu.
+///
+/// Aynı sahip + aynı varlık + aynı DAKİKADA yazılmış eski taşlar tek bir
+/// işlemdir: miktarlar toplanır, tutar korunur (Σ miktar × fiyat),
+/// `deletedCount` taş sayısı olur → satır "Silindi · 17 kayıt" der.
+/// Yeni tip taşlara (`deletedCount > 0`) ve tek kalan eski taşa dokunulmaz.
+/// Veri değişmez; yalnızca gösterim.
+List<Asset> eskiMezarTaslariniBirlestir(List<Asset> silinen) {
+  final gruplar = <String, List<Asset>>{};
+  final out = <Asset>[];
+  for (final a in silinen) {
+    if (!a.isDeleteLog || a.deletedCount > 0) {
+      out.add(a);
+      continue;
+    }
+    final t = a.addedDate.toUtc();
+    final anahtar = [
+      a.userId,
+      a.type.name,
+      a.ticker,
+      a.subCategory ?? '',
+      a.unitType,
+      t.year, t.month, t.day, t.hour, t.minute,
+    ].join('|');
+    gruplar.putIfAbsent(anahtar, () => []).add(a);
+  }
+  for (final g in gruplar.values) {
+    if (g.length == 1) {
+      out.add(g.single);
+      continue;
+    }
+    final miktar = g.fold<double>(0, (t, a) => t + a.quantity);
+    final tutar = g.fold<double>(0, (t, a) => t + a.quantity * a.purchasePrice);
+    final r = g.first;
+    out.add(Asset(
+      id: 'mezar-grup:${r.id}',
+      userId: r.userId,
+      name: r.name,
+      ticker: r.ticker,
+      type: r.type,
+      quantity: miktar,
+      purchasePrice: miktar > 0 ? tutar / miktar : r.purchasePrice,
+      currency: r.currency,
+      notes: '',
+      subCategory: r.subCategory,
+      unitType: r.unitType,
+      purchaseFxRate: r.purchaseFxRate,
+      currentPrice: r.currentPrice,
+      lastUpdated: r.lastUpdated,
+      addedDate: g
+          .map((a) => a.addedDate)
+          .reduce((x, y) => x.isAfter(y) ? x : y),
+      isManualPrice: r.isManualPrice,
+      kind: AssetKind.deleteLog,
+      deletedCount: g.length,
+    ));
+  }
+  return out;
 }
 
 /// Silinen kaydın silinme anı: damga, yoksa (mezar taşı) kaydın kendisi.
@@ -429,13 +499,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
               child: Row(
                 children: [
                   _filtreCipi(),
-                  // Silinmiş kayıt yoksa çip de yok — boş bir filtre
-                  // sunmanın anlamı yok. Açıkken, eşleşme kalmasa bile durur
-                  // ki kullanıcı kapatabilsin.
-                  if (silinenSayisi > 0 || _silinenler) ...[
-                    const SizedBox(width: SandikSpace.sm),
-                    _silinenCipi(silinenSayisi),
-                  ],
                   if (_range != _DateRange.all) ...[
                     const SizedBox(width: SandikSpace.sm),
                     _EtkinCip(
@@ -459,6 +522,19 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       }),
                     ),
                   ],
+                  // "Silinenler" HER ZAMAN durur (kullanıcı bildirimi
+                  // 2026-09-29: "silinenler filtresi silinmiş gibi"). Eskiden
+                  // silinmiş kayıt yokken gizleniyordu: filtre bir hesapta var,
+                  // ötekinde yok görünüyor, özellik kaybolmuş sanılıyordu.
+                  // Kayıt yoksa sayı yazılmaz; açınca boş durum anlatır.
+                  //
+                  // Yeri satırın SONU: etkin dönem/tür çipleri [Filtrele]'nin
+                  // parçası, onun yanında kalır. Filtre yokken bu çip zaten
+                  // [Filtrele]'nin hemen yanına düşer (istenen yer); filtre
+                  // varken araya girip etkin çipleri kaydırmanın arkasına
+                  // itmez (ölçüldü: 390pt'de "Son 7 gün" görünmez oluyordu).
+                  const SizedBox(width: SandikSpace.sm),
+                  _silinenCipi(silinenSayisi),
                 ],
               ),
             ),
@@ -512,7 +588,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           Expanded(
             child: toplam == 0
                 ? _empty()
-                : RefreshIndicator(
+                : RefreshIndicator.adaptive(
                     color: context.c.amberText,
                     onRefresh: () => ref
                         .read(portfolioProvider.notifier)
@@ -622,7 +698,9 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   /// eşleşen silinmiş kayıt sayısıdır.
   Widget _silinenCipi(int sayi) {
     final secili = _silinenler;
-    final etiket = '${context.l10n.deletedFilter} · $sayi';
+    final etiket = sayi > 0
+        ? '${context.l10n.deletedFilter} · $sayi'
+        : context.l10n.deletedFilter;
     return Semantics(
       selected: secili,
       child: SandikTappable(
@@ -633,7 +711,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
         }),
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
-          curve: Curves.easeOut,
+          curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(
               horizontal: SandikSpace.md, vertical: SandikSpace.sm),
           decoration:
@@ -659,7 +737,37 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
     );
   }
 
-  Widget _empty() => Center(
+  Widget _empty() {
+    // Silinenler açık ve başka filtre yok: "eşleşme yok / aralığı genişlet"
+    // yanlış yönlendirir — filtre değil, silinmiş kayıt yok.
+    if (_silinenler && _sayfaFiltreSayisi == 0 && _query.trim().isEmpty) {
+      return _bosDurum(Icons.delete_outline_rounded,
+          context.l10n.deletedEmptyTitle, context.l10n.deletedEmptyBody);
+    }
+    return _emptyGenel();
+  }
+
+  Widget _bosDurum(IconData ikon, String baslik, String govde) => Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(ikon, size: 52, color: context.c.text36),
+              const SizedBox(height: SandikSpace.smd),
+              Text(baslik,
+                  textAlign: TextAlign.center,
+                  style: context.t.titleMedium?.copyWith(color: context.c.text58)),
+              const SizedBox(height: SandikSpace.sm),
+              Text(govde,
+                  textAlign: TextAlign.center,
+                  style: context.t.bodySmall?.copyWith(color: context.c.text36)),
+            ],
+          ),
+        ),
+      );
+
+  Widget _emptyGenel() => Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -982,15 +1090,14 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                     borderRadius: BorderRadius.circular(SandikRadius.md)),
                 elevation: 0,
               ),
-              child: AnimatedSwitcher(
-                duration: SandikMotion.stateOf(context),
-                switchInCurve: SandikMotion.enter,
-                child: Text(
-                  n == 0 ? l.filterNoMatch : l.filterShowN(n),
-                  key: ValueKey(n),
-                  style: context.t.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
+              // Canlandırma YOK (hareket denetimi 2026-09-29): sayı her
+              // filtre dokunuşunda değişir; `AnimatedSwitcher` iki sayıyı
+              // aynı yerde üst üste soldurup bir an "12/13" karışık
+              // okutuyordu. Anında değişen sayı daha net.
+              child: Text(
+                n == 0 ? l.filterNoMatch : l.filterShowN(n),
+                style:
+                    context.t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
           ),

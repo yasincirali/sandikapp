@@ -58,6 +58,11 @@ enum TourTarget {
   /// bulamazsa adımı atlar.
   zirveKarti,
 
+  /// Ana ekran: "Portföy hareketleri" kabı. Satıra dokununca işlem notu
+  /// sayfası açılır (2026-09-29) — dokunulabilirliği satırda görünmediği
+  /// için tur anlatır. Portföy boşken kap çizilmez; adım `kosul` ile atlar.
+  hareketler,
+
   /// Ana ekran: "Bugün" kartı (günün hareketi, hedef, yaklaşan tarihler).
   /// Portföy boşken çizilmez; tur hedefi bulamazsa adımı atlar.
   bugunKarti,

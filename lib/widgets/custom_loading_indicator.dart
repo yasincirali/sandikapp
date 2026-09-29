@@ -46,6 +46,13 @@ class CustomLoadingIndicator extends StatelessWidget {
 
 /// Ortalanmış tam alan yükleme — `Center(child: CustomLoadingIndicator())`
 /// tekrarını kısaltır.
+///
+/// ## Ne zaman bu, ne zaman iskelet (UX denetimi 2026-09-29)
+/// Bir EYLEM sürerken (kaydet, gönder, giriş) bu gösterge. İÇERİK
+/// yüklenirken (liste, grafik, kart) `SandikSkeletonList` /
+/// `SandikSkeletonChart` / `SandikSkeleton`: içeriğin geleceği yer belli
+/// olur, yerleşim veri gelince zıplamaz; ortada dönen halka finans
+/// panosunda "bozuk" okunur.
 class CustomLoadingView extends StatelessWidget {
   const CustomLoadingView({
     super.key,

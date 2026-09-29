@@ -119,7 +119,7 @@ abstract class AppLocalizations {
   /// No description provided for @emailInvalid.
   ///
   /// In tr, this message translates to:
-  /// **'Geçerli e-posta girin'**
+  /// **'Geçerli bir e-posta gir'**
   String get emailInvalid;
 
   /// No description provided for @password.
@@ -173,7 +173,7 @@ abstract class AppLocalizations {
   /// No description provided for @noAccountRegister.
   ///
   /// In tr, this message translates to:
-  /// **'Hesabınız yok mu? Kayıt olun'**
+  /// **'Hesabın yok mu? Kayıt ol'**
   String get noAccountRegister;
 
   /// No description provided for @register.
@@ -203,7 +203,7 @@ abstract class AppLocalizations {
   /// No description provided for @fullNameRequired.
   ///
   /// In tr, this message translates to:
-  /// **'Ad soyad girin'**
+  /// **'Ad soyad gir'**
   String get fullNameRequired;
 
   /// No description provided for @passwordRepeat.
@@ -239,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @haveAccountSignIn.
   ///
   /// In tr, this message translates to:
-  /// **'Zaten hesabınız var mı? Giriş yapın'**
+  /// **'Zaten hesabın var mı? Giriş yap'**
   String get haveAccountSignIn;
 
   /// No description provided for @exitAppTitle.
@@ -359,7 +359,7 @@ abstract class AppLocalizations {
   /// No description provided for @disclaimerIntro.
   ///
   /// In tr, this message translates to:
-  /// **'Uygulamayı kullanmaya devam etmek için lütfen aşağıdaki yasal uyarıyı okuyun ve onaylayın.'**
+  /// **'Uygulamayı kullanmaya devam etmek için aşağıdaki yasal uyarıyı oku ve onayla.'**
   String get disclaimerIntro;
 
   /// No description provided for @disclaimerAcceptRow.
@@ -467,7 +467,7 @@ abstract class AppLocalizations {
   /// No description provided for @otpEnterFull.
   ///
   /// In tr, this message translates to:
-  /// **'Lütfen 6 haneli kodu tam olarak girin.'**
+  /// **'6 haneli kodun tamamını gir.'**
   String get otpEnterFull;
 
   /// No description provided for @otpSentTitle.
@@ -881,13 +881,13 @@ abstract class AppLocalizations {
   /// No description provided for @registerNameMissing.
   ///
   /// In tr, this message translates to:
-  /// **'Ad soyad girin.'**
+  /// **'Ad soyad gir.'**
   String get registerNameMissing;
 
   /// No description provided for @registerEmailInvalid.
   ///
   /// In tr, this message translates to:
-  /// **'Geçerli bir e-posta girin.'**
+  /// **'Geçerli bir e-posta gir.'**
   String get registerEmailInvalid;
 
   /// No description provided for @registerPasswordsMismatch.
@@ -1241,13 +1241,13 @@ abstract class AppLocalizations {
   /// No description provided for @tickerHintStock.
   ///
   /// In tr, this message translates to:
-  /// **'Örn: THYAO.IS, GARAN.IS  (Borsa İstanbul için .IS ekleyin)'**
+  /// **'Örn: THYAO.IS, GARAN.IS  (Borsa İstanbul için .IS ekle)'**
   String get tickerHintStock;
 
   /// No description provided for @tickerHintFund.
   ///
   /// In tr, this message translates to:
-  /// **'Yahoo Finance kodu yoksa boş bırakın, fiyatı manuel girin'**
+  /// **'Yahoo Finance kodu yoksa boş bırak, fiyatı elle gir'**
   String get tickerHintFund;
 
   /// No description provided for @tickerHintFx.
@@ -1361,7 +1361,7 @@ abstract class AppLocalizations {
   /// No description provided for @notesHint.
   ///
   /// In tr, this message translates to:
-  /// **'Notlarınız...'**
+  /// **'Notların...'**
   String get notesHint;
 
   /// No description provided for @txHasNote.
@@ -1412,6 +1412,12 @@ abstract class AppLocalizations {
   /// **'Bu işleme not yazılmamış.'**
   String get noteNone;
 
+  /// No description provided for @noteAddHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neden aldın, hedefin ne? Kısa bir not yaz.'**
+  String get noteAddHint;
+
   /// No description provided for @noteReadOnlyPartner.
   ///
   /// In tr, this message translates to:
@@ -1457,7 +1463,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickEntryHelp.
   ///
   /// In tr, this message translates to:
-  /// **'Her satıra bir varlık yazın. Fiyat opsiyonel — boş bırakırsanız güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet'**
+  /// **'Her satıra bir varlık yaz. Fiyat opsiyonel — boş bırakırsan güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet'**
   String get quickEntryHelp;
 
   /// No description provided for @quickEntryPlaceholder.
@@ -1499,7 +1505,7 @@ abstract class AppLocalizations {
   /// No description provided for @pleaseWait.
   ///
   /// In tr, this message translates to:
-  /// **'Lütfen bekleyin'**
+  /// **'Lütfen bekle'**
   String get pleaseWait;
 
   /// No description provided for @fundsLoadFailed.
@@ -1535,7 +1541,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickStockTap.
   ///
   /// In tr, this message translates to:
-  /// **'Hisse seçmek için dokunun...'**
+  /// **'Hisse seçmek için dokun...'**
   String get pickStockTap;
 
   /// No description provided for @pickFundPrompt.
@@ -1553,7 +1559,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickFundTap.
   ///
   /// In tr, this message translates to:
-  /// **'Fon seçmek için dokunun...'**
+  /// **'Fon seçmek için dokun...'**
   String get pickFundTap;
 
   /// No description provided for @noResults.
@@ -1853,7 +1859,7 @@ abstract class AppLocalizations {
   /// No description provided for @feedbackHint.
   ///
   /// In tr, this message translates to:
-  /// **'Mesajınızı yazın…'**
+  /// **'Mesajını yaz…'**
   String get feedbackHint;
 
   /// No description provided for @send.
@@ -2123,7 +2129,7 @@ abstract class AppLocalizations {
   /// No description provided for @showAmountsSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonunuz açılmadan görülebildiği için varsayılan olarak kapalıdır.'**
+  /// **'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.'**
   String get showAmountsSubtitle;
 
   /// No description provided for @partnerActivityNotifications.
@@ -2231,7 +2237,7 @@ abstract class AppLocalizations {
   /// No description provided for @generateInviteCodeBody.
   ///
   /// In tr, this message translates to:
-  /// **'Kodu ortağınıza gönderin. Ortak kodu girince size onay isteği gelir.'**
+  /// **'Kodu ortağına gönder. Ortağın kodu girince sana onay isteği gelir.'**
   String get generateInviteCodeBody;
 
   /// No description provided for @enterPartnerCode.
@@ -2243,7 +2249,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterPartnerCodeBody.
   ///
   /// In tr, this message translates to:
-  /// **'Ortağınızın size gönderdiği kodu girin (örn: KRHNJ-8P2SW). Onay vermesi beklenir.'**
+  /// **'Ortağının sana gönderdiği kodu gir (örn: KRHNJ-8P2SW). Onay vermesi beklenir.'**
   String get enterPartnerCodeBody;
 
   /// No description provided for @tooManyAttempts.
@@ -2267,7 +2273,7 @@ abstract class AppLocalizations {
   /// No description provided for @noPartnersYet.
   ///
   /// In tr, this message translates to:
-  /// **'Henüz ortağınız yok'**
+  /// **'Henüz ortağın yok'**
   String get noPartnersYet;
 
   /// No description provided for @removePartnerSemantics.
@@ -3245,13 +3251,13 @@ abstract class AppLocalizations {
   /// No description provided for @addAssetsToCompare.
   ///
   /// In tr, this message translates to:
-  /// **'Karşılaştırmak için varlık ekleyin'**
+  /// **'Karşılaştırmak için varlık ekle'**
   String get addAssetsToCompare;
 
   /// No description provided for @addAssetsToCompareBody.
   ///
   /// In tr, this message translates to:
-  /// **'Portföyünüzde olmayan varlıkları da ekleyebilirsiniz.'**
+  /// **'Portföyünde olmayan varlıkları da ekleyebilirsin.'**
   String get addAssetsToCompareBody;
 
   /// No description provided for @inMyPortfolio.
@@ -4055,7 +4061,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterValidAmount.
   ///
   /// In tr, this message translates to:
-  /// **'Geçerli bir tutar girin'**
+  /// **'Geçerli bir tutar gir'**
   String get enterValidAmount;
 
   /// No description provided for @dividendSaved.
@@ -4991,7 +4997,7 @@ abstract class AppLocalizations {
   /// No description provided for @hiddenOutsideWindow.
   ///
   /// In tr, this message translates to:
-  /// **'Şu an görünmüyor: saat {start}–{end} aralığının dışındasınız. Banner {start}\'da görünecek. Hemen görmek için \"Gün boyu göster\"i açın.'**
+  /// **'Şu an görünmüyor: saat {start}–{end} aralığının dışındasın. Banner {start}\'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.'**
   String hiddenOutsideWindow(String start, String end);
 
   /// No description provided for @quietStart.
@@ -6593,7 +6599,7 @@ abstract class AppLocalizations {
   /// No description provided for @registerUsernameMissing.
   ///
   /// In tr, this message translates to:
-  /// **'Kullanıcı adı girin.'**
+  /// **'Kullanıcı adı gir.'**
   String get registerUsernameMissing;
 
   /// No description provided for @deletedFilter.
@@ -6601,6 +6607,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Silinenler'**
   String get deletedFilter;
+
+  /// No description provided for @deletedEmptyTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silinmiş kayıt yok'**
+  String get deletedEmptyTitle;
+
+  /// No description provided for @deletedEmptyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.'**
+  String get deletedEmptyBody;
 
   /// No description provided for @txDateLabeled.
   ///

@@ -30,7 +30,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Karşılaştır'), findsOneWidget);
-    expect(find.text('Karşılaştırmak için varlık ekleyin'), findsOneWidget);
+    expect(find.text('Karşılaştırmak için varlık ekle'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/sandik_skeleton.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset.dart';
 import '../models/user_model.dart';
@@ -947,7 +948,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         // Öncelik: fresh Future data > stale cache > spinner
         final rows = snap.data ?? _staleRows;
         if (rows == null) {
-          return const CustomLoadingView();
+          // İçerik yüklenirken iskelet (UX denetimi 2026-09-29).
+          return const SandikSkeletonList(rows: 4);
         }
         if (rows.isEmpty) {
           return Center(

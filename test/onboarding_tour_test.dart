@@ -127,6 +127,9 @@ class _EvSahibiState extends State<_EvSahibi> {
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
           if (widget.bugunVar) _tus(TourTarget.bugunKarti, 'bugün'),
           _tus(TourTarget.piyasaSeridi, 'piyasa'),
+          // Gerçek ana ekranda hareket kabı yalnız kayıt varken çizilir;
+          // "Bugün" kartıyla aynı koşul (dolu portföy).
+          if (widget.bugunVar) _tus(TourTarget.hareketler, 'hareketler'),
           // Gerçek ekranda zil Başlangıç seviyesinde gizli; adımın `kosul`u
           // aynı seviyeye bakar.
           if (widget.zilVar) _tus(TourTarget.bildirimCani, 'zil'),
@@ -606,6 +609,10 @@ void main() {
         (tester) async {
       await _pump(tester, seviye: YatirimciSeviyesi.baslangic);
       await _adimaGit(tester, 'Piyasa bir bakışta');
+      await tester.tap(_ileri);
+      await _bekle(tester);
+      // Araya işlem notu adımı girer (2026-09-29); o da geçilir.
+      expect(find.text('İşlem notların'), findsOneWidget);
       await tester.tap(_ileri);
       await tester.pump();
       await tester.pump();

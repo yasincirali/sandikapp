@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart'
     show
         Icons,
@@ -22,7 +23,6 @@ import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
@@ -68,7 +68,9 @@ class WatchlistBody extends ConsumerWidget {
         const SizedBox(height: SandikSpace.sm),
         Expanded(
           child: async.when(
-            loading: () => const CustomLoadingView(),
+            // İçerik yüklenirken iskelet: satırların geleceği yer belli,
+            // yerleşim zıplamaz (UX denetimi 2026-09-29).
+            loading: () => const SandikSkeletonList(rows: 4),
             error: (e, _) => SandikErrorView(
               error: e,
               onRetry: () => ref.invalidate(watchlistProvider),
@@ -111,7 +113,7 @@ class _List extends ConsumerWidget {
     final periodLabel =
         watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
 
-    return RefreshIndicator(
+    return RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () async {
         ref.invalidate(watchlistChartProvider);
@@ -271,7 +273,7 @@ class _ChartCard extends ConsumerWidget {
           const SizedBox(height: SandikSpace.sm),
           async.when(
             loading: () =>
-                const SizedBox(height: 210, child: CustomLoadingView()),
+                const SandikSkeletonChart(height: 210),
             // Grafik çizilemezse liste KULLANILABİLİR kalmalı — hata ekranı
             // basıp satırları gizlemek orantısız olurdu.
             error: (_, __) => SizedBox(
