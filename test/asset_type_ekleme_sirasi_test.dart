@@ -71,17 +71,57 @@ void main() {
 
     final secici = find.byWidgetPredicate(
         (w) => w is TourAnchor && w.target == TourTarget.turSecici);
-    // Yatay kaydırmalı satır: ekran dışındaki çip de yerleşir, x'i büyür.
-    final xler = [
+    // Çipler SARMALI (2026-09-29, emülatör testi #29): sıra okuma sırasıdır —
+    // önce satır (y), satır içinde x.
+    final konumlar = [
       for (final t in AssetType.eklemeSirasi)
-        tester
-            .getTopLeft(find.descendant(of: secici, matching: find.text(t.label)))
-            .dx,
+        tester.getTopLeft(
+            find.descendant(of: secici, matching: find.text(t.label))),
     ];
-    for (var i = 1; i < xler.length; i++) {
-      expect(xler[i], greaterThan(xler[i - 1]),
+    bool once(Offset a, Offset b) =>
+        (a.dy - b.dy).abs() < 1 ? a.dx < b.dx : a.dy < b.dy;
+    for (var i = 1; i < konumlar.length; i++) {
+      expect(once(konumlar[i - 1], konumlar[i]), isTrue,
           reason: '${AssetType.eklemeSirasi[i].label} '
               '${AssetType.eklemeSirasi[i - 1].label}\'dan sonra gelmeli');
     }
   });
+
+  // Emülatör testi #29: kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında
+  // kalıyordu ve ipucu fark edilmiyordu. Her çip, kaydırmadan, ekranın
+  // içinde görünmeli — en dar desteklenen genişlikte de.
+  for (final w in <double>[320, 375]) {
+    testWidgets('${w.toInt()}pt — tüm tür çipleri kaydırmadan görünür',
+        (tester) async {
+      await initializeDateFormatting('tr_TR');
+      SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = Size(w * 3, 812 * 3);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          portfolioProvider.overrideWith(() => _BosPortfoy()),
+          addAssetPriceLookupProvider.overrideWithValue(const _NoLookup()),
+        ],
+        child:
+            MaterialApp(theme: ThemeData.dark(), home: const AddAssetScreen()),
+      ));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final secici = find.byWidgetPredicate(
+          (w) => w is TourAnchor && w.target == TourTarget.turSecici);
+      expect(
+          find.descendant(
+              of: secici, matching: find.byType(SingleChildScrollView)),
+          findsNothing,
+          reason: 'Tür seçici yatay kaydırmaya geri dönmemeli.');
+      for (final t in AssetType.eklemeSirasi) {
+        final r = tester.getRect(
+            find.descendant(of: secici, matching: find.text(t.label)));
+        expect(r.right, lessThanOrEqualTo(w),
+            reason: '${t.label} ekran dışında (x=${r.right})');
+      }
+    });
+  }
 }

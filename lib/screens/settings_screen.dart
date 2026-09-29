@@ -929,6 +929,7 @@ class _ThemeModePicker extends ConsumerWidget {
             Expanded(
               child: SandikTappable(
                 semanticLabel: context.l10n.themeSemantics(label),
+                selected: current == mode,
                 // Uygulama DIŞI yüzeylere (kilit ekranı + widget) itiş
                 // BURADA YAPILMAZ.
                 //
@@ -982,6 +983,20 @@ class _ThemeModePicker extends ConsumerWidget {
   }
 }
 
+/// Baz birimin arayüz dilindeki adı.
+///
+/// `BaseCurrency.label` Türkçe sabit ("Dolar") ve enum `money_format`'ta,
+/// `BuildContext`'siz yaşıyor; İngilizce modda ekran okuyucu "Base currency
+/// Dolar", not satırı "shown in dolar" diyordu (2026-09-29 emülatör testi
+/// #27). Gösterim buradan geçer; enum etiketi dilden bağımsız kimlik kalır.
+@visibleForTesting
+String bazBirimAdi(AppLocalizations l, BaseCurrency b) => switch (b) {
+      BaseCurrency.try_ => l.baseCurrencyNameLira,
+      BaseCurrency.usd => l.baseCurrencyNameDollar,
+      BaseCurrency.eur => l.baseCurrencyNameEuro,
+      BaseCurrency.gold => l.baseCurrencyNameGold,
+    };
+
 /// Baz para birimi (Faz 3.2). Tema seçiciyle aynı dil: dört eşit segment.
 ///
 /// Tercih yalnızca GÖSTERİMİ değiştirir — hesaplar TRY'de kalır, tutarlar
@@ -1016,7 +1031,9 @@ class _BaseCurrencyPicker extends ConsumerWidget {
               for (final (birim, icon) in _options)
                 Expanded(
                   child: SandikTappable(
-                    semanticLabel: context.l10n.baseCurrencySemantics(birim.label),
+                    semanticLabel: context.l10n
+                        .baseCurrencySemantics(bazBirimAdi(context.l10n, birim)),
+                    selected: current == birim,
                     onTap: () => setBaseCurrency(ref, birim),
                     child: AnimatedContainer(
                       duration: SandikMotion.stateOf(context),
@@ -1039,7 +1056,9 @@ class _BaseCurrencyPicker extends ConsumerWidget {
                           ),
                           const SizedBox(height: SandikSpace.xs),
                           Text(
-                            birim.kod == 'ALTIN' ? 'Altın' : birim.kod,
+                            birim == BaseCurrency.gold
+                                ? context.l10n.assetTypeGold
+                                : birim.kod,
                             style: context.t.labelLarge?.copyWith(
                               letterSpacing: 0,
                               fontWeight: current == birim
@@ -1065,7 +1084,7 @@ class _BaseCurrencyPicker extends ConsumerWidget {
             kurYok
                 ? context.l10n.rateNotFetched
                 : context.l10n.baseCurrencyNote(
-                    baz.etkinBirim.label.toLowerCase()),
+                    bazBirimAdi(context.l10n, baz.etkinBirim).toLowerCase()),
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
         ),
@@ -1101,6 +1120,7 @@ class _InvestorLevelPicker extends ConsumerWidget {
                 Expanded(
                   child: SandikTappable(
                     semanticLabel: context.l10n.levelSemantics(s.etiket(context)),
+                    selected: current == s,
                     onTap: () => ref
                         .read(investorLevelIndexProvider.notifier)
                         .set(s.index),
@@ -1189,6 +1209,7 @@ class _LanguagePicker extends ConsumerWidget {
                 Expanded(
                   child: SandikTappable(
                     semanticLabel: '$label ${l.language}',
+                    selected: current == kod,
                     onTap: () => ref
                         .read(localeProvider.notifier)
                         .set(LocaleNotifier.parse(kod)),

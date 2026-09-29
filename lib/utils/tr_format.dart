@@ -103,6 +103,21 @@ String fmtTRYCompact(double value) {
   return '$sign₺${fmtNum(abs, digits: 0)}';
 }
 
+/// [fmtTRYCompact] + sondaki anlamsız sıfırlar atılır: `₺250K`, `₺2,5M`,
+/// `₺1,25M`.
+///
+/// Hedef gibi YUVARLAK tutarlar içindir: hedef çiplerinde "₺250,0K" ve
+/// "₺2,50M" yazıyordu (2026-09-29 emülatör testi #31) — ",0" okuyana
+/// hassasiyet değil gürültü söyler. [fmtTRYCompact] kendisi değişmedi:
+/// eksenler ve baz para parite testi (`money_format_test`) sabit ondalığa
+/// yaslanıyor; aynı eksende "₺1,5M | ₺1,55M" karışık hane okunmaz.
+String fmtTRYCompactSade(double value) {
+  final s = fmtTRYCompact(value);
+  // Yalnızca sondaki ondalık kısım: ",50M" → ",5M", ",0K" → "K".
+  return s.replaceFirstMapped(RegExp(r',(\d*?)0+([A-Za-z]*)$'),
+      (m) => '${m[1]!.isEmpty ? '' : ',${m[1]}'}${m[2]}');
+}
+
 /// Grafik ekseni için tutar etiketi — iki sınır AYIRT EDİLEBİLİR olmalı.
 ///
 /// [fmtTRYCompact] tek başına yetmiyor: milyonu iki ondalıkla kısaltıyor

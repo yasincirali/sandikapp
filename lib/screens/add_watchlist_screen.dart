@@ -613,7 +613,7 @@ String? aramaSembolEtiketi(VarlikKimligi c) {
 String? aramaFiyatMetni(VarlikKimligi c, YahooQuote? q) {
   final f = q?.regularMarketPrice;
   if (f == null || !f.isFinite || f <= 0) return null;
-  if (c.ticker.startsWith('XU') && c.ticker.endsWith('.IS')) {
+  if (bistEndeksiMi(c.ticker)) {
     return fmtNum(f, digits: 0);
   }
   return tryFormatter(

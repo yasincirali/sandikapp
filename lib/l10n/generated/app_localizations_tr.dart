@@ -577,7 +577,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lotSummary(int buys, int sells) {
-    return '$buys alım · $sells çıkarma';
+    String _temp0 = intl.Intl.pluralLogic(
+      sells,
+      locale: localeName,
+      other: '$buys alım · $sells çıkarma',
+      zero: '$buys alım',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -697,7 +703,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)';
 
   @override
-  String get tickerHintOther => 'Yahoo Finance sembolü veya boş bırakın';
+  String get tickerHintOther => 'Yahoo Finance sembolü ya da boş bırak';
 
   @override
   String assetTypeSemantics(String type) {
@@ -1936,6 +1942,80 @@ class AppLocalizationsTr extends AppLocalizations {
   String get clearFilters => 'Filtreleri temizle';
 
   @override
+  String watchlistRowUp(String pct) {
+    return 'artış $pct';
+  }
+
+  @override
+  String watchlistRowDown(String pct) {
+    return 'düşüş $pct';
+  }
+
+  @override
+  String get watchlistRowFollowing => 'takip ediliyor';
+
+  @override
+  String notificationsNewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count yeni bildirim',
+      one: '1 yeni bildirim',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get signOutAction => 'Çıkış yap';
+
+  @override
+  String get baseCurrencyNameLira => 'Lira';
+
+  @override
+  String get baseCurrencyNameDollar => 'Dolar';
+
+  @override
+  String get baseCurrencyNameEuro => 'Euro';
+
+  @override
+  String get baseCurrencyNameGold => 'Gram altın';
+
+  @override
+  String get datePickerHelp => 'Tarih seç';
+
+  @override
+  String get datePickerConfirm => 'Seç';
+
+  @override
+  String get sortAssetsSemantics => 'Varlıkları sırala';
+
+  @override
+  String get showDetailsSemantics => 'Ayrıntıları göster';
+
+  @override
+  String get hideDetailsSemantics => 'Ayrıntıları gizle';
+
+  @override
+  String pricePreviewClose(String date) {
+    return '$date kapanışı — kayıtta bu fiyat kullanılacak';
+  }
+
+  @override
+  String pricePreviewLastTradingClose(String date) {
+    return 'Son işlem günü kapanışı ($date) — kayıtta bu fiyat kullanılacak';
+  }
+
+  @override
+  String priceAssignedClose(String date, String price) {
+    return '$date kapanışı $price olarak atandı';
+  }
+
+  @override
+  String priceAssignedLastTradingClose(String date, String price) {
+    return 'Son işlem günü ($date) kapanışı $price olarak atandı';
+  }
+
+  @override
   String todayRealAhead(String pts) {
     return '$pts puan önde';
   }
@@ -2648,7 +2728,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
-    return '$lehte/$total gösterge · güven %$pct';
+    return '$lehte/$total yön veren gösterge · güven %$pct';
   }
 
   @override
@@ -2687,7 +2767,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all gösterge';
+    return '· $on/$all gösterge açık';
   }
 
   @override
@@ -3044,7 +3124,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get hiddenWeekend =>
-      'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.';
+      'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.';
 
   @override
   String hiddenOutsideWindow(String start, String end) {

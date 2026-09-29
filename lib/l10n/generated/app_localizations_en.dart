@@ -553,7 +553,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String activeAlertsCount(int count) {
-    return '$count active price alerts';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active price alerts',
+      one: '1 active price alert',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -576,7 +582,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lotSummary(int buys, int sells) {
-    return '$buys buys · $sells removals';
+    String _temp0 = intl.Intl.pluralLogic(
+      buys,
+      locale: localeName,
+      other: '$buys buys',
+      one: '1 buy',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      sells,
+      locale: localeName,
+      other: '$buys buys · $sells removals',
+      zero: '$_temp0',
+    );
+    return '$_temp1';
   }
 
   @override
@@ -1940,6 +1958,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearFilters => 'Clear filters';
 
   @override
+  String watchlistRowUp(String pct) {
+    return 'up $pct';
+  }
+
+  @override
+  String watchlistRowDown(String pct) {
+    return 'down $pct';
+  }
+
+  @override
+  String get watchlistRowFollowing => 'on your watchlist';
+
+  @override
+  String notificationsNewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new notifications',
+      one: '1 new notification',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get signOutAction => 'Sign out';
+
+  @override
+  String get baseCurrencyNameLira => 'Lira';
+
+  @override
+  String get baseCurrencyNameDollar => 'Dollar';
+
+  @override
+  String get baseCurrencyNameEuro => 'Euro';
+
+  @override
+  String get baseCurrencyNameGold => 'Gram gold';
+
+  @override
+  String get datePickerHelp => 'Select date';
+
+  @override
+  String get datePickerConfirm => 'Select';
+
+  @override
+  String get sortAssetsSemantics => 'Sort assets';
+
+  @override
+  String get showDetailsSemantics => 'Show details';
+
+  @override
+  String get hideDetailsSemantics => 'Hide details';
+
+  @override
+  String pricePreviewClose(String date) {
+    return '$date close — this price will be saved';
+  }
+
+  @override
+  String pricePreviewLastTradingClose(String date) {
+    return 'Last trading day\'s close ($date) — this price will be saved';
+  }
+
+  @override
+  String priceAssignedClose(String date, String price) {
+    return '$date close assigned: $price';
+  }
+
+  @override
+  String priceAssignedLastTradingClose(String date, String price) {
+    return 'Last trading day\'s ($date) close assigned: $price';
+  }
+
+  @override
   String todayRealAhead(String pts) {
     return '$pts pts ahead';
   }
@@ -2501,7 +2593,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nActiveAlerts(int n) {
-    return '$n active price alerts';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n active price alerts',
+      one: '1 active price alert',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2655,7 +2753,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
-    return '$lehte/$total indicators · $pct% confidence';
+    return '$lehte/$total directional indicators · $pct% confidence';
   }
 
   @override
@@ -2694,7 +2792,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all indicators';
+    return '· $on/$all indicators on';
   }
 
   @override

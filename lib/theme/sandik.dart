@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../l10n/l10n.dart';
 import 'yukleme_isareti.dart';
 
 /// Platforma uygun sayfa geçişi.
@@ -27,13 +28,18 @@ import 'yukleme_isareti.dart';
 ///
 /// [lastDate] varsayılanı bugündür: işlem/ödeme tarihleri geçmişe aittir.
 /// Gelecek tarih gereken yerler (mevduat vadesi) kendi değerini verir.
+///
+/// Düğme ve başlık metinleri arayüz dilinden gelir: önceden sabit
+/// 'İptal' / 'Seç' / 'Tarih seç' yazıyordu ve İngilizce modda seçici
+/// Türkçe kalıyordu (2026-09-29 emülatör testi #27).
 Future<DateTime?> pickSandikDate(
   BuildContext context, {
   required DateTime initialDate,
   DateTime? firstDate,
   DateTime? lastDate,
-  String helpText = 'Tarih seç',
+  String? helpText,
 }) {
+  final l10n = context.l10n;
   final last = lastDate ?? DateTime.now();
   // initialDate aralık dışındaysa Flutter assert atar — güvenli tarafa çek.
   var initial = initialDate;
@@ -46,9 +52,9 @@ Future<DateTime?> pickSandikDate(
     initialDate: initial,
     firstDate: first,
     lastDate: last,
-    helpText: helpText,
-    cancelText: 'İptal',
-    confirmText: 'Seç',
+    helpText: helpText ?? l10n.datePickerHelp,
+    cancelText: l10n.cancelWord,
+    confirmText: l10n.datePickerConfirm,
     builder: (ctx, child) {
       // Palet AKTİF TEMADAN okunur. Eskiden burada sabit `ColorScheme.dark`
       // vardı: light modda uygulama aydınlıkken tarih seçici koyu açılıyor,
@@ -404,6 +410,7 @@ class SandikTappable extends StatefulWidget {
     this.onLongPress,
     this.scale = 0.97,
     this.semanticLabel,
+    this.selected,
     this.haptic = SandikHaptic.selection,
   });
 
@@ -412,6 +419,13 @@ class SandikTappable extends StatefulWidget {
   final VoidCallback? onLongPress;
   final double scale;
   final String? semanticLabel;
+
+  /// Segment/seçenek grubunda bu seçeneğin seçili olup olmadığı. `null`:
+  /// seçim kavramı yok (düz düğme). Verildiğinde ekran okuyucu "seçili"
+  /// der — tema/seviye/dil/baz para segmentlerinde seçim yalnızca renkte
+  /// kalıyordu, TalkBack hangisinin seçili olduğunu söylemiyordu
+  /// (2026-09-29 emülatör testi #28).
+  final bool? selected;
 
   /// Dokunuşta verilecek dokunsal geri bildirim.
   ///
@@ -445,9 +459,10 @@ class _SandikTappableState extends State<SandikTappable> {
       child: widget.child,
     );
 
-    if (widget.semanticLabel != null) {
+    if (widget.semanticLabel != null || widget.selected != null) {
       result = Semantics(
         button: true,
+        selected: widget.selected,
         label: widget.semanticLabel,
         child: result,
       );
@@ -1237,7 +1252,7 @@ class SandikLogoutButton extends StatelessWidget {
       onPressed: disabled ? null : onPressed,
       child: Semantics(
         button: true,
-        label: 'Çıkış yap',
+        label: context.l10n.signOutAction,
         child: Container(
           width: SandikTouch.min,
           height: SandikTouch.min,

@@ -242,6 +242,10 @@ class GorunumCipi extends StatelessWidget {
       label: '${context.l10n.scopeWho}: $etiket',
       hint: context.l10n.scopeSwipeHint,
       value: '${konum + 1} / ${gorunumler.length}',
+      // Dokunma eylemi AÇIKÇA: `ExcludeSemantics` alttaki `SandikTappable`'ın
+      // eylemini de siliyor, çip TalkBack'te okunup açılamıyordu (2026-09-29
+      // emülatör testi #28).
+      onTap: () => _ac(context),
       child: ExcludeSemantics(
         child: SandikTappable(
           semanticLabel: etiket,
@@ -577,6 +581,9 @@ class _Satir extends StatelessWidget {
       button: true,
       selected: secili,
       label: '$ad${tutar == null ? '' : ', $tutar'}',
+      // `excludeSemantics` InkWell'in eylemini de siliyor — eylem açıkça
+      // verilmezse satır okunur ama seçilemez (emülatör testi #28).
+      onTap: onTap,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,

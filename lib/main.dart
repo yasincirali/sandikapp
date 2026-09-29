@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'l10n/l10n.dart';
+import 'l10n/sen_material_localizations.dart';
 import 'models/asset.dart';
 import 'models/user_model.dart';
 import 'providers/price_alert_notification_provider.dart';
@@ -355,6 +356,10 @@ class SandikApp extends ConsumerWidget {
       // ondalık ayırıcı. Kullanıcı İngilizce seçerse en_US.
       locale: locale,
       localizationsDelegates: const [
+        // Material'ın Türkçesini "sen" hitabıyla ezer; bir tür için ilk uyan
+        // delegate kullanıldığından Global* delegate'lerden ÖNCE durmalı
+        // (bkz. `sen_material_localizations.dart`, emülatör testi #19).
+        SenMaterialLocalizationsDelegate(),
         ...AppLocalizations.localizationsDelegates,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

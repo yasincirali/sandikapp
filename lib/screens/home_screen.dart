@@ -848,7 +848,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Expanded(
                       child: _personMiniCard(
-                        'Ben',
+                        context.l10n.scopeMe,
                         myBuyTotal,
                         context.c.amberText,
                         tryFmt,
@@ -1732,7 +1732,9 @@ class _SignalBadgeButton extends ConsumerWidget {
 
     return SandikTappable(
       onTap: onTap,
-      semanticLabel: count > 0 ? '$count yeni bildirim' : 'Bildirimler',
+      semanticLabel: count > 0
+          ? context.l10n.notificationsNewCount(count)
+          : context.l10n.settingsNotifications,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -1806,7 +1808,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
         const SizedBox(height: SandikSpace.lg),
         SandikTappable(
           haptic: SandikHaptic.medium,
-          semanticLabel: 'Varlık ekle',
+          semanticLabel: context.l10n.addAsset,
           onTap: () => pushGuarded(
             context,
             adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),

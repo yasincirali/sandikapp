@@ -274,7 +274,7 @@
   "totalCost": "Toplam Maliyet",
   "currentValue": "Güncel Tutar",
   "dividendReceived": "Tahsil Edilen Temettü",
-  "lotSummary": "{buys} alım · {sells} çıkarma",
+  "lotSummary": "{sells, plural, =0{{buys} alım} other{{buys} alım · {sells} çıkarma}}",
   "@lotSummary": {
     "placeholders": {
       "buys": {
@@ -375,7 +375,7 @@
   "tickerHintGold": "Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)",
   "tickerHintCrypto": "Örn: BTC, ETH — listeden seç",
   "tickerHintCommodity": "Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)",
-  "tickerHintOther": "Yahoo Finance sembolü veya boş bırakın",
+  "tickerHintOther": "Yahoo Finance sembolü ya da boş bırak",
   "assetTypeSemantics": "{type} türü",
   "total": "toplam",
   "@assetTypeSemantics": {
@@ -1074,6 +1074,79 @@
   "portfolioSeriesNote": "Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.",
   "portfolioActivityTitle": "Portföy Hareketleri",
   "clearFilters": "Filtreleri temizle",
+  "watchlistRowUp": "artış {pct}",
+  "@watchlistRowUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowDown": "düşüş {pct}",
+  "@watchlistRowDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowFollowing": "takip ediliyor",
+  "notificationsNewCount": "{count, plural, =1{1 yeni bildirim} other{{count} yeni bildirim}}",
+  "@notificationsNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signOutAction": "Çıkış yap",
+  "baseCurrencyNameLira": "Lira",
+  "baseCurrencyNameDollar": "Dolar",
+  "baseCurrencyNameEuro": "Euro",
+  "baseCurrencyNameGold": "Gram altın",
+  "datePickerHelp": "Tarih seç",
+  "datePickerConfirm": "Seç",
+  "sortAssetsSemantics": "Varlıkları sırala",
+  "showDetailsSemantics": "Ayrıntıları göster",
+  "hideDetailsSemantics": "Ayrıntıları gizle",
+  "pricePreviewClose": "{date} kapanışı — kayıtta bu fiyat kullanılacak",
+  "@pricePreviewClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pricePreviewLastTradingClose": "Son işlem günü kapanışı ({date}) — kayıtta bu fiyat kullanılacak",
+  "@pricePreviewLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedClose": "{date} kapanışı {price} olarak atandı",
+  "@priceAssignedClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedLastTradingClose": "Son işlem günü ({date}) kapanışı {price} olarak atandı",
+  "@priceAssignedLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "todayRealAhead": "{pts} puan önde",
   "@todayRealAhead": {
     "description": "Bugün kartı, 'Enflasyona göre' satırının değeri; yön kelimeyle, işaret yok (F3)",
@@ -1701,7 +1774,7 @@
   "trendUp": "YUKARI TREND",
   "trendDown": "AŞAĞI TREND",
   "trendFlat": "YATAY",
-  "indicatorsConfidence": "{lehte}/{total} gösterge · güven %{pct}",
+  "indicatorsConfidence": "{lehte}/{total} yön veren gösterge · güven %{pct}",
   "@indicatorsConfidence": {
     "placeholders": {
       "lehte": {
@@ -1732,7 +1805,7 @@
   "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler hesaplanamıyor.",
   "noIndicatorsSelected": "Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları'ndan aktifleştir.",
   "technicalAnalysisUpper": "TEKNİK ANALİZ",
-  "nOfMIndicators": "· {on}/{all} gösterge",
+  "nOfMIndicators": "· {on}/{all} gösterge açık",
   "@nOfMIndicators": {
     "placeholders": {
       "on": {
@@ -1987,7 +2060,7 @@
   "endHour": "Bitiş saati",
   "liveActivityIosNote": "iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.",
   "marketClosedNote": "Piyasa kapalıyken son kapanış gösterilir.",
-  "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.",
+  "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.",
   "hiddenOutsideWindow": "Şu an görünmüyor: saat {start}–{end} aralığının dışındasın. Banner {start}'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.",
   "@hiddenOutsideWindow": {
     "placeholders": {

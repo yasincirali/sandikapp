@@ -260,7 +260,7 @@
   "buyAction": "Buy",
   "sellAction": "Sell",
   "deleteAction": "Delete",
-  "activeAlertsCount": "{count} active price alerts",
+  "activeAlertsCount": "{count, plural, =1{1 active price alert} other{{count} active price alerts}}",
   "@activeAlertsCount": {
     "placeholders": {
       "count": {
@@ -274,7 +274,7 @@
   "totalCost": "Total Cost",
   "currentValue": "Current Value",
   "dividendReceived": "Dividends Received",
-  "lotSummary": "{buys} buys · {sells} removals",
+  "lotSummary": "{sells, plural, =0{{buys, plural, =1{1 buy} other{{buys} buys}}} other{{buys} buys · {sells} removals}}",
   "@lotSummary": {
     "placeholders": {
       "buys": {
@@ -1074,6 +1074,79 @@
   "portfolioSeriesNote": "Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
   "portfolioActivityTitle": "Portfolio Activity",
   "clearFilters": "Clear filters",
+  "watchlistRowUp": "up {pct}",
+  "@watchlistRowUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowDown": "down {pct}",
+  "@watchlistRowDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowFollowing": "on your watchlist",
+  "notificationsNewCount": "{count, plural, =1{1 new notification} other{{count} new notifications}}",
+  "@notificationsNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signOutAction": "Sign out",
+  "baseCurrencyNameLira": "Lira",
+  "baseCurrencyNameDollar": "Dollar",
+  "baseCurrencyNameEuro": "Euro",
+  "baseCurrencyNameGold": "Gram gold",
+  "datePickerHelp": "Select date",
+  "datePickerConfirm": "Select",
+  "sortAssetsSemantics": "Sort assets",
+  "showDetailsSemantics": "Show details",
+  "hideDetailsSemantics": "Hide details",
+  "pricePreviewClose": "{date} close — this price will be saved",
+  "@pricePreviewClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pricePreviewLastTradingClose": "Last trading day's close ({date}) — this price will be saved",
+  "@pricePreviewLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedClose": "{date} close assigned: {price}",
+  "@priceAssignedClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedLastTradingClose": "Last trading day's ({date}) close assigned: {price}",
+  "@priceAssignedLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "todayRealAhead": "{pts} pts ahead",
   "@todayRealAhead": {
     "placeholders": {
@@ -1546,7 +1619,7 @@
   "sellAllWarning": "You are selling the whole position — it leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
   "saleValue": "Sale value",
   "noPriceAlert": "No price alert",
-  "nActiveAlerts": "{n} active price alerts",
+  "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
   "@nActiveAlerts": {
     "placeholders": {
       "n": {
@@ -1699,7 +1772,7 @@
   "trendUp": "UPTREND",
   "trendDown": "DOWNTREND",
   "trendFlat": "FLAT",
-  "indicatorsConfidence": "{lehte}/{total} indicators · {pct}% confidence",
+  "indicatorsConfidence": "{lehte}/{total} directional indicators · {pct}% confidence",
   "@indicatorsConfidence": {
     "placeholders": {
       "lehte": {
@@ -1730,7 +1803,7 @@
   "indicatorsNoHistory": "This asset's price history could not be fetched — indicators cannot be calculated.",
   "noIndicatorsSelected": "No indicators are selected for this asset type. Enable them from Profile → Signal Settings.",
   "technicalAnalysisUpper": "TECHNICAL ANALYSIS",
-  "nOfMIndicators": "· {on}/{all} indicators",
+  "nOfMIndicators": "· {on}/{all} indicators on",
   "@nOfMIndicators": {
     "placeholders": {
       "on": {

@@ -310,7 +310,7 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   Future<({String inviteId, String partnerName})> submitCode(
       String code) async {
     final user = ref.read(authProvider).valueOrNull;
-    if (user == null) throw Exception('Oturum açın.');
+    if (user == null) throw Exception('Oturum aç.');
     return AuthService.instance.submitPartnerCode(
       currentUserId: user.id,
       code: code,
