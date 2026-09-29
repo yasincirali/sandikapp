@@ -485,6 +485,35 @@ const bist100StocksMap = <String, String>{
   'KZBGY.IS': 'Kızılbük GYO',
   'OBASE.IS': 'Obase Bilgisayar',
   'BINHO.IS': 'Bin Holding',
+
+  // 2026 Haziran sonu–Eylül halka arzları (işlem görmeye başlamış olanlar).
+  // Liste "BIST'te işlem gören tüm hisseler" olduğundan bu ekleme kapsamın
+  // gereğidir, davranış değişikliği değil: yeni kodlar seçicide aranabilir
+  // olur, var olan hiçbir girdi değişmez. Ayrıca halka arz takvimindeki
+  // "Katıldım" akışı ekleme formunu `KOD.IS` ile açar; sembol burada yoksa
+  // kayıt şirket adını kaybedip yalnızca kodu yazar
+  // (`AddAssetFormState.resolveIdentity`). Kaynak: docs/data/halka_arz.json;
+  // işlem görmeye başlamış her kaydın burada olduğunu
+  // test/halka_arz_veri_test.dart kilitler.
+  'NETGL.IS': 'Net Global Endüstriyel',
+  'BKRGY.IS': 'Bakırcı GYO',
+  'INTET.IS': 'İntetra Teknoloji',
+  'KPEKS.IS': 'Kapeks Kimya',
+  'VEYAS.IS': 'Türker Vangölü Enerji',
+  'TKNKA.IS': 'Teknika Plast',
+  'CITAS.IS': 'Çitlekçi Mağazacılık',
+  'QUICK.IS': 'Quick Sigorta',
+  'KARCL.IS': 'Kardemir Çelik',
+  'MASFN.IS': 'Masfen Enerji',
+  'ALBTN.IS': 'Albayrak Hazır Beton',
+  'METEN.IS': 'Metgün Enerji',
+  'SARAE.IS': 'Şa-Ra Enerji',
+  'SSAAT.IS': 'Saat ve Saat',
+  'EKIM.IS': 'Ekim Turizm (Intercity)',
+  'ISVEA.IS': 'İsvea Seramik',
+  'GOLDA.IS': 'Golda Gıda',
+  'SOHOE.IS': 'Soho Giyim ve Enerji',
+  'ORZAX.IS': 'Orzaks İlaç',
 };
 
 /// Geriye dönük uyumluluk için liste hali

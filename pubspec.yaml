@@ -80,6 +80,10 @@ flutter:
 
   assets:
     - assets/images/
+    # Halka arz takviminin gömülü kopyası: ağ yoksa ilk açılışta da liste
+    # görünsün. Aynısı docs/data/ altında (GitHub Pages); eşitliği
+    # test/halka_arz_veri_test.dart kilitler.
+    - assets/data/halka_arz.json
 
   # DM Sans yerel asset olarak gömülü; tek marka fontu. Aile adı
   # `kSandikFontFamily` (lib/theme/sandik.dart) ile birebir aynı olmalı —

@@ -2647,6 +2647,63 @@
   "deletedFilter": "Deleted",
   "deletedEmptyTitle": "No deleted records",
   "deletedEmptyBody": "When you delete an asset, its buys, sells and deletion date stay here; they don't count toward your portfolio.",
+  "ipoTitle": "IPOs",
+  "ipoProfileRowSubtitle": "Calendar, price and participation",
+  "ipoGroupTalep": "Taking orders",
+  "ipoGroupYaklasan": "Upcoming",
+  "ipoGroupIslemBekliyor": "Awaiting listing",
+  "ipoGroupIslemGoruyor": "Trading",
+  "ipoGroupBilinmiyor": "Dates unknown",
+  "ipoOfflineNote": "Offline: showing the list from {tarih}.",
+  "@ipoOfflineNote": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoOfflineNoDate": "Offline: showing the saved list.",
+  "ipoListDate": "List date: {tarih}",
+  "@ipoListDate": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoEmpty": "No IPOs in the list right now.",
+  "ipoDisclaimer": "For information only, not investment advice. Confirm dates and price with your broker.",
+  "ipoRowTalep": "Orders: {aralik}",
+  "@ipoRowTalep": {
+    "placeholders": {
+      "aralik": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoRowIslem": "Listing: {tarih}",
+  "@ipoRowIslem": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoFieldTalep": "Order period",
+  "ipoFieldFiyat": "Offer price",
+  "ipoFieldDagitim": "Allocation",
+  "ipoFieldIslem": "First trading day",
+  "ipoFieldPazar": "Market",
+  "ipoFieldGuncelleme": "Info date",
+  "ipoDagitimEsit": "Equal",
+  "ipoDagitimOransal": "Pro rata",
+  "ipoOpenSource": "Open source",
+  "ipoSourceFailed": "Couldn't open the link.",
+  "ipoParticipate": "I participated, add to portfolio",
+  "ipoParticipateHint": "Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.",
+  "ipoParticipateNoPrice": "The offer price isn't in the list: type the purchase price in the form. A stock that isn't trading has no quote; if you leave it empty the cost is saved as 0.",
+  "ipoParticipateLater": "Allocations are announced after the order period ends. If you took part, you can add it to your portfolio here then.",
+  "ipoParticipationSaved": "Your IPO lots were added to your portfolio.",
   "txDateLabeled": "{tur}: {tarih}",
   "@txDateLabeled": {
     "placeholders": {
