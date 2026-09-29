@@ -142,7 +142,7 @@ class _DonemSatiri extends StatelessWidget {
         const SizedBox(height: SandikSpace.xs),
         Text(
           l10n.fundReportReturnVsMedian(
-              fmtPct(sira.getiri), fmtPct(sira.ortanca)),
+              fmtPctIsaretli(sira.getiri), fmtPctIsaretli(sira.ortanca)),
           style: context.t.bodySmall?.copyWith(color: context.c.text58),
         ),
         const SizedBox(height: SandikSpace.xxs),

@@ -116,7 +116,7 @@ class FiyatGrafigi extends StatelessWidget {
         final pct = (spots[i].y - ilk) / ilk * 100;
         return [
           (
-            fmtPct(pct, digits: 2, showSign: true),
+            fmtPctIsaretli(pct),
             pct.abs() < 0.005 ? context.c.text58 : context.signColor(pct),
           ),
         ];
@@ -149,11 +149,10 @@ class FiyatGrafigi extends StatelessWidget {
       avgY: top / gorunur.length,
       asgariBantOrani: eksenX.gunIci ? gunIciAsgariBantOrani : 0.02,
     );
-    final ondalik = bant.interval < 1
-        ? 2
-        : bant.interval < 10
-            ? 1
-            : 0;
+    // Hane adımı TAM gösterir (0,25 → iki hane, 5 → hanesiz): eski merdiven
+    // (<1 → 2, <10 → 1) 0,005'lik adımda komşu etiketleri aynı metne
+    // düşürebiliyordu (2026-09-29 emülatör testi #7, "₺1 | ₺1").
+    final ondalik = eksenOndaligi(bant.interval);
     // Eksende para simgesi var (₺320) — Performans ve varlık detayıyla aynı.
     final eksenBicimi =
         tryFormatter(digits: ondalik, symbol: bicim.currencySymbol);

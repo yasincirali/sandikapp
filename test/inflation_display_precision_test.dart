@@ -39,13 +39,17 @@ void main() {
     // `inflation` oldu (görsel gövde `RealReturnBadge`'e ayrıldı) ve
     // isme bağlı kalıp davranış hiç değişmediği hâlde testi kırdı.
     // Korunacak şey tek: o iki sayının iki ondalıkla yazılması.
+    // 2026-09-29: getiri yönlü yüzdeye geçti (`fmtPctIsaretli`, "%-5,00"
+    // yerine "−%5,00"); biçimleyici adı serbest, `digits: 2` şart.
+    RegExp ikiOndalik(String ad) => RegExp(
+        r'(fmtNum|fmtPct|fmtPctIsaretli)\([\w.]*' + ad + r', digits: 2\)');
     expect(
-      src.contains(RegExp(r'fmtNum\([\w.]*inflation, digits: 2\)')),
+      src.contains(ikiOndalik('inflation')),
       isTrue,
       reason: 'TÜFE yuvarlanmamalı — TÜİK rakamıyla karşılaştırılabilmeli.',
     );
     expect(
-      src.contains(RegExp(r'fmtNum\([\w.]*nominal, digits: 2\)')),
+      src.contains(ikiOndalik('nominal')),
       isTrue,
       reason: 'Nominal getiri TÜFE ile aynı hassasiyette olmalı.',
     );

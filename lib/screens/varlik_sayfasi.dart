@@ -439,8 +439,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
-    final bicim = tryFormatter(
-        digits: 2, symbol: currencySymbolFor(k.ticker, k.currency) ?? '₺');
+    // Fiyatın sembolü kotasyonun para birimi: dolar kuru "₺49,00", "$" değil
+    // (2026-09-29 emülatör testi #13; bkz. [kotasyonSembolu]).
+    final bicim =
+        tryFormatter(digits: 2, symbol: kotasyonSembolu(k.ticker, k.currency));
     final bayat = cizilen != null && cizilen != _gun;
 
     if (!_acildi) {
@@ -516,8 +518,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
               ? ' '
               : ist.isFlat
                   ? context.l10n.periodNoChange(donem)
-                  : '${ist.degisimPct >= 0 ? '+' : '−'}'
-                      '${fmtPct(ist.degisimPct.abs())} · '
+                  : '${fmtPctIsaretli(ist.degisimPct)} · '
                       '${ist.fark >= 0 ? '+' : '−'}'
                       '${bicim.format(ist.fark.abs())} · $donem',
           maxLines: 1,

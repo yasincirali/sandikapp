@@ -221,7 +221,7 @@ class _LegendChip extends StatelessWidget {
         Text(
           isFlat
               ? '—'
-              : '${pct >= 0 ? '+' : '−'}${fmtPct(pct.abs(), digits: 1)}',
+              : fmtPctIsaretli(pct, digits: 1),
           style: context.t.numSmall.copyWith(
             fontSize: 11,
             color: isFlat

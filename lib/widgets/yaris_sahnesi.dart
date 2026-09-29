@@ -101,7 +101,7 @@ Color yarisciRengi(BuildContext context, YarisKatilimci k) {
   return r[(math.max(1, k.renkSirasi) - 1) % r.length];
 }
 
-String _yuzde(double v) => fmtPct(v, digits: 1, showSign: true);
+String _yuzde(double v) => fmtPctIsaretli(v, digits: 1);
 
 class YarisSahnesi extends StatefulWidget {
   const YarisSahnesi({

@@ -126,6 +126,10 @@
   "add": "Add",
   "update": "Update",
   "save": "Save",
+  "posPeriodPriceMove": "price {pct}",
+  "@posPeriodPriceMove": {
+    "placeholders": {"pct": {"type": "String"}}
+  },
   "assetType": "Asset Type",
   "assetName": "Asset name",
   "nameRequired": "Name required",
@@ -347,7 +351,7 @@
     }
   },
   "fundReportAtMedian": "At the median",
-  "fundReportFootnote": "Source: TEFAS. Compared with funds in the same category; past returns do not indicate future returns.",
+  "fundReportFootnote": "Source: TEFAS. Returns are as published by TEFAS; its calculation dates don't exactly match the chart's period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.",
   "fundReportPanelLine": "#{rank} of {count} in its category ({period})",
   "@fundReportPanelLine": {
     "placeholders": {

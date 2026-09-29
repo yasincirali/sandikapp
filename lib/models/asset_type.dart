@@ -156,3 +156,26 @@ String? currencySymbolFor(String ticker, String currency) {
   final code = _extractCurrencyCode(ticker, currency);
   return code != null ? _currencySymbols[code] : null;
 }
+
+/// Bir KOTASYONUN (birim fiyatın) para sembolü — [currencySymbolFor]'un
+/// fiyat karşılığı.
+///
+/// [currencySymbolFor] döviz varlığının MİKTAR birimini verir ("$100"
+/// tutan dolar). Fiyat ise paritenin KARŞI para birimindedir: `USDTRY=X`
+/// kotasyonu 1 doların TL karşılığıdır, "₺49,00". Aramada ve varlık
+/// sayfasında fiyat miktar sembolüyle yazılıyor, dolar "$49,00" görünüyordu
+/// (2026-09-29 emülatör testi #13).
+///
+/// Kural: `XXXYYY=X` paritesinde sembol YYY'nin; diğerlerinde kotasyonun
+/// kendi para birimi ([currency], emtia vadelisi `$`); bilinmiyorsa ₺.
+String kotasyonSembolu(String ticker, String currency) {
+  final t = ticker.trim().toUpperCase();
+  if (t.endsWith('=X')) {
+    final cift = t.substring(0, t.length - 2);
+    if (cift.length == 6) {
+      final karsi = _currencySymbols[cift.substring(3)];
+      if (karsi != null) return karsi;
+    }
+  }
+  return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
+}

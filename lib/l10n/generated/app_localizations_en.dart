@@ -345,6 +345,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
+  String posPeriodPriceMove(String pct) {
+    return 'price $pct';
+  }
+
+  @override
   String get assetType => 'Asset Type';
 
   @override
@@ -645,7 +650,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fundReportFootnote =>
-      'Source: TEFAS. Compared with funds in the same category; past returns do not indicate future returns.';
+      'Source: TEFAS. Returns are as published by TEFAS; its calculation dates don\'t exactly match the chart\'s period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.';
 
   @override
   String fundReportPanelLine(String count, String rank, String period) {

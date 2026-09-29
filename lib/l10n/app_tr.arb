@@ -126,6 +126,11 @@
   "add": "Ekle",
   "update": "Güncelle",
   "save": "Kaydet",
+  "posPeriodPriceMove": "fiyat {pct}",
+  "@posPeriodPriceMove": {
+    "description": "Varlık ekranı pozisyon kartında dönem kâr/zarar satırının yüzdesi: tutar sahibin piyasa etkisi, yüzde ise 1 birimin (ürünün) fiyat hareketi. Etiket iki sayının farklı tabanı olduğunu söyler.",
+    "placeholders": {"pct": {"type": "String"}}
+  },
   "assetType": "Varlık Türü",
   "assetName": "Varlık adı",
   "nameRequired": "Ad zorunlu",
@@ -347,7 +352,7 @@
     }
   },
   "fundReportAtMedian": "Ortancayla aynı",
-  "fundReportFootnote": "Kaynak: TEFAS. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.",
+  "fundReportFootnote": "Kaynak: TEFAS. Getiriler TEFAS'ın açıkladığı rakamlardır; TEFAS'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.",
   "fundReportPanelLine": "Kategorisinde {count} fondan {rank}. ({period})",
   "@fundReportPanelLine": {
     "placeholders": {

@@ -106,7 +106,7 @@ void main() {
         getiriler: [0.4, -1.2, 3.5, null, 8.1, 21.3, 140.0], olcek: 2);
     expect(t.takeException(), isNull);
     for (final g in [21.3, -1.2, 140.0]) {
-      expect(find.text(fmtPct(g, digits: 1, showSign: true)), findsOneWidget,
+      expect(find.text(fmtPctIsaretli(g, digits: 1)), findsOneWidget,
           reason: '$g');
     }
   });
