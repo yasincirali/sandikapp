@@ -103,6 +103,15 @@ const List<SurumNotu> surumNotlari = [
     onemli: true,
     baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Zirvedeki portföyler',
+        aciklama: 'Performans\'ta tür dökümünün altındaki yeni kart, dönemin '
+            'en çok kazanan anonim portföylerini gösterir. Dokununca yeni '
+            'ekran: haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
+            'üstünde. Bir portföye dokun, neye yatırdığını ve senden farkını '
+            'oku. Kimlik, miktar ve TL asla paylaşılmaz.',
+      ),
       // Kripto (2026-09-25) ayrı bir 1.1.7 notu olarak yazılmıştı; ASC'de
       // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump
       // yapıyor, yani derleme 1.1.6 çıkacak. '1.1.7' notu hiç gösterilmezdi

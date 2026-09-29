@@ -506,6 +506,20 @@ List<_Adim> _adimlariKur() {
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(
+      id: 'zirve',
+      hedef: TourTarget.zirveKarti,
+      rozet: 'YENİ',
+      baslik: 'Zirvedeki portföyler',
+      // 2026-09-29: kart Yarış ekranından Performans'a taşındı, kendi
+      // ekranı ve cetveli var. Tur uygulamanın güncel hâlini anlatmalı.
+      govde: 'Tür dökümünün altındaki kart, dönemin en çok kazanan anonim '
+          'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
+          'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
+          'neye yatırdığını ve senden farkını oku. Kimlik, miktar ve TL '
+          'asla paylaşılmaz.',
+      giris: (_) => _sekmeyeGec(3),
+    ),
+    _Adim(
       id: 'sekme_profil',
       hedef: TourTarget.sekmeProfil,
       baslik: 'Profil sekmesi',

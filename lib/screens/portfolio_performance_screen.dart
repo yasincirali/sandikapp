@@ -62,6 +62,9 @@ import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
+import '../widgets/zirve_karti.dart';
+import '../services/zirve_kiyas.dart';
+import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
 
 part 'portfolio_performance/grafik_kabi.dart';

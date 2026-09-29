@@ -342,6 +342,33 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               canliDeger: (lotlar) =>
                   DailySummary.kapsamToplami(pState, lotlar),
             ),
+          // Zirvedeki portföyler — Yarış ekranından buraya taşındı
+          // (kullanıcı kararı 2026-09-29): zirve bir KIYAS verisi, yarış
+          // değil; kıyas ekranı burası. Ortak ya da yarışa katılım şartı
+          // yok, küresel bayrak yeter. Dönem Performans seçicisinden en
+          // yakın sunucu dönemine eşlenir (`ZirveDonem.yakin`); ekran o
+          // dönemle açılır. Tür dökümü gibi koşula bağlı DEĞİL: kullanıcının
+          // kendi serisi yokken de zirve vardır.
+          if (RemoteConfigService.instance.globalLeaderboardEnabled) ...[
+            const SizedBox(height: SandikSpace.md),
+            TourAnchor(
+              target: TourTarget.zirveKarti,
+              child: ZirveKarti(
+                donem: ZirveDonem.yakin(
+                    _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].days),
+                onAc: () => pushGuarded(
+                  context,
+                  adaptiveRoute<void>(
+                    builder: (_) => ZirvePortfoylerScreen(
+                      baslangic: ZirveDonem.yakin(
+                          _PortfolioPerformanceScreenState
+                              ._periods[_selectedPeriodIdx].days),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
           // NOT: Portföy sinyal paneli KALDIRILDI (kullanıcı kararı,
           // 2026-08-31). Teknik sinyaller yalnızca varlık detay/performans
           // ekranında gösterilir. Bu panel senkron çalıştığı için gerçek fiyat
