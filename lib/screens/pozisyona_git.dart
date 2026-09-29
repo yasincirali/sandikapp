@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
@@ -65,6 +66,7 @@ void pozisyonuAc(BuildContext context, WidgetRef ref, VarlikKimligi kimlik) {
 /// "Portföyüme ekle" — ekleme formu sembol, ad ve türle ön doldurulur;
 /// takip listesi satırı ve Karşılaştır ile AYNI ön doldurma.
 void portfoyeEkleAc(BuildContext context, VarlikKimligi kimlik) {
+  if (DemoModu.yazmaKapisi('varlik_ekle')) return; // Demo (F1).
   pushGuarded(
     context,
     adaptiveRoute<void>(

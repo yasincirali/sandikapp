@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
@@ -17,6 +18,7 @@ import '../utils/tr_format.dart';
 const _hazirHedefler = <int>[250000, 500000, 1000000, 2500000];
 
 Future<void> showHedefSheet(BuildContext context, WidgetRef ref) async {
+  if (DemoModu.yazmaKapisi('hedef')) return; // Demo: hedef bir tercih yazımı (F1).
   final mevcut = ref.read(portfolioGoalProvider);
   final sonuc = await showModalBottomSheet<int>(
     context: context,

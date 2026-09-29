@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../demo/demo_modu.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
@@ -20,7 +21,11 @@ class SupabaseService {
   static final SupabaseService instance = SupabaseService._();
   SupabaseService._();
 
-  SupabaseClient get _db => Supabase.instance.client;
+  // Demo (F1) sunucuya dokunmaz: kaçan bir çağrı ağa çıkmadan burada
+  // düşer ve izi `DemoModu.ihlaller`e yazılır (`demo_izolasyon_test`).
+  SupabaseClient get _db => DemoModu.aktif
+      ? throw DemoModu.sunucuEngeli('SupabaseService')
+      : Supabase.instance.client;
   final _log = DbLogger.instance;
 
   String? get _uid => _db.auth.currentUser?.id;

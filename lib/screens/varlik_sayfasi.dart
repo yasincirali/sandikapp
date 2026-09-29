@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
@@ -188,7 +189,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // Arama ekranının "Son baktıkların" şeridi — hangi girişten açıldıysa
     // (arama, takip, karşılaştır, ekleme seçicisi) bakılan varlık odur.
     final uid = ref.read(authProvider).valueOrNull?.id;
-    if (uid != null) {
+    // Demo (F1): "son bakılanlar" diske yazılır ve gerçek hesapta görünürdü.
+    if (uid != null && !DemoModu.aktif) {
       CrashReporter.arkaPlan(
           SonBakilanlar.instance.kaydet(uid, widget.kimlik),
           reason: 'VarlikSayfasi.sonBakilan');

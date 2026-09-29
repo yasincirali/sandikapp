@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../demo/demo_modu.dart';
 import '../services/price_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -453,9 +454,11 @@ class _PortfolioPerformanceScreenState
                     // şartı yok — kullanıcı kararı 2026-09-28: yarış ortaktan
                     // bağımsız bir özellik, giriş noktası da öyle). Küresel
                     // kapalıyken eski kural: opt-in + aktif ortak.
-                    if (RemoteConfigService.instance.globalLeaderboardEnabled ||
-                        (ref.watch(leaderboardOptInProvider) &&
-                            activePartners.isNotEmpty)) ...[
+                    // Demo (F1): yarış sunucu havuzudur, demoda yok.
+                    if (!DemoModu.aktif &&
+                        (RemoteConfigService.instance.globalLeaderboardEnabled ||
+                            (ref.watch(leaderboardOptInProvider) &&
+                                activePartners.isNotEmpty))) ...[
                       Semantics(
                         button: true,
                         label: context.l10n.raceTitle,

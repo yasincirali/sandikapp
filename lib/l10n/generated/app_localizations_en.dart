@@ -786,6 +786,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseWait => 'Please wait';
 
   @override
+  String get demoTryButton => 'Take a look first';
+
+  @override
+  String get demoBannerTitle => 'Sample portfolio';
+
+  @override
+  String get demoBannerSubtitle => 'Sample holdings, live prices';
+
+  @override
+  String get demoCreateAccount => 'Create account';
+
+  @override
+  String get demoExit => 'Exit sample';
+
+  @override
+  String get demoAccountCardTitle => 'Build your own portfolio';
+
+  @override
+  String get demoAccountCardBody =>
+      'Everything you see here works with your own holdings too. Create an account to add assets and save notes and alerts.';
+
+  @override
+  String get demoAccountCardSignIn => 'I already have an account';
+
+  @override
+  String get demoSaveSheetTitle => 'Create an account to save';
+
+  @override
+  String get demoSaveSheetBody =>
+      'This is a sample portfolio; changes you make here are not saved. Create an account to build your own portfolio.';
+
+  @override
+  String get demoSaveSheetContinue => 'Keep exploring';
+
+  @override
   String get fundsLoadFailed => 'Could not load funds';
 
   @override

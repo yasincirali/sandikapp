@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'supabase_service.dart';
+import '../demo/demo_modu.dart';
 import '../models/asset_type.dart';
 import 'tefas_service.dart';
 
@@ -570,6 +571,8 @@ class PriceService {
       if (kod != null) kodSembol[kod] = s;
     }
     if (kodSembol.isEmpty) return {};
+    // Demo (F1) sunucuya dokunmaz; kripto fiyatı sunucu tablosunda.
+    if (DemoModu.aktif) return {};
     final satirlar =
         await SupabaseService.instance.kriptoFiyatlari(kodSembol.keys.toList());
     final out = <String, YahooQuote>{};
@@ -620,6 +623,7 @@ class PriceService {
       String symbol, String range, String interval) async {
     final kod = kriptoKodu(symbol);
     if (kod == null) return [];
+    if (DemoModu.aktif) return []; // Demo: seri sunucuda (F1).
     try {
       return await SupabaseService.instance.kriptoSerisi(
         kod: kod,

@@ -1508,6 +1508,72 @@ abstract class AppLocalizations {
   /// **'Lütfen bekle'**
   String get pleaseWait;
 
+  /// No description provided for @demoTryButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce bir göz at'**
+  String get demoTryButton;
+
+  /// No description provided for @demoBannerTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örnek portföy'**
+  String get demoBannerTitle;
+
+  /// No description provided for @demoBannerSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıklar örnek, fiyatlar canlı'**
+  String get demoBannerSubtitle;
+
+  /// No description provided for @demoCreateAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap oluştur'**
+  String get demoCreateAccount;
+
+  /// No description provided for @demoExit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örnekten çık'**
+  String get demoExit;
+
+  /// No description provided for @demoAccountCardTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi portföyünü kur'**
+  String get demoAccountCardTitle;
+
+  /// No description provided for @demoAccountCardBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Burada gördüğün her şey kendi varlıklarınla da çalışır. Varlık eklemek, not ve alarm kaydetmek için hesap oluştur.'**
+  String get demoAccountCardBody;
+
+  /// No description provided for @demoAccountCardSignIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zaten hesabım var'**
+  String get demoAccountCardSignIn;
+
+  /// No description provided for @demoSaveSheetTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydetmek için hesap oluştur'**
+  String get demoSaveSheetTitle;
+
+  /// No description provided for @demoSaveSheetBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu bir örnek portföy; burada yaptığın değişiklik kaydedilmez. Kendi portföyünü kurmak için hesap oluştur.'**
+  String get demoSaveSheetBody;
+
+  /// No description provided for @demoSaveSheetContinue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örneğe devam et'**
+  String get demoSaveSheetContinue;
+
   /// No description provided for @fundsLoadFailed.
   ///
   /// In tr, this message translates to:

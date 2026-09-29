@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../providers/auth_provider.dart';
@@ -33,6 +34,7 @@ Future<void> showIslemNotuSheet(
   required Asset asset,
   required String? not,
 }) async {
+  if (DemoModu.yazmaKapisi('not')) return; // Demo: not kaydı hesap ister (F1).
   final benimId = ref.read(authProvider).valueOrNull?.id;
   final duzenlenebilir = islemNotuDuzenlenebilir(asset, benimId: benimId);
   final sonuc = await showModalBottomSheet<String>(

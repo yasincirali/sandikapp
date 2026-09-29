@@ -785,6 +785,41 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pleaseWait => 'Lütfen bekle';
 
   @override
+  String get demoTryButton => 'Önce bir göz at';
+
+  @override
+  String get demoBannerTitle => 'Örnek portföy';
+
+  @override
+  String get demoBannerSubtitle => 'Varlıklar örnek, fiyatlar canlı';
+
+  @override
+  String get demoCreateAccount => 'Hesap oluştur';
+
+  @override
+  String get demoExit => 'Örnekten çık';
+
+  @override
+  String get demoAccountCardTitle => 'Kendi portföyünü kur';
+
+  @override
+  String get demoAccountCardBody =>
+      'Burada gördüğün her şey kendi varlıklarınla da çalışır. Varlık eklemek, not ve alarm kaydetmek için hesap oluştur.';
+
+  @override
+  String get demoAccountCardSignIn => 'Zaten hesabım var';
+
+  @override
+  String get demoSaveSheetTitle => 'Kaydetmek için hesap oluştur';
+
+  @override
+  String get demoSaveSheetBody =>
+      'Bu bir örnek portföy; burada yaptığın değişiklik kaydedilmez. Kendi portföyünü kurmak için hesap oluştur.';
+
+  @override
+  String get demoSaveSheetContinue => 'Örneğe devam et';
+
+  @override
   String get fundsLoadFailed => 'Fonlar yüklenemedi';
 
   @override
