@@ -16,11 +16,14 @@ import '../utils/tr_format.dart';
 /// ötekini örter ve dokunulamaz. Yakın işaretler bir üst kata çıkar, ince
 /// bir sapla eksene bağlanır (`ZirveKiyas.katlar`).
 ///
-/// ## Etkileşim
-/// İşarete dokunmak onu seçer ([onSec]); ekran alttaki bloğu o portföye
-/// çevirir. Dönem değişince işaretler yeni yerine KAYAR — hareket bilgi
-/// taşır ("bu hafta önümdeydi, bu ay gerimde"); "hareketi azalt" açıkken
-/// anında.
+/// ## Hareket (2026-09-29, "daha göz alıcı ve akışkan")
+/// - Seçilen işaretin arkasında bir ışık halkası (imleç) durur; seçim
+///   değişince halka yeni işarete YAYLANARAK kayar ([SandikMotion.spring]).
+///   Göz nereden nereye gidildiğini izler.
+/// - Seçilen işaret yaylanarak büyür, bırakılan küçülür.
+/// - Dönem değişince işaretler, saplar ve sıfır çizgisi yeni yerine
+///   süzülür ([SandikMotion.glide]) — "bu hafta önümdeydi, bu ay gerimde".
+/// "Hareketi azalt" açıkken hepsi anında.
 class ZirveCetveli extends StatelessWidget {
   const ZirveCetveli({
     super.key,
@@ -41,6 +44,7 @@ class ZirveCetveli extends StatelessWidget {
   static const double _isaretCap = 24;
   static const double _katAdimi = 26;
   static const double _etiketYuksekligi = 16;
+  static const double _haleCap = 52;
 
   /// Eksenin üstten uzaklığı: iki kat + etiket + dokunma kutusunun yarısı.
   static const double _eksenY = 96;
@@ -66,6 +70,7 @@ class ZirveCetveli extends StatelessWidget {
           color: context.c.text36,
           letterSpacing: 0,
         );
+        final seciliIdx = isaretler.indexWhere((i) => i.anahtar == secili);
 
         return SizedBox(
           height: yukseklik,
@@ -81,15 +86,15 @@ class ZirveCetveli extends StatelessWidget {
               ),
               // Sıfır çizgisi: kim artıda kim ekside, renge gerek kalmadan.
               AnimatedPositioned(
-                duration: SandikMotion.surfaceOf(context),
-                curve: SandikMotion.move,
+                duration: SandikMotion.flowOf(context),
+                curve: SandikMotion.glide,
                 left: x(0) - 0.5,
                 top: _eksenY - 9,
                 child: Container(width: 1, height: 18, color: context.c.text36),
               ),
               AnimatedPositioned(
-                duration: SandikMotion.surfaceOf(context),
-                curve: SandikMotion.move,
+                duration: SandikMotion.flowOf(context),
+                curve: SandikMotion.glide,
                 left: x(0) - 20,
                 top: _eksenY + 12,
                 child: SizedBox(
@@ -111,8 +116,8 @@ class ZirveCetveli extends StatelessWidget {
               for (var i = 0; i < isaretler.length; i++)
                 if (katlar[i] > 0)
                   AnimatedPositioned(
-                    duration: SandikMotion.surfaceOf(context),
-                    curve: SandikMotion.move,
+                    duration: SandikMotion.flowOf(context),
+                    curve: SandikMotion.glide,
                     left: x(isaretler[i].roi) - 0.5,
                     top: _eksenY - katlar[i] * _katAdimi,
                     child: Container(
@@ -121,6 +126,31 @@ class ZirveCetveli extends StatelessWidget {
                       color: context.c.text36,
                     ),
                   ),
+              // Işık halkası (imleç): seçili işaretin arkasında, yaylanarak
+              // kayar. Dokunuşu yutmaz.
+              if (seciliIdx >= 0)
+                AnimatedPositioned(
+                  key: const ValueKey('zirve-imlec'),
+                  duration: SandikMotion.flowOf(context),
+                  curve: SandikMotion.spring,
+                  left: x(isaretler[seciliIdx].roi) - _haleCap / 2,
+                  top: _eksenY - katlar[seciliIdx] * _katAdimi - _haleCap / 2,
+                  child: IgnorePointer(
+                    child: Container(
+                      width: _haleCap,
+                      height: _haleCap,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            context.c.amberFill.withValues(alpha: 0.45),
+                            context.c.amberFill.withValues(alpha: 0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               // Üst kattakiler SONRA çizilir: alttakinin dokunma kutusunun
               // üstüne binen etiket/kutu, alttakini örtmesin (ölçüldü:
               // 2. üst katta, 3.'nün etiketi 2.'nin kutusunu kapatıyordu).
@@ -150,8 +180,8 @@ class ZirveCetveli extends StatelessWidget {
             : context.c.text90;
     return AnimatedPositioned(
       key: ValueKey('zirve-isaret-${i.anahtar}'),
-      duration: SandikMotion.surfaceOf(context),
-      curve: SandikMotion.move,
+      duration: SandikMotion.flowOf(context),
+      curve: SandikMotion.glide,
       left: x - SandikTouch.min / 2,
       top: merkezY - SandikTouch.min / 2 - _etiketYuksekligi,
       child: Column(
@@ -162,14 +192,18 @@ class ZirveCetveli extends StatelessWidget {
             child: SizedBox(
               width: SandikTouch.min,
               height: _etiketYuksekligi,
-              child: Text(
-                i.etiket,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                style: context.t.labelSmall?.copyWith(
+              child: AnimatedDefaultTextStyle(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
+                style: (context.t.labelSmall ?? const TextStyle()).copyWith(
                   letterSpacing: 0,
                   fontWeight: seciliMi ? FontWeight.w800 : FontWeight.w600,
                   color: seciliMi ? context.c.text90 : context.c.text58,
+                ),
+                child: Text(
+                  i.etiket,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
                 ),
               ),
             ),
@@ -190,35 +224,37 @@ class ZirveCetveli extends StatelessWidget {
                   width: SandikTouch.min,
                   height: SandikTouch.min,
                   child: Center(
-                    child: AnimatedContainer(
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
-                      width: _isaretCap,
-                      height: _isaretCap,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: i.sen ? context.c.amberFill : context.c.surface1,
-                        border: Border.all(color: kenarRengi, width: 2),
-                        boxShadow: [
-                          if (seciliMi)
-                            BoxShadow(
-                              color: context.c.amberFill.withValues(alpha: 0.35),
-                              spreadRadius: 4,
-                            )
-                          else if (birinci)
-                            BoxShadow(
-                              color: context.c.gold.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                            ),
-                        ],
-                      ),
-                      child: Text(
-                        // Havuzdaysan amber daire sıranı taşır; değilsen "S".
-                        i.sen && i.sira == null ? 'S' : '${i.sira}',
-                        style: context.t.numSmall.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: yaziRengi,
+                    // Seçilen işaret yaylanarak büyür.
+                    child: AnimatedScale(
+                      scale: seciliMi ? 1.22 : 1,
+                      duration: SandikMotion.flowOf(context),
+                      curve: SandikMotion.spring,
+                      child: AnimatedContainer(
+                        duration: SandikMotion.stateOf(context),
+                        curve: SandikMotion.enter,
+                        width: _isaretCap,
+                        height: _isaretCap,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              i.sen ? context.c.amberFill : context.c.surface1,
+                          border: Border.all(color: kenarRengi, width: 2),
+                          boxShadow: [
+                            if (birinci && !seciliMi)
+                              BoxShadow(
+                                color: context.c.gold.withValues(alpha: 0.35),
+                                blurRadius: 12,
+                              ),
+                          ],
+                        ),
+                        child: Text(
+                          // Havuzdaysan amber daire sıranı taşır; değilsen "S".
+                          i.sen && i.sira == null ? 'S' : '${i.sira}',
+                          style: context.t.numSmall.copyWith(
+                            fontWeight: FontWeight.w900,
+                            color: yaziRengi,
+                          ),
                         ),
                       ),
                     ),

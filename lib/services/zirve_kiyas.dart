@@ -358,6 +358,39 @@ abstract final class ZirveKiyas {
   static String _payYazisi(double v) =>
       fmtNum(v, digits: v < 10 ? 1 : 0);
 
+  /// Ayna kıyasındaki fon satırlarının sırası: iki taraftaki kodların
+  /// birleşimi, büyük olan payına göre büyükten küçüğe; [fonDiger] sonda.
+  static List<String> fonKiyasSirasi(
+      Map<String, double> sen, Map<String, double> zirve) {
+    double enBuyuk(String k) {
+      final a = sen[k] ?? 0;
+      final b = zirve[k] ?? 0;
+      return a > b ? a : b;
+    }
+
+    final l = {...sen.keys, ...zirve.keys}
+        .where((k) => k != fonDiger && enBuyuk(k) > 0)
+        .toList()
+      ..sort((a, b) => enBuyuk(b).compareTo(enBuyuk(a)));
+    if (enBuyuk(fonDiger) > 0) l.add(fonDiger);
+    return l;
+  }
+
+  /// "Getiride o 6,1 puan önde." / "Getiride sen 2,0 puan öndesin." /
+  /// "Getiride başa baş." Kullanıcının getirisi yoksa boş.
+  static String getiriFarkiCumlesi({
+    required double? senRoi,
+    required double zirveRoi,
+  }) {
+    if (senRoi == null) return '';
+    final fark = zirveRoi - senRoi;
+    if (fark.abs() < 0.05) return 'Getiride başa baş.';
+    final puan = fmtNum(fark.abs(), digits: 1);
+    return fark > 0
+        ? 'Getiride o $puan puan önde.'
+        : 'Getiride sen $puan puan öndesin.';
+  }
+
   /// Cetvel ekseni: sıfır daima görünür, iki uçta payın %12'si kadar
   /// (en az 0,5 puan) boşluk — uçtaki işaret kenara yapışmasın.
   static ZirveEksen eksen(Iterable<double> degerler) {

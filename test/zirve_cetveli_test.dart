@@ -114,4 +114,30 @@ void main() {
     expect(find.text('S'), findsNothing);
     expect(find.text('Sen'), findsOneWidget);
   });
+
+  testWidgets('ışık halkası seçilen işarete kayar', (tester) async {
+    await pump(tester, secili: '1');
+    Offset hale() =>
+        tester.getCenter(find.byKey(const ValueKey('zirve-imlec')));
+    Offset nokta(String k) =>
+        tester.getCenter(find.byKey(ValueKey('zirve-dokun-$k')));
+    expect((hale() - nokta('1')).distance, lessThan(1));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ZirveCetveli(
+                isaretler: isaretler, secili: 'sen', onSec: (_) {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    // Yolda: ne eski ne yeni yerde.
+    expect((hale() - nokta('sen')).distance, greaterThan(5));
+    await tester.pumpAndSettle();
+    expect((hale() - nokta('sen')).distance, lessThan(1));
+  });
 }

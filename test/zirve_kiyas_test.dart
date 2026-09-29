@@ -214,4 +214,22 @@ void main() {
           'Zirvede 2. sıradasın');
     });
   });
+
+  group('ayna kıyas yardımcıları', () {
+    test('fon sırası: birleşim, büyükten küçüğe, diğer sonda', () {
+      expect(
+          ZirveKiyas.fonKiyasSirasi(const {'TTE': 28.3},
+              const {'AFT': 5.1, ZirveKiyas.fonDiger: 0.8, 'DLY': 40.0}),
+          ['DLY', 'TTE', 'AFT', ZirveKiyas.fonDiger]);
+    });
+    test('getiri farkı cümlesi', () {
+      expect(ZirveKiyas.getiriFarkiCumlesi(senRoi: -3.3, zirveRoi: 2.8),
+          'Getiride o 6,1 puan önde.');
+      expect(ZirveKiyas.getiriFarkiCumlesi(senRoi: 5.0, zirveRoi: 3.0),
+          'Getiride sen 2,0 puan öndesin.');
+      expect(ZirveKiyas.getiriFarkiCumlesi(senRoi: 3.0, zirveRoi: 3.02),
+          'Getiride başa baş.');
+      expect(ZirveKiyas.getiriFarkiCumlesi(senRoi: null, zirveRoi: 3.0), '');
+    });
+  });
 }

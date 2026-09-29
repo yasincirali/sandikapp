@@ -292,6 +292,19 @@ abstract final class SandikMotion {
   /// Ekranda yer değiştiren / biçim değiştiren eleman.
   static const Curve move = Curves.easeInOutCubic;
 
+  /// Akış: gözün izlemesi istenen biçim değişimi — kıyas çubukları, akan
+  /// şerit dilimleri, sayan rakamlar, kayan imleç (560ms). Zirve ekranı
+  /// kararı (2026-09-29, "daha göz alıcı ve akışkan"): [surface] süresi
+  /// dilimin nereden nereye aktığını okumaya yetmiyordu.
+  static const Duration flow = Duration(milliseconds: 560);
+
+  /// Hafif taşarak yerine oturan varış — seçim imleci ve seçilen işaret.
+  /// Yalnız küçük, tek bir öğede; listelerde ve metinde kullanılmaz.
+  static const Curve spring = Curves.easeOutBack;
+
+  /// Uzun, yumuşak süzülme — genişlik ve konum akışı ([flow] ile).
+  static const Curve glide = Curves.easeOutQuart;
+
   // ── Erişilebilirlik ───────────────────────────────────────────────────────
 
   /// "Hareketi azalt" sistem ayarı açıkken [Duration.zero], değilse [d].
@@ -325,6 +338,9 @@ abstract final class SandikMotion {
 
   /// [surface] süresinin reduce-motion farkındalıklı hâli.
   static Duration surfaceOf(BuildContext context) => of(context, surface);
+
+  /// [flow] süresinin reduce-motion farkındalıklı hâli.
+  static Duration flowOf(BuildContext context) => of(context, flow);
 }
 
 /// Dokunsal geri bildirim ölçeği.

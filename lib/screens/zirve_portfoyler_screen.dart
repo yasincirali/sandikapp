@@ -9,6 +9,7 @@ import '../theme/sandik.dart';
 import '../utils/polling.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
+import '../widgets/zirve_ayna_kiyas.dart';
 import '../widgets/zirve_cetveli.dart';
 import '../widgets/zirve_dagilim_seridi.dart';
 import '../widgets/zirve_fon_listesi.dart';
@@ -51,6 +52,14 @@ class ZirvePortfoylerScreen extends ConsumerStatefulWidget {
 class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   late ZirveDonem _donem = widget.baslangic;
   String _secili = '1';
+
+  /// Son seçimin yönü (+1 sağa / −1 sola, cetvelde). Başlık ve cümle bu
+  /// yönde kayarak yenilenir — imleçle aynı yöne akar.
+  int _yon = 1;
+
+  /// Ayna kıyasının karşı tarafı (zirve sırası). Kendine dokununca DEĞİŞMEZ:
+  /// kıyas son seçtiğin zirveyle kalır, boşalmaz.
+  String? _kiyasHedefi;
   late Future<List<TopGainerAllocation>> _satirlar = _cek();
   late Future<int?> _havuz = _havuzCek();
   double? _senRoi;
@@ -147,6 +156,21 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     });
   }
 
+  void _isaretSec(String k, List<ZirveIsaret> isaretler,
+      List<TopGainerAllocation> satirlar) {
+    if (k == _secili) return;
+    double? roiOf(String a) =>
+        isaretler.where((i) => i.anahtar == a).firstOrNull?.roi;
+    final eski = roiOf(_secili);
+    final yeni = roiOf(k);
+    final satir = satirlar.where((s) => '${s.rank}' == k).firstOrNull;
+    setState(() {
+      _yon = (eski == null || yeni == null || yeni >= eski) ? 1 : -1;
+      _secili = k;
+      if (satir != null && !satir.ben) _kiyasHedefi = k;
+    });
+  }
+
   void _ayrintiAc(TopGainerAllocation? satir) {
     showModalBottomSheet<void>(
       context: context,
@@ -237,6 +261,16 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     final seciliRoi = seciliSatir?.roiPct ?? senRoi;
     final getiriEki =
         seciliRoi == null ? '' : ' ${_donem.ad} ${ZirveKiyas.getiriParcasi(seciliRoi)}.';
+    // Ayna kıyasının karşısı: seçili işaret bir zirveyse o; kendin
+    // seçiliysen son seçtiğin zirve; hiç seçmediysen senden olmayan ilk sıra.
+    final adaylar = satirlar.where((s) => !s.ben).toList();
+    final hedefAnahtari = seciliSatir != null && !seciliSatir.ben
+        ? '${seciliSatir.rank}'
+        : _kiyasHedefi;
+    final hedef = adaylar
+            .where((s) => '${s.rank}' == hedefAnahtari)
+            .firstOrNull ??
+        adaylar.firstOrNull;
 
     return [
       _Hero(
@@ -259,10 +293,13 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
       ZirveCetveli(
         isaretler: isaretler,
         secili: gecerli,
-        onSec: (k) => setState(() => _secili = k),
+        onSec: (k) => _isaretSec(k, isaretler, satirlar),
       ),
       const SizedBox(height: SandikSpace.md),
       _SeciliPortfoy(
+        anahtar: gecerli,
+        yon: _yon,
+        roi: seciliRoi,
         sira: seciliSatir?.rank,
         baslik: senMi
             ? 'Sen neye yatırmışsın?'
@@ -272,21 +309,26 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         fonDetay: seciliFon,
         onAyrinti: () => _ayrintiAc(seciliSatir),
       ),
-      const SizedBox(height: SandikSpace.smd),
-      _FarkNotu(
-        metin: senMi
-            ? (benSira != null
-                ? 'Zirvedesin: $benSira. sıradasın. Başka bir işarete dokun, '
-                    'farkı burada söyleyelim.'
-                : 'Bir zirve işaretine dokun, farkı burada söyleyelim.')
-            : ZirveKiyas.farkCumlesi(
-                senPay: _senPay,
-                zirvePay: seciliSatir.allocation,
-                zirveAd: seciliSatir.rank == 1
-                    ? 'zirve'
-                    : '${seciliSatir.rank}. portföy',
-              ),
-      ),
+      if (hedef != null) ...[
+        const SizedBox(height: SandikSpace.lg),
+        SandikSectionHeader(title: 'SEN VE ${hedef.rank}. PORTFÖY'),
+        const SizedBox(height: SandikSpace.sm),
+        _KiyasSecici(
+          adaylar: adaylar,
+          secili: hedef.rank,
+          onSec: (rank) => _isaretSec('$rank', isaretler, satirlar),
+        ),
+        const SizedBox(height: SandikSpace.smd),
+        ZirveAynaKiyas(
+          senPay: _senPay,
+          senFon: _senFonDetay,
+          zirvePay: hedef.allocation,
+          zirveFon: hedef.fonDetay,
+          zirveAd: '${hedef.rank}. portföy',
+          senRoi: senRoi,
+          zirveRoi: hedef.roiPct,
+        ),
+      ],
       const SizedBox(height: SandikSpace.lg),
       _AltNot(havuz: _havuz),
     ];
@@ -489,13 +531,29 @@ class _Hucre extends StatelessWidget {
             ],
           ),
           const SizedBox(height: SandikSpace.xs2),
-          Text(
-            d == null ? '—' : ZirveKiyas.isaretliYuzde(d),
-            style: context.t.numMedium.copyWith(
-              fontWeight: FontWeight.w800,
-              color: renk,
+          if (d == null)
+            Text(
+              '—',
+              style: context.t.numMedium.copyWith(
+                fontWeight: FontWeight.w800,
+                color: renk,
+              ),
+            )
+          else
+            // Dönem ya da kaynak değişince sayı SAYARAK yeni değere gider;
+            // işaret (+/−) geçişte değişirse renk de o anda döner.
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: d),
+              duration: SandikMotion.flowOf(context),
+              curve: SandikMotion.glide,
+              builder: (context, v, _) => Text(
+                ZirveKiyas.isaretliYuzde(v),
+                style: context.t.numMedium.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: v < 0 ? context.c.loss : context.c.gain,
+                ),
+              ),
             ),
-          ),
           Text(
             alt,
             maxLines: 2,
@@ -552,8 +610,19 @@ class _Madalya extends StatelessWidget {
 }
 
 /// Seçili işaretin bloğu: soru, cevap cümlesi, şerit; dokununca ayrıntı.
+///
+/// ## Geçiş (2026-09-29, "daha göz alıcı ve akışkan")
+/// - Başlık, cümle ve fon satırı seçimin YÖNÜNDE kayarak yenilenir
+///   (cetveldeki imleçle aynı yöne; [yon]).
+/// - Getiri sayarak yeni değere gider.
+/// - Şerit dilimleri sabit tür sırasında genişleyip daralarak akar
+///   (`ZirveDagilimSeridi`).
+/// Hepsi `SandikMotion` üzerinden; "hareketi azalt" açıkken anında.
 class _SeciliPortfoy extends StatelessWidget {
   const _SeciliPortfoy({
+    required this.anahtar,
+    required this.yon,
+    required this.roi,
     required this.sira,
     required this.baslik,
     required this.cumle,
@@ -562,6 +631,10 @@ class _SeciliPortfoy extends StatelessWidget {
     required this.onAyrinti,
   });
 
+  /// Seçili işaretin anahtarı — yenilenen parçaların anahtarı.
+  final String anahtar;
+  final int yon;
+  final double? roi;
   final int? sira;
   final String baslik;
   final String cumle;
@@ -571,8 +644,32 @@ class _SeciliPortfoy extends StatelessWidget {
   final Map<String, double> fonDetay;
   final VoidCallback onAyrinti;
 
+  Widget _kaydir(BuildContext context, String parca, Widget child) {
+    return AnimatedSwitcher(
+      duration: SandikMotion.surfaceOf(context),
+      switchInCurve: SandikMotion.enter,
+      switchOutCurve: SandikMotion.enter,
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topLeft,
+        children: [...previous, if (current != null) current],
+      ),
+      transitionBuilder: (c, anim) => FadeTransition(
+        opacity: anim,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: Offset(0.08 * yon, 0),
+            end: Offset.zero,
+          ).animate(anim),
+          child: c,
+        ),
+      ),
+      child: KeyedSubtree(key: ValueKey('$parca-$anahtar'), child: child),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final r = roi;
     return Semantics(
       button: true,
       label: '$baslik Ayrıntı için dokun.',
@@ -583,37 +680,68 @@ class _SeciliPortfoy extends StatelessWidget {
           children: [
             Row(
               children: [
-                _Madalya(sira: sira),
-                const SizedBox(width: SandikSpace.sm),
                 Expanded(
-                  child: Text(
-                    baslik,
-                    style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: context.c.text90,
+                  child: _kaydir(
+                    context,
+                    'baslik',
+                    Row(
+                      children: [
+                        _Madalya(sira: sira),
+                        const SizedBox(width: SandikSpace.sm),
+                        Expanded(
+                          child: Text(
+                            baslik,
+                            style: context.t.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: context.c.text90,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+                if (r != null)
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(end: r),
+                    duration: SandikMotion.flowOf(context),
+                    curve: SandikMotion.glide,
+                    builder: (context, v, _) => Text(
+                      ZirveKiyas.isaretliYuzde(v),
+                      style: context.t.numSmall.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: v < 0 ? context.c.loss : context.c.gain,
+                      ),
+                    ),
+                  ),
                 Icon(Icons.chevron_right_rounded, color: context.c.text36),
               ],
             ),
             const SizedBox(height: SandikSpace.sm),
-            Text(
-              cumle,
-              style: context.t.bodyMedium?.copyWith(
-                color: context.c.text90,
-                height: 1.4,
+            _kaydir(
+              context,
+              'cumle',
+              Text(
+                cumle,
+                style: context.t.bodyMedium?.copyWith(
+                  color: context.c.text90,
+                  height: 1.4,
+                ),
               ),
             ),
             const SizedBox(height: SandikSpace.smd),
             ZirveDagilimSeridi(pay: pay),
             if (fonDetay.isNotEmpty) ...[
               const SizedBox(height: SandikSpace.sm),
-              Text(
-                'Fonlar: ${ZirveKiyas.fonOzeti(fonDetay)}',
-                style: context.t.labelMedium?.copyWith(
-                  letterSpacing: 0,
-                  color: context.c.text58,
+              _kaydir(
+                context,
+                'fon',
+                Text(
+                  'Fonlar: ${ZirveKiyas.fonOzeti(fonDetay)}',
+                  style: context.t.labelMedium?.copyWith(
+                    letterSpacing: 0,
+                    color: context.c.text58,
+                  ),
                 ),
               ),
             ],
@@ -635,37 +763,61 @@ class _SeciliPortfoy extends StatelessWidget {
   }
 }
 
-/// "Sen fona ağırlık vermişsin, zirve altına." — amber not, renksiz fark.
-class _FarkNotu extends StatelessWidget {
-  const _FarkNotu({required this.metin});
+/// Ayna kıyasının karşısı: 1. · 2. · 3. (kendi satırın hariç). Seçmek
+/// cetvelde o işareti seçmekle aynı — imleç de oraya kayar.
+class _KiyasSecici extends StatelessWidget {
+  const _KiyasSecici({
+    required this.adaylar,
+    required this.secili,
+    required this.onSec,
+  });
 
-  final String metin;
+  final List<TopGainerAllocation> adaylar;
+  final int secili;
+  final ValueChanged<int> onSec;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(SandikSpace.smd),
-      decoration: BoxDecoration(
-        color: context.c.amberFill.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.compare_arrows_rounded,
-              size: 18, color: context.c.amberText),
-          const SizedBox(width: SandikSpace.sm),
+    return Row(
+      children: [
+        for (final a in adaylar)
           Expanded(
-            child: Text(
-              metin,
-              style: context.t.bodyMedium?.copyWith(
-                color: context.c.text90,
-                height: 1.4,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: SandikSpace.xs2 / 2),
+              child: Semantics(
+                button: true,
+                selected: a.rank == secili,
+                label: '${a.rank}. portföyle kıyasla',
+                child: ExcludeSemantics(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => onSec(a.rank),
+                    child: AnimatedContainer(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      height: SandikTouch.min,
+                      alignment: Alignment.center,
+                      decoration: context.chip(selected: a.rank == secili),
+                      child: Text(
+                        '${a.rank}.  ${ZirveKiyas.isaretliYuzde(a.roiPct)}',
+                        style: context.t.labelMedium?.copyWith(
+                          letterSpacing: 0,
+                          fontWeight: a.rank == secili
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                          color: a.rank == secili
+                              ? context.c.text90
+                              : context.c.text58,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -819,13 +971,6 @@ class _PortfoyAyrintisi extends StatelessWidget {
         ? 'Getirin henüz hesaplanamıyor'
         : '${donem.ad} ${ZirveKiyas.getiriParcasi(roi)}$siraEki';
     final turler = ZirveKiyas.sirali(pay);
-    final farklar = senMi
-        ? const <({String tur, double sen, double zirve})>[]
-        : ([
-            for (final t in {...senPay.keys, ...pay.keys})
-              (tur: t, sen: senPay[t] ?? 0.0, zirve: pay[t] ?? 0.0),
-          ]..sort((a, b) =>
-            (b.sen - b.zirve).abs().compareTo((a.sen - a.zirve).abs())));
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(SandikSpace.lg, SandikSpace.sm,
@@ -897,10 +1042,9 @@ class _PortfoyAyrintisi extends StatelessWidget {
             if (t.tur == 'fon' && fonDetay.isNotEmpty) ...[
               Padding(
                 padding: const EdgeInsets.only(left: SandikSpace.md),
-                child: ZirveFonListesi(
-                  fonDetay: fonDetay,
-                  senFonDetay: senMi ? null : senFonDetay,
-                ),
+                // Kıyas aşağıdaki aynada; burada yalnız bu portföyün
+                // fonları ve resmi adları.
+                child: ZirveFonListesi(fonDetay: fonDetay),
               ),
               const SizedBox(height: SandikSpace.xs2),
             ],
@@ -909,19 +1053,15 @@ class _PortfoyAyrintisi extends StatelessWidget {
             const SizedBox(height: SandikSpace.smd),
             const SandikSectionHeader(title: 'SENDEN FARKI'),
             const SizedBox(height: SandikSpace.sm),
-            Text(
-              '${ZirveKiyas.farkCumlesi(senPay: senPay, zirvePay: pay, zirveAd: s.rank == 1 ? 'zirve' : '${s.rank}. portföy')} '
-              '${ZirveKiyas.enBuyukFarkCumlesi(senPay, pay)}',
-              style: context.t.bodyMedium?.copyWith(
-                color: context.c.text90,
-                height: 1.4,
-              ),
+            ZirveAynaKiyas(
+              senPay: senPay,
+              senFon: senFonDetay,
+              zirvePay: pay,
+              zirveFon: fonDetay,
+              zirveAd: '${s.rank}. portföy',
+              senRoi: senRoi,
+              zirveRoi: s.roiPct,
             ),
-            const SizedBox(height: SandikSpace.smd),
-            for (final f in farklar) ...[
-              _FarkSatiri(tur: f.tur, sen: f.sen, zirve: f.zirve),
-              const SizedBox(height: SandikSpace.sm),
-            ],
           ],
           const SizedBox(height: SandikSpace.sm),
           Text(
@@ -1001,44 +1141,6 @@ class _TurSatiri extends StatelessWidget {
               color: context.c.text90,
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-/// "Altın · sende %18 · onda %56 · 38 puan". Fark renksiz.
-class _FarkSatiri extends StatelessWidget {
-  const _FarkSatiri({required this.tur, required this.sen, required this.zirve});
-
-  final String tur;
-  final double sen;
-  final double zirve;
-
-  @override
-  Widget build(BuildContext context) {
-    final fark = (sen - zirve).round();
-    return Row(
-      children: [
-        SizedBox(
-          width: 64,
-          child: Text(
-            ZirveDagilimSeridi.etiket(context, tur),
-            style: context.t.bodyMedium?.copyWith(color: context.c.text90),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            'sende %${sen.round()} · onda %${zirve.round()}',
-            style: context.t.labelMedium?.copyWith(
-              letterSpacing: 0,
-              color: context.c.text58,
-            ),
-          ),
-        ),
-        Text(
-          fark == 0 ? 'aynı' : '${fark.abs()} puan',
-          style: context.t.numSmall.copyWith(color: context.c.text36),
         ),
       ],
     );
