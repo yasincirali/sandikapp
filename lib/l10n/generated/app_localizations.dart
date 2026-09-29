@@ -6710,6 +6710,180 @@ abstract class AppLocalizations {
   /// **'Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.'**
   String get deletedEmptyBody;
 
+  /// No description provided for @ipoTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Halka arzlar'**
+  String get ipoTitle;
+
+  /// No description provided for @ipoProfileRowSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takvim, fiyat ve katılım kaydı'**
+  String get ipoProfileRowSubtitle;
+
+  /// No description provided for @ipoGroupTalep.
+  ///
+  /// In tr, this message translates to:
+  /// **'Talep toplanıyor'**
+  String get ipoGroupTalep;
+
+  /// No description provided for @ipoGroupYaklasan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaklaşan'**
+  String get ipoGroupYaklasan;
+
+  /// No description provided for @ipoGroupIslemBekliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem görmeyi bekliyor'**
+  String get ipoGroupIslemBekliyor;
+
+  /// No description provided for @ipoGroupIslemGoruyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem görüyor'**
+  String get ipoGroupIslemGoruyor;
+
+  /// No description provided for @ipoGroupBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarihi belirsiz'**
+  String get ipoGroupBilinmiyor;
+
+  /// No description provided for @ipoOfflineNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çevrimdışı: {tarih} tarihli liste gösteriliyor.'**
+  String ipoOfflineNote(String tarih);
+
+  /// No description provided for @ipoOfflineNoDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çevrimdışı: kayıtlı liste gösteriliyor.'**
+  String get ipoOfflineNoDate;
+
+  /// No description provided for @ipoListDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Liste tarihi: {tarih}'**
+  String ipoListDate(String tarih);
+
+  /// No description provided for @ipoEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an listede halka arz yok.'**
+  String get ipoEmpty;
+
+  /// No description provided for @ipoDisclaimer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgi amaçlıdır, yatırım tavsiyesi değildir. Tarih ve fiyatı aracı kurumundan doğrula.'**
+  String get ipoDisclaimer;
+
+  /// No description provided for @ipoRowTalep.
+  ///
+  /// In tr, this message translates to:
+  /// **'Talep: {aralik}'**
+  String ipoRowTalep(String aralik);
+
+  /// No description provided for @ipoRowIslem.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem: {tarih}'**
+  String ipoRowIslem(String tarih);
+
+  /// No description provided for @ipoFieldTalep.
+  ///
+  /// In tr, this message translates to:
+  /// **'Talep toplama'**
+  String get ipoFieldTalep;
+
+  /// No description provided for @ipoFieldFiyat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Halka arz fiyatı'**
+  String get ipoFieldFiyat;
+
+  /// No description provided for @ipoFieldDagitim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağıtım'**
+  String get ipoFieldDagitim;
+
+  /// No description provided for @ipoFieldIslem.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem başlangıcı'**
+  String get ipoFieldIslem;
+
+  /// No description provided for @ipoFieldPazar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pazar'**
+  String get ipoFieldPazar;
+
+  /// No description provided for @ipoFieldGuncelleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgi tarihi'**
+  String get ipoFieldGuncelleme;
+
+  /// No description provided for @ipoDagitimEsit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşit'**
+  String get ipoDagitimEsit;
+
+  /// No description provided for @ipoDagitimOransal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oransal'**
+  String get ipoDagitimOransal;
+
+  /// No description provided for @ipoOpenSource.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynağı aç'**
+  String get ipoOpenSource;
+
+  /// No description provided for @ipoSourceFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı açılamadı.'**
+  String get ipoSourceFailed;
+
+  /// No description provided for @ipoParticipate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katıldım, portföye ekle'**
+  String get ipoParticipate;
+
+  /// No description provided for @ipoParticipateHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.'**
+  String get ipoParticipateHint;
+
+  /// No description provided for @ipoParticipateNoPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.'**
+  String get ipoParticipateNoPrice;
+
+  /// No description provided for @ipoParticipateLater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağıtım sonuçları talep toplama bitince açıklanır. Katıldıysan o zaman buradan portföyüne ekleyebilirsin.'**
+  String get ipoParticipateLater;
+
+  /// No description provided for @ipoParticipationSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Halka arz lotun portföyüne eklendi.'**
+  String get ipoParticipationSaved;
+
   /// No description provided for @txDateLabeled.
   ///
   /// In tr, this message translates to:

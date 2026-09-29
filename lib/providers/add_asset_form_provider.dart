@@ -265,6 +265,7 @@ class AddAssetFormState {
     BulkCartItem? cartInitial,
     String? prefillTicker,
     AssetType? prefillType,
+    DateTime? prefillDate,
     DateTime? now,
   }) {
     final a = editingAsset;
@@ -296,7 +297,9 @@ class AddAssetFormState {
       unitType: a?.unitType ?? c?.unitType ?? 'piece',
       currency: a?.currency ?? c?.currency ?? type.defaultCurrency,
       isManualPrice: a?.isManualPrice ?? (c != null && c.ticker.isEmpty),
-      addedDate: a?.addedDate ?? c?.addedDate ?? now ?? DateTime.now(),
+      // Halka arz katılımı (F6) tarihi hazır getirir; null iken eski davranış.
+      addedDate:
+          a?.addedDate ?? c?.addedDate ?? prefillDate ?? now ?? DateTime.now(),
       bist100Ticker: isBist100 && ticker.isNotEmpty ? ticker : null,
       selectedFund: fund,
     );
@@ -497,11 +500,15 @@ class AddAssetFormArgs {
     this.cartInitial,
     this.prefillTicker,
     this.prefillType,
+    this.prefillDate,
   });
   final Asset? editingAsset;
   final BulkCartItem? cartInitial;
   final String? prefillTicker;
   final AssetType? prefillType;
+
+  /// İsteğe bağlı açılış tarihi (halka arz katılımı); null → bugün.
+  final DateTime? prefillDate;
 }
 
 class AddAssetFormNotifier
@@ -521,6 +528,7 @@ class AddAssetFormNotifier
       cartInitial: arg.cartInitial,
       prefillTicker: arg.prefillTicker,
       prefillType: arg.prefillType,
+      prefillDate: arg.prefillDate,
     );
   }
 

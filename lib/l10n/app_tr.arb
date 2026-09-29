@@ -2739,6 +2739,63 @@
   "deletedFilter": "Silinenler",
   "deletedEmptyTitle": "Silinmiş kayıt yok",
   "deletedEmptyBody": "Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.",
+  "ipoTitle": "Halka arzlar",
+  "ipoProfileRowSubtitle": "Takvim, fiyat ve katılım kaydı",
+  "ipoGroupTalep": "Talep toplanıyor",
+  "ipoGroupYaklasan": "Yaklaşan",
+  "ipoGroupIslemBekliyor": "İşlem görmeyi bekliyor",
+  "ipoGroupIslemGoruyor": "İşlem görüyor",
+  "ipoGroupBilinmiyor": "Tarihi belirsiz",
+  "ipoOfflineNote": "Çevrimdışı: {tarih} tarihli liste gösteriliyor.",
+  "@ipoOfflineNote": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoOfflineNoDate": "Çevrimdışı: kayıtlı liste gösteriliyor.",
+  "ipoListDate": "Liste tarihi: {tarih}",
+  "@ipoListDate": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoEmpty": "Şu an listede halka arz yok.",
+  "ipoDisclaimer": "Bilgi amaçlıdır, yatırım tavsiyesi değildir. Tarih ve fiyatı aracı kurumundan doğrula.",
+  "ipoRowTalep": "Talep: {aralik}",
+  "@ipoRowTalep": {
+    "placeholders": {
+      "aralik": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoRowIslem": "İşlem: {tarih}",
+  "@ipoRowIslem": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoFieldTalep": "Talep toplama",
+  "ipoFieldFiyat": "Halka arz fiyatı",
+  "ipoFieldDagitim": "Dağıtım",
+  "ipoFieldIslem": "İşlem başlangıcı",
+  "ipoFieldPazar": "Pazar",
+  "ipoFieldGuncelleme": "Bilgi tarihi",
+  "ipoDagitimEsit": "Eşit",
+  "ipoDagitimOransal": "Oransal",
+  "ipoOpenSource": "Kaynağı aç",
+  "ipoSourceFailed": "Bağlantı açılamadı.",
+  "ipoParticipate": "Katıldım, portföye ekle",
+  "ipoParticipateHint": "Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.",
+  "ipoParticipateNoPrice": "Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.",
+  "ipoParticipateLater": "Dağıtım sonuçları talep toplama bitince açıklanır. Katıldıysan o zaman buradan portföyüne ekleyebilirsin.",
+  "ipoParticipationSaved": "Halka arz lotun portföyüne eklendi.",
   "txDateLabeled": "{tur}: {tarih}",
   "@txDateLabeled": {
     "placeholders": {

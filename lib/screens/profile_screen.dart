@@ -14,6 +14,7 @@ import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
 import '../utils/polling.dart';
 import 'recap_screen.dart';
+import 'halka_arz_screen.dart' show HalkaArzProfilSatiri;
 import '../services/crash_reporter.dart';
 import '../services/share_card_service.dart';
 import '../services/analytics_service.dart';
@@ -453,6 +454,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         // takvim penceresi (26 Aralık–10 Ocak) ve verinin
                         // anlamlı olması. Yılın 11 ayı hiç görünmez.
                         const RecapBanner(),
+                        // Halka arz takvimi (F6). Bayrak kapalıyken sıfır
+                        // yükseklik — Profil yerleşimi değişmez.
+                        const HalkaArzProfilSatiri(),
                         const _PendingRequestsSection(),
                         const SizedBox(height: 8),
                         SandikSectionHeader(title: context.l10n.partnerActionsUpper),

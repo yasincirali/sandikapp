@@ -3963,6 +3963,105 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.';
 
   @override
+  String get ipoTitle => 'Halka arzlar';
+
+  @override
+  String get ipoProfileRowSubtitle => 'Takvim, fiyat ve katılım kaydı';
+
+  @override
+  String get ipoGroupTalep => 'Talep toplanıyor';
+
+  @override
+  String get ipoGroupYaklasan => 'Yaklaşan';
+
+  @override
+  String get ipoGroupIslemBekliyor => 'İşlem görmeyi bekliyor';
+
+  @override
+  String get ipoGroupIslemGoruyor => 'İşlem görüyor';
+
+  @override
+  String get ipoGroupBilinmiyor => 'Tarihi belirsiz';
+
+  @override
+  String ipoOfflineNote(String tarih) {
+    return 'Çevrimdışı: $tarih tarihli liste gösteriliyor.';
+  }
+
+  @override
+  String get ipoOfflineNoDate => 'Çevrimdışı: kayıtlı liste gösteriliyor.';
+
+  @override
+  String ipoListDate(String tarih) {
+    return 'Liste tarihi: $tarih';
+  }
+
+  @override
+  String get ipoEmpty => 'Şu an listede halka arz yok.';
+
+  @override
+  String get ipoDisclaimer =>
+      'Bilgi amaçlıdır, yatırım tavsiyesi değildir. Tarih ve fiyatı aracı kurumundan doğrula.';
+
+  @override
+  String ipoRowTalep(String aralik) {
+    return 'Talep: $aralik';
+  }
+
+  @override
+  String ipoRowIslem(String tarih) {
+    return 'İşlem: $tarih';
+  }
+
+  @override
+  String get ipoFieldTalep => 'Talep toplama';
+
+  @override
+  String get ipoFieldFiyat => 'Halka arz fiyatı';
+
+  @override
+  String get ipoFieldDagitim => 'Dağıtım';
+
+  @override
+  String get ipoFieldIslem => 'İşlem başlangıcı';
+
+  @override
+  String get ipoFieldPazar => 'Pazar';
+
+  @override
+  String get ipoFieldGuncelleme => 'Bilgi tarihi';
+
+  @override
+  String get ipoDagitimEsit => 'Eşit';
+
+  @override
+  String get ipoDagitimOransal => 'Oransal';
+
+  @override
+  String get ipoOpenSource => 'Kaynağı aç';
+
+  @override
+  String get ipoSourceFailed => 'Bağlantı açılamadı.';
+
+  @override
+  String get ipoParticipate => 'Katıldım, portföye ekle';
+
+  @override
+  String get ipoParticipateHint =>
+      'Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.';
+
+  @override
+  String get ipoParticipateNoPrice =>
+      'Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.';
+
+  @override
+  String get ipoParticipateLater =>
+      'Dağıtım sonuçları talep toplama bitince açıklanır. Katıldıysan o zaman buradan portföyüne ekleyebilirsin.';
+
+  @override
+  String get ipoParticipationSaved => 'Halka arz lotun portföyüne eklendi.';
+
+  @override
   String txDateLabeled(String tur, String tarih) {
     return '$tur: $tarih';
   }

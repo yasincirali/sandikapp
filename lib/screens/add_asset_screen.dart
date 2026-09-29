@@ -84,6 +84,15 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   final String? prefillName;
   final AssetType? prefillType;
 
+  /// Halka arz katılım kaydından (F6) gelen alış fiyatı ve tarihi. İkisi de
+  /// İSTEĞE BAĞLI: `null` iken form eskisi gibi açılır (fiyat boş, tarih
+  /// bugün). Doluyken fiyat alanı yazılı gelir; kullanıcı fiyatı kendisi
+  /// girmiş sayıldığından önizleme ağa çıkmaz — işlem görmeye henüz
+  /// başlamamış hissenin kotasyonu zaten yoktur. Düzenleme/sepet değerleri
+  /// her zaman kazanır.
+  final double? prefillPrice;
+  final DateTime? prefillDate;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
@@ -92,6 +101,8 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillTicker,
     this.prefillName,
     this.prefillType,
+    this.prefillPrice,
+    this.prefillDate,
   });
 
   @override
@@ -116,6 +127,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     cartInitial: widget.cartInitial,
     prefillTicker: widget.prefillTicker,
     prefillType: widget.prefillType,
+    prefillDate: widget.prefillDate,
   );
   AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
   AddAssetFormNotifier get _n =>
@@ -151,7 +163,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty = a?.quantity ?? c?.quantity ?? 0;
-    final initPrice = a?.purchasePrice ?? c?.price ?? 0;
+    final initPrice = a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);

@@ -3976,6 +3976,106 @@ class AppLocalizationsEn extends AppLocalizations {
       'When you delete an asset, its buys, sells and deletion date stay here; they don\'t count toward your portfolio.';
 
   @override
+  String get ipoTitle => 'IPOs';
+
+  @override
+  String get ipoProfileRowSubtitle => 'Calendar, price and participation';
+
+  @override
+  String get ipoGroupTalep => 'Taking orders';
+
+  @override
+  String get ipoGroupYaklasan => 'Upcoming';
+
+  @override
+  String get ipoGroupIslemBekliyor => 'Awaiting listing';
+
+  @override
+  String get ipoGroupIslemGoruyor => 'Trading';
+
+  @override
+  String get ipoGroupBilinmiyor => 'Dates unknown';
+
+  @override
+  String ipoOfflineNote(String tarih) {
+    return 'Offline: showing the list from $tarih.';
+  }
+
+  @override
+  String get ipoOfflineNoDate => 'Offline: showing the saved list.';
+
+  @override
+  String ipoListDate(String tarih) {
+    return 'List date: $tarih';
+  }
+
+  @override
+  String get ipoEmpty => 'No IPOs in the list right now.';
+
+  @override
+  String get ipoDisclaimer =>
+      'For information only, not investment advice. Confirm dates and price with your broker.';
+
+  @override
+  String ipoRowTalep(String aralik) {
+    return 'Orders: $aralik';
+  }
+
+  @override
+  String ipoRowIslem(String tarih) {
+    return 'Listing: $tarih';
+  }
+
+  @override
+  String get ipoFieldTalep => 'Order period';
+
+  @override
+  String get ipoFieldFiyat => 'Offer price';
+
+  @override
+  String get ipoFieldDagitim => 'Allocation';
+
+  @override
+  String get ipoFieldIslem => 'First trading day';
+
+  @override
+  String get ipoFieldPazar => 'Market';
+
+  @override
+  String get ipoFieldGuncelleme => 'Info date';
+
+  @override
+  String get ipoDagitimEsit => 'Equal';
+
+  @override
+  String get ipoDagitimOransal => 'Pro rata';
+
+  @override
+  String get ipoOpenSource => 'Open source';
+
+  @override
+  String get ipoSourceFailed => 'Couldn\'t open the link.';
+
+  @override
+  String get ipoParticipate => 'I participated, add to portfolio';
+
+  @override
+  String get ipoParticipateHint =>
+      'Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.';
+
+  @override
+  String get ipoParticipateNoPrice =>
+      'The offer price isn\'t in the list: type the purchase price in the form. A stock that isn\'t trading has no quote; if you leave it empty the cost is saved as 0.';
+
+  @override
+  String get ipoParticipateLater =>
+      'Allocations are announced after the order period ends. If you took part, you can add it to your portfolio here then.';
+
+  @override
+  String get ipoParticipationSaved =>
+      'Your IPO lots were added to your portfolio.';
+
+  @override
   String txDateLabeled(String tur, String tarih) {
     return '$tur: $tarih';
   }
