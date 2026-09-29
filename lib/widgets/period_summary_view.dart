@@ -400,8 +400,12 @@ class _AnaRakamKarti extends StatelessWidget {
                         color: renk,
                       ),
                       const SizedBox(width: SandikSpace.xxs),
+                      // Yönlü yüzde (2026-09-29 emülatör testi): tutar
+                      // "−₺48.092" yazarken rozet "%3,35" diyordu — yön
+                      // yalnızca ok ve renkte kalıyordu. Tutarla aynı dil
+                      // `fmtPctIsaretli`'den.
                       Text(
-                        fmtPct(pct.abs(), digits: 2),
+                        fmtPctIsaretli(pct, digits: 2),
                         style: context.t.numSmall.copyWith(color: renk),
                       ),
                     ],
@@ -797,8 +801,8 @@ class _VarlikSatiri extends StatelessWidget {
           ),
           const SizedBox(width: SandikSpace.sm),
           Text(
-            '${varlik.changePct >= 0 ? '+' : '−'}'
-            '${fmtPct(varlik.changePct.abs(), digits: 1)}',
+            // Elle "+"/"−" yazmak sıfırda "+%0,0" üretiyordu; ortak biçim.
+            fmtPctIsaretli(varlik.changePct, digits: 1),
             style: context.t.numSmall.copyWith(color: renk),
           ),
         ],
@@ -929,6 +933,9 @@ class _ReelGetiriKarti extends StatelessWidget {
     final onde = reel >= 0;
     final ton = onde ? context.c.gain : context.c.loss;
     final c = context.c;
+    // TÜFE penceresi biliniyor mu? Biliniyorsa kart dönem kartından FARKLI
+    // bir aralığı ölçüyor ve bunu söylemek zorunda (aşağıdaki not).
+    final pencereBelli = baslangic != null && bitis != null;
 
     return _BaglamKarti(
       baslik: context.l10n.realReturnPeriod(donemEtiketi),
@@ -946,8 +953,10 @@ class _ReelGetiriKarti extends StatelessWidget {
                     ?.copyWith(color: ton, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: SandikSpace.sm),
+              // Yön okta; sayı mutlak. `fmtPct(reel)` eksi reel getiride
+              // "▼ %-2,10" yazıyordu (eski biçim, bkz. `fmtPctIsaretli`).
               Text(
-                fmtPct(reel),
+                fmtPct(reel.abs()),
                 style: context.t.numMedium.copyWith(color: ton),
               ),
             ],
@@ -959,13 +968,33 @@ class _ReelGetiriKarti extends StatelessWidget {
                 : context.l10n.realReturnNegative,
             style: context.t.bodySmall?.copyWith(color: c.text58),
           ),
+          // ── Aralık notu (2026-09-29 emülatör testi) ──────────────────────
+          // 1A'da aynı ekranda "piyasa getirisi −₺48.092 · Bu ay ekside" ile
+          // "▲%6,18 … alım gücün arttı · Senin getirin %8,14" yan yana
+          // duruyordu. İkisi de doğru: dönem kartı BUGÜNE kadarki son 30
+          // günü, bu kart son AÇIKLANMIŞ TÜFE ayını ölçer (hizalama gerekçesi
+          // `RealReturnService.piyasaGetirisi`). Temettü farkı DEĞİL — iki
+          // nominal de aynı nakit akışı düzeltmeli formülden gelir. Çelişki
+          // aralığın yalnızca kartın dibinde yazmasındandı; hüküm cümlesinin
+          // hemen altında söylenir ve nominal satırı "bu aralıkta" der.
+          if (pencereBelli) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              context.l10n.cpiWindowNote,
+              style: context.t.bodySmall?.copyWith(color: c.text36),
+            ),
+          ],
           // Ham girdiler: kullanıcı sayıyı TÜİK'le doğrulayabilmeli.
           if (nominal != null && tufe != null) ...[
             const SizedBox(height: SandikSpace.smd),
             Divider(color: c.hairline, height: 1),
             const SizedBox(height: SandikSpace.smd),
             _KucukSatir(
-                etiket: context.l10n.nominalReturn, deger: fmtPct(nominal!)),
+                etiket: pencereBelli
+                    ? context.l10n.nominalReturnInWindow
+                    : context.l10n.nominalReturn,
+                // Nominal eksi olabilir: yönlü biçim ("−%3,10", "%-3,10" değil).
+                deger: fmtPctIsaretli(nominal!)),
             const SizedBox(height: SandikSpace.xs2),
             _KucukSatir(etiket: context.l10n.periodCpi, deger: fmtPct(tufe!)),
             if (fark != null) ...[

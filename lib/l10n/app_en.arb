@@ -529,6 +529,24 @@
   "tefasFunds": "TEFAS Funds",
   "fundsLoading": "Loading funds...",
   "pleaseWait": "Please wait",
+  "breakdownUpAmount": "up {amount}",
+  "@breakdownUpAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "breakdownDownAmount": "down {amount}",
+  "@breakdownDownAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturnInWindow": "Your return in this window",
+  "cpiWindowNote": "CPI is published monthly, so this card runs to the latest published month. The market return above runs to today — the two figures cover different windows.",
   "demoTryButton": "Take a look first",
   "demoBannerTitle": "Sample portfolio",
   "demoBannerSubtitle": "Sample holdings, live prices",
@@ -2423,7 +2441,7 @@
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
   "todayRealHint": "Yearly return minus CPI",
-  "todayWeekLabel": "Last week",
+  "todayWeekLabel": "Last 7 days",
   "todayWeekHint": "Market effect on your portfolio · summary ready",
   "todayGoalLabel": "Goal",
   "todayGoalSetShort": "Pick an amount, see what's left daily",

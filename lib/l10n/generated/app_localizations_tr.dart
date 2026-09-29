@@ -884,6 +884,23 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pleaseWait => 'Lütfen bekle';
 
   @override
+  String breakdownUpAmount(String amount) {
+    return 'artış $amount';
+  }
+
+  @override
+  String breakdownDownAmount(String amount) {
+    return 'azalış $amount';
+  }
+
+  @override
+  String get nominalReturnInWindow => 'Bu aralıkta senin getirin';
+
+  @override
+  String get cpiWindowNote =>
+      'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.';
+
+  @override
   String get demoTryButton => 'Önce bir göz at';
 
   @override
@@ -3522,7 +3539,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayRealHint => 'Yıllık getirin ile TÜFE farkı';
 
   @override
-  String get todayWeekLabel => 'Geçen hafta';
+  String get todayWeekLabel => 'Son 7 gün';
 
   @override
   String get todayWeekHint => 'Piyasanın portföyüne etkisi · özet hazır';

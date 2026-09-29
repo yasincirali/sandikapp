@@ -361,8 +361,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   Future<ReelGetiriSatiri?> _reelYukle() =>
       BugunYukleyici.reel(widget.state, enFazla: _yuklemeSuresi);
 
-  /// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip` ile aynı
-  /// hesap (`PeriodSummaryService.compute`, 1H penceresi), aynı bayrak.
+  /// Son 7 günün (kayan, ucu canlı) piyasa getirisi — eski
+  /// `WeeklySummaryChip` ile aynı hesap (`PeriodSummaryService.compute`, 1H
+  /// penceresi), aynı bayrak. Etiket "Son 7 gün": gerekçe
+  /// `HaftalikOzetSatiri`.
   Future<double?> _haftalikYukle() =>
       BugunYukleyici.haftalik(widget.state, enFazla: _yuklemeSuresi);
 

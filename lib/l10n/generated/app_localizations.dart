@@ -1652,6 +1652,30 @@ abstract class AppLocalizations {
   /// **'Lütfen bekle'**
   String get pleaseWait;
 
+  /// No description provided for @breakdownUpAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'artış {amount}'**
+  String breakdownUpAmount(String amount);
+
+  /// No description provided for @breakdownDownAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'azalış {amount}'**
+  String breakdownDownAmount(String amount);
+
+  /// No description provided for @nominalReturnInWindow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu aralıkta senin getirin'**
+  String get nominalReturnInWindow;
+
+  /// No description provided for @cpiWindowNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.'**
+  String get cpiWindowNote;
+
   /// No description provided for @demoTryButton.
   ///
   /// In tr, this message translates to:
@@ -5999,7 +6023,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayWeekLabel.
   ///
   /// In tr, this message translates to:
-  /// **'Geçen hafta'**
+  /// **'Son 7 gün'**
   String get todayWeekLabel;
 
   /// No description provided for @todayWeekHint.

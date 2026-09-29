@@ -481,14 +481,28 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     // duyuru olur ve yön bilgisi (kazanç mı kayıp mı) YALNIZCA renkte kalırdı;
     // renk tek başına bilgi taşıyamaz. Sayıların işareti görsel tarafta bu
     // rolü üstlenir ("+" / "−"), burada kelimeyle söylüyoruz.
+    //
+    // **Kavram görselle aynı olmalı (2026-09-29 emülatör testi).** Gün içi
+    // dışında satır HAM birikim değişimini gösterir (alım/satım dahil, bkz.
+    // [_pnl]); ekran okuyucu ise onu "kazanç/kayıp" diye okuyordu: "Hisse,
+    // kayıp ₺349.856 … dönem içi satış ₺329.473" — oysa düşüşün büyük kısmı
+    // satıştı, piyasa kaybı değil. Akış varken birikim "artış/azalış" diye
+    // okunur. Akış yoksa (ya da gün içinde arındırılmış rakamda) değişim
+    // zaten piyasa etkisidir ve "kazanç/kayıp" doğrudur.
+    final birikimli = !_net && !widget.simulate && flow.abs() > 0.5;
+    final tutar = tryFmt.format(pnl.abs());
     final semanticLabel = [
       label,
       if (isFlat)
-        'değişim yok'
+        context.l10n.noChangeLower
       else ...[
-        pnl >= 0
-            ? context.l10n.gainAmount(tryFmt.format(pnl.abs()))
-            : context.l10n.lossAmount(tryFmt.format(pnl.abs())),
+        birikimli
+            ? (pnl >= 0
+                ? context.l10n.breakdownUpAmount(tutar)
+                : context.l10n.breakdownDownAmount(tutar))
+            : (pnl >= 0
+                ? context.l10n.gainAmount(tutar)
+                : context.l10n.lossAmount(tutar)),
         if (pct != null) fmtPct(pct.abs(), digits: 2),
       ],
       if (!widget.simulate && flow.abs() > 0.5)
