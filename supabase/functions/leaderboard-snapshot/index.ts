@@ -346,6 +346,12 @@ export function dagilim(
 
 type AssetRow = Lot & { deleted_at?: string | null };
 
+/// 0073 tetikleyicisinin reddi: dakikada bir snapshot. Mesaj metnine bakılır
+/// çünkü PostgREST hata kodu (P0001) her `raise exception` için aynı.
+export function throttleMu(mesaj: string | null | undefined): boolean {
+  return (mesaj ?? '').includes('snapshot_throttled');
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -436,23 +442,43 @@ Deno.serve(async (request) => {
       if (!yazildi) atlanan++;
     }
 
+    // Yazım KULLANICI BAŞINA (2026-09-29): 0073 tetikleyicisi kullanıcı ×
+    // dönem için dakikada bir satıra izin verir (`snapshot_throttled`) ve
+    // service role'ü de kapsar. Tek toplu insert'te bir kullanıcının o
+    // dakikada attığı istemci snapshot'ı (Yarış ekranı açık) BÜTÜN partiyi
+    // düşürüyordu — ilk canlı koşuda görüldü. Throttle "atlandı" sayılır
+    // (o dakikadaki değer zaten taze), başka hata yükselir.
+    let throttled = 0;
+    let yazilanRoi = 0;
+    let yazilanAlloc = 0;
     if (!dryRun) {
-      if (roiRows.length > 0) {
-        const { error } = await admin.from('user_roi_snapshots').insert(roiRows);
-        if (error) throw new Error(`ROI snapshot yazilamadi: ${error.message}`);
-      }
-      if (allocRows.length > 0) {
-        const { error } = await admin.from('user_allocation_snapshots').insert(allocRows);
-        if (error) throw new Error(`Dagilim snapshot yazilamadi: ${error.message}`);
+      for (const uid of userIds) {
+        const roi = roiRows.filter((r) => r.user_id === uid);
+        const alloc = allocRows.filter((r) => r.user_id === uid);
+        if (roi.length > 0) {
+          const { error } = await admin.from('user_roi_snapshots').insert(roi);
+          if (error && !throttleMu(error.message)) {
+            throw new Error(`ROI snapshot yazilamadi: ${error.message}`);
+          }
+          if (error) throttled++; else yazilanRoi += roi.length;
+        }
+        if (alloc.length > 0) {
+          const { error } = await admin.from('user_allocation_snapshots').insert(alloc);
+          if (error && !throttleMu(error.message)) {
+            throw new Error(`Dagilim snapshot yazilamadi: ${error.message}`);
+          }
+          if (error) throttled++; else yazilanAlloc += alloc.length;
+        }
       }
     }
 
     return jsonResponse({
       ok: true,
       users: userIds.length,
-      roi_rows: roiRows.length,
-      alloc_rows: allocRows.length,
+      roi_rows: dryRun ? roiRows.length : yazilanRoi,
+      alloc_rows: dryRun ? allocRows.length : yazilanAlloc,
       skipped: atlanan,
+      throttled,
       symbols: semboller.size,
       series_loaded: seriler.size,
       dry_run: dryRun,
