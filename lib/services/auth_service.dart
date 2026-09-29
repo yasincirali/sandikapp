@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -54,19 +55,46 @@ class AuthService {
   /// Şifrenin kabul edilebilir olup olmadığını döner.
   /// Null = geçerli; aksi halde kullanıcıya gösterilecek hata mesajı.
   /// B1 fix: min 8 karakter + en az bir harf + en az bir rakam.
+  /// Şifrenin tek tek kuralları — kayıt ekranı bunları canlı liste olarak
+  /// gösterir (kullanıcı kararı 2026-09-29: girdi kuralları basmadan önce
+  /// net görünsün). [validatePassword] ile AYNI kurallar; ikisi ayrışmasın
+  /// diye o da buradan okur.
+  static ({bool uzunluk, bool harf, bool rakam, bool sinirIcinde}) sifreKurallari(
+          String password) =>
+      (
+        uzunluk: password.length >= 8,
+        harf: RegExp(r'[A-Za-zğüşıöçĞÜŞİÖÇ]').hasMatch(password),
+        rakam: RegExp(r'\d').hasMatch(password),
+        sinirIcinde: utf8.encode(password).length <= 72,
+      );
+
+  /// E-posta biçimi — sunucunun ("Unable to validate email address:
+  /// invalid format") reddedeceği adresi FORMDA yakalamak için. Eskiden
+  /// yalnızca "@ ve nokta var mı" bakılıyordu; Türkçe harfli ("aslı@…"),
+  /// boşluklu ya da çift noktalı adres sunucuya gidip genel bir hatayla
+  /// dönüyordu. Tam RFC değil, sunucunun kabul ettiği yaygın biçim.
+  static bool eMailGecerliMi(String v) => _eMailBicimi.hasMatch(v.trim());
+
+  static final _eMailBicimi = RegExp(
+    r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*"
+    r'@[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?'
+    r'(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$',
+  );
+
   static String? validatePassword(String password) {
-    if (password.length < 8) {
+    final k = sifreKurallari(password);
+    if (!k.uzunluk) {
       return 'Şifre en az 8 karakter olmalı.';
     }
     // bcrypt ilk 72 baytı hash'ler; fazlası sessizce atılır ve kullanıcı
     // "uzun şifrem var" sanır (2026-09 L12). Sınırı açıkça söyle.
-    if (utf8.encode(password).length > 72) {
+    if (!k.sinirIcinde) {
       return 'Şifre en fazla 72 karakter olabilir.';
     }
-    if (!RegExp(r'[A-Za-zğüşıöçĞÜŞİÖÇ]').hasMatch(password)) {
+    if (!k.harf) {
       return 'Şifre en az bir harf içermeli.';
     }
-    if (!RegExp(r'\d').hasMatch(password)) {
+    if (!k.rakam) {
       return 'Şifre en az bir rakam içermeli.';
     }
     return null;
@@ -227,7 +255,55 @@ class AuthService {
 
   // ── Register ──────────────────────────────────────────────────────────────
 
-  Future<AppUser> register({
+  /// Kayıt isteğini gönderir; bağlantı koparsa BİR KEZ yeniden dener.
+  ///
+  /// Neden (prod, 2026-09-29, iOS): sunucu kaydı tamamlayıp kodu e-postayla
+  /// gönderdi (`/signup` 200) ama cevap telefona ulaşmadı. Kullanıcı
+  /// "Kayıt hatası" gördü, kod ekranına hiç geçemedi; hesabı oluşmuş ama
+  /// doğrulanmamış hâlde kaldı. İstemci bir ağ hatasında isteğin sunucuya
+  /// ulaşıp ulaşmadığını bilemez — ikinci istek bunu söyler:
+  ///   · 200 → kayıt tamam (ya da ilk istek hiç ulaşmamıştı);
+  ///   · 429 "For security purposes, you can only request this after N
+  ///     seconds" → aynı e-postaya az önce kod GİTMİŞ, yani ilk istek
+  ///     ulaştı. Kayıt başarılı sayılır, kullanıcı kod ekranına geçer;
+  ///   · yine ağ hatası → gerçekten bağlantı yok, hata yukarı çıkar ve
+  ///     kullanıcı formda kalır.
+  /// Hesap numaralandırma (M4) açılmaz: kullanıcı her durumda aynı kod
+  /// ekranını görür, "bu e-posta kayıtlı" bilgisi sızmaz.
+  ///
+  /// Dönüş: sunucu cevabı; ilk isteğin ulaştığı 429 yolunda `null`.
+  @visibleForTesting
+  static Future<T?> kayidiUlastir<T>(
+    Future<T> Function() gonder, {
+    Duration bekle = const Duration(milliseconds: 1500),
+  }) async {
+    try {
+      return await gonder();
+    } catch (e) {
+      if (!baglantiHatasiMi(e)) rethrow;
+    }
+    // Kopma anındaki ağ (Wi-Fi → hücresel geçişi) bir an toparlansın.
+    await Future<void>.delayed(bekle);
+    try {
+      return await gonder();
+    } on AuthApiException catch (e) {
+      if (oncekiIstekUlastiMi(e)) return null;
+      rethrow;
+    }
+  }
+
+  /// GoTrue'nun e-posta başına 60 sn kuralı: bu 429 ancak aynı adrese az
+  /// önce e-posta gönderildiyse gelir. Genel e-posta kotası ("Email rate
+  /// limit exceeded") aynı kodu taşır ama bir şey kanıtlamaz — ayrılır.
+  @visibleForTesting
+  static bool oncekiIstekUlastiMi(AuthApiException e) =>
+      e.statusCode == '429' &&
+      e.message.toLowerCase().contains('for security purposes');
+
+  /// Dönüş: yeni kullanıcı; bağlantı kopup ilk isteğin ulaştığı
+  /// anlaşıldığında `null` (kimlik bilinmez ama kod gönderilmiştir —
+  /// [kayidiUlastir]). Ekran her iki durumda da kod ekranına geçer.
+  Future<AppUser?> register({
     required String email,
     required String displayName,
     required String password,
@@ -245,19 +321,22 @@ class AuthService {
     }
 
     try {
-      final response = await _log.log(
-        source: 'AuthService.register',
-        table: 'auth/sign-up',
-        op: 'RPC',
-        request: {'email': normalizedEmail, 'display_name': displayName.trim()},
-        call: () => _client.auth.signUp(
-          email: normalizedEmail,
-          password: password,
-          data: {'display_name': displayName.trim()},
-        ),
-      );
+      final response = await kayidiUlastir(() => _log.log(
+            source: 'AuthService.register',
+            table: 'auth/sign-up',
+            op: 'RPC',
+            request: {
+              'email': normalizedEmail,
+              'display_name': displayName.trim(),
+            },
+            call: () => _client.auth.signUp(
+              email: normalizedEmail,
+              password: password,
+              data: {'display_name': displayName.trim()},
+            ),
+          ));
 
-      if (response.user == null) {
+      if (response != null && response.user == null) {
         throw const AuthException('Kayıt başarısız. Lütfen tekrar deneyin.');
       }
 
@@ -274,12 +353,14 @@ class AuthService {
       // kadar oturum açılmaz. Register'ı burada sonlandırıyoruz;
       // RegisterScreen bir sonraki adımda OtpVerificationScreen'e
       // yönlendirir.
-      final user = AppUser(
-        id: response.user!.id,
-        email: normalizedEmail,
-        displayName: displayName.trim(),
-        createdAt: DateTime.now(),
-      );
+      final user = response == null
+          ? null
+          : AppUser(
+              id: response.user!.id,
+              email: normalizedEmail,
+              displayName: displayName.trim(),
+              createdAt: DateTime.now(),
+            );
 
       // Post-signup best-effort: displayName'i email için kaydet, profil
       // upsert'i doğrulama sonrasına ertelenir (RLS auth.uid() ile

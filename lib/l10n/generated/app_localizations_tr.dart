@@ -69,6 +69,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get passwordsMismatch => 'Şifreler eşleşmiyor';
 
   @override
+  String get sifreKuralUzunluk => 'En az 8 karakter';
+
+  @override
+  String get sifreKuralHarf => 'En az bir harf';
+
+  @override
+  String get sifreKuralRakam => 'En az bir rakam';
+
+  @override
   String get haveAccountSignIn => 'Zaten hesabınız var mı? Giriş yapın';
 
   @override

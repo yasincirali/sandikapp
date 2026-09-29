@@ -56,6 +56,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _termsDocConfirmed = false;
   bool _consentDocConfirmed = false;
   bool _emailTouched = false; // focus kaybedince hata göster
+  // "Kayıt ol"a eksik formla basıldı mı? Basıldıysa her alan kendi hatasını
+  // gösterir (yalnızca ilk eksik bir uyarıda değil) ve şifre kuralları
+  // karşılanmayanı kırmızıyla işaretler (kullanıcı kararı 2026-09-29).
+  bool _gonderimDenendi = false;
   bool _submitting = false; // register çağrısı + başarı dialog süresince
 
 
@@ -109,9 +113,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     };
   }
 
-  bool _isValidEmail(String v) {
-    final parts = v.split('@');
-    return parts.length == 2 && parts[0].isNotEmpty && parts[1].contains('.');
+  // Kural serviste (sunucunun reddedeceği biçim); ekran yalnızca sorar.
+  bool _isValidEmail(String v) => AuthService.eMailGecerliMi(v);
+
+  /// Eksik formla basıldığında TÜM alanların hatasını birden aç: tek bir
+  /// uyarı yalnız ilk eksiği söylüyordu, kullanıcı düzeltip tekrar basınca
+  /// sıradakini öğreniyordu.
+  void _eksikleriGoster() {
+    setState(() {
+      _gonderimDenendi = true;
+      _emailTouched = true;
+      _termsError = !_termsAccepted;
+      _consentError = !_consentAccepted;
+    });
+    _formKey.currentState?.validate();
   }
 
   @override
@@ -266,6 +281,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: AutofillGroup(
             child: Form(
             key: _formKey,
+            // İlk denemeden sonra alanlar yazdıkça yeniden denetlenir:
+            // düzeltilen alanın hatası kalkar, kalan eksik görünür kalır.
+            autovalidateMode: _gonderimDenendi
+                ? AutovalidateMode.onUserInteraction
+                : AutovalidateMode.disabled,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
             children: [
@@ -379,7 +399,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 style: context.t.bodyLarge?.copyWith(color: context.c.text90),
                 decoration: context.inputDecoration('',
                     labelText: context.l10n.password,
-                    errorText: _passCtrl.text.isEmpty
+                    // Kurallar alanın altındaki canlı listede; burada
+                    // yalnız listede olmayan üst sınır (72 bayt) kalır.
+                    errorText: AuthService.sifreKurallari(_passCtrl.text)
+                            .sinirIcinde
                         ? null
                         : AuthService.validatePassword(_passCtrl.text),
                     prefixIcon: Padding(
@@ -399,9 +422,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         size: 20,
                       ),
                     )),
-                validator: (v) =>
-                    v == null ? context.l10n.passwordRequired : AuthService.validatePassword(v),
+                // Kural ihlali listede görünür; validator yalnız alanı
+                // kırmızı çerçeveye alır (metni tekrar etmeden).
+                validator: (v) {
+                  final hata = AuthService.validatePassword(v ?? '');
+                  if (hata == null) return null;
+                  return AuthService.sifreKurallari(v ?? '').sinirIcinde
+                      ? ''
+                      : hata;
+                },
               ),
+              if (_passCtrl.text.isNotEmpty || _gonderimDenendi)
+                _SifreKurallariListesi(
+                  sifre: _passCtrl.text,
+                  eksikleriVurgula: _gonderimDenendi,
+                ),
               const SizedBox(height: 14),
 
               // Şifre tekrar
@@ -504,6 +539,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     : () {
                         final missing = _firstMissingRequirement();
                         if (missing != null) {
+                          _eksikleriGoster();
                           showAppError(context, AuthException(missing));
                           return;
                         }
@@ -555,6 +591,64 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         ),
         ),
+      ),
+    );
+  }
+}
+
+/// Şifre kuralları, yazarken canlı: karşılanan yeşil tik, karşılanmayan
+/// boş daire; "Kayıt ol"a eksik basıldıktan sonra karşılanmayan kırmızı.
+/// Kural kaynağı `AuthService.sifreKurallari` — sunucuya gidecek kuralla
+/// aynı, ekranda ayrı bir kopya yok.
+class _SifreKurallariListesi extends StatelessWidget {
+  final String sifre;
+  final bool eksikleriVurgula;
+
+  const _SifreKurallariListesi({
+    required this.sifre,
+    required this.eksikleriVurgula,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final k = AuthService.sifreKurallari(sifre);
+    Widget satir(bool tamam, String metin) {
+      final renk = tamam
+          ? context.c.gain
+          : (eksikleriVurgula ? context.c.loss : context.c.text36);
+      return Padding(
+        padding: const EdgeInsets.only(top: SandikSpace.xs),
+        child: Row(
+          children: [
+            Icon(
+              tamam
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              size: 14,
+              color: renk,
+            ),
+            const SizedBox(width: SandikSpace.xs2),
+            Expanded(
+              child: Text(
+                metin,
+                style: context.t.bodySmall?.copyWith(color: renk),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(
+          left: SandikSpace.smd, top: SandikSpace.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          satir(k.uzunluk, context.l10n.sifreKuralUzunluk),
+          satir(k.harf, context.l10n.sifreKuralHarf),
+          satir(k.rakam, context.l10n.sifreKuralRakam),
+        ],
       ),
     );
   }

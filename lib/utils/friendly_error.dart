@@ -161,7 +161,22 @@ String _authMessage(String raw) {
   if (lower.contains('jwt expired') || lower.contains('token expired')) {
     return 'Oturumun süresi doldu. Tekrar giriş yap.';
   }
-  return 'Giriş işlemi başarısız oldu.';
+  // Girdi kaynaklı sunucu retleri (2026-09-29): kayıt formu bunları artık
+  // basmadan önce gösteriyor, ama istemci kuralı sunucudan geride kalırsa
+  // kullanıcı yine NEDENİ okumalı — genel "başarısız" değil.
+  if (lower.contains('unable to validate email') ||
+      lower.contains('email_address_invalid') ||
+      (lower.contains('email address') && lower.contains('invalid'))) {
+    return 'E-posta adresi geçersiz. Yazımını kontrol et.';
+  }
+  if (lower.contains('for security purposes')) {
+    return 'Güvenlik için kısa bir süre bekle, sonra tekrar dene.';
+  }
+  // Eskiden "Giriş işlemi başarısız oldu." — kayıt ve kod doğrulamada da
+  // bu metne düşülüyor, kullanıcı "kayıt olurken neden giriş?" diye
+  // okuyordu (prod, 2026-09-29: "Kayıt hatası: Giriş işlemi başarısız
+  // oldu"). Metin akıştan bağımsız.
+  return 'İşlem tamamlanamadı. Biraz sonra tekrar dene.';
 }
 
 /// Marka renkli hata dialogu.
