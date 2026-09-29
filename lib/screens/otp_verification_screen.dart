@@ -408,11 +408,16 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         children: [
           Icon(Icons.schedule_rounded, color: context.c.text58, size: 14),
           const SizedBox(width: 6),
-          Text(
-            context.l10n.otpExpiresIn(_formatMmSs(_expiry)),
-            style: context.t.titleSmall?.copyWith(
-              color: context.c.text58,
-              fontWeight: FontWeight.w600,
+          // Flexible: dar Android ekranında büyük yazı boyutuyla satır
+          // taşıyordu (360 dp, 2026-09-29).
+          Flexible(
+            child: Text(
+              context.l10n.otpExpiresIn(_formatMmSs(_expiry)),
+              textAlign: TextAlign.center,
+              style: context.t.titleSmall?.copyWith(
+                color: context.c.text58,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -481,8 +486,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // Cooldown devam ediyorsa: "Yeniden gönder (43s)" gri. Bittiyse
     // tıklanabilir amber. Bu Twitter/WhatsApp/Google auth ile aynı desen.
     final showCountdown = _cooldown > 0 && !_resending;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    // Wrap: iki parça tek satıra sığmazsa bağlantı alt satıra iner — Row
+    // dar ekranda büyük yazıyla taşıyordu (360 dp, 2026-09-29).
+    return Wrap(
+      alignment: WrapAlignment.center,
       children: [
         Text(
           context.l10n.otpNotReceived,

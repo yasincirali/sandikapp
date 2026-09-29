@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,6 +29,22 @@ class DbLogger {
   /// Zayıf bağlantıda sonsuz spin yerine TimeoutException ile düşer.
   static const Duration defaultTimeout = Duration(seconds: 15);
 
+  /// Zaman aşımı ile gerçekte geçen süre arasındaki bu paydan büyük fark,
+  /// istek yoldayken sürecin DONDURULDUĞUNU gösterir (iOS arka plan
+  /// askısı, debugger duraklaması). Prod kanıtı (2026-09-28, iOS): 15 sn
+  /// sınırlı üç SELECT 93 133 ms ve 460 491 ms'de — üçü aynı milisaniyede —
+  /// düştü; ne ağ ne sunucu yavaştı, sayaçlar öne dönüşte birlikte patladı.
+  static const Duration _askiPayi = Duration(seconds: 5);
+
+  /// Zaman aşımı gerçek bir bekleme mi, yoksa askıdan dönüş mü?
+  @visibleForTesting
+  static bool askidanDonusMu(Duration gecen, Duration timeout) =>
+      gecen > timeout + _askiPayi;
+
+  /// Duvar saati — testte askıyı taklit etmek için değiştirilir.
+  @visibleForTesting
+  static DateTime Function() saat = DateTime.now;
+
   SupabaseClient get _client => Supabase.instance.client;
 
   /// Tek giriş noktası — her DB çağrısı bu wrapper üzerinden geçer.
@@ -45,24 +63,51 @@ class DbLogger {
     required Future<T> Function() call,
     Duration? timeout,
   }) async {
-    final requestedAt = DateTime.now();
+    final requestedAt = saat();
+    final sinir = timeout ?? defaultTimeout;
     Object? error;
     late T result;
+    var askidanDonus = false;
 
     try {
-      result = await call().timeout(timeout ?? defaultTimeout);
+      result = await call().timeout(sinir);
       return result;
+    } on TimeoutException catch (e) {
+      // Askıdan dönüşte düşen okuma bir kez, TAZE bağlantıyla yeniden
+      // denenir: kullanıcı öne döndüğünde ağ çoğu zaman sağlamdır ve
+      // ekranın hata durumuna düşmesi gereksizdir. Yalnızca SELECT —
+      // yazma istekleri askıdayken sunucuya ulaşmış olabilir, tekrarı çift
+      // kayıt demektir. İlk isteğin soketi iptal edilemez (`.timeout`
+      // yalnızca beklemeyi bırakır), meşgul olduğu için havuz ikinci
+      // isteğe yeni bağlantı açar.
+      if (op == 'SELECT' &&
+          askidanDonusMu(saat().difference(requestedAt), sinir)) {
+        askidanDonus = true;
+        try {
+          result = await call().timeout(sinir);
+          return result;
+        } catch (e2) {
+          error = e2;
+          rethrow;
+        }
+      }
+      error = e;
+      rethrow;
     } catch (e) {
       error = e;
       rethrow;
     } finally {
-      final respondedAt = DateTime.now();
+      final respondedAt = saat();
       final durationMs = respondedAt.difference(requestedAt).inMilliseconds;
       final isError = error != null;
 
       final responseSummary = isError
-          ? {'error': _sanitizeMessage(error.toString())}
-          : _summarize(isError ? null : result);
+          ? {
+              'error': _sanitizeMessage(error.toString()),
+              // Panelde gerçek ağ zaman aşımından ayırt edilsin.
+              if (askidanDonus) 'askidan_donus': true,
+            }
+          : _summarize(result);
 
       _printDebug(
         source: source,

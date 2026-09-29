@@ -218,6 +218,24 @@ abstract class AppLocalizations {
   /// **'Şifreler eşleşmiyor'**
   String get passwordsMismatch;
 
+  /// No description provided for @sifreKuralUzunluk.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az 8 karakter'**
+  String get sifreKuralUzunluk;
+
+  /// No description provided for @sifreKuralHarf.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az bir harf'**
+  String get sifreKuralHarf;
+
+  /// No description provided for @sifreKuralRakam.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az bir rakam'**
+  String get sifreKuralRakam;
+
   /// No description provided for @haveAccountSignIn.
   ///
   /// In tr, this message translates to:

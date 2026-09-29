@@ -69,6 +69,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordsMismatch => 'Passwords do not match';
 
   @override
+  String get sifreKuralUzunluk => 'At least 8 characters';
+
+  @override
+  String get sifreKuralHarf => 'At least one letter';
+
+  @override
+  String get sifreKuralRakam => 'At least one number';
+
+  @override
   String get haveAccountSignIn => 'Already have an account? Sign in';
 
   @override
