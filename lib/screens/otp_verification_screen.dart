@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
@@ -140,10 +141,25 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       //
       // Gerçek sürüm/dil/platform ve hata raporu serviste (2026-09-23
       // denetimi U18); başarısızlık akışı durdurmaz.
-      await DisclaimerService.instance.kabulKaydet(
+      final onayKaydedildi = await DisclaimerService.instance.kabulKaydet(
         userId: user.id,
         locale: etkinDil,
       );
+      // Kayıt hunisi (F11). Yalnızca olay; akış değişmez.
+      // - `disclaimer_accepted` yalnız kayıt BAŞARILIYSA: başarısızsa kapı
+      //   ekranı yeniden sorar ve olay oradan (main.dart) gider — iki kez
+      //   sayılmaz.
+      // - `username_set` burada: e-posta kaydında kullanıcı adı formda
+      //   seçilir, sunucu tetikleyicisi hesapla birlikte yazar; ayrı bir ad
+      //   ekranı yoktur. Olay atlanırsa e-posta yolundaki herkes hunide bu
+      //   adımda "düşmüş" görünürdü. Ad ekranı (sosyal giriş / eski hesap)
+      //   kendi olayını `KullaniciAdiScreen`'de gönderir.
+      unawaited(AnalyticsService.instance.logSignupStep('otp_verified'));
+      if (onayKaydedildi) {
+        unawaited(
+            AnalyticsService.instance.logSignupStep('disclaimer_accepted'));
+      }
+      unawaited(AnalyticsService.instance.logSignupStep('username_set'));
       ref.invalidate(authProvider);
       if (!mounted) return;
       Navigator.of(context).popUntil((r) => r.isFirst);

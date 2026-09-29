@@ -1802,6 +1802,29 @@ class AppLocalizationsTr extends AppLocalizations {
   String get clearFilters => 'Filtreleri temizle';
 
   @override
+  String todayRealAhead(String pts) {
+    return '$pts puan önde';
+  }
+
+  @override
+  String todayRealBehind(String pts) {
+    return '$pts puan geride';
+  }
+
+  @override
+  String get todayRealEven => 'başa baş';
+
+  @override
+  String recapPointsAhead(String n) {
+    return 'Enflasyonu $n puan geçtin';
+  }
+
+  @override
+  String recapPointsBehind(String n) {
+    return 'Enflasyonun $n puan gerisinde kaldın';
+  }
+
+  @override
   String get loadingEllipsis => 'Yükleniyor…';
 
   @override
@@ -1991,11 +2014,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recapSubtitle => 'Bir yılın kısa hikâyesi.';
 
   @override
-  String recapPoints(String n) {
-    return '$n puan';
-  }
-
-  @override
   String recapDays(int n) {
     return '$n gün';
   }
@@ -2048,7 +2066,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String realReturnSemanticsAhead(String pts) {
-    return 'Son bir yılda portföyün enflasyonu yüzde $pts puan geçti';
+    return 'Son bir yılda portföyün enflasyonu $pts puan geçti';
   }
 
   @override
@@ -2061,7 +2079,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String realReturnSemanticsBehind(String pts) {
-    return 'Son bir yılda portföyün enflasyonun yüzde $pts puan gerisinde kaldı';
+    return 'Son bir yılda portföyün enflasyonun $pts puan gerisinde kaldı';
   }
 
   @override
@@ -3368,11 +3386,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get todayRealHint => 'Yıllık getirin ile TÜFE farkı';
-
-  @override
-  String todayPoints(String pts) {
-    return '$pts puan';
-  }
 
   @override
   String get todayWeekLabel => 'Geçen hafta';

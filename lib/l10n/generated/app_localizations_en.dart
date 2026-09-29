@@ -1806,6 +1806,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearFilters => 'Clear filters';
 
   @override
+  String todayRealAhead(String pts) {
+    return '$pts pts ahead';
+  }
+
+  @override
+  String todayRealBehind(String pts) {
+    return '$pts pts behind';
+  }
+
+  @override
+  String get todayRealEven => 'even';
+
+  @override
+  String recapPointsAhead(String n) {
+    return 'You beat inflation by $n points';
+  }
+
+  @override
+  String recapPointsBehind(String n) {
+    return 'You trailed inflation by $n points';
+  }
+
+  @override
   String get loadingEllipsis => 'Loading…';
 
   @override
@@ -1992,11 +2015,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recapSubtitle => 'A short story of the year.';
-
-  @override
-  String recapPoints(String n) {
-    return '$n points';
-  }
 
   @override
   String recapDays(int n) {
@@ -3379,11 +3397,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get todayRealHint => 'Yearly return minus CPI';
-
-  @override
-  String todayPoints(String pts) {
-    return '$pts pts';
-  }
 
   @override
   String get todayWeekLabel => 'Last week';

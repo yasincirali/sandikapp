@@ -928,6 +928,41 @@
   "portfolioSeriesNote": "Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.",
   "portfolioActivityTitle": "Portföy Hareketleri",
   "clearFilters": "Filtreleri temizle",
+  "todayRealAhead": "{pts} puan önde",
+  "@todayRealAhead": {
+    "description": "Bugün kartı, 'Enflasyona göre' satırının değeri; yön kelimeyle, işaret yok (F3)",
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealBehind": "{pts} puan geride",
+  "@todayRealBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealEven": "başa baş",
+  "recapPointsAhead": "Enflasyonu {n} puan geçtin",
+  "@recapPointsAhead": {
+    "description": "Yıl sonu özeti, enflasyon sayfası başlığı; eskiden işaretli çıplak '{n} puan' idi (F3)",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapPointsBehind": "Enflasyonun {n} puan gerisinde kaldın",
+  "@recapPointsBehind": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "loadingEllipsis": "Yükleniyor…",
   "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
   "priceAlertsTitle": "Fiyat Alarmları",
@@ -1014,14 +1049,6 @@
     }
   },
   "recapSubtitle": "Bir yılın kısa hikâyesi.",
-  "recapPoints": "{n} puan",
-  "@recapPoints": {
-    "placeholders": {
-      "n": {
-        "type": "String"
-      }
-    }
-  },
   "recapDays": "{n} gün",
   "@recapDays": {
     "placeholders": {
@@ -1099,7 +1126,7 @@
       }
     }
   },
-  "realReturnSemanticsAhead": "Son bir yılda portföyün enflasyonu yüzde {pts} puan geçti",
+  "realReturnSemanticsAhead": "Son bir yılda portföyün enflasyonu {pts} puan geçti",
   "@realReturnSemanticsAhead": {
     "placeholders": {
       "pts": {
@@ -1116,7 +1143,7 @@
       }
     }
   },
-  "realReturnSemanticsBehind": "Son bir yılda portföyün enflasyonun yüzde {pts} puan gerisinde kaldı",
+  "realReturnSemanticsBehind": "Son bir yılda portföyün enflasyonun {pts} puan gerisinde kaldı",
   "@realReturnSemanticsBehind": {
     "placeholders": {
       "pts": {
@@ -2254,14 +2281,6 @@
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
   "todayRealHint": "Yıllık getirin ile TÜFE farkı",
-  "todayPoints": "{pts} puan",
-  "@todayPoints": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
   "todayWeekLabel": "Geçen hafta",
   "todayWeekHint": "Piyasanın portföyüne etkisi · özet hazır",
   "todayGoalLabel": "Hedef",

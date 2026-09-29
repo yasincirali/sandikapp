@@ -3314,6 +3314,36 @@ abstract class AppLocalizations {
   /// **'Filtreleri temizle'**
   String get clearFilters;
 
+  /// Bugün kartı, 'Enflasyona göre' satırının değeri; yön kelimeyle, işaret yok (F3)
+  ///
+  /// In tr, this message translates to:
+  /// **'{pts} puan önde'**
+  String todayRealAhead(String pts);
+
+  /// No description provided for @todayRealBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pts} puan geride'**
+  String todayRealBehind(String pts);
+
+  /// No description provided for @todayRealEven.
+  ///
+  /// In tr, this message translates to:
+  /// **'başa baş'**
+  String get todayRealEven;
+
+  /// Yıl sonu özeti, enflasyon sayfası başlığı; eskiden işaretli çıplak '{n} puan' idi (F3)
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyonu {n} puan geçtin'**
+  String recapPointsAhead(String n);
+
+  /// No description provided for @recapPointsBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyonun {n} puan gerisinde kaldın'**
+  String recapPointsBehind(String n);
+
   /// No description provided for @loadingEllipsis.
   ///
   /// In tr, this message translates to:
@@ -3644,12 +3674,6 @@ abstract class AppLocalizations {
   /// **'Bir yılın kısa hikâyesi.'**
   String get recapSubtitle;
 
-  /// No description provided for @recapPoints.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} puan'**
-  String recapPoints(String n);
-
   /// No description provided for @recapDays.
   ///
   /// In tr, this message translates to:
@@ -3719,7 +3743,7 @@ abstract class AppLocalizations {
   /// No description provided for @realReturnSemanticsAhead.
   ///
   /// In tr, this message translates to:
-  /// **'Son bir yılda portföyün enflasyonu yüzde {pts} puan geçti'**
+  /// **'Son bir yılda portföyün enflasyonu {pts} puan geçti'**
   String realReturnSemanticsAhead(String pts);
 
   /// No description provided for @lastYearInflation.
@@ -3737,7 +3761,7 @@ abstract class AppLocalizations {
   /// No description provided for @realReturnSemanticsBehind.
   ///
   /// In tr, this message translates to:
-  /// **'Son bir yılda portföyün enflasyonun yüzde {pts} puan gerisinde kaldı'**
+  /// **'Son bir yılda portföyün enflasyonun {pts} puan gerisinde kaldı'**
   String realReturnSemanticsBehind(String pts);
 
   /// No description provided for @pointsBehind.
@@ -5761,12 +5785,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yıllık getirin ile TÜFE farkı'**
   String get todayRealHint;
-
-  /// No description provided for @todayPoints.
-  ///
-  /// In tr, this message translates to:
-  /// **'{pts} puan'**
-  String todayPoints(String pts);
 
   /// No description provided for @todayWeekLabel.
   ///
