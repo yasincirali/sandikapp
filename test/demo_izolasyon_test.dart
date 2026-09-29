@@ -131,6 +131,25 @@ void main() {
             'etkilenmemeli.');
   });
 
+  testWidgets(
+      'şerit ekran okuyucuda görünür (iç Navigator engeli şeridi silmez) '
+      've çıkış ikonu demoda yok', (tester) async {
+    // 2026-09-29 emülatör testi 2: #3 şerit TalkBack ağacında yoktu;
+    // #2 "Çıkış yap" ikonu demoda görünüyordu.
+    final semantik = tester.ensureSemantics();
+    await _telefon(tester);
+    await tester.pumpWidget(const MaterialApp(home: DemoKabugu()));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.bySemanticsLabel(RegExp('Hesap oluştur')), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp('Örnek portföy')), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp('Çıkış yap')), findsNothing);
+
+    await _sok(tester);
+    semantik.dispose();
+  });
+
   testWidgets('varlık ekranı da demo kapsamında, sunucusuz açılır',
       (tester) async {
     await _telefon(tester, boy: 2400);

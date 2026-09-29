@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import 'yukleme_isareti.dart';
 
@@ -1243,6 +1244,11 @@ class SandikLogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Demoda çizilmez: örnek portföy bir oturum değil, çıkılacak hesap yok.
+    // Eskiden basınca "çıkmak istediğine emin misin?" sorup ardından
+    // "hesap oluştur" sayfası açıyordu (2026-09-29 emülatör testi 2, #2).
+    // Demodan çıkış şeridin X'i ve geri tuşu.
+    if (DemoModu.aktif) return const SizedBox.shrink();
     final color = disabled
         ? Sandik.loss.withValues(alpha: 0.35)
         : Sandik.loss;

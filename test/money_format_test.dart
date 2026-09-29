@@ -132,6 +132,8 @@ void main() {
 
     // Takip listesi BİLİNÇLİ hariç: oradaki fiyat varlığın KENDİ kurundadır
     // (AAPL için $), TRY tutarı değil — baz birime çevirmek yanlış olurdu.
-    expect(oku('lib/screens/watchlist_screen.dart'), contains('currencySymbolFor('));
+    // Sembol kotasyonun para birimi (`kotasyonSembolu`, 2026-09-29): döviz
+    // paritesinde karşı para birimi (USDTRY=X → ₺).
+    expect(oku('lib/screens/watchlist_screen.dart'), contains('kotasyonSembolu('));
   });
 }

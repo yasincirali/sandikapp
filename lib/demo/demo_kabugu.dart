@@ -215,7 +215,16 @@ class _DemoKabuguState extends State<DemoKabugu> {
             Expanded(
               // Şerit durum çubuğu boşluğunu zaten aldı; alttaki ekranlar
               // kendi `SafeArea`'larıyla ikinci kez almasın.
-              child: MediaQuery.removePadding(
+              //
+              // `Semantics(container: true)`: iç Navigator'ın sayfa engeli
+              // (`ModalBarrier` → `BlockSemantics`) aynı kapsamda kendinden
+              // ÖNCE çizilen kardeşleri ekran okuyucudan siler — şerit (X,
+              // "Örnek portföy", "Hesap oluştur") TalkBack'te hiç yoktu
+              // (2026-09-29 emülatör testi 2, #3). Ayrı kapsam engeli içeride
+              // tutar.
+              child: Semantics(
+                container: true,
+                child: MediaQuery.removePadding(
                 context: context,
                 removeTop: true,
                 child: NavigatorPopHandler(
@@ -233,6 +242,7 @@ class _DemoKabuguState extends State<DemoKabugu> {
                     ],
                   ),
                 ),
+              ),
               ),
             ),
           ],

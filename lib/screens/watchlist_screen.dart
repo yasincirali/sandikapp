@@ -910,14 +910,16 @@ extension on WatchlistItem {
 
 /// Satırdaki fiyat metni. Endeks puandır: para simgesi ve kuruş yok
 /// (arama satırı ve piyasa bandıyla aynı kural, `bistEndeksiMi`).
-/// Diğerleri kotasyonun kendi para birimiyle.
+/// Diğerleri kotasyonun kendi para birimiyle — `kotasyonSembolu`: döviz
+/// paritesinde KARŞI para birimi (`USDTRY=X` → ₺49,00; eskiden miktar
+/// sembolüyle "$49,00" yazıyordu — 2026-09-29 emülatör testi #13, arama
+/// satırı ve varlık sayfasıyla aynı kural).
 @visibleForTesting
 String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
   if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
   return tryFormatter(
-          digits: 2,
-          symbol: currencySymbolFor(item.ticker, item.currency) ?? '₺')
+          digits: 2, symbol: kotasyonSembolu(item.ticker, item.currency))
       .format(f);
 }
