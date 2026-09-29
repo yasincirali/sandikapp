@@ -803,7 +803,7 @@ class _PortfolioPerformanceScreenState
 
   /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900) — baz
   /// birimde (Faz 3.2). Seri TRY kalır, yalnızca etiket çevrilir.
-  String _fmtY(double val) => ref.read(bazParaProvider).compact(val);
+  String _fmtY(double val) => ref.read(gosterimBazParaProvider).compact(val);
 
   /// Seçili periyodun değişim özeti — grafiğin hemen üstünde.
   ///

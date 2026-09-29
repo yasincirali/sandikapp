@@ -818,6 +818,36 @@ abstract class AppLocalizations {
   /// **'Vazgeç'**
   String get cancel;
 
+  /// Hızlı Al/Sat diyaloğu: eldeki miktarın tamamını seçen çip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hepsi ({qty})'**
+  String quickAllChip(String qty);
+
+  /// No description provided for @quickHolding.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevcut'**
+  String get quickHolding;
+
+  /// Hızlı Al/Sat: ortalama birim maliyet kısaltması.
+  ///
+  /// In tr, this message translates to:
+  /// **'ort. {price}'**
+  String quickAvgShort(String price);
+
+  /// No description provided for @quickUnitPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birim fiyat'**
+  String get quickUnitPrice;
+
+  /// No description provided for @quickTotalCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam maliyet'**
+  String get quickTotalCost;
+
   /// No description provided for @delete.
   ///
   /// In tr, this message translates to:

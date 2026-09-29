@@ -556,8 +556,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   Widget build(BuildContext context) {
     // Baz para birimi BİR KEZ burada okunur: alt widget'lara parametre
     // gider. Yalnızca DEĞER tutarları (PnL, dönem değişimi) çevrilir;
-    // grafiğin ekseni/ipucu kote FİYATTIR ve ₺ kalır.
-    final baz = ref.watch(bazParaProvider);
+    // grafiğin ekseni/ipucu kote FİYATTIR ve ₺ kalır. "Bakiyeyi gizle"
+    // açıksa bu DEĞER tutarları maskelenir (`gosterimBazParaProvider`,
+    // bulgu #3); fiyat bakiye değildir, açık kalır.
+    final baz = ref.watch(gosterimBazParaProvider);
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;

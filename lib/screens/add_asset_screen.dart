@@ -1470,9 +1470,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _type == AssetType.kripto
-                          ? _quantitySuffix
-                          : AddAssetFormState.unitLabel(_unitType),
+                      // Miktar alanının son ekiyle AYNI birim (bulgu #22):
+                      // eski `UnitType.label` hisse/fonda "Adet" yazıyordu.
+                      _quantitySuffix,
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: selected
