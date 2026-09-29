@@ -49,11 +49,11 @@ import '../services/period_summary_service.dart' show SummaryPeriod;
 /// Sıfırda — ya da gösterilen hanelerde sıfıra yuvarlanıyorsa — işaret
 /// YOK: "−%0,00" yönü olmayan bir şeye yön yazardı. Hesaba dokunmaz;
 /// yalnızca biçim.
-String isaretliYuzde(double pct, {int digits = 2}) {
-  final metin = fmtPct(pct.abs(), digits: digits);
-  if (metin == fmtPct(0, digits: digits)) return metin;
-  return '${pct > 0 ? '+' : '−'}$metin';
-}
+///
+/// Kural `tr_format.dart` › [fmtPctIsaretli]'de (piyasa şeridi de oradan);
+/// bu ad kartın testleri ve çağrı yerleri için korunur.
+String isaretliYuzde(double pct, {int digits = 2}) =>
+    fmtPctIsaretli(pct, digits: digits);
 
 /// "Enflasyona göre" satırının değeri: `5,2 puan önde` / `20,6 puan geride`.
 ///

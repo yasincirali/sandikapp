@@ -18,6 +18,19 @@ String fmtPct(double value, {int digits = 2, bool showSign = false}) {
   return '%$sign$str';
 }
 
+/// Yönlü yüzde: `+%1,23` / `−%0,06` — tutarla AYNI işaret biçimi.
+///
+/// [fmtPct] eksiyi sayının içine koyar ("%-0,23"); uygulamanın tutarları ise
+/// U+2212 ile başa yazar ("−₺368"). Yan yana duran tutar ve yüzde aynı dili
+/// konuşsun diye yönlü yüzde TEK yerden (2026-09-29 emülatör testi: piyasa
+/// şeridi "%-0,23", Bugün kartı "−%0,06" yazıyordu). Sıfıra yuvarlanan değer
+/// işaretsiz: "−%0,00" yönü olmayan şeye yön yazardı.
+String fmtPctIsaretli(double pct, {int digits = 2}) {
+  final metin = fmtPct(pct.abs(), digits: digits);
+  if (metin == fmtPct(0, digits: digits)) return metin;
+  return '${pct > 0 ? '+' : '\u2212'}$metin';
+}
+
 /// Genel sayı: `1.234,56` — [digits] ondalık hane (default 2).
 String fmtNum(double value, {int digits = 2}) {
   final f = NumberFormat.decimalPattern('tr_TR')

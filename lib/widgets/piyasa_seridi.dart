@@ -101,9 +101,12 @@ class PiyasaOgesi {
   final String deger;
   final double? degisimPct;
 
-  /// Ekran okuyucu ve test için düz metin: "Dolar 48,79 artı %0,08".
+  /// Ekran okuyucu ve test için düz metin: "Dolar 48,79 +%0,08".
+  ///
+  /// Yön [fmtPctIsaretli] ile (2026-09-29): eskiden eksi "%-0,23" diye
+  /// sayının içine giriyordu; uygulamanın geri kalanı "−%0,23" yazıyor.
   String get metin =>
-      '$etiket $deger${degisimPct == null ? '' : ' ${degisimPct! >= 0 ? '+' : ''}${fmtPct(degisimPct!)}'}';
+      '$etiket $deger${degisimPct == null ? '' : ' ${fmtPctIsaretli(degisimPct!)}'}';
 }
 
 class _PiyasaSeridiState extends State<PiyasaSeridi> {

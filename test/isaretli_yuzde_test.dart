@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/utils/tr_format.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
 
@@ -40,11 +41,21 @@ void main() {
           .split('\n')
           .where((s) => !s.trimLeft().startsWith('//'))
           .join('\n');
-      // Tek izinli kullanım `isaretliYuzde`'nin kendi gövdesi.
-      expect(RegExp(r'fmtPct\([^)]*\.abs\(\)').allMatches(src).length, 1);
+      // Kartta işaretsiz yüzde KALMADI: gövde 2026-09-29'dan beri
+      // `tr_format.dart` › `fmtPctIsaretli`'de (piyasa şeridi de oradan).
+      expect(RegExp(r'fmtPct\([^)]*\.abs\(\)').allMatches(src).length, 0);
       expect(src.contains('yuzde = isaretliYuzde(s.changePct);'), isTrue);
       expect(src.contains('deger: isaretliYuzde(s.getiriPct),'), isTrue);
     });
+  });
+
+  test('piyasa şeridi de aynı biçim: eksi "−%0,23", "%-0,23" değil', () {
+    // 2026-09-29 emülatör testi: şerit ekran okuyucu metni "%-0,23" yazıyordu.
+    expect(fmtPctIsaretli(-0.23), '\u2212%0,23');
+    expect(fmtPctIsaretli(0.08), '+%0,08');
+    expect(fmtPctIsaretli(0.001), '%0,00');
+    final kaynak = ekranKaynagiSync('lib/widgets/piyasa_seridi.dart');
+    expect(kaynak.contains('fmtPctIsaretli(degisimPct!)'), isTrue);
   });
 
   group('enflasyon farkı — yön kelimede', () {
