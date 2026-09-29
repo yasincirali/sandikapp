@@ -1181,7 +1181,7 @@ abstract class AppLocalizations {
   /// No description provided for @lotSummary.
   ///
   /// In tr, this message translates to:
-  /// **'{buys} alım · {sells} çıkarma'**
+  /// **'{sells, plural, =0{{buys} alım} other{{buys} alım · {sells} çıkarma}}'**
   String lotSummary(int buys, int sells);
 
   /// No description provided for @sortMarketValue.
@@ -1385,7 +1385,7 @@ abstract class AppLocalizations {
   /// No description provided for @tickerHintOther.
   ///
   /// In tr, this message translates to:
-  /// **'Yahoo Finance sembolü veya boş bırakın'**
+  /// **'Yahoo Finance sembolü ya da boş bırak'**
   String get tickerHintOther;
 
   /// No description provided for @assetTypeSemantics.
@@ -3590,6 +3590,114 @@ abstract class AppLocalizations {
   /// **'Filtreleri temizle'**
   String get clearFilters;
 
+  /// No description provided for @watchlistRowUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'artış {pct}'**
+  String watchlistRowUp(String pct);
+
+  /// No description provided for @watchlistRowDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'düşüş {pct}'**
+  String watchlistRowDown(String pct);
+
+  /// No description provided for @watchlistRowFollowing.
+  ///
+  /// In tr, this message translates to:
+  /// **'takip ediliyor'**
+  String get watchlistRowFollowing;
+
+  /// No description provided for @notificationsNewCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 yeni bildirim} other{{count} yeni bildirim}}'**
+  String notificationsNewCount(int count);
+
+  /// No description provided for @signOutAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış yap'**
+  String get signOutAction;
+
+  /// No description provided for @baseCurrencyNameLira.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lira'**
+  String get baseCurrencyNameLira;
+
+  /// No description provided for @baseCurrencyNameDollar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get baseCurrencyNameDollar;
+
+  /// No description provided for @baseCurrencyNameEuro.
+  ///
+  /// In tr, this message translates to:
+  /// **'Euro'**
+  String get baseCurrencyNameEuro;
+
+  /// No description provided for @baseCurrencyNameGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram altın'**
+  String get baseCurrencyNameGold;
+
+  /// No description provided for @datePickerHelp.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarih seç'**
+  String get datePickerHelp;
+
+  /// No description provided for @datePickerConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seç'**
+  String get datePickerConfirm;
+
+  /// No description provided for @sortAssetsSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıkları sırala'**
+  String get sortAssetsSemantics;
+
+  /// No description provided for @showDetailsSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrıntıları göster'**
+  String get showDetailsSemantics;
+
+  /// No description provided for @hideDetailsSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrıntıları gizle'**
+  String get hideDetailsSemantics;
+
+  /// No description provided for @pricePreviewClose.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} kapanışı — kayıtta bu fiyat kullanılacak'**
+  String pricePreviewClose(String date);
+
+  /// No description provided for @pricePreviewLastTradingClose.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son işlem günü kapanışı ({date}) — kayıtta bu fiyat kullanılacak'**
+  String pricePreviewLastTradingClose(String date);
+
+  /// No description provided for @priceAssignedClose.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} kapanışı {price} olarak atandı'**
+  String priceAssignedClose(String date, String price);
+
+  /// No description provided for @priceAssignedLastTradingClose.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son işlem günü ({date}) kapanışı {price} olarak atandı'**
+  String priceAssignedLastTradingClose(String date, String price);
+
   /// Bugün kartı, 'Enflasyona göre' satırının değeri; yön kelimeyle, işaret yok (F3)
   ///
   /// In tr, this message translates to:
@@ -4691,7 +4799,7 @@ abstract class AppLocalizations {
   /// No description provided for @indicatorsConfidence.
   ///
   /// In tr, this message translates to:
-  /// **'{lehte}/{total} gösterge · güven %{pct}'**
+  /// **'{lehte}/{total} yön veren gösterge · güven %{pct}'**
   String indicatorsConfidence(int lehte, int total, int pct);
 
   /// No description provided for @confidenceOnly.
@@ -4757,7 +4865,7 @@ abstract class AppLocalizations {
   /// No description provided for @nOfMIndicators.
   ///
   /// In tr, this message translates to:
-  /// **'· {on}/{all} gösterge'**
+  /// **'· {on}/{all} gösterge açık'**
   String nOfMIndicators(int on, int all);
 
   /// No description provided for @configureIndicators.
@@ -5291,7 +5399,7 @@ abstract class AppLocalizations {
   /// No description provided for @hiddenWeekend.
   ///
   /// In tr, this message translates to:
-  /// **'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.'**
+  /// **'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.'**
   String get hiddenWeekend;
 
   /// No description provided for @hiddenOutsideWindow.

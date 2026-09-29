@@ -97,7 +97,7 @@ class _HedefSheetState extends State<_HedefSheet> {
             children: [
               for (final h in _hazirHedefler)
                 ActionChip(
-                  label: Text(fmtTRYCompact(h.toDouble())),
+                  label: Text(fmtTRYCompactSade(h.toDouble())),
                   onPressed: () => setState(() {
                     _ctrl.text = fmtNum(h.toDouble(), digits: 0);
                     _hata = null;

@@ -378,6 +378,6 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
       qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity);
   final miktarMetni = asset.unitIsPrefix
       ? '${asset.unitLabel}$miktar'
-      : '$miktar ${asset.unitLabel}';
+      : '$miktar ${birimMetni(l10n, asset.unitLabel)}';
   return '${asset.isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
 }

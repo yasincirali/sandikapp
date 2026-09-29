@@ -241,6 +241,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         ),
                         child: Center(
                           child: Icon(Icons.compare_arrows_rounded,
+                              semanticLabel: context.l10n.compare,
                               color: context.c.amberText, size: 22),
                         ),
                       ),
@@ -1417,7 +1418,16 @@ class _ExpandChevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    // Etiket + açık/kapalı durumu (emülatör testi #28): ok yalnızca
+    // görseldi, TalkBack etiketsiz bir düğme okuyordu.
+    return Semantics(
+      container: true,
+      button: true,
+      expanded: expanded,
+      label: expanded
+          ? context.l10n.hideDetailsSemantics
+          : context.l10n.showDetailsSemantics,
+      child: GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       // Dokunma alanı 44×44 (HIG #37, High severity) — görsel ikon 32'de
@@ -1438,6 +1448,7 @@ class _ExpandChevron extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -1825,6 +1836,7 @@ class _SortButton extends StatelessWidget {
         ),
         child: Icon(
           Icons.sort_rounded,
+          semanticLabel: context.l10n.sortAssetsSemantics,
           size: 20,
           color: current != _SortOrder.valueDesc
               ? context.c.amberText

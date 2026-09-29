@@ -228,3 +228,18 @@ String kotasyonSembolu(String ticker, String currency) {
   }
   return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
 }
+
+/// BIST endeksi mi (`XU100.IS`, `XU030.IS`, `XUSIN.IS`)?
+///
+/// Endeks PUANDIR, fiyat değil: para simgesi ve kuruş anlamsız ("BIST 100
+/// ₺12.290,58" yazıyordu — 2026-09-29 emülatör testi #17). Kural önceden
+/// yalnızca arama satırında (`aramaFiyatMetni`) yaşıyordu; takip listesi
+/// kendi biçimleyicisini kurup ₺ basıyordu. Tek tanım burada, gösteren her
+/// yüzey buna sorar. Kayıtlar `.IS` son ekiyle gelir; son eksiz yazım da
+/// (eski kayıt, test verisi) aynı endeksi anlatır.
+bool bistEndeksiMi(String ticker) {
+  final t = ticker.trim().toUpperCase();
+  if (!t.startsWith('XU')) return false;
+  if (t.endsWith('.IS')) return true;
+  return t.length == 5 && !t.contains(RegExp(r'[.:=\-]'));
+}

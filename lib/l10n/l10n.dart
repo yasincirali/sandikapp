@@ -20,7 +20,30 @@ export 'generated/app_localizations.dart';
 extension L10nX on BuildContext {
   AppLocalizations get l10n =>
       AppLocalizations.of(this) ?? AppLocalizationsTr();
+
+  /// `intl` tarih biçimleyicilerinin (`DateFormat('d MMM', …)`) dili —
+  /// arayüz diliyle aynı.
+  ///
+  /// Önerilen ortak yardımcı (2026-09-29 emülatör testi #27): kod tabanında
+  /// ~40 `DateFormat(..., 'tr_TR')` sabit locale'le yazılmış; İngilizce modda
+  /// "29 Eyl" çıkıyor. Hepsini tek turda çevirmek geniş bir değişiklik
+  /// (grafik eksenleri, widget/Live Activity sözleşmeleri Türkçe kalmalı).
+  /// Arayüz metni üreten yerler bu getter'a geçer; `bugun_karti`'ndaki
+  /// `_dil` aynı kuralın eski kopyası. Delegate yoksa (test) Türkçe.
+  String get tarihDili =>
+      Localizations.maybeLocaleOf(this)?.languageCode == 'en'
+          ? 'en_US'
+          : 'tr_TR';
 }
+
+/// Miktar biriminin arayüz dilindeki yazımı.
+///
+/// `birimEtiketi` (models/asset.dart) birimi VERİ olarak üretir ("adet",
+/// "gr", "lot", coin kodu) — model katmanı `BuildContext` bilmez. Yalnız
+/// Türkçe kelime olan "adet" çevrilir; "gr"/"kg"/"lot"/"BTC" iki dilde aynı.
+/// İngilizce modda "15 adet" yazıyordu (emülatör testi #27).
+String birimMetni(AppLocalizations l, String birim) =>
+    birim == 'adet' ? l.unitPiece : birim;
 
 /// Dönem kimliği → ekranda görünen etiket (3.20).
 ///

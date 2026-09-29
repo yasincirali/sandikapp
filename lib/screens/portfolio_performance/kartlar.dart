@@ -523,7 +523,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // gürültüdür, o yüzden koşullu.
     final dateFmt = DateFormat(
       start.year == end.year ? 'd MMM' : 'd MMM y',
-      'tr_TR',
+      // Arayüz diliyle (emülatör testi #27: İngilizcede "29 Eyl").
+      context.tarihDili,
     );
     // Başlık "birikim" der: rakam alımları İÇERİR, dolayısıyla saf getiri
     // değildir. Simülasyonda miktar sabit olduğu için orada birikim etkisi
@@ -547,9 +548,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ? context.l10n.todaysBalanceChange
         : kapaliKuyruk
             ? context.l10n.sinceDateToToday(
-                DateFormat('d MMM', 'tr_TR').format(start))
+                DateFormat('d MMM', context.tarihDili).format(start))
             : context.l10n.balanceChangeSince(
-                DateFormat('d MMMM', 'tr_TR').format(start));
+                DateFormat('d MMMM', context.tarihDili).format(start));
 
     final title = intraday
         ? gunIciBaslik

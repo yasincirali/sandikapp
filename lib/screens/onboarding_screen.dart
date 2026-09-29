@@ -472,8 +472,10 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       baslik: 'Kripto da burada',
       // "Çiplerin sonunda" yazıyordu; 2026-09-25 sırasında Kripto Fon'dan
-      // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`).
-      govde: 'Tür çiplerinde Fon\'un yanında Kripto var: listeden coin\'i '
+      // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`). 2026-09-29'dan
+      // beri çipler sarmalı (#29): Kripto dar ekranda Fon'la aynı satıra
+      // düşmeyebilir, bu yüzden metin konum ("Fon'un yanında") söylemez.
+      govde: 'Tür çiplerinde Kripto da var: listeden coin\'i '
           'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
           'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
           'grafikte hafta sonu da görünür.',
@@ -582,8 +584,8 @@ List<_Adim> _adimlariKur() {
       govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
           'onayladığında portföyleriniz tek ekranda birleşir; "Birlikte" '
           'herkesin toplamı, "Ben" yalnız senin. Birden çok ortağın olabilir; '
-          'ana ekranda kartı kaydırarak aralarında geçersin. İstediğiniz an '
-          'ayrılırsınız.',
+          'ana ekranda kartı kaydırarak aralarında geçersin. İstediğin an '
+          'ortaklıktan ayrılabilirsin.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),

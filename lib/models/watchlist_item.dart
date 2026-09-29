@@ -67,6 +67,37 @@ class WatchlistItem {
     return '${type.name}|$core';
   }
 
+  /// Takip satırında, grafikte ve grafik açıklamasında gösterilen kısa ad.
+  ///
+  /// TEK tanım: satır (`watchlist_screen` `displayLabel`) ve grafik
+  /// (`watchlistChartProvider` `chartLabel`) ayrı kopyalar taşıyordu; ikisi de
+  /// iç sembolleri ham basıyordu — açıklamada "ALTIN_GRAM", "ALTIN_GREMSE",
+  /// "XU100" (2026-09-29 emülatör testi #17). Kural:
+  ///   · hisse/fon/kripto → sembolün kendisi (`TEFAS:AFO` → `AFO`,
+  ///     `AGHOL.IS` → `AGHOL`): kullanıcının tanıdığı kısaltma bu;
+  ///   · altın iç sembolü (`ALTIN_*`), emtia vadelisi (`GC=F`) ve BIST
+  ///     endeksi → görünen ad: bu kodlar kullanıcıya hiçbir şey söylemez;
+  ///   · kur çifti (`USDTRY=X`) → para kodu (`USD`).
+  String get kisaEtiket {
+    final t = ticker.trim();
+    final sub = subCategory?.trim();
+    String ad() {
+      if (sub != null && sub.isNotEmpty) return sub;
+      return name.trim().isNotEmpty ? name.trim() : t;
+    }
+
+    if (t.isEmpty) return ad();
+    final buyuk = t.toUpperCase();
+    if (buyuk.startsWith('ALTIN_') ||
+        buyuk.endsWith('=F') ||
+        bistEndeksiMi(t)) {
+      return name.trim().isNotEmpty ? name.trim() : ad();
+    }
+    if (buyuk.endsWith('TRY=X')) return buyuk.replaceAll('TRY=X', '');
+    final sade = t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
+    return sade.length >= 2 ? sade : ad();
+  }
+
   WatchlistItem copyWith({
     double? currentPrice,
     double? periodChangePct,

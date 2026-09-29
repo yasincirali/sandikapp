@@ -227,6 +227,27 @@ Future<FiyatSonucu> fiyatBul({
 bool _ayniGun(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
+/// Seçilen tarih hafta sonuysa, tarihli kapanışın GERÇEKTE geldiği işlem
+/// günü (Cuma); değilse `null`.
+///
+/// Tarihli fiyat "son geçerli kapanış" kuralıyla çekilir
+/// (`PriceService.fetchHistoricalClose`: hedef günde ya da öncesindeki en
+/// yeni işlem günü). Pazar seçilince gelen fiyat Cuma'nındır; form ise
+/// "1 Mar 2026 kapanışı" yazıyordu — o gün kapanış yok (2026-09-29 emülatör
+/// testi #31). Kripto 7/24 işler, hafta sonu kendi kapanışı vardır: `null`.
+///
+/// Resmî tatiller bilinmiyor (takvim yok): hafta içi bir tatilde metin yine
+/// seçilen günü söyler. Uydurma bir gün yazmaktansa bilineni söylemek.
+DateTime? haftaSonuKapanisGunu(DateTime secilen, {required bool yediGun}) {
+  if (yediGun) return null;
+  final gun = dayKey(secilen);
+  return switch (gun.weekday) {
+    DateTime.saturday => DateTime(gun.year, gun.month, gun.day - 1),
+    DateTime.sunday => DateTime(gun.year, gun.month, gun.day - 2),
+    _ => null,
+  };
+}
+
 // ─── Durum ───────────────────────────────────────────────────────────────────
 
 /// Bir geçişin metin alanlarına yazması gereken değerler. `null` = dokunma,

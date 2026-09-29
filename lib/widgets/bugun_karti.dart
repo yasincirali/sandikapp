@@ -551,7 +551,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             onTap: _olcerek(s, () => showHedefSheet(context, ref)),
           );
         }
-        final hedef = gizli ? '••••' : fmtTRYCompact(s.hedefTRY.toDouble());
+        final hedef = gizli ? '••••' : fmtTRYCompactSade(s.hedefTRY.toDouble());
         if (s.ulasildi) {
           return _DefterSatiri(
             etiket: l10n.todayGoalLabel,
@@ -565,7 +565,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           etiket: l10n.todayGoalLabel,
           ipucu: l10n.todayGoalLeftHint(hedef),
           deger: l10n.todayGoalValue(
-              (s.oran * 100).floor(), gizli ? '••••' : fmtTRYCompact(s.kalan)),
+              (s.oran * 100).floor(), gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
           renk: c.amberText,
           cubuk: s.oran,
           onTap: _olcerek(s, () => showHedefSheet(context, ref)),
