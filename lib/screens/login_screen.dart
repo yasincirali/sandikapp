@@ -11,6 +11,8 @@ import 'package:flutter/material.dart'
         Material,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../demo/demo_kabugu.dart' show demoyuAc;
+import '../demo/demo_modu.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
@@ -398,6 +400,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: context.t.bodyLarge?.copyWith(color: context.c.amberText),
                       ),
                     ),
+                    // Örnek portföyle dene (F1) — hesap açmadan önce değeri
+                    // görmek için. İkincil: kayıt bağlantısının altında,
+                    // sönük renkte; birincil yol hâlâ giriş/kayıt. Bayrak
+                    // `demo_mode_enabled` kapalıyken hiç çizilmez.
+                    if (DemoModu.girisDugmesiAcik())
+                      CupertinoButton(
+                        onPressed: () => demoyuAc(context),
+                        child: Text(
+                          context.l10n.demoTryButton,
+                          style: context.t.bodyLarge?.copyWith(color: context.c.text58),
+                        ),
+                      ),
                     const SizedBox(height: 32),
                   ],
                 ),

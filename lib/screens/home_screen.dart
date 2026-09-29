@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../demo/demo_modu.dart';
 import '../providers/price_alert_notification_provider.dart';
 import '../providers/app_notification_provider.dart';
 import '../models/app_notification.dart';
@@ -66,13 +67,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _reloading = false;
 
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
-  void _aramayiAc() => pushGuarded(
-        context,
-        adaptiveRoute<void>(
-          builder: (_) => const AddWatchlistScreen(),
-          fullscreenDialog: true,
-        ),
-      );
+  void _aramayiAc() {
+    // Demo (F1): takibe alma bir yazma; arama sayfası oraya çıkıyor.
+    if (DemoModu.yazmaKapisi('arama')) return;
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) => const AddWatchlistScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
 
   Future<void> _reload() async {
     if (_reloading) return;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
@@ -25,6 +26,7 @@ Future<void> showQuickAdjustDialog(
   required Asset asset,
   required QuickAdjustMode mode,
 }) async {
+  if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
   return showDialog<void>(
     context: context,
     barrierDismissible: true,

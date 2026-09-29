@@ -11,6 +11,7 @@ import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import '../config/pref_keys.dart';
+import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
@@ -106,6 +107,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
   Future<void> set(ThemeMode mode) async {
     state = mode;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(_kThemeModeKey, _toString(mode));
@@ -177,6 +181,9 @@ class LocaleNotifier extends Notifier<Locale?> {
 
   Future<void> set(Locale? locale) async {
     state = locale;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(PrefKeys.locale, encode(locale));
@@ -233,6 +240,9 @@ class _IntPrefNotifier extends Notifier<int> {
 
   Future<void> set(int value) async {
     state = value;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setInt(_key, value);
@@ -276,6 +286,9 @@ class _BoolPrefNotifier extends Notifier<bool> {
 
   Future<void> set(bool value) async {
     state = value;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setBool(_key, value);
@@ -521,6 +534,7 @@ class IndicatorPrefsNotifier extends Notifier<Map<AssetType, Set<String>>> {
   }
 
   Future<void> _persist() async {
+    if (DemoModu.aktif) return; // Demo tercihi diske yazılmaz (F1).
     try {
       final prefs = await SharedPreferences.getInstance();
       final entries = state.entries
@@ -585,6 +599,7 @@ final indicatorPrefsProvider =
 typedef _Reader = T Function<T>(ProviderListenable<T> provider);
 
 Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
+  if (DemoModu.aktif) return; // Demo sunucuya yazmaz (F1).
   try {
     final user = read(authProvider).valueOrNull;
     if (user == null) return;
@@ -671,6 +686,7 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
   }
 
   Future<void> _persist() async {
+    if (DemoModu.aktif) return; // Demo tercihi diske yazılmaz (F1).
     try {
       final prefs = await SharedPreferences.getInstance();
       final entries =
@@ -770,6 +786,7 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   }
 
   Future<void> _persist() async {
+    if (DemoModu.aktif) return; // Demo tercihi diske yazılmaz (F1).
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(

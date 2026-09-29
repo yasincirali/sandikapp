@@ -766,11 +766,14 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () => pushGuarded(
-                context,
-                adaptiveRoute<void>(
-                    builder: (_) => const SignalSettingsScreen()),
-              ),
+              // Demo (F1): sinyal ayarları sunucuya yazılır.
+              onTap: () => DemoModu.yazmaKapisi('ayarlar')
+                  ? null
+                  : pushGuarded(
+                      context,
+                      adaptiveRoute<void>(
+                          builder: (_) => const SignalSettingsScreen()),
+                    ),
               child: Row(
                 children: [
                   Icon(Icons.tune_rounded, size: 14, color: context.c.amberText),

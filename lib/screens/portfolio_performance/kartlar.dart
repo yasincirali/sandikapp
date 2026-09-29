@@ -364,7 +364,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           // yakın sunucu dönemine eşlenir (`ZirveDonem.yakin`); ekran o
           // dönemle açılır. Tür dökümü gibi koşula bağlı DEĞİL: kullanıcının
           // kendi serisi yokken de zirve vardır.
-          if (RemoteConfigService.instance.globalLeaderboardEnabled) ...[
+          // Demo (F1): Zirve sunucudan okunur, demoda çizilmez.
+          if (RemoteConfigService.instance.globalLeaderboardEnabled &&
+              !DemoModu.aktif) ...[
             const SizedBox(height: SandikSpace.md),
             TourAnchor(
               target: TourTarget.zirveKarti,

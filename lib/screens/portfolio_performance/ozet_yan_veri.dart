@@ -243,6 +243,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// geçersiz sayıp boş dönüyordu.
   Future<void> _yukleDilim() async {
     if (_dilimIstendi) return;
+    if (DemoModu.aktif) return; // Demo sunucuya ROI yüklemez (F1).
     if (widget.period != SummaryPeriod.altiAy) return;
     _dilimIstendi = true;
 

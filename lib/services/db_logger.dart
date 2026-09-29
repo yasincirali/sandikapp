@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../demo/demo_modu.dart';
+
 /// Her Supabase / DB isteğini loglar.
 /// SDK kaynağı, tablo/endpoint, metot, request/response payload ve süreler
 /// hem debug konsoluna hem de Supabase'deki `db_logs` tablosuna yazılır.
@@ -148,6 +150,9 @@ class DbLogger {
     required bool isError,
   }) {
     if (silentInTests) return;
+    // Demo kapısının düşürdüğü çağrı da buraya hata olarak gelir;
+    // `db_logs`'a yazmak demonun sunucuya dokunması olurdu (F1).
+    if (DemoModu.aktif) return;
 
     // Production'da DB log yazma kapalı (KVKK/PII riski).
     // Sadece hatalar persist edilir; başarılı çağrılar sessiz geçer.

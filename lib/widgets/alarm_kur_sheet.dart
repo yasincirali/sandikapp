@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../models/price_alert.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
@@ -54,6 +55,7 @@ Future<PriceAlert?> alarmKurAkisi(
   AlarmAdayi? sabit,
   List<AlarmAdayi> adaylar = const [],
 }) async {
+  if (DemoModu.yazmaKapisi('alarm')) return null; // Demo: alarm hesap ister (F1).
   final liste = sabit != null ? [sabit] : adaylar;
   if (liste.isEmpty) {
     sandikSnack(context, context.l10n.addAssetFirst,

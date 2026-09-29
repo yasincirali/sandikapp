@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../demo/demo_modu.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart'
     show
@@ -597,13 +598,16 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: SandikSpace.md),
           SandikTappable(
             semanticLabel: context.l10n.addToWatchlist,
-            onTap: () => pushGuarded(
-              context,
-              adaptiveRoute<void>(
-                builder: (_) => const AddWatchlistScreen(),
-                fullscreenDialog: true,
-              ),
-            ),
+            // Demo (F1): takibe almak bir yazma.
+            onTap: () => DemoModu.yazmaKapisi('takip')
+                ? null
+                : pushGuarded(
+                    context,
+                    adaptiveRoute<void>(
+                      builder: (_) => const AddWatchlistScreen(),
+                      fullscreenDialog: true,
+                    ),
+                  ),
             child: Container(
               constraints: const BoxConstraints(minHeight: 44),
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -671,13 +675,16 @@ class _EmptyState extends StatelessWidget {
 class _AddHeader extends ConsumerWidget {
   const _AddHeader();
 
-  void _ekle(BuildContext context) => pushGuarded(
-        context,
-        adaptiveRoute<void>(
-          builder: (_) => const AddWatchlistScreen(),
-          fullscreenDialog: true,
-        ),
-      );
+  void _ekle(BuildContext context) {
+    if (DemoModu.yazmaKapisi('takip')) return; // Demo: takip bir yazma (F1).
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) => const AddWatchlistScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

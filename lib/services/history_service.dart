@@ -5,6 +5,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/tefas_nav_gozlem.dart';
+import '../demo/demo_modu.dart';
 import 'analytics_service.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
@@ -262,6 +263,8 @@ class HistoryService {
     Set<String> fonKodlari,
     DateTime gun,
   ) async {
+    // Demo sunucuya dokunmaz: gözlem yoksa basamak sabit saate düşer.
+    if (DemoModu.aktif) return const {};
     try {
       return await SupabaseService.instance
           .tefasNavGozlemleri(fonKodlari, gun: gun);
