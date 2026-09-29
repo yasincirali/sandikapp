@@ -393,6 +393,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cancel => 'Vazgeç';
 
   @override
+  String quickAllChip(String qty) {
+    return 'Hepsi ($qty)';
+  }
+
+  @override
+  String get quickHolding => 'Mevcut';
+
+  @override
+  String quickAvgShort(String price) {
+    return 'ort. $price';
+  }
+
+  @override
+  String get quickUnitPrice => 'Birim fiyat';
+
+  @override
+  String get quickTotalCost => 'Toplam maliyet';
+
+  @override
   String get delete => 'Sil';
 
   @override

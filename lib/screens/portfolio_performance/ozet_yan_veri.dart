@@ -469,7 +469,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
         : null;
 
     return PeriodSummaryView(
-      baz: ref.watch(bazParaProvider),
+      baz: ref.watch(gosterimBazParaProvider),
       summary: gosterilen,
       uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
       karakter: widget.karakter,
@@ -489,7 +489,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       katkiKarti: katki == null
           ? null
           : ContributionKarti(
-              baz: ref.watch(bazParaProvider),
+              baz: ref.watch(gosterimBazParaProvider),
               ozet: katki,
               aralik: _katkiAralik,
               onAralik: (a) => setState(() => _katkiAralik = a),

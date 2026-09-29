@@ -343,7 +343,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   start: cizimBaslangici, intraday: isIntraday)
               case final ep?)
             _TypeBreakdownCard(
-              baz: ref.watch(bazParaProvider),
+              baz: ref.watch(gosterimBazParaProvider),
               breakdown: breakdown,
               totalFirst: ep.first,
               totalLast: ep.last,
@@ -512,7 +512,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ? context.c.text36
         : (positive ? context.c.gain : context.c.loss);
 
-    final tryFmt = ref.watch(bazParaProvider).formatter(digits: 0);
+    final tryFmt = ref.watch(gosterimBazParaProvider).formatter(digits: 0);
     final periodLabel = donemEtiketi(context.l10n,
         _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].label);
     // Yıl, iki uç FARKLI yıla düşüyorsa yazılır.

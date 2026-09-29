@@ -1,15 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
+import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/fiyat_kaynagi.dart';
 import '../services/remote_config_service.dart';
 import '../services/temettu_gecmisi.dart';
 import '../theme/sandik.dart';
+import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import 'dividend_dialog.dart';
 
@@ -27,7 +30,7 @@ import 'dividend_dialog.dart';
 ///   · varlık TRY kote BIST hissesi değil (`FiyatKaynagi.temettuSembolu`),
 ///   · 12 ayda hak tarihinde lotun olduğu olay yok, ya da veri çekilemedi.
 /// Boş kart "temettü yok" demek olurdu; veri çekilemediyse bu yanlış olur.
-class TemettuGecmisiKarti extends StatefulWidget {
+class TemettuGecmisiKarti extends ConsumerStatefulWidget {
   /// Pozisyonun ekran görünümü (`asDisplayAsset`) — sahibi ve anahtarı.
   final Asset varlik;
 
@@ -51,11 +54,11 @@ class TemettuGecmisiKarti extends StatefulWidget {
   });
 
   @override
-  State<TemettuGecmisiKarti> createState() =>
+  ConsumerState<TemettuGecmisiKarti> createState() =>
       _TemettuGecmisiKartiState();
 }
 
-class _TemettuGecmisiKartiState extends State<TemettuGecmisiKarti> {
+class _TemettuGecmisiKartiState extends ConsumerState<TemettuGecmisiKarti> {
   String? _sembol;
   List<TemettuOlayi>? _olaylar;
 
@@ -125,6 +128,12 @@ class _TemettuGecmisiKartiState extends State<TemettuGecmisiKarti> {
     final l = context.l10n;
     final c = context.c;
     final tarih = DateFormat('dd.MM.yyyy', 'tr_TR');
+    // "Bakiyeyi gizle" (bulgu #3): kaydedilen toplam ve brüt tutar senin
+    // lotunla çarpılmış paradır → maskelenir. Pay başı tutar ve lot sayısı
+    // açık kalır (hareket satırında da miktar açık; kural Ana ile aynı).
+    final gizli = ref.watch(balanceHiddenProvider);
+    String tl(double v) =>
+        gizli ? const BazPara.lira().gizliTutar : fmtTRY(v, digits: 2);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -139,7 +148,7 @@ class _TemettuGecmisiKartiState extends State<TemettuGecmisiKarti> {
             children: [
               if (_kaydedilen > 0) ...[
                 Text(
-                  l.dividendRecordedTotal(fmtTRY(_kaydedilen, digits: 2)),
+                  l.dividendRecordedTotal(tl(_kaydedilen)),
                   style: context.t.bodyMedium?.copyWith(
                       color: c.gain, fontWeight: FontWeight.w600),
                 ),
@@ -147,7 +156,7 @@ class _TemettuGecmisiKartiState extends State<TemettuGecmisiKarti> {
               ],
               for (var i = 0; i < _satirlar.length; i++) ...[
                 if (i > 0) Divider(height: SandikSpace.md, color: c.hairline),
-                _satir(_satirlar[i], tarih),
+                _satir(_satirlar[i], tarih, tl),
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
@@ -161,7 +170,8 @@ class _TemettuGecmisiKartiState extends State<TemettuGecmisiKarti> {
     );
   }
 
-  Widget _satir(TemettuSatiri s, DateFormat tarih) {
+  Widget _satir(
+      TemettuSatiri s, DateFormat tarih, String Function(double) tl) {
     final l = context.l10n;
     final c = context.c;
     return Row(
@@ -180,7 +190,7 @@ class _TemettuGecmisiKartiState extends State<TemettuGecmisiKarti> {
               // KAP'taki rakamla karşılaştırınca tutmaz.
               Text(
                 '${l.dividendEventLine(fmtNumFlex(s.lot), '₺${fmtNumFlex(s.olay.tutarPay)}')}'
-                ' · ${l.dividendGrossAmount(fmtTRY(s.brut, digits: 2))}',
+                ' · ${l.dividendGrossAmount(tl(s.brut))}',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: context.t.bodySmall?.copyWith(color: c.text58),

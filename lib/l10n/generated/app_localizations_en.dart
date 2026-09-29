@@ -392,6 +392,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cancel => 'Cancel';
 
   @override
+  String quickAllChip(String qty) {
+    return 'All ($qty)';
+  }
+
+  @override
+  String get quickHolding => 'Holding';
+
+  @override
+  String quickAvgShort(String price) {
+    return 'avg. $price';
+  }
+
+  @override
+  String get quickUnitPrice => 'Unit price';
+
+  @override
+  String get quickTotalCost => 'Total cost';
+
+  @override
   String get delete => 'Delete';
 
   @override

@@ -39,15 +39,34 @@ enum BaseCurrency {
 /// [kur] geçersizse (0 ya da negatif — kur henüz çekilmedi) TRY'ye düşülür:
 /// yanlış kurla yazılmış bir tutar, ₺ ile yazılmış doğru tutardan kötüdür.
 class BazPara {
-  const BazPara(this.birim, this.kur);
+  const BazPara(this.birim, this.kur, {this.gizli = false});
 
   /// Varsayılan: ₺, kur 1 — eski davranışın birebir aynısı.
   const BazPara.lira()
       : birim = BaseCurrency.try_,
-        kur = 1;
+        kur = 1,
+        gizli = false;
 
   final BaseCurrency birim;
   final double kur;
+
+  /// "Bakiyeyi gizle" açık — bu nesneden geçen HER tutar [gizliTutar] yazar.
+  ///
+  /// ## Neden biçimleyicinin içinde (2026-09-29 emülatör testi, bulgu #3)
+  /// Gizleme yalnız Ana ekranda, her çağrı yerinde elle
+  /// (`hideBalance ? '••••' : fmt(...)`) yapılıyordu; Portföy ve Performans
+  /// sekmeleri tercihi hiç okumuyordu ve toplam, kart, eksen, ipucu, tür
+  /// dökümü açıkta kalıyordu. Bu ekranlarda 60'a yakın tutar çağrı yeri var;
+  /// tek tek `if` eklemek bir sonraki yeni satırın yine sızması demekti.
+  /// Tutarlar zaten bu nesneden geçtiği için maske de burada: ekran
+  /// `gosterimBazParaProvider`'ı okuyunca altındaki her kart kendiliğinden
+  /// gizlenir. Yüzdeler bu nesneden geçmez, görünür kalır (Ana'daki Bugün
+  /// kartıyla aynı kural). [cevir] maskelenmez: grafik GEOMETRİSİ gerçek
+  /// sayıyla çizilir, yalnız etiket gizlenir.
+  final bool gizli;
+
+  /// Aynı birim/kur, tutarları maskeleyen kopya.
+  BazPara gizlenmis() => BazPara(birim, kur, gizli: true);
 
   bool get lira => birim == BaseCurrency.try_ || !(kur > 0);
   BaseCurrency get etkinBirim => lira ? BaseCurrency.try_ : birim;
@@ -70,6 +89,7 @@ class BazPara {
 
   /// `fmtTRYCompact` karşılığı — eksen/dar alan etiketi.
   String compact(double tryTutar) {
+    if (gizli) return gizliTutar;
     if (lira) return fmtTRYCompact(tryTutar);
     final v = cevir(tryTutar);
     final abs = v.abs();
@@ -90,6 +110,7 @@ class BazPara {
   /// `fmtTRYAxis` karşılığı: iki komşu eksen etiketi ayırt edilebilir kalsın
   /// diye ondalık sayısı bandın genişliğine göre seçilir.
   String axis(double tryTutar, double trySpan) {
+    if (gizli) return gizliTutar;
     if (lira) return fmtTRYAxis(tryTutar, trySpan);
     final v = cevir(tryTutar);
     final span = cevir(trySpan).abs();
@@ -133,6 +154,7 @@ class ParaBicimi {
   final NumberFormat _tr;
 
   String format(num tryTutar) {
+    if (_baz.gizli) return _baz.gizliTutar;
     final v = tryTutar.toDouble();
     if (_baz.lira) return _tr.format(v);
     final c = _baz.cevir(v);

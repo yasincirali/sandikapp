@@ -30,6 +30,18 @@ final bazParaProvider = Provider<BazPara>((ref) {
   return BazPara(birim, gecerli ? kur : 0);
 });
 
+/// EKRANA yazılan portföy tutarları için baz — "Bakiyeyi gizle" açıksa
+/// maskeli ([BazPara.gizli]).
+///
+/// Portföy, Performans ve varlık ekranının POZİSYON tutarları bunu okur
+/// (bulgu #3, 2026-09-29: gizleme yalnız Ana'da çalışıyordu). Ham
+/// [bazParaProvider] hesap ve piyasa FİYATI yüzeyleri için kalır: bir
+/// hissenin kotasyonu bakiye değildir, gizlenmez.
+final gosterimBazParaProvider = Provider<BazPara>((ref) {
+  final baz = ref.watch(bazParaProvider);
+  return ref.watch(balanceHiddenProvider) ? baz.gizlenmis() : baz;
+});
+
 /// Baz birimi değiştirir; altın seçildiyse kuru hemen çeker ki ekran ₺'de
 /// takılı kalmasın (altın kuru yalnızca bu tercihle isteniyor).
 Future<void> setBaseCurrency(WidgetRef ref, BaseCurrency birim) async {

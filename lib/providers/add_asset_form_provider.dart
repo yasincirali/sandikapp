@@ -335,16 +335,17 @@ class AddAssetFormState {
   bool get isDoviz => type == AssetType.doviz;
   bool get isAltin => type == AssetType.altin;
 
+  /// Miktar alanının ve hızlı miktar çiplerinin birimi.
+  ///
+  /// Kanonik [birimEtiketi]'nden (bulgu #22, 2026-09-29): eskiden
+  /// `UnitType.label` okunuyordu ve hisse/fon formda "Adet", kaydedilince
+  /// portföyde "lot" yazıyordu; altın formda "Gram", portföyde "gr". Aynı
+  /// varlık iki ekranda iki birim — `bulk_add`'de 2026-09-12'de kapatılan
+  /// ayrışmanın form tarafındaki kopyası. Döviz alt kategorisini (para
+  /// birimi) yazmaya devam eder.
   String get quantitySuffix {
     if (isDoviz) return subCategory ?? 'Adet';
-    return unitLabel(unitType);
-  }
-
-  static String unitLabel(String unitType) {
-    for (final u in UnitType.values) {
-      if (u.name == unitType || u.shortcode == unitType) return u.label;
-    }
-    return 'Adet';
+    return birimEtiketi(type: type, unitType: unitType, currency: currency);
   }
 
   List<String> get quantityPresets {

@@ -380,7 +380,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     _AssetTypeDonut(
                                       assets: displayAssets,
                                       pState: pState,
-                                      baz: ref.watch(bazParaProvider),
+                                      baz: ref.watch(gosterimBazParaProvider),
                                       onTypeSelected: (type) =>
                                           setState(() => _filteredType = type),
                                     ),
@@ -388,7 +388,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     _AssetList(
                                       positions: filteredPositions,
                                       pState: pState,
-                                      baz: ref.watch(bazParaProvider),
+                                      baz: ref.watch(gosterimBazParaProvider),
                                       currentUserId: currentUserId,
                                       // Ham `CupertinoPageRoute` + korumasız
                                       // push: satıra hızlı iki dokunuş aynı
@@ -1057,9 +1057,15 @@ class _GainLossLine extends StatelessWidget {
             ? Icons.arrow_drop_up_rounded
             : Icons.arrow_drop_down_rounded);
 
+    // Yön METİNDE de yazılır (bulgu #6, 2026-09-29): eskiden tutar ve yüzde
+    // mutlak değerdi ("ATATP ₺5 · %2,23" zararda), yön yalnız renk ve oktan
+    // okunuyordu — renk körü ve ekran okuyucu için kayıp. Tutar U+2212 ile,
+    // yüzde `fmtPctIsaretli` ile: Ana'daki Bugün kartıyla aynı dil. Tutarın
+    // işareti yüzdenin işaretiyle aynı kaynaktan (`gainLossTRY`) gelir.
     final String label = isFlat
         ? context.l10n.noChange
-        : '${tryFmt.format(gainLossTRY.abs())} · ${fmtPct(pct.abs(), digits: 2)}';
+        : '${isPositive ? '+' : '\u2212'}${tryFmt.format(gainLossTRY.abs())}'
+            ' · ${fmtPctIsaretli(pct)}';
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -1346,7 +1352,7 @@ class _AssetCardState extends State<_AssetCard>
                   background: context.c.amberFill,
                   foreground: context.c.onAmber,
                   icon: Icons.savings_outlined,
-                  label: 'Temettü',
+                  label: context.l10n.dividend,
                 ),
             ],
           ),
@@ -1530,13 +1536,14 @@ class _AssetDetailsPanel extends StatelessWidget {
                 child: _DetailItem(
                   label: context.l10n.firstPurchase,
                   value: firstBuyDate != null
-                      ? DateFormat('d MMM yyyy', 'tr_TR').format(firstBuyDate)
+                      ? DateFormat('d MMM yyyy', context.l10n.localeName)
+                          .format(firstBuyDate)
                       : '—',
                 ),
               ),
               Expanded(
                 child: _DetailItem(
-                  label: 'Miktar',
+                  label: context.l10n.quantity,
                   value: qtyDisplay,
                 ),
               ),
@@ -1554,9 +1561,13 @@ class _AssetDetailsPanel extends StatelessWidget {
               Expanded(
                 child: _DetailItem(
                   label: context.l10n.totalCost,
-                  value: position.weightedPurchasePrice > 0
-                      ? '${costFmt2.format(position.totalCost)} ${rep.currency}'
-                      : '—',
+                  // Alış para biriminde yazılır, `baz`dan geçmez → gizleme
+                  // elle (bulgu #3). Ortalama maliyet birim FİYATTIR, açık.
+                  value: position.weightedPurchasePrice <= 0
+                      ? '—'
+                      : baz.gizli
+                          ? baz.gizliTutar
+                          : '${costFmt2.format(position.totalCost)} ${rep.currency}',
                 ),
               ),
             ],
@@ -1645,7 +1656,7 @@ class _NotlarBolumu extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.notesSection.toUpperCase(),
+            ustHarf(l10n.notesSection, l10n),
             style: context.t.labelMedium?.copyWith(
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -1736,7 +1747,10 @@ class _DetailItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
+          // Düz `toUpperCase` Türkçe'de "MIKTAR", "ORT. MALIYET" veriyordu
+          // (bulgu #8); `ustHarf` dile göre i→İ çevirir, İngilizce'ye
+          // dokunmaz.
+          ustHarf(label, context.l10n),
           style: context.t.labelMedium?.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
