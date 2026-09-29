@@ -126,7 +126,7 @@ class LegalDocs {
     ]),
     LegalBlock.tableRow(['Portföy snapshot geçmişi', 'Performans grafikleri']),
     LegalBlock.tableRow([
-      'Dönemsel getiri (%) ve varlık türü payları (%) — sunucuda hesaplanır',
+      'Dönemsel getiri (%), varlık türü payları (%) ve fon kodu bazında paylar (%) — sunucuda hesaplanır',
       'Zirvedeki Portföyler (anonim karşılaştırma, bkz. 5.1)'
     ]),
     LegalBlock.tableRow(
@@ -186,7 +186,7 @@ class LegalDocs {
     // "anonim bir alan olduğundan rıza metinlerine eklenmeli".
     LegalBlock.h3('5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)'),
     LegalBlock.p(
-      'Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.',
+      'Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1\'in altındaki ya da kodsuz fonlar toplu olarak) uygulamanın tüm kullanıcılarına gösterilir; fon adları resmi TEFAS listesinden gelir. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.',
     ),
     LegalBlock.h2('6. Yurt Dışına Veri Aktarımı'),
     LegalBlock.p(
@@ -265,7 +265,7 @@ class LegalDocs {
       'sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.\n\n'
       'Zirvedeki Portföyler: portföyü 5 günden eski her kullanıcının dönemsel getirisi ve varlık türü '
       'payları anonim bir karşılaştırma havuzunda değerlendirilir; en çok kazanan portföylerin yalnızca '
-      'sırası, getirisi ve tür payları, kimlik ve tutar olmadan tüm kullanıcılara gösterilir (ayrıntı: '
+      'sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik ve tutar olmadan tüm kullanıcılara gösterilir (ayrıntı: '
       'Gizlilik Politikası 5.1). Bu işlev hizmetin standart parçasıdır; ayrı bir katılım beyanı gerektirmez.',
     ),
     LegalBlock.h2('3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi'),
@@ -388,7 +388,7 @@ class LegalDocs {
     LegalBlock.h3('2.3 Müşteri İşlem Verisi'),
     LegalBlock.p(
         '· Portföy varlık kayıtları\n· Snapshot geçmişi\n· Ortaklık bağlantıları ve davet kodları\n'
-        '· Dönemsel getiri yüzdesi ve varlık türü payları (Zirvedeki Portföyler anonim havuzu)'),
+        '· Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu)'),
     LegalBlock.h3('2.4 İşlem Güvenliği Verisi'),
     LegalBlock.p(
         '· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
@@ -406,7 +406,7 @@ class LegalDocs {
         ['Yasal yükümlülüklerin yerine getirilmesi', '2.5, 2.4']),
     LegalBlock.tableRow(['Hata teşhisi ve uygulama güvenliği', '2.4']),
     LegalBlock.p(
-      'Zirvedeki Portföyler: Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.',
+      'Zirvedeki Portföyler: Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1\'in altındaki ya da kodsuz fonlar toplu olarak) uygulamanın tüm kullanıcılarına gösterilir; fon adları resmi TEFAS listesinden gelir. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.',
     ),
     LegalBlock.h2('4. Hukuki Dayanak'),
     LegalBlock.tableHeader(['Veri', 'Hukuki Sebep']),

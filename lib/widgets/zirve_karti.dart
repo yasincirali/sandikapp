@@ -139,7 +139,7 @@ class _ZirveKartiState extends State<ZirveKarti> {
                 ),
               ),
               Text(
-                '${widget.donem.sifat} · anonim · yalnız tür payı',
+                '${widget.donem.sifat} · anonim · tür ve fon payı',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,

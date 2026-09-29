@@ -34,7 +34,7 @@
 ### 2.3 Müşteri İşlem Verisi
 - Portföy varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)
 - Snapshot geçmişi (toplam değer, getiri yüzdesi)
-- Dönemsel getiri yüzdesi ve varlık türü payları (Zirvedeki Portföyler anonim havuzu)
+- Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu)
 - Ortaklık bağlantıları ve davet kodları
 
 ### 2.4 İşlem Güvenliği Verisi
@@ -103,7 +103,7 @@ Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içe
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 
-Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi ve tür payları uygulamanın tüm kullanıcılarına gösterilir. Ad, e-posta, kullanıcı adı, tutar, miktar, varlık adı veya sembolü hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.
+Portföyü 5 günden, hesabı 7 günden eski her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) uygulamanın tüm kullanıcılarına gösterilir; fon adları resmi TEFAS listesinden gelir. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.
 
 ---
 

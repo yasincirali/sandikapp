@@ -25,6 +25,11 @@ Senin yapacakların:
    Hukuki dayanak **KVKK 5(2)(c) + 5(2)(f)** yazıldı, açık rıza DEĞİL (katılım
    beyana dayanmaz). Hukukçuya göster; özellikle 8 kişilik küçük havuzda
    tanınabilirlik ve meşru menfaate itiraz hakkı (GDPR 21) ifadesi.
+   **0084 ile genişledi:** fon türünde TEFAS fon kodu ve portföy içindeki
+   payı da gösteriliyor (%1 altı ve kodsuz fonlar "diğer"de; ad resmi
+   TEFAS listesinden, kullanıcının notu asla). Metinler buna göre
+   güncellendi; somut fon karışımı parmak izine yaklaştığı için bunu
+   hukukçuya ayrıca göster.
 2. **Web yayını:** `legal/*.md` değişikliklerini
    `yasincirali.github.io/sandikapp`'a yayınla (uygulama içi metin sürümle gider).
 3. **Mağaza gizlilik beyanları:** App Store "App Privacy" ve Play "Veri

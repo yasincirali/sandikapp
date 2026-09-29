@@ -6,6 +6,7 @@ import 'supabase_service.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
 import 'history_service.dart';
+import 'zirve_kiyas.dart';
 
 /// Kâr/zarar hesabı sonucu.
 ///
@@ -18,17 +19,22 @@ class RoiResult {
   const RoiResult({required this.roi, required this.usedFallback});
 }
 
-/// Top gainer satırı — anonim, sadece rank + ROI + tür yüzdeleri.
+/// Top gainer satırı — anonim: rank + ROI + tür yüzdeleri + fon kırılımı.
 class TopGainerAllocation {
   final int rank;
   final double roiPct;
 
   /// Tür bazlı yüzde, örn. {"hisse": 45.2, "doviz": 30.1, ...}. Sum ≈ 100.
   final Map<String, double> allocation;
+
+  /// Fon türünün TEFAS kodu bazında kırılımı, TOPLAM portföyün yüzdesi
+  /// (Σ ≈ allocation['fon']); "DIGER" toplu kalem (0084). Fon yoksa boş.
+  final Map<String, double> fonDetay;
   const TopGainerAllocation({
     required this.rank,
     required this.roiPct,
     required this.allocation,
+    this.fonDetay = const {},
   });
 }
 
@@ -370,6 +376,28 @@ class LeaderboardService {
     };
   }
 
+  /// Fon türünün TEFAS kodu bazında kırılımı, toplam portföyün yüzdesi
+  /// (Σ ≈ `computeAllocation()['fon']`). Kural sunucuyla aynı
+  /// (`ZirveKiyas.fonAnahtari`, %1 eşiği) — Zirve ekranındaki "Sen" satırı
+  /// zirveyle aynı ölçüyle okunsun. Yalnız cihazda kalır, gönderilmez.
+  Map<String, double> computeFonDetay(
+    List<Asset> assets,
+    double Function(double, String) toTRY,
+  ) {
+    final kodDegeri = <String, double>{};
+    var toplam = 0.0;
+    for (final p in aggregatePositions(assets)) {
+      final a = p.asDisplayAsset();
+      final tl = toTRY(a.totalValue, a.currency);
+      if (tl <= 0) continue;
+      toplam += tl;
+      if (a.type.name != 'fon') continue;
+      final kod = ZirveKiyas.fonAnahtari(a.ticker);
+      kodDegeri.update(kod, (v) => v + tl, ifAbsent: () => tl);
+    }
+    return ZirveKiyas.fonDetayiTopla(kodDegeri, toplam);
+  }
+
   /// Kullanıcının tür bazlı % dağılımını Supabase'e yazar. Miktar, TL,
   /// ticker göndermez — sadece {tür: %}. Aktif varlıklar (buy - sell)
   /// üzerinden TL bazlı hesaplanmış oranlar client tarafında hazırlanır.
@@ -399,8 +427,10 @@ class LeaderboardService {
     int topN = 3,
   }) async {
     try {
+      // 0084: aynı havuz + fon kırılımı. Eski `get_top_gainers_allocation`
+      // yayındaki eski sürümler için sunucuda duruyor.
       final res = await Supabase.instance.client.rpc<dynamic>(
-        'get_top_gainers_allocation',
+        'zirve_portfoyleri',
         params: {'p_period_days': periodDays, 'p_top_n': topN},
       );
       if (res == null) return const [];
@@ -416,10 +446,17 @@ class LeaderboardService {
           for (final e in allocRaw.entries)
             e.key as String: (e.value as num).toDouble(),
         };
+        final fonRaw = row['fon_detay'];
         out.add(TopGainerAllocation(
           rank: rank,
           roiPct: roi,
           allocation: alloc,
+          fonDetay: fonRaw is Map
+              ? {
+                  for (final e in fonRaw.entries)
+                    e.key as String: (e.value as num).toDouble(),
+                }
+              : const {},
         ));
       }
       return out;

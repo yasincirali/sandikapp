@@ -22,6 +22,7 @@ import {
   netLotlar,
   portfoyDegeri,
   seriSembolu,
+  fonDetayi,
   yazimPlani,
   yedekTryFiyati,
 } from '../functions/leaderboard-snapshot/index.ts';
@@ -251,4 +252,42 @@ Deno.test('yazimPlani: kimse yarışa katılmamışsa yarış tablosuna yazım y
   );
   assertEquals(plan.yarisKullanicilari, []);
   assertEquals(plan.zirveRoi.length, 1);
+});
+
+// ── 0084: fon kırılımı ──────────────────────────────────────────────────────
+function fonLot(ticker: string, quantity: number, current_price: number): Lot {
+  return {
+    id: ticker + quantity, user_id: 'u', type: 'fon', ticker, name: 'Kullanıcının notu',
+    quantity, current_price, is_manual_price: true, kind: 'buy', currency: 'TRY',
+  } as unknown as Lot;
+}
+
+Deno.test('fonDetayi: kod bazında pay, toplam portföyün yüzdesi', () => {
+  const lots = [
+    fonLot('AFT', 100, 10), // 1000
+    fonLot('TTE', 50, 10), // 500
+    { ...fonLot('X', 1, 1), type: 'altin', ticker: 'ALTIN_GRAM', quantity: 1, current_price: 2500 } as Lot,
+  ];
+  const d = fonDetayi(lots, new Map(), NOW)!;
+  assertEquals(d, { AFT: 25, TTE: 12.5 });
+});
+
+Deno.test('fonDetayi: serbest metin kod ve %1 altı "diğer"e düşer; ad taşınmaz', () => {
+  const lots = [
+    fonLot('AFT', 990, 1), // %99
+    fonLot('babamın fonu', 5, 1), // kalıba uymaz
+    fonLot('IPB', 5, 1), // %0,5 < eşik
+  ];
+  const d = fonDetayi(lots, new Map(), NOW)!;
+  assertEquals(d.AFT, 99);
+  assertEquals(d.DIGER, 1);
+  assertEquals(Object.keys(d).sort(), ['AFT', 'DIGER']);
+  assertEquals(JSON.stringify(d).includes('babam'), false);
+});
+
+Deno.test('fonDetayi: fon yoksa null; TEFAS: öneki kırpılır', () => {
+  assertEquals(fonDetayi([
+    { ...fonLot('X', 1, 1), type: 'hisse', ticker: 'THYAO', current_price: 300 } as Lot,
+  ], new Map(), NOW), null);
+  assertEquals(fonDetayi([fonLot('TEFAS:aft', 10, 10)], new Map(), NOW), { AFT: 100 });
 });

@@ -45,7 +45,7 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Push notifications, marketing emails (if any) | Art. 6(1)(a) — consent |
 | Storing disclaimer acceptance log | Art. 6(1)(c) — legal obligation |
 | Security measures (rate limiting, abuse detection, error logs) | Art. 6(1)(f) — legitimate interests |
-| Top Portfolios anonymous pool (period return %, asset-type shares %) | Art. 6(1)(b) — performance of a contract (standard App feature); Art. 6(1)(f) — legitimate interests |
+| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(b) — performance of a contract (standard App feature); Art. 6(1)(f) — legitimate interests |
 | International transfer (Supabase/Firebase USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
 ---
@@ -56,7 +56,7 @@ See [Privacy Policy §5](PRIVACY_POLICY.md#5-third-party-recipients-data-process
 
 All processors are bound by Data Processing Agreements (DPAs) under Art. 28.
 
-Other users of the App receive only the anonymous output of the Top Portfolios pool — rank, return percentage and asset-type shares, with no identity, amounts or holdings — see [Privacy Policy §5.1](PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios).
+Other users of the App receive only the anonymous output of the Top Portfolios pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios).
 
 ---
 

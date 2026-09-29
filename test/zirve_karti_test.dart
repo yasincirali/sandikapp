@@ -76,7 +76,7 @@ void main() {
 
   testWidgets('dönem alt başlıkta ve cümlede', (tester) async {
     await pump(tester, satirlar: const [birinci], donem: ZirveDonem.yil);
-    expect(find.textContaining('yıllık · anonim'), findsOneWidget);
+    expect(find.textContaining('yıllık · anonim · tür ve fon payı'), findsOneWidget);
     expect(find.text('Bu yıl zirvedeki portföy %2,7 kazandı.'), findsOneWidget);
   });
 

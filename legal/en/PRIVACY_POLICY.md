@@ -42,7 +42,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 |---|---|
 | Asset records (symbol, quantity, purchase price, date, note) | Portfolio tracking (core functionality) |
 | Portfolio snapshot history | Performance charts |
-| Period return (%) and asset-type shares (%) — computed on our servers | Top Portfolios (anonymous comparison, see §5.1) |
+| Period return (%), asset-type shares (%) and per-fund-code shares (%) — computed on our servers | Top Portfolios (anonymous comparison, see §5.1) |
 | Partnership invite codes & mutual links | Multi-user sharing feature |
 
 ### 3.3 Device & Notification Data
@@ -100,7 +100,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 
 ### 5.1 Anonymous Sharing with Other Users (Top Portfolios)
 
-For every user whose portfolio is older than 5 days and whose account is older than 7 days, the period return (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on our servers twice a day and kept in an anonymous comparison pool. When the pool holds at least 8 portfolios, only the rank, return percentage and asset-type shares of up to 4 top-gaining portfolios are shown to all users of the App. Names, e-mail addresses, usernames, amounts, quantities, asset names or symbols are never shared; the displayed information contains no data that reveals your identity. Inclusion in the pool requires no separate declaration or consent; the pool is part of the standard functionality of the App. When you delete your account, your measurements in the pool are deleted as well.
+For every user whose portfolio is older than 5 days and whose account is older than 7 days, the period return (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on our servers twice a day and kept in an anonymous comparison pool. When the pool holds at least 8 portfolios, only the rank, return percentage, asset-type shares and, for funds, the public TEFAS fund code with its share of the portfolio (funds below 1% or without a code grouped together) of up to 4 top-gaining portfolios are shown to all users of the App; fund names come from the official TEFAS list. Names, e-mail addresses, usernames, amounts, quantities, the names or symbols of stocks and other assets, and any names or notes you give your assets are never shared; the displayed information contains no data that reveals your identity. Inclusion in the pool requires no separate declaration or consent; the pool is part of the standard functionality of the App. When you delete your account, your measurements in the pool are deleted as well.
 
 ---
 

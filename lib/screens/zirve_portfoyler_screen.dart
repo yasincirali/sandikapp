@@ -11,6 +11,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/zirve_cetveli.dart';
 import '../widgets/zirve_dagilim_seridi.dart';
+import '../widgets/zirve_fon_listesi.dart';
 import '../widgets/zirve_karti.dart';
 
 /// Zirvedeki Portföyler — tam ekran (kullanıcı seçimi 2026-09-29, "A ·
@@ -54,6 +55,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   late Future<int?> _havuz = _havuzCek();
   double? _senRoi;
   Map<String, double> _senPay = const {};
+  Map<String, double> _senFonDetay = const {};
   late final ForegroundPoller _tik = ForegroundPoller(
     interval: const Duration(seconds: 45),
     onTick: () async {
@@ -108,6 +110,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     final donem = _donem;
     setState(() {
       _senPay = servis.computeAllocation(p.assets, p.toTRY);
+      _senFonDetay = servis.computeFonDetay(p.assets, p.toTRY);
       _senRoi = servis.staleROI(userId: me.id, periodDays: donem.gun);
     });
     final roi = await servis.computeROI(
@@ -135,6 +138,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         donem: _donem,
         satir: satir,
         senPay: _senPay,
+        senFonDetay: _senFonDetay,
         senRoi: _senRoi,
       ),
     );
@@ -200,6 +204,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
         satirlar.where((s) => '${s.rank}' == gecerli).firstOrNull;
     final senMi = seciliSatir == null;
     final seciliPay = seciliSatir?.allocation ?? _senPay;
+    final seciliFon = seciliSatir?.fonDetay ?? _senFonDetay;
     final seciliRoi = seciliSatir?.roiPct ?? senRoi;
     final getiriEki =
         seciliRoi == null ? '' : ' ${_donem.ad} ${ZirveKiyas.getiriParcasi(seciliRoi)}.';
@@ -234,6 +239,7 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
             : '${seciliSatir.rank}. portföy neye yatırmış?',
         cumle: ZirveKiyas.dagilimCumlesi(seciliPay, sen: senMi) + getiriEki,
         pay: seciliPay,
+        fonDetay: seciliFon,
         onAyrinti: () => _ayrintiAc(seciliSatir),
       ),
       const SizedBox(height: SandikSpace.smd),
@@ -510,6 +516,7 @@ class _SeciliPortfoy extends StatelessWidget {
     required this.baslik,
     required this.cumle,
     required this.pay,
+    required this.fonDetay,
     required this.onAyrinti,
   });
 
@@ -517,6 +524,9 @@ class _SeciliPortfoy extends StatelessWidget {
   final String baslik;
   final String cumle;
   final Map<String, double> pay;
+
+  /// Fon türünün kod bazında kırılımı; boşsa satır çizilmez.
+  final Map<String, double> fonDetay;
   final VoidCallback onAyrinti;
 
   @override
@@ -555,9 +565,21 @@ class _SeciliPortfoy extends StatelessWidget {
             ),
             const SizedBox(height: SandikSpace.smd),
             ZirveDagilimSeridi(pay: pay),
+            if (fonDetay.isNotEmpty) ...[
+              const SizedBox(height: SandikSpace.sm),
+              Text(
+                'Fonlar: ${ZirveKiyas.fonOzeti(fonDetay)}',
+                style: context.t.labelMedium?.copyWith(
+                  letterSpacing: 0,
+                  color: context.c.text58,
+                ),
+              ),
+            ],
             const SizedBox(height: SandikSpace.sm),
             Text(
-              'Tür tür dağılım ve senden farkı ›',
+              fonDetay.isEmpty
+                  ? 'Tür tür dağılım ve senden farkı ›'
+                  : 'Tür tür dağılım, fonların adı ve senden farkı ›',
               style: context.t.labelMedium?.copyWith(
                 letterSpacing: 0,
                 fontWeight: FontWeight.w700,
@@ -677,7 +699,7 @@ class _BosDurum extends StatelessWidget {
               Text(
                 'Portföyü 5 günden eski herkes kendiliğinden ve anonim olarak '
                 'havuzdadır; ayrıca katılman gerekmez. Kimlik, miktar ve TL '
-                'paylaşılmaz; yalnız getiri ve tür payı.',
+                'paylaşılmaz; yalnız getiri, tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,
@@ -725,6 +747,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
     required this.donem,
     required this.satir,
     required this.senPay,
+    required this.senFonDetay,
     required this.senRoi,
   });
 
@@ -733,6 +756,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
   /// null → kullanıcının kendi portföyü.
   final TopGainerAllocation? satir;
   final Map<String, double> senPay;
+  final Map<String, double> senFonDetay;
   final double? senRoi;
 
   @override
@@ -740,6 +764,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
     final s = satir;
     final senMi = s == null;
     final pay = s?.allocation ?? senPay;
+    final fonDetay = s?.fonDetay ?? senFonDetay;
     final roi = s?.roiPct ?? senRoi;
     final baslik = senMi ? 'Senin portföyün' : '${s.rank}. portföy';
     final altBaslik = roi == null
@@ -819,6 +844,18 @@ class _PortfoyAyrintisi extends StatelessWidget {
           for (final t in turler) ...[
             _TurSatiri(tur: t.tur, pay: t.pay),
             const SizedBox(height: SandikSpace.sm),
+            // Fon satırının altında hangi fonlar: kod, resmi TEFAS adı,
+            // portföy içindeki payı; zirve portföyünde "sende %X" kıyası.
+            if (t.tur == 'fon' && fonDetay.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(left: SandikSpace.md),
+                child: ZirveFonListesi(
+                  fonDetay: fonDetay,
+                  senFonDetay: senMi ? null : senFonDetay,
+                ),
+              ),
+              const SizedBox(height: SandikSpace.xs2),
+            ],
           ],
           if (!senMi) ...[
             const SizedBox(height: SandikSpace.smd),
@@ -842,10 +879,12 @@ class _PortfoyAyrintisi extends StatelessWidget {
           Text(
             senMi
                 ? 'Portföyün de havuzda, anonim. İlk üçe girersen başkaları '
-                    'yalnız getirini ve tür payını görür; kimliğin, tutarın '
-                    've varlıkların asla görünmez.'
-                : 'Anonim: bu portföyün kimliği, tutarı ve varlıkları '
-                    'paylaşılmaz; yalnız tür payı.',
+                    'getirini, tür payını ve fonlarının TEFAS kodu ile payını '
+                    'görür; kimliğin, tutarın ve diğer varlıkların asla '
+                    'görünmez.'
+                : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
+                    'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '
+                    'payı. Fon adları resmi TEFAS listesinden.',
             style: context.t.labelMedium?.copyWith(
               letterSpacing: 0,
               color: context.c.text36,

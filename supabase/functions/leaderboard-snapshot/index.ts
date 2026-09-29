@@ -350,6 +350,59 @@ export function dagilim(
   return { allocation_pct, type_count };
 }
 
+/// TEFAS fon kodu: 3 büyük harf/rakam (AFT, TTE, IPB…). Kamuya açık
+/// kimlik; kullanıcının elle yazdığı serbest metin (ad, not) bu kalıba
+/// uymaz ve ASLA taşınmaz — "diğer"e düşer.
+export const TEFAS_KODU = /^[A-Z0-9]{3}$/;
+export const FON_DIGER = 'DIGER';
+
+/// Payı bu yüzdenin altındaki fon adıyla yazılmaz, "diğer"e katılır.
+/// Küçük kalemler parmak izini keskinleştirir, bilgi katmaz.
+export const FON_ESIGI_PCT = 1;
+
+/// Fon türünün kod bazında kırılımı, TOPLAM portföyün yüzdesi olarak
+/// (Σ ≈ `allocation_pct.fon`). Kullanıcı kararı 2026-09-29: "sadece kategori
+/// yerine fonda hangi fonlar olduğu ve oranları da yazmalı".
+///
+/// Yalnızca ZİRVE tablosuna gider (0084); Yarış'ın dağılım satırı aynen
+/// kalır. Fon yoksa ya da değerlenemiyorsa null.
+export function fonDetayi(
+  lots: Lot[],
+  seriler: Map<string, Seri>,
+  nowMs: number,
+): Record<string, number> | null {
+  const kodDegeri = new Map<string, number>();
+  let toplam = 0;
+  for (const lot of lots) {
+    const miktar = Number(lot.quantity ?? 0);
+    if (!Number.isFinite(miktar) || miktar <= 0) continue;
+    const p = lotTryFiyati(lot, seriler, nowMs) ?? yedekTryFiyati(lot, seriler, nowMs);
+    if (p <= 0) continue;
+    const v = miktar * p;
+    toplam += v;
+    if (lot.type !== 'fon') continue;
+    const kod = String(lot.ticker ?? '').trim().toUpperCase().replace(/^TEFAS:/, '');
+    const anahtar = TEFAS_KODU.test(kod) ? kod : FON_DIGER;
+    kodDegeri.set(anahtar, (kodDegeri.get(anahtar) ?? 0) + v);
+  }
+  if (toplam <= 0 || kodDegeri.size === 0) return null;
+  const out: Record<string, number> = {};
+  let diger = 0;
+  for (const [kod, v] of kodDegeri) {
+    const pct = v / toplam * 100;
+    if (kod === FON_DIGER || pct < FON_ESIGI_PCT) {
+      diger += pct;
+      continue;
+    }
+    out[kod] = Math.round(pct * 10) / 10;
+  }
+  if (diger > 0) {
+    const d = Math.round(diger * 10) / 10;
+    if (d > 0) out[FON_DIGER] = d;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 type AssetRow = Lot & { deleted_at?: string | null };
 
 /// 0073 tetikleyicisinin reddi: dakikada bir snapshot. Mesaj metnine bakılır
@@ -470,6 +523,14 @@ Deno.serve(async (request) => {
     const nowMs = Date.now();
     const roiRows: Array<{ user_id: string; period_days: number; roi_pct: number }> = [];
     const allocRows: Array<{ user_id: string; allocation_pct: Record<string, number>; type_count: number }> = [];
+    // Zirve satırı = Yarış satırı + fon kırılımı. Ayrı dizi: Yarış tablosunda
+    // `fon_detay` sütunu yok ve olmamalı (Yarış mekaniği değişmez).
+    const zirveAllocRows: Array<{
+      user_id: string;
+      allocation_pct: Record<string, number>;
+      type_count: number;
+      fon_detay: Record<string, number> | null;
+    }> = [];
     let atlanan = 0;
     for (const uid of userIds) {
       const lots = lotlariOf.get(uid) ?? [];
@@ -484,6 +545,7 @@ Deno.serve(async (request) => {
       const d = dagilim(lots, seriler, nowMs);
       if (d !== null) {
         allocRows.push({ user_id: uid, ...d });
+        zirveAllocRows.push({ user_id: uid, ...d, fon_detay: fonDetayi(lots, seriler, nowMs) });
         yazildi = true;
       }
       if (!yazildi) atlanan++;
@@ -495,7 +557,7 @@ Deno.serve(async (request) => {
     // dakikada attığı istemci snapshot'ı (Yarış ekranı açık) BÜTÜN partiyi
     // düşürüyordu — ilk canlı koşuda görüldü. Throttle "atlandı" sayılır
     // (o dakikadaki değer zaten taze), başka hata yükselir.
-    const plan = yazimPlani(roiRows, allocRows, optIn);
+    const plan = yazimPlani(roiRows, zirveAllocRows, optIn);
     let throttled = 0;
     let yazilanRoi = 0;
     let yazilanAlloc = 0;

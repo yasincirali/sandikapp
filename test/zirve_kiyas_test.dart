@@ -154,4 +154,39 @@ void main() {
     expect(ZirveDonem.yakin(180), ZirveDonem.yil);
     expect(ZirveDonem.yakin(1825), ZirveDonem.yil);
   });
+
+  group('fon kırılımı (0084)', () {
+    test('TEFAS kodu kalıbı; serbest metin "diğer"', () {
+      expect(ZirveKiyas.fonAnahtari('aft'), 'AFT');
+      expect(ZirveKiyas.fonAnahtari('TEFAS:TTE'), 'TTE');
+      expect(ZirveKiyas.fonAnahtari('Babamın fonu'), ZirveKiyas.fonDiger);
+      expect(ZirveKiyas.fonAnahtari(null), ZirveKiyas.fonDiger);
+    });
+
+    test('toplam portföyün yüzdesi; %1 altı "diğer"e katılır', () {
+      final d = ZirveKiyas.fonDetayiTopla(
+          const {'AFT': 250, 'TTE': 125, 'IPB': 5, ZirveKiyas.fonDiger: 5},
+          1000);
+      expect(d, {'AFT': 25.0, 'TTE': 12.5, ZirveKiyas.fonDiger: 1.0});
+    });
+
+    test('sıralama: büyükten küçüğe, "diğer" en sonda', () {
+      final s = ZirveKiyas.fonSirali(
+          const {ZirveKiyas.fonDiger: 30.0, 'TTE': 12.5, 'AFT': 25.0});
+      expect(s.map((e) => e.kod), ['AFT', 'TTE', ZirveKiyas.fonDiger]);
+    });
+
+    test('özet satırı: en fazla 4 kod, kalan "diğer"de', () {
+      expect(
+          ZirveKiyas.fonOzeti(
+              const {'AFT': 25.0, 'TTE': 12.5, ZirveKiyas.fonDiger: 1.0}),
+          'AFT %25 · TTE %13 · diğer %1,0');
+      expect(
+          ZirveKiyas.fonOzeti(const {
+            'A01': 20.0, 'A02': 15.0, 'A03': 10.0, 'A04': 8.0, 'A05': 2.0,
+          }),
+          'A01 %20 · A02 %15 · A03 %10 · A04 %8,0 · diğer %2,0');
+      expect(ZirveKiyas.fonOzeti(const {}), '');
+    });
+  });
 }

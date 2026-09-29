@@ -17,9 +17,11 @@
 ///    üretmez; renk yalnızca getiride (kazanç/kayıp).
 ///
 /// ## Anonimlik
-/// Sunucudan gelen tek şey sıra, getiri ve tür payı
-/// (`get_top_gainers_allocation`, migration 0059). Burada da başka bir şey
-/// üretilmez: cümlelerde ticker, tutar, kimlik yoktur.
+/// Sunucudan gelen: sıra, getiri, tür payı ve fon türünde TEFAS kodu
+/// bazında pay (`zirve_portfoyleri`, 0084). Fon kodu kamuya açık bir
+/// kimliktir; kullanıcının yazdığı ad/not taşınmaz, %1 altı fonlar "diğer"de
+/// toplanır (kullanıcı kararı 2026-09-29). Hisse ve diğer varlıkların
+/// sembolü, tutar, miktar ve kimlik hiç üretilmez.
 library;
 
 import '../utils/tr_format.dart';
@@ -275,6 +277,72 @@ abstract final class ZirveKiyas {
     return 'En büyük fark ${turAd(f.tur)}: sende %${f.sen.round()}, '
         'onda %${f.zirve.round()}.';
   }
+
+  // ── Fon kırılımı (0084) ────────────────────────────────────────────────
+
+  /// Toplu kalem anahtarı: kodsuz/serbest metin ya da %1 altı fonlar.
+  static const fonDiger = 'DIGER';
+
+  /// Payı bunun altındaki fon adıyla yazılmaz (sunucu `FON_ESIGI_PCT`).
+  static const fonEsigiPct = 1.0;
+
+  static final _tefasKodu = RegExp(r'^[A-Z0-9]{3}$');
+
+  /// Varlığın ticker'ından TEFAS kodu; kalıba uymayan her şey [fonDiger].
+  /// Sunucudaki `fonDetayi` ile AYNI kural — "Sen" satırı zirveyle aynı
+  /// ölçüyle okunsun.
+  static String fonAnahtari(String? ticker) {
+    final kod = (ticker ?? '').trim().toUpperCase().replaceFirst('TEFAS:', '');
+    return _tefasKodu.hasMatch(kod) ? kod : fonDiger;
+  }
+
+  /// {kod: TL değeri} + portföy toplamı → {kod: toplamın %'si}, 1 ondalık;
+  /// eşik altı ve kodsuzlar [fonDiger]'de.
+  static Map<String, double> fonDetayiTopla(
+      Map<String, double> kodDegeri, double toplam) {
+    if (toplam <= 0) return const {};
+    final out = <String, double>{};
+    var diger = 0.0;
+    for (final e in kodDegeri.entries) {
+      final pct = e.value / toplam * 100;
+      if (e.key == fonDiger || pct < fonEsigiPct) {
+        diger += pct;
+        continue;
+      }
+      out[e.key] = (pct * 10).round() / 10;
+    }
+    final d = (diger * 10).round() / 10;
+    if (d > 0) out[fonDiger] = d;
+    return out;
+  }
+
+  /// Büyükten küçüğe; [fonDiger] her zaman en sonda.
+  static List<({String kod, double pay})> fonSirali(Map<String, double> d) {
+    final l = [
+      for (final e in d.entries)
+        if (e.value > 0 && e.key != fonDiger) (kod: e.key, pay: e.value),
+    ]..sort((a, b) => b.pay.compareTo(a.pay));
+    final diger = d[fonDiger];
+    if (diger != null && diger > 0) l.add((kod: fonDiger, pay: diger));
+    return l;
+  }
+
+  /// "AFT %12 · TTE %16 · diğer %1" — seçili portföy bloğunun tek satırı.
+  static String fonOzeti(Map<String, double> d, {int enFazla = 4}) {
+    final s = fonSirali(d);
+    if (s.isEmpty) return '';
+    final gorunen = s.where((e) => e.kod != fonDiger).take(enFazla).toList();
+    final kalan = s.fold<double>(0, (t, e) => t + e.pay) -
+        gorunen.fold<double>(0, (t, e) => t + e.pay);
+    final parca = [
+      for (final e in gorunen) '${e.kod} %${_payYazisi(e.pay)}',
+      if (kalan >= 0.05) 'diğer %${_payYazisi(kalan)}',
+    ];
+    return parca.join(' · ');
+  }
+
+  static String _payYazisi(double v) =>
+      fmtNum(v, digits: v < 10 ? 1 : 0);
 
   /// Cetvel ekseni: sıfır daima görünür, iki uçta payın %12'si kadar
   /// (en az 0,5 puan) boşluk — uçtaki işaret kenara yapışmasın.
