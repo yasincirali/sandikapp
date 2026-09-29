@@ -155,6 +155,19 @@ class RemoteConfigService {
     // ekranında kalır. 0 = kapı kapalı. Android versionCode / iOS build.
     SunucuSecimi.minBuildAndroid: 0,
     SunucuSecimi.minBuildIos: 0,
+
+    // ── Büyüme özellikleri (docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md) ──
+    // Debug derlemede AÇIK (emülatör/TestFlight öncesi kontrol), release'de
+    // KAPALI doğar: mağazaya kapalı gider, Console'dan kademeli açılır.
+    // Sorun çıkarsa yayın gerekmeden Console'da `false`.
+    'demo_mode_enabled': kDebugMode,
+    'lock_offer_after_first_asset': kDebugMode,
+    'fund_report_card_enabled': kDebugMode,
+    'dividend_capture_enabled': kDebugMode,
+    'ipo_calendar_enabled': kDebugMode,
+    // Temettü önerisinde stopaj oranı (0..1). -1 = bilinmiyor: öneri BRÜT
+    // gösterir, net tutarı kullanıcı girer (uydurma oran yazılmaz).
+    'temettu_stopaj_orani': -1.0,
   };
 
   Future<void> init() async {
@@ -293,4 +306,32 @@ class RemoteConfigService {
   bool get reviewPromptSoftGate =>
       _rc?.getBool('review_prompt_soft_gate') ??
       _defaults['review_prompt_soft_gate'] as bool;
+
+  // ── Büyüme özellikleri ─────────────────────────────────────────────────
+  bool get demoModeEnabled =>
+      _rc?.getBool('demo_mode_enabled') ??
+      _defaults['demo_mode_enabled'] as bool;
+
+  bool get lockOfferAfterFirstAsset =>
+      _rc?.getBool('lock_offer_after_first_asset') ??
+      _defaults['lock_offer_after_first_asset'] as bool;
+
+  bool get fundReportCardEnabled =>
+      _rc?.getBool('fund_report_card_enabled') ??
+      _defaults['fund_report_card_enabled'] as bool;
+
+  bool get dividendCaptureEnabled =>
+      _rc?.getBool('dividend_capture_enabled') ??
+      _defaults['dividend_capture_enabled'] as bool;
+
+  bool get ipoCalendarEnabled =>
+      _rc?.getBool('ipo_calendar_enabled') ??
+      _defaults['ipo_calendar_enabled'] as bool;
+
+  /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
+  double? get temettuStopajOrani {
+    final v = _rc?.getDouble('temettu_stopaj_orani') ??
+        _defaults['temettu_stopaj_orani'] as double;
+    return (v >= 0 && v < 1) ? v : null;
+  }
 }
