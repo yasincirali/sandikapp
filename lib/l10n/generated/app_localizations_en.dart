@@ -604,6 +604,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetFullName => 'Full Name';
 
   @override
+  String get fundReportTitleUpper => 'FUND REPORT CARD';
+
+  @override
+  String fundReportCategory(String category, String count) {
+    return '$category · $count funds';
+  }
+
+  @override
+  String get fundReportPeriod1m => '1 month';
+
+  @override
+  String get fundReportPeriodYtd => 'Year to date';
+
+  @override
+  String get fundReportPeriod1y => '1 year';
+
+  @override
+  String fundReportRank(String count, String rank) {
+    return '#$rank of $count';
+  }
+
+  @override
+  String fundReportReturnVsMedian(String ret, String median) {
+    return 'Return $ret · category median $median';
+  }
+
+  @override
+  String fundReportAboveMedian(String pts) {
+    return '$pts pts above the median';
+  }
+
+  @override
+  String fundReportBelowMedian(String pts) {
+    return '$pts pts below the median';
+  }
+
+  @override
+  String get fundReportAtMedian => 'At the median';
+
+  @override
+  String get fundReportFootnote =>
+      'Source: TEFAS. Compared with funds in the same category; past returns do not indicate future returns.';
+
+  @override
+  String fundReportPanelLine(String count, String rank, String period) {
+    return '#$rank of $count in its category ($period)';
+  }
+
+  @override
   String get assetTypeStock => 'Stocks';
 
   @override

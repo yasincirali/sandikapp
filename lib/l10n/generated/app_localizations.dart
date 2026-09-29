@@ -1196,6 +1196,78 @@ abstract class AppLocalizations {
   /// **'Tam Adı'**
   String get assetFullName;
 
+  /// No description provided for @fundReportTitleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'FON KARNESİ'**
+  String get fundReportTitleUpper;
+
+  /// No description provided for @fundReportCategory.
+  ///
+  /// In tr, this message translates to:
+  /// **'{category} · {count} fon'**
+  String fundReportCategory(String category, String count);
+
+  /// No description provided for @fundReportPeriod1m.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 ay'**
+  String get fundReportPeriod1m;
+
+  /// No description provided for @fundReportPeriodYtd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılbaşından beri'**
+  String get fundReportPeriodYtd;
+
+  /// No description provided for @fundReportPeriod1y.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 yıl'**
+  String get fundReportPeriod1y;
+
+  /// No description provided for @fundReportRank.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} fondan {rank}.'**
+  String fundReportRank(String count, String rank);
+
+  /// No description provided for @fundReportReturnVsMedian.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirisi {ret} · kategori ortancası {median}'**
+  String fundReportReturnVsMedian(String ret, String median);
+
+  /// No description provided for @fundReportAboveMedian.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortancanın {pts} puan üstünde'**
+  String fundReportAboveMedian(String pts);
+
+  /// No description provided for @fundReportBelowMedian.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortancanın {pts} puan altında'**
+  String fundReportBelowMedian(String pts);
+
+  /// No description provided for @fundReportAtMedian.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortancayla aynı'**
+  String get fundReportAtMedian;
+
+  /// No description provided for @fundReportFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: TEFAS. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.'**
+  String get fundReportFootnote;
+
+  /// No description provided for @fundReportPanelLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategorisinde {count} fondan {rank}. ({period})'**
+  String fundReportPanelLine(String count, String rank, String period);
+
   /// No description provided for @assetTypeStock.
   ///
   /// In tr, this message translates to:

@@ -62,6 +62,7 @@ void main() {
     'lib/screens/varlik_sayfasi.dart': 0,
     'lib/screens/pozisyona_git.dart': 0,
     'lib/widgets/fiyat_grafigi.dart': 0,
+    'lib/widgets/fon_karnesi_karti.dart': 0,
     'lib/widgets/alarm_kur_sheet.dart': 0,
     'lib/widgets/asset_sparkline.dart': 0,
     'lib/widgets/disclaimer_widget.dart': 0,

@@ -293,6 +293,75 @@
   "sortHighestFirst": "Highest First",
   "sortLowestFirst": "Lowest First",
   "assetFullName": "Full Name",
+  "fundReportTitleUpper": "FUND REPORT CARD",
+  "fundReportCategory": "{category} · {count} funds",
+  "@fundReportCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportPeriod1m": "1 month",
+  "fundReportPeriodYtd": "Year to date",
+  "fundReportPeriod1y": "1 year",
+  "fundReportRank": "#{rank} of {count}",
+  "@fundReportRank": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportReturnVsMedian": "Return {ret} · category median {median}",
+  "@fundReportReturnVsMedian": {
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAboveMedian": "{pts} pts above the median",
+  "@fundReportAboveMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportBelowMedian": "{pts} pts below the median",
+  "@fundReportBelowMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAtMedian": "At the median",
+  "fundReportFootnote": "Source: TEFAS. Compared with funds in the same category; past returns do not indicate future returns.",
+  "fundReportPanelLine": "#{rank} of {count} in its category ({period})",
+  "@fundReportPanelLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "assetTypeStock": "Stocks",
   "assetTypeFund": "Funds",
   "assetTypeFx": "Currency",

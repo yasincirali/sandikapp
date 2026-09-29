@@ -605,6 +605,55 @@ class AppLocalizationsTr extends AppLocalizations {
   String get assetFullName => 'Tam Adı';
 
   @override
+  String get fundReportTitleUpper => 'FON KARNESİ';
+
+  @override
+  String fundReportCategory(String category, String count) {
+    return '$category · $count fon';
+  }
+
+  @override
+  String get fundReportPeriod1m => '1 ay';
+
+  @override
+  String get fundReportPeriodYtd => 'Yılbaşından beri';
+
+  @override
+  String get fundReportPeriod1y => '1 yıl';
+
+  @override
+  String fundReportRank(String count, String rank) {
+    return '$count fondan $rank.';
+  }
+
+  @override
+  String fundReportReturnVsMedian(String ret, String median) {
+    return 'Getirisi $ret · kategori ortancası $median';
+  }
+
+  @override
+  String fundReportAboveMedian(String pts) {
+    return 'Ortancanın $pts puan üstünde';
+  }
+
+  @override
+  String fundReportBelowMedian(String pts) {
+    return 'Ortancanın $pts puan altında';
+  }
+
+  @override
+  String get fundReportAtMedian => 'Ortancayla aynı';
+
+  @override
+  String get fundReportFootnote =>
+      'Kaynak: TEFAS. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.';
+
+  @override
+  String fundReportPanelLine(String count, String rank, String period) {
+    return 'Kategorisinde $count fondan $rank. ($period)';
+  }
+
+  @override
   String get assetTypeStock => 'Hisse';
 
   @override
