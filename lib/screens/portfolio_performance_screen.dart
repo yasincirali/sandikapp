@@ -62,6 +62,9 @@ import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
+import '../widgets/zirve_karti.dart';
+import '../services/zirve_kiyas.dart';
+import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
 
 part 'portfolio_performance/grafik_kabi.dart';
@@ -447,8 +450,13 @@ class _PortfolioPerformanceScreenState
                     // Yarış bir GEZİNME girişi, grafik aracı değil: eskiden
                     // grafik araç satırında duruyordu ve o satırın tamamı
                     // kaldırıldı. Yeri üst çubuk.
-                    if (ref.watch(leaderboardOptInProvider) &&
-                        activePartners.isNotEmpty) ...[
+                    // Kupa: küresel yarış açıkken HERKESE (ortak ya da opt-in
+                    // şartı yok — kullanıcı kararı 2026-09-28: yarış ortaktan
+                    // bağımsız bir özellik, giriş noktası da öyle). Küresel
+                    // kapalıyken eski kural: opt-in + aktif ortak.
+                    if (RemoteConfigService.instance.globalLeaderboardEnabled ||
+                        (ref.watch(leaderboardOptInProvider) &&
+                            activePartners.isNotEmpty)) ...[
                       Semantics(
                         button: true,
                         label: context.l10n.raceTitle,
@@ -461,12 +469,24 @@ class _PortfolioPerformanceScreenState
                               adaptiveRoute<void>(
                                   builder: (_) => const LeaderboardScreen()),
                             ),
-                            child: Icon(Icons.emoji_events_rounded,
-                                size: 20, color: context.c.amberText),
+                            // Üst çubuk düğmeleri her ekranda aynı kabuk
+                            // (44pt kutu) ve aynı aralık (`SandikSpace.sm`)
+                            // — kullanıcı bildirimi 2026-09-28: "chip'ler
+                            // standart aralıkta, hizalı olmalı". Çıplak
+                            // ikon çıkış kutusunun yanında hizasız duruyordu.
+                            child: Container(
+                              width: SandikTouch.min,
+                              height: SandikTouch.min,
+                              decoration: context.chip(selected: false),
+                              child: Center(
+                                child: Icon(Icons.emoji_events_rounded,
+                                    size: 20, color: context.c.amberText),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: SandikSpace.xs2),
+                      const SizedBox(width: SandikSpace.sm),
                     ],
                     // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
                     // beklenmeyen bir eylem olurdu.

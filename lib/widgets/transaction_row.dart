@@ -14,6 +14,15 @@ import '../l10n/l10n.dart';
 /// yapısal kopyasını doğrulamak zorunda kalıyordu (kopya bayatlarsa test
 /// yeşil kalırken uygulama taşar). Artık saf widget: veriyi parametre olarak
 /// alır, provider okumaz — çağıran taraf okur.
+///
+/// **2026-09-28 yeniden tasarımı (kullanıcı kararı, seçenek A "gruplu
+/// liste").** Eski satır kendi kartıydı: sol renk şeridi, tür rozeti,
+/// miktar rozeti ve "Alım/Satım" pili. Aynı bilgi üç kez kodlanıyordu
+/// (şerit + pil + işaret hepsi "alım" diyordu) ve her satır ayrı kutu
+/// olduğu için göz kayıtları birlikte okuyamıyordu. Yeni satır DÜZ:
+/// arka planı ve kenarı yok, çağıran taraf bir kaba (SandikCard) koyar ve
+/// satırlar arasına [HareketAyraci] çizer (iOS gruplu liste). Tek renk
+/// sinyali tutarın kendisi; işlem türü ve miktar sağ altta düz metin.
 class TransactionRow extends StatelessWidget {
   const TransactionRow({
     super.key,
@@ -21,6 +30,10 @@ class TransactionRow extends StatelessWidget {
     required this.portfolioState,
     this.hideBalance = false,
     this.baz = const BazPara.lira(),
+    this.yilGoster = true,
+    this.silinenGorunumu = false,
+    this.not,
+    this.onTap,
   });
 
   final Asset asset;
@@ -32,6 +45,44 @@ class TransactionRow extends StatelessWidget {
   /// (`money_format.dart`); tutarın ₺ değeri defterde değişmez.
   final BazPara baz;
 
+  /// Tarihte yıl yazılsın mı. Ana sayfada satır tek başına durur, yıl
+  /// gerekir. Tüm hareketler ekranında satırlar ay kaplarında ("EYLÜL
+  /// 2026") toplanır; yıl başlıkta olduğu için satırda tekrarı gürültüdür.
+  final bool yilGoster;
+
+  /// "Silinenler" alanında mı (kullanıcı kararı 2026-09-29). Satır işlem
+  /// tarihinin yerine iki tarih yazar: işlemin kendisi ("Alım: 12 Mar
+  /// 2026") ve silinme anı ("Silinme: 3 Eyl 2026"). Alanın başlığı zaten
+  /// "silindi" dediği için soluklaştırma ve "· silindi" eki yok; tutar
+  /// renk sinyali taşımaz (artık portföyde olmayan bir kazanç/kayıp).
+  final bool silinenGorunumu;
+
+  /// Kullanıcının bu işleme yazdığı not — çağıran `islemNotu(...)` ile
+  /// hesaplar (eski kopyalar orada ayıklanır). Doluysa tarih satırının
+  /// sonunda soluk bir not ikonu çizilir; metin satırda YAZMAZ.
+  ///
+  /// Neden yalnızca ikon (kullanıcı isteği 2026-09-29: "çok göz önünde
+  /// olmamalı ama tamamen de kaybolmamalı"): not metni üçüncü bir satır
+  /// olsaydı notlu satırlar notsuzlardan uzun olur, gruplu listenin ritmi
+  /// bozulurdu. İkon satır yüksekliğini değiştirmez; metin dokununca açılan
+  /// not sayfasında okunur.
+  final String? not;
+
+  /// Satıra dokununca — işlem notu sayfası. `null` ise satır eskisi gibi
+  /// dokunulmaz (ör. ortak kaydının notu yoksa açılacak bir şey yok).
+  final VoidCallback? onTap;
+
+  /// Avatar çapı. 36pt: 44pt dokunma hedefinden küçük (satır dokunulabilir
+  /// değil), ikonun 18pt'i etrafında nefes payı bırakır. [HareketAyraci]
+  /// girintisi bu sayıya bağlıdır.
+  static const double avatarCap = 36;
+
+  /// Yatay iç boşluk — [HareketAyraci] girintisi buradan hesaplanır.
+  static const double yatayBosluk = SandikSpace.md2;
+
+  /// Avatar ile metin bloğu arası.
+  static const double avatarAraligi = SandikSpace.smd;
+
   @override
   Widget build(BuildContext context) {
     // Portföy ekranındaki pozisyon detayıyla birebir tutar gösterimi —
@@ -42,6 +93,7 @@ class TransactionRow extends StatelessWidget {
     // sanılır). Para kuruştan ince yazılmaz; 3 hane yalnızca BİRİM fiyat
     // hassasiyeti için anlamlıdır (fon fiyatları), toplam tutar için değil.
     final tryFmt = baz.formatter(digits: 2);
+    final l10n = context.l10n;
     final bool isSell = asset.isSell;
     final bool isDelete = asset.isDeleteLog;
     final bool isDividend = asset.isDividend;
@@ -54,257 +106,278 @@ class TransactionRow extends StatelessWidget {
         isDividend ? asset.dividendAmount : asset.quantity * unitPrice;
     final txValueTRY = portfolioState.toTRY(txValue, asset.currency);
 
-    final Color accent = isDelete
+    // Tek renk sinyali: tutar. Alım yeşil, satım kırmızı, temettü amber,
+    // silme kaydı soluk. Başka hiçbir öğe renkle tür anlatmaz — eski
+    // tasarımda şerit + pil + tutar üçü birden anlatıyordu.
+    final Color tutarRengi = isDelete || silinenGorunumu
         ? context.c.text58
-        : (isSell ? context.c.loss : (isDividend ? context.c.amberText : context.c.gain));
-    final IconData kindIcon = isDelete
-        ? Icons.delete_outline_rounded
         : (isSell
-            ? Icons.trending_down_rounded
-            : (isDividend
-                ? Icons.savings_outlined
-                : Icons.trending_up_rounded));
-    // "Eklendi/Çıkarıldı" envanter diliydi; kayıtlar aslında fiyatlı
-    // alım/satım işlemleri. Swipe aksiyonları ve hızlı işlem dialogu da
-    // "Al/Sat" diline geçti — geçmiş listesi onlarla aynı dili konuşmalı.
-    //
-    // Yan fayda: "Satım" (5 harf), "Çıkarıldı"dan (9 harf) kısa. O etiket
-    // 116pt'lik kolonda 19px taşıyordu (bkz. TECHNICAL_DEBT.md); artık
-    // FittedBox küçültmek zorunda kalmıyor.
-    // Silme artık pozisyon başına TEK kayıttır ve kaç ledger satırının
-    // gittiğini taşır. Tek kayıt silindiyse sayı bilgi vermez ("Silindi ·
-    // 1 kayıt" gürültü olurdu); eski kayıtlarda `deletedCount` 0'dır, o da
-    // sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
-    final String kindLabel = isDelete
-        ? (asset.deletedCount > 1
-            ? context.l10n.deletedNRecords(asset.deletedCount)
-            : 'Silindi')
-        : (isSell ? context.l10n.txSell : (isDividend ? context.l10n.txDividend : context.l10n.txBuy));
+            ? context.c.loss
+            : (isDividend ? context.c.amberText : context.c.gain));
     final String sign = isSell || isDelete ? '−' : '+';
+
+    final String turEtiketi = hareketTurEtiketi(l10n, asset);
 
     // Yumuşak silinmiş lot: kayıt geçmişte DURUR ama artık portföye
     // dahil değil. Satırı soluklaştırıyoruz — okunabilir kalır, aktif
     // işlemlerle karışmaz. Gizlemek yanlış olurdu: kullanıcı "ne aldım,
-    // ne sattım, sonra sildim" zincirini görebilmeli.
-    final bool isVoided = asset.isDeleted;
+    // ne sattım, sonra sildim" zincirini görebilmeli. Opacity tek başına
+    // yetmez (renk körlüğü, parlak ekran); etiketin sonuna metinle de
+    // yazılır. Eski köşe rozeti + Stack/Positioned bunun içindi, kalktı.
+    final bool isVoided = asset.isDeleted && !silinenGorunumu;
+    final String sagAltEtiket =
+        isVoided ? '$turEtiketi · ${l10n.txVoided}' : turEtiketi;
 
     final row = Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border(
-              left: BorderSide(color: accent.withValues(alpha: 0.7), width: 3),
+      padding: const EdgeInsets.symmetric(
+          horizontal: yatayBosluk, vertical: SandikSpace.smd),
+      child: Row(
+        // Avatar, metin bloğu ve tutar kolonu ortak eksende hizalansın.
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _Avatar(asset: asset),
+          const SizedBox(width: avatarAraligi),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              // Satır yüksekliği içeriğe göre belirlensin. Varsayılan
+              // `MainAxisSize.max` bu Column'u satırın (sağ kolonun
+              // belirlediği) yüksekliğine zorluyordu; iki satırlık fon
+              // başlığı buna sığmayınca taşıyordu.
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Fon/hisse: başlık olarak yalnızca KOD (THYAO).
+                //
+                // Önceden kod bir rozette, tam ad da altında ayrı
+                // satırdaydı; uzun fon adları (45 karaktere kadar)
+                // satırı taşırıyordu. Artık kod başlığın kendisi —
+                // hem tekrar yok hem de tek satır garanti.
+                // Tam ad, varlığın detay ekranında görünür.
+                Text(
+                  asset.showTicker ? asset.displayTicker! : asset.name,
+                  maxLines: asset.showTicker ? 1 : 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                    letterSpacing: asset.showTicker ? 0.2 : null,
+                    color: context.c.text90,
+                  ),
+                ),
+                const SizedBox(height: SandikSpace.xxs),
+                // Saat de yazılır (kullanıcı isteği 2026-09-24); tarih
+                // seçiciyle girilen işlemde saat bilinmediği için yalnızca
+                // tarih kalır (`fmtTarihSaat`).
+                if (silinenGorunumu) ...[
+                  // Mezar taşının (fiziksel silmeden kalan iz) kendi tarihi
+                  // silinme anıdır; işlem tarihi bilinmez, yazılmaz.
+                  if (!isDelete)
+                    _tarihSatiri(
+                      context,
+                      l10n.txDateLabeled(
+                        isSell
+                            ? l10n.txSell
+                            : (isDividend ? l10n.txDividend : l10n.txBuy),
+                        fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
+                      ),
+                    ),
+                  _tarihSatiri(
+                    context,
+                    l10n.deletedOnDate(fmtTarihSaat(
+                        asset.deletedAt ?? asset.addedDate,
+                        yilsiz: !yilGoster)),
+                    notIsareti: not != null,
+                  ),
+                ] else
+                  _tarihSatiri(
+                    context,
+                    fmtTarihSaat(asset.addedDate, yilsiz: !yilGoster),
+                    notIsareti: not != null,
+                  ),
+              ],
             ),
           ),
-          child: Row(
-            // İkon, metin bloğu ve tutar kolonu ortak eksende hizalansın.
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              asset.currencySymbol != null
-                  ? Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: asset.type.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: Center(
-                        child: Text(
-                          asset.currencySymbol!,
-                          style: sandikFont(
-                            fontSize: asset.currencySymbol!.length > 1 ? 9 : 13,
-                            fontWeight: FontWeight.w800,
-                            color: asset.type.onSurface(context),
-                            height: 1,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Icon(asset.type.icon,
-                      color: asset.type.onSurface(context), size: 22),
-              const SizedBox(width: SandikSpace.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  // Satır yüksekliği içeriğe göre belirlensin. Varsayılan
-                  // `MainAxisSize.max` bu Column'u satırın (sağ kolonun
-                  // belirlediği) yüksekliğine zorluyordu; iki satırlık fon
-                  // başlığı + rozet satırı buna sığmayınca 3.9px taşıyordu.
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Fon/hisse: başlık olarak yalnızca KOD (THYAO).
-                    //
-                    // Önceden kod bir rozette, tam ad da altında ayrı
-                    // satırdaydı; uzun fon adları (45 karaktere kadar)
-                    // satırı taşırıyordu. Artık kod başlığın kendisi —
-                    // hem tekrar yok hem de tek satır garanti.
-                    // Tam ad, varlığın detay ekranında görünür.
-                    Text(
-                        asset.showTicker ? asset.displayTicker! : asset.name,
-                        maxLines: asset.showTicker ? 1 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.titleMedium?.copyWith(
-                            fontWeight:
-                                asset.showTicker ? FontWeight.w700 : FontWeight.w600,
-                            height: 1.25,
-                            letterSpacing: asset.showTicker ? 0.2 : null,
-                            color: context.c.text90)),
-                    const SizedBox(height: SandikSpace.xs),
-                    // Rozet satırı dar ekranda yatayda taşıyordu (320pt'de
-                    // 161px). `Wrap` sığmayanı alt satıra alır — kırpmak
-                    // yerine sarmak, tarih ve miktar okunur kalsın.
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: SandikSpace.sm,
-                      runSpacing: SandikSpace.xs,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: asset.type.color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(SandikRadius.sm),
-                          ),
-                          child: Text(asset.type.labelOf(context.l10n),
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  color: asset.type.onSurface(context),
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                        // Saat de yazılır (kullanıcı isteği 2026-09-24);
-                        // tarih seçiciyle girilen işlemde saat bilinmediği
-                        // için yalnızca tarih kalır (`fmtTarihSaat`).
-                        Text(
-                          fmtTarihSaat(asset.addedDate),
-                          style: context.t.bodySmall
-                              ?.copyWith(color: context.c.text36),
-                        ),
-                        // Temettüde miktar 0'dır — "0 adet" rozeti anlamsız
-                        // olurdu, o yüzden yalnızca miktarlı işlemlerde göster.
-                        if (!isDividend)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: context.c.overlay,
-                              borderRadius:
-                                  BorderRadius.circular(SandikRadius.sm),
-                            ),
-                            child: Text(
-                              asset.unitIsPrefix
-                                  ? '${asset.unitLabel}${qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity)}'
-                                  : '${qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity)} ${asset.unitLabel}',
-                              style: context.t.labelMedium?.copyWith(
-                                  letterSpacing: 0,
-                                  color: context.c.text58,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                      ],
+          const SizedBox(width: SandikSpace.sm),
+          // Sağ kolon sabit genişlikte: sınırsız bırakılırsa genişliği
+          // en uzun tutar belirler ve soldaki isim alanını yer. Sabit
+          // tutmak hem bunu önler hem tüm satırların sağ kenarını
+          // hizalar. Sığmayan tutar kırpılmaz, FittedBox ile küçülür.
+          SizedBox(
+            width: 116,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    hideBalance
+                        ? '$sign${baz.gizliTutar}'
+                        : '$sign${tryFmt.format(txValueTRY)}',
+                    maxLines: 1,
+                    // İşlem tutarı — alt alta listelenir, tabular figür.
+                    // `numSmall` 13pt; burada bir kademe büyük (bodyLarge
+                    // 15pt) çünkü tutar satırın tek vurgusu.
+                    style: (context.t.bodyLarge ?? const TextStyle()).copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      color: tutarRengi,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: SandikSpace.sm),
-              // Sağ kolon sabit genişlikte: sınırsız bırakılırsa genişliği
-              // en uzun tutar belirler ve soldaki isim alanını yer. Sabit
-              // tutmak hem bunu önler hem tüm satırların sağ kenarını
-              // hizalar. Sığmayan tutar kırpılmaz, FittedBox ile küçülür.
-              SizedBox(
-                width: 116,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      // Rozet 116pt'lik kolona sığmalı. "Eklendi" sığıyordu
-                      // ama "Çıkarıldı" 19px taşıyordu — etiket uzunluğu
-                      // işlem türüne göre değişiyor. FittedBox sığmayanı
-                      // kırpmadan küçültür.
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(kindIcon, size: 11, color: accent),
-                            const SizedBox(width: SandikSpace.xs),
-                            Text(kindLabel,
-                                style: context.t.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0,
-                                    color: accent)),
-                          ],
-                        ),
-                      ),
+                const SizedBox(height: SandikSpace.xxs),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    sagAltEtiket,
+                    maxLines: 1,
+                    style: context.t.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: context.c.text36,
                     ),
-                    const SizedBox(height: SandikSpace.xs),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerRight,
-                      child: Text(
-                        hideBalance
-                            ? '$sign${baz.gizliTutar}'
-                            : '$sign${tryFmt.format(txValueTRY)}',
-                        maxLines: 1,
-                        // İşlem tutarı — alt alta listelenir, tabular figür.
-                        style: context.t.numSmall.copyWith(
-                            fontSize: 15,
-                            color: isDelete
-                                ? context.c.text58
-                                : (isSell ? context.c.loss : context.c.text90)),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-    );
-
-    if (!isVoided) return row;
-
-    // Silinmiş kaydı yarı saydam göster + "silindi" rozeti. Opacity tek
-    // başına yetmez: renk körlüğü veya parlak ekranda fark edilmeyebilir,
-    // bu yüzden metinle de işaretliyoruz.
-    return Opacity(
-      opacity: 0.55,
-      child: Stack(
-        children: [
-          row,
-          Positioned(
-            left: 14,
-            top: 6,
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: context.c.text58.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(SandikRadius.sm),
-              ),
-              child: Text(
-                'silindi',
-                style: context.t.labelSmall?.copyWith(
-                  fontSize: 9,
-                  letterSpacing: 0.2,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text58,
-                ),
-              ),
+              ],
             ),
           ),
         ],
       ),
     );
+
+    final Widget gorunen =
+        isVoided ? Opacity(opacity: 0.55, child: row) : row;
+    if (onTap == null) return gorunen;
+    return SandikTappable(
+      semanticLabel: not != null
+          ? l10n.txOpenNoteWithNote(
+              asset.showTicker ? asset.displayTicker! : asset.name)
+          : l10n.txOpenNote(
+              asset.showTicker ? asset.displayTicker! : asset.name),
+      onTap: onTap,
+      child: gorunen,
+    );
   }
 
+  /// Tarih satırı; [notIsareti] ise sonunda not ikonu.
+  ///
+  /// İkon ekleme formundaki "Not ekle" satırının ikonuyla AYNI
+  /// (`Icons.notes_rounded`) — kullanıcı yazdığı yerde gördüğü işareti
+  /// burada tanır. Renk tarihle aynı `text36`: satırda yeni bir vurgu
+  /// değil, tarihin bir parçası gibi okunur.
+  Widget _tarihSatiri(BuildContext context, String metin,
+      {bool notIsareti = false}) {
+    final metinW = Text(
+      metin,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: context.t.bodySmall?.copyWith(color: context.c.text36),
+    );
+    if (!notIsareti) return metinW;
+    return Row(
+      children: [
+        Flexible(child: metinW),
+        const SizedBox(width: SandikSpace.xs),
+        Icon(
+          Icons.notes_rounded,
+          size: 13,
+          color: context.c.text36,
+          semanticLabel: context.l10n.txHasNote,
+        ),
+      ],
+    );
+  }
+}
+
+/// Satırın solundaki tür avatarı: varlık türünün rengiyle boyanmış daire,
+/// içinde tür ikonu ya da döviz sembolü. Tür bilgisini yalnızca bu taşır;
+/// eski "Altın" rozeti kalktı (tür filtresi zaten listenin üstünde).
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.asset});
+
+  final Asset asset;
+
+  @override
+  Widget build(BuildContext context) {
+    final symbol = asset.currencySymbol;
+    final Color on = asset.type.onSurface(context);
+    return Container(
+      width: TransactionRow.avatarCap,
+      height: TransactionRow.avatarCap,
+      decoration: BoxDecoration(
+        color: asset.type.color.withValues(alpha: 0.14),
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: symbol == null
+            ? Icon(asset.type.icon, size: 18, color: on)
+            : Text(
+                symbol,
+                // Tek karakter ($, €) rahat okunur; "CHF" gibi üç harfli
+                // sembol daireye ancak etiket boyutunda sığar.
+                style: (symbol.length > 1
+                        ? context.t.labelSmall
+                        : context.t.titleSmall)
+                    ?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                  height: 1,
+                  color: on,
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+/// İki hareket satırı arasındaki saç teli çizgi.
+///
+/// Avatar hizasından başlar (iOS gruplu liste girintisi): çizgi metin
+/// bloğunun altını çizer, avatar kolonunu kesmez. Girinti satırın kendi
+/// sabitlerinden hesaplanır; satır dolgusu değişirse burası da değişir.
+class HareketAyraci extends StatelessWidget {
+  const HareketAyraci({super.key});
+
+  static const double girinti = TransactionRow.yatayBosluk +
+      TransactionRow.avatarCap +
+      TransactionRow.avatarAraligi;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: girinti),
+      child: Divider(height: 1, thickness: 1, color: context.c.hairline),
+    );
+  }
+}
+
+/// Satırın sağ altındaki tür etiketi ("Alım · 5 gr", "Satım · 2 adet",
+/// "Temettü", "Silindi"). İşlem notu sayfasının başlığında da aynı etiket
+/// kullanılır — iki yerde ayrı yazılsaydı ilk değişiklikte ayrışırdı.
+///
+/// "Eklendi/Çıkarıldı" envanter diliydi; kayıtlar aslında fiyatlı
+/// alım/satım işlemleri. Swipe aksiyonları ve hızlı işlem dialogu da
+/// "Al/Sat" diline geçti — geçmiş listesi onlarla aynı dili konuşmalı.
+///
+/// Silme artık pozisyon başına TEK kayıttır ve kaç ledger satırının
+/// gittiğini taşır. Tek kayıt silindiyse sayı bilgi vermez ("Silindi ·
+/// 1 kayıt" gürültü olurdu); eski kayıtlarda `deletedCount` 0'dır, o da
+/// sayı bilinmiyor demektir. Her iki durumda düz "Silindi".
+///
+/// Miktar artık rozet değil, tür etiketinin devamı: "Alım · 5 gr".
+/// Temettüde miktar 0'dır — "· 0 adet" anlamsız olurdu, yalnızca tür.
+String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
+  if (asset.isDeleteLog) {
+    return asset.deletedCount > 1
+        ? l10n.deletedNRecords(asset.deletedCount)
+        : l10n.txDeleted;
+  }
+  if (asset.isDividend) return l10n.txDividend;
+  final miktar =
+      qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity);
+  final miktarMetni = asset.unitIsPrefix
+      ? '${asset.unitLabel}$miktar'
+      : '$miktar ${asset.unitLabel}';
+  return '${asset.isSell ? l10n.txSell : l10n.txBuy} · $miktarMetni';
 }

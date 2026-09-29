@@ -131,6 +131,27 @@ void main() {
           isTrue,
           reason: 'tür dökümü üst kartla AYNI tabandan beslenmeli');
     });
+
+    test('grafikteki dönem başı ÇİZGİSİ de aynı noktadan', () {
+      // Kullanıcı bildirimi (2026-09-28): "yatay başlangıç kesikli çizgisi
+      // sadece yıllık grafikte yok". Çizgi `primarySeg.spots.first`'e
+      // çiziliyordu; 1Y'de çekme penceresi dönemden geniş olduğu için o
+      // nokta dönem başından ÖNCE (x < 0) kalıyor, görünür Y bandına
+      // girmediğinden çizgi kırpılıyordu. Kartın kuralı (pencere içindeki
+      // ilk dolu nokta) çizgiye de uygulanır; çizgi ile kart tabanı aynı.
+      final src =
+          ekranKaynagiSync('lib/screens/portfolio_performance/grafik_kabi.dart');
+      final tek = src.replaceAll(RegExp(r'\s+'), ' ');
+      expect(
+          tek.contains('final taban = _periodEndpoints(segments, start: start, '
+              'intraday: intraday);'),
+          isTrue,
+          reason: 'çizgi ve çubuk tabanı _periodEndpoints sonucundan okunmalı');
+      expect(tek.contains('GrafikStili.donemBasi( context, taban.first,'), isTrue,
+          reason: 'dönem başı çizgisi kartla aynı noktada');
+      expect(tek.contains('horizontalLines: taban == null || _simulate'), isTrue,
+          reason: 'çizgi ilk spot yerine pencere içi tabana bağlı (1Y)');
+    });
   });
 
   group('kullanıcının kuralı: "baş ile son arasındaki fark"', () {

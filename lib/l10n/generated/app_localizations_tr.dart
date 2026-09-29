@@ -700,6 +700,52 @@ class AppLocalizationsTr extends AppLocalizations {
   String get notesHint => 'Notlarınız...';
 
   @override
+  String get txHasNote => 'Not var';
+
+  @override
+  String txOpenNote(String name) {
+    return '$name işlemi, not ekle';
+  }
+
+  @override
+  String txOpenNoteWithNote(String name) {
+    return '$name işlemi, notu var, notu aç';
+  }
+
+  @override
+  String get noteSaved => 'Not kaydedildi';
+
+  @override
+  String get noteRemoved => 'Not silindi';
+
+  @override
+  String get noteSaveFailed => 'Not kaydedilemedi';
+
+  @override
+  String get noteRemove => 'Notu sil';
+
+  @override
+  String get noteNone => 'Bu işleme not yazılmamış.';
+
+  @override
+  String get noteReadOnlyPartner =>
+      'Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.';
+
+  @override
+  String get noteReadOnlyDeleted => 'Silinmiş kaydın notu düzenlenemez.';
+
+  @override
+  String get notesSection => 'Notlar';
+
+  @override
+  String moreNotesCount(int count) {
+    return '+$count not daha · Tüm Hareketler\'de';
+  }
+
+  @override
+  String get searchAssetSymbolOrNote => 'Varlık, sembol veya not ara';
+
+  @override
   String quantitySemantics(String value) {
     return 'Miktar $value';
   }
@@ -745,7 +791,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get clearSearch => 'Aramayı temizle';
 
   @override
-  String get pickStockPrompt => 'Lütfen bir hisse seçin';
+  String get pickStockPrompt => 'Listeden bir hisse seç ya da sembolünü yaz';
 
   @override
   String get pickStock => 'Hisse seç';
@@ -754,7 +800,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pickStockTap => 'Hisse seçmek için dokunun...';
 
   @override
-  String get pickFundPrompt => 'Lütfen bir fon seçin';
+  String get pickFundPrompt => 'Bir fon seç';
 
   @override
   String get pickFund => 'Fon seç';
@@ -860,25 +906,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bu varlığın fiyat geçmişi şu an çekilemedi. Bağlantını kontrol edip tekrar dene.';
 
   @override
-  String get totalQuantityUpper => 'TOPLAM MİKTAR';
-
-  @override
   String get otherTab => 'Diğer';
-
-  @override
-  String periodChangeUpper(String period) {
-    return '$period DEĞİŞİM';
-  }
-
-  @override
-  String buyPerUnit(String unit) {
-    return 'ALIŞ / $unit';
-  }
-
-  @override
-  String todayPerUnit(String unit) {
-    return 'BUGÜN / $unit';
-  }
 
   @override
   String get noResultsShort => 'Sonuç yok.';
@@ -2106,6 +2134,20 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get txDeleted => 'Silindi';
+
+  @override
+  String get txVoided => 'silindi';
+
+  @override
+  String get seeAllShort => 'Tümünü gör';
+
+  @override
+  String nTransactions(int n) {
+    return '$n hareket';
+  }
+
+  @override
   String get txSell => 'Satım';
 
   @override
@@ -2986,9 +3028,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rangeCustom => 'Özel';
 
   @override
-  String get searchAssetOrSymbol => 'Varlık adı veya sembol ara';
-
-  @override
   String get noRecords => 'Kayıt yok';
 
   @override
@@ -3685,6 +3724,29 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get posQuantity => 'Miktar';
+
+  @override
+  String get posBuyPrice => 'Alış fiyatın (ortalama)';
+
+  @override
+  String get posTodayPrice => 'Bugünkü fiyat';
+
+  @override
+  String get posTotalCost => 'Ödediğin toplam';
+
+  @override
+  String get posCurrentValue => 'Bugünkü değer';
+
+  @override
+  String get posTotalPnl => 'Toplam kâr/zarar';
+
+  @override
+  String posPeriodPnl(String period) {
+    return '$period kâr/zarar';
+  }
+
+  @override
   String chartStartLabel(String date, String value) {
     return 'BAŞLANGIÇ · $date · $value';
   }
@@ -3760,6 +3822,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get searchAssetsSemantics => 'Varlık ara';
 
   @override
+  String get searchChip => 'Ara';
+
+  @override
   String get searchShortHint => 'Hisse, fon, altın, döviz, kripto';
 
   @override
@@ -3768,6 +3833,13 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get kullaniciAdiAciklama =>
       'Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap\'tan değiştirebilirsin.';
+
+  @override
+  String get kullaniciAdiZorunluNot =>
+      'Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.';
+
+  @override
+  String get kullaniciAdiUygunDevam => 'Bu ad uygun. Devam edebilirsin.';
 
   @override
   String get kullaniciAdiEtiket => 'Kullanıcı adı';
@@ -3814,4 +3886,106 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get registerUsernameMissing => 'Kullanıcı adı girin.';
+
+  @override
+  String get deletedFilter => 'Silinenler';
+
+  @override
+  String txDateLabeled(String tur, String tarih) {
+    return '$tur: $tarih';
+  }
+
+  @override
+  String deletedOnDate(String tarih) {
+    return 'Silinme: $tarih';
+  }
+
+  @override
+  String get pickGoldPrompt => 'Bir altın türü seç';
+
+  @override
+  String get pickCurrencyPrompt => 'Bir döviz seç';
+
+  @override
+  String get raceLive => 'Canlı';
+
+  @override
+  String get raceLiveJustNow => 'Canlı · az önce güncellendi';
+
+  @override
+  String raceLiveSecondsAgo(int n) {
+    return 'Canlı · $n sn önce güncellendi';
+  }
+
+  @override
+  String raceLiveMinutesAgo(int n) {
+    return 'Canlı · $n dk önce güncellendi';
+  }
+
+  @override
+  String get raceYou => 'Sen';
+
+  @override
+  String get raceYouTag => 'SEN';
+
+  @override
+  String get raceVs => 'VS';
+
+  @override
+  String raceGapToLeader(String fark) {
+    return 'Lidere $fark puan';
+  }
+
+  @override
+  String get duelTied => 'Başa baş gidiyorsunuz';
+
+  @override
+  String duelAhead(String ad, String adIyelik, String fark) {
+    return '$adIyelik $fark puan önündesin';
+  }
+
+  @override
+  String duelBehind(String ad, String adIyelik, String fark) {
+    return '$adIyelik $fark puan gerisindesin';
+  }
+
+  @override
+  String raceRankUp(int n) {
+    return '$n sıra yükseldi';
+  }
+
+  @override
+  String raceRankDown(int n) {
+    return '$n sıra düştü';
+  }
+
+  @override
+  String get filterButton => 'Filtrele';
+
+  @override
+  String filterButtonActive(int n) {
+    return 'Filtrele, $n etkin';
+  }
+
+  @override
+  String get filterReset => 'Sıfırla';
+
+  @override
+  String get filterPeriodHeader => 'DÖNEM';
+
+  @override
+  String get filterTypeHeader => 'TÜR';
+
+  @override
+  String filterShowN(int n) {
+    return '$n kaydı göster';
+  }
+
+  @override
+  String get filterNoMatch => 'Eşleşen kayıt yok';
+
+  @override
+  String filterRemove(String ad) {
+    return '$ad filtresini kaldır';
+  }
 }

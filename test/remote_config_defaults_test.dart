@@ -63,8 +63,11 @@ void main() {
   group('kapalı kalması gerekenler', () {
     // Bunlar tutundurma paketine DAHİL DEĞİL; toplu "hepsini aç" turunda
     // yanlışlıkla sürüklenmediklerini doğrular.
-    test('küresel sıralama kapalı — havuz dolana kadar (2026-09-21)', () {
-      expect(varsayilan('global_leaderboard_enabled'), 'false');
+    test('küresel yarış AÇIK (2026-09-28), yüzdelik şeridi kapalı', () {
+      // 2026-09-21'de ikisi birlikte kapatılmıştı; 2026-09-28 kullanıcı
+      // kararı yarışı ortaktan bağımsız bir özellik olarak açtı. Şerit
+      // ("N kişi" sayısı) havuz dolana kadar kapalı kalır.
+      expect(varsayilan('global_leaderboard_enabled'), 'true');
       expect(varsayilan('percentile_strip_enabled'), 'false');
     });
 

@@ -292,6 +292,19 @@ abstract final class SandikMotion {
   /// Ekranda yer değiştiren / biçim değiştiren eleman.
   static const Curve move = Curves.easeInOutCubic;
 
+  /// Akış: gözün izlemesi istenen biçim değişimi — kıyas çubukları, akan
+  /// şerit dilimleri, sayan rakamlar, kayan imleç (560ms). Zirve ekranı
+  /// kararı (2026-09-29, "daha göz alıcı ve akışkan"): [surface] süresi
+  /// dilimin nereden nereye aktığını okumaya yetmiyordu.
+  static const Duration flow = Duration(milliseconds: 560);
+
+  /// Hafif taşarak yerine oturan varış — seçim imleci ve seçilen işaret.
+  /// Yalnız küçük, tek bir öğede; listelerde ve metinde kullanılmaz.
+  static const Curve spring = Curves.easeOutBack;
+
+  /// Uzun, yumuşak süzülme — genişlik ve konum akışı ([flow] ile).
+  static const Curve glide = Curves.easeOutQuart;
+
   // ── Erişilebilirlik ───────────────────────────────────────────────────────
 
   /// "Hareketi azalt" sistem ayarı açıkken [Duration.zero], değilse [d].
@@ -325,6 +338,9 @@ abstract final class SandikMotion {
 
   /// [surface] süresinin reduce-motion farkındalıklı hâli.
   static Duration surfaceOf(BuildContext context) => of(context, surface);
+
+  /// [flow] süresinin reduce-motion farkındalıklı hâli.
+  static Duration flowOf(BuildContext context) => of(context, flow);
 }
 
 /// Dokunsal geri bildirim ölçeği.
@@ -1083,6 +1099,20 @@ class Sandik {
   static const Color medalSilverDark = Color(0xFFBFC0C4);
   static const Color medalBronze = Color(0xFFE0A574); // 3.
   static const Color medalBronzeDark = Color(0xFFC07E3F);
+
+  // ── Yarışçı renkleri (Yarış ekranı, 2026-09-29) ───────────────────────────
+  //
+  // Ortakların avatar/çizgi rengi. "Sen" her zaman marka amberidir; ortaklar
+  // bu listeden SIRAYLA alır (ortak listesindeki yerine göre, sıralamaya göre
+  // değil — sıra değişince kişinin rengi değişmesin). Tonlar amber'den,
+  // kazanç yeşilinden ve kayıp kırmızısından uzak: renk kimlik anlatır,
+  // kâr/zarar değil.
+  static const List<Color> yarisci = [
+    info, // gök mavisi
+    Color(0xFF7EC8A9), // nane
+    Color(0xFFC97B4F), // bakır
+    Color(0xFFB98AE0), // orkide
+  ];
 
   // ── Sabit opaklıklar (dark zemin üzeri metin) ──────────────────────────────
   static const Color text90    = Color(0xE1FFFFFF); // 0.88 opak (Ana başlık)

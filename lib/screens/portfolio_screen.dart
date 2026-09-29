@@ -39,6 +39,9 @@ import '../providers/watchlist_provider.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../services/islem_notu.dart';
+import '../widgets/islem_notu_sheet.dart';
+import '../widgets/transaction_row.dart' show hareketTurEtiketi;
 
 enum _SortOrder {
   valueDesc,
@@ -205,7 +208,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       current: _sortOrder,
                       onChanged: (o) => setState(() => _sortOrder = o),
                     ),
-                    const SizedBox(width: 8),
+                    // Düğme aralığı her ekranda `SandikSpace.sm`
+                    // (2026-09-28; burada 8 ve 4 karışıktı).
+                    const SizedBox(width: SandikSpace.sm),
                     // NOT: Performans ekranına giden düğme KALDIRILDI —
                     // alt gezinme çubuğunda zaten "Performans" sekmesi var ve
                     // aynı ekranı açıyordu. Bu satır dört kontrol taşıyordu.
@@ -239,7 +244,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: SandikSpace.sm),
                     SandikLogoutButton(
                       onPressed: () => confirmAndLogout(context, ref),
                     ),
@@ -1599,6 +1604,102 @@ class _AssetDetailsPanel extends StatelessWidget {
                   color: context.c.text36, fontWeight: FontWeight.w500),
             ),
           ],
+          _NotlarBolumu(lotlar: position.lots),
+        ],
+      ),
+    );
+  }
+}
+
+/// Açılır paneldeki "NOTLAR" — pozisyonun işlemlerine yazılmış notlar.
+///
+/// Kullanıcı isteği (2026-09-29): "not bilgisi Portföy sayfasında da yer
+/// almalı; kart açıldığında orada olmalı." Kapalı kartta işaret YOK: satır
+/// zaten ad + alarm zili + miktar + tutar + kâr taşıyor; not "göze batmasın
+/// ama kaybolmasın" isteğinin kapalı kart karşılığı açılır panelin kendisi.
+///
+/// Not yoksa bölüm hiç çizilmez (boş bir "Not yok" başlığı her kartta
+/// gürültü olurdu). En yeni [_enFazla] not; fazlası Tüm Hareketler'e
+/// yönlendirilir — panel bir defter değil, pozisyonun özeti.
+///
+/// Her not dokununca hareket satırıyla AYNI not sayfasını açar: notu
+/// gördüğü yerde düzeltebilsin, hareketlere gitmesin.
+class _NotlarBolumu extends ConsumerWidget {
+  const _NotlarBolumu({required this.lotlar});
+
+  final List<Asset> lotlar;
+
+  static const _enFazla = 3;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notlar = notluIslemler(lotlar);
+    if (notlar.isEmpty) return const SizedBox.shrink();
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.notesSection.toUpperCase(),
+            style: context.t.labelMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: context.c.text36,
+            ),
+          ),
+          for (final n in notlar.take(_enFazla))
+            SandikTappable(
+              semanticLabel: l10n.txOpenNoteWithNote(hareketTurEtiketi(l10n, n.islem)),
+              onTap: () =>
+                  showIslemNotuSheet(context, ref, asset: n.islem, not: n.not),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Hareket satırındaki not işaretiyle aynı ikon.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Icon(Icons.notes_rounded,
+                          size: 14, color: context.c.text36),
+                    ),
+                    const SizedBox(width: SandikSpace.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            n.not,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.t.bodyMedium?.copyWith(
+                                color: context.c.text90, height: 1.35),
+                          ),
+                          const SizedBox(height: SandikSpace.xxs),
+                          // Hangi işleme ait: çok lot'lu pozisyonda "hangi
+                          // alışın notu" sorusunun cevabı.
+                          Text(
+                            '${hareketTurEtiketi(l10n, n.islem)} · '
+                            '${fmtTarihSaat(n.islem.addedDate)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.t.bodySmall
+                                ?.copyWith(color: context.c.text36),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (notlar.length > _enFazla)
+            Text(
+              l10n.moreNotesCount(notlar.length - _enFazla),
+              style: context.t.bodySmall?.copyWith(color: context.c.text36),
+            ),
         ],
       ),
     );

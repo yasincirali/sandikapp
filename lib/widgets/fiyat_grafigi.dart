@@ -226,14 +226,8 @@ class FiyatGrafigi extends StatelessWidget {
               if (value <= meta.min || value >= meta.max) {
                 return const SizedBox.shrink();
               }
-              return Padding(
-                padding: const EdgeInsets.only(left: SandikSpace.sm),
-                child: Text(
-                  eksenBicimi.format(value).trim(),
-                  maxLines: 1,
-                  style: GrafikStili.eksenYazisi(context),
-                ),
-              );
+              return GrafikStili.yEtiketi(eksenBicimi.format(value).trim(),
+                  stil: GrafikStili.eksenYazisi(context));
             },
           ),
         ),
@@ -247,15 +241,11 @@ class FiyatGrafigi extends StatelessWidget {
                 return const SizedBox.shrink();
               }
               final t = DateTime.fromMillisecondsSinceEpoch(value.round());
-              return Padding(
-                padding: const EdgeInsets.only(top: SandikSpace.sm2),
-                child: Text(
-                  zamanEtiketi(t,
-                      spanGun: span / const Duration(days: 1).inMilliseconds,
-                      gunIci: eksenX.gunIci),
-                  maxLines: 1,
-                  style: GrafikStili.eksenYazisi(context),
-                ),
+              return GrafikStili.xEtiketi(
+                zamanEtiketi(t,
+                    spanGun: span / const Duration(days: 1).inMilliseconds,
+                    gunIci: eksenX.gunIci),
+                stil: GrafikStili.eksenYazisi(context),
               );
             },
           ),

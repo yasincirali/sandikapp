@@ -52,6 +52,12 @@ enum TourTarget {
   /// açan çipi işaret ediyor.
   kapsamSecici,
 
+  /// Performans: "Zirvedeki Portföyler" kartı (tür dökümünün altında).
+  /// Yarış ekranından buraya taşındı (2026-09-29); dokununca cetvel
+  /// ekranı açılır. Küresel bayrak kapalıyken çizilmez; tur hedefi
+  /// bulamazsa adımı atlar.
+  zirveKarti,
+
   /// Ana ekran: "Bugün" kartı (günün hareketi, hedef, yaklaşan tarihler).
   /// Portföy boşken çizilmez; tur hedefi bulamazsa adımı atlar.
   bugunKarti,

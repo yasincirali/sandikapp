@@ -408,6 +408,14 @@ class Asset {
         deletedAt: deletedAt,
       );
 
+  /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
+  /// (tam alan listesi; yeni alan eklendiğinde buraya da eklenmeli).
+  /// Mevcut nesneyi yerinde DEĞİŞTİRMEZ: durumdaki listeyi paylaşan
+  /// herkes eski notu görmeye devam ederdi ve Riverpod değişikliği fark
+  /// etmezdi. Taze kopya üzerinde yazar.
+  Asset copyWithNotes(String notes) =>
+      copyWithDeletedAt(deletedAt)..notes = notes;
+
   // `toMap()` / `fromMap()` (SQLite/camelCase çifti) 2026-09'da SİLİNDİ:
   // kod tabanında sıfır çağıranı vardı ve `toSupabase()` ile alan kümesi
   // ayrışmıştı (purchaseFxRate, commission, dividendAmount, deletedCount,

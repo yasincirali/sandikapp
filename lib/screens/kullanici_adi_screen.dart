@@ -1,7 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/crash_reporter.dart';
+import '../services/kullanici_adi_denetimi.dart';
 
 import '../l10n/l10n.dart';
 import '../models/kullanici_adi.dart';
@@ -40,64 +40,41 @@ class KullaniciAdiScreen extends ConsumerStatefulWidget {
 
 class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
   final _ctrl = TextEditingController();
-  Timer? _bekleme;
 
-  /// Son sunucu yanıtı ve hangi metin için alındığı — eski yanıt yeni
-  /// metnin üstüne yazılmasın.
-  KullaniciAdiSonuc? _sonuc;
-  String? _sonucMetni;
-  bool _soruluyor = false;
+  /// Gecikme, eskime ve "kaydedilebilir mi" mantığı kayıt formuyla ortak
+  /// (`KullaniciAdiDenetimi`, 2026-09-28); bu ekran yalnız okur.
+  late final KullaniciAdiDenetimi _denetim;
 
   @override
   void initState() {
     super.initState();
     final user = ref.read(authProvider).valueOrNull;
+    _denetim = KullaniciAdiDenetimi(
+      sor: SupabaseService.instance.kullaniciAdiUygunMu,
+      mevcutAd: user?.username,
+    )..addListener(_yenile);
     // Değiştirmede mevcut ad; zorunlu ekranda görünen addan öneri
-    // ("Yasin Dirali" → "Yasin.Dirali"). Öneri de denetimden geçer.
+    // ("Yasin Dirali" → "Yasin.Dirali"). Öneri de denetimden geçer —
+    // gecikmesiz, çünkü kullanıcı henüz yazmadı.
     final baslangic = user?.username ?? KullaniciAdi.oneri(user?.displayName ?? '');
     _ctrl.text = baslangic;
-    _ctrl.addListener(_degisti);
-    if (baslangic.isNotEmpty && baslangic != user?.username) _sor(baslangic);
+    _ctrl.addListener(() => _denetim.metinDegisti(_ctrl.text));
+    _denetim.metinDegisti(baslangic,
+        hemen: baslangic.isNotEmpty && baslangic != user?.username);
+  }
+
+  void _yenile() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    _bekleme?.cancel();
+    _denetim.dispose();
     _ctrl.dispose();
     super.dispose();
   }
 
   String get _metin => _ctrl.text.trim();
-
-  bool get _mevcutAd {
-    final u = ref.read(authProvider).valueOrNull?.username;
-    return u != null && u == _metin;
-  }
-
-  void _degisti() {
-    _bekleme?.cancel();
-    setState(() {});
-    final m = _metin;
-    if (m.isEmpty || KullaniciAdi.bicimDenetle(m) != null || _mevcutAd) return;
-    _bekleme = Timer(const Duration(milliseconds: 450),
-        () => _sor(m));
-  }
-
-  Future<void> _sor(String m) async {
-    setState(() => _soruluyor = true);
-    try {
-      final s = await SupabaseService.instance.kullaniciAdiUygunMu(m);
-      if (!mounted || m != _metin) return;
-      setState(() {
-        _sonuc = s;
-        _sonucMetni = m;
-      });
-    } catch (_) {
-      // Anlık kontrol ağda kaldıysa sessiz: kayıt yine sunucuya sorar.
-    } finally {
-      if (mounted) setState(() => _soruluyor = false);
-    }
-  }
 
   String _hataMetni(KullaniciAdiSonuc s) => switch (s) {
         KullaniciAdiSonuc.bicim => context.l10n.kullaniciAdiHataBicim,
@@ -109,30 +86,6 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
           context.l10n.kullaniciAdiHataBilinmiyor,
       };
 
-  /// Alanın altındaki satır: biçim hatası anında, sunucu yanıtı yalnız
-  /// o anki metne aitse.
-  ({String metin, bool hata})? _durum() {
-    final m = _metin;
-    if (m.isEmpty) return null;
-    if (KullaniciAdi.bicimDenetle(m) != null) {
-      return (metin: context.l10n.kullaniciAdiHataBicim, hata: true);
-    }
-    if (_mevcutAd || _sonucMetni != m || _sonuc == null) return null;
-    if (_sonuc == KullaniciAdiSonuc.uygun) {
-      return (metin: context.l10n.kullaniciAdiUygun, hata: false);
-    }
-    return (metin: _hataMetni(_sonuc!), hata: true);
-  }
-
-  bool get _kaydedilebilir {
-    final m = _metin;
-    if (KullaniciAdi.bicimDenetle(m) != null || _mevcutAd) return false;
-    // Bu metin için sunucu zaten "hayır" dediyse düğme pasif.
-    return !(_sonucMetni == m &&
-        _sonuc != null &&
-        _sonuc != KullaniciAdiSonuc.uygun);
-  }
-
   Future<void> _kaydet() async {
     final m = _metin;
     FocusScope.of(context).unfocus();
@@ -143,14 +96,14 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
         if (!widget.zorunlu) {
           sandikSnack(context, context.l10n.kullaniciAdiKaydedildi,
               kind: SandikSnackKind.success);
-          Navigator.of(context).maybePop();
+          // Sayfa kapanışı beklenmez; `arkaPlan` lint'i susturmakla kalmaz,
+          // olası hatayı non-fatal kaydeder (`arka_plan_hata_yutma_test`).
+          CrashReporter.arkaPlan(Navigator.of(context).maybePop(),
+              reason: 'KullaniciAdiScreen.maybePop');
         }
         return;
       }
-      setState(() {
-        _sonuc = s;
-        _sonucMetni = m;
-      });
+      _denetim.sonucYaz(m, s);
     } catch (e) {
       if (mounted) showAppError(context, e);
     }
@@ -158,76 +111,177 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final durum = _durum();
+    final durum = _denetim.durum;
+    final zorunlu = widget.zorunlu;
+
+    // Alan: metin ortalı ve büyük — ekranın tek işi bu ad. "@" alanın
+    // içinde değil, üstteki amblemde: prefix ortalamayı kaydırıyordu.
     final alan = TextField(
       controller: _ctrl,
       autofocus: true,
       autocorrect: false,
       enableSuggestions: false,
       maxLength: KullaniciAdi.enUzun,
+      textAlign: TextAlign.center,
       textInputAction: TextInputAction.done,
       autofillHints: const [AutofillHints.newUsername],
       onSubmitted: (_) {
-        if (_kaydedilebilir) _kaydet();
+        if (_denetim.kaydedilebilir) _kaydet();
       },
-      style: context.t.bodyLarge?.copyWith(color: context.c.text90),
+      style: context.t.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: context.c.text90,
+      ),
       decoration: context
           .inputDecoration(
-            '',
-            labelText: context.l10n.kullaniciAdiEtiket,
-            prefixIcon: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md2),
-              child: Icon(Icons.alternate_email_rounded,
-                  color: context.c.text36, size: 20),
-            ),
-            suffixIcon: _soruluyor
+            context.l10n.kullaniciAdiEtiket,
+            suffixIcon: _denetim.soruluyor
                 ? const Padding(
                     padding: EdgeInsets.all(SandikSpace.md2),
                     child: CustomLoadingIndicator(size: 16),
                   )
                 : null,
           )
-          .copyWith(counterText: ''),
+          .copyWith(
+            counterText: '',
+            // Sağdaki yükleniyor göstergesi ortalamayı bozmasın: aynı
+            // genişlikte görünmez bir sol boşluk.
+            prefixIcon:
+                _denetim.soruluyor ? const SizedBox(width: SandikTouch.min) : null,
+          ),
     );
 
-    final govde = ListView(
-      padding: EdgeInsets.symmetric(
-        horizontal: SandikSpace.screenH(context),
-        vertical: SandikSpace.lg,
-      ),
-      children: [
-        if (widget.zorunlu) ...[
-          Text(
-            context.l10n.kullaniciAdiBaslik,
-            style: context.t.headlineMedium?.copyWith(color: context.c.text90),
-          ),
-          const SizedBox(height: SandikSpace.sm),
-        ],
-        Text(
-          context.l10n.kullaniciAdiAciklama,
-          style: context.t.bodyMedium?.copyWith(color: context.c.text58),
-        ),
-        const SizedBox(height: SandikSpace.lg),
-        alan,
-        const SizedBox(height: SandikSpace.sm),
-        Text(
-          durum?.metin ?? context.l10n.kullaniciAdiKurallar,
-          style: context.t.bodySmall?.copyWith(
-            color: durum == null
-                ? context.c.text36
-                : (durum.hata ? context.c.loss : context.c.gain),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.lg),
-        SandikAsyncButton(
-          onPressed: _kaydedilebilir ? _kaydet : null,
-          child: Text(widget.zorunlu
-              ? context.l10n.kullaniciAdiDevam
-              : context.l10n.kullaniciAdiKaydet),
-        ),
-        if (widget.zorunlu) ...[
-          const SizedBox(height: SandikSpace.md),
+    // Durum satırı: kural → biçim hatası → sunucu yanıtı. "Uygun" yanıtı
+    // zorunlu ekranda "devam edebilirsin" der — kullanıcı kapının o an
+    // açıldığını buradan ve aktifleşen düğmeden anlar (kullanıcı isteği
+    // 2026-09-28: "belirleyince hemen geçebileceğini bilmeli").
+    final String durumMetni;
+    final Color durumRengi;
+    IconData? durumIkon;
+    if (durum == null) {
+      durumMetni = context.l10n.kullaniciAdiKurallar;
+      durumRengi = context.c.text36;
+    } else if (durum != KullaniciAdiSonuc.uygun) {
+      durumMetni = durum == KullaniciAdiSonuc.bicim
+          ? context.l10n.kullaniciAdiHataBicim
+          : _hataMetni(durum);
+      durumRengi = context.c.loss;
+      durumIkon = Icons.error_outline_rounded;
+    } else {
+      durumMetni = zorunlu
+          ? context.l10n.kullaniciAdiUygunDevam
+          : context.l10n.kullaniciAdiUygun;
+      durumRengi = context.c.gain;
+      durumIkon = Icons.check_circle_rounded;
+    }
+
+    final icerik = ConstrainedBox(
+      // Tablet/masaüstünde alan ekran boyu uzamasın; 420pt bir form
+      // sütunu için rahat okunur genişlik.
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Amblem: ekranın odağı. Marka amberi dolgu değil, saydam halka;
+          // amberText ikon (zemin olarak amberText yasağı — ratchet).
           Center(
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: context.c.amberFill.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.alternate_email_rounded,
+                  size: 34, color: context.c.amberText),
+            ),
+          ),
+          const SizedBox(height: SandikSpace.lg),
+          if (zorunlu) ...[
+            Text(
+              context.l10n.kullaniciAdiBaslik,
+              textAlign: TextAlign.center,
+              style: context.t.headlineMedium?.copyWith(color: context.c.text90),
+            ),
+            const SizedBox(height: SandikSpace.sm),
+          ],
+          Text(
+            context.l10n.kullaniciAdiAciklama,
+            textAlign: TextAlign.center,
+            style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+          ),
+          if (zorunlu) ...[
+            const SizedBox(height: SandikSpace.sm),
+            // Kapı kuralı açık yazılır: adsız geçiş yok, ad seçilince
+            // bekleme yok.
+            Text(
+              context.l10n.kullaniciAdiZorunluNot,
+              textAlign: TextAlign.center,
+              style: context.t.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: context.c.text90,
+              ),
+            ),
+          ],
+          const SizedBox(height: SandikSpace.xl),
+          alan,
+          const SizedBox(height: SandikSpace.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (durumIkon != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: SandikSpace.xxs),
+                  child: Icon(durumIkon, size: 14, color: durumRengi),
+                ),
+                const SizedBox(width: SandikSpace.xs),
+              ],
+              Flexible(
+                child: Text(
+                  durumMetni,
+                  textAlign: TextAlign.center,
+                  style: context.t.bodySmall?.copyWith(color: durumRengi),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: SandikSpace.lg),
+          SandikAsyncButton(
+            onPressed: _denetim.kaydedilebilir ? _kaydet : null,
+            child: Text(zorunlu
+                ? context.l10n.kullaniciAdiDevam
+                : context.l10n.kullaniciAdiKaydet),
+          ),
+        ],
+      ),
+    );
+
+    // Dikeyde ortalı; klavye açılınca görünür alan küçülür, blok yine
+    // ortada kalır ve sığmazsa kayar (minHeight = görünür yükseklik).
+    // "Çıkış yap" ortalanan bloğa DAHİL DEĞİL: alt kenara sabit, ikincil.
+    final hp = SandikSpace.screenH(context);
+    final govde = Column(
+      children: [
+        Expanded(
+          child: LayoutBuilder(builder: (context, c) {
+            return SingleChildScrollView(
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.symmetric(
+                  horizontal: hp, vertical: SandikSpace.lg),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                    minHeight: c.maxHeight - 2 * SandikSpace.lg),
+                child: Center(child: icerik),
+              ),
+            );
+          }),
+        ),
+        if (zorunlu)
+          Padding(
+            padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
             child: TextButton(
               onPressed: () => ref.read(authProvider.notifier).logout(),
               child: Text(
@@ -236,18 +290,17 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
               ),
             ),
           ),
-        ],
       ],
     );
 
     return PopScope(
-      canPop: !widget.zorunlu,
+      canPop: !zorunlu,
       child: Scaffold(
         backgroundColor: context.c.background,
-        appBar: widget.zorunlu
+        appBar: zorunlu
             ? null
             : SandikAppBar(title: context.l10n.kullaniciAdiEtiket),
-        body: widget.zorunlu ? SafeArea(child: govde) : govde,
+        body: zorunlu ? SafeArea(child: govde) : govde,
       ),
     );
   }

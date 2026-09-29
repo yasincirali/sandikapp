@@ -74,8 +74,12 @@ void main() {
 
     test('taşan metin ELLIPSIS olur — asla sarmaz', () {
       // Sarma, etiketi iki satıra çıkarıp grafiğin altını bozardı.
-      expect(kaynak.contains('overflow: TextOverflow.ellipsis'), isTrue);
-      expect(kaynak.contains('softWrap: false'), isTrue);
+      // 2026-09-29'dan beri kutu ortak bileşende (`GrafikStili.xEtiketi`);
+      // tüm grafiklerin kapsamı `grafik_eksen_etiketi_test`'te.
+      expect(kaynak.contains('GrafikStili.xEtiketi('), isTrue);
+      final stil = ekranKaynagiSync('lib/widgets/grafik_stili.dart');
+      expect(stil.contains('overflow: TextOverflow.ellipsis'), isTrue);
+      expect(stil.contains('softWrap: false'), isTrue);
     });
   });
 

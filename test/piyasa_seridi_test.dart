@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'helpers/kaynak.dart';
 import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
 
 /// Kayan bant — erişilebilirlik ve döngü kuralları.
@@ -145,5 +148,97 @@ void main() {
     expect(acildi, 1);
     // Bant kendi dokunuşunu korur: büyütece dokunmak bandı durdurmaz.
     expect(bant(tester).akiyor, isTrue);
+  });
+
+  testWidgets('"Ara" çipi etiketli; tek başına da tam hap (seçenek C)',
+      (tester) async {
+    // Şeridin ucunda: büyüteç + "Ara" metni (ikon tek başına değil —
+    // kullanıcı kararı 2026-09-28, keşfedilebilirlik).
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData.dark(),
+      home: Scaffold(
+        body: Row(children: [
+          const Expanded(child: KayanBant(ogeler: ogeler, sagKose: false)),
+          PiyasaAramaDugmesi(onTap: () {}),
+        ]),
+      ),
+    ));
+    await tester.pump();
+    expect(find.text('Ara'), findsOneWidget);
+    expect(find.byIcon(Icons.search_rounded), findsOneWidget);
+    // Fiyat yokken çip tek başına: yine etiketli, dokunma alanı 44.
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData.dark(),
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.centerRight,
+          child: PiyasaAramaDugmesi(onTap: () {}, cerceveli: false),
+        ),
+      ),
+    ));
+    await tester.pump();
+    expect(find.text('Ara'), findsOneWidget);
+    expect(tester.getSize(find.byType(PiyasaAramaDugmesi)).height,
+        greaterThanOrEqualTo(44));
+  });
+
+  // ── Bant kendi ritmi dışında SIFIRLANMAZ (kullanıcı kararı 2026-09-28) ──
+  //
+  // Ana sayfada görünüm (Ben → ortak) değişince ya da bandın üstündeki
+  // koşullu şerit girip çıkınca bant AYNI element olarak kalmalı: state
+  // (kotasyon, akış fazı) korunur, yalnızca yeniden çizilir.
+  testWidgets('üst ağaç yeniden kurulunca bant durumu ve fazı korunur',
+      (tester) async {
+    var ekstra = false;
+    late StateSetter kur;
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData.dark(),
+      home: Scaffold(
+        body: StatefulBuilder(builder: (context, setState) {
+          kur = setState;
+          return Column(children: [
+            if (ekstra) const SizedBox(key: ValueKey('x'), height: 10),
+            // Her kurulumda YENİ liste örneği — ana sayfa da böyle yapar.
+            KayanBant(key: const ValueKey('bant'), ogeler: List.of(ogeler)),
+          ]);
+        }),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    final onceState = bant(tester);
+    final onceKayma = onceState.kaydirma;
+    expect(onceKayma, greaterThan(0));
+
+    kur(() => ekstra = true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final sonraState = bant(tester);
+    expect(identical(onceState, sonraState), isTrue,
+        reason: 'bant yeniden kurulmamalı — aynı State');
+    expect(sonraState.kaydirma, greaterThan(onceKayma),
+        reason: 'faz sıfırlanmadı, akış devam etti');
+    expect(sonraState.akiyor, isTrue);
+  });
+
+  test('ana sayfa: şerit koşulsuz ve anahtarlı (görünümden bağımsız)', () {
+    final kod = ekranKaynagiSync('lib/screens/home_screen.dart');
+    final a = kod.indexOf('// Piyasa şeridi — dolar/euro/gram altın/BIST 100');
+    final b = kod.indexOf('// Portfolio summary', a);
+    expect(a, greaterThan(0));
+    expect(b, greaterThan(a));
+    final blok = kod.substring(a, b);
+    expect(blok.contains("key: const ValueKey('piyasa-seridi')"), isTrue,
+        reason: 'anahtar yoksa üstteki koşullu sliver bandı sıfırlar');
+    // Yorum satırları dışında `if (ownView)` kalmamalı.
+    final kodSatirlari = const LineSplitter()
+        .convert(blok)
+        .where((l) => !l.trimLeft().startsWith('//'))
+        .join(' ');
+    expect(kodSatirlari.contains('if (ownView)'), isFalse,
+        reason: 'bant her görünümde çizilir (kullanıcı kararı 2026-09-28)');
+    expect(kodSatirlari.contains('PiyasaAramaDugmesi('), isFalse,
+        reason: 'arama artık şeridin içinde, ayrı dal yok');
   });
 }

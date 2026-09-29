@@ -224,7 +224,12 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
-  /// Dönem satırı — ekranın kalıcı İKİNCİ kontrol satırı.
+  /// Dönem satırı — ekranın kalıcı İKİNCİ kontrol satırı, grafiğin ÜSTÜNDE.
+  ///
+  /// 2026-09-28'de bir süre grafiğin altına indirildi ve aynı gün geri
+  /// alındı; gerekçe `kartlar.dart` kontrol yığını notunda (grafiğin boyu
+  /// dönemle değişiyor, altındaki seçici zıplıyordu). Üç grafik ekranı da
+  /// bu sırayı paylaşır: fiyat/kontrol → seçici → grafik.
   ///
   /// Dönem en sık dokunulan denetim, veriye en yakın satırda durur. Grafik
   /// araçları 2026-09-15'te bu satırdan grafik kartının İÇİNE taşındı: tip

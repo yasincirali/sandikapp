@@ -1133,6 +1133,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         FxRateMigrationService.instance.runFor(user.id);
         // Leaderboard opt-in server-side hydration: kullanıcı başka bir cihazda
         // katılmışsa (veya uygulamayı yeniden kurmuşsa) bayrağı geri getir.
+        // Kaynak `profiles.leaderboard_opt_in` (0081), eski cihazlar için
+        // snapshot kanıtı. Yön tek: sunucu → cihaz; cihaz → sunucu yazımı
+        // yalnızca kullanıcının Katıl/Ayrıl eylemlerinde (`optInSunucuyaYaz`),
+        // tercih sıfırlanması (hesap değişimi) sunucuya "ayrıldı" yazmasın.
         _hydrateLeaderboardOptIn(user.id);
       }
 

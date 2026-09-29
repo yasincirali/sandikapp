@@ -122,6 +122,9 @@ class _OptInHero extends StatelessWidget {
       onTap: () {
         // Sadece toggle aç — kullanıcı sonra chip'e basıp sıralamayı görecek
         ref.read(leaderboardOptInProvider.notifier).set(true);
+        // Sunucu da bilsin: günlük snapshot bu bayrağa bakar (0081).
+        LeaderboardService.instance.optInSunucuyaYaz(
+            ref.read(authProvider).valueOrNull?.id, true);
       },
       child: Row(
         children: [

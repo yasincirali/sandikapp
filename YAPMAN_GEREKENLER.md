@@ -8,12 +8,114 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-09-28 Kullanıcı adı — 0079 (ikisi)
+## ⏳ 2026-09-29 Zirvedeki Portföyler anonim havuz — 0083 (iki projede dağıtıldı)
 
-Merge sonrası **Actions → Supabase deploy → hedef `ikisi`, functions `none`**.
-Edge function değişmedi; yalnız şema (kolon `profiles.username`, yasaklı
-sözcük tablosu, tetikleyici, iki RPC). Migration kendi filtresini sınar
+> **Durum 2026-09-29 (Claude):** 0083 + `leaderboard-snapshot` yerel CLI ile
+> Frankfurt → Tokyo; `sema_esitlik.py`: **ŞEMA EŞİT**. Yeni cron yok (mevcut
+> haftalık temizlik işi zirve tablolarını da siler). Havuz beyana dayanmaz
+> (kullanıcı kararı): portföyü 5 günden, hesabı 7 günden eski herkes anonim
+> olarak içinde. Yarış tabloları ve kuralları değişmedi.
+
+Senin yapacakların:
+
+1. **Hukuki gözden geçirme.** "Zirvedeki Portföyler" şu metinlere eklendi:
+   Gizlilik Politikası §3.2, §4, **§5.1**, §7; KVKK Aydınlatma §2.3, §3,
+   §4.2, **§5.3**, §6; Kullanım Koşulları §2 (uygulama içi
+   `lib/screens/legal_doc_screen.dart` + `legal/tr|en/*.md`, GDPR Notice §3–4).
+   Hukuki dayanak **KVKK 5(2)(c) + 5(2)(f)** yazıldı, açık rıza DEĞİL (katılım
+   beyana dayanmaz). Hukukçuya göster; özellikle 8 kişilik küçük havuzda
+   tanınabilirlik ve meşru menfaate itiraz hakkı (GDPR 21) ifadesi.
+   **0084 ile genişledi:** fon türünde TEFAS fon kodu ve portföy içindeki
+   payı da gösteriliyor (%1 altı ve kodsuz fonlar "diğer"de; ad resmi
+   TEFAS listesinden, kullanıcının notu asla). Metinler buna göre
+   güncellendi; somut fon karışımı parmak izine yaklaştığı için bunu
+   hukukçuya ayrıca göster.
+   **0085:** havuz şartına "portföyde en az 2 farklı varlık" eklendi
+   (kullanıcı kararı); metinler güncellendi. Bu şartla Tokyo havuzu 6
+   (eşik 8): zirve iki portföy daha şartı sağlayana kadar boş durumda.
+2. **Web yayını:** `legal/*.md` değişikliklerini
+   `yasincirali.github.io/sandikapp`'a yayınla (uygulama içi metin sürümle gider).
+3. **Mağaza gizlilik beyanları:** App Store "App Privacy" ve Play "Veri
+   güvenliği" formunda finansal bilginin (getiri %, tür payı %) diğer
+   kullanıcılara anonim çıktı olarak gösterilmesinin mevcut beyanlarla uyumunu
+   kontrol et.
+4. **Bilinen tutarsızlık (önceden vardı):** Yarış snapshot tabloları 400 gün
+   saklanıyor (0081), politika "son 365 gün" diyor. Zirve tabloları 365 gün.
+   Yarış tarafına dokunulmadı (Yarış mekaniği değişmesin kararı); hangisini
+   düzelteceğine sen karar ver.
+
+## ⏳ 2026-09-28 Yarış snapshot'ı sunucuda — 0081 + `leaderboard-snapshot` (iki proje)
+
+> **Durum 2026-09-29 akşam (Claude):** secret'lar iki projede de üretilip yazıldı (function env + Vault), canlı koşu 200: 4 kullanıcı, dağılımlar uygulamayla örtüşüyor. Bu maddede yapılacak iş KALMADI; kart havuz 8 uygun kullanıcıya ulaşınca açılır (bugün 4).
+>
+> **Durum 2026-09-29 (Claude):** 0080 + 0081 iki projeye de yerel CLI ile
+> push edildi (Frankfurt → Tokyo), `leaderboard-snapshot` iki projede dağıtıldı,
+> `sema_esitlik.py`: **ŞEMA EŞİT**. Tokyo'da 4 kullanıcı opt-in olarak geri
+> dolduruldu. **Açık kalan (senin):** madde 1 ve 2'deki secret'lar iki projede
+> de YOK (`secrets list` 0, Vault 0) — cron secret'sız 503/"Vault secret
+> bulunamadi" ile düşer. Madde 3 ve 4 tamam (Frankfurt'ta iki yeni cron
+> `cron.alter_job(jobid, active := false)` ile kapatıldı — `update cron.job`
+> postgres rolünde de 42501 verir, resmi yol alter_job). Madde 5 sende.
+
+Zirve portföyler / küresel sıralama havuzu artık sunucuda günlük dolar.
+Merge sonrası, **her iki projede** (Frankfurt → Tokyo):
+
+1. **Vault secret:** `leaderboard_snapshot_cron_secret` — rastgele 32+ karakter
+   (Dashboard → Project Settings → Vault → New secret). `cron_headers()` bunu
+   okur; yoksa cron işi her gün "Vault secret bulunamadi" ile düşer (fail-closed).
+2. **Edge function secret:** `LEADERBOARD_SNAPSHOT_CRON_SECRET` = aynı değer
+   (Dashboard → Edge Functions → Secrets). Fonksiyon bu env yoksa 503 döner.
+3. **Actions → Supabase deploy → hedef `ikisi`, functions `leaderboard-snapshot`**
+   (migration 0081 aynı koşuda gider: `profiles.leaderboard_opt_in` sütunu,
+   cron günde iki: 10:00 ve 15:00 TR — 0082, 400 günlük saklama).
+4. Frankfurt'ta cron işleri geçişe kadar kapalı tutuluyorsa (`cron.job.active`),
+   `leaderboard-snapshot` ve `leaderboard-snapshot-retention` için de aynı
+   bayrağı uygula; şema eşitliği (`sema_esitlik.py`) cron `active` farkını
+   zaten bilinçli sayıyor.
+5. İlk koşuyu elle tetikleyip yanıtı kontrol et (SQL Editor, hedef projede):
+   `select public.trigger_leaderboard_snapshot();` → `net._http_response`
+   içinde `{"ok":true,"users":N,"roi_rows":…}`. Uygun havuz 5 gün sonra
+   dolmaya başlar (0059 kuralı: 5 farklı gün).
+
+## ✅ 2026-09-28 Küresel yarış bayrağı — Firebase Remote Config (KAPANDI 2026-09-28: console'da parametre yok, uygulama varsayılanı geçerli)
+
+Uygulama içi varsayılan `global_leaderboard_enabled` artık **true**
+(`remote_config_service.dart`). Firebase Console → Remote Config'de bu
+parametre **tanımlıysa** oradaki değer uygulama varsayılanını ezer:
+`false` duruyorsa `true` yap ve yayınla (ya da parametreyi sil; varsayılan
+devreye girer). `percentile_strip_enabled` bilinçli olarak kapalı kalıyor.
+Ayrıca 0080 migration'ı (kayıt formunda anonim kullanıcı adı denetimi) merge
+sonrası **Actions → Supabase deploy → hedef `ikisi`** ile iki sunucuya gider.
+
+## ✅ 2026-09-28 Kullanıcı adı — 0079 + analyze-signals/daily-brief (ikisi) (TAMAMLANDI 2026-09-28)
+
+> Uygulandı: yerel CLI ile Frankfurt → Tokyo sırasıyla 0079 push + iki fonksiyon
+> deploy; `sema_esitlik.py`: **ŞEMA EŞİT** (cron bayrağı hariç). Android Release
+> AAB (#28) ağ hatasından düşmüştü, yeniden koşuldu ve geçti. **Açık kalan:**
+> GitHub `SUPABASE_ACCESS_TOKEN` hâlâ Frankfurt'ta 403 (aşağıdaki eşitleme
+> maddesine bak) — yenilenene kadar `sema-esitlik.yml` kırmızı döner.
+
+Merge sonrası **Actions → Supabase deploy → hedef `ikisi`,
+functions `analyze-signals daily-brief`**. Şema: kolon `profiles.username`,
+yasaklı sözcük tablosu, tetikleyici, iki RPC. Migration kendi filtresini sınar
 (`isik` geçer, `s1ktir` düşer…); öz-denetim kırılırsa deploy durur.
+Fonksiyonlar: #27 (cc84cfd, 2026-09-28 15:37) `analyze-signals` ve paylaşılan
+`_shared/price_history.ts`'i değiştirdi (kripto + tüm türler sinyalde);
+`daily-brief` aynı paylaşılan dosyayı içe aldığı için bundle'ı değişti. Son
+başarılı deploy 2026-09-25 (47069a5) ve Frankfurt Faz 2 (2026-09-27) bu
+değişikliği taşımıyor — iki sunucuda da eski.
+
+**Durum 2026-09-28 (Claude):** yerel CLI ile Frankfurt'a `db push --dry-run`
+yalnızca 0079'u bekliyor; gerçek push otomatik modun "canlı dağıtım" kapısına
+takıldı, elle koşulmalı. GitHub yolu Frankfurt'ta 403 veriyor (kısıtlı token,
+aşağıdaki maddeye bak); token yenilenene kadar yerel CLI tek çalışan yol:
+```bash
+supabase link --project-ref ynwymnpdiwudrlxfrmuo && supabase db push        # Frankfurt (kanarya)
+supabase functions deploy analyze-signals daily-brief --project-ref ynwymnpdiwudrlxfrmuo
+supabase link --project-ref ybdbzouzhzwthjgwlbmk && supabase db push        # Tokyo (canlı) — link burada kalsın
+supabase functions deploy analyze-signals daily-brief --project-ref ybdbzouzhzwthjgwlbmk
+python tool/sema_esitlik.py                                                 # ŞEMA EŞİT görmeli
+```
 
 Sıra esnek: uygulama migration'dan ÖNCE yayına çıkarsa zorunlu ekran
 açılmaz (sunucuda kolon yoksa istemci "bilinmiyor" sayar), deploy olunca

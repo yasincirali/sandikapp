@@ -13,6 +13,8 @@ import '../models/kullanici_adi.dart';
 import '../providers/auth_provider.dart';
 import '../services/sunucu_secimi.dart';
 import '../services/auth_service.dart';
+import '../services/kullanici_adi_denetimi.dart';
+import '../services/supabase_service.dart';
 import '../services/disclaimer_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -32,6 +34,11 @@ class RegisterScreen extends ConsumerStatefulWidget {
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+
+  /// Kullanıcı adı benzersizliği FORMDA denetlenir (kullanıcı kararı
+  /// 2026-09-28): adını burada veren kullanıcıya giriş kapısı bir daha
+  /// sorulmaz. Oturum henüz yok; anonim RPC (0080) kullanılır.
+  late final KullaniciAdiDenetimi _adDenetimi;
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _passConfirmCtrl = TextEditingController();
@@ -58,7 +65,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 
   bool get _canSubmit =>
-      KullaniciAdi.bicimDenetle(_nameCtrl.text) == null &&
+      _adDenetimi.kaydedilebilir &&
       _isValidEmail(_emailCtrl.text) &&
       AuthService.validatePassword(_passCtrl.text) == null &&
       _passCtrl.text == _passConfirmCtrl.text &&
@@ -74,6 +81,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (KullaniciAdi.bicimDenetle(_nameCtrl.text) != null) {
       return context.l10n.kullaniciAdiHataBicim;
     }
+    final adRet = _adRetMetni();
+    if (adRet != null) return adRet;
     if (!_isValidEmail(_emailCtrl.text)) return context.l10n.registerEmailInvalid;
     final passError = AuthService.validatePassword(_passCtrl.text);
     if (passError != null) return passError;
@@ -85,6 +94,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return context.l10n.consentMustAccept;
     }
     return null;
+  }
+
+  /// Sunucu bu adı reddettiyse kullanıcı dilinde nedeni; yoksa null.
+  /// Biçim ayrı ele alınır (anında, ağ yok).
+  String? _adRetMetni() {
+    final d = _adDenetimi.durum;
+    if (d == null ||
+        d == KullaniciAdiSonuc.uygun ||
+        d == KullaniciAdiSonuc.bicim) {
+      return null;
+    }
+    return switch (d) {
+      KullaniciAdiSonuc.uygunsuz => context.l10n.kullaniciAdiHataUygunsuz,
+      KullaniciAdiSonuc.ayrilmis => context.l10n.kullaniciAdiHataAyrilmis,
+      KullaniciAdiSonuc.alinmis => context.l10n.kullaniciAdiHataAlinmis,
+      _ => context.l10n.kullaniciAdiHataBilinmiyor,
+    };
   }
 
   // Kural serviste (sunucunun reddedeceği biçim); ekran yalnızca sorar.
@@ -106,6 +132,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    _adDenetimi = KullaniciAdiDenetimi(
+      sor: SupabaseService.instance.kullaniciAdiKayittaUygunMu,
+    )..addListener(_rebuild);
+    _nameCtrl.addListener(() => _adDenetimi.metinDegisti(_nameCtrl.text));
     _nameCtrl.addListener(_rebuild);
     _emailCtrl.addListener(_rebuild);
     _passCtrl.addListener(_rebuild);
@@ -116,6 +146,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
+    _adDenetimi.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
@@ -277,8 +308,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               // Kullanıcı adı (0079, 2026-09-28) — eskiden "Ad Soyad"dı.
               // Görünen ad artık kullanıcı adıdır (ortak da bunu görür);
               // iki ayrı alan sormak yerine kayıtta doğrudan o istenir.
-              // Biçim burada, uygunluk/benzersizlik OTP doğrulamasından
-              // sonra sunucuda denetlenir; reddedilirse giriş kapısı sorar.
+              // Biçim anında; uygunluk/benzersizlik yazarken anonim RPC ile
+              // (0080, 2026-09-28) — eskiden OTP sonrasına kalıyor, alınmış
+              // ad giriş kapısında ikinci kez soruluyordu. OTP sonrası
+              // kayıt yine sunucuya sorar (yarış: iki kişi aynı anda aynı
+              // ad); o nadir durumda kapı yedek olarak kalır.
               TextFormField(
                 controller: _nameCtrl,
                 textCapitalization: TextCapitalization.none,
@@ -296,16 +330,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Icon(Icons.alternate_email_rounded,
                           color: context.c.text36, size: 20),
-                    )).copyWith(
-                  helperText: context.l10n.kullaniciAdiKurallar,
+                    ),
+                    suffixIcon: _adDenetimi.soruluyor
+                        ? const Padding(
+                            padding: EdgeInsets.all(SandikSpace.md2),
+                            child: CustomLoadingIndicator(size: 16),
+                          )
+                        : null).copyWith(
+                  // Sunucu onayladıysa kural yerine yeşil onay; reddettiyse
+                  // hata satırı — kullanıcı "Kaydol"a basmadan görür.
+                  helperText: _adDenetimi.durum == KullaniciAdiSonuc.uygun
+                      ? context.l10n.kullaniciAdiUygun
+                      : context.l10n.kullaniciAdiKurallar,
+                  helperStyle: _adDenetimi.durum == KullaniciAdiSonuc.uygun
+                      ? context.t.bodySmall?.copyWith(color: context.c.gain)
+                      : null,
                   helperMaxLines: 2,
+                  errorText: _adRetMetni(),
                   counterText: '',
                 ),
                 validator: (v) => (v == null || v.trim().isEmpty)
                     ? context.l10n.registerUsernameMissing
                     : (KullaniciAdi.bicimDenetle(v) != null
                         ? context.l10n.kullaniciAdiHataBicim
-                        : null),
+                        : _adRetMetni()),
               ),
               const SizedBox(height: 14),
 

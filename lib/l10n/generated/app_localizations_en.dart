@@ -699,6 +699,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notesHint => 'Your notes...';
 
   @override
+  String get txHasNote => 'Has a note';
+
+  @override
+  String txOpenNote(String name) {
+    return '$name transaction, add a note';
+  }
+
+  @override
+  String txOpenNoteWithNote(String name) {
+    return '$name transaction, has a note, open note';
+  }
+
+  @override
+  String get noteSaved => 'Note saved';
+
+  @override
+  String get noteRemoved => 'Note removed';
+
+  @override
+  String get noteSaveFailed => 'Couldn\'t save the note';
+
+  @override
+  String get noteRemove => 'Remove note';
+
+  @override
+  String get noteNone => 'No note on this transaction.';
+
+  @override
+  String get noteReadOnlyPartner =>
+      'This record belongs to your partner; only they can edit its note.';
+
+  @override
+  String get noteReadOnlyDeleted =>
+      'A deleted record\'s note can\'t be edited.';
+
+  @override
+  String get notesSection => 'Notes';
+
+  @override
+  String moreNotesCount(int count) {
+    return '+$count more notes · in All Transactions';
+  }
+
+  @override
+  String get searchAssetSymbolOrNote => 'Search asset, symbol or note';
+
+  @override
   String quantitySemantics(String value) {
     return 'Quantity $value';
   }
@@ -744,7 +791,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearSearch => 'Clear search';
 
   @override
-  String get pickStockPrompt => 'Please pick a stock';
+  String get pickStockPrompt => 'Pick a stock from the list or type its symbol';
 
   @override
   String get pickStock => 'Pick a stock';
@@ -753,7 +800,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickStockTap => 'Tap to pick a stock...';
 
   @override
-  String get pickFundPrompt => 'Please pick a fund';
+  String get pickFundPrompt => 'Pick a fund';
 
   @override
   String get pickFund => 'Pick a fund';
@@ -859,25 +906,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This asset\'s price history could not be fetched. Check your connection and try again.';
 
   @override
-  String get totalQuantityUpper => 'TOTAL QUANTITY';
-
-  @override
   String get otherTab => 'Other';
-
-  @override
-  String periodChangeUpper(String period) {
-    return '$period CHANGE';
-  }
-
-  @override
-  String buyPerUnit(String unit) {
-    return 'BUY / $unit';
-  }
-
-  @override
-  String todayPerUnit(String unit) {
-    return 'TODAY / $unit';
-  }
 
   @override
   String get noResultsShort => 'No results.';
@@ -2107,6 +2136,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get txDeleted => 'Deleted';
+
+  @override
+  String get txVoided => 'removed';
+
+  @override
+  String get seeAllShort => 'See all';
+
+  @override
+  String nTransactions(int n) {
+    return '$n transactions';
+  }
+
+  @override
   String get txSell => 'Sale';
 
   @override
@@ -2993,9 +3036,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rangeCustom => 'Custom';
 
   @override
-  String get searchAssetOrSymbol => 'Search asset name or symbol';
-
-  @override
   String get noRecords => 'No records';
 
   @override
@@ -3694,6 +3734,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get posQuantity => 'Quantity';
+
+  @override
+  String get posBuyPrice => 'Your buy price (avg.)';
+
+  @override
+  String get posTodayPrice => 'Today\'s price';
+
+  @override
+  String get posTotalCost => 'Total paid';
+
+  @override
+  String get posCurrentValue => 'Value today';
+
+  @override
+  String get posTotalPnl => 'Total profit/loss';
+
+  @override
+  String posPeriodPnl(String period) {
+    return '$period profit/loss';
+  }
+
+  @override
   String chartStartLabel(String date, String value) {
     return 'START · $date · $value';
   }
@@ -3769,6 +3832,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchAssetsSemantics => 'Search assets';
 
   @override
+  String get searchChip => 'Search';
+
+  @override
   String get searchShortHint => 'Stocks, funds, gold, FX, crypto';
 
   @override
@@ -3777,6 +3843,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get kullaniciAdiAciklama =>
       'Your partner sees you by this name, and it\'s the name shown in the app. You can change it later in Settings > Account.';
+
+  @override
+  String get kullaniciAdiZorunluNot =>
+      'You need a username to continue. As soon as you pick an available one, you can go on.';
+
+  @override
+  String get kullaniciAdiUygunDevam =>
+      'This name is available. You can continue.';
 
   @override
   String get kullaniciAdiEtiket => 'Username';
@@ -3824,4 +3898,106 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerUsernameMissing => 'Enter a username.';
+
+  @override
+  String get deletedFilter => 'Deleted';
+
+  @override
+  String txDateLabeled(String tur, String tarih) {
+    return '$tur: $tarih';
+  }
+
+  @override
+  String deletedOnDate(String tarih) {
+    return 'Deleted: $tarih';
+  }
+
+  @override
+  String get pickGoldPrompt => 'Pick a gold type';
+
+  @override
+  String get pickCurrencyPrompt => 'Pick a currency';
+
+  @override
+  String get raceLive => 'Live';
+
+  @override
+  String get raceLiveJustNow => 'Live · updated just now';
+
+  @override
+  String raceLiveSecondsAgo(int n) {
+    return 'Live · updated ${n}s ago';
+  }
+
+  @override
+  String raceLiveMinutesAgo(int n) {
+    return 'Live · updated ${n}m ago';
+  }
+
+  @override
+  String get raceYou => 'You';
+
+  @override
+  String get raceYouTag => 'YOU';
+
+  @override
+  String get raceVs => 'VS';
+
+  @override
+  String raceGapToLeader(String fark) {
+    return '$fark pts behind the leader';
+  }
+
+  @override
+  String get duelTied => 'Neck and neck';
+
+  @override
+  String duelAhead(String ad, String adIyelik, String fark) {
+    return '$fark pts ahead of $ad';
+  }
+
+  @override
+  String duelBehind(String ad, String adIyelik, String fark) {
+    return '$fark pts behind $ad';
+  }
+
+  @override
+  String raceRankUp(int n) {
+    return 'Up $n';
+  }
+
+  @override
+  String raceRankDown(int n) {
+    return 'Down $n';
+  }
+
+  @override
+  String get filterButton => 'Filter';
+
+  @override
+  String filterButtonActive(int n) {
+    return 'Filter, $n active';
+  }
+
+  @override
+  String get filterReset => 'Reset';
+
+  @override
+  String get filterPeriodHeader => 'PERIOD';
+
+  @override
+  String get filterTypeHeader => 'TYPE';
+
+  @override
+  String filterShowN(int n) {
+    return 'Show $n records';
+  }
+
+  @override
+  String get filterNoMatch => 'No matching records';
+
+  @override
+  String filterRemove(String ad) {
+    return 'Remove $ad filter';
+  }
 }

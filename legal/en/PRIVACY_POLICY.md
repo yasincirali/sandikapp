@@ -1,7 +1,7 @@
 # Privacy Policy — sandık
 
 **Effective date:** May 11, 2026
-**Last updated:** May 11, 2026
+**Last updated:** September 29, 2026
 **Version:** 1.0
 
 > **Note:** Published version. Data controller is an individual developer; VERBIS registration is not required unless commercial activity is initiated in Türkiye (kvkk.gov.tr). Contact for privacy inquiries: sandikapp.destek@gmail.com.
@@ -42,6 +42,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 |---|---|
 | Asset records (symbol, quantity, purchase price, date, note) | Portfolio tracking (core functionality) |
 | Portfolio snapshot history | Performance charts |
+| Period return (%), asset-type shares (%) and per-fund-code shares (%) — computed on our servers | Top Portfolios (anonymous comparison, see §5.1) |
 | Partnership invite codes & mutual links | Multi-user sharing feature |
 
 ### 3.3 Device & Notification Data
@@ -82,6 +83,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 6. To meet legal obligations (disclaimer proof, lawful authority requests)
 7. For diagnostics and service improvement
 8. To detect abuse, fraud, and cyberattacks (GDPR 6(1)(f) — legitimate interest)
+9. Top Portfolios: to show, anonymously, the return and asset-type allocation of the period's top-gaining portfolios (GDPR 6(1)(b) and 6(1)(f))
 
 ---
 
@@ -95,6 +97,10 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 | Stock/fund prices | Yahoo Finance, TEFAS, finans.truncgil.com | NONE — only symbol query is sent | Price retrieval | Global |
 
 **These providers act solely as data processors on our instructions. Controllership remains with us.**
+
+### 5.1 Anonymous Sharing with Other Users (Top Portfolios)
+
+For every user whose portfolio is older than 5 days and holds at least 2 different assets, and whose account is older than 7 days, the period return (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on our servers twice a day and kept in an anonymous comparison pool. When the pool holds at least 8 portfolios, only the rank, return percentage, asset-type shares and, for funds, the public TEFAS fund code with its share of the portfolio (funds below 1% or without a code grouped together) of up to 4 top-gaining portfolios are shown to all users of the App; fund names come from the official TEFAS list. Names, e-mail addresses, usernames, amounts, quantities, the names or symbols of stocks and other assets, and any names or notes you give your assets are never shared; the displayed information contains no data that reveals your identity. Inclusion in the pool requires no separate declaration or consent; the pool is part of the standard functionality of the App. When you delete your account, your measurements in the pool are deleted as well.
 
 ---
 
@@ -116,6 +122,7 @@ The destination country (USA) is not on the Turkish DPA's list of countries with
 | Account data | Until account deletion |
 | Asset records | Until account deletion |
 | Snapshot history | Last 365 days (rolling, older entries auto-deleted) |
+| Top Portfolios pool measurements (return %, type share %) | Last 365 days (rolling); immediately on account deletion |
 | Disclaimer acceptance log | **3 years** after account deletion (Turkish CO Art. 146 statute of limitations) |
 | Push token | Auto-deleted on app uninstall or logout |
 | Crash reports | 90 days |

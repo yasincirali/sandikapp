@@ -368,9 +368,9 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.piyasaSeridi,
       baslik: 'Piyasa bir bakışta',
       govde: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle en '
-          'üstte. Sağ uçtaki büyüteçle herhangi bir hisseyi, fonu, altını '
-          'ya da kriptoyu ara; portföyüne eklemeden grafiğine ve '
-          'istatistiklerine bak, istersen takibe al.',
+          'üstte. Şeridin sağ ucundaki "Ara" ile herhangi bir hisseyi, '
+          'fonu, altını ya da kriptoyu ara; portföyüne eklemeden grafiğine '
+          've istatistiklerine bak, istersen takibe al.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
@@ -481,9 +481,12 @@ List<_Adim> _adimlariKur() {
       baslik: 'Dönem seç',
       // 2026-09-28: 3A ve 5Y eklendi; aynı seçici artık Takip,
       // Karşılaştır ve varlık ekranlarında da var.
-      govde: 'GÜNLÜK gün içini saat saat çizer; 1H / 1A / 3A / 6A / 1Y / 5Y '
-          'daha geniş pencereler. Aynı seçici Takip, Karşılaştır ve varlık '
-          'ekranlarında da aynı. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+      // 2026-09-28: seçici üç grafik ekranında da grafiğin ÜSTÜNDE
+      // (bkz. `kartlar.dart` kontrol yığını notu).
+      govde: 'Grafiğin üstündeki seçici: GÜNLÜK gün içini saat saat çizer; '
+          '1H / 1A / 3A / 6A / 1Y / 5Y daha geniş pencereler. Aynı seçici '
+          'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
+          'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
           'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
       // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
       // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam
@@ -503,6 +506,21 @@ List<_Adim> _adimlariKur() {
           'içindeki her alım ve satımla gerçek geçmişini çizer; Simülasyon '
           '"bugünkü portföyümü baştan elimde tutsaydım ne olurdu?" sorusunu '
           'yanıtlar.',
+      giris: (_) => _sekmeyeGec(3),
+    ),
+    _Adim(
+      id: 'zirve',
+      hedef: TourTarget.zirveKarti,
+      rozet: 'YENİ',
+      baslik: 'Zirvedeki portföyler',
+      // 2026-09-29: kart Yarış ekranından Performans'a taşındı, kendi
+      // ekranı ve cetveli var. Tur uygulamanın güncel hâlini anlatmalı.
+      govde: 'Tür dökümünün altındaki kart, dönemin en çok kazanan anonim '
+          'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
+          'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
+          'neye yatırdığını ve senden farkını oku. Portföyü 5 günden eski '
+          've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim '
+          'olarak havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(

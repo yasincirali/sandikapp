@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'crash_reporter.dart';
+import 'supabase_service.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
 import 'history_service.dart';
+import 'zirve_kiyas.dart';
 
 /// Kâr/zarar hesabı sonucu.
 ///
@@ -15,19 +19,39 @@ class RoiResult {
   const RoiResult({required this.roi, required this.usedFallback});
 }
 
-/// Top gainer satırı — anonim, sadece rank + ROI + tür yüzdeleri.
+/// Top gainer satırı — anonim: rank + ROI + tür yüzdeleri + fon kırılımı.
 class TopGainerAllocation {
   final int rank;
   final double roiPct;
 
   /// Tür bazlı yüzde, örn. {"hisse": 45.2, "doviz": 30.1, ...}. Sum ≈ 100.
   final Map<String, double> allocation;
+
+  /// Fon türünün TEFAS kodu bazında kırılımı, TOPLAM portföyün yüzdesi
+  /// (Σ ≈ allocation['fon']); "DIGER" toplu kalem (0084). Fon yoksa boş.
+  final Map<String, double> fonDetay;
+
+  /// Bu satır çağıranın kendi portföyü mü (0085, `auth.uid()`). Başkasına
+  /// bir şey söylemez; ekran bu satırı "Sen" diye çizer, ikinci bir "Sen"
+  /// işareti koymaz.
+  final bool ben;
   const TopGainerAllocation({
     required this.rank,
     required this.roiPct,
     required this.allocation,
+    this.fonDetay = const {},
+    this.ben = false,
   });
 }
+
+/// Çağıranın zirve havuzundaki kendi değeri (0085 `zirve_benim`).
+/// Havuzdaysa Zirve ekranı "Sen"i bununla çizer: zirveyle AYNI kaynak ve
+/// saat, iki ayrı sayı yok.
+typedef ZirveBenim = ({
+  double roiPct,
+  Map<String, double> allocation,
+  Map<String, double> fonDetay,
+});
 
 /// `get_percentile_bucket` yanıtı.
 ///
@@ -245,7 +269,28 @@ class LeaderboardService {
   /// Sunucuda bu kullanıcı için daha önce bir ROI snapshot atıldı mı?
   /// True ise kullanıcı bir cihazda opt-in yapmış demektir — uygulama
   /// yeniden kurulsa bile lokal bayrağı buradan hydrate ederiz.
+  /// Opt-in tercihini sunucuya yansıtır (0081). Arka planda; hata
+  /// non-fatal raporlanır, kullanıcı akışı beklemez. Çağıran taraf cihaz
+  /// tercihini zaten yazdı; burası yalnızca sunucu bayrağı.
+  void optInSunucuyaYaz(String? userId, bool acik) {
+    if (userId == null || userId.isEmpty) return;
+    CrashReporter.arkaPlan(
+      SupabaseService.instance.yarisOptInYaz(userId, acik),
+      reason: 'LeaderboardService.optInSunucuyaYaz',
+    );
+  }
+
   Future<bool> hasServerSideOptIn(String userId) async {
+    // Önce sunucu bayrağı (0081); yoksa/okunamazsa eski kanıt: daha önce
+    // atılmış bir snapshot satırı (sütun eklenmeden önceki cihazlar).
+    try {
+      final p = await Supabase.instance.client
+          .from('profiles')
+          .select('leaderboard_opt_in')
+          .eq('id', userId)
+          .maybeSingle();
+      if (p != null && p['leaderboard_opt_in'] == true) return true;
+    } catch (_) {}
     try {
       final res = await Supabase.instance.client
           .from('user_roi_snapshots')
@@ -346,6 +391,28 @@ class LeaderboardService {
     };
   }
 
+  /// Fon türünün TEFAS kodu bazında kırılımı, toplam portföyün yüzdesi
+  /// (Σ ≈ `computeAllocation()['fon']`). Kural sunucuyla aynı
+  /// (`ZirveKiyas.fonAnahtari`, %1 eşiği) — Zirve ekranındaki "Sen" satırı
+  /// zirveyle aynı ölçüyle okunsun. Yalnız cihazda kalır, gönderilmez.
+  Map<String, double> computeFonDetay(
+    List<Asset> assets,
+    double Function(double, String) toTRY,
+  ) {
+    final kodDegeri = <String, double>{};
+    var toplam = 0.0;
+    for (final p in aggregatePositions(assets)) {
+      final a = p.asDisplayAsset();
+      final tl = toTRY(a.totalValue, a.currency);
+      if (tl <= 0) continue;
+      toplam += tl;
+      if (a.type.name != 'fon') continue;
+      final kod = ZirveKiyas.fonAnahtari(a.ticker);
+      kodDegeri.update(kod, (v) => v + tl, ifAbsent: () => tl);
+    }
+    return ZirveKiyas.fonDetayiTopla(kodDegeri, toplam);
+  }
+
   /// Kullanıcının tür bazlı % dağılımını Supabase'e yazar. Miktar, TL,
   /// ticker göndermez — sadece {tür: %}. Aktif varlıklar (buy - sell)
   /// üzerinden TL bazlı hesaplanmış oranlar client tarafında hazırlanır.
@@ -375,8 +442,10 @@ class LeaderboardService {
     int topN = 3,
   }) async {
     try {
+      // 0084: aynı havuz + fon kırılımı. Eski `get_top_gainers_allocation`
+      // yayındaki eski sürümler için sunucuda duruyor.
       final res = await Supabase.instance.client.rpc<dynamic>(
-        'get_top_gainers_allocation',
+        'zirve_portfoyleri',
         params: {'p_period_days': periodDays, 'p_top_n': topN},
       );
       if (res == null) return const [];
@@ -392,10 +461,18 @@ class LeaderboardService {
           for (final e in allocRaw.entries)
             e.key as String: (e.value as num).toDouble(),
         };
+        final fonRaw = row['fon_detay'];
         out.add(TopGainerAllocation(
           rank: rank,
           roiPct: roi,
           allocation: alloc,
+          fonDetay: fonRaw is Map
+              ? {
+                  for (final e in fonRaw.entries)
+                    e.key as String: (e.value as num).toDouble(),
+                }
+              : const {},
+          ben: row['ben'] == true,
         ));
       }
       return out;
@@ -433,6 +510,56 @@ class LeaderboardService {
         percentile: pct,
         total: total,
         medianDiffPts: medyan == null || benim == null ? null : benim - medyan,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Zirve havuzunda kaç portföy var (0083 `zirve_havuz_boyutu`).
+  ///
+  /// Zirve havuzu beyana dayanmaz: portföyü 5 günden, hesabı 7 günden eski
+  /// herkes anonim olarak içindedir. Yarış'ın [fetchPoolSize]'ından AYRI —
+  /// o yalnız yarışa katılanları sayar ve Yarış ekranı onu kullanmaya
+  /// devam eder. Hata → null; UI sayı yazmaz (uydurma sayı yok).
+  Future<int?> fetchZirveHavuzBoyutu({int periodDays = 30}) async {
+    try {
+      final r = await Supabase.instance.client.rpc<dynamic>(
+        'zirve_havuz_boyutu',
+        params: {'p_period_days': periodDays},
+      );
+      return (r as num?)?.toInt();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Çağıranın havuzdaki kendi getirisi/dağılımı; havuzda değilse (ya da
+  /// hata) null — ekran istemci hesabına düşer.
+  Future<ZirveBenim?> fetchZirveBenim({required int periodDays}) async {
+    try {
+      final res = await Supabase.instance.client.rpc<dynamic>(
+        'zirve_benim',
+        params: {'p_period_days': periodDays},
+      );
+      if (res is! List || res.isEmpty) return null;
+      final row = res.first as Map<String, dynamic>;
+      final roi = (row['roi_pct'] as num?)?.toDouble();
+      final alloc = row['allocation_pct'];
+      if (roi == null || alloc is! Map) return null;
+      final fon = row['fon_detay'];
+      return (
+        roiPct: roi,
+        allocation: {
+          for (final e in alloc.entries)
+            e.key as String: (e.value as num).toDouble(),
+        },
+        fonDetay: fon is Map
+            ? {
+                for (final e in fon.entries)
+                  e.key as String: (e.value as num).toDouble(),
+              }
+            : const <String, double>{},
       );
     } catch (_) {
       return null;

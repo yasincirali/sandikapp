@@ -138,7 +138,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           quantity: qty,
           purchasePrice: addPrice,
           currency: asset.currency,
-          notes: asset.notes,
+          // Yeni alış yeni bir işlemdir; önceki lot'un notu ona ait değil.
+          notes: '',
           isManualPrice: asset.isManualPrice,
           subCategory: asset.subCategory,
           unitType: asset.unitType,

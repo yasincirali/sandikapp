@@ -1,6 +1,7 @@
 # GDPR Notice — sandık
 
 **Effective date:** May 11, 2026
+**Last updated:** September 29, 2026
 **Version:** 1.0
 
 > This document supplements the [Privacy Policy](PRIVACY_POLICY.md) and [Terms of Service](TERMS_OF_SERVICE.md) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
@@ -44,6 +45,7 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Push notifications, marketing emails (if any) | Art. 6(1)(a) — consent |
 | Storing disclaimer acceptance log | Art. 6(1)(c) — legal obligation |
 | Security measures (rate limiting, abuse detection, error logs) | Art. 6(1)(f) — legitimate interests |
+| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(b) — performance of a contract (standard App feature); Art. 6(1)(f) — legitimate interests |
 | International transfer (Supabase/Firebase USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
 ---
@@ -53,6 +55,8 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 See [Privacy Policy §5](PRIVACY_POLICY.md#5-third-party-recipients-data-processors).
 
 All processors are bound by Data Processing Agreements (DPAs) under Art. 28.
+
+Other users of the App receive only the anonymous output of the Top Portfolios pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios).
 
 ---
 

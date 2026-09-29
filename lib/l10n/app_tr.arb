@@ -335,6 +335,40 @@
   "transactionDate": "İşlem tarihi",
   "addNote": "Not ekle",
   "notesHint": "Notlarınız...",
+  "txHasNote": "Not var",
+  "txOpenNote": "{name} işlemi, not ekle",
+  "@txOpenNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "txOpenNoteWithNote": "{name} işlemi, notu var, notu aç",
+  "@txOpenNoteWithNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noteSaved": "Not kaydedildi",
+  "noteRemoved": "Not silindi",
+  "noteSaveFailed": "Not kaydedilemedi",
+  "noteRemove": "Notu sil",
+  "noteNone": "Bu işleme not yazılmamış.",
+  "noteReadOnlyPartner": "Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.",
+  "noteReadOnlyDeleted": "Silinmiş kaydın notu düzenlenemez.",
+  "notesSection": "Notlar",
+  "moreNotesCount": "+{count} not daha · Tüm Hareketler'de",
+  "@moreNotesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchAssetSymbolOrNote": "Varlık, sembol veya not ara",
   "quantitySemantics": "Miktar {value}",
   "@quantitySemantics": {
     "placeholders": {
@@ -362,10 +396,10 @@
   "fundsLoadFailed": "Fonlar yüklenemedi",
   "searchEllipsis": "Ara...",
   "clearSearch": "Aramayı temizle",
-  "pickStockPrompt": "Lütfen bir hisse seçin",
+  "pickStockPrompt": "Listeden bir hisse seç ya da sembolünü yaz",
   "pickStock": "Hisse seç",
   "pickStockTap": "Hisse seçmek için dokunun...",
-  "pickFundPrompt": "Lütfen bir fon seçin",
+  "pickFundPrompt": "Bir fon seç",
   "pickFund": "Fon seç",
   "pickFundTap": "Fon seçmek için dokunun...",
   "noResults": "Sonuç bulunamadı",
@@ -419,32 +453,7 @@
   },
   "setPriceAlert": "Fiyat alarmı kur",
   "priceHistoryFailed": "Bu varlığın fiyat geçmişi şu an çekilemedi. Bağlantını kontrol edip tekrar dene.",
-  "totalQuantityUpper": "TOPLAM MİKTAR",
   "otherTab": "Diğer",
-  "periodChangeUpper": "{period} DEĞİŞİM",
-  "@periodChangeUpper": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
-  "buyPerUnit": "ALIŞ / {unit}",
-  "@buyPerUnit": {
-    "placeholders": {
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
-  "todayPerUnit": "BUGÜN / {unit}",
-  "@todayPerUnit": {
-    "placeholders": {
-      "unit": {
-        "type": "String"
-      }
-    }
-  },
   "noResultsShort": "Sonuç yok.",
   "compare": "Karşılaştır",
   "clearShort": "Temizle",
@@ -1185,6 +1194,28 @@
       }
     }
   },
+  "txDeleted": "Silindi",
+  "txVoided": "silindi",
+  "seeAllShort": "Tümünü gör",
+  "nTransactions": "{n} hareket",
+  "@nTransactions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "txDeleted": "Silindi",
+  "txVoided": "silindi",
+  "seeAllShort": "Tümünü gör",
+  "nTransactions": "{n} hareket",
+  "@nTransactions": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "txSell": "Satım",
   "txDividend": "Temettü",
   "txBuy": "Alım",
@@ -1918,7 +1949,6 @@
   "rangeLast90": "Son 90 gün",
   "rangeThisYear": "Bu yıl",
   "rangeCustom": "Özel",
-  "searchAssetOrSymbol": "Varlık adı veya sembol ara",
   "noRecords": "Kayıt yok",
   "nRecords": "{n} kayıt",
   "@nRecords": {
@@ -2564,6 +2594,20 @@
     "description": "Grafikte gün içi dönem başı çizgisinin etiketi: açılış saati ve değeri.",
     "placeholders": {"time": {"type": "String"}, "value": {"type": "String"}}
   },
+  "posQuantity": "Miktar",
+  "posBuyPrice": "Alış fiyatın (ortalama)",
+  "posTodayPrice": "Bugünkü fiyat",
+  "posTotalCost": "Ödediğin toplam",
+  "posCurrentValue": "Bugünkü değer",
+  "posTotalPnl": "Toplam kâr/zarar",
+  "posPeriodPnl": "{period} kâr/zarar",
+  "@posPeriodPnl": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "chartStartLabel": "BAŞLANGIÇ · {date} · {value}",
   "@chartStartLabel": {
     "description": "Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.",
@@ -2594,9 +2638,12 @@
   "@searchShowAll": {"placeholders": {"count": {"type": "int"}}},
   "searchInPortfolioTag": "Portföyünde",
   "searchAssetsSemantics": "Varlık ara",
+  "searchChip": "Ara",
   "searchShortHint": "Hisse, fon, altın, döviz, kripto",
   "kullaniciAdiBaslik": "Kullanıcı adını seç",
   "kullaniciAdiAciklama": "Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap'tan değiştirebilirsin.",
+  "kullaniciAdiZorunluNot": "Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.",
+  "kullaniciAdiUygunDevam": "Bu ad uygun. Devam edebilirsin.",
   "kullaniciAdiEtiket": "Kullanıcı adı",
   "kullaniciAdiKurallar": "3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.",
   "kullaniciAdiHataBicim": "3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.",
@@ -2610,5 +2657,130 @@
   "kullaniciAdiKaydedildi": "Kullanıcı adın güncellendi.",
   "kullaniciAdiSecilmedi": "Henüz seçilmedi",
   "kullaniciAdiCikis": "Çıkış yap",
-  "registerUsernameMissing": "Kullanıcı adı girin."
+  "registerUsernameMissing": "Kullanıcı adı girin.",
+  "deletedFilter": "Silinenler",
+  "txDateLabeled": "{tur}: {tarih}",
+  "@txDateLabeled": {
+    "placeholders": {
+      "tur": {
+        "type": "String"
+      },
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "deletedOnDate": "Silinme: {tarih}",
+  "@deletedOnDate": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "pickGoldPrompt": "Bir altın türü seç",
+  "pickCurrencyPrompt": "Bir döviz seç",
+  "raceLive": "Canlı",
+  "raceLiveJustNow": "Canlı · az önce güncellendi",
+  "raceLiveSecondsAgo": "Canlı · {n} sn önce güncellendi",
+  "@raceLiveSecondsAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "raceLiveMinutesAgo": "Canlı · {n} dk önce güncellendi",
+  "@raceLiveMinutesAgo": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "raceYou": "Sen",
+  "raceYouTag": "SEN",
+  "raceVs": "VS",
+  "raceGapToLeader": "Lidere {fark} puan",
+  "@raceGapToLeader": {
+    "placeholders": {
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "duelTied": "Başa baş gidiyorsunuz",
+  "duelAhead": "{adIyelik} {fark} puan önündesin",
+  "@duelAhead": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      },
+      "adIyelik": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "duelBehind": "{adIyelik} {fark} puan gerisindesin",
+  "@duelBehind": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      },
+      "adIyelik": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "raceRankUp": "{n} sıra yükseldi",
+  "@raceRankUp": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "raceRankDown": "{n} sıra düştü",
+  "@raceRankDown": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "filterButton": "Filtrele",
+  "filterButtonActive": "Filtrele, {n} etkin",
+  "@filterButtonActive": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "filterReset": "Sıfırla",
+  "filterPeriodHeader": "DÖNEM",
+  "filterTypeHeader": "TÜR",
+  "filterShowN": "{n} kaydı göster",
+  "@filterShowN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "filterNoMatch": "Eşleşen kayıt yok",
+  "filterRemove": "{ad} filtresini kaldır",
+  "@filterRemove": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      }
+    }
+  }
 }

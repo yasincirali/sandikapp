@@ -1364,6 +1364,84 @@ abstract class AppLocalizations {
   /// **'Notlarınız...'**
   String get notesHint;
 
+  /// No description provided for @txHasNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not var'**
+  String get txHasNote;
+
+  /// No description provided for @txOpenNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} işlemi, not ekle'**
+  String txOpenNote(String name);
+
+  /// No description provided for @txOpenNoteWithNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} işlemi, notu var, notu aç'**
+  String txOpenNoteWithNote(String name);
+
+  /// No description provided for @noteSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not kaydedildi'**
+  String get noteSaved;
+
+  /// No description provided for @noteRemoved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not silindi'**
+  String get noteRemoved;
+
+  /// No description provided for @noteSaveFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not kaydedilemedi'**
+  String get noteSaveFailed;
+
+  /// No description provided for @noteRemove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Notu sil'**
+  String get noteRemove;
+
+  /// No description provided for @noteNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işleme not yazılmamış.'**
+  String get noteNone;
+
+  /// No description provided for @noteReadOnlyPartner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.'**
+  String get noteReadOnlyPartner;
+
+  /// No description provided for @noteReadOnlyDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silinmiş kaydın notu düzenlenemez.'**
+  String get noteReadOnlyDeleted;
+
+  /// No description provided for @notesSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Notlar'**
+  String get notesSection;
+
+  /// No description provided for @moreNotesCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'+{count} not daha · Tüm Hareketler\'de'**
+  String moreNotesCount(int count);
+
+  /// No description provided for @searchAssetSymbolOrNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık, sembol veya not ara'**
+  String get searchAssetSymbolOrNote;
+
   /// No description provided for @quantitySemantics.
   ///
   /// In tr, this message translates to:
@@ -1445,7 +1523,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickStockPrompt.
   ///
   /// In tr, this message translates to:
-  /// **'Lütfen bir hisse seçin'**
+  /// **'Listeden bir hisse seç ya da sembolünü yaz'**
   String get pickStockPrompt;
 
   /// No description provided for @pickStock.
@@ -1463,7 +1541,7 @@ abstract class AppLocalizations {
   /// No description provided for @pickFundPrompt.
   ///
   /// In tr, this message translates to:
-  /// **'Lütfen bir fon seçin'**
+  /// **'Bir fon seç'**
   String get pickFundPrompt;
 
   /// No description provided for @pickFund.
@@ -1658,35 +1736,11 @@ abstract class AppLocalizations {
   /// **'Bu varlığın fiyat geçmişi şu an çekilemedi. Bağlantını kontrol edip tekrar dene.'**
   String get priceHistoryFailed;
 
-  /// No description provided for @totalQuantityUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'TOPLAM MİKTAR'**
-  String get totalQuantityUpper;
-
   /// No description provided for @otherTab.
   ///
   /// In tr, this message translates to:
   /// **'Diğer'**
   String get otherTab;
-
-  /// No description provided for @periodChangeUpper.
-  ///
-  /// In tr, this message translates to:
-  /// **'{period} DEĞİŞİM'**
-  String periodChangeUpper(String period);
-
-  /// No description provided for @buyPerUnit.
-  ///
-  /// In tr, this message translates to:
-  /// **'ALIŞ / {unit}'**
-  String buyPerUnit(String unit);
-
-  /// No description provided for @todayPerUnit.
-  ///
-  /// In tr, this message translates to:
-  /// **'BUGÜN / {unit}'**
-  String todayPerUnit(String unit);
 
   /// No description provided for @noResultsShort.
   ///
@@ -3794,6 +3848,30 @@ abstract class AppLocalizations {
   /// **'Silindi · {n} kayıt'**
   String deletedNRecords(int n);
 
+  /// No description provided for @txDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silindi'**
+  String get txDeleted;
+
+  /// No description provided for @txVoided.
+  ///
+  /// In tr, this message translates to:
+  /// **'silindi'**
+  String get txVoided;
+
+  /// No description provided for @seeAllShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünü gör'**
+  String get seeAllShort;
+
+  /// No description provided for @nTransactions.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} hareket'**
+  String nTransactions(int n);
+
   /// No description provided for @txSell.
   ///
   /// In tr, this message translates to:
@@ -5126,12 +5204,6 @@ abstract class AppLocalizations {
   /// **'Özel'**
   String get rangeCustom;
 
-  /// No description provided for @searchAssetOrSymbol.
-  ///
-  /// In tr, this message translates to:
-  /// **'Varlık adı veya sembol ara'**
-  String get searchAssetOrSymbol;
-
   /// No description provided for @noRecords.
   ///
   /// In tr, this message translates to:
@@ -6248,6 +6320,48 @@ abstract class AppLocalizations {
   /// **'AÇILIŞ · {time} · {value}'**
   String chartOpenLabel(String time, String value);
 
+  /// No description provided for @posQuantity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Miktar'**
+  String get posQuantity;
+
+  /// No description provided for @posBuyPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alış fiyatın (ortalama)'**
+  String get posBuyPrice;
+
+  /// No description provided for @posTodayPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü fiyat'**
+  String get posTodayPrice;
+
+  /// No description provided for @posTotalCost.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödediğin toplam'**
+  String get posTotalCost;
+
+  /// No description provided for @posCurrentValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü değer'**
+  String get posCurrentValue;
+
+  /// No description provided for @posTotalPnl.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam kâr/zarar'**
+  String get posTotalPnl;
+
+  /// No description provided for @posPeriodPnl.
+  ///
+  /// In tr, this message translates to:
+  /// **'{period} kâr/zarar'**
+  String posPeriodPnl(String period);
+
   /// Grafikte dönem başı çizgisinin etiketi: dönem başı tarihi ve değeri.
   ///
   /// In tr, this message translates to:
@@ -6362,6 +6476,12 @@ abstract class AppLocalizations {
   /// **'Varlık ara'**
   String get searchAssetsSemantics;
 
+  /// No description provided for @searchChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get searchChip;
+
   /// No description provided for @searchShortHint.
   ///
   /// In tr, this message translates to:
@@ -6379,6 +6499,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ortağın seni bu adla görür, uygulamada da bu ad görünür. Sonra Ayarlar > Hesap\'tan değiştirebilirsin.'**
   String get kullaniciAdiAciklama;
+
+  /// No description provided for @kullaniciAdiZorunluNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.'**
+  String get kullaniciAdiZorunluNot;
+
+  /// No description provided for @kullaniciAdiUygunDevam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad uygun. Devam edebilirsin.'**
+  String get kullaniciAdiUygunDevam;
 
   /// No description provided for @kullaniciAdiEtiket.
   ///
@@ -6463,6 +6595,162 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kullanıcı adı girin.'**
   String get registerUsernameMissing;
+
+  /// No description provided for @deletedFilter.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silinenler'**
+  String get deletedFilter;
+
+  /// No description provided for @txDateLabeled.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tur}: {tarih}'**
+  String txDateLabeled(String tur, String tarih);
+
+  /// No description provided for @deletedOnDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silinme: {tarih}'**
+  String deletedOnDate(String tarih);
+
+  /// No description provided for @pickGoldPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir altın türü seç'**
+  String get pickGoldPrompt;
+
+  /// No description provided for @pickCurrencyPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir döviz seç'**
+  String get pickCurrencyPrompt;
+
+  /// No description provided for @raceLive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Canlı'**
+  String get raceLive;
+
+  /// No description provided for @raceLiveJustNow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Canlı · az önce güncellendi'**
+  String get raceLiveJustNow;
+
+  /// No description provided for @raceLiveSecondsAgo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Canlı · {n} sn önce güncellendi'**
+  String raceLiveSecondsAgo(int n);
+
+  /// No description provided for @raceLiveMinutesAgo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Canlı · {n} dk önce güncellendi'**
+  String raceLiveMinutesAgo(int n);
+
+  /// No description provided for @raceYou.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sen'**
+  String get raceYou;
+
+  /// No description provided for @raceYouTag.
+  ///
+  /// In tr, this message translates to:
+  /// **'SEN'**
+  String get raceYouTag;
+
+  /// No description provided for @raceVs.
+  ///
+  /// In tr, this message translates to:
+  /// **'VS'**
+  String get raceVs;
+
+  /// No description provided for @raceGapToLeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lidere {fark} puan'**
+  String raceGapToLeader(String fark);
+
+  /// No description provided for @duelTied.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş gidiyorsunuz'**
+  String get duelTied;
+
+  /// No description provided for @duelAhead.
+  ///
+  /// In tr, this message translates to:
+  /// **'{adIyelik} {fark} puan önündesin'**
+  String duelAhead(String ad, String adIyelik, String fark);
+
+  /// No description provided for @duelBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'{adIyelik} {fark} puan gerisindesin'**
+  String duelBehind(String ad, String adIyelik, String fark);
+
+  /// No description provided for @raceRankUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} sıra yükseldi'**
+  String raceRankUp(int n);
+
+  /// No description provided for @raceRankDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} sıra düştü'**
+  String raceRankDown(int n);
+
+  /// No description provided for @filterButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtrele'**
+  String get filterButton;
+
+  /// No description provided for @filterButtonActive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtrele, {n} etkin'**
+  String filterButtonActive(int n);
+
+  /// No description provided for @filterReset.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıfırla'**
+  String get filterReset;
+
+  /// No description provided for @filterPeriodHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'DÖNEM'**
+  String get filterPeriodHeader;
+
+  /// No description provided for @filterTypeHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜR'**
+  String get filterTypeHeader;
+
+  /// No description provided for @filterShowN.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} kaydı göster'**
+  String filterShowN(int n);
+
+  /// No description provided for @filterNoMatch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşen kayıt yok'**
+  String get filterNoMatch;
+
+  /// No description provided for @filterRemove.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} filtresini kaldır'**
+  String filterRemove(String ad);
 }
 
 class _AppLocalizationsDelegate

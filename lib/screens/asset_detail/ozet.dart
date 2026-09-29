@@ -27,16 +27,22 @@ part of '../asset_detail_screen.dart';
 /// 5Y aynı haftalık katmandan (`yahooRange: 5y`) beslenir; `HistoryService`
 /// aynı isteği tekilleştirir, yani 5Y ağa ek istek çıkarmaz. Önbellekteki
 /// döneme geçiş beklemesiz: seri `SynchronousFuture` ile hemen çizilir.
+/// Pozisyonun sayıları — tek kayıt, üç tüketici: fiyat bloğundaki
+/// "Pozisyonun" satırı, `_PozisyonKarti` ve grafiğin uç rengi. Üçü AYNI
+/// kaydı okur; ayrı hesap yazılmaz (ana sayfa kartıyla aynı formül).
+typedef _PnlOzeti = ({
+  double anchorUnitTRY,
+  double currentUnitTRY,
+  double totalCostTRY,
+  double currentValueTRY,
+  double totalPnlTRY,
+  double pnlPct,
+  bool gainPositive,
+});
+
 extension _DetayOzet on _AssetDetailScreenState {
-  /// Pozisyonun alış → bugün özeti — üstteki satır, `_PnlSummaryStrip` ve
-  /// grafiğin uç rengi AYNI sayıları okur (ana sayfa kartıyla aynı formül).
-  ({
-    double anchorUnitTRY,
-    double currentUnitTRY,
-    double totalPnlTRY,
-    double pnlPct,
-    bool gainPositive,
-  }) _pnlOzeti(PortfolioState? pState) {
+  /// Pozisyonun alış → bugün özeti (bkz. [_PnlOzeti]).
+  _PnlOzeti _pnlOzeti(PortfolioState? pState) {
     // Canlı görünüm — açılış anının kopyası değil (bkz. `_canli`).
     final asset = _canli.asset;
     final qty = asset.quantity;
@@ -52,6 +58,8 @@ extension _DetayOzet on _AssetDetailScreenState {
     return (
       anchorUnitTRY: anchorUnitTRY,
       currentUnitTRY: currentUnitTRY,
+      totalCostTRY: totalCostTRY,
+      currentValueTRY: currentValueTRY,
       totalPnlTRY: totalPnlTRY,
       pnlPct: pnlPct,
       gainPositive: totalPnlTRY >= 0,
@@ -215,17 +223,9 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   /// Güncel fiyat + seçili dönemin değişimi + pozisyon satırı.
   ///
-  /// Fiyat CANLI birim fiyattır (grafiğin sağ ucu, `_PnlSummaryStrip`'in
-  /// "bugün / birim"i) — seri beklenmeden görünür.
-  Widget _fiyatBlogu(
-      ({
-        double anchorUnitTRY,
-        double currentUnitTRY,
-        double totalPnlTRY,
-        double pnlPct,
-        bool gainPositive,
-      }) pnl,
-      BazPara baz) {
+  /// Fiyat CANLI birim fiyattır (grafiğin sağ ucu, pozisyon kartındaki
+  /// "Bugünkü fiyat") — seri beklenmeden görünür.
+  Widget _fiyatBlogu(_PnlOzeti pnl, BazPara baz) {
     final l = context.l10n;
     final days = _periods[_selectedPeriodIdx].days;
     final etiket = donemEtiketi(l, _periods[_selectedPeriodIdx].label);
@@ -334,13 +334,20 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   // ── İstatistikler ────────────────────────────────────────────────────────
 
-  /// 2×2 istatistik + dönem aralığı. Seçili dönemin serisi gelmeden çizilmez
-  /// (uydurma yok); gelince yerine oturur.
+  /// 2×2 istatistik + dönem aralığı. Seçili dönemin serisi gelmeden sayı
+  /// yazılmaz (uydurma yok); gelince yerine oturur.
+  ///
+  /// Seri henüz yokken bölüm BOŞ DÖNMEZ, aynı boyda iskelet durur
+  /// (2026-09-28): eskiden `[]` dönüyor, altındaki sinyal paneli yukarı
+  /// sıçrayıp seri gelince geri iniyordu — dönem değiştirirken sayfa
+  /// "yeniden yükleniyor" gibi görünüyordu. Kullanıcı kararı: dönem
+  /// değişince yalnızca grafik ve ona bağlı alanlar yenilensin, yerleşim
+  /// oynamasın.
   List<Widget> _istatistikler(double canliBirim) {
     final days = _periods[_selectedPeriodIdx].days;
     final ist = _donemIstatistikleri[days];
     final pct = _donemYuzdesi(days, canliBirim);
-    if (ist == null || pct == null) return const [];
+    if (ist == null || pct == null) return [_istatistikIskeleti()];
     // Aralık canlı fiyatı da kapsar: seri haftalıkken bugünkü fiyat son
     // kapanışın dışına taşabilir; imleç yine çubuğun içinde doğru yerde.
     final canli = canliBirim > 0 ? canliBirim : ist.son;
@@ -367,5 +374,34 @@ extension _DetayOzet on _AssetDetailScreenState {
         ),
       ],
     ];
+  }
+
+  /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
+  /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni).
+  Widget _istatistikIskeleti() {
+    Widget kart() => Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(SandikSpace.smd),
+            decoration: context.surfaceCard(),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SandikSkeleton(width: 72, height: 10),
+                SizedBox(height: SandikSpace.xs),
+                SandikSkeleton(width: 56, height: 16),
+              ],
+            ),
+          ),
+        );
+    return Semantics(
+      label: context.l10n.loadingEllipsis,
+      child: Column(
+        children: [
+          Row(children: [kart(), const SizedBox(width: SandikSpace.sm), kart()]),
+          const SizedBox(height: SandikSpace.sm),
+          Row(children: [kart(), const SizedBox(width: SandikSpace.sm), kart()]),
+        ],
+      ),
+    );
   }
 }

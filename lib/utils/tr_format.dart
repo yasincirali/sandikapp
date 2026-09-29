@@ -246,9 +246,14 @@ bool saatBiliniyor(DateTime t) {
 /// Grafikte günlük/haftalık kova 00:00'a oturur; orada saat yazmak "00:00"
 /// gürültüsü olurdu. Saatlik kovalar ve "şimdi" noktası ise gerçek saat
 /// taşır. Kural tek: [saatBiliniyor].
-String fmtTarihSaat(DateTime t) {
+///
+/// [yilsiz]: yıl zaten bir üst başlıkta yazılıysa (tüm hareketler ekranı
+/// ay kapları "EYLÜL 2026") satırda tekrar etmez — "25 Eyl · 14:29".
+String fmtTarihSaat(DateTime t, {bool yilsiz = false}) {
   final y = t.toLocal();
+  final gun = yilsiz ? 'd MMM' : 'd MMM yyyy';
   return saatBiliniyor(y)
-      ? DateFormat('d MMM yyyy · HH:mm', 'tr_TR').format(y)
-      : DateFormat('d MMM yyyy', 'tr_TR').format(y);
+      ? DateFormat('$gun · HH:mm', 'tr_TR').format(y)
+      : DateFormat(gun, 'tr_TR').format(y);
 }
+
