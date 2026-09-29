@@ -677,8 +677,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         color: color,
                       ),
                       const SizedBox(width: 3),
+                      // İşaretli (emülatör doğrulaması 2026-09-30): ok
+                      // ikonunun ekran okuyucu etiketi yok, "−₺… | %0,03"
+                      // okunuyordu; tutarla aynı yön dili.
                       Text(
-                        fmtPct(pct.abs(), digits: 2),
+                        fmtPctIsaretli(pct, digits: 2),
                         style: context.t.numSmall.copyWith(color: color),
                       ),
                     ],
@@ -717,7 +720,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         : '${piyasa >= 0 ? '+' : '−'}'
                             '${tryFmt.format(piyasa.abs())}',
                     ek: piyasaPct != null && !piyasaFlat
-                        ? fmtPct(piyasaPct.abs(), digits: 2)
+                        ? fmtPctIsaretli(piyasaPct, digits: 2)
                         : null,
                     renk: piyasaColor,
                   ),

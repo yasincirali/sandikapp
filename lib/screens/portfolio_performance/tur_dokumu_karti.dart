@@ -606,7 +606,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                 ),
                 if (pct != null && !isFlat)
                   Text(
-                    fmtPct(pct.abs(), digits: 2),
+                    // Tutar üstte işaretli; yüzde de aynı yönü taşır
+                    // (emülatör doğrulaması 2026-09-30).
+                    fmtPctIsaretli(pct, digits: 2),
                     maxLines: 1,
                     style: context.t.numSmall.copyWith(
                         color: color.withValues(alpha: 0.85), fontSize: 10),
