@@ -124,6 +124,19 @@ const List<SurumNotu> surumNotlari = [
             "aranır.",
       ),
       Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Daha net rakamlar',
+        aciklama: 'Bugün kartında günlük yüzde artık tutarla aynı işareti '
+            'taşıyor (+%1,23 / −%0,06); yön yalnızca renkten okunmuyor. '
+            'Enflasyon farkı yönüyle yazılıyor: "20,6 puan geride", '
+            '"5,2 puan önde".',
+      ),
+      // Fon karnesi, temettü kartı, halka arz takvimi, örnek portföy ve
+      // ilk açılış sırası Remote Config bayrağı arkasında (mağaza sürümünde
+      // KAPALI). Notları bayrak açılırken eklenir; kapalı özelliği anlatan
+      // not kullanıcıya görmediği şeyi vaat ederdi. Metin önerileri:
+      // YAPMAN_GEREKENLER.md "Büyüme özellikleri — bayrak açma sırası".
+      Yenilik(
         ikon: YenilikIkonu.genel,
         baslik: 'Daha okunaklı, daha hızlı',
         aciklama: 'Koyu temada ikincil yazılar daha okunaklı; sekmeler '

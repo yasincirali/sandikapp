@@ -8,6 +8,22 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-29 Büyüme özellikleri — bayrak açma sırası (PUSH EDİLMEDİ)
+
+Plan: `docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md`. Kod yerelde, debug
+derlemede bayraklar AÇIK (emülatörde görünür), mağaza sürümünde KAPALI.
+Önce emülatörde bak; onay verince push. Sonra Firebase Console → Remote Config:
+
+| Sıra | Bayrak | Açınca sürüm notuna eklenecek (öneri) |
+|---|---|---|
+| 1 | `fund_report_card_enabled` | **Fon karnesi** — Fon ekranında fonun kendi kategorisindeki sırası (1 ay, yılbaşından beri, 1 yıl) ve kategori ortancasına farkı; portföy kartını açınca tek satır özet. |
+| 2 | `ipo_calendar_enabled` | **Halka arz takvimi** — Profil → Halka arzlar. Kaynaklı liste; "Katıldım" ile lotunu halka arz fiyatı ve tarihiyle ekle. (Önce `docs/data/halka_arz.json` Pages'e çıkmalı — push ile olur.) |
+| 3 | `lock_offer_after_first_asset` | Not gerekmez (yeni kullanıcı akışı); seviye sorusu da bu bayrakla gelir. |
+| 4 | `dividend_capture_enabled` | **Temettülerini kaçırma** — Hisse ekranında son 12 ayın temettüleri; "Kaydet" ile tutar hazır gelir. Sunucu tarafı (0086 + `temettu-yakala`) AYRI dağıtılır, aşağıdaki bölüm. `temettu_stopaj_orani` değerini gir. |
+| 5 | `demo_mode_enabled` | Not gerekmez (giriş ekranındaki "Önce bir göz at"). |
+
+- [ ] Halka arz listesini güncel tut: `docs/README.md` "Halka arz verisi" prosedürü.
+
 ## ⏳ 2026-09-29 Temettü yakalama + yıl sonu anı — 0086, 0087 (YAZILDI, DAĞITILMADI)
 
 Kod merge'de; sunucu tarafı elle açılır. Sıra **iki projede de** (Frankfurt → Tokyo):
