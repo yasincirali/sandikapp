@@ -15,8 +15,16 @@ part of '../portfolio_performance_screen.dart';
 String _positionLabel(String key, AssetType type, AppLocalizations l) {
   final parts = key.split('|');
   var core = parts.length > 1 ? parts[1] : key;
-  if (core.startsWith('sub:')) core = core.substring(4);
-  if (core.startsWith('name:')) core = core.substring(5);
+  if (core.startsWith('sub:')) {
+    core = core.substring(4);
+  } else if (core.startsWith('name:')) {
+    core = core.substring(5);
+  } else {
+    // Sembol çekirdeği: `ARDYZ.IS` / `TEFAS:AFT` / `KRIPTO:BTC` → kod
+    // (`pozisyonKodu`; 2026-09-29 emülatör testinde GÜNLÜK'ün "en çok
+    // hareket eden"i ham `ARDYZ.IS` yazıyordu).
+    core = pozisyonKodu(core);
+  }
   if (core.isEmpty) return type.labelOf(l);
   // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
   // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.

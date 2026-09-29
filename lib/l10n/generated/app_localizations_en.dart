@@ -885,6 +885,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseWait => 'Please wait';
 
   @override
+  String breakdownUpAmount(String amount) {
+    return 'up $amount';
+  }
+
+  @override
+  String breakdownDownAmount(String amount) {
+    return 'down $amount';
+  }
+
+  @override
+  String get nominalReturnInWindow => 'Your return in this window';
+
+  @override
+  String get cpiWindowNote =>
+      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today — the two figures cover different windows.';
+
+  @override
   String get demoTryButton => 'Take a look first';
 
   @override
@@ -3533,7 +3550,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayRealHint => 'Yearly return minus CPI';
 
   @override
-  String get todayWeekLabel => 'Last week';
+  String get todayWeekLabel => 'Last 7 days';
 
   @override
   String get todayWeekHint => 'Market effect on your portfolio · summary ready';

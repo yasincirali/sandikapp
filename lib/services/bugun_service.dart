@@ -112,10 +112,18 @@ class ReelGetiriSatiri extends BugunSatiri {
   bool get onde => fark >= 0;
 }
 
-/// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip`'in satırı.
+/// Son 7 günün piyasa getirisi — eski `WeeklySummaryChip`'in satırı.
 ///
-/// Haftanın ilk iki günü SABİT (özet taze), sonra dönüşüm havuzunda: hafta
-/// ilerledikçe "geçen hafta" eskir ama bilgi kaybolmaz.
+/// **Tanım: KAYAN 7 gün, sağ ucu canlı** (`BugunYukleyici.haftalik` →
+/// `PeriodSummaryService.compute(birHafta, canliSon: …)`). Satır Özet › 1H'ye
+/// götürür ve orada AYNI rakam görünmeli ("tıklanan rakamı bulamayan
+/// kullanıcı", `WeeklySummaryChip._ac`), 1H de bugüne kadarki 7 gündür.
+/// Etiket bir süre "Geçen hafta" yazdı; takvim haftası sanıldı ve oturum
+/// içinde değişen rakam (−%2,51 → −%2,10, 2026-09-29 emülatör testi) hata
+/// gibi göründü. Hesap değil etiket hizalandı: "Son 7 gün".
+///
+/// Haftanın ilk iki günü SABİT satır (haftalık özet bildirimiyle aynı
+/// günler), sonra dönüşüm havuzunda: bilgi kaybolmaz.
 class HaftalikOzetSatiri extends BugunSatiri {
   const HaftalikOzetSatiri({required this.getiriPct});
   final double getiriPct;

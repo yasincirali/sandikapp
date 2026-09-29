@@ -529,6 +529,24 @@
   "tefasFunds": "TEFAS Fonları",
   "fundsLoading": "Fonlar yükleniyor...",
   "pleaseWait": "Lütfen bekle",
+  "breakdownUpAmount": "artış {amount}",
+  "@breakdownUpAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "breakdownDownAmount": "azalış {amount}",
+  "@breakdownDownAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturnInWindow": "Bu aralıkta senin getirin",
+  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.",
   "demoTryButton": "Önce bir göz at",
   "demoBannerTitle": "Örnek portföy",
   "demoBannerSubtitle": "Varlıklar örnek, fiyatlar canlı",
@@ -2427,7 +2445,7 @@
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
   "todayRealHint": "Yıllık getirin ile TÜFE farkı",
-  "todayWeekLabel": "Geçen hafta",
+  "todayWeekLabel": "Son 7 gün",
   "todayWeekHint": "Piyasanın portföyüne etkisi · özet hazır",
   "todayGoalLabel": "Hedef",
   "todayGoalSetShort": "Tutar seç, kalanı her gün gör",

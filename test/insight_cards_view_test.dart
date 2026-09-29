@@ -114,7 +114,9 @@ void main() {
       );
 
       expect(find.textContaining('Reel getiri'), findsOneWidget);
-      expect(find.text('Senin getirin'), findsOneWidget);
+      // Pencere biliniyor (`ozet` uçları doldurur): nominal satırı dönem
+      // kartından FARKLI aralığı ölçtüğünü söyler (2026-09-29, bulgu #4).
+      expect(find.text('Bu aralıkta senin getirin'), findsOneWidget);
       expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
       expect(find.text('Aradaki fark'), findsOneWidget);
       // Ana rakam bileşik reel getiri, puan farkı DEĞİL.
