@@ -34,6 +34,7 @@ import 'package:flutter/cupertino.dart' show CupertinoButton;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/main.dart' as app;
 import 'package:portfoy_takip/screens/onboarding_screen.dart';
 
@@ -109,7 +110,17 @@ void main() {
     // ("Duman.Testi"); test sunucunun "kullanılabilir" yanıtını bekleyip
     // gerçek kullanıcı gibi "Devam et"e basar. Böylece RPC, tetikleyici
     // ve kapı taze yığında uçtan uca sınanır.
-    final adUygun = find.text('Bu ad kullanılabilir.');
+    // Metin çeviri sözlüğünden: ekran zorunlu kipte "Bu ad uygun. Devam
+    // edebilirsin." (`kullaniciAdiUygunDevam`), aksi hâlde "Bu ad
+    // kullanılabilir." (`kullaniciAdiUygun`) yazar. Test eskiden ikincisini
+    // literal arıyordu; ekran zorunlu kipe geçince (5c9f7d3) CI'da 45 sn
+    // bekleyip düştü (ekranda "Bu ad uygun…" duruyordu). Sözlükten okumak
+    // metin bir daha değişirse testi birlikte taşır.
+    final tr = AppLocalizationsTr();
+    final adUygun = find.byWidgetPredicate((w) =>
+        w is Text &&
+        (w.data == tr.kullaniciAdiUygunDevam ||
+            w.data == tr.kullaniciAdiUygun));
     final simdiDegil = find.text('Şimdi değil');
     await _bekleKosul(
       tester,
