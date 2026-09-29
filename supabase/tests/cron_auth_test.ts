@@ -38,6 +38,7 @@ const SECRET_DOGRULAYAN = [
   'calendar-nudge',
   'weekly-summary',
   'fetch-inflation',
+  'temettu-yakala', // 0086
 ];
 
 /// Tetikleyicilerin hepsi — `push-live-activity` dahil.

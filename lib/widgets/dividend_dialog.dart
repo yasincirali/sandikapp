@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,9 @@ import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
+import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
+import '../services/temettu_gecmisi.dart';
 import 'custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 
@@ -16,38 +21,89 @@ import '../l10n/l10n.dart';
 /// Temettü **miktarı değiştirmez** — eline geçen parayı kaydeder ve getiriye
 /// eklenir. Kullanıcı stopaj sonrası NET tutarı girer; uygulama vergi hesabı
 /// yapmaz (yatırım/vergi tavsiyesi vermemek için bilinçli tercih).
+///
+/// ## Öneriyle açılış (temettü yakalama, 2026-09-29)
+/// [oneri] verilirse (push `type: 'temettu'`, çan kaydı ya da "Son 12 ay
+/// temettü" kartı) alan ÖN DOLU açılır: brüt = lot × TL/pay; Remote Config
+/// stopaj oranı biliniyorsa net öneri ve "stopaj %x varsayıldı" notu,
+/// bilinmiyorsa brüt ve "net tutarı gir" notu. Kayıt yine AYNI yoldan
+/// (`addDividend`) ve kullanıcı "Kaydet"e basınca gider — öneri hiçbir şeyi
+/// kendiliğinden yazmaz. Tarih hak tarihi olur (BIST'te ödeme çoğunlukla o
+/// gün); kullanıcı değiştirebilir.
+///
+/// [stopajKaynagi] testler için; verilmezse Remote Config okunur.
+///
+/// `WidgetRef` almaz: diyalog kendi `ref`'ini taşır (ConsumerStatefulWidget).
+/// Push dokunuşu gibi widget ağacı DIŞINDAN açılış (NotificationService)
+/// yalnızca `BuildContext` bilir.
 Future<void> showDividendDialog(
-  BuildContext context,
-  WidgetRef ref, {
+  BuildContext context, {
   required Asset asset,
+  TemettuOnerisi? oneri,
+  double? Function()? stopajKaynagi,
 }) async {
-  return showDialog<void>(
+  final stopaj = oneri == null
+      ? null
+      : (stopajKaynagi ??
+          () => RemoteConfigService.instance.temettuStopajOrani)();
+  final kaydedildi = await showDialog<bool>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => _DividendDialog(asset: asset, ref: ref),
+    builder: (_) => _DividendDialog(
+      asset: asset,
+      oneri: oneri,
+      stopaj: stopaj,
+    ),
   );
+  // Önerinin akıbeti ölçülür: "kaydedildi" oranı düşükse öneri ya yanlış
+  // ya gereksizdir (bayrak kademeli açılırken karar verisi).
+  if (oneri != null) {
+    unawaited(AnalyticsService.instance.logDividendSuggestion(
+        action: kaydedildi == true ? 'recorded' : 'dismissed'));
+  }
 }
 
-class _DividendDialog extends StatefulWidget {
+class _DividendDialog extends ConsumerStatefulWidget {
   final Asset asset;
-  final WidgetRef ref;
+  final TemettuOnerisi? oneri;
 
-  const _DividendDialog({required this.asset, required this.ref});
+  /// 0..1 ya da `null` (bilinmiyor) — yalnız [oneri] varken anlamlı.
+  final double? stopaj;
+
+  const _DividendDialog({
+    required this.asset,
+    this.oneri,
+    this.stopaj,
+  });
 
   @override
-  State<_DividendDialog> createState() => _DividendDialogState();
+  ConsumerState<_DividendDialog> createState() => _DividendDialogState();
 }
 
-class _DividendDialogState extends State<_DividendDialog> {
+class _DividendDialogState extends ConsumerState<_DividendDialog> {
   final _amount = TextEditingController();
   late DateTime _paidAt;
   bool _saving = false;
   String? _error;
 
+  /// Öneri tutarı net mi (stopaj uygulandı) — not satırı buna göre.
+  bool _oneriNet = false;
+
   @override
   void initState() {
     super.initState();
     _paidAt = DateTime.now();
+    final o = widget.oneri;
+    if (o != null) {
+      final t = TemettuGecmisi.oneriTutari(o.brut, widget.stopaj);
+      _oneriNet = t.net;
+      // Alan `parseTrNumber` ile okunur; `fmtInputTr` gidiş-dönüşte kayıpsız.
+      _amount.text = fmtInputTr(t.tutar, maxDigits: 2);
+      // Öğlen: cihaz hangi saat diliminde olursa olsun kayıt TR takviminde
+      // hak gününe düşsün (gece yarısı bir gün geri kayabilirdi).
+      final h = o.hakTarihi;
+      _paidAt = DateTime(h.year, h.month, h.day, 12);
+    }
   }
 
   @override
@@ -71,7 +127,7 @@ class _DividendDialogState extends State<_DividendDialog> {
       _error = null;
     });
     try {
-      await widget.ref.read(portfolioProvider.notifier).addDividend(
+      await ref.read(portfolioProvider.notifier).addDividend(
             asset: widget.asset,
             amount: amount,
             paidAt: _paidAt,
@@ -80,7 +136,8 @@ class _DividendDialogState extends State<_DividendDialog> {
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): diyalog kapanıyor
       // ve temettü hareket listesine düşüyor. Hata yolu `_error` ile diyalogda
       // kalmaya devam eder.
-      Navigator.pop(context);
+      // `true`: çağıran öneri akıbetini "recorded" diye ölçer.
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -99,12 +156,39 @@ class _DividendDialogState extends State<_DividendDialog> {
     if (picked != null) setState(() => _paidAt = picked);
   }
 
+  /// Önerinin dayanağı: hangi olay, hangi lot, brüt ne. Kullanıcı tutarı
+  /// buradan doğrular ("100 lotum vardı, doğru").
+  List<Widget> _oneriSatirlari(TemettuOnerisi o, DateFormat dateFmt) {
+    final kod = o.ticker.replaceAll(RegExp(r'\.IS$', caseSensitive: false), '');
+    final stil = context.t.bodySmall?.copyWith(color: context.c.text90);
+    return [
+      const SizedBox(height: SandikSpace.sm),
+      Text(
+        context.l10n.dividendSuggestionLine(
+            kod, dateFmt.format(o.hakTarihi)),
+        style: stil?.copyWith(fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: SandikSpace.xs2),
+      Text(
+        context.l10n.dividendSuggestionGross(
+          fmtNumFlex(o.lot),
+          '₺${fmtNumFlex(o.tutarPay)}',
+          fmtTRY(o.brut, digits: 2),
+        ),
+        style: stil,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final a = widget.asset;
     final dateFmt = DateFormat('dd/MM/yyyy', 'tr_TR');
 
     return AlertDialog(
+      // Öneri satırları içeriği uzatır; küçük ekranda + klavye açıkken
+      // taşmasın. Önerisiz (elle) açılış eskisi gibi.
+      scrollable: widget.oneri != null,
       backgroundColor: context.c.surface2,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(SandikRadius.md)),
@@ -127,6 +211,7 @@ class _DividendDialogState extends State<_DividendDialog> {
             context.l10n.netAmountReceived(a.displayTicker ?? a.name),
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
+          if (widget.oneri != null) ..._oneriSatirlari(widget.oneri!, dateFmt),
           const SizedBox(height: 14),
           TextField(
             controller: _amount,
@@ -157,13 +242,29 @@ class _DividendDialogState extends State<_DividendDialog> {
                   Icon(Icons.event_outlined,
                       size: 18, color: context.c.text58),
                   const SizedBox(width: 8),
-                  Text(context.l10n.paymentDate(dateFmt.format(_paidAt)),
-                      style:
-                          context.t.bodyMedium?.copyWith(color: context.c.text90)),
+                  // Flexible: dar ekran + büyük metinde tarih satırı taşıyordu
+                  // (temettü önerisi testinde yakalandı, 2026-09-29).
+                  Flexible(
+                    child: Text(context.l10n.paymentDate(dateFmt.format(_paidAt)),
+                        style: context.t.bodyMedium
+                            ?.copyWith(color: context.c.text90)),
+                  ),
                 ],
               ),
             ),
           ),
+          if (widget.oneri != null) ...[
+            const SizedBox(height: 6),
+            // Tutarın ne olduğunu SÖYLE: net mi (varsayılan oranla) brüt mü.
+            // Kullanıcı düzeltmeden kaydederse bile neyi onayladığını bilir.
+            Text(
+              _oneriNet
+                  ? context.l10n.dividendWithholdingAssumed(
+                      fmtPct(widget.stopaj! * 100, digits: 0))
+                  : context.l10n.dividendEnterNet,
+              style: context.t.bodySmall?.copyWith(color: context.c.amberText),
+            ),
+          ],
           const SizedBox(height: 6),
           Text(
             context.l10n.dividendNote,

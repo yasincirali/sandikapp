@@ -358,6 +358,72 @@
   "noteRemove": "Notu sil",
   "noteNone": "Bu işleme not yazılmamış.",
   "noteAddHint": "Neden aldın, hedefin ne? Kısa bir not yaz.",
+  "notifTypeDividend": "Temettü",
+  "dividendHistoryUpper": "SON 12 AY TEMETTÜ",
+  "dividendRecordedTotal": "Kaydettiğin: {amount}",
+  "@dividendRecordedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEventLine": "{lot} lot × {perShare}",
+  "@dividendEventLine": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendGrossAmount": "{amount} brüt",
+  "@dividendGrossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendRecorded": "Kaydedildi",
+  "dividendRecordAction": "Kaydet",
+  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.",
+  "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
+  "@dividendSuggestionLine": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendSuggestionGross": "{lot} lot × {perShare} = {gross} brüt",
+  "@dividendSuggestionGross": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      },
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendWithholdingAssumed": "Stopaj {rate} varsayıldı, düzeltebilirsin.",
+  "@dividendWithholdingAssumed": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEnterNet": "Stopaj oranı bilinmiyor: tutar brüt, ele geçen net tutarı gir.",
   "noteReadOnlyPartner": "Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.",
   "noteReadOnlyDeleted": "Silinmiş kaydın notu düzenlenemez.",
   "notesSection": "Notlar",

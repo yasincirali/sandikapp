@@ -9,6 +9,16 @@ tekrarda kapatır. Buradaki tetikleyici ise ülkenin **zaten baktığı** bir an
 o sabah Türkiye'de milyonlarca kişi "ne kadar oldu?" diye bakıyor. Bildirim
 o merakı karşılıyor, üretmiyor.
 
+## İkinci an: yıl sonu özeti (0087)
+
+26 Aralık 20:00 TR'de `trigger_calendar_nudge_yil_sonu()` aynı fonksiyonu
+`{"occasion":"year_end_recap"}` gövdesiyle çağırır: "<yıl> sandık Özetin
+hazır". Yalnız portföyünde kaydı olan kullanıcılara, TR tarihi
+`RecapService.isYearlyWindow` penceresindeyken (26 Aralık – 10 Ocak) gider;
+`calendar_nudge_log(occasion='year_end_recap', period='<yıl>-12-01')` ikinci
+gönderimi önler. Push'a dokunmak Profil sekmesini (özet afişi) açar. Gövdesiz
+çağrı eskisi gibi TÜFE günüdür.
+
 ## Kişiselleştirme neden yok
 
 Bildirim **ulusal** rakamı taşır ("Enflasyon aylık %2,49 · yıllık %40,12"),

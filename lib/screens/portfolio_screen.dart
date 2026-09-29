@@ -414,7 +414,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                           asset: p.asDisplayAsset(),
                                           mode: QuickAdjustMode.remove),
                                       onDividend: (p) => showDividendDialog(
-                                          context, ref,
+                                          context,
                                           asset: p.asDisplayAsset()),
                                     ),
                                   ],

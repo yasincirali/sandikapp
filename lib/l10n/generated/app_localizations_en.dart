@@ -731,6 +731,56 @@ class AppLocalizationsEn extends AppLocalizations {
       'Why did you buy it, what\'s your target? Write a short note.';
 
   @override
+  String get notifTypeDividend => 'Dividend';
+
+  @override
+  String get dividendHistoryUpper => 'DIVIDENDS · LAST 12 MONTHS';
+
+  @override
+  String dividendRecordedTotal(String amount) {
+    return 'Recorded: $amount';
+  }
+
+  @override
+  String dividendEventLine(String lot, String perShare) {
+    return '$lot shares × $perShare';
+  }
+
+  @override
+  String dividendGrossAmount(String amount) {
+    return '$amount gross';
+  }
+
+  @override
+  String get dividendRecorded => 'Recorded';
+
+  @override
+  String get dividendRecordAction => 'Record';
+
+  @override
+  String get dividendSourceNote =>
+      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.';
+
+  @override
+  String dividendSuggestionLine(String ticker, String date) {
+    return '$ticker · ex-date $date';
+  }
+
+  @override
+  String dividendSuggestionGross(String lot, String perShare, String gross) {
+    return '$lot shares × $perShare = $gross gross';
+  }
+
+  @override
+  String dividendWithholdingAssumed(String rate) {
+    return 'Assumed $rate withholding tax; you can edit it.';
+  }
+
+  @override
+  String get dividendEnterNet =>
+      'Withholding rate unknown: the amount is gross, enter the net amount you received.';
+
+  @override
   String get noteReadOnlyPartner =>
       'This record belongs to your partner; only they can edit its note.';
 

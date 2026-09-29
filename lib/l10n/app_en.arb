@@ -358,6 +358,72 @@
   "noteRemove": "Remove note",
   "noteNone": "No note on this transaction.",
   "noteAddHint": "Why did you buy it, what's your target? Write a short note.",
+  "notifTypeDividend": "Dividend",
+  "dividendHistoryUpper": "DIVIDENDS · LAST 12 MONTHS",
+  "dividendRecordedTotal": "Recorded: {amount}",
+  "@dividendRecordedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEventLine": "{lot} shares × {perShare}",
+  "@dividendEventLine": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendGrossAmount": "{amount} gross",
+  "@dividendGrossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendRecorded": "Recorded",
+  "dividendRecordAction": "Record",
+  "dividendSourceNote": "Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.",
+  "dividendSuggestionLine": "{ticker} · ex-date {date}",
+  "@dividendSuggestionLine": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendSuggestionGross": "{lot} shares × {perShare} = {gross} gross",
+  "@dividendSuggestionGross": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      },
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendWithholdingAssumed": "Assumed {rate} withholding tax; you can edit it.",
+  "@dividendWithholdingAssumed": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEnterNet": "Withholding rate unknown: the amount is gross, enter the net amount you received.",
   "noteReadOnlyPartner": "This record belongs to your partner; only they can edit its note.",
   "noteReadOnlyDeleted": "A deleted record's note can't be edited.",
   "notesSection": "Notes",

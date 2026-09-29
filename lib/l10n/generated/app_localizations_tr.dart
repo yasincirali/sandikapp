@@ -731,6 +731,56 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noteAddHint => 'Neden aldın, hedefin ne? Kısa bir not yaz.';
 
   @override
+  String get notifTypeDividend => 'Temettü';
+
+  @override
+  String get dividendHistoryUpper => 'SON 12 AY TEMETTÜ';
+
+  @override
+  String dividendRecordedTotal(String amount) {
+    return 'Kaydettiğin: $amount';
+  }
+
+  @override
+  String dividendEventLine(String lot, String perShare) {
+    return '$lot lot × $perShare';
+  }
+
+  @override
+  String dividendGrossAmount(String amount) {
+    return '$amount brüt';
+  }
+
+  @override
+  String get dividendRecorded => 'Kaydedildi';
+
+  @override
+  String get dividendRecordAction => 'Kaydet';
+
+  @override
+  String get dividendSourceNote =>
+      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.';
+
+  @override
+  String dividendSuggestionLine(String ticker, String date) {
+    return '$ticker · hak tarihi $date';
+  }
+
+  @override
+  String dividendSuggestionGross(String lot, String perShare, String gross) {
+    return '$lot lot × $perShare = $gross brüt';
+  }
+
+  @override
+  String dividendWithholdingAssumed(String rate) {
+    return 'Stopaj $rate varsayıldı, düzeltebilirsin.';
+  }
+
+  @override
+  String get dividendEnterNet =>
+      'Stopaj oranı bilinmiyor: tutar brüt, ele geçen net tutarı gir.';
+
+  @override
   String get noteReadOnlyPartner =>
       'Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.';
 

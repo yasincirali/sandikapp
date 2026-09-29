@@ -15,6 +15,7 @@ import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/notification_service.dart';
+import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
@@ -245,6 +246,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         );
+      case AppNotification.temettu:
+        // Push'la AYNI varış: ön dolu temettü diyaloğu. Veri bozuksa açılmaz.
+        final oneri = TemettuOnerisi.fromPush(b.data);
+        if (oneri != null) {
+          NotificationService.instance.openTemettuOnerisi(oneri);
+        }
+      case AppNotification.calendarNudge
+          when b.data['occasion']?.toString() ==
+              NotificationService.yilSonuOccasion:
+        // Yıl sonu özeti → Profil (özet afişi orada).
+        MainNavigationScreen.sekmeIstegi.value =
+            MainNavigationScreen.profilSekmesi;
       default:
         break;
     }
