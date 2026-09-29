@@ -8,6 +8,25 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-30 Emülatör testi düzeltmeleri — elle yapılacaklar (PUSH EDİLMEDİ)
+
+Rapor: `docs/EMULATOR_TEST_RAPORU_2026_09_30.md`.
+
+- [ ] **`daily-brief` dağıtımı (iki sunucu):** brifing push'u artık tek hisseyi
+  anlatınca o hissenin ekranını açıyor ve metin "Portföyündeki N hisse daha
+  hareketli" oldu. İstemci eski veriyle geriye uyumlu (ticker yoksa Özet'i açar);
+  yeni davranış için Actions → Supabase deploy, hedef `ikisi`, functions
+  `daily-brief`. Sonda `sema_esitlik.py`.
+- [ ] **KARAR — Zirvedeki Portföyler rızası (KVKK):** ekran "herkes kendiliğinden
+  ve anonim olarak havuzdadır; ayrıca katılman gerekmez" diyor, ekranda çıkış yolu
+  yok. Anonim ve toplulaştırılmış veri olsa da açık rıza / itiraz hakkı gerekip
+  gerekmediğini hukukçuyla netleştir. Kod DEĞİŞTİRİLMEDİ.
+- [ ] **KARAR — fon birimi "lot" mu "pay" mı:** `miktar_birimi_test` fon → "lot"
+  kilitliyor (senin verdiğin örnekler). Doğru terim "pay"; istersen değiştirilir.
+- [ ] **Veri düzeltme (isteğe bağlı):** Silinenler'de eski `döviz`/`USD` kayıtları
+  TL kurla girilmiş (ör. "$2.200 → ₺4,15M"). Tek seferlik migration ile
+  `currency='TRY'`, `purchase_fx_rate=1` (iki sunucu). Yazılmadı.
+
 ## ⏳ 2026-09-29 Büyüme özellikleri — bayrak açma sırası (PUSH EDİLMEDİ)
 
 Plan: `docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md`. Kod yerelde, debug

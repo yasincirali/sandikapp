@@ -413,7 +413,12 @@ class HalkaArzDetay extends ConsumerWidget {
                 ? l.ipoParticipateLater
                 : fiyat == null
                     ? l.ipoParticipateNoPrice
-                    : l.ipoParticipateHint,
+                    // İşlem başlamışsa "işlem başlayana kadar halka arz
+                    // fiyatıyla görünür" cümlesi yanlış olurdu (emülatör
+                    // testi 2, #15): hisse zaten canlı fiyatla görünür.
+                    : durum == HalkaArzDurumu.islemGoruyor
+                        ? l.ipoParticipateHintTraded
+                        : l.ipoParticipateHint,
             style: context.t.bodyMedium?.copyWith(
               color: kaydedilebilir && fiyat == null
                   ? context.c.amberText

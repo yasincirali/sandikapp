@@ -198,8 +198,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Icon(Icons.email_outlined, color: context.c.text36, size: 20),
                         ),
                       ),
-                      validator: (v) =>
-                          (v == null || !v.contains('@')) ? context.l10n.emailInvalid : null,
+                      // Kayıt formuyla AYNI kural (servis); eskiden yalnız '@'
+                      // aranıyordu, "a@" geçip sunucuda reddediliyordu
+                      // (2026-09-29 emülatör testi 2, #11).
+                      validator: (v) => (v == null ||
+                              !AuthService.eMailGecerliMi(v.trim()))
+                          ? context.l10n.emailInvalid
+                          : null,
                     ),
                     const SizedBox(height: 14),
 

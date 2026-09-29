@@ -2899,6 +2899,7 @@
   "ipoSourceFailed": "Couldn't open the link.",
   "ipoParticipate": "I participated, add to portfolio",
   "ipoParticipateHint": "Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.",
+  "ipoParticipateHintTraded": "Enter the lots you were allocated; the offer price and first trading day are filled in. The stock shows at its live price.",
   "ipoParticipateNoPrice": "The offer price isn't in the list: type the purchase price in the form. A stock that isn't trading has no quote; if you leave it empty the cost is saved as 0.",
   "ipoParticipateLater": "Allocations are announced after the order period ends. If you took part, you can add it to your portfolio here then.",
   "ipoParticipationSaved": "Your IPO lots were added to your portfolio.",

@@ -4195,6 +4195,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.';
 
   @override
+  String get ipoParticipateHintTraded =>
+      'Enter the lots you were allocated; the offer price and first trading day are filled in. The stock shows at its live price.';
+
+  @override
   String get ipoParticipateNoPrice =>
       'The offer price isn\'t in the list: type the purchase price in the form. A stock that isn\'t trading has no quote; if you leave it empty the cost is saved as 0.';
 

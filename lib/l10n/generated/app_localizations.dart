@@ -7070,6 +7070,12 @@ abstract class AppLocalizations {
   /// **'Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.'**
   String get ipoParticipateHint;
 
+  /// No description provided for @ipoParticipateHintTraded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sana düşen lot sayısını yaz; alış fiyatı (halka arz fiyatı) ve ilk işlem günü hazır gelir. Hisse portföyünde canlı fiyatıyla görünür.'**
+  String get ipoParticipateHintTraded;
+
   /// No description provided for @ipoParticipateNoPrice.
   ///
   /// In tr, this message translates to:

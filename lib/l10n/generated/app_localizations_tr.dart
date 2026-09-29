@@ -4182,6 +4182,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.';
 
   @override
+  String get ipoParticipateHintTraded =>
+      'Sana düşen lot sayısını yaz; alış fiyatı (halka arz fiyatı) ve ilk işlem günü hazır gelir. Hisse portföyünde canlı fiyatıyla görünür.';
+
+  @override
   String get ipoParticipateNoPrice =>
       'Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.';
 

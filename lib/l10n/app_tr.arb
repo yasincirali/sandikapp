@@ -2908,6 +2908,7 @@
   "ipoSourceFailed": "Bağlantı açılamadı.",
   "ipoParticipate": "Katıldım, portföye ekle",
   "ipoParticipateHint": "Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.",
+  "ipoParticipateHintTraded": "Sana düşen lot sayısını yaz; alış fiyatı (halka arz fiyatı) ve ilk işlem günü hazır gelir. Hisse portföyünde canlı fiyatıyla görünür.",
   "ipoParticipateNoPrice": "Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.",
   "ipoParticipateLater": "Dağıtım sonuçları talep toplama bitince açıklanır. Katıldıysan o zaman buradan portföyüne ekleyebilirsin.",
   "ipoParticipationSaved": "Halka arz lotun portföyüne eklendi.",
