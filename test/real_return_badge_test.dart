@@ -157,8 +157,11 @@ void main() {
       await _pump(tester, nominal: 37.39, inflation: 31.51);
 
       // Parçalara bölünmüş hâli ekran okuyucuda anlamsız sayı dizisi olurdu.
+      // F3 (2026-09-29): "yüzde 5,88 puan" iki birimi karıştırıyordu (fark
+      // yüzde DEĞİL, puan); ekran okuyucu metni görünen rozetle aynı dili
+      // konuşur.
       expect(
-        find.bySemanticsLabel(RegExp(r'enflasyonu yüzde 5,88 puan geçti')),
+        find.bySemanticsLabel(RegExp(r'enflasyonu 5,88 puan geçti')),
         findsOneWidget,
       );
       handle.dispose();

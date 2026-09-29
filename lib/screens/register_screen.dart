@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
@@ -12,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/kullanici_adi.dart';
 import '../providers/auth_provider.dart';
 import '../services/sunucu_secimi.dart';
+import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/kullanici_adi_denetimi.dart';
 import '../services/supabase_service.dart';
@@ -132,6 +135,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    // Kayıt hunisinin ilk adımı (F11). Yalnızca olay; form davranışı aynı.
+    AnalyticsService.instance.logSignupStep('form_opened');
     _adDenetimi = KullaniciAdiDenetimi(
       sor: SupabaseService.instance.kullaniciAdiKayittaUygunMu,
     )..addListener(_rebuild);
@@ -229,6 +234,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         displayName: _nameCtrl.text,
         password: _passCtrl.text,
       );
+      // `register` döndüyse sunucu doğrulama kodunu gönderdi (confirm-email
+      // açık). `mounted`'tan önce: ekran kapanmış olsa da kod gitti.
+      // "Yeni kod iste" tekrar gönderimidir, huniye ayrı adım yazılmaz.
+      unawaited(AnalyticsService.instance.logSignupStep('otp_sent'));
 
       if (!mounted) return;
       await AuthService.instance.saveEmailForLogin(emailForOtp);

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/kullanici_adi_denetimi.dart';
 
@@ -88,9 +91,17 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
 
   Future<void> _kaydet() async {
     final m = _metin;
+    // `await`'ten ÖNCE okunur: zorunlu ekranda kayıt başarılı olunca kapı
+    // bu ekranı ağaçtan söker; olay `mounted` denetiminden önce gitmeli.
+    final zorunlu = widget.zorunlu;
     FocusScope.of(context).unfocus();
     try {
       final s = await ref.read(authProvider.notifier).kullaniciAdiKaydet(m);
+      // Kayıt hunisi (F11) — yalnız giriş kapısındaki ad adımı; Ayarlar'dan
+      // ad değiştirmek huninin parçası değil.
+      if (zorunlu && s == KullaniciAdiSonuc.uygun) {
+        unawaited(AnalyticsService.instance.logSignupStep('username_set'));
+      }
       if (!mounted) return;
       if (s == KullaniciAdiSonuc.uygun) {
         if (!widget.zorunlu) {

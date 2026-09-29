@@ -105,8 +105,13 @@ class _RecapScreenState extends State<RecapScreen> {
           : '';
       out.add(_Sayfa(
         ustBaslik: context.l10n.recapVsInflation,
-        baslik:
-            context.l10n.recapPoints(fmtNum(d.inflationSpread!.abs(), digits: 1)),
+        // Yön kelimede (F3): "20,6 puan" tek başına jargon, işaret yalnız
+        // renkte kalıyordu. Hesap aynı; yalnızca metin.
+        baslik: onde
+            ? context.l10n
+                .recapPointsAhead(fmtNum(d.inflationSpread!, digits: 1))
+            : context.l10n
+                .recapPointsBehind(fmtNum(d.inflationSpread!.abs(), digits: 1)),
         altBaslik: (onde
                 ? context.l10n.recapKeptPower
                 : context.l10n.recapInflationWon) +

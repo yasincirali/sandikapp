@@ -38,6 +38,40 @@ import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 
+/// Yüzdeyi TUTARLA AYNI işaret biçimiyle yazar: `+%1,23` / `−%0,06`.
+///
+/// **Neden (plan F3, 2026-09-29):** kart tutarı "−₺368", yüzdeyi ise
+/// `fmtPct(x.abs())` ile "%0,06" yazıyordu; yön yalnız RENKTE kalıyordu.
+/// Renk körlüğünde ve ekran okuyucuda yüzde yönsüz okunur, üstelik tutarın
+/// yanında işaretsiz duran yüzde "artı" sanılır. Eksi işareti tutardaki
+/// gibi U+2212 (−): tire değil, rakam genişliğinde.
+///
+/// Sıfırda — ya da gösterilen hanelerde sıfıra yuvarlanıyorsa — işaret
+/// YOK: "−%0,00" yönü olmayan bir şeye yön yazardı. Hesaba dokunmaz;
+/// yalnızca biçim.
+String isaretliYuzde(double pct, {int digits = 2}) {
+  final metin = fmtPct(pct.abs(), digits: digits);
+  if (metin == fmtPct(0, digits: digits)) return metin;
+  return '${pct > 0 ? '+' : '−'}$metin';
+}
+
+/// "Enflasyona göre" satırının değeri: `5,2 puan önde` / `20,6 puan geride`.
+///
+/// **Neden (plan F3):** eskiden `−20,6 puan` yazıyordu — işaretli çıplak
+/// "puan" finans jargonu; kullanıcı neyin kaç puan olduğunu satır
+/// etiketinden çıkarmak zorundaydı. Etiket "Enflasyona göre" zaten neye
+/// göre olduğunu söylüyor; değer yönü KELİMEYLE söyler (işaret gerekmez).
+/// Kısa kalması bilinçli: defter satırında değer hiç kırpılmaz, uzun
+/// cümle dar ekranda etiketi yok ederdi. Tek ondalığa yuvarlanmış fark
+/// sıfırsa "başa baş" — "0,0 puan önde" yön uydururdu.
+///
+/// [onde] `ReelGetiriSatiri.onde` (fark ≥ 0) — yön kararı hesapta kalır.
+String reelFarkMetni(AppLocalizations l10n, {required double fark, required bool onde}) {
+  final puan = fmtNum(fark.abs(), digits: 1);
+  if (puan == fmtNum(0, digits: 1)) return l10n.todayRealEven;
+  return onde ? l10n.todayRealAhead(puan) : l10n.todayRealBehind(puan);
+}
+
 class BugunKarti extends ConsumerStatefulWidget {
   const BugunKarti({
     super.key,
@@ -488,21 +522,20 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     switch (s) {
       case ReelGetiriSatiri():
         // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
-        final puan = fmtNum(s.fark.abs(), digits: 1);
         return _DefterSatiri(
           etiket: l10n.todayRealLabel,
           ipucu: l10n.todayRealHint,
-          deger: l10n.todayPoints('${s.onde ? '+' : '−'}$puan'),
+          deger: reelFarkMetni(l10n, fark: s.fark, onde: s.onde),
           renk: s.onde ? c.gain : c.loss,
           onTap: _olcerek(s, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
         );
       case HaftalikOzetSatiri():
         // Eski çiple aynı hedef: Özet › 1H.
-        final pct = fmtPct(s.getiriPct.abs());
         return _DefterSatiri(
           etiket: l10n.todayWeekLabel,
           ipucu: l10n.todayWeekHint,
-          deger: '${s.getiriPct >= 0 ? '+' : '−'}$pct',
+          // İşaret zaten vardı ama sıfırda "+%0,00" yazıyordu; ortak biçim.
+          deger: isaretliYuzde(s.getiriPct),
           renk: s.getiriPct >= 0 ? c.gain : c.loss,
           onTap: _olcerek(s, () => _ozeteGit(periodIdx: SummaryPeriod.birHafta.index)),
         );
@@ -771,7 +804,8 @@ class _Hero extends StatelessWidget {
             ? '••••'
             : '${s.changeTRY > 0 ? '+' : '−'}${fmtTRY(s.changeTRY.abs())}';
         renk = context.signColor(s.changeTRY);
-        yuzde = fmtPct(s.changePct.abs());
+        // Tutarla aynı işaret biçimi (F3) — yön yalnız renkte kalmasın.
+        yuzde = isaretliYuzde(s.changePct);
         alt = acik
             ? l10n.todaySessionOpen(_saat(
                 now,

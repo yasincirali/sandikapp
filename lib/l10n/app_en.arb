@@ -997,6 +997,39 @@
   "portfolioSeriesNote": "Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
   "portfolioActivityTitle": "Portfolio Activity",
   "clearFilters": "Clear filters",
+  "todayRealAhead": "{pts} pts ahead",
+  "@todayRealAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealBehind": "{pts} pts behind",
+  "@todayRealBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealEven": "even",
+  "recapPointsAhead": "You beat inflation by {n} points",
+  "@recapPointsAhead": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapPointsBehind": "You trailed inflation by {n} points",
+  "@recapPointsBehind": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "loadingEllipsis": "Loading…",
   "widenDateRangeHint": "Try widening the date range or clearing the search.",
   "priceAlertsTitle": "Price Alerts",
@@ -1083,14 +1116,6 @@
     }
   },
   "recapSubtitle": "A short story of the year.",
-  "recapPoints": "{n} points",
-  "@recapPoints": {
-    "placeholders": {
-      "n": {
-        "type": "String"
-      }
-    }
-  },
   "recapDays": "{n} days",
   "@recapDays": {
     "placeholders": {
@@ -2321,14 +2346,6 @@
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
   "todayRealHint": "Yearly return minus CPI",
-  "todayPoints": "{pts} pts",
-  "@todayPoints": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
   "todayWeekLabel": "Last week",
   "todayWeekHint": "Market effect on your portfolio · summary ready",
   "todayGoalLabel": "Goal",
