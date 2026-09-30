@@ -333,6 +333,47 @@ func directionArrow(_ isPositive: Bool) -> String {
     isPositive ? "▲" : "▼"
 }
 
+/// BIST seans saatleri — Dinamik Ada seans çubuğu VE kilit ekranı kartı
+/// aynı kaynaktan okur (2026-09-30).
+///
+/// 10:00–18:00 İstanbul saati; Bugün kartındaki "18:00 kapanış" ile aynı
+/// (`BugunService.seansKapanisDk`). Tatil ve yarım gün takvimi burada YOK:
+/// seansın açık olup olmadığına uygulamanın yazdığı `isMarketOpen` karar
+/// verir; bu yardımcı yalnız saat aralığını ve hafta içi bir sonraki
+/// açılışı verir. Tatilde "sonraki açılış" bir gün erken görünebilir —
+/// kart onu tarihle yazar, yanlış bir süre saymaz.
+enum BistSeans {
+    static let istanbul = TimeZone(identifier: "Europe/Istanbul") ?? .current
+
+    private static var takvim: Calendar {
+        var t = Calendar(identifier: .gregorian)
+        t.timeZone = istanbul
+        return t
+    }
+
+    /// Verilen günün seans aralığı (10:00…18:00).
+    static func aralik(_ gun: Date = Date()) -> ClosedRange<Date>? {
+        let t = takvim
+        guard let acilis = t.date(bySettingHour: 10, minute: 0, second: 0, of: gun),
+              let kapanis = t.date(bySettingHour: 18, minute: 0, second: 0, of: gun),
+              acilis < kapanis else { return nil }
+        return acilis...kapanis
+    }
+
+    /// Şu andan sonraki ilk hafta içi 10:00.
+    static func sonrakiAcilis(_ simdi: Date = Date()) -> Date? {
+        let t = takvim
+        for ileri in 0...7 {
+            guard let gun = t.date(byAdding: .day, value: ileri, to: simdi),
+                  let acilis = t.date(bySettingHour: 10, minute: 0, second: 0, of: gun)
+            else { continue }
+            let haftaGunu = t.component(.weekday, from: acilis) // 1 Pazar … 7 Cumartesi
+            if haftaGunu != 1, haftaGunu != 7, acilis > simdi { return acilis }
+        }
+        return nil
+    }
+}
+
 /// BIST seansının ne kadarının geçtiği — Dinamik Ada genişletilmiş
 /// görünümü, tutar kapalıyken (2026-09-30, ikinci tur).
 ///
@@ -351,17 +392,7 @@ struct SandikSeansCubugu: View {
     let renk: Color
     let palette: SandikPalette
 
-    private static let istanbul = TimeZone(identifier: "Europe/Istanbul") ?? .current
-
-    private var seans: ClosedRange<Date>? {
-        var takvim = Calendar(identifier: .gregorian)
-        takvim.timeZone = Self.istanbul
-        let simdi = Date()
-        guard let acilis = takvim.date(bySettingHour: 10, minute: 0, second: 0, of: simdi),
-              let kapanis = takvim.date(bySettingHour: 18, minute: 0, second: 0, of: simdi),
-              acilis < kapanis else { return nil }
-        return acilis...kapanis
-    }
+    private var seans: ClosedRange<Date>? { BistSeans.aralik() }
 
     var body: some View {
         HStack(spacing: 8) {

@@ -277,13 +277,22 @@ struct SandikHomeWidget: Widget {
 //
 // Kararlar:
 // - TEK kart (kullanıcı kararı 2026-09-30, ikinci tur: "kilit ekranında 2
-//   parçalı olmasın, dörtgen kartı yayalım"). Yuvarlak widget kaldırıldı;
-//   renkli yuvarlak gösterge Dinamik Ada'da yaşıyor (`SandikYonHalkasi`).
-//   iOS kilit ekranında en geniş widget dikdörtgendir (satırın yarısı);
-//   tam genişlik yalnız Canlı Etkinlik banner'ına açık.
-// - Kart yatay kullanılır: solda yön + büyük yüzde, sağda kalan genişliği
-//   dolduran günün eğrisi. Tutar YALNIZ "Kilit ekranında tutar göster"
-//   açıksa, başlık satırının sağında (Canlı Etkinlik'le tek ayar).
+//   parçalı olmasın"). Yuvarlak widget kaldırıldı; renkli yuvarlak gösterge
+//   Dinamik Ada'da yaşıyor (`SandikYonHalkasi`). iOS kilit ekranında en
+//   geniş widget dikdörtgendir (satırın yarısı).
+// - "Canlı seans kartı" (üçüncü tur: "göz alıcı olmalı, Apple'ın yeni
+//   teknolojilerinden faydalanmalı"):
+//     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`), üstünde
+//       kartın alt yarısına YAYILMIŞ günün eğrisi — sayı grafiğin üstünde.
+//     * Seans açıkken canlı çubuk + kapanışa geri sayım
+//       (`ProgressView/Text(timerInterval:)`): uygulama açılmadan saniye
+//       saniye akar, güncelleme bütçesi harcamaz.
+//     * Zaman çizelgesi 18:00'de ikinci girdiyle kendiliğinden "kapalı"
+//       görünüme geçer; kapalıyken sonraki açılışın günü ve saati.
+//     * Tutar `privacySensitive`: telefon kilitliyken sistem örter, Face ID
+//       ile bakınca görünür — ayar açıkken bile (iki kat gizlilik).
+//     * Yüzde `numericText` geçişiyle değişir, `widgetAccentable` ile
+//       renklendirilmiş kilit ekranında vurgu rengini alır.
 // - "Bakiyeyi gizle" açıkken yüzde de, eğri de YOK — yalnız "••".
 // - Kilit ekranı tek renkli (vibrant) çizer: renk yerine `.primary` /
 //   `.secondary`; yön her zaman ▲/▼ ile.
@@ -309,6 +318,15 @@ struct SandikKilitEntry: TimelineEntry {
 
     /// Yön yalnız gerçek, görünür bir hareket varken (ana ekranla aynı kural).
     var hasDirection: Bool { hasData && !isHidden && !isFlat }
+
+    /// Aynı veri, seans kapanmış olarak — zaman çizelgesinin 18:00 girdisi.
+    func kapali(at tarih: Date) -> SandikKilitEntry {
+        SandikKilitEntry(
+            date: tarih, hasData: hasData, isHidden: isHidden,
+            showsAmount: showsAmount, pctText: pctText, changeText: changeText,
+            isPositive: isPositive, isFlat: isFlat, isMarketOpen: false,
+            sparkline: sparkline)
+    }
 
     static let placeholder = SandikKilitEntry(
         date: Date(),
@@ -360,8 +378,17 @@ struct SandikKilitProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SandikKilitEntry>) -> Void) {
-        // Ana ekranla aynı: veriyi uygulama yazar ve yeniler, `.never`.
-        completion(Timeline(entries: [read()], policy: .never))
+        // Veriyi uygulama yazar ve yeniler (`.never`). Tek istisna seansın
+        // bitişi: açıkken 18:00'e "kapalı" ikinci girdi eklenir — kart
+        // uygulama açılmasa da kapanışta kendiliğinden döner, geri sayım
+        // 0:00'da donup kalmaz.
+        let simdi = read()
+        var girdiler = [simdi]
+        if simdi.isMarketOpen, let bitis = BistSeans.aralik()?.upperBound,
+           bitis > Date() {
+            girdiler.append(simdi.kapali(at: bitis))
+        }
+        completion(Timeline(entries: girdiler, policy: .never))
     }
 }
 
@@ -373,68 +400,125 @@ struct SandikKilitView: View {
     }
 
     private var tutarGorunur: Bool {
-        entry.showsAmount && !entry.changeText.isEmpty && entry.changeText != "—"
+        entry.showsAmount && !entry.isHidden && !entry.changeText.isEmpty
+            && entry.changeText != "—"
+    }
+
+    /// Geçiş animasyonu için yüzdenin sayı karşılığı ("+%0,42" → 0.42).
+    private var yuzdeSayi: Double {
+        let rakam = entry.pctText
+            .filter { $0.isNumber || $0 == "," }
+            .replacingOccurrences(of: ",", with: ".")
+        let deger = Double(rakam) ?? 0
+        return entry.pctText.contains("−") || entry.pctText.contains("-") ? -deger : deger
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                SandikLogoMark(width: 11)
-                Text("sandık")
-                    .font(.sandikLabel(11, weight: .bold))
-                if entry.hasData && !entry.isMarketOpen {
-                    // Rakamın neden hareketsiz olduğunu söyler (ana ekranla aynı).
-                    Text("· kapalı")
-                        .font(.sandikLabel(10, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 4)
-                if tutarGorunur && !entry.isHidden {
-                    Text(entry.changeText)
-                        .font(.sandikNumber(11, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
+        ZStack(alignment: .topLeading) {
+            AccessoryWidgetBackground()
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            // Günün eğrisi kartın alt yarısına yayılır — sayı üstünde durur.
+            if entry.hasData, !entry.isHidden, entry.sparkline.count >= 2 {
+                SandikSparkline(
+                    points: entry.sparkline,
+                    color: .primary,
+                    showsFill: true
+                )
+                .opacity(0.5)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            if !entry.hasData {
-                Text("Uygulamayı aç")
-                    .font(.sandikLabel(12, weight: .medium))
+            VStack(alignment: .leading, spacing: 0) {
+                baslik
+                sayi
+                Spacer(minLength: 0)
+                seansSatiri
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var baslik: some View {
+        HStack(spacing: 4) {
+            SandikLogoMark(width: 11)
+            Text("sandık")
+                .font(.sandikLabel(11, weight: .bold))
+            Spacer(minLength: 4)
+            if tutarGorunur {
+                Text(entry.changeText)
+                    .font(.sandikNumber(11, weight: .semibold))
                     .foregroundStyle(.secondary)
-            } else if entry.isHidden {
-                Text("••")
-                    .font(.sandikNumber(22, weight: .bold))
-            } else {
-                // Yatay düzen: yüzde solda (öncelikli, kırpılmaz), eğri kalan
-                // genişliği doldurur — kart iki satır yerine tek bakışta okunur.
-                HStack(alignment: .center, spacing: 6) {
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        if let ok = ok {
-                            Text(ok)
-                                .font(.sandikLabel(11, weight: .black))
-                        }
-                        Text(entry.pctText)
-                            .font(.sandikNumber(22, weight: .bold))
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                    }
-                    .layoutPriority(1)
-                    if entry.sparkline.count >= 2 {
-                        SandikSparkline(
-                            points: entry.sparkline,
-                            color: .primary,
-                            showsFill: false
-                        )
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 22)
-                    }
-                }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    // Kilitliyken sistem örter; Face ID ile bakınca açılır.
+                    .privacySensitive()
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var sayi: some View {
+        if !entry.hasData {
+            Text("Uygulamayı aç")
+                .font(.sandikLabel(12, weight: .medium))
+                .foregroundStyle(.secondary)
+        } else if entry.isHidden {
+            Text("••")
+                .font(.sandikNumber(24, weight: .bold))
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                if let ok = ok {
+                    Text(ok)
+                        .font(.sandikLabel(12, weight: .black))
+                }
+                Text(entry.pctText)
+                    .font(.sandikNumber(24, weight: .bold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .contentTransition(.numericText(value: yuzdeSayi))
+            }
+            .widgetAccentable()
+        }
+    }
+
+    @ViewBuilder
+    private var seansSatiri: some View {
+        if entry.hasData, !entry.isHidden {
+            if entry.isMarketOpen, let seans = BistSeans.aralik(),
+               seans.upperBound > entry.date {
+                HStack(spacing: 5) {
+                    ProgressView(timerInterval: seans, countsDown: false) {
+                        EmptyView()
+                    } currentValueLabel: {
+                        EmptyView()
+                    }
+                    .progressViewStyle(.linear)
+                    .widgetAccentable()
+                    // Kapanışa kalan süre — saniye saniye, uygulama kapalıyken de.
+                    Text(timerInterval: entry.date...seans.upperBound, countsDown: true)
+                        .font(.sandikNumber(10, weight: .semibold))
+                        .monospacedDigit()
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 46, alignment: .trailing)
+                }
+            } else if let acilis = BistSeans.sonrakiAcilis(entry.date) {
+                HStack(spacing: 3) {
+                    Text("Seans kapalı · açılış")
+                        .font(.sandikLabel(10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(acilis, format: .dateTime.weekday(.abbreviated).hour().minute())
+                        .font(.sandikNumber(10, weight: .semibold))
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+        }
     }
 }
 

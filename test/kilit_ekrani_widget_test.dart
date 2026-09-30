@@ -126,6 +126,19 @@ void main() {
       expect(paket, contains('SandikKilitWidget()'));
     });
 
+    // Üçüncü tur (2026-09-30): "canlı seans kartı" — Apple'ın kilit ekranı
+    // teknolojileri. Biri sessizce silinirse kart eski düz hâline döner.
+    test('canlı seans kartı: geri sayım, çubuk, 18:00 girdisi, gizlilik', () {
+      expect(swift, contains('Text(timerInterval:'));
+      expect(swift, contains('ProgressView(timerInterval:'));
+      expect(swift, contains('girdiler.append(simdi.kapali(at: bitis))'),
+          reason: 'Seans bitince kart kendiliğinden kapalıya dönmeli');
+      expect(swift, contains('.privacySensitive()'),
+          reason: 'Tutar kilitliyken sistemce örtülmeli');
+      expect(swift, contains('.contentTransition(.numericText('));
+      expect(swift, contains('AccessoryWidgetBackground()'));
+    });
+
     test('TEK kart: yalnız dikdörtgen; yuvarlak ve tek satır YOK', () {
       expect(swift, contains('.supportedFamilies([.accessoryRectangular])'));
       expect(swift, isNot(contains('.accessoryCircular')),
