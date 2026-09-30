@@ -3,6 +3,7 @@ import 'dart:async' show FutureOr, unawaited;
 import '../widgets/sandik_skeleton.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart'
     show
         RefreshIndicator,
@@ -70,6 +71,51 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// 2026-10-01).
   final _kaydirma = ScrollController();
   late final VoidCallback _basaDonBirak;
+
+  // ── Yeni eklenen varlık (animasyon denetimi 2026-10-01, özgün dokunuş) ──
+  //
+  // Varlık eklenince uygulama Portföy sekmesine geçiyor ama yeni satır
+  // ötekilerin arasında hiçbir işaret vermeden duruyordu; uzun listede
+  // kullanıcı "nereye gitti?" diye arıyordu. Şimdi liste o satıra kayar ve
+  // satır BİR KEZ amber çerçeveyle parlayıp söner. Ekleme ekranı kimlik
+  // döndürmediği için yeni satır, bir önceki kurulumda görülen anahtar
+  // kümesinden farkla bulunur: ilk yüklemede, görünüm (Ben/ortak/Birlikte)
+  // değişince ve birden çok satır birden gelince (toplu ekleme, ilk senkron)
+  // parlatılmaz — yalnız "tek yeni satır" anı.
+
+  /// Önceki kurulumda görülen pozisyon anahtarları; `null` = henüz yok.
+  Set<String>? _gorulenAnahtarlar;
+  String? _gorulenGorunum;
+
+  /// Parlatılacak satır ve onu görünür kılmak için anahtarı.
+  String? _vurgulanan;
+  final _vurguAnahtari = GlobalKey();
+
+  void _yeniSatiriBul(List<Position> positions) {
+    final anahtarlar = {for (final p in positions) p.key};
+    final onceki = _gorulenAnahtarlar;
+    final ayniGorunum = _gorulenGorunum == _view;
+    _gorulenAnahtarlar = anahtarlar;
+    _gorulenGorunum = _view;
+    // Görünüm değişince eski parlama bir daha oynamasın.
+    if (!ayniGorunum) _vurgulanan = null;
+    if (onceki == null || !ayniGorunum) return;
+    final yeni = anahtarlar.difference(onceki);
+    if (yeni.length != 1) return;
+    _vurgulanan = yeni.single;
+    // Build içindeyiz: kaydırma kareden sonra. Satır liste dışındaysa
+    // (filtre) bağlam yoktur, sessizce geçer.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = _vurguAnahtari.currentContext;
+      if (!mounted || c == null) return;
+      Scrollable.ensureVisible(
+        c,
+        alignment: 0.3,
+        duration: SandikMotion.surfaceOf(context),
+        curve: SandikMotion.move,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -385,6 +431,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
                                 final positions =
                                     aggregatePositionsByOwner(ownerLots);
+                                _yeniSatiriBul(positions);
 
                                 if (positions.isEmpty) {
                                   return const <Widget>[_EmptyState()];
@@ -423,6 +470,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     ),
                                     const SizedBox(height: 32),
                                     ..._AssetList(
+                                      vurgulanan: _vurgulanan,
+                                      vurguAnahtari: _vurguAnahtari,
                                       positions: filteredPositions,
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
@@ -857,7 +906,13 @@ class _AssetList {
   final FutureOr<void> Function(Position) onRemove;
   final FutureOr<void> Function(Position) onDividend;
 
+  /// Bir kez parlayacak yeni satırın anahtarı (bkz. `_yeniSatiriBul`).
+  final String? vurgulanan;
+  final GlobalKey vurguAnahtari;
+
   const _AssetList({
+    required this.vurgulanan,
+    required this.vurguAnahtari,
     required this.positions,
     required this.pState,
     required this.baz,
@@ -873,8 +928,11 @@ class _AssetList {
         // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
         // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
         for (final position in positions)
-          _AssetCard(
+          _YeniVarlikParlamasi(
             key: ValueKey(position.key),
+            aktif: position.key == vurgulanan,
+            child: _AssetCard(
+            key: position.key == vurgulanan ? vurguAnahtari : null,
             position: position,
             pState: pState,
             baz: baz,
@@ -886,7 +944,110 @@ class _AssetList {
             onRemove: onRemove,
             onDividend: onDividend,
           ),
+          ),
       ];
+}
+
+/// Yeni eklenen satırın tek seferlik parlaması: amber çerçeve belirir ve
+/// yavaşça söner (~1,1 sn). Yalnız RENK — konum/ölçek yok; bu yüzden
+/// "hareketi azalt" açıkken de gösterilir (bkz. `DegisimVurgusu`).
+///
+/// Sekme görünür olana ve ekleme ekranı kapanana kadar bekler: Portföy
+/// gizli sekmedeyken (`TickerMode` kapalı) saat yine akar ve parlama
+/// kimse görmeden biterdi.
+class _YeniVarlikParlamasi extends StatefulWidget {
+  const _YeniVarlikParlamasi({
+    super.key,
+    required this.aktif,
+    required this.child,
+  });
+
+  final bool aktif;
+  final Widget child;
+
+  @override
+  State<_YeniVarlikParlamasi> createState() => _YeniVarlikParlamasiState();
+}
+
+class _YeniVarlikParlamasiState extends State<_YeniVarlikParlamasi>
+    with SingleTickerProviderStateMixin {
+  // Yalnız parlayacak satırda kurulur: tembel `late` denetleyici hiç
+  // parlamayan kartta ilk kez `dispose` içinde kurulup ağaçtan ata
+  // arıyordu ("deactivated widget's ancestor", kart listesi testleri).
+  AnimationController? _c;
+  ValueListenable<TickerModeData>? _gorunurluk;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.aktif) {
+      _c = AnimationController(
+        vsync: this,
+        duration: SandikMotion.flow * 2,
+        value: 1,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) => _bekleVeYak());
+    }
+  }
+
+  void _bekleVeYak() {
+    if (!mounted) return;
+    final g = TickerMode.getValuesNotifier(context);
+    if (g.value.enabled) {
+      _yak();
+      return;
+    }
+    _gorunurluk = g..addListener(_gorunurlukDegisti);
+  }
+
+  void _gorunurlukDegisti() {
+    if (!mounted || !(_gorunurluk?.value.enabled ?? false)) return;
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _gorunurluk = null;
+    _yak();
+  }
+
+  void _yak() {
+    // Ekleme ekranı alttan iniyor; parlama onun ARDINDAN görünsün. Ticker
+    // future'ı hata üretmez (yalnız `orCancel` üretir) — beklenmez.
+    Future<void>.delayed(SandikMotion.modal, () {
+      final c = _c;
+      if (mounted && c != null) c.forward(from: 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _c;
+    if (!widget.aktif || c == null) return widget.child;
+    final amber = context.c.amberFill;
+    return AnimatedBuilder(
+      animation: c,
+      child: widget.child,
+      builder: (context, child) {
+        final t = SandikMotion.glide.transform(c.value);
+        if (t >= 1) return child!;
+        return DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            border: Border.all(
+              color: amber.withValues(alpha: 0.9 * (1 - t)),
+              width: 2,
+            ),
+          ),
+          child: child,
+        );
+      },
+    );
+  }
 }
 
 // ── Asset Card ────────────────────────────────────────────────────────────────

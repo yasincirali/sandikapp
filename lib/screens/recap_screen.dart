@@ -204,22 +204,49 @@ class _RecapScreenState extends State<RecapScreen> {
           children: [
             // İlerleme çubukları — hikâye biçiminin en tanınan işareti;
             // kullanıcı kaç sayfa kaldığını bilmeden ilerlemez.
+            //
+            // Çubuklar PARMAKLA dolar (animasyon denetimi 2026-10-01):
+            // eskiden sayfa yarıyı geçince (`onPageChanged`) bir sonraki
+            // çubuk tek karede boyanıyordu. Artık `PageController.page`
+            // kesirli değerinden doldurulur — sürüklerken çubuk da sürüklenir.
+            // Yalnız bu şerit yeniden kurulur (AnimatedBuilder), sayfalar
+            // değil; dolgu `FractionallySizedBox` ile ölçekte değil boyda.
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Row(
-                children: [
-                  for (var i = 0; i < sayfalar.length; i++)
-                    Expanded(
-                      child: Container(
-                        height: 3,
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        decoration: BoxDecoration(
-                          color: i <= _index ? c.amberFill : c.text20,
-                          borderRadius: BorderRadius.circular(2),
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) {
+                  final sayfa = _controller.hasClients &&
+                          _controller.position.haveDimensions
+                      ? (_controller.page ?? _index.toDouble())
+                      : _index.toDouble();
+                  return Row(
+                    children: [
+                      for (var i = 0; i < sayfalar.length; i++)
+                        Expanded(
+                          child: Container(
+                            height: 3,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              color: c.text20,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            alignment: Alignment.centerLeft,
+                            child: FractionallySizedBox(
+                              widthFactor: (sayfa - i + 1).clamp(0.0, 1.0),
+                              heightFactor: 1,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: c.amberFill,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                ],
+                    ],
+                  );
+                },
               ),
             ),
             Align(
@@ -234,7 +261,11 @@ class _RecapScreenState extends State<RecapScreen> {
               child: PageView.builder(
                 controller: _controller,
                 itemCount: sayfalar.length,
-                onPageChanged: (i) => setState(() => _index = i),
+                // Sayfa değişince hafif dokunsal onay — hikâyede bir adım.
+                onPageChanged: (i) {
+                  SandikHaptic.selection.perform();
+                  setState(() => _index = i);
+                },
                 itemBuilder: (_, i) => sayfalar[i],
               ),
             ),
