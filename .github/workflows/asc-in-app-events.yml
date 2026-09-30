@@ -1,0 +1,41 @@
+# App Store In-App Event taslakları (karar 6.5, 2026-09-30).
+#
+# Elle tetiklenir. Varsayılan KURU koşu: yalnız ne kurulacağını yazar.
+# "uygula" işaretlenirse etkinlikleri App Store Connect'te TASLAK kurar —
+# incelemeye GÖNDERMEZ; o adım kullanıcı taslağı gördükten sonra ASC'de.
+# Kaynak: store_listing/ios/in_app_events/etkinlikler.json (+ PNG'ler).
+# Kimlik: TestFlight iş akışıyla aynı ASC_* secret'ları.
+name: App Store etkinlikleri (taslak)
+
+on:
+  workflow_dispatch:
+    inputs:
+      uygula:
+        description: "Taslakları gerçekten kur (işaretsiz = kuru koşu)"
+        type: boolean
+        default: false
+
+jobs:
+  etkinlikler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyjwt cryptography requests pillow
+      # Görseller commit'li; yine de betikten yeniden üretilir ki JSON ile
+      # görsel adları hep eşleşsin.
+      - run: python store_listing/build_event_graphics.py
+      - name: Etkinlikleri kur
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+        run: |
+          if [ "${{ inputs.uygula }}" = "true" ]; then
+            python tool/asc_in_app_events.py --uygula
+          else
+            python tool/asc_in_app_events.py
+          fi
