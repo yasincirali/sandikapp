@@ -679,7 +679,7 @@ class _PeriodBar extends StatelessWidget {
           children: List.generate(periods.length, (i) {
             final active = i == selected;
             return Expanded(
-              child: GestureDetector(
+              child: SandikBasma(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onChange(i),
                 child: AnimatedContainer(

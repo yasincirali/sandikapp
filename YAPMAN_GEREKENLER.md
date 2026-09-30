@@ -8,6 +8,47 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## 🔴 2026-09-30 Vadeli mevduat + BES — 0088 + üç edge function DAĞITILMADI (kod main'de)
+
+**Durum:** PR #34 kullanıcı kararıyla main'e birleştirildi (TestFlight + Android
+derlemesi başladı), ama 0088 ve üç fonksiyon **henüz iki sunucuda da yok**.
+Claude'un `supabase db push` / `functions deploy` komutları otomatik modda
+"Production Deploy" / "Protected-Scope IaC Apply" diye reddedildi; izin kuralı
+eklemesi de "Self-Modification" diye reddedildi.
+
+**Bu adımlar yapılana kadar:** yayındaki derlemede Varlık Ekle → Mevduat/BES
+kaydı "kaydedilemedi" der (tablo yok). Diğer türlerin kaydı, fiyatlar ve
+mevcut portföy ETKİLENMEZ (`sozlesme_id` gövdeye yalnız doluyken yazılır).
+Mümkünse test kullanıcılarına duyurmadan önce yap.
+
+Güvence (2026-09-30): PR CI'ında "Supabase yığını + başsız duman" 0088'i taze
+yığında sıfırdan uyguladı ✅; Frankfurt `db push --dry-run` yalnız 0088'i
+gösterdi; göç yalnız ekleme yapıyor (iki tablo + boş bırakılabilir sütun).
+
+- [ ] **1. Frankfurt göç** (sırayla; dizin `C:/projects/PortfoyTakip-birlestir`
+      Frankfurt'a bağlı — silindiyse ana dizinde önce
+      `supabase link --project-ref ynwymnpdiwudrlxfrmuo`):
+      `supabase db push` → göç kendini doğrular (GRANT 4/4, RLS 2/2, FK).
+- [ ] **2. Frankfurt fonksiyonlar:**
+      `supabase functions deploy analyze-signals leaderboard-snapshot observe-tefas-nav --project-ref ynwymnpdiwudrlxfrmuo`
+- [ ] **3. Tokyo göç:** `supabase link --project-ref ybdbzouzhzwthjgwlbmk && supabase db push`
+- [ ] **4. Tokyo fonksiyonlar:**
+      `supabase functions deploy analyze-signals leaderboard-snapshot observe-tefas-nav --project-ref ybdbzouzhzwthjgwlbmk`
+- [ ] **5. Eşitlik:** `python tool/sema_esitlik.py` → ŞEMA EŞİT. (Ana dizinin
+      `supabase/.temp/project-ref`'i Tokyo'da kalmalı.)
+- [ ] **Claude'a yaptırmak istersen:** önce `/permissions` → Allow'a
+      `Bash(supabase db push:*)`, `Bash(supabase functions deploy:*)`,
+      `Bash(supabase link:*)` ekle, sonra "0088'i dağıt" de.
+- [ ] **Cihazda dene (10 dk, dağıtımdan SONRA):** Varlık Ekle → Mevduat: banka
+      + 250.000 + %42 + 32 gün → özet "+₺7.594,52" demeli; kaydet; varlık
+      sayfasında dönem kartı. BES: şirket + birikim + bir emeklilik fonu %100
+      (+ istersen devlet katkısı fonu); varlık sayfasında döküm ve hak ediş.
+      Ana sayfa piyasa şeridi: uzun bas → tut/kaydır → bırak → akmaya devam.
+- [ ] **Her Ocak:** yeni yılın BES devlet katkısı sınırı (brüt asgari ücret
+      × 12 × oran) `lib/services/bes_hesabi.dart` › `yillikSinirTablosu`'na
+      eklenmeli — Claude'a "BES sınırı 2027" demen yeter. Eklenmezse katkı
+      sayfası sınırsız hesaplar ve tutarı düzenlenebilir gösterir.
+
 ## ⏳ 2026-09-30 Karar tahtası 4–8 — kod yerelde (PUSH EDİLMEDİ)
 
 Emülatörde kontrol et → onay → push. Ayrıntı: sohbet raporu.

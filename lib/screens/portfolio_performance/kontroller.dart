@@ -375,7 +375,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                     Semantics(
                       button: true,
                       label: context.l10n.modeInfoSemantics(o.label),
-                      child: GestureDetector(
+                      child: SandikBasma(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _showModeInfoSheet(forSim: o.sim),
                       child: Padding(

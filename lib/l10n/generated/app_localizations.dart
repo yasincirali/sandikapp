@@ -7393,6 +7393,534 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} filtresini kaldır'**
   String filterRemove(String ad);
+
+  /// No description provided for @assetTypeDeposit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduat'**
+  String get assetTypeDeposit;
+
+  /// No description provided for @assetTypePension.
+  ///
+  /// In tr, this message translates to:
+  /// **'BES'**
+  String get assetTypePension;
+
+  /// No description provided for @tickerHintDeposit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sözleşmeden hesaplanır'**
+  String get tickerHintDeposit;
+
+  /// No description provided for @tickerHintPension.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS emeklilik fonu kodu'**
+  String get tickerHintPension;
+
+  /// No description provided for @depositBank.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka'**
+  String get depositBank;
+
+  /// No description provided for @depositBankHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn. Enpara, Garanti BBVA'**
+  String get depositBankHint;
+
+  /// No description provided for @depositPrincipal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırdığın tutar'**
+  String get depositPrincipal;
+
+  /// No description provided for @depositRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık faiz (brüt, %)'**
+  String get depositRate;
+
+  /// No description provided for @depositKindTerm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeli'**
+  String get depositKindTerm;
+
+  /// No description provided for @depositKindDaily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük faizli'**
+  String get depositKindDaily;
+
+  /// No description provided for @depositTerm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade'**
+  String get depositTerm;
+
+  /// No description provided for @depositDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} gün'**
+  String depositDays(int n);
+
+  /// No description provided for @depositCustomDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel'**
+  String get depositCustomDays;
+
+  /// No description provided for @depositCustomDaysHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün sayısı'**
+  String get depositCustomDaysHint;
+
+  /// No description provided for @depositStart.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başlangıç'**
+  String get depositStart;
+
+  /// No description provided for @depositWithholding.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj (%)'**
+  String get depositWithholding;
+
+  /// No description provided for @depositWithholdingHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeye göre önerildi. Bankan farklı uyguluyorsa düzelt.'**
+  String get depositWithholdingHint;
+
+  /// No description provided for @depositMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade sonu'**
+  String get depositMaturity;
+
+  /// No description provided for @depositNetReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net getiri'**
+  String get depositNetReturn;
+
+  /// No description provided for @depositAtMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade sonunda'**
+  String get depositAtMaturity;
+
+  /// No description provided for @depositDailyNet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük net'**
+  String get depositDailyNet;
+
+  /// No description provided for @depositErrorBank.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka adını yaz.'**
+  String get depositErrorBank;
+
+  /// No description provided for @depositErrorPrincipal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutarı yaz.'**
+  String get depositErrorPrincipal;
+
+  /// No description provided for @depositErrorRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Faiz oranını yaz.'**
+  String get depositErrorRate;
+
+  /// No description provided for @depositErrorDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeyi gün olarak yaz.'**
+  String get depositErrorDays;
+
+  /// No description provided for @depositErrorWithholding.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj 0 ile 100 arasında olmalı.'**
+  String get depositErrorWithholding;
+
+  /// No description provided for @depositAccrualNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değer her gün tahakkuk eden net faizle artar. Vadeyi erken bozarsan banka faizi ödemeyebilir.'**
+  String get depositAccrualNote;
+
+  /// No description provided for @depositCardTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduat'**
+  String get depositCardTitle;
+
+  /// No description provided for @depositPeriodN.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}. dönem'**
+  String depositPeriodN(int n);
+
+  /// No description provided for @depositDaysLeft.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeye {n} gün'**
+  String depositDaysLeft(int n);
+
+  /// No description provided for @depositMatured.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadesi doldu'**
+  String get depositMatured;
+
+  /// No description provided for @depositMaturedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Faiz eklendi. Yeni dönemi başlatmak için yeni faizi gir; girmezsen değer olduğu gibi kalır.'**
+  String get depositMaturedBody;
+
+  /// No description provided for @depositThisPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönem net'**
+  String get depositThisPeriod;
+
+  /// No description provided for @depositTotalReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam net getiri'**
+  String get depositTotalReturn;
+
+  /// No description provided for @depositRenew.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenile'**
+  String get depositRenew;
+
+  /// No description provided for @depositWithdraw.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çektim'**
+  String get depositWithdraw;
+
+  /// No description provided for @depositRenewTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni dönem'**
+  String get depositRenewTitle;
+
+  /// No description provided for @depositRenewSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni dönem başladı'**
+  String get depositRenewSaved;
+
+  /// No description provided for @depositRateUpdate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oranı güncelle'**
+  String get depositRateUpdate;
+
+  /// No description provided for @depositRateSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oran güncellendi'**
+  String get depositRateSaved;
+
+  /// No description provided for @depositWithdrawTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Parayı çektin mi?'**
+  String get depositWithdrawTitle;
+
+  /// No description provided for @depositWithdrawBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduat bugünkü değeriyle ({amount}) satılmış olarak kaydedilir.'**
+  String depositWithdrawBody(String amount);
+
+  /// No description provided for @depositWithdrawConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çektim, kapat'**
+  String get depositWithdrawConfirm;
+
+  /// No description provided for @depositWithdrawn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduat kapatıldı'**
+  String get depositWithdrawn;
+
+  /// No description provided for @pensionCompany.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emeklilik şirketi'**
+  String get pensionCompany;
+
+  /// No description provided for @pensionCompanyHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn. Anadolu Hayat'**
+  String get pensionCompanyHint;
+
+  /// No description provided for @pensionEntryDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sisteme giriş'**
+  String get pensionEntryDate;
+
+  /// No description provided for @pensionEntryDateHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısının hak ediş oranı buna bağlı.'**
+  String get pensionEntryDateHint;
+
+  /// No description provided for @pensionBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü birikimin'**
+  String get pensionBalance;
+
+  /// No description provided for @pensionBalanceHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı hariç; şirketinin uygulamasında ya da BES Mobil\'de yazan tutar.'**
+  String get pensionBalanceHint;
+
+  /// No description provided for @pensionPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugüne kadar ödediğin katkı'**
+  String get pensionPaid;
+
+  /// No description provided for @pensionFunds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon dağılımı'**
+  String get pensionFunds;
+
+  /// No description provided for @pensionAddFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon ekle'**
+  String get pensionAddFund;
+
+  /// No description provided for @pensionShareTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam {pct}'**
+  String pensionShareTotal(String pct);
+
+  /// No description provided for @pensionShareError.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon payları toplamı %100 olmalı.'**
+  String get pensionShareError;
+
+  /// No description provided for @pensionFundError.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az bir emeklilik fonu seç.'**
+  String get pensionFundError;
+
+  /// No description provided for @pensionGov.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı'**
+  String get pensionGov;
+
+  /// No description provided for @pensionGovBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı birikimi'**
+  String get pensionGovBalance;
+
+  /// No description provided for @pensionGovFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı fonu'**
+  String get pensionGovFund;
+
+  /// No description provided for @pensionGovFundHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilmiyorsan boş bırak; devlet katkısı eklenmez.'**
+  String get pensionGovFundHint;
+
+  /// No description provided for @pensionMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık katkı'**
+  String get pensionMonthly;
+
+  /// No description provided for @pensionDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkı günü'**
+  String get pensionDay;
+
+  /// No description provided for @pensionErrorCompany.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şirket adını yaz.'**
+  String get pensionErrorCompany;
+
+  /// No description provided for @pensionErrorBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikim tutarını yaz.'**
+  String get pensionErrorBalance;
+
+  /// No description provided for @pensionErrorGovFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı birikimi için fonu da seç.'**
+  String get pensionErrorGovFund;
+
+  /// No description provided for @pensionPriceMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'{code} fonunun fiyatı alınamadı. Birazdan tekrar dene.'**
+  String pensionPriceMissing(String code);
+
+  /// No description provided for @pensionPickFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emeklilik fonu seç'**
+  String get pensionPickFund;
+
+  /// No description provided for @pensionPickGovFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı fonu seç'**
+  String get pensionPickGovFund;
+
+  /// No description provided for @pensionSearchFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon kodu ya da adı'**
+  String get pensionSearchFund;
+
+  /// No description provided for @pensionNoFundFound.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşen emeklilik fonu yok'**
+  String get pensionNoFundFound;
+
+  /// No description provided for @pensionCardTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'BES'**
+  String get pensionCardTitle;
+
+  /// No description provided for @pensionYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}. yıl'**
+  String pensionYear(int n);
+
+  /// No description provided for @pensionTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam birikim'**
+  String get pensionTotal;
+
+  /// No description provided for @pensionOwn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Senin katkın'**
+  String get pensionOwn;
+
+  /// No description provided for @pensionGovShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet'**
+  String get pensionGovShort;
+
+  /// No description provided for @pensionReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri'**
+  String get pensionReturn;
+
+  /// No description provided for @pensionIfLeave.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün çıkarsan (vergi öncesi)'**
+  String get pensionIfLeave;
+
+  /// No description provided for @pensionVesting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı hak ediş'**
+  String get pensionVesting;
+
+  /// No description provided for @pensionVestingNext.
+  ///
+  /// In tr, this message translates to:
+  /// **'{now} · {years} yıl sonra {next}'**
+  String pensionVestingNext(String now, int years, String next);
+
+  /// No description provided for @pensionAddContribution.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ayın katkısını ekle'**
+  String get pensionAddContribution;
+
+  /// No description provided for @pensionContributionTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkı ekle'**
+  String get pensionContributionTitle;
+
+  /// No description provided for @pensionContributionAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkı tutarı'**
+  String get pensionContributionAmount;
+
+  /// No description provided for @pensionContributionGov.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı: {amount}'**
+  String pensionContributionGov(String amount);
+
+  /// No description provided for @pensionContributionGovCapped.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu yılın devlet katkısı sınırı doldu.'**
+  String get pensionContributionGovCapped;
+
+  /// No description provided for @pensionContributionSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkı eklendi'**
+  String get pensionContributionSaved;
+
+  /// No description provided for @pensionContributionDue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ayın katkısı henüz eklenmedi.'**
+  String get pensionContributionDue;
+
+  /// No description provided for @pensionNoGovFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı fonu seçilmedi; devlet katkısı eklenmez.'**
+  String get pensionNoGovFund;
+
+  /// No description provided for @contractManagedNotice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.'**
+  String get contractManagedNotice;
 }
 
 class _AppLocalizationsDelegate

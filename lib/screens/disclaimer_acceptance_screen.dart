@@ -107,7 +107,7 @@ class _DisclaimerAcceptanceScreenState
               const SizedBox(height: 24),
 
               // Onay checkbox
-              GestureDetector(
+              SandikBasma(
                 onTap: () => setState(() {
                   _accepted = !_accepted;
                   if (_accepted) _showError = false;

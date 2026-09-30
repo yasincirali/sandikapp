@@ -96,6 +96,13 @@ String birimEtiketi({
       // Coin'in kendi kodu: "0,0045 BTC". Kod çözülemezse "adet" — boş
       // birim ekranda sayıyı çıplak bırakırdı.
       return kriptoKodu(ticker) ?? 'adet';
+    case AssetType.bes:
+      // Emeklilik fonu payı; BES'te "lot" denmez.
+      return 'pay';
+    case AssetType.mevduat:
+      // Birim değerli pay (bkz. `mevduat_hesabi.dart`). Ekranlar mevduatta
+      // miktarı değil tutarı gösterir; etiket yalnız ham satırlarda çıkar.
+      return 'birim';
     case AssetType.diger:
       return 'adet';
   }
@@ -193,6 +200,11 @@ class Asset {
   /// GİRMEZ — bkz. [isActive].
   final DateTime? deletedAt;
 
+  /// Bağlı sözleşme (`sozlesmeler.id`, 0088) — yalnız mevduat ve BES
+  /// lotlarında dolu. Faiz/vade ya da katkı planı oradadır; lot bakiyeyi
+  /// taşır (bkz. `models/sozlesme.dart`).
+  final String? sozlesmeId;
+
   /// Sunucudaki `ticker` sütununun OKUNDUĞU hâli — yalnızca [kanonikTicker]
   /// onu değiştirdiyse dolu (öneksiz eski fon kodu `AFT` → `TEFAS:AFT`).
   ///
@@ -227,6 +239,7 @@ class Asset {
     this.dividendAmount = 0,
     this.deletedCount = 0,
     this.deletedAt,
+    this.sozlesmeId,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -305,7 +318,12 @@ class Asset {
 
   /// Fon/Hisse için ticker gösterilmeli mi?
   bool get showTicker =>
-      displayTicker != null && (type == AssetType.fon || type == AssetType.hisse);
+      displayTicker != null &&
+      (type == AssetType.fon ||
+          type == AssetType.hisse ||
+          // BES lotunun kodu emeklilik fonudur (AH5); mevduatın sembolü
+          // sözleşme id'sidir, gösterilmez.
+          type == AssetType.bes);
 
   /// Kripto ise coin kodu (`BTC`), değilse `null`.
   String? get kriptoKod => type == AssetType.kripto ? kriptoKodu(ticker) : null;
@@ -423,6 +441,7 @@ class Asset {
         dividendAmount: dividendAmount,
         deletedCount: deletedCount,
         deletedAt: deletedAt,
+        sozlesmeId: sozlesmeId,
       ).._kayitliTicker = _kayitliTicker;
 
   /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
@@ -464,6 +483,11 @@ class Asset {
         'dividend_amount': dividendAmount,
         'deleted_count': deletedCount,
         'deleted_at': deletedAt?.toUtc().toIso8601String(),
+        // YALNIZ doluyken yazılır: sütun 0088 ile geldi. Göç iki sunucuya
+        // ulaşmadan yayınlanan bir sürümde anahtar her gövdede olsaydı
+        // PostgREST bilinmeyen sütun için TÜM varlık yazımlarını reddederdi
+        // (PGRST204) — mevduat/BES dışındaki kullanıcı da kaydedemezdi.
+        if (sozlesmeId != null) 'sozlesme_id': sozlesmeId,
       };
 
   /// Sunucu satırından okur — sembolü [kanonikTicker] biçimine çevirerek.
@@ -537,5 +561,7 @@ class Asset {
         deletedAt: m['deleted_at'] != null
             ? DateTime.parse(m['deleted_at'] as String).toLocal()
             : null,
+        // Migration 0088 öncesi satırlarda sütun yok → null.
+        sozlesmeId: m['sozlesme_id'] as String?,
       );
 }

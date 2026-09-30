@@ -43,7 +43,7 @@ class PriceAlertTile extends StatelessWidget {
     final double bgAlpha = faded ? 0.05 : 0.10;
     final double borderAlpha = faded ? 0.12 : 0.28;
 
-    return GestureDetector(
+    return SandikBasma(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),

@@ -329,7 +329,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Widget _primaryButton({required String label, VoidCallback? onTap}) {
     final enabled = onTap != null;
-    return GestureDetector(
+    return SandikBasma(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Container(

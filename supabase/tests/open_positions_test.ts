@@ -373,3 +373,15 @@ Deno.test('mezarTasi:false — ref_asset_id işaret ettiği lot yaşar; satış 
   // 150 − 120 = 30 > 0 → pozisyon açık, iki alım da listede.
   assertEquals(acikPozisyonLotlari(rows, { mezarTasi: false }).map((r) => r.id).sort(), ['a1', 'a2']);
 });
+
+Deno.test('BES: aynı fonda kendi katkın ile devlet katkısı ayrı pozisyon (Dart positionKey eşi)', () => {
+  const katki = alim({ id: 'k', type: 'bes', ticker: 'TEFAS:AH5', sub_category: 'katki' });
+  const dk = alim({ id: 'd', type: 'bes', ticker: 'TEFAS:AH5', sub_category: 'dk' });
+  assertEquals(pozisyonAnahtari(katki), 'u1|bes|TEFAS:AH5|sub:katki|TRY');
+  assertEquals(pozisyonAnahtari(dk) === pozisyonAnahtari(katki), false);
+});
+
+Deno.test('mevduat: sözleşme sembolü anahtardır', () => {
+  const m = alim({ id: 'm', type: 'mevduat', ticker: 'MEVDUAT:abc' });
+  assertEquals(pozisyonAnahtari(m), 'u1|mevduat|MEVDUAT:ABC|TRY');
+});

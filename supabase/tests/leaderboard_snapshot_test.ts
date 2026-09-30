@@ -304,3 +304,24 @@ Deno.test('varlikSayisi: aynı sembolün lotları tek, değersiz/sıfır miktar 
   assertEquals(varlikSayisi(lots, new Map(), NOW), 1);
   assertEquals(varlikSayisi([...lots, fonLot('TTE', 2, 10)], new Map(), NOW), 2);
 });
+
+// ── Mevduat / BES (0088) ───────────────────────────────────────────────────
+
+Deno.test('mevduat: seri istemez, current_price (istemcinin birim değeri) ile değerlenir', () => {
+  const l = lot({
+    id: 'mv',
+    type: 'mevduat',
+    ticker: 'MEVDUAT:9f1c2e7a-0000-4000-8000-000000000001',
+    quantity: 250000,
+    current_price: 1.0312,
+  });
+  assertEquals(lotSembolleri(l), []);
+  assertEquals(lotTryFiyati(l, new Map(), NOW), 1.0312);
+});
+
+Deno.test('BES: TEFAS emeklilik fonu serisinden fiyatlanır', () => {
+  const l = lot({ id: 'b', type: 'bes', ticker: 'TEFAS:AH5', sub_category: 'katki' });
+  assertEquals(lotSembolleri(l), ['TEFAS:AH5']);
+  const seriler = new Map<string, Seri>([['TEFAS:AH5', seri([1, 0.021])]]);
+  assertEquals(lotTryFiyati(l, seriler, NOW), 0.021);
+});

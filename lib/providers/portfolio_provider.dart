@@ -470,6 +470,46 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
   }
 
+  /// Sözleşmeden üretilmiş hazır lotları (mevduat açılışı, BES fonları,
+  /// BES katkısı) TEK istekte yazar ve deftere ekler.
+  ///
+  /// [addAsset]'ten farkı: lotları sözleşme sağlayıcısı kurar (miktar =
+  /// pay, fiyat = birim değer, `sozlesmeId` dolu); burada yalnız kota
+  /// kapısı, yazım ve durum güncellemesi yapılır. Kota anahtarı [addAsset]
+  /// ile aynı formüldür — BES'in üç fonu üç varlık sayılır, aynı fona
+  /// sonraki katkı yeni varlık sayılmaz.
+  Future<void> sozlesmeLotlariniEkle(List<Asset> lots) async {
+    if (lots.isEmpty) return;
+    final currentState = state.valueOrNull ?? const PortfolioState();
+    final limit = ref.read(assetLimitProvider);
+    if (limit < (1 << 30)) {
+      final mevcut = <String>{
+        for (final a in currentState.assets)
+          if (a.isBuy && a.isActive) '${a.type.name}|${a.ticker}|${a.currency}',
+      };
+      final yeni = {
+        for (final a in lots) '${a.type.name}|${a.ticker}|${a.currency}',
+      }.difference(mevcut);
+      if (yeni.isNotEmpty && mevcut.length + yeni.length > limit) {
+        unawaited(AnalyticsService.instance
+            .logPremiumGateShown(feature: 'asset_limit'));
+        throw AssetLimitExceededException(mevcut.length, limit);
+      }
+    }
+
+    await SupabaseService.instance.insertAssets(lots);
+
+    for (final a in {for (final l in lots) l.type}) {
+      unawaited(AnalyticsService.instance.logAssetAdded(type: a.name));
+    }
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(assets: [...lots, ...current.assets]));
+      _gunIciSeriyiDusur();
+    }
+  }
+
   /// [addedDate]: satış günü; `null` → şimdi (elle satış). Ekstre içe
   /// aktarımı (karar 5.4) geçmiş satışları kendi günüyle yazar — yoksa
   /// dönem hesapları ve seri, satışı bugüne kaydırırdı.
@@ -505,6 +545,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       sellPrice: sellPrice,
       addedDate: addedDate,
+      // Mevduat/BES satışı da sözleşmesine bağlı kalır (net bakiye ve
+      // katkı hesapları lotları sözleşmeden toplar).
+      sozlesmeId: asset.sozlesmeId,
     );
 
     await SupabaseService.instance.insertAsset(transaction);

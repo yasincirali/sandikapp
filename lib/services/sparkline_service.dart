@@ -53,7 +53,8 @@ class SparklineService {
         a.type == AssetType.kripto ||
         a.type == AssetType.emtia ||
         a.type == AssetType.doviz ||
-        a.type == AssetType.fon;
+        // BES ve mevduat fon yolundan fiyatlanır (`fiyatlamaTuru`).
+        a.type.fiyatlamaTuru == AssetType.fon;
   }
 
   /// Altın serisinin önbellek anahtarı — gerçek bir Yahoo sembolü değil.

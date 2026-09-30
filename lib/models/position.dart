@@ -133,6 +133,18 @@ String positionKey(Asset a) {
       core = a.ticker.trim().toUpperCase();
       if (core.isEmpty) core = 'name:${a.name.trim().toLowerCase()}';
       break;
+    case AssetType.mevduat:
+      // `MEVDUAT:<sözleşme id>` — sözleşme başına bir pozisyon.
+      core = a.ticker.trim().toUpperCase();
+      if (core.isEmpty) core = 'name:${a.name.trim().toLowerCase()}';
+      break;
+    case AssetType.bes:
+      // Fon kodu + alt kategori (katkı / devlet katkısı): aynı fonda iki
+      // birikim tek pozisyona düşmesin (bkz. `BesAltKategori`). Sunucu eşi
+      // `positions.ts` › `pozisyonAnahtari`.
+      core = '${a.ticker.trim().toUpperCase()}|'
+          'sub:${(a.subCategory ?? '').toLowerCase()}';
+      break;
     case AssetType.emtia:
     case AssetType.diger:
       final t = a.ticker.trim().toUpperCase();

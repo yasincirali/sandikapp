@@ -409,7 +409,7 @@ class _DialogButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 46,
-      child: GestureDetector(
+      child: SandikBasma(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Semantics(

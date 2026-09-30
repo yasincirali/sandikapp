@@ -325,7 +325,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const Spacer(),
-                        GestureDetector(
+                        SandikBasma(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => pushGuarded(
                             context,
@@ -353,7 +353,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // GestureDetector(opaque) instead of CupertinoButton: on
                     // iOS release the CupertinoButton was losing the gesture
                     // arena to the enclosing Scrollable and never firing.
-                    GestureDetector(
+                    SandikBasma(
                       behavior: HitTestBehavior.opaque,
                       onTap: _loading ? null : _login,
                       child: Container(

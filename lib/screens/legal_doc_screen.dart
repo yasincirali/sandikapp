@@ -720,7 +720,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                   ],
                 ),
               ),
-            GestureDetector(
+            SandikBasma(
               behavior: HitTestBehavior.opaque,
               onTap: active ? () => Navigator.pop(context, true) : null,
               child: Container(

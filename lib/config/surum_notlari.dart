@@ -103,6 +103,19 @@ const List<SurumNotu> surumNotlari = [
     onemli: true,
     baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      // 2026-09-30 (çalışma seçenekleri M2 + B3). Sunucu tarafı 0088 iki
+      // sunucuya ulaşmadan bu sürüm yayına çıkmamalı (YAPMAN_GEREKENLER).
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Vadeli mevduat ve BES',
+        aciklama: "Varlık Ekle'de iki yeni tür. Mevduat: banka, tutar, faiz "
+            've vadeyi yaz; net getiriyi stopajıyla birlikte hesaplarız, '
+            'vade dolunca varlık sayfasından yeni faizle yenilersin. Günlük '
+            'faizli hesaplar da olur. BES: şirketini, birikimini ve fon '
+            'dağılımını gir; değer her gün emeklilik fonlarının fiyatından '
+            'gelir, devlet katkısı hak ediş oranıyla ayrı durur ve aylık '
+            'katkını tek dokunuşla eklersin.',
+      ),
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Zirvedeki portföyler',

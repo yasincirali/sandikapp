@@ -11,7 +11,8 @@ import 'package:portfoy_takip/widgets/tour_anchor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Varlık Ekle tür çiplerinin sırası (kullanıcı kararı 2026-09-25):
-/// Hisse, Döviz, Altın, Fon, Kripto, Emtia, Diğer.
+/// Hisse, Döviz, Altın, Fon, Kripto, Emtia, Diğer. 2026-09-30: Mevduat ve
+/// BES fonun hemen arkasına girdi (sözleşmeli türler).
 ///
 /// Sıra enum'dan (`AssetType.values`) ayrı bir listede; enum sırası uygulamanın
 /// geri kalanını (filtre çipleri, tür dökümü) sıralamaya devam eder. Ayrı liste
@@ -47,6 +48,8 @@ void main() {
       AssetType.doviz,
       AssetType.altin,
       AssetType.fon,
+      AssetType.mevduat,
+      AssetType.bes,
       AssetType.kripto,
       AssetType.emtia,
       AssetType.diger,

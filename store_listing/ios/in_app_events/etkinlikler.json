@@ -1,5 +1,5 @@
 {
-  "_not": "App Store In-App Event taslakları (karar 6.2 / 6.3, 2026-09-30). tool/asc_in_app_events.py okur; etkinlikleri App Store Connect'te TASLAK olarak kurar, incelemeye GÖNDERMEZ. Saatler UTC (TR = UTC+3). Sınırlar: ad 30, kısa açıklama 50, uzun açıklama 120 karakter. Ocak/Şubat enflasyon günleri TÜİK 2027 takvimi yayımlanınca eklenir (ayın 3'ü hafta sonuna düşerse açıklama günü kayabilir).",
+  "_not": "App Store In-App Event taslakları (karar 6.2 / 6.3, 2026-09-30). tool/asc_in_app_events.py okur; etkinlikleri App Store Connect'te TASLAK olarak kurar, incelemeye GÖNDERMEZ. Saatler UTC (TR = UTC+3). Yayın başlangıcı etkinlikten en fazla 14 gün önce (ASC 409, 2026-09-30). Sınırlar: ad 30, kısa açıklama 50, uzun açıklama 120 karakter. Ocak/Şubat enflasyon günleri TÜİK 2027 takvimi yayımlanınca eklenir (ayın 3'ü hafta sonuna düşerse açıklama günü kayabilir).",
   "etkinlikler": [
     {
       "referans": "enflasyon-gunu-2026-11",
@@ -53,7 +53,7 @@
       "amac": "APPROPRIATE_FOR_ALL_USERS",
       "oncelik": "HIGH",
       "derin_baglanti": "sandik://yil-ozeti",
-      "yayin_baslangic": "2026-12-12T07:00:00Z",
+      "yayin_baslangic": "2026-12-12T18:00:00Z",
       "etkinlik_baslangic": "2026-12-26T17:00:00Z",
       "etkinlik_bitis": "2027-01-10T20:59:00Z",
       "gorsel": "yil_sonu_ozeti",

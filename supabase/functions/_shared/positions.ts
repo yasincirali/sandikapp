@@ -74,7 +74,13 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
     case 'altin':
       core = `sub:${alt.toLowerCase()}`;
       break;
-    default: // emtia, diger
+    case 'bes':
+      // Fon kodu + alt kategori (katki / dk): kendi katkın ile devlet
+      // katkısı aynı fonda olsa da ayrı pozisyondur. Dart eşi
+      // `positionKey` › `AssetType.bes` (0088, 2026-09-30).
+      core = `${ticker}|sub:${alt.toLowerCase()}`;
+      break;
+    default: // emtia, diger, kripto, mevduat (`MEVDUAT:<sözleşme id>`)
       core = ticker !== '' ? ticker : `name:${ad}`;
   }
 

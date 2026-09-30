@@ -270,7 +270,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
       ),
     );
     if (widget.onTap == null) return govde;
-    return GestureDetector(
+    return SandikBasma(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onTap,
       child: govde,
@@ -653,7 +653,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
           const SizedBox(height: SandikSpace.smd),
           Align(
             alignment: Alignment.centerLeft,
-            child: GestureDetector(
+            child: SandikBasma(
               behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _deneme++),
               child: Container(

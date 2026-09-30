@@ -7,7 +7,9 @@ Güvenlik kuralları (kullanıcı kararı 2026-09-30: "gönderimi ben yapayım" 
 son hâli incelemeye göndermeden önce kullanıcıya gösterilir):
   * Etkinlik yalnız TASLAK kurulur; incelemeye GÖNDERİLMEZ (o adım App
     Store Connect'te elle, kullanıcı gördükten sonra).
-  * İdempotent: aynı `referans` (referenceName) zaten varsa atlanır.
+  * İdempotent ve ONARICI: aynı `referans` (referenceName) varsa yeniden
+    kurulmaz; eksik dili ve eksik / yarım kalmış görseli tamamlar (ilk
+    koşu 2026-09-30'da görsel onayında düştü, Kasım taslağı yarım kaldı).
   * Varsayılan KURU koşu; yazmak için `--uygula`.
   * Uygulamada tanımlı olmayan dil (ör. Türkçe yerelleştirme henüz
     eklenmediyse `tr`) atlanır ve raporlanır.
@@ -20,7 +22,6 @@ GitHub secret'ları). Anahtar ekrana basılmaz.
     python tool/asc_in_app_events.py --uygula   # taslakları kur
 """
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -69,6 +70,9 @@ class Asc:
     def patch(self, yol, veri):
         return self._cevap(self.s.patch(f"{API}{yol}", json={"data": veri}, timeout=30))
 
+    def delete(self, yol):
+        return self._cevap(self.s.delete(f"{API}{yol}", timeout=30))
+
 
 def gorsel_yukle(asc, lokal_id, tur, yol):
     veri = open(yol, "rb").read()
@@ -85,11 +89,49 @@ def gorsel_yukle(asc, lokal_id, tur, yol):
         r = requests.request(op["method"], op["url"], data=parca, headers=basliklar, timeout=60)
         if r.status_code >= 400:
             sys.exit(f"Görsel parçası yüklenemedi ({r.status_code}): {yol}")
+    # Onayda YALNIZ `uploaded` — bu kaynakta `sourceFileChecksum` yok (409
+    # ENTITY_ERROR.ATTRIBUTE.UNKNOWN, 2026-09-30; ekran görüntüsü API'sinden
+    # farklı).
     asc.patch(f"/appEventScreenshots/{rez['id']}", {
         "type": "appEventScreenshots", "id": rez["id"],
-        "attributes": {"uploaded": True,
-                       "sourceFileChecksum": hashlib.md5(veri).hexdigest()},
+        "attributes": {"uploaded": True},
     })
+
+
+def lokal_tamamla(asc, olay_id, e, kullanilacak):
+    """Etkinliğin eksik dillerini ve görsellerini tamamlar.
+
+    Yarım kalmış görsel (teslim durumu COMPLETE / UPLOAD_COMPLETE olmayan)
+    silinip yeniden yüklenir. Dönen değer: yapılan iş sayısı."""
+    is_sayisi = 0
+    lokaller = {x["attributes"]["locale"]: x
+                for x in asc.get(f"/appEvents/{olay_id}/localizations")["data"]}
+    for dil in kullanilacak:
+        m = e["metin"][dil]
+        lok = lokaller.get(dil)
+        if lok is None:
+            lok = asc.post("/appEventLocalizations", {
+                "type": "appEventLocalizations",
+                "attributes": {"locale": dil, "name": m["ad"],
+                               "shortDescription": m["kisa"],
+                               "longDescription": m["uzun"]},
+                "relationships": {"appEvent": {"data": {"type": "appEvents", "id": olay_id}}},
+            })["data"]
+            is_sayisi += 1
+        mevcut_gorsel = {}
+        for g in asc.get(f"/appEventLocalizations/{lok['id']}/appEventScreenshots")["data"]:
+            durum = ((g["attributes"].get("assetDeliveryState") or {}).get("state") or "")
+            if durum in ("COMPLETE", "UPLOAD_COMPLETE"):
+                mevcut_gorsel[g["attributes"]["appEventAssetType"]] = g["id"]
+            else:
+                asc.delete(f"/appEventScreenshots/{g['id']}")
+                is_sayisi += 1
+        for tur, ek in GORSEL_TURLERI.items():
+            if tur in mevcut_gorsel:
+                continue
+            gorsel_yukle(asc, lok["id"], tur, os.path.join(KLASOR, f"{e['gorsel']}_{ek}.png"))
+            is_sayisi += 1
+    return is_sayisi
 
 
 def main():
@@ -116,15 +158,19 @@ def main():
             diller.add(lok["attributes"]["locale"])
     print(f"Uygulamanın dilleri: {sorted(diller)}")
 
-    mevcut = {x["attributes"]["referenceName"]
+    mevcut = {x["attributes"]["referenceName"]: x["id"]
               for x in asc.get(f"/apps/{app_id}/appEvents", limit=200)["data"]}
 
     for e in tanim["etkinlikler"]:
         ref = e["referans"]
-        if ref in mevcut:
-            print(f"= {ref}: zaten var, atlandı")
-            continue
         kullanilacak = [d for d in e["metin"] if d in diller]
+        if ref in mevcut:
+            if not args.uygula:
+                print(f"= {ref}: zaten var (uygulamada eksikleri tamamlanır)")
+                continue
+            n = lokal_tamamla(asc, mevcut[ref], e, kullanilacak)
+            print(f"= {ref}: zaten var — {n} eksik tamamlandı")
+            continue
         atlanan = [d for d in e["metin"] if d not in diller]
         print(f"+ {ref}: {e['etkinlik_baslangic']} → {e['etkinlik_bitis']}, "
               f"diller {kullanilacak}" + (f", ATLANAN {atlanan}" if atlanan else ""))
@@ -151,18 +197,7 @@ def main():
             },
             "relationships": {"app": {"data": {"type": "apps", "id": app_id}}},
         })["data"]
-        for dil in kullanilacak:
-            m = e["metin"][dil]
-            lok = asc.post("/appEventLocalizations", {
-                "type": "appEventLocalizations",
-                "attributes": {"locale": dil, "name": m["ad"],
-                               "shortDescription": m["kisa"],
-                               "longDescription": m["uzun"]},
-                "relationships": {"appEvent": {"data": {"type": "appEvents", "id": olay["id"]}}},
-            })["data"]
-            for tur, ek in GORSEL_TURLERI.items():
-                gorsel_yukle(asc, lok["id"], tur,
-                             os.path.join(KLASOR, f"{e['gorsel']}_{ek}.png"))
+        lokal_tamamla(asc, olay["id"], e, kullanilacak)
         print(f"  ✓ {ref}: TASLAK kuruldu (incelemeye gönderilmedi)")
 
     if not args.uygula:

@@ -161,7 +161,9 @@ FonKarnesi? fonKarnesi(String fonKodu, List<TefasFund> tumFonlar) {
 /// Eski kayıtlar kodu `TEFAS:IJC` biçiminde, yeniler öneksiz (`DLY`)
 /// taşıyor (bkz. `Asset.displayTicker`); ikisi de aynı koda iner.
 String? fonKoduOf({required AssetType tur, required String ticker}) {
-  if (tur != AssetType.fon) return null;
+  // BES lotu da TEFAS emeklilik fonudur (EMK); karne aynı fon tipi +
+  // kategori içinde kıyaslar. Mevduatın fon kodu yoktur.
+  if (tur != AssetType.fon && tur != AssetType.bes) return null;
   final kod = ticker
       .trim()
       .replaceFirst(RegExp(r'^TEFAS:', caseSensitive: false), '')

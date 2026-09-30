@@ -144,10 +144,25 @@ export function seriSembolu(lot: Lot): string {
   return t;
 }
 
+/// Mevduat sembol öneki (0088). İstemci eşi `asset_type.dart` ›
+/// `mevduatOneki`.
+export const MEVDUAT_ONEKI = 'MEVDUAT:';
+
+/// Değeri piyasadan değil sözleşmeden gelen lot mu (mevduat)?
+///
+/// Birim değer istemcide sözleşmenin dönemlerinden hesaplanır ve her fiyat
+/// turunda `current_price`'a yazılır. Sunucu faiz motorunu KOPYALAMAZ
+/// (iki motor ayrışırdı — 0058'in dersi); elle fiyatlı lot gibi
+/// `current_price` ile değerler. Bayatlık payı küçük: mevduat günde
+/// binde bir mertebesinde değişir.
+export function sozlesmeFiyatli(lot: Lot): boolean {
+  return (lot.ticker ?? '').trim().toUpperCase().startsWith(MEVDUAT_ONEKI);
+}
+
 /// Lotun değerlenmesi için gereken seriler. Elle fiyatlı lot hiçbir seri
 /// istemez.
 export function lotSembolleri(lot: Lot): string[] {
-  if (lot.is_manual_price === true) return [];
+  if (lot.is_manual_price === true || sozlesmeFiyatli(lot)) return [];
   if (lot.type === 'altin') {
     const kod = altinKodu(lot);
     if (kod === null) return [];
@@ -168,7 +183,7 @@ export function lotTryFiyati(
   seriler: Map<string, Seri>,
   tMs: number,
 ): number | null {
-  if (lot.is_manual_price === true) {
+  if (lot.is_manual_price === true || sozlesmeFiyatli(lot)) {
     const p = Number(lot.current_price ?? 0);
     return Number.isFinite(p) && p > 0 ? p : null;
   }
