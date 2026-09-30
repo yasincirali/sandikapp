@@ -1311,7 +1311,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showOnWeekendSubtitle =>
-      'BIST is closed on weekends; the banner shows the last close labelled \"Market closed\".';
+      'BIST is closed on weekends. If your portfolio is only stocks and funds, the banner shows the last close labelled \"Market closed\"; with gold, FX or crypto it stays live.';
 
   @override
   String get showAmounts => 'Show amounts';
@@ -2862,14 +2862,39 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get csvImportTitle => 'Import from CSV';
+  String get csvImportTitle => 'Import statement';
 
   @override
   String get csvImportBody =>
-      'Copy and paste your broker statement or Excel table. Include a header row; column order doesn\'t matter. A \"Side\" (Buy/Sell) column or a negative quantity is read as a sale.';
+      'Choose your broker or bank statement (PDF, Excel or CSV) or copy and paste the table. Column names and order don\'t matter: symbol, quantity, price, date and buy/sell are detected automatically. Buys and sells come in with their dates.';
 
   @override
   String get pasteHere => 'Paste here';
+
+  @override
+  String get importPickFile => 'Choose file (PDF, Excel, CSV)';
+
+  @override
+  String get importReading => 'Reading file…';
+
+  @override
+  String get importMappingTitle => 'Columns were matched like this';
+
+  @override
+  String get importLowConfidence =>
+      'We\'re not fully sure about this file\'s columns; check the mapping and fix it if needed.';
+
+  @override
+  String get importFixColumns => 'Fix columns';
+
+  @override
+  String get importColumnNone => 'None';
+
+  @override
+  String get importApply => 'Apply';
+
+  @override
+  String get importOrPaste => 'or paste the table';
 
   @override
   String get preview => 'Preview';
@@ -2946,7 +2971,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use the + Add Asset button below to queue several assets and save them all at once.';
 
   @override
-  String get pasteFromStatement => 'Paste from statement / CSV';
+  String get pasteFromStatement => 'Import statement (PDF, Excel, CSV)';
 
   @override
   String saveAllCount(int n) {
@@ -3219,7 +3244,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketClosedNote =>
-      'When the market is closed, the last close is shown.';
+      'While the exchange is closed, stocks and funds show the last close; gold, FX and crypto stay live.';
 
   @override
   String get hiddenWeekend =>
@@ -3695,6 +3720,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayClosedWord => 'Market closed';
 
   @override
+  String get todayLiveWord => 'Live';
+
+  @override
   String get todayLoading => 'Intraday data loading';
 
   @override
@@ -3895,7 +3923,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emptyPasteHint =>
-      'Copy your broker statement and paste it; every line becomes an asset.';
+      'Choose or paste your broker statement (PDF, Excel or CSV); each row becomes a holding.';
 
   @override
   String get marketDollar => 'USD';

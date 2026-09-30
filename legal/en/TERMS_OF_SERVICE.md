@@ -26,7 +26,7 @@ sandık is a personal portfolio tracking tool for the following asset types:
 
 The App displays portfolio value, allocation, performance and (optionally) technical-analysis signals. The partnership feature allows two users to share their portfolios with mutual consent.
 
-**Top Portfolios:** The period return and asset-type shares of every user whose portfolio is older than 5 days and holds at least 2 different assets are evaluated in an anonymous comparison pool; only the rank, return, type shares and, for funds, the TEFAS fund codes with their shares of top-gaining portfolios are shown to all users, without identity or amounts (details: Privacy Policy §5.1). This is a standard part of the service and requires no separate opt-in.
+**Top Portfolios (optional):** With your explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); only the rank, return, type shares and, for funds, the TEFAS fund codes with their shares of top-gaining portfolios are shown to other participants, without identity or amounts, and in return you see the same anonymous information about them (details: Privacy Policy §5.1). You can leave at any time; not joining affects no other feature.
 
 ---
 

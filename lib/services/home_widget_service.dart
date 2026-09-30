@@ -12,6 +12,7 @@ import '../providers/portfolio_provider.dart';
 import '../screens/main_navigation_screen.dart';
 import '../screens/portfolio_performance_screen.dart';
 import '../theme/sandik.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'deep_link_router.dart';
@@ -99,6 +100,13 @@ class HomeWidgetService {
   static const _kChangePct = 'sandik_change_pct';
   /// BIST işlem saatleri içinde miyiz? Canlılık noktasının rengini sürer.
   static const _kMarketOpen = 'sandik_market_open';
+
+  /// Portföy yalnızca borsa ürünü mü (hisse/fon/BES)? "Piyasa kapalı"
+  /// ibaresi ve gri nokta YALNIZCA o zaman (kullanıcı kararı 2026-10-01,
+  /// bkz. `yalnizcaBorsa`). [_kMarketOpen] BIST seansını anlatmaya devam
+  /// eder — iOS kilit widget'ının seans çubuğu/geri sayımı ona bakar.
+  /// Native taraf anahtar yoksa `true` varsayar (eski davranış).
+  static const _kYalnizBorsa = 'sandik_yalniz_borsa';
 
   /// Uygulamanın SEÇİLİ teması açık mı? Native taraf paleti buna göre seçer.
   ///
@@ -292,6 +300,9 @@ class HomeWidgetService {
       // çiziliyor ve o da uygulamanın temasını izlemeli.
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
       await HomeWidget.saveWidgetData<bool>(_kLockAmounts, lockScreenAmounts);
+      // Gizliyken de yazılır: gizli widget da "Piyasa kapalı" satırı çizer.
+      final yalnizBorsa = yalnizcaBorsaVarliklardan(state.assets);
+      await HomeWidget.saveWidgetData<bool>(_kYalnizBorsa, yalnizBorsa);
 
       if (hideBalance) {
         // Kullanıcı bakiyeyi uygulama içinde gizlemişse ana ekranda
@@ -384,7 +395,10 @@ class HomeWidgetService {
           // Hareket yoksa çizgi de nötr çizilir: düz kırmızı bir çizgi
           // "bugün kaybettim" diye okunur.
           isFlat: !summary.hasChange || summary.isFlat,
-          isMarketOpen: DailySummary.isMarketOpen(DateTime.now()),
+          // Karışık portföyde nokta canlı kalır: borsa kapalı olsa da
+          // altın/döviz/kripto rakamı hareket ettiriyor.
+          isMarketOpen:
+              DailySummary.isMarketOpen(DateTime.now()) || !yalnizBorsa,
         );
       }
 

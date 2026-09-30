@@ -566,6 +566,39 @@ class LeaderboardService {
     }
   }
 
+  /// Zirvedeki Portföyler açık rıza metninin sürümü (0091). Metin
+  /// (`ZirveRizaKarti`) anlamca değişirse bu da değişir; sunucu hangi
+  /// sürüme rıza verildiğini saklar (ispat yükü veri sorumlusunda).
+  static const zirveRizaMetniSurumu = '2026-10-01';
+
+  /// Çağıranın geçerli zirve rızası var mı (0091 `zirve_rizalari`, RLS: yalnız
+  /// kendi satırı)? Hata → null; ekran "bilinmiyor" der, rıza varsaymaz.
+  Future<bool?> fetchZirveRizasi() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return null;
+      final rows = await Supabase.instance.client
+          .from('zirve_rizalari')
+          .select('geri_cekildi_at')
+          .eq('user_id', uid);
+      if (rows.isEmpty) return false;
+      return rows.first['geri_cekildi_at'] == null;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'zirve_rizasi_okunamadi');
+      return null;
+    }
+  }
+
+  /// Rıza ver ([ver] true) ya da geri çek. Geri çekme sunucuda ölçümleri
+  /// aynı işlemde siler (0091 `zirve_rizasi_ayarla`). Hata çağırana
+  /// fırlatılır — ekran `friendlyError` ile gösterir, durum değişmemiş sayılır.
+  Future<void> setZirveRizasi(bool ver) async {
+    await Supabase.instance.client.rpc<dynamic>(
+      'zirve_rizasi_ayarla',
+      params: {'p_ver': ver, 'p_metin_surumu': zirveRizaMetniSurumu},
+    );
+  }
+
   /// k-anonimlik eşiği — `get_percentile_bucket` / `get_top_gainers`
   /// (migration 0031, `k_min`). Sunucudaki sayı değişirse burası da.
   static const kMinKatilimci = 8;

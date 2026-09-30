@@ -100,4 +100,31 @@ void main() {
         isFalse,
         reason: 'bu ay eklendi');
   });
+
+  group('sunucu parametreleri (0089) — elle yıl eklemek gerekmez', () {
+    tearDown(() => BesHesabi.uzakParametreler(const {}));
+
+    test('tabloda olmayan yıl sunucudan gelince sınır bilinir', () {
+      expect(BesHesabi.yillikSinir(2027), isNull,
+          reason: 'yedek tabloda 2027 yok — uydurma sınır olmamalı');
+      BesHesabi.uzakParametreler({2027: (sinir: 95000, oran: 20)});
+      expect(BesHesabi.yillikSinir(2027), 95000);
+      final r = BesHesabi.devletKatkisi(
+          katki: 10000, tarih: DateTime(2027, 2, 1), buYilAlinan: 94000);
+      expect(r.tutar, 1000, reason: 'kalan sınıra kırpılır');
+      expect(r.sinirBilinmiyor, isFalse);
+    });
+
+    test('sunucu oranı merdiveni ezer (yıl içi karar değişikliği)', () {
+      BesHesabi.uzakParametreler({2027: (sinir: 95000, oran: 25)});
+      expect(BesHesabi.devletKatkisiOrani(DateTime(2027, 3, 1)), 25);
+      // Başka yıllar etkilenmez.
+      expect(BesHesabi.devletKatkisiOrani(DateTime(2026, 3, 1)), 20);
+    });
+
+    test('sunucu boşsa yedek tablo çalışır', () {
+      BesHesabi.uzakParametreler(const {});
+      expect(BesHesabi.yillikSinir(2026), 79272);
+    });
+  });
 }

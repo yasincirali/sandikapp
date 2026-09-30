@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/sozlesme.dart';
 import '../services/bes_hesabi.dart';
+import '../services/crash_reporter.dart';
 import '../services/mevduat_hesabi.dart';
 import '../services/price_service.dart';
 import '../services/sozlesme_deposu.dart';
@@ -61,6 +62,16 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
         if (x.tur == SozlesmeTuru.mevduat) x.id,
     ]);
     SozlesmeDeposu.instance.yaz(s, d);
+    // BES varsa devlet katkısı sınırı/oranı sunucudan (0089). Arka planda:
+    // gelmezse `BesHesabi` yedek tabloyla çalışır, sözleşmeler beklemez.
+    if (s.any((x) => x.tur == SozlesmeTuru.bes)) {
+      CrashReporter.arkaPlan(
+        SupabaseService.instance
+            .fetchBesDevletKatkisi()
+            .then(BesHesabi.uzakParametreler),
+        reason: 'bes_devlet_katkisi_yukle',
+      );
+    }
     return _durum(s, d);
   }
 

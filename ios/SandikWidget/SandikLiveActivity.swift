@@ -103,7 +103,7 @@ struct SandikLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(context.state.isMarketOpen
+                    Text(!context.state.kapaliGoster
                          ? "Son: \(context.state.updatedAtText)"
                          : "Kapalı • \(context.state.updatedAtText)")
                         .font(.sandikNumber(12, weight: .medium))
@@ -191,7 +191,7 @@ struct SandikLiveActivity: Widget {
                                     : palette.text58,
                                 showsFill: !tutarAcik,
                                 isMarketOpen: tutarAcik
-                                    ? nil : context.state.isMarketOpen
+                                    ? nil : !context.state.kapaliGoster
                             )
                             .frame(height: tutarAcik ? 26 : 34)
                         }
@@ -200,6 +200,7 @@ struct SandikLiveActivity: Widget {
                         } else {
                             SandikSeansCubugu(
                                 isMarketOpen: context.state.isMarketOpen,
+                                yalnizBorsa: context.state.yalnizBorsa,
                                 renk: context.state.hasDirection
                                     ? palette.statusColor(
                                         isPositive: context.state.isPositive)
@@ -235,14 +236,16 @@ struct SandikLiveActivity: Widget {
                 //
                 // Logoya DÜŞÜLÜR: ölçüm yokken ve bakiye gizliyken (ana ekran
                 // widget'ıyla aynı gizlilik kuralı). Seans kapalıyken aynı
-                // soluklaştırma.
+                // soluklaştırma — yalnızca portföy tamamen borsaysa
+                // (`kapaliGoster`, 2026-10-01): altın/kripto varken rakam
+                // hareket ediyor, soluk logo yanlış sinyal olurdu.
                 if let y = SandikYonHalkasi.yuzde(state: context.state) {
                     SandikYonHalkasi(yuzde: y, palette: palette, kalinlik: 3)
                         .frame(width: 24, height: 24)
-                        .opacity(context.state.isMarketOpen ? 1.0 : 0.55)
+                        .opacity(context.state.kapaliGoster ? 0.55 : 1.0)
                 } else {
                     SandikLogoMark(width: 20)
-                        .opacity(context.state.isMarketOpen ? 1.0 : 0.55)
+                        .opacity(context.state.kapaliGoster ? 0.55 : 1.0)
                 }
 
             } compactTrailing: {
@@ -386,9 +389,14 @@ enum BistSeans {
 /// "18:00 kapanış" ile aynı (`BugunService.seansKapanisDk`). Yarım günlerde
 /// (12:30) çubuk tam dolmadan seans kapanır; `isMarketOpen` false gelince
 /// çubuk "Seans kapalı" yazısına döner — yanlış süre söylemez.
+///
+/// "Seans kapalı" yalnızca portföy tamamen borsaysa ([yalnizBorsa],
+/// kullanıcı kararı 2026-10-01). Karışık portföyde seans dışında çubuk
+/// hiç çizilmez: altın/döviz/kripto işlerken "kapalı" yanlış bilgidir.
 @available(iOS 17.0, *)
 struct SandikSeansCubugu: View {
     let isMarketOpen: Bool
+    var yalnizBorsa: Bool = true
     let renk: Color
     let palette: SandikPalette
 
@@ -410,7 +418,7 @@ struct SandikSeansCubugu: View {
                 Text("18:00")
                     .font(.sandikNumber(11, weight: .medium))
                     .foregroundStyle(palette.text58)
-            } else {
+            } else if yalnizBorsa {
                 Text("Seans kapalı")
                     .font(.sandikLabel(11, weight: .medium))
                     .foregroundStyle(palette.text58)
@@ -551,7 +559,7 @@ struct SandikLockScreenView: View {
                     points: state.sparkline,
                     palette: palette,
                     color: yonRengi,
-                    isMarketOpen: state.isMarketOpen,
+                    isMarketOpen: !state.kapaliGoster,
                     // Tutar gizliyken eksen metinleri BOŞ gelir: kılavuz
                     // çizgisi çizilir, büyüklük yazılmaz.
                     axisMin: state.axisMinText,
@@ -562,6 +570,7 @@ struct SandikLockScreenView: View {
             }
             SandikSeansCubugu(
                 isMarketOpen: state.isMarketOpen,
+                yalnizBorsa: state.yalnizBorsa,
                 renk: SandikTheme.amber,
                 palette: palette
             )
@@ -600,9 +609,10 @@ struct SandikLockScreenView: View {
             // Canlılık noktası — statik (marka kuralı: yanıp sönmez). Piyasa
             // kapalıyken gri: yeşil nokta "veri akıyor" demektir.
             Circle()
-                .fill(state.isMarketOpen ? palette.gain : palette.text36)
+                .fill(state.kapaliGoster ? palette.text36 : palette.gain)
                 .frame(width: 6, height: 6)
-            Text(state.isMarketOpen
+            // "Piyasa kapalı" yalnızca tamamen borsa portföyünde (2026-10-01).
+            Text(!state.kapaliGoster
                  ? "Canlı • \(state.updatedAtText)"
                  : "Piyasa kapalı • \(state.updatedAtText)")
                 .font(.sandikNumber(11, weight: .medium))

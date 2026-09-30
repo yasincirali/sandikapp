@@ -13,7 +13,7 @@
 
 ### A) Yurt Dışına Veri Aktarımı
 
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin **Amerika Birleşik Devletleri'nde (ABD)** sunucuları bulunan **Supabase Inc.** ve **Google LLC (Firebase)** servislerine aktarılmasına;
+KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde)** bulunan **Supabase Inc.** ve **Amerika Birleşik Devletleri'nde (ABD)** bulunan **Google LLC (Firebase)** servislerine aktarılmasına;
 
 - E-posta adresim
 - Görünen adım (display name)
@@ -25,7 +25,7 @@ KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin **Amerika Birleşik 
 - Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm
 - Disclaimer onayımın metadatası (zaman, sürüm, platform, IP)
 
-amacıyla aktarılmasına; ABD'nin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
+amacıyla aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
 
 ☐ **Onaylıyorum** *(zorunlu — kayıt için gerekli)*
 
@@ -61,6 +61,14 @@ Yeni özellik duyuruları, kampanyalar ve kullanım ipuçlarının e-posta adres
 
 ---
 
+### E) Zirvedeki Portföyler (uygulama içinde ayrıca istenir)
+
+Bu rıza kayıt sırasında DEĞİL, Zirvedeki Portföyler ekranını ilk açtığımda ayrı bir kartla istenir. Dönemsel getiri yüzdemin, varlık türü paylarımın ve fonlarda TEFAS fon kodu ile portföy içindeki payının anonim bir karşılaştırma havuzunda işlenmesine ve havuza katılan diğer kullanıcılara kimliğim, tutarlarım ve miktarlarım olmadan gösterilmesine; karşılığında katılımcıların aynı anonim bilgilerini görmeye **AÇIK RIZA VERİYORUM** (ayrıntı: Gizlilik Politikası §5.1, KVKK Aydınlatma Metni §5.3). Rıza vermezsem getirim bu amaçla hesaplanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanın verildiği tarih ve gösterilen metnin sürümü ispat için kaydedilir.
+
+☐ **Zirvedeki Portföyler'e katılıyorum** *(opsiyonel — ekrandaki "Katılıyorum" düğmesiyle verilir)*
+
+---
+
 ## 2. Açık Rızamın Geri Alınması
 
 Vermiş olduğum açık rızayı, KVKK Madde 7 ve 11 uyarınca **istediğim zaman geri alabileceğimi** biliyorum:
@@ -68,6 +76,7 @@ Vermiş olduğum açık rızayı, KVKK Madde 7 ve 11 uyarınca **istediğim zama
 - **Push bildirimi rızası:** Uygulama → Profil → Ayarlar → Bildirimler → Kapat
 - **Hata raporu rızası:** Uygulama → Profil → Ayarlar → Hata raporları → Kapat
 - **Pazarlama rızası:** Her e-postanın altındaki "abonelikten çık" linki veya Profil → Ayarlar → İletişim tercihi
+- **Zirvedeki Portföyler rızası:** Performans → Zirvedeki Portföyler → "Zirvedeki Portföyler'den ayrıl" (havuzdaki ölçümler anında silinir)
 - **Yurt dışı aktarım rızası:** Açık rızamın geri çekilmesi, hizmetin sunulamaması anlamına gelir; bu durumda hesabımı silmem gerekir (Profil → Ayarlar → Hesabımı Sil).
 
 Rızamı geri çektiğim tarihten önceki işleme faaliyetleri hukuka uygun sayılmaya devam eder.

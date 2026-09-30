@@ -62,6 +62,7 @@ button:hover { opacity: 0.9; }
 </header>
 <h1>GDPR Notice — sandık</h1>
 <p><strong>Effective date:</strong> May 11, 2026
+<strong>Last updated:</strong> September 29, 2026
 <strong>Version:</strong> 1.0</p>
 <blockquote>
 <p>This document supplements the <a href="PRIVACY_POLICY.md">Privacy Policy</a> and <a href="TERMS_OF_SERVICE.md">Terms of Service</a> with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).</p>
@@ -117,7 +118,11 @@ and this section updated.</p>
 <td>Art. 6(1)(f) — legitimate interests</td>
 </tr>
 <tr>
-<td>International transfer (Supabase/Firebase USA)</td>
+<td>Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %)</td>
+<td>Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time)</td>
+</tr>
+<tr>
+<td>International transfer (Supabase Japan → Germany, Firebase USA)</td>
 <td>Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs</td>
 </tr>
 </tbody>
@@ -126,9 +131,13 @@ and this section updated.</p>
 <h2>4. Recipients (Art. 13(1)(e))</h2>
 <p>See <a href="PRIVACY_POLICY.md#5-third-party-recipients-data-processors">Privacy Policy §5</a>.</p>
 <p>All processors are bound by Data Processing Agreements (DPAs) under Art. 28.</p>
+<p>Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see <a href="PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios">Privacy Policy §5.1</a>.</p>
 <hr />
 <h2>5. International Transfers (Art. 44-49)</h2>
-<p>Data is transferred to the United States via:</p>
+<p>The database is hosted in Japan (AWS Tokyo), which benefits from the EU adequacy decision for Japan
+(Commission Implementing Decision (EU) 2019/419). It is being migrated to Germany (AWS Frankfurt, EU);
+after the migration, database storage involves no third-country transfer. Supabase Inc. (a U.S.
+company) and Google act as processors under the mechanisms below:</p>
 <table>
 <thead>
 <tr>
@@ -139,8 +148,8 @@ and this section updated.</p>
 </thead>
 <tbody>
 <tr>
-<td>Supabase Inc.</td>
-<td>EU-U.S. Data Privacy Framework + Standard Contractual Clauses</td>
+<td>Supabase Inc. (processor; data in Japan → Germany)</td>
+<td>EU adequacy decision for Japan; EU-U.S. Data Privacy Framework + Standard Contractual Clauses for remote access</td>
 <td>https://supabase.com/privacy</td>
 </tr>
 <tr>

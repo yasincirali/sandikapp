@@ -381,6 +381,7 @@ void main() {
         'axisMinText',
         'axisMaxText',
         'isFlatChange',
+        'yalnizBorsa',
       ];
 
       for (final alan in alanlar) {
@@ -433,6 +434,7 @@ void main() {
         'axisMinText',
         'axisMaxText',
         'isFlatChange',
+        'yalnizBorsa',
       ];
 
       for (final alan in alanlar) {

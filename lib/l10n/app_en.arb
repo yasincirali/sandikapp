@@ -724,7 +724,7 @@
   "startTime": "Start",
   "endTime": "End",
   "showOnWeekend": "Show on weekends too",
-  "showOnWeekendSubtitle": "BIST is closed on weekends; the banner shows the last close labelled \"Market closed\".",
+  "showOnWeekendSubtitle": "BIST is closed on weekends. If your portfolio is only stocks and funds, the banner shows the last close labelled \"Market closed\"; with gold, FX or crypto it stays live.",
   "showAmounts": "Show amounts",
   "showAmountsSubtitle": "Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.",
   "lockWidgetHowTo": "You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.",
@@ -1880,9 +1880,17 @@
       }
     }
   },
-  "csvImportTitle": "Import from CSV",
-  "csvImportBody": "Copy and paste your broker statement or Excel table. Include a header row; column order doesn't matter. A \"Side\" (Buy/Sell) column or a negative quantity is read as a sale.",
+  "csvImportTitle": "Import statement",
+  "csvImportBody": "Choose your broker or bank statement (PDF, Excel or CSV) or copy and paste the table. Column names and order don't matter: symbol, quantity, price, date and buy/sell are detected automatically. Buys and sells come in with their dates.",
   "pasteHere": "Paste here",
+  "importPickFile": "Choose file (PDF, Excel, CSV)",
+  "importReading": "Reading file…",
+  "importMappingTitle": "Columns were matched like this",
+  "importLowConfidence": "We're not fully sure about this file's columns; check the mapping and fix it if needed.",
+  "importFixColumns": "Fix columns",
+  "importColumnNone": "None",
+  "importApply": "Apply",
+  "importOrPaste": "or paste the table",
   "preview": "Preview",
   "csvRowsRead": "{n} rows read",
   "@csvRowsRead": {
@@ -1957,7 +1965,7 @@
   "pasteCsv": "Paste CSV",
   "cartEmpty": "The cart is empty",
   "cartEmptyBody": "Use the + Add Asset button below to queue several assets and save them all at once.",
-  "pasteFromStatement": "Paste from statement / CSV",
+  "pasteFromStatement": "Import statement (PDF, Excel, CSV)",
   "saveAllCount": "Save All ({n})",
   "@saveAllCount": {
     "placeholders": {
@@ -2117,7 +2125,7 @@
   "startHour": "Start time",
   "endHour": "End time",
   "liveActivityIosNote": "iOS keeps a Live Activity session open for at most 8 hours. Opening the app refreshes it; if you never open it, it may drop off the lock screen.",
-  "marketClosedNote": "When the market is closed, the last close is shown.",
+  "marketClosedNote": "While the exchange is closed, stocks and funds show the last close; gold, FX and crypto stay live.",
   "hiddenWeekend": "Not visible right now: weekend display is off. Use the switch above to turn it on.",
   "hiddenOutsideWindow": "Not visible right now: you're outside the {start}-{end} window. The banner appears at {start}. To see it now, turn on \"Show all day\".",
   "@hiddenOutsideWindow": {
@@ -2555,6 +2563,7 @@
     }
   },
   "todayClosedWord": "Market closed",
+  "todayLiveWord": "Live",
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
   "todayRealHint": "Yearly return minus CPI",
@@ -2790,7 +2799,7 @@
       }
     }
   },
-  "emptyPasteHint": "Copy your broker statement and paste it; every line becomes an asset.",
+  "emptyPasteHint": "Choose or paste your broker statement (PDF, Excel or CSV); each row becomes a holding.",
   "marketDollar": "USD",
   "marketEuro": "EUR",
   "marketGold": "Gold (g)",

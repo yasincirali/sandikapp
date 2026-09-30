@@ -19,6 +19,12 @@ void main() {
   // Tema uzantısı olmadan `context.c` patlar; ekranın kendi kabuğu bunu
   // gerektiriyor.
   Future<void> pump(WidgetTester t) async {
+    // Uzun telefon: 2026-10-01'de ekrana "Dosyadan seç" ve eşleme kartı
+    // eklendi; önizleme listesi 800pt'lik varsayılan test yüzeyinin altına
+    // düşüyor ve ListView görünmeyen çocuğu kurmuyordu.
+    t.view.physicalSize = const Size(430 * 3, 1600 * 3);
+    t.view.devicePixelRatio = 3;
+    addTearDown(t.view.reset);
     await t.pumpWidget(
       ProviderScope(
         child: MaterialApp(

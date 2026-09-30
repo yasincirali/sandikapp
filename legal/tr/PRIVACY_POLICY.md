@@ -82,7 +82,7 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 6. Yasal yükümlülüklerimizi yerine getirmek (disclaimer kanıtı, yetkili merci talepleri)
 7. Hata teşhisi ve servis kalitesinin iyileştirilmesi
 8. Kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)
-9. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını anonim olarak göstermek (KVKK 5(2)(c) ve 5(2)(f))
+9. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)
 
 ---
 
@@ -90,7 +90,7 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 
 | Hizmet | Sağlayıcı | Veri | Amaç | Yer |
 |---|---|---|---|---|
-| Backend & veritabanı | Supabase Inc. | Tüm hesap ve uygulama verileri | Saklama, kimlik doğrulama | ABD (AWS) |
+| Backend & veritabanı | Supabase Inc. | Tüm hesap ve uygulama verileri | Saklama, kimlik doğrulama | Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde |
 | Push bildirimi | Google Firebase Cloud Messaging | Push token, bildirim içeriği | Bildirim teslimi | Küresel (Google) |
 | Hata raporu (eklenirse) | Google Firebase Crashlytics | Cihaz modeli, OS, hata stack trace | Çökme teşhisi | Küresel |
 | Hisse/fon fiyat bilgisi | Yahoo Finance, TEFAS, finans.truncgil.com | YOK — sadece sembol query'si gönderilir | Fiyat çekme | Küresel |
@@ -99,18 +99,18 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 
 ### 5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)
 
-Portföyü 5 günden, hesabı 7 günden eski ve portföyünde en az 2 farklı varlık bulunan her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) uygulamanın tüm kullanıcılarına gösterilir; fon adları resmi TEFAS listesinden gelir. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.
+Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.
 
 ---
 
 ## 6. Yurt Dışına Veri Aktarımı
 
-Supabase ve Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
+Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
 
 - **AB üyesi kullanıcılar için:** Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.
 - **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı kayıt sırasında onayladığınız "KVKK Aydınlatma Metni" içerisindeki onay kutusuyla vermektesiniz.
 
-Aktarım yapılan ülke (ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
+Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
 
 ---
 
@@ -121,7 +121,7 @@ Aktarım yapılan ülke (ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sah
 | Hesap verileri | Hesap silinene kadar |
 | Varlık kayıtları | Hesap silinene kadar |
 | Snapshot geçmişi | Son 365 gün rolling (eski kayıtlar otomatik silinir) |
-| Zirve havuzu ölçümleri (getiri %, tür payı %) | Son 365 gün rolling; hesap silinince hemen |
+| Zirve havuzu ölçümleri (getiri %, tür payı %) | Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen |
 | Disclaimer onay logu | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
 | Push token | Cihaz uygulamayı sildiğinde veya logout'ta otomatik silinir |
 | Hata raporları | 90 gün |

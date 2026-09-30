@@ -62,7 +62,7 @@ button:hover { opacity: 0.9; }
 </header>
 <p>﻿# Gizlilik Politikası — sandık</p>
 <p><strong>Yürürlük tarihi:</strong> 11 Mayıs 2026
-<strong>Son güncelleme:</strong> 11 Mayıs 2026
+<strong>Son güncelleme:</strong> 29 Eylül 2026
 <strong>Sürüm:</strong> 1.0</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
@@ -123,6 +123,10 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Portföy snapshot geçmişi</td>
 <td>Performans grafikleri</td>
+</tr>
+<tr>
+<td>Dönemsel getiri (%), varlık türü payları (%) ve fon kodu bazında paylar (%) — sunucuda hesaplanır</td>
+<td>Zirvedeki Portföyler (anonim karşılaştırma, bkz. §5.1)</td>
 </tr>
 <tr>
 <td>Ortaklık davet kodları ve karşılıklı bağlantılar</td>
@@ -209,6 +213,7 @@ button:hover { opacity: 0.9; }
 <li>Yasal yükümlülüklerimizi yerine getirmek (disclaimer kanıtı, yetkili merci talepleri)</li>
 <li>Hata teşhisi ve servis kalitesinin iyileştirilmesi</li>
 <li>Kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)</li>
+<li>Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)</li>
 </ol>
 <hr />
 <h2>5. Verilerin Paylaşıldığı Üçüncü Taraflar (Veri İşleyenler)</h2>
@@ -228,7 +233,7 @@ button:hover { opacity: 0.9; }
 <td>Supabase Inc.</td>
 <td>Tüm hesap ve uygulama verileri</td>
 <td>Saklama, kimlik doğrulama</td>
-<td>ABD (AWS)</td>
+<td>Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde</td>
 </tr>
 <tr>
 <td>Push bildirimi</td>
@@ -254,14 +259,16 @@ button:hover { opacity: 0.9; }
 </tbody>
 </table>
 <p><strong>Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.</strong></p>
+<h3>5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)</h3>
+<p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
 <hr />
 <h2>6. Yurt Dışına Veri Aktarımı</h2>
-<p>Supabase ve Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
+<p>Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
 <ul>
 <li><strong>AB üyesi kullanıcılar için:</strong> Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.</li>
 <li><strong>Türk kullanıcılar için:</strong> KVKK Madde 9(1) kapsamında <strong>açık rıza</strong> alınmaktadır. Açık rızanızı kayıt sırasında onayladığınız "KVKK Aydınlatma Metni" içerisindeki onay kutusuyla vermektesiniz.</li>
 </ul>
-<p>Aktarım yapılan ülke (ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı <strong>açık rızanıza</strong> dayanmaktadır.</p>
+<p>Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı <strong>açık rızanıza</strong> dayanmaktadır.</p>
 <hr />
 <h2>7. Veri Saklama Süreleri</h2>
 <table>
@@ -283,6 +290,10 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Snapshot geçmişi</td>
 <td>Son 365 gün rolling (eski kayıtlar otomatik silinir)</td>
+</tr>
+<tr>
+<td>Zirve havuzu ölçümleri (getiri %, tür payı %)</td>
+<td>Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen</td>
 </tr>
 <tr>
 <td>Disclaimer onay logu</td>

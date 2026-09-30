@@ -1298,7 +1298,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showOnWeekendSubtitle =>
-      'Hafta sonu BIST kapalıdır; banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir.';
+      'Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.';
 
   @override
   String get showAmounts => 'Tutarları göster';
@@ -2837,14 +2837,39 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get csvImportTitle => 'CSV ile içe aktar';
+  String get csvImportTitle => 'Ekstreden içe aktar';
 
   @override
   String get csvImportBody =>
-      'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.';
+      'Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.';
 
   @override
   String get pasteHere => 'Buraya yapıştır';
+
+  @override
+  String get importPickFile => 'Dosyadan seç (PDF, Excel, CSV)';
+
+  @override
+  String get importReading => 'Dosya okunuyor…';
+
+  @override
+  String get importMappingTitle => 'Sütunlar böyle eşlendi';
+
+  @override
+  String get importLowConfidence =>
+      'Bu dosyanın sütunlarından tam emin değiliz; eşlemeyi kontrol et, gerekirse düzelt.';
+
+  @override
+  String get importFixColumns => 'Sütunları düzelt';
+
+  @override
+  String get importColumnNone => 'Yok';
+
+  @override
+  String get importApply => 'Uygula';
+
+  @override
+  String get importOrPaste => 'ya da tabloyu yapıştır';
 
   @override
   String get preview => 'Önizle';
@@ -2921,7 +2946,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.';
 
   @override
-  String get pasteFromStatement => 'Ekstreden / CSV\'den yapıştır';
+  String get pasteFromStatement => 'Ekstreden içe aktar (PDF, Excel, CSV)';
 
   @override
   String saveAllCount(int n) {
@@ -3193,7 +3218,8 @@ class AppLocalizationsTr extends AppLocalizations {
       'iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.';
 
   @override
-  String get marketClosedNote => 'Piyasa kapalıyken son kapanış gösterilir.';
+  String get marketClosedNote =>
+      'Borsa kapalıyken hisse ve fonlar son kapanıştan, altın, döviz ve kripto canlı gösterilir.';
 
   @override
   String get hiddenWeekend =>
@@ -3666,6 +3692,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayClosedWord => 'Piyasa kapalı';
 
   @override
+  String get todayLiveWord => 'Canlı';
+
+  @override
   String get todayLoading => 'Gün içi veri geliyor';
 
   @override
@@ -3866,7 +3895,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get emptyPasteHint =>
-      'Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.';
+      'Aracı kurum ekstreni (PDF, Excel ya da CSV) seç ya da yapıştır; her satır bir varlık olur.';
 
   @override
   String get marketDollar => 'Dolar';

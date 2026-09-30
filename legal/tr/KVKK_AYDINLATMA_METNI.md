@@ -76,11 +76,11 @@
 |---|---|
 | E-posta, şifre, display name | KVKK 5(2)(c) — sözleşmenin kurulması ve ifası için zorunlu |
 | Portföy verileri | KVKK 5(2)(c) — sözleşmenin ifası |
-| Zirve havuzu ölçümleri (getiri %, tür payı %) | KVKK 5(2)(c) — sözleşmenin ifası; 5(2)(f) — meşru menfaat |
+| Zirve havuzu ölçümleri (getiri %, tür payı %) | KVKK 5(1) — açık rıza (uygulama içinde, isteğe bağlı; her an geri alınabilir) |
 | Push token | KVKK 5(1) — açık rıza |
 | IP, cihaz bilgisi | KVKK 5(2)(f) — meşru menfaat (güvenlik) |
 | Disclaimer onayı | KVKK 5(2)(a) — kanunlarda öngörülmesi (SPK) |
-| Yurt dışı aktarımı (Supabase USA, Firebase) | KVKK 5(1) ve 9(1) — açık rıza |
+| Yurt dışı aktarımı (Supabase Japonya → Almanya, Firebase ABD) | KVKK 5(1) ve 9(1) — açık rıza |
 
 ---
 
@@ -93,17 +93,17 @@ Mevcut işleme faaliyetlerinde **yurt içi üçüncü taraf aktarımı yapılmam
 
 | Alıcı | Ülke | Veri | Amaç | Hukuki sebep |
 |---|---|---|---|---|
-| Supabase Inc. | ABD | Tüm hesap ve uygulama verileri | Veritabanı ve kimlik doğrulama altyapısı | KVKK 9(1) — açık rıza |
+| Supabase Inc. | Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde | Tüm hesap ve uygulama verileri | Veritabanı ve kimlik doğrulama altyapısı | KVKK 9(1) — açık rıza |
 | Google LLC (Firebase Cloud Messaging) | ABD / Küresel | Push token, bildirim içeriği | Bildirim teslimi | KVKK 9(1) — açık rıza |
 | Google LLC (Firebase Crashlytics) - **eklendiğinde** | ABD / Küresel | Cihaz modeli, OS, hata stack trace | Çökme teşhisi | KVKK 5(2)(f) ve 9(1) — açık rıza |
 
-ABD, Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
+Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
 Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içerisinde belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 
-Portföyü 5 günden, hesabı 7 günden eski ve portföyünde en az 2 farklı varlık bulunan her kullanıcının dönemsel getirisi (haftalık, aylık, altı aylık, yıllık) ve varlık türü payları (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) uygulamanın tüm kullanıcılarına gösterilir; fon adları resmi TEFAS listesinden gelir. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Havuza dahil olmak ayrı bir beyan ya da onay gerektirmez; havuz uygulamanın standart işlevinin parçasıdır. Hesabınızı sildiğinizde havuzdaki ölçümleriniz de silinir.
+Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.
 
 ---
 
@@ -114,7 +114,7 @@ Portföyü 5 günden, hesabı 7 günden eski ve portföyünde en az 2 farklı va
 | Hesap verileri (e-posta, display name) | Hesap silinene kadar | Sözleşme süresi |
 | Portföy varlık kayıtları | Hesap silinene kadar | Sözleşme süresi |
 | Snapshot geçmişi | Son 365 gün rolling | Servis ihtiyacı |
-| Zirve havuzu ölçümleri | Son 365 gün rolling; hesap silinince hemen | Servis ihtiyacı |
+| Zirve havuzu ölçümleri | Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen | Servis ihtiyacı |
 | Push token | Logout veya uninstall'a kadar | Sözleşme süresi |
 | Disclaimer onay logu | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
 | Oturum logları (IP, cihaz) | 90 gün | KVKK 5(2)(f) meşru menfaat |

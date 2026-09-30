@@ -638,7 +638,7 @@ ASC'de işaretlenen her veri tipinin Play karşılığı:
 | Contact Info → Email Address | Personal info → Email address | Zorunlu, hesap yönetimi |
 | Contact Info → Name | Personal info → Name | Ortak sıralamasında görünen ad |
 | Identifiers → User ID | Personal info → User IDs | Supabase UUID |
-| Financial Info → Other Financial Info | Financial info → Other financial info | Portföy kayıtları |
+| Financial Info → Other Financial Info | Financial info → Other financial info | Portföy kayıtları; Yarış ve Zirvedeki Portföyler'in anonim yüzdeleri de bu satırda (ikisi de isteğe bağlı — Zirve 0091'den beri açık rızayla; kutucuk değişmez, bkz. `store_listing/DATA_SAFETY_FORM.md`) |
 | Usage Data → Product Interaction | App activity → App interactions | Firebase Analytics |
 | Diagnostics → Crash Data | App info & performance → Crash logs | Crashlytics |
 | Diagnostics → Performance Data | App info & performance → Diagnostics | — |

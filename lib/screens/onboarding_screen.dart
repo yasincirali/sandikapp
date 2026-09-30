@@ -521,10 +521,13 @@ List<_Adim> _adimlariKur() {
       baslik: 'Toplu ekle',
       // 2026-09-30 (karar 5.6): yapıştırma artık kurum sütun adlarını ve
       // satış satırlarını da okuyor; tur yüzeyin güncel hâlini anlatır.
+      // 2026-10-01: ekstre dosyadan da okunuyor (PDF/Excel/CSV, evrensel
+      // motor) — tur "dosyadan seç"i anlatır.
       govde: 'Birden çok varlığı sepete atıp tek onayda kaydet. Aracı kurum '
-          'ekstreni ya da Excel tablonu yapıştırarak da içe aktarabilirsin; '
-          'alışlar ve satışlar tarihleriyle birlikte gelir. Portföyünü ilk '
-          'kez kurarken en hızlı yol bu.',
+          'ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da '
+          'tabloyu yapıştır; sütunlar kendiliğinden tanınır, alışlar ve '
+          'satışlar tarihleriyle gelir. Portföyünü ilk kez kurarken en hızlı '
+          'yol bu.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
       cikis: (_) => _varlikEkleKapat(),
@@ -586,9 +589,9 @@ List<_Adim> _adimlariKur() {
       govde: 'Tür dökümünün altındaki kart, dönemin en çok kazanan anonim '
           'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
           'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
-          'neye yatırdığını ve senden farkını oku. Portföyü 5 günden eski '
-          've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim '
-          'olarak havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
+          'neye yatırdığını ve senden farkını oku. Katılım isteğe bağlı ve '
+          'anonim: katılanlar birbirinin tür dağılımını ve getirisini görür; '
+          'kimlik, miktar ve TL asla paylaşılmaz.',
       giris: (_) => _sekmeyeGec(3),
     ),
     _Adim(
@@ -692,9 +695,10 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       id: 'toplu_son',
       hedef: TourTarget.topluEkle,
       baslik: 'Hazırsın',
-      govde: 'En hızlı yol: aracı kurum ekstreni kopyala, "Toplu ekle" › '
-          'yapıştır; her alış ve satış kendi tarihiyle deftere girer. Tek '
-          'tek girmek istersen tür seçmen yeter, fiyat kendiliğinden gelir.',
+      govde: 'En hızlı yol: "Toplu ekle" › ekstreden içe aktar. Kurumunun '
+          'PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
+          'tarihiyle deftere girer. Tek tek girmek istersen tür seçmen yeter, '
+          'fiyat kendiliğinden gelir.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),

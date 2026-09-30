@@ -103,6 +103,15 @@ const List<SurumNotu> surumNotlari = [
     onemli: true,
     baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      // 2026-10-01: evrensel ekstre motoru (docs/EKSTRE_MOTORU.md).
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Ekstreni dosyadan içe aktar',
+        aciklama: "Toplu ekle › Ekstreden içe aktar: aracı kurum ya da "
+            'bankanın PDF, Excel veya CSV ekstresini seç. Sütunların adı ve '
+            'sırası önemli değil; sembol, adet, maliyet, tarih ve alış/satış '
+            'kendiliğinden bulunur. Emin olmadığımız sütunu sana sorarız.',
+      ),
       // 2026-09-30 (çalışma seçenekleri M2 + B3). Sunucu tarafı 0088 iki
       // sunucuya ulaşmadan bu sürüm yayına çıkmamalı (YAPMAN_GEREKENLER).
       Yenilik(
@@ -123,9 +132,9 @@ const List<SurumNotu> surumNotlari = [
             'en çok kazanan anonim portföylerini gösterir. Dokununca yeni '
             'ekran: haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
             'üstünde. Bir portföye dokun, neye yatırdığını (fonlarda hangi '
-            'fonlar, ne oranda) ve senden farkını oku. Portföyü 5 günden eski '
-            've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim olarak '
-            'havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
+            'fonlar, ne oranda) ve senden farkını oku. Katılım isteğe bağlı '
+            've anonim: katılanlar birbirinin tür dağılımını ve getirisini '
+            'görür; kimlik, miktar ve TL asla paylaşılmaz.',
       ),
       Yenilik(
         ikon: YenilikIkonu.liste,
