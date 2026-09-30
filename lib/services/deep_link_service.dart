@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 
+import '../screens/main_navigation_screen.dart';
 import 'crash_reporter.dart';
 import 'deep_link_router.dart';
 import 'notification_service.dart';
@@ -19,7 +20,8 @@ import 'notification_service.dart';
 /// doldurur — Navigator'ı değiştirmez, yalnızca URI akışı verir.
 ///
 /// ## Kapsam
-/// Yalnızca `asset` host'u ele alınır. `widget` / `live-activity` host'ları
+/// `asset`, `enflasyon` ve `yil-ozeti` host'ları ele alınır (son ikisi App
+/// Store In-App Event bağlantıları, karar 6.1). `widget` / `live-activity` host'ları
 /// `HomeWidgetService` tarafından zaten karşılanıyor; aynı intent'i iki
 /// dinleyicinin işlemesi sekmeyi iki kez değiştirirdi (zararsız ama
 /// gereksiz) — bu yüzden burada bilinçli olarak yok sayılır.
@@ -33,15 +35,24 @@ class DeepLinkService {
               // Sahte / başkasına ait / silinmiş id: sessiz geçme, hata
               // ekranı göster — kullanıcı bir bağlantıya dokundu.
               onNotFound: NotificationService.instance.showAssetNotFound,
-            ));
+            )),
+        _openReel = NotificationService.instance.openReelGetiri,
+        _sekmeyeGit = ((i) => MainNavigationScreen.sekmeIstegi.value = i);
 
-  /// Test için: hedef eylemi enjekte edilebilir.
+  /// Test için: hedef eylemler enjekte edilebilir.
   @visibleForTesting
-  DeepLinkService.withHandler(this._openAsset);
+  DeepLinkService.withHandler(
+    this._openAsset, {
+    void Function()? openReel,
+    void Function(int sekme)? sekmeyeGit,
+  })  : _openReel = openReel ?? (() {}),
+        _sekmeyeGit = sekmeyeGit ?? ((_) {});
 
   static final DeepLinkService instance = DeepLinkService._();
 
   final void Function(String assetId) _openAsset;
+  final void Function() _openReel;
+  final void Function(int sekme) _sekmeyeGit;
   StreamSubscription<Uri>? _sub;
 
   /// Köprüyü kurar.
@@ -70,9 +81,22 @@ class DeepLinkService {
   @visibleForTesting
   bool handle(Uri uri) {
     final id = DeepLinkRouter.hedefVarlikId(uri);
-    if (id == null) return false;
-    _openAsset(id);
-    return true;
+    if (id != null) {
+      _openAsset(id);
+      return true;
+    }
+    if (DeepLinkRouter.reelGetiriIster(uri)) {
+      _openReel();
+      return true;
+    }
+    // Yalnız etkinlik host'u: `widget` / `live-activity` sekme eşlemesi
+    // HomeWidgetService'in (bkz. Kapsam) — burada ikinci kez uygulanmaz.
+    if (uri.scheme == 'sandik' && uri.host == DeepLinkRouter.yilOzetiHost) {
+      final sekme = DeepLinkRouter.hedefSekme(uri);
+      if (sekme != null) _sekmeyeGit(sekme);
+      return true;
+    }
+    return false;
   }
 
   void dispose() {

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/screens/main_navigation_screen.dart';
 import 'package:portfoy_takip/services/deep_link_service.dart';
 
 /// Dış kaynaklı derin bağlantı köprüsü (3.8).
@@ -23,6 +24,22 @@ void main() {
     expect(s.handle(Uri.parse('sandik://widget')), isFalse);
     expect(s.handle(Uri.parse('sandik://live-activity')), isFalse);
     expect(acilan, isEmpty);
+  });
+
+  // Karar 6.1 (2026-09-30): App Store In-App Event bağlantıları.
+  test('sandik://enflasyon reel getiriyi (Özet › 1Y) açar', () {
+    var reel = 0;
+    final s = DeepLinkService.withHandler((_) {}, openReel: () => reel++);
+    expect(s.handle(Uri.parse('sandik://enflasyon')), isTrue);
+    expect(reel, 1);
+  });
+
+  test('sandik://yil-ozeti Profil sekmesine gider (yıl sonu push\'uyla aynı)',
+      () {
+    final sekmeler = <int>[];
+    final s = DeepLinkService.withHandler((_) {}, sekmeyeGit: sekmeler.add);
+    expect(s.handle(Uri.parse('sandik://yil-ozeti')), isTrue);
+    expect(sekmeler, [MainNavigationScreen.profilSekmesi]);
   });
 
   test('tanınmayan şema / bozuk yol hiçbir şey yapmaz', () {
