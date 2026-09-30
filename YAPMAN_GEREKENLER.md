@@ -8,41 +8,23 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## 🔴 2026-09-30 Vadeli mevduat + BES — 0088 + beş edge function DAĞITILMADI (kod main'de)
+## ✅ 2026-09-30 Vadeli mevduat + BES — 0088 + beş edge function (DAĞITILDI 2026-10-01)
 
-**Durum:** PR #34 kullanıcı kararıyla main'e birleştirildi (TestFlight + Android
-derlemesi başladı), ama 0088 ve üç fonksiyon **henüz iki sunucuda da yok**.
-Claude'un `supabase db push` / `functions deploy` komutları otomatik modda
-"Production Deploy" / "Protected-Scope IaC Apply" diye reddedildi; izin kuralı
-eklemesi de "Self-Modification" diye reddedildi.
+**Durum 2026-10-01 (Claude, kullanıcının açık onayıyla, yerel CLI):** 1–5 TAMAM.
 
-**Bu adımlar yapılana kadar:** yayındaki derlemede Varlık Ekle → Mevduat/BES
-kaydı "kaydedilemedi" der (tablo yok). Diğer türlerin kaydı, fiyatlar ve
-mevcut portföy ETKİLENMEZ (`sozlesme_id` gövdeye yalnız doluyken yazılır).
-Mümkünse test kullanıcılarına duyurmadan önce yap.
+- [x] **1. Frankfurt göç** — `db push`: yalnız 0088, doğrulama bloğu temiz.
+- [x] **2. Frankfurt fonksiyonlar** — analyze-signals, daily-brief,
+      leaderboard-snapshot, temettu-yakala, observe-tefas-nav.
+- [x] **3. Tokyo göç** — yalnız 0088, doğrulama bloğu temiz.
+- [x] **4. Tokyo fonksiyonlar** — aynı beşi.
+- [x] **5. Eşitlik** — `sema_esitlik.py`: ŞEMA EŞİT. Ana dizin Tokyo'ya bağlı.
 
-Beş fonksiyon (2026-10-01 düzeltme): `_shared/positions.ts` BES pozisyon
-anahtarını değiştirdi; onu içe aktaran `daily-brief` ve `temettu-yakala` da
-yeniden dağıtılmalı (ilk listede yalnız üçü vardı).
+Kanıt (iki sunucuda aynı): `sozlesmeler` + `mevduat_donemleri` var, RLS açık,
+4 politika, `authenticated` GRANT'ları, `assets.sozlesme_id`, migration defteri
+0088. Beş fonksiyon DB içinden Vault secret'ıyla `{"dry_run": true}` çağrıldı —
+hepsi HTTP 200 (gönderim/yazma yok; daily-brief `sent` kuru koşuda yalnız
+sayar). 0088 cron kurmuyor.
 
-Güvence (2026-09-30): PR CI'ında "Supabase yığını + başsız duman" 0088'i taze
-yığında sıfırdan uyguladı ✅; Frankfurt `db push --dry-run` yalnız 0088'i
-gösterdi; göç yalnız ekleme yapıyor (iki tablo + boş bırakılabilir sütun).
-
-- [ ] **1. Frankfurt göç** (sırayla; dizin `C:/projects/PortfoyTakip-birlestir`
-      Frankfurt'a bağlı — silindiyse ana dizinde önce
-      `supabase link --project-ref ynwymnpdiwudrlxfrmuo`):
-      `supabase db push` → göç kendini doğrular (GRANT 4/4, RLS 2/2, FK).
-- [ ] **2. Frankfurt fonksiyonlar:**
-      `supabase functions deploy analyze-signals daily-brief leaderboard-snapshot temettu-yakala observe-tefas-nav --project-ref ynwymnpdiwudrlxfrmuo`
-- [ ] **3. Tokyo göç:** `supabase link --project-ref ybdbzouzhzwthjgwlbmk && supabase db push`
-- [ ] **4. Tokyo fonksiyonlar:**
-      `supabase functions deploy analyze-signals daily-brief leaderboard-snapshot temettu-yakala observe-tefas-nav --project-ref ybdbzouzhzwthjgwlbmk`
-- [ ] **5. Eşitlik:** `python tool/sema_esitlik.py` → ŞEMA EŞİT. (Ana dizinin
-      `supabase/.temp/project-ref`'i Tokyo'da kalmalı.)
-- [ ] **Claude'a yaptırmak istersen:** önce `/permissions` → Allow'a
-      `Bash(supabase db push:*)`, `Bash(supabase functions deploy:*)`,
-      `Bash(supabase link:*)` ekle, sonra "0088'i dağıt" de.
 - [ ] **Cihazda dene (10 dk, dağıtımdan SONRA):** Varlık Ekle → Mevduat: banka
       + 250.000 + %42 + 32 gün → özet "+₺7.594,52" demeli; kaydet; varlık
       sayfasında dönem kartı. BES: şirket + birikim + bir emeklilik fonu %100
