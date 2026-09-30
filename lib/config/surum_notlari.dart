@@ -131,11 +131,32 @@ const List<SurumNotu> surumNotlari = [
             'Enflasyon farkı yönüyle yazılıyor: "20,6 puan geride", '
             '"5,2 puan önde".',
       ),
-      // Fon karnesi, temettü kartı, halka arz takvimi, örnek portföy ve
-      // ilk açılış sırası Remote Config bayrağı arkasında (mağaza sürümünde
-      // KAPALI). Notları bayrak açılırken eklenir; kapalı özelliği anlatan
-      // not kullanıcıya görmediği şeyi vaat ederdi. Metin önerileri:
-      // YAPMAN_GEREKENLER.md "Büyüme özellikleri — bayrak açma sırası".
+      // Büyüme bayrakları 2026-09-30'da açık doğdu (remote_config_service);
+      // notlar onlarla birlikte geldi. Bir bayrak Console'dan kapatılırsa
+      // notu da buradan çıkar — kapalı özelliği anlatan not kullanıcıya
+      // görmediği şeyi vaat eder. Örnek portföy ve ilk açılış sırası yeni
+      // kullanıcı akışı, not gerektirmez.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Fon karnesi',
+        aciklama: 'Fon ekranında fonun kendi kategorisindeki sırası (1 ay, '
+            'yılbaşından beri, 1 yıl) ve kategori ortancasına farkı. '
+            "Portföy'de fon kartını açınca tek satırlık özeti görünür.",
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Temettülerini kaçırma',
+        aciklama: 'Hisse ekranında son 12 ayın temettüleri; "Kaydet" ile '
+            'tutar hazır gelir, yalnızca onaylarsın. Elindeki bir hisse '
+            'temettü dağıttığında akşam haber veririz.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Halka arz takvimi',
+        aciklama: 'Profil › Halka arzlar: kaynağıyla birlikte yaklaşan ve '
+            'son halka arzlar. "Katıldım" ile lotunu halka arz fiyatı ve '
+            'tarihiyle portföyüne eklersin.',
+      ),
       Yenilik(
         ikon: YenilikIkonu.genel,
         baslik: 'Daha okunaklı, daha hızlı',

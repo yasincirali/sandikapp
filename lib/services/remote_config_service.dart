@@ -157,14 +157,17 @@ class RemoteConfigService {
     SunucuSecimi.minBuildIos: 0,
 
     // ── Büyüme özellikleri (docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md) ──
-    // Debug derlemede AÇIK (emülatör/TestFlight öncesi kontrol), release'de
-    // KAPALI doğar: mağazaya kapalı gider, Console'dan kademeli açılır.
-    // Sorun çıkarsa yayın gerekmeden Console'da `false`.
-    'demo_mode_enabled': kDebugMode,
-    'lock_offer_after_first_asset': kDebugMode,
-    'fund_report_card_enabled': kDebugMode,
-    'dividend_capture_enabled': kDebugMode,
-    'ipo_calendar_enabled': kDebugMode,
+    // AÇIK doğar (2026-09-30, kullanıcı kararı: "hepsini çalışacak şekilde
+    // ayarla" — özellikler TestFlight'ta çalışmalı). Önceki hâl `kDebugMode`:
+    // release derlemesi olan TestFlight'ta kapalıydı, Console'dan açılmaları
+    // bekleniyordu. 2026-09-07 tutundurma kararıyla aynı desen ve aynı
+    // BEDEL (yukarıdaki not): kapatmak için Console'a anahtarı `false`
+    // olarak eklemek gerekir — yayın gerekmez.
+    'demo_mode_enabled': true,
+    'lock_offer_after_first_asset': true,
+    'fund_report_card_enabled': true,
+    'dividend_capture_enabled': true,
+    'ipo_calendar_enabled': true,
     // Temettü önerisinde stopaj oranı (0..1). -1 = bilinmiyor: öneri BRÜT
     // gösterir, net tutarı kullanıcı girer (uydurma oran yazılmaz).
     'temettu_stopaj_orani': -1.0,
