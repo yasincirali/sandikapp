@@ -6,27 +6,36 @@ import '../models/asset_type.dart';
 import '../services/kap_baglanti_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
-import 'custom_loading_indicator.dart';
 
 /// Hisse ekranında "KAP bildirimleri ↗" satırı (karar 7.2, 2026-09-30).
 ///
-/// Uygulama KAP verisi göstermez (lisans, karar 7.1); şirketin KAP
-/// sayfasını tarayıcıda açar. Adres `KapBaglantiService`'te çözülür —
-/// yalnız BIST hissesinde çizilir; endeks (XU100) ve BIST dışı sembolde
-/// yok (KAP'ta sayfası yoktur).
+/// Uygulama KAP verisi göstermez (lisans, karar 7.1); dokununca varlığın
+/// KAP'taki şirket sayfası tarayıcıda açılır.
+///
+/// ## Neden adres ekran açılırken çözülür (kullanıcı kararı, ikinci tur)
+/// "KAP bilgisi olabilecek olanlarda gözükmeli": satır yalnız KAP'ta
+/// şirketi KESİN bulunan varlıkta çizilir. Türe bakmak yetmiyor — borsa
+/// yatırım fonu (GLDTR) de BIST'te hisse gibi işlem görür ama KAP'ta şirket
+/// sayfası yoktur. Bu yüzden ekran açılınca adres bir kez sorulur (oturum
+/// önbelleği; ikinci açılışta ilk karede çizilir) ve bulunamazsa satır hiç
+/// yer kaplamaz. Altın, döviz, kripto, fon ve endekste sorgu hiç atılmaz.
 class KapBaglantisi extends StatefulWidget {
   const KapBaglantisi({
     super.key,
     required this.tur,
     required this.ticker,
     this.dis = EdgeInsets.zero,
+    this.servis,
   });
 
   final AssetType tur;
   final String ticker;
   final EdgeInsets dis;
 
-  /// Satır bu varlıkta çizilir mi — ekranın kendi koşulu da bu.
+  /// Test için; verilmezse paylaşılan örnek.
+  final KapBaglantiService? servis;
+
+  /// KAP'ta sayfası OLABİLECEK varlık mı — sorgu yalnız bunlarda atılır.
   static bool gosterilir(AssetType tur, String ticker) =>
       tur == AssetType.hisse &&
       ticker.toUpperCase().endsWith('.IS') &&
@@ -37,12 +46,27 @@ class KapBaglantisi extends StatefulWidget {
 }
 
 class _KapBaglantisiState extends State<KapBaglantisi> {
-  bool _aciliyor = false;
+  Uri? _adres;
+
+  KapBaglantiService get _servis =>
+      widget.servis ?? KapBaglantiService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!KapBaglantisi.gosterilir(widget.tur, widget.ticker)) return;
+    if (_servis.biliniyor(widget.ticker)) {
+      _adres = _servis.onbellekte(widget.ticker);
+      return;
+    }
+    _servis.sirketSayfasi(widget.ticker).then((u) {
+      if (mounted && u != null) setState(() => _adres = u);
+    });
+  }
 
   Future<void> _ac() async {
-    if (_aciliyor) return; // çift dokunuş iki sekme açmasın
-    setState(() => _aciliyor = true);
-    final uri = await KapBaglantiService.instance.sirketSayfasi(widget.ticker);
+    final uri = _adres;
+    if (uri == null) return;
     var ok = false;
     try {
       ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -51,9 +75,7 @@ class _KapBaglantisiState extends State<KapBaglantisi> {
       // kullanıcı eylemine bağlı, raporlanacak bir arıza değil.
       ok = false;
     }
-    if (!mounted) return;
-    setState(() => _aciliyor = false);
-    if (!ok) {
+    if (!ok && mounted) {
       sandikSnack(context, context.l10n.kapLinkFailed,
           kind: SandikSnackKind.warning);
     }
@@ -61,14 +83,12 @@ class _KapBaglantisiState extends State<KapBaglantisi> {
 
   @override
   Widget build(BuildContext context) {
-    if (!KapBaglantisi.gosterilir(widget.tur, widget.ticker)) {
-      return const SizedBox.shrink();
-    }
+    if (_adres == null) return const SizedBox.shrink();
     final c = context.c;
     return Padding(
       padding: widget.dis,
       child: SandikCard(
-        onTap: _aciliyor ? null : _ac,
+        onTap: _ac,
         padding: const EdgeInsets.symmetric(
             horizontal: SandikSpace.md, vertical: SandikSpace.smd),
         child: Row(
@@ -89,10 +109,7 @@ class _KapBaglantisiState extends State<KapBaglantisi> {
               ),
             ),
             const SizedBox(width: SandikSpace.sm),
-            if (_aciliyor)
-              const CustomLoadingIndicator(size: 18)
-            else
-              Icon(Icons.open_in_new_rounded, size: 18, color: c.amberText),
+            Icon(Icons.open_in_new_rounded, size: 18, color: c.amberText),
           ],
         ),
       ),

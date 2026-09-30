@@ -4997,7 +4997,7 @@ abstract class AppLocalizations {
   /// No description provided for @kapLinkHint.
   ///
   /// In tr, this message translates to:
-  /// **'Şirketin son bildirimleri KAP\'ta, tarayıcıda açılır'**
+  /// **'Şirketin KAP sayfası tarayıcıda açılır'**
   String get kapLinkHint;
 
   /// No description provided for @kapLinkFailed.

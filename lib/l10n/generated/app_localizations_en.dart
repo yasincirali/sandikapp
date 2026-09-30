@@ -2925,8 +2925,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get kapLinkLabel => 'KAP disclosures';
 
   @override
-  String get kapLinkHint =>
-      'Opens the company\'s latest disclosures on KAP in your browser';
+  String get kapLinkHint => 'Opens the company\'s KAP page in your browser';
 
   @override
   String get kapLinkFailed =>
