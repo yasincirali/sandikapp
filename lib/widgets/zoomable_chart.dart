@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -268,6 +269,62 @@ class _ZoomableChartState extends State<ZoomableChart> {
     return _veri!;
   }
 
+  // ── Görünür değişim denetimi (animasyon denetimi 2026-10-01, ölçüm) ──────
+  //
+  // fl_chart yeni veriyi eskisiyle `==` ile karşılaştırıp farklıysa morf
+  // başlatır. Ama `LineChartData` eksen etiketi ve dokunma geri çağrısı
+  // gibi KAPANIŞLAR taşır ve sahipler (Performans, varlık detayı, fiyat
+  // grafiği, karşılaştırma) her kurulumda yenisini verir — veri hiç
+  // değişmese de eşit sayılmaz. Ölçüldü: fiyatı DEĞİŞMEYEN her 30 sn
+  // tikinde Performans grafiği 12 kare (180 ms) boşuna yeniden boyuyordu.
+  // Burada yalnız ÇİZİLEN şey karşılaştırılır (eksen aralığı + çizgi
+  // noktaları/rengi/kalınlığı); aynıysa morf süresi sıfırdır. Sahiplere
+  // dokunmadan dört grafik birden düzelir.
+  LineChartData? _oncekiCizilen;
+
+  ///
+  /// Karşılaştırma PİKSEL ALTI toleranslıdır: zaman ekseni "şu an"a bağlı
+  /// grafiklerde her tikte son nokta ve eksen sonu biraz kayar (ölçüldü:
+  /// 103 günlük pencerede 0,003 gün ≈ 0,01 px). Göz görmez; morf ise
+  /// 180 ms boyar. Eşik eksen aralığının binde biri (~0,35 px).
+  bool _gorunurDegisti(LineChartData yeni) {
+    final eski = _oncekiCizilen;
+    _oncekiCizilen = yeni;
+    if (eski == null) return true;
+    if (identical(eski, yeni)) return false;
+    final tx = (yeni.maxX - yeni.minX).abs() / 1000;
+    final ty = (yeni.maxY - yeni.minY).abs() / 1000;
+    bool yakin(double? a, double? b, double t) =>
+        a == b || (a != null && b != null && (a - b).abs() <= t);
+    if (!yakin(eski.minX, yeni.minX, tx) ||
+        !yakin(eski.maxX, yeni.maxX, tx) ||
+        !yakin(eski.minY, yeni.minY, ty) ||
+        !yakin(eski.maxY, yeni.maxY, ty) ||
+        eski.lineBarsData.length != yeni.lineBarsData.length) {
+      return true;
+    }
+    for (var i = 0; i < yeni.lineBarsData.length; i++) {
+      final a = eski.lineBarsData[i];
+      final b = yeni.lineBarsData[i];
+      if (a.color != b.color ||
+          a.gradient != b.gradient ||
+          a.barWidth != b.barWidth ||
+          a.show != b.show ||
+          !listEquals(a.dashArray, b.dashArray) ||
+          a.spots.length != b.spots.length) {
+        return true;
+      }
+      for (var j = 0; j < a.spots.length; j++) {
+        final p = a.spots[j];
+        final q = b.spots[j];
+        if (p.isNull() != q.isNull()) return true;
+        if (p.isNull()) continue;
+        if (!yakin(p.x, q.x, tx) || !yakin(p.y, q.y, ty)) return true;
+      }
+    }
+    return false;
+  }
+
   void _setInteracting(bool v) {
     if (_interacting == v) return;
     // Jest sırasında setState zaten viewport değişimiyle tetikleniyor;
@@ -504,6 +561,8 @@ class _ZoomableChartState extends State<ZoomableChart> {
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;
+      final veri = _grafikVerisi();
+      final gorunurDegisti = _gorunurDegisti(veri);
       return SizedBox(
         height: widget.height,
         child: Stack(
@@ -540,10 +599,12 @@ class _ZoomableChartState extends State<ZoomableChart> {
             Positioned.fill(
               child: RepaintBoundary(
                 child: LineChart(
-                  _grafikVerisi(),
+                  veri,
                   // Hareketi azalt açıkken morf da yok: `swapDuration`
-                  // varsayılanı ham token, kendisi korumaz.
+                  // varsayılanı ham token, kendisi korumaz. Görünür bir şey
+                  // değişmediyse de yok (bkz. `_gorunurDegisti`).
                   duration: _interacting ||
+                          !gorunurDegisti ||
                           MediaQuery.disableAnimationsOf(context)
                       ? Duration.zero
                       : widget.swapDuration,

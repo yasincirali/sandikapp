@@ -16,6 +16,7 @@ import 'dart:async';
 import '../services/tazelik_ritmi.dart';
 import '../services/price_service.dart';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -1002,9 +1003,13 @@ class _GunIciPainter extends CustomPainter {
     if (uc != null) canvas.drawCircle(uc, 2, Paint()..color = renk);
   }
 
+  // DEĞER karşılaştırması (animasyon denetimi 2026-10-01): seri her
+  // kurulumda `DailySummary.from`'dan YENİ liste olarak geliyor; kimlik
+  // karşılaştırması her fiyat tikinde — değer aynıyken de — yeniden
+  // boyatıyordu. Seri gün içi (≤ ~100 nokta), karşılaştırma boyamaktan ucuz.
   @override
   bool shouldRepaint(_GunIciPainter old) =>
-      old.renk != renk || !identical(old.seri, seri);
+      old.renk != renk || !listEquals(old.seri, seri);
 }
 
 // ── Defter satırı ────────────────────────────────────────────────────────────

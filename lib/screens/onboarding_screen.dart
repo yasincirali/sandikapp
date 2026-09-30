@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -863,6 +864,10 @@ class OnboardingTourHost extends StatelessWidget {
   }
 }
 
+/// Tur perdesi bulanık mı: yalnız iOS + açık tema (bkz. perde yorumu).
+bool _turBulanik(BuildContext context) =>
+    context.isLight && defaultTargetPlatform == TargetPlatform.iOS;
+
 /// HIG'in en küçük dokunma hedefi: 44×44pt (Human Interface Guidelines →
 /// Controls). Boşluk ölçeğine ait bir sayı DEĞİL — Apple'ın sabiti; bu
 /// yüzden `SandikSpace` içinden seçilmez.
@@ -1165,15 +1170,26 @@ class _TurKatmaniState extends State<_TurKatmani>
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {},
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
-              child: ColoredBox(
-                // Light'ta zemin rengi karartmaz; koyu metin tonu kullanılır.
-                color: context.isLight
-                    ? p.text90.withValues(alpha: 0.42)
-                    : p.background.withValues(alpha: 0.78),
-              ),
-            ),
+            // Bulanıklık YALNIZ iOS + açık temada (animasyon denetimi
+            // 2026-10-01): `BackdropFilter` bir kare çizildiği sürece HER
+            // karede yeniden uygulanır ve turda nabız halkası sürekli döner —
+            // blur tur boyunca kesintisiz GPU işi. Koyu temada perde %78
+            // opak, blur zaten görünmüyordu; Android'de (Vulkan/Skia)
+            // pahalı. Açık temada blur'suz hâlde ayrım kaybolmasın diye
+            // perde biraz koyulaşır (0,42 → 0,50).
+            child: _turBulanik(context)
+                ? BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                    child: ColoredBox(
+                      color: p.text90.withValues(alpha: 0.42),
+                    ),
+                  )
+                : ColoredBox(
+                    // Light'ta zemin rengi karartmaz; koyu metin tonu.
+                    color: context.isLight
+                        ? p.text90.withValues(alpha: 0.50)
+                        : p.background.withValues(alpha: 0.78),
+                  ),
           ),
         ),
         // Dokunuşa kapalı hedef: oyuk görünür ama altına geçirmez.

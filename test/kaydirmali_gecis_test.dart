@@ -193,4 +193,63 @@ void main() {
     await g.up();
     await t.pumpAndSettle();
   });
+
+  // Animasyon denetimi 2026-10-01: görünüm çipten (kaydırma dışında)
+  // değişince kart yönlü kısa bir girişle gelir; kaydırmanın kendi geçişinde
+  // bu giriş OYNAMAZ (karusel zaten oynadı).
+  group('çipten görünüm değişimi', () {
+    Widget kurSira(int sira, ValueChanged<bool> onGecis) => MaterialApp(
+          theme: ThemeData(extensions: const [SandikPalette.light]),
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 320,
+                child: KaydirmaliGecis(
+                  etkin: true,
+                  sira: sira,
+                  onGecis: onGecis,
+                  komsu: (_) => const SizedBox(height: 120),
+                  child: const SizedBox(height: 120, child: Text('kart')),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    double kayma(WidgetTester t) {
+      final tr = t.widgetList<Transform>(find.ancestor(
+          of: find.text('kart'), matching: find.byType(Transform)));
+      return tr.fold<double>(
+          0, (m, e) => m + e.transform.getTranslation().x.abs());
+    }
+
+    testWidgets('çip sırayı değiştirince kart yandan kayarak gelir',
+        (t) async {
+      await t.pumpWidget(kurSira(0, (_) {}));
+      await t.pumpWidget(kurSira(2, (_) {}));
+      await t.pump(const Duration(milliseconds: 40));
+      expect(kayma(t), greaterThan(0), reason: 'giriş oynamalı');
+      await t.pumpAndSettle();
+      expect(kayma(t), 0);
+    });
+
+    testWidgets('kaydırmanın kendi geçişinde giriş oynamaz', (t) async {
+      var sira = 0;
+      late StateSetter yenile;
+      await t.pumpWidget(StatefulBuilder(builder: (c, s) {
+        yenile = s;
+        return kurSira(sira, (ileri) => yenile(() => sira = 1));
+      }));
+      await t.drag(find.text('kart'), const Offset(-200, 0));
+      // Yay bitip görünüm değişene kadar ilerle (karusel kendi kaymasını
+      // oynatır — o ölçülmez).
+      for (var i = 0; i < 120 && sira == 0; i++) {
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      expect(sira, 1);
+      await t.pump(const Duration(milliseconds: 40));
+      expect(kayma(t), 0, reason: 'karusel oynadı; ikinci giriş olmamalı');
+      await t.pumpAndSettle();
+    });
+  });
 }

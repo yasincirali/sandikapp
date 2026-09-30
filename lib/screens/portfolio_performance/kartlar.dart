@@ -190,7 +190,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // çipleri, dönem seçici) ağaçta KALMALI, yoksa kullanıcı Özet'e
         // geçtiğinde dönemini değiştiremez hale gelir. Aynı gerekçe
         // `_buildChartWithData`'nın koşulsuz çağrılmasının da sebebi.
-        if (_ozetSekmesi) ...[
+        if (_ozetSekmesi) ...<Widget>[
           // Seri HAZIR DEĞİLKEN sayı çizilmez — iskelet durur
           // (kullanıcı bildirimi 2026-09-22: "ekran render olup sonradan
           // başka değere güncelleniyor, direkt açılırken doğru şekilde
@@ -217,18 +217,26 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           const SizedBox(height: 12),
           const DisclaimerWidget(),
           const SizedBox(height: 16),
-        ] else ...[
+        ].map((w) => _SekmeSolmasi(ozet: true, taze: _sekmeYeniDegisti, child: w))
+        else ...<Widget>[
           // "Yeni çözünürlükte veri yükleniyor" göstergesi — zoom sırasında
           // eski veri ekranda kalır, üstte ince bir bar akıcı hisi verir.
-          if (waiting)
-            SizedBox(
-              height: 2,
-              child: LinearProgressIndicator(
-                minHeight: 2,
-                backgroundColor: Colors.transparent,
-                color: context.c.amberFill,
-              ),
-            ),
+          //
+          // Yer HEP ayrılı, gösterge yalnız beklerken (animasyon denetimi
+          // 2026-10-01): eskiden `if (waiting)` 2 pt'lik satırı listeye
+          // EKLİYORDU — yakınlaştırma sırasında grafik parmağın altında 2 pt
+          // kayıyor ve liste çocuklarının sırası değiştiği için grafiğin
+          // State'i yeniden kuruluyordu ("0'dan çizim").
+          SizedBox(
+            height: 2,
+            child: waiting
+                ? LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: Colors.transparent,
+                    color: context.c.amberFill,
+                  )
+                : null,
+          ),
           // ── Akıcı geçiş tasarımı ────────────────────────────────────────
           // `LineChart` bir ImplicitlyAnimatedWidget: yeni `LineChartData`
           // verildiğinde eski veriden yenisine kendi lerp'liyor (150ms).
@@ -395,7 +403,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           const SizedBox(height: 12),
           const DisclaimerWidget(),
           const SizedBox(height: 16),
-        ],
+        ].map((w) => _SekmeSolmasi(ozet: false, taze: _sekmeYeniDegisti, child: w)),
       ],
     ),
     );
@@ -943,4 +951,33 @@ class _DegisimKalemi extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Grafik ↔ Özet geçişinde yeni sekmenin öğeleri kısa bir solmayla gelir
+/// (animasyon denetimi 2026-10-01): eskiden içerik tek karede değişiyordu.
+/// Her liste öğesi ayrı sarılır — tüm dalı tek `Column`'a toplamak
+/// `ListView`'in tembel kurulumunu bozardı. Anahtar sekmeye bağlı: aynı
+/// sekmede yeniden kurulumda (fiyat tiki, dönem) solma OYNAMAZ, yalnız
+/// sekme değişince; [taze] değilse (ilk açılış, kaydırınca sonradan kurulan
+/// öğe) başlangıç zaten tam opak. Hareketi azalt açıkken süre sıfır.
+class _SekmeSolmasi extends StatelessWidget {
+  const _SekmeSolmasi({
+    required this.ozet,
+    required this.taze,
+    required this.child,
+  });
+
+  final bool ozet;
+  final bool taze;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        key: ValueKey(ozet),
+        tween: Tween<double>(begin: taze ? 0.35 : 1, end: 1),
+        duration: SandikMotion.stateOf(context),
+        curve: SandikMotion.enter,
+        child: child,
+        builder: (_, v, c) => v >= 1 ? c! : Opacity(opacity: v, child: c),
+      );
 }

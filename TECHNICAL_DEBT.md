@@ -9,57 +9,75 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## 🟡 AÇIK — Animasyon denetiminde ertelenenler (2026-10-01)
+## ✅ KAPANDI — Animasyon denetiminde ertelenenler (2026-10-01, ölçüm + düzeltme)
 
-**Ne:** Dört kademelik animasyon/etkileşim denetimi uygulandı (commit'ler
-`dbf3ad5`, `3da4ecc`, `26c5614`, `3ca824e`; testler
-`test/animasyon_denetimi_test.dart`). Bulunup bu turda YAPILMAYANLAR:
+**Ne:** Dört kademelik animasyon/etkileşim denetimi main'e girdi (PR #35).
+Ertelenen maddeler sonra ÖLÇÜMLE araştırıldı: gerçek Ana/Portföy/Performans
+ekranları 10/60/200 varlıkla, 30 sn fiyat tiki altında widget testinde
+koşuldu (kurulum süresi, tikten sonra boşa çizilen kare, yeniden kurulan
+widget sayısı). Sayılar debug/JIT test ortamından — cihazda (release/AOT)
+mutlak değerler birkaç kat küçük, ORANLAR geçerli. Kazançlar
+`test/tik_maliyeti_test.dart`'ta kilitli.
 
-1. **Grafik morfu her üst yeniden kurulumda baştan başlıyor.**
-   `ZoomableChart` veri önbelleği kurucunun KİMLİĞİNE bağlı; dört grafik
-   sahibi (`grafik_kabi`, `asset_detail_screen`, `fiyat_grafigi`,
-   karşılaştırma) her kurulumda yeni kapanış veriyor → 30 sn tikte ve çip
-   dokunuşunda görünmez bir 180 ms yeniden boyama. Görsel sıçrama YOK
-   (RepaintBoundary içinde), yalnız CPU. **Neden ertelendi:** kalıcı
-   çözüm her sahibin girdilerinden bir veri anahtarı üretmesi; eksik bir
-   girdi "grafik eski veriyi gösteriyor" hatası doğurur — ölçüm olmadan
-   değmez. **Ne zaman:** DevTools'ta tik anında kare süresi ölçülünce.
-2. **Sekme kökleri `portfolioProvider`'ı bütünüyle izliyor.** Ana
-   (`positionedAssets()` ~5 kez), Portföy (sıralama), Performans ve
-   varlık detayı her fiyat tikinde ağır `build` koşuyor. `select` / türev
-   provider'lar gerek. **Maliyet:** büyük portföyde tik anında kare
-   düşmesi olasılığı. **Ne zaman:** 50+ pozisyonlu kullanıcıda profil
-   alınınca; mimari refactor olarak ayrı tur.
-3. **Tanıtım turu boyunca tam ekran blur her karede yeniden hesaplanıyor**
-   (`onboarding_screen` `_TurKatmani`: nabız halkası + altta akan şerit
-   kare üretiyor). İlk açılışa özgü; turda şerit duraklatılabilir ya da
-   blur sabit bir görüntüye alınabilir.
-4. **Yarış ekranı:** kürsü sütunları `AnimatedBuilder`'da child'sız ve
-   `Opacity` ile (açılışta ~1 sn × 3 sütun tam yeniden kurulum); sıra
-   değişiminde `BoxShadow` blur'u animasyonlu. Nadir ekran; `FadeTransition`
-   + hoist edilmiş child ile düzeltilir.
-5. **`bugun_karti` ressamı** `shouldRepaint`'te seriyi kimlikle
-   karşılaştırıyor, seri her kurulumda yeniden üretildiği için her
-   kurulumda boyuyor; satır başına iki `TextPainter.layout`.
-6. **Eski veri soluklaştırması `AnimatedOpacity` ile tüm grafik kartını
-   sarıyor** (`kartlar.dart`, `asset_detail_screen`): beklerken grafik ve
-   imleç offscreen katmandan geçiyor. Çizgi rengini soluklaştırmak daha ucuz.
-7. **Tek segment bileşeni yazılmadı.** Yedi segment kontrolü aynı süre/
-   eğriye hizalandı ve dönem seçicisi kayan zemin aldı; ama hâlâ yedi ayrı
-   uygulama var (`SandikSegment` hedefi). Yeni segment yazılacaksa önce bu.
-8. **Görünüm çipiyle (sheet) seçim kartı anında değiştiriyor**, kaydırma
-   ise karusel animasyonu oynatıyor — aynı durum değişimi iki dilde.
-   `KaydirmaliGecis`'e programatik kaydırma eklenmeli.
-9. **Tüm işlemler filtre değişimi ve Performans Grafik↔Özet** anında
-   değişiyor; kısa anahtarlı solma yeterli.
+**KAPANDI (commit `183fb22`):**
+1. ~~Grafik morfu her üst yeniden kurulumda baştan başlıyor.~~ Ölçüldü:
+   fiyatı DEĞİŞMEYEN tikte Portföy halkası ve Performans grafiği 12'şer
+   kare (180 ms) boşuna boyuyordu. Kök: fl_chart verisi kapanış taşıyor,
+   `==` hiç tutmuyor. Çözüm sahiplerde değil `ZoomableChart`'ta: yalnız
+   çizilen karşılaştırılır, piksel altı toleransla (zaman ekseni "şu an"a
+   bağlı olduğundan her tik 0,01 px kayıyordu). Halka: binde bir altı pay
+   oynaması yok sayılır. Sonuç: Portföy 12 → 0, Performans 12 → ~1 kare.
+2. ~~Sekme kökleri `portfolioProvider`'ı bütünüyle izliyor.~~ Ölçüm
+   korkuyu DOĞRULAMADI: Ana ve Portföy tik maliyeti 10 → 200 varlıkta
+   sabit (~6-9 ms debug). Tek doğrusal büyüyen Performans'tı ve sebebi
+   izleme değil, aşağıdaki kapalı tür dökümüydü. `select` refactor'ı
+   gereksiz — kapandı.
+   - Bulunan asıl kaynak: Performans tür dökümü KAPALIYKEN varlık
+     satırlarını ağaçta tutuyordu (AnimatedAlign/AnimatedOpacity 0).
+     200 varlıkta tik başı 1.150 widget yeniden kurulumu → 394 (sabit),
+     28,8 → 14,1 ms. `SandikAcilir`'a geçti.
+4. ~~Yarış kürsüsü `AnimatedBuilder`'da child'sız.~~ İçerik ve kaide bir
+   kez kurulur; giriş karelerinde yalnız öteleme/saydamlık/ölçek.
+6. ~~Eski veri soluklaştırması `AnimatedOpacity` ile grafiği sarıyor.~~
+   Gerek yok: grafik kendi `RepaintBoundary`'sinde, soluk hâl yalnız
+   yükleme süresince (tipik < 1 sn); opaklık katmanı yalnız bir şey
+   yeniden boyandığında birleştirilir. Ölçülebilir maliyet yok.
 
-**Bilinçli olarak YAPILMAYANLAR (karar):**
-- Android sayfa geçişi Flutter'ın varsayılanı (tahmine dayalı geri +
-  ~450 ms sönüm-kayma) KALDI: yerel his ve geri jesti ondan geliyor;
-  yalnız `fullscreenDialog` alttan gelir.
-- Satırdan varlık sayfasına `Hero` geçişi yapılmadı: iki uçta metin
-  stilleri farklı, Hero metinde uçuş sırasında boyut sıçraması üretir —
-  "kasma/kararsız animasyon istemiyorum" kuralına aykırı.
+**KAPANDI (commit `5104c22`):**
+3. ~~Tanıtım turu blur'u her karede.~~ `BackdropFilter` bir kare çizildiği
+   sürece her karede uygulanır; turda nabız halkası hep döndüğü için blur
+   tur boyunca kesintisiz ödeniyordu. Yalnız iOS + açık temada kaldı
+   (koyu temada %78 opak perde altında görünmüyordu; Android'de pahalı);
+   blur'suz açık temada perde 0,42 → 0,50.
+5. ~~`bugun_karti` ressamı her kurulumda boyuyor.~~ `shouldRepaint`
+   seriyi `listEquals` ile değerle karşılaştırır.
+7. ~~Tek segment bileşeni.~~ `SandikSegment` (kayan zemin, flex payları,
+   44 pt hedef, hareketi azalt). `DonemSecici`, çubuk aralığı ve
+   Grafik/Özet anahtarı üstünde; son ikisi yerinde solan dolgudan kayan
+   zemine geçti. Bilinçli olarak AYRI kalanlar: `modern_tab_selector`
+   (zaten kayan hap + sayaç rozeti), `kapsam_kisi_secici` (üçüncü segment
+   açılır menü), yarış/zirve seçicileri (amber gradyan — oyunlu ekran),
+   `period_summary_view` (amber dolgulu küçük anahtar). Hepsi aynı
+   süre/eğride; yeni segment yazılacaksa `SandikSegment`.
+8. ~~Görünüm çipi kartı anında değiştiriyor.~~ `KaydirmaliGecis.sira`:
+   kaydırma dışı değişimde yönlü 24 pt giriş; kaydırmanın kendi
+   geçişinde oynamaz. Karusel kullanılmadı: çip iki adım atlayabilir.
+9. ~~Filtre değişimi / Grafik↔Özet anında.~~ Tüm işlemler listesi
+   `_resetPaging`'de 180 ms solma (iki liste üst üste kurulmaz).
+   Performans sekmesi öğeleri yalnız değişimden sonraki pencerede solar
+   (tembel listede kaydırınca kurulan öğe solmaz). Ek bulgu: zoom yükleme
+   çubuğu listeye EKLENİYORDU — grafik 2 pt kayıyor ve liste sırası
+   değiştiği için grafiğin State'i yeniden kuruluyordu; yer artık hep
+   ayrılı.
+
+**Bilinçli olarak YAPILMAYANLAR (karar, araştırmayla teyit):**
+- Android sayfa geçişi Flutter 3.44 varsayılanı (tahmine dayalı geri +
+  sönüm-kayma) KALDI: Android 14+'ün kendi geri jesti önizlemesi bu
+  geçişe bağlı; özel geçiş onu kırar. Yalnız `fullscreenDialog` alttan.
+- `Hero` geçişi yapılmadı: satır ile varlık sayfası arasında ORTAK görsel
+  öğe yok (satırdaki tür rozetinin detayda karşılığı yok); metinde Hero
+  uçuş sırasında boyut sıçratır. Önce detaya bir tür rozeti tasarlanması
+  gerekir — tasarım kararı.
 - Ana toplamın rakamlarının yuvarlanması yapılmadı: günde onlarca kez
   görülen sayı; `DegisimVurgusu` kararı (yalnız renk) korunur.
 

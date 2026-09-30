@@ -783,6 +783,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // bırakınca kayarak geçer (`KaydirmaliGecis`).
                 child: KaydirmaliGecis(
                   etkin: allActivePartners.isNotEmpty,
+                  // Çipten seçimde yönlü giriş için (bkz. `sira`).
+                  sira: GorunumCipi.sira(allActivePartners).indexOf(_view),
                   ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
                   onIpucuGosterildi: () => ref
                       .read(kaydirmaIpucuGosterildiProvider.notifier)

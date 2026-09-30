@@ -231,7 +231,20 @@ extension _DateRangeLabel on _DateRange {
   }
 }
 
-class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
+class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
+    with SingleTickerProviderStateMixin {
+  /// Filtre değişiminin görünür işareti (animasyon denetimi 2026-10-01).
+  ///
+  /// "Silinenler", dönem ya da tür değişince liste tek karede başka bir
+  /// sonuç kümesine dönüyordu; yalnız çip değişiyordu, liste "değişti mi?"
+  /// sorusunu bırakıyordu. Liste %35'ten 180 ms'de belirir. Eski ve yeni
+  /// liste ÜST ÜSTE kurulmaz (`AnimatedSwitcher` uzun iki listeyi aynı anda
+  /// kurardı) — yalnız yeni liste solarak gelir. Hareketi azalt'ta yok.
+  late final AnimationController _filtreGecisi =
+      AnimationController(vsync: this, value: 1);
+  late final Animation<double> _filtreSolma = Tween<double>(begin: 0.35, end: 1)
+      .animate(CurvedAnimation(parent: _filtreGecisi, curve: SandikMotion.enter));
+
   static const int _pageSize = 25;
 
   late String? _view;
@@ -264,6 +277,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   @override
   void dispose() {
+    _filtreGecisi.dispose();
     _scrollCtrl.removeListener(_maybeGrow);
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
@@ -292,6 +306,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   /// Tüm filtre değişiklikleri bu tek noktadan geçer.
   void _resetPaging() {
     _visible = _pageSize;
+    final sure = SandikMotion.stateOf(context);
+    if (sure != Duration.zero) {
+      _filtreGecisi
+        ..duration = sure
+        ..forward(from: 0);
+    }
     if (_scrollCtrl.hasClients && _scrollCtrl.offset != 0) {
       _scrollCtrl.jumpTo(0);
     }
@@ -625,7 +645,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       final ayAdi = DateFormat(
                           'LLLL yyyy', Localizations.localeOf(context).languageCode);
                       final tr = Localizations.localeOf(context).languageCode == 'tr';
-                      return ListView.builder(
+                      // Filtre değişince yeni sonuç kısa bir solmayla gelir
+                      // (bkz. `_filtreGecisi`); iki liste üst üste kurulmaz.
+                      return FadeTransition(
+                        opacity: _filtreSolma,
+                        child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
                         controller: _scrollCtrl,
                         padding: EdgeInsets.fromLTRB(hp, 16, hp, 32),
@@ -696,6 +720,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             ),
                           );
                         },
+                      ),
                       );
                     }),
                   ),

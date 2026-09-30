@@ -280,53 +280,23 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       (label: context.l10n.tabChart, ozet: false),
       (label: context.l10n.tabSummary, ozet: true),
     ];
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: options.map((o) {
-          final selected = _ozetSekmesi == o.ozet;
-          return Expanded(
-            child: CupertinoButton(
-              minimumSize: SandikTouch.minSize,
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                if (_ozetSekmesi == o.ozet) return;
-                _guncelle(() => _ozetSekmesi = o.ozet);
-                if (o.ozet) {
-                  AnalyticsService.instance.logPeriodSummaryViewed(
-                    period: SummaryPeriod.fromIndex(_selectedPeriodIdx).name,
-                  );
-                }
-              },
-              // Zemin ve metin geçişli (animasyon denetimi 2026-10-01).
-              child: AnimatedContainer(
-                duration: SandikMotion.stateOf(context),
-                curve: SandikMotion.enter,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  color: selected ? context.c.surface2 : Colors.transparent,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-                child: Center(
-                  child: AnimatedDefaultTextStyle(
-                    duration: SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
-                    style: (context.t.bodyMedium ?? const TextStyle()).copyWith(
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                      color: selected ? context.c.amberText : context.c.text36,
-                    ),
-                    child: Text(o.label),
-                  ),
-                ),
-              ),
-            ),
+    // Ortak [SandikSegment] (2026-10-01): seçim zemini kayar.
+    return SandikSegment(
+      adet: options.length,
+      secili: _ozetSekmesi ? 1 : 0,
+      onSec: (i) {
+        final o = options[i];
+        _guncelle(() {
+          _ozetSekmesi = o.ozet;
+          _sekmeDegismeAni = DateTime.now();
+        });
+        if (o.ozet) {
+          AnalyticsService.instance.logPeriodSummaryViewed(
+            period: SummaryPeriod.fromIndex(_selectedPeriodIdx).name,
           );
-        }).toList(),
-      ),
+        }
+      },
+      oge: (_, i, __) => Text(options[i].label),
     );
   }
 
