@@ -17,6 +17,7 @@ import '../providers/portfolio_provider.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_acilir.dart';
 import '../services/crash_reporter.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
@@ -1240,26 +1241,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         ),
                       ),
                     ),
-                  Icon(
-                      _notesExpanded
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
-                      color: context.c.text58,
-                      size: 20),
+                  // İkon değişmez, DÖNER — öteki katlanır bölümler gibi
+                  // (animasyon denetimi 2026-10-01; eskiden iki ikon
+                  // arasında tek karede atlıyordu).
+                  SandikAcilirOk(
+                    acik: _notesExpanded,
+                    child: Icon(Icons.expand_more_rounded,
+                        color: context.c.text58, size: 20),
+                  ),
                 ],
               ),
             ),
           ),
-          AnimatedCrossFade(
-            duration: SandikMotion.state,
-            firstCurve: SandikMotion.enter,
-            secondCurve: SandikMotion.enter,
-            sizeCurve: SandikMotion.move,
-            crossFadeState: _notesExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: Padding(
+          // Ortak katlanır bölüm: hareketi azalt'a da uyar (eskiden ham
+          // `SandikMotion.state` idi).
+          SandikAcilir(
+            acik: _notesExpanded,
+            child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               child: TextFormField(
                 controller: _notes,

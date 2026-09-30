@@ -28,10 +28,25 @@
 //   · kart ve komşu `RepaintBoundary` içindedir — `Transform.translate`
 //     kompozitörde yalnızca katmanı öteler, piksel yeniden çizilmez.
 //
+// ## Fizik (dördüncü tur, animasyon denetimi 2026-10-01)
+// Bırakma eskiden sabit süreli eğriydi (tamamlama 240, iptal 180 ms): kart
+// %90 yol almışken de 240 ms sürüyor, bırakma anında hız sıçrıyordu. Ayrıca
+// eşiği geçip TERS yöne fırlatınca kart yine ileri geçiyordu (hızın yönüne
+// bakılmıyordu) ve yarıda yakalanan animasyonun `await`'i hiç dönmüyordu
+// (durdurulan denetleyicinin future'ı tamamlanmaz) — dinleyici açıkta
+// kalıp sonraki her animasyonda `_dx`'e yazıyordu. Şimdi:
+//   · bırakma `SpringSimulation` ile, parmağın hızıyla başlar
+//     ([SandikMotion.yayOtur] / [SandikMotion.yayGeri]);
+//   · hızlı fırlatmada karar HIZIN yönündedir: ileri sürükleyip geri
+//     fırlatmak iptal eder;
+//   · denetleyici sınırsızdır ve değeri doğrudan kaymadır — ayrı dinleyici
+//     kurulup sökülmez; kesilen animasyon `orCancel` ile temiz biter.
+//
 // Bu widget görünümün NE olduğunu bilmez: [onGecis] ile yön bildirir,
 // [komsu] ile "o yöndeki kart"ı ister. Böylece ana ekranın kimlik
 // sözleşmesine ('' / id / null) bağlanmaz ve tek başına test edilir.
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart' show SpringSimulation;
 
 import '../theme/sandik.dart';
 
@@ -76,9 +91,11 @@ class KaydirmaliGecis extends StatefulWidget {
   static const double ipucuKayma = 28;
 
   /// Geçiş eşiği: kart genişliğinin bu oranı kadar sürüklenmiş ya da
-  /// [esikHiz]'den hızlı fırlatılmış.
+  /// [esikHiz]'den (pt/sn) hızlı fırlatılmış. 400 → 300: kısa ama bilinçli
+  /// bir fiske de geçmeli (denetim kılavuzu ~0,11 pt/ms; yatay jest dikey
+  /// kaydırmayla çakışmadığı için daha aşağısı gereksiz hassas olurdu).
   static const double esikOran = 0.3;
-  static const double esikHiz = 400;
+  static const double esikHiz = 300;
 
   /// İki kart arasındaki boşluk (pt).
   static const double aralik = SandikSpace.smd;
@@ -112,7 +129,10 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   @override
   void initState() {
     super.initState();
-    _yay = AnimationController(vsync: this);
+    // Sınırsız: değer doğrudan kayma (pt). Yay simülasyonu da, ipucu
+    // eğrisi de aynı değeri sürer.
+    _yay = AnimationController.unbounded(vsync: this)
+      ..addListener(() => _dx.value = _yay.value);
     if (widget.ipucu && widget.etkin) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _gozKirp());
     }
@@ -134,23 +154,41 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   }
 
   /// [bas] → [son] arası kaymayı [sure] boyunca oynatır; süre sıfırsa
-  /// (hareketi azalt) doğrudan [son]a atlar.
-  Future<void> _kaydir(
+  /// (hareketi azalt) doğrudan [son]a atlar. Parmak araya girip
+  /// denetleyiciyi durdurursa `false` döner (yarım kaldı).
+  Future<bool> _kaydir(
       double bas, double son, Duration sure, Curve egriTuru) async {
     if (sure == Duration.zero) {
       if (mounted) _dx.value = son;
-      return;
+      return true;
     }
-    _yay
-      ..duration = sure
-      ..reset();
-    final egri = CurvedAnimation(parent: _yay, curve: egriTuru);
-    void tik() => _dx.value = bas + (son - bas) * egri.value;
-    egri.addListener(tik);
-    await _yay.forward();
-    egri.removeListener(tik);
-    egri.dispose();
-    if (mounted) _dx.value = son;
+    _yay.value = bas;
+    try {
+      await _yay.animateTo(son, duration: sure, curve: egriTuru).orCancel;
+      return true;
+    } on TickerCanceled {
+      return false;
+    }
+  }
+
+  /// Bırakma: parmağın [hiz]ıyla (pt/sn) başlayan yay, [son]a doğal
+  /// yavaşlar. Hareketi azalt açıkken doğrudan [son]. Parmak yeniden
+  /// yakalarsa `false`.
+  Future<bool> _yayla(double son, double hiz, SpringDescription yay) async {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _dx.value = son;
+      return true;
+    }
+    _yay.value = _dx.value;
+    try {
+      await _yay
+          .animateWith(SpringSimulation(yay, _dx.value, son, hiz))
+          .orCancel;
+      if (mounted) _dx.value = son;
+      return true;
+    } on TickerCanceled {
+      return false;
+    }
   }
 
   /// Tek seferlik ipucu: ekran otursun, sola kay, komşu okunsun, geri gel.
@@ -164,7 +202,10 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     if (sure == Duration.zero) return;
     await Future<void>.delayed(sure * 3);
     if (!mounted || _dx.value != 0 || _yay.isAnimating) return;
-    await _kaydir(0, -KaydirmaliGecis.ipucuKayma, sure, SandikMotion.enter);
+    if (!await _kaydir(
+        0, -KaydirmaliGecis.ipucuKayma, sure, SandikMotion.enter)) {
+      return;
+    }
     await Future<void>.delayed(sure * 2);
     if (!mounted || _dx.value != -KaydirmaliGecis.ipucuKayma) return;
     await _kaydir(-KaydirmaliGecis.ipucuKayma, 0, sure, SandikMotion.move);
@@ -179,25 +220,32 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   Future<void> _birak(DragEndDetails d) async {
     final hiz = d.primaryVelocity ?? 0;
     final dx = _dx.value;
-    final ileri = dx < 0 || (dx == 0 && hiz < 0);
+    final ileri = dx < 0;
     final tam = _genislik + KaydirmaliGecis.aralik;
-    final gecis = dx != 0 &&
-        (dx.abs() >= _genislik * KaydirmaliGecis.esikOran ||
-            hiz.abs() >= KaydirmaliGecis.esikHiz);
+    if (dx == 0) return;
+    final bool gecis;
+    if (hiz.abs() >= KaydirmaliGecis.esikHiz) {
+      // Fiske: karar HIZIN yönünde. Sola sürükleyip sağa fırlatmak
+      // "vazgeçtim"dir — eskiden kart yine ileri geçiyordu.
+      gecis = (hiz < 0) == ileri;
+    } else {
+      gecis = dx.abs() >= _genislik * KaydirmaliGecis.esikOran;
+    }
     if (gecis) {
       // Kaymayı tamamla: komşu kart pencereye tam oturur. Sonra görünüm
       // değişir ve kayma sıfırlanır — yeni gerçek kart, komşunun durduğu
       // yerde belirir; göz fark etmez.
       SandikHaptic.selection.perform();
-      await _kaydir(dx, ileri ? -tam : tam, SandikMotion.surfaceOf(context),
-          SandikMotion.enter);
+      if (!await _yayla(ileri ? -tam : tam, hiz, SandikMotion.yayOtur)) {
+        return;
+      }
       if (!mounted) return;
       _dx.value = 0;
       widget.onGecis(ileri);
       return;
     }
-    // İptal: yerine yaylan.
-    await _kaydir(dx, 0, SandikMotion.stateOf(context), SandikMotion.enter);
+    // İptal: parmağın hızıyla yerine yaylan.
+    await _yayla(0, hiz, SandikMotion.yayGeri);
   }
 
   /// O yöndeki komşu kart — önbellekten; yoksa bir kez kurulur.
@@ -225,7 +273,9 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
       behavior: HitTestBehavior.translucent,
       onHorizontalDragUpdate: _surukle,
       onHorizontalDragEnd: _birak,
-      onHorizontalDragCancel: () => _dx.value = 0,
+      // Jest iptali (ör. sistem hareketi araya girdi): yerine YAYLAN —
+      // eskiden tek karede sıfıra atlıyordu.
+      onHorizontalDragCancel: () => _yayla(0, 0, SandikMotion.yayGeri),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -268,12 +318,18 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
                     offset: Offset(dx, 0),
                     child: kart,
                   ),
+                  // Komşu sabit kutuda, `Transform` ile ötelenir: eskiden
+                  // `Positioned(left:)` her sürükleme karesinde Stack'i
+                  // yeniden yerleştiriyordu; artık yalnız katman kayar.
                   if (dx != 0)
                     Positioned(
-                      left: komsuX,
+                      left: 0,
                       top: 0,
                       width: _genislik,
-                      child: _komsu(ileri),
+                      child: Transform.translate(
+                        offset: Offset(komsuX, 0),
+                        child: _komsu(ileri),
+                      ),
                     ),
                 ],
               );

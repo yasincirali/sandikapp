@@ -376,14 +376,7 @@ class _FrequencyRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                    child: Container(
-                      width: 38,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: context.c.text36,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
+                    child: const SandikTutamac(),
                   ),
                   const SizedBox(height: 16),
                   Text(

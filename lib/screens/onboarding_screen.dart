@@ -328,8 +328,11 @@ List<_Adim> _adimlariKur() {
       id: 'alt_menu',
       hedef: TourTarget.altMenu,
       baslik: 'Beş tuş, tüm uygulama',
+      // 2026-10-01: açık sekmeye yeniden dokunmak listeyi başa alır
+      // (`SekmeBasaDon`) — alt menünün yeni davranışı, adımda söylenir.
       govde: 'Ana · Portföy · + · Performans · Profil. Ortadaki büyük tuş '
-          'varlık ekler; en sık yapacağın iş bu.',
+          'varlık ekler; en sık yapacağın iş bu. Açık sekmeye bir daha '
+          'dokunursan liste en başa döner.',
       dokunulabilir: false,
     ),
     _Adim(
@@ -553,8 +556,9 @@ List<_Adim> _adimlariKur() {
           'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
       // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
       // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam
-      // panelinin içinde ve panel kapalıyken de ağaçta duruyor, yani
-      // dönem değişimini ondan okuyamıyoruz. Ölçemediğimiz bir görevi
+      // panelinin içinde, yani dönem değişimini ondan okuyamıyoruz
+      // (2026-10-01'den beri panel kapalıyken ağaçta da değil —
+      // `SandikAcilir`). Ölçemediğimiz bir görevi
       // "tamamlandı" diye göstermektense görevsiz anlatım dürüst.
       giris: (_) => _sekmeyeGec(3),
     ),

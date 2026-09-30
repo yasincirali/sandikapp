@@ -9,6 +9,7 @@ import '../services/insight_metrics_service.dart' show Concentration, Drawdown;
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
 import '../theme/sandik.dart';
+import 'sandik_acilir.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
@@ -1612,21 +1613,27 @@ class _AralikSecici extends StatelessWidget {
                 child: SandikBasma(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onSec(a),
+                  // Zemin ve metin aynı sürede geçer; eskiden zemin 240 ms
+                  // sönerken metin rengi tek karede atlıyordu (animasyon
+                  // denetimi 2026-10-01).
                   child: AnimatedContainer(
-                    duration: SandikMotion.surfaceOf(context),
+                    duration: SandikMotion.stateOf(context),
                     curve: SandikMotion.enter,
                     decoration: BoxDecoration(
                       color: a == secili ? c.amberFill : Colors.transparent,
                       borderRadius: BorderRadius.circular(SandikRadius.sm),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      a.labelOf(context.l10n),
-                      style: context.t.labelMedium?.copyWith(
+                    child: AnimatedDefaultTextStyle(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      style: (context.t.labelMedium ?? const TextStyle())
+                          .copyWith(
                         color: a == secili ? c.onAmber : c.text58,
                         fontWeight:
                             a == secili ? FontWeight.w700 : FontWeight.w500,
                       ),
+                      child: Text(a.labelOf(context.l10n)),
                     ),
                   ),
                 ),
@@ -1941,9 +1948,9 @@ class _BosDurum extends StatelessWidget {
 /// Derinlik — katlanır bölüm (2026-09-21).
 ///
 /// Başlık satırı her zaman görünür ("DERİNLİK · XIRR, sağlık…"), içerik
-/// dokununca açılır. `AnimatedSize` yalnızca yükseklik geçişi yapar; kapalı
-/// durumda çocuklar ağaçta DEĞİLDİR — kapalıyken hesaplama/çizim maliyeti
-/// sıfır (CPU/GPU kaygısı). Açık/kapalı durumu oturum içi, tercih değil.
+/// dokununca açılır. [SandikAcilir] yükseklik + solma geçişi yapar; kapalı
+/// durumda (kapanış bittikten sonra) çocuklar ağaçta DEĞİLDİR — kapalıyken
+/// hesaplama/çizim maliyeti sıfır (CPU/GPU kaygısı). Açık/kapalı durumu oturum içi, tercih değil.
 class _DerinlikBolumu extends StatefulWidget {
   const _DerinlikBolumu({
     required this.baslangictaAcik,
@@ -1998,10 +2005,10 @@ class _DerinlikBolumuState extends State<_DerinlikBolumu> {
                         ],
                       ),
                     ),
-                    AnimatedRotation(
-                      turns: _acik ? 0.5 : 0,
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
+                    // Ok panelle aynı süre/eğride (animasyon denetimi
+                    // 2026-10-01: ok 180 ms, panel 240 ms'deydi).
+                    SandikAcilirOk(
+                      acik: _acik,
                       child: Icon(Icons.expand_more_rounded,
                           color: context.c.text58),
                     ),
@@ -2011,19 +2018,15 @@ class _DerinlikBolumuState extends State<_DerinlikBolumu> {
             ),
           ),
         ),
-        AnimatedSize(
-          duration: SandikMotion.surfaceOf(context),
-          curve: SandikMotion.move,
-          alignment: Alignment.topCenter,
-          child: _acik
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: SandikSpace.sm),
-                    ...widget.cocuklar,
-                  ],
-                )
-              : const SizedBox(width: double.infinity),
+        SandikAcilir(
+          acik: _acik,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: SandikSpace.sm),
+              ...widget.cocuklar,
+            ],
+          ),
         ),
       ],
     );

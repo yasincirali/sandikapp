@@ -65,7 +65,7 @@ Future<void> showQuickAdjustDialog(
   required QuickAdjustMode mode,
 }) async {
   if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
-  return showDialog<void>(
+  return showSandikGecisli<void>(
     context: context,
     barrierDismissible: true,
     builder: (_) => _QuickAdjustDialog(asset: asset, mode: mode, ref: ref),

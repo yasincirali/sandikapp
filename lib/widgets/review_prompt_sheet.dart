@@ -141,14 +141,7 @@ class ReviewPromptSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: c.text20,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            child: const SandikTutamac(),
           ),
           const SizedBox(height: SandikSpace.lg),
           Center(

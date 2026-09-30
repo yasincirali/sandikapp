@@ -14,7 +14,15 @@ import 'yukleme_isareti.dart';
 ///
 /// iOS'ta [CupertinoPageRoute] döner: sağdan-sola kayma animasyonu ve
 /// kenardan içeri swipe-to-go-back jesti (HIG'in beklediği davranış).
-/// Android'de [MaterialPageRoute] ile alttan-yukarı geçiş korunur.
+/// Android'de [MaterialPageRoute]: Flutter 3.44'te platformun kendi geçişi
+/// (tahmine dayalı geri + yatay sönüm-kayma). Eski yorum "alttan-yukarı"
+/// diyordu; o geçiş (FadeUpwards) Flutter'dan çoktan kalktı.
+///
+/// `fullscreenDialog: true` (FAB → Varlık Ekle, paywall…) Android'de de
+/// ALTTAN gelir ([_AlttanModalRoute]): Material rotası bu bayrakla yalnızca
+/// alttaki sayfayı durduruyor, yeni sayfa yine yandan geliyordu — "kapat"
+/// düğmeli bir modal ileri gezinti gibi görünüyordu (animasyon denetimi
+/// 2026-10-01).
 ///
 /// `MaterialPageRoute(builder: ...)` yerine bunu kullan:
 /// ```dart
@@ -99,11 +107,48 @@ PageRoute<T> adaptiveRoute<T>({
       fullscreenDialog: fullscreenDialog,
     );
   }
+  if (fullscreenDialog) {
+    return _AlttanModalRoute<T>(builder: builder, settings: settings);
+  }
   return MaterialPageRoute<T>(
     builder: builder,
     settings: settings,
-    fullscreenDialog: fullscreenDialog,
   );
+}
+
+/// Android tam ekran modalı: alttan çekmece gibi gelir, aşağı iner.
+///
+/// iOS'un modal sunumuyla aynı mekân dili — "bu sayfa ileri bir adım değil,
+/// üstüne açılan bir iş; bitince aşağı iner". Süre [SandikMotion.modal],
+/// eğri [SandikMotion.cekmece]; kapanışta çekmece eğrisinin tersi (ilk anda
+/// hızla iner). Hareketi azalt açıkken yalnız solma.
+class _AlttanModalRoute<T> extends MaterialPageRoute<T> {
+  _AlttanModalRoute({required super.builder, super.settings})
+      : super(fullscreenDialog: true);
+
+  @override
+  Duration get transitionDuration => SandikMotion.modal;
+
+  @override
+  Duration get reverseTransitionDuration => SandikMotion.modal;
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return FadeTransition(opacity: animation, child: child);
+    }
+    final egri = CurvedAnimation(
+      parent: animation,
+      curve: SandikMotion.cekmece,
+      reverseCurve: SandikMotion.cekmece.flipped,
+    );
+    return SlideTransition(
+      position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+          .animate(egri),
+      child: child,
+    );
+  }
 }
 
 /// Aynı sayfanın çift açılmasını engelleyen güvenli push.
@@ -118,12 +163,16 @@ PageRoute<T> adaptiveRoute<T>({
 ///
 /// İş mantığını değiştirmez: ilk push aynen çalışır, dönüş değeri aynen
 /// iletilir. Yalnızca yinelenen ikinci çağrı düşer.
+///
+/// Pencere 350 → 500 ms (animasyon denetimi 2026-10-01): gerçek geçişler
+/// iOS'ta 500 ms (`CupertinoPageRoute`), Android'de ~450 ms; 350 ms'lik
+/// pencere geçişin son yarısındaki ikinci dokunuşu kaçırıyordu.
 DateTime? _lastPushAt;
 
 Future<T?> pushGuarded<T>(
   BuildContext context,
   Route<T> route, {
-  Duration window = const Duration(milliseconds: 350),
+  Duration window = const Duration(milliseconds: 500),
 }) {
   final now = DateTime.now();
   final last = _lastPushAt;
@@ -299,6 +348,15 @@ abstract final class SandikMotion {
   /// Ekranda yer değiştiren / biçim değiştiren eleman.
   static const Curve move = Curves.easeInOutCubic;
 
+  /// Tam ekran modal (alttan gelen sayfa) süresi. [surface] (240) bir
+  /// sheet için yeterli ama ekranın tamamını kat eden hareket için kısa
+  /// kalıyor; iOS modal sunumu ~350 ms'ye yakın.
+  static const Duration modal = Duration(milliseconds: 320);
+
+  /// Çekmece eğrisi — iOS sheet/modal hissi: çok hızlı başlar, uzun ve
+  /// yumuşak oturur (denetim kılavuzu `cubic-bezier(0.32, 0.72, 0, 1)`).
+  static const Curve cekmece = Cubic(0.32, 0.72, 0, 1);
+
   /// TERSTEN oynatılan eğri yuvası: `reverseCurve`, `switchOutCurve`.
   ///
   /// Flutter bu yuvalardaki eğriyi zaman 1→0 akarken okur. Oraya [enter]
@@ -328,6 +386,28 @@ abstract final class SandikMotion {
 
   /// Uzun, yumuşak süzülme — genişlik ve konum akışı ([flow] ile).
   static const Curve glide = Curves.easeOutQuart;
+
+  // ── Jest sonrası fizik ────────────────────────────────────────────────────
+  //
+  // Parmak bırakıldığında sabit süreli bir eğri, parmağın HIZINI atar: kart
+  // %90 yol almışken de 240 ms'de biter, bırakma anında hız sıçrar.
+  // Yay simülasyonu bırakma hızıyla başlar ve hedefe doğal yavaşlar —
+  // hareket kesintisiz devam eder (Apple "fluid interfaces"; animasyon
+  // denetimi 2026-10-01). `controller.animateWith(SpringSimulation(yay,
+  // bas, son, hiz))` ile kullanılır; hareketi azalt açıkken doğrudan
+  // hedefe atlanır.
+
+  /// Yerine oturma — sekme/kart geçişini tamamlama. Taşma YOK (bounce 0):
+  /// hedef bir kenarsa (komşu kart pencereye oturuyor) aşmak boşluk gösterir.
+  static final SpringDescription yayOtur =
+      SpringDescription.withDurationAndBounce(
+          duration: const Duration(milliseconds: 380));
+
+  /// Geri yaylanma — iptal edilen sürükleme, bırakılan tutamaç. Çok hafif
+  /// taşma (bounce 0,12): "vazgeçtin, yerine döndü" hissi; oyuncak değil.
+  static final SpringDescription yayGeri =
+      SpringDescription.withDurationAndBounce(
+          duration: const Duration(milliseconds: 420), bounce: 0.12);
 
   // ── Erişilebilirlik ───────────────────────────────────────────────────────
 
@@ -1466,6 +1546,27 @@ class _SandikBasmaState extends State<SandikBasma>
       ),
     );
   }
+}
+
+/// Alt sayfa tutamacı — uygulamanın TEK tutamacı.
+///
+/// On beş sheet kendi tutamacını elle çiziyordu: üç genişlik (36/38/40),
+/// dört renk (text20, text36, overlay, hairline), üç köşe değeri. Aynı jest
+/// (aşağı çek, kapat) her sayfada biraz farklı görünüyordu (animasyon
+/// denetimi 2026-10-01). 36×4, `text36`: iki temada da okunur ama baskın
+/// değil.
+class SandikTutamac extends StatelessWidget {
+  const SandikTutamac({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: context.c.text36,
+          borderRadius: BorderRadius.circular(SandikSpace.xxs),
+        ),
+      );
 }
 
 /// Bölüm başlığı + isteğe bağlı sayaç rozeti.

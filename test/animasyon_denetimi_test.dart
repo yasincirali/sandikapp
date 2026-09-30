@@ -4,6 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/acilis_kapisi.dart';
 import 'package:portfoy_takip/utils/friendly_error.dart';
+import 'package:portfoy_takip/widgets/kapanan_satir.dart';
+import 'package:portfoy_takip/widgets/sandik_acilir.dart';
+import 'package:portfoy_takip/widgets/sekme_basa_don.dart';
 import 'package:portfoy_takip/widgets/zoomable_chart.dart';
 
 /// Animasyon denetimi (2026-10-01) — birinci kademe: kullanıcının doğrudan
@@ -47,6 +50,94 @@ void main() {
       expect(fade.opacity.value, lessThan(0.3),
           reason: 'kapanış ease-in kalmış: diyalog yarı sürede hâlâ görünür');
       await tester.pumpAndSettle();
+    });
+  });
+
+  group('SandikAcilir', () {
+    Widget kur(bool acik, {bool azalt = false}) => MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: azalt),
+            child: Scaffold(
+              body: Column(children: [
+                SandikAcilir(acik: acik, child: const Text('panel')),
+              ]),
+            ),
+          ),
+        );
+
+    testWidgets('kapanırken içerik ilk karede silinmez, sonunda ağaçtan çıkar',
+        (tester) async {
+      await tester.pumpWidget(kur(true));
+      expect(find.text('panel'), findsOneWidget);
+      await tester.pumpWidget(kur(false));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(find.text('panel'), findsOneWidget,
+          reason: 'eskiden panel ilk karede siliniyor, boş kutu küçülüyordu');
+      await tester.pumpAndSettle();
+      expect(find.text('panel'), findsNothing,
+          reason: 'kapalıyken ağaçta kalmamalı (hesap/çizim maliyeti sıfır)');
+    });
+
+    testWidgets('hareketi azalt: anında açılır/kapanır', (tester) async {
+      await tester.pumpWidget(kur(false, azalt: true));
+      await tester.pumpWidget(kur(true, azalt: true));
+      await tester.pump();
+      final boy = tester.widget<SizeTransition>(find.byType(SizeTransition));
+      expect(boy.sizeFactor.value, 1);
+    });
+  });
+
+  group('KapananSatir', () {
+    testWidgets('iş hata verirse satır geri açılır', (tester) async {
+      late BuildContext satirCtx;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: KapananSatir(
+            child: Builder(builder: (c) {
+              satirCtx = c;
+              return const Text('satır');
+            }),
+          ),
+        ),
+      ));
+      Object? yakalanan;
+      KapananSatir.kapatVeYap(satirCtx, () async => throw StateError('ağ'))
+          .catchError((Object e) => yakalanan = e);
+      await tester.pumpAndSettle();
+      expect(yakalanan, isA<StateError>());
+      final boy = tester.widget<SizeTransition>(find.byType(SizeTransition));
+      expect(boy.sizeFactor.value, 1, reason: 'kullanıcı sildiğini sanmamalı');
+    });
+  });
+
+  group('SekmeBasaDon', () {
+    testWidgets('açık sekmeye yeniden dokunuş yalnız o sekmenin listesini başa alır',
+        (tester) async {
+      final c = ScrollController();
+      addTearDown(c.dispose);
+      late VoidCallback birak;
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(builder: (ctx) {
+          birak = SekmeBasaDon.dinle(
+              7, () => SekmeBasaDon.basaKaydir(ctx, c));
+          return ListView.builder(
+            controller: c,
+            itemCount: 200,
+            itemBuilder: (_, i) => SizedBox(height: 60, child: Text('$i')),
+          );
+        }),
+      ));
+      addTearDown(() => birak());
+      c.jumpTo(5000);
+      await tester.pump();
+
+      SekmeBasaDon.yayinla(8); // başka sekme
+      await tester.pumpAndSettle();
+      expect(c.offset, 5000);
+
+      SekmeBasaDon.yayinla(7);
+      await tester.pumpAndSettle();
+      expect(c.offset, 0);
     });
   });
 

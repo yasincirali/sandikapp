@@ -90,10 +90,12 @@ class ModernTabSelector extends StatelessWidget {
             clipBehavior: Clip.hardEdge,
             children: [
               // Sliding pill
+              // Token süresi/eğrisi: eskiden elle 220 ms + ham eğriydi;
+              // etiket rengi (`state`) ile aynı anda varsın diye `state` +
+              // `move` (animasyon denetimi 2026-10-01).
               AnimatedPositioned(
-                duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 220)),
-                curve: Curves.easeInOutCubic,
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.move,
                 left: pillLeft + 4,
                 top: 4,
                 width: tabW - 8,
@@ -314,7 +316,14 @@ class _OrtakSekmesiState extends State<_OrtakSekmesi> {
                 child: Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: SandikSpace.xs2),
-                  child: Row(
+                  // Kardeş segmentler gibi geçişli: eskiden bu etiket hap
+                  // gelmeden koyu renge atlıyor, bir an düşük kontrastta
+                  // kalıyordu (animasyon denetimi 2026-10-01).
+                  child: AnimatedDefaultTextStyle(
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    style: _metin(context, secili)!,
+                    child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
@@ -322,14 +331,20 @@ class _OrtakSekmesiState extends State<_OrtakSekmesi> {
                           etiket,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: _metin(context, secili),
                         ),
                       ),
-                      Icon(Icons.expand_more_rounded,
-                          size: 16,
-                          color:
-                              secili ? context.c.onAmber : context.c.text36),
+                      TweenAnimationBuilder<Color?>(
+                        tween: ColorTween(
+                            end: secili ? context.c.onAmber : context.c.text36),
+                        duration: SandikMotion.stateOf(context),
+                        curve: SandikMotion.enter,
+                        builder: (_, renk, __) => Icon(
+                            Icons.expand_more_rounded,
+                            size: 16,
+                            color: renk),
+                      ),
                     ],
+                  ),
                   ),
                 ),
               ),

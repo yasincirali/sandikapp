@@ -144,16 +144,23 @@ class _Segment extends StatelessWidget {
             minimumSize: SandikTouch.minSize,
             padding: EdgeInsets.zero,
             onPressed: onTap,
-            child: Container(
+            // Zemin ve metin geçişli (animasyon denetimi 2026-10-01).
+            child: AnimatedContainer(
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
               height: double.infinity,
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs2),
               decoration: _kabuk(context, secili),
-              child: Text(
-                etiket,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: _metin(context, secili),
+              child: AnimatedDefaultTextStyle(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
+                style: _metin(context, secili) ?? const TextStyle(),
+                child: Text(
+                  etiket,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ),
@@ -258,7 +265,9 @@ class _OrtakMenusuState extends State<_OrtakMenusu> {
                     ),
                   ),
               ],
-              child: Container(
+              child: AnimatedContainer(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
                 height: double.infinity,
                 alignment: Alignment.center,
                 padding:
