@@ -867,8 +867,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dividendWithholdingAssumed(String rate) {
-    return 'Assumed $rate withholding tax; you can edit it.';
+  String dividendWithholdingAssumed(String rate, String cut, String net) {
+    return '$rate withholding tax (−$cut) deducted: net $net. Edit if different.';
   }
 
   @override

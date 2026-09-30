@@ -494,10 +494,16 @@
       }
     }
   },
-  "dividendWithholdingAssumed": "Assumed {rate} withholding tax; you can edit it.",
+  "dividendWithholdingAssumed": "{rate} withholding tax (−{cut}) deducted: net {net}. Edit if different.",
   "@dividendWithholdingAssumed": {
     "placeholders": {
       "rate": {
+        "type": "String"
+      },
+      "cut": {
+        "type": "String"
+      },
+      "net": {
         "type": "String"
       }
     }

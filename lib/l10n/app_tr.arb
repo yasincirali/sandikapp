@@ -497,10 +497,16 @@
       }
     }
   },
-  "dividendWithholdingAssumed": "Stopaj {rate} varsayıldı, düzeltebilirsin.",
+  "dividendWithholdingAssumed": "Stopaj {rate} (−{cut}) düşüldü: net {net}. Farklıysa düzelt.",
   "@dividendWithholdingAssumed": {
     "placeholders": {
       "rate": {
+        "type": "String"
+      },
+      "cut": {
+        "type": "String"
+      },
+      "net": {
         "type": "String"
       }
     }

@@ -855,8 +855,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String dividendWithholdingAssumed(String rate) {
-    return 'Stopaj $rate varsayıldı, düzeltebilirsin.';
+  String dividendWithholdingAssumed(String rate, String cut, String net) {
+    return 'Stopaj $rate (−$cut) düşüldü: net $net. Farklıysa düzelt.';
   }
 
   @override

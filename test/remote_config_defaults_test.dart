@@ -71,6 +71,12 @@ void main() {
       expect(varsayilan('percentile_strip_enabled'), 'false');
     });
 
+    // Karar 8.1 (2026-09-30): kâr payı stopajı %15 (9286 s. CBK, RG
+    // 22.12.2024). Değer değişirse mevzuat değişmiş olmalı — kaynağı yaz.
+    test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
+      expect(varsayilan('temettu_stopaj_orani'), '0.15');
+    });
+
     test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {
       expect(varsayilan('paywall_enabled'), 'false');
     });

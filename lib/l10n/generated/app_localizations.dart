@@ -1595,8 +1595,8 @@ abstract class AppLocalizations {
   /// No description provided for @dividendWithholdingAssumed.
   ///
   /// In tr, this message translates to:
-  /// **'Stopaj {rate} varsayıldı, düzeltebilirsin.'**
-  String dividendWithholdingAssumed(String rate);
+  /// **'Stopaj {rate} (−{cut}) düşüldü: net {net}. Farklıysa düzelt.'**
+  String dividendWithholdingAssumed(String rate, String cut, String net);
 
   /// No description provided for @dividendEnterNet.
   ///
