@@ -51,27 +51,10 @@ class MilestoneSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: c.text20,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            child: const SandikTutamac(),
           ),
           const SizedBox(height: 24),
-          Center(
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: c.amberFill.withValues(alpha: 0.16),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(_ikon, size: 28, color: c.amberText),
-            ),
-          ),
+          Center(child: _Rozet(ikon: _ikon)),
           const SizedBox(height: 16),
           Text(
             milestone.title,
@@ -94,6 +77,106 @@ class MilestoneSheet extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Devam'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kilometre taşı rozeti — uygulamanın nadir, duygusal anı.
+///
+/// Animasyon denetimi 2026-10-01 ("kaçırılmış fırsat"): kutlama sayfası
+/// hareketsiz ve sessizdi. Ton kuralı (konfeti yok, oyunlaştırma yok)
+/// korunur: sayfa oturduktan sonra rozet %90'dan hafif taşarak yerine
+/// oturur, arkasından tek bir amber halka yayılıp söner ve orta şiddette
+/// dokunsal onay gelir — "kasana bir şey eklendi" hissi, gösteri değil.
+/// Yay taşması yalnız bu TEK küçük öğede ([SandikMotion.spring] kuralı).
+/// Hareketi azalt açıkken rozet sabit, halka yok; dokunsal onay kalır.
+class _Rozet extends StatefulWidget {
+  const _Rozet({required this.ikon});
+
+  final IconData ikon;
+
+  @override
+  State<_Rozet> createState() => _RozetState();
+}
+
+class _RozetState extends State<_Rozet> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: SandikMotion.flow * 2);
+  late final Animation<double> _olcek = Tween<double>(begin: 0.9, end: 1)
+      .animate(CurvedAnimation(
+          parent: _c,
+          curve: const Interval(0, 0.4, curve: SandikMotion.spring)));
+  late final Animation<double> _halka = CurvedAnimation(
+      parent: _c, curve: const Interval(0.15, 1, curve: SandikMotion.glide));
+
+  @override
+  void initState() {
+    super.initState();
+    // Sayfa alttan kayarken değil, oturduktan sonra.
+    Future<void>.delayed(SandikMotion.surface, () {
+      if (!mounted) return;
+      SandikHaptic.medium.perform();
+      if (!MediaQuery.disableAnimationsOf(context)) _c.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final rozet = Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: c.amberFill.withValues(alpha: 0.16),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(widget.ikon, size: 28, color: c.amberText),
+    );
+    if (MediaQuery.disableAnimationsOf(context)) return rozet;
+    // Yerleşim rozetin 56'lık kutusu kadar — halka kutudan TAŞAR ama sayfa
+    // yüksekliğini değiştirmez (hareketi azalt'taki hâliyle aynı boy).
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          // Tek halka: 56'dan 96'ya yayılır, solar. Boyası kendi katmanında.
+          OverflowBox(
+            maxWidth: 96,
+            maxHeight: 96,
+            child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _halka,
+              builder: (_, __) {
+                final t = _halka.value;
+                if (t <= 0 || t >= 1) return const SizedBox.shrink();
+                final cap = 56 + 40 * t;
+                return Container(
+                  width: cap,
+                  height: cap,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: c.amberFill.withValues(alpha: 0.45 * (1 - t)),
+                      width: 2,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ),
+          ),
+          ScaleTransition(scale: _olcek, child: rozet),
         ],
       ),
     );

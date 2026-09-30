@@ -53,7 +53,7 @@ Future<void> showDividendDialog(
       ? null
       : (stopajKaynagi ??
           () => RemoteConfigService.instance.temettuStopajOrani)();
-  final kaydedildi = await showDialog<bool>(
+  final kaydedildi = await showSandikGecisli<bool>(
     context: context,
     barrierDismissible: true,
     builder: (_) => _DividendDialog(

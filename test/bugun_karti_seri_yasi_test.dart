@@ -134,10 +134,14 @@ void main() {
       // sonlarını değiştirdiğinde birebir eşleşme SAHTE kırılır (bu
       // projede dört test tam olarak böyle kırılmıştı).
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(
-          tek.contains('TazelikRitmi.nabiz.dinle(() { '
-              'if (!mounted) return; _seriyiTazele();'),
-          isTrue,
+      // 2026-10-01: arada gizli sekme kapısı var (TickerMode kapalıyken
+      // tazeleme yok); tick yine YALNIZ `_seriyiTazele`'yi çağırır.
+      final i = tek.indexOf('TazelikRitmi.nabiz.dinle(() {');
+      expect(i, greaterThanOrEqualTo(0));
+      final govde = tek.substring(i, tek.indexOf('});', i));
+      expect(govde.contains('_seriyiTazele();'), isTrue,
+          reason: 'nabız üç yüklemeyi birden tetiklerse gereksiz istek doğar');
+      expect(govde.contains('_yukle'), isFalse,
           reason: 'nabız üç yüklemeyi birden tetiklerse gereksiz istek doğar');
     });
 

@@ -801,9 +801,16 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     // Volume subchart için sync viewport. Aynı controller ZoomableChart ve
     // ZoomableBarChart tarafından paylaşılır → üstte pinch/pan yapılınca
     // alt panel de aynı X aralığına oturur.
+    //
+    // Anahtarda `end` GÜN'e yuvarlanır: `end` build'de `DateTime.now()`
+    // (milisaniye) — ham hâli her yeniden kurulumda (30 sn fiyat tiki, çip
+    // dokunuşu) anahtarı değiştirip viewport'u sıfırdan kuruyordu; kullanıcı
+    // yakınlaştırdığı anda — parmak ekrandayken bile — tam aralığa geri
+    // atılıyordu (animasyon denetimi 2026-10-01). Gün içinde uzayan aralık
+    // `updateFullRange` yolundan geçer ve yakınlaştırma korunur.
     final viewport = _ensureViewport(
       key:
-          '${_zoomKey ?? "n/a"}|${start.millisecondsSinceEpoch}|${end.millisecondsSinceEpoch}|$intraday',
+          '${_zoomKey ?? "n/a"}|${start.millisecondsSinceEpoch}|${dayKey(end).millisecondsSinceEpoch}|$intraday',
       fullMinX: minX,
       fullMaxX: maxX,
     );
@@ -1036,7 +1043,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                     // Ana grafikle aynı motion token'ları — hacim paneli
                     // periyot değişiminde onunla birlikte morf'lansın, kendi
                     // başına (fl_chart varsayılanı 150ms/linear) kaymasın.
-                    duration: SandikMotion.state,
+                    // Jest sırasında ana grafik gibi morf YOK (bkz.
+                    // `ChartViewport.jestSuruyor`); hareketi azalt'ta da yok.
+                    duration: vp.jestSuruyor
+                        ? Duration.zero
+                        : SandikMotion.stateOf(context),
                     curve: SandikMotion.enter,
                   );
                 },

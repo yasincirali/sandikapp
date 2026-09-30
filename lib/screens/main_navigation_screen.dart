@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
+import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
@@ -205,6 +206,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // durum değişimi değildir, geri bildirim de vermemeli.
     if (index != _currentIndex) {
       SandikHaptic.selection.perform();
+    } else {
+      // Açık sekmeye yeniden dokunuş: listesi başa döner (bkz.
+      // `SekmeBasaDon`, animasyon denetimi 2026-10-01).
+      SekmeBasaDon.yayinla(index);
     }
     if (index == 0 && _currentIndex != 0) {
       ref.read(portfolioProvider.notifier).refreshPrices();
@@ -393,7 +398,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color: color,
                 ),
-                child: Text(label),
+                // Kalınlık ANINDA değişir, yalnız renk geçer: en sık
+                // dokunulan kontrolde kalınlık w500→w700 arası süzülürken
+                // etiket genişliği 180 ms titriyordu (animasyon denetimi
+                // 2026-10-01). Metnin kendi stili animasyonlu stilin
+                // üstüne biner — yalnız `fontWeight`'ı sabitler.
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),

@@ -22,6 +22,7 @@ import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
 import '../utils/sandik_snack.dart';
@@ -67,6 +68,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _scrollCtrl = ScrollController();
   bool _reloading = false;
 
+  /// Açık Ana sekmesine yeniden dokununca başa dön (bkz. [SekmeBasaDon]).
+  late final VoidCallback _basaDonBirak;
+
+  /// Piyasa şeridi ekranda mı. Şerit sürekli kayan bir bant (kendi
+  /// `Ticker`'ı); kullanıcı aşağı kaydırıp onu ekrandan çıkarınca bile her
+  /// karede kare üretiyor, uygulama hiç boşa düşmüyordu (animasyon
+  /// denetimi 2026-10-01). Ekrandan çıkınca `TickerMode` ile durur, geri
+  /// gelince kaldığı yerden akar; nabız turu da gizliyken atlanır.
+  final _seritAnahtari = GlobalKey();
+  final _seritGorunur = ValueNotifier<bool>(true);
+
+  void _seritGorunurlugunuGuncelle() {
+    final kutu = _seritAnahtari.currentContext?.findRenderObject();
+    if (kutu is! RenderBox || !kutu.attached || !kutu.hasSize) return;
+    final alt = kutu.localToGlobal(Offset(0, kutu.size.height)).dy;
+    _seritGorunur.value = alt > 0;
+  }
+
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
   void _aramayiAc() {
     // Demo (F1): takibe alma bir yazma; arama sayfası oraya çıkıyor.
@@ -94,8 +113,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _basaDonBirak = SekmeBasaDon.dinle(
+        0, () => SekmeBasaDon.basaKaydir(context, _scrollCtrl));
+    _scrollCtrl.addListener(_seritGorunurlugunuGuncelle);
+  }
+
+  @override
   void dispose() {
+    _basaDonBirak();
+    _scrollCtrl.removeListener(_seritGorunurlugunuGuncelle);
     _scrollCtrl.dispose();
+    _seritGorunur.dispose();
     super.dispose();
   }
 
@@ -717,7 +747,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             key: const ValueKey('piyasa-seridi'),
             child: TourAnchor(
               target: TourTarget.piyasaSeridi,
-              child: PiyasaSeridi(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _seritGorunur,
+                builder: (_, gorunur, serit) =>
+                    TickerMode(enabled: gorunur, child: serit!),
+                child: PiyasaSeridi(
+                key: _seritAnahtari,
                 // Şerit kartı 44pt kutuda ortalı 36pt (bkz.
                 // `piyasa_seridi.dart`); alt 10 + kutu payı 4 = hero karta
                 // 14pt (seçenek C).
@@ -731,6 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // payı 4 = 8pt.
                 padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm2),
                 onAra: _aramayiAc,
+              ),
               ),
             ),
           ),
@@ -1230,7 +1266,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required int gecmis,
     required int aktif,
   }) {
-    return showDialog<bool>(
+    return showSandikGecisli<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.permanentDelete),
@@ -1303,14 +1339,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
             children: [
               const SizedBox(height: SandikSpace.md),
               Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.c.text36,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                ),
+                child: const SandikTutamac(),
               ),
               const SizedBox(height: SandikSpace.md),
               Padding(
@@ -1710,11 +1739,26 @@ class _BalanceToggleButton extends ConsumerWidget {
         width: 44,
         height: 44,
         decoration: context.chip(selected: hidden),
+        // Göz ikonu yerinde değişir (tema anahtarındaki gibi kısa çapraz
+        // sönüm + hafif büyüme); eskiden tek karede atlıyordu.
         child: Center(
-          child: Icon(
-            hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-            color: hidden ? context.c.amberText : context.c.text58,
-            size: 20,
+          child: AnimatedSwitcher(
+            duration: SandikMotion.stateOf(context),
+            switchInCurve: SandikMotion.enter,
+            switchOutCurve: SandikMotion.exit,
+            transitionBuilder: (child, a) => FadeTransition(
+              opacity: a,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.85, end: 1).animate(a),
+                child: child,
+              ),
+            ),
+            child: Icon(
+              hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              key: ValueKey(hidden),
+              color: hidden ? context.c.amberText : context.c.text58,
+              size: 20,
+            ),
           ),
         ),
       ),

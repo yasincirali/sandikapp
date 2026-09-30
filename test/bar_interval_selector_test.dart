@@ -80,11 +80,13 @@ void main() {
       onSecim: (_) {},
     )));
 
-    final secili = t.widget<Text>(find.text('15dk'));
-    final digeri = t.widget<Text>(find.text('5dk'));
-    expect(secili.style?.fontWeight, FontWeight.w600);
-    expect(digeri.style?.fontWeight, FontWeight.w500);
-    expect(secili.style?.color, isNot(digeri.style?.color));
+    // Stil 2026-10-01'den beri `AnimatedDefaultTextStyle`'dan gelir (geçişli
+    // seçim); metnin kendisi stil taşımaz — etkin stili oku.
+    TextStyle etkin(String s) =>
+        DefaultTextStyle.of(t.element(find.text(s))).style;
+    expect(etkin('15dk').fontWeight, FontWeight.w600);
+    expect(etkin('5dk').fontWeight, FontWeight.w500);
+    expect(etkin('15dk').color, isNot(etkin('5dk').color));
   });
 }
 

@@ -64,14 +64,20 @@ class _HScrollWithFadeState extends State<HScrollWithFade> {
           scrollDirection: Axis.horizontal,
           child: widget.child,
         ),
-        if (_canScrollRight)
-          Positioned(
+        // Kenar solması belirip kaybolurken GEÇER (kaydırıp sona gelince
+        // ok bir karede yok oluyordu — animasyon denetimi 2026-10-01).
+        // Hep ağaçta: `AnimatedOpacity` 0'dayken çizim maliyeti yok.
+        Positioned(
             right: 0,
             top: 0,
             bottom: 0,
             width: widget.fadeWidth,
             child: IgnorePointer(
-              child: Row(
+              child: AnimatedOpacity(
+                opacity: _canScrollRight ? 1 : 0,
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
+                child: Row(
                 children: [
                   Expanded(
                     child: DecoratedBox(
@@ -104,6 +110,7 @@ class _HScrollWithFadeState extends State<HScrollWithFade> {
                     ),
                   ),
                 ],
+              ),
               ),
             ),
           ),

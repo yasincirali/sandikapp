@@ -158,6 +158,10 @@ class VarlikSayfasi extends ConsumerStatefulWidget {
 class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   static const _yarim = 0.7;
   static const _tam = 0.94;
+
+  /// Sayfanın inebileceği en alt oran. Tutamaç sürüklemesi de, içerik
+  /// fırlatması da buraya kadar parmağı izler; altı kapatmaya sayılır.
+  static const _enAlt = 0.5;
   /// Grafik kartının dış yüksekliği — ortak grafik stilinden (Performans
   /// stili, 2026-09-28); yükleme/hata kutuları da aynı yükseklikte.
   static const _grafikYuksekligi = GrafikStili.kartYuksekligi;
@@ -228,6 +232,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
             periodDays: kSinyalPenceresiGun),
     ]);
+    if (!mounted) return;
+    await rotaGecisiniBekle(context);
     if (mounted) setState(() => _acildi = true);
   }
 
@@ -281,8 +287,15 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   }
 
   /// Tutamaçtan sürükleme: parmağın dikey hareketi sayfa oranına çevrilir.
-  /// Yarım boyutun altına inen çekiş kapatmaya sayılır (modalın kendi
+  /// [_enAlt]'ın altına inen çekiş kapatmaya sayılır (modalın kendi
   /// jestiyle aynı his).
+  ///
+  /// Animasyon denetimi 2026-10-01: sayfa eskiden [_yarim]'da (0,7) DONUP
+  /// parmak aşağı giderken yerinde duruyordu; içerik fırlatması ise 0,5'e
+  /// kadar inebildiği için oradan tutamaca dokununca sayfa 0,7'ye
+  /// zıplıyordu. Artık tutamaç da [_enAlt]'a kadar parmağı izler; altı
+  /// kapatma sayılır. Bırakınca hedefe parmağın hızıyla gider
+  /// ([_hizliSure]).
   double _asagiTasma = 0;
 
   void _surukle(DragUpdateDetails d) {
@@ -290,13 +303,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final h = MediaQuery.sizeOf(context).height;
     if (h <= 0) return;
     final yeni = _sayfa.size - d.delta.dy / h;
-    if (yeni < _yarim) {
+    if (yeni < _enAlt) {
       _asagiTasma += d.delta.dy;
-      _sayfa.jumpTo(_yarim);
+      _sayfa.jumpTo(_enAlt);
       return;
     }
     _asagiTasma = 0;
-    _sayfa.jumpTo(yeni.clamp(_yarim, _tam));
+    _sayfa.jumpTo(yeni.clamp(_enAlt, _tam));
   }
 
   void _birak(DragEndDetails d) {
@@ -304,8 +317,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final hiz = d.primaryVelocity ?? 0; // + aşağı
     final tasma = _asagiTasma;
     _asagiTasma = 0;
-    final yarimda = _sayfa.size <= _yarim + 0.01;
-    if (yarimda && (tasma > SandikTouch.min * 2 || hiz > 700)) {
+    final boy = _sayfa.size;
+    // Kapatma: en alta dayanıp çekmeye devam ettiyse ya da yarım boyun
+    // altından aşağı fırlattıysa.
+    if ((boy <= _enAlt + 0.01 && tasma > SandikTouch.min) ||
+        (boy < _yarim - 0.01 && hiz > 700) ||
+        (boy <= _yarim + 0.01 && hiz > 1200)) {
       Navigator.of(context).maybePop();
       return;
     }
@@ -313,13 +330,29 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         ? _tam
         : hiz > 300
             ? _yarim
-            : (_sayfa.size < (_yarim + _tam) / 2 ? _yarim : _tam);
-    final sure = SandikMotion.of(context, SandikMotion.surface);
+            : (boy < (_yarim + _tam) / 2 ? _yarim : _tam);
+    final sure = _hizliSure(hedef, hiz);
     if (sure == Duration.zero) {
       _sayfa.jumpTo(hedef);
     } else {
       _sayfa.animateTo(hedef, duration: sure, curve: SandikMotion.enter);
     }
+  }
+
+  /// Parmak hızını taşıyan süre: `easeOutCubic` başlangıç eğimi 3'tür, yani
+  /// ilk hız = 3 × mesafe / süre. Süreyi buna göre seçmek, bırakma anında
+  /// sayfanın parmakla AYNI hızda devam etmesini sağlar (eskiden hız ne
+  /// olursa olsun sabit 240 ms'ydi — hızlı fiskede sayfa bir an
+  /// yavaşlıyordu). Yavaş bırakışta [SandikMotion.surface]'i aşmaz, çok
+  /// hızlıda 120 ms'nin altına inmez.
+  Duration _hizliSure(double hedef, double hiz) {
+    final tavan = SandikMotion.of(context, SandikMotion.surface);
+    if (tavan == Duration.zero) return Duration.zero;
+    final h = MediaQuery.sizeOf(context).height;
+    final mesafe = (hedef - _sayfa.size).abs() * h;
+    if (hiz.abs() < 50 || mesafe <= 0) return tavan;
+    final ms = (3 * mesafe / hiz.abs() * 1000).clamp(120.0, tavan.inMilliseconds.toDouble());
+    return Duration(microseconds: (ms * 1000).round());
   }
 
   String _donemEtiketi(int gun) => donemEtiketi(
@@ -338,7 +371,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         controller: _sayfa,
         expand: false,
         initialChildSize: widget.tamAcilis ? _tam : _yarim,
-        minChildSize: 0.5,
+        minChildSize: _enAlt,
         maxChildSize: _tam,
         snap: true,
         snapSizes: const [_yarim],

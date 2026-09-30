@@ -8,7 +8,8 @@ import 'package:flutter/material.dart'
         LinearProgressIndicator,
         Icons,
         TextStyle,
-        RefreshIndicator;
+        RefreshIndicator,
+        showModalBottomSheet;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -21,6 +22,9 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_acilir.dart';
+import '../widgets/sekme_basa_don.dart';
+import 'main_navigation_screen.dart' show MainNavigationScreen;
 import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
@@ -197,6 +201,11 @@ class _PortfolioPerformanceScreenState
 
   late ScrollController _scrollController;
 
+  /// Açık Performans sekmesine yeniden dokununca başa dön (bkz.
+  /// [SekmeBasaDon]). Ekran başka yerden rota olarak açıldıysa
+  /// (`showBackButton`) abone olmaz — o bir sekme değil.
+  VoidCallback? _basaDonBirak;
+
   @override
   void initState() {
     super.initState();
@@ -213,6 +222,11 @@ class _PortfolioPerformanceScreenState
     }
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
+    if (!widget.showBackButton) {
+      _basaDonBirak = SekmeBasaDon.dinle(
+          MainNavigationScreen.performansSekmesi,
+          () => SekmeBasaDon.basaKaydir(context, _scrollController));
+    }
     // Dönem derin bağlantıyla GÜNLÜK dışına ayarlanmış olabilir; tick
     // kararı seçili dönemden sonra verilmeli.
     _startIntradayTickIfNeeded();
@@ -269,6 +283,7 @@ class _PortfolioPerformanceScreenState
     _nabziBirak?.call();
     _zoomController?.dispose();
     _viewport?.dispose();
+    _basaDonBirak?.call();
     _scrollController.dispose();
     super.dispose();
   }

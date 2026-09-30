@@ -3,6 +3,7 @@ import 'dart:async' show FutureOr, unawaited;
 import '../widgets/sandik_skeleton.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart'
     show
         RefreshIndicator,
@@ -25,6 +26,8 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/sparkline_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sekme_basa_don.dart';
+import '../widgets/sandik_acilir.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
@@ -62,6 +65,71 @@ class PortfolioScreen extends ConsumerStatefulWidget {
 
 class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   String? _view = '';
+
+  /// Varlıklarım listesinin denetleyicisi — açık Portföy sekmesine yeniden
+  /// dokununca başa döner (bkz. [SekmeBasaDon], animasyon denetimi
+  /// 2026-10-01).
+  final _kaydirma = ScrollController();
+  late final VoidCallback _basaDonBirak;
+
+  // ── Yeni eklenen varlık (animasyon denetimi 2026-10-01, özgün dokunuş) ──
+  //
+  // Varlık eklenince uygulama Portföy sekmesine geçiyor ama yeni satır
+  // ötekilerin arasında hiçbir işaret vermeden duruyordu; uzun listede
+  // kullanıcı "nereye gitti?" diye arıyordu. Şimdi liste o satıra kayar ve
+  // satır BİR KEZ amber çerçeveyle parlayıp söner. Ekleme ekranı kimlik
+  // döndürmediği için yeni satır, bir önceki kurulumda görülen anahtar
+  // kümesinden farkla bulunur: ilk yüklemede, görünüm (Ben/ortak/Birlikte)
+  // değişince ve birden çok satır birden gelince (toplu ekleme, ilk senkron)
+  // parlatılmaz — yalnız "tek yeni satır" anı.
+
+  /// Önceki kurulumda görülen pozisyon anahtarları; `null` = henüz yok.
+  Set<String>? _gorulenAnahtarlar;
+  String? _gorulenGorunum;
+
+  /// Parlatılacak satır ve onu görünür kılmak için anahtarı.
+  String? _vurgulanan;
+  final _vurguAnahtari = GlobalKey();
+
+  void _yeniSatiriBul(List<Position> positions) {
+    final anahtarlar = {for (final p in positions) p.key};
+    final onceki = _gorulenAnahtarlar;
+    final ayniGorunum = _gorulenGorunum == _view;
+    _gorulenAnahtarlar = anahtarlar;
+    _gorulenGorunum = _view;
+    // Görünüm değişince eski parlama bir daha oynamasın.
+    if (!ayniGorunum) _vurgulanan = null;
+    if (onceki == null || !ayniGorunum) return;
+    final yeni = anahtarlar.difference(onceki);
+    if (yeni.length != 1) return;
+    _vurgulanan = yeni.single;
+    // Build içindeyiz: kaydırma kareden sonra. Satır liste dışındaysa
+    // (filtre) bağlam yoktur, sessizce geçer.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final c = _vurguAnahtari.currentContext;
+      if (!mounted || c == null) return;
+      Scrollable.ensureVisible(
+        c,
+        alignment: 0.3,
+        duration: SandikMotion.surfaceOf(context),
+        curve: SandikMotion.move,
+      );
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _basaDonBirak = SekmeBasaDon.dinle(
+        1, () => SekmeBasaDon.basaKaydir(context, _kaydirma));
+  }
+
+  @override
+  void dispose() {
+    _basaDonBirak();
+    _kaydirma.dispose();
+    super.dispose();
+  }
   AssetType? _filteredType;
   _SortOrder _sortOrder = _SortOrder.valueDesc;
 
@@ -286,7 +354,17 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     onRefresh: () => ref
                         .read(portfolioProvider.notifier)
                         .refreshPrices(force: true),
+                    // Kaydırma paneli grubu listenin TAMAMINI sarar: kartlar
+                    // artık doğrudan dış listenin çocukları (bkz. [_AssetList]).
+                    child: SlidableAutoCloseBehavior(
                     child: ListView(
+                      // Varlıklarım ↔ Takip Listesi geçişinde liste sökülüp
+                      // yeniden kuruluyor; anahtar konumu PageStorage'da
+                      // tutar — geri dönünce kaldığı yerden devam eder
+                      // (animasyon denetimi 2026-10-01: her geçişte başa
+                      // atıyordu).
+                      key: const PageStorageKey('portfoy-varliklarim'),
+                      controller: _kaydirma,
                       physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics()),
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 80),
@@ -315,8 +393,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         // bir önceki liste zaten var. `valueOrNull` yeniden
                         // yükleme boyunca önceki değeri korur, bu yüzden spinner
                         // artık YALNIZCA hiç veri yokken (ilk açılış) çıkar.
-                        (partnerAssetsAsync.valueOrNull == null
-                            ? (partnerAssetsAsync.hasError
+                        //
+                        // Sonuç bir LİSTE ve dış listeye YAYILIR (`...`):
+                        // kartlar dış ListView'in doğrudan çocuğu olunca
+                        // yalnızca görünenler kurulur (bkz. [_AssetList]).
+                        ...(partnerAssetsAsync.valueOrNull == null
+                            ? <Widget>[
+                                partnerAssetsAsync.hasError
                                 ? SandikErrorView(
                                     error: partnerAssetsAsync.error!,
                                     onRetry: () =>
@@ -325,7 +408,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     height: 300,
                                     child: SandikSkeletonList(
                                         rows: 4, padding: EdgeInsets.zero),
-                                  ))
+                                  )]
                             : ((Map<String, List<Asset>> partnerMap) {
                                 // Sahiplik sınırı KORUNMALI: `positionKey` sahip
                                 // bilgisi taşımaz, bu yüzden tüm ortakların lot'ları
@@ -348,9 +431,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
 
                                 final positions =
                                     aggregatePositionsByOwner(ownerLots);
+                                _yeniSatiriBul(positions);
 
                                 if (positions.isEmpty) {
-                                  return const _EmptyState();
+                                  return const <Widget>[_EmptyState()];
                                 }
 
                                 final filteredPositions =
@@ -376,8 +460,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 SparklineService.instance
                                     .prefetch(displayAssets);
 
-                                return Column(
-                                  children: [
+                                return <Widget>[
                                     _AssetTypeDonut(
                                       assets: displayAssets,
                                       pState: pState,
@@ -386,7 +469,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                           setState(() => _filteredType = type),
                                     ),
                                     const SizedBox(height: 32),
-                                    _AssetList(
+                                    ..._AssetList(
+                                      vurgulanan: _vurgulanan,
+                                      vurguAnahtari: _vurguAnahtari,
                                       positions: filteredPositions,
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
@@ -418,11 +503,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       onDividend: (p) => showDividendDialog(
                                           context,
                                           asset: p.asDisplayAsset()),
-                                    ),
-                                  ],
-                                );
+                                    ).kartlar(),
+                                ];
                               })(partnerAssetsAsync.valueOrNull!)),
                       ],
+                    ),
                     ),
                   ),
                 ),
@@ -644,7 +729,15 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
           height: 260,
           child: Stack(
             children: [
-              PieChart(
+              // RepaintBoundary: halka morf ederken (dilim seçimi, fiyat
+              // tiki) kart listesiyle aynı katmanda boyanıyordu — her karede
+              // bütün liste yeniden çiziliyordu. Süre/eğri token'dan: fl_chart
+              // varsayılanı 150 ms DOĞRUSAL ve hareketi azalt'ı bilmez
+              // (animasyon denetimi 2026-10-01).
+              RepaintBoundary(
+                child: PieChart(
+                swapAnimationDuration: SandikMotion.stateOf(context),
+                swapAnimationCurve: SandikMotion.enter,
                 PieChartData(
                   pieTouchData: PieTouchData(
                     touchCallback: (event, response) {
@@ -674,6 +767,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   centerSpaceRadius: 88,
                   startDegreeOffset: -90,
                 ),
+              ),
               ),
               Center(
                 child: Padding(
@@ -787,7 +881,18 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
 // ── Asset List ────────────────────────────────────────────────────────────────
 
-class _AssetList extends StatelessWidget {
+/// Varlık kartlarını üretir — WIDGET DEĞİL, dış listeye yayılan bir liste.
+///
+/// Eskiden `ListView.builder(shrinkWrap: true, NeverScrollable)` idi ve
+/// yorumu "yalnızca görünür aralığı kurar" diyordu; doğru değildi:
+/// sınırsız yükseklikte `shrinkWrap` görünümü, boyunu bulmak için BÜTÜN
+/// kartları kurar ve yerleştirir. Her kartta `Slidable` + `ClipRRect` +
+/// `AnimatedSize` var; büyük portföyde her fiyat tikinde hepsi yeniden
+/// kuruluyor, bir kart açılınca iç ve dış liste her karede yeniden
+/// yerleşiyordu (animasyon denetimi 2026-10-01). Kartlar artık dış
+/// `ListView`'in doğrudan çocukları: yalnızca ekrana girenler kurulur.
+/// Kaydırma paneli grubu (`SlidableAutoCloseBehavior`) dış listeyi sarar.
+class _AssetList {
   final List<Position> positions;
   final PortfolioState pState;
   final BazPara baz;
@@ -801,7 +906,13 @@ class _AssetList extends StatelessWidget {
   final FutureOr<void> Function(Position) onRemove;
   final FutureOr<void> Function(Position) onDividend;
 
+  /// Bir kez parlayacak yeni satırın anahtarı (bkz. `_yeniSatiriBul`).
+  final String? vurgulanan;
+  final GlobalKey vurguAnahtari;
+
   const _AssetList({
+    required this.vurgulanan,
+    required this.vurguAnahtari,
     required this.positions,
     required this.pState,
     required this.baz,
@@ -813,27 +924,15 @@ class _AssetList extends StatelessWidget {
     required this.onDividend,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    // `Column` + `.map()` her kartı bir kerede kurardı. Free tier 20 varlıkla
-    // sınırlı ama premium sınırsız — büyük portföyde ekran dışındaki kartlar
-    // da (sparkline yükleyen State'leriyle birlikte) boşuna inşa ediliyordu.
-    //
-    // Dış ListView zaten kaydırmayı yönetiyor, bu yüzden burada
-    // shrinkWrap + NeverScrollable: iç içe iki kaydırma olmaz, ama
-    // `itemBuilder` yalnızca görünür aralığı kurar.
-    return SlidableAutoCloseBehavior(
-      child: ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        itemCount: positions.length,
+  List<Widget> kartlar() => [
         // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
         // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
-        itemBuilder: (context, i) {
-          final position = positions[i];
-          return _AssetCard(
+        for (final position in positions)
+          _YeniVarlikParlamasi(
             key: ValueKey(position.key),
+            aktif: position.key == vurgulanan,
+            child: _AssetCard(
+            key: position.key == vurgulanan ? vurguAnahtari : null,
             position: position,
             pState: pState,
             baz: baz,
@@ -844,9 +943,109 @@ class _AssetList extends StatelessWidget {
             onAdd: onAdd,
             onRemove: onRemove,
             onDividend: onDividend,
-          );
-        },
-      ),
+          ),
+          ),
+      ];
+}
+
+/// Yeni eklenen satırın tek seferlik parlaması: amber çerçeve belirir ve
+/// yavaşça söner (~1,1 sn). Yalnız RENK — konum/ölçek yok; bu yüzden
+/// "hareketi azalt" açıkken de gösterilir (bkz. `DegisimVurgusu`).
+///
+/// Sekme görünür olana ve ekleme ekranı kapanana kadar bekler: Portföy
+/// gizli sekmedeyken (`TickerMode` kapalı) saat yine akar ve parlama
+/// kimse görmeden biterdi.
+class _YeniVarlikParlamasi extends StatefulWidget {
+  const _YeniVarlikParlamasi({
+    super.key,
+    required this.aktif,
+    required this.child,
+  });
+
+  final bool aktif;
+  final Widget child;
+
+  @override
+  State<_YeniVarlikParlamasi> createState() => _YeniVarlikParlamasiState();
+}
+
+class _YeniVarlikParlamasiState extends State<_YeniVarlikParlamasi>
+    with SingleTickerProviderStateMixin {
+  // Yalnız parlayacak satırda kurulur: tembel `late` denetleyici hiç
+  // parlamayan kartta ilk kez `dispose` içinde kurulup ağaçtan ata
+  // arıyordu ("deactivated widget's ancestor", kart listesi testleri).
+  AnimationController? _c;
+  ValueListenable<TickerModeData>? _gorunurluk;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.aktif) {
+      _c = AnimationController(
+        vsync: this,
+        duration: SandikMotion.flow * 2,
+        value: 1,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) => _bekleVeYak());
+    }
+  }
+
+  void _bekleVeYak() {
+    if (!mounted) return;
+    final g = TickerMode.getValuesNotifier(context);
+    if (g.value.enabled) {
+      _yak();
+      return;
+    }
+    _gorunurluk = g..addListener(_gorunurlukDegisti);
+  }
+
+  void _gorunurlukDegisti() {
+    if (!mounted || !(_gorunurluk?.value.enabled ?? false)) return;
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _gorunurluk = null;
+    _yak();
+  }
+
+  void _yak() {
+    // Ekleme ekranı alttan iniyor; parlama onun ARDINDAN görünsün. Ticker
+    // future'ı hata üretmez (yalnız `orCancel` üretir) — beklenmez.
+    Future<void>.delayed(SandikMotion.modal, () {
+      final c = _c;
+      if (mounted && c != null) c.forward(from: 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _c;
+    if (!widget.aktif || c == null) return widget.child;
+    final amber = context.c.amberFill;
+    return AnimatedBuilder(
+      animation: c,
+      child: widget.child,
+      builder: (context, child) {
+        final t = SandikMotion.glide.transform(c.value);
+        if (t >= 1) return child!;
+        return DecoratedBox(
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(SandikRadius.md),
+            border: Border.all(
+              color: amber.withValues(alpha: 0.9 * (1 - t)),
+              width: 2,
+            ),
+          ),
+          child: child,
+        );
+      },
     );
   }
 }
@@ -1283,15 +1482,12 @@ class _AssetCardState extends State<_AssetCard>
           ),
           // Ok ile panel AYNI süre ve eğriyle (animasyon denetimi,
           // 2026-09-30): ok 200, panel 220 ms'de bitiyordu — hareket tek
-          // parça hissettirmiyordu.
-          AnimatedSize(
-            duration: SandikMotion.surfaceOf(context),
-            curve: SandikMotion.enter,
-            alignment: Alignment.topCenter,
-            child: _expanded
-                ? _AssetDetailsPanel(
-                    position: position, pState: pState, baz: widget.baz)
-                : const SizedBox(width: double.infinity),
+          // parça hissettirmiyordu. 2026-10-01: ortak [SandikAcilir] —
+          // kapanırken panel ilk karede silinmiyor, solarak kapanıyor.
+          SandikAcilir(
+            acik: _expanded,
+            child: _AssetDetailsPanel(
+                position: position, pState: pState, baz: widget.baz),
           ),
         ],
       ),
@@ -1439,10 +1635,8 @@ class _ExpandChevron extends StatelessWidget {
         width: 44,
         height: 44,
         alignment: Alignment.center,
-        child: AnimatedRotation(
-          turns: expanded ? 0.5 : 0.0,
-          duration: SandikMotion.surfaceOf(context),
-          curve: SandikMotion.enter,
+        child: SandikAcilirOk(
+          acik: expanded,
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: context.c.text58,

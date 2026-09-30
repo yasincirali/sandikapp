@@ -286,6 +286,33 @@ Future<bool> showSandikConfirm({
   return result == true;
 }
 
+/// Kendi içeriğini çizen diyaloglar (form, seçim, `AlertDialog`) için
+/// markanın geçişi ve perdesi.
+///
+/// `showDialog` Flutter'ın DialogRoute'unu kullanır: 150 ms saf solma,
+/// büyüme yok, kendi perde rengi. Marka diyalogları ise %94'ten büyüyerek
+/// 240 ms'de gelir — hızlı ayar ve temettü diyaloğu "bir anda beliriyor",
+/// ötekiler "açılıyor"du; iki hareket dili yan yanaydı (animasyon denetimi
+/// 2026-10-01). İçerik aynen kalır, yalnız sunuş markanınki olur.
+/// `showDialog` yerine bunu kullan.
+Future<T?> showSandikGecisli<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) {
+  return showGeneralDialog<T>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: _barrierColor(context.isLight),
+    transitionDuration: SandikMotion.surface,
+    // `showDialog` gibi güvenli alanda: yatayda çentik diyaloğu kesmesin.
+    pageBuilder: (ctx, _, __) => SafeArea(child: Builder(builder: builder)),
+    transitionBuilder: (ctx, anim, _, child) =>
+        _diyalogGecisi(ctx, anim, child),
+  );
+}
+
 /// Perde rengi — aydınlıkta hafif, karanlıkta koyu; iki dialog da bunu kullanır.
 Color _barrierColor(bool isLight) =>
     Colors.black.withValues(alpha: isLight ? 0.32 : 0.55);
@@ -600,9 +627,18 @@ String _humanize(String raw) {
 /// denetimi 2026-09-29 — eskiden azaltılmış harekette de büyüyordu).
 /// `FadeTransition`/`ScaleTransition`: her karede `Opacity` yeniden
 /// kurulmaz, katmanın opaklığı doğrudan değişir.
+///
+/// Kapanışta `reverseCurve` [SandikMotion.exit]: tanımsızken kapanış da
+/// easeOutCubic'i TERSTEN oynuyordu — diyalog neredeyse tam görünür kalıp
+/// son ~80 ms'de birden kayboluyordu; "kapat"a basınca ağır hissettiriyordu
+/// (animasyon denetimi 2026-10-01).
 Widget _diyalogGecisi(
     BuildContext ctx, Animation<double> anim, Widget child) {
-  final egri = CurvedAnimation(parent: anim, curve: SandikMotion.enter);
+  final egri = CurvedAnimation(
+    parent: anim,
+    curve: SandikMotion.enter,
+    reverseCurve: SandikMotion.exit,
+  );
   if (MediaQuery.disableAnimationsOf(ctx)) {
     return FadeTransition(opacity: egri, child: child);
   }

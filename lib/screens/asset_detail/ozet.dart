@@ -109,6 +109,14 @@ extension _DetayOzet on _AssetDetailScreenState {
         if (p.days != secili && !_donemSerileri.containsKey(p.days))
           _donemSerisi([birim], p.days).then((b) {
             if (!mounted) return;
+            // Açılış kapısı henüz açılmadıysa yalnız kaydet: kapının tek
+            // `setState`'i hepsini birlikte çizer. Eskiden altı dönemin her
+            // biri ayrı tam ekran yeniden kurulum yapıyordu — sayfa kayarak
+            // girerken (animasyon denetimi 2026-10-01).
+            if (!_acildi) {
+              _donemKaydet(p.days, b.total, b.seansGunu);
+              return;
+            }
             _guncelle(() => _donemKaydet(p.days, b.total, b.seansGunu));
           }, onError: (Object e, StackTrace st) {
             // Çip boş kalır; dönem seçilince `_loadHistory` yeniden dener.

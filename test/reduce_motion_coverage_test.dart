@@ -111,9 +111,14 @@ void main() {
   group('kaynak taraması — koruma kapsamı', () {
     test('her Animated* widget\'ı reduce-motion farkındalıklı süre kullanır',
         () {
+      // 2026-10-01 animasyon denetimi: CrossFade / Slide /
+      // FractionallySizedBox da kapsamda — eskiden desen onları görmüyordu
+      // (not alanının `AnimatedCrossFade`'i ham `SandikMotion.state` ile
+      // hareketi azalt'ı yok sayıyordu).
       final widgetPattern = RegExp(
         r'Animated(?:Container|Opacity|Switcher|Positioned|DefaultTextStyle'
-        r'|Size|Scale|Rotation|Align|Padding)\(',
+        r'|Size|Scale|Rotation|Align|Padding|CrossFade|Slide'
+        r'|FractionallySizedBox)\(',
       );
       final durationPattern = RegExp(r'duration:\s*([^,\n]+)');
 
