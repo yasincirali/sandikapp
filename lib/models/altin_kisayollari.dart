@@ -55,8 +55,9 @@ extension GoldSubCategoryGrup on GoldSubCategory {
 /// Bir lot'un hangi altın türü olduğu. `null` → altın değil / tanınmıyor.
 ///
 /// Önce **ticker**'a bakılır: `subCategory` alanı kaynağa göre farklı
-/// yazılıyor — ekleme formu `label` ('Çeyrek Altın'), CSV içe aktarma enum
-/// adı ('ceyrek') yazar. Ticker ise her iki yolda da [goldTickerMap]'ten
+/// yazılıyor — ekleme formu `label` ('Çeyrek Altın'), CSV içe aktarma
+/// 2026-10-01'e kadar enum adı ('ceyrek') yazıyordu (eski satırlar duruyor;
+/// pozisyon anahtarındaki eşi `altinAltAnahtari`). Ticker ise her iki yolda da [goldTickerMap]'ten
 /// gelir ve tektir. Ticker tanınmazsa (eski/elle girilmiş kayıt) iki
 /// `subCategory` biçimi de denenir.
 GoldSubCategory? altinTuru(Asset a) {

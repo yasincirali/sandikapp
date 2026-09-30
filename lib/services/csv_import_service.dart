@@ -436,7 +436,12 @@ class CsvImportService {
           // yani CSV'den gelen gram altın hiç fiyatlanmıyordu.
           ticker: goldTickerMap[sub.label] ?? 'ALTIN_GRAM',
           name: sub.label,
-          subCategory: sub.name,
+          // Etiket — ekleme formunun yazdığı biçim. Enum adı (`ceyrek`)
+          // yazılıyordu: pozisyon anahtarı formdan eklenen aynı altından
+          // ayrılıp Portföy'de iki satır çıkıyordu, düzenleme formu da
+          // türü tanımıyordu (2026-10-01; eski satırlar okumada
+          // `altinAltAnahtari` ile birleşir).
+          subCategory: sub.label,
           unitType: sub.unitType,
           currency: 'TRY',
         );

@@ -109,7 +109,8 @@ void main() {
 
   test('tür CSV biçimindeki subCategory (enum adı) ve sembolden de tanınır',
       () {
-    // CSV içe aktarma subCategory'ye enum adını yazar.
+    // CSV içe aktarma 2026-10-01'e kadar subCategory'ye enum adını
+    // yazıyordu; o satırlar defterde duruyor.
     expect(altinTuru(_lot('a', GoldSubCategory.tam, subCategory: 'tam')),
         GoldSubCategory.tam);
     // Sembolü tanınmayan eski kayıt: label'dan.

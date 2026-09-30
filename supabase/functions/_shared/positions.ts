@@ -49,6 +49,38 @@ export interface PozisyonLot {
 /// Net miktar bu eşiğin altındaysa pozisyon KAPALI sayılır.
 const EPSILON = 1e-7;
 
+/// Altın alt türü: enum adı (CSV içe aktarmanın yazdığı `ceyrek`) → etiket.
+/// Dart eşi `GoldSubCategory` (`asset_categories.dart`) — sıra ve yazım
+/// birebir; yeni tür eklenirse İKİSİNE de.
+const ALTIN_ETIKETI: Record<string, string> = {
+  gr24: 'Gram Altın (24 Ayar)',
+  gr22: '22 Ayar Gram Altın',
+  gr18: '18 Ayar Altın',
+  gr14: '14 Ayar Altın',
+  has: 'Has Altın',
+  ceyrek: 'Çeyrek Altın',
+  yarim: 'Yarım Altın',
+  tam: 'Tam Altın',
+  cumhuriyet: 'Cumhuriyet Altını',
+  ata: 'Ata Altını',
+  resat: 'Reşat Altını',
+  hamit: 'Hamit Altını',
+  ikibucuk: 'İkibuçuk Altın',
+  gremse: 'Gremse Altın',
+  besli: 'Beşli Altın',
+  ons: 'Altın (Ons)',
+};
+
+/// Dart `altinAltAnahtari` ile BİREBİR: aynı çeyrek altın formdan
+/// (`Çeyrek Altın`) ve CSV'den (`ceyrek`) gelince tek pozisyon olsun
+/// (2026-10-01). Küçük harf `tr` yerelinde DEĞİL: Dart `toLowerCase`
+/// yerelden bağımsızdır, `İ` ikisinde de aynı dönüşür.
+export function altinAltAnahtari(alt: string): string {
+  const s = alt.trim();
+  const etiket = ALTIN_ETIKETI[s] ?? s;
+  return etiket.toLowerCase();
+}
+
 /// Aggregation kimliği — hangi lot'lar aynı pozisyonda toplanır.
 ///
 /// Dart'taki `positionKey` ile BİREBİR aynı kurallar (oradaki gerekçeler
@@ -72,7 +104,7 @@ export function pozisyonAnahtari(a: PozisyonLot): string {
       core = ticker !== '' ? ticker : `sub:${alt.toUpperCase()}`;
       break;
     case 'altin':
-      core = `sub:${alt.toLowerCase()}`;
+      core = `sub:${altinAltAnahtari(alt)}`;
       break;
     case 'bes':
       // Fon kodu + alt kategori (katki / dk): kendi katkın ile devlet
