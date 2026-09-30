@@ -9,7 +9,7 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## 🟡 AÇIK — Animasyon denetiminde ertelenenler (2026-10-01, ölçümle güncellendi)
+## ✅ KAPANDI — Animasyon denetiminde ertelenenler (2026-10-01, ölçüm + düzeltme)
 
 **Ne:** Dört kademelik animasyon/etkileşim denetimi main'e girdi (PR #35).
 Ertelenen maddeler sonra ÖLÇÜMLE araştırıldı: gerçek Ana/Portföy/Performans
@@ -43,41 +43,32 @@ mutlak değerler birkaç kat küçük, ORANLAR geçerli. Kazançlar
    yükleme süresince (tipik < 1 sn); opaklık katmanı yalnız bir şey
    yeniden boyandığında birleştirilir. Ölçülebilir maliyet yok.
 
-**AÇIK (araştırma notlarıyla):**
-3. **Tanıtım turu boyunca tam ekran blur her karede yeniden hesaplanıyor.**
-   Araştırma: Flutter her karede bütün katman ağacını yeniden birleştirir;
-   `BackdropFilter` katmanı, ALTINDAN bağımsız olarak, herhangi bir kare
-   çizildiği sürece yeniden uygulanır. Turda nabız halkası sürekli döndüğü
-   için blur tur boyunca her karede ödenir — altta şeridi durdurmak bunu
-   çözmez. Koyu temada karartma %78 opak: blur neredeyse görünmüyor; açık
-   temada (%42) görünür. **Seçenekler:** (a) Android'de blur'suz, yalnız
-   karartma (iOS/Impeller'da kalsın); (b) sigma 3 → 0 koyu temada. Karar
-   görsel — **ölçüm gerçek cihazda** (DevTools raster süresi, düşük segment
-   Android). Test ortamı raster ölçemiyor. İlk açılışa özgü.
-5. **`bugun_karti` ressamı her kurulumda boyuyor** (`shouldRepaint` kimlik
-   karşılaştırması; seri her kurulumda yeniden üretiliyor). Dosya şu an
-   başka bir çalışmada açık (Canlı Etkinlik/piyasa kapalı); o iş
-   bitince `listEquals` ile değer karşılaştırmasına çevrilir. Ölçümde Ana
-   tik maliyeti sabit çıktı — öncelik düşük.
-7. **Tek `SandikSegment` bileşeni.** Yedi segment aynı süre/eğriye çekildi,
-   dönem seçici kayan zemin aldı. Kalan fark kod tekrarı (davranış değil):
-   `modern_tab_selector` (kayan hap), `DonemSecici` (kayan zemin, flex
-   payları), `bar_interval_selector`, `kapsam_kisi_secici` (üçüncü segment
-   açılır menü), `kontroller` grafik/özet, yarış ve zirve seçicileri
-   (amber gradyan zemin), `period_summary_view`. Ortak API: `etiketler`,
-   `secili`, `onSec`, `paylar` (isteğe bağlı flex), `zemin` (düz/gradyan),
-   `ekSatir` (getiri). Yeni segment yazılacaksa önce bu.
-8. **Görünüm çipi (sheet) kartı anında değiştiriyor**, kaydırma karusel
-   oynatıyor. Araştırma: karusel yalnız KOMŞU görünüme gider; sheet'ten
-   Ben → Birlikte gibi iki adım atlanabiliyor, arada yanlış kart
-   görünmemeli. Doğru çözüm karusel değil yönlü kısa geçiş (içerik
-   `sira` farkının yönünde 24 pt kayıp solar). `KaydirmaliGecis`'e
-   `programatikGec(yon)` eklenir.
-9. **Tüm işlemler filtre değişimi / Performans Grafik↔Özet anında
-   değişiyor.** Araştırma: listeyi `AnimatedSwitcher` ile sarmak iki uzun
-   listeyi aynı anda kurar — kazançtan pahalı. Uygun olan: liste
-   anahtarı değişince yalnız GÖRÜNÜR ilk satırlara 120 ms solma. Grafik↔
-   Özet `kartlar.dart`'ta (şu an başka çalışmada açık).
+**KAPANDI (commit `5104c22`):**
+3. ~~Tanıtım turu blur'u her karede.~~ `BackdropFilter` bir kare çizildiği
+   sürece her karede uygulanır; turda nabız halkası hep döndüğü için blur
+   tur boyunca kesintisiz ödeniyordu. Yalnız iOS + açık temada kaldı
+   (koyu temada %78 opak perde altında görünmüyordu; Android'de pahalı);
+   blur'suz açık temada perde 0,42 → 0,50.
+5. ~~`bugun_karti` ressamı her kurulumda boyuyor.~~ `shouldRepaint`
+   seriyi `listEquals` ile değerle karşılaştırır.
+7. ~~Tek segment bileşeni.~~ `SandikSegment` (kayan zemin, flex payları,
+   44 pt hedef, hareketi azalt). `DonemSecici`, çubuk aralığı ve
+   Grafik/Özet anahtarı üstünde; son ikisi yerinde solan dolgudan kayan
+   zemine geçti. Bilinçli olarak AYRI kalanlar: `modern_tab_selector`
+   (zaten kayan hap + sayaç rozeti), `kapsam_kisi_secici` (üçüncü segment
+   açılır menü), yarış/zirve seçicileri (amber gradyan — oyunlu ekran),
+   `period_summary_view` (amber dolgulu küçük anahtar). Hepsi aynı
+   süre/eğride; yeni segment yazılacaksa `SandikSegment`.
+8. ~~Görünüm çipi kartı anında değiştiriyor.~~ `KaydirmaliGecis.sira`:
+   kaydırma dışı değişimde yönlü 24 pt giriş; kaydırmanın kendi
+   geçişinde oynamaz. Karusel kullanılmadı: çip iki adım atlayabilir.
+9. ~~Filtre değişimi / Grafik↔Özet anında.~~ Tüm işlemler listesi
+   `_resetPaging`'de 180 ms solma (iki liste üst üste kurulmaz).
+   Performans sekmesi öğeleri yalnız değişimden sonraki pencerede solar
+   (tembel listede kaydırınca kurulan öğe solmaz). Ek bulgu: zoom yükleme
+   çubuğu listeye EKLENİYORDU — grafik 2 pt kayıyor ve liste sırası
+   değiştiği için grafiğin State'i yeniden kuruluyordu; yer artık hep
+   ayrılı.
 
 **Bilinçli olarak YAPILMAYANLAR (karar, araştırmayla teyit):**
 - Android sayfa geçişi Flutter 3.44 varsayılanı (tahmine dayalı geri +
