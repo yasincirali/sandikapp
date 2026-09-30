@@ -362,10 +362,9 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       // 90° dönüp aşağıyı gösterir, yani içeriğin çıktığı yönü. Ara kareler
       // sonucu telegraflar, körlemesine interpolasyon yapmaz.
       trailing: canExpand
-          ? AnimatedRotation(
-              turns: isOpen ? 0.25 : 0,
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.enter,
+          ? SandikAcilirOk(
+              acik: isOpen,
+              tur: 0.25,
               child: Icon(Icons.chevron_right_rounded,
                   size: 18,
                   // Açıkken biraz belirginleşir: hangi başlığın açık olduğu
@@ -411,40 +410,38 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
         // aynı yolu izler — çıkış ve giriş simetriktir, yoksa içerik bir
         // yerden gelip başka yere gidiyormuş gibi kopuk hissedilir.
         //
-        // `ClipRect` şart: açılırken taşan kısım başlığın üstüne binmesin.
-        ClipRect(
-          child: AnimatedAlign(
-            alignment: Alignment.topCenter,
-            heightFactor: isOpen ? 1.0 : 0.0,
-            duration: SandikMotion.stateOf(context),
-            curve: SandikMotion.enter,
-            child: AnimatedOpacity(
-              opacity: isOpen ? 1.0 : 0.0,
-              // Opaklık boyuttan biraz HIZLI kapanır: kapanırken içerik önce
-              // soluklaşır, sonra yer kapanır — ters sırada olsaydı boş bir
-              // beyaz alan bir an görünürdü.
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.enter,
-              child: Padding(
-                padding: const EdgeInsets.only(left: 16, top: 8),
-                child: Column(
-                  children: [
-                    for (final k in kids) ...[
-                      _row(
-                        context,
-                        tryFmt,
-                        label: k.label,
-                        dotColor: type.color.withValues(alpha: 0.45),
-                        value: k.last,
-                        cost: k.first,
-                        flow: k.flow,
-                        dense: true,
-                      ),
-                      if (k != kids.last) const SizedBox(height: 8),
-                    ],
-                  ],
-                ),
-              ),
+        // Açılırken taşan kısım başlığın üstüne binmez: `SandikAcilir`'ın
+        // boy geçişi kendi kutusunu kırpar.
+        // 2026-10-01 (animasyon denetimi, ÖLÇÜM): eskiden kırpma + hizalama
+        // (yükseklik çarpanı 0) + saydamlık 0 ile KAPALI bölümün ürün
+        // satırları ağaçta kalıyordu. 200 varlıklı portföyde her
+        // 30 sn fiyat tikinde görünmeyen ~150 satır yeniden kuruluyordu;
+        // Performans'ın tik maliyeti varlık sayısıyla doğrusal büyüyordu.
+        // Ortak [SandikAcilir]: aynı "başlığın altından doğar" hareketi
+        // (üstten açılır, kapanırken solarak kapanır), ama kapanış bitince
+        // satırlar ağaçtan çıkar. (Eski yorumdaki "opaklık biraz hızlı
+        // kapanır" koddaki eşit sürelerle çelişiyordu; burada `exit`
+        // eğrisi solmayı gerçekten öne alıyor.)
+        SandikAcilir(
+          acik: isOpen,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16, top: 8),
+            child: Column(
+              children: [
+                for (final k in kids) ...[
+                  _row(
+                    context,
+                    tryFmt,
+                    label: k.label,
+                    dotColor: type.color.withValues(alpha: 0.45),
+                    value: k.last,
+                    cost: k.first,
+                    flow: k.flow,
+                    dense: true,
+                  ),
+                  if (k != kids.last) const SizedBox(height: 8),
+                ],
+              ],
             ),
           ),
         ),

@@ -914,6 +914,82 @@ class _KursuSutunu extends StatelessWidget {
     };
     final lider = sira == 1;
     final hareket = SandikMotion.of(context, SandikMotion.flow);
+    // İçerik ve kaide BİR KEZ kurulur; giriş animasyonu (~1 sn × 3 sütun,
+    // ekran açılırken) her karede yalnız öteleme/saydamlık/ölçek
+    // sarmalayıcılarını kurar. Eskiden `AnimatedBuilder` child'sızdı: her
+    // karede avatar, ad ve `YuvarlananMetin` (build'de TextPainter.layout)
+    // baştan kuruluyordu — rota geçişiyle çakışan kareler (animasyon
+    // denetimi 2026-10-01). Aynı widget örneği döndüğünde Flutter alt ağacı
+    // yeniden kurmaz.
+    final ust = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedScale(
+          scale: lider ? 1 : 0.5,
+          duration: hareket,
+          curve: SandikMotion.spring,
+          child: AnimatedOpacity(
+            opacity: lider ? 1 : 0,
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            child: const _Tac(genislik: SandikSpace.lg),
+          ),
+        ),
+        const SizedBox(height: SandikSpace.xs),
+        _Avatar(k: k, cap: SandikSpace.xxl, parla: lider),
+        const SizedBox(height: SandikSpace.xs2),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+          child: Text(
+            k.kisaAd,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: context.c.text90,
+            ),
+          ),
+        ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: YuvarlananMetin(
+            _yuzde(roi),
+            stil: context.t.numSmall.copyWith(
+              color: roi >= 0 ? context.c.gain : context.c.loss,
+            ),
+          ),
+        ),
+      ],
+    );
+    final kaide = AnimatedContainer(
+      duration: hareket,
+      curve: SandikMotion.move,
+      height: basamak,
+      margin: const EdgeInsets.symmetric(horizontal: SandikSpace.xs2),
+      alignment: Alignment.topCenter,
+      padding: const EdgeInsets.only(top: SandikSpace.xs2),
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SandikRadius.md),
+          bottom: Radius.circular(SandikSpace.xs),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            madalya.withValues(alpha: 0.4),
+            madalya.withValues(alpha: 0.05),
+          ],
+        ),
+        border: Border.all(color: madalya.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        '$sira',
+        style: context.t.numMedium.copyWith(
+          color: koyu ? madalya : madalyaKoyu,
+        ),
+      ),
+    );
     return AnimatedBuilder(
       animation: giris,
       builder: (context, _) {
@@ -923,84 +999,13 @@ class _KursuSutunu extends StatelessWidget {
           children: [
             Transform.translate(
               offset: Offset(0, (1 - e) * basamak),
-              child: Opacity(
-                opacity: e.clamp(0.0, 1.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedScale(
-                      scale: lider ? 1 : 0.5,
-                      duration: hareket,
-                      curve: SandikMotion.spring,
-                      child: AnimatedOpacity(
-                        opacity: lider ? 1 : 0,
-                        duration: SandikMotion.stateOf(context),
-                        curve: SandikMotion.enter,
-                        child: const _Tac(genislik: SandikSpace.lg),
-                      ),
-                    ),
-                    const SizedBox(height: SandikSpace.xs),
-                    _Avatar(k: k, cap: SandikSpace.xxl, parla: lider),
-                    const SizedBox(height: SandikSpace.xs2),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: SandikSpace.xs),
-                      child: Text(
-                        k.kisaAd,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: context.c.text90,
-                        ),
-                      ),
-                    ),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: YuvarlananMetin(
-                        _yuzde(roi),
-                        stil: context.t.numSmall.copyWith(
-                          color: roi >= 0 ? context.c.gain : context.c.loss,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: Opacity(opacity: e.clamp(0.0, 1.0), child: ust),
             ),
             const SizedBox(height: SandikSpace.xs2),
             Transform(
               alignment: Alignment.bottomCenter,
               transform: Matrix4.diagonal3Values(1, math.max(0.02, e), 1),
-              child: AnimatedContainer(
-                duration: hareket,
-                curve: SandikMotion.move,
-                height: basamak,
-                margin: const EdgeInsets.symmetric(horizontal: SandikSpace.xs2),
-                alignment: Alignment.topCenter,
-                padding: const EdgeInsets.only(top: SandikSpace.xs2),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(SandikRadius.md),
-                    bottom: Radius.circular(SandikSpace.xs),
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      madalya.withValues(alpha: 0.4),
-                      madalya.withValues(alpha: 0.05),
-                    ],
-                  ),
-                  border: Border.all(color: madalya.withValues(alpha: 0.4)),
-                ),
-                child: Text(
-                  '$sira',
-                  style: context.t.numMedium.copyWith(
-                    color: koyu ? madalya : madalyaKoyu,
-                  ),
-                ),
-              ),
+              child: kaide,
             ),
           ],
         );
