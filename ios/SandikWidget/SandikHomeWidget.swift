@@ -441,14 +441,17 @@ struct SandikKilitView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            VStack(alignment: .leading, spacing: 2) {
+            // Dikey bütçe 12 mini'de ~52 pt (ölçüldü, 2026-10-01): 4+4 dolgu,
+            // ~13 pt alt satır, kalan ~30 pt yüzdenin — yüzde küçülmeden
+            // ~27 pt kalır (çizim: "sandık kilit ekranı" artifact'ı).
+            VStack(alignment: .leading, spacing: 1) {
                 sayi
                 Spacer(minLength: 0)
                 seansCubugu
                 altSatir
             }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
         }
         .accessibilityElement(children: .combine)
     }
@@ -509,7 +512,7 @@ struct SandikKilitView: View {
             SandikLogoMark(width: 10)
             if tutarGorunur {
                 Text(entry.changeText)
-                    .font(.sandikNumber(12, weight: .semibold))
+                    .font(.sandikNumber(11, weight: .semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     // Kilitliyken sistem örter; Face ID ile bakınca açılır.
@@ -528,7 +531,7 @@ struct SandikKilitView: View {
                seans.upperBound > entry.date {
                 // Kapanışa kalan süre — saniye saniye, uygulama kapalıyken de.
                 Text(timerInterval: entry.date...seans.upperBound, countsDown: true)
-                    .font(.sandikNumber(12, weight: .semibold))
+                    .font(.sandikNumber(11, weight: .semibold))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 58, alignment: .trailing)
@@ -539,7 +542,7 @@ struct SandikKilitView: View {
                     Text("açılış")
                         .font(.sandikLabel(11, weight: .medium))
                     Text(acilis, format: .dateTime.weekday(.abbreviated).hour().minute())
-                        .font(.sandikNumber(12, weight: .semibold))
+                        .font(.sandikNumber(11, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
                 .lineLimit(1)
