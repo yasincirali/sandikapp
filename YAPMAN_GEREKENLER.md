@@ -8,7 +8,7 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## 🔴 2026-09-30 Vadeli mevduat + BES — 0088 + üç edge function DAĞITILMADI (kod main'de)
+## 🔴 2026-09-30 Vadeli mevduat + BES — 0088 + beş edge function DAĞITILMADI (kod main'de)
 
 **Durum:** PR #34 kullanıcı kararıyla main'e birleştirildi (TestFlight + Android
 derlemesi başladı), ama 0088 ve üç fonksiyon **henüz iki sunucuda da yok**.
@@ -21,6 +21,10 @@ kaydı "kaydedilemedi" der (tablo yok). Diğer türlerin kaydı, fiyatlar ve
 mevcut portföy ETKİLENMEZ (`sozlesme_id` gövdeye yalnız doluyken yazılır).
 Mümkünse test kullanıcılarına duyurmadan önce yap.
 
+Beş fonksiyon (2026-10-01 düzeltme): `_shared/positions.ts` BES pozisyon
+anahtarını değiştirdi; onu içe aktaran `daily-brief` ve `temettu-yakala` da
+yeniden dağıtılmalı (ilk listede yalnız üçü vardı).
+
 Güvence (2026-09-30): PR CI'ında "Supabase yığını + başsız duman" 0088'i taze
 yığında sıfırdan uyguladı ✅; Frankfurt `db push --dry-run` yalnız 0088'i
 gösterdi; göç yalnız ekleme yapıyor (iki tablo + boş bırakılabilir sütun).
@@ -30,10 +34,10 @@ gösterdi; göç yalnız ekleme yapıyor (iki tablo + boş bırakılabilir sütu
       `supabase link --project-ref ynwymnpdiwudrlxfrmuo`):
       `supabase db push` → göç kendini doğrular (GRANT 4/4, RLS 2/2, FK).
 - [ ] **2. Frankfurt fonksiyonlar:**
-      `supabase functions deploy analyze-signals leaderboard-snapshot observe-tefas-nav --project-ref ynwymnpdiwudrlxfrmuo`
+      `supabase functions deploy analyze-signals daily-brief leaderboard-snapshot temettu-yakala observe-tefas-nav --project-ref ynwymnpdiwudrlxfrmuo`
 - [ ] **3. Tokyo göç:** `supabase link --project-ref ybdbzouzhzwthjgwlbmk && supabase db push`
 - [ ] **4. Tokyo fonksiyonlar:**
-      `supabase functions deploy analyze-signals leaderboard-snapshot observe-tefas-nav --project-ref ybdbzouzhzwthjgwlbmk`
+      `supabase functions deploy analyze-signals daily-brief leaderboard-snapshot temettu-yakala observe-tefas-nav --project-ref ybdbzouzhzwthjgwlbmk`
 - [ ] **5. Eşitlik:** `python tool/sema_esitlik.py` → ŞEMA EŞİT. (Ana dizinin
       `supabase/.temp/project-ref`'i Tokyo'da kalmalı.)
 - [ ] **Claude'a yaptırmak istersen:** önce `/permissions` → Allow'a
