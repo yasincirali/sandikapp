@@ -178,6 +178,34 @@ class _ZoomableChartState extends State<ZoomableChart> {
   // yumuşak morf'lansın.
   bool _interacting = false;
 
+  // ── Veri önbelleği (animasyon denetimi, 2026-09-30) ──────────────────────
+  //
+  // Artı imleciyle gezinirken (scrub) her kare `setState` çalışıyor ve
+  // `widget.builder(minX, maxX)` tüm `LineChartData`'yı — noktalar, eksen
+  // etiketleri, çizgi stilleri — baştan üretiyordu; oysa değişen yalnız
+  // imleç. Görünür aralık ve kurucu aynıysa önceki veri döner. Kurucu üst
+  // widget her kurulduğunda yeni bir kapanıştır → üst yeniden kurulunca
+  // (veri/dönem değişimi) önbellek kendiliğinden düşer; yalnız bu State'in
+  // kendi setState'lerinde (imleç) isabet eder.
+  LineChartData? _veri;
+  double? _veriMin;
+  double? _veriMax;
+  Object? _veriKurucu;
+
+  LineChartData _grafikVerisi() {
+    final kurucu = widget.builder;
+    if (_veri == null ||
+        _veriMin != _minX ||
+        _veriMax != _maxX ||
+        !identical(_veriKurucu, kurucu)) {
+      _veri = kurucu(_minX, _maxX);
+      _veriMin = _minX;
+      _veriMax = _maxX;
+      _veriKurucu = kurucu;
+    }
+    return _veri!;
+  }
+
   void _setInteracting(bool v) {
     if (_interacting == v) return;
     // Jest sırasında setState zaten viewport değişimiyle tetikleniyor;
@@ -418,11 +446,15 @@ class _ZoomableChartState extends State<ZoomableChart> {
             //    Aksi halde her kare bir önceki hedefe doğru lerp'lerken yeni
             //    hedef gelir; parmak takip etmesi gecikmeli/lastikli hissedilir.
             //  • Veri/periyot değişiminde `swapDuration` ile yumuşak morf.
+            // RepaintBoundary: imleç ve balon her karede değişirken çizgi
+            // grafiği kendi katmanında kalır, yeniden boyanmaz.
             Positioned.fill(
-              child: LineChart(
-                widget.builder(_minX, _maxX),
-                duration: _interacting ? Duration.zero : widget.swapDuration,
-                curve: widget.swapCurve,
+              child: RepaintBoundary(
+                child: LineChart(
+                  _grafikVerisi(),
+                  duration: _interacting ? Duration.zero : widget.swapDuration,
+                  curve: widget.swapCurve,
+                ),
               ),
             ),
 
