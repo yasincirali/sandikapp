@@ -50,6 +50,8 @@
   --kayip: #FF6B52;
   --gece: rgba(2, 12, 8, 0.7);
   --yay: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Güçlü ease-out: girişler (animate skill tablosu). */
+  --cikis: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -87,9 +89,11 @@ a { color: inherit; }
 }
 .ada .marka { display: flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 800; letter-spacing: -0.02em; color: var(--altin); }
 .ada .marka img { width: 26px; height: 26px; border-radius: 7px; }
-.ada nav { display: flex; gap: 18px; font-size: 14px; }
-.ada nav a { text-decoration: none; color: var(--soluk); transition: color 300ms var(--yay); }
-.ada nav a:hover { color: var(--metin); }
+.ada nav { display: flex; gap: 4px; font-size: 14px; }
+.ada nav a { text-decoration: none; color: var(--soluk); padding: 6px 12px; border-radius: 999px; transition: color 250ms ease, background-color 250ms ease; }
+/* Bulunduğun bölüm (durum göstergesi; IntersectionObserver). */
+.ada nav a.aktif { color: var(--metin); background: rgba(255, 255, 255, 0.08); }
+@media (hover: hover) and (pointer: fine) { .ada nav a:hover { color: var(--metin); } }
 
 /* ── Ada düğmesi (düğme içinde düğme) ─────────────────────────────────── */
 .dugme {
@@ -113,7 +117,9 @@ a { color: inherit; }
   display: grid; place-items: center;
   transition: transform 500ms var(--yay);
 }
-.dugme:hover .ok { transform: translate(3px, -2px) scale(1.06); }
+@media (hover: hover) and (pointer: fine) {
+  .dugme:hover .ok { transform: translate(3px, -2px) scale(1.06); }
+}
 .dugme:active { transform: scale(0.98); }
 .dugme:focus-visible { outline: 3px solid var(--altin); outline-offset: 4px; }
 
@@ -176,6 +182,7 @@ a { color: inherit; }
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
           mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
 }
+.katmanlar .kat { position: absolute; inset: 0; }
 .katmanlar svg { position: absolute; left: 0; bottom: 0; width: 200%; height: 100%; }
 .katmanlar .k1 { animation: ak 38s linear infinite; }
 .katmanlar .k2 { animation: ak 29s linear infinite reverse; }
@@ -285,7 +292,7 @@ a { color: inherit; }
 .canli .rakam span { margin-left: auto; font-weight: 700; }
 .canli .seans { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--soluk); }
 .canli .seans .yol { flex: 1; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
-.canli .seans .yol i { display: block; height: 100%; width: 22%; background: var(--amber); }
+.canli .seans .yol i { display: block; height: 100%; width: 22%; background: var(--amber); transform-origin: left; }
 
 .dokum { margin-top: auto; display: grid; gap: 10px; font-size: 15px; }
 .dokum div { display: flex; justify-content: space-between; color: var(--soluk); }
@@ -333,9 +340,55 @@ footer nav a { text-decoration: none; color: var(--soluk); }
 footer nav a:hover { color: var(--metin); text-decoration: underline; }
 footer p { margin-top: 22px; }
 
-/* Kaydırınca beliren öğeler — JS yoksa hepsi görünür kalır. */
-.js .belir { opacity: 0; transform: translateY(36px); filter: blur(6px); transition: opacity 900ms var(--yay), transform 900ms var(--yay), filter 900ms var(--yay); }
+/* Kaydırınca beliren öğeler — JS yoksa hepsi görünür kalır.
+   `--gecikme` kardeşler arası sıra (70-90 ms): hepsi birden gelmesin. */
+.js .belir { opacity: 0; transform: translateY(36px); filter: blur(6px); transition: opacity 900ms var(--yay), transform 900ms var(--yay), filter 900ms var(--yay); transition-delay: var(--gecikme, 0ms); }
 .js .belir.gorundu { opacity: 1; transform: none; filter: none; }
+
+/* Kilit ekranı sahnesi (açıklama): önce widget, sonra Canlı Etkinlik
+   alttan gelir, seans çubuğu dolar. iOS'taki sırayla aynı. */
+.js .kilit-widget, .js .canli { opacity: 0; transition: opacity 700ms var(--cikis), transform 700ms var(--cikis); }
+.js .kilit-widget { transform: translateY(12px) scale(0.97); }
+.js .canli { transform: translateY(35%); }
+.js .b-kilit.gorundu .kilit-widget { opacity: 1; transform: none; transition-delay: 350ms; }
+.js .b-kilit.gorundu .canli { opacity: 1; transform: none; transition-delay: 650ms; }
+.js .canli .seans .yol i { transform: scaleX(0); transition: transform 1400ms var(--cikis) 1100ms; }
+.js .b-kilit.gorundu .canli .seans .yol i { transform: scaleX(1); }
+
+/* Bildirim yukarıdan düşer (push gibi). */
+.js .bildirim { opacity: 0; transform: translateY(-14px) scale(0.97); transition: opacity 600ms var(--cikis) 450ms, transform 600ms var(--cikis) 450ms; }
+.js .b-alarm.gorundu .bildirim { opacity: 1; transform: none; }
+
+/* Net kâr dökümü: satırlar sırayla, en son net. */
+.js .dokum div { opacity: 0; transform: translateX(-8px); transition: opacity 500ms var(--cikis), transform 500ms var(--cikis); }
+.js .b-kar.gorundu .dokum div { opacity: 1; transform: none; }
+.js .b-kar.gorundu .dokum div:nth-child(1) { transition-delay: 300ms; }
+.js .b-kar.gorundu .dokum div:nth-child(2) { transition-delay: 360ms; }
+.js .b-kar.gorundu .dokum div:nth-child(3) { transition-delay: 420ms; }
+.js .b-kar.gorundu .dokum div:nth-child(4) { transition-delay: 480ms; }
+.js .b-kar.gorundu .dokum div:nth-child(5) { transition-delay: 620ms; }
+
+/* Hesaplayıcı: görünene kadar çubuklar boş; görününce satır içi ölçeğe dolar. */
+.js .hukum-tepsi:not(.gorundu) .cubuk .dolgu { transform: scaleX(0) !important; }
+
+/* Derinlik: kaydırmaya bağlı (tarayıcının kaydırma zaman çizelgesi,
+   JS kaydırma dinleyicisi YOK). Desteklemeyen tarayıcıda sayfa durağan,
+   hiçbir şey kaybolmaz. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Arka katman yavaş, ön katman hızlı akar: sandığın derinliği. */
+    .kat-k1 { animation: derinUzak linear both; animation-timeline: scroll(root); animation-range: 0 700px; }
+    .kat-k2 { animation: derinOrta linear both; animation-timeline: scroll(root); animation-range: 0 700px; }
+    @keyframes derinUzak { to { transform: translateY(46px); } }
+    @keyframes derinOrta { to { transform: translateY(22px); } }
+    /* Açılış kartı çıkarken hafifçe yukarı çekilir. */
+    .vitrin .tepsi { animation: vitrinCik linear both; animation-timeline: view(); animation-range: exit 0% exit 100%; }
+    @keyframes vitrinCik { to { transform: translateY(-36px); } }
+    /* Ada menü aşağı indikçe koyulaşır; içerik üstünde okunur kalır. */
+    .ada { animation: adaKoyu linear both; animation-timeline: scroll(root); animation-range: 0 260px; }
+    @keyframes adaKoyu { to { background-color: rgba(10, 30, 21, 0.9); box-shadow: 0 18px 44px -26px rgba(2, 12, 8, 0.95); } }
+  }
+}
 
 @media (max-width: 900px) {
   .hero .izgara { grid-template-columns: minmax(0, 1fr); gap: 48px; }
@@ -364,11 +417,22 @@ footer p { margin-top: 22px; }
   .bant li[aria-hidden="true"] { display: none; }
   .js .belir { opacity: 1; transform: none; filter: none; transition: none; }
   .cubuk .dolgu, .dugme, .dugme .ok { transition: none; }
+  .js .kilit-widget, .js .canli, .js .bildirim, .js .dokum div { opacity: 1; transform: none; transition: none; }
+  .js .canli .seans .yol i { transform: none; transition: none; }
+  .js .hukum-tepsi:not(.gorundu) .cubuk .dolgu { transform: none !important; }
 }
 </style>
 </head>
 <body>
-<script>document.documentElement.classList.add('js');</script>
+<script>
+  // Belirme animasyonu JS'e bağlı: JS yoksa `.js` eklenmez, her şey görünür.
+  // Güvence: gözlemci 2,5 sn'de bir kez bile tetiklenmezse (eski tarayıcı,
+  // betik hatası) içerik gizli kalmasın, hepsi görünür olsun.
+  document.documentElement.classList.add('js');
+  window.__guvence = setTimeout(function () {
+    document.querySelectorAll('.belir').forEach(function (e) { e.classList.add('gorundu'); });
+  }, 2500);
+</script>
 
 <header class="ada">
   <a class="marka" href="#ust" aria-label="sandık ana sayfa"><img src="img/sandik-icon.png" alt="" width="26" height="26">sandık</a>
@@ -397,7 +461,7 @@ footer p { margin-top: 22px; }
         </div>
       </div>
 
-      <div class="vitrin belir" aria-label="Uygulamanın ana ekran kartı, örnek portföy">
+      <div class="vitrin belir" style="--gecikme: 120ms" aria-label="Uygulamanın ana ekran kartı, örnek portföy">
         <div class="tepsi">
           <div class="cekirdek">
             <div class="kart-ust"><span>Toplam net varlık</span><b>sandık</b></div>
@@ -418,9 +482,9 @@ footer p { margin-top: 22px; }
     <!-- İmza: logodaki üç dalga katmanı (sandik_logo.svg), sandıkta üst üste
          biriken birikim. Yavaşça akar; hareketi azalt açıkken durur. -->
     <div class="katmanlar" aria-hidden="true">
-      <svg class="k1" viewBox="0 0 2048 180" preserveAspectRatio="none"><path d="M0 60 C85 110 171 110 256 60 S427 10 512 60 S683 110 768 60 S939 10 1024 60 S1195 110 1280 60 S1451 10 1536 60 S1707 110 1792 60 S1963 10 2048 60 L2048 180 L0 180 Z" fill="#E2861F" opacity="0.55"/></svg>
-      <svg class="k2" viewBox="0 0 2048 180" preserveAspectRatio="none"><path d="M0 95 C85 140 171 140 256 95 S427 50 512 95 S683 140 768 95 S939 50 1024 95 S1195 140 1280 95 S1451 50 1536 95 S1707 140 1792 95 S1963 50 2048 95 L2048 180 L0 180 Z" fill="#C56314" opacity="0.7"/></svg>
-      <svg class="k3" viewBox="0 0 2048 180" preserveAspectRatio="none"><path d="M0 130 C85 170 171 170 256 130 S427 90 512 130 S683 170 768 130 S939 90 1024 130 S1195 170 1280 130 S1451 90 1536 130 S1707 170 1792 130 S1963 90 2048 130 L2048 180 L0 180 Z" fill="#993D0A"/></svg>
+      <div class="kat kat-k1"><svg class="k1" viewBox="0 0 2048 180" preserveAspectRatio="none"><path d="M0 60 C85 110 171 110 256 60 S427 10 512 60 S683 110 768 60 S939 10 1024 60 S1195 110 1280 60 S1451 10 1536 60 S1707 110 1792 60 S1963 10 2048 60 L2048 180 L0 180 Z" fill="#E2861F" opacity="0.55"/></svg></div>
+      <div class="kat kat-k2"><svg class="k2" viewBox="0 0 2048 180" preserveAspectRatio="none"><path d="M0 95 C85 140 171 140 256 95 S427 50 512 95 S683 140 768 95 S939 50 1024 95 S1195 140 1280 95 S1451 50 1536 95 S1707 140 1792 95 S1963 50 2048 95 L2048 180 L0 180 Z" fill="#C56314" opacity="0.7"/></svg></div>
+      <div class="kat kat-k3"><svg class="k3" viewBox="0 0 2048 180" preserveAspectRatio="none"><path d="M0 130 C85 170 171 170 256 130 S427 90 512 130 S683 170 768 130 S939 90 1024 130 S1195 170 1280 130 S1451 90 1536 130 S1707 170 1792 130 S1963 90 2048 130 L2048 180 L0 180 Z" fill="#993D0A"/></svg></div>
     </div>
   </section>
 
@@ -448,7 +512,7 @@ footer p { margin-top: 22px; }
             </div>
           </form>
         </div>
-        <div class="tepsi belir">
+        <div class="tepsi belir hukum-tepsi" style="--gecikme: 90ms">
           <div class="cekirdek hukum" aria-live="polite">
             <div>
               <div class="etiket" id="hukum-etiket">Enflasyonun önündesin</div>
@@ -509,7 +573,7 @@ footer p { margin-top: 22px; }
           </div>
         </div>
 
-        <div class="tepsi b-kar belir">
+        <div class="tepsi b-kar belir" style="--gecikme: 80ms">
           <div class="cekirdek">
             <h3>Komisyon ve temettü dahil</h3>
             <p>Ekrandaki kâr, cebine giren parayı anlatır.</p>
@@ -523,7 +587,7 @@ footer p { margin-top: 22px; }
           </div>
         </div>
 
-        <div class="tepsi b-alarm belir">
+        <div class="tepsi b-alarm belir" style="--gecikme: 160ms">
           <div class="cekirdek">
             <h3>Fiyat alarmı ve sinyal</h3>
             <p>Belirlediğin fiyata gelen varlık ya da teknik sinyal için bildirim alırsın.</p>
@@ -534,7 +598,7 @@ footer p { margin-top: 22px; }
           </div>
         </div>
 
-        <div class="tepsi b-ortak belir">
+        <div class="tepsi b-ortak belir" style="--gecikme: 80ms">
           <div class="cekirdek">
             <div>
               <h3>Ailenle birlikte tut</h3>
@@ -550,11 +614,11 @@ footer p { margin-top: 22px; }
   <section class="bolum" id="gizlilik">
     <div class="kap">
       <h2 class="belir">Verin sende kalır</h2>
-      <dl class="gercekler belir">
-        <div><dt>TLS 1.2+</dt><dd>Telefonundan sunucuya giden her istek şifreli.</dd></div>
-        <div><dt>AES-256</dt><dd>Sunucuda saklanan veriler şifreli durur.</dd></div>
-        <div><dt>Tek dokunuş</dt><dd>Bakiyeni gizler, uygulamayı Face ID ya da parmak iziyle kilitlersin.</dd></div>
-        <div><dt>İstediğin an</dt><dd>Hesabını ve verilerini uygulamanın içinden silersin.</dd></div>
+      <dl class="gercekler">
+        <div class="belir"><dt>TLS 1.2+</dt><dd>Telefonundan sunucuya giden her istek şifreli.</dd></div>
+        <div class="belir" style="--gecikme: 70ms"><dt>AES-256</dt><dd>Sunucuda saklanan veriler şifreli durur.</dd></div>
+        <div class="belir" style="--gecikme: 140ms"><dt>Tek dokunuş</dt><dd>Bakiyeni gizler, uygulamayı Face ID ya da parmak iziyle kilitlersin.</dd></div>
+        <div class="belir" style="--gecikme: 210ms"><dt>İstediğin an</dt><dd>Hesabını ve verilerini uygulamanın içinden silersin.</dd></div>
       </dl>
     </div>
   </section>
@@ -584,36 +648,27 @@ footer p { margin-top: 22px; }
 
 <script>
 (function () {
-  // Kaydırınca belirme: IntersectionObserver (scroll dinleyicisi yok).
-  var ogeler = document.querySelectorAll('.belir');
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (girdiler) {
-      girdiler.forEach(function (g) {
-        if (g.isIntersecting) { g.target.classList.add('gorundu'); io.unobserve(g.target); }
-      });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    ogeler.forEach(function (o) { io.observe(o); });
-  } else {
-    ogeler.forEach(function (o) { o.classList.add('gorundu'); });
-  }
-
-  // "Enflasyonu geçtin mi?" hesaplayıcısı.
+  var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var tr = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+  var puanEl = document.getElementById('hukum-puan');
+
+  // ── "Enflasyonu geçtin mi?" hesaplayıcısı ──────────────────────────────
   function oku(id) {
     var s = document.getElementById(id).value.trim().replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
     var v = parseFloat(s);
     return isFinite(v) ? v : NaN;
   }
   function yuzde(v) { return (v < 0 ? '−%' : '%') + tr.format(Math.abs(v)); }
+  var sonFark = null;
   function hesapla() {
     var yat = oku('yatirilan'), bug = oku('bugun'), tufe = oku('tufe');
     var etiket = document.getElementById('hukum-etiket');
-    var puan = document.getElementById('hukum-puan');
     var metin = document.getElementById('hukum-metin');
     if (!(yat > 0) || !(bug >= 0) || !(tufe > -100)) {
+      sonFark = null;
       etiket.textContent = 'Üç alanı da doldur';
-      puan.textContent = '...';
-      puan.className = 'buyuk sayi';
+      puanEl.textContent = '...';
+      puanEl.className = 'buyuk sayi';
       metin.textContent = 'Tutarları lira, enflasyonu yüzde olarak yaz.';
       return;
     }
@@ -621,9 +676,10 @@ footer p { margin-top: 22px; }
     var fark = getiri - tufe;
     var reel = ((1 + getiri / 100) / (1 + tufe / 100) - 1) * 100;
     var onde = fark >= 0;
+    sonFark = Math.abs(fark);
     etiket.textContent = onde ? 'Enflasyonun önündesin' : 'Enflasyonun gerisindesin';
-    puan.textContent = tr.format(Math.abs(fark)) + ' puan';
-    puan.className = 'buyuk sayi ' + (onde ? 'on' : 'geri');
+    puanEl.textContent = tr.format(sonFark) + ' puan';
+    puanEl.className = 'buyuk sayi ' + (onde ? 'on' : 'geri');
     document.getElementById('t-sen').textContent = yuzde(getiri);
     document.getElementById('t-tufe').textContent = yuzde(tufe);
     var enBuyuk = Math.max(Math.abs(getiri), Math.abs(tufe), 1);
@@ -633,11 +689,69 @@ footer p { margin-top: 22px; }
       ? 'Alım gücün ' + yuzde(reel) + ' arttı: bugünkü paran, başladığın günün fiyatlarıyla daha fazla şey alıyor.'
       : 'Alım gücün ' + yuzde(Math.abs(reel)) + ' azaldı: rakam büyüse de, başladığın günün fiyatlarıyla daha az şey alıyor.';
   }
+  var dokunuldu = false;
   ['yatirilan', 'bugun', 'tufe'].forEach(function (id) {
-    document.getElementById(id).addEventListener('input', hesapla);
+    document.getElementById(id).addEventListener('input', function () { dokunuldu = true; hesapla(); });
   });
   document.getElementById('hesapla').addEventListener('submit', function (e) { e.preventDefault(); });
   hesapla();
+
+  // Puan sayacı: hüküm kartı BELİRDİĞİ an 0'dan gerçek sonuca sayar (bir
+  // kez). Belirmezse (gözlemci yok) gerçek sonuç zaten yazılı durur;
+  // sayaç hiçbir koşulda yanlış rakamda kalmaz.
+  var sayacKullanildi = false;
+  function sayaciBaslat() {
+    if (sayacKullanildi || azHareket || dokunuldu || sonFark === null) return;
+    sayacKullanildi = true;
+    var hedef = sonFark, sure = 1100, bas = null;
+    puanEl.textContent = tr.format(0) + ' puan';
+    function adim(t) {
+      if (dokunuldu) return;
+      if (bas === null) bas = t;
+      var k = Math.min((t - bas) / sure, 1);
+      var e = 1 - Math.pow(1 - k, 4); // güçlü ease-out
+      puanEl.textContent = tr.format(hedef * e) + ' puan';
+      if (k < 1) requestAnimationFrame(adim);
+    }
+    setTimeout(function () { requestAnimationFrame(adim); }, 300);
+    // Kare döngüsü işlemezse (arka plan sekmesi) son değer yine yazılır.
+    setTimeout(function () { if (!dokunuldu) hesapla(); }, 300 + sure + 150);
+  }
+
+  // ── Kaydırınca belirme (IntersectionObserver; scroll dinleyicisi yok) ──
+  var ogeler = document.querySelectorAll('.belir');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (girdiler) {
+      // Gözlemci çalışıyor: güvence zamanlayıcısına gerek kalmadı.
+      if (window.__guvence) { clearTimeout(window.__guvence); window.__guvence = null; }
+      girdiler.forEach(function (g) {
+        if (!g.isIntersecting) return;
+        g.target.classList.add('gorundu');
+        if (g.target.classList.contains('hukum-tepsi')) sayaciBaslat();
+        io.unobserve(g.target);
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    ogeler.forEach(function (o) { io.observe(o); });
+
+    // Menüde bulunduğun bölüm (durum göstergesi).
+    var baglantilar = {};
+    document.querySelectorAll('.ada nav a').forEach(function (a) { baglantilar[a.getAttribute('href').slice(1)] = a; });
+    var bolumIo = new IntersectionObserver(function (girdiler) {
+      girdiler.forEach(function (g) {
+        var a = baglantilar[g.target.id];
+        if (!a) return;
+        if (g.isIntersecting) {
+          Object.keys(baglantilar).forEach(function (k) { baglantilar[k].classList.remove('aktif'); baglantilar[k].removeAttribute('aria-current'); });
+          a.classList.add('aktif'); a.setAttribute('aria-current', 'true');
+        } else if (a.classList.contains('aktif') && g.boundingClientRect.top > 0) {
+          a.classList.remove('aktif'); a.removeAttribute('aria-current');
+        }
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    Object.keys(baglantilar).forEach(function (id) { var el = document.getElementById(id); if (el) bolumIo.observe(el); });
+  } else {
+    ogeler.forEach(function (o) { o.classList.add('gorundu'); });
+  }
 })();
 </script>
 </body>
