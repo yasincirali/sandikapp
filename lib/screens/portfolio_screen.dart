@@ -25,6 +25,8 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/sparkline_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sekme_basa_don.dart';
+import '../widgets/sandik_acilir.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
@@ -62,6 +64,26 @@ class PortfolioScreen extends ConsumerStatefulWidget {
 
 class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   String? _view = '';
+
+  /// Varlıklarım listesinin denetleyicisi — açık Portföy sekmesine yeniden
+  /// dokununca başa döner (bkz. [SekmeBasaDon], animasyon denetimi
+  /// 2026-10-01).
+  final _kaydirma = ScrollController();
+  late final VoidCallback _basaDonBirak;
+
+  @override
+  void initState() {
+    super.initState();
+    _basaDonBirak = SekmeBasaDon.dinle(
+        1, () => SekmeBasaDon.basaKaydir(context, _kaydirma));
+  }
+
+  @override
+  void dispose() {
+    _basaDonBirak();
+    _kaydirma.dispose();
+    super.dispose();
+  }
   AssetType? _filteredType;
   _SortOrder _sortOrder = _SortOrder.valueDesc;
 
@@ -290,6 +312,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     // artık doğrudan dış listenin çocukları (bkz. [_AssetList]).
                     child: SlidableAutoCloseBehavior(
                     child: ListView(
+                      // Varlıklarım ↔ Takip Listesi geçişinde liste sökülüp
+                      // yeniden kuruluyor; anahtar konumu PageStorage'da
+                      // tutar — geri dönünce kaldığı yerden devam eder
+                      // (animasyon denetimi 2026-10-01: her geçişte başa
+                      // atıyordu).
+                      key: const PageStorageKey('portfoy-varliklarim'),
+                      controller: _kaydirma,
                       physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics()),
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 80),
@@ -1292,15 +1321,12 @@ class _AssetCardState extends State<_AssetCard>
           ),
           // Ok ile panel AYNI süre ve eğriyle (animasyon denetimi,
           // 2026-09-30): ok 200, panel 220 ms'de bitiyordu — hareket tek
-          // parça hissettirmiyordu.
-          AnimatedSize(
-            duration: SandikMotion.surfaceOf(context),
-            curve: SandikMotion.enter,
-            alignment: Alignment.topCenter,
-            child: _expanded
-                ? _AssetDetailsPanel(
-                    position: position, pState: pState, baz: widget.baz)
-                : const SizedBox(width: double.infinity),
+          // parça hissettirmiyordu. 2026-10-01: ortak [SandikAcilir] —
+          // kapanırken panel ilk karede silinmiyor, solarak kapanıyor.
+          SandikAcilir(
+            acik: _expanded,
+            child: _AssetDetailsPanel(
+                position: position, pState: pState, baz: widget.baz),
           ),
         ],
       ),
@@ -1448,10 +1474,8 @@ class _ExpandChevron extends StatelessWidget {
         width: 44,
         height: 44,
         alignment: Alignment.center,
-        child: AnimatedRotation(
-          turns: expanded ? 0.5 : 0.0,
-          duration: SandikMotion.surfaceOf(context),
-          curve: SandikMotion.enter,
+        child: SandikAcilirOk(
+          acik: expanded,
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: context.c.text58,

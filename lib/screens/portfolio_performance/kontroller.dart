@@ -175,10 +175,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                       ),
                     ),
                   ),
-                  AnimatedRotation(
-                    turns: acik ? 0.5 : 0,
-                    duration: SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
+                  // Ok panelle aynı süre/eğride (animasyon denetimi
+                  // 2026-10-01: ok 180 ms `enter`, panel 240 ms `move`).
+                  SandikAcilirOk(
+                    acik: acik,
                     child: Icon(Icons.expand_more_rounded, size: 16, color: ton),
                   ),
                 ],
@@ -197,15 +197,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Mod anahtarı yalnızca gün dışı dönemde anlamlı (gün içi seride
   /// simülasyonun karşılığı yok), bu yüzden orada hiç çizilmez.
   Widget _buildScopePanel(bool isIntraday) {
-    return AnimatedCrossFade(
-      duration: SandikMotion.surfaceOf(context),
-      sizeCurve: SandikMotion.move,
-      firstCurve: SandikMotion.enter,
-      secondCurve: SandikMotion.enter,
-      crossFadeState:
-          _kapsamAcik ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-      firstChild: const SizedBox(width: double.infinity),
-      secondChild: Padding(
+    // Ortak katlanır bölüm (animasyon denetimi 2026-10-01).
+    return SandikAcilir(
+      acik: _kapsamAcik,
+      child: Padding(
         padding: const EdgeInsets.only(top: SandikSpace.sm),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -307,19 +302,24 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                   );
                 }
               },
-              child: Container(
+              // Zemin ve metin geçişli (animasyon denetimi 2026-10-01).
+              child: AnimatedContainer(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.enter,
                 height: double.infinity,
                 decoration: BoxDecoration(
                   color: selected ? context.c.surface2 : Colors.transparent,
                   borderRadius: BorderRadius.circular(SandikRadius.sm),
                 ),
                 child: Center(
-                  child: Text(
-                    o.label,
-                    style: context.t.bodyMedium?.copyWith(
+                  child: AnimatedDefaultTextStyle(
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    style: (context.t.bodyMedium ?? const TextStyle()).copyWith(
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                       color: selected ? context.c.amberText : context.c.text36,
                     ),
+                    child: Text(o.label),
                   ),
                 ),
               ),
@@ -405,8 +405,12 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         ? context.l10n.simModeBody
         : context.l10n.realModeBody;
 
-    showCupertinoModalPopup<void>(
+    // Uygulamanın öteki ~30 sheet'i gibi Material alt sayfası (animasyon
+    // denetimi 2026-10-01): bu tek Cupertino açılır penceresiydi — 335 ms
+    // kayıyor, aşağı çekerek KAPANMIYORDU ve köşesi 24'tü (tema 20).
+    showModalBottomSheet<void>(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => DefaultTextStyle(
         style: sandikFont(
             color: context.c.text90, decoration: TextDecoration.none),
@@ -414,7 +418,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
           decoration: BoxDecoration(
             color: context.c.surface1,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
           ),
           child: SafeArea(
             top: false,
@@ -423,14 +428,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.c.overlay,
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
-                    ),
-                  ),
+                  child: const SandikTutamac(),
                 ),
                 const SizedBox(height: 16),
                 Row(

@@ -161,7 +161,12 @@ class _List extends ConsumerWidget {
         await ref.read(watchlistProvider.future);
       },
       child: ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
+      // Segment geçişinde konum korunur (bkz. Portföy `PageStorageKey`).
+      key: const PageStorageKey('portfoy-takip-listesi'),
+      // Aynı ekranın Varlıklarım listesiyle AYNI fizik: Android'de biri
+      // yaylanıp öteki esniyordu (animasyon denetimi 2026-10-01).
+      physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics()),
       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 12),
       // +2: grafik kartı ve sayı başlığı. Ekleme satırı artık listede
       // DEĞİL, gövdenin üstünde (`_AddHeader`).
@@ -486,8 +491,28 @@ class _Row extends ConsumerWidget {
               color: context.c.loss,
               borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
-            child: Icon(Icons.delete_outline_rounded,
-                color: context.c.onStatus, size: 20),
+            // Zemin NE olacağını söyler: "Takipten çıkar". Aynı ekranın
+            // Varlıklarım sekmesinde aynı jest bir SİL panelini açıyor (lot
+            // silmek geri alınamaz, onay ister); burada iş geri alınabilir
+            // (yeniden eklenir) ve onaysızdır. Yalnız çöp kutusu ikonu iki
+            // farklı sonucu aynı gösteriyordu (animasyon denetimi 2026-10-01).
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    context.l10n.removeFromWatchlist,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelLarge
+                        ?.copyWith(color: context.c.onStatus),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.xs2),
+                Icon(Icons.visibility_off_outlined,
+                    color: context.c.onStatus, size: 20),
+              ],
+            ),
           ),
           // Demo modunda yazma engellidir: sağlayıcı satırı listeden
           // DÜŞÜRMEDEN hata fırlatıyordu, kaydırılıp kapatılan satır ağaçta

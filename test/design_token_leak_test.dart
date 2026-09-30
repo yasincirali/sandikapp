@@ -63,10 +63,12 @@ void main() {
     }
 
     // 2026-08-09 denetimi: 42 → 28. Kalanlar debounce/timeout gibi
-    // gerçekten hareket dili dışındaki süreler.
+    // gerçekten hareket dili dışındaki süreler. 2026-10-01 animasyon
+    // denetimi: 28 → 20 (sekme hapı ve yarış seçicisi token'a geçti;
+    // aradaki fark önceki turlarda düşmüş ama eşik güncellenmemişti).
     expect(
       hits.length,
-      lessThanOrEqualTo(28),
+      lessThanOrEqualTo(20),
       reason: 'Yeni çıplak süre eklenmiş. Hareket ise '
           'SandikMotion.press/state/surface kullan.\n${hits.join('\n')}',
     );

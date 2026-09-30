@@ -85,7 +85,12 @@ class _BarDugmesi extends StatelessWidget {
       child: Semantics(
         selected: isSelected,
         button: true,
-        child: Container(
+        // Seçim zemini ve metin rengi geçişli (animasyon denetimi
+        // 2026-10-01): eskiden tek karede atlıyordu. Dönem seçicisindeki
+        // gibi `state` süresi; hareketi azalt'ta anında.
+        child: AnimatedContainer(
+          duration: SandikMotion.stateOf(context),
+          curve: SandikMotion.enter,
           // Dokunma hedefi en az 44px yüksekliğinde kalsın (HIG/Material).
           constraints: const BoxConstraints(minHeight: SandikTouch.min),
           decoration: BoxDecoration(
@@ -93,12 +98,14 @@ class _BarDugmesi extends StatelessWidget {
             borderRadius: BorderRadius.circular(SandikRadius.sm),
           ),
           child: Center(
-            child: Text(
-              bar.etiket,
-              style: context.t.bodySmall?.copyWith(
+            child: AnimatedDefaultTextStyle(
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              style: (context.t.bodySmall ?? const TextStyle()).copyWith(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected ? context.c.amberText : context.c.text36,
               ),
+              child: Text(bar.etiket),
             ),
           ),
         ),

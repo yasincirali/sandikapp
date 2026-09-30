@@ -71,14 +71,7 @@ class YeniliklerSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: c.text20,
-                borderRadius: BorderRadius.circular(SandikRadius.sm),
-              ),
-            ),
+            child: const SandikTutamac(),
           ),
           const SizedBox(height: SandikSpace.lg),
           Text(

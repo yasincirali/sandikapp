@@ -131,8 +131,12 @@ void main() {
       // olabiliyordu — aynı ekranda iki farklı an.
       final src = ekranKaynagiSync('lib/widgets/piyasa_seridi.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('TazelikRitmi.nabiz.dinle(_yukle)'), isTrue,
+      // 2026-10-01: dinleyici gizli sekmede (TickerMode kapalı) turu atlar;
+      // bağ yine ortak nabızdır.
+      expect(tek.contains('TazelikRitmi.nabiz.dinle('), isTrue,
           reason: 'bant da ortak nabza bağlı olmalı');
+      expect(tek.contains('_yukle(); });'), isTrue,
+          reason: 'nabız bandın kotasyon turunu tetiklemeli');
       // Yorumları ele — açıklamada `ForegroundPoller` geçiyor (eski
       // davranışın kaydı). Aranan şey ÇALIŞAN kod.
       final kodsuz = src

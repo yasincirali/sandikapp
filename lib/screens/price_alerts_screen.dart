@@ -8,6 +8,8 @@ import '../providers/price_alert_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
+import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -112,12 +114,33 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 96),
               itemCount: liste.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, i) => _AlarmSatiri(
-                alarm: liste[i],
-                onDelete: () =>
-                    ref.read(priceAlertsProvider.notifier).delete(liste[i].id),
-                onRearm: () =>
-                    ref.read(priceAlertsProvider.notifier).rearm(liste[i].id),
+              // Silinen satır önce kapanır, altındakiler yukarı kayar; sunucu
+              // reddederse geri açılır ve sebep söylenir (animasyon denetimi
+              // 2026-10-01 — eskiden satır tek karede yok oluyor, hata da
+              // yakalanmıyordu).
+              itemBuilder: (_, i) => KapananSatir(
+                key: ValueKey(liste[i].id),
+                child: Builder(
+                  builder: (satirCtx) => _AlarmSatiri(
+                    alarm: liste[i],
+                    onDelete: () async {
+                      final id = liste[i].id;
+                      SandikHaptic.medium.perform();
+                      try {
+                        await KapananSatir.kapatVeYap(
+                            satirCtx,
+                            () => ref
+                                .read(priceAlertsProvider.notifier)
+                                .delete(id));
+                      } catch (e) {
+                        if (context.mounted) showAppError(context, e);
+                      }
+                    },
+                    onRearm: () => ref
+                        .read(priceAlertsProvider.notifier)
+                        .rearm(liste[i].id),
+                  ),
+                ),
               ),
             ),
           );

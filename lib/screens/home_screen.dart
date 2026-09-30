@@ -22,6 +22,7 @@ import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
 import '../utils/sandik_snack.dart';
@@ -67,6 +68,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _scrollCtrl = ScrollController();
   bool _reloading = false;
 
+  /// Açık Ana sekmesine yeniden dokununca başa dön (bkz. [SekmeBasaDon]).
+  late final VoidCallback _basaDonBirak;
+
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
   void _aramayiAc() {
     // Demo (F1): takibe alma bir yazma; arama sayfası oraya çıkıyor.
@@ -94,7 +98,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _basaDonBirak = SekmeBasaDon.dinle(
+        0, () => SekmeBasaDon.basaKaydir(context, _scrollCtrl));
+  }
+
+  @override
   void dispose() {
+    _basaDonBirak();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -1230,7 +1242,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required int gecmis,
     required int aktif,
   }) {
-    return showDialog<bool>(
+    return showSandikGecisli<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.l10n.permanentDelete),
@@ -1303,14 +1315,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
             children: [
               const SizedBox(height: SandikSpace.md),
               Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: context.c.text36,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                ),
+                child: const SandikTutamac(),
               ),
               const SizedBox(height: SandikSpace.md),
               Padding(

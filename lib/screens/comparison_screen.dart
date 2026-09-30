@@ -1082,14 +1082,7 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
         child: Column(
           children: [
             const SizedBox(height: 10),
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: p.text20,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const SandikTutamac(),
             // Sekme yalnızca kıyaslanabilecek bir portföy VARSA çizilir:
             // tek seçenekli bir seçici karar verecek bir şey sunmaz.
             if (widget.portfolioOptions.isNotEmpty)

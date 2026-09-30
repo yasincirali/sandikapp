@@ -207,14 +207,7 @@ class _RoiInfoSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.c.text36,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              child: const SandikTutamac(),
             ),
             const SizedBox(height: 14),
             // Başlık + KAPAT.
@@ -682,10 +675,11 @@ class _PeriodBar extends StatelessWidget {
               child: SandikBasma(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onChange(i),
+                // Token: elle 220 ms + ham eğri yerine seçicilerin ortak
+                // `state`/`enter`'ı (animasyon denetimi 2026-10-01).
                 child: AnimatedContainer(
-                  duration: SandikMotion.of(
-                      context, const Duration(milliseconds: 220)),
-                  curve: Curves.easeOutCubic,
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
                   margin: EdgeInsets.symmetric(horizontal: active ? 0 : 2),
                   decoration: BoxDecoration(
                     // Seçili pill bir YÜZEY — dolgu token'ı kullanılır.

@@ -110,6 +110,18 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
+/// Kapsam panelini açar. Panel 2026-10-01'den beri ortak `SandikAcilir`:
+/// KAPALIYKEN çocukları ağaçta değildir (eskiden `AnimatedCrossFade` gizli
+/// çipleri ağaçta tutuyordu ve bu test onları kapalı panelde buluyordu).
+/// Testin sorusu "yükleme karesi açık paneli söküyor mu" — paneli açıp sorar.
+Future<void> _paneliAc(WidgetTester tester) async {
+  final ac = find.byIcon(Icons.tune_rounded);
+  if (ac.evaluate().isEmpty) return;
+  await tester.tap(ac.first, warnIfMissed: false);
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
@@ -121,6 +133,7 @@ void main() {
     testWidgets('tip filtresi değişince çipler ve periyot toggle kalır',
         (tester) async {
       await _pump(tester);
+      await _paneliAc(tester);
 
       // Ön koşul: filtre çipleri çizilmiş olmalı.
       expect(find.text('Tümü'), findsWidgets,
@@ -147,6 +160,7 @@ void main() {
 
     testWidgets('periyot değişiminde filtre çipleri kalır', (tester) async {
       await _pump(tester);
+      await _paneliAc(tester);
 
       final aylik = find.text('1A');
       if (aylik.evaluate().isNotEmpty) {

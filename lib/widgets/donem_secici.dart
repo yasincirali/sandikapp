@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
@@ -31,6 +30,15 @@ import 'donem_istatistik.dart' show donemDuzMu;
 /// ÖLÇÜLEN metin genişliğinden türetilir. Yedi dönemle 320pt'de toplam
 /// pay satıra sığmayabilir: etiket o zaman kırpılmaz, `FittedBox` ile
 /// küçülür.
+///
+/// ## Kayan seçim (animasyon denetimi 2026-10-01)
+/// Seçili zemin eskiden her segmentin kendi dolgusuydu: seçim bir
+/// segmentten ötekine TEK KAREDE atlıyordu. Artık zemin tek bir katman ve
+/// yeni segmentin yerine KAYAR ([SandikMotion.state] + [SandikMotion.move]);
+/// göz seçimin nereden nereye geçtiğini izler. Segment genişlikleri
+/// `flex` payıyla orantılı olduğu için zeminin yeri aynı paylardan
+/// hesaplanır — ölçüm yok, fazladan yerleşim geçişi yok. Hareketi azalt
+/// açıkken süre sıfır: zemin anında yerine oturur.
 class DonemSecici extends StatelessWidget {
   const DonemSecici({
     super.key,
@@ -77,6 +85,10 @@ class DonemSecici extends StatelessWidget {
       return ((tp.width + 2 * SandikSpace.sm2) * 100).round();
     }
 
+    final etiketler = [for (final d in donemler) donemEtiketi(l, d.label)];
+    final paylar = [for (final e in etiketler) pay(e)];
+    final toplamPay = paylar.fold<int>(0, (a, b) => a + b);
+
     return Container(
       // Getirili hâlde ikinci satır için dokunma hedefi kadar yükseklik.
       height: getiri == null ? tekSatirYukseklik : SandikTouch.min + SandikSpace.sm,
@@ -84,13 +96,36 @@ class DonemSecici extends StatelessWidget {
           color: context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md)),
       padding: const EdgeInsets.all(3),
-      child: Row(
+      child: LayoutBuilder(builder: (context, kutu) {
+        final w = kutu.maxWidth;
+        final gecerli = secili >= 0 && secili < paylar.length && toplamPay > 0;
+        final solPay = gecerli
+            ? paylar.take(secili).fold<int>(0, (a, b) => a + b)
+            : 0;
+        return Stack(
+          children: [
+            if (gecerli)
+              AnimatedPositioned(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.move,
+                left: w * solPay / toplamPay,
+                width: w * paylar[secili] / toplamPay,
+                top: 0,
+                bottom: 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: context.c.surface2,
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  ),
+                ),
+              ),
+            Row(
         children: List.generate(donemler.length, (i) {
-          final etiket = donemEtiketi(l, donemler[i].label);
+          final etiket = etiketler[i];
           final seciliMi = i == secili;
           final g = getiri == null || i >= getiri.length ? null : getiri[i];
           return Flexible(
-            flex: pay(etiket),
+            flex: paylar[i],
             child: Semantics(
               button: true,
               selected: seciliMi,
@@ -109,10 +144,6 @@ class DonemSecici extends StatelessWidget {
                   alignment: Alignment.center,
                   padding:
                       const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-                  decoration: BoxDecoration(
-                    color: seciliMi ? context.c.surface2 : Colors.transparent,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
                   // Tek FittedBox bütün sütunu küçültür: yedi segmentte
                   // dar genişlik ve büyük metin ölçeğinde (x2, x3) iki
                   // satır kabuğa sığmayabilir; kırpmak yerine küçülür.
@@ -121,16 +152,22 @@ class DonemSecici extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          etiket,
-                          maxLines: 1,
-                          softWrap: false,
-                          style: stil?.copyWith(
+                        // Renk zeminle aynı sürede geçer; kalınlık ölçümde
+                        // en geniş hâle göre ayrıldığı için yer oynatmaz.
+                        AnimatedDefaultTextStyle(
+                          duration: SandikMotion.stateOf(context),
+                          curve: SandikMotion.enter,
+                          style: (stil ?? const TextStyle()).copyWith(
                             fontWeight:
                                 seciliMi ? FontWeight.w600 : FontWeight.w500,
                             color: seciliMi
                                 ? context.c.amberText
                                 : context.c.text36,
+                          ),
+                          child: Text(
+                            etiket,
+                            maxLines: 1,
+                            softWrap: false,
                           ),
                         ),
                         if (getiri != null)
@@ -157,7 +194,10 @@ class DonemSecici extends StatelessWidget {
             ),
           );
         }),
-      ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

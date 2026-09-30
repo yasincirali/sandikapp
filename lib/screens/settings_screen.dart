@@ -131,7 +131,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // 2. Kademe — şifre doğrulama
     final passwordCtrl = TextEditingController();
     bool obscure = true;
-    final secondConfirm = await showDialog<bool>(
+    final secondConfirm = await showSandikGecisli<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogCtx) => StatefulBuilder(
@@ -244,7 +244,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _showDisclaimerText() {
-    showDialog<void>(
+    showSandikGecisli<void>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: context.c.surface2,

@@ -368,8 +368,11 @@ class _DonemSecici extends StatelessWidget {
                   child: SandikBasma(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => onSec(d),
+                    // Zemin metinle AYNI sürede (`state`): eskiden zemin 240,
+                    // metin 180 ms'de varıyordu (animasyon denetimi
+                    // 2026-10-01).
                     child: AnimatedContainer(
-                      duration: SandikMotion.surfaceOf(context),
+                      duration: SandikMotion.stateOf(context),
                       curve: SandikMotion.enter,
                       margin: EdgeInsets.symmetric(
                           horizontal: d == secili ? 0 : 2),
@@ -980,14 +983,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: context.c.hairline,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            child: const SandikTutamac(),
           ),
           const SizedBox(height: SandikSpace.md),
           Row(

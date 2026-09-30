@@ -61,6 +61,50 @@ void main() {
         reason: 'yaylanınca komşu kart pencereden çıkar');
   });
 
+  // Animasyon denetimi 2026-10-01: eşiği geçtikten sonra TERS yöne
+  // fırlatmak "vazgeçtim"dir; eskiden hızın yönüne bakılmıyordu.
+  testWidgets('eşiği geçip ters yöne fırlatmak iptal eder', (t) async {
+    var cagrildi = false;
+    await t.pumpWidget(kur(onGecis: (_) => cagrildi = true));
+    final g = await t.startGesture(t.getCenter(find.text('kart')));
+    // Yavaşça eşiğin ötesine (320 × 0,3 = 96 pt).
+    for (var i = 0; i < 12; i++) {
+      await g.moveBy(const Offset(-10, 0));
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    // Sonra hızla sağa fiske.
+    await g.moveBy(const Offset(20, 0));
+    await t.pump(const Duration(milliseconds: 8));
+    await g.moveBy(const Offset(20, 0));
+    await t.pump(const Duration(milliseconds: 8));
+    await g.up();
+    await t.pumpAndSettle();
+    expect(cagrildi, isFalse);
+    expect(find.text('Ayşe'), findsNothing);
+  });
+
+  testWidgets('kısa hızlı fiske eşiği geçmeden de ilerletir', (t) async {
+    bool? yon;
+    await t.pumpWidget(kur(onGecis: (v) => yon = v));
+    await t.fling(find.text('kart'), const Offset(-60, 0), 800);
+    await t.pumpAndSettle();
+    expect(yon, isTrue);
+  });
+
+  testWidgets('bırakma animasyonunu parmakla yakalamak takılı bırakmaz',
+      (t) async {
+    var sayac = 0;
+    await t.pumpWidget(kur(onGecis: (_) => sayac++));
+    await t.drag(find.text('kart'), const Offset(-40, 0));
+    await t.pump(const Duration(milliseconds: 30));
+    // Geri yaylanırken yakala, bu kez eşiği geç.
+    await t.drag(find.text('kart'), const Offset(-160, 0));
+    await t.pumpAndSettle();
+    expect(sayac, 1);
+    expect(find.text('Ayşe'), findsNothing,
+        reason: 'geçiş bitince kayma sıfırlanır, komşu pencereden çıkar');
+  });
+
   testWidgets('sağa kaydırma geri yönü bildirir', (t) async {
     bool? yon;
     await t.pumpWidget(kur(onGecis: (v) => yon = v));
