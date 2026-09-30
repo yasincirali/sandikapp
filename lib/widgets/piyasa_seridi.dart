@@ -177,7 +177,13 @@ class _PiyasaSeridiState extends State<PiyasaSeridi> {
     // İlk turu HEMEN at: nabız ilk tick'ini bir aralık sonra atar ve
     // bant o süre boyunca boş kalırdı.
     _yukle();
-    _nabziBirak = TazelikRitmi.nabiz.dinle(_yukle);
+    _nabziBirak = TazelikRitmi.nabiz.dinle(() {
+      // Gizli sekmede kotasyon turu yok (animasyon denetimi 2026-10-01).
+      if (!mounted || !TickerMode.getValuesNotifier(context).value.enabled) {
+        return;
+      }
+      _yukle();
+    });
   }
 
   @override

@@ -1710,11 +1710,26 @@ class _BalanceToggleButton extends ConsumerWidget {
         width: 44,
         height: 44,
         decoration: context.chip(selected: hidden),
+        // Göz ikonu yerinde değişir (tema anahtarındaki gibi kısa çapraz
+        // sönüm + hafif büyüme); eskiden tek karede atlıyordu.
         child: Center(
-          child: Icon(
-            hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
-            color: hidden ? context.c.amberText : context.c.text58,
-            size: 20,
+          child: AnimatedSwitcher(
+            duration: SandikMotion.stateOf(context),
+            switchInCurve: SandikMotion.enter,
+            switchOutCurve: SandikMotion.exit,
+            transitionBuilder: (child, a) => FadeTransition(
+              opacity: a,
+              child: ScaleTransition(
+                scale: Tween<double>(begin: 0.85, end: 1).animate(a),
+                child: child,
+              ),
+            ),
+            child: Icon(
+              hidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              key: ValueKey(hidden),
+              color: hidden ? context.c.amberText : context.c.text58,
+              size: 20,
+            ),
           ),
         ),
       ),

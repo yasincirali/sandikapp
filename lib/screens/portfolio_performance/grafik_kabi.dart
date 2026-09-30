@@ -1043,7 +1043,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                     // Ana grafikle aynı motion token'ları — hacim paneli
                     // periyot değişiminde onunla birlikte morf'lansın, kendi
                     // başına (fl_chart varsayılanı 150ms/linear) kaymasın.
-                    duration: SandikMotion.state,
+                    // Jest sırasında ana grafik gibi morf YOK (bkz.
+                    // `ChartViewport.jestSuruyor`); hareketi azalt'ta da yok.
+                    duration: vp.jestSuruyor
+                        ? Duration.zero
+                        : SandikMotion.stateOf(context),
                     curve: SandikMotion.enter,
                   );
                 },

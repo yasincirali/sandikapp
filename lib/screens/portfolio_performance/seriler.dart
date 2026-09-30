@@ -327,6 +327,12 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
       // diyordu; yoktu — `PortfolioNotifier._surenTur` ile eklendi.)
       _nabziBirak = TazelikRitmi.nabiz.dinle(() {
         if (!mounted) return;
+        // Sekme görünmüyorsa (alt menüde başka sekme açık, `TickerMode`
+        // kapalı) tam ekran yeniden kurulum + ağ isteği YAPILMAZ: gizli
+        // Performans her 30 sn'de bir görünür sekmeyle aynı karelerde
+        // çalışıyordu (animasyon denetimi 2026-10-01). Sekmeye dönülünce
+        // en geç bir sonraki nabız tazeler (≤ 30 sn).
+        if (!TickerMode.getValuesNotifier(context).value.enabled) return;
         _guncelle(() {
           // Memoize edilen intraday future'ı bilerek düşür — tick'in amacı
           // zaten seriyi tazelemek. Yeni future yüklenirken eski veri

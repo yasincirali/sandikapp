@@ -23,7 +23,37 @@
 /// geçmişi çekilemedi"), kapı onu yutmaz, yalnızca beklemez.
 library;
 
+import 'dart:async';
+
+import 'package:flutter/widgets.dart';
+
 const acilisSiniri = Duration(seconds: 3);
+
+/// Ekranın geldiği rota giriş animasyonunu bitirince tamamlanır.
+///
+/// Açılış kapısı önbellek sıcakken birkaç milisaniyede açılır — tam da
+/// sayfa kayarak girerken. Kapının `setState`'i bütün ekranı (grafik,
+/// çipler, istatistik) geçişin ORTASINDA kurar ve kaydırma kare atlar
+/// (animasyon denetimi 2026-10-01). Kapı açıldıktan sonra bunu beklemek
+/// çizimi geçiş bitimine kaydırır; geçiş en fazla ~0,5 sn sürdüğünden
+/// kullanıcı beklemez — iskelet zaten o sırada görünüyordu.
+///
+/// Rota yoksa, animasyon bitmişse ya da geri gidiyorsa hemen tamamlanır.
+Future<void> rotaGecisiniBekle(BuildContext context) {
+  final anim = ModalRoute.of(context)?.animation;
+  if (anim == null || anim.status != AnimationStatus.forward) {
+    return Future.value();
+  }
+  final c = Completer<void>();
+  void dinle(AnimationStatus s) {
+    if (s == AnimationStatus.forward) return;
+    anim.removeStatusListener(dinle);
+    if (!c.isCompleted) c.complete();
+  }
+
+  anim.addStatusListener(dinle);
+  return c.future;
+}
 
 /// [isler]in hepsi bitince (başarılı ya da hatalı) ya da [sinir] dolunca
 /// tamamlanır; asla hata fırlatmaz.
