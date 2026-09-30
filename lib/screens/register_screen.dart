@@ -809,7 +809,7 @@ class _LegalConsentBox extends StatelessWidget {
                   child: Text(
                     docConfirmed
                         ? checkboxLabel
-                        : '$checkboxLabel\n(Önce belgeyi okuyun)',
+                        : '$checkboxLabel\n(Önce belgeyi oku)',
                     style: context.t.titleSmall?.copyWith(
                       color: error ? context.c.loss : context.c.text58,
                     ),
