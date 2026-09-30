@@ -1,4 +1,5 @@
 import 'asset.dart';
+import 'asset_categories.dart';
 import 'asset_type.dart';
 
 /// Aggregated portfolio position — birden çok Asset (lot) tek pozisyon olarak.
@@ -125,7 +126,7 @@ String positionKey(Asset a) {
       core = t.isNotEmpty ? t : 'sub:${(a.subCategory ?? '').toUpperCase()}';
       break;
     case AssetType.altin:
-      core = 'sub:${(a.subCategory ?? '').toLowerCase()}';
+      core = 'sub:${altinAltAnahtari(a.subCategory)}';
       break;
     case AssetType.kripto:
       // `KRIPTO:BTC` — hisse gibi ticker; ad yedeği tickersız eski/elle
@@ -152,6 +153,24 @@ String positionKey(Asset a) {
       break;
   }
   return '$type|$core|$currency';
+}
+
+/// Altın alt türünün anahtar biçimi: etiketin küçük harflisi
+/// (`çeyrek altın`).
+///
+/// ## Neden (2026-10-01)
+/// `subCategory` kaynağa göre iki biçimde yazılıyor: ekleme formu etiketi
+/// (`Çeyrek Altın`), CSV içe aktarma enum adını (`ceyrek`; 2026-10-01'e
+/// kadar). Anahtar ham değerden kurulunca aynı çeyrek altın iki pozisyona
+/// bölünüyor, Portföy'de iki ayrı satır çıkıyordu. `altinTuru` bu ayrımı
+/// zaten biliyordu; anahtar bilmiyordu. Tanınmayan değer eskisi gibi
+/// küçük harfe indirilir. Sunucu eşi `positions.ts` › `altinAltAnahtari`.
+String altinAltAnahtari(String? subCategory) {
+  final s = (subCategory ?? '').trim();
+  for (final g in GoldSubCategory.values) {
+    if (g.label == s || g.name == s) return g.label.toLowerCase();
+  }
+  return s.toLowerCase();
 }
 
 /// [positionKey]'in ticker çekirdeğini KULLANICIYA gösterilecek koda çevirir.
@@ -210,6 +229,116 @@ List<List<Asset>> lotlarSahibeGore(Iterable<Asset> assets) {
     m.putIfAbsent(a.userId, () => []).add(a);
   }
   return m.values.toList(growable: false);
+}
+
+/// "Birlikte" görünümünde AYNI varlığın farklı sahiplerdeki pozisyonları —
+/// kullanıcıya TEK satır, hesapta sahip başına parçalar.
+///
+/// ## Neden (kullanıcı bildirimi, 2026-10-01)
+/// *"Neden KCHOL 2 defa gösterilmiş, bu büyük bir hata."* Birlikte listesi
+/// [aggregatePositionsByOwner] çıktısını olduğu gibi basıyordu: sahiplik
+/// sınırı doğru korunuyordu ama kullanıcı iki ortağın KCHOL'ünü sahip
+/// etiketi olmayan iki ayrı satır olarak görüyordu. Aynı anahtar iki kez
+/// liste anahtarı (`ValueKey(key)`) olunca kaydırma paneli ve açılır kart
+/// durumu da satırlar arasında karışabiliyordu.
+///
+/// ## Değişmez korunur
+/// Birleşme GÖRÜNÜMDEDİR, hesapta değil: her parça kendi sahibinin
+/// `aggregatePositions` çıktısıdır (kendi maliyeti, kendi netlemesi) ve
+/// değer/maliyet parçaların TOPLAMIDIR — tek temsilcinin fiyatı herkesin
+/// miktarına uygulanmaz (bkz. [aggregatePositionsByOwner] madde 1–3).
+/// Ağırlıklı alış fiyatı yalnızca açılır paneldeki "ortalama maliyet" için
+/// türetilir; kâr/zarar ondan hesaplanmaz.
+class BirlesikPozisyon extends Position {
+  BirlesikPozisyon._({
+    required super.key,
+    required super.representative,
+    required super.lots,
+    required super.totalQuantity,
+    required super.weightedPurchasePrice,
+    required super.weightedFxRate,
+    required super.latestAddedDate,
+    required super.totalCommission,
+    required super.totalDividend,
+    required this.parcalar,
+  });
+
+  /// Sahip başına pozisyonlar — her biri tek sahibin lot'larından kurulu.
+  final List<Position> parcalar;
+
+  factory BirlesikPozisyon.parcalardan(List<Position> parcalar) {
+    assert(parcalar.length > 1);
+    final enYeni = parcalar.reduce(
+        (a, b) => b.latestAddedDate.isAfter(a.latestAddedDate) ? b : a);
+    var miktar = 0.0, maliyet = 0.0, kurluMaliyet = 0.0;
+    var komisyon = 0.0, temettu = 0.0;
+    for (final p in parcalar) {
+      miktar += p.totalQuantity;
+      maliyet += p.totalQuantity * p.weightedPurchasePrice;
+      kurluMaliyet +=
+          p.totalQuantity * p.weightedPurchasePrice * p.weightedFxRate;
+      komisyon += p.totalCommission;
+      temettu += p.totalDividend;
+    }
+    return BirlesikPozisyon._(
+      key: enYeni.key,
+      representative: enYeni.representative,
+      lots: [for (final p in parcalar) ...p.lots]
+        ..sort((a, b) => b.addedDate.compareTo(a.addedDate)),
+      totalQuantity: miktar,
+      weightedPurchasePrice: miktar > 0 ? maliyet / miktar : 0,
+      weightedFxRate: maliyet > 0 ? kurluMaliyet / maliyet : 1,
+      latestAddedDate: enYeni.latestAddedDate,
+      totalCommission: komisyon,
+      totalDividend: temettu,
+      parcalar: List.unmodifiable(parcalar),
+    );
+  }
+
+  /// [userId]'nin parçası — kaydırma aksiyonları (Al/Sat/Temettü/Sil) ve
+  /// varlık ekranı YALNIZCA bununla çalışır: ortağın lot'una yazılamaz (RLS)
+  /// ve varlık ekranı tek sahipli pozisyon bekler (`_canli`).
+  Position? parcasi(String? userId) {
+    for (final p in parcalar) {
+      if (p.representative.userId == userId) return p;
+    }
+    return null;
+  }
+
+  @override
+  double get totalValue =>
+      parcalar.fold(0.0, (s, p) => s + p.totalValue);
+
+  @override
+  double get totalCost => parcalar.fold(0.0, (s, p) => s + p.totalCost);
+
+  @override
+  double get totalCostTRY =>
+      parcalar.fold(0.0, (s, p) => s + p.totalCostTRY);
+
+  /// Görünen birim fiyat parçaların değerinden türetilir: satırdaki tutar
+  /// (`miktar × fiyat`) ile kâr/zararın dayandığı [totalValue] aynı sayı
+  /// olsun — sahiplerin fiyatı bir an farklıysa (biri tazelenmemiş) bile.
+  @override
+  Asset asDisplayAsset() {
+    final a = super.asDisplayAsset();
+    if (totalQuantity > 0) a.currentPrice = totalValue / totalQuantity;
+    return a;
+  }
+}
+
+/// Sahip başına kurulmuş pozisyonları, aynı [Position.key]'e düşenler TEK
+/// satır olacak şekilde birleştirir (bkz. [BirlesikPozisyon]). Tek sahipli
+/// pozisyon olduğu gibi döner; sıra ilk görülme sırasıdır.
+List<Position> sahiplerArasiBirlestir(Iterable<Position> sahipPozisyonlari) {
+  final gruplar = <String, List<Position>>{};
+  for (final p in sahipPozisyonlari) {
+    gruplar.putIfAbsent(p.key, () => []).add(p);
+  }
+  return [
+    for (final g in gruplar.values)
+      g.length == 1 ? g.single : BirlesikPozisyon.parcalardan(g),
+  ];
 }
 
 /// TRY'ye çeviren dönüştürücü. Canlı kurlar `PortfolioState`'te tutulur;

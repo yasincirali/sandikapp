@@ -41,7 +41,9 @@ void main() {
     expect(r.rows[0].ticker, 'GARAN.IS');
     expect(r.rows[0].price, 45.5);
     expect(r.rows[1].type, AssetType.altin);
-    expect(r.rows[1].subCategory, 'ceyrek');
+    // Formla AYNI biçim (etiket): enum adı yazılınca aynı altın iki
+    // pozisyona bölünüyordu (2026-10-01).
+    expect(r.rows[1].subCategory, 'Çeyrek Altın');
     expect(r.rows[1].unitType, 'piece');
   });
 

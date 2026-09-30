@@ -385,3 +385,14 @@ Deno.test('mevduat: sözleşme sembolü anahtardır', () => {
   const m = alim({ id: 'm', type: 'mevduat', ticker: 'MEVDUAT:abc' });
   assertEquals(pozisyonAnahtari(m), 'u1|mevduat|MEVDUAT:ABC|TRY');
 });
+
+Deno.test('altın: CSV enum adı (ceyrek) ile form etiketi (Çeyrek Altın) tek pozisyon (Dart altinAltAnahtari eşi)', () => {
+  // 2026-10-01: aynı çeyrek altın Portföy'de iki satır çıkıyordu.
+  const csv = alim({ id: 'c', type: 'altin', ticker: 'ALTIN_CEYREK', sub_category: 'ceyrek' });
+  const form = alim({ id: 'f', type: 'altin', ticker: 'ALTIN_CEYREK', sub_category: 'Çeyrek Altın' });
+  assertEquals(pozisyonAnahtari(csv), 'u1|altin|sub:çeyrek altın|TRY');
+  assertEquals(pozisyonAnahtari(form), pozisyonAnahtari(csv));
+  // Tanınmayan değer eskisi gibi küçük harf.
+  const eski = alim({ id: 'e', type: 'altin', sub_category: 'Bilezik' });
+  assertEquals(pozisyonAnahtari(eski), 'u1|altin|sub:bilezik|TRY');
+});

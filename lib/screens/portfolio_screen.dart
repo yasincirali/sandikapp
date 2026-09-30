@@ -429,8 +429,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                   ];
                                 }
 
-                                final positions =
-                                    aggregatePositionsByOwner(ownerLots);
+                                // Birlikte'de aynı varlık TEK satır: hesap
+                                // sahip başına kalır, satır parçaların
+                                // toplamını gösterir (bkz. `BirlesikPozisyon`;
+                                // "KCHOL iki kez görünüyor", 2026-10-01).
+                                final positions = sahiplerArasiBirlestir(
+                                    aggregatePositionsByOwner(ownerLots));
                                 _yeniSatiriBul(positions);
 
                                 if (positions.isEmpty) {
@@ -924,28 +928,41 @@ class _AssetList {
     required this.onDividend,
   });
 
+  /// Kullanıcının bu satırdaki KENDİ pozisyonu — yoksa `null` (satır
+  /// tamamen ortağın). Birleşik satırda yalnız kendi parçası: aksiyonlar
+  /// ortağın lot'una yazamaz (RLS) ve Sil yalnız kendi lot'larını siler.
+  Position? _kendiParcasi(Position p) {
+    if (currentUserId == null) return null;
+    if (p is BirlesikPozisyon) return p.parcasi(currentUserId);
+    return p.representative.userId == currentUserId ? p : null;
+  }
+
   List<Widget> kartlar() => [
         // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
         // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
         for (final position in positions)
-          _YeniVarlikParlamasi(
-            key: ValueKey(position.key),
-            aktif: position.key == vurgulanan,
-            child: _AssetCard(
-            key: position.key == vurgulanan ? vurguAnahtari : null,
-            position: position,
-            pState: pState,
-            baz: baz,
-            canEdit: currentUserId != null &&
-                position.representative.userId == currentUserId,
-            onTap: onTap,
-            onDelete: onDelete,
-            onAdd: onAdd,
-            onRemove: onRemove,
-            onDividend: onDividend,
-          ),
-          ),
+          _kart(position, _kendiParcasi(position)),
       ];
+
+  Widget _kart(Position position, Position? kendi) => _YeniVarlikParlamasi(
+        key: ValueKey(position.key),
+        aktif: position.key == vurgulanan,
+        child: _AssetCard(
+          key: position.key == vurgulanan ? vurguAnahtari : null,
+          position: position,
+          pState: pState,
+          baz: baz,
+          canEdit: kendi != null,
+          // Varlık ekranı tek sahipli pozisyon bekler; birleşik satırda
+          // önce kendi parçası, yoksa ilk sahibinki.
+          onTap: (p) => onTap(kendi ??
+              (p is BirlesikPozisyon ? p.parcalar.first : p)),
+          onDelete: (_) => onDelete(kendi!),
+          onAdd: (_) => onAdd(kendi!),
+          onRemove: (_) => onRemove(kendi!),
+          onDividend: (_) => onDividend(kendi!),
+        ),
+      );
 }
 
 /// Yeni eklenen satırın tek seferlik parlaması: amber çerçeve belirir ve
