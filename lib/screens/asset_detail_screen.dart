@@ -244,7 +244,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
         _historyFuture,
         digerleri,
         if (sinyalSerisi != null) sinyalSerisi,
-      ]).then<void>((_) {
+      ]).then<void>((_) async {
+        if (!mounted) return;
+        await rotaGecisiniBekle(context);
         if (mounted) setState(() => _acildi = true);
       }),
       reason: 'AssetDetail.acilis',

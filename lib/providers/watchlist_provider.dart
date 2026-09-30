@@ -291,10 +291,28 @@ final watchlistFocusProvider = StateProvider<String?>((ref) => null);
 /// `assets`'ten ayrıdır (bkz. `0043_watchlist.sql`) ve portföy tarafındaki
 /// hiçbir provider bunu okumaz.
 class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
+  /// Son yayınlanan verinin sahibi (kullanıcı kimliği).
+  ///
+  /// Dönem değişince Riverpod `AsyncLoading`'i ÖNCEKİ değerle yayınlar;
+  /// ekran bu eski veriyi soluk gösterip iskelete düşmez (animasyon
+  /// denetimi 2026-10-01: her dönem dokunuşunda liste ve grafik iskelete
+  /// dönüp geri geliyordu). Ama kullanıcı değişiminde de aynı kare gelir ve
+  /// önceki değer BAŞKA kullanıcınındır (bkz. `main.dart` portföy
+  /// dinleyicisi, 2026-09-21). Eski veri yalnızca sahibi hâlâ oturumdaysa
+  /// gösterilir — karar [eskiVeriGosterilebilir]'de.
+  String? _veriSahibi;
+
+  /// Yeniden yüklenirken önceki liste [uid] kullanıcısına mı ait.
+  bool eskiVeriGosterilebilir(String? uid) =>
+      uid != null && _veriSahibi == uid;
+
   @override
   Future<List<WatchlistItem>> build() async {
     final user = ref.watch(authProvider).valueOrNull;
-    if (user == null) return const [];
+    if (user == null) {
+      _veriSahibi = null;
+      return const [];
+    }
 
     // Dönem değişince fiyatlar yeniden hesaplanmalı — provider'ı izliyoruz.
     final periodIdx = ref.watch(watchlistPeriodProvider);
@@ -302,13 +320,20 @@ class WatchlistNotifier extends AsyncNotifier<List<WatchlistItem>> {
     try {
       final items =
           await SupabaseService.instance.fetchWatchlist(userId: user.id);
-      if (items.isEmpty) return const [];
+      if (items.isEmpty) {
+        _veriSahibi = user.id;
+        return const [];
+      }
       // `await` ZORUNLU: await olmadan döndürülen future'ın hatası aşağıdaki
       // `catch`'e DÜŞMEZ. O durumda provider hata durumuna geçer ve takip
       // listesi, boş liste yerine hata ekranı gösterirdi — koruma yazıldığı
       // gibi çalışmıyordu.
-      return await _withPrices(items, watchlistPeriods[periodIdx].days);
+      final sonuc =
+          await _withPrices(items, watchlistPeriods[periodIdx].days);
+      _veriSahibi = user.id;
+      return sonuc;
     } catch (_) {
+      _veriSahibi = user.id;
       return const [];
     }
   }

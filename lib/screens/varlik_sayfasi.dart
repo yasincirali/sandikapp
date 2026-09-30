@@ -228,6 +228,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
             periodDays: kSinyalPenceresiGun),
     ]);
+    if (!mounted) return;
+    await rotaGecisiniBekle(context);
     if (mounted) setState(() => _acildi = true);
   }
 

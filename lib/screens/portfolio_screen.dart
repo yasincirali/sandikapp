@@ -286,6 +286,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                     onRefresh: () => ref
                         .read(portfolioProvider.notifier)
                         .refreshPrices(force: true),
+                    // Kaydırma paneli grubu listenin TAMAMINI sarar: kartlar
+                    // artık doğrudan dış listenin çocukları (bkz. [_AssetList]).
+                    child: SlidableAutoCloseBehavior(
                     child: ListView(
                       physics: const BouncingScrollPhysics(
                           parent: AlwaysScrollableScrollPhysics()),
@@ -315,8 +318,13 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         // bir önceki liste zaten var. `valueOrNull` yeniden
                         // yükleme boyunca önceki değeri korur, bu yüzden spinner
                         // artık YALNIZCA hiç veri yokken (ilk açılış) çıkar.
-                        (partnerAssetsAsync.valueOrNull == null
-                            ? (partnerAssetsAsync.hasError
+                        //
+                        // Sonuç bir LİSTE ve dış listeye YAYILIR (`...`):
+                        // kartlar dış ListView'in doğrudan çocuğu olunca
+                        // yalnızca görünenler kurulur (bkz. [_AssetList]).
+                        ...(partnerAssetsAsync.valueOrNull == null
+                            ? <Widget>[
+                                partnerAssetsAsync.hasError
                                 ? SandikErrorView(
                                     error: partnerAssetsAsync.error!,
                                     onRetry: () =>
@@ -325,7 +333,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     height: 300,
                                     child: SandikSkeletonList(
                                         rows: 4, padding: EdgeInsets.zero),
-                                  ))
+                                  )]
                             : ((Map<String, List<Asset>> partnerMap) {
                                 // Sahiplik sınırı KORUNMALI: `positionKey` sahip
                                 // bilgisi taşımaz, bu yüzden tüm ortakların lot'ları
@@ -350,7 +358,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     aggregatePositionsByOwner(ownerLots);
 
                                 if (positions.isEmpty) {
-                                  return const _EmptyState();
+                                  return const <Widget>[_EmptyState()];
                                 }
 
                                 final filteredPositions =
@@ -376,8 +384,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 SparklineService.instance
                                     .prefetch(displayAssets);
 
-                                return Column(
-                                  children: [
+                                return <Widget>[
                                     _AssetTypeDonut(
                                       assets: displayAssets,
                                       pState: pState,
@@ -386,7 +393,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                           setState(() => _filteredType = type),
                                     ),
                                     const SizedBox(height: 32),
-                                    _AssetList(
+                                    ..._AssetList(
                                       positions: filteredPositions,
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
@@ -418,11 +425,11 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       onDividend: (p) => showDividendDialog(
                                           context,
                                           asset: p.asDisplayAsset()),
-                                    ),
-                                  ],
-                                );
+                                    ).kartlar(),
+                                ];
                               })(partnerAssetsAsync.valueOrNull!)),
                       ],
+                    ),
                     ),
                   ),
                 ),
@@ -644,7 +651,15 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
           height: 260,
           child: Stack(
             children: [
-              PieChart(
+              // RepaintBoundary: halka morf ederken (dilim seçimi, fiyat
+              // tiki) kart listesiyle aynı katmanda boyanıyordu — her karede
+              // bütün liste yeniden çiziliyordu. Süre/eğri token'dan: fl_chart
+              // varsayılanı 150 ms DOĞRUSAL ve hareketi azalt'ı bilmez
+              // (animasyon denetimi 2026-10-01).
+              RepaintBoundary(
+                child: PieChart(
+                swapAnimationDuration: SandikMotion.stateOf(context),
+                swapAnimationCurve: SandikMotion.enter,
                 PieChartData(
                   pieTouchData: PieTouchData(
                     touchCallback: (event, response) {
@@ -674,6 +689,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   centerSpaceRadius: 88,
                   startDegreeOffset: -90,
                 ),
+              ),
               ),
               Center(
                 child: Padding(
@@ -787,7 +803,18 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
 // ── Asset List ────────────────────────────────────────────────────────────────
 
-class _AssetList extends StatelessWidget {
+/// Varlık kartlarını üretir — WIDGET DEĞİL, dış listeye yayılan bir liste.
+///
+/// Eskiden `ListView.builder(shrinkWrap: true, NeverScrollable)` idi ve
+/// yorumu "yalnızca görünür aralığı kurar" diyordu; doğru değildi:
+/// sınırsız yükseklikte `shrinkWrap` görünümü, boyunu bulmak için BÜTÜN
+/// kartları kurar ve yerleştirir. Her kartta `Slidable` + `ClipRRect` +
+/// `AnimatedSize` var; büyük portföyde her fiyat tikinde hepsi yeniden
+/// kuruluyor, bir kart açılınca iç ve dış liste her karede yeniden
+/// yerleşiyordu (animasyon denetimi 2026-10-01). Kartlar artık dış
+/// `ListView`'in doğrudan çocukları: yalnızca ekrana girenler kurulur.
+/// Kaydırma paneli grubu (`SlidableAutoCloseBehavior`) dış listeyi sarar.
+class _AssetList {
   final List<Position> positions;
   final PortfolioState pState;
   final BazPara baz;
@@ -813,26 +840,11 @@ class _AssetList extends StatelessWidget {
     required this.onDividend,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    // `Column` + `.map()` her kartı bir kerede kurardı. Free tier 20 varlıkla
-    // sınırlı ama premium sınırsız — büyük portföyde ekran dışındaki kartlar
-    // da (sparkline yükleyen State'leriyle birlikte) boşuna inşa ediliyordu.
-    //
-    // Dış ListView zaten kaydırmayı yönetiyor, bu yüzden burada
-    // shrinkWrap + NeverScrollable: iç içe iki kaydırma olmaz, ama
-    // `itemBuilder` yalnızca görünür aralığı kurar.
-    return SlidableAutoCloseBehavior(
-      child: ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        itemCount: positions.length,
+  List<Widget> kartlar() => [
         // Sıralama değişince kartlar yeniden kullanılmasın: aksi halde bir
         // satırın açık/kapalı durumu ve sparkline'ı başka varlığa taşınır.
-        itemBuilder: (context, i) {
-          final position = positions[i];
-          return _AssetCard(
+        for (final position in positions)
+          _AssetCard(
             key: ValueKey(position.key),
             position: position,
             pState: pState,
@@ -844,11 +856,8 @@ class _AssetList extends StatelessWidget {
             onAdd: onAdd,
             onRemove: onRemove,
             onDividend: onDividend,
-          );
-        },
-      ),
-    );
-  }
+          ),
+      ];
 }
 
 // ── Asset Card ────────────────────────────────────────────────────────────────

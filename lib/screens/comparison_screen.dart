@@ -75,6 +75,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// Açılış dönemi 3A — eski varsayılan korunur (sıra değişse de adla).
   int _periodIdx = SummaryPeriod.ucAy.index;
 
+  /// Grafikte ŞU AN çizili serilerin dönemi. Dönem değişince yeni seriler
+  /// hep birlikte gelene kadar eski grafik (eski dönem ekseniyle) soluk
+  /// kalır — [_periodIdx] seçicinin, bu grafiğin dönemidir.
+  int _cizilenDonemIdx = SummaryPeriod.ucAy.index;
+
+  /// Son dönem değişiminin nesli: art arda iki dokunuşta eski dönemin geç
+  /// gelen sonuçları yenisinin üstüne yazılmasın.
+  int _donemNesli = 0;
+
   /// Periyotlar uygulamanın tek dönem kümesinden ([SummaryPeriod]) —
   /// 2026-09-28'e kadar burada GÜNLÜK ve 6A yoktu, 3A yalnızca buradaydı.
   /// Gün değeri `sembolGunu`: GÜNLÜK `getSymbolHistory`'de `1d` aralığıdır.
@@ -135,19 +144,12 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   Future<void> _load(String ticker) async {
     final days = _periods[_periodIdx].days;
-
-    // Portföy serileri piyasada kote DEĞİLDİR — lot'lardan hesaplanır.
-    // Bu yüzden sembol geçmişi yerine portföy geçmişi yolundan geçerler.
-    // TÜFE de kote değil: TÜİK tablosundan aylık basamak.
-    final raw = PortfolioSeries.isPortfolio(ticker)
-        ? await _loadPortfolioSeries(ticker, days)
-        : TufeSeries.isTufe(ticker)
-            ? await _loadTufeSeries(days)
-            : await HistoryService.instance
-                .getSymbolHistory(ticker, periodDays: days);
-    final norm = normalizeSeries(raw);
+    final norm = await _fetch(ticker, days);
 
     if (!mounted) return;
+    // Bu arada dönem değiştiyse sonuç eski döneme ait — `_changePeriod`
+    // kendi sonuçlarını toplu yazar.
+    if (days != _periods[_periodIdx].days) return;
     setState(() {
       _loading.remove(ticker);
       if (norm == null) {
@@ -158,6 +160,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         _series[ticker] = norm;
       }
     });
+  }
+
+  Future<NormalizedSeries?> _fetch(String ticker, int days) async {
+
+    // Portföy serileri piyasada kote DEĞİLDİR — lot'lardan hesaplanır.
+    // Bu yüzden sembol geçmişi yerine portföy geçmişi yolundan geçerler.
+    // TÜFE de kote değil: TÜİK tablosundan aylık basamak.
+    final raw = PortfolioSeries.isPortfolio(ticker)
+        ? await _loadPortfolioSeries(ticker, days)
+        : TufeSeries.isTufe(ticker)
+            ? await _loadTufeSeries(days)
+            : await HistoryService.instance
+                .getSymbolHistory(ticker, periodDays: days);
+    return normalizeSeries(raw);
   }
 
   /// Portföy serisini lot'lardan hesaplar.
@@ -220,14 +236,49 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 
   /// Periyot değişince TÜM seriler yeniden çekilir — normalize referansı
   /// (dönem başı) değiştiği için eski yüzdeler geçersizdir.
+  ///
+  /// Eski seriler yenileri gelene kadar SOLUK kalır ve yeniler hep BİRLİKTE
+  /// yazılır (animasyon denetimi 2026-10-01): eskiden `_series.clear()`
+  /// grafiği iskelete düşürüyor, çizgiler sonra tek tek sıfırdan çiziliyordu
+  /// — `LineChart` morfu kayboluyordu. İki dönemin serisi aynı eksende hiç
+  /// karışmaz: yazma tek `setState`.
   Future<void> _changePeriod(int idx) async {
+    final nesil = ++_donemNesli;
+    final days = _periods[idx].days;
+    final hedefler = _selected.map((s) => s.ticker).toList();
     setState(() {
       _periodIdx = idx;
-      _series.clear();
-      _loading.addAll(_selected.map((s) => s.ticker));
+      _loading.addAll(hedefler);
     });
-    await Future.wait(_selected.map((s) => _load(s.ticker)));
+    final sonuclar = await Future.wait(hedefler.map((t) async {
+      try {
+        return await _fetch(t, days);
+      } catch (_) {
+        return null;
+      }
+    }));
+    if (!mounted || nesil != _donemNesli) return;
+    setState(() {
+      _cizilenDonemIdx = idx;
+      _series.clear();
+      for (var i = 0; i < hedefler.length; i++) {
+        final t = hedefler[i];
+        // Bu arada kaldırılan sembol geri gelmesin.
+        if (!_selected.any((s) => s.ticker == t)) continue;
+        _loading.remove(t);
+        final norm = sonuclar[i];
+        if (norm == null) {
+          _failed.add(t);
+        } else {
+          _failed.remove(t);
+          _series[t] = norm;
+        }
+      }
+    });
   }
+
+  /// Grafik eski dönemin serisini gösterirken yenisi bekleniyor mu.
+  bool get _donemBekliyor => _cizilenDonemIdx != _periodIdx;
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +344,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (_series.isEmpty) {
       return const SandikSkeletonChart(height: 260);
     }
+    final bekliyor = _donemBekliyor;
 
     final colors = _seriesColors(p);
 
@@ -301,12 +353,17 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     int seciliIndeks(String ticker) =>
         _selected.indexWhere((s) => s.ticker == ticker);
 
-    return Container(
+    return AnimatedOpacity(
+      // Eski dönem soluk: sayılar tazeleniyor (bkz. [_changePeriod]).
+      opacity: bekliyor ? 0.5 : 1,
+      duration: SandikMotion.stateOf(context),
+      curve: SandikMotion.enter,
+      child: Container(
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
       decoration: context.surfaceCard(),
       child: PercentComparisonChart(
         series: _series,
-        periodDays: _periods[_periodIdx].days,
+        periodDays: _periods[_cizilenDonemIdx].days,
         // Seçim sırası korunur — kullanıcının eklediği sıra grafikteki
         // katman sırasıyla aynı olsun.
         order: _selected.map((s) => s.ticker).toList(),
@@ -325,6 +382,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           for (final s in _selected)
             if (TufeSeries.isTufe(s.ticker)) s.ticker,
         },
+      ),
       ),
     );
   }

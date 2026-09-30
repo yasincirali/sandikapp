@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/utils/acilis_kapisi.dart';
 import 'package:portfoy_takip/utils/friendly_error.dart';
 import 'package:portfoy_takip/widgets/zoomable_chart.dart';
 
@@ -46,6 +47,32 @@ void main() {
       expect(fade.opacity.value, lessThan(0.3),
           reason: 'kapanış ease-in kalmış: diyalog yarı sürede hâlâ görünür');
       await tester.pumpAndSettle();
+    });
+  });
+
+  group('rotaGecisiniBekle', () {
+    testWidgets('sayfa kayarak girerken bekler, geçiş bitince tamamlanır',
+        (tester) async {
+      late NavigatorState nav;
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(builder: (c) {
+          nav = Navigator.of(c);
+          return const SizedBox.shrink();
+        }),
+      ));
+      var bitti = false;
+      // ignore: unawaited_futures
+      nav.push(MaterialPageRoute<void>(builder: (c) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          rotaGecisiniBekle(c).then((_) => bitti = true);
+        });
+        return const SizedBox.shrink();
+      }));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(bitti, isFalse, reason: 'geçiş sürerken kapı açılmamalı');
+      await tester.pumpAndSettle();
+      expect(bitti, isTrue);
     });
   });
 

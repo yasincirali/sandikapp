@@ -77,7 +77,11 @@ class PortfolioSummaryWidget extends StatelessWidget {
         // yuvarlıyor. Yerine RepaintBoundary: fiyat tikinde kart kendi
         // katmanında yeniden çizilir, sayfanın geri kalanı çizilmez.
         child: RepaintBoundary(
-          child: KeyedSubtree(
+          // Stack: yenileme çizgisi kartın ALT BOŞLUĞUNA bindirilir (bkz.
+          // aşağıdaki `Positioned`).
+          child: Stack(
+            children: [
+          KeyedSubtree(
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),
@@ -107,7 +111,15 @@ class PortfolioSummaryWidget extends StatelessWidget {
                         ),
                       ],
               ),
-              child: Column(
+              // Bakiyeyi gizle/göster temettü ve gerçekleşen satırlarını
+              // kaldırıp geri koyar; kart eskiden tek karede kısalıyordu.
+              // Yalnız bu satırlar değişince oynar (fiyat tiki yüksekliği
+              // değiştirmez → maliyet yok).
+              child: AnimatedSize(
+                duration: SandikMotion.stateOf(context),
+                curve: SandikMotion.move,
+                alignment: Alignment.topCenter,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -243,18 +255,28 @@ class PortfolioSummaryWidget extends StatelessWidget {
                         ),
                       ),
                     ),
-                  if (state.isLoading)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: LinearProgressIndicator(
-                        backgroundColor: Colors.transparent,
-                        color: context.c.amberFill,
-                        minHeight: 1,
-                      ),
-                    ),
                 ],
               ),
+              ),
             ),
+          ),
+              // Yenileme çizgisi AKIŞIN DIŞINDA: eskiden Column'a 9 pt'lik
+              // satır olarak ekleniyordu — her fiyat yenilemesinde kart
+              // uzayıp kısalıyor, altındaki ana sayfa iki kez zıplıyordu
+              // (animasyon denetimi 2026-10-01). Kartın 20 pt'lik alt
+              // boşluğuna oturur; yerleşim hiç değişmez.
+              if (state.isLoading)
+                Positioned(
+                  left: hPad,
+                  right: hPad,
+                  bottom: 10,
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.transparent,
+                    color: context.c.amberFill,
+                    minHeight: 1,
+                  ),
+                ),
+            ],
           ),
         ),
       ),

@@ -17,7 +17,8 @@ import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../models/varlik_kimligi.dart';
 import '../models/watchlist_item.dart';
-import '../providers/auth_provider.dart' show activePartnersProvider;
+import '../providers/auth_provider.dart'
+    show activePartnersProvider, authProvider;
 import '../providers/preferences_provider.dart' show watchlistLimitProvider;
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
@@ -61,6 +62,7 @@ class WatchlistBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(watchlistProvider);
+    final eskiyiGoster = _eskiVeriyiGoster(ref, async);
 
     return Column(
       children: [
@@ -70,21 +72,57 @@ class WatchlistBody extends ConsumerWidget {
         const SizedBox(height: SandikSpace.sm),
         Expanded(
           child: async.when(
-            // İçerik yüklenirken iskelet: satırların geleceği yer belli,
+            // Dönem değişiminde eski liste SOLUK kalır, iskelete düşmez
+            // (animasyon denetimi 2026-10-01): her dönem dokunuşunda liste
+            // ve grafik iskelete dönüp geri geliyor, yerleşim iki kez
+            // zıplıyordu. Performans ekranının "eski veri soluk" deseni.
+            skipLoadingOnReload: eskiyiGoster,
+            // İlk yüklemede iskelet: satırların geleceği yer belli,
             // yerleşim zıplamaz (UX denetimi 2026-09-29).
             loading: () => const SandikSkeletonList(rows: 4),
             error: (e, _) => SandikErrorView(
               error: e,
               onRetry: () => ref.invalidate(watchlistProvider),
             ),
-            data: (items) =>
-                items.isEmpty ? const _EmptyState() : _List(items: items),
+            data: (items) => _SolukBekleme(
+              bekliyor: eskiyiGoster,
+              child: items.isEmpty ? const _EmptyState() : _List(items: items),
+            ),
           ),
         ),
         const _FooterNote(),
       ],
     );
   }
+}
+
+/// Yeniden yüklenirken önceki veri gösterilebilir mi: yükleme sürüyor,
+/// önceki değer var VE o değer hâlâ oturumdaki kullanıcıya ait. Sahip
+/// denetimi kullanıcı değişiminde başkasının listesinin bir kare bile
+/// görünmemesi içindir (bkz. [WatchlistNotifier.eskiVeriGosterilebilir]).
+bool _eskiVeriyiGoster(WidgetRef ref, AsyncValue<Object?> async) {
+  if (!async.isLoading || !async.hasValue) return false;
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  return ref.read(watchlistProvider.notifier).eskiVeriGosterilebilir(uid);
+}
+
+/// Eski veri beklerken soluk — "bu sayılar tazeleniyor" işareti.
+///
+/// Soluklaşma yalnız bekleme başında/sonunda 180 ms oynar; arada opaklık
+/// sabit kaldığı için kare başına maliyet yok.
+class _SolukBekleme extends StatelessWidget {
+  const _SolukBekleme({required this.bekliyor, required this.child});
+
+  final bool bekliyor;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedOpacity(
+        opacity: bekliyor ? 0.5 : 1,
+        duration: SandikMotion.stateOf(context),
+        curve: SandikMotion.enter,
+        child: IgnorePointer(ignoring: bekliyor, child: child),
+      );
 }
 
 /// Dönem seçici — ortak [DonemSecici] (tek dönem kümesi ve tek görünüş,
@@ -216,6 +254,7 @@ class _ChartCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(watchlistChartProvider);
+    final eskiyiGoster = _eskiVeriyiGoster(ref, async);
     final periodLabel =
         watchlistPeriods[ref.watch(watchlistPeriodProvider)].label;
     final partners = ref.watch(activePartnersProvider);
@@ -274,6 +313,9 @@ class _ChartCard extends ConsumerWidget {
           ),
           const SizedBox(height: SandikSpace.sm),
           async.when(
+            // Dönem değişiminde eski grafik soluk kalır ve yenisine MORF
+            // eder; iskelete düşüp sıfırdan çizilmez (bkz. `WatchlistBody`).
+            skipLoadingOnReload: eskiyiGoster,
             loading: () =>
                 const SandikSkeletonChart(height: 210),
             // Grafik çizilemezse liste KULLANILABİLİR kalmalı — hata ekranı
@@ -309,7 +351,12 @@ class _ChartCard extends ConsumerWidget {
                       ? focused
                       : null;
 
-              return Column(
+              // Liste de yeniden yükleniyorsa grafik zaten onun soluk
+              // katmanının içinde — ikinci kez soluklaştırmak 0,25'e iner.
+              final listeBekliyor = ref.watch(watchlistProvider).isLoading;
+              return _SolukBekleme(
+                bekliyor: eskiyiGoster && !listeBekliyor,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   WatchlistChart(
@@ -335,6 +382,7 @@ class _ChartCard extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
               );
             },
           ),

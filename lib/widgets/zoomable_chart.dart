@@ -16,6 +16,14 @@ class ChartViewport extends ChangeNotifier {
   double _minX;
   double _maxX;
 
+  /// Ana grafikte pinch/pan/zaman sürüklemesi sürüyor mu. Aynı viewport'u
+  /// dinleyen yan grafikler (hacim paneli) jest sırasında morf etmemeli:
+  /// her karede 180 ms'lik yeni bir lerp başlatıp parmağın ve ana grafiğin
+  /// GERİSİNDE kalıyordu (animasyon denetimi 2026-10-01). [ZoomableChart]
+  /// yazar; dinleyici bildirimi atmaz (zaten her jest karesi `set` ile
+  /// bildirir).
+  bool jestSuruyor = false;
+
   double get minX => _minX;
   double get maxX => _maxX;
   bool get isZoomed =>
@@ -266,6 +274,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
     // burada yalnızca bayrağı güncelliyoruz (build bir sonraki karede
     // doğru süreyi okur).
     _interacting = v;
+    widget.viewportController?.jestSuruyor = v;
   }
 
   @override
@@ -461,7 +470,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
 
   void _onTimeDragEnd(DragEndDetails _) {
     if (!mounted) return;
-    setState(() => _interacting = false);
+    setState(() => _setInteracting(false));
   }
 
   void _onTimeDragUpdate(DragUpdateDetails d) {
@@ -578,7 +587,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                         // setState şart: son kare doğru süreyle çizilmeli.
                         ..onEnd = (_) {
                           if (!mounted) return;
-                          setState(() => _interacting = false);
+                          setState(() => _setInteracting(false));
                         };
                     },
                   ),

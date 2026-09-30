@@ -168,6 +168,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     // farklı anın verisini gösteriyordu (bkz. `TazelikRitmi.nabiz`).
     _nabziBirak = TazelikRitmi.nabiz.dinle(() {
       if (!mounted) return;
+      // Gizli sekmede tazeleme yok (bkz. Performans `_startIntradayTickIfNeeded`,
+      // animasyon denetimi 2026-10-01); dönünce en geç bir nabızda tazelenir.
+      if (!TickerMode.getValuesNotifier(context).value.enabled) return;
       _seriyiTazele();
     });
   }
