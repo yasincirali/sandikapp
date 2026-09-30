@@ -60,6 +60,7 @@ class KaydirmaliGecis extends StatefulWidget {
     this.altBilgi,
     this.ipucu = false,
     this.onIpucuGosterildi,
+    this.sira,
   });
 
   /// Kartın altına çizilen satır (sayfa noktaları); [ilerleme] sürükleme
@@ -87,6 +88,17 @@ class KaydirmaliGecis extends StatefulWidget {
   final bool ipucu;
   final VoidCallback? onIpucuGosterildi;
 
+  /// Gösterilen görünümün sıradaki yeri (Ben 0, ortaklar, Birlikte son).
+  ///
+  /// Görünüm KAYDIRMA DIŞINDA değişirse (başlıktaki çip, alt sayfa) kart
+  /// yönlü kısa bir geçişle gelir: sıra büyüdüyse sağdan, küçüldüyse
+  /// soldan 24 pt kayarak ve solarak (animasyon denetimi 2026-10-01).
+  /// Eskiden çipten seçim kartı tek karede değiştiriyor, kaydırma ise
+  /// karusel oynatıyordu — aynı durum değişimi iki dilde. Karusel burada
+  /// kullanılmaz: çip iki adım atlayabilir (Ben → Birlikte) ve aradaki
+  /// komşu kart yanlış olurdu. `null`: davranış kapalı.
+  final int? sira;
+
   /// Göz kırpma mesafesi (pt) — komşu kartın kenarı okunacak kadar.
   static const double ipucuKayma = 28;
 
@@ -105,7 +117,7 @@ class KaydirmaliGecis extends StatefulWidget {
 }
 
 class _KaydirmaliGecisState extends State<KaydirmaliGecis>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // `late final` ile tembel kurulmaz: hiç sürüklenmeden dispose edilirse
   // ilk erişim dispose içinde olur ve Ticker, ayrılmış ağaçta ata arar
   // ("Looking up a deactivated widget's ancestor") — taşma testinde yaşandı.
@@ -133,6 +145,7 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     // eğrisi de aynı değeri sürer.
     _yay = AnimationController.unbounded(vsync: this)
       ..addListener(() => _dx.value = _yay.value);
+    _giris = AnimationController(vsync: this, value: 1);
     if (widget.ipucu && widget.etkin) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _gozKirp());
     }
@@ -144,10 +157,38 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     // Üst widget yeniden kuruldu: komşu kartın verisi değişmiş olabilir.
     _komsuWidget = null;
     _komsuYon = null;
+    final eski = oldWidget.sira;
+    final yeni = widget.sira;
+    if (eski != null && yeni != null && eski != yeni) {
+      if (_kendiGecisim) {
+        // Kaydırmanın kendisi geçti; karusel zaten oynadı.
+        _kendiGecisim = false;
+      } else {
+        _girisYon = yeni > eski ? 1 : -1;
+        final sure = SandikMotion.stateOf(context);
+        if (sure == Duration.zero) {
+          _giris.value = 1;
+        } else {
+          _giris
+            ..duration = sure
+            ..forward(from: 0);
+        }
+      }
+    }
   }
+
+  /// Çip/alt sayfa geçişinin girişi (bkz. [KaydirmaliGecis.sira]).
+  /// `late` ama `initState`'te kurulur: tembel kurulsaydı hiç
+  /// kullanılmadan dispose'ta kurulup ata arardı.
+  late final AnimationController _giris;
+  double _girisYon = 0;
+
+  /// Görünümü bu widget'ın kaydırması mı değiştirdi.
+  bool _kendiGecisim = false;
 
   @override
   void dispose() {
+    _giris.dispose();
     _yay.dispose();
     _dx.dispose();
     super.dispose();
@@ -241,6 +282,7 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
       }
       if (!mounted) return;
       _dx.value = 0;
+      _kendiGecisim = true;
       widget.onGecis(ileri);
       return;
     }
@@ -267,7 +309,18 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
 
     // Kart bir kez kurulur ve kendi katmanında yaşar; sürüklerken
     // yalnızca ötelenir.
-    final kart = RepaintBoundary(child: widget.child);
+    final kart = AnimatedBuilder(
+      animation: _giris,
+      child: RepaintBoundary(child: widget.child),
+      builder: (context, cocuk) {
+        final t = SandikMotion.enter.transform(_giris.value);
+        if (t >= 1) return cocuk!;
+        return Transform.translate(
+          offset: Offset(_girisYon * 24 * (1 - t), 0),
+          child: Opacity(opacity: 0.35 + 0.65 * t, child: cocuk),
+        );
+      },
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,

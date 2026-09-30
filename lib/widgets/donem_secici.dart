@@ -4,6 +4,7 @@ import '../l10n/l10n.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import 'sandik_segment.dart';
 import 'donem_istatistik.dart' show donemDuzMu;
 
 /// Uygulamanın TEK dönem seçicisi — Performans, Takip, Karşılaştır, varlık
@@ -86,118 +87,50 @@ class DonemSecici extends StatelessWidget {
     }
 
     final etiketler = [for (final d in donemler) donemEtiketi(l, d.label)];
-    final paylar = [for (final e in etiketler) pay(e)];
-    final toplamPay = paylar.fold<int>(0, (a, b) => a + b);
 
-    return Container(
+    // Kabuk, kayan zemin, dokunma, geçiş: ortak [SandikSegment]
+    // (2026-10-01). Burada yalnız dönem içeriği ve getiri satırı kalır.
+    return SandikSegment(
+      adet: donemler.length,
+      secili: secili,
+      onSec: onSec,
+      paylar: [for (final e in etiketler) pay(e)],
+      metinStili: stil,
       // Getirili hâlde ikinci satır için dokunma hedefi kadar yükseklik.
-      height: getiri == null ? tekSatirYukseklik : SandikTouch.min + SandikSpace.sm,
-      decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(3),
-      child: LayoutBuilder(builder: (context, kutu) {
-        final w = kutu.maxWidth;
-        final gecerli = secili >= 0 && secili < paylar.length && toplamPay > 0;
-        final solPay = gecerli
-            ? paylar.take(secili).fold<int>(0, (a, b) => a + b)
-            : 0;
-        return Stack(
-          children: [
-            if (gecerli)
-              AnimatedPositioned(
-                duration: SandikMotion.stateOf(context),
-                curve: SandikMotion.move,
-                left: w * solPay / toplamPay,
-                width: w * paylar[secili] / toplamPay,
-                top: 0,
-                bottom: 0,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: context.c.surface2,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+      yukseklik: getiri == null
+          ? tekSatirYukseklik
+          : SandikTouch.min + SandikSpace.sm,
+      semantik: (i) {
+        final g = getiri == null || i >= getiri.length ? null : getiri[i];
+        return g == null ? etiketler[i] : '${etiketler[i]}, ${fmtPctIsaretli(g)}';
+      },
+      // Tek FittedBox bütün sütunu küçültür: yedi segmentte dar genişlik ve
+      // büyük metin ölçeğinde (x2, x3) iki satır kabuğa sığmayabilir;
+      // kırpmak yerine küçülür.
+      oge: (context, i, _) {
+        final g = getiri == null || i >= getiri.length ? null : getiri[i];
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(etiketler[i], maxLines: 1, softWrap: false),
+              if (getiri != null)
+                Text(
+                  g == null ? ' ' : fmtPctIsaretli(g, digits: 1),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: context.t.labelSmall?.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    color: g == null || donemDuzMu(g)
+                        ? context.c.text36
+                        : context.signColor(g),
                   ),
                 ),
-              ),
-            Row(
-        children: List.generate(donemler.length, (i) {
-          final etiket = etiketler[i];
-          final seciliMi = i == secili;
-          final g = getiri == null || i >= getiri.length ? null : getiri[i];
-          return Flexible(
-            flex: paylar[i],
-            child: Semantics(
-              button: true,
-              selected: seciliMi,
-              label: g == null ? etiket : '$etiket, ${fmtPctIsaretli(g)}',
-              excludeSemantics: true,
-              child: CupertinoButton(
-                minimumSize: SandikTouch.minSize,
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  if (seciliMi) return;
-                  SandikHaptic.selection.perform();
-                  onSec(i);
-                },
-                child: Container(
-                  height: double.infinity,
-                  alignment: Alignment.center,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
-                  // Tek FittedBox bütün sütunu küçültür: yedi segmentte
-                  // dar genişlik ve büyük metin ölçeğinde (x2, x3) iki
-                  // satır kabuğa sığmayabilir; kırpmak yerine küçülür.
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Renk zeminle aynı sürede geçer; kalınlık ölçümde
-                        // en geniş hâle göre ayrıldığı için yer oynatmaz.
-                        AnimatedDefaultTextStyle(
-                          duration: SandikMotion.stateOf(context),
-                          curve: SandikMotion.enter,
-                          style: (stil ?? const TextStyle()).copyWith(
-                            fontWeight:
-                                seciliMi ? FontWeight.w600 : FontWeight.w500,
-                            color: seciliMi
-                                ? context.c.amberText
-                                : context.c.text36,
-                          ),
-                          child: Text(
-                            etiket,
-                            maxLines: 1,
-                            softWrap: false,
-                          ),
-                        ),
-                        if (getiri != null)
-                          Text(
-                            g == null
-                                ? ' '
-                                : fmtPctIsaretli(g, digits: 1),
-                            maxLines: 1,
-                            softWrap: false,
-                            style: context.t.labelSmall?.copyWith(
-                              fontFeatures: const [
-                                FontFeature.tabularFigures()
-                              ],
-                              color: g == null || donemDuzMu(g)
-                                  ? context.c.text36
-                                  : context.signColor(g),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-            ),
-          ],
+            ],
+          ),
         );
-      }),
+      },
     );
   }
 }

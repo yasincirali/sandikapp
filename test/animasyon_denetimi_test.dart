@@ -6,6 +6,7 @@ import 'package:portfoy_takip/utils/acilis_kapisi.dart';
 import 'package:portfoy_takip/utils/friendly_error.dart';
 import 'package:portfoy_takip/widgets/kapanan_satir.dart';
 import 'package:portfoy_takip/widgets/sandik_acilir.dart';
+import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/sekme_basa_don.dart';
 import 'package:portfoy_takip/widgets/zoomable_chart.dart';
 
@@ -109,6 +110,64 @@ void main() {
       expect(yakalanan, isA<StateError>());
       final boy = tester.widget<SizeTransition>(find.byType(SizeTransition));
       expect(boy.sizeFactor.value, 1, reason: 'kullanıcı sildiğini sanmamalı');
+    });
+  });
+
+  group('SandikSegment', () {
+    Widget kur(int secili, ValueChanged<int> onSec, {bool azalt = false}) =>
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: azalt),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 300,
+                  child: SandikSegment(
+                    adet: 3,
+                    secili: secili,
+                    onSec: onSec,
+                    oge: (_, i, __) => Text('s$i'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    double zeminSol(WidgetTester t) => t
+        .getTopLeft(find.descendant(
+            of: find.byType(AnimatedPositioned),
+            matching: find.byType(DecoratedBox)))
+        .dx;
+
+    testWidgets('seçim zemini yeni segmente KAYAR (atlamaz)', (t) async {
+      await t.pumpWidget(kur(0, (_) {}));
+      final bas = zeminSol(t);
+      await t.pumpWidget(kur(2, (_) {}));
+      await t.pump(const Duration(milliseconds: 60));
+      final ara = zeminSol(t);
+      await t.pumpAndSettle();
+      final son = zeminSol(t);
+      expect(ara, greaterThan(bas));
+      expect(ara, lessThan(son), reason: 'ara karede yolun ortasında olmalı');
+    });
+
+    testWidgets('seçili segmente dokunuş yok sayılır, öteki bildirilir',
+        (t) async {
+      final gelen = <int>[];
+      await t.pumpWidget(kur(1, gelen.add));
+      await t.tap(find.text('s1'));
+      await t.tap(find.text('s2'));
+      expect(gelen, [2]);
+    });
+
+    testWidgets('hareketi azalt: zemin anında yerinde', (t) async {
+      await t.pumpWidget(kur(0, (_) {}, azalt: true));
+      await t.pumpWidget(kur(2, (_) {}, azalt: true));
+      await t.pump();
+      final x = zeminSol(t);
+      await t.pumpAndSettle();
+      expect(zeminSol(t), x);
     });
   });
 

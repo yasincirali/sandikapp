@@ -23,6 +23,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_acilir.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/sekme_basa_don.dart';
 import 'main_navigation_screen.dart' show MainNavigationScreen;
 import '../utils/chart_line_width.dart';
@@ -181,6 +182,18 @@ class _PortfolioPerformanceScreenState
   /// Sekme başına ayrı bir dönem tutmak, aynı ekranda iki farklı "şu anki
   /// dönem" kavramı yaratırdı.
   bool _ozetSekmesi = false;
+
+  /// Grafik ↔ Özet en son ne zaman değişti — yeni sekmenin öğeleri yalnız
+  /// bu andan kısa süre sonra kurulurken solarak gelir (`_SekmeSolmasi`).
+  /// Tembel listede sonradan (kaydırınca) kurulan öğe solmaz.
+  DateTime? _sekmeDegismeAni;
+
+  /// Sekme değişiminden hemen sonra mıyız (solma penceresi).
+  bool get _sekmeYeniDegisti {
+    final an = _sekmeDegismeAni;
+    return an != null &&
+        DateTime.now().difference(an) < SandikMotion.surface;
+  }
   // Intraday sekmesi seçiliyken şimdiki zaman marker'ının X ekseni üstünde
   // ilerlemesi için periyodik tick. Her 60 sn'de bir setState çağırıyor.
   /// Ortak nabız dinleyicisini kaldırma işlevi (bkz. `TazelikRitmi.nabiz`).
