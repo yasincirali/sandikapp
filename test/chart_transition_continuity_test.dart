@@ -114,6 +114,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Jest bitince tekrar açılmalı ki periyot değişimleri morf'lansın.
+    // 2026-10-01: morf yalnız GÖRÜNÜR değişimde açılır (aynı veriyle
+    // yeniden kurulumda süre sıfır — bkz. `_gorunurDegisti`); bu yüzden
+    // dönem değişimini taklit eden yeni veriyle bakılır.
+    await tester.pumpWidget(host(vp, 500));
     final after = tester.widget<LineChart>(find.byType(LineChart));
     expect(after.duration, SandikMotion.state,
         reason: 'jest bittikten sonra implicit animasyon geri gelmeli');

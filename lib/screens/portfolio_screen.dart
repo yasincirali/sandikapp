@@ -690,6 +690,32 @@ class _AssetTypeDonut extends StatefulWidget {
 class _AssetTypeDonutState extends State<_AssetTypeDonut> {
   int? _touchedIndex;
 
+  /// Son çizilen dilimler (tür → pay) ve seçili dilim. Halka YALNIZ
+  /// görünür bir değişimde morf eder (animasyon denetimi 2026-10-01,
+  /// ölçüm): `PieChartData` dokunma geri çağrısı taşıdığı için fl_chart her
+  /// kurulumu "yeni veri" sayıyor, fiyatı değişmeyen her 30 sn tikinde
+  /// 12 kare boşuna boyuyordu. Paydaki binde birin altındaki oynama da
+  /// gözle görülmez; o da anında uygulanır.
+  List<(AssetType, double)>? _oncekiPaylar;
+  int? _oncekiDokunulan;
+
+  bool _gorunurDegisti(List<MapEntry<AssetType, double>> dilimler, double toplam) {
+    final paylar = [
+      for (final d in dilimler) (d.key, toplam > 0 ? d.value / toplam : 0.0),
+    ];
+    final eski = _oncekiPaylar;
+    final eskiDokunulan = _oncekiDokunulan;
+    _oncekiPaylar = paylar;
+    _oncekiDokunulan = _touchedIndex;
+    if (eski == null || eski.length != paylar.length) return true;
+    if (eskiDokunulan != _touchedIndex) return true;
+    for (var i = 0; i < paylar.length; i++) {
+      if (eski[i].$1 != paylar[i].$1) return true;
+      if ((eski[i].$2 - paylar[i].$2).abs() > 0.001) return true;
+    }
+    return false;
+  }
+
   String _formatTL(double val) {
     // Ana ekran hero'suyla birebir aynı format: ₺1.234.567 (baz birimde)
     return widget.baz.fmt(val);
@@ -708,6 +734,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    final morf = _gorunurDegisti(sorted, totalVal);
     final touched = _touchedIndex != null && _touchedIndex! < sorted.length
         ? sorted[_touchedIndex!]
         : null;
@@ -736,7 +763,8 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
               // (animasyon denetimi 2026-10-01).
               RepaintBoundary(
                 child: PieChart(
-                swapAnimationDuration: SandikMotion.stateOf(context),
+                swapAnimationDuration:
+                    morf ? SandikMotion.stateOf(context) : Duration.zero,
                 swapAnimationCurve: SandikMotion.enter,
                 PieChartData(
                   pieTouchData: PieTouchData(
