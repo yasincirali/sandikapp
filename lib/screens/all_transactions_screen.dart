@@ -896,7 +896,7 @@ String _donemEtiketi(
     BuildContext context, _DateRange r, DateTimeRange? customRange) {
   if (r == _DateRange.custom && customRange != null) {
     final f = DateFormat('d MMM', Localizations.localeOf(context).toString());
-    return '${f.format(customRange.start)} – ${f.format(customRange.end)}';
+    return '${f.format(customRange.start)} - ${f.format(customRange.end)}';
   }
   return r.labelOf(context.l10n);
 }

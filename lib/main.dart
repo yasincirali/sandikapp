@@ -424,9 +424,9 @@ class SandikApp extends ConsumerWidget {
       inverseSurface: p.text90,
       onInverseSurface: p.onAmber,
       inversePrimary: Sandik.brown,
-      // Scrim / shadow
-      scrim: Colors.black,
-      shadow: Colors.black,
+      // Scrim / shadow: tonlu, düz siyah değil (`SandikPalette.golge`).
+      scrim: p.golge,
+      shadow: p.golge,
     );
 
     // ── Typography (DM Sans — tek font) ──────────────────────────────────────

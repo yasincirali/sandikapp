@@ -898,8 +898,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           _addedDate.month == now.month &&
           _addedDate.day == now.day;
       final msg = isToday
-          ? 'Alış fiyatı boş — kaydederken güncel piyasa fiyatı otomatik atanacak.'
-          : 'Alış fiyatı boş — ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
+          ? 'Alış fiyatı boş. Kaydederken güncel piyasa fiyatı otomatik atanacak.'
+          : 'Alış fiyatı boş. ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
               'tarihli kapanış fiyatı otomatik atanacak.';
       return Container(
         padding: const EdgeInsets.all(16),
@@ -1053,7 +1053,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       final islemGunu = haftaSonuKapanisGunu(_addedDate,
           yediGun: _type == AssetType.kripto);
       subtitle = !_previewIsHistorical
-          ? 'Tarihli fiyat bulunamadı — güncel piyasa fiyatı kullanılacak'
+          ? 'Tarihli fiyat bulunamadı, güncel piyasa fiyatı kullanılacak'
           : islemGunu != null
               ? context.l10n.pricePreviewLastTradingClose(
                   DateFormat('d MMM', context.tarihDili).format(islemGunu))
@@ -1062,8 +1062,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       color = context.c.loss.withValues(alpha: 0.8);
       icon = Icons.help_outline_rounded;
       title = 'Fiyat bulunamadı';
-      subtitle = 'İnternet yok ya da bu sembol için veri gelmedi — '
-          'alış fiyatını manuel girmek isteyebilirsin';
+      subtitle = 'İnternet yok ya da bu sembol için veri gelmedi. '
+          'Alış fiyatını elle girebilirsin.';
     }
 
     return Padding(
@@ -2140,7 +2140,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   DateFormat('d MMM', context.tarihDili).format(islemGunu),
                   fiyatStr)
               : context.l10n.priceAssignedClose(dateStr, fiyatStr))
-          : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
+          : '$dateStr için geçmiş fiyat bulunamadı, güncel fiyat '
               '${fmt.format(price)} $_currency atandı';
       // Tarihli kapanış bulundu → başarı; bulunamadı → uyarı zemini.
       sandikSnack(

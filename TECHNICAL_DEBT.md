@@ -155,7 +155,12 @@ işaretsiz okur.
 
 ---
 
-## 🟡 AÇIK — `docs/_build_legal.py` ana sayfayı eski şablonla eziyor
+## ✅ KAPANDI (2026-10-01) — `docs/_build_legal.py` ana sayfayı eski şablonla eziyor
+
+**Kapanış:** betik artık `docs/index.html` ve `docs/favicon.svg`'yi YAZMAZ; ikisi elle
+bakılır (tanıtım sayfası taste-skill denetimiyle yeniden yazıldı, favicon gerçek logo).
+Hukuki sayfaların şablonu (`LAYOUT`) hâlâ "S" harfli logo ve eski yeşil tonu taşıyor;
+betik bir dahaki koşuda onları olduğu gibi üretir.
 
 **Ne:** Betik hukuki sayfalarla birlikte `docs/index.html`'i de kendi
 içindeki şablondan yeniden basıyor. O şablon eskimiş: 2026-09-20'de elle

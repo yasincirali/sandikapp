@@ -292,7 +292,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
           reason: 'PortfolioNotifier.build (önbellekten açıldı)');
       return PortfolioState(
         assets: cached,
-        errorMessage: 'Çevrimdışı — son bilinen veriler gösteriliyor.',
+        errorMessage: 'Çevrimdışı. Son bilinen veriler gösteriliyor.',
         ownerId: user.id,
       );
     }

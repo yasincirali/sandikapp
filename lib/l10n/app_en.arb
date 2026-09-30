@@ -164,7 +164,7 @@
   "portfolio": "Portfolio",
   "myAssets": "My Assets",
   "watchlist": "Watchlist",
-  "priceUpdateFailed": "Prices could not be updated — showing older data.",
+  "priceUpdateFailed": "Prices could not be updated. Showing older data.",
   "otpSentPrefix": "We sent the 6-digit code to\n",
   "otpSentSuffix": "",
   "registerNameMissing": "Enter your full name.",
@@ -382,7 +382,7 @@
   "tickerHintFund": "Leave empty if there is no Yahoo Finance code and enter the price manually",
   "tickerHintFx": "e.g. USDTRY=X, EURTRY=X, GBPTRY=X",
   "tickerHintGold": "e.g. XAUTRY=X (gram gold in TRY) or GC=F (ounce, USD)",
-  "tickerHintCrypto": "e.g. BTC, ETH — pick from the list",
+  "tickerHintCrypto": "Pick from the list, e.g. BTC, ETH",
   "tickerHintCommodity": "e.g. CL=F (oil), NG=F (natural gas), GC=F (gold ounce)",
   "tickerHintOther": "A Yahoo Finance symbol, or leave it empty",
   "assetTypeSemantics": "{type} type",
@@ -398,7 +398,7 @@
   "quickEntryVoice": "Voice / Quick entry",
   "orNotInList": "or not in the list",
   "symbolHint": "Type a symbol (e.g. AAPL, THYAO.IS)",
-  "companyNameHint": "Company name (optional — fetched from the symbol)",
+  "companyNameHint": "Company name (optional, fetched from the symbol)",
   "goldSemantics": "{kind} gold",
   "@goldSemantics": {
     "placeholders": {
@@ -407,7 +407,7 @@
       }
     }
   },
-  "commissionNote": "Trading commission is added to your cost — profit/loss shows the real figure.",
+  "commissionNote": "Trading commission is added to your cost, so profit/loss shows the real figure.",
   "costPreviewHint": "Enter a quantity and the total cost appears here.",
   "totalCostUpper": "TOTAL COST",
   "transactionDate": "Transaction date",
@@ -508,7 +508,7 @@
       }
     }
   },
-  "dividendEnterNet": "Gross {gross} — enter what you received after withholding tax.",
+  "dividendEnterNet": "Gross {gross}. Enter what you received after withholding tax.",
   "@dividendEnterNet": {
     "placeholders": {
       "gross": {
@@ -537,7 +537,7 @@
     }
   },
   "quickEntryTitle": "Quick Entry",
-  "quickEntryHelp": "One asset per line. Price is optional — leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units",
+  "quickEntryHelp": "One asset per line. Price is optional: leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units",
   "quickEntryPlaceholder": "100 dollars\n10 grams gold 4500 lira\nGARAN 500 units 105 lira",
   "saveNAssets": "Save {count} assets",
   "@saveNAssets": {
@@ -569,7 +569,7 @@
     }
   },
   "nominalReturnInWindow": "Your return in this window",
-  "cpiWindowNote": "CPI is published monthly, so this card runs to the latest published month. The market return above runs to today — the two figures cover different windows.",
+  "cpiWindowNote": "CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.",
   "demoTryButton": "Take a look first",
   "demoBannerTitle": "Sample portfolio",
   "demoBannerSubtitle": "Sample holdings, live prices",
@@ -748,7 +748,7 @@
   "generateInviteCodeBody": "Send the code to your partner. Once they enter it, you get an approval request.",
   "enterPartnerCode": "Enter Partner Code",
   "enterPartnerCodeBody": "Enter the code your partner sent you (e.g. KRHNJ-8P2SW). They then need to approve.",
-  "tooManyAttempts": "Too many attempts — you can try again in {wait}.",
+  "tooManyAttempts": "Too many attempts. You can try again in {wait}.",
   "@tooManyAttempts": {
     "placeholders": {
       "wait": {
@@ -794,7 +794,7 @@
       }
     }
   },
-  "partnershipCreated": "You are now partners with {name}!",
+  "partnershipCreated": "You are now partners with {name}.",
   "@partnershipCreated": {
     "placeholders": {
       "name": {
@@ -804,9 +804,9 @@
   },
   "requestRejected": "The partner request was rejected.",
   "requestCancelled": "The partner request was cancelled.",
-  "partnershipAccepted": "Partnership accepted!",
+  "partnershipAccepted": "Partnership accepted.",
   "sendingEllipsis": "Sending...",
-  "waitFor": "Wait — {wait}",
+  "waitFor": "Wait: {wait}",
   "@waitFor": {
     "placeholders": {
       "wait": {
@@ -845,9 +845,9 @@
   "noAssetsOfTypeChartBody": "Add an asset of this type and its performance appears here. You can pick another type.",
   "noHistoryAllBody": "Price history is not tracked for your assets; their value counts in the total but no time chart can be drawn.",
   "youngPortfolioTitle": "No history for this period yet",
-  "youngPortfolioBody": "Your portfolio is newer than the selected period. The chart fills in as trading days pass — see today's move in the DAILY view.",
+  "youngPortfolioBody": "Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today's move in the DAILY view.",
   "forceUpdateTitle": "Update required",
-  "forceUpdateBody": "This version of Sandık is no longer supported. Update the app to continue — your data is safe.",
+  "forceUpdateBody": "This version of Sandık is no longer supported. Update the app to continue; your data is safe.",
   "forceUpdateButton": "Update",
   "serverMovedTitle": "Sandık has moved",
   "serverMovedBodyAndroid": "We moved to a faster server. Close and reopen the app to continue. You'll be asked to sign in once; your password and data are unchanged.",
@@ -863,12 +863,12 @@
   },
   "simModeTitle": "Simulation Mode",
   "realModeTitle": "Actual Mode",
-  "simModeBody": "How the chart would look if you had held today's net portfolio for the whole period — it ignores past buy/sell decisions and shows only the price change of your current position.",
-  "realModeBody": "Each day's value is computed from the net quantity you held that day. Tap a point to see that day's portfolio value and any buy / sell amounts — so you can see exactly why the chart rose or fell.",
+  "simModeBody": "How would the chart look if you had held today's net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.",
+  "realModeBody": "Each day's value is computed from the net quantity you held that day. Tap a point to see that day's portfolio value and any buy / sell amounts, so you can see exactly why the chart rose or fell.",
   "portfolioPerformance": "Portfolio Performance",
   "chartDataFailed": "Could not load chart data",
   "chartDataFailedBody": "Price history could not be fetched. Check your connection and try again.",
-  "intradayMissingBody": "Intraday prices could not be fetched for {names}. These assets are drawn FLAT at their last known price — a flat line does not mean the market was quiet.",
+  "intradayMissingBody": "Intraday prices could not be fetched for {names}. These assets are drawn FLAT at their last known price. A flat line does not mean the market was quiet.",
   "@intradayMissingBody": {
     "placeholders": {
       "names": {
@@ -971,7 +971,7 @@
   "marketWord": "Market",
   "cashDividend": "Cash dividends within it",
   "commissionPaid": "Commission paid",
-  "contributionNotReturn": "The blue bar is your own money — it is not a return. The percentage comes only from the market bar.",
+  "contributionNotReturn": "The blue bar is your own money, not a return. The percentage comes only from the market bar.",
   "periodCourse": "Course over the period",
   "greenDaysOfTotal": "{up} of {total} trading days closed up.",
   "@greenDaysOfTotal": {
@@ -994,7 +994,7 @@
     }
   },
   "nominalReturn": "Your return",
-  "cpiWindowRange": "Measured: {start} – {end}",
+  "cpiWindowRange": "Measured: {start} - {end}",
   "@cpiWindowRange": {
     "description": "Actual window ends of the CPI comparison",
     "placeholders": {
@@ -1038,7 +1038,7 @@
   },
   "maxDrawdown": "Largest drawdown",
   "volatility": "Volatility",
-  "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad — it just means bigger ups and downs.",
+  "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad; it just means bigger ups and downs.",
   "concentration": "Concentration",
   "moneyReturnAnnual": "Return on your money (annual)",
   "xirrBody": "The annual compound return of the money you invested, taking the DATES of your investments into account.",
@@ -1067,7 +1067,7 @@
   },
   "chartLoadFailed": "The chart could not be loaded.",
   "notEnoughPriceHistory": "Not enough price history for a chart.",
-  "portfolioLineInfoDaily": "In the daily view the {name} line shows your real value — the same as the daily chart on the Performance screen.",
+  "portfolioLineInfoDaily": "In the daily view the {name} line shows your real value, the same as the daily chart on the Performance screen.",
   "@portfolioLineInfoDaily": {
     "placeholders": {
       "name": {
@@ -1113,7 +1113,7 @@
   "comparisonDisclaimer": "Past performance is not an indicator of future returns. Chart values show percentage change from the start of the period; commission, tax and dividends are not included.",
   "searchAssetsHint": "Search stocks, funds, gold or indices",
   "noResultsFound": "No results found",
-  "portfolioSeriesNote": "Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
+  "portfolioSeriesNote": "Portfolios are computed series, not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
   "portfolioActivityTitle": "Portfolio Activity",
   "clearFilters": "Clear filters",
   "watchlistRowUp": "up {pct}",
@@ -1151,7 +1151,7 @@
   "sortAssetsSemantics": "Sort assets",
   "showDetailsSemantics": "Show details",
   "hideDetailsSemantics": "Hide details",
-  "pricePreviewClose": "{date} close — this price will be saved",
+  "pricePreviewClose": "{date} close. This price will be saved",
   "@pricePreviewClose": {
     "placeholders": {
       "date": {
@@ -1159,7 +1159,7 @@
       }
     }
   },
-  "pricePreviewLastTradingClose": "Last trading day's close ({date}) — this price will be saved",
+  "pricePreviewLastTradingClose": "Last trading day's close ({date}). This price will be saved",
   "@pricePreviewLastTradingClose": {
     "placeholders": {
       "date": {
@@ -1238,13 +1238,13 @@
   "selectedPeriodReturn": "Return for the selected period",
   "depositsDontChangeRank": "Deposits don't change the ranking",
   "everyoneMeasuredSame": "Everyone is measured the same way",
-  "rankVsPortfolioNote": "This number can DIFFER from the profit/loss percentage on the Portfolio screen — that one shows total profit/loss since your first purchase, this one only what happened in the period you picked.",
+  "rankVsPortfolioNote": "This number can DIFFER from the profit/loss percentage on the Portfolio screen. That one shows total profit/loss since your first purchase; this one only what happened in the period you picked.",
   "rankSwapNote": "If you sold an asset entirely and bought another during the period, the result shows the \"as if you had held the new asset from the start\" scenario. Portfolios without price history are excluded from the ranking.",
   "notInRace": "You haven't joined the Race",
   "notInRaceBody": "Turn on participation to appear in the return ranking with your partners. Only partners who opt in can see each other's percentage. Your assets and total TRY value are never shared.",
   "joinRace": "Join the Race",
   "addPartnerToRace": "Add a partner and race together",
-  "raceNoListShared": "No one's asset list is shared — only return percentages are ranked.",
+  "raceNoListShared": "No one's asset list is shared; only return percentages are ranked.",
   "yourReturnUpper": "YOUR RETURN",
   "dataNotReady": "Data is not ready.",
   "leaderUpper": "LEADER",
@@ -1252,7 +1252,7 @@
   "globalRanking": "Global Ranking",
   "checkingAnonPool": "Checking the anonymous pool…",
   "comingSoonUpper": "SOON",
-  "globalRankingSoon": "Your rank opens once there are enough participants — anonymous, KVKK compliant",
+  "globalRankingSoon": "Your rank opens once there are enough participants. Anonymous, KVKK compliant",
   "topPercentile": "You're in the top {pct}% of the {period} ranking",
   "@topPercentile": {
     "placeholders": {
@@ -1284,8 +1284,8 @@
     }
   },
   "selectedPeriodReturnBody": "Your portfolio's value at the end of the period is compared with its value at the start:\n\n(period end − period start) ÷ period start\n\nThe 7D / 30D / 1Y choice above changes the result directly.",
-  "depositsDontChangeRankBody": "The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today's assets from the start of the period. Growing your portfolio therefore does not raise your return — you see the same percentage whether you hold 1 lot or 10,000.",
-  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don't need to wait for your partner to open the app — the calculation happens on this device.",
+  "depositsDontChangeRankBody": "The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today's assets from the start of the period. Growing your portfolio therefore does not raise your return: you see the same percentage whether you hold 1 lot or 10,000.",
+  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don't need to wait for your partner to open the app; the calculation happens on this device.",
   "planYearly": "Yearly",
   "planYearlySubtitle": "7 days free, then renews automatically",
   "planMonthly": "Monthly",
@@ -1332,7 +1332,7 @@
       }
     }
   },
-  "recapCardSubtitle": "A short story of the year — {character}",
+  "recapCardSubtitle": "A short story of the year: {character}",
   "@recapCardSubtitle": {
     "placeholders": {
       "character": {
@@ -1523,7 +1523,7 @@
       }
     }
   },
-  "widenTheGap": "Widen the gap — second is {gap}% behind",
+  "widenTheGap": "Widen the gap, second is {gap}% behind",
   "@widenTheGap": {
     "placeholders": {
       "gap": {
@@ -1531,7 +1531,7 @@
       }
     }
   },
-  "atTheTop": "You're at the top — keep the lead",
+  "atTheTop": "You're at the top. Keep the lead",
   "toPassPerson": "+{diff}% to pass {name}",
   "@toPassPerson": {
     "placeholders": {
@@ -1543,7 +1543,7 @@
       }
     }
   },
-  "higherInOtherPeriods": "You rank higher in other periods — tap to see",
+  "higherInOtherPeriods": "You rank higher in other periods. Tap to see",
   "deleteAssetTitle": "Delete Asset",
   "deleteAssetMulti": "Permanently delete {n} transaction records (buy/sell/dividend) for \"{name}\"?",
   "@deleteAssetMulti": {
@@ -1565,7 +1565,7 @@
     }
   },
   "deleteAnyway": "Delete anyway",
-  "deleteAssetWarning": "This is not a sale — the asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.",
+  "deleteAssetWarning": "This is not a sale. The asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.",
   "alarmAlsoDeleteTitle": "{n, plural, =1{Delete the alert too?} other{Delete the {n} alerts too?}}",
   "@alarmAlsoDeleteTitle": {
     "placeholders": {
@@ -1658,7 +1658,7 @@
       }
     }
   },
-  "sellAllWarning": "You are selling the whole position — it leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
+  "sellAllWarning": "You are selling the whole position. It leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
   "saleValue": "Sale value",
   "noPriceAlert": "No price alert",
   "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
@@ -1842,7 +1842,7 @@
   "arrowDown": "▼ down",
   "arrowFlat": "◆ flat",
   "indicatorsCalculating": "Calculating indicators…",
-  "indicatorsNoHistory": "This asset's price history could not be fetched — indicators cannot be calculated.",
+  "indicatorsNoHistory": "This asset's price history could not be fetched, so indicators cannot be calculated.",
   "noIndicatorsSelected": "No indicators are selected for this asset type. Enable them from Profile → Signal Settings.",
   "technicalAnalysisUpper": "TECHNICAL ANALYSIS",
   "nOfMIndicators": "· {on}/{all} indicators on",
@@ -1986,7 +1986,7 @@
       }
     }
   },
-  "unitPriceDiffNote": "The change is a unit price difference — you don't own this asset.",
+  "unitPriceDiffNote": "The change is a unit price difference; you don't own this asset.",
   "notEnoughHistoryForAsset": "Not enough price history for this asset.",
   "notInYourPortfolio": "This asset is not part of your portfolio.",
   "searchingEllipsis": "Searching…",
@@ -2119,7 +2119,7 @@
   "liveActivityIosNote": "iOS keeps a Live Activity session open for at most 8 hours. Opening the app refreshes it; if you never open it, it may drop off the lock screen.",
   "marketClosedNote": "When the market is closed, the last close is shown.",
   "hiddenWeekend": "Not visible right now: weekend display is off. Use the switch above to turn it on.",
-  "hiddenOutsideWindow": "Not visible right now: you're outside the {start}–{end} window. The banner appears at {start}. To see it now, turn on \"Show all day\".",
+  "hiddenOutsideWindow": "Not visible right now: you're outside the {start}-{end} window. The banner appears at {start}. To see it now, turn on \"Show all day\".",
   "@hiddenOutsideWindow": {
     "placeholders": {
       "start": {
@@ -2153,7 +2153,7 @@
       }
     }
   },
-  "realReturnPositive": "Your portfolio delivered a real return above inflation — your purchasing power grew.",
+  "realReturnPositive": "Your portfolio delivered a real return above inflation; your purchasing power grew.",
   "percentileSentence": "You are above {pct}% of participants.",
   "@percentileSentence": {
     "placeholders": {
@@ -2207,7 +2207,7 @@
       }
     }
   },
-  "realReturnNegative": "Your portfolio fell short of inflation — your purchasing power shrank.",
+  "realReturnNegative": "Your portfolio fell short of inflation; your purchasing power shrank.",
   "nPeopleParen": "({n} people)",
   "@nPeopleParen": {
     "placeholders": {
@@ -2360,7 +2360,7 @@
       }
     }
   },
-  "raceFooterGlobal": "Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous — identity, quantity and TRY figures are never shared.",
+  "raceFooterGlobal": "Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.",
   "calculatingEllipsis": "Calculating…",
   "nThousandPeople": "{n}K PEOPLE",
   "@nThousandPeople": {
@@ -2383,7 +2383,7 @@
   "toneTop25": "Well above average",
   "toneTop50": "Above average",
   "toneTop75": "Close to average",
-  "toneRest": "You can do better — follow the 30D view",
+  "toneRest": "You can do better. Follow the 30D view",
   "raceFooterPartners": "The ranking is the selected period's return (%). Everyone is measured with the same formula; no one's asset list is visible.",
   "recapYourPortfolio": "Your portfolio",
   "recapGrewThisYear": "This is how you grew this year.",
@@ -2391,7 +2391,7 @@
   "recapVsInflation": "Against inflation · last 12 months",
   "recapKeptPower": "You protected your purchasing power and added to it.",
   "recapInflationWon": "Inflation was ahead over the last 12 months.",
-  "recapInflationWindow": "Measured: {start} – {end} (CPI is published monthly, so the window ends at the last released month)",
+  "recapInflationWindow": "Measured: {start} - {end} (CPI is published monthly, so the window ends at the last released month)",
   "@recapInflationWindow": {
     "description": "Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari",
     "placeholders": {
@@ -2463,7 +2463,7 @@
   "@whatsNewSubtitle": {},
   "whatsNewEmpty": "No notes for this version.",
   "@whatsNewEmpty": {},
-  "appVersionLabel": "sandık — version {surum}",
+  "appVersionLabel": "sandık · version {surum}",
   "@appVersionLabel": {
     "placeholders": {
       "surum": {
@@ -2507,7 +2507,7 @@
       }
     }
   },
-  "shareCardRange": "{start} – {end}",
+  "shareCardRange": "{start} - {end}",
   "@shareCardRange": {
     "placeholders": {
       "start": {
@@ -2929,8 +2929,8 @@
   "kullaniciAdiZorunluNot": "You need a username to continue. As soon as you pick an available one, you can go on.",
   "kullaniciAdiUygunDevam": "This name is available. You can continue.",
   "kullaniciAdiEtiket": "Username",
-  "kullaniciAdiKurallar": "3–20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.",
-  "kullaniciAdiHataBicim": "Must be 3–20 characters, start with a letter and contain only letters, digits, . and _.",
+  "kullaniciAdiKurallar": "3-20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.",
+  "kullaniciAdiHataBicim": "Must be 3-20 characters, start with a letter and contain only letters, digits, . and _.",
   "kullaniciAdiHataUygunsuz": "This name isn't allowed. Try another one.",
   "kullaniciAdiHataAyrilmis": "This name is reserved. Try another one.",
   "kullaniciAdiHataAlinmis": "This name is taken. Try another one.",

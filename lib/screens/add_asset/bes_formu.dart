@@ -317,13 +317,13 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
                     SozlesmeEtiketi(l10n.pensionDay),
                     SozlesmeAlani(
                       controller: _gun,
-                      ipucu: '1–28',
+                      ipucu: '1-28',
                       sayi: true,
                       dogrula: (v) {
                         final t = (v ?? '').trim();
                         if (t.isEmpty) return null;
                         final g = int.tryParse(t);
-                        return g == null || g < 1 || g > 28 ? '1–28' : null;
+                        return g == null || g < 1 || g > 28 ? '1-28' : null;
                       },
                     ),
                   ],

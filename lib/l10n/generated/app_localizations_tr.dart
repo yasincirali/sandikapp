@@ -439,7 +439,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get priceUpdateFailed =>
-      'Fiyatlar güncellenemedi — eski veriler gösteriliyor.';
+      'Fiyatlar güncellenemedi, eski veriler gösteriliyor.';
 
   @override
   String get otpSentPrefix => '6 haneli kodu\n';
@@ -720,7 +720,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)';
 
   @override
-  String get tickerHintCrypto => 'Örn: BTC, ETH — listeden seç';
+  String get tickerHintCrypto => 'Listeden seç, örn. BTC, ETH';
 
   @override
   String get tickerHintCommodity =>
@@ -751,7 +751,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get companyNameHint =>
-      'Şirket adı (opsiyonel — semboldan otomatik çekilir)';
+      'Şirket adı (opsiyonel, semboldan otomatik çekilir)';
 
   @override
   String goldSemantics(String kind) {
@@ -760,7 +760,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get commissionNote =>
-      'Alım-satım komisyonu maliyete eklenir — kâr/zarar gerçek rakamı gösterir.';
+      'Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.';
 
   @override
   String get costPreviewHint =>
@@ -861,7 +861,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String dividendEnterNet(String gross) {
-    return 'Brüt $gross — stopaj sonrası eline geçeni yaz.';
+    return 'Brüt $gross. Stopaj sonrası eline geçeni yaz.';
   }
 
   @override
@@ -892,7 +892,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get quickEntryHelp =>
-      'Her satıra bir varlık yaz. Fiyat opsiyonel — boş bırakırsan güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet';
+      'Her satıra bir varlık yaz. Fiyat opsiyonel; boş bırakırsan güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet';
 
   @override
   String get quickEntryPlaceholder =>
@@ -933,7 +933,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cpiWindowNote =>
-      'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.';
+      'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır, yani iki rakamın aralığı farklı.';
 
   @override
   String get demoTryButton => 'Önce bir göz at';
@@ -1378,7 +1378,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String tooManyAttempts(String wait) {
-    return 'Çok fazla deneme — $wait sonra tekrar deneyebilirsin.';
+    return 'Çok fazla deneme. $wait sonra tekrar deneyebilirsin.';
   }
 
   @override
@@ -1441,7 +1441,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String partnershipCreated(String name) {
-    return '$name ile ortaklık kuruldu!';
+    return '$name ile ortaklık kuruldu.';
   }
 
   @override
@@ -1451,14 +1451,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get requestCancelled => 'Ortaklık isteği iptal edildi.';
 
   @override
-  String get partnershipAccepted => 'Ortaklık kabul edildi!';
+  String get partnershipAccepted => 'Ortaklık kabul edildi.';
 
   @override
   String get sendingEllipsis => 'Gönderiliyor...';
 
   @override
   String waitFor(String wait) {
-    return 'Bekle — $wait';
+    return 'Bekle: $wait';
   }
 
   @override
@@ -1521,14 +1521,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get youngPortfolioBody =>
-      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.';
+      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi GÜNLÜK görünümünde görebilirsin.';
 
   @override
   String get forceUpdateTitle => 'Güncelleme gerekli';
 
   @override
   String get forceUpdateBody =>
-      'Sandık\'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — verilerin yerinde.';
+      'Sandık\'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle; verilerin yerinde.';
 
   @override
   String get forceUpdateButton => 'Güncelle';
@@ -1560,11 +1560,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get simModeBody =>
-      'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü — geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.';
+      'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.';
 
   @override
   String get realModeBody =>
-      'Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür — böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.';
+      'Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür. Böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.';
 
   @override
   String get portfolioPerformance => 'Portföy Performans';
@@ -1578,7 +1578,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String intradayMissingBody(String names) {
-    return '$names için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi — çizginin düz olması piyasanın durgun olduğu anlamına gelmez.';
+    return '$names için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi. Çizginin düz olması piyasanın durgun olduğu anlamına gelmez.';
   }
 
   @override
@@ -1786,7 +1786,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'Mavi çubuk senin paran — getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.';
+      'Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.';
 
   @override
   String get periodCourse => 'Dönem içi seyir';
@@ -1809,7 +1809,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cpiWindowRange(String start, String end) {
-    return 'Ölçüm aralığı: $start – $end';
+    return 'Ölçüm aralığı: $start - $end';
   }
 
   @override
@@ -1873,7 +1873,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get volatilityBody =>
-      'Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil — daha çok inip çıktığı anlamına gelir.';
+      'Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil; daha çok inip çıktığı anlamına gelir.';
 
   @override
   String get concentration => 'Yoğunlaşma';
@@ -1917,7 +1917,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String portfolioLineInfoDaily(String name) {
-    return 'Günlük görünümde $name çizgisi gerçek değerini gösterir — Performans ekranındaki günlük grafiğin aynısı.';
+    return 'Günlük görünümde $name çizgisi gerçek değerini gösterir: Performans ekranındaki günlük grafiğin aynısı.';
   }
 
   @override
@@ -1983,7 +1983,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get portfolioSeriesNote =>
-      'Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.';
+      'Portföyler hesaplanan serilerdir, piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.';
 
   @override
   String get portfolioActivityTitle => 'Portföy Hareketleri';
@@ -2047,12 +2047,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String pricePreviewClose(String date) {
-    return '$date kapanışı — kayıtta bu fiyat kullanılacak';
+    return '$date kapanışı. Kayıtta bu fiyat kullanılacak';
   }
 
   @override
   String pricePreviewLastTradingClose(String date) {
-    return 'Son işlem günü kapanışı ($date) — kayıtta bu fiyat kullanılacak';
+    return 'Son işlem günü kapanışı ($date). Kayıtta bu fiyat kullanılacak';
   }
 
   @override
@@ -2141,7 +2141,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rankVsPortfolioNote =>
-      'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir — orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.';
+      'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir. Orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.';
 
   @override
   String get rankSwapNote =>
@@ -2162,7 +2162,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get raceNoListShared =>
-      'Kimsenin varlık listesi paylaşılmaz — yalnız getiri yüzdeleri sıralanır.';
+      'Kimsenin varlık listesi paylaşılmaz, yalnız getiri yüzdeleri sıralanır.';
 
   @override
   String get yourReturnUpper => 'SENİN GETİRİN';
@@ -2187,7 +2187,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get globalRankingSoon =>
-      'Yeterli katılımcı olunca sıran açılacak — anonim, KVKK uyumlu';
+      'Yeterli katılımcı olunca sıran açılacak. Anonim, KVKK uyumlu';
 
   @override
   String topPercentile(String period, int pct) {
@@ -2220,11 +2220,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez — 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.';
+      'Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez: 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.';
 
   @override
   String get everyoneMeasuredSameBody =>
-      'Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok — hesap bu cihazda yapılır.';
+      'Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok; hesap bu cihazda yapılır.';
 
   @override
   String get planYearly => 'Yıllık';
@@ -2294,7 +2294,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String recapCardSubtitle(String character) {
-    return 'Bir yılın kısa hikâyesi — $character';
+    return 'Bir yılın kısa hikâyesi: $character';
   }
 
   @override
@@ -2482,11 +2482,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String widenTheGap(String gap) {
-    return 'Farkı büyüt — ikinci +$gap% geride';
+    return 'Farkı büyüt, ikinci +$gap% geride';
   }
 
   @override
-  String get atTheTop => 'Zirvedesin — farkı koru';
+  String get atTheTop => 'Zirvedesin, farkı koru';
 
   @override
   String toPassPerson(String name, String diff) {
@@ -2495,7 +2495,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get higherInOtherPeriods =>
-      'Diğer periyotlarda daha üsttesin — dokun, bak';
+      'Diğer periyotlarda daha üsttesin. Dokun, bak';
 
   @override
   String get deleteAssetTitle => 'Varlığı Sil';
@@ -2515,7 +2515,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAssetWarning =>
-      'Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.';
+      'Bu bir satış değil. Varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.';
 
   @override
   String alarmAlsoDeleteTitle(int n) {
@@ -2618,7 +2618,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sellAllWarning =>
-      'Tüm miktarı satıyorsun — pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.';
+      'Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.';
 
   @override
   String get saleValue => 'Satış değeri';
@@ -2806,7 +2806,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get indicatorsNoHistory =>
-      'Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler hesaplanamıyor.';
+      'Bu varlığın fiyat geçmişi şu an çekilemedi, göstergeler hesaplanamıyor.';
 
   @override
   String get noIndicatorsSelected =>
@@ -2953,7 +2953,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get unitPriceDiffNote =>
-      'Değişim birim fiyat farkıdır — bu varlığa sahip değilsin.';
+      'Değişim birim fiyat farkıdır; bu varlığa sahip değilsin.';
 
   @override
   String get notEnoughHistoryForAsset =>
@@ -3201,7 +3201,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String hiddenOutsideWindow(String start, String end) {
-    return 'Şu an görünmüyor: saat $start–$end aralığının dışındasın. Banner $start\'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.';
+    return 'Şu an görünmüyor: saat $start-$end aralığının dışındasın. Banner $start\'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.';
   }
 
   @override
@@ -3212,7 +3212,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String quietHoursOn(String start, String end) {
-    return 'Brifing, özet, takvim ve alarm push\'ları $start–$end arası gönderilmez';
+    return 'Brifing, özet, takvim ve alarm push\'ları $start-$end arası gönderilmez';
   }
 
   @override
@@ -3229,7 +3229,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get realReturnPositive =>
-      'Portföyün enflasyonun üzerinde reel getiri sağladı — alım gücün arttı.';
+      'Portföyün enflasyonun üzerinde reel getiri sağladı, alım gücün arttı.';
 
   @override
   String percentileSentence(int pct) {
@@ -3293,7 +3293,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get realReturnNegative =>
-      'Portföyün enflasyonun altında kaldı — alım gücün geriledi.';
+      'Portföyün enflasyonun altında kaldı, alım gücün geriledi.';
 
   @override
   String nPeopleParen(int n) {
@@ -3422,7 +3422,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get raceFooterGlobal =>
-      'Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir — kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+      'Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
 
   @override
   String get calculatingEllipsis => 'Hesaplanıyor…';
@@ -3453,7 +3453,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get toneTop75 => 'Ortalamaya yakınsın';
 
   @override
-  String get toneRest => 'Daha iyisini yapabilirsin — 30G takip et';
+  String get toneRest => 'Daha iyisini yapabilirsin, 30G takip et';
 
   @override
   String get raceFooterPartners =>
@@ -3479,7 +3479,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String recapInflationWindow(String start, String end) {
-    return 'Ölçüm: $start – $end (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)';
+    return 'Ölçüm: $start - $end (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)';
   }
 
   @override
@@ -3560,7 +3560,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String appVersionLabel(String surum) {
-    return 'sandık — sürüm $surum';
+    return 'sandık · sürüm $surum';
   }
 
   @override
@@ -3607,7 +3607,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String shareCardRange(String start, String end) {
-    return '$start – $end';
+    return '$start - $end';
   }
 
   @override
@@ -4149,11 +4149,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kullaniciAdiKurallar =>
-      '3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.';
+      '3-20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.';
 
   @override
   String get kullaniciAdiHataBicim =>
-      '3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.';
+      '3-20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.';
 
   @override
   String get kullaniciAdiHataUygunsuz =>

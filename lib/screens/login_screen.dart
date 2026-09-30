@@ -307,7 +307,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.28),
+                                    color: context.c.golge.withValues(alpha: 0.28),
                                     blurRadius: 5,
                                     offset: const Offset(0, 1.5),
                                   ),

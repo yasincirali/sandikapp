@@ -648,7 +648,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.45),
+                        color: context.c.golge.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(SandikRadius.lg),
                         border: Border.all(
                             color: context.c.text36),

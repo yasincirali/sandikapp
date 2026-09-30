@@ -31,7 +31,7 @@ enum UnitType {
 /// kotasyonla gelir (`PriceService._truncgilGoldKeys`). Var olan
 /// `gr22` → `ALTIN_GRAM` eşlemesi KORUNDU: eski kayıtlar o sembolle durur.
 enum GoldSubCategory {
-  gr24('Gram Altın (24 Ayar)', 'gr', '24 ayar (995) gram altın — bankada ve kuyumcuda "gram altın"'),
+  gr24('Gram Altın (24 Ayar)', 'gr', '24 ayar (995) gram altın; bankada ve kuyumcuda "gram altın"'),
   gr22('22 Ayar Gram Altın', 'gr', '22 ayar altın, gram olarak alınır'),
   gr18('18 Ayar Altın', 'gr', '18 ayar altın, gram olarak'),
   gr14('14 Ayar Altın', 'gr', '14 ayar altın, gram olarak'),

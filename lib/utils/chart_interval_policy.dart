@@ -126,7 +126,7 @@ class ChartIntervalPolicy {
   /// == yeni`) `null` döner ve hiçbir şey gösterilmez.
   static String? degisimAciklamasi(ResolutionTier eski, ResolutionTier yeni) {
     if (eski == yeni) return null;
-    return '${eski.etiket} bu dönemde kullanılamıyor — '
+    return '${eski.etiket} bu dönemde kullanılamıyor; '
         '${yeni.etiket} bara geçildi.';
   }
 }

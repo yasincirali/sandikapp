@@ -114,7 +114,7 @@ void main() {
       );
       final m = RecapService.shareText(d, year: 2026);
       expect(m.contains('Özetim 2026'), isTrue);
-      expect(m.contains('Kasım 25 – Kasım 26'), isTrue,
+      expect(m.contains('Kasım 25 - Kasım 26'), isTrue,
           reason: 'pencere başlıktaki yıldan farklı — yazılmak zorunda');
     });
 

@@ -594,7 +594,7 @@ class _HeroShell extends StatelessWidget {
                 child: Icon(
                   Icons.emoji_events_rounded,
                   size: 110,
-                  color: Colors.black.withValues(alpha: 0.10),
+                  color: context.c.golge.withValues(alpha: 0.10),
                 ),
               ),
               Padding(

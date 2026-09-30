@@ -617,7 +617,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: context.c.golge.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(SandikRadius.md),
                   ),
                   child: Row(
