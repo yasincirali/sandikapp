@@ -101,9 +101,11 @@ void main() {
         ),
       ));
       Object? yakalanan;
-      KapananSatir.kapatVeYap(satirCtx, () async => throw StateError('ağ'))
+      final is_ = KapananSatir.kapatVeYap(
+              satirCtx, () async => throw StateError('ağ'))
           .catchError((Object e) => yakalanan = e);
       await tester.pumpAndSettle();
+      await is_;
       expect(yakalanan, isA<StateError>());
       final boy = tester.widget<SizeTransition>(find.byType(SizeTransition));
       expect(boy.sizeFactor.value, 1, reason: 'kullanıcı sildiğini sanmamalı');
