@@ -527,7 +527,7 @@ class _BulkItemTile extends StatelessWidget {
         item.subCategory!,
     ].join(' · ');
 
-    return GestureDetector(
+    return SandikBasma(
       onTap: onEdit,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

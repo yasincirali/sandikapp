@@ -59,19 +59,21 @@ class _SandikSkeletonState extends State<SandikSkeleton>
   @override
   Widget build(BuildContext context) {
     final color = context.c.hairline;
+    // FadeTransition (animasyon denetimi, 2026-09-30): eskiden
+    // AnimatedBuilder + Opacity her karede bloğu yeniden kuruyor ve ayrı bir
+    // çizim katmanı (saveLayer) açıyordu; yükleme listesinde onlarca blok
+    // aynı anda nabız attığı için yükleme sırasında kaydırma takılıyordu.
+    // FadeTransition saydamlığı bileşik katmanda uygular, build yok.
     return ExcludeSemantics(
-      child: AnimatedBuilder(
-        animation: _alpha,
-        builder: (context, _) => Opacity(
-          opacity: _alpha.value,
-          child: Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              // hairline zaten yarı saydam; iki kat üst üste bloğu belirginleştirir.
-              color: Color.alphaBlend(color, color.withValues(alpha: 1)),
-              borderRadius: BorderRadius.circular(widget.radius),
-            ),
+      child: FadeTransition(
+        opacity: _alpha,
+        child: Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            // hairline zaten yarı saydam; iki kat üst üste bloğu belirginleştirir.
+            color: Color.alphaBlend(color, color.withValues(alpha: 1)),
+            borderRadius: BorderRadius.circular(widget.radius),
           ),
         ),
       ),

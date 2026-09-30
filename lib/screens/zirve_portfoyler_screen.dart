@@ -365,7 +365,7 @@ class _DonemSecici extends StatelessWidget {
                 selected: d == secili,
                 label: d.ad,
                 child: ExcludeSemantics(
-                  child: GestureDetector(
+                  child: SandikBasma(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => onSec(d),
                     child: AnimatedContainer(
@@ -790,7 +790,7 @@ class _KiyasSecici extends StatelessWidget {
                 selected: a.rank == secili,
                 label: '${a.rank}. portföyle kıyasla',
                 child: ExcludeSemantics(
-                  child: GestureDetector(
+                  child: SandikBasma(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => onSec(a.rank),
                     child: AnimatedContainer(

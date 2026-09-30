@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -310,11 +309,17 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // içerik yüksekliği + viewPadding.bottom kullanılır; aksi halde bar
     // Dynamic Island'lı cihazlarda indicator'ın altında kalıyordu.
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    // BackdropFilter KALKTI (animasyon denetimi, 2026-09-30): Scaffold
+    // `extendBody` kullanmıyor, içerik menünün arkasına hiç geçmiyor — blur
+    // yalnızca düz arka plan rengini bulanıklaştırıyordu (görünmez), ama her
+    // karede GPU'ya tam bir arka plan okuması + bulanıklık ödetiyordu;
+    // kaydırmanın takıldığı yerlerden biri. Açık temada zemin zaten opak
+    // beyaz. Görünüm birebir aynı.
     return TourAnchor(
       target: TourTarget.altMenu,
       child: ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: context.c.background),
         child: Container(
           padding: EdgeInsets.only(bottom: bottomInset > 0 ? bottomInset : 12),
           decoration: BoxDecoration(
@@ -351,7 +356,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // yabancı duruyor. HitTestBehavior.opaque, Column'un boş kalan alanının
     // da dokunmayı yakalamasını sağlar (tam 60pt yükseklikte hedef).
     return Expanded(
-      child: GestureDetector(
+      child: SandikBasma(
         behavior: HitTestBehavior.opaque,
         onTap: () => _onItemTapped(index),
         child: Semantics(

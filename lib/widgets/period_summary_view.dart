@@ -1609,7 +1609,7 @@ class _AralikSecici extends StatelessWidget {
               child: Semantics(
                 selected: a == secili,
                 button: true,
-                child: GestureDetector(
+                child: SandikBasma(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onSec(a),
                   child: AnimatedContainer(

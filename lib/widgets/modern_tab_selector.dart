@@ -188,7 +188,7 @@ class _Sekme extends StatelessWidget {
         // emülatör testi #17/#28 — "clickable=false").
         onTap: onTap,
         child: ExcludeSemantics(
-          child: GestureDetector(
+          child: SandikBasma(
             onTap: onTap,
             behavior: HitTestBehavior.opaque,
             child: Center(

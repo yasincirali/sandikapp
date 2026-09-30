@@ -378,7 +378,7 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SandikBasma(
       onTap: onTap,
       child: AnimatedContainer(
         duration: SandikMotion.stateOf(context),

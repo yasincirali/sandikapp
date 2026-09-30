@@ -662,7 +662,7 @@ class _SaatChip extends StatelessWidget {
     return Semantics(
       selected: secili,
       button: true,
-      child: GestureDetector(
+      child: SandikBasma(
         onTap: onTap,
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
@@ -814,7 +814,7 @@ class _ThresholdSegment extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final opt in kSignalThresholdOptions)
-            GestureDetector(
+            SandikBasma(
               onTap: () => onChanged(opt),
               child: AnimatedContainer(
                 duration: SandikMotion.stateOf(context),

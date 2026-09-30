@@ -1594,7 +1594,7 @@ class _SignalTile extends StatelessWidget {
     final double bgAlpha = faded ? 0.05 : 0.10;
     final double borderAlpha = faded ? 0.12 : 0.28;
 
-    final Widget content = GestureDetector(
+    final Widget content = SandikBasma(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),

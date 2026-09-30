@@ -1,4 +1,3 @@
-import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/money_format.dart';
@@ -71,10 +70,14 @@ class PortfolioSummaryWidget extends StatelessWidget {
       container: true,
       label: semanticSummary,
       child: ExcludeSemantics(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(SandikRadius.lg),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        // BackdropFilter + ClipRRect KALKTI (animasyon denetimi, 2026-09-30):
+        // kartın arkasında düz arka plan rengi var, bulanıklık görünmüyordu;
+        // kart kaydırmayla hareket ettiği için her karede arka plan okuması +
+        // blur + kırpma ödeniyordu. Köşeleri kartın kendi `borderRadius`'u
+        // yuvarlıyor. Yerine RepaintBoundary: fiyat tikinde kart kendi
+        // katmanında yeniden çizilir, sayfanın geri kalanı çizilmez.
+        child: RepaintBoundary(
+          child: KeyedSubtree(
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 20),

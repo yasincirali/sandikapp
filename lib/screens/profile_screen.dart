@@ -1261,7 +1261,7 @@ class _ProfilePremiumBanner extends ConsumerWidget {
     if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
     final premium = ref.watch(effectivePremiumProvider);
     if (premium) return const _PremiumActiveBadge();
-    return GestureDetector(
+    return SandikBasma(
       onTap: () {
         AnalyticsService.instance
             .logPremiumGateShown(feature: 'profile_banner');
