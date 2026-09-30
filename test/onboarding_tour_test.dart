@@ -640,6 +640,9 @@ void main() {
       await _bekle(tester);
       expect(_dokunus[TourTarget.turSecici], isNull);
       await _devam(tester);
+      // Mevduat ve BES adımı (YENİ, 2026-09-30) aynı tür çiplerini gösterir.
+      expect(find.text('Mevduat ve BES'), findsOneWidget);
+      await _devam(tester);
       expect(find.text('Cümleyle ekle'), findsOneWidget);
 
       // Mikrofon dokunuşa kapalı: sheet açılıp karartmanın altında kalmasın.

@@ -10,6 +10,8 @@ import 'supabase_service.dart';
 import '../demo/demo_modu.dart';
 import '../models/asset_type.dart';
 import 'tefas_service.dart';
+import 'mevduat_hesabi.dart';
+import 'sozlesme_deposu.dart';
 
 class YahooQuote {
   final String symbol;
@@ -396,6 +398,18 @@ class PriceService {
         .toList();
     if (cleaned.isEmpty) return {};
 
+    // Mevduat (`MEVDUAT:<id>`) ağa çıkmaz ve önbelleğe girmez: birim değer
+    // sözleşmeden HESAPLANIR (`mevduat_hesabi.dart`), ucuzdur ve yenileme
+    // sonrası 45 sn'lik eski kotasyon gösterilmemeli.
+    final mevduatList =
+        cleaned.where((s) => s.startsWith(mevduatOneki)).toList();
+    final mevduatSonucu = <String, YahooQuote>{};
+    if (mevduatList.isNotEmpty) {
+      cleaned.removeWhere((s) => s.startsWith(mevduatOneki));
+      mevduatSonucu.addAll(await _mevduatKotasyonlari(mevduatList));
+      if (cleaned.isEmpty) return mevduatSonucu;
+    }
+
     // Soğuk açılışta yedek yol hiçbir oran/birincil fiyat bilmeden
     // koşmasın — iki kalıcı bellek de ağa çıkmadan ÖNCE hazır olmalı.
     await Future.wait([
@@ -417,7 +431,7 @@ class PriceService {
         cachedHits[s] = e.quote;
         return true;
       });
-      if (cleaned.isEmpty) return cachedHits;
+      if (cleaned.isEmpty) return {...cachedHits, ...mevduatSonucu};
     }
 
     final fxList = cleaned.where((s) => _fxSymbols.contains(s)).toList();
@@ -553,7 +567,38 @@ class PriceService {
     }
 
     results.addAll(cachedHits);
+    results.addAll(mevduatSonucu);
     return results;
+  }
+
+  // ── Mevduat — sözleşmeden birim değer (0088) ───────────────────────────
+
+  /// `MEVDUAT:<id>` kotasyonları: fiyat = bugünkü birim değer, yüzde = son
+  /// 24 saatteki net tahakkuk. Sözleşmesi bulunamayan sembol DÖNMEZ — lot
+  /// son yazılan fiyatında kalır (uydurma yok).
+  Future<Map<String, YahooQuote>> _mevduatKotasyonlari(
+      List<String> semboller) async {
+    final depo = SozlesmeDeposu.instance;
+    await depo.eksikleriYukle([
+      for (final s in semboller)
+        if (mevduatSozlesmeId(s) case final id?) id,
+    ]);
+    final simdi = DateTime.now();
+    final dun = simdi.subtract(const Duration(days: 1));
+    final out = <String, YahooQuote>{};
+    for (final s in semboller) {
+      final v = depo.mevduatBirimDegeri(s, simdi);
+      if (v == null || v <= 0) continue;
+      final once = depo.mevduatBirimDegeri(s, dun);
+      out[s] = YahooQuote(
+        symbol: s,
+        regularMarketPrice: v,
+        currency: 'TRY',
+        regularMarketChangePercent:
+            once == null || once <= 0 ? null : (v / once - 1) * 100,
+      );
+    }
+    return out;
   }
 
   // ── Kripto — sunucu tablosu (kripto_fiyat, 0074) ───────────────────────
@@ -1148,6 +1193,15 @@ class PriceService {
       return _kriptoGecmisKapanis(symbol, date);
     }
 
+    // Mevduat: o günün sonundaki birim değer (sözleşmeden).
+    if (symbol.toUpperCase().startsWith(mevduatOneki)) {
+      final id = mevduatSozlesmeId(symbol);
+      if (id == null) return null;
+      await SozlesmeDeposu.instance.eksikleriYukle([id]);
+      return SozlesmeDeposu.instance.mevduatBirimDegeri(
+          symbol, DateTime(date.year, date.month, date.day, 23, 59, 59));
+    }
+
     if (symbol.startsWith('TEFAS:')) {
       final code = symbol.replaceFirst('TEFAS:', '');
       final points = await TefasService.instance
@@ -1318,6 +1372,22 @@ class PriceService {
     // Kripto: sunucunun paylaşılan önbelleği (kripto-seri). TL, TRY kote.
     if (FiyatKaynagi.kriptoMu(symbol)) {
       return _kriptoSerisi(symbol, range, interval);
+    }
+
+    // Mevduat: ağ yok — sözleşmenin dönemlerinden istenen pencere ve
+    // adımla sentetik birim değer serisi. "Sentetik" uydurma demek değil:
+    // her nokta sözleşmenin o anki tahakkukudur (`MevduatHesabi`).
+    if (symbol.toUpperCase().startsWith(mevduatOneki)) {
+      final id = mevduatSozlesmeId(symbol);
+      if (id == null) return const [];
+      await SozlesmeDeposu.instance.eksikleriYukle([id]);
+      final son = DateTime.now();
+      return SozlesmeDeposu.instance.mevduatSerisi(
+        symbol,
+        bas: son.subtract(aralikSuresi(range)),
+        son: son,
+        adim: aralikAdimi(interval),
+      );
     }
 
     final yahooRange = range;

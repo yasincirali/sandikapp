@@ -179,6 +179,10 @@ class RecapService {
       AssetType.fon => PortfolioCharacter.foncu,
       AssetType.emtia => PortfolioCharacter.emtiaci,
       AssetType.kripto => PortfolioCharacter.kriptocu,
+      // Mevduat/BES ağırlıklı portföy için ayrı karakter YOK (eski
+      // `mevduatci` 2026-09-14'te türle birlikte kalktı; yenisi özet
+      // metinleri ister). Şimdilik dengeli sayılır.
+      AssetType.mevduat || AssetType.bes => PortfolioCharacter.dengeli,
       AssetType.diger => PortfolioCharacter.dengeli,
     };
   }

@@ -4433,4 +4433,298 @@ class AppLocalizationsEn extends AppLocalizations {
   String filterRemove(String ad) {
     return 'Remove $ad filter';
   }
+
+  @override
+  String get assetTypeDeposit => 'Deposit';
+
+  @override
+  String get assetTypePension => 'Pension (BES)';
+
+  @override
+  String get tickerHintDeposit => 'Calculated from the contract';
+
+  @override
+  String get tickerHintPension => 'TEFAS pension fund code';
+
+  @override
+  String get depositBank => 'Bank';
+
+  @override
+  String get depositBankHint => 'e.g. the name of your bank';
+
+  @override
+  String get depositPrincipal => 'Amount deposited';
+
+  @override
+  String get depositRate => 'Annual interest (gross, %)';
+
+  @override
+  String get depositKindTerm => 'Term deposit';
+
+  @override
+  String get depositKindDaily => 'Daily interest';
+
+  @override
+  String get depositTerm => 'Term';
+
+  @override
+  String depositDays(int n) {
+    return '$n days';
+  }
+
+  @override
+  String get depositCustomDays => 'Custom';
+
+  @override
+  String get depositCustomDaysHint => 'Number of days';
+
+  @override
+  String get depositStart => 'Start date';
+
+  @override
+  String get depositWithholding => 'Withholding tax (%)';
+
+  @override
+  String get depositWithholdingHint =>
+      'Suggested from the term. Change it if your bank applies a different rate.';
+
+  @override
+  String get depositMaturity => 'Maturity';
+
+  @override
+  String get depositNetReturn => 'Net return';
+
+  @override
+  String get depositAtMaturity => 'At maturity';
+
+  @override
+  String get depositDailyNet => 'Daily net';
+
+  @override
+  String get depositErrorBank => 'Enter the bank\'s name.';
+
+  @override
+  String get depositErrorPrincipal => 'Enter the amount.';
+
+  @override
+  String get depositErrorRate => 'Enter the interest rate.';
+
+  @override
+  String get depositErrorDays => 'Enter the term in days.';
+
+  @override
+  String get depositErrorWithholding =>
+      'Withholding tax must be between 0 and 100.';
+
+  @override
+  String get depositAccrualNote =>
+      'The value grows each day by the accrued net interest. If you break the term early, the bank may not pay the interest.';
+
+  @override
+  String get depositCardTitle => 'Deposit';
+
+  @override
+  String depositPeriodN(int n) {
+    return 'Period $n';
+  }
+
+  @override
+  String depositDaysLeft(int n) {
+    return '$n days to maturity';
+  }
+
+  @override
+  String get depositMatured => 'Matured';
+
+  @override
+  String get depositMaturedBody =>
+      'Interest has been added. Enter the new rate to start the next period; otherwise the value stays as it is.';
+
+  @override
+  String get depositThisPeriod => 'This period, net';
+
+  @override
+  String get depositTotalReturn => 'Total net return';
+
+  @override
+  String get depositRenew => 'Renew';
+
+  @override
+  String get depositWithdraw => 'Withdrawn';
+
+  @override
+  String get depositRenewTitle => 'New period';
+
+  @override
+  String get depositRenewSaved => 'New period started';
+
+  @override
+  String get depositRateUpdate => 'Update rate';
+
+  @override
+  String get depositRateSaved => 'Rate updated';
+
+  @override
+  String get depositWithdrawTitle => 'Did you withdraw the money?';
+
+  @override
+  String depositWithdrawBody(String amount) {
+    return 'The deposit is recorded as sold at today\'s value ($amount).';
+  }
+
+  @override
+  String get depositWithdrawConfirm => 'Yes, close it';
+
+  @override
+  String get depositWithdrawn => 'Deposit closed';
+
+  @override
+  String get pensionCompany => 'Pension company';
+
+  @override
+  String get pensionCompanyHint => 'e.g. the name of your provider';
+
+  @override
+  String get pensionEntryDate => 'Joined the system';
+
+  @override
+  String get pensionEntryDateHint =>
+      'The vesting rate of the government contribution depends on this.';
+
+  @override
+  String get pensionBalance => 'Current savings';
+
+  @override
+  String get pensionBalanceHint =>
+      'Excluding the government contribution, as shown in your provider\'s app or BES Mobil.';
+
+  @override
+  String get pensionPaid => 'Contributions paid so far';
+
+  @override
+  String get pensionFunds => 'Fund allocation';
+
+  @override
+  String get pensionAddFund => 'Add fund';
+
+  @override
+  String pensionShareTotal(String pct) {
+    return 'Total $pct';
+  }
+
+  @override
+  String get pensionShareError => 'Fund shares must add up to 100%.';
+
+  @override
+  String get pensionFundError => 'Pick at least one pension fund.';
+
+  @override
+  String get pensionGov => 'Government contribution';
+
+  @override
+  String get pensionGovBalance => 'Government contribution balance';
+
+  @override
+  String get pensionGovFund => 'Government contribution fund';
+
+  @override
+  String get pensionGovFundHint =>
+      'Leave it empty if you don\'t know; it won\'t be added.';
+
+  @override
+  String get pensionMonthly => 'Monthly contribution';
+
+  @override
+  String get pensionDay => 'Contribution day';
+
+  @override
+  String get pensionErrorCompany => 'Enter the company\'s name.';
+
+  @override
+  String get pensionErrorBalance => 'Enter your savings.';
+
+  @override
+  String get pensionErrorGovFund =>
+      'Also pick the fund for the government contribution balance.';
+
+  @override
+  String pensionPriceMissing(String code) {
+    return 'Couldn\'t get the price for $code. Try again shortly.';
+  }
+
+  @override
+  String get pensionPickFund => 'Pick a pension fund';
+
+  @override
+  String get pensionPickGovFund => 'Pick the government contribution fund';
+
+  @override
+  String get pensionSearchFund => 'Fund code or name';
+
+  @override
+  String get pensionNoFundFound => 'No matching pension fund';
+
+  @override
+  String get pensionCardTitle => 'Pension (BES)';
+
+  @override
+  String pensionYear(int n) {
+    return 'Year $n';
+  }
+
+  @override
+  String get pensionTotal => 'Total savings';
+
+  @override
+  String get pensionOwn => 'Your contributions';
+
+  @override
+  String get pensionGovShort => 'Government';
+
+  @override
+  String get pensionReturn => 'Return';
+
+  @override
+  String get pensionIfLeave => 'If you left today (before tax)';
+
+  @override
+  String get pensionVesting => 'Government contribution vesting';
+
+  @override
+  String pensionVestingNext(String now, int years, String next) {
+    return '$now · $next in $years years';
+  }
+
+  @override
+  String get pensionAddContribution => 'Add this month\'s contribution';
+
+  @override
+  String get pensionContributionTitle => 'Add contribution';
+
+  @override
+  String get pensionContributionAmount => 'Contribution';
+
+  @override
+  String pensionContributionGov(String amount) {
+    return 'Government contribution: $amount';
+  }
+
+  @override
+  String get pensionContributionGovCapped =>
+      'This year\'s government contribution limit is reached.';
+
+  @override
+  String get pensionContributionSaved => 'Contribution added';
+
+  @override
+  String get pensionContributionDue =>
+      'This month\'s contribution isn\'t added yet.';
+
+  @override
+  String get pensionNoGovFund =>
+      'No government contribution fund is set; it won\'t be added.';
+
+  @override
+  String get contractManagedNotice =>
+      'This asset is managed by its contract. Use the contract card on the asset page to change it.';
 }

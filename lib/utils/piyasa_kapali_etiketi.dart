@@ -23,7 +23,10 @@ import '../models/asset_type.dart';
 /// kılıyor — bu ekranda tekrar tekrar işe yarayan bir ayrım.
 
 /// Borsa takvimine bağlı türler: hafta sonu ve resmî tatilde KESİN kapalı.
-const _borsayaBagli = {AssetType.hisse, AssetType.fon};
+///
+/// BES fonları TEFAS'ta fon gibi iş günü fiyatlanır. Mevduat HİÇBİRİNDE
+/// değil: değeri piyasadan değil sözleşmeden gelir, "kapalı" olamaz.
+const _borsayaBagli = {AssetType.hisse, AssetType.fon, AssetType.bes};
 
 /// Kapalı dönemde de değer üretebilen türler.
 ///

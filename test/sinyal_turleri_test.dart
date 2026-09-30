@@ -10,8 +10,10 @@ import 'package:portfoy_takip/models/asset_type.dart';
 ///
 /// Bu test iki tarafı birbirine bağlar: yeni bir `AssetType` eklenip sunucu
 /// kümesi güncellenmezse kırılır. `diger` elle fiyatlanır, seri yoktur.
+/// `mevduat` (2026-09-30) piyasa serisi taşımaz — değeri sözleşmenin
+/// tahakkukudur, teknik sinyal anlamsızdır; ayar ekranında da görünmez.
 void main() {
-  test('sunucu ANALYZABLE = tüm AssetType\'lar (diger hariç)', () {
+  test('sunucu ANALYZABLE = tüm AssetType\'lar (diger ve mevduat hariç)', () {
     final src =
         File('supabase/functions/analyze-signals/index.ts').readAsStringSync();
     final m = RegExp(r"ANALYZABLE = new Set\(\[([^\]]*)\]\)").firstMatch(src);
@@ -22,7 +24,7 @@ void main() {
         .toSet();
     final istemci = {
       for (final t in AssetType.values)
-        if (t != AssetType.diger) t.name,
+        if (t != AssetType.diger && t != AssetType.mevduat) t.name,
     };
     expect(sunucu, istemci,
         reason: 'Yeni tür eklendiyse analyze-signals ANALYZABLE ve seri '

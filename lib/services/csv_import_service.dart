@@ -324,6 +324,11 @@ class CsvImportService {
     // U08: "HİSSE" / "DÖVİZ" de tanınsın — başlıkla aynı katlama.
     final t = _katla(s.trim());
     for (final v in AssetType.values) {
+      // Mevduat ve BES CSV'den gelmez: lotları sözleşmesiz anlamsızdır
+      // (faiz/vade ya da katkı planı olmadan birim değeri hesaplanamaz).
+      // Tanınmayan tür olarak satır hatası üretir; kullanıcı kendi formunu
+      // kullanır.
+      if (v.sozlesmeli) continue;
       if (t == _katla(v.name) || t == _katla(v.label)) return v;
     }
     if (t.startsWith('hisse') || t == 'stock') return AssetType.hisse;
@@ -462,6 +467,10 @@ class CsvImportService {
         );
       case AssetType.emtia:
       case AssetType.diger:
+      // Ulaşılamaz (`_typeFromCell` sözleşmeli türü tanımaz); switch
+      // eksiksiz kalsın diye burada.
+      case AssetType.mevduat:
+      case AssetType.bes:
         return (
           ticker: t,
           name: raw.trim(),

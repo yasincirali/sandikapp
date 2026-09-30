@@ -1105,6 +1105,17 @@ class Sandik {
   static const Color danger    = Color(0xFFEF4444); // Yıkıcı eylem / hata
   static const Color info      = Color(0xFF4EA8DE); // Bilgilendirme / nötr vurgu
 
+  // ── Sözleşmeli varlık kategorileri (2026-09-30) ────────────────────────────
+  //
+  // Mevduat ve BES tür renkleri tema dosyasında: kategori paleti dolu
+  // (amber, gök mavisi, nane, altın, bakır, orkide, menekşe) ve yeni tonun
+  // gain/loss'la ve komşularıyla çakışmaması gerekiyor. Mevduat soğuk,
+  // nötr bir çelik mavisi (banka, durağan getiri); BES yeşile kaçmayan
+  // zeytin sarısı (uzun vadede büyüyen birikim). Light zemin tonu
+  // `AssetType.onLightSurface` üretir (`asset_type_light_contrast_test`).
+  static const Color mevduat   = Color(0xFF8FA3B8); // Çelik mavisi
+  static const Color bes       = Color(0xFFB5C25A); // Zeytin sarısı
+
   // ── Madalya (leaderboard) ──────────────────────────────────────────────────
   //
   // Madalya rozetleri gradient'tir ve üzerlerinde sıra numarası yazar. Metin

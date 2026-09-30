@@ -8,6 +8,30 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-30 Vadeli mevduat + BES — 0088 + üç edge function (PUSH EDİLMEDİ)
+
+Kod yerelde; emülatörde gör → onay → push. **Sıra önemli:** 0088 iki
+sunucuya ulaşmadan bu kodu taşıyan sürüm TestFlight'a/Play'e gitmemeli —
+mevduat/BES açılışı `sozlesmeler` tablosunu arar, yoksa "kaydedilemedi"
+der. (Diğer türlerin kaydı etkilenmez: `sozlesme_id` gövdeye yalnız
+doluyken yazılır.)
+
+- [ ] **Migration 0088** (`supabase/migrations/0088_mevduat_bes_sozlesmeleri.sql`):
+      Actions → `supabase-deploy.yml`, hedef `ikisi` (Frankfurt → Tokyo).
+      Göç kendini doğrular (GRANT 4/4, RLS 2/2, FK); kırmızıysa log'u Claude'a ver.
+      Ardından `python tool/sema_esitlik.py` eşit demeli.
+- [ ] **Edge function'lar (ikisi):** `analyze-signals` (BES fon gibi analiz),
+      `leaderboard-snapshot` (mevduat `current_price` ile değerlenir),
+      `observe-tefas-nav` (BES fonlarının NAV'ı da gözlenir).
+- [ ] **Cihazda dene (10 dk):** Varlık Ekle → Mevduat: banka + 250.000 +
+      %42 + 32 gün → özet "+₺7.594,52" demeli; kaydet; varlık sayfasında
+      dönem kartı. BES: şirket + birikim + bir emeklilik fonu %100 (+ istersen
+      devlet katkısı fonu); varlık sayfasında döküm ve hak ediş satırı.
+- [ ] **Her Ocak:** yeni yılın BES devlet katkısı sınırı (brüt asgari ücret
+      × 12 × oran) `lib/services/bes_hesabi.dart` › `yillikSinirTablosu`'na
+      eklenmeli — Claude'a "BES sınırı 2027" demen yeter. Eklenmezse katkı
+      sayfası sınırsız hesaplar ve tutarı düzenlenebilir gösterir.
+
 ## ⏳ 2026-09-30 Karar tahtası 4–8 — kod yerelde (PUSH EDİLMEDİ)
 
 Emülatörde kontrol et → onay → push. Ayrıntı: sohbet raporu.

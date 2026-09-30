@@ -115,7 +115,8 @@ Deno.serve(async (request) => {
     const { data: assetRows, error: assetErr } = await client
       .from('assets')
       .select('ticker')
-      .eq('type', 'fon')
+      // BES lotları da TEFAS emeklilik fonudur (`TEFAS:AH5`, 0088).
+      .in('type', ['fon', 'bes'])
       .like('ticker', 'TEFAS:%')
       // Silme fiziksel değil, damgalıdır (0027); silinmiş lot için sorma.
       .is('deleted_at', null);

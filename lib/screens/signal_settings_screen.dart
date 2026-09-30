@@ -114,7 +114,12 @@ class SignalSettingsScreen extends ConsumerWidget {
           // Kripto önceden sunucu analizinde olmadığı için gizleniyordu —
           // artık `analyze-signals` ANALYZABLE'da. İki listenin eşitliğini
           // `sinyal_turleri_test` kilitler.
-          for (final type in AssetType.values) ...[
+          //
+          // Tek istisna mevduat (2026-09-30): piyasa serisi yok, eğrisi
+          // sözleşmenin tahakkukudur; sunucu da analiz etmez. BES fonu
+          // (TEFAS EMK) fon gibi analiz edilir ve burada görünür.
+          for (final type in AssetType.values)
+            if (type != AssetType.mevduat) ...[
             _CategorySection(
               type: type,
               selected: prefs[type] ??

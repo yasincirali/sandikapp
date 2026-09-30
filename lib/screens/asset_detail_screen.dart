@@ -58,6 +58,7 @@ import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
+import '../widgets/sozlesme_karti.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -178,7 +179,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
   /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `seviyeGorunurlugu`.
   bool get _sinyalYuzeyleri =>
-      seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller;
+      seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller &&
+      // Mevduatın piyasa serisi yok; eğrisi sözleşmenin tahakkukudur ve
+      // teknik sinyal anlamsızdır (sunucu da analiz etmez, ANALYZABLE).
+      widget.asset.type != AssetType.mevduat;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
   ///
@@ -1603,6 +1607,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                       _currentQuantity, (v, d) => fmtNum(v, digits: d)),
                   birimEtiketi: widget.asset.unitLabel,
                   birimBicim: _birimBicim,
+                  birimGizli: widget.asset.type == AssetType.mevduat,
                   donemEtiketi: donemEtiketi(
                       context.l10n, _periods[_selectedPeriodIdx].label),
                   // Seçili dönemin serisi gelmeden `null`: satır "—" yazar,
@@ -1613,6 +1618,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
+                if (isOwnAsset) _sozlesmeKarti(),
                 if (isOwnAsset && pState != null) _temettuKarti(pState),
                 _kapBaglantisi(),
                 if (_sinyalYuzeyleri) ...[

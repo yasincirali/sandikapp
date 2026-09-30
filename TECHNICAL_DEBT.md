@@ -5,7 +5,44 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+
+---
+
+## 🟡 AÇIK — Mevduat/BES v1'de ertelenenler (2026-09-30, 0088)
+
+**Ne:** Vadeli mevduat (M2 + vadesiz M3) ve BES (B3) sözleşme tablosu +
+lot defteri + fiyatlama türü üzerine kuruldu (`AssetType.fiyatlamaTuru`,
+`mevduat_hesabi.dart`, `bes_hesabi.dart`, `sozlesme_provider.dart`).
+Çalışmada önerilip bu turda YAPILMAYANLAR:
+
+1. **Vade bildirimi (push).** Vade dolunca kullanıcıya push gitmiyor;
+   bilgi yalnız varlık sayfasındaki kartta. Yerel zamanlı bildirim için
+   `timezone` paketi yok; sunucu yolu `pg_cron` + `requireCronSecret()` +
+   `mevduat_donemleri.vade_sonu` sorgusu. **Maliyet:** vadesi dolan mevduat
+   yenilenmezse değer düz kalır (uydurma yok) — kullanıcı fark etmeyebilir.
+   **Ne zaman:** ilk kullanıcı geri bildiriminde; migration + edge function.
+2. **Takasbank/EGM dökümü içe aktarma (B4).** BES geçmişi açılış bakiyesiyle
+   başlıyor (lotlar bugün tarihli); geçmiş katkılar ve pay adetleri yok.
+   **Ne zaman:** kullanıcı örnek CSV verdiğinde (`csv_import_service`).
+3. **Portföy listesinde sözleşme kartı.** BES fon başına ayrı pozisyon
+   (katkı ve devlet katkısı ayrı); sözleşme toplamı yalnız varlık
+   sayfasındaki kartta. Liste gruplaması `positionKey` dışında yeni bir
+   görünüm katmanı ister.
+4. **Ortak görünümünde sözleşme kartı.** Ortağın mevduatı birim değerle
+   doğru fiyatlanıyor (RLS okuma izni, `SozlesmeDeposu` tembel yükleme);
+   kart yalnız kendi varlığında çiziliyor.
+5. **Hak ediş %100 (10 yıl + 56 yaş).** Doğum tarihi saklanmıyor; kart
+   %60'ta durur.
+6. **Devlet katkısı yıllık sınırı** tabloyla (`yillikSinirTablosu`) — her
+   Ocak bir satır eklenmeli (YAPMAN_GEREKENLER'de hatırlatma var).
+7. **Stopaj tarihçesi** yalnız 2025-07-09 kararından; daha eski açılışta
+   öneri güncel oranı verir (kullanıcı düzeltebilir, oran dönemde saklanır).
+8. **Döviz mevduatı (M4)** — bilinçli olarak yok (`sozlesmeler.para_birimi
+   = 'TRY'` kısıtı).
+9. **Eski sürüm istemci** yeni türü `diger` okur (`AssetType.fromString`);
+   o sürümde lot düzenlenirse tür `diger`e yazılabilir. Yalnız birden çok
+   cihazda eski sürüm kullanan kişiyi etkiler.
 
 ---
 

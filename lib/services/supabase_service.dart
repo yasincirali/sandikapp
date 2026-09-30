@@ -8,6 +8,7 @@ import '../models/kullanici_adi.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
 import '../models/signal_preference.dart';
+import '../models/sozlesme.dart';
 import '../models/tefas_nav_gozlem.dart';
 import '../models/user_model.dart';
 import '../models/watchlist_item.dart';
@@ -465,6 +466,112 @@ class SupabaseService {
       call: () => _db.from('assets').select('id').eq('user_id', userId),
     );
     return rows.length;
+  }
+
+  /// Birden çok lotu TEK istekte yazar (BES açılışı: fon başına bir lot +
+  /// devlet katkısı lotu). Tek istek, yarım kalmış bir açılışı önler:
+  /// PostgREST çoklu INSERT'i tek ifadede koşar, biri reddedilirse hiçbiri
+  /// yazılmaz.
+  Future<void> insertAssets(List<Asset> assets) async {
+    if (assets.isEmpty) return;
+    final rows = [for (final a in assets) a.toSupabase()];
+    await _log.log<void>(
+      source: 'SupabaseService.insertAssets',
+      table: 'assets',
+      op: 'INSERT',
+      request: {'count': rows.length, 'user_id': rows.first['user_id']},
+      call: () => _db.from('assets').insert(rows),
+    );
+  }
+
+  // ── Sözleşmeler (mevduat / BES, 0088) ─────────────────────────────────────
+
+  /// Sözleşmeleri id ile okur — kendi ya da ortağın (RLS iki politikayla
+  /// izin verir). Fiyat servisi bilinmeyen `MEVDUAT:` sembolünde buradan
+  /// yükler.
+  Future<List<Sozlesme>> fetchSozlesmeler(List<String> ids) async {
+    if (ids.isEmpty) return const [];
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchSozlesmeler',
+      table: 'sozlesmeler',
+      op: 'SELECT',
+      request: {'ids': ids.length},
+      call: () => _db.from('sozlesmeler').select().inFilter('id', ids),
+    );
+    return rows.map(Sozlesme.fromSupabase).toList();
+  }
+
+  Future<List<Sozlesme>> fetchSozlesmelerByUser(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchSozlesmelerByUser',
+      table: 'sozlesmeler',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db.from('sozlesmeler').select().eq('user_id', userId),
+    );
+    return rows.map(Sozlesme.fromSupabase).toList();
+  }
+
+  Future<List<MevduatDonemi>> fetchMevduatDonemleri(
+      List<String> sozlesmeIds) async {
+    if (sozlesmeIds.isEmpty) return const [];
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchMevduatDonemleri',
+      table: 'mevduat_donemleri',
+      op: 'SELECT',
+      request: {'sozlesme_ids': sozlesmeIds.length},
+      call: () => _db
+          .from('mevduat_donemleri')
+          .select()
+          .inFilter('sozlesme_id', sozlesmeIds)
+          .order('baslangic'),
+    );
+    return rows.map(MevduatDonemi.fromSupabase).toList();
+  }
+
+  Future<void> insertSozlesme(Sozlesme s) async {
+    final body = s.toSupabase();
+    await _log.log<void>(
+      source: 'SupabaseService.insertSozlesme',
+      table: 'sozlesmeler',
+      op: 'INSERT',
+      request: {'id': s.id, 'tur': s.tur.name},
+      call: () => _db.from('sozlesmeler').insert(body),
+    );
+  }
+
+  Future<void> updateSozlesme(Sozlesme s) async {
+    final body = s.toSupabase()..remove('id')..remove('user_id');
+    await _log.log<void>(
+      source: 'SupabaseService.updateSozlesme',
+      table: 'sozlesmeler',
+      op: 'UPDATE',
+      request: {'id': s.id},
+      call: () => _db.from('sozlesmeler').update(body).eq('id', s.id),
+    );
+  }
+
+  /// Sözleşmeyi siler — yalnız lot yazımı başarısız olan yarım açılışı
+  /// geri almak için. Lotlar `on delete set null` ile korunur (0088).
+  Future<void> deleteSozlesme(String id) async {
+    await _log.log<void>(
+      source: 'SupabaseService.deleteSozlesme',
+      table: 'sozlesmeler',
+      op: 'DELETE',
+      request: {'id': id},
+      call: () => _db.from('sozlesmeler').delete().eq('id', id),
+    );
+  }
+
+  Future<void> insertMevduatDonemi(MevduatDonemi d, String userId) async {
+    final body = d.toSupabase(userId);
+    await _log.log<void>(
+      source: 'SupabaseService.insertMevduatDonemi',
+      table: 'mevduat_donemleri',
+      op: 'INSERT',
+      request: {'sozlesme_id': d.sozlesmeId},
+      call: () => _db.from('mevduat_donemleri').insert(body),
+    );
   }
 
   // ── Snapshots ─────────────────────────────────────────────────────────────

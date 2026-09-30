@@ -35,6 +35,7 @@ void main() {
 
   const tavan = <String, int>{
     'lib/models/asset.dart': 0,
+    'lib/models/sozlesme.dart': 0,
     'lib/models/position.dart': 0,
     'lib/models/price_alert.dart': 0,
     'lib/models/signal_alert.dart': 0,
@@ -44,6 +45,9 @@ void main() {
     'lib/models/user_model.dart': 0,
     'lib/models/watchlist_item.dart': 0,
     'lib/models/yatirimci_seviyesi.dart': 0,
+    'lib/screens/add_asset/bes_formu.dart': 0,
+    'lib/screens/add_asset/emeklilik_fonu_secici.dart': 0,
+    'lib/screens/add_asset/mevduat_formu.dart': 0,
     'lib/screens/add_watchlist_screen.dart': 0,
     'lib/screens/asset_detail/eylemler.dart': 0,
     'lib/screens/asset_detail/ozet.dart': 0,
@@ -64,6 +68,8 @@ void main() {
     'lib/screens/pozisyona_git.dart': 0,
     'lib/widgets/fiyat_grafigi.dart': 0,
     'lib/widgets/fon_karnesi_karti.dart': 0,
+    'lib/widgets/sozlesme_formu_ortak.dart': 0,
+    'lib/widgets/sozlesme_karti.dart': 0,
     'lib/widgets/alarm_kur_sheet.dart': 0,
     'lib/widgets/asset_sparkline.dart': 0,
     'lib/widgets/disclaimer_widget.dart': 0,

@@ -30,7 +30,9 @@ class IndicatorId {
 
   static const premium = <String>{adx, williamsR, cci};
 
-  static Set<String> recommendedFor(AssetType type) => switch (type) {
+  static Set<String> recommendedFor(AssetType type) =>
+      // BES fonu fon gibi analiz edilir (`fiyatlamaTuru`).
+      switch (type.fiyatlamaTuru) {
         AssetType.hisse => {rsi, macd, bollinger, stochastic, adx},
         AssetType.fon => {ema, rsi, macd},
         AssetType.altin => {rsi, bollinger, ema, cci},
@@ -145,8 +147,8 @@ class TechnicalAnalysisService {
   // ── 2. MACD ───────────────────────────────────────────────────────────────
 
   static TechnicalIndicator macd(List<double> prices, AssetType type) {
-    final fast = type == AssetType.fon ? 8 : 12;
-    final slow = type == AssetType.fon ? 21 : 26;
+    final fast = type.fiyatlamaTuru == AssetType.fon ? 8 : 12;
+    final slow = type.fiyatlamaTuru == AssetType.fon ? 21 : 26;
     const sig = 9;
     final label = 'MACD ($fast,$slow,$sig)';
 
@@ -235,7 +237,7 @@ class TechnicalAnalysisService {
     if (type == AssetType.hisse) {
       shortP = 20;
       longP = 50;
-    } else if (type == AssetType.fon) {
+    } else if (type.fiyatlamaTuru == AssetType.fon) {
       shortP = 10;
       longP = 30;
     } else if (type == AssetType.altin) {

@@ -28,7 +28,13 @@ class _PozisyonKarti extends StatelessWidget {
     required this.birimBicim,
     required this.donemEtiketi,
     required this.donem,
+    this.birimGizli = false,
   });
+
+  /// Miktar ve birim fiyat satırları gizlensin mi — mevduatta "250.000
+  /// birim × 1,03 ₺/birim" kullanıcıya bir şey söylemez; tutar satırları
+  /// (yatırdığın, bugünkü değer, kâr/zarar) aynı bilgiyi taşır.
+  final bool birimGizli;
 
   final BazPara baz;
   final _PnlOzeti pnl;
@@ -51,13 +57,16 @@ class _PozisyonKarti extends StatelessWidget {
           horizontal: SandikSpace.md, vertical: SandikSpace.xs),
       child: Column(
         children: [
-          _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
-          _PozisyonSatiri(
-              etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
-          _PozisyonSatiri(
-              etiket: l.posTodayPrice,
-              deger: pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
-          Divider(height: SandikSpace.sm, color: context.c.hairline),
+          if (!birimGizli) ...[
+            _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
+            _PozisyonSatiri(
+                etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
+            _PozisyonSatiri(
+                etiket: l.posTodayPrice,
+                deger:
+                    pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
+            Divider(height: SandikSpace.sm, color: context.c.hairline),
+          ],
           _PozisyonSatiri(
               etiket: l.posTotalCost, deger: tutar.format(pnl.totalCostTRY)),
           _PozisyonSatiri(

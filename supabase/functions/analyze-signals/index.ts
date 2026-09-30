@@ -389,14 +389,23 @@ export function shouldNotifyNow(
   return gecenSaat >= 1;
 }
 
-/// Sinyal üretilebilen türler ('diger' elle fiyatlanır, seri yoktur).
+/// Sinyal üretilebilen türler ('diger' elle fiyatlanır, seri yoktur;
+/// 'mevduat'ın piyasa serisi yoktur, değeri sözleşmeden gelir — 0088).
+/// 'bes' TEFAS emeklilik fonudur ve fon gibi analiz edilir (`analizTuru`).
 ///
 /// Kripto 2026-09-28'de eklendi (kullanıcı isteği: "kripto ve eklenecek tüm
 /// yeni kategoriler için sinyal ayarları olmalı"). Seri Binance günlük
 /// mumlarından, TL'ye çevrilmiş (`price_history.ts` → `fetchKripto`).
 /// İstemcideki `sinyal_turleri_test` bu kümeyi `AssetType` ile karşılaştırır:
 /// yeni tür eklenince burası da güncellenmezse test kırılır.
-export const ANALYZABLE = new Set(['hisse', 'fon', 'altin', 'doviz', 'emtia', 'kripto']);
+export const ANALYZABLE = new Set(['hisse', 'fon', 'bes', 'altin', 'doviz', 'emtia', 'kripto']);
+
+/// Göstergelerin hangi tür parametreleriyle hesaplanacağı: BES fonu fon
+/// parametreleriyle (MACD 8/21, MA 10/30). İstemci eşi
+/// `AssetType.fiyatlamaTuru`.
+export function analizTuru(tur: string): AssetType {
+  return (tur === 'bes' ? 'fon' : tur) as AssetType;
+}
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
@@ -666,7 +675,7 @@ Deno.serve(async (request) => {
       // Premium göstergeler sunucuda hesaplanmaz — premium durumu burada
       // güvenilir biçimde bilinmiyor. Kullanıcı premium ise uygulama içi
       // analiz zaten gösteriyor; push temel göstergelerle üretilir.
-      const inds = analyze(prices, asset.type as AssetType, indicators, false);
+      const inds = analyze(prices, analizTuru(asset.type), indicators, false);
       if (inds.length === 0) continue;
 
       evaluated++;

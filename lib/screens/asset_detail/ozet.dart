@@ -388,6 +388,11 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
   /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
   /// değil şirkete ait.
+  /// Mevduat / BES sözleşme kartı (2026-09-30): dönem, vade, yenileme;
+  /// BES'te birikim dökümü, hak ediş ve aylık katkı. Yalnız KENDİ
+  /// varlığında — eylemler sözleşmeye yazar, ortak yalnız okur (RLS).
+  Widget _sozlesmeKarti() => SozlesmeKarti(varlik: _canli.asset);
+
   Widget _kapBaglantisi() => KapBaglantisi(
       tur: widget.asset.type,
       ticker: widget.asset.ticker,

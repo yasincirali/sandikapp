@@ -4401,4 +4401,295 @@ class AppLocalizationsTr extends AppLocalizations {
   String filterRemove(String ad) {
     return '$ad filtresini kaldır';
   }
+
+  @override
+  String get assetTypeDeposit => 'Mevduat';
+
+  @override
+  String get assetTypePension => 'BES';
+
+  @override
+  String get tickerHintDeposit => 'Sözleşmeden hesaplanır';
+
+  @override
+  String get tickerHintPension => 'TEFAS emeklilik fonu kodu';
+
+  @override
+  String get depositBank => 'Banka';
+
+  @override
+  String get depositBankHint => 'Örn. Enpara, Garanti BBVA';
+
+  @override
+  String get depositPrincipal => 'Yatırdığın tutar';
+
+  @override
+  String get depositRate => 'Yıllık faiz (brüt, %)';
+
+  @override
+  String get depositKindTerm => 'Vadeli';
+
+  @override
+  String get depositKindDaily => 'Günlük faizli';
+
+  @override
+  String get depositTerm => 'Vade';
+
+  @override
+  String depositDays(int n) {
+    return '$n gün';
+  }
+
+  @override
+  String get depositCustomDays => 'Özel';
+
+  @override
+  String get depositCustomDaysHint => 'Gün sayısı';
+
+  @override
+  String get depositStart => 'Başlangıç';
+
+  @override
+  String get depositWithholding => 'Stopaj (%)';
+
+  @override
+  String get depositWithholdingHint =>
+      'Vadeye göre önerildi. Bankan farklı uyguluyorsa düzelt.';
+
+  @override
+  String get depositMaturity => 'Vade sonu';
+
+  @override
+  String get depositNetReturn => 'Net getiri';
+
+  @override
+  String get depositAtMaturity => 'Vade sonunda';
+
+  @override
+  String get depositDailyNet => 'Günlük net';
+
+  @override
+  String get depositErrorBank => 'Banka adını yaz.';
+
+  @override
+  String get depositErrorPrincipal => 'Tutarı yaz.';
+
+  @override
+  String get depositErrorRate => 'Faiz oranını yaz.';
+
+  @override
+  String get depositErrorDays => 'Vadeyi gün olarak yaz.';
+
+  @override
+  String get depositErrorWithholding => 'Stopaj 0 ile 100 arasında olmalı.';
+
+  @override
+  String get depositAccrualNote =>
+      'Değer her gün tahakkuk eden net faizle artar. Vadeyi erken bozarsan banka faizi ödemeyebilir.';
+
+  @override
+  String get depositCardTitle => 'Mevduat';
+
+  @override
+  String depositPeriodN(int n) {
+    return '$n. dönem';
+  }
+
+  @override
+  String depositDaysLeft(int n) {
+    return 'Vadeye $n gün';
+  }
+
+  @override
+  String get depositMatured => 'Vadesi doldu';
+
+  @override
+  String get depositMaturedBody =>
+      'Faiz eklendi. Yeni dönemi başlatmak için yeni faizi gir; girmezsen değer olduğu gibi kalır.';
+
+  @override
+  String get depositThisPeriod => 'Bu dönem net';
+
+  @override
+  String get depositTotalReturn => 'Toplam net getiri';
+
+  @override
+  String get depositRenew => 'Yenile';
+
+  @override
+  String get depositWithdraw => 'Çektim';
+
+  @override
+  String get depositRenewTitle => 'Yeni dönem';
+
+  @override
+  String get depositRenewSaved => 'Yeni dönem başladı';
+
+  @override
+  String get depositRateUpdate => 'Oranı güncelle';
+
+  @override
+  String get depositRateSaved => 'Oran güncellendi';
+
+  @override
+  String get depositWithdrawTitle => 'Parayı çektin mi?';
+
+  @override
+  String depositWithdrawBody(String amount) {
+    return 'Mevduat bugünkü değeriyle ($amount) satılmış olarak kaydedilir.';
+  }
+
+  @override
+  String get depositWithdrawConfirm => 'Çektim, kapat';
+
+  @override
+  String get depositWithdrawn => 'Mevduat kapatıldı';
+
+  @override
+  String get pensionCompany => 'Emeklilik şirketi';
+
+  @override
+  String get pensionCompanyHint => 'Örn. Anadolu Hayat';
+
+  @override
+  String get pensionEntryDate => 'Sisteme giriş';
+
+  @override
+  String get pensionEntryDateHint =>
+      'Devlet katkısının hak ediş oranı buna bağlı.';
+
+  @override
+  String get pensionBalance => 'Bugünkü birikimin';
+
+  @override
+  String get pensionBalanceHint =>
+      'Devlet katkısı hariç; şirketinin uygulamasında ya da BES Mobil\'de yazan tutar.';
+
+  @override
+  String get pensionPaid => 'Bugüne kadar ödediğin katkı';
+
+  @override
+  String get pensionFunds => 'Fon dağılımı';
+
+  @override
+  String get pensionAddFund => 'Fon ekle';
+
+  @override
+  String pensionShareTotal(String pct) {
+    return 'Toplam $pct';
+  }
+
+  @override
+  String get pensionShareError => 'Fon payları toplamı %100 olmalı.';
+
+  @override
+  String get pensionFundError => 'En az bir emeklilik fonu seç.';
+
+  @override
+  String get pensionGov => 'Devlet katkısı';
+
+  @override
+  String get pensionGovBalance => 'Devlet katkısı birikimi';
+
+  @override
+  String get pensionGovFund => 'Devlet katkısı fonu';
+
+  @override
+  String get pensionGovFundHint =>
+      'Bilmiyorsan boş bırak; devlet katkısı eklenmez.';
+
+  @override
+  String get pensionMonthly => 'Aylık katkı';
+
+  @override
+  String get pensionDay => 'Katkı günü';
+
+  @override
+  String get pensionErrorCompany => 'Şirket adını yaz.';
+
+  @override
+  String get pensionErrorBalance => 'Birikim tutarını yaz.';
+
+  @override
+  String get pensionErrorGovFund => 'Devlet katkısı birikimi için fonu da seç.';
+
+  @override
+  String pensionPriceMissing(String code) {
+    return '$code fonunun fiyatı alınamadı. Birazdan tekrar dene.';
+  }
+
+  @override
+  String get pensionPickFund => 'Emeklilik fonu seç';
+
+  @override
+  String get pensionPickGovFund => 'Devlet katkısı fonu seç';
+
+  @override
+  String get pensionSearchFund => 'Fon kodu ya da adı';
+
+  @override
+  String get pensionNoFundFound => 'Eşleşen emeklilik fonu yok';
+
+  @override
+  String get pensionCardTitle => 'BES';
+
+  @override
+  String pensionYear(int n) {
+    return '$n. yıl';
+  }
+
+  @override
+  String get pensionTotal => 'Toplam birikim';
+
+  @override
+  String get pensionOwn => 'Senin katkın';
+
+  @override
+  String get pensionGovShort => 'Devlet';
+
+  @override
+  String get pensionReturn => 'Getiri';
+
+  @override
+  String get pensionIfLeave => 'Bugün çıkarsan (vergi öncesi)';
+
+  @override
+  String get pensionVesting => 'Devlet katkısı hak ediş';
+
+  @override
+  String pensionVestingNext(String now, int years, String next) {
+    return '$now · $years yıl sonra $next';
+  }
+
+  @override
+  String get pensionAddContribution => 'Bu ayın katkısını ekle';
+
+  @override
+  String get pensionContributionTitle => 'Katkı ekle';
+
+  @override
+  String get pensionContributionAmount => 'Katkı tutarı';
+
+  @override
+  String pensionContributionGov(String amount) {
+    return 'Devlet katkısı: $amount';
+  }
+
+  @override
+  String get pensionContributionGovCapped =>
+      'Bu yılın devlet katkısı sınırı doldu.';
+
+  @override
+  String get pensionContributionSaved => 'Katkı eklendi';
+
+  @override
+  String get pensionContributionDue => 'Bu ayın katkısı henüz eklenmedi.';
+
+  @override
+  String get pensionNoGovFund =>
+      'Devlet katkısı fonu seçilmedi; devlet katkısı eklenmez.';
+
+  @override
+  String get contractManagedNotice =>
+      'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.';
 }

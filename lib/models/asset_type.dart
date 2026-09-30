@@ -19,6 +19,11 @@ enum AssetType {
   // çoğu TL paritesinden). Sıra `diger`'in ÖNÜNDE: `values` döngüleri
   // (filtre çipi, tür dökümü) "Diğer"i hep sonda gösteriyor.
   kripto('Kripto', Icons.currency_bitcoin_rounded, Color(0xFFD47FC4), 'TRY'),
+  // Sözleşmeli türler (2026-09-30, çalışma seçenek M2 + B3). Sıra `diger`in
+  // ÖNÜNDE (bkz. kripto notu). İkisi de TL: v1'de döviz mevduatı yok.
+  // Fiyatlama: [fiyatlamaTuru].
+  mevduat('Mevduat', Icons.account_balance_rounded, Sandik.mevduat, 'TRY'),
+  bes('BES', Icons.savings_rounded, Sandik.bes, 'TRY'),
   diger('Diğer', Icons.more_horiz_rounded, Color(0xFF8D7BE0), 'TRY');      // Soft violet — nötr, ayrık
 
   const AssetType(
@@ -67,6 +72,8 @@ enum AssetType {
         AssetType.altin => l.assetTypeGold,
         AssetType.emtia => l.assetTypeCommodity,
         AssetType.kripto => l.assetTypeCrypto,
+        AssetType.mevduat => l.assetTypeDeposit,
+        AssetType.bes => l.assetTypePension,
         AssetType.diger => l.assetTypeOther,
       };
 
@@ -78,8 +85,34 @@ enum AssetType {
         AssetType.altin => l.tickerHintGold,
         AssetType.emtia => l.tickerHintCommodity,
         AssetType.kripto => l.tickerHintCrypto,
+        AssetType.mevduat => l.tickerHintDeposit,
+        AssetType.bes => l.tickerHintPension,
         AssetType.diger => l.tickerHintOther,
       };
+
+  /// Fiyat ve seri motorları bu türü hangi tür GİBİ fiyatlar.
+  ///
+  /// ## Neden (2026-09-30, 0058 dersi)
+  /// Mevduat ilk sürümünde her motora "mevduat hariç" dalı eklemişti ve
+  /// silinme sebebi buydu. Mevduat ve BES yeni bir fiyatlama biçimi DEĞİL:
+  /// ikisi de **birim değerli** (NAV) varlıktır — miktar pay, fiyat pay
+  /// başına TL. Fonla aynı yoldan fiyatlanırlar; hangi kaynaktan
+  /// beslendiklerine sembol öneki karar verir (`TEFAS:` → TEFAS emeklilik
+  /// fonu, `MEVDUAT:` → sözleşmeden hesaplanan birim değer; bkz.
+  /// `FiyatKaynagi`).
+  ///
+  /// Kural: fiyat/seri/kotasyon yolundaki tür soruları [type] yerine bunu
+  /// sorar; görünüm (dağılım, filtre, etiket, renk) [type]'ı sorar.
+  AssetType get fiyatlamaTuru => switch (this) {
+        AssetType.mevduat || AssetType.bes => AssetType.fon,
+        _ => this,
+      };
+
+  /// Sözleşmeden yönetilen tür mü (faiz/vade ya da katkı planı)?
+  ///
+  /// Bu türler genel Varlık Ekle formundan (miktar × fiyat) girilmez; kendi
+  /// formları ve varlık sayfasındaki sözleşme kartı vardır.
+  bool get sozlesmeli => this == AssetType.mevduat || this == AssetType.bes;
 
   /// Varlık Ekle tür çiplerinin sırası (kullanıcı kararı 2026-09-25):
   /// Hisse, Döviz, Altın, Fon, Kripto, Emtia, Diğer.
@@ -93,6 +126,10 @@ enum AssetType {
     doviz,
     altin,
     fon,
+    // Mevduat ve BES fonun yanında (2026-09-30): "param nerede duruyor"
+    // sorusunun birikim ayağı; kripto/emtia/diğer daha seyrek seçilir.
+    mevduat,
+    bes,
     kripto,
     emtia,
     diger,
@@ -125,6 +162,27 @@ String? kriptoKodu(String ticker) {
 
 /// `BTC` → `KRIPTO:BTC`.
 String kriptoSembolu(String kod) => '$kriptoOneki${kod.trim().toUpperCase()}';
+
+/// Mevduat sembol öneki — `assets.ticker` = `MEVDUAT:<sözleşme id>`.
+///
+/// Mevduatın piyasa fiyatı yoktur: birim değeri sözleşmenin dönemlerinden
+/// hesaplanır (`mevduat_hesabi.dart`). Önek, `PriceService`'in kotasyon ve
+/// seri kapılarında bu sembolü Yahoo'ya göndermeden sözleşmeye yönlendirir;
+/// tıpkı `TEFAS:` ve `KRIPTO:` gibi. Sunucu eşi
+/// `leaderboard-snapshot` › `MEVDUAT_ONEKI`.
+const String mevduatOneki = 'MEVDUAT:';
+
+/// `MEVDUAT:<id>` → sözleşme id'si; mevduat sembolü değilse `null`.
+String? mevduatSozlesmeId(String ticker) {
+  final s = ticker.trim();
+  if (!s.toUpperCase().startsWith(mevduatOneki)) return null;
+  final id = s.substring(mevduatOneki.length).trim().toLowerCase();
+  return id.isEmpty ? null : id;
+}
+
+/// Sözleşme id'si → `MEVDUAT:<id>`.
+String mevduatSembolu(String sozlesmeId) =>
+    '$mevduatOneki${sozlesmeId.trim().toLowerCase()}';
 
 /// TEFAS fon sembol öneki — `assets.ticker` = `TEFAS:AFT`.
 ///
@@ -169,7 +227,9 @@ String kanonikTicker({
   required String ticker,
   required bool isManualPrice,
 }) {
-  if (type != AssetType.fon || isManualPrice) return ticker;
+  // Fon YOLUNDAN fiyatlanan her tür (BES dahil; `fiyatlamaTuru`). Mevduat
+  // sembolü `MEVDUAT:` önekli olduğu için aşağıdaki desen onu değiştirmez.
+  if (type.fiyatlamaTuru != AssetType.fon || isManualPrice) return ticker;
   final t = ticker.trim().toUpperCase();
   if (t.startsWith(tefasOneki) || !_tefasKodDeseni.hasMatch(t)) return ticker;
   return '$tefasOneki$t';

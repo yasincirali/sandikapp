@@ -29,6 +29,9 @@ import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
+import 'add_asset/bes_formu.dart';
+import 'add_asset/mevduat_formu.dart';
+import '../widgets/sozlesme_formu_ortak.dart';
 
 const _addAssetUuid = Uuid();
 
@@ -148,6 +151,36 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   static const _currencies = ['TRY', 'USD', 'EUR', 'GBP'];
   bool get _isEditing => widget.editingAsset != null;
+
+  // Sözleşmeli türler (mevduat, BES) kendi formlarıyla girilir; bkz.
+  // `add_asset/sozlesme_formu_ortak.dart`. Genel formun durumu onlara hiç
+  // dokunmaz — tür çipi yalnızca gövdeyi değiştirir.
+  final _mevduatFormu = GlobalKey<MevduatFormuState>();
+  final _besFormu = GlobalKey<BesFormuState>();
+
+  /// Bu ekranda sözleşme formu mu açık (yeni kayıt, sepet değil)?
+  bool get _sozlesmeFormuAcik =>
+      _type.sozlesmeli && !_isEditing && !widget.cartMode;
+
+  /// Kayıt bayrağı genel formunkiyle aynı (`addAssetFormProvider.saving`):
+  /// ekran durum alanı taşımaz (Faz 3.10 ratchet).
+  Future<void> _sozlesmeKaydet() async {
+    if (_saving) return;
+    final SozlesmeFormu? form = _type == AssetType.mevduat
+        ? _mevduatFormu.currentState as SozlesmeFormu?
+        : _besFormu.currentState;
+    if (form == null) return;
+    _n.setSaving(true);
+    final tamam = await form.kaydet();
+    if (!mounted) return;
+    if (tamam) {
+      // Bayrak açık kalır: kapanış animasyonunda buton yeniden basılmasın
+      // (genel `_save` ile aynı gerekçe).
+      Navigator.of(context).pop(true);
+      return;
+    }
+    _n.setSaving(false);
+  }
   bool get _isBist100 => _s.isBist100;
   bool get _isFon => _s.isFon;
   bool get _isDoviz => _s.isDoviz;
@@ -329,16 +362,44 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           child: Column(
             children: [
               Expanded(
-                child: ListView(
+                // `SingleChildScrollView` + `Column`, tembel `ListView` DEĞİL
+                // (2026-09-30). Tembel liste ekran dışına kayan form alanını
+                // ATAR; `FormField.didChangeDependencies`'in planladığı kare
+                // sonrası geri çağrı atılmış alana dokununca "RestorableStringN
+                // was used after being disposed" düşüyordu (tür seçici iki
+                // çiple bir satır uzayınca 844pt ekranda doğrulama → yazma
+                // akışında ölçüldü; `varlik_kimlik_dogrulama_test`). Form bir
+                // düzine blok: hepsini kurulu tutmak ucuz, alan durumu da
+                // kaydırmada kaybolmaz.
+                child: SingleChildScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 24),
+                  child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
                     _typeSelector(cs),
                     const SizedBox(height: 22),
 
+                    if (_type.sozlesmeli) ...[
+                      if (_sozlesmeFormuAcik)
+                        _type == AssetType.mevduat
+                            ? MevduatFormu(key: _mevduatFormu)
+                            : BesFormu(key: _besFormu)
+                      else
+                        // Düzenleme: sözleşmeli lot genel formdan (miktar ×
+                        // fiyat) değiştirilmez; birim değer ve pay adedi
+                        // sözleşmeden gelir.
+                        SandikCard(
+                          child: Text(
+                            context.l10n.contractManagedNotice,
+                            style: context.t.bodyMedium
+                                ?.copyWith(color: context.c.text58),
+                          ),
+                        ),
+                    ] else ...[
                     // ── Kimlik: Bağlama göre TEK giriş alanı ──────────────
                     _sectionLabel(_identityLabel()),
                     const SizedBox(height: 10),
@@ -375,10 +436,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
                     // ── Notlar (collapsible) ─────────────────────────────
                     _notesCollapsible(cs),
+                    ],
                   ],
+                  ),
                 ),
               ),
-              _stickyBottomBar(saveLabel),
+              if (!_type.sozlesmeli || _sozlesmeFormuAcik)
+                _stickyBottomBar(saveLabel),
             ],
           ),
         ),
@@ -1151,10 +1215,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 children: [
                   Icon(Icons.notes_rounded, size: 16, color: context.c.text58),
                   const SizedBox(width: 10),
-                  Text(context.l10n.addNote,
-                      style: context.t.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.c.text90)),
+                  // Esnek (2026-09-30): 320pt × 2.0 metin ölçeğinde 6px
+                  // taşıyordu. Tembel liste bu satırı ekran dışında hiç
+                  // kurmadığı için `text_scale_overflow_test` görmüyordu;
+                  // form tümüyle kurulunca ortaya çıktı.
+                  Flexible(
+                    child: Text(context.l10n.addNote,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: context.c.text90)),
+                  ),
                   const Spacer(),
                   if (_notes.text.isNotEmpty && !_notesExpanded)
                     Padding(
@@ -1219,7 +1291,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           width: double.infinity,
           height: 54,
           child: FilledButton(
-            onPressed: _saving ? null : _save,
+            onPressed: _saving
+                ? null
+                : (_sozlesmeFormuAcik ? _sozlesmeKaydet : _save),
             style: FilledButton.styleFrom(
               backgroundColor: context.c.amberFill,
               foregroundColor: context.c.onAmber,
@@ -1288,7 +1362,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // alanı yok: sunucunun tanımadığı sembol fiyatsız lot üretirdi).
     // Sıra enum'dan değil sayfaya özel listeden (kullanıcı kararı
     // 2026-09-25; gerekçe `AssetType.eklemeSirasi`).
-    const types = AssetType.eklemeSirasi;
+    // Mevduat ve BES yalnız YENİ kayıtta: sepet (toplu ekleme) miktar ×
+    // fiyat satırı taşır, düzenlemede tür değiştirmek lotu sözleşmesiz
+    // bırakırdı.
+    final types = [
+      for (final t in AssetType.eklemeSirasi)
+        if (!t.sozlesmeli || (!widget.cartMode && !_isEditing)) t,
+    ];
     // Sarmalı (`Wrap`), yatay kaydırmalı DEĞİL (2026-09-29 emülatör testi
     // #29): kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında kalıyordu ve
     // kenardaki silik ok ipucu fark edilmiyordu — formun İLK sorusunun

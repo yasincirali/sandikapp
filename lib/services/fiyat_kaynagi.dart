@@ -97,7 +97,9 @@ class FiyatKaynagi {
   static bool seriyeGirer(Asset a) {
     if (a.quantity == 0) return false;
     if (a.currentPrice > 0) return true;
-    switch (a.type) {
+    // Fiyatlama türüne göre: BES (`TEFAS:`) ve mevduat (`MEVDUAT:`) fon
+    // gibi birim değerli seriden beslenir (`AssetType.fiyatlamaTuru`).
+    switch (a.type.fiyatlamaTuru) {
       case AssetType.altin:
         // Altın serisi gram22k'dan TÜRETİLİR; canlı fiyatı olmasa da
         // çizilebilir (bkz. `altinGramSerisi`).

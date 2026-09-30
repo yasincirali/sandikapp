@@ -3135,5 +3135,162 @@
         "type": "String"
       }
     }
-  }
+  },
+  "assetTypeDeposit": "Mevduat",
+  "assetTypePension": "BES",
+  "tickerHintDeposit": "Sözleşmeden hesaplanır",
+  "tickerHintPension": "TEFAS emeklilik fonu kodu",
+  "depositBank": "Banka",
+  "depositBankHint": "Örn. Enpara, Garanti BBVA",
+  "depositPrincipal": "Yatırdığın tutar",
+  "depositRate": "Yıllık faiz (brüt, %)",
+  "depositKindTerm": "Vadeli",
+  "depositKindDaily": "Günlük faizli",
+  "depositTerm": "Vade",
+  "depositDays": "{n} gün",
+  "@depositDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "depositCustomDays": "Özel",
+  "depositCustomDaysHint": "Gün sayısı",
+  "depositStart": "Başlangıç",
+  "depositWithholding": "Stopaj (%)",
+  "depositWithholdingHint": "Vadeye göre önerildi. Bankan farklı uyguluyorsa düzelt.",
+  "depositMaturity": "Vade sonu",
+  "depositNetReturn": "Net getiri",
+  "depositAtMaturity": "Vade sonunda",
+  "depositDailyNet": "Günlük net",
+  "depositErrorBank": "Banka adını yaz.",
+  "depositErrorPrincipal": "Tutarı yaz.",
+  "depositErrorRate": "Faiz oranını yaz.",
+  "depositErrorDays": "Vadeyi gün olarak yaz.",
+  "depositErrorWithholding": "Stopaj 0 ile 100 arasında olmalı.",
+  "depositAccrualNote": "Değer her gün tahakkuk eden net faizle artar. Vadeyi erken bozarsan banka faizi ödemeyebilir.",
+  "depositCardTitle": "Mevduat",
+  "depositPeriodN": "{n}. dönem",
+  "@depositPeriodN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "depositDaysLeft": "Vadeye {n} gün",
+  "@depositDaysLeft": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "depositMatured": "Vadesi doldu",
+  "depositMaturedBody": "Faiz eklendi. Yeni dönemi başlatmak için yeni faizi gir; girmezsen değer olduğu gibi kalır.",
+  "depositThisPeriod": "Bu dönem net",
+  "depositTotalReturn": "Toplam net getiri",
+  "depositRenew": "Yenile",
+  "depositWithdraw": "Çektim",
+  "depositRenewTitle": "Yeni dönem",
+  "depositRenewSaved": "Yeni dönem başladı",
+  "depositRateUpdate": "Oranı güncelle",
+  "depositRateSaved": "Oran güncellendi",
+  "depositWithdrawTitle": "Parayı çektin mi?",
+  "depositWithdrawBody": "Mevduat bugünkü değeriyle ({amount}) satılmış olarak kaydedilir.",
+  "@depositWithdrawBody": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "depositWithdrawConfirm": "Çektim, kapat",
+  "depositWithdrawn": "Mevduat kapatıldı",
+  "pensionCompany": "Emeklilik şirketi",
+  "pensionCompanyHint": "Örn. Anadolu Hayat",
+  "pensionEntryDate": "Sisteme giriş",
+  "pensionEntryDateHint": "Devlet katkısının hak ediş oranı buna bağlı.",
+  "pensionBalance": "Bugünkü birikimin",
+  "pensionBalanceHint": "Devlet katkısı hariç; şirketinin uygulamasında ya da BES Mobil'de yazan tutar.",
+  "pensionPaid": "Bugüne kadar ödediğin katkı",
+  "pensionFunds": "Fon dağılımı",
+  "pensionAddFund": "Fon ekle",
+  "pensionShareTotal": "Toplam {pct}",
+  "@pensionShareTotal": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionShareError": "Fon payları toplamı %100 olmalı.",
+  "pensionFundError": "En az bir emeklilik fonu seç.",
+  "pensionGov": "Devlet katkısı",
+  "pensionGovBalance": "Devlet katkısı birikimi",
+  "pensionGovFund": "Devlet katkısı fonu",
+  "pensionGovFundHint": "Bilmiyorsan boş bırak; devlet katkısı eklenmez.",
+  "pensionMonthly": "Aylık katkı",
+  "pensionDay": "Katkı günü",
+  "pensionErrorCompany": "Şirket adını yaz.",
+  "pensionErrorBalance": "Birikim tutarını yaz.",
+  "pensionErrorGovFund": "Devlet katkısı birikimi için fonu da seç.",
+  "pensionPriceMissing": "{code} fonunun fiyatı alınamadı. Birazdan tekrar dene.",
+  "@pensionPriceMissing": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionPickFund": "Emeklilik fonu seç",
+  "pensionPickGovFund": "Devlet katkısı fonu seç",
+  "pensionSearchFund": "Fon kodu ya da adı",
+  "pensionNoFundFound": "Eşleşen emeklilik fonu yok",
+  "pensionCardTitle": "BES",
+  "pensionYear": "{n}. yıl",
+  "@pensionYear": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionTotal": "Toplam birikim",
+  "pensionOwn": "Senin katkın",
+  "pensionGovShort": "Devlet",
+  "pensionReturn": "Getiri",
+  "pensionIfLeave": "Bugün çıkarsan (vergi öncesi)",
+  "pensionVesting": "Devlet katkısı hak ediş",
+  "pensionVestingNext": "{now} · {years} yıl sonra {next}",
+  "@pensionVestingNext": {
+    "placeholders": {
+      "now": {
+        "type": "String"
+      },
+      "years": {
+        "type": "int"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionAddContribution": "Bu ayın katkısını ekle",
+  "pensionContributionTitle": "Katkı ekle",
+  "pensionContributionAmount": "Katkı tutarı",
+  "pensionContributionGov": "Devlet katkısı: {amount}",
+  "@pensionContributionGov": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionContributionGovCapped": "Bu yılın devlet katkısı sınırı doldu.",
+  "pensionContributionSaved": "Katkı eklendi",
+  "pensionContributionDue": "Bu ayın katkısı henüz eklenmedi.",
+  "pensionNoGovFund": "Devlet katkısı fonu seçilmedi; devlet katkısı eklenmez.",
+  "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan."
 }

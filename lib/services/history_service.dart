@@ -581,7 +581,7 @@ class HistoryService {
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
-          (a.type == AssetType.fon && a.ticker.isNotEmpty);
+          (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
       tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
     }
@@ -724,7 +724,7 @@ class HistoryService {
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
-              a.type == AssetType.fon ||
+              a.type.fiyatlamaTuru == AssetType.fon ||
               a.type == AssetType.doviz) {
             final map = tickerNormalizedDaily[a.ticker] ?? {};
             if (map.isNotEmpty) {
@@ -1253,7 +1253,7 @@ class HistoryService {
     final fonNavFutures = <String, Future<List<(int, double)>>>{};
     for (final a in assets) {
       if (!a.isBuy || a.quantity <= 0) continue;
-      if (a.type != AssetType.fon) continue;
+      if (a.type.fiyatlamaTuru != AssetType.fon) continue;
       // NAV yalnızca TEFAS kodlu fonlarda var; elle fiyatlanan fonun
       // yayımlanmış bir serisi yok.
       if (!a.ticker.startsWith('TEFAS:')) continue;
@@ -1678,7 +1678,7 @@ class HistoryService {
             unitTRY = unitLocal;
           }
         }
-      } else if (a.type == AssetType.fon && a.currentPrice > 0) {
+      } else if (a.type.fiyatlamaTuru == AssetType.fon && a.currentPrice > 0) {
         unitTRY = a.currentPrice;
       } else if (a.currentPrice > 0) {
         unitTRY = a.currentPrice;
@@ -1887,7 +1887,7 @@ class HistoryService {
               navGunu.year == dayStart.year &&
               navGunu.month == dayStart.month &&
               navGunu.day == dayStart.day;
-          if (v == null && a.type == AssetType.fon && a.currentPrice > 0) {
+          if (v == null && a.type.fiyatlamaTuru == AssetType.fon && a.currentPrice > 0) {
             v = gunIciFonBirimFiyati(
                   guncelNav: a.currentPrice,
                   // NAV bugüne ait değilse basamak YOK: `oncekiNav` null
@@ -2264,7 +2264,7 @@ class HistoryService {
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
-          (a.type == AssetType.fon && a.ticker.isNotEmpty);
+          (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
       tickerFutures.putIfAbsent(
           a.ticker, () => _fetchTickerAtTier(a.ticker, tier));
@@ -2405,7 +2405,7 @@ class HistoryService {
         } else if (a.type == AssetType.hisse ||
             a.type == AssetType.emtia ||
             a.type == AssetType.doviz ||
-            a.type == AssetType.fon) {
+            a.type.fiyatlamaTuru == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};
           final price = _closestOrNull(map, cursor);
           if (price != null) {
@@ -2732,6 +2732,9 @@ class HistoryService {
       // Kripto serisi sunucuda TL'ye çevrilmiş gelir (kripto-seri); burada
       // USD sayılsaydı bir kez daha kurla çarpılırdı.
       FiyatKaynagi.kriptoMu(sym) ||
+      // Mevduat birim değeri TL'dir (sözleşmeden); USD sayılsaydı kurla
+      // çarpılırdı.
+      sym.startsWith(mevduatOneki) ||
       sym.endsWith('TRY=X') ||
       sym.startsWith('ALTIN_');
 
