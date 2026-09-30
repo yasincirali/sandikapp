@@ -170,7 +170,12 @@ class RemoteConfigService {
     'ipo_calendar_enabled': true,
     // Temettü önerisinde stopaj oranı (0..1). -1 = bilinmiyor: öneri BRÜT
     // gösterir, net tutarı kullanıcı girer (uydurma oran yazılmaz).
-    'temettu_stopaj_orani': -1.0,
+    //
+    // 0.15 (karar 8.1, 2026-09-30): kâr payı stopajı 22.12.2024'ten beri
+    // %15 — 9286 sayılı Cumhurbaşkanı Kararı, Resmî Gazete 32760. Bu
+    // uydurma değil, kaynaklı mevzuat değeri; mevzuat değişirse Console'a
+    // yeni değer (yayın gerekmez) ve bu satır birlikte güncellenir.
+    'temettu_stopaj_orani': 0.15,
   };
 
   Future<void> init() async {

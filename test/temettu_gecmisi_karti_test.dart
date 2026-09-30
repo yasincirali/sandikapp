@@ -195,7 +195,7 @@ void main() {
       });
     }
 
-    testWidgets('"Kaydet" öneri diyaloğunu açar (boş net alan, hak tarihi)',
+    testWidgets('"Kaydet" öneri diyaloğunu açar (net ön dolu, hak tarihi)',
         (t) async {
       await _pump(
         t,
@@ -210,10 +210,11 @@ void main() {
       await t.pumpAndSettle();
       expect(find.byType(AlertDialog), findsOneWidget);
       final alan = t.widget<TextField>(find.byType(TextField));
-      // Remote Config testte varsayılan: stopaj -1 → bilinmiyor → alan BOŞ,
-      // brüt yalnız yardımcı metinde.
-      expect(alan.controller!.text, isEmpty);
-      expect(find.textContaining('Brüt ₺344,20'), findsOneWidget);
+      // Remote Config testte varsayılan: stopaj 0,15 (karar 8.1, mevzuat)
+      // → alan NET ön dolu, kesinti ve net satırda. "Bilinmiyor" yolu
+      // `diyalog ön dolumu` grubunda `stopajKaynagi: null` ile sınanır.
+      expect(alan.controller!.text, '292,57');
+      expect(find.textContaining('düşüldü: net ₺292,57'), findsOneWidget);
       expect(find.textContaining('Ödeme tarihi: ${_g(_yakin, '/')}'),
           findsOneWidget);
     });
@@ -273,11 +274,17 @@ void main() {
       expect(find.text('Geçerli bir tutar gir'), findsOneWidget);
     });
 
-    testWidgets('stopaj %15 → net 292,57 + "stopaj %15 varsayıldı"', (t) async {
+    testWidgets('stopaj %15 → net 292,57; kesinti ve net açıkça yazılır',
+        (t) async {
       await ac(t, o: oneri, stopaj: 0.15);
       final alan = t.widget<TextField>(find.byType(TextField));
       expect(alan.controller!.text, '292,57');
-      expect(find.textContaining('Stopaj %15 varsayıldı'), findsOneWidget);
+      // Karar 8.2: yalnız oran değil, düşülen tutar ve net de — Σ tutar:
+      // 344,20 − 51,63 = 292,57 (alandaki öneriyle aynı sayı).
+      expect(
+          find.text('Stopaj %15 (−₺51,63) düşüldü: net ₺292,57. '
+              'Farklıysa düzelt.'),
+          findsOneWidget);
       expect(find.textContaining('bilinmiyor'), findsNothing);
     });
 

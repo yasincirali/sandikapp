@@ -139,10 +139,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                       const SizedBox(width: SandikSpace.sm),
                       Expanded(
                         child: Text(
+                          '${row.satis ? '${context.l10n.cartSellTag} · ' : ''}'
                           '${row.ticker} · ${fmtNumFlex(row.quantity)} '
                           '${row.unitType == 'piece' ? context.l10n.unitPiece : row.unitType}'
                           ' · ${row.price > 0 ? '${fmtNumFlex(row.price)} ${row.currency}' : context.l10n.closePriceWillBeFetched}',
-                          style: context.t.bodySmall?.copyWith(color: c.text90),
+                          style: context.t.bodySmall?.copyWith(
+                              color: row.satis ? c.loss : c.text90),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

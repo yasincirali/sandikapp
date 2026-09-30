@@ -471,7 +471,7 @@
   },
   "dividendRecorded": "Kaydedildi",
   "dividendRecordAction": "Kaydet",
-  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.",
+  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.",
   "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
   "@dividendSuggestionLine": {
     "placeholders": {
@@ -497,10 +497,16 @@
       }
     }
   },
-  "dividendWithholdingAssumed": "Stopaj {rate} varsayıldı, düzeltebilirsin.",
+  "dividendWithholdingAssumed": "Stopaj {rate} (−{cut}) düşüldü: net {net}. Farklıysa düzelt.",
   "@dividendWithholdingAssumed": {
     "placeholders": {
       "rate": {
+        "type": "String"
+      },
+      "cut": {
+        "type": "String"
+      },
+      "net": {
         "type": "String"
       }
     }
@@ -723,7 +729,8 @@
   "showOnWeekend": "Hafta sonu da göster",
   "showOnWeekendSubtitle": "Hafta sonu BIST kapalıdır; banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir.",
   "showAmounts": "Tutarları göster",
-  "showAmountsSubtitle": "Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.",
+  "showAmountsSubtitle": "Canlı Etkinlik ve kilit ekranı widget'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.",
+  "lockWidgetHowTo": "Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.",
   "partnerActivityNotifications": "Ortak hareketi bildirimleri",
   "partnerActivityNotificationsSubtitle": "Ortağın portföyüne ekleme yaptığında günlük özette an",
   "quietHours": "Sessiz saatler",
@@ -1879,7 +1886,7 @@
     }
   },
   "csvImportTitle": "CSV ile içe aktar",
-  "csvImportBody": "Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil.",
+  "csvImportBody": "Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.",
   "pasteHere": "Buraya yapıştır",
   "preview": "Önizle",
   "csvRowsRead": "{n} satır okundu",
@@ -1931,6 +1938,26 @@
       }
     }
   },
+  "importSellExceedsHolding": "{name}: satış miktarı o tarihte elindekinden fazla; kaydedilmedi.",
+  "@importSellExceedsHolding": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importSellNoPrice": "{name}: satış fiyatı bulunamadı; fiyatı yazıp tekrar dene.",
+  "@importSellNoPrice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartSellTag": "Satış",
+  "kapLinkLabel": "KAP bildirimleri",
+  "kapLinkHint": "Şirketin KAP sayfası tarayıcıda açılır",
+  "kapLinkFailed": "KAP sayfası açılamadı. İnternet bağlantını kontrol et.",
   "clearCartConfirm": "Sepetteki tüm varlıklar silinecek. Emin misin?",
   "pasteCsv": "CSV yapıştır",
   "cartEmpty": "Sepet boş",

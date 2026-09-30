@@ -498,9 +498,12 @@ List<_Adim> _adimlariKur() {
       id: 'toplu',
       hedef: TourTarget.topluEkle,
       baslik: 'Toplu ekle',
-      govde: 'Birden çok varlığı sepete atıp tek onayda kaydet; CSV '
-          'yapıştırarak da içe aktarabilirsin. Portföyünü ilk kez kurarken '
-          'en hızlı yol bu.',
+      // 2026-09-30 (karar 5.6): yapıştırma artık kurum sütun adlarını ve
+      // satış satırlarını da okuyor; tur yüzeyin güncel hâlini anlatır.
+      govde: 'Birden çok varlığı sepete atıp tek onayda kaydet. Aracı kurum '
+          'ekstreni ya da Excel tablonu yapıştırarak da içe aktarabilirsin; '
+          'alışlar ve satışlar tarihleriyle birlikte gelir. Portföyünü ilk '
+          'kez kurarken en hızlı yol bu.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
       cikis: (_) => _varlikEkleKapat(),
@@ -668,8 +671,8 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       hedef: TourTarget.topluEkle,
       baslik: 'Hazırsın',
       govde: 'En hızlı yol: aracı kurum ekstreni kopyala, "Toplu ekle" › '
-          'yapıştır; her satır bir varlık olur. Tek tek girmek istersen tür '
-          'seçmen yeter, fiyat kendiliğinden gelir.',
+          'yapıştır; her alış ve satış kendi tarihiyle deftere girer. Tek '
+          'tek girmek istersen tür seçmen yeter, fiyat kendiliğinden gelir.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),

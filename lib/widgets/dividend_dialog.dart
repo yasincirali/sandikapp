@@ -21,7 +21,10 @@ import '../l10n/l10n.dart';
 ///
 /// Temettü **miktarı değiştirmez** — eline geçen parayı kaydeder ve getiriye
 /// eklenir. Kullanıcı stopaj sonrası NET tutarı girer; uygulama vergi hesabı
-/// yapmaz (yatırım/vergi tavsiyesi vermemek için bilinçli tercih).
+/// yapmaz (yatırım/vergi tavsiyesi vermemek için bilinçli tercih). Tek
+/// istisna öneriyle açılış: mevzuattaki kâr payı stopajı (Remote Config,
+/// varsayılan %15) brütten düşülür, düşülen tutar ve net AÇIKÇA yazılır ve
+/// alan düzenlenebilir kalır — bir öneri, kesinleşmiş hesap değil.
 ///
 /// ## Öneriyle açılış (temettü yakalama, 2026-09-29)
 /// [oneri] verilirse (push `type: 'temettu'`, çan kaydı ya da "Son 12 ay
@@ -265,10 +268,22 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
             // Tutarın ne olduğunu SÖYLE: net öneri mi (varsayılan oranla),
             // yoksa boş alan + brüt dayanak mı. Kullanıcı düzeltmeden
             // kaydederse bile neyi onayladığını bilir.
+            //
+            // Net öneride kesinti TUTARI ve net de yazılır (karar 8.2,
+            // 2026-09-30): yalnız oranı yazmak hesabı kullanıcıya bırakıyordu,
+            // "gizli kesinti" okunmasın. Sayılar alandaki öneriyle aynı
+            // kaynaktan (`oneriTutari`); kullanıcı alanı değiştirirse satır
+            // önerinin dayanağı olarak kalır.
             Text(
               _oneriNet
                   ? context.l10n.dividendWithholdingAssumed(
-                      fmtPct(widget.stopaj! * 100, digits: 0))
+                      fmtPct(widget.stopaj! * 100, digits: 0),
+                      fmtTRY(widget.oneri!.brut * widget.stopaj!, digits: 2),
+                      fmtTRY(
+                          TemettuGecmisi.oneriTutari(
+                                  widget.oneri!.brut, widget.stopaj)
+                              .tutar!,
+                          digits: 2))
                   : context.l10n
                       .dividendEnterNet(fmtTRY(widget.oneri!.brut, digits: 2)),
               style: context.t.bodySmall?.copyWith(color: context.c.amberText),

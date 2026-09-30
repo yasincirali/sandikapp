@@ -262,3 +262,280 @@ struct SandikHomeWidget: Widget {
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
+
+
+// MARK: - Kilit ekranı widget'ı (karar 4.1 / 4.3 / 4.4 / 4.5, 2026-09-30)
+//
+// Ana ekran widget'ından AYRI tür: ana ekranın görünümü ve arka planı hiç
+// değişmez. Veri aynı paylaşımlı depodan okunur; kilit ekranına özel dört
+// anahtarı `HomeWidgetService` yazar (`_kLockAmounts`, `_kLockPct`,
+// `_kPctNum`, `_kHidden`).
+//
+// Bu kod `SandikHomeWidget.swift` İÇİNDE, ayrı dosyada değil: uzantı hedefi
+// dosyaları pbxproj'da tek tek listeliyor ve proje Windows'ta
+// düzenleniyor — yeni dosya kaydı unutulursa widget sessizce hiç derlenmez.
+//
+// Kararlar:
+// - TEK kart (kullanıcı kararı 2026-09-30, ikinci tur: "kilit ekranında 2
+//   parçalı olmasın"). Yuvarlak widget kaldırıldı; renkli yuvarlak gösterge
+//   Dinamik Ada'da yaşıyor (`SandikYonHalkasi`). iOS kilit ekranında en
+//   geniş widget dikdörtgendir (satırın yarısı).
+// - "Canlı seans kartı" (üçüncü tur: "göz alıcı olmalı, Apple'ın yeni
+//   teknolojilerinden faydalanmalı"):
+//     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`), üstünde
+//       kartın alt yarısına YAYILMIŞ günün eğrisi — sayı grafiğin üstünde.
+//     * Seans açıkken canlı çubuk + kapanışa geri sayım
+//       (`ProgressView/Text(timerInterval:)`): uygulama açılmadan saniye
+//       saniye akar, güncelleme bütçesi harcamaz.
+//     * Zaman çizelgesi 18:00'de ikinci girdiyle kendiliğinden "kapalı"
+//       görünüme geçer; kapalıyken sonraki açılışın günü ve saati.
+//     * Tutar `privacySensitive`: telefon kilitliyken sistem örter, Face ID
+//       ile bakınca görünür — ayar açıkken bile (iki kat gizlilik).
+//     * Yüzde `numericText` geçişiyle değişir, `widgetAccentable` ile
+//       renklendirilmiş kilit ekranında vurgu rengini alır.
+// - "Bakiyeyi gizle" açıkken yüzde de, eğri de YOK — yalnız "••".
+// - Kilit ekranı tek renkli (vibrant) çizer: renk yerine `.primary` /
+//   `.secondary`; yön her zaman ▲/▼ ile.
+
+private enum KilitKeys {
+    static let lockAmounts = "sandik_lock_amounts"
+    static let lockPct = "sandik_lock_pct"
+    static let hidden = "sandik_hidden"
+}
+
+struct SandikKilitEntry: TimelineEntry {
+    let date: Date
+    let hasData: Bool
+    let isHidden: Bool
+    let showsAmount: Bool
+    /// `+%0,42` / `−%0,06` / `%0,00` ya da `—`.
+    let pctText: String
+    let changeText: String
+    let isPositive: Bool
+    let isFlat: Bool
+    let isMarketOpen: Bool
+    let sparkline: [Double]
+
+    /// Yön yalnız gerçek, görünür bir hareket varken (ana ekranla aynı kural).
+    var hasDirection: Bool { hasData && !isHidden && !isFlat }
+
+    /// Aynı veri, seans kapanmış olarak — zaman çizelgesinin 18:00 girdisi.
+    func kapali(at tarih: Date) -> SandikKilitEntry {
+        SandikKilitEntry(
+            date: tarih, hasData: hasData, isHidden: isHidden,
+            showsAmount: showsAmount, pctText: pctText, changeText: changeText,
+            isPositive: isPositive, isFlat: isFlat, isMarketOpen: false,
+            sparkline: sparkline)
+    }
+
+    static let placeholder = SandikKilitEntry(
+        date: Date(),
+        hasData: false,
+        isHidden: false,
+        showsAmount: false,
+        pctText: "—",
+        changeText: "",
+        isPositive: true,
+        isFlat: true,
+        isMarketOpen: false,
+        sparkline: []
+    )
+}
+
+struct SandikKilitProvider: TimelineProvider {
+
+    private func read() -> SandikKilitEntry {
+        guard let defaults = UserDefaults(suiteName: WidgetKeys.suite),
+              defaults.bool(forKey: WidgetKeys.hasData) else {
+            return .placeholder
+        }
+        let gizli = defaults.bool(forKey: KilitKeys.hidden)
+        // Gizliyken seri OKUNMAZ (Dart zaten siler; eski sürümden kalan
+        // bir seri ihtimaline karşı burada da).
+        let seri: [Double] = gizli ? [] :
+            (defaults.string(forKey: WidgetKeys.sparkSeries) ?? "")
+                .split(separator: ",")
+                .compactMap { Double($0) }
+        let yuzde = defaults.string(forKey: KilitKeys.lockPct) ?? ""
+        return SandikKilitEntry(
+            date: Date(),
+            hasData: true,
+            isHidden: gizli,
+            showsAmount: defaults.bool(forKey: KilitKeys.lockAmounts) && !gizli,
+            pctText: yuzde.isEmpty ? "—" : yuzde,
+            changeText: defaults.string(forKey: WidgetKeys.change) ?? "",
+            isPositive: defaults.bool(forKey: WidgetKeys.isPositive),
+            isFlat: defaults.bool(forKey: WidgetKeys.isFlat),
+            isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
+            sparkline: seri
+        )
+    }
+
+    func placeholder(in context: Context) -> SandikKilitEntry { .placeholder }
+
+    func getSnapshot(in context: Context, completion: @escaping (SandikKilitEntry) -> Void) {
+        completion(context.isPreview ? .placeholder : read())
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SandikKilitEntry>) -> Void) {
+        // Veriyi uygulama yazar ve yeniler (`.never`). Tek istisna seansın
+        // bitişi: açıkken 18:00'e "kapalı" ikinci girdi eklenir — kart
+        // uygulama açılmasa da kapanışta kendiliğinden döner, geri sayım
+        // 0:00'da donup kalmaz.
+        let simdi = read()
+        var girdiler = [simdi]
+        if simdi.isMarketOpen, let bitis = BistSeans.aralik()?.upperBound,
+           bitis > Date() {
+            girdiler.append(simdi.kapali(at: bitis))
+        }
+        completion(Timeline(entries: girdiler, policy: .never))
+    }
+}
+
+struct SandikKilitView: View {
+    let entry: SandikKilitEntry
+
+    private var ok: String? {
+        entry.hasDirection ? directionArrow(entry.isPositive) : nil
+    }
+
+    private var tutarGorunur: Bool {
+        entry.showsAmount && !entry.isHidden && !entry.changeText.isEmpty
+            && entry.changeText != "—"
+    }
+
+    /// Geçiş animasyonu için yüzdenin sayı karşılığı ("+%0,42" → 0.42).
+    private var yuzdeSayi: Double {
+        let rakam = entry.pctText
+            .filter { $0.isNumber || $0 == "," }
+            .replacingOccurrences(of: ",", with: ".")
+        let deger = Double(rakam) ?? 0
+        return entry.pctText.contains("−") || entry.pctText.contains("-") ? -deger : deger
+    }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            AccessoryWidgetBackground()
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            // Günün eğrisi kartın alt yarısına yayılır — sayı üstünde durur.
+            if entry.hasData, !entry.isHidden, entry.sparkline.count >= 2 {
+                SandikSparkline(
+                    points: entry.sparkline,
+                    color: .primary,
+                    showsFill: true
+                )
+                .opacity(0.5)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+
+            VStack(alignment: .leading, spacing: 0) {
+                baslik
+                sayi
+                Spacer(minLength: 0)
+                seansSatiri
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var baslik: some View {
+        HStack(spacing: 4) {
+            SandikLogoMark(width: 11)
+            Text("sandık")
+                .font(.sandikLabel(11, weight: .bold))
+            Spacer(minLength: 4)
+            if tutarGorunur {
+                Text(entry.changeText)
+                    .font(.sandikNumber(11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    // Kilitliyken sistem örter; Face ID ile bakınca açılır.
+                    .privacySensitive()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sayi: some View {
+        if !entry.hasData {
+            Text("Uygulamayı aç")
+                .font(.sandikLabel(12, weight: .medium))
+                .foregroundStyle(.secondary)
+        } else if entry.isHidden {
+            Text("••")
+                .font(.sandikNumber(24, weight: .bold))
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                if let ok = ok {
+                    Text(ok)
+                        .font(.sandikLabel(12, weight: .black))
+                }
+                Text(entry.pctText)
+                    .font(.sandikNumber(24, weight: .bold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .contentTransition(.numericText(value: yuzdeSayi))
+            }
+            .widgetAccentable()
+        }
+    }
+
+    @ViewBuilder
+    private var seansSatiri: some View {
+        if entry.hasData, !entry.isHidden {
+            if entry.isMarketOpen, let seans = BistSeans.aralik(),
+               seans.upperBound > entry.date {
+                HStack(spacing: 5) {
+                    ProgressView(timerInterval: seans, countsDown: false) {
+                        EmptyView()
+                    } currentValueLabel: {
+                        EmptyView()
+                    }
+                    .progressViewStyle(.linear)
+                    .widgetAccentable()
+                    // Kapanışa kalan süre — saniye saniye, uygulama kapalıyken de.
+                    Text(timerInterval: entry.date...seans.upperBound, countsDown: true)
+                        .font(.sandikNumber(10, weight: .semibold))
+                        .monospacedDigit()
+                        .multilineTextAlignment(.trailing)
+                        .frame(width: 46, alignment: .trailing)
+                }
+            } else if let acilis = BistSeans.sonrakiAcilis(entry.date) {
+                HStack(spacing: 3) {
+                    Text("Seans kapalı · açılış")
+                        .font(.sandikLabel(10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(acilis, format: .dateTime.weekday(.abbreviated).hour().minute())
+                        .font(.sandikNumber(10, weight: .semibold))
+                }
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            }
+        }
+    }
+}
+
+struct SandikKilitWidget: Widget {
+    /// `HomeWidgetService._iOSKilitWidgetName` ile aynı olmalı.
+    let kind = "SandikKilitWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: SandikKilitProvider()) { entry in
+            SandikKilitView(entry: entry)
+                // Ana ekran widget'ıyla aynı hedef: Performans, günlük grafik.
+                .widgetURL(widgetClickURL)
+                // iOS 17'de zorunlu; kilit ekranında zemin sistemindir.
+                .containerBackground(for: .widget) { Color.clear }
+        }
+        .configurationDisplayName("sandık")
+        .description("Günün değişimi kilit ekranında. Tutar yalnız izin verirsen görünür.")
+        .supportedFamilies([.accessoryRectangular])
+    }
+}

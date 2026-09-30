@@ -27,6 +27,7 @@ import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/supabase_service.dart';
+import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
 
@@ -1524,6 +1525,9 @@ class _LiveActivitySection extends ConsumerWidget {
             // anahtar hiç işe yaramıyormuş gibi görünüyordu.
             final svc = LiveActivityService.instance;
             svc.showAmountsOnLockScreen = v;
+            // Kilit ekranı widget'ı aynı tercihi okur (karar 4.4) — aynı
+            // gerekçeyle hemen yazılır.
+            HomeWidgetService.instance.lockScreenAmounts = v;
 
             final snapshot = ref.read(portfolioProvider).valueOrNull;
             if (snapshot != null) {
@@ -1531,8 +1535,25 @@ class _LiveActivitySection extends ConsumerWidget {
                 snapshot,
                 hideBalance: ref.read(balanceHiddenProvider),
               ), reason: 'settings_screen.svc.sync');
+              CrashReporter.arkaPlan(
+                  HomeWidgetService.instance.updateWithChart(
+                    snapshot,
+                    hideBalance: ref.read(balanceHiddenProvider),
+                  ),
+                  reason: 'settings_screen.HomeWidgetService.updateWithChart');
             }
           },
+        ),
+        // Kilit ekranı widget'ı nasıl eklenir (karar 4.6) — tutar ayarının
+        // hemen altında: kullanıcı "bu ayar neyi yönetir"i okurken yüzeyi
+        // nereden ekleyeceğini de görür.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              SandikSpace.md, SandikSpace.xs, SandikSpace.md, SandikSpace.sm),
+          child: Text(
+            context.l10n.lockWidgetHowTo,
+            style: context.t.bodySmall?.copyWith(color: context.c.text58),
+          ),
         ),
 
         // ---- Durum satırı ----

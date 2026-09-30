@@ -12,6 +12,10 @@ struct SandikWidgetBundle: WidgetBundle {
         // `kind = "SandikWidget"` bekliyor.
         SandikHomeWidget()
 
+        // Kilit ekranı widget'ı (satır + yuvarlak, karar 4.1/4.3) —
+        // `HomeWidgetService._iOSKilitWidgetName` = "SandikKilitWidget".
+        SandikKilitWidget()
+
         // Kullanılan ActivityKit API'leri (`ActivityContent`, `staleDate`)
         // iOS 16.2+ ister; hedef minimumu 17.0. Koşul pratikte hep doğrudur
         // ama bırakılır ki hedef ileride düşürülürse derleme kırılsın,

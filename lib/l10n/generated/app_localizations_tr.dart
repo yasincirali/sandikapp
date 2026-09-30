@@ -842,7 +842,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dividendSourceNote =>
-      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.';
+      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {
@@ -855,8 +855,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String dividendWithholdingAssumed(String rate) {
-    return 'Stopaj $rate varsayıldı, düzeltebilirsin.';
+  String dividendWithholdingAssumed(String rate, String cut, String net) {
+    return 'Stopaj $rate (−$cut) düşüldü: net $net. Farklıysa düzelt.';
   }
 
   @override
@@ -1305,7 +1305,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.';
+      'Canlı Etkinlik ve kilit ekranı widget\'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.';
+
+  @override
+  String get lockWidgetHowTo =>
+      'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.';
 
   @override
   String get partnerActivityNotifications => 'Ortak hareketi bildirimleri';
@@ -2837,7 +2841,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get csvImportBody =>
-      'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil.';
+      'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.';
 
   @override
   String get pasteHere => 'Buraya yapıştır';
@@ -2878,6 +2882,29 @@ class AppLocalizationsTr extends AppLocalizations {
   String bulkAddPartialResult(int saved, int failed) {
     return '$saved varlık eklendi, $failed varlık eklenemedi. Eklenemeyenler sepette duruyor; tekrar denersen yalnızca onlar eklenir.';
   }
+
+  @override
+  String importSellExceedsHolding(String name) {
+    return '$name: satış miktarı o tarihte elindekinden fazla; kaydedilmedi.';
+  }
+
+  @override
+  String importSellNoPrice(String name) {
+    return '$name: satış fiyatı bulunamadı; fiyatı yazıp tekrar dene.';
+  }
+
+  @override
+  String get cartSellTag => 'Satış';
+
+  @override
+  String get kapLinkLabel => 'KAP bildirimleri';
+
+  @override
+  String get kapLinkHint => 'Şirketin KAP sayfası tarayıcıda açılır';
+
+  @override
+  String get kapLinkFailed =>
+      'KAP sayfası açılamadı. İnternet bağlantını kontrol et.';
 
   @override
   String get clearCartConfirm =>

@@ -160,6 +160,15 @@ class WidgetInstallSheet extends StatelessWidget {
               ),
             ),
           ],
+          // iPhone'da kilit ekranı widget'ı da var (karar 4.6): aynı
+          // sayfada tek satır — ayrı bir öneri ikinci bir kesinti olurdu.
+          if (Platform.isIOS) ...[
+            Text(
+              context.l10n.lockWidgetHowTo,
+              style: context.t.bodyMedium?.copyWith(color: c.text58),
+            ),
+            const SizedBox(height: 12),
+          ],
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,

@@ -854,7 +854,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dividendSourceNote =>
-      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.';
+      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; \"Save\" prefills the net after 15% withholding tax, which you can edit.';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {
@@ -867,8 +867,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String dividendWithholdingAssumed(String rate) {
-    return 'Assumed $rate withholding tax; you can edit it.';
+  String dividendWithholdingAssumed(String rate, String cut, String net) {
+    return '$rate withholding tax (−$cut) deducted: net $net. Edit if different.';
   }
 
   @override
@@ -1318,7 +1318,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+      'Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+
+  @override
+  String get lockWidgetHowTo =>
+      'You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.';
 
   @override
   String get partnerActivityNotifications => 'Partner activity notifications';
@@ -2862,7 +2866,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csvImportBody =>
-      'Copy and paste your broker statement or Excel table. Include a header row; column order doesn\'t matter.';
+      'Copy and paste your broker statement or Excel table. Include a header row; column order doesn\'t matter. A \"Side\" (Buy/Sell) column or a negative quantity is read as a sale.';
 
   @override
   String get pasteHere => 'Paste here';
@@ -2903,6 +2907,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String bulkAddPartialResult(int saved, int failed) {
     return '$saved added, $failed could not be added. The failed ones are still in the cart; trying again adds only those.';
   }
+
+  @override
+  String importSellExceedsHolding(String name) {
+    return '$name: sell quantity is more than you held on that date; not saved.';
+  }
+
+  @override
+  String importSellNoPrice(String name) {
+    return '$name: sell price not found; enter the price and try again.';
+  }
+
+  @override
+  String get cartSellTag => 'Sell';
+
+  @override
+  String get kapLinkLabel => 'KAP disclosures';
+
+  @override
+  String get kapLinkHint => 'Opens the company\'s KAP page in your browser';
+
+  @override
+  String get kapLinkFailed =>
+      'Couldn\'t open the KAP page. Check your connection.';
 
   @override
   String get clearCartConfirm =>

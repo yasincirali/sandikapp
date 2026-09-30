@@ -1894,6 +1894,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         unitType: _unitType,
         isManualPrice: manual,
         addedDate: _addedDate,
+        // Düzenleme satırı alım/satım yönünü KORUR: form yalnız alım
+        // bilir; ekstreden gelen satış satırı düzenlenince alıma dönüp
+        // pozisyonu şişirirdi (karar 5.4).
+        satis: widget.cartInitial?.satis ?? false,
       );
       final notifier = ref.read(bulkCartProvider.notifier);
       if (widget.cartInitial != null) {

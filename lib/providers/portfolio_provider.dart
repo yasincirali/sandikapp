@@ -470,10 +470,14 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
   }
 
+  /// [addedDate]: satış günü; `null` → şimdi (elle satış). Ekstre içe
+  /// aktarımı (karar 5.4) geçmiş satışları kendi günüyle yazar — yoksa
+  /// dönem hesapları ve seri, satışı bugüne kaydırırdı.
   Future<void> addSellTransaction({
     required Asset asset,
     required double quantity,
     double? sellPrice,
+    DateTime? addedDate,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -500,6 +504,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       kind: AssetKind.sell,
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       sellPrice: sellPrice,
+      addedDate: addedDate,
     );
 
     await SupabaseService.instance.insertAsset(transaction);

@@ -14,6 +14,7 @@ class BulkCartItem {
     this.subCategory,
     this.unitType = 'piece',
     this.isManualPrice = false,
+    this.satis = false,
   });
 
   final String id;
@@ -31,6 +32,13 @@ class BulkCartItem {
   /// tarihin kapanış fiyatı fetch edilir.
   final DateTime addedDate;
 
+  /// Satış satırı mı (karar 5.4, 2026-09-30 — aracı kurum işlem ekstresi
+  /// alım ve satımı birlikte verir). Satış kalemi toplu kayıtta alımlardan
+  /// SONRA, tarih sırasıyla `addSellTransaction` ile yazılır; miktar o
+  /// tarihte elde olandan fazlaysa yazılmaz (bkz. `IceAktarmaSatislari`).
+  /// [price] satışta SATIŞ fiyatıdır.
+  final bool satis;
+
   BulkCartItem copyWith({
     AssetType? type,
     String? name,
@@ -42,6 +50,7 @@ class BulkCartItem {
     String? unitType,
     bool? isManualPrice,
     DateTime? addedDate,
+    bool? satis,
   }) =>
       BulkCartItem(
         id: id,
@@ -55,6 +64,7 @@ class BulkCartItem {
         unitType: unitType ?? this.unitType,
         isManualPrice: isManualPrice ?? this.isManualPrice,
         addedDate: addedDate ?? this.addedDate,
+        satis: satis ?? this.satis,
       );
 }
 

@@ -919,6 +919,29 @@ class NotificationService {
     showDividendDialog(context, asset: gorunum?.asset ?? lot, oneri: oneri);
   }
 
+  /// Performans › Özet, 1Y — reel getiri kartı (`sandik://enflasyon`,
+  /// App Store "Enflasyon günü" etkinliği; karar 6.1). Bugün kartındaki
+  /// "Enflasyona göre" satırıyla AYNI hedef (`_ozeteGit`). Soğuk açılışta
+  /// navigator hazır olana kadar diğer açıcılar gibi bekler; kilit ekranı
+  /// açıkken kilit kapısına ertelenir.
+  void openReelGetiri({int deneme = 0}) {
+    if (kilitKapisi.ertele(() => openReelGetiri())) return;
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(
+          _yenidenDenemeAraligi, () => openReelGetiri(deneme: deneme + 1));
+      return;
+    }
+    navigator.push(adaptiveRoute<void>(
+      builder: (_) => PortfolioPerformanceScreen(
+        showBackButton: true,
+        initialOzet: true,
+        initialPeriodIdx: SummaryPeriod.birYil.index,
+      ),
+    ));
+  }
+
   /// Dış bağlantının hedefi bulunamadığında hata ekranı. Navigator hazır
   /// değilse çağrılmaz — [openAssetPerformance] bunu zaten garanti eder.
   void showAssetNotFound() {

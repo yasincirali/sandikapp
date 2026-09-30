@@ -468,7 +468,7 @@
   },
   "dividendRecorded": "Recorded",
   "dividendRecordAction": "Record",
-  "dividendSourceNote": "Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.",
+  "dividendSourceNote": "Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; \"Save\" prefills the net after 15% withholding tax, which you can edit.",
   "dividendSuggestionLine": "{ticker} · ex-date {date}",
   "@dividendSuggestionLine": {
     "placeholders": {
@@ -494,10 +494,16 @@
       }
     }
   },
-  "dividendWithholdingAssumed": "Assumed {rate} withholding tax; you can edit it.",
+  "dividendWithholdingAssumed": "{rate} withholding tax (−{cut}) deducted: net {net}. Edit if different.",
   "@dividendWithholdingAssumed": {
     "placeholders": {
       "rate": {
+        "type": "String"
+      },
+      "cut": {
+        "type": "String"
+      },
+      "net": {
         "type": "String"
       }
     }
@@ -720,7 +726,8 @@
   "showOnWeekend": "Show on weekends too",
   "showOnWeekendSubtitle": "BIST is closed on weekends; the banner shows the last close labelled \"Market closed\".",
   "showAmounts": "Show amounts",
-  "showAmountsSubtitle": "When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.",
+  "showAmountsSubtitle": "Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.",
+  "lockWidgetHowTo": "You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.",
   "partnerActivityNotifications": "Partner activity notifications",
   "partnerActivityNotificationsSubtitle": "Mention it in the daily brief when your partner adds to their portfolio",
   "quietHours": "Quiet hours",
@@ -1874,7 +1881,7 @@
     }
   },
   "csvImportTitle": "Import from CSV",
-  "csvImportBody": "Copy and paste your broker statement or Excel table. Include a header row; column order doesn't matter.",
+  "csvImportBody": "Copy and paste your broker statement or Excel table. Include a header row; column order doesn't matter. A \"Side\" (Buy/Sell) column or a negative quantity is read as a sale.",
   "pasteHere": "Paste here",
   "preview": "Preview",
   "csvRowsRead": "{n} rows read",
@@ -1926,6 +1933,26 @@
       }
     }
   },
+  "importSellExceedsHolding": "{name}: sell quantity is more than you held on that date; not saved.",
+  "@importSellExceedsHolding": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importSellNoPrice": "{name}: sell price not found; enter the price and try again.",
+  "@importSellNoPrice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartSellTag": "Sell",
+  "kapLinkLabel": "KAP disclosures",
+  "kapLinkHint": "Opens the company's KAP page in your browser",
+  "kapLinkFailed": "Couldn't open the KAP page. Check your connection.",
   "clearCartConfirm": "All assets in the cart will be removed. Are you sure?",
   "pasteCsv": "Paste CSV",
   "cartEmpty": "The cart is empty",

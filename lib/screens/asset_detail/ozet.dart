@@ -385,6 +385,14 @@ extension _DetayOzet on _AssetDetailScreenState {
       ticker: widget.asset.ticker,
       dis: const EdgeInsets.only(top: SandikSpace.lg));
 
+  /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
+  /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
+  /// değil şirkete ait.
+  Widget _kapBaglantisi() => KapBaglantisi(
+      tur: widget.asset.type,
+      ticker: widget.asset.ticker,
+      dis: const EdgeInsets.only(top: SandikSpace.lg));
+
   // ── Temettü ──────────────────────────────────────────────────────────────
 
   /// "Son 12 ay temettü" kartı (plan §F5, 2026-09-29).

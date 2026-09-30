@@ -40,6 +40,22 @@ class DeepLinkRouter {
   /// URI ile adreslenebilir yapar (widget, paylaşılan bağlantı, App Links).
   static const assetHost = 'asset';
 
+  /// App Store In-App Event "Enflasyon günü" (karar 6.1, 2026-09-30):
+  /// Performans › Özet, 1Y — reel getiri kartı orada. Etkinliğe dokunan
+  /// kullanıcı "enflasyonu yendim mi" sorusunun cevabına iner.
+  static const enflasyonHost = 'enflasyon';
+
+  /// App Store In-App Event "Yıl sonu özetin hazır" (karar 6.1): Profil
+  /// sekmesi. Yıl sonu PUSH'uyla AYNI varış (`NotificationService`,
+  /// `yilSonuOccasion`): özet afişi orada ve kendi takvim kapısıyla
+  /// (`RecapService.isYearlyWindow`) açılır — pencere dışında dokunan
+  /// kullanıcıya boş/yarım bir özet gösterilmez.
+  static const yilOzetiHost = 'yil-ozeti';
+
+  /// `sandik://enflasyon` mu?
+  static bool reelGetiriIster(Uri? uri) =>
+      uri != null && uri.scheme == 'sandik' && uri.host == enflasyonHost;
+
   /// Dokunuş, performans ekranının GÜNLÜK (gün içi) görünümünü mü istiyor?
   ///
   /// Widget ve Canlı Etkinlik'in ikisi de `DailySummary` gösteriyor: aynı
@@ -73,6 +89,7 @@ class DeepLinkRouter {
 
     return switch (uri.host) {
       widgetHost || liveActivityHost => MainNavigationScreen.performansSekmesi,
+      yilOzetiHost => MainNavigationScreen.profilSekmesi,
       _ => null,
     };
   }

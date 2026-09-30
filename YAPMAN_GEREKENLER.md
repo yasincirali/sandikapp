@@ -8,15 +8,34 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-30 Karar tahtası 4–8 — kod yerelde (PUSH EDİLMEDİ)
+
+Emülatörde kontrol et → onay → push. Ayrıntı: sohbet raporu.
+
+- [ ] **Ekstre örnekleri (5.3/5.4/5.5 engelleyici):** MKK e-Yatırımcı portföy
+      dökümü + aylık ekstre (Excel+PDF), Midas aylık ekstre PDF'i. Tutarlar
+      değişebilir, başlıklar kalsın. `tmp/ekstre_ornekleri/` altına.
+      Plan: `docs/KURUM_EKSTRESI_YAPILABILIRLIK_2026_09.md`.
+- [ ] **KAP lisans yazısı (7.1):** `docs/KAP_VERI_LISANSI_2026_09.md` —
+      `[köşeli]` alanları doldur, Borsa İstanbul Veri Dağıtım + MKK KAP
+      Destek + bir veri dağıtıcısına (Matriks/Foreks) gönder.
+- [ ] **In-App Event'ler (6.5):** push sonrası Actions → "App Store
+      etkinlikleri (taslak)" önce kuru, sonra `uygula`. Claude kurar;
+      taslakları ASC'de gör, incelemeye sen gönder. Yayın başlangıcı
+      Kasım etkinliği için 20 Ekim. ASC'de Türkçe yerelleştirme yoksa `tr`
+      metni atlanır (ASO maddesi).
+- [ ] **iOS kilit ekranı widget'ı (4.x):** Swift bu makinede derlenmedi —
+      ilk TestFlight derlemesi kırmızıysa log'u Claude'a ver. Telefonda:
+      kilit ekranına basılı tut → Özelleştir → widget alanı → sandık.
+
 ## ⏳ 2026-09-30 Emülatör testi düzeltmeleri — elle yapılacaklar (PUSH EDİLMEDİ)
 
 Rapor: `docs/EMULATOR_TEST_RAPORU_2026_09_30.md`.
 
-- [ ] **`daily-brief` dağıtımı (iki sunucu):** brifing push'u artık tek hisseyi
-  anlatınca o hissenin ekranını açıyor ve metin "Portföyündeki N hisse daha
-  hareketli" oldu. İstemci eski veriyle geriye uyumlu (ticker yoksa Özet'i açar);
-  yeni davranış için Actions → Supabase deploy, hedef `ikisi`, functions
-  `daily-brief`. Sonda `sema_esitlik.py`.
+- [x] **`daily-brief` + `analyze-signals` dağıtımı (iki sunucu) — 2026-09-30
+  yerel CLI ile yapıldı.** Brifing push'u tek hisseyi anlatınca o hissenin
+  ekranını açıyor; `analyze-signals` ortak `technical_analysis.ts` değiştiği
+  için (teyitsiz kesişim açıklaması, #31) yeniden dağıtıldı.
 - [ ] **KARAR — Zirvedeki Portföyler rızası (KVKK):** ekran "herkes kendiliğinden
   ve anonim olarak havuzdadır; ayrıca katılman gerekmez" diyor, ekranda çıkış yolu
   yok. Anonim ve toplulaştırılmış veri olsa da açık rıza / itiraz hakkı gerekip
@@ -27,11 +46,13 @@ Rapor: `docs/EMULATOR_TEST_RAPORU_2026_09_30.md`.
   TL kurla girilmiş (ör. "$2.200 → ₺4,15M"). Tek seferlik migration ile
   `currency='TRY'`, `purchase_fx_rate=1` (iki sunucu). Yazılmadı.
 
-## ⏳ 2026-09-29 Büyüme özellikleri — bayrak açma sırası (PUSH EDİLMEDİ)
+## ✅ 2026-09-29 Büyüme özellikleri — bayraklar AÇIK doğar (2026-09-30)
 
-Plan: `docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md`. Kod yerelde, debug
-derlemede bayraklar AÇIK (emülatörde görünür), mağaza sürümünde KAPALI.
-Önce emülatörde bak; onay verince push. Sonra Firebase Console → Remote Config:
+Plan: `docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md`. 2026-09-30 kullanıcı
+kararı ("hepsini çalışacak şekilde ayarla"): beş bayrağın varsayılanı `true`
+(`ec3484f`), sürüm notu 1.1.6'ya eklendi. Console'da bir şey yapman GEREKMEZ.
+Bir özelliği kapatmak için Console'a o anahtarı `false` olarak ekle (yayın
+gerekmez) ve `surum_notlari.dart`'tan notunu çıkar. Tablo kayıt için:
 
 | Sıra | Bayrak | Açınca sürüm notuna eklenecek (öneri) |
 |---|---|---|
@@ -43,9 +64,19 @@ derlemede bayraklar AÇIK (emülatörde görünür), mağaza sürümünde KAPALI
 
 - [ ] Halka arz listesini güncel tut: `docs/README.md` "Halka arz verisi" prosedürü.
 
-## ⏳ 2026-09-29 Temettü yakalama + yıl sonu anı — 0086, 0087 (YAZILDI, DAĞITILMADI)
+## ✅ 2026-09-29 Temettü yakalama + yıl sonu anı — 0086, 0087 (DAĞITILDI 2026-09-30)
 
-Kod merge'de; sunucu tarafı elle açılır. Sıra **iki projede de** (Frankfurt → Tokyo):
+**Durum 2026-09-30 (Claude, yerel CLI, kullanıcı onayıyla):** 1–4 ve 5 TAMAM.
+Secret iki projede Vault + function (özetler eşit); 0086/0087 Frankfurt →
+Tokyo; `temettu-yakala`, `calendar-nudge`, `daily-brief`, `analyze-signals`
+ikisine; `sema_esitlik.py` ŞEMA EŞİT. Cron: Tokyo açık, Frankfurt kapalı —
+Frankfurt'ta 0077'den kalan açık `snapshots-retention` yüzünden 0086/0087
+yeni işleri AÇIK kurmuştu; üçü de `alter_job(active := false)` ile kapatıldı
+(Frankfurt'ta açık iş: 0). Kuru koşu (DB içinden, secret dışarı çıkmadan
+`net.http_post` + `{"dry_run":true}`): HTTP 200, "Pencerede temettu yok".
+Bayrak açık doğuyor (7. adım gereksiz). Kalan: 6 (stopaj oranı, isteğe bağlı).
+
+Özgün sıra (kayıt) — **iki projede de** (Frankfurt → Tokyo):
 
 1. **Vault secret:** `temettu_yakala_cron_secret` — rastgele 32+ karakter.
    Yoksa `temettu-yakala` cron'u her akşam "Vault secret bulunamadi" ile düşer

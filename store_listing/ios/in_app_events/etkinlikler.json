@@ -1,0 +1,74 @@
+{
+  "_not": "App Store In-App Event taslakları (karar 6.2 / 6.3, 2026-09-30). tool/asc_in_app_events.py okur; etkinlikleri App Store Connect'te TASLAK olarak kurar, incelemeye GÖNDERMEZ. Saatler UTC (TR = UTC+3). Sınırlar: ad 30, kısa açıklama 50, uzun açıklama 120 karakter. Ocak/Şubat enflasyon günleri TÜİK 2027 takvimi yayımlanınca eklenir (ayın 3'ü hafta sonuna düşerse açıklama günü kayabilir).",
+  "etkinlikler": [
+    {
+      "referans": "enflasyon-gunu-2026-11",
+      "rozet": "SPECIAL_EVENT",
+      "amac": "KEEP_ACTIVE_USERS_INFORMED",
+      "oncelik": "NORMAL",
+      "derin_baglanti": "sandik://enflasyon",
+      "yayin_baslangic": "2026-10-20T07:00:00Z",
+      "etkinlik_baslangic": "2026-11-03T07:00:00Z",
+      "etkinlik_bitis": "2026-11-05T20:59:00Z",
+      "gorsel": "enflasyon_gunu",
+      "metin": {
+        "tr": {
+          "ad": "Enflasyon günü",
+          "kisa": "Portföyün bu ay enflasyonu yendi mi?",
+          "uzun": "TÜİK bugün aylık enflasyonu açıklıyor. sandık, portföyünün reel getirisini tek ekranda gösterir."
+        },
+        "en-US": {
+          "ad": "Inflation Day",
+          "kisa": "Did your portfolio beat inflation?",
+          "uzun": "Turkey's monthly inflation figure is out today. sandık shows your portfolio's real return on one screen."
+        }
+      }
+    },
+    {
+      "referans": "enflasyon-gunu-2026-12",
+      "rozet": "SPECIAL_EVENT",
+      "amac": "KEEP_ACTIVE_USERS_INFORMED",
+      "oncelik": "NORMAL",
+      "derin_baglanti": "sandik://enflasyon",
+      "yayin_baslangic": "2026-11-19T07:00:00Z",
+      "etkinlik_baslangic": "2026-12-03T07:00:00Z",
+      "etkinlik_bitis": "2026-12-05T20:59:00Z",
+      "gorsel": "enflasyon_gunu",
+      "metin": {
+        "tr": {
+          "ad": "Enflasyon günü",
+          "kisa": "Portföyün bu ay enflasyonu yendi mi?",
+          "uzun": "TÜİK bugün aylık enflasyonu açıklıyor. sandık, portföyünün reel getirisini tek ekranda gösterir."
+        },
+        "en-US": {
+          "ad": "Inflation Day",
+          "kisa": "Did your portfolio beat inflation?",
+          "uzun": "Turkey's monthly inflation figure is out today. sandık shows your portfolio's real return on one screen."
+        }
+      }
+    },
+    {
+      "referans": "yil-sonu-ozeti-2026",
+      "rozet": "SPECIAL_EVENT",
+      "amac": "APPROPRIATE_FOR_ALL_USERS",
+      "oncelik": "HIGH",
+      "derin_baglanti": "sandik://yil-ozeti",
+      "yayin_baslangic": "2026-12-12T07:00:00Z",
+      "etkinlik_baslangic": "2026-12-26T17:00:00Z",
+      "etkinlik_bitis": "2027-01-10T20:59:00Z",
+      "gorsel": "yil_sonu_ozeti",
+      "metin": {
+        "tr": {
+          "ad": "Yıl sonu özetin hazır",
+          "kisa": "Portföyün 2026'yı nasıl geçirdi?",
+          "uzun": "Yatırımcı karakterin, yılın getirisi, enflasyona göre durumun ve en çok kazandıran varlığın. Paylaşılabilir kartlarla."
+        },
+        "en-US": {
+          "ad": "Your 2026 in review",
+          "kisa": "How did your portfolio do this year?",
+          "uzun": "Your investor type, the year's return, how you did against inflation and your top asset, on shareable cards."
+        }
+      }
+    }
+  ]
+}
