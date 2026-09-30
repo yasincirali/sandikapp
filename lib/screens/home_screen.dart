@@ -71,6 +71,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Açık Ana sekmesine yeniden dokununca başa dön (bkz. [SekmeBasaDon]).
   late final VoidCallback _basaDonBirak;
 
+  /// Piyasa şeridi ekranda mı. Şerit sürekli kayan bir bant (kendi
+  /// `Ticker`'ı); kullanıcı aşağı kaydırıp onu ekrandan çıkarınca bile her
+  /// karede kare üretiyor, uygulama hiç boşa düşmüyordu (animasyon
+  /// denetimi 2026-10-01). Ekrandan çıkınca `TickerMode` ile durur, geri
+  /// gelince kaldığı yerden akar; nabız turu da gizliyken atlanır.
+  final _seritAnahtari = GlobalKey();
+  final _seritGorunur = ValueNotifier<bool>(true);
+
+  void _seritGorunurlugunuGuncelle() {
+    final kutu = _seritAnahtari.currentContext?.findRenderObject();
+    if (kutu is! RenderBox || !kutu.attached || !kutu.hasSize) return;
+    final alt = kutu.localToGlobal(Offset(0, kutu.size.height)).dy;
+    _seritGorunur.value = alt > 0;
+  }
+
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
   void _aramayiAc() {
     // Demo (F1): takibe alma bir yazma; arama sayfası oraya çıkıyor.
@@ -102,12 +117,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _basaDonBirak = SekmeBasaDon.dinle(
         0, () => SekmeBasaDon.basaKaydir(context, _scrollCtrl));
+    _scrollCtrl.addListener(_seritGorunurlugunuGuncelle);
   }
 
   @override
   void dispose() {
     _basaDonBirak();
+    _scrollCtrl.removeListener(_seritGorunurlugunuGuncelle);
     _scrollCtrl.dispose();
+    _seritGorunur.dispose();
     super.dispose();
   }
 
@@ -729,7 +747,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             key: const ValueKey('piyasa-seridi'),
             child: TourAnchor(
               target: TourTarget.piyasaSeridi,
-              child: PiyasaSeridi(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _seritGorunur,
+                builder: (_, gorunur, serit) =>
+                    TickerMode(enabled: gorunur, child: serit!),
+                child: PiyasaSeridi(
+                key: _seritAnahtari,
                 // Şerit kartı 44pt kutuda ortalı 36pt (bkz.
                 // `piyasa_seridi.dart`); alt 10 + kutu payı 4 = hero karta
                 // 14pt (seçenek C).
@@ -743,6 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // payı 4 = 8pt.
                 padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm2),
                 onAra: _aramayiAc,
+              ),
               ),
             ),
           ),

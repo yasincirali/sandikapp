@@ -1329,11 +1329,17 @@ class _CanliSatirState extends State<_CanliSatir>
                                       duration: SandikMotion.stateOf(context),
                                       switchInCurve: SandikMotion.spring,
                                       switchOutCurve: SandikMotion.exit,
+                                      // %90'dan büyür, HİÇLİKTEN değil: sıra
+                                      // rozeti sıfırdan patlayıp taşıyordu
+                                      // (animasyon denetimi 2026-10-01).
                                       transitionBuilder: (child, a) =>
                                           FadeTransition(
                                         opacity: a,
                                         child: ScaleTransition(
-                                            scale: a, child: child),
+                                            scale: Tween<double>(
+                                                    begin: 0.9, end: 1)
+                                                .animate(a),
+                                            child: child),
                                       ),
                                       child: _degisim == null
                                           ? const SizedBox.shrink(

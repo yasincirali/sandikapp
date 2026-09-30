@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
@@ -866,8 +867,18 @@ const double _higHedef = 44;
 /// Uzun süreli hareketler için ölçek — hareket dili sabitlerinin katları,
 /// böylece "hareketi azalt" koruması (`SandikMotion.of`) aynen çalışır.
 abstract final class _Sahne {
-  /// Kartın belirişi: 480ms.
-  static Duration get belir => SandikMotion.surface * 2;
+  /// Kartın belirişi: 240 ms ([SandikMotion.surface]).
+  ///
+  /// Eskiden 480 ms'ydi ve her adımda saydamlık SIFIRDAN başlıyordu: hızlı
+  /// "Devam"da kart her dokunuşta tamamen sönüp yeniden beliriyordu —
+  /// göz kırpması gibi (animasyon denetimi 2026-10-01). Şimdi yarı süre ve
+  /// adım değişiminde %30'dan başlar ([_TurKatmaniState._adimaGir]).
+  static Duration get belir => SandikMotion.surface;
+
+  /// Oyuğun hedefe yaklaşma zaman sabiti (sn). Adım değişince oyuk yeni
+  /// hedefe KAYAR (tek karede atlamaz); ekran kayarken hedefi ~70 ms
+  /// gecikmeyle izler — göz fark etmez, titreme de süzülür.
+  static const double oyukTau = 0.07;
 
   /// Nabız halkası bir turu: 1.440ms.
   static Duration get nabiz => SandikMotion.surface * 6;
@@ -909,8 +920,16 @@ class _TurKatmaniState extends State<_TurKatmani>
       AnimationController(vsync: this, duration: _Sahne.nabiz);
   late final AnimationController _belir = AnimationController(vsync: this);
 
+  /// Bütün katmanın (karartma + bulanıklık + kart) giriş/çıkış solması.
+  /// Eskiden tam ekran karartma tek karede açılıp kapanıyordu; yalnız kart
+  /// soluyordu (animasyon denetimi 2026-10-01).
+  late final AnimationController _perde = AnimationController(vsync: this);
+
   int _i = 0;
+
+  /// ÇİZİLEN oyuk — hedefe [_Sahne.oyukTau] ile yaklaşır (bkz. [_yaklas]).
   Rect? _rect;
+  Duration _oncekiTik = Duration.zero;
 
   /// Tamamlanan görevlerin adım kimlikleri.
   final Set<String> _tamamlanan = {};
@@ -952,6 +971,8 @@ class _TurKatmaniState extends State<_TurKatmani>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _belir.duration = SandikMotion.of(context, _Sahne.belir);
+    _perde.duration = SandikMotion.surfaceOf(context);
+    if (!_bitti && !_perde.isAnimating && _perde.value == 0) _perde.forward();
     // Sürekli hareket yalnızca "hareketi azalt" kapalıyken; açıkken halka
     // sabit durur (kaldırılmaz — hedef yine işaretli kalır).
     if (MediaQuery.disableAnimationsOf(context)) {
@@ -967,6 +988,7 @@ class _TurKatmaniState extends State<_TurKatmani>
     _ticker.dispose();
     _nabiz.dispose();
     _belir.dispose();
+    _perde.dispose();
     super.dispose();
   }
 
@@ -976,10 +998,13 @@ class _TurKatmaniState extends State<_TurKatmani>
     _i = i;
     _girisAni = _simdi;
     _hedefsiz = false;
-    _rect = null;
+    // `_rect` SIFIRLANMAZ: oyuk eski hedefte kalır ve yeni hedef ilk
+    // ölçüldüğü karede oraya kayar (bkz. [_yaklas]). Yeni adımın hedefi
+    // yoksa ya da henüz kurulmadıysa `_tik` oyuğu kendisi kaldırır.
     if (!ilk) {
       AnalyticsService.instance.logOnboardingStep(i);
-      _belir.forward(from: 0);
+      // Sıfırdan değil: içerik değişti, kart söner gibi olmasın.
+      _belir.forward(from: math.min(_belir.value, 0.3));
     }
     // Ön koşul (`giris`) BİR KARE SONRA: "Devam"ın açtığı rota daha
     // kurulmadan hedef "yok" görünür ve ön koşul aynı ekranı ikinci kez
@@ -1009,6 +1034,8 @@ class _TurKatmaniState extends State<_TurKatmani>
 
   void _tik(Duration gecen) {
     if (_bitti) return;
+    final dt = gecen - _oncekiTik;
+    _oncekiTik = gecen;
     _simdi = gecen;
     final adim = _adim;
 
@@ -1035,10 +1062,22 @@ class _TurKatmaniState extends State<_TurKatmani>
     }
     if (!_ayni(yeni, _rect) || _hedefsiz) {
       setState(() {
-        _rect = yeni;
+        _rect = _yaklas(_rect, yeni, dt);
         _hedefsiz = false;
       });
     }
+  }
+
+  /// Çizilen oyuğu hedefe bir kare yaklaştırır (üstel süzme, kare
+  /// süresinden bağımsız). İlk görünüşte, hedef kalkınca ve hareketi
+  /// azalt açıkken doğrudan hedef.
+  Rect? _yaklas(Rect? simdiki, Rect? hedef, Duration dt) {
+    if (simdiki == null || hedef == null) return hedef;
+    if (MediaQuery.disableAnimationsOf(context)) return hedef;
+    final sn = dt.inMicroseconds / Duration.microsecondsPerSecond;
+    final k = 1 - math.exp(-sn / _Sahne.oyukTau);
+    final r = Rect.lerp(simdiki, hedef, k.clamp(0.0, 1.0))!;
+    return _ayni(r, hedef) ? hedef : r;
   }
 
   static bool _ayni(Rect? a, Rect? b) {
@@ -1077,11 +1116,22 @@ class _TurKatmaniState extends State<_TurKatmani>
     _kapat(tamamlandi: false);
   }
 
-  void _kapat({required bool tamamlandi}) {
+  Future<void> _kapat({required bool tamamlandi}) async {
     if (_bitti) return;
     _bitti = true;
     _ticker.stop();
-    if (tamamlandi) AnalyticsService.instance.logOnboardingCompleted();
+    if (tamamlandi) unawaited(AnalyticsService.instance.logOnboardingCompleted());
+    // Perde solarak kalkar, SONRA katman sökülür. Çıkış hızla başlar
+    // (`exit`); hareketi azalt açıkken süre sıfır.
+    if (_perde.duration != Duration.zero && _perde.value > 0) {
+      try {
+        await _perde
+            .animateBack(0, curve: SandikMotion.exit)
+            .orCancel;
+      } on TickerCanceled {
+        // Katman zaten sökülüyor.
+      }
+    }
     widget.onBitti(tamamlandi);
   }
 
@@ -1097,7 +1147,11 @@ class _TurKatmaniState extends State<_TurKatmani>
     final oyuk = rect?.inflate(SandikSpace.xs2);
     final mq = MediaQuery.of(context);
 
-    return Stack(
+    return FadeTransition(
+      // Bütün katman (karartma + bulanıklık + kart) birlikte solar — bkz.
+      // [_perde].
+      opacity: _perde,
+      child: Stack(
       fit: StackFit.expand,
       children: [
         // Karartma + blur; oyuk dışında dokunuşu YUTAR, oyukta geçirir
@@ -1141,6 +1195,7 @@ class _TurKatmaniState extends State<_TurKatmani>
         if (adim.hedef == null || oyuk != null || _hedefsiz)
           _kart(context, mq, oyuk),
       ],
+    ),
     );
   }
 

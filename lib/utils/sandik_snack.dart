@@ -64,7 +64,12 @@ void sandikSnack(
             ));
 
   final messenger = ScaffoldMessenger.of(context);
-  messenger.hideCurrentSnackBar();
+  // `clearSnackBars`: öncekini ÇIKIŞ ANİMASYONU BEKLEMEDEN kaldırır.
+  // `hideCurrentSnackBar` 250 ms'lik çıkışı oynatıp yeniyi ondan sonra
+  // getiriyordu; art arda eylemde (takipten birkaç satır çıkarmak) her
+  // mesaj ~500 ms geç geliyor, "Geri al" bir önceki satıra ait kalıyordu
+  // (animasyon denetimi 2026-10-01).
+  messenger.clearSnackBars();
   messenger.showSnackBar(
     SnackBar(
       content: Text(
