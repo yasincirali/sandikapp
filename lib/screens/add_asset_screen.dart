@@ -606,7 +606,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           label: secili == null
               ? context.l10n.pickGoldTap
               : context.l10n.goldSelectedSemantics(secili.label),
-          child: GestureDetector(
+          child: SandikBasma(
             onTap: _showGoldPicker,
             child: _selectorContainer(
               cs: cs,
@@ -678,7 +678,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       button: true,
       selected: selected,
       label: context.l10n.goldSemantics(g.label),
-      child: GestureDetector(
+      child: SandikBasma(
         onTap: () => _selectGold(g),
         child: AnimatedContainer(
           duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
@@ -1389,7 +1389,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               button: true,
               selected: selected,
               label: context.l10n.assetTypeSemantics(t.labelOf(context.l10n)),
-              child: GestureDetector(
+              child: SandikBasma(
               onTap: () async {
                 _yaz(_n.selectType(t));
                 _schedulePricePreview();
@@ -1460,7 +1460,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               button: true,
               selected: selected,
               label: opt.label,
-              child: GestureDetector(
+              child: SandikBasma(
               onTap: () {
                 _yaz(_n.selectDoviz(opt));
                 _schedulePricePreview();
@@ -1537,7 +1537,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               button: true,
               selected: selected,
               label: context.l10n.quantitySemantics(v),
-              child: GestureDetector(
+              child: SandikBasma(
               onTap: () => _quantity.text = v,
               child: AnimatedContainer(
                 duration:
@@ -1603,7 +1603,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       label: selectedName == null
           ? context.l10n.pickStock
           : 'Seçili hisse: $selectedName. Değiştirmek için çift dokun.',
-      child: GestureDetector(
+      child: SandikBasma(
         onTap: _showBist100Picker,
         child: _selectorContainer(
           cs: cs,
@@ -1645,7 +1645,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       label: _selectedFund == null
           ? context.l10n.pickFund
           : 'Seçili fon: ${_selectedFund!.name}. Değiştirmek için çift dokun.',
-      child: GestureDetector(
+      child: SandikBasma(
         onTap: _showTefasPicker,
         child: _selectorContainer(
           cs: cs,
@@ -1693,7 +1693,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       label: kod == null
           ? context.l10n.pickCryptoTap
           : context.l10n.cryptoSelectedSemantics(ad ?? kod),
-      child: GestureDetector(
+      child: SandikBasma(
         onTap: _showKriptoPicker,
         child: _selectorContainer(
           cs: cs,
@@ -2944,7 +2944,7 @@ class _PickerShellState extends State<_PickerShell> {
                     Semantics(
                       button: true,
                       label: context.l10n.clearSearch,
-                      child: GestureDetector(
+                      child: SandikBasma(
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
                           widget.searchCtrl.clear();
