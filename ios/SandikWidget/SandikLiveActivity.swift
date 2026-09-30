@@ -508,11 +508,21 @@ struct SandikYonHalkasi: View {
 
 // MARK: - Kilit ekranı görünümü
 
-/// Kilit ekranı banner'ı — iki sütunlu sakin düzen.
+/// Kilit ekranı banner'ı — "büyük kart" (kullanıcı kararı 2026-10-01).
 ///
-/// Sol sütun "ne kadarım var", sağ sütun "bugün ne oldu" sorusunu yanıtlar;
-/// aralarında hairline dikey ayraç. Bu ayrım bilinçli: kullanıcı gözünü
-/// kaydırmadan iki rakamı da okuyabilmeli.
+/// ## Neden (kullanıcı: "yeni kartı Canlı Etkinlik boyutunda göstersek
+/// aslında çözülecek")
+/// Kilit ekranı widget'ı iOS'ta satırın yarısıyla sınırlı (~150×57 pt);
+/// saate yakın büyüklükte bir yüzey yalnız Canlı Etkinlik'e açık (tam
+/// genişlik, ~160 pt yükseklik). Eski düzen bu alanı iki küçük sütuna
+/// bölüyordu (24 pt yüzde + 130 pt'lik grafik). Şimdi kilit ekranı
+/// widget'ının yeni kartıyla AYNI dil, büyük ölçekte:
+///   · başlık: logo + "sandık" + canlılık durumu (tek ince satır);
+///   · kahraman satır: yön + ~44 pt yüzde, izin varsa sağda tutar + toplam;
+///   · günün eğrisi tam genişlikte;
+///   · seans çubuğu (`SandikSeansCubugu`, Dinamik Ada ile ortak).
+/// Yükseklik bütçesi: 14+18+6+46+6+30+6+14+14 ≈ 154 pt (iOS üst sınırı 160).
+/// Tutar kuralı değişmedi: yalnız "Kilit ekranında tutar göster" açıksa.
 @available(iOS 17.0, *)
 struct SandikLockScreenView: View {
     let context: ActivityViewContext<SandikActivityAttributes>
@@ -524,74 +534,40 @@ struct SandikLockScreenView: View {
 
     private var state: SandikActivityAttributes.ContentState { context.state }
 
+    private var yonRengi: Color {
+        state.hasDirection
+            ? palette.statusColor(isPositive: state.isPositive)
+            : palette.text58
+    }
+
+    private var tutarGorunur: Bool { state.showAmounts && !state.isHidden }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-
-            // ---- Başlık: kimlik + canlılık göstergesi ----
-            HStack(spacing: 8) {
-                SandikLogoMark(width: 24)
-
-                // Marka adı + tarih tek blokta. Tarih ikincil bilgidir ve
-                // alt satıra iner: yüzeyin ana sorusu "bugün ne oldu",
-                // "hangi gün" değil — ama gece yarısını geçen bir oturumda
-                // rakamın hangi güne ait olduğu okunabilmeli.
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Sandık")
-                        .font(.sandikLabel(15, weight: .semibold))
-                        .foregroundStyle(palette.text90)
-
-                    if !state.dateText.isEmpty {
-                        Text(state.dateText)
-                            .font(.sandikLabel(10, weight: .medium))
-                            .foregroundStyle(palette.text58)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                }
-
-                Spacer(minLength: 8)
-
-                HStack(spacing: 5) {
-                    // Canlılık noktası — statik. Marka kuralı gereği yanıp
-                    // sönmez: kilit ekranında saatlerce duran bir yüzeyde
-                    // titreşen nokta rahatsız edicidir ve pil yakar.
-                    //
-                    // Piyasa kapalıyken YEŞİL DEĞİL gri: yeşil nokta
-                    // "veri akıyor" demektir ve gece bu doğru değildir.
-                    Circle()
-                        .fill(state.isMarketOpen
-                              ? palette.gain
-                              : palette.text36)
-                        .frame(width: 6, height: 6)
-
-                    // Piyasa kapalıyken kullanıcı rakamın NEDEN
-                    // değişmediğini bilmeli; aksi halde donuk sayı
-                    // "uygulama bozuk" olarak okunur.
-                    Text(state.isMarketOpen
-                         ? "Canlı • \(state.updatedAtText)"
-                         : "Piyasa kapalı • \(state.updatedAtText)")
-                        .font(.sandikNumber(11, weight: .medium))
-                        .foregroundStyle(palette.text58)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                }
+        VStack(alignment: .leading, spacing: 6) {
+            baslik
+            kahraman
+            if !state.isHidden, !state.sparkline.isEmpty {
+                SandikSparkline(
+                    points: state.sparkline,
+                    palette: palette,
+                    color: yonRengi,
+                    isMarketOpen: state.isMarketOpen,
+                    // Tutar gizliyken eksen metinleri BOŞ gelir: kılavuz
+                    // çizgisi çizilir, büyüklük yazılmaz.
+                    axisMin: state.axisMinText,
+                    axisMax: state.axisMaxText,
+                    showsGuides: true
+                )
+                .frame(height: 30)
             }
-
-            // ---- İçerik ----
-            //
-            // Düzen `showAmounts`'a göre DEĞİŞİR:
-            //   kapalı → günlük yüzde solda, grafik sağda (tutar hiç yok)
-            //   açık   → toplam + net kazanç iki sütun, grafik altta
-            //
-            // Yüzde ve grafik her iki durumda da görünür: ikisi de portföy
-            // BÜYÜKLÜĞÜNÜ ele vermez, yalnızca günün nasıl geçtiğini söyler.
-            if state.showAmounts && !state.isHidden {
-                amountsLayout
-            } else {
-                privateLayout
-            }
+            SandikSeansCubugu(
+                isMarketOpen: state.isMarketOpen,
+                renk: SandikTheme.amber,
+                palette: palette
+            )
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
         .background(palette.background)
         // Kilit ekranı çerçevesi — lg (20) + hairline kenar.
         .clipShape(RoundedRectangle(cornerRadius: SandikTheme.radiusLg, style: .continuous))
@@ -604,145 +580,81 @@ struct SandikLockScreenView: View {
         .accessibilityLabel(accessibilitySummary)
     }
 
-    /// Gizli düzen — tutar YOK, yalnızca günlük yüzde + grafik.
-    ///
-    /// Varsayılan durum budur. Kullanıcı Ayarlar'dan açıkça izin vermedikçe
-    /// kilit ekranında para tutarı görünmez.
-    private var privateLayout: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Bugün")
+    /// Kimlik + canlılık — tek ince satır; kartın asıl sorusu altta.
+    private var baslik: some View {
+        HStack(spacing: 6) {
+            SandikLogoMark(width: 16)
+            Text("sandık")
+                .font(.sandikLabel(13, weight: .bold))
+                .foregroundStyle(palette.gold)
+            if !state.dateText.isEmpty {
+                // Gece yarısını geçen oturumda rakamın hangi güne ait olduğu
+                // okunabilmeli.
+                Text(state.dateText)
                     .font(.sandikLabel(11, weight: .medium))
                     .foregroundStyle(palette.text58)
-
-                HStack(spacing: 5) {
-                    // Veri yoksa ok ve işaret basılmaz: `▲ +—` anlamsızdır
-                    // ve yeşil renk olmayan bir kazancı ima ederdi.
-                    if state.hasDirection {
-                        Text(directionArrow(state.isPositive))
-                            .font(.sandikLabel(13, weight: .black))
-                    }
-                    Text(state.hasChangeData
-                         ? (state.isFlatChange
-                            ? state.changePctText
-                            : "\(signPrefix(state.isPositive))\(state.changePctText)")
-                         : "—")
-                        .font(.sandikNumber(24, weight: .bold))
-                        .tracking(-0.24)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                .foregroundStyle(state.hasDirection
-                                 ? palette.statusColor(isPositive: state.isPositive)
-                                 : palette.text58)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-
-            Spacer(minLength: 0)
-
-            // Grafik sağda, dikey alanı doldurur.
-            SandikSparkline(
-                points: state.sparkline,
-                palette: palette,
-                color: state.hasDirection
-                    ? palette.statusColor(isPositive: state.isPositive)
-                    : palette.text58,
-                isMarketOpen: state.isMarketOpen,
-                // Tutar gizliyken bu alanlar BOŞ gelir: rakam yazılmaz
-                // ama kılavuz çizgileri yine çizilir. Çizgi bir büyüklük
-                // taşımaz, yalnızca grafiğin bandını gösterir.
-                axisMin: state.axisMinText,
-                axisMax: state.axisMaxText,
-                showsGuides: true
-            )
-            .frame(width: 130, height: 44)
+            Spacer(minLength: 6)
+            // Canlılık noktası — statik (marka kuralı: yanıp sönmez). Piyasa
+            // kapalıyken gri: yeşil nokta "veri akıyor" demektir.
+            Circle()
+                .fill(state.isMarketOpen ? palette.gain : palette.text36)
+                .frame(width: 6, height: 6)
+            Text(state.isMarketOpen
+                 ? "Canlı • \(state.updatedAtText)"
+                 : "Piyasa kapalı • \(state.updatedAtText)")
+                .font(.sandikNumber(11, weight: .medium))
+                .foregroundStyle(palette.text58)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
         }
     }
 
-    /// Tutarlı düzen — kullanıcı Ayarlar'dan açıkça izin verdiyse.
-    private var amountsLayout: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 0) {
-                // Sol: toplam portföy.
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Toplam Portföy")
-                        .font(.sandikLabel(11, weight: .medium))
-                        .foregroundStyle(palette.text58)
+    /// Kahraman satır: yön + büyük yüzde; izin varsa sağda tutar ve toplam.
+    private var kahraman: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if state.isHidden {
+                Text("••")
+                    .font(.sandikNumber(44, weight: .bold))
+                    .foregroundStyle(palette.text90)
+            } else {
+                // Veri yoksa ok ve işaret basılmaz: `▲ +—` anlamsızdır ve
+                // yeşil renk olmayan bir kazancı ima ederdi.
+                if state.hasDirection {
+                    Text(directionArrow(state.isPositive))
+                        .font(.sandikLabel(22, weight: .black))
+                }
+                Text(state.hasChangeData
+                     ? (state.isFlatChange
+                        ? state.changePctText
+                        : "\(signPrefix(state.isPositive))\(state.changePctText)")
+                     : "—")
+                    .font(.sandikNumber(44, weight: .bold))
+                    .tracking(-1)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            }
 
-                    Text(state.totalText)
+            Spacer(minLength: 8)
+
+            if tutarGorunur {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(state.changeText)
                         .font(.sandikNumber(19, weight: .bold))
-                        .tracking(-0.19)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text(state.totalText)
+                        .font(.sandikNumber(12, weight: .semibold))
                         .foregroundStyle(palette.gold)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                // Hairline dikey ayraç.
-                Rectangle()
-                    .fill(palette.hairline)
-                    .frame(width: 1)
-                    .frame(maxHeight: 46)
-                    .padding(.horizontal, 14)
-
-                // Sağ: bugünkü net kazanç.
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Bugünkü Değişim")
-                        .font(.sandikLabel(11, weight: .medium))
-                        .foregroundStyle(palette.text58)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-
-                    HStack(spacing: 4) {
-                        if state.hasDirection {
-                            Text(directionArrow(state.isPositive))
-                                .font(.sandikLabel(11, weight: .black))
-                        }
-                        Text(state.changeText)
-                            .font(.sandikNumber(17, weight: .bold))
-                            .tracking(-0.17)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                    }
-                    .foregroundStyle(state.hasDirection
-                                     ? palette.statusColor(isPositive: state.isPositive)
-                                     : palette.text58)
-
-                    // Yüzde rozeti — durum renginin çok düşük alfalı zemini
-                    // üstünde. Amber BURAYA konmaz: brief'e göre amber
-                    // yalnızca gerçekten vurgulanacak TEK öğe için.
-                    if state.hasDirection {
-                        Text("\(signPrefix(state.isPositive))\(state.changePctText) Günlük")
-                            .font(.sandikNumber(10, weight: .semibold))
-                            .foregroundStyle(palette.statusColor(isPositive: state.isPositive))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 3)
-                            .background(
-                                RoundedRectangle(cornerRadius: SandikTheme.radiusSm, style: .continuous)
-                                    .fill(palette.statusColor(isPositive: state.isPositive)
-                                        .opacity(0.14))
-                            )
-                            .padding(.top, 1)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            // Grafik altta, tam genişlik.
-            if !state.sparkline.isEmpty {
-                SandikSparkline(
-                    points: state.sparkline,
-                    palette: palette,
-                    color: state.hasDirection
-                        ? palette.statusColor(isPositive: state.isPositive)
-                        : palette.text58,
-                    isMarketOpen: state.isMarketOpen,
-                    axisMin: state.axisMinText,
-                    axisMax: state.axisMaxText,
-                    showsGuides: true
-                )
-                .frame(height: 32)
             }
         }
+        .foregroundStyle(yonRengi)
     }
 
     /// İşaret öneki — yüzde rozetinde `+%2,45` / `-%2,45` okunuşu için.
