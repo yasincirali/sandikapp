@@ -1577,7 +1577,7 @@ abstract class AppLocalizations {
   /// No description provided for @dividendSourceNote.
   ///
   /// In tr, this message translates to:
-  /// **'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.'**
+  /// **'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.'**
   String get dividendSourceNote;
 
   /// No description provided for @dividendSuggestionLine.

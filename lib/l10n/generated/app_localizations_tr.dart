@@ -842,7 +842,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dividendSourceNote =>
-      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.';
+      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; \"Kaydet\" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {

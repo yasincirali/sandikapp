@@ -854,7 +854,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dividendSourceNote =>
-      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.';
+      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; \"Save\" prefills the net after 15% withholding tax, which you can edit.';
 
   @override
   String dividendSuggestionLine(String ticker, String date) {
