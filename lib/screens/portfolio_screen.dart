@@ -1281,10 +1281,12 @@ class _AssetCardState extends State<_AssetCard>
               ),
             ),
           ),
+          // Ok ile panel AYNI süre ve eğriyle (animasyon denetimi,
+          // 2026-09-30): ok 200, panel 220 ms'de bitiyordu — hareket tek
+          // parça hissettirmiyordu.
           AnimatedSize(
-            duration:
-                SandikMotion.of(context, const Duration(milliseconds: 220)),
-            curve: Curves.easeOutCubic,
+            duration: SandikMotion.surfaceOf(context),
+            curve: SandikMotion.enter,
             alignment: Alignment.topCenter,
             child: _expanded
                 ? _AssetDetailsPanel(
@@ -1439,8 +1441,8 @@ class _ExpandChevron extends StatelessWidget {
         alignment: Alignment.center,
         child: AnimatedRotation(
           turns: expanded ? 0.5 : 0.0,
-          duration: SandikMotion.of(context, const Duration(milliseconds: 200)),
-          curve: Curves.easeOutCubic,
+          duration: SandikMotion.surfaceOf(context),
+          curve: SandikMotion.enter,
           child: Icon(
             Icons.keyboard_arrow_down_rounded,
             color: context.c.text58,
