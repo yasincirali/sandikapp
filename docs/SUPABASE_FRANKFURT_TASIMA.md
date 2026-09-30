@@ -320,6 +320,17 @@ Arada yeni projeye yazılan veri kaybolur — bu yüzden pencere kısa ve gece.
 - [ ] **[SEN]** GitHub secret'ları: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
       `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` → yeni proje.
       (`supabase-deploy.yml` bu ref'e dağıtır; değiştirilmezse eski projeye gider.)
+- [ ] **[SEN/CLAUDE]** `SUPABASE_ACCESS_TOKEN` → **iki projeye yetkili** token
+      (kullanıcı kararı 2026-09-30: bu paketle birlikte). Bugünkü token kısıtlı,
+      yalnız Tokyo'yu görüyor: Frankfurt'ta Management API **403**. Sonuçları:
+      günlük `sema-esitlik.yml` her gün KIRMIZI (fark yüzünden değil, Frankfurt
+      okunamadığı için) ve `supabase-deploy.yml` Frankfurt adımında düşer. O güne
+      kadar dağıtım + eşitlik kanıtı **yerel CLI** ile (`supabase link` →
+      `db push` → `functions deploy --project-ref` → Tokyo'ya geri link →
+      `python tool/sema_esitlik.py`). Seçenekler: (a) yerel CLI token'ını
+      `gh secret set` ile yaz — tüm organizasyona yetkili, kişisel token;
+      (b) panelde yalnız bu iki projeye kapsamlı yeni token aç — daha dar.
+      Token değişince `sema-esitlik.yml`'yi elle bir kez koştur, yeşil görmeli.
 - [ ] **[CLAUDE]** Hukuki metinler: gizlilik politikası (TR/EN), KVKK aydınlatma,
       **açık rıza metni**, `DATA_SAFETY_FORM.md` — "ABD" → **"Almanya (AB)"**.
       **Uygulama içi metinler de** (2026-09-27 emülatör turunda görüldü —
@@ -366,7 +377,10 @@ da çalışmalı, o iki sunucu hep senkron birebir aynı gitmeli."*
   GRANT/sütun GRANT/eklenti/event trigger/cron/Vault ADI/migration defteri).
   Satır sonu ve sütun sırası anlam taşımadığı için normalize edilir.
 - **Günlük:** `sema-esitlik.yml` 07:30 TR — deploy dışı kaymayı (SQL Editor,
-  panel ayarı) yakalar.
+  panel ayarı) yakalar. ⚠️ Faz 5'teki token değişimine kadar Frankfurt'ta
+  403 ile KIRMIZI döner; kırmızı "fark var" demek DEĞİLDİR — log'da
+  `Management API HTTP 403` satırına bak. Kanıt o güne kadar yerelde
+  (son ölçüm 2026-09-30, 0086/0087 sonrası: ŞEMA EŞİT).
 - **İlk ölçüm (2026-09-28): 52 fark.** 30'u beklenen (Tokyo'da 0076 yok) ve
   satır sonu. Gerçek kayma 4 madde → `0078_sunucu_esitleme.sql`:
   1. `profiles_select_partner` Frankfurt'ta **hatalı** (`p.id` — ortak profili
