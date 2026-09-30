@@ -299,6 +299,23 @@ abstract final class SandikMotion {
   /// Ekranda yer değiştiren / biçim değiştiren eleman.
   static const Curve move = Curves.easeInOutCubic;
 
+  /// TERSTEN oynatılan eğri yuvası: `reverseCurve`, `switchOutCurve`.
+  ///
+  /// Flutter bu yuvalardaki eğriyi zaman 1→0 akarken okur. Oraya [enter]
+  /// (easeOutCubic) koymak çıkışı ease-in yapar: çıkan öğe yarı sürede hâlâ
+  /// %87 görünür, son karelerde birden kaybolur — kapanış ağır hissettirir.
+  /// Altı `AnimatedSwitcher` ve bütün marka diyalogları tam da bunu
+  /// yapıyordu; yorumları "çıkan katman da ease-out" diyordu (animasyon
+  /// denetimi 2026-10-01).
+  ///
+  /// `enter.flipped` (= easeInCubic) tersten oynayınca ease-out olur: çıkış
+  /// ilk anda hızla başlar. Adı "ease-in kullan" demek DEĞİLDİR — yalnızca
+  /// ters yuvaya girer; ileri yönde asla kullanılmaz.
+  /// `const` olsun diye açık yazıldı: easeOutCubic `Cubic(0.215, 0.61,
+  /// 0.355, 1)`, ters çevrilmişi `Cubic(1-c, 1-d, 1-a, 1-b)`
+  /// (`animasyon_denetimi_test` `enter.flipped` ile eşitliğini doğrular).
+  static const Curve exit = Cubic(0.645, 0.0, 0.785, 0.39);
+
   /// Akış: gözün izlemesi istenen biçim değişimi — kıyas çubukları, akan
   /// şerit dilimleri, sayan rakamlar, kayan imleç (560ms). Zirve ekranı
   /// kararı (2026-09-29, "daha göz alıcı ve akışkan"): [surface] süresi

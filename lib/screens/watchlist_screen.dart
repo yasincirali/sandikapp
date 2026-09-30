@@ -441,6 +441,20 @@ class _Row extends ConsumerWidget {
             child: Icon(Icons.delete_outline_rounded,
                 color: context.c.onStatus, size: 20),
           ),
+          // Demo modunda yazma engellidir: sağlayıcı satırı listeden
+          // DÜŞÜRMEDEN hata fırlatıyordu, kaydırılıp kapatılan satır ağaçta
+          // kalıyor ve Flutter "dismissed Dismissible is still part of the
+          // tree" hatası veriyordu (animasyon denetimi 2026-10-01). Onay
+          // aşamasında durdurulur: satır yerine yaylanır, demo mesajı
+          // `yazmaEngeli` dinleyicisinden gelir.
+          confirmDismiss: (_) async {
+            if (DemoModu.aktif) {
+              await _remove(context, ref);
+              return false;
+            }
+            SandikHaptic.medium.perform();
+            return true;
+          },
           onDismissed: (_) => _remove(context, ref),
           child: SandikTappable(
             // Etiket YOK: satırın adı dıştaki `Semantics` cümlesi; buradaki
@@ -592,6 +606,10 @@ class _Row extends ConsumerWidget {
     final notifier = ref.read(watchlistProvider.notifier);
     try {
       await notifier.remove(item.id);
+    } on DemoYazmaEngeli {
+      // Demo mesajı `DemoModu.yazmaEngeli` dinleyicisinden gösterildi;
+      // "bağlantını kontrol et" burada yanlış olurdu.
+      return;
     } catch (_) {
       if (!context.mounted) return;
       // Provider state'i zaten geri aldı; burada SEBEBİ söylüyoruz — satırın

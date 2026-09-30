@@ -85,7 +85,7 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
         child: AnimatedSwitcher(
           duration: SandikMotion.stateOf(context),
           switchInCurve: SandikMotion.enter,
-          switchOutCurve: SandikMotion.enter,
+          switchOutCurve: SandikMotion.exit,
           child: _busy
               ? const CustomLoadingIndicator(
                   key: ValueKey('busy'),

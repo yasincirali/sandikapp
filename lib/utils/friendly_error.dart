@@ -600,9 +600,18 @@ String _humanize(String raw) {
 /// denetimi 2026-09-29 — eskiden azaltılmış harekette de büyüyordu).
 /// `FadeTransition`/`ScaleTransition`: her karede `Opacity` yeniden
 /// kurulmaz, katmanın opaklığı doğrudan değişir.
+///
+/// Kapanışta `reverseCurve` [SandikMotion.exit]: tanımsızken kapanış da
+/// easeOutCubic'i TERSTEN oynuyordu — diyalog neredeyse tam görünür kalıp
+/// son ~80 ms'de birden kayboluyordu; "kapat"a basınca ağır hissettiriyordu
+/// (animasyon denetimi 2026-10-01).
 Widget _diyalogGecisi(
     BuildContext ctx, Animation<double> anim, Widget child) {
-  final egri = CurvedAnimation(parent: anim, curve: SandikMotion.enter);
+  final egri = CurvedAnimation(
+    parent: anim,
+    curve: SandikMotion.enter,
+    reverseCurve: SandikMotion.exit,
+  );
   if (MediaQuery.disableAnimationsOf(ctx)) {
     return FadeTransition(opacity: egri, child: child);
   }

@@ -1234,7 +1234,7 @@ class _ThemeToggleButton extends ConsumerWidget {
           child: AnimatedSwitcher(
             duration: SandikMotion.stateOf(context),
             switchInCurve: SandikMotion.enter,
-            switchOutCurve: SandikMotion.enter,
+            switchOutCurve: SandikMotion.exit,
             child: Icon(
               showingLight
                   ? Icons.dark_mode_rounded

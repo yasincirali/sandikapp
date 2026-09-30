@@ -1328,7 +1328,7 @@ class _CanliSatirState extends State<_CanliSatir>
                                     AnimatedSwitcher(
                                       duration: SandikMotion.stateOf(context),
                                       switchInCurve: SandikMotion.spring,
-                                      switchOutCurve: SandikMotion.enter,
+                                      switchOutCurve: SandikMotion.exit,
                                       transitionBuilder: (child, a) =>
                                           FadeTransition(
                                         opacity: a,
