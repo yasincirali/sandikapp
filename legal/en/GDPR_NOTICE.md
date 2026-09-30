@@ -45,8 +45,8 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Push notifications, marketing emails (if any) | Art. 6(1)(a) — consent |
 | Storing disclaimer acceptance log | Art. 6(1)(c) — legal obligation |
 | Security measures (rate limiting, abuse detection, error logs) | Art. 6(1)(f) — legitimate interests |
-| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(b) — performance of a contract (standard App feature); Art. 6(1)(f) — legitimate interests |
-| International transfer (Supabase/Firebase USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
+| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time) |
+| International transfer (Supabase Japan → Germany, Firebase USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
 ---
 
@@ -56,17 +56,20 @@ See [Privacy Policy §5](PRIVACY_POLICY.md#5-third-party-recipients-data-process
 
 All processors are bound by Data Processing Agreements (DPAs) under Art. 28.
 
-Other users of the App receive only the anonymous output of the Top Portfolios pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios).
+Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios).
 
 ---
 
 ## 5. International Transfers (Art. 44-49)
 
-Data is transferred to the United States via:
+The database is hosted in Japan (AWS Tokyo), which benefits from the EU adequacy decision for Japan
+(Commission Implementing Decision (EU) 2019/419). It is being migrated to Germany (AWS Frankfurt, EU);
+after the migration, database storage involves no third-country transfer. Supabase Inc. (a U.S.
+company) and Google act as processors under the mechanisms below:
 
 | Service | Mechanism | Reference |
 |---|---|---|
-| Supabase Inc. | EU-U.S. Data Privacy Framework + Standard Contractual Clauses | https://supabase.com/privacy |
+| Supabase Inc. (processor; data in Japan → Germany) | EU adequacy decision for Japan; EU-U.S. Data Privacy Framework + Standard Contractual Clauses for remote access | https://supabase.com/privacy |
 | Google Firebase | EU-U.S. Data Privacy Framework + SCCs | https://firebase.google.com/support/privacy |
 
 **Risk assessment:** The U.S. is a recipient of the EU-U.S. Data Privacy Framework adequacy decision (10 July 2023). However, due to evolving CJEU jurisprudence, we additionally rely on SCCs and supplementary measures (encryption in transit and at rest, access controls, RLS).

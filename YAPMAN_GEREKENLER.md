@@ -1,12 +1,101 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-09-25 (kripto — 0074, 0075 + dört edge function)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 (BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-01 İkinci tur — BES otomatik, Zirve açık rıza, halka arz, web, ekstre motoru
+
+**Durum 2026-10-01 (Claude, kullanıcının açık onayıyla — "supabase push ve kodu
+maine mergele"):** sunucu tarafı İKİ SUNUCUDA TAMAM; kod main'e birleştirildi
+(TestFlight derlemesi main push'uyla tetiklenir). İzole worktree'den dağıtıldı:
+başka oturumların commit'lenmemiş `_shared/positions.ts` değişikliği sunucuya
+GİTMEDİ.
+
+Kanıt: 0089/0090/0091 Frankfurt → Tokyo, doğrulama blokları temiz; Frankfurt'ta
+açık cron yok (bes-parametre kapalı doğdu), Tokyo'da açık. `bes-parametre` kuru
+koşu iki sunucuda 200 `okunan {2026, 396360, 79272, 20}`, `degisti:false`.
+Canlıda bulunan arıza: Deno `fetch` EGM yanıtını "invalid HTTP header" diye
+reddediyordu → ham TLS yolu eklendi (test: `hamYanitiCoz`). `leaderboard-snapshot`
+Tokyo kuru koşu 200: zirve satırı 0 (rıza yok, beklenen), yarış 68/17 değişmedi.
+`sema_esitlik.py`: ŞEMA EŞİT.
+
+**Sunucu (iki sunucu, Frankfurt → Tokyo, `db push` + fonksiyonlar):**
+- [x] **0089 + `bes-parametre`** — BES devlet katkısı sınırı/oranı artık EGM'nin
+      resmî sayfasından her gün otomatik (katkı × oran = azami doğrulanmadan
+      yazmaz). Yeni secret YOK: TÜFE çekiminin `INFLATION_FETCH_CRON_SECRET` /
+      `inflation_fetch_cron_secret`'ını paylaşır. Dağıtım sonrası kuru koşu:
+      `net.http_post(edge_function_url('bes-parametre'), cron_headers('inflation_fetch_cron_secret'), '{"dry_run":true}')`
+      → `okunan: {yil:2026, …79272…}`. Frankfurt'ta cron kapalı doğar (kural).
+- [x] **0090** — yarış snapshot saklaması 400 → 365 gün (politika "365" diyor;
+      hiçbir okuyucu 365'ten eskiye bakmıyordu). İlk haftalık temizlikte
+      365–400 gün arası satırlar silinir.
+- [x] **0091 + `leaderboard-snapshot`** — Zirvedeki Portföyler AÇIK RIZAYA geçer.
+      ⚠️ **Rıza kartını içeren uygulama sürümüyle birlikte** dağıt: 0091 mevcut
+      zirve ölçümlerini siler (henüz kimse rıza vermedi) ve rızasız çağırana liste
+      boş döner — eski sürüm kullanıcısı katılamaz, "havuz oluşuyor" görür.
+      Fonksiyon 0091'den SONRA (yeni `zirve_rizalari` tablosunu okur).
+- [x] Sonda `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] **Bilinçli geçiş dönemi:** mağazadaki sürüm (rıza kartı yok) kullanıcıları
+      Zirve'ye yeni sürüme kadar katılamaz; listeleri boş, "havuz oluşuyor" görür.
+      Havuz 8 rızaya ulaşana kadar zaten boştu (Tokyo 6).
+
+**Hukuk (hukukçuya göster):**
+- [ ] **Zirve rızası karşılıklı:** listeyi yalnız katılan görür. "Açık rıza hizmet
+      şartı yapılamaz" ilkesiyle ilişkisi — burada rıza, hizmetin konusu olan
+      veri paylaşımının kendisi. Metinler: Gizlilik §5.1, KVKK §4/§5.3, Açık Rıza
+      Metni E, Koşullar §2, GDPR (6(1)(a)); uygulama içi kart `ZirveRizaKarti`.
+- [ ] **Veri yeri düzeltildi:** web metinleri Supabase için "ABD" diyordu; gerçek
+      Japonya (Tokyo), Almanya'ya (Frankfurt) taşınıyor — düzeltildi. Kayıtta
+      "ABD'ye aktarım" rızası vermiş kullanıcılar için yeniden rıza gerekip
+      gerekmediğini sor (uygulama içi metin zaten gerçek ülkeyi yazıyordu).
+
+**Yayın / mağaza:**
+- [ ] **Web:** `docs/` yeniden üretildi (Zirve rızası + veri yeri); main'e
+      push'la GitHub Pages yayınlar. Açılış sayfası artık derleyiciyle ezilmiyor.
+- [ ] **Mağaza gizlilik beyanları:** kutucuk değişikliği GEREKMİYOR (anonim çıktı
+      Play'de "paylaşım" sayılmaz; Apple'da ayrı kategori yok). Referans metin
+      güncellendi: `store_listing/DATA_SAFETY_FORM.md`.
+- [ ] **In-App Event'ler:** üç TASLAK ASC'de hazır (Kasım + Aralık enflasyon
+      günü, yıl sonu özeti — kuru koşuyla doğrulandı 2026-10-01). ASC → Uygulama
+      İçi Etkinlikler → her birini incelemeye gönder; **Kasım'ınki 20 Ekim'den
+      önce**.
+- [ ] **Halka arz otomasyonu:** `.github/workflows/halka-arz.yml` main'e girince
+      her sabah 09:30 TR çalışır, değişiklik varsa PR açar. **Repo ayarı gerekli:**
+      Settings → Actions → General → Workflow permissions → "Read and write" +
+      "Allow GitHub Actions to create and approve pull requests". Liste bugün
+      güncel (son arz NETGL).
+
+**Ekstre motoru (PDF / Excel / CSV):**
+- [ ] **Gerçek örnek dosyalar** — MKK e-Yatırımcı (Excel+PDF), Midas PDF ve
+      kullandığın kurum(lar)ın ekstresi, `tmp/ekstre_ornekleri/` altına
+      (tutarları değiştirebilirsin). Motor örneksiz, sentetik senaryolarla
+      doğrulandı; gerçek dosyayla ilk deneme en değerli test.
+- [ ] **Cihazda dene:** Toplu ekle › Ekstreden içe aktar › Dosyadan seç.
+- [ ] **iOS derlemesi + boyut:** yeni yerel paketler `pdfrx` (PDFium) ve
+      `file_selector` — CI iOS derlemesi yeşil mi, uygulama kaç MB büyüdü.
+
+## ✅ 2026-10-01 "Piyasa kapalı" yalnızca borsa portföyüne — `push-live-activity` DAĞITILDI
+
+Kod yerelde (commit/push YOK). Karışık portföyde (altın/döviz/kripto/mevduat
+içeren) hiçbir yüzey "Piyasa/Seans kapalı" demiyor; yalnızca hisse/fon/BES
+portföyünde görünür.
+
+- [ ] **Emülatör/cihaz kontrolü (hafta sonu ya da 18:10 sonrası):** yalnız
+      hisse portföyü → Bugün kartı "Piyasa kapalı · … açılır", widget
+      "Piyasa kapalı • HH:mm". Hisse + altın ya da kripto → Bugün kartı alt
+      satırı "Canlı", widget "Canlı • HH:mm", yeşil nokta.
+- [x] **`push-live-activity` iki sunucuya** — 2026-10-01 (kullanıcı onayıyla,
+      yerel CLI): Frankfurt v5, Tokyo v34. Doğrulama: Tokyo'da dağıtım sonrası
+      ilk cron koşusu 200 `{"sent":2,"total":3}` (öncekiyle aynı); iki sunucuda
+      secret'sız çağrı 401 (fail-closed, yeni kod açılıyor).
+- [ ] **iOS derlemesi:** `SandikAttributes`/`SandikHomeWidget`/
+      `SandikLiveActivity`/`LiveActivityPlugin` değişti; Windows'ta
+      derlenemedi — CI iOS derlemesinde kontrol et.
 
 ## ✅ 2026-09-30 Vadeli mevduat + BES — 0088 + beş edge function (DAĞITILDI 2026-10-01)
 
@@ -30,10 +119,8 @@ sayar). 0088 cron kurmuyor.
       sayfasında dönem kartı. BES: şirket + birikim + bir emeklilik fonu %100
       (+ istersen devlet katkısı fonu); varlık sayfasında döküm ve hak ediş.
       Ana sayfa piyasa şeridi: uzun bas → tut/kaydır → bırak → akmaya devam.
-- [ ] **Her Ocak:** yeni yılın BES devlet katkısı sınırı (brüt asgari ücret
-      × 12 × oran) `lib/services/bes_hesabi.dart` › `yillikSinirTablosu`'na
-      eklenmeli — Claude'a "BES sınırı 2027" demen yeter. Eklenmezse katkı
-      sayfası sınırsız hesaplar ve tutarı düzenlenebilir gösterir.
+- [x] ~~**Her Ocak:** BES sınırını elle ekle~~ — 2026-10-01 otomatik
+      (0089 + `bes-parametre`, EGM'den günlük; yukarıdaki ikinci tur).
 
 ## ⏳ 2026-09-30 Karar tahtası 4–8 — kod yerelde (PUSH EDİLMEDİ)
 
@@ -63,10 +150,9 @@ Rapor: `docs/EMULATOR_TEST_RAPORU_2026_09_30.md`.
   yerel CLI ile yapıldı.** Brifing push'u tek hisseyi anlatınca o hissenin
   ekranını açıyor; `analyze-signals` ortak `technical_analysis.ts` değiştiği
   için (teyitsiz kesişim açıklaması, #31) yeniden dağıtıldı.
-- [ ] **KARAR — Zirvedeki Portföyler rızası (KVKK):** ekran "herkes kendiliğinden
-  ve anonim olarak havuzdadır; ayrıca katılman gerekmez" diyor, ekranda çıkış yolu
-  yok. Anonim ve toplulaştırılmış veri olsa da açık rıza / itiraz hakkı gerekip
-  gerekmediğini hukukçuyla netleştir. Kod DEĞİŞTİRİLMEDİ.
+- [x] **KARAR — Zirvedeki Portföyler rızası (KVKK):** 2026-10-01 kullanıcı kararı:
+  açık rıza + uygulama içi açıklama. Kod yazıldı (0091, `ZirveRizaKarti`, metinler);
+  dağıtım ve hukukçu teyidi yukarıdaki ikinci turda.
 - [ ] **KARAR — fon birimi "lot" mu "pay" mı:** `miktar_birimi_test` fon → "lot"
   kilitliyor (senin verdiğin örnekler). Doğru terim "pay"; istersen değiştirilir.
 - [ ] **Veri düzeltme (isteğe bağlı):** Silinenler'de eski `döviz`/`USD` kayıtları
@@ -164,10 +250,8 @@ Senin yapacakların:
    güvenliği" formunda finansal bilginin (getiri %, tür payı %) diğer
    kullanıcılara anonim çıktı olarak gösterilmesinin mevcut beyanlarla uyumunu
    kontrol et.
-4. **Bilinen tutarsızlık (önceden vardı):** Yarış snapshot tabloları 400 gün
-   saklanıyor (0081), politika "son 365 gün" diyor. Zirve tabloları 365 gün.
-   Yarış tarafına dokunulmadı (Yarış mekaniği değişmesin kararı); hangisini
-   düzelteceğine sen karar ver.
+4. ~~**Bilinen tutarsızlık:** Yarış snapshot'ları 400 gün, politika 365~~ —
+   2026-10-01 0090 ile 365'e hizalandı (400'ün işlevsel karşılığı yoktu).
 
 ## ⏳ 2026-09-28 Yarış snapshot'ı sunucuda — 0081 + `leaderboard-snapshot` (iki proje)
 

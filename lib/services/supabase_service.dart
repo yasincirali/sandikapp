@@ -512,6 +512,28 @@ class SupabaseService {
     return rows.map(Sozlesme.fromSupabase).toList();
   }
 
+  /// BES devlet katkısı yıllık parametreleri (0089) — referans verisi,
+  /// kullanıcıya bağlı değil. Yıl → (azami devlet katkısı TL, oran %).
+  Future<Map<int, ({double sinir, double oran})>>
+      fetchBesDevletKatkisi() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchBesDevletKatkisi',
+      table: 'bes_devlet_katkisi',
+      op: 'SELECT',
+      request: const {},
+      call: () => _db
+          .from('bes_devlet_katkisi')
+          .select('yil, azami_devlet_katkisi, oran_yuzde'),
+    );
+    return {
+      for (final r in rows)
+        (r['yil'] as num).toInt(): (
+          sinir: (r['azami_devlet_katkisi'] as num).toDouble(),
+          oran: (r['oran_yuzde'] as num).toDouble(),
+        ),
+    };
+  }
+
   Future<List<MevduatDonemi>> fetchMevduatDonemleri(
       List<String> sozlesmeIds) async {
     if (sozlesmeIds.isEmpty) return const [];

@@ -14,9 +14,16 @@ import '../models/sozlesme.dart';
 /// 2026-01-01'den itibaren %20 (Cumhurbaşkanı kararı, RG 2026-01-07;
 /// önce %30). Yıllık üst sınır o yılın brüt asgari ücret toplamının oran
 /// kadarıdır: 2026'da 396.360 × %20 = ₺79.272. Yeni yılın tutarı Ocak'ta
-/// asgari ücretle belli olur ve tabloya EKLENİR; tabloda olmayan yıl için
-/// sınır `null` döner — uydurma sınır uygulanmaz, ekran kullanıcıya
-/// düzenlenebilir tutar gösterir.
+/// asgari ücretle belli olur; tabloda olmayan yıl için sınır `null` döner —
+/// uydurma sınır uygulanmaz, ekran kullanıcıya düzenlenebilir tutar gösterir.
+///
+/// ## Sunucu parametreleri (2026-10-01, kullanıcı: "elle tanımlamam
+/// mantıklı değil")
+/// Yıllık sınır ve oran artık sunucudaki `bes_devlet_katkisi` tablosundan
+/// gelir (0089; `bes-parametre` her gün EGM'nin resmî sayfasından çeker ve
+/// katkı × oran = azami tutarlılığını doğrulamadan yazmaz). İstemci
+/// [uzakParametreler] ile yükler; sunucu cevap vermezse aşağıdaki sabit
+/// tablo ve oran merdiveni YEDEK olarak kalır.
 abstract final class BesHesabi {
   /// Hak ediş basamakları: (tam yıl eşiği, yüzde).
   static const hakEdisBasamaklari = <(int, double)>[
@@ -56,15 +63,32 @@ abstract final class BesHesabi {
 
   /// [tarih]'te yapılan katkıya uygulanan devlet katkısı yüzdesi.
   static double devletKatkisiOrani(DateTime tarih) {
+    final uzak = _uzak[tarih.year]?.oran;
+    if (uzak != null) return uzak;
     if (!tarih.isBefore(DateTime(2026))) return 20;
     if (!tarih.isBefore(DateTime(2022))) return 30;
     return 25;
   }
 
-  /// Yıllık devlet katkısı üst sınırı (TL); tabloda olmayan yıl `null`.
+  /// Yedek sınır tablosu — sunucu parametresi yüklenemezse (çevrimdışı ilk
+  /// açılış). Yeni yıl buraya ELLE eklenmez; sunucu getirir.
   static const Map<int, double> yillikSinirTablosu = {2026: 79272};
 
-  static double? yillikSinir(int yil) => yillikSinirTablosu[yil];
+  /// Sunucudan gelen parametreler: yıl → (azami devlet katkısı TL, oran %).
+  static final Map<int, ({double sinir, double oran})> _uzak = {};
+
+  /// `bes_devlet_katkisi` satırlarını yükler (bkz. `BesParametreleri`).
+  /// Önceki yükleme tamamen değiştirilir.
+  static void uzakParametreler(Map<int, ({double sinir, double oran})> m) {
+    _uzak
+      ..clear()
+      ..addAll(m);
+  }
+
+  /// Yıllık devlet katkısı üst sınırı (TL): önce sunucu, sonra yedek tablo;
+  /// ikisinde de yoksa `null` (uydurma sınır yok).
+  static double? yillikSinir(int yil) =>
+      _uzak[yil]?.sinir ?? yillikSinirTablosu[yil];
 
   /// [katki] TL'lik katkının devlet katkısı; yılın kalan sınırına kırpılır.
   ///

@@ -83,7 +83,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 6. To meet legal obligations (disclaimer proof, lawful authority requests)
 7. For diagnostics and service improvement
 8. To detect abuse, fraud, and cyberattacks (GDPR 6(1)(f) — legitimate interest)
-9. Top Portfolios: to show, anonymously, the return and asset-type allocation of the period's top-gaining portfolios (GDPR 6(1)(b) and 6(1)(f))
+9. Top Portfolios: to show, anonymously, the return and asset-type allocation of the period's top-gaining portfolios among participants (GDPR 6(1)(a) — consent, opt-in in the App)
 
 ---
 
@@ -91,7 +91,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 
 | Service | Provider | Data | Purpose | Location |
 |---|---|---|---|---|
-| Backend & database | Supabase Inc. | All account & app data | Storage, authentication | USA (AWS) |
+| Backend & database | Supabase Inc. | All account & app data | Storage, authentication | Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU) |
 | Push notifications | Google Firebase Cloud Messaging | Push token, notification content | Notification delivery | Global (Google) |
 | Crash reports (when added) | Google Firebase Crashlytics | Device model, OS, error stack trace | Crash diagnostics | Global |
 | Stock/fund prices | Yahoo Finance, TEFAS, finans.truncgil.com | NONE — only symbol query is sent | Price retrieval | Global |
@@ -100,18 +100,18 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 
 ### 5.1 Anonymous Sharing with Other Users (Top Portfolios)
 
-For every user whose portfolio is older than 5 days and holds at least 2 different assets, and whose account is older than 7 days, the period return (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on our servers twice a day and kept in an anonymous comparison pool. When the pool holds at least 8 portfolios, only the rank, return percentage, asset-type shares and, for funds, the public TEFAS fund code with its share of the portfolio (funds below 1% or without a code grouped together) of up to 4 top-gaining portfolios are shown to all users of the App; fund names come from the official TEFAS list. Names, e-mail addresses, usernames, amounts, quantities, the names or symbols of stocks and other assets, and any names or notes you give your assets are never shared; the displayed information contains no data that reveals your identity. Inclusion in the pool requires no separate declaration or consent; the pool is part of the standard functionality of the App. When you delete your account, your measurements in the pool are deleted as well.
+Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days and holds at least 2 different assets and your account is older than 7 days, your period return (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on our servers twice a day and kept in an anonymous comparison pool. When the pool holds at least 8 portfolios, only the rank, return percentage, asset-type shares and, for funds, the public TEFAS fund code with its share of the portfolio (funds below 1% or without a code grouped together) of up to 4 top-gaining portfolios are shown to other participating users; fund names come from the official TEFAS list. In return, you see — in the same anonymous form — which asset types participating users hold, in what proportions, and their returns; this comparison is available only to participants. Names, e-mail addresses, usernames, amounts, quantities, the names or symbols of stocks and other assets, and any names or notes you give your assets are never shared; the displayed information contains no data that reveals your identity. If you do not consent, your return is neither computed nor stored for this purpose, and no other feature of the App is affected. You can withdraw consent at any time from the Top Portfolios screen; your pool measurements are then deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your pool measurements are deleted as well.
 
 ---
 
 ## 6. International Data Transfers
 
-Because Supabase and Firebase are hosted in the USA, your data is transferred outside the EEA / Türkiye. Under GDPR Articles 44-49 and KVKK Article 9:
+Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye (and, for Firebase, outside the EEA). The in-app text shows the country of the server you are connected to. Under GDPR Articles 44-49 and KVKK Article 9:
 
 - **For EU/EEA users:** Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.
 - **For Turkish users:** **Explicit consent** is collected at registration (the consent checkbox in the KVKK Disclosure Document).
 
-The destination country (USA) is not on the Turkish DPA's list of countries with adequate protection; therefore international transfer is based on **explicit consent**.
+The destination countries (Japan, USA; Germany after the migration) are not on the Turkish DPA's list of countries with adequate protection; therefore international transfer is based on **explicit consent**.
 
 ---
 
@@ -122,7 +122,7 @@ The destination country (USA) is not on the Turkish DPA's list of countries with
 | Account data | Until account deletion |
 | Asset records | Until account deletion |
 | Snapshot history | Last 365 days (rolling, older entries auto-deleted) |
-| Top Portfolios pool measurements (return %, type share %) | Last 365 days (rolling); immediately on account deletion |
+| Top Portfolios pool measurements (return %, type share %) | Last 365 days (rolling); immediately on consent withdrawal or account deletion |
 | Disclaimer acceptance log | **3 years** after account deletion (Turkish CO Art. 146 statute of limitations) |
 | Push token | Auto-deleted on app uninstall or logout |
 | Crash reports | 90 days |

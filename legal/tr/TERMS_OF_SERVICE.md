@@ -26,7 +26,7 @@ sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bi
 
 Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
 
-**Zirvedeki Portföyler:** Portföyü 5 günden eski ve en az 2 farklı varlık içeren her kullanıcının dönemsel getirisi ve varlık türü payları anonim bir karşılaştırma havuzunda değerlendirilir; en çok kazanan portföylerin yalnızca sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik ve tutar olmadan tüm kullanıcılara gösterilir (ayrıntı: Gizlilik Politikası §5.1). Bu işlev hizmetin standart parçasıdır; ayrı bir katılım beyanı gerektirmez.
+**Zirvedeki Portföyler (isteğe bağlı):** Uygulama içinde açık rıza verirseniz dönemsel getiriniz ve varlık türü paylarınız anonim bir karşılaştırma havuzunda değerlendirilir (portföy 5 günden eski, en az 2 farklı varlık); en çok kazanan portföylerin yalnızca sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik ve tutar olmadan diğer katılımcılara gösterilir; karşılığında siz de katılımcıların aynı anonim bilgilerini görürsünüz (ayrıntı: Gizlilik Politikası §5.1). İstediğiniz an ayrılabilirsiniz; katılmamak başka hiçbir özelliği etkilemez.
 
 ---
 

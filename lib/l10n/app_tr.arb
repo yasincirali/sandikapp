@@ -727,7 +727,7 @@
   "startTime": "Başlangıç",
   "endTime": "Bitiş",
   "showOnWeekend": "Hafta sonu da göster",
-  "showOnWeekendSubtitle": "Hafta sonu BIST kapalıdır; banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir.",
+  "showOnWeekendSubtitle": "Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.",
   "showAmounts": "Tutarları göster",
   "showAmountsSubtitle": "Canlı Etkinlik ve kilit ekranı widget'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.",
   "lockWidgetHowTo": "Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.",
@@ -1885,9 +1885,17 @@
       }
     }
   },
-  "csvImportTitle": "CSV ile içe aktar",
-  "csvImportBody": "Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.",
+  "csvImportTitle": "Ekstreden içe aktar",
+  "csvImportBody": "Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.",
   "pasteHere": "Buraya yapıştır",
+  "importPickFile": "Dosyadan seç (PDF, Excel, CSV)",
+  "importReading": "Dosya okunuyor…",
+  "importMappingTitle": "Sütunlar böyle eşlendi",
+  "importLowConfidence": "Bu dosyanın sütunlarından tam emin değiliz; eşlemeyi kontrol et, gerekirse düzelt.",
+  "importFixColumns": "Sütunları düzelt",
+  "importColumnNone": "Yok",
+  "importApply": "Uygula",
+  "importOrPaste": "ya da tabloyu yapıştır",
   "preview": "Önizle",
   "csvRowsRead": "{n} satır okundu",
   "@csvRowsRead": {
@@ -1962,7 +1970,7 @@
   "pasteCsv": "CSV yapıştır",
   "cartEmpty": "Sepet boş",
   "cartEmptyBody": "Aşağıdaki + Varlık Ekle butonuyla art arda varlık ekleyip hepsini tek seferde kaydedebilirsin.",
-  "pasteFromStatement": "Ekstreden / CSV'den yapıştır",
+  "pasteFromStatement": "Ekstreden içe aktar (PDF, Excel, CSV)",
   "saveAllCount": "Tümünü Kaydet ({n})",
   "@saveAllCount": {
     "placeholders": {
@@ -2124,7 +2132,7 @@
   "startHour": "Başlangıç saati",
   "endHour": "Bitiş saati",
   "liveActivityIosNote": "iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.",
-  "marketClosedNote": "Piyasa kapalıyken son kapanış gösterilir.",
+  "marketClosedNote": "Borsa kapalıyken hisse ve fonlar son kapanıştan, altın, döviz ve kripto canlı gösterilir.",
   "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.",
   "hiddenOutsideWindow": "Şu an görünmüyor: saat {start}-{end} aralığının dışındasın. Banner {start}'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.",
   "@hiddenOutsideWindow": {
@@ -2562,6 +2570,7 @@
     }
   },
   "todayClosedWord": "Piyasa kapalı",
+  "todayLiveWord": "Canlı",
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
   "todayRealHint": "Yıllık getirin ile TÜFE farkı",
@@ -2798,7 +2807,7 @@
       }
     }
   },
-  "emptyPasteHint": "Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.",
+  "emptyPasteHint": "Aracı kurum ekstreni (PDF, Excel ya da CSV) seç ya da yapıştır; her satır bir varlık olur.",
   "marketDollar": "Dolar",
   "marketEuro": "Euro",
   "marketGold": "Gram altın",

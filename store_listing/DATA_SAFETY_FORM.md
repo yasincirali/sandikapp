@@ -48,20 +48,41 @@
 | Device or other IDs | ✅ | ❌ | Required | FCM push notification token (for partnership invites and signal notifications) |
 | **Advertising ID** | ❌ | — | — | **Not collected.** `firebase_analytics` normally merges `com.google.android.gms.permission.AD_ID` into the manifest; it is explicitly removed (`tools:node="remove"` in `android/app/src/main/AndroidManifest.xml`). This matches the iOS declaration (`PrivacyInfo.xcprivacy` → `NSPrivacyTracking=false`). The Privacy Sandbox pair `android.permission.ACCESS_ADSERVICES_AD_ID` / `ACCESS_ADSERVICES_ATTRIBUTION` (added by `play-services-measurement-api`) is removed the same way since 2026-09-27 — the 1.1.6+7 AAB still carried them. Verify after each build: the merged manifest must contain no `AD_ID` and no `ADSERVICES` entry. |
 
-## Special note: Anonymous aggregated data (leaderboard/competition)
+## Special note: Anonymous comparison features (Yarış + Zirvedeki Portföyler)
 
-The "Yarış" (Competition) feature is **entirely opt-in** and processes the following:
+**Checkbox impact (2026-10-01 review): none.** Both features stay under
+"Financial info → Other financial info — Collected ✅, Shared ❌, Optional".
+Showing *anonymized* output to other users inside the app is not "sharing"
+in Play's sense (no transfer to a third party; anonymous data is exempt), and
+Apple's App Privacy label has no "shown to other users" category — the
+existing "Other Financial Info → App Functionality, Linked to user" entry
+already covers it. What changed is the *optional* column and the purpose
+text below; keep both stores' free-text answers in sync with this note.
 
-1. **Return-on-investment (ROI) percentages** — a single derived percentage per user, per time period (7/30/365 days), uploaded to `user_roi_snapshots`.
-2. **Portfolio type allocation percentages** — {asset_type: percent} map (e.g., `{"hisse": 40, "altin": 30}`). **No quantities, no TRY amounts, no ticker symbols.** Uploaded to `user_allocation_snapshots`.
+### Yarış (partner competition + global percentile)
+1. **Period return (%)** per user per period (7/30/180/365 days) and
+   **asset-type allocation (%)** — no quantities, no TRY amounts, no tickers.
+2. Computed **on our servers** twice a day (migrations 0081/0082) — the
+   client no longer uploads them — and written only for users who opted in.
+3. **Opt-in** (defaults OFF; "Yarış" → "Katıl"). Partners see each other's
+   return only after an invitation both accepted.
+4. **k-anonymity:** global aggregates need ≥ 8 eligible users (`k_min`, 0031).
+5. Retention: **365 days** rolling (0090; was 400 until 2026-10-01).
 
-Both are:
-- **Opt-in by explicit user consent** (defaults OFF; user must open "Yarış" and tap "Katıl")
-- **Guarded by k-anonymity** (minimum 20 participants; below this threshold, no aggregate is exposed)
-- **Aggregated by SECURITY DEFINER RPCs** on the server; raw rows are never sent to any client except the row's owner (RLS enforced)
-- **Not shared with third parties**
+### Zirvedeki Portföyler (Top Portfolios) — explicit consent since 0091
+1. Same two derived percentages plus, for funds, the public **TEFAS fund
+   code and its share of the portfolio** (funds < 1 % grouped as "other").
+2. **Optional, explicit consent in the app** (KVKK 5(1) / GDPR 6(1)(a)):
+   the Top Portfolios screen shows a consent card (what is shared, what is
+   not, what you get, how to withdraw); nothing is computed for users who
+   do not consent. Withdrawal deletes the user's pool rows immediately.
+3. **Reciprocal:** only participants see the list (rank, return %, type
+   shares, fund codes — no identity, amounts or quantities).
+4. **k-anonymity:** list shown only when the pool has ≥ 8 portfolios; at
+   most 4 rows.
+5. Retention: 365 days rolling; immediately on withdrawal or account deletion.
 
-This should be declared under "Financial info → Other financial info" with note that data is only aggregated with strict privacy guardrails and is opt-in.
+Neither feature is shared with third parties.
 
 ## Data sharing with third-party providers (processors, not "sharing" in Play sense)
 
@@ -69,7 +90,7 @@ The following third parties act as **data processors** on our instructions (decl
 
 | Provider | Data | Purpose | Location |
 |---|---|---|---|
-| Supabase Inc. | All account & app data | Storage, authentication, RLS-enforced access | USA (AWS) |
+| Supabase Inc. | All account & app data | Storage, authentication, RLS-enforced access | Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU) |
 | Google Firebase (Cloud Messaging, Crashlytics, Analytics, Remote Config) | Push token, crash reports, analytics events | Notification delivery, diagnostics, feature flags | Global (Google) |
 | Yahoo Finance / TEFAS / finans.truncgil.com | Only asset ticker symbols (no user identifiers) | Price data retrieval | Global |
 
@@ -91,6 +112,7 @@ Most data is required for core app functionality. The following are truly option
 - Signal notifications (defaults ON, toggleable in Settings)
 - Partner notifications (defaults ON, toggleable)
 - **Yarış/Competition (defaults OFF, opt-in only)**
+- **Zirvedeki Portföyler / Top Portfolios (explicit in-app consent, withdrawable; since 0091)**
 - Bulk asset add cart (feature usage optional)
 
 ---

@@ -74,8 +74,10 @@ void main() {
         ozet: ozetYok,
         hedefTRY: 0,
         now: DateTime(2026, 9, 20, 12), // Pazar
+        yalnizcaBorsa: true,
       );
       expect(kapali.birincil, isA<PiyasaKapaliSatiri>());
+      expect(kapali.kapaliSoylenir, isTrue);
       final acik = BugunService.hesapla(
         karZararlar: const [],
         toplamDeger: 0,
@@ -84,6 +86,20 @@ void main() {
         now: DateTime(2026, 9, 22, 12),
       );
       expect(acik.birincil, isNull);
+    });
+
+    test('karışık portföyde "Piyasa kapalı" satırı YOK (2026-10-01)', () {
+      // Kullanıcı kararı: altın/kripto hafta sonu da işler; "kapalı"
+      // yalnızca tamamen borsa portföyüne söylenir.
+      final karisik = BugunService.hesapla(
+        karZararlar: const [],
+        toplamDeger: 0,
+        ozet: ozetYok,
+        hedefTRY: 0,
+        now: DateTime(2026, 9, 20, 12), // Pazar
+      );
+      expect(karisik.birincil, isNot(isA<PiyasaKapaliSatiri>()));
+      expect(karisik.kapaliSoylenir, isFalse);
     });
 
     test('içgörüler günden güne döner, aynı gün sabittir', () {

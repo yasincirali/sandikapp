@@ -16,9 +16,10 @@ typedef HavuzYukleyici = Future<int?> Function(int gun);
 /// (`ZirvePortfoylerScreen`). Yarış ekranındaki eski kart 2026-09-29'da
 /// buraya taşındı: zirve bir KIYAS verisidir, yarış değil; kıyas ekranı
 /// Performans'tır. Ortak ya da yarışa katılım şartı yok — küresel bayrak
-/// (`global_leaderboard_enabled`) yeter. Havuz da beyana dayanmaz (0083):
-/// portföyü 5 günden eski herkes anonim olarak içindedir; kart kimseyi
-/// "katılmaya" çağırmaz.
+/// (`global_leaderboard_enabled`) yeter. Havuz AÇIK RIZAYA dayanır (0091,
+/// 2026-10-01): rıza vermemiş kullanıcıya kart "havuz oluşuyor" DEMEZ —
+/// sunucu ona listeyi zaten boş döner (karşılıklılık); kart katılım
+/// davetini gösterir, dokununca ekrandaki rıza kartı açılır.
 ///
 /// Dönem Performans'ın seçicisini izler (`ZirveDonem.yakin`); ekran o
 /// dönemle açılır. Kart kendi başına yenilenmez (poller yok): Performans
@@ -30,6 +31,7 @@ class ZirveKarti extends StatefulWidget {
     required this.onAc,
     this.yukleyici,
     this.havuzYukleyici,
+    this.rizaYukleyici,
   });
 
   final ZirveDonem donem;
@@ -39,6 +41,9 @@ class ZirveKarti extends StatefulWidget {
   final ZirveYukleyici? yukleyici;
   final HavuzYukleyici? havuzYukleyici;
 
+  /// Test için rıza durumu; null → `LeaderboardService.fetchZirveRizasi`.
+  final Future<bool?> Function()? rizaYukleyici;
+
   @override
   State<ZirveKarti> createState() => _ZirveKartiState();
 }
@@ -46,6 +51,10 @@ class ZirveKarti extends StatefulWidget {
 class _ZirveKartiState extends State<ZirveKarti> {
   late Future<List<TopGainerAllocation>> _satirlar;
   late Future<int?> _havuz;
+
+  /// Geçerli zirve rızası; `null` (okunamadı) davet göstermez, eski boş
+  /// durum kalır — rıza varsayılmaz ama yok da sayılmaz.
+  late Future<bool?> _riza;
 
   static const double _kupaBoyu = 30;
 
@@ -70,6 +79,8 @@ class _ZirveKartiState extends State<ZirveKarti> {
         (gun) => LeaderboardService.instance
             .fetchZirveHavuzBoyutu(periodDays: gun);
     _havuz = h(widget.donem.gun);
+    _riza = (widget.rizaYukleyici ??
+        LeaderboardService.instance.fetchZirveRizasi)();
   }
 
   @override
@@ -101,7 +112,13 @@ class _ZirveKartiState extends State<ZirveKarti> {
                     ],
                   );
                 }
-                if (satirlar.isEmpty) return _bos(context);
+                if (satirlar.isEmpty) {
+                  return FutureBuilder<bool?>(
+                    future: _riza,
+                    builder: (context, r) =>
+                        r.data == false ? _davet(context) : _bos(context),
+                  );
+                }
                 return _dolu(context, satirlar.first);
               },
             ),
@@ -180,6 +197,33 @@ class _ZirveKartiState extends State<ZirveKarti> {
           'Kendi yerini ve üç portföyün dağılımını gör ›',
           style: context.t.labelMedium?.copyWith(
             letterSpacing: 0,
+            fontWeight: FontWeight.w700,
+            color: context.c.amberText,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Rıza yok: katılım daveti. Ne karşılığında ne verildiği tek cümlede;
+  /// ayrıntı ve karar ekrandaki rıza kartında.
+  Widget _davet(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Katılanların anonim portföylerini gör: en çok kazandıranlar neye '
+          'yatırmış, senden farkı ne. Katılım isteğe bağlı; kimlik, tutar '
+          've TL paylaşılmaz.',
+          style: context.t.bodyMedium?.copyWith(
+            color: context.c.text90,
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        Text(
+          'Nasıl çalıştığını oku ve katıl ›',
+          style: context.t.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
             color: context.c.amberText,
           ),

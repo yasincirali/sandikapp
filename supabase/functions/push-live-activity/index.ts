@@ -331,6 +331,11 @@ Deno.serve(async (request) => {
       // ve gece yarısı push'lanan banner "Canlı" diyordu — donuk rakamla
       // birlikte doğrudan yanlış bilgi.
       isMarketOpen: isBistOpen(),
+      // Portföy yalnızca borsa ürünü mü? "Piyasa kapalı" yalnızca o zaman
+      // (kullanıcı kararı 2026-10-01). Sunucu türü bilmez; istemcinin
+      // özete yazdığı kararı TAŞIR. Eski istemcinin satırında alan yoktur:
+      // `true` — o güne kadarki davranış (uzantı varsayılanıyla aynı).
+      yalnizBorsa: row.yalnizBorsa !== false,
       // Grafiğin tutar ekseni. Tutar göstermeye izin YOKSA gönderilmez —
       // eksen portföy büyüklüğünü doğrudan ele verir ve normalize seri
       // göndermenin bütün gerekçesi buydu. Boş gelince uzantı ekseni

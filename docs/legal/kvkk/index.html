@@ -62,6 +62,7 @@ button:hover { opacity: 0.9; }
 </header>
 <p>﻿# KVKK Aydınlatma Metni — sandık</p>
 <p><strong>Yürürlük tarihi:</strong> 11 Mayıs 2026
+<strong>Son güncelleme:</strong> 29 Eylül 2026
 <strong>Sürüm:</strong> 1.0</p>
 <hr />
 <h2>1. Veri Sorumlusunun Kimliği</h2>
@@ -119,6 +120,7 @@ button:hover { opacity: 0.9; }
 <ul>
 <li>Portföy varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)</li>
 <li>Snapshot geçmişi (toplam değer, getiri yüzdesi)</li>
+<li>Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu)</li>
 <li>Ortaklık bağlantıları ve davet kodları</li>
 </ul>
 <h3>2.4 İşlem Güvenliği Verisi</h3>
@@ -148,6 +150,10 @@ button:hover { opacity: 0.9; }
 </tr>
 <tr>
 <td>Portföy takibi (uygulamanın ana işlevi)</td>
+<td>2.3</td>
+</tr>
+<tr>
+<td>Zirvedeki Portföyler — anonim karşılaştırma</td>
 <td>2.3</td>
 </tr>
 <tr>
@@ -201,6 +207,10 @@ button:hover { opacity: 0.9; }
 <td>KVKK 5(2)(c) — sözleşmenin ifası</td>
 </tr>
 <tr>
+<td>Zirve havuzu ölçümleri (getiri %, tür payı %)</td>
+<td>KVKK 5(1) — açık rıza (uygulama içinde, isteğe bağlı; her an geri alınabilir)</td>
+</tr>
+<tr>
 <td>Push token</td>
 <td>KVKK 5(1) — açık rıza</td>
 </tr>
@@ -213,7 +223,7 @@ button:hover { opacity: 0.9; }
 <td>KVKK 5(2)(a) — kanunlarda öngörülmesi (SPK)</td>
 </tr>
 <tr>
-<td>Yurt dışı aktarımı (Supabase USA, Firebase)</td>
+<td>Yurt dışı aktarımı (Supabase Japonya → Almanya, Firebase ABD)</td>
 <td>KVKK 5(1) ve 9(1) — açık rıza</td>
 </tr>
 </tbody>
@@ -236,7 +246,7 @@ button:hover { opacity: 0.9; }
 <tbody>
 <tr>
 <td>Supabase Inc.</td>
-<td>ABD</td>
+<td>Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde</td>
 <td>Tüm hesap ve uygulama verileri</td>
 <td>Veritabanı ve kimlik doğrulama altyapısı</td>
 <td>KVKK 9(1) — açık rıza</td>
@@ -257,8 +267,10 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
-<p>ABD, Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde <strong>bulunmamaktadır</strong>. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında <strong>açık rızanıza</strong> dayanmaktadır.</p>
+<p>Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde <strong>bulunmamaktadır</strong>. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında <strong>açık rızanıza</strong> dayanmaktadır.</p>
 <p>Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içerisinde belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.</p>
+<h3>5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)</h3>
+<p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
 <hr />
 <h2>6. Kişisel Verilerin Saklanma Süresi</h2>
 <table>
@@ -283,6 +295,11 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Snapshot geçmişi</td>
 <td>Son 365 gün rolling</td>
+<td>Servis ihtiyacı</td>
+</tr>
+<tr>
+<td>Zirve havuzu ölçümleri</td>
+<td>Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen</td>
 <td>Servis ihtiyacı</td>
 </tr>
 <tr>

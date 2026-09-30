@@ -32,6 +32,7 @@ import '../services/bugun_yukleyici.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../theme/sandik.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import 'hedef_sheet.dart';
@@ -453,6 +454,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       reel: _reel,
       haftalikGetiriPct: _haftalik,
       kisisel: widget.kisisel,
+      // "Piyasa kapalı" yalnızca tamamen borsa portföyüne (2026-10-01).
+      // Kartın gösterdiği KAPSAMIN defteri — Birlikte'de ortağın altını da
+      // rakamı hareket ettirir.
+      yalnizcaBorsa: yalnizcaBorsaVarliklardan(widget.state.assets),
     );
     if (veri.bos) return const SizedBox.shrink();
     _gosterimiOlc(veri, now);
@@ -508,6 +513,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
               birincil: veri.birincil,
               seri: ozet?.sparkline ?? const [],
               gizli: gizli,
+              kapaliSoylenir: veri.kapaliSoylenir,
             ),
             if (defter.isNotEmpty) ...[
               const SizedBox(height: SandikSpace.smd),
@@ -693,6 +699,7 @@ class _Baslik extends StatelessWidget {
     required this.birincil,
     required this.seri,
     required this.gizli,
+    required this.kapaliSoylenir,
   });
 
   final DateTime now;
@@ -700,6 +707,7 @@ class _Baslik extends StatelessWidget {
   final BugunSatiri? birincil;
   final List<double> seri;
   final bool gizli;
+  final bool kapaliSoylenir;
 
   static const double _tarihGenisligi = 60;
 
@@ -756,7 +764,12 @@ class _Baslik extends StatelessWidget {
         ),
         Expanded(
           child: _Hero(
-              now: now, dil: dil, birincil: birincil, seri: seri, gizli: gizli),
+              now: now,
+              dil: dil,
+              birincil: birincil,
+              seri: seri,
+              gizli: gizli,
+              kapaliSoylenir: kapaliSoylenir),
         ),
       ],
     );
@@ -770,6 +783,7 @@ class _Hero extends StatelessWidget {
     required this.birincil,
     required this.seri,
     required this.gizli,
+    required this.kapaliSoylenir,
   });
 
   final DateTime now;
@@ -777,6 +791,9 @@ class _Hero extends StatelessWidget {
   final BugunSatiri? birincil;
   final List<double> seri;
   final bool gizli;
+
+  /// Bkz. `BugunKartiVerisi.kapaliSoylenir`.
+  final bool kapaliSoylenir;
 
   /// Sparkline için hero sütununun en az genişliği (pt). Altında sayı ve
   /// yüzde tek başına kalır; 320pt ekranda buraya ~165pt düşüyor.
@@ -825,7 +842,11 @@ class _Hero extends StatelessWidget {
                 BistTakvimi.yarimGunMu(now)
                     ? BistTakvimi.yarimGunKapanisDk
                     : BugunService.seansKapanisDk))
-            : '${l10n.todayClosedWord} · ${_acilis(l10n)}';
+            // Karışık portföy (altın/döviz/kripto): borsa kapalı olsa da
+            // rakam işler — "Piyasa kapalı" yanlış olurdu (2026-10-01).
+            : kapaliSoylenir
+                ? '${l10n.todayClosedWord} · ${_acilis(l10n)}'
+                : l10n.todayLiveWord;
       }
       seriCiz = !gizli && seri.length >= 2;
     } else if (s is PiyasaKapaliSatiri) {

@@ -540,6 +540,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // segmentler zaten bu kartın girdisi ve kuyruk orada işaretli. İkinci
     // bir yoldan sormak, iki kaynağın ayrışması demekti.
     final kapaliKuyruk = segments.any((s) => s.piyasaKapali);
+    // Rozet yalnızca portföy TAMAMEN borsa ürünüyse (2026-10-01, bkz.
+    // `yalnizcaBorsa`): karışık portföyde altın/kripto hafta sonu da
+    // işler, "kapalı" demek yanlış bilgidir — `null` gelir, rozet çizilmez.
+    final kapaliEtiketi =
+        kapaliKuyruk ? piyasaKapaliEtiketiVarliklardan(targetAssets) : null;
 
     // Gün içi başlık, çizilen günü söyler. Kuyruk varsa aralık yazılır
     // ("11 Eyl → bugün"): eksen artık tek gün değil, kullanıcı isteği
@@ -601,7 +606,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               // ne olduğunu SÖZLE de anlatır. Desen tek başına yeterli
               // değil: kullanıcı düz çizgiyi "fiyat oynamadı" diye
               // okuyabilir, oysa borsa kapalıydı.
-              if (kapaliKuyruk) ...[
+              if (kapaliEtiketi != null) ...[
                 const SizedBox(width: SandikSpace.sm),
                 Container(
                   padding:
@@ -611,10 +616,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                   child: Text(
-                    // Metin portföydeki TÜRLERE göre daralır: mevduat
-                    // faizi hafta sonu da işler, ona "piyasa kapalı"
-                    // demek yanlış bilgidir (bkz. `piyasaKapaliEtiketi`).
-                    piyasaKapaliEtiketiVarliklardan(targetAssets),
+                    // Metin portföydeki TÜRLERE göre karar verilir:
+                    // mevduat faizi, altın, kripto hafta sonu da işler,
+                    // onlara "kapalı" demek yanlış bilgidir (bkz.
+                    // `piyasaKapaliEtiketi`).
+                    kapaliEtiketi,
                     maxLines: 1,
                     style: context.t.labelSmall?.copyWith(
                       letterSpacing: 0.6,

@@ -46,7 +46,14 @@ docs/
 ## Halka arz takvimi verisi (`data/halka_arz.json`)
 
 Uygulamanın "Halka arzlar" ekranı bu dosyayı okur (`HalkaArzService`); ağ yoksa
-uygulamaya gömülü kopyaya (`assets/data/halka_arz.json`) düşer. Güncelleme:
+uygulamaya gömülü kopyaya (`assets/data/halka_arz.json`) düşer.
+
+**Otomatik (2026-10-01'den beri):** `.github/workflows/halka-arz.yml` her gün
+09:30 TR'de `tool/halka_arz_guncelle.py`'yi koşar; aşağıdaki 1–3. adımları yapar
+(yeni arz, boş alanı dolan kayıt, işlem görmeye başlayan kodun sembol listesine
+eklenmesi), 4. adımdaki testi koşar ve değişiklik varsa PR açar — birleştirmek
+yeterli. Dolu bir alanın üstüne yazmaz; elle düzeltme kalıcıdır. Elle yol yalnızca
+kaynakta olmayan bir düzeltme için:
 
 1. Kaydı ekle/düzelt — her alan kaynaktan (SPK bülteni, KAP, izahname, aracı kurum
    ya da halkarz.com şirket sayfası). Bilinmeyen alan `null`; tahmin yazma. `kaynak`

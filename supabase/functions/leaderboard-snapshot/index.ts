@@ -11,8 +11,9 @@
 // Kullanıcı kararı: snapshot'ı sunucu her gün, opt-in yapmış herkes için
 // atar; havuz uygulama açılışına bağlı olmaktan çıkar.
 //
-// ## 2026-09-29: zirve havuzu beyana dayanmaz (0083)
-// Portföyü olan HERKES ölçülür ve `zirve_*_snapshots` tablolarına yazılır
+// ## 2026-09-29: zirve havuzu beyana dayanmaz (0083) → 2026-10-01: açık rıza (0091)
+// 0083'te portföyü olan HERKES ölçülüp `zirve_*_snapshots`'a yazılıyordu;
+// 0091'den beri yalnız `zirve_rizalari`'nda geçerli rızası olanlar yazılır
 // (anonim, RLS kapalı kutu; yalnız RPC okur). Yarış tablolarına yine
 // YALNIZ opt-in kullanıcılar yazılır — Yarış ekranının mekaniği değişmesin
 // diye (`yazimPlani`). Aynı hesap iki yere gider; ikinci bir fiyat turu yok.
@@ -451,24 +452,26 @@ export function throttleMu(mesaj: string | null | undefined): boolean {
   return (mesaj ?? '').includes('snapshot_throttled');
 }
 
-/// Hangi satır hangi tabloya (0083, 2026-09-29).
+/// Hangi satır hangi tabloya.
 ///
-/// Zirve havuzu BEYANA DAYANMAZ: ölçülen herkes `zirve_*` tablolarına
-/// yazılır. Yarış tabloları (`user_*_snapshots`) yalnızca yarışa katılanlar
-/// için yazılır — Yarış ekranının mekaniği değişmesin (kullanıcı kararı):
-/// katılmamış bir ortak sıralamada görünmez, genel yüzdelik havuzu
-/// genişlemez.
+/// Zirve havuzu AÇIK RIZAYA dayanır (0091, 2026-10-01; 0083'te beyansızdı):
+/// `zirve_*` tablolarına yalnız [zirveRiza] kümesindekiler yazılır —
+/// rızası olmayanın getirisi ve dağılımı zirve için saklanmaz (veri
+/// minimizasyonu). Yarış tabloları (`user_*_snapshots`) yalnızca yarışa
+/// katılanlar için yazılır — Yarış ekranının mekaniği değişmesin: katılmamış
+/// bir ortak sıralamada görünmez, genel yüzdelik havuzu genişlemez.
 export function yazimPlani<R extends { user_id: string }, A extends { user_id: string }>(
   roiRows: R[],
   allocRows: A[],
   optIn: Set<string>,
+  zirveRiza: Set<string>,
 ): { zirveRoi: R[]; zirveAlloc: A[]; yarisKullanicilari: string[] } {
   const olculen = new Set<string>();
   for (const r of roiRows) olculen.add(r.user_id);
   for (const a of allocRows) olculen.add(a.user_id);
   return {
-    zirveRoi: roiRows,
-    zirveAlloc: allocRows,
+    zirveRoi: roiRows.filter((r) => zirveRiza.has(r.user_id)),
+    zirveAlloc: allocRows.filter((a) => zirveRiza.has(a.user_id)),
     yarisKullanicilari: [...olculen].filter((u) => optIn.has(u)),
   };
 }
@@ -528,14 +531,23 @@ Deno.serve(async (request) => {
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
     // 1) Yarışa katılanlar — yalnız Yarış tablolarına kimin yazılacağını
-    // belirler. Ölçülecek küme bu DEĞİL: zirve havuzu beyana dayanmaz
-    // (0083), portföyü olan herkes ölçülür.
+    // belirler. Zirve kümesi ayrı: açık rıza verenler (1b, 0091).
     const { data: profilRows, error: profilError } = await admin
       .from('profiles')
       .select('id')
       .eq('leaderboard_opt_in', true);
     if (profilError) throw new Error(`Profiller alinamadi: ${profilError.message}`);
     const optIn = new Set((profilRows ?? []).map((r: { id: string }) => String(r.id)));
+
+    // 1b) Zirve açık rızası (0091) — zirve tablolarına kimin yazılacağı.
+    const { data: rizaRows, error: rizaError } = await admin
+      .from('zirve_rizalari')
+      .select('user_id')
+      .is('geri_cekildi_at', null);
+    if (rizaError) throw new Error(`Zirve rizalari alinamadi: ${rizaError.message}`);
+    const zirveRiza = new Set(
+      (rizaRows ?? []).map((r: { user_id: string }) => String(r.user_id)),
+    );
 
     // 2) Herkesin aktif defteri (sayfalı).
     // Mezar taşı YOK: kullanıcının ekranda gördüğü portföy `deleted_at` +
@@ -603,7 +615,7 @@ Deno.serve(async (request) => {
     // dakikada attığı istemci snapshot'ı (Yarış ekranı açık) BÜTÜN partiyi
     // düşürüyordu — ilk canlı koşuda görüldü. Throttle "atlandı" sayılır
     // (o dakikadaki değer zaten taze), başka hata yükselir.
-    const plan = yazimPlani(roiRows, zirveAllocRows, optIn);
+    const plan = yazimPlani(roiRows, zirveAllocRows, optIn, zirveRiza);
     let throttled = 0;
     let yazilanRoi = 0;
     let yazilanAlloc = 0;

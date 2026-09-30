@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -377,7 +378,8 @@ class LiveActivityService {
     final key = '${payload['totalText']}|${payload['changeText']}'
         '|${payload['changePctText']}|${payload['showAmounts']}'
         '|${payload['isFlatChange']}|${payload['axisMinText']}'
-        '|${payload['axisMaxText']}|${payload['isLightTheme']}';
+        '|${payload['axisMaxText']}|${payload['isLightTheme']}'
+        '|${payload['yalnizBorsa']}';
     if (key == _lastSummaryKey) return;
 
     await _db
@@ -407,6 +409,8 @@ class LiveActivityService {
             // önplandayken ActivityKit doğru paleti basar, push gelince
             // eskisine dönerdi — `show_amounts` ile birebir aynı hata.
             'isLightTheme': payload['isLightTheme'],
+            // Sunucu push'u da "kapalı" etiketini aynı kuralla basmalı.
+            'yalnizBorsa': payload['yalnizBorsa'],
             // Özetin hangi ANLAM sürümüyle yazıldığı.
             //
             // v1'de `changeText` ÖMÜRLÜK getiriydi; v2'de günlük değişim.
@@ -639,7 +643,7 @@ class LiveActivityService {
           '|${payload['isPositive']}|${payload['isHidden']}'
           '|${payload['showAmounts']}|${payload['isMarketOpen']}'
           '|${payload['isFlatChange']}|${payload['axisMinText']}'
-          '|${payload['isLightTheme']}';
+          '|${payload['isLightTheme']}|${payload['yalnizBorsa']}';
       final unchanged = _sessionActive && key == _lastPayloadKey;
 
       // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup APNs'e
@@ -770,6 +774,7 @@ class LiveActivityService {
         'axisMaxText': '',
         'isFlatChange': false,
         'isLightTheme': themeIsLight,
+        'yalnizBorsa': yalnizcaBorsaVarliklardan(state.assets),
       };
     }
 
@@ -827,6 +832,13 @@ class LiveActivityService {
       // tümden keserdi. Eski istemci bu alanı tanımaz, varsayılan koyu
       // paletle çizer — bugünkü davranış.
       'isLightTheme': themeIsLight,
+      // "Piyasa kapalı" yalnızca portföy TAMAMEN borsa ürünüyse (kullanıcı
+      // kararı 2026-10-01, bkz. `yalnizcaBorsa`). `isMarketOpen` BIST
+      // seansını anlatmaya devam eder (seans çubuğu ona bakar); etiketi
+      // ikisi birlikte belirler. Şema sürümü yükseltilmedi — `isLightTheme`
+      // ile aynı gerekçe: eski alanların anlamı değişmedi, eksik alan eski
+      // davranışa düşer.
+      'yalnizBorsa': yalnizcaBorsaVarliklardan(state.assets),
     };
   }
 

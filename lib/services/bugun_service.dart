@@ -137,6 +137,7 @@ class BugunKartiVerisi {
     this.reel,
     this.haftalik,
     this.olay,
+    this.kapaliSoylenir = false,
   });
   final BugunSatiri? birincil;
   final List<BugunSatiri> ikincil;
@@ -150,6 +151,12 @@ class BugunKartiVerisi {
   /// düzeni). Eskiden dönüşüm havuzundaydı; bir tarih "bazı günler görünen"
   /// bir şey olamaz, kalan gün sayısı her gün değişir ve her gün okunur.
   final YaklasanOlaySatiri? olay;
+
+  /// Seans dışında "Piyasa kapalı" denebilir mi? Yalnızca portföy TAMAMEN
+  /// borsa ürünüyse (kullanıcı kararı 2026-10-01, bkz. `yalnizcaBorsa`).
+  /// Karışık portföyde altın/döviz/kripto hafta sonu ve gece de işler;
+  /// başlık orada kapalılık değil canlılık söyler.
+  final bool kapaliSoylenir;
 
   bool get bos =>
       birincil == null &&
@@ -273,12 +280,16 @@ abstract final class BugunService {
     ReelGetiriSatiri? reel,
     double? haftalikGetiriPct,
     bool kisisel = true,
+    bool yalnizcaBorsa = false,
   }) {
     BugunSatiri? birincil;
     if (ozet != null && ozet.hasChange) {
       birincil = GunlukDegisimSatiri(
           changeTRY: ozet.changeTRY!, changePct: ozet.changePct!);
-    } else if (!seansAcikMi(now)) {
+    } else if (yalnizcaBorsa && !seansAcikMi(now)) {
+      // Yalnızca borsa portföyü: rakam gerçekten donuk, "kapalı" doğru.
+      // Karışık portföyde bu satır YOK (2026-10-01) — altın/kripto işlerken
+      // "Piyasa kapalı" demek yanlış bilgidir; seri gelince hareket çizilir.
       birincil = PiyasaKapaliSatiri(sonrakiAcilis: sonrakiAcilis(now));
     }
 
@@ -333,6 +344,7 @@ abstract final class BugunService {
       reel: reel,
       haftalik: haftalik,
       olay: olaylar.isEmpty ? null : olaylar.first,
+      kapaliSoylenir: yalnizcaBorsa,
     );
   }
 }

@@ -162,6 +162,18 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// Eski sürümlerden gelen oturumlar bu alanı taşımaz; varsayılan
         /// `false` — koyu palet, yani bugüne kadarki davranış.
         var isLightTheme: Bool = false
+
+        /// Portföy yalnızca borsa ürünü mü (hisse/fon/BES)?
+        ///
+        /// "Piyasa kapalı" / "Seans kapalı" yalnızca o zaman söylenir
+        /// (kullanıcı kararı 2026-10-01): karışık portföyde altın, döviz,
+        /// kripto hafta sonu ve gece de işler, rakam donuk değildir.
+        /// [isMarketOpen] BIST seansını anlatmaya devam eder (seans çubuğu
+        /// ona bakar); etiket ikisinden türetilir — bkz. [kapaliGoster].
+        ///
+        /// Eski sürümden/eski sunucudan gelen durumda alan yoktur;
+        /// varsayılan `true` — o güne kadarki davranış.
+        var yalnizBorsa: Bool = true
     }
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.
@@ -233,7 +245,16 @@ extension SandikActivityAttributes.ContentState {
         // Varsayılan KOYU — bugüne kadarki davranış.
         isLightTheme =
             try c.decodeIfPresent(Bool.self, forKey: .isLightTheme) ?? false
+        // Varsayılan `true` — eski davranış (bkz. alan notu).
+        yalnizBorsa =
+            try c.decodeIfPresent(Bool.self, forKey: .yalnizBorsa) ?? true
     }
+
+    /// "Kapalı" denebilir mi — seans dışı VE portföy yalnızca borsa.
+    ///
+    /// Canlılık etiketi, gri nokta ve soluk logo bunu sorar; seans çubuğu
+    /// ise yalnızca [isMarketOpen]'a bakar (BIST'in kendi saati).
+    var kapaliGoster: Bool { !isMarketOpen && yalnizBorsa }
 
     /// Günlük değişim gerçekten hesaplanabildi mi?
     ///

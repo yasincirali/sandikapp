@@ -32,6 +32,11 @@ private enum WidgetKeys {
     static let updatedAt = "sandik_updated_at"
     static let date = "sandik_date"
     static let marketOpen = "sandik_market_open"
+    /// Portföy yalnızca borsa ürünü mü (hisse/fon/BES)? "Kapalı" ibaresi
+    /// yalnızca o zaman söylenir (kullanıcı kararı 2026-10-01): karışık
+    /// portföyde altın/döviz/kripto hafta sonu ve gece de işler. Dart'ta
+    /// `yalnizcaBorsa` (utils/piyasa_kapali_etiketi.dart).
+    static let yalnizBorsa = "sandik_yalniz_borsa"
     static let isLightTheme = "sandik_is_light_theme"
     static let sparkSeries = "sandik_spark_series"
 }
@@ -61,8 +66,13 @@ struct SandikEntry: TimelineEntry {
     let updatedAt: String
     let dateLabel: String
     let isMarketOpen: Bool
+    /// Bkz. `WidgetKeys.yalnizBorsa`.
+    let yalnizBorsa: Bool
     let isLight: Bool
     let sparkline: [Double]
+
+    /// "Kapalı" denebilir mi — seans dışı VE portföy yalnızca borsa.
+    var kapaliGoster: Bool { !isMarketOpen && yalnizBorsa }
 
     /// Yön RENKLE anlatılamaz — çağıran ayrıca ▲/▼ gösterir.
     /// Ölçüm yoksa ya da sıfırsa yön YOKTUR (nötr ton).
@@ -83,9 +93,17 @@ struct SandikEntry: TimelineEntry {
         updatedAt: "",
         dateLabel: "",
         isMarketOpen: false,
+        yalnizBorsa: true,
         isLight: false,
         sparkline: []
     )
+}
+
+/// `sandik_yalniz_borsa` — anahtar YOKSA `true` (eski sürümün yazdığı
+/// veride o güne kadarki davranış: seans dışında "Kapalı").
+/// `bool(forKey:)` eksik anahtara `false` döndürür; o yüzden `object`.
+func yalnizBorsaOku(_ defaults: UserDefaults) -> Bool {
+    defaults.object(forKey: WidgetKeys.yalnizBorsa) as? Bool ?? true
 }
 
 struct SandikProvider: TimelineProvider {
@@ -115,6 +133,7 @@ struct SandikProvider: TimelineProvider {
             updatedAt: defaults.string(forKey: WidgetKeys.updatedAt) ?? "",
             dateLabel: defaults.string(forKey: WidgetKeys.date) ?? "",
             isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
+            yalnizBorsa: yalnizBorsaOku(defaults),
             isLight: defaults.bool(forKey: WidgetKeys.isLightTheme),
             sparkline: seri
         )
@@ -163,7 +182,8 @@ struct SandikHomeWidgetView: View {
                     // Dar alanda gradient dolgu gürültüye dönüşüyor —
                     // kilit ekranındaki kompakt görünümle aynı karar.
                     showsFill: family == .systemLarge,
-                    isMarketOpen: entry.isMarketOpen
+                    // Karışık portföyde nokta canlı kalır: rakam işliyor.
+                    isMarketOpen: !entry.kapaliGoster
                 )
                 .frame(height: family == .systemLarge ? 64 : 36)
             }
@@ -181,9 +201,10 @@ struct SandikHomeWidgetView: View {
                 .font(.sandikLabel(12, weight: .bold))
                 .foregroundColor(palette.text58)
             Spacer(minLength: 0)
-            if !entry.isMarketOpen && entry.hasData {
+            if entry.kapaliGoster && entry.hasData {
                 // Rakamın neden değişmediğini söyler. Bu olmadan kullanıcı
-                // widget'ı bozuk sanıyor.
+                // widget'ı bozuk sanıyor. Yalnızca borsa portföyünde:
+                // altın/kripto varken rakam gerçekten değişiyor (2026-10-01).
                 Text("Kapalı")
                     .font(.sandikLabel(10, weight: .semibold))
                     .foregroundColor(palette.text36)
@@ -314,6 +335,8 @@ struct SandikKilitEntry: TimelineEntry {
     let isPositive: Bool
     let isFlat: Bool
     let isMarketOpen: Bool
+    /// Bkz. `WidgetKeys.yalnizBorsa`.
+    let yalnizBorsa: Bool
     let sparkline: [Double]
 
     /// Yön yalnız gerçek, görünür bir hareket varken (ana ekranla aynı kural).
@@ -325,7 +348,7 @@ struct SandikKilitEntry: TimelineEntry {
             date: tarih, hasData: hasData, isHidden: isHidden,
             showsAmount: showsAmount, pctText: pctText, changeText: changeText,
             isPositive: isPositive, isFlat: isFlat, isMarketOpen: false,
-            sparkline: sparkline)
+            yalnizBorsa: yalnizBorsa, sparkline: sparkline)
     }
 
     static let placeholder = SandikKilitEntry(
@@ -338,6 +361,7 @@ struct SandikKilitEntry: TimelineEntry {
         isPositive: true,
         isFlat: true,
         isMarketOpen: false,
+        yalnizBorsa: true,
         sparkline: []
     )
 }
@@ -367,6 +391,7 @@ struct SandikKilitProvider: TimelineProvider {
             isPositive: defaults.bool(forKey: WidgetKeys.isPositive),
             isFlat: defaults.bool(forKey: WidgetKeys.isFlat),
             isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
+            yalnizBorsa: yalnizBorsaOku(defaults),
             sparkline: seri
         )
     }
@@ -535,9 +560,14 @@ struct SandikKilitView: View {
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 58, alignment: .trailing)
-            } else if let acilis = BistSeans.sonrakiAcilis(entry.date) {
+            } else if entry.yalnizBorsa,
+                      let acilis = BistSeans.sonrakiAcilis(entry.date) {
                 // "Seans kapalı ·" öneki kalktı: çubuk yokken "açılış" zaten
                 // kapalı demektir; yer yüzdeye kaldı.
+                //
+                // Yalnızca borsa portföyünde (2026-10-01): karışık portföyde
+                // "açılış" da örtük bir "kapalı" ibaresidir, oysa altın/kripto
+                // işliyor. Orada sağ taraf boş kalır.
                 HStack(spacing: 3) {
                     Text("açılış")
                         .font(.sandikLabel(11, weight: .medium))

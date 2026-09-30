@@ -21,6 +21,7 @@ void main() {
     required List<TopGainerAllocation> satirlar,
     int? havuz,
     ZirveDonem donem = ZirveDonem.ay,
+    bool? riza = true,
   }) async {
     tester.view.physicalSize = const Size(390 * 3, 500 * 3);
     tester.view.devicePixelRatio = 3;
@@ -37,6 +38,7 @@ void main() {
               onAc: () => acildi++,
               yukleyici: (_) async => satirlar,
               havuzYukleyici: (_) async => havuz,
+              rizaYukleyici: () async => riza,
             ),
           ),
         ),
@@ -45,6 +47,22 @@ void main() {
     await tester.pumpAndSettle();
     return acildi;
   }
+
+  // 0091: havuz açık rızaya dayanır; rızasız kullanıcıya sunucu boş döner.
+  testWidgets('rıza yok: "havuz oluşuyor" değil, katılım daveti', (tester) async {
+    await pump(tester, satirlar: const [], havuz: 4, riza: false);
+    expect(find.textContaining('Havuz oluşuyor'), findsNothing,
+        reason: 'rızasız kullanıcıya boş liste havuz boşluğu değil');
+    expect(find.textContaining('Katılım isteğe bağlı'), findsOneWidget);
+    expect(find.text('Nasıl çalıştığını oku ve katıl ›'), findsOneWidget);
+  });
+
+  testWidgets('rıza okunamadı: davet uydurulmaz, boş durum kalır',
+      (tester) async {
+    await pump(tester, satirlar: const [], havuz: 4, riza: null);
+    expect(find.textContaining('Katılım isteğe bağlı'), findsNothing);
+    expect(find.textContaining('Havuz oluşuyor'), findsOneWidget);
+  });
 
   testWidgets('dolu: cümle, birincinin şeridi, çağrı satırı', (tester) async {
     await pump(tester, satirlar: const [birinci]);
@@ -94,6 +112,7 @@ void main() {
             onAc: () => acildi++,
             yukleyici: (_) async => const [birinci],
             havuzYukleyici: (_) async => 4,
+            rizaYukleyici: () async => true,
           ),
         ),
       ),

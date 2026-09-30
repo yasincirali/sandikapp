@@ -292,7 +292,8 @@ enum LiveActivityChannel {
             //
             // ⚠️ Argüman sırası `ContentState` alan sırasıyla AYNI olmak
             // zorunda (memberwise initializer): showAmounts → axisMinText
-            // → axisMaxText → isFlatChange → isMarketOpen → isLightTheme.
+            // → axisMaxText → isFlatChange → isMarketOpen → isLightTheme
+            // → yalnizBorsa.
             axisMinText: args["axisMinText"] as? String ?? "",
             axisMaxText: args["axisMaxText"] as? String ?? "",
             // Ölçüldü ama sıfır mı? Yön oku ve kâr/zarar rengi buna göre
@@ -314,7 +315,10 @@ enum LiveActivityChannel {
             //
             // Varsayılan `false` (koyu) korunur: bayrak eksikse bugüne
             // kadarki davranış.
-            isLightTheme: args["isLightTheme"] as? Bool ?? false
+            isLightTheme: args["isLightTheme"] as? Bool ?? false,
+            // Varsayılan `true`: bayrak eksikse o güne kadarki davranış
+            // (seans dışında "Piyasa kapalı"). ContentState ile AYNI.
+            yalnizBorsa: args["yalnizBorsa"] as? Bool ?? true
         )
     }
 }

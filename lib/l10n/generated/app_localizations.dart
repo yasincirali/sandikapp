@@ -2393,7 +2393,7 @@ abstract class AppLocalizations {
   /// No description provided for @showOnWeekendSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Hafta sonu BIST kapalıdır; banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir.'**
+  /// **'Hafta sonu BIST kapalıdır. Portföyün yalnızca hisse ve fondan oluşuyorsa banner son kapanışı \"Piyasa kapalı\" etiketiyle gösterir; altın, döviz ya da kripto varsa canlı kalır.'**
   String get showOnWeekendSubtitle;
 
   /// No description provided for @showAmounts.
@@ -4901,13 +4901,13 @@ abstract class AppLocalizations {
   /// No description provided for @csvImportTitle.
   ///
   /// In tr, this message translates to:
-  /// **'CSV ile içe aktar'**
+  /// **'Ekstreden içe aktar'**
   String get csvImportTitle;
 
   /// No description provided for @csvImportBody.
   ///
   /// In tr, this message translates to:
-  /// **'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.'**
+  /// **'Aracı kurum ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da tabloyu kopyalayıp yapıştır. Sütunların adı ve sırası önemli değil: sembol, adet, fiyat, tarih ve alış/satış kendiliğinden bulunur. Alışlar ve satışlar tarihleriyle birlikte gelir.'**
   String get csvImportBody;
 
   /// No description provided for @pasteHere.
@@ -4915,6 +4915,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Buraya yapıştır'**
   String get pasteHere;
+
+  /// No description provided for @importPickFile.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dosyadan seç (PDF, Excel, CSV)'**
+  String get importPickFile;
+
+  /// No description provided for @importReading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dosya okunuyor…'**
+  String get importReading;
+
+  /// No description provided for @importMappingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sütunlar böyle eşlendi'**
+  String get importMappingTitle;
+
+  /// No description provided for @importLowConfidence.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dosyanın sütunlarından tam emin değiliz; eşlemeyi kontrol et, gerekirse düzelt.'**
+  String get importLowConfidence;
+
+  /// No description provided for @importFixColumns.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sütunları düzelt'**
+  String get importFixColumns;
+
+  /// No description provided for @importColumnNone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yok'**
+  String get importColumnNone;
+
+  /// No description provided for @importApply.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygula'**
+  String get importApply;
+
+  /// No description provided for @importOrPaste.
+  ///
+  /// In tr, this message translates to:
+  /// **'ya da tabloyu yapıştır'**
+  String get importOrPaste;
 
   /// No description provided for @preview.
   ///
@@ -5033,7 +5081,7 @@ abstract class AppLocalizations {
   /// No description provided for @pasteFromStatement.
   ///
   /// In tr, this message translates to:
-  /// **'Ekstreden / CSV\'den yapıştır'**
+  /// **'Ekstreden içe aktar (PDF, Excel, CSV)'**
   String get pasteFromStatement;
 
   /// No description provided for @saveAllCount.
@@ -5435,7 +5483,7 @@ abstract class AppLocalizations {
   /// No description provided for @marketClosedNote.
   ///
   /// In tr, this message translates to:
-  /// **'Piyasa kapalıyken son kapanış gösterilir.'**
+  /// **'Borsa kapalıyken hisse ve fonlar son kapanıştan, altın, döviz ve kripto canlı gösterilir.'**
   String get marketClosedNote;
 
   /// No description provided for @hiddenWeekend.
@@ -6194,6 +6242,12 @@ abstract class AppLocalizations {
   /// **'Piyasa kapalı'**
   String get todayClosedWord;
 
+  /// No description provided for @todayLiveWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'Canlı'**
+  String get todayLiveWord;
+
   /// No description provided for @todayLoading.
   ///
   /// In tr, this message translates to:
@@ -6497,7 +6551,7 @@ abstract class AppLocalizations {
   /// No description provided for @emptyPasteHint.
   ///
   /// In tr, this message translates to:
-  /// **'Aracı kurum ekstreni kopyala ve yapıştır; her satır bir varlık olur.'**
+  /// **'Aracı kurum ekstreni (PDF, Excel ya da CSV) seç ya da yapıştır; her satır bir varlık olur.'**
   String get emptyPasteHint;
 
   /// No description provided for @marketDollar.

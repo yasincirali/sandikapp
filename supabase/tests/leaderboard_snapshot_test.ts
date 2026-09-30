@@ -228,8 +228,8 @@ Deno.test('netLotlar: farklı para birimi / tür ayrı pozisyon, mezar taşı mi
   assertEquals(out.map((l) => [l.type, l.quantity]), [['altin', 35], ['doviz', 2200]]);
 });
 
-// ── 0083: zirve herkese, yarış yalnız katılana ─────────────────────────────
-Deno.test('yazimPlani: zirve ölçülen herkesi alır, yarış yalnız opt-in', () => {
+// ── 0091: zirve yalnız açık rıza verene, yarış yalnız katılana ──────────────
+Deno.test('yazimPlani: zirve yalnız rıza verenleri alır, yarış yalnız opt-in', () => {
   const roi = [
     { user_id: 'a', period_days: 30, roi_pct: 2.7 },
     { user_id: 'b', period_days: 30, roi_pct: -3.3 },
@@ -238,9 +238,10 @@ Deno.test('yazimPlani: zirve ölçülen herkesi alır, yarış yalnız opt-in', 
     { user_id: 'b', allocation_pct: { altin: 100 }, type_count: 1 },
     { user_id: 'c', allocation_pct: { fon: 100 }, type_count: 1 },
   ];
-  const plan = yazimPlani(roi, alloc, new Set(['b', 'z']));
-  assertEquals(plan.zirveRoi.length, 2);
-  assertEquals(plan.zirveAlloc.length, 2);
+  const plan = yazimPlani(roi, alloc, new Set(['b', 'z']), new Set(['a', 'c']));
+  // Rıza: a ve c. 'b' yarışta ama zirveye rıza vermedi → zirvede YOK.
+  assertEquals(plan.zirveRoi.map((r) => r.user_id), ['a']);
+  assertEquals(plan.zirveAlloc.map((r) => r.user_id), ['c']);
   // 'z' opt-in ama ölçülmedi → yazılacak satırı yok; 'a' ve 'c' opt-in değil.
   assertEquals(plan.yarisKullanicilari, ['b']);
 });
@@ -250,9 +251,24 @@ Deno.test('yazimPlani: kimse yarışa katılmamışsa yarış tablosuna yazım y
     [{ user_id: 'a', period_days: 7, roi_pct: 1 }],
     [{ user_id: 'a', allocation_pct: { hisse: 100 }, type_count: 1 }],
     new Set<string>(),
+    new Set(['a']),
   );
   assertEquals(plan.yarisKullanicilari, []);
   assertEquals(plan.zirveRoi.length, 1);
+});
+
+Deno.test('yazimPlani: rıza yoksa zirveye hiçbir satır yazılmaz', () => {
+  // 0091 öncesi herkes ölçülüyordu; artık rızasız kullanıcının getirisi
+  // zirve için SAKLANMAZ (veri minimizasyonu).
+  const plan = yazimPlani(
+    [{ user_id: 'a', period_days: 30, roi_pct: 5 }],
+    [{ user_id: 'a', allocation_pct: { altin: 100 }, type_count: 1 }],
+    new Set(['a']),
+    new Set<string>(),
+  );
+  assertEquals(plan.zirveRoi, []);
+  assertEquals(plan.zirveAlloc, []);
+  assertEquals(plan.yarisKullanicilari, ['a']);
 });
 
 // ── 0084: fon kırılımı ──────────────────────────────────────────────────────

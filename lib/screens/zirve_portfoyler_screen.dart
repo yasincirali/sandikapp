@@ -6,14 +6,17 @@ import '../providers/portfolio_provider.dart';
 import '../services/leaderboard_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
+import '../utils/friendly_error.dart';
 import '../utils/polling.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/zirve_ayna_kiyas.dart';
 import '../widgets/zirve_cetveli.dart';
 import '../widgets/zirve_dagilim_seridi.dart';
 import '../widgets/zirve_fon_listesi.dart';
 import '../widgets/zirve_karti.dart';
+import '../widgets/zirve_riza_karti.dart';
 
 /// Zirvedeki Portföyler — tam ekran (kullanıcı seçimi 2026-09-29, "A ·
 /// Cetvel önde").
@@ -28,8 +31,10 @@ import '../widgets/zirve_karti.dart';
 /// - Zirve: `get_top_gainers_allocation` (sıra, getiri, tür payı; anonim).
 ///   Sunucu snapshot'ı günde iki kez (0081/0082); ekran 45 sn'de bir
 ///   yeniden sorar ki dönem değişimi ve cron sonrası taze olsun.
-/// - Havuz beyana dayanmaz (0083): portföyü 5 günden, hesabı 7 günden eski
-///   herkes anonim olarak içinde. Ekran kimseyi "katılmaya" çağırmaz;
+/// - Havuz AÇIK RIZAYA dayanır (0091, 2026-10-01; 0083'te beyansızdı):
+///   rıza vermemiş kullanıcı önce `ZirveRizaKarti`'nı görür — ne paylaşılır,
+///   ne paylaşılmaz, karşılığında ne alır, nasıl geri çeker. Karşılıklılık:
+///   liste yalnız katılana açılır (sunucu da rızasız çağırana boş döner).
 ///   Yarış ekranı ve onun katılım anahtarı bundan bağımsız.
 /// - Sen: getiri istemcide `LeaderboardService.computeROI` (Yarış
 ///   ekranıyla AYNI formül), dağılım `computeAllocation`. Sunucuya bir şey
@@ -62,6 +67,9 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   String? _kiyasHedefi;
   late Future<List<TopGainerAllocation>> _satirlar = _cek();
   late Future<int?> _havuz = _havuzCek();
+
+  /// Geçerli zirve rızası (0091). `null` = okunamadı; rıza varsayılmaz.
+  late Future<bool?> _riza = LeaderboardService.instance.fetchZirveRizasi();
   double? _senRoi;
 
   /// "Sen" değerleri sunucudan mı (havuzdasın, 0085 `zirve_benim`)? Öyleyse
@@ -156,6 +164,46 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     });
   }
 
+  /// Rıza verildi → liste ve "Sen" yeniden çekilir. Hata kartta kalır
+  /// (`SandikAsyncButton` yeniden basılabilir), durum değişmemiş sayılır.
+  Future<void> _katil() async {
+    try {
+      await LeaderboardService.instance.setZirveRizasi(true);
+    } catch (e) {
+      if (mounted) showAppError(context, e);
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _riza = Future.value(true);
+      _satirlar = _cek();
+      _havuz = _havuzCek();
+    });
+    await _senYenile();
+  }
+
+  /// Rızayı geri çek: onay → sunucu ölçümleri aynı işlemde siler.
+  Future<void> _ayril() async {
+    final onay = await showSandikConfirm(
+      context: context,
+      title: "Zirvedeki Portföyler'den ayrıl",
+      message: 'Portföyün havuzdan çıkar ve bugüne kadarki ölçümlerin hemen '
+          'silinir. Katılanların portföylerini de artık göremezsin. İstediğin '
+          'an yeniden katılabilirsin.',
+      confirmLabel: 'Ayrıl',
+      destructive: true,
+    );
+    if (!onay || !mounted) return;
+    try {
+      await LeaderboardService.instance.setZirveRizasi(false);
+    } catch (e) {
+      if (mounted) showAppError(context, e);
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _riza = Future.value(false));
+  }
+
   void _isaretSec(String k, List<ZirveIsaret> isaretler,
       List<TopGainerAllocation> satirlar) {
     if (k == _secili) return;
@@ -200,7 +248,43 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
       backgroundColor: context.c.background,
       appBar: SandikAppBar(title: 'Zirvedeki Portföyler'),
       body: SafeArea(
-        child: FutureBuilder<List<TopGainerAllocation>>(
+        child: FutureBuilder<bool?>(
+          future: _riza,
+          builder: (context, rizaSnap) {
+            if (rizaSnap.connectionState != ConnectionState.done) {
+              return ListView(
+                padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+                children: const [_Iskelet()],
+              );
+            }
+            final riza = rizaSnap.data;
+            if (riza == null) {
+              return SandikErrorView(
+                error: 'Katılım durumun okunamadı.',
+                onRetry: () => setState(() =>
+                    _riza = LeaderboardService.instance.fetchZirveRizasi()),
+              );
+            }
+            if (!riza) {
+              return ListView(
+                padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+                children: [
+                  ZirveRizaKarti(
+                    onKatil: _katil,
+                    onSimdiDegil: () => Navigator.of(context).maybePop(),
+                  ),
+                ],
+              );
+            }
+            return _liste(hp);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _liste(double hp) {
+    return FutureBuilder<List<TopGainerAllocation>>(
           future: _satirlar,
           builder: (context, snap) {
             final satirlar = snap.data ?? const <TopGainerAllocation>[];
@@ -218,12 +302,17 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
                   _BosDurum(havuz: _havuz)
                 else
                   ..._dolu(context, satirlar),
+                const SizedBox(height: SandikSpace.md),
+                Center(
+                  child: TextButton(
+                    onPressed: _ayril,
+                    child: const Text("Zirvedeki Portföyler'den ayrıl"),
+                  ),
+                ),
               ],
             );
           },
-        ),
-      ),
-    );
+        );
   }
 
   List<Widget> _dolu(BuildContext context, List<TopGainerAllocation> satirlar) {
@@ -852,7 +941,8 @@ class _AltNot extends StatelessWidget {
 }
 
 /// Havuz eşiği dolmamış: ilerleme + nasıl dolduğu. "Yakında" yok, çağrı
-/// düğmesi de yok — havuz beyana dayanmaz, kullanıcının yapacağı bir şey yok.
+/// düğmesi de yok — bu kartı gören zaten katılmış; havuz başkalarının
+/// katılımıyla dolar.
 class _BosDurum extends StatelessWidget {
   const _BosDurum({required this.havuz});
 
@@ -894,10 +984,10 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                'Portföyü 5 günden eski ve en az 2 farklı varlığı olan herkes '
-                'kendiliğinden ve anonim olarak havuzdadır; ayrıca katılman '
-                'gerekmez. Kimlik, miktar ve TL '
-                'paylaşılmaz; yalnız getiri, tür payı ve fon payları.',
+                'Havuzda yalnız katılmayı kabul edenler var; portföyü 5 '
+                'günden eski ve en az 2 farklı varlığı olan katılımcılar '
+                'sayılır. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
+                'tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,
@@ -1067,9 +1157,9 @@ class _PortfoyAyrintisi extends StatelessWidget {
                         'getirini, tür payını ve fonlarının TEFAS kodu ile '
                         'payını görür; kimliğin, tutarın ve diğer varlıkların '
                         'asla görünmez.'
-                    : 'Portföyün henüz havuzda değil: portföy 5 günden eski '
-                        'olmalı ve en az 2 farklı varlık içermeli. Şart '
-                        'sağlanınca kendiliğinden ve anonim olarak girer.')
+                    : 'Portföyün henüz havuzda değil: katıldın, ama portföy '
+                        '5 günden eski olmalı ve en az 2 farklı varlık '
+                        'içermeli. Şart sağlanınca anonim olarak girer.')
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '
                     'payı. Fon adları resmi TEFAS listesinden.',
