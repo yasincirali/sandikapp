@@ -24,7 +24,7 @@ void main() {
       expect(v.aylik, isNotNull);
     });
 
-    test('kapsam görünümünde hedef ve aylık özet yok, diğerleri kalır', () {
+    test('kapsam görünümünde aylık özet yok, hedef ve diğerleri kalır', () {
       final v = BugunService.hesapla(
         karZararlar: const [1, -1],
         toplamDeger: 1000,
@@ -35,15 +35,16 @@ void main() {
         haftalikGetiriPct: 1.2,
         kisisel: false,
       );
-      expect(v.ikincil.whereType<HedefSatiri>(), isEmpty,
-          reason: 'ortağın hedefi sunucuda yok; uydurulmaz');
+      // 2026-09-30: hedef kapsamın KENDİ hedefi (`kapsamHedefiProvider`);
+      // kart Birlikte'ye geçince satır kaybolmamalı.
+      expect(v.ikincil.whereType<HedefSatiri>().single.hedefTRY, 5000);
       expect(v.aylik, isNull, reason: 'aylık özet kendi recap ekranına gider');
       expect(v.ikincil.whereType<YesilOranSatiri>(), isNotEmpty);
       expect(v.reel, isNotNull);
       expect(v.olay, isNotNull, reason: 'ulusal takvim herkese');
     });
 
-    test('kapsam görünümünde hedef 0 olsa bile "hedef belirle" çağrısı yok',
+    test('kapsam görünümünde hedef 0 ise "hedef belirle" çağrısı görünür',
         () {
       final v = BugunService.hesapla(
         karZararlar: const [],
@@ -53,7 +54,8 @@ void main() {
         now: DateTime(2026, 9, 21, 12),
         kisisel: false,
       );
-      expect(v.ikincil, isEmpty);
+      expect(v.ikincil.single, isA<HedefSatiri>());
+      expect((v.ikincil.single as HedefSatiri).belirlenmedi, isTrue);
     });
   });
 

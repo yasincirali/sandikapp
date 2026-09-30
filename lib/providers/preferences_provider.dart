@@ -368,10 +368,55 @@ final biometricLockOfferedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final kilitYontemiProvider = FutureProvider<KilitYontemi?>(
     (ref) => BiometricLockService.instance.yontem);
 
-/// Portföy hedefi (TRY). 0 = hedef belirlenmedi. Yalnızca gösterim:
-/// hedef hiçbir hesabı değiştirmez, "Bugün" kartında ilerleme çubuğu olur.
-final portfolioGoalProvider = NotifierProvider<_IntPrefNotifier, int>(
-    () => _IntPrefNotifier(PrefKeys.portfolioGoalTRY, 0, perUser: true));
+/// Portföy hedefi (TRY), Bugün kartının KAPSAMINA göre. 0 = belirlenmedi.
+/// Yalnızca gösterim: hedef hiçbir hesabı değiştirmez, kartta ilerleme
+/// çubuğu olur.
+///
+/// Anahtar (arg): `''` Ben, `'birlikte'`, `'ortak_<id>'`. Neden kapsam
+/// başına (kullanıcı bulgusu 2026-09-30, "hala arada kayboluyor"): hedef
+/// satırı yalnızca kendi görünümündeydi, kart Birlikte'ye/ortağa geçince
+/// kayboluyordu. Kendi hedefini birleşik toplama karşı ölçmek yanlış
+/// "kalan" söylerdi; her kartın kendi hedefi var. Hepsi bu cihazda, oturum
+/// sahibine özel — ortağın koyduğu hedef sunucuda yok, uydurulmaz.
+/// Ben'in anahtarı eskisiyle aynı (`portfolio_goal_try`), var olan hedef
+/// korunur.
+class KapsamHedefiNotifier extends FamilyNotifier<int, String> {
+  String get _key => _userKey(arg.isEmpty
+      ? PrefKeys.portfolioGoalTRY
+      : '${PrefKeys.portfolioGoalTRY}_$arg');
+
+  @override
+  int build(String arg) {
+    final prefs = _prefsSync;
+    if (prefs != null) return prefs.getInt(_key) ?? 0;
+    _loadAsync();
+    return 0;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getInt(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(int value) async {
+    state = value;
+    if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setInt(_key, value);
+    } catch (_) {}
+  }
+}
+
+final kapsamHedefiProvider =
+    NotifierProvider.family<KapsamHedefiNotifier, int, String>(
+        KapsamHedefiNotifier.new);
+
+/// Kendi görünümünün hedefi — `kapsamHedefiProvider('')`.
+final portfolioGoalProvider = kapsamHedefiProvider('');
 
 /// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
 ///
@@ -1016,7 +1061,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   investorLevelIndexProvider,
   biometricLockProvider,
   biometricLockOfferedProvider,
-  portfolioGoalProvider,
+  kapsamHedefiProvider, // aile: Ben (`portfolioGoalProvider`) + kapsamlar
   lockScreenAmountsProvider,
   liveActivityStartProvider,
   liveActivityEndProvider,

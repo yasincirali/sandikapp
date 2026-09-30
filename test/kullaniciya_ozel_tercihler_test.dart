@@ -110,6 +110,32 @@ void main() {
       expect(prefs.getInt('portfolio_goal_try_B'), 100000);
     });
 
+    // 2026-09-30: hedef kart kapsamına göre ("hala arada kayboluyor").
+    test('her kapsamın kendi hedefi; Ben eski anahtarda, kişiye özel',
+        () async {
+      await initPreferencesCache();
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+
+      kullaniciDegisti(c, 'A');
+      await c.read(portfolioGoalProvider.notifier).set(750000);
+      await c.read(kapsamHedefiProvider('birlikte').notifier).set(2000000);
+      await c.read(kapsamHedefiProvider('ortak_x').notifier).set(300000);
+      expect(c.read(kapsamHedefiProvider('')), 750000,
+          reason: 'portfolioGoalProvider = Ben kapsamı');
+      expect(c.read(kapsamHedefiProvider('birlikte')), 2000000);
+      expect(c.read(kapsamHedefiProvider('ortak_x')), 300000);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getInt('portfolio_goal_try_A'), 750000,
+          reason: 'var olan kullanıcının hedefi korunur');
+      expect(prefs.getInt('portfolio_goal_try_birlikte_A'), 2000000);
+
+      kullaniciDegisti(c, 'B');
+      expect(c.read(kapsamHedefiProvider('birlikte')), 0,
+          reason: 'aile listede; B, A\'nın Birlikte hedefini görmez');
+    });
+
     // Denetim F6 (2026-09-23): yarış onayı cihaz genelindeydi; A'nın onayı
     // aynı telefondaki B için de "açık" okunuyor, B'nin getirisi onaysız
     // sunucuya gidiyordu.

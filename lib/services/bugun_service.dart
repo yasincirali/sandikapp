@@ -256,9 +256,12 @@ abstract final class BugunService {
   /// (tek giriş noktası; bkz. `hedef` gerekçesi).
   ///
   /// [kisisel] (2026-09-21, kart kapsamı izler): kart Ortak / Birlikte
-  /// görünümünde o kapsamın defteriyle kurulur; orada KİŞİSEL satırlar
-  /// üretilmez — hedef cihazdaki kişiye özel tercihtir (ortağınki sunucuda
-  /// yok, uydurulmaz), aylık özet girişi kendi recap ekranına gider.
+  /// görünümünde o kapsamın defteriyle kurulur; orada aylık özet girişi
+  /// üretilmez — kendi recap ekranına gider. Hedef 2026-09-30'dan beri
+  /// her kapsamda: [hedefTRY] çağıranın seçtiği KAPSAMIN hedefidir
+  /// (`kapsamHedefiProvider`), kendi hedefin birleşik toplama karşı
+  /// ölçülmez. Eskiden hedef de kişisel satırdı ve kart Birlikte'ye
+  /// geçince kayboluyordu (kullanıcı bulgusu "hala arada kayboluyor").
   /// Piyasa hareketi, artıdaki varlık, reel getiri, haftalık ve ulusal
   /// takvim kapsamdan bağımsız hesaplanır, hepsi kalır.
   static BugunKartiVerisi hesapla({
@@ -292,8 +295,7 @@ abstract final class BugunService {
     // havuza girince 3 aday 2 yuvaya düşüyor, bazı günler hedef dönüşümle
     // gizleniyor ve o gün hedef belirlemek imkânsız oluyordu. Dönüşüm artık
     // kalan yuvalarda; hedef her gün en altta, yeri değişmez.
-    final hedef =
-        kisisel ? HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger) : null;
+    final hedef = HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger);
     // Olay havuza girmez — ayak notu (bkz. `BugunKartiVerisi.olay`).
     final olaylar = yaklasanOlaylar(now);
 
@@ -309,7 +311,7 @@ abstract final class BugunService {
     }
 
     final ikincil = <BugunSatiri>[];
-    final donenYuva = ikincilSayisi - (hedef == null ? 0 : 1);
+    final donenYuva = ikincilSayisi - 1;
     if (adaylar.isNotEmpty) {
       final bas = now.difference(DateTime(now.year)).inDays % adaylar.length;
       for (var i = 0;
@@ -318,7 +320,7 @@ abstract final class BugunService {
         ikincil.add(adaylar[(bas + i) % adaylar.length]);
       }
     }
-    if (hedef != null) ikincil.add(hedef);
+    ikincil.add(hedef);
 
     final aylik = kisisel && now.day <= aylikOzetGunSayisi
         ? AylikOzetSatiri(ay: DateTime(now.year, now.month - 1, 1))

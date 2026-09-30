@@ -835,8 +835,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // kart yerine duran reel getiri ve haftalık şeritleri artık kartın
             // satırları — 2026-09-17 kararı (şeritler kapsamın defterini alır)
             // kartın tamamına uygulandı, ikinci bir hesap yolu yok.
-            // Kişisel satırlar (hedef, aylık özet) yalnızca kendi görünümünde
-            // (`kisisel`); kartın kimin olduğu başlıkta yazar (`etiket`).
+            // Aylık özet yalnızca kendi görünümünde (`kisisel`); hedef her
+            // kapsamda, kapsamın kendi hedefiyle (`hedefKapsami`); kartın
+            // kimin olduğu başlıkta yazar (`etiket`).
             // Yüzdelik dilim şeridi Profil'de (sosyal karşılaştırma ana
             // ekranın sorusu değil).
             SliverToBoxAdapter(
@@ -857,6 +858,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   state: benGorunumu ? myState : gorunumDurumu(ledgerAssets),
                   kisisel: benGorunumu,
                   etiket: _bugunEtiketi(allActivePartners),
+                  // Her kartın kendi hedefi (2026-09-30): hedef satırı
+                  // Birlikte'ye/ortağa geçince kayboluyordu.
+                  hedefKapsami: _view == ''
+                      ? ''
+                      : _view == null
+                          ? 'birlikte'
+                          : 'ortak_$_view',
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
               ),

@@ -79,6 +79,7 @@ class BugunKarti extends ConsumerStatefulWidget {
     this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 0),
     this.kisisel = true,
     this.etiket,
+    this.hedefKapsami = '',
   });
 
   /// Kartın anlattığı defter — seçili kapsamın (2026-09-21).
@@ -91,10 +92,14 @@ class BugunKarti extends ConsumerStatefulWidget {
   final PortfolioState state;
   final EdgeInsets padding;
 
-  /// Kendi görünümü mü? Kişisel satırlar (hedef, aylık özet) yalnızca
-  /// burada; gün içi seri de yalnızca burada kilit ekranıyla paylaşılan
-  /// önbellekten okunur (bkz. `_seriYukle`).
+  /// Kendi görünümü mü? Aylık özet girişi yalnızca burada; gün içi seri de
+  /// yalnızca burada kilit ekranıyla paylaşılan önbellekten okunur (bkz.
+  /// `_seriYukle`). Hedef artık her kapsamda — bkz. [hedefKapsami].
   final bool kisisel;
+
+  /// Hedef satırının kapsam anahtarı (`kapsamHedefiProvider`): `''` Ben,
+  /// `'birlikte'`, `'ortak_<id>'` (2026-09-30).
+  final String hedefKapsami;
 
   /// Kartın başına yazılan kapsam etiketi ("Ayşe'nin bugünü", "Birlikte").
   /// Kendi görünümünde `null`: kartın kimin olduğu sorusu yalnızca başka
@@ -440,7 +445,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           toTRY: widget.state.toTRY,
           sonFiyat: PriceService.instance.sonBilinenFiyat),
       ozet: ozet,
-      hedefTRY: ref.watch(portfolioGoalProvider),
+      hedefTRY: ref.watch(kapsamHedefiProvider(widget.hedefKapsami)),
       now: now,
       reel: _reel,
       haftalikGetiriPct: _haftalik,
@@ -548,7 +553,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             ipucu: l10n.todayGoalSetShort,
             deger: l10n.todayGoalAction,
             renk: c.amberText,
-            onTap: _olcerek(s, () => showHedefSheet(context, ref)),
+            onTap: _olcerek(s, () => showHedefSheet(context, ref,
+                kapsam: widget.hedefKapsami, etiket: widget.etiket)),
           );
         }
         final hedef = gizli ? '••••' : fmtTRYCompactSade(s.hedefTRY.toDouble());
@@ -558,7 +564,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             ipucu: l10n.todayGoalDoneHint(hedef),
             deger: l10n.todayGoalDone,
             renk: c.gain,
-            onTap: _olcerek(s, () => showHedefSheet(context, ref)),
+            onTap: _olcerek(s, () => showHedefSheet(context, ref,
+                kapsam: widget.hedefKapsami, etiket: widget.etiket)),
           );
         }
         return _DefterSatiri(
@@ -568,7 +575,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
               (s.oran * 100).floor(), gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
           renk: c.amberText,
           cubuk: s.oran,
-          onTap: _olcerek(s, () => showHedefSheet(context, ref)),
+          onTap: _olcerek(s, () => showHedefSheet(context, ref,
+                kapsam: widget.hedefKapsami, etiket: widget.etiket)),
         );
       case YesilOranSatiri():
         return _DefterSatiri(

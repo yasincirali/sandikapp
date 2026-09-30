@@ -14,12 +14,18 @@ import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart';
 
 const _hazirHedefler = <int>[250000, 500000, 1000000, 2500000];
 
-Future<void> showHedefSheet(BuildContext context, WidgetRef ref) async {
+/// [kapsam]: `kapsamHedefiProvider` anahtarı (`''` Ben). [etiket] kartın
+/// kapsam etiketi ("Birlikte", "Ayşe'nin bugünü") — başka bir defterin
+/// hedefi yazılırken sheet kimin için olduğunu söyler.
+Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
+    {String kapsam = '', String? etiket}) async {
   if (DemoModu.yazmaKapisi('hedef')) return; // Demo: hedef bir tercih yazımı (F1).
-  final mevcut = ref.read(portfolioGoalProvider);
+  final saglayici = kapsamHedefiProvider(kapsam);
+  final mevcut = ref.read(saglayici);
   final sonuc = await showModalBottomSheet<int>(
     context: context,
     isScrollControlled: true,
@@ -27,17 +33,18 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref) async {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
     ),
-    builder: (ctx) => _HedefSheet(mevcut: mevcut),
+    builder: (ctx) => _HedefSheet(mevcut: mevcut, etiket: etiket),
   );
   if (sonuc == null) return;
-  await ref.read(portfolioGoalProvider.notifier).set(sonuc);
+  await ref.read(saglayici.notifier).set(sonuc);
   // Kaç kişinin hedef kullandığı, kartın bu satırı hak edip etmediğini söyler.
   unawaited(AnalyticsService.instance.logGoalSet(amountTRY: sonuc));
 }
 
 class _HedefSheet extends StatefulWidget {
-  const _HedefSheet({required this.mevcut});
+  const _HedefSheet({required this.mevcut, this.etiket});
   final int mevcut;
+  final String? etiket;
 
   @override
   State<_HedefSheet> createState() => _HedefSheetState();
@@ -78,6 +85,20 @@ class _HedefSheetState extends State<_HedefSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (widget.etiket != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: SandikSpace.xs),
+              child: Text(
+                trBuyukHarf(widget.etiket!),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.t.labelSmall?.copyWith(
+                  color: context.c.text58,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ),
           Text(
             l10n.goalTitle,
             style: context.t.headlineSmall?.copyWith(
