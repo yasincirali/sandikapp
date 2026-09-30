@@ -1710,7 +1710,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       switchInCurve: SandikMotion.enter,
       // Çıkan katman da ease-out: ease-in yavaş başlar ve kullanıcının en
       // dikkatli baktığı ilk anı geciktirir — arayüzü ağır hissettirir.
-      switchOutCurve: SandikMotion.enter,
+      switchOutCurve: SandikMotion.exit,
       // Varsayılan layoutBuilder giren/çıkan çocuğu üst üste bindirir; splash
       // sönerken ana ekran altında beliriyor olsun diye aynısı korunur.
       child: _resolveScreen(auth, user),

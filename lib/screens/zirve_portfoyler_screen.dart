@@ -648,7 +648,7 @@ class _SeciliPortfoy extends StatelessWidget {
     return AnimatedSwitcher(
       duration: SandikMotion.surfaceOf(context),
       switchInCurve: SandikMotion.enter,
-      switchOutCurve: SandikMotion.enter,
+      switchOutCurve: SandikMotion.exit,
       layoutBuilder: (current, previous) => Stack(
         alignment: Alignment.topLeft,
         children: [...previous, if (current != null) current],

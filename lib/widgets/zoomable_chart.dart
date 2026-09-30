@@ -42,11 +42,62 @@ class ChartViewport extends ChangeNotifier {
   /// erteler (bkz. `_PerformansSeriler._ensureViewport`).
   bool updateFullRangeSessiz(double newMin, double newMax) {
     if (fullMinX == newMin && fullMaxX == newMax) return false;
+    final p = korunanPencere(
+      minX: _minX,
+      maxX: _maxX,
+      eskiMin: fullMinX,
+      eskiMax: fullMaxX,
+      yeniMin: newMin,
+      yeniMax: newMax,
+    );
     fullMinX = newMin;
     fullMaxX = newMax;
-    _minX = newMin;
-    _maxX = newMax;
+    _minX = p.$1;
+    _maxX = p.$2;
     return true;
+  }
+
+  /// Tam aralık değişince görünür pencerenin yeni yeri.
+  ///
+  /// Eskiden her aralık değişimi pencereyi tam aralığa sıfırlıyordu. Aralık
+  /// ise gün içinde durmadan uzuyor (yeni gün içi nokta, dakika dönümünde
+  /// `DateTime.now()`), yani kullanıcı yakınlaştırdığı anda — bazen parmak
+  /// ekrandayken — geri atılıyordu (animasyon denetimi 2026-10-01).
+  ///
+  /// - Yakınlaştırılmamışsa: yeni tam aralık (eski davranış).
+  /// - Pencere sağ kenara dayalıysa (en güncel veriye bakıyor): genişlik
+  ///   korunur, sağ kenarla birlikte kayar — canlı veriyi izlemeye devam eder.
+  /// - Değilse: aynı yerde kalır; yeni aralığa sığmazsa içeri itilir.
+  /// - Pencere yeni aralıktan genişse: tam aralık.
+  static (double, double) korunanPencere({
+    required double minX,
+    required double maxX,
+    required double eskiMin,
+    required double eskiMax,
+    required double yeniMin,
+    required double yeniMax,
+  }) {
+    const eps = 0.001;
+    final yakin = (minX - eskiMin).abs() > eps || (maxX - eskiMax).abs() > eps;
+    final genislik = maxX - minX;
+    if (!yakin || genislik <= 0 || genislik >= yeniMax - yeniMin) {
+      return (yeniMin, yeniMax);
+    }
+    var lo = minX;
+    var hi = maxX;
+    if ((maxX - eskiMax).abs() <= eps) {
+      hi = yeniMax;
+      lo = hi - genislik;
+    }
+    if (lo < yeniMin) {
+      lo = yeniMin;
+      hi = lo + genislik;
+    }
+    if (hi > yeniMax) {
+      hi = yeniMax;
+      lo = hi - genislik;
+    }
+    return (lo, hi);
   }
 
   /// Ertelenmiş bildirimi at — [updateFullRangeSessiz] ile birlikte kullanılır.
@@ -164,6 +215,9 @@ class _ZoomableChartState extends State<ZoomableChart> {
   double _startMinX = 0;
   double _startMaxX = 0;
   double _startFocalRel = 0.5;
+  // Jest başındaki odak noktası (piksel). Kaydırma BAŞLANGIÇTAN toplam
+  // yer değiştirmeyle hesaplanır — bkz. `_onScaleUpdate`.
+  double _startFocalPx = 0;
   double _chartWidth = 1.0;
 
   // Crosshair state — null = kapalı. `_crosshairPx` widget'ın soldan
@@ -231,8 +285,19 @@ class _ZoomableChartState extends State<ZoomableChart> {
     }
     if (oldWidget.fullMinX != widget.fullMinX ||
         oldWidget.fullMaxX != widget.fullMaxX) {
-      _localMinX = widget.fullMinX;
-      _localMaxX = widget.fullMaxX;
+      // Yakınlaştırma korunur (bkz. [ChartViewport.korunanPencere]): varlık
+      // detayında `maxX` dakika dönümünde değişiyor ve eskiden yerel zoom'u
+      // her dakika sıfırlıyordu.
+      final p = ChartViewport.korunanPencere(
+        minX: _localMinX,
+        maxX: _localMaxX,
+        eskiMin: oldWidget.fullMinX,
+        eskiMax: oldWidget.fullMaxX,
+        yeniMin: widget.fullMinX,
+        yeniMax: widget.fullMaxX,
+      );
+      _localMinX = p.$1;
+      _localMaxX = p.$2;
       // Controller varsa full range'i de güncelle
       widget.viewportController
           ?.updateFullRange(widget.fullMinX, widget.fullMaxX);
@@ -281,6 +346,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
     final localInPlot =
         (details.localFocalPoint.dx - _plotLeft).clamp(0.0, _plotWidth);
     _startFocalRel = (localInPlot / _plotWidth).clamp(0.0, 1.0);
+    _startFocalPx = details.localFocalPoint.dx;
   }
 
   void _onScaleUpdate(ScaleUpdateDetails details) {
@@ -306,7 +372,13 @@ class _ZoomableChartState extends State<ZoomableChart> {
     double newMin = focalX - newWidth * _startFocalRel;
     double newMax = newMin + newWidth;
 
-    final panPx = details.focalPointDelta.dx;
+    // Kaydırma jest BAŞINDAN bu yana toplam yer değiştirme. Pencere her
+    // karede başlangıç penceresinden (`_startMinX`) yeniden kurulduğu için
+    // `focalPointDelta` (yalnız SON karenin farkı) kullanılamaz: grafik her
+    // karede başlangıca bir kare kadar kayıp geri dönüyor, parmağı takip
+    // etmiyordu (animasyon denetimi 2026-10-01). Toplam farkla, başta
+    // parmağın altındaki veri noktası parmağın altında kalır.
+    final panPx = details.localFocalPoint.dx - _startFocalPx;
     final panData = -panPx / _plotWidth * newWidth;
     newMin += panData;
     newMax += panData;
@@ -355,6 +427,14 @@ class _ZoomableChartState extends State<ZoomableChart> {
             .clamp(_plotLeft, _plotRight);
       }
     }
+    // Aynı veri noktasına oturduysa yeniden kurma: parmak her pikselde olay
+    // üretiyor ama imleç yalnız nokta değişince hareket ediyor — boşuna
+    // etiket/detay kurucuları koşuyordu (animasyon denetimi 2026-10-01).
+    if (px == _crosshairPx && xData == _crosshairX) return;
+    // İmleç belirdiği an hafif dokunsal onay: uzun basış tuttu, artık
+    // parmak grafiği okuyor. Nokta başına DEĞİL — yoğun seride (1Y ≈ 250
+    // nokta) sürekli titreşim yorucu olur.
+    if (_crosshairPx == null) SandikHaptic.selection.perform();
     setState(() {
       _crosshairPx = px;
       _crosshairX = xData;
@@ -452,7 +532,12 @@ class _ZoomableChartState extends State<ZoomableChart> {
               child: RepaintBoundary(
                 child: LineChart(
                   _grafikVerisi(),
-                  duration: _interacting ? Duration.zero : widget.swapDuration,
+                  // Hareketi azalt açıkken morf da yok: `swapDuration`
+                  // varsayılanı ham token, kendisi korumaz.
+                  duration: _interacting ||
+                          MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : widget.swapDuration,
                   curve: widget.swapCurve,
                 ),
               ),
@@ -648,10 +733,14 @@ class _CrosshairOverlay extends StatelessWidget {
                       children: [
                         Text(
                           pill!.$1,
+                          // Eşit genişlikli rakam: imleç gezerken fiyat
+                          // değiştikçe hap genişliği ve sol kenarı
+                          // titremesin (animasyon denetimi 2026-10-01).
                           style: const TextStyle(
                             color: Color(0xE1FFFFFF),
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
+                            fontFeatures: [FontFeature.tabularFigures()],
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

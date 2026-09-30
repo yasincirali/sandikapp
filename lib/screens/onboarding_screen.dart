@@ -1520,7 +1520,7 @@ class _GorevSeridi extends StatelessWidget {
     return AnimatedSwitcher(
       duration: SandikMotion.stateOf(context),
       switchInCurve: SandikMotion.enter,
-      switchOutCurve: SandikMotion.enter,
+      switchOutCurve: SandikMotion.exit,
       child: Container(
         key: ValueKey(bitti),
         padding: const EdgeInsets.symmetric(
