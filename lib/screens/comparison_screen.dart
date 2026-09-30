@@ -871,7 +871,7 @@ class _SheetTabs extends StatelessWidget {
         children: [
           for (var i = 0; i < _labels.length; i++)
             Expanded(
-              child: GestureDetector(
+              child: SandikBasma(
                 // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın —
                 // yalnızca metnin üstü hedef olsaydı isabet zorlaşırdı.
                 behavior: HitTestBehavior.opaque,

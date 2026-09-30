@@ -239,7 +239,7 @@ class ZirveCetveli extends StatelessWidget {
                     '${ZirveKiyas.getiriParcasi(i.roi)}'
                 : '${i.sira}. portföy, ${ZirveKiyas.getiriParcasi(i.roi)}',
             child: ExcludeSemantics(
-              child: GestureDetector(
+              child: SandikBasma(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => onSec(i.anahtar),
                 child: SizedBox(

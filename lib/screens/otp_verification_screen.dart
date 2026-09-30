@@ -513,7 +513,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             color: context.c.text58,
           ),
         ),
-        GestureDetector(
+        SandikBasma(
           onTap: canResend ? _resend : null,
           behavior: HitTestBehavior.opaque,
           child: Text(

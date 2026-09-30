@@ -498,7 +498,7 @@ class _BodyTabs extends StatelessWidget {
         selected: secili,
         label: rozet == null ? label : context.l10n.tabSemanticsCount(label, rozet),
         child: ExcludeSemantics(
-          child: GestureDetector(
+          child: SandikBasma(
             // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın.
             behavior: HitTestBehavior.opaque,
             onTap: () {
@@ -727,7 +727,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
             final pct = fmtPct(
                 e.value.value / (totalVal > 0 ? totalVal : 1) * 100,
                 digits: 1);
-            return GestureDetector(
+            return SandikBasma(
               onTap: () {
                 final newIdx = _touchedIndex == e.key ? null : e.key;
                 setState(() => _touchedIndex = newIdx);
@@ -883,7 +883,7 @@ Widget _rowAction(
     // `Builder` aramayı bir seviye aşağı taşır — artık gerçek `Slidable`
     // bulunur.
     child: Builder(
-      builder: (innerContext) => GestureDetector(
+      builder: (innerContext) => SandikBasma(
         behavior: HitTestBehavior.opaque,
         onTap: () async {
           // Panel kapanışı bir ANİMASYONDUR. Eskiden `close()` çağrılıp hemen
@@ -1427,7 +1427,7 @@ class _ExpandChevron extends StatelessWidget {
       label: expanded
           ? context.l10n.hideDetailsSemantics
           : context.l10n.showDetailsSemantics,
-      child: GestureDetector(
+      child: SandikBasma(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       // Dokunma alanı 44×44 (HIG #37, High severity) — görsel ikon 32'de

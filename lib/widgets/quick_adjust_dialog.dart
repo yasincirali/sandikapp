@@ -530,7 +530,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           for (final chip in chips)
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: GestureDetector(
+              child: SandikBasma(
                 onTap: () => setState(() {
                   _qtyCtrl.text = chip.deger;
                   _error = null;

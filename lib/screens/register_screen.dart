@@ -541,7 +541,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               // losing the gesture arena to the enclosing Scrollable.
               // Button stays tappable even when incomplete so we can tell
               // the user WHICH requirement is missing.
-              GestureDetector(
+              SandikBasma(
                 behavior: HitTestBehavior.opaque,
                 onTap: isLoading
                     ? null
