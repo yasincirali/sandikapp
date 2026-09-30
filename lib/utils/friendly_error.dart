@@ -303,7 +303,7 @@ Future<T?> showSandikGecisli<T>({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: _barrierColor(context.isLight),
+    barrierColor: _barrierColor(context),
     transitionDuration: SandikMotion.surface,
     // `showDialog` gibi güvenli alanda: yatayda çentik diyaloğu kesmesin.
     pageBuilder: (ctx, _, __) => SafeArea(child: Builder(builder: builder)),
