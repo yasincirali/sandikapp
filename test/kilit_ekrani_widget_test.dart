@@ -137,15 +137,19 @@ void main() {
           reason: 'Karar 4.2: tek satırlık widget yapılmadı');
     });
 
-    test('Dinamik Ada: mini grafik, gizliyken logoya düşer (4.3)', () {
+    test('Dinamik Ada: renkli yön halkası; gizli/ölçümsüz → logo (4.3)', () {
       final ada = _oku('ios/SandikWidget/SandikLiveActivity.swift');
       final bas = ada.indexOf('} compactLeading: {');
       final son = ada.indexOf('} compactTrailing: {');
       final kompakt = ada.substring(bas, son);
-      expect(kompakt, contains('SandikSparkline('));
-      expect(kompakt,
-          contains('context.state.isHidden || context.state.sparkline.count < 2'));
+      expect(kompakt, contains('SandikYonHalkasi('));
       expect(kompakt, contains('SandikLogoMark('));
+      final minimal = ada.substring(ada.indexOf('} minimal: {'));
+      expect(minimal.substring(0, 1500), contains('SandikYonHalkasi('));
+      // Sayı METİNDEN okunur (sunucu push'u yeni alan taşımaz) ve gizliyken
+      // yok sayılır.
+      expect(ada, contains('static func yuzde(state:'));
+      expect(ada, contains('if state.isHidden { return nil }'));
     });
   });
 }
