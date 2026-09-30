@@ -1949,6 +1949,9 @@
     }
   },
   "cartSellTag": "Sell",
+  "kapLinkLabel": "KAP disclosures",
+  "kapLinkHint": "Opens the company's KAP page in your browser",
+  "kapLinkFailed": "Couldn't open the KAP page. Check your connection.",
   "clearCartConfirm": "All assets in the cart will be removed. Are you sure?",
   "pasteCsv": "Paste CSV",
   "cartEmpty": "The cart is empty",

@@ -2918,6 +2918,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartSellTag => 'Sell';
 
   @override
+  String get kapLinkLabel => 'KAP disclosures';
+
+  @override
+  String get kapLinkHint => 'Opens the company\'s KAP page in your browser';
+
+  @override
+  String get kapLinkFailed =>
+      'Couldn\'t open the KAP page. Check your connection.';
+
+  @override
   String get clearCartConfirm =>
       'All assets in the cart will be removed. Are you sure?';
 

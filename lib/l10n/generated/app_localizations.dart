@@ -4982,6 +4982,24 @@ abstract class AppLocalizations {
   /// **'Satış'**
   String get cartSellTag;
 
+  /// No description provided for @kapLinkLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'KAP bildirimleri'**
+  String get kapLinkLabel;
+
+  /// No description provided for @kapLinkHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şirketin KAP sayfası tarayıcıda açılır'**
+  String get kapLinkHint;
+
+  /// No description provided for @kapLinkFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'KAP sayfası açılamadı. İnternet bağlantını kontrol et.'**
+  String get kapLinkFailed;
+
   /// No description provided for @clearCartConfirm.
   ///
   /// In tr, this message translates to:

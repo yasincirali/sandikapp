@@ -2893,6 +2893,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get cartSellTag => 'Satış';
 
   @override
+  String get kapLinkLabel => 'KAP bildirimleri';
+
+  @override
+  String get kapLinkHint => 'Şirketin KAP sayfası tarayıcıda açılır';
+
+  @override
+  String get kapLinkFailed =>
+      'KAP sayfası açılamadı. İnternet bağlantını kontrol et.';
+
+  @override
   String get clearCartConfirm =>
       'Sepetteki tüm varlıklar silinecek. Emin misin?';
 
