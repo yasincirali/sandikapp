@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'helpers/kaynak.dart';
@@ -9,7 +10,8 @@ import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
 /// Kayan bant — erişilebilirlik ve döngü kuralları.
 ///
 /// Bant dört sabit değer taşır; ekran okuyucu bunu TEK cümle okumalı,
-/// "hareketi azalt" açıkken akış olmamalı, dokunuş durdurmalı.
+/// "hareketi azalt" açıkken akış olmamalı; uzun basış tutmalı, bırakınca
+/// akış sürmeli (2026-09-30, dokunuşla durdur/sürdür yerine).
 ///
 /// 2026-09-21: bant `ListView` + `jumpTo`'dan boyama-tabanlı çizime geçti
 /// (`_RenderBant`); testler artık scroll konumunu değil `KayanBantState`'in
@@ -75,37 +77,98 @@ void main() {
     expect(b.kaydirma, greaterThan(once), reason: 'Dururken elle kaydırılır.');
   });
 
-  testWidgets('akarken ilerler; dokunuş durdurur, ikinci dokunuş sürdürür',
-      (tester) async {
+  testWidgets('akarken ilerler; kısa dokunuş bandı durdurmaz', (tester) async {
     await pump(tester);
     final b = bant(tester);
     expect(b.akiyor, isTrue);
     final once = b.kaydirma;
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
-    final sonra = b.kaydirma;
-    expect(sonra, greaterThan(once));
+    expect(b.kaydirma, greaterThan(once));
 
-    await tester.tap(find.byType(KayanBant));
-    await tester.pump();
-    expect(b.akiyor, isFalse);
-    final durdu = b.kaydirma;
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(b.kaydirma, durdu);
-
-    // Sürdürünce kaldığı yerden devam eder — sıçrama yok.
+    // Eski davranış dokunuşla durdurmaktı; artık sayfayı kaydırırken
+    // bandın üstünden geçen parmak bandı dondurmamalı.
     await tester.tap(find.byType(KayanBant));
     await tester.pump();
     expect(b.akiyor, isTrue);
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(b.kaydirma, greaterThan(durdu));
-    expect(b.kaydirma - durdu, lessThan(PiyasaSeridi.hiz * 0.5),
-        reason: '200 ms\'de en fazla hız × 0,2 sn kadar ilerler; sıçramaz.');
+    expect(b.tutuluyor, isFalse);
   });
 
-  testWidgets('akarken elle kaydırma yok (ticker ile çatışır)', (tester) async {
+  testWidgets('uzun basış tutar, sağa sola kaydırılır, bırakınca akış sürer',
+      (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    final g = await tester.startGesture(tester.getCenter(find.byType(KayanBant)));
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(b.tutuluyor, isTrue);
+    expect(b.akiyor, isFalse, reason: 'Tutarken bant kendiliğinden akmaz.');
+
+    final tutus = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(b.kaydirma, tutus, reason: 'Parmak dururken bant da durur.');
+
+    // Parmak sola → içerik ileri; sağa → geri. 1:1.
+    await g.moveBy(const Offset(-60, 0));
+    await tester.pump();
+    expect(b.kaydirma - tutus, closeTo(60, 0.01));
+    await g.moveBy(const Offset(90, 0));
+    await tester.pump();
+    expect(b.kaydirma - tutus, closeTo(-30, 0.01));
+
+    // Parmak durup bırakılır: hız ~0, bant yavaşça akış hızına çıkar.
+    await tester.pump(const Duration(milliseconds: 300));
+    final birakis = b.kaydirma;
+    await g.up();
+    await tester.pump();
+    expect(b.tutuluyor, isFalse);
+    expect(b.akiyor, isTrue, reason: 'Bırakınca akış kendiliğinden sürer.');
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    final ilerleme = b.kaydirma - birakis;
+    expect(ilerleme, greaterThan(0));
+    expect(ilerleme, lessThan(PiyasaSeridi.hiz * 0.2),
+        reason: 'Durgun bırakışta sıçrama yok: sıfırdan hıza yumuşak çıkış.');
+  });
+
+  testWidgets('fırlatış hızı akışa devredilir, sonra akış hızına iner',
+      (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    final g = await tester.createGesture();
+    await g.down(tester.getCenter(find.byType(KayanBant)),
+        timeStamp: Duration.zero);
+    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+    expect(b.tutuluyor, isTrue);
+    // Sola hızlı sürükleme: 16 ms'de 20 pt ≈ 1250 pt/sn.
+    var t = kLongPressTimeout + const Duration(milliseconds: 50);
+    for (var i = 0; i < 6; i++) {
+      t += const Duration(milliseconds: 16);
+      await g.moveBy(const Offset(-20, 0), timeStamp: t);
+    }
+    await g.up(timeStamp: t);
+    await tester.pump();
+    final birakis = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(b.kaydirma - birakis, greaterThan(PiyasaSeridi.hiz * 0.1 * 3),
+        reason: 'Bırakış anında bant parmağın hızıyla devam etmeli.');
+
+    // Birkaç zaman sabiti sonra hız yeniden akış hızıdır.
+    await tester.pump(const Duration(seconds: 3));
+    final a = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a) / 0.5, closeTo(PiyasaSeridi.hiz, 1));
+  });
+
+  testWidgets('hareketi azalt: uzun basıp bırakınca bant durur kalır',
+      (tester) async {
+    await pump(tester, hareketiAzalt: true);
+    final b = bant(tester);
+    await tester.longPress(find.byType(KayanBant));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(b.akiyor, isFalse);
+  });
+
+  testWidgets('akarken uzun basışsız sürükleme bandı ötelemez', (tester) async {
     await pump(tester);
     final b = bant(tester);
     final once = b.kaydirma;
@@ -147,7 +210,7 @@ void main() {
     await tester.tap(find.byType(PiyasaAramaDugmesi));
     await tester.pump(const Duration(milliseconds: 300));
     expect(acildi, 1);
-    // Bant kendi dokunuşunu korur: büyütece dokunmak bandı durdurmaz.
+    // Büyütece dokunmak bandı durdurmaz.
     expect(bant(tester).akiyor, isTrue);
   });
 

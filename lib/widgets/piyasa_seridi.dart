@@ -10,7 +10,25 @@
 // kart) aracı kurum bandı seçildi: en az yer (30pt), "canlı piyasa" hissi
 // en güçlü. Dört değer sabit ve sıralı olduğu için erişilebilirlik sorunu
 // yok: ekran okuyucu bandı TEK cümle olarak okur, "hareketi azalt" açıkken
-// bant durur ve elle kaydırılır, dokunuş durdurur/sürdürür.
+// bant durur ve elle kaydırılır.
+//
+// ## Etkileşim: uzun bas → tut, kaydır, bırak → akış sürer (2026-09-30)
+// İlk sürümde dokunuş bandı durdurup sürdüren bir anahtardı ve elle
+// kaydırma yalnızca dururken mümkündü: iki adım (dokun, kaydır, yine dokun)
+// ve bant durdurulup unutulunca ana sayfa "donmuş" görünüyordu. Kullanıcı
+// istedi: dokunuş değil UZUN BASIŞ bandı tutsun, parmak basılıyken sağa
+// sola kaydırılsın, bırakınca akmaya devam etsin. Böylece:
+//   · durma geçici — parmak kalkınca bant her zaman akar, unutulmuş durak
+//     yok;
+//   · kısa dokunuş hiçbir şey yapmaz; sayfayı kaydırmak için bandın
+//     üstünden geçen parmak bandı yanlışlıkla durdurmaz;
+//   · bırakışta parmağın hızı akışa DEVREDİLİR (apple-design §5): bant
+//     parmağın hızıyla başlar, üstel olarak sabit akış hızına iner
+//     ([PiyasaSeridi.devirSabiti]). Sert geçiş olsaydı hızlı bir fırlatış
+//     parmak kalktığı karede "duvara çarpardı".
+// Tutuş anında hafif dokunsal tık (`SandikHaptic.selection`): uzun basış
+// görsel olarak hiçbir şey değiştirmediği için "yakaladın" bilgisi oradan
+// gelir.
 //
 // ## Akış: yalnızca boyama, her karede yerleşim YOK (2026-09-21)
 // İlk sürüm `ListView.builder` + her karede `jumpTo` idi. Bu, kare başına
@@ -49,6 +67,8 @@
 // 5. düğme 320pt'de taşar, ayrı arama satırı 52pt çalardı.
 // Fiyat gelmese de çip kalır (tek başına tam yuvarlak) — arama fiyata
 // bağlı değil.
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import '../services/tazelik_ritmi.dart';
 import 'package:flutter/material.dart';
@@ -102,6 +122,15 @@ class PiyasaSeridi extends StatefulWidget {
   /// Akış hızı (pt/sn). Bir tur (dört öğe ≈ 600pt) ~17 sn sürer: okumaya
   /// yetecek kadar yavaş, "canlı" hissettirecek kadar hızlı.
   static const hiz = 36.0;
+
+  /// Bırakıştan sonra parmak hızının akış hızına inme zaman sabiti (sn).
+  /// 0,35 sn: fırlatış ~1 sn içinde akışa karışır — momentum hissedilir ama
+  /// bant ekranda "uçup gitmez".
+  static const devirSabiti = 0.35;
+
+  /// Devredilen hızın üst sınırı (pt/sn). Sert bir fırlatış bandı
+  /// okunamayacak hızda döndürmesin; sınır tur başına ~0,4 sn.
+  static const azamiDevirHizi = 1500.0;
 
   @override
   State<PiyasaSeridi> createState() => _PiyasaSeridiState();
@@ -282,7 +311,7 @@ class _AramaCipi extends StatelessWidget {
   }
 }
 
-/// Sonsuz kayan bant. Öğeler döngüsel tekrarlanır; dokunuş durdurur.
+/// Sonsuz kayan bant. Öğeler döngüsel tekrarlanır; uzun basış tutar.
 ///
 /// Öğeler tek bir Row olarak BİR KEZ yerleşir; her karede yalnızca kaydırma
 /// fazı değişir ve bant yeniden boyanır (bkz. dosya başı "Akış"). Kayma
@@ -314,14 +343,27 @@ class KayanBantState extends State<KayanBant>
   /// kalanıdır; sınırsız büyür, saatlerce açık kalsa da taşmaz (double).
   final _kaydirma = ValueNotifier<double>(0);
 
-  /// Ticker'ın son başladığı andaki kayma — durdur/sürdür ve elle
-  /// kaydırma sonrası akış kaldığı yerden devam eder, sıçramaz.
+  /// Ticker'ın son başladığı andaki kayma — tutuş sonrası akış kaldığı
+  /// yerden devam eder, sıçramaz.
   double _taban = 0;
-  bool _duraklatildi = false;
+
+  /// Ticker başladığında devredilen hız (pt/sn). Normal akışta
+  /// [PiyasaSeridi.hiz]; bırakıştan sonra parmağın hızı.
+  double _baslangicHizi = PiyasaSeridi.hiz;
+
+  /// Parmak bandı tutuyor mu (uzun basış sürüyor).
+  bool _tutuluyor = false;
+
+  /// Tutuş sırasında parmağın son yatay konumu — kare başına fark.
+  double _sonX = 0;
 
   /// Bant şu an kendiliğinden akıyor mu?
   @visibleForTesting
   bool get akiyor => _ticker.isActive;
+
+  /// Parmak bandı tutuyor mu — test için.
+  @visibleForTesting
+  bool get tutuluyor => _tutuluyor;
 
   /// Toplam kayma (pt) — test için.
   @visibleForTesting
@@ -333,33 +375,57 @@ class KayanBantState extends State<KayanBant>
     // Hareketi azalt: bant durur, elle kaydırılır (iOS HIG: Motion).
     final dur = MediaQuery.disableAnimationsOf(context);
     if (dur && _ticker.isActive) _ticker.stop();
-    if (!dur && !_ticker.isActive && !_duraklatildi) _baslat();
+    if (!dur && !_ticker.isActive && !_tutuluyor) _baslat();
   }
 
-  void _baslat() {
+  void _baslat({double hiz = PiyasaSeridi.hiz}) {
     _taban = _kaydirma.value;
+    _baslangicHizi = hiz;
     _ticker.start();
   }
 
-  /// Kare: kayma = taban + hız × geçen süre. Zamana bağlı (kare farkına
-  /// değil): düşen bir kare bandı yavaşlatmaz, sonraki kare doğru konuma
-  /// oturur. Arka plandan dönüşte faz sıçrar ama bant döngüsel — hangi
-  /// öğede olduğunun önemi yok.
+  /// Kare: kayma = taban + ∫ v(t) dt, v(t) = hız + (v₀ − hız)·e^(−t/τ).
+  /// Normal akışta v₀ = hız ve ifade `taban + hız × t`'ye iner. Zamana
+  /// bağlı (kare farkına değil): düşen bir kare bandı yavaşlatmaz, sonraki
+  /// kare doğru konuma oturur. Arka plandan dönüşte faz sıçrar ama bant
+  /// döngüsel — hangi öğede olduğunun önemi yok.
   void _kare(Duration gecen) {
-    _kaydirma.value = _taban + PiyasaSeridi.hiz * gecen.inMicroseconds / 1e6;
+    const hiz = PiyasaSeridi.hiz;
+    const tau = PiyasaSeridi.devirSabiti;
+    final t = gecen.inMicroseconds / 1e6;
+    _kaydirma.value = _taban +
+        hiz * t +
+        (_baslangicHizi - hiz) * tau * (1 - math.exp(-t / tau));
   }
 
-  void _dokunus() {
-    setState(() => _duraklatildi = !_duraklatildi);
-    if (_duraklatildi) {
-      _ticker.stop();
-    } else if (!MediaQuery.disableAnimationsOf(context)) {
-      _baslat();
-    }
+  /// Uzun basış: bant parmağa yapışır. Akış durur, faz olduğu yerde kalır.
+  void _tut(LongPressStartDetails d) {
+    _ticker.stop();
+    _sonX = d.localPosition.dx;
+    setState(() => _tutuluyor = true);
+    SandikHaptic.selection.perform();
   }
 
-  /// Elle kaydırma — yalnızca bant dururken (akarken ticker'la çatışır).
-  /// Parmak sola giderse içerik ileri akar; sınır yok, döngüsel.
+  /// Tutarken sürükleme 1:1: parmak sola giderse içerik ileri akar; sınır
+  /// yok, döngüsel.
+  void _tutarkenKaydir(LongPressMoveUpdateDetails d) {
+    final x = d.localPosition.dx;
+    _kaydirma.value -= x - _sonX;
+    _sonX = x;
+  }
+
+  /// Bırakış: parmağın hızı akışa devredilir (bkz. dosya başı
+  /// "Etkileşim"). Hareketi azalt açıksa bant durur kalır.
+  void _birak(LongPressEndDetails d) {
+    setState(() => _tutuluyor = false);
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    final v = (-d.velocity.pixelsPerSecond.dx).clamp(
+        -PiyasaSeridi.azamiDevirHizi, PiyasaSeridi.azamiDevirHizi);
+    _baslat(hiz: v.toDouble());
+  }
+
+  /// Hareketi azalt açıkken bant hiç akmaz; uzun basış beklemeden doğrudan
+  /// sürüklenir.
   void _surukle(DragUpdateDetails d) {
     _kaydirma.value -= d.delta.dx;
   }
@@ -374,13 +440,14 @@ class KayanBantState extends State<KayanBant>
   @override
   Widget build(BuildContext context) {
     final ogeler = widget.ogeler;
-    final akiyor = _ticker.isActive;
+    final hareketiAzalt = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: ogeler.map((o) => o.metin).join(', '),
-      button: true,
       child: GestureDetector(
-        onTap: _dokunus,
-        onHorizontalDragUpdate: akiyor ? null : _surukle,
+        onLongPressStart: _tut,
+        onLongPressMoveUpdate: _tutarkenKaydir,
+        onLongPressEnd: _birak,
+        onHorizontalDragUpdate: hareketiAzalt ? _surukle : null,
         behavior: HitTestBehavior.opaque,
         // Dokunma alanı 44pt (HIG); görünen şerit 36pt, kutuda ortalı —
         // 4pt'lik dikey tamponlar ana sayfa dolgusuyla birlikte 12pt üst
