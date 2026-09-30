@@ -471,7 +471,7 @@
   },
   "dividendRecorded": "Kaydedildi",
   "dividendRecordAction": "Kaydet",
-  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.",
+  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; "Kaydet" %15 stopaj düşülmüş neti hazır getirir, düzeltebilirsin.",
   "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
   "@dividendSuggestionLine": {
     "placeholders": {
