@@ -371,7 +371,7 @@ class RecapService {
     final satirlar = <String>[baslik, ''];
 
     if (karakter != null) {
-      satirlar.add('${karakter.label} — ${karakter.tagline}');
+      satirlar.add('${karakter.label}: ${karakter.tagline}');
     }
     if (degisimPct != null) {
       satirlar.add('$degisimEtiketi: ${isaretli(degisimPct)}');
@@ -465,7 +465,7 @@ class RecapService {
     if (xirrPct != null) {
       aciklama.add('· XIRR: her para giriş/çıkışını tarihiyle '
           'ağırlıklandıran yıllıklandırılmış getiri. Piyasa getirisinden '
-          'farklı olması normaldir — o dönemi, bu para akışını ölçer.');
+          'farklı olması normaldir: o dönemi, bu para akışını ölçer.');
     }
     if (enIyi != null || enZayif != null) {
       aciklama.add('· En iyi/en zayıf: varlığın ALIŞ fiyatına göre ömürlük '
@@ -518,7 +518,7 @@ class RecapService {
         // okuyan kişi başlıktaki yılı varsayar.
         nominalAralik: (d.inflationStart == null || d.inflationEnd == null)
             ? null
-            : '${_ayYilMetni(d.inflationStart!)} – '
+            : '${_ayYilMetni(d.inflationStart!)} - '
                 '${_ayYilMetni(d.inflationEnd!)}',
       );
 

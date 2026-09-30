@@ -167,7 +167,7 @@
   "portfolio": "Portföy",
   "myAssets": "Varlıklarım",
   "watchlist": "Takip Listesi",
-  "priceUpdateFailed": "Fiyatlar güncellenemedi — eski veriler gösteriliyor.",
+  "priceUpdateFailed": "Fiyatlar güncellenemedi, eski veriler gösteriliyor.",
   "otpSentPrefix": "6 haneli kodu\n",
   "otpSentSuffix": "\nadresine gönderdik.",
   "registerNameMissing": "Ad soyad gir.",
@@ -385,7 +385,7 @@
   "tickerHintFund": "Yahoo Finance kodu yoksa boş bırak, fiyatı elle gir",
   "tickerHintFx": "Örn: USDTRY=X, EURTRY=X, GBPTRY=X",
   "tickerHintGold": "Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)",
-  "tickerHintCrypto": "Örn: BTC, ETH — listeden seç",
+  "tickerHintCrypto": "Listeden seç, örn. BTC, ETH",
   "tickerHintCommodity": "Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)",
   "tickerHintOther": "Yahoo Finance sembolü ya da boş bırak",
   "assetTypeSemantics": "{type} türü",
@@ -401,7 +401,7 @@
   "quickEntryVoice": "Sesli / Hızlı giriş",
   "orNotInList": "veya listede yok",
   "symbolHint": "Sembol yaz (örn: AAPL, THYAO.IS)",
-  "companyNameHint": "Şirket adı (opsiyonel — semboldan otomatik çekilir)",
+  "companyNameHint": "Şirket adı (opsiyonel, semboldan otomatik çekilir)",
   "goldSemantics": "{kind} altın",
   "@goldSemantics": {
     "placeholders": {
@@ -410,7 +410,7 @@
       }
     }
   },
-  "commissionNote": "Alım-satım komisyonu maliyete eklenir — kâr/zarar gerçek rakamı gösterir.",
+  "commissionNote": "Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.",
   "costPreviewHint": "Miktar girince toplam maliyet burada görünecek.",
   "totalCostUpper": "TOPLAM MALİYET",
   "transactionDate": "İşlem tarihi",
@@ -511,7 +511,7 @@
       }
     }
   },
-  "dividendEnterNet": "Brüt {gross} — stopaj sonrası eline geçeni yaz.",
+  "dividendEnterNet": "Brüt {gross}. Stopaj sonrası eline geçeni yaz.",
   "@dividendEnterNet": {
     "placeholders": {
       "gross": {
@@ -540,7 +540,7 @@
     }
   },
   "quickEntryTitle": "Hızlı Giriş",
-  "quickEntryHelp": "Her satıra bir varlık yaz. Fiyat opsiyonel — boş bırakırsan güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet",
+  "quickEntryHelp": "Her satıra bir varlık yaz. Fiyat opsiyonel; boş bırakırsan güncel fiyat otomatik çekilir.\nÖrn:  100 dolar  /  10 gram altın 4500 lira  /  GARAN 500 adet",
   "quickEntryPlaceholder": "100 dolar\n10 gram altın 4500 lira\nGARAN 500 adet 105 lira",
   "saveNAssets": "{count} varlığı kaydet",
   "@saveNAssets": {
@@ -572,7 +572,7 @@
     }
   },
   "nominalReturnInWindow": "Bu aralıkta senin getirin",
-  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.",
+  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır, yani iki rakamın aralığı farklı.",
   "demoTryButton": "Önce bir göz at",
   "demoBannerTitle": "Örnek portföy",
   "demoBannerSubtitle": "Varlıklar örnek, fiyatlar canlı",
@@ -751,7 +751,7 @@
   "generateInviteCodeBody": "Kodu ortağına gönder. Ortağın kodu girince sana onay isteği gelir.",
   "enterPartnerCode": "Ortak Kodunu Gir",
   "enterPartnerCodeBody": "Ortağının sana gönderdiği kodu gir (örn: KRHNJ-8P2SW). Onay vermesi beklenir.",
-  "tooManyAttempts": "Çok fazla deneme — {wait} sonra tekrar deneyebilirsin.",
+  "tooManyAttempts": "Çok fazla deneme. {wait} sonra tekrar deneyebilirsin.",
   "@tooManyAttempts": {
     "placeholders": {
       "wait": {
@@ -797,7 +797,7 @@
       }
     }
   },
-  "partnershipCreated": "{name} ile ortaklık kuruldu!",
+  "partnershipCreated": "{name} ile ortaklık kuruldu.",
   "@partnershipCreated": {
     "placeholders": {
       "name": {
@@ -807,9 +807,9 @@
   },
   "requestRejected": "Ortaklık isteği reddedildi.",
   "requestCancelled": "Ortaklık isteği iptal edildi.",
-  "partnershipAccepted": "Ortaklık kabul edildi!",
+  "partnershipAccepted": "Ortaklık kabul edildi.",
   "sendingEllipsis": "Gönderiliyor...",
-  "waitFor": "Bekle — {wait}",
+  "waitFor": "Bekle: {wait}",
   "@waitFor": {
     "placeholders": {
       "wait": {
@@ -848,9 +848,9 @@
   "noAssetsOfTypeChartBody": "Bu türden bir varlık eklediğinde performansı burada görünecek. Başka bir tür seçebilirsin.",
   "noHistoryAllBody": "Portföyündeki varlıkların fiyat geçmişi izlenmiyor; değerleri toplamda görünür ama zaman grafiği çizilemiyor.",
   "youngPortfolioTitle": "Bu dönem için henüz geçmiş yok",
-  "youngPortfolioBody": "Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak — bugünkü hareketi GÜNLÜK görünümünde görebilirsin.",
+  "youngPortfolioBody": "Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi GÜNLÜK görünümünde görebilirsin.",
   "forceUpdateTitle": "Güncelleme gerekli",
-  "forceUpdateBody": "Sandık'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — verilerin yerinde.",
+  "forceUpdateBody": "Sandık'ın bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle; verilerin yerinde.",
   "forceUpdateButton": "Güncelle",
   "serverMovedTitle": "Sandık yenilendi",
   "serverMovedBodyAndroid": "Daha hızlı sunucumuza geçtik. Devam etmek için uygulamayı kapatıp yeniden aç. Bir kez giriş yapman istenecek; şifren ve verilerin aynı.",
@@ -866,12 +866,12 @@
   },
   "simModeTitle": "Simülasyon Modu",
   "realModeTitle": "Gerçek Mod",
-  "simModeBody": "Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü — geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.",
-  "realModeBody": "Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür — böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.",
+  "simModeBody": "Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.",
+  "realModeBody": "Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür. Böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.",
   "portfolioPerformance": "Portföy Performans",
   "chartDataFailed": "Grafik verisi alınamadı",
   "chartDataFailedBody": "Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.",
-  "intradayMissingBody": "{names} için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi — çizginin düz olması piyasanın durgun olduğu anlamına gelmez.",
+  "intradayMissingBody": "{names} için gün içi fiyat verisi alınamadı. Bu varlıklar grafikte son bilinen fiyatlarıyla SABİT çizildi. Çizginin düz olması piyasanın durgun olduğu anlamına gelmez.",
   "@intradayMissingBody": {
     "placeholders": {
       "names": {
@@ -974,7 +974,7 @@
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Mavi çubuk senin paran — getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.",
+  "contributionNotReturn": "Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.",
   "periodCourse": "Dönem içi seyir",
   "greenDaysOfTotal": "{total} işlem gününün {up}'ü artıda kapandı.",
   "@greenDaysOfTotal": {
@@ -997,7 +997,7 @@
     }
   },
   "nominalReturn": "Senin getirin",
-  "cpiWindowRange": "Ölçüm aralığı: {start} – {end}",
+  "cpiWindowRange": "Ölçüm aralığı: {start} - {end}",
   "@cpiWindowRange": {
     "description": "TÜFE karşılaştırmasının gerçek pencere uçları",
     "placeholders": {
@@ -1041,7 +1041,7 @@
   },
   "maxDrawdown": "En büyük düşüş",
   "volatility": "Oynaklık",
-  "volatilityBody": "Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil — daha çok inip çıktığı anlamına gelir.",
+  "volatilityBody": "Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil; daha çok inip çıktığı anlamına gelir.",
   "concentration": "Yoğunlaşma",
   "moneyReturnAnnual": "Paranın getirisi (yıllık)",
   "xirrBody": "Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.",
@@ -1070,7 +1070,7 @@
   },
   "chartLoadFailed": "Grafik yüklenemedi.",
   "notEnoughPriceHistory": "Grafik için yeterli fiyat geçmişi yok.",
-  "portfolioLineInfoDaily": "Günlük görünümde {name} çizgisi gerçek değerini gösterir — Performans ekranındaki günlük grafiğin aynısı.",
+  "portfolioLineInfoDaily": "Günlük görünümde {name} çizgisi gerçek değerini gösterir: Performans ekranındaki günlük grafiğin aynısı.",
   "@portfolioLineInfoDaily": {
     "placeholders": {
       "name": {
@@ -1116,7 +1116,7 @@
   "comparisonDisclaimer": "Geçmiş performans gelecek getiri için gösterge değildir. Grafikteki değerler dönem başına göre yüzde değişimi gösterir; komisyon, vergi ve temettü dahil değildir.",
   "searchAssetsHint": "Hisse, fon, altın veya endeks ara",
   "noResultsFound": "Sonuç bulunamadı",
-  "portfolioSeriesNote": "Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.",
+  "portfolioSeriesNote": "Portföyler hesaplanan serilerdir, piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.",
   "portfolioActivityTitle": "Portföy Hareketleri",
   "clearFilters": "Filtreleri temizle",
   "watchlistRowUp": "artış {pct}",
@@ -1154,7 +1154,7 @@
   "sortAssetsSemantics": "Varlıkları sırala",
   "showDetailsSemantics": "Ayrıntıları göster",
   "hideDetailsSemantics": "Ayrıntıları gizle",
-  "pricePreviewClose": "{date} kapanışı — kayıtta bu fiyat kullanılacak",
+  "pricePreviewClose": "{date} kapanışı. Kayıtta bu fiyat kullanılacak",
   "@pricePreviewClose": {
     "placeholders": {
       "date": {
@@ -1162,7 +1162,7 @@
       }
     }
   },
-  "pricePreviewLastTradingClose": "Son işlem günü kapanışı ({date}) — kayıtta bu fiyat kullanılacak",
+  "pricePreviewLastTradingClose": "Son işlem günü kapanışı ({date}). Kayıtta bu fiyat kullanılacak",
   "@pricePreviewLastTradingClose": {
     "placeholders": {
       "date": {
@@ -1243,13 +1243,13 @@
   "selectedPeriodReturn": "Seçili dönemin getirisi",
   "depositsDontChangeRank": "Para yatırmak sıralamayı değiştirmez",
   "everyoneMeasuredSame": "Herkes aynı şekilde ölçülür",
-  "rankVsPortfolioNote": "Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir — orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.",
+  "rankVsPortfolioNote": "Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir. Orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.",
   "rankSwapNote": "Dönem içinde bir varlığı tamamen satıp yerine başkasını aldıysan, sonuç \"yeni varlığı dönem başından beri tutsaydın\" senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.",
   "notInRace": "Yarış'a katılmadın",
   "notInRaceBody": "Ortaklarınla getiri sıralamasında yer almak için katılmayı aç. Sadece kaydolan ortaklar birbirinin yüzdesini görebilir. Varlıkların ve toplam TRY değerin asla paylaşılmaz.",
   "joinRace": "Yarış'a katıl",
   "addPartnerToRace": "Ortak ekle, aranızda da yarış",
-  "raceNoListShared": "Kimsenin varlık listesi paylaşılmaz — yalnız getiri yüzdeleri sıralanır.",
+  "raceNoListShared": "Kimsenin varlık listesi paylaşılmaz, yalnız getiri yüzdeleri sıralanır.",
   "yourReturnUpper": "SENİN GETİRİN",
   "dataNotReady": "Veri hazır değil.",
   "leaderUpper": "LİDER",
@@ -1257,7 +1257,7 @@
   "globalRanking": "Genel Sıralama",
   "checkingAnonPool": "Anonim havuz kontrol ediliyor…",
   "comingSoonUpper": "YAKINDA",
-  "globalRankingSoon": "Yeterli katılımcı olunca sıran açılacak — anonim, KVKK uyumlu",
+  "globalRankingSoon": "Yeterli katılımcı olunca sıran açılacak. Anonim, KVKK uyumlu",
   "topPercentile": "{period} sıralamada ilk %{pct}'desin",
   "@topPercentile": {
     "placeholders": {
@@ -1289,8 +1289,8 @@
     }
   },
   "selectedPeriodReturnBody": "Portföyünün dönem sonundaki değeri, dönem başındaki değeriyle karşılaştırılır:\n\n(dönem sonu − dönem başı) ÷ dönem başı\n\nYukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.",
-  "depositsDontChangeRankBody": "Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez — 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.",
-  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok — hesap bu cihazda yapılır.",
+  "depositsDontChangeRankBody": "Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez: 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.",
+  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok; hesap bu cihazda yapılır.",
   "planYearly": "Yıllık",
   "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
   "planMonthly": "Aylık",
@@ -1337,7 +1337,7 @@
       }
     }
   },
-  "recapCardSubtitle": "Bir yılın kısa hikâyesi — {character}",
+  "recapCardSubtitle": "Bir yılın kısa hikâyesi: {character}",
   "@recapCardSubtitle": {
     "placeholders": {
       "character": {
@@ -1528,7 +1528,7 @@
       }
     }
   },
-  "widenTheGap": "Farkı büyüt — ikinci +{gap}% geride",
+  "widenTheGap": "Farkı büyüt, ikinci +{gap}% geride",
   "@widenTheGap": {
     "placeholders": {
       "gap": {
@@ -1536,7 +1536,7 @@
       }
     }
   },
-  "atTheTop": "Zirvedesin — farkı koru",
+  "atTheTop": "Zirvedesin, farkı koru",
   "toPassPerson": "{name}'i geçmen için +{diff}%",
   "@toPassPerson": {
     "placeholders": {
@@ -1548,7 +1548,7 @@
       }
     }
   },
-  "higherInOtherPeriods": "Diğer periyotlarda daha üsttesin — dokun, bak",
+  "higherInOtherPeriods": "Diğer periyotlarda daha üsttesin. Dokun, bak",
   "deleteAssetTitle": "Varlığı Sil",
   "deleteAssetMulti": "\"{name}\" için {n} işlem kaydı (alım/satım/temettü) kalıcı olarak silinsin mi?",
   "@deleteAssetMulti": {
@@ -1570,7 +1570,7 @@
     }
   },
   "deleteAnyway": "Yine de sil",
-  "deleteAssetWarning": "Bu bir satış değil — varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.",
+  "deleteAssetWarning": "Bu bir satış değil. Varlık portföyden çıkar, toplamlardan ve geçmiş grafiğinden düşer. İşlem kayıtları \"Portföy Hareketleri\"nde kalır. Sattıysan bunun yerine \"Sat\" kullan; realize kâr/zararın hesaba dahil olur.",
   "alarmAlsoDeleteTitle": "{n, plural, =1{Alarm da silinsin mi?} other{{n} alarm da silinsin mi?}}",
   "@alarmAlsoDeleteTitle": {
     "placeholders": {
@@ -1663,7 +1663,7 @@
       }
     }
   },
-  "sellAllWarning": "Tüm miktarı satıyorsun — pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.",
+  "sellAllWarning": "Tüm miktarı satıyorsun. Pozisyon listeden kalkar ama bu bir satış kaydı olarak durur. İşlem geçmişin ve realize kâr/zararın korunur. Kaydı tamamen silmek istiyorsan varlık detayından \"Sil\"i kullan.",
   "saleValue": "Satış değeri",
   "noPriceAlert": "Fiyat alarmı yok",
   "nActiveAlerts": "{n} aktif fiyat alarmı",
@@ -1847,7 +1847,7 @@
   "arrowDown": "▼ aşağı",
   "arrowFlat": "◆ yatay",
   "indicatorsCalculating": "Göstergeler hesaplanıyor…",
-  "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler hesaplanamıyor.",
+  "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi, göstergeler hesaplanamıyor.",
   "noIndicatorsSelected": "Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları'ndan aktifleştir.",
   "technicalAnalysisUpper": "TEKNİK ANALİZ",
   "nOfMIndicators": "· {on}/{all} gösterge açık",
@@ -1991,7 +1991,7 @@
       }
     }
   },
-  "unitPriceDiffNote": "Değişim birim fiyat farkıdır — bu varlığa sahip değilsin.",
+  "unitPriceDiffNote": "Değişim birim fiyat farkıdır; bu varlığa sahip değilsin.",
   "notEnoughHistoryForAsset": "Bu varlık için yeterli fiyat geçmişi yok.",
   "notInYourPortfolio": "Bu varlık portföyüne dahil değildir.",
   "searchingEllipsis": "Aranıyor…",
@@ -2126,7 +2126,7 @@
   "liveActivityIosNote": "iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.",
   "marketClosedNote": "Piyasa kapalıyken son kapanış gösterilir.",
   "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.",
-  "hiddenOutsideWindow": "Şu an görünmüyor: saat {start}–{end} aralığının dışındasın. Banner {start}'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.",
+  "hiddenOutsideWindow": "Şu an görünmüyor: saat {start}-{end} aralığının dışındasın. Banner {start}'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.",
   "@hiddenOutsideWindow": {
     "placeholders": {
       "start": {
@@ -2139,7 +2139,7 @@
   },
   "quietStart": "Sessizlik başlangıcı",
   "quietEnd": "Sessizlik bitişi",
-  "quietHoursOn": "Brifing, özet, takvim ve alarm push'ları {start}–{end} arası gönderilmez",
+  "quietHoursOn": "Brifing, özet, takvim ve alarm push'ları {start}-{end} arası gönderilmez",
   "@quietHoursOn": {
     "placeholders": {
       "start": {
@@ -2160,7 +2160,7 @@
       }
     }
   },
-  "realReturnPositive": "Portföyün enflasyonun üzerinde reel getiri sağladı — alım gücün arttı.",
+  "realReturnPositive": "Portföyün enflasyonun üzerinde reel getiri sağladı, alım gücün arttı.",
   "percentileSentence": "Katılımcıların %{pct} kadarının üstündesin.",
   "@percentileSentence": {
     "placeholders": {
@@ -2214,7 +2214,7 @@
       }
     }
   },
-  "realReturnNegative": "Portföyün enflasyonun altında kaldı — alım gücün geriledi.",
+  "realReturnNegative": "Portföyün enflasyonun altında kaldı, alım gücün geriledi.",
   "nPeopleParen": "({n} kişi)",
   "@nPeopleParen": {
     "placeholders": {
@@ -2367,7 +2367,7 @@
       }
     }
   },
-  "raceFooterGlobal": "Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir — kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
+  "raceFooterGlobal": "Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
   "calculatingEllipsis": "Hesaplanıyor…",
   "nThousandPeople": "{n}K KİŞİ",
   "@nThousandPeople": {
@@ -2390,7 +2390,7 @@
   "toneTop25": "Ortalamanın çok üstündesin",
   "toneTop50": "Ortalamanın üstündesin",
   "toneTop75": "Ortalamaya yakınsın",
-  "toneRest": "Daha iyisini yapabilirsin — 30G takip et",
+  "toneRest": "Daha iyisini yapabilirsin, 30G takip et",
   "raceFooterPartners": "Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.",
   "recapYourPortfolio": "Portföyün",
   "recapGrewThisYear": "Bu yıl böyle büyüdün.",
@@ -2398,7 +2398,7 @@
   "recapVsInflation": "Enflasyona karşı · son 12 ay",
   "recapKeptPower": "Alım gücünü korudun ve üstüne koydun.",
   "recapInflationWon": "Son 12 ayda enflasyon öndeydi.",
-  "recapInflationWindow": "Ölçüm: {start} – {end} (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)",
+  "recapInflationWindow": "Ölçüm: {start} - {end} (TÜFE aylık yayımlandığı için pencere son açıklanan ayda biter)",
   "@recapInflationWindow": {
     "description": "Yil sonu ozetinde enflasyon karsilastirmasinin gercek pencere uclari",
     "placeholders": {
@@ -2470,7 +2470,7 @@
   "@whatsNewSubtitle": {},
   "whatsNewEmpty": "Bu sürüm için not yok.",
   "@whatsNewEmpty": {},
-  "appVersionLabel": "sandık — sürüm {surum}",
+  "appVersionLabel": "sandık · sürüm {surum}",
   "@appVersionLabel": {
     "placeholders": {
       "surum": {
@@ -2514,7 +2514,7 @@
       }
     }
   },
-  "shareCardRange": "{start} – {end}",
+  "shareCardRange": "{start} - {end}",
   "@shareCardRange": {
     "placeholders": {
       "start": {
@@ -2938,8 +2938,8 @@
   "kullaniciAdiZorunluNot": "Devam etmek için bir kullanıcı adı gerekiyor. Uygun bir ad seçtiğin an devam edebilirsin.",
   "kullaniciAdiUygunDevam": "Bu ad uygun. Devam edebilirsin.",
   "kullaniciAdiEtiket": "Kullanıcı adı",
-  "kullaniciAdiKurallar": "3–20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.",
-  "kullaniciAdiHataBicim": "3–20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.",
+  "kullaniciAdiKurallar": "3-20 karakter: harf, rakam, nokta ve alt çizgi. Harfle başlar, boşluk olmaz.",
+  "kullaniciAdiHataBicim": "3-20 karakter olmalı; harfle başlar, yalnız harf, rakam, . ve _ içerir.",
   "kullaniciAdiHataUygunsuz": "Bu ad uygun değil. Başka bir ad dene.",
   "kullaniciAdiHataAyrilmis": "Bu ad ayrılmış. Başka bir ad dene.",
   "kullaniciAdiHataAlinmis": "Bu ad alınmış. Başka bir ad dene.",

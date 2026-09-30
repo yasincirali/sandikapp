@@ -107,7 +107,7 @@ class _RealReturnStripState extends ConsumerState<RealReturnStrip> {
 String _aralik(BuildContext context, InflationWindow w) {
   final loc = Localizations.localeOf(context).toString();
   final f = DateFormat('MMM yyyy', loc);
-  return '${f.format(w.seriBaslangici)} – ${f.format(w.seriBitisi)}';
+  return '${f.format(w.seriBaslangici)} - ${f.format(w.seriBitisi)}';
 }
 
 /// Rozetin görsel gövdesi — veri kaynağından ayrı.

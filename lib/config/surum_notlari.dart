@@ -408,7 +408,7 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.grafik,
         baslik: 'Bildirimden doğrudan varlığa',
         aciklama: 'Alarm bildirimine dokununca o varlığın ekranı GÜNLÜK '
-            'sekmesinde açılır — fiyatın gün içinde ne yaptığını tek bakışta '
+            'sekmesinde açılır; fiyatın gün içinde ne yaptığını tek bakışta '
             'görürsün.',
       ),
       Yenilik(
@@ -422,7 +422,7 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.grafik,
         baslik: 'Altın grafiğindeki sahte düşüş gitti',
         aciklama: 'Altın grafiğinin son noktası, olmayan bir düşüş gibi '
-            'aşağı iniyordu — üstelik bazen. Sebep iki ayrı fiyat '
+            'aşağı iniyordu, üstelik bazen. Sebep iki ayrı fiyat '
             'kaynağıydı: veri gelmediğinde grafik, spot altın yerine vadeli '
             'sözleşmeye düşüyor ve tüm çizgi biraz yukarı kayıyordu. Artık '
             'tüm dönem sekmeleri aynı kaynağı aynı sırayla kullanıyor ve '

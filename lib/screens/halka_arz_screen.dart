@@ -264,7 +264,7 @@ String? _talepAraligi(BuildContext context, HalkaArz a, {bool yil = false}) {
   if (b == null && s == null) return null;
   if (b == null) return _gunAy(context, s!, yil: yil);
   if (s == null || s == b) return _gunAy(context, b, yil: yil);
-  return '${_gunAy(context, b)} – ${_gunAy(context, s, yil: yil)}';
+  return '${_gunAy(context, b)} - ${_gunAy(context, s, yil: yil)}';
 }
 
 String _gunAy(BuildContext context, DateTime t, {bool yil = false}) =>

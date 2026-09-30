@@ -3,105 +3,285 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>sandık — Portföy Takibi</title>
-<meta name="description" content="sandık, tüm yatırımlarını tek ekranda takip et. Hisse, fon, döviz, altın, emtia. Getirin enflasyonu geçti mi?">
+<title>sandık · Birikimin tek ekranda</title>
+<meta name="description" content="Hisse, fon, döviz, altın, kripto, mevduat ve BES tek ekranda. Enflasyonu geçip geçmediğini komisyon ve temettü dahil gerçek kârınla gör.">
+<meta property="og:title" content="sandık · Birikimin tek ekranda">
+<meta property="og:description" content="Hisse, fon, döviz, altın, kripto, mevduat ve BES tek ekranda. Gerçek kârını enflasyonla kıyasla.">
+<meta property="og:image" content="https://yasincirali.github.io/sandikapp/img/sandik-icon.png">
+<meta name="theme-color" content="#0A1E15">
 <!-- Safari akıllı banner: iOS'ta sayfanın üstünde "App Store'da aç" şeridi (2026-09-20). -->
 <meta name="apple-itunes-app" content="app-id=6786837699">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/sandik-icon.png">
+<!--
+  Yeniden düzen (2026-10-01, taste-skill denetimi):
+  - Emoji başlıklar, dört eşit kart ve "S" harfli sahte logo kalktı; gerçek
+    uygulama ikonu hero'da.
+  - "Uçtan uca şifreli" iddiası kalktı: gizlilik politikası TLS 1.2+ aktarım
+    ve sunucuda AES-256 saklama diyor, uçtan uca şifreleme yok.
+  - DM Sans sayfayla birlikte gelir (fonts/): Google Fonts'a istek, yani
+    ziyaretçi IP'sinin üçüncü tarafa gitmesi yok.
+  - Tema cihazdan: koyu marka yeşili, açık tema uygulamanın açık paleti.
+  - Bu dosyayı `_build_legal.py` artık YAZMAZ (elle bakılır).
+-->
 <style>
+@font-face { font-family: 'DM Sans'; src: url('fonts/DMSans-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('fonts/DMSans-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('fonts/DMSans-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('fonts/DMSans-ExtraBold.ttf') format('truetype'); font-weight: 800; font-display: swap; }
+
 :root {
+  color-scheme: dark;
   --bg: #0A1E15;
-  --surface: #10281E;
-  --surface-2: #1A3D2E;
-  --border: rgba(255,255,255,0.06);
-  --text: rgba(255,255,255,0.90);
-  --text-58: rgba(255,255,255,0.58);
+  --surface: #112E28;
+  --line: rgba(255, 255, 255, 0.08);
+  --text: rgba(255, 255, 255, 0.90);
+  --muted: rgba(255, 255, 255, 0.69);
+  --faint: rgba(255, 255, 255, 0.58);
   --amber: #F5A623;
-  --gold: #F5C842;
-  --gain: #6BB77B;
+  --on-amber: #112E28;
+  --accent-text: #F5C842;
+  --shadow: rgba(2, 12, 8, 0.65);
 }
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #F4F1EA;
+    --surface: #FBFAF6;
+    --line: rgba(18, 36, 25, 0.10);
+    --text: #12241E;
+    --muted: #4A5B54;
+    --faint: #566761;
+    --on-amber: #12241E;
+    --accent-text: #4A3618;
+    --shadow: rgba(18, 36, 25, 0.22);
+  }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'DM Sans', sans-serif; line-height: 1.6; min-height: 100vh; }
-.hero { max-width: 960px; margin: 0 auto; padding: 80px 24px 60px; text-align: center; }
-.logo-hero { width: 96px; height: 96px; background: linear-gradient(135deg, var(--gold), var(--amber)); border-radius: 24px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: #0A1E15; font-size: 52px; margin-bottom: 24px; box-shadow: 0 12px 40px rgba(245,166,35,0.25); }
-h1 { font-size: 48px; font-weight: 800; letter-spacing: -1.5px; margin: 0 0 12px; }
-.tagline { font-size: 20px; color: var(--text-58); margin-bottom: 40px; max-width: 560px; margin-left: auto; margin-right: auto; }
-.store { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
-.store-btn { display: inline-flex; flex-direction: column; align-items: flex-start; text-decoration: none; background: #fff; color: #0A1E15; border-radius: 12px; padding: 10px 22px; min-width: 170px; line-height: 1.15; }
-.store-btn .store-small { font-size: 11px; opacity: .7; }
-.store-btn .store-big { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
-.store-btn.soon { background: var(--surface-2); color: var(--text-58); border: 1px solid var(--border); cursor: default; }
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin: 40px 0; }
-.feature { background: var(--surface); padding: 24px 20px; border-radius: 16px; border: 1px solid var(--border); text-align: left; }
-.feature h3 { color: var(--gold); font-size: 16px; margin-bottom: 8px; }
-.feature p { font-size: 14px; color: var(--text-58); }
-.legal-nav { margin-top: 60px; padding: 32px; background: var(--surface); border-radius: 16px; border: 1px solid var(--border); text-align: left; max-width: 640px; margin-left: auto; margin-right: auto; }
-.legal-nav h2 { color: var(--gold); font-size: 16px; margin-bottom: 16px; font-weight: 700; }
-.legal-nav ul { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
-.legal-nav a { color: var(--text); text-decoration: none; font-size: 14px; padding: 6px 0; display: block; border-bottom: 1px solid var(--border); }
-.legal-nav a:hover { color: var(--amber); }
-footer { text-align: center; padding: 40px 20px; font-size: 12px; color: rgba(255,255,255,0.36); }
-@media (max-width: 600px) {
-  h1 { font-size: 32px; }
-  .tagline { font-size: 16px; }
-  .legal-nav ul { grid-template-columns: 1fr; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 24px; }
+
+.top { display: flex; align-items: center; gap: 10px; padding-block: 24px; }
+.top img { width: 32px; height: 32px; border-radius: 8px; }
+.top span { font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: var(--accent-text); }
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: 48px;
+  align-items: center;
+  padding-block: 56px 88px;
+}
+.hero h1 {
+  font-size: clamp(2.6rem, 6vw, 4.25rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.hero p { margin-top: 20px; font-size: 1.2rem; color: var(--muted); max-width: 34ch; }
+.cta-row { margin-top: 32px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.cta {
+  display: inline-block;
+  background: var(--amber);
+  color: var(--on-amber);
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-decoration: none;
+  padding: 14px 26px;
+  border-radius: 14px;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), filter 180ms ease;
+}
+.cta:hover { filter: brightness(1.06); }
+.cta:active { transform: scale(0.98); }
+.cta:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 3px; }
+.cta-row small { color: var(--faint); font-size: 0.95rem; }
+.hero-icon { justify-self: center; }
+.hero-icon img {
+  width: min(300px, 70vw);
+  height: auto;
+  border-radius: 22.5%;
+  box-shadow: 0 30px 80px -20px var(--shadow);
+  display: block;
+}
+
+section { padding-block: 72px; border-top: 1px solid var(--line); }
+section h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  max-width: 22ch;
+}
+section > .wrap > p { margin-top: 16px; color: var(--muted); max-width: 62ch; }
+
+.types {
+  margin-top: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  list-style: none;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.types li:nth-child(n+7) { color: var(--accent-text); }
+
+.facts {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px 56px;
+}
+.facts h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
+.facts p { margin-top: 6px; color: var(--muted); max-width: 46ch; }
+.facts .wide { grid-column: 1 / -1; }
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 48px;
+  align-items: start;
+}
+.split p { color: var(--muted); }
+.split p + p { margin-top: 14px; }
+
+.privacy { background: var(--surface); border-radius: 24px; padding: 40px; margin-block: 8px 72px; }
+.privacy h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+.privacy p { margin-top: 14px; color: var(--muted); max-width: 62ch; }
+
+footer { border-top: 1px solid var(--line); padding-block: 36px 48px; font-size: 0.9rem; color: var(--faint); }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+footer nav a { text-decoration: none; color: var(--muted); }
+footer nav a:hover { color: var(--text); text-decoration: underline; }
+footer p { margin-top: 20px; }
+
+@media (max-width: 760px) {
+  body { font-size: 16px; }
+  .wrap { padding-inline: 20px; }
+  .hero { grid-template-columns: 1fr; gap: 36px; padding-block: 24px 56px; }
+  .hero-icon { justify-self: start; order: -1; }
+  .hero-icon img { width: 104px; }
+  .facts { grid-template-columns: 1fr; gap: 28px; }
+  .split { grid-template-columns: 1fr; gap: 16px; }
+  section { padding-block: 56px; }
+  .privacy { padding: 28px 22px; border-radius: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta { transition: none; }
 }
 </style>
 </head>
 <body>
-<div class="hero">
-  <div class="logo-hero">S</div>
-  <h1>sandık</h1>
-  <p class="tagline">Hisse, fon, döviz, altın ve emtia varlıklarını tek ekranda takip et. Getirin enflasyonu geçti mi, komisyon ve temettü dahil gerçek kârın ne — tek bakışta.</p>
+<header class="wrap top">
+  <img src="img/sandik-icon.png" alt="" width="32" height="32">
+  <span>sandık</span>
+</header>
 
-  <!-- Mağaza düğmeleri: X/Ekşi/Reddit'ten gelen tıklama doğrudan mağazaya düşsün (2026-09-20). -->
-  <div class="store">
-    <a class="store-btn" href="https://apps.apple.com/tr/app/id6786837699?utm_source=web&utm_medium=landing&utm_campaign=hero">
-      <span class="store-small">Ücretsiz indir</span><span class="store-big">App Store</span>
-    </a>
-    <span class="store-btn soon" title="Google Play sürümü hazırlanıyor">
-      <span class="store-small">Yakında</span><span class="store-big">Google Play</span>
-    </span>
-  </div>
-
-  <div class="features">
-    <div class="feature">
-      <h3>📊 Profesyonel Grafik</h3>
-      <p>Pinch zoom, crosshair, dinamik zaman aralıkları. Portföy performansın anlık ve tarihsel.</p>
+<main>
+  <div class="wrap hero">
+    <div>
+      <h1>Birikimin tek ekranda.</h1>
+      <p>Hisse, fon, döviz, altın, kripto, mevduat ve BES. Enflasyonu geçip geçmediğini gerçek kârınla gör.</p>
+      <div class="cta-row">
+        <!-- Mağaza düğmesi: X/Ekşi/Reddit'ten gelen tıklama doğrudan mağazaya düşsün (2026-09-20). -->
+        <a class="cta" href="https://apps.apple.com/tr/app/id6786837699?utm_source=web&amp;utm_medium=landing&amp;utm_campaign=hero">App Store'dan indir</a>
+        <small>Google Play sürümü hazırlanıyor.</small>
+      </div>
     </div>
-    <div class="feature">
-      <h3>👥 Ortak Paylaşımı</h3>
-      <p>Aile veya iş ortaklarınla portföyünü güvenli paylaş. İstediğin zaman sonlandır.</p>
-    </div>
-    <div class="feature">
-      <h3>🏆 Yarış (Opsiyonel)</h3>
-      <p>Ortaklarınla getiri sıralaması + anonim genel percentile. Sadece opt-in ile aktif.</p>
-    </div>
-    <div class="feature">
-      <h3>🔒 Gizlilik</h3>
-      <p>KVKK + GDPR uyumlu. Uçtan uca şifreli. Hesabını istediğin zaman sil.</p>
+    <div class="hero-icon">
+      <img src="img/sandik-icon.png" alt="sandık uygulama ikonu" width="300" height="300">
     </div>
   </div>
 
-  <div class="legal-nav">
-    <h2>Hukuki & Destek</h2>
-    <ul>
-      <li><a href="privacy/">Gizlilik Politikası (TR)</a></li>
-      <li><a href="privacy-en/">Privacy Policy (EN)</a></li>
-      <li><a href="terms/">Kullanım Koşulları</a></li>
-      <li><a href="terms-en/">Terms of Service</a></li>
-      <li><a href="legal/kvkk/">KVKK Aydınlatma</a></li>
-      <li><a href="legal/gdpr/">GDPR Notice</a></li>
-      <li><a href="legal/acik-riza/">Açık Rıza Metni</a></li>
-      <li><a href="legal/depolama/">Depolama Bilgisi</a></li>
-      <li><a href="data-deletion/">Hesap Silme (TR)</a></li>
-      <li><a href="data-request/">Data Request (EN)</a></li>
-    </ul>
+  <section>
+    <div class="wrap">
+      <h2>Ne biriktiriyorsan hepsi burada</h2>
+      <p>BIST hisseleri ve TEFAS fonları günlük fiyatıyla, döviz ve altın yurt içi kurla, kripto Türk lirası karşılığıyla gelir. Vadeli mevduatın faizini, BES'te devlet katkısını ayrı ayrı görürsün.</p>
+      <ul class="types" aria-label="Takip edilen varlık türleri">
+        <li>Hisse</li>
+        <li>Fon</li>
+        <li>Döviz</li>
+        <li>Altın</li>
+        <li>Emtia</li>
+        <li>Kripto</li>
+        <li>Mevduat</li>
+        <li>BES</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Kâr dediğin gerçek kâr olsun</h2>
+      <div class="facts">
+        <div>
+          <h3>Komisyon ve temettü dahil</h3>
+          <p>Alış fiyatın, ödediğin komisyon ve aldığın temettü hesaba girer. Ekrandaki kâr, cebine giren parayı anlatır.</p>
+        </div>
+        <div>
+          <h3>Enflasyonla kıyas</h3>
+          <p>Getirin aynı dönemin TÜFE'siyle karşılaştırılır. Önünde misin, gerisinde mi, tek satırda okursun.</p>
+        </div>
+        <div class="wide">
+          <h3>Her dönem, her varlık</h3>
+          <p>Günlükten yıllığa, tüm portföyün ya da tek bir varlığın grafiği. Yakınlaştırır, üzerinde parmağınla gezersin.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap split">
+      <h2>Uygulamayı açmadan bil</h2>
+      <div>
+        <p>iPhone'da kilit ekranı widget'ı günün yüzdesini gösterir. Seans saatinde Canlı Etkinlik, günün grafiği ve seans çubuğuyla kilit ekranının altında durur.</p>
+        <p>Belirlediğin fiyata gelen varlık ya da teknik sinyal için bildirim alırsın. Ana ekran widget'ı iPhone'da ve Android'de var.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Ailenle birlikte tut</h2>
+      <p>Ortak koduyla eşinin ya da ailenin portföyünü seninkiyle yan yana izlersin. Paylaşımı istediğin an bitirirsin.</p>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="privacy">
+      <h2>Verin sende kalır</h2>
+      <p>Verilerin aktarımda TLS ile, sunucuda AES-256 ile şifrelenir. Bakiyeni tek dokunuşla gizler, uygulamayı Face ID ya da parmak iziyle kilitlersin. Hesabını uygulamanın içinden silersin.</p>
+    </div>
   </div>
-</div>
+</main>
 
 <footer>
-  © sandık · <a href="mailto:sandikapp.destek@gmail.com" style="color:inherit">sandikapp.destek@gmail.com</a>
+  <div class="wrap">
+    <nav aria-label="Hukuki metinler ve destek">
+      <a href="privacy/">Gizlilik Politikası</a>
+      <a href="privacy-en/">Privacy Policy</a>
+      <a href="terms/">Kullanım Koşulları</a>
+      <a href="terms-en/">Terms of Service</a>
+      <a href="legal/kvkk/">KVKK Aydınlatma</a>
+      <a href="legal/gdpr/">GDPR Notice</a>
+      <a href="legal/acik-riza/">Açık Rıza Metni</a>
+      <a href="legal/depolama/">Depolama Bilgisi</a>
+      <a href="data-deletion/">Hesap Silme</a>
+      <a href="data-request/">Data Request</a>
+    </nav>
+    <p>© 2026 sandık. Destek: <a href="mailto:sandikapp.destek@gmail.com">sandikapp.destek@gmail.com</a></p>
+  </div>
 </footer>
 </body>
 </html>

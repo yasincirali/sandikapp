@@ -389,7 +389,7 @@ class _FrequencyRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Bildirimler yalnızca '
-                    '${_saatMetni(kSignalWindowStart)}–'
+                    '${_saatMetni(kSignalWindowStart)}-'
                     '${_saatMetni(kSignalWindowEnd)} arasında gönderilir.',
                     style: context.t.bodySmall
                         ?.copyWith(color: context.c.text58, height: 1.4),
@@ -528,8 +528,8 @@ class _FrequencyRow extends StatelessWidget {
           const SizedBox(height: 8),
           if (!freq.needsHourPicker)
             Text(
-              '${freq.description} — '
-              '${_saatMetni(kSignalWindowStart)}–'
+              '${freq.description}, '
+              '${_saatMetni(kSignalWindowStart)}-'
               '${_saatMetni(kSignalWindowEnd)} arası.',
               style: context.t.bodySmall
                   ?.copyWith(color: context.c.text36, height: 1.4),

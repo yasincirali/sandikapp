@@ -104,7 +104,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                     ? context.c.cardShadow
                     : [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
+                          color: context.c.golge.withValues(alpha: 0.22),
                           blurRadius: 28,
                           spreadRadius: -4,
                           offset: const Offset(0, 8),

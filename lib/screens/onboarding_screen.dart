@@ -320,7 +320,7 @@ List<_Adim> _adimlariKur() {
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
       // Sıra Varlık Ekle çipleriyle aynı (`AssetType.eklemeSirasi`).
-      govde: 'Hisse, döviz, altın, fon, kripto ve emtia — hepsi tek '
+      govde: 'Hisse, döviz, altın, fon, kripto ve emtia; hepsi tek '
           'toplamda, tek para biriminde. Fiyatlar arka planda kendiliğinden güncellenir.\n\n'
           'Uygulamayı birlikte gezelim: her adımda gerçek ekranın üstünde '
           'tek bir tuş açık kalır. Dokun, dene.',
@@ -375,9 +375,9 @@ List<_Adim> _adimlariKur() {
       id: 'bugun',
       hedef: TourTarget.bugunKarti,
       baslik: 'Bugün ne oldu?',
-      govde: 'Solda tarih, yanında günün hareketi — sadece piyasa etkisi, '
+      govde: 'Solda tarih, yanında günün hareketi: sadece piyasa etkisi, '
           'yatırdığın para sayılmaz. Altındaki satırlar: enflasyona göre '
-          'durumun, son 7 gün, artıdaki varlıkların ve hedefin — hedef '
+          'durumun, son 7 gün, artıdaki varlıkların ve hedefin. Hedef '
           'satırı her gün orada, dokunup belirlersin; en altta yaklaşan '
           'tarih. Her satırın altında ne anlama geldiği '
           'yazar; dokununca ayrıntı açılır. Ortağına ya da Birlikte\'ye '
@@ -465,7 +465,7 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.sekmeEkle,
       baslik: 'Varlık ekle',
       govde: 'Hisse mi, fon mu, altın mı, kripto mu? Tür seçtiğinde form '
-          'ona göre değişir — altında gram, hissede adet sorulur. Seçim '
+          'ona göre değişir: altında gram, hissede adet sorulur. Seçim '
           'listesindeki grafik simgesi, seçmeden önce varlığa bakmanı sağlar.',
       gorev: '+ tuşuna dokun',
       gorevBitti: 'Varlık Ekle açıldı',
@@ -661,7 +661,7 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
     const _Adim(
       id: 'karsilama',
       baslik: 'Sandığına hoş geldin',
-      govde: 'Hisse, döviz, altın, fon, kripto — hepsi tek toplamda. Bir dakikada '
+      govde: 'Hisse, döviz, altın, fon, kripto; hepsi tek toplamda. Bir dakikada '
           'ilk varlığını girelim; gerisini uygulama kendi anlatır.',
     ),
     // Yatırımcı seviyesi (plan F2, 2026-09-29): tercih yalnız Ayarlar ›

@@ -192,7 +192,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // const değil: `LegalDocs.privacy` verinin ülkesini çalışma anında
         // doldurur (köprü sürümü).
         builder: (_) => LegalDocScreen(
-          title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
+          title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
           icon: Icons.public_rounded,
           blocks: LegalDocs.privacy,
           confirmMode: true,
@@ -511,7 +511,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               // KVKK Madde 9(1) zorunluluğu: açık rıza birleştirilemez.
               _LegalConsentBox(
                 icon: Icons.public_rounded,
-                title: 'Açık Rıza — Yurt Dışı Veri Aktarımı',
+                title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
                 bodyText:
                     // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
                     'Verilerin Supabase (${SunucuSecimi.instance.aktifOrNull?.ulke ?? 'yurt dışı'}) ve Firebase (ABD/Küresel) '

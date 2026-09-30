@@ -181,7 +181,7 @@ class MilestoneService {
         // tarihidir, uygulamayı ne zamandır kullandığı değil. Geçmiş tarihli
         // alım girip birkaç haftadır kullanan kullanıcıya "2 yıldır
         // takiptesin" denmişti (2026-09-27). Söylenen, bilinen tek gerçek.
-        body: 'İlk alımın $yil yıl önceydi — sabır bu işin yarısı.',
+        body: 'İlk alımın $yil yıl önceydi. Sabır bu işin yarısı.',
       ));
     }
     return out;

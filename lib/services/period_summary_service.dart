@@ -987,7 +987,7 @@ class PeriodSummaryService {
     String g(DateTime t) => '${t.day.toString().padLeft(2, '0')}.'
         '${t.month.toString().padLeft(2, '0')}.'
         '${(t.year % 100).toString().padLeft(2, '0')}';
-    return '${g(bas)} – ${g(bit)}';
+    return '${g(bas)} - ${g(bit)}';
   }
 
   static String? shareText(

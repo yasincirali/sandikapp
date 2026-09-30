@@ -817,6 +817,14 @@ class SandikPalette extends ThemeExtension<SandikPalette> {
   /// light'ta yüksekliğin tek taşıyıcısı.
   final List<BoxShadow> cardShadow;
 
+  /// Tonlu gölge ve perde rengi (2026-10-01, taste-skill denetimi).
+  ///
+  /// Düz siyah gölge yeşil zeminde gri, krem zeminde kirli görünüyordu;
+  /// gölge zeminin tonunu taşımalı. Taban `onAmber`: iki temada da koyu
+  /// marka yeşili (#112E28 / #12241E), %45 siyaha çekilir. Alfa çağıranda
+  /// (`golge.withValues(alpha: …)`), ton tek yerde.
+  Color get golge => Color.lerp(onAmber, const Color(0xFF000000), 0.45)!;
+
   /// Mevcut dark palet.
   ///
   /// [gain] ve [loss] denetimde düzeltildi: eski değerler (#2D9E6C / #E8503A)

@@ -438,7 +438,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get priceUpdateFailed =>
-      'Prices could not be updated — showing older data.';
+      'Prices could not be updated. Showing older data.';
 
   @override
   String get otpSentPrefix => 'We sent the 6-digit code to\n';
@@ -731,7 +731,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'e.g. XAUTRY=X (gram gold in TRY) or GC=F (ounce, USD)';
 
   @override
-  String get tickerHintCrypto => 'e.g. BTC, ETH — pick from the list';
+  String get tickerHintCrypto => 'Pick from the list, e.g. BTC, ETH';
 
   @override
   String get tickerHintCommodity =>
@@ -762,7 +762,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get companyNameHint =>
-      'Company name (optional — fetched from the symbol)';
+      'Company name (optional, fetched from the symbol)';
 
   @override
   String goldSemantics(String kind) {
@@ -771,7 +771,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commissionNote =>
-      'Trading commission is added to your cost — profit/loss shows the real figure.';
+      'Trading commission is added to your cost, so profit/loss shows the real figure.';
 
   @override
   String get costPreviewHint =>
@@ -873,7 +873,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String dividendEnterNet(String gross) {
-    return 'Gross $gross — enter what you received after withholding tax.';
+    return 'Gross $gross. Enter what you received after withholding tax.';
   }
 
   @override
@@ -905,7 +905,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quickEntryHelp =>
-      'One asset per line. Price is optional — leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units';
+      'One asset per line. Price is optional: leave it blank and the current price is fetched.\ne.g.  100 dollars  /  10 grams gold 4500 lira  /  GARAN 500 units';
 
   @override
   String get quickEntryPlaceholder =>
@@ -946,7 +946,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cpiWindowNote =>
-      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today — the two figures cover different windows.';
+      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.';
 
   @override
   String get demoTryButton => 'Take a look first';
@@ -1391,7 +1391,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tooManyAttempts(String wait) {
-    return 'Too many attempts — you can try again in $wait.';
+    return 'Too many attempts. You can try again in $wait.';
   }
 
   @override
@@ -1454,7 +1454,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String partnershipCreated(String name) {
-    return 'You are now partners with $name!';
+    return 'You are now partners with $name.';
   }
 
   @override
@@ -1464,14 +1464,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get requestCancelled => 'The partner request was cancelled.';
 
   @override
-  String get partnershipAccepted => 'Partnership accepted!';
+  String get partnershipAccepted => 'Partnership accepted.';
 
   @override
   String get sendingEllipsis => 'Sending...';
 
   @override
   String waitFor(String wait) {
-    return 'Wait — $wait';
+    return 'Wait: $wait';
   }
 
   @override
@@ -1534,14 +1534,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get youngPortfolioBody =>
-      'Your portfolio is newer than the selected period. The chart fills in as trading days pass — see today\'s move in the DAILY view.';
+      'Your portfolio is newer than the selected period. The chart fills in as trading days pass. See today\'s move in the DAILY view.';
 
   @override
   String get forceUpdateTitle => 'Update required';
 
   @override
   String get forceUpdateBody =>
-      'This version of Sandık is no longer supported. Update the app to continue — your data is safe.';
+      'This version of Sandık is no longer supported. Update the app to continue; your data is safe.';
 
   @override
   String get forceUpdateButton => 'Update';
@@ -1573,11 +1573,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get simModeBody =>
-      'How the chart would look if you had held today\'s net portfolio for the whole period — it ignores past buy/sell decisions and shows only the price change of your current position.';
+      'How would the chart look if you had held today\'s net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.';
 
   @override
   String get realModeBody =>
-      'Each day\'s value is computed from the net quantity you held that day. Tap a point to see that day\'s portfolio value and any buy / sell amounts — so you can see exactly why the chart rose or fell.';
+      'Each day\'s value is computed from the net quantity you held that day. Tap a point to see that day\'s portfolio value and any buy / sell amounts, so you can see exactly why the chart rose or fell.';
 
   @override
   String get portfolioPerformance => 'Portfolio Performance';
@@ -1591,7 +1591,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String intradayMissingBody(String names) {
-    return 'Intraday prices could not be fetched for $names. These assets are drawn FLAT at their last known price — a flat line does not mean the market was quiet.';
+    return 'Intraday prices could not be fetched for $names. These assets are drawn FLAT at their last known price. A flat line does not mean the market was quiet.';
   }
 
   @override
@@ -1800,7 +1800,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'The blue bar is your own money — it is not a return. The percentage comes only from the market bar.';
+      'The blue bar is your own money, not a return. The percentage comes only from the market bar.';
 
   @override
   String get periodCourse => 'Course over the period';
@@ -1823,7 +1823,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiWindowRange(String start, String end) {
-    return 'Measured: $start – $end';
+    return 'Measured: $start - $end';
   }
 
   @override
@@ -1888,7 +1888,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get volatilityBody =>
-      'This is how much your portfolio value swung on average over the year. High is neither good nor bad — it just means bigger ups and downs.';
+      'This is how much your portfolio value swung on average over the year. High is neither good nor bad; it just means bigger ups and downs.';
 
   @override
   String get concentration => 'Concentration';
@@ -1932,7 +1932,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String portfolioLineInfoDaily(String name) {
-    return 'In the daily view the $name line shows your real value — the same as the daily chart on the Performance screen.';
+    return 'In the daily view the $name line shows your real value, the same as the daily chart on the Performance screen.';
   }
 
   @override
@@ -1999,7 +1999,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portfolioSeriesNote =>
-      'Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.';
+      'Portfolios are computed series, not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.';
 
   @override
   String get portfolioActivityTitle => 'Portfolio Activity';
@@ -2063,12 +2063,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pricePreviewClose(String date) {
-    return '$date close — this price will be saved';
+    return '$date close. This price will be saved';
   }
 
   @override
   String pricePreviewLastTradingClose(String date) {
-    return 'Last trading day\'s close ($date) — this price will be saved';
+    return 'Last trading day\'s close ($date). This price will be saved';
   }
 
   @override
@@ -2157,7 +2157,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rankVsPortfolioNote =>
-      'This number can DIFFER from the profit/loss percentage on the Portfolio screen — that one shows total profit/loss since your first purchase, this one only what happened in the period you picked.';
+      'This number can DIFFER from the profit/loss percentage on the Portfolio screen. That one shows total profit/loss since your first purchase; this one only what happened in the period you picked.';
 
   @override
   String get rankSwapNote =>
@@ -2178,7 +2178,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get raceNoListShared =>
-      'No one\'s asset list is shared — only return percentages are ranked.';
+      'No one\'s asset list is shared; only return percentages are ranked.';
 
   @override
   String get yourReturnUpper => 'YOUR RETURN';
@@ -2203,7 +2203,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get globalRankingSoon =>
-      'Your rank opens once there are enough participants — anonymous, KVKK compliant';
+      'Your rank opens once there are enough participants. Anonymous, KVKK compliant';
 
   @override
   String topPercentile(String period, int pct) {
@@ -2236,11 +2236,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositsDontChangeRankBody =>
-      'The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today\'s assets from the start of the period. Growing your portfolio therefore does not raise your return — you see the same percentage whether you hold 1 lot or 10,000.';
+      'The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today\'s assets from the start of the period. Growing your portfolio therefore does not raise your return: you see the same percentage whether you hold 1 lot or 10,000.';
 
   @override
   String get everyoneMeasuredSameBody =>
-      'You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don\'t need to wait for your partner to open the app — the calculation happens on this device.';
+      'You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don\'t need to wait for your partner to open the app; the calculation happens on this device.';
 
   @override
   String get planYearly => 'Yearly';
@@ -2309,7 +2309,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String recapCardSubtitle(String character) {
-    return 'A short story of the year — $character';
+    return 'A short story of the year: $character';
   }
 
   @override
@@ -2497,11 +2497,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String widenTheGap(String gap) {
-    return 'Widen the gap — second is $gap% behind';
+    return 'Widen the gap, second is $gap% behind';
   }
 
   @override
-  String get atTheTop => 'You\'re at the top — keep the lead';
+  String get atTheTop => 'You\'re at the top. Keep the lead';
 
   @override
   String toPassPerson(String name, String diff) {
@@ -2510,7 +2510,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get higherInOtherPeriods =>
-      'You rank higher in other periods — tap to see';
+      'You rank higher in other periods. Tap to see';
 
   @override
   String get deleteAssetTitle => 'Delete Asset';
@@ -2530,7 +2530,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAssetWarning =>
-      'This is not a sale — the asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.';
+      'This is not a sale. The asset leaves your portfolio and drops out of totals and the history chart. Transaction records stay under \"Portfolio Activity\". If you sold it, use \"Sell\" instead so your realised profit/loss is counted.';
 
   @override
   String alarmAlsoDeleteTitle(int n) {
@@ -2633,7 +2633,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sellAllWarning =>
-      'You are selling the whole position — it leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.';
+      'You are selling the whole position. It leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.';
 
   @override
   String get saleValue => 'Sale value';
@@ -2831,7 +2831,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get indicatorsNoHistory =>
-      'This asset\'s price history could not be fetched — indicators cannot be calculated.';
+      'This asset\'s price history could not be fetched, so indicators cannot be calculated.';
 
   @override
   String get noIndicatorsSelected =>
@@ -2978,7 +2978,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unitPriceDiffNote =>
-      'The change is a unit price difference — you don\'t own this asset.';
+      'The change is a unit price difference; you don\'t own this asset.';
 
   @override
   String get notEnoughHistoryForAsset =>
@@ -3227,7 +3227,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String hiddenOutsideWindow(String start, String end) {
-    return 'Not visible right now: you\'re outside the $start–$end window. The banner appears at $start. To see it now, turn on \"Show all day\".';
+    return 'Not visible right now: you\'re outside the $start-$end window. The banner appears at $start. To see it now, turn on \"Show all day\".';
   }
 
   @override
@@ -3255,7 +3255,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realReturnPositive =>
-      'Your portfolio delivered a real return above inflation — your purchasing power grew.';
+      'Your portfolio delivered a real return above inflation; your purchasing power grew.';
 
   @override
   String percentileSentence(int pct) {
@@ -3320,7 +3320,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get realReturnNegative =>
-      'Your portfolio fell short of inflation — your purchasing power shrank.';
+      'Your portfolio fell short of inflation; your purchasing power shrank.';
 
   @override
   String nPeopleParen(int n) {
@@ -3449,7 +3449,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get raceFooterGlobal =>
-      'Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous — identity, quantity and TRY figures are never shared.';
+      'Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
 
   @override
   String get calculatingEllipsis => 'Calculating…';
@@ -3480,7 +3480,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toneTop75 => 'Close to average';
 
   @override
-  String get toneRest => 'You can do better — follow the 30D view';
+  String get toneRest => 'You can do better. Follow the 30D view';
 
   @override
   String get raceFooterPartners =>
@@ -3508,7 +3508,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String recapInflationWindow(String start, String end) {
-    return 'Measured: $start – $end (CPI is published monthly, so the window ends at the last released month)';
+    return 'Measured: $start - $end (CPI is published monthly, so the window ends at the last released month)';
   }
 
   @override
@@ -3589,7 +3589,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String appVersionLabel(String surum) {
-    return 'sandık — version $surum';
+    return 'sandık · version $surum';
   }
 
   @override
@@ -3636,7 +3636,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String shareCardRange(String start, String end) {
-    return '$start – $end';
+    return '$start - $end';
   }
 
   @override
@@ -4179,11 +4179,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kullaniciAdiKurallar =>
-      '3–20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.';
+      '3-20 characters: letters, digits, dot and underscore. Starts with a letter, no spaces.';
 
   @override
   String get kullaniciAdiHataBicim =>
-      'Must be 3–20 characters, start with a letter and contain only letters, digits, . and _.';
+      'Must be 3-20 characters, start with a letter and contain only letters, digits, . and _.';
 
   @override
   String get kullaniciAdiHataUygunsuz =>

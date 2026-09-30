@@ -28,6 +28,11 @@ import 'add_asset_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
+/// Ortak serisinin arama satırı adındaki ayraç: "Ayşe · tüm portföyü".
+/// Üretildiği yer ve adın ilk parçasını okuyan iki yer aynı sabiti kullanır;
+/// eskiden üçü ayrı ayrı uzun tire yazıyordu (taste-skill, 2026-10-01).
+const _ortakAdAyraci = ' · ';
+
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
 ///
 /// Uygulamanın geri kalanı *"bende ne var"* sorusunu yanıtlar; bu ekran
@@ -657,7 +662,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (hit.ticker == PortfolioSeries.mine) return 'Portföyüm';
     if (hit.ticker == PortfolioSeries.together) return 'Birlikte';
     if (PortfolioSeries.partnerIdOf(hit.ticker) != null) {
-      return hit.name.split(' — ').first;
+      return hit.name.split(_ortakAdAyraci).first;
     }
     // "Aylık" etikette DURUR: basamağın neden basamak olduğunu söyler.
     if (TufeSeries.isTufe(hit.ticker)) return 'TÜFE (aylık)';
@@ -881,7 +886,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     for (final p in partners) {
       out.add(SymbolHit(
         ticker: '${PortfolioSeries.partnerPrefix}${p.id}',
-        name: '${p.displayName} — tüm portföyü',
+        name: '${p.displayName}${_ortakAdAyraci}tüm portföyü',
         source: 'Ortak',
       ));
     }
@@ -1062,8 +1067,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
   String _portfolioTitle(SymbolHit h) {
     if (h.ticker == PortfolioSeries.mine) return 'Portföyüm';
     if (h.ticker == PortfolioSeries.together) return 'Birlikte';
-    // Ortak: adı `name` alanının ilk parçasında ("Ayşe — tüm portföyü").
-    return h.name.split(' — ').first;
+    // Ortak: adı `name` alanının ilk parçasında ("Ayşe · tüm portföyü").
+    return h.name.split(_ortakAdAyraci).first;
   }
 
   @override

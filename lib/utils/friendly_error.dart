@@ -246,7 +246,6 @@ Future<bool> showSandikConfirm({
 }) async {
   if (!context.mounted) return false;
   final palette = context.c;
-  final isLight = context.isLight;
   final accent = destructive ? palette.loss : palette.amberText;
   final icon =
       destructive ? Icons.warning_amber_rounded : Icons.help_outline_rounded;
@@ -254,7 +253,7 @@ Future<bool> showSandikConfirm({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierLabel: 'Sandık onay',
-    barrierColor: _barrierColor(isLight),
+    barrierColor: _barrierColor(context),
     transitionDuration: SandikMotion.surface,
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) => _diyalogGecisi(
@@ -314,8 +313,9 @@ Future<T?> showSandikGecisli<T>({
 }
 
 /// Perde rengi — aydınlıkta hafif, karanlıkta koyu; iki dialog da bunu kullanır.
-Color _barrierColor(bool isLight) =>
-    Colors.black.withValues(alpha: isLight ? 0.32 : 0.55);
+/// Ton düz siyah değil, marka yeşiline çalar (`SandikPalette.golge`).
+Color _barrierColor(BuildContext context) =>
+    context.c.golge.withValues(alpha: context.isLight ? 0.32 : 0.55);
 
 /// Dialog kabuğu — ikon rozeti, başlık, mesaj, isteğe bağlı detay kutusu,
 /// eylem satırı. `_SandikDialog` (tek buton, canlı mesaj) ve onay dialogu
@@ -353,7 +353,7 @@ class _SandikDialogShell extends StatelessWidget {
               border: Border.all(color: accent.withValues(alpha: 0.30)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black
+                  color: context.c.golge
                       .withValues(alpha: context.isLight ? 0.14 : 0.35),
                   blurRadius: 30,
                   spreadRadius: -6,
@@ -489,7 +489,6 @@ Future<void> showSandikDialog({
   // Renkler `context`ten okunur: bu dialog light modda da açılıyor ve
   // sabit koyu yüzey + koyu metin okunmaz hale geliyordu.
   final palette = context.c;
-  final bool isLight = context.isLight;
   final Color accent;
   final IconData icon;
   switch (kind) {
@@ -510,7 +509,7 @@ Future<void> showSandikDialog({
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Sandık dialog',
-    barrierColor: _barrierColor(isLight),
+    barrierColor: _barrierColor(context),
     transitionDuration: SandikMotion.surface,
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) => _diyalogGecisi(
