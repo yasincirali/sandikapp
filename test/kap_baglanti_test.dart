@@ -10,8 +10,9 @@ import 'package:portfoy_takip/widgets/kap_baglantisi.dart';
 /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yanıt örnekleri KAP'ın
 /// şirket arama ucundan 2026-09-30'da ölçülen biçimde.
 void main() {
-  const thyao = '[{"companyCode":"1107","mkkMemberOid":"x","title":"TÜRK HAVA '
-      'YOLLARI A.O.","permaLink":"1107-turk-hava-yollari-a-o"}]';
+  const thyao = '[{"companyCode":"1107","mkkMemberOid":'
+      '"4028e4a140f2ed720140f376bebb01a7","title":"TÜRK HAVA YOLLARI A.O.",'
+      '"permaLink":"1107-turk-hava-yollari-a-o"}]';
   // "GARAN" bulanık aramada ÜÇ şirket döndü, ilki Garanti Bankası DEĞİL.
   const garan = '[{"companyCode":"2113","title":"GARANTİ BBVA OPERASYONEL '
       'KİRALAMA","permaLink":"2113-garanti-bbva-operasyonel-kiralama-hizmetleri-a-s"},'
@@ -23,11 +24,12 @@ void main() {
         return http.Response.bytes(utf8.encode(govde), kod);
       }));
 
-  test('tek sonuç → şirketin kalıcı KAP adresi', () async {
+  test('tek sonuç → şirketin KAP bildirim listesi (en yeni üstte)', () async {
     final istekler = <Uri>[];
     final u = await servis(thyao, istek: istekler).sirketSayfasi('THYAO.IS');
     expect(u.toString(),
-        'https://www.kap.org.tr/tr/sirket-bilgileri/ozet/1107-turk-hava-yollari-a-o');
+        'https://www.kap.org.tr/tr/bildirim-sorgu-sonuc'
+        '?member=4028e4a140f2ed720140f376bebb01a7');
     expect(istekler.single.path, '/tr/api/member/filter/THYAO');
   });
 
@@ -53,10 +55,10 @@ void main() {
     expect(istekler.length, 1);
   });
 
-  test('beklenmeyen kalıcı adres biçimi reddedilir', () {
+  test('beklenmeyen üye kimliği biçimi reddedilir', () {
     expect(
-        KapBaglantiService.tekPermaLink(
-            '[{"permaLink":"javascript:alert(1)"}]'),
+        KapBaglantiService.tekUyeKimligi(
+            '[{"mkkMemberOid":"x&member=../../"}]'),
         isNull);
   });
 

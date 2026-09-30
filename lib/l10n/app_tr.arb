@@ -1956,7 +1956,7 @@
   },
   "cartSellTag": "Satış",
   "kapLinkLabel": "KAP bildirimleri",
-  "kapLinkHint": "Şirketin KAP sayfası tarayıcıda açılır",
+  "kapLinkHint": "Şirketin son bildirimleri KAP'ta, tarayıcıda açılır",
   "kapLinkFailed": "KAP sayfası açılamadı. İnternet bağlantını kontrol et.",
   "clearCartConfirm": "Sepetteki tüm varlıklar silinecek. Emin misin?",
   "pasteCsv": "CSV yapıştır",

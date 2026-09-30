@@ -2900,7 +2900,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get kapLinkLabel => 'KAP bildirimleri';
 
   @override
-  String get kapLinkHint => 'Şirketin KAP sayfası tarayıcıda açılır';
+  String get kapLinkHint =>
+      'Şirketin son bildirimleri KAP\'ta, tarayıcıda açılır';
 
   @override
   String get kapLinkFailed =>

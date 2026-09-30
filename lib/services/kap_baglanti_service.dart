@@ -15,11 +15,18 @@ import 'crash_reporter.dart';
 /// tarayıcısında açılır — kullanıcı KAP'ta şirketi kendisi arasa olacak
 /// şeyin aynısı, dokunuş başına tek istek.
 ///
-/// ## Neden kalıcı adres (ölçüm, 2026-09-30)
+/// ## Neden kodla adres kurulmuyor (ölçüm, 2026-09-30)
 /// `…/sirket-bilgileri/ozet/THYAO` sunucuda şirketi ÇÖZMÜYOR (THYAO ile
-/// uydurma "ZZZZZ" aynı boş kabuğu döndürdü). Kalıcı adres
-/// `…/ozet/1107-turk-hava-yollari-a-o` şirketi sunucuda üretiyor. Kalıcı
-/// adresi KAP'ın kendi şirket arama ucu verir.
+/// uydurma "ZZZZZ" aynı boş kabuğu döndürdü). Şirketi tanıyan kimlik
+/// KAP'ın kendi şirket arama ucundan gelir. (İlk sürüm özet sayfasının
+/// kalıcı adresini — `…/ozet/1107-turk-hava-yollari-a-o` — açıyordu;
+/// aynı gün bildirim listesine çevrildi, aşağıda.)
+///
+/// ## Neden bildirim LİSTESİ (2026-09-30, kullanıcı: "son haberler")
+/// Özet sayfası şirket künyesini açıyordu; kullanıcının aradığı son
+/// bildirimler. `…/bildirim-sorgu-sonuc?member=<mkkMemberOid>` şirketin
+/// bildirimlerini en yeniden eskiye SUNUCUDA listeliyor (ölçüldü: SAHOL
+/// 108 bildirim; sahte kimlik boş). Kimlik aynı arama yanıtından gelir.
 ///
 /// ## Neden yalnız TEK sonuçta
 /// Arama ucu kodla değil adla BULANIK arar: "GARAN" ilk sırada Garanti BBVA
@@ -57,9 +64,10 @@ class KapBaglantiService {
       final uri = Uri.parse('$_kok/api/member/filter/$kod');
       final yanit = await (_istemci?.get(uri) ?? http.get(uri)).timeout(_sure);
       if (yanit.statusCode != 200) return sorguSayfasi;
-      final perma = tekPermaLink(utf8.decode(yanit.bodyBytes));
-      if (perma == null) return sorguSayfasi;
-      final adres = Uri.parse('$_kok/sirket-bilgileri/ozet/$perma');
+      final uye = tekUyeKimligi(utf8.decode(yanit.bodyBytes));
+      if (uye == null) return sorguSayfasi;
+      final adres = Uri.parse('$_kok/bildirim-sorgu-sonuc')
+          .replace(queryParameters: {'member': uye});
       _onbellek[kod] = adres;
       return adres;
     } on TimeoutException {
@@ -72,15 +80,15 @@ class KapBaglantiService {
     }
   }
 
-  /// Arama yanıtından kalıcı adres — YALNIZ tek sonuçta (bkz. sınıf notu).
-  /// Biçim beklenmedikse `null`.
-  static String? tekPermaLink(String govde) {
+  /// Arama yanıtından şirketin KAP üye kimliği (`mkkMemberOid`) — YALNIZ
+  /// tek sonuçta (bkz. sınıf notu). Biçim beklenmedikse `null`.
+  static String? tekUyeKimligi(String govde) {
     final veri = jsonDecode(govde);
     if (veri is! List || veri.length != 1) return null;
     final ilk = veri.first;
     if (ilk is! Map) return null;
-    final perma = ilk['permaLink'];
-    if (perma is! String) return null;
-    return RegExp(r'^\d+-[a-z0-9-]+$').hasMatch(perma) ? perma : null;
+    final oid = ilk['mkkMemberOid'];
+    if (oid is! String) return null;
+    return RegExp(r'^[0-9a-f]{32}$').hasMatch(oid) ? oid : null;
   }
 }
