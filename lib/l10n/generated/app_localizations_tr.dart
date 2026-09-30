@@ -2837,7 +2837,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get csvImportBody =>
-      'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil.';
+      'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.';
 
   @override
   String get pasteHere => 'Buraya yapıştır';
@@ -2878,6 +2878,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String bulkAddPartialResult(int saved, int failed) {
     return '$saved varlık eklendi, $failed varlık eklenemedi. Eklenemeyenler sepette duruyor; tekrar denersen yalnızca onlar eklenir.';
   }
+
+  @override
+  String importSellExceedsHolding(String name) {
+    return '$name: satış miktarı o tarihte elindekinden fazla; kaydedilmedi.';
+  }
+
+  @override
+  String importSellNoPrice(String name) {
+    return '$name: satış fiyatı bulunamadı; fiyatı yazıp tekrar dene.';
+  }
+
+  @override
+  String get cartSellTag => 'Satış';
 
   @override
   String get clearCartConfirm =>

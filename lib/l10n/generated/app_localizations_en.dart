@@ -2862,7 +2862,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csvImportBody =>
-      'Copy and paste your broker statement or Excel table. Include a header row; column order doesn\'t matter.';
+      'Copy and paste your broker statement or Excel table. Include a header row; column order doesn\'t matter. A \"Side\" (Buy/Sell) column or a negative quantity is read as a sale.';
 
   @override
   String get pasteHere => 'Paste here';
@@ -2903,6 +2903,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String bulkAddPartialResult(int saved, int failed) {
     return '$saved added, $failed could not be added. The failed ones are still in the cart; trying again adds only those.';
   }
+
+  @override
+  String importSellExceedsHolding(String name) {
+    return '$name: sell quantity is more than you held on that date; not saved.';
+  }
+
+  @override
+  String importSellNoPrice(String name) {
+    return '$name: sell price not found; enter the price and try again.';
+  }
+
+  @override
+  String get cartSellTag => 'Sell';
 
   @override
   String get clearCartConfirm =>

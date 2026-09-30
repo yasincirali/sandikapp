@@ -278,6 +278,7 @@ class DemoPortfolioNotifier extends PortfolioNotifier {
     required Asset asset,
     required double quantity,
     double? sellPrice,
+    DateTime? addedDate,
   }) async =>
       DemoModu.yazmaEngeli('satis');
 

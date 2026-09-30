@@ -27,6 +27,18 @@ import 'fiyat_kaynagi.dart';
 ///   Okunamayan ya da negatif fiyat → satır hatası.
 /// - Başlık eşleştirmesi Türkçe-güvenli (bkz. [_katla]): "FİYAT", "TARİH".
 /// - Tür: sütun varsa o; yoksa semboldan çıkarım (bkz. [inferType]).
+///
+/// Aracı kurum ekstreleri (karar 5.1 + 5.4, 2026-09-30):
+/// - Kurumların yaygın sütun adları da tanınır ("Menkul Kıymet", "Nominal",
+///   "Ortalama Maliyet", "İşlem Tarihi", "Valör"…).
+/// - Alış/satış: "İşlem Türü", "Al/Sat", "Yön"… sütunu (değer "Alış" /
+///   "Satış" / "A" / "S" / "Buy" / "Sell") ya da sütun yoksa EKSİ adet →
+///   satış. Satış satırı sepete `satis: true` ile girer; elde olandan fazla
+///   satış toplu kayıtta reddedilir (`IceAktarmaSatislari`).
+/// - Fiyat sütunu yok ya da boş ama "Tutar" / "İşlem Tutarı" varsa birim
+///   fiyat = |tutar| / adet.
+/// - Sembol hücresi "THYAO - Türk Hava Yolları" ya da "THYAO.E" (kurumların
+///   hisse soneki) gelirse kod ayıklanır.
 class CsvImportService {
   CsvImportService._();
 
@@ -34,13 +46,36 @@ class CsvImportService {
 
   static const _aliases = <String, List<String>>{
     'ticker': ['sembol', 'kod', 'ticker', 'symbol', 'hisse', 'fon', 'code'],
-    'quantity': ['adet', 'miktar', 'lot', 'quantity', 'qty', 'amount'],
-    'price': ['fiyat', 'maliyet', 'alış', 'alis', 'price', 'cost', 'birim'],
-    'date': ['tarih', 'date', 'alım tarihi', 'alim tarihi'],
+    'quantity': ['adet', 'miktar', 'lot', 'quantity', 'qty', 'amount',
+      'nominal', 'pay adedi', 'adet/nominal', 'miktar/nominal'],
+    // `price`'tan ÖNCE: "Maliyet Tutarı" / "Toplam Maliyet" birim fiyat
+    // değil toplamdır; `maliyet` takma adının önek eşleşmesine düşmesin.
+    'total': ['tutar', 'islem tutari', 'toplam tutar', 'toplam maliyet',
+      'net tutar', 'brut tutar', 'maliyet tutari', 'toplam'],
+    'price': ['fiyat', 'maliyet', 'alış', 'alis', 'price', 'cost', 'birim',
+      'ortalama maliyet', 'ort. maliyet', 'ort maliyet', 'ort. mlyt',
+      'ort mlyt', 'maliyet fiyati', 'islem fiyati', 'gerceklesen fiyat',
+      'gerceklesme fiyati', 'ortalama fiyat', 'ort. fiyat'],
+    'date': ['tarih', 'date', 'alım tarihi', 'alim tarihi', 'islem tarihi',
+      'valor', 'valor tarihi', 'emir tarihi', 'gerceklesme tarihi'],
     'currency': ['para birimi', 'para', 'currency', 'döviz', 'doviz', 'cur'],
     'type': ['tür', 'tur', 'tip', 'type', 'kategori'],
     'name': ['ad', 'isim', 'name', 'açıklama', 'aciklama'],
   };
+
+  /// Alış/satış sütunu — YALNIZ tam eşleşme. Önek eşleşmesi "işlem" gibi
+  /// kısa bir adla "İşlem Tutarı"nı yön sütunu sanardı.
+  static const _yonAdlari = <String>{
+    'islem turu', 'islem tipi', 'islem yonu', 'al/sat', 'alis/satis',
+    'alim/satim', 'a/s', 'yon', 'side', 'b/s', 'buy/sell', 'action',
+    'emir yonu', 'emir turu', 'hareket turu',
+  };
+
+  /// Kurumların sembol sütunu adları ([_aliases]'a ek; önek eşleşmesi).
+  static const _sembolEk = <String>[
+    'menkul', 'menkul kiymet', 'kiymet', 'kiymet kodu', 'menkul kodu',
+    'enstruman', 'hisse kodu', 'fon kodu', 'varlik kodu',
+  ];
 
   /// Metni çözer. Hiç satır yoksa `rows` boş, `errors` nedenini söyler.
   static CsvImportResult parse(String text, {DateTime? today}) {
@@ -76,23 +111,49 @@ class CsvImportService {
         return v.isEmpty ? null : v;
       }
 
-      final rawTicker = cell('ticker');
-      if (rawTicker == null) {
+      final hamSembol = cell('ticker');
+      if (hamSembol == null) {
         errors.add('Satır $lineNo: sembol yok.');
         continue;
       }
-      final qty = parseTrNumber(cell('quantity') ?? '');
-      if (qty == null || qty <= 0) {
+      final rawTicker = sembolAyikla(hamSembol);
+      final okunanAdet = parseTrNumber(cell('quantity') ?? '');
+      if (okunanAdet == null || okunanAdet == 0) {
         errors.add('Satır $lineNo ($rawTicker): adet okunamadı.');
         continue;
       }
+      // Yön: sütun varsa o; yoksa eksi adet = satış (bazı ekstreler satışı
+      // negatif miktarla yazar).
+      final hamYon = cell('side');
+      final bool satis;
+      if (hamYon != null) {
+        final y = yonCoz(hamYon);
+        if (y == null) {
+          errors.add('Satır $lineNo ($rawTicker): alış/satış okunamadı '
+              '("$hamYon").');
+          continue;
+        }
+        satis = y;
+      } else {
+        satis = okunanAdet < 0;
+      }
+      final qty = okunanAdet.abs();
       // Dolu ama okunamayan fiyat/tarih sessizce 0 / bugün OLMAZ
       // (2026-09-23 denetimi U08): başlık eşleşmediğinde "FİYAT" sütunu hiç
       // okunmuyor, fiyat 0 ve tarih bugün kalıyordu — kullanıcı hatalı
       // maliyeti fark etmeden kaydediyordu. Boş hücre ise belgelenmiş
       // davranıştır (kapanış çekilir / bugün).
       final rawPrice = cell('price');
-      final parsedPrice = rawPrice == null ? 0.0 : parseTrNumber(rawPrice);
+      // Fiyat yoksa tutardan: birim = |tutar| / adet (kurum ekstresi).
+      final rawTotal = cell('total');
+      final tutar = rawTotal == null ? null : parseTrNumber(rawTotal);
+      if (rawPrice == null && rawTotal != null && tutar == null) {
+        errors.add('Satır $lineNo ($rawTicker): tutar okunamadı.');
+        continue;
+      }
+      final parsedPrice = rawPrice != null
+          ? parseTrNumber(rawPrice)
+          : (tutar != null ? tutar.abs() / qty : 0.0);
       if (parsedPrice == null) {
         errors.add('Satır $lineNo ($rawTicker): fiyat okunamadı.');
         continue;
@@ -132,6 +193,7 @@ class CsvImportService {
         unitType: norm.unitType,
         isManualPrice: price > 0 && type == AssetType.diger,
         addedDate: date,
+        satis: satis,
       ));
     }
     return CsvImportResult(rows: rows, errors: errors);
@@ -181,6 +243,15 @@ class CsvImportService {
     final out = <String, int>{};
     for (var i = 0; i < cells.length; i++) {
       final h = _katla(cells[i].trim());
+      if (!out.containsKey('side') && _yonAdlari.contains(h)) {
+        out['side'] = i;
+        continue;
+      }
+      if (!out.containsKey('ticker') &&
+          _sembolEk.map(_katla).any((a) => h == a || h.startsWith('$a '))) {
+        out['ticker'] = i;
+        continue;
+      }
       for (final e in _aliases.entries) {
         if (out.containsKey(e.key)) continue;
         if (e.value.map(_katla).any((a) => h == a || h.startsWith('$a '))) {
@@ -203,6 +274,30 @@ class CsvImportService {
   /// "alis" / "ALIŞ" / "ALIS" aynı anahtara düşer. Katlama artık ortak
   /// (`utils/tr_katla.dart`) — arama da aynısını kullanır.
   static String _katla(String s) => trKatla(s);
+
+  /// Alış/satış hücresi → `true` satış, `false` alış, `null` okunamadı.
+  static bool? yonCoz(String hucre) {
+    final t = _katla(hucre.trim());
+    if (t.isEmpty) return null;
+    if (t == 's' || t == 'sell' || t.startsWith('sat')) return true;
+    if (t == 'a' || t == 'b' || t == 'buy' || t == 'al' ||
+        t.startsWith('alis') || t.startsWith('alim')) {
+      return false;
+    }
+    return null;
+  }
+
+  /// Kurum sembol hücresinden kod: "THYAO - Türk Hava Yolları" → "THYAO",
+  /// "THYAO.E" (BIST hisse soneki) → "THYAO". Diğer her şey olduğu gibi —
+  /// "GRAM ALTIN" gibi boşluklu adlar bölünmez (yalnız " - " ayırır).
+  static String sembolAyikla(String hucre) {
+    var t = hucre.trim();
+    final tire = t.indexOf(' - ');
+    if (tire > 0) t = t.substring(0, tire).trim();
+    final e = RegExp(r'^([A-Za-z]{4,6})\.E$').firstMatch(t);
+    if (e != null) t = e.group(1)!;
+    return t;
+  }
 
   static DateTime? _parseDate(String? s) {
     if (s == null) return null;

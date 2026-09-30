@@ -2,8 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../models/asset.dart' show birimEtiketi;
+import '../models/asset.dart' show Asset, birimEtiketi;
 import '../providers/bulk_cart_provider.dart';
+import '../services/ice_aktarma_satislari.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
@@ -146,9 +147,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       return 0.0;
     }
 
-    // ── 2) Insert'leri paralel çalıştır ────────────────────────────────────
+    // ── 2) Alım insert'lerini paralel çalıştır ─────────────────────────────
+    // Satışlar burada YAZILMAZ (karar 5.4): alımlar defterde olmadan
+    // "o gün elde kaç lot vardı" sorusu cevaplanamaz. Onlar 3. adımda.
     bool limitHit = false;
-    await Future.wait(items.map((item) async {
+    await Future.wait(items.where((i) => !i.satis).map((item) async {
       try {
         await portfolio.addAsset(
           name: item.name,
@@ -172,6 +175,40 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         failures.add('${item.name}: ${friendlyError(e)}');
       }
     }));
+
+    // ── 3) Satışlar: güncel defterle planla, tarih sırasıyla yaz ──────────
+    // Elde olandan fazla satış ve fiyatı bulunamayan satış YAZILMAZ; sepette
+    // kalır, nedeni hata özetinde söylenir. Sıralı: her satış bir öncekinin
+    // düştüğü miktarı görmeli (plan bunu zaten hesaplıyor, yazım da sırayla).
+    final satislar = items.where((i) => i.satis).toList();
+    if (satislar.isNotEmpty) {
+      final defter =
+          ref.read(portfolioProvider).valueOrNull?.assets ?? const <Asset>[];
+      final plan =
+          IceAktarmaSatislari.planla(defter: defter, satislar: satislar);
+      for (final r in plan.reddedilen) {
+        failures.add(l.importSellExceedsHolding(r.name));
+      }
+      for (final p in plan.yazilacak) {
+        final fiyat = resolvePrice(p.kalem);
+        if (fiyat <= 0) {
+          failures.add(l.importSellNoPrice(p.kalem.name));
+          continue;
+        }
+        try {
+          await portfolio.addSellTransaction(
+            asset: IceAktarmaSatislari.pozisyonGorunumu(p, fiyat),
+            quantity: p.kalem.quantity,
+            sellPrice: fiyat,
+            addedDate: p.kalem.addedDate,
+          );
+          sepet.remove(p.kalem.id);
+          if (mounted) setState(() => _saved++);
+        } catch (e) {
+          failures.add('${p.kalem.name}: ${friendlyError(e)}');
+        }
+      }
+    }
 
     if (!mounted) return;
     setState(() => _saving = false);
@@ -478,7 +515,10 @@ class _BulkItemTile extends StatelessWidget {
         ? null
         : DateFormat('d MMM yyyy', 'tr_TR').format(item.addedDate);
 
+    // Satış satırı (karar 5.4) ilk kelimede ve renkte ayrışır: aynı sembolün
+    // alışı ve satışı sepette alt alta durur, yön yalnız renkle anlatılmaz.
     final subtitle = <String>[
+      if (item.satis) context.l10n.cartSellTag,
       '${_fmt(item.quantity)} ${_unitLabel()}',
       if (item.price > 0) '${_fmt(item.price)} ${item.currency}',
       if (item.price <= 0) 'Fiyat otomatik',
@@ -522,8 +562,9 @@ class _BulkItemTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: context.t.titleSmall
-                          ?.copyWith(color: context.c.text58),
+                      style: context.t.titleSmall?.copyWith(
+                          color:
+                              item.satis ? context.c.loss : context.c.text58),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                 ],

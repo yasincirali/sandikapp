@@ -4901,7 +4901,7 @@ abstract class AppLocalizations {
   /// No description provided for @csvImportBody.
   ///
   /// In tr, this message translates to:
-  /// **'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil.'**
+  /// **'Aracı kurum ekstresini ya da Excel tablosunu kopyalayıp yapıştır. Başlık satırı olsun; sütun sırası önemli değil. \"İşlem Türü\" (Alış/Satış) sütunu ya da eksi adet satış olarak okunur.'**
   String get csvImportBody;
 
   /// No description provided for @pasteHere.
@@ -4963,6 +4963,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{saved} varlık eklendi, {failed} varlık eklenemedi. Eklenemeyenler sepette duruyor; tekrar denersen yalnızca onlar eklenir.'**
   String bulkAddPartialResult(int saved, int failed);
+
+  /// No description provided for @importSellExceedsHolding.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name}: satış miktarı o tarihte elindekinden fazla; kaydedilmedi.'**
+  String importSellExceedsHolding(String name);
+
+  /// No description provided for @importSellNoPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name}: satış fiyatı bulunamadı; fiyatı yazıp tekrar dene.'**
+  String importSellNoPrice(String name);
+
+  /// No description provided for @cartSellTag.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış'**
+  String get cartSellTag;
 
   /// No description provided for @clearCartConfirm.
   ///

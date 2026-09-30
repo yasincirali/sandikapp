@@ -1880,7 +1880,7 @@
     }
   },
   "csvImportTitle": "Import from CSV",
-  "csvImportBody": "Copy and paste your broker statement or Excel table. Include a header row; column order doesn't matter.",
+  "csvImportBody": "Copy and paste your broker statement or Excel table. Include a header row; column order doesn't matter. A \"Side\" (Buy/Sell) column or a negative quantity is read as a sale.",
   "pasteHere": "Paste here",
   "preview": "Preview",
   "csvRowsRead": "{n} rows read",
@@ -1932,6 +1932,23 @@
       }
     }
   },
+  "importSellExceedsHolding": "{name}: sell quantity is more than you held on that date; not saved.",
+  "@importSellExceedsHolding": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importSellNoPrice": "{name}: sell price not found; enter the price and try again.",
+  "@importSellNoPrice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cartSellTag": "Sell",
   "clearCartConfirm": "All assets in the cart will be removed. Are you sure?",
   "pasteCsv": "Paste CSV",
   "cartEmpty": "The cart is empty",
