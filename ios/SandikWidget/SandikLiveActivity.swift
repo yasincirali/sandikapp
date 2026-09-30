@@ -204,8 +204,39 @@ struct SandikLiveActivity: Widget {
                 //
                 // Opaklık TEK sinyal değil: yüzdenin yanında durur ve
                 // ayrıntı genişletildiğinde yazıyla tekrarlanır.
-                SandikLogoMark(width: 20)
+                //
+                // ## Mini grafik (karar 4.3, 2026-09-30)
+                // Kullanıcı isteği: "tek satırlık dinamik ada görsel olarak
+                // ilgi çekici olmalı ve net bilgiyi içermeli". Logo bilgi
+                // taşımıyordu (hangi uygulama olduğu zaten belli); günün
+                // eğrisi tek bakışta "sabahtan beri nasıl gitti"yi söyler,
+                // yüzde sağda sayıyı verir — iki yarı birlikte bir borsa
+                // şeridi gibi okunur. Eğri durumla aynı renkte; seans
+                // kapalıyken aynı soluklaştırma kuralı.
+                //
+                // Logoya DÜŞÜLÜR: veri yokken (çizilecek eğri yok) ve bakiye
+                // gizliyken. Gizlilik kuralı ana ekran widget'ıyla aynı
+                // (`_writeHidden` seriyi siler): eğri, tutar gizliyken bile
+                // günün hareketini ele verir ve Ada her ekranda görünür.
+                // (Genişletilmiş görünüm grafiği gösteriyor; o kullanıcının
+                // basılı tutarak açtığı bir yüzey.)
+                if context.state.isHidden || context.state.sparkline.count < 2 {
+                    SandikLogoMark(width: 20)
+                        .opacity(context.state.isMarketOpen ? 1.0 : 0.55)
+                } else {
+                    SandikSparkline(
+                        points: context.state.sparkline,
+                        palette: palette,
+                        color: context.state.hasDirection
+                            ? palette.statusColor(
+                                isPositive: context.state.isPositive)
+                            : palette.text58,
+                        showsFill: false
+                    )
+                    .frame(width: 30, height: 14)
                     .opacity(context.state.isMarketOpen ? 1.0 : 0.55)
+                    .accessibilityLabel("Günün grafiği")
+                }
 
             } compactTrailing: {
                 // Yön oku + yüzde. Tutar BURAYA girmez: compact alan dar,
@@ -219,7 +250,12 @@ struct SandikLiveActivity: Widget {
                             .font(.sandikLabel(9, weight: .black))
                     }
                     Text(context.state.isHidden ? "••" : context.state.changePctText)
-                        .font(.sandikNumber(13, weight: .semibold))
+                        // Mini grafikle dengelensin diye bir punto büyük ve
+                        // kalın (4.3): sayı şeridin "sonucu".
+                        .font(.sandikNumber(14, weight: .bold))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .foregroundStyle(context.state.hasDirection
                     ? palette.statusColor(isPositive: context.state.isPositive)

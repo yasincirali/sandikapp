@@ -157,6 +157,33 @@ const List<SurumNotu> surumNotlari = [
             'son halka arzlar. "Katıldım" ile lotunu halka arz fiyatı ve '
             'tarihiyle portföyüne eklersin.',
       ),
+      // 2026-09-30 karar tahtası (4–8). Aynı sürüm (1.1.6) notunu bugün
+      // görmüş TestFlight kullanıcısına bunlar otomatik açılmaz (kural 3,
+      // `yeniNotlar`); Ayarlar › Yenilikler'de durur. Mağazadan 1.1.6'yı
+      // ilk alan kullanıcı hepsini görür.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Kilit ekranında sandık (iPhone)',
+        aciklama: 'Kilit ekranına widget olarak ekle: günün yüzdesi ve '
+            'eğrisi, ya da yuvarlak göstergede yönü ve büyüklüğü. Tutar '
+            'yalnız "Kilit ekranında tutar göster" açıksa görünür. Dinamik '
+            "Ada'da da artık günün mini grafiği var.",
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Aracı kurum ekstresi: alış ve satış',
+        aciklama: 'Toplu ekle › yapıştır artık kurumların sütun adlarını '
+            '(Menkul Kıymet, Nominal, Ortalama Maliyet…) tanıyor; satış '
+            'satırları da kendi tarihiyle deftere girer. Elinde olandan '
+            'fazla satış kaydedilmez.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Temettüde net tutar ve KAP',
+        aciklama: 'Temettü önerisi %15 stopaj düşülmüş net tutarla gelir; '
+            'düşülen tutar yazar, istersen düzeltirsin. Hisse ekranındaki '
+            '"KAP bildirimleri" şirketin KAP sayfasını açar.',
+      ),
       Yenilik(
         ikon: YenilikIkonu.genel,
         baslik: 'Daha okunaklı, daha hızlı',

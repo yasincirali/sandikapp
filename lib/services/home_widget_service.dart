@@ -57,6 +57,14 @@ class HomeWidgetService {
   /// iOS widget'ının `kind` değeri (WidgetKit tarafında aynısı yazılır).
   static const _iOSWidgetName = 'SandikWidget';
 
+  /// iOS kilit ekranı widget'ının `kind`'ı (karar 4.1/4.3, 2026-09-30).
+  ///
+  /// Ayrı tür: ana ekran widget'ının görünümüne ve arka planına dokunmadan
+  /// kilit ekranı ailelerini (satır + yuvarlak) tanımlar. `home_widget`
+  /// iOS'ta YALNIZ adı verilen türü yeniler (`reloadTimelines(ofKind:)`);
+  /// bu yüzden [_requestUpdate] iOS'ta ikinci bir çağrı yapar.
+  static const _iOSKilitWidgetName = 'SandikKilitWidget';
+
   // Paylaşımlı depo anahtarları — native taraf bu adlarla okur.
   static const _kTotal = 'sandik_total';
   static const _kChange = 'sandik_change';
@@ -100,6 +108,32 @@ class HomeWidgetService {
   /// kalıyordu — kullanıcı bulgusu buydu. Bu bayrak tercihi çözülmüş hâliyle
   /// taşır ("Sistem" seçiliyse cihazın görünümüne çözülür).
   static const _kIsLightTheme = 'sandik_is_light_theme';
+
+  // ── Kilit ekranı widget'ı (karar 4.1 / 4.3 / 4.4 / 4.5) ──────────────────
+
+  /// Kilit ekranında TUTAR gösterilsin mi — Canlı Etkinlik'in "Kilit
+  /// ekranında tutar göster" tercihinin AYNISI (karar 4.4: iki kilit ekranı
+  /// yüzeyi tek ayar). Varsayılan kapalı: kilit ekranı telefon açılmadan
+  /// görülür.
+  static const _kLockAmounts = 'sandik_lock_amounts';
+
+  /// Kısa, işaretli günlük yüzde: `+%0,42` / `−%0,06` / `%0,00`; ölçüm
+  /// yoksa `—`. `_kChangePct`'teki " Günlük" soneki kilit ekranına sığmaz.
+  /// Biçim `fmtPctIsaretli` — uygulamanın tek işaretli yüzde kaynağı.
+  static const _kLockPct = 'sandik_lock_pct';
+
+  /// Günlük yüzde SAYI olarak — yuvarlak widget'ın göstergesi (Gauge).
+  static const _kPctNum = 'sandik_change_pct_num';
+
+  /// Bakiye gizli mi (karar 4.5): kilit ekranı gizliyken yüzdeyi de
+  /// göstermez. Ana ekran widget'ı bunu maskeli metinden anlıyor; kilit
+  /// ekranı açık bir bayrakla karar verir.
+  static const _kHidden = 'sandik_hidden';
+
+  /// [_kLockAmounts]'ın değeri — servis Riverpod okuyamaz; `main.dart`
+  /// portföy dinleyicisi ve Ayarlar anahtarı buraya yazar (Canlı Etkinlik'teki
+  /// `showAmountsOnLockScreen` ile aynı desen).
+  bool lockScreenAmounts = false;
 
   /// Uygulamanın çözülmüş tema tercihi — tek kaynaktan OKUNUR.
   ///
@@ -260,6 +294,7 @@ class HomeWidgetService {
       // Tema, bakiye gizli olsun olmasın YAZILIR: gizli durumda da widget
       // çiziliyor ve o da uygulamanın temasını izlemeli.
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
+      await HomeWidget.saveWidgetData<bool>(_kLockAmounts, lockScreenAmounts);
 
       if (hideBalance) {
         // Kullanıcı bakiyeyi uygulama içinde gizlemişse ana ekranda
@@ -321,6 +356,14 @@ class HomeWidgetService {
                   '${fmtPct(summary.changePct!.abs(), digits: 2)} Günlük',
         );
         await HomeWidget.saveWidgetData<bool>(_kHasData, true);
+        await HomeWidget.saveWidgetData<bool>(_kHidden, false);
+        await HomeWidget.saveWidgetData<String>(
+            _kLockPct,
+            summary.hasChange
+                ? fmtPctIsaretli(summary.changePct!, digits: 2)
+                : '—');
+        await HomeWidget.saveWidgetData<double>(
+            _kPctNum, summary.hasChange ? summary.changePct! : 0.0);
         // Tarih — kilit ekranıyla AYNI biçim. Widget günlerce ekranda
         // durur; rakamın hangi güne ait olduğu okunabilmeli.
         await HomeWidget.saveWidgetData<String>(
@@ -666,6 +709,11 @@ class HomeWidgetService {
     await HomeWidget.saveWidgetData<bool>(_kIsFlat, true);
     await HomeWidget.saveWidgetData<String>(_kChangePct, '');
     await HomeWidget.saveWidgetData<bool>(_kHasData, true);
+    // Kilit ekranı: yüzde de gizli (karar 4.5) — değer yazılmaz, bayrak
+    // gizli der.
+    await HomeWidget.saveWidgetData<bool>(_kHidden, true);
+    await HomeWidget.saveWidgetData<String>(_kLockPct, '');
+    await HomeWidget.saveWidgetData<double>(_kPctNum, 0.0);
     await HomeWidget.saveWidgetData<String>(
         _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
     await HomeWidget.saveWidgetData<bool>(
@@ -724,9 +772,16 @@ class HomeWidgetService {
     }
   }
 
-  Future<void> _requestUpdate() => HomeWidget.updateWidget(
-        name: _androidProvider,
-        androidName: _androidProvider,
-        iOSName: _iOSWidgetName,
-      );
+  Future<void> _requestUpdate() async {
+    await HomeWidget.updateWidget(
+      name: _androidProvider,
+      androidName: _androidProvider,
+      iOSName: _iOSWidgetName,
+    );
+    // Kilit ekranı türü ayrı yenilenir (bkz. [_iOSKilitWidgetName]);
+    // Android'de bu tür yok — çağrı yalnız iOS'ta.
+    if (Platform.isIOS) {
+      await HomeWidget.updateWidget(iOSName: _iOSKilitWidgetName);
+    }
+  }
 }

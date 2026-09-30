@@ -2405,8 +2405,14 @@ abstract class AppLocalizations {
   /// No description provided for @showAmountsSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.'**
+  /// **'Canlı Etkinlik ve kilit ekranı widget\'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.'**
   String get showAmountsSubtitle;
+
+  /// No description provided for @lockWidgetHowTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.'**
+  String get lockWidgetHowTo;
 
   /// No description provided for @partnerActivityNotifications.
   ///

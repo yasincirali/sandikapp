@@ -1305,7 +1305,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.';
+      'Canlı Etkinlik ve kilit ekranı widget\'ı için geçerli. Kapalıyken yalnızca günlük yüzde ve grafik görünür. Kilit ekranı telefonun açılmadan görülebildiği için varsayılan olarak kapalıdır.';
+
+  @override
+  String get lockWidgetHowTo =>
+      'Kilit ekranına da ekleyebilirsin: kilit ekranına basılı tut → Özelleştir → Kilit Ekranı → widget alanına dokun → sandık.';
 
   @override
   String get partnerActivityNotifications => 'Ortak hareketi bildirimleri';

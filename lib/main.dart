@@ -1671,6 +1671,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
         // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
         // kalmadı — itmeyi unutmak mümkün değil.
+        // Kilit ekranı widget'ı Canlı Etkinlik'in tutar tercihini okur
+        // (karar 4.4). Güncellemeden ÖNCE atanır: sonra atansaydı bu yazım
+        // eski değeri taşırdı.
+        HomeWidgetService.instance.lockScreenAmounts =
+            ref.read(lockScreenAmountsProvider);
         CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
           snapshot,
           hideBalance: hideBalance,

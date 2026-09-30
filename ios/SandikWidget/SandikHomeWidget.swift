@@ -262,3 +262,249 @@ struct SandikHomeWidget: Widget {
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
+
+
+// MARK: - Kilit ekranı widget'ı (karar 4.1 / 4.3 / 4.4 / 4.5, 2026-09-30)
+//
+// Ana ekran widget'ından AYRI tür: ana ekranın görünümü ve arka planı hiç
+// değişmez. Veri aynı paylaşımlı depodan okunur; kilit ekranına özel dört
+// anahtarı `HomeWidgetService` yazar (`_kLockAmounts`, `_kLockPct`,
+// `_kPctNum`, `_kHidden`).
+//
+// Bu kod `SandikHomeWidget.swift` İÇİNDE, ayrı dosyada değil: uzantı hedefi
+// dosyaları pbxproj'da tek tek listeliyor ve proje Windows'ta
+// düzenleniyor — yeni dosya kaydı unutulursa widget sessizce hiç derlenmez.
+//
+// Kararlar:
+// - Satır widget'ı: yön + yüzde büyük, altında günün eğrisi. Tutar YALNIZ
+//   "Kilit ekranında tutar göster" açıksa (Canlı Etkinlik'le tek ayar).
+// - Yuvarlak widget: sistemin kilit ekranı göstergesi; günün yüzdesi
+//   −%3…+%3 yayında nokta, ortada ok + yüzde. Yön ve büyüklük tek bakışta.
+//   ±%3 dışı uçta durur (portföy için günlük ±%3 zaten sert bir gün).
+// - "Bakiyeyi gizle" açıkken yüzde de, eğri de YOK — yalnız logo / "••".
+// - Kilit ekranı tek renkli (vibrant) çizer: renk yerine `.primary` /
+//   `.secondary`; yön her zaman ▲/▼ ile.
+
+private enum KilitKeys {
+    static let lockAmounts = "sandik_lock_amounts"
+    static let lockPct = "sandik_lock_pct"
+    static let pctNum = "sandik_change_pct_num"
+    static let hidden = "sandik_hidden"
+}
+
+struct SandikKilitEntry: TimelineEntry {
+    let date: Date
+    let hasData: Bool
+    let isHidden: Bool
+    let showsAmount: Bool
+    /// `+%0,42` / `−%0,06` / `%0,00` ya da `—`.
+    let pctText: String
+    let pctValue: Double
+    let changeText: String
+    let isPositive: Bool
+    let isFlat: Bool
+    let isMarketOpen: Bool
+    let sparkline: [Double]
+
+    /// Yön yalnız gerçek, görünür bir hareket varken (ana ekranla aynı kural).
+    var hasDirection: Bool { hasData && !isHidden && !isFlat }
+
+    static let placeholder = SandikKilitEntry(
+        date: Date(),
+        hasData: false,
+        isHidden: false,
+        showsAmount: false,
+        pctText: "—",
+        pctValue: 0,
+        changeText: "",
+        isPositive: true,
+        isFlat: true,
+        isMarketOpen: false,
+        sparkline: []
+    )
+}
+
+struct SandikKilitProvider: TimelineProvider {
+
+    private func read() -> SandikKilitEntry {
+        guard let defaults = UserDefaults(suiteName: WidgetKeys.suite),
+              defaults.bool(forKey: WidgetKeys.hasData) else {
+            return .placeholder
+        }
+        let gizli = defaults.bool(forKey: KilitKeys.hidden)
+        // Gizliyken seri OKUNMAZ (Dart zaten siler; eski sürümden kalan
+        // bir seri ihtimaline karşı burada da).
+        let seri: [Double] = gizli ? [] :
+            (defaults.string(forKey: WidgetKeys.sparkSeries) ?? "")
+                .split(separator: ",")
+                .compactMap { Double($0) }
+        let yuzde = defaults.string(forKey: KilitKeys.lockPct) ?? ""
+        return SandikKilitEntry(
+            date: Date(),
+            hasData: true,
+            isHidden: gizli,
+            showsAmount: defaults.bool(forKey: KilitKeys.lockAmounts) && !gizli,
+            pctText: yuzde.isEmpty ? "—" : yuzde,
+            pctValue: defaults.double(forKey: KilitKeys.pctNum),
+            changeText: defaults.string(forKey: WidgetKeys.change) ?? "",
+            isPositive: defaults.bool(forKey: WidgetKeys.isPositive),
+            isFlat: defaults.bool(forKey: WidgetKeys.isFlat),
+            isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
+            sparkline: seri
+        )
+    }
+
+    func placeholder(in context: Context) -> SandikKilitEntry { .placeholder }
+
+    func getSnapshot(in context: Context, completion: @escaping (SandikKilitEntry) -> Void) {
+        completion(context.isPreview ? .placeholder : read())
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<SandikKilitEntry>) -> Void) {
+        // Ana ekranla aynı: veriyi uygulama yazar ve yeniler, `.never`.
+        completion(Timeline(entries: [read()], policy: .never))
+    }
+}
+
+struct SandikKilitView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: SandikKilitEntry
+
+    /// Yuvarlak göstergenin yarı genişliği (yüzde puanı).
+    private static let olcek = 3.0
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            yuvarlak
+        default:
+            satir
+        }
+    }
+
+    private var ok: String? {
+        entry.hasDirection ? directionArrow(entry.isPositive) : nil
+    }
+
+    /// Yuvarlakta tek ondalık: `%0,4`. Ölçüm yoksa `—`.
+    private var kisaYuzde: String {
+        guard entry.pctText != "—" else { return "—" }
+        let deger = String(format: "%.1f", abs(entry.pctValue))
+            .replacingOccurrences(of: ".", with: ",")
+        return "%" + deger
+    }
+
+    // ── Satır (accessoryRectangular) ────────────────────────────────────────
+
+    private var satir: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 4) {
+                SandikLogoMark(width: 11)
+                Text("sandık")
+                    .font(.sandikLabel(11, weight: .bold))
+                if entry.hasData && !entry.isMarketOpen {
+                    // Rakamın neden hareketsiz olduğunu söyler (ana ekranla aynı).
+                    Text("· kapalı")
+                        .font(.sandikLabel(10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !entry.hasData {
+                Text("Uygulamayı aç")
+                    .font(.sandikLabel(12, weight: .medium))
+                    .foregroundStyle(.secondary)
+            } else if entry.isHidden {
+                Text("••")
+                    .font(.sandikNumber(20, weight: .bold))
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    if let ok = ok {
+                        Text(ok)
+                            .font(.sandikLabel(11, weight: .black))
+                    }
+                    Text(entry.pctText)
+                        .font(.sandikNumber(20, weight: .bold))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    if entry.showsAmount, !entry.changeText.isEmpty,
+                       entry.changeText != "—" {
+                        Text(entry.changeText)
+                            .font(.sandikNumber(12, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
+                if entry.sparkline.count >= 2 {
+                    SandikSparkline(
+                        points: entry.sparkline,
+                        color: .primary,
+                        showsFill: false
+                    )
+                    .frame(height: 12)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // ── Yuvarlak (accessoryCircular) ────────────────────────────────────────
+
+    @ViewBuilder
+    private var yuvarlak: some View {
+        if !entry.hasData || entry.isHidden {
+            ZStack {
+                AccessoryWidgetBackground()
+                SandikLogoMark(width: 22)
+            }
+        } else {
+            let sinir = Self.olcek
+            Gauge(
+                value: min(max(entry.pctValue, -sinir), sinir),
+                in: -sinir...sinir
+            ) {
+                Text("sandık")
+            } currentValueLabel: {
+                VStack(spacing: -1) {
+                    if let ok = ok {
+                        Text(ok)
+                            .font(.sandikLabel(8, weight: .black))
+                    }
+                    Text(kisaYuzde)
+                        .font(.sandikNumber(13, weight: .bold))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                }
+            } minimumValueLabel: {
+                Text("−")
+                    .font(.sandikLabel(9, weight: .bold))
+            } maximumValueLabel: {
+                Text("+")
+                    .font(.sandikLabel(9, weight: .bold))
+            }
+            .gaugeStyle(.accessoryCircular)
+            .accessibilityLabel("Bugün \(entry.pctText)")
+        }
+    }
+}
+
+struct SandikKilitWidget: Widget {
+    /// `HomeWidgetService._iOSKilitWidgetName` ile aynı olmalı.
+    let kind = "SandikKilitWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: SandikKilitProvider()) { entry in
+            SandikKilitView(entry: entry)
+                // Ana ekran widget'ıyla aynı hedef: Performans, günlük grafik.
+                .widgetURL(widgetClickURL)
+                // iOS 17'de zorunlu; kilit ekranında zemin sistemindir.
+                .containerBackground(for: .widget) { Color.clear }
+        }
+        .configurationDisplayName("sandık")
+        .description("Günün değişimi kilit ekranında. Tutar yalnız izin verirsen görünür.")
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular])
+    }
+}

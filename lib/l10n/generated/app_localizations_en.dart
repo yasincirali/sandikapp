@@ -1318,7 +1318,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get showAmountsSubtitle =>
-      'When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+      'Applies to the Live Activity and the lock screen widget. When off, only the daily percentage and chart are shown. The lock screen is visible without unlocking your phone, so this is off by default.';
+
+  @override
+  String get lockWidgetHowTo =>
+      'You can add it to the lock screen too: touch and hold the lock screen → Customize → Lock Screen → tap the widget area → sandık.';
 
   @override
   String get partnerActivityNotifications => 'Partner activity notifications';
