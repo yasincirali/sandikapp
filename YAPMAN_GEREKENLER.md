@@ -8,6 +8,26 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-30 Karar tahtası 4–8 — kod yerelde (PUSH EDİLMEDİ)
+
+Emülatörde kontrol et → onay → push. Ayrıntı: sohbet raporu.
+
+- [ ] **Ekstre örnekleri (5.3/5.4/5.5 engelleyici):** MKK e-Yatırımcı portföy
+      dökümü + aylık ekstre (Excel+PDF), Midas aylık ekstre PDF'i. Tutarlar
+      değişebilir, başlıklar kalsın. `tmp/ekstre_ornekleri/` altına.
+      Plan: `docs/KURUM_EKSTRESI_YAPILABILIRLIK_2026_09.md`.
+- [ ] **KAP lisans yazısı (7.1):** `docs/KAP_VERI_LISANSI_2026_09.md` —
+      `[köşeli]` alanları doldur, Borsa İstanbul Veri Dağıtım + MKK KAP
+      Destek + bir veri dağıtıcısına (Matriks/Foreks) gönder.
+- [ ] **In-App Event'ler (6.5):** push sonrası Actions → "App Store
+      etkinlikleri (taslak)" önce kuru, sonra `uygula`. Claude kurar;
+      taslakları ASC'de gör, incelemeye sen gönder. Yayın başlangıcı
+      Kasım etkinliği için 20 Ekim. ASC'de Türkçe yerelleştirme yoksa `tr`
+      metni atlanır (ASO maddesi).
+- [ ] **iOS kilit ekranı widget'ı (4.x):** Swift bu makinede derlenmedi —
+      ilk TestFlight derlemesi kırmızıysa log'u Claude'a ver. Telefonda:
+      kilit ekranına basılı tut → Özelleştir → widget alanı → sandık.
+
 ## ⏳ 2026-09-30 Emülatör testi düzeltmeleri — elle yapılacaklar (PUSH EDİLMEDİ)
 
 Rapor: `docs/EMULATOR_TEST_RAPORU_2026_09_30.md`.
