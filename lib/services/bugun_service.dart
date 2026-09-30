@@ -252,7 +252,8 @@ abstract final class BugunService {
   /// Dönüşüm: içgörü adayları günün tarihine göre kaydırılır ki iki ardışık
   /// günde aynı satır aynı sırada çıkmasın. Tarihe bağlı olması bilinçli —
   /// rastgele olsaydı aynı gün içinde her açılışta değişir, "az önce
-  /// gördüğüm neredeydi" sorusu doğardı.
+  /// gördüğüm neredeydi" sorusu doğardı. Hedef satırı dönüşüme girmez
+  /// (tek giriş noktası; bkz. `hedef` gerekçesi).
   ///
   /// [kisisel] (2026-09-21, kart kapsamı izler): kart Ortak / Birlikte
   /// görünümünde o kapsamın defteriyle kurulur; orada KİŞİSEL satırlar
@@ -285,9 +286,14 @@ abstract final class BugunService {
         toplam: karZararlar.length,
       ));
     }
-    if (kisisel) {
-      adaylar.add(HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger));
-    }
+    // Hedef havuza GİRMEZ, sabit satırdır (2026-09-30, kullanıcı bulgusu
+    // "hedef belirle kısmı kaybolmuş"): hedef belirleme/düzenlemenin tek
+    // giriş noktası bu satır. Havuzdayken Çarşamba'dan sonra haftalık da
+    // havuza girince 3 aday 2 yuvaya düşüyor, bazı günler hedef dönüşümle
+    // gizleniyor ve o gün hedef belirlemek imkânsız oluyordu. Dönüşüm artık
+    // kalan yuvalarda; hedef her gün en altta, yeri değişmez.
+    final hedef =
+        kisisel ? HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger) : null;
     // Olay havuza girmez — ayak notu (bkz. `BugunKartiVerisi.olay`).
     final olaylar = yaklasanOlaylar(now);
 
@@ -303,14 +309,16 @@ abstract final class BugunService {
     }
 
     final ikincil = <BugunSatiri>[];
+    final donenYuva = ikincilSayisi - (hedef == null ? 0 : 1);
     if (adaylar.isNotEmpty) {
       final bas = now.difference(DateTime(now.year)).inDays % adaylar.length;
       for (var i = 0;
-          i < adaylar.length && ikincil.length < ikincilSayisi;
+          i < adaylar.length && ikincil.length < donenYuva;
           i++) {
         ikincil.add(adaylar[(bas + i) % adaylar.length]);
       }
     }
+    if (hedef != null) ikincil.add(hedef);
 
     final aylik = kisisel && now.day <= aylikOzetGunSayisi
         ? AylikOzetSatiri(ay: DateTime(now.year, now.month - 1, 1))

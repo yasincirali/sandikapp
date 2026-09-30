@@ -373,8 +373,9 @@ List<_Adim> _adimlariKur() {
       baslik: 'Bugün ne oldu?',
       govde: 'Solda tarih, yanında günün hareketi — sadece piyasa etkisi, '
           'yatırdığın para sayılmaz. Altındaki satırlar: enflasyona göre '
-          'durumun, son 7 gün, hedefine kalan ve artıdaki varlıkların; en '
-          'altta yaklaşan tarih. Her satırın altında ne anlama geldiği '
+          'durumun, son 7 gün, artıdaki varlıkların ve hedefin — hedef '
+          'satırı her gün orada, dokunup belirlersin; en altta yaklaşan '
+          'tarih. Her satırın altında ne anlama geldiği '
           'yazar; dokununca ayrıntı açılır. Ortağına ya da Birlikte\'ye '
           'geçince kart o defterin gününü anlatır, başında kimin olduğu '
           'yazar.',
