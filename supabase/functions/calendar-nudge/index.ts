@@ -13,6 +13,11 @@
 // çıkarmak için canlı kur ve tüm geçmiş gerekir) ve uydurulmuş bir sayı
 // göndermektense kullanıcıyı uygulamadaki gerçek hesaba çağırmak doğru.
 // Reel getiri rozeti onu açtığında zaten karşılıyor.
+//
+// ── Anlar ───────────────────────────────────────────────────────────────────
+// · TÜFE günü (0048): gövdesiz ya da `occasion: inflation_day`.
+// · Yıl sonu özeti (0087): `occasion: year_end_recap`, 26 Aralık 20:00 TR.
+// Yeni an gövdeden seçilir; TÜFE yolu olduğu gibi kalır.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -122,6 +127,190 @@ export function buildInflationMessage(
   };
 }
 
+// ── Yıl sonu özeti anı (0087) ───────────────────────────────────────────────
+//
+// İkinci ulusal an: 26 Aralık akşamı "yılım nasıl geçti?" sorusu. Özet
+// uygulamada hazır (`RecapService`, Profil'deki afiş); bildirim yalnızca
+// haber verir. TÜFE günüyle aynı ilke: KİŞİYE ÖZEL RAKAM TAŞIMAZ — sunucuda
+// kişinin yıllık getirisi yok, uydurulmuş bir yüzde göndermektense
+// kullanıcıyı uygulamadaki gerçek hesaba çağırmak doğru.
+
+/// Gövdedeki an adı — `trigger_calendar_nudge_yil_sonu()` bunu yollar.
+/// Gövdesiz çağrı (0048/0076 tetikleyicisi) eskisi gibi TÜFE günüdür.
+export const YIL_SONU = 'year_end_recap';
+
+/// TR takvim günü (sabit UTC+3, yaz saati yok).
+function trTarihi(now: Date): { yil: number; ay: number; gun: number } {
+  const t = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  return { yil: t.getUTCFullYear(), ay: t.getUTCMonth() + 1, gun: t.getUTCDate() };
+}
+
+/// İstemcideki `RecapService.isYearlyWindow` ile BİREBİR: 26 Aralık – 10
+/// Ocak (TR). Pencere dışında bildirim gitmez: dokunan kullanıcı afişi
+/// bulamaz (afiş kendini takvimle kapatır) — boş bir dokunuş olurdu.
+export function yilSonuPenceresindeMi(now: Date): boolean {
+  const { ay, gun } = trTarihi(now);
+  return (ay === 12 && gun >= 26) || (ay === 1 && gun <= 10);
+}
+
+/// Özetin ait olduğu yıl — `RecapService.yearFor` ile aynı: Ocak'ta
+/// önceki yıl.
+export function yilSonuYili(now: Date): number {
+  const { yil, ay } = trTarihi(now);
+  return ay === 1 ? yil - 1 : yil;
+}
+
+/// Defter anahtarı: `calendar_nudge_log.period` (date). Yılın Aralık'ı —
+/// 26 Aralık'ta da 3 Ocak'ta elle tetiklense de aynı yılı anlatır.
+export function yilSonuDonemi(yil: number): string {
+  return `${yil}-12-01`;
+}
+
+export function yilSonuMesaji(yil: number): { title: string; body: string } {
+  return {
+    title: `${yil} sandık Özetin hazır`,
+    body: 'Yılın nasıl geçti, enflasyonun önünde misin? Tek sayfada gör, '
+      + 'istersen paylaş.',
+  };
+}
+
+/// Push'un gideceği token'lar: portföyünde kayıt olan kullanıcılarınki.
+///
+/// Boş portföyde özet "anlamlı" değildir (`RecapData.isMeaningful`) ve
+/// afiş hiç çıkmaz; ona "özetin hazır" demek boş bir dokunuş üretir.
+export function yilSonuHedefleri<T extends { user_id: string }>(
+  tokenlar: T[],
+  kayitliKullanicilar: Set<string>,
+): T[] {
+  return tokenlar.filter((t) => kayitliKullanicilar.has(t.user_id));
+}
+
+/// Aktif kaydı olan kullanıcılar — sayfalı (PostgREST `max_rows` 1000;
+/// sayfasız okuma kullanıcıları sessizce düşürür, leaderboard-snapshot notu).
+async function kayitliKullanicilar(admin: SupabaseClient): Promise<Set<string>> {
+  const SAYFA = 1000;
+  const out = new Set<string>();
+  for (let bas = 0;; bas += SAYFA) {
+    const { data, error } = await admin
+      .from('assets')
+      .select('id, user_id')
+      .is('deleted_at', null)
+      .order('id')
+      .range(bas, bas + SAYFA - 1);
+    if (error) throw new Error(`Varliklar alinamadi: ${error.message}`);
+    const satirlar = (data ?? []) as Array<{ user_id: string }>;
+    for (const r of satirlar) out.add(r.user_id);
+    if (satirlar.length < SAYFA) break;
+  }
+  return out;
+}
+
+/// Yıl sonu anının gönderimi. TÜFE yolundan AYRI yazıldı: o yol yıllardır
+/// sahada, ona dokunmadan yeni an eklensin (plan §2 "bozmama").
+async function yilSonuAni(p: {
+  admin: SupabaseClient;
+  fcmProjectId: string;
+  fcmServiceAccountJson: string;
+  dryRun: boolean;
+  now: Date;
+}): Promise<Response> {
+  const { admin, now } = p;
+  if (!yilSonuPenceresindeMi(now)) {
+    return jsonResponse({ ok: true, reason: 'Yil sonu penceresi disinda.', sent: 0 });
+  }
+  const yil = yilSonuYili(now);
+  const donem = yilSonuDonemi(yil);
+
+  // Defter: aynı yıl ikinci kez gitmez (elle ikinci tetik, cron tekrarı).
+  const { data: defterRows, error: defterHatasi } = await admin
+    .from('calendar_nudge_log')
+    .select('period')
+    .eq('occasion', YIL_SONU)
+    .eq('period', donem)
+    .limit(1);
+  // Okunamıyorsa DUR: okumadan göndermek çift bildirim riskidir.
+  if (defterHatasi) throw new Error(`Defter okunamadi: ${defterHatasi.message}`);
+  if ((defterRows ?? []).length > 0) {
+    return jsonResponse({ ok: true, reason: `${yil} yil sonu ani zaten gonderildi.`, sent: 0 });
+  }
+
+  const { data: tokenRows } = await admin
+    .from('user_push_tokens')
+    .select('token, user_id, device_id, platform, updated_at');
+  const hedefler = yilSonuHedefleri(
+    collapseTokens((tokenRows ?? []) as TokenRow[]),
+    await kayitliKullanicilar(admin),
+  );
+  if (hedefler.length === 0) {
+    return jsonResponse({ ok: true, reason: 'Hedef yok.', sent: 0 });
+  }
+
+  const mesaj = yilSonuMesaji(yil);
+  if (p.dryRun) {
+    return jsonResponse({ ok: true, dry_run: true, would_send: hedefler.length, title: mesaj.title });
+  }
+
+  const accessToken = await createAccessToken(
+    JSON.parse(p.fcmServiceAccountJson) as ServiceAccount,
+  );
+  let sent = 0;
+  let skippedQuietHours = 0;
+  const failures: string[] = [];
+  const cankaydi = new Set<string>();
+  const sessiz = await sessizKullanicilar(admin, hedefler.map((t) => t.user_id));
+  for (const t of hedefler) {
+    if (sessiz.has(t.user_id)) { skippedQuietHours += 1; continue; }
+    const kayitHatasi = await recordAppNotification(
+      admin,
+      appNotificationRow({
+        userId: t.user_id,
+        type: 'calendar_nudge',
+        title: mesaj.title,
+        body: mesaj.body,
+        data: { occasion: YIL_SONU },
+      }),
+      cankaydi,
+    );
+    if (kayitHatasi) failures.push(kayitHatasi);
+
+    const r = await sendFcmNotification({
+      accessToken,
+      projectId: p.fcmProjectId,
+      token: t.token,
+      title: mesaj.title,
+      body: mesaj.body,
+      channelId: CHANNEL_ID,
+      data: { type: 'calendar_nudge', occasion: YIL_SONU },
+    });
+    if (r.ok) {
+      sent += 1;
+    } else {
+      console.error('[calendar-nudge] yil sonu FCM basarisiz:', r.rawText.slice(0, 500));
+      failures.push(`fcm: ${r.hataKodu}`);
+      if (r.shouldDeleteToken) {
+        await admin.from('user_push_tokens').delete().eq('token', t.token);
+      }
+    }
+  }
+
+  // Defter yalnızca gerçekten gönderim olduysa (TÜFE yoluyla aynı denge).
+  if (sent > 0) {
+    try {
+      await admin
+        .from('calendar_nudge_log')
+        .upsert({ occasion: YIL_SONU, period: donem }, { onConflict: 'occasion,period' });
+    } catch (_) { /* en kötü: elle ikinci tetikte ikinci bildirim */ }
+  }
+
+  return jsonResponse({
+    ok: true,
+    occasion: YIL_SONU,
+    sent,
+    skipped_quiet_hours: skippedQuietHours,
+    failures: failures.slice(0, 5),
+  });
+}
+
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
@@ -151,12 +340,26 @@ Deno.serve(async (request) => {
     }
 
     let dryRun = false;
+    let occasion: string | null = null;
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
+      if (typeof body?.occasion === 'string') occasion = body.occasion;
     } catch (_) { /* gövde opsiyonel */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Yıl sonu anı (0087) kendi yolundan; gövdesiz / başka an → TÜFE günü
+    // (0048'in `inflation_day` gövdesi dahil — eski davranış korunur).
+    if (occasion === YIL_SONU) {
+      return await yilSonuAni({
+        admin,
+        fcmProjectId,
+        fcmServiceAccountJson,
+        dryRun,
+        now: new Date(),
+      });
+    }
 
     // ── Endeks ──────────────────────────────────────────────────────────────
     // Son 13 ay: aylık için son iki, yıllık için 12 ay öncesi gerekiyor.

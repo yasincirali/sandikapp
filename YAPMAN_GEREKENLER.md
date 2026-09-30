@@ -8,6 +8,73 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-09-30 Emülatör testi düzeltmeleri — elle yapılacaklar (PUSH EDİLMEDİ)
+
+Rapor: `docs/EMULATOR_TEST_RAPORU_2026_09_30.md`.
+
+- [ ] **`daily-brief` dağıtımı (iki sunucu):** brifing push'u artık tek hisseyi
+  anlatınca o hissenin ekranını açıyor ve metin "Portföyündeki N hisse daha
+  hareketli" oldu. İstemci eski veriyle geriye uyumlu (ticker yoksa Özet'i açar);
+  yeni davranış için Actions → Supabase deploy, hedef `ikisi`, functions
+  `daily-brief`. Sonda `sema_esitlik.py`.
+- [ ] **KARAR — Zirvedeki Portföyler rızası (KVKK):** ekran "herkes kendiliğinden
+  ve anonim olarak havuzdadır; ayrıca katılman gerekmez" diyor, ekranda çıkış yolu
+  yok. Anonim ve toplulaştırılmış veri olsa da açık rıza / itiraz hakkı gerekip
+  gerekmediğini hukukçuyla netleştir. Kod DEĞİŞTİRİLMEDİ.
+- [ ] **KARAR — fon birimi "lot" mu "pay" mı:** `miktar_birimi_test` fon → "lot"
+  kilitliyor (senin verdiğin örnekler). Doğru terim "pay"; istersen değiştirilir.
+- [ ] **Veri düzeltme (isteğe bağlı):** Silinenler'de eski `döviz`/`USD` kayıtları
+  TL kurla girilmiş (ör. "$2.200 → ₺4,15M"). Tek seferlik migration ile
+  `currency='TRY'`, `purchase_fx_rate=1` (iki sunucu). Yazılmadı.
+
+## ⏳ 2026-09-29 Büyüme özellikleri — bayrak açma sırası (PUSH EDİLMEDİ)
+
+Plan: `docs/BUYUME_OZELLIKLERI_TEKNIK_PLAN_2026_09.md`. Kod yerelde, debug
+derlemede bayraklar AÇIK (emülatörde görünür), mağaza sürümünde KAPALI.
+Önce emülatörde bak; onay verince push. Sonra Firebase Console → Remote Config:
+
+| Sıra | Bayrak | Açınca sürüm notuna eklenecek (öneri) |
+|---|---|---|
+| 1 | `fund_report_card_enabled` | **Fon karnesi** — Fon ekranında fonun kendi kategorisindeki sırası (1 ay, yılbaşından beri, 1 yıl) ve kategori ortancasına farkı; portföy kartını açınca tek satır özet. |
+| 2 | `ipo_calendar_enabled` | **Halka arz takvimi** — Profil → Halka arzlar. Kaynaklı liste; "Katıldım" ile lotunu halka arz fiyatı ve tarihiyle ekle. (Önce `docs/data/halka_arz.json` Pages'e çıkmalı — push ile olur.) |
+| 3 | `lock_offer_after_first_asset` | Not gerekmez (yeni kullanıcı akışı); seviye sorusu da bu bayrakla gelir. |
+| 4 | `dividend_capture_enabled` | **Temettülerini kaçırma** — Hisse ekranında son 12 ayın temettüleri; "Kaydet" ile tutar hazır gelir. Sunucu tarafı (0086 + `temettu-yakala`) AYRI dağıtılır, aşağıdaki bölüm. `temettu_stopaj_orani` değerini gir. |
+| 5 | `demo_mode_enabled` | Not gerekmez (giriş ekranındaki "Önce bir göz at"). |
+
+- [ ] Halka arz listesini güncel tut: `docs/README.md` "Halka arz verisi" prosedürü.
+
+## ⏳ 2026-09-29 Temettü yakalama + yıl sonu anı — 0086, 0087 (YAZILDI, DAĞITILMADI)
+
+Kod merge'de; sunucu tarafı elle açılır. Sıra **iki projede de** (Frankfurt → Tokyo):
+
+1. **Vault secret:** `temettu_yakala_cron_secret` — rastgele 32+ karakter.
+   Yoksa `temettu-yakala` cron'u her akşam "Vault secret bulunamadi" ile düşer
+   (fail-closed, yer tutucu tohum yok).
+2. **Edge function secret:** `TEMETTU_YAKALA_CRON_SECRET` = aynı değer. Yoksa
+   fonksiyon 503 döner. (Yıl sonu anı mevcut `CALENDAR_NUDGE_CRON_SECRET`'ı
+   kullanır — yeni secret yok.)
+3. **Actions → Supabase deploy → hedef `ikisi`, functions
+   `temettu-yakala,calendar-nudge`** (0086 + 0087 aynı koşuda). Sonda
+   `sema_esitlik.py` ŞEMA EŞİT demeli.
+4. **Cron bayrağı:** 0086/0087 projede tüm işler kapalıysa yeni işi de kapalı
+   kurar (Frankfurt kipi), açıksa açık. Dağıtım sonrası
+   `select jobname, active from cron.job where jobname in ('temettu-yakala','calendar-nudge-year-end');`
+   ile kontrol et; Frankfurt'ta `false`, Tokyo'da `true` olmalı.
+5. **İlk koşu (kuru):** hedef projede SQL Editor'dan değil, curl ile
+   `{"dry_run": true}` gövdesiyle `temettu-yakala` → `would_suggest` sayısı.
+   Gerçek koşu cron'a bırakılır (her gün 19:00 TR).
+6. **Firebase Remote Config:** `temettu_stopaj_orani` — güncel BIST nakit
+   temettü stopajı (0..1, ör. `0.15`). Tanımlanmazsa (-1) öneri BRÜT kalır ve
+   diyalog "net tutarı gir" der — yanlış değil, yalnızca bir adım fazla.
+   Oranı mevzuattan sen doğrula; uygulama oran uydurmaz.
+7. **Bayrak:** `dividend_capture_enabled` release'de kapalı. TestFlight'ta
+   `true` yap, kart + diyalog + bildirim merkezi kaydını dene, sonra kademeli aç.
+   Sunucu cron'u bayraktan BAĞIMSIZ push atar — bayrak kapalıyken push'un
+   gitmesini istemiyorsan 3. adımı bayrağı açacağın güne bırak.
+8. **Yıl sonu anı:** 26 Aralık 20:00 TR'de bir kez gider (yalnız kaydı olan
+   kullanıcılara); `recap_enabled` Console'da kapalıysa afiş görünmez ve push
+   boşa gider — Aralık'tan önce kontrol et.
+
 ## ⏳ 2026-09-29 Zirvedeki Portföyler anonim havuz — 0083 (iki projede dağıtıldı)
 
 > **Durum 2026-09-29 (Claude):** 0083 + `leaderboard-snapshot` yerel CLI ile

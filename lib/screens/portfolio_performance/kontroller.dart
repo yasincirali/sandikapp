@@ -8,7 +8,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final color = type?.color ?? context.c.amberText;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: CupertinoButton(
+      // Seçili tür ekran okuyucuya da söylenir; yalnızca renkteydi (#28).
+      child: Semantics(
+        container: true,
+        selected: selected,
+        child: CupertinoButton(
         minimumSize: SandikTouch.minSize,
         padding: EdgeInsets.zero,
         // Tür filtresi de tohumu atar — kapsamla aynı gerekçe
@@ -39,6 +43,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -205,14 +210,18 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            HScrollWithFade(
-              child: Row(
-                children: [
-                  _typeChip(null, context.l10n.allTypes),
-                  for (final t in AssetType.values)
-                    _typeChip(t, t.labelOf(context.l10n)),
-                ],
-              ),
+            // Sarmalı (`Wrap`), yatay kaydırmalı DEĞİL: kaydırmalı satırda
+            // Kripto/Emtia/Diğer ekran dışında kalıyor ve kenardaki silik ok
+            // fark edilmiyordu — kullanıcı o türlerin var olduğunu
+            // kaydırmadan bilemiyordu (2026-09-29 emülatör testi #29). Panel
+            // seyrek açılıyor; birkaç satırlık yükseklik seçeneği gizlemekten
+            // ucuz.
+            Wrap(
+              children: [
+                _typeChip(null, context.l10n.allTypes),
+                for (final t in AssetType.values)
+                  _typeChip(t, t.labelOf(context.l10n)),
+              ],
             ),
             if (!isIntraday && !_ozetSekmesi) ...[
               const SizedBox(height: SandikSpace.sm),

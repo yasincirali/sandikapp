@@ -399,7 +399,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         : (positive ? context.c.gain : context.c.loss);
     final roiText = best.myRoi == null
         ? '—'
-        : '${positive ? '+' : ''}${fmtNum(best.myRoi!, digits: 1)}%';
+        : fmtPctIsaretli(best.myRoi!, digits: 1);
 
     // Başlık: "Haftalıkta 1. sıradasın" gibi — hangi periyotta parladığını
     // göstermek rekabet duygusunu güçlendirir, "ne olduğu" belirsizliğini

@@ -37,10 +37,27 @@ docs/
 ├── legal/depolama/index.html  → /legal/depolama
 ├── data-deletion/index.html → /data-deletion   (Play Console zorunlu)
 ├── data-request/index.html  → /data-request    (GDPR)
+├── data/halka_arz.json     → /data/halka_arz.json — halka arz takvimi (uygulama okur)
 ├── _build_legal.py          → build script
 ├── faz10-draw-tools-plan.md → dev notu, Pages'te de render edilir ama önemsiz
 └── README.md                → bu dosya
 ```
+
+## Halka arz takvimi verisi (`data/halka_arz.json`)
+
+Uygulamanın "Halka arzlar" ekranı bu dosyayı okur (`HalkaArzService`); ağ yoksa
+uygulamaya gömülü kopyaya (`assets/data/halka_arz.json`) düşer. Güncelleme:
+
+1. Kaydı ekle/düzelt — her alan kaynaktan (SPK bülteni, KAP, izahname, aracı kurum
+   ya da halkarz.com şirket sayfası). Bilinmeyen alan `null`; tahmin yazma. `kaynak`
+   zorunlu, `kod` `.IS` eki OLMADAN. Kök ve kayıttaki `guncelleme` = derleme günü.
+2. Aynı içeriği `assets/data/halka_arz.json`'a kopyala (iki dosya birebir aynı olmalı).
+3. İşlem görmeye başlayan yeni kodu `lib/models/asset_categories.dart` →
+   `bist100StocksMap`'e ekle ("Katıldım" kaydı şirket adını oradan alır).
+4. `flutter test test/halka_arz_veri_test.dart` — şema, tarih sırası, fiyat > 0 ya
+   da null, iki kopyanın eşitliği ve sembol listesi burada kilitli.
+5. `main`'e girince Pages yayınlar; uygulama en geç 1 saatte (bellek önbelleği)
+   yeni listeyi görür. Uygulama sürümü gerekmez.
 
 ## Play Console form değerleri
 

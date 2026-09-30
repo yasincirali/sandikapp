@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../demo/demo_modu.dart';
+
 /// TÜFE endeksi ve reel getiri hesabı.
 ///
 /// **Neden bu servis var:** Türk tasarrufçusunun sorusu "kaç kazandım" değil
@@ -38,6 +40,9 @@ class InflationService {
         DateTime.now().difference(_cekildi!) < _cacheTtl &&
         _endeks != null;
     if (taze) return _endeks!;
+    // Demo sunucuya dokunmaz; TÜFE yoksa reel getiri kartı zaten
+    // "veri yok" hâline düşer (önbelleğe yazılmaz — gerçek oturum sorar).
+    if (DemoModu.aktif) return const {};
 
     try {
       final rows = await Supabase.instance.client

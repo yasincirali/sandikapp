@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
@@ -19,12 +20,51 @@ import '../l10n/l10n.dart';
 /// Miktar sıfıra düşerse varlık silinir.
 enum QuickAdjustMode { add, remove }
 
+/// Hızlı miktar çiplerinin SAYISAL önerileri — "Hepsi" çipi hariç.
+///
+/// ## Neden saf fonksiyon (bulgu #9, 2026-09-29 emülatör testi)
+/// 1 lotluk ATATP'de Sat açılınca çipler "Hepsi (1) | 10 | 100 | 1000 |
+/// Hepsi (1)" idi: türün sabit listesi eldekine bakmadan basılıyor, sona
+/// eldeki miktar "Hepsi" diye ekleniyordu; üstelik listedeki `1` eldekine
+/// EŞİT olduğu için o da "Hepsi" etiketini alıyordu. Eldekini aşan öneri
+/// satışta zaten `cannotExceedQuantity` hatasına gider — basılması tuzaktı.
+///
+/// Kural: satışta yalnızca eldekinden KÜÇÜK öneriler (eşiti "Hepsi"
+/// çipidir, ikinci kez yazılmaz); alışta türün makul adımları. Kripto
+/// ayrı: tam sayı adet nadirdir, 100 BTC öneri olmaz (Varlık Ekle
+/// formundaki `quantityPresets` ile aynı ölçek).
+List<double> hizliMiktarOnerileri({
+  required AssetType tur,
+  required String birimTuru,
+  required double eldeki,
+  required bool satis,
+}) {
+  final List<double> taban;
+  if (birimTuru == 'gram' || birimTuru == 'gr') {
+    taban = const [1, 5, 10, 50];
+  } else if (birimTuru == 'ounce' || birimTuru == 'oz') {
+    taban = const [0.1, 0.5, 1];
+  } else if (tur == AssetType.kripto) {
+    taban = const [0.001, 0.01, 0.1, 1];
+  } else if (tur == AssetType.doviz) {
+    taban = const [10, 50, 100, 500];
+  } else if (tur == AssetType.fon || tur == AssetType.hisse) {
+    taban = const [1, 10, 100, 1000];
+  } else {
+    taban = const [1, 5, 10, 100];
+  }
+  if (!satis) return taban;
+  // Kayan nokta payı: 10 − 1e-12 "10'dan küçük" sayılmasın.
+  return [for (final v in taban) if (v < eldeki - 1e-9) v];
+}
+
 Future<void> showQuickAdjustDialog(
   BuildContext context,
   WidgetRef ref, {
   required Asset asset,
   required QuickAdjustMode mode,
 }) async {
+  if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -219,7 +259,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       Text(
                         // Swipe etiketiyle aynı dil: orada "Al/Sat" deyip
                         // burada "Ekle/Çıkar" göstermek akışı kopartıyordu.
-                        _isAdd ? 'Al' : 'Sat',
+                        // Aynı anahtar (`buyAction`/`sellAction`).
+                        _isAdd
+                            ? context.l10n.buyAction
+                            : context.l10n.sellAction,
                         style: context.t.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: context.c.text90,
@@ -255,12 +298,12 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               ),
               child: Row(
                 children: [
-                  Text('Mevcut',
+                  Text(context.l10n.quickHolding,
                       style: context.t.bodySmall?.copyWith(color: context.c.text36)),
                   const Spacer(),
                   Text(
                     '${numFmt.format(asset.quantity)} $_unitLabel · '
-                    'ort. ${numFmt.format(asset.purchasePrice)} $_currencySymbol',
+                    '${context.l10n.quickAvgShort('${numFmt.format(asset.purchasePrice)} $_currencySymbol')}',
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -273,7 +316,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             const SizedBox(height: 16),
 
             // ── Miktar ────────────────────────────────────────────────
-            Text('Miktar',
+            Text(context.l10n.quantity,
                 style: context.t.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.c.text58)),
@@ -342,7 +385,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             // ── Fiyat (sadece ekleme için) ────────────────────────────
             if (_isAdd) ...[
               const SizedBox(height: 16),
-              Text('Birim fiyat',
+              Text(context.l10n.quickUnitPrice,
                   style: context.t.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: context.c.text58)),
@@ -383,7 +426,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 ),
                 child: Row(
                   children: [
-                    Text(_isAdd ? 'Toplam maliyet' : context.l10n.saleValue,
+                    Text(
+                        _isAdd
+                            ? context.l10n.quickTotalCost
+                            : context.l10n.saleValue,
                         style: context.t.titleSmall?.copyWith(color: context.c.text58)),
                     const Spacer(),
                     Text(
@@ -421,7 +467,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
-                    child: Text('İptal',
+                    child: Text(context.l10n.cancelWord,
                         style: context.t.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: context.c.text90)),
@@ -440,7 +486,10 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                     ),
                     child: _saving
                         ? const CustomLoadingIndicator(size: 18)
-                        : Text(_isAdd ? 'Al' : 'Sat',
+                        : Text(
+                            _isAdd
+                                ? context.l10n.buyAction
+                                : context.l10n.sellAction,
                             style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: context.c.text90)),
@@ -456,35 +505,34 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   }
 
   Widget _quickChips() {
-    // Varlığın türüne göre hızlı miktar önerileri
-    final presets = <String>[];
-    final unit = widget.asset.unitType;
-    if (unit == 'gram') {
-      presets.addAll(['1', '5', '10', '50']);
-    } else if (unit == 'ounce') {
-      presets.addAll(['0.1', '0.5', '1']);
-    } else if (widget.asset.type == AssetType.doviz) {
-      presets.addAll(['10', '50', '100', '500']);
-    } else if (widget.asset.type == AssetType.fon ||
-        widget.asset.type == AssetType.hisse) {
-      presets.addAll(['1', '10', '100', '1000']);
-    } else {
-      presets.addAll(['1', '5', '10', '100']);
-    }
-    // Çıkar modunda "hepsi" seçeneği
-    if (!_isAdd) presets.add(_fmt(widget.asset.quantity));
+    // Öneriler `hizliMiktarOnerileri`'nden (saf, testli). Alanın metni ve
+    // çipin yazısı AYNI Türkçe biçimde (`_fmt`): eski '0.1' ham yazımı
+    // ekranda "0.1" görünüyordu.
+    final eldeki = widget.asset.quantity;
+    final chips = <({String deger, String etiket})>[
+      for (final v in hizliMiktarOnerileri(
+        tur: widget.asset.type,
+        birimTuru: widget.asset.unitType,
+        eldeki: eldeki,
+        satis: !_isAdd,
+      ))
+        (deger: _fmt(v), etiket: _fmt(v)),
+      // Satışta TEK "Hepsi" — eldekinin tamamı (bkz. bulgu #9).
+      if (!_isAdd && eldeki > 0)
+        (deger: _fmt(eldeki), etiket: context.l10n.quickAllChip(_fmt(eldeki))),
+    ];
 
     return SizedBox(
       height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          for (final p in presets)
+          for (final chip in chips)
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: GestureDetector(
                 onTap: () => setState(() {
-                  _qtyCtrl.text = p;
+                  _qtyCtrl.text = chip.deger;
                   _error = null;
                 }),
                 child: Container(
@@ -496,9 +544,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    p == _fmt(widget.asset.quantity) && !_isAdd
-                        ? 'Hepsi ($p)'
-                        : p,
+                    chip.etiket,
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

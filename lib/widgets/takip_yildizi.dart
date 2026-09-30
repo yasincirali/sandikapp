@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
@@ -25,6 +26,7 @@ Future<void> takipDegistir(
   VarlikKimligi k, {
   required bool takipte,
 }) async {
+  if (DemoModu.yazmaKapisi('takip')) return; // Demo: takip bir yazma (F1).
   final notifier = ref.read(watchlistProvider.notifier);
   try {
     if (takipte) {

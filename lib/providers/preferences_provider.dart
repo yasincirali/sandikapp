@@ -11,6 +11,7 @@ import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import '../config/pref_keys.dart';
+import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
@@ -106,6 +107,9 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
 
   Future<void> set(ThemeMode mode) async {
     state = mode;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(_kThemeModeKey, _toString(mode));
@@ -177,6 +181,9 @@ class LocaleNotifier extends Notifier<Locale?> {
 
   Future<void> set(Locale? locale) async {
     state = locale;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setString(PrefKeys.locale, encode(locale));
@@ -233,6 +240,9 @@ class _IntPrefNotifier extends Notifier<int> {
 
   Future<void> set(int value) async {
     state = value;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setInt(_key, value);
@@ -276,6 +286,9 @@ class _BoolPrefNotifier extends Notifier<bool> {
 
   Future<void> set(bool value) async {
     state = value;
+    // Demo (F1): değer bellekte değişir, diske yazılmaz — kabuk kapanınca
+    // demonun container'ıyla birlikte biter, gerçek tercihe sızmaz.
+    if (DemoModu.aktif) return;
     try {
       final prefs = _prefsSync ?? await SharedPreferences.getInstance();
       await prefs.setBool(_key, value);
@@ -355,10 +368,55 @@ final biometricLockOfferedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final kilitYontemiProvider = FutureProvider<KilitYontemi?>(
     (ref) => BiometricLockService.instance.yontem);
 
-/// Portföy hedefi (TRY). 0 = hedef belirlenmedi. Yalnızca gösterim:
-/// hedef hiçbir hesabı değiştirmez, "Bugün" kartında ilerleme çubuğu olur.
-final portfolioGoalProvider = NotifierProvider<_IntPrefNotifier, int>(
-    () => _IntPrefNotifier(PrefKeys.portfolioGoalTRY, 0, perUser: true));
+/// Portföy hedefi (TRY), Bugün kartının KAPSAMINA göre. 0 = belirlenmedi.
+/// Yalnızca gösterim: hedef hiçbir hesabı değiştirmez, kartta ilerleme
+/// çubuğu olur.
+///
+/// Anahtar (arg): `''` Ben, `'birlikte'`, `'ortak_<id>'`. Neden kapsam
+/// başına (kullanıcı bulgusu 2026-09-30, "hala arada kayboluyor"): hedef
+/// satırı yalnızca kendi görünümündeydi, kart Birlikte'ye/ortağa geçince
+/// kayboluyordu. Kendi hedefini birleşik toplama karşı ölçmek yanlış
+/// "kalan" söylerdi; her kartın kendi hedefi var. Hepsi bu cihazda, oturum
+/// sahibine özel — ortağın koyduğu hedef sunucuda yok, uydurulmaz.
+/// Ben'in anahtarı eskisiyle aynı (`portfolio_goal_try`), var olan hedef
+/// korunur.
+class KapsamHedefiNotifier extends FamilyNotifier<int, String> {
+  String get _key => _userKey(arg.isEmpty
+      ? PrefKeys.portfolioGoalTRY
+      : '${PrefKeys.portfolioGoalTRY}_$arg');
+
+  @override
+  int build(String arg) {
+    final prefs = _prefsSync;
+    if (prefs != null) return prefs.getInt(_key) ?? 0;
+    _loadAsync();
+    return 0;
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getInt(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(int value) async {
+    state = value;
+    if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setInt(_key, value);
+    } catch (_) {}
+  }
+}
+
+final kapsamHedefiProvider =
+    NotifierProvider.family<KapsamHedefiNotifier, int, String>(
+        KapsamHedefiNotifier.new);
+
+/// Kendi görünümünün hedefi — `kapsamHedefiProvider('')`.
+final portfolioGoalProvider = kapsamHedefiProvider('');
 
 /// Kilit ekranı Live Activity'sinde para tutarı gösterilsin mi?
 ///
@@ -521,6 +579,7 @@ class IndicatorPrefsNotifier extends Notifier<Map<AssetType, Set<String>>> {
   }
 
   Future<void> _persist() async {
+    if (DemoModu.aktif) return; // Demo tercihi diske yazılmaz (F1).
     try {
       final prefs = await SharedPreferences.getInstance();
       final entries = state.entries
@@ -585,6 +644,7 @@ final indicatorPrefsProvider =
 typedef _Reader = T Function<T>(ProviderListenable<T> provider);
 
 Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
+  if (DemoModu.aktif) return; // Demo sunucuya yazmaz (F1).
   try {
     final user = read(authProvider).valueOrNull;
     if (user == null) return;
@@ -671,6 +731,7 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
   }
 
   Future<void> _persist() async {
+    if (DemoModu.aktif) return; // Demo tercihi diske yazılmaz (F1).
     try {
       final prefs = await SharedPreferences.getInstance();
       final entries =
@@ -770,6 +831,7 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   }
 
   Future<void> _persist() async {
+    if (DemoModu.aktif) return; // Demo tercihi diske yazılmaz (F1).
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(
@@ -961,6 +1023,18 @@ const _kLeaderboardOptInKey = PrefKeys.leaderboardOptIn;
 final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLeaderboardOptInKey, false, perUser: true));
 
+/// Çan rozetinin "görüldü" damgası (ms epoch; 0 = hiç açılmadı).
+///
+/// Rozet eskiden AKTİF (temizlenmemiş) bildirim sayısıydı: çan sayfası
+/// açılıp bildirim okunsa bile "1 yeni bildirim" kalıyordu, çünkü okumak
+/// hiçbir durumu değiştirmiyordu (emülatör testi #26, 2026-09-29). Aktif /
+/// Geçmiş ayrımı (Temizle) kullanıcının bilinçli arşividir, okundu değil;
+/// o yüzden sunucuya "okundu" yazılmaz, yalnız bu cihaz-içi damga tutulur
+/// ve rozet damgadan SONRA gelen aktif kayıtları sayar
+/// (`yeniBildirimSayisi`).
+final bildirimSonGorulenProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.bildirimSonGorulen, 0, perUser: true));
+
 // ─── Kullanıcıya özel tercihlerin TAM listesi ─────────────────────────────────
 //
 // `setPreferencesUser` yalnızca anahtar ÖN EKİNİ değiştirir; provider'ın
@@ -987,10 +1061,11 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   investorLevelIndexProvider,
   biometricLockProvider,
   biometricLockOfferedProvider,
-  portfolioGoalProvider,
+  kapsamHedefiProvider, // aile: Ben (`portfolioGoalProvider`) + kapsamlar
   lockScreenAmountsProvider,
   liveActivityStartProvider,
   liveActivityEndProvider,
   liveActivityWeekendProvider,
   leaderboardOptInProvider,
+  bildirimSonGorulenProvider,
 ];

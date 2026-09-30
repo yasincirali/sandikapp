@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
@@ -54,6 +55,8 @@ import '../widgets/grafik_stili.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
+import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/temettu_gecmisi_karti.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -553,8 +556,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   Widget build(BuildContext context) {
     // Baz para birimi BİR KEZ burada okunur: alt widget'lara parametre
     // gider. Yalnızca DEĞER tutarları (PnL, dönem değişimi) çevrilir;
-    // grafiğin ekseni/ipucu kote FİYATTIR ve ₺ kalır.
-    final baz = ref.watch(bazParaProvider);
+    // grafiğin ekseni/ipucu kote FİYATTIR ve ₺ kalır. "Bakiyeyi gizle"
+    // açıksa bu DEĞER tutarları maskelenir (`gosterimBazParaProvider`,
+    // bulgu #3); fiyat bakiye değildir, açık kalır.
+    final baz = ref.watch(gosterimBazParaProvider);
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;
@@ -1184,6 +1189,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               final viewMinY = yBounds.minY;
                               final viewMaxY = yBounds.maxY;
                               final yInterval = yBounds.interval;
+                              // Komşu iki Y etiketinin GERÇEK değer farkı —
+                              // log ölçekte en dar aralık en alttadır. Etiket
+                              // hanesi buna göre seçilir: `fmtTRYCompact`
+                              // "₺1 | ₺1" yazıyordu (2026-09-29 emülatör
+                              // testi #7; adım etiketin hassasiyetinden
+                              // küçüktü).
+                              final yEtiketAdimi =
+                                  (fromY(viewMinY + yInterval) - fromY(viewMinY))
+                                      .abs();
                               // Lot marker'ları piksel bazlı seyreltmeden
                               // geçer — arka arkaya alım yapılan günlerde
                               // dot'lar üst üste binip yığın gibi
@@ -1251,8 +1265,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     return const SizedBox.shrink();
                                   }
                                   final label = compareOn
-                                      ? '${(value - 100).toStringAsFixed(1)}%'
-                                      : fmtTRYCompact(fromY(value));
+                                      ? fmtPctIsaretli(value - 100,
+                                          digits: eksenOndaligi(yInterval,
+                                              enAz: 1, enCok: 3))
+                                      : fmtTRYAxis(
+                                          fromY(value), yEtiketAdimi);
                                   return GrafikStili.yEtiketi(label,
                                       stil: GrafikStili.eksenYazisi(context));
                                 },
@@ -1284,30 +1301,19 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   final date = startDate.add(Duration(
                                       minutes:
                                           (value * 60 * 24).round()));
-                                  final showYearOnly = span > 400;
-                                  final showTime = span < 3;
-                                  final showYear = !showYearOnly &&
-                                      date.year != DateTime.now().year;
                                   // Gün içi sekmesinde tek bir gün çizilir;
                                   // her etikette aynı tarihi tekrarlamak
                                   // 74pt'lik etiketi kırpar ve okunması
-                                  // gereken SAATİ gölgeler.
+                                  // gereken SAATİ gölgeler. Diğer dönemler
+                                  // ortak `zamanEtiketi`nden: bu ekran aynı
+                                  // kuralın kopyasını taşıyordu ve yıl
+                                  // düzeltmesini ("Oca '26", 2026-09-29
+                                  // emülatör testi #21) kaçırırdı.
                                   final label = isIntraday
                                       ? DateFormat('HH:mm', 'tr_TR')
                                           .format(date)
-                                      : showYearOnly
-                                          ? DateFormat('MMM yy', 'tr_TR')
-                                              .format(date)
-                                          : showTime
-                                              ? DateFormat('d MMM HH:mm',
-                                                      'tr_TR')
-                                                  .format(date)
-                                              : DateFormat(
-                                                      showYear
-                                                          ? 'd MMM yy'
-                                                          : 'd MMM',
-                                                      'tr_TR')
-                                                  .format(date);
+                                      : zamanEtiketi(date,
+                                          spanGun: span, gunIci: false);
                                   // Sabit genişlik + ortalama: taşan metin
                                   // ellipsis olur, komşu etiketle çakışmaz.
                                   return GrafikStili.xEtiketi(label,
@@ -1472,7 +1478,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       minutes: (spot.x * 1440).round()));
                                   final dateLabel = fmtTarihSaat(date);
                                   final tipText = compareOn
-                                      ? '${(spot.y - 100).toStringAsFixed(2)}%'
+                                      ? fmtPctIsaretli(spot.y - 100)
                                       : '${valueFmt.format(fromY(spot.y))} ₺';
                                   return LineTooltipItem(
                                     tipText,
@@ -1516,7 +1522,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   minutes:
                                       (snapped.x * 1440).round()));
                               final title = compareOn
-                                  ? '${(snapped.y - 100).toStringAsFixed(2)}%'
+                                  ? fmtPctIsaretli(snapped.y - 100)
                                   : tryFormatter(digits: 2)
                                       .format(fromY(snapped.y));
                               // Gün içinde okunacak bilgi SAATTİR; tarih
@@ -1605,12 +1611,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 ),
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
+                _fonKarnesi(),
+                if (isOwnAsset && pState != null) _temettuKarti(pState),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),
                   TechnicalSignalPanel.forAsset(widget.asset,
                       key: _sinyalPaneliKey, detayli: true),
                   // AL/SAT sinyali gösteren her yüzey yasal ibareyi de
-                  // taşır (varlık sayfasıyla aynı).
+                  // taşır (varlık sayfasıyla aynı). Sayfadaki TEK ibare
+                  // budur — panel kendi içinde basmaz (#20: üç kez
+                  // tekrarlanıyordu).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
                 ],

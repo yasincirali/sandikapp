@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
@@ -19,6 +20,7 @@ import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/fiyat_grafigi.dart';
+import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/takip_yildizi.dart';
@@ -188,7 +190,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // Arama ekranının "Son baktıkların" şeridi — hangi girişten açıldıysa
     // (arama, takip, karşılaştır, ekleme seçicisi) bakılan varlık odur.
     final uid = ref.read(authProvider).valueOrNull?.id;
-    if (uid != null) {
+    // Demo (F1): "son bakılanlar" diske yazılır ve gerçek hesapta görünürdü.
+    if (uid != null && !DemoModu.aktif) {
       CrashReporter.arkaPlan(
           SonBakilanlar.instance.kaydet(uid, widget.kimlik),
           reason: 'VarlikSayfasi.sonBakilan');
@@ -436,8 +439,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
-    final bicim = tryFormatter(
-        digits: 2, symbol: currencySymbolFor(k.ticker, k.currency) ?? '₺');
+    // Fiyatın sembolü kotasyonun para birimi: dolar kuru "₺49,00", "$" değil
+    // (2026-09-29 emülatör testi #13; bkz. [kotasyonSembolu]).
+    final bicim =
+        tryFormatter(digits: 2, symbol: kotasyonSembolu(k.ticker, k.currency));
     final bayat = cizilen != null && cizilen != _gun;
 
     if (!_acildi) {
@@ -459,6 +464,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         _aralikCubugu(ist, bicim),
         const SizedBox(height: SandikSpace.lg),
       ],
+      FonKarnesiKarti(tur: k.type, ticker: k.ticker),
       // Sahip olunmayan varlık için de teknik göstergeler hesaplanır; panel
       // bir `Asset` istemez.
       TechnicalSignalPanel(
@@ -512,8 +518,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
               ? ' '
               : ist.isFlat
                   ? context.l10n.periodNoChange(donem)
-                  : '${ist.degisimPct >= 0 ? '+' : '−'}'
-                      '${fmtPct(ist.degisimPct.abs())} · '
+                  : '${fmtPctIsaretli(ist.degisimPct)} · '
                       '${ist.fark >= 0 ? '+' : '−'}'
                       '${bicim.format(ist.fark.abs())} · $donem',
           maxLines: 1,

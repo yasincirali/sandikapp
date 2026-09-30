@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/position.dart' show aktifLotlar;
 import '../models/price_alert.dart';
@@ -44,6 +45,7 @@ Future<bool> confirmAndDeletePosition(
   required String name,
   required List<Asset> lots,
 }) async {
+  if (DemoModu.yazmaKapisi('sil')) return false; // Demo defteri silinmez (F1).
   final multi = lots.length > 1;
   final ok = await showSandikConfirm(
     context: context,
@@ -52,7 +54,7 @@ Future<bool> confirmAndDeletePosition(
         ? context.l10n.deleteAssetMulti(name, lots.length)
         : context.l10n.deleteAssetSingle(name),
     confirmLabel: context.l10n.deleteAnyway,
-    cancelLabel: 'İptal',
+    cancelLabel: context.l10n.cancelWord,
     destructive: true,
     detail: Container(
       padding: const EdgeInsets.all(12),

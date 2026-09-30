@@ -766,11 +766,14 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: () => pushGuarded(
-                context,
-                adaptiveRoute<void>(
-                    builder: (_) => const SignalSettingsScreen()),
-              ),
+              // Demo (F1): sinyal ayarları sunucuya yazılır.
+              onTap: () => DemoModu.yazmaKapisi('ayarlar')
+                  ? null
+                  : pushGuarded(
+                      context,
+                      adaptiveRoute<void>(
+                          builder: (_) => const SignalSettingsScreen()),
+                    ),
               child: Row(
                 children: [
                   Icon(Icons.tune_rounded, size: 14, color: context.c.amberText),
@@ -787,8 +790,13 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        const DisclaimerWidget(),
+        // Yasal ibare panelin İÇİNDE değil, panelin hemen ALTINDA, onu
+        // barındıran ekranda (asset_detail_screen, varlik_sayfasi) durur.
+        // Panel üstte ve altta birer ibare daha basıyordu; ekranınkiyle
+        // birlikte varlık sayfasında aynı uyarı ÜÇ kez okunuyordu (emülatör
+        // testi #20, 2026-09-29). "Sinyal gösteren her yüzey ibare taşır"
+        // kuralı ekran düzeyinde korunur: `signal_disclaimer_coverage_test`
+        // paneli kullanan her ekranı tarar, panelin ibare basmadığını da.
         const SizedBox(height: 12),
 
         // ── Özet sinyal kartı ────────────────────────────────────────────────
@@ -969,8 +977,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
             }).toList(),
           ),
         ),
-        const SizedBox(height: 8),
-        const DisclaimerWidget(),
+        // İbare burada da basılmaz — bkz. panelin başındaki not (#20).
       ],
     );
   }

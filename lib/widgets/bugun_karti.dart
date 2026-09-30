@@ -38,6 +38,40 @@ import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 
+/// Yüzdeyi TUTARLA AYNI işaret biçimiyle yazar: `+%1,23` / `−%0,06`.
+///
+/// **Neden (plan F3, 2026-09-29):** kart tutarı "−₺368", yüzdeyi ise
+/// `fmtPct(x.abs())` ile "%0,06" yazıyordu; yön yalnız RENKTE kalıyordu.
+/// Renk körlüğünde ve ekran okuyucuda yüzde yönsüz okunur, üstelik tutarın
+/// yanında işaretsiz duran yüzde "artı" sanılır. Eksi işareti tutardaki
+/// gibi U+2212 (−): tire değil, rakam genişliğinde.
+///
+/// Sıfırda — ya da gösterilen hanelerde sıfıra yuvarlanıyorsa — işaret
+/// YOK: "−%0,00" yönü olmayan bir şeye yön yazardı. Hesaba dokunmaz;
+/// yalnızca biçim.
+///
+/// Kural `tr_format.dart` › [fmtPctIsaretli]'de (piyasa şeridi de oradan);
+/// bu ad kartın testleri ve çağrı yerleri için korunur.
+String isaretliYuzde(double pct, {int digits = 2}) =>
+    fmtPctIsaretli(pct, digits: digits);
+
+/// "Enflasyona göre" satırının değeri: `5,2 puan önde` / `20,6 puan geride`.
+///
+/// **Neden (plan F3):** eskiden `−20,6 puan` yazıyordu — işaretli çıplak
+/// "puan" finans jargonu; kullanıcı neyin kaç puan olduğunu satır
+/// etiketinden çıkarmak zorundaydı. Etiket "Enflasyona göre" zaten neye
+/// göre olduğunu söylüyor; değer yönü KELİMEYLE söyler (işaret gerekmez).
+/// Kısa kalması bilinçli: defter satırında değer hiç kırpılmaz, uzun
+/// cümle dar ekranda etiketi yok ederdi. Tek ondalığa yuvarlanmış fark
+/// sıfırsa "başa baş" — "0,0 puan önde" yön uydururdu.
+///
+/// [onde] `ReelGetiriSatiri.onde` (fark ≥ 0) — yön kararı hesapta kalır.
+String reelFarkMetni(AppLocalizations l10n, {required double fark, required bool onde}) {
+  final puan = fmtNum(fark.abs(), digits: 1);
+  if (puan == fmtNum(0, digits: 1)) return l10n.todayRealEven;
+  return onde ? l10n.todayRealAhead(puan) : l10n.todayRealBehind(puan);
+}
+
 class BugunKarti extends ConsumerStatefulWidget {
   const BugunKarti({
     super.key,
@@ -45,6 +79,7 @@ class BugunKarti extends ConsumerStatefulWidget {
     this.padding = const EdgeInsets.fromLTRB(20, 12, 20, 0),
     this.kisisel = true,
     this.etiket,
+    this.hedefKapsami = '',
   });
 
   /// Kartın anlattığı defter — seçili kapsamın (2026-09-21).
@@ -57,10 +92,14 @@ class BugunKarti extends ConsumerStatefulWidget {
   final PortfolioState state;
   final EdgeInsets padding;
 
-  /// Kendi görünümü mü? Kişisel satırlar (hedef, aylık özet) yalnızca
-  /// burada; gün içi seri de yalnızca burada kilit ekranıyla paylaşılan
-  /// önbellekten okunur (bkz. `_seriYukle`).
+  /// Kendi görünümü mü? Aylık özet girişi yalnızca burada; gün içi seri de
+  /// yalnızca burada kilit ekranıyla paylaşılan önbellekten okunur (bkz.
+  /// `_seriYukle`). Hedef artık her kapsamda — bkz. [hedefKapsami].
   final bool kisisel;
+
+  /// Hedef satırının kapsam anahtarı (`kapsamHedefiProvider`): `''` Ben,
+  /// `'birlikte'`, `'ortak_<id>'` (2026-09-30).
+  final String hedefKapsami;
 
   /// Kartın başına yazılan kapsam etiketi ("Ayşe'nin bugünü", "Birlikte").
   /// Kendi görünümünde `null`: kartın kimin olduğu sorusu yalnızca başka
@@ -327,8 +366,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   Future<ReelGetiriSatiri?> _reelYukle() =>
       BugunYukleyici.reel(widget.state, enFazla: _yuklemeSuresi);
 
-  /// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip` ile aynı
-  /// hesap (`PeriodSummaryService.compute`, 1H penceresi), aynı bayrak.
+  /// Son 7 günün (kayan, ucu canlı) piyasa getirisi — eski
+  /// `WeeklySummaryChip` ile aynı hesap (`PeriodSummaryService.compute`, 1H
+  /// penceresi), aynı bayrak. Etiket "Son 7 gün": gerekçe
+  /// `HaftalikOzetSatiri`.
   Future<double?> _haftalikYukle() =>
       BugunYukleyici.haftalik(widget.state, enFazla: _yuklemeSuresi);
 
@@ -404,7 +445,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           toTRY: widget.state.toTRY,
           sonFiyat: PriceService.instance.sonBilinenFiyat),
       ozet: ozet,
-      hedefTRY: ref.watch(portfolioGoalProvider),
+      hedefTRY: ref.watch(kapsamHedefiProvider(widget.hedefKapsami)),
       now: now,
       reel: _reel,
       haftalikGetiriPct: _haftalik,
@@ -488,21 +529,20 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     switch (s) {
       case ReelGetiriSatiri():
         // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
-        final puan = fmtNum(s.fark.abs(), digits: 1);
         return _DefterSatiri(
           etiket: l10n.todayRealLabel,
           ipucu: l10n.todayRealHint,
-          deger: l10n.todayPoints('${s.onde ? '+' : '−'}$puan'),
+          deger: reelFarkMetni(l10n, fark: s.fark, onde: s.onde),
           renk: s.onde ? c.gain : c.loss,
           onTap: _olcerek(s, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
         );
       case HaftalikOzetSatiri():
         // Eski çiple aynı hedef: Özet › 1H.
-        final pct = fmtPct(s.getiriPct.abs());
         return _DefterSatiri(
           etiket: l10n.todayWeekLabel,
           ipucu: l10n.todayWeekHint,
-          deger: '${s.getiriPct >= 0 ? '+' : '−'}$pct',
+          // İşaret zaten vardı ama sıfırda "+%0,00" yazıyordu; ortak biçim.
+          deger: isaretliYuzde(s.getiriPct),
           renk: s.getiriPct >= 0 ? c.gain : c.loss,
           onTap: _olcerek(s, () => _ozeteGit(periodIdx: SummaryPeriod.birHafta.index)),
         );
@@ -513,27 +553,30 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             ipucu: l10n.todayGoalSetShort,
             deger: l10n.todayGoalAction,
             renk: c.amberText,
-            onTap: _olcerek(s, () => showHedefSheet(context, ref)),
+            onTap: _olcerek(s, () => showHedefSheet(context, ref,
+                kapsam: widget.hedefKapsami, etiket: widget.etiket)),
           );
         }
-        final hedef = gizli ? '••••' : fmtTRYCompact(s.hedefTRY.toDouble());
+        final hedef = gizli ? '••••' : fmtTRYCompactSade(s.hedefTRY.toDouble());
         if (s.ulasildi) {
           return _DefterSatiri(
             etiket: l10n.todayGoalLabel,
             ipucu: l10n.todayGoalDoneHint(hedef),
             deger: l10n.todayGoalDone,
             renk: c.gain,
-            onTap: _olcerek(s, () => showHedefSheet(context, ref)),
+            onTap: _olcerek(s, () => showHedefSheet(context, ref,
+                kapsam: widget.hedefKapsami, etiket: widget.etiket)),
           );
         }
         return _DefterSatiri(
           etiket: l10n.todayGoalLabel,
           ipucu: l10n.todayGoalLeftHint(hedef),
           deger: l10n.todayGoalValue(
-              (s.oran * 100).floor(), gizli ? '••••' : fmtTRYCompact(s.kalan)),
+              (s.oran * 100).floor(), gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
           renk: c.amberText,
           cubuk: s.oran,
-          onTap: _olcerek(s, () => showHedefSheet(context, ref)),
+          onTap: _olcerek(s, () => showHedefSheet(context, ref,
+                kapsam: widget.hedefKapsami, etiket: widget.etiket)),
         );
       case YesilOranSatiri():
         return _DefterSatiri(
@@ -771,7 +814,8 @@ class _Hero extends StatelessWidget {
             ? '••••'
             : '${s.changeTRY > 0 ? '+' : '−'}${fmtTRY(s.changeTRY.abs())}';
         renk = context.signColor(s.changeTRY);
-        yuzde = fmtPct(s.changePct.abs());
+        // Tutarla aynı işaret biçimi (F3) — yön yalnız renkte kalmasın.
+        yuzde = isaretliYuzde(s.changePct);
         alt = acik
             ? l10n.todaySessionOpen(_saat(
                 now,

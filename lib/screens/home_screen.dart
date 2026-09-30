@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../demo/demo_modu.dart';
 import '../providers/price_alert_notification_provider.dart';
 import '../providers/app_notification_provider.dart';
 import '../models/app_notification.dart';
@@ -15,6 +16,8 @@ import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/notification_service.dart';
+import '../services/crash_reporter.dart';
+import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
@@ -65,13 +68,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _reloading = false;
 
   /// Varlık arama — takibe alma ekranıyla AYNI ekran (tek arama yüzeyi).
-  void _aramayiAc() => pushGuarded(
-        context,
-        adaptiveRoute<void>(
-          builder: (_) => const AddWatchlistScreen(),
-          fullscreenDialog: true,
-        ),
-      );
+  void _aramayiAc() {
+    // Demo (F1): takibe alma bir yazma; arama sayfası oraya çıkıyor.
+    if (DemoModu.yazmaKapisi('arama')) return;
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) => const AddWatchlistScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
 
   Future<void> _reload() async {
     if (_reloading) return;
@@ -115,6 +122,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // sunucuda silinse bile LİSTE EKRANDA DEĞİŞMİYORDU. "Silmiyor"
     // şikâyetinin görünür sebebi buydu.
     // Sheet artık `ConsumerWidget` ve provider'ı kendisi izliyor.
+    // Sayfa açılınca ve kapanınca "görüldü" damgası (#26): rozet yalnız
+    // bundan sonra gelenleri "yeni" sayar. Kapanışta da yazılır: sayfa
+    // açıkken düşen bildirim listede görüldü, rozette yeniden belirmesin.
+    _bildirimleriGorulduSay();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -194,13 +205,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         },
       ),
+    ).whenComplete(() {
+      if (mounted) _bildirimleriGorulduSay();
+    });
+  }
+
+  void _bildirimleriGorulduSay() {
+    final akis = bildirimAkisi(
+      ref.read(signalProvider).valueOrNull ?? const [],
+      ref.read(priceAlertNotificationProvider).valueOrNull ?? const [],
+      ref.read(appNotificationProvider).valueOrNull ?? const [],
+    );
+    CrashReporter.arkaPlan(
+      ref.read(bildirimSonGorulenProvider.notifier).set(
+          gorulduDamgasi(akis, DateTime.now()).millisecondsSinceEpoch),
+      reason: 'home.bildirimGoruldu',
     );
   }
 
   /// Genel bildirime dokunuş — push'a dokunulmuş gibi aynı yere (0066).
   ///
-  /// Ortaklık → davet akışı; günlük/haftalık özet → Performans "Özet"
-  /// (bildirimin anlattığı rakam orada); takvim hatırlatması → ana ekran
+  /// Ortaklık → davet akışı; günlük brifing → `openDailyBrief` (push'la tek
+  /// fonksiyon); haftalık özet → Performans "Özet" (bildirimin anlattığı
+  /// rakam orada); takvim hatırlatması → ana ekran
   /// (zaten buradayız, yalnızca liste kapanır).
   void _genelBildirimeGit(AppNotification b) {
     switch (b.type) {
@@ -209,7 +236,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (inviteId.isNotEmpty) {
           NotificationService.instance.openPartnerInvite(inviteId);
         }
-      case AppNotification.dailyBrief || AppNotification.weeklySummary:
+      case AppNotification.dailyBrief:
+        // Push'la AYNI fonksiyon (#16): hisse brifingi → o hissenin ekranı,
+        // ortak / eski kayıt → Özet. Eskiden çan Özet'e, push ana ekrana
+        // gidiyordu; anlatılan hisse ikisinde de yoktu.
+        NotificationService.instance.openDailyBrief(b.data);
+      case AppNotification.weeklySummary:
         Navigator.push(
           context,
           adaptiveRoute<void>(
@@ -245,6 +277,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
         );
+      case AppNotification.temettu:
+        // Push'la AYNI varış: ön dolu temettü diyaloğu. Veri bozuksa açılmaz.
+        final oneri = TemettuOnerisi.fromPush(b.data);
+        if (oneri != null) {
+          NotificationService.instance.openTemettuOnerisi(oneri);
+        }
+      case AppNotification.calendarNudge
+          when b.data['occasion']?.toString() ==
+              NotificationService.yilSonuOccasion:
+        // Yıl sonu özeti → Profil (özet afişi orada).
+        MainNavigationScreen.sekmeIstegi.value =
+            MainNavigationScreen.profilSekmesi;
       default:
         break;
     }
@@ -791,8 +835,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // kart yerine duran reel getiri ve haftalık şeritleri artık kartın
             // satırları — 2026-09-17 kararı (şeritler kapsamın defterini alır)
             // kartın tamamına uygulandı, ikinci bir hesap yolu yok.
-            // Kişisel satırlar (hedef, aylık özet) yalnızca kendi görünümünde
-            // (`kisisel`); kartın kimin olduğu başlıkta yazar (`etiket`).
+            // Aylık özet yalnızca kendi görünümünde (`kisisel`); hedef her
+            // kapsamda, kapsamın kendi hedefiyle (`hedefKapsami`); kartın
+            // kimin olduğu başlıkta yazar (`etiket`).
             // Yüzdelik dilim şeridi Profil'de (sosyal karşılaştırma ana
             // ekranın sorusu değil).
             SliverToBoxAdapter(
@@ -813,6 +858,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   state: benGorunumu ? myState : gorunumDurumu(ledgerAssets),
                   kisisel: benGorunumu,
                   etiket: _bugunEtiketi(allActivePartners),
+                  // Her kartın kendi hedefi (2026-09-30): hedef satırı
+                  // Birlikte'ye/ortağa geçince kayboluyordu.
+                  hedefKapsami: _view == ''
+                      ? ''
+                      : _view == null
+                          ? 'birlikte'
+                          : 'ortak_$_view',
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
               ),
@@ -830,7 +882,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Expanded(
                       child: _personMiniCard(
-                        'Ben',
+                        context.l10n.scopeMe,
                         myBuyTotal,
                         context.c.amberText,
                         tryFmt,
@@ -1705,16 +1757,27 @@ class _SignalBadgeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Rozet İKİ türü birden sayar: kullanıcı için çan tek bir yer ve
-    // "3 bildirim" dediğinde açtığında üçünü de görmeli. Yalnızca
-    // sinyalleri saymak, alarm gelince rozetin kıpırdamaması demekti.
-    final count = ref.watch(activeSignalsProvider).length +
-        ref.watch(activePriceAlertNotificationsProvider).length +
-        ref.watch(activeAppNotificationsProvider).length;
+    // Rozet ÜÇ kaynağı birden sayar: kullanıcı için çan tek bir yer.
+    // Yalnızca sinyalleri saymak, alarm gelince rozetin kıpırdamaması
+    // demekti. Sayılan şey "YENİ": çan sayfası en son açıldıktan sonra
+    // gelen aktif kayıtlar (#26 — okunduktan sonra da "1 yeni" kalıyordu).
+    final sonGorulenMs = ref.watch(bildirimSonGorulenProvider);
+    final count = yeniBildirimSayisi(
+      bildirimAkisi(
+        ref.watch(activeSignalsProvider),
+        ref.watch(activePriceAlertNotificationsProvider),
+        ref.watch(activeAppNotificationsProvider),
+      ),
+      sonGorulenMs <= 0
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(sonGorulenMs),
+    );
 
     return SandikTappable(
       onTap: onTap,
-      semanticLabel: count > 0 ? '$count yeni bildirim' : 'Bildirimler',
+      semanticLabel: count > 0
+          ? context.l10n.notificationsNewCount(count)
+          : context.l10n.settingsNotifications,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -1788,7 +1851,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
         const SizedBox(height: SandikSpace.lg),
         SandikTappable(
           haptic: SandikHaptic.medium,
-          semanticLabel: 'Varlık ekle',
+          semanticLabel: context.l10n.addAsset,
           onTap: () => pushGuarded(
             context,
             adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),

@@ -124,6 +124,40 @@ const List<SurumNotu> surumNotlari = [
             "aranır.",
       ),
       Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Daha net rakamlar',
+        aciklama: 'Bugün kartında günlük yüzde artık tutarla aynı işareti '
+            'taşıyor (+%1,23 / −%0,06); yön yalnızca renkten okunmuyor. '
+            'Enflasyon farkı yönüyle yazılıyor: "20,6 puan geride", '
+            '"5,2 puan önde".',
+      ),
+      // Büyüme bayrakları 2026-09-30'da açık doğdu (remote_config_service);
+      // notlar onlarla birlikte geldi. Bir bayrak Console'dan kapatılırsa
+      // notu da buradan çıkar — kapalı özelliği anlatan not kullanıcıya
+      // görmediği şeyi vaat eder. Örnek portföy ve ilk açılış sırası yeni
+      // kullanıcı akışı, not gerektirmez.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Fon karnesi',
+        aciklama: 'Fon ekranında fonun kendi kategorisindeki sırası (1 ay, '
+            'yılbaşından beri, 1 yıl) ve kategori ortancasına farkı. '
+            "Portföy'de fon kartını açınca tek satırlık özeti görünür.",
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Temettülerini kaçırma',
+        aciklama: 'Hisse ekranında son 12 ayın temettüleri; "Kaydet" ile '
+            'tutar hazır gelir, yalnızca onaylarsın. Elindeki bir hisse '
+            'temettü dağıttığında akşam haber veririz.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Halka arz takvimi',
+        aciklama: 'Profil › Halka arzlar: kaynağıyla birlikte yaklaşan ve '
+            'son halka arzlar. "Katıldım" ile lotunu halka arz fiyatı ve '
+            'tarihiyle portföyüne eklersin.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.genel,
         baslik: 'Daha okunaklı, daha hızlı',
         aciklama: 'Koyu temada ikincil yazılar daha okunaklı; sekmeler '

@@ -346,6 +346,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get save => 'Kaydet';
 
   @override
+  String posPeriodPriceMove(String pct) {
+    return 'fiyat $pct';
+  }
+
+  @override
   String get assetType => 'Varlık Türü';
 
   @override
@@ -391,6 +396,25 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cancel => 'Vazgeç';
+
+  @override
+  String quickAllChip(String qty) {
+    return 'Hepsi ($qty)';
+  }
+
+  @override
+  String get quickHolding => 'Mevcut';
+
+  @override
+  String quickAvgShort(String price) {
+    return 'ort. $price';
+  }
+
+  @override
+  String get quickUnitPrice => 'Birim fiyat';
+
+  @override
+  String get quickTotalCost => 'Toplam maliyet';
 
   @override
   String get delete => 'Sil';
@@ -577,7 +601,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lotSummary(int buys, int sells) {
-    return '$buys alım · $sells çıkarma';
+    String _temp0 = intl.Intl.pluralLogic(
+      sells,
+      locale: localeName,
+      other: '$buys alım · $sells çıkarma',
+      zero: '$buys alım',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -603,6 +633,55 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get assetFullName => 'Tam Adı';
+
+  @override
+  String get fundReportTitleUpper => 'FON KARNESİ';
+
+  @override
+  String fundReportCategory(String category, String count) {
+    return '$category · $count fon';
+  }
+
+  @override
+  String get fundReportPeriod1m => '1 ay';
+
+  @override
+  String get fundReportPeriodYtd => 'Yılbaşından beri';
+
+  @override
+  String get fundReportPeriod1y => '1 yıl';
+
+  @override
+  String fundReportRank(String count, String rank) {
+    return '$count fondan $rank.';
+  }
+
+  @override
+  String fundReportReturnVsMedian(String ret, String median) {
+    return 'Getirisi $ret · kategori ortancası $median';
+  }
+
+  @override
+  String fundReportAboveMedian(String pts) {
+    return 'Ortancanın $pts puan üstünde';
+  }
+
+  @override
+  String fundReportBelowMedian(String pts) {
+    return 'Ortancanın $pts puan altında';
+  }
+
+  @override
+  String get fundReportAtMedian => 'Ortancayla aynı';
+
+  @override
+  String get fundReportFootnote =>
+      'Kaynak: TEFAS. Getiriler TEFAS\'ın açıkladığı rakamlardır; TEFAS\'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.';
+
+  @override
+  String fundReportPanelLine(String count, String rank, String period) {
+    return 'Kategorisinde $count fondan $rank. ($period)';
+  }
 
   @override
   String get assetTypeStock => 'Hisse';
@@ -648,7 +727,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)';
 
   @override
-  String get tickerHintOther => 'Yahoo Finance sembolü veya boş bırakın';
+  String get tickerHintOther => 'Yahoo Finance sembolü ya da boş bırak';
 
   @override
   String assetTypeSemantics(String type) {
@@ -731,6 +810,61 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noteAddHint => 'Neden aldın, hedefin ne? Kısa bir not yaz.';
 
   @override
+  String get alertTargetAtCurrent =>
+      'Hedef güncel fiyata eşit, alarm hemen çalışır. Biraz üstünü ya da altını yaz.';
+
+  @override
+  String get notifTypeDividend => 'Temettü';
+
+  @override
+  String get dividendHistoryUpper => 'SON 12 AY TEMETTÜ';
+
+  @override
+  String dividendRecordedTotal(String amount) {
+    return 'Kaydettiğin: $amount';
+  }
+
+  @override
+  String dividendEventLine(String lot, String perShare) {
+    return '$lot lot × $perShare';
+  }
+
+  @override
+  String dividendGrossAmount(String amount) {
+    return '$amount brüt';
+  }
+
+  @override
+  String get dividendRecorded => 'Kaydedildi';
+
+  @override
+  String get dividendRecordAction => 'Kaydet';
+
+  @override
+  String get dividendSourceNote =>
+      'Yahoo Finance\'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.';
+
+  @override
+  String dividendSuggestionLine(String ticker, String date) {
+    return '$ticker · hak tarihi $date';
+  }
+
+  @override
+  String dividendSuggestionGross(String lot, String perShare, String gross) {
+    return '$lot lot × $perShare = $gross brüt';
+  }
+
+  @override
+  String dividendWithholdingAssumed(String rate) {
+    return 'Stopaj $rate varsayıldı, düzeltebilirsin.';
+  }
+
+  @override
+  String dividendEnterNet(String gross) {
+    return 'Brüt $gross — stopaj sonrası eline geçeni yaz.';
+  }
+
+  @override
   String get noteReadOnlyPartner =>
       'Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.';
 
@@ -783,6 +917,58 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pleaseWait => 'Lütfen bekle';
+
+  @override
+  String breakdownUpAmount(String amount) {
+    return 'artış $amount';
+  }
+
+  @override
+  String breakdownDownAmount(String amount) {
+    return 'azalış $amount';
+  }
+
+  @override
+  String get nominalReturnInWindow => 'Bu aralıkta senin getirin';
+
+  @override
+  String get cpiWindowNote =>
+      'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.';
+
+  @override
+  String get demoTryButton => 'Önce bir göz at';
+
+  @override
+  String get demoBannerTitle => 'Örnek portföy';
+
+  @override
+  String get demoBannerSubtitle => 'Varlıklar örnek, fiyatlar canlı';
+
+  @override
+  String get demoCreateAccount => 'Hesap oluştur';
+
+  @override
+  String get demoExit => 'Örnekten çık';
+
+  @override
+  String get demoAccountCardTitle => 'Kendi portföyünü kur';
+
+  @override
+  String get demoAccountCardBody =>
+      'Burada gördüğün her şey kendi varlıklarınla da çalışır. Varlık eklemek, not ve alarm kaydetmek için hesap oluştur.';
+
+  @override
+  String get demoAccountCardSignIn => 'Zaten hesabım var';
+
+  @override
+  String get demoSaveSheetTitle => 'Kaydetmek için hesap oluştur';
+
+  @override
+  String get demoSaveSheetBody =>
+      'Bu bir örnek portföy; burada yaptığın değişiklik kaydedilmez. Kendi portföyünü kurmak için hesap oluştur.';
+
+  @override
+  String get demoSaveSheetContinue => 'Örneğe devam et';
 
   @override
   String get fundsLoadFailed => 'Fonlar yüklenemedi';
@@ -1802,6 +1988,103 @@ class AppLocalizationsTr extends AppLocalizations {
   String get clearFilters => 'Filtreleri temizle';
 
   @override
+  String watchlistRowUp(String pct) {
+    return 'artış $pct';
+  }
+
+  @override
+  String watchlistRowDown(String pct) {
+    return 'düşüş $pct';
+  }
+
+  @override
+  String get watchlistRowFollowing => 'takip ediliyor';
+
+  @override
+  String notificationsNewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count yeni bildirim',
+      one: '1 yeni bildirim',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get signOutAction => 'Çıkış yap';
+
+  @override
+  String get baseCurrencyNameLira => 'Lira';
+
+  @override
+  String get baseCurrencyNameDollar => 'Dolar';
+
+  @override
+  String get baseCurrencyNameEuro => 'Euro';
+
+  @override
+  String get baseCurrencyNameGold => 'Gram altın';
+
+  @override
+  String get datePickerHelp => 'Tarih seç';
+
+  @override
+  String get datePickerConfirm => 'Seç';
+
+  @override
+  String get sortAssetsSemantics => 'Varlıkları sırala';
+
+  @override
+  String get showDetailsSemantics => 'Ayrıntıları göster';
+
+  @override
+  String get hideDetailsSemantics => 'Ayrıntıları gizle';
+
+  @override
+  String pricePreviewClose(String date) {
+    return '$date kapanışı — kayıtta bu fiyat kullanılacak';
+  }
+
+  @override
+  String pricePreviewLastTradingClose(String date) {
+    return 'Son işlem günü kapanışı ($date) — kayıtta bu fiyat kullanılacak';
+  }
+
+  @override
+  String priceAssignedClose(String date, String price) {
+    return '$date kapanışı $price olarak atandı';
+  }
+
+  @override
+  String priceAssignedLastTradingClose(String date, String price) {
+    return 'Son işlem günü ($date) kapanışı $price olarak atandı';
+  }
+
+  @override
+  String todayRealAhead(String pts) {
+    return '$pts puan önde';
+  }
+
+  @override
+  String todayRealBehind(String pts) {
+    return '$pts puan geride';
+  }
+
+  @override
+  String get todayRealEven => 'başa baş';
+
+  @override
+  String recapPointsAhead(String n) {
+    return 'Enflasyonu $n puan geçtin';
+  }
+
+  @override
+  String recapPointsBehind(String n) {
+    return 'Enflasyonun $n puan gerisinde kaldın';
+  }
+
+  @override
   String get loadingEllipsis => 'Yükleniyor…';
 
   @override
@@ -1991,11 +2274,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get recapSubtitle => 'Bir yılın kısa hikâyesi.';
 
   @override
-  String recapPoints(String n) {
-    return '$n puan';
-  }
-
-  @override
   String recapDays(int n) {
     return '$n gün';
   }
@@ -2048,7 +2326,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String realReturnSemanticsAhead(String pts) {
-    return 'Son bir yılda portföyün enflasyonu yüzde $pts puan geçti';
+    return 'Son bir yılda portföyün enflasyonu $pts puan geçti';
   }
 
   @override
@@ -2061,7 +2339,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String realReturnSemanticsBehind(String pts) {
-    return 'Son bir yılda portföyün enflasyonun yüzde $pts puan gerisinde kaldı';
+    return 'Son bir yılda portföyün enflasyonun $pts puan gerisinde kaldı';
   }
 
   @override
@@ -2496,7 +2774,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
-    return '$lehte/$total gösterge · güven %$pct';
+    return '$lehte/$total yön veren gösterge · güven %$pct';
   }
 
   @override
@@ -2535,7 +2813,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all gösterge';
+    return '· $on/$all gösterge açık';
   }
 
   @override
@@ -2892,7 +3170,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get hiddenWeekend =>
-      'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.';
+      'Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.';
 
   @override
   String hiddenOutsideWindow(String start, String end) {
@@ -3370,12 +3648,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayRealHint => 'Yıllık getirin ile TÜFE farkı';
 
   @override
-  String todayPoints(String pts) {
-    return '$pts puan';
-  }
-
-  @override
-  String get todayWeekLabel => 'Geçen hafta';
+  String get todayWeekLabel => 'Son 7 gün';
 
   @override
   String get todayWeekHint => 'Piyasanın portföyüne etkisi · özet hazır';
@@ -3899,6 +4172,109 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get deletedEmptyBody =>
       'Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.';
+
+  @override
+  String get ipoTitle => 'Halka arzlar';
+
+  @override
+  String get ipoProfileRowSubtitle => 'Takvim, fiyat ve katılım kaydı';
+
+  @override
+  String get ipoGroupTalep => 'Talep toplanıyor';
+
+  @override
+  String get ipoGroupYaklasan => 'Yaklaşan';
+
+  @override
+  String get ipoGroupIslemBekliyor => 'İşlem görmeyi bekliyor';
+
+  @override
+  String get ipoGroupIslemGoruyor => 'İşlem görüyor';
+
+  @override
+  String get ipoGroupBilinmiyor => 'Tarihi belirsiz';
+
+  @override
+  String ipoOfflineNote(String tarih) {
+    return 'Çevrimdışı: $tarih tarihli liste gösteriliyor.';
+  }
+
+  @override
+  String get ipoOfflineNoDate => 'Çevrimdışı: kayıtlı liste gösteriliyor.';
+
+  @override
+  String ipoListDate(String tarih) {
+    return 'Liste tarihi: $tarih';
+  }
+
+  @override
+  String get ipoEmpty => 'Şu an listede halka arz yok.';
+
+  @override
+  String get ipoDisclaimer =>
+      'Bilgi amaçlıdır, yatırım tavsiyesi değildir. Tarih ve fiyatı aracı kurumundan doğrula.';
+
+  @override
+  String ipoRowTalep(String aralik) {
+    return 'Talep: $aralik';
+  }
+
+  @override
+  String ipoRowIslem(String tarih) {
+    return 'İşlem: $tarih';
+  }
+
+  @override
+  String get ipoFieldTalep => 'Talep toplama';
+
+  @override
+  String get ipoFieldFiyat => 'Halka arz fiyatı';
+
+  @override
+  String get ipoFieldDagitim => 'Dağıtım';
+
+  @override
+  String get ipoFieldIslem => 'İşlem başlangıcı';
+
+  @override
+  String get ipoFieldPazar => 'Pazar';
+
+  @override
+  String get ipoFieldGuncelleme => 'Bilgi tarihi';
+
+  @override
+  String get ipoDagitimEsit => 'Eşit';
+
+  @override
+  String get ipoDagitimOransal => 'Oransal';
+
+  @override
+  String get ipoOpenSource => 'Kaynağı aç';
+
+  @override
+  String get ipoSourceFailed => 'Bağlantı açılamadı.';
+
+  @override
+  String get ipoParticipate => 'Katıldım, portföye ekle';
+
+  @override
+  String get ipoParticipateHint =>
+      'Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.';
+
+  @override
+  String get ipoParticipateHintTraded =>
+      'Sana düşen lot sayısını yaz; alış fiyatı (halka arz fiyatı) ve ilk işlem günü hazır gelir. Hisse portföyünde canlı fiyatıyla görünür.';
+
+  @override
+  String get ipoParticipateNoPrice =>
+      'Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.';
+
+  @override
+  String get ipoParticipateLater =>
+      'Dağıtım sonuçları talep toplama bitince açıklanır. Katıldıysan o zaman buradan portföyüne ekleyebilirsin.';
+
+  @override
+  String get ipoParticipationSaved => 'Halka arz lotun portföyüne eklendi.';
 
   @override
   String txDateLabeled(String tur, String tarih) {

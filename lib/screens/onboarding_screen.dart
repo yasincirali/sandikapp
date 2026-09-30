@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/cupertino.dart';
@@ -10,7 +11,9 @@ import '../models/position.dart' show aktifLotlar;
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../l10n/l10n.dart';
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/tour_anchor.dart';
@@ -114,11 +117,18 @@ class OnboardingScreen extends StatefulWidget {
   /// Katman [OnboardingTourHost] içinde açılır; tur zaten açıksa ikinci kez
   /// açılmaz. [onBitti] turun nasıl kapandığını söyler: `true` sonuna kadar
   /// gezildi, `false` "Atla" ile bırakıldı.
+  ///
+  /// [seviyeSorusu] kısa turda yatırımcı seviyesi adımı (plan F2).
+  /// Varsayılan `false` = bugünkü tur. Bayrağı (`lock_offer_after_first_asset`,
+  /// F2'nin tek bayrağı: ilk açılış sırası bir bütün olarak açılıp kapanır)
+  /// yalnızca ilk açılış giriş noktası (`_turuAc`) okur; testler iki hâli
+  /// de açıkça seçer, debug'da açık olan bayrağa bağlı kalmaz.
   static void baslatTur({
     required void Function(bool tamamlandi) onBitti,
     bool kisa = false,
+    bool seviyeSorusu = false,
   }) {
-    _Tur.baslat(onBitti: onBitti, kisa: kisa);
+    _Tur.baslat(onBitti: onBitti, kisa: kisa, seviyeSorusu: seviyeSorusu);
   }
 
   /// Tur açıksa KAPATIR — yalnızca entegrasyon testi için.
@@ -171,7 +181,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // İlk açılış KISA tur (bkz. `_kisaAdimlar`); tam tur Ayarlar'dan.
     _Tur.baslat(
       kisa: true,
+      seviyeSorusu: RemoteConfigService.instance.lockOfferAfterFirstAsset,
       onBitti: (tamamlandi) async {
+        // Kayıt hunisi (F11): tur KAPANDI — sonuna kadar gezildi ya da
+        // atlandı. Atlama ayrıca `onboarding_skipped` ile ölçülüyor; huni
+        // "kullanıcı turdan çıkıp ana ekrana ulaştı mı"yı sorar.
+        unawaited(AnalyticsService.instance.logSignupStep('tour_done'));
         await OnboardingScreen.markCompleted(widget.userId);
         if (mounted) widget.onComplete();
       },
@@ -213,7 +228,16 @@ class _Adim {
     this.giris,
     this.devam,
     this.cikis,
+    this.ek,
   });
+
+  /// Gövdenin altına eklenen etkileşimli içerik (ör. seviye seçici).
+  ///
+  /// Tur "gerçek ekranın üstünde" ilkesiyle çalışır; kartın içinde kendi
+  /// denetimi olan tek adım seviye sorusudur (F2) — anlatacağı bir ekran
+  /// öğesi yok, bir tercih soruluyor. Seçim zorunlu değil: "Devam" her
+  /// zaman açık, dokunulmazsa varsayılan (Orta) kalır.
+  final WidgetBuilder? ek;
 
   final String id;
   final String baslik;
@@ -349,8 +373,9 @@ List<_Adim> _adimlariKur() {
       baslik: 'Bugün ne oldu?',
       govde: 'Solda tarih, yanında günün hareketi — sadece piyasa etkisi, '
           'yatırdığın para sayılmaz. Altındaki satırlar: enflasyona göre '
-          'durumun, geçen hafta, hedefine kalan ve artıdaki varlıkların; en '
-          'altta yaklaşan tarih. Her satırın altında ne anlama geldiği '
+          'durumun, son 7 gün, artıdaki varlıkların ve hedefin — hedef '
+          'satırı her gün orada, dokunup belirlersin; en altta yaklaşan '
+          'tarih. Her satırın altında ne anlama geldiği '
           'yazar; dokununca ayrıntı açılır. Ortağına ya da Birlikte\'ye '
           'geçince kart o defterin gününü anlatır, başında kimin olduğu '
           'yazar.',
@@ -448,8 +473,10 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       baslik: 'Kripto da burada',
       // "Çiplerin sonunda" yazıyordu; 2026-09-25 sırasında Kripto Fon'dan
-      // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`).
-      govde: 'Tür çiplerinde Fon\'un yanında Kripto var: listeden coin\'i '
+      // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`). 2026-09-29'dan
+      // beri çipler sarmalı (#29): Kripto dar ekranda Fon'la aynı satıra
+      // düşmeyebilir, bu yüzden metin konum ("Fon'un yanında") söylemez.
+      govde: 'Tür çiplerinde Kripto da var: listeden coin\'i '
           'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
           'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
           'grafikte hafta sonu da görünür.',
@@ -558,8 +585,8 @@ List<_Adim> _adimlariKur() {
       govde: 'Kodunu eşine gönder ya da onunkini gir. Karşı taraf '
           'onayladığında portföyleriniz tek ekranda birleşir; "Birlikte" '
           'herkesin toplamı, "Ben" yalnız senin. Birden çok ortağın olabilir; '
-          'ana ekranda kartı kaydırarak aralarında geçersin. İstediğiniz an '
-          'ayrılırsınız.',
+          'ana ekranda kartı kaydırarak aralarında geçersin. İstediğin an '
+          'ortaklıktan ayrılabilirsin.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),
@@ -603,7 +630,7 @@ List<_Adim> _adimlariKur() {
 /// Son adım Varlık Ekle'yi AÇIK bırakır: "Sandığımı Aç" dendiğinde kullanıcı
 /// zaten yapıştırma tuşunun önündedir; tam turdaki gibi kapatıp "+ tuşuna
 /// dokun" demek bir adım geri gitmek olurdu.
-List<_Adim> _kisaAdimlar() {
+List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
   final tam = {for (final a in _adimlariKur()) a.id: a};
   return [
     const _Adim(
@@ -612,6 +639,22 @@ List<_Adim> _kisaAdimlar() {
       govde: 'Hisse, döviz, altın, fon, kripto — hepsi tek toplamda. Bir dakikada '
           'ilk varlığını girelim; gerisini uygulama kendi anlatır.',
     ),
+    // Yatırımcı seviyesi (plan F2, 2026-09-29): tercih yalnız Ayarlar ›
+    // Görünüm'de duruyordu ve yeni kullanıcı varlığından habersizdi;
+    // Başlangıç seviyesinin sadeleştirdiği ekranları (teknik sinyaller,
+    // bildirim zili) ilk günden görüyordu. Karşılamadan HEMEN sonra, hedefli
+    // adımlardan önce: sonraki adımlar zaten gerçek ekranı gösterdiği için
+    // ekran seçilen seviyeyle anlatılır. Ayrı bir ön ekran yerine tur adımı:
+    // "Atla" ve ilerleme göstergesi bedava gelir, tur yapısı değişmez.
+    if (seviyeSorusu)
+      const _Adim(
+        id: 'seviye',
+        baslik: 'Yatırımda neredesin?',
+        govde: 'Ekranlar seçimine göre sadeleşir ya da ayrıntılanır. Emin '
+            "değilsen Orta'da kal; Ayarlar › Görünüm'den istediğin an "
+            'değiştirirsin.',
+        ek: _seviyeSecici,
+      ),
     tam['hero']!,
     tam['bugun']!,
     tam['ekle']!,
@@ -631,6 +674,85 @@ List<_Adim> _kisaAdimlar() {
       dokunulabilir: false,
     ),
   ];
+}
+
+Widget _seviyeSecici(BuildContext context) => const _SeviyeSecici();
+
+/// Seviye adımının seçicisi — Ayarlar › Görünüm'deki seçiciyle aynı dil
+/// (üç eşit segment + seçilenin tek satırlık açıklaması) ve AYNI tercih
+/// (`investorLevelIndexProvider`, kişiye özel). İkinci bir kaynak yok:
+/// burada seçilen Ayarlar'da seçili görünür.
+class _SeviyeSecici extends ConsumerWidget {
+  const _SeviyeSecici();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.c;
+    final secili = ref.watch(yatirimciSeviyesiProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(SandikSpace.xs),
+          decoration: context.surfaceCard(),
+          child: Row(
+            children: [
+              for (final s in YatirimciSeviyesi.values)
+                Expanded(
+                  child: SandikTappable(
+                    semanticLabel: context.l10n.levelSemantics(s.etiket(context)),
+                    onTap: () => ref
+                        .read(investorLevelIndexProvider.notifier)
+                        .set(s.index),
+                    child: AnimatedContainer(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      // 44pt alt sınır (HIG): ikon + etiket dar kartta da
+                      // dokunma hedefini doldursun.
+                      constraints: const BoxConstraints(minHeight: _higHedef),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+                      decoration: s == secili
+                          ? BoxDecoration(
+                              color: p.amberFill.withValues(alpha: 0.16),
+                              borderRadius: SandikRadius.smAll,
+                            )
+                          : null,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(s.ikon,
+                              size: 20,
+                              color: s == secili ? p.amberText : p.text36),
+                          const SizedBox(height: SandikSpace.xs),
+                          Text(
+                            s.etiket(context),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.t.labelLarge?.copyWith(
+                              letterSpacing: 0,
+                              fontWeight: s == secili
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: s == secili ? p.amberText : p.text58,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        Text(
+          secili.aciklama(context),
+          style: context.t.bodySmall?.copyWith(color: p.text58, height: 1.4),
+        ),
+      ],
+    );
+  }
 }
 
 // ─── Tur denetleyicisi ───────────────────────────────────────────────────────
@@ -656,10 +778,13 @@ abstract final class _Tur {
   static void baslat({
     required void Function(bool tamamlandi) onBitti,
     bool kisa = false,
+    bool seviyeSorusu = false,
   }) {
     if (aktif) return;
     oturum.value = _Oturum(
-      adimlar: kisa ? _kisaAdimlar() : _adimlariKur(),
+      adimlar: kisa
+          ? _kisaAdimlar(seviyeSorusu: seviyeSorusu)
+          : _adimlariKur(),
       onBitti: onBitti,
     );
     AnalyticsService.instance.logOnboardingStep(0);
@@ -1203,6 +1328,10 @@ class _AdimKarti extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
+                    if (adim.ek case final ek?) ...[
+                      const SizedBox(height: SandikSpace.smd),
+                      ek(context),
+                    ],
                     if (adim.gorev != null) ...[
                       const SizedBox(height: SandikSpace.smd),
                       _GorevSeridi(

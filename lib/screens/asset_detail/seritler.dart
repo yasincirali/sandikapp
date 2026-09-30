@@ -76,6 +76,9 @@ class _PozisyonKarti extends StatelessWidget {
               tutar: d.tutar,
               yuzde: d.yuzde,
               bicim: tutar,
+              // Yüzde ÜRÜNÜN fiyat hareketi, tutar SAHİBİN piyasa etkisi —
+              // farklı tabanlar; etiket bunu söyler ("₺0 · fiyat −%7,55").
+              yuzdeEtiketi: l.posPeriodPriceMove,
             )
           else
             _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
@@ -96,26 +99,28 @@ class _PozisyonSatiri extends StatelessWidget {
     this.vurgulu = false,
   });
 
-  /// Kâr/zarar satırı: işaretli tutar + yüzde, yeşil/kırmızı; yuvarlanmış
-  /// tutar ve yüzde ikisi de sıfırsa nötr "Değişim yok".
+  /// Kâr/zarar satırı: işaretli tutar + yüzde; bkz. [kazancSatiri].
   factory _PozisyonSatiri.kazanc({
     required String etiket,
     required double tutar,
     required double yuzde,
     required ParaBicimi bicim,
+    String Function(String yuzde)? yuzdeEtiketi,
     bool vurgulu = false,
   }) {
-    final duz = tutar.abs().round() == 0 && donemDuzMu(yuzde);
-    if (duz) {
-      return _PozisyonSatiri(
-          etiket: etiket, deger: null, vurgulu: vurgulu, renk: null);
-    }
-    final isaret = tutar >= 0 ? '+' : '−';
+    final k = kazancSatiri(
+        tutar: tutar,
+        yuzde: yuzde,
+        tutarMetni: bicim.format,
+        yuzdeEtiketi: yuzdeEtiketi);
     return _PozisyonSatiri(
       etiket: etiket,
-      deger: '$isaret${bicim.format(tutar.abs())} · '
-          '$isaret${fmtPct(yuzde.abs(), digits: 2)}',
-      renk: tutar >= 0 ? _KazancRengi.gain : _KazancRengi.loss,
+      deger: k?.metin,
+      renk: switch (k?.yon) {
+        1 => _KazancRengi.gain,
+        -1 => _KazancRengi.loss,
+        _ => null,
+      },
       vurgulu: vurgulu,
     );
   }
@@ -170,6 +175,44 @@ class _PozisyonSatiri extends StatelessWidget {
 }
 
 enum _KazancRengi { gain, loss }
+
+/// Pozisyon kartındaki kâr/zarar satırının metni ve yönü (`1` kâr, `-1`
+/// zarar, `0` nötr); tutar da yüzde de sıfıra yuvarlanıyorsa `null`
+/// ("Değişim yok").
+///
+/// ## Her sayı KENDİ işaretini taşır (2026-09-29 emülatör testi #1)
+/// Eskiden işaret tutardan alınıp yüzdeye de yazılıyordu (`yuzde.abs()`).
+/// Dönem satırında iki sayı farklı tabanlardan gelir (bkz.
+/// `_donemDegisimi`): tutar pozisyonun PİYASA ETKİSİ, yüzde ürünün birim
+/// fiyat hareketi. Bugün alınan fon 1H'de %7,55 düşmüşken piyasa etkisi
+/// ₺0 (≥ 0) olduğu için satır yeşil "+₺0 · +%7,55" yazıyordu — yön tersti.
+/// Şimdi yüzde [fmtPctIsaretli] ile kendi yönünü yazar, [yuzdeEtiketi]
+/// ("fiyat") onun neyi ölçtüğünü söyler.
+///
+/// Renk SATIRIN sorusundan gelir — "kâr/zarar" sahibin kazancıdır, yani
+/// TUTARIN yönü. Tutar sıfıra yuvarlanıyorsa renk nötr (yeşil ₺0 "kazandın"
+/// der) ve tutar işaretsiz yazılır.
+///
+/// Toplam satırında yüzde aynı tabandandır (kâr / maliyet), etiket yoktur;
+/// iki sayının işareti zaten aynıdır.
+@visibleForTesting
+({String metin, int yon})? kazancSatiri({
+  required double tutar,
+  required double yuzde,
+  required String Function(double) tutarMetni,
+  String Function(String yuzde)? yuzdeEtiketi,
+}) {
+  final tutarDuz = tutar.abs().round() == 0;
+  if (tutarDuz && donemDuzMu(yuzde)) return null;
+  final t = tutarDuz
+      ? tutarMetni(0)
+      : '${tutar > 0 ? '+' : '−'}${tutarMetni(tutar.abs())}';
+  final y = fmtPctIsaretli(yuzde);
+  return (
+    metin: '$t · ${yuzdeEtiketi == null ? y : yuzdeEtiketi(y)}',
+    yon: tutarDuz ? 0 : (tutar > 0 ? 1 : -1),
+  );
+}
 
 /// Fullscreen landscape moduna geçiren küçük ikon buton.
 /// Grafik üzerine çizilen göstergeleri açıp kapatan küçük toggle chip.

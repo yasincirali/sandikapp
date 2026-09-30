@@ -23,8 +23,11 @@ import '../config/pref_keys.dart';
 // `alarmSembolu`: alarm kurarken kullanılan sembol kuralı. Bildirimi
 // varlığa geri eşlemek için AYNI fonksiyon kullanılmalı.
 import '../widgets/alarm_kur_sheet.dart' show alarmSembolu;
+import '../widgets/dividend_dialog.dart' show showDividendDialog;
 import 'analytics_service.dart';
 import 'crash_reporter.dart';
+import 'fiyat_kaynagi.dart';
+import 'temettu_gecmisi.dart';
 import 'kilit_kapisi.dart';
 import 'retention_tracker.dart';
 import 'period_summary_service.dart' show SummaryPeriod;
@@ -60,6 +63,15 @@ class NotificationService {
   static const watchlistMoveType = 'watchlist_move';
   static const inflationDayType = 'inflation_day';
   static const priceAlertType = 'price_alert';
+
+  /// Temettü önerisi (0086, `temettu-yakala`): ön dolu temettü diyaloğu.
+  static const temettuType = 'temettu';
+
+  /// Takvim anı (`calendar-nudge`); hangi an olduğu `data.occasion`'da.
+  static const calendarNudgeType = 'calendar_nudge';
+
+  /// Yıl sonu özeti anı (0087) — Profil sekmesindeki özet afişine gider.
+  static const yilSonuOccasion = 'year_end_recap';
   static const _partnerInvitePayloadPrefix = 'partner_invite:';
   static const _signalPayloadPrefix = 'signal_alert:';
 
@@ -479,10 +491,17 @@ class NotificationService {
       }
     }
 
-    // Brifingin varış yeri ana ekrandır — uygulamanın açılması yeterli,
-    // ayrıca bir yere yönlendirilmez. Bildirim tek bir varlığa değil
-    // portföyün geneline dair.
-    if (type == dailyBriefType) return;
+    // Brifing → [openDailyBrief] (çan sayfasıyla AYNI fonksiyon).
+    //
+    // ÖNCEKİ KARAR ve neden değişti (emülatör testi #16, 2026-09-29):
+    // "brifingin varış yeri ana ekrandır, bildirim portföyün geneline dair"
+    // deniyordu; oysa hisse brifingi TEK bir hisseyi anlatır ("ARDYZ son
+    // kapanışta %5,8 yükseldi") ve ana ekranda o hisse yoktu. Üstelik çan
+    // aynı bildirimi Özet'e götürüyordu: iki yol, iki davranış.
+    if (type == dailyBriefType) {
+      openDailyBrief(data);
+      return;
+    }
 
     // Haftalık/aylık özet → Performans › Özet: bildirimin anlattığı rakam
     // orada. Aylıkta 1A dönemi. Çan sayfasındaki dokunuşla aynı hedef
@@ -503,6 +522,24 @@ class NotificationService {
     }
     if (type == watchlistMoveType) {
       MainNavigationScreen.sekmeIstegi.value = 1;
+      return;
+    }
+
+    // Temettü önerisi → ön dolu temettü diyaloğu (kayıt yine kullanıcı
+    // onayıyla, `addDividend` yolundan). Bozuk veri → hiçbir şey açılmaz.
+    if (type == temettuType) {
+      final oneri = TemettuOnerisi.fromPush(data);
+      if (oneri != null) openTemettuOnerisi(oneri);
+      return;
+    }
+
+    // Yıl sonu özeti anı → Profil sekmesi: özet afişi orada ve kendi
+    // takvim kapısıyla açılır (`RecapBanner`). TÜFE günü anı ana ekranda
+    // kalır (eski davranış).
+    if (type == calendarNudgeType &&
+        data['occasion']?.toString() == yilSonuOccasion) {
+      MainNavigationScreen.sekmeIstegi.value =
+          MainNavigationScreen.profilSekmesi;
       return;
     }
 
@@ -571,6 +608,27 @@ class NotificationService {
   /// Çan sayfasındaki ortaklık bildirimine dokunuş — push'a dokunulmuş
   /// gibi aynı davet akışı (0066).
   void openPartnerInvite(String inviteId) => _openPartnerInvite(inviteId);
+
+  /// Günlük brifingin varış yeri — push ve çan AYNI fonksiyonu çağırır.
+  ///
+  /// Hisse brifingi (`variant: 'mover'`, sunucu `ticker` ekler — bkz.
+  /// `daily-brief/index.ts` `briefVerisi`) → anlatılan hissenin ekranı,
+  /// GÜNLÜK'te (bildirim son kapanıştaki GÜNLÜK hareketi anlatır). Eşleme
+  /// fiyat alarmıyla aynı yoldan ([openPriceAlertAsset]): brifing yalnız
+  /// BIST hissesini anlatır, hissede alarm sembolü ticker'ın kendisidir.
+  /// Hisse o arada satıldıysa hata ekranı değil Özet açılır — bildirim
+  /// portföy hakkında konuşuyordu, boş ekran yanıltıcı olur.
+  ///
+  /// Ortak brifingi, ticker'sız eski kayıtlar (çan geçmişi) ve bilinmeyen
+  /// varyant → Performans › Özet.
+  void openDailyBrief(Map<String, dynamic> data) {
+    final ticker = data['ticker']?.toString().trim() ?? '';
+    if (data['variant']?.toString() == 'mover' && ticker.isNotEmpty) {
+      openPriceAlertAsset(ticker, onNotFound: () => _openOzet());
+      return;
+    }
+    _openOzet();
+  }
 
   /// Dönem özeti push'undan Performans › Özet'e.
   ///
@@ -812,6 +870,53 @@ class NotificationService {
       // sessizce varsayılana düşer.
       initialPeriodDays: 0,
     );
+  }
+
+  /// Temettü önerisinden (push ya da çan) ön dolu temettü diyaloğunu açar.
+  ///
+  /// Öneri `ticker` taşır, `asset_id` değil (sunucu pozisyonu sembolden
+  /// tanır). Varlık, `FiyatKaynagi.temettuSembolu` ile — kartın ve sunucunun
+  /// kullandığı AYNI kuralla — oturum sahibinin defterinden bulunur.
+  /// Pozisyon bugün kapalıysa (öneriden sonra satıldı) ham lot kullanılır:
+  /// temettü hak tarihinde tutulan lota aittir, bugünkü mülkiyete değil.
+  /// Bulunamazsa sessiz (silinmiş varlığın eski önerisi için hata ekranı
+  /// yanıltıcı olur — [openAssetPerformance] ile aynı karar).
+  void openTemettuOnerisi(TemettuOnerisi oneri, {int deneme = 0}) {
+    if (kilitKapisi.ertele(() => openTemettuOnerisi(oneri))) return;
+    final navigator = _navigatorKey?.currentState;
+    final context = navigator?.overlay?.context;
+    if (navigator == null || context == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(_yenidenDenemeAraligi,
+          () => openTemettuOnerisi(oneri, deneme: deneme + 1));
+      return;
+    }
+
+    final container = ProviderScope.containerOf(context, listen: false);
+    final assets = container.read(portfolioProvider).valueOrNull?.assets;
+    final me = container.read(authProvider).valueOrNull?.id;
+    if (assets == null || assets.isEmpty || me == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(_yenidenDenemeAraligi,
+          () => openTemettuOnerisi(oneri, deneme: deneme + 1));
+      return;
+    }
+
+    Asset? lot;
+    for (final a in assets) {
+      if (a.userId == me &&
+          a.isActive &&
+          a.isBuy &&
+          FiyatKaynagi.temettuSembolu(a) == oneri.ticker) {
+        lot = a;
+        break;
+      }
+    }
+    if (lot == null) return;
+    final gorunum = pozisyonGorunumu(assets, lot);
+
+    unawaited(AnalyticsService.instance.logDividendSuggestion(action: 'shown'));
+    showDividendDialog(context, asset: gorunum?.asset ?? lot, oneri: oneri);
   }
 
   /// Dış bağlantının hedefi bulunamadığında hata ekranı. Navigator hazır

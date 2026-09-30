@@ -2242,7 +2242,7 @@
           "name": "EMA Kesişim (10/30)",
           "value": -0.0,
           "signal": "neutral",
-          "description": "EMA10 < EMA30 — düşüş trendi"
+          "description": "EMA10 < EMA30, fiyat EMA10 üstünde — teyit yok"
         },
         {
           "id": "stochastic",
@@ -2622,7 +2622,7 @@
           "name": "EMA Kesişim (7/21)",
           "value": 0.0,
           "signal": "neutral",
-          "description": "EMA7 > EMA21 — yükseliş trendi"
+          "description": "EMA7 > EMA21, fiyat EMA7 altında — teyit yok"
         },
         {
           "id": "stochastic",
@@ -3002,7 +3002,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": -4.362156,
           "signal": "neutral",
-          "description": "EMA20 < EMA50 — düşüş trendi"
+          "description": "EMA20 < EMA50, fiyat EMA20 üstünde — teyit yok"
         },
         {
           "id": "stochastic",
@@ -3192,7 +3192,7 @@
           "name": "EMA Kesişim (10/30)",
           "value": -6.042543,
           "signal": "neutral",
-          "description": "EMA10 < EMA30 — düşüş trendi"
+          "description": "EMA10 < EMA30, fiyat EMA10 üstünde — teyit yok"
         },
         {
           "id": "stochastic",
@@ -3382,7 +3382,7 @@
           "name": "EMA Kesişim (14/40)",
           "value": -5.338262,
           "signal": "neutral",
-          "description": "EMA14 < EMA40 — düşüş trendi"
+          "description": "EMA14 < EMA40, fiyat EMA14 üstünde — teyit yok"
         },
         {
           "id": "stochastic",
@@ -3572,7 +3572,7 @@
           "name": "EMA Kesişim (7/21)",
           "value": -4.895492,
           "signal": "neutral",
-          "description": "EMA7 < EMA21 — düşüş trendi"
+          "description": "EMA7 < EMA21, fiyat EMA7 üstünde — teyit yok"
         },
         {
           "id": "stochastic",
@@ -3762,7 +3762,7 @@
           "name": "EMA Kesişim (20/50)",
           "value": -4.362156,
           "signal": "neutral",
-          "description": "EMA20 < EMA50 — düşüş trendi"
+          "description": "EMA20 < EMA50, fiyat EMA20 üstünde — teyit yok"
         },
         {
           "id": "stochastic",

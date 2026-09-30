@@ -579,7 +579,7 @@ class _SoloRoiCard extends StatelessWidget {
         : (positive ? context.c.gain : context.c.loss);
     final valueText = r == null
         ? (computing ? context.l10n.calculatingEllipsis : '—')
-        : '${positive ? '+' : ''}${fmtNum(r, digits: 2)}%';
+        : fmtPctIsaretli(r);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),

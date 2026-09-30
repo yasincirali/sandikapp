@@ -345,6 +345,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
+  String posPeriodPriceMove(String pct) {
+    return 'price $pct';
+  }
+
+  @override
   String get assetType => 'Asset Type';
 
   @override
@@ -390,6 +395,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cancel => 'Cancel';
+
+  @override
+  String quickAllChip(String qty) {
+    return 'All ($qty)';
+  }
+
+  @override
+  String get quickHolding => 'Holding';
+
+  @override
+  String quickAvgShort(String price) {
+    return 'avg. $price';
+  }
+
+  @override
+  String get quickUnitPrice => 'Unit price';
+
+  @override
+  String get quickTotalCost => 'Total cost';
 
   @override
   String get delete => 'Delete';
@@ -553,7 +577,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String activeAlertsCount(int count) {
-    return '$count active price alerts';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active price alerts',
+      one: '1 active price alert',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -576,7 +606,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lotSummary(int buys, int sells) {
-    return '$buys buys · $sells removals';
+    String _temp0 = intl.Intl.pluralLogic(
+      buys,
+      locale: localeName,
+      other: '$buys buys',
+      one: '1 buy',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      sells,
+      locale: localeName,
+      other: '$buys buys · $sells removals',
+      zero: '$_temp0',
+    );
+    return '$_temp1';
   }
 
   @override
@@ -602,6 +644,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assetFullName => 'Full Name';
+
+  @override
+  String get fundReportTitleUpper => 'FUND REPORT CARD';
+
+  @override
+  String fundReportCategory(String category, String count) {
+    return '$category · $count funds';
+  }
+
+  @override
+  String get fundReportPeriod1m => '1 month';
+
+  @override
+  String get fundReportPeriodYtd => 'Year to date';
+
+  @override
+  String get fundReportPeriod1y => '1 year';
+
+  @override
+  String fundReportRank(String count, String rank) {
+    return '#$rank of $count';
+  }
+
+  @override
+  String fundReportReturnVsMedian(String ret, String median) {
+    return 'Return $ret · category median $median';
+  }
+
+  @override
+  String fundReportAboveMedian(String pts) {
+    return '$pts pts above the median';
+  }
+
+  @override
+  String fundReportBelowMedian(String pts) {
+    return '$pts pts below the median';
+  }
+
+  @override
+  String get fundReportAtMedian => 'At the median';
+
+  @override
+  String get fundReportFootnote =>
+      'Source: TEFAS. Returns are as published by TEFAS; its calculation dates don\'t exactly match the chart\'s period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.';
+
+  @override
+  String fundReportPanelLine(String count, String rank, String period) {
+    return '#$rank of $count in its category ($period)';
+  }
 
   @override
   String get assetTypeStock => 'Stocks';
@@ -731,6 +822,61 @@ class AppLocalizationsEn extends AppLocalizations {
       'Why did you buy it, what\'s your target? Write a short note.';
 
   @override
+  String get alertTargetAtCurrent =>
+      'Target equals the current price, so the alert would fire right away. Enter a price above or below it.';
+
+  @override
+  String get notifTypeDividend => 'Dividend';
+
+  @override
+  String get dividendHistoryUpper => 'DIVIDENDS · LAST 12 MONTHS';
+
+  @override
+  String dividendRecordedTotal(String amount) {
+    return 'Recorded: $amount';
+  }
+
+  @override
+  String dividendEventLine(String lot, String perShare) {
+    return '$lot shares × $perShare';
+  }
+
+  @override
+  String dividendGrossAmount(String amount) {
+    return '$amount gross';
+  }
+
+  @override
+  String get dividendRecorded => 'Recorded';
+
+  @override
+  String get dividendRecordAction => 'Record';
+
+  @override
+  String get dividendSourceNote =>
+      'Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.';
+
+  @override
+  String dividendSuggestionLine(String ticker, String date) {
+    return '$ticker · ex-date $date';
+  }
+
+  @override
+  String dividendSuggestionGross(String lot, String perShare, String gross) {
+    return '$lot shares × $perShare = $gross gross';
+  }
+
+  @override
+  String dividendWithholdingAssumed(String rate) {
+    return 'Assumed $rate withholding tax; you can edit it.';
+  }
+
+  @override
+  String dividendEnterNet(String gross) {
+    return 'Gross $gross — enter what you received after withholding tax.';
+  }
+
+  @override
   String get noteReadOnlyPartner =>
       'This record belongs to your partner; only they can edit its note.';
 
@@ -784,6 +930,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pleaseWait => 'Please wait';
+
+  @override
+  String breakdownUpAmount(String amount) {
+    return 'up $amount';
+  }
+
+  @override
+  String breakdownDownAmount(String amount) {
+    return 'down $amount';
+  }
+
+  @override
+  String get nominalReturnInWindow => 'Your return in this window';
+
+  @override
+  String get cpiWindowNote =>
+      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today — the two figures cover different windows.';
+
+  @override
+  String get demoTryButton => 'Take a look first';
+
+  @override
+  String get demoBannerTitle => 'Sample portfolio';
+
+  @override
+  String get demoBannerSubtitle => 'Sample holdings, live prices';
+
+  @override
+  String get demoCreateAccount => 'Create account';
+
+  @override
+  String get demoExit => 'Exit sample';
+
+  @override
+  String get demoAccountCardTitle => 'Build your own portfolio';
+
+  @override
+  String get demoAccountCardBody =>
+      'Everything you see here works with your own holdings too. Create an account to add assets and save notes and alerts.';
+
+  @override
+  String get demoAccountCardSignIn => 'I already have an account';
+
+  @override
+  String get demoSaveSheetTitle => 'Create an account to save';
+
+  @override
+  String get demoSaveSheetBody =>
+      'This is a sample portfolio; changes you make here are not saved. Create an account to build your own portfolio.';
+
+  @override
+  String get demoSaveSheetContinue => 'Keep exploring';
 
   @override
   String get fundsLoadFailed => 'Could not load funds';
@@ -1806,6 +2004,103 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clearFilters => 'Clear filters';
 
   @override
+  String watchlistRowUp(String pct) {
+    return 'up $pct';
+  }
+
+  @override
+  String watchlistRowDown(String pct) {
+    return 'down $pct';
+  }
+
+  @override
+  String get watchlistRowFollowing => 'on your watchlist';
+
+  @override
+  String notificationsNewCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count new notifications',
+      one: '1 new notification',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get signOutAction => 'Sign out';
+
+  @override
+  String get baseCurrencyNameLira => 'Lira';
+
+  @override
+  String get baseCurrencyNameDollar => 'Dollar';
+
+  @override
+  String get baseCurrencyNameEuro => 'Euro';
+
+  @override
+  String get baseCurrencyNameGold => 'Gram gold';
+
+  @override
+  String get datePickerHelp => 'Select date';
+
+  @override
+  String get datePickerConfirm => 'Select';
+
+  @override
+  String get sortAssetsSemantics => 'Sort assets';
+
+  @override
+  String get showDetailsSemantics => 'Show details';
+
+  @override
+  String get hideDetailsSemantics => 'Hide details';
+
+  @override
+  String pricePreviewClose(String date) {
+    return '$date close — this price will be saved';
+  }
+
+  @override
+  String pricePreviewLastTradingClose(String date) {
+    return 'Last trading day\'s close ($date) — this price will be saved';
+  }
+
+  @override
+  String priceAssignedClose(String date, String price) {
+    return '$date close assigned: $price';
+  }
+
+  @override
+  String priceAssignedLastTradingClose(String date, String price) {
+    return 'Last trading day\'s ($date) close assigned: $price';
+  }
+
+  @override
+  String todayRealAhead(String pts) {
+    return '$pts pts ahead';
+  }
+
+  @override
+  String todayRealBehind(String pts) {
+    return '$pts pts behind';
+  }
+
+  @override
+  String get todayRealEven => 'even';
+
+  @override
+  String recapPointsAhead(String n) {
+    return 'You beat inflation by $n points';
+  }
+
+  @override
+  String recapPointsBehind(String n) {
+    return 'You trailed inflation by $n points';
+  }
+
+  @override
   String get loadingEllipsis => 'Loading…';
 
   @override
@@ -1992,11 +2287,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recapSubtitle => 'A short story of the year.';
-
-  @override
-  String recapPoints(String n) {
-    return '$n points';
-  }
 
   @override
   String recapDays(int n) {
@@ -2349,7 +2639,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nActiveAlerts(int n) {
-    return '$n active price alerts';
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n active price alerts',
+      one: '1 active price alert',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2503,7 +2799,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String indicatorsConfidence(int lehte, int total, int pct) {
-    return '$lehte/$total indicators · $pct% confidence';
+    return '$lehte/$total directional indicators · $pct% confidence';
   }
 
   @override
@@ -2542,7 +2838,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String nOfMIndicators(int on, int all) {
-    return '· $on/$all indicators';
+    return '· $on/$all indicators on';
   }
 
   @override
@@ -3381,12 +3677,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayRealHint => 'Yearly return minus CPI';
 
   @override
-  String todayPoints(String pts) {
-    return '$pts pts';
-  }
-
-  @override
-  String get todayWeekLabel => 'Last week';
+  String get todayWeekLabel => 'Last 7 days';
 
   @override
   String get todayWeekHint => 'Market effect on your portfolio · summary ready';
@@ -3912,6 +4203,110 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deletedEmptyBody =>
       'When you delete an asset, its buys, sells and deletion date stay here; they don\'t count toward your portfolio.';
+
+  @override
+  String get ipoTitle => 'IPOs';
+
+  @override
+  String get ipoProfileRowSubtitle => 'Calendar, price and participation';
+
+  @override
+  String get ipoGroupTalep => 'Taking orders';
+
+  @override
+  String get ipoGroupYaklasan => 'Upcoming';
+
+  @override
+  String get ipoGroupIslemBekliyor => 'Awaiting listing';
+
+  @override
+  String get ipoGroupIslemGoruyor => 'Trading';
+
+  @override
+  String get ipoGroupBilinmiyor => 'Dates unknown';
+
+  @override
+  String ipoOfflineNote(String tarih) {
+    return 'Offline: showing the list from $tarih.';
+  }
+
+  @override
+  String get ipoOfflineNoDate => 'Offline: showing the saved list.';
+
+  @override
+  String ipoListDate(String tarih) {
+    return 'List date: $tarih';
+  }
+
+  @override
+  String get ipoEmpty => 'No IPOs in the list right now.';
+
+  @override
+  String get ipoDisclaimer =>
+      'For information only, not investment advice. Confirm dates and price with your broker.';
+
+  @override
+  String ipoRowTalep(String aralik) {
+    return 'Orders: $aralik';
+  }
+
+  @override
+  String ipoRowIslem(String tarih) {
+    return 'Listing: $tarih';
+  }
+
+  @override
+  String get ipoFieldTalep => 'Order period';
+
+  @override
+  String get ipoFieldFiyat => 'Offer price';
+
+  @override
+  String get ipoFieldDagitim => 'Allocation';
+
+  @override
+  String get ipoFieldIslem => 'First trading day';
+
+  @override
+  String get ipoFieldPazar => 'Market';
+
+  @override
+  String get ipoFieldGuncelleme => 'Info date';
+
+  @override
+  String get ipoDagitimEsit => 'Equal';
+
+  @override
+  String get ipoDagitimOransal => 'Pro rata';
+
+  @override
+  String get ipoOpenSource => 'Open source';
+
+  @override
+  String get ipoSourceFailed => 'Couldn\'t open the link.';
+
+  @override
+  String get ipoParticipate => 'I participated, add to portfolio';
+
+  @override
+  String get ipoParticipateHint =>
+      'Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.';
+
+  @override
+  String get ipoParticipateHintTraded =>
+      'Enter the lots you were allocated; the offer price and first trading day are filled in. The stock shows at its live price.';
+
+  @override
+  String get ipoParticipateNoPrice =>
+      'The offer price isn\'t in the list: type the purchase price in the form. A stock that isn\'t trading has no quote; if you leave it empty the cost is saved as 0.';
+
+  @override
+  String get ipoParticipateLater =>
+      'Allocations are announced after the order period ends. If you took part, you can add it to your portfolio here then.';
+
+  @override
+  String get ipoParticipationSaved =>
+      'Your IPO lots were added to your portfolio.';
 
   @override
   String txDateLabeled(String tur, String tarih) {

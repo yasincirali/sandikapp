@@ -129,9 +129,12 @@ function paraBirimi(lot: Lot): string {
   return (lot.currency ?? 'TRY').trim().toUpperCase() || 'TRY';
 }
 
-/// Fon kodu bazı kayıtlarda öneksiz ("AFT"); seri kaynağı `TEFAS:` ister
-/// (istemci `history_service` aynı normalizasyonu yapar). Diğer türlerde
-/// ticker olduğu gibi.
+/// Fon kodu bazı kayıtlarda öneksiz ("AFT"); seri kaynağı `TEFAS:` ister.
+/// İstemci eşi `lib/models/asset_type.dart` › `kanonikTicker` (okuma
+/// sınırında, `Asset.fromSupabase`; 2026-09-29'a kadar istemcide YOKTU ve
+/// öneksiz fon hiç fiyatlanmıyordu). İstemci bilerek daha dar: yalnızca
+/// 3 harf/rakamlı TEFAS kodunu ve elle fiyatlı olmayan lot'u çevirir.
+/// Diğer türlerde ticker olduğu gibi.
 export function seriSembolu(lot: Lot): string {
   const t = (lot.ticker ?? '').trim();
   if (t === '') return '';

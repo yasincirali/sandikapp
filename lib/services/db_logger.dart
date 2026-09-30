@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../demo/demo_modu.dart';
+
 /// Her Supabase / DB isteğini loglar.
 /// SDK kaynağı, tablo/endpoint, metot, request/response payload ve süreler
 /// hem debug konsoluna hem de Supabase'deki `db_logs` tablosuna yazılır.
@@ -148,16 +150,24 @@ class DbLogger {
     required bool isError,
   }) {
     if (silentInTests) return;
+    // Demo kapısının düşürdüğü çağrı da buraya hata olarak gelir;
+    // `db_logs`'a yazmak demonun sunucuya dokunması olurdu (F1).
+    if (DemoModu.aktif) return;
 
     // Production'da DB log yazma kapalı (KVKK/PII riski).
     // Sadece hatalar persist edilir; başarılı çağrılar sessiz geçer.
     if (kReleaseMode && !isError) return;
 
+    // Oturum yoksa (giriş/kayıt ekranı) yazma DENENMEZ: `db_logs` RLS'i
+    // anonim INSERT'i reddeder (42501) ve her deneme yeni bir hata satırı
+    // üretirdi (2026-09-29 emülatör testi 2, bulgu #14).
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return;
+
     Future(() async {
       try {
-        final uid = _client.auth.currentUser?.id;
         await _client.from('db_logs').insert({
-          if (uid != null) 'user_id': uid,
+          'user_id': uid,
           'ts': requestedAt.toUtc().toIso8601String(),
           'sdk': _sdk,
           'source': source,

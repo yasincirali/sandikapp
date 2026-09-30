@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -672,6 +673,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// Dönüşte seri YENİDEN ÇEKİLİR: kullanıcı varlığı eklediyse artık
   /// "Portföyümde" rozetini hak eder ve portföy serileri de değişmiştir.
   Future<void> _openAdd(SymbolHit hit) async {
+    if (DemoModu.yazmaKapisi('varlik_ekle')) return; // Demo (F1).
     await pushGuarded(
       context,
       adaptiveRoute<void>(

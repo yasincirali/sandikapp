@@ -25,5 +25,31 @@ void main() {
       expect(TefasFund.fromJson({'n': 'kodsuz'}), isNull);
       expect(TefasFund.fromJson({'c': 'A', 'n': 'B'})!.fundType, 'YAT');
     });
+
+    // F4 fon karnesi (2026-09-29): kategori katalog kaydına eklendi.
+    test('kategori round-trip; v1 kaydında (anahtar yok) null', () {
+      const f = TefasFund(
+        code: 'AFA',
+        name: 'A Fonu',
+        price: 0,
+        fundType: 'YAT',
+        managerName: '',
+        kategori: 'Hisse Senedi Şemsiye Fonu',
+      );
+      expect(TefasFund.fromJson(f.toJson())!.kategori,
+          'Hisse Senedi Şemsiye Fonu');
+      // v1 dosyasındaki kayıt biçimi: `k` yok.
+      final v1 = TefasFund.fromJson(
+          {'c': 'AFA', 'n': 'A Fonu', 'p': 0, 't': 'YAT', 'm': '', 'rl': 5})!;
+      expect(v1.kategori, isNull);
+      expect(v1.riskLevel, 5);
+      expect(TefasFund.fromJson({'c': 'A', 'n': 'B', 'k': '  '})!.kategori,
+          isNull);
+    });
+
+    test('risk değeri JSON\'da ondalıklı gelse de okunur', () {
+      expect(TefasFund.fromJson({'c': 'A', 'n': 'B', 'rl': 3.0})!.riskLevel,
+          3);
+    });
   });
 }

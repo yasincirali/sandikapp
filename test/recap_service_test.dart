@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/config/magaza.dart';
 import 'package:portfoy_takip/services/recap_service.dart';
 
 /// "sandık Özeti" hesabı.
@@ -283,6 +284,16 @@ void main() {
       expect(metin.contains('400'), isFalse);
       expect(RegExp(r'\d{4,}').hasMatch(metin.replaceAll('2026', '')), isFalse,
           reason: 'dört haneli sayı tutar demektir');
+    });
+
+    test('yıllık metin mağaza bağlantısını taşır (F9, kanal etiketli)', () {
+      // Paylaşılan özet tek organik yayılma kanalı; bağlantısız metin alan
+      // kişiyi mağazada "sandık" aramaya yolluyordu (ı→i katlaması,
+      // ASO_2026_09 §1). Bağlantı `Magaza.indirBaglantisi`'ndan.
+      final metin = RecapService.shareText(run(), year: 2026);
+      expect(metin.contains(Magaza.indirKapisi), isTrue);
+      expect(metin.contains('utm_source=share_card'), isTrue);
+      expect(metin.contains('utm_campaign=yillik'), isTrue);
     });
 
     test('karakter etiketi metinde geçer', () {

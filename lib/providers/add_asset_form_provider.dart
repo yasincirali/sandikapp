@@ -227,6 +227,27 @@ Future<FiyatSonucu> fiyatBul({
 bool _ayniGun(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
+/// Seçilen tarih hafta sonuysa, tarihli kapanışın GERÇEKTE geldiği işlem
+/// günü (Cuma); değilse `null`.
+///
+/// Tarihli fiyat "son geçerli kapanış" kuralıyla çekilir
+/// (`PriceService.fetchHistoricalClose`: hedef günde ya da öncesindeki en
+/// yeni işlem günü). Pazar seçilince gelen fiyat Cuma'nındır; form ise
+/// "1 Mar 2026 kapanışı" yazıyordu — o gün kapanış yok (2026-09-29 emülatör
+/// testi #31). Kripto 7/24 işler, hafta sonu kendi kapanışı vardır: `null`.
+///
+/// Resmî tatiller bilinmiyor (takvim yok): hafta içi bir tatilde metin yine
+/// seçilen günü söyler. Uydurma bir gün yazmaktansa bilineni söylemek.
+DateTime? haftaSonuKapanisGunu(DateTime secilen, {required bool yediGun}) {
+  if (yediGun) return null;
+  final gun = dayKey(secilen);
+  return switch (gun.weekday) {
+    DateTime.saturday => DateTime(gun.year, gun.month, gun.day - 1),
+    DateTime.sunday => DateTime(gun.year, gun.month, gun.day - 2),
+    _ => null,
+  };
+}
+
 // ─── Durum ───────────────────────────────────────────────────────────────────
 
 /// Bir geçişin metin alanlarına yazması gereken değerler. `null` = dokunma,
@@ -265,6 +286,7 @@ class AddAssetFormState {
     BulkCartItem? cartInitial,
     String? prefillTicker,
     AssetType? prefillType,
+    DateTime? prefillDate,
     DateTime? now,
   }) {
     final a = editingAsset;
@@ -296,7 +318,9 @@ class AddAssetFormState {
       unitType: a?.unitType ?? c?.unitType ?? 'piece',
       currency: a?.currency ?? c?.currency ?? type.defaultCurrency,
       isManualPrice: a?.isManualPrice ?? (c != null && c.ticker.isEmpty),
-      addedDate: a?.addedDate ?? c?.addedDate ?? now ?? DateTime.now(),
+      // Halka arz katılımı (F6) tarihi hazır getirir; null iken eski davranış.
+      addedDate:
+          a?.addedDate ?? c?.addedDate ?? prefillDate ?? now ?? DateTime.now(),
       bist100Ticker: isBist100 && ticker.isNotEmpty ? ticker : null,
       selectedFund: fund,
     );
@@ -332,16 +356,17 @@ class AddAssetFormState {
   bool get isDoviz => type == AssetType.doviz;
   bool get isAltin => type == AssetType.altin;
 
+  /// Miktar alanının ve hızlı miktar çiplerinin birimi.
+  ///
+  /// Kanonik [birimEtiketi]'nden (bulgu #22, 2026-09-29): eskiden
+  /// `UnitType.label` okunuyordu ve hisse/fon formda "Adet", kaydedilince
+  /// portföyde "lot" yazıyordu; altın formda "Gram", portföyde "gr". Aynı
+  /// varlık iki ekranda iki birim — `bulk_add`'de 2026-09-12'de kapatılan
+  /// ayrışmanın form tarafındaki kopyası. Döviz alt kategorisini (para
+  /// birimi) yazmaya devam eder.
   String get quantitySuffix {
     if (isDoviz) return subCategory ?? 'Adet';
-    return unitLabel(unitType);
-  }
-
-  static String unitLabel(String unitType) {
-    for (final u in UnitType.values) {
-      if (u.name == unitType || u.shortcode == unitType) return u.label;
-    }
-    return 'Adet';
+    return birimEtiketi(type: type, unitType: unitType, currency: currency);
   }
 
   List<String> get quantityPresets {
@@ -497,11 +522,15 @@ class AddAssetFormArgs {
     this.cartInitial,
     this.prefillTicker,
     this.prefillType,
+    this.prefillDate,
   });
   final Asset? editingAsset;
   final BulkCartItem? cartInitial;
   final String? prefillTicker;
   final AssetType? prefillType;
+
+  /// İsteğe bağlı açılış tarihi (halka arz katılımı); null → bugün.
+  final DateTime? prefillDate;
 }
 
 class AddAssetFormNotifier
@@ -521,6 +550,7 @@ class AddAssetFormNotifier
       cartInitial: arg.cartInitial,
       prefillTicker: arg.prefillTicker,
       prefillType: arg.prefillType,
+      prefillDate: arg.prefillDate,
     );
   }
 

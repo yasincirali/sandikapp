@@ -114,9 +114,11 @@ void main() {
     String oku(String p) => ekranKaynagiSync(p);
     expect(oku('lib/screens/home_screen.dart'), contains('baz: baz'));
     expect(oku('lib/screens/portfolio_screen.dart'),
-        contains('baz: ref.watch(bazParaProvider)'));
+        contains('baz: ref.watch(gosterimBazParaProvider)'));
     final perf = oku('lib/screens/portfolio_performance_screen.dart');
-    expect(perf, contains('PeriodSummaryView(\n      baz: ref.watch(bazParaProvider)'));
+    // `gosterim…`: baz birim + "Bakiyeyi gizle" maskesi (bulgu #3).
+    expect(perf,
+        contains('PeriodSummaryView(\n      baz: ref.watch(gosterimBazParaProvider)'));
     expect(perf, isNot(contains('tryFormatter(digits: 0)')),
         reason: 'performans ekranında ₺\'ye sabit biçimlendirici kalmamalı');
     expect(oku('lib/widgets/period_summary_view.dart'), isNot(contains('fmtTRY(')));
@@ -124,12 +126,14 @@ void main() {
     // Tekil varlık ekranı ve hareket satırları (2026-09-14): DEĞER tutarları
     // baz birimde. Fiyat/değer ayrımının kendisi `money_format_scope_test`te.
     final detay = oku('lib/screens/asset_detail_screen.dart');
-    expect(detay, contains('final baz = ref.watch(bazParaProvider)'));
+    expect(detay, contains('final baz = ref.watch(gosterimBazParaProvider)'));
     expect(detay, contains('baz: baz'));
     expect(oku('lib/widgets/transaction_row.dart'), contains('final BazPara baz'));
 
     // Takip listesi BİLİNÇLİ hariç: oradaki fiyat varlığın KENDİ kurundadır
     // (AAPL için $), TRY tutarı değil — baz birime çevirmek yanlış olurdu.
-    expect(oku('lib/screens/watchlist_screen.dart'), contains('currencySymbolFor('));
+    // Sembol kotasyonun para birimi (`kotasyonSembolu`, 2026-09-29): döviz
+    // paritesinde karşı para birimi (USDTRY=X → ₺).
+    expect(oku('lib/screens/watchlist_screen.dart'), contains('kotasyonSembolu('));
   });
 }

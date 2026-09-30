@@ -84,6 +84,15 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   final String? prefillName;
   final AssetType? prefillType;
 
+  /// Halka arz katılım kaydından (F6) gelen alış fiyatı ve tarihi. İkisi de
+  /// İSTEĞE BAĞLI: `null` iken form eskisi gibi açılır (fiyat boş, tarih
+  /// bugün). Doluyken fiyat alanı yazılı gelir; kullanıcı fiyatı kendisi
+  /// girmiş sayıldığından önizleme ağa çıkmaz — işlem görmeye henüz
+  /// başlamamış hissenin kotasyonu zaten yoktur. Düzenleme/sepet değerleri
+  /// her zaman kazanır.
+  final double? prefillPrice;
+  final DateTime? prefillDate;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
@@ -92,6 +101,8 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillTicker,
     this.prefillName,
     this.prefillType,
+    this.prefillPrice,
+    this.prefillDate,
   });
 
   @override
@@ -116,6 +127,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     cartInitial: widget.cartInitial,
     prefillTicker: widget.prefillTicker,
     prefillType: widget.prefillType,
+    prefillDate: widget.prefillDate,
   );
   AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
   AddAssetFormNotifier get _n =>
@@ -151,7 +163,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty = a?.quantity ?? c?.quantity ?? 0;
-    final initPrice = a?.purchasePrice ?? c?.price ?? 0;
+    final initPrice = a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);
@@ -971,9 +983,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ? Icons.event_available_rounded
           : Icons.auto_awesome_rounded;
       title = '${fmt.format(p)} $_currency / birim';
-      subtitle = _previewIsHistorical
-          ? '$dateLabel kapanışı — kayıtta bu fiyat kullanılacak'
-          : 'Tarihli fiyat bulunamadı — güncel piyasa fiyatı kullanılacak';
+      // Hafta sonu seçildiyse gelen kapanış Cuma'nındır; metin seçilen
+      // günü değil, fiyatın GERÇEK gününü söyler (emülatör testi #31).
+      final islemGunu = haftaSonuKapanisGunu(_addedDate,
+          yediGun: _type == AssetType.kripto);
+      subtitle = !_previewIsHistorical
+          ? 'Tarihli fiyat bulunamadı — güncel piyasa fiyatı kullanılacak'
+          : islemGunu != null
+              ? context.l10n.pricePreviewLastTradingClose(
+                  DateFormat('d MMM', context.tarihDili).format(islemGunu))
+              : context.l10n.pricePreviewClose(dateLabel);
     } else {
       color = context.c.loss.withValues(alpha: 0.8);
       icon = Icons.help_outline_rounded;
@@ -1270,11 +1289,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // Sıra enum'dan değil sayfaya özel listeden (kullanıcı kararı
     // 2026-09-25; gerekçe `AssetType.eklemeSirasi`).
     const types = AssetType.eklemeSirasi;
+    // Sarmalı (`Wrap`), yatay kaydırmalı DEĞİL (2026-09-29 emülatör testi
+    // #29): kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında kalıyordu ve
+    // kenardaki silik ok ipucu fark edilmiyordu — formun İLK sorusunun
+    // seçenekleri kaydırmadan görünmüyordu. Yedi çip dar ekranda iki satır
+    // tutar; seçeneği gizlemekten ucuz. Sıra `eklemeSirasi` ile okuma
+    // sırasıdır (soldan sağa, yukarıdan aşağı).
     return TourAnchor(
       target: TourTarget.turSecici,
-      child: HScrollWithFade(
-      fadeColor: context.c.background,
-      child: Row(
+      child: Wrap(
+        runSpacing: SandikSpace.sm,
         children: types.map((t) {
           final selected = _type == t;
           return Padding(
@@ -1320,11 +1344,19 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     Icon(t.icon,
                         size: 18, color: selected ? t.color : context.c.text58),
                     const SizedBox(width: 8),
-                    Text(t.labelOf(context.l10n),
-                        style: context.t.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: selected ? context.c.text90 : context.c.text58,
-                        )),
+                    // Flexible: sarmalı satırda çipin azami genişliği satır
+                    // genişliğidir (kaydırmalı satırda sınırsızdı). 3× metin
+                    // ölçeğinde 320pt'de etiket taşardı; kısaltılır.
+                    Flexible(
+                      child: Text(t.labelOf(context.l10n),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: context.t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color:
+                                selected ? context.c.text90 : context.c.text58,
+                          )),
+                    ),
                   ],
                 ),
               ),
@@ -1332,7 +1364,6 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           );
         }).toList(),
       ),
-    ),
     );
   }
 
@@ -1458,9 +1489,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      _type == AssetType.kripto
-                          ? _quantitySuffix
-                          : AddAssetFormState.unitLabel(_unitType),
+                      // Miktar alanının son ekiyle AYNI birim (bulgu #22):
+                      // eski `UnitType.label` hisse/fonda "Adet" yazıyordu.
+                      _quantitySuffix,
                       style: context.t.labelMedium?.copyWith(
                         letterSpacing: 0,
                         color: selected
@@ -2018,8 +2049,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (priceFromHistorical || priceFallbackToSpot) {
       final fmt = qtyFormatter(maxDigits: 2);
       final dateStr = DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate);
+      final islemGunu = haftaSonuKapanisGunu(_addedDate,
+          yediGun: _type == AssetType.kripto);
+      final fiyatStr = '${fmt.format(price)} $_currency';
       final msg = priceFromHistorical
-          ? '$dateStr kapanışı ${fmt.format(price)} $_currency olarak atandı'
+          ? (islemGunu != null
+              ? context.l10n.priceAssignedLastTradingClose(
+                  DateFormat('d MMM', context.tarihDili).format(islemGunu),
+                  fiyatStr)
+              : context.l10n.priceAssignedClose(dateStr, fiyatStr))
           : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
               '${fmt.format(price)} $_currency atandı';
       // Tarihli kapanış bulundu → başarı; bulunamadı → uyarı zemini.

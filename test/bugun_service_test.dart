@@ -87,17 +87,43 @@ void main() {
     });
 
     test('içgörüler günden güne döner, aynı gün sabittir', () {
+      // 23–24 Eylül 2026 Çarşamba–Perşembe: haftalık havuzda, yeşil oranla
+      // tek dönen yuvayı paylaşır.
       BugunKartiVerisi g(int gun) => BugunService.hesapla(
             karZararlar: [1, 2, -3],
             toplamDeger: 500000,
             ozet: ozetVar,
             hedefTRY: 1000000,
             now: DateTime(2026, 9, gun, 12),
+            haftalikGetiriPct: 1.2,
           );
-      final a = g(22), b = g(23), a2 = g(22);
+      final a = g(23), b = g(24), a2 = g(23);
       expect(a.ikincil.length, BugunService.ikincilSayisi);
       expect(a.ikincil.first.runtimeType, isNot(b.ikincil.first.runtimeType));
       expect(a.ikincil.first.runtimeType, a2.ikincil.first.runtimeType);
+    });
+
+    // Kullanıcı bulgusu 2026-09-30 (Çarşamba): "hedef belirle kısmı
+    // kaybolmuş" — hedef dönüşümle gizleniyordu; tek giriş noktası olduğu
+    // için her gün, hedef belirlenmiş de belirlenmemiş de görünmeli.
+    test('hedef satırı her gün görünür, yeri sabit (en alt)', () {
+      for (final hedefTRY in [0, 1000000]) {
+        for (var gun = 21; gun <= 30; gun++) {
+          final v = BugunService.hesapla(
+            karZararlar: const [1, 2, -3],
+            toplamDeger: 500000,
+            ozet: ozetVar,
+            hedefTRY: hedefTRY,
+            now: DateTime(2026, 9, gun, 12),
+            haftalikGetiriPct: 1.2,
+          );
+          expect(v.ikincil.length, BugunService.ikincilSayisi,
+              reason: '$gun Eylül, hedef $hedefTRY');
+          expect(v.ikincil.last, isA<HedefSatiri>(),
+              reason: '$gun Eylül, hedef $hedefTRY');
+          expect(v.ikincil.whereType<HedefSatiri>().length, 1);
+        }
+      }
     });
 
     test('aylık özet yalnızca ayın ilk üç günü', () {

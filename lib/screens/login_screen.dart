@@ -11,6 +11,8 @@ import 'package:flutter/material.dart'
         Material,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../demo/demo_kabugu.dart' show demoyuAc;
+import '../demo/demo_modu.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
@@ -196,8 +198,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Icon(Icons.email_outlined, color: context.c.text36, size: 20),
                         ),
                       ),
-                      validator: (v) =>
-                          (v == null || !v.contains('@')) ? context.l10n.emailInvalid : null,
+                      // Kayıt formuyla AYNI kural (servis); eskiden yalnız '@'
+                      // aranıyordu, "a@" geçip sunucuda reddediliyordu
+                      // (2026-09-29 emülatör testi 2, #11).
+                      validator: (v) => (v == null ||
+                              !AuthService.eMailGecerliMi(v.trim()))
+                          ? context.l10n.emailInvalid
+                          : null,
                     ),
                     const SizedBox(height: 14),
 
@@ -398,6 +405,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: context.t.bodyLarge?.copyWith(color: context.c.amberText),
                       ),
                     ),
+                    // Örnek portföyle dene (F1) — hesap açmadan önce değeri
+                    // görmek için. İkincil: kayıt bağlantısının altında,
+                    // sönük renkte; birincil yol hâlâ giriş/kayıt. Bayrak
+                    // `demo_mode_enabled` kapalıyken hiç çizilmez.
+                    if (DemoModu.girisDugmesiAcik())
+                      CupertinoButton(
+                        onPressed: () => demoyuAc(context),
+                        child: Text(
+                          context.l10n.demoTryButton,
+                          style: context.t.bodyLarge?.copyWith(color: context.c.text58),
+                        ),
+                      ),
                     const SizedBox(height: 32),
                   ],
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../demo/demo_modu.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/kripto_fiyat.dart';
@@ -287,6 +288,7 @@ class SymbolSearchService {
   /// önler. Hata (oturum yok, ağ yok) boş döner — hisse/fon araması
   /// kripto yüzünden düşmemeli.
   Future<List<SymbolHit>> _searchKripto(String q) async {
+    if (DemoModu.aktif) return const []; // Katalog sunucuda (F1).
     try {
       final simdi = DateTime.now();
       if (_kriptoKatalog == null ||

@@ -126,6 +126,55 @@ String? kriptoKodu(String ticker) {
 /// `BTC` → `KRIPTO:BTC`.
 String kriptoSembolu(String kod) => '$kriptoOneki${kod.trim().toUpperCase()}';
 
+/// TEFAS fon sembol öneki — `assets.ticker` = `TEFAS:AFT`.
+///
+/// Fiyat servisi fonu YALNIZCA bu önekten tanır (`PriceService.fetchQuotes`
+/// `tefasList`); öneksiz kod Yahoo'ya düşer.
+const String tefasOneki = 'TEFAS:';
+
+/// TEFAS fon kodu: üç büyük harf/rakam (AFT, TTE, IPB…). Sunucu eşi
+/// `leaderboard-snapshot` › `TEFAS_KODU`.
+final RegExp _tefasKodDeseni = RegExp(r'^[A-Z0-9]{3}$');
+
+/// Varlığın KANONİK sembolü — fiyat, seri ve kimlik (`positionKey`,
+/// "Portföyünde" rozeti) hep bu biçimle çalışır.
+///
+/// ## Neden (emülatör bulgusu #2, 2026-09-29)
+/// Eski fon kayıtları kodu öneksiz taşıyor (`AFT`; CSV içe aktarma da
+/// 2026-09-29'a kadar öyle yazıyordu), yeni kayıtlar `TEFAS:AFT`. Öneksiz
+/// kod fiyat servisinde Yahoo'ya gidiyor ve fiyat DÖNMÜYORDU: 70.000 paylık
+/// fon eski `current_price` ile kaldı, portföy ~₺24.500 eksikti ve bunu
+/// hiçbir şey söylemiyordu. Aynı kod aramada `TEFAS:AFT` kimliğiyle
+/// eşleşmediği için "Portföyünde" rozeti de çıkmıyordu. Daha kötüsü: bir
+/// fon kodu tesadüfen bir ABD sembolüyle çakışsa Yahoo o hissenin USD
+/// fiyatını döndürür ve fona yazılırdı — uydurma sayı (sözleşme madde 3).
+///
+/// ## Kural
+/// Tür `fon` + elle fiyatlı DEĞİL + önek yok + kod TEFAS biçiminde (3 harf/
+/// rakam) → `TEFAS:KOD`. Başka her şey olduğu gibi döner (idempotent).
+///
+///   * Elle fiyatlı fon dışarıda: kod orada fiyat kaynağı değil, etikettir;
+///     yayımlanmış NAV'la birleştirilirse iki fiyat rejimi tek pozisyonda
+///     karışırdı.
+///   * 3 harf şartı sunucudan (`seriSembolu`) bilerek DAR: `.IS`'li ya da
+///     uzun kodlu eski bir "fon" kaydı bugün Yahoo'dan fiyat alıyor olabilir;
+///     onu TEFAS'a çevirmek çalışanı bozmaktır. TEFAS kodu olmayan şey TEFAS'a
+///     yönlendirilmez.
+///
+/// Veri DEĞİŞTİRİLMEZ (okuma tarafı): `Asset.fromSupabase` bu biçime
+/// çevirir, `toSupabase` satırın kayıtlı biçimini geri yazar. Sunucu
+/// tarafının eşi `leaderboard-snapshot` › `seriSembolu`.
+String kanonikTicker({
+  required AssetType type,
+  required String ticker,
+  required bool isManualPrice,
+}) {
+  if (type != AssetType.fon || isManualPrice) return ticker;
+  final t = ticker.trim().toUpperCase();
+  if (t.startsWith(tefasOneki) || !_tefasKodDeseni.hasMatch(t)) return ticker;
+  return '$tefasOneki$t';
+}
+
 // Döviz kodu → para sembolü
 const _currencySymbols = <String, String>{
   'USD': '\$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',
@@ -155,4 +204,42 @@ String? _extractCurrencyCode(String ticker, String currency) {
 String? currencySymbolFor(String ticker, String currency) {
   final code = _extractCurrencyCode(ticker, currency);
   return code != null ? _currencySymbols[code] : null;
+}
+
+/// Bir KOTASYONUN (birim fiyatın) para sembolü — [currencySymbolFor]'un
+/// fiyat karşılığı.
+///
+/// [currencySymbolFor] döviz varlığının MİKTAR birimini verir ("$100"
+/// tutan dolar). Fiyat ise paritenin KARŞI para birimindedir: `USDTRY=X`
+/// kotasyonu 1 doların TL karşılığıdır, "₺49,00". Aramada ve varlık
+/// sayfasında fiyat miktar sembolüyle yazılıyor, dolar "$49,00" görünüyordu
+/// (2026-09-29 emülatör testi #13).
+///
+/// Kural: `XXXYYY=X` paritesinde sembol YYY'nin; diğerlerinde kotasyonun
+/// kendi para birimi ([currency], emtia vadelisi `$`); bilinmiyorsa ₺.
+String kotasyonSembolu(String ticker, String currency) {
+  final t = ticker.trim().toUpperCase();
+  if (t.endsWith('=X')) {
+    final cift = t.substring(0, t.length - 2);
+    if (cift.length == 6) {
+      final karsi = _currencySymbols[cift.substring(3)];
+      if (karsi != null) return karsi;
+    }
+  }
+  return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
+}
+
+/// BIST endeksi mi (`XU100.IS`, `XU030.IS`, `XUSIN.IS`)?
+///
+/// Endeks PUANDIR, fiyat değil: para simgesi ve kuruş anlamsız ("BIST 100
+/// ₺12.290,58" yazıyordu — 2026-09-29 emülatör testi #17). Kural önceden
+/// yalnızca arama satırında (`aramaFiyatMetni`) yaşıyordu; takip listesi
+/// kendi biçimleyicisini kurup ₺ basıyordu. Tek tanım burada, gösteren her
+/// yüzey buna sorar. Kayıtlar `.IS` son ekiyle gelir; son eksiz yazım da
+/// (eski kayıt, test verisi) aynı endeksi anlatır.
+bool bistEndeksiMi(String ticker) {
+  final t = ticker.trim().toUpperCase();
+  if (!t.startsWith('XU')) return false;
+  if (t.endsWith('.IS')) return true;
+  return t.length == 5 && !t.contains(RegExp(r'[.:=\-]'));
 }

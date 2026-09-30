@@ -14,6 +14,8 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/tour_anchor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/kaynak.dart';
+
 /// İlk girişte gösterilen spot ışığı turu.
 ///
 /// 2026-09-14: tur artık ayrı bir ekran değil, gerçek ekranın üstündeki bir
@@ -268,6 +270,7 @@ Future<void> _pump(
   bool davetKoduVar = true,
   bool bugunVar = true,
   YatirimciSeviyesi seviye = YatirimciSeviyesi.orta,
+  bool seviyeSorusu = false,
 }) async {
   tester.view.physicalSize = Size(width * 3, height * 3);
   tester.view.devicePixelRatio = 3.0;
@@ -283,7 +286,10 @@ Future<void> _pump(
       // aynı koşulla çizilir, yani ikisi birbirini tutar.
       overrides: [
         portfolioProvider.overrideWith(() => _Portfoy(bos: !bugunVar)),
-        yatirimciSeviyesiProvider.overrideWithValue(seviye),
+        // Seviye sorusu testinde seviye SABİTLENMEZ: seçici gerçek tercihi
+        // (`investorLevelIndexProvider`) yazar, türetilmiş sağlayıcı onu
+        // okumalı — sabit değer seçimin etkisini gizlerdi.
+        if (!seviyeSorusu) yatirimciSeviyesiProvider.overrideWithValue(seviye),
       ],
       child: MaterialApp(
         theme: ThemeData(brightness: parlaklik, extensions: [palet]),
@@ -304,7 +310,8 @@ Future<void> _pump(
     ),
   );
   await tester.pump();
-  OnboardingScreen.baslatTur(onBitti: (t) => _sonuc = t, kisa: kisa);
+  OnboardingScreen.baslatTur(
+      onBitti: (t) => _sonuc = t, kisa: kisa, seviyeSorusu: seviyeSorusu);
   await _bekle(tester);
 }
 
@@ -463,6 +470,94 @@ void main() {
     testWidgets('tam tur (Ayarlar) hâlâ uzun', (tester) async {
       await _pump(tester);
       expect(await _turuGez(tester), greaterThan(10));
+    });
+  });
+
+  // Plan F2 (2026-09-29): yatırımcı seviyesi ilk turun başında tek adım.
+  // Bayrak (`lock_offer_after_first_asset`) yalnızca ilk açılış giriş
+  // noktasında okunur; burada iki hâl açıkça seçilir.
+  group('seviye sorusu (F2)', () {
+    setUp(OnboardingScreen.turuKapatTestIcin);
+
+    testWidgets('bayrak kapalı: soru YOK, kısa tur bugünkü gibi',
+        (tester) async {
+      await _pump(tester, kisa: true);
+      var soruldu = false;
+      for (var i = 0; i < 10; i++) {
+        if (find.text('Yatırımda neredesin?').evaluate().isNotEmpty) {
+          soruldu = true;
+        }
+        if (find.text('Sandığımı Aç').evaluate().isNotEmpty) break;
+        await _devam(tester);
+      }
+      expect(soruldu, isFalse);
+    });
+
+    testWidgets('bayrak açık: karşılamadan hemen sonra, varsayılan Orta',
+        (tester) async {
+      await _pump(tester, kisa: true, seviyeSorusu: true);
+      expect(find.text('Sandığına hoş geldin'), findsOneWidget);
+      await _devam(tester);
+      expect(find.text('Yatırımda neredesin?'), findsOneWidget);
+      for (final ad in ['Başlangıç', 'Orta', 'İleri']) {
+        expect(find.text(ad), findsOneWidget, reason: ad);
+      }
+      // Seçilenin açıklaması görünür; dokunulmazsa Orta = bugünkü görünüm.
+      expect(find.textContaining('Bugünkü görünüm'), findsOneWidget);
+      // Zorunlu değil: "Devam" her zaman açık.
+      expect(find.text('Devam'), findsOneWidget);
+    });
+
+    testWidgets('seçim GERÇEK tercihe yazılır (Ayarlar ile aynı kaynak)',
+        (tester) async {
+      await _pump(tester, kisa: true, seviyeSorusu: true);
+      await _devam(tester);
+      final kap = ProviderScope.containerOf(
+          tester.element(find.text('Yatırımda neredesin?')));
+      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.orta);
+
+      await tester.tap(find.text('Başlangıç'));
+      await _bekle(tester);
+      expect(kap.read(investorLevelIndexProvider),
+          YatirimciSeviyesi.baslangic.index);
+      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.baslangic);
+      expect(find.textContaining('Sade görünüm'), findsOneWidget,
+          reason: 'Açıklama seçimle birlikte değişmeli.');
+
+      await tester.tap(find.text('İleri'));
+      await _bekle(tester);
+      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.ileri);
+    });
+
+    testWidgets('yalnızca BİR adım ekler; tur yine "Hazırsın" ile kapanır',
+        (tester) async {
+      await _pump(tester, kisa: true, seviyeSorusu: true);
+      expect(await _turuGez(tester), 6, reason: 'karşılama + seviye + 5 adım');
+      expect(find.text('Hazırsın'), findsOneWidget);
+      await tester.tap(find.text('Sandığımı Aç'));
+      await _bekle(tester);
+      expect(_sonuc, isTrue);
+    });
+
+    for (final (w, s) in [(320.0, 2.0), (375.0, 1.5)]) {
+      testWidgets('${w.toInt()}pt @ $s× — seviye adımı taşmaz',
+          (tester) async {
+        await _pump(tester,
+            kisa: true, seviyeSorusu: true, width: w, textScale: s);
+        await _devam(tester);
+        expect(find.text('Yatırımda neredesin?'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    test('kaynak: bayrağı yalnızca ilk açılış giriş noktası okur', () {
+      final src = ekranKaynagiSync('lib/screens/onboarding_screen.dart');
+      expect(
+          RegExp(r'lockOfferAfterFirstAsset').allMatches(src).length, 1,
+          reason: 'Ayarlar\'dan açılan tam tur ve testler bayraktan '
+              'bağımsız kalmalı.');
+      expect(src, contains('seviyeSorusu: RemoteConfigService.instance'
+          '.lockOfferAfterFirstAsset'));
     });
   });
 

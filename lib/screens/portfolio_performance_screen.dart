@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../demo/demo_modu.dart';
 import '../services/price_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -48,7 +49,6 @@ import '../services/xirr_service.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/period_summary_view.dart';
 import '../widgets/disclaimer_widget.dart';
-import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/zoomable_chart.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/donem_secici.dart';
@@ -453,9 +453,11 @@ class _PortfolioPerformanceScreenState
                     // şartı yok — kullanıcı kararı 2026-09-28: yarış ortaktan
                     // bağımsız bir özellik, giriş noktası da öyle). Küresel
                     // kapalıyken eski kural: opt-in + aktif ortak.
-                    if (RemoteConfigService.instance.globalLeaderboardEnabled ||
-                        (ref.watch(leaderboardOptInProvider) &&
-                            activePartners.isNotEmpty)) ...[
+                    // Demo (F1): yarış sunucu havuzudur, demoda yok.
+                    if (!DemoModu.aktif &&
+                        (RemoteConfigService.instance.globalLeaderboardEnabled ||
+                            (ref.watch(leaderboardOptInProvider) &&
+                                activePartners.isNotEmpty))) ...[
                       Semantics(
                         button: true,
                         label: context.l10n.raceTitle,
@@ -800,7 +802,16 @@ class _PortfolioPerformanceScreenState
 
   /// TRY değeri için okunabilir kısa etiket (₺1,2M / ₺450K / ₺900) — baz
   /// birimde (Faz 3.2). Seri TRY kalır, yalnızca etiket çevrilir.
-  String _fmtY(double val) => ref.read(bazParaProvider).compact(val);
+  ///
+  /// Hane [adim]a (ızgara adımı) göre: `compact` iki ondalıkta sabitti ve
+  /// GÜNLÜK'te ~₺2.500'lük adımla "₺1,39M" dört kez yazılıyordu (2026-09-29
+  /// emülatör testi #7). `axis` komşu iki etiketi ayırt edecek kadar hane
+  /// ekler, geniş bantta `compact` ile aynı kısa biçimde kalır.
+  ///
+  /// `gosterimBazParaProvider`: "bakiyeyi gizle" açıkken eksen de maskeli
+  /// (emülatör testi #3).
+  String _fmtY(double val, double adim) =>
+      ref.read(gosterimBazParaProvider).axis(val, adim);
 
   /// Seçili periyodun değişim özeti — grafiğin hemen üstünde.
   ///

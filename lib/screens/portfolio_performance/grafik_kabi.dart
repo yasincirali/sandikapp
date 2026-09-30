@@ -351,7 +351,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                     etiket: GrafikStili.donemBasiEtiketi(
                       context,
                       an: DateTime.fromMillisecondsSinceEpoch(taban.firstTs!),
-                      deger: ref.read(bazParaProvider).fmt(taban.first),
+                      deger: ref.read(gosterimBazParaProvider).fmt(taban.first),
                       gunIci: intraday,
                     ),
                   ),
@@ -391,7 +391,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                 if (val == meta.min || val == meta.max) {
                   return const SizedBox.shrink();
                 }
-                return GrafikStili.yEtiketi(_fmtY(val),
+                return GrafikStili.yEtiketi(_fmtY(val, yInterval),
                     stil: GrafikStili.eksenYazisi(context));
               },
             ),
@@ -413,7 +413,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   return const SizedBox.shrink();
                 }
                 // Dinamik format — dar viewport'ta gün+ay, geniş
-                // viewport'ta (365+ gün) sadece "MMM yy". Çok dar (<3 gün)
+                // viewport'ta (365+ gün) sadece ay ve yıl ("Oca '26"). Çok dar (<3 gün)
                 // görünümde saat de göster.
                 // Biçim kuralı `chart_axis.dart`'ta — takip listesi grafiği
                 // de aynı fonksiyonu çağırır.
@@ -658,7 +658,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             tooltipPadding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             getTooltipItems: (spots) {
-              final tryFmt0 = ref.read(bazParaProvider).formatter(digits: 0);
+              final tryFmt0 = ref.read(gosterimBazParaProvider).formatter(digits: 0);
               // Anchor = dönem başı (pencere içindeki ilk dolu nokta,
               // `taban`); son x/y = bugün. Anchor eskiden serinin ilk
               // noktasıydı ve 1Y'de dönem penceresinin dışında kalıyordu.
@@ -872,7 +872,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                   ? dayKey(start)
                       .add(Duration(minutes: snapped.x.round()))
                   : start.add(Duration(minutes: (snapped.x * 1440).round()));
-              final title = ref.read(bazParaProvider).fmt(snapped.y);
+              final title = ref.read(gosterimBazParaProvider).fmt(snapped.y);
               // Gün içi etiket normalde yalnızca saat yazar — tek gün
               // çizildiği için tarih gereksiz gürültüydü. Ama piyasa
               // kapalıyken seri BİRDEN ÇOK günü kapsıyor (Cuma→Pazar) ve
@@ -898,7 +898,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               if (spots.isEmpty || _simulate || intraday) return const [];
               // Diğer crosshair callback'leriyle aynı ikili arama.
               final snapped = spots[nearestSpotIndex(spots, x)];
-              final tryFmt0 = ref.read(bazParaProvider).formatter(digits: 0);
+              final tryFmt0 = ref.read(gosterimBazParaProvider).formatter(digits: 0);
               final firstY = spots.first.y;
               final gain = snapped.y - firstY;
               final out = <(String, Color)>[];

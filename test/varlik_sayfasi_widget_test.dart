@@ -193,9 +193,10 @@ void main() {
 
   testWidgets('çip getirileri her dönemin KENDİ serisinden', (t) async {
     await _kur(t);
-    // Sahte seri: dönem sonu = 100 + gün/10 → 1Y %+36,5, 1A %+3,0.
-    expect(find.text('%+36,5'), findsWidgets);
-    expect(find.text('%+3,0'), findsOneWidget);
+    // Sahte seri: dönem sonu = 100 + gün/10 → 1Y +%36,5, 1A +%3,0
+    // (yönlü yüzde `fmtPctIsaretli`; eski biçim "%+36,5").
+    expect(find.text('+%36,5'), findsWidgets);
+    expect(find.text('+%3,0'), findsOneWidget);
     // Varsayılan dönem 1Y — başlıktaki fiyat 1Y serisinin son noktası.
     expect(find.textContaining('136,50'), findsWidgets);
   });

@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/supabase_config.dart';
 import 'l10n/l10n.dart';
+import 'l10n/sen_material_localizations.dart';
 import 'models/asset.dart';
 import 'models/user_model.dart';
 import 'providers/price_alert_notification_provider.dart';
@@ -46,6 +47,8 @@ import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
+import 'services/ilk_acilis_sirasi.dart';
+import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
@@ -353,6 +356,10 @@ class SandikApp extends ConsumerWidget {
       // ondalık ayırıcı. Kullanıcı İngilizce seçerse en_US.
       locale: locale,
       localizationsDelegates: const [
+        // Material'ın Türkçesini "sen" hitabıyla ezer; bir tür için ilk uyan
+        // delegate kullanıldığından Global* delegate'lerden ÖNCE durmalı
+        // (bkz. `sen_material_localizations.dart`, emülatör testi #19).
+        SenMaterialLocalizationsDelegate(),
         ...AppLocalizations.localizationsDelegates,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -1022,6 +1029,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _checkedUserId = null;
         _onboardingDone = null;
         _kilometreTasiSessizKullanici = null;
+        // Yeniden girişte kilit teklifi yeniden değerlendirilir (F2).
+        _kilitTeklifiErtelenen = null;
         // Tercih anahtarlarını kullanıcıdan ayır ve provider'ları tazele.
         // Yapılmazsa bir sonraki kullanıcı öncekinin sinyal ayarlarını
         // görür — ayarlar SharedPreferences'ta cihaz genelinde duruyor.
@@ -1804,7 +1813,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       return DisclaimerAcceptanceScreen(
         key: const ValueKey('disclaimer'),
         userId: user.id,
-        onAccepted: () => setState(() => _disclaimerAccepted = true),
+        onAccepted: () {
+          // Huni (F11). E-posta kaydında onay OTP ekranında kaydedilir ve
+          // olay orada gider; bu dal sosyal giriş / eski hesap yoludur.
+          AnalyticsService.instance.logSignupStep('disclaimer_accepted');
+          setState(() => _disclaimerAccepted = true);
+        },
       );
     }
 
@@ -1883,17 +1897,75 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // (`kilitYontemiProvider`): "aç" düğmesi yalnızca "desteklemiyor"
     // uyarısına çıkardı. Yanıt beklenirken splash sürer — anahtar aynı
     // olduğundan geçiş görünmez; sorgu milisaniyeler sürer.
+    //
+    // İlk varlıktan SONRA (plan F2, bayrak `lock_offer_after_first_asset`):
+    // bkz. `_kilitTeklifiErtelendi`. Bayrak kapalıyken o fonksiyon hep
+    // `false` döner ve bu blok birebir eski hâlindedir.
     if (!ref.watch(biometricLockProvider) &&
         !ref.watch(biometricLockOfferedProvider)) {
-      final yontem = ref.watch(kilitYontemiProvider);
-      if (yontem.isLoading) {
-        return const SandikLoadingScreen(key: ValueKey('splash'));
+      if (!_kilitTeklifiErtelendi(user.id)) {
+        final yontem = ref.watch(kilitYontemiProvider);
+        if (yontem.isLoading) {
+          return const SandikLoadingScreen(key: ValueKey('splash'));
+        }
+        final y = yontem.valueOrNull;
+        if (y != null) return _kilitTeklifi(user.id, y);
       }
-      final y = yontem.valueOrNull;
-      if (y != null) return _kilitTeklifi(user.id, y);
     }
 
+    // Kayıt hunisinin son adımı (F11): ana ekran bu cihazda ilk kez.
+    // Build'de yan etki olmasın diye kare sonunda; cihaz bayrağı ve süreç
+    // içi tekrar eleme `KayitHunisi`'nde.
+    if (!_anaEkranBildirildi) {
+      _anaEkranBildirildi = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => KayitHunisi.anaEkranIlkKez());
+    }
     return const MainNavigationScreen(key: ValueKey('main'));
+  }
+
+  /// Bu süreçte `home_first_seen` denetimi tetiklendi mi — build her
+  /// karede çalışır, kare sonu geri çağrısı bir kez kurulsun.
+  bool _anaEkranBildirildi = false;
+
+  /// Kilit teklifinin bu OTURUM için ertelendiği kullanıcı.
+  ///
+  /// **Neden bir mandal, neden portföyü canlı izlemiyoruz (F2, 2026-09-29):**
+  /// kapı `home:` rotasının kökünü değiştirir. Portföy canlı izlenseydi
+  /// kullanıcı ilk varlığını KAYDETTİĞİ anda kök `MainNavigationScreen`'den
+  /// `LockOfferScreen`'e dönerdi: Varlık Ekle rotası hâlâ üstte açıkken
+  /// altındaki ana ekran (sekme durumu, tur, kilometre taşı kutlaması)
+  /// sökülür, kullanıcı kaydet'e bastıktan sonra geri döndüğünde tanımadığı
+  /// bir ekran görürdü — tam da "işlem ortasında bölme".
+  ///
+  /// Seçilen yol: karar teklifin gösterileceği ilk kapı değerlendirmesinde
+  /// BİR KEZ verilir. O anda aktif varlık yoksa teklif bu oturum boyunca
+  /// ertelenir; sonraki kapı değerlendirmesinde (soğuk açılış ya da yeniden
+  /// giriş — teklifin anlattığı zaman aşımı çıkışı da bir yeniden giriştir)
+  /// varlık varsa gösterilir. Böylece teklif her zaman ana ekrandan ÖNCE
+  /// ve bir akışın ortasında değil, açılışın başında çıkar. Çıkışta
+  /// sıfırlanır (`_authSubscription`), ikinci hesap kendi durumuna göre
+  /// değerlendirilir.
+  String? _kilitTeklifiErtelenen;
+
+  bool _kilitTeklifiErtelendi(String userId) {
+    // Bayrak kapalıyken portföye hiç bakılmaz: kapı eski hâlinde bir
+    // provider'a bile fazladan dokunmasın (bozmama güvencesi §2.1).
+    final bayrak = RemoteConfigService.instance.lockOfferAfterFirstAsset;
+    if (!bayrak) return false;
+    if (_kilitTeklifiErtelenen == userId) return true;
+    // `read`, `watch` değil: portföy değişimi bu kararı yeniden açmaz
+    // (yukarıdaki gerekçe). Kapı zaten portföyü splash'te bekledi.
+    // Sahip damgası şart: kullanıcı değişiminde `AsyncLoading` önceki
+    // kullanıcının defterini taşır; A'nın varlıkları B'ye teklif açmasın.
+    final state = ref.read(portfolioProvider).valueOrNull;
+    final bilinen = state != null && state.ownerId == userId;
+    final ertele = kilitTeklifiErtelensin(
+      bayrak: bayrak,
+      aktifVarlikVar: bilinen ? aktifLotlar(state.assets).isNotEmpty : null,
+    );
+    if (ertele) _kilitTeklifiErtelenen = userId;
+    return ertele;
   }
 
   /// Kilit teklifi ekranı ve iki sonucu — bkz. `LockOfferScreen`.

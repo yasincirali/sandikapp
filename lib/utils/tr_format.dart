@@ -8,14 +8,33 @@ import 'package:intl/intl.dart';
 /// aksi halde `toStringAsFixed` çıktısı (`1.5`, `1234.56`) TR locale ile
 /// tutarsız olur.
 
-/// Yüzde: `%12,34` — [digits] ondalık hane sayısı.
-String fmtPct(double value, {int digits = 2, bool showSign = false}) {
+/// Yüzde: `%12,34` — [digits] ondalık hane sayısı. YÖNSÜZ büyüklükler için
+/// (pay, oynaklık, güven, stopaj oranı).
+///
+/// Eskiden `showSign` parametresi vardı: artıyı "%+1,23", eksiyi sayının
+/// içine "%-8,48" yazıyordu — tutarların "−₺368" diliyle çelişen ikinci bir
+/// yön biçimi (2026-09-29 emülatör testi #5: dönem istatistiği, dönem
+/// seçici, arama satırı, kıyas grafiği, yarış kartı). Yönlü yüzde artık
+/// yalnızca [fmtPctIsaretli]; parametre, ikinci biçim geri gelmesin diye
+/// kaldırıldı (`yonlu_yuzde_tek_kaynak_test`).
+String fmtPct(double value, {int digits = 2}) {
   final f = NumberFormat.decimalPattern('tr_TR')
     ..minimumFractionDigits = digits
     ..maximumFractionDigits = digits;
-  final str = f.format(value);
-  final sign = showSign && value > 0 ? '+' : '';
-  return '%$sign$str';
+  return '%${f.format(value)}';
+}
+
+/// Yönlü yüzde: `+%1,23` / `−%0,06` — tutarla AYNI işaret biçimi.
+///
+/// [fmtPct] eksiyi sayının içine koyar ("%-0,23"); uygulamanın tutarları ise
+/// U+2212 ile başa yazar ("−₺368"). Yan yana duran tutar ve yüzde aynı dili
+/// konuşsun diye yönlü yüzde TEK yerden (2026-09-29 emülatör testi: piyasa
+/// şeridi "%-0,23", Bugün kartı "−%0,06" yazıyordu). Sıfıra yuvarlanan değer
+/// işaretsiz: "−%0,00" yönü olmayan şeye yön yazardı.
+String fmtPctIsaretli(double pct, {int digits = 2}) {
+  final metin = fmtPct(pct.abs(), digits: digits);
+  if (metin == fmtPct(0, digits: digits)) return metin;
+  return '${pct > 0 ? '+' : '\u2212'}$metin';
 }
 
 /// Genel sayı: `1.234,56` — [digits] ondalık hane (default 2).
@@ -90,6 +109,21 @@ String fmtTRYCompact(double value) {
   return '$sign₺${fmtNum(abs, digits: 0)}';
 }
 
+/// [fmtTRYCompact] + sondaki anlamsız sıfırlar atılır: `₺250K`, `₺2,5M`,
+/// `₺1,25M`.
+///
+/// Hedef gibi YUVARLAK tutarlar içindir: hedef çiplerinde "₺250,0K" ve
+/// "₺2,50M" yazıyordu (2026-09-29 emülatör testi #31) — ",0" okuyana
+/// hassasiyet değil gürültü söyler. [fmtTRYCompact] kendisi değişmedi:
+/// eksenler ve baz para parite testi (`money_format_test`) sabit ondalığa
+/// yaslanıyor; aynı eksende "₺1,5M | ₺1,55M" karışık hane okunmaz.
+String fmtTRYCompactSade(double value) {
+  final s = fmtTRYCompact(value);
+  // Yalnızca sondaki ondalık kısım: ",50M" → ",5M", ",0K" → "K".
+  return s.replaceFirstMapped(RegExp(r',(\d*?)0+([A-Za-z]*)$'),
+      (m) => '${m[1]!.isEmpty ? '' : ',${m[1]}'}${m[2]}');
+}
+
 /// Grafik ekseni için tutar etiketi — iki sınır AYIRT EDİLEBİLİR olmalı.
 ///
 /// [fmtTRYCompact] tek başına yetmiyor: milyonu iki ondalıkla kısaltıyor
@@ -99,37 +133,83 @@ String fmtTRYCompact(double value) {
 /// [span] eksenin toplam genişliğidir; ondalık sayısı ona göre seçilir:
 /// bant ne kadar darsa o kadar çok basamak gerekir. Üst sınır olarak 4
 /// ondalık: daha fazlası dar bir eksende okunmaz.
+///
+/// ## Çok çizgili eksende [span] = ADIM (2026-09-29 emülatör testi #7)
+/// Performans grafiği `fmtTRYCompact` ile "₺1,39M | ₺1,39M | ₺1,39M |
+/// ₺1,39M", varlık detayı "₺1 | ₺1" yazıyordu: ızgara adımı (~₺2.500 /
+/// ₺0,25) etiketin gösterdiği hassasiyetten (₺10.000 / ₺1) küçüktü.
+/// Kural "komşu iki etiket ayırt edilebilir"; iki sınırlı yüzeyde (widget,
+/// Live Activity) komşu = iki uç, yani [span] bant genişliği; ızgaralı
+/// grafikte komşu = bir ADIM ötesi, yani [span] = eksen adımı.
 String fmtTRYAxis(double value, double span) {
-  final abs = value.abs();
   final sign = value < 0 ? '-' : '';
+  return '$sign₺${eksenGovdesi(value.abs(), span)}';
+}
 
-  // Trilyon — `Tn` (U14, 2026-09-23 denetimi; bkz. [fmtTRYCompact]).
+/// Ayırt etme hanesi: [olcekliAdim] kadar ayrık iki değeri FARKLI metne
+/// yazmaya yeten en az ondalık (çözünürlük 10^-hane ≤ adım).
+int _ayirtHanesi(double olcekliAdim) {
+  if (!(olcekliAdim > 0) || !olcekliAdim.isFinite) return 0;
+  return (-math.log(olcekliAdim) / math.ln10 - 1e-9).ceil();
+}
+
+/// Eksen etiketinin sembolsüz, işaretsiz gövdesi ("2,45M", "1.500,00") —
+/// [fmtTRYAxis] ve `BazPara.axis` AYNI kademe kuralını paylaşsın diye tek
+/// yerde (ikisi ayrı kopya taşıyordu).
+///
+/// Her kademenin TABAN hanesi eski kuraldır (geniş bantta sade: "₺2,45M");
+/// taban [span]'ı ayırt etmeye yetmiyorsa hane artar, kademenin tavanını
+/// da aşıyorsa kısaltmasız yazılır ("₺1.390.123"). Böylece yeterli olduğu
+/// her durumda çıktı eskisiyle birebir aynı kalır, yalnızca tekrar eden
+/// etiket üreten durumlar değişir.
+String eksenGovdesi(double abs, double span) {
+  final s = span.abs();
+  int buyukTaban(double olcekli) =>
+      olcekli >= 0.02 ? 2 : (olcekli >= 0.002 ? 3 : 4);
+  String? kademe(double bolen, String ek, int taban, int tavan) {
+    final hane = math.max(taban, _ayirtHanesi(s / bolen));
+    if (hane > tavan) return null;
+    return '${fmtNum(abs / bolen, digits: hane)}$ek';
+  }
+
+  final String? kisa;
   if (abs >= 1e12) {
-    final spanTn = span / 1e12;
-    final digits = spanTn >= 0.02 ? 2 : (spanTn >= 0.002 ? 3 : 4);
-    return '$sign₺${fmtNum(abs / 1e12, digits: digits)}Tn';
-  }
-  // Milyar — `Mr` kısaltmasıyla. Bu basamak eksikti ve 1,25 milyarlık bir
-  // portföy `₺1.250,00M` olarak yazılıyordu: hem uzun hem okunmuyor.
-  if (abs >= 1000000000) {
-    final spanMr = span / 1000000000;
-    final digits = spanMr >= 0.02 ? 2 : (spanMr >= 0.002 ? 3 : 4);
-    return '$sign₺${fmtNum(abs / 1000000000, digits: digits)}Mr';
-  }
-  if (abs >= 1000000) {
-    final scaled = abs / 1000000;
+    // Trilyon — `Tn` (U14, 2026-09-23 denetimi; bkz. [fmtTRYCompact]).
+    kisa = kademe(1e12, 'Tn', buyukTaban(s / 1e12), 4);
+  } else if (abs >= 1e9) {
+    // Milyar — `Mr` kısaltmasıyla. Bu basamak eksikti ve 1,25 milyarlık bir
+    // portföy `₺1.250,00M` olarak yazılıyordu: hem uzun hem okunmuyor.
+    kisa = kademe(1e9, 'Mr', buyukTaban(s / 1e9), 4);
+  } else if (abs >= 1e6) {
     // Bant milyon cinsinden ne kadar dar? 0,01M (10 bin TL) altındaki
     // farklar iki ondalıkla görünmez olur.
-    final spanM = span / 1000000;
-    final digits = spanM >= 0.02 ? 2 : (spanM >= 0.002 ? 3 : 4);
-    return '$sign₺${fmtNum(scaled, digits: digits)}M';
+    kisa = kademe(1e6, 'M', buyukTaban(s / 1e6), 4);
+  } else if (abs >= 1000) {
+    kisa = kademe(1000, 'K', s / 1000 >= 0.2 ? 1 : 2, 2);
+  } else {
+    kisa = null;
   }
-  if (abs >= 1000) {
-    final spanK = span / 1000;
-    final digits = spanK >= 0.2 ? 1 : 2;
-    return '$sign₺${fmtNum(abs / 1000, digits: digits)}K';
+  if (kisa != null) return kisa;
+  final hane = math.max(s < 10 ? 2 : 0, _ayirtHanesi(s)).clamp(0, 8);
+  return fmtNum(abs, digits: hane);
+}
+
+/// Izgaralı eksende adımı TAM gösteren ondalık sayısı: 0,25'lik adım iki
+/// haneyle ("0,25 · 0,50"), 2,5'lik bir haneyle, 5'lik hanesiz yazılır.
+///
+/// Tam gösterim ayırt etmeyi de garanti eder (adımın katları farklı metne
+/// düşer). Yüzde ekseni aynı kuralı `yuzdeEkseni.ondalik` ile uygular; bu,
+/// fiyat ve kıyas-yüzde eksenleri içindir. [enCok] dar eksende okunurluk
+/// tavanı.
+int eksenOndaligi(double adim, {int enAz = 0, int enCok = 4}) {
+  if (!(adim > 0) || !adim.isFinite) return enAz;
+  var d = enAz;
+  while (d < enCok) {
+    final o = adim * math.pow(10, d);
+    if ((o - o.roundToDouble()).abs() <= 1e-6 * math.max(1.0, o.abs())) break;
+    d++;
   }
-  return '$sign₺${fmtNum(abs, digits: span < 10 ? 2 : 0)}';
+  return d;
 }
 
 /// Kullanıcının yazdığı sayıyı Türkçe biçime göre çözer.

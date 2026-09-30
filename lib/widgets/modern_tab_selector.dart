@@ -182,6 +182,11 @@ class _Sekme extends StatelessWidget {
         button: true,
         selected: secili,
         label: '$onek: $etiket',
+        // Dokunma eylemi Semantics'e AÇIKÇA verilir: altındaki
+        // `ExcludeSemantics` düğmenin kendi eylemini de siliyor, düğüm
+        // okunuyor ama TalkBack'te etkinleştirilemiyordu (2026-09-29
+        // emülatör testi #17/#28 — "clickable=false").
+        onTap: onTap,
         child: ExcludeSemantics(
           child: GestureDetector(
             onTap: onTap,
@@ -215,7 +220,7 @@ class _Sekme extends StatelessWidget {
 /// `CupertinoPageScaffold` altındaki ekranlarda da kullanılıyor ve
 /// `PopupMenuButton`'ın kendi `InkWell`'i Material ata arıyor (aynı tuzak
 /// `KapsamKisiSecici` ve `GrafikTipiSecici`'de de kayıtlı).
-class _OrtakSekmesi extends StatelessWidget {
+class _OrtakSekmesi extends StatefulWidget {
   const _OrtakSekmesi({
     required this.etiket,
     required this.secili,
@@ -235,16 +240,35 @@ class _OrtakSekmesi extends StatelessWidget {
   final String Function(String) ilkAd;
 
   @override
+  State<_OrtakSekmesi> createState() => _OrtakSekmesiState();
+}
+
+class _OrtakSekmesiState extends State<_OrtakSekmesi> {
+  final _menu = GlobalKey<PopupMenuButtonState<String>>();
+
+  @override
   Widget build(BuildContext context) {
+    final etiket = widget.etiket;
+    final secili = widget.secili;
+    final onek = widget.onek;
+    final partners = widget.partners;
+    final seciliId = widget.seciliId;
+    final onChanged = widget.onChanged;
+    final ilkAd = widget.ilkAd;
     return Expanded(
       child: Semantics(
         button: true,
         selected: secili,
         label: '$onek: $etiket',
+        // Menü ekran okuyucudan da AÇILABİLSİN: `ExcludeSemantics`
+        // `PopupMenuButton`'ın kendi dokunma eylemini siliyor; düğüm
+        // okunuyor ama etkinleştirilemiyordu (2026-09-29 emülatör testi #28).
+        onTap: () => _menu.currentState?.showButtonMenu(),
         child: ExcludeSemantics(
           child: Material(
             type: MaterialType.transparency,
             child: PopupMenuButton<String>(
+              key: _menu,
               tooltip: context.l10n.scopePartners,
               position: PopupMenuPosition.under,
               color: context.c.surface2,

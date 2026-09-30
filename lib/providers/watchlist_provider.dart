@@ -551,18 +551,10 @@ final watchlistChartProvider =
 /// Grafikte ve açıklamada kullanılan kısa etiket.
 ///
 /// `TEFAS:AFO` → `AFO`, `AGHOL.IS` → `AGHOL` — kaynak önekleri kullanıcıya
-/// hiçbir şey ifade etmez. `watchlist_screen`'deki `displayLabel` ile aynı
-/// kural; grafik ile liste aynı adı göstermeli.
+/// hiçbir şey ifade etmez. Grafik ile liste aynı adı göstermeli; bu yüzden
+/// kural modelde TEK yerde (`WatchlistItem.kisaEtiket`). Eskiden burada ve
+/// `watchlist_screen`'de iki kopya vardı ve ikisi de `ALTIN_GRAM`/`XU100`
+/// gibi iç sembolleri açıklamaya ham basıyordu (emülatör testi #17).
 extension WatchlistChartLabel on WatchlistItem {
-  String get chartLabel {
-    final t = ticker.trim();
-    if (t.isNotEmpty) {
-      final sade =
-          t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
-      if (sade.length >= 2) return sade;
-    }
-    final sub = subCategory?.trim();
-    if (sub != null && sub.isNotEmpty) return sub;
-    return name;
-  }
+  String get chartLabel => kisaEtiket;
 }

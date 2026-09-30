@@ -30,8 +30,8 @@ Deno.test('sarmalı pencere 22–7: gece içinde, gündüz dışında', () => {
   assertEquals(sessizSaatteMi(12, 22, 7), false);
 });
 
-Deno.test('dört proaktif fonksiyon yardımcıyı kullanıyor', async () => {
-  for (const fn of ['daily-brief', 'weekly-summary', 'calendar-nudge', 'check-price-alerts']) {
+Deno.test('proaktif push fonksiyonları yardımcıyı kullanıyor', async () => {
+  for (const fn of ['daily-brief', 'weekly-summary', 'calendar-nudge', 'check-price-alerts', 'temettu-yakala']) {
     const src = await Deno.readTextFile(new URL(`../functions/${fn}/index.ts`, import.meta.url));
     assertEquals(src.includes('sessizKullanicilar('), true, `${fn} sessiz saatleri uygulamalı`);
   }

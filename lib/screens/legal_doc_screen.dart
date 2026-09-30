@@ -712,7 +712,7 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        'Onaylamak için belgeyi sona kadar okuyun',
+                        'Onaylamak için belgeyi sona kadar oku',
                         style: context.t.bodySmall
                             ?.copyWith(color: context.c.text58),
                       ),

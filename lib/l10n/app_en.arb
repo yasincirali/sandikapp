@@ -126,6 +126,10 @@
   "add": "Add",
   "update": "Update",
   "save": "Save",
+  "posPeriodPriceMove": "price {pct}",
+  "@posPeriodPriceMove": {
+    "placeholders": {"pct": {"type": "String"}}
+  },
   "assetType": "Asset Type",
   "assetName": "Asset name",
   "nameRequired": "Name required",
@@ -148,6 +152,11 @@
   },
   "retry": "Retry",
   "cancel": "Cancel",
+  "quickAllChip": "All ({qty})",
+  "quickHolding": "Holding",
+  "quickAvgShort": "avg. {price}",
+  "quickUnitPrice": "Unit price",
+  "quickTotalCost": "Total cost",
   "delete": "Delete",
   "sell": "Sell",
   "dividend": "Dividend",
@@ -260,7 +269,7 @@
   "buyAction": "Buy",
   "sellAction": "Sell",
   "deleteAction": "Delete",
-  "activeAlertsCount": "{count} active price alerts",
+  "activeAlertsCount": "{count, plural, =1{1 active price alert} other{{count} active price alerts}}",
   "@activeAlertsCount": {
     "placeholders": {
       "count": {
@@ -274,7 +283,7 @@
   "totalCost": "Total Cost",
   "currentValue": "Current Value",
   "dividendReceived": "Dividends Received",
-  "lotSummary": "{buys} buys · {sells} removals",
+  "lotSummary": "{sells, plural, =0{{buys, plural, =1{1 buy} other{{buys} buys}}} other{{buys} buys · {sells} removals}}",
   "@lotSummary": {
     "placeholders": {
       "buys": {
@@ -293,6 +302,75 @@
   "sortHighestFirst": "Highest First",
   "sortLowestFirst": "Lowest First",
   "assetFullName": "Full Name",
+  "fundReportTitleUpper": "FUND REPORT CARD",
+  "fundReportCategory": "{category} · {count} funds",
+  "@fundReportCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportPeriod1m": "1 month",
+  "fundReportPeriodYtd": "Year to date",
+  "fundReportPeriod1y": "1 year",
+  "fundReportRank": "#{rank} of {count}",
+  "@fundReportRank": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportReturnVsMedian": "Return {ret} · category median {median}",
+  "@fundReportReturnVsMedian": {
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAboveMedian": "{pts} pts above the median",
+  "@fundReportAboveMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportBelowMedian": "{pts} pts below the median",
+  "@fundReportBelowMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAtMedian": "At the median",
+  "fundReportFootnote": "Source: TEFAS. Returns are as published by TEFAS; its calculation dates don't exactly match the chart's period, so they may differ slightly from the period return above. Compared with funds in the same category; past returns do not indicate future returns.",
+  "fundReportPanelLine": "#{rank} of {count} in its category ({period})",
+  "@fundReportPanelLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "assetTypeStock": "Stocks",
   "assetTypeFund": "Funds",
   "assetTypeFx": "Currency",
@@ -358,6 +436,80 @@
   "noteRemove": "Remove note",
   "noteNone": "No note on this transaction.",
   "noteAddHint": "Why did you buy it, what's your target? Write a short note.",
+  "alertTargetAtCurrent": "Target equals the current price, so the alert would fire right away. Enter a price above or below it.",
+  "notifTypeDividend": "Dividend",
+  "dividendHistoryUpper": "DIVIDENDS · LAST 12 MONTHS",
+  "dividendRecordedTotal": "Recorded: {amount}",
+  "@dividendRecordedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEventLine": "{lot} shares × {perShare}",
+  "@dividendEventLine": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendGrossAmount": "{amount} gross",
+  "@dividendGrossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendRecorded": "Recorded",
+  "dividendRecordAction": "Record",
+  "dividendSourceNote": "Paid dividends per Yahoo Finance, using your shares on the ex-date. Amounts are gross; you record the net amount you received.",
+  "dividendSuggestionLine": "{ticker} · ex-date {date}",
+  "@dividendSuggestionLine": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendSuggestionGross": "{lot} shares × {perShare} = {gross} gross",
+  "@dividendSuggestionGross": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      },
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendWithholdingAssumed": "Assumed {rate} withholding tax; you can edit it.",
+  "@dividendWithholdingAssumed": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEnterNet": "Gross {gross} — enter what you received after withholding tax.",
+  "@dividendEnterNet": {
+    "placeholders": {
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
   "noteReadOnlyPartner": "This record belongs to your partner; only they can edit its note.",
   "noteReadOnlyDeleted": "A deleted record's note can't be edited.",
   "notesSection": "Notes",
@@ -394,6 +546,35 @@
   "tefasFunds": "TEFAS Funds",
   "fundsLoading": "Loading funds...",
   "pleaseWait": "Please wait",
+  "breakdownUpAmount": "up {amount}",
+  "@breakdownUpAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "breakdownDownAmount": "down {amount}",
+  "@breakdownDownAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturnInWindow": "Your return in this window",
+  "cpiWindowNote": "CPI is published monthly, so this card runs to the latest published month. The market return above runs to today — the two figures cover different windows.",
+  "demoTryButton": "Take a look first",
+  "demoBannerTitle": "Sample portfolio",
+  "demoBannerSubtitle": "Sample holdings, live prices",
+  "demoCreateAccount": "Create account",
+  "demoExit": "Exit sample",
+  "demoAccountCardTitle": "Build your own portfolio",
+  "demoAccountCardBody": "Everything you see here works with your own holdings too. Create an account to add assets and save notes and alerts.",
+  "demoAccountCardSignIn": "I already have an account",
+  "demoSaveSheetTitle": "Create an account to save",
+  "demoSaveSheetBody": "This is a sample portfolio; changes you make here are not saved. Create an account to build your own portfolio.",
+  "demoSaveSheetContinue": "Keep exploring",
   "fundsLoadFailed": "Could not load funds",
   "searchEllipsis": "Search...",
   "clearSearch": "Clear search",
@@ -928,6 +1109,112 @@
   "portfolioSeriesNote": "Portfolios are computed series — they are not quoted on any market. Their returns are drawn as a percentage from the start of the period, just like an asset.",
   "portfolioActivityTitle": "Portfolio Activity",
   "clearFilters": "Clear filters",
+  "watchlistRowUp": "up {pct}",
+  "@watchlistRowUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowDown": "down {pct}",
+  "@watchlistRowDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowFollowing": "on your watchlist",
+  "notificationsNewCount": "{count, plural, =1{1 new notification} other{{count} new notifications}}",
+  "@notificationsNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signOutAction": "Sign out",
+  "baseCurrencyNameLira": "Lira",
+  "baseCurrencyNameDollar": "Dollar",
+  "baseCurrencyNameEuro": "Euro",
+  "baseCurrencyNameGold": "Gram gold",
+  "datePickerHelp": "Select date",
+  "datePickerConfirm": "Select",
+  "sortAssetsSemantics": "Sort assets",
+  "showDetailsSemantics": "Show details",
+  "hideDetailsSemantics": "Hide details",
+  "pricePreviewClose": "{date} close — this price will be saved",
+  "@pricePreviewClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pricePreviewLastTradingClose": "Last trading day's close ({date}) — this price will be saved",
+  "@pricePreviewLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedClose": "{date} close assigned: {price}",
+  "@priceAssignedClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedLastTradingClose": "Last trading day's ({date}) close assigned: {price}",
+  "@priceAssignedLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealAhead": "{pts} pts ahead",
+  "@todayRealAhead": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealBehind": "{pts} pts behind",
+  "@todayRealBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealEven": "even",
+  "recapPointsAhead": "You beat inflation by {n} points",
+  "@recapPointsAhead": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapPointsBehind": "You trailed inflation by {n} points",
+  "@recapPointsBehind": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "loadingEllipsis": "Loading…",
   "widenDateRangeHint": "Try widening the date range or clearing the search.",
   "priceAlertsTitle": "Price Alerts",
@@ -1014,14 +1301,6 @@
     }
   },
   "recapSubtitle": "A short story of the year.",
-  "recapPoints": "{n} points",
-  "@recapPoints": {
-    "placeholders": {
-      "n": {
-        "type": "String"
-      }
-    }
-  },
   "recapDays": "{n} days",
   "@recapDays": {
     "placeholders": {
@@ -1375,7 +1654,7 @@
   "sellAllWarning": "You are selling the whole position — it leaves the list but stays as a sale record. Your transaction history and realised profit/loss are kept. To remove the record entirely, use \"Delete\" from the asset detail.",
   "saleValue": "Sale value",
   "noPriceAlert": "No price alert",
-  "nActiveAlerts": "{n} active price alerts",
+  "nActiveAlerts": "{n, plural, =1{1 active price alert} other{{n} active price alerts}}",
   "@nActiveAlerts": {
     "placeholders": {
       "n": {
@@ -1528,7 +1807,7 @@
   "trendUp": "UPTREND",
   "trendDown": "DOWNTREND",
   "trendFlat": "FLAT",
-  "indicatorsConfidence": "{lehte}/{total} indicators · {pct}% confidence",
+  "indicatorsConfidence": "{lehte}/{total} directional indicators · {pct}% confidence",
   "@indicatorsConfidence": {
     "placeholders": {
       "lehte": {
@@ -1559,7 +1838,7 @@
   "indicatorsNoHistory": "This asset's price history could not be fetched — indicators cannot be calculated.",
   "noIndicatorsSelected": "No indicators are selected for this asset type. Enable them from Profile → Signal Settings.",
   "technicalAnalysisUpper": "TECHNICAL ANALYSIS",
-  "nOfMIndicators": "· {on}/{all} indicators",
+  "nOfMIndicators": "· {on}/{all} indicators on",
   "@nOfMIndicators": {
     "placeholders": {
       "on": {
@@ -2252,15 +2531,7 @@
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
   "todayRealHint": "Yearly return minus CPI",
-  "todayPoints": "{pts} pts",
-  "@todayPoints": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekLabel": "Last week",
+  "todayWeekLabel": "Last 7 days",
   "todayWeekHint": "Market effect on your portfolio · summary ready",
   "todayGoalLabel": "Goal",
   "todayGoalSetShort": "Pick an amount, see what's left daily",
@@ -2647,6 +2918,64 @@
   "deletedFilter": "Deleted",
   "deletedEmptyTitle": "No deleted records",
   "deletedEmptyBody": "When you delete an asset, its buys, sells and deletion date stay here; they don't count toward your portfolio.",
+  "ipoTitle": "IPOs",
+  "ipoProfileRowSubtitle": "Calendar, price and participation",
+  "ipoGroupTalep": "Taking orders",
+  "ipoGroupYaklasan": "Upcoming",
+  "ipoGroupIslemBekliyor": "Awaiting listing",
+  "ipoGroupIslemGoruyor": "Trading",
+  "ipoGroupBilinmiyor": "Dates unknown",
+  "ipoOfflineNote": "Offline: showing the list from {tarih}.",
+  "@ipoOfflineNote": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoOfflineNoDate": "Offline: showing the saved list.",
+  "ipoListDate": "List date: {tarih}",
+  "@ipoListDate": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoEmpty": "No IPOs in the list right now.",
+  "ipoDisclaimer": "For information only, not investment advice. Confirm dates and price with your broker.",
+  "ipoRowTalep": "Orders: {aralik}",
+  "@ipoRowTalep": {
+    "placeholders": {
+      "aralik": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoRowIslem": "Listing: {tarih}",
+  "@ipoRowIslem": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoFieldTalep": "Order period",
+  "ipoFieldFiyat": "Offer price",
+  "ipoFieldDagitim": "Allocation",
+  "ipoFieldIslem": "First trading day",
+  "ipoFieldPazar": "Market",
+  "ipoFieldGuncelleme": "Info date",
+  "ipoDagitimEsit": "Equal",
+  "ipoDagitimOransal": "Pro rata",
+  "ipoOpenSource": "Open source",
+  "ipoSourceFailed": "Couldn't open the link.",
+  "ipoParticipate": "I participated, add to portfolio",
+  "ipoParticipateHint": "Enter the lots you were allocated; price and date are filled in. Until trading starts the stock shows at the offer price.",
+  "ipoParticipateHintTraded": "Enter the lots you were allocated; the offer price and first trading day are filled in. The stock shows at its live price.",
+  "ipoParticipateNoPrice": "The offer price isn't in the list: type the purchase price in the form. A stock that isn't trading has no quote; if you leave it empty the cost is saved as 0.",
+  "ipoParticipateLater": "Allocations are announced after the order period ends. If you took part, you can add it to your portfolio here then.",
+  "ipoParticipationSaved": "Your IPO lots were added to your portfolio.",
   "txDateLabeled": "{tur}: {tarih}",
   "@txDateLabeled": {
     "placeholders": {

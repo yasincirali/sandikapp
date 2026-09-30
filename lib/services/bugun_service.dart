@@ -112,10 +112,18 @@ class ReelGetiriSatiri extends BugunSatiri {
   bool get onde => fark >= 0;
 }
 
-/// Geçen haftanın piyasa getirisi — eski `WeeklySummaryChip`'in satırı.
+/// Son 7 günün piyasa getirisi — eski `WeeklySummaryChip`'in satırı.
 ///
-/// Haftanın ilk iki günü SABİT (özet taze), sonra dönüşüm havuzunda: hafta
-/// ilerledikçe "geçen hafta" eskir ama bilgi kaybolmaz.
+/// **Tanım: KAYAN 7 gün, sağ ucu canlı** (`BugunYukleyici.haftalik` →
+/// `PeriodSummaryService.compute(birHafta, canliSon: …)`). Satır Özet › 1H'ye
+/// götürür ve orada AYNI rakam görünmeli ("tıklanan rakamı bulamayan
+/// kullanıcı", `WeeklySummaryChip._ac`), 1H de bugüne kadarki 7 gündür.
+/// Etiket bir süre "Geçen hafta" yazdı; takvim haftası sanıldı ve oturum
+/// içinde değişen rakam (−%2,51 → −%2,10, 2026-09-29 emülatör testi) hata
+/// gibi göründü. Hesap değil etiket hizalandı: "Son 7 gün".
+///
+/// Haftanın ilk iki günü SABİT satır (haftalık özet bildirimiyle aynı
+/// günler), sonra dönüşüm havuzunda: bilgi kaybolmaz.
 class HaftalikOzetSatiri extends BugunSatiri {
   const HaftalikOzetSatiri({required this.getiriPct});
   final double getiriPct;
@@ -244,12 +252,16 @@ abstract final class BugunService {
   /// Dönüşüm: içgörü adayları günün tarihine göre kaydırılır ki iki ardışık
   /// günde aynı satır aynı sırada çıkmasın. Tarihe bağlı olması bilinçli —
   /// rastgele olsaydı aynı gün içinde her açılışta değişir, "az önce
-  /// gördüğüm neredeydi" sorusu doğardı.
+  /// gördüğüm neredeydi" sorusu doğardı. Hedef satırı dönüşüme girmez
+  /// (tek giriş noktası; bkz. `hedef` gerekçesi).
   ///
   /// [kisisel] (2026-09-21, kart kapsamı izler): kart Ortak / Birlikte
-  /// görünümünde o kapsamın defteriyle kurulur; orada KİŞİSEL satırlar
-  /// üretilmez — hedef cihazdaki kişiye özel tercihtir (ortağınki sunucuda
-  /// yok, uydurulmaz), aylık özet girişi kendi recap ekranına gider.
+  /// görünümünde o kapsamın defteriyle kurulur; orada aylık özet girişi
+  /// üretilmez — kendi recap ekranına gider. Hedef 2026-09-30'dan beri
+  /// her kapsamda: [hedefTRY] çağıranın seçtiği KAPSAMIN hedefidir
+  /// (`kapsamHedefiProvider`), kendi hedefin birleşik toplama karşı
+  /// ölçülmez. Eskiden hedef de kişisel satırdı ve kart Birlikte'ye
+  /// geçince kayboluyordu (kullanıcı bulgusu "hala arada kayboluyor").
   /// Piyasa hareketi, artıdaki varlık, reel getiri, haftalık ve ulusal
   /// takvim kapsamdan bağımsız hesaplanır, hepsi kalır.
   static BugunKartiVerisi hesapla({
@@ -277,9 +289,13 @@ abstract final class BugunService {
         toplam: karZararlar.length,
       ));
     }
-    if (kisisel) {
-      adaylar.add(HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger));
-    }
+    // Hedef havuza GİRMEZ, sabit satırdır (2026-09-30, kullanıcı bulgusu
+    // "hedef belirle kısmı kaybolmuş"): hedef belirleme/düzenlemenin tek
+    // giriş noktası bu satır. Havuzdayken Çarşamba'dan sonra haftalık da
+    // havuza girince 3 aday 2 yuvaya düşüyor, bazı günler hedef dönüşümle
+    // gizleniyor ve o gün hedef belirlemek imkânsız oluyordu. Dönüşüm artık
+    // kalan yuvalarda; hedef her gün en altta, yeri değişmez.
+    final hedef = HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger);
     // Olay havuza girmez — ayak notu (bkz. `BugunKartiVerisi.olay`).
     final olaylar = yaklasanOlaylar(now);
 
@@ -295,14 +311,16 @@ abstract final class BugunService {
     }
 
     final ikincil = <BugunSatiri>[];
+    final donenYuva = ikincilSayisi - 1;
     if (adaylar.isNotEmpty) {
       final bas = now.difference(DateTime(now.year)).inDays % adaylar.length;
       for (var i = 0;
-          i < adaylar.length && ikincil.length < ikincilSayisi;
+          i < adaylar.length && ikincil.length < donenYuva;
           i++) {
         ikincil.add(adaylar[(bas + i) % adaylar.length]);
       }
     }
+    ikincil.add(hedef);
 
     final aylik = kisisel && now.day <= aylikOzetGunSayisi
         ? AylikOzetSatiri(ay: DateTime(now.year, now.month - 1, 1))

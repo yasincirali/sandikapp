@@ -220,12 +220,19 @@ export function movingAverage(
         ? 'sell'
         : 'neutral';
 
+  // Açıklama sinyalle aynı şeyi söylemeli (Dart ile birebir; gerekçe
+  // `technical_analysis_service.dart` movingAverage notunda, emülatör
+  // testi #31): teyitsiz kesişim "yükseliş trendi" diye yazılmaz.
   const description =
-    shortEma > longEma
+    signal === 'buy'
       ? `EMA${shortP} > EMA${longP} — yükseliş trendi`
-      : shortEma < longEma
+      : signal === 'sell'
         ? `EMA${shortP} < EMA${longP} — düşüş trendi`
-        : 'Ortalamalarda kesişim bölgesi';
+        : shortEma > longEma
+          ? `EMA${shortP} > EMA${longP}, fiyat EMA${shortP} altında — teyit yok`
+          : shortEma < longEma
+            ? `EMA${shortP} < EMA${longP}, fiyat EMA${shortP} üstünde — teyit yok`
+            : 'Ortalamalarda kesişim bölgesi';
 
   return { name: label, value: diff, signal, description };
 }

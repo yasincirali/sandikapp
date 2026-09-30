@@ -39,15 +39,34 @@ enum BaseCurrency {
 /// [kur] geçersizse (0 ya da negatif — kur henüz çekilmedi) TRY'ye düşülür:
 /// yanlış kurla yazılmış bir tutar, ₺ ile yazılmış doğru tutardan kötüdür.
 class BazPara {
-  const BazPara(this.birim, this.kur);
+  const BazPara(this.birim, this.kur, {this.gizli = false});
 
   /// Varsayılan: ₺, kur 1 — eski davranışın birebir aynısı.
   const BazPara.lira()
       : birim = BaseCurrency.try_,
-        kur = 1;
+        kur = 1,
+        gizli = false;
 
   final BaseCurrency birim;
   final double kur;
+
+  /// "Bakiyeyi gizle" açık — bu nesneden geçen HER tutar [gizliTutar] yazar.
+  ///
+  /// ## Neden biçimleyicinin içinde (2026-09-29 emülatör testi, bulgu #3)
+  /// Gizleme yalnız Ana ekranda, her çağrı yerinde elle
+  /// (`hideBalance ? '••••' : fmt(...)`) yapılıyordu; Portföy ve Performans
+  /// sekmeleri tercihi hiç okumuyordu ve toplam, kart, eksen, ipucu, tür
+  /// dökümü açıkta kalıyordu. Bu ekranlarda 60'a yakın tutar çağrı yeri var;
+  /// tek tek `if` eklemek bir sonraki yeni satırın yine sızması demekti.
+  /// Tutarlar zaten bu nesneden geçtiği için maske de burada: ekran
+  /// `gosterimBazParaProvider`'ı okuyunca altındaki her kart kendiliğinden
+  /// gizlenir. Yüzdeler bu nesneden geçmez, görünür kalır (Ana'daki Bugün
+  /// kartıyla aynı kural). [cevir] maskelenmez: grafik GEOMETRİSİ gerçek
+  /// sayıyla çizilir, yalnız etiket gizlenir.
+  final bool gizli;
+
+  /// Aynı birim/kur, tutarları maskeleyen kopya.
+  BazPara gizlenmis() => BazPara(birim, kur, gizli: true);
 
   bool get lira => birim == BaseCurrency.try_ || !(kur > 0);
   BaseCurrency get etkinBirim => lira ? BaseCurrency.try_ : birim;
@@ -70,6 +89,7 @@ class BazPara {
 
   /// `fmtTRYCompact` karşılığı — eksen/dar alan etiketi.
   String compact(double tryTutar) {
+    if (gizli) return gizliTutar;
     if (lira) return fmtTRYCompact(tryTutar);
     final v = cevir(tryTutar);
     final abs = v.abs();
@@ -90,6 +110,7 @@ class BazPara {
   /// `fmtTRYAxis` karşılığı: iki komşu eksen etiketi ayırt edilebilir kalsın
   /// diye ondalık sayısı bandın genişliğine göre seçilir.
   String axis(double tryTutar, double trySpan) {
+    if (gizli) return gizliTutar;
     if (lira) return fmtTRYAxis(tryTutar, trySpan);
     final v = cevir(tryTutar);
     final span = cevir(trySpan).abs();
@@ -97,29 +118,11 @@ class BazPara {
     final sign = v < 0 ? '-' : '';
     final s = etkinBirim.sembol;
     final gold = etkinBirim == BaseCurrency.gold;
-    String yaz(String govde) => gold ? '$sign$govde $s' : '$sign$s$govde';
-    // Mr/Tn basamakları `fmtTRYAxis` ile aynı (U14, 2026-09-23 denetimi).
-    if (abs >= 1e12) {
-      final spanTn = span / 1e12;
-      final digits = spanTn >= 0.02 ? 2 : (spanTn >= 0.002 ? 3 : 4);
-      return yaz('${fmtNum(abs / 1e12, digits: digits)}Tn');
-    }
-    if (abs >= 1e9) {
-      final spanMr = span / 1e9;
-      final digits = spanMr >= 0.02 ? 2 : (spanMr >= 0.002 ? 3 : 4);
-      return yaz('${fmtNum(abs / 1e9, digits: digits)}Mr');
-    }
-    if (abs >= 1000000) {
-      final spanM = span / 1000000;
-      final digits = spanM >= 0.02 ? 2 : (spanM >= 0.002 ? 3 : 4);
-      return yaz('${fmtNum(abs / 1000000, digits: digits)}M');
-    }
-    if (abs >= 1000) {
-      final spanK = span / 1000;
-      final digits = spanK >= 0.2 ? 1 : 2;
-      return yaz('${fmtNum(abs / 1000, digits: digits)}K');
-    }
-    return yaz(fmtNum(abs, digits: span < 10 ? 2 : 0));
+    // Kademe kuralı (Mr/Tn dahil) `fmtTRYAxis` ile TEK yerden:
+    // `eksenGovdesi` — ayrı kopya ızgara adımı düzeltmesini (2026-09-29
+    // emülatör testi #7) kaçırırdı.
+    final govde = eksenGovdesi(abs, span);
+    return gold ? '$sign$govde $s' : '$sign$s$govde';
   }
 }
 
@@ -133,6 +136,7 @@ class ParaBicimi {
   final NumberFormat _tr;
 
   String format(num tryTutar) {
+    if (_baz.gizli) return _baz.gizliTutar;
     final v = tryTutar.toDouble();
     if (_baz.lira) return _tr.format(v);
     final c = _baz.cevir(v);

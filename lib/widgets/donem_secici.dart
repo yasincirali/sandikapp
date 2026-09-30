@@ -94,7 +94,7 @@ class DonemSecici extends StatelessWidget {
             child: Semantics(
               button: true,
               selected: seciliMi,
-              label: g == null ? etiket : '$etiket, ${fmtPct(g, showSign: true)}',
+              label: g == null ? etiket : '$etiket, ${fmtPctIsaretli(g)}',
               excludeSemantics: true,
               child: CupertinoButton(
                 minimumSize: SandikTouch.minSize,
@@ -137,7 +137,7 @@ class DonemSecici extends StatelessWidget {
                           Text(
                             g == null
                                 ? ' '
-                                : fmtPct(g, digits: 1, showSign: true),
+                                : fmtPctIsaretli(g, digits: 1),
                             maxLines: 1,
                             softWrap: false,
                             style: context.t.labelSmall?.copyWith(

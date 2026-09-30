@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/user_model.dart';
+import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/services/islem_notu.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -45,6 +48,28 @@ Future<void> _pump(WidgetTester tester, Widget w) => tester.pumpWidget(
         home: Scaffold(body: w),
       ),
     );
+
+class _FakeAuth extends AuthNotifier {
+  @override
+  Future<AppUser?> build() async => AppUser(
+        id: 'u1',
+        email: 't@e.com',
+        displayName: 'T',
+        createdAt: DateTime(2026),
+      );
+}
+
+/// `updateNotes` çağrılarını kaydeder; sunucuya gitmez.
+class _NotYazan extends PortfolioNotifier {
+  final yazilan = <String>[];
+
+  @override
+  Future<PortfolioState> build() async => const PortfolioState();
+
+  @override
+  Future<void> updateNotes(Asset asset, String notes) async =>
+      yazilan.add(notes);
+}
 
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
@@ -230,6 +255,90 @@ void main() {
       expect(find.byType(TextField), findsNothing);
       expect(find.text('onun notu'), findsOneWidget);
       expect(find.textContaining('ortağına ait'), findsOneWidget);
+    });
+  });
+
+  group('Notu sil — geri alınabilir (#25)', () {
+    // Emülatör testi #25 (2026-09-29): "Notu sil" onaysız ve geri
+    // alınamıyordu. Onay diyaloğu yerine snackbar'da "Geri al".
+    testWidgets('silince "Geri al" eski notu geri yazar', (tester) async {
+      final portfoy = _NotYazan();
+      final kayit = _kayit('a', notes: 'maaştan');
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith(_FakeAuth.new),
+          portfolioProvider.overrideWith(() => portfoy),
+        ],
+        child: MaterialApp(
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            extensions: const [SandikPalette.dark],
+          ),
+          home: Scaffold(
+            body: Consumer(
+              builder: (context, ref, _) {
+                // Oturum çözülsün: düzenlenebilirlik sahibine bakar.
+                ref.watch(authProvider);
+                return TextButton(
+                  onPressed: () => showIslemNotuSheet(context, ref,
+                      asset: kayit, not: 'maaştan'),
+                  child: const Text('aç'),
+                );
+              },
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('aç'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Notu sil'));
+      await tester.pumpAndSettle();
+      expect(portfoy.yazilan, ['']);
+      expect(find.text('Not silindi'), findsOneWidget);
+
+      await tester.tap(find.text('Geri al'));
+      await tester.pumpAndSettle();
+      expect(portfoy.yazilan, ['', 'maaştan']);
+    });
+
+    testWidgets('not DÜZENLENİNCE "Geri al" yok (yalnız silme geri alınır)',
+        (tester) async {
+      final portfoy = _NotYazan();
+      final kayit = _kayit('a', notes: 'maaştan');
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          authProvider.overrideWith(_FakeAuth.new),
+          portfolioProvider.overrideWith(() => portfoy),
+        ],
+        child: MaterialApp(
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            extensions: const [SandikPalette.dark],
+          ),
+          home: Scaffold(
+            body: Consumer(
+              builder: (context, ref, _) {
+                // Oturum çözülsün: düzenlenebilirlik sahibine bakar.
+                ref.watch(authProvider);
+                return TextButton(
+                  onPressed: () => showIslemNotuSheet(context, ref,
+                      asset: kayit, not: 'maaştan'),
+                  child: const Text('aç'),
+                );
+              },
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('aç'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'ikramiyeden');
+      await tester.tap(find.text('Kaydet'));
+      await tester.pumpAndSettle();
+      expect(portfoy.yazilan, ['ikramiyeden']);
+      expect(find.text('Geri al'), findsNothing);
     });
   });
 }

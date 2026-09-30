@@ -16,6 +16,7 @@ export type AppNotificationType =
   | 'monthly_summary' // 0067 — CHECK kısıtı da orada genişletildi
   | 'watchlist_move' // 0068 — takip listesinde günlük büyük hareket
   | 'inflation_day' // 0068 — TÜİK açıklama günü
+  | 'temettu' // 0086 — temettü önerisi (temettu-yakala)
   | 'calendar_nudge';
 
 export interface AppNotificationRow {

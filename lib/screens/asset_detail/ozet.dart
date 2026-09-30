@@ -244,7 +244,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       degisimRenk = context.c.text36;
     } else {
       final fark = canli - ilk;
-      degisim = '${pct >= 0 ? '+' : '−'}${fmtPct(pct.abs())} · '
+      degisim = '${fmtPctIsaretli(pct)} · '
           '${fark >= 0 ? '+' : '−'}${bicim.format(fark.abs())} · $etiket';
       degisimRenk = context.signColor(pct);
     }
@@ -300,7 +300,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         Text(
           l.adPositionLine(
             '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
-            '$isaret${fmtPct(pnl.pnlPct.abs())}',
+            pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -375,6 +375,28 @@ extension _DetayOzet on _AssetDetailScreenState {
       ],
     ];
   }
+
+  /// Fon karnesi (F4) — istatistiklerin hemen altında. Bayrak kapalıysa,
+  /// varlık fon değilse ya da karne kurulamıyorsa kart hiç yer kaplamaz
+  /// (boşluk `dis` ile kartın içinde; çizilmezse o da yok). Hub'a yalnızca
+  /// çağrı satırı girer — gövde bu part'ta (CLAUDE.md: yeni kod part'a).
+  Widget _fonKarnesi() => FonKarnesiKarti(
+      tur: widget.asset.type,
+      ticker: widget.asset.ticker,
+      dis: const EdgeInsets.only(top: SandikSpace.lg));
+
+  // ── Temettü ──────────────────────────────────────────────────────────────
+
+  /// "Son 12 ay temettü" kartı (plan §F5, 2026-09-29).
+  ///
+  /// Yalnız KENDİ varlığında: ortağın temettüsünü sen kaydedemezsin
+  /// (`addDividend` oturum sahibine yazar). Defter sahibin tüm satırları —
+  /// geçmişi soran hesap, `aktifLotlar` değil (CLAUDE.md "Kapanmış
+  /// pozisyon"). Kart bayrak/tür/veri yoksa kendini tamamen gizler.
+  Widget _temettuKarti(PortfolioState pState) => TemettuGecmisiKarti(
+        varlik: _canli.asset,
+        defter: pState.assets,
+      );
 
   /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
   /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni).

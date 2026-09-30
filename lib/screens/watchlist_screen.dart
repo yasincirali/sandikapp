@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../demo/demo_modu.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart'
     show
@@ -9,6 +10,7 @@ import 'package:flutter/material.dart'
         Dismissible,
         DismissDirection,
         RefreshIndicator;
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/asset_type.dart';
@@ -388,24 +390,45 @@ class _Row extends ConsumerWidget {
         ? context.c.text36
         : context.signColor(pct);
 
-    final fmt = tryFormatter(
-        digits: 2,
-        symbol: currencySymbolFor(item.ticker, item.currency) ?? '₺');
+    final fiyatMetni = takipFiyatMetni(item);
+    final l10n = context.l10n;
 
     // Ekran okuyucu için tek parça cümle — parçalı okunursa yön bilgisi
     // yalnızca renkte kalırdı.
     final semantic = [
       item.name,
-      if (item.currentPrice != null) fmt.format(item.currentPrice),
-      if (!isFlat) '${pct >= 0 ? 'artış' : 'düşüş'} ${fmtPct(pct.abs())}',
-      'takip ediliyor',
+      if (item.currentPrice != null) fiyatMetni,
+      if (!isFlat)
+        pct >= 0
+            ? l10n.watchlistRowUp(fmtPct(pct.abs()))
+            : l10n.watchlistRowDown(fmtPct(pct.abs())),
+      l10n.watchlistRowFollowing,
     ].join(', ');
 
+    // ## Erişilebilirlik ağacı (emülatör testi #17, 2026-09-29)
+    // Önceden bütün satır `Semantics(label) + ExcludeSemantics` ile
+    // sarılıydı. `ExcludeSemantics` altındaki HER şeyi siliyordu — metinlerle
+    // birlikte satırın dokunma eylemini ve + düğmesini de: TalkBack satırı
+    // okuyor ama "clickable=false" görüyor, "Portföyüme ekle"ye hiç
+    // ulaşamıyordu.
+    //
+    // Şimdi: satır TEK bir düğme düğümü (`container` + `button` + cümle
+    // etiketi); dokunma eylemi dıştaki `SandikTappable`'ın jestinden bu
+    // düğüme katılır (Semantics'e ayrıca `onTap` VERİLMEZ — iki tap eylemi
+    // aynı düğümde çakışır ve jest etiketsiz ayrı bir düğüme düşer). Yalnızca
+    // görsel metinler `ExcludeSemantics` altında (cümle zaten onları
+    // söylüyor); + düğmesi kendi `container` düğümünde, kendi etiketiyle.
+    // Kaydırarak silme TalkBack'te çalışmadığı için aynı iş özel eylem
+    // olarak da sunulur.
     return Semantics(
       container: true,
+      button: true,
       label: semantic,
-      child: ExcludeSemantics(
-        child: Dismissible(
+      customSemanticsActions: {
+        CustomSemanticsAction(label: l10n.removeFromWatchlist): () =>
+            _remove(context, ref),
+      },
+      child: Dismissible(
           key: ValueKey(item.id),
           direction: DismissDirection.endToStart,
           background: Container(
@@ -420,7 +443,8 @@ class _Row extends ConsumerWidget {
           ),
           onDismissed: (_) => _remove(context, ref),
           child: SandikTappable(
-            semanticLabel: context.l10n.openDetailSemantics(item.name),
+            // Etiket YOK: satırın adı dıştaki `Semantics` cümlesi; buradaki
+            // jest yalnızca dokunma eylemini o düğüme katar.
             // Varlık sayfası TAM hâlde açılır (kullanıcı bu varlığa bakmaya
             // geldi) ve listedeki dönemle başlar. Eski ayrı detay ekranının
             // yerini aldı — iki detay yüzeyi zamanla ayrışırdı.
@@ -454,24 +478,29 @@ class _Row extends ConsumerWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.displayLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.bodyMedium
-                              ?.copyWith(color: context.c.text90),
-                        ),
-                        Text(
-                          item.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: context.t.bodySmall
-                              ?.copyWith(color: context.c.text36, fontSize: 11),
-                        ),
-                      ],
+                    child: ExcludeSemantics(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.displayLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.t.bodyMedium
+                                ?.copyWith(color: context.c.text90),
+                          ),
+                          // Kısa ad zaten görünen adsa (endeks, altın, emtia)
+                          // ikinci satır aynı metni tekrar ederdi.
+                          if (item.displayLabel != item.name)
+                            Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.t.bodySmall?.copyWith(
+                                  color: context.c.text36, fontSize: 11),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -481,31 +510,29 @@ class _Row extends ConsumerWidget {
                   // her satırda başka x'te duruyordu. Sıkı sütun + sağa yaslı
                   // FittedBox ile + her satırda kartın sağ kenarında hizalı.
                   Expanded(
-                    child: FittedBox(
+                    child: ExcludeSemantics(
+                      child: FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            item.currentPrice != null
-                                ? fmt.format(item.currentPrice)
-                                : '—',
+                            fiyatMetni,
                             maxLines: 1,
                             style: context.t.numSmall.copyWith(
                                 color: context.c.text90,
                                 fontWeight: FontWeight.w700),
                           ),
                           Text(
-                            isFlat
-                                ? '—'
-                                : '${pct >= 0 ? '+' : '−'}${fmtPct(pct.abs())}',
+                            isFlat ? '—' : fmtPctIsaretli(pct),
                             maxLines: 1,
                             style: context.t.numSmall
                                 .copyWith(color: color, fontSize: 11),
                           ),
                         ],
                       ),
+                    ),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -517,7 +544,11 @@ class _Row extends ConsumerWidget {
                   // gönderip aynı varlığı ikinci kez aratmak gereksizdi.
                   // Al/Sat burada YOK: takip edilen varlık tanımı gereği
                   // portföyde değildir (iki küme yapısal olarak ayrık).
-                  SandikTappable(
+                  // Kendi düğümü (`container`): etiketi ve dokunma eylemi
+                  // satırın cümlesine karışmaz, TalkBack'te ayrı odaklanır.
+                  Semantics(
+                    container: true,
+                    child: SandikTappable(
                     semanticLabel: context.l10n.addToPortfolioSemantics(item.displayLabel),
                     onTap: () => pushGuarded(
                       context,
@@ -538,12 +569,12 @@ class _Row extends ConsumerWidget {
                           size: 20, color: context.c.amberText),
                     ),
                   ),
+                  ),
                 ],
               ),
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -597,13 +628,16 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: SandikSpace.md),
           SandikTappable(
             semanticLabel: context.l10n.addToWatchlist,
-            onTap: () => pushGuarded(
-              context,
-              adaptiveRoute<void>(
-                builder: (_) => const AddWatchlistScreen(),
-                fullscreenDialog: true,
-              ),
-            ),
+            // Demo (F1): takibe almak bir yazma.
+            onTap: () => DemoModu.yazmaKapisi('takip')
+                ? null
+                : pushGuarded(
+                    context,
+                    adaptiveRoute<void>(
+                      builder: (_) => const AddWatchlistScreen(),
+                      fullscreenDialog: true,
+                    ),
+                  ),
             child: Container(
               constraints: const BoxConstraints(minHeight: 44),
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -671,13 +705,16 @@ class _EmptyState extends StatelessWidget {
 class _AddHeader extends ConsumerWidget {
   const _AddHeader();
 
-  void _ekle(BuildContext context) => pushGuarded(
-        context,
-        adaptiveRoute<void>(
-          builder: (_) => const AddWatchlistScreen(),
-          fullscreenDialog: true,
-        ),
-      );
+  void _ekle(BuildContext context) {
+    if (DemoModu.yazmaKapisi('takip')) return; // Demo: takip bir yazma (F1).
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) => const AddWatchlistScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -865,19 +902,24 @@ class _FooterNote extends StatelessWidget {
       );
 }
 
-/// Ekranda gösterilecek kısa etiket: ticker varsa o, yoksa alt kategori.
+/// Ekranda gösterilecek kısa etiket — grafikle AYNI kural
+/// (`WatchlistItem.kisaEtiket`; `TEFAS:AFO` → `AFO`, `ALTIN_GRAM` → ad).
 extension on WatchlistItem {
-  String get displayLabel {
-    final t = ticker.trim();
-    if (t.isNotEmpty) {
-      // `TEFAS:AFO` → `AFO`, `AGHOL.IS` → `AGHOL` — kaynak önekleri
-      // kullanıcıya hiçbir şey ifade etmez (bkz. `shortLabel`, edge function).
-      final sade =
-          t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');
-      if (sade.length >= 2) return sade;
-    }
-    final sub = subCategory?.trim();
-    if (sub != null && sub.isNotEmpty) return sub;
-    return name;
-  }
+  String get displayLabel => kisaEtiket;
+}
+
+/// Satırdaki fiyat metni. Endeks puandır: para simgesi ve kuruş yok
+/// (arama satırı ve piyasa bandıyla aynı kural, `bistEndeksiMi`).
+/// Diğerleri kotasyonun kendi para birimiyle — `kotasyonSembolu`: döviz
+/// paritesinde KARŞI para birimi (`USDTRY=X` → ₺49,00; eskiden miktar
+/// sembolüyle "$49,00" yazıyordu — 2026-09-29 emülatör testi #13, arama
+/// satırı ve varlık sayfasıyla aynı kural).
+@visibleForTesting
+String takipFiyatMetni(WatchlistItem item) {
+  final f = item.currentPrice;
+  if (f == null) return '—';
+  if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
+  return tryFormatter(
+          digits: 2, symbol: kotasyonSembolu(item.ticker, item.currency))
+      .format(f);
 }

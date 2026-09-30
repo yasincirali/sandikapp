@@ -343,7 +343,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   start: cizimBaslangici, intraday: isIntraday)
               case final ep?)
             _TypeBreakdownCard(
-              baz: ref.watch(bazParaProvider),
+              baz: ref.watch(gosterimBazParaProvider),
               breakdown: breakdown,
               totalFirst: ep.first,
               totalLast: ep.last,
@@ -364,7 +364,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           // yakın sunucu dönemine eşlenir (`ZirveDonem.yakin`); ekran o
           // dönemle açılır. Tür dökümü gibi koşula bağlı DEĞİL: kullanıcının
           // kendi serisi yokken de zirve vardır.
-          if (RemoteConfigService.instance.globalLeaderboardEnabled) ...[
+          // Demo (F1): Zirve sunucudan okunur, demoda çizilmez.
+          if (RemoteConfigService.instance.globalLeaderboardEnabled &&
+              !DemoModu.aktif) ...[
             const SizedBox(height: SandikSpace.md),
             TourAnchor(
               target: TourTarget.zirveKarti,
@@ -510,7 +512,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ? context.c.text36
         : (positive ? context.c.gain : context.c.loss);
 
-    final tryFmt = ref.watch(bazParaProvider).formatter(digits: 0);
+    final tryFmt = ref.watch(gosterimBazParaProvider).formatter(digits: 0);
     final periodLabel = donemEtiketi(context.l10n,
         _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].label);
     // Yıl, iki uç FARKLI yıla düşüyorsa yazılır.
@@ -521,7 +523,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // gürültüdür, o yüzden koşullu.
     final dateFmt = DateFormat(
       start.year == end.year ? 'd MMM' : 'd MMM y',
-      'tr_TR',
+      // Arayüz diliyle (emülatör testi #27: İngilizcede "29 Eyl").
+      context.tarihDili,
     );
     // Başlık "birikim" der: rakam alımları İÇERİR, dolayısıyla saf getiri
     // değildir. Simülasyonda miktar sabit olduğu için orada birikim etkisi
@@ -545,9 +548,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ? context.l10n.todaysBalanceChange
         : kapaliKuyruk
             ? context.l10n.sinceDateToToday(
-                DateFormat('d MMM', 'tr_TR').format(start))
+                DateFormat('d MMM', context.tarihDili).format(start))
             : context.l10n.balanceChangeSince(
-                DateFormat('d MMMM', 'tr_TR').format(start));
+                DateFormat('d MMMM', context.tarihDili).format(start));
 
     final title = intraday
         ? gunIciBaslik
@@ -674,8 +677,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         color: color,
                       ),
                       const SizedBox(width: 3),
+                      // İşaretli (emülatör doğrulaması 2026-09-30): ok
+                      // ikonunun ekran okuyucu etiketi yok, "−₺… | %0,03"
+                      // okunuyordu; tutarla aynı yön dili.
                       Text(
-                        fmtPct(pct.abs(), digits: 2),
+                        fmtPctIsaretli(pct, digits: 2),
                         style: context.t.numSmall.copyWith(color: color),
                       ),
                     ],
@@ -714,7 +720,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                         : '${piyasa >= 0 ? '+' : '−'}'
                             '${tryFmt.format(piyasa.abs())}',
                     ek: piyasaPct != null && !piyasaFlat
-                        ? fmtPct(piyasaPct.abs(), digits: 2)
+                        ? fmtPctIsaretli(piyasaPct, digits: 2)
                         : null,
                     renk: piyasaColor,
                   ),

@@ -34,6 +34,10 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
   /// "Performans" sekmesi `PortfolioPerformanceScreen` indeks 3'tedir.
   static const performansSekmesi = 3;
 
+  /// Profil sekmesi — yıllık özet afişi (`RecapBanner`) burada; yıl sonu
+  /// anı bildirimi (0087) buraya gider.
+  static const profilSekmesi = 4;
+
   /// Dışarıdan sekme değiştirme kanalı.
   ///
   /// Neden `ValueNotifier`: dokunuş uygulama AÇIKKEN de gelebilir (sıcak

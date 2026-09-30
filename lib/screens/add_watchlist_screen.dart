@@ -571,7 +571,7 @@ class _SatirKutusu extends StatelessWidget {
                           color: context.c.text90,
                           fontFeatures: const [FontFeature.tabularFigures()])),
                   if (pct != null)
-                    Text(fmtPct(pct, showSign: true),
+                    Text(fmtPctIsaretli(pct),
                         maxLines: 1,
                         style: context.t.labelSmall?.copyWith(
                             color: pct.abs() < 0.005
@@ -609,15 +609,16 @@ String? aramaSembolEtiketi(VarlikKimligi c) {
 ///
 /// Endeks puandır: para simgesi ve kuruş anlamsız (piyasa bandıyla aynı
 /// kural). Diğerleri kotasyonun kendi para birimiyle — emtia `$`, kalanı `₺`.
+/// Kur çiftinin fiyatı KARŞI para birimindedir: `USDTRY=X` → "₺49,00"
+/// ([kotasyonSembolu]; eskiden miktar sembolü "$49,00" yazılıyordu).
 @visibleForTesting
 String? aramaFiyatMetni(VarlikKimligi c, YahooQuote? q) {
   final f = q?.regularMarketPrice;
   if (f == null || !f.isFinite || f <= 0) return null;
-  if (c.ticker.startsWith('XU') && c.ticker.endsWith('.IS')) {
+  if (bistEndeksiMi(c.ticker)) {
     return fmtNum(f, digits: 0);
   }
-  return tryFormatter(
-          digits: 2, symbol: currencySymbolFor(c.ticker, c.currency) ?? '₺')
+  return tryFormatter(digits: 2, symbol: kotasyonSembolu(c.ticker, c.currency))
       .format(f);
 }
 

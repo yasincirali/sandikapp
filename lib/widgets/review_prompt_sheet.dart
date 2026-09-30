@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../demo/demo_modu.dart';
 import '../config/destek.dart';
 import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
@@ -42,6 +43,7 @@ class ReviewPromptSheet extends StatelessWidget {
   /// kapısı için `portfolioProvider` buradan okunur. Böylece yeni bir
   /// tetikleyici eklemek tek satırdır ve kapı mantığı tek yerde kalır.
   static Future<void> belkiGoster(BuildContext context, ReviewAni an) async {
+    if (DemoModu.aktif) return; // Demo'da inceleme istemi yok (F1).
     final svc = ReviewPromptService.instance;
     final state = ProviderScope.containerOf(context, listen: false)
         .read(portfolioProvider)

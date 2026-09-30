@@ -269,11 +269,22 @@ class TechnicalAnalysisService {
             ? SignalType.sell
             : SignalType.neutral;
 
-    final desc = shortEma > longEma
+    // Açıklama SİNYALLE aynı şeyi söylemeli. Sinyal iki koşul ister
+    // (ortalamaların sırası + fiyatın kısa ortalamanın doğru tarafında);
+    // açıklama yalnız ilkine bakıyordu: panelde "NÖTR" rozetinin yanında
+    // "EMA20 > EMA50 — yükseliş trendi" yazıyordu (2026-09-29 emülatör
+    // testi #31). Hesap değişmedi; teyitsiz durum adıyla söylenir.
+    // TS portu (`supabase/functions/_shared/technical_analysis.ts`) ile
+    // birebir — altın vektörler (`ta_golden_vectors`) ikisini de bağlar.
+    final desc = signal == SignalType.buy
         ? 'EMA$shortP > EMA$longP — yükseliş trendi'
-        : shortEma < longEma
+        : signal == SignalType.sell
             ? 'EMA$shortP < EMA$longP — düşüş trendi'
-            : 'Ortalamalarda kesişim bölgesi';
+            : shortEma > longEma
+                ? 'EMA$shortP > EMA$longP, fiyat EMA$shortP altında — teyit yok'
+                : shortEma < longEma
+                    ? 'EMA$shortP < EMA$longP, fiyat EMA$shortP üstünde — teyit yok'
+                    : 'Ortalamalarda kesişim bölgesi';
 
     return TechnicalIndicator(
         name: label, value: diff, signal: signal, description: desc);

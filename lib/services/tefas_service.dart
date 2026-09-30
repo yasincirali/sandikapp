@@ -19,6 +19,17 @@ class TefasFund {
   final double? returnYtd;
   final int? riskLevel;        // 1-7
 
+  /// TEFAS'ın `fonTurAciklama` alanı — "Hisse Senedi Şemsiye Fonu",
+  /// "Para Piyasası Şemsiye Fonu"… Fon karnesi (F4, 2026-09-29) bir fonu
+  /// yalnızca AYNI kategorideki fonlarla kıyaslar; farklı kategorideki
+  /// fonlarla getiri sırası anlamsızdır (hisse fonu ile para piyasası fonu
+  /// aynı yarışta koşmaz).
+  ///
+  /// Nullable: v1 disk önbelleğinde bu alan yoktu. Eski kayıt okunursa
+  /// `null` kalır ve karne hiç çizilmez — kategori TAHMİN edilmez (uydurma
+  /// sayı yasağının metin karşılığı).
+  final String? kategori;
+
   const TefasFund({
     required this.code,
     required this.name,
@@ -31,6 +42,7 @@ class TefasFund {
     this.return1y,
     this.returnYtd,
     this.riskLevel,
+    this.kategori,
   });
 
   Map<String, dynamic> toJson() => {
@@ -45,6 +57,7 @@ class TefasFund {
         'r1y': return1y,
         'ryd': returnYtd,
         'rl': riskLevel,
+        'k': kategori,
       };
 
   static TefasFund? fromJson(Map<String, dynamic> j) {
@@ -62,8 +75,18 @@ class TefasFund {
       return6m: (j['r6m'] as num?)?.toDouble(),
       return1y: (j['r1y'] as num?)?.toDouble(),
       returnYtd: (j['ryd'] as num?)?.toDouble(),
-      riskLevel: j['rl'] as int?,
+      // `as num?` — JSON'dan tamsayı bazen `double` olarak döner
+      // (ör. 3.0); `as int?` o durumda fırlatır ve TÜM katalog okuması
+      // "bozuk önbellek" sayılıp ağa düşerdi.
+      riskLevel: (j['rl'] as num?)?.toInt(),
+      // Eski (v1) kayıtta anahtar yok → null. Boş metin de "bilinmiyor".
+      kategori: _bosIseNull(j['k'] as String?),
     );
+  }
+
+  static String? _bosIseNull(String? s) {
+    final t = s?.trim();
+    return (t == null || t.isEmpty) ? null : t;
   }
 }
 
@@ -94,8 +117,18 @@ class TefasService {
   // erişimde okuyup ayrıştırıyor: `initPreferencesCache` açılışta ~450 ms
   // bekliyordu (profile build, ölçüldü) — yalnız fon aramasında gereken bir
   // liste için HER açılışta. Dosya yalnız katalog istendiğinde okunur.
-  // Şema değişirse dosya adını v2'ye çıkar → eski dosya yok sayılır.
-  static const _dosyaAdi = 'tefas_funds_cache_v1.json';
+  // Şema değişirse dosya adının sürümünü artır → eski dosya yok sayılır.
+  //
+  // v2 (2026-09-29, F4 fon karnesi): kayda `k` (kategori, `fonTurAciklama`)
+  // eklendi. v1 dosyası 24 saat daha "taze" sayılıp kategorisiz katalog
+  // döndürürdü → karne bir güne kadar hiç görünmezdi. Ad değişince eski
+  // dosya okunmaz, katalog bir kez ağdan yeniden çekilir (ilk fon araması
+  // ya da karne açılışında — normal 24 saatlik yenilemeyle aynı istek).
+  // `fromJson` eksik alanı yine `null` sayar: sürüm artırmak yalnız hızlı
+  // geçiş içindir, okuma tarafı eski biçime karşı ZATEN dayanıklıdır.
+  static const _dosyaAdi = 'tefas_funds_cache_v2.json';
+  // Önceki sürüm dosyaları — yalnız SİLMEK için (~500 KB diskte kalmasın).
+  static const _eskiDosyaAdlari = ['tefas_funds_cache_v1.json'];
   // Eski yerdeki anahtarlar — yalnız SİLMEK için (tercih dosyası küçülsün).
   static const _eskiPrefsCacheKey = 'tefas_funds_cache_v1';
   static const _eskiPrefsCacheTsKey = 'tefas_funds_cache_ts_v1';
@@ -142,6 +175,13 @@ class TefasService {
         await prefs.remove(_eskiPrefsCacheTsKey);
       }
     } catch (_) {}
+    try {
+      final klasor = await getApplicationSupportDirectory();
+      for (final ad in _eskiDosyaAdlari) {
+        final eski = File('${klasor.path}/$ad');
+        if (await eski.exists()) await eski.delete();
+      }
+    } catch (_) {} // test ortamı / eklenti yok / dosya kilitli — önemsiz
   }
 
   Future<void> _loadFromDisk() async {
@@ -443,6 +483,10 @@ class TefasService {
         return1y: f.return1y,
         returnYtd: f.returnYtd,
         riskLevel: f.riskLevel,
+        // Kopyada kategori düşerse fon, fiyatı bir kez sorulduktan sonra
+        // karne sıralamasından sessizce çıkardı (kategori sayısı da bir
+        // eksik yazılırdı).
+        kategori: f.kategori,
       );
 
   /// `fonFiyatBilgiGetir` çağrısının HAM sonucu — fiyat + ünvan.
@@ -625,6 +669,8 @@ class TefasService {
               return1y: _toDouble(d['getiri1y']),
               returnYtd: _toDouble(d['getiriyb']),
               riskLevel: int.tryParse(d['riskDegeri']?.toString() ?? ''),
+              kategori: TefasFund._bosIseNull(
+                  _fixEncoding(d['fonTurAciklama'] as String? ?? '')),
             ))
         .where((f) => f.code.isNotEmpty && f.name.isNotEmpty)
         .toList()

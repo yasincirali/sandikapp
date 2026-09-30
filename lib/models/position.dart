@@ -142,6 +142,22 @@ String positionKey(Asset a) {
   return '$type|$core|$currency';
 }
 
+/// [positionKey]'in ticker çekirdeğini KULLANICIYA gösterilecek koda çevirir.
+///
+/// Anahtar fiyat sağlayıcısının sembolünü taşır (`ARDYZ.IS`, `TEFAS:AFT`,
+/// `KRIPTO:BTC`); bu önek/sonekler kullanıcıya bir şey söylemez. Performans ›
+/// Özet GÜNLÜK'te "günün en çok hareket edeni" ham `ARDYZ.IS` yazıyordu
+/// (2026-09-29 emülatör testi). Kural `Asset.displayTicker` ve
+/// `VarlikKimligi.kisaEtiket` ile aynı: kaynak öneki (`XXX:`) ve BIST'in
+/// `.IS` soneki atılır. Alt kategori (`sub:`) ve ad (`name:`) çekirdekleri
+/// ÇAĞIRANIN işi — burada yalnızca sembol sadeleşir.
+String pozisyonKodu(String core) {
+  final t = core.trim();
+  final sade = t.contains(':') ? t.substring(t.lastIndexOf(':') + 1) : t;
+  final kod = sade.endsWith('.IS') ? sade.substring(0, sade.length - 3) : sade;
+  return kod.isEmpty ? t : kod;
+}
+
 /// Birden çok sahibin ("Ben" + ortaklar) lot'larını, sahiplik sınırını
 /// koruyarak tek listede pozisyonlara çevirir.
 ///

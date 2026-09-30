@@ -313,6 +313,33 @@ class AnalyticsService {
 
   /// Hedef belirlendi / kaldırıldı. Tutar gönderilmez (mahremiyet);
   /// yalnızca büyüklük kovası — "kim ne kadar" değil "kaç kişi kullanıyor".
+  // ── Büyüme özellikleri (plan 2026-09-29) ────────────────────────────────
+  // Olay adları sabit: Firebase panoları bunlara bağlanır, değiştirme.
+
+  /// Kayıt/ilk açılış hunisinin adımı: form_opened, otp_sent, otp_verified,
+  /// disclaimer_accepted, username_set, tour_done, home_first_seen.
+  Future<void> logSignupStep(String step) =>
+      _log('signup_step', {'step': step});
+
+  Future<void> logDemoOpened() => _log('demo_opened');
+
+  /// Demo'dan hesap oluşturmaya geçti (`from`: hangi eylem tetikledi).
+  Future<void> logDemoConverted({required String from}) =>
+      _log('demo_converted', {'from': from});
+
+  Future<void> logFundCardViewed({required String category}) =>
+      _log('fund_card_viewed', {'category': category});
+
+  /// Temettü önerisi: shown / recorded / dismissed.
+  Future<void> logDividendSuggestion({required String action}) =>
+      _log('dividend_suggestion', {'action': action});
+
+  Future<void> logIpoViewed({required String surface}) =>
+      _log('ipo_viewed', {'surface': surface});
+
+  Future<void> logIpoParticipationRecorded() =>
+      _log('ipo_participation_recorded');
+
   Future<void> logGoalSet({required int amountTRY}) => _log(
         'goal_set',
         {

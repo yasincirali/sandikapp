@@ -126,6 +126,11 @@
   "add": "Ekle",
   "update": "Güncelle",
   "save": "Kaydet",
+  "posPeriodPriceMove": "fiyat {pct}",
+  "@posPeriodPriceMove": {
+    "description": "Varlık ekranı pozisyon kartında dönem kâr/zarar satırının yüzdesi: tutar sahibin piyasa etkisi, yüzde ise 1 birimin (ürünün) fiyat hareketi. Etiket iki sayının farklı tabanı olduğunu söyler.",
+    "placeholders": {"pct": {"type": "String"}}
+  },
   "assetType": "Varlık Türü",
   "assetName": "Varlık adı",
   "nameRequired": "Ad zorunlu",
@@ -148,6 +153,13 @@
   },
   "retry": "Tekrar Dene",
   "cancel": "Vazgeç",
+  "quickAllChip": "Hepsi ({qty})",
+  "@quickAllChip": {"description": "Hızlı Al/Sat diyaloğu: eldeki miktarın tamamını seçen çip.", "placeholders": {"qty": {"type": "String"}}},
+  "quickHolding": "Mevcut",
+  "quickAvgShort": "ort. {price}",
+  "@quickAvgShort": {"description": "Hızlı Al/Sat: ortalama birim maliyet kısaltması.", "placeholders": {"price": {"type": "String"}}},
+  "quickUnitPrice": "Birim fiyat",
+  "quickTotalCost": "Toplam maliyet",
   "delete": "Sil",
   "sell": "Sat",
   "dividend": "Temettü",
@@ -274,7 +286,7 @@
   "totalCost": "Toplam Maliyet",
   "currentValue": "Güncel Tutar",
   "dividendReceived": "Tahsil Edilen Temettü",
-  "lotSummary": "{buys} alım · {sells} çıkarma",
+  "lotSummary": "{sells, plural, =0{{buys} alım} other{{buys} alım · {sells} çıkarma}}",
   "@lotSummary": {
     "placeholders": {
       "buys": {
@@ -293,6 +305,75 @@
   "sortHighestFirst": "En Yüksek Önce",
   "sortLowestFirst": "En Düşük Önce",
   "assetFullName": "Tam Adı",
+  "fundReportTitleUpper": "FON KARNESİ",
+  "fundReportCategory": "{category} · {count} fon",
+  "@fundReportCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportPeriod1m": "1 ay",
+  "fundReportPeriodYtd": "Yılbaşından beri",
+  "fundReportPeriod1y": "1 yıl",
+  "fundReportRank": "{count} fondan {rank}.",
+  "@fundReportRank": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportReturnVsMedian": "Getirisi {ret} · kategori ortancası {median}",
+  "@fundReportReturnVsMedian": {
+    "placeholders": {
+      "ret": {
+        "type": "String"
+      },
+      "median": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAboveMedian": "Ortancanın {pts} puan üstünde",
+  "@fundReportAboveMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportBelowMedian": "Ortancanın {pts} puan altında",
+  "@fundReportBelowMedian": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "fundReportAtMedian": "Ortancayla aynı",
+  "fundReportFootnote": "Kaynak: TEFAS. Getiriler TEFAS'ın açıkladığı rakamlardır; TEFAS'ın hesap günleri grafikteki dönemle birebir örtüşmez, bu yüzden yukarıdaki dönem getirisinden biraz farklı olabilir. Aynı kategorideki fonlarla kıyas; geçmiş getiri gelecekteki getiriyi göstermez.",
+  "fundReportPanelLine": "Kategorisinde {count} fondan {rank}. ({period})",
+  "@fundReportPanelLine": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "rank": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
   "assetTypeStock": "Hisse",
   "assetTypeFund": "Fon",
   "assetTypeFx": "Döviz",
@@ -306,7 +387,7 @@
   "tickerHintGold": "Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)",
   "tickerHintCrypto": "Örn: BTC, ETH — listeden seç",
   "tickerHintCommodity": "Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)",
-  "tickerHintOther": "Yahoo Finance sembolü veya boş bırakın",
+  "tickerHintOther": "Yahoo Finance sembolü ya da boş bırak",
   "assetTypeSemantics": "{type} türü",
   "total": "toplam",
   "@assetTypeSemantics": {
@@ -358,6 +439,80 @@
   "noteRemove": "Notu sil",
   "noteNone": "Bu işleme not yazılmamış.",
   "noteAddHint": "Neden aldın, hedefin ne? Kısa bir not yaz.",
+  "alertTargetAtCurrent": "Hedef güncel fiyata eşit, alarm hemen çalışır. Biraz üstünü ya da altını yaz.",
+  "notifTypeDividend": "Temettü",
+  "dividendHistoryUpper": "SON 12 AY TEMETTÜ",
+  "dividendRecordedTotal": "Kaydettiğin: {amount}",
+  "@dividendRecordedTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEventLine": "{lot} lot × {perShare}",
+  "@dividendEventLine": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendGrossAmount": "{amount} brüt",
+  "@dividendGrossAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendRecorded": "Kaydedildi",
+  "dividendRecordAction": "Kaydet",
+  "dividendSourceNote": "Yahoo Finance'e göre gerçekleşmiş temettüler, hak tarihindeki lotunla. Tutarlar brüt; kaydı ele geçen net tutarla sen yaparsın.",
+  "dividendSuggestionLine": "{ticker} · hak tarihi {date}",
+  "@dividendSuggestionLine": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendSuggestionGross": "{lot} lot × {perShare} = {gross} brüt",
+  "@dividendSuggestionGross": {
+    "placeholders": {
+      "lot": {
+        "type": "String"
+      },
+      "perShare": {
+        "type": "String"
+      },
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendWithholdingAssumed": "Stopaj {rate} varsayıldı, düzeltebilirsin.",
+  "@dividendWithholdingAssumed": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "dividendEnterNet": "Brüt {gross} — stopaj sonrası eline geçeni yaz.",
+  "@dividendEnterNet": {
+    "placeholders": {
+      "gross": {
+        "type": "String"
+      }
+    }
+  },
   "noteReadOnlyPartner": "Bu kayıt ortağına ait; notunu yalnızca o düzenleyebilir.",
   "noteReadOnlyDeleted": "Silinmiş kaydın notu düzenlenemez.",
   "notesSection": "Notlar",
@@ -394,6 +549,35 @@
   "tefasFunds": "TEFAS Fonları",
   "fundsLoading": "Fonlar yükleniyor...",
   "pleaseWait": "Lütfen bekle",
+  "breakdownUpAmount": "artış {amount}",
+  "@breakdownUpAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "breakdownDownAmount": "azalış {amount}",
+  "@breakdownDownAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "nominalReturnInWindow": "Bu aralıkta senin getirin",
+  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır — iki rakamın aralığı farklı.",
+  "demoTryButton": "Önce bir göz at",
+  "demoBannerTitle": "Örnek portföy",
+  "demoBannerSubtitle": "Varlıklar örnek, fiyatlar canlı",
+  "demoCreateAccount": "Hesap oluştur",
+  "demoExit": "Örnekten çık",
+  "demoAccountCardTitle": "Kendi portföyünü kur",
+  "demoAccountCardBody": "Burada gördüğün her şey kendi varlıklarınla da çalışır. Varlık eklemek, not ve alarm kaydetmek için hesap oluştur.",
+  "demoAccountCardSignIn": "Zaten hesabım var",
+  "demoSaveSheetTitle": "Kaydetmek için hesap oluştur",
+  "demoSaveSheetBody": "Bu bir örnek portföy; burada yaptığın değişiklik kaydedilmez. Kendi portföyünü kurmak için hesap oluştur.",
+  "demoSaveSheetContinue": "Örneğe devam et",
   "fundsLoadFailed": "Fonlar yüklenemedi",
   "searchEllipsis": "Ara...",
   "clearSearch": "Aramayı temizle",
@@ -928,6 +1112,114 @@
   "portfolioSeriesNote": "Portföyler hesaplanan serilerdir — piyasada kote değiller. Getirileri, tıpkı bir varlık gibi dönem başına göre yüzde olarak çizilir.",
   "portfolioActivityTitle": "Portföy Hareketleri",
   "clearFilters": "Filtreleri temizle",
+  "watchlistRowUp": "artış {pct}",
+  "@watchlistRowUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowDown": "düşüş {pct}",
+  "@watchlistRowDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "watchlistRowFollowing": "takip ediliyor",
+  "notificationsNewCount": "{count, plural, =1{1 yeni bildirim} other{{count} yeni bildirim}}",
+  "@notificationsNewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "signOutAction": "Çıkış yap",
+  "baseCurrencyNameLira": "Lira",
+  "baseCurrencyNameDollar": "Dolar",
+  "baseCurrencyNameEuro": "Euro",
+  "baseCurrencyNameGold": "Gram altın",
+  "datePickerHelp": "Tarih seç",
+  "datePickerConfirm": "Seç",
+  "sortAssetsSemantics": "Varlıkları sırala",
+  "showDetailsSemantics": "Ayrıntıları göster",
+  "hideDetailsSemantics": "Ayrıntıları gizle",
+  "pricePreviewClose": "{date} kapanışı — kayıtta bu fiyat kullanılacak",
+  "@pricePreviewClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "pricePreviewLastTradingClose": "Son işlem günü kapanışı ({date}) — kayıtta bu fiyat kullanılacak",
+  "@pricePreviewLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedClose": "{date} kapanışı {price} olarak atandı",
+  "@priceAssignedClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "priceAssignedLastTradingClose": "Son işlem günü ({date}) kapanışı {price} olarak atandı",
+  "@priceAssignedLastTradingClose": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealAhead": "{pts} puan önde",
+  "@todayRealAhead": {
+    "description": "Bugün kartı, 'Enflasyona göre' satırının değeri; yön kelimeyle, işaret yok (F3)",
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealBehind": "{pts} puan geride",
+  "@todayRealBehind": {
+    "placeholders": {
+      "pts": {
+        "type": "String"
+      }
+    }
+  },
+  "todayRealEven": "başa baş",
+  "recapPointsAhead": "Enflasyonu {n} puan geçtin",
+  "@recapPointsAhead": {
+    "description": "Yıl sonu özeti, enflasyon sayfası başlığı; eskiden işaretli çıplak '{n} puan' idi (F3)",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "recapPointsBehind": "Enflasyonun {n} puan gerisinde kaldın",
+  "@recapPointsBehind": {
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "loadingEllipsis": "Yükleniyor…",
   "widenDateRangeHint": "Tarih aralığını genişletmeyi veya aramayı temizlemeyi dene.",
   "priceAlertsTitle": "Fiyat Alarmları",
@@ -1014,14 +1306,6 @@
     }
   },
   "recapSubtitle": "Bir yılın kısa hikâyesi.",
-  "recapPoints": "{n} puan",
-  "@recapPoints": {
-    "placeholders": {
-      "n": {
-        "type": "String"
-      }
-    }
-  },
   "recapDays": "{n} gün",
   "@recapDays": {
     "placeholders": {
@@ -1099,7 +1383,7 @@
       }
     }
   },
-  "realReturnSemanticsAhead": "Son bir yılda portföyün enflasyonu yüzde {pts} puan geçti",
+  "realReturnSemanticsAhead": "Son bir yılda portföyün enflasyonu {pts} puan geçti",
   "@realReturnSemanticsAhead": {
     "placeholders": {
       "pts": {
@@ -1116,7 +1400,7 @@
       }
     }
   },
-  "realReturnSemanticsBehind": "Son bir yılda portföyün enflasyonun yüzde {pts} puan gerisinde kaldı",
+  "realReturnSemanticsBehind": "Son bir yılda portföyün enflasyonun {pts} puan gerisinde kaldı",
   "@realReturnSemanticsBehind": {
     "placeholders": {
       "pts": {
@@ -1528,7 +1812,7 @@
   "trendUp": "YUKARI TREND",
   "trendDown": "AŞAĞI TREND",
   "trendFlat": "YATAY",
-  "indicatorsConfidence": "{lehte}/{total} gösterge · güven %{pct}",
+  "indicatorsConfidence": "{lehte}/{total} yön veren gösterge · güven %{pct}",
   "@indicatorsConfidence": {
     "placeholders": {
       "lehte": {
@@ -1559,7 +1843,7 @@
   "indicatorsNoHistory": "Bu varlığın fiyat geçmişi şu an çekilemedi — göstergeler hesaplanamıyor.",
   "noIndicatorsSelected": "Bu varlık türü için hiçbir gösterge seçilmemiş. Profil → Sinyal Ayarları'ndan aktifleştir.",
   "technicalAnalysisUpper": "TEKNİK ANALİZ",
-  "nOfMIndicators": "· {on}/{all} gösterge",
+  "nOfMIndicators": "· {on}/{all} gösterge açık",
   "@nOfMIndicators": {
     "placeholders": {
       "on": {
@@ -1814,7 +2098,7 @@
   "endHour": "Bitiş saati",
   "liveActivityIosNote": "iOS, Live Activity oturumunu en fazla 8 saat açık tutar. Uygulamayı açtıkça süre yenilenir; hiç açmazsanız kilit ekranından düşebilir.",
   "marketClosedNote": "Piyasa kapalıyken son kapanış gösterilir.",
-  "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullanın.",
+  "hiddenWeekend": "Şu an görünmüyor: hafta sonu gösterimi kapalı. Açmak için yukarıdaki anahtarı kullan.",
   "hiddenOutsideWindow": "Şu an görünmüyor: saat {start}–{end} aralığının dışındasın. Banner {start}'da görünecek. Hemen görmek için \"Gün boyu göster\"i aç.",
   "@hiddenOutsideWindow": {
     "placeholders": {
@@ -2254,15 +2538,7 @@
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
   "todayRealHint": "Yıllık getirin ile TÜFE farkı",
-  "todayPoints": "{pts} puan",
-  "@todayPoints": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekLabel": "Geçen hafta",
+  "todayWeekLabel": "Son 7 gün",
   "todayWeekHint": "Piyasanın portföyüne etkisi · özet hazır",
   "todayGoalLabel": "Hedef",
   "todayGoalSetShort": "Tutar seç, kalanı her gün gör",
@@ -2651,6 +2927,64 @@
   "deletedFilter": "Silinenler",
   "deletedEmptyTitle": "Silinmiş kayıt yok",
   "deletedEmptyBody": "Bir varlığı sildiğinde alım, satım ve silinme tarihleri burada durur; portföy toplamına girmez.",
+  "ipoTitle": "Halka arzlar",
+  "ipoProfileRowSubtitle": "Takvim, fiyat ve katılım kaydı",
+  "ipoGroupTalep": "Talep toplanıyor",
+  "ipoGroupYaklasan": "Yaklaşan",
+  "ipoGroupIslemBekliyor": "İşlem görmeyi bekliyor",
+  "ipoGroupIslemGoruyor": "İşlem görüyor",
+  "ipoGroupBilinmiyor": "Tarihi belirsiz",
+  "ipoOfflineNote": "Çevrimdışı: {tarih} tarihli liste gösteriliyor.",
+  "@ipoOfflineNote": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoOfflineNoDate": "Çevrimdışı: kayıtlı liste gösteriliyor.",
+  "ipoListDate": "Liste tarihi: {tarih}",
+  "@ipoListDate": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoEmpty": "Şu an listede halka arz yok.",
+  "ipoDisclaimer": "Bilgi amaçlıdır, yatırım tavsiyesi değildir. Tarih ve fiyatı aracı kurumundan doğrula.",
+  "ipoRowTalep": "Talep: {aralik}",
+  "@ipoRowTalep": {
+    "placeholders": {
+      "aralik": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoRowIslem": "İşlem: {tarih}",
+  "@ipoRowIslem": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "ipoFieldTalep": "Talep toplama",
+  "ipoFieldFiyat": "Halka arz fiyatı",
+  "ipoFieldDagitim": "Dağıtım",
+  "ipoFieldIslem": "İşlem başlangıcı",
+  "ipoFieldPazar": "Pazar",
+  "ipoFieldGuncelleme": "Bilgi tarihi",
+  "ipoDagitimEsit": "Eşit",
+  "ipoDagitimOransal": "Oransal",
+  "ipoOpenSource": "Kaynağı aç",
+  "ipoSourceFailed": "Bağlantı açılamadı.",
+  "ipoParticipate": "Katıldım, portföye ekle",
+  "ipoParticipateHint": "Sana düşen lot sayısını yaz; alış fiyatı ve tarih hazır gelir. İşlem başlayana kadar hisse portföyünde halka arz fiyatıyla görünür.",
+  "ipoParticipateHintTraded": "Sana düşen lot sayısını yaz; alış fiyatı (halka arz fiyatı) ve ilk işlem günü hazır gelir. Hisse portföyünde canlı fiyatıyla görünür.",
+  "ipoParticipateNoPrice": "Halka arz fiyatı listede yok: formda alış fiyatını kendin yaz. İşlem görmeyen hissenin fiyatı bulunamaz; boş bırakırsan maliyet 0 kaydedilir.",
+  "ipoParticipateLater": "Dağıtım sonuçları talep toplama bitince açıklanır. Katıldıysan o zaman buradan portföyüne ekleyebilirsin.",
+  "ipoParticipationSaved": "Halka arz lotun portföyüne eklendi.",
   "txDateLabeled": "{tur}: {tarih}",
   "@txDateLabeled": {
     "placeholders": {
