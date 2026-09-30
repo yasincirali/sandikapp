@@ -276,19 +276,21 @@ struct SandikHomeWidget: Widget {
 // düzenleniyor — yeni dosya kaydı unutulursa widget sessizce hiç derlenmez.
 //
 // Kararlar:
-// - Satır widget'ı: yön + yüzde büyük, altında günün eğrisi. Tutar YALNIZ
-//   "Kilit ekranında tutar göster" açıksa (Canlı Etkinlik'le tek ayar).
-// - Yuvarlak widget: sistemin kilit ekranı göstergesi; günün yüzdesi
-//   −%3…+%3 yayında nokta, ortada ok + yüzde. Yön ve büyüklük tek bakışta.
-//   ±%3 dışı uçta durur (portföy için günlük ±%3 zaten sert bir gün).
-// - "Bakiyeyi gizle" açıkken yüzde de, eğri de YOK — yalnız logo / "••".
+// - TEK kart (kullanıcı kararı 2026-09-30, ikinci tur: "kilit ekranında 2
+//   parçalı olmasın, dörtgen kartı yayalım"). Yuvarlak widget kaldırıldı;
+//   renkli yuvarlak gösterge Dinamik Ada'da yaşıyor (`SandikYonHalkasi`).
+//   iOS kilit ekranında en geniş widget dikdörtgendir (satırın yarısı);
+//   tam genişlik yalnız Canlı Etkinlik banner'ına açık.
+// - Kart yatay kullanılır: solda yön + büyük yüzde, sağda kalan genişliği
+//   dolduran günün eğrisi. Tutar YALNIZ "Kilit ekranında tutar göster"
+//   açıksa, başlık satırının sağında (Canlı Etkinlik'le tek ayar).
+// - "Bakiyeyi gizle" açıkken yüzde de, eğri de YOK — yalnız "••".
 // - Kilit ekranı tek renkli (vibrant) çizer: renk yerine `.primary` /
 //   `.secondary`; yön her zaman ▲/▼ ile.
 
 private enum KilitKeys {
     static let lockAmounts = "sandik_lock_amounts"
     static let lockPct = "sandik_lock_pct"
-    static let pctNum = "sandik_change_pct_num"
     static let hidden = "sandik_hidden"
 }
 
@@ -299,7 +301,6 @@ struct SandikKilitEntry: TimelineEntry {
     let showsAmount: Bool
     /// `+%0,42` / `−%0,06` / `%0,00` ya da `—`.
     let pctText: String
-    let pctValue: Double
     let changeText: String
     let isPositive: Bool
     let isFlat: Bool
@@ -315,7 +316,6 @@ struct SandikKilitEntry: TimelineEntry {
         isHidden: false,
         showsAmount: false,
         pctText: "—",
-        pctValue: 0,
         changeText: "",
         isPositive: true,
         isFlat: true,
@@ -345,7 +345,6 @@ struct SandikKilitProvider: TimelineProvider {
             isHidden: gizli,
             showsAmount: defaults.bool(forKey: KilitKeys.lockAmounts) && !gizli,
             pctText: yuzde.isEmpty ? "—" : yuzde,
-            pctValue: defaults.double(forKey: KilitKeys.pctNum),
             changeText: defaults.string(forKey: WidgetKeys.change) ?? "",
             isPositive: defaults.bool(forKey: WidgetKeys.isPositive),
             isFlat: defaults.bool(forKey: WidgetKeys.isFlat),
@@ -367,37 +366,18 @@ struct SandikKilitProvider: TimelineProvider {
 }
 
 struct SandikKilitView: View {
-    @Environment(\.widgetFamily) private var family
     let entry: SandikKilitEntry
-
-    /// Yuvarlak göstergenin yarı genişliği (yüzde puanı).
-    private static let olcek = 3.0
-
-    var body: some View {
-        switch family {
-        case .accessoryCircular:
-            yuvarlak
-        default:
-            satir
-        }
-    }
 
     private var ok: String? {
         entry.hasDirection ? directionArrow(entry.isPositive) : nil
     }
 
-    /// Yuvarlakta tek ondalık: `%0,4`. Ölçüm yoksa `—`.
-    private var kisaYuzde: String {
-        guard entry.pctText != "—" else { return "—" }
-        let deger = String(format: "%.1f", abs(entry.pctValue))
-            .replacingOccurrences(of: ".", with: ",")
-        return "%" + deger
+    private var tutarGorunur: Bool {
+        entry.showsAmount && !entry.changeText.isEmpty && entry.changeText != "—"
     }
 
-    // ── Satır (accessoryRectangular) ────────────────────────────────────────
-
-    private var satir: some View {
-        VStack(alignment: .leading, spacing: 1) {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
                 SandikLogoMark(width: 11)
                 Text("sandık")
@@ -408,6 +388,14 @@ struct SandikKilitView: View {
                         .font(.sandikLabel(10, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
+                Spacer(minLength: 4)
+                if tutarGorunur && !entry.isHidden {
+                    Text(entry.changeText)
+                        .font(.sandikNumber(11, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
             }
 
             if !entry.hasData {
@@ -416,78 +404,37 @@ struct SandikKilitView: View {
                     .foregroundStyle(.secondary)
             } else if entry.isHidden {
                 Text("••")
-                    .font(.sandikNumber(20, weight: .bold))
+                    .font(.sandikNumber(22, weight: .bold))
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    if let ok = ok {
-                        Text(ok)
-                            .font(.sandikLabel(11, weight: .black))
-                    }
-                    Text(entry.pctText)
-                        .font(.sandikNumber(20, weight: .bold))
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                    if entry.showsAmount, !entry.changeText.isEmpty,
-                       entry.changeText != "—" {
-                        Text(entry.changeText)
-                            .font(.sandikNumber(12, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                // Yatay düzen: yüzde solda (öncelikli, kırpılmaz), eğri kalan
+                // genişliği doldurur — kart iki satır yerine tek bakışta okunur.
+                HStack(alignment: .center, spacing: 6) {
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        if let ok = ok {
+                            Text(ok)
+                                .font(.sandikLabel(11, weight: .black))
+                        }
+                        Text(entry.pctText)
+                            .font(.sandikNumber(22, weight: .bold))
+                            .monospacedDigit()
                             .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .minimumScaleFactor(0.6)
                     }
-                }
-                if entry.sparkline.count >= 2 {
-                    SandikSparkline(
-                        points: entry.sparkline,
-                        color: .primary,
-                        showsFill: false
-                    )
-                    .frame(height: 12)
+                    .layoutPriority(1)
+                    if entry.sparkline.count >= 2 {
+                        SandikSparkline(
+                            points: entry.sparkline,
+                            color: .primary,
+                            showsFill: false
+                        )
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 22)
+                    }
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // ── Yuvarlak (accessoryCircular) ────────────────────────────────────────
-
-    @ViewBuilder
-    private var yuvarlak: some View {
-        if !entry.hasData || entry.isHidden {
-            ZStack {
-                AccessoryWidgetBackground()
-                SandikLogoMark(width: 22)
-            }
-        } else {
-            let sinir = Self.olcek
-            Gauge(
-                value: min(max(entry.pctValue, -sinir), sinir),
-                in: -sinir...sinir
-            ) {
-                Text("sandık")
-            } currentValueLabel: {
-                VStack(spacing: -1) {
-                    if let ok = ok {
-                        Text(ok)
-                            .font(.sandikLabel(8, weight: .black))
-                    }
-                    Text(kisaYuzde)
-                        .font(.sandikNumber(13, weight: .bold))
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                }
-            } minimumValueLabel: {
-                Text("−")
-                    .font(.sandikLabel(9, weight: .bold))
-            } maximumValueLabel: {
-                Text("+")
-                    .font(.sandikLabel(9, weight: .bold))
-            }
-            .gaugeStyle(.accessoryCircular)
-            .accessibilityLabel("Bugün \(entry.pctText)")
-        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -505,6 +452,6 @@ struct SandikKilitWidget: Widget {
         }
         .configurationDisplayName("sandık")
         .description("Günün değişimi kilit ekranında. Tutar yalnız izin verirsen görünür.")
-        .supportedFamilies([.accessoryRectangular, .accessoryCircular])
+        .supportedFamilies([.accessoryRectangular])
     }
 }

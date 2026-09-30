@@ -85,7 +85,6 @@ void main() {
       await HomeWidgetService.instance.update(_durum(), hideBalance: true);
       expect(kanal.yazilan['sandik_hidden'], isTrue);
       expect(kanal.yazilan['sandik_lock_pct'], '');
-      expect(kanal.yazilan['sandik_change_pct_num'], 0.0);
     });
 
     test('görünürken: gizli değil; ölçüm yoksa yüzde uydurulmaz ("—")',
@@ -114,7 +113,6 @@ void main() {
       for (final anahtar in const [
         'sandik_lock_amounts',
         'sandik_lock_pct',
-        'sandik_change_pct_num',
         'sandik_hidden',
       ]) {
         expect(dart, contains("'$anahtar'"), reason: 'Dart: $anahtar');
@@ -128,11 +126,10 @@ void main() {
       expect(paket, contains('SandikKilitWidget()'));
     });
 
-    test('yalnız kilit ekranı aileleri; 4.2 (tek satır) YOK', () {
-      expect(
-          swift,
-          contains(
-              '.supportedFamilies([.accessoryRectangular, .accessoryCircular])'));
+    test('TEK kart: yalnız dikdörtgen; yuvarlak ve tek satır YOK', () {
+      expect(swift, contains('.supportedFamilies([.accessoryRectangular])'));
+      expect(swift, isNot(contains('.accessoryCircular')),
+          reason: 'İkinci tur: kilit ekranı iki parçalı olmasın');
       expect(swift, isNot(contains('.accessoryInline')),
           reason: 'Karar 4.2: tek satırlık widget yapılmadı');
     });

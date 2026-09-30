@@ -164,10 +164,10 @@ const List<SurumNotu> surumNotlari = [
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Kilit ekranında sandık (iPhone)',
-        aciklama: 'Kilit ekranına widget olarak ekle: günün yüzdesi ve '
-            'eğrisi, ya da yuvarlak göstergede yönü ve büyüklüğü. Tutar '
-            'yalnız "Kilit ekranında tutar göster" açıksa görünür. Dinamik '
-            "Ada'da da artık günün mini grafiği var.",
+        aciklama: 'Kilit ekranına widget olarak ekle: günün yönü, yüzdesi '
+            've eğrisi tek kartta. Tutar yalnız "Kilit ekranında tutar '
+            "göster\" açıksa görünür. Dinamik Ada'da renkli yön halkası "
+            'günün yönünü ve büyüklüğünü tek bakışta gösterir.',
       ),
       Yenilik(
         ikon: YenilikIkonu.liste,

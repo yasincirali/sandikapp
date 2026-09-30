@@ -57,10 +57,10 @@ class HomeWidgetService {
   /// iOS widget'ının `kind` değeri (WidgetKit tarafında aynısı yazılır).
   static const _iOSWidgetName = 'SandikWidget';
 
-  /// iOS kilit ekranı widget'ının `kind`'ı (karar 4.1/4.3, 2026-09-30).
+  /// iOS kilit ekranı widget'ının `kind`'ı (karar 4.1, 2026-09-30).
   ///
   /// Ayrı tür: ana ekran widget'ının görünümüne ve arka planına dokunmadan
-  /// kilit ekranı ailelerini (satır + yuvarlak) tanımlar. `home_widget`
+  /// kilit ekranı kartını (tek dikdörtgen) tanımlar. `home_widget`
   /// iOS'ta YALNIZ adı verilen türü yeniler (`reloadTimelines(ofKind:)`);
   /// bu yüzden [_requestUpdate] iOS'ta ikinci bir çağrı yapar.
   static const _iOSKilitWidgetName = 'SandikKilitWidget';
@@ -121,9 +121,6 @@ class HomeWidgetService {
   /// yoksa `—`. `_kChangePct`'teki " Günlük" soneki kilit ekranına sığmaz.
   /// Biçim `fmtPctIsaretli` — uygulamanın tek işaretli yüzde kaynağı.
   static const _kLockPct = 'sandik_lock_pct';
-
-  /// Günlük yüzde SAYI olarak — yuvarlak widget'ın göstergesi (Gauge).
-  static const _kPctNum = 'sandik_change_pct_num';
 
   /// Bakiye gizli mi (karar 4.5): kilit ekranı gizliyken yüzdeyi de
   /// göstermez. Ana ekran widget'ı bunu maskeli metinden anlıyor; kilit
@@ -362,8 +359,6 @@ class HomeWidgetService {
             summary.hasChange
                 ? fmtPctIsaretli(summary.changePct!, digits: 2)
                 : '—');
-        await HomeWidget.saveWidgetData<double>(
-            _kPctNum, summary.hasChange ? summary.changePct! : 0.0);
         // Tarih — kilit ekranıyla AYNI biçim. Widget günlerce ekranda
         // durur; rakamın hangi güne ait olduğu okunabilmeli.
         await HomeWidget.saveWidgetData<String>(
@@ -713,7 +708,6 @@ class HomeWidgetService {
     // gizli der.
     await HomeWidget.saveWidgetData<bool>(_kHidden, true);
     await HomeWidget.saveWidgetData<String>(_kLockPct, '');
-    await HomeWidget.saveWidgetData<double>(_kPctNum, 0.0);
     await HomeWidget.saveWidgetData<String>(
         _kDate, DateFormat('d MMMM EEEE', 'tr_TR').format(DateTime.now()));
     await HomeWidget.saveWidgetData<bool>(

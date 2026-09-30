@@ -139,14 +139,10 @@ struct SandikLiveActivity: Widget {
                                 // kırpılmasın; küçülsün ama okunur kalsın.
                                 .minimumScaleFactor(0.75)
                         } else {
-                          HStack(spacing: 8) {
-                            // Renkli yön halkası (2026-09-30) — dar
-                            // görünümle aynı dil, büyük ölçekte.
-                            if let y = SandikYonHalkasi.yuzde(state: context.state) {
-                                SandikYonHalkasi(yuzde: y, palette: palette,
-                                                 kalinlik: 3.5)
-                                    .frame(width: 30, height: 30)
-                            }
+                            // Tutar kapalıyken (ikinci tur, kullanıcı: "büyük
+                            // kartta yuvarlak göstergeye gerek yok, farklı bir
+                            // tasarım"): halka yok; yüzde kartın tek büyük
+                            // sayısı, altta dolgulu eğri + seans çubuğu.
                             HStack(spacing: 5) {
                                 // Ok YALNIZCA gerçek bir yön varken.
                                 // Koşulsuz basıldığında iki durumda
@@ -163,8 +159,8 @@ struct SandikLiveActivity: Widget {
                                         .font(.sandikLabel(11, weight: .black))
                                 }
                                 Text(context.state.changePctText)
-                                    .font(.sandikNumber(20, weight: .bold))
-                                    .tracking(-0.2)
+                                    .font(.sandikNumber(26, weight: .bold))
+                                    .tracking(-0.3)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.75)
                             }
@@ -172,7 +168,6 @@ struct SandikLiveActivity: Widget {
                                 ? palette.statusColor(
                                     isPositive: context.state.isPositive)
                                 : palette.text58)
-                          }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -180,8 +175,12 @@ struct SandikLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
+                    let tutarAcik =
+                        context.state.showAmounts && !context.state.isHidden
                     VStack(spacing: 6) {
                         // Gün içi grafik — tutar gizliyken de görünür.
+                        // Tutar kapalıyken kartın ana görseli: dolgulu ve
+                        // uç noktalı, biraz daha yüksek.
                         if !context.state.sparkline.isEmpty {
                             SandikSparkline(
                                 points: context.state.sparkline,
@@ -190,13 +189,24 @@ struct SandikLiveActivity: Widget {
                                     ? palette.statusColor(
                                         isPositive: context.state.isPositive)
                                     : palette.text58,
-                                // Dar alanda gradient dolgu gürültüye
-                                // dönüşüyor; yalnızca çizgi bırakılır.
-                                showsFill: false
+                                showsFill: !tutarAcik,
+                                isMarketOpen: tutarAcik
+                                    ? nil : context.state.isMarketOpen
                             )
-                            .frame(height: 26)
+                            .frame(height: tutarAcik ? 26 : 34)
                         }
-                        SandikChangePill(state: context.state)
+                        if tutarAcik {
+                            SandikChangePill(state: context.state)
+                        } else {
+                            SandikSeansCubugu(
+                                isMarketOpen: context.state.isMarketOpen,
+                                renk: context.state.hasDirection
+                                    ? palette.statusColor(
+                                        isPositive: context.state.isPositive)
+                                    : palette.text58,
+                                palette: palette
+                            )
+                        }
                     }
                     .padding(.top, 4)
                 }
@@ -321,6 +331,62 @@ struct SandikLiveActivity: Widget {
 @available(iOS 17.0, *)
 func directionArrow(_ isPositive: Bool) -> String {
     isPositive ? "▲" : "▼"
+}
+
+/// BIST seansının ne kadarının geçtiği — Dinamik Ada genişletilmiş
+/// görünümü, tutar kapalıyken (2026-09-30, ikinci tur).
+///
+/// `ProgressView(timerInterval:)` sistem tarafından CANLI ilerler: Canlı
+/// Etkinlik güncellemesi beklemeden çubuk akar, bütçe harcamaz.
+///
+/// Neden `sessionEndsAtUnix` değil: o alan kullanıcının seçtiği GÖSTERİM
+/// penceresinin sonu (`LiveActivityService.sessionEnd`), seansın değil.
+/// Seans 10:00–18:00 İstanbul saatiyle burada kurulur — Bugün kartındaki
+/// "18:00 kapanış" ile aynı (`BugunService.seansKapanisDk`). Yarım günlerde
+/// (12:30) çubuk tam dolmadan seans kapanır; `isMarketOpen` false gelince
+/// çubuk "Seans kapalı" yazısına döner — yanlış süre söylemez.
+@available(iOS 17.0, *)
+struct SandikSeansCubugu: View {
+    let isMarketOpen: Bool
+    let renk: Color
+    let palette: SandikPalette
+
+    private static let istanbul = TimeZone(identifier: "Europe/Istanbul") ?? .current
+
+    private var seans: ClosedRange<Date>? {
+        var takvim = Calendar(identifier: .gregorian)
+        takvim.timeZone = Self.istanbul
+        let simdi = Date()
+        guard let acilis = takvim.date(bySettingHour: 10, minute: 0, second: 0, of: simdi),
+              let kapanis = takvim.date(bySettingHour: 18, minute: 0, second: 0, of: simdi),
+              acilis < kapanis else { return nil }
+        return acilis...kapanis
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if isMarketOpen, let aralik = seans {
+                Text("Seans")
+                    .font(.sandikLabel(11, weight: .medium))
+                    .foregroundStyle(palette.text58)
+                ProgressView(timerInterval: aralik, countsDown: false) {
+                    EmptyView()
+                } currentValueLabel: {
+                    EmptyView()
+                }
+                .progressViewStyle(.linear)
+                .tint(renk)
+                Text("18:00")
+                    .font(.sandikNumber(11, weight: .medium))
+                    .foregroundStyle(palette.text58)
+            } else {
+                Text("Seans kapalı")
+                    .font(.sandikLabel(11, weight: .medium))
+                    .foregroundStyle(palette.text58)
+                Spacer(minLength: 0)
+            }
+        }
+    }
 }
 
 /// Günün yönünü ve büyüklüğünü RENKLE gösteren yay — Dinamik Ada
