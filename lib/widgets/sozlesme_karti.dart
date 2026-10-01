@@ -45,7 +45,7 @@ class SozlesmeKarti extends ConsumerWidget {
     final lotlar = [
       for (final a in ref.watch(portfolioProvider).valueOrNull?.assets ??
           const <Asset>[])
-        if (a.sozlesmeId == id && a.isActive) a,
+        if (sozlesmeLotuMu(a, s) && a.isActive) a,
     ];
     final govde = s.tur == SozlesmeTuru.mevduat
         ? _MevduatGovdesi(s: s, donemler: sd!.donemleri(id), lotlar: lotlar)
@@ -147,8 +147,15 @@ class _MevduatGovdesi extends ConsumerWidget {
     final pozisyon = aggregatePositions(lotlar);
     final pay = pozisyon.fold<double>(0, (t, p) => t + p.totalQuantity);
     final bugun = MevduatHesabi.birimDeger(donemler, simdi) ?? 0;
-    final donemBasi = MevduatHesabi.birimDeger(donemler, son.baslangic) ?? 0;
-    final buDonem = pay * (bugun - donemBasi);
+    final buDonem = MevduatHesabi.donemKazanci(
+      donemler,
+      [
+        for (final a in lotlar)
+          if (a.isBuy || a.isSell)
+            (a.addedDate, a.isSell ? -a.quantity : a.quantity),
+      ],
+      simdi,
+    );
     final doldu = MevduatHesabi.vadesiDoldu(donemler, simdi);
     final kalan = MevduatHesabi.vadeyeKalanGun(donemler, simdi);
     final ilerleme = MevduatHesabi.donemIlerlemesi(donemler, simdi);
@@ -344,9 +351,18 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
   final _form = GlobalKey<FormState>();
   late final _faiz = TextEditingController(
       text: fmtNumFlex(widget.onceki.yillikFaiz, maxDigits: 2));
-  late final _stopaj = TextEditingController(
-      text: fmtNumFlex(widget.onceki.stopaj, maxDigits: 2));
   late int? _gun = widget.onceki.gun;
+
+  // Yeni dönemin stopajı YENİ dönemin açılış gününde yürürlükteki orandır
+  // (stopaj incelemesi, 2026-10-01). Eskiden alan önceki dönemin oranıyla
+  // açılıyor, öneri yalnızca vade çipine dokununca geliyordu: 2025 Şubat'ta
+  // %15'le açılıp Temmuz'dan sonra aynı vadeyle yenilenen mevduat %17,5
+  // yerine %15'le kaydediliyordu.
+  late final _stopaj = TextEditingController(
+      text: fmtNumFlex(onerilenStopaj(_yeniBaslangic, _gun), maxDigits: 2));
+
+  /// Yeni dönemin başı — `mevduatYenile`/`mevduatOranGuncelle` ile aynı kural.
+  DateTime get _yeniBaslangic => widget.onceki.vadeSonu ?? DateTime.now();
 
   @override
   void dispose() {
@@ -357,8 +373,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
 
   void _gunSec(int g) {
     setState(() => _gun = g);
-    final bas = widget.onceki.vadeSonu ?? DateTime.now();
-    _stopaj.text = fmtNumFlex(onerilenStopaj(bas, g), maxDigits: 2);
+    _stopaj.text = fmtNumFlex(onerilenStopaj(_yeniBaslangic, g), maxDigits: 2);
   }
 
   @override

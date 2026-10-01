@@ -3,6 +3,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/models/sozlesme.dart';
+import 'package:portfoy_takip/providers/sozlesme_provider.dart';
 import 'package:portfoy_takip/services/fiyat_kaynagi.dart';
 import 'package:portfoy_takip/services/mevduat_hesabi.dart';
 import 'package:portfoy_takip/services/price_service.dart';
@@ -217,5 +218,44 @@ void main() {
         current: b);
     expect(a.totalCost, 250000);
     expect(a.totalValue - a.totalCost, closeTo(7594.52, 0.01));
+  });
+
+  test('hızlı alımla sözleşme kimliksiz yazılmış mevduat lotu sözleşmeye sayılır',
+      () {
+    final s = Sozlesme(
+      id: sid,
+      userId: 'u',
+      tur: SozlesmeTuru.mevduat,
+      kurum: 'Banka',
+      baslangic: DateTime(2026, 9, 1),
+    );
+    final bagli = lot(
+        type: AssetType.mevduat, ticker: mevduatSembolu(sid), sozlesmeId: sid);
+    // Eski sürümün "+" ile yazdığı lot: sembol var, sozlesme_id yok.
+    final yetim =
+        lot(type: AssetType.mevduat, ticker: mevduatSembolu(sid), qty: 2);
+    final baska = lot(
+        type: AssetType.mevduat,
+        ticker: mevduatSembolu('00000000-0000-4000-8000-000000000002'),
+        qty: 3);
+    expect(sozlesmeLotuMu(bagli, s), isTrue);
+    expect(sozlesmeLotuMu(yetim, s), isTrue);
+    expect(sozlesmeLotuMu(baska, s), isFalse);
+
+    // BES'te sembol sözleşmeye özgü değil: yalnız kimlik sayılır.
+    final bes = Sozlesme(
+      id: sid,
+      userId: 'u',
+      tur: SozlesmeTuru.bes,
+      kurum: 'Emeklilik',
+      baslangic: DateTime(2026, 1, 1),
+    );
+    expect(sozlesmeLotuMu(lot(type: AssetType.bes, ticker: 'TEFAS:AH5'), bes),
+        isFalse);
+    expect(
+        sozlesmeLotuMu(
+            lot(type: AssetType.bes, ticker: 'TEFAS:AH5', sozlesmeId: sid),
+            bes),
+        isTrue);
   });
 }

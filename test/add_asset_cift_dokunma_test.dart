@@ -41,6 +41,7 @@ class _SayanPortfoy extends PortfolioNotifier {
     DateTime? addedDate,
     double? initialCurrentPrice,
     double commission = 0,
+    String? sozlesmeId,
   }) async {
     ekleme++;
   }

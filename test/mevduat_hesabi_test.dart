@@ -101,6 +101,61 @@ void main() {
     expect(onerilenStopaj(t, null), 17.5, reason: 'vadesiz = 6 aya kadar');
   });
 
+  test('önerilen stopaj açılış gününe göre: 9487 dönemi (2025-02-01..07-08)',
+      () {
+    // 2025 Mart'ında açılan mevduata 10041'in oranı önerilmez.
+    final t = DateTime(2025, 3, 15);
+    expect(onerilenStopaj(t, 32), 15);
+    expect(onerilenStopaj(t, 365), 12);
+    expect(onerilenStopaj(t, 730), 10);
+    expect(onerilenStopaj(t, null), 15);
+    // Sınır günleri: karar günü yeni oranla açılır.
+    expect(onerilenStopaj(DateTime(2025, 7, 8), 32), 15);
+    expect(onerilenStopaj(DateTime(2025, 7, 9), 32), 17.5);
+    expect(onerilenStopaj(DateTime(2025, 2, 1), 365), 12);
+  });
+
+  group('bu dönem net (donemKazanci)', () {
+    const n = 0.45 * 0.825;
+    double b(int g) => 1 + n * g / 365;
+    final d = [donem(bas, 32, faiz: 45)];
+    final vade = bas.add(const Duration(days: 32));
+
+    test('tek alım: dönemin net faizi', () {
+      expect(MevduatHesabi.donemKazanci(d, [(bas, 100000)], vade),
+          closeTo(100000 * (b(32) - 1), 1e-6));
+    });
+
+    test('dönem içinde eklenen para kendi gününden faiz alır', () {
+      final g16 = bas.add(const Duration(days: 16));
+      final pay2 = 100000 / b(16);
+      final k = MevduatHesabi.donemKazanci(
+          d, [(bas, 100000), (g16, pay2)], vade);
+      // ₺4.856 — eski hesap (toplam pay × dönem büyümesi) ₺6.457 derdi.
+      expect(k, closeTo(100000 * (b(32) - 1) + pay2 * (b(32) - b(16)), 1e-6));
+      expect(k, closeTo(4856.13, 0.01));
+    });
+
+    test('dönem içi çekim: çekilen pay çekim gününe kadar sayılır', () {
+      final g16 = bas.add(const Duration(days: 16));
+      final k = MevduatHesabi.donemKazanci(
+          d, [(bas, 100000), (g16, -40000)], vade);
+      expect(k, closeTo(60000 * (b(32) - 1) + 40000 * (b(16) - 1), 1e-6));
+    });
+
+    test('yenilenmiş dönemde önceki dönemin alımı dönem başından sayılır', () {
+      final d2 = [
+        donem(bas, 32, faiz: 45, id: 'a'),
+        donem(vade, 32, faiz: 40, id: 'b'),
+      ];
+      final son = vade.add(const Duration(days: 32));
+      final basBirim = MevduatHesabi.birimDeger(d2, vade)!;
+      final sonBirim = MevduatHesabi.birimDeger(d2, son)!;
+      expect(MevduatHesabi.donemKazanci(d2, [(bas, 100000)], son),
+          closeTo(100000 * (sonBirim - basBirim), 1e-6));
+    });
+  });
+
   test('seri: başlangıç öncesi nokta yok, son nokta "şimdi", nokta sayısı sınırlı',
       () {
     final son = bas.add(const Duration(days: 10));

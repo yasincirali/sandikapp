@@ -137,6 +137,39 @@ abstract final class MevduatHesabi {
     return (_gun(d.baslangic, simdi) / top).clamp(0.0, 1.0);
   }
 
+  /// Son dönemde kazanılan net faiz (TL) — kartın "Bu dönem net" satırı.
+  ///
+  /// [akislar] mevduatın pay hareketleridir: `(tarih, pay)`, alış pozitif,
+  /// çekim negatif.
+  ///
+  /// ## Neden pay × (bugün − dönem başı) değil (2026-10-01)
+  /// Eski hesap bugünkü TOPLAM payı dönem başından beri faiz almış sayıyordu.
+  /// Dönem içinde para eklenince (portföydeki "+" ile) yeni para dönem
+  /// başından beri işlemiş gibi görünüyordu: ₺100.000 ile açılan %45'lik
+  /// 32 günlük mevduata 16. gün ₺100.000 eklenince vade günü bu dönem net
+  /// ₺4.856 iken ₺6.457 yazıyordu. Her hareket kendi gününden itibaren sayılır; dönem
+  /// başından önceki hareketler dönem başından.
+  static double donemKazanci(
+    List<MevduatDonemi> donemler,
+    Iterable<(DateTime, double)> akislar,
+    DateTime simdi,
+  ) {
+    final son = sonDonem(donemler);
+    if (son == null) return 0;
+    final bugun = birimDeger(donemler, simdi);
+    if (bugun == null) return 0;
+    final donemBasi = birimDeger(donemler, son.baslangic) ?? 1;
+    var toplam = 0.0;
+    for (final (tarih, pay) in akislar) {
+      if (tarih.isAfter(simdi)) continue;
+      final giris = tarih.isAfter(son.baslangic)
+          ? (birimDeger(donemler, tarih) ?? donemBasi)
+          : donemBasi;
+      toplam += pay * (bugun - giris);
+    }
+    return toplam;
+  }
+
   /// [anapara] için bir vadeli dönemin NET faiz tutarı (TL).
   static double donemNetFaizi({
     required double anapara,
@@ -164,13 +197,25 @@ abstract final class MevduatHesabi {
 /// hükümlerini farklı yorumlayabiliyor ve eski dönemler için elimizde
 /// doğrulanmış tarihçe yok.
 ///
-/// Kaynak: 10041 sayılı Cumhurbaşkanı Kararı (RG 2025-07-09). TL mevduat:
-/// 6 aya kadar vadeli ve vadesiz %17,5; 1 yıla kadar %15; 1 yıldan uzun %10.
+/// Kaynaklar (TL mevduat; vadesiz/ihbarlı hesaplar "6 aya kadar" grubunda):
+///   · 10041 sayılı CK (RG 2025-07-09): 6 aya kadar %17,5; 1 yıla kadar
+///     %15; 1 yıldan uzun %10.
+///   · 9487 sayılı CK (2025-02-01'den açılan/yenilenen): %15 / %12 / %10.
+///
+/// ## Neden geçmiş satır (stopaj incelemesi, 2026-10-01)
+/// Tablo yalnızca 2025-07-09 satırını taşıyordu ve daha eski açılışlar
+/// `orElse` ile o satıra düşüyordu: 2025 Mart'ında açılmış 2 yıllık bir
+/// mevduata doğru öneri %10, 1 yıllığa %12 iken uygulama %15 öneriyordu
+/// (₺100.000, %48, 365 gün: net ₺42.240 yerine ₺40.800). 2025-02-01
+/// öncesi oranlar (%10/%7,5/%5, daha önce %7,5/%5/%2,5) vadesiz hesap
+/// için ayrı bir oran taşıdığından eklenmedi; o tarihlerde öneri en eski
+/// satırdır ve form "bankan farklı uyguluyorsa düzelt" der.
 ///
 /// Yeni karar çıkınca listenin BAŞINA satır eklenir (tarih + üç oran).
 final List<({DateTime yururluk, double altiAy, double birYil, double uzun})>
     mevduatStopajTablosu = [
   (yururluk: DateTime(2025, 7, 9), altiAy: 17.5, birYil: 15, uzun: 10),
+  (yururluk: DateTime(2025, 2, 1), altiAy: 15, birYil: 12, uzun: 10),
 ];
 
 /// [baslangic]'ta açılan, [gun] günlük (vadesizde `null`) dönem için
