@@ -1787,20 +1787,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodStart => 'Period start';
 
   @override
-  String get yourContribution => 'Your contribution';
+  String get yourContribution => 'Net contribution';
 
   @override
   String get marketWord => 'Market';
 
   @override
-  String get cashDividend => 'Cash dividends within it';
+  String get cashDividend => 'Of which cash dividends';
 
   @override
   String get commissionPaid => 'Commission paid';
 
   @override
   String get contributionNotReturn =>
-      'The blue bar is your own money, not a return. The percentage comes only from the market bar.';
+      'The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.';
+
+  @override
+  String annualRatePct(String pct) {
+    return '$pct a year';
+  }
+
+  @override
+  String periodTotalPct(String pct) {
+    return 'Period total $pct';
+  }
 
   @override
   String get periodCourse => 'Course over the period';
@@ -2463,6 +2473,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gainWord => 'gain';
+
+  @override
+  String get costBasisGain => 'Gain vs. cost';
+
+  @override
+  String get costBasisLoss => 'Loss vs. cost';
 
   @override
   String get lossWord => 'loss';

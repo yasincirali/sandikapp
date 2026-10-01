@@ -3227,7 +3227,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourContribution.
   ///
   /// In tr, this message translates to:
-  /// **'Katkın'**
+  /// **'Net katkın'**
   String get yourContribution;
 
   /// No description provided for @marketWord.
@@ -3251,8 +3251,20 @@ abstract class AppLocalizations {
   /// No description provided for @contributionNotReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.'**
+  /// **'Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.'**
   String get contributionNotReturn;
+
+  /// No description provided for @annualRatePct.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} yıllık'**
+  String annualRatePct(String pct);
+
+  /// No description provided for @periodTotalPct.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem toplamı {pct}'**
+  String periodTotalPct(String pct);
 
   /// No description provided for @periodCourse.
   ///
@@ -4321,6 +4333,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'kazanç'**
   String get gainWord;
+
+  /// No description provided for @costBasisGain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre kâr'**
+  String get costBasisGain;
+
+  /// No description provided for @costBasisLoss.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre zarar'**
+  String get costBasisLoss;
 
   /// No description provided for @lossWord.
   ///

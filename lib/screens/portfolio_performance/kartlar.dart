@@ -741,8 +741,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ),
           // Alt kat: akış varsa ana rakam alımı/satışı İÇERİR ve "+%100
           // kazandım" yanılgısı doğar. İki eşit kalem bunu kapatır:
-          //   • Katkın — yatırdığın para, getiri sayılmaz (nötr renk,
-          //     Özet'teki mavi çubukla aynı anlam);
+          //   • Net katkın — yatırdığın para eksi satıştan ve nakit
+          //     temettüden çektiğin (`getiriAkisi`, 2026-10-01: temettü
+          //     piyasa etkisinin İÇİNDE, burada çıkış), getiri sayılmaz
+          //     (nötr renk, Özet'teki mavi çubukla aynı anlam);
           //   • Sadece piyasa etkisi — ana sayfa Bugün kartı ve Özet ile
           //     AYNI rakam ve yüzde; iki ekran yan yana bununla eşleşir.
           if (netInflow.abs() > 0.5) ...[

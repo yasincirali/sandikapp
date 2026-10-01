@@ -1773,7 +1773,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get periodStart => 'Dönem başı';
 
   @override
-  String get yourContribution => 'Katkın';
+  String get yourContribution => 'Net katkın';
 
   @override
   String get marketWord => 'Piyasa';
@@ -1786,7 +1786,17 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.';
+      'Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.';
+
+  @override
+  String annualRatePct(String pct) {
+    return '$pct yıllık';
+  }
+
+  @override
+  String periodTotalPct(String pct) {
+    return 'Dönem toplamı $pct';
+  }
 
   @override
   String get periodCourse => 'Dönem içi seyir';
@@ -2448,6 +2458,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get gainWord => 'kazanç';
+
+  @override
+  String get costBasisGain => 'Maliyetine göre kâr';
+
+  @override
+  String get costBasisLoss => 'Maliyetine göre zarar';
 
   @override
   String get lossWord => 'kayıp';
