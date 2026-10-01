@@ -4806,4 +4806,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get contractManagedNotice =>
       'This asset is managed by its contract. Use the contract card on the asset page to change it.';
+
+  @override
+  String get kiyasBaslik => 'Had you put it elsewhere';
+
+  @override
+  String get kiyasAciklama =>
+      'Had you invested the same amounts on the same days here.';
+
+  @override
+  String get kiyasSenin => 'Your portfolio';
+
+  @override
+  String get kiyasBasaBas => 'Even';
+
+  @override
+  String get kiyasTemettuNotu =>
+      'Dividends this period count as withdrawals on both sides, so your return may differ slightly from the Summary figure.';
+
+  @override
+  String get kiyasVeriYok =>
+      'Price data for the comparison is unavailable right now.';
 }

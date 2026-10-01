@@ -4772,4 +4772,23 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get contractManagedNotice =>
       'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.';
+
+  @override
+  String get kiyasBaslik => 'Başka yere koysaydın';
+
+  @override
+  String get kiyasAciklama => 'Aynı paraları aynı günlerde buraya yatırsaydın.';
+
+  @override
+  String get kiyasSenin => 'Senin portföyün';
+
+  @override
+  String get kiyasBasaBas => 'Başa baş';
+
+  @override
+  String get kiyasTemettuNotu =>
+      'Bu dönemdeki temettüler iki tarafta da çekiş sayıldı; getirin Özet\'teki rakamdan biraz farklı olabilir.';
+
+  @override
+  String get kiyasVeriYok => 'Kıyas için fiyat verisi şu an alınamadı.';
 }

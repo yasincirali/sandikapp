@@ -8059,6 +8059,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.'**
   String get contractManagedNotice;
+
+  /// Kıyas kartı başlığı (Özet sekmesi)
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka yere koysaydın'**
+  String get kiyasBaslik;
+
+  /// Kıyas kartı açıklaması; satırların ne anlattığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı paraları aynı günlerde buraya yatırsaydın.'**
+  String get kiyasAciklama;
+
+  /// Kıyas kartında kullanıcının kendi satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Senin portföyün'**
+  String get kiyasSenin;
+
+  /// Kıyasla aradaki fark sıfıra yuvarlandığında
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş'**
+  String get kiyasBasaBas;
+
+  /// Dönemde nakit temettü varken kıyas kartının dipnotu
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemdeki temettüler iki tarafta da çekiş sayıldı; getirin Özet\'teki rakamdan biraz farklı olabilir.'**
+  String get kiyasTemettuNotu;
+
+  /// Kıyas kartı: hiçbir kıyas hesaplanamadığında
+  ///
+  /// In tr, this message translates to:
+  /// **'Kıyas için fiyat verisi şu an alınamadı.'**
+  String get kiyasVeriYok;
 }
 
 class _AppLocalizationsDelegate
