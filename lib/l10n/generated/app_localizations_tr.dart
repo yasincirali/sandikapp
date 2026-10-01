@@ -2167,21 +2167,21 @@ class AppLocalizationsTr extends AppLocalizations {
   String get howReturnCalculated => 'Getiri nasıl hesaplanıyor?';
 
   @override
-  String get selectedPeriodReturn => 'Seçili dönemin getirisi';
+  String get selectedPeriodReturn => 'Seçimlerinin getirisi';
 
   @override
-  String get depositsDontChangeRank => 'Para yatırmak sıralamayı değiştirmez';
+  String get depositsDontChangeRank => 'Para eklemek sıralamayı değiştirmez';
 
   @override
   String get everyoneMeasuredSame => 'Herkes aynı şekilde ölçülür';
 
   @override
   String get rankVsPortfolioNote =>
-      'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir. Orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.';
+      'Kendi satırının altındaki \"Paranın getirisi\" Performans ekranındaki sayıdır: ne zaman, ne kadar para eklediğini de hesaba katar. Sıralama ise yalnız seçimlerini ölçer; iki sayı farklı olabilir.';
 
   @override
   String get rankSwapNote =>
-      'Dönem içinde bir varlığı tamamen satıp yerine başkasını aldıysan, sonuç \"yeni varlığı dönem başından beri tutsaydın\" senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.';
+      'Yeni katılan, yalnız portföyünü tuttuğu süre kadar ölçülür. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.';
 
   @override
   String get notInRace => 'Yarış\'a katılmadın';
@@ -2201,7 +2201,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Kimsenin varlık listesi paylaşılmaz, yalnız getiri yüzdeleri sıralanır.';
 
   @override
-  String get yourReturnUpper => 'SENİN GETİRİN';
+  String get yourReturnUpper => 'SEÇİMLERİNİN GETİRİSİ';
 
   @override
   String get dataNotReady => 'Veri hazır değil.';
@@ -2252,15 +2252,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get selectedPeriodReturnBody =>
-      'Portföyünün dönem sonundaki değeri, dönem başındaki değeriyle karşılaştırılır:\n\n(dönem sonu − dönem başı) ÷ dönem başı\n\nYukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.';
+      'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.';
 
   @override
   String get depositsDontChangeRankBody =>
-      'Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez: 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.';
+      'Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.';
 
   @override
   String get everyoneMeasuredSameBody =>
-      'Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok; hesap bu cihazda yapılır.';
+      'Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için en az 30 günlük geçmiş gerekir. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satış, girildiği gün yapılmış sayılır.';
 
   @override
   String get planYearly => 'Yıllık';
@@ -3494,7 +3494,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get raceFooterGlobal =>
-      'Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
+      'Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.';
 
   @override
   String get calculatingEllipsis => 'Hesaplanıyor…';
@@ -3529,7 +3529,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get raceFooterPartners =>
-      'Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.';
+      'Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.';
 
   @override
   String get recapYourPortfolio => 'Portföyün';
@@ -4812,6 +4812,15 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get contractManagedNotice =>
       'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.';
+
+  @override
+  String raceMoneyReturn(String pct) {
+    return 'Paranın getirisi $pct';
+  }
+
+  @override
+  String get raceMoneyReturnHint =>
+      'Para ekleme zamanı dahil · Performans ile aynı';
 
   @override
   String get kiyasBaslik => 'Başka yere koysaydın';

@@ -14,7 +14,8 @@ import { assertAlmostEquals, assertEquals } from 'jsr:@std/assert@1';
 import { fiyatAninda, noktalariTopla, Seri } from '../functions/_shared/dated_history.ts';
 import {
   dagilim,
-  donemRoi,
+  DefterSatiri,
+  donemTwr,
   GUN_MS,
   Lot,
   lotSembolleri,
@@ -26,6 +27,7 @@ import {
   fonDetayi,
   varlikSayisi,
   yazimPlani,
+  yarisAni,
   yedekTryFiyati,
 } from '../functions/leaderboard-snapshot/index.ts';
 
@@ -101,33 +103,123 @@ Deno.test('elle fiyatlı lot: seri istemez, iki uçta current_price', () => {
 
 // ── ROI ve kapsama ─────────────────────────────────────────────────────────
 
-Deno.test('dönem ROI: bugünkü miktar sabit, yalnız fiyat etkisi', () => {
-  const lots = [
-    lot({ id: 'h', type: 'hisse', ticker: 'THYAO.IS', quantity: 10 }),
-    lot({ id: 'f', type: 'fon', ticker: 'TEFAS:YAY', quantity: 100 }),
-  ];
-  const seriler = new Map<string, Seri>([
-    ['THYAO.IS', seri([30, 100], [0, 120])], // 1000 → 1200
-    ['TEFAS:YAY', seri([30, 10], [0, 10])], // 1000 → 1000
-  ]);
-  // 2000 → 2200 = +%10
-  assertAlmostEquals(donemRoi(lots, seriler, NOW, 30)!, 10, 1e-9);
+// ── Seçimlerinin getirisi (TWR, 0095) ─────────────────────────────────────
+//
+// "Yarış Ölçüsü Kıyası" senaryosu (2026-10-01): X dalgalı (100 → dip 80 →
+// 120), Y sakin (100 → 110 → 105). Ay = 30 gün; Ay 0 bugünden 360 gün önce.
+// Beklenen sayılar o sayfanın TWR sütunu. İstemci eşi aynı senaryoyu
+// `test/secim_getirisi_test.dart`'ta koşar — iki motor ayrışırsa biri kırılır.
+
+const AY = 30;
+const X_AY = [100, 104, 107, 110, 100, 90, 80, 88, 96, 104, 110, 118, 120];
+const Y_AY = [100, 101, 102, 103, 104, 106, 110, 109, 107, 106, 105, 105, 105];
+const ayAni = (ay: number) => NOW - (360 - ay * AY) * G;
+const ayIso = (ay: number) => new Date(ayAni(ay)).toISOString();
+const aySerisi = (f: number[]): Seri => f.map((v, ay) => [ayAni(ay), v] as [number, number]);
+const PIYASA = new Map<string, Seri>([
+  ['X.IS', aySerisi(X_AY)],
+  ['Y.IS', aySerisi(Y_AY)],
+]);
+
+let _no = 0;
+function hareket(
+  ticker: string,
+  ay: number,
+  tutar: number,
+  p: { satis?: boolean; girisAyi?: number; fiyat?: number } = {},
+): DefterSatiri {
+  const fiyat = p.fiyat ?? (ticker === 'X.IS' ? X_AY : Y_AY)[ay];
+  return {
+    id: `r${++_no}`,
+    user_id: 'u1',
+    type: 'hisse',
+    ticker,
+    kind: p.satis ? 'sell' : 'buy',
+    quantity: tutar / fiyat,
+    currency: 'TRY',
+    added_date: ayIso(ay),
+    created_at: ayIso(p.girisAyi ?? ay),
+  };
+}
+
+const twr = (defter: DefterSatiri[]) => donemTwr(defter, PIYASA, NOW, 365);
+
+Deno.test('TWR senaryo: Ayşe, Burak, Cem — para zamanlaması sonucu değiştirmez (%20)', () => {
+  assertAlmostEquals(twr([hareket('X.IS', 0, 100_000)])!, 20, 1e-9);
+  assertAlmostEquals(twr([hareket('X.IS', 0, 100_000), hareket('X.IS', 6, 100_000)])!, 20, 1e-9);
+  assertAlmostEquals(twr([hareket('X.IS', 0, 100_000), hareket('X.IS', 3, 100_000)])!, 20, 1e-9);
 });
 
-Deno.test('kapsama: serisi olmayan lot (current_price ile) %20\'yi aşarsa ROI yazılmaz', () => {
-  const lots = [
-    lot({ id: 'h', type: 'hisse', ticker: 'THYAO.IS', quantity: 10 }),
-    lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10, current_price: 50 }),
-  ];
-  const seriler = new Map<string, Seri>([['THYAO.IS', seri([30, 100], [0, 110])]]);
-  // THYAO 1100 fiyatlı, YOK.IS 500 karanlıkta → 1100 < 1600 × 0.8 → null.
-  assertEquals(donemRoi(lots, seriler, NOW, 30), null);
-  // Karanlık pay küçükse (current_price 5 → 50) ROI yazılır.
-  const kucuk = [lots[0], lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10, current_price: 5 })];
-  assertAlmostEquals(donemRoi(kucuk, seriler, NOW, 30)!, 10, 1e-9);
-  // current_price da yoksa lot görünmezdir (uygulama da fiyatsız gösterir).
-  const fiyatsiz = [lots[0], lot({ id: 'z', type: 'hisse', ticker: 'YOK.IS', quantity: 10 })];
-  assertAlmostEquals(donemRoi(fiyatsiz, seriler, NOW, 30)!, 10, 1e-9);
+Deno.test('TWR senaryo: Deniz — Y\'yi satıp X alan kararıyla ölçülür (%65)', () => {
+  const y = hareket('Y.IS', 0, 100_000);
+  const satis = { ...hareket('Y.IS', 6, 0, { satis: true }), quantity: y.quantity };
+  const x = hareket('X.IS', 6, 110_000);
+  assertAlmostEquals(twr([y, satis, x])!, 65, 1e-9);
+});
+
+Deno.test('TWR senaryo: Hakan — girilen fiyat (1 TL) kullanılmaz, piyasa fiyatı (%50)', () => {
+  const h = { ...hareket('X.IS', 6, 100_000), quantity: 1250, purchase_price: 1 };
+  assertAlmostEquals(twr([h])!, 50, 1e-9);
+});
+
+Deno.test('TWR senaryo: Ege — yalnız tuttuğu ay ölçülür (%1,69)', () => {
+  assertAlmostEquals(twr([hareket('X.IS', 11, 1_000)])!, (120 / 118 - 1) * 100, 1e-9);
+});
+
+Deno.test('TWR senaryo: Fikret — küçük taban + büyük geç para şişirmez (%6,69)', () => {
+  const v = twr([hareket('Y.IS', 0, 10_000), hareket('X.IS', 11, 200_000)])!;
+  const bekl = (1.05 * ((100 * 105 + (200_000 / 118) * 120) / (100 * 105 + 200_000)) - 1) * 100;
+  assertAlmostEquals(v, bekl, 1e-9);
+  assertAlmostEquals(v, 6.69, 0.01);
+});
+
+Deno.test('TWR senaryo: Gül — Ay 12\'de girilen "Ay 6" alımı girildiği an sayılır', () => {
+  // Giriş bugün → ilk alım bugün → 30 günlük asgari ölçüm yok → sıralamada yok.
+  assertEquals(twr([hareket('X.IS', 6, 100_000, { girisAyi: 12 })]), null);
+  // Aynı hile eski bir hesapta: Ayşe'nin defterine eklenen geriye tarihli
+  // dip alımı sonucu değiştirmez (bugün alınmış sayılır, getirisi ~0).
+  const ayse = hareket('X.IS', 0, 100_000);
+  assertAlmostEquals(twr([ayse, hareket('X.IS', 6, 100_000, { girisAyi: 12 })])!, 20, 1e-9);
+});
+
+Deno.test('yarisAni: 3 gün pay; fazlası giriş anı; giriş anı yoksa tarih', () => {
+  const r = (eklenmeGun: number, girisGun: number | null): DefterSatiri => ({
+    id: 'a', user_id: 'u1', type: 'hisse',
+    added_date: new Date(NOW - eklenmeGun * G).toISOString(),
+    created_at: girisGun === null ? null : new Date(NOW - girisGun * G).toISOString(),
+  });
+  assertEquals(yarisAni(r(2, 0)), NOW - 2 * G); // dün/önceki gün alındı
+  assertEquals(yarisAni(r(3, 0)), NOW - 3 * G); // sınırda pay içinde
+  assertEquals(yarisAni(r(4, 0)), NOW); // geriye tarih → giriş anı
+  assertEquals(yarisAni(r(40, null)), NOW - 40 * G);
+});
+
+Deno.test('TWR: asgari 30 gün ölçüm; dönemden bağımsız', () => {
+  const genc = [hareket('X.IS', 12, 1_000)];
+  genc[0].added_date = new Date(NOW - 20 * G).toISOString();
+  genc[0].created_at = genc[0].added_date;
+  assertEquals(donemTwr(genc, PIYASA, NOW, 7), null);
+  const yetiskin = [{ ...genc[0], added_date: new Date(NOW - 31 * G).toISOString(), created_at: new Date(NOW - 31 * G).toISOString() }];
+  // 31 gün önce alındı: 7 günlük dönemde yalnız son 7 gün ölçülür
+  // (X 118 → bugün 120); 31 günün tamamı değil.
+  assertAlmostEquals(donemTwr(yetiskin, PIYASA, NOW, 7)!, (120 / 118 - 1) * 100, 1e-9);
+});
+
+Deno.test('TWR kapsama: serisi olmayan lot bugünkü değerin %20\'sini aşarsa null', () => {
+  const x = hareket('X.IS', 0, 100_000); // bugün 120.000
+  const yok = (fiyat: number): DefterSatiri => ({
+    id: 'z', user_id: 'u1', type: 'hisse', ticker: 'YOK.IS', kind: 'buy',
+    quantity: 100, currency: 'TRY', current_price: fiyat,
+    added_date: ayIso(0), created_at: ayIso(0),
+  });
+  assertEquals(twr([x, yok(500)]), null); // 50.000 karanlıkta
+  assertAlmostEquals(twr([x, yok(50)])!, 20, 1e-9); // 5.000 → yazılır, seri dışı
+});
+
+Deno.test('TWR: fiyatı hiç olmayan defter null; sonuç CHECK aralığına kırpılır', () => {
+  assertEquals(donemTwr([hareket('X.IS', 0, 100)], new Map(), NOW, 365), null);
+  const uc = new Map<string, Seri>([['X.IS', [[ayAni(0), 0.0001], [ayAni(6), 1_000_000]]]]);
+  assertEquals(donemTwr([hareket('X.IS', 0, 1)], uc, NOW, 365), 100000);
 });
 
 Deno.test('fon kodu öneksizse TEFAS: eklenir; diğer türler dokunulmaz', () => {
@@ -146,13 +238,6 @@ Deno.test('yedek fiyat: current_price, TRY dışı kurla; kur yoksa 0', () => {
   // Dağılıma yedekle girer.
   const d = dagilim([tl], new Map(), NOW)!;
   assertEquals(d.allocation_pct, { hisse: 100 });
-});
-
-Deno.test('ROI: başlangıç değeri sıfırsa null; aralık kırpılır', () => {
-  const lots = [lot({ id: 'h', type: 'hisse', ticker: 'A.IS', quantity: 1 })];
-  assertEquals(donemRoi(lots, new Map(), NOW, 7), null);
-  const uc = new Map<string, Seri>([['A.IS', seri([7, 0.0001], [0, 1_000_000])]]);
-  assertEquals(donemRoi(lots, uc, NOW, 7), 100000);
 });
 
 Deno.test('portfoyDegeri: yalnizca kümesi ve kapsanan lotlar', () => {

@@ -1226,8 +1226,17 @@ kendisi.
 
 ## ✅ KAPANDI — Yatırımcı karşılaştırması medyan farkı ve metrik etiketi taşımıyor
 
+**Madde 3 KAPANDI 2026-10-01** (d667199, `feat/yaris-twr`, 0095): Yarış ve Zirve
+artık seçimlerinin getirisi — zaman ağırlıklı getiri (kullanıcı kararı R1,
+"Yarış Ölçüsü Kıyası"). "Veri modeli ara değerleme taşımıyor" engeli
+gerçek değildi: günlük miktar defterden (`added_date` + alım/satım)
+kurulur, değerleme piyasa serisinden; asıl açık geriye tarihli kayıttı ve
+0095 `assets.created_at` + tetikleyiciyle kapandı. Motor iki yerde, tek
+kural: sunucu `leaderboard-snapshot` › `donemTwr`, istemci
+`secim_getirisi.dart`; aynı senaryo testi iki tarafta.
+
 **KAPANDI 2026-09-14** (madde 1 ve 2; madde 3 TWR bilinçli tercih olarak
-kalıyor). `0061_percentile_median.sql`: `get_percentile_bucket` DROP + CREATE
+kalıyordu — 2026-10-01'de kapandı, yukarıda). `0061_percentile_median.sql`: `get_percentile_bucket` DROP + CREATE
 ile `median_roi_pct` ve `my_roi_pct` sütunlarını da döner (havuz, k_min=8,
 Sybil kapısı 0059 ile aynı; medyan 1 ondalığa yuvarlanır). İstemci
 `PercentileBucket.medianDiffPts` alanını OPSİYONEL okur — sunucu 0061'den
