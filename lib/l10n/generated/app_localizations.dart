@@ -1715,8 +1715,44 @@ abstract class AppLocalizations {
   /// No description provided for @cpiWindowNote.
   ///
   /// In tr, this message translates to:
-  /// **'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır, yani iki rakamın aralığı farklı.'**
+  /// **'TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.'**
   String get cpiWindowNote;
+
+  /// No description provided for @rangeChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'{start} - {end}'**
+  String rangeChip(String start, String end);
+
+  /// No description provided for @rangeToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'bugün'**
+  String get rangeToday;
+
+  /// No description provided for @rangeSinceFirstBuy.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk alımdan bugüne'**
+  String get rangeSinceFirstBuy;
+
+  /// No description provided for @sinceCpiWindowEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} sonundan bugüne'**
+  String sinceCpiWindowEnd(String month);
+
+  /// No description provided for @sinceCpiWindowBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si açıklanınca ({date}) bu kart güncellenir.'**
+  String sinceCpiWindowBody(String month, String date);
+
+  /// No description provided for @sinceCpiWindowBodyLate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si yüklenince bu kart güncellenir.'**
+  String sinceCpiWindowBodyLate(String month);
 
   /// No description provided for @demoTryButton.
   ///
@@ -3206,11 +3242,11 @@ abstract class AppLocalizations {
   /// **'Beş yıl eğrisi'**
   String get fiveYearCurve;
 
-  /// No description provided for @periodMarketReturn.
+  /// No description provided for @moneyReturnPeriod.
   ///
   /// In tr, this message translates to:
-  /// **'{period} piyasa getirisi'**
-  String periodMarketReturn(String period);
+  /// **'Paranın getirisi · {period}'**
+  String moneyReturnPeriod(String period);
 
   /// No description provided for @whereItCameFrom.
   ///
@@ -3271,12 +3307,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Enflasyona karşı'**
   String get againstInflation;
-
-  /// No description provided for @realReturnPeriod.
-  ///
-  /// In tr, this message translates to:
-  /// **'Reel getiri · {period}'**
-  String realReturnPeriod(String period);
 
   /// No description provided for @nominalReturn.
   ///
@@ -3419,7 +3449,7 @@ abstract class AppLocalizations {
   /// No description provided for @moneyReturnAnnual.
   ///
   /// In tr, this message translates to:
-  /// **'Paranın getirisi (yıllık)'**
+  /// **'Başlangıçtan beri (yıllık)'**
   String get moneyReturnAnnual;
 
   /// No description provided for @xirrBody.
@@ -3431,13 +3461,13 @@ abstract class AppLocalizations {
   /// No description provided for @periodMarketReturnLabel.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem piyasa getirisi'**
+  /// **'Seçili dönemin getirisi'**
   String get periodMarketReturnLabel;
 
   /// No description provided for @xirrVsMarketBody.
   ///
   /// In tr, this message translates to:
-  /// **'İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.'**
+  /// **'İki sayı çelişmez: üstteki ilk alımından bugüne, alım zamanlarını da hesaba katarak ölçer; alttaki yalnızca seçili dönemde piyasanın hareketini ölçer.'**
   String get xirrVsMarketBody;
 
   /// No description provided for @advancedMetricsYear.
@@ -6662,17 +6692,23 @@ abstract class AppLocalizations {
   /// **'Geçen hafta piyasadan −{pct} · özetin hazır'**
   String todayWeeklyDown(String pct);
 
-  /// No description provided for @sectionThisPeriod.
+  /// No description provided for @sectionResult.
   ///
   /// In tr, this message translates to:
-  /// **'BU DÖNEM'**
-  String get sectionThisPeriod;
+  /// **'SONUÇ'**
+  String get sectionResult;
 
-  /// No description provided for @sectionAssets.
+  /// No description provided for @sectionWhy.
   ///
   /// In tr, this message translates to:
-  /// **'VARLIKLAR'**
-  String get sectionAssets;
+  /// **'NEDEN'**
+  String get sectionWhy;
+
+  /// No description provided for @sectionDetail.
+  ///
+  /// In tr, this message translates to:
+  /// **'AYRINTI'**
+  String get sectionDetail;
 
   /// No description provided for @sectionDepth.
   ///

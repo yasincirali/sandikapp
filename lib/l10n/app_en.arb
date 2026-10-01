@@ -569,7 +569,47 @@
     }
   },
   "nominalReturnInWindow": "Your return in this window",
-  "cpiWindowNote": "CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.",
+  "cpiWindowNote": "CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.",
+  "rangeChip": "{start} - {end}",
+  "@rangeChip": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeToday": "today",
+  "rangeSinceFirstBuy": "First buy to today",
+  "sinceCpiWindowEnd": "Since end of {month}",
+  "@sinceCpiWindowEnd": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "sinceCpiWindowBody": "The figure above includes this stretch; this card updates when {month} CPI is published ({date}).",
+  "@sinceCpiWindowBody": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sinceCpiWindowBodyLate": "The figure above includes this stretch; this card updates once {month} CPI is loaded.",
+  "@sinceCpiWindowBodyLate": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "demoTryButton": "Take a look first",
   "demoBannerTitle": "Sample portfolio",
   "demoBannerSubtitle": "Sample holdings, live prices",
@@ -957,8 +997,8 @@
   "last5YearsPeriod": "the last 5 years",
   "fiveYearExtremes": "Five-year extremes",
   "fiveYearCurve": "Five-year curve",
-  "periodMarketReturn": "{period} market return",
-  "@periodMarketReturn": {
+  "moneyReturnPeriod": "Return on your money · {period}",
+  "@moneyReturnPeriod": {
     "placeholders": {
       "period": {
         "type": "String"
@@ -985,14 +1025,6 @@
     }
   },
   "againstInflation": "Against inflation",
-  "realReturnPeriod": "Real return · {period}",
-  "@realReturnPeriod": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
   "nominalReturn": "Your return",
   "cpiWindowRange": "Measured: {start} - {end}",
   "@cpiWindowRange": {
@@ -1049,10 +1081,10 @@
   "volatility": "Volatility",
   "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad; it just means bigger ups and downs.",
   "concentration": "Concentration",
-  "moneyReturnAnnual": "Return on your money (annual)",
+  "moneyReturnAnnual": "Since you started (annual)",
   "xirrBody": "The annual compound return of the money you invested, taking the DATES of your investments into account.",
-  "periodMarketReturnLabel": "Period market return",
-  "xirrVsMarketBody": "The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market's move.",
+  "periodMarketReturnLabel": "Selected period's return",
+  "xirrVsMarketBody": "The two numbers do not contradict: the top one runs from your first buy to today and also accounts for when you bought; the bottom one measures only the market's move in the selected period.",
   "advancedMetricsYear": "Advanced metrics · last year",
   "notEnoughHistory": "Not enough history for {period}",
   "@notEnoughHistory": {
@@ -2861,8 +2893,9 @@
       }
     }
   },
-  "sectionThisPeriod": "THIS PERIOD",
-  "sectionAssets": "ASSETS",
+  "sectionResult": "RESULT",
+  "sectionWhy": "WHY",
+  "sectionDetail": "DETAIL",
   "sectionDepth": "DEPTH",
   "sectionDepthHint": "XIRR, health, advanced metrics, character",
   "myAlarms": "My alerts",

@@ -946,7 +946,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cpiWindowNote =>
-      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.';
+      'CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.';
+
+  @override
+  String rangeChip(String start, String end) {
+    return '$start - $end';
+  }
+
+  @override
+  String get rangeToday => 'today';
+
+  @override
+  String get rangeSinceFirstBuy => 'First buy to today';
+
+  @override
+  String sinceCpiWindowEnd(String month) {
+    return 'Since end of $month';
+  }
+
+  @override
+  String sinceCpiWindowBody(String month, String date) {
+    return 'The figure above includes this stretch; this card updates when $month CPI is published ($date).';
+  }
+
+  @override
+  String sinceCpiWindowBodyLate(String month) {
+    return 'The figure above includes this stretch; this card updates once $month CPI is loaded.';
+  }
 
   @override
   String get demoTryButton => 'Take a look first';
@@ -1776,8 +1802,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiveYearCurve => 'Five-year curve';
 
   @override
-  String periodMarketReturn(String period) {
-    return '$period market return';
+  String moneyReturnPeriod(String period) {
+    return 'Return on your money · $period';
   }
 
   @override
@@ -1812,11 +1838,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get againstInflation => 'Against inflation';
-
-  @override
-  String realReturnPeriod(String period) {
-    return 'Real return · $period';
-  }
 
   @override
   String get nominalReturn => 'Your return';
@@ -1899,18 +1920,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get concentration => 'Concentration';
 
   @override
-  String get moneyReturnAnnual => 'Return on your money (annual)';
+  String get moneyReturnAnnual => 'Since you started (annual)';
 
   @override
   String get xirrBody =>
       'The annual compound return of the money you invested, taking the DATES of your investments into account.';
 
   @override
-  String get periodMarketReturnLabel => 'Period market return';
+  String get periodMarketReturnLabel => 'Selected period\'s return';
 
   @override
   String get xirrVsMarketBody =>
-      'The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market\'s move.';
+      'The two numbers do not contradict: the top one runs from your first buy to today and also accounts for when you bought; the bottom one measures only the market\'s move in the selected period.';
 
   @override
   String get advancedMetricsYear => 'Advanced metrics · last year';
@@ -3994,10 +4015,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sectionThisPeriod => 'THIS PERIOD';
+  String get sectionResult => 'RESULT';
 
   @override
-  String get sectionAssets => 'ASSETS';
+  String get sectionWhy => 'WHY';
+
+  @override
+  String get sectionDetail => 'DETAIL';
 
   @override
   String get sectionDepth => 'DEPTH';

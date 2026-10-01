@@ -580,7 +580,9 @@ void main() {
         (t) async {
       await kur(t,
           ozet(SummaryPeriod.birAy, _hizali([ilk], agustos, aylikFiyat(103))));
-      expect(find.text('Reel getiri · Ağustos 2026'), findsOneWidget);
+      // Başlık + aralık çipi (D2, 2026-10-01): tek ay ADIYLA, çipte.
+      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Ağustos 2026'), findsOneWidget);
       expect(find.text('▲'), findsWidgets);
       expect(find.text('%0,49'), findsOneWidget);
       expect(
@@ -622,14 +624,17 @@ void main() {
       expect(find.textContaining('alım gücün geriledi'), findsNothing);
     });
 
-    testWidgets('1Y yendi: "son 1 yıl" · Ağustos 2025 - Ağustos 2026',
+    testWidgets('1Y yendi: çip "Ağu 25 - Ağu 26" · Ağustos 2025 - Ağustos 2026',
         (t) async {
       final k0 = DateTime(2025, 9, 1);
       final r = _hizali(
           [ilk], yil, (d) => 100 * _us(1.0055, d.difference(k0).inDays ~/ 7),
           haftalik: true);
       await kur(t, ozet(SummaryPeriod.birYil, r));
-      expect(find.text('Reel getiri · son 1 yıl'), findsOneWidget);
+      // Göreli "son 1 yıl" yerine ölçülen aralık (D2, 2026-10-01).
+      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
+      expect(find.textContaining('son 1 yıl'), findsNothing);
       expect(find.text('%1,14'), findsOneWidget);
       expect(find.text('+%33,00'), findsWidgets);
       expect(find.text('%31,51'), findsOneWidget);

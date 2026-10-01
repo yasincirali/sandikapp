@@ -83,6 +83,11 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// örtüşmüyor — 1A'da hiç kesişmiyordu.
   double? _hizaliNominal;
 
+  /// TÜFE penceresinin sonundan BUGÜNE getiri (köprü satırı, D2
+  /// 2026-10-01). Reel getiri kartının ölçmediği ama üst kartın içerdiği
+  /// süre; `null` ise satır çizilmez. Gerekçe `TufeKoprusu` notunda.
+  TufeKoprusu? _tufeKoprusu;
+
   /// `inflation_index` tablosu tamamen boş mu? (Kurulum eksik.)
   ///
   /// `_enflasyon == null` ile aynı şey DEĞİL: endeks dolu olup bu dönemin
@@ -136,6 +141,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     if (old.period != widget.period) {
       _tufePencere = null;
       _hizaliNominal = null;
+      _tufeKoprusu = null;
       // Endeks boşluğu döneme bağlı değil ama `_yukle` yeniden koşup onu
       // tazeleyecek; arada eski değeri tutmak yanlış kart göstermez
       // (boşsa yine boş çıkar) ama sıfırlamak durumu tek yerde tutuyor.
@@ -227,10 +233,32 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     final bosMu =
         enf == null ? await InflationService.instance.isStale() : false;
 
+    // Köprü satırı: TÜFE penceresinin sonu → BUGÜN. Yalnızca reel kart
+    // çizilecekse ölçülür (kartsız bir köprü neyi köprülediğini söyleyemez).
+    // Sağ uç canlı kapsam toplamı — üst kartla aynı uç (bkz. `compute`
+    // [canliSon]); ölçüm `TufeKoprusu.olc`'ta, burada formül yok.
+    TufeKoprusu? kopru;
+    if (enf != null && w != null && mounted) {
+      final simdi = DateTime.now();
+      final pState = ref.read(portfolioProvider).valueOrNull;
+      final pct = await TufeKoprusu.olc(
+        widget.assets,
+        pencereSonu: w.seriBitisi,
+        now: simdi,
+        canliSon: pState == null
+            ? null
+            : DailySummary.kapsamToplami(pState, widget.assets),
+      );
+      if (pct != null) {
+        kopru = TufeKoprusu(pencereSonu: w.seriBitisi, getiriPct: pct);
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _tufePencere = enf == null ? null : w;
       _hizaliNominal = enf == null ? null : nominal;
+      _tufeKoprusu = kopru;
       _endeksBos = bosMu;
     });
   }
@@ -509,6 +537,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       ileriKarti: ileri == null ? null : IleriMetrikKarti(metrikler: ileri),
       xirr: gorunur.xirr ? _xirr : null,
       enflasyonVerisiBekleniyor: _endeksBos,
+      tufeKoprusu: _tufeKoprusu,
       // Derinlik bölümü (XIRR, sağlık, ileri metrikler…) ileri seviyede açık
       // gelir, diğerlerinde katlı: özet önce "bu dönem"i anlatsın.
       derinlikAcik:
