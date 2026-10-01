@@ -341,8 +341,8 @@ List<_Adim> _adimlariKur() {
       id: 'hero',
       hedef: TourTarget.heroKart,
       baslik: 'Toplam net varlığın',
-      govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
-          'kazandığını ya da kaybettiğini söyler. Ortağın varsa kartı '
+      govde: 'Tüm varlıkların tek toplamda; altındaki satır maliyetine göre '
+          'kârını ya da zararını söyler. Ortağın varsa kartı '
           'sağa-sola kaydır: sıradaki kişinin kartı yandan gelir, alttaki '
           'noktalar kimde olduğunu gösterir. Başlıktaki çip de aynı işi '
           'yapar; listede herkesin toplamı yazar. İlk varlığını '
@@ -544,9 +544,15 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_performans',
       hedef: TourTarget.sekmePerformans,
       baslik: 'Performans sekmesi',
-      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden bir yıla kadar her '
-          'dönemi görebilirsin. Özet üç başlıkta: BU DÖNEM, VARLIKLAR ve '
-          'istersen açtığın DERİNLİK.',
+      // 2026-10-01 (düzen A): Özet "BU DÖNEM / VARLIKLAR / DERİNLİK" idi;
+      // soru sırasına (Sonuç → Neden → Ayrıntı) çevrildi, ana rakamın adı
+      // "Paranın getirisi" oldu ve her yüzde aralık çipi taşıyor. Dönemler
+      // 2026-09-28'den beri 5Y'ye kadar ("bir yıla kadar" eskimişti).
+      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
+          'dönemi görebilirsin. Özet soru sırasıyla ilerler: SONUÇ (paranın '
+          'getirisi ve enflasyona karşı), NEDEN (nereden geldi, hangi '
+          'varlıklar) ve AYRINTI (birikim, istersen açtığın derinlik). Her '
+          'yüzdenin yanındaki mavi çip ölçüldüğü aralığı yazar.',
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),
@@ -594,8 +600,12 @@ List<_Adim> _adimlariKur() {
       baslik: 'Zirvedeki portföyler',
       // 2026-09-29: kart Yarış ekranından Performans'a taşındı, kendi
       // ekranı ve cetveli var. Tur uygulamanın güncel hâlini anlatmalı.
-      govde: 'Tür dökümünün altındaki kart, dönemin en çok kazanan anonim '
-          'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
+      // 2026-10-01 (0095): ölçü "seçimlerinin getirisi" (TWR) oldu; metin
+      // neyin yarıştığını söyler — para ekleme zamanı değil, seçimler.
+      govde: 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
+          'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
+          'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
+          'Dokununca yeni ekran: haftalık, aylık ve '
           'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
           'neye yatırdığını ve senden farkını oku. Katılım isteğe bağlı ve '
           'anonim: katılanlar birbirinin tür dağılımını ve getirisini görür; '

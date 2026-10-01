@@ -10,24 +10,37 @@ import '../services/inflation_service.dart'
 import '../services/insight_metrics_service.dart' show Concentration, Drawdown;
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
+import '../services/tufe_koprusu.dart';
 import '../theme/sandik.dart';
+import 'aralik_cipi.dart';
 import 'sandik_acilir.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
 
-/// Özet sekmesinin gövdesi — üç blok, her dönemde aynı iskelet.
+/// Özet sekmesinin gövdesi — Sonuç → Neden → Ayrıntı, her dönemde aynı
+/// iskelet.
 ///
-/// ## Neden üç blok ve neden bu sırayla
-/// 1. **Tek ana rakam** — kullanıcı ekrana bakınca tek bir sayı görmeli.
-///    İki eşit ağırlıklı sayı gösteren bir özet, özet değildir.
-/// 2. **"Nereden geldi" köprüsü** — bu ekranın en ayırt edici parçası.
-///    Dönem başı / katkı / piyasa / bugün dört çubuk olarak yan yana
-///    durur. Katkı çubuğu MAVİ (info) çünkü getiri DEĞİL; yalnızca piyasa
-///    çubuğu yeşil/kırmızı olur. Renk burada bir süs değil, ekranın
-///    taşıdığı tek argüman.
-/// 3. **Döneme özgü bağlam** — GÜNLÜK'te gün içi eğri, 1H'de en iyi/en
-///    zayıf, 1A'da TÜFE, 6A'da benchmark, 1Y'de karakter + reel getiri.
+/// ## Neden bu sırayla (düzen A, kullanıcı kararı 2026-10-01)
+/// Sıra yatırımcının soru sırasıdır: "ne kadar kazandım, enflasyonu
+/// geçtim mi?" → "neden?" → "ayrıntısı ne?".
+/// 1. **SONUÇ** — tek ana rakam ("Paranın getirisi") ve hemen altında
+///    enflasyona karşı hükmü. Kullanıcı ekrana bakınca tek bir sayı ve tek
+///    bir hüküm görmeli; iki eşit ağırlıklı sayı gösteren bir özet, özet
+///    değildir. Reel getiri önceden köprünün ve eğrinin altında kalıyordu;
+///    "enflasyonu geçtim mi" sonucun parçası, nedenin değil.
+/// 2. **NEDEN** — "Nereden geldi" köprüsü (bu ekranın en ayırt edici
+///    parçası: dönem başı / katkı / piyasa / bugün; katkı çubuğu MAVİ çünkü
+///    getiri DEĞİL, yalnızca piyasa çubuğu yeşil/kırmızı — renk burada süs
+///    değil, ekranın taşıdığı tek argüman), dönemin seyri (eğri, gün
+///    sayımı), varlık uçları + dağılım ve "başka yere koysaydın" kıyası.
+/// 3. **AYRINTI** — birikim disiplini ve katlanır Derinlik (XIRR, sağlık,
+///    ileri metrikler, karakter, sabır, benchmark).
+///
+/// ## Aralık çipi
+/// Her getiri yüzdesi ÖLÇÜLDÜĞÜ aralığı yanında taşır ([AralikCipi]):
+/// ana rakam bugüne, reel getiri son açıklanmış TÜFE ayına, XIRR ilk
+/// alımdan bugüne kadar ölçer. Gerekçe `aralik_cipi.dart` notunda.
 ///
 /// ## Ton (`RETENTION_STRATEJISI.md` §8 ve §9 — pazarlıksız)
 /// * Kayıptaki dönemde kutlama dili YOK (Monzo Wrapped'in eleştirildiği
@@ -109,6 +122,23 @@ class PeriodSummaryView extends StatelessWidget {
   /// katlı (2026-09-21 sadeleştirme). Testler varsayılanı açık görür.
   final bool derinlikAcik;
 
+  /// "Başka yere koysaydın" kıyas kartı — NEDEN bölümünün sonunda (5. sıra).
+  ///
+  /// Widget olarak alınır (sağlık kartıyla aynı gerekçe: hesap ağa çıkar,
+  /// bu view SAF kalır). `null` ise hiçbir şey çizilmez — slot boşken yer
+  /// tutucu ya da boşluk bırakılmaz.
+  final Widget? kiyasKarti;
+
+  /// TÜFE penceresinin bitişinden BUGÜNE kadarki getiri (köprü satırı,
+  /// kullanıcı kararı D2 2026-10-01). Reel getiri kartının altında çizilir;
+  /// `null` ise (seri yok, pencere bugünde bitiyor) satır yok — uydurma
+  /// sayı yazılmaz. Gerekçe `TufeKoprusu` notunda.
+  final TufeKoprusu? tufeKoprusu;
+
+  /// "Bugün" kararının saati (çip "1 Eki 25 - bugün" ve TÜFE açıklama
+  /// tarihi geçti mi). `null` ise `DateTime.now()`; testler sabitler.
+  final DateTime? simdi;
+
   const PeriodSummaryView({
     super.key,
     required this.summary,
@@ -126,35 +156,47 @@ class PeriodSummaryView extends StatelessWidget {
     this.xirr,
     this.enflasyonVerisiBekleniyor = false,
     this.derinlikAcik = true,
+    this.kiyasKarti,
+    this.tufeKoprusu,
+    this.simdi,
   });
 
   @override
   Widget build(BuildContext context) {
     if (!summary.isMeaningful) return _BosDurum(period: summary.period);
 
-    // 2026-09-21 sadeleştirme: on altı kart art arda değil, üç başlık.
-    //   · BU DÖNEM  — ana rakam, köprü, reel getiri/TÜFE, gün sayımı, eğri,
-    //                paylaş: dönemin kendisi.
-    //   · VARLIKLAR — en iyi/en zayıf, dağılım, katkı: portföyün içi.
-    //   · DERİNLİK  — XIRR, sağlık, ileri metrikler, karakter, sabır,
-    //                benchmark: katlanır; ileri seviyede açık gelir.
+    // 2026-09-21 sadeleştirme: on altı kart art arda değil, üç başlık
+    // (BU DÖNEM / VARLIKLAR / katlanır DERİNLİK).
+    // 2026-10-01 düzen A: başlıklar yatırımcının soru sırasına çevrildi.
+    //   · SONUÇ   — ana rakam, reel getiri/TÜFE (ya da yedek kartları),
+    //               paylaş: "ne oldu, enflasyonu geçtim mi".
+    //   · NEDEN   — köprü, seyir (eğri/gün sayımı), uçlar, dağılım, kıyas:
+    //               "neden böyle oldu".
+    //   · AYRINTI — birikim disiplini + katlanır DERİNLİK (ileri seviyede
+    //               açık gelir).
     // Hiçbir kart kaldırılmadı; yalnızca yer ve sıra değişti.
     final g = _gruplar(context);
     final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SandikSectionHeader(title: l10n.sectionThisPeriod),
+        SandikSectionHeader(title: l10n.sectionResult),
         const SizedBox(height: SandikSpace.sm),
-        _AnaRakamKarti(summary: summary, uzunDonemPct: uzunDonemPct, baz: baz),
-        const SizedBox(height: SandikSpace.smd),
-        _KopruKarti(summary: summary, baz: baz),
-        ..._arali(g.buDonem, once: true),
-        if (g.varliklar.isNotEmpty) ...[
+        ..._arali(g.sonuc),
+        if (g.neden.isNotEmpty) ...[
           const SizedBox(height: SandikSpace.md),
-          SandikSectionHeader(title: l10n.sectionAssets),
+          SandikSectionHeader(title: l10n.sectionWhy),
           const SizedBox(height: SandikSpace.sm),
-          ..._arali(g.varliklar),
+          ..._arali(g.neden),
+        ],
+        // AYRINTI başlığı yalnızca birikim kartı varsa: Derinlik kendi
+        // başlığını taşıyor ve tek başına kaldığında üst üste iki başlık
+        // ("AYRINTI" + "DERİNLİK") boş bir bölüm gibi okunurdu.
+        if (g.ayrinti.isNotEmpty) ...[
+          const SizedBox(height: SandikSpace.md),
+          SandikSectionHeader(title: l10n.sectionDetail),
+          const SizedBox(height: SandikSpace.sm),
+          ..._arali(g.ayrinti),
         ],
         if (g.derinlik.isNotEmpty) ...[
           const SizedBox(height: SandikSpace.md),
@@ -167,25 +209,44 @@ class PeriodSummaryView extends StatelessWidget {
     );
   }
 
-  /// Blokların arasına standart boşluk; [once] true ise ilkinin önüne de.
-  static List<Widget> _arali(List<Widget> bloklar, {bool once = false}) {
+  /// Blokların arasına standart boşluk.
+  static List<Widget> _arali(List<Widget> bloklar) {
     final out = <Widget>[];
     for (var i = 0; i < bloklar.length; i++) {
-      if (i > 0 || once) out.add(const SizedBox(height: SandikSpace.smd));
+      if (i > 0) out.add(const SizedBox(height: SandikSpace.smd));
       out.add(bloklar[i]);
     }
     return out;
   }
 
-  ({List<Widget> buDonem, List<Widget> varliklar, List<Widget> derinlik})
-      _gruplar(BuildContext context) {
-    final buDonem = <Widget>[];
+  ({
+    List<Widget> sonuc,
+    List<Widget> neden,
+    List<Widget> ayrinti,
+    List<Widget> derinlik,
+  }) _gruplar(BuildContext context) {
+    final simdi = this.simdi ?? DateTime.now();
+    // SONUÇ her zaman ana rakamla açılır; reel getiri (varsa) hemen altında.
+    final sonuc = <Widget>[
+      _AnaRakamKarti(
+        summary: summary,
+        uzunDonemPct: uzunDonemPct,
+        baz: baz,
+        simdi: simdi,
+      ),
+    ];
+    // NEDEN üç parçadan kurulur ve bu sırayla birleşir: köprü → seyir →
+    // varlıklar → kıyas. Seyir (eğri/gün sayımı) köprünün hemen altında:
+    // köprü piyasanın NE KADAR getirdiğini, eğri o yolun NASIL geçtiğini
+    // anlatır; uçlar ise portföyün içine iner ve ondan sonra gelir.
+    final seyir = <Widget>[];
     final varliklar = <Widget>[];
+    final ayrinti = <Widget>[];
     final derinlik = <Widget>[];
 
     void reelYaDaTufe(String donemEtiketi) {
       if (summary.reelGetiriPct != null) {
-        buDonem.add(_ReelGetiriKarti(
+        sonuc.add(_ReelGetiriKarti(
           reel: summary.reelGetiriPct!,
           nominal: summary.tufeNominalPct,
           tufe: summary.tufePct,
@@ -193,11 +254,13 @@ class PeriodSummaryView extends StatelessWidget {
           baslangic: summary.tufeBaslangic,
           bitis: summary.tufeBitis,
           donemEtiketi: donemEtiketi,
+          kopru: tufeKoprusu,
+          simdi: simdi,
         ));
       } else if (summary.tufeFarki != null) {
-        buDonem.add(_TufeKarti(fark: summary.tufeFarki!));
+        sonuc.add(_TufeKarti(fark: summary.tufeFarki!));
       } else if (enflasyonVerisiBekleniyor) {
-        buDonem.add(const _EnflasyonBekleniyorKarti());
+        sonuc.add(const _EnflasyonBekleniyorKarti());
       }
     }
 
@@ -214,13 +277,13 @@ class PeriodSummaryView extends StatelessWidget {
     switch (summary.period) {
       case SummaryPeriod.gunluk:
         if (summary.sparkline.length >= 2) {
-          buDonem.add(_GunIciEgriKarti(summary: summary));
+          seyir.add(_GunIciEgriKarti(summary: summary));
         }
         varlikKarti(context.l10n.biggestMoverToday);
 
       case SummaryPeriod.birHafta:
         if (summary.gunSayimi != null) {
-          buDonem.add(_GunSayimiKarti(sayim: summary.gunSayimi!));
+          seyir.add(_GunSayimiKarti(sayim: summary.gunSayimi!));
         }
         varlikKarti(context.l10n.weekExtremes);
 
@@ -245,7 +308,7 @@ class PeriodSummaryView extends StatelessWidget {
       case SummaryPeriod.besYil:
         reelYaDaTufe(context.l10n.last5YearsPeriod);
         if (summary.sparkline.length >= 2) {
-          buDonem.add(_GunIciEgriKarti(
+          seyir.add(_GunIciEgriKarti(
               summary: summary, baslik: context.l10n.fiveYearCurve));
         }
         varlikKarti(context.l10n.fiveYearExtremes);
@@ -263,7 +326,7 @@ class PeriodSummaryView extends StatelessWidget {
       case SummaryPeriod.birYil:
         reelYaDaTufe(context.l10n.lastYearPeriod);
         if (summary.sparkline.length >= 2) {
-          buDonem.add(_GunIciEgriKarti(
+          seyir.add(_GunIciEgriKarti(
               summary: summary, baslik: context.l10n.yearCurve));
         }
         if (xirr != null) {
@@ -282,16 +345,37 @@ class PeriodSummaryView extends StatelessWidget {
         }
     }
 
-    // Katkı kartı: gün içi hariç her dönemde, varlıklar bloğunda.
-    if (katkiKarti != null && summary.period != SummaryPeriod.gunluk) {
-      varliklar.add(katkiKarti!);
-    }
-    // Paylaş dönemin altında: kart paylaşılan şeyin hemen yanında.
+    // Paylaş SONUÇ'un altında: paylaşılan şey ana rakam + reel hüküm, buton
+    // onların hemen yanında durur.
     if (onShare != null) {
-      buDonem.add(_PaylasButonu(onShare: onShare!));
+      sonuc.add(_PaylasButonu(onShare: onShare!));
     }
 
-    return (buDonem: buDonem, varliklar: varliklar, derinlik: derinlik);
+    final neden = <Widget>[
+      // Köprü eksik uçla çizilmez (bkz. `_KopruKarti.cizilir`); listeye de
+      // girmez ki tek içeriği köprü olan NEDEN başlığı boş kalmasın.
+      if (_KopruKarti.cizilir(summary)) _KopruKarti(summary: summary, baz: baz),
+      ...seyir,
+      ...varliklar,
+      // Kıyas slotu (5. sıra): kartı başka bir ajan/ekran kurar, burası yalnız
+      // yerini tutar. null'sa hiçbir şey eklenmez.
+      if (kiyasKarti != null) kiyasKarti!,
+    ];
+
+    // Birikim disiplini: gün içi hariç her dönemde, AYRINTI'da. Döneme bağlı
+    // değil (kendi kova seçicisi var) — "ne oldu/neden" sorularının değil,
+    // "nasıl biriktiriyorum" sorusunun kartı; bu yüzden sonuç ve nedenin
+    // ardından gelir.
+    if (katkiKarti != null && summary.period != SummaryPeriod.gunluk) {
+      ayrinti.add(katkiKarti!);
+    }
+
+    return (
+      sonuc: sonuc,
+      neden: neden,
+      ayrinti: ayrinti,
+      derinlik: derinlik,
+    );
   }
 }
 
@@ -308,19 +392,40 @@ class PeriodSummaryView extends StatelessWidget {
 /// "birikim" değişimini gösteriyor (alımlar dahil), burası saf piyasa
 /// getirisini. Başlık hangisini gösterdiğini yazıyor, yoksa iki sekmede
 /// farklı iki rakam gören kullanıcı hangisine güveneceğini bilemezdi.
+///
+/// **Başlık "Paranın getirisi" (kullanıcı kararı 2026-10-01).** Eskiden
+/// "1Y piyasa getirisi" idi; düzen A'da sonucun başlığı yatırımcının
+/// sorusuyla ("param ne getirdi?") adlandırıldı. Rakam değişmedi: nakit
+/// akışından arındırılmış dönem getirisi, katkı köprüde ayrı durur. Eski
+/// "Paranın getirisi (yıllık)" başlığı XIRR kartındaydı; karışmasın diye o
+/// kart "Başlangıçtan beri (yıllık)" oldu ve çipi "İlk alımdan bugüne" der.
+///
+/// Tarih aralığı ayrı bir gri satır değil, başlığın yanındaki çip
+/// ([AralikCipi]): pencere bugünde bitiyorsa "1 Eki 25 - bugün".
 class _AnaRakamKarti extends StatelessWidget {
   final PeriodSummary summary;
   final double? uzunDonemPct;
   final BazPara baz;
+  final DateTime simdi;
 
-  const _AnaRakamKarti(
-      {required this.summary, this.uzunDonemPct, required this.baz});
+  const _AnaRakamKarti({
+    required this.summary,
+    this.uzunDonemPct,
+    required this.baz,
+    required this.simdi,
+  });
 
   @override
   Widget build(BuildContext context) {
     final s = summary;
     final piyasa = s.piyasaTRY;
     final pct = s.getiriPct;
+    // 5Y (ölçülen pencere > 1 yıl): ana yüzde YILLIK oran, dönem toplamı
+    // yanında küçük (GIPS; `PeriodSummary.yillikGetiriPct`). ≤1Y'de alan
+    // `null`, kart eskisi gibi dönem toplamını yazar — kısa dönem
+    // yıllıklandırılmaz.
+    final yillik = s.yillikGetiriPct;
+    final rozetPct = yillik ?? pct;
 
     // Sıfır bir YÖN taşımaz: yeşil bir "+₺0" olmayan bir hareketi varmış
     // gibi gösterir ve kırmızı gören kullanıcı "kaybettim" diye okur.
@@ -329,13 +434,11 @@ class _AnaRakamKarti extends StatelessWidget {
         : (s.isNegative ? context.c.loss : context.c.gain);
     final pozitif = !s.isNegative;
 
-    final dateFmt = DateFormat(
-      s.start.year == s.end.year ? 'd MMM' : 'd MMM y',
-      'tr_TR',
-    );
+    final l = context.l10n;
     final aralik = s.period.intraday
-        ? DateFormat('d MMMM', 'tr_TR').format(s.start)
-        : '${dateFmt.format(s.start)} → ${dateFmt.format(s.end)}';
+        ? AralikMetni.tekGun(l, context.tarihDili, gun: s.start, simdi: simdi)
+        : AralikMetni.gunlu(l, context.tarihDili,
+            bas: s.start, son: s.end, simdi: simdi);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -344,24 +447,9 @@ class _AnaRakamKarti extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Flexible(
-                child: Text(
-                  context.l10n.periodMarketReturn(
-                      donemEtiketi(context.l10n, s.period.label)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      context.t.titleSmall?.copyWith(color: context.c.text58),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: SandikSpace.xxs),
-          Text(
-            aralik,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          _BaslikSatiri(
+            baslik: l.moneyReturnPeriod(donemEtiketi(l, s.period.label)),
+            cip: aralik,
           ),
           const SizedBox(height: SandikSpace.smd),
           Row(
@@ -382,7 +470,7 @@ class _AnaRakamKarti extends StatelessWidget {
                   ),
                 ),
               ),
-              if (pct != null && !s.isFlat) ...[
+              if (rozetPct != null && !s.isFlat) ...[
                 const SizedBox(width: SandikSpace.sm),
                 // Yön ikonu renge EK bir sinyal: renk körlüğünde de okunur.
                 Container(
@@ -408,7 +496,10 @@ class _AnaRakamKarti extends StatelessWidget {
                       // yalnızca ok ve renkte kalıyordu. Tutarla aynı dil
                       // `fmtPctIsaretli`'den.
                       Text(
-                        fmtPctIsaretli(pct, digits: 2),
+                        yillik == null
+                            ? fmtPctIsaretli(rozetPct, digits: 2)
+                            : context.l10n.annualRatePct(
+                                fmtPctIsaretli(yillik, digits: 2)),
                         style: context.t.numSmall.copyWith(color: renk),
                       ),
                     ],
@@ -417,6 +508,13 @@ class _AnaRakamKarti extends StatelessWidget {
               ],
             ],
           ),
+          if (yillik != null && pct != null && !s.isFlat) ...[
+            const SizedBox(height: SandikSpace.xs2),
+            Text(
+              context.l10n.periodTotalPct(fmtPctIsaretli(pct, digits: 2)),
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ],
           const SizedBox(height: SandikSpace.sm),
           // Ton anahtarı: kayıpta kutlama da uyarı da yok, bağlam var.
           Text(
@@ -449,23 +547,34 @@ class _KopruKarti extends StatelessWidget {
 
   const _KopruKarti({required this.summary, required this.baz});
 
-  @override
-  Widget build(BuildContext context) {
-    final s = summary;
+  /// Köprü ancak dört ucun hepsi ölçülebildiyse ve en az biri sıfır
+  /// değilse anlam taşır. Eksik bir çubukla çizilen köprü "toplam =
+  /// parçalar" iddiasını kırar. Statik: NEDEN bölümü başlığını yalnızca
+  /// içerik varsa çizebilsin diye kart kurulmadan da sorulabilir.
+  static bool cizilir(PeriodSummary s) {
     final bas = s.baslangicTRY;
     final son = s.sonTRY;
     final katki = s.katkiTRY;
     final piyasa = s.piyasaTRY;
-
-    // Köprü ancak dört ucun hepsi ölçülebildiyse anlam taşır. Eksik bir
-    // çubukla çizilen köprü "toplam = parçalar" iddiasını kırar.
     if (bas == null || son == null || katki == null || piyasa == null) {
-      return const SizedBox.shrink();
+      return false;
     }
+    return [bas.abs(), son.abs(), katki.abs(), piyasa.abs()]
+            .reduce((a, b) => a > b ? a : b) >
+        0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = summary;
+    if (!cizilir(s)) return const SizedBox.shrink();
+    final bas = s.baslangicTRY!;
+    final son = s.sonTRY!;
+    final katki = s.katkiTRY!;
+    final piyasa = s.piyasaTRY!;
 
     final enBuyuk = [bas.abs(), son.abs(), katki.abs(), piyasa.abs()]
         .reduce((a, b) => a > b ? a : b);
-    if (enBuyuk <= 0) return const SizedBox.shrink();
 
     final piyasaRenk = s.isFlat
         ? context.c.text36
@@ -527,8 +636,9 @@ class _KopruKarti extends StatelessWidget {
           //
           // Çubuk olarak çizilselerdi köprünün "toplam = parçalar"
           // iddiasını kırardı — ikisi de zaten yukarıdaki çubukların
-          // İÇİNDE (temettü piyasa çubuğunda erimiş, komisyon katkıya
-          // dahil). Ayrı satır yalnızca görünürlük verir; toplama ikinci
+          // İÇİNDE (temettü piyasa çubuğuna eklenmiş ve net katkıdan
+          // çıkış olarak düşülmüş — `getiriAkisi`, 2026-10-01; komisyon
+          // katkıya dahil). Ayrı satır yalnızca görünürlük verir; toplama ikinci
           // kez eklenmezler ve bu ayrım burada yazılı durmalı, yoksa bir
           // sonraki değişiklik onları çubuğa çevirir.
           if (s.temettuTRY != null || s.komisyonTRY != null) ...[
@@ -886,15 +996,18 @@ class _TufeKarti extends StatelessWidget {
 /// yazıyor (nominal, TÜFE, fark). Kullanıcı TÜİK'in açıkladığı rakamla
 /// doğrulayabilmeli — yoksa kart bir kara kutu olur ve bu ekranın bütün
 /// değeri güvenilir olmasından geliyor.
-/// TÜFE penceresinin uçlarını AY olarak yazar ("Ağustos 2025").
 ///
-/// Gün yazılmaz: endeks aylık bir ölçüm ve "31 Ağustos" yazmak, o gün
-/// yapılmış bir ölçüm varmış izlenimi verirdi. Locale delegate yoksa
-/// `context.l10n` Türkçe'ye düştüğü gibi biçim de 'tr_TR'ye düşer.
-String _ayEtiketi(BuildContext context, DateTime t) =>
-    DateFormat('MMMM yyyy', Localizations.localeOf(context).toString())
-        .format(t);
-
+/// ## Aralık başlıkta, köprü dipte (D2, 2026-10-01)
+/// Başlık göreli "son 1 yıl" yerine ölçülen aralığı çip olarak yazar
+/// ("Ağu 25 - Ağu 26"; 1A'da "Ağustos 2026"). Üst kart bugüne kadar
+/// ölçtüğü için aradaki süre ([kopru]) kartın dibinde ÖLÇÜLMÜŞ olarak
+/// yazılır: "Ağu sonundan bugüne −%5,15".
+///
+/// Ay biçimleri `context.tarihDili` ile kurulur (eskiden
+/// `Localizations.localeOf` okunuyordu; delegate'siz testte 'en_US'e
+/// düşüp "August" yazabiliyordu — ortak getter Türkçe'ye düşer). Gün
+/// yazılmaz: endeks aylık bir ölçüm ve "31 Ağustos" yazmak, o gün yapılmış
+/// bir ölçüm varmış izlenimi verirdi.
 class _ReelGetiriKarti extends StatelessWidget {
   /// Bileşik reel getiri (%). Ana rakam.
   final double reel;
@@ -908,8 +1021,9 @@ class _ReelGetiriKarti extends StatelessWidget {
   /// Puan farkı (nominal − TÜFE). Gündelik dilin okuduğu sayı.
   final double? fark;
 
-  /// Dönem etiketi ("Son 1 yılda"). Hangi pencere olduğu YAZILMALI:
-  /// dönemsiz bir enflasyon karşılaştırması doğrulanamaz.
+  /// Dönem etiketi ("son 1 yıl"). Hangi pencere olduğu YAZILMALI:
+  /// dönemsiz bir enflasyon karşılaştırması doğrulanamaz. Yalnızca gerçek
+  /// pencere ([baslangic]/[bitis]) bilinmiyorsa çipte görünür.
   final String donemEtiketi;
 
   /// Karşılaştırmanın GERÇEK uçları.
@@ -921,14 +1035,23 @@ class _ReelGetiriKarti extends StatelessWidget {
   final DateTime? baslangic;
   final DateTime? bitis;
 
+  /// TÜFE penceresinin sonundan bugüne getiri (köprü satırı). `null` ise
+  /// satır yok.
+  final TufeKoprusu? kopru;
+
+  /// Açıklama tarihi geçti mi kararı için.
+  final DateTime simdi;
+
   const _ReelGetiriKarti({
     required this.reel,
     required this.donemEtiketi,
+    required this.simdi,
     this.nominal,
     this.tufe,
     this.fark,
     this.baslangic,
     this.bitis,
+    this.kopru,
   });
 
   @override
@@ -945,19 +1068,24 @@ class _ReelGetiriKarti extends StatelessWidget {
     // TÜFE penceresi biliniyor mu? Biliniyorsa kart dönem kartından FARKLI
     // bir aralığı ölçüyor ve bunu söylemek zorunda (aşağıdaki not).
     final pencereBelli = baslangic != null && bitis != null;
+    final l = context.l10n;
+    final dil = context.tarihDili;
     // Tek aylık pencere ADIYLA yazılır (kullanıcı bildirimi, 2026-10-01).
     // "son 1 ay" etiketi Eylül özetinin altında Ağustos'u anlatıyordu: TÜFE
     // ayın 3'ünde açıklanır, 1'inde kart son açıklanan aya (Ağustos)
     // düşer. Ay adı yazılınca kart hangi ayı ölçtüğünü kendisi söyler.
     // [bitis] ölçülen ayın son günü (`InflationWindow.seriBitisi`).
-    final tekAy = pencereBelli &&
-        (bitis!.year - baslangic!.year) * 12 +
-                (bitis!.month - baslangic!.month) ==
-            1;
-    final olculenAy = tekAy ? _ayEtiketi(context, bitis!) : null;
+    final tekAy = pencereBelli && AralikMetni.tekAyMi(baslangic!, bitis!);
+    final olculenAy =
+        tekAy ? DateFormat('MMMM yyyy', dil).format(bitis!) : null;
 
     return _BaglamKarti(
-      baslik: context.l10n.realReturnPeriod(olculenAy ?? donemEtiketi),
+      baslik: l.realReturn,
+      // D2: göreli "son 1 yıl" yerine gerçek aralık. Pencere bilinmiyorsa
+      // (eski veri yolu) dönem etiketi kalır — hiç yazmamaktan iyidir.
+      cip: pencereBelli
+          ? AralikMetni.aylik(l, dil, bas: baslangic!, bitis: bitis!)
+          : donemEtiketi,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1002,6 +1130,9 @@ class _ReelGetiriKarti extends StatelessWidget {
           // nominal de aynı nakit akışı düzeltmeli formülden gelir. Çelişki
           // aralığın yalnızca kartın dibinde yazmasındandı; hüküm cümlesinin
           // hemen altında söylenir ve nominal satırı "bu aralıkta" der.
+          // 2026-10-01 (D2): aralığın kendisi artık başlık çipinde ve fark
+          // dipteki köprü satırında ölçülü; not yalnızca NEDEN farklı
+          // olduğunu söyleyecek kadar kısaldı (bkz. `cpiWindowNote`).
           if (pencereBelli) ...[
             const SizedBox(height: SandikSpace.xs),
             Text(
@@ -1045,12 +1176,41 @@ class _ReelGetiriKarti extends StatelessWidget {
                 olculenAy != null
                     ? context.l10n.cpiWindowMonth(olculenAy)
                     : context.l10n.cpiWindowRange(
-                        _ayEtiketi(context, baslangic!),
-                        _ayEtiketi(context, bitis!),
+                        DateFormat('MMMM yyyy', dil).format(baslangic!),
+                        DateFormat('MMMM yyyy', dil).format(bitis!),
                       ),
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
             ],
+          ],
+          // ── Köprü satırı (D2, 2026-10-01) ────────────────────────────────
+          // "Ağu sonundan bugüne −%5,15": üst kartın içerdiği ama bu kartın
+          // ölçmediği süre, ÖLÇÜLMÜŞ olarak. Pencere bilinmiyorsa satırın
+          // başlangıcı da yoktur; köprü yalnızca pencereyle birlikte çizilir.
+          if (pencereBelli && kopru != null) ...[
+            const SizedBox(height: SandikSpace.smd),
+            Divider(color: c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.smd),
+            _KucukSatir(
+              etiket: l.sinceCpiWindowEnd(
+                  DateFormat('MMM', dil).format(kopru!.pencereSonu)),
+              deger: fmtPctIsaretli(kopru!.getiriPct),
+              ton: context.signColor(kopru!.getiriPct),
+            ),
+            const SizedBox(height: SandikSpace.xs2),
+            Text(
+              // Açıklama tarihi geçtiyse (TÜİK yayımladı ama tablo henüz
+              // güncellenmedi) tarih yazılmaz: geçmiş bir günü "açıklanınca"
+              // diye anmak yanlış olurdu.
+              kopru!.aciklamaTarihi.isAfter(simdi)
+                  ? l.sinceCpiWindowBody(
+                      DateFormat('MMMM', dil).format(kopru!.eksikAy),
+                      DateFormat('d MMMM', dil).format(kopru!.aciklamaTarihi),
+                    )
+                  : l.sinceCpiWindowBodyLate(
+                      DateFormat('MMMM', dil).format(kopru!.eksikAy)),
+              style: context.t.bodySmall?.copyWith(color: c.text36),
+            ),
           ],
         ],
       ),
@@ -1373,7 +1533,10 @@ class _BaglamKarti extends StatelessWidget {
   final String baslik;
   final Widget child;
 
-  const _BaglamKarti({required this.baslik, required this.child});
+  /// Başlığın yanındaki aralık çipi ([AralikCipi]); `null` ise yok.
+  final String? cip;
+
+  const _BaglamKarti({required this.baslik, required this.child, this.cip});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1384,15 +1547,39 @@ class _BaglamKarti extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              baslik,
-              style: context.t.titleSmall?.copyWith(color: context.c.text58),
-            ),
+            _BaslikSatiri(baslik: baslik, cip: cip),
             const SizedBox(height: SandikSpace.smd),
             child,
           ],
         ),
       );
+}
+
+/// Kart başlığı + (varsa) aralık çipi.
+///
+/// `Wrap`: 320pt'de uzun başlık ("Paranın getirisi · 1Y") ile çip
+/// ("1 Eki 25 - bugün") yan yana sığmazsa çip alt satıra iner; `Row` ile
+/// ya başlık kesilirdi ya taşardı.
+class _BaslikSatiri extends StatelessWidget {
+  const _BaslikSatiri({required this.baslik, this.cip});
+
+  final String baslik;
+  final String? cip;
+
+  @override
+  Widget build(BuildContext context) {
+    final yazi = Text(
+      baslik,
+      style: context.t.titleSmall?.copyWith(color: context.c.text58),
+    );
+    if (cip == null) return yazi;
+    return Wrap(
+      spacing: SandikSpace.sm,
+      runSpacing: SandikSpace.xs,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [yazi, AralikCipi(cip!)],
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1828,7 +2015,12 @@ class XirrKarti extends StatelessWidget {
     final ton = onde ? c.gain : c.loss;
 
     return _BaglamKarti(
+      // 2026-10-01: başlık "Paranın getirisi (yıllık)" → "Başlangıçtan beri
+      // (yıllık)". "Paranın getirisi" artık SONUÇ'taki dönem rakamının adı;
+      // bu kart ilk alımdan bugüne ölçer ve çip bunu söyler — iki rakam
+      // aynı adı taşısaydı kullanıcı dönem yüzdesiyle kıyaslardı.
       baslik: context.l10n.moneyReturnAnnual,
+      cip: context.l10n.rangeSinceFirstBuy,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

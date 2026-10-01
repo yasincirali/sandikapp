@@ -163,7 +163,9 @@ void main() {
       ));
       await t.pumpAndSettle();
 
-      expect(find.textContaining('Reel getiri · Ağustos 2026'), findsOneWidget);
+      // Başlık + çip (D2, 2026-10-01): ay adı çipte.
+      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Ağustos 2026'), findsOneWidget);
       expect(find.textContaining('son 1 ay'), findsNothing);
       expect(find.textContaining('Ölçülen ay: Ağustos 2026'), findsOneWidget);
       expect(find.textContaining('Temmuz'), findsNothing,

@@ -71,7 +71,9 @@ void main() {
 
   test('Performans kartı nominali TÜFE penceresinde yeniden hesaplar', () {
     final src = kod('lib/screens/portfolio_performance/ozet_yan_veri.dart');
-    expect(src.contains('RealReturnService.piyasaGetirisi('), isTrue,
+    // `hizaliGetiri` = `piyasaGetirisi` + aynı pencerede reel para
+    // ağırlıklı getiri (K4, 2026-10-01); nominal yine aynı yoldan.
+    expect(src.contains('RealReturnService.hizaliGetiri('), isTrue,
         reason: 'dönem kartının getirisi TÜFE penceresine ait değil');
     expect(src.contains('InflationService.instance.pencere('), isTrue);
     expect(src.contains('inflationForPeriod('), isFalse,

@@ -572,7 +572,47 @@
     }
   },
   "nominalReturnInWindow": "Bu aralıkta senin getirin",
-  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır, yani iki rakamın aralığı farklı.",
+  "cpiWindowNote": "TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.",
+  "rangeChip": "{start} - {end}",
+  "@rangeChip": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeToday": "bugün",
+  "rangeSinceFirstBuy": "İlk alımdan bugüne",
+  "sinceCpiWindowEnd": "{month} sonundan bugüne",
+  "@sinceCpiWindowEnd": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "sinceCpiWindowBody": "Üstteki rakam bu süreyi içeriyor; {month} TÜFE'si açıklanınca ({date}) bu kart güncellenir.",
+  "@sinceCpiWindowBody": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sinceCpiWindowBodyLate": "Üstteki rakam bu süreyi içeriyor; {month} TÜFE'si yüklenince bu kart güncellenir.",
+  "@sinceCpiWindowBodyLate": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "demoTryButton": "Önce bir göz at",
   "demoBannerTitle": "Örnek portföy",
   "demoBannerSubtitle": "Varlıklar örnek, fiyatlar canlı",
@@ -960,8 +1000,8 @@
   "last5YearsPeriod": "son 5 yıl",
   "fiveYearExtremes": "Beş yılın uçları",
   "fiveYearCurve": "Beş yıl eğrisi",
-  "periodMarketReturn": "{period} piyasa getirisi",
-  "@periodMarketReturn": {
+  "moneyReturnPeriod": "Paranın getirisi · {period}",
+  "@moneyReturnPeriod": {
     "placeholders": {
       "period": {
         "type": "String"
@@ -970,11 +1010,27 @@
   },
   "whereItCameFrom": "Nereden geldi",
   "periodStart": "Dönem başı",
-  "yourContribution": "Katkın",
+  "yourContribution": "Net katkın",
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.",
+  "contributionNotReturn": "Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.",
+  "annualRatePct": "{pct} yıllık",
+  "@annualRatePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "periodTotalPct": "Dönem toplamı {pct}",
+  "@periodTotalPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "periodCourse": "Dönem içi seyir",
   "greenDaysOfTotal": "{total} işlem gününün {up}'ü artıda kapandı.",
   "@greenDaysOfTotal": {
@@ -988,14 +1044,6 @@
     }
   },
   "againstInflation": "Enflasyona karşı",
-  "realReturnPeriod": "Reel getiri · {period}",
-  "@realReturnPeriod": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
   "nominalReturn": "Senin getirin",
   "cpiWindowRange": "Ölçüm aralığı: {start} - {end}",
   "@cpiWindowRange": {
@@ -1052,10 +1100,10 @@
   "volatility": "Oynaklık",
   "volatilityBody": "Portföyünün değeri yıl boyunca ortalama bu ölçüde dalgalandı. Yüksek olması iyi ya da kötü değil; daha çok inip çıktığı anlamına gelir.",
   "concentration": "Yoğunlaşma",
-  "moneyReturnAnnual": "Paranın getirisi (yıllık)",
+  "moneyReturnAnnual": "Başlangıçtan beri (yıllık)",
   "xirrBody": "Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.",
-  "periodMarketReturnLabel": "Dönem piyasa getirisi",
-  "xirrVsMarketBody": "İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.",
+  "periodMarketReturnLabel": "Seçili dönemin getirisi",
+  "xirrVsMarketBody": "İki sayı çelişmez: üstteki ilk alımından bugüne, alım zamanlarını da hesaba katarak ölçer; alttaki yalnızca seçili dönemde piyasanın hareketini ölçer.",
   "advancedMetricsYear": "İleri metrikler · son 1 yıl",
   "notEnoughHistory": "{period} için yeterli geçmiş yok",
   "@notEnoughHistory": {
@@ -1249,17 +1297,17 @@
   "leaveRaceBody": "Sıralamadan çıkarsın; ortakların yüzdeni artık göremez. İstediğin zaman yeniden katılabilirsin.",
   "leaveWord": "Ayrıl",
   "howReturnCalculated": "Getiri nasıl hesaplanıyor?",
-  "selectedPeriodReturn": "Seçili dönemin getirisi",
-  "depositsDontChangeRank": "Para yatırmak sıralamayı değiştirmez",
+  "selectedPeriodReturn": "Seçimlerinin getirisi",
+  "depositsDontChangeRank": "Para eklemek sıralamayı değiştirmez",
   "everyoneMeasuredSame": "Herkes aynı şekilde ölçülür",
-  "rankVsPortfolioNote": "Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir. Orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.",
-  "rankSwapNote": "Dönem içinde bir varlığı tamamen satıp yerine başkasını aldıysan, sonuç \"yeni varlığı dönem başından beri tutsaydın\" senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.",
+  "rankVsPortfolioNote": "Kendi satırının altındaki \"Paranın getirisi\" Performans ekranındaki sayıdır: ne zaman, ne kadar para eklediğini de hesaba katar. Sıralama ise yalnız seçimlerini ölçer; iki sayı farklı olabilir.",
+  "rankSwapNote": "Yeni katılan, yalnız portföyünü tuttuğu süre kadar ölçülür. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.",
   "notInRace": "Yarış'a katılmadın",
   "notInRaceBody": "Ortaklarınla getiri sıralamasında yer almak için katılmayı aç. Sadece kaydolan ortaklar birbirinin yüzdesini görebilir. Varlıkların ve toplam TRY değerin asla paylaşılmaz.",
   "joinRace": "Yarış'a katıl",
   "addPartnerToRace": "Ortak ekle, aranızda da yarış",
   "raceNoListShared": "Kimsenin varlık listesi paylaşılmaz, yalnız getiri yüzdeleri sıralanır.",
-  "yourReturnUpper": "SENİN GETİRİN",
+  "yourReturnUpper": "SEÇİMLERİNİN GETİRİSİ",
   "dataNotReady": "Veri hazır değil.",
   "leaderUpper": "LİDER",
   "loadingUpper": "YÜKLENİYOR",
@@ -1297,9 +1345,9 @@
       }
     }
   },
-  "selectedPeriodReturnBody": "Portföyünün dönem sonundaki değeri, dönem başındaki değeriyle karşılaştırılır:\n\n(dönem sonu − dönem başı) ÷ dönem başı\n\nYukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.",
-  "depositsDontChangeRankBody": "Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez: 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.",
-  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok; hesap bu cihazda yapılır.",
+  "selectedPeriodReturnBody": "Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.",
+  "depositsDontChangeRankBody": "Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.",
+  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için en az 30 günlük geçmiş gerekir. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satış, girildiği gün yapılmış sayılır.",
   "planYearly": "Yıllık",
   "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
   "planMonthly": "Aylık",
@@ -1510,6 +1558,8 @@
   "txDividend": "Temettü",
   "txBuy": "Alım",
   "gainWord": "kazanç",
+  "costBasisGain": "Maliyetine göre kâr",
+  "costBasisLoss": "Maliyetine göre zarar",
   "lossWord": "kayıp",
   "realisedFromSalesSemantics": "satışlardan gerçekleşen ",
   "raceNoPartnerBody": "Henüz ortağın yok. Kendi dönem getirini ve küresel dilimini şimdiden görebilirsin.",
@@ -2385,7 +2435,7 @@
       }
     }
   },
-  "raceFooterGlobal": "Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
+  "raceFooterGlobal": "Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.",
   "calculatingEllipsis": "Hesaplanıyor…",
   "nThousandPeople": "{n}K KİŞİ",
   "@nThousandPeople": {
@@ -2409,7 +2459,7 @@
   "toneTop50": "Ortalamanın üstündesin",
   "toneTop75": "Ortalamaya yakınsın",
   "toneRest": "Daha iyisini yapabilirsin, 30G takip et",
-  "raceFooterPartners": "Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.",
+  "raceFooterPartners": "Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.",
   "recapYourPortfolio": "Portföyün",
   "recapGrewThisYear": "Bu yıl böyle büyüdün.",
   "recapToughYear": "Zor bir yıl oldu.",
@@ -2869,8 +2919,9 @@
       }
     }
   },
-  "sectionThisPeriod": "BU DÖNEM",
-  "sectionAssets": "VARLIKLAR",
+  "sectionResult": "SONUÇ",
+  "sectionWhy": "NEDEN",
+  "sectionDetail": "AYRINTI",
   "sectionDepth": "DERİNLİK",
   "sectionDepthHint": "XIRR, sağlık, ileri metrikler, karakter",
   "myAlarms": "Alarmlarım",
@@ -3331,6 +3382,28 @@
   "pensionSwitchSame": "Dağılım zaten böyle.",
   "pensionSwitchNote": "Fon değişikliği",
   "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.",
+  "raceMoneyReturn": "Paranın getirisi {pct}",
+  "@raceMoneyReturn": {
+    "description": "Yarış, kendi satırının altında: XIRR, Performans › Özet ile aynı sayı (R1, 2026-10-01)",
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "raceMoneyReturnHint": "Para ekleme zamanı dahil · Performans ile aynı",
+  "kiyasBaslik": "Başka yere koysaydın",
+  "@kiyasBaslik": {"description": "Kıyas kartı başlığı (Özet sekmesi)"},
+  "kiyasAciklama": "Aynı paraları aynı günlerde buraya yatırsaydın.",
+  "@kiyasAciklama": {"description": "Kıyas kartı açıklaması; satırların ne anlattığı"},
+  "kiyasSenin": "Senin portföyün",
+  "@kiyasSenin": {"description": "Kıyas kartında kullanıcının kendi satırı"},
+  "kiyasBasaBas": "Başa baş",
+  "@kiyasBasaBas": {"description": "Kıyasla aradaki fark sıfıra yuvarlandığında"},
+  "kiyasTemettuNotu": "Bu dönemdeki nakit temettüler iki tarafta da cebine giren para sayıldı.",
+  "@kiyasTemettuNotu": {"description": "Dönemde nakit temettü varken kıyas kartının dipnotu"},
+  "kiyasVeriYok": "Kıyas için fiyat verisi şu an alınamadı.",
+  "@kiyasVeriYok": {"description": "Kıyas kartı: hiçbir kıyas hesaplanamadığında"},
   "pensionDayHint": "Örn. 15",
   "pensionDayNote": "Aylık katkının her ay hesabından çekildiği gün. 29-31 her ayda olmadığı için en fazla 28; ay sonunda çekiliyorsa 28 yaz.",
   "pensionDayError": "1 ile 28 arasında bir gün yaz.",

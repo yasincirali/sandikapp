@@ -45,6 +45,7 @@ import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../services/real_return_service.dart';
+import '../services/tufe_koprusu.dart';
 import '../services/leaderboard_service.dart';
 import '../services/contribution_history_service.dart';
 import '../services/insight_metrics_service.dart';
@@ -70,6 +71,8 @@ import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
 import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../widgets/kiyas_karti.dart';
+import '../services/kiyas_service.dart';
 
 part 'portfolio_performance/grafik_kabi.dart';
 part 'portfolio_performance/seriler.dart';

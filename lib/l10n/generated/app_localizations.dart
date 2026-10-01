@@ -1715,8 +1715,44 @@ abstract class AppLocalizations {
   /// No description provided for @cpiWindowNote.
   ///
   /// In tr, this message translates to:
-  /// **'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır, yani iki rakamın aralığı farklı.'**
+  /// **'TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.'**
   String get cpiWindowNote;
+
+  /// No description provided for @rangeChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'{start} - {end}'**
+  String rangeChip(String start, String end);
+
+  /// No description provided for @rangeToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'bugün'**
+  String get rangeToday;
+
+  /// No description provided for @rangeSinceFirstBuy.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk alımdan bugüne'**
+  String get rangeSinceFirstBuy;
+
+  /// No description provided for @sinceCpiWindowEnd.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} sonundan bugüne'**
+  String sinceCpiWindowEnd(String month);
+
+  /// No description provided for @sinceCpiWindowBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si açıklanınca ({date}) bu kart güncellenir.'**
+  String sinceCpiWindowBody(String month, String date);
+
+  /// No description provided for @sinceCpiWindowBodyLate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si yüklenince bu kart güncellenir.'**
+  String sinceCpiWindowBodyLate(String month);
 
   /// No description provided for @demoTryButton.
   ///
@@ -3206,11 +3242,11 @@ abstract class AppLocalizations {
   /// **'Beş yıl eğrisi'**
   String get fiveYearCurve;
 
-  /// No description provided for @periodMarketReturn.
+  /// No description provided for @moneyReturnPeriod.
   ///
   /// In tr, this message translates to:
-  /// **'{period} piyasa getirisi'**
-  String periodMarketReturn(String period);
+  /// **'Paranın getirisi · {period}'**
+  String moneyReturnPeriod(String period);
 
   /// No description provided for @whereItCameFrom.
   ///
@@ -3227,7 +3263,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourContribution.
   ///
   /// In tr, this message translates to:
-  /// **'Katkın'**
+  /// **'Net katkın'**
   String get yourContribution;
 
   /// No description provided for @marketWord.
@@ -3251,8 +3287,20 @@ abstract class AppLocalizations {
   /// No description provided for @contributionNotReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.'**
+  /// **'Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.'**
   String get contributionNotReturn;
+
+  /// No description provided for @annualRatePct.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} yıllık'**
+  String annualRatePct(String pct);
+
+  /// No description provided for @periodTotalPct.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönem toplamı {pct}'**
+  String periodTotalPct(String pct);
 
   /// No description provided for @periodCourse.
   ///
@@ -3271,12 +3319,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Enflasyona karşı'**
   String get againstInflation;
-
-  /// No description provided for @realReturnPeriod.
-  ///
-  /// In tr, this message translates to:
-  /// **'Reel getiri · {period}'**
-  String realReturnPeriod(String period);
 
   /// No description provided for @nominalReturn.
   ///
@@ -3419,7 +3461,7 @@ abstract class AppLocalizations {
   /// No description provided for @moneyReturnAnnual.
   ///
   /// In tr, this message translates to:
-  /// **'Paranın getirisi (yıllık)'**
+  /// **'Başlangıçtan beri (yıllık)'**
   String get moneyReturnAnnual;
 
   /// No description provided for @xirrBody.
@@ -3431,13 +3473,13 @@ abstract class AppLocalizations {
   /// No description provided for @periodMarketReturnLabel.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem piyasa getirisi'**
+  /// **'Seçili dönemin getirisi'**
   String get periodMarketReturnLabel;
 
   /// No description provided for @xirrVsMarketBody.
   ///
   /// In tr, this message translates to:
-  /// **'İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.'**
+  /// **'İki sayı çelişmez: üstteki ilk alımından bugüne, alım zamanlarını da hesaba katarak ölçer; alttaki yalnızca seçili dönemde piyasanın hareketini ölçer.'**
   String get xirrVsMarketBody;
 
   /// No description provided for @advancedMetricsYear.
@@ -3821,13 +3863,13 @@ abstract class AppLocalizations {
   /// No description provided for @selectedPeriodReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Seçili dönemin getirisi'**
+  /// **'Seçimlerinin getirisi'**
   String get selectedPeriodReturn;
 
   /// No description provided for @depositsDontChangeRank.
   ///
   /// In tr, this message translates to:
-  /// **'Para yatırmak sıralamayı değiştirmez'**
+  /// **'Para eklemek sıralamayı değiştirmez'**
   String get depositsDontChangeRank;
 
   /// No description provided for @everyoneMeasuredSame.
@@ -3839,13 +3881,13 @@ abstract class AppLocalizations {
   /// No description provided for @rankVsPortfolioNote.
   ///
   /// In tr, this message translates to:
-  /// **'Bu sayı, Portföy ekranındaki kâr/zarar yüzdesinden FARKLI olabilir. Orası ilk alımından bugüne olan toplam kâr/zararı gösterir, burası ise yalnızca seçtiğin dönemde ne olduğunu.'**
+  /// **'Kendi satırının altındaki \"Paranın getirisi\" Performans ekranındaki sayıdır: ne zaman, ne kadar para eklediğini de hesaba katar. Sıralama ise yalnız seçimlerini ölçer; iki sayı farklı olabilir.'**
   String get rankVsPortfolioNote;
 
   /// No description provided for @rankSwapNote.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem içinde bir varlığı tamamen satıp yerine başkasını aldıysan, sonuç \"yeni varlığı dönem başından beri tutsaydın\" senaryosunu gösterir. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.'**
+  /// **'Yeni katılan, yalnız portföyünü tuttuğu süre kadar ölçülür. Fiyat geçmişi bulunamayan portföyler sıralamada yer almaz.'**
   String get rankSwapNote;
 
   /// No description provided for @notInRace.
@@ -3881,7 +3923,7 @@ abstract class AppLocalizations {
   /// No description provided for @yourReturnUpper.
   ///
   /// In tr, this message translates to:
-  /// **'SENİN GETİRİN'**
+  /// **'SEÇİMLERİNİN GETİRİSİ'**
   String get yourReturnUpper;
 
   /// No description provided for @dataNotReady.
@@ -3965,19 +4007,19 @@ abstract class AppLocalizations {
   /// No description provided for @selectedPeriodReturnBody.
   ///
   /// In tr, this message translates to:
-  /// **'Portföyünün dönem sonundaki değeri, dönem başındaki değeriyle karşılaştırılır:\n\n(dönem sonu − dönem başı) ÷ dönem başı\n\nYukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.'**
+  /// **'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.'**
   String get selectedPeriodReturnBody;
 
   /// No description provided for @depositsDontChangeRankBody.
   ///
   /// In tr, this message translates to:
-  /// **'Ölçülen tek şey, varlıklarının piyasada ne kadar değer kazandığı. Dönem içinde yaptığın alım ve satımlar oranı ETKİLEMEZ.\n\nHesap, bugünkü varlıklarını dönem başından beri tutmuşsun gibi yapılır. Bu yüzden portföyünü büyütmek getirini yükseltmez: 1 lot da tutsan 10.000 lot da tutsan aynı yüzdeyi görürsün.'**
+  /// **'Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.'**
   String get depositsDontChangeRankBody;
 
   /// No description provided for @everyoneMeasuredSameBody.
   ///
   /// In tr, this message translates to:
-  /// **'Sen ve ortakların aynı formülle, aynı anda, aynı fiyatlarla hesaplanırsınız.\n\nOrtağının uygulamayı açmasını beklemene gerek yok; hesap bu cihazda yapılır.'**
+  /// **'Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için en az 30 günlük geçmiş gerekir. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satış, girildiği gün yapılmış sayılır.'**
   String get everyoneMeasuredSameBody;
 
   /// No description provided for @planYearly.
@@ -4321,6 +4363,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'kazanç'**
   String get gainWord;
+
+  /// No description provided for @costBasisGain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre kâr'**
+  String get costBasisGain;
+
+  /// No description provided for @costBasisLoss.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maliyetine göre zarar'**
+  String get costBasisLoss;
 
   /// No description provided for @lossWord.
   ///
@@ -5837,7 +5891,7 @@ abstract class AppLocalizations {
   /// No description provided for @raceFooterGlobal.
   ///
   /// In tr, this message translates to:
-  /// **'Getiri, seçili dönemin başı ile sonu karşılaştırılarak hesaplanır. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.'**
+  /// **'Sıralama seçimlerinin getirisidir: her gün tuttuğun varlıklar piyasa fiyatıyla ölçülür, para ekleme zamanı etkilemez. Sıralamalar ve dağılımlar anonimdir; kimlik, miktar ve TL bilgisi asla paylaşılmaz.'**
   String get raceFooterGlobal;
 
   /// No description provided for @calculatingEllipsis.
@@ -5897,7 +5951,7 @@ abstract class AppLocalizations {
   /// No description provided for @raceFooterPartners.
   ///
   /// In tr, this message translates to:
-  /// **'Sıralama, seçili dönemin getirisidir (%). Herkes aynı formülle ölçülür; kimsenin varlık listesi görünmez.'**
+  /// **'Sıralama, seçili dönemde seçimlerinin getirisidir (%): para ekleme zamanı etkilemez. Kimsenin varlık listesi görünmez.'**
   String get raceFooterPartners;
 
   /// No description provided for @recapYourPortfolio.
@@ -6662,17 +6716,23 @@ abstract class AppLocalizations {
   /// **'Geçen hafta piyasadan −{pct} · özetin hazır'**
   String todayWeeklyDown(String pct);
 
-  /// No description provided for @sectionThisPeriod.
+  /// No description provided for @sectionResult.
   ///
   /// In tr, this message translates to:
-  /// **'BU DÖNEM'**
-  String get sectionThisPeriod;
+  /// **'SONUÇ'**
+  String get sectionResult;
 
-  /// No description provided for @sectionAssets.
+  /// No description provided for @sectionWhy.
   ///
   /// In tr, this message translates to:
-  /// **'VARLIKLAR'**
-  String get sectionAssets;
+  /// **'NEDEN'**
+  String get sectionWhy;
+
+  /// No description provided for @sectionDetail.
+  ///
+  /// In tr, this message translates to:
+  /// **'AYRINTI'**
+  String get sectionDetail;
 
   /// No description provided for @sectionDepth.
   ///
@@ -8059,6 +8119,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.'**
   String get contractManagedNotice;
+
+  /// Yarış, kendi satırının altında: XIRR, Performans › Özet ile aynı sayı (R1, 2026-10-01)
+  ///
+  /// In tr, this message translates to:
+  /// **'Paranın getirisi {pct}'**
+  String raceMoneyReturn(String pct);
+
+  /// No description provided for @raceMoneyReturnHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para ekleme zamanı dahil · Performans ile aynı'**
+  String get raceMoneyReturnHint;
+
+  /// Kıyas kartı başlığı (Özet sekmesi)
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka yere koysaydın'**
+  String get kiyasBaslik;
+
+  /// Kıyas kartı açıklaması; satırların ne anlattığı
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı paraları aynı günlerde buraya yatırsaydın.'**
+  String get kiyasAciklama;
+
+  /// Kıyas kartında kullanıcının kendi satırı
+  ///
+  /// In tr, this message translates to:
+  /// **'Senin portföyün'**
+  String get kiyasSenin;
+
+  /// Kıyasla aradaki fark sıfıra yuvarlandığında
+  ///
+  /// In tr, this message translates to:
+  /// **'Başa baş'**
+  String get kiyasBasaBas;
+
+  /// Dönemde nakit temettü varken kıyas kartının dipnotu
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemdeki nakit temettüler iki tarafta da cebine giren para sayıldı.'**
+  String get kiyasTemettuNotu;
+
+  /// Kıyas kartı: hiçbir kıyas hesaplanamadığında
+  ///
+  /// In tr, this message translates to:
+  /// **'Kıyas için fiyat verisi şu an alınamadı.'**
+  String get kiyasVeriYok;
 
   /// No description provided for @pensionDayHint.
   ///

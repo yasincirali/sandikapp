@@ -36,9 +36,10 @@ import '../widgets/zirve_riza_karti.dart';
 ///   ne paylaşılmaz, karşılığında ne alır, nasıl geri çeker. Karşılıklılık:
 ///   liste yalnız katılana açılır (sunucu da rızasız çağırana boş döner).
 ///   Yarış ekranı ve onun katılım anahtarı bundan bağımsız.
-/// - Sen: getiri istemcide `LeaderboardService.computeROI` (Yarış
-///   ekranıyla AYNI formül), dağılım `computeAllocation`. Sunucuya bir şey
-///   yazılmaz — snapshot'ı artık sunucu alıyor.
+/// - Sen: getiri istemcide `LeaderboardService.computeROI` — seçimlerinin
+///   getirisi (TWR, 0095; Yarış ve sunucuyla AYNI kural,
+///   `secim_getirisi.dart`), dağılım `computeAllocation`. Sunucuya bir şey
+///   yazılmaz — snapshot'ı yalnız sunucu alıyor.
 ///
 /// ## Dil
 /// Sayı yalnız başına konuşmaz; cümleler `ZirveKiyas`'ta. Dağılım farkı
@@ -137,13 +138,18 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     setState(() {
       _senPay = servis.computeAllocation(p.assets, p.toTRY);
       _senFonDetay = servis.computeFonDetay(p.assets, p.toTRY);
-      _senRoi = servis.staleROI(userId: me.id, periodDays: donem.gun);
+      // Zirve anonim: sunucuyla aynı geriye tarih kuralı (`SiralamaKapsami`).
+      _senRoi = servis.staleROI(
+          userId: me.id,
+          periodDays: donem.gun,
+          kapsam: SiralamaKapsami.anonim);
     });
     final sonuc = await Future.wait<Object?>([
       servis.fetchZirveBenim(periodDays: donem.gun),
       servis.computeROI(
         assets: p.assets,
         periodDays: donem.gun,
+        kapsam: SiralamaKapsami.anonim,
         currentValueTRY: servis.totalValueTRY(p.assets, p.toTRY),
         toTRY: p.toTRY,
         cacheKey: me.id,
@@ -984,8 +990,14 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                'Havuzda yalnız katılmayı kabul edenler var; portföyü 5 '
+                // 30 gün: seçimlerinin getirisi (TWR, 0095) en az 30 günlük
+                // ölçüm ister; havuzun 5 günlük şartından önce o dolmalı.
+                'Havuzda yalnız katılmayı kabul edenler var; portföyü 30 '
                 'günden eski ve en az 2 farklı varlığı olan katılımcılar '
+                'sayılır. Sıralama seçimlerinin getirisidir: her gün '
+                'tutulan varlıklar piyasa fiyatıyla ölçülür, para ekleme '
+                'zamanı etkilemez. Bugünden 3 günden fazla geriye tarihli '
+                'girilen kayıt (içe aktarılan geçmiş dahil) girildiği gün '
                 'sayılır. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
                 'tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
@@ -1158,7 +1170,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
                         'payını görür; kimliğin, tutarın ve diğer varlıkların '
                         'asla görünmez.'
                     : 'Portföyün henüz havuzda değil: katıldın, ama portföy '
-                        '5 günden eski olmalı ve en az 2 farklı varlık '
+                        '30 günden eski olmalı ve en az 2 farklı varlık '
                         'içermeli. Şart sağlanınca anonim olarak girer.')
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '
