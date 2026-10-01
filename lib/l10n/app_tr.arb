@@ -2830,6 +2830,100 @@
     }
   },
   "todayMonthlySummaryHint": "Getirin, enflasyon farkı ve en iyi varlığın",
+  "todayCloseAt": "{close} kapanış",
+  "@todayCloseAt": {
+    "placeholders": {
+      "close": {
+        "type": "String"
+      }
+    }
+  },
+  "todayClosedShort": "Kapalı",
+  "todayMarketOnlyShort": "piyasa etkisi",
+  "todayGreenShort": "Artıda",
+  "todayWeekReadyShort": "Özet hazır",
+  "todayGoalNewAction": "Yenisini seç",
+  "todayMonthlyTileSubShort": "Geçen ayın karnesi",
+  "todayEventCpiTiny": "TÜİK · {date}",
+  "@todayEventCpiTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayTiny": "Tatil · {date}",
+  "@todayEventHolidayTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndTiny": "Ay sonu",
+  "todayMoveLabel": "Günün hareketi",
+  "todayRealYearly": "yıllık",
+  "todayYourReturn": "Getirin {pct}",
+  "@todayYourReturn": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCpiShort": "TÜFE {pct}",
+  "@todayCpiShort": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekUp": "{pct} yükseliş",
+  "@todayWeekUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekDown": "{pct} düşüş",
+  "@todayWeekDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekHintShort": "Piyasanın portföyüne etkisi",
+  "todayWeekReady": "Haftalık özet hazır",
+  "todayGoalSetAction": "Hedef belirle",
+  "todayGoalSetSub": "Kalanı her gün gör",
+  "todayGoalProgressTitle": "Hedefe %{pct}",
+  "@todayGoalProgressTitle": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalLeftShort": "{left} kaldı",
+  "@todayGoalLeftShort": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlyTile": "{month} özeti",
+  "@todayMonthlyTile": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlyTileSub": "Getiri, enflasyon, en iyi varlık",
   "goalTitle": "Portföy hedefi",
   "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",

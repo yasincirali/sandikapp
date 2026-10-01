@@ -2822,6 +2822,100 @@
     }
   },
   "todayMonthlySummaryHint": "Return, inflation gap and your best holding",
+  "todayCloseAt": "closes {close}",
+  "@todayCloseAt": {
+    "placeholders": {
+      "close": {
+        "type": "String"
+      }
+    }
+  },
+  "todayClosedShort": "Closed",
+  "todayMarketOnlyShort": "market only",
+  "todayGreenShort": "In profit",
+  "todayWeekReadyShort": "Summary ready",
+  "todayGoalNewAction": "Pick a new one",
+  "todayMonthlyTileSubShort": "Last month's report",
+  "todayEventCpiTiny": "CPI · {date}",
+  "@todayEventCpiTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayTiny": "Holiday · {date}",
+  "@todayEventHolidayTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndTiny": "Month end",
+  "todayMoveLabel": "Today's move",
+  "todayRealYearly": "yearly",
+  "todayYourReturn": "Your return {pct}",
+  "@todayYourReturn": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCpiShort": "CPI {pct}",
+  "@todayCpiShort": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekUp": "{pct} up",
+  "@todayWeekUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekDown": "{pct} down",
+  "@todayWeekDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekHintShort": "Market's effect on your portfolio",
+  "todayWeekReady": "Weekly summary ready",
+  "todayGoalSetAction": "Set a goal",
+  "todayGoalSetSub": "See what's left every day",
+  "todayGoalProgressTitle": "{pct}% to goal",
+  "@todayGoalProgressTitle": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalLeftShort": "{left} to go",
+  "@todayGoalLeftShort": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlyTile": "{month} summary",
+  "@todayMonthlyTile": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlyTileSub": "Return, inflation, best holding",
   "goalTitle": "Portfolio goal",
   "goalHint": "Display only; it does not change any calculation.",
   "goalInvalid": "Enter a valid amount",

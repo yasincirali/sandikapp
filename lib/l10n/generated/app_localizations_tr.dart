@@ -3903,6 +3903,98 @@ class AppLocalizationsTr extends AppLocalizations {
       'Getirin, enflasyon farkı ve en iyi varlığın';
 
   @override
+  String todayCloseAt(String close) {
+    return '$close kapanış';
+  }
+
+  @override
+  String get todayClosedShort => 'Kapalı';
+
+  @override
+  String get todayMarketOnlyShort => 'piyasa etkisi';
+
+  @override
+  String get todayGreenShort => 'Artıda';
+
+  @override
+  String get todayWeekReadyShort => 'Özet hazır';
+
+  @override
+  String get todayGoalNewAction => 'Yenisini seç';
+
+  @override
+  String get todayMonthlyTileSubShort => 'Geçen ayın karnesi';
+
+  @override
+  String todayEventCpiTiny(String date) {
+    return 'TÜİK · $date';
+  }
+
+  @override
+  String todayEventHolidayTiny(String date) {
+    return 'Tatil · $date';
+  }
+
+  @override
+  String get todayEventMonthEndTiny => 'Ay sonu';
+
+  @override
+  String get todayMoveLabel => 'Günün hareketi';
+
+  @override
+  String get todayRealYearly => 'yıllık';
+
+  @override
+  String todayYourReturn(String pct) {
+    return 'Getirin $pct';
+  }
+
+  @override
+  String todayCpiShort(String pct) {
+    return 'TÜFE $pct';
+  }
+
+  @override
+  String todayWeekUp(String pct) {
+    return '$pct yükseliş';
+  }
+
+  @override
+  String todayWeekDown(String pct) {
+    return '$pct düşüş';
+  }
+
+  @override
+  String get todayWeekHintShort => 'Piyasanın portföyüne etkisi';
+
+  @override
+  String get todayWeekReady => 'Haftalık özet hazır';
+
+  @override
+  String get todayGoalSetAction => 'Hedef belirle';
+
+  @override
+  String get todayGoalSetSub => 'Kalanı her gün gör';
+
+  @override
+  String todayGoalProgressTitle(int pct) {
+    return 'Hedefe %$pct';
+  }
+
+  @override
+  String todayGoalLeftShort(String left) {
+    return '$left kaldı';
+  }
+
+  @override
+  String todayMonthlyTile(String month) {
+    return '$month özeti';
+  }
+
+  @override
+  String get todayMonthlyTileSub => 'Getiri, enflasyon, en iyi varlık';
+
+  @override
   String get goalTitle => 'Portföy hedefi';
 
   @override
