@@ -3221,9 +3221,6 @@
   "pensionCompanyHint": "Örn. Anadolu Hayat",
   "pensionEntryDate": "Sisteme giriş",
   "pensionEntryDateHint": "Devlet katkısının hak ediş oranı buna bağlı.",
-  "pensionBalance": "Bugünkü birikimin",
-  "pensionBalanceHint": "Devlet katkısı hariç; şirketinin uygulamasında ya da BES Mobil'de yazan tutar.",
-  "pensionPaid": "Bugüne kadar ödediğin katkı",
   "pensionFunds": "Fon dağılımı",
   "pensionAddFund": "Fon ekle",
   "pensionShareTotal": "Toplam {pct}",
@@ -3237,13 +3234,12 @@
   "pensionShareError": "Fon payları toplamı %100 olmalı.",
   "pensionFundError": "En az bir emeklilik fonu seç.",
   "pensionGov": "Devlet katkısı",
-  "pensionGovBalance": "Devlet katkısı birikimi",
   "pensionGovFund": "Devlet katkısı fonu",
   "pensionGovFundHint": "Bilmiyorsan boş bırak; devlet katkısı eklenmez.",
   "pensionMonthly": "Aylık katkı",
   "pensionDay": "Katkı günü",
   "pensionErrorCompany": "Şirket adını yaz.",
-  "pensionErrorBalance": "Birikim tutarını yaz.",
+  "pensionErrorBalance": "Ana para ile getirinin toplamı sıfırdan büyük olmalı.",
   "pensionErrorGovFund": "Devlet katkısı birikimi için fonu da seç.",
   "pensionPriceMissing": "{code} fonunun fiyatı alınamadı. Birazdan tekrar dene.",
   "@pensionPriceMissing": {
@@ -3301,5 +3297,28 @@
   "pensionContributionSaved": "Katkı eklendi",
   "pensionContributionDue": "Bu ayın katkısı henüz eklenmedi.",
   "pensionNoGovFund": "Devlet katkısı fonu seçilmedi; devlet katkısı eklenmez.",
+  "pensionPrincipal": "Ana para (ödediğin katkı)",
+  "pensionPrincipalHint": "Bugüne kadar cebinden yatırdığın toplam; ekstrende \"katkı payı\" diye geçer.",
+  "pensionGain": "Getiri (kâr)",
+  "pensionGainHint": "Ekstrendeki getiri. Zarardaysan eksiyle yaz.",
+  "pensionHistoryHint": "Grafik giriş tarihinden bugüne bu birikimle düz çizilir; bundan sonrası fonlarının fiyatıyla yürür.",
+  "pensionGovPrincipal": "Devlet katkısı ana parası",
+  "pensionGovGain": "Devlet katkısı getirisi",
+  "pensionErrorPrincipal": "Ana parayı yaz.",
+  "pensionSwitchFunds": "Fon değiştir",
+  "pensionSwitchTitle": "Fon dağılımını değiştir",
+  "pensionSwitchHint": "Birikimin bugünkü fiyatlarla yeni dağılıma taşınır. Ana para ve kâr değişmez; grafik bugünden sonra yeni fonlarla yürür.",
+  "pensionSwitchContributions": "Yeni katkılar da bu dağılımla gitsin",
+  "pensionSwitchCount": "Bu yıl {n}/12 fon değişikliği",
+  "@pensionSwitchCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionSwitchSaved": "Fon dağılımı değişti",
+  "pensionSwitchSame": "Dağılım zaten böyle.",
+  "pensionSwitchNote": "Fon değişikliği",
   "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan."
 }

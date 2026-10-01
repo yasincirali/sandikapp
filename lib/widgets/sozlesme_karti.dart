@@ -10,6 +10,7 @@ import '../models/position.dart';
 import '../models/sozlesme.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
+import 'bes_dagilim_editoru.dart';
 import 'sozlesme_formu_ortak.dart';
 import '../services/bes_hesabi.dart';
 import '../services/crash_reporter.dart';
@@ -591,6 +592,11 @@ class _BesGovdesi extends ConsumerWidget {
               birincil: katkiBekliyor,
               bas: () => _katkiEkle(context, ref),
             ),
+            const SizedBox(height: SandikSpace.sm),
+            _Eylem(
+              metin: l10n.pensionSwitchFunds,
+              bas: () => _fonDegistir(context, ref),
+            ),
           ],
         ],
       ),
@@ -641,6 +647,162 @@ class _BesGovdesi extends ConsumerWidget {
         sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
       }
     }
+  }
+}
+
+/// Kendi birikiminin bugünkü dağılımı (değer oranı, %) — "Fon değiştir"
+/// sayfası bununla açılır. Devlet katkısı hariç.
+List<FonPayi> besBugunkuDagilim(List<Asset> lotlar) {
+  final p = [
+    for (final x in aggregatePositions(lotlar))
+      if (x.representative.subCategory != BesAltKategori.devletKatkisi) x,
+  ];
+  final toplam = p.fold<double>(0, (t, x) => t + x.totalValue);
+  if (toplam <= 0) return const [];
+  return [
+    for (final x in p)
+      FonPayi(
+        kod: x.representative.ticker.replaceFirst(tefasOneki, ''),
+        // Tam sayıya yuvarlanır (talimatlar tam yüzdeyle verilir); son fon
+        // kalanı alır ki toplam %100 olsun.
+        oran: (x.totalValue / toplam * 100).roundToDouble(),
+      ),
+  ]..sort((a, b) => b.oran.compareTo(a.oran));
+}
+
+extension on _BesGovdesi {
+  Future<void> _fonDegistir(BuildContext context, WidgetRef ref) async {
+    if (DemoModu.yazmaKapisi('bes')) return;
+    final l10n = context.l10n;
+    final n = ref.read(sozlesmeProvider.notifier);
+    var bugunku = besBugunkuDagilim(lotlar);
+    if (bugunku.isNotEmpty) {
+      final digerleri = bugunku
+          .skip(1)
+          .fold<double>(0, (t, f) => t + f.oran);
+      bugunku = [
+        FonPayi(kod: bugunku.first.kod, oran: 100 - digerleri),
+        ...bugunku.skip(1),
+      ];
+    }
+    final sonuc =
+        await showModalBottomSheet<({List<FonPayi> dagilim, bool katki})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (_) => _FonDegisimSayfasi(
+        bugunku: bugunku,
+        buYil: n.buYilFonDegisikligi(s.id, DateTime.now().year),
+      ),
+    );
+    if (sonuc == null || !context.mounted) return;
+    final kurum = s.kurum;
+    final devletEtiketi = l10n.pensionGovShort;
+    try {
+      final yazilan = await n.besFonDegistir(
+        sozlesmeId: s.id,
+        yeniDagilim: sonuc.dagilim,
+        katkiTalimatiDa: sonuc.katki,
+        adUret: (kod, {required devlet}) =>
+            devlet ? '$kurum · $kod · $devletEtiketi' : '$kurum · $kod',
+        not: l10n.pensionSwitchNote,
+      );
+      if (context.mounted) {
+        sandikSnack(
+            context,
+            yazilan == 0 && !sonuc.katki
+                ? l10n.pensionSwitchSame
+                : l10n.pensionSwitchSaved,
+            kind: SandikSnackKind.success);
+      }
+    } on BesFiyatYokException catch (e) {
+      if (context.mounted) {
+        sandikSnack(context, l10n.pensionPriceMissing(e.kod),
+            kind: SandikSnackKind.error);
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.fonDegistir');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+}
+
+class _FonDegisimSayfasi extends StatefulWidget {
+  const _FonDegisimSayfasi({required this.bugunku, required this.buYil});
+  final List<FonPayi> bugunku;
+  final int buYil;
+
+  @override
+  State<_FonDegisimSayfasi> createState() => _FonDegisimSayfasiState();
+}
+
+class _FonDegisimSayfasiState extends State<_FonDegisimSayfasi> {
+  final _editor = GlobalKey<BesDagilimEditoruState>();
+  bool _katkiDa = true;
+  String? _hata;
+
+  void _kaydet() {
+    final l10n = context.l10n;
+    final d = _editor.currentState?.dagilim ?? const <FonPayi>[];
+    final hata = d.isEmpty
+        ? l10n.pensionFundError
+        : !BesHesabi.dagilimGecerli(d)
+            ? l10n.pensionShareError
+            : null;
+    if (hata != null) {
+      setState(() => _hata = hata);
+      return;
+    }
+    Navigator.of(context).pop((dagilim: d, katki: _katkiDa));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(SandikSpace.lgs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.pensionSwitchTitle,
+                style: context.t.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700, color: context.c.text90)),
+            SozlesmeNotu(l10n.pensionSwitchHint),
+            const SizedBox(height: SandikSpace.md),
+            BesDagilimEditoru(
+              key: _editor,
+              baslangic: widget.bugunku,
+              hata: _hata,
+              degisti: () {
+                if (_hata != null) setState(() => _hata = null);
+              },
+            ),
+            CheckboxListTile(
+              value: _katkiDa,
+              onChanged: (v) => setState(() => _katkiDa = v ?? true),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(l10n.pensionSwitchContributions,
+                  style: context.t.bodyMedium
+                      ?.copyWith(color: context.c.text90)),
+            ),
+            SozlesmeNotu(l10n.pensionSwitchCount(widget.buYil)),
+            const SizedBox(height: SandikSpace.lg),
+            _Eylem(metin: l10n.save, birincil: true, bas: _kaydet),
+          ],
+        ),
+      ),
+    );
   }
 }
 

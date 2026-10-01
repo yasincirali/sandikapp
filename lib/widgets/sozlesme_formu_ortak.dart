@@ -82,6 +82,11 @@ final sozlesmeSayiSuzgeci = <TextInputFormatter>[
   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
 ];
 
+/// İşaretli ondalık süzgeç: BES getirisi zarar olabilir (`-1.250,40`).
+final sozlesmeIsaretliSuzgeci = <TextInputFormatter>[
+  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\-]')),
+];
+
 /// Metin/sayı alanı — dolgu ve çerçeve temadan (`context.inputDecoration`).
 class SozlesmeAlani extends StatelessWidget {
   const SozlesmeAlani({
@@ -93,6 +98,7 @@ class SozlesmeAlani extends StatelessWidget {
     this.dogrula,
     this.degisti,
     this.buyukHarf = false,
+    this.isaretli = false,
   });
 
   final TextEditingController controller;
@@ -100,6 +106,9 @@ class SozlesmeAlani extends StatelessWidget {
   final String? sonek;
   final bool sayi;
   final bool buyukHarf;
+
+  /// Sayı eksi olabilir mi (yalnız [sayi] ile anlamlı).
+  final bool isaretli;
   final String? Function(String?)? dogrula;
   final void Function(String)? degisti;
 
@@ -114,9 +123,11 @@ class SozlesmeAlani extends StatelessWidget {
                   color: context.c.text58, fontWeight: FontWeight.w700),
             ),
         keyboardType: sayi
-            ? const TextInputType.numberWithOptions(decimal: true)
+            ? TextInputType.numberWithOptions(decimal: true, signed: isaretli)
             : TextInputType.text,
-        inputFormatters: sayi ? sozlesmeSayiSuzgeci : null,
+        inputFormatters: sayi
+            ? (isaretli ? sozlesmeIsaretliSuzgeci : sozlesmeSayiSuzgeci)
+            : null,
         textCapitalization:
             buyukHarf ? TextCapitalization.words : TextCapitalization.none,
         validator: dogrula,

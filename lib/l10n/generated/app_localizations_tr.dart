@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3132,15 +3133,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID ile koru',
-        'touchId': 'Touch ID ile koru',
-        'biyometrik': 'Biyometrik kilitle koru',
-        'other': 'Ekran kilidiyle koru',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID ile koru',
+      'touchId': 'Touch ID ile koru',
+      'biyometrik': 'Biyometrik kilitle koru',
+      'other': 'Ekran kilidiyle koru',
+    });
     return '$_temp0';
   }
 
@@ -3171,15 +3169,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID\'yi aç',
-        'touchId': 'Touch ID\'yi aç',
-        'biyometrik': 'Biyometrik kilidi aç',
-        'other': 'Uygulama kilidini aç',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID\'yi aç',
+      'touchId': 'Touch ID\'yi aç',
+      'biyometrik': 'Biyometrik kilidi aç',
+      'other': 'Uygulama kilidini aç',
+    });
     return '$_temp0';
   }
 
@@ -4588,16 +4583,6 @@ class AppLocalizationsTr extends AppLocalizations {
       'Devlet katkısının hak ediş oranı buna bağlı.';
 
   @override
-  String get pensionBalance => 'Bugünkü birikimin';
-
-  @override
-  String get pensionBalanceHint =>
-      'Devlet katkısı hariç; şirketinin uygulamasında ya da BES Mobil\'de yazan tutar.';
-
-  @override
-  String get pensionPaid => 'Bugüne kadar ödediğin katkı';
-
-  @override
   String get pensionFunds => 'Fon dağılımı';
 
   @override
@@ -4618,9 +4603,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pensionGov => 'Devlet katkısı';
 
   @override
-  String get pensionGovBalance => 'Devlet katkısı birikimi';
-
-  @override
   String get pensionGovFund => 'Devlet katkısı fonu';
 
   @override
@@ -4637,7 +4619,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pensionErrorCompany => 'Şirket adını yaz.';
 
   @override
-  String get pensionErrorBalance => 'Birikim tutarını yaz.';
+  String get pensionErrorBalance =>
+      'Ana para ile getirinin toplamı sıfırdan büyük olmalı.';
 
   @override
   String get pensionErrorGovFund => 'Devlet katkısı birikimi için fonu da seç.';
@@ -4717,6 +4700,60 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pensionNoGovFund =>
       'Devlet katkısı fonu seçilmedi; devlet katkısı eklenmez.';
+
+  @override
+  String get pensionPrincipal => 'Ana para (ödediğin katkı)';
+
+  @override
+  String get pensionPrincipalHint =>
+      'Bugüne kadar cebinden yatırdığın toplam; ekstrende \"katkı payı\" diye geçer.';
+
+  @override
+  String get pensionGain => 'Getiri (kâr)';
+
+  @override
+  String get pensionGainHint => 'Ekstrendeki getiri. Zarardaysan eksiyle yaz.';
+
+  @override
+  String get pensionHistoryHint =>
+      'Grafik giriş tarihinden bugüne bu birikimle düz çizilir; bundan sonrası fonlarının fiyatıyla yürür.';
+
+  @override
+  String get pensionGovPrincipal => 'Devlet katkısı ana parası';
+
+  @override
+  String get pensionGovGain => 'Devlet katkısı getirisi';
+
+  @override
+  String get pensionErrorPrincipal => 'Ana parayı yaz.';
+
+  @override
+  String get pensionSwitchFunds => 'Fon değiştir';
+
+  @override
+  String get pensionSwitchTitle => 'Fon dağılımını değiştir';
+
+  @override
+  String get pensionSwitchHint =>
+      'Birikimin bugünkü fiyatlarla yeni dağılıma taşınır. Ana para ve kâr değişmez; grafik bugünden sonra yeni fonlarla yürür.';
+
+  @override
+  String get pensionSwitchContributions =>
+      'Yeni katkılar da bu dağılımla gitsin';
+
+  @override
+  String pensionSwitchCount(int n) {
+    return 'Bu yıl $n/12 fon değişikliği';
+  }
+
+  @override
+  String get pensionSwitchSaved => 'Fon dağılımı değişti';
+
+  @override
+  String get pensionSwitchSame => 'Dağılım zaten böyle.';
+
+  @override
+  String get pensionSwitchNote => 'Fon değişikliği';
 
   @override
   String get contractManagedNotice =>

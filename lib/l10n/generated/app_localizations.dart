@@ -63,7 +63,7 @@ import 'app_localizations_tr.dart';
 /// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
-      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -86,16 +86,16 @@ abstract class AppLocalizations {
   /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -7736,24 +7736,6 @@ abstract class AppLocalizations {
   /// **'Devlet katkısının hak ediş oranı buna bağlı.'**
   String get pensionEntryDateHint;
 
-  /// No description provided for @pensionBalance.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bugünkü birikimin'**
-  String get pensionBalance;
-
-  /// No description provided for @pensionBalanceHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Devlet katkısı hariç; şirketinin uygulamasında ya da BES Mobil\'de yazan tutar.'**
-  String get pensionBalanceHint;
-
-  /// No description provided for @pensionPaid.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bugüne kadar ödediğin katkı'**
-  String get pensionPaid;
-
   /// No description provided for @pensionFunds.
   ///
   /// In tr, this message translates to:
@@ -7790,12 +7772,6 @@ abstract class AppLocalizations {
   /// **'Devlet katkısı'**
   String get pensionGov;
 
-  /// No description provided for @pensionGovBalance.
-  ///
-  /// In tr, this message translates to:
-  /// **'Devlet katkısı birikimi'**
-  String get pensionGovBalance;
-
   /// No description provided for @pensionGovFund.
   ///
   /// In tr, this message translates to:
@@ -7829,7 +7805,7 @@ abstract class AppLocalizations {
   /// No description provided for @pensionErrorBalance.
   ///
   /// In tr, this message translates to:
-  /// **'Birikim tutarını yaz.'**
+  /// **'Ana para ile getirinin toplamı sıfırdan büyük olmalı.'**
   String get pensionErrorBalance;
 
   /// No description provided for @pensionErrorGovFund.
@@ -7970,6 +7946,102 @@ abstract class AppLocalizations {
   /// **'Devlet katkısı fonu seçilmedi; devlet katkısı eklenmez.'**
   String get pensionNoGovFund;
 
+  /// No description provided for @pensionPrincipal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana para (ödediğin katkı)'**
+  String get pensionPrincipal;
+
+  /// No description provided for @pensionPrincipalHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugüne kadar cebinden yatırdığın toplam; ekstrende \"katkı payı\" diye geçer.'**
+  String get pensionPrincipalHint;
+
+  /// No description provided for @pensionGain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri (kâr)'**
+  String get pensionGain;
+
+  /// No description provided for @pensionGainHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstrendeki getiri. Zarardaysan eksiyle yaz.'**
+  String get pensionGainHint;
+
+  /// No description provided for @pensionHistoryHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafik giriş tarihinden bugüne bu birikimle düz çizilir; bundan sonrası fonlarının fiyatıyla yürür.'**
+  String get pensionHistoryHint;
+
+  /// No description provided for @pensionGovPrincipal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı ana parası'**
+  String get pensionGovPrincipal;
+
+  /// No description provided for @pensionGovGain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet katkısı getirisi'**
+  String get pensionGovGain;
+
+  /// No description provided for @pensionErrorPrincipal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana parayı yaz.'**
+  String get pensionErrorPrincipal;
+
+  /// No description provided for @pensionSwitchFunds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon değiştir'**
+  String get pensionSwitchFunds;
+
+  /// No description provided for @pensionSwitchTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon dağılımını değiştir'**
+  String get pensionSwitchTitle;
+
+  /// No description provided for @pensionSwitchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikimin bugünkü fiyatlarla yeni dağılıma taşınır. Ana para ve kâr değişmez; grafik bugünden sonra yeni fonlarla yürür.'**
+  String get pensionSwitchHint;
+
+  /// No description provided for @pensionSwitchContributions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni katkılar da bu dağılımla gitsin'**
+  String get pensionSwitchContributions;
+
+  /// No description provided for @pensionSwitchCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu yıl {n}/12 fon değişikliği'**
+  String pensionSwitchCount(int n);
+
+  /// No description provided for @pensionSwitchSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon dağılımı değişti'**
+  String get pensionSwitchSaved;
+
+  /// No description provided for @pensionSwitchSame.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılım zaten böyle.'**
+  String get pensionSwitchSame;
+
+  /// No description provided for @pensionSwitchNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon değişikliği'**
+  String get pensionSwitchNote;
+
   /// No description provided for @contractManagedNotice.
   ///
   /// In tr, this message translates to:
@@ -8004,8 +8076,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

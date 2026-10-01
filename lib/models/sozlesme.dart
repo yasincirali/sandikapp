@@ -71,6 +71,7 @@ class Sozlesme {
     this.fonDagilimi = const [],
     this.dkFonKodu,
     this.kapandi,
+    this.olusturuldu,
   });
 
   final String id;
@@ -93,7 +94,35 @@ class Sozlesme {
 
   final DateTime? kapandi;
 
+  /// Kaydın yazıldığı an (`created_at`). BES'te bu **açılış anıdır**:
+  /// kullanıcı o güne kadarki ana parayı ve getiriyi o an girdi. Açılıştan
+  /// önceki geçmiş fon serisinden değil, açılış değerinde DÜZ çizilir
+  /// (bkz. `BesAcilis`). Sunucu doldurur; istemcide yeni yazılan kayıtta
+  /// `besAc` aynı anı verir. Eski satırda da dolu (sütun 0088'den beri var).
+  final DateTime? olusturuldu;
+
   bool get acik => kapandi == null;
+
+  /// Aynı sözleşme, kapanış tarihiyle. Diğer alanlar (açılış anı dahil)
+  /// korunur — eskiden kapanış yeni bir nesne kuruyor, eklenen alanlar
+  /// unutulunca sessizce düşüyordu.
+  Sozlesme kopya({
+    DateTime? kapandi,
+    List<FonPayi>? fonDagilimi,
+  }) =>
+      Sozlesme(
+        id: id,
+        userId: userId,
+        tur: tur,
+        kurum: kurum,
+        baslangic: baslangic,
+        aylikKatki: aylikKatki,
+        katkiGunu: katkiGunu,
+        fonDagilimi: fonDagilimi ?? this.fonDagilimi,
+        dkFonKodu: dkFonKodu,
+        kapandi: kapandi ?? this.kapandi,
+        olusturuldu: olusturuldu,
+      );
 
   Map<String, dynamic> toSupabase() => {
         'id': id,
@@ -125,6 +154,9 @@ class Sozlesme {
         ],
         dkFonKodu: m['dk_fon_kodu'] as String?,
         kapandi: m['kapandi'] == null ? null : gunOku(m['kapandi'] as String),
+        olusturuldu: m['created_at'] == null
+            ? null
+            : DateTime.tryParse(m['created_at'] as String)?.toLocal(),
       );
 }
 

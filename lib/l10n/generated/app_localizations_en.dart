@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -3157,15 +3158,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Protect with Face ID',
-        'touchId': 'Protect with Touch ID',
-        'biyometrik': 'Protect with biometrics',
-        'other': 'Protect with your screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Protect with Face ID',
+      'touchId': 'Protect with Touch ID',
+      'biyometrik': 'Protect with biometrics',
+      'other': 'Protect with your screen lock',
+    });
     return '$_temp0';
   }
 
@@ -3196,15 +3194,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Turn on Face ID',
-        'touchId': 'Turn on Touch ID',
-        'biyometrik': 'Turn on biometric lock',
-        'other': 'Turn on app lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Turn on Face ID',
+      'touchId': 'Turn on Touch ID',
+      'biyometrik': 'Turn on biometric lock',
+      'other': 'Turn on app lock',
+    });
     return '$_temp0';
   }
 
@@ -4620,16 +4615,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'The vesting rate of the government contribution depends on this.';
 
   @override
-  String get pensionBalance => 'Current savings';
-
-  @override
-  String get pensionBalanceHint =>
-      'Excluding the government contribution, as shown in your provider\'s app or BES Mobil.';
-
-  @override
-  String get pensionPaid => 'Contributions paid so far';
-
-  @override
   String get pensionFunds => 'Fund allocation';
 
   @override
@@ -4650,9 +4635,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionGov => 'Government contribution';
 
   @override
-  String get pensionGovBalance => 'Government contribution balance';
-
-  @override
   String get pensionGovFund => 'Government contribution fund';
 
   @override
@@ -4669,7 +4651,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionErrorCompany => 'Enter the company\'s name.';
 
   @override
-  String get pensionErrorBalance => 'Enter your savings.';
+  String get pensionErrorBalance => 'Principal plus return must be above zero.';
 
   @override
   String get pensionErrorGovFund =>
@@ -4751,6 +4733,61 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pensionNoGovFund =>
       'No government contribution fund is set; it won\'t be added.';
+
+  @override
+  String get pensionPrincipal => 'Principal (contributions paid)';
+
+  @override
+  String get pensionPrincipalHint =>
+      'Total you have paid in so far; shown as \"contributions\" on your statement.';
+
+  @override
+  String get pensionGain => 'Return (profit)';
+
+  @override
+  String get pensionGainHint =>
+      'The return on your statement. Use a minus sign for a loss.';
+
+  @override
+  String get pensionHistoryHint =>
+      'The chart shows this balance as a flat line from your entry date to today; from now on it follows your funds\' prices.';
+
+  @override
+  String get pensionGovPrincipal => 'Government contribution principal';
+
+  @override
+  String get pensionGovGain => 'Government contribution return';
+
+  @override
+  String get pensionErrorPrincipal => 'Enter the principal.';
+
+  @override
+  String get pensionSwitchFunds => 'Switch funds';
+
+  @override
+  String get pensionSwitchTitle => 'Change fund allocation';
+
+  @override
+  String get pensionSwitchHint =>
+      'Your savings move to the new allocation at today\'s prices. Principal and profit stay the same; the chart follows the new funds from today.';
+
+  @override
+  String get pensionSwitchContributions =>
+      'Send new contributions to this allocation too';
+
+  @override
+  String pensionSwitchCount(int n) {
+    return '$n/12 fund switches this year';
+  }
+
+  @override
+  String get pensionSwitchSaved => 'Fund allocation changed';
+
+  @override
+  String get pensionSwitchSame => 'That is already your allocation.';
+
+  @override
+  String get pensionSwitchNote => 'Fund switch';
 
   @override
   String get contractManagedNotice =>
