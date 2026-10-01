@@ -834,7 +834,8 @@ class LiveActivityService {
       'isLightTheme': themeIsLight,
       // "Piyasa kapalı" yalnızca portföy TAMAMEN borsa ürünüyse (kullanıcı
       // kararı 2026-10-01, bkz. `yalnizcaBorsa`). `isMarketOpen` BIST
-      // seansını anlatmaya devam eder (seans çubuğu ona bakar); etiketi
+      // seansını anlatmaya devam eder (eski sürümlerin seans çubuğu ona
+      // bakar); etiketi
       // ikisi birlikte belirler. Şema sürümü yükseltilmedi — `isLightTheme`
       // ile aynı gerekçe: eski alanların anlamı değişmedi, eksik alan eski
       // davranışa düşer.

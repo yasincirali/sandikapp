@@ -168,8 +168,8 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// "Piyasa kapalı" / "Seans kapalı" yalnızca o zaman söylenir
         /// (kullanıcı kararı 2026-10-01): karışık portföyde altın, döviz,
         /// kripto hafta sonu ve gece de işler, rakam donuk değildir.
-        /// [isMarketOpen] BIST seansını anlatmaya devam eder (seans çubuğu
-        /// ona bakar); etiket ikisinden türetilir — bkz. [kapaliGoster].
+        /// [isMarketOpen] BIST seansını anlatmaya devam eder (eski sürümlerin
+        /// seans çubuğu ona bakardı; çubuk 2026-10-01'de kalktı); etiket ikisinden türetilir — bkz. [kapaliGoster].
         ///
         /// Eski sürümden/eski sunucudan gelen durumda alan yoktur;
         /// varsayılan `true` — o güne kadarki davranış.
@@ -252,8 +252,8 @@ extension SandikActivityAttributes.ContentState {
 
     /// "Kapalı" denebilir mi — seans dışı VE portföy yalnızca borsa.
     ///
-    /// Canlılık etiketi, gri nokta ve soluk logo bunu sorar; seans çubuğu
-    /// ise yalnızca [isMarketOpen]'a bakar (BIST'in kendi saati).
+    /// Canlılık etiketi, gri nokta ve soluk logo bunu sorar. (Seans çubuğu
+    /// yalnızca [isMarketOpen]'a bakardı; 2026-10-01'de kaldırıldı.)
     var kapaliGoster: Bool { !isMarketOpen && yalnizBorsa }
 
     /// Günlük değişim gerçekten hesaplanabildi mi?
