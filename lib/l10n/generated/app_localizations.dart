@@ -5648,6 +5648,12 @@ abstract class AppLocalizations {
   /// **'Portföyün enflasyonun altında kaldı, alım gücün geriledi.'**
   String get realReturnNegative;
 
+  /// No description provided for @realReturnEven.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyün enflasyonla aynı oranda değerlendi, alım gücün korundu.'**
+  String get realReturnEven;
+
   /// No description provided for @nPeopleParen.
   ///
   /// In tr, this message translates to:

@@ -203,7 +203,11 @@ void main() {
       final ilk = DateTime(2026, 8, 14, 18), son = DateTime(2026, 9, 12, 18);
       final w = son.difference(DateTime(2026, 8, 25)).inMinutes /
           son.difference(ilk).inMinutes;
-      expect(s.getiriPct, closeTo(5000 / (100000 - 10000 * w) * 100, 0.001));
+      // Yüzde kesin para ağırlıklı getiri (IRR, 2026-10-01 best practice
+      // kıyası): 100.000(1+r) − 10.000(1+r)^w = 95.000 → %5,342217.
+      // Dietz yaklaşığı (aşağıda) ondan yalnızca binde birler farklı.
+      expect(s.getiriPct, closeTo(5.342217, 0.0001));
+      expect(s.getiriPct, closeTo(5000 / (100000 - 10000 * w) * 100, 0.01));
       expect(s.isNegative, isFalse,
           reason: 'portföy değeri düştü ama piyasa artıda');
     });

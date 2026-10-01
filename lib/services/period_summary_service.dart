@@ -4,6 +4,7 @@ import '../models/position.dart' show positionKey;
 import 'daily_summary.dart';
 import 'history_service.dart';
 import 'inflation_service.dart';
+import 'para_agirlikli_getiri.dart';
 import 'xirr_service.dart' show XirrService;
 import 'recap_service.dart' show PortfolioCharacter, RecapAsset, RecapService;
 import '../utils/tr_format.dart';
@@ -110,6 +111,11 @@ class PeriodSummary {
   /// Eylül özeti). Şimdi her akış dönemde kaldığı süre oranında paydaya
   /// girer; akış yoksa sonuç eski formülle BİREBİR aynıdır.
   /// Köprünün TRY satırları ([katkiTRY], [piyasaTRY]) değişmedi.
+  ///
+  /// Aynı gün, best practice kıyasından sonra: ortalama sermaye (Modified
+  /// Dietz) doğrusal yaklaşık olarak kaldı, sayının kendisi aynı akış ve
+  /// ağırlıklarla KESİN para ağırlıklı getiri (dönem IRR'ı;
+  /// `PeriodSummaryService.paraAgirlikliGetiri`). İşaret yine `piyasaTRY`'nin.
   final double? getiriPct;
 
   /// Dönemin en iyi / en zayıf varlığı — DÖNEME ait, ömürlük değil.
@@ -620,6 +626,11 @@ class PeriodSummaryService {
           DateTime(end.year, end.month, end.day, 23, 59, 59)
               .millisecondsSinceEpoch,
     );
+    final piyasa = brut - katki;
+    final sonTs = canli ? end.millisecondsSinceEpoch : u.lastTs;
+    final akisSonu = akisSonuMs ??
+        DateTime(end.year, end.month, end.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
     return (
       ilk: u.first,
       son: son,
@@ -627,15 +638,56 @@ class PeriodSummaryService {
       sonTs: u.lastTs,
       brut: brut,
       katki: katki,
-      piyasa: brut - katki,
+      piyasa: piyasa,
       // Eski payda (baş + POZİTİF katkı) — yalnızca tutar eşikleri için;
-      // yüzde artık [pct] (ortalama sermaye).
+      // yüzde artık [pct] (para ağırlıklı getiri).
       taban: u.first + (katki > 0 ? katki : 0),
-      pct: sermaye == null ? null : (brut - katki) / sermaye * 100,
+      pct: sermaye == null
+          ? null
+          : paraAgirlikliGetiri(
+              lotlar: lotlar,
+              bas: u.first,
+              son: son,
+              basTs: u.firstTs,
+              sonTs: sonTs,
+              akisSonuMs: akisSonu,
+              piyasa: piyasa,
+              sermaye: sermaye,
+            ),
     );
   }
 
-  /// Dönemin ORTALAMA sermayesi (TRY) — yüzdenin paydası (Modified Dietz).
+  /// Dönemin PARA AĞIRLIKLI getirisi (yüzde) — dönem içi IRR.
+  ///
+  /// Akış kümesi ve ağırlıklar [ortalamaSermaye] ile AYNI (damga kapısı
+  /// `(basTs, akisSonuMs]`); hesap ve gerekçe `paraAgirlikliGetiriPct`'te
+  /// (best practice kıyası, 2026-10-01). Kök yoksa Dietz sonucu.
+  static double paraAgirlikliGetiri({
+    required List<Asset> lotlar,
+    required double bas,
+    required double son,
+    required int basTs,
+    required int sonTs,
+    required int akisSonuMs,
+    required double piyasa,
+    required double sermaye,
+  }) {
+    final sure = sonTs - basTs;
+    final akislar = <DonemAkisi>[];
+    for (final a in lotlar) {
+      final f = flowOf(a);
+      if (f == 0) continue;
+      final ms = a.addedDate.millisecondsSinceEpoch;
+      if (ms <= basTs || ms > akisSonuMs) continue;
+      final w = sure <= 0 ? 0.0 : ((sonTs - ms) / sure).clamp(0.0, 1.0);
+      akislar.add((f: f, w: w));
+    }
+    return paraAgirlikliGetiriPct(bas: bas, son: son, akislar: akislar) ??
+        piyasa / sermaye * 100;
+  }
+
+  /// Dönemin ORTALAMA sermayesi (TRY) — Modified Dietz paydası; yüzde artık
+  /// [paraAgirlikliGetiri] ile kesinleşir, bu payda onun kapısı ve yedeği.
   ///
   /// ## Neden (kullanıcı bildirimi ve önerisi, 2026-10-01)
   /// *"1 ay içerisinde TÜFE'yle karşılaştırılan değerde dönem içi

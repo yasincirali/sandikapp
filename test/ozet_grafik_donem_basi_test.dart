@@ -252,20 +252,19 @@ void main() {
 
     test('piyasa satırı ana sayfayla AYNI formül ve taban', () {
       // `DailySummary.from`: piyasa = (son − ilk) − akış;
-      // taban = gün başı + POZİTİF akış.
+      // yüzde para ağırlıklı (`DailySummary.gunIciGetiriPct`).
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
       expect(tek.contains('final piyasa = grossChange - netInflow;'), isTrue);
-      // GÜNLÜK'te taban ana sayfanınki (baş + pozitif akış); 1H ve üstünde
-      // Özet'le aynı ORTALAMA sermaye (2026-10-01).
-      expect(
-          tek.contains('? firstY + (netInflow > 0 ? netInflow : 0)'),
-          isTrue,
+      // Yüzde para ağırlıklı (2026-10-01): GÜNLÜK'te ana sayfanın
+      // fonksiyonu, 1H ve üstünde Özet'inki — tek hesap, iki çağrı.
+      expect(tek.contains('DailySummary.gunIciGetiriPct('), isTrue,
           reason: 'tutar eşitlenip yüzde ayrışırsa çelişki sürer');
-      expect(tek.contains('(intraday || _simulate)'), isTrue);
-      expect(tek.contains('PeriodSummaryService.ortalamaSermaye('), isTrue,
-          reason: 'dönem yüzdesi Özet ile TEK payda');
+      expect(tek.contains('PeriodSummaryService.paraAgirlikliGetiri('), isTrue,
+          reason: 'dönem yüzdesi Özet ile TEK hesap');
+      expect(tek.contains('netInflow > 0 ? netInflow : 0'), isFalse,
+          reason: 'eski "baş + pozitif akış" paydası geri gelmemeli');
       expect(tek.contains('context.l10n.marketOnlyRow'), isTrue,
           reason: 'piyasa etkisi ayrı satır olarak yazılmalı');
     });

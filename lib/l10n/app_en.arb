@@ -2225,6 +2225,7 @@
     }
   },
   "realReturnNegative": "Your portfolio fell short of inflation; your purchasing power shrank.",
+  "realReturnEven": "Your portfolio kept pace with inflation; your purchasing power held steady.",
   "nPeopleParen": "({n} people)",
   "@nPeopleParen": {
     "placeholders": {

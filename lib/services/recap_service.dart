@@ -379,9 +379,14 @@ class RecapService {
     if (enflasyonPuan != null) {
       final reel =
           reelGetiriPct == null ? '' : ' (reel ${isaretli(reelGetiriPct)})';
-      satirlar.add(enflasyonPuan >= 0
-          ? 'Enflasyonun ${yuzde(enflasyonPuan)} puan önündeyim$reel'
-          : 'Enflasyonun ${yuzde(enflasyonPuan)} puan gerisindeyim$reel');
+      // "0,0 puan önündeyim/gerisindeyim" yazılmaz: metindeki sayı sıfırsa
+      // hüküm de başa baştır (ekrandaki kartla aynı kural,
+      // `InflationService.hukum`).
+      satirlar.add(yuzde(enflasyonPuan) == yuzde(0)
+          ? 'Enflasyonla başa başım$reel'
+          : enflasyonPuan > 0
+              ? 'Enflasyonun ${yuzde(enflasyonPuan)} puan önündeyim$reel'
+              : 'Enflasyonun ${yuzde(enflasyonPuan)} puan gerisindeyim$reel');
     }
     if (xirrPct != null) {
       satirlar.add('Yıllıklandırılmış getiri (XIRR): ${isaretli(xirrPct)}');
