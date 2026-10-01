@@ -399,7 +399,8 @@ List<_Adim> _adimlariKur() {
       baslik: 'Piyasa bir bakışta',
       govde: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle en '
           'üstte. Şeride uzun basıp tut, sağa sola kaydır; bırakınca akmaya '
-          'devam eder. Sağ uçtaki "Ara" ile herhangi bir hisseyi, '
+          'devam eder. Bir süre dokunulmazsa durur, dokununca yeniden akar. '
+          'Sağ uçtaki "Ara" ile herhangi bir hisseyi, '
           'fonu, altını ya da kriptoyu ara; portföyüne eklemeden grafiğine '
           've istatistiklerine bak, istersen takibe al.',
       rozet: 'YENİ',

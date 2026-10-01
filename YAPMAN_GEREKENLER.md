@@ -8,6 +8,23 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-02 ProGuard daraltması — gerçek cihazda 5 dakikalık kontrol
+
+`android/app/proguard-rules.pro`'daki geniş keep'ler (Flutter, Firebase, GMS `{ *; }`)
+kaldırıldı; Play indirme 17,7 → 17,0 MB. Emülatörde release build açıldı, Firebase/
+Crashlytics başladı, sekmeler ve widget çökmedi — ama oturum açık olduğu için giriş
+akışları denenmedi. Bir sonraki Play kapalı test / TestFlight build'inde telefonda:
+
+- [ ] Çıkış yap → **Google ile giriş** → **Apple ile giriş** (iOS'ta R8 yok; Android'de Google)
+- [ ] Bildirim ayarlarından test push'u gönder, telefona düşsün
+- [ ] Remote Config bayrağı okunuyor mu (örn. Yarış görünürlüğü)
+- [ ] Yerel bildirim (sinyal/alarm) göründü mü
+- [ ] Ana ekran widget'ı güncelleniyor mu
+
+Kırılan varsa belirti `ClassNotFoundException` / `NoSuchMethodError`; Crashlytics'te
+görünür. Düzeltme: ilgili paket için **dar** keep satırı (gerekçesiyle), geniş `{ *; }`
+geri gelmesin. Rapor: `docs/CPU_GPU_VE_BOYUT_RAPORU_2026_10.md` → "Uygulananlar".
+
 ## ✅ 2026-10-01 Yarış/Zirve ölçüsü → "Seçimlerinin getirisi" (TWR) — 0095 + `leaderboard-snapshot` İKİ SUNUCUDA
 
 Karar (yasin, 2026-10-01, "Yarış Ölçüsü Kıyası" R1): sıralama ve Zirve
