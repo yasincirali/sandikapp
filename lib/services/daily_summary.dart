@@ -748,6 +748,27 @@ class IntradaySeriesCache {
   /// Varlık kümesi başına yuva. Anahtar [anahtar].
   final Map<String, _GunIciYuva> _yuvalar = {};
 
+  /// Bir yuvaya YENİ seri yazıldığında artar; [sonGuncellenen] o yuvanın
+  /// anahtarı.
+  ///
+  /// ## Neden (kullanıcı kararı 2026-10-02: "Bugün kartı, günlük kartı,
+  /// canlı etkinlik ve widget hepsi senkron olmalı")
+  /// Tek önbellek yetmiyordu: bir yüzey taze seri çekince diğerleri bunu
+  /// kendi bir sonraki tazelemesine kadar (≤ 30 sn, soğuk açılışta daha
+  /// uzun) öğrenmiyordu. Ölçüldü: açılıştan hemen sonra Ana kartı ve widget
+  /// +₺335, Performans +₺148 — splash ısıtması seriyi fiyat turu bitmeden
+  /// çekmişti, Performans sonra tazesini çekti. Sinyal sayesinde yeni seri
+  /// AYNI KAREDE Bugün kartına, Performans'a, widget'a ve Live Activity'ye
+  /// ulaşır; dinleyiciler önbellekten okur (yeni ağ turu yok).
+  final ValueNotifier<int> surum = ValueNotifier<int>(0);
+
+  /// [surum]'u son artıran yuvanın anahtarı ([anahtar]).
+  String sonGuncellenen = '';
+
+  /// Ben kapsamının anahtarı — widget/Live Activity dinleyicisi yalnızca
+  /// bu yuva tazelenince yeniden yazar.
+  String get benAnahtari => _benAnahtari;
+
   /// [get] ile son istenen (Ben) kümenin anahtarı — widget ve Live Activity
   /// `series`/`seansGunu`'yu buradan okur; onlar kapsam bilmez.
   String _benAnahtari = '';
@@ -875,6 +896,8 @@ class IntradaySeriesCache {
       // değerde donar — üstelik "Canlı" etiketiyle.
       y.fetchedAt = ts;
       y.ownerId = ownerId;
+      sonGuncellenen = anahtar(assets);
+      surum.value++;
     } catch (e) {
       if (kDebugMode) debugPrint('Gün içi seri çekilemedi: $e');
     } finally {

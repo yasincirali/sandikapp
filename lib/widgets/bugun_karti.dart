@@ -16,7 +16,7 @@ import 'dart:async';
 import '../services/tazelik_ritmi.dart';
 import '../services/price_service.dart';
 
-import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -32,6 +32,7 @@ import '../services/bugun_service.dart';
 import '../services/bugun_yukleyici.dart';
 import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
+import '../services/fiyat_kaynagi.dart';
 import '../theme/sandik.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
@@ -219,14 +220,61 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     _nabziBirak = TazelikRitmi.nabiz.dinle(() {
       if (!mounted) return;
       // Gizli sekmede tazeleme yok (bkz. Performans `_startIntradayTickIfNeeded`,
-      // animasyon denetimi 2026-10-01); dönünce en geç bir nabızda tazelenir.
+      // animasyon denetimi 2026-10-01); dönünce HEMEN tazelenir
+      // ([_gorunurlukDegisti]).
       if (!TickerMode.getValuesNotifier(context).value.enabled) return;
       _seriyiTazele();
     });
+    IntradaySeriesCache.instance.surum.addListener(_seriGeldi);
+  }
+
+  /// Sekmenin görünürlüğü (`TickerMode`); görünür olunca seri hemen
+  /// ortak önbellekten okunur.
+  ///
+  /// ## Neden (kullanıcı kararı 2026-10-02: "hepsi senkron olmalı")
+  /// Gizli sekmede nabız atlanıyor (doğru: boşa kare). Ama Performans'ta
+  /// gezip Ana'ya dönen kullanıcı bir nabız boyunca (≤ 30 sn) kartın ESKİ
+  /// seriyle hesapladığı rakamı görüyordu; Performans aynı anda taze
+  /// seriyi gösteriyordu. Görünür olunca `zorla` ile istenir: aynı nabızda
+  /// Performans çekmişse aynı nesne döner (`IntradaySeriesCache.zorlaEsigi`),
+  /// yoksa taze çekilir. İki yüzey artık aynı seriyle, aynı anda.
+  ValueListenable<TickerModeData>? _gorunurluk;
+
+  void _gorunurlukDegisti() {
+    if (!mounted || _gorunurluk?.value.enabled != true) return;
+    _seriyiTazele();
+  }
+
+  /// Ortak önbelleğe yeni seri yazıldı (başka bir yüzey çekti) — kart
+  /// ağa çıkmadan önbellekten okur (`IntradaySeriesCache.surum`).
+  void _seriGeldi() {
+    if (!mounted) return;
+    if (_gorunurluk?.value.enabled == false) return; // görünür olunca okunur
+    // Yalnızca kartın kümesinin yuvası (`BugunYukleyici.seri` ile aynı
+    // küme: aktif + seriye giren lot'lar).
+    final kume = widget.state.activeAssets
+        .where(FiyatKaynagi.seriyeGirer)
+        .toList();
+    if (IntradaySeriesCache.instance.sonGuncellenen !=
+        IntradaySeriesCache.anahtar(kume)) {
+      return;
+    }
+    _seriyiTazele(zorla: false);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final yeni = TickerMode.getValuesNotifier(context);
+    if (identical(yeni, _gorunurluk)) return;
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _gorunurluk = yeni..addListener(_gorunurlukDegisti);
   }
 
   @override
   void dispose() {
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    IntradaySeriesCache.instance.surum.removeListener(_seriGeldi);
     _nabziBirak?.call();
     super.dispose();
   }
@@ -239,13 +287,13 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   ///
   /// `setState` yalnızca değer GERÇEKTEN değiştiyse çağrılır: her tick'te
   /// kartı yeniden çizmek gereksiz kare üretirdi.
-  Future<void> _seriyiTazele() async {
+  Future<void> _seriyiTazele({bool zorla = true}) async {
     // İlk yükleme sürüyor, üstüne binme. `_yuklendi` tek başına yetmez:
     // kart son yüklemeyle açıldıysa (`_sonYukleme`) yükleme arkada sürer.
     if (!_yuklendi || _yukleniyor) return;
     // `nabiz: true` — önbellek yaşa bakmadan tazelenir; Performans da bu
     // nabızda koşulsuz çekiyor (bkz. `IntradaySeriesCache.get` [zorla]).
-    final yeni = await _seriYukle(nabiz: true);
+    final yeni = await _seriYukle(nabiz: zorla);
     if (!mounted || yeni == null) return;
     final eski = _seri;
     if (eski != null &&

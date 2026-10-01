@@ -3,6 +3,7 @@ import '../demo/demo_modu.dart';
 import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart'
     show
         Colors,
@@ -203,6 +204,47 @@ class _PortfolioPerformanceScreenState
   /// Ortak nabız dinleyicisini kaldırma işlevi (bkz. `TazelikRitmi.nabiz`).
   VoidCallback? _nabziBirak;
 
+  /// Sekme görünürlüğü (`TickerMode`) — GÜNLÜK'te görünür olunca gün içi
+  /// seri HEMEN tazelenir, bir sonraki nabız beklenmez.
+  ///
+  /// Gizli sekmede nabız atlanıyor (doğru). Ama Ana'da gezip buraya dönen
+  /// kullanıcı ≤ 30 sn boyunca Bugün kartının az önce çektiği seriden ESKİ
+  /// bir seriyle hesaplanmış rakam görüyordu (kullanıcı kararı 2026-10-02:
+  /// "hepsi senkron olmalı"). Bugün kartı aynı dinleyiciyi taşır
+  /// (`_BugunKartiState._gorunurlukDegisti`).
+  ValueListenable<TickerModeData>? _gorunurluk;
+
+  void _gorunurlukDegisti() {
+    if (!mounted || _gorunurluk?.value.enabled != true) return;
+    if (!_periods[_selectedPeriodIdx].intraday) return;
+    _guncelle(() => _intradayKey = null);
+  }
+
+  /// Ortak önbelleğe yeni seri yazıldı (ör. Bugün kartı çekti): GÜNLÜK
+  /// görünürken aynı nesneyi okumak için memoize future düşürülür. Yeniden
+  /// istek `zorla` ile gelir ama [IntradaySeriesCache.zorlaEsigi] içinde —
+  /// ağa çıkmaz, aynı yuvayı döndürür (döngü yok).
+  void _gunIciSeriGeldi() {
+    if (!mounted || _gorunurluk?.value.enabled == false) return;
+    if (!_periods[_selectedPeriodIdx].intraday) return;
+    // Yalnızca BU ekranın kümesinin yuvası: başka kapsamın (ör. Birlikte)
+    // tazelenmesi burada yeniden okuma tetiklemesin.
+    final c = IntradaySeriesCache.instance;
+    if (c.sonGuncellenen != IntradaySeriesCache.anahtar(_intradayAssets)) {
+      return;
+    }
+    _guncelle(() => _intradayKey = null);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final yeni = TickerMode.getValuesNotifier(context);
+    if (identical(yeni, _gorunurluk)) return;
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    _gorunurluk = yeni..addListener(_gorunurlukDegisti);
+  }
+
   // Zoom-aware veri controller'ı. Chart viewport değiştikçe uygun
   // ResolutionTier'da veri yükler, debounce ile spam engeller.
   ZoomDataController? _zoomController;
@@ -253,6 +295,7 @@ class _PortfolioPerformanceScreenState
     // Dönem derin bağlantıyla GÜNLÜK dışına ayarlanmış olabilir; tick
     // kararı seçili dönemden sonra verilmeli.
     _startIntradayTickIfNeeded();
+    IntradaySeriesCache.instance.surum.addListener(_gunIciSeriGeldi);
 
     // Dış yüzey dokunuşu. Soğuk açılışta istek bu ekran KURULMADAN önce
     // yazılmış olur (sekme isteği de öyle), o yüzden dinleyiciyi bağlamakla
@@ -303,6 +346,8 @@ class _PortfolioPerformanceScreenState
     // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
     // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).
     PortfolioPerformanceScreen.gunlukIstegi.removeListener(_gunlukIstegiGeldi);
+    _gorunurluk?.removeListener(_gorunurlukDegisti);
+    IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     _nabziBirak?.call();
     _zoomController?.dispose();
     _viewport?.dispose();

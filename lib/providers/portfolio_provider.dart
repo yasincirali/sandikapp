@@ -144,8 +144,16 @@ class PortfolioState {
   /// satışı diğerinin lot'unu düşürüyordu. `totalCost`/`capitalGainLoss`
   /// ile AYNI kaynağa bağlandı; üç sayı tek kümeden beslenmezse
   /// "Σ parça == bütün" değişmezi kırılır.
-  double get totalValue =>
-      ownerScopedTotalValue(lotlarSahibeGore(assets), toTRY: toTRY);
+  ///
+  /// **`sonFiyat` (2026-10-02, kullanıcı kararı: "ana sayfa toplam varlık,
+  /// Bugün kartı, Performans günlük, widget ve canlı etkinlik senkron
+  /// olmalı").** Bugün kartı, Performans GÜNLÜK ucu, widget ve Live
+  /// Activity toplamı `DailySummary.liveTotalTRY` ile okuyor: fiyatı bir
+  /// turda düşmüş pozisyon oturumdaki son kotasyona düşer. Bu getter o
+  /// yedeği almıyordu; o anda ana sayfa toplamı pozisyonu tamamen
+  /// dışarıda bırakıp diğer dört yüzeyden düşük görünüyordu. Artık aynı yol.
+  double get totalValue => ownerScopedTotalValue(lotlarSahibeGore(assets),
+      toTRY: toTRY, sonFiyat: PriceService.instance.sonBilinenFiyat);
 
   /// Maliyet tabanı (TRY) — AÇIK pozisyonların maliyeti, temettü hariç.
   ///

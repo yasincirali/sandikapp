@@ -127,7 +127,9 @@ void main() {
       // Reel getiri ve haftalık özet günde bir kez değişir; 30 saniyede bir
       // çekmek boşuna ağ trafiği olurdu.
       final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
-      expect(src.contains('Future<void> _seriyiTazele()'), isTrue);
+      // 2026-10-02: `zorla` parametresi (önbellek sinyali zorlamadan okur).
+      expect(src.contains('Future<void> _seriyiTazele({bool zorla = true})'),
+          isTrue);
       // Tick `_yukle`'yi DEĞİL, dar kapsamlı tazelemeyi çağırmalı.
       //
       // Boşlukları tek boşluğa indirerek arıyoruz: `dart format` satır
