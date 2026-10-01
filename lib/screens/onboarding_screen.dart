@@ -591,8 +591,12 @@ List<_Adim> _adimlariKur() {
       baslik: 'Zirvedeki portföyler',
       // 2026-09-29: kart Yarış ekranından Performans'a taşındı, kendi
       // ekranı ve cetveli var. Tur uygulamanın güncel hâlini anlatmalı.
-      govde: 'Tür dökümünün altındaki kart, dönemin en çok kazanan anonim '
-          'portföylerini gösterir. Dokununca yeni ekran: haftalık, aylık ve '
+      // 2026-10-01 (0095): ölçü "seçimlerinin getirisi" (TWR) oldu; metin
+      // neyin yarıştığını söyler — para ekleme zamanı değil, seçimler.
+      govde: 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
+          'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
+          'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
+          'Dokununca yeni ekran: haftalık, aylık ve '
           'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
           'neye yatırdığını ve senden farkını oku. Katılım isteğe bağlı ve '
           'anonim: katılanlar birbirinin tür dağılımını ve getirisini görür; '

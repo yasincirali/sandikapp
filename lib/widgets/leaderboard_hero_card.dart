@@ -4,7 +4,6 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../screens/leaderboard_screen.dart';
-import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
@@ -262,7 +261,8 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         LeaderboardService.instance.totalValueTRY(myAssets, pState.toTRY);
 
     Future<_PeriodSnapshot?> compute(int periodDays, String label) async {
-      // Kendi ROI — lokal hesap + upload (fire-and-forget).
+      // Kendi getirin — cihazda (anlık görüntüyü 0095'ten beri yalnız
+      // sunucu yazar).
       final myRoi = await LeaderboardService.instance.computeROI(
         assets: myAssets,
         periodDays: periodDays,
@@ -270,16 +270,6 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         toTRY: pState.toTRY,
         cacheKey: me.id,
       );
-      if (myRoi != null) {
-        CrashReporter.arkaPlan(
-          LeaderboardService.instance.uploadRoiSnapshot(
-            userId: me.id,
-            periodDays: periodDays,
-            roiPct: myRoi,
-          ),
-          reason: 'LeaderboardHeroCard.uploadRoiSnapshot',
-        );
-      }
 
       // Ortakların kâr/zararı BURADA hesaplanır — sunucu snapshot'ı beklenmez.
       //

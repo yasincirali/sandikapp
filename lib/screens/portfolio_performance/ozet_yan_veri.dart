@@ -261,28 +261,11 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     if (me == null) return;
     if (widget.assets.isEmpty) return;
 
-    final pState = ref.read(portfolioProvider).valueOrNull;
-    if (pState == null) return;
-
     try {
       final servis = LeaderboardService.instance;
       const gun = 180;
-      final roi = await servis.computeROI(
-        assets: widget.assets,
-        periodDays: gun,
-        currentValueTRY: servis.totalValueTRY(widget.assets, pState.toTRY),
-        toTRY: pState.toTRY,
-        cacheKey: me.id,
-      );
-      // Geçmiş yetersiz — karşılaştırma yapılamaz, uydurma bir dilim
-      // gösterilmez.
-      if (roi == null || !mounted) return;
-
-      await servis.uploadRoiSnapshot(
-        userId: me.id,
-        periodDays: gun,
-        roiPct: roi,
-      );
+      // Anlık görüntüyü cihaz YAZMAZ (0095): cron yarışa katılan herkes için
+      // TWR yazar; kendi satırı yoksa RPC boş döner ve dilim gösterilmez.
       final data = await servis.fetchPercentile(gun);
       if (!mounted || data == null) return;
 

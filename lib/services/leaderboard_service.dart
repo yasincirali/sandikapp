@@ -5,7 +5,12 @@ import 'crash_reporter.dart';
 import 'supabase_service.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
+import '../providers/portfolio_provider.dart' show PortfolioState;
+import 'daily_summary.dart';
 import 'history_service.dart';
+import 'period_summary_service.dart';
+import 'remote_config_service.dart';
+import 'secim_getirisi.dart';
 import 'zirve_kiyas.dart';
 
 /// Kâr/zarar hesabı sonucu.
@@ -176,50 +181,81 @@ class LeaderboardService {
     return RoiResult(roi: result, usedFallback: false);
   }
 
-  /// Bir varlık listesinin SEÇİLİ DÖNEMDEKİ getirisi.
+  /// Bir kişinin defterinin SEÇİLİ DÖNEMDEKİ getirisi — SEÇİMLERİNİN
+  /// GETİRİSİ (zaman ağırlıklı, TWR; 0095, 2026-10-01).
   ///
-  /// ```
-  ///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-  /// ```
+  /// Hesap ve gerekçe `secim_getirisi.dart`'ta; sunucu (`leaderboard-
+  /// snapshot` › `donemTwr`) aynı kuralla Zirve'yi ve genel havuzu ölçer.
   ///
-  /// Takip listesi grafiğindeki `normalizeSeries` ile AYNI soru: "bu dönemde
-  /// yüzde kaç değişti?" Seri `getPortfolioHistory(..., simulate: true)` ile
-  /// üretilir — bugünkü net pozisyon dönemin tamamına yayılır.
-  ///
-  /// ## Neden `simulate: true`
-  /// Gerçek geçmiş modunda bir lot'un `addedDate`'inden önceki slotlara 0
-  /// yazılır; dönem başı 0 olunca bölme tanımsız kalır ve dönem içinde alım
-  /// yapan herkes sıralamadan düşerdi. Simülasyon, herkesi aynı pencerede
-  /// ölçer — "bu varlıkları dönem başından beri tutsaydım" senaryosu.
-  /// (Takip listesi grafiği de aynı gerekçeyle simülasyon kullanıyor.)
+  /// **2026-10-01'e kadar simülasyondu** (`getPortfolioHistory(simulate:
+  /// true)`: bugünkü net pozisyon dönemin tamamına yayılırdı). Kullanıcı
+  /// kararı R1 ("Yarış Ölçüsü Kıyası"): simülasyon satıp başka varlık
+  /// alanın kararını görmüyor, geç girene bütün dönemi veriyordu.
   ///
   /// ## Ortaklar için de aynı yol
   /// Ortağın lot'ları `allPartnerAssetsProvider` üzerinden bu cihazda ZATEN
-  /// var ve `refreshPrices` `currentPrice`'ı canlı kotasyonla güncelliyor
-  /// (RLS DB'ye yazmayı engellese de bellekte günceller). Sunucu snapshot'ı
-  /// beklemek üç soruna yol açıyordu:
+  /// var. Sunucu snapshot'ı beklemek üç soruna yol açıyordu (2026-09-02):
   ///   · ortak uygulamayı hiç açmadıysa → yarışta değeri YOK,
   ///   · eski sürümde açtıysa → eski formülle yazılmış BAYAT değer,
   ///   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
   ///
-  /// Dönem başı ≤ 0 ise `null` — bölme tanımsız.
+  /// [assets] TEK KİŞİNİN defteri (alım + satım). `null`: ölçüm 30 günden
+  /// kısa, kapsama düşük ya da fiyat geçmişi alınamadı.
   Future<double?> donemGetirisiPct(
     List<Asset> assets,
     int periodDays,
   ) async {
     if (assets.isEmpty) return null;
     try {
-      final seri = await HistoryService.instance
-          .getPortfolioHistory(assets, periodDays, simulate: true);
-      if (seri.length < 2) return null;
-      final ts = seri.keys.toList()..sort();
-      final ilk = seri[ts.first]!;
-      final son = seri[ts.last]!;
-      if (ilk <= 0) return null;
-      return ((son - ilk) / ilk) * 100.0;
-    } catch (_) {
+      return await SecimGetirisi.donemPct(assets, periodDays);
+    } catch (e, st) {
       // Fiyat geçmişi alınamadı — "veri yok" olarak göster. Uydurma bir
       // sayı basmak sıralamayı sessizce bozardı.
+      CrashReporter.report(e, st, reason: 'LeaderboardService.donemGetirisiPct');
+      return null;
+    }
+  }
+
+  /// Kendi satırındaki ek bilgi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
+  /// Performans › Özet'in AYNI dönemdeki sayısı (R1, 2026-10-01).
+  ///
+  /// Yeni bir XIRR YAZILMAZ: Özet'in yolu (`PeriodSummaryService.compute`,
+  /// sağ uç canlı kapsam toplamı) olduğu gibi çağrılır — ana sayfanın
+  /// "Son 7 gün" satırı (`BugunYukleyici.haftalik`) ile aynı desen. İki
+  /// yüzey aynı dönemde aynı sayıyı söylemeli.
+  ///
+  /// Yarış'ın dönemi Özet'in dönemine eşlenir (30G → 1A: Özet ayı takvimden
+  /// sayar). Eşi olmayan dönemde ya da Özet bayrağı kapalıyken `null`.
+  Future<double?> paraninGetirisiPct(PortfolioState state, int periodDays) async {
+    final period = switch (periodDays) {
+      7 => SummaryPeriod.birHafta,
+      30 => SummaryPeriod.birAy,
+      180 => SummaryPeriod.altiAy,
+      365 => SummaryPeriod.birYil,
+      _ => null,
+    };
+    if (period == null || state.assets.isEmpty) return null;
+    if (!RemoteConfigService.instance.periodSummaryEnabled) return null;
+    try {
+      final now = DateTime.now();
+      final p = PeriodSummaryService.pencere(period, now);
+      final bd = await HistoryService.instance
+          .getPortfolioHistoryBreakdownAtResolution(
+        assets: state.assets,
+        from: p.start,
+        to: p.end,
+        tier: ResolutionTierMeta.pickForSpan(period.days.toDouble()),
+      );
+      return PeriodSummaryService.compute(
+        period: period,
+        assets: state.assets,
+        breakdown: bd,
+        now: now,
+        canliSon: DailySummary.kapsamToplami(state, state.assets),
+      ).getiriPct;
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'LeaderboardService.paraninGetirisiPct');
       return null;
     }
   }
@@ -304,24 +340,10 @@ class LeaderboardService {
     }
   }
 
-  /// Client'ın hesapladığı ROI değerini snapshot tablosuna yazar. Opt-in
-  /// kontrolü çağıran yerin sorumluluğu. Hata sessizce yutulur — bu ikincil
-  /// bir operasyon, ana leaderboard'un düşmesine izin vermez.
-  Future<void> uploadRoiSnapshot({
-    required String userId,
-    required int periodDays,
-    required double roiPct,
-  }) async {
-    try {
-      await Supabase.instance.client.from('user_roi_snapshots').insert({
-        'user_id': userId,
-        'period_days': periodDays,
-        'roi_pct': roiPct,
-      });
-    } catch (_) {
-      // Sessizce yut — global percentile "yakında" hâli, kullanıcıyı bozmasın.
-    }
-  }
+  // `uploadRoiSnapshot` 0095'te (2026-10-01) KALDIRILDI: ROI anlık
+  // görüntüsünü yalnız sunucu yazar (cron, TWR). İstemci simülasyon değeri
+  // yüklüyordu; iki ölçü aynı havuzda karışırdı. Sunucuda istemci INSERT
+  // yetkisi de geri alındı — eski sürümlerin denemesi sessizce düşer.
 
   /// Aktif ortakların son ROI snapshot'larını Supabase'ten çeker.
   ///

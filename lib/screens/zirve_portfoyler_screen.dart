@@ -36,9 +36,10 @@ import '../widgets/zirve_riza_karti.dart';
 ///   ne paylaşılmaz, karşılığında ne alır, nasıl geri çeker. Karşılıklılık:
 ///   liste yalnız katılana açılır (sunucu da rızasız çağırana boş döner).
 ///   Yarış ekranı ve onun katılım anahtarı bundan bağımsız.
-/// - Sen: getiri istemcide `LeaderboardService.computeROI` (Yarış
-///   ekranıyla AYNI formül), dağılım `computeAllocation`. Sunucuya bir şey
-///   yazılmaz — snapshot'ı artık sunucu alıyor.
+/// - Sen: getiri istemcide `LeaderboardService.computeROI` — seçimlerinin
+///   getirisi (TWR, 0095; Yarış ve sunucuyla AYNI kural,
+///   `secim_getirisi.dart`), dağılım `computeAllocation`. Sunucuya bir şey
+///   yazılmaz — snapshot'ı yalnız sunucu alıyor.
 ///
 /// ## Dil
 /// Sayı yalnız başına konuşmaz; cümleler `ZirveKiyas`'ta. Dağılım farkı
@@ -984,10 +985,14 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                'Havuzda yalnız katılmayı kabul edenler var; portföyü 5 '
+                // 30 gün: seçimlerinin getirisi (TWR, 0095) en az 30 günlük
+                // ölçüm ister; havuzun 5 günlük şartından önce o dolmalı.
+                'Havuzda yalnız katılmayı kabul edenler var; portföyü 30 '
                 'günden eski ve en az 2 farklı varlığı olan katılımcılar '
-                'sayılır. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
-                'tür payı ve fon payları.',
+                'sayılır. Sıralama seçimlerinin getirisidir: her gün '
+                'tutulan varlıklar piyasa fiyatıyla ölçülür, para ekleme '
+                'zamanı etkilemez. Kimlik, miktar ve TL paylaşılmaz; yalnız '
+                'getiri, tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,
@@ -1158,7 +1163,7 @@ class _PortfoyAyrintisi extends StatelessWidget {
                         'payını görür; kimliğin, tutarın ve diğer varlıkların '
                         'asla görünmez.'
                     : 'Portföyün henüz havuzda değil: katıldın, ama portföy '
-                        '5 günden eski olmalı ve en az 2 farklı varlık '
+                        '30 günden eski olmalı ve en az 2 farklı varlık '
                         'içermeli. Şart sağlanınca anonim olarak girer.')
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '

@@ -205,6 +205,14 @@ class Asset {
   /// taşır (bkz. `models/sozlesme.dart`).
   final String? sozlesmeId;
 
+  /// Satırın SUNUCUYA girildiği an (0095 `assets.created_at`). İstemci
+  /// yazmaz — tetikleyici her girişte ve ekonomik alan düzenlemesinde
+  /// `now()` basar. Yalnız Yarış'ın "seçimlerinin getirisi" okur:
+  /// [addedDate] bundan 3 günden fazla gerideyse kayıt girildiği anda
+  /// yapılmış sayılır (geriye tarihli kayıtla yarış hilesi; bkz.
+  /// `secim_getirisi.dart`). `null` → sütun öncesi kopya; tarih olduğu gibi.
+  final DateTime? createdAt;
+
   /// Sunucudaki `ticker` sütununun OKUNDUĞU hâli — yalnızca [kanonikTicker]
   /// onu değiştirdiyse dolu (öneksiz eski fon kodu `AFT` → `TEFAS:AFT`).
   ///
@@ -240,6 +248,7 @@ class Asset {
     this.deletedCount = 0,
     this.deletedAt,
     this.sozlesmeId,
+    this.createdAt,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -442,6 +451,7 @@ class Asset {
         deletedCount: deletedCount,
         deletedAt: deletedAt,
         sozlesmeId: sozlesmeId,
+        createdAt: createdAt,
       ).._kayitliTicker = _kayitliTicker;
 
   /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
@@ -563,5 +573,10 @@ class Asset {
             : null,
         // Migration 0088 öncesi satırlarda sütun yok → null.
         sozlesmeId: m['sozlesme_id'] as String?,
+        // Migration 0095 öncesi satırlarda sütun yok → null. YAZILMAZ
+        // (`toSupabase`'te yok): giriş anını sunucu basar.
+        createdAt: m['created_at'] != null
+            ? DateTime.parse(m['created_at'] as String).toLocal()
+            : null,
       );
 }

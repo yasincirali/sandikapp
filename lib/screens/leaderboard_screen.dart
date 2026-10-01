@@ -149,6 +149,13 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                 pState?.toTRY(val, cur) ?? val,
                           ),
                   ),
+                  // Kendi satırının ek bilgisi (R1): paranın getirisi —
+                  // Performans ile aynı sayı. Sıralama seçimleri ölçer.
+                  if (me != null && pState != null)
+                    _ParaninGetirisiSatiri(
+                      portfoy: pState,
+                      periodDays: _periods[_periodIdx].days,
+                    ),
                   if (kuresel) ...[
                     // Genel sıralama (yüzdelik dilim) GEÇİCİ olarak kapalı
                     // (kullanıcı kararı 2026-09-29): havuz k_min'i geçene kadar
@@ -185,14 +192,87 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 }
 
+/// Kendi satırının ek bilgisi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
+/// Performans › Özet'in aynı dönemdeki sayısı (R1, 2026-10-01).
+///
+/// Sıralama SEÇİMLERİ ölçer (TWR; para ekleme zamanı etkilemez). Kullanıcı
+/// "benim param ne yaptı?" diye de sorar; o sorunun cevabı Performans'taki
+/// rakamdır ve burada AYNI rakam görünür — yeni bir hesap değil
+/// (`LeaderboardService.paraninGetirisiPct`). İki sayı farklıysa nedeni
+/// "Getiri nasıl hesaplanıyor?" sayfasında yazar. Sayı yoksa (yeni
+/// portföy, Özet bayrağı kapalı) satır çizilmez — uydurma yok.
+///
+/// Dönem değişince yeniden hesaplanır; fiyat tiklerinde değil (Özet'in
+/// kendisi de dönem başına bir kez hesaplar).
+class _ParaninGetirisiSatiri extends StatefulWidget {
+  const _ParaninGetirisiSatiri({required this.portfoy, required this.periodDays});
+
+  final PortfolioState portfoy;
+  final int periodDays;
+
+  @override
+  State<_ParaninGetirisiSatiri> createState() => _ParaninGetirisiSatiriState();
+}
+
+class _ParaninGetirisiSatiriState extends State<_ParaninGetirisiSatiri> {
+  Future<double?>? _sonuc;
+  int? _gun;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_gun != widget.periodDays) {
+      _gun = widget.periodDays;
+      _sonuc = LeaderboardService.instance
+          .paraninGetirisiPct(widget.portfoy, widget.periodDays);
+    }
+    return FutureBuilder<double?>(
+      future: _sonuc,
+      builder: (context, snap) {
+        final v = snap.data;
+        if (v == null) return const SizedBox.shrink();
+        final c = context.c;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+              SandikSpace.xs, SandikSpace.screenH(context), 0),
+          child: Row(
+            children: [
+              Icon(Icons.account_balance_wallet_outlined,
+                  size: SandikSpace.md, color: c.text58),
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                      text: context.l10n.raceMoneyReturn(fmtPctIsaretli(v)),
+                      style: context.t.bodySmall?.copyWith(
+                        color: c.text90,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' · ${context.l10n.raceMoneyReturnHint}',
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
+                    ),
+                  ]),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// "Getiri nasıl hesaplanıyor?" açıklaması.
 ///
-/// Yarış metriği seçili dönemin getirisidir:
+/// Yarış metriği 2026-10-01'den (0095) beri SEÇİMLERİNİN GETİRİSİ (zaman
+/// ağırlıklı, TWR; `secim_getirisi.dart`): dönem günlere bölünür, her gün
+/// tutulan varlıklar piyasa fiyatıyla değerlenir, günler çarpılır. Öncesinde
+/// simülasyondu (bugünkü sepet dönem başından beri tutulmuş sayılırdı).
 ///
-///     (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-///
-/// Performans ekranındaki yüzdeden FARKLIDIR (o, ilk alımdan bugüne toplam
-/// kâr/zarardır) — bu sayfa farkı açıklar.
+/// Performans ekranındaki yüzdeden FARKLIDIR — o, paranın getirisidir
+/// (zamanlama dahil); bu sayfa farkı açıklar.
 class _RoiInfoSheet extends StatelessWidget {
   const _RoiInfoSheet();
 
@@ -488,17 +568,8 @@ class _SoloPanelState extends State<_SoloPanel> {
       toTRY: widget.pnlToTRY,
       cacheKey: me.id,
     );
-    if (roi != null) {
-      // Fire-and-forget snapshot — global percentile için.
-      CrashReporter.arkaPlan(
-        LeaderboardService.instance.uploadRoiSnapshot(
-          userId: me.id,
-          periodDays: widget.periodDays,
-          roiPct: roi,
-        ),
-        reason: 'LeaderboardScreen.uploadRoiSnapshot',
-      );
-    }
+    // ROI anlık görüntüsü artık YALNIZ sunucuda yazılır (0095): genel
+    // yüzdelik ve Zirve, cron'un TWR'sini okur.
     if (!mounted) return;
     setState(() {
       _myRoi = roi;
@@ -865,15 +936,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         cacheKey: me.id,
       );
       if (myRoi != null) {
-        // Await ETMİYORUZ, snapshot upload + partner fetch paralel gitsin.
-        CrashReporter.arkaPlan(
-          LeaderboardService.instance.uploadRoiSnapshot(
-            userId: me.id,
-            periodDays: widget.periodDays,
-            roiPct: myRoi,
-          ),
-          reason: 'LeaderboardScreen.uploadRoiSnapshot',
-        );
+        // ROI anlık görüntüsü artık YALNIZ sunucuda yazılır (0095).
         // Top gainers allocation feature'ı için anonim tür dağılımını da
         // gönder — miktar/TL yok, sadece {tür: %}. RPC k-anonymity + min
         // type_count filtreleri ile agregat gösterir.
