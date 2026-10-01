@@ -967,11 +967,27 @@
   },
   "whereItCameFrom": "Where it came from",
   "periodStart": "Period start",
-  "yourContribution": "Your contribution",
+  "yourContribution": "Net contribution",
   "marketWord": "Market",
-  "cashDividend": "Cash dividends within it",
+  "cashDividend": "Of which cash dividends",
   "commissionPaid": "Commission paid",
-  "contributionNotReturn": "The blue bar is your own money, not a return. The percentage comes only from the market bar.",
+  "contributionNotReturn": "The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.",
+  "annualRatePct": "{pct} a year",
+  "@annualRatePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "periodTotalPct": "Period total {pct}",
+  "@periodTotalPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "periodCourse": "Course over the period",
   "greenDaysOfTotal": "{up} of {total} trading days closed up.",
   "@greenDaysOfTotal": {
@@ -1505,6 +1521,8 @@
   "txDividend": "Dividend",
   "txBuy": "Purchase",
   "gainWord": "gain",
+  "costBasisGain": "Gain vs. cost",
+  "costBasisLoss": "Loss vs. cost",
   "lossWord": "loss",
   "realisedFromSalesSemantics": "realised from sales ",
   "raceNoPartnerBody": "You have no partners yet. You can already see your own period return and global percentile.",

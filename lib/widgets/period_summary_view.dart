@@ -321,6 +321,12 @@ class _AnaRakamKarti extends StatelessWidget {
     final s = summary;
     final piyasa = s.piyasaTRY;
     final pct = s.getiriPct;
+    // 5Y (ölçülen pencere > 1 yıl): ana yüzde YILLIK oran, dönem toplamı
+    // yanında küçük (GIPS; `PeriodSummary.yillikGetiriPct`). ≤1Y'de alan
+    // `null`, kart eskisi gibi dönem toplamını yazar — kısa dönem
+    // yıllıklandırılmaz.
+    final yillik = s.yillikGetiriPct;
+    final rozetPct = yillik ?? pct;
 
     // Sıfır bir YÖN taşımaz: yeşil bir "+₺0" olmayan bir hareketi varmış
     // gibi gösterir ve kırmızı gören kullanıcı "kaybettim" diye okur.
@@ -382,7 +388,7 @@ class _AnaRakamKarti extends StatelessWidget {
                   ),
                 ),
               ),
-              if (pct != null && !s.isFlat) ...[
+              if (rozetPct != null && !s.isFlat) ...[
                 const SizedBox(width: SandikSpace.sm),
                 // Yön ikonu renge EK bir sinyal: renk körlüğünde de okunur.
                 Container(
@@ -408,7 +414,10 @@ class _AnaRakamKarti extends StatelessWidget {
                       // yalnızca ok ve renkte kalıyordu. Tutarla aynı dil
                       // `fmtPctIsaretli`'den.
                       Text(
-                        fmtPctIsaretli(pct, digits: 2),
+                        yillik == null
+                            ? fmtPctIsaretli(rozetPct, digits: 2)
+                            : context.l10n.annualRatePct(
+                                fmtPctIsaretli(yillik, digits: 2)),
                         style: context.t.numSmall.copyWith(color: renk),
                       ),
                     ],
@@ -417,6 +426,13 @@ class _AnaRakamKarti extends StatelessWidget {
               ],
             ],
           ),
+          if (yillik != null && pct != null && !s.isFlat) ...[
+            const SizedBox(height: SandikSpace.xs2),
+            Text(
+              context.l10n.periodTotalPct(fmtPctIsaretli(pct, digits: 2)),
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ],
           const SizedBox(height: SandikSpace.sm),
           // Ton anahtarı: kayıpta kutlama da uyarı da yok, bağlam var.
           Text(
@@ -527,8 +543,9 @@ class _KopruKarti extends StatelessWidget {
           //
           // Çubuk olarak çizilselerdi köprünün "toplam = parçalar"
           // iddiasını kırardı — ikisi de zaten yukarıdaki çubukların
-          // İÇİNDE (temettü piyasa çubuğunda erimiş, komisyon katkıya
-          // dahil). Ayrı satır yalnızca görünürlük verir; toplama ikinci
+          // İÇİNDE (temettü piyasa çubuğuna eklenmiş ve net katkıdan
+          // çıkış olarak düşülmüş — `getiriAkisi`, 2026-10-01; komisyon
+          // katkıya dahil). Ayrı satır yalnızca görünürlük verir; toplama ikinci
           // kez eklenmezler ve bu ayrım burada yazılı durmalı, yoksa bir
           // sonraki değişiklik onları çubuğa çevirir.
           if (s.temettuTRY != null || s.komisyonTRY != null) ...[

@@ -970,11 +970,27 @@
   },
   "whereItCameFrom": "Nereden geldi",
   "periodStart": "Dönem başı",
-  "yourContribution": "Katkın",
+  "yourContribution": "Net katkın",
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Mavi çubuk senin paran, getiri sayılmaz. Yüzde yalnızca piyasa çubuğundan hesaplanır.",
+  "contributionNotReturn": "Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.",
+  "annualRatePct": "{pct} yıllık",
+  "@annualRatePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "periodTotalPct": "Dönem toplamı {pct}",
+  "@periodTotalPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "periodCourse": "Dönem içi seyir",
   "greenDaysOfTotal": "{total} işlem gününün {up}'ü artıda kapandı.",
   "@greenDaysOfTotal": {
@@ -1510,6 +1526,8 @@
   "txDividend": "Temettü",
   "txBuy": "Alım",
   "gainWord": "kazanç",
+  "costBasisGain": "Maliyetine göre kâr",
+  "costBasisLoss": "Maliyetine göre zarar",
   "lossWord": "kayıp",
   "realisedFromSalesSemantics": "satışlardan gerçekleşen ",
   "raceNoPartnerBody": "Henüz ortağın yok. Kendi dönem getirini ve küresel dilimini şimdiden görebilirsin.",
