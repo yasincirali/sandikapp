@@ -8,23 +8,28 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## 🍎 TESTFLIGHT DURDU: APPLE SÖZLEŞMESİ (2026-10-01, Claude)
+## 🚨 EN ÖNEMLİ VE KRİTİK: MATCH_PASSWORD'Ü DEĞİŞTİR (2026-10-01)
 
-iOS — TestFlight koşuları #289, #292, #294 (#41/#43/#45 birleşmeleri) aynı
-yerde kırıldı: App Store Connect API "A required agreement is missing or has
-expired" diyor. Kod sorunu değil; build hiç başlamadan duruyor.
+Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
+iOS — TestFlight Actions günlüğüne açık metin bastı (fastlane özet tablosu,
+`security unlock-keychain -p ...`; GitHub kabuk kaçışlı değeri maskelemedi).
+Bu parola imza sertifikası/profil reposunu (`MATCH_GIT_URL`) şifreler. Repoya
+erişim ayrıca `MATCH_GIT_BASIC_AUTH` PAT'ı ister (günlükte görünmedi), yine de
+parola açıkta sayılır. Günlüğe basma düzeltmesi: PR #46.
 
-- [ ] **Sözleşmeyi kabul et:** Hesap sahibi (Account Holder) olarak
-      appstoreconnect.apple.com → Business (Agreements) ve
-      developer.apple.com → Account'ta bekleyen sözleşme/güncellenmiş
-      Program License Agreement'ı kabul et.
-- [ ] **Sonra:** Actions → iOS — TestFlight → Run workflow (main). Son main
-      bugünkü tüm değişiklikleri (#40–#45) taşır.
-- [ ] **MATCH_PASSWORD açığa çıktı:** repo herkese açık; Fastfile keychain
-      kilidini açarken parolayı Actions günlüğüne basıyordu (düzeltildi).
-      Sertifika reposu özelse tek başına yetmez ama parolayı değiştir:
-      `fastlane match change_password` + GitHub secret `MATCH_PASSWORD`.
-      İstersen eski koşuların günlüklerini de sil.
+- [ ] Kendi makinende repo kökünde: `cd ios && bundle install`
+- [ ] `MATCH_GIT_URL=<sertifika reposu URL'si> bundle exec fastlane match change_password`
+      (eski + yeni parolayı sorar, depoyu yeniden şifreleyip push eder;
+      sertifika reposuna push izni gerekir)
+- [ ] GitHub → sandikapp → Settings → Secrets and variables → Actions →
+      `MATCH_PASSWORD` → Update (yeni parola)
+- [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
+- [ ] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
+
+> Not (2026-10-01): TestFlight'ı durduran Apple Program License Agreement
+> güncellemesi yasin tarafından kabul edildi; Business sayfasındaki AB DSA
+> "trader" beyanı hâlâ bekliyor (AB'de yayın için gerekli, TestFlight'ı
+> engellemiyor).
 
 ## 🔁 FRANKFURT EŞLEME BEKLİYOR (2026-10-01, Claude)
 
