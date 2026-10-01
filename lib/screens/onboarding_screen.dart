@@ -493,7 +493,8 @@ List<_Adim> _adimlariKur() {
     // girdi (tur metni arayüzle birlikte değişir kuralı). Aynı hedefte
     // ikinci adım: kripto adımı kendi özelliğini anlatmaya devam eder.
     // 2026-10-01: BES formu ana para + getiri sorar, geçmiş düz çizilir,
-    // "Fon değiştir" eklendi — metin buna göre.
+    // "Fon değiştir" eklendi — metin buna göre. Aynı gün: otomatik katkı
+    // (0096) formda ve kartta; son cümle onu anlatır.
     _Adim(
       id: 'mevduat_bes',
       hedef: TourTarget.turSecici,
@@ -505,7 +506,9 @@ List<_Adim> _adimlariKur() {
           'paranı, getirini ve fon dağılımını gir; geçmiş giriş tarihinden '
           'bugüne düz çizilir, bundan sonrası emeklilik fonlarının fiyatıyla '
           'yürür. Fonunu değiştirince grafik yeni fonlarla devam eder; devlet '
-          'katkısı hak ediş oranıyla ayrı görünür.',
+          'katkısı hak ediş oranıyla ayrı görünür. Katkı gününü yazıp '
+          'otomatik eklemeyi açarsan aylık katkın o gün kendiliğinden eklenir; '
+          'tutar farklıysa kartta tek dokunuşla düzeltirsin.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),

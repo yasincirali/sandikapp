@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../utils/tr_format.dart';
 import 'package:uuid/uuid.dart';
 
+import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -303,9 +304,13 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     String? dkFonKodu,
     double? aylikKatki,
     int? katkiGunu,
+    bool otomatikKatki = false,
   }) async {
     final uid = _kullanici();
     final an = DateTime.now();
+    // Otomatik katkı yalnız plan tamken (0096 kısıtı da ister). İmleç
+    // bugün: açılış birikimi bugüne kadarki katkıları zaten içerir.
+    final otomatik = otomatikKatki && aylikKatki != null && katkiGunu != null;
     final s = Sozlesme(
       id: _uuid.v4(),
       userId: uid,
@@ -319,6 +324,8 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       // Sunucunun `created_at`'i ile aynı an (birkaç ms farkla); yeniden
       // yüklemeye kadar açılış anını bu taşır.
       olusturuldu: an,
+      otomatikKatki: otomatik,
+      otomatikKatkiSon: otomatik ? dayKey(an) : null,
     );
     // Giriş bugünse ya da gelecekteyse (saat farkı) lot şimdi tarihli.
     final girisGunu = dayKey(giris);
@@ -400,22 +407,37 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
 
   /// Katkı tarihleri (açılış hariç) — "bu ayın katkısı eklendi mi".
   List<DateTime> katkiTarihleri(String sozlesmeId) {
-    final lotlar = [
+    final hepsi = [
       for (final a in ref.read(portfolioProvider).valueOrNull?.assets ??
           const <Asset>[])
-        if (a.sozlesmeId == sozlesmeId && a.isBuy && a.isActive) a,
+        if (a.sozlesmeId == sozlesmeId && a.isActive) a,
+    ];
+    final lotlar = [
+      for (final a in hepsi)
+        if (a.isBuy) a,
     ];
     if (lotlar.isEmpty) return const [];
     final acilis = lotlar
         .map((a) => a.addedDate)
         .reduce((a, b) => a.isBefore(b) ? a : b);
+    final degisim = _fonDegisimAnlari(hepsi);
     return [
       for (final a in lotlar)
         if (a.addedDate.isAfter(acilis) &&
-            a.subCategory != BesAltKategori.devletKatkisi)
+            a.subCategory != BesAltKategori.devletKatkisi &&
+            !degisim.contains(a.addedDate.microsecondsSinceEpoch))
           a.addedDate,
     ];
   }
+
+  /// Fon değişikliğinin anları. Değişimin alış ayağı katkı DEĞİLDİR: satış
+  /// ayağıyla aynı anda yazılır (`besFonDegistir`, tek `an`). Sayılsaydı fon
+  /// değiştirilen ay "katkı eklendi" görünür; hatırlatma susar, otomatik
+  /// katkı o ayı atlardı (2026-10-01'de otomatik katkı yazılırken bulundu).
+  static Set<int> _fonDegisimAnlari(Iterable<Asset> lotlar) => {
+        for (final a in lotlar)
+          if (a.isSell) a.addedDate.microsecondsSinceEpoch,
+      };
 
   /// Aylık (ya da ara) katkı: dağılıma göre fon lotları + devlet katkısı.
   ///
@@ -437,38 +459,242 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       for (final f in s.fonDagilimi) f.kod,
       if (dkVar) s.dkFonKodu!,
     ]);
-    final an = tarih ?? DateTime.now();
-    final lotlar = <Asset>[];
-    for (final e in BesHesabi.katkiyiBol(tutar, s.fonDagilimi).entries) {
-      final fiyat = fiyatlar[e.key]!;
-      lotlar.add(_besLotu(
-        uid: uid,
-        s: s,
-        kod: e.key,
-        ad: adUret(e.key, devlet: false),
-        pay: e.value / fiyat,
-        maliyet: e.value,
-        fiyat: fiyat,
-        tarih: an,
-        devlet: false,
-      ));
-    }
-    if (dkVar) {
-      final kod = s.dkFonKodu!;
-      final fiyat = fiyatlar[kod]!;
-      lotlar.add(_besLotu(
-        uid: uid,
-        s: s,
-        kod: kod,
-        ad: adUret(kod, devlet: true),
-        pay: devletKatkisi / fiyat,
-        maliyet: devletKatkisi,
-        fiyat: fiyat,
-        tarih: an,
-        devlet: true,
-      ));
-    }
+    final lotlar = _katkiLotlari(
+      uid: uid,
+      s: s,
+      tutar: tutar,
+      devletKatkisi: dkVar ? devletKatkisi : 0,
+      fiyatlar: fiyatlar,
+      tarih: tarih ?? DateTime.now(),
+      adUret: adUret,
+    );
     await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle(lotlar);
+  }
+
+  // ── BES otomatik katkı (0096, kullanıcı isteği 2026-10-01) ─────────────
+
+  bool _otomatikCalisiyor = false;
+
+  /// Otomatik katkısı açık BES'lerde günü gelen katkıları yazar.
+  ///
+  /// Uygulama açılışında ve öne dönüşte çağrılır (`_AuthGate`); sunucuda
+  /// cron yok. Her katkı KENDİ günüyle ve o günün TEFAS fiyatıyla yazılır
+  /// (`_fonFiyatlariGunu`): uygulama üç ay açılmadıysa üç ayrı katkı,
+  /// bugünün fiyatıyla tek yığın değil. Fiyat bulunamazsa o günde durulur
+  /// ve imleç o günün öncesine kurulur: bir sonraki açılış yeniden dener,
+  /// uydurma fiyatla pay yazılmaz.
+  ///
+  /// Tutar sözleşmedeki aylık katkıdır ("miktar değişmediği sürece").
+  /// Kullanıcı farklı ödediyse kart sorar, [otomatikKatkiGuncelle] düzeltir.
+  /// Son yazılan gün [Sozlesme.otomatikKatkiBekleyen]'e konur: soru o
+  /// onaylanana kadar kartta durur.
+  ///
+  /// Dönen liste yazılan katkılar (bildirim için); hiçbir şey yazılmadıysa
+  /// boş. Hatalar Crashlytics'e gider, yukarı çıkmaz: açılışı bozmamalı.
+  Future<List<({String sozlesmeId, DateTime gun, double tutar})>>
+      otomatikKatkilariIsle({
+    required String Function(Sozlesme s, String kod, {required bool devlet})
+        adUret,
+    required String not,
+  }) async {
+    if (_otomatikCalisiyor || DemoModu.aktif) return const [];
+    _otomatikCalisiyor = true;
+    final eklenen = <({String sozlesmeId, DateTime gun, double tutar})>[];
+    try {
+      final durum = await future;
+      final adaylar = [
+        for (final s in durum.sozlesmeler.values)
+          if (s.tur == SozlesmeTuru.bes && s.otomatikKatki && s.acik) s,
+      ];
+      if (adaylar.isEmpty) return const [];
+      await ref.read(portfolioProvider.future);
+      final uid = _kullanici();
+      for (final s in adaylar) {
+        final gunler = BesHesabi.otomatikKatkiGunleri(
+          s: s,
+          simdi: DateTime.now(),
+          katkiTarihleri: katkiTarihleri(s.id),
+        );
+        if (gunler.isEmpty) continue;
+        var imlec = _bugun();
+        DateTime? sonYazilan;
+        final seriler = <String, List<(int, double)>>{};
+        for (final gun in gunler) {
+          final tutar = s.aylikKatki!;
+          final dk = s.dkFonKodu == null
+              ? 0.0
+              : BesHesabi.devletKatkisi(
+                  katki: tutar,
+                  tarih: gun,
+                  buYilAlinan: buYilDevletKatkisi(s.id, gun.year),
+                ).tutar;
+          try {
+            final fiyatlar = await _fonFiyatlariGunu([
+              for (final f in s.fonDagilimi) f.kod,
+              if (dk > 0) s.dkFonKodu!,
+            ], gun, seriler);
+            await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle(
+                  _katkiLotlari(
+                    uid: uid,
+                    s: s,
+                    tutar: tutar,
+                    devletKatkisi: dk,
+                    fiyatlar: fiyatlar,
+                    // Yerel gece yarısı = "saati bilinmiyor" (bkz.
+                    // `saatBiliniyor`): şirketin hangi saatte çektiği
+                    // bilinmez; hareket listesi uydurma saat göstermesin.
+                    tarih: dayKey(gun),
+                    adUret: (kod, {required devlet}) =>
+                        adUret(s, kod, devlet: devlet),
+                    not: not,
+                  ),
+                );
+            sonYazilan = gun;
+            eklenen.add((sozlesmeId: s.id, gun: gun, tutar: tutar));
+          } catch (e, st) {
+            if (e is! BesFiyatYokException) {
+              CrashReporter.report(e, st,
+                  reason: 'SozlesmeNotifier.otomatikKatki');
+            }
+            imlec = DateTime(gun.year, gun.month, gun.day - 1);
+            break;
+          }
+        }
+        final yeni = s.kopya(
+          otomatikKatkiSon: imlec,
+          otomatikKatkiBekleyen: sonYazilan,
+        );
+        // Bu yazım düşerse lotlar yazılmış ama imleç eski kalır; bir sonraki
+        // açılış aynı ayı "dolu" görür (`katkiTarihleri`) ve tekrar yazmaz.
+        await SupabaseService.instance.updateSozlesme(yeni);
+        SozlesmeDeposu.instance.yaz([yeni], const []);
+        _yayinla([yeni], const []);
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeNotifier.otomatikKatki');
+    } finally {
+      _otomatikCalisiyor = false;
+    }
+    return eklenen;
+  }
+
+  /// Otomatik katkıyı açar/kapatır (kart anahtarı).
+  ///
+  /// Açarken imleç `max(açılış günü, geçen ayın son günü)`: bu ayın katkı
+  /// günü geçtiyse ve bu ay katkı yoksa hemen yazılır; daha eski aylar
+  /// GERİYE doldurulmaz (o aylarda gerçekten ödenip ödenmediği bilinmiyor).
+  /// Kapatırken bekleyen soru da kalkar.
+  Future<void> otomatikKatkiAyarla(String sozlesmeId, bool acik) async {
+    final s = _simdiki.sozlesme(sozlesmeId);
+    if (s == null || s.tur != SozlesmeTuru.bes) return;
+    if (acik && (s.aylikKatki == null || s.katkiGunu == null)) return;
+    final Sozlesme yeni;
+    if (acik) {
+      final n = DateTime.now();
+      final gecenAySonu = DateTime(n.year, n.month, 0);
+      final acilis = dayKey(s.olusturuldu ?? s.baslangic);
+      yeni = s.kopya(
+        otomatikKatki: true,
+        otomatikKatkiSon:
+            acilis.isAfter(gecenAySonu) ? acilis : gecenAySonu,
+      );
+    } else {
+      yeni = s.kopya(otomatikKatki: false, bekleyenSil: true);
+    }
+    await _sozlesmeYaz(yeni);
+  }
+
+  /// "Tutar doğru": bekleyen soru kalkar.
+  Future<void> otomatikKatkiOnayla(String sozlesmeId) async {
+    final s = _simdiki.sozlesme(sozlesmeId);
+    if (s == null || s.otomatikKatkiBekleyen == null) return;
+    await _sozlesmeYaz(s.kopya(bekleyenSil: true));
+  }
+
+  /// Bekleyen otomatik katkının o günkü lotları ve tutarı (kart sorusu).
+  ({List<Asset> katki, Asset? dk, double tutar})? otomatikKatkiLotlari(
+      String sozlesmeId) {
+    final s = _simdiki.sozlesme(sozlesmeId);
+    final gun = s?.otomatikKatkiBekleyen;
+    if (s == null || gun == null) return null;
+    final hepsi = [
+      for (final a in ref.read(portfolioProvider).valueOrNull?.assets ??
+          const <Asset>[])
+        if (a.sozlesmeId == sozlesmeId && a.isActive) a,
+    ];
+    final degisim = _fonDegisimAnlari(hepsi);
+    final oGun = [
+      for (final a in hepsi)
+        if (a.isBuy &&
+            dayKey(a.addedDate) == gun &&
+            !degisim.contains(a.addedDate.microsecondsSinceEpoch))
+          a,
+    ];
+    final katki = [
+      for (final a in oGun)
+        if (a.subCategory != BesAltKategori.devletKatkisi) a,
+    ];
+    if (katki.isEmpty) return null;
+    final dk = [
+      for (final a in oGun)
+        if (a.subCategory == BesAltKategori.devletKatkisi) a,
+    ];
+    return (
+      katki: katki,
+      dk: dk.isEmpty ? null : dk.first,
+      tutar: katki.fold<double>(0, (t, a) => t + a.totalCost),
+    );
+  }
+
+  /// Otomatik yazılan katkının tutarını düzeltir (kullanıcı farklı ödedi).
+  ///
+  /// Lotlar YERİNDE güncellenir, silinip yeniden yazılmaz: hareket
+  /// listesinde "Silindi" satırı bırakmasın. Pay adedi aynı oranla
+  /// ölçeklenir (birim fiyat o günün fiyatıdır, değişmez); devlet katkısı
+  /// yeni tutardan yeniden hesaplanır. [planiDa] ise sonraki aylar da yeni
+  /// tutarla yazılır ("miktar değişmediği sürece" kuralının değiştiği an).
+  Future<void> otomatikKatkiGuncelle({
+    required String sozlesmeId,
+    required double yeniTutar,
+    required bool planiDa,
+  }) async {
+    final s = _simdiki.sozlesme(sozlesmeId);
+    final gun = s?.otomatikKatkiBekleyen;
+    final l = otomatikKatkiLotlari(sozlesmeId);
+    if (s == null || gun == null || l == null || yeniTutar <= 0) return;
+    final p = ref.read(portfolioProvider.notifier);
+    if (l.tutar > 0 && (yeniTutar - l.tutar).abs() > 0.005) {
+      final k = yeniTutar / l.tutar;
+      for (final a in l.katki) {
+        await p.updateAsset(
+            a.copyWithDeletedAt(a.deletedAt)..quantity = a.quantity * k);
+      }
+      final dk = l.dk;
+      if (dk != null) {
+        final eskiDk = dk.totalCost;
+        final yeniDk = BesHesabi.devletKatkisi(
+          katki: yeniTutar,
+          tarih: gun,
+          buYilAlinan: buYilDevletKatkisi(s.id, gun.year) - eskiDk,
+        ).tutar;
+        if (yeniDk <= 0) {
+          await p.deleteAsset(dk.id);
+        } else if (eskiDk > 0) {
+          await p.updateAsset(dk.copyWithDeletedAt(dk.deletedAt)
+            ..quantity = dk.quantity * yeniDk / eskiDk);
+        }
+      }
+    }
+    await _sozlesmeYaz(s.kopya(
+      bekleyenSil: true,
+      aylikKatki: planiDa ? yeniTutar : null,
+    ));
+  }
+
+  Future<void> _sozlesmeYaz(Sozlesme yeni) async {
+    await SupabaseService.instance.updateSozlesme(yeni);
+    SozlesmeDeposu.instance.yaz([yeni], const []);
+    _yayinla([yeni], const []);
   }
 
   /// Bu yıl bu sözleşmede yapılan fon değişikliği sayısı (bilgi; bkz.
@@ -640,6 +866,97 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
         addedDate: tarih,
         sozlesmeId: s.id,
       );
+
+  /// Bir katkının lotları: dağılıma göre fon lotları + devlet katkısı lotu
+  /// ([devletKatkisi] > 0 ve fonu biliniyorsa). Elle ve otomatik katkı aynı
+  /// kurucudan geçer: iki yol ayrışıp biri yeni alanı unutmasın.
+  List<Asset> _katkiLotlari({
+    required String uid,
+    required Sozlesme s,
+    required double tutar,
+    required double devletKatkisi,
+    required Map<String, double> fiyatlar,
+    required DateTime tarih,
+    required String Function(String kod, {required bool devlet}) adUret,
+    String not = '',
+  }) {
+    final lotlar = <Asset>[];
+    for (final e in BesHesabi.katkiyiBol(tutar, s.fonDagilimi).entries) {
+      final fiyat = fiyatlar[e.key]!;
+      lotlar.add(_besLotu(
+        uid: uid,
+        s: s,
+        kod: e.key,
+        ad: adUret(e.key, devlet: false),
+        pay: e.value / fiyat,
+        maliyet: e.value,
+        fiyat: fiyat,
+        tarih: tarih,
+        devlet: false,
+        not: not,
+      ));
+    }
+    final kod = s.dkFonKodu;
+    if (kod != null && devletKatkisi > 0) {
+      final fiyat = fiyatlar[kod]!;
+      lotlar.add(_besLotu(
+        uid: uid,
+        s: s,
+        kod: kod,
+        ad: adUret(kod, devlet: true),
+        pay: devletKatkisi / fiyat,
+        maliyet: devletKatkisi,
+        fiyat: fiyat,
+        tarih: tarih,
+        devlet: true,
+        not: not,
+      ));
+    }
+    return lotlar;
+  }
+
+  /// [gun]'ün TEFAS fiyatları: o gün ya da en çok 7 gün önceki son işlem
+  /// günü (hafta sonu, bayram). Bugünse anlık kotasyon. Bulunamazsa
+  /// [BesFiyatYokException]: pay adedi uydurma fiyatla yazılmaz.
+  ///
+  /// Seri `PriceService.fetchHistory` ile gelir (fon serisinin tek kaynağı);
+  /// [seriler] aynı turda fon başına bir kez çekilsin diye. Günler eskiden
+  /// yeniye işlendiği için ilk çekilen (en geniş) aralık sonrakileri de
+  /// kapsar.
+  Future<Map<String, double>> _fonFiyatlariGunu(
+    List<String> kodlar,
+    DateTime gun,
+    Map<String, List<(int, double)>> seriler,
+  ) async {
+    if (!dayKey(gun).isBefore(_bugun())) return _fonFiyatlari(kodlar);
+    final ay = (DateTime.now().difference(gun).inDays / 30).ceil();
+    final aralik = ay <= 1
+        ? '1mo'
+        : ay <= 3
+            ? '3mo'
+            : ay <= 6
+                ? '6mo'
+                : ay <= 12
+                    ? '1y'
+                    : '3y';
+    final gunSonu =
+        DateTime(gun.year, gun.month, gun.day + 1).millisecondsSinceEpoch;
+    final enEski =
+        DateTime(gun.year, gun.month, gun.day - 7).millisecondsSinceEpoch;
+    final out = <String, double>{};
+    for (final k in kodlar) {
+      final seri = seriler[k] ??=
+          await PriceService.instance.fetchHistory('$tefasOneki$k', aralik);
+      double? f;
+      for (final (t, p) in seri) {
+        if (t >= gunSonu) break;
+        if (t >= enEski && p > 0) f = p;
+      }
+      if (f == null) throw BesFiyatYokException(k);
+      out[k] = f;
+    }
+    return out;
+  }
 
   /// TEFAS emeklilik fonu fiyatları; biri eksikse [BesFiyatYokException].
   Future<Map<String, double>> _fonFiyatlari(List<String> kodlar) async {

@@ -3330,5 +3330,37 @@
   "pensionSwitchSaved": "Fon dağılımı değişti",
   "pensionSwitchSame": "Dağılım zaten böyle.",
   "pensionSwitchNote": "Fon değişikliği",
-  "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan."
+  "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.",
+  "pensionDayHint": "Örn. 15",
+  "pensionDayNote": "Aylık katkının her ay hesabından çekildiği gün. 29-31 her ayda olmadığı için en fazla 28; ay sonunda çekiliyorsa 28 yaz.",
+  "pensionDayError": "1 ile 28 arasında bir gün yaz.",
+  "pensionAuto": "Katkıyı otomatik ekle",
+  "pensionAutoNote": "Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.",
+  "pensionAutoNeedsPlan": "Otomatik ekleme için aylık katkıyı ve katkı gününü yaz.",
+  "pensionAutoLotNote": "Otomatik katkı",
+  "pensionAutoAdded": "{date} katkın otomatik eklendi: {amount}. Tutarı güncellemek ister misin?",
+  "@pensionAutoAdded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "pensionAutoConfirm": "Tutar doğru",
+  "pensionAutoUpdate": "Tutarı güncelle",
+  "pensionAutoUpdateTitle": "Otomatik katkıyı güncelle",
+  "pensionAutoUpdatePlan": "Sonraki aylar da bu tutarla eklensin",
+  "pensionAutoUpdated": "Katkı güncellendi",
+  "pensionAutoSnack": "{count, plural, =1{BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.} other{{count} aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.}}",
+  "@pensionAutoSnack": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionAddExtraContribution": "Ek katkı ekle"
 }

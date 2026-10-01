@@ -45,6 +45,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
   final _gun = TextEditingController();
   TefasFund? _dkFonu;
   DateTime _giris = DateTime.now();
+  bool _otomatik = false;
   String? _dagilimHatasi;
 
   @override
@@ -122,6 +123,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
             dkFonKodu: _dkFonu?.code,
             aylikKatki: parseTrNumber(_aylik.text),
             katkiGunu: int.tryParse(_gun.text.trim()),
+            otomatikKatki: _otomatik,
           );
       return true;
     } on BesFiyatYokException catch (e) {
@@ -292,6 +294,12 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
                       ipucu: '0',
                       sonek: '₺',
                       sayi: true,
+                      // Otomatik eklemede tutar zorunlu: neyin yazılacağı
+                      // bilinmezse katkı yazılmaz (0096 kısıtı da ister).
+                      dogrula: (v) => _otomatik &&
+                              (parseTrNumber(v ?? '') ?? 0) <= 0
+                          ? l10n.pensionAutoNeedsPlan
+                          : null,
                     ),
                   ],
                 ),
@@ -305,13 +313,15 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
                     SozlesmeEtiketi(l10n.pensionDay),
                     SozlesmeAlani(
                       controller: _gun,
-                      ipucu: '1-28',
+                      ipucu: l10n.pensionDayHint,
                       sayi: true,
                       dogrula: (v) {
                         final t = (v ?? '').trim();
-                        if (t.isEmpty) return null;
+                        if (t.isEmpty && !_otomatik) return null;
                         final g = int.tryParse(t);
-                        return g == null || g < 1 || g > 28 ? '1-28' : null;
+                        return g == null || g < 1 || g > 28
+                            ? l10n.pensionDayError
+                            : null;
                       },
                     ),
                   ],
@@ -319,6 +329,34 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
               ),
             ],
           ),
+          // Alanın ne olduğu ve 28 sınırının nedeni burada söylenir: çıplak
+          // "1-28" ipucu ne girileceğini anlatmıyordu (kullanıcı geri
+          // bildirimi 2026-10-01).
+          SozlesmeNotu(l10n.pensionDayNote),
+          const SizedBox(height: SandikSpace.smd),
+          // Otomatik ekleme (0096). Kapalıyken eski davranış: kart yalnızca
+          // hatırlatır.
+          MergeSemantics(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.pensionAuto,
+                    style: context.t.bodyMedium?.copyWith(
+                        color: context.c.text90, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                Switch.adaptive(
+                  value: _otomatik,
+                  // TRACK rengi: iOS'ta `CupertinoSwitch` açık rengi
+                  // track'te taşır (bkz. sinyal ayarları anahtarı).
+                  activeTrackColor: context.c.amberText,
+                  onChanged: (v) => setState(() => _otomatik = v),
+                ),
+              ],
+            ),
+          ),
+          SozlesmeNotu(l10n.pensionAutoNote),
         ],
       ),
     );

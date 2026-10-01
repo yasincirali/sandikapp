@@ -72,6 +72,9 @@ class Sozlesme {
     this.dkFonKodu,
     this.kapandi,
     this.olusturuldu,
+    this.otomatikKatki = false,
+    this.otomatikKatkiSon,
+    this.otomatikKatkiBekleyen,
   });
 
   final String id;
@@ -101,6 +104,19 @@ class Sozlesme {
   /// `besAc` aynı anı verir. Eski satırda da dolu (sütun 0088'den beri var).
   final DateTime? olusturuldu;
 
+  /// Katkı günü gelince aylık katkı otomatik yazılır (0096; kullanıcı
+  /// isteği 2026-10-01). Yazma `SozlesmeNotifier.otomatikKatkilariIsle`'de,
+  /// hangi günlerin yazılacağı `BesHesabi.otomatikKatkiGunleri`'nde.
+  final bool otomatikKatki;
+
+  /// Otomatik işlemin baktığı son gün (imleç). Bu günden SONRAKİ katkı
+  /// günleri yazılır; kullanıcı otomatik katkıyı silerse geri gelmez.
+  final DateTime? otomatikKatkiSon;
+
+  /// Otomatik yazılan, kullanıcının henüz onaylamadığı katkının günü.
+  /// Kart "tutarı güncellemek ister misin" sorusunu buna bakarak sorar.
+  final DateTime? otomatikKatkiBekleyen;
+
   bool get acik => kapandi == null;
 
   /// Aynı sözleşme, kapanış tarihiyle. Diğer alanlar (açılış anı dahil)
@@ -109,6 +125,13 @@ class Sozlesme {
   Sozlesme kopya({
     DateTime? kapandi,
     List<FonPayi>? fonDagilimi,
+    double? aylikKatki,
+    bool? otomatikKatki,
+    DateTime? otomatikKatkiSon,
+    // Kayıt: `null` "değiştirme" demek; bekleyeni SİLMEK için
+    // [bekleyenSil].
+    DateTime? otomatikKatkiBekleyen,
+    bool bekleyenSil = false,
   }) =>
       Sozlesme(
         id: id,
@@ -116,12 +139,17 @@ class Sozlesme {
         tur: tur,
         kurum: kurum,
         baslangic: baslangic,
-        aylikKatki: aylikKatki,
+        aylikKatki: aylikKatki ?? this.aylikKatki,
         katkiGunu: katkiGunu,
         fonDagilimi: fonDagilimi ?? this.fonDagilimi,
         dkFonKodu: dkFonKodu,
         kapandi: kapandi ?? this.kapandi,
         olusturuldu: olusturuldu,
+        otomatikKatki: otomatikKatki ?? this.otomatikKatki,
+        otomatikKatkiSon: otomatikKatkiSon ?? this.otomatikKatkiSon,
+        otomatikKatkiBekleyen: bekleyenSil
+            ? null
+            : otomatikKatkiBekleyen ?? this.otomatikKatkiBekleyen,
       );
 
   Map<String, dynamic> toSupabase() => {
@@ -138,6 +166,20 @@ class Sozlesme {
             : null,
         'dk_fon_kodu': dkFonKodu,
         'kapandi': kapandi == null ? null : gunMetni(kapandi!),
+        // 0096 sütunları YALNIZ kullanılıyorsa gönderilir: migration iki
+        // sunucuya gitmeden yayınlanan istemci, sütunu olmayan şemaya
+        // yazınca her BES/mevduat açılışı PGRST204 ile düşerdi. Kapatma
+        // (true → false) imleç dolu olduğu için yine gönderilir.
+        if (otomatikKatki ||
+            otomatikKatkiSon != null ||
+            otomatikKatkiBekleyen != null) ...{
+          'otomatik_katki': otomatikKatki,
+          'otomatik_katki_son':
+              otomatikKatkiSon == null ? null : gunMetni(otomatikKatkiSon!),
+          'otomatik_katki_bekleyen': otomatikKatkiBekleyen == null
+              ? null
+              : gunMetni(otomatikKatkiBekleyen!),
+        },
       };
 
   factory Sozlesme.fromSupabase(Map<String, dynamic> m) => Sozlesme(
@@ -157,6 +199,13 @@ class Sozlesme {
         olusturuldu: m['created_at'] == null
             ? null
             : DateTime.tryParse(m['created_at'] as String)?.toLocal(),
+        otomatikKatki: m['otomatik_katki'] == true,
+        otomatikKatkiSon: m['otomatik_katki_son'] == null
+            ? null
+            : gunOku(m['otomatik_katki_son'] as String),
+        otomatikKatkiBekleyen: m['otomatik_katki_bekleyen'] == null
+            ? null
+            : gunOku(m['otomatik_katki_bekleyen'] as String),
       );
 }
 

@@ -8059,6 +8059,96 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.'**
   String get contractManagedNotice;
+
+  /// No description provided for @pensionDayHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn. 15'**
+  String get pensionDayHint;
+
+  /// No description provided for @pensionDayNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık katkının her ay hesabından çekildiği gün. 29-31 her ayda olmadığı için en fazla 28; ay sonunda çekiliyorsa 28 yaz.'**
+  String get pensionDayNote;
+
+  /// No description provided for @pensionDayError.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 ile 28 arasında bir gün yaz.'**
+  String get pensionDayError;
+
+  /// No description provided for @pensionAuto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkıyı otomatik ekle'**
+  String get pensionAuto;
+
+  /// No description provided for @pensionAutoNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.'**
+  String get pensionAutoNote;
+
+  /// No description provided for @pensionAutoNeedsPlan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik ekleme için aylık katkıyı ve katkı gününü yaz.'**
+  String get pensionAutoNeedsPlan;
+
+  /// No description provided for @pensionAutoLotNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik katkı'**
+  String get pensionAutoLotNote;
+
+  /// No description provided for @pensionAutoAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} katkın otomatik eklendi: {amount}. Tutarı güncellemek ister misin?'**
+  String pensionAutoAdded(String date, String amount);
+
+  /// No description provided for @pensionAutoConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar doğru'**
+  String get pensionAutoConfirm;
+
+  /// No description provided for @pensionAutoUpdate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutarı güncelle'**
+  String get pensionAutoUpdate;
+
+  /// No description provided for @pensionAutoUpdateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik katkıyı güncelle'**
+  String get pensionAutoUpdateTitle;
+
+  /// No description provided for @pensionAutoUpdatePlan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonraki aylar da bu tutarla eklensin'**
+  String get pensionAutoUpdatePlan;
+
+  /// No description provided for @pensionAutoUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katkı güncellendi'**
+  String get pensionAutoUpdated;
+
+  /// No description provided for @pensionAutoSnack.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.} other{{count} aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.}}'**
+  String pensionAutoSnack(int count);
+
+  /// No description provided for @pensionAddExtraContribution.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ek katkı ekle'**
+  String get pensionAddExtraContribution;
 }
 
 class _AppLocalizationsDelegate

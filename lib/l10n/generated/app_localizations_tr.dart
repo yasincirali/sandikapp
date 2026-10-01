@@ -4772,4 +4772,64 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get contractManagedNotice =>
       'Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.';
+
+  @override
+  String get pensionDayHint => 'Örn. 15';
+
+  @override
+  String get pensionDayNote =>
+      'Aylık katkının her ay hesabından çekildiği gün. 29-31 her ayda olmadığı için en fazla 28; ay sonunda çekiliyorsa 28 yaz.';
+
+  @override
+  String get pensionDayError => '1 ile 28 arasında bir gün yaz.';
+
+  @override
+  String get pensionAuto => 'Katkıyı otomatik ekle';
+
+  @override
+  String get pensionAutoNote =>
+      'Katkı günü gelince aylık katkını o günün fon fiyatıyla ekleriz, sonra tutarı sana sorarız. Kapalıysa yalnızca hatırlatırız.';
+
+  @override
+  String get pensionAutoNeedsPlan =>
+      'Otomatik ekleme için aylık katkıyı ve katkı gününü yaz.';
+
+  @override
+  String get pensionAutoLotNote => 'Otomatik katkı';
+
+  @override
+  String pensionAutoAdded(String date, String amount) {
+    return '$date katkın otomatik eklendi: $amount. Tutarı güncellemek ister misin?';
+  }
+
+  @override
+  String get pensionAutoConfirm => 'Tutar doğru';
+
+  @override
+  String get pensionAutoUpdate => 'Tutarı güncelle';
+
+  @override
+  String get pensionAutoUpdateTitle => 'Otomatik katkıyı güncelle';
+
+  @override
+  String get pensionAutoUpdatePlan => 'Sonraki aylar da bu tutarla eklensin';
+
+  @override
+  String get pensionAutoUpdated => 'Katkı güncellendi';
+
+  @override
+  String pensionAutoSnack(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count aylık BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
+      one:
+          'BES katkın otomatik eklendi. Tutarı BES kartından güncelleyebilirsin.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pensionAddExtraContribution => 'Ek katkı ekle';
 }

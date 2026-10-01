@@ -17,12 +17,14 @@ import 'config/supabase_config.dart';
 import 'l10n/l10n.dart';
 import 'l10n/sen_material_localizations.dart';
 import 'models/asset.dart';
+import 'models/asset_type.dart';
 import 'models/user_model.dart';
 import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
+import 'providers/sozlesme_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
 import 'screens/main_navigation_screen.dart';
@@ -920,6 +922,38 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   ProviderSubscription<AsyncValue<PortfolioState>>? _portfolioWarmUp;
   ProviderSubscription<AsyncValue<Map<String, List<Asset>>>>?
       _partnerAssetsWarmUp;
+
+  /// BES otomatik katkının bu oturumda çalıştığı kullanıcı (0096). Portföy
+  /// her yazımda yeniden yayınlanır; iş kullanıcı başına bir kez tetiklenir,
+  /// sonrası öne dönüşte.
+  String? _besOtomatikKullanici;
+
+  /// Günü gelen BES katkılarını yazar ve bildirir. Sözleşmeli BES lotu yoksa
+  /// sözleşmeler hiç çekilmez (BES'siz kullanıcıya ek istek yok).
+  void _besOtomatikKatki() {
+    final varliklar = ref.read(portfolioProvider).valueOrNull?.assets;
+    if (varliklar == null ||
+        !varliklar.any((a) => a.sozlesmeId != null && a.type == AssetType.bes)) {
+      return;
+    }
+    final l10n = context.l10n;
+    final devletEtiketi = l10n.pensionGovShort;
+    CrashReporter.arkaPlan(
+      () async {
+        final eklenen =
+            await ref.read(sozlesmeProvider.notifier).otomatikKatkilariIsle(
+                  adUret: (s, kod, {required devlet}) => devlet
+                      ? '${s.kurum} · $kod · $devletEtiketi'
+                      : '${s.kurum} · $kod',
+                  not: l10n.pensionAutoLotNote,
+                );
+        if (eklenen.isEmpty || !mounted) return;
+        sandikSnack(context, l10n.pensionAutoSnack(eklenen.length),
+            kind: SandikSnackKind.success);
+      }(),
+      reason: 'main.besOtomatikKatki',
+    );
+  }
   // Ortak listesi de ısıtılmalı. `activePartnersProvider` bunun türevidir ve
   // yüklenirken `valueOrNull ?? []` yüzünden "ortak yok" gibi görünür — splash
   // kapısı ortak varlıklarını beklemeden geçer, sonra liste dolunca HomeScreen
@@ -1453,6 +1487,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       CrashReporter.arkaPlan(_persistBackgroundedAt(_backgroundedAt), reason: 'main._persistBackgroundedAt');
     } else if (state == AppLifecycleState.resumed) {
       CrashReporter.arkaPlan(_persistBackgroundedAt(null), reason: 'main._persistBackgroundedAt');
+      // Uygulama günlerce açık kalabilir: katkı günü öne dönüşte de yakalanır.
+      if (_besOtomatikKullanici != null) _besOtomatikKatki();
       // Remote Config yedek yolu (köprü sürümü, K1): `refresh()` hiçbir yerden
       // çağrılmıyordu; gerçek zamanlı bildirim kaçarsa açık uygulama sunucu
       // değişimini ancak soğuk açılışta görürdü. Prod'da RC'nin saatlik alt
@@ -1562,6 +1598,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // mount'tur; üstüne açılan ekranlardan yapılan değişim de buraya düşer.
     ref.listen<ThemeMode>(themeModeProvider, (_, __) {
       _applySurfaceTheme(trustDeviceBrightness: true);
+    });
+
+    // BES otomatik katkı (0096): portföy kullanıcı için İLK kez yerleşince.
+    // `isLoading` karesi atlanır: kullanıcı değişiminde AsyncLoading önceki
+    // kullanıcının portföyünü taşır.
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      final uid = ref.read(authProvider).valueOrNull?.id;
+      if (uid == null || next.isLoading || !next.hasValue) return;
+      if (_besOtomatikKullanici == uid) return;
+      _besOtomatikKullanici = uid;
+      _besOtomatikKatki();
     });
 
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
