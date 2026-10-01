@@ -103,6 +103,16 @@ const List<SurumNotu> surumNotlari = [
     onemli: true,
     baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      // 2026-10-01: Bugün kartı "sakin pano" (kullanıcı seçimi D).
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Bugün kartı yenilendi',
+        aciklama: 'Günün hareketi artık tam genişlikte bir eğriyle; kesik '
+            'çizgi gün başı seviyesi. Enflasyona göre durumun çubukla '
+            '(getirin dolu, TÜFE çizgi), son 7 gün ve artıdaki varlıkların '
+            'kendi kutusunda. Hedef ve aylık özet sarı kutularda, bir '
+            'dokunuşla.',
+      ),
       // 2026-10-01: tek getiri dili (M1 + D2 + düzen A + kıyas kartı).
       // Ana rakam bu sürümde değişiyor (temettü dahil, para ağırlıklı);
       // not bunu açıkça söylemeli, yoksa kullanıcı farkı hata sanar.

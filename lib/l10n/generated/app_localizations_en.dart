@@ -3932,6 +3932,73 @@ class AppLocalizationsEn extends AppLocalizations {
       'Return, inflation gap and your best holding';
 
   @override
+  String todayCloseAt(String close) {
+    return 'closes $close';
+  }
+
+  @override
+  String get todayMoveLabel => 'Today\'s move';
+
+  @override
+  String get todayAxisOpen => 'open';
+
+  @override
+  String get todayAxisNow => 'now';
+
+  @override
+  String get todayRealYearly => 'yearly';
+
+  @override
+  String todayYourReturn(String pct) {
+    return 'Your return $pct';
+  }
+
+  @override
+  String todayCpiShort(String pct) {
+    return 'CPI $pct';
+  }
+
+  @override
+  String todayWeekUp(String pct) {
+    return '$pct up';
+  }
+
+  @override
+  String todayWeekDown(String pct) {
+    return '$pct down';
+  }
+
+  @override
+  String get todayWeekHintShort => 'Market\'s effect on your portfolio';
+
+  @override
+  String get todayWeekReady => 'Weekly summary ready';
+
+  @override
+  String get todayGoalSetAction => 'Set a goal';
+
+  @override
+  String get todayGoalSetSub => 'See what\'s left every day';
+
+  @override
+  String todayGoalProgressTitle(int pct) {
+    return '$pct% to goal';
+  }
+
+  @override
+  String todayGoalLeftShort(String left) {
+    return '$left to go';
+  }
+
+  @override
+  String todayMonthlyTile(String month) {
+    return '$month summary';
+  }
+
+  @override
+  String get todayMonthlyTileSub => 'Return, inflation, best holding';
+
+  @override
   String get goalTitle => 'Portfolio goal';
 
   @override
