@@ -3327,6 +3327,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Portföyün enflasyonun altında kaldı, alım gücün geriledi.';
 
   @override
+  String get realReturnEven =>
+      'Portföyün enflasyonla aynı oranda değerlendi, alım gücün korundu.';
+
+  @override
   String nPeopleParen(int n) {
     return '($n kişi)';
   }
