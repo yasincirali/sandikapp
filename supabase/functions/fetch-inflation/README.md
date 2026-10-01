@@ -229,9 +229,9 @@ deno test --allow-read --allow-net supabase/tests/fetch_inflation_test.ts
 |---|---|---|
 | `fetch-inflation` | `5 7 3 * *` | ayın 3'ü 10:05 |
 | `fetch-inflation-retry` | `5 7 4 * *` | ayın 4'ü 10:05 |
-| ~~`calendar-nudge-inflation`~~ | ~~`15 7 3 * *`~~ | 0092 ile kalktı — TÜFE aylık özetle gider |
-| ~~`calendar-nudge-inflation-retry`~~ | ~~`15 7 4 * *`~~ | 0092 ile kalktı |
-| `monthly-summary` | `30 7 3,4 * *` | ayın 3'ü/4'ü 10:30 — ayın TÜFE'si + aylık özet (0092) |
+| ~~`calendar-nudge-inflation`~~ | ~~`15 7 3 * *`~~ | 0093 ile kalktı — TÜFE aylık özetle gider |
+| ~~`calendar-nudge-inflation-retry`~~ | ~~`15 7 4 * *`~~ | 0093 ile kalktı |
+| `monthly-summary` | `30 7 3,4 * *` | ayın 3'ü/4'ü 10:30 — ayın TÜFE'si + aylık özet (0093) |
 | `calendar-nudge-log-cleanup` | `40 22 * * 0` | Pazar 01:40 |
 
 ## Sonrası: `real_return_enabled`

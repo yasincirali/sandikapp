@@ -1,4 +1,4 @@
--- 0092 — Aylık özet TÜFE gününe taşındı (2026-10-01)
+-- 0093 — Aylık özet TÜFE gününe taşındı (2026-10-01)
 --
 -- Kullanıcı bildirimi (ekran görüntüsüyle): 1 Ekim'de giden "Eylül özeti"
 -- push'u "Enflasyon farkı Özet'te" diyordu; Özet'te Eylül değil AĞUSTOS

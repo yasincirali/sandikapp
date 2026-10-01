@@ -15,7 +15,7 @@ gösterdi (TÜİK Eylül TÜFE'sini 3 Ekim'de açıklıyor). Ayrıntı:
 proje dosyaları `denetim/AYLIK_OZET_ENFLASYON_2026-10-01.md`.
 
 - [ ] **PR'ı birleştir**, sonra Actions → Supabase deploy (hedef `ikisi`):
-      migration **0092** + fonksiyonlar **`weekly-summary`**, **`fetch-inflation`**.
+      migration **0093** + fonksiyonlar **`weekly-summary`**, **`fetch-inflation`**.
       Yeni secret YOK.
 - **Neden 3 Ekim'den önce:** dağıtılmazsa 3 Ekim'de eski düzen koşar:
       `fetch-inflation` 10:05'te ve `calendar-nudge` 10:15'te İKİ ayrı TÜFE

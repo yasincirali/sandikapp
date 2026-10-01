@@ -117,7 +117,7 @@ const UC_TAZELIK_SAAT = 48;
 // görüntüsüyle). Ayrıca 3'ünde iki ayrı TÜFE push'u daha vardı
 // (`fetch-inflation` 10:05, `calendar-nudge` 10:15).
 //
-// Şimdi: cron 3'ü ve 4'ü TR 10:30 (0092), `fetch-inflation`'dan SONRA.
+// Şimdi: cron 3'ü ve 4'ü TR 10:30 (0093), `fetch-inflation`'dan SONRA.
 //   · Ayın TÜFE'si tabloda yoksa (TÜİK gecikti) HİÇBİR ŞEY gönderilmez,
 //     ertesi gün yeniden denenir.
 //   · Ay başına TEK koşu: `inflation_push_log(period)` kilidi — eski
@@ -424,7 +424,7 @@ Deno.serve(async (request) => {
           }
           throw new Error(`inflation_push_log yazilamadi: ${error.message}`);
         }
-        // `calendar-nudge` TÜFE kancası 0092 ile takvimden kalktı; elle
+        // `calendar-nudge` TÜFE kancası 0093 ile takvimden kalktı; elle
         // tetiklenirse de aynı ayı ikinci kez göndermesin.
         await admin
           .from('calendar_nudge_log')

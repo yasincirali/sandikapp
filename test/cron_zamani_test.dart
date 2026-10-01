@@ -6,7 +6,7 @@ import 'package:portfoy_takip/utils/cron_zamani.dart';
 void main() {
   test('gün-ay alanı sayıysa aylık', () {
     expect(cronAyGunu('30 6 1 * *'), 1); // monthly-summary (0067)
-    expect(cronAyGunu('30 7 3,4 * *'), 3); // monthly-summary (0092)
+    expect(cronAyGunu('30 7 3,4 * *'), 3); // monthly-summary (0093)
     expect(cronAyGunu('5 7 3 * *'), 3); // fetch-inflation
     expect(cronAyGunu('15 7 4 * *'), 4); // calendar-nudge retry
   });

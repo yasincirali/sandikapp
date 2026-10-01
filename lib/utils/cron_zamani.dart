@@ -9,7 +9,7 @@
 /// iş aylıktır ve "ilk slotu henüz gelmedi" olağan bir durumdur.
 ///
 /// Kapsam dar: standart 5 alanlı ifade; gün tek sayı ya da sayı LİSTESİ.
-/// Liste (2026-10-01): aylık özet `3,4` (TÜFE günü + gecikme turu, 0092);
+/// Liste (2026-10-01): aylık özet `3,4` (TÜFE günü + gecikme turu, 0093);
 /// ilk gün döner. Aralık (`1-5`) aylık kabul edilmez — bu projede yok.
 int? cronAyGunu(String schedule) {
   final alanlar = schedule.trim().split(RegExp(r'\s+'));

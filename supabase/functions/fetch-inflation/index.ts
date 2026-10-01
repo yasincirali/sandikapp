@@ -551,7 +551,7 @@ Deno.serve(async (request) => {
 
     // ── TÜFE günü push'u BURADAN GİTMEZ (2026-10-01) ────────────────────────
     // Ayın TÜFE'si artık aylık özetle TEK push'ta gidiyor (`weekly-summary`
-    // period=month, 0092: ayın 3'ü/4'ü TR 10:30). Eskiden burada 10:05'te,
+    // period=month, 0093: ayın 3'ü/4'ü TR 10:30). Eskiden burada 10:05'te,
     // `calendar-nudge`'da 10:15'te ve aylık özette (1'inde) ayrı ayrı
     // gidiyordu; kullanıcı aynı gün iki TÜFE push'u alacaktı. Kilit
     // (`inflation_push_log`) aynı: eski sürüm önce koşarsa aylık o ay susar.

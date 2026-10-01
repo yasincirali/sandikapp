@@ -7,7 +7,7 @@
 // kişisel sayı YOK: yanlış bir yüzde göndermektense oranı söyleyip soruyu
 // sormak dürüst.
 //
-// 2026-10-01: push artık `weekly-summary` (aylık özet, 0092) içinden gider;
+// 2026-10-01: push artık `weekly-summary` (aylık özet, 0093) içinden gider;
 // bu dosyanın `tufeMesaji`/`enflasyonOranlari`'ı orada kullanılıyor.
 // `tufeGunuPushu` çağıransız kaldı (eski yol, testleri duruyor).
 //
