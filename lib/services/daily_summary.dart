@@ -469,7 +469,10 @@ class DailySummary {
   ///   * satışta maliyet değil `sellProceedsTRY` kullanılır — kârla
   ///     satılan pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa
   ///     etkisi" sayılırdı;
-  ///   * temettü ve silinen lot akışa girmez (`isActive` ikisini de eler).
+  ///   * silinen lot akışa girmez (`isActive` eler);
+  ///   * nakit temettü ÇIKIŞTIR (−) — `getiriAkisi` (2026-10-01, "tek
+  ///     getiri dili"): ödenen nakit gün içi seride yok, akış saymazsak
+  ///     günün piyasa etkisi temettü kadar eksik çıkar.
   static double todayInflow(List<Asset> assets, DateTime now) {
     final dayStart = dayKey(now);
     final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -485,17 +488,13 @@ class DailySummary {
     DateTime dayStart,
     DateTime dayEnd,
   ) {
+    // Kural tek yerde: `getiriAkisi` (Özet ve Grafik kartıyla aynı).
     var total = 0.0;
     for (final a in assets) {
-      if (!a.isActive) continue;
       if (a.addedDate.isBefore(dayStart) || a.addedDate.isAfter(dayEnd)) {
         continue;
       }
-      if (a.isBuy) {
-        total += a.totalCostTRY;
-      } else if (a.isSell) {
-        total -= a.sellProceedsTRY;
-      }
+      total += getiriAkisi(a);
     }
     return total;
   }
@@ -563,12 +562,11 @@ class DailySummary {
       final nowMs = now.millisecondsSinceEpoch;
       final sure = nowMs - acilisMs;
       for (final a in lotlar) {
-        if (!a.isActive) continue;
         final ms = a.addedDate.millisecondsSinceEpoch;
         if (ms < esikMs || ms > bitisMs) continue;
-        final f = a.isBuy
-            ? a.totalCostTRY
-            : (a.isSell ? -a.sellProceedsTRY : 0.0);
+        // [gunIciKatki] ile AYNI tutar kuralı (`getiriAkisi`): temettü
+        // çıkış, ikisi ayrışırsa ₺ ve % farklı akış kümesini ölçer.
+        final f = getiriAkisi(a);
         if (f == 0) continue;
         final w = sure <= 0 ? 0.0 : ((nowMs - ms) / sure).clamp(0.0, 1.0);
         akislar.add((f: f, w: w));

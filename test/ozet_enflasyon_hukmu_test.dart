@@ -388,7 +388,11 @@ void main() {
       expect(r.ozet.piyasaTRY, closeTo(35124.405242, 1e-4));
       expect(r.nominal, closeTo(33.045210, 1e-5));
       expect(r.puan, closeTo(1.535210, 1e-5));
-      expect(r.reel, closeTo(1.167372, 1e-5));
+      // Reel PARA AĞIRLIKLI (K4, 2026-10-01): her alım kendi ayının TÜFE
+      // düzeyinde. Kapalı formül 1,33045210 / 1,3151 − 1 = %1,167372 idi;
+      // aylar eşit uzun olmadığı için sabit aylık hız günlükte tam
+      // düzgün değil, fark küçük (Python, aynı kural): %1,175709.
+      expect(r.reel, closeTo(1.175709, 1e-5));
       expect(InflationService.hukum(r.reel), EnflasyonHukmu.ustunde);
     });
 
@@ -735,10 +739,21 @@ class _Sonuc {
   _Sonuc(this.ozet, this.w, this.rr);
   double get nominal => rr.nominal;
   double get puan => rr.puan;
-  double get reel => rr.reel;
+  double get reel => rr.reel!;
 }
 
-/// `RealReturnService.piyasaGetirisi` ile AYNI çağrı — yalnızca seri
+/// Pencerenin TÜFE'sini aylara SABİT hızla yayan endeks (ilk ay 100).
+/// Reel para ağırlıklı getiri (`RealReturnService.hizaliGetiri`) ara
+/// ayların endeksine de bakar; eşit aylık enflasyonda sonuç kapalı
+/// formülle `(1+n)/(1+e)−1` hemen hemen aynıdır (ay uzunlukları eşit
+/// olmadığı için birebir değil).
+Map<DateTime, double> _endeks(InflationWindow w) => {
+      for (var k = 0; k <= w.ayAdedi; k++)
+        DateTime(w.ilkAy.year, w.ilkAy.month + k, 1):
+            100 * math.pow(1 + w.pct / 100, k / w.ayAdedi).toDouble(),
+    };
+
+/// `RealReturnService.hizaliGetiri` ile AYNI çağrı — yalnızca seri
 /// ağdan değil [_motor]'dan gelir.
 _Sonuc _hizali(
   List<Asset> lotlar,
@@ -759,10 +774,15 @@ _Sonuc _hizali(
     breakdown: bd,
     now: w.seriBitisi,
     pencereBaslangici: w.seriBaslangici,
+    tufeEndeksi: _endeks(w),
   );
   return _Sonuc(
     s,
     w,
-    RealReturn(nominal: s.getiriPct!, inflation: w.pct, pencere: w),
+    RealReturn(
+        nominal: s.getiriPct!,
+        inflation: w.pct,
+        pencere: w,
+        reel: s.reelGetiriPct),
   );
 }
