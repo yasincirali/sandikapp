@@ -141,6 +141,94 @@ abstract final class BesHesabi {
     return out;
   }
 
+  /// Fon değişikliği planı: bugünkü birikimi [hedef] dağılıma taşır.
+  ///
+  /// [mevcut] fon başına elde kalan pay ve ana para (maliyet), [fiyatlar]
+  /// bugünkü TEFAS fiyatı. Dönen satırlar: azalan fonda SATIŞ (pay, serbest
+  /// kalan ana para), artan fonda ALIŞ (pay, taşınan ana para).
+  ///
+  /// ## Neden ana para taşınır, kâr realize edilmez
+  /// Gerçek BES'te fon değişikliği bir satış değildir: birikim el
+  /// değiştirmez, vergi doğmaz, "ödediğin katkı" aynı kalır. Satıştan
+  /// serbest kalan ana para, alınan fonlara DEĞER oranında dağıtılır;
+  /// böylece değişim anında Σ ana para ve Σ değer aynı kalır, kâr da.
+  /// Ekran satış lotunu maliyet fiyatından yazar (gerçekleşen kâr 0) —
+  /// eski sürümler de kârı çift saymaz.
+  ///
+  /// [esik] TL'den küçük kaymalar yok sayılır (kuruş gürültüsü yeni lot
+  /// açmasın). Değişecek bir şey yoksa boş liste.
+  static List<({String kod, double pay, double maliyet, bool satis})>
+      fonDegisimPlani({
+    required Map<String, ({double pay, double maliyet})> mevcut,
+    required Map<String, double> fiyatlar,
+    required List<FonPayi> hedef,
+    double esik = 1,
+  }) {
+    final toplamOran = hedef.fold<double>(0, (t, f) => t + f.oran);
+    if (toplamOran <= 0) return const [];
+    var toplam = 0.0;
+    final deger = <String, double>{};
+    for (final e in mevcut.entries) {
+      final f = fiyatlar[e.key];
+      if (f == null || f <= 0 || e.value.pay <= 0) continue;
+      deger[e.key] = e.value.pay * f;
+      toplam += e.value.pay * f;
+    }
+    if (toplam <= 0) return const [];
+    final hedefDeger = <String, double>{};
+    for (final f in hedef) {
+      hedefDeger[f.kod] =
+          (hedefDeger[f.kod] ?? 0) + toplam * f.oran / toplamOran;
+    }
+    final kodlar = {...deger.keys, ...hedefDeger.keys};
+    final satislar = <({String kod, double pay, double maliyet, bool satis})>[];
+    final alimFarki = <String, double>{};
+    var serbestMaliyet = 0.0;
+    var serbestDeger = 0.0;
+    for (final k in kodlar) {
+      final fark = (hedefDeger[k] ?? 0) - (deger[k] ?? 0);
+      if (fark.abs() < esik && hedefDeger.containsKey(k)) continue;
+      if (fark < 0) {
+        final m = mevcut[k]!;
+        // Fon dağılımdan çıktıysa payın TAMAMI (kuruş artığı kalmasın).
+        final pay = hedefDeger.containsKey(k)
+            ? -fark / fiyatlar[k]!
+            : m.pay;
+        final maliyet = m.maliyet * pay / m.pay;
+        serbestMaliyet += maliyet;
+        serbestDeger += pay * fiyatlar[k]!;
+        satislar.add((kod: k, pay: pay, maliyet: maliyet, satis: true));
+      } else if (fark > 0) {
+        alimFarki[k] = fark;
+      }
+    }
+    final alimToplam = alimFarki.values.fold<double>(0, (t, x) => t + x);
+    if (satislar.isEmpty || alimToplam <= 0) return const [];
+    // Alımlar satıştan serbest kalan DEĞERE ölçeklenir: eşik altında
+    // atlanan kuruş kaymaları Σ alım ≠ Σ satış yapmasın (değer korunur).
+    final olcek = serbestDeger / alimToplam;
+    return [
+      ...satislar,
+      for (final e in alimFarki.entries)
+        (
+          kod: e.key,
+          pay: e.value * olcek / fiyatlar[e.key]!,
+          maliyet: serbestMaliyet * e.value / alimToplam,
+          satis: false,
+        ),
+    ];
+  }
+
+  /// Bu yıl yapılan fon değişikliği sayısı — katılımcının yılda 12 hakkı
+  /// var (BES Yönetmeliği). [satisAnlari] sözleşmenin satış lotlarının
+  /// anları; aynı dakikadaki satışlar tek değişikliktir. Yalnızca BİLGİ:
+  /// sınır uygulamaya kurala bağlanmaz, şirket uygular.
+  static int buYilFonDegisikligi(Iterable<DateTime> satisAnlari, int yil) => {
+        for (final t in satisAnlari)
+          if (t.year == yil)
+            DateTime(t.year, t.month, t.day, t.hour, t.minute),
+      }.length;
+
   /// Dağılım geçerli mi: en az bir fon, oranlar toplamı %100 (±0,01).
   static bool dagilimGecerli(List<FonPayi> dagilim) {
     if (dagilim.isEmpty) return false;

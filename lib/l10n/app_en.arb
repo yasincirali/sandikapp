@@ -3111,22 +3111,18 @@
   "pensionCompanyHint": "e.g. the name of your provider",
   "pensionEntryDate": "Joined the system",
   "pensionEntryDateHint": "The vesting rate of the government contribution depends on this.",
-  "pensionBalance": "Current savings",
-  "pensionBalanceHint": "Excluding the government contribution, as shown in your provider's app or BES Mobil.",
-  "pensionPaid": "Contributions paid so far",
   "pensionFunds": "Fund allocation",
   "pensionAddFund": "Add fund",
   "pensionShareTotal": "Total {pct}",
   "pensionShareError": "Fund shares must add up to 100%.",
   "pensionFundError": "Pick at least one pension fund.",
   "pensionGov": "Government contribution",
-  "pensionGovBalance": "Government contribution balance",
   "pensionGovFund": "Government contribution fund",
   "pensionGovFundHint": "Leave it empty if you don't know; it won't be added.",
   "pensionMonthly": "Monthly contribution",
   "pensionDay": "Contribution day",
   "pensionErrorCompany": "Enter the company's name.",
-  "pensionErrorBalance": "Enter your savings.",
+  "pensionErrorBalance": "Principal plus return must be above zero.",
   "pensionErrorGovFund": "Also pick the fund for the government contribution balance.",
   "pensionPriceMissing": "Couldn't get the price for {code}. Try again shortly.",
   "pensionPickFund": "Pick a pension fund",
@@ -3150,5 +3146,28 @@
   "pensionContributionSaved": "Contribution added",
   "pensionContributionDue": "This month's contribution isn't added yet.",
   "pensionNoGovFund": "No government contribution fund is set; it won't be added.",
+  "pensionPrincipal": "Principal (contributions paid)",
+  "pensionPrincipalHint": "Total you have paid in so far; shown as \"contributions\" on your statement.",
+  "pensionGain": "Return (profit)",
+  "pensionGainHint": "The return on your statement. Use a minus sign for a loss.",
+  "pensionHistoryHint": "The chart shows this balance as a flat line from your entry date to today; from now on it follows your funds' prices.",
+  "pensionGovPrincipal": "Government contribution principal",
+  "pensionGovGain": "Government contribution return",
+  "pensionErrorPrincipal": "Enter the principal.",
+  "pensionSwitchFunds": "Switch funds",
+  "pensionSwitchTitle": "Change fund allocation",
+  "pensionSwitchHint": "Your savings move to the new allocation at today's prices. Principal and profit stay the same; the chart follows the new funds from today.",
+  "pensionSwitchContributions": "Send new contributions to this allocation too",
+  "pensionSwitchCount": "{n}/12 fund switches this year",
+  "@pensionSwitchCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pensionSwitchSaved": "Fund allocation changed",
+  "pensionSwitchSame": "That is already your allocation.",
+  "pensionSwitchNote": "Fund switch",
   "contractManagedNotice": "This asset is managed by its contract. Use the contract card on the asset page to change it."
 }

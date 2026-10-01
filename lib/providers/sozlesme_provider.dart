@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/position.dart';
 import '../models/sozlesme.dart';
 import '../services/bes_hesabi.dart';
 import '../services/crash_reporter.dart';
@@ -276,10 +277,18 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
 
   /// Yeni BES: sözleşme + fon başına açılış lotu (+ devlet katkısı lotu).
   ///
-  /// Açılış lotları BUGÜN tarihlidir: geçmiş katkıların tarihleri ve pay
-  /// adetleri bilinmiyor, bugünkü birikimi geçmişe yaymak uydurma bir
-  /// tarihçe olurdu. Maliyet "bugüne kadar ödediğin katkı"dır; getiri
-  /// (birikim − katkı) bu yüzden ilk günden doğru görünür.
+  /// ## Açılış lotları GİRİŞ tarihlidir (kullanıcı kararı 2026-10-01)
+  /// Kullanıcı ekstresindeki üç sayıyı girer: ana para (ödediği katkı),
+  /// getiri ve devlet katkısı (ana para + getiri). Geçmiş katkıların
+  /// tarihleri ve pay adetleri bilinmiyor; bugünkü fonların serisini geçmişe
+  /// uygulamak, dağılım sık değiştiyse uydurma bir tarihçe olurdu. Bu yüzden
+  /// birikim sisteme giriş gününde var sayılır ve açılış anına kadar DÜZ
+  /// çizilir (`BesAcilis`). Sonuç: kâr ilk günden görünür, açılış günü
+  /// sahte bir "piyasa etkisi" sıçraması olmaz, geçmiş dönemlerin piyasa
+  /// etkisi 0'dır.
+  ///
+  /// Önceden açılış lotları BUGÜN tarihliydi; o kayıtlarda açılış anı ile
+  /// lot anı aynı olduğundan düz çizgi kuralı etkisizdir (geriye uyumlu).
   ///
   /// [adUret] lot adını kurar (`Anadolu Hayat · AH5`); dil ekranın işi.
   Future<void> besAc({
@@ -296,6 +305,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     int? katkiGunu,
   }) async {
     final uid = _kullanici();
+    final an = DateTime.now();
     final s = Sozlesme(
       id: _uuid.v4(),
       userId: uid,
@@ -306,14 +316,19 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       katkiGunu: katkiGunu,
       fonDagilimi: dagilim,
       dkFonKodu: dkFonKodu,
+      // Sunucunun `created_at`'i ile aynı an (birkaç ms farkla); yeniden
+      // yüklemeye kadar açılış anını bu taşır.
+      olusturuldu: an,
     );
+    // Giriş bugünse ya da gelecekteyse (saat farkı) lot şimdi tarihli.
+    final girisGunu = dayKey(giris);
+    final lotTarihi = girisGunu.isBefore(an) ? girisGunu : an;
     final dkVar = dkFonKodu != null && (dkBirikim ?? 0) > 0;
     final fiyatlar = await _fonFiyatlari([
       for (final f in dagilim) f.kod,
       if (dkVar) dkFonKodu,
     ]);
 
-    final an = DateTime.now();
     final lotlar = <Asset>[];
     final birikimPay = BesHesabi.katkiyiBol(birikim, dagilim);
     final odenenPay = BesHesabi.katkiyiBol(odenen, dagilim);
@@ -328,7 +343,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
         pay: pay,
         maliyet: odenenPay[e.key] ?? e.value,
         fiyat: fiyat,
-        tarih: an,
+        tarih: lotTarihi,
         devlet: false,
       ));
     }
@@ -343,7 +358,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
         pay: pay,
         maliyet: dkOdenen ?? dkBirikim,
         fiyat: fiyat,
-        tarih: an,
+        tarih: lotTarihi,
         devlet: true,
       ));
     }
@@ -456,7 +471,142 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle(lotlar);
   }
 
+  /// Bu yıl bu sözleşmede yapılan fon değişikliği sayısı (bilgi; bkz.
+  /// `BesHesabi.buYilFonDegisikligi`).
+  int buYilFonDegisikligi(String sozlesmeId, int yil) =>
+      BesHesabi.buYilFonDegisikligi([
+        for (final a in ref.read(portfolioProvider).valueOrNull?.assets ??
+            const <Asset>[])
+          if (a.sozlesmeId == sozlesmeId &&
+              a.isSell &&
+              a.isActive &&
+              a.subCategory != BesAltKategori.devletKatkisi)
+            a.addedDate,
+      ], yil);
+
+  /// Fon değişikliği (kullanıcı kararı 2026-10-01): kendi birikimini
+  /// bugünkü fiyatlarla [yeniDagilim]'a taşır.
+  ///
+  /// Azalan fonda satış, artan fonda alış lotu yazılır; plan ve ana para
+  /// taşıma kuralı `BesHesabi.fonDegisimPlani`'nda. Satış lotu MALİYET
+  /// fiyatından yazılır (`sellPrice == purchasePrice`): gerçekleşen kâr 0,
+  /// nakit akışı (satış geliri = taşınan ana para = alış maliyeti) net 0.
+  /// Dönem hesapları bu yüzden değişimi para giriş/çıkışı ya da piyasa
+  /// hareketi saymaz; grafik bugünden sonra yeni fonların serisiyle yürür.
+  ///
+  /// Devlet katkısı lotlarına dokunulmaz: onun fonu ayrı talimattır ve
+  /// yalnız devlet katkısı fonları arasında değişebilir.
+  ///
+  /// [katkiTalimatiDa] `true` ise sözleşmenin yeni katkı dağılımı da aynı
+  /// olur — gerçek BES'te iki ayrı talimattır, çoğu kullanıcı ikisini
+  /// birlikte değiştirir. Dönen değer: yazılan lot sayısı (0 = değişecek
+  /// bir şey yoktu).
+  Future<int> besFonDegistir({
+    required String sozlesmeId,
+    required List<FonPayi> yeniDagilim,
+    required bool katkiTalimatiDa,
+    required String Function(String kod, {required bool devlet}) adUret,
+    required String not,
+  }) async {
+    final uid = _kullanici();
+    final s = _simdiki.sozlesme(sozlesmeId);
+    final portfoy = ref.read(portfolioProvider).valueOrNull;
+    if (s == null || portfoy == null) return 0;
+    final kendi = [
+      for (final a in portfoy.assets)
+        if (a.sozlesmeId == sozlesmeId &&
+            a.isActive &&
+            a.subCategory != BesAltKategori.devletKatkisi)
+          a,
+    ];
+    final mevcut = <String, ({double pay, double maliyet})>{};
+    final temsil = <String, Position>{};
+    for (final p in aggregatePositions(kendi)) {
+      final kod = p.representative.ticker.replaceFirst(tefasOneki, '');
+      mevcut[kod] = (pay: p.totalQuantity, maliyet: p.totalCost);
+      temsil[kod] = p;
+    }
+    final fiyatlar = await _fonFiyatlari({
+      ...mevcut.keys,
+      for (final f in yeniDagilim) f.kod,
+    }.toList());
+    final plan = BesHesabi.fonDegisimPlani(
+        mevcut: mevcut, fiyatlar: fiyatlar, hedef: yeniDagilim);
+
+    final an = DateTime.now();
+    final lotlar = <Asset>[
+      for (final x in plan)
+        if (x.satis)
+          _besSatisi(
+            uid: uid,
+            s: s,
+            temsil: temsil[x.kod]!.representative,
+            pay: x.pay,
+            birimMaliyet: x.maliyet / x.pay,
+            fiyat: fiyatlar[x.kod]!,
+            tarih: an,
+            not: not,
+          )
+        else
+          _besLotu(
+            uid: uid,
+            s: s,
+            kod: x.kod,
+            ad: adUret(x.kod, devlet: false),
+            pay: x.pay,
+            maliyet: x.maliyet,
+            fiyat: fiyatlar[x.kod]!,
+            tarih: an,
+            devlet: false,
+            not: not,
+          ),
+    ];
+    if (lotlar.isNotEmpty) {
+      await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle(lotlar);
+    }
+    if (katkiTalimatiDa) {
+      final yeni = s.kopya(fonDagilimi: yeniDagilim);
+      await SupabaseService.instance.updateSozlesme(yeni);
+      SozlesmeDeposu.instance.yaz([yeni], const []);
+      _yayinla([yeni], const []);
+    }
+    return lotlar.length;
+  }
+
   // ── Yardımcılar ────────────────────────────────────────────────────────
+
+  /// Fon değişikliğinin satış ayağı — maliyet fiyatından (bkz.
+  /// [besFonDegistir]). `addSellTransaction` ile aynı alanlar; ayrı kurulur
+  /// çünkü alışlarla TEK istekte yazılır (yarım kalan değişim olmasın).
+  Asset _besSatisi({
+    required String uid,
+    required Sozlesme s,
+    required Asset temsil,
+    required double pay,
+    required double birimMaliyet,
+    required double fiyat,
+    required DateTime tarih,
+    required String not,
+  }) =>
+      Asset(
+        id: _uuid.v4(),
+        userId: uid,
+        name: temsil.name,
+        ticker: temsil.ticker,
+        type: AssetType.bes,
+        subCategory: BesAltKategori.katki,
+        quantity: pay,
+        purchasePrice: birimMaliyet,
+        sellPrice: birimMaliyet,
+        currency: 'TRY',
+        notes: not,
+        isManualPrice: false,
+        currentPrice: fiyat,
+        lastUpdated: DateTime.now(),
+        kind: AssetKind.sell,
+        addedDate: tarih,
+        sozlesmeId: s.id,
+      );
 
   Asset _besLotu({
     required String uid,
@@ -468,6 +618,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     required double fiyat,
     required DateTime tarih,
     required bool devlet,
+    String not = '',
   }) =>
       Asset(
         id: _uuid.v4(),
@@ -482,7 +633,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
         // birikimden az olduğu için bu, bugünkü fiyattan düşüktür.
         purchasePrice: pay > 0 ? maliyet / pay : fiyat,
         currency: 'TRY',
-        notes: '',
+        notes: not,
         isManualPrice: false,
         currentPrice: fiyat,
         lastUpdated: DateTime.now(),

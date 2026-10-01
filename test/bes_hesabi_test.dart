@@ -4,6 +4,7 @@ import 'package:portfoy_takip/services/bes_hesabi.dart';
 
 /// BES kuralları — hak ediş, devlet katkısı ve katkının bölünmesi.
 void main() {
+  _fonDegisimi();
   final giris = DateTime(2019, 5, 10);
 
   test('hak ediş basamakları: %0 / %15 / %35 / %60', () {
@@ -125,6 +126,73 @@ void main() {
     test('sunucu boşsa yedek tablo çalışır', () {
       BesHesabi.uzakParametreler(const {});
       expect(BesHesabi.yillikSinir(2026), 79272);
+    });
+  });
+}
+
+void _fonDegisimi() {
+  group('fon değişikliği planı', () {
+    // AAA: 100 pay × 10 = 1000 (ana para 800), BBB: 50 pay × 20 = 1000
+    // (ana para 900). Toplam değer 2000, ana para 1700, kâr 300.
+    final mevcut = {
+      'AAA': (pay: 100.0, maliyet: 800.0),
+      'BBB': (pay: 50.0, maliyet: 900.0),
+    };
+    const fiyatlar = {'AAA': 10.0, 'BBB': 20.0, 'CCC': 5.0};
+
+    test('değer ve ana para korunur, kâr değişmez', () {
+      final plan = BesHesabi.fonDegisimPlani(
+        mevcut: mevcut,
+        fiyatlar: fiyatlar,
+        hedef: const [FonPayi(kod: 'BBB', oran: 25), FonPayi(kod: 'CCC', oran: 75)],
+      );
+      double deger(bool satis) => plan
+          .where((x) => x.satis == satis)
+          .fold(0.0, (t, x) => t + x.pay * fiyatlar[x.kod]!);
+      double maliyet(bool satis) => plan
+          .where((x) => x.satis == satis)
+          .fold(0.0, (t, x) => t + x.maliyet);
+      expect(deger(false), closeTo(deger(true), 1e-6));
+      expect(maliyet(false), closeTo(maliyet(true), 1e-6));
+
+      // AAA dağılımdan çıktı: payın tamamı ve ana parasının tamamı satılır.
+      final aaa = plan.singleWhere((x) => x.kod == 'AAA');
+      expect(aaa.satis, isTrue);
+      expect(aaa.pay, 100);
+      expect(aaa.maliyet, 800);
+      // BBB 1000 → 500: yarısı.
+      final bbb = plan.singleWhere((x) => x.kod == 'BBB');
+      expect(bbb.satis, isTrue);
+      expect(bbb.pay, closeTo(25, 1e-9));
+      expect(bbb.maliyet, closeTo(450, 1e-9));
+      // CCC hedef 1500 → 300 pay, taşınan ana para 800 + 450.
+      final ccc = plan.singleWhere((x) => x.kod == 'CCC');
+      expect(ccc.satis, isFalse);
+      expect(ccc.pay, closeTo(300, 1e-9));
+      expect(ccc.maliyet, closeTo(1250, 1e-9));
+    });
+
+    test('aynı dağılım → boş plan (kuruş kaymaları lot açmaz)', () {
+      final plan = BesHesabi.fonDegisimPlani(
+        mevcut: mevcut,
+        fiyatlar: fiyatlar,
+        hedef: const [FonPayi(kod: 'AAA', oran: 50), FonPayi(kod: 'BBB', oran: 50)],
+      );
+      expect(plan, isEmpty);
+    });
+
+    test('yılda değişiklik sayısı: aynı dakikadaki satışlar tek değişiklik',
+        () {
+      final t = DateTime(2026, 3, 4, 10, 15, 3);
+      expect(
+        BesHesabi.buYilFonDegisikligi([
+          t,
+          t.add(const Duration(seconds: 20)),
+          DateTime(2026, 6, 1, 9),
+          DateTime(2025, 12, 31, 9),
+        ], 2026),
+        2,
+      );
     });
   });
 }
