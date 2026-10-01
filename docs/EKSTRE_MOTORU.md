@@ -91,13 +91,31 @@ sütun kaymaz. Sınır: taranmış (görüntü) PDF metin içermez → dürüst 
 | Belge nerede işlenir | Cihazda | Sunucu/LLM | Finansal belge dışarı çıkmaz (KVKK); çevrimdışı çalışır |
 | Anlama → mevcut ayrıştırıcı | Kanonik metin | Ayrıştırıcıyı yeniden yazmak | Satış/tür/fiyat kuralları ve testleri tek yerde kalır; kullanıcı okunanı metin olarak görür/düzeltir |
 
+## Gerçek dosya öncesi sertleştirme (2026-10-02)
+
+Kurum dosyası görülmeden, bilinen kurum biçimlerinden (MKK e-Yatırımcı, banka
+PDF'leri, "Excel'e aktar" HTML'leri) türetilen kırılma noktaları kapatıldı;
+her biri `test/ekstre_motoru_test.dart`'ta bir vakadır:
+
+| Kırılma | Düzeltme |
+|---|---|
+| "THYAO TÜRK HAVA YOLLARI A.O." tek hücrede, " - " yok → sembol tanınmaz, tablo reddedilir | `sembolAyikla`: ilk kelime bilinen BIST kodu / ISIN / döviz kodu ise kesin; 3–6 harf kod + ≥2 kelimelik ad ise ilk kelime; altın deyimleri bölünmez |
+| "Birim Pay Fiyatı", "İşlem Adedi", "Kıymet Kodu" sözlükte çekimli yok | Başlık ve sözlük iyelik ekinden köke iner (`_kokler`) |
+| Döküm'de adet × Son Fiyat ≈ Piyasa Değeri yakalanıp "tutar" sayılıyor, ardından "maliyet uyuşmuyor" sahte uyarısı | Çarpım araması başlıktan bilinen adet/fiyatı içermek zorunda |
+| `20260903` bitişik tarih, `−250` Unicode eksi | `tarihCoz` / `sayiCoz` |
+| HTML'in ilk 4 KB'si `<style>` → CSV sanılır; `</td>`/`</tr>` yazmayan eski çıktı → sıfır satır | 64 KB sezgi; açılış etiketine göre bölen toleranslı ayrıştırıcı |
+| `<x:row>` önekli XLSX → "dolu sayfa yok" | `namespaceUri: '*'` |
+| Çok sayfalı PDF'te sayfa başına bant → sütunlar sayfadan sayfaya kayar | Bantlar belge genelinde (`sayfalardanSatirlar`) |
+| Sembol tanınmayınca doğrudan hata, kullanıcı için çıkmaz | En büyük tablo güven 0 ile döner; "Sütunları düzelt" açık, metin alanı boş |
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örnekleri hâlâ yok** (MKK e-Yatırımcı, Midas PDF…). Motor örneksiz
   tasarlandı ve sentetik senaryolarla test edildi; ilk gerçek dosyalar geldiğinde
   `test/ekstre_motoru_test.dart`'a (anonimleştirilmiş) eklenmeli.
 - **iOS derlemesi:** pdfrx/file_selector yerel parçaları bu makinede derlenmedi (CI).
-- **Uygulama boyutu:** PDFium ikilisi. Android'de ABI başına birkaç MB; ölç.
+- **Uygulama boyutu:** PDFium ikilisi — ölçüldü (`docs/CPU_GPU_VE_BOYUT_RAPORU_2026_10.md`):
+  arm64 APK'da 6,4 MB, Play indirmesinde 3,0 MB. Kalması kararlaştırıldı.
 - **Çok satırlı hücre (PDF):** uzun şirket adı ikinci satıra taşarsa o satır sembolsüz
   kalır ve atlanır — veri kaybı yok, ad kısalır.
 - **Sonraki adım (E):** "ekstrem tanınmadı → örnek gönder" akışı (açık rızayla).

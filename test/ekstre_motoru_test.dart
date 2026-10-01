@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/csv_import_service.dart';
+import 'package:portfoy_takip/services/ekstre/ekstre_ice_aktarma.dart';
 import 'package:portfoy_takip/services/ekstre/ekstre_tablosu.dart';
 import 'package:portfoy_takip/services/ekstre/metin_cozucu.dart';
 import 'package:portfoy_takip/services/ekstre/pdf_tablo.dart';
@@ -204,6 +205,171 @@ void main() {
       expect(d.guven, 1);
       final r = CsvImportService.parse(d.kanonikMetin(), today: bugun);
       expect(r.rows.first.quantity, 45.2);
+    });
+
+    test('sembol tanınmayan tablo elle eşleme adayı olarak döner (güven 0, metin boş)', () async {
+      const metin = 'Ay;Gelir;Gider\nOcak;1000;800\nŞubat;1200;900\n';
+      final s = await ekstreyiOku(Uint8List.fromList(utf8.encode(metin)));
+      expect(s.ana.guven, 0);
+      expect(s.ana.eminDegil, isTrue);
+      expect(s.ana.roller.containsKey(EkstreRol.sembol), isFalse);
+      expect(s.kanonikMetin(), isEmpty);
+      // Kullanıcı sütunları gösterince normal yoldan okunur.
+      final d = s.anaDuzeltildi({EkstreRol.sembol: 0, EkstreRol.adet: 1});
+      expect(d.kanonikMetin(), contains('Ocak'));
+    });
+  });
+
+  // ── 2026-10-02: gerçek kurum çıktılarında kırılan noktalar ────────────────
+
+  group('kod + ad aynı hücrede', () {
+    test('sembolAyikla: ilk kelime kod, altın/döviz deyimi bölünmez', () {
+      expect(CsvImportService.sembolAyikla('THYAO TÜRK HAVA YOLLARI A.O.'), 'THYAO');
+      expect(CsvImportService.sembolAyikla('AFT AK PORTFÖY YENİ TEKNOLOJİLER FONU'), 'AFT');
+      expect(CsvImportService.sembolAyikla('TRATHYAO91M5 TÜRK HAVA YOLLARI'), 'TRATHYAO91M5');
+      expect(CsvImportService.sembolAyikla('USD AMERİKAN DOLARI'), 'USD');
+      expect(CsvImportService.sembolAyikla('GRAM ALTIN'), 'GRAM ALTIN');
+      expect(CsvImportService.sembolAyikla('ÇEYREK ALTIN'), 'ÇEYREK ALTIN');
+      expect(CsvImportService.sembolAyikla('ATA ALTIN'), 'ATA ALTIN');
+      expect(CsvImportService.sembolAyikla('THYAO - Türk Hava Yolları'), 'THYAO');
+    });
+
+    test('MKK dökümü: "Kıymet" sütunu kod + unvan, tablo yine anlaşılır', () {
+      const metin = 'Kıymet;Hesap No;Bakiye;Bloke\n'
+          'THYAO TÜRK HAVA YOLLARI A.O.;1234;150;0\n'
+          'EREGL EREĞLİ DEMİR VE ÇELİK FABRİKALARI T.A.Ş.;1234;300;0\n';
+      final r = uc(tablolariOku(Uint8List.fromList(utf8.encode(metin))));
+      expect(r.errors, isEmpty);
+      expect(r.rows.map((x) => (x.ticker, x.quantity)), [
+        ('THYAO.IS', 150.0),
+        ('EREGL.IS', 300.0),
+      ]);
+    });
+  });
+
+  group('başlık çekimleri', () {
+    test('"Birim Pay Fiyatı" / "Pay Adedi" / "İşlem Tutarı" başlıktan eşlenir', () {
+      const metin = 'İşlem Tarihi;Fon Kodu;İşlem Türü;Pay Adedi;Birim Pay Fiyatı;İşlem Tutarı\n'
+          '03.09.2026;AFT;Alış;1.000;1,95;1.950,00\n'
+          '10.09.2026;AFT;Satış;400;2,10;840,00\n';
+      final a = tablolariAnla(tablolariOku(Uint8List.fromList(utf8.encode(metin)))).first;
+      expect(a.roller[EkstreRol.fiyat], 4);
+      expect(a.roller[EkstreRol.adet], 3);
+      expect(a.roller[EkstreRol.tutar], 5);
+      expect(a.guven, 1);
+      final r = CsvImportService.parse(a.kanonikMetin(), today: bugun);
+      expect(r.rows.map((x) => (x.quantity, x.price, x.satis)), [
+        (1000.0, 1.95, false),
+        (400.0, 2.10, true),
+      ]);
+    });
+  });
+
+  group('portföy dökümü tutarlılığı', () {
+    test('Piyasa Değeri tutar sanılmaz; maliyet doğruyken sahte uyarı yok', () {
+      const metin = 'Menkul Kıymet;Adet;Ortalama Maliyet;Son Fiyat;Piyasa Değeri;Kar/Zarar\n'
+          'EREGL;200;41,75;48,10;9.620,00;1.270,00\n'
+          'THYAO;50;300,00;312,40;15.620,00;620,00\n'
+          'ASELS;10;55,00;60,00;600,00;50,00\n';
+      final a = tablolariAnla(tablolariOku(Uint8List.fromList(utf8.encode(metin)))).first;
+      expect(a.roller[EkstreRol.fiyat], 2);
+      expect(a.roller[EkstreRol.tutar], isNull);
+      expect(a.notlar.where((n) => n.contains('uyuşmuyor')), isEmpty);
+      expect(a.guven, 1);
+    });
+  });
+
+  group('hücre çözücü ekleri', () {
+    test('bitişik yyyyaagg tarih ve Unicode eksi', () {
+      expect(tarihCoz('20260903'), DateTime(2026, 9, 3));
+      expect(tarihCoz('20261303'), isNull);
+      expect(tarihCoz('46270'), isNull);
+      expect(sayiCoz('−250'), -250);
+      expect(sayiCoz('1.250,00−'), -1250);
+    });
+  });
+
+  group('HTML toleransı', () {
+    test('uzun <style> önsözü ve kapanış etiketsiz hücreler', () {
+      final html = '<html><head><meta charset="utf-8"><style>${'.x{color:red} ' * 500}'
+          '</style></head><body><table>'
+          '<tr><th>Menkul<th>Adet<th>Maliyet'
+          '<tr><td>THYAO<td>100<td>312,40'
+          '<tr><td>ASELS<td>20<td>60,00'
+          '</table></body></html>';
+      final bayt = Uint8List.fromList(utf8.encode(html));
+      expect(html.indexOf('<table'), greaterThan(4096), reason: 'önsöz 4 KB penceresini aşmalı');
+      expect(bicimiSez(bayt), EkstreBicimi.html);
+      final t = tablolariOku(bayt).single;
+      expect(t.satirlar, [
+        ['Menkul', 'Adet', 'Maliyet'],
+        ['THYAO', '100', '312,40'],
+        ['ASELS', '20', '60,00'],
+      ]);
+      final r = uc([t]);
+      expect(r.rows.map((x) => (x.ticker, x.quantity, x.price)), [
+        ('THYAO.IS', 100.0, 312.40),
+        ('ASELS.IS', 20.0, 60.0),
+      ]);
+    });
+  });
+
+  group('XLSX ad alanı önekli', () {
+    test('<x:row>/<x:c> yazan üretici de okunur', () {
+      String xml(String s) => '<?xml version="1.0" encoding="UTF-8"?>$s';
+      const ns = 'xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
+      final dosyalar = {
+        'xl/workbook.xml': xml('<x:workbook $ns xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<x:sheets><x:sheet name="Portföy" sheetId="1" r:id="rId1"/></x:sheets></x:workbook>'),
+        'xl/_rels/workbook.xml.rels': xml('<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="worksheet" Target="worksheets/sheet1.xml"/></Relationships>'),
+        'xl/sharedStrings.xml': xml('<x:sst $ns><x:si><x:t>Sembol</x:t></x:si><x:si><x:t>Adet</x:t></x:si>'
+            '<x:si><x:t>Maliyet</x:t></x:si><x:si><x:t>GARAN</x:t></x:si></x:sst>'),
+        'xl/worksheets/sheet1.xml': xml('<x:worksheet $ns><x:sheetData>'
+            '<x:row r="1"><x:c r="A1" t="s"><x:v>0</x:v></x:c><x:c r="B1" t="s"><x:v>1</x:v></x:c><x:c r="C1" t="s"><x:v>2</x:v></x:c></x:row>'
+            '<x:row r="2"><x:c r="A2" t="s"><x:v>3</x:v></x:c><x:c r="B2"><x:v>75</x:v></x:c><x:c r="C2"><x:v>112.5</x:v></x:c></x:row>'
+            '</x:sheetData></x:worksheet>'),
+      };
+      final arsiv = Archive();
+      dosyalar.forEach((ad, icerik) {
+        final b = utf8.encode(icerik);
+        arsiv.addFile(ArchiveFile(ad, b.length, b));
+      });
+      final t = tablolariOku(Uint8List.fromList(ZipEncoder().encode(arsiv))).single;
+      expect(t.kaynak, 'Portföy');
+      expect(t.satirlar, [
+        ['Sembol', 'Adet', 'Maliyet'],
+        ['GARAN', '75', '112,5'],
+      ]);
+    });
+  });
+
+  group('PDF çok sayfa', () {
+    List<PdfKarakter> satir(double y, List<(String, double)> parcalar) => [
+          for (final (metin, x) in parcalar)
+            for (var i = 0; i < metin.length; i++)
+              PdfKarakter(metin[i], x + i * 6, x + i * 6 + 5, y + 10, y),
+        ];
+
+    test('ikinci sayfada boş kalan sütun hizayı bozmaz', () {
+      final sayfa1 = [
+        ...satir(700, [('Menkul', 20), ('Adet', 130), ('Fiyat', 200)]),
+        ...satir(680, [('THYAO', 20), ('100', 142), ('45,20', 200)]),
+      ];
+      // 2. sayfada adet sütunu hiç dolu değil: tek başına bantlansa iki
+      // sütun çıkar ve fiyat 2. indekse (adet) kayardı.
+      final sayfa2 = [
+        ...satir(700, [('GRAM ALTIN', 20), ('4.250,00', 200)]),
+        ...satir(680, [('CEYREK ALTIN', 20), ('6.900,00', 200)]),
+      ];
+      expect(sayfalardanSatirlar([sayfa1, sayfa2]), [
+        ['Menkul', 'Adet', 'Fiyat'],
+        ['THYAO', '100', '45,20'],
+        ['GRAM ALTIN', '', '4.250,00'],
+        ['CEYREK ALTIN', '', '6.900,00'],
+      ]);
+      // Karşı kanıt: aynı sayfa tek başına bantlansa fiyat 2. sütuna düşer.
+      expect(sayfadanSatirlar(sayfa2).first.length, 2);
     });
   });
 }

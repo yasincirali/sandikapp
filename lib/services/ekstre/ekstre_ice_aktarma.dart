@@ -37,6 +37,9 @@ class EkstreOkumaSonucu {
   /// Emin olunan tabloların birleşik kanonik metni. Ana tablo her zaman
   /// girer (eşleme ekranı onu gösterir); diğerleri yalnız eşiği geçerse.
   String kanonikMetin() {
+    // Elle eşleme adayı (sembol yok): metin alanına yarım bir tablo basmak
+    // yerine boş bırak; kart "emin değiliz" der, kullanıcı sütunları seçer.
+    if (!ana.roller.containsKey(EkstreRol.sembol)) return '';
     final secilen = [
       ana,
       for (final a in anlamlar.skip(1))
@@ -63,7 +66,16 @@ Future<EkstreOkumaSonucu> ekstreyiOku(Uint8List bytes) async {
   final bicim = bicimiSez(bytes);
   final tablolar =
       bicim == EkstreBicimi.pdf ? await pdfTablolari(bytes) : tablolariOku(bytes);
-  final anlamlar = tablolariAnla(tablolar);
+  var anlamlar = tablolariAnla(tablolar);
+  if (anlamlar.isEmpty) {
+    // Sembol sütunu tanınmadı ama ortada bir tablo var: çıkmaz sokak yerine
+    // en büyük tabloyu güven 0 ile ver — ekran "emin değiliz" der ve
+    // "Sütunları düzelt" ile kullanıcı sembolü kendisi gösterir. Motor
+    // uydurmaz (roller boş kalır); yalnızca elle eşlemenin yolu açık kalır.
+    // Tanınmayan kurum çıktısında ilk sürüm doğrudan hata veriyordu ve
+    // kullanıcının dosyayla yapabileceği hiçbir şey kalmıyordu (2026-10-02).
+    anlamlar = _elleEslemeAdayi(tablolar);
+  }
   if (anlamlar.isEmpty) {
     throw const EkstreOkumaHatasi(
         'Dosyada sembol içeren bir tablo bulunamadı. Portföy dökümü ya da '
@@ -71,4 +83,15 @@ Future<EkstreOkumaSonucu> ekstreyiOku(Uint8List bytes) async {
         'aşağıya yapıştır.');
   }
   return EkstreOkumaSonucu(bicim: bicim, anlamlar: anlamlar);
+}
+
+/// Sembolsüz anlaşılan tablolardan elle eşlemeye en uygun olanı: en az iki
+/// veri satırı ve üç sütun; en çok satırlı önce.
+List<EkstreAnlami> _elleEslemeAdayi(List<EkstreTablosu> tablolar) {
+  final adaylar = <EkstreAnlami>[
+    for (final t in tablolar)
+      if (tabloyuAnla(t) case final a?)
+        if (a.veri.length >= 2 && a.basliklar.length >= 3) a,
+  ]..sort((a, b) => b.veri.length.compareTo(a.veri.length));
+  return adaylar.take(1).toList();
 }

@@ -25,19 +25,22 @@ Future<List<EkstreTablosu>> pdfTablolari(Uint8List bytes) async {
     throw const EkstreOkumaHatasi('PDF açılamadı (bozuk olabilir).');
   }
   try {
-    final satirlar = <List<String>>[];
+    // Sayfalar ayrı toplanır, tablo HEPSİNDEN birlikte kurulur: sütun
+    // bantları belge genelinde ortak (bkz. pdf_tablo.dart).
+    final sayfalar = <List<PdfKarakter>>[];
     for (final sayfa in doc.pages) {
       final ham = await sayfa.loadText();
       if (ham == null) continue;
       final metin = ham.fullText;
       final kutular = ham.charRects;
       final n = metin.length < kutular.length ? metin.length : kutular.length;
-      satirlar.addAll(sayfadanSatirlar([
+      sayfalar.add([
         for (var i = 0; i < n; i++)
           PdfKarakter(metin[i], kutular[i].left, kutular[i].right,
               kutular[i].top, kutular[i].bottom),
-      ]));
+      ]);
     }
+    final satirlar = sayfalardanSatirlar(sayfalar);
     if (satirlar.isEmpty) {
       throw const EkstreOkumaHatasi(
           'Bu PDF metin içermiyor (taranmış görüntü olabilir). Kurumun '
