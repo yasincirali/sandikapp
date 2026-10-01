@@ -303,11 +303,14 @@ struct SandikHomeWidget: Widget {
 //   geniş widget dikdörtgendir (satırın yarısı).
 // - "Canlı seans kartı" (üçüncü tur: "göz alıcı olmalı, Apple'ın yeni
 //   teknolojilerinden faydalanmalı"):
-//     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`), üstünde
-//       kartın alt yarısına YAYILMIŞ günün eğrisi — sayı grafiğin üstünde.
-//     * Seans açıkken canlı çubuk + kapanışa geri sayım
-//       (`ProgressView/Text(timerInterval:)`): uygulama açılmadan saniye
-//       saniye akar, güncelleme bütçesi harcamaz.
+//     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`); günün
+//       eğrisi yüzdenin ALTINDA kendi bandında. (İlk hâlinde eğri kartın alt
+//       yarısına yayılıyor, sayı üstüne basılıyordu; 2026-10-01'de "yazı ile
+//       grafik üst üste biniyor" bildirimiyle ayrıldı.)
+//     * Seans açıkken kapanışa geri sayım (`Text(timerInterval:)`):
+//       uygulama açılmadan saniye saniye akar, güncelleme bütçesi
+//       harcamaz. Üstündeki ince seans çubuğu kaldırıldı (kullanıcı
+//       kararı 2026-10-01: "seans çizgisini kaldıralım").
 //     * Zaman çizelgesi 18:00'de ikinci girdiyle kendiliğinden "kapalı"
 //       görünüme geçer; kapalıyken sonraki açılışın günü ve saati.
 //     * Tutar `privacySensitive`: telefon kilitliyken sistem örter, Face ID
@@ -446,39 +449,54 @@ struct SandikKilitView: View {
     // Başlık satırı kalktı: kart zaten sandık'ın (kilit ekranı düzenleyicisi
     // uygulama adını gösterir), logo alt satırın başına küçük iner. Yüzde
     // ~29 pt, alt satır tek sıra: logo + tutar solda, geri sayım / açılış
-    // sağda; seans çubuğu ikisinin arasında ince bir çizgi.
+    // sağda. Aradaki ince seans çubuğu 2026-10-01'de kaldırıldı (kullanıcı
+    // kararı); kapanış bilgisi sağdaki geri sayımda kalıyor.
+
+    // ## Üst üste binme yok (kullanıcı bildirimi, 2026-10-01)
+    // "Kilit ekranı widget'ında yazılar ve grafikler birbirinin üstüne
+    // biniyor; hepsi net okunabilmeli." Eğri önceden kartın alt yarısına
+    // katman olarak YAYILIYOR, yüzde ve alt satır onun üstüne basılıyordu; tek
+    // renkli (vibrant) kilit ekranında %40 opaklık bile rakamın arkasında
+    // gürültü oluyordu. Artık üç bant alt alta ve ayrı: yüzde, eğri şeridi,
+    // alt satır. Hiçbir metin çizginin üstünde durmaz.
+    //
+    // Yer bütçesi (12 mini ~52 pt): yüzde ~27–29, alt satır ~13; eğri ARTAN
+    // yeri alır (en az 6, en çok 16 pt). `layoutPriority` yüzdeyi ve alt
+    // satırı korur — yer daralırsa önce eğri incelir, rakam küçülmez.
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        VStack(alignment: .leading, spacing: 2) {
+            sayi
+                .layoutPriority(2)
+            egriSeridi
+            altSatir
+                .layoutPriority(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(
             AccessoryWidgetBackground()
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            // Günün eğrisi kartın alt yarısına yayılır — sayı üstünde durur.
-            if entry.hasData, !entry.isHidden, entry.sparkline.count >= 2 {
-                SandikSparkline(
-                    points: entry.sparkline,
-                    color: .primary,
-                    showsFill: true
-                )
-                .opacity(0.4)
-                .padding(.top, 22)
-                .padding(.bottom, 14)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-
-            // Dikey bütçe 12 mini'de ~52 pt (ölçüldü, 2026-10-01): 4+4 dolgu,
-            // ~13 pt alt satır, kalan ~30 pt yüzdenin — yüzde küçülmeden
-            // ~27 pt kalır (çizim: "sandık kilit ekranı" artifact'ı).
-            VStack(alignment: .leading, spacing: 1) {
-                sayi
-                Spacer(minLength: 0)
-                seansCubugu
-                altSatir
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
+        )
         .accessibilityElement(children: .combine)
+    }
+
+    /// Günün eğrisi — kendi bandında, metinle çakışmadan. Veri yokken ya da
+    /// gizliyken bant yerine boşluk: alt satır yine en alta oturur.
+    @ViewBuilder
+    private var egriSeridi: some View {
+        if entry.hasData, !entry.isHidden, entry.sparkline.count >= 2 {
+            SandikSparkline(
+                points: entry.sparkline,
+                color: .primary,
+                showsFill: true
+            )
+            .opacity(0.7)
+            .frame(maxWidth: .infinity, minHeight: 6, maxHeight: 16)
+        } else {
+            Spacer(minLength: 0)
+        }
     }
 
     @ViewBuilder
@@ -510,22 +528,6 @@ struct SandikKilitView: View {
                     .contentTransition(.numericText(value: yuzdeSayi))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .widgetAccentable()
-        }
-    }
-
-    /// Seans açıkken kapanışa kadar dolan ince çubuk — uygulama kapalıyken de
-    /// akar (`timerInterval`), güncelleme bütçesi harcamaz.
-    @ViewBuilder
-    private var seansCubugu: some View {
-        if entry.hasData, !entry.isHidden, entry.isMarketOpen,
-           let seans = BistSeans.aralik(), seans.upperBound > entry.date {
-            ProgressView(timerInterval: seans, countsDown: false) {
-                EmptyView()
-            } currentValueLabel: {
-                EmptyView()
-            }
-            .progressViewStyle(.linear)
             .widgetAccentable()
         }
     }

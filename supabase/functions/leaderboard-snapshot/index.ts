@@ -476,20 +476,37 @@ export function yazimPlani<R extends { user_id: string }, A extends { user_id: s
   };
 }
 
+/// Tek kullanıcılık ölçüm isteği (0094, 2026-10-01): gövdede geçerli bir
+/// `user_id` varsa yalnız o kullanıcı ölçülür. Geçersiz/boş → null, yani
+/// bildiğimiz tam (cron) koşu — bozuk bir gövde herkesi ölçmeye düşer ama
+/// asla başka birini "tek kullanıcı" diye ölçmez.
+export function tekKullanici(body: unknown): string | null {
+  const v = (body as { user_id?: unknown } | null)?.user_id;
+  if (typeof v !== 'string') return null;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+    ? v.toLowerCase()
+    : null;
+}
+
 const VARLIK_SUTUNLARI =
   'id, user_id, name, ticker, type, is_manual_price, current_price, kind, quantity, sub_category, currency, added_date, ref_asset_id';
 
 /// PostgREST tek yanıtta en fazla `max_rows` (varsayılan 1000) satır döner.
 /// Sayfalamasız okuma, defter büyüdükçe kullanıcıları SESSİZCE düşürürdü —
 /// zirve artık yalnız yarışanları değil herkesi okuduğu için sınır yakın.
-async function tumAktifVarliklar(admin: SupabaseClient): Promise<AssetRow[]> {
+async function tumAktifVarliklar(
+  admin: SupabaseClient,
+  yalniz: string | null = null,
+): Promise<AssetRow[]> {
   const SAYFA = 1000;
   const out: AssetRow[] = [];
   for (let bas = 0; ; bas += SAYFA) {
-    const { data, error } = await admin
+    let q = admin
       .from('assets')
       .select(VARLIK_SUTUNLARI)
-      .is('deleted_at', null)
+      .is('deleted_at', null);
+    if (yalniz) q = q.eq('user_id', yalniz);
+    const { data, error } = await q
       .order('id')
       .range(bas, bas + SAYFA - 1);
     if (error) throw new Error(`Varliklar alinamadi: ${error.message}`);
@@ -523,9 +540,16 @@ Deno.serve(async (request) => {
     }
 
     let dryRun = false;
+    // Tek kullanıcı modu (0094): `zirve_rizasi_ayarla` rıza verilince
+    // çağırır ki kullanıcı akşamki cron'u (18:40) beklemeden havuza girsin
+    // (kullanıcı kararı 2026-10-01, "Anında ölçüm"). Bu modda YALNIZ zirve
+    // tablolarına yazılır: Yarış'ın günlük ritmi ve 0073 throttle'ı
+    // değişmesin diye yarış tablosuna dokunulmaz.
+    let tek: string | null = null;
     try {
       const body = await request.json();
       dryRun = body?.dry_run === true;
+      tek = tekKullanici(body);
     } catch (_) { /* gövde yok */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
@@ -537,7 +561,9 @@ Deno.serve(async (request) => {
       .select('id')
       .eq('leaderboard_opt_in', true);
     if (profilError) throw new Error(`Profiller alinamadi: ${profilError.message}`);
-    const optIn = new Set((profilRows ?? []).map((r: { id: string }) => String(r.id)));
+    const optIn = tek
+      ? new Set<string>()
+      : new Set((profilRows ?? []).map((r: { id: string }) => String(r.id)));
 
     // 1b) Zirve açık rızası (0091) — zirve tablolarına kimin yazılacağı.
     const { data: rizaRows, error: rizaError } = await admin
@@ -553,7 +579,7 @@ Deno.serve(async (request) => {
     // Mezar taşı YOK: kullanıcının ekranda gördüğü portföy `deleted_at` +
     // buy/sell netlemesidir (istemci `aggregatePositions`); "sil → geri al"
     // sonrası defterde kalan mezar taşı lotu öldürmez (bkz. positions.ts).
-    const tum = await tumAktifVarliklar(admin);
+    const tum = await tumAktifVarliklar(admin, tek);
     const userIds = [...new Set(tum.map((a) => String(a.user_id)))];
     if (userIds.length === 0) {
       return jsonResponse({ ok: true, reason: 'Portfoyu olan kullanici yok.', users: 0 });
@@ -663,6 +689,7 @@ Deno.serve(async (request) => {
       symbols: semboller.size,
       series_loaded: seriler.size,
       dry_run: dryRun,
+      tek_kullanici: tek !== null,
     });
   } catch (error) {
     // Ayrıntı yalnızca günlüğe; yanıt tablo/sütun/secret adı sızdırmaz.

@@ -28,6 +28,7 @@ jobs:
     timeout-minutes: 10
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}  # Frankfurt; yoksa ortağa düşer
     steps:
       - uses: actions/checkout@v4
       - name: Şema parmak izi — Tokyo = Frankfurt

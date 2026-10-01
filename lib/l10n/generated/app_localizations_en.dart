@@ -3353,6 +3353,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your portfolio fell short of inflation; your purchasing power shrank.';
 
   @override
+  String get realReturnEven =>
+      'Your portfolio kept pace with inflation; your purchasing power held steady.';
+
+  @override
   String nPeopleParen(int n) {
     return '($n people)';
   }

@@ -31,6 +31,19 @@ parola açıkta sayılır. Günlüğe basma düzeltmesi: PR #46.
 > "trader" beyanı hâlâ bekliyor (AB'de yayın için gerekli, TestFlight'ı
 > engellemiyor).
 
+## ⏳ 2026-10-01 Zirve rızası → anında ölçüm (0094, PR'da)
+
+Karar (yasin, 2026-10-01, "Anında ölçüm"): rıza kalır; "Katılıyorum"a basınca
+portföy akşam 18:40 cron'unu beklemeden o an ölçülür. Uygunluk şartları ve
+8 kişi eşiği aynen. Uygulama sürümü gerekmez (yalnız sunucu).
+
+- [ ] **Sıra önemli:** ÖNCE `leaderboard-snapshot` fonksiyonu, SONRA 0094.
+      Ters sırada eski fonksiyon `user_id`'yi yok sayıp herkes için tam koşu
+      yapar (zararsız, gereksiz yük). "Supabase deploy" iş akışı migration'ı
+      fonksiyondan önce koşar; bu yüzden iki koşu: 1) migrations kapalı,
+      functions `leaderboard-snapshot`; 2) migrations açık.
+- [ ] Frankfurt yine atlanır (yukarıdaki eşleme bölümüne 0094 eklendi).
+
 ## 🔁 FRANKFURT EŞLEME BEKLİYOR (2026-10-01, Claude)
 
 Karar (yasin, 2026-10-01): GitHub'daki `SUPABASE_ACCESS_TOKEN` Frankfurt'a
@@ -38,7 +51,7 @@ Karar (yasin, 2026-10-01): GitHub'daki `SUPABASE_ACCESS_TOKEN` Frankfurt'a
 #44/#45), bu yüzden bu tur yalnız **Tokyo**'ya dağıtıldı (hedef `tokyo`).
 Frankfurt'a gidemeyenler sunucular eşlenirken toplu gidecek:
 
-- [ ] **Migration:** `0092_push_bildirim_surumu`, `0093_aylik_ozet_tufe_gunu`
+- [ ] **Migration:** `0092_push_bildirim_surumu`, `0093_aylik_ozet_tufe_gunu`, `0094_zirve_riza_aninda_olcum` (+ `leaderboard-snapshot` fonksiyonu önce)
       (Frankfurt'ta son uygulanan: 0091).
 - [ ] **Fonksiyonlar:** `bildirim-karti` (YENİ, `verify_jwt = false`),
       `check-price-alerts`, `daily-brief`, `weekly-summary`, `fetch-inflation`

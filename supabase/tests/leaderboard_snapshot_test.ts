@@ -22,6 +22,7 @@ import {
   netLotlar,
   portfoyDegeri,
   seriSembolu,
+  tekKullanici,
   fonDetayi,
   varlikSayisi,
   yazimPlani,
@@ -340,4 +341,19 @@ Deno.test('BES: TEFAS emeklilik fonu serisinden fiyatlanır', () => {
   assertEquals(lotSembolleri(l), ['TEFAS:AH5']);
   const seriler = new Map<string, Seri>([['TEFAS:AH5', seri([1, 0.021])]]);
   assertEquals(lotTryFiyati(l, seriler, NOW), 0.021);
+});
+
+Deno.test('tekKullanici: geçerli uuid tek kullanıcı modunu açar', () => {
+  assertEquals(
+    tekKullanici({ user_id: 'A1B2C3D4-0000-4000-8000-00000000000F', source: 'zirve_riza' }),
+    'a1b2c3d4-0000-4000-8000-00000000000f',
+  );
+});
+
+Deno.test('tekKullanici: cron gövdesi, bozuk ya da boş değer tam koşu demek', () => {
+  assertEquals(tekKullanici({ source: 'cron' }), null);
+  assertEquals(tekKullanici({ user_id: 'herkes' }), null);
+  assertEquals(tekKullanici({ user_id: "x' or 1=1" }), null);
+  assertEquals(tekKullanici({ user_id: 42 }), null);
+  assertEquals(tekKullanici(null), null);
 });

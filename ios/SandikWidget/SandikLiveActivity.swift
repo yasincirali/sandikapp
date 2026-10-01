@@ -142,7 +142,8 @@ struct SandikLiveActivity: Widget {
                             // Tutar kapalıyken (ikinci tur, kullanıcı: "büyük
                             // kartta yuvarlak göstergeye gerek yok, farklı bir
                             // tasarım"): halka yok; yüzde kartın tek büyük
-                            // sayısı, altta dolgulu eğri + seans çubuğu.
+                            // sayısı, altta dolgulu eğri. Seans çubuğu
+                            // kaldırıldı (kullanıcı kararı 2026-10-01).
                             HStack(spacing: 5) {
                                 // Ok YALNIZCA gerçek bir yön varken.
                                 // Koşulsuz basıldığında iki durumda
@@ -193,20 +194,13 @@ struct SandikLiveActivity: Widget {
                                 isMarketOpen: tutarAcik
                                     ? nil : !context.state.kapaliGoster
                             )
-                            .frame(height: tutarAcik ? 26 : 34)
+                            .frame(height: tutarAcik ? 26 : 40)
                         }
+                        // Tutar kapalıyken alttaki seans çubuğu KALKTI
+                        // (kullanıcı kararı 2026-10-01: "seans çizgisini
+                        // kaldıralım"); boşalan yer eğriye verildi (34 → 40).
                         if tutarAcik {
                             SandikChangePill(state: context.state)
-                        } else {
-                            SandikSeansCubugu(
-                                isMarketOpen: context.state.isMarketOpen,
-                                yalnizBorsa: context.state.yalnizBorsa,
-                                renk: context.state.hasDirection
-                                    ? palette.statusColor(
-                                        isPositive: context.state.isPositive)
-                                    : palette.text58,
-                                palette: palette
-                            )
                         }
                     }
                     .padding(.top, 4)
@@ -336,8 +330,10 @@ func directionArrow(_ isPositive: Bool) -> String {
     isPositive ? "▲" : "▼"
 }
 
-/// BIST seans saatleri — Dinamik Ada seans çubuğu VE kilit ekranı kartı
-/// aynı kaynaktan okur (2026-09-30).
+/// BIST seans saatleri — kilit ekranı widget'ının kapanış geri sayımı ve
+/// 18:00 zaman çizelgesi girdisi buradan okur (2026-09-30). Seans çubuğu
+/// Canlı Etkinlik'ten ve kilit ekranı widget'ından kaldırıldı (kullanıcı
+/// kararı 2026-10-01); saat aralığı geri sayım için kaldı.
 ///
 /// 10:00–18:00 İstanbul saati; Bugün kartındaki "18:00 kapanış" ile aynı
 /// (`BugunService.seansKapanisDk`). Tatil ve yarım gün takvimi burada YOK:
@@ -374,57 +370,6 @@ enum BistSeans {
             if haftaGunu != 1, haftaGunu != 7, acilis > simdi { return acilis }
         }
         return nil
-    }
-}
-
-/// BIST seansının ne kadarının geçtiği — Dinamik Ada genişletilmiş
-/// görünümü, tutar kapalıyken (2026-09-30, ikinci tur).
-///
-/// `ProgressView(timerInterval:)` sistem tarafından CANLI ilerler: Canlı
-/// Etkinlik güncellemesi beklemeden çubuk akar, bütçe harcamaz.
-///
-/// Neden `sessionEndsAtUnix` değil: o alan kullanıcının seçtiği GÖSTERİM
-/// penceresinin sonu (`LiveActivityService.sessionEnd`), seansın değil.
-/// Seans 10:00–18:00 İstanbul saatiyle burada kurulur — Bugün kartındaki
-/// "18:00 kapanış" ile aynı (`BugunService.seansKapanisDk`). Yarım günlerde
-/// (12:30) çubuk tam dolmadan seans kapanır; `isMarketOpen` false gelince
-/// çubuk "Seans kapalı" yazısına döner — yanlış süre söylemez.
-///
-/// "Seans kapalı" yalnızca portföy tamamen borsaysa ([yalnizBorsa],
-/// kullanıcı kararı 2026-10-01). Karışık portföyde seans dışında çubuk
-/// hiç çizilmez: altın/döviz/kripto işlerken "kapalı" yanlış bilgidir.
-@available(iOS 17.0, *)
-struct SandikSeansCubugu: View {
-    let isMarketOpen: Bool
-    var yalnizBorsa: Bool = true
-    let renk: Color
-    let palette: SandikPalette
-
-    private var seans: ClosedRange<Date>? { BistSeans.aralik() }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            if isMarketOpen, let aralik = seans {
-                Text("Seans")
-                    .font(.sandikLabel(11, weight: .medium))
-                    .foregroundStyle(palette.text58)
-                ProgressView(timerInterval: aralik, countsDown: false) {
-                    EmptyView()
-                } currentValueLabel: {
-                    EmptyView()
-                }
-                .progressViewStyle(.linear)
-                .tint(renk)
-                Text("18:00")
-                    .font(.sandikNumber(11, weight: .medium))
-                    .foregroundStyle(palette.text58)
-            } else if yalnizBorsa {
-                Text("Seans kapalı")
-                    .font(.sandikLabel(11, weight: .medium))
-                    .foregroundStyle(palette.text58)
-                Spacer(minLength: 0)
-            }
-        }
     }
 }
 
@@ -527,9 +472,10 @@ struct SandikYonHalkasi: View {
 /// widget'ının yeni kartıyla AYNI dil, büyük ölçekte:
 ///   · başlık: logo + "sandık" + canlılık durumu (tek ince satır);
 ///   · kahraman satır: yön + ~44 pt yüzde, izin varsa sağda tutar + toplam;
-///   · günün eğrisi tam genişlikte;
-///   · seans çubuğu (`SandikSeansCubugu`, Dinamik Ada ile ortak).
-/// Yükseklik bütçesi: 14+18+6+46+6+30+6+14+14 ≈ 154 pt (iOS üst sınırı 160).
+///   · günün eğrisi tam genişlikte.
+/// Alttaki seans çubuğu kaldırıldı (kullanıcı kararı 2026-10-01: "seans
+/// çizgisini kaldıralım"); boşalan 20 pt'nin yarısı eğriye verildi (30 → 40).
+/// Yükseklik bütçesi: 14+18+6+46+6+40+14 ≈ 144 pt (iOS üst sınırı 160).
 /// Tutar kuralı değişmedi: yalnız "Kilit ekranında tutar göster" açıksa.
 @available(iOS 17.0, *)
 struct SandikLockScreenView: View {
@@ -566,14 +512,8 @@ struct SandikLockScreenView: View {
                     axisMax: state.axisMaxText,
                     showsGuides: true
                 )
-                .frame(height: 30)
+                .frame(height: 40)
             }
-            SandikSeansCubugu(
-                isMarketOpen: state.isMarketOpen,
-                yalnizBorsa: state.yalnizBorsa,
-                renk: SandikTheme.amber,
-                palette: palette
-            )
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

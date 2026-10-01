@@ -128,15 +128,37 @@ void main() {
 
     // Üçüncü tur (2026-09-30): "canlı seans kartı" — Apple'ın kilit ekranı
     // teknolojileri. Biri sessizce silinirse kart eski düz hâline döner.
-    test('canlı seans kartı: geri sayım, çubuk, 18:00 girdisi, gizlilik', () {
+    test('canlı seans kartı: geri sayım, 18:00 girdisi, gizlilik', () {
       expect(swift, contains('Text(timerInterval:'));
-      expect(swift, contains('ProgressView(timerInterval:'));
       expect(swift, contains('girdiler.append(simdi.kapali(at: bitis))'),
           reason: 'Seans bitince kart kendiliğinden kapalıya dönmeli');
       expect(swift, contains('.privacySensitive()'),
           reason: 'Tutar kilitliyken sistemce örtülmeli');
       expect(swift, contains('.contentTransition(.numericText('));
       expect(swift, contains('AccessoryWidgetBackground()'));
+    });
+
+    // Kullanıcı kararı 2026-10-01: "seans çizgisini kaldıralım" — kilit
+    // ekranı widget'ında da, Canlı Etkinlik'te (kilit kartı + Dinamik Ada)
+    // de seans ilerleme çubuğu YOK. Geri sayım metni kalır.
+    test('seans çubuğu yok: kilit widget\'ı ve Canlı Etkinlik', () {
+      final ada = _oku('ios/SandikWidget/SandikLiveActivity.swift');
+      for (final kaynak in [swift, ada]) {
+        expect(kaynak, isNot(contains('ProgressView(')));
+        expect(kaynak, isNot(contains('SandikSeansCubugu')));
+      }
+    });
+
+    // Kullanıcı bildirimi 2026-10-01: yazı ile grafik üst üste biniyordu.
+    // Eğri kendi bandında; görünüm ZStack ile katmanlanmaz.
+    test('kilit kartı: metin ve eğri üst üste binmez', () {
+      final bas = swift.indexOf('struct SandikKilitView');
+      final son = swift.indexOf('struct SandikKilitWidget');
+      final gorunum = swift.substring(bas, son);
+      expect(gorunum, isNot(contains('ZStack')));
+      expect(gorunum, contains('egriSeridi'));
+      expect(gorunum, contains('.layoutPriority(2)'),
+          reason: 'Yer daralınca önce eğri incelmeli, yüzde değil');
     });
 
     test('TEK kart: yalnız dikdörtgen; yuvarlak ve tek satır YOK', () {

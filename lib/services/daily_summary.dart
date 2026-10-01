@@ -10,6 +10,7 @@ import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
 import 'history_service.dart';
+import 'para_agirlikli_getiri.dart';
 import 'price_service.dart';
 import '../utils/tr_format.dart';
 import 'bist_calendar.dart';
@@ -536,6 +537,46 @@ class DailySummary {
         DateTime(seansGunu.year, seansGunu.month, seansGunu.day, 23, 59, 59));
   }
 
+  /// GÜNLÜK piyasa etkisinin yüzdesi — para ağırlıklı (2026-10-01).
+  ///
+  /// Akış kümesi [gunIciKatki] ile AYNI (açılış slotundan sonra, çizilen
+  /// seans günü içinde; geçmiş seansta akış yok). Her akış günün kalanı
+  /// oranında sayılır: kapanışa beş dakika kala eklenen para günün
+  /// getirisini sulandırmaz. Eskiden payda `açılış + pozitif akış` idi —
+  /// aylık özette düzeltilen hatanın gün içi kopyası ("tüm zaman
+  /// aralıklarında uygulanmalı", yasin). Akış yoksa sonuç birebir
+  /// `(son − açılış) / açılış`.
+  static double? gunIciGetiriPct(
+    List<Asset> lotlar, {
+    required double acilis,
+    required double son,
+    required int acilisMs,
+    required DateTime seansGunu,
+    required DateTime now,
+  }) {
+    final akislar = <DonemAkisi>[];
+    if (!dayKey(seansGunu).isBefore(dayKey(now))) {
+      final esikMs = acilisMs + gunIciSlot.inMilliseconds;
+      final bitisMs =
+          DateTime(seansGunu.year, seansGunu.month, seansGunu.day, 23, 59, 59)
+              .millisecondsSinceEpoch;
+      final nowMs = now.millisecondsSinceEpoch;
+      final sure = nowMs - acilisMs;
+      for (final a in lotlar) {
+        if (!a.isActive) continue;
+        final ms = a.addedDate.millisecondsSinceEpoch;
+        if (ms < esikMs || ms > bitisMs) continue;
+        final f = a.isBuy
+            ? a.totalCostTRY
+            : (a.isSell ? -a.sellProceedsTRY : 0.0);
+        if (f == 0) continue;
+        final w = sure <= 0 ? 0.0 : ((nowMs - ms) / sure).clamp(0.0, 1.0);
+        akislar.add((f: f, w: w));
+      }
+    }
+    return paraAgirlikliGetiriPct(bas: acilis, son: son, akislar: akislar);
+  }
+
   /// Gün içi serinin açılış ölçümünün damgası — [dayValues]'un ilk
   /// noktası (şimdiye kadarki ilk DOLU slot).
   static int? acilisDamgasi(Map<int, double> series, DateTime now) {
@@ -637,11 +678,19 @@ class DailySummary {
             acilisMs: acilis, seansGunu: cizilenGun, now: now);
     final amount = (last - open) - inflow;
 
-    // Yüzde tabanı: gün başı değer + bugün yatırılan para. Yalnızca `open`
-    // kullanmak, gün içinde portföyünü büyüten kullanıcıda yüzdeyi
-    // şişirirdi. (Kartla aynı taban.)
-    final base = open + (inflow > 0 ? inflow : 0);
-    if (base <= 0) {
+    // Yüzde: para ağırlıklı ([gunIciGetiriPct], 2026-10-01). Eskiden payda
+    // `açılış + pozitif akış` idi: kapanışa yakın eklenen para günün
+    // tamamında çalışmış sayılıyor, yüzde eziliyordu. Grafik kartı aynı
+    // fonksiyonu çağırır (parite).
+    final pct = acilis == null
+        ? amount / open * 100
+        : gunIciGetiriPct(kapsam,
+            acilis: open,
+            son: last,
+            acilisMs: acilis,
+            seansGunu: cizilenGun,
+            now: now);
+    if (pct == null) {
       return DailySummary(
         totalTRY: total,
         changeTRY: null,
@@ -653,7 +702,7 @@ class DailySummary {
     return DailySummary(
       totalTRY: total,
       changeTRY: amount,
-      changePct: amount / base * 100,
+      changePct: pct,
       sparkline: values,
       inflowTRY: inflow,
     );

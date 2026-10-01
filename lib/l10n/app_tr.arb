@@ -2232,6 +2232,7 @@
     }
   },
   "realReturnNegative": "Portföyün enflasyonun altında kaldı, alım gücün geriledi.",
+  "realReturnEven": "Portföyün enflasyonla aynı oranda değerlendi, alım gücün korundu.",
   "nPeopleParen": "({n} kişi)",
   "@nPeopleParen": {
     "placeholders": {
