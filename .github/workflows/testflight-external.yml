@@ -3,10 +3,10 @@ name: iOS — TestFlight harici gruba gönder
 # TestFlight'a zaten yüklenmiş ve işlenmiş bir build'i HARİCİ (external)
 # test grubuna gönderir. Derleme yok; yalnızca App Store Connect API key.
 #
-# Neden elle: `ios-testflight.yml` her main push'unda dahili testçilere
-# build atar. Harici testçilere giden her build Apple'ın Beta App Review'una
-# düşer ve gerçek kullanıcılara ulaşır — ne zaman ne gideceği bilinçli
-# seçilsin (CLAUDE.md: canlıdaki kullanıcı etkilenmez).
+# Otomatik yol `ios-testflight.yml`'dedir: TESTFLIGHT_HARICI_GRUP doluysa her
+# main birleşmesi harici gruba da gider (yasin kararı 2026-10-01). Bu iş
+# akışı elle yol: belirli bir build'i (ör. otomatik gönderim zaman aşımına
+# düştüyse ya da eski bir build) harici gruba göndermek için.
 #
 # İlk gönderimden önce ASC → TestFlight → Test Information dolu olmalı
 # (geri bildirim e-postası, iletişim kişisi, giriş gerekiyorsa demo hesap).

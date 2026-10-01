@@ -576,11 +576,12 @@ platform :ios do
   # TestFlight'ta ZATEN işlenmiş bir build'i harici (external) test grubuna
   # gönderir. Derleme/imzalama yok, match gerekmez — yalnızca ASC API key.
   #
-  # Neden `beta`ya eklenmedi: `beta` her main push'unda koşar ve
-  # `skip_waiting_for_build_processing: true` ile işlemeyi beklemeden çıkar;
-  # harici dağıtım işlenmiş build ister, ayrıca her build Beta App Review'a
-  # gider. Harici testçiye ne zaman ne gideceği bilinçli bir karar olsun diye
-  # ayrı, elle tetiklenen lane (testflight-external.yml).
+  # Neden `beta`dan ayrı lane: `beta` `skip_waiting_for_build_processing:
+  # true` ile işlemeyi beklemeden çıkar; harici dağıtım işlenmiş build ister
+  # (`bekle:true` bekler). İki çağıran: ios-testflight.yml her main
+  # birleşmesinde (TESTFLIGHT_HARICI_GRUP doluysa — yasin kararı 2026-10-01,
+  # Android kapalı testle aynı anda) ve testflight-external.yml elle (eski
+  # bir build'i yeniden göndermek için).
   #
   # İlk harici gönderim Apple'ın Beta App Review'una düşer (genelde < 1 gün);
   # sonraki build'ler çoğunlukla otomatik onaylanır. ASC → TestFlight → Test
