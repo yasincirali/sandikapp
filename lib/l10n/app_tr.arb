@@ -2830,6 +2830,100 @@
     }
   },
   "todayMonthlySummaryHint": "Getirin, enflasyon farkı ve en iyi varlığın",
+  "todayCloseAt": "{close} kapanış",
+  "@todayCloseAt": {
+    "placeholders": {
+      "close": {
+        "type": "String"
+      }
+    }
+  },
+  "todayClosedShort": "Kapalı",
+  "todayMarketOnlyShort": "piyasa etkisi",
+  "todayGreenShort": "Artıda",
+  "todayWeekReadyShort": "Özet hazır",
+  "todayGoalNewAction": "Yenisini seç",
+  "todayMonthlyTileSubShort": "Geçen ayın karnesi",
+  "todayEventCpiTiny": "TÜİK · {date}",
+  "@todayEventCpiTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayTiny": "Tatil · {date}",
+  "@todayEventHolidayTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndTiny": "Ay sonu",
+  "todayMoveLabel": "Günün hareketi",
+  "todayRealYearly": "yıllık",
+  "todayYourReturn": "Getirin {pct}",
+  "@todayYourReturn": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayCpiShort": "TÜFE {pct}",
+  "@todayCpiShort": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekUp": "{pct} yükseliş",
+  "@todayWeekUp": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekDown": "{pct} düşüş",
+  "@todayWeekDown": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "todayWeekHintShort": "Piyasanın portföyüne etkisi",
+  "todayWeekReady": "Haftalık özet hazır",
+  "todayGoalSetAction": "Hedef belirle",
+  "todayGoalSetSub": "Kalanı her gün gör",
+  "todayGoalProgressTitle": "Hedefe %{pct}",
+  "@todayGoalProgressTitle": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "todayGoalLeftShort": "{left} kaldı",
+  "@todayGoalLeftShort": {
+    "placeholders": {
+      "left": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlyTile": "{month} özeti",
+  "@todayMonthlyTile": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "todayMonthlyTileSub": "Getiri, enflasyon, en iyi varlık",
   "goalTitle": "Portföy hedefi",
   "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",
@@ -3329,20 +3423,27 @@
   "pensionReturn": "Getiri",
   "pensionIfLeave": "Bugün çıkarsan (vergi öncesi)",
   "pensionVesting": "Devlet katkısı hak ediş",
-  "pensionVestingNext": "{now} · {years} yıl sonra {next}",
-  "@pensionVestingNext": {
-    "placeholders": {
-      "now": {
-        "type": "String"
-      },
-      "years": {
-        "type": "int"
-      },
-      "next": {
-        "type": "String"
-      }
-    }
-  },
+  "currentValueUpper": "GÜNCEL DEĞER",
+  "depositCardRate": "Faiz",
+  "depositCardRateValue": "%{rate} brüt · stopaj %{wht}",
+  "@depositCardRateValue": {"placeholders": {"rate": {"type": "String"}, "wht": {"type": "String"}}},
+  "depositWithholdingManual": "Bu oranı sen girdin; vade ya da tarih değişince öneri üstüne yazılmaz.",
+  "depositAccrualNoteDaily": "Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.",
+  "depositAlreadyMatured": "Bu dönemin vadesi {date} tarihinde dolmuş. Kaydettikten sonra karttan yeni dönemi başlatabilirsin.",
+  "@depositAlreadyMatured": {"placeholders": {"date": {"type": "String"}}},
+  "depositRenewStartHint": "Banka vadeli hesabı vade gününde yeniler. Başka bir günde yenilediysen tarihi değiştir; aradaki günler faizsiz sayılır.",
+  "pensionVestingNextIn": "{now} · {duration} sonra {next}",
+  "@pensionVestingNextIn": {"placeholders": {"now": {"type": "String"}, "duration": {"type": "String"}, "next": {"type": "String"}}},
+  "pensionVestingSoon": "{now} · bir ay içinde {next}",
+  "@pensionVestingSoon": {"placeholders": {"now": {"type": "String"}, "next": {"type": "String"}}},
+  "pensionYears": "{n} yıl",
+  "@pensionYears": {"placeholders": {"n": {"type": "int"}}},
+  "pensionMonths": "{n} ay",
+  "@pensionMonths": {"placeholders": {"n": {"type": "int"}}},
+  "pensionYearsMonths": "{years} yıl {months} ay",
+  "@pensionYearsMonths": {"placeholders": {"years": {"type": "int"}, "months": {"type": "int"}}},
+  "dividendAboveGross": "Net tutar brütten ({gross}) büyük olamaz. Alanı kontrol et.",
+  "@dividendAboveGross": {"placeholders": {"gross": {"type": "String"}}},
   "pensionAddContribution": "Bu ayın katkısını ekle",
   "pensionContributionTitle": "Katkı ekle",
   "pensionContributionAmount": "Katkı tutarı",

@@ -3932,6 +3932,98 @@ class AppLocalizationsEn extends AppLocalizations {
       'Return, inflation gap and your best holding';
 
   @override
+  String todayCloseAt(String close) {
+    return 'closes $close';
+  }
+
+  @override
+  String get todayClosedShort => 'Closed';
+
+  @override
+  String get todayMarketOnlyShort => 'market only';
+
+  @override
+  String get todayGreenShort => 'In profit';
+
+  @override
+  String get todayWeekReadyShort => 'Summary ready';
+
+  @override
+  String get todayGoalNewAction => 'Pick a new one';
+
+  @override
+  String get todayMonthlyTileSubShort => 'Last month\'s report';
+
+  @override
+  String todayEventCpiTiny(String date) {
+    return 'CPI · $date';
+  }
+
+  @override
+  String todayEventHolidayTiny(String date) {
+    return 'Holiday · $date';
+  }
+
+  @override
+  String get todayEventMonthEndTiny => 'Month end';
+
+  @override
+  String get todayMoveLabel => 'Today\'s move';
+
+  @override
+  String get todayRealYearly => 'yearly';
+
+  @override
+  String todayYourReturn(String pct) {
+    return 'Your return $pct';
+  }
+
+  @override
+  String todayCpiShort(String pct) {
+    return 'CPI $pct';
+  }
+
+  @override
+  String todayWeekUp(String pct) {
+    return '$pct up';
+  }
+
+  @override
+  String todayWeekDown(String pct) {
+    return '$pct down';
+  }
+
+  @override
+  String get todayWeekHintShort => 'Market\'s effect on your portfolio';
+
+  @override
+  String get todayWeekReady => 'Weekly summary ready';
+
+  @override
+  String get todayGoalSetAction => 'Set a goal';
+
+  @override
+  String get todayGoalSetSub => 'See what\'s left every day';
+
+  @override
+  String todayGoalProgressTitle(int pct) {
+    return '$pct% to goal';
+  }
+
+  @override
+  String todayGoalLeftShort(String left) {
+    return '$left to go';
+  }
+
+  @override
+  String todayMonthlyTile(String month) {
+    return '$month summary';
+  }
+
+  @override
+  String get todayMonthlyTileSub => 'Return, inflation, best holding';
+
+  @override
   String get goalTitle => 'Portfolio goal';
 
   @override
@@ -4756,8 +4848,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionVesting => 'Government contribution vesting';
 
   @override
-  String pensionVestingNext(String now, int years, String next) {
-    return '$now · $next in $years years';
+  String get currentValueUpper => 'CURRENT VALUE';
+
+  @override
+  String get depositCardRate => 'Interest';
+
+  @override
+  String depositCardRateValue(String rate, String wht) {
+    return '$rate% gross · $wht% withholding';
+  }
+
+  @override
+  String get depositWithholdingManual =>
+      'You entered this rate; changing the term or date won\'t overwrite it.';
+
+  @override
+  String get depositAccrualNoteDaily =>
+      'The value grows every day by the net interest; a daily-interest account pays it in every day.';
+
+  @override
+  String depositAlreadyMatured(String date) {
+    return 'This term matured on $date. After saving, start the next period from the card.';
+  }
+
+  @override
+  String get depositRenewStartHint =>
+      'Banks renew a term deposit on its maturity date. If you renewed on another day, change the date; the days in between earn no interest.';
+
+  @override
+  String pensionVestingNextIn(String now, String duration, String next) {
+    return '$now · $next in $duration';
+  }
+
+  @override
+  String pensionVestingSoon(String now, String next) {
+    return '$now · $next within a month';
+  }
+
+  @override
+  String pensionYears(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n years',
+      one: '1 year',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pensionMonths(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pensionYearsMonths(int years, int months) {
+    return '$years yr $months mo';
+  }
+
+  @override
+  String dividendAboveGross(String gross) {
+    return 'The net amount can\'t be more than the gross ($gross). Check the field.';
   }
 
   @override

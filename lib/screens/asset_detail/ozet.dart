@@ -128,6 +128,17 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   /// Dönemin yüzdesi: dönem başı (`uclar`) → canlı birim fiyat.
   double? _donemYuzdesi(int days, double canliBirim) {
+    // Mevduat: seriden değil sözleşmeden (bkz. `mevduatDegisimi`).
+    if (widget.asset.type == AssetType.mevduat) {
+      final now = DateTime.now();
+      final m = SozlesmeDeposu.instance.mevduatDegisimi(
+          widget.asset.ticker,
+          days == 0
+              ? dayKey(now)
+              : _AssetDetailScreenState._donemBaslangici(days, now),
+          now);
+      if (m != null) return m;
+    }
     final ilk = _donemIlk[days];
     if (ilk == null || ilk <= 0) return null;
     final son = canliBirim > 0 ? canliBirim : null;
@@ -241,17 +252,24 @@ extension _DetayOzet on _AssetDetailScreenState {
     final pct = _donemYuzdesi(days, canli);
     final ilk = _donemIlk[days];
     final bicim = _birimBicim;
+    // Mevduatta büyük sayı birim değer değil (₺1,37 — iç hesabın payı,
+    // 2026-10-01 emülatör testi) pozisyonun bugünkü değeridir; değişim
+    // satırı da yalnız yüzdeyi yazar.
+    final mevduat = widget.asset.type == AssetType.mevduat;
 
     final String degisim;
     final Color degisimRenk;
-    if (pct == null || ilk == null) {
+    if (pct == null || (ilk == null && !mevduat)) {
       degisim = ' ';
       degisimRenk = context.c.text36;
     } else if (donemDuzMu(pct)) {
       degisim = l.periodNoChange(etiket);
       degisimRenk = context.c.text36;
+    } else if (mevduat) {
+      degisim = '${fmtPctIsaretli(pct)} · $etiket';
+      degisimRenk = context.signColor(pct);
     } else {
-      final fark = canli - ilk;
+      final fark = canli - ilk!;
       degisim = '${fmtPctIsaretli(pct)} · '
           '${fark >= 0 ? '+' : '−'}${bicim.format(fark.abs())} · $etiket';
       degisimRenk = context.signColor(pct);
@@ -270,7 +288,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         Row(
           children: [
             Text(
-              l.currentPriceUpper,
+              mevduat ? l.currentValueUpper : l.currentPriceUpper,
               style: context.t.labelSmall?.copyWith(
                   letterSpacing: 0.9,
                   fontWeight: FontWeight.w700,
@@ -290,7 +308,9 @@ extension _DetayOzet on _AssetDetailScreenState {
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           child: Text(
-            canli > 0 ? bicim.format(canli) : '—',
+            mevduat
+                ? baz.fmt(pnl.currentValueTRY)
+                : (canli > 0 ? bicim.format(canli) : '—'),
             maxLines: 1,
             style: context.t.numLarge.copyWith(color: context.c.gold),
           ),
@@ -372,7 +392,10 @@ extension _DetayOzet on _AssetDetailScreenState {
       // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
       // seri): çubuk "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi
       // ızgarada zaten var (getiri %0, düşüş %0); boş çubuk gürültüdür.
-      if (aralik > 1e-9 * yuksek.abs()) ...[
+      // Mevduatta "dönem düşüğü/yükseği" birim değerdir (₺1,37 / ₺1,41) —
+      // kullanıcıya bir şey söylemez; değer zaten yalnız artar.
+      if (aralik > 1e-9 * yuksek.abs() &&
+          widget.asset.type != AssetType.mevduat) ...[
         const SizedBox(height: SandikSpace.sm),
         DonemAralikCubugu(
           dusuk: dusuk,

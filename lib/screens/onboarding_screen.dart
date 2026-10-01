@@ -376,14 +376,16 @@ List<_Adim> _adimlariKur() {
       id: 'bugun',
       hedef: TourTarget.bugunKarti,
       baslik: 'Bugün ne oldu?',
-      govde: 'Solda tarih, yanında günün hareketi: sadece piyasa etkisi, '
-          'yatırdığın para sayılmaz. Altındaki satırlar: enflasyona göre '
-          'durumun, son 7 gün, artıdaki varlıkların ve hedefin. Hedef '
-          'satırı her gün orada, dokunup belirlersin; en altta yaklaşan '
-          'tarih. Her satırın altında ne anlama geldiği '
-          'yazar; dokununca ayrıntı açılır. Ortağına ya da Birlikte\'ye '
-          'geçince kart o defterin gününü anlatır, başında kimin olduğu '
-          'yazar.',
+      // 2026-10-01 "sakin pano" düzeni: satır listesi yerine üç kat.
+      govde: 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
+          'hareketi: sadece piyasa etkisi, yatırdığın para sayılmaz; '
+          'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
+          'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
+          'çizgi TÜFE), son 7 gün, artıdaki varlıkların. Sarı kutular '
+          'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '
+          'tarih. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
+          'Birlikte\'ye geçince kart o defterin gününü anlatır, başında '
+          'kimin olduğu yazar.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
@@ -399,7 +401,8 @@ List<_Adim> _adimlariKur() {
       baslik: 'Piyasa bir bakışta',
       govde: 'Dolar, euro, gram altın ve BIST 100 günlük değişimiyle en '
           'üstte. Şeride uzun basıp tut, sağa sola kaydır; bırakınca akmaya '
-          'devam eder. Sağ uçtaki "Ara" ile herhangi bir hisseyi, '
+          'devam eder. Bir süre dokunulmazsa durur, dokununca yeniden akar. '
+          'Sağ uçtaki "Ara" ile herhangi bir hisseyi, '
           'fonu, altını ya da kriptoyu ara; portföyüne eklemeden grafiğine '
           've istatistiklerine bak, istersen takibe al.',
       rozet: 'YENİ',

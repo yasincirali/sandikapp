@@ -6554,6 +6554,150 @@ abstract class AppLocalizations {
   /// **'Getirin, enflasyon farkı ve en iyi varlığın'**
   String get todayMonthlySummaryHint;
 
+  /// No description provided for @todayCloseAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'{close} kapanış'**
+  String todayCloseAt(String close);
+
+  /// No description provided for @todayClosedShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapalı'**
+  String get todayClosedShort;
+
+  /// No description provided for @todayMarketOnlyShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'piyasa etkisi'**
+  String get todayMarketOnlyShort;
+
+  /// No description provided for @todayGreenShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artıda'**
+  String get todayGreenShort;
+
+  /// No description provided for @todayWeekReadyShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özet hazır'**
+  String get todayWeekReadyShort;
+
+  /// No description provided for @todayGoalNewAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenisini seç'**
+  String get todayGoalNewAction;
+
+  /// No description provided for @todayMonthlyTileSubShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen ayın karnesi'**
+  String get todayMonthlyTileSubShort;
+
+  /// No description provided for @todayEventCpiTiny.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜİK · {date}'**
+  String todayEventCpiTiny(String date);
+
+  /// No description provided for @todayEventHolidayTiny.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tatil · {date}'**
+  String todayEventHolidayTiny(String date);
+
+  /// No description provided for @todayEventMonthEndTiny.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay sonu'**
+  String get todayEventMonthEndTiny;
+
+  /// No description provided for @todayMoveLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günün hareketi'**
+  String get todayMoveLabel;
+
+  /// No description provided for @todayRealYearly.
+  ///
+  /// In tr, this message translates to:
+  /// **'yıllık'**
+  String get todayRealYearly;
+
+  /// No description provided for @todayYourReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirin {pct}'**
+  String todayYourReturn(String pct);
+
+  /// No description provided for @todayCpiShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE {pct}'**
+  String todayCpiShort(String pct);
+
+  /// No description provided for @todayWeekUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} yükseliş'**
+  String todayWeekUp(String pct);
+
+  /// No description provided for @todayWeekDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} düşüş'**
+  String todayWeekDown(String pct);
+
+  /// No description provided for @todayWeekHintShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasanın portföyüne etkisi'**
+  String get todayWeekHintShort;
+
+  /// No description provided for @todayWeekReady.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık özet hazır'**
+  String get todayWeekReady;
+
+  /// No description provided for @todayGoalSetAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef belirle'**
+  String get todayGoalSetAction;
+
+  /// No description provided for @todayGoalSetSub.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kalanı her gün gör'**
+  String get todayGoalSetSub;
+
+  /// No description provided for @todayGoalProgressTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedefe %{pct}'**
+  String todayGoalProgressTitle(int pct);
+
+  /// No description provided for @todayGoalLeftShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'{left} kaldı'**
+  String todayGoalLeftShort(String left);
+
+  /// No description provided for @todayMonthlyTile.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} özeti'**
+  String todayMonthlyTile(String month);
+
+  /// No description provided for @todayMonthlyTileSub.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri, enflasyon, en iyi varlık'**
+  String get todayMonthlyTileSub;
+
   /// No description provided for @goalTitle.
   ///
   /// In tr, this message translates to:
@@ -7964,11 +8108,83 @@ abstract class AppLocalizations {
   /// **'Devlet katkısı hak ediş'**
   String get pensionVesting;
 
-  /// No description provided for @pensionVestingNext.
+  /// No description provided for @currentValueUpper.
   ///
   /// In tr, this message translates to:
-  /// **'{now} · {years} yıl sonra {next}'**
-  String pensionVestingNext(String now, int years, String next);
+  /// **'GÜNCEL DEĞER'**
+  String get currentValueUpper;
+
+  /// No description provided for @depositCardRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Faiz'**
+  String get depositCardRate;
+
+  /// No description provided for @depositCardRateValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{rate} brüt · stopaj %{wht}'**
+  String depositCardRateValue(String rate, String wht);
+
+  /// No description provided for @depositWithholdingManual.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu oranı sen girdin; vade ya da tarih değişince öneri üstüne yazılmaz.'**
+  String get depositWithholdingManual;
+
+  /// No description provided for @depositAccrualNoteDaily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.'**
+  String get depositAccrualNoteDaily;
+
+  /// No description provided for @depositAlreadyMatured.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemin vadesi {date} tarihinde dolmuş. Kaydettikten sonra karttan yeni dönemi başlatabilirsin.'**
+  String depositAlreadyMatured(String date);
+
+  /// No description provided for @depositRenewStartHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka vadeli hesabı vade gününde yeniler. Başka bir günde yenilediysen tarihi değiştir; aradaki günler faizsiz sayılır.'**
+  String get depositRenewStartHint;
+
+  /// No description provided for @pensionVestingNextIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'{now} · {duration} sonra {next}'**
+  String pensionVestingNextIn(String now, String duration, String next);
+
+  /// No description provided for @pensionVestingSoon.
+  ///
+  /// In tr, this message translates to:
+  /// **'{now} · bir ay içinde {next}'**
+  String pensionVestingSoon(String now, String next);
+
+  /// No description provided for @pensionYears.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} yıl'**
+  String pensionYears(int n);
+
+  /// No description provided for @pensionMonths.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ay'**
+  String pensionMonths(int n);
+
+  /// No description provided for @pensionYearsMonths.
+  ///
+  /// In tr, this message translates to:
+  /// **'{years} yıl {months} ay'**
+  String pensionYearsMonths(int years, int months);
+
+  /// No description provided for @dividendAboveGross.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net tutar brütten ({gross}) büyük olamaz. Alanı kontrol et.'**
+  String dividendAboveGross(String gross);
 
   /// No description provided for @pensionAddContribution.
   ///

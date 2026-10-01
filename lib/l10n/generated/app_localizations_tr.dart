@@ -3903,6 +3903,98 @@ class AppLocalizationsTr extends AppLocalizations {
       'Getirin, enflasyon farkı ve en iyi varlığın';
 
   @override
+  String todayCloseAt(String close) {
+    return '$close kapanış';
+  }
+
+  @override
+  String get todayClosedShort => 'Kapalı';
+
+  @override
+  String get todayMarketOnlyShort => 'piyasa etkisi';
+
+  @override
+  String get todayGreenShort => 'Artıda';
+
+  @override
+  String get todayWeekReadyShort => 'Özet hazır';
+
+  @override
+  String get todayGoalNewAction => 'Yenisini seç';
+
+  @override
+  String get todayMonthlyTileSubShort => 'Geçen ayın karnesi';
+
+  @override
+  String todayEventCpiTiny(String date) {
+    return 'TÜİK · $date';
+  }
+
+  @override
+  String todayEventHolidayTiny(String date) {
+    return 'Tatil · $date';
+  }
+
+  @override
+  String get todayEventMonthEndTiny => 'Ay sonu';
+
+  @override
+  String get todayMoveLabel => 'Günün hareketi';
+
+  @override
+  String get todayRealYearly => 'yıllık';
+
+  @override
+  String todayYourReturn(String pct) {
+    return 'Getirin $pct';
+  }
+
+  @override
+  String todayCpiShort(String pct) {
+    return 'TÜFE $pct';
+  }
+
+  @override
+  String todayWeekUp(String pct) {
+    return '$pct yükseliş';
+  }
+
+  @override
+  String todayWeekDown(String pct) {
+    return '$pct düşüş';
+  }
+
+  @override
+  String get todayWeekHintShort => 'Piyasanın portföyüne etkisi';
+
+  @override
+  String get todayWeekReady => 'Haftalık özet hazır';
+
+  @override
+  String get todayGoalSetAction => 'Hedef belirle';
+
+  @override
+  String get todayGoalSetSub => 'Kalanı her gün gör';
+
+  @override
+  String todayGoalProgressTitle(int pct) {
+    return 'Hedefe %$pct';
+  }
+
+  @override
+  String todayGoalLeftShort(String left) {
+    return '$left kaldı';
+  }
+
+  @override
+  String todayMonthlyTile(String month) {
+    return '$month özeti';
+  }
+
+  @override
+  String get todayMonthlyTileSub => 'Getiri, enflasyon, en iyi varlık';
+
+  @override
   String get goalTitle => 'Portföy hedefi';
 
   @override
@@ -4723,8 +4815,61 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pensionVesting => 'Devlet katkısı hak ediş';
 
   @override
-  String pensionVestingNext(String now, int years, String next) {
-    return '$now · $years yıl sonra $next';
+  String get currentValueUpper => 'GÜNCEL DEĞER';
+
+  @override
+  String get depositCardRate => 'Faiz';
+
+  @override
+  String depositCardRateValue(String rate, String wht) {
+    return '%$rate brüt · stopaj %$wht';
+  }
+
+  @override
+  String get depositWithholdingManual =>
+      'Bu oranı sen girdin; vade ya da tarih değişince öneri üstüne yazılmaz.';
+
+  @override
+  String get depositAccrualNoteDaily =>
+      'Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.';
+
+  @override
+  String depositAlreadyMatured(String date) {
+    return 'Bu dönemin vadesi $date tarihinde dolmuş. Kaydettikten sonra karttan yeni dönemi başlatabilirsin.';
+  }
+
+  @override
+  String get depositRenewStartHint =>
+      'Banka vadeli hesabı vade gününde yeniler. Başka bir günde yenilediysen tarihi değiştir; aradaki günler faizsiz sayılır.';
+
+  @override
+  String pensionVestingNextIn(String now, String duration, String next) {
+    return '$now · $duration sonra $next';
+  }
+
+  @override
+  String pensionVestingSoon(String now, String next) {
+    return '$now · bir ay içinde $next';
+  }
+
+  @override
+  String pensionYears(int n) {
+    return '$n yıl';
+  }
+
+  @override
+  String pensionMonths(int n) {
+    return '$n ay';
+  }
+
+  @override
+  String pensionYearsMonths(int years, int months) {
+    return '$years yıl $months ay';
+  }
+
+  @override
+  String dividendAboveGross(String gross) {
+    return 'Net tutar brütten ($gross) büyük olamaz. Alanı kontrol et.';
   }
 
   @override

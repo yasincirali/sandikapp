@@ -30,6 +30,21 @@
 // görsel olarak hiçbir şey değiştirmediği için "yakaladın" bilgisi oradan
 // gelir.
 //
+// ## Boşta durma: kimse bakmazken akmaz (2026-10-01, CPU/GPU raporu)
+// Cihaz ölçümü: Ana ekran boşta dururken bant 58 fps çiziyor ve
+// emülatörde bir çekirdeğin %64'ünü tutuyordu; Portföy ve Performans
+// sekmeleri boşta sıfırdı. Bant tek başına ekranı ve GPU'yu hiç uyutmuyordu
+// (`docs/CPU_GPU_VE_BOYUT_RAPORU_2026_10.md`). Karar: bant iki tur
+// ([PiyasaSeridi.bostaSuresi]) dokunulmadan aktıktan sonra YAVAŞLAYARAK
+// durur ([PiyasaSeridi.durusSabiti] ile üstel; sert durma 36 pt/sn'de bile
+// göze batan bir "takılma" olurdu). Kare hızı DÜŞÜRÜLMEDİ: akarken 60 fps
+// kalır, kullanıcı kararı "tüm animasyonlar 60 fps pürüzsüz".
+// Yeniden akış: şeride herhangi bir dokunuş (parmak iner inmez, jest
+// arenası beklenmez), uygulamanın öne gelmesi, Ana sekmesine dönüş
+// (`TickerMode`). Yeni fiyat turu bandı UYANDIRMAZ: nabız 30 sn'de bir
+// atıyor, boşta süresi 35 sn — fiyat uyandırsaydı seans boyunca hiç
+// durmazdı. Fiyat yerinde güncellenir, faz korunur (aşağıdaki bölüm).
+//
 // ## Akış: yalnızca boyama, her karede yerleşim YOK (2026-09-21)
 // İlk sürüm `ListView.builder` + her karede `jumpTo` idi. Bu, kare başına
 // scroll makinesinin tamamını çalıştırıyordu: sliver yerleşimi, üç scroll
@@ -131,6 +146,16 @@ class PiyasaSeridi extends StatefulWidget {
   /// Devredilen hızın üst sınırı (pt/sn). Sert bir fırlatış bandı
   /// okunamayacak hızda döndürmesin; sınır tur başına ~0,4 sn.
   static const azamiDevirHizi = 1500.0;
+
+  /// Dokunuşsuz akış süresi; dolunca bant yavaşlayıp durur (bkz. dosya başı
+  /// "Boşta durma"). İki tur: ilk turda dört değer okunur, ikincisi "canlı"
+  /// hissini verir; üçüncü turu kimse izlemez. 30 sn'lik fiyat nabzından
+  /// uzun olması bilinçli — nabız bandı uyandırmaz ama zamanlama çakışmasın.
+  static const bostaSuresi = Duration(seconds: 35);
+
+  /// Boşta durma yavaşlamasının zaman sabiti (sn). 0,6 sn: bant ~2 sn'de
+  /// (≈ 3 zaman sabiti) görünür biçimde durur, "fren" değil "sönme".
+  static const durusSabiti = 0.6;
 
   @override
   State<PiyasaSeridi> createState() => _PiyasaSeridiState();
@@ -342,20 +367,38 @@ class KayanBant extends StatefulWidget {
 
 /// Bant durumu — testler kayma ve akış durumunu buradan okur.
 class KayanBantState extends State<KayanBant>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final Ticker _ticker = createTicker(_kare);
 
   /// Toplam kayma (pt). Bant fazı bunun içerik genişliğine bölümünden
   /// kalanıdır; sınırsız büyür, saatlerce açık kalsa da taşmaz (double).
   final _kaydirma = ValueNotifier<double>(0);
 
-  /// Ticker'ın son başladığı andaki kayma — tutuş sonrası akış kaldığı
-  /// yerden devam eder, sıçramaz.
+  /// Fazın başladığı andaki kayma — tutuş sonrası akış kaldığı yerden
+  /// devam eder, sıçramaz.
   double _taban = 0;
 
-  /// Ticker başladığında devredilen hız (pt/sn). Normal akışta
-  /// [PiyasaSeridi.hiz]; bırakıştan sonra parmağın hızı.
+  /// Faz başında devredilen hız (pt/sn). Normal akışta [PiyasaSeridi.hiz];
+  /// bırakıştan sonra parmağın hızı; boşta durmaya girerken o anki hız.
   double _baslangicHizi = PiyasaSeridi.hiz;
+
+  /// Fazın yöneldiği hız (pt/sn): akışta [PiyasaSeridi.hiz], boşta durmada 0.
+  double _hedefHiz = PiyasaSeridi.hiz;
+
+  /// Fazın ticker zamanındaki başlangıcı. Faz değişimi ticker'ı yeniden
+  /// başlatmaz (tik içinde stop/start yok); süre buradan ölçülür.
+  Duration _fazT0 = Duration.zero;
+
+  /// Son karedeki anlık hız — dışarıdan uyandırırken (dokunuş, öne geliş)
+  /// akış bu hızdan sürer, sıçramaz.
+  double _sonHiz = 0;
+
+  /// Bant boşta süresi dolduğu için durdu mu (hareketi azalt ya da tutuş
+  /// değil). Test ve teşhis için.
+  bool _bostaDurdu = false;
+
+  /// Son bilinen `TickerMode` — gizli sekmeden dönüşü yakalamak için.
+  bool _tickerModuAcik = true;
 
   /// Parmak bandı tutuyor mu (uzun basış sürüyor).
   bool _tutuluyor = false;
@@ -367,6 +410,10 @@ class KayanBantState extends State<KayanBant>
   @visibleForTesting
   bool get akiyor => _ticker.isActive;
 
+  /// Boşta süresi dolduğu için durdu mu — test için.
+  @visibleForTesting
+  bool get bostaDurdu => _bostaDurdu && !_ticker.isActive;
+
   /// Parmak bandı tutuyor mu — test için.
   @visibleForTesting
   bool get tutuluyor => _tutuluyor;
@@ -376,32 +423,88 @@ class KayanBantState extends State<KayanBant>
   double get kaydirma => _kaydirma.value;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Hareketi azalt: bant durur, elle kaydırılır (iOS HIG: Motion).
     final dur = MediaQuery.disableAnimationsOf(context);
     if (dur && _ticker.isActive) _ticker.stop();
-    if (!dur && !_ticker.isActive && !_tutuluyor) _baslat();
+    // Gizli sekmede ticker susturulur ama `isActive` kalır; sekmeye dönünce
+    // ticker'ın saati sıçrar ve boşta süresi dolmuş görünür. Dönüş bir
+    // "dokunuş" sayılır: saat sıfırlanır, bant akar.
+    final acik = TickerMode.valuesOf(context).enabled;
+    final sekmeyeDonus = acik && !_tickerModuAcik;
+    _tickerModuAcik = acik;
+    if (dur || _tutuluyor) return;
+    if (!_ticker.isActive || sekmeyeDonus) _uyandir();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Öne geliş: arka planda kare yoktu, ticker saati sıçradı; boşta
+    // durmuşsa da kullanıcı yeni geldi — her iki durumda yeniden akar.
+    if (state == AppLifecycleState.resumed) _uyandir();
+  }
+
+  /// Dokunuş / öne geliş / sekmeye dönüş: boşta saatini sıfırlar, bant
+  /// durmuşsa o anki hızdan (durmuşsa 0'dan yumuşak kalkışla) yeniden akar.
+  void _uyandir() {
+    if (!mounted || _tutuluyor || MediaQuery.disableAnimationsOf(context)) {
+      return;
+    }
+    final v = _ticker.isActive ? _sonHiz : 0.0;
+    _ticker.stop();
+    _baslat(hiz: v);
+  }
+
+  /// Ticker'ı durmuş hâlden başlatır; [hiz] devredilen hız, hedef akış hızı.
   void _baslat({double hiz = PiyasaSeridi.hiz}) {
     _taban = _kaydirma.value;
     _baslangicHizi = hiz;
+    _hedefHiz = PiyasaSeridi.hiz;
+    _fazT0 = Duration.zero;
+    _bostaDurdu = false;
     _ticker.start();
   }
 
-  /// Kare: kayma = taban + ∫ v(t) dt, v(t) = hız + (v₀ − hız)·e^(−t/τ).
-  /// Normal akışta v₀ = hız ve ifade `taban + hız × t`'ye iner. Zamana
-  /// bağlı (kare farkına değil): düşen bir kare bandı yavaşlatmaz, sonraki
-  /// kare doğru konuma oturur. Arka plandan dönüşte faz sıçrar ama bant
-  /// döngüsel — hangi öğede olduğunun önemi yok.
+  /// Tik içinde faz değişimi: ticker sürer, saat [simdi]'den ölçülür.
+  void _fazaGec(Duration simdi, {required double hiz, required double hedef}) {
+    _taban = _kaydirma.value;
+    _baslangicHizi = hiz;
+    _hedefHiz = hedef;
+    _fazT0 = simdi;
+  }
+
+  /// Kare: kayma = taban + ∫ v(t) dt, v(t) = hedef + (v₀ − hedef)·e^(−t/τ).
+  /// Normal akışta v₀ = hedef = hız ve ifade `taban + hız × t`'ye iner.
+  /// Zamana bağlı (kare farkına değil): düşen bir kare bandı yavaşlatmaz,
+  /// sonraki kare doğru konuma oturur. Boşta durma aynı formülün hedef = 0
+  /// hâli: hız üstel söner, kayma asimptotik yerleşir, ticker durur.
   void _kare(Duration gecen) {
-    const hiz = PiyasaSeridi.hiz;
-    const tau = PiyasaSeridi.devirSabiti;
-    final t = gecen.inMicroseconds / 1e6;
-    _kaydirma.value = _taban +
-        hiz * t +
-        (_baslangicHizi - hiz) * tau * (1 - math.exp(-t / tau));
+    final hedef = _hedefHiz;
+    final tau = hedef == 0 ? PiyasaSeridi.durusSabiti : PiyasaSeridi.devirSabiti;
+    final t = (gecen - _fazT0).inMicroseconds / 1e6;
+    final sonum = math.exp(-t / tau);
+    _sonHiz = hedef + (_baslangicHizi - hedef) * sonum;
+    _kaydirma.value =
+        _taban + hedef * t + (_baslangicHizi - hedef) * tau * (1 - sonum);
+    if (hedef == 0) {
+      // Altı zaman sabiti: kalan hız binde üçün altında, göz ayırt etmez.
+      if (t >= 6 * tau) {
+        _sonHiz = 0;
+        _bostaDurdu = true;
+        _ticker.stop();
+      }
+      return;
+    }
+    if (gecen - _fazT0 >= PiyasaSeridi.bostaSuresi) {
+      _fazaGec(gecen, hiz: _sonHiz, hedef: 0);
+    }
   }
 
   /// Uzun basış: bant parmağa yapışır. Akış durur, faz olduğu yerde kalır.
@@ -438,6 +541,7 @@ class KayanBantState extends State<KayanBant>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _ticker.dispose();
     _kaydirma.dispose();
     super.dispose();
@@ -449,7 +553,13 @@ class KayanBantState extends State<KayanBant>
     final hareketiAzalt = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       label: ogeler.map((o) => o.metin).join(', '),
-      child: GestureDetector(
+      // Listener, GestureDetector'ın DIŞINDA: parmak iner inmez uyandırır,
+      // jest arenasının (uzun basış mı, sayfa kaydırma mı) kararını
+      // beklemez. Sayfayı kaydırırken bandın üstünden geçen parmak da
+      // bandı uyandırır — kullanıcı ekranda, akış yerinde.
+      child: Listener(
+        onPointerDown: (_) => _uyandir(),
+        child: GestureDetector(
         onLongPressStart: _tut,
         onLongPressMoveUpdate: _tutarkenKaydir,
         onLongPressEnd: _birak,
@@ -497,6 +607,7 @@ class KayanBantState extends State<KayanBant>
               ),
             ),
           ),
+        ),
         ),
       ),
     );

@@ -98,6 +98,11 @@ class Position {
       // Komisyon toplamı taşınmazsa pozisyon Asset'e çevrildiği anda
       // maliyetten düşer ve kâr olduğundan yüksek görünür.
       commission: totalCommission,
+      // Mevduat/BES sözleşme kartı bu kimlikle bulunur (`SozlesmeKarti`).
+      // Taşınmazsa portföy satırından açılan varlık sayfası sözleşmesiz bir
+      // piyasa varlığı gibi görünüyordu: dönem kartı, vade, yenileme yoktu
+      // (2026-10-01 emülatör testi).
+      sozlesmeId: r.sozlesmeId,
     );
   }
 }
