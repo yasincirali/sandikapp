@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/bes_hesabi.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
@@ -110,8 +111,18 @@ void main() {
     expect(find.text('Toplam birikim'), findsOneWidget);
     expect(find.text('Senin katkın'), findsOneWidget);
     expect(find.text('Devlet'), findsOneWidget);
-    expect(find.textContaining('3 yıl sonra'), findsOneWidget,
-        reason: '7. yıl: %35, 3 yıl sonra %60');
+    // Kalan süre ay hassasiyetinde (2026-10-01): eski "3 yıl sonra" tam yıl
+    // farkıydı; giriş yıl−7'nin 1 Ocak'ı olduğundan %60 eşiğine çoğu gün
+    // "2 yıl N ay" kalır. Beklenen metin aynı saf hesaptan kurulur.
+    final kalan = BesHesabi.sonrakiBasamakSuresi(
+        DateTime(gun.year - 7, 1, 1), DateTime.now())!;
+    final sure = kalan.ay == 0
+        ? '${kalan.yil} yıl'
+        : kalan.yil == 0
+            ? '${kalan.ay} ay'
+            : '${kalan.yil} yıl ${kalan.ay} ay';
+    expect(find.textContaining('$sure sonra %60'), findsOneWidget,
+        reason: '7. yıl: %35, $sure sonra %60');
     expect(find.text('Bu ayın katkısı henüz eklenmedi.'), findsOneWidget);
     expect(find.text('Bu ayın katkısını ekle'), findsOneWidget);
   });

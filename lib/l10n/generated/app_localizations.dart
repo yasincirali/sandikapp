@@ -7964,11 +7964,83 @@ abstract class AppLocalizations {
   /// **'Devlet katkısı hak ediş'**
   String get pensionVesting;
 
-  /// No description provided for @pensionVestingNext.
+  /// No description provided for @currentValueUpper.
   ///
   /// In tr, this message translates to:
-  /// **'{now} · {years} yıl sonra {next}'**
-  String pensionVestingNext(String now, int years, String next);
+  /// **'GÜNCEL DEĞER'**
+  String get currentValueUpper;
+
+  /// No description provided for @depositCardRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Faiz'**
+  String get depositCardRate;
+
+  /// No description provided for @depositCardRateValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{rate} brüt · stopaj %{wht}'**
+  String depositCardRateValue(String rate, String wht);
+
+  /// No description provided for @depositWithholdingManual.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu oranı sen girdin; vade ya da tarih değişince öneri üstüne yazılmaz.'**
+  String get depositWithholdingManual;
+
+  /// No description provided for @depositAccrualNoteDaily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.'**
+  String get depositAccrualNoteDaily;
+
+  /// No description provided for @depositAlreadyMatured.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu dönemin vadesi {date} tarihinde dolmuş. Kaydettikten sonra karttan yeni dönemi başlatabilirsin.'**
+  String depositAlreadyMatured(String date);
+
+  /// No description provided for @depositRenewStartHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka vadeli hesabı vade gününde yeniler. Başka bir günde yenilediysen tarihi değiştir; aradaki günler faizsiz sayılır.'**
+  String get depositRenewStartHint;
+
+  /// No description provided for @pensionVestingNextIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'{now} · {duration} sonra {next}'**
+  String pensionVestingNextIn(String now, String duration, String next);
+
+  /// No description provided for @pensionVestingSoon.
+  ///
+  /// In tr, this message translates to:
+  /// **'{now} · bir ay içinde {next}'**
+  String pensionVestingSoon(String now, String next);
+
+  /// No description provided for @pensionYears.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} yıl'**
+  String pensionYears(int n);
+
+  /// No description provided for @pensionMonths.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ay'**
+  String pensionMonths(int n);
+
+  /// No description provided for @pensionYearsMonths.
+  ///
+  /// In tr, this message translates to:
+  /// **'{years} yıl {months} ay'**
+  String pensionYearsMonths(int years, int months);
+
+  /// No description provided for @dividendAboveGross.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net tutar brütten ({gross}) büyük olamaz. Alanı kontrol et.'**
+  String dividendAboveGross(String gross);
 
   /// No description provided for @pensionAddContribution.
   ///

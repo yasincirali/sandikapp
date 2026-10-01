@@ -43,6 +43,28 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
+  /// Mevduata dönem eklendi (yenileme, oran değişikliği): seri sözleşmeden
+  /// üretildiği için ekranın tuttuğu dönem serileri bayatladı. Hepsi atılır,
+  /// seçili dönem ve çipler yeniden yüklenir. `HistoryService` önbelleğini
+  /// `mevduatYenile` zaten unutturdu (`sembolUnut`).
+  ///
+  /// Neden (2026-10-01 emülatör testi): yenilemeden sonra grafik eski düz
+  /// çizgide kalıyor, geriye dönük faiz 1H/1A/BUGÜN'de +%2,89 "bugünkü
+  /// kazanç" diye görünüyordu; sayfadan çıkıp girince düzeliyordu.
+  void _sozlesmeSerileriniTazele() {
+    // Üçü birlikte: dönem başı (`_donemIlk`) kalırsa BUGÜN kartı eski dönem
+    // başından yeni birim değere yüzde yazmaya devam eder.
+    _donemSerileri.clear();
+    _donemIlk.clear();
+    _donemIstatistikleri.clear();
+    _guncelle(() {
+      _lastHistory = null;
+      _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
+    });
+    CrashReporter.arkaPlan(_digerDonemleriYukle(),
+        reason: 'AssetDetail.sozlesmeTazele');
+  }
+
   void _selectPeriod(int idx) {
     // Eski sekme gün içi miydi? Index güncellenmeden ÖNCE okunmalı.
     final oncekiGunIci = _gunIciMi;

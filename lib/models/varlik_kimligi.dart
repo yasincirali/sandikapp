@@ -50,6 +50,10 @@ class VarlikKimligi {
   /// bir şey ifade etmez.
   String get kisaEtiket {
     final t = ticker.trim();
+    // Mevduatın sembolü sözleşme id'sidir (`MEVDUAT:<uuid>`) — kullanıcıya
+    // bir şey söylemez; varlık sayfasının başlığında uuid yazıyordu
+    // (2026-10-01 emülatör testi). Adı ("Enpara · Vadeli") gösterilir.
+    if (mevduatSozlesmeId(t) != null) return name;
     if (t.isNotEmpty) {
       final sade =
           t.contains(':') ? t.split(':').last : t.replaceAll('.IS', '');

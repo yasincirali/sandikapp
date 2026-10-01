@@ -44,6 +44,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
   final _aylik = TextEditingController();
   final _gun = TextEditingController();
   TefasFund? _dkFonu;
+  bool _denendi = false;
   DateTime _giris = DateTime.now();
   bool _otomatik = false;
   String? _dagilimHatasi;
@@ -102,7 +103,10 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
     } else if (!BesHesabi.dagilimGecerli(dagilim)) {
       dagilimHatasi = l10n.pensionShareError;
     }
-    setState(() => _dagilimHatasi = dagilimHatasi);
+    setState(() {
+      _dagilimHatasi = dagilimHatasi;
+      if (!formGecerli) _denendi = true;
+    });
     if (!formGecerli || dagilimHatasi != null) return false;
 
     final kurum = _sirket.text.trim();
@@ -151,6 +155,11 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
     final l10n = context.l10n;
     return Form(
       key: _form,
+      // Mevduat formuyla aynı: ilk başarısız denemeden sonra hata metni alan
+      // düzeltilince kalkar (2026-10-01 emülatör testi).
+      autovalidateMode: _denendi
+          ? AutovalidateMode.onUserInteraction
+          : AutovalidateMode.disabled,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -179,11 +179,14 @@ class _MevduatGovdesi extends ConsumerWidget {
                 : l10n.depositPeriodN(MevduatHesabi.donemSayisi(donemler)),
           ),
           const SizedBox(height: SandikSpace.smd),
+          // Formun alan etiketleri ("Yıllık faiz (brüt, %)", "Stopaj (%)")
+          // kartta "42 · Stopaj (%) 12" diye okunuyordu (2026-10-01
+          // emülatör testi); kartın kendi etiketi ve değer kalıbı var.
           SozlesmeOzetSatiri(
-            etiket: l10n.depositRate,
-            deger: '${fmtNumFlex(son.yillikFaiz, maxDigits: 2)} · '
-                '${l10n.depositWithholding} '
-                '${fmtNumFlex(son.stopaj, maxDigits: 2)}',
+            etiket: l10n.depositCardRate,
+            deger: l10n.depositCardRateValue(
+                fmtNumFlex(son.yillikFaiz, maxDigits: 2),
+                fmtNumFlex(son.stopaj, maxDigits: 2)),
           ),
           if (vade != null)
             SozlesmeOzetSatiri(
@@ -296,7 +299,8 @@ class _MevduatGovdesi extends ConsumerWidget {
             sozlesmeId: s.id,
             yillikFaiz: sonuc.faiz,
             stopaj: sonuc.stopaj,
-            vadeGun: sonuc.gun);
+            vadeGun: sonuc.gun,
+            baslangic: sonuc.bas);
       }
       if (context.mounted) {
         sandikSnack(context,
@@ -327,6 +331,10 @@ class _MevduatGovdesi extends ConsumerWidget {
       if (context.mounted) {
         sandikSnack(context, l10n.depositWithdrawn,
             kind: SandikSnackKind.success);
+        // Çekilen mevduatın sayfasında kalmanın anlamı yok: sayfa açık
+        // pozisyonu (bugünkü değer ₺100.086) göstermeye devam ediyordu
+        // (2026-10-01 emülatör testi). Portföye dönülür; satır kalkmıştır.
+        await Navigator.of(context).maybePop();
       }
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'SozlesmeKarti.cek');
@@ -337,7 +345,7 @@ class _MevduatGovdesi extends ConsumerWidget {
   }
 }
 
-typedef _YeniDonem = ({double faiz, double stopaj, int? gun});
+typedef _YeniDonem = ({double faiz, double stopaj, int? gun, DateTime bas});
 
 /// Yenileme / oran güncelleme sayfası.
 class _YenilemeSayfasi extends StatefulWidget {
@@ -362,8 +370,21 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
   late final _stopaj = TextEditingController(
       text: fmtNumFlex(onerilenStopaj(_yeniBaslangic, _gun), maxDigits: 2));
 
-  /// Yeni dönemin başı — `mevduatYenile`/`mevduatOranGuncelle` ile aynı kural.
-  DateTime get _yeniBaslangic => widget.onceki.vadeSonu ?? DateTime.now();
+  /// Yeni dönemin başı. Varsayılan `mevduatYenile` ile aynı kural (banka
+  /// vadeli hesabı vade gününde yeniler); kullanıcı değiştirebilir.
+  ///
+  /// Neden seçilebilir (2026-10-01 emülatör testi): 7 ay önce vadesi dolup
+  /// kendisi bugün yenileyen kullanıcı, 32 günlük dönemleri tek tek girmek
+  /// zorunda kalıyordu — her biri yine geçmişte kalıp "vadesi doldu"
+  /// diyordu. Seçilen gün ile eski vade arasındaki günler faizsiz, düz.
+  /// Vadesizde (oran değişikliği) yeni oran bugünden işler, seçim yok.
+  late DateTime _yeniBaslangic = widget.onceki.vadesiz
+      ? dayKey(DateTime.now())
+      : dayKey(widget.onceki.vadeSonu ?? DateTime.now());
+
+  /// Kullanıcı stopajı elle değiştirdiyse vade/tarih değişikliği öneriyi
+  /// üstüne yazmaz (formdaki kural).
+  bool _stopajElle = false;
 
   @override
   void dispose() {
@@ -374,7 +395,13 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
 
   void _gunSec(int g) {
     setState(() => _gun = g);
-    _stopaj.text = fmtNumFlex(onerilenStopaj(_yeniBaslangic, g), maxDigits: 2);
+    _stopajOner();
+  }
+
+  void _stopajOner() {
+    if (_stopajElle) return;
+    _stopaj.text =
+        fmtNumFlex(onerilenStopaj(_yeniBaslangic, _gun), maxDigits: 2);
   }
 
   @override
@@ -431,6 +458,20 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                   ],
                 ),
               ],
+              if (!vadesiz) ...[
+                const SizedBox(height: SandikSpace.md),
+                SozlesmeTarihi(
+                  etiket: l10n.depositStart,
+                  tarih: _yeniBaslangic,
+                  ilk: dayKey(widget.onceki.baslangic)
+                      .add(const Duration(days: 1)),
+                  degisti: (d) => setState(() {
+                    _yeniBaslangic = dayKey(d);
+                    _stopajOner();
+                  }),
+                ),
+                SozlesmeNotu(l10n.depositRenewStartHint),
+              ],
               const SizedBox(height: SandikSpace.md),
               SozlesmeEtiketi(l10n.depositWithholding),
               SozlesmeAlani(
@@ -438,6 +479,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                 ipucu: '0',
                 sonek: '%',
                 sayi: true,
+                degisti: (_) => _stopajElle = true,
                 dogrula: (v) {
                   final x = parseTrNumber(v ?? '');
                   return x == null || x < 0 || x > 100
@@ -455,6 +497,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                     faiz: parseTrNumber(_faiz.text)!,
                     stopaj: parseTrNumber(_stopaj.text)!,
                     gun: vadesiz ? null : _gun,
+                    bas: _yeniBaslangic,
                   ));
                 },
               ),
@@ -518,7 +561,7 @@ class _BesGovdesi extends ConsumerWidget {
     final simdi = DateTime.now();
     final d = besDokumu(s, lotlar, simdi);
     final yil = BesHesabi.tamYil(s.baslangic, simdi) + 1;
-    final sonraki = BesHesabi.sonrakiBasamak(s.baslangic, simdi);
+    final sonraki = BesHesabi.sonrakiBasamakSuresi(s.baslangic, simdi);
     final n = ref.read(sozlesmeProvider.notifier);
     final katkiTarihleri = n.katkiTarihleri(s.id);
     final katkiBekliyor = BesHesabi.katkiBekleniyor(
@@ -595,8 +638,18 @@ class _BesGovdesi extends ConsumerWidget {
             etiket: l10n.pensionVesting,
             deger: sonraki == null
                 ? fmtPct(d.hakEdis, digits: 0)
-                : l10n.pensionVestingNext(fmtPct(d.hakEdis, digits: 0),
-                    sonraki.yil, fmtPct(sonraki.oran, digits: 0)),
+                : sonraki.yil == 0 && sonraki.ay == 0
+                    ? l10n.pensionVestingSoon(fmtPct(d.hakEdis, digits: 0),
+                        fmtPct(sonraki.oran, digits: 0))
+                    : l10n.pensionVestingNextIn(
+                        fmtPct(d.hakEdis, digits: 0),
+                        sonraki.ay == 0
+                            ? l10n.pensionYears(sonraki.yil)
+                            : sonraki.yil == 0
+                                ? l10n.pensionMonths(sonraki.ay)
+                                : l10n.pensionYearsMonths(
+                                    sonraki.yil, sonraki.ay),
+                        fmtPct(sonraki.oran, digits: 0)),
           ),
           if (s.dkFonKodu == null) SozlesmeNotu(l10n.pensionNoGovFund),
           if (s.acik) ...[

@@ -4723,8 +4723,61 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pensionVesting => 'Devlet katkısı hak ediş';
 
   @override
-  String pensionVestingNext(String now, int years, String next) {
-    return '$now · $years yıl sonra $next';
+  String get currentValueUpper => 'GÜNCEL DEĞER';
+
+  @override
+  String get depositCardRate => 'Faiz';
+
+  @override
+  String depositCardRateValue(String rate, String wht) {
+    return '%$rate brüt · stopaj %$wht';
+  }
+
+  @override
+  String get depositWithholdingManual =>
+      'Bu oranı sen girdin; vade ya da tarih değişince öneri üstüne yazılmaz.';
+
+  @override
+  String get depositAccrualNoteDaily =>
+      'Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.';
+
+  @override
+  String depositAlreadyMatured(String date) {
+    return 'Bu dönemin vadesi $date tarihinde dolmuş. Kaydettikten sonra karttan yeni dönemi başlatabilirsin.';
+  }
+
+  @override
+  String get depositRenewStartHint =>
+      'Banka vadeli hesabı vade gününde yeniler. Başka bir günde yenilediysen tarihi değiştir; aradaki günler faizsiz sayılır.';
+
+  @override
+  String pensionVestingNextIn(String now, String duration, String next) {
+    return '$now · $duration sonra $next';
+  }
+
+  @override
+  String pensionVestingSoon(String now, String next) {
+    return '$now · bir ay içinde $next';
+  }
+
+  @override
+  String pensionYears(int n) {
+    return '$n yıl';
+  }
+
+  @override
+  String pensionMonths(int n) {
+    return '$n ay';
+  }
+
+  @override
+  String pensionYearsMonths(int years, int months) {
+    return '$years yıl $months ay';
+  }
+
+  @override
+  String dividendAboveGross(String gross) {
+    return 'Net tutar brütten ($gross) büyük olamaz. Alanı kontrol et.';
   }
 
   @override
