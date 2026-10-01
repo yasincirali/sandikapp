@@ -305,9 +305,10 @@ struct SandikHomeWidget: Widget {
 //   teknolojilerinden faydalanmalı"):
 //     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`), üstünde
 //       kartın alt yarısına YAYILMIŞ günün eğrisi — sayı grafiğin üstünde.
-//     * Seans açıkken canlı çubuk + kapanışa geri sayım
-//       (`ProgressView/Text(timerInterval:)`): uygulama açılmadan saniye
-//       saniye akar, güncelleme bütçesi harcamaz.
+//     * Seans açıkken kapanışa geri sayım (`Text(timerInterval:)`):
+//       uygulama açılmadan saniye saniye akar, güncelleme bütçesi
+//       harcamaz. Üstündeki ince seans çubuğu kaldırıldı (kullanıcı
+//       kararı 2026-10-01: "seans çizgisini kaldıralım").
 //     * Zaman çizelgesi 18:00'de ikinci girdiyle kendiliğinden "kapalı"
 //       görünüme geçer; kapalıyken sonraki açılışın günü ve saati.
 //     * Tutar `privacySensitive`: telefon kilitliyken sistem örter, Face ID
@@ -446,7 +447,8 @@ struct SandikKilitView: View {
     // Başlık satırı kalktı: kart zaten sandık'ın (kilit ekranı düzenleyicisi
     // uygulama adını gösterir), logo alt satırın başına küçük iner. Yüzde
     // ~29 pt, alt satır tek sıra: logo + tutar solda, geri sayım / açılış
-    // sağda; seans çubuğu ikisinin arasında ince bir çizgi.
+    // sağda. Aradaki ince seans çubuğu 2026-10-01'de kaldırıldı (kullanıcı
+    // kararı); kapanış bilgisi sağdaki geri sayımda kalıyor.
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -472,7 +474,6 @@ struct SandikKilitView: View {
             VStack(alignment: .leading, spacing: 1) {
                 sayi
                 Spacer(minLength: 0)
-                seansCubugu
                 altSatir
             }
             .padding(.horizontal, 8)
@@ -510,22 +511,6 @@ struct SandikKilitView: View {
                     .contentTransition(.numericText(value: yuzdeSayi))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .widgetAccentable()
-        }
-    }
-
-    /// Seans açıkken kapanışa kadar dolan ince çubuk — uygulama kapalıyken de
-    /// akar (`timerInterval`), güncelleme bütçesi harcamaz.
-    @ViewBuilder
-    private var seansCubugu: some View {
-        if entry.hasData, !entry.isHidden, entry.isMarketOpen,
-           let seans = BistSeans.aralik(), seans.upperBound > entry.date {
-            ProgressView(timerInterval: seans, countsDown: false) {
-                EmptyView()
-            } currentValueLabel: {
-                EmptyView()
-            }
-            .progressViewStyle(.linear)
             .widgetAccentable()
         }
     }

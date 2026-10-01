@@ -104,7 +104,8 @@ class HomeWidgetService {
   /// Portföy yalnızca borsa ürünü mü (hisse/fon/BES)? "Piyasa kapalı"
   /// ibaresi ve gri nokta YALNIZCA o zaman (kullanıcı kararı 2026-10-01,
   /// bkz. `yalnizcaBorsa`). [_kMarketOpen] BIST seansını anlatmaya devam
-  /// eder — iOS kilit widget'ının seans çubuğu/geri sayımı ona bakar.
+  /// eder — iOS kilit widget'ının kapanış geri sayımı ona bakar (seans
+  /// çubuğu 2026-10-01'de kaldırıldı).
   /// Native taraf anahtar yoksa `true` varsayar (eski davranış).
   static const _kYalnizBorsa = 'sandik_yalniz_borsa';
 
