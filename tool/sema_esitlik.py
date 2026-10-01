@@ -85,6 +85,10 @@ def main() -> int:
     token = os.environ.get("SUPABASE_ACCESS_TOKEN") if api else None
     if api and not token:
         raise SystemExit("API modu için SUPABASE_ACCESS_TOKEN gerekli.")
+    # Frankfurt ayrı hesapta olabilir (2026-10-01: ortak token 403); `_EU`
+    # varsa onunla, yoksa ortak token'la sorgulanır.
+    tokenlar = {"tokyo": token,
+                "frankfurt": (os.environ.get("SUPABASE_ACCESS_TOKEN_EU") or token) if api else None}
     ref_dosyasi = KOK / "supabase/.temp/project-ref"
     onceki = ref_dosyasi.read_text().strip() if ref_dosyasi.exists() else None
     ayrinti = "--ayrinti" in sys.argv
@@ -92,7 +96,7 @@ def main() -> int:
     tanimlar: dict[str, dict[tuple, str]] = {}
     try:
         for ad, ref in PROJELER.items():
-            satirlar = api_ile(ref, token) if token else cli_ile(ref)
+            satirlar = api_ile(ref, tokenlar[ad]) if token else cli_ile(ref)
             izler[ad] = {(r["tur"], r["ad"]): r["ozet"] for r in satirlar}
             tanimlar[ad] = {(r["tur"], r["ad"]): r.get("tanim") or "" for r in satirlar}
             print(f"{ad:10} {len(satirlar)} satır")

@@ -16,8 +16,11 @@
 # kırmızı. Tek hedef yalnız onarım (repair) gibi projeye özgü işler için.
 #
 # Gerekli secret'lar (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens (iki proje
-#                            aynı hesapta; tek token ikisine de yeter)
+#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. Tokyo'yu
+#                            (ve _EU yoksa Frankfurt'u da) gören hesaptan.
+#   SUPABASE_ACCESS_TOKEN_EU — isteğe bağlı: Frankfurt'u gören hesabın token'ı.
+#                            İki proje ayrı hesaptaysa şart (2026-10-01'de ortak
+#                            token Frankfurt'ta 403 aldı); yoksa ortağa düşülür.
 #   SUPABASE_DB_PASSWORD   — yalnız Tokyo, isteğe bağlı: güncel CLI şifre
 #                            yerine token'la geçici giriş rolü kurar
 # Proje ref'leri secret DEĞİL (uygulamada zaten açık, supabase_config.dart);
@@ -82,7 +85,10 @@ jobs:
       matrix:
         hedef: ${{ fromJSON(inputs.hedef == 'ikisi' && '["frankfurt","tokyo"]' || format('["{0}"]', inputs.hedef)) }}
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Frankfurt başka bir Supabase hesabında olabilir (2026-10-01: ortak
+      # token Frankfurt'ta 403 aldı). `_EU` tanımlıysa Frankfurt onu kullanır,
+      # değilse ortak token'a düşer — secret eklenene kadar davranış aynı.
+      SUPABASE_ACCESS_TOKEN: ${{ matrix.hedef == 'frankfurt' && secrets.SUPABASE_ACCESS_TOKEN_EU || secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ matrix.hedef == 'tokyo' && secrets.SUPABASE_DB_PASSWORD || '' }}
       PROJECT_REF: ${{ matrix.hedef == 'tokyo' && 'ybdbzouzhzwthjgwlbmk' || 'ynwymnpdiwudrlxfrmuo' }}
     steps:
@@ -220,6 +226,7 @@ jobs:
     timeout-minutes: 10
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
     steps:
       - uses: actions/checkout@v4
       - name: Şema parmak izi — Tokyo = Frankfurt
