@@ -26,7 +26,9 @@ permissions:
 jobs:
   build_and_upload:
     runs-on: macos-latest
-    timeout-minutes: 60
+    # 90: harici gruba otomatik gönderimde build'in işlenmesi beklenir
+    # (genelde 15–30 dk) — derleme + bekleme 60'ı aşabilir.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
@@ -159,6 +161,33 @@ jobs:
           # yazılamadı, CI kırmızı göründü. (2026-09-17)
           git pull --rebase --autostash origin main
           git push origin HEAD:main
+
+      # Harici (external) TestFlight grubu — yasin'in kararı (2026-10-01):
+      # her main birleşmesi harici testçilere de gitsin, Android kapalı
+      # testle aynı anda. Repo değişkeni TESTFLIGHT_HARICI_GRUP boşsa adım
+      # atlanır ve eski davranış (yalnız dahili) birebir sürer. Build ASC'de
+      # işlenene dek beklenir; yükleme ve sürüm bump'ı bu adımdan ÖNCE
+      # bittiği için burada bir hata yalnız harici gönderimi etkiler.
+      - name: TestFlight — harici gruba gönder
+        if: success() && vars.TESTFLIGHT_HARICI_GRUP != '' && env.TF_BUILD_NUMBER != ''
+        working-directory: ios
+        timeout-minutes: 50
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ITC_TEAM_ID: ${{ secrets.ITC_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          FASTLANE_HIDE_CHANGELOG: "1"
+          GRUPLAR: ${{ vars.TESTFLIGHT_HARICI_GRUP }}
+          NOTLAR: ${{ vars.TESTFLIGHT_HARICI_NOT }}
+        run: |
+          bundle exec fastlane harici_dagit \
+            groups:"$GRUPLAR" \
+            build_number:"$TF_BUILD_NUMBER" \
+            changelog:"$NOTLAR" \
+            bekle:true
 
       - name: Upload IPA artifact (debug reference)
         if: always()
