@@ -4756,8 +4756,73 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pensionVesting => 'Government contribution vesting';
 
   @override
-  String pensionVestingNext(String now, int years, String next) {
-    return '$now · $next in $years years';
+  String get currentValueUpper => 'CURRENT VALUE';
+
+  @override
+  String get depositCardRate => 'Interest';
+
+  @override
+  String depositCardRateValue(String rate, String wht) {
+    return '$rate% gross · $wht% withholding';
+  }
+
+  @override
+  String get depositWithholdingManual =>
+      'You entered this rate; changing the term or date won\'t overwrite it.';
+
+  @override
+  String get depositAccrualNoteDaily =>
+      'The value grows every day by the net interest; a daily-interest account pays it in every day.';
+
+  @override
+  String depositAlreadyMatured(String date) {
+    return 'This term matured on $date. After saving, start the next period from the card.';
+  }
+
+  @override
+  String get depositRenewStartHint =>
+      'Banks renew a term deposit on its maturity date. If you renewed on another day, change the date; the days in between earn no interest.';
+
+  @override
+  String pensionVestingNextIn(String now, String duration, String next) {
+    return '$now · $next in $duration';
+  }
+
+  @override
+  String pensionVestingSoon(String now, String next) {
+    return '$now · $next within a month';
+  }
+
+  @override
+  String pensionYears(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n years',
+      one: '1 year',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pensionMonths(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pensionYearsMonths(int years, int months) {
+    return '$years yr $months mo';
+  }
+
+  @override
+  String dividendAboveGross(String gross) {
+    return 'The net amount can\'t be more than the gross ($gross). Check the field.';
   }
 
   @override

@@ -43,6 +43,11 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   DateTime _baslangic = _bugun();
   bool _stopajElle = false;
 
+  /// İlk başarısız "Ekle"den sonra alanlar yazdıkça doğrulanır: hata metni
+  /// alan düzeltilince kalkar. Eskiden bir sonraki "Ekle"ye kadar kırmızı
+  /// kalıyordu (2026-10-01 emülatör testi). İlk açılışta form kızarmaz.
+  bool _denendi = false;
+
   static DateTime _bugun() {
     final n = DateTime.now();
     return dayKey(n);
@@ -83,7 +88,10 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   @override
   Future<bool> kaydet() async {
     if (DemoModu.yazmaKapisi('mevduat')) return false;
-    if (!(_form.currentState?.validate() ?? false)) return false;
+    if (!(_form.currentState?.validate() ?? false)) {
+      setState(() => _denendi = true);
+      return false;
+    }
     final l10n = context.l10n;
     final kurum = _banka.text.trim();
     final tur = _vadesiz ? l10n.depositKindDaily : l10n.depositKindTerm;
@@ -116,8 +124,16 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final renk = AssetType.mevduat.color;
+    final gun = _gun;
+    final vadeSonu =
+        _vadesiz || gun == null ? null : _baslangic.add(Duration(days: gun));
+    final vadeGecmiste =
+        vadeSonu != null && !vadeSonu.isAfter(dayKey(DateTime.now()));
     return Form(
       key: _form,
+      autovalidateMode: _denendi
+          ? AutovalidateMode.onUserInteraction
+          : AutovalidateMode.disabled,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -259,7 +275,9 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
             ipucu: '0',
             sonek: '%',
             sayi: true,
-            degisti: (_) => _stopajElle = true,
+            degisti: (_) {
+              if (!_stopajElle) setState(() => _stopajElle = true);
+            },
             dogrula: (v) {
               final x = parseTrNumber(v ?? '');
               return x == null || x < 0 || x > 100
@@ -267,7 +285,11 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
                   : null;
             },
           ),
-          SozlesmeNotu(l10n.depositWithholdingHint),
+          // Elle girilen oranın altında "vadeye göre önerildi" yazmak yanlış
+          // bilgiydi; öneri artık üstüne yazmıyor, not da bunu söyler.
+          SozlesmeNotu(_stopajElle
+              ? l10n.depositWithholdingManual
+              : l10n.depositWithholdingHint),
           const SizedBox(height: SandikSpace.lgs),
           _Ozet(
             anapara: parseTrNumber(_anapara.text),
@@ -277,7 +299,14 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
             vadesiz: _vadesiz,
             baslangic: _baslangic,
           ),
-          SozlesmeNotu(l10n.depositAccrualNote),
+          if (vadeGecmiste)
+            SozlesmeNotu(l10n.depositAlreadyMatured(
+                DateFormat.yMMMd(l10n.localeName).format(vadeSonu))),
+          // Vadesiz hesabın bozulacak vadesi yok; "vadeyi erken bozarsan"
+          // notu orada yanlıştı.
+          SozlesmeNotu(_vadesiz
+              ? l10n.depositAccrualNoteDaily
+              : l10n.depositAccrualNote),
         ],
       ),
     );

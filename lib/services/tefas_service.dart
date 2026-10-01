@@ -499,6 +499,12 @@ class TefasService {
 
     // Cache'e ekle/güncelle — bir daha aynı kod için fetchAllFunds arasa
     // bulur ve bu sefer FİYATLI bulur.
+    //
+    // Katalog henüz yüklenmediyse ÖNCE diskten yüklenir (2026-10-01):
+    // açılıştaki fiyat turu portföydeki fonları burada ararken RAM boştu;
+    // boş listeye tek fon eklenip `_saveToDisk` ile yazılınca 24 saatlik
+    // katalog o birkaç fonla eziliyordu.
+    if (_cachedFunds == null) await _loadFromDisk();
     final liste = <TefasFund>[...(_cachedFunds ?? const <TefasFund>[])];
     final idx = liste.indexWhere((f) => f.code == normalized);
     if (idx >= 0) {
@@ -508,8 +514,12 @@ class TefasService {
     }
     _cachedFunds = liste;
     // Kurucu-only fonlar da kalıcı olsun — kullanıcı bir kez eklediğinde
-    // sonraki açılışlarda yeniden lookup gerektirmesin.
-    CrashReporter.arkaPlan(_saveToDisk(), reason: 'tefas_service._saveToDisk');
+    // sonraki açılışlarda yeniden lookup gerektirmesin. Yalnız elde TAM
+    // katalog varken (`_cacheTime` dolu): eksik liste diske yazılmaz.
+    if (_cacheTime != null) {
+      CrashReporter.arkaPlan(_saveToDisk(),
+          reason: 'tefas_service._saveToDisk');
+    }
     return fund;
   }
 

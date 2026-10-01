@@ -60,6 +60,7 @@ import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
+import '../services/sozlesme_deposu.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -117,8 +118,12 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
 
 class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// Fiyat kaynağının anladığı sembol; yoksa alarm kurulamaz.
-  String? get _alarmSembolu =>
-      alarmSembolu(widget.asset.ticker, widget.asset.subCategory);
+  // Mevduat ve BES'e fiyat alarmı kurulmaz: mevduatın "fiyatı" sözleşmenin
+  // tahakkukudur, BES fonu da katılımcının alıp sattığı bir menkul değil
+  // (2026-10-01 emülatör testi: ikisinde de alarm zili duruyordu).
+  String? get _alarmSembolu => widget.asset.type.sozlesmeli
+      ? null
+      : alarmSembolu(widget.asset.ticker, widget.asset.subCategory);
 
   late int _selectedPeriodIdx;
 
@@ -183,7 +188,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller &&
       // Mevduatın piyasa serisi yok; eğrisi sözleşmenin tahakkukudur ve
       // teknik sinyal anlamsızdır (sunucu da analiz etmez, ANALYZABLE).
-      widget.asset.type != AssetType.mevduat;
+      // BES de öyle (2026-10-01 emülatör testi): katılımcı fonu alıp
+      // satamaz, yalnız dağılımı değiştirir; devlet katkısı fonunda o da
+      // yok. AL/SAT göstergesi orada yanıltıcıdır.
+      !widget.asset.type.sozlesmeli;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
   ///

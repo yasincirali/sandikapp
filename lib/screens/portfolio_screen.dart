@@ -21,6 +21,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -1459,9 +1460,7 @@ class _AssetCardState extends State<_AssetCard>
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              a.unitIsPrefix
-                                  ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.labelOf(context.l10n)}'
-                                  : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.labelOf(context.l10n)}',
+                              _satirAltMetni(context, a),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: context.t.bodySmall
@@ -1734,6 +1733,21 @@ class _AssetDetailsPanel extends StatelessWidget {
 
     final currentValueTRY = pState.toTRY(position.totalValue, rep.currency);
 
+    // Mevduatta miktar (birim) ve ortalama maliyet (1 TRY) iç hesabın
+    // paylarıdır, kullanıcıya bir şey söylemez (2026-10-01 emülatör testi);
+    // panel ilk alış + toplam maliyet + güncel tutar gösterir.
+    final birimsiz = rep.type == AssetType.mevduat;
+    final toplamMaliyet = _DetailItem(
+      label: context.l10n.totalCost,
+      // Alış para biriminde yazılır, `baz`dan geçmez → gizleme
+      // elle (bulgu #3). Ortalama maliyet birim FİYATTIR, açık.
+      value: position.weightedPurchasePrice <= 0
+          ? '—'
+          : baz.gizli
+              ? baz.gizliTutar
+              : '${costFmt2.format(position.totalCost)} ${rep.currency}',
+    );
+
     // Grafiğin rengi satırdaki yüzdeyle aynı kaynaktan gelmeli (temettü dahil),
     // yoksa eğri yeşilken yazı kırmızı olabilir.
     // Tek kaynak: hem kâr/zarar hem de aşağıdaki temettü satırı bunu kullanır.
@@ -1794,13 +1808,16 @@ class _AssetDetailsPanel extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: _DetailItem(
-                  label: context.l10n.quantity,
-                  value: qtyDisplay,
-                ),
+                child: birimsiz
+                    ? toplamMaliyet
+                    : _DetailItem(
+                        label: context.l10n.quantity,
+                        value: qtyDisplay,
+                      ),
               ),
             ],
           ),
+          if (!birimsiz) ...[
           const SizedBox(height: 12),
           Row(
             children: [
@@ -1810,20 +1827,10 @@ class _AssetDetailsPanel extends StatelessWidget {
                   value: avgCostStr,
                 ),
               ),
-              Expanded(
-                child: _DetailItem(
-                  label: context.l10n.totalCost,
-                  // Alış para biriminde yazılır, `baz`dan geçmez → gizleme
-                  // elle (bulgu #3). Ortalama maliyet birim FİYATTIR, açık.
-                  value: position.weightedPurchasePrice <= 0
-                      ? '—'
-                      : baz.gizli
-                          ? baz.gizliTutar
-                          : '${costFmt2.format(position.totalCost)} ${rep.currency}',
-                ),
-              ),
+              Expanded(child: toplamMaliyet),
             ],
           ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -2157,4 +2164,29 @@ class _SortSheet extends StatelessWidget {
         _SortOrder.gainPctDesc => Icons.percent_rounded,
         _SortOrder.gainPctAsc => Icons.percent_rounded,
       };
+}
+
+/// Portföy satırının alt metni: miktar · tür.
+///
+/// Sözleşmeli türlerde miktar anlam taşımaz (2026-10-01 emülatör testi):
+/// mevduatın "250.000 birim"i iç hesabın payıdır, BES'in "318.850,44 pay"ı
+/// da üç ayrı fon satırının hangi sözleşmeye ait olduğunu söylemez. Mevduat
+/// yalnız türünü, BES kurumunu ve katkı tipini yazar
+/// ("Anadolu Hayat · Devlet katkısı").
+String _satirAltMetni(BuildContext context, Asset a) {
+  final l10n = context.l10n;
+  final tur = a.type.labelOf(l10n);
+  if (a.type == AssetType.mevduat) return tur;
+  if (a.type == AssetType.bes) {
+    final kurum = a.besKurumu;
+    final tip = a.subCategory == BesAltKategori.devletKatkisi
+        ? l10n.pensionGov
+        : tur;
+    return kurum == null ? tip : '$kurum · $tip';
+  }
+  final miktar = fmtNum(a.quantity,
+      digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2);
+  return a.unitIsPrefix
+      ? '${a.unitLabel}$miktar · $tur'
+      : '$miktar ${a.unitLabel} · $tur';
 }

@@ -132,6 +132,16 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
       setState(() => _error = context.l10n.enterValidAmount);
       return;
     }
+    // Net, brütü aşamaz. Emülatör testinde (2026-10-01) SAHOL'da 777,46
+    // brütlük temettü ₺150.660,84 kayıtlıydı: ön dolu "660,84"ün önüne
+    // silinmeden "150" yazılmış, satır kârı −%7,91 yerine +%285 görünüyordu.
+    // Dayanak (brüt) biliniyorsa böyle bir kayıt baştan durdurulur.
+    final o = widget.oneri;
+    if (o != null && o.brut > 0 && amount > o.brut * 1.0001) {
+      setState(() => _error =
+          context.l10n.dividendAboveGross(fmtTRY(o.brut, digits: 2)));
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;

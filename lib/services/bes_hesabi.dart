@@ -61,6 +61,23 @@ abstract final class BesHesabi {
     return null;
   }
 
+  /// Bir sonraki basamağa kalan süre, AY hassasiyetinde (aşağı yuvarlanır).
+  ///
+  /// [sonrakiBasamak] tam yıl farkını verir; ekran "4 yıl sonra %60"
+  /// yazıyordu, oysa 15.05.2020 girişte %60 eşiği 15.05.2030 — 2026-10-01'den
+  /// 3 yıl 7 ay sonra (emülatör testi). Son basamaktaysa `null`.
+  static ({int yil, int ay, double oran})? sonrakiBasamakSuresi(
+      DateTime giris, DateTime simdi) {
+    final s = sonrakiBasamak(giris, simdi);
+    if (s == null) return null;
+    final esikYil = tamYil(giris, simdi) + s.yil;
+    final esik = DateTime(giris.year + esikYil, giris.month, giris.day);
+    var ay = (esik.year - simdi.year) * 12 + esik.month - simdi.month;
+    if (simdi.day > esik.day) ay--;
+    if (ay < 0) ay = 0;
+    return (yil: ay ~/ 12, ay: ay % 12, oran: s.oran);
+  }
+
   /// [tarih]'te yapılan katkıya uygulanan devlet katkısı yüzdesi.
   static double devletKatkisiOrani(DateTime tarih) {
     final uzak = _uzak[tarih.year]?.oran;
