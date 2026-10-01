@@ -55,10 +55,15 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
   /// Uzun pencere bağlamı için gereken varlıklar ve akış kuralı.
   final List<Asset> assets;
 
+  /// "Başka yere koysaydın" kartı — `_buildOzetSekmesi` Özet'in girdileriyle
+  /// kurar, burası yalnızca view'a taşır. `null` ise çizilmez.
+  final Widget? kiyasKarti;
+
   const _OzetYanVeri({
     required this.period,
     required this.summary,
     required this.assets,
+    this.kiyasKarti,
     this.karakter,
     this.enSabirli,
     this.enSabirliGun,
@@ -521,6 +526,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     return PeriodSummaryView(
       baz: ref.watch(gosterimBazParaProvider),
       summary: gosterilen,
+      kiyasKarti: widget.kiyasKarti,
       uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,

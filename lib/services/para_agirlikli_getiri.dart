@@ -37,6 +37,18 @@ double getiriAkisi(Asset a) {
   return 0;
 }
 
+/// GÜNLÜK yüzeylerin akışı: [getiriAkisi] eksi nakit temettü.
+///
+/// ## Neden gün içinde temettü YOK (birleştirme, 2026-10-01)
+/// Kullanıcı temettüyü paranın GELDİĞİ gün girer; hissenin temettü kadar
+/// düştüğü gün (hak kullanım) haftalar öncedir. Dönem ölçeğinde (1H ve
+/// üstü) iki tarih çoğunlukla aynı pencereye düşer ve temettü gerçek gelir
+/// olarak sayılmalıdır. Gün ölçeğinde ise hiç örtüşmezler: ödeme günü seri
+/// kıpırdamadığı hâlde ana sayfa, widget ve Live Activity "bugün +₺50"
+/// yazıyordu (`islem_ekran_matrisi_test` İŞLEM 4 — temettü kâr değil,
+/// nakit). Günlük kart "sadece piyasa etkisi" der; o gün piyasa etkisi yok.
+double gunlukAkis(Asset a) => a.isDividend ? 0 : getiriAkisi(a);
+
 /// Bir dönem içi nakit akışı: tutar (TRY, alım +, satış −) ve dönemde
 /// KALDIĞI sürenin payı (`w`: dönem başında 1, dönem sonunda 0).
 typedef DonemAkisi = ({double f, double w});

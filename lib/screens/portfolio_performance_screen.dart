@@ -71,6 +71,8 @@ import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
 import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
+import '../widgets/kiyas_karti.dart';
+import '../services/kiyas_service.dart';
 
 part 'portfolio_performance/grafik_kabi.dart';
 part 'portfolio_performance/seriler.dart';

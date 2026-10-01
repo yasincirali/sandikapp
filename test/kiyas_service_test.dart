@@ -271,6 +271,12 @@ void main() {
       )!;
       expect(g.temettuVar, isTrue);
       expect(g.akislar.map((a) => a.tutar), [500.0, -40.0]);
+      // Tek getiri dili (K3): Özet de temettüyü çıkış sayar, "senin"
+      // satırı temettülü dönemde de Özet'in yüzdesiyle BİREBİR.
+      final p = PeriodSummaryService.pencere(SummaryPeriod.birAy, now);
+      final pe = PeriodSummaryService.piyasaEtkisi(
+          seri: seri(), lotlar: ile, start: p.start, end: p.end)!;
+      expect(g.getiriPct, closeTo(pe.pct!, 1e-9));
       // Temettü çekiş sayıldığı için getiri temettüsüz hâlden YÜKSEK.
       final temettusuz = KiyasGirdisi.kur(
         period: SummaryPeriod.birAy,

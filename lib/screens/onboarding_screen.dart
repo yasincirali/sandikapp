@@ -341,8 +341,8 @@ List<_Adim> _adimlariKur() {
       id: 'hero',
       hedef: TourTarget.heroKart,
       baslik: 'Toplam net varlığın',
-      govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
-          'kazandığını ya da kaybettiğini söyler. Ortağın varsa kartı '
+      govde: 'Tüm varlıkların tek toplamda; altındaki satır maliyetine göre '
+          'kârını ya da zararını söyler. Ortağın varsa kartı '
           'sağa-sola kaydır: sıradaki kişinin kartı yandan gelir, alttaki '
           'noktalar kimde olduğunu gösterir. Başlıktaki çip de aynı işi '
           'yapar; listede herkesin toplamı yazar. İlk varlığını '

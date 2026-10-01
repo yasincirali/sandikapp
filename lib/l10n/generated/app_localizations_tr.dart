@@ -4827,7 +4827,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get kiyasTemettuNotu =>
-      'Bu dönemdeki temettüler iki tarafta da çekiş sayıldı; getirin Özet\'teki rakamdan biraz farklı olabilir.';
+      'Bu dönemdeki nakit temettüler iki tarafta da cebine giren para sayıldı.';
 
   @override
   String get kiyasVeriYok => 'Kıyas için fiyat verisi şu an alınamadı.';

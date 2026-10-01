@@ -4862,7 +4862,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get kiyasTemettuNotu =>
-      'Dividends this period count as withdrawals on both sides, so your return may differ slightly from the Summary figure.';
+      'Cash dividends this period count as money paid out to you on both sides.';
 
   @override
   String get kiyasVeriYok =>

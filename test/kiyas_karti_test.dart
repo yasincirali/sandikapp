@@ -119,7 +119,7 @@ void main() {
 
   testWidgets('temettülü dönemde dipnot çizilir', (t) async {
     await kur(t, girdi(temettu: true));
-    expect(find.textContaining('temettüler iki tarafta da çekiş'),
+    expect(find.textContaining('temettüler iki tarafta da cebine giren'),
         findsOneWidget);
   });
 

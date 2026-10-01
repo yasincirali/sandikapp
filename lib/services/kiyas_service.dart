@@ -61,16 +61,15 @@ class KiyasGirdisi {
   /// `(basTs, akış sonu]` aralığındaki akışlar — temettü dahil.
   final List<KiyasAkisi> akislar;
 
-  /// Kullanıcının AYNI akışlarla para ağırlıklı getirisi (%).
+  /// Kullanıcının para ağırlıklı getirisi (%) — Özet'in `getiriPct`'i.
   ///
-  /// Temettü yoksa Özet'teki `getiriPct` ile birebir aynıdır (aynı akış,
-  /// aynı ağırlık; `kiyas_service_test` kilitler). Temettü VARSA farklıdır
-  /// ve bu kasıtlı: Özet temettüyü akışa koymaz (değer serisinde "erir",
-  /// bkz. `PeriodSummary.temettuTRY`), kıyas ise koymak ZORUNDA — yoksa
-  /// kullanıcının cebine giren para kıyas varlığında yatırımda kalmış
-  /// sayılır ve kıyas haksız yere öne geçer. İki taraf aynı akışı görsün
-  /// diye kullanıcının getirisi de burada temettü dahil yeniden hesaplanır;
-  /// kart bu durumda bir not düşer ([temettuVar]).
+  /// **Yeniden hesaplanmaz, `piyasaEtkisi`'nden okunur (birleştirme,
+  /// 2026-10-01).** Kart yazılırken Özet temettüyü akışa koymuyordu ve bu
+  /// alan temettü dahil ayrıca çözülüyordu; "tek getiri dili" (K3) ile Özet
+  /// de nakit temettüyü çıkış saydığı için iki hesap aynı denklemi aynı
+  /// akışlarla çözer hâle geldi. İkinci kopyayı tutmak, bu projede defalarca
+  /// ayrışan "aynı hesabın iki kopyası" sınıfını yeniden açardı. Kıyas tarafı
+  /// temettüyü yine çekiş sayar ([akislar]) — iki taraf aynı akışı görür.
   final double? getiriPct;
 
   /// Akışlarda nakit temettü var mı?
@@ -150,11 +149,7 @@ class KiyasGirdisi {
       sonTRY: pe.son,
       sonTs: sonTs,
       akislar: akis,
-      getiriPct: paraAgirlikliGetiriPct(
-        bas: pe.ilk,
-        son: pe.son,
-        akislar: KiyasService.agirliklar(akis, basTs: pe.ilkTs, sonTs: sonTs),
-      ),
+      getiriPct: pe.pct,
       temettuVar: temettu,
     );
   }

@@ -3226,6 +3226,6 @@
   "kiyasAciklama": "Had you invested the same amounts on the same days here.",
   "kiyasSenin": "Your portfolio",
   "kiyasBasaBas": "Even",
-  "kiyasTemettuNotu": "Dividends this period count as withdrawals on both sides, so your return may differ slightly from the Summary figure.",
+  "kiyasTemettuNotu": "Cash dividends this period count as money paid out to you on both sides.",
   "kiyasVeriYok": "Price data for the comparison is unavailable right now."
 }

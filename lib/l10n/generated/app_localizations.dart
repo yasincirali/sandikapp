@@ -8147,7 +8147,7 @@ abstract class AppLocalizations {
   /// Dönemde nakit temettü varken kıyas kartının dipnotu
   ///
   /// In tr, this message translates to:
-  /// **'Bu dönemdeki temettüler iki tarafta da çekiş sayıldı; getirin Özet\'teki rakamdan biraz farklı olabilir.'**
+  /// **'Bu dönemdeki nakit temettüler iki tarafta da cebine giren para sayıldı.'**
   String get kiyasTemettuNotu;
 
   /// Kıyas kartı: hiçbir kıyas hesaplanamadığında

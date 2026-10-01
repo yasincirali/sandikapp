@@ -3390,7 +3390,7 @@
   "@kiyasSenin": {"description": "Kıyas kartında kullanıcının kendi satırı"},
   "kiyasBasaBas": "Başa baş",
   "@kiyasBasaBas": {"description": "Kıyasla aradaki fark sıfıra yuvarlandığında"},
-  "kiyasTemettuNotu": "Bu dönemdeki temettüler iki tarafta da çekiş sayıldı; getirin Özet'teki rakamdan biraz farklı olabilir.",
+  "kiyasTemettuNotu": "Bu dönemdeki nakit temettüler iki tarafta da cebine giren para sayıldı.",
   "@kiyasTemettuNotu": {"description": "Dönemde nakit temettü varken kıyas kartının dipnotu"},
   "kiyasVeriYok": "Kıyas için fiyat verisi şu an alınamadı.",
   "@kiyasVeriYok": {"description": "Kıyas kartı: hiçbir kıyas hesaplanamadığında"}

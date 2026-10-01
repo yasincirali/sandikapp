@@ -243,7 +243,10 @@ void main() {
     });
   });
 
-  group('K3 GÜNLÜK (ana sayfa, widget, Live Activity) aynı kural', () {
+  // Birleştirme kararı (2026-10-01): temettü DÖNEMLERDE akıştır, GÜN İÇİNDE
+  // değildir — ödeme günü hak kullanım gününden ayrı, gün ölçeğinde sahte
+  // "bugünkü kâr" üretir (`gunlukAkis`, islem_ekran_matrisi İŞLEM 4).
+  group('K3 GÜNLÜK (ana sayfa, widget, Live Activity) temettüsüz', () {
     final gun = DateTime(2026, 9, 10);
     final now = DateTime(2026, 9, 10, 14, 2);
     Map<int, double> seans() {
@@ -259,17 +262,16 @@ void main() {
     final taban = _lot('taban', 10000, DateTime(2026, 1, 5), fiyat: 102.5);
     final tem = _temettu('tem', 5000, DateTime(2026, 9, 10, 11));
 
-    test('gün içi temettü akıştan düşülür: değişim temettü kadar yüksek',
-        () {
+    test('gün içi temettü akışa GİRMEZ: günlük değişim sıçramaz', () {
       final state0 = PortfolioState(assets: [taban], usdTry: 42);
       final state1 = PortfolioState(assets: [taban, tem], usdTry: 42);
       final d0 = DailySummary.from(
           state: state0, series: seans(), now: now, seansGunu: gun);
       final d1 = DailySummary.from(
           state: state1, series: seans(), now: now, seansGunu: gun);
-      expect(d1.inflowTRY, -5000);
-      expect(d1.changeTRY! - d0.changeTRY!, closeTo(5000, 1e-6));
-      expect(d1.changePct!, greaterThan(d0.changePct!));
+      expect(d1.inflowTRY, 0);
+      expect(d1.changeTRY!, closeTo(d0.changeTRY!, 1e-6));
+      expect(d1.changePct!, closeTo(d0.changePct!, 1e-9));
     });
 
     test('Özet GÜNLÜK köprüsü tutar ve DailySummary ile birebir', () {

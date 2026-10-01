@@ -470,9 +470,9 @@ class DailySummary {
   ///     satılan pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa
   ///     etkisi" sayılırdı;
   ///   * silinen lot akışa girmez (`isActive` eler);
-  ///   * nakit temettü ÇIKIŞTIR (−) — `getiriAkisi` (2026-10-01, "tek
-  ///     getiri dili"): ödenen nakit gün içi seride yok, akış saymazsak
-  ///     günün piyasa etkisi temettü kadar eksik çıkar.
+  ///   * nakit temettü akışa girmez — `gunlukAkis`: ödeme günü hak
+  ///     kullanım gününden ayrıdır, gün ölçeğinde temettü sahte bir
+  ///     "bugünkü kâr" sıçraması üretir (dönemlerde ise girer, `getiriAkisi`).
   static double todayInflow(List<Asset> assets, DateTime now) {
     final dayStart = dayKey(now);
     final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -488,13 +488,13 @@ class DailySummary {
     DateTime dayStart,
     DateTime dayEnd,
   ) {
-    // Kural tek yerde: `getiriAkisi` (Özet ve Grafik kartıyla aynı).
+    // Kural tek yerde: `gunlukAkis` (gün içi yüzeylerin hepsi aynı).
     var total = 0.0;
     for (final a in assets) {
       if (a.addedDate.isBefore(dayStart) || a.addedDate.isAfter(dayEnd)) {
         continue;
       }
-      total += getiriAkisi(a);
+      total += gunlukAkis(a);
     }
     return total;
   }
@@ -564,9 +564,9 @@ class DailySummary {
       for (final a in lotlar) {
         final ms = a.addedDate.millisecondsSinceEpoch;
         if (ms < esikMs || ms > bitisMs) continue;
-        // [gunIciKatki] ile AYNI tutar kuralı (`getiriAkisi`): temettü
-        // çıkış, ikisi ayrışırsa ₺ ve % farklı akış kümesini ölçer.
-        final f = getiriAkisi(a);
+        // [gunIciKatki] ile AYNI tutar kuralı (`gunlukAkis`); ikisi
+        // ayrışırsa ₺ ve % farklı akış kümesini ölçer.
+        final f = gunlukAkis(a);
         if (f == 0) continue;
         final w = sure <= 0 ? 0.0 : ((nowMs - ms) / sure).clamp(0.0, 1.0);
         akislar.add((f: f, w: w));

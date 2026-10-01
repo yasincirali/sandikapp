@@ -862,17 +862,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       );
     }
 
+    // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
+    // (`currentTotal`); bkz. `compute` [canliSon]. Kıyas kartı da AYNI ucu
+    // alır, yoksa "senin portföyün" satırı Özet'in yüzdesiyle ayrışır.
+    final canliSon =
+        pState == null ? null : DailySummary.kapsamToplami(pState, targetAssets);
+
     final summary = PeriodSummaryService.compute(
       period: period,
       assets: targetAssets,
       breakdown: breakdown,
       now: now,
       gunlukOzet: gunluk,
-      // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
-      // (`currentTotal`); bkz. `compute` [canliSon].
-      canliSon: pState == null
-          ? null
-          : DailySummary.kapsamToplami(pState, targetAssets),
+      canliSon: canliSon,
       canliDagilim: pState == null
           ? null
           : DailySummary.kapsamDagilimi(pState, targetAssets),
@@ -919,10 +921,23 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       }
     }
 
+    // "Başka yere koysaydın" (PME, düzen A'nın 5. kartı). Girdiler Özet'le
+    // AYNI: seri, kapsam lot'ları, `now` ve canlı uç — `KiyasGirdisi.kur`
+    // notu. GÜNLÜK'te ya da seri iki uç taşımıyorsa kart yok.
+    final kiyasGirdisi = KiyasGirdisi.kur(
+      period: period,
+      lotlar: targetAssets,
+      seri: breakdown.total,
+      now: now,
+      canliSon: canliSon,
+    );
+
     return _OzetYanVeri(
       period: period,
       summary: summary,
       assets: targetAssets,
+      kiyasKarti:
+          kiyasGirdisi == null ? null : KiyasKarti(girdi: kiyasGirdisi),
       // Karakter/sabır yalnızca 1Y'de gösterilir; başka dönemde
       // hesaplanmış olsa da view onları çizmez.
       karakter: period == SummaryPeriod.birYil
