@@ -388,7 +388,11 @@ void main() {
       expect(r.ozet.piyasaTRY, closeTo(35124.405242, 1e-4));
       expect(r.nominal, closeTo(33.045210, 1e-5));
       expect(r.puan, closeTo(1.535210, 1e-5));
-      expect(r.reel, closeTo(1.167372, 1e-5));
+      // Reel PARA AĞIRLIKLI (K4, 2026-10-01): her alım kendi ayının TÜFE
+      // düzeyinde. Kapalı formül 1,33045210 / 1,3151 − 1 = %1,167372 idi;
+      // aylar eşit uzun olmadığı için sabit aylık hız günlükte tam
+      // düzgün değil, fark küçük (Python, aynı kural): %1,175709.
+      expect(r.reel, closeTo(1.175709, 1e-5));
       expect(InflationService.hukum(r.reel), EnflasyonHukmu.ustunde);
     });
 
@@ -580,7 +584,9 @@ void main() {
         (t) async {
       await kur(t,
           ozet(SummaryPeriod.birAy, _hizali([ilk], agustos, aylikFiyat(103))));
-      expect(find.text('Reel getiri · Ağustos 2026'), findsOneWidget);
+      // Başlık + aralık çipi (D2, 2026-10-01): tek ay ADIYLA, çipte.
+      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Ağustos 2026'), findsOneWidget);
       expect(find.text('▲'), findsWidgets);
       expect(find.text('%0,49'), findsOneWidget);
       expect(
@@ -622,14 +628,17 @@ void main() {
       expect(find.textContaining('alım gücün geriledi'), findsNothing);
     });
 
-    testWidgets('1Y yendi: "son 1 yıl" · Ağustos 2025 - Ağustos 2026',
+    testWidgets('1Y yendi: çip "Ağu 25 - Ağu 26" · Ağustos 2025 - Ağustos 2026',
         (t) async {
       final k0 = DateTime(2025, 9, 1);
       final r = _hizali(
           [ilk], yil, (d) => 100 * _us(1.0055, d.difference(k0).inDays ~/ 7),
           haftalik: true);
       await kur(t, ozet(SummaryPeriod.birYil, r));
-      expect(find.text('Reel getiri · son 1 yıl'), findsOneWidget);
+      // Göreli "son 1 yıl" yerine ölçülen aralık (D2, 2026-10-01).
+      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
+      expect(find.textContaining('son 1 yıl'), findsNothing);
       expect(find.text('%1,14'), findsOneWidget);
       expect(find.text('+%33,00'), findsWidgets);
       expect(find.text('%31,51'), findsOneWidget);
@@ -735,10 +744,21 @@ class _Sonuc {
   _Sonuc(this.ozet, this.w, this.rr);
   double get nominal => rr.nominal;
   double get puan => rr.puan;
-  double get reel => rr.reel;
+  double get reel => rr.reel!;
 }
 
-/// `RealReturnService.piyasaGetirisi` ile AYNI çağrı — yalnızca seri
+/// Pencerenin TÜFE'sini aylara SABİT hızla yayan endeks (ilk ay 100).
+/// Reel para ağırlıklı getiri (`RealReturnService.hizaliGetiri`) ara
+/// ayların endeksine de bakar; eşit aylık enflasyonda sonuç kapalı
+/// formülle `(1+n)/(1+e)−1` hemen hemen aynıdır (ay uzunlukları eşit
+/// olmadığı için birebir değil).
+Map<DateTime, double> _endeks(InflationWindow w) => {
+      for (var k = 0; k <= w.ayAdedi; k++)
+        DateTime(w.ilkAy.year, w.ilkAy.month + k, 1):
+            100 * math.pow(1 + w.pct / 100, k / w.ayAdedi).toDouble(),
+    };
+
+/// `RealReturnService.hizaliGetiri` ile AYNI çağrı — yalnızca seri
 /// ağdan değil [_motor]'dan gelir.
 _Sonuc _hizali(
   List<Asset> lotlar,
@@ -759,10 +779,15 @@ _Sonuc _hizali(
     breakdown: bd,
     now: w.seriBitisi,
     pencereBaslangici: w.seriBaslangici,
+    tufeEndeksi: _endeks(w),
   );
   return _Sonuc(
     s,
     w,
-    RealReturn(nominal: s.getiriPct!, inflation: w.pct, pencere: w),
+    RealReturn(
+        nominal: s.getiriPct!,
+        inflation: w.pct,
+        pencere: w,
+        reel: s.reelGetiriPct),
   );
 }

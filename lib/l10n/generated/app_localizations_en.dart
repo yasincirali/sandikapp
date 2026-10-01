@@ -946,7 +946,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cpiWindowNote =>
-      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.';
+      'CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.';
+
+  @override
+  String rangeChip(String start, String end) {
+    return '$start - $end';
+  }
+
+  @override
+  String get rangeToday => 'today';
+
+  @override
+  String get rangeSinceFirstBuy => 'First buy to today';
+
+  @override
+  String sinceCpiWindowEnd(String month) {
+    return 'Since end of $month';
+  }
+
+  @override
+  String sinceCpiWindowBody(String month, String date) {
+    return 'The figure above includes this stretch; this card updates when $month CPI is published ($date).';
+  }
+
+  @override
+  String sinceCpiWindowBodyLate(String month) {
+    return 'The figure above includes this stretch; this card updates once $month CPI is loaded.';
+  }
 
   @override
   String get demoTryButton => 'Take a look first';
@@ -1776,8 +1802,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiveYearCurve => 'Five-year curve';
 
   @override
-  String periodMarketReturn(String period) {
-    return '$period market return';
+  String moneyReturnPeriod(String period) {
+    return 'Return on your money · $period';
   }
 
   @override
@@ -1787,20 +1813,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodStart => 'Period start';
 
   @override
-  String get yourContribution => 'Your contribution';
+  String get yourContribution => 'Net contribution';
 
   @override
   String get marketWord => 'Market';
 
   @override
-  String get cashDividend => 'Cash dividends within it';
+  String get cashDividend => 'Of which cash dividends';
 
   @override
   String get commissionPaid => 'Commission paid';
 
   @override
   String get contributionNotReturn =>
-      'The blue bar is your own money, not a return. The percentage comes only from the market bar.';
+      'The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.';
+
+  @override
+  String annualRatePct(String pct) {
+    return '$pct a year';
+  }
+
+  @override
+  String periodTotalPct(String pct) {
+    return 'Period total $pct';
+  }
 
   @override
   String get periodCourse => 'Course over the period';
@@ -1812,11 +1848,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get againstInflation => 'Against inflation';
-
-  @override
-  String realReturnPeriod(String period) {
-    return 'Real return · $period';
-  }
 
   @override
   String get nominalReturn => 'Your return';
@@ -1899,18 +1930,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get concentration => 'Concentration';
 
   @override
-  String get moneyReturnAnnual => 'Return on your money (annual)';
+  String get moneyReturnAnnual => 'Since you started (annual)';
 
   @override
   String get xirrBody =>
       'The annual compound return of the money you invested, taking the DATES of your investments into account.';
 
   @override
-  String get periodMarketReturnLabel => 'Period market return';
+  String get periodMarketReturnLabel => 'Selected period\'s return';
 
   @override
   String get xirrVsMarketBody =>
-      'The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market\'s move.';
+      'The two numbers do not contradict: the top one runs from your first buy to today and also accounts for when you bought; the bottom one measures only the market\'s move in the selected period.';
 
   @override
   String get advancedMetricsYear => 'Advanced metrics · last year';
@@ -2152,21 +2183,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get howReturnCalculated => 'How is the return calculated?';
 
   @override
-  String get selectedPeriodReturn => 'Return for the selected period';
+  String get selectedPeriodReturn => 'Return on your picks';
 
   @override
-  String get depositsDontChangeRank => 'Deposits don\'t change the ranking';
+  String get depositsDontChangeRank =>
+      'Adding money doesn\'t change the ranking';
 
   @override
   String get everyoneMeasuredSame => 'Everyone is measured the same way';
 
   @override
   String get rankVsPortfolioNote =>
-      'This number can DIFFER from the profit/loss percentage on the Portfolio screen. That one shows total profit/loss since your first purchase; this one only what happened in the period you picked.';
+      'The \"Return on your money\" under your row is the number on the Performance screen: it also accounts for when and how much money you added. The ranking measures only your picks, so the two can differ.';
 
   @override
   String get rankSwapNote =>
-      'If you sold an asset entirely and bought another during the period, the result shows the \"as if you had held the new asset from the start\" scenario. Portfolios without price history are excluded from the ranking.';
+      'Newcomers are measured only for as long as they have held their portfolio. Portfolios without price history are excluded from the ranking.';
 
   @override
   String get notInRace => 'You haven\'t joined the Race';
@@ -2186,7 +2218,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'No one\'s asset list is shared; only return percentages are ranked.';
 
   @override
-  String get yourReturnUpper => 'YOUR RETURN';
+  String get yourReturnUpper => 'RETURN ON YOUR PICKS';
 
   @override
   String get dataNotReady => 'Data is not ready.';
@@ -2237,15 +2269,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectedPeriodReturnBody =>
-      'Your portfolio\'s value at the end of the period is compared with its value at the start:\n\n(period end − period start) ÷ period start\n\nThe 7D / 30D / 1Y choice above changes the result directly.';
+      'The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.';
 
   @override
   String get depositsDontChangeRankBody =>
-      'The only thing measured is how much your assets gained in the market. Buys and sells during the period do NOT affect the ratio.\n\nThe calculation assumes you held today\'s assets from the start of the period. Growing your portfolio therefore does not raise your return: you see the same percentage whether you hold 1 lot or 10,000.';
+      'What is measured is your picks: which assets you held, on which days. When and how much money you added does NOT affect the ratio; the same picks give the same percentage whether you hold 1 lot or 10,000.\n\nThe purchase price you entered is not used; everything is valued at market prices.';
 
   @override
   String get everyoneMeasuredSameBody =>
-      'You and your partners are computed with the same formula, at the same moment, from the same prices.\n\nYou don\'t need to wait for your partner to open the app; the calculation happens on this device.';
+      'You and your partners are computed with the same formula and the same prices; the calculation happens on this device. Between partners the date you entered counts: history imported via CSV or statement counts right away.\n\nAt least 30 days of history is needed to be ranked. In anonymous rankings (Top portfolios, global), a buy or sell entered with a date more than 3 days in the past counts as made on the day it was entered.';
 
   @override
   String get planYearly => 'Yearly';
@@ -2463,6 +2495,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gainWord => 'gain';
+
+  @override
+  String get costBasisGain => 'Gain vs. cost';
+
+  @override
+  String get costBasisLoss => 'Loss vs. cost';
 
   @override
   String get lossWord => 'loss';
@@ -3483,7 +3521,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get raceFooterGlobal =>
-      'Return is computed by comparing the start and end of the selected period. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
+      'The ranking is the return on your picks: the assets you held each day are valued at market prices, and when money was added doesn\'t matter. Rankings and allocations are anonymous; identity, quantity and TRY figures are never shared.';
 
   @override
   String get calculatingEllipsis => 'Calculating…';
@@ -3518,7 +3556,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get raceFooterPartners =>
-      'The ranking is the selected period\'s return (%). Everyone is measured with the same formula; no one\'s asset list is visible.';
+      'The ranking is the return on your picks in the selected period (%): when money was added doesn\'t matter. No one\'s asset list is visible.';
 
   @override
   String get recapYourPortfolio => 'Your portfolio';
@@ -3994,10 +4032,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sectionThisPeriod => 'THIS PERIOD';
+  String get sectionResult => 'RESULT';
 
   @override
-  String get sectionAssets => 'ASSETS';
+  String get sectionWhy => 'WHY';
+
+  @override
+  String get sectionDetail => 'DETAIL';
 
   @override
   String get sectionDepth => 'DEPTH';
@@ -4806,4 +4847,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get contractManagedNotice =>
       'This asset is managed by its contract. Use the contract card on the asset page to change it.';
+
+  @override
+  String raceMoneyReturn(String pct) {
+    return 'Return on your money $pct';
+  }
+
+  @override
+  String get raceMoneyReturnHint =>
+      'Includes when money was added · same as Performance';
+
+  @override
+  String get kiyasBaslik => 'Had you put it elsewhere';
+
+  @override
+  String get kiyasAciklama =>
+      'Had you invested the same amounts on the same days here.';
+
+  @override
+  String get kiyasSenin => 'Your portfolio';
+
+  @override
+  String get kiyasBasaBas => 'Even';
+
+  @override
+  String get kiyasTemettuNotu =>
+      'Cash dividends this period count as money paid out to you on both sides.';
+
+  @override
+  String get kiyasVeriYok =>
+      'Price data for the comparison is unavailable right now.';
 }

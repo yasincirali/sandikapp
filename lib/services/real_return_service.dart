@@ -70,6 +70,24 @@ class RealReturnService {
   static Future<double?> piyasaGetirisi(
     List<Asset> assets,
     InflationWindow w,
+  ) async =>
+      (await hizaliGetiri(assets, w))?.nominal;
+
+  /// [piyasaGetirisi] + aynı pencerede REEL para ağırlıklı getiri.
+  ///
+  /// ## Neden reel ayrıca hesaplanıyor (2026-10-01, K4)
+  /// `(1+n)/(1+e) − 1` yıl içinde eklenen paranın yılın TAMAMININ
+  /// enflasyonunu yaşadığını varsayar. Reel getiri her akışı kendi
+  /// tarihindeki TÜFE düzeyine taşıyıp aynı para ağırlıklı denklemi
+  /// çözer (`reelParaAgirlikliGetiriPct`); akış yoksa iki formül birebir
+  /// aynıdır. Nominal ve TÜFE satırları ile puan farkı DEĞİŞMEZ.
+  ///
+  /// Endeks önbellekten okunur (`indexSeries`, `pencere` ile aynı çekim —
+  /// ek ağ turu yok). Ara ayın endeksi eksikse `reel` `null`: sayı
+  /// uydurulmaz, kart TÜFE satırına düşer.
+  static Future<({double nominal, double? reel})?> hizaliGetiri(
+    List<Asset> assets,
+    InflationWindow w,
   ) async {
     if (assets.isEmpty) return null;
     final tier = ResolutionTierMeta.pickForSpan(
@@ -82,13 +100,18 @@ class RealReturnService {
       to: w.seriBitisi,
       tier: tier,
     );
-    return PeriodSummaryService.compute(
+    final endeks = await InflationService.instance.indexSeries();
+    final s = PeriodSummaryService.compute(
       period: SummaryPeriod.birYil,
       assets: assets,
       breakdown: bd,
       now: w.seriBitisi,
       pencereBaslangici: w.seriBaslangici,
-    ).getiriPct;
+      tufeEndeksi: endeks,
+    );
+    final nominal = s.getiriPct;
+    if (nominal == null) return null;
+    return (nominal: nominal, reel: s.reelGetiriPct);
   }
 
   /// Nominal + TÜFE çifti. Biri eksikse `null`: eksik veriyle rozet
@@ -102,9 +125,10 @@ class RealReturnService {
     if (w == null) return null;
     // Nominal AYNI pencereden hesaplanır — iki ayrı çağrı iki ayrı pencere
     // demekti ve fark ölçülmemiş bir aralığı içeriyordu.
-    final nominal = await piyasaGetirisi(assets, w);
-    if (nominal == null) return null;
-    return RealReturn(nominal: nominal, inflation: w.pct, pencere: w);
+    final g = await hizaliGetiri(assets, w);
+    if (g == null) return null;
+    return RealReturn(
+        nominal: g.nominal, inflation: w.pct, pencere: w, reel: g.reel);
   }
 }
 
@@ -114,6 +138,7 @@ class RealReturn {
     required this.nominal,
     required this.inflation,
     required this.pencere,
+    this.reel,
   });
 
   final double nominal;
@@ -127,6 +152,12 @@ class RealReturn {
   /// Puan farkı (nominal − TÜFE) — gündelik dilin okuduğu sayı.
   double get puan => InflationService.spreadPoints(nominal, inflation);
 
-  /// Bileşik reel getiri — matematiksel olarak doğru olan.
-  double get reel => InflationService.realReturnPct(nominal, inflation);
+  /// Reel PARA AĞIRLIKLI getiri (yüzde) — her akış kendi tarihinin TÜFE
+  /// düzeyinde (`RealReturnService.hizaliGetiri`). Ara ayın endeksi
+  /// eksikse `null`.
+  ///
+  /// 2026-10-01'e kadar getter'dı: `(1+n)/(1+e) − 1`. O formül yıl içinde
+  /// eklenen paraya yılın tamamının enflasyonunu yüklüyordu; akış yokken
+  /// iki sayı birebir aynıdır.
+  final double? reel;
 }

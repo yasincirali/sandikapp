@@ -77,27 +77,12 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
     final me = ref.read(authProvider).valueOrNull;
     if (me == null) return;
 
-    // Snapshot'ı BURADA tazele.
-    //
-    // `get_percentile_bucket` yalnızca son 24 saatte snapshot atmış
-    // kullanıcıları karşılaştırır. Yükleme eskiden sadece Yarış ekranında
-    // yapılıyordu; ana ekran şeridi ona bağlı kalsaydı yalnızca "bugün
-    // Yarış'a uğramış" kullanıcıda çalışır, yani hiç görünmezdi.
+    // Anlık görüntüyü cihaz YAZMAZ (0095): `leaderboard-snapshot` cron'u
+    // yarışa katılan herkes için günde iki kez TWR yazar. Eskiden şerit
+    // kendi simülasyon değerini yüklüyordu — iki ölçü aynı havuzda
+    // karışırdı. Kendi satırı yoksa (yeni hesap, 30 gün dolmadı) RPC boş
+    // döner ve şerit gizli kalır; uydurma dilim yok.
     final servis = LeaderboardService.instance;
-    final roi = await servis.computeROI(
-      assets: widget.myAssets,
-      periodDays: PercentileStrip.periodDays,
-      currentValueTRY: servis.totalValueTRY(widget.myAssets, widget.toTRY),
-      toTRY: widget.toTRY,
-      cacheKey: me.id,
-    );
-    if (roi == null) return; // geçmiş veri yetersiz — karşılaştırma yapılamaz
-    await servis.uploadRoiSnapshot(
-      userId: me.id,
-      periodDays: PercentileStrip.periodDays,
-      roiPct: roi,
-    );
-
     final data = await servis.fetchPercentile(PercentileStrip.periodDays);
     if (!mounted || data == null) return;
 

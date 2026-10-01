@@ -2668,14 +2668,23 @@ class HistoryService {
   ///
   /// **Altın:** `ALTIN_*` sembolleri XAU/USD serisinden 22 ayar gram TRY'ye
   /// çevrilir ve ürün ağırlığıyla (çeyrek, yarım...) ölçeklenir.
+  ///
+  /// **[cozunurluk]** verilirse katman ([tierForPeriod]) yerine o kullanılır;
+  /// range dönemden gelmeye devam eder (önbellek anahtarı interval'i de
+  /// taşır, iki çekim birbirini ezmez). Tek çağıranı kıyas kartı
+  /// (`KiyasYukleyici`, 2026-10-01): 6A ve üstünde varsayılan katman
+  /// HAFTALIKTIR ve haftalık kova haftanın KAPANIŞINI pazartesi damgasıyla
+  /// taşır — çarşamba günkü bir alım o haftanın cuma fiyatıyla eşlenirdi
+  /// (ileriye bakan fiyat). Akış gününe fiyat bağlayan hesap günlük ister.
   Future<Map<int, double>> getSymbolHistory(
     String symbol, {
     required int periodDays,
+    ResolutionTier? cozunurluk,
   }) async {
     final sym = symbol.trim().toUpperCase();
     if (sym.isEmpty) return {};
 
-    final tier = tierForPeriod(periodDays);
+    final tier = cozunurluk ?? tierForPeriod(periodDays);
     final range = rangeForPeriod(periodDays);
 
     // Interval'i KATMAN belirler, range değil. Eskiden interval
