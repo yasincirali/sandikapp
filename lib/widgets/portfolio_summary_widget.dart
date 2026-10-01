@@ -115,10 +115,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
               // kaldırıp geri koyar; kart eskiden tek karede kısalıyordu.
               // Yalnız bu satırlar değişince oynar (fiyat tiki yüksekliği
               // değiştirmez → maliyet yok).
-              child: AnimatedSize(
-                duration: SandikMotion.stateOf(context),
-                curve: SandikMotion.move,
-                alignment: Alignment.topCenter,
+              child: _BoyGecisi(
                 child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -280,6 +277,33 @@ class PortfolioSummaryWidget extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Kartın yükseklik geçişi; hareketi azalt açıkken HİÇ `AnimatedSize` kurmaz.
+///
+/// ## Neden (integration kırmızısı, 2026-10-01)
+/// Sıfır süreli `AnimatedSize` boyut değişiminde kendi
+/// `performLayout`'u içinden denetleyiciyi `forward()` eder; sıfır sürede
+/// denetleyici aynı karede biter, dinleyicisi `markNeedsLayout` çağırır ve
+/// Flutter "RenderAnimatedSize was mutated in its own performLayout"
+/// assert'iyle düşer. Animasyonları kapalı CI emülatöründe (ve hareketi
+/// azalt açık cihazda) varlık eklenince kart uzadığı anda duman testi
+/// buradan kırılıyordu. Süre sıfırsa geçiş zaten yok: çocuğu doğrudan koy.
+class _BoyGecisi extends StatelessWidget {
+  const _BoyGecisi({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (SandikMotion.stateOf(context) == Duration.zero) return child;
+    return AnimatedSize(
+      duration: SandikMotion.stateOf(context),
+      curve: SandikMotion.move,
+      alignment: Alignment.topCenter,
+      child: child,
     );
   }
 }

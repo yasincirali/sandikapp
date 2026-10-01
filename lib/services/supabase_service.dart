@@ -937,6 +937,35 @@ class SupabaseService {
     );
   }
 
+  /// Bu cihazın anladığı bildirim biçimini token satırına yazar (0092).
+  ///
+  /// Sunucu kart görselini yalnız `bildirim_surumu >= 2` olan cihaza
+  /// gönderir; eski sürümler bu çağrıyı hiç yapmaz ve satırları NULL kalır —
+  /// onlara giden bildirim birebir eskisi gibi (kullanıcı kuralı
+  /// 2026-10-01: store kullanıcıları etkilenmesin).
+  ///
+  /// ASLA fırlatmaz: kart bir süs, token kaydı değil. 0092 o sunucuda henüz
+  /// yoksa sütun bilinmez (PGRST204 / 42703) — sessiz geçilir, bildirim yine
+  /// düz metin gelir. Başka hatalar Crashlytics'e non-fatal.
+  Future<void> setPushBildirimSurumu(String token, int surum) async {
+    try {
+      await _log.log<void>(
+        source: 'SupabaseService.setPushBildirimSurumu',
+        table: 'user_push_tokens',
+        op: 'UPDATE',
+        request: {'bildirim_surumu': surum},
+        call: () => _db
+            .from('user_push_tokens')
+            .update({'bildirim_surumu': surum}).eq('token', token),
+      );
+    } on PostgrestException catch (e, st) {
+      if (e.code == 'PGRST204' || e.code == '42703') return;
+      CrashReporter.report(e, st, reason: 'setPushBildirimSurumu');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'setPushBildirimSurumu');
+    }
+  }
+
   // ── Sinyal tercihleri ─────────────────────────────────────────────────────
 
   /// Kullanıcının sunucudaki sinyal tercihlerini okur.

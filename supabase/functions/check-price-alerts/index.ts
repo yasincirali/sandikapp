@@ -21,7 +21,13 @@ import {
   type KanaryaSonucu,
 } from '../_shared/kanarya.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+import { collapseTokens, TokenRow, tokenSatirlariniOku } from '../_shared/push_tokens.ts';
+import {
+  kartGorseli,
+  KartAyari,
+  KartVerisi,
+  kartVerisiniHazirla,
+} from '../_shared/bildirim_karti.ts';
 import { takipListesiHareketleri } from '../_shared/watchlist_moves.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
@@ -95,6 +101,25 @@ export function buildAlertMessage(
   };
 }
 
+/// Fiyat alarmının kartı (yalnız `bildirim_surumu >= 2` cihazlar).
+///
+/// Değişim yüzdesi değil EŞİK bildirimi: halka büyüklük göstermez, yön
+/// renginde tam çizilir; büyük satır şu anki fiyat, alt satır hedef.
+export function buildAlertCard(
+  label: string,
+  price: number,
+  target: number,
+  direction: string,
+): KartVerisi | null {
+  if (!Number.isFinite(price) || !Number.isFinite(target)) return null;
+  return kartVerisiniHazirla({
+    e: label,
+    b: `₺${formatTRY(price)}`,
+    y: direction === 'above' ? 'u' : 'd',
+    a: `Fiyat alarmı · hedef ₺${formatTRY(target)}`,
+  });
+}
+
 /// Cihaz başına tek token (bkz. daily-brief/index.ts — aynı gerekçe).
 
 Deno.serve(async (request) => {
@@ -136,6 +161,8 @@ Deno.serve(async (request) => {
     } catch (_) { /* gövde opsiyonel */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
+    // Bildirim kartı (0092, yalnız yeni sürüm cihazlar) — bkz. bildirim_karti.ts.
+    const kart: KartAyari = { supabaseUrl, anahtar: serviceRoleKey };
 
     if (watchlist) {
       return jsonResponse(await takipListesiHareketleri(admin, {
@@ -143,6 +170,7 @@ Deno.serve(async (request) => {
         fcm: dryRun
           ? null
           : { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson },
+        kart,
       }));
     }
 
@@ -222,11 +250,10 @@ Deno.serve(async (request) => {
 
     // ── 3) Token'lar ────────────────────────────────────────────────────────
     const userIds = [...new Set(tetiklenen.map((a) => a.user_id))];
-    const { data: tokenRows } = await admin
-      .from('user_push_tokens')
-      .select('token, user_id, device_id, platform, updated_at')
-      .in('user_id', userIds);
-    const tokens = collapseTokens((tokenRows ?? []) as TokenRow[]);
+    const { data: tokenRows } = await tokenSatirlariniOku((s) =>
+      admin.from('user_push_tokens').select(s).in('user_id', userIds)
+    );
+    const tokens = collapseTokens(tokenRows ?? []);
 
     const tokensByUser = new Map<string, TokenRow[]>();
     for (const t of tokens) {
@@ -313,6 +340,12 @@ Deno.serve(async (request) => {
         failures.push('liste: yazilamadi');
       }
 
+      const kartVerisi = buildAlertCard(
+        alarm.label,
+        fiyat,
+        Number(alarm.target_price),
+        alarm.direction,
+      );
       for (const t of tokensByUser.get(alarm.user_id) ?? []) {
         const r = await sendFcmNotification({
           accessToken,
@@ -322,6 +355,7 @@ Deno.serve(async (request) => {
           body: mesaj.body,
           channelId: CHANNEL_ID,
           data: { type: 'price_alert', alert_id: alarm.id, symbol: alarm.symbol },
+          gorselUrl: await kartGorseli(kart, t, kartVerisi),
         });
         if (r.ok) {
           sent += 1;

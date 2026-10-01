@@ -134,6 +134,7 @@ export async function sendFcmNotification({
   data,
   priority = 'normal',
   badge,
+  gorselUrl,
 }: {
   accessToken: string;
   projectId: string;
@@ -152,8 +153,20 @@ export async function sendFcmNotification({
   /// beklentisine aykırı: 5 bildirim gelse de "1" görünür. Verilmezse
   /// rozet dokunulmaz.
   badge?: number;
+  /// Bildirim kartı görseli (`_shared/bildirim_karti.ts`). YALNIZ token'ı
+  /// `bildirim_surumu >= KART_SURUMU` olan cihaza verilir. Verilmezse gövde
+  /// birebir eskisi gibi kurulur — eski sürümler hiçbir yeni alan görmez
+  /// (kullanıcı kuralı 2026-10-01: store kullanıcıları etkilenmesin).
+  gorselUrl?: string;
 }): Promise<SendResult> {
   const acil = priority === 'high';
+  const aps: Record<string, unknown> = badge === undefined
+    ? { sound: 'default' }
+    : { sound: 'default', badge };
+  // iOS görseli kendisi indirmez: `mutable-content` Notification Service
+  // Extension'ı uyandırır, o da `fcm_options.image`'ı ekler. Uzantısı
+  // olmayan sürüm bu alanları yok sayar ve metni gösterir.
+  if (gorselUrl) aps['mutable-content'] = 1;
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
     {
@@ -165,7 +178,7 @@ export async function sendFcmNotification({
       body: JSON.stringify({
         message: {
           token,
-          notification: { title, body },
+          notification: gorselUrl ? { title, body, image: gorselUrl } : { title, body },
           data,
           android: {
             // Brifing acil değil: `normal` öncelik pil dostu ve Android'in
@@ -186,11 +199,8 @@ export async function sendFcmNotification({
               'apns-priority': acil ? '10' : '5',
               'apns-push-type': 'alert',
             },
-            payload: {
-              aps: badge === undefined
-                ? { sound: 'default' }
-                : { sound: 'default', badge },
-            },
+            payload: { aps },
+            ...(gorselUrl ? { fcm_options: { image: gorselUrl } } : {}),
           },
         },
       }),
