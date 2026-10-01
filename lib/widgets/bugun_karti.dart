@@ -74,6 +74,16 @@ String reelFarkMetni(AppLocalizations l10n, {required double fark, required bool
   return onde ? l10n.todayRealAhead(puan) : l10n.todayRealBehind(puan);
 }
 
+/// Bkz. `_BugunKartiState._sonYukleme`.
+typedef _BugunAnligi = ({
+  String imza,
+  DateTime at,
+  Map<int, double>? seri,
+  ReelGetiriSatiri? reel,
+  double? haftalik,
+});
+final Map<String, _BugunAnligi> _bugunSonYukleme = {};
+
 class BugunKarti extends ConsumerStatefulWidget {
   const BugunKarti({
     super.key,
@@ -108,6 +118,10 @@ class BugunKarti extends ConsumerStatefulWidget {
   /// bir defter gösterilirken doğar.
   final String? etiket;
 
+  /// Kapsam başına son yükleme önbelleğini boşaltır (testler).
+  @visibleForTesting
+  static void anliklariTemizle() => _bugunSonYukleme.clear();
+
   @override
   ConsumerState<BugunKarti> createState() => _BugunKartiState();
 }
@@ -118,9 +132,34 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   double? _haftalik;
   bool _istendi = false;
 
+  /// [_yukle] ağda mı — bkz. [_seriyiTazele].
+  bool _yukleniyor = false;
+
   /// Üç yükleme de sonuçlandı mı (başarı ya da hata fark etmez)?
   /// `false` iken kart iskelet çizer — bkz. [_yukle].
   bool _yuklendi = false;
+
+  /// Kapsam başına son yükleme (2026-10-01).
+  ///
+  /// Kart görünüm başına anahtarlı (`bugun-<görünüm>`): Ben → Ayşe → Ben
+  /// kaydırmasında her dönüşte SIFIRDAN kuruluyor ve az önce gösterdiği
+  /// sonucu yeniden yüklerken iskelet çiziyordu (kullanıcı: "günlük veri
+  /// kartı yüklenmeden kaydırma olmuyor"). Şimdi kart, aynı defter için
+  /// [_seriTazelikPenceresi] içinde yüklenmiş sonucu varsa onunla açılır;
+  /// yükleme yine arkada koşar ve sonucu yazar. Pencere kartın kendi
+  /// tazelik penceresidir: o yaştaki seri zaten "taze" sayılıyor, ikinci bir
+  /// bayatlık kuralı yok. Defter imzası tutmazsa (alım/satım) kullanılmaz.
+  static Map<String, _BugunAnligi> get _sonYukleme => _bugunSonYukleme;
+
+  String get _anlikAnahtari => '${widget.kisisel}|${widget.hedefKapsami}';
+
+  void _anligiKaydet() => _sonYukleme[_anlikAnahtari] = (
+        imza: _defterImzasi(widget.state),
+        at: DateTime.now(),
+        seri: _seri,
+        reel: _reel,
+        haftalik: _haftalik,
+      );
 
   /// Tek bir yüklemenin üst sınırı. Biri asılı kalırsa kart bu süreden
   /// sonra elindekiyle çizilir; iskelet sonsuza kadar kalmaz.
@@ -161,6 +200,15 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   @override
   void initState() {
     super.initState();
+    final son = _sonYukleme[_anlikAnahtari];
+    if (son != null &&
+        son.imza == _defterImzasi(widget.state) &&
+        DateTime.now().difference(son.at) <= _seriTazelikPenceresi) {
+      _seri = son.seri;
+      _reel = son.reel;
+      _haftalik = son.haftalik;
+      _yuklendi = true;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
     // ORTAK NABIZ — kendi `Timer`'ını KURMAZ.
     //
@@ -192,7 +240,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// `setState` yalnızca değer GERÇEKTEN değiştiyse çağrılır: her tick'te
   /// kartı yeniden çizmek gereksiz kare üretirdi.
   Future<void> _seriyiTazele() async {
-    if (!_yuklendi) return; // ilk yükleme sürüyor, üstüne binme
+    // İlk yükleme sürüyor, üstüne binme. `_yuklendi` tek başına yetmez:
+    // kart son yüklemeyle açıldıysa (`_sonYukleme`) yükleme arkada sürer.
+    if (!_yuklendi || _yukleniyor) return;
     // `nabiz: true` — önbellek yaşa bakmadan tazelenir; Performans da bu
     // nabızda koşulsuz çekiyor (bkz. `IntradaySeriesCache.get` [zorla]).
     final yeni = await _seriYukle(nabiz: true);
@@ -204,6 +254,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       return; // değişmedi
     }
     setState(() => _seri = yeni);
+    _anligiKaydet();
   }
 
   /// Bütçeyi aşan tur için tek bekleyici var mı? (bkz. [_turBitinceYukle])
@@ -227,6 +278,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       final yeni = await _seriYukle(nabiz: true);
       if (!mounted || yeni == null) return;
       setState(() => _seri = yeni);
+      _anligiKaydet();
     }(), reason: 'BugunKarti.turBitinceYukle');
   }
 
@@ -292,11 +344,13 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   Future<void> _yukle() async {
     if (_istendi || !mounted || widget.state.assets.isEmpty) return;
     _istendi = true;
+    _yukleniyor = true;
     final sonuc = await Future.wait([
       _seriYukle(),
       _reelYukle(),
       _haftalikYukle(),
     ]);
+    _yukleniyor = false;
     if (!mounted) return;
     setState(() {
       // `?? _seri`: tur bütçeyi aşmışsa seri buradan null gelir ve
@@ -306,6 +360,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       _haftalik = sonuc[2] as double?;
       _yuklendi = true;
     });
+    _anligiKaydet();
   }
 
   /// Gün içi seri.

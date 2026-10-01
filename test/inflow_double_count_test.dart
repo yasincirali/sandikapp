@@ -104,8 +104,11 @@ void main() {
     expect(s.katkiTRY, 900.0);
     // (2100 − 1000) − 900 = 200 saf piyasa
     expect(s.piyasaTRY, closeTo(200.0, 1e-9));
-    // Payda katkıyı içerir: 200 / (1000 + 900)
-    expect(s.getiriPct, closeTo(200 / 1900 * 100, 1e-9));
+    // Payda ORTALAMA sermaye (2026-10-01): ₺900 dönemde kaldığı süre
+    // oranında (10 Mar → 30 Haz / 15 Oca → 30 Haz) sayılır.
+    final w = DateTime(2026, 6, 30).difference(DateTime(2026, 3, 10)).inMinutes /
+        DateTime(2026, 6, 30).difference(DateTime(2026, 1, 15)).inMinutes;
+    expect(s.getiriPct, closeTo(200 / (1000 + 900 * w) * 100, 1e-9));
   });
 
   test('ölçülen arıza: 4 kat büyüyen portföy NEGATİF getiri göstermez', () {
@@ -143,7 +146,9 @@ void main() {
     expect(s.getiriPct, isNotNull);
     expect(s.getiriPct!, greaterThan(0),
         reason: 'portföy 4 kat büyürken getiri negatif olamaz');
-    expect(s.getiriPct!, closeTo(20.73, 0.05));
+    // 20,73 → 31,96 (2026-10-01): katkının ₺256 bini Nisan–Temmuz'da girdi
+    // ve artık yılın tamamında çalışmış sayılmıyor (ortalama sermaye).
+    expect(s.getiriPct!, closeTo(31.96, 0.05));
   });
 
   test('pencere başı ile seri başı ÇAKIŞIYORSA davranış değişmez', () {

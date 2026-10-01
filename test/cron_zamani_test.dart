@@ -5,7 +5,8 @@ import 'package:portfoy_takip/utils/cron_zamani.dart';
 /// ayın 1'i / 3'ü koşan işler ilk slotlarından önce kurulduysa arıza değil.
 void main() {
   test('gün-ay alanı sayıysa aylık', () {
-    expect(cronAyGunu('30 6 1 * *'), 1); // monthly-summary
+    expect(cronAyGunu('30 6 1 * *'), 1); // monthly-summary (0067)
+    expect(cronAyGunu('30 7 3,4 * *'), 3); // monthly-summary (0093)
     expect(cronAyGunu('5 7 3 * *'), 3); // fetch-inflation
     expect(cronAyGunu('15 7 4 * *'), 4); // calendar-nudge retry
   });
@@ -15,7 +16,7 @@ void main() {
     expect(cronAyGunu('45 6 * * 2-5'), isNull); // daily-brief
     expect(cronAyGunu('*/30 5-18 * * *'), isNull); // check-price-alerts
     expect(cronAyGunu('50 22 * * 0'), isNull); // haftalık temizlik
-    expect(cronAyGunu('0 0 1,15 * *'), isNull, reason: 'liste kapsam dışı');
+    expect(cronAyGunu('0 0 1-5 * *'), isNull, reason: 'aralık kapsam dışı');
   });
 
   test('bozuk ifade null', () {

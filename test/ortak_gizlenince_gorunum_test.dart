@@ -14,6 +14,7 @@ import 'package:portfoy_takip/providers/signal_provider.dart';
 import 'package:portfoy_takip/screens/home_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/widgets/gorunum_cipi.dart';
+import 'package:portfoy_takip/widgets/portfolio_summary_widget.dart';
 
 /// Regresyon (kullanıcı bildirimi, 2026-09-28): ortaklı kullanıcı ortak
 /// görünümündeyken Profil'den ortağı gizleyince ana ekranın toplam kartı
@@ -155,7 +156,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Hata: ₺0. Beklenen: görünüm Ben'e döner, kendi toplamı yazar.
-    expect(find.text('₺0'), findsNothing,
+    // Yalnızca TOPLAM kartında aranır: Bugün kartı testte ağa çıkamadığı
+    // için günlük değişimi "₺0" yazar (Ben görünümünde de böyle). Eskiden
+    // ekranın tamamı aranıyordu ve test, Bugün kartı o anda iskelette
+    // olduğu için geçiyordu; kart artık kapsamın son yüklemesiyle açılıyor
+    // (`BugunKarti._sonYukleme`, 2026-10-01).
+    expect(
+        find.descendant(
+            of: find.byType(PortfolioSummaryWidget),
+            matching: find.text('₺0')),
+        findsNothing,
         reason: 'gizlenen ortağın görünümü toplamı sıfırlamamalı');
     expect(find.textContaining('31.240'), findsWidgets);
     expect(find.textContaining('10.000'), findsNothing,

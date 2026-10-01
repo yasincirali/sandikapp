@@ -8,6 +8,31 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏰ 3 EKİM 10:05'TEN ÖNCE — aylık özet + TÜFE tek push (2026-10-01, Claude)
+
+Eylül özeti push'u 1 Ekim'de gitti ve Özet'te **Ağustos** enflasyonunu
+gösterdi (TÜİK Eylül TÜFE'sini 3 Ekim'de açıklıyor). Ayrıntı:
+proje dosyaları `denetim/AYLIK_OZET_ENFLASYON_2026-10-01.md`.
+
+- [ ] **PR #42'yi birleştir**, sonra Actions → Supabase deploy, dal `main`,
+      hedef `ikisi`: migration **0093** + fonksiyonlar **`weekly-summary`**,
+      **`fetch-inflation`**. Yeni secret YOK. Aşağıdaki bildirim kartı (0092,
+      #41) da dağıtılmadıysa TEK koşuda birlikte: functions `all` ya da
+      `weekly-summary fetch-inflation bildirim-karti check-price-alerts daily-brief`
+      (db push 0092 → 0093 sırasıyla koşar).
+- **Neden 3 Ekim'den önce:** dağıtılmazsa 3 Ekim'de eski düzen koşar:
+      `fetch-inflation` 10:05'te ve `calendar-nudge` 10:15'te İKİ ayrı TÜFE
+      push'u gider (bu çift push 0068'den beri vardı, canlıda hiç koşmamıştı).
+- **Dağıtımdan sonra:** 3 Ekim 10:30'da tek push. Eylül özetini 1 Ekim'de
+      zaten alan kullanıcıya yalnızca "Eylül enflasyonu %x" gider (ikinci özet
+      yok); Kasım'dan itibaren herkes "▲ Ekim: piyasadan %x · enflasyon %y" alır.
+- **Sıra önemsiz, çift push üretmez:** her yol aynı `inflation_push_log`
+      kilidini alıyor. Kontrol: `select jobname, schedule, active from cron.job
+      where jobname like '%monthly%' or jobname like 'calendar-nudge%';` →
+      `monthly-summary` = `30 7 3,4 * *`, `calendar-nudge-inflation*` yok.
+- İstemci: Özet yüzdesi artık ortalama sermayeyle; TÜFE kartı ayın adını
+      yazar. Yeni sürümle gelir, eski sürümler etkilenmez.
+
 ## ⏳ 2026-10-01 Bildirim kartı ("C · Kart", yalnız yeni sürüm)
 
 Karar (yasin, 2026-10-01): bildirimler C kartı tasarımına geçer ama **store
