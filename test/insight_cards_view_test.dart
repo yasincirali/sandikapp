@@ -124,14 +124,18 @@ void main() {
       expect(find.textContaining('11,4 puan'), findsOneWidget);
     });
 
-    testWidgets('dönem etiketi kartın başlığında', (t) async {
+    testWidgets('ölçülen aralık kartın başlığında, çip olarak', (t) async {
+      // D2 (2026-10-01): göreli "son 1 yıl" yerine gerçek TÜFE penceresi —
+      // "+%23" ile "+8,3 puan önde" farklı aralıkları ölçüyor ve bu
+      // başlıkta görünmeli.
       await pump(
         t,
         PeriodSummaryView(
           summary: ozet(reel: 8.34, tufePct: 36.7, fark: 11.4),
         ),
       );
-      expect(find.textContaining('son 1 yıl'), findsWidgets);
+      expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
+      expect(find.textContaining('son 1 yıl'), findsNothing);
     });
 
     testWidgets('reel getiri yoksa kart çizilmez', (t) async {
@@ -153,7 +157,9 @@ void main() {
           ),
         ),
       );
-      expect(find.textContaining('son 6 ay'), findsWidgets);
+      // `ozet` pencereyi 12 aylık verir; çip dönem etiketini değil
+      // ölçülen aralığı yazar.
+      expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
       expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
     });
 
@@ -409,14 +415,18 @@ void main() {
         t,
         PeriodSummaryView(summary: ozet(pct: 48.10), xirr: 31.4),
       );
-      expect(find.text('Paranın getirisi (yıllık)'), findsOneWidget);
-      expect(find.text('Dönem piyasa getirisi'), findsOneWidget);
+      // 2026-10-01: "Paranın getirisi" SONUÇ'taki dönem rakamının adı;
+      // XIRR ilk alımdan bugüne ölçer ve bunu başlık + çip söyler.
+      expect(find.text('Başlangıçtan beri (yıllık)'), findsOneWidget);
+      expect(find.text('İlk alımdan bugüne'), findsOneWidget);
+      expect(find.text('Seçili dönemin getirisi'), findsOneWidget);
       expect(find.textContaining('İki sayı çelişmez'), findsOneWidget);
     });
 
     testWidgets('xirr null iken kart çizilmez', (t) async {
       await pump(t, PeriodSummaryView(summary: ozet()));
-      expect(find.text('Paranın getirisi (yıllık)'), findsNothing);
+      expect(find.text('Başlangıçtan beri (yıllık)'), findsNothing);
+      expect(find.text('İlk alımdan bugüne'), findsNothing);
     });
   });
 

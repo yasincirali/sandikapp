@@ -75,6 +75,7 @@ void main() {
     'lib/widgets/disclaimer_widget.dart': 0,
     'lib/widgets/grafik_tipi_secici.dart': 0,
     'lib/widgets/h_scroll_with_fade.dart': 0,
+    'lib/widgets/kiyas_karti.dart': 0,
     'lib/widgets/milestone_sheet.dart': 0,
     // review_prompt_sheet: 2 literal e-posta İÇERİĞİ (konu + imza), UI
     // metni değil; UI metinlerinin tamamı l10n'da.

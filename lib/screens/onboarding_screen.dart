@@ -341,8 +341,8 @@ List<_Adim> _adimlariKur() {
       id: 'hero',
       hedef: TourTarget.heroKart,
       baslik: 'Toplam net varlığın',
-      govde: 'Tüm varlıkların tek toplamda; altındaki satır bugün ne kadar '
-          'kazandığını ya da kaybettiğini söyler. Ortağın varsa kartı '
+      govde: 'Tüm varlıkların tek toplamda; altındaki satır maliyetine göre '
+          'kârını ya da zararını söyler. Ortağın varsa kartı '
           'sağa-sola kaydır: sıradaki kişinin kartı yandan gelir, alttaki '
           'noktalar kimde olduğunu gösterir. Başlıktaki çip de aynı işi '
           'yapar; listede herkesin toplamı yazar. İlk varlığını '
@@ -541,9 +541,15 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_performans',
       hedef: TourTarget.sekmePerformans,
       baslik: 'Performans sekmesi',
-      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden bir yıla kadar her '
-          'dönemi görebilirsin. Özet üç başlıkta: BU DÖNEM, VARLIKLAR ve '
-          'istersen açtığın DERİNLİK.',
+      // 2026-10-01 (düzen A): Özet "BU DÖNEM / VARLIKLAR / DERİNLİK" idi;
+      // soru sırasına (Sonuç → Neden → Ayrıntı) çevrildi, ana rakamın adı
+      // "Paranın getirisi" oldu ve her yüzde aralık çipi taşıyor. Dönemler
+      // 2026-09-28'den beri 5Y'ye kadar ("bir yıla kadar" eskimişti).
+      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
+          'dönemi görebilirsin. Özet soru sırasıyla ilerler: SONUÇ (paranın '
+          'getirisi ve enflasyona karşı), NEDEN (nereden geldi, hangi '
+          'varlıklar) ve AYRINTI (birikim, istersen açtığın derinlik). Her '
+          'yüzdenin yanındaki mavi çip ölçüldüğü aralığı yazar.',
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),

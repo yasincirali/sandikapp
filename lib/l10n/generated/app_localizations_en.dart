@@ -946,7 +946,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cpiWindowNote =>
-      'CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.';
+      'CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.';
+
+  @override
+  String rangeChip(String start, String end) {
+    return '$start - $end';
+  }
+
+  @override
+  String get rangeToday => 'today';
+
+  @override
+  String get rangeSinceFirstBuy => 'First buy to today';
+
+  @override
+  String sinceCpiWindowEnd(String month) {
+    return 'Since end of $month';
+  }
+
+  @override
+  String sinceCpiWindowBody(String month, String date) {
+    return 'The figure above includes this stretch; this card updates when $month CPI is published ($date).';
+  }
+
+  @override
+  String sinceCpiWindowBodyLate(String month) {
+    return 'The figure above includes this stretch; this card updates once $month CPI is loaded.';
+  }
 
   @override
   String get demoTryButton => 'Take a look first';
@@ -1776,8 +1802,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fiveYearCurve => 'Five-year curve';
 
   @override
-  String periodMarketReturn(String period) {
-    return '$period market return';
+  String moneyReturnPeriod(String period) {
+    return 'Return on your money · $period';
   }
 
   @override
@@ -1787,20 +1813,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get periodStart => 'Period start';
 
   @override
-  String get yourContribution => 'Your contribution';
+  String get yourContribution => 'Net contribution';
 
   @override
   String get marketWord => 'Market';
 
   @override
-  String get cashDividend => 'Cash dividends within it';
+  String get cashDividend => 'Of which cash dividends';
 
   @override
   String get commissionPaid => 'Commission paid';
 
   @override
   String get contributionNotReturn =>
-      'The blue bar is your own money, not a return. The percentage comes only from the market bar.';
+      'The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.';
+
+  @override
+  String annualRatePct(String pct) {
+    return '$pct a year';
+  }
+
+  @override
+  String periodTotalPct(String pct) {
+    return 'Period total $pct';
+  }
 
   @override
   String get periodCourse => 'Course over the period';
@@ -1812,11 +1848,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get againstInflation => 'Against inflation';
-
-  @override
-  String realReturnPeriod(String period) {
-    return 'Real return · $period';
-  }
 
   @override
   String get nominalReturn => 'Your return';
@@ -1899,18 +1930,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get concentration => 'Concentration';
 
   @override
-  String get moneyReturnAnnual => 'Return on your money (annual)';
+  String get moneyReturnAnnual => 'Since you started (annual)';
 
   @override
   String get xirrBody =>
       'The annual compound return of the money you invested, taking the DATES of your investments into account.';
 
   @override
-  String get periodMarketReturnLabel => 'Period market return';
+  String get periodMarketReturnLabel => 'Selected period\'s return';
 
   @override
   String get xirrVsMarketBody =>
-      'The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market\'s move.';
+      'The two numbers do not contradict: the top one runs from your first buy to today and also accounts for when you bought; the bottom one measures only the market\'s move in the selected period.';
 
   @override
   String get advancedMetricsYear => 'Advanced metrics · last year';
@@ -2463,6 +2494,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get gainWord => 'gain';
+
+  @override
+  String get costBasisGain => 'Gain vs. cost';
+
+  @override
+  String get costBasisLoss => 'Loss vs. cost';
 
   @override
   String get lossWord => 'loss';
@@ -3994,10 +4031,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sectionThisPeriod => 'THIS PERIOD';
+  String get sectionResult => 'RESULT';
 
   @override
-  String get sectionAssets => 'ASSETS';
+  String get sectionWhy => 'WHY';
+
+  @override
+  String get sectionDetail => 'DETAIL';
 
   @override
   String get sectionDepth => 'DEPTH';
@@ -4806,4 +4846,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get contractManagedNotice =>
       'This asset is managed by its contract. Use the contract card on the asset page to change it.';
+
+  @override
+  String get kiyasBaslik => 'Had you put it elsewhere';
+
+  @override
+  String get kiyasAciklama =>
+      'Had you invested the same amounts on the same days here.';
+
+  @override
+  String get kiyasSenin => 'Your portfolio';
+
+  @override
+  String get kiyasBasaBas => 'Even';
+
+  @override
+  String get kiyasTemettuNotu =>
+      'Cash dividends this period count as money paid out to you on both sides.';
+
+  @override
+  String get kiyasVeriYok =>
+      'Price data for the comparison is unavailable right now.';
 }

@@ -103,6 +103,21 @@ const List<SurumNotu> surumNotlari = [
     onemli: true,
     baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
     yenilikler: [
+      // 2026-10-01: tek getiri dili (M1 + D2 + düzen A + kıyas kartı).
+      // Ana rakam bu sürümde değişiyor (temettü dahil, para ağırlıklı);
+      // not bunu açıkça söylemeli, yoksa kullanıcı farkı hata sanar.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Performans özeti yenilendi',
+        aciklama: 'Ana rakam artık "Paranın getirisi": eklediğin paranın ne '
+            'zaman girdiği hesaba katılır ve nakit temettülerin de getiriye '
+            'dahildir, bu yüzden rakam öncekinden farklı görünebilir. Her '
+            'yüzdenin yanında hangi tarihler arasında ölçüldüğü yazar. '
+            "Enflasyon kartı TÜİK'in son açıkladığı aya kadar ölçer; o "
+            'günden bugüne getirin kartın altında ayrıca yazar. Yeni "Başka '
+            'yere koysaydın" kartı, aynı paraları aynı günlerde dolara, '
+            "altına ya da BIST 100'e koysaydın ne olacağını gösterir.",
+      ),
       // 2026-10-01: evrensel ekstre motoru (docs/EKSTRE_MOTORU.md).
       Yenilik(
         ikon: YenilikIkonu.liste,

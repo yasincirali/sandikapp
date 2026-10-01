@@ -198,9 +198,11 @@ class XirrService {
   /// Varlık defterinden CEP açısından nakit akışları.
   ///
   /// İşaret `PeriodSummaryService.flowOf`'un TERSİ (sınıf notuna bakın).
-  /// Temettü akışa GİRER — `flowOf` onu dışarıda bırakıyor çünkü orada
-  /// soru "portföye ne kadar para koydum"; burada soru "cebime ne girdi"
-  /// ve temettü tam olarak odur.
+  /// Temettü akışa GİRER (cebe giren para). Dönem içi para ağırlıklı
+  /// getiri de 2026-10-01'den beri aynı şeyi yapar (`getiriAkisi`: temettü
+  /// portföyden ÇIKAN para) — iki hesap temettüde aynı dili konuşur.
+  /// `flowOf` ise katkı sorusu ("ne kadar para koydum") ve temettüyü 0
+  /// sayar.
   ///
   /// Ham defter kullanılır (`aktifLotlar` DEĞİL): XIRR geçmişi sorar,
   /// bugünkü mülkiyeti değil (CLAUDE.md "kapanmış pozisyon" kuralı).
@@ -229,10 +231,11 @@ class XirrService {
 
   /// Dönem içindeki temettü toplamı (TRY).
   ///
-  /// Köprü kartının "temettü" satırı buradan besleniyor. `flowOf` temettüyü
-  /// bilinçli olarak dışarıda bıraktığı için ayrı bir toplayıcı gerekti;
-  /// pencere kuralı `netInflow` ile AYNI (gün sınırlarına genişletilmiş)
-  /// olmalı ki iki sayı aynı dönemi anlatsın.
+  /// Gün sınırlarına genişletilmiş pencere (`netInflow`'un varsayılanı).
+  /// Köprü kartının "temettü" satırı 2026-10-01'den beri buradan DEĞİL,
+  /// piyasa etkisinin kendi damga kapısından beslenir
+  /// (`PeriodSummaryService.temettuArasi`): satır piyasa rakamına gerçekten
+  /// eklenen tutarı söylemeli.
   static double dividendsInPeriod(
     List<Asset> assets,
     DateTime start,
