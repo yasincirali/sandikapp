@@ -529,6 +529,7 @@ class _SoloPanelState extends State<_SoloPanel> {
         : LeaderboardService.instance.staleROI(
             userId: widget.me!.id,
             periodDays: widget.periodDays,
+            kapsam: SiralamaKapsami.anonim,
           );
     _refresh();
     _liveTick.start();
@@ -550,6 +551,7 @@ class _SoloPanelState extends State<_SoloPanel> {
           : LeaderboardService.instance.staleROI(
               userId: widget.me!.id,
               periodDays: widget.periodDays,
+              kapsam: SiralamaKapsami.anonim,
             );
       _refresh();
     }
@@ -561,9 +563,13 @@ class _SoloPanelState extends State<_SoloPanel> {
     setState(() => _computing = true);
     final myCurrentTRY = LeaderboardService.instance
         .totalValueTRY(widget.myAssets, widget.pnlToTRY);
+    // Tek başına panel GENEL sıralamanın yanında durur (yüzdelik dilim
+    // sunucudan, anonim): sayı da anonim kuralla ölçülür ki ikisi aynı
+    // şeyi söylesin. Ortaklı liste `ortaklar` kapsamıyla ölçer.
     final roi = await LeaderboardService.instance.computeROI(
       assets: widget.myAssets,
       periodDays: widget.periodDays,
+      kapsam: SiralamaKapsami.anonim,
       currentValueTRY: myCurrentTRY,
       toTRY: widget.pnlToTRY,
       cacheKey: me.id,
@@ -878,6 +884,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       roi: LeaderboardService.instance.staleROI(
         userId: widget.me!.id,
         periodDays: widget.periodDays,
+        kapsam: SiralamaKapsami.ortaklar,
       ),
     ));
     for (var i = 0; i < widget.partners.length; i++) {
@@ -891,6 +898,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         roi: LeaderboardService.instance.staleROI(
           userId: p.id,
           periodDays: widget.periodDays,
+          kapsam: SiralamaKapsami.ortaklar,
         ),
       ));
     }
@@ -931,6 +939,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       myRoi = await LeaderboardService.instance.computeROI(
         assets: widget.myAssets,
         periodDays: widget.periodDays,
+        kapsam: SiralamaKapsami.ortaklar,
         currentValueTRY: myCurrentTRY,
         toTRY: widget.pnlToTRY,
         cacheKey: me.id,
@@ -971,7 +980,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     // sahip iki ortak tek istek eder.
     final partnerRois = await Future.wait(
       widget.partners.map((p) => LeaderboardService.instance.donemGetirisiPct(
-          widget.partnerAssets[p.id] ?? const [], widget.periodDays)),
+          widget.partnerAssets[p.id] ?? const [], widget.periodDays,
+              kapsam: SiralamaKapsami.ortaklar)),
     );
     for (var i = 0; i < widget.partners.length; i++) {
       final p = widget.partners[i];

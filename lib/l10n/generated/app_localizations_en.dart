@@ -2246,7 +2246,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get everyoneMeasuredSameBody =>
-      'You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nAt least 30 days of history is needed to be ranked. A buy or sell entered with a date more than 3 days in the past counts as made on the day it was entered.';
+      'You and your partners are computed with the same formula and the same prices; the calculation happens on this device. Between partners the date you entered counts: history imported via CSV or statement counts right away.\n\nAt least 30 days of history is needed to be ranked. In anonymous rankings (Top portfolios, global), a buy or sell entered with a date more than 3 days in the past counts as made on the day it was entered.';
 
   @override
   String get planYearly => 'Yearly';

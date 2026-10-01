@@ -1299,7 +1299,7 @@
   },
   "selectedPeriodReturnBody": "Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.",
   "depositsDontChangeRankBody": "Ölçülen şey seçimlerin: hangi varlığı, hangi günler tuttuğun. Ne zaman ve ne kadar para eklediğin oranı ETKİLEMEZ; 1 lot da tutsan 10.000 lot da tutsan aynı seçim aynı yüzdeyi verir.\n\nGirdiğin alış fiyatı kullanılmaz; her şey piyasa fiyatıyla değerlenir.",
-  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır.\n\nSıralamaya girmek için en az 30 günlük geçmiş gerekir. Bugünden 3 günden fazla geriye tarihli girilen alım ya da satış, girildiği gün yapılmış sayılır.",
+  "everyoneMeasuredSameBody": "Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için en az 30 günlük geçmiş gerekir. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satış, girildiği gün yapılmış sayılır.",
   "planYearly": "Yıllık",
   "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
   "planMonthly": "Aylık",

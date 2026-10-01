@@ -130,7 +130,9 @@ void main() {
       // dönmesin — R1 kararı.
       final servis = _yorumsuz(
           await File('lib/services/leaderboard_service.dart').readAsString());
-      expect(servis.contains('SecimGetirisi.donemPct(assets, periodDays)'),
+      expect(
+          servis.contains(
+              'SecimGetirisi.donemPct(assets, periodDays, kapsam: kapsam)'),
           isTrue);
       expect(servis.contains('simulate: true'), isFalse,
           reason: 'simülasyon 0095 ile emekli oldu');
@@ -176,7 +178,8 @@ void main() {
 
   group('boş / geçersiz girdi', () {
     test('boş portföy NULL', () async {
-      expect(await LeaderboardService.instance.donemGetirisiPct(const [], 30),
+      expect(await LeaderboardService.instance
+              .donemGetirisiPct(const [], 30, kapsam: SiralamaKapsami.ortaklar),
           isNull);
     });
 
@@ -186,6 +189,7 @@ void main() {
         periodDays: 30,
         currentValueTRY: 0,
         toTRY: (v, c) => v,
+        kapsam: SiralamaKapsami.ortaklar,
       );
       expect(r.roi, isNull);
       expect(r.usedFallback, isFalse);
@@ -233,8 +237,26 @@ void main() {
       final i = servis.indexOf('Future<RoiResult> computeROIDetailed(');
       expect(i, greaterThan(0));
       final govde = servis.substring(i, i + 900);
-      expect(govde.contains('donemGetirisiPct(assets, periodDays)'), isTrue,
+      expect(
+          govde.contains(
+              'donemGetirisiPct(assets, periodDays, kapsam: kapsam)'),
+          isTrue,
           reason: 'kendi değerim de ortaklarla aynı yoldan hesaplanmalı');
+      // Önbellek anahtarı kapsamı taşır: Yarış'ın değeri Zirve'nin yerine
+      // geçmesin (geriye tarihli kayıtta iki kapsam farklı sayı verir).
+      expect(govde.contains(r"'$cacheKey|$periodDays|${kapsam.name}'"), isTrue);
+    });
+
+    test('ortaklar arası Yarış beyan tarihine, Zirve kurala güvenir', () {
+      final ekran = _yorumsuz(ekranKaynagiSync('lib/screens/leaderboard_screen.dart'));
+      final i = ekran.indexOf('final partnerRois = await Future.wait(');
+      expect(i, greaterThan(0));
+      expect(ekran.substring(i, i + 400).contains('SiralamaKapsami.ortaklar'),
+          isTrue);
+      final zirve = _yorumsuz(
+          ekranKaynagiSync('lib/screens/zirve_portfoyler_screen.dart'));
+      expect(zirve.contains('SiralamaKapsami.ortaklar'), isFalse,
+          reason: 'Zirve anonim: sunucuyla aynı geriye tarih kuralı');
     });
   });
 

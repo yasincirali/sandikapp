@@ -266,6 +266,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
       final myRoi = await LeaderboardService.instance.computeROI(
         assets: myAssets,
         periodDays: periodDays,
+        kapsam: SiralamaKapsami.ortaklar,
         currentValueTRY: myCurrentTRY,
         toTRY: pState.toTRY,
         cacheKey: me.id,
@@ -286,7 +287,8 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
       // Paralel — sırayla beklemek ortak sayısıyla orantılı gecikme yaratır.
       final partnerRois = await Future.wait(
         partners.map((p) => LeaderboardService.instance
-            .donemGetirisiPct(partnerAssets[p.id] ?? const [], periodDays)),
+            .donemGetirisiPct(partnerAssets[p.id] ?? const [], periodDays,
+              kapsam: SiralamaKapsami.ortaklar)),
       );
 
       final rows = <_Row>[

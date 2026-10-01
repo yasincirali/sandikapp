@@ -1294,7 +1294,7 @@
   },
   "selectedPeriodReturnBody": "The period is split into days. Each day, the assets you held that day are valued at market prices, and the daily returns are chained together.\n\nIf you sold one asset and bought another, each counts only on the days you held it. The 7D / 30D / 1Y choice above changes the result directly.",
   "depositsDontChangeRankBody": "What is measured is your picks: which assets you held, on which days. When and how much money you added does NOT affect the ratio; the same picks give the same percentage whether you hold 1 lot or 10,000.\n\nThe purchase price you entered is not used; everything is valued at market prices.",
-  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula and the same prices; the calculation happens on this device.\n\nAt least 30 days of history is needed to be ranked. A buy or sell entered with a date more than 3 days in the past counts as made on the day it was entered.",
+  "everyoneMeasuredSameBody": "You and your partners are computed with the same formula and the same prices; the calculation happens on this device. Between partners the date you entered counts: history imported via CSV or statement counts right away.\n\nAt least 30 days of history is needed to be ranked. In anonymous rankings (Top portfolios, global), a buy or sell entered with a date more than 3 days in the past counts as made on the day it was entered.",
   "planYearly": "Yearly",
   "planYearlySubtitle": "7 days free, then renews automatically",
   "planMonthly": "Monthly",

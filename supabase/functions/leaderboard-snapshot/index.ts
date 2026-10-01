@@ -360,6 +360,12 @@ function zamanMs(v: string | null | undefined): number | null {
 /// alım Ay 12'de sayılır, dipten kazanç yazılmaz. Satış için de aynı:
 /// çöküşten önceye geriye tarihli satış, girildiği gün yapılmış sayılır.
 /// Giriş anı yoksa tarih olduğu gibi (0095 öncesi satırlar ona eşitlendi).
+///
+/// Bu fonksiyonun yazdığı her yüzey ANONİM (Zirve, genel yüzdelik), kural
+/// burada hep uygulanır. Ortaklar arası Yarış cihazda ölçülür ve beyan
+/// edilen tarihe güvenir (kullanıcı kararı 2026-10-01; istemci
+/// `SiralamaKapsami.ortaklar`): herkes birbirini tanır, buna karşılık
+/// geçmişini içe aktaran kullanıcı 30 gün beklemez.
 export function yarisAni(r: DefterSatiri): number | null {
   const eklenme = zamanMs(r.added_date);
   const giris = zamanMs(r.created_at);

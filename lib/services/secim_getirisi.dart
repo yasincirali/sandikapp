@@ -19,7 +19,13 @@
 //
 // ## Hile kuralları (sunucuyla aynı)
 //   · Yarış anı ([yarisAni]): `addedDate` girişten ([Asset.createdAt]) 3
-//     günden fazla gerideyse kayıt girildiği anda yapılmış sayılır.
+//     günden fazla gerideyse kayıt girildiği anda yapılmış sayılır — YALNIZ
+//     anonim sıralamada ([SiralamaKapsami.anonim]: Zirve, genel). Ortaklar
+//     arası Yarış'ta beyan edilen tarih geçerli (kullanıcı kararı
+//     2026-10-01): herkes birbirini tanır, sahte kayıt yalnız arkadaşı
+//     kandırır; buna karşılık geçmişini CSV/ekstreyle dürüstçe içe aktaran
+//     kullanıcı 30 gün beklemeden sıralanır. Hile riski, kimliği bilinmeyen
+//     portföyün herkesin önüne çıktığı anonim yüzeylerdedir.
 //   · En az 30 günlük ölçüm ([asgariOlcumGun]).
 //   · Bugünkü portföyün %80'i fiyatlanamıyorsa sayı yok (uydurma yasağı).
 //
@@ -49,12 +55,24 @@ const double kapsamaEsigi = 0.8;
 
 const int _gunMs = 24 * 60 * 60 * 1000;
 
-/// Satırın yarışta sayılan anı (epoch ms). Giriş anı yoksa (0095 öncesi
-/// kopya) tarih olduğu gibi.
-int yarisAni(Asset a) {
+/// Hangi sıralama için ölçülüyor — kaydın TARİHİNE güven buna bağlı
+/// (kullanıcı kararı 2026-10-01). Formül ikisinde de aynı (TWR).
+enum SiralamaKapsami {
+  /// Ortaklar arası Yarış: beyan edilen tarih geçerli; içe aktarılan geçmiş
+  /// hemen sayılır.
+  ortaklar,
+
+  /// Zirve ve genel sıralama (anonim): geriye tarih kuralı — sunucunun
+  /// `donemTwr`'ı ile birebir (sunucu yalnız anonim yüzeyleri yazar).
+  anonim,
+}
+
+/// Satırın yarışta sayılan anı (epoch ms). Ortaklar kapsamında ya da giriş
+/// anı yoksa (0095 öncesi kopya) tarih olduğu gibi.
+int yarisAni(Asset a, SiralamaKapsami kapsam) {
   final eklenme = a.addedDate.millisecondsSinceEpoch;
   final giris = a.createdAt?.millisecondsSinceEpoch;
-  if (giris == null) return eklenme;
+  if (giris == null || kapsam == SiralamaKapsami.ortaklar) return eklenme;
   return eklenme < giris - geriTarihPayiGun * _gunMs ? giris : eklenme;
 }
 
@@ -83,7 +101,8 @@ class PozisyonGecmisi {
 ///
 /// [lotlar] TEK KİŞİNİN defteri olmalı: `positionKey` sahip taşımaz, iki
 /// kişinin aynı hissesi tek pozisyona düşerdi (bkz. `lotlarSahibeGore`).
-List<PozisyonGecmisi> pozisyonGecmisleri(Iterable<Asset> lotlar) {
+List<PozisyonGecmisi> pozisyonGecmisleri(
+    Iterable<Asset> lotlar, SiralamaKapsami kapsam) {
   final gruplar = <String, PozisyonGecmisi>{};
   final sablonTarihi = <String, int>{};
   for (final a in lotlar) {
@@ -92,7 +111,7 @@ List<PozisyonGecmisi> pozisyonGecmisleri(Iterable<Asset> lotlar) {
     if (!q.isFinite || q <= 0) continue;
     final key = positionKey(a);
     final g = gruplar.putIfAbsent(key, () => PozisyonGecmisi(key, a));
-    g.hareketler.add((an: yarisAni(a), miktar: a.isSell ? -q : q));
+    g.hareketler.add((an: yarisAni(a, kapsam), miktar: a.isSell ? -q : q));
     if (a.isBuy) {
       final t = a.addedDate.millisecondsSinceEpoch;
       final onceki = sablonTarihi[key];
@@ -212,9 +231,10 @@ abstract final class SecimGetirisi {
   static Future<double?> donemPct(
     List<Asset> lotlar,
     int gun, {
+    required SiralamaKapsami kapsam,
     DateTime? simdi,
   }) async {
-    final gecmis = pozisyonGecmisleri(lotlar);
+    final gecmis = pozisyonGecmisleri(lotlar, kapsam);
     if (gecmis.isEmpty) return null;
     final now = simdi ?? DateTime.now();
     final nowMs = now.millisecondsSinceEpoch;

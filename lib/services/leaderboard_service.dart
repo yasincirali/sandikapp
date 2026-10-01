@@ -11,6 +11,9 @@ import 'history_service.dart';
 import 'period_summary_service.dart';
 import 'remote_config_service.dart';
 import 'secim_getirisi.dart';
+
+// Çağıranlar kapsamı seçer; enum'ı ayrıca içe aktarmasınlar.
+export 'secim_getirisi.dart' show SiralamaKapsami;
 import 'zirve_kiyas.dart';
 
 /// Kâr/zarar hesabı sonucu.
@@ -127,7 +130,10 @@ class LeaderboardService {
   static final LeaderboardService instance = LeaderboardService._();
   LeaderboardService._();
 
-  // In-memory ROI cache — key: (userId, periodDays). Session boyunca kalır.
+  // In-memory ROI cache — key: (userId, periodDays, kapsam). Kapsam anahtarda
+  // ŞART: ortaklar ve anonim kapsam aynı kişiye farklı sayı verebilir
+  // (geriye tarihli kayıt) ve Yarış'ın değeri Zirve'nin yerine geçmemeli.
+  // Session boyunca kalır.
   // Ekran her açılışta cache'i placeholder olarak gösterir (stale ok),
   // arka planda hemen yeniden hesaplar. Kullanıcı bekletilmez, veri her
   // zaman güncel.
@@ -138,15 +144,18 @@ class LeaderboardService {
   /// Önceki hesaptan cache'te kalan ROI değeri (varsa). Ekran açılırken
   /// spinner yerine placeholder olarak gösterilir; asıl `computeROI`
   /// arka planda çağrılır ve gelen sonuç bunun üstüne yazılır.
-  double? staleROI({required String userId, required int periodDays}) {
-    return _roiCache['$userId|$periodDays']?.roi;
+  double? staleROI({
+    required String userId,
+    required int periodDays,
+    required SiralamaKapsami kapsam,
+  }) {
+    return _roiCache['$userId|$periodDays|${kapsam.name}']?.roi;
   }
 
-  /// Bir kullanıcının SEÇİLİ DÖNEMDEKİ getirisi.
+  /// Bir kullanıcının SEÇİLİ DÖNEMDEKİ seçimlerinin getirisi (TWR).
   ///
-  /// ```
-  ///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-  /// ```
+  /// [kapsam]: ortaklar arası Yarış mı, anonim sıralama mı (Zirve, genel) —
+  /// kaydın tarihine güven buna bağlı (bkz. `SiralamaKapsami`).
   ///
   /// [currentValueTRY] ve [toTRY] artık KULLANILMIYOR (imza geriye dönük
   /// uyumluluk için duruyor): değer de dönem başı da aynı fiyat serisinden
@@ -159,14 +168,15 @@ class LeaderboardService {
     required int periodDays,
     required double currentValueTRY,
     required double Function(double, String) toTRY,
+    required SiralamaKapsami kapsam,
     String? cacheKey,
   }) async {
     if (assets.isEmpty) {
       return const RoiResult(roi: null, usedFallback: false);
     }
 
-    final ck = cacheKey == null ? null : '$cacheKey|$periodDays';
-    final result = await donemGetirisiPct(assets, periodDays);
+    final ck = cacheKey == null ? null : '$cacheKey|$periodDays|${kapsam.name}';
+    final result = await donemGetirisiPct(assets, periodDays, kapsam: kapsam);
 
     if (kDebugMode) {
       // ignore: avoid_print
@@ -201,13 +211,18 @@ class LeaderboardService {
   ///
   /// [assets] TEK KİŞİNİN defteri (alım + satım). `null`: ölçüm 30 günden
   /// kısa, kapsama düşük ya da fiyat geçmişi alınamadı.
+  ///
+  /// [kapsam] zorunlu: çağıran hangi sıralamayı çizdiğini bilir. Ortaklar
+  /// arası Yarış beyan edilen tarihe güvenir; Zirve ve genel sıralama
+  /// sunucuyla aynı geriye tarih kuralını uygular.
   Future<double?> donemGetirisiPct(
     List<Asset> assets,
-    int periodDays,
-  ) async {
+    int periodDays, {
+    required SiralamaKapsami kapsam,
+  }) async {
     if (assets.isEmpty) return null;
     try {
-      return await SecimGetirisi.donemPct(assets, periodDays);
+      return await SecimGetirisi.donemPct(assets, periodDays, kapsam: kapsam);
     } catch (e, st) {
       // Fiyat geçmişi alınamadı — "veri yok" olarak göster. Uydurma bir
       // sayı basmak sıralamayı sessizce bozardı.
@@ -266,6 +281,7 @@ class LeaderboardService {
     required int periodDays,
     required double currentValueTRY,
     required double Function(double, String) toTRY,
+    required SiralamaKapsami kapsam,
     String? cacheKey,
   }) async {
     final r = await computeROIDetailed(
@@ -273,6 +289,7 @@ class LeaderboardService {
       periodDays: periodDays,
       currentValueTRY: currentValueTRY,
       toTRY: toTRY,
+      kapsam: kapsam,
       cacheKey: cacheKey,
     );
     return r.roi;

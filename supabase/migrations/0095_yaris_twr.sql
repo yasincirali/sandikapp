@@ -22,7 +22,11 @@
 --    tarihini sonradan değiştirmek" de "şimdi girildi" sayılır.
 --    Kural (yarışta sayılan an): `added_date` girişten 3 günden fazla
 --    gerideyse satır GİRİLDİĞİ anda yapılmış sayılır; 3 günlük pay "dün
---    aldım, bugün giriyorum" kullanıcısını cezalandırmasın diye.
+--    aldım, bugün giriyorum" kullanıcısını cezalandırmasın diye. Kural
+--    yalnız ANONİM sıralamada (Zirve, genel — bu sunucunun yazdığı her
+--    şey); ortaklar arası Yarış cihazda ölçülür ve beyan edilen tarihe
+--    güvenir (kullanıcı kararı 2026-10-01, içe aktarılan geçmiş hemen
+--    sayılsın).
 -- 2) Mevcut satırlar: `created_at = added_date` (geleceğe tarihliyse
 --    şimdi). Eski kayıtların tarihine GÜVENİLİR: kullanıcılar geçmiş
 --    varlıklarını ilk alış tarihiyle girdi; satırları geçiş anına kaydırmak

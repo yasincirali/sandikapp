@@ -33,9 +33,11 @@ zaman ağırlıklı getiri; kendi satırında ek bilgi "Paranın getirisi"
          portföyler).
 - [ ] Bil: 0095 eski ROI satırlarını siler (iki ölçü karışmasın). Yarış
       genel havuzu ≥5 farklı gün, Zirve 8 kişi eşiği yeniden dolana kadar
-      boş görünür. Eski kayıtların tarihine güvenilir (geçmişin sıfırlanmaz);
-      bundan sonra 3 günden fazla geriye tarihli giriş/düzenleme "girildiği
-      an" sayılır — CSV/ekstre ile geçmişini yeni içe aktaran kullanıcı da.
+      boş görünür. Eski kayıtların tarihine güvenilir (geçmişin sıfırlanmaz).
+      Bundan sonra 3 günden fazla geriye tarihli giriş/düzenleme yalnız
+      ANONİM sıralamada (Zirve, genel) "girildiği an" sayılır; ortaklar
+      arası Yarış'ta beyan edilen tarih geçerli — CSV/ekstreyle içe
+      aktarılan geçmiş orada hemen sayılır (kararın, 2026-10-01).
 - [ ] Hukuki metin gözden geçirme (senin kararın): açık rıza metni Zirve
       için "portföy 5 günden eski" diyor; sunucu şartı hâlâ 5 gün ama
       seçimlerinin getirisi en az 30 günlük ölçüm ister. Ayrıca `assets`

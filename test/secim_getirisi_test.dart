@@ -48,8 +48,10 @@ Asset _hareket(
   );
 }
 
-double? _twr(List<Asset> defter, {int gun = 365}) => secimGetirisiPct(
-      gecmis: pozisyonGecmisleri(defter),
+double? _twr(List<Asset> defter,
+        {int gun = 365, SiralamaKapsami kapsam = SiralamaKapsami.anonim}) =>
+    secimGetirisiPct(
+      gecmis: pozisyonGecmisleri(defter, kapsam),
       birimFiyat: (p, t) {
         final s = _piyasa[p.sablon.ticker];
         return s == null ? null : seriDegeriAninda(s, t);
@@ -115,6 +117,19 @@ void main() {
   });
 
   group('kurallar', () {
+    test('ortaklar kapsamı beyan edilen tarihe güvenir (kullanıcı kararı)', () {
+      // İçe aktarılan geçmiş: Ay 12'de girilen Ay 6 alımı. Ortaklar arası
+      // Yarış'ta beyan geçerli (%50, dipten beri); anonimde girildiği an
+      // sayılır ve 30 günlük ölçüm olmadığı için sıralamada yok.
+      final ice = [_hareket('X.IS', 6, 100000, girisAyi: 12)];
+      expect(_twr(ice, kapsam: SiralamaKapsami.ortaklar), closeTo(50, 1e-9));
+      expect(_twr(ice, kapsam: SiralamaKapsami.anonim), isNull);
+      // Tarihi dürüst kayıtta iki kapsam aynı sayıyı verir.
+      final durust = [_hareket('X.IS', 0, 100000)];
+      expect(_twr(durust, kapsam: SiralamaKapsami.ortaklar),
+          _twr(durust, kapsam: SiralamaKapsami.anonim));
+    });
+
     test('yarisAni: 3 gün pay, fazlası giriş anı, giriş anı yoksa tarih', () {
       Asset r(int eklenmeGun, int? girisGun) => Asset(
             id: 'a',
@@ -133,10 +148,10 @@ void main() {
                 : DateTime.fromMillisecondsSinceEpoch(
                     _now - girisGun * _gunMs),
           );
-      expect(yarisAni(r(2, 0)), _now - 2 * _gunMs);
-      expect(yarisAni(r(3, 0)), _now - 3 * _gunMs);
-      expect(yarisAni(r(4, 0)), _now);
-      expect(yarisAni(r(40, null)), _now - 40 * _gunMs);
+      expect(yarisAni(r(2, 0), SiralamaKapsami.anonim), _now - 2 * _gunMs);
+      expect(yarisAni(r(3, 0), SiralamaKapsami.anonim), _now - 3 * _gunMs);
+      expect(yarisAni(r(4, 0), SiralamaKapsami.anonim), _now);
+      expect(yarisAni(r(40, null), SiralamaKapsami.anonim), _now - 40 * _gunMs);
     });
 
     test('asgari 30 gün ölçüm; 7 günlük dönemde yalnız son 7 gün', () {
@@ -183,7 +198,7 @@ void main() {
     test('silinmiş lot ve mezar taşı miktara girmez', () {
       final silinen = _hareket('X.IS', 0, 100000)
           .copyWithDeletedAt(DateTime.fromMillisecondsSinceEpoch(_now));
-      expect(pozisyonGecmisleri([silinen]), isEmpty);
+      expect(pozisyonGecmisleri([silinen], SiralamaKapsami.anonim), isEmpty);
     });
 
     test('giriş anı sunucudan OKUNUR, istemci YAZMAZ (0095)', () {
@@ -209,7 +224,8 @@ void main() {
       // Sütun öncesi satır: null → tarih olduğu gibi.
       final eski = Asset.fromSupabase({...m}..remove('created_at'));
       expect(eski.createdAt, isNull);
-      expect(yarisAni(eski), eski.addedDate.millisecondsSinceEpoch);
+      expect(yarisAni(eski, SiralamaKapsami.anonim),
+          eski.addedDate.millisecondsSinceEpoch);
     });
 
     test('olcumAnlari: başlangıç, bugüne hizalı tam günler, bugün', () {

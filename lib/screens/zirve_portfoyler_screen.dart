@@ -138,13 +138,18 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
     setState(() {
       _senPay = servis.computeAllocation(p.assets, p.toTRY);
       _senFonDetay = servis.computeFonDetay(p.assets, p.toTRY);
-      _senRoi = servis.staleROI(userId: me.id, periodDays: donem.gun);
+      // Zirve anonim: sunucuyla aynı geriye tarih kuralı (`SiralamaKapsami`).
+      _senRoi = servis.staleROI(
+          userId: me.id,
+          periodDays: donem.gun,
+          kapsam: SiralamaKapsami.anonim);
     });
     final sonuc = await Future.wait<Object?>([
       servis.fetchZirveBenim(periodDays: donem.gun),
       servis.computeROI(
         assets: p.assets,
         periodDays: donem.gun,
+        kapsam: SiralamaKapsami.anonim,
         currentValueTRY: servis.totalValueTRY(p.assets, p.toTRY),
         toTRY: p.toTRY,
         cacheKey: me.id,
@@ -991,8 +996,10 @@ class _BosDurum extends StatelessWidget {
                 'günden eski ve en az 2 farklı varlığı olan katılımcılar '
                 'sayılır. Sıralama seçimlerinin getirisidir: her gün '
                 'tutulan varlıklar piyasa fiyatıyla ölçülür, para ekleme '
-                'zamanı etkilemez. Kimlik, miktar ve TL paylaşılmaz; yalnız '
-                'getiri, tür payı ve fon payları.',
+                'zamanı etkilemez. Bugünden 3 günden fazla geriye tarihli '
+                'girilen kayıt (içe aktarılan geçmiş dahil) girildiği gün '
+                'sayılır. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
+                'tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
                   color: context.c.text58,
