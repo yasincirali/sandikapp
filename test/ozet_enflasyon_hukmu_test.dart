@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/inflation_service.dart';
+import 'package:portfoy_takip/services/para_agirlikli_getiri.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
 import 'package:portfoy_takip/services/real_return_service.dart';
 import 'package:portfoy_takip/services/recap_service.dart';
@@ -433,6 +435,81 @@ void main() {
       expect(ilkLot.purchasePrice, 60);
       expect(r.nominal, closeTo(33.004978, 1e-5));
     });
+  });
+
+  // ── 4b. Aynı kural TÜM dönemlerde (yasin: "tüm zaman aralıklarında") ───
+  group('para ağırlıklı getiri her dönemde aynı fonksiyondan', () {
+    test('GÜNLÜK: kapanışa 10 dk kala eklenen ₺100.000 günü sulandırmaz', () {
+      // Açılış 10:00 ₺100.000, gün +%2; 17:50'de ₺100.000 alım, 18:00 son
+      // ₺202.000. Eski payda (açılış + akış) %1,00 yazıyordu.
+      //   IRR: 100.000(1+r) + 100.000(1+r)^(10/480) = 202.000 → %1,959562
+      final gun = DateTime(2026, 10, 1);
+      final pct = DailySummary.gunIciGetiriPct(
+        [_lot('ek', 1000, DateTime(2026, 10, 1, 17, 50), alis: 100)],
+        acilis: 100000,
+        son: 202000,
+        acilisMs: DateTime(2026, 10, 1, 10).millisecondsSinceEpoch,
+        seansGunu: gun,
+        now: DateTime(2026, 10, 1, 18),
+      );
+      expect(pct, closeTo(1.959562, 1e-5));
+    });
+
+    test('GÜNLÜK geçmiş seans (hafta sonu): akış yok, son/açılış − 1', () {
+      final pct = DailySummary.gunIciGetiriPct(
+        [_lot('ek', 1000, DateTime(2026, 10, 3, 12), alis: 100)],
+        acilis: 100000,
+        son: 101000,
+        acilisMs: DateTime(2026, 10, 2, 10).millisecondsSinceEpoch,
+        seansGunu: DateTime(2026, 10, 2),
+        now: DateTime(2026, 10, 3, 13),
+      );
+      expect(pct, closeTo(1.0, 1e-9));
+    });
+
+    for (final p in [
+      SummaryPeriod.birHafta,
+      SummaryPeriod.birAy,
+      SummaryPeriod.ucAy,
+      SummaryPeriod.altiAy,
+      SummaryPeriod.birYil,
+      SummaryPeriod.besYil,
+    ]) {
+      test('${p.label}: Özet yüzdesi = kesin para ağırlıklı getiri', () {
+        final now = DateTime(2026, 10, 1, 12);
+        final bas = PeriodSummaryService.pencere(p, now).start;
+        final orta = bas.add(now.difference(bas) ~/ 2);
+        // Baş ₺10.000 → yarıda ₺10.000 alım → son ₺21.000 (piyasa ₺1.000).
+        final seri = {
+          bas.millisecondsSinceEpoch: 10000.0,
+          now.subtract(const Duration(hours: 1)).millisecondsSinceEpoch:
+              21000.0,
+        };
+        final lot = _lot('ek', 100, orta, alis: 100);
+        final s = PeriodSummaryService.compute(
+          period: p,
+          assets: [lot],
+          breakdown: PortfolioHistoryBreakdown(
+            total: seri,
+            byType: const {},
+            byPosition: const {},
+            positionType: const {},
+          ),
+          now: now,
+        );
+        final sonTs = now.subtract(const Duration(hours: 1));
+        final w = sonTs.difference(orta).inMilliseconds /
+            sonTs.difference(bas).inMilliseconds;
+        final beklenen = paraAgirlikliGetiriPct(
+            bas: 10000, son: 21000, akislar: [(f: 10000, w: w)])!;
+        expect(s.piyasaTRY, closeTo(1000, 1e-6));
+        expect(s.getiriPct, closeTo(beklenen, 1e-9));
+        // Kesin değer Dietz'ten büyük (kazanç bileşik), eski "baş + akış"
+        // paydasının %5,00'ından belirgin biçimde büyük.
+        expect(s.getiriPct!, greaterThan(1000 / (10000 + 10000 * w) * 100));
+        expect(s.getiriPct!, greaterThan(6.0));
+      });
+    }
   });
 
   // ── 5. Bileşik reel getiri ile puan farkı aynı yönü söyler ──────────────

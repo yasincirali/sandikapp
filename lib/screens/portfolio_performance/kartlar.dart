@@ -504,23 +504,44 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // dönem başı + POZİTİF akış ("gün içinde portföyünü büyüten
     // kullanıcıda yüzdeyi şişirmemek için", bkz. `DailySummary.from`).
     final piyasa = grossChange - netInflow;
-    // Payda: 1H ve üstünde dönemin ORTALAMA sermayesi — Özet'le TEK fonksiyon
-    // (`PeriodSummaryService.ortalamaSermaye`, 2026-10-01). Ay sonunda
-    // eklenen para ayın tamamında çalışmış sayılmaz. GÜNLÜK'te ana sayfanın
-    // kuralı (`DailySummary.from`: baş + pozitif akış) kalır — parite orada.
-    final piyasaPctBase = (intraday || _simulate)
-        ? firstY + (netInflow > 0 ? netInflow : 0)
-        : (PeriodSummaryService.ortalamaSermaye(
+    // Yüzde: PARA AĞIRLIKLI getiri — Özet ve ana sayfayla TEK fonksiyon
+    // (2026-10-01, best practice kıyası; "tüm zaman aralıklarında").
+    // 1H ve üstünde `PeriodSummaryService.paraAgirlikliGetiri` (Özet'in
+    // `piyasaEtkisi` yüzdesi), GÜNLÜK'te `DailySummary.gunIciGetiriPct`
+    // (ana sayfa, widget, Live Activity). Simülasyonda akış yok: son/baş.
+    double? piyasaPct;
+    if (_simulate) {
+      piyasaPct = firstY > 0 ? piyasa / firstY * 100 : null;
+    } else if (intraday) {
+      piyasaPct = DailySummary.gunIciGetiriPct(targetAssets,
+          acilis: firstY,
+          son: lastY,
+          acilisMs: ep.firstTs!,
+          seansGunu: start,
+          now: end);
+    } else {
+      final akisSonuMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
+          .millisecondsSinceEpoch;
+      final sermaye = PeriodSummaryService.ortalamaSermaye(
+        lotlar: targetAssets,
+        bas: firstY,
+        basTs: ep.firstTs!,
+        sonTs: end.millisecondsSinceEpoch,
+        akisSonuMs: akisSonuMs,
+      );
+      piyasaPct = sermaye == null
+          ? null
+          : PeriodSummaryService.paraAgirlikliGetiri(
               lotlar: targetAssets,
               bas: firstY,
+              son: lastY,
               basTs: ep.firstTs!,
               sonTs: end.millisecondsSinceEpoch,
-              akisSonuMs: DateTime(end.year, end.month, end.day, 23, 59, 59)
-                  .millisecondsSinceEpoch,
-            ) ??
-            0);
-    final piyasaPct =
-        piyasaPctBase > 0 ? (piyasa / piyasaPctBase) * 100 : null;
+              akisSonuMs: akisSonuMs,
+              piyasa: piyasa,
+              sermaye: sermaye,
+            );
+    }
     final piyasaFlat =
         piyasa.abs().round() == 0 && (piyasaPct?.abs() ?? 0) < 0.005;
     final piyasaColor = piyasaFlat
