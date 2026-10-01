@@ -105,6 +105,43 @@ void main() {
         reason: 'geçiş bitince kayma sıfırlanır, komşu pencereden çıkar');
   });
 
+  // Görünmez kuyruk (kullanıcı bildirimi 2026-10-01): "Bugün kartı
+  // yüklenmeden kaydırma olmuyor." Yay varsayılan toleransla ~1 sn sürüyor,
+  // kart ~350 ms'de oturmuş görünüyordu; görünüm ancak yay bitince
+  // değişiyordu ve aradaki ikinci kaydırma bekleyen geçişi siliyordu.
+  testWidgets('kart oturduğu anda görünüm değişir (görünmez kuyruk yok)',
+      (t) async {
+    var sayac = 0;
+    await t.pumpWidget(kur(onGecis: (_) => sayac++));
+    await t.drag(find.text('kart'), const Offset(-160, 0));
+    var kare = 0;
+    while (sayac == 0 && kare < 120) {
+      await t.pump(const Duration(milliseconds: 16));
+      kare++;
+    }
+    // Ölçüm: eski varsayılan toleransla ~1.100 ms, piksel toleransıyla ~510.
+    expect(kare * 16, lessThan(600),
+        reason: 'kart yerine oturdu; görünüm de o an değişmeli');
+  });
+
+  testWidgets('yerleşirken gelen ikinci kaydırma iki geçiş yapar',
+      (t) async {
+    var sayac = 0;
+    await t.pumpWidget(kur(onGecis: (_) => sayac++));
+    await t.drag(find.text('kart'), const Offset(-160, 0));
+    // Yay daha bitmeden (kart neredeyse oturmuş) yeniden kaydır.
+    for (var i = 0; i < 12; i++) {
+      await t.pump(const Duration(milliseconds: 16));
+    }
+    // Kart kaymış durumda; jest kartın KUTUSUNA (pencere) verilir.
+    await t.drag(find.byType(KaydirmaliGecis), const Offset(-160, 0));
+    await t.pumpAndSettle();
+    expect(sayac, 2,
+        reason: 'araya giren sürükleme bekleyen geçişi silmemeli');
+    expect(find.text('Ayşe'), findsNothing,
+        reason: 'iki geçiş bitince kayma sıfırlanır');
+  });
+
   testWidgets('sağa kaydırma geri yönü bildirir', (t) async {
     bool? yon;
     await t.pumpWidget(kur(onGecis: (v) => yon = v));

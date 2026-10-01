@@ -42,11 +42,26 @@
 //   · denetleyici sınırsızdır ve değeri doğrudan kaymadır — ayrı dinleyici
 //     kurulup sökülmez; kesilen animasyon `orCancel` ile temiz biter.
 //
+// ## Görünmez kuyruk (beşinci tur, 2026-10-01)
+// Kullanıcı: "Bugün kartı yüklenmediğinde kart kaydırılamıyor." Ölçüldü
+// (`kaydirmali_gecis_test`): yay varsayılan toleransla (0,001 pt) ~970 ms
+// sürüyordu, kart ise ~350 ms'de yerine OTURMUŞ görünüyordu. Görünüm
+// ([onGecis]) ancak yay bitince değiştiği için aradaki ~0,6 sn'de ekran
+// yeni kartı gösterirken Bugün kartı hâlâ eski görünümdeydi (yeni kapsamın
+// yüklemesi henüz başlamamıştı). Bu pencerede atılan ikinci kaydırma
+// yayı durduruyor, bekleyen geçiş HİÇ işlenmiyor ve kart eski görünümde
+// kalıyordu: iki kaydırma tek geçiş, ya da hiç. Şimdi:
+//   · yay piksel toleransıyla biter ([_yayToleransi]) — görünüm kartın
+//     oturduğu anda değişir, Bugün kartı yüklemeye o an başlar;
+//   · yerleşirken gelen yeni sürükleme bekleyen geçişi ÖNCE işler
+//     ([_bekleyenGecis]), sonra parmağı yeni kartın üstünde sürdürür —
+//     kaydırma hiçbir zaman yüklemeyi ya da animasyonu beklemez.
+//
 // Bu widget görünümün NE olduğunu bilmez: [onGecis] ile yön bildirir,
 // [komsu] ile "o yöndeki kart"ı ister. Böylece ana ekranın kimlik
 // sözleşmesine ('' / id / null) bağlanmaz ve tek başına test edilir.
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart' show SpringSimulation;
+import 'package:flutter/physics.dart' show SpringSimulation, Tolerance;
 
 import '../theme/sandik.dart';
 
@@ -186,6 +201,22 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   /// Görünümü bu widget'ın kaydırması mı değiştirdi.
   bool _kendiGecisim = false;
 
+  /// Tamamlanmak üzere yaylanan geçişin yönü; yay bitince ya da araya
+  /// yeni bir sürükleme girince [_gecisiIslet] ile işlenir. `null`:
+  /// bekleyen geçiş yok.
+  bool? _bekleyenGecis;
+
+  /// Yay kart oturduğu anda biter: 0,5 pt göze görünmez. Varsayılan
+  /// tolerans (0,001) ~0,6 sn görünmez kuyruk bırakıyordu — bkz. dosya
+  /// başı "Görünmez kuyruk".
+  static const _yayToleransi = Tolerance(distance: 0.5, velocity: 20);
+
+  void _gecisiIslet(bool ileri) {
+    _bekleyenGecis = null;
+    _kendiGecisim = true;
+    widget.onGecis(ileri);
+  }
+
   @override
   void dispose() {
     _giris.dispose();
@@ -223,7 +254,8 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     _yay.value = _dx.value;
     try {
       await _yay
-          .animateWith(SpringSimulation(yay, _dx.value, son, hiz))
+          .animateWith(SpringSimulation(yay, _dx.value, son, hiz,
+              tolerance: _yayToleransi))
           .orCancel;
       if (mounted) _dx.value = son;
       return true;
@@ -253,7 +285,16 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   }
 
   void _surukle(DragUpdateDetails d) {
+    // Önceki geçiş hâlâ yerleşiyorsa önce onu işle: kayma bir kart
+    // ötelenir, parmak artık YENİ kartı tutuyor. Eskiden yay durduruluyor
+    // ve geçiş kayboluyordu.
+    final bekleyen = _bekleyenGecis;
     if (_yay.isAnimating) _yay.stop();
+    if (bekleyen != null) {
+      final tam = _genislik + KaydirmaliGecis.aralik;
+      _dx.value += bekleyen ? tam : -tam;
+      _gecisiIslet(bekleyen);
+    }
     final sinir = _genislik + KaydirmaliGecis.aralik;
     _dx.value = (_dx.value + d.delta.dx).clamp(-sinir, sinir);
   }
@@ -277,13 +318,14 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
       // değişir ve kayma sıfırlanır — yeni gerçek kart, komşunun durduğu
       // yerde belirir; göz fark etmez.
       SandikHaptic.selection.perform();
+      _bekleyenGecis = ileri;
+      // `false`: araya sürükleme girdi, geçişi `_surukle` işledi.
       if (!await _yayla(ileri ? -tam : tam, hiz, SandikMotion.yayOtur)) {
         return;
       }
-      if (!mounted) return;
+      if (!mounted || _bekleyenGecis != ileri) return;
       _dx.value = 0;
-      _kendiGecisim = true;
-      widget.onGecis(ileri);
+      _gecisiIslet(ileri);
       return;
     }
     // İptal: parmağın hızıyla yerine yaylan.
