@@ -3911,12 +3911,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayMoveLabel => 'Günün hareketi';
 
   @override
-  String get todayAxisOpen => 'açılış';
-
-  @override
-  String get todayAxisNow => 'şimdi';
-
-  @override
   String get todayRealYearly => 'yıllık';
 
   @override

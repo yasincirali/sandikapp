@@ -107,7 +107,7 @@ const List<SurumNotu> surumNotlari = [
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Bugün kartı yenilendi',
-        aciklama: 'Günün hareketi artık tam genişlikte bir eğriyle; kesik '
+        aciklama: 'Günün hareketi büyük rakamla, yanında gün içi eğri; kesik '
             'çizgi gün başı seviyesi. Enflasyona göre durumun çubukla '
             '(getirin dolu, TÜFE çizgi), son 7 gün ve artıdaki varlıkların '
             'kendi kutusunda. Hedef ve aylık özet sarı kutularda, bir '

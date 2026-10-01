@@ -122,6 +122,29 @@ void main() {
     expect(find.text('Hedef belirle'), findsNothing);
   });
 
+  group('satır içi kıvılcım — tutar öncelikli (3. tur, seçim G)', () {
+    test('artan yer 56pt altındaysa kıvılcım çizilmez', () {
+      expect(kivilcimGenisligi(0), isNull);
+      expect(kivilcimGenisligi(55.9), isNull);
+    });
+    test('56..120 arası artan yer kadar, üstü 120', () {
+      expect(kivilcimGenisligi(56), 56);
+      expect(kivilcimGenisligi(90), 90);
+      expect(kivilcimGenisligi(120), 120);
+      expect(kivilcimGenisligi(400), 120);
+    });
+    test('kaynak: kıvılcım artan yerden ölçülür, tutar ölçülür, rozet sabit',
+        () {
+      final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
+      expect(
+          src.contains('final artan = k.maxWidth - tutarW - rozetW'), isTrue);
+      expect(src.contains('seriCiz ? kivilcimGenisligi(artan) : null'), isTrue);
+      expect(src.contains('_YuzdeRozeti.azamiGenislik'), isTrue);
+      // Eksen satırı (açılış / şimdi) kalktı — yer kazanımının yarısı oydu.
+      expect(src.contains('todayAxisOpen'), isFalse);
+    });
+  });
+
   group('kaynak sözleşmesi', () {
     final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
 

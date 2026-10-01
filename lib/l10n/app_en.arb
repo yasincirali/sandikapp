@@ -2831,8 +2831,6 @@
     }
   },
   "todayMoveLabel": "Today's move",
-  "todayAxisOpen": "open",
-  "todayAxisNow": "now",
   "todayRealYearly": "yearly",
   "todayYourReturn": "Your return {pct}",
   "@todayYourReturn": {

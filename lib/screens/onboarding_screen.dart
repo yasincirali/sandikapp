@@ -379,7 +379,7 @@ List<_Adim> _adimlariKur() {
       // 2026-10-01 "sakin pano" düzeni: satır listesi yerine üç kat.
       govde: 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
           'hareketi: sadece piyasa etkisi, yatırdığın para sayılmaz; '
-          'altındaki eğride kesik çizgi gün başı seviyesidir. Sonra iki '
+          'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
           'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
           'çizgi TÜFE), son 7 gün, artıdaki varlıkların. Sarı kutular '
           'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '

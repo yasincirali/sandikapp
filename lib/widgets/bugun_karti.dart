@@ -468,9 +468,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
               const SandikSkeleton(width: 140, height: 12),
               const SizedBox(height: SandikSpace.sm),
               const SandikSkeleton(width: 180, height: 36),
-              const SizedBox(height: SandikSpace.sm),
-              const SandikSkeleton(
-                  width: double.infinity, height: _GunIciGrafik.yukseklik),
               const SizedBox(height: SandikSpace.md2),
               Divider(height: 1, color: context.c.hairline),
               const SizedBox(height: SandikSpace.md2),
@@ -1027,51 +1024,76 @@ class _Hareket extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: SandikSpace.xs),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Uzun tutar (−₺2.418.191) dar sütunda küçülür, kırpılmaz.
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  buyuk,
-                  maxLines: 1,
-                  style: context.t.displaySmall?.copyWith(
-                    color: c.text90,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                    letterSpacing: -1,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+        // Satır içi kıvılcım (3. tur, kullanıcı seçimi G, 2026-10-01): tam
+        // genişlik eğri + eksen satırı kartın üçte birini alıyordu ve seri
+        // çoğu gün "düz çizgi + sonda kırılma" olduğundan o alanı dolduran
+        // bilgi yoktu. Eğri tutarın sağına, artan yere iner.
+        //
+        // Öncelik kuralı (kullanıcı: "kâr/zarar tutarı taşmamalı"): tutar
+        // ve rozet önce DOĞAL genişliklerini alır; kıvılcım yalnızca artan
+        // yere çizilir (`kivilcimGenisligi`) — yer yoksa hiç çizilmez, tutarı
+        // sıkıştırmaz. Tutar rozetle birlikte bile sığmıyorsa (−₺2.418.191,
+        // 320pt) FittedBox küçültür; hiçbir durumda kırpılmaz.
+        LayoutBuilder(
+          builder: (context, k) {
+            final tutarStil = context.t.displaySmall?.copyWith(
+              color: c.text90,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+              letterSpacing: -1,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            );
+            final tp = TextPainter(
+              text: TextSpan(text: buyuk, style: tutarStil),
+              textDirection: Directionality.of(context),
+              maxLines: 1,
+              textScaler: MediaQuery.textScalerOf(context),
+            )..layout();
+            final tutarW = tp.width;
+            tp.dispose();
+            // Rozet ölçülmez: içeriği kısa ve sabit; üst sınırla sayılır.
+            final rozetW = yuzde == null ? 0.0 : _YuzdeRozeti.azamiGenislik;
+            final artan = k.maxWidth - tutarW - rozetW - SandikSpace.md;
+            final kivilcimW = seriCiz ? kivilcimGenisligi(artan) : null;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(buyuk, maxLines: 1, style: tutarStil),
                   ),
                 ),
-              ),
-            ),
-            if (yuzde != null) ...[
-              const SizedBox(width: SandikSpace.sm2),
-              _YuzdeRozeti(metin: yuzde, renk: renk, yon: yon),
-            ],
-          ],
+                if (yuzde != null) ...[
+                  const SizedBox(width: SandikSpace.sm2),
+                  _YuzdeRozeti(metin: yuzde, renk: renk, yon: yon),
+                ],
+                if (kivilcimW != null) ...[
+                  const Spacer(),
+                  _GunIciGrafik(seri: seri, renk: renk, genislik: kivilcimW),
+                ],
+              ],
+            );
+          },
         ),
-        if (seriCiz) ...[
-          const SizedBox(height: SandikSpace.sm),
-          _GunIciGrafik(seri: seri, renk: renk),
-          const SizedBox(height: SandikSpace.xxs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(l10n.todayAxisOpen,
-                  style: context.t.labelSmall?.copyWith(color: c.text36)),
-              Text(l10n.todayAxisNow,
-                  style: context.t.labelSmall?.copyWith(color: c.text36)),
-            ],
-          ),
-        ],
       ],
     );
   }
 }
+
+/// Kıvılcımın alacağı genişlik — artan yerden; sığmıyorsa `null` (çizilmez).
+///
+/// Alt sınır [kivilcimEnAz]: 56pt'in altında eğri yön bile anlatamaz,
+/// leke olur. Üst sınır [kivilcimEnCok]: daha genişi tutarla yarışır.
+/// Saf; `bugun_karti_sakin_pano_test` kilitler.
+double? kivilcimGenisligi(double artan) {
+  if (artan < kivilcimEnAz) return null;
+  return artan < kivilcimEnCok ? artan : kivilcimEnCok;
+}
+
+const double kivilcimEnAz = 56;
+const double kivilcimEnCok = 120;
 
 /// Renkli zeminli yüzde rozeti: "▼ %0,18".
 class _YuzdeRozeti extends StatelessWidget {
@@ -1082,6 +1104,11 @@ class _YuzdeRozeti extends StatelessWidget {
 
   /// `true` yukarı, `false` aşağı, `null` oksuz.
   final bool? yon;
+
+  /// Yerleşim hesabında rozetin payı: ok (18) + "%99,99" + dolgu, büyük
+  /// yazı ölçeğinde bile bu sınırı aşmaz. Ölçmek yerine sabit — rozet
+  /// içeriği kısa ve biçimi tek.
+  static const double azamiGenislik = 88;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1115,25 +1142,32 @@ class _YuzdeRozeti extends StatelessWidget {
       );
 }
 
-/// Gün içi eğri — tam genişlik, altı renk gölgeli, gün başı kesik çizgi.
+/// Gün içi kıvılcım — tutarın sağında, altı hafif gölgeli, gün başı kesik
+/// çizgi.
 ///
-/// Eski 64×24 kıvılcımın yerine (sakin pano): eğri artık yalnızca yönü
-/// değil "gün başına göre neredeyim"i de anlatır — kesik çizgi açılış
-/// seviyesidir; eğri onun altındaysa gün ekside. Kilit ekranı/widget ile
-/// aynı ham seri; eksen yok, zaman etiketleri altındaki satırda.
+/// Eğri yalnızca yönü değil "gün başına göre neredeyim"i de anlatır —
+/// kesik çizgi açılış seviyesidir; eğri onun altındaysa gün ekside. Tam
+/// genişlik sürümü (56pt + eksen satırı) kartı dolduruyordu; genişlik
+/// artık çağıranın artan yerinden gelir (`kivilcimGenisligi`). Kilit
+/// ekranı/widget ile aynı ham seri; eksen ve zaman etiketi yok.
 class _GunIciGrafik extends StatelessWidget {
-  const _GunIciGrafik({required this.seri, required this.renk});
+  const _GunIciGrafik({
+    required this.seri,
+    required this.renk,
+    required this.genislik,
+  });
 
   final List<double> seri;
   final Color renk;
+  final double genislik;
 
-  static const double yukseklik = 56;
+  static const double yukseklik = 30;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
         child: SizedBox(
           height: yukseklik,
-          width: double.infinity,
+          width: genislik,
           child: CustomPaint(
             painter: _GunIciPainter(
               seri: seri,

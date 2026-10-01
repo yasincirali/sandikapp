@@ -6566,18 +6566,6 @@ abstract class AppLocalizations {
   /// **'Günün hareketi'**
   String get todayMoveLabel;
 
-  /// No description provided for @todayAxisOpen.
-  ///
-  /// In tr, this message translates to:
-  /// **'açılış'**
-  String get todayAxisOpen;
-
-  /// No description provided for @todayAxisNow.
-  ///
-  /// In tr, this message translates to:
-  /// **'şimdi'**
-  String get todayAxisNow;
-
   /// No description provided for @todayRealYearly.
   ///
   /// In tr, this message translates to:

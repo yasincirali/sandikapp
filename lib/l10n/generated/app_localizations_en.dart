@@ -3940,12 +3940,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayMoveLabel => 'Today\'s move';
 
   @override
-  String get todayAxisOpen => 'open';
-
-  @override
-  String get todayAxisNow => 'now';
-
-  @override
   String get todayRealYearly => 'yearly';
 
   @override
