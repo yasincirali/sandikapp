@@ -28,6 +28,14 @@ Frankfurt'a gidemeyenler sunucular eşlenirken toplu gidecek:
 
 Frankfurt geçişe kadar canlı değil (cron kapalı), müşteri etkilenmez.
 
+> **Tokyo uygulandı (2026-10-01, Claude, Actions):** 0092 + 0093 `db push`
+> temiz ("Applying migration 0092… 0093… Finished"); tüm fonksiyonlar
+> dağıtıldı (bildirim-karti, check-price-alerts, daily-brief, weekly-summary,
+> fetch-inflation dahil). Tokyo `SUPABASE_DB_PASSWORD` secret'ı yasin
+> tarafından düzeltildi. Aşağıdaki iki bölümün Tokyo ayağı tamam; Frankfurt
+> ayağı bu bölümde bekliyor. Açık kontrol: cron sorgusu (`monthly-summary` =
+> `30 7 3,4 * *`, `calendar-nudge-inflation*` yok) Tokyo'da elle bakılmadı.
+
 ## ⏰ 3 EKİM 10:05'TEN ÖNCE — aylık özet + TÜFE tek push (2026-10-01, Claude)
 
 Eylül özeti push'u 1 Ekim'de gitti ve Özet'te **Ağustos** enflasyonunu
