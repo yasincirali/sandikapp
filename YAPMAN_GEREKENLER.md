@@ -8,9 +8,6 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-<<<<<<< HEAD
-## ✅ 2026-10-01 Zirve rızası → anında ölçüm (0094) — İKİ SUNUCUDA
-=======
 ## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01) — kalan: `MATCH_PASSWORD_YENI`'yi sil
 
 Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
@@ -53,8 +50,7 @@ okur, depoyu yeni parolayla şifreler, iki kez doğrular).
 > "trader" beyanı hâlâ bekliyor (AB'de yayın için gerekli, TestFlight'ı
 > engellemiyor).
 
-## ⏳ 2026-10-01 Zirve rızası → anında ölçüm (0094, PR'da)
->>>>>>> origin/main
+## ✅ 2026-10-01 Zirve rızası → anında ölçüm (0094) — İKİ SUNUCUDA
 
 Karar (yasin, 2026-10-01, "Anında ölçüm"): rıza kalır; "Katılıyorum"a basınca
 portföy akşam 18:40 cron'unu beklemeden o an ölçülür. Uygunluk şartları ve
@@ -79,9 +75,9 @@ Claude'un dağıtımını reddetti):
       kapalı, kapı HMAC). Not: `curl -I` HEAD gönderir → 405, ölçüt değil.
 - [x] **Ayrı token:** GitHub secret `SUPABASE_ACCESS_TOKEN_EU` (yalnız
       `sandikapp-eu` projesi, 2026-10-01). Deploy'un Frankfurt hedefi, eşitlik
-      işi ve günlük `sema-esitlik.yml` onu kullanır — **PR #51 birleşince**.
-      O zamana kadar Actions'ta Frankfurt hedefi ve günlük eşitlik 403 verir.
-- [ ] **PR #51'i birleştir** (yalnız CI; `_EU` yoksa ortak token'a düşer).
+      işi ve günlük `sema-esitlik.yml` onu kullanır (PR #51, birleşti).
+      Doğrulama: `sema-esitlik.yml` koşu 36889658665 yeşil, iki taraf 1129
+      satır, ŞEMA EŞİT — Actions artık Frankfurt'a erişiyor.
 
 Frankfurt geçişe kadar canlı değil (cron kapalı), müşteri etkilenmez.
 
