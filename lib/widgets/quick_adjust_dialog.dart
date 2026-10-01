@@ -183,6 +183,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           isManualPrice: asset.isManualPrice,
           subCategory: asset.subCategory,
           unitType: asset.unitType,
+          sozlesmeId: asset.sozlesmeId,
         );
       } else {
         await notifier.addSellTransaction(

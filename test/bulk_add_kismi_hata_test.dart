@@ -46,6 +46,7 @@ class _SahtePortfoy extends PortfolioNotifier {
     DateTime? addedDate,
     double? initialCurrentPrice,
     double commission = 0,
+    String? sozlesmeId,
   }) async {
     if (basarisiz.contains(name)) throw Exception('ağ koptu');
     eklenen.add(name);

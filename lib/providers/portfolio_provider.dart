@@ -383,6 +383,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     DateTime? addedDate,
     double? initialCurrentPrice,
     double commission = 0,
+    String? sozlesmeId,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -430,6 +431,9 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       addedDate: addedDate,
       currentPrice: initialCurrentPrice,
       commission: commission,
+      // Sözleşmeli pozisyona (mevduat/BES) hızlı alım: lot sözleşmesine
+      // bağlı kalır, yoksa kart ve "Çektim" onu görmez (2026-10-01).
+      sozlesmeId: sozlesmeId,
     );
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
       asset.purchasePrice = asset.currentPrice;
