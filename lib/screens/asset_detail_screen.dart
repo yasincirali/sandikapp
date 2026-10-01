@@ -59,6 +59,7 @@ import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/sozlesme_karti.dart';
+import '../providers/sozlesme_provider.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -604,6 +605,17 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       final v = GorunumCipi.gecerli(next, _view);
       if (v != _view) setState(() => _view = v);
     });
+    // Mevduat dönemi eklenince seri yeniden üretilir (bkz.
+    // `_sozlesmeSerileriniTazele`). Varlık sayfa ömrü boyunca değişmez,
+    // dinleyici koşulu sabittir.
+    final sozlesmeId = widget.asset.sozlesmeId;
+    if (sozlesmeId != null && widget.asset.type == AssetType.mevduat) {
+      ref.listen(sozlesmeProvider, (onceki, sonraki) {
+        final a = onceki?.valueOrNull?.donemleri(sozlesmeId).length;
+        final b = sonraki.valueOrNull?.donemleri(sozlesmeId).length;
+        if (a != null && b != null && a != b) _sozlesmeSerileriniTazele();
+      });
+    }
 
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
@@ -1067,7 +1079,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // `_karsilastirmaSerisi` ile ana varlıkla aynı
                         // 5 dakikalık ızgaradan gelir.
                         _CompareStrip(
-                          primaryTicker: widget.asset.ticker,
+                          // Çip etiketi başlıkla aynı kısa etiket: ham sembol
+                          // `MEVDUAT:<uuid>` / `THYAO.IS` yazıyordu.
+                          primaryTicker: _kimlik.kisaEtiket,
                           compare: _compareAsset,
                           onAddPressed: _openComparePicker,
                           onClearPressed: () {

@@ -8,6 +8,7 @@ import '../models/position.dart';
 import '../models/sozlesme.dart';
 import '../services/bes_hesabi.dart';
 import '../services/crash_reporter.dart';
+import '../services/history_service.dart';
 import '../services/mevduat_hesabi.dart';
 import '../services/price_service.dart';
 import '../services/sozlesme_deposu.dart';
@@ -217,6 +218,9 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     );
     await SupabaseService.instance.insertMevduatDonemi(d, uid);
     SozlesmeDeposu.instance.donemEkle(d);
+    // Seri dönemlerden üretilir; önbellekteki eski seri unutulmazsa grafik
+    // eski çizgide kalır ve geriye dönük faiz bugünkü kazanç gibi görünür.
+    HistoryService.instance.sembolUnut(mevduatSembolu(sozlesmeId));
     _yayinla(const [], [d]);
     await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
   }

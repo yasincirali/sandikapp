@@ -2622,6 +2622,27 @@ class HistoryService {
     _tierCache.clear();
   }
 
+  /// [sym]'nin bütün önbellek girişlerini unutur: seri (`SEMBOL_range…`),
+  /// boş yanıt hatırası ve çözünürlük katmanı (`tier::SEMBOL`).
+  ///
+  /// Neden (2026-10-01 emülatör testi): mevduat serisi ağdan değil
+  /// sözleşmenin dönemlerinden üretilir. Yeni dönem eklenince (yenileme,
+  /// oran değişikliği) eski seri 15 dk TTL boyunca önbellekte kalıyordu:
+  /// grafik eski düz çizgide duruyor, güncel birim değer yeni dönemden
+  /// geldiği için geriye dönük faiz 1H/1A/BUGÜN'de "bugünkü kazanç" diye
+  /// görünüyordu (+%2,89, vade 7 ay önce dolmuşken).
+  void sembolUnut(String sym) {
+    bool seri(String k) => k.startsWith('${sym}_');
+    for (final k in _cache.keys.where(seri).toList()) {
+      _cache.remove(k);
+      _cacheAt.remove(k);
+    }
+    _bosYanitAt.removeWhere((k, _) => seri(k));
+    bool katman(String k) => k.endsWith('::$sym');
+    _tierCache.removeWhere((k, _) => katman(k));
+    _tierCacheAt.removeWhere((k, _) => katman(k));
+  }
+
   // ── Tek varlık geçmişi (karşılaştırma altyapısı) ──────────────────────────
   //
   // Buradan aşağısı PORTFÖYDEN BAĞIMSIZDIR: kullanıcının sahip olmadığı bir
