@@ -13,6 +13,14 @@ import 'push_message_router.dart';
 import 'supabase_service.dart';
 import 'crash_reporter.dart';
 
+/// Bu sürümün anladığı push biçimi — `user_push_tokens.bildirim_surumu`.
+///
+/// 2 = bildirim kartı görseli (sunucu: `_shared/bildirim_karti.ts`
+/// `KART_SURUMU`). Sunucu kartı YALNIZ bu değeri yazan cihazlara gönderir;
+/// eski sürümler hiçbir şey yazmaz ve düz metin almaya devam eder
+/// (kullanıcı kuralı 2026-10-01). Parite: `bildirim_surumu_parite_test`.
+const int bildirimSurumu = 2;
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -329,6 +337,9 @@ class RemotePushService {
       deviceId: deviceId,
     );
     _currentToken = token;
+    // Kayıttan SONRA: satır artık bu hesabın. Kart görselini açar (0092).
+    await SupabaseService.instance
+        .setPushBildirimSurumu(token, bildirimSurumu);
   }
 
   String get _platformName {

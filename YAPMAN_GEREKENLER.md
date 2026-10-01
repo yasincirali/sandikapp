@@ -14,9 +14,12 @@ Eylül özeti push'u 1 Ekim'de gitti ve Özet'te **Ağustos** enflasyonunu
 gösterdi (TÜİK Eylül TÜFE'sini 3 Ekim'de açıklıyor). Ayrıntı:
 proje dosyaları `denetim/AYLIK_OZET_ENFLASYON_2026-10-01.md`.
 
-- [ ] **PR'ı birleştir**, sonra Actions → Supabase deploy (hedef `ikisi`):
-      migration **0093** + fonksiyonlar **`weekly-summary`**, **`fetch-inflation`**.
-      Yeni secret YOK.
+- [ ] **PR #42'yi birleştir**, sonra Actions → Supabase deploy, dal `main`,
+      hedef `ikisi`: migration **0093** + fonksiyonlar **`weekly-summary`**,
+      **`fetch-inflation`**. Yeni secret YOK. Aşağıdaki bildirim kartı (0092,
+      #41) da dağıtılmadıysa TEK koşuda birlikte: functions `all` ya da
+      `weekly-summary fetch-inflation bildirim-karti check-price-alerts daily-brief`
+      (db push 0092 → 0093 sırasıyla koşar).
 - **Neden 3 Ekim'den önce:** dağıtılmazsa 3 Ekim'de eski düzen koşar:
       `fetch-inflation` 10:05'te ve `calendar-nudge` 10:15'te İKİ ayrı TÜFE
       push'u gider (bu çift push 0068'den beri vardı, canlıda hiç koşmamıştı).
@@ -29,6 +32,32 @@ proje dosyaları `denetim/AYLIK_OZET_ENFLASYON_2026-10-01.md`.
       `monthly-summary` = `30 7 3,4 * *`, `calendar-nudge-inflation*` yok.
 - İstemci: Özet yüzdesi artık ortalama sermayeyle; TÜFE kartı ayın adını
       yazar. Yeni sürümle gelir, eski sürümler etkilenmez.
+
+## ⏳ 2026-10-01 Bildirim kartı ("C · Kart", yalnız yeni sürüm)
+
+Karar (yasin, 2026-10-01): bildirimler C kartı tasarımına geçer ama **store
+kullanıcıları etkilenmez** — kart yalnız `user_push_tokens.bildirim_surumu >= 2`
+yazan yeni sürüm cihazlara gider; eski sürümlere giden FCM gövdesi birebir aynı
+(`fcm_send_test` kilitler).
+
+**Sunucu (iki sunucu, Frankfurt → Tokyo, `supabase-deploy.yml` hedef `ikisi`):**
+- [ ] **0092** — `user_push_tokens.bildirim_surumu` sütunu (yalnız ekleme,
+      varsayılan NULL). Uygulama sürümünden ÖNCE dağıtılabilir; eski sürüm
+      etkilenmez.
+- [ ] **Fonksiyonlar:** `bildirim-karti` (YENİ — `config.toml`'da
+      `verify_jwt = false`; Android görseli oturumsuz indirir, kapıyı HMAC
+      imzası tutar), `check-price-alerts`, `daily-brief`. Yeni secret YOK
+      (imza anahtarı mevcut `SUPABASE_SERVICE_ROLE_KEY`). Sıra önemli değil:
+      gönderenler sütun yoksa eski seçime düşer.
+- [ ] Dağıtım sonrası: `curl -I "$SUPABASE_URL/functions/v1/bildirim-karti?d=x&s=y"`
+      → **403** (401 ise `verify_jwt` uygulanmamış: deploy'a `--no-verify-jwt`).
+- [ ] Sonda `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+
+**iOS (2. adım — senin işlemin gerekiyor):** iOS görseli kendisi indirmez;
+bunun için *Notification Service Extension* hedefi gerekir. Yeni bundle id
+`com.sandik.app.NotificationService` → Apple Developer'da App ID kaydı +
+match profili (`setup-match.yml`). Bu yapılana kadar yeni iOS sürümü de kartı
+**metin olarak** gösterir (bozulma yok); Android kartı hemen gösterir.
 
 ## ⏳ 2026-10-01 İkinci tur — BES otomatik, Zirve açık rıza, halka arz, web, ekstre motoru
 

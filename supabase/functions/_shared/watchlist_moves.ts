@@ -19,7 +19,8 @@
 // ekranda 6.200 görürken sunucu başka bir seriye bakardı.
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { createAccessToken, sendFcmNotification, ServiceAccount } from './fcm.ts';
-import { collapseTokens, TokenRow } from './push_tokens.ts';
+import { collapseTokens, tokenSatirlariniOku } from './push_tokens.ts';
+import { degisimKarti, kartGorseli, KartAyari, KartVerisi } from './bildirim_karti.ts';
 import { fetchLiveQuotes } from './live_prices.ts';
 import { sessizKullanicilar } from './quiet_hours.ts';
 import { appNotificationRow, recordAppNotification } from './app_notifications.ts';
@@ -69,6 +70,13 @@ export function hareketMesaji(hareketler: Hareket[]): { title: string; body: str
   return { title, body };
 }
 
+/// Kart yalnız TEK hareketli bildirimde: birden çok hareketi tek halka
+/// anlatamaz, metin zaten hepsini sayıyor.
+export function hareketKarti(hareketler: Hareket[]): KartVerisi | null {
+  if (hareketler.length !== 1) return null;
+  return degisimKarti(hareketler[0].ad, hareketler[0].pct, 'Takip listesi · son kapanış');
+}
+
 type WatchRow = {
   user_id: string;
   ticker: string;
@@ -83,6 +91,9 @@ export async function takipListesiHareketleri(
     fcm: { projectId: string; serviceAccountJson: string } | null;
     dryRun: boolean;
     esikPct?: number;
+    /// Bildirim kartı (0092): verilirse `bildirim_surumu >= 2` cihazlara
+    /// tek hareketli bildirimde kart görseli eklenir.
+    kart?: KartAyari | null;
   },
 ): Promise<Record<string, unknown>> {
   const esik = args.esikPct ?? HAREKET_ESIGI_PCT;
@@ -136,11 +147,10 @@ export async function takipListesiHareketleri(
   const zaten = new Set((gonderilmis ?? []).map((r: { user_id: string }) => r.user_id));
   const sessiz = await sessizKullanicilar(admin, userIds);
 
-  const { data: tokenRows } = await admin
-    .from('user_push_tokens')
-    .select('token, user_id, device_id, platform, updated_at')
-    .in('user_id', userIds);
-  const tokens = collapseTokens((tokenRows ?? []) as TokenRow[]);
+  const { data: tokenRows } = await tokenSatirlariniOku((s) =>
+    admin.from('user_push_tokens').select(s).in('user_id', userIds)
+  );
+  const tokens = collapseTokens(tokenRows ?? []);
 
   let sent = 0;
   let skippedQuietHours = 0;
@@ -181,6 +191,7 @@ export async function takipListesiHareketleri(
       body: mesaj.body,
       channelId: CHANNEL_ID,
       data: { type: 'watchlist_move', sent_on: bugun },
+      gorselUrl: await kartGorseli(args.kart, t, hareketKarti(hareketler)),
     });
     if (r.ok) {
       sent += 1;

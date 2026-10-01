@@ -194,8 +194,8 @@ struct SandikHomeWidgetView: View {
 
     private var baslik: some View {
         HStack(spacing: 6) {
-            // Boyut `width` ile verilir; `frame` ile ezmek 80:50 oranını
-            // bozardı (yükseklik genişlikten türetiliyor).
+            // Boyut `width` ile verilir (işaret kare, 2026-10-01); `frame`
+            // ile ezmek Canvas ölçeğini bozardı.
             SandikLogoMark(width: 16)
             Text("sandık")
                 .font(.sandikLabel(12, weight: .bold))
@@ -534,7 +534,9 @@ struct SandikKilitView: View {
     /// sonraki açılış.
     private var altSatir: some View {
         HStack(spacing: 4) {
-            SandikLogoMark(width: 10)
+            // 12: kare işaret 11 pt rakamın büyük harf yüksekliğiyle hizalı;
+            // 10'da anahtar deliği pikselin altına iniyordu.
+            SandikLogoMark(width: 12)
             if tutarGorunur {
                 Text(entry.changeText)
                     .font(.sandikNumber(11, weight: .semibold))

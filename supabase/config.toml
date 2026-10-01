@@ -384,6 +384,12 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Bildirim kartı görseli (0092): Android FCM görselini OTURUMSUZ indirir,
+# JWT isteyen fonksiyon 401 döner ve kart hiç görünmez. Kapıyı imza tutar
+# (`_shared/bildirim_karti.ts` → HMAC, imzasız istek 403).
+[functions.bildirim-karti]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327

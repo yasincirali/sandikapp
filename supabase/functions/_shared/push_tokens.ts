@@ -18,7 +18,37 @@ export type TokenRow = {
   device_id?: string | null;
   platform?: string | null;
   updated_at?: string | null;
+  /// 0092: cihazın anladığı bildirim biçimi (yeni istemci yazar; eski NULL).
+  bildirim_surumu?: number | null;
 };
+
+/// Gönderen fonksiyonların okuduğu sütunlar.
+export const TOKEN_SUTUNLARI = 'token, user_id, device_id, platform, updated_at';
+
+type SorguSonucu = {
+  data: unknown;
+  error: { code?: string; message: string } | null;
+};
+
+/// Token satırlarını `bildirim_surumu` ile okur; sütun o projede henüz
+/// yoksa (0092 dağıtılmadan fonksiyon dağıtıldıysa) eski seçime düşer.
+///
+/// Düşüş şart: sütunu körlemesine seçmek 42703 döndürür ve o turda HİÇ
+/// bildirim gitmez — kart gibi bir süs için bütün push'u riske atmak olmaz.
+/// `sorgu` sütun listesini alıp aynı sorguyu kurar (filtreler çağıranda).
+export async function tokenSatirlariniOku(
+  sorgu: (sutunlar: string) => PromiseLike<SorguSonucu>,
+): Promise<{ data: TokenRow[] | null; error: SorguSonucu['error'] }> {
+  const ilk = await sorgu(`${TOKEN_SUTUNLARI}, bildirim_surumu`);
+  if (
+    ilk.error &&
+    (ilk.error.code === '42703' || ilk.error.message.includes('bildirim_surumu'))
+  ) {
+    const eski = await sorgu(TOKEN_SUTUNLARI);
+    return { data: (eski.data ?? null) as TokenRow[] | null, error: eski.error };
+  }
+  return { data: (ilk.data ?? null) as TokenRow[] | null, error: ilk.error };
+}
 
 /// Gruplama anahtarı: `device_id` varsa o (istemcinin `shared_preferences`'ta
 /// tuttuğu kalıcı kimlik). Yoksa `platform`'a düşülür: eski sürüm istemciler
