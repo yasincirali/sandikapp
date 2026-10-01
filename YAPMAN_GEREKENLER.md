@@ -17,12 +17,23 @@ Bu parola imza sertifikası/profil reposunu (`MATCH_GIT_URL`) şifreler. Repoya
 erişim ayrıca `MATCH_GIT_BASIC_AUTH` PAT'ı ister (günlükte görünmedi), yine de
 parola açıkta sayılır. Günlüğe basma düzeltmesi: PR #46.
 
-- [ ] Kendi makinende repo kökünde: `cd ios && bundle install`
-- [ ] `MATCH_GIT_URL=<sertifika reposu URL'si> bundle exec fastlane match change_password`
-      (eski + yeni parolayı sorar, depoyu yeniden şifreleyip push eder;
-      sertifika reposuna push izni gerekir)
+Yol (2026-10-01): yerel Ruby gerekmez, eski parolayı bilmen gerekmez —
+GitHub Actions'ta `match-parola-degistir.yml` (eski parolayı mevcut secret'tan
+okur, depoyu yeni parolayla şifreler, iki kez doğrular).
+
+- [ ] Git Bash: `openssl rand -hex 32` → çıktıyı parola yöneticisine kaydet.
+      (Yalnız harf/rakam şart: eski paroladaki özel karakterler kabuk
+      kaçışıyla değişip GitHub maskesinden kaçmıştı. Lane kontrol eder.)
 - [ ] GitHub → sandikapp → Settings → Secrets and variables → Actions →
-      `MATCH_PASSWORD` → Update (yeni parola)
+      **New repository secret** → `MATCH_PASSWORD_YENI` = o değer.
+- [ ] Actions → **iOS — Match parolasını değiştir (tek seferlik)** → Run
+      workflow → onay `DEGISTIR`. Koşu süresince main'e birleştirme yapma.
+- [ ] Yeşilse HEMEN: `MATCH_PASSWORD` → Update → aynı değer; sonra
+      `MATCH_PASSWORD_YENI`'yi sil. (Bu ikisi arasında iOS derlemesi
+      sertifikayı çözemez.) Kırmızıysa günlüğe bak: "Finished uploading
+      files" satırı YOKSA depo değişmemiştir, `MATCH_PASSWORD`'e dokunma;
+      VARSA depo yeni paroladadır, `MATCH_PASSWORD`'ü yine güncelle. İki
+      durumda da günlüğü Claude'a ver.
 - [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
 - [ ] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
 
