@@ -149,6 +149,18 @@ void main() {
       }
     });
 
+    // Kullanıcı bildirimi 2026-10-01: yazı ile grafik üst üste biniyordu.
+    // Eğri kendi bandında; görünüm ZStack ile katmanlanmaz.
+    test('kilit kartı: metin ve eğri üst üste binmez', () {
+      final bas = swift.indexOf('struct SandikKilitView');
+      final son = swift.indexOf('struct SandikKilitWidget');
+      final gorunum = swift.substring(bas, son);
+      expect(gorunum, isNot(contains('ZStack')));
+      expect(gorunum, contains('egriSeridi'));
+      expect(gorunum, contains('.layoutPriority(2)'),
+          reason: 'Yer daralınca önce eğri incelmeli, yüzde değil');
+    });
+
     test('TEK kart: yalnız dikdörtgen; yuvarlak ve tek satır YOK', () {
       expect(swift, contains('.supportedFamilies([.accessoryRectangular])'));
       expect(swift, isNot(contains('.accessoryCircular')),
