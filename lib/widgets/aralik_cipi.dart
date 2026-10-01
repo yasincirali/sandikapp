@@ -93,4 +93,23 @@ class AralikMetni {
   /// Pencere tek bir TÜFE ayını mı ölçüyor?
   static bool tekAyMi(DateTime bas, DateTime bitis) =>
       (bitis.year - bas.year) * 12 + (bitis.month - bas.month) == 1;
+
+  /// ÖLÇÜLEN ayların aralığı (müşteri testi, 2026-10-01).
+  ///
+  /// [aylik] uçları yazıyordu: 3A'da "May 26 - Ağu 26" dört ay gibi
+  /// okunuyordu, oysa ölçüm Mayıs SONU → Ağustos sonu = Haziran, Temmuz,
+  /// Ağustos. Burada ilk ÖLÇÜLEN ay yazılır: "Haz - Ağu 26". Tek ay ay
+  /// adıyla ("Ağustos 2026"); on iki ay TÜİK diliyle ("Ağu 25 - Ağu 26")
+  /// — kullanıcı yıllık enflasyonu TÜİK'te o uçlarla doğruluyor.
+  static String olculenAylar(AppLocalizations l, String dil,
+      {required DateTime bas, required DateTime bitis}) {
+    final ayAdedi = (bitis.year - bas.year) * 12 + (bitis.month - bas.month);
+    if (ayAdedi <= 1) return DateFormat('MMMM yyyy', dil).format(bitis);
+    if (ayAdedi == 12) return aylik(l, dil, bas: bas, bitis: bitis);
+    final ilkOlculen = DateTime(bas.year, bas.month + 1, 1);
+    return l.rangeChip(
+      DateFormat('MMM', dil).format(ilkOlculen),
+      DateFormat('MMM yy', dil).format(bitis),
+    );
+  }
 }

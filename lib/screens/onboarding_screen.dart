@@ -548,9 +548,14 @@ List<_Adim> _adimlariKur() {
       // soru sırasına (Sonuç → Neden → Ayrıntı) çevrildi, ana rakamın adı
       // "Paranın getirisi" oldu ve her yüzde aralık çipi taşıyor. Dönemler
       // 2026-09-28'den beri 5Y'ye kadar ("bir yıla kadar" eskimişti).
+      // 2026-10-02 (müşteri testi sadeleştirmesi): enflasyon kartı tek sayı
+      // söyler (kaç puan önde/geride), Grafik kartındaki yüzde yalnızca
+      // piyasanın kattığıdır — tur metni de bunu söylüyor.
       govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
-          'dönemi görebilirsin. Özet soru sırasıyla ilerler: SONUÇ (paranın '
-          'getirisi ve enflasyona karşı), NEDEN (nereden geldi, hangi '
+          'dönemi görebilirsin. Grafik kartında yüzde yalnızca piyasanın '
+          'kattığıdır; yatırdığın para ayrı yazılır. Özet soru sırasıyla '
+          'ilerler: SONUÇ (paranın getirisi ve enflasyona göre kaç puan '
+          'önde ya da geride olduğun), NEDEN (nereden geldi, hangi '
           'varlıklar) ve AYRINTI (birikim, istersen açtığın derinlik). Her '
           'yüzdenin yanındaki mavi çip ölçüldüğü aralığı yazar.',
       gorev: 'Performans sekmesine dokun',

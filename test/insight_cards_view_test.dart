@@ -113,15 +113,28 @@ void main() {
         ),
       );
 
-      expect(find.textContaining('Reel getiri'), findsOneWidget);
-      // Pencere biliniyor (`ozet` uçları doldurur): nominal satırı dönem
-      // kartından FARKLI aralığı ölçtüğünü söyler (2026-09-29, bulgu #4).
+      // Başlık Ana ekranla aynı ("Enflasyona göre"); ana sayı PUAN FARKI
+      // (müşteri testi 2026-10-01: dört yüzde tek karta sığmıyordu).
+      expect(find.text('Enflasyona göre'), findsOneWidget);
+      // Üst kartın enflasyon satırı + ayrıntı kartı: aynı sayı iki yerde.
+      expect(find.text('11,4 puan önde'), findsNWidgets(2));
+      // Pencere ve iki girdi tek cümlede: kullanıcı aralığı ilk kelimede
+      // okur (2026-09-29 bulgu #4'ün yeni biçimi).
+      expect(find.textContaining('Son bir yılda (Ağu 2025 - Ağu 2026)'),
+          findsOneWidget);
+      expect(find.textContaining('%48,1 arttı, enflasyon %36,7 oldu'),
+          findsOneWidget);
+      // Ham girdiler katlanır bölümde — kapalıyken ağaçta YOK.
+      expect(find.text('Bu aralıkta senin getirin'), findsNothing);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
       expect(find.text('Bu aralıkta senin getirin'), findsOneWidget);
       expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
-      expect(find.text('Aradaki fark'), findsOneWidget);
-      // Ana rakam bileşik reel getiri, puan farkı DEĞİL.
-      expect(find.textContaining('%8,34'), findsOneWidget);
-      expect(find.textContaining('11,4 puan'), findsOneWidget);
+      expect(find.text('Bileşik reel getiri'), findsOneWidget);
+      expect(find.text('+%8,34'), findsOneWidget);
+      // Nominal iki yerde: üst kartın rozeti ve bu kartın ham girdi satırı.
+      expect(find.text('+%48,10'), findsNWidgets(2));
+      expect(find.text('%36,70'), findsOneWidget);
     });
 
     testWidgets('ölçülen aralık kartın başlığında, çip olarak', (t) async {
@@ -160,7 +173,8 @@ void main() {
       // `ozet` pencereyi 12 aylık verir; çip dönem etiketini değil
       // ölçülen aralığı yazar.
       expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
-      expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
+      expect(find.text('Enflasyona göre'), findsOneWidget);
+      expect(find.textContaining('enflasyon %18,0 oldu'), findsOneWidget);
     });
 
     testWidgets('negatif reel getiride kutlama dili yok', (t) async {
@@ -225,7 +239,7 @@ void main() {
         ),
       );
       expect(find.text('TÜFE verisi henüz yüklenmedi.'), findsNothing);
-      expect(find.text('Enflasyon (TÜFE)'), findsOneWidget);
+      expect(find.text('Enflasyona göre'), findsOneWidget);
     });
 
     testWidgets('bekleyen-veri hâli uyarı tonu taşımaz', (t) async {
@@ -251,13 +265,14 @@ void main() {
         t,
         PeriodSummaryView(summary: ozet(temettu: 1250, komisyon: 340)),
       );
-      expect(find.text('Bunun nakit temettüsü'), findsOneWidget);
+      // Temettü kendi çubuğuyla, eksi: cebe giden para (2026-10-01).
+      expect(find.text('Cebine aldığın temettü'), findsOneWidget);
       expect(find.text('Ödenen komisyon'), findsOneWidget);
     });
 
     testWidgets('null iken satır HİÇ çizilmez — ₺0 yazılmaz', (t) async {
       await pump(t, PeriodSummaryView(summary: ozet()));
-      expect(find.text('Bunun nakit temettüsü'), findsNothing);
+      expect(find.text('Cebine aldığın temettü'), findsNothing);
       expect(find.text('Ödenen komisyon'), findsNothing);
     });
   });
@@ -475,7 +490,7 @@ void main() {
         ),
         brightness: Brightness.dark,
       );
-      expect(find.textContaining('Reel getiri'), findsOneWidget);
+      expect(find.text('Enflasyona göre'), findsOneWidget);
     });
   });
 }

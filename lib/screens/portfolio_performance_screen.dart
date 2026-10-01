@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../demo/demo_modu.dart';
+import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
@@ -208,6 +209,12 @@ class _PortfolioPerformanceScreenState
   // Controller'ın hangi (view, tip, periyot, simülasyon, asset-hash) için
   // kurulduğunu takip et — bunlar değişince yeni controller kurulur.
   String? _zoomKey;
+
+  /// Özet'in kanonik serisini yeniden kurduran sayaç (`_OzetSerisi`
+  /// anahtarının parçası). Kullanıcı yenilemesi (`_retryChartData`)
+  /// artırır; Özet grafiğin controller'ına bağlı olmadığı için başka türlü
+  /// tazelenmezdi.
+  int _ozetYenileme = 0;
 
   // Ana grafik + volume subchart aynı X viewport'unu paylaşsın diye
   // ortak controller. Grafiğin fullMinX/fullMaxX'i period değiştikçe

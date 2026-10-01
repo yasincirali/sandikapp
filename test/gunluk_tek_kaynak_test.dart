@@ -385,12 +385,13 @@ void main() {
 
       // Performans: tur + KARE, ve liste son build'in kopyasından.
       final seriler = kod('lib/screens/portfolio_performance/seriler.dart');
+      // 2026-10-02 (gün içi tek seri): seri ORTAK önbellekten, aynı
+      // bekleme zinciriyle.
       expect(
           seriler.contains(
               '.fiyatTurunuVeKareyiBekle(enFazla: TazelikRitmi.gunIciSeriOmru) '
-              '.then((_) => HistoryService.instance'
-              '.getPortfolioHistoryHourlyBreakdown( '
-              '_intradayKey == key ? _intradayAssets : chartAssets, 24))'),
+              '.then((_) => IntradaySeriesCache.instance.breakdown( '
+              '_intradayKey == key ? _intradayAssets : chartAssets,'),
           isTrue,
           reason: 'memoize edilen future taze listeyi okumalı');
       expect(seriler.contains('_intradayAssets = chartAssets;'), isTrue);

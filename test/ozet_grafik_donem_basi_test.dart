@@ -265,7 +265,7 @@ void main() {
           reason: 'dönem yüzdesi Özet ile TEK hesap');
       expect(tek.contains('netInflow > 0 ? netInflow : 0'), isFalse,
           reason: 'eski "baş + pozitif akış" paydası geri gelmemeli');
-      expect(tek.contains('context.l10n.marketOnlyRow'), isTrue,
+      expect(tek.contains('context.l10n.marketAddedRow'), isTrue,
           reason: 'piyasa etkisi ayrı satır olarak yazılmalı');
     });
 
@@ -275,8 +275,14 @@ void main() {
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('etiket: context.l10n.yourContribution,'), isTrue);
-      expect(tek.contains('etiket: context.l10n.marketOnlyRow,'), isTrue);
+      // 2026-10-01: "Yatırdığın" (temettü hariç) + "Cebine aldığın temettü"
+      // + "Piyasanın kattığı" — Özet köprüsüyle aynı üç parça; yüzde
+      // rozeti akış varken yalnızca piyasa kaleminde.
+      expect(tek.contains('etiket: context.l10n.investedRow,'), isTrue);
+      expect(tek.contains('etiket: context.l10n.dividendPocketRow,'), isTrue);
+      expect(tek.contains('etiket: context.l10n.marketAddedRow,'), isTrue);
+      expect(tek.contains('if (pct != null && !isFlat && !akisVar)'), isTrue,
+          reason: 'kahraman rozeti akış varken çizilmez — getiri sanılıyordu');
       expect(tek.contains('IncludedNote('), isFalse,
           reason: 'not satırı kalktı, kalemler anlatıyor');
       expect(tek.contains('ExcludedNote('), isFalse,

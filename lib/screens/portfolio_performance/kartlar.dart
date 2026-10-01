@@ -205,14 +205,34 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           //
           // `hasData` tek başına yetmez: tohum veri de "veri" sayılır ama
           // `stale` iken BAŞKA bir kapsamın/periyodun serisidir.
-          if (!hasData || stale)
-            _ozetIskeleti(context)
+          //
+          // Gün dışı dönemlerde Özet grafiğin serisini DEĞİL kendi kanonik
+          // serisini okur (`_OzetSerisi`): zoom/bar seçimi Özet'in dönem
+          // başını kaydırmasın (müşteri testi 2026-10-01).
+          if (isIntraday)
+            (!hasData || stale)
+                ? _ozetIskeleti(context)
+                : _buildOzetSekmesi(
+                    breakdown: breakdown,
+                    targetAssets: targetAssets,
+                    intraday: true,
+                    seansBaslangici: cizimBaslangici,
+                  )
           else
-            _buildOzetSekmesi(
-              breakdown: breakdown,
-              targetAssets: targetAssets,
-              intraday: isIntraday,
-              seansBaslangici: cizimBaslangici,
+            _OzetSerisi(
+              key: ValueKey('ozet|$_view|${_typeFilter?.name}|'
+                  '$_selectedPeriodIdx|$_simulate|$_ozetYenileme|'
+                  '${chartAssets.map((a) => a.id).join(",")}'),
+              chartAssets: chartAssets,
+              period: SummaryPeriod.fromIndex(_selectedPeriodIdx),
+              simulate: _simulate,
+              iskelet: _ozetIskeleti(context),
+              builder: (bd) => _buildOzetSekmesi(
+                breakdown: bd,
+                targetAssets: targetAssets,
+                intraday: false,
+                seansBaslangici: cizimBaslangici,
+              ),
             ),
           const SizedBox(height: 12),
           const DisclaimerWidget(),
@@ -544,6 +564,22 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     }
     final piyasaFlat =
         piyasa.abs().round() == 0 && (piyasaPct?.abs() ?? 0) < 0.005;
+
+    // Temettü AYRI kalem (müşteri testi 2026-10-01): `netInflow` temettüyü
+    // çıkış sayar (`getiriAkisi`), bu yüzden hiçbir şey yapmadığı günde
+    // kullanıcı "Net katkın −₺86" görüyordu. "Yatırdığın" = alım − satış
+    // (temettü hariç), temettü kendi kaleminde "cebine" — Özet köprüsüyle
+    // aynı üç parça (`_KopruKarti.yatirdigin`).
+    final temettu = _simulate
+        ? 0.0
+        : PeriodSummaryService.temettuArasi(
+            targetAssets,
+            sonrasiMs: ep.firstTs!,
+            sonuMs: DateTime(end.year, end.month, end.day, 23, 59, 59)
+                .millisecondsSinceEpoch,
+          );
+    final yatirilan = netInflow + temettu;
+    final akisVar = netInflow.abs() > 0.5 || temettu.abs() > 0.5;
     final piyasaColor = piyasaFlat
         ? context.c.text36
         : (piyasa >= 0 ? context.c.gain : context.c.loss);
@@ -685,7 +721,13 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
             ],
           ),
           const SizedBox(height: SandikSpace.sm2),
-          // Kahraman: tutar en büyük tipografi, yüzde yanında küçük rozet.
+          // Kahraman: tutar en büyük tipografi. Yüzde rozeti YALNIZCA akış
+          // yokken burada (o zaman birikim = piyasanın kattığı); akış
+          // varken rozet aşağıdaki piyasa kaleminde. Müşteri testi
+          // 2026-10-01: "+%106,66" (1Y) ve "+%934,47" (5Y) kahraman
+          // rozetleri getiri diye okunuyordu — yatırılan parayı da sayan
+          // birikim değişimiydi. Birikim tutar olarak kalır (kullanıcı
+          // kararı 2026-09-24), yüzde yalnızca piyasaya ait.
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -704,79 +746,59 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   ),
                 ),
               ),
-              if (pct != null && !isFlat) ...[
+              if (pct != null && !isFlat && !akisVar) ...[
                 const SizedBox(width: SandikSpace.sm),
-                // Yüzde rozeti — yön ikonu renge ek bir sinyal taşır,
-                // renk körlüğünde de okunur.
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: SandikRadius.smAll,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        positive
-                            ? Icons.arrow_upward_rounded
-                            : Icons.arrow_downward_rounded,
-                        size: 12,
-                        color: color,
-                      ),
-                      const SizedBox(width: 3),
-                      // İşaretli (emülatör doğrulaması 2026-09-30): ok
-                      // ikonunun ekran okuyucu etiketi yok, "−₺… | %0,03"
-                      // okunuyordu; tutarla aynı yön dili.
-                      Text(
-                        fmtPctIsaretli(pct, digits: 2),
-                        style: context.t.numSmall.copyWith(color: color),
-                      ),
-                    ],
-                  ),
-                ),
+                _YuzdeRozeti(pct: pct, renk: color),
               ],
             ],
           ),
           // Alt kat: akış varsa ana rakam alımı/satışı İÇERİR ve "+%100
-          // kazandım" yanılgısı doğar. İki eşit kalem bunu kapatır:
-          //   • Net katkın — yatırdığın para eksi satıştan ve nakit
-          //     temettüden çektiğin (`getiriAkisi`, 2026-10-01: temettü
-          //     piyasa etkisinin İÇİNDE, burada çıkış), getiri sayılmaz
-          //     (nötr renk, Özet'teki mavi çubukla aynı anlam);
-          //   • Sadece piyasa etkisi — ana sayfa Bugün kartı ve Özet ile
-          //     AYNI rakam ve yüzde; iki ekran yan yana bununla eşleşir.
-          if (netInflow.abs() > 0.5) ...[
+          // kazandım" yanılgısı doğar. Üç kalem bunu kapatır — Özet
+          // köprüsüyle AYNI üç parça (`_KopruKarti`):
+          //   • Yatırdığın — alım − satış, temettü HARİÇ (nötr renk,
+          //     Özet'teki mavi çubukla aynı anlam);
+          //   • Cebine aldığın temettü — varsa, eksi (portföyden cebe);
+          //   • Piyasanın kattığı — ana sayfa Bugün kartı ve Özet ile AYNI
+          //     rakam ve yüzde; rozet burada.
+          if (akisVar) ...[
             const SizedBox(height: SandikSpace.smd),
             Container(height: 1, color: context.c.hairline),
             const SizedBox(height: SandikSpace.sm2),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _DegisimKalemi(
-                    etiket: context.l10n.yourContribution,
-                    deger: '${netInflow > 0 ? '+' : '−'}'
-                        '${tryFmt.format(netInflow.abs())}',
-                    renk: context.c.text58,
+                if (yatirilan.abs() > 0.5)
+                  Expanded(
+                    child: _DegisimKalemi(
+                      etiket: context.l10n.investedRow,
+                      deger: '${yatirilan > 0 ? '+' : '−'}'
+                          '${tryFmt.format(yatirilan.abs())}',
+                      renk: context.c.text58,
+                    ),
                   ),
-                ),
-                const SizedBox(width: SandikSpace.md),
-                Expanded(
-                  child: _DegisimKalemi(
-                    etiket: context.l10n.marketOnlyRow,
-                    deger: piyasaFlat
-                        ? context.l10n.noChange
-                        : '${piyasa >= 0 ? '+' : '−'}'
-                            '${tryFmt.format(piyasa.abs())}',
-                    ek: piyasaPct != null && !piyasaFlat
-                        ? fmtPctIsaretli(piyasaPct, digits: 2)
-                        : null,
-                    renk: piyasaColor,
+                if (yatirilan.abs() > 0.5 && temettu.abs() > 0.5)
+                  const SizedBox(width: SandikSpace.md),
+                if (temettu.abs() > 0.5)
+                  Expanded(
+                    child: _DegisimKalemi(
+                      etiket: context.l10n.dividendPocketRow,
+                      deger: '−${tryFmt.format(temettu.abs())}',
+                      renk: context.c.text58,
+                    ),
                   ),
-                ),
               ],
+            ),
+            const SizedBox(height: SandikSpace.sm2),
+            _DegisimKalemi(
+              etiket: context.l10n.marketAddedRow,
+              deger: piyasaFlat
+                  ? context.l10n.noChange
+                  : '${piyasa >= 0 ? '+' : '−'}'
+                      '${tryFmt.format(piyasa.abs())}',
+              rozet: piyasaPct != null && !piyasaFlat
+                  ? _YuzdeRozeti(pct: piyasaPct, renk: piyasaColor)
+                  : null,
+              renk: piyasaColor,
             ),
           ],
         ],
@@ -965,13 +987,15 @@ class _DegisimKalemi extends StatelessWidget {
     required this.etiket,
     required this.deger,
     required this.renk,
-    this.ek,
+    this.rozet,
   });
 
   final String etiket;
   final String deger;
-  final String? ek;
   final Color renk;
+
+  /// Değerin yanındaki yüzde rozeti (piyasanın kattığı kalemi).
+  final Widget? rozet;
 
   @override
   Widget build(BuildContext context) {
@@ -991,17 +1015,141 @@ class _DegisimKalemi extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SandikSpace.xs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            ek == null ? deger : '$deger · $ek',
-            maxLines: 1,
-            style: context.t.numSmall.copyWith(color: renk),
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  deger,
+                  maxLines: 1,
+                  style: context.t.numSmall.copyWith(color: renk),
+                ),
+              ),
+            ),
+            if (rozet != null) ...[
+              const SizedBox(width: SandikSpace.sm),
+              rozet!,
+            ],
+          ],
         ),
       ],
     );
+  }
+}
+
+/// Yüzde rozeti — yön ikonu renge ek bir sinyal taşır, renk körlüğünde de
+/// okunur. Kahraman satırında (akış yokken) ve piyasa kaleminde aynı rozet.
+class _YuzdeRozeti extends StatelessWidget {
+  const _YuzdeRozeti({required this.pct, required this.renk});
+
+  final double pct;
+  final Color renk;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: renk.withValues(alpha: 0.12),
+          borderRadius: SandikRadius.smAll,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              pct >= 0
+                  ? Icons.arrow_upward_rounded
+                  : Icons.arrow_downward_rounded,
+              size: 12,
+              color: renk,
+            ),
+            const SizedBox(width: 3),
+            // İşaretli (emülatör doğrulaması 2026-09-30): ok ikonunun ekran
+            // okuyucu etiketi yok, "−₺… | %0,03" okunuyordu; tutarla aynı
+            // yön dili.
+            Text(
+              fmtPctIsaretli(pct, digits: 2),
+              style: context.t.numSmall.copyWith(color: renk),
+            ),
+          ],
+        ),
+      );
+}
+
+/// Özet'in KENDİ serisi — grafiğin zoom çözünürlüğünden bağımsız.
+///
+/// ## Neden (müşteri testi 2026-10-01)
+/// Özet, grafiğin `ZoomDataController` verisini okuyordu. Kullanıcı
+/// grafiği yakınlaştırınca ya da elle bar seçince seri başka çözünürlükte
+/// kuruluyor, "ilk dolu nokta" başka güne düşüyor ve Özet'in "Dönem başı"
+/// değişiyordu (ölçüldü: 1Y'de ₺705.390 → ₺688.073, 1 Eki → 6 Eki). Aynı
+/// dönem iki bakışta iki sayı söylüyordu. Özet artık dönemin KANONİK
+/// serisini ister: pencere `PeriodSummaryService.pencere`, çözünürlük
+/// `pickForSpan(period.days)` — Ana ekrandaki "Son 7 gün" ile birebir aynı
+/// istek (`BugunYukleyici.haftalik`). `HistoryService._tierCache` sayesinde
+/// varsayılan zoom'da ağa ikinci kez çıkılmaz.
+///
+/// Anahtar (dönem, kapsam, simülasyon, lot kimlikleri, yenileme sayacı)
+/// değişince yeniden kurulur; o sırada iskelet çizilir — yanlış sayıdan
+/// iyidir (`_ozetSekmesi` notu). GÜNLÜK bu yoldan geçmez: gün içi seri
+/// canlıdır ve ana ekranla ortak katmandan gelir.
+class _OzetSerisi extends StatefulWidget {
+  const _OzetSerisi({
+    super.key,
+    required this.chartAssets,
+    required this.period,
+    required this.simulate,
+    required this.iskelet,
+    required this.builder,
+  });
+
+  final List<Asset> chartAssets;
+  final SummaryPeriod period;
+  final bool simulate;
+  final Widget iskelet;
+  final Widget Function(PortfolioHistoryBreakdown breakdown) builder;
+
+  @override
+  State<_OzetSerisi> createState() => _OzetSerisiState();
+}
+
+class _OzetSerisiState extends State<_OzetSerisi> {
+  PortfolioHistoryBreakdown? _seri;
+  int _istek = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _yukle();
+  }
+
+  Future<void> _yukle() async {
+    final benim = ++_istek;
+    final now = DateTime.now();
+    final p = PeriodSummaryService.pencere(widget.period, now);
+    try {
+      final bd = await HistoryService.instance
+          .getPortfolioHistoryBreakdownAtResolution(
+        assets: widget.chartAssets,
+        from: p.start,
+        to: p.end,
+        tier: ResolutionTierMeta.pickForSpan(widget.period.days.toDouble()),
+        simulate: widget.simulate,
+      );
+      if (!mounted || benim != _istek) return;
+      setState(() => _seri = bd);
+    } catch (e, st) {
+      // Seri gelmezse iskelet kalır; sessiz değil — Crashlytics'e düşer.
+      CrashReporter.report(e, st, reason: 'OzetSerisi.yukle');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bd = _seri;
+    if (bd == null || bd.total.isEmpty) return widget.iskelet;
+    return widget.builder(bd);
   }
 }
 

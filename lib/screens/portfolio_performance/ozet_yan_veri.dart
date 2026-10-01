@@ -26,6 +26,19 @@ String _positionLabel(String key, AssetType type, AppLocalizations l) {
     core = pozisyonKodu(core);
   }
   if (core.isEmpty) return type.labelOf(l);
+  // Döviz: ham Yahoo sembolü ("EURTRY=X") müşteriye sızıyordu (emülatör
+  // testi 2026-10-01, GÜNLÜK "en çok hareket eden"). Piyasa şeridiyle aynı
+  // adlar (`piyasa_seridi`: Dolar / Euro), sterlin de eklendi.
+  if (type == AssetType.doviz) {
+    final kod = core.toUpperCase().replaceAll('TRY=X', '');
+    final ad = switch (kod) {
+      'USD' => l.marketDollar,
+      'EUR' => l.marketEuro,
+      'GBP' => l.marketPound,
+      _ => null,
+    };
+    if (ad != null) return ad;
+  }
   // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
   // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
   return core.length > 1
@@ -209,9 +222,18 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     //
     // `pencere()` yüzdeyle birlikte UÇLARI da veriyor; nominal getiri
     // birazdan o uçlara hizalanacak.
-    final w = await InflationService.instance.pencere(
+    var w = await InflationService.instance.pencere(
       widget.period == SummaryPeriod.birAy ? 30 : widget.period.days,
     );
+    // 5Y: endeks beş yıl geriye gitmiyorsa kart HİÇ çizilmiyordu (müşteri
+    // testi 2026-10-01). Pencere veri olan en erken aya / ilk alıma çekilir
+    // ve kart bunu söyler (`InflationWindow.kisaltildi`).
+    if (w == null && widget.period.days > SummaryPeriod.birYil.days) {
+      w = await InflationService.instance.pencereKapsayan(
+        widget.period.days,
+        enErken: PeriodSummaryService.ilkAlimTarihi(widget.assets),
+      );
+    }
 
     // Nominal AYNI pencerede yeniden hesaplanır — `widget.summary.getiriPct`
     // takvimden türetilen (bugünden geriye) pencerenin getirisi ve TÜFE
@@ -541,6 +563,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       xirr: gorunur.xirr ? _xirr : null,
       enflasyonVerisiBekleniyor: _endeksBos,
       tufeKoprusu: _tufeKoprusu,
+      tufePenceresiKisaltildi: _tufePencere?.kisaltildi ?? false,
       // Derinlik bölümü (XIRR, sağlık, ileri metrikler…) ileri seviyede açık
       // gelir, diğerlerinde katlı: özet önce "bu dönem"i anlatsın.
       derinlikAcik:
@@ -633,6 +656,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       // ekranda yazılı.
       start: s.start,
       end: s.end,
+      ilkAlim: s.ilkAlim,
       baslangicTRY: s.baslangicTRY,
       sonTRY: s.sonTRY,
       katkiTRY: s.katkiTRY,
