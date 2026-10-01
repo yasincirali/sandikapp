@@ -741,8 +741,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ),
           // Alt kat: akış varsa ana rakam alımı/satışı İÇERİR ve "+%100
           // kazandım" yanılgısı doğar. İki eşit kalem bunu kapatır:
-          //   • Katkın — yatırdığın para, getiri sayılmaz (nötr renk,
-          //     Özet'teki mavi çubukla aynı anlam);
+          //   • Net katkın — yatırdığın para eksi satıştan ve nakit
+          //     temettüden çektiğin (`getiriAkisi`, 2026-10-01: temettü
+          //     piyasa etkisinin İÇİNDE, burada çıkış), getiri sayılmaz
+          //     (nötr renk, Özet'teki mavi çubukla aynı anlam);
           //   • Sadece piyasa etkisi — ana sayfa Bugün kartı ve Özet ile
           //     AYNI rakam ve yüzde; iki ekran yan yana bununla eşleşir.
           if (netInflow.abs() > 0.5) ...[
@@ -860,17 +862,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       );
     }
 
+    // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
+    // (`currentTotal`); bkz. `compute` [canliSon]. Kıyas kartı da AYNI ucu
+    // alır, yoksa "senin portföyün" satırı Özet'in yüzdesiyle ayrışır.
+    final canliSon =
+        pState == null ? null : DailySummary.kapsamToplami(pState, targetAssets);
+
     final summary = PeriodSummaryService.compute(
       period: period,
       assets: targetAssets,
       breakdown: breakdown,
       now: now,
       gunlukOzet: gunluk,
-      // Sağ uç CANLI kapsam toplamı — Grafik kartının ucuyla aynı sayı
-      // (`currentTotal`); bkz. `compute` [canliSon].
-      canliSon: pState == null
-          ? null
-          : DailySummary.kapsamToplami(pState, targetAssets),
+      canliSon: canliSon,
       canliDagilim: pState == null
           ? null
           : DailySummary.kapsamDagilimi(pState, targetAssets),
@@ -917,10 +921,23 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       }
     }
 
+    // "Başka yere koysaydın" (PME, düzen A'nın 5. kartı). Girdiler Özet'le
+    // AYNI: seri, kapsam lot'ları, `now` ve canlı uç — `KiyasGirdisi.kur`
+    // notu. GÜNLÜK'te ya da seri iki uç taşımıyorsa kart yok.
+    final kiyasGirdisi = KiyasGirdisi.kur(
+      period: period,
+      lotlar: targetAssets,
+      seri: breakdown.total,
+      now: now,
+      canliSon: canliSon,
+    );
+
     return _OzetYanVeri(
       period: period,
       summary: summary,
       assets: targetAssets,
+      kiyasKarti:
+          kiyasGirdisi == null ? null : KiyasKarti(girdi: kiyasGirdisi),
       // Karakter/sabır yalnızca 1Y'de gösterilir; başka dönemde
       // hesaplanmış olsa da view onları çizmez.
       karakter: period == SummaryPeriod.birYil

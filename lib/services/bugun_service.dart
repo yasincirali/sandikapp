@@ -17,6 +17,7 @@
 import '../utils/tr_format.dart' show dayKey;
 import 'bist_calendar.dart';
 import 'daily_summary.dart';
+import 'tuik_takvimi.dart';
 
 /// Yaklaşan olay türleri — hepsi ULUSAL takvimden, uydurma sebep yok.
 enum BugunOlayTuru {
@@ -218,9 +219,9 @@ abstract final class BugunService {
     final bugun = dayKey(now);
     final out = <YaklasanOlaySatiri>[];
 
-    // TÜİK: bu ayın 3'ü geçmediyse o, geçtiyse gelecek ayın 3'ü.
-    var tuik = DateTime(now.year, now.month, 3, 10);
-    if (now.isAfter(tuik)) tuik = DateTime(now.year, now.month + 1, 3, 10);
+    // TÜİK: bu ayın 3'ü geçmediyse o, geçtiyse gelecek ayın 3'ü. Kural
+    // `TuikTakvimi`'nde tek yerde (Özet'in TÜFE köprü satırı da okuyor).
+    final tuik = TuikTakvimi.sonrakiAciklama(now);
     final tuikGun = dayKey(tuik);
     final tuikKalan = tuikGun.difference(bugun).inDays;
     if (tuikKalan >= 0 && tuikKalan <= ufuk) {

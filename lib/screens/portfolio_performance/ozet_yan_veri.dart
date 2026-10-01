@@ -55,10 +55,15 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
   /// Uzun pencere bağlamı için gereken varlıklar ve akış kuralı.
   final List<Asset> assets;
 
+  /// "Başka yere koysaydın" kartı — `_buildOzetSekmesi` Özet'in girdileriyle
+  /// kurar, burası yalnızca view'a taşır. `null` ise çizilmez.
+  final Widget? kiyasKarti;
+
   const _OzetYanVeri({
     required this.period,
     required this.summary,
     required this.assets,
+    this.kiyasKarti,
     this.karakter,
     this.enSabirli,
     this.enSabirliGun,
@@ -82,6 +87,15 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// türetilen pencerenin (bugünden geriye) getirisi ve TÜFE penceresiyle
   /// örtüşmüyor — 1A'da hiç kesişmiyordu.
   double? _hizaliNominal;
+
+  /// [_hizaliNominal] ile AYNI pencerede reel para ağırlıklı getiri
+  /// (`RealReturnService.hizaliGetiri`). Ara ayın endeksi eksikse `null`.
+  double? _hizaliReel;
+
+  /// TÜFE penceresinin sonundan BUGÜNE getiri (köprü satırı, D2
+  /// 2026-10-01). Reel getiri kartının ölçmediği ama üst kartın içerdiği
+  /// süre; `null` ise satır çizilmez. Gerekçe `TufeKoprusu` notunda.
+  TufeKoprusu? _tufeKoprusu;
 
   /// `inflation_index` tablosu tamamen boş mu? (Kurulum eksik.)
   ///
@@ -136,6 +150,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     if (old.period != widget.period) {
       _tufePencere = null;
       _hizaliNominal = null;
+      _hizaliReel = null;
+      _tufeKoprusu = null;
       // Endeks boşluğu döneme bağlı değil ama `_yukle` yeniden koşup onu
       // tazeleyecek; arada eski değeri tutmak yanlış kart göstermez
       // (boşsa yine boş çıkar) ama sıfırlamak durumu tek yerde tutuyor.
@@ -202,9 +218,12 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     // penceresiyle örtüşmüyor. Gerekçe `RealReturnService.piyasaGetirisi`
     // notunda; hesap da orada, burada kopyalanmıyor.
     double? nominal;
+    double? reelHizali;
     if (w != null) {
       try {
-        nominal = await RealReturnService.piyasaGetirisi(widget.assets, w);
+        final g = await RealReturnService.hizaliGetiri(widget.assets, w);
+        nominal = g?.nominal;
+        reelHizali = g?.reel;
       } catch (_) {
         // Seri kurulamazsa kart hiç çizilmez: hizasız bir farkı göstermek,
         // hiç göstermemekten kötü.
@@ -227,10 +246,33 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     final bosMu =
         enf == null ? await InflationService.instance.isStale() : false;
 
+    // Köprü satırı: TÜFE penceresinin sonu → BUGÜN. Yalnızca reel kart
+    // çizilecekse ölçülür (kartsız bir köprü neyi köprülediğini söyleyemez).
+    // Sağ uç canlı kapsam toplamı — üst kartla aynı uç (bkz. `compute`
+    // [canliSon]); ölçüm `TufeKoprusu.olc`'ta, burada formül yok.
+    TufeKoprusu? kopru;
+    if (enf != null && w != null && mounted) {
+      final simdi = DateTime.now();
+      final pState = ref.read(portfolioProvider).valueOrNull;
+      final pct = await TufeKoprusu.olc(
+        widget.assets,
+        pencereSonu: w.seriBitisi,
+        now: simdi,
+        canliSon: pState == null
+            ? null
+            : DailySummary.kapsamToplami(pState, widget.assets),
+      );
+      if (pct != null) {
+        kopru = TufeKoprusu(pencereSonu: w.seriBitisi, getiriPct: pct);
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _tufePencere = enf == null ? null : w;
       _hizaliNominal = enf == null ? null : nominal;
+      _hizaliReel = enf == null ? null : reelHizali;
+      _tufeKoprusu = kopru;
       _endeksBos = bosMu;
     });
   }
@@ -346,9 +388,12 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
         if (baglamGerek && yil.getiriPct != null) _uzunDonem = yil.getiriPct;
         if (saglikGerek) {
           _drawdown = InsightMetricsService.maxDrawdown(bd.total);
+          // Akıştan arındırılmış (2026-10-01): alım günü "sıçrama"
+          // sayılmasın. Düşüş ham kalır (`maxDrawdown` notu).
           _volatilite = InsightMetricsService.annualizedVolatility(
             bd.total,
             barSuresiGun: barGun,
+            lotlar: widget.assets,
           );
         }
       });
@@ -397,7 +442,9 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     final w = _tufePencere;
     final nominal = _hizaliNominal;
     // İkisi de TÜFE penceresinden: biri eksikse kart hiç çizilmez.
-    final gosterilen = (w != null && nominal != null) ? _tufeIle(s, w, nominal) : s;
+    final gosterilen = (w != null && nominal != null)
+        ? _tufeIle(s, w, nominal, _hizaliReel)
+        : s;
 
     // Paylaşım metni ENFLASYON BAĞLANDIKTAN SONRAKİ özetten üretilir:
     // `gosterilen` yerine `s` verilirse "enflasyonun X puan önündeyim"
@@ -462,6 +509,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     return PeriodSummaryView(
       baz: ref.watch(gosterimBazParaProvider),
       summary: gosterilen,
+      kiyasKarti: widget.kiyasKarti,
       uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,
@@ -492,6 +540,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       ileriKarti: ileri == null ? null : IleriMetrikKarti(metrikler: ileri),
       xirr: gorunur.xirr ? _xirr : null,
       enflasyonVerisiBekleniyor: _endeksBos,
+      tufeKoprusu: _tufeKoprusu,
       // Derinlik bölümü (XIRR, sağlık, ileri metrikler…) ileri seviyede açık
       // gelir, diğerlerinde katlı: özet önce "bu dönem"i anlatsın.
       derinlikAcik:
@@ -560,13 +609,18 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// enflasyonun AĞDAN sonradan gelmesinin sonucu (servis saf ve ağa
   /// çıkmıyor). Formüller iki yerde de aynı `InflationService`
   /// fonksiyonlarına bakıyor, kopyalanmıyor.
+  ///
+  /// [reel] servisin REEL PARA AĞIRLIKLI getirisidir (2026-10-01, K4):
+  /// burada `(1+n)/(1+e) − 1` ile yeniden türetilmez — o formül yıl içinde
+  /// eklenen paraya yılın tamamının enflasyonunu yüklüyordu. Nominal, TÜFE
+  /// ve puan farkı aynı kalır.
   PeriodSummary _tufeIle(
     PeriodSummary s,
     InflationWindow w,
     double nominal,
+    double? reel,
   ) {
     final enflasyon = w.pct;
-    final reel = InflationService.realReturnPct(nominal, enflasyon);
 
     return PeriodSummary(
       period: s.period,
@@ -584,6 +638,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       katkiTRY: s.katkiTRY,
       piyasaTRY: s.piyasaTRY,
       getiriPct: s.getiriPct,
+      yillikGetiriPct: s.yillikGetiriPct,
       enIyi: s.enIyi,
       enZayif: s.enZayif,
       tufeFarki: InflationService.spreadPoints(nominal, enflasyon),
@@ -596,7 +651,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       // NaN filtresi: −%100 enflasyonda payda sıfırlanıyor ve ekrana
       // "%NaN" basılırdı (servis tarafındaki `_sonluVeyaNull` ile aynı
       // kapı).
-      reelGetiriPct: reel.isFinite ? reel : null,
+      reelGetiriPct: (reel != null && reel.isFinite) ? reel : null,
       temettuTRY: s.temettuTRY,
       komisyonTRY: s.komisyonTRY,
       dagilimBasi: s.dagilimBasi,

@@ -569,7 +569,47 @@
     }
   },
   "nominalReturnInWindow": "Your return in this window",
-  "cpiWindowNote": "CPI is published monthly, so this card runs to the latest published month. The market return above runs to today, so the two figures cover different windows.",
+  "cpiWindowNote": "CPI is published monthly, so this card ends at the latest published month: different windows from the figure above.",
+  "rangeChip": "{start} - {end}",
+  "@rangeChip": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "rangeToday": "today",
+  "rangeSinceFirstBuy": "First buy to today",
+  "sinceCpiWindowEnd": "Since end of {month}",
+  "@sinceCpiWindowEnd": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "sinceCpiWindowBody": "The figure above includes this stretch; this card updates when {month} CPI is published ({date}).",
+  "@sinceCpiWindowBody": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sinceCpiWindowBodyLate": "The figure above includes this stretch; this card updates once {month} CPI is loaded.",
+  "@sinceCpiWindowBodyLate": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "demoTryButton": "Take a look first",
   "demoBannerTitle": "Sample portfolio",
   "demoBannerSubtitle": "Sample holdings, live prices",
@@ -957,8 +997,8 @@
   "last5YearsPeriod": "the last 5 years",
   "fiveYearExtremes": "Five-year extremes",
   "fiveYearCurve": "Five-year curve",
-  "periodMarketReturn": "{period} market return",
-  "@periodMarketReturn": {
+  "moneyReturnPeriod": "Return on your money · {period}",
+  "@moneyReturnPeriod": {
     "placeholders": {
       "period": {
         "type": "String"
@@ -967,11 +1007,27 @@
   },
   "whereItCameFrom": "Where it came from",
   "periodStart": "Period start",
-  "yourContribution": "Your contribution",
+  "yourContribution": "Net contribution",
   "marketWord": "Market",
-  "cashDividend": "Cash dividends within it",
+  "cashDividend": "Of which cash dividends",
   "commissionPaid": "Commission paid",
-  "contributionNotReturn": "The blue bar is your own money, not a return. The percentage comes only from the market bar.",
+  "contributionNotReturn": "The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.",
+  "annualRatePct": "{pct} a year",
+  "@annualRatePct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "periodTotalPct": "Period total {pct}",
+  "@periodTotalPct": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "periodCourse": "Course over the period",
   "greenDaysOfTotal": "{up} of {total} trading days closed up.",
   "@greenDaysOfTotal": {
@@ -985,14 +1041,6 @@
     }
   },
   "againstInflation": "Against inflation",
-  "realReturnPeriod": "Real return · {period}",
-  "@realReturnPeriod": {
-    "placeholders": {
-      "period": {
-        "type": "String"
-      }
-    }
-  },
   "nominalReturn": "Your return",
   "cpiWindowRange": "Measured: {start} - {end}",
   "@cpiWindowRange": {
@@ -1049,10 +1097,10 @@
   "volatility": "Volatility",
   "volatilityBody": "This is how much your portfolio value swung on average over the year. High is neither good nor bad; it just means bigger ups and downs.",
   "concentration": "Concentration",
-  "moneyReturnAnnual": "Return on your money (annual)",
+  "moneyReturnAnnual": "Since you started (annual)",
   "xirrBody": "The annual compound return of the money you invested, taking the DATES of your investments into account.",
-  "periodMarketReturnLabel": "Period market return",
-  "xirrVsMarketBody": "The two numbers do not contradict: the top one also accounts for when you bought, the bottom one measures only the market's move.",
+  "periodMarketReturnLabel": "Selected period's return",
+  "xirrVsMarketBody": "The two numbers do not contradict: the top one runs from your first buy to today and also accounts for when you bought; the bottom one measures only the market's move in the selected period.",
   "advancedMetricsYear": "Advanced metrics · last year",
   "notEnoughHistory": "Not enough history for {period}",
   "@notEnoughHistory": {
@@ -1505,6 +1553,8 @@
   "txDividend": "Dividend",
   "txBuy": "Purchase",
   "gainWord": "gain",
+  "costBasisGain": "Gain vs. cost",
+  "costBasisLoss": "Loss vs. cost",
   "lossWord": "loss",
   "realisedFromSalesSemantics": "realised from sales ",
   "raceNoPartnerBody": "You have no partners yet. You can already see your own period return and global percentile.",
@@ -2861,8 +2911,9 @@
       }
     }
   },
-  "sectionThisPeriod": "THIS PERIOD",
-  "sectionAssets": "ASSETS",
+  "sectionResult": "RESULT",
+  "sectionWhy": "WHY",
+  "sectionDetail": "DETAIL",
   "sectionDepth": "DEPTH",
   "sectionDepthHint": "XIRR, health, advanced metrics, character",
   "myAlarms": "My alerts",
@@ -3172,5 +3223,11 @@
   "pensionSwitchNote": "Fund switch",
   "contractManagedNotice": "This asset is managed by its contract. Use the contract card on the asset page to change it.",
   "raceMoneyReturn": "Return on your money {pct}",
-  "raceMoneyReturnHint": "Includes when money was added · same as Performance"
+  "raceMoneyReturnHint": "Includes when money was added · same as Performance",
+  "kiyasBaslik": "Had you put it elsewhere",
+  "kiyasAciklama": "Had you invested the same amounts on the same days here.",
+  "kiyasSenin": "Your portfolio",
+  "kiyasBasaBas": "Even",
+  "kiyasTemettuNotu": "Cash dividends this period count as money paid out to you on both sides.",
+  "kiyasVeriYok": "Price data for the comparison is unavailable right now."
 }

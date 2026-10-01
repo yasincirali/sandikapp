@@ -185,13 +185,14 @@ void main() {
 
       expect(find.text('Nereden geldi'), findsOneWidget);
       expect(find.text('Dönem başı'), findsOneWidget);
-      expect(find.text('Katkın'), findsOneWidget);
+      // "Net" (2026-10-01): nakit temettü de çıkış — `getiriAkisi`.
+      expect(find.text('Net katkın'), findsOneWidget);
       expect(find.text('Piyasa'), findsOneWidget);
       expect(find.text('Şimdi'), findsOneWidget);
 
       // Açıklama satırı: mavi çubuğun getiri OLMADIĞINI söylemek zorunda.
       expect(
-        find.textContaining('senin paran'),
+        find.textContaining('senin net paran'),
         findsOneWidget,
         reason: 'köprünün tek argümanı bu cümle — kaybolmamalı',
       );
