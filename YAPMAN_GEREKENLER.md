@@ -8,6 +8,24 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## 🍎 TESTFLIGHT DURDU: APPLE SÖZLEŞMESİ (2026-10-01, Claude)
+
+iOS — TestFlight koşuları #289, #292, #294 (#41/#43/#45 birleşmeleri) aynı
+yerde kırıldı: App Store Connect API "A required agreement is missing or has
+expired" diyor. Kod sorunu değil; build hiç başlamadan duruyor.
+
+- [ ] **Sözleşmeyi kabul et:** Hesap sahibi (Account Holder) olarak
+      appstoreconnect.apple.com → Business (Agreements) ve
+      developer.apple.com → Account'ta bekleyen sözleşme/güncellenmiş
+      Program License Agreement'ı kabul et.
+- [ ] **Sonra:** Actions → iOS — TestFlight → Run workflow (main). Son main
+      bugünkü tüm değişiklikleri (#40–#45) taşır.
+- [ ] **MATCH_PASSWORD açığa çıktı:** repo herkese açık; Fastfile keychain
+      kilidini açarken parolayı Actions günlüğüne basıyordu (düzeltildi).
+      Sertifika reposu özelse tek başına yetmez ama parolayı değiştir:
+      `fastlane match change_password` + GitHub secret `MATCH_PASSWORD`.
+      İstersen eski koşuların günlüklerini de sil.
+
 ## 🔁 FRANKFURT EŞLEME BEKLİYOR (2026-10-01, Claude)
 
 Karar (yasin, 2026-10-01): GitHub'daki `SUPABASE_ACCESS_TOKEN` Frankfurt'a
