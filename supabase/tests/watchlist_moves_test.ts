@@ -4,6 +4,7 @@ import {
   EN_COK_VARLIK,
   HAREKET_ESIGI_PCT,
   hareketleriSec,
+  hareketKarti,
   hareketMesaji,
   takipSembolu,
 } from '../functions/_shared/watchlist_moves.ts';
@@ -51,4 +52,14 @@ Deno.test('çoklu hareket: sayı başlıkta, liste gövdede, eksi işareti', () 
 Deno.test('tutar sızmaz', () => {
   const m = hareketMesaji([{ ad: 'X', pct: 9 }]);
   assertEquals(/₺|\bTL\b/.test(m.title + m.body), false);
+});
+
+// 0092: kart yalnız TEK hareketli bildirimde (birden çok hareketi tek halka
+// anlatamaz).
+Deno.test('hareket kartı: tek hareket → kart, çok hareket → yok', () => {
+  const k = hareketKarti([{ ad: 'KCHOL', pct: -3.1 }])!;
+  assertEquals(k.e, 'KCHOL');
+  assertEquals(k.b, '%3,1');
+  assertEquals(k.y, 'd');
+  assertEquals(hareketKarti([{ ad: 'A', pct: 3 }, { ad: 'B', pct: -4 }]), null);
 });

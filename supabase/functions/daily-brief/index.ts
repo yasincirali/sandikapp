@@ -56,7 +56,8 @@ import {
 import { loadPriceHistories, resolveSymbol } from '../_shared/price_history.ts';
 import { acikPozisyonLotlari } from '../_shared/positions.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+import { collapseTokens, tokenSatirlariniOku } from '../_shared/push_tokens.ts';
+import { degisimKarti, kartGorseli, KartAyari } from '../_shared/bildirim_karti.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -273,13 +274,15 @@ Deno.serve(async (request) => {
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
     // ── 1) Push token'ı olan kullanıcılar ───────────────────────────────────
-    const { data: tokenRows, error: tokenError } = await admin
-      .from('user_push_tokens')
-      .select('token, user_id, device_id, platform, updated_at');
+    const { data: tokenRows, error: tokenError } = await tokenSatirlariniOku((s) =>
+      admin.from('user_push_tokens').select(s)
+    );
     if (tokenError) {
       throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
     }
-    const tokens = collapseTokens((tokenRows ?? []) as TokenRow[]);
+    const tokens = collapseTokens(tokenRows ?? []);
+    // Bildirim kartı (0092, yalnız yeni sürüm cihazlar) — bkz. bildirim_karti.ts.
+    const kart: KartAyari = { supabaseUrl, anahtar: serviceRoleKey };
     if (tokens.length === 0) {
       return jsonResponse({ ok: true, reason: 'Kayitli push token yok.', sent: 0 });
     }
@@ -551,6 +554,13 @@ Deno.serve(async (request) => {
         body: mesaj.body,
         channelId: CHANNEL_ID,
         data: veri,
+        // Ortak mesajında kart yok: fiyat hareketi değil, bir kişinin
+        // eylemi; halka ve yüzde anlatacak bir şey taşımaz.
+        gorselUrl: ortak ? undefined : await kartGorseli(
+          kart,
+          tokenRow,
+          degisimKarti(aday!.en.label, aday!.en.changePct, 'Son kapanış · en hareketli'),
+        ),
       });
 
       if (r.ok) {

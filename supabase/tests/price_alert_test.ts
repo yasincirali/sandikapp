@@ -13,6 +13,7 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
+  buildAlertCard,
   buildAlertMessage,
   formatTRY,
   isTriggered,
@@ -209,4 +210,15 @@ Deno.test('parseTruncgilBody: HTML gövdede kurtarma denenmez', () => {
   let hata = false;
   try { parseTruncgilBody('<html>"USD":{"Buying":1}</html>'); } catch { hata = true; }
   assertEquals(hata, true);
+});
+
+// 0092: alarm kartı — eşik bildirimi; halka büyüklük taşımaz (p yok).
+Deno.test('alarm kartı: büyük satır şu anki fiyat, alt satır hedef, yön eşikten', () => {
+  const k = buildAlertCard('THYAO', 321.4, 320, 'above')!;
+  assertEquals(k.b, '₺321,40');
+  assertEquals(k.y, 'u');
+  assertEquals(k.p, undefined);
+  assertEquals(k.a, 'Fiyat alarmı · hedef ₺320,00');
+  assertEquals(buildAlertCard('THYAO', 319, 320, 'below')!.y, 'd');
+  assertEquals(buildAlertCard('THYAO', Number.NaN, 320, 'above'), null);
 });

@@ -150,6 +150,12 @@ class NotificationService {
   /// `supabase/functions/analyze-signals/index.ts` → `channel_id`.
   /// Biri değişirse diğeri de değişmeli, aksi halde uzak bildirimler
   /// sessizce düşer.
+  ///
+  /// Kanal adları Android Ayarlar > Bildirimler'de görünür. 2026-10-01'e
+  /// kadar Türkçe karaktersizdi ("Fiyat Alarmlari"); aynı kimlikle yeniden
+  /// `createNotificationChannel` adı ve açıklamayı günceller, kullanıcının
+  /// kanal ayarına (kapalı/sessiz) dokunmaz. Kimlikler DEĞİŞMEZ — sunucu
+  /// `channel_id` ile eşleşir.
   Future<void> _createAndroidChannels() async {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
@@ -159,8 +165,8 @@ class NotificationService {
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
         'signal_channel',
-        'Teknik Sinyal Bildirimleri',
-        description: 'Portföyünüzdeki varlıklar için trend bildirimleri',
+        'Teknik sinyal bildirimleri',
+        description: 'Portföyündeki varlıklar için trend bildirimleri',
         importance: Importance.high,
       ),
     );
@@ -169,8 +175,8 @@ class NotificationService {
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
         'partner_invite_channel',
-        'Ortaklik Bildirimleri',
-        description: 'Yeni ortaklik onay istekleri',
+        'Ortaklık bildirimleri',
+        description: 'Yeni ortaklık onay istekleri',
         importance: Importance.max,
       ),
     );
@@ -184,8 +190,8 @@ class NotificationService {
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
         'alert_channel',
-        'Fiyat Alarmlari',
-        description: 'Kurdugun fiyat hedefine ulasildiginda',
+        'Fiyat alarmları',
+        description: 'Kurduğun fiyat hedefine ulaşıldığında',
         importance: Importance.high,
       ),
     );
@@ -201,8 +207,8 @@ class NotificationService {
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
         'brief_channel',
-        'Gunluk Brifing',
-        description: 'Portfoyunuzdeki gunluk hareket ozeti',
+        'Günlük brifing',
+        description: 'Portföyündeki günlük hareket özeti',
         importance: Importance.defaultImportance,
       ),
     );
@@ -213,8 +219,8 @@ class NotificationService {
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
         'summary_channel',
-        'Donem Ozeti',
-        description: 'Haftalik ve aylik portfoy ozeti',
+        'Dönem özeti',
+        description: 'Haftalık ve aylık portföy özeti',
         importance: Importance.defaultImportance,
       ),
     );
