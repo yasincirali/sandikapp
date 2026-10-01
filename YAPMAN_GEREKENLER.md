@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 (BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 akşam (Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -8,54 +8,44 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-01 Zirve rızası → anında ölçüm (0094, PR'da)
+## ✅ 2026-10-01 Zirve rızası → anında ölçüm (0094) — İKİ SUNUCUDA
 
 Karar (yasin, 2026-10-01, "Anında ölçüm"): rıza kalır; "Katılıyorum"a basınca
 portföy akşam 18:40 cron'unu beklemeden o an ölçülür. Uygunluk şartları ve
 8 kişi eşiği aynen. Uygulama sürümü gerekmez (yalnız sunucu).
 
-- [ ] **Sıra önemli:** ÖNCE `leaderboard-snapshot` fonksiyonu, SONRA 0094.
-      Ters sırada eski fonksiyon `user_id`'yi yok sayıp herkes için tam koşu
-      yapar (zararsız, gereksiz yük). "Supabase deploy" iş akışı migration'ı
-      fonksiyondan önce koşar; bu yüzden iki koşu: 1) migrations kapalı,
-      functions `leaderboard-snapshot`; 2) migrations açık.
-- [ ] Frankfurt yine atlanır (yukarıdaki eşleme bölümüne 0094 eklendi).
+- [x] Sıra: ÖNCE `leaderboard-snapshot`, SONRA 0094 — Tokyo Actions
+      (15:16 fonksiyon, 15:18 migration), Frankfurt yerel CLI (aynı sıra).
 
-## 🔁 FRANKFURT EŞLEME BEKLİYOR (2026-10-01, Claude)
+## ✅ FRANKFURT EŞLENDİ (2026-10-01)
 
-Karar (yasin, 2026-10-01): GitHub'daki `SUPABASE_ACCESS_TOKEN` Frankfurt'a
-**403** alıyor ("Your account does not have the necessary privileges"; koşu
-#44/#45), bu yüzden bu tur yalnız **Tokyo**'ya dağıtıldı (hedef `tokyo`).
-Frankfurt'a gidemeyenler sunucular eşlenirken toplu gidecek:
+GitHub'daki ortak `SUPABASE_ACCESS_TOKEN` Frankfurt'ta **403** alıyordu (koşu
+#44/#45); 0092–0094 önce yalnız Tokyo'ya gitti. Frankfurt ayağı yasin
+tarafından yerel CLI ile koşuldu (Claude'un komut listesiyle; otomatik mod
+Claude'un dağıtımını reddetti):
 
-- [ ] **Migration:** `0092_push_bildirim_surumu`, `0093_aylik_ozet_tufe_gunu`, `0094_zirve_riza_aninda_olcum` (+ `leaderboard-snapshot` fonksiyonu önce)
-      (Frankfurt'ta son uygulanan: 0091).
-- [ ] **Fonksiyonlar:** `bildirim-karti` (YENİ, `verify_jwt = false`),
-      `check-price-alerts`, `daily-brief`, `weekly-summary`, `fetch-inflation`
-      — en kolayı functions `all`.
-- [ ] **Önce token:** Frankfurt'u da gören hesaptan tam yetkili token →
-      GitHub secret `SUPABASE_ACCESS_TOKEN`. Sonra Actions → Supabase deploy,
-      hedef `ikisi` (Tokyo'da zaten uygulananlar no-op), ya da yalnız `frankfurt`.
-- [ ] Sonda `python tool/sema_esitlik.py` → ŞEMA EŞİT. O zamana kadar günlük
-      `sema-esitlik.yml` kırmızı döner — beklenen.
+- [x] `leaderboard-snapshot` → `db push` (0092, 0093, 0094) → functions (tümü,
+      `bildirim-karti` dahil).
+- [x] `python tool/sema_esitlik.py` → **ŞEMA EŞİT** (cron açık/kapalı hariç).
+      Bu, Tokyo'daki açık kontrolü de kapatır: parmak izinde iki tarafta
+      `monthly-summary` = `30 7 3,4 * *`, `calendar-nudge-inflation*` yok.
+- [x] `bildirim-karti` imzasız GET → iki sunucuda **403** (`verify_jwt`
+      kapalı, kapı HMAC). Not: `curl -I` HEAD gönderir → 405, ölçüt değil.
+- [x] **Ayrı token:** GitHub secret `SUPABASE_ACCESS_TOKEN_EU` (yalnız
+      `sandikapp-eu` projesi, 2026-10-01). Deploy'un Frankfurt hedefi, eşitlik
+      işi ve günlük `sema-esitlik.yml` onu kullanır — **PR #51 birleşince**.
+      O zamana kadar Actions'ta Frankfurt hedefi ve günlük eşitlik 403 verir.
+- [ ] **PR #51'i birleştir** (yalnız CI; `_EU` yoksa ortak token'a düşer).
 
 Frankfurt geçişe kadar canlı değil (cron kapalı), müşteri etkilenmez.
 
-> **Tokyo uygulandı (2026-10-01, Claude, Actions):** 0092 + 0093 `db push`
-> temiz ("Applying migration 0092… 0093… Finished"); tüm fonksiyonlar
-> dağıtıldı (bildirim-karti, check-price-alerts, daily-brief, weekly-summary,
-> fetch-inflation dahil). Tokyo `SUPABASE_DB_PASSWORD` secret'ı yasin
-> tarafından düzeltildi. Aşağıdaki iki bölümün Tokyo ayağı tamam; Frankfurt
-> ayağı bu bölümde bekliyor. Açık kontrol: cron sorgusu (`monthly-summary` =
-> `30 7 3,4 * *`, `calendar-nudge-inflation*` yok) Tokyo'da elle bakılmadı.
-
-## ⏰ 3 EKİM 10:05'TEN ÖNCE — aylık özet + TÜFE tek push (2026-10-01, Claude)
+## ✅ 3 EKİM — aylık özet + TÜFE tek push (2026-10-01; iki sunucuda dağıtıldı)
 
 Eylül özeti push'u 1 Ekim'de gitti ve Özet'te **Ağustos** enflasyonunu
 gösterdi (TÜİK Eylül TÜFE'sini 3 Ekim'de açıklıyor). Ayrıntı:
 proje dosyaları `denetim/AYLIK_OZET_ENFLASYON_2026-10-01.md`.
 
-- [ ] **PR #42'yi birleştir**, sonra Actions → Supabase deploy, dal `main`,
+- [x] **PR #42'yi birleştir**, sonra Actions → Supabase deploy, dal `main`,
       hedef `ikisi`: migration **0093** + fonksiyonlar **`weekly-summary`**,
       **`fetch-inflation`**. Yeni secret YOK. Aşağıdaki bildirim kartı (0092,
       #41) da dağıtılmadıysa TEK koşuda birlikte: functions `all` ya da
@@ -74,7 +64,7 @@ proje dosyaları `denetim/AYLIK_OZET_ENFLASYON_2026-10-01.md`.
 - İstemci: Özet yüzdesi artık ortalama sermayeyle; TÜFE kartı ayın adını
       yazar. Yeni sürümle gelir, eski sürümler etkilenmez.
 
-## ⏳ 2026-10-01 Bildirim kartı ("C · Kart", yalnız yeni sürüm)
+## ⏳ 2026-10-01 Bildirim kartı ("C · Kart", yalnız yeni sürüm) — sunucu iki sunucuda ✅, iOS adımı açık
 
 Karar (yasin, 2026-10-01): bildirimler C kartı tasarımına geçer ama **store
 kullanıcıları etkilenmez** — kart yalnız `user_push_tokens.bildirim_surumu >= 2`
@@ -82,17 +72,17 @@ yazan yeni sürüm cihazlara gider; eski sürümlere giden FCM gövdesi birebir 
 (`fcm_send_test` kilitler).
 
 **Sunucu (iki sunucu, Frankfurt → Tokyo, `supabase-deploy.yml` hedef `ikisi`):**
-- [ ] **0092** — `user_push_tokens.bildirim_surumu` sütunu (yalnız ekleme,
+- [x] **0092** — `user_push_tokens.bildirim_surumu` sütunu (yalnız ekleme,
       varsayılan NULL). Uygulama sürümünden ÖNCE dağıtılabilir; eski sürüm
       etkilenmez.
-- [ ] **Fonksiyonlar:** `bildirim-karti` (YENİ — `config.toml`'da
+- [x] **Fonksiyonlar:** `bildirim-karti` (YENİ — `config.toml`'da
       `verify_jwt = false`; Android görseli oturumsuz indirir, kapıyı HMAC
       imzası tutar), `check-price-alerts`, `daily-brief`. Yeni secret YOK
       (imza anahtarı mevcut `SUPABASE_SERVICE_ROLE_KEY`). Sıra önemli değil:
       gönderenler sütun yoksa eski seçime düşer.
-- [ ] Dağıtım sonrası: `curl -I "$SUPABASE_URL/functions/v1/bildirim-karti?d=x&s=y"`
+- [x] Dağıtım sonrası: `curl "$SUPABASE_URL/functions/v1/bildirim-karti?d=x&s=y"` (GET; `-I` HEAD'dir → 405)
       → **403** (401 ise `verify_jwt` uygulanmamış: deploy'a `--no-verify-jwt`).
-- [ ] Sonda `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [x] Sonda `python tool/sema_esitlik.py` → ŞEMA EŞİT.
 
 **iOS (2. adım — senin işlemin gerekiyor):** iOS görseli kendisi indirmez;
 bunun için *Notification Service Extension* hedefi gerekir. Yeni bundle id
