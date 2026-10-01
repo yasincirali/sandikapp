@@ -111,6 +111,31 @@ o adlarla geçer.
 
 ## Kurallar
 
+**Canlıdaki kullanıcı etkilenmez (ANA KURAL, kullanıcı kuralı 2026-10-01).**
+Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
+şekilde yapılır. Diğer kurallarla çelişirse bu kazanır.
+- **İş dalda ve PR'da yapılır.** `main`'e birleşme TestFlight ve Play build'ini
+  tetikler (`ios-testflight.yml`, `android-release.yml`); `main`'e doğrudan
+  push yok, CI yeşil olmadan birleştirme yok.
+- **Sunucu değişikliği eski sürümlerle uyumlu olur.** Telefonlarda haftalarca
+  eski build'ler çalışır. Migration ve edge function önce **ekleyerek** gelir
+  (yeni kolon/RPC/parametre isteğe bağlı); eski istemcinin okuduğu kolonu, RPC
+  imzasını veya yanıt biçimini kaldırma/yeniden adlandırma ancak o sürümler
+  kullanımdan düşünce, ayrı bir migration'la yapılır. Kırıcıysa özette
+  **açıkça bayrakla** ve `YAPMAN_GEREKENLER.md`'ye yayın sırasını yaz
+  (ör. 0091: yeni build mağazaya çıkmadan canlıya giderse eski sürümde Zirve
+  listesi boşalıyordu).
+- **Riskli yeni davranış bayrakla açılır.** Varsayılanı kapalı Remote Config
+  anahtarı (`RemoteConfigService`) arkasında gelir; bayrak kapalıyken eski
+  davranış birebir korunur.
+- **Canlı veriye dokunulmaz.** Tokyo/Frankfurt projelerinde SQL Editor'dan veri
+  değiştirme, toplu silme, canlı secret rotasyonu yok (bkz. "Asla kendiliğinden
+  yapma"). Deneme yerel Supabase yığınında (`supabase start` + `seed.sql`) ya da
+  testte yapılır.
+- **Kullanıcı verisini taşıyan değişiklik** (`shared_preferences` anahtarı,
+  widget sözleşmesi, önbellek biçimi) eski değeri okuyup taşır; anahtar
+  silinip kullanıcının tercihi sıfırlanmaz.
+
 **Tasarım sistemi.** Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
 `SandikSpace`, köşe `SandikRadius`, animasyon `SandikMotion.of(context)`. Ham `Colors.*`,
 `Color(0x…)`, `fontSize:`, `Duration(milliseconds:)` ekleme — `design_token_leak_test` ve
@@ -274,5 +299,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-09-28 (iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-10-01 (canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).
