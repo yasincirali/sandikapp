@@ -8,6 +8,29 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## 🚨 EN ÖNEMLİ VE KRİTİK: MATCH_PASSWORD'Ü DEĞİŞTİR (2026-10-01)
+
+Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
+iOS — TestFlight Actions günlüğüne açık metin bastı (fastlane özet tablosu,
+`security unlock-keychain -p ...`; GitHub kabuk kaçışlı değeri maskelemedi).
+Bu parola imza sertifikası/profil reposunu (`MATCH_GIT_URL`) şifreler. Repoya
+erişim ayrıca `MATCH_GIT_BASIC_AUTH` PAT'ı ister (günlükte görünmedi), yine de
+parola açıkta sayılır. Günlüğe basma düzeltmesi: PR #46.
+
+- [ ] Kendi makinende repo kökünde: `cd ios && bundle install`
+- [ ] `MATCH_GIT_URL=<sertifika reposu URL'si> bundle exec fastlane match change_password`
+      (eski + yeni parolayı sorar, depoyu yeniden şifreleyip push eder;
+      sertifika reposuna push izni gerekir)
+- [ ] GitHub → sandikapp → Settings → Secrets and variables → Actions →
+      `MATCH_PASSWORD` → Update (yeni parola)
+- [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
+- [ ] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
+
+> Not (2026-10-01): TestFlight'ı durduran Apple Program License Agreement
+> güncellemesi yasin tarafından kabul edildi; Business sayfasındaki AB DSA
+> "trader" beyanı hâlâ bekliyor (AB'de yayın için gerekli, TestFlight'ı
+> engellemiyor).
+
 ## ⏳ 2026-10-01 Zirve rızası → anında ölçüm (0094, PR'da)
 
 Karar (yasin, 2026-10-01, "Anında ölçüm"): rıza kalır; "Katılıyorum"a basınca
