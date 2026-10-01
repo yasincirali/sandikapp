@@ -265,13 +265,14 @@ void main() {
       expect(InflationService.hukum(r.reel), EnflasyonHukmu.altinda);
     });
 
-    test('ay ortası ALIM: eklenen para getiri sayılmaz, yüzde %2,7030', () {
+    test('ay ortası ALIM: eklenen para getiri sayılmaz, yüzde %2,7092', () {
       // 16 Ağu 10:00'da 100 adet × 102 ₺ = ₺10.200 eklendi.
       //   son = 200 × 103 = ₺20.600, katkı ₺10.200
       //   piyasa = 20.600 − 10.000 − 10.200 = ₺400
       //   ağırlık = (31 Ağu 00:00 − 16 Ağu 10:00) / 31 gün = 14,5833/31
-      //   ortalama sermaye = 10.000 + 10.200 × 0,470430 = ₺14.798,39
-      //   nominal = 400 / 14.798,39 = %2,702997
+      //   Dietz yaklaşığı: 400 / (10.000 + 10.200 × 0,470430) = %2,702997
+      //   kesin para ağırlıklı (IRR): 10.000(1+r) + 10.200(1+r)^0,470430
+      //   = 20.600 → r = %2,709213
       final r = _hizali([
         ilkLot,
         _lot('ek', 100, DateTime(2026, 8, 16, 10), alis: 102),
@@ -279,18 +280,18 @@ void main() {
       expect(r.ozet.sonTRY, 20600);
       expect(r.ozet.katkiTRY, 10200);
       expect(r.ozet.piyasaTRY, closeTo(400, 1e-6));
-      expect(r.nominal, closeTo(2.702997, 1e-5));
-      expect(r.puan, closeTo(0.202997, 1e-5));
-      expect(r.reel, closeTo(0.198046, 1e-5));
+      expect(r.nominal, closeTo(2.709213, 1e-5));
+      expect(r.puan, closeTo(0.209213, 1e-5));
+      expect(r.reel, closeTo(0.204111, 1e-5));
       expect(InflationService.hukum(r.reel), EnflasyonHukmu.ustunde);
     });
 
-    test('ay ortası SATIŞ: çekilen para kayıp sayılmaz, yüzde %3,2891', () {
+    test('ay ortası SATIŞ: çekilen para kayıp sayılmaz, yüzde %3,2803', () {
       // 16 Ağu 10:00'da 50 adet 102 ₺'dan satıldı → ₺5.100 çıktı.
       //   son = 50 × 103 = ₺5.150, katkı −₺5.100
       //   piyasa = 5.150 − 10.000 + 5.100 = ₺250
-      //   ortalama sermaye = 10.000 − 5.100 × 0,470430 = ₺7.600,81
-      //   nominal = 250 / 7.600,81 = %3,289125
+      //   Dietz: 250 / (10.000 − 5.100 × 0,470430) = %3,289125
+      //   IRR: 10.000(1+r) − 5.100(1+r)^0,470430 = 5.150 → %3,280279
       final r = _hizali([
         ilkLot,
         _lot('satis', 50, DateTime(2026, 8, 16, 10),
@@ -299,8 +300,8 @@ void main() {
       expect(r.ozet.sonTRY, 5150);
       expect(r.ozet.katkiTRY, -5100);
       expect(r.ozet.piyasaTRY, closeTo(250, 1e-6));
-      expect(r.nominal, closeTo(3.289125, 1e-5));
-      expect(r.reel, closeTo(0.769878, 1e-5));
+      expect(r.nominal, closeTo(3.280279, 1e-5));
+      expect(r.reel, closeTo(0.761248, 1e-5));
     });
 
     test('AYIN SON GÜNÜ alım ölçümü bozmaz: yine %3,00', () {
@@ -315,19 +316,19 @@ void main() {
       expect(r.nominal, closeTo(3.0, 1e-9));
     });
 
-    test('sondan bir önceki gün alım: tam sayılır, ağırlığı ~0 (%3,9459)',
+    test('sondan bir önceki gün alım: tam sayılır, ağırlığı ~0 (%3,9469)',
         () {
       // 30 Ağu 14:00, 100 × 102 ₺. Son slotta (31 Ağu) değerin içinde.
       //   piyasa = 20.600 − 10.000 − 10.200 = ₺400
       //   ağırlık = 10 saat / 744 saat = 0,013441
       //   sermaye = 10.000 + 10.200 × 0,013441 = ₺10.137,10
-      //   nominal = 400 / 10.137,10 = %3,945903
+      //   Dietz 400 / 10.137,10 = %3,945903; IRR %3,946916
       final r = _hizali([
         ilkLot,
         _lot('ondan', 100, DateTime(2026, 8, 30, 14), alis: 102),
       ], w, fiyat(103));
       expect(r.ozet.katkiTRY, 10200);
-      expect(r.nominal, closeTo(3.945903, 1e-5));
+      expect(r.nominal, closeTo(3.946916, 1e-5));
     });
 
     test('yüzdenin işareti HER ZAMAN ₺ piyasa satırınınki', () {
@@ -368,11 +369,11 @@ void main() {
       expect(InflationService.hukum(r.reel), EnflasyonHukmu.ustunde);
     });
 
-    test('yıl boyu her ayın 15\'i 10 adet alım (DCA) → %32,9431', () {
+    test('yıl boyu her ayın 15\'i 10 adet alım (DCA) → %33,0452', () {
       // 12 alım × 10 adet, alış fiyatı o haftanın fiyatı (Python ile):
       //   baş ₺100.000, son 1.120 × 133,005 = ₺148.965,58
       //   katkı ₺13.841,17, piyasa ₺35.124,41
-      //   ortalama sermaye ₺106.621,48 → nominal %32,943085
+      //   Dietz %32,943085; kesin para ağırlıklı (IRR) %33,045210
       double fiyat(DateTime d) => 100 * _us(1.0055, hafta(d));
       final lotlar = [ilkLot];
       for (var m = 0; m < 12; m++) {
@@ -383,10 +384,28 @@ void main() {
       final r = _hizali(lotlar, w, fiyat, haftalik: true);
       expect(r.ozet.katkiTRY, closeTo(13841.170399, 1e-4));
       expect(r.ozet.piyasaTRY, closeTo(35124.405242, 1e-4));
-      expect(r.nominal, closeTo(32.943085, 1e-5));
-      expect(r.puan, closeTo(1.433085, 1e-5));
-      expect(r.reel, closeTo(1.089715, 1e-5));
+      expect(r.nominal, closeTo(33.045210, 1e-5));
+      expect(r.puan, closeTo(1.535210, 1e-5));
+      expect(r.reel, closeTo(1.167372, 1e-5));
       expect(InflationService.hukum(r.reel), EnflasyonHukmu.ustunde);
+    });
+
+    test('dipte BÜYÜK alım: Dietz %62,23 değil kesin IRR %66,44', () {
+      // ₺100.000 ile başlıyor; fiyat 2 Mar'da 70'e iniyor, o gün ₺200.000
+      // ekleniyor; yıl sonunda 110. Doğrusal Dietz büyük akışta 4 puan
+      // eksik ölçüyordu — TÜFE'nin yakınında hükmü çevirebilecek fark.
+      final alim = DateTime(2026, 3, 2, 12);
+      final r = _hizali([
+        ilkLot,
+        _lot('dip', 200000 / 70, alim, alis: 70),
+      ], w, (d) {
+        if (d.isBefore(DateTime(2026, 3, 2))) return 100;
+        if (d.isBefore(DateTime(2026, 8, 31))) return 70;
+        return 110;
+      }, haftalik: true);
+      expect(r.ozet.katkiTRY, closeTo(200000, 1e-6));
+      expect(r.nominal, closeTo(66.441673, 1e-4));
+      expect(r.nominal, isNot(closeTo(62.228336, 1)));
     });
 
     test('negatif yıl −%20 → ALTINDA (−51,51 puan, reel −%39,17)', () {

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart' show positionKey;
@@ -110,6 +112,11 @@ class PeriodSummary {
   /// Eylül özeti). Şimdi her akış dönemde kaldığı süre oranında paydaya
   /// girer; akış yoksa sonuç eski formülle BİREBİR aynıdır.
   /// Köprünün TRY satırları ([katkiTRY], [piyasaTRY]) değişmedi.
+  ///
+  /// Aynı gün, best practice kıyasından sonra: ortalama sermaye (Modified
+  /// Dietz) doğrusal yaklaşık olarak kaldı, sayının kendisi aynı akış ve
+  /// ağırlıklarla KESİN para ağırlıklı getiri (dönem IRR'ı;
+  /// `PeriodSummaryService.paraAgirlikliGetiri`). İşaret yine `piyasaTRY`'nin.
   final double? getiriPct;
 
   /// Dönemin en iyi / en zayıf varlığı — DÖNEME ait, ömürlük değil.
@@ -620,6 +627,11 @@ class PeriodSummaryService {
           DateTime(end.year, end.month, end.day, 23, 59, 59)
               .millisecondsSinceEpoch,
     );
+    final piyasa = brut - katki;
+    final sonTs = canli ? end.millisecondsSinceEpoch : u.lastTs;
+    final akisSonu = akisSonuMs ??
+        DateTime(end.year, end.month, end.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
     return (
       ilk: u.first,
       son: son,
@@ -627,15 +639,104 @@ class PeriodSummaryService {
       sonTs: u.lastTs,
       brut: brut,
       katki: katki,
-      piyasa: brut - katki,
+      piyasa: piyasa,
       // Eski payda (baş + POZİTİF katkı) — yalnızca tutar eşikleri için;
-      // yüzde artık [pct] (ortalama sermaye).
+      // yüzde artık [pct] (para ağırlıklı getiri).
       taban: u.first + (katki > 0 ? katki : 0),
-      pct: sermaye == null ? null : (brut - katki) / sermaye * 100,
+      pct: sermaye == null
+          ? null
+          : paraAgirlikliGetiri(
+              lotlar: lotlar,
+              bas: u.first,
+              son: son,
+              basTs: u.firstTs,
+              sonTs: sonTs,
+              akisSonuMs: akisSonu,
+              piyasa: piyasa,
+              sermaye: sermaye,
+            ),
     );
   }
 
-  /// Dönemin ORTALAMA sermayesi (TRY) — yüzdenin paydası (Modified Dietz).
+  /// Dönemin PARA AĞIRLIKLI getirisi (yüzde) — dönem içi IRR.
+  ///
+  /// ## Neden Modified Dietz yetmedi (2026-10-01, yasin: "best practice'lerle
+  /// karşılaştır")
+  /// [ortalamaSermaye] (Modified Dietz) para ağırlıklı getirinin BİRİNCİ
+  /// DERECE yaklaşığıdır: akışın dönem içinde kazandığını bileşik değil
+  /// doğrusal sayar. GIPS/CFA pratiğinde bu yaklaşık, akışın küçük ya da
+  /// dönemin kısa (ay) olduğu yerde kabul görür; uzun dönemde büyük akış
+  /// varsa sapar. Ölçüldü (1Y, ₺100.000 ile başlayıp dipte ₺200.000
+  /// ekleyen kullanıcı): Dietz %61,97, gerçek IRR %66,14 — %31,5'lik
+  /// TÜFE'nin yakınındaki bir portföyde hükmü çevirebilecek fark. 1A'da
+  /// fark yüzde binde birler mertebesinde (%2,7030 → %2,7092).
+  ///
+  /// Denklem (yatırımcının kendi parasının deneyimi):
+  ///     bas·(1+r) + Σ F_i·(1+r)^(w_i) = son,   w_i = (T_son − t_i)/(T_son − T_baş)
+  /// Dietz bu denklemin `(1+r)^w ≈ 1 + w·r` doğrusallaştırmasıdır; aynı
+  /// akış kümesi, aynı ağırlıklar.
+  ///
+  /// **İşaret kuralı korunur** (TWR'nin reddedilme sebebi): kök her zaman
+  /// `piyasa` ile aynı işaretlidir; çözüm bulunamazsa ya da işaret tutmazsa
+  /// Dietz sonucuna düşülür — sayı uydurulmaz, eski davranış korunur.
+  static double paraAgirlikliGetiri({
+    required List<Asset> lotlar,
+    required double bas,
+    required double son,
+    required int basTs,
+    required int sonTs,
+    required int akisSonuMs,
+    required double piyasa,
+    required double sermaye,
+  }) {
+    final dietz = piyasa / sermaye * 100;
+    final sure = sonTs - basTs;
+    final akislar = <({double f, double w})>[];
+    for (final a in lotlar) {
+      final f = flowOf(a);
+      if (f == 0) continue;
+      final ms = a.addedDate.millisecondsSinceEpoch;
+      if (ms <= basTs || ms > akisSonuMs) continue;
+      final w = sure <= 0 ? 0.0 : ((sonTs - ms) / sure).clamp(0.0, 1.0);
+      akislar.add((f: f, w: w));
+    }
+    // Akış yoksa IRR = Dietz = son/baş − 1 (kesin, yaklaşık değil).
+    if (akislar.isEmpty || piyasa == 0) return dietz;
+
+    double fark(double r) {
+      var v = bas * (1 + r);
+      for (final a in akislar) {
+        v += a.f * math.pow(1 + r, a.w);
+      }
+      return v - son;
+    }
+
+    // Kök `piyasa`nın işaret tarafında aranır: r=0'da fark = −piyasa.
+    var lo = piyasa > 0 ? 0.0 : -0.999999;
+    var hi = piyasa > 0 ? 1.0 : 0.0;
+    if (piyasa > 0) {
+      while (fark(hi) < 0 && hi < 1e6) {
+        hi *= 2;
+      }
+    }
+    final fLo = fark(lo);
+    final fHi = fark(hi);
+    if (!fLo.isFinite || !fHi.isFinite || fLo.sign == fHi.sign) return dietz;
+    for (var i = 0; i < 200; i++) {
+      final m = (lo + hi) / 2;
+      if (fark(m).sign == fLo.sign) {
+        lo = m;
+      } else {
+        hi = m;
+      }
+    }
+    final r = (lo + hi) / 2 * 100;
+    if (!r.isFinite || r.sign != piyasa.sign) return dietz;
+    return r;
+  }
+
+  /// Dönemin ORTALAMA sermayesi (TRY) — Modified Dietz paydası; yüzde artık
+  /// [paraAgirlikliGetiri] ile kesinleşir, bu payda onun kapısı ve yedeği.
   ///
   /// ## Neden (kullanıcı bildirimi ve önerisi, 2026-10-01)
   /// *"1 ay içerisinde TÜFE'yle karşılaştırılan değerde dönem içi

@@ -108,7 +108,11 @@ void main() {
     // oranında (10 Mar → 30 Haz / 15 Oca → 30 Haz) sayılır.
     final w = DateTime(2026, 6, 30).difference(DateTime(2026, 3, 10)).inMinutes /
         DateTime(2026, 6, 30).difference(DateTime(2026, 1, 15)).inMinutes;
-    expect(s.getiriPct, closeTo(200 / (1000 + 900 * w) * 100, 1e-9));
+    // Sayı KESİN para ağırlıklı getiri (IRR): 1000(1+r) + 900(1+r)^w =
+    // 2100 → %12,535352. Dietz yaklaşığı %12,44 (best practice kıyası,
+    // 2026-10-01).
+    expect(s.getiriPct, closeTo(12.535352, 1e-5));
+    expect(s.getiriPct, closeTo(200 / (1000 + 900 * w) * 100, 0.2));
   });
 
   test('ölçülen arıza: 4 kat büyüyen portföy NEGATİF getiri göstermez', () {
@@ -148,7 +152,10 @@ void main() {
         reason: 'portföy 4 kat büyürken getiri negatif olamaz');
     // 20,73 → 31,96 (2026-10-01): katkının ₺256 bini Nisan–Temmuz'da girdi
     // ve artık yılın tamamında çalışmış sayılmıyor (ortalama sermaye).
-    expect(s.getiriPct!, closeTo(31.96, 0.05));
+    // 31,96 → 32,84 (aynı gün): Dietz doğrusal yaklaşığı yerine kesin para
+    // ağırlıklı getiri. Bu gerçek portföy şeklinde ~0,9 puan fark — %31,5
+    // TÜFE'nin yanında hükmü çevirebilecek büyüklük.
+    expect(s.getiriPct!, closeTo(32.84, 0.05));
   });
 
   test('pencere başı ile seri başı ÇAKIŞIYORSA davranış değişmez', () {
