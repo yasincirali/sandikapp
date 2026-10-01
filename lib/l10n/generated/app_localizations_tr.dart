@@ -1813,6 +1813,11 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String cpiWindowMonth(String month) {
+    return 'Ölçülen ay: $month';
+  }
+
+  @override
   String get periodCpi => 'Enflasyon (TÜFE)';
 
   @override

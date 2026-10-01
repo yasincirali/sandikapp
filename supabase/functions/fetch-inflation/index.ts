@@ -45,7 +45,6 @@
 // — yanlış bir reel getiri, hiç göstermemekten kötüdür.
 
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { enflasyonOranlari, tufeGunuPushu } from '../_shared/tufe_push.ts';
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -252,13 +251,7 @@ Deno.serve(async (request) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const evdsApiKey = Deno.env.get('EVDS_API_KEY');
     const cronSecret = Deno.env.get('INFLATION_FETCH_CRON_SECRET');
-    // TÜFE günü push'u (0068). FCM secret'ları proje geneli; yoksa push
-    // ATLANIR, endeks yazımı yine tamamlanır — push ikincil.
-    const fcmProjectId = Deno.env.get('FCM_PROJECT_ID');
-    const fcmServiceAccountJson = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON');
-    const fcm = fcmProjectId && fcmServiceAccountJson
-      ? { projectId: fcmProjectId, serviceAccountJson: fcmServiceAccountJson }
-      : null;
+    // TÜFE günü push'u buradan gitmiyor (2026-10-01) — aylık özet taşır.
 
     // FAIL-CLOSED: secret yoksa 503 (bkz. cron_auth.ts). Sonra header kontrolü.
     const eksik = cronSecretZorunlu(cronSecret, 'INFLATION_FETCH_CRON_SECRET');
@@ -556,27 +549,13 @@ Deno.serve(async (request) => {
       throw new Error(`inflation_index yazilamadi: ${upsertError.message}`);
     }
 
-    // ── TÜFE günü push'u (0068) ─────────────────────────────────────────────
-    // Yalnızca YENİ ay yazıldıysa; `inflation_push_log` aynı ay için ikinci
-    // koşuyu keser. Push hatası endeks yazımını geri almaz — ayrı raporlanır.
-    let push: Record<string, unknown> | null = null;
-    if (yeniVarMi) {
-      const oranlar = enflasyonOranlari(satirlar);
-      if (oranlar) {
-        try {
-          push = await tufeGunuPushu(admin, {
-            period: oranlar.period,
-            aylikPct: oranlar.aylikPct,
-            yillikPct: oranlar.yillikPct,
-            fcm,
-            dryRun: false,
-          });
-        } catch (e) {
-          console.error('[fetch-inflation] TÜFE push başarısız:', e);
-          push = { ok: false, reason: 'push hatasi' };
-        }
-      }
-    }
+    // ── TÜFE günü push'u BURADAN GİTMEZ (2026-10-01) ────────────────────────
+    // Ayın TÜFE'si artık aylık özetle TEK push'ta gidiyor (`weekly-summary`
+    // period=month, 0092: ayın 3'ü/4'ü TR 10:30). Eskiden burada 10:05'te,
+    // `calendar-nudge`'da 10:15'te ve aylık özette (1'inde) ayrı ayrı
+    // gidiyordu; kullanıcı aynı gün iki TÜFE push'u alacaktı. Kilit
+    // (`inflation_push_log`) aynı: eski sürüm önce koşarsa aylık o ay susar.
+    const push = null;
 
     return jsonResponse({
       ok: true,

@@ -59,6 +59,7 @@ import {
   recordAppNotification,
 } from '../_shared/app_notifications.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import { enflasyonOranlari, tufeMesaji } from '../_shared/tufe_push.ts';
 import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
@@ -107,10 +108,47 @@ const UC_TAZELIK_SAAT = 48;
 //     bildirimi fiilen kapatırdı. Sayısız mesaj yalan söylemez.
 //   · Sessiz eşik (min_move_pct) yok: ay tek bir cümle hak eder.
 //
-// Aynı gün ikinci push yok: gönderim hem `weekly_summary_log`'a (Pazartesi
-// 1'ine denk gelirse haftalık susar) hem `daily_brief_log`'a yazılır
-// (brifing 06:45'te "bugün gönderildi" görür ve atlar; aylık 06:30'da).
+// ── Ayın 3'ü, TÜFE ile birleşik (2026-10-01, kullanıcı kararı) ─────────────
+//
+// İlk hâli ayın 1'inde gidiyordu. TÜİK geçen ayın TÜFE'sini 3'ünde 10:00'da
+// açıklıyor; 1'inde "Enflasyon farkı Özet'te" diyen push'a dokunan
+// kullanıcı Özet'te ÖNCEKİ ayın (Ağustos) enflasyonunu buluyordu — Eylül
+// özetinin altında Ağustos'un hesabı (kullanıcı bildirimi, ekran
+// görüntüsüyle). Ayrıca 3'ünde iki ayrı TÜFE push'u daha vardı
+// (`fetch-inflation` 10:05, `calendar-nudge` 10:15).
+//
+// Şimdi: cron 3'ü ve 4'ü TR 10:30 (0092), `fetch-inflation`'dan SONRA.
+//   · Ayın TÜFE'si tabloda yoksa (TÜİK gecikti) HİÇBİR ŞEY gönderilmez,
+//     ertesi gün yeniden denenir.
+//   · Ay başına TEK koşu: `inflation_push_log(period)` kilidi — eski
+//     `fetch-inflation` push'uyla AYNI defter, yani hangisi önce koşarsa
+//     o ay için tek TÜFE push'u gider (sürüm sırası ne olursa olsun).
+//   · Özet bildirimini kapatmış ya da bu ay özeti ZATEN almış kullanıcı
+//     (geçiş: Eylül özeti 1 Ekim'de eski takvimle gitti) yalnızca TÜFE
+//     mesajını alır — eski TÜFE günü push'unun birebir aynısı.
+//
+// Aynı gün ikinci push yok: gönderim `daily_brief_log`'a yazılır (brifing
+// 09:45'te zaten gitmişse bu, günün ikinci ve son mesajıdır — eskiden de
+// TÜFE push'u öyleydi).
 export type Donem = 'week' | 'month';
+
+/** Ayın TÜFE'si — aylık özete eklenir. */
+export type AyTufesi = { aylikPct: number; yillikPct: number | null };
+
+/**
+ * Özetlenen ayın TÜFE oranları. Seri `period` artan sıralı; satır o aya
+ * AİT olmalı — son açıklanan ay farklıysa `null` (başka ayın enflasyonu
+ * bu aya YAZILMAZ; kullanıcı bildiriminin kökü buydu).
+ */
+export function ayinTufesi(
+  satirlar: Array<{ period: string; value: number }>,
+  donem: string,
+): AyTufesi | null {
+  const kadar = satirlar.filter((r) => r.period.slice(0, 10) <= donem);
+  const o = enflasyonOranlari(kadar);
+  if (!o || o.period.slice(0, 10) !== donem) return null;
+  return { aylikPct: o.aylikPct, yillikPct: o.yillikPct };
+}
 
 /** Türkçe ay adları — `intl` yok; `BugunKarti`/`RecapService` ile aynı sabit. */
 const AY_ADLARI = [
@@ -124,7 +162,9 @@ const AY_ADLARI = [
  * `now` 1 Eylül 06:30 UTC ise → 1 Ağustos 00:00 TR … 1 Eylül 00:00 TR.
  * Ayın 1'i yerine gecikmeli koşsa da (2'si, 3'ü) yine geçen ayı verir.
  */
-export function ayPenceresi(now: Date): { fromMs: number; toMs: number; ayAdi: string } {
+export function ayPenceresi(
+  now: Date,
+): { fromMs: number; toMs: number; ayAdi: string; donem: string } {
   const TR_OFFSET_MS = 3 * 3600_000;
   const tr = new Date(now.getTime() + TR_OFFSET_MS);
   const y = tr.getUTCFullYear();
@@ -132,7 +172,10 @@ export function ayPenceresi(now: Date): { fromMs: number; toMs: number; ayAdi: s
   const buAyBasi = Date.UTC(y, m, 1) - TR_OFFSET_MS;
   const gecenAyBasi = Date.UTC(y, m - 1, 1) - TR_OFFSET_MS;
   const gecenAy = ((m - 1) % 12 + 12) % 12;
-  return { fromMs: gecenAyBasi, toMs: buAyBasi, ayAdi: AY_ADLARI[gecenAy] };
+  const g = new Date(Date.UTC(y, m - 1, 1));
+  // `inflation_index.period` biçimi: ayın ilk günü.
+  const donem = `${g.getUTCFullYear()}-${String(g.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  return { fromMs: gecenAyBasi, toMs: buAyBasi, ayAdi: AY_ADLARI[gecenAy], donem };
 }
 
 /**
@@ -144,24 +187,36 @@ export function buildMonthlyMessage(
   ayAdi: string,
   changePct: number | null,
   uzunDonemPct: number | null,
+  tufe: AyTufesi | null = null,
 ): { title: string; body: string } {
+  // Ayın TÜFE'si başlığa girer: kullanıcı iki rakamı yan yana görür ve
+  // Özet'teki reel getiri kartı AYNI ayı anlatır (2026-10-01).
+  const enf = tufe === null
+    ? ''
+    : ` · enflasyon %${tufe.aylikPct.toFixed(2).replace('.', ',')}`;
   if (changePct === null) {
+    const yil = tufe?.yillikPct == null
+      ? ''
+      : `Yıllık enflasyon %${tufe.yillikPct.toFixed(1).replace('.', ',')}. `;
     return {
-      title: `${ayAdi} özetin hazır`,
-      body: 'Getirin, enflasyon farkı ve en iyi varlığın Özet\'te. Yatırım tavsiyesi değildir.',
+      title: `${ayAdi} özetin hazır${enf}`,
+      body: tufe === null
+        ? 'Getirin, enflasyon farkı ve en iyi varlığın Özet\'te. Yatırım tavsiyesi değildir.'
+        : `${yil}Getirin ve reel farkın Özet'te. Yatırım tavsiyesi değildir.`,
     };
   }
   const yukari = changePct >= 0;
   const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
   const baslik = yukari
-    ? `▲ ${ayAdi}: piyasadan %${mutlak}`
-    : `▼ ${ayAdi}: piyasadan −%${mutlak}`;
+    ? `▲ ${ayAdi}: piyasadan %${mutlak}${enf}`
+    : `▼ ${ayAdi}: piyasadan −%${mutlak}${enf}`;
+  const ozet = tufe === null ? 'Enflasyon farkı' : 'Reel getirin';
   let govde: string;
   if (!yukari && uzunDonemPct !== null && uzunDonemPct > 0) {
     const u = uzunDonemPct.toFixed(1).replace('.', ',');
-    govde = `Ay ekside. Daha uzun pencerede hâlâ +%${u}. Enflasyon farkı Özet'te.`;
+    govde = `Ay ekside. Daha uzun pencerede hâlâ +%${u}. ${ozet} Özet'te.`;
   } else {
-    govde = 'Enflasyon farkı ve en iyi varlığın Özet\'te. Yatırım tavsiyesi değildir.';
+    govde = `${ozet} ve en iyi varlığın Özet'te. Yatırım tavsiyesi değildir.`;
   }
   return { title: baslik, body: govde };
 }
@@ -332,6 +387,53 @@ Deno.serve(async (request) => {
     const bildirimTipi = aylik ? 'monthly_summary' : 'weekly_summary';
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
+    const ay = ayPenceresi(new Date());
+
+    // ── 0) Aylık: ayın TÜFE'si + ay başına tek koşu kilidi ─────────────────
+    // (bkz. "Ayın 3'ü, TÜFE ile birleşik"). TÜFE yoksa hiçbir şey
+    // gönderilmez ve kilit ALINMAZ — ertesi günkü koşu yeniden dener.
+    let ayTufe: AyTufesi | null = null;
+    if (aylik) {
+      const { data: idxRows } = await admin
+        .from('inflation_index')
+        .select('period, tufe_index')
+        .lte('period', ay.donem)
+        .order('period', { ascending: false })
+        .limit(13);
+      const seri = ((idxRows ?? []) as Array<{ period: string; tufe_index: number }>)
+        .map((r) => ({ period: String(r.period), value: Number(r.tufe_index) }))
+        .reverse();
+      ayTufe = ayinTufesi(seri, ay.donem);
+      if (ayTufe === null) {
+        return jsonResponse({
+          ok: true,
+          reason: 'tufe_bekleniyor',
+          period: ay.donem,
+          sent: 0,
+        });
+      }
+      if (!dryRun) {
+        const { error } = await admin
+          .from('inflation_push_log')
+          .insert({ period: ay.donem });
+        if (error) {
+          // 23505 → bu ayın TÜFE push'u (eski `fetch-inflation` yolu ya da
+          // önceki koşu) zaten gitti; ikinci kez gönderilmez.
+          if (error.code === '23505') {
+            return jsonResponse({ ok: true, reason: 'zaten gonderildi', sent: 0 });
+          }
+          throw new Error(`inflation_push_log yazilamadi: ${error.message}`);
+        }
+        // `calendar-nudge` TÜFE kancası 0092 ile takvimden kalktı; elle
+        // tetiklenirse de aynı ayı ikinci kez göndermesin.
+        await admin
+          .from('calendar_nudge_log')
+          .upsert(
+            { occasion: 'inflation_day', period: ay.donem },
+            { onConflict: 'occasion,period' },
+          );
+      }
+    }
 
     // ── 1) Push token'ı olan kullanıcılar ───────────────────────────────────
     const { data: tokenRows, error: tokenError } = await admin
@@ -381,11 +483,27 @@ Deno.serve(async (request) => {
       // göndermemek, tercihi bilmemekten daha kötü bir varsayım olurdu.
     }
 
+    // ── 3b) Aylık: bu ay özeti ZATEN almış kullanıcı ────────────────────────
+    // Geçiş: Eylül özeti 1 Ekim'de eski takvimle (ayın 1'i) gitti. 3'ündeki
+    // koşu aynı ayı ikinci kez anlatmasın — bu kullanıcılar yalnızca TÜFE
+    // mesajını alır (eski TÜFE günü push'unun aynısı).
+    const ayOzetiAlmis = new Set<string>();
+    if (aylik) {
+      const { data: alanlar } = await admin
+        .from('app_notifications')
+        .select('user_id')
+        .eq('type', 'monthly_summary')
+        .gte('created_at', new Date(ay.toMs).toISOString())
+        .in('user_id', userIds);
+      for (const r of (alanlar ?? []) as Array<{ user_id: string }>) {
+        ayOzetiAlmis.add(String(r.user_id));
+      }
+    }
+
     // ── 4) Dönem penceresi ──────────────────────────────────────────────────
     // Haftalık: son 7 gün, şimdiye kadar. Aylık: geçen TAKVİM ayı — uçlar
     // ayın ilk/son gününe yakın snapshot'lardan (tazelik kuralı aynı).
     const simdi = Date.now();
-    const ay = ayPenceresi(new Date(simdi));
     const fromMs = aylik ? ay.fromMs : simdi - 7 * 24 * 60 * 60 * 1000;
     const toMs = aylik ? ay.toMs : simdi;
     const yilFromMs = simdi - 365 * 24 * 60 * 60 * 1000;
@@ -422,6 +540,28 @@ Deno.serve(async (request) => {
         sent: 0,
       });
     }
+
+    // ── 5b) SON 365 GÜNDE akış olanlar ─────────────────────────────────────
+    // "Daha uzun pencerede hâlâ +%X" cümlesi snapshot uçlarından (BRÜT)
+    // hesaplanıyor. Yıl içinde para ekleyen kullanıcıda bu sayı katkıyla
+    // şişer (2026-10-01 denetimi) — o kullanıcıya cümle sayısız kurulur.
+    // Sorgu düşerse herkes akışlı sayılır: şüpheli sayı gönderilmez.
+    const yilAkisli = new Set<string>(userIds);
+    try {
+      const { data: yilRows, error: yilErr } = await admin
+        .from('assets')
+        .select('user_id')
+        .in('user_id', userIds)
+        .in('kind', ['buy', 'sell'])
+        .is('deleted_at', null)
+        .gte('added_date', new Date(yilFromMs).toISOString());
+      if (!yilErr) {
+        yilAkisli.clear();
+        for (const r of (yilRows ?? []) as Array<Record<string, unknown>>) {
+          yilAkisli.add(String(r.user_id));
+        }
+      }
+    } catch (_) { /* herkes akışlı kalır */ }
 
     // ── 6) Snapshot'lar ─────────────────────────────────────────────────────
     const { data: snapRows, error: snapError } = await admin
@@ -460,11 +600,23 @@ Deno.serve(async (request) => {
     const sessiz = await sessizKullanicilar(admin, userIds);
     let skippedQuietHours = 0;
 
+    const tufeYalnizTokenlar: typeof tokens = [];
+
     for (const tokenRow of tokens) {
       const uid = tokenRow.user_id;
-      if (zatenGonderildi.has(uid)) continue;
-      if (istemeyen.has(uid)) { skippedOptOut += 1; continue; }
+      // Haftalık defter aylığı SUSTURMAZ: 3'ü Pazartesi'ye düşerse haftalık
+      // 09:45'te gitmiş olur ama ayın TÜFE'si yalnızca bu mesajda.
+      if (!aylik && zatenGonderildi.has(uid)) continue;
       if (sessiz.has(uid)) { skippedQuietHours += 1; continue; }
+      // Aylık: özeti kapatmış ya da bu ay özeti almış kullanıcıya YALNIZCA
+      // TÜFE mesajı (eski TÜFE günü push'u, tercih anahtarı yok).
+      if (aylik && ayTufe !== null &&
+          (istemeyen.has(uid) || ayOzetiAlmis.has(uid))) {
+        if (istemeyen.has(uid)) skippedOptOut += 1;
+        tufeYalnizTokenlar.push(tokenRow);
+        continue;
+      }
+      if (istemeyen.has(uid)) { skippedOptOut += 1; continue; }
 
       // AKIŞ KAPISI — en önemlisi. Haftalıkta susturur; aylıkta yüzdeyi
       // düşürür, bildirimi değil (bkz. "Aylık özet" notu).
@@ -492,7 +644,7 @@ Deno.serve(async (request) => {
       // Yıllık uçlar için tazelik denetimi aranmaz: bağlam cümlesi ikincil
       // ve yaklaşık olması kabul edilebilir.
       let uzunDonemPct: number | null = null;
-      if (degisim !== null && degisim < 0) {
+      if (degisim !== null && degisim < 0 && !yilAkisli.has(uid)) {
         const yilSirali = rows
           .map((r) => ({ ts: Date.parse(r.ts), total: snapshotTotal(r.data) }))
           .filter((r) => Number.isFinite(r.ts) && r.total > 0)
@@ -508,7 +660,7 @@ Deno.serve(async (request) => {
       // Haftalık yol buraya `degisim` dolu gelir (yukarıdaki kapılar);
       // aylıkta null olabilir ve mesaj sayısız kurulur.
       const mesaj = aylik
-        ? buildMonthlyMessage(ay.ayAdi, degisim, uzunDonemPct)
+        ? buildMonthlyMessage(ay.ayAdi, degisim, uzunDonemPct, ayTufe)
         : buildWeeklyMessage(degisim ?? 0, uzunDonemPct);
 
       if (dryRun) { sent += 1; continue; }
@@ -521,7 +673,9 @@ Deno.serve(async (request) => {
           type: bildirimTipi,
           title: mesaj.title,
           body: mesaj.body,
-          data: { sent_on: bugun },
+          // `ay` (2026-10-01): bildirimin anlattığı takvim ayı. Eski
+          // sürümler alanı yok sayar.
+          data: aylik ? { sent_on: bugun, ay: ay.donem.slice(0, 7) } : { sent_on: bugun },
         }),
         cankaydi,
       );
@@ -534,7 +688,9 @@ Deno.serve(async (request) => {
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
-        data: { type: bildirimTipi, sent_on: bugun },
+        data: aylik
+          ? { type: bildirimTipi, sent_on: bugun, ay: ay.donem.slice(0, 7) }
+          : { type: bildirimTipi, sent_on: bugun },
       });
 
       if (r.ok) {
@@ -570,10 +726,51 @@ Deno.serve(async (request) => {
       }
     }
 
+    // ── 8) Aylık: yalnızca TÜFE mesajı alacaklar ────────────────────────────
+    let sentTufe = 0;
+    if (aylik && ayTufe !== null && tufeYalnizTokenlar.length > 0) {
+      const tm = tufeMesaji(ay.ayAdi, ayTufe.aylikPct, ayTufe.yillikPct);
+      const tufeCan = new Set<string>();
+      for (const t of tufeYalnizTokenlar) {
+        if (dryRun) { sentTufe += 1; continue; }
+        const kh = await recordAppNotification(
+          admin,
+          appNotificationRow({
+            userId: t.user_id,
+            type: 'inflation_day',
+            title: tm.title,
+            body: tm.body,
+            data: { period: ay.donem },
+          }),
+          tufeCan,
+        );
+        if (kh) failures.push(kh);
+        const r = await sendFcmNotification({
+          accessToken,
+          projectId: fcmProjectId,
+          token: t.token,
+          title: tm.title,
+          body: tm.body,
+          channelId: CHANNEL_ID,
+          data: { type: 'inflation_day', period: ay.donem },
+        });
+        if (r.ok) {
+          sentTufe += 1;
+        } else {
+          console.error('[weekly-summary] TÜFE gonderimi basarisiz:', r.rawText.slice(0, 500));
+          failures.push(`fcm: ${r.hataKodu}`);
+          if (r.shouldDeleteToken) {
+            await admin.from('user_push_tokens').delete().eq('token', t.token);
+          }
+        }
+      }
+    }
+
     return jsonResponse({
       ok: true,
       period: donem,
       sent,
+      sent_tufe_only: sentTufe,
       skipped_flow: skippedFlow,
       skipped_coverage: skippedCoverage,
       skipped_quiet: skippedQuiet,

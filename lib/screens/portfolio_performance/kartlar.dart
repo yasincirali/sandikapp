@@ -504,7 +504,21 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // dönem başı + POZİTİF akış ("gün içinde portföyünü büyüten
     // kullanıcıda yüzdeyi şişirmemek için", bkz. `DailySummary.from`).
     final piyasa = grossChange - netInflow;
-    final piyasaPctBase = firstY + (netInflow > 0 ? netInflow : 0);
+    // Payda: 1H ve üstünde dönemin ORTALAMA sermayesi — Özet'le TEK fonksiyon
+    // (`PeriodSummaryService.ortalamaSermaye`, 2026-10-01). Ay sonunda
+    // eklenen para ayın tamamında çalışmış sayılmaz. GÜNLÜK'te ana sayfanın
+    // kuralı (`DailySummary.from`: baş + pozitif akış) kalır — parite orada.
+    final piyasaPctBase = (intraday || _simulate)
+        ? firstY + (netInflow > 0 ? netInflow : 0)
+        : (PeriodSummaryService.ortalamaSermaye(
+              lotlar: targetAssets,
+              bas: firstY,
+              basTs: ep.firstTs!,
+              sonTs: end.millisecondsSinceEpoch,
+              akisSonuMs: DateTime(end.year, end.month, end.day, 23, 59, 59)
+                  .millisecondsSinceEpoch,
+            ) ??
+            0);
     final piyasaPct =
         piyasaPctBase > 0 ? (piyasa / piyasaPctBase) * 100 : null;
     final piyasaFlat =

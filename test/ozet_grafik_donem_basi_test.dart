@@ -257,11 +257,15 @@ void main() {
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
       expect(tek.contains('final piyasa = grossChange - netInflow;'), isTrue);
+      // GÜNLÜK'te taban ana sayfanınki (baş + pozitif akış); 1H ve üstünde
+      // Özet'le aynı ORTALAMA sermaye (2026-10-01).
       expect(
-          tek.contains(
-              'final piyasaPctBase = firstY + (netInflow > 0 ? netInflow : 0);'),
+          tek.contains('? firstY + (netInflow > 0 ? netInflow : 0)'),
           isTrue,
           reason: 'tutar eşitlenip yüzde ayrışırsa çelişki sürer');
+      expect(tek.contains('(intraday || _simulate)'), isTrue);
+      expect(tek.contains('PeriodSummaryService.ortalamaSermaye('), isTrue,
+          reason: 'dönem yüzdesi Özet ile TEK payda');
       expect(tek.contains('context.l10n.marketOnlyRow'), isTrue,
           reason: 'piyasa etkisi ayrı satır olarak yazılmalı');
     });

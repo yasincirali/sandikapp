@@ -7,6 +7,10 @@
 // kişisel sayı YOK: yanlış bir yüzde göndermektense oranı söyleyip soruyu
 // sormak dürüst.
 //
+// 2026-10-01: push artık `weekly-summary` (aylık özet, 0092) içinden gider;
+// bu dosyanın `tufeMesaji`/`enflasyonOranlari`'ı orada kullanılıyor.
+// `tufeGunuPushu` çağıransız kaldı (eski yol, testleri duruyor).
+//
 // Tekilleştirme `inflation_push_log(period)`: `fetch-inflation` cron'u
 // açıklama günü birkaç kez koşabilir (0053: 10:05, gecikmede tekrar); aynı
 // ay için ikinci push gitmez. Tercih anahtarı yok (ayda bir, markanın

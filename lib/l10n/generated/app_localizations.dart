@@ -3290,6 +3290,12 @@ abstract class AppLocalizations {
   /// **'Ölçüm aralığı: {start} - {end}'**
   String cpiWindowRange(String start, String end);
 
+  /// Tek aylık TÜFE karşılaştırmasının ölçtüğü ay
+  ///
+  /// In tr, this message translates to:
+  /// **'Ölçülen ay: {month}'**
+  String cpiWindowMonth(String month);
+
   /// No description provided for @periodCpi.
   ///
   /// In tr, this message translates to:

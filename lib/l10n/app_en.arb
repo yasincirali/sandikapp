@@ -1006,6 +1006,15 @@
       }
     }
   },
+  "cpiWindowMonth": "Measured month: {month}",
+  "@cpiWindowMonth": {
+    "description": "The month a one-month CPI comparison measures",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "periodCpi": "Inflation (CPI)",
   "pointDifference": "Difference",
   "realReturn": "Real return",

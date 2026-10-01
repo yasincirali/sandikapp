@@ -8,12 +8,15 @@
 /// tutmaz; ayırt edici tek şey ifadenin kendisi: gün-ay alanı `*` değilse
 /// iş aylıktır ve "ilk slotu henüz gelmedi" olağan bir durumdur.
 ///
-/// Kapsam dar: yalnızca standart 5 alanlı ifade ve tek sayı gün. Liste
-/// (`1,15`) ya da aralık (`1-5`) aylık kabul edilmez — bu projede yok.
+/// Kapsam dar: standart 5 alanlı ifade; gün tek sayı ya da sayı LİSTESİ.
+/// Liste (2026-10-01): aylık özet `3,4` (TÜFE günü + gecikme turu, 0092);
+/// ilk gün döner. Aralık (`1-5`) aylık kabul edilmez — bu projede yok.
 int? cronAyGunu(String schedule) {
   final alanlar = schedule.trim().split(RegExp(r'\s+'));
   if (alanlar.length < 5) return null;
-  final gun = int.tryParse(alanlar[2]);
-  if (gun == null || gun < 1 || gun > 31) return null;
-  return gun;
+  final gunler = alanlar[2].split(',').map(int.tryParse).toList();
+  if (gunler.isEmpty || gunler.any((g) => g == null || g < 1 || g > 31)) {
+    return null;
+  }
+  return gunler.reduce((a, b) => a! < b! ? a : b);
 }
