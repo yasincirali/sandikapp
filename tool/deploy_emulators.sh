@@ -119,3 +119,20 @@ for d in $DEVICES; do
 done
 
 [ "$fail" = "0" ] && echo -e "\nTamam — her iki emülatörde çalışıyor." || exit 1
+
+# Boşta kare kapısı (2026-10-01, CPU/GPU raporu): Ana ekran dokunulmadan
+# ~40 sn sonra kare üretmemeli (piyasa şeridi boşta durur). Widget testi bunu
+# göremez; yalnızca cihazda kare sayarak görünür. Tek cihazda, son adımdan
+# sonra koşar; betiğin geri kalanını BLOKLAMAZ — ölçüm emülatörün o anki
+# yüküne duyarlı, yanlış kırmızı dağıtımı durdurmasın. Kırmızıysa rapor
+# okunur, `python tool/cpu_ekran.py <cihaz> --kapi` ile elle tekrarlanır.
+# Atlamak için: BOSTA_KAPI=0 bash tool/deploy_emulators.sh
+if [ "${BOSTA_KAPI:-1}" = "1" ]; then
+  step "ek   Boşta kare kapısı (Ana ekran, ~1 dk)"
+  ilk=$(echo "$DEVICES" | head -1)
+  if python tool/cpu_ekran.py "$ilk" --kapi; then
+    echo "  $ilk  ✓ boşta kare yok"
+  else
+    echo "  $ilk  ⚠ boşta kare kapısı kırmızı — rapor: docs/CPU_GPU_VE_BOYUT_RAPORU_2026_10.md"
+  fi
+fi
