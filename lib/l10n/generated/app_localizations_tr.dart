@@ -933,7 +933,33 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cpiWindowNote =>
-      'TÜFE ayda bir açıklanır; bu kart son açıklanan aya kadar ölçer. Üstteki piyasa getirisi bugüne kadardır, yani iki rakamın aralığı farklı.';
+      'TÜFE ayda bir açıklanır; bu kart son açıklanan ayın sonunda biter, aralığı üstteki rakamdan farklı.';
+
+  @override
+  String rangeChip(String start, String end) {
+    return '$start - $end';
+  }
+
+  @override
+  String get rangeToday => 'bugün';
+
+  @override
+  String get rangeSinceFirstBuy => 'İlk alımdan bugüne';
+
+  @override
+  String sinceCpiWindowEnd(String month) {
+    return '$month sonundan bugüne';
+  }
+
+  @override
+  String sinceCpiWindowBody(String month, String date) {
+    return 'Üstteki rakam bu süreyi içeriyor; $month TÜFE\'si açıklanınca ($date) bu kart güncellenir.';
+  }
+
+  @override
+  String sinceCpiWindowBodyLate(String month) {
+    return 'Üstteki rakam bu süreyi içeriyor; $month TÜFE\'si yüklenince bu kart güncellenir.';
+  }
 
   @override
   String get demoTryButton => 'Önce bir göz at';
@@ -1762,8 +1788,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get fiveYearCurve => 'Beş yıl eğrisi';
 
   @override
-  String periodMarketReturn(String period) {
-    return '$period piyasa getirisi';
+  String moneyReturnPeriod(String period) {
+    return 'Paranın getirisi · $period';
   }
 
   @override
@@ -1808,11 +1834,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get againstInflation => 'Enflasyona karşı';
-
-  @override
-  String realReturnPeriod(String period) {
-    return 'Reel getiri · $period';
-  }
 
   @override
   String get nominalReturn => 'Senin getirin';
@@ -1894,18 +1915,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get concentration => 'Yoğunlaşma';
 
   @override
-  String get moneyReturnAnnual => 'Paranın getirisi (yıllık)';
+  String get moneyReturnAnnual => 'Başlangıçtan beri (yıllık)';
 
   @override
   String get xirrBody =>
       'Yatırdığın paranın, yatırdığın TARİHLER dikkate alınarak hesaplanan yıllık bileşik getirisi.';
 
   @override
-  String get periodMarketReturnLabel => 'Dönem piyasa getirisi';
+  String get periodMarketReturnLabel => 'Seçili dönemin getirisi';
 
   @override
   String get xirrVsMarketBody =>
-      'İki sayı çelişmez: üstteki senin ne zaman alım yaptığını da hesaba katar, alttaki yalnızca piyasanın hareketini ölçer.';
+      'İki sayı çelişmez: üstteki ilk alımından bugüne, alım zamanlarını da hesaba katarak ölçer; alttaki yalnızca seçili dönemde piyasanın hareketini ölçer.';
 
   @override
   String get advancedMetricsYear => 'İleri metrikler · son 1 yıl';
@@ -3982,10 +4003,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get sectionThisPeriod => 'BU DÖNEM';
+  String get sectionResult => 'SONUÇ';
 
   @override
-  String get sectionAssets => 'VARLIKLAR';
+  String get sectionWhy => 'NEDEN';
+
+  @override
+  String get sectionDetail => 'AYRINTI';
 
   @override
   String get sectionDepth => 'DERİNLİK';
