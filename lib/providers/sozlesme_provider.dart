@@ -25,6 +25,23 @@ class BesFiyatYokException implements Exception {
   String toString() => 'BesFiyatYokException($kod)';
 }
 
+/// [a] lotu [s] sözleşmesine mi ait?
+///
+/// Önce `sozlesme_id`. Mevduatta ek olarak `MEVDUAT:<id>` sembolü de
+/// sayılır (stopaj incelemesi, 2026-10-01): portföydeki "+" (hızlı alım)
+/// lotu sözleşme kimliği taşımadan yazılıyordu. O lot pozisyonda ve
+/// toplamda görünüyor ama kart ve "Çektim" onu görmüyordu — çekimden sonra
+/// eklenen para portföyde açık kalıp faiz işletmeye devam ediyordu. Canlıda
+/// böyle yazılmış lotlar olabileceği için düzeltme okuma tarafında da
+/// yapılır; sembol sözleşmeye özgüdür, başka sözleşmenin lotu karışmaz.
+/// BES'te sembol (`TEFAS:KOD`) sözleşmeye özgü değildir, yalnızca kimlik.
+bool sozlesmeLotuMu(Asset a, Sozlesme s) {
+  if (a.sozlesmeId == s.id) return true;
+  return s.tur == SozlesmeTuru.mevduat &&
+      a.sozlesmeId == null &&
+      mevduatSozlesmeId(a.ticker) == s.id.toLowerCase();
+}
+
 /// Kullanıcının sözleşmeleri ve mevduat dönemleri.
 class SozlesmeState {
   const SozlesmeState({
@@ -226,7 +243,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     if (portfoy == null || s == null) return;
     final lotlar = [
       for (final a in portfoy.assets)
-        if (a.sozlesmeId == sozlesmeId && a.isActive) a,
+        if (sozlesmeLotuMu(a, s) && a.isActive) a,
     ];
     final alim = lotlar.where((a) => a.isBuy).toList();
     if (alim.isEmpty) return;
