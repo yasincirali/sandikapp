@@ -1,0 +1,73 @@
+name: iOS — TestFlight harici gruba gönder
+
+# TestFlight'a zaten yüklenmiş ve işlenmiş bir build'i HARİCİ (external)
+# test grubuna gönderir. Derleme yok; yalnızca App Store Connect API key.
+#
+# Neden elle: `ios-testflight.yml` her main push'unda dahili testçilere
+# build atar. Harici testçilere giden her build Apple'ın Beta App Review'una
+# düşer ve gerçek kullanıcılara ulaşır — ne zaman ne gideceği bilinçli
+# seçilsin (CLAUDE.md: canlıdaki kullanıcı etkilenmez).
+#
+# İlk gönderimden önce ASC → TestFlight → Test Information dolu olmalı
+# (geri bildirim e-postası, iletişim kişisi, giriş gerekiyorsa demo hesap).
+
+on:
+  workflow_dispatch:
+    inputs:
+      groups:
+        description: "Harici grup adı (ASC'deki gibi; birden çoksa virgülle)"
+        required: true
+        type: string
+      build_number:
+        description: 'Build numarası (boş = en son yüklenen build)'
+        required: false
+        type: string
+        default: ''
+      ne_test_edilsin:
+        description: '"What to Test" metni (testçilere görünür)'
+        required: false
+        type: string
+        default: 'Yeni sürüm: ana sayfa kartları, aylık özet ve enflasyon karşılaştırması, mevduat stopajı ve BES düzeltmeleri. Lütfen portföy ekleme, Özet ve bildirimleri dene; sorunları TestFlight üzerinden ekran görüntüsüyle bildir.'
+
+concurrency:
+  group: testflight-external
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  distribute:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby (fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Harici gruba gönder
+        working-directory: ios
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_CONTENT: ${{ secrets.ASC_KEY_CONTENT }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          ITC_TEAM_ID: ${{ secrets.ITC_TEAM_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Girdileri ortamdan geçir: doğrudan `run:` içine gömmek
+          # betik enjeksiyonuna açık olurdu.
+          GRUPLAR: ${{ inputs.groups }}
+          BUILD_NO: ${{ inputs.build_number }}
+          NOTLAR: ${{ inputs.ne_test_edilsin }}
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
+          FASTLANE_HIDE_CHANGELOG: '1'
+        run: |
+          bundle exec fastlane harici_dagit \
+            groups:"$GRUPLAR" \
+            build_number:"$BUILD_NO" \
+            changelog:"$NOTLAR"

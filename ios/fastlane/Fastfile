@@ -535,4 +535,47 @@ platform :ios do
 
     UI.success("Build #{next_build_number} TestFlight'a upload edildi 🚀")
   end
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # harici_dagit
+  # ─────────────────────────────────────────────────────────────────────────
+  # TestFlight'ta ZATEN işlenmiş bir build'i harici (external) test grubuna
+  # gönderir. Derleme/imzalama yok, match gerekmez — yalnızca ASC API key.
+  #
+  # Neden `beta`ya eklenmedi: `beta` her main push'unda koşar ve
+  # `skip_waiting_for_build_processing: true` ile işlemeyi beklemeden çıkar;
+  # harici dağıtım işlenmiş build ister, ayrıca her build Beta App Review'a
+  # gider. Harici testçiye ne zaman ne gideceği bilinçli bir karar olsun diye
+  # ayrı, elle tetiklenen lane (testflight-external.yml).
+  #
+  # İlk harici gönderim Apple'ın Beta App Review'una düşer (genelde < 1 gün);
+  # sonraki build'ler çoğunlukla otomatik onaylanır. ASC → TestFlight → Test
+  # Information (geri bildirim e-postası, iletişim, giriş bilgisi) dolu
+  # değilse Apple gönderimi reddeder — o durumda hata mesajı bunu söyler.
+  desc "İşlenmiş son (veya verilen) build'i harici TestFlight grubuna gönder"
+  lane :harici_dagit do |options|
+    gruplar = options[:groups].to_s.split(",").map(&:strip).reject(&:empty?)
+    UI.user_error!("En az bir harici grup adı ver (groups:)") if gruplar.empty?
+
+    notlar = options[:changelog].to_s.strip
+    notlar = notlar[0, CHANGELOG_LIMIT] if notlar.length > CHANGELOG_LIMIT
+
+    params = {
+      api_key: asc_api_key,
+      distribute_only: true,
+      distribute_external: true,
+      notify_external_testers: true,
+      groups: gruplar,
+      # Info.plist ITSAppUsesNonExemptEncryption=false ile aynı beyan;
+      # verilmezse pilot soru sorup CI'da takılabilir.
+      uses_non_exempt_encryption: false
+    }
+    # Boş bırakılırsa pilot en son yüklenen build'i seçer.
+    params[:build_number] = options[:build_number].to_s if options[:build_number].to_s.strip != ""
+    params[:app_version] = options[:app_version].to_s if options[:app_version].to_s.strip != ""
+    params[:changelog] = notlar unless notlar.empty?
+
+    upload_to_testflight(**params)
+    UI.success("Harici gruba gönderildi: #{gruplar.join(', ')} 🚀")
+  end
 end
