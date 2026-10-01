@@ -8,7 +8,53 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+<<<<<<< HEAD
 ## ✅ 2026-10-01 Zirve rızası → anında ölçüm (0094) — İKİ SUNUCUDA
+=======
+## ✅ MATCH_PASSWORD DEĞİŞTİRİLDİ (2026-10-01) — kalan: `MATCH_PASSWORD_YENI`'yi sil
+
+Repo herkese açık; Fastfile keychain kilidini açarken `MATCH_PASSWORD`'ü
+iOS — TestFlight Actions günlüğüne açık metin bastı (fastlane özet tablosu,
+`security unlock-keychain -p ...`; GitHub kabuk kaçışlı değeri maskelemedi).
+Bu parola imza sertifikası/profil reposunu (`MATCH_GIT_URL`) şifreler. Repoya
+erişim ayrıca `MATCH_GIT_BASIC_AUTH` PAT'ı ister (günlükte görünmedi), yine de
+parola açıkta sayılır. Günlüğe basma düzeltmesi: PR #46.
+
+Yol (2026-10-01): yerel Ruby gerekmez, eski parolayı bilmen gerekmez —
+GitHub Actions'ta `match-parola-degistir.yml` (eski parolayı mevcut secret'tan
+okur, depoyu yeni parolayla şifreler, iki kez doğrular).
+
+- [x] Git Bash: `openssl rand -hex 32` → çıktıyı parola yöneticisine kaydet.
+      (Yalnız harf/rakam şart: eski paroladaki özel karakterler kabuk
+      kaçışıyla değişip GitHub maskesinden kaçmıştı. Lane kontrol eder.)
+- [x] GitHub → sandikapp → Settings → Secrets and variables → Actions →
+      **New repository secret** → `MATCH_PASSWORD_YENI` = o değer.
+- [x] Actions → **iOS — Match parolasını değiştir (tek seferlik)** → Run
+      workflow → onay `DEGISTIR`. Koşu süresince main'e birleştirme yapma.
+- [x] Yeşilse HEMEN: `MATCH_PASSWORD` → Update → aynı değer; sonra
+      `MATCH_PASSWORD_YENI`'yi sil. (Bu ikisi arasında iOS derlemesi
+      sertifikayı çözemez.) Kırmızıysa günlüğe bak: "Finished uploading
+      files" satırı YOKSA depo değişmemiştir, `MATCH_PASSWORD`'e dokunma;
+      VARSA depo yeni paroladadır, `MATCH_PASSWORD`'ü yine güncelle. İki
+      durumda da günlüğü Claude'a ver.
+- [ ] İstersen eski iOS — TestFlight koşularının günlüklerini sil.
+- [x] Sonra Actions → iOS — TestFlight → Run workflow (main) ile doğrula.
+- [ ] **`MATCH_PASSWORD_YENI` secret'ını sil** (artık gereksiz; değeri
+      `MATCH_PASSWORD` ile aynı).
+
+> Kanıt (Claude): değişim koşusu 36892103259 — eski parolayla çözüldü, yeni
+> parolayla şifrelendi, kopyada ve depo yeniden indirildikten sonra yeni
+> parolayla çözüldü (5 dosya). `MATCH_PASSWORD` 16:29'da güncellendi;
+> TestFlight koşusu 36892363458 yeni parolayla yeşil (build 1785274431) ve
+> günlükte `unlock-keychain -p` satırı yok (#46).
+
+> Not (2026-10-01): TestFlight'ı durduran Apple Program License Agreement
+> güncellemesi yasin tarafından kabul edildi; Business sayfasındaki AB DSA
+> "trader" beyanı hâlâ bekliyor (AB'de yayın için gerekli, TestFlight'ı
+> engellemiyor).
+
+## ⏳ 2026-10-01 Zirve rızası → anında ölçüm (0094, PR'da)
+>>>>>>> origin/main
 
 Karar (yasin, 2026-10-01, "Anında ölçüm"): rıza kalır; "Katılıyorum"a basınca
 portföy akşam 18:40 cron'unu beklemeden o an ölçülür. Uygunluk şartları ve
