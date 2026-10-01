@@ -3381,5 +3381,17 @@
   "pensionSwitchSaved": "Fon dağılımı değişti",
   "pensionSwitchSame": "Dağılım zaten böyle.",
   "pensionSwitchNote": "Fon değişikliği",
-  "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan."
+  "contractManagedNotice": "Bu varlık sözleşmeden yönetilir. Değiştirmek için varlık sayfasındaki sözleşme kartını kullan.",
+  "kiyasBaslik": "Başka yere koysaydın",
+  "@kiyasBaslik": {"description": "Kıyas kartı başlığı (Özet sekmesi)"},
+  "kiyasAciklama": "Aynı paraları aynı günlerde buraya yatırsaydın.",
+  "@kiyasAciklama": {"description": "Kıyas kartı açıklaması; satırların ne anlattığı"},
+  "kiyasSenin": "Senin portföyün",
+  "@kiyasSenin": {"description": "Kıyas kartında kullanıcının kendi satırı"},
+  "kiyasBasaBas": "Başa baş",
+  "@kiyasBasaBas": {"description": "Kıyasla aradaki fark sıfıra yuvarlandığında"},
+  "kiyasTemettuNotu": "Bu dönemdeki temettüler iki tarafta da çekiş sayıldı; getirin Özet'teki rakamdan biraz farklı olabilir.",
+  "@kiyasTemettuNotu": {"description": "Dönemde nakit temettü varken kıyas kartının dipnotu"},
+  "kiyasVeriYok": "Kıyas için fiyat verisi şu an alınamadı.",
+  "@kiyasVeriYok": {"description": "Kıyas kartı: hiçbir kıyas hesaplanamadığında"}
 }

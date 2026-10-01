@@ -50,6 +50,16 @@ class FiyatKaynagi {
   /// vadeli sözleşme spot'un yapısal olarak üstünde işlem görür.
   static const String xauUsd = 'GC=F';
 
+  /// BIST 100 endeksi (puan, TRY kote). Ana sayfa piyasa bandının
+  /// gösterdiği sembolle AYNI (`PiyasaSeridi.semboller`); serisi Yahoo
+  /// `chart` ucundan `.IS` yolunu izler (`HistoryService.getSymbolHistory`).
+  static const String bist100 = 'XU100.IS';
+
+  /// "Gram altın" — 24 ayar (995). Piyasa bandının altını da budur
+  /// (gerekçe `PiyasaSeridi.altinSembolu`): Türkiye'de "gram altın" 24
+  /// ayar demektir. Serisi [altinGramSerisi]'nden ağırlık çarpanıyla türer.
+  static const String gramAltin24 = 'ALTIN_GRAM24';
+
   /// Uygulamanın iç altın sembolleri (`ALTIN_GRAM`, `ALTIN_CEYREK`…)
   /// gerçek bir Yahoo/TEFAS sembolü DEĞİLDİR: hepsi gram22k serisinden
   /// ağırlık çarpanıyla türetilir.
@@ -205,6 +215,39 @@ class FiyatKaynagi {
         addedDate: DateTime(2000),
         isManualPrice: a.isManualPrice,
       );
+}
+
+/// "Başka yere koysaydın" kartının kıyas varlıkları — SEMBOL KARARI BURADA.
+///
+/// ## Neden bu dosyada (sözleşme madde 1)
+/// Kıyas kartı yeni bir fiyat yüzeyidir; hangi seriden besleneceğini kendi
+/// dosyasında seçseydi "dolar"ın bir yerde `USDTRY=X`, başka yerde truncgil
+/// `USD` olduğu ayrışma sınıfı geri gelirdi. Yükleyici (`KiyasYukleyici`)
+/// yalnızca [sembol]'ü okur; seri `HistoryService.getSymbolHistory` ile,
+/// takip listesi ve Karşılaştır ekranının kullandığı AYNI yoldan gelir.
+///
+/// ## Ölçek (madde 2) neden burada sorun değil
+/// Kıyas hesabı (kamu piyasası eşdeğeri) yalnızca serinin ORANLARINI
+/// kullanır: alınan birim = tutar ÷ fiyat, son değer = birim × son fiyat.
+/// Serinin tamamını sabit bir çarpanla ölçeklemek sonucu DEĞİŞTİRMEZ —
+/// çarpan sadeleşir. Yine de altın serisi `getSymbolHistory` içinde canlı
+/// kotasyona kalibre edilir (`altinKalibrasyonu`), dolar ve endeks TRY
+/// kotedir; hiçbir yerde ikinci bir kaynak karışmaz.
+///
+/// ## Mevduat YOK (2026-10-01)
+/// Projede piyasa mevduat FAİZİ serisi yok: `MEVDUAT:` sembolleri
+/// kullanıcının kendi sözleşmesinin tahakkukudur, bir piyasa oranı değil.
+/// Sabit bir faiz yazmak (madde 3) uydurma sayıdır; seri eklenene kadar
+/// mevduat kıyası gösterilmez.
+enum KiyasVarligi {
+  dolar(FiyatKaynagi.usdTry),
+  altin(FiyatKaynagi.gramAltin24),
+  bist100(FiyatKaynagi.bist100);
+
+  const KiyasVarligi(this.sembol);
+
+  /// Serinin çekileceği sembol.
+  final String sembol;
 }
 
 /// Altın gram22k serisinin hangi kaynaktan kurulduğu.
