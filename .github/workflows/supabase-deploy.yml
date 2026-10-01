@@ -114,10 +114,14 @@ jobs:
                 -d "$body")
           # Erişim hatası "project_url yok" diye raporlanmamalı (2026-09-28:
           # token Frankfurt'a 403 alınca kapı yanlış teşhis yazdı).
-          if [ "$kod" != "200" ]; then
-            echo "::error::${{ matrix.hedef }}: Management API HTTP $kod — token bu projeye erişemiyor olabilir. Yanıt: $(head -c 300 yanit.json)"
-            exit 1
-          fi
+          # Başarı 2xx'tir, yalnız 200 değil: API 2026-10-01'de bu uç için
+          # 201 dönmeye başladı ve kapı başarılı yanıtı ([{"n":1}]) hata saydı.
+          case "$kod" in
+            2??) ;;
+            *)
+              echo "::error::${{ matrix.hedef }}: Management API HTTP $kod — token bu projeye erişemiyor olabilir. Yanıt: $(head -c 300 yanit.json)"
+              exit 1 ;;
+          esac
           n=$(jq -r '.[0].n' yanit.json)
           if [ "$n" != "1" ]; then
             echo "::error::${{ matrix.hedef }}: Vault'ta project_url yok. SQL Editor: select vault.create_secret('https://$PROJECT_REF.supabase.co', 'project_url');"

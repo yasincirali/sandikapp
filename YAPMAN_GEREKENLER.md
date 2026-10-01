@@ -8,6 +8,34 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## 🔁 FRANKFURT EŞLEME BEKLİYOR (2026-10-01, Claude)
+
+Karar (yasin, 2026-10-01): GitHub'daki `SUPABASE_ACCESS_TOKEN` Frankfurt'a
+**403** alıyor ("Your account does not have the necessary privileges"; koşu
+#44/#45), bu yüzden bu tur yalnız **Tokyo**'ya dağıtıldı (hedef `tokyo`).
+Frankfurt'a gidemeyenler sunucular eşlenirken toplu gidecek:
+
+- [ ] **Migration:** `0092_push_bildirim_surumu`, `0093_aylik_ozet_tufe_gunu`
+      (Frankfurt'ta son uygulanan: 0091).
+- [ ] **Fonksiyonlar:** `bildirim-karti` (YENİ, `verify_jwt = false`),
+      `check-price-alerts`, `daily-brief`, `weekly-summary`, `fetch-inflation`
+      — en kolayı functions `all`.
+- [ ] **Önce token:** Frankfurt'u da gören hesaptan tam yetkili token →
+      GitHub secret `SUPABASE_ACCESS_TOKEN`. Sonra Actions → Supabase deploy,
+      hedef `ikisi` (Tokyo'da zaten uygulananlar no-op), ya da yalnız `frankfurt`.
+- [ ] Sonda `python tool/sema_esitlik.py` → ŞEMA EŞİT. O zamana kadar günlük
+      `sema-esitlik.yml` kırmızı döner — beklenen.
+
+Frankfurt geçişe kadar canlı değil (cron kapalı), müşteri etkilenmez.
+
+> **Tokyo uygulandı (2026-10-01, Claude, Actions):** 0092 + 0093 `db push`
+> temiz ("Applying migration 0092… 0093… Finished"); tüm fonksiyonlar
+> dağıtıldı (bildirim-karti, check-price-alerts, daily-brief, weekly-summary,
+> fetch-inflation dahil). Tokyo `SUPABASE_DB_PASSWORD` secret'ı yasin
+> tarafından düzeltildi. Aşağıdaki iki bölümün Tokyo ayağı tamam; Frankfurt
+> ayağı bu bölümde bekliyor. Açık kontrol: cron sorgusu (`monthly-summary` =
+> `30 7 3,4 * *`, `calendar-nudge-inflation*` yok) Tokyo'da elle bakılmadı.
+
 ## ⏰ 3 EKİM 10:05'TEN ÖNCE — aylık özet + TÜFE tek push (2026-10-01, Claude)
 
 Eylül özeti push'u 1 Ekim'de gitti ve Özet'te **Ağustos** enflasyonunu
