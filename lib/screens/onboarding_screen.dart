@@ -541,9 +541,15 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_performans',
       hedef: TourTarget.sekmePerformans,
       baslik: 'Performans sekmesi',
-      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden bir yıla kadar her '
-          'dönemi görebilirsin. Özet üç başlıkta: BU DÖNEM, VARLIKLAR ve '
-          'istersen açtığın DERİNLİK.',
+      // 2026-10-01 (düzen A): Özet "BU DÖNEM / VARLIKLAR / DERİNLİK" idi;
+      // soru sırasına (Sonuç → Neden → Ayrıntı) çevrildi, ana rakamın adı
+      // "Paranın getirisi" oldu ve her yüzde aralık çipi taşıyor. Dönemler
+      // 2026-09-28'den beri 5Y'ye kadar ("bir yıla kadar" eskimişti).
+      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
+          'dönemi görebilirsin. Özet soru sırasıyla ilerler: SONUÇ (paranın '
+          'getirisi ve enflasyona karşı), NEDEN (nereden geldi, hangi '
+          'varlıklar) ve AYRINTI (birikim, istersen açtığın derinlik). Her '
+          'yüzdenin yanındaki mavi çip ölçüldüğü aralığı yazar.',
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),
