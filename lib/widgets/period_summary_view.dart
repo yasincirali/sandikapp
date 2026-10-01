@@ -5,6 +5,8 @@ import '../models/asset_type.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/contribution_history_service.dart';
 import '../services/daily_summary.dart' show DailySummary;
+import '../services/inflation_service.dart'
+    show EnflasyonHukmu, InflationService;
 import '../services/insight_metrics_service.dart' show Concentration, Drawdown;
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
@@ -931,9 +933,15 @@ class _ReelGetiriKarti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onde = reel >= 0;
-    final ton = onde ? context.c.gain : context.c.loss;
+    // Hüküm ekranda görünen sayıdan verilir (`InflationService.hukum`):
+    // "%0,00" yazan kart yön söylemez, "başa baş" der.
+    final hukum = InflationService.hukum(reel);
     final c = context.c;
+    final ton = switch (hukum) {
+      EnflasyonHukmu.ustunde => c.gain,
+      EnflasyonHukmu.altinda => c.loss,
+      EnflasyonHukmu.basaBas => c.text58,
+    };
     // TÜFE penceresi biliniyor mu? Biliniyorsa kart dönem kartından FARKLI
     // bir aralığı ölçüyor ve bunu söylemek zorunda (aşağıdaki not).
     final pencereBelli = baslangic != null && bitis != null;
@@ -959,7 +967,11 @@ class _ReelGetiriKarti extends StatelessWidget {
             children: [
               // Yön RENKLE anlatılmaz — ok her zaman yanında.
               Text(
-                onde ? '▲' : '▼',
+                switch (hukum) {
+                  EnflasyonHukmu.ustunde => '▲',
+                  EnflasyonHukmu.altinda => '▼',
+                  EnflasyonHukmu.basaBas => '=',
+                },
                 style: context.t.labelLarge
                     ?.copyWith(color: ton, fontWeight: FontWeight.w700),
               ),
@@ -974,9 +986,11 @@ class _ReelGetiriKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.xs),
           Text(
-            onde
-                ? context.l10n.realReturnPositive
-                : context.l10n.realReturnNegative,
+            switch (hukum) {
+              EnflasyonHukmu.ustunde => context.l10n.realReturnPositive,
+              EnflasyonHukmu.altinda => context.l10n.realReturnNegative,
+              EnflasyonHukmu.basaBas => context.l10n.realReturnEven,
+            },
             style: context.t.bodySmall?.copyWith(color: c.text58),
           ),
           // ── Aralık notu (2026-09-29 emülatör testi) ──────────────────────
@@ -1012,9 +1026,15 @@ class _ReelGetiriKarti extends StatelessWidget {
               const SizedBox(height: SandikSpace.xs2),
               _KucukSatir(
                 etiket: context.l10n.pointDifference,
-                deger: '${fark! >= 0 ? '+' : '−'}'
-                    '${fmtNum(fark!.abs(), digits: 1)} puan',
-                ton: fark! >= 0 ? c.gain : c.loss,
+                // "0,0 puan"a yuvarlanan fark işaret ve renk taşımaz —
+                // "+0,0" ya da kırmızı "−0,0" başa baş hükmüyle çelişirdi.
+                deger: fmtNum(fark!.abs(), digits: 1) == fmtNum(0, digits: 1)
+                    ? '${fmtNum(0, digits: 1)} puan'
+                    : '${fark! > 0 ? '+' : '−'}'
+                        '${fmtNum(fark!.abs(), digits: 1)} puan',
+                ton: fmtNum(fark!.abs(), digits: 1) == fmtNum(0, digits: 1)
+                    ? c.text58
+                    : (fark! > 0 ? c.gain : c.loss),
               ),
             ],
             if (baslangic != null && bitis != null) ...[
