@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 gece (Yarış/Zirve TWR — 0095, yerelde; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -8,36 +8,24 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-01 Yarış/Zirve ölçüsü → "Seçimlerinin getirisi" (TWR) — 0095 + `leaderboard-snapshot` (YERELDE, push yok)
+## ✅ 2026-10-01 Yarış/Zirve ölçüsü → "Seçimlerinin getirisi" (TWR) — 0095 + `leaderboard-snapshot` İKİ SUNUCUDA
 
 Karar (yasin, 2026-10-01, "Yarış Ölçüsü Kıyası" R1): sıralama ve Zirve
 zaman ağırlıklı getiri; kendi satırında ek bilgi "Paranın getirisi"
-(Performans ile aynı XIRR). Kod `feat/yaris-twr` dalında (worktree
-`../PortfoyTakip-twr`), yalnız yerel commit.
+(Performans ile aynı XIRR). Ortaklar arası Yarış beyan edilen tarihe
+güvenir; Zirve ve genel sıralamada 3 günden fazla geriye tarihli kayıt
+girildiği an sayılır.
 
-- [ ] Emülatörde gör: Yarış ekranı (ortaklı ve tek başına), "Getiri nasıl
-      hesaplanıyor?" sayfası, Performans › Zirve kartı ve ekranı. Senin
-      satırının altında "Paranın getirisi … · Performans ile aynı" satırı;
-      sayı Performans › Özet'in aynı dönemiyle eşit olmalı (30G ↔ 1A).
-- [ ] Onaylarsan main'e birleştir; sonra **dağıtım sırası önemli**:
-      1. **ÖNCE migration 0095** — iki sunucu, Frankfurt → Tokyo
-         (`supabase-deploy.yml`, hedef `ikisi`). Fonksiyon `created_at`
-         sütununu seçer; sütun yoksa cron düşer.
-      2. **HEMEN ARDINDAN `leaderboard-snapshot`** — iki sunucu. Arada cron
-         koşarsa eski fonksiyon simülasyon satırı yazar; temizlik:
-         `delete from public.user_roi_snapshots; delete from public.zirve_roi_snapshots;`
-         (yeni fonksiyon dağıtıldıktan sonra, iki sunucuda).
-      3. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
-      4. Elle bir koşu: `select public.trigger_leaderboard_snapshot();` →
-         `net._http_response` içinde `roi_rows` > 0 (30 günden eski
-         portföyler).
-- [ ] Bil: 0095 eski ROI satırlarını siler (iki ölçü karışmasın). Yarış
-      genel havuzu ≥5 farklı gün, Zirve 8 kişi eşiği yeniden dolana kadar
-      boş görünür. Eski kayıtların tarihine güvenilir (geçmişin sıfırlanmaz).
-      Bundan sonra 3 günden fazla geriye tarihli giriş/düzenleme yalnız
-      ANONİM sıralamada (Zirve, genel) "girildiği an" sayılır; ortaklar
-      arası Yarış'ta beyan edilen tarih geçerli — CSV/ekstreyle içe
-      aktarılan geçmiş orada hemen sayılır (kararın, 2026-10-01).
+- [x] Emülatör (5554): kuruldu, çalışıyor, çökme yok.
+- [x] main'e birleşti: PR #57 (5de7371), CI 5/5 yeşil (taze yığında 0095 dahil).
+- [x] Dağıtım (Claude, Actions 36918113396): Frankfurt → Tokyo, her
+      sunucuda önce 0095, sonra `leaderboard-snapshot`; eşitlik: ŞEMA EŞİT.
+- [x] Doğrulama (Tokyo): deneme koşusu 200 — 20 kullanıcı, 36 TWR satırı,
+      30/30 seri. İlk gerçek koşu: Yarış 20, Zirve 8 satır yazıldı; eski
+      simülasyon satırı 0; giriş anı boş varlık 0.
+- [ ] Bil: Yarış genel havuzu ≥5 farklı gün, Zirve 8 kişi eşiği dolana
+      kadar kısmi görünür. Eski kayıtların tarihine güvenildi (geçmişin
+      sıfırlanmadı).
 - [ ] Hukuki metin gözden geçirme (senin kararın): açık rıza metni Zirve
       için "portföy 5 günden eski" diyor; sunucu şartı hâlâ 5 gün ama
       seçimlerinin getirisi en az 30 günlük ölçüm ister. Ayrıca `assets`
