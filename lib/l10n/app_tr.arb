@@ -1009,6 +1009,15 @@
       }
     }
   },
+  "cpiWindowMonth": "Ölçülen ay: {month}",
+  "@cpiWindowMonth": {
+    "description": "Tek aylık TÜFE karşılaştırmasının ölçtüğü ay",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
   "periodCpi": "Enflasyon (TÜFE)",
   "pointDifference": "Aradaki fark",
   "realReturn": "Reel getiri",

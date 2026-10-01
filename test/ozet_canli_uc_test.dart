@@ -67,16 +67,20 @@ void main() {
     expect(s.piyasaTRY, closeTo(1100, 1e-6));
   });
 
-  test('canlı uç yoksa bayat son slot bugünkü alımı eksi yazar (eski arıza)',
-      () {
+  // Eskiden bu test arızayı BELGELİYORDU (−5.500): uç slotta ölçülünce
+  // bugünkü alım değerde yok ama katkıda vardı. 2026-10-01'den beri katkı
+  // uç değerin ölçüldüğü ana kadar sayılır (`piyasaEtkisi`); aynı arıza
+  // TÜFE kartında ayın son günü alım yapanı −%31 gösteriyordu.
+  test('canlı uç yoksa katkı son slotta kesilir — bugünkü alım düşülmez', () {
     final s = PeriodSummaryService.compute(
       period: SummaryPeriod.birHafta,
       assets: lotlar,
       breakdown: bd,
       now: now,
     );
-    // 30.600 − 30.000 − 6.100 = −5.500: alımın değeri kadar eksik.
-    expect(s.piyasaTRY, closeTo(-5500, 1e-6));
+    // 30.600 − 30.000 = +600; bugünkü alım ne değerde ne katkıda.
+    expect(s.katkiTRY, 0);
+    expect(s.piyasaTRY, closeTo(600, 1e-6));
   });
 
   test('tür dökümü kartı üst kartla AYNI taban anını ve canlı ucu kullanır',
@@ -102,8 +106,7 @@ void main() {
             'canliDeger: (lotlar) => DailySummary.kapsamToplami(pState, lotlar)'),
         isTrue);
     // Üst kart da aynı akış fonksiyonunu çağırır.
-    expect(
-        kartlar.split('PeriodSummaryService.grafikKatkisi(').length - 1, 1);
+    expect(kartlar.split('PeriodSummaryService.grafikKatkisi(').length - 1, 1);
   });
 
   test('bugüne kadar süren her çağıran canlı ucu geçer', () {

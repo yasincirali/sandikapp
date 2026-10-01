@@ -99,12 +99,17 @@ class PeriodSummary {
   /// Saf getiri (TRY) = (son − baş) − katkı.
   final double? piyasaTRY;
 
-  /// Saf getiri yüzdesi = [piyasaTRY] / (başlangıç + max(katkı, 0)).
+  /// Saf getiri yüzdesi = [piyasaTRY] / dönemin ORTALAMA sermayesi
+  /// (bkz. `PeriodSummaryService.ortalamaSermaye`).
   ///
-  /// Payda katkıyı İÇERİR: dönem içinde portföyünü ikiye katlayan kullanıcıda
-  /// yalnızca `baslangicTRY`'yi taban almak yüzdeyi şişirirdi. Negatif katkı
-  /// (net satış) tabana eklenmez — satılan para artık piyasada değil, ondan
-  /// getiri beklenmez.
+  /// **2026-10-01'e kadar** `piyasaTRY / (başlangıç + max(katkı, 0))` idi:
+  /// ay içinde eklenen para ayın BAŞINDAN beri portföydeymiş gibi paydaya
+  /// tam giriyordu. Ölçüldü: ₺100.000 ile başlayıp %3 kazanan, 29'unda
+  /// ₺100.000 ekleyen kullanıcıya %3,00 yerine %1,55 yazıyordu; TÜFE
+  /// kartında enflasyonun "gerisinde" görünüyordu (kullanıcı bildirimi,
+  /// Eylül özeti). Şimdi her akış dönemde kaldığı süre oranında paydaya
+  /// girer; akış yoksa sonuç eski formülle BİREBİR aynıdır.
+  /// Köprünün TRY satırları ([katkiTRY], [piyasaTRY]) değişmedi.
   final double? getiriPct;
 
   /// Dönemin en iyi / en zayıf varlığı — DÖNEME ait, ömürlük değil.
@@ -264,6 +269,7 @@ class PeriodSummaryService {
     DateTime start,
     DateTime end, {
     int? startExclusiveMs,
+    int? endInclusiveMs,
   }) {
     // [startExclusiveMs] verildiğinde gün yuvarlaması YAPILMAZ: sayım o
     // damgadan SONRA başlar.
@@ -273,8 +279,12 @@ class PeriodSummaryService {
     // içinde. Aynı günün erken saatindeki bir alım gün yuvarlamasıyla
     // katkıya da girerse iki kez sayılır. Damga sınırı ikisini ayırır.
     final startMs = startExclusiveMs ?? dayKey(start).millisecondsSinceEpoch;
-    final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
-        .millisecondsSinceEpoch;
+    // [endInclusiveMs] verildiğinde gün sonuna GENİŞLETİLMEZ: uç değer bir
+    // SLOTTA ölçüldüyse (ör. 31 Ağu 00:00), o slottan sonraki alım uç
+    // değerin içinde yoktur ve katkıya da girmemelidir (bkz. `piyasaEtkisi`).
+    final endMs = endInclusiveMs ??
+        DateTime(end.year, end.month, end.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
 
     var total = 0.0;
     for (final a in assets) {
@@ -570,6 +580,7 @@ class PeriodSummaryService {
     double katki,
     double piyasa,
     double taban,
+    double? pct,
   })? piyasaEtkisi({
     required Map<int, double> seri,
     required List<Asset> lotlar,
@@ -578,18 +589,37 @@ class PeriodSummaryService {
     double? canliSon,
   }) {
     final u = uclar(seri,
-        fromMs: start.millisecondsSinceEpoch,
-        toMs: end.millisecondsSinceEpoch);
+        fromMs: start.millisecondsSinceEpoch, toMs: end.millisecondsSinceEpoch);
     if (u == null) return null;
-    final son = (canliSon != null &&
-            (canliSon > 0 ||
-                (canliSon == 0 &&
-                    lotlar.isNotEmpty &&
-                    DailySummary.acikPozisyonYok(lotlar))))
-        ? canliSon
-        : u.last;
-    final katki = netInflow(lotlar, start, end, startExclusiveMs: u.firstTs);
+    final canli = canliSon != null &&
+        (canliSon > 0 ||
+            (canliSon == 0 &&
+                lotlar.isNotEmpty &&
+                DailySummary.acikPozisyonYok(lotlar)));
+    final son = canli ? canliSon : u.last;
+    // Katkının SAĞ sınırı uç değerin ölçüldüğü an (2026-10-01).
+    //
+    // Uç canlıysa (bugünkü toplam) bugün yapılan her alım içindedir; sınır
+    // gün sonu kalır. Uç bir SLOTSA (TÜFE hizası: 31 Ağu 00:00) o slottan
+    // sonraki alım değerin içinde YOK ama gün sonuna genişleyen sınır onu
+    // katkıya yazıyordu. Ölçüldü: ayın son günü ₺50.000 alan kullanıcının
+    // %3'lük ayı −%31 görünüyordu — alım hem değerden eksik hem katkıdan
+    // düşülmüş.
+    final akisSonuMs = canli ? null : u.lastTs;
+    final katki = netInflow(lotlar, start, end,
+        startExclusiveMs: u.firstTs, endInclusiveMs: akisSonuMs);
     final brut = son - u.first;
+    // Yüzdenin paydası: dönemin ortalama sermayesi (`ortalamaSermaye`).
+    // Canlı uçta dönem ŞİMDİ biter; slot ucunda son slotta.
+    final sermaye = ortalamaSermaye(
+      lotlar: lotlar,
+      bas: u.first,
+      basTs: u.firstTs,
+      sonTs: canli ? end.millisecondsSinceEpoch : u.lastTs,
+      akisSonuMs: akisSonuMs ??
+          DateTime(end.year, end.month, end.day, 23, 59, 59)
+              .millisecondsSinceEpoch,
+    );
     return (
       ilk: u.first,
       son: son,
@@ -598,9 +628,57 @@ class PeriodSummaryService {
       brut: brut,
       katki: katki,
       piyasa: brut - katki,
-      // Payda: dönem başı + POZİTİF katkı (bkz. `PeriodSummary.getiriPct`).
+      // Eski payda (baş + POZİTİF katkı) — yalnızca tutar eşikleri için;
+      // yüzde artık [pct] (ortalama sermaye).
       taban: u.first + (katki > 0 ? katki : 0),
+      pct: sermaye == null ? null : (brut - katki) / sermaye * 100,
     );
+  }
+
+  /// Dönemin ORTALAMA sermayesi (TRY) — yüzdenin paydası (Modified Dietz).
+  ///
+  /// ## Neden (kullanıcı bildirimi ve önerisi, 2026-10-01)
+  /// *"1 ay içerisinde TÜFE'yle karşılaştırılan değerde dönem içi
+  /// eklemeleri de dahil ediyor."* Eski payda `baş + max(katkı, 0)` idi:
+  /// ayın son günü eklenen para ayın TAMAMINDA çalışmış sayılıyor, yüzde
+  /// sıfıra doğru eziliyordu (₺100.000 ile başlayıp %3 kazanan, 29'unda
+  /// ₺100.000 ekleyen kullanıcıya %1,55). Kullanıcının önerisi: piyasa
+  /// etkisi dönem içinde ORTALAMA olarak çalışan sermayeye bölünsün,
+  /// eklenen para piyasanın kazandırdığını bozmasın.
+  ///
+  /// ## Formül
+  ///     sermaye = baş + Σ F_i × (T_son − t_i) / (T_son − T_baş)
+  /// Her akış dönemde KALDIĞI süre oranında sayılır: ayın ilk günü eklenen
+  /// para tam, son günü eklenen neredeyse hiç. Satış (F < 0) da aynı
+  /// ağırlıkla sermayeden düşer — satılan para o günden sonra çalışmadı.
+  ///
+  /// **Neden zaman ağırlıklı (TWR) değil.** TWR her slotu ayrı zincirler
+  /// ve TRY "Piyasa" satırıyla İŞARETİ ayrışabilir (₺ eksi, % artı). Bu
+  /// payda yalnızca ölçeği değiştirir: yüzde her zaman `piyasaTRY`'nin
+  /// işaretini taşır ve köprüyle aynı hikâyeyi anlatır. Akış yoksa payda
+  /// `baş`tır — eski sayıyla birebir.
+  ///
+  /// Damga kapısı `piyasaEtkisi` ile aynı: akış `(T_baş, akisSonuMs]`
+  /// aralığında sayılır. Payda pozitif değilse `null` (tümü satılıp
+  /// yeniden alınmayan dönem gibi) — sayı uydurulmaz.
+  static double? ortalamaSermaye({
+    required List<Asset> lotlar,
+    required double bas,
+    required int basTs,
+    required int sonTs,
+    required int akisSonuMs,
+  }) {
+    final sure = sonTs - basTs;
+    var sermaye = bas;
+    for (final a in lotlar) {
+      final f = flowOf(a);
+      if (f == 0) continue;
+      final ms = a.addedDate.millisecondsSinceEpoch;
+      if (ms <= basTs || ms > akisSonuMs) continue;
+      final w = sure <= 0 ? 0.0 : ((sonTs - ms) / sure).clamp(0.0, 1.0);
+      sermaye += f * w;
+    }
+    return sermaye > 0 ? sermaye : null;
   }
 
   /// TEK pozisyonun piyasa etkisi — BİRİM seriden ve lot miktarlarından.
@@ -636,10 +714,10 @@ class PeriodSummaryService {
     double? canliBirim,
   }) {
     final u = uclar(birimSeri,
-        fromMs: start.millisecondsSinceEpoch,
-        toMs: end.millisecondsSinceEpoch);
+        fromMs: start.millisecondsSinceEpoch, toMs: end.millisecondsSinceEpoch);
     if (u == null) return null;
-    final sonBirim = (canliBirim != null && canliBirim > 0) ? canliBirim : u.last;
+    final sonBirim =
+        (canliBirim != null && canliBirim > 0) ? canliBirim : u.last;
     final endMs = end.millisecondsSinceEpoch;
     var bas = 0.0;
     var son = 0.0;
@@ -784,8 +862,10 @@ class PeriodSummaryService {
 
     // Payda: dönem başı + POZİTİF katkı. Negatif katkı (net satış)
     // eklenmez — satılan para artık piyasada değil.
-    final taban = pe.taban;
-    final pct = taban > 0 ? piyasa / taban * 100 : null;
+    // Yüzdenin paydası ORTALAMA sermaye (2026-10-01, `ortalamaSermaye`):
+    // dönem içi eklemeler ayın tamamında çalışmış sayılmaz. TRY köprüsü
+    // aynı kaldı.
+    final pct = pe.pct;
 
     // Dönem içinde AKIŞ görmüş pozisyonlar en iyi/en zayıf yarışından
     // elenir (miktar değişimi getiri sanılmasın).

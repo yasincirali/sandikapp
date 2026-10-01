@@ -937,9 +937,19 @@ class _ReelGetiriKarti extends StatelessWidget {
     // TÜFE penceresi biliniyor mu? Biliniyorsa kart dönem kartından FARKLI
     // bir aralığı ölçüyor ve bunu söylemek zorunda (aşağıdaki not).
     final pencereBelli = baslangic != null && bitis != null;
+    // Tek aylık pencere ADIYLA yazılır (kullanıcı bildirimi, 2026-10-01).
+    // "son 1 ay" etiketi Eylül özetinin altında Ağustos'u anlatıyordu: TÜFE
+    // ayın 3'ünde açıklanır, 1'inde kart son açıklanan aya (Ağustos)
+    // düşer. Ay adı yazılınca kart hangi ayı ölçtüğünü kendisi söyler.
+    // [bitis] ölçülen ayın son günü (`InflationWindow.seriBitisi`).
+    final tekAy = pencereBelli &&
+        (bitis!.year - baslangic!.year) * 12 +
+                (bitis!.month - baslangic!.month) ==
+            1;
+    final olculenAy = tekAy ? _ayEtiketi(context, bitis!) : null;
 
     return _BaglamKarti(
-      baslik: context.l10n.realReturnPeriod(donemEtiketi),
+      baslik: context.l10n.realReturnPeriod(olculenAy ?? donemEtiketi),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1010,10 +1020,14 @@ class _ReelGetiriKarti extends StatelessWidget {
             if (baslangic != null && bitis != null) ...[
               const SizedBox(height: SandikSpace.xs2),
               Text(
-                context.l10n.cpiWindowRange(
-                  _ayEtiketi(context, baslangic!),
-                  _ayEtiketi(context, bitis!),
-                ),
+                // Tek ay "Temmuz 2026 - Ağustos 2026" diye İKİ ay gibi
+                // okunuyordu; ölçüm Temmuz SONU → Ağustos sonu, yani Ağustos.
+                olculenAy != null
+                    ? context.l10n.cpiWindowMonth(olculenAy)
+                    : context.l10n.cpiWindowRange(
+                        _ayEtiketi(context, baslangic!),
+                        _ayEtiketi(context, bitis!),
+                      ),
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
             ],
@@ -1627,8 +1641,8 @@ class _AralikSecici extends StatelessWidget {
                     child: AnimatedDefaultTextStyle(
                       duration: SandikMotion.stateOf(context),
                       curve: SandikMotion.enter,
-                      style: (context.t.labelMedium ?? const TextStyle())
-                          .copyWith(
+                      style:
+                          (context.t.labelMedium ?? const TextStyle()).copyWith(
                         color: a == secili ? c.onAmber : c.text58,
                         fontWeight:
                             a == secili ? FontWeight.w700 : FontWeight.w500,

@@ -1827,6 +1827,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String cpiWindowMonth(String month) {
+    return 'Measured month: $month';
+  }
+
+  @override
   String get periodCpi => 'Inflation (CPI)';
 
   @override
