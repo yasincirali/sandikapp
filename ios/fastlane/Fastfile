@@ -699,6 +699,9 @@ platform :ios do
     params = {
       api_key: api_key,
       distribute_only: true,
+      # distribute_only'de IPA yok; pilot platformu çıkaramayınca SORAR ve
+      # CI'da "non-interactive mode" ile düşer (2026-10-01, koşu 36902929795).
+      app_platform: "ios",
       distribute_external: true,
       notify_external_testers: true,
       groups: gruplar,
