@@ -288,16 +288,48 @@ class CsvImportService {
   }
 
   /// Kurum sembol hücresinden kod: "THYAO - Türk Hava Yolları" → "THYAO",
-  /// "THYAO.E" (BIST hisse soneki) → "THYAO". Diğer her şey olduğu gibi —
-  /// "GRAM ALTIN" gibi boşluklu adlar bölünmez (yalnız " - " ayırır).
+  /// "THYAO.E" (BIST hisse soneki) → "THYAO", "THYAO TÜRK HAVA YOLLARI A.O."
+  /// → "THYAO". "GRAM ALTIN" / "ÇEYREK ALTIN" gibi boşluklu altın adları
+  /// bölünmez.
+  ///
+  /// Kod + ad aynı hücrede ve arada yalnız boşluk (2026-10-02): MKK
+  /// e-Yatırımcı ve banka PDF'lerinde "Kıymet" sütunu böyle gelir; " - "
+  /// olmadığı için hücre olduğu gibi kalıyor, hiçbir sembole benzemiyor ve
+  /// TABLO bütünüyle reddediliyordu ("sembol içeren tablo bulunamadı").
+  /// Kural: ilk kelime bilinen BIST kodu ya da ISIN ise kesin; değilse
+  /// 3–6 harfli büyük harf kod + ardından en az iki kelimelik ad (ve
+  /// altın/döviz deyimi değil) → ilk kelime. Tek kelimelik kuyruk ("GRAM
+  /// ALTIN") bölünmez.
   static String sembolAyikla(String hucre) {
     var t = hucre.trim();
     final tire = t.indexOf(' - ');
     if (tire > 0) t = t.substring(0, tire).trim();
     final e = RegExp(r'^([A-Za-z]{4,6})\.E$').firstMatch(t);
     if (e != null) t = e.group(1)!;
+    final bosluk = t.indexOf(' ');
+    if (bosluk > 0) {
+      final ilk = t.substring(0, bosluk);
+      final kuyruk = t.substring(bosluk + 1).trim();
+      final u = ilk.toUpperCase();
+      final kesin = bist100StocksMap.containsKey('$u.IS') ||
+          RegExp(r'^TR[A-Z0-9]{10}$').hasMatch(u) ||
+          _dovizKodlari.contains(u);
+      final kodGibi = RegExp(r'^[A-Z][A-Z0-9]{2,5}$').hasMatch(ilk) &&
+          kuyruk.split(RegExp(r'\s+')).length >= 2 &&
+          !_altinDeyimi.hasMatch(trKatla(t));
+      if (kesin || kodGibi) t = ilk;
+    }
     return t;
   }
+
+  static const _dovizKodlari = {
+    'USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD', 'SAR', 'RUB', 'CNY',
+    'NOK', 'SEK', 'DKK',
+  };
+
+  static final _altinDeyimi = RegExp(
+      r'\b(altin|gram|ceyrek|yarim|tam|ata|resat|cumhuriyet|hamit|gremse|'
+      r'besli|ikibucuk|has|ons|gumus)\b');
 
   static DateTime? _parseDate(String? s) {
     if (s == null) return null;

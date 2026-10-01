@@ -121,6 +121,30 @@ class SozlesmeDeposu {
     return MevduatHesabi.birimDeger(d, t);
   }
 
+  /// [bas] → [son] arası birim değer değişimi (%), SÖZLEŞMEDEN.
+  ///
+  /// Neden seriden değil (2026-10-01 emülatör testi): seri adımlı örneklenir
+  /// (5Y haftalık) ve ilk noktası açılıştan günler sonra düşer — 5Y +%40,10
+  /// yazarken pozisyon +%40,92'ydi; gün içi seri bugün açılan hesapta tek
+  /// noktadan kaldığı için BUGÜN %0,00 kalıyordu; yenilemeden sonra açık
+  /// sayfadaki gün içi taban eski dönemden geliyordu. Sözleşmenin tahakkuku
+  /// kesin bilinir; yüzde doğrudan ondan hesaplanır.
+  ///
+  /// Pencere sözleşmeden önce başlıyorsa ilk dönemin başından ölçülür
+  /// (pencere pozisyondan uzunsa yüzde pozisyonun ömrünün getirisidir).
+  double? mevduatDegisimi(String sembol, DateTime bas, DateTime son) {
+    final id = mevduatSozlesmeId(sembol);
+    final d = id == null ? null : _donemler[id];
+    if (d == null || d.isEmpty) return null;
+    final ilk = d
+        .map((x) => x.baslangic)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final b = MevduatHesabi.birimDeger(d, bas.isBefore(ilk) ? ilk : bas);
+    final s = MevduatHesabi.birimDeger(d, son);
+    if (b == null || s == null || b <= 0) return null;
+    return (s / b - 1) * 100;
+  }
+
   /// `MEVDUAT:<id>` sembolünün seri penceresi.
   List<(int, double)> mevduatSerisi(
     String sembol, {

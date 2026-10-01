@@ -10,11 +10,19 @@ import 'dart:math' as math;
 ///   1. karakter → kelime (boşluk ya da yatay boşluk),
 ///   2. kelime → satır (dikey merkez kümelemesi, yazı yüksekliğine göre),
 ///   3. satır içinde kelime → hücre (sütun aralığı > yazı yüksekliği),
-///   4. hücre → SÜTUN BANDI: çok hücreli satırların x aralıkları sayfa
+///   4. hücre → SÜTUN BANDI: çok hücreli satırların x aralıkları belge
 ///      boyunca birleştirilir; her hücre en çok örtüştüğü banda yerleşir.
 ///      Boş hücre boş kalır — sütun kaymaz.
 /// Kurum başına kural yok: aynı algoritma Midas'ın, MKK'nın ve bankaların
 /// PDF'lerinde aynı işi yapar; sütunların NE olduğunu `TabloAnlama` çözer.
+///
+/// ## Bantlar sayfa başına değil, BELGE başına (2026-10-02)
+/// Çok sayfalı ekstrede her sayfa aynı sütun düzenini taşır ama son sayfa
+/// (toplam satırları, dipnot) ya da bir sütunu tamamen boş geçen bir sayfa
+/// farklı sayıda bant üretir; sayfalar alt alta eklenince aynı sütun farklı
+/// indekse düşer ve anlama katmanı ikinci sayfadan itibaren adet/fiyatı
+/// karıştırır. Bu yüzden hücre satırları sayfa sayfa kurulur, bantlar
+/// hepsinden birlikte çıkarılır ([sayfalardanSatirlar]).
 class PdfKarakter {
   const PdfKarakter(this.c, this.sol, this.sag, this.ust, this.alt);
   final String c;
@@ -36,8 +44,23 @@ class _Hucre {
   double sol, sag;
 }
 
-/// Bir sayfanın karakterleri → satır × sütun.
-List<List<String>> sayfadanSatirlar(List<PdfKarakter> karakterler) {
+/// Tek sayfanın karakterleri → satır × sütun.
+List<List<String>> sayfadanSatirlar(List<PdfKarakter> karakterler) =>
+    sayfalardanSatirlar([karakterler]);
+
+/// Birden çok sayfanın karakterleri → satır × sütun; sütun bantları bütün
+/// sayfalardan BİRLİKTE çıkarılır (yukarıdaki gerekçe).
+List<List<String>> sayfalardanSatirlar(List<List<PdfKarakter>> sayfalar) {
+  final hucreSatirlari = <List<_Hucre>>[];
+  for (final s in sayfalar) {
+    hucreSatirlari.addAll(_hucreSatirlari(s));
+  }
+  if (hucreSatirlari.isEmpty) return const [];
+  return _bantlaraYerlestir(hucreSatirlari);
+}
+
+/// 1–3: karakter → kelime → satır → hücre (tek sayfa; y ekseni sayfaya özgü).
+List<List<_Hucre>> _hucreSatirlari(List<PdfKarakter> karakterler) {
   final kelimeler = _kelimeler(karakterler);
   if (kelimeler.isEmpty) return const [];
   final yukseklikler = kelimeler.map((k) => k.yukseklik).toList()..sort();
@@ -59,7 +82,7 @@ List<List<String>> sayfadanSatirlar(List<PdfKarakter> karakterler) {
   }
 
   // 3) Satır içi hücreler.
-  final hucreSatirlari = <List<_Hucre>>[];
+  final out = <List<_Hucre>>[];
   for (final s in satirlar) {
     s.sort((a, b) => a.sol.compareTo(b.sol));
     final hucreler = <_Hucre>[];
@@ -72,11 +95,14 @@ List<List<String>> sayfadanSatirlar(List<PdfKarakter> karakterler) {
         hucreler.add(_Hucre(k.metin, k.sol, k.sag));
       }
     }
-    hucreSatirlari.add(hucreler);
+    out.add(hucreler);
   }
+  return out;
+}
 
-  // 4) Sütun bantları — yalnız çok hücreli satırlardan (başlık/dipnot gibi
-  // tek parça satırlar sayfa genişliğinde uzanıp bantları yutardı).
+/// 4: sütun bantları — yalnız çok hücreli satırlardan (başlık/dipnot gibi
+/// tek parça satırlar sayfa genişliğinde uzanıp bantları yutardı).
+List<List<String>> _bantlaraYerlestir(List<List<_Hucre>> hucreSatirlari) {
   final genislik = [
     for (final s in hucreSatirlari)
       for (final c in s) c.sag,

@@ -83,6 +83,24 @@ mutlak değerler birkaç kat küçük, ORANLAR geçerli. Kazançlar
 
 ---
 
+## 🟡 AÇIK — `hareket_filtre_kaydirma_test` main'de kırık (2026-10-02)
+
+**Ne:** "filtre değişince liste başa kayar" testi `origin/main`'de (21e5ae3)
+geçmiyor: Silinenler çipine dokununca ofset 0 beklenirken 1512 kalıyor.
+Ekstre sertleştirme turunda (fix/ekstre-motoru) fark edildi; o dalın
+değişiklikleriyle ilgisi yok (stash'li koşuda da kırık).
+
+**Bilinen:** Ekranın `_resetPaging` → `jumpTo(0)` yolu yerinde; animasyon
+commit'i (7e33121) öncesi dosya sürümüyle de kırık, yani neden ekran
+dosyasında değil — `SandikTappable`/tema ya da test kurgusundaki bir başka
+değişiklik aday. `tool/deploy_emulators.sh` test kapısında duruyor; bu tur
+derleme/kurulum/çökme adımları elle koşuldu.
+
+**Ne zaman:** Bir sonraki hareket ekranı turunda; önce 1475a88'den bugüne
+`SandikTappable` ve `h_scroll_with_fade` değişikliklerini ikiye böl.
+
+---
+
 ## 🟡 AÇIK — Mevduat/BES v1'de ertelenenler (2026-09-30, 0088)
 
 **Ne:** Vadeli mevduat (M2 + vadesiz M3) ve BES (B3) sözleşme tablosu +

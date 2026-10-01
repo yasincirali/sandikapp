@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/kullanici_adi.dart';
@@ -428,16 +429,33 @@ class PendingInvitesNotifier
     return SupabaseService.instance.getPendingInvitesForMe(user.id);
   }
 
-  /// Sunucudan tazele. Onay/ret sonrası ve elle çekmede çağrılır.
+  /// Sunucudan tazele. Onay/ret sonrası ve elle çekmede çağrılır; Profil
+  /// ekranı 20 sn'de bir güvenlik ağı olarak da çağırır.
+  ///
+  /// Yanıt öncekiyle AYNIYSA state yazılmaz (2026-10-01, CPU raporu):
+  /// her `AsyncData(yeniListe)` ataması, içerik aynı olsa da farklı liste
+  /// örneği olduğu için dinleyicileri uyandırıyordu; Profil ekranı 20 sn'de
+  /// bir boşa yeniden kuruluyor, ölçümde tur başına ~1,2 sn CPU ve 17 kare
+  /// üretiyordu. Karşılaştırma JSON üzerinden: davet kayıtları Postgrest'ten
+  /// düz JSON gelir (iç içe profil haritası dahil), `mapEquals` iç haritayı
+  /// kimlikle kıyaslayıp hep "farklı" derdi.
   Future<void> refresh() async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) {
       state = const AsyncData([]);
       return;
     }
-    state = await AsyncValue.guard(
+    final yeni = await AsyncValue.guard(
       () => SupabaseService.instance.getPendingInvitesForMe(user.id),
     );
+    final eski = state.valueOrNull;
+    final yeniListe = yeni.valueOrNull;
+    if (eski != null &&
+        yeniListe != null &&
+        davetKayitlariAyni(eski, yeniListe)) {
+      return;
+    }
+    state = yeni;
   }
 
   /// Daveti listeden HEMEN düşür — sunucu turunu beklemeden.
@@ -451,6 +469,19 @@ class PendingInvitesNotifier
     state = AsyncData(
       mevcut.where((i) => i['id'] != inviteId).toList(growable: false),
     );
+  }
+}
+
+/// İki davet listesi içerik olarak aynı mı (bkz. [PendingInvitesNotifier.refresh]).
+@visibleForTesting
+bool davetKayitlariAyni(
+    List<Map<String, dynamic>> a, List<Map<String, dynamic>> b) {
+  if (a.length != b.length) return false;
+  try {
+    return jsonEncode(a) == jsonEncode(b);
+  } catch (_) {
+    // JSON'a dökülemeyen bir değer (beklenmez) — güvenli taraf: farklı say.
+    return false;
   }
 }
 

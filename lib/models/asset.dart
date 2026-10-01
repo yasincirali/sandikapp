@@ -325,6 +325,15 @@ class Asset {
     return t.isEmpty ? null : t;
   }
 
+  /// BES lotunun sözleşme kurumu. Lot adı `kurum · fon` ya da
+  /// `kurum · fon · Devlet` biçimindedir (`BesFormu` › `adUret`). Ad bu
+  /// biçimde değilse (eski kayıt, elle değiştirilmiş) `null`.
+  String? get besKurumu {
+    if (type != AssetType.bes) return null;
+    final i = name.indexOf(' · ');
+    return i > 0 ? name.substring(0, i).trim() : null;
+  }
+
   /// Fon/Hisse için ticker gösterilmeli mi?
   bool get showTicker =>
       displayTicker != null &&
