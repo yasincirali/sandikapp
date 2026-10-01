@@ -11,6 +11,7 @@ import '../services/insight_metrics_service.dart' show Concentration, Drawdown;
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart' show PortfolioCharacter, RecapAsset;
 import '../services/tufe_koprusu.dart';
+import '../services/tuik_takvimi.dart';
 import '../theme/sandik.dart';
 import 'aralik_cipi.dart';
 import 'sandik_acilir.dart';
@@ -135,6 +136,10 @@ class PeriodSummaryView extends StatelessWidget {
   /// sayı yazılmaz. Gerekçe `TufeKoprusu` notunda.
   final TufeKoprusu? tufeKoprusu;
 
+  /// TÜFE penceresi veri olan en erken aya çekildi mi (5Y;
+  /// `InflationWindow.kisaltildi`). Kart bunu söyler.
+  final bool tufePenceresiKisaltildi;
+
   /// "Bugün" kararının saati (çip "1 Eki 25 - bugün" ve TÜFE açıklama
   /// tarihi geçti mi). `null` ise `DateTime.now()`; testler sabitler.
   final DateTime? simdi;
@@ -158,6 +163,7 @@ class PeriodSummaryView extends StatelessWidget {
     this.derinlikAcik = true,
     this.kiyasKarti,
     this.tufeKoprusu,
+    this.tufePenceresiKisaltildi = false,
     this.simdi,
   });
 
@@ -256,6 +262,8 @@ class PeriodSummaryView extends StatelessWidget {
           donemEtiketi: donemEtiketi,
           kopru: tufeKoprusu,
           simdi: simdi,
+          pencereKisaltildi: tufePenceresiKisaltildi,
+          ilkAlim: summary.ilkAlim,
         ));
       } else if (summary.tufeFarki != null) {
         sonuc.add(_TufeKarti(fark: summary.tufeFarki!));
@@ -435,10 +443,44 @@ class _AnaRakamKarti extends StatelessWidget {
     final pozitif = !s.isNegative;
 
     final l = context.l10n;
+    // Çip ilk alımdan başlar, pencere ondan eskiyse (5Y "1 Eki 21" yerine
+    // "14 Eyl 23"; alan notu `PeriodSummary.ilkAlim`). Grafik kartıyla
+    // aynı kural (`effectiveStart`).
+    final ilkAlim = s.ilkAlim;
+    final cipBasi =
+        (ilkAlim != null && ilkAlim.isAfter(s.start)) ? ilkAlim : s.start;
     final aralik = s.period.intraday
         ? AralikMetni.tekGun(l, context.tarihDili, gun: s.start, simdi: simdi)
         : AralikMetni.gunlu(l, context.tarihDili,
-            bas: s.start, son: s.end, simdi: simdi);
+            bas: cipBasi, son: s.end, simdi: simdi);
+
+    // ── Enflasyon hükmü ÜST KARTTA bir satır (müşteri testi 2026-10-01) ──
+    // 6A'da bu kart "+%15,06 · Bu altı ay artıda", altındaki "alım gücün
+    // geriledi" diyordu; ikisi farklı pencereyi ölçüyor ve bunu yalnızca
+    // dipnot söylüyordu. Hüküm pencere adıyla buraya gelir: iki sayı aynı
+    // kartta, aynı bakışta. Ayrıntı kartı (`_ReelGetiriKarti`) aynı puanı
+    // başlık yapar — aynı sayı iki yerde, farklı sayı değil.
+    final tufeFarki = s.tufeFarki;
+    final tufeBas = s.tufeBaslangic;
+    final tufeBitis = s.tufeBitis;
+    Widget? enflasyonSatiri;
+    if (tufeFarki != null && tufeBas != null && tufeBitis != null) {
+      final puan = fmtNum(tufeFarki.abs(), digits: 1);
+      final basaBas = puan == fmtNum(0, digits: 1);
+      final deger = basaBas
+          ? l.todayRealEven
+          : (tufeFarki > 0 ? l.todayRealAhead(puan) : l.todayRealBehind(puan));
+      final ton = basaBas
+          ? context.c.text58
+          : (tufeFarki > 0 ? context.c.gain : context.c.loss);
+      enflasyonSatiri = _KucukSatir(
+        etiket: l.vsInflationIn(AralikMetni.olculenAylar(
+            l, context.tarihDili,
+            bas: tufeBas, bitis: tufeBitis)),
+        deger: deger,
+        ton: ton,
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -521,6 +563,12 @@ class _AnaRakamKarti extends StatelessWidget {
             PeriodSummaryService.tonCumlesi(s, uzunDonemPct: uzunDonemPct),
             style: context.t.bodySmall?.copyWith(color: context.c.text58),
           ),
+          if (enflasyonSatiri != null) ...[
+            const SizedBox(height: SandikSpace.smd),
+            Divider(color: context.c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.sm),
+            enflasyonSatiri,
+          ],
         ],
       ),
     );
@@ -564,22 +612,41 @@ class _KopruKarti extends StatelessWidget {
         0;
   }
 
+  /// "Yatırdığın" = alım − satış, temettü HARİÇ.
+  ///
+  /// ## Neden (müşteri testi, 2026-10-01)
+  /// `katkiTRY` temettüyü çıkış sayar (`getiriAkisi`); "Birikim disiplinin"
+  /// kartı saymaz. Aynı altı ay için biri ₺367.751, öteki ₺517.796 yazdı —
+  /// fark tam olarak ₺150.045 nakit temettü. Ekranda "net katkı" iki anlama
+  /// geliyordu. Artık iki kart aynı sayıyı söyler (yatırdığın = alım −
+  /// satış); temettü köprüde KENDİ satırıyla görünür (eksi: cebe gitti) ve
+  /// köprü yine toplanır: baş + yatırdığın − temettü + piyasa = şimdi.
+  static double yatirdigin(PeriodSummary s) =>
+      (s.katkiTRY ?? 0) + (s.temettuTRY ?? 0);
+
   @override
   Widget build(BuildContext context) {
     final s = summary;
     if (!cizilir(s)) return const SizedBox.shrink();
     final bas = s.baslangicTRY!;
     final son = s.sonTRY!;
-    final katki = s.katkiTRY!;
     final piyasa = s.piyasaTRY!;
+    final temettu = s.temettuTRY;
+    final yatirilan = yatirdigin(s);
 
-    final enBuyuk = [bas.abs(), son.abs(), katki.abs(), piyasa.abs()]
-        .reduce((a, b) => a > b ? a : b);
+    final enBuyuk = [
+      bas.abs(),
+      son.abs(),
+      yatirilan.abs(),
+      piyasa.abs(),
+      if (temettu != null) temettu.abs(),
+    ].reduce((a, b) => a > b ? a : b);
 
     final piyasaRenk = s.isFlat
         ? context.c.text36
         : (s.isNegative ? context.c.loss : context.c.gain);
 
+    final l = context.l10n;
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: SandikSpace.md2),
@@ -588,13 +655,13 @@ class _KopruKarti extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            context.l10n.whereItCameFrom,
+            l.whereItCameFrom,
             style: context.t.titleSmall?.copyWith(color: context.c.text58),
           ),
           const SizedBox(height: SandikSpace.smd),
           _CubukSatiri(
             baz: baz,
-            etiket: context.l10n.periodStart,
+            etiket: l.periodStart,
             deger: bas,
             oran: bas.abs() / enBuyuk,
             renk: context.c.text36,
@@ -603,17 +670,31 @@ class _KopruKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: context.l10n.yourContribution,
-            deger: katki,
-            oran: katki.abs() / enBuyuk,
+            etiket: l.investedRow,
+            deger: yatirilan,
+            oran: yatirilan.abs() / enBuyuk,
             // MAVİ — getiri değil, kullanıcının kendi parası.
             renk: context.c.info,
             isaretli: true,
           ),
+          // Temettü kendi çubuğuyla (eksi): cebe giden para. Çubuk olarak
+          // çizilmesi köprüyü BOZMAZ — artık "yatırdığın" temettüyü
+          // içermiyor, dolayısıyla toplam = parçalar yine tutar.
+          if (temettu != null) ...[
+            const SizedBox(height: SandikSpace.sm),
+            _CubukSatiri(
+              baz: baz,
+              etiket: l.dividendPocketRow,
+              deger: -temettu,
+              oran: temettu.abs() / enBuyuk,
+              renk: context.c.text36,
+              isaretli: true,
+            ),
+          ],
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: context.l10n.marketWord,
+            etiket: l.marketAddedRow,
             deger: piyasa,
             oran: piyasa.abs() / enBuyuk,
             renk: piyasaRenk,
@@ -622,9 +703,7 @@ class _KopruKarti extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           _CubukSatiri(
             baz: baz,
-            etiket: s.period.intraday
-                ? context.l10n.todayWord
-                : context.l10n.nowWord,
+            etiket: s.period.intraday ? l.todayWord : l.nowWord,
             deger: son,
             oran: son.abs() / enBuyuk,
             // Marka amberi METİN rengi olarak kullanılır; zemin amberFill
@@ -632,33 +711,18 @@ class _KopruKarti extends StatelessWidget {
             renk: context.c.amberText,
             isaretli: false,
           ),
-          // Temettü ve komisyon: ÇUBUK değil, alt satır.
-          //
-          // Çubuk olarak çizilselerdi köprünün "toplam = parçalar"
-          // iddiasını kırardı — ikisi de zaten yukarıdaki çubukların
-          // İÇİNDE (temettü piyasa çubuğuna eklenmiş ve net katkıdan
-          // çıkış olarak düşülmüş — `getiriAkisi`, 2026-10-01; komisyon
-          // katkıya dahil). Ayrı satır yalnızca görünürlük verir; toplama ikinci
-          // kez eklenmezler ve bu ayrım burada yazılı durmalı, yoksa bir
-          // sonraki değişiklik onları çubuğa çevirir.
-          if (s.temettuTRY != null || s.komisyonTRY != null) ...[
+          // Komisyon: ÇUBUK değil, alt satır — zaten "yatırdığın"ın içinde
+          // (`totalCostTRY` komisyonu içerir); satır yalnızca görünürlük
+          // verir, toplama ikinci kez eklenmez.
+          if (s.komisyonTRY != null) ...[
             const SizedBox(height: SandikSpace.smd),
             Divider(color: context.c.hairline, height: 1),
             const SizedBox(height: SandikSpace.smd),
-            if (s.temettuTRY != null)
-              _KucukSatir(
-                etiket: context.l10n.cashDividend,
-                deger: baz.fmt(s.temettuTRY!),
-                ton: context.c.gain,
-              ),
-            if (s.komisyonTRY != null) ...[
-              if (s.temettuTRY != null) const SizedBox(height: SandikSpace.xs2),
-              _KucukSatir(
-                etiket: context.l10n.commissionPaid,
-                deger: '−${baz.fmt(s.komisyonTRY!)}',
-                ton: context.c.text58,
-              ),
-            ],
+            _KucukSatir(
+              etiket: l.commissionPaid,
+              deger: '−${baz.fmt(s.komisyonTRY!)}',
+              ton: context.c.text58,
+            ),
           ],
 
           const SizedBox(height: SandikSpace.smd),
@@ -672,7 +736,7 @@ class _KopruKarti extends StatelessWidget {
               const SizedBox(width: SandikSpace.xs2),
               Expanded(
                 child: Text(
-                  context.l10n.contributionNotReturn,
+                  l.contributionNotReturn,
                   style: context.t.bodySmall?.copyWith(color: context.c.text36),
                 ),
               ),
@@ -721,11 +785,13 @@ class _CubukSatiri extends StatelessWidget {
         children: [
           // Etiket sütunu sabit: dört çubuğun sol kenarı hizalanmalı,
           // yoksa uzunluk farkı çubukları kaydırır ve karşılaştırma bozulur.
+          // 110pt + iki satır (2026-10-02): "Cebine aldığın temettü" ve
+          // "Piyasanın kattığı" 86pt'te kesiliyordu ("Cebine aldığın…").
           SizedBox(
-            width: 86,
+            width: 110,
             child: Text(
               etiket,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
@@ -982,65 +1048,66 @@ class _TufeKarti extends StatelessWidget {
   }
 }
 
-/// Reel getiri — ekranın en önemli kartı.
+/// Enflasyona göre — ekranın en önemli kartı.
 ///
-/// ## Neden ÜÇ sayı birden
-/// Önceki hâli tek bir "puan farkı" gösteriyordu ve başlığı "Reel getiri"
-/// idi — oysa gösterdiği şey reel getiri DEĞİLDİ, nominal ile TÜFE
-/// arasındaki puan farkıydı. İkisi yüksek enflasyonda belirgin ayrışır:
-/// %48,1 nominal / %36,7 TÜFE'de puan farkı 11,4 ama bileşik reel getiri
-/// 8,34. Başlık ile içerik çelişiyordu.
+/// ## Tek sayı: puan farkı (müşteri testi, 2026-10-01)
+/// Kart dört yüzde taşıyordu: bileşik reel getiri (başlık), nominal, TÜFE,
+/// puan farkı; altında bir de "Ağu sonundan bugüne" köprüsü. Emülatör
+/// turunda birikimci "reel getirim 4,03 mü, 4,5 mi?" diye sordu; Ana ekran
+/// aynı anda "5,4 puan önde" diyordu (puan diliyle). Karar: **başlık puan
+/// farkı** — Ana ekranla aynı sayı, aynı kelimeler ("4,5 puan önde").
+/// Bileşik reel getiri matematiksel olarak daha doğru ama gündelik dilin
+/// okuduğu sayı değil; katlanır "Nasıl hesaplandı" bölümüne iner, silinmez.
 ///
-/// Çözüm ikisinden birini silmek değil: ana rakam artık BİLEŞİK reel getiri
-/// (matematiksel olarak doğru olan), altındaki satır üç girdiyi de açıkça
-/// yazıyor (nominal, TÜFE, fark). Kullanıcı TÜİK'in açıkladığı rakamla
-/// doğrulayabilmeli — yoksa kart bir kara kutu olur ve bu ekranın bütün
-/// değeri güvenilir olmasından geliyor.
+/// ## Pencere cümlenin İÇİNDE
+/// Üst kart bugüne kadar, bu kart son açıklanmış TÜFE ayının sonuna kadar
+/// ölçer. Eskiden bu fark iki paragraflık dipnotla anlatılıyordu; 6A'da üst
+/// kart "+%15 artıda", bu kart "alım gücün geriledi" yazınca kullanıcı
+/// dipnotu değil çelişkiyi okudu. Şimdi ilk cümle pencereyi adıyla söyler:
+/// "Mart – Ağustos arasında birikimin %8,6 arttı, enflasyon %13,1 oldu."
+/// 1A'da "Ağustos ayında…" (kart Eylül'ü değil Ağustos'u ölçüyor; bunu
+/// gizlemek yerine ilk kelimede söylüyoruz). Tek not kalır: bir sonraki
+/// TÜFE'nin ne zaman geleceği.
 ///
-/// ## Aralık başlıkta, köprü dipte (D2, 2026-10-01)
-/// Başlık göreli "son 1 yıl" yerine ölçülen aralığı çip olarak yazar
-/// ("Ağu 25 - Ağu 26"; 1A'da "Ağustos 2026"). Üst kart bugüne kadar
-/// ölçtüğü için aradaki süre ([kopru]) kartın dibinde ÖLÇÜLMÜŞ olarak
-/// yazılır: "Ağu sonundan bugüne −%5,15".
+/// ## Pencere kısaltıldıysa
+/// 5Y'de endeks o kadar geriye gitmiyor; kart eskiden HİÇ çizilmiyordu.
+/// `InflationService.pencereKapsayan` veri olan en erken aya (ya da ilk
+/// alıma) çeker, kart "ilk alımından … sonuna" diye yazar ve kısaltıldığını
+/// söyler. Uydurma yok, sessizlik de yok.
 ///
-/// Ay biçimleri `context.tarihDili` ile kurulur (eskiden
-/// `Localizations.localeOf` okunuyordu; delegate'siz testte 'en_US'e
-/// düşüp "August" yazabiliyordu — ortak getter Türkçe'ye düşer). Gün
-/// yazılmaz: endeks aylık bir ölçüm ve "31 Ağustos" yazmak, o gün yapılmış
-/// bir ölçüm varmış izlenimi verirdi.
-class _ReelGetiriKarti extends StatelessWidget {
-  /// Bileşik reel getiri (%). Ana rakam.
+/// Ay biçimleri `context.tarihDili` ile kurulur (delegate'siz testte
+/// Türkçe'ye düşer). Gün yazılmaz: endeks aylık bir ölçüm.
+class _ReelGetiriKarti extends StatefulWidget {
+  /// Bileşik reel getiri (%). Katlanır bölümde.
   final double reel;
 
-  /// Nominal getiri (%) — ham girdi, doğrulama için.
+  /// Nominal getiri (%) — cümlenin "birikimin %36,0 arttı" parçası.
   final double? nominal;
 
-  /// Dönemin kümülatif TÜFE'si (%) — ham girdi.
+  /// Dönemin kümülatif TÜFE'si (%).
   final double? tufe;
 
-  /// Puan farkı (nominal − TÜFE). Gündelik dilin okuduğu sayı.
+  /// Puan farkı (nominal − TÜFE). BAŞLIK bu sayıdır.
   final double? fark;
 
-  /// Dönem etiketi ("son 1 yıl"). Hangi pencere olduğu YAZILMALI:
-  /// dönemsiz bir enflasyon karşılaştırması doğrulanamaz. Yalnızca gerçek
-  /// pencere ([baslangic]/[bitis]) bilinmiyorsa çipte görünür.
+  /// Dönem etiketi ("son 1 yıl"). Yalnızca gerçek pencere bilinmiyorsa.
   final String donemEtiketi;
 
-  /// Karşılaştırmanın GERÇEK uçları.
-  ///
-  /// Etiket ("son 1 yıl") yaklaşık; TÜFE aylık yayımlandığı için pencere
-  /// son açıklanmış ayda biter ve bugüne kadar gelmez. Tarihleri yazmak o
-  /// farkı görünür kılar — yazmazsak kullanıcı rakamı bugüne kadarki bir
-  /// aralık sanır ve TÜİK'le kıyasladığında tutmadığını görür.
+  /// Karşılaştırmanın GERÇEK uçları (portföy serisi: ay SONLARI).
   final DateTime? baslangic;
   final DateTime? bitis;
 
-  /// TÜFE penceresinin sonundan bugüne getiri (köprü satırı). `null` ise
-  /// satır yok.
+  /// TÜFE penceresinin sonundan bugüne getiri — katlanır bölümde.
   final TufeKoprusu? kopru;
 
   /// Açıklama tarihi geçti mi kararı için.
   final DateTime simdi;
+
+  /// Pencere veri olan en erken aya çekildi (`InflationWindow.kisaltildi`).
+  final bool pencereKisaltildi;
+
+  /// Kapsamdaki ilk alım — kısaltılmış pencerede cümle buradan başlar.
+  final DateTime? ilkAlim;
 
   const _ReelGetiriKarti({
     required this.reel,
@@ -1052,40 +1119,135 @@ class _ReelGetiriKarti extends StatelessWidget {
     this.baslangic,
     this.bitis,
     this.kopru,
+    this.pencereKisaltildi = false,
+    this.ilkAlim,
   });
 
   @override
+  State<_ReelGetiriKarti> createState() => _ReelGetiriKartiState();
+}
+
+class _ReelGetiriKartiState extends State<_ReelGetiriKarti> {
+  /// "Nasıl hesaplandı" açık mı. Varsayılan kapalı: kartın ilk bakışta tek
+  /// sayı söylemesi bu kararın özü.
+  bool _ayrintiAcik = false;
+
+  static int _ayAdedi(DateTime bas, DateTime bitis) =>
+      (bitis.year - bas.year) * 12 + (bitis.month - bas.month);
+
+  @override
   Widget build(BuildContext context) {
-    // Hüküm ekranda görünen sayıdan verilir (`InflationService.hukum`):
-    // "%0,00" yazan kart yön söylemez, "başa baş" der.
-    final hukum = InflationService.hukum(reel);
+    final w = widget;
+    final l = context.l10n;
     final c = context.c;
+    final dil = context.tarihDili;
+    final pencereBelli = w.baslangic != null && w.bitis != null;
+
+    // ── Hüküm: puan farkından (Ana ekranla AYNI kural) ────────────────
+    // Ekranda "0,0 puan"a yuvarlanan fark yön söylemez — başa baş.
+    final fark = w.fark;
+    final puanMetni = fark == null ? null : fmtNum(fark.abs(), digits: 1);
+    final basaBas =
+        puanMetni != null && puanMetni == fmtNum(0, digits: 1);
+    final hukum = fark == null
+        ? InflationService.hukum(w.reel)
+        : basaBas
+            ? EnflasyonHukmu.basaBas
+            : (fark > 0 ? EnflasyonHukmu.ustunde : EnflasyonHukmu.altinda);
     final ton = switch (hukum) {
       EnflasyonHukmu.ustunde => c.gain,
       EnflasyonHukmu.altinda => c.loss,
       EnflasyonHukmu.basaBas => c.text58,
     };
-    // TÜFE penceresi biliniyor mu? Biliniyorsa kart dönem kartından FARKLI
-    // bir aralığı ölçüyor ve bunu söylemek zorunda (aşağıdaki not).
-    final pencereBelli = baslangic != null && bitis != null;
-    final l = context.l10n;
-    final dil = context.tarihDili;
-    // Tek aylık pencere ADIYLA yazılır (kullanıcı bildirimi, 2026-10-01).
-    // "son 1 ay" etiketi Eylül özetinin altında Ağustos'u anlatıyordu: TÜFE
-    // ayın 3'ünde açıklanır, 1'inde kart son açıklanan aya (Ağustos)
-    // düşer. Ay adı yazılınca kart hangi ayı ölçtüğünü kendisi söyler.
-    // [bitis] ölçülen ayın son günü (`InflationWindow.seriBitisi`).
-    final tekAy = pencereBelli && AralikMetni.tekAyMi(baslangic!, bitis!);
-    final olculenAy =
-        tekAy ? DateFormat('MMMM yyyy', dil).format(bitis!) : null;
+    final ok = switch (hukum) {
+      EnflasyonHukmu.ustunde => '▲',
+      EnflasyonHukmu.altinda => '▼',
+      EnflasyonHukmu.basaBas => '=',
+    };
+    // Başlık sayısı: puan farkı; yoksa (eski veri yolu) bileşik reel.
+    final baslikSayisi = puanMetni == null
+        ? fmtPct(w.reel.abs())
+        : switch (hukum) {
+            EnflasyonHukmu.ustunde => l.todayRealAhead(puanMetni),
+            EnflasyonHukmu.altinda => l.todayRealBehind(puanMetni),
+            EnflasyonHukmu.basaBas => l.todayRealEven,
+          };
+
+    // ── Cümle: pencere + nominal + TÜFE tek cümlede ────────────────────
+    String? cumle;
+    if (pencereBelli && w.nominal != null && w.tufe != null) {
+      final n = w.nominal!;
+      final degisim = n.abs() < 0.05
+          ? l.savingsFlat
+          : n > 0
+              ? l.savingsRose(fmtPct(n.abs(), digits: 1))
+              : l.savingsFell(fmtPct(n.abs(), digits: 1));
+      final cpi = fmtPct(w.tufe!, digits: 1);
+      final bas = w.baslangic!;
+      final bitis = w.bitis!;
+      final ayAdedi = (bitis.year - bas.year) * 12 + (bitis.month - bas.month);
+      // Ölçülen ilk ay: seri bir önceki ayın SONUNDAN başlar.
+      final ilkOlculenAy = DateTime(bas.year, bas.month + 1, 1);
+      final uzunAy = DateFormat('MMMM', dil);
+      final uzunAyYil = DateFormat('MMMM yyyy', dil);
+      // "İlk alımından" yalnızca pencere gerçekten ilk alımın ayına
+      // çekildiyse; endeksin ilk ayına çekildiyse (ilk alım daha eski)
+      // aralık cümlesi + kısaltma notu — "14 Eyl 2023'ten" deyip Ekim
+      // 2024'ten ölçmek yanlış bilgi olurdu (emülatör 2026-10-02).
+      final ilkAlimAyinaCekildi = w.pencereKisaltildi &&
+          w.ilkAlim != null &&
+          ilkOlculenAy.year == w.ilkAlim!.year &&
+          ilkOlculenAy.month == w.ilkAlim!.month;
+      if (ilkAlimAyinaCekildi) {
+        cumle = l.cpiSentenceSinceFirstBuy(
+          DateFormat('d MMMM yyyy', dil).format(w.ilkAlim!),
+          uzunAy.format(bitis),
+          degisim,
+          cpi,
+        );
+      } else if (ayAdedi == 1) {
+        cumle = l.cpiSentenceMonth(uzunAyYil.format(bitis), degisim, cpi);
+      } else if (ayAdedi == 12) {
+        final kisa = DateFormat('MMM yyyy', dil);
+        cumle = l.cpiSentenceYear(
+            kisa.format(bas), kisa.format(bitis), degisim, cpi);
+      } else {
+        cumle = l.cpiSentenceRange(uzunAy.format(ilkOlculenAy),
+            uzunAyYil.format(bitis), degisim, cpi);
+      }
+    }
+    final hukumCumlesi = switch (hukum) {
+      EnflasyonHukmu.ustunde => l.purchasingPowerUp,
+      EnflasyonHukmu.altinda => l.purchasingPowerDown,
+      EnflasyonHukmu.basaBas => l.purchasingPowerKept,
+    };
+
+    // ── Not: bir sonraki TÜFE ne zaman ─────────────────────────────────
+    String? sonrakiNot;
+    if (pencereBelli) {
+      final eksikAy = DateTime(w.bitis!.year, w.bitis!.month + 1, 1);
+      final aciklama = TuikTakvimi.aciklamaTarihi(eksikAy);
+      final ayAdi = DateFormat('MMMM', dil).format(eksikAy);
+      sonrakiNot = aciklama.isAfter(w.simdi)
+          ? l.cpiNextNote(ayAdi, DateFormat('d MMMM', dil).format(aciklama))
+          : l.cpiNextNoteLate(ayAdi);
+    }
+    String? kisaltmaNotu;
+    if (w.pencereKisaltildi && w.baslangic != null) {
+      final ilkOlculenAy =
+          DateTime(w.baslangic!.year, w.baslangic!.month + 1, 1);
+      kisaltmaNotu =
+          l.cpiShortenedNote(DateFormat('MMMM yyyy', dil).format(ilkOlculenAy));
+    }
 
     return _BaglamKarti(
-      baslik: l.realReturn,
-      // D2: göreli "son 1 yıl" yerine gerçek aralık. Pencere bilinmiyorsa
-      // (eski veri yolu) dönem etiketi kalır — hiç yazmamaktan iyidir.
+      // Ana ekrandaki satırla AYNI başlık ("Enflasyona göre"): iki yüzey
+      // aynı soruyu aynı adla sormalı.
+      baslik: l.todayRealLabel,
       cip: pencereBelli
-          ? AralikMetni.aylik(l, dil, bas: baslangic!, bitis: bitis!)
-          : donemEtiketi,
+          ? AralikMetni.olculenAylar(l, dil,
+              bas: w.baslangic!, bitis: w.bitis!)
+          : w.donemEtiketi,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1095,123 +1257,130 @@ class _ReelGetiriKarti extends StatelessWidget {
             children: [
               // Yön RENKLE anlatılmaz — ok her zaman yanında.
               Text(
-                switch (hukum) {
-                  EnflasyonHukmu.ustunde => '▲',
-                  EnflasyonHukmu.altinda => '▼',
-                  EnflasyonHukmu.basaBas => '=',
-                },
+                ok,
                 style: context.t.labelLarge
                     ?.copyWith(color: ton, fontWeight: FontWeight.w700),
               ),
               const SizedBox(width: SandikSpace.sm),
-              // Yön okta; sayı mutlak. `fmtPct(reel)` eksi reel getiride
-              // "▼ %-2,10" yazıyordu (eski biçim, bkz. `fmtPctIsaretli`).
-              Text(
-                fmtPct(reel.abs()),
-                style: context.t.numMedium.copyWith(color: ton),
+              Expanded(
+                child: Text(
+                  baslikSayisi,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.t.numMedium.copyWith(color: ton),
+                ),
               ),
             ],
           ),
           const SizedBox(height: SandikSpace.xs),
           Text(
-            switch (hukum) {
-              EnflasyonHukmu.ustunde => context.l10n.realReturnPositive,
-              EnflasyonHukmu.altinda => context.l10n.realReturnNegative,
-              EnflasyonHukmu.basaBas => context.l10n.realReturnEven,
-            },
+            // "…enflasyon %13,1 oldu; alım gücün geriledi." — hüküm aynı
+            // cümlenin devamı. Cümle kurulamadıysa hüküm tek başına, büyük
+            // harfle.
+            cumle == null
+                ? (hukumCumlesi.isEmpty
+                    ? hukumCumlesi
+                    : hukumCumlesi[0].toUpperCase() + hukumCumlesi.substring(1))
+                : '${cumle.endsWith('.') ? cumle.substring(0, cumle.length - 1) : cumle}; $hukumCumlesi',
             style: context.t.bodySmall?.copyWith(color: c.text58),
           ),
-          // ── Aralık notu (2026-09-29 emülatör testi) ──────────────────────
-          // 1A'da aynı ekranda "piyasa getirisi −₺48.092 · Bu ay ekside" ile
-          // "▲%6,18 … alım gücün arttı · Senin getirin %8,14" yan yana
-          // duruyordu. İkisi de doğru: dönem kartı BUGÜNE kadarki son 30
-          // günü, bu kart son AÇIKLANMIŞ TÜFE ayını ölçer (hizalama gerekçesi
-          // `RealReturnService.piyasaGetirisi`). Temettü farkı DEĞİL — iki
-          // nominal de aynı nakit akışı düzeltmeli formülden gelir. Çelişki
-          // aralığın yalnızca kartın dibinde yazmasındandı; hüküm cümlesinin
-          // hemen altında söylenir ve nominal satırı "bu aralıkta" der.
-          // 2026-10-01 (D2): aralığın kendisi artık başlık çipinde ve fark
-          // dipteki köprü satırında ölçülü; not yalnızca NEDEN farklı
-          // olduğunu söyleyecek kadar kısaldı (bkz. `cpiWindowNote`).
-          if (pencereBelli) ...[
+          if (kisaltmaNotu != null) ...[
             const SizedBox(height: SandikSpace.xs),
             Text(
-              context.l10n.cpiWindowNote,
+              kisaltmaNotu,
               style: context.t.bodySmall?.copyWith(color: c.text36),
             ),
           ],
-          // Ham girdiler: kullanıcı sayıyı TÜİK'le doğrulayabilmeli.
-          if (nominal != null && tufe != null) ...[
-            const SizedBox(height: SandikSpace.smd),
-            Divider(color: c.hairline, height: 1),
-            const SizedBox(height: SandikSpace.smd),
-            _KucukSatir(
-                etiket: pencereBelli
-                    ? context.l10n.nominalReturnInWindow
-                    : context.l10n.nominalReturn,
-                // Nominal eksi olabilir: yönlü biçim ("−%3,10", "%-3,10" değil).
-                deger: fmtPctIsaretli(nominal!)),
-            const SizedBox(height: SandikSpace.xs2),
-            _KucukSatir(etiket: context.l10n.periodCpi, deger: fmtPct(tufe!)),
-            if (fark != null) ...[
-              const SizedBox(height: SandikSpace.xs2),
-              _KucukSatir(
-                etiket: context.l10n.pointDifference,
-                // "0,0 puan"a yuvarlanan fark işaret ve renk taşımaz —
-                // "+0,0" ya da kırmızı "−0,0" başa baş hükmüyle çelişirdi.
-                deger: fmtNum(fark!.abs(), digits: 1) == fmtNum(0, digits: 1)
-                    ? '${fmtNum(0, digits: 1)} puan'
-                    : '${fark! > 0 ? '+' : '−'}'
-                        '${fmtNum(fark!.abs(), digits: 1)} puan',
-                ton: fmtNum(fark!.abs(), digits: 1) == fmtNum(0, digits: 1)
-                    ? c.text58
-                    : (fark! > 0 ? c.gain : c.loss),
-              ),
-            ],
-            if (baslangic != null && bitis != null) ...[
-              const SizedBox(height: SandikSpace.xs2),
-              Text(
-                // Tek ay "Temmuz 2026 - Ağustos 2026" diye İKİ ay gibi
-                // okunuyordu; ölçüm Temmuz SONU → Ağustos sonu, yani Ağustos.
-                olculenAy != null
-                    ? context.l10n.cpiWindowMonth(olculenAy)
-                    : context.l10n.cpiWindowRange(
-                        DateFormat('MMMM yyyy', dil).format(baslangic!),
-                        DateFormat('MMMM yyyy', dil).format(bitis!),
-                      ),
-                style: context.t.bodySmall?.copyWith(color: c.text58),
-              ),
-            ],
-          ],
-          // ── Köprü satırı (D2, 2026-10-01) ────────────────────────────────
-          // "Ağu sonundan bugüne −%5,15": üst kartın içerdiği ama bu kartın
-          // ölçmediği süre, ÖLÇÜLMÜŞ olarak. Pencere bilinmiyorsa satırın
-          // başlangıcı da yoktur; köprü yalnızca pencereyle birlikte çizilir.
-          if (pencereBelli && kopru != null) ...[
-            const SizedBox(height: SandikSpace.smd),
-            Divider(color: c.hairline, height: 1),
-            const SizedBox(height: SandikSpace.smd),
-            _KucukSatir(
-              etiket: l.sinceCpiWindowEnd(
-                  DateFormat('MMM', dil).format(kopru!.pencereSonu)),
-              deger: fmtPctIsaretli(kopru!.getiriPct),
-              ton: context.signColor(kopru!.getiriPct),
-            ),
-            const SizedBox(height: SandikSpace.xs2),
+          if (sonrakiNot != null) ...[
+            const SizedBox(height: SandikSpace.xs),
             Text(
-              // Açıklama tarihi geçtiyse (TÜİK yayımladı ama tablo henüz
-              // güncellenmedi) tarih yazılmaz: geçmiş bir günü "açıklanınca"
-              // diye anmak yanlış olurdu.
-              kopru!.aciklamaTarihi.isAfter(simdi)
-                  ? l.sinceCpiWindowBody(
-                      DateFormat('MMMM', dil).format(kopru!.eksikAy),
-                      DateFormat('d MMMM', dil).format(kopru!.aciklamaTarihi),
-                    )
-                  : l.sinceCpiWindowBodyLate(
-                      DateFormat('MMMM', dil).format(kopru!.eksikAy)),
+              sonrakiNot,
               style: context.t.bodySmall?.copyWith(color: c.text36),
             ),
           ],
+          // ── Nasıl hesaplandı (katlanır) ──────────────────────────────
+          // Ham girdiler burada: kullanıcı TÜİK'le doğrulayabilmeli ama
+          // ilk bakışta tek sayı görmeli.
+          const SizedBox(height: SandikSpace.smd),
+          Divider(color: c.hairline, height: 1),
+          SandikTappable(
+            semanticLabel: _ayrintiAcik
+                ? l.rowExpandedSemantics(l.cpiHowComputed)
+                : l.rowCollapsedSemantics(l.cpiHowComputed),
+            onTap: () => setState(() => _ayrintiAcik = !_ayrintiAcik),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: SandikTouch.min),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.cpiHowComputed,
+                      style: context.t.bodySmall?.copyWith(
+                          color: c.text58, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  SandikAcilirOk(
+                    acik: _ayrintiAcik,
+                    child: Icon(Icons.expand_more_rounded,
+                        size: 18, color: c.text36),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SandikAcilir(
+            acik: _ayrintiAcik,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _KucukSatir(
+                    etiket: l.compoundRealReturn,
+                    deger: fmtPctIsaretli(w.reel)),
+                if (w.nominal != null && w.tufe != null) ...[
+                  const SizedBox(height: SandikSpace.xs2),
+                  _KucukSatir(
+                      etiket: pencereBelli
+                          ? l.nominalReturnInWindow
+                          : l.nominalReturn,
+                      deger: fmtPctIsaretli(w.nominal!)),
+                  const SizedBox(height: SandikSpace.xs2),
+                  _KucukSatir(etiket: l.periodCpi, deger: fmtPct(w.tufe!)),
+                ],
+                if (pencereBelli) ...[
+                  const SizedBox(height: SandikSpace.xs2),
+                  Text(
+                    // Çiple aynı kural (`AralikMetni.olculenAylar`): tek ay
+                    // adıyla, on iki ay TÜİK diliyle (Ağustos → Ağustos),
+                    // arası ilk ÖLÇÜLEN aydan.
+                    AralikMetni.tekAyMi(w.baslangic!, w.bitis!)
+                        ? l.cpiWindowMonth(
+                            DateFormat('MMMM yyyy', dil).format(w.bitis!))
+                        : l.cpiWindowRange(
+                            DateFormat('MMMM yyyy', dil).format(
+                                _ayAdedi(w.baslangic!, w.bitis!) == 12
+                                    ? w.baslangic!
+                                    : DateTime(w.baslangic!.year,
+                                        w.baslangic!.month + 1, 1)),
+                            DateFormat('MMMM yyyy', dil).format(w.bitis!),
+                          ),
+                    style: context.t.bodySmall?.copyWith(color: c.text36),
+                  ),
+                ],
+                if (pencereBelli && w.kopru != null) ...[
+                  const SizedBox(height: SandikSpace.xs2),
+                  _KucukSatir(
+                    etiket: l.sinceCpiWindowEnd(
+                        DateFormat('MMM', dil).format(w.kopru!.pencereSonu)),
+                    deger: fmtPctIsaretli(w.kopru!.getiriPct),
+                    ton: context.signColor(w.kopru!.getiriPct),
+                  ),
+                ],
+                const SizedBox(height: SandikSpace.xs2),
+                _KucukSatir(etiket: l.cpiSourceLabel, deger: l.cpiSourceValue),
+                const SizedBox(height: SandikSpace.xs),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1620,6 +1789,62 @@ class ContributionKarti extends StatelessWidget {
     this.baz = const BazPara.lira(),
   });
 
+  /// Kova ifadesi: "Eylül ayında" / "29 Eyl haftasında" / "2025 yılında".
+  /// Türkçe ek uyumu için ("Eylül'de" / "Ağustos'ta") ay adı yerine
+  /// "ayında" kalıbı — ek seçmek gerekmez.
+  String _kovaIfadesi(BuildContext context, ContributionBucket k) {
+    final l = context.l10n;
+    final dil = context.tarihDili;
+    return switch (aralik) {
+      ContributionInterval.aylik =>
+        l.inMonthPhrase(DateFormat('MMMM', dil).format(k.start)),
+      ContributionInterval.haftalik =>
+        l.inWeekPhrase(DateFormat('d MMM', dil).format(k.start)),
+      ContributionInterval.yillik => l.inYearPhrase('${k.start.year}'),
+    };
+  }
+
+  /// "Son 6 ayın" — tek katkı cümlesinin öznesi.
+  String _donemIfadesi(BuildContext context) {
+    final l = context.l10n;
+    final n = '${ozet.kovalar.length}';
+    return switch (aralik) {
+      ContributionInterval.aylik => l.ofLastNMonths(n),
+      ContributionInterval.haftalik => l.ofLastNWeeks(n),
+      ContributionInterval.yillik => l.ofLastNYears(n),
+    };
+  }
+
+  /// Tek katkı dönemi: "Son 6 ayın yalnızca birinde para yatırdın: Eylül
+  /// ayında ₺529.881. Haziran ayında ₺12.000 çektin."
+  String _tekKatkiCumlesi(BuildContext context) {
+    final l = context.l10n;
+    final katki = ozet.kovalar.firstWhere((k) => k.netTRY > 0,
+        orElse: () => ozet.kovalar.first);
+    final parcalar = [
+      l.singleContribution(_donemIfadesi(context), _kovaIfadesi(context, katki),
+          baz.fmt(katki.netTRY)),
+      for (final k in ozet.kovalar)
+        if (k.netTRY < -0.5)
+          l.singleWithdrawal(
+              _kovaIfadesi(context, k), baz.fmt(k.netTRY.abs())),
+    ];
+    return parcalar.join(' ');
+  }
+
+  /// Hiç katkı yok: satış varsa onu söyler, yoksa "yeni para girmemiş".
+  String _bosCumle(BuildContext context) {
+    final l = context.l10n;
+    final satislar = ozet.kovalar.where((k) => k.netTRY < -0.5).toList();
+    if (satislar.isEmpty) return l.noNewMoney;
+    if (satislar.length == 1) {
+      return l.onlySalesInWindow(_kovaIfadesi(context, satislar.first),
+          '−${baz.fmt(satislar.first.netTRY.abs())}');
+    }
+    final toplam = satislar.fold(0.0, (a, k) => a + k.netTRY.abs());
+    return l.onlySalesInWindowTotal('−${baz.fmt(toplam)}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
@@ -1635,10 +1860,12 @@ class ContributionKarti extends StatelessWidget {
             const SizedBox(height: SandikSpace.smd),
           ],
 
-          // Hiç katkı yoksa çubuk çizmenin anlamı yok — dürüst boş hâl.
+          // Hiç katkı yoksa büyük sayı yok — dürüst boş hâl. Satış varsa
+          // onu söyler: "yeni para girmemiş" cümlesinin altında kırmızı
+          // bir satış çubuğu çelişkiydi (müşteri testi 2026-10-01, Hisse).
           if (ozet.bos)
             Text(
-              context.l10n.noNewMoney,
+              _bosCumle(context),
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             )
           else ...[
@@ -1678,38 +1905,52 @@ class ContributionKarti extends StatelessWidget {
             ),
           ],
 
-          const SizedBox(height: SandikSpace.smd),
-          Divider(color: c.hairline, height: 1),
-          const SizedBox(height: SandikSpace.smd),
-
-          if (ozet.ortalamaTRY != null)
-            _KucukSatir(
-              etiket: aralik.ortalamaBasligi(context.l10n),
-              deger: baz.fmt(ozet.ortalamaTRY!),
+          // Tek katkı dönemi: ortalama, en yüksek ve "geçen döneme göre"
+          // üçü de aynı sayıyı tekrarlıyordu (₺529.881 × 3; müşteri testi
+          // 2026-10-01). Dört satır yerine tek cümle: "Son 6 ayın yalnızca
+          // birinde para yatırdın: Eylül ayında ₺529.881." Satırlar iki ve
+          // üzeri katkı döneminde anlam taşır, orada kalır.
+          if (ozet.katkiliKovaSayisi == 1) ...[
+            const SizedBox(height: SandikSpace.smd),
+            Divider(color: c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.smd),
+            Text(
+              _tekKatkiCumlesi(context),
+              style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
-          if (ozet.zirve != null) ...[
+          ] else if (!ozet.bos) ...[
+            const SizedBox(height: SandikSpace.smd),
+            Divider(color: c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.smd),
+            if (ozet.ortalamaTRY != null)
+              _KucukSatir(
+                etiket: aralik.ortalamaBasligi(context.l10n),
+                deger: baz.fmt(ozet.ortalamaTRY!),
+              ),
+            if (ozet.zirve != null) ...[
+              const SizedBox(height: SandikSpace.xs2),
+              _KucukSatir(
+                etiket: context.l10n.highestWord,
+                deger: baz.fmt(ozet.zirve!.netTRY),
+              ),
+            ],
             const SizedBox(height: SandikSpace.xs2),
             _KucukSatir(
-              etiket: context.l10n.highestWord,
-              deger: baz.fmt(ozet.zirve!.netTRY),
+              etiket: context.l10n.contributingPeriods,
+              deger: '${ozet.katkiliKovaSayisi} / ${ozet.kovalar.length}',
             ),
-          ],
-          const SizedBox(height: SandikSpace.xs2),
-          _KucukSatir(
-            etiket: context.l10n.contributingPeriods,
-            deger: '${ozet.katkiliKovaSayisi} / ${ozet.kovalar.length}',
-          ),
-          if (ozet.sonFarkTRY != null) ...[
-            const SizedBox(height: SandikSpace.xs2),
-            _KucukSatir(
-              etiket: aralik.gecenDonemeGore(context.l10n),
-              deger: '${ozet.sonFarkTRY! >= 0 ? '+' : '−'}'
-                  '${baz.fmt(ozet.sonFarkTRY!.abs())}',
-              ton: ozet.sonFarkTRY! >= 0 ? c.gain : c.loss,
-            ),
+            if (ozet.sonFarkTRY != null) ...[
+              const SizedBox(height: SandikSpace.xs2),
+              _KucukSatir(
+                etiket: aralik.gecenDonemeGore(context.l10n),
+                deger: '${ozet.sonFarkTRY! >= 0 ? '+' : '−'}'
+                    '${baz.fmt(ozet.sonFarkTRY!.abs())}',
+                ton: ozet.sonFarkTRY! >= 0 ? c.gain : c.loss,
+              ),
+            ],
           ],
 
-          if (ozet.trend != null) ...[
+          if (ozet.trend != null && ozet.katkiliKovaSayisi > 1) ...[
             const SizedBox(height: SandikSpace.smd),
             Text(
               aralik.trendCumlesi(

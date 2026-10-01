@@ -2933,7 +2933,7 @@ abstract class AppLocalizations {
   /// No description provided for @changeByTypeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TÜRE GÖRE DEĞİŞİM'**
+  /// **'TÜRE GÖRE · PİYASANIN KATTIĞI'**
   String get changeByTypeUpper;
 
   /// No description provided for @noData.
@@ -2987,7 +2987,7 @@ abstract class AppLocalizations {
   /// No description provided for @tradeVolumeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'İŞLEM HACMİ'**
+  /// **'ALIM · SATIŞ'**
   String get tradeVolumeUpper;
 
   /// No description provided for @crosshairNetBuy.
@@ -3287,7 +3287,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionNotReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.'**
+  /// **'Yüzde yalnızca piyasanın kattığından hesaplanır. Temettü cebine girdiği için portföyden çıkış sayılır.'**
   String get contributionNotReturn;
 
   /// No description provided for @annualRatePct.
@@ -8473,6 +8473,211 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ek katkı ekle'**
   String get pensionAddExtraContribution;
+
+  /// No description provided for @cpiSentenceMonth.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} ayında birikimin {change}, aylık enflasyon {cpi} oldu.'**
+  String cpiSentenceMonth(String month, String change, String cpi);
+
+  /// No description provided for @cpiSentenceRange.
+  ///
+  /// In tr, this message translates to:
+  /// **'{start} - {end} arasında birikimin {change}, enflasyon {cpi} oldu.'**
+  String cpiSentenceRange(String start, String end, String change, String cpi);
+
+  /// No description provided for @cpiSentenceYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son bir yılda ({start} - {end}) birikimin {change}, enflasyon {cpi} oldu.'**
+  String cpiSentenceYear(String start, String end, String change, String cpi);
+
+  /// No description provided for @cpiSentenceSinceFirstBuy.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
+  String cpiSentenceSinceFirstBuy(
+      String date, String end, String change, String cpi);
+
+  /// No description provided for @savingsRose.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} arttı'**
+  String savingsRose(String pct);
+
+  /// No description provided for @savingsFell.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pct} azaldı'**
+  String savingsFell(String pct);
+
+  /// No description provided for @savingsFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'değişmedi'**
+  String get savingsFlat;
+
+  /// No description provided for @purchasingPowerUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'alım gücün arttı.'**
+  String get purchasingPowerUp;
+
+  /// No description provided for @purchasingPowerDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'alım gücün geriledi.'**
+  String get purchasingPowerDown;
+
+  /// No description provided for @purchasingPowerKept.
+  ///
+  /// In tr, this message translates to:
+  /// **'alım gücün korundu.'**
+  String get purchasingPowerKept;
+
+  /// No description provided for @cpiNextNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} TÜFE\'si {date} tarihinde açıklanınca karşılaştırma {month} ayını da kapsar.'**
+  String cpiNextNote(String month, String date);
+
+  /// No description provided for @cpiNextNoteLate.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} TÜFE\'si yüklenince karşılaştırma {month} ayını da kapsar.'**
+  String cpiNextNoteLate(String month);
+
+  /// No description provided for @cpiShortenedNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kadar geriye giden TÜFE verisi yok; karşılaştırma {month} ayından başlıyor.'**
+  String cpiShortenedNote(String month);
+
+  /// No description provided for @cpiHowComputed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Nasıl hesaplandı'**
+  String get cpiHowComputed;
+
+  /// No description provided for @compoundRealReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bileşik reel getiri'**
+  String get compoundRealReturn;
+
+  /// No description provided for @cpiSourceLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak'**
+  String get cpiSourceLabel;
+
+  /// No description provided for @cpiSourceValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜİK TÜFE'**
+  String get cpiSourceValue;
+
+  /// No description provided for @vsInflationIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyona göre ({window})'**
+  String vsInflationIn(String window);
+
+  /// No description provided for @investedRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırdığın'**
+  String get investedRow;
+
+  /// No description provided for @marketAddedRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasanın kattığı'**
+  String get marketAddedRow;
+
+  /// No description provided for @dividendPocketRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Cebine aldığın temettü'**
+  String get dividendPocketRow;
+
+  /// No description provided for @flowBuyBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alım +{flow} · birikim {change}'**
+  String flowBuyBalance(String flow, String change);
+
+  /// No description provided for @flowSellBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış −{flow} · birikim {change}'**
+  String flowSellBalance(String flow, String change);
+
+  /// No description provided for @ofLastNMonths.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son {n} ayın'**
+  String ofLastNMonths(String n);
+
+  /// No description provided for @ofLastNWeeks.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son {n} haftanın'**
+  String ofLastNWeeks(String n);
+
+  /// No description provided for @ofLastNYears.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son {n} yılın'**
+  String ofLastNYears(String n);
+
+  /// No description provided for @inMonthPhrase.
+  ///
+  /// In tr, this message translates to:
+  /// **'{month} ayında'**
+  String inMonthPhrase(String month);
+
+  /// No description provided for @inWeekPhrase.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} haftasında'**
+  String inWeekPhrase(String date);
+
+  /// No description provided for @inYearPhrase.
+  ///
+  /// In tr, this message translates to:
+  /// **'{year} yılında'**
+  String inYearPhrase(String year);
+
+  /// No description provided for @singleContribution.
+  ///
+  /// In tr, this message translates to:
+  /// **'{period} yalnızca birinde para yatırdın: {bucket} {amount}.'**
+  String singleContribution(String period, String bucket, String amount);
+
+  /// No description provided for @singleWithdrawal.
+  ///
+  /// In tr, this message translates to:
+  /// **'{bucket} {amount} çektin.'**
+  String singleWithdrawal(String bucket, String amount);
+
+  /// No description provided for @onlySalesInWindow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu pencerede yeni para girmedi; satış var: {bucket} {amount}.'**
+  String onlySalesInWindow(String bucket, String amount);
+
+  /// No description provided for @onlySalesInWindowTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu pencerede yeni para girmedi; toplam {amount} satış var.'**
+  String onlySalesInWindowTotal(String amount);
+
+  /// No description provided for @marketPound.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sterlin'**
+  String get marketPound;
 }
 
 class _AppLocalizationsDelegate

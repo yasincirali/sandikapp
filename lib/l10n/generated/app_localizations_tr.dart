@@ -1614,7 +1614,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get raceUpper => 'YARIŞ';
 
   @override
-  String get changeByTypeUpper => 'TÜRE GÖRE DEĞİŞİM';
+  String get changeByTypeUpper => 'TÜRE GÖRE · PİYASANIN KATTIĞI';
 
   @override
   String get noData => 'Veri yok';
@@ -1645,7 +1645,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'İŞLEM HACMİ';
+  String get tradeVolumeUpper => 'ALIM · SATIŞ';
 
   @override
   String crosshairNetBuy(String amount) {
@@ -1812,7 +1812,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.';
+      'Yüzde yalnızca piyasanın kattığından hesaplanır. Temettü cebine girdiği için portföyden çıkış sayılır.';
 
   @override
   String annualRatePct(String pct) {
@@ -5045,4 +5045,151 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pensionAddExtraContribution => 'Ek katkı ekle';
+
+  @override
+  String cpiSentenceMonth(String month, String change, String cpi) {
+    return '$month ayında birikimin $change, aylık enflasyon $cpi oldu.';
+  }
+
+  @override
+  String cpiSentenceRange(String start, String end, String change, String cpi) {
+    return '$start - $end arasında birikimin $change, enflasyon $cpi oldu.';
+  }
+
+  @override
+  String cpiSentenceYear(String start, String end, String change, String cpi) {
+    return 'Son bir yılda ($start - $end) birikimin $change, enflasyon $cpi oldu.';
+  }
+
+  @override
+  String cpiSentenceSinceFirstBuy(
+      String date, String end, String change, String cpi) {
+    return 'İlk alımından ($date) $end sonuna birikimin $change, enflasyon $cpi oldu.';
+  }
+
+  @override
+  String savingsRose(String pct) {
+    return '$pct arttı';
+  }
+
+  @override
+  String savingsFell(String pct) {
+    return '$pct azaldı';
+  }
+
+  @override
+  String get savingsFlat => 'değişmedi';
+
+  @override
+  String get purchasingPowerUp => 'alım gücün arttı.';
+
+  @override
+  String get purchasingPowerDown => 'alım gücün geriledi.';
+
+  @override
+  String get purchasingPowerKept => 'alım gücün korundu.';
+
+  @override
+  String cpiNextNote(String month, String date) {
+    return '$month TÜFE\'si $date tarihinde açıklanınca karşılaştırma $month ayını da kapsar.';
+  }
+
+  @override
+  String cpiNextNoteLate(String month) {
+    return '$month TÜFE\'si yüklenince karşılaştırma $month ayını da kapsar.';
+  }
+
+  @override
+  String cpiShortenedNote(String month) {
+    return 'Bu kadar geriye giden TÜFE verisi yok; karşılaştırma $month ayından başlıyor.';
+  }
+
+  @override
+  String get cpiHowComputed => 'Nasıl hesaplandı';
+
+  @override
+  String get compoundRealReturn => 'Bileşik reel getiri';
+
+  @override
+  String get cpiSourceLabel => 'Kaynak';
+
+  @override
+  String get cpiSourceValue => 'TÜİK TÜFE';
+
+  @override
+  String vsInflationIn(String window) {
+    return 'Enflasyona göre ($window)';
+  }
+
+  @override
+  String get investedRow => 'Yatırdığın';
+
+  @override
+  String get marketAddedRow => 'Piyasanın kattığı';
+
+  @override
+  String get dividendPocketRow => 'Cebine aldığın temettü';
+
+  @override
+  String flowBuyBalance(String flow, String change) {
+    return 'Alım +$flow · birikim $change';
+  }
+
+  @override
+  String flowSellBalance(String flow, String change) {
+    return 'Satış −$flow · birikim $change';
+  }
+
+  @override
+  String ofLastNMonths(String n) {
+    return 'Son $n ayın';
+  }
+
+  @override
+  String ofLastNWeeks(String n) {
+    return 'Son $n haftanın';
+  }
+
+  @override
+  String ofLastNYears(String n) {
+    return 'Son $n yılın';
+  }
+
+  @override
+  String inMonthPhrase(String month) {
+    return '$month ayında';
+  }
+
+  @override
+  String inWeekPhrase(String date) {
+    return '$date haftasında';
+  }
+
+  @override
+  String inYearPhrase(String year) {
+    return '$year yılında';
+  }
+
+  @override
+  String singleContribution(String period, String bucket, String amount) {
+    return '$period yalnızca birinde para yatırdın: $bucket $amount.';
+  }
+
+  @override
+  String singleWithdrawal(String bucket, String amount) {
+    return '$bucket $amount çektin.';
+  }
+
+  @override
+  String onlySalesInWindow(String bucket, String amount) {
+    return 'Bu pencerede yeni para girmedi; satış var: $bucket $amount.';
+  }
+
+  @override
+  String onlySalesInWindowTotal(String amount) {
+    return 'Bu pencerede yeni para girmedi; toplam $amount satış var.';
+  }
+
+  @override
+  String get marketPound => 'Sterlin';
 }

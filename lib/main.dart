@@ -1033,6 +1033,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Emniyet supabı burada BAŞLATILMAZ — kullanıcı belli olunca
     // `_startDataWaitTimeout()` ile başlar (bkz. _dataWaitTimer).
     WidgetsBinding.instance.addObserver(this);
+    // Gün içi seri tazelenince widget ve Live Activity AYNI karede
+    // yeniden yazılır (bkz. [_gunIciSeriGeldi]).
+    IntradaySeriesCache.instance.surum.addListener(_gunIciSeriGeldi);
     // Diskten okunan tema kararını yüzeylere BİR KEZ hizala (`force`).
     // Servis singleton'ları `false` (koyu) doğar ve karar değişmemiş
     // sayıldığı için normal yolda itilmezdi: açık temalı kullanıcı, ilk
@@ -1195,8 +1198,41 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     _partnersWarmUp?.close();
     _partnerAssetsWarmUp?.close();
     PartnerInviteListenerService.instance.stop();
+    IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// Ortak gün içi önbelleğin Ben yuvasına YENİ seri yazıldı.
+  ///
+  /// ## Neden (kullanıcı kararı 2026-10-02: "Bugün kartı, günlük kartı,
+  /// canlı etkinlik ve widget hepsi senkron olmalı")
+  /// Widget ve Live Activity yalnızca portföy yayınında yazılıyordu. Bugün
+  /// kartı ya da Performans taze seri çektiğinde (nabız, sekmeye dönüş)
+  /// bu iki yüzey bir sonraki fiyat yayınına kadar ESKİ seriyle hesaplanmış
+  /// rakamı tutuyordu (ölçüldü: açılıştan sonra widget +₺335, uygulama
+  /// +₺148). Yeni seri gelince ikisi de hemen yeniden yazılır; hesap aynı
+  /// önbellekten okur, ağa çıkmaz. Yalnız Ben yuvası: widget ve kilit
+  /// ekranı kişisel defteri gösterir.
+  void _gunIciSeriGeldi() {
+    final c = IntradaySeriesCache.instance;
+    if (c.sonGuncellenen != c.benAnahtari) return;
+    final async = ref.read(portfolioProvider);
+    // Yerleşik veri kuralı portföy dinleyicisiyle aynı (kullanıcı
+    // değişiminde AsyncLoading önceki kullanıcının defterini taşır).
+    if (async.isLoading) return;
+    final snapshot = async.valueOrNull;
+    if (snapshot == null || snapshot.assets.isEmpty) return;
+    final hideBalance = ref.read(balanceHiddenProvider);
+    HomeWidgetService.instance.lockScreenAmounts =
+        ref.read(lockScreenAmountsProvider);
+    CrashReporter.arkaPlan(
+        HomeWidgetService.instance
+            .updateWithChart(snapshot, hideBalance: hideBalance),
+        reason: 'main.gunIciSeri.updateWithChart');
+    CrashReporter.arkaPlan(
+        LiveActivityService.instance.sync(snapshot, hideBalance: hideBalance),
+        reason: 'main.gunIciSeri.LiveActivityService.sync');
   }
 
   Future<void> _hydrateLeaderboardOptIn(String userId) async {

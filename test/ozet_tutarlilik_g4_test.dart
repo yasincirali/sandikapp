@@ -86,12 +86,16 @@ void main() {
         ),
       );
       // Hüküm (dönem kartı eksi, reel kart artı) kendi başına çelişki gibi
-      // okunuyordu; aralık farkı açıkça yazılmalı.
-      expect(find.text(trMetni('cpiWindowNote')), findsOneWidget);
-      expect(find.text(trMetni('nominalReturnInWindow')), findsOneWidget);
-      expect(find.text(trMetni('nominalReturn')), findsNothing);
+      // okunuyordu; aralık artık cümlenin İLK kelimesinde (2026-10-01).
+      expect(find.textContaining('Ağustos 2026 ayında birikimin %8,1 arttı'),
+          findsOneWidget);
       // Renk/yön ilgili metrikten: dönem kartı eksi, reel kart kendi ▲'sı.
       expect(find.text('▲'), findsOneWidget);
+      // Ham girdi katlanır bölümde, "bu aralıkta" etiketiyle.
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.text(trMetni('nominalReturnInWindow')), findsOneWidget);
+      expect(find.text(trMetni('nominalReturn')), findsNothing);
       expect(find.text('+%8,14'), findsOneWidget);
     });
 
@@ -102,10 +106,12 @@ void main() {
           summary: ozet(tufePct: 1.85, nominal: -3.10, reel: -4.86),
         ),
       );
-      expect(find.text('−%3,10'), findsOneWidget);
       expect(find.text('▼'), findsOneWidget);
-      // Ana rakam mutlak; yön okta.
-      expect(find.text('%4,86'), findsOneWidget);
+      expect(find.textContaining('birikimin %3,1 azaldı'), findsOneWidget);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.text('−%3,10'), findsOneWidget);
+      expect(find.text('−%4,86'), findsOneWidget);
       expect(find.textContaining('%-'), findsNothing);
     });
 
@@ -119,6 +125,9 @@ void main() {
         ),
       );
       expect(find.text(trMetni('cpiWindowNote')), findsNothing);
+      expect(find.textContaining('ayında birikimin'), findsNothing);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
       expect(find.text(trMetni('nominalReturn')), findsOneWidget);
     });
 
@@ -132,11 +141,16 @@ void main() {
   group('#11 tür dökümü ekran okuyucu metni', () {
     final src = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart');
 
-    test('akışlı satırda birikim "artış/azalış", kazanç/kayıp değil', () {
-      expect(src, contains('breakdownUpAmount('));
-      expect(src, contains('breakdownDownAmount('));
-      // Karar: yalnızca akış varken ve gün içi arındırılmış değilken.
-      expect(src, contains('final birikimli = !_net && !widget.simulate'));
+    test('satır her dönemde piyasanın kattığı — "kazanç/kayıp" doğru', () {
+      // 2026-10-01: satır artık her dönemde arındırılmış (akış düşülmüş);
+      // "artış/azalış" ayrımına gerek kalmadı, ekran okuyucu da kazanç/kayıp
+      // der. Akış ve birikim değişimi alt satırda ("Alım +₺… · birikim +₺…").
+      expect(src, contains('gainAmount('));
+      expect(src, contains('lossAmount('));
+      expect(src.contains('breakdownUpAmount('), isFalse);
+      expect(src, contains('bool get _net => !widget.simulate;'));
+      expect(src, contains('flowBuyBalance('));
+      expect(src, contains('flowSellBalance('));
       // Ham Türkçe literal kalmadı.
       expect(src.contains("'değişim yok'"), isFalse);
       expect(trMetni('breakdownDownAmount'), startsWith('azalış'));

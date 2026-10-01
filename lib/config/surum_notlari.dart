@@ -116,6 +116,9 @@ const List<SurumNotu> surumNotlari = [
       // 2026-10-01: tek getiri dili (M1 + D2 + düzen A + kıyas kartı).
       // Ana rakam bu sürümde değişiyor (temettü dahil, para ağırlıklı);
       // not bunu açıkça söylemeli, yoksa kullanıcı farkı hata sanar.
+      // 2026-10-02 (müşteri testi sadeleştirmesi, aynı sürüm): enflasyon
+      // kartı tek sayı (puan farkı), pencere cümlede; Grafik kartında yüzde
+      // yalnızca piyasanın kattığı; köprüde temettü kendi satırında.
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Performans özeti yenilendi',
@@ -123,10 +126,13 @@ const List<SurumNotu> surumNotlari = [
             'zaman girdiği hesaba katılır ve nakit temettülerin de getiriye '
             'dahildir, bu yüzden rakam öncekinden farklı görünebilir. Her '
             'yüzdenin yanında hangi tarihler arasında ölçüldüğü yazar. '
-            "Enflasyon kartı TÜİK'in son açıkladığı aya kadar ölçer; o "
-            'günden bugüne getirin kartın altında ayrıca yazar. Yeni "Başka '
-            'yere koysaydın" kartı, aynı paraları aynı günlerde dolara, '
-            "altına ya da BIST 100'e koysaydın ne olacağını gösterir.",
+            'Enflasyon karşılaştırması tek sayı söyler: kaç puan önde ya da '
+            "geride olduğun, hangi aylar arasında ölçüldüğüyle birlikte; "
+            'ayrıntı "Nasıl hesaplandı" altında. Grafik kartındaki yüzde '
+            'yalnızca piyasanın kattığıdır; yatırdığın para ve cebine aldığın '
+            'temettü ayrı yazılır. Yeni "Başka yere koysaydın" kartı, aynı '
+            'paraları aynı günlerde dolara, altına ya da BIST 100\'e '
+            'koysaydın ne olacağını gösterir.',
       ),
       // 2026-10-01: evrensel ekstre motoru (docs/EKSTRE_MOTORU.md).
       Yenilik(

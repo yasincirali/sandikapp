@@ -115,7 +115,7 @@ void main() {
     testWidgets('reel getiri: göreli "son 1 yıl" yerine "Ağu 25 - Ağu 26"',
         (t) async {
       await kur(t, PeriodSummaryView(summary: ozet(), simdi: simdi));
-      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Enflasyona göre'), findsOneWidget);
       expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
       expect(find.textContaining('son 1 yıl'), findsNothing);
     });
@@ -162,14 +162,20 @@ void main() {
         t,
         PeriodSummaryView(summary: ozet(), tufeKoprusu: kopru, simdi: simdi),
       );
-      expect(find.text('Ağu sonundan bugüne'), findsOneWidget);
-      expect(find.text('−%5,15'), findsOneWidget);
+      // Bir sonraki TÜFE notu kartın gövdesinde (2026-10-01 sadeleştirme):
+      // "Eylül TÜFE'si 3 Ekim tarihinde açıklanınca karşılaştırma Eylül
+      // ayını da kapsar."
       expect(
-        find.text("Üstteki rakam bu süreyi içeriyor; Eylül TÜFE'si "
-            'açıklanınca (3 Ekim) bu kart güncellenir.'),
+        find.textContaining("Eylül TÜFE'si 3 Ekim tarihinde açıklanınca"),
         findsOneWidget,
       );
-      // Satır reel kartın İÇİNDE, dibinde: nominal satırının altında.
+      // Köprü satırı katlanır "Nasıl hesaplandı" bölümünde, nominal
+      // satırının altında.
+      expect(find.text('Ağu sonundan bugüne'), findsNothing);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.text('Ağu sonundan bugüne'), findsOneWidget);
+      expect(find.text('−%5,15'), findsOneWidget);
       expect(y(t, find.text('Ağu sonundan bugüne')),
           greaterThan(y(t, find.text('Bu aralıkta senin getirin'))));
     });
@@ -237,7 +243,7 @@ void main() {
       final sira = [
         find.text('SONUÇ'),
         find.text('Paranın getirisi · 1Y'),
-        find.text('Reel getiri'),
+        find.text('Enflasyona göre'),
         find.text('Özetini paylaş'),
         find.text('NEDEN'),
         find.text('Nereden geldi'),
@@ -317,9 +323,11 @@ void main() {
       expect(find.text('Return on your money · 1Y'), findsOneWidget);
       expect(find.text('1 Oct 25 - today'), findsOneWidget);
       expect(find.text('Aug 25 - Aug 26'), findsOneWidget);
-      expect(find.text('Since end of Aug'), findsOneWidget);
-      expect(find.textContaining('September CPI is published (3 October)'),
+      expect(find.textContaining('September CPI is published on 3 October'),
           findsOneWidget);
+      await t.tap(find.text('How it was computed'));
+      await t.pumpAndSettle();
+      expect(find.text('Since end of Aug'), findsOneWidget);
     });
   });
 }

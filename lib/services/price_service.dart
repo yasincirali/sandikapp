@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../utils/tr_format.dart' show dayKey;
 import 'tazelik_ritmi.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
@@ -288,6 +289,30 @@ class PriceService {
   /// gerekçe `altinUrunUclari` › `referansTRY`.
   final Map<String, double> _gunlukReferans = {};
 
+  /// Sembol → [_gunlukReferans]'ın yazıldığı gün (takvim).
+  final Map<String, DateTime> _gunlukReferansGunu = {};
+
+  /// Gün başı referansı gün içinde SABİT kalır; bu oranın altındaki
+  /// sapmalar yazılmaz.
+  ///
+  /// ## Neden (kullanıcı kararı 2026-10-02: "hepsi senkron olmalı")
+  /// Referans `fiyat ÷ (1 + yüzde)`; kaynak yüzdeyi iki basamağa yuvarlıyor
+  /// (−%0,40). Fiyat %0,01 oynayıp yüzde aynı kalınca referans da oynuyor:
+  /// her fiyat turunda birkaç kuruş farklı bir "dünkü kapanış". Gün içi seri
+  /// bu referansla kurulduğundan iki farklı anda çekilen iki seri farklı
+  /// açılış taşıyordu ve Bugün kartı, Performans › GÜNLÜK, widget ve Live
+  /// Activity — formül aynı olsa da — farklı rakam gösteriyordu (ölçüldü:
+  /// +₺140 / −₺260). Dünkü kapanış gün içinde değişmez; ilk ölçüm kalır.
+  ///
+  /// Eşik %0,25: yuvarlama titremesi (≈%0,01) çok altında; yeni seansın
+  /// tabanı (önceki kapanış değişti) ya da kaynak düzeltmesi bunun üstünde
+  /// kalır ve referans yenilenir. Gün değişince koşulsuz yenilenir.
+  static const gunlukReferansToleransi = 0.0025;
+
+  /// Saat kaynağı — testler sabitler (gün sınırı sınanabilsin).
+  @visibleForTesting
+  static DateTime Function() saat = DateTime.now;
+
   /// [symbol]'ün günlük yüzdesinin ölçüldüğü gün başı fiyatı — yoksa `null`.
   double? gunlukReferansFiyat(String symbol) =>
       _gunlukReferans[symbol.trim().toUpperCase()];
@@ -297,7 +322,17 @@ class PriceService {
     if (pct == null || !pct.isFinite) return;
     _gunlukDegisimPct[s] = pct;
     final taban = 1 + pct / 100.0;
-    if (taban > 0.01 && fiyat > 0) _gunlukReferans[s] = fiyat / taban;
+    if (taban <= 0.01 || fiyat <= 0) return;
+    final yeni = fiyat / taban;
+    final bugun = dayKey(saat());
+    final eski = _gunlukReferans[s];
+    if (eski != null &&
+        _gunlukReferansGunu[s] == bugun &&
+        ((yeni - eski) / eski).abs() < gunlukReferansToleransi) {
+      return; // gün içi titreme — ilk ölçüm kalır
+    }
+    _gunlukReferans[s] = fiyat / taban;
+    _gunlukReferansGunu[s] = bugun;
   }
 
   /// Testler için: bir kotasyonu ağa çıkmadan oturum belleğine yazar.
@@ -320,6 +355,7 @@ class PriceService {
     _sonKaynak.clear();
     _gunlukDegisimPct.clear();
     _gunlukReferans.clear();
+    _gunlukReferansGunu.clear();
     _birincilYukleme = null;
   }
 

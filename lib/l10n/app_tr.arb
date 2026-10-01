@@ -921,7 +921,7 @@
   },
   "retryLower": "Tekrar dene",
   "raceUpper": "YARIŞ",
-  "changeByTypeUpper": "TÜRE GÖRE DEĞİŞİM",
+  "changeByTypeUpper": "TÜRE GÖRE · PİYASANIN KATTIĞI",
   "noData": "Veri yok",
   "tooltipReturn": "\nGetiri ",
   "tooltipBuy": "\nAlım  +",
@@ -932,7 +932,7 @@
   "@chartTxBuy": {"description": "Grafik crosshair: çubuğa düşen alım işlemi — zaman ve birim fiyat.", "placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
   "chartTxSell": "Satış {when} · {price}",
   "@chartTxSell": {"placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
-  "tradeVolumeUpper": "İŞLEM HACMİ",
+  "tradeVolumeUpper": "ALIM · SATIŞ",
   "crosshairNetBuy": "Net alım +{amount}",
   "@crosshairNetBuy": {"placeholders": {"amount": {"type": "String"}}},
   "crosshairNetSell": "Net satış −{amount}",
@@ -1014,7 +1014,7 @@
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Mavi çubuk senin net paran: eklediğin eksi satıştan ve nakit temettüden çektiğin. Getiri sayılmaz; yüzde yalnızca piyasa çubuğundan hesaplanır, temettü piyasanın içindedir.",
+  "contributionNotReturn": "Yüzde yalnızca piyasanın kattığından hesaplanır. Temettü cebine girdiği için portföyden çıkış sayılır.",
   "annualRatePct": "{pct} yıllık",
   "@annualRatePct": {
     "placeholders": {
@@ -3536,5 +3536,247 @@
       }
     }
   },
-  "pensionAddExtraContribution": "Ek katkı ekle"
+  "pensionAddExtraContribution": "Ek katkı ekle",
+  "cpiSentenceMonth": "{month} ayında birikimin {change}, aylık enflasyon {cpi} oldu.",
+  "@cpiSentenceMonth": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiSentenceRange": "{start} - {end} arasında birikimin {change}, enflasyon {cpi} oldu.",
+  "@cpiSentenceRange": {
+      "placeholders": {
+          "start": {
+              "type": "String"
+          },
+          "end": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiSentenceYear": "Son bir yılda ({start} - {end}) birikimin {change}, enflasyon {cpi} oldu.",
+  "@cpiSentenceYear": {
+      "placeholders": {
+          "start": {
+              "type": "String"
+          },
+          "end": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiSentenceSinceFirstBuy": "İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.",
+  "@cpiSentenceSinceFirstBuy": {
+      "placeholders": {
+          "date": {
+              "type": "String"
+          },
+          "end": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "savingsRose": "{pct} arttı",
+  "@savingsRose": {
+      "placeholders": {
+          "pct": {
+              "type": "String"
+          }
+      }
+  },
+  "savingsFell": "{pct} azaldı",
+  "@savingsFell": {
+      "placeholders": {
+          "pct": {
+              "type": "String"
+          }
+      }
+  },
+  "savingsFlat": "değişmedi",
+  "purchasingPowerUp": "alım gücün arttı.",
+  "purchasingPowerDown": "alım gücün geriledi.",
+  "purchasingPowerKept": "alım gücün korundu.",
+  "cpiNextNote": "{month} TÜFE'si {date} tarihinde açıklanınca karşılaştırma {month} ayını da kapsar.",
+  "@cpiNextNote": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          },
+          "date": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiNextNoteLate": "{month} TÜFE'si yüklenince karşılaştırma {month} ayını da kapsar.",
+  "@cpiNextNoteLate": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiShortenedNote": "Bu kadar geriye giden TÜFE verisi yok; karşılaştırma {month} ayından başlıyor.",
+  "@cpiShortenedNote": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiHowComputed": "Nasıl hesaplandı",
+  "compoundRealReturn": "Bileşik reel getiri",
+  "cpiSourceLabel": "Kaynak",
+  "cpiSourceValue": "TÜİK TÜFE",
+  "vsInflationIn": "Enflasyona göre ({window})",
+  "@vsInflationIn": {
+      "placeholders": {
+          "window": {
+              "type": "String"
+          }
+      }
+  },
+  "investedRow": "Yatırdığın",
+  "marketAddedRow": "Piyasanın kattığı",
+  "dividendPocketRow": "Cebine aldığın temettü",
+  "flowBuyBalance": "Alım +{flow} · birikim {change}",
+  "@flowBuyBalance": {
+      "placeholders": {
+          "flow": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          }
+      }
+  },
+  "flowSellBalance": "Satış −{flow} · birikim {change}",
+  "@flowSellBalance": {
+      "placeholders": {
+          "flow": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          }
+      }
+  },
+  "ofLastNMonths": "Son {n} ayın",
+  "@ofLastNMonths": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "ofLastNWeeks": "Son {n} haftanın",
+  "@ofLastNWeeks": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "ofLastNYears": "Son {n} yılın",
+  "@ofLastNYears": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "inMonthPhrase": "{month} ayında",
+  "@inMonthPhrase": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "inWeekPhrase": "{date} haftasında",
+  "@inWeekPhrase": {
+      "placeholders": {
+          "date": {
+              "type": "String"
+          }
+      }
+  },
+  "inYearPhrase": "{year} yılında",
+  "@inYearPhrase": {
+      "placeholders": {
+          "year": {
+              "type": "String"
+          }
+      }
+  },
+  "singleContribution": "{period} yalnızca birinde para yatırdın: {bucket} {amount}.",
+  "@singleContribution": {
+      "placeholders": {
+          "period": {
+              "type": "String"
+          },
+          "bucket": {
+              "type": "String"
+          },
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "singleWithdrawal": "{bucket} {amount} çektin.",
+  "@singleWithdrawal": {
+      "placeholders": {
+          "bucket": {
+              "type": "String"
+          },
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "onlySalesInWindow": "Bu pencerede yeni para girmedi; satış var: {bucket} {amount}.",
+  "@onlySalesInWindow": {
+      "placeholders": {
+          "bucket": {
+              "type": "String"
+          },
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "onlySalesInWindowTotal": "Bu pencerede yeni para girmedi; toplam {amount} satış var.",
+  "@onlySalesInWindowTotal": {
+      "placeholders": {
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "marketPound": "Sterlin"
 }

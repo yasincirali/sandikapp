@@ -61,9 +61,15 @@ void main() {
     });
 
     test('veri hazır değilken iskelet çizilir', () {
-      expect(src.contains('if (!hasData || stale) _ozetIskeleti(context)'),
+      // Gün içi dal grafiğin kapılarını kullanır; gün dışı dallar kendi
+      // kanonik serisini ister ve o gelene kadar aynı iskeleti çizer
+      // (`_OzetSerisi`, 2026-10-01).
+      expect(src.contains('(!hasData || stale) ? _ozetIskeleti(context)'),
           isTrue,
           reason: 'yanlış sayı göstermektense iskelet göster');
+      expect(src.contains('_OzetSerisi('), isTrue,
+          reason: 'Özet grafiğin zoom serisine bağlı kalmamalı');
+      expect(src.contains('iskelet: _ozetIskeleti(context)'), isTrue);
     });
 
     test('iskelet gerçekten tanımlı', () {

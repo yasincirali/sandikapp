@@ -918,7 +918,7 @@
   },
   "retryLower": "Try again",
   "raceUpper": "RACE",
-  "changeByTypeUpper": "CHANGE BY TYPE",
+  "changeByTypeUpper": "BY TYPE · MARKET ADDED",
   "noData": "No data",
   "tooltipReturn": "\nReturn ",
   "tooltipBuy": "\nBuy  +",
@@ -929,7 +929,7 @@
   "@chartTxBuy": {"description": "Grafik crosshair: çubuğa düşen alım işlemi — zaman ve birim fiyat.", "placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
   "chartTxSell": "Sell {when} · {price}",
   "@chartTxSell": {"placeholders": {"when": {"type": "String"}, "price": {"type": "String"}}},
-  "tradeVolumeUpper": "TRADE VOLUME",
+  "tradeVolumeUpper": "BUYS · SELLS",
   "crosshairNetBuy": "Net buy +{amount}",
   "@crosshairNetBuy": {"placeholders": {"amount": {"type": "String"}}},
   "crosshairNetSell": "Net sell −{amount}",
@@ -1011,7 +1011,7 @@
   "marketWord": "Market",
   "cashDividend": "Of which cash dividends",
   "commissionPaid": "Commission paid",
-  "contributionNotReturn": "The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.",
+  "contributionNotReturn": "The percentage comes only from what the market added. Dividends count as money leaving the portfolio because they went to your pocket.",
   "annualRatePct": "{pct} a year",
   "@annualRatePct": {
     "placeholders": {
@@ -3350,5 +3350,247 @@
   "pensionAutoUpdatePlan": "Use this amount for the coming months too",
   "pensionAutoUpdated": "Contribution updated",
   "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added automatically. You can update the amount on the pension card.} other{{count} monthly pension contributions were added automatically. You can update the amount on the pension card.}}",
-  "pensionAddExtraContribution": "Add extra contribution"
+  "pensionAddExtraContribution": "Add extra contribution",
+  "cpiSentenceMonth": "In {month} your savings {change}; monthly inflation was {cpi}.",
+  "@cpiSentenceMonth": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiSentenceRange": "Between {start} and {end} your savings {change}; inflation was {cpi}.",
+  "@cpiSentenceRange": {
+      "placeholders": {
+          "start": {
+              "type": "String"
+          },
+          "end": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiSentenceYear": "Over the last year ({start} - {end}) your savings {change}; inflation was {cpi}.",
+  "@cpiSentenceYear": {
+      "placeholders": {
+          "start": {
+              "type": "String"
+          },
+          "end": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiSentenceSinceFirstBuy": "From your first purchase ({date}) to the end of {end} your savings {change}; inflation was {cpi}.",
+  "@cpiSentenceSinceFirstBuy": {
+      "placeholders": {
+          "date": {
+              "type": "String"
+          },
+          "end": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          },
+          "cpi": {
+              "type": "String"
+          }
+      }
+  },
+  "savingsRose": "grew {pct}",
+  "@savingsRose": {
+      "placeholders": {
+          "pct": {
+              "type": "String"
+          }
+      }
+  },
+  "savingsFell": "fell {pct}",
+  "@savingsFell": {
+      "placeholders": {
+          "pct": {
+              "type": "String"
+          }
+      }
+  },
+  "savingsFlat": "did not change",
+  "purchasingPowerUp": "your purchasing power grew.",
+  "purchasingPowerDown": "your purchasing power shrank.",
+  "purchasingPowerKept": "your purchasing power held steady.",
+  "cpiNextNote": "Once {month} CPI is published on {date}, the comparison will cover {month} too.",
+  "@cpiNextNote": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          },
+          "date": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiNextNoteLate": "Once {month} CPI is loaded, the comparison will cover {month} too.",
+  "@cpiNextNoteLate": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiShortenedNote": "CPI data does not go back that far; the comparison starts from {month}.",
+  "@cpiShortenedNote": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "cpiHowComputed": "How it was computed",
+  "compoundRealReturn": "Compound real return",
+  "cpiSourceLabel": "Source",
+  "cpiSourceValue": "TurkStat CPI",
+  "vsInflationIn": "Versus inflation ({window})",
+  "@vsInflationIn": {
+      "placeholders": {
+          "window": {
+              "type": "String"
+          }
+      }
+  },
+  "investedRow": "You put in",
+  "marketAddedRow": "Market added",
+  "dividendPocketRow": "Dividends you pocketed",
+  "flowBuyBalance": "Bought {flow} · balance {change}",
+  "@flowBuyBalance": {
+      "placeholders": {
+          "flow": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          }
+      }
+  },
+  "flowSellBalance": "Sold {flow} · balance {change}",
+  "@flowSellBalance": {
+      "placeholders": {
+          "flow": {
+              "type": "String"
+          },
+          "change": {
+              "type": "String"
+          }
+      }
+  },
+  "ofLastNMonths": "Of the last {n} months",
+  "@ofLastNMonths": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "ofLastNWeeks": "Of the last {n} weeks",
+  "@ofLastNWeeks": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "ofLastNYears": "Of the last {n} years",
+  "@ofLastNYears": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "inMonthPhrase": "in {month}",
+  "@inMonthPhrase": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "inWeekPhrase": "in the week of {date}",
+  "@inWeekPhrase": {
+      "placeholders": {
+          "date": {
+              "type": "String"
+          }
+      }
+  },
+  "inYearPhrase": "in {year}",
+  "@inYearPhrase": {
+      "placeholders": {
+          "year": {
+              "type": "String"
+          }
+      }
+  },
+  "singleContribution": "{period}, you put money in only once: {bucket}, {amount}.",
+  "@singleContribution": {
+      "placeholders": {
+          "period": {
+              "type": "String"
+          },
+          "bucket": {
+              "type": "String"
+          },
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "singleWithdrawal": "{bucket} you took out {amount}.",
+  "@singleWithdrawal": {
+      "placeholders": {
+          "bucket": {
+              "type": "String"
+          },
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "onlySalesInWindow": "No new money in this window; there were sales: {bucket} {amount}.",
+  "@onlySalesInWindow": {
+      "placeholders": {
+          "bucket": {
+              "type": "String"
+          },
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "onlySalesInWindowTotal": "No new money in this window; sales total {amount}.",
+  "@onlySalesInWindowTotal": {
+      "placeholders": {
+          "amount": {
+              "type": "String"
+          }
+      }
+  },
+  "marketPound": "GBP"
 }

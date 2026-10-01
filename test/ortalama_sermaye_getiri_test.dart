@@ -163,13 +163,19 @@ void main() {
       ));
       await t.pumpAndSettle();
 
-      // Başlık + çip (D2, 2026-10-01): ay adı çipte.
-      expect(find.text('Reel getiri'), findsOneWidget);
+      // Başlık Ana ekranla aynı + çip (D2, 2026-10-01): ay adı çipte.
+      expect(find.text('Enflasyona göre'), findsOneWidget);
       expect(find.text('Ağustos 2026'), findsOneWidget);
       expect(find.textContaining('son 1 ay'), findsNothing);
-      expect(find.textContaining('Ölçülen ay: Ağustos 2026'), findsOneWidget);
+      // Cümle de ayı adıyla söyler (2026-10-02 sadeleştirme).
+      expect(find.textContaining('Ağustos 2026 ayında birikimin'),
+          findsOneWidget);
       expect(find.textContaining('Temmuz'), findsNothing,
           reason: 'tek ay iki ay gibi okunmamalı');
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.textContaining('Ölçülen ay: Ağustos 2026'), findsOneWidget);
+      expect(find.textContaining('Temmuz'), findsNothing);
     });
   });
 }

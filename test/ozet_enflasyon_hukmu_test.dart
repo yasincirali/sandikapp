@@ -584,20 +584,27 @@ void main() {
         (t) async {
       await kur(t,
           ozet(SummaryPeriod.birAy, _hizali([ilk], agustos, aylikFiyat(103))));
-      // Başlık + aralık çipi (D2, 2026-10-01): tek ay ADIYLA, çipte.
-      expect(find.text('Reel getiri'), findsOneWidget);
+      // Başlık Ana ekranla aynı, aralık çipi tek ay ADIYLA (D2).
+      expect(find.text('Enflasyona göre'), findsOneWidget);
       expect(find.text('Ağustos 2026'), findsOneWidget);
       expect(find.text('▲'), findsWidgets);
-      expect(find.text('%0,49'), findsOneWidget);
+      // Ana sayı PUAN FARKI (2026-10-01 sadeleştirme); cümle pencere +
+      // iki girdi + hüküm.
+      // Aynı puan iki yerde: üst kartın enflasyon satırı + ayrıntı kartı
+      // başlığı (aynı sayı, farklı sayı değil — 2026-10-01).
+      expect(find.text('0,5 puan önde'), findsNWidgets(2));
       expect(
-          find.text(
-              'Portföyün enflasyonun üzerinde reel getiri sağladı, alım gücün arttı.'),
+          find.textContaining(
+              'Ağustos 2026 ayında birikimin %3,0 arttı, aylık enflasyon %2,5 oldu; alım gücün arttı.'),
           findsOneWidget);
+      expect(find.textContaining('alım gücün geriledi'), findsNothing);
+      // Ham girdiler ve bileşik reel katlanır bölümde.
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.text('+%0,49'), findsOneWidget);
       expect(find.text('+%3,00'), findsWidgets);
       expect(find.text('%2,50'), findsOneWidget);
-      expect(find.text('+0,5 puan'), findsOneWidget);
       expect(find.text('Ölçülen ay: Ağustos 2026'), findsOneWidget);
-      expect(find.textContaining('alım gücün geriledi'), findsNothing);
     });
 
     testWidgets('1A altında: ▼ %0,98 · −1,0 puan · "alım gücün geriledi"',
@@ -605,12 +612,15 @@ void main() {
       await kur(t,
           ozet(SummaryPeriod.birAy, _hizali([ilk], agustos, aylikFiyat(101.5))));
       expect(find.text('▼'), findsWidgets);
-      expect(find.text('%0,98'), findsOneWidget);
+      expect(find.text('1,0 puan geride'), findsNWidgets(2));
       expect(
-          find.text('Portföyün enflasyonun altında kaldı, alım gücün geriledi.'),
+          find.textContaining(
+              'birikimin %1,5 arttı, aylık enflasyon %2,5 oldu; alım gücün geriledi.'),
           findsOneWidget);
-      expect(find.text('−1,0 puan'), findsOneWidget);
       expect(find.textContaining('alım gücün arttı'), findsNothing);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.text('−%0,98'), findsOneWidget);
     });
 
     testWidgets('1A başa baş: "=" %0,00 · 0,0 puan · "alım gücün korundu"',
@@ -618,14 +628,13 @@ void main() {
       await kur(t,
           ozet(SummaryPeriod.birAy, _hizali([ilk], agustos, aylikFiyat(102.5))));
       expect(find.text('='), findsOneWidget);
-      expect(find.text('%0,00'), findsOneWidget);
-      expect(
-          find.text(
-              'Portföyün enflasyonla aynı oranda değerlendi, alım gücün korundu.'),
-          findsOneWidget);
-      expect(find.text('0,0 puan'), findsOneWidget);
+      expect(find.text('başa baş'), findsNWidgets(2));
+      expect(find.textContaining('alım gücün korundu'), findsOneWidget);
       expect(find.textContaining('alım gücün arttı'), findsNothing);
       expect(find.textContaining('alım gücün geriledi'), findsNothing);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.textContaining('%0,00'), findsOneWidget);
     });
 
     testWidgets('1Y yendi: çip "Ağu 25 - Ağu 26" · Ağustos 2025 - Ağustos 2026',
@@ -636,16 +645,21 @@ void main() {
           haftalik: true);
       await kur(t, ozet(SummaryPeriod.birYil, r));
       // Göreli "son 1 yıl" yerine ölçülen aralık (D2, 2026-10-01).
-      expect(find.text('Reel getiri'), findsOneWidget);
+      expect(find.text('Enflasyona göre'), findsOneWidget);
       expect(find.text('Ağu 25 - Ağu 26'), findsOneWidget);
       expect(find.textContaining('son 1 yıl'), findsNothing);
-      expect(find.text('%1,14'), findsOneWidget);
+      expect(find.text('1,5 puan önde'), findsNWidgets(2));
+      expect(
+          find.textContaining(
+              'Son bir yılda (Ağu 2025 - Ağu 2026) birikimin %33,0 arttı, enflasyon %31,5 oldu; alım gücün arttı.'),
+          findsOneWidget);
+      await t.tap(find.text('Nasıl hesaplandı'));
+      await t.pumpAndSettle();
+      expect(find.text('+%1,14'), findsOneWidget);
       expect(find.text('+%33,00'), findsWidgets);
       expect(find.text('%31,51'), findsOneWidget);
-      expect(find.text('+1,5 puan'), findsOneWidget);
       expect(find.text('Ölçüm aralığı: Ağustos 2025 - Ağustos 2026'),
           findsOneWidget);
-      expect(find.textContaining('alım gücün arttı'), findsOneWidget);
     });
 
     testWidgets('1Y başa baş: kayan nokta "altında kaldı" yazdırmaz',

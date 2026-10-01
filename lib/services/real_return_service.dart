@@ -90,6 +90,52 @@ class RealReturnService {
     InflationWindow w,
   ) async {
     if (assets.isEmpty) return null;
+    // ── Oturum içi hafıza (2026-10-01 emülatör testi) ──────────────────
+    // Pencere tamamen GEÇMİŞTE (son açıklanmış TÜFE ayının sonunda biter);
+    // canlı fiyat bu sayıya giremez. Yine de aynı pencere aynı lot'larla
+    // iki ayrı anda farklı çıkıyordu (+%36,92 → +%36,04): seri önbelleği
+    // 15 dk'da tazelenince altın/kur kalibrasyon çarpanı değişiyor, karışık
+    // portföyde uçların oranı kıpırdıyordu. Kullanıcı bunu "uygulama rakam
+    // uyduruyor" diye okur. Pencere + lot parmak izi başına sonuç bir kez
+    // hesaplanır; Ana kart ve Özet aynı girişi okur. Lot değişince
+    // (alım/satış/silme) parmak izi değişir ve yeniden hesaplanır.
+    final anahtar = _hafizaAnahtari(assets, w);
+    final hazir = _hafiza[anahtar];
+    if (hazir != null) return hazir;
+    final sonuc = await _hizaliGetiriHesapla(assets, w);
+    if (sonuc != null) {
+      _hafiza.remove(anahtar);
+      _hafiza[anahtar] = sonuc;
+      while (_hafiza.length > _hafizaUstSinir) {
+        _hafiza.remove(_hafiza.keys.first);
+      }
+    }
+    return sonuc;
+  }
+
+  static final Map<String, ({double nominal, double? reel})> _hafiza = {};
+  static const _hafizaUstSinir = 24;
+
+  /// Pencere uçları + lot parmak izi (id, tür, miktar, tarih). Fiyat
+  /// girmez: canlı fiyat geçmiş pencerenin sonucunu DEĞİŞTİRMEMELİ, bu
+  /// hafızanın var olma sebebi tam olarak bu.
+  static String _hafizaAnahtari(List<Asset> assets, InflationWindow w) {
+    final ids = [
+      for (final a in assets)
+        '${a.id}:${a.kind.name}:${a.quantity}:'
+            '${a.addedDate.millisecondsSinceEpoch}'
+    ]..sort();
+    return '${w.ilkAy.millisecondsSinceEpoch}|${w.sonAy.millisecondsSinceEpoch}'
+        '|${ids.join(',')}';
+  }
+
+  /// Hafızayı boşaltır — testler ve kullanıcı değişimi için.
+  static void hafizayiTemizle() => _hafiza.clear();
+
+  static Future<({double nominal, double? reel})?> _hizaliGetiriHesapla(
+    List<Asset> assets,
+    InflationWindow w,
+  ) async {
     final tier = ResolutionTierMeta.pickForSpan(
       w.seriBitisi.difference(w.seriBaslangici).inDays.toDouble(),
     );

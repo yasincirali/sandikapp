@@ -185,14 +185,16 @@ void main() {
 
       expect(find.text('Nereden geldi'), findsOneWidget);
       expect(find.text('Dönem başı'), findsOneWidget);
-      // "Net" (2026-10-01): nakit temettü de çıkış — `getiriAkisi`.
-      expect(find.text('Net katkın'), findsOneWidget);
-      expect(find.text('Piyasa'), findsOneWidget);
+      // "Yatırdığın" = alım − satış (2026-10-01): temettü ayrı çubukta,
+      // böylece Birikim disiplinin kartıyla aynı sayı.
+      expect(find.text('Yatırdığın'), findsOneWidget);
+      expect(find.text('Piyasanın kattığı'), findsOneWidget);
       expect(find.text('Şimdi'), findsOneWidget);
 
-      // Açıklama satırı: mavi çubuğun getiri OLMADIĞINI söylemek zorunda.
+      // Açıklama satırı: yüzdenin yalnızca piyasadan geldiğini söylemek
+      // zorunda.
       expect(
-        find.textContaining('senin net paran'),
+        find.textContaining('piyasanın kattığından'),
         findsOneWidget,
         reason: 'köprünün tek argümanı bu cümle — kaybolmamalı',
       );

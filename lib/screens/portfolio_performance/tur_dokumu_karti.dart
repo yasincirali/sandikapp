@@ -126,7 +126,14 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   /// aynı); satırlar da öyle, yoksa Σ satır üst rakamı tutmaz. Sıralama da
   /// bu sayıya göre — ham değişime göre sıralamak gün içinde "en çok
   /// kazandıran üstte" sözünü bozuyordu (kod incelemesi, 2026-09-24).
-  bool get _net => widget.intraday && !widget.simulate;
+  /// Satır her dönemde PİYASANIN KATTIĞINI gösterir (müşteri testi,
+  /// 2026-10-01). Eskiden yalnızca gün içinde arındırılıyor, diğer
+  /// dönemlerde ham birikim değişimi yazılıyordu: 1Y'de "Altın +%364,52",
+  /// "Hisse −%47,21" — altına ₺596K yatırılmış, hisseden ₺265K çıkılmıştı;
+  /// birikimci bunu "altın kazandırdı, hisse kaybettirdi" diye okudu. Şimdi
+  /// tutar ve yüzde piyasanın kattığı; alım/satış ve birikim değişimi alt
+  /// satırda yazılı durur. Simülasyonda akış yok, iki sayı aynı.
+  bool get _net => !widget.simulate;
   double _pnl(_BreakdownRow r) => r.change - (_net ? r.flow : 0);
 
   /// Tür satırları + her türün altındaki ürün satırları.
@@ -486,20 +493,16 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     // satıştı, piyasa kaybı değil. Akış varken birikim "artış/azalış" diye
     // okunur. Akış yoksa (ya da gün içinde arındırılmış rakamda) değişim
     // zaten piyasa etkisidir ve "kazanç/kayıp" doğrudur.
-    final birikimli = !_net && !widget.simulate && flow.abs() > 0.5;
+    // Satır artık her dönemde arındırılmış ([_net]); "kazanç/kayıp" doğru.
     final tutar = tryFmt.format(pnl.abs());
     final semanticLabel = [
       label,
       if (isFlat)
         context.l10n.noChangeLower
       else ...[
-        birikimli
-            ? (pnl >= 0
-                ? context.l10n.breakdownUpAmount(tutar)
-                : context.l10n.breakdownDownAmount(tutar))
-            : (pnl >= 0
-                ? context.l10n.gainAmount(tutar)
-                : context.l10n.lossAmount(tutar)),
+        pnl >= 0
+            ? context.l10n.gainAmount(tutar)
+            : context.l10n.lossAmount(tutar),
         if (pct != null) fmtPct(pct.abs(), digits: 2),
       ],
       if (!widget.simulate && flow.abs() > 0.5)
@@ -528,6 +531,10 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       ),
     );
   }
+
+  /// "+₺619.503" / "−₺174.590" — birikim değişimi işaretli yazılır.
+  static String _isaretli(ParaBicimi fmt, double v) =>
+      '${v >= 0 ? '+' : '−'}${fmt.format(v.abs())}';
 
   /// Satırın görsel gövdesi — semantik sarmalayıcıdan ayrı tutulur ki
   /// `ExcludeSemantics` altındaki ağaç sade kalsın.
@@ -566,14 +573,21 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                     ? context.t.bodySmall?.copyWith(color: context.c.text58)
                     : context.t.bodyMedium?.copyWith(color: context.c.text90),
               ),
-              // Gerçek modda dönem içi işlem varsa belirt. Simülasyonda bu
-              // satır hiç çıkmaz — orada miktar sabit sayılır.
+              // Gerçek modda dönem içi işlem varsa belirt: akış + birikim
+              // değişimi ("Alım +₺595.828 · birikim +₺619.503"). Üstteki
+              // sayı piyasanın kattığı; kullanıcı ikisini yan yana görür.
+              // Simülasyonda bu satır hiç çıkmaz — orada miktar sabit.
               if (!widget.simulate && flow.abs() > 0.5)
                 Text(
                   flow > 0
-                      ? context.l10n.flowBuyUpper(tryFmt.format(flow))
-                      : context.l10n.flowSellUpper(tryFmt.format(flow.abs())),
-                  maxLines: 1,
+                      ? context.l10n.flowBuyBalance(
+                          tryFmt.format(flow), _isaretli(tryFmt, pnl + flow))
+                      : context.l10n.flowSellBalance(
+                          tryFmt.format(flow.abs()),
+                          _isaretli(tryFmt, pnl + flow)),
+                  // İki satır: "Satış −₺265.048 · birikim −₺174.590" dar
+                  // sütuna sığmıyor, kesilince birikim okunmuyordu.
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.bodySmall
                       ?.copyWith(color: context.c.text36, fontSize: 11),

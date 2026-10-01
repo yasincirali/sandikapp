@@ -288,11 +288,23 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     // ekranda beklerken iskelet zaten beklenen görüntüdür; açılış turu
     // emülatörde 27 sn sürdü ve 30 sn'lik sınır eski defterle seri
     // kurmanın eşiğindeydi (2026-09-24).
+    //
+    // Seri ORTAK önbellekten (2026-10-02, "her yerde aynı olmalı"): Bugün
+    // kartı, widget ve kilit ekranı aynı kümeyi aynı yuvadan okur. Gün başı
+    // her çekimde canlı kotasyondan türetildiğinden iki ayrı çekim bir nabız
+    // boyunca farklı rakam üretiyordu (ölçüldü +₺66 / +₺40). Nabız yolu
+    // `zorla` ile gelir; aynı nabızda kartın çekimi bitmişse ona katılır
+    // (`IntradaySeriesCache.zorlaEsigi`).
+    final ownerId = ref.read(portfolioProvider).valueOrNull?.ownerId ?? '';
     _intradayFuture = ref
         .read(portfolioProvider.notifier)
         .fiyatTurunuVeKareyiBekle(enFazla: TazelikRitmi.gunIciSeriOmru)
-        .then((_) => HistoryService.instance.getPortfolioHistoryHourlyBreakdown(
-            _intradayKey == key ? _intradayAssets : chartAssets, 24))
+        .then((_) => IntradaySeriesCache.instance.breakdown(
+              _intradayKey == key ? _intradayAssets : chartAssets,
+              ownerId: ownerId,
+              azamiYas: TazelikRitmi.yuzey,
+              zorla: true,
+            ))
       ..then((v) {
         if (mounted && v.total.isNotEmpty) {
           _lastIntradayData = v;

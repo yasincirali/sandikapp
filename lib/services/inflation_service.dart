@@ -318,6 +318,47 @@ class InflationService {
     return InflationWindow(ilkAy: ilkAy, sonAy: sonAy, pct: pct);
   }
 
+  /// [pencere] gibi, ama ilk ay endekste YOKSA pencereyi veri olan en
+  /// erken aya (ve varsa [enErken] ayına) çeker.
+  ///
+  /// ## Neden (2026-10-01 emülatör testi, 5Y)
+  /// Beş yıllık dönemde `pencere(1825)` Ağustos 2021'i istiyor; tablo o
+  /// kadar geriye gitmiyor ve kart HİÇ çizilmiyordu — sebep de yazmıyordu.
+  /// Beş yıllık birikimcinin en önemli sorusu ("beş yılda eridim mi?")
+  /// sessizce boş kalıyordu. Uydurma yok: pencere kısaltılır ve bunun
+  /// kısaltıldığı [InflationWindow.kisaltildi] ile söylenir; ekran "veri
+  /// olan en uzun aralık" diye yazar.
+  ///
+  /// [enErken] kullanıcının ilk alım tarihi: ondan önceki aylar portföy
+  /// için anlamsız, pencere en fazla o aya kadar geri gider. Kısaltılmış
+  /// pencere en az bir ay olmalı; değilse `null`.
+  Future<InflationWindow?> pencereKapsayan(int gun,
+      {DateTime? now, DateTime? enErken}) async {
+    final tam = await pencere(gun, now: now);
+    final endeks = await _yukle();
+    if (endeks.isEmpty) return null;
+    final sonAy = endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+    final istenen = DateTime(sonAy.year, sonAy.month - aySayisi(gun), 1);
+    final enEskiEndeks = endeks.keys.reduce((a, b) => a.isBefore(b) ? a : b);
+    var taban = istenen.isBefore(enEskiEndeks) ? enEskiEndeks : istenen;
+    if (enErken != null) {
+      // İlk alımın AYI tabandır: endeks ayın ölçümü, pencere ayın sonundan
+      // başlar; ilk alımdan önceki ay sonu portföy için sıfır noktasıdır.
+      final ilkAlimAyi = DateTime(enErken.year, enErken.month - 1, 1);
+      if (ilkAlimAyi.isAfter(taban)) taban = ilkAlimAyi;
+    }
+    if (tam != null && !taban.isAfter(tam.ilkAy)) return tam;
+    if (!taban.isBefore(sonAy)) return null;
+    final bugun = now ?? DateTime.now();
+    final gecenAy =
+        (bugun.year - sonAy.year) * 12 + (bugun.month - sonAy.month);
+    if (gecenAy > bayatlikEsigiAy) return null;
+    final pct = changePct(endeks, taban, sonAy);
+    if (pct == null) return null;
+    return InflationWindow(
+        ilkAy: taban, sonAy: sonAy, pct: pct, kisaltildi: true);
+  }
+
   /// Son açıklanmış ayın AYLIK TÜFE değişimi (bir önceki aya göre).
   ///
   /// Aylık özetin sorusu yıllıktan farklı: "bu ay eridim mi". Yıllık TÜFE
@@ -359,11 +400,17 @@ class InflationWindow {
     required this.ilkAy,
     required this.sonAy,
     required this.pct,
+    this.kisaltildi = false,
   });
 
   /// Pencerenin ilk ayı (endeks anahtarı — ayın 1'i). Bu ayın ENDEKSİ taban
   /// alınır, yani karşılaştırma bu ayın SONUNDAN başlar ([seriBaslangici]).
   final DateTime ilkAy;
+
+  /// İstenen dönem endekste (ya da portföyde) yoktu ve pencere veri olan
+  /// en erken aya çekildi (`InflationService.pencereKapsayan`). Ekran bunu
+  /// söyler; sessizce kısa bir pencereyi uzun dönem diye sunmaz.
+  final bool kisaltildi;
 
   /// Pencerenin son ayı — son açıklanmış TÜFE ayı.
   final DateTime sonAy;

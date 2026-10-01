@@ -224,10 +224,18 @@ class PeriodSummary {
   /// `null`.
   final ({int artida, int toplam})? gunSayimi;
 
+  /// Kapsamdaki İLK alımın tarihi. Dönem penceresi ([start]) bundan
+  /// ESKİYSE ekran aralık çipini buradan başlatır (2026-10-01 emülatör
+  /// testi: 5Y çipi "1 Eki 21 – bugün · Dönem başı ₺137.500" yazıyordu,
+  /// oysa ilk alım 14 Eyl 2023 — 2021'de portföy yoktu; Grafik kartı
+  /// doğru tarihi yazıyordu, Özet yazmıyordu). Lot yoksa `null`.
+  final DateTime? ilkAlim;
+
   const PeriodSummary({
     required this.period,
     required this.start,
     required this.end,
+    this.ilkAlim,
     this.baslangicTRY,
     this.sonTRY,
     this.katkiTRY,
@@ -912,6 +920,18 @@ class PeriodSummaryService {
   /// widget, Live Activity, üst kart ve bu sekme aynı rakamı göstermek
   /// ZORUNDA (bkz. `daily_summary.dart` "Değişmezler"). Burada ayrı bir
   /// formül kurmak o değişmezi sessizce kırardı.
+  /// Kapsamdaki ilk AKTİF alımın tarihi; alım yoksa `null`.
+  /// Grafik kartının "ilk alımdan itibaren çiz" kuralıyla aynı kaynak
+  /// (`effectiveStart`): iki yüzey aynı tarihi yazsın.
+  static DateTime? ilkAlimTarihi(List<Asset> lotlar) {
+    DateTime? ilk;
+    for (final a in lotlar) {
+      if (!a.isBuy || !a.isActive) continue;
+      if (ilk == null || a.addedDate.isBefore(ilk)) ilk = a.addedDate;
+    }
+    return ilk;
+  }
+
   static PeriodSummary compute({
     required SummaryPeriod period,
     required List<Asset> assets,
@@ -1104,6 +1124,7 @@ class PeriodSummaryService {
       period: period,
       start: p.start,
       end: p.end,
+      ilkAlim: ilkAlimTarihi(assets),
       baslangicTRY: pe.ilk,
       sonTRY: pe.son,
       katkiTRY: katki,

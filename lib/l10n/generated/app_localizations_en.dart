@@ -1627,7 +1627,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceUpper => 'RACE';
 
   @override
-  String get changeByTypeUpper => 'CHANGE BY TYPE';
+  String get changeByTypeUpper => 'BY TYPE · MARKET ADDED';
 
   @override
   String get noData => 'No data';
@@ -1658,7 +1658,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tradeVolumeUpper => 'TRADE VOLUME';
+  String get tradeVolumeUpper => 'BUYS · SELLS';
 
   @override
   String crosshairNetBuy(String amount) {
@@ -1826,7 +1826,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'The blue bar is your net money: what you added minus what you took out through sales and cash dividends. It is not a return; the percentage comes only from the market bar, which includes dividends.';
+      'The percentage comes only from what the market added. Dividends count as money leaving the portfolio because they went to your pocket.';
 
   @override
   String annualRatePct(String pct) {
@@ -5095,4 +5095,151 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pensionAddExtraContribution => 'Add extra contribution';
+
+  @override
+  String cpiSentenceMonth(String month, String change, String cpi) {
+    return 'In $month your savings $change; monthly inflation was $cpi.';
+  }
+
+  @override
+  String cpiSentenceRange(String start, String end, String change, String cpi) {
+    return 'Between $start and $end your savings $change; inflation was $cpi.';
+  }
+
+  @override
+  String cpiSentenceYear(String start, String end, String change, String cpi) {
+    return 'Over the last year ($start - $end) your savings $change; inflation was $cpi.';
+  }
+
+  @override
+  String cpiSentenceSinceFirstBuy(
+      String date, String end, String change, String cpi) {
+    return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
+  }
+
+  @override
+  String savingsRose(String pct) {
+    return 'grew $pct';
+  }
+
+  @override
+  String savingsFell(String pct) {
+    return 'fell $pct';
+  }
+
+  @override
+  String get savingsFlat => 'did not change';
+
+  @override
+  String get purchasingPowerUp => 'your purchasing power grew.';
+
+  @override
+  String get purchasingPowerDown => 'your purchasing power shrank.';
+
+  @override
+  String get purchasingPowerKept => 'your purchasing power held steady.';
+
+  @override
+  String cpiNextNote(String month, String date) {
+    return 'Once $month CPI is published on $date, the comparison will cover $month too.';
+  }
+
+  @override
+  String cpiNextNoteLate(String month) {
+    return 'Once $month CPI is loaded, the comparison will cover $month too.';
+  }
+
+  @override
+  String cpiShortenedNote(String month) {
+    return 'CPI data does not go back that far; the comparison starts from $month.';
+  }
+
+  @override
+  String get cpiHowComputed => 'How it was computed';
+
+  @override
+  String get compoundRealReturn => 'Compound real return';
+
+  @override
+  String get cpiSourceLabel => 'Source';
+
+  @override
+  String get cpiSourceValue => 'TurkStat CPI';
+
+  @override
+  String vsInflationIn(String window) {
+    return 'Versus inflation ($window)';
+  }
+
+  @override
+  String get investedRow => 'You put in';
+
+  @override
+  String get marketAddedRow => 'Market added';
+
+  @override
+  String get dividendPocketRow => 'Dividends you pocketed';
+
+  @override
+  String flowBuyBalance(String flow, String change) {
+    return 'Bought $flow · balance $change';
+  }
+
+  @override
+  String flowSellBalance(String flow, String change) {
+    return 'Sold $flow · balance $change';
+  }
+
+  @override
+  String ofLastNMonths(String n) {
+    return 'Of the last $n months';
+  }
+
+  @override
+  String ofLastNWeeks(String n) {
+    return 'Of the last $n weeks';
+  }
+
+  @override
+  String ofLastNYears(String n) {
+    return 'Of the last $n years';
+  }
+
+  @override
+  String inMonthPhrase(String month) {
+    return 'in $month';
+  }
+
+  @override
+  String inWeekPhrase(String date) {
+    return 'in the week of $date';
+  }
+
+  @override
+  String inYearPhrase(String year) {
+    return 'in $year';
+  }
+
+  @override
+  String singleContribution(String period, String bucket, String amount) {
+    return '$period, you put money in only once: $bucket, $amount.';
+  }
+
+  @override
+  String singleWithdrawal(String bucket, String amount) {
+    return '$bucket you took out $amount.';
+  }
+
+  @override
+  String onlySalesInWindow(String bucket, String amount) {
+    return 'No new money in this window; there were sales: $bucket $amount.';
+  }
+
+  @override
+  String onlySalesInWindowTotal(String amount) {
+    return 'No new money in this window; sales total $amount.';
+  }
+
+  @override
+  String get marketPound => 'GBP';
 }
