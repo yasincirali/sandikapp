@@ -179,6 +179,145 @@ void main() {
         reason: 'Akarken parmak bandı 200 pt ötelememeli.');
   });
 
+  // ── Boşta durma (2026-10-01, CPU/GPU raporu) ─────────────────────────
+  // Bant dokunulmadan iki tur aktıktan sonra yavaşlayıp durur; dokunuş,
+  // öne geliş ve sekmeye dönüş yeniden akıtır. Akarken kare hızı değişmez.
+
+  testWidgets('dokunuşsuz boşta süresi dolunca bant yumuşakça durur',
+      (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    expect(b.akiyor, isTrue);
+
+    // Süre dolmadan hemen önce tam hızda.
+    await tester.pump(PiyasaSeridi.bostaSuresi - const Duration(seconds: 1));
+    final a1 = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a1) / 0.5, closeTo(PiyasaSeridi.hiz, 1),
+        reason: 'Boşta süresi dolana kadar akış hızı sabit.');
+    expect(b.bostaDurdu, isFalse);
+
+    // Süre dolar: hız düşer ama kayma geri gitmez, sıçramaz.
+    await tester.pump(const Duration(seconds: 1));
+    final once = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 300));
+    final adim1 = b.kaydirma - once;
+    await tester.pump(const Duration(milliseconds: 300));
+    final adim2 = b.kaydirma - once - adim1;
+    expect(adim1, greaterThan(0));
+    expect(adim2, greaterThan(0));
+    expect(adim2, lessThan(adim1), reason: 'Yavaşlama üstel: adımlar küçülür.');
+    expect(adim1, lessThan(PiyasaSeridi.hiz * 0.3),
+        reason: 'Sert durma yok: ilk 300 ms zaten tam hızın altında.');
+
+    // Birkaç zaman sabiti sonra ticker durmuştur, kayma sabit.
+    await tester.pump(const Duration(seconds: 5));
+    expect(b.akiyor, isFalse);
+    expect(b.bostaDurdu, isTrue);
+    final durus = b.kaydirma;
+    await tester.pump(const Duration(seconds: 1));
+    expect(b.kaydirma, durus, reason: 'Durunca kare üretilmez.');
+  });
+
+  testWidgets('durmuş banda dokunuş yeniden akıtır; kalkış yumuşak',
+      (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    // İki kare: ilki süreyi doldurup sönmeye geçer, ikincisi sönmeyi bitirir.
+    await tester.pump(PiyasaSeridi.bostaSuresi + const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 6));
+    expect(b.bostaDurdu, isTrue);
+
+    // Kısa dokunuş (uzun basış değil): Listener parmak iner inmez uyandırır.
+    final durus = b.kaydirma;
+    await tester.tap(find.byType(KayanBant));
+    await tester.pump();
+    expect(b.akiyor, isTrue);
+    expect(b.bostaDurdu, isFalse);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(b.kaydirma - durus, lessThan(PiyasaSeridi.hiz * 0.1),
+        reason: 'Sıfırdan hıza yumuşak çıkış, sıçrama yok.');
+    await tester.pump(const Duration(seconds: 3));
+    final a = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a) / 0.5, closeTo(PiyasaSeridi.hiz, 1),
+        reason: 'Dokunuştan sonra akış hızına döner.');
+  });
+
+  testWidgets('akarken dokunuş boşta saatini sıfırlar', (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    await tester.pump(PiyasaSeridi.bostaSuresi - const Duration(seconds: 2));
+    await tester.tap(find.byType(KayanBant));
+    await tester.pump();
+    // Dokunuş olmasaydı 2 sn sonra yavaşlamaya girerdi.
+    await tester.pump(const Duration(seconds: 10));
+    final a = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a) / 0.5, closeTo(PiyasaSeridi.hiz, 1),
+        reason: 'Dokunuştan 10 sn sonra hâlâ tam hızda akmalı.');
+    expect(b.bostaDurdu, isFalse);
+  });
+
+  testWidgets('gizli sekmeden dönüş bandı uyandırır, saat sıfırlanır',
+      (tester) async {
+    tester.view.physicalSize = const Size(320 * 3, 200 * 3);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    Future<void> kur(bool acik) => tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData.dark(),
+            home: Scaffold(
+              body: TickerMode(
+                enabled: acik,
+                child: const KayanBant(ogeler: ogeler),
+              ),
+            ),
+          ),
+        );
+    await kur(true);
+    await tester.pump();
+    final b = bant(tester);
+    expect(b.akiyor, isTrue);
+
+    // Sekme gizlenir: ticker susar, ama saat akmaya devam eder (gerçek
+    // cihazda arka planda/gizli sekmede kare yok, dönüşte zaman sıçrar).
+    await kur(false);
+    await tester.pump(PiyasaSeridi.bostaSuresi + const Duration(seconds: 10));
+    await kur(true);
+    await tester.pump();
+    expect(b.akiyor, isTrue, reason: 'Sekmeye dönüş: bant akar.');
+    await tester.pump(const Duration(seconds: 5));
+    final a = b.kaydirma;
+    await tester.pump(const Duration(milliseconds: 500));
+    expect((b.kaydirma - a) / 0.5, closeTo(PiyasaSeridi.hiz, 1),
+        reason: 'Dönüşten 5 sn sonra hâlâ akıyor: boşta saati sıfırlanmış.');
+  });
+
+  testWidgets('öne geliş durmuş bandı uyandırır', (tester) async {
+    await pump(tester);
+    final b = bant(tester);
+    // İki kare: ilki süreyi doldurup sönmeye geçer, ikincisi sönmeyi bitirir.
+    await tester.pump(PiyasaSeridi.bostaSuresi + const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 6));
+    expect(b.bostaDurdu, isTrue);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(b.akiyor, isTrue);
+    expect(b.bostaDurdu, isFalse);
+  });
+
+  testWidgets('hareketi azalt açıkken dokunuş bandı akıtmaz', (tester) async {
+    await pump(tester, hareketiAzalt: true);
+    final b = bant(tester);
+    await tester.tap(find.byType(KayanBant));
+    await tester.pump();
+    expect(b.akiyor, isFalse);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    expect(b.akiyor, isFalse);
+  });
+
   testWidgets('kayma yalnızca boyar: sürüklerken widget ağacı yeniden kurulmaz',
       (tester) async {
     await pump(tester, hareketiAzalt: true);
