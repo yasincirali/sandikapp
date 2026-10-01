@@ -1,0 +1,65 @@
+name: iOS — Match parolasını değiştir (tek seferlik)
+
+# Sertifika deposunu (MATCH_GIT_URL) eski paroladan yeni parolaya yeniden
+# şifreler. Neden: MATCH_PASSWORD 2026-10-01'de herkese açık iOS — TestFlight
+# günlüğüne basıldı (#46 bunu durdurdu, ama açığa çıkan değer değişmeli).
+# `fastlane match change_password` etkileşimli olduğu için CI'da koşmuyor;
+# `match_parola_degistir` lane'i aynı adımları ortamdaki parolalarla yapar.
+#
+# Sıra (YAPMAN_GEREKENLER.md "MATCH_PASSWORD'Ü DEĞİŞTİR"):
+#   1. `openssl rand -hex 32` → GitHub secret MATCH_PASSWORD_YENI
+#   2. Bu iş akışı, onay = DEGISTIR
+#   3. Yeşilse HEMEN: MATCH_PASSWORD = aynı değer; MATCH_PASSWORD_YENI sil
+#   4. iOS — TestFlight → Run workflow ile doğrula
+# 2 ile 3 arasında iOS derlemesi sertifikayı çözemez — arada main'e
+# birleştirme yapma.
+#
+# Ubuntu yeter: match'in şifrelemesi saf OpenSSL (Ruby), keychain gerekmez.
+
+on:
+  workflow_dispatch:
+    inputs:
+      onay:
+        description: "Sertifika deposu yeniden şifrelenecek. Onay için DEGISTIR yaz"
+        required: true
+        type: string
+
+# Kendi grubu: ios-testflight'ın grubuna girse onun cancel-in-progress'i bu
+# işi push ortasında iptal edebilirdi.
+concurrency:
+  group: match-parola-degistir
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  degistir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Onay
+        env:
+          ONAY: ${{ inputs.onay }}
+        run: |
+          if [ "$ONAY" != "DEGISTIR" ]; then echo "::error::Onay için DEGISTIR yazılmalı"; exit 1; fi
+
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby (fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Parolayı değiştir ve doğrula
+        working-directory: ios
+        env:
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_GIT_BASIC_AUTH: ${{ secrets.MATCH_GIT_BASIC_AUTH }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_PASSWORD_YENI: ${{ secrets.MATCH_PASSWORD_YENI }}
+          FASTLANE_SKIP_UPDATE_CHECK: '1'
+          FASTLANE_HIDE_CHANGELOG: '1'
+        run: bundle exec fastlane ios match_parola_degistir

@@ -209,6 +209,96 @@ platform :ios do
   end
 
   # ─────────────────────────────────────────────────────────────────────────
+  # match_parola_degistir
+  # ─────────────────────────────────────────────────────────────────────────
+  # MATCH_PASSWORD 2026-10-01'de herkese açık Actions günlüğüne basıldı (#46).
+  # `fastlane match change_password` yeni parolayı ETKİLEŞİMLİ sorar, CI'da
+  # koşmaz; geliştirici makinesinde de Ruby yok. Bu lane aynı adımları
+  # (match/lib/match/change_password.rb) parolaları ortamdan alarak yapar:
+  # eski = MATCH_PASSWORD, yeni = MATCH_PASSWORD_YENI.
+  #
+  # İki doğrulama: depoya yazmadan ÖNCE yeni parolayla geri çözülebiliyor mu
+  # (kopyada), yazdıktan SONRA depo baştan indirilip yeni parolayla çözülüyor
+  # mu. Yazma başarılıysa GitHub'daki MATCH_PASSWORD hemen yeni değere
+  # güncellenmeli — o ana kadar iOS derlemeleri sertifikayı çözemez.
+  desc "Match sertifika deposunun parolasını değiştir (CI, etkileşimsiz)"
+  lane :match_parola_degistir do
+    require "match"
+    require "tmpdir"
+
+    eski = ENV["MATCH_PASSWORD"].to_s
+    yeni = ENV["MATCH_PASSWORD_YENI"].to_s
+    UI.user_error!("MATCH_PASSWORD (eski parola) eksik") if eski.empty?
+    UI.user_error!("MATCH_PASSWORD_YENI secret'ı eksik") if yeni.empty?
+    UI.user_error!("Yeni parola eskisiyle aynı") if yeni == eski
+    # Yalnız harf/rakam: eski parolada kabuk kaçışı (`\#`, `\&`) değeri
+    # değiştirdi ve GitHub maskesi tutmadı (#46).
+    unless yeni.match?(/\A[A-Za-z0-9]{32,}\z/)
+      UI.user_error!("Yeni parola en az 32 karakter ve yalnız harf/rakam olmalı (openssl rand -hex 32)")
+    end
+
+    params = FastlaneCore::Configuration.create(Match::Options.available_options, {
+      storage_mode: "git",
+      type: "appstore",
+      git_url: ENV["MATCH_GIT_URL"],
+      git_basic_authorization: ENV["MATCH_GIT_BASIC_AUTH"],
+      # Runner'da git kimliği yok; commit için şart.
+      git_full_name: "sandik-ci",
+      git_user_email: "41898282+github-actions[bot]@users.noreply.github.com",
+      readonly: false
+    })
+    sifreleme = lambda do |dizin|
+      Match::Encryption.for_storage_mode("git", {
+        git_url: params[:git_url],
+        s3_bucket: nil,
+        s3_skip_encryption: false,
+        working_directory: dizin,
+        force_legacy_encryption: false
+      })
+    end
+    # decrypt_files parolayı yalnız ENV'den okur.
+    parolayla = lambda do |parola, &blok|
+      onceki = ENV["MATCH_PASSWORD"]
+      begin
+        ENV["MATCH_PASSWORD"] = parola
+        blok.call
+      ensure
+        ENV["MATCH_PASSWORD"] = onceki
+      end
+    end
+
+    dosyalar = []
+    storage = Match::Storage.from_params(params)
+    begin
+      storage.download
+      enc = sifreleme.call(storage.working_directory)
+      parolayla.call(eski) { enc.decrypt_files }
+      dosyalar = enc.encrypt_files(password: yeni)
+      UI.user_error!("Depoda şifreli dosya yok — yanlış depo?") if dosyalar.empty?
+
+      Dir.mktmpdir do |kopya|
+        FileUtils.cp_r(File.join(storage.working_directory, "."), kopya)
+        parolayla.call(yeni) { sifreleme.call(kopya).decrypt_files }
+      end
+
+      storage.save_changes!(files_to_commit: dosyalar,
+                            custom_message: "[fastlane] Changed passphrase (CI)")
+    ensure
+      storage.clear_changes
+    end
+
+    kontrol = Match::Storage.from_params(params)
+    begin
+      kontrol.download
+      parolayla.call(yeni) { sifreleme.call(kontrol.working_directory).decrypt_files }
+    ensure
+      kontrol.clear_changes
+    end
+    UI.success("Parola değişti ve doğrulandı (#{dosyalar.count} dosya). " \
+               "ŞİMDİ GitHub secret MATCH_PASSWORD'ü MATCH_PASSWORD_YENI ile aynı yap.")
+  end
+
+  # ─────────────────────────────────────────────────────────────────────────
   # beta
   # ─────────────────────────────────────────────────────────────────────────
   # Her main push'ta: match readonly ile signing hazırla, Flutter release
