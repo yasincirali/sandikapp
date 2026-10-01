@@ -110,9 +110,9 @@ Claude'un dağıtımını reddetti):
       kapalı, kapı HMAC). Not: `curl -I` HEAD gönderir → 405, ölçüt değil.
 - [x] **Ayrı token:** GitHub secret `SUPABASE_ACCESS_TOKEN_EU` (yalnız
       `sandikapp-eu` projesi, 2026-10-01). Deploy'un Frankfurt hedefi, eşitlik
-      işi ve günlük `sema-esitlik.yml` onu kullanır — **PR #51 birleşince**.
-      O zamana kadar Actions'ta Frankfurt hedefi ve günlük eşitlik 403 verir.
-- [ ] **PR #51'i birleştir** (yalnız CI; `_EU` yoksa ortak token'a düşer).
+      işi ve günlük `sema-esitlik.yml` onu kullanır (PR #51, birleşti).
+      Doğrulama: `sema-esitlik.yml` koşu 36889658665 yeşil, iki taraf 1129
+      satır, ŞEMA EŞİT — Actions artık Frankfurt'a erişiyor.
 
 Frankfurt geçişe kadar canlı değil (cron kapalı), müşteri etkilenmez.
 
