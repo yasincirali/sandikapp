@@ -4877,4 +4877,65 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get kiyasVeriYok =>
       'Price data for the comparison is unavailable right now.';
+
+  @override
+  String get pensionDayHint => 'e.g. 15';
+
+  @override
+  String get pensionDayNote =>
+      'The day your monthly contribution is taken from your account. At most 28 because days 29-31 don\'t exist in every month; if it\'s taken at month-end, enter 28.';
+
+  @override
+  String get pensionDayError => 'Enter a day between 1 and 28.';
+
+  @override
+  String get pensionAuto => 'Add contribution automatically';
+
+  @override
+  String get pensionAutoNote =>
+      'On the contribution day we add your monthly contribution at that day\'s fund price, then ask you to confirm the amount. If off, we only remind you.';
+
+  @override
+  String get pensionAutoNeedsPlan =>
+      'Enter the monthly contribution and day to add it automatically.';
+
+  @override
+  String get pensionAutoLotNote => 'Automatic contribution';
+
+  @override
+  String pensionAutoAdded(String date, String amount) {
+    return 'Your $date contribution was added automatically: $amount. Want to update the amount?';
+  }
+
+  @override
+  String get pensionAutoConfirm => 'Amount is right';
+
+  @override
+  String get pensionAutoUpdate => 'Update amount';
+
+  @override
+  String get pensionAutoUpdateTitle => 'Update automatic contribution';
+
+  @override
+  String get pensionAutoUpdatePlan =>
+      'Use this amount for the coming months too';
+
+  @override
+  String get pensionAutoUpdated => 'Contribution updated';
+
+  @override
+  String pensionAutoSnack(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count monthly pension contributions were added automatically. You can update the amount on the pension card.',
+      one:
+          'Your pension contribution was added automatically. You can update the amount on the pension card.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pensionAddExtraContribution => 'Add extra contribution';
 }

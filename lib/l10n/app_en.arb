@@ -3229,5 +3229,20 @@
   "kiyasSenin": "Your portfolio",
   "kiyasBasaBas": "Even",
   "kiyasTemettuNotu": "Cash dividends this period count as money paid out to you on both sides.",
-  "kiyasVeriYok": "Price data for the comparison is unavailable right now."
+  "kiyasVeriYok": "Price data for the comparison is unavailable right now.",
+  "pensionDayHint": "e.g. 15",
+  "pensionDayNote": "The day your monthly contribution is taken from your account. At most 28 because days 29-31 don't exist in every month; if it's taken at month-end, enter 28.",
+  "pensionDayError": "Enter a day between 1 and 28.",
+  "pensionAuto": "Add contribution automatically",
+  "pensionAutoNote": "On the contribution day we add your monthly contribution at that day's fund price, then ask you to confirm the amount. If off, we only remind you.",
+  "pensionAutoNeedsPlan": "Enter the monthly contribution and day to add it automatically.",
+  "pensionAutoLotNote": "Automatic contribution",
+  "pensionAutoAdded": "Your {date} contribution was added automatically: {amount}. Want to update the amount?",
+  "pensionAutoConfirm": "Amount is right",
+  "pensionAutoUpdate": "Update amount",
+  "pensionAutoUpdateTitle": "Update automatic contribution",
+  "pensionAutoUpdatePlan": "Use this amount for the coming months too",
+  "pensionAutoUpdated": "Contribution updated",
+  "pensionAutoSnack": "{count, plural, =1{Your pension contribution was added automatically. You can update the amount on the pension card.} other{{count} monthly pension contributions were added automatically. You can update the amount on the pension card.}}",
+  "pensionAddExtraContribution": "Add extra contribution"
 }

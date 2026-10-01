@@ -1,4 +1,5 @@
 import '../models/sozlesme.dart';
+import '../utils/tr_format.dart';
 
 /// BES kuralları — hak ediş, devlet katkısı oranı ve yıllık sınır.
 ///
@@ -246,7 +247,56 @@ abstract final class BesHesabi {
     final gun = s.katkiGunu;
     if (s.aylikKatki == null || gun == null || !s.acik) return false;
     if (simdi.day < gun) return false;
-    return !katkiTarihleri
-        .any((t) => t.year == simdi.year && t.month == simdi.month);
+    return !buAyKatkiVar(katkiTarihleri, simdi);
+  }
+
+  /// Bu takvim ayında katkı yazıldı mı. Kartın düğmesi buna göre "bu ayın
+  /// katkısı" ya da "ek katkı" der: eklendikten sonra da "Bu ayın katkısını
+  /// ekle" yazınca aynı ay ikinci kez ekleniyordu (emülatör testi,
+  /// 2026-10-01).
+  static bool buAyKatkiVar(Iterable<DateTime> katkiTarihleri, DateTime simdi) =>
+      katkiTarihleri
+          .any((t) => t.year == simdi.year && t.month == simdi.month);
+
+  /// Otomatik katkının yazılacağı günler (kullanıcı isteği 2026-10-01:
+  /// *"tarihe göre, miktar değişmediği sürece ekleyelim ve yatırma günü
+  /// de"*).
+  ///
+  /// İmleçten ([Sozlesme.otomatikKatkiSon]) SONRA gelen, bugün dahil her
+  /// ayın katkı günü. O takvim ayında zaten katkı varsa (kullanıcı elle
+  /// eklediyse) ay atlanır: aynı ayın katkısı iki kez yazılmaz. Uygulama
+  /// aylarca açılmadıysa her ay KENDİ günüyle döner, bugüne yığılmaz. En
+  /// çok [enFazla] ay: bozuk bir imleç yıllarca geriye katkı yazmasın.
+  static List<DateTime> otomatikKatkiGunleri({
+    required Sozlesme s,
+    required DateTime simdi,
+    required Iterable<DateTime> katkiTarihleri,
+    int enFazla = 24,
+  }) {
+    final gun = s.katkiGunu;
+    final son = s.otomatikKatkiSon;
+    if (!s.otomatikKatki ||
+        !s.acik ||
+        gun == null ||
+        son == null ||
+        (s.aylikKatki ?? 0) <= 0) {
+      return const [];
+    }
+    final bugun = dayKey(simdi);
+    final imlec = dayKey(son);
+    final dolu = {for (final t in katkiTarihleri) t.year * 12 + t.month};
+    final out = <DateTime>[];
+    var y = son.year;
+    var m = son.month;
+    while (out.length < enFazla) {
+      final d = DateTime(y, m, gun);
+      if (d.isAfter(bugun)) break;
+      if (d.isAfter(imlec) && !dolu.contains(y * 12 + m)) out.add(d);
+      if (++m > 12) {
+        m = 1;
+        y++;
+      }
+    }
+    return out;
   }
 }

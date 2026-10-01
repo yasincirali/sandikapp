@@ -84,6 +84,22 @@ portföy akşam 18:40 cron'unu beklemeden o an ölçülür. Uygunluk şartları 
 - [x] Sıra: ÖNCE `leaderboard-snapshot`, SONRA 0094 — Tokyo Actions
       (15:16 fonksiyon, 15:18 migration), Frankfurt yerel CLI (aynı sıra).
 
+## ⏳ 2026-10-01 BES otomatik katkı (0096): dal `feat/bes-otomatik-katki`, push YOK
+
+İstek: katkı günü gelince aylık katkı o günün fon fiyatıyla kendiliğinden
+eklensin, sonra "otomatik eklendi, tutarı güncellemek ister misin?" diye
+sorulsun. Ekleme uygulamada yapılır (açılışta ve öne dönüşte), sunucuda cron yok.
+
+- [ ] **Cihazda dene** (emülatör çizmiyor): BES ekle → aylık katkı + katkı
+      günü + "Katkıyı otomatik ekle" açık. Var olan BES'te kartın altındaki
+      anahtarı aç: bu ayın günü geçtiyse ve bu ay katkı yoksa hemen eklenmeli,
+      kartta sarı soru kutusu çıkmalı. "Tutarı güncelle" → farklı tutar →
+      lot ve devlet katkısı yeni tutara göre; "Tutar doğru" → soru kalkar.
+- [ ] Onaylarsan: **0096 iki sunucuya, uygulama sürümünden ÖNCE**
+      (Frankfurt → Tokyo, sonra `python tool/sema_esitlik.py`). İstemci yeni
+      sütunları yalnız otomatik açıkken gönderir: şema yokken mevcut akışlar
+      bozulmaz, ama otomatik açık BES açılışı hata verir.
+
 ## ✅ FRANKFURT EŞLENDİ (2026-10-01)
 
 GitHub'daki ortak `SUPABASE_ACCESS_TOKEN` Frankfurt'ta **403** alıyordu (koşu

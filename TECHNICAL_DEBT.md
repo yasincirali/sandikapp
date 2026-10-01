@@ -117,6 +117,17 @@ lot defteri + fiyatlama türü üzerine kuruldu (`AssetType.fiyatlamaTuru`,
 9. **Eski sürüm istemci** yeni türü `diger` okur (`AssetType.fromString`);
    o sürümde lot düzenlenirse tür `diger`e yazılabilir. Yalnız birden çok
    cihazda eski sürüm kullanan kişiyi etkiler.
+10. **BES otomatik katkı istemcide (0096, 2026-10-01).** Katkı uygulama
+    açılınca/öne dönünce yazılır; uygulama açılmazsa katkı da push da yok.
+    Sunucu yolu (cron + TEFAS fiyatı Deno'da) fiyat kaynağı kararını
+    (`fiyat_kaynagi.dart`) ikinci kez kurmak demekti. **Maliyet:** aylarca
+    açılmayan uygulamada katkılar ilk açılışta kendi günleriyle toplu
+    yazılır (en çok 24 ay); "katkın eklendi" push'u yok. **Ne zaman:** vade
+    bildirimi (madde 1) için cron kurulduğunda ikisi birlikte.
+11. **Otomatik katkı varlık sınırına takılırsa** (yeni devlet katkısı fonu,
+    ücretsiz plan) her açılışta yeniden denenir ve Crashlytics'e düşer;
+    kullanıcıya ayrı bir mesaj yok. Paywall kapalıyken sınır sonsuz,
+    pratikte görülmez.
 
 ---
 
