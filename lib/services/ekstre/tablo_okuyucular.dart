@@ -26,9 +26,14 @@ EkstreBicimi bicimiSez(Uint8List b) {
   if (bas(const [0x50, 0x4B, 0x03, 0x04])) return EkstreBicimi.xlsx; // PK..
   if (bas(const [0x25, 0x50, 0x44, 0x46])) return EkstreBicimi.pdf; // %PDF
   if (bas(const [0xD0, 0xCF, 0x11, 0xE0])) return EkstreBicimi.eskiXls; // OLE2
-  final bas2k = metneCevir(Uint8List.sublistView(b, 0, b.length < 4096 ? b.length : 4096))
+  // 64 KB: "Excel'e aktar" HTML'lerinin başında kilobaytlarca <style> ve
+  // Office ad alanı durur; 4 KB'lik pencere `<table`'ı görmeyip dosyayı CSV
+  // sanıyordu (2026-10-02).
+  final bas64k = metneCevir(Uint8List.sublistView(b, 0, b.length < 65536 ? b.length : 65536))
       .toLowerCase();
-  if (bas2k.contains('<table') || bas2k.contains('<html')) return EkstreBicimi.html;
+  if (bas64k.contains('<table') || bas64k.contains('<html') || bas64k.contains('<!doctype html')) {
+    return EkstreBicimi.html;
+  }
   return EkstreBicimi.metin;
 }
 
@@ -147,22 +152,37 @@ List<List<String>> _rfc4180(String metin, String ayrac) {
 
 // ── HTML tablo ("Excel'e aktar" çıktılarının çoğu) ───────────────────────────
 
+/// Kapanış etiketi ZORUNLU DEĞİL: eski "Excel'e aktar" çıktıları `</td>` ve
+/// `</tr>` yazmaz (HTML'de ikisi de isteğe bağlı). `(.*?)</tr>` ile arayan
+/// ilk sürüm böyle dosyada sıfır satır bulup "tablo yok" diyordu; şimdi
+/// tablo `<table`…`</table>`/sonraki `<table`, satır `<tr`, hücre `<td`/`<th`
+/// açılışlarına göre BÖLÜNÜR, kapanışlar yalnızca metin temizliğinde düşer.
 List<EkstreTablosu> htmlTablolari(String html) {
   final out = <EkstreTablosu>[];
-  final tabloRe = RegExp(r'<table\b[^>]*>(.*?)</table>', caseSensitive: false, dotAll: true);
-  final satirRe = RegExp(r'<tr\b[^>]*>(.*?)</tr>', caseSensitive: false, dotAll: true);
-  final hucreRe = RegExp(r'<t([dh])\b([^>]*)>(.*?)</t\1>', caseSensitive: false, dotAll: true);
+  final tabloBas = RegExp(r'<table\b', caseSensitive: false);
+  final tabloSon = RegExp(r'</table\s*>', caseSensitive: false);
+  final satirBas = RegExp(r'<tr\b[^>]*>', caseSensitive: false);
+  final hucreBas = RegExp(r'<t[dh]\b([^>]*)>', caseSensitive: false);
   final colspanRe = RegExp(r'colspan\s*=\s*"?(\d+)', caseSensitive: false);
+  final baslar = tabloBas.allMatches(html).map((m) => m.start).toList();
   var no = 0;
-  for (final t in tabloRe.allMatches(html)) {
+  for (var i = 0; i < baslar.length; i++) {
+    final bas = baslar[i];
+    final sonraki = i + 1 < baslar.length ? baslar[i + 1] : html.length;
+    final kapanis = tabloSon.firstMatch(html.substring(bas, sonraki));
+    final govde = html.substring(bas, kapanis == null ? sonraki : bas + kapanis.start);
     no++;
     final satirlar = <List<String>>[];
-    for (final s in satirRe.allMatches(t.group(1)!)) {
+    final satirParcalari = govde.split(satirBas).skip(1);
+    for (final s in satirParcalari) {
       final hucreler = <String>[];
-      for (final h in hucreRe.allMatches(s.group(1)!)) {
-        hucreler.add(_htmlMetin(h.group(3)!));
-        final span = int.tryParse(colspanRe.firstMatch(h.group(2)!)?.group(1) ?? '') ?? 1;
-        for (var k = 1; k < span && k < 50; k++) {
+      final hucreAcilislari = hucreBas.allMatches(s).toList();
+      for (var k = 0; k < hucreAcilislari.length; k++) {
+        final h = hucreAcilislari[k];
+        final sonu = k + 1 < hucreAcilislari.length ? hucreAcilislari[k + 1].start : s.length;
+        hucreler.add(_htmlMetin(s.substring(h.end, sonu)));
+        final span = int.tryParse(colspanRe.firstMatch(h.group(1)!)?.group(1) ?? '') ?? 1;
+        for (var j = 1; j < span && j < 50; j++) {
           hucreler.add('');
         }
       }
@@ -181,6 +201,8 @@ List<EkstreTablosu> htmlTablolari(String html) {
 String _htmlMetin(String s) {
   final t = s
       .replaceAll(RegExp(r'<br\s*/?>', caseSensitive: false), ' ')
+      // Kapanış etiketsiz tabloda hücre metni `</tr>`/`</table>`'a kadar
+      // uzayabilir; bütün etiketler (kapanışlar dahil) boşluğa iner.
       .replaceAll(RegExp(r'<[^>]+>'), ' ');
   return htmlVarliklari(t).replaceAll(RegExp(r'\s+'), ' ').trim();
 }
@@ -201,6 +223,11 @@ String htmlVarliklari(String s) {
 
 // ── XLSX (Office Open XML) ───────────────────────────────────────────────────
 
+/// Her çalışma sayfası ayrı tablo. Eleman aramaları ad alanından bağımsız
+/// (`namespaceUri: '*'`): Excel öneksiz yazar ama Aspose/POI gibi
+/// üreticiler `<x:row>` basar; önekli dosya 'dolu sayfa yok' diye
+/// reddediliyordu (2026-10-02).
+///
 /// Her çalışma sayfası ayrı tablo. Sayı hücresi "1234,56" (Türkçe ondalık,
 /// binlik ayraçsız — tip bilindiği için belirsizlik yok), tarih biçimli
 /// sayı hücresi "gg.aa.yyyy" olarak yazılır.
@@ -218,8 +245,8 @@ List<EkstreTablosu> xlsxOku(Uint8List b) {
   }
 
   final paylasilan = <String>[
-    for (final si in xml('xl/sharedStrings.xml')?.findAllElements('si') ?? const <XmlElement>[])
-      si.findAllElements('t').map((t) => t.innerText).join(),
+    for (final si in xml('xl/sharedStrings.xml')?.findAllElements('si', namespaceUri: '*') ?? const <XmlElement>[])
+      si.findAllElements('t', namespaceUri: '*').map((t) => t.innerText).join(),
   ];
 
   // Tarih biçimli stil indeksleri.
@@ -227,10 +254,10 @@ List<EkstreTablosu> xlsxOku(Uint8List b) {
   final stiller = xml('xl/styles.xml');
   if (stiller != null) {
     final ozel = <int, String>{
-      for (final f in stiller.findAllElements('numFmt'))
+      for (final f in stiller.findAllElements('numFmt', namespaceUri: '*'))
         int.tryParse(f.getAttribute('numFmtId') ?? '') ?? -1: f.getAttribute('formatCode') ?? '',
     };
-    final xfs = stiller.findAllElements('cellXfs').firstOrNull?.findElements('xf').toList() ?? const [];
+    final xfs = stiller.findAllElements('cellXfs', namespaceUri: '*').firstOrNull?.findElements('xf', namespaceUri: '*').toList() ?? const [];
     for (var i = 0; i < xfs.length; i++) {
       final id = int.tryParse(xfs[i].getAttribute('numFmtId') ?? '') ?? 0;
       final yerlesik = (id >= 14 && id <= 22) || (id >= 45 && id <= 47);
@@ -242,11 +269,11 @@ List<EkstreTablosu> xlsxOku(Uint8List b) {
 
   // Sayfa adları ve dosyaları.
   final iliskiler = <String, String>{
-    for (final r in xml('xl/_rels/workbook.xml.rels')?.findAllElements('Relationship') ?? const <XmlElement>[])
+    for (final r in xml('xl/_rels/workbook.xml.rels')?.findAllElements('Relationship', namespaceUri: '*') ?? const <XmlElement>[])
       r.getAttribute('Id') ?? '': r.getAttribute('Target') ?? '',
   };
   final sayfalar = <(String, String)>[];
-  for (final s in xml('xl/workbook.xml')?.findAllElements('sheet') ?? const <XmlElement>[]) {
+  for (final s in xml('xl/workbook.xml')?.findAllElements('sheet', namespaceUri: '*') ?? const <XmlElement>[]) {
     // `r:id` — önek dosyadan dosyaya değişebilir, yerel ada bakılır.
     final rid = s.attributes
             .where((a) => a.name.local == 'id')
@@ -264,9 +291,9 @@ List<EkstreTablosu> xlsxOku(Uint8List b) {
     final doc = xml(yol);
     if (doc == null) continue;
     final satirlar = <List<String>>[];
-    for (final row in doc.findAllElements('row')) {
+    for (final row in doc.findAllElements('row', namespaceUri: '*')) {
       final hucreler = <String>[];
-      for (final c in row.findElements('c')) {
+      for (final c in row.findElements('c', namespaceUri: '*')) {
         final ref = c.getAttribute('r') ?? '';
         final sutun = _sutunIndeksi(ref);
         while (sutun != null && hucreler.length < sutun) {
@@ -294,13 +321,13 @@ int? _sutunIndeksi(String ref) {
 
 String _hucreMetni(XmlElement c, List<String> paylasilan, Set<int> tarihStilleri) {
   final tip = c.getAttribute('t');
-  final v = c.findElements('v').firstOrNull?.innerText ?? '';
+  final v = c.findElements('v', namespaceUri: '*').firstOrNull?.innerText ?? '';
   switch (tip) {
     case 's':
       final i = int.tryParse(v);
       return i != null && i < paylasilan.length ? paylasilan[i].trim() : '';
     case 'inlineStr':
-      return c.findAllElements('t').map((t) => t.innerText).join().trim();
+      return c.findAllElements('t', namespaceUri: '*').map((t) => t.innerText).join().trim();
     case 'str':
     case 'e':
       return v.trim();

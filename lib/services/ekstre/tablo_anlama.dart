@@ -239,15 +239,38 @@ String _norm(String s) => trKatla(s)
     .replaceAll(RegExp(r'\s+'), ' ')
     .trim();
 
+/// Başlık karşılaştırması için kök: iyelik eki düşer ("fiyati" → "fiyat",
+/// "adedi" → "adet", "kodu" → "kod"). Kurumlar aynı sütunu "Birim Pay
+/// Fiyatı", "İşlem Adedi", "Kıymet Kodu" diye yazar; sözlüğe her çekimi
+/// eklemek yerine iki taraf da köke iner (sözlük girdileri de aynı
+/// işlemden geçer, bkz. [_sozlukKok]).
+const _kokler = {
+  'fiyati': 'fiyat', 'tutari': 'tutar', 'adedi': 'adet', 'miktari': 'miktar',
+  'tarihi': 'tarih', 'kodu': 'kod', 'adi': 'ad', 'turu': 'tur', 'tipi': 'tip',
+  'degeri': 'deger', 'maliyeti': 'maliyet', 'birimi': 'birim', 'cinsi': 'cins',
+  'yonu': 'yon', 'zamani': 'zaman', 'sayisi': 'sayi', 'nominali': 'nominal',
+  'hacmi': 'hacim', 'unvani': 'unvan', 'ismi': 'isim',
+};
+
+String _kok(String normalHucre) =>
+    normalHucre.split(' ').map((k) => _kokler[k] ?? k).join(' ');
+
+final _sozlukKok = <EkstreRol, List<String>>{
+  for (final e in _sozluk.entries) e.key: [for (final a in e.value) _kok(_norm(a))],
+};
+final _olumsuzKok = <EkstreRol, Set<String>>{
+  for (final e in _olumsuz.entries) e.key: {for (final a in e.value) _kok(a)},
+};
+
 double baslikPuani(EkstreRol r, String hucre) {
-  final h = _norm(hucre);
+  final h = _kok(_norm(hucre));
   if (h.isEmpty || h.length > 40) return 0;
   final kelimeler = h.split(' ').toSet();
-  for (final o in _olumsuz[r] ?? const <String>[]) {
+  for (final o in _olumsuzKok[r] ?? const <String>{}) {
     if (kelimeler.contains(o)) return -0.6;
   }
   var puan = 0.0;
-  for (final a in _sozluk[r]!) {
+  for (final a in _sozlukKok[r]!) {
     if (h == a) return 1.0;
     if (h.startsWith('$a ') || h.endsWith(' $a') || h.contains(' $a ')) {
       puan = math.max(puan, 0.6);
@@ -269,6 +292,8 @@ double? sayiCoz(String ham, {bool turkce = true}) {
     eksi = true;
     s = s.substring(1, s.length - 1);
   }
+  // Unicode eksi/tire (PDF'ler U+2212 ve U+2013 basar) → ASCII eksi.
+  s = s.replaceAll(RegExp('[\u2212\u2013\u2014]'), '-');
   s = s.replaceAll(RegExp(r'[\s ₺$€£%]|TRY|TL|USD|EUR|GBP', caseSensitive: false), '');
   if (s.endsWith('-')) {
     eksi = true;
@@ -321,6 +346,11 @@ DateTime? tarihCoz(String ham, {bool ayOnce = false}) {
   if (t.isEmpty) return null;
   var m = RegExp(r'^(\d{4})[-./](\d{1,2})[-./](\d{1,2})').firstMatch(t);
   if (m != null) return _gun(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
+  // Bitişik yyyyaagg (MKK/takas çıktıları): yalnız 8 hane ve geçerli ay/gün.
+  m = RegExp(r'^(19|20)(\d{2})(\d{2})(\d{2})$').firstMatch(t);
+  if (m != null) {
+    return _gun(int.parse('${m[1]}${m[2]}'), int.parse(m[3]!), int.parse(m[4]!));
+  }
   m = RegExp(r'^(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})(?:\s|$|T)').firstMatch(t);
   if (m != null) {
     var y = int.parse(m[3]!);
@@ -645,13 +675,22 @@ EkstreAnlami? tabloyuAnla(EkstreTablosu tablo) {
       for (final r in const [EkstreRol.adet, EkstreRol.fiyat, EkstreRol.tutar])
         if (roller[r] != null) roller[r]!,
     ];
+    // Başlıktan bilinen adet/fiyat çarpanın İÇİNDE olmalı. Aksi hâlde
+    // portföy dökümünde adet × SON FİYAT ≈ PİYASA DEĞERİ ilişkisi yakalanıp
+    // "Piyasa Değeri" tutar sayılıyor, ardından 6. adım adet × maliyet ≠
+    // tutar diye güveni düşürüp "fiyat güncel olabilir" uyarısı veriyordu —
+    // maliyet doğruyken sahte uyarı (2026-10-02).
+    final sabitAdet = roller[EkstreRol.adet], sabitFiyat = roller[EkstreRol.fiyat];
     (int, int, int)? enIyi;
     var enIyiOran = 0.6;
     for (final a in havuz) {
       for (final b in havuz) {
         if (b <= a) continue;
+        if (sabitAdet != null && a != sabitAdet && b != sabitAdet) continue;
+        if (sabitFiyat != null && a != sabitFiyat && b != sabitFiyat) continue;
         for (final t in havuz) {
           if (t == a || t == b) continue;
+          if (t == sabitAdet || t == sabitFiyat) continue;
           final oran = _carpimOrani(profiller[a].degerler, profiller[b].degerler, profiller[t].degerler);
           if (oran > enIyiOran) {
             enIyiOran = oran;
