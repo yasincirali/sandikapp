@@ -3937,6 +3937,37 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get todayClosedShort => 'Closed';
+
+  @override
+  String get todayMarketOnlyShort => 'market only';
+
+  @override
+  String get todayGreenShort => 'In profit';
+
+  @override
+  String get todayWeekReadyShort => 'Summary ready';
+
+  @override
+  String get todayGoalNewAction => 'Pick a new one';
+
+  @override
+  String get todayMonthlyTileSubShort => 'Last month\'s report';
+
+  @override
+  String todayEventCpiTiny(String date) {
+    return 'CPI · $date';
+  }
+
+  @override
+  String todayEventHolidayTiny(String date) {
+    return 'Holiday · $date';
+  }
+
+  @override
+  String get todayEventMonthEndTiny => 'Month end';
+
+  @override
   String get todayMoveLabel => 'Today\'s move';
 
   @override

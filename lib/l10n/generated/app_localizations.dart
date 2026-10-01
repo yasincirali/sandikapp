@@ -6560,6 +6560,60 @@ abstract class AppLocalizations {
   /// **'{close} kapanış'**
   String todayCloseAt(String close);
 
+  /// No description provided for @todayClosedShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapalı'**
+  String get todayClosedShort;
+
+  /// No description provided for @todayMarketOnlyShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'piyasa etkisi'**
+  String get todayMarketOnlyShort;
+
+  /// No description provided for @todayGreenShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artıda'**
+  String get todayGreenShort;
+
+  /// No description provided for @todayWeekReadyShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özet hazır'**
+  String get todayWeekReadyShort;
+
+  /// No description provided for @todayGoalNewAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenisini seç'**
+  String get todayGoalNewAction;
+
+  /// No description provided for @todayMonthlyTileSubShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen ayın karnesi'**
+  String get todayMonthlyTileSubShort;
+
+  /// No description provided for @todayEventCpiTiny.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜİK · {date}'**
+  String todayEventCpiTiny(String date);
+
+  /// No description provided for @todayEventHolidayTiny.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tatil · {date}'**
+  String todayEventHolidayTiny(String date);
+
+  /// No description provided for @todayEventMonthEndTiny.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay sonu'**
+  String get todayEventMonthEndTiny;
+
   /// No description provided for @todayMoveLabel.
   ///
   /// In tr, this message translates to:

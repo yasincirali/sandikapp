@@ -3908,6 +3908,37 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get todayClosedShort => 'Kapalı';
+
+  @override
+  String get todayMarketOnlyShort => 'piyasa etkisi';
+
+  @override
+  String get todayGreenShort => 'Artıda';
+
+  @override
+  String get todayWeekReadyShort => 'Özet hazır';
+
+  @override
+  String get todayGoalNewAction => 'Yenisini seç';
+
+  @override
+  String get todayMonthlyTileSubShort => 'Geçen ayın karnesi';
+
+  @override
+  String todayEventCpiTiny(String date) {
+    return 'TÜİK · $date';
+  }
+
+  @override
+  String todayEventHolidayTiny(String date) {
+    return 'Tatil · $date';
+  }
+
+  @override
+  String get todayEventMonthEndTiny => 'Ay sonu';
+
+  @override
   String get todayMoveLabel => 'Günün hareketi';
 
   @override

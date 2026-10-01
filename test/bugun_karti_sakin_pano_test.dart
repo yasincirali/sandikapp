@@ -9,6 +9,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
+import 'package:portfoy_takip/widgets/sigan_metin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -47,6 +48,13 @@ class _FakePortfolio extends PortfolioNotifier {
   Future<PortfolioState> build() async =>
       PortfolioState(assets: _defter, usdTry: 42, eurTry: 46, gbpTry: 54);
 }
+
+/// `SiganMetin` kendi RenderBox'ıyla çizer; `find.text` onu görmez.
+/// Seçilen (ekranda TAM yazılan) metne göre bulur.
+Finder sigan(String metin) => find.byElementPredicate((e) {
+      final r = e.renderObject;
+      return r is SiganMetinRender && r.secilen == metin;
+    });
 
 void main() {
   setUpAll(() async {
@@ -97,13 +105,21 @@ void main() {
       await kur(tester, genislik: genislik);
       expect(tester.takeException(), isNull);
       // Başlık: BUGÜN + gün adı; ölçüm bloğu etiketi; eylem kutusu.
-      expect(find.text('BUGÜN'), findsOneWidget);
-      expect(find.textContaining('Günün hareketi'), findsOneWidget);
-      expect(find.text('Hedef belirle'), findsOneWidget);
+      expect(sigan('BUGÜN'), findsOneWidget);
+      // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
+      // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".
+      expect(
+          sigan('Günün hareketi · sadece piyasa etkisi')
+                  .evaluate()
+                  .isNotEmpty ||
+              sigan('Günün hareketi · piyasa etkisi').evaluate().isNotEmpty ||
+              sigan('Günün hareketi').evaluate().isNotEmpty,
+          isTrue);
+      expect(sigan('Hedef belirle'), findsOneWidget);
       // Bilgi kutusu: dönen yuva artıdaki varlığı (1 / 2) ya da — Çarşamba
       // sonrası havuza giren — son 7 günü seçer; hangisi geldiyse kutu var.
-      final yesil = find.text('Artıdaki varlık').evaluate().isNotEmpty;
-      final hafta = find.text('Son 7 gün').evaluate().isNotEmpty;
+      final yesil = sigan('Artıdaki varlık').evaluate().isNotEmpty;
+      final hafta = sigan('Son 7 gün').evaluate().isNotEmpty;
       expect(yesil || hafta, isTrue, reason: 'bilgi kutusu çizilmedi');
       if (yesil) expect(find.text('1 / 2'), findsOneWidget);
     });
@@ -118,8 +134,8 @@ void main() {
     await container.read(kapsamHedefiProvider('').notifier).set(100000);
     await tester.pump();
     expect(tester.takeException(), isNull);
-    expect(find.text('Hedefe %41'), findsOneWidget);
-    expect(find.text('Hedef belirle'), findsNothing);
+    expect(sigan('Hedefe %41'), findsOneWidget);
+    expect(sigan('Hedef belirle'), findsNothing);
   });
 
   group('satır içi kıvılcım — tutar öncelikli (3. tur, seçim G)', () {
@@ -142,6 +158,51 @@ void main() {
       expect(src.contains('_YuzdeRozeti.azamiGenislik'), isTrue);
       // Eksen satırı (açılış / şimdi) kalktı — yer kazanımının yarısı oydu.
       expect(src.contains('todayAxisOpen'), isFalse);
+    });
+  });
+
+  group('her metin tam okunur — SiganMetin (kullanıcı kuralı 2026-10-01)', () {
+    // flutter_test yazı tipi Ahem: her karakter fontSize kadar geniş;
+    // ölçüm deterministik.
+    const stil = TextStyle(fontSize: 10);
+    String? sec(List<String> adaylar, double genislik, {int maxLines = 1}) =>
+        SiganMetin.sigan(adaylar,
+            genislik: genislik,
+            stil: stil,
+            yon: TextDirection.ltr,
+            olcek: TextScaler.noScaling,
+            maxLines: maxLines);
+
+    test('sığan ilk (en uzun) yazım seçilir', () {
+      expect(sec(['uzun yazim', 'kisa'], 100), 'uzun yazim');
+      expect(sec(['uzun yazim', 'kisa'], 60), 'kisa');
+    });
+    test('hiçbiri sığmazsa null — widget en kısayı satıra kırar', () {
+      expect(sec(['uzun yazim', 'kisa'], 30), isNull);
+    });
+    test('iki satırda sığma kontrolü', () {
+      expect(sec(['uzun yazim'], 60, maxLines: 2), 'uzun yazim');
+    });
+    testWidgets('dar yerde kısa yazım TAM yazılır, üç nokta yok',
+        (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: Center(
+          child: SizedBox(
+            width: 60,
+            child: SiganMetin(['Haftalik ozet hazir', 'Ozet'], style: stil),
+          ),
+        ),
+      ));
+      expect(sigan('Ozet'), findsOneWidget);
+      expect(sigan('Haftalik ozet hazir'), findsNothing);
+    });
+    test('kaynak: kartta çıplak ellipsis Text kalmadı', () {
+      final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
+      // Tutar/değer FittedBox'ta (küçülür, kırpılmaz); gün adı ve ay
+      // kısaltması sabit ve kısa. Diğer her metin SiganMetin'den geçer.
+      expect(RegExp(r'overflow: TextOverflow\.ellipsis').allMatches(src).length,
+          lessThanOrEqualTo(2),
+          reason: 'Yeni metin ellipsis ile değil SiganMetin ile eklenir');
     });
   });
 

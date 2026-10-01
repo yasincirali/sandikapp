@@ -2838,6 +2838,29 @@
       }
     }
   },
+  "todayClosedShort": "Kapalı",
+  "todayMarketOnlyShort": "piyasa etkisi",
+  "todayGreenShort": "Artıda",
+  "todayWeekReadyShort": "Özet hazır",
+  "todayGoalNewAction": "Yenisini seç",
+  "todayMonthlyTileSubShort": "Geçen ayın karnesi",
+  "todayEventCpiTiny": "TÜİK · {date}",
+  "@todayEventCpiTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayTiny": "Tatil · {date}",
+  "@todayEventHolidayTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndTiny": "Ay sonu",
   "todayMoveLabel": "Günün hareketi",
   "todayRealYearly": "yıllık",
   "todayYourReturn": "Getirin {pct}",

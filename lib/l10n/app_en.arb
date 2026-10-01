@@ -2830,6 +2830,29 @@
       }
     }
   },
+  "todayClosedShort": "Closed",
+  "todayMarketOnlyShort": "market only",
+  "todayGreenShort": "In profit",
+  "todayWeekReadyShort": "Summary ready",
+  "todayGoalNewAction": "Pick a new one",
+  "todayMonthlyTileSubShort": "Last month's report",
+  "todayEventCpiTiny": "CPI · {date}",
+  "@todayEventCpiTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventHolidayTiny": "Holiday · {date}",
+  "@todayEventHolidayTiny": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "todayEventMonthEndTiny": "Month end",
   "todayMoveLabel": "Today's move",
   "todayRealYearly": "yearly",
   "todayYourReturn": "Your return {pct}",

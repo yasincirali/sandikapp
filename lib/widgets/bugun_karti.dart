@@ -40,6 +40,7 @@ import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
+import 'sigan_metin.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
 
 /// Yüzdeyi TUTARLA AYNI işaret biçimiyle yazar: `+%1,23` / `−%0,06`.
@@ -593,18 +594,25 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   ///
   /// Eski düzende bu metin hareketin ALTINDAYDI; sakin panoda tarih
   /// satırına çıktı ki hareket bloğu yalnızca ölçümü taşısın.
-  String _durumMetni(BugunSatiri? s, DateTime now) {
+  ///
+  /// Uzun → kısa adaylar (`SiganMetin`): "Piyasa kapalı · Pazartesi 10:00
+  /// açılır" → "Kapalı · Pzt 10:00" → "Kapalı". Hangisi sığarsa o, tam.
+  List<String> _durumMetni(BugunSatiri? s, DateTime now) {
     final l10n = context.l10n;
-    String acilis() {
+    if (s is PiyasaKapaliSatiri) {
       final a = BugunService.sonrakiAcilis(now);
       final ayniGun = dayKey(a) == dayKey(now);
-      final ne = ayniGun
-          ? l10n.todayAt(DateFormat.Hm().format(a))
-          : '${DateFormat.EEEE(_dil).format(a)} ${DateFormat.Hm().format(a)}';
-      return l10n.todayOpensAt(ne);
+      final saat = DateFormat.Hm().format(a);
+      final uzun = ayniGun
+          ? l10n.todayAt(saat)
+          : '${DateFormat.EEEE(_dil).format(a)} $saat';
+      final kisa = ayniGun ? saat : '${DateFormat.E(_dil).format(a)} $saat';
+      return [
+        '${l10n.todayClosedWord} · ${l10n.todayOpensAt(uzun)}',
+        '${l10n.todayClosedShort} · $kisa',
+        l10n.todayClosedShort,
+      ];
     }
-
-    if (s is PiyasaKapaliSatiri) return '${l10n.todayClosedWord} · ${acilis()}';
     if (s is GunlukDegisimSatiri) {
       if (BugunService.seansAcikMi(now)) {
         final kapanisDk = BistTakvimi.yarimGunMu(now)
@@ -612,14 +620,18 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             : BugunService.seansKapanisDk;
         final kapanis = DateFormat.Hm()
             .format(dayKey(now).add(Duration(minutes: kapanisDk)));
-        return '${l10n.todayLiveWord} · ${l10n.todayCloseAt(kapanis)}';
+        return [
+          '${l10n.todayLiveWord} · ${l10n.todayCloseAt(kapanis)}',
+          '${l10n.todayLiveWord} · $kapanis',
+          l10n.todayLiveWord,
+        ];
       }
       // Karışık portföy (altın/döviz/kripto): borsa kapalı olsa da rakam
       // işler — "Piyasa kapalı" yanlış olurdu (2026-10-01). Yalnızca borsa
       // portföyünde hesap zaten `PiyasaKapaliSatiri` üretir.
-      return l10n.todayLiveWord;
+      return [l10n.todayLiveWord];
     }
-    return l10n.todayLoading;
+    return [l10n.todayLoading];
   }
 
   /// Bilgi kutusu: etiket › / değer / açıklama (+ enflasyon çubuğu).
@@ -630,13 +642,17 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       case ReelGetiriSatiri():
         // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
         return _BilgiKutusu(
-          etiket: '${l10n.todayRealLabel} · ${l10n.todayRealYearly}',
+          etiket: [
+            '${l10n.todayRealLabel} · ${l10n.todayRealYearly}',
+            l10n.todayRealLabel,
+          ],
           deger: reelFarkMetni(l10n, fark: s.fark, onde: s.onde),
           renk: s.onde ? c.gain : c.loss,
           yon: s.onde,
           cubuk: _EnflasyonCubugu(nominal: s.nominal, tufe: s.inflation),
-          altMetin:
-              '${l10n.todayYourReturn(fmtPct(s.nominal))} · ${l10n.todayCpiShort(fmtPct(s.inflation))}',
+          altMetin: [
+            '${l10n.todayYourReturn(fmtPct(s.nominal))} · ${l10n.todayCpiShort(fmtPct(s.inflation))}',
+          ],
           onTap: _olcerek(
               s, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
         );
@@ -645,7 +661,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         final yuzde = fmtPct(s.getiriPct.abs());
         final sifir = s.getiriPct.abs() < 0.005;
         return _BilgiKutusu(
-          etiket: l10n.todayWeekLabel,
+          etiket: [l10n.todayWeekLabel],
           deger: sifir
               ? isaretliYuzde(0)
               : s.getiriPct > 0
@@ -653,17 +669,17 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
                   : l10n.todayWeekDown(yuzde),
           renk: s.getiriPct >= 0 ? c.gain : c.loss,
           yon: sifir ? null : s.getiriPct > 0,
-          altMetin: l10n.todayWeekHintShort,
-          rozet: l10n.todayWeekReady,
+          altMetin: [l10n.todayWeekHintShort],
+          rozet: [l10n.todayWeekReady, l10n.todayWeekReadyShort],
           onTap: _olcerek(
               s, () => _ozeteGit(periodIdx: SummaryPeriod.birHafta.index)),
         );
       case YesilOranSatiri():
         return _BilgiKutusu(
-          etiket: l10n.todayGreenLabel,
+          etiket: [l10n.todayGreenLabel, l10n.todayGreenShort],
           deger: l10n.todayGreenValue(s.yesil, s.toplam),
           renk: s.yesil * 2 >= s.toplam ? c.gain : c.text90,
-          altMetin: l10n.todayGreenHint,
+          altMetin: [l10n.todayGreenHint],
         );
       // Eylem kutusunda ya da başlık/ayakta çizilirler.
       case HedefSatiri():
@@ -688,7 +704,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           return _EylemKutusu(
             ikon: Icons.flag_outlined,
             baslik: l10n.todayGoalSetAction,
-            alt: l10n.todayGoalSetSub,
+            alt: [l10n.todayGoalSetSub],
             onTap: hedefAc,
           );
         }
@@ -697,15 +713,17 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           return _EylemKutusu(
             ikon: Icons.flag_rounded,
             baslik: '${l10n.todayGoalLabel} · ${l10n.todayGoalDone}',
-            alt: l10n.todayGoalDoneHint(hedef),
+            alt: [l10n.todayGoalDoneHint(hedef), l10n.todayGoalNewAction],
             onTap: hedefAc,
           );
         }
         return _EylemKutusu(
           ikon: Icons.flag_outlined,
           baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
-          alt: l10n
-              .todayGoalLeftShort(gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
+          alt: [
+            l10n.todayGoalLeftShort(
+                gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
+          ],
           oran: s.oran,
           onTap: hedefAc,
         );
@@ -713,7 +731,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         return _EylemKutusu(
           ikon: Icons.menu_book_outlined,
           baslik: l10n.todayMonthlyTile(DateFormat.MMMM(_dil).format(s.ay)),
-          alt: l10n.todayMonthlyTileSub,
+          alt: [l10n.todayMonthlyTileSub, l10n.todayMonthlyTileSubShort],
           onTap: _olcerek(
             s,
             () => pushGuarded<void>(
@@ -823,7 +841,9 @@ class _Baslik extends StatelessWidget {
   /// `null`, o zaman "BUGÜN" yazar. Görünüm çipi toplam kartında kimde
   /// olduğunu söyler ama bu kart ondan aşağıda, kendi başına okunur.
   final String? etiket;
-  final String durum;
+
+  /// Uzun → kısa adaylar; bkz. `_durumMetni`.
+  final List<String> durum;
 
   /// Seans açık mı — durum noktasının rengi.
   final bool acik;
@@ -840,11 +860,10 @@ class _Baslik extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              SiganMetin(
                 // Türkçe büyük harf: düz `toUpperCase` "AYŞE'NIN" verir.
-                trBuyukHarf(etiket ?? context.l10n.todayTitle),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                // Uzun ortak adı sığmazsa iki satıra kırılır, kırpılmaz.
+                [trBuyukHarf(etiket ?? context.l10n.todayTitle)],
                 style: context.t.labelSmall?.copyWith(
                   color: c.amberText,
                   fontWeight: FontWeight.w700,
@@ -879,10 +898,8 @@ class _Baslik extends StatelessWidget {
               ),
               const SizedBox(width: SandikSpace.xs2),
               Flexible(
-                child: Text(
+                child: SiganMetin(
                   durum,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.end,
                   style: context.t.labelMedium?.copyWith(
                     color: c.text58,
@@ -1006,22 +1023,16 @@ class _Hareket extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text.rich(
-          TextSpan(
-            text: l10n.todayMoveLabel,
-            style: context.t.labelMedium?.copyWith(
-              color: c.text58,
-              fontWeight: FontWeight.w600,
-            ),
-            children: [
-              TextSpan(
-                text: ' · ${l10n.todayMarketOnly}',
-                style: context.t.labelMedium?.copyWith(color: c.text36),
-              ),
-            ],
+        SiganMetin(
+          [
+            '${l10n.todayMoveLabel} · ${l10n.todayMarketOnly}',
+            '${l10n.todayMoveLabel} · ${l10n.todayMarketOnlyShort}',
+            l10n.todayMoveLabel,
+          ],
+          style: context.t.labelMedium?.copyWith(
+            color: c.text58,
+            fontWeight: FontWeight.w600,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: SandikSpace.xs),
         // Satır içi kıvılcım (3. tur, kullanıcı seçimi G, 2026-10-01): tam
@@ -1322,15 +1333,16 @@ class _BilgiKutusu extends StatelessWidget {
     this.onTap,
   });
 
-  final String etiket;
+  /// Uzun → kısa yazımlar; sığan ilki tam yazılır (`SiganMetin`).
+  final List<String> etiket;
   final String deger;
   final Color renk;
 
   /// `true` yukarı ok, `false` aşağı, `null` oksuz.
   final bool? yon;
   final Widget? cubuk;
-  final String? altMetin;
-  final String? rozet;
+  final List<String>? altMetin;
+  final List<String>? rozet;
   final VoidCallback? onTap;
 
   @override
@@ -1344,10 +1356,8 @@ class _BilgiKutusu extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: SiganMetin(
                   etiket,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: context.t.labelMedium?.copyWith(
                     color: c.text58,
                     fontWeight: FontWeight.w600,
@@ -1397,10 +1407,9 @@ class _BilgiKutusu extends StatelessWidget {
           if (altMetin != null)
             Padding(
               padding: const EdgeInsets.only(top: SandikSpace.xs2),
-              child: Text(
+              child: SiganMetin(
                 altMetin!,
                 maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: context.t.labelSmall?.copyWith(color: c.text58),
               ),
             ),
@@ -1435,7 +1444,7 @@ class _BilgiKutusu extends StatelessWidget {
     );
     return Semantics(
       button: onTap != null,
-      label: '$etiket, $deger. ${altMetin ?? ''}',
+      label: '${etiket.first}, $deger. ${altMetin?.first ?? ''}',
       excludeSemantics: true,
       child: kutu,
     );
@@ -1445,7 +1454,9 @@ class _BilgiKutusu extends StatelessWidget {
 /// Amber zeminli küçük hap: "Haftalık özet hazır", "2 gün".
 class _Rozet extends StatelessWidget {
   const _Rozet({required this.metin});
-  final String metin;
+
+  /// Uzun → kısa yazımlar ("Haftalık özet hazır" → "Özet hazır").
+  final List<String> metin;
 
   @override
   Widget build(BuildContext context) {
@@ -1457,10 +1468,8 @@ class _Rozet extends StatelessWidget {
         color: c.amberFill.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(SandikRadius.lg),
       ),
-      child: Text(
+      child: SiganMetin(
         metin,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: context.t.labelSmall?.copyWith(
           color: c.amberText,
           fontWeight: FontWeight.w700,
@@ -1545,7 +1554,9 @@ class _EylemKutusu extends StatelessWidget {
 
   final IconData ikon;
   final String baslik;
-  final String alt;
+
+  /// Uzun → kısa yazımlar; sığan ilki tam yazılır.
+  final List<String> alt;
   final VoidCallback onTap;
 
   /// 0..1 hedef ilerlemesi — alt satırın altında ince çubuk.
@@ -1556,7 +1567,7 @@ class _EylemKutusu extends StatelessWidget {
     final c = context.c;
     return Semantics(
       button: true,
-      label: '$baslik. $alt',
+      label: '$baslik. ${alt.first}',
       excludeSemantics: true,
       child: Material(
         color: c.amberFill.withValues(alpha: 0.12),
@@ -1578,19 +1589,15 @@ class _EylemKutusu extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          baslik,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        SiganMetin(
+                          [baslik],
                           style: context.t.labelLarge?.copyWith(
                             color: c.amberText,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Text(
+                        SiganMetin(
                           alt,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style:
                               context.t.labelSmall?.copyWith(color: c.text58),
                         ),
@@ -1647,10 +1654,20 @@ class _AyakNotu extends StatelessWidget {
     final c = context.c;
     final l10n = context.l10n;
     final tarih = DateFormat('d MMMM', dil).format(olay.tarih);
+    // Uzun → kısa: "TÜİK enflasyonu · 3 Ekim" sığmazsa "TÜİK · 3 Ekim".
     final ne = switch (olay.tur) {
-      BugunOlayTuru.tuikAciklamasi => l10n.todayEventCpiShort(tarih),
-      BugunOlayTuru.bistTatili => l10n.todayEventHolidayShort(tarih),
-      BugunOlayTuru.aySonu => l10n.todayEventMonthEndShort,
+      BugunOlayTuru.tuikAciklamasi => [
+          l10n.todayEventCpiShort(tarih),
+          l10n.todayEventCpiTiny(tarih),
+        ],
+      BugunOlayTuru.bistTatili => [
+          l10n.todayEventHolidayShort(tarih),
+          l10n.todayEventHolidayTiny(tarih),
+        ],
+      BugunOlayTuru.aySonu => [
+          l10n.todayEventMonthEndShort,
+          l10n.todayEventMonthEndTiny,
+        ],
     };
     final kalan = switch (olay.gunKaldi) {
       0 => l10n.todayWordToday,
@@ -1662,15 +1679,13 @@ class _AyakNotu extends StatelessWidget {
         Icon(Icons.event_rounded, size: 16, color: c.text36),
         const SizedBox(width: SandikSpace.sm),
         Expanded(
-          child: Text(
+          child: SiganMetin(
             ne,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: context.t.bodySmall?.copyWith(color: c.text58),
           ),
         ),
         const SizedBox(width: SandikSpace.sm),
-        _Rozet(metin: kalan),
+        _Rozet(metin: [kalan]),
       ],
     );
   }
