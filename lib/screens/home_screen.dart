@@ -973,8 +973,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Builder(builder: (_) {
                 // Liste ham ledger'dan gelir — her Al/Sat/Temettü kaydı
                 // ayrı satır. Tür filtresi yok (2026-09-28). Silinenler
-                // yok (2026-09-29, yukarıdaki not); sıralı gelir.
-                final recentAssets = hareketler.aktif;
+                // yok (2026-09-29, yukarıdaki not). Sıra GİRİŞ ANI
+                // (2026-10-03): içe aktarılan geçmiş tarihli kayıt da
+                // eklendiği an üstte görünür (`sonGirilenler`).
+                final recentAssets = sonGirilenler(hareketler.aktif);
 
                 // Boşsa hiçbir şey çizme: kendi defterinde CTA ZATEN özetin
                 // hemen altında (_EmptyPortfolioCta); ortak görünümünde

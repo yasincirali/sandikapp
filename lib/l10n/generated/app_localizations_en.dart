@@ -2931,6 +2931,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importFixColumns => 'Fix columns';
 
   @override
+  String importDepositRow(String name, String amount, String rate, int days) {
+    return '$name · $amount · $rate interest · $days-day term';
+  }
+
+  @override
+  String importFundNotRecognized(String name) {
+    return 'Fund not recognized, skipped: $name';
+  }
+
+  @override
+  String get importFundListFailed =>
+      'Couldn\'t load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.';
+
+  @override
+  String importDepositsFound(int n) {
+    return '$n time deposits found (demand accounts are not imported)';
+  }
+
+  @override
+  String importStatementDate(String date) {
+    return 'Statement date $date: fund cost is taken as that day\'s unit price.';
+  }
+
+  @override
+  String cartDepositSubtitle(String rate, int days) {
+    return 'Time deposit · $rate · $days days';
+  }
+
+  @override
   String get importColumnNone => 'None';
 
   @override

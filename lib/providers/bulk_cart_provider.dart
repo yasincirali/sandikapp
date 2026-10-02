@@ -1,6 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset_type.dart';
 
+/// Sepetteki vadeli mevduatın sözleşmesi (ekstreden, 2026-10-03).
+///
+/// Mevduat sözleşmeli türdür: lot tek başına anlamsız, birim değer faiz ve
+/// vadeden hesaplanır. Kalem bu bilgiyi taşırsa toplu kayıt onu
+/// `SozlesmeNotifier.mevduatAc` ile yazar (sözleşme + dönem + anapara lotu);
+/// miktar = anapara, tarih = dönem başı.
+typedef SepetMevduati = ({
+  String kurum,
+  double yillikFaiz,
+  double stopaj,
+  int vadeGun,
+});
+
 class BulkCartItem {
   BulkCartItem({
     required this.id,
@@ -15,6 +28,7 @@ class BulkCartItem {
     this.unitType = 'piece',
     this.isManualPrice = false,
     this.satis = false,
+    this.mevduat,
   });
 
   final String id;
@@ -38,6 +52,10 @@ class BulkCartItem {
   /// tarihte elde olandan fazlaysa yazılmaz (bkz. `IceAktarmaSatislari`).
   /// [price] satışta SATIŞ fiyatıdır.
   final bool satis;
+
+  /// Doluysa kalem vadeli mevduattır ([type] `AssetType.mevduat`); formda
+  /// düzenlenmez (ekleme formu sözleşme alanlarını taşımıyor).
+  final SepetMevduati? mevduat;
 
   BulkCartItem copyWith({
     AssetType? type,
@@ -65,6 +83,7 @@ class BulkCartItem {
         isManualPrice: isManualPrice ?? this.isManualPrice,
         addedDate: addedDate ?? this.addedDate,
         satis: satis ?? this.satis,
+        mevduat: mevduat,
       );
 }
 

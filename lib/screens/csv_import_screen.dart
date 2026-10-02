@@ -1,11 +1,13 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../providers/bulk_cart_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/csv_import_service.dart';
 import '../services/ekstre/ekstre_ice_aktarma.dart';
+import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
@@ -47,6 +49,10 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   String? _dosyaAdi;
   bool _okunuyor = false;
 
+  /// Adla yazılmış fonlar için TEFAS listesi alınamadı: her ad için ayrı
+  /// "tanınmadı" demek yerine tek, nedenini söyleyen satır.
+  bool _fonListesiAlinamadi = false;
+
   static const _ornek = 'Sembol;Adet;Fiyat;Tarih\n'
       'THYAO;100;312,40;05.03.2026\n'
       'TCD;250;;10.01.2026\n'
@@ -58,8 +64,48 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     super.dispose();
   }
 
+  /// Metin → önizleme. Dosyadan okunduysa vadeli mevduatlar (metne girmez:
+  /// CSV yolu sözleşmeli türü bilerek reddeder) ve tanınmayan fonlar da
+  /// eklenir — kullanıcı neyin GİRMEDİĞİNİ de görür.
   void _parse() {
-    setState(() => _result = CsvImportService.parse(_ctrl.text));
+    final e = _ekstre;
+    final metin = _ctrl.text;
+    final temel = metin.trim().isEmpty && e != null
+        ? const CsvImportResult(rows: [], errors: [])
+        : CsvImportService.parse(metin);
+    if (e == null) {
+      setState(() => _result = temel);
+      return;
+    }
+    final l = context.l10n;
+    setState(() => _result = CsvImportResult(
+          rows: [...temel.rows, ...e.mevduatKalemleri()],
+          errors: [
+            ...temel.errors,
+            if (_fonListesiAlinamadi && e.cozulemeyenFonlar.isNotEmpty)
+              l.importFundListFailed
+            else
+              for (final ad in e.cozulemeyenFonlar)
+                l.importFundNotRecognized(ad),
+            ...e.notlar,
+          ],
+        ));
+  }
+
+  /// Banka ekstresi fonu adla yazar; kod TEFAS unvanından (tek ve kesin
+  /// eşleşme, `fonKoduBul`). Liste önbellekten gelir (24 saat); alınamazsa
+  /// adlı satırlar içe aktarılmaz, önizleme nedenini söyler.
+  Future<EkstreOkumaSonucu> _fonAdlariniCoz(EkstreOkumaSonucu s) async {
+    _fonListesiAlinamadi = false;
+    if (s.cozulecekFonAdlari.isEmpty) return s;
+    try {
+      final fonlar = await TefasService.instance.fetchAllFunds();
+      return s.kodlarla([for (final f in fonlar) (kod: f.code, unvan: f.name)]);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'ekstre_fon_listesi');
+      _fonListesiAlinamadi = true;
+      return s;
+    }
   }
 
   static const _turler = [
@@ -99,7 +145,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     if (dosya == null || !mounted) return;
     setState(() => _okunuyor = true);
     try {
-      final sonuc = await ekstreyiOku(await dosya.readAsBytes());
+      final sonuc =
+          await _fonAdlariniCoz(await ekstreyiOku(await dosya.readAsBytes()));
       if (!mounted) return;
       _ekstre = sonuc;
       _dosyaAdi = dosya.name;
@@ -119,13 +166,14 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   Future<void> _eslemeyiDuzelt() async {
     final e = _ekstre;
-    if (e == null) return;
+    final ana = e?.ana;
+    if (e == null || ana == null) return;
     final yeni = await showModalBottomSheet<Map<EkstreRol, int>>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: context.c.surface1,
-      builder: (_) => _EslemeSayfasi(anlam: e.ana),
+      builder: (_) => _EslemeSayfasi(anlam: ana),
     );
     if (yeni == null || !mounted) return;
     final duzeltilmis = e.anaDuzeltildi(yeni);
@@ -260,7 +308,13 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                       const SizedBox(width: SandikSpace.sm),
                       Expanded(
                         child: Text(
-                          '${row.satis ? '${context.l10n.cartSellTag} · ' : ''}'
+                          row.mevduat != null
+                              ? context.l10n.importDepositRow(
+                                  row.name,
+                                  fmtTRY(row.quantity, digits: 2),
+                                  fmtPct(row.mevduat!.yillikFaiz),
+                                  row.mevduat!.vadeGun)
+                              : '${row.satis ? '${context.l10n.cartSellTag} · ' : ''}'
                           '${row.ticker} · ${fmtNumFlex(row.quantity)} '
                           '${row.unitType == 'piece' ? context.l10n.unitPiece : row.unitType}'
                           ' · ${row.price > 0 ? '${fmtNumFlex(row.price)} ${row.currency}' : context.l10n.closePriceWillBeFetched}',
@@ -309,6 +363,7 @@ class _EslemeKarti extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final a = sonuc.ana;
+    final tarih = sonuc.belgeTarihi;
     return SandikCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -326,8 +381,9 @@ class _EslemeKarti extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w700, color: c.text90),
           ),
           const SizedBox(height: SandikSpace.sm),
-          for (final r in EkstreRol.values)
-            if (a.roller[r] != null)
+          if (a != null)
+            for (final r in EkstreRol.values)
+              if (a.roller[r] != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: SandikSpace.xxs),
                 child: Text(
@@ -335,14 +391,14 @@ class _EslemeKarti extends StatelessWidget {
                   style: context.t.bodySmall?.copyWith(color: c.text90),
                 ),
               ),
-          if (a.eminDegil) ...[
+          if (a != null && a.eminDegil) ...[
             const SizedBox(height: SandikSpace.sm),
             Text(
               context.l10n.importLowConfidence,
               style: context.t.bodySmall?.copyWith(color: c.amberText),
             ),
           ],
-          for (final n in a.notlar)
+          for (final n in a?.notlar ?? const <String>[])
             Padding(
               padding: const EdgeInsets.only(top: SandikSpace.xs),
               child: Text(
@@ -350,14 +406,36 @@ class _EslemeKarti extends StatelessWidget {
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
             ),
-          const SizedBox(height: SandikSpace.xs),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: onDuzelt,
-              child: Text(context.l10n.importFixColumns),
+          // Tarih sütunu olmayan döküm: satırlar ekstre gününü aldı ve maliyet
+          // o günün fiyatı — kullanıcı K/Z'nin nereden başladığını bilsin.
+          if (tarih != null && a != null && !a.roller.containsKey(EkstreRol.tarih))
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                context.l10n.importStatementDate(DateFormat('d MMM yyyy',
+                        Localizations.localeOf(context).languageCode)
+                    .format(tarih)),
+                style: context.t.bodySmall?.copyWith(color: c.text58),
+              ),
             ),
-          ),
+          if (sonuc.mevduatlar.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                context.l10n.importDepositsFound(sonuc.mevduatlar.length),
+                style: context.t.bodySmall?.copyWith(color: c.text90),
+              ),
+            ),
+          if (a != null) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: onDuzelt,
+                child: Text(context.l10n.importFixColumns),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -437,6 +437,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       purchaseFxRate: fxRate,
       kind: AssetKind.buy,
       addedDate: addedDate,
+      // Giriş anı YERELDE de (sunucu `created_at`'i tetikleyiciyle basar,
+      // istemciye dönmez; `toSupabase` yazmaz). Yoksa geriye tarihli kayıt
+      // yeniden yüklemeye kadar ana sayfa akışında eski tarihine düşer
+      // (`sonGirilenler`).
+      createdAt: DateTime.now(),
       currentPrice: initialCurrentPrice,
       commission: commission,
       // Sözleşmeli pozisyona (mevduat/BES) hızlı alım: lot sözleşmesine
@@ -554,6 +559,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       currentPrice: asset.currentPrice,
       lastUpdated: asset.lastUpdated,
       kind: AssetKind.sell,
+      createdAt: DateTime.now(), // bkz. addAsset
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       sellPrice: sellPrice,
       addedDate: addedDate,
@@ -610,6 +616,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       purchaseFxRate: fxRate,
       currentPrice: asset.currentPrice,
       kind: AssetKind.dividend,
+      createdAt: DateTime.now(), // bkz. addAsset
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       addedDate: paidAt,
       dividendAmount: amount,
