@@ -20,6 +20,8 @@ import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/tour_anchor.dart';
 import 'main_navigation_screen.dart';
+import 'portfolio_performance_screen.dart';
+import '../demo/demo_modu.dart';
 
 /// Yeni kullanıcılara gösterilen interaktif tanıtım.
 ///
@@ -627,7 +629,18 @@ List<_Adim> _adimlariKur() {
           'neye yatırdığını ve senden farkını oku. Katılım isteğe bağlı ve '
           'anonim: katılanlar birbirinin tür dağılımını ve getirisini görür; '
           'kimlik, miktar ve TL asla paylaşılmaz.',
-      giris: (_) => _sekmeyeGec(3),
+      // Kartı GÖSTER (2026-10-03): kart Grafik yüzeyinde ve listenin en
+      // altında; sekmeye geçmek yetmiyordu, metin boşluğun üstünde
+      // kalıyordu. Ekran Grafik'e geçer ve kartı görünür alana getirir.
+      giris: (_) {
+        _sekmeyeGec(3);
+        PortfolioPerformanceScreen.zirveIstegi.value = true;
+      },
+      // Kart yalnız küresel bayrak açıkken ve demoda değilken çizilir
+      // (`kartlar.dart`); yokken adım gösterilmez.
+      kosul: (_) =>
+          RemoteConfigService.instance.globalLeaderboardEnabled &&
+          !DemoModu.aktif,
     ),
     _Adim(
       id: 'sekme_profil',

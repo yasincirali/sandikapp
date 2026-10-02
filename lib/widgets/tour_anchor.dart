@@ -87,15 +87,26 @@ enum TourTarget {
 /// Bazı ekranlar aynı anda iki kez ağaçta olabilir (`PortfolioPerformanceScreen`
 /// tam ekran grafik rotasında ikinci kez kurulur). GlobalKey iki kez
 /// kullanılınca Flutter çöker. Burada hedefi bir `BuildContext` temsil eder
-/// ve İLK kaydolan kazanır; ikinci kopya sessizce yok sayılır, çöküş yok.
+/// ve İLK kaydolan kazanır; ikinci kopya beklemede durur, çöküş yok.
+///
+/// ## Neden sıra (2026-10-03, Zirve adımı kartı göstermiyordu)
+/// Kayıt tek yuvaydı: ikinci kopya "ilk hâlâ canlı" diye REDDEDİLİYOR, sonra
+/// ilk kopya sökülünce `_sil` yuvayı boşaltıyordu. Tembel listede yeniden
+/// kurulan ya da rota/yüzey geçişinde bir kare üst üste yaşayan hedef böylece
+/// ağaçta olduğu hâlde "yok" görünüyor, tur metni boşluğun üstünde kalıyordu.
+/// Şimdi kayıtlar sırayla tutulur: kural aynı (ilk canlı kazanır), ama ilk
+/// gidince sıradaki devralır.
 abstract final class TourTargets {
-  static final Map<TourTarget, BuildContext> _kayit = {};
+  static final Map<TourTarget, List<BuildContext>> _kayit = {};
 
-  /// Kaydolmuş ve hâlâ ağaçta olan hedefin bağlamı.
+  /// Kaydolmuş ve hâlâ ağaçta olan İLK hedefin bağlamı.
   static BuildContext? context(TourTarget t) {
-    final c = _kayit[t];
-    if (c == null || !c.mounted) return null;
-    return c;
+    final liste = _kayit[t];
+    if (liste == null) return null;
+    for (final c in liste) {
+      if (c.mounted) return c;
+    }
+    return null;
   }
 
   /// Hedef şu an ağaçta mı? (Örn. "Varlık Ekle" ekranı açıldı mı?)
@@ -116,14 +127,16 @@ abstract final class TourTargets {
   }
 
   static void _kaydet(TourTarget t, BuildContext c) {
-    // İlk kaydolan kazanır; eski kayıt hâlâ canlıysa dokunma.
-    final eski = _kayit[t];
-    if (eski != null && eski.mounted && eski != c) return;
-    _kayit[t] = c;
+    final liste = _kayit.putIfAbsent(t, () => <BuildContext>[]);
+    liste.removeWhere((e) => !e.mounted);
+    if (!liste.contains(c)) liste.add(c);
   }
 
   static void _sil(TourTarget t, BuildContext c) {
-    if (_kayit[t] == c) _kayit.remove(t);
+    final liste = _kayit[t];
+    if (liste == null) return;
+    liste.remove(c);
+    if (liste.isEmpty) _kayit.remove(t);
   }
 }
 
