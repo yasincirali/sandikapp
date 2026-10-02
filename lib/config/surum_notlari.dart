@@ -108,6 +108,18 @@ const List<SurumNotu> surumNotlari = [
     // kez görüyor.
     baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
+      // 2026-10-03: tek aktif cihaz + kayıtlı cihazlar (0098). Kullanıcı
+      // ilk kez kod ekranı ya da "başka cihazda açıldı" çıkışı görünce
+      // nedenini buradan öğrenir; sessiz kalsa arıza sanılırdı.
+      Yenilik(
+        ikon: YenilikIkonu.guvenlik,
+        baslik: 'Hesabın tek cihazda açık',
+        aciklama: 'Hesabın artık aynı anda yalnızca bir cihazda açık '
+            'kalır; başka cihazda açılınca öbüründe oturum kapanır. '
+            'Listende olmayan bir cihazdan girişte e-postana 6 haneli kod '
+            'gelir. Kayıtlı cihazlarını Ayarlar › Hesap & Güvenlik › '
+            "Kayıtlı cihazlar'da görüp kaldırabilirsin.",
+      ),
       // 2026-10-01: Bugün kartı "sakin pano" (kullanıcı seçimi D).
       Yenilik(
         ikon: YenilikIkonu.grafik,

@@ -100,7 +100,7 @@
   "settingsAccount": "Hesap & Güvenlik",
   "settingsHelp": "Yardım & Yasal",
   "settingsAppearanceSubtitle": "Tema, baz para birimi, dil, yatırımcı seviyesi",
-  "settingsAccountSubtitle": "Biyometrik kilit, verilerini indir, hesabını sil",
+  "settingsAccountSubtitle": "Biyometrik kilit, kayıtlı cihazlar, verilerini indir, hesabını sil",
   "settingsHelpSubtitle": "Bize ulaş, tanıtım turu, gizlilik ve koşullar",
   "themeSystem": "Sistem",
   "themeLight": "Açık",
@@ -3798,5 +3798,35 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cihazOtpBaslik": "Bu cihazı doğrula",
+  "cihazOtpAciklama": "Hesabın listede olmayan bir cihazda açılıyor. Güvenliğin için e-postana gönderdiğimiz kodu gir.",
+  "cihazOtpIpucu": "Bu sen değilsen vazgeç ve şifreni değiştir. Doğrulanan cihaz, diğer cihazlardaki oturumu kapatır.",
+  "cihazOtpVazgec": "Vazgeç ve çıkış yap",
+  "cihazKapisiHata": "Bu cihaz doğrulanamadı. Bağlantını kontrol edip tekrar dene.",
+  "baskaCihazdaAcildi": "Hesabın başka bir cihazda açıldı. Bu cihazda oturum kapatıldı.",
+  "kayitliCihazlar": "Kayıtlı cihazlar",
+  "kayitliCihazlarAlt": "Hesabın aynı anda tek cihazda açık kalır",
+  "kayitliCihazlarAciklama": "Hesabın aynı anda yalnızca bir cihazda açık olabilir. Listede olmayan bir cihazdan giriş yapılınca e-postana doğrulama kodu gönderilir. Tanımadığın bir cihazı kaldır ve şifreni değiştir.",
+  "buCihaz": "Bu cihaz",
+  "cihazSonKullanim": "Son kullanım: {tarih}",
+  "@cihazSonKullanim": {
+    "placeholders": {
+      "tarih": {
+        "type": "String"
+      }
+    }
+  },
+  "cihazKaldir": "Kaldır",
+  "cihazKaldirBaslik": "Cihaz kaldırılsın mı?",
+  "cihazKaldirMesaj": "{ad} bir sonraki girişte e-posta koduyla yeniden doğrulanmak zorunda kalır.",
+  "@cihazKaldirMesaj": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      }
+    }
+  },
+  "cihazKaldirildi": "Cihaz kaldırıldı",
+  "cihazListesiBos": "Kayıtlı cihaz yok."
 }

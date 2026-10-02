@@ -261,7 +261,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsAccountSubtitle =>
-      'Biyometrik kilit, verilerini indir, hesabını sil';
+      'Biyometrik kilit, kayıtlı cihazlar, verilerini indir, hesabını sil';
 
   @override
   String get settingsHelpSubtitle =>
@@ -5216,4 +5216,61 @@ class AppLocalizationsTr extends AppLocalizations {
   String depositStripRate(String rate) {
     return '%$rate brüt faiz';
   }
+
+  @override
+  String get cihazOtpBaslik => 'Bu cihazı doğrula';
+
+  @override
+  String get cihazOtpAciklama =>
+      'Hesabın listede olmayan bir cihazda açılıyor. Güvenliğin için e-postana gönderdiğimiz kodu gir.';
+
+  @override
+  String get cihazOtpIpucu =>
+      'Bu sen değilsen vazgeç ve şifreni değiştir. Doğrulanan cihaz, diğer cihazlardaki oturumu kapatır.';
+
+  @override
+  String get cihazOtpVazgec => 'Vazgeç ve çıkış yap';
+
+  @override
+  String get cihazKapisiHata =>
+      'Bu cihaz doğrulanamadı. Bağlantını kontrol edip tekrar dene.';
+
+  @override
+  String get baskaCihazdaAcildi =>
+      'Hesabın başka bir cihazda açıldı. Bu cihazda oturum kapatıldı.';
+
+  @override
+  String get kayitliCihazlar => 'Kayıtlı cihazlar';
+
+  @override
+  String get kayitliCihazlarAlt => 'Hesabın aynı anda tek cihazda açık kalır';
+
+  @override
+  String get kayitliCihazlarAciklama =>
+      'Hesabın aynı anda yalnızca bir cihazda açık olabilir. Listede olmayan bir cihazdan giriş yapılınca e-postana doğrulama kodu gönderilir. Tanımadığın bir cihazı kaldır ve şifreni değiştir.';
+
+  @override
+  String get buCihaz => 'Bu cihaz';
+
+  @override
+  String cihazSonKullanim(String tarih) {
+    return 'Son kullanım: $tarih';
+  }
+
+  @override
+  String get cihazKaldir => 'Kaldır';
+
+  @override
+  String get cihazKaldirBaslik => 'Cihaz kaldırılsın mı?';
+
+  @override
+  String cihazKaldirMesaj(String ad) {
+    return '$ad bir sonraki girişte e-posta koduyla yeniden doğrulanmak zorunda kalır.';
+  }
+
+  @override
+  String get cihazKaldirildi => 'Cihaz kaldırıldı';
+
+  @override
+  String get cihazListesiBos => 'Kayıtlı cihaz yok.';
 }

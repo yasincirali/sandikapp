@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/cihaz_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/disclaimer_service.dart';
@@ -12,14 +13,33 @@ import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 
+/// Kodun ne için istendiği.
+enum OtpAmaci {
+  /// Kayıt sonrası e-posta doğrulama (Kayıt ekranından push edilir).
+  kayit,
+
+  /// Kayıtlı olmayan cihazda giriş (0098). `_AuthGate` kök ekran olarak
+  /// gösterir; kodu ekran açılınca kendisi ister, doğrulanınca kapı açılır.
+  cihaz,
+}
+
 /// Register (veya login) sonrası email doğrulama ekranı.
 ///
 /// 6 haneli OTP input + "Doğrula" + timer + "Kodu yeniden gönder".
 /// Timer expire olunca kutular disable, sadece "Yeni kod iste" gösterilir.
 /// Yeni kod istendiğinde kutular yeniden açılır.
+///
+/// Cihaz doğrulama ([OtpAmaci.cihaz]) aynı ekranı kullanır: kod girişi,
+/// süre ve yeniden gönderme aynı davranış; değişen yalnız metin, kodun
+/// hangi uca gittiği ve "geri"nin anlamı (çıkış — gidilecek önceki ekran yok).
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String email;
-  const OtpVerificationScreen({super.key, required this.email});
+  final OtpAmaci amac;
+  const OtpVerificationScreen({
+    super.key,
+    required this.email,
+    this.amac = OtpAmaci.kayit,
+  });
 
   @override
   ConsumerState<OtpVerificationScreen> createState() =>
@@ -46,15 +66,30 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   static const _otpValiditySeconds = 600; // 10 dk
   static const _resendCooldownSeconds = 60;
 
+  bool get _cihaz => widget.amac == OtpAmaci.cihaz;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNodes.first.requestFocus();
+      // Kayıtta kodu sunucu kendisi yolladı; cihaz kapısında kodu bu ekran
+      // ister. Hata (ör. az önce gönderildi) gösterilir ama sayaç işler:
+      // önceki kod hâlâ geçerli olabilir.
+      if (_cihaz && mounted) {
+        ref
+            .read(cihazKapisiProvider.notifier)
+            .kodGonder()
+            .catchError((Object e) {
+          if (mounted) showAppError(context, e);
+        });
+      }
     });
     _startCooldown();
     _startExpiry();
   }
+
+  Future<void> _vazgec() => ref.read(authProvider.notifier).logout();
 
   @override
   void dispose() {
@@ -128,6 +163,22 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // olabilir). U18.
     final etkinDil = Localizations.localeOf(context).toString();
     setState(() => _submitting = true);
+    if (_cihaz) {
+      try {
+        // Başarılıysa kapı `serbest` olur ve `_AuthGate` bu ekranı kaldırır.
+        await ref.read(cihazKapisiProvider.notifier).kodDogrula(code);
+      } catch (e) {
+        if (!mounted) return;
+        showAppError(context, e);
+        for (final c in _controllers) {
+          c.clear();
+        }
+        _focusNodes.first.requestFocus();
+      } finally {
+        if (mounted) setState(() => _submitting = false);
+      }
+      return;
+    }
     try {
       final user = await AuthService.instance.verifyRegistrationOtp(
         email: widget.email,
@@ -179,7 +230,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     if (_cooldown > 0 && !_isExpired) return;
     setState(() => _resending = true);
     try {
-      await AuthService.instance.resendRegistrationOtp(widget.email);
+      if (_cihaz) {
+        await ref.read(cihazKapisiProvider.notifier).kodGonder();
+      } else {
+        await AuthService.instance.resendRegistrationOtp(widget.email);
+      }
       if (!mounted) return;
       // Yeni kod alındı: cooldown + expiry sıfırlan, kutular tekrar aktif.
       _startCooldown();
@@ -204,7 +259,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        onBack: _submitting ? null : () => Navigator.of(context).pop(),
+        onBack: _submitting
+            ? null
+            : _cihaz
+                ? _vazgec
+                : () => Navigator.of(context).pop(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -216,7 +275,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               _iconBadge(),
               const SizedBox(height: 28),
               Text(
-                context.l10n.otpTitle,
+                _cihaz ? context.l10n.cihazOtpBaslik : context.l10n.otpTitle,
                 textAlign: TextAlign.center,
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 26,
@@ -226,6 +285,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 ),
               ),
               const SizedBox(height: 10),
+              if (_cihaz) ...[
+                Text(
+                  context.l10n.cihazOtpAciklama,
+                  textAlign: TextAlign.center,
+                  style: context.t.bodyMedium?.copyWith(
+                    color: context.c.text58,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               _emailIntro(),
               const SizedBox(height: 32),
               _otpRow(),
@@ -265,7 +335,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         // Amber dolgunun üzerine gelen içerik rengi tanımı `onAmber`;
         // sabit `black87` her iki temada da doğru olmuyordu.
         child: Icon(
-          Icons.mark_email_read_rounded,
+          _cihaz ? Icons.phonelink_lock_rounded : Icons.mark_email_read_rounded,
           color: context.c.onAmber,
           size: 36,
         ),
@@ -533,6 +603,25 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   Widget _footerHint() {
+    if (_cihaz) {
+      return Column(
+        children: [
+          Text(
+            context.l10n.cihazOtpIpucu,
+            textAlign: TextAlign.center,
+            style: context.t.bodySmall?.copyWith(
+              color: context.c.text36,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _submitting ? null : _vazgec,
+            child: Text(context.l10n.cihazOtpVazgec),
+          ),
+        ],
+      );
+    }
     return Center(
       child: Text(
         context.l10n.otpWrongEmail,

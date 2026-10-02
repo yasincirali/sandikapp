@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -8,6 +8,38 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-03 Tek aktif cihaz + kayıtlı cihazlar (0098) — dal `feat/tek-cihaz`
+
+Karar (yasin, 2026-10-03): "Aynı hesap aynı anda 2 cihazda açılamamalı, kayıtlı
+cihaz listesi olmalı, mail OTP ile kontrol; listeden silme." Kod worktree
+`PortfoyTakip-tekcihaz`'da, **push yok** (push onay kuralı). Sunucu kuralları yerel
+Supabase'de gerçek GoTrue token'larıyla doğrulandı (25 SQL senaryosu + uçtan uca).
+
+Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
+
+- [ ] **İki projede** (Tokyo + Frankfurt) Supabase → Authentication → Email
+      Templates → **Magic Link** şablonuna kodu ekle: `{{ .Token }}`
+      (örn. "Giriş kodun: {{ .Token }}"). Yeni cihaz kodu bu şablonla gider;
+      yalnız bağlantı içeren varsayılan şablonda kullanıcıya **kod gitmez** ve
+      yeni cihazda giriş yapamaz. Kayıt/şifre sıfırlama şablonları zaten kodlu.
+- [ ] Aynı yerde "Email OTP expiration" = 600 sn mi? (OTP ekranı 10 dk sayıyor.)
+- [ ] Auth → Rate Limits: saatlik e-posta sınırı geçişte yeterli mi (her yeni
+      cihaz bir e-posta).
+- [ ] Mağaza **inceleme hesabı** ve ortak test hesapları muaf tutulmalı (inceleyici
+      e-postayı okuyamaz, aynı hesabı birden çok cihazda açar). İKİ sunucuda:
+      ```sql
+      insert into public.cihaz_kontrol_muafiyeti (user_id, neden)
+      select id, 'magaza inceleme' from auth.users where email = '<inceleme hesabı>';
+      ```
+- [ ] Emülatörde (iki cihaz, aynı hesap) dene → sonra 0098'i `supabase-deploy.yml`
+      (hedef `ikisi`) ile gönder → `python tool/sema_esitlik.py`.
+- [ ] Bilinçli kararları onayla: (1) hiç kayıtlı cihazı olmayan hesabın İLK cihazı
+      kodsuz kaydolur (aksi halde güncellemede herkese aynı anda kod giderdi);
+      (2) yeni cihaz kapısı uygulamadadır — şifreyi bilen biri ham API ile veri
+      okuyabilir, kapı şifrenin yerine geçmez (sunucuda gerçek olan: tek aktif
+      oturum ve kodsuz cihaz kaydı reddi).
+- [ ] Not: kendi iki emülatörünü aynı hesapla yan yana kullanamazsın — biri
+      diğerini çıkarır. Geliştirme hesabını muafiyete eklemek bir seçenek.
 ## ⏳ 2026-10-02 Müşteri testi düzeltmeleri — dal `fix/musteri-testi-116`, PUSH YOK
 
 Rapor: claude.ai artifact "sandık 1.1.6 müşteri testi". Kod dört yerel

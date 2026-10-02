@@ -684,7 +684,8 @@ List<_Adim> _adimlariKur() {
       id: 'ayarlar',
       hedef: TourTarget.ayarlar,
       baslik: 'Ayarlar',
-      govde: 'Kullanıcı adın, bildirimler, sinyal ayarları, günlük '
+      govde: 'Kullanıcı adın, kayıtlı cihazların, bildirimler, sinyal '
+          'ayarları, günlük '
           'brifingin saati (sabah / akşam), fiyat alarmları, tema, sessiz '
           'saatler ve yasal belgeler. '
           'Bu turu da buradan yeniden izleyebilirsin.',
