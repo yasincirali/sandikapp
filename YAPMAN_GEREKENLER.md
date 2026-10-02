@@ -1,12 +1,50 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-02 (kontrol paneli kayıt hunisi — 0097, dağıtım sende; önce: 2026-10-01 gece Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-02 Kontrol paneli: kayıt hunisi — 0097 + istemci (dal `feat/huni-paneli`)
+
+Panelin açılış ekranı artık **Kayıt hunisi**: indirip açtı → kayıt ekranı →
+kayıt → ilk giriş → ilk varlık; ara adımlar, gün gün, kırılım, kayıt hataları
+ve kişi kişi yolculuk. Worktree: `C:/projects/PortfoyTakip-huni`.
+
+- [x] Yerel Supabase'de (PG 17) 0097 uygulandı, doğrulama blokları geçti; sahte
+      veriyle beş `admin_huni_*` RPC'si ve panel ekranı denendi; anon tabloyu /
+      admin RPC'lerini çağıramıyor, admin olmayan "Yetkisiz" alıyor.
+- [x] `flutter analyze lib/ test/` temiz; ilgili 45 test dosyası (606 test) geçti.
+- [x] Tam paket 4219 test geçti; 5554'te güncelleme kurulumu açıldı, çökme yok,
+      `huni_aktif=false` (güncelleme ile gelen cihaz huniye girmiyor — doğru).
+- [ ] **0097'yi iki sunucuya dağıt** — Claude'un `db push`'u otomatik modda
+      reddedildi ("canlı dağıtım"). İki sunucu da 0096'da, yalnızca 0097 bekliyor
+      (kuru çalıştırma: "Would push 0097_kayit_hunisi.sql"). PowerShell'de:
+      ```
+      cd C:\projects\PortfoyTakip-huni
+      supabase link --project-ref ynwymnpdiwudrlxfrmuo   # Frankfurt
+      supabase db push --linked
+      supabase link --project-ref ybdbzouzhzwthjgwlbmk   # Tokyo
+      supabase db push --linked
+      cd C:\projects\PortfoyTakip && python tool/sema_esitlik.py
+      ```
+      İstemci sürümünden önce olması iyi; tersi olursa olaylar cihazda kuyrukta
+      bekler, akış bozulmaz.
+- [ ] **Masaüstü kısayolu** — Claude'un kısayol yazması da reddedildi. Başlatıcı
+      ve panel klasörü (`C:\projects\PortfoyTakip-panel`) hazır; yalnızca kısayol
+      eksik: `tool/admin_dashboard/README.md` → "Kısayolu yeniden oluşturmak"
+      bloğunu PowerShell'de çalıştır, eski `sandik destek paneli` kısayolunu sil.
+- [ ] **Gizlilik metni / Data Safety** kontrolü (hukuki adım, sende): yeni
+      veri = cihazda üretilen rastgele kurulum kimliği + adım zamanları +
+      kayıt hata kodları (mesaj yok), oturum açınca hesaba bağlanır, 400 gün
+      saklanır. Firebase Analytics'in beyan ettiği "uygulama etkileşimleri"
+      kapsamında görünüyor; KVKK aydınlatma metninde "birinci taraf kullanım
+      istatistiği" ifadesi yoksa ekle.
+- Panel yalnızca "Kurulumdan" görünümünde yeni sürümün yayılmasını bekler;
+  o zamana kadar **"Hesaptan"** görünümü tüm sürümlerden dolar.
 
 ## ⏳ 2026-10-02 ProGuard daraltması — gerçek cihazda 5 dakikalık kontrol
 

@@ -282,3 +282,42 @@ pre.json {
 .kv dd { margin: 0; font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
 
 .section-gap { margin-top: var(--sp5); }
+
+.banner.info { background: rgba(78, 168, 222, 0.1); color: var(--t58); }
+.banner.info b { color: var(--t90); font-weight: 500; }
+
+/* ── Kayıt hunisi (0097) ─────────────────────────────────────────────── */
+
+.nav-group {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--t36); padding: var(--sp3) var(--sp3) var(--sp1);
+}
+
+.huni { display: flex; flex-direction: column; gap: var(--sp1); }
+.huni-satir {
+  display: grid;
+  grid-template-columns: minmax(150px, 210px) minmax(120px, 1fr) 84px 108px 116px;
+  align-items: center; gap: var(--sp4);
+  padding: var(--sp2) 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.huni-iz { height: 22px; background: var(--overlay); border-radius: 4px; overflow: hidden; }
+.huni-dolgu { height: 100%; border-radius: 4px; transition: width 240ms ease; }
+.huni-sayi, .huni-gecis, .huni-sure { text-align: right; }
+.huni-gecis, .huni-sure { font-size: 12px; }
+.huni-alt {
+  display: flex; flex-wrap: wrap; gap: var(--sp2) var(--sp5);
+  padding-top: var(--sp3); font-size: 12px; color: var(--t58);
+}
+@media (max-width: 900px) {
+  .huni-satir { grid-template-columns: 1fr 72px 96px; }
+  .huni-iz { grid-column: 1 / -1; order: 5; }
+  .huni-sure { display: none; }
+}
+
+.serit { display: inline-flex; gap: 4px; align-items: center; }
+.serit-nokta {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  border: 1.5px solid var(--t20); box-sizing: border-box; vertical-align: middle;
+}
+.serit-nokta.on { border-color: transparent; }
