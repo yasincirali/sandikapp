@@ -29,6 +29,7 @@ import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/lock_offer_screen.dart';
+import 'services/tazelik_ritmi.dart';
 import 'services/biometric_lock_service.dart' show KilitYontemi;
 import 'screens/lock_screen.dart';
 import 'utils/sandik_snack.dart';
@@ -1739,46 +1740,24 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // güvenli taraf: yazma, son bilinen değer ekranda kalsın.
       final snapshot = yerlesik;
       if (snapshot != null && snapshot.assets.isNotEmpty) {
-        final hideBalance = ref.read(balanceHiddenProvider);
-        // **Tema BURADA ne çözülür ne de itilir.**
-        //
-        // Bu dinleyici her portföy yayınında çalışıyor: fiyat tazeleme,
-        // sekme değişimi, varlık ekleme — dakikada birkaç kez. Eskiden
-        // burada `resolveThemeIsLightNow` çağrılıyor, yani cihaz görünümü
-        // yeniden ÖRNEKLENİYORDU. Tercih "Sistem" iken (varsayılan bu) ve
-        // özellikle iOS arkaya alınan kareyi ters görünümde yakalarken
-        // yanlış değer hem ActivityKit'e hem `live_activity_sessions`
-        // satırına yazılıyor, sunucu onu 5 dakikada bir push'luyordu:
-        // kilit ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
-        //
-        // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
-        // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
-        // kalmadı — itmeyi unutmak mümkün değil.
-        // Kilit ekranı widget'ı Canlı Etkinlik'in tutar tercihini okur
-        // (karar 4.4). Güncellemeden ÖNCE atanır: sonra atansaydı bu yazım
-        // eski değeri taşırdı.
-        HomeWidgetService.instance.lockScreenAmounts =
-            ref.read(lockScreenAmountsProvider);
-        CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
-          snapshot,
-          hideBalance: hideBalance,
-        ), reason: 'main.HomeWidgetService.updateWithChart');
-        // iOS kilit ekranı / Dynamic Island. Aynı dinleyiciye bağlanır çünkü
-        // aynı gerekçe geçerli: portföy 10'dan fazla yerden yazılıyor ve
-        // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
-        // Servis kendi içinde seans saatini ve tekrar eden içeriği eler;
-        // burada koşul yok. Android'de kanal kayıtlı değildir, sessizce geçer.
-        // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
-        // provider okuyamaz (Riverpod'a bağlı değil, singleton).
-        final la = LiveActivityService.instance;
-        la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
-        la.startMinute = ref.read(liveActivityStartProvider);
-        la.endMinute = ref.read(liveActivityEndProvider);
-        la.includeWeekend = ref.read(liveActivityWeekendProvider);
-        CrashReporter.arkaPlan(LiveActivityService.instance.sync(
-          snapshot,
-          hideBalance: hideBalance,
-        ), reason: 'main.LiveActivityService.sync');
+        // Fiyat turu ağdaysa yazım tur SONUNA ertelenir (2026-10-02 müşteri
+        // testi). Bu iki yüzey gün içi seriyi ORTAK önbellekten ister ve
+        // önbellek boşsa onu ÇEKER. Soğuk açılışta ilk yayın veritabanındaki
+        // fiyatla, tur bitmeden geliyordu: seri altının gün başı referansı
+        // yokken kuruluyor ("altın-yüzde altın yok"), "taze" damgasıyla
+        // önbelleğe giriyor; splash ısıtması ve Bugün kartı 30 sn boyunca
+        // aynı yuvayı taze bulup onu kullanıyordu. Ölçüldü: kart açılışta
+        // −₺8.713 / −₺19.183, tur sonrası seriyle +₺6.551 — işaret ters.
+        // Bugün kartı ve Performans bu kuralı zaten uyguluyordu
+        // (`fiyatTurunuVeKareyiBekle`); önbelleği dolduran bu yol dışarıda
+        // kalmıştı. Widget/kilit ekranı birkaç saniye son yazılan değerde
+        // kalır — eski fiyattan rakam üretmekten iyidir.
+        final notifier = ref.read(portfolioProvider.notifier);
+        if (notifier.fiyatTuruSuruyor) {
+          _yuzeyYaziminiTurSonunaBirak(notifier);
+          return;
+        }
+        _gunIciYuzeyleriniYaz(snapshot);
       }
     });
 
@@ -1798,6 +1777,77 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sönerken ana ekran altında beliriyor olsun diye aynısı korunur.
       child: _resolveScreen(auth, user),
     );
+  }
+
+  /// Tur sonuna ertelenmiş yazım için tek bekleyici var mı?
+  bool _turSonuYazimBekliyor = false;
+
+  /// Süren fiyat turu bitince (ve yeni defter bir kare sonra yayınlanınca)
+  /// widget ve Live Activity'yi EN GÜNCEL defterle yazar. Tur boyunca gelen
+  /// yayınlar tek bekleyicide birleşir. Bütçe gün içi seri ömrü: asılı tur
+  /// yüzeyleri sonsuza kadar dondurmasın.
+  void _yuzeyYaziminiTurSonunaBirak(PortfolioNotifier notifier) {
+    if (_turSonuYazimBekliyor) return;
+    _turSonuYazimBekliyor = true;
+    CrashReporter.arkaPlan(() async {
+      try {
+        await notifier.fiyatTurunuVeKareyiBekle(
+            enFazla: TazelikRitmi.gunIciSeriOmru);
+      } finally {
+        _turSonuYazimBekliyor = false;
+      }
+      if (!mounted) return;
+      final async = ref.read(portfolioProvider);
+      if (async.isLoading) return; // yükleme bitince dinleyici yeniden çalışır
+      final son = async.valueOrNull;
+      if (son == null || son.assets.isEmpty) return;
+      _gunIciYuzeyleriniYaz(son);
+    }(), reason: 'main.yuzeyYazimiTurSonu');
+  }
+
+  /// Ana ekran widget'ı + Live Activity yazımı (portföy dinleyicisinin
+  /// yaptığı iş; gerekçeler dinleyicide).
+  void _gunIciYuzeyleriniYaz(PortfolioState snapshot) {
+    final hideBalance = ref.read(balanceHiddenProvider);
+    // **Tema BURADA ne çözülür ne de itilir.**
+    //
+    // Bu dinleyici her portföy yayınında çalışıyor: fiyat tazeleme,
+    // sekme değişimi, varlık ekleme — dakikada birkaç kez. Eskiden
+    // burada `resolveThemeIsLightNow` çağrılıyor, yani cihaz görünümü
+    // yeniden ÖRNEKLENİYORDU. Tercih "Sistem" iken (varsayılan bu) ve
+    // özellikle iOS arkaya alınan kareyi ters görünümde yakalarken
+    // yanlış değer hem ActivityKit'e hem `live_activity_sessions`
+    // satırına yazılıyor, sunucu onu 5 dakikada bir push'luyordu:
+    // kilit ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
+    //
+    // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
+    // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
+    // kalmadı — itmeyi unutmak mümkün değil.
+    // Kilit ekranı widget'ı Canlı Etkinlik'in tutar tercihini okur
+    // (karar 4.4). Güncellemeden ÖNCE atanır: sonra atansaydı bu yazım
+    // eski değeri taşırdı.
+    HomeWidgetService.instance.lockScreenAmounts =
+        ref.read(lockScreenAmountsProvider);
+    CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
+      snapshot,
+      hideBalance: hideBalance,
+    ), reason: 'main.HomeWidgetService.updateWithChart');
+    // iOS kilit ekranı / Dynamic Island. Aynı dinleyiciye bağlanır çünkü
+    // aynı gerekçe geçerli: portföy 10'dan fazla yerden yazılıyor ve
+    // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
+    // Servis kendi içinde seans saatini ve tekrar eden içeriği eler;
+    // burada koşul yok. Android'de kanal kayıtlı değildir, sessizce geçer.
+    // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
+    // provider okuyamaz (Riverpod'a bağlı değil, singleton).
+    final la = LiveActivityService.instance;
+    la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
+    la.startMinute = ref.read(liveActivityStartProvider);
+    la.endMinute = ref.read(liveActivityEndProvider);
+    la.includeWeekend = ref.read(liveActivityWeekendProvider);
+    CrashReporter.arkaPlan(LiveActivityService.instance.sync(
+      snapshot,
+      hideBalance: hideBalance,
+    ), reason: 'main.LiveActivityService.sync');
   }
 
   /// Portföy + ortak verisi ana ekranı çizmeye yetecek kadar hazır mı?

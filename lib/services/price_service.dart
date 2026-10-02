@@ -250,7 +250,16 @@ class PriceService {
   ///
   /// Hiç altın fiyatlanmadıysa `false` — karar verecek veri yok.
   bool get altinGunlukYuzdeTam {
-    final altinlar = _sonBilinenFiyat.keys.where(FiyatKaynagi.altinMi);
+    // Yalnızca BU OTURUMDA canlı kotasyonu görülen ayarlar sayılır. Diskten
+    // yüklenen fiyat ([_birincilYukle]) yüzde taşımaz; dünkü oturumda
+    // izlenmiş, bugün hiç istenmeyen bir ayar (ölçüldü: Cumhuriyet) bayrağı
+    // oturum boyunca `false`'ta tutuyor ve açılışın ilk gün içi serisi
+    // altını eski sabit çarpan yoluyla, nabız serisi ürün bazlı yolla
+    // kuruyordu: aynı gün Bugün kartı önce −₺12.295, 30 sn sonra +₺3.175
+    // (2026-10-02 müşteri testi). Ölçek hafızası diskteki fiyatı yine okur.
+    final altinlar = _sonBilinenFiyat.keys
+        .where(FiyatKaynagi.altinMi)
+        .where((s) => !_yalnizDisktenBilinen.contains(s));
     if (altinlar.isEmpty) return false;
     return altinlar.every(_gunlukDegisimPct.containsKey);
   }
@@ -280,6 +289,11 @@ class PriceService {
   /// [_sonBilinenFiyat] ile aynı disiplin: TTL ile düşmez, yalnızca
   /// gerçekten ÖLÇÜLMÜŞ değerleri taşır.
   final Map<String, double> _gunlukDegisimPct = {};
+
+  /// Fiyatı yalnızca diskten ([_birincilYukle]) bilinen, bu oturumda canlı
+  /// kotasyonu henüz gelmemiş semboller — [altinGunlukYuzdeTam] bunları
+  /// saymaz.
+  final Set<String> _yalnizDisktenBilinen = {};
 
   /// Sembol → günlük yüzdenin ölçüldüğü GÜN BAŞI fiyatı.
   ///
@@ -345,6 +359,7 @@ class PriceService {
   void testIcinKotasyonYaz(String symbol, double fiyat, {double? gunlukPct}) {
     final s = symbol.trim().toUpperCase();
     _sonBilinenFiyat[s] = fiyat;
+    _yalnizDisktenBilinen.remove(s);
     _gunlukYaz(s, fiyat, gunlukPct);
   }
 
@@ -354,6 +369,7 @@ class PriceService {
     _sonBilinenFiyat.clear();
     _sonKaynak.clear();
     _gunlukDegisimPct.clear();
+    _yalnizDisktenBilinen.clear();
     _gunlukReferans.clear();
     _gunlukReferansGunu.clear();
     _birincilYukleme = null;
@@ -401,6 +417,7 @@ class PriceService {
         if (_sonBilinenFiyat.containsKey(e.key)) continue;
         _sonBilinenFiyat[e.key] = p;
         _sonKaynak[e.key] = FiyatKaynagiEtiketi.yurtIci;
+        _yalnizDisktenBilinen.add(e.key);
       }
     } catch (_) {
       // Bozuk kayıt — yok say; bir sonraki başarılı çekim üstüne yazar.
@@ -591,6 +608,7 @@ class PriceService {
         // TTL'siz oturum belleği: grafik yolları kur/fiyat bulamadığında
         // sabit uydurmak yerine buraya bakar (bkz. `sonBilinenFiyat`).
         _sonBilinenFiyat[e.key] = p;
+        _yalnizDisktenBilinen.remove(e.key);
         // Günlük yüzde de saklanır — grafik serisinin uçlarını ÜRÜNÜN
         // kendi hareketine oturtmak için (bkz. `gunlukDegisimPct`).
         _gunlukYaz(e.key, p, e.value.regularMarketChangePercent);
