@@ -30,6 +30,11 @@ Asset _lot(String id,
       isManualPrice: elle,
       currentPrice: fiyat,
       lastUpdated: guncel,
+      // Sabit: verilmezse kurucu `DateTime.now()` yazar ve iki `_lot('A')`
+      // farklı mikrosaniyede doğar — `ayniDefter` addedDate'e baktığı için
+      // Linux CI'da "aynı" lotlar farklı çıkıyordu (Windows'ta saat
+      // çözünürlüğü kaba olduğundan yerelde geçiyordu).
+      addedDate: DateTime(2026, 9, 1),
     );
 
 void main() {
