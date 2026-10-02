@@ -212,6 +212,7 @@ class SozlesmeCipi extends StatelessWidget {
     required this.secili,
     required this.secildi,
     required this.renk,
+    this.icerigeGore = false,
   });
 
   final String metin;
@@ -219,8 +220,22 @@ class SozlesmeCipi extends StatelessWidget {
   final VoidCallback secildi;
   final Color renk;
 
+  /// `Wrap` içinde çip metni kadar geniş olsun mu?
+  ///
+  /// Metni ortalayan `alignment`, `Wrap`'ın verdiği sınırsız genişlikte
+  /// çipi tüm satıra yayıyordu: dört vade seçeneği alt alta tam genişlik
+  /// satırlar olarak diziliyordu (2026-10-02 müşteri testi). `Expanded`
+  /// içindeki kullanım (Vadeli / Günlük faizli) yayılmak İSTER; o yüzden
+  /// varsayılan kapalı.
+  final bool icerigeGore;
+
   @override
-  Widget build(BuildContext context) => Semantics(
+  Widget build(BuildContext context) {
+    final cip = _cip(context);
+    return icerigeGore ? IntrinsicWidth(child: cip) : cip;
+  }
+
+  Widget _cip(BuildContext context) => Semantics(
         button: true,
         selected: secili,
         child: InkWell(

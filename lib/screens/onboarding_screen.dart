@@ -377,11 +377,15 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.bugunKarti,
       baslik: 'Bugün ne oldu?',
       // 2026-10-01 "sakin pano" düzeni: satır listesi yerine üç kat.
+      // 2026-10-02: enflasyon kutusu ölçüm aylarını yazar; ikinci kutu
+      // (son 7 gün / artıdaki varlık) dönüşümlü — metin ikisini birden
+      // vaat etmez.
       govde: 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
           'hareketi: sadece piyasa etkisi, yatırdığın para sayılmaz; '
           'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
           'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
-          'çizgi TÜFE), son 7 gün, artıdaki varlıkların. Sarı kutular '
+          'çizgi TÜFE; başlıkta hangi aylar arasında ölçüldüğü), yanında '
+          'son 7 gün ya da artıdaki varlıkların, günden güne. Sarı kutular '
           'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '
           'tarih. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
           'Birlikte\'ye geçince kart o defterin gününü anlatır, başında '

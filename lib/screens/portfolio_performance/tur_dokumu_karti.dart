@@ -533,8 +533,11 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   }
 
   /// "+₺619.503" / "−₺174.590" — birikim değişimi işaretli yazılır.
+  /// İşaret ile tutar arasında KELİME BİRLEŞTİRİCİ (U+2060, görünmez):
+  /// dar sütunda satır "birikim −" ile bitip "₺175.809" alt satıra
+  /// düşüyordu (2026-10-02 müşteri testi) — eksi sayıdan kopunca okunmaz.
   static String _isaretli(ParaBicimi fmt, double v) =>
-      '${v >= 0 ? '+' : '−'}${fmt.format(v.abs())}';
+      '${v >= 0 ? '+' : '−'}\u2060${fmt.format(v.abs())}';
 
   /// Satırın görsel gövdesi — semantik sarmalayıcıdan ayrı tutulur ki
   /// `ExcludeSemantics` altındaki ağaç sade kalsın.
@@ -580,10 +583,12 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
               if (!widget.simulate && flow.abs() > 0.5)
                 Text(
                   flow > 0
+                      // Şablondaki "+{flow}" / "−{flow}" de bölünmesin.
                       ? context.l10n.flowBuyBalance(
-                          tryFmt.format(flow), _isaretli(tryFmt, pnl + flow))
+                          '\u2060${tryFmt.format(flow)}',
+                          _isaretli(tryFmt, pnl + flow))
                       : context.l10n.flowSellBalance(
-                          tryFmt.format(flow.abs()),
+                          '\u2060${tryFmt.format(flow.abs())}',
                           _isaretli(tryFmt, pnl + flow)),
                   // İki satır: "Satış −₺265.048 · birikim −₺174.590" dar
                   // sütuna sığmıyor, kesilince birikim okunmuyordu.
