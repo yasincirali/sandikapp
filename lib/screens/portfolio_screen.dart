@@ -1726,15 +1726,9 @@ class _AssetDetailsPanel extends StatelessWidget {
       ..sort((a, b) => a.addedDate.compareTo(b.addedDate));
     final firstBuyDate = buyLots.isNotEmpty ? buyLots.first.addedDate : null;
 
-    // TRY alışında "₺" (2026-10-02 müşteri testi: aynı panelde "93,5 TRY"
-    // ile "₺47.685,00" yan yanaydı). Döviz alışında kod kalır — tutar alış
-    // para birimindedir, ₺ yazmak yanlış olurdu.
-    final tryAlis = rep.currency.toUpperCase() == 'TRY';
-    final avgCostStr = position.weightedPurchasePrice <= 0
-        ? '—'
-        : tryAlis
-            ? '₺${numFmt.format(position.weightedPurchasePrice)}'
-            : '${numFmt.format(position.weightedPurchasePrice)} ${rep.currency}';
+    final avgCostStr = position.weightedPurchasePrice > 0
+        ? '${numFmt.format(position.weightedPurchasePrice)} ${rep.currency}'
+        : '—';
 
     final qty = position.totalQuantity;
     final qtyStr = qty == qty.truncateToDouble()
@@ -1758,9 +1752,7 @@ class _AssetDetailsPanel extends StatelessWidget {
           ? '—'
           : baz.gizli
               ? baz.gizliTutar
-              : tryAlis
-                  ? fmtTRY(position.totalCost, digits: 2)
-                  : '${costFmt2.format(position.totalCost)} ${rep.currency}',
+              : '${costFmt2.format(position.totalCost)} ${rep.currency}',
     );
 
     // Grafiğin rengi satırdaki yüzdeyle aynı kaynaktan gelmeli (temettü dahil),
