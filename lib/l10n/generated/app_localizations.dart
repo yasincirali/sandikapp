@@ -8810,6 +8810,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kayıtlı cihaz yok.'**
   String get cihazListesiBos;
+
+  /// No description provided for @otpSpamIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod gelmediyse Gereksiz / Spam klasörüne de bak.'**
+  String get otpSpamIpucu;
 }
 
 class _AppLocalizationsDelegate

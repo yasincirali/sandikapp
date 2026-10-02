@@ -5324,4 +5324,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cihazListesiBos => 'No registered devices.';
+
+  @override
+  String get otpSpamIpucu =>
+      'Didn\'t get it? Check your Junk / Spam folder too.';
 }

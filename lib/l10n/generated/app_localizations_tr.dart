@@ -5273,4 +5273,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cihazListesiBos => 'Kayıtlı cihaz yok.';
+
+  @override
+  String get otpSpamIpucu => 'Kod gelmediyse Gereksiz / Spam klasörüne de bak.';
 }

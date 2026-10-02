@@ -305,6 +305,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               _primaryButton(),
               const SizedBox(height: 16),
               _resendRow(canResend: canResend),
+              // Kod e-postası Outlook'ta Gereksiz'e düştü (emülatör testi,
+              // 2026-10-03). Kullanıcı kodu bulamazsa yeni cihazda / kayıtta
+              // takılı kalır; gönderen alan adı doğrulanana kadar ipucu şart.
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.otpSpamIpucu,
+                textAlign: TextAlign.center,
+                style: context.t.bodySmall?.copyWith(color: context.c.text58),
+              ),
               const SizedBox(height: 24),
               _footerHint(),
               const SizedBox(height: 20),

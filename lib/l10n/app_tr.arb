@@ -3828,5 +3828,6 @@
     }
   },
   "cihazKaldirildi": "Cihaz kaldırıldı",
-  "cihazListesiBos": "Kayıtlı cihaz yok."
+  "cihazListesiBos": "Kayıtlı cihaz yok.",
+  "otpSpamIpucu": "Kod gelmediyse Gereksiz / Spam klasörüne de bak."
 }

@@ -3628,5 +3628,6 @@
   "cihazKaldirBaslik": "Remove this device?",
   "cihazKaldirMesaj": "{ad} will need to be verified with an email code the next time it signs in.",
   "cihazKaldirildi": "Device removed",
-  "cihazListesiBos": "No registered devices."
+  "cihazListesiBos": "No registered devices.",
+  "otpSpamIpucu": "Didn't get it? Check your Junk / Spam folder too."
 }

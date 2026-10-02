@@ -109,6 +109,8 @@ void main() {
       expect(find.text(trMetni('cihazOtpBaslik')), findsOneWidget);
       expect(find.text(trMetni('cihazOtpVazgec')), findsOneWidget);
       expect(find.text(trMetni('otpTitle')), findsNothing);
+      // Kod Gereksiz'e düşebiliyor — ipucu görünür olmalı.
+      expect(find.text(trMetni('otpSpamIpucu')), findsOneWidget);
     });
 
     testWidgets('6 hane girilince kod kapıya gider', (tester) async {
