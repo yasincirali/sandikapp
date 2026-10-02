@@ -690,14 +690,16 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     switch (s) {
       case ReelGetiriSatiri():
         // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
-        // Önce ölçüm ayları ("Ağu 25 - Ağu 26", Özet'le aynı biçim): getiri
-        // yüzdesi Performans 1Y'den farklı pencereyi ölçüyor ve bunu ancak
-        // aralık söyler (2026-10-02 müşteri testi). Sığmazsa eski etiketler.
+        // Ölçüm ayları ("Ağu 25 - Ağu 26", Özet'le aynı biçim) alt metnin
+        // sonunda: getiri yüzdesi Performans 1Y'den farklı pencereyi
+        // ölçüyor ve bunu ancak aralık söyler (2026-10-02 müşteri testi).
+        // Başlık dar kutuda aralığa yer bırakmıyordu; alt metin iki satır.
+        // Sığmazsa eski metne düşer.
         final pencere = s.pencere;
+        final degerler =
+            '${l10n.todayYourReturn(fmtPct(s.nominal))} · ${l10n.todayCpiShort(fmtPct(s.inflation))}';
         return _BilgiKutusu(
           etiket: [
-            if (pencere != null)
-              '${l10n.todayRealLabel} · ${AralikMetni.olculenAylar(l10n, context.tarihDili, bas: pencere.seriBaslangici, bitis: pencere.seriBitisi)}',
             '${l10n.todayRealLabel} · ${l10n.todayRealYearly}',
             l10n.todayRealLabel,
           ],
@@ -706,7 +708,9 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           yon: s.onde,
           cubuk: _EnflasyonCubugu(nominal: s.nominal, tufe: s.inflation),
           altMetin: [
-            '${l10n.todayYourReturn(fmtPct(s.nominal))} · ${l10n.todayCpiShort(fmtPct(s.inflation))}',
+            if (pencere != null)
+              '$degerler · ${AralikMetni.olculenAylar(l10n, context.tarihDili, bas: pencere.seriBaslangici, bitis: pencere.seriBitisi)}',
+            degerler,
           ],
           onTap: _olcerek(
               s, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
