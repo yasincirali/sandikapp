@@ -345,6 +345,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               else
               Expanded(
                 child: pStateAsync.when(
+                  // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
+                  // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
+                  // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
+                  // boşalıp doluyordu (titreme bulgusu 2026-10-02). Ana ekran aynı
+                  // şeyi `valueOrNull` ile baştan beri yapıyor.
+                  skipLoadingOnReload: true,
                   loading: () => const SandikLoadingScreen(),
                   error: (e, _) => SandikErrorView(
                       error: e,

@@ -314,6 +314,17 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     }
     if (_scrollCtrl.hasClients && _scrollCtrl.offset != 0) {
       _scrollCtrl.jumpTo(0);
+      // Kare sonrası bir kez daha (CI kırmızısı 2026-10-02, tarihe bağlı):
+      // `jumpTo` setState İÇİNDE eski içerikte koşuyor; yeni filtrenin
+      // satırları yerleşince konum bir "ballistic" düzeltmeyle eski
+      // ofsete (≈1.750) geri kayıyordu — liste başa dönmüş gibi yapıp
+      // dibe dönüyordu. Ay kapları tarihe göre değiştiği için yalnız bazı
+      // günlerde görünüyordu.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollCtrl.hasClients && _scrollCtrl.offset != 0) {
+          _scrollCtrl.jumpTo(0);
+        }
+      });
     }
   }
 
