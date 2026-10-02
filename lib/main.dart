@@ -49,6 +49,7 @@ import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
+import 'services/huni_kaydi.dart';
 import 'services/ilk_acilis_sirasi.dart';
 import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
@@ -164,6 +165,10 @@ void main() async {
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
     // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
     await initPreferencesCache();
+    // Kayıt hunisi (0097): yeni kurulum mu? RetentionTracker kurulum
+    // gününü yazmadan ÖNCE (o deferred init'te) — yazdıktan sonra her cihaz
+    // "eski" görünürdü. Yalnızca tercih dosyası; ağ yok.
+    await HuniKaydi.instance.hazirla();
     // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
     //
     // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
@@ -252,6 +257,9 @@ void main() async {
       ),
     );
     await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    // Önceki açılışlardan kalan huni olayları (ilk açılış dahil) — Supabase
+    // ancak burada hazır. Beklenmez.
+    CrashReporter.arkaPlan(HuniKaydi.instance.bosalt(), reason: 'main.HuniKaydi.bosalt');
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
     CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
@@ -1897,6 +1905,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
     _oturumVardi = true;
 
+    // Huni (0097): bu kurulumda ilk oturum. Sunucu bununla kurulumun
+    // oturumsuz adımlarını kişiye bağlar. Tekrar eleme `HuniKaydi`'nde;
+    // kare sonunda, build'de yan etki olmasın.
+    if (!_huniGirisBildirildi) {
+      _huniGirisBildirildi = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => HuniKaydi.instance.kaydet(HuniAdimi.ilkGiris));
+    }
+
     if (_disclaimerAccepted == false) {
       return DisclaimerAcceptanceScreen(
         key: const ValueKey('disclaimer'),
@@ -2015,6 +2032,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// Bu süreçte `home_first_seen` denetimi tetiklendi mi — build her
   /// karede çalışır, kare sonu geri çağrısı bir kez kurulsun.
   bool _anaEkranBildirildi = false;
+
+  /// Bu süreçte huni `ilk_giris` adımı tetiklendi mi (bkz. build).
+  bool _huniGirisBildirildi = false;
 
   /// Kilit teklifinin bu OTURUM için ertelendiği kullanıcı.
   ///

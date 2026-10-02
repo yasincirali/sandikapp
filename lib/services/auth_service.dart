@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,7 @@ import '../models/user_model.dart';
 import '../models/kullanici_adi.dart';
 import 'db_logger.dart';
 import 'home_widget_service.dart';
+import 'huni_kaydi.dart';
 import 'live_activity_service.dart';
 import 'portfolio_cache.dart';
 import 'social_auth_service.dart';
@@ -375,6 +377,9 @@ class AuthService {
     } on AuthException {
       rethrow;
     } on AuthApiException catch (e) {
+      // Huni (0097): kayıt/giriş sırasında oturumsuz alınan hata db_logs'a
+      // düşmez; panel düşüş nedenini buradan okur. Yalnızca sınıf+kod.
+      unawaited(HuniKaydi.instance.hata('kayit', e));
       // Hesap numaralandırma (M4): "zaten kayıtlı" demek, bu e-postanın bir
       // hesabı olduğunu doğrulamaktı. Confirm-email açıkken Supabase zaten
       // duplicate için de "kod gönderildi" davranır; bu dal yalnızca eski
@@ -388,6 +393,7 @@ class AuthService {
       }
       throw AuthException(friendlyError(e));
     } catch (e, st) {
+      unawaited(HuniKaydi.instance.hata('kayit', e));
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
       // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
@@ -473,6 +479,9 @@ class AuthService {
       }
       return user;
     } on AuthApiException catch (e) {
+      // Huni (0097): kayıt/giriş sırasında oturumsuz alınan hata db_logs'a
+      // düşmez; panel düşüş nedenini buradan okur. Yalnızca sınıf+kod.
+      unawaited(HuniKaydi.instance.hata('otp', e));
       final msg = e.message.toLowerCase();
       if (msg.contains('expired') || msg.contains('invalid')) {
         throw const AuthException(
@@ -481,6 +490,7 @@ class AuthService {
       // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
       throw AuthException(friendlyError(e));
     } catch (e, st) {
+      unawaited(HuniKaydi.instance.hata('otp', e));
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
       // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
@@ -512,6 +522,9 @@ class AuthService {
         },
       );
     } on AuthApiException catch (e) {
+      // Huni (0097): kayıt/giriş sırasında oturumsuz alınan hata db_logs'a
+      // düşmez; panel düşüş nedenini buradan okur. Yalnızca sınıf+kod.
+      unawaited(HuniKaydi.instance.hata('otp_tekrar', e));
       final msg = e.message.toLowerCase();
       if (msg.contains('rate') || msg.contains('too many')) {
         throw const AuthException(
@@ -520,6 +533,7 @@ class AuthService {
       // Ham GoTrue metni (İngilizce) kullanıcıya gitmesin — U13 sözleşmesi.
       throw AuthException(friendlyError(e));
     } catch (e, st) {
+      unawaited(HuniKaydi.instance.hata('otp_tekrar', e));
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
       // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve
@@ -671,11 +685,15 @@ class AuthService {
     } on AuthException {
       rethrow;
     } on AuthApiException catch (e, st) {
+      // Huni (0097): kayıt/giriş sırasında oturumsuz alınan hata db_logs'a
+      // düşmez; panel düşüş nedenini buradan okur. Yalnızca sınıf+kod.
+      unawaited(HuniKaydi.instance.hata('sosyal_${provider.name}', e));
       CrashReporter.report(e, st, reason: 'AuthService.loginWithSocial');
       throw AuthException(
           '${provider == SocialProvider.apple ? 'Apple' : 'Google'} ile giriş '
           'yapılamadı. Biraz sonra tekrar dene.');
     } catch (e, st) {
+      unawaited(HuniKaydi.instance.hata('sosyal_${provider.name}', e));
       // Bağlantı hatası KULLANICININ ağından gelir, bizim bir
       // arızamız değil: Crashlytics'e taşımak gerçek hataları
       // gürültüde gizler (bkz. `CrashReporter.agHatasiMi`) ve

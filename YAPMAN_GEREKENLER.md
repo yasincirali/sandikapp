@@ -1,12 +1,38 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-02 (kontrol paneli kayıt hunisi — 0097, dağıtım sende; önce: 2026-10-01 gece Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-02 Kontrol paneli: kayıt hunisi — 0097 + istemci (dal `feat/huni-paneli`, push YOK)
+
+Panelin açılış ekranı artık **Kayıt hunisi**: indirip açtı → kayıt ekranı →
+kayıt → ilk giriş → ilk varlık; ara adımlar, gün gün, kırılım, kayıt hataları
+ve kişi kişi yolculuk. Worktree: `C:/projects/PortfoyTakip-huni`.
+
+- [x] Yerel Supabase'de (PG 17) 0097 uygulandı, doğrulama blokları geçti; sahte
+      veriyle beş `admin_huni_*` RPC'si ve panel ekranı denendi; anon tabloyu /
+      admin RPC'lerini çağıramıyor, admin olmayan "Yetkisiz" alıyor.
+- [x] `flutter analyze lib/ test/` temiz; ilgili 45 test dosyası (606 test) geçti.
+- [ ] **Emülatörde kontrol** (push kuralı): uygulamayı SİLİP kur → giriş ekranı
+      → kayıt ol → ilk varlığı ekle; panelde "Kurulumdan" görünümünde yolculuk
+      görünsün. Güncelleme ile kurulan cihaz huniye GİRMEMELİ.
+- [ ] **0097'yi iki sunucuya dağıt** (Frankfurt → Tokyo, `supabase-deploy.yml`
+      hedef `ikisi`) → `python tool/sema_esitlik.py`. İstemci sürümünden ÖNCE:
+      migration yokken istemci her açılışta tek bir non-fatal raporlar, akış
+      bozulmaz ama olaylar kuyrukta bekler.
+- [ ] **Gizlilik metni / Data Safety** kontrolü (hukuki adım, sende): yeni
+      veri = cihazda üretilen rastgele kurulum kimliği + adım zamanları +
+      kayıt hata kodları (mesaj yok), oturum açınca hesaba bağlanır, 400 gün
+      saklanır. Firebase Analytics'in beyan ettiği "uygulama etkileşimleri"
+      kapsamında görünüyor; KVKK aydınlatma metninde "birinci taraf kullanım
+      istatistiği" ifadesi yoksa ekle.
+- Panel yalnızca "Kurulumdan" görünümünde yeni sürümün yayılmasını bekler;
+  o zamana kadar **"Hesaptan"** görünümü tüm sürümlerden dolar.
 
 ## ⏳ 2026-10-02 ProGuard daraltması — gerçek cihazda 5 dakikalık kontrol
 
