@@ -166,6 +166,12 @@ class _MevduatGovdesi extends ConsumerWidget {
         : pay * (MevduatHesabi.birimDeger(donemler, vade) ?? 0);
     final tarih = DateFormat.yMMMd(l10n.localeName);
     final acik = s.acik && pay > 1e-9;
+    // Vadeli dönem, vadesi dolmamış: değer anaparada düz, faiz vade sonunda
+    // eklenecek (kullanıcı kararı 2026-10-02). Kazanç "beklenen" olarak
+    // gösterilir; "Bu dönem net" ₺0 yazıp kullanıcıyı korkutmaz.
+    final vadeIci = !son.vadesiz && !doldu;
+    final beklenen =
+        vadeIci ? MevduatHesabi.vadeSonuNetFaizi(donemler, pay) : null;
 
     return SandikCard(
       child: Column(
@@ -192,11 +198,18 @@ class _MevduatGovdesi extends ConsumerWidget {
             SozlesmeOzetSatiri(
                 etiket: l10n.depositMaturity, deger: tarih.format(vade)),
           if (acik) ...[
-            SozlesmeOzetSatiri(
-              etiket: l10n.depositThisPeriod,
-              deger: '+${fmtTRY(buDonem, digits: 2)}',
-              renk: context.c.gain,
-            ),
+            if (beklenen != null)
+              SozlesmeOzetSatiri(
+                etiket: l10n.depositInterestAtMaturity,
+                deger: '+${fmtTRY(beklenen, digits: 2)}',
+                renk: context.c.gain,
+              )
+            else
+              SozlesmeOzetSatiri(
+                etiket: l10n.depositThisPeriod,
+                deger: '+${fmtTRY(buDonem, digits: 2)}',
+                renk: context.c.gain,
+              ),
             if (vadeDegeri != null && !doldu)
               SozlesmeOzetSatiri(
                 etiket: l10n.depositAtMaturity,
@@ -223,6 +236,7 @@ class _MevduatGovdesi extends ConsumerWidget {
                         ?.copyWith(color: context.c.text58)),
               ),
           ],
+          if (vadeIci && acik) SozlesmeNotu(l10n.depositPaidAtMaturityNote),
           if (doldu && acik) ...[
             const SizedBox(height: SandikSpace.smd),
             Container(
@@ -251,12 +265,17 @@ class _MevduatGovdesi extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
+                  // Vade içinde "Yenile" yerine "Oranı güncelle": banka vade
+                  // içinde faizi değiştirdiyse dönem aynı kalır, vade
+                  // sonundaki kazanç yeni orana göre çıkar (2026-10-02).
                   child: _Eylem(
-                    metin: son.vadesiz
+                    metin: son.vadesiz || vadeIci
                         ? l10n.depositRateUpdate
                         : l10n.depositRenew,
                     birincil: doldu,
-                    bas: () => _yenile(context, ref, son),
+                    bas: () => vadeIci
+                        ? _faizGuncelle(context, ref, son)
+                        : _yenile(context, ref, son),
                   ),
                 ),
                 const SizedBox(width: SandikSpace.sm),
@@ -315,6 +334,40 @@ class _MevduatGovdesi extends ConsumerWidget {
     }
   }
 
+  /// Vade içinde faiz değişikliği — dönem yerinde güncellenir.
+  Future<void> _faizGuncelle(
+      BuildContext context, WidgetRef ref, MevduatDonemi son) async {
+    if (DemoModu.yazmaKapisi('mevduat')) return;
+    final l10n = context.l10n;
+    final sonuc = await showModalBottomSheet<_YeniDonem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (_) => _YenilemeSayfasi(onceki: son, vadeIci: true),
+    );
+    if (sonuc == null || !context.mounted) return;
+    try {
+      await ref.read(sozlesmeProvider.notifier).mevduatFaizGuncelle(
+          sozlesmeId: s.id, yillikFaiz: sonuc.faiz, stopaj: sonuc.stopaj);
+      if (context.mounted) {
+        sandikSnack(
+            context,
+            l10n.depositRateSavedMidTerm(
+                fmtNumFlex(sonuc.faiz, maxDigits: 2)),
+            kind: SandikSnackKind.success);
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.faizGuncelle');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+
   Future<void> _cek(BuildContext context, WidgetRef ref, double deger) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
@@ -349,8 +402,12 @@ typedef _YeniDonem = ({double faiz, double stopaj, int? gun, DateTime bas});
 
 /// Yenileme / oran güncelleme sayfası.
 class _YenilemeSayfasi extends StatefulWidget {
-  const _YenilemeSayfasi({required this.onceki});
+  const _YenilemeSayfasi({required this.onceki, this.vadeIci = false});
   final MevduatDonemi onceki;
+
+  /// Vadeli dönemde VADE İÇİ oran değişikliği: yalnız faiz ve stopaj
+  /// sorulur; vade ve başlangıç dönemin kendisidir.
+  final bool vadeIci;
 
   @override
   State<_YenilemeSayfasi> createState() => _YenilemeSayfasiState();
@@ -367,8 +424,14 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
   // açılıyor, öneri yalnızca vade çipine dokununca geliyordu: 2025 Şubat'ta
   // %15'le açılıp Temmuz'dan sonra aynı vadeyle yenilenen mevduat %17,5
   // yerine %15'le kaydediliyordu.
+  // Vade içi değişiklikte stopaj dönemin kendi stopajıdır (açılış günü ve
+  // vadeye bağlı; ikisi de değişmiyor).
   late final _stopaj = TextEditingController(
-      text: fmtNumFlex(onerilenStopaj(_yeniBaslangic, _gun), maxDigits: 2));
+      text: fmtNumFlex(
+          widget.vadeIci
+              ? widget.onceki.stopaj
+              : onerilenStopaj(_yeniBaslangic, _gun),
+          maxDigits: 2));
 
   /// Yeni dönemin başı. Varsayılan `mevduatYenile` ile aynı kural (banka
   /// vadeli hesabı vade gününde yeniler); kullanıcı değiştirebilir.
@@ -408,6 +471,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final vadesiz = widget.onceki.vadesiz;
+    final vadeIci = widget.vadeIci;
     final renk = AssetType.mevduat.color;
     return Padding(
       padding: EdgeInsets.only(
@@ -420,7 +484,10 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(vadesiz ? l10n.depositRateUpdate : l10n.depositRenewTitle,
+              Text(
+                  vadesiz || vadeIci
+                      ? l10n.depositRateUpdate
+                      : l10n.depositRenewTitle,
                   style: context.t.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700, color: context.c.text90)),
               const SizedBox(height: SandikSpace.md),
@@ -437,7 +504,8 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                       : null;
                 },
               ),
-              if (!vadesiz) ...[
+              if (vadeIci) SozlesmeNotu(l10n.depositRateMidTermHint),
+              if (!vadesiz && !vadeIci) ...[
                 const SizedBox(height: SandikSpace.md),
                 SozlesmeEtiketi(l10n.depositTerm),
                 Wrap(
@@ -458,7 +526,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                   ],
                 ),
               ],
-              if (!vadesiz) ...[
+              if (!vadesiz && !vadeIci) ...[
                 const SizedBox(height: SandikSpace.md),
                 SozlesmeTarihi(
                   etiket: l10n.depositStart,

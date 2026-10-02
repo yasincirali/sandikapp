@@ -596,6 +596,22 @@ class SupabaseService {
     );
   }
 
+  /// Dönemin faiz ve stopajını yerinde günceller (vade içi oran değişikliği).
+  /// Başlangıç ve vade DEĞİŞMEZ; yalnız iki oran gönderilir.
+  Future<void> updateMevduatDonemiOrani(MevduatDonemi d, String userId) async {
+    await _log.log<void>(
+      source: 'SupabaseService.updateMevduatDonemiOrani',
+      table: 'mevduat_donemleri',
+      op: 'UPDATE',
+      request: {'id': d.id},
+      call: () => _db
+          .from('mevduat_donemleri')
+          .update({'yillik_faiz': d.yillikFaiz, 'stopaj': d.stopaj})
+          .eq('id', d.id)
+          .eq('user_id', userId),
+    );
+  }
+
   // ── Snapshots ─────────────────────────────────────────────────────────────
 
   /// Kullanıcı başına son anlık görüntü yazımı — [snapshotAraligi]'ndan sık

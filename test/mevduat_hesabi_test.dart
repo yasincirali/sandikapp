@@ -39,10 +39,66 @@ void main() {
         isNull);
   });
 
-  test('vadeli dönem doğrusal tahakkuk eder', () {
-    final yari = MevduatHesabi.birimDeger(
-        [donem(bas, 32)], bas.add(const Duration(days: 16)))!;
-    expect(yari, closeTo(1 + net32 / 2, 1e-12));
+  test('vadeli dönem vade içinde DÜZ, faiz vade sonunda eklenir (2026-10-02)',
+      () {
+    final d = [donem(bas, 32)];
+    final vade = bas.add(const Duration(days: 32));
+    expect(MevduatHesabi.birimDeger(d, bas.add(const Duration(days: 16))),
+        1.0);
+    expect(
+        MevduatHesabi.birimDeger(d, vade.subtract(const Duration(seconds: 1))),
+        1.0,
+        reason: 'vade gününden bir saniye önce bile faiz eklenmemiş');
+    expect(MevduatHesabi.birimDeger(d, vade), closeTo(1 + net32, 1e-12));
+  });
+
+  test('vade içinde beklenen net faiz: vade sonunda eklenecek tutar', () {
+    final d = [donem(bas, 32)];
+    expect(MevduatHesabi.vadeSonuNetFaizi(d, 250000),
+        closeTo(250000 * net32, 1e-6));
+    expect(MevduatHesabi.vadeSonuNetFaizi([donem(bas, null)], 250000),
+        isNull,
+        reason: 'günlük faizlide vade yok');
+  });
+
+  test('vade içinde oran değişti: kazanç SON orana göre (dönem yerinde)', () {
+    // Kullanıcı kararı 2026-10-02: oran vade içinde %42 → %38 olursa vade
+    // sonunda tüm dönem %38 üzerinden eklenir; vade öncesi değer düz kaldığı
+    // için geri alınan bir kazanç yok.
+    final once = [donem(bas, 32, faiz: 42)];
+    final sonra = [donem(bas, 32, faiz: 38)];
+    final g16 = bas.add(const Duration(days: 16));
+    expect(MevduatHesabi.birimDeger(once, g16),
+        MevduatHesabi.birimDeger(sonra, g16));
+    expect(MevduatHesabi.vadeSonuNetFaizi(sonra, 100000),
+        closeTo(100000 * 0.38 * 0.825 * 32 / 365, 1e-6));
+  });
+
+  test('eski kayıt: vadeden önce açılmış sonraki dönem o güne kadarki faizi '
+      'geçişte ekler (geçmiş değer değişmez)', () {
+    final g10 = bas.add(const Duration(days: 10));
+    final d = [donem(bas, 32, id: 'a'), donem(g10, 32, faiz: 40, id: 'b')];
+    expect(MevduatHesabi.birimDeger(d, g10),
+        closeTo(1 + 0.42 * 0.825 * 10 / 365, 1e-12));
+    expect(MevduatHesabi.birimDeger(d, g10.add(const Duration(days: 5))),
+        MevduatHesabi.birimDeger(d, g10));
+  });
+
+  test('portföy şeridi özeti: vadeli ve günlük faizli', () {
+    final g8 = bas.add(const Duration(days: 8));
+    final o = MevduatHesabi.ozet([donem(bas, 32)], 100000, g8)!;
+    expect(o.vade, bas.add(const Duration(days: 32)));
+    expect(o.ilerleme, closeTo(0.25, 1e-9));
+    expect(o.kalanGun, 24);
+    expect(o.doldu, isFalse);
+    expect(o.vadeSonuNet, closeTo(100000 * net32, 1e-6));
+    expect(o.gunlukNet, isNull);
+
+    final v = MevduatHesabi.ozet(
+        [donem(bas, null, faiz: 36.5, stopaj: 0)], 100000, bas)!;
+    expect(v.vade, isNull);
+    expect(v.gunlukNet, closeTo(100, 1e-9));
+    expect(v.vadeSonuNet, isNull);
   });
 
   test('vade doldu, yenilenmedi: değer DÜZ kalır (yenileme faizi uydurulmaz)',
@@ -116,14 +172,27 @@ void main() {
   });
 
   group('bu dönem net (donemKazanci)', () {
-    const n = 0.45 * 0.825;
-    double b(int g) => 1 + n * g / 365;
-    final d = [donem(bas, 32, faiz: 45)];
+    // Vadeli dönemde değer vade içinde düz; hareket gününden faiz alma
+    // kuralı günlük faizli hesapta anlamlı — iç testler onunla.
+    final d = [donem(bas, null, faiz: 45)];
     final vade = bas.add(const Duration(days: 32));
+    double b(int g) =>
+        MevduatHesabi.birimDeger(d, bas.add(Duration(days: g)))!;
 
     test('tek alım: dönemin net faizi', () {
       expect(MevduatHesabi.donemKazanci(d, [(bas, 100000)], vade),
           closeTo(100000 * (b(32) - 1), 1e-6));
+    });
+
+    test('vadeli: vade gelince dönemin tamamı, öncesinde 0', () {
+      final dv = [donem(bas, 32, faiz: 45)];
+      const n = 0.45 * 0.825;
+      expect(
+          MevduatHesabi.donemKazanci(
+              dv, [(bas, 100000)], bas.add(const Duration(days: 16))),
+          0);
+      expect(MevduatHesabi.donemKazanci(dv, [(bas, 100000)], vade),
+          closeTo(100000 * n * 32 / 365, 1e-6));
     });
 
     test('dönem içinde eklenen para kendi gününden faiz alır', () {
@@ -131,9 +200,10 @@ void main() {
       final pay2 = 100000 / b(16);
       final k = MevduatHesabi.donemKazanci(
           d, [(bas, 100000), (g16, pay2)], vade);
-      // ₺4.856 — eski hesap (toplam pay × dönem büyümesi) ₺6.457 derdi.
+      // Eski hesap (toplam pay × dönem büyümesi) yeni parayı dönem başından
+      // saydı.
       expect(k, closeTo(100000 * (b(32) - 1) + pay2 * (b(32) - b(16)), 1e-6));
-      expect(k, closeTo(4856.13, 0.01));
+      expect(k, lessThan((100000 + pay2) * (b(32) - 1)));
     });
 
     test('dönem içi çekim: çekilen pay çekim gününe kadar sayılır', () {

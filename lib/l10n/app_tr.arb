@@ -3333,7 +3333,7 @@
   "depositErrorRate": "Faiz oranını yaz.",
   "depositErrorDays": "Vadeyi gün olarak yaz.",
   "depositErrorWithholding": "Stopaj 0 ile 100 arasında olmalı.",
-  "depositAccrualNote": "Değer her gün tahakkuk eden net faizle artar. Vadeyi erken bozarsan banka faizi ödemeyebilir.",
+  "depositAccrualNote": "Faiz vade sonunda anaparaya eklenir; o güne kadar değer anaparada kalır. Vadeyi erken bozarsan banka faizi ödemeyebilir.",
   "depositCardTitle": "Mevduat",
   "depositPeriodN": "{n}. dönem",
   "@depositPeriodN": {
@@ -3778,5 +3778,25 @@
           }
       }
   },
-  "marketPound": "Sterlin"
+  "marketPound": "Sterlin",
+  "depositInterestAtMaturity": "Vade sonunda net faiz",
+  "depositInterestAdded": "Eklenen net faiz",
+  "depositPaidAtMaturityNote": "Faiz vade sonunda eklenir; o güne kadar değer anaparada kalır. Vade içinde oranı güncellersen kazanç son girdiğin orana göre hesaplanır.",
+  "depositRateMidTermHint": "Vade ve başlangıç aynı kalır. Vade sonundaki kazanç bu yeni orana göre hesaplanır.",
+  "depositRateSavedMidTerm": "Oran %{rate} oldu. Vade sonundaki kazanç bu orana göre hesaplanacak.",
+  "@depositRateSavedMidTerm": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "depositStripRate": "%{rate} brüt faiz",
+  "@depositStripRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  }
 }

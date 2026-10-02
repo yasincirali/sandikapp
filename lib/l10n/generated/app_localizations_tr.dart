@@ -4655,7 +4655,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositAccrualNote =>
-      'Değer her gün tahakkuk eden net faizle artar. Vadeyi erken bozarsan banka faizi ödemeyebilir.';
+      'Faiz vade sonunda anaparaya eklenir; o güne kadar değer anaparada kalır. Vadeyi erken bozarsan banka faizi ödemeyebilir.';
 
   @override
   String get depositCardTitle => 'Mevduat';
@@ -5192,4 +5192,28 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get marketPound => 'Sterlin';
+
+  @override
+  String get depositInterestAtMaturity => 'Vade sonunda net faiz';
+
+  @override
+  String get depositInterestAdded => 'Eklenen net faiz';
+
+  @override
+  String get depositPaidAtMaturityNote =>
+      'Faiz vade sonunda eklenir; o güne kadar değer anaparada kalır. Vade içinde oranı güncellersen kazanç son girdiğin orana göre hesaplanır.';
+
+  @override
+  String get depositRateMidTermHint =>
+      'Vade ve başlangıç aynı kalır. Vade sonundaki kazanç bu yeni orana göre hesaplanır.';
+
+  @override
+  String depositRateSavedMidTerm(String rate) {
+    return 'Oran %$rate oldu. Vade sonundaki kazanç bu orana göre hesaplanacak.';
+  }
+
+  @override
+  String depositStripRate(String rate) {
+    return '%$rate brüt faiz';
+  }
 }

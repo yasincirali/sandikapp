@@ -4688,7 +4688,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositAccrualNote =>
-      'The value grows each day by the accrued net interest. If you break the term early, the bank may not pay the interest.';
+      'Interest is added to the principal at maturity; until then the value stays at the principal. If you break the term early, the bank may not pay the interest.';
 
   @override
   String get depositCardTitle => 'Deposit';
@@ -5242,4 +5242,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get marketPound => 'GBP';
+
+  @override
+  String get depositInterestAtMaturity => 'Net interest at maturity';
+
+  @override
+  String get depositInterestAdded => 'Net interest added';
+
+  @override
+  String get depositPaidAtMaturityNote =>
+      'Interest is added at maturity; until then the value stays at the principal. If you update the rate during the term, the gain uses the latest rate you entered.';
+
+  @override
+  String get depositRateMidTermHint =>
+      'The term and start date stay the same. The gain at maturity uses this new rate.';
+
+  @override
+  String depositRateSavedMidTerm(String rate) {
+    return 'Rate is now $rate%. The gain at maturity will use this rate.';
+  }
+
+  @override
+  String depositStripRate(String rate) {
+    return '$rate% gross interest';
+  }
 }

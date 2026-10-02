@@ -114,10 +114,13 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
   void _yayinla(Iterable<Sozlesme> degisen, Iterable<MevduatDonemi> yeniDonem) {
     final c = _simdiki;
     final s = {...c.sozlesmeler, for (final x in degisen) x.id: x};
-    final d = [
-      for (final l in c.donemler.values) ...l,
-      ...yeniDonem,
-    ];
+    // id'ye göre: güncellenen dönem (`mevduatFaizGuncelle`) eskisinin
+    // yerine geçer, iki kez sayılmaz.
+    final d = {
+      for (final l in c.donemler.values)
+        for (final x in l) x.id: x,
+      for (final x in yeniDonem) x.id: x,
+    }.values.toList();
     state = AsyncData(_durum(s.values, d));
   }
 
@@ -221,6 +224,41 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     SozlesmeDeposu.instance.donemEkle(d);
     // Seri dönemlerden üretilir; önbellekteki eski seri unutulmazsa grafik
     // eski çizgide kalır ve geriye dönük faiz bugünkü kazanç gibi görünür.
+    HistoryService.instance.sembolUnut(mevduatSembolu(sozlesmeId));
+    _yayinla(const [], [d]);
+    await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+  }
+
+  /// Vadeli dönemin faiz oranı VADE İÇİNDE değişti: dönem satırı yerinde
+  /// güncellenir, vade ve başlangıç aynı kalır.
+  ///
+  /// Kullanıcı kararı (2026-10-02): *"Vade bitmeden faiz oranı
+  /// değiştirildiğinde vade sonunda kazanç son orana göre verilmeli."*
+  /// Vadeli dönemin değeri vade sonuna kadar düz olduğu için (bkz.
+  /// `mevduat_hesabi.dart`) yeni oran geçmişte görünmüş hiçbir kazancı geri
+  /// almaz; yalnızca vade sonunda eklenecek tutar değişir. Yeni dönem
+  /// AÇILMAZ: açılsaydı dönem sayısı artar, eski oranla bir ara kazanç
+  /// oluşurdu.
+  Future<void> mevduatFaizGuncelle({
+    required String sozlesmeId,
+    required double yillikFaiz,
+    required double stopaj,
+  }) async {
+    final uid = _kullanici();
+    final son = MevduatHesabi.sonDonem(_simdiki.donemleri(sozlesmeId));
+    if (son == null || son.vadesiz) {
+      throw StateError('vadeli dönem yok');
+    }
+    final d = MevduatDonemi(
+      id: son.id,
+      sozlesmeId: son.sozlesmeId,
+      baslangic: son.baslangic,
+      vadeSonu: son.vadeSonu,
+      yillikFaiz: yillikFaiz,
+      stopaj: stopaj,
+    );
+    await SupabaseService.instance.updateMevduatDonemiOrani(d, uid);
+    SozlesmeDeposu.instance.donemEkle(d);
     HistoryService.instance.sembolUnut(mevduatSembolu(sozlesmeId));
     _yayinla(const [], [d]);
     await ref.read(portfolioProvider.notifier).refreshPrices(force: true);

@@ -32,6 +32,7 @@ import '../widgets/sandik_acilir.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
+import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
@@ -1779,7 +1780,13 @@ class _AssetDetailsPanel extends StatelessWidget {
           // telefonlarda 2–22pt'ye düşüyor ve okunmuyordu. Burada panelin
           // tamamını kullanır, yükseklik de 24→48pt'ye çıkar: eğrinin şekli
           // gerçekten görünür.
-          if (SparklineService.supports(rep)) ...[
+          // Mevduat: fiyat eğrisi yerine vade şeridi (2026-10-02). Vadeli
+          // mevduatın değeri vade içinde düzdür; eğri boş/düz kalıyordu.
+          if (rep.type == AssetType.mevduat) ...[
+            MevduatVadeSeridi(
+                temsilci: rep, pay: position.totalQuantity, baz: baz),
+            const SizedBox(height: 14),
+          ] else if (SparklineService.supports(rep)) ...[
             LayoutBuilder(
               builder: (context, c) => AssetSparkline(
                 asset: rep,

@@ -131,6 +131,30 @@ void main() {
             kurum: 'Enpara',
             baslangic: gun),
       ], [
+        // Günlük faizli: değer her gün artar (vadelide vade içinde düz,
+        // bkz. aşağıdaki vadeli test).
+        MevduatDonemi(
+          id: 'd',
+          sozlesmeId: sid,
+          baslangic: gun,
+          vadeSonu: null,
+          yillikFaiz: 42,
+          stopaj: 17.5,
+        ),
+      ]);
+    });
+
+    test('vadeli: vade içinde kotasyon anaparada, değişim 0', () async {
+      final bas = DateTime.now().subtract(const Duration(days: 10));
+      final gun = DateTime(bas.year, bas.month, bas.day);
+      SozlesmeDeposu.instance.yaz([
+        Sozlesme(
+            id: sid,
+            userId: 'u',
+            tur: SozlesmeTuru.mevduat,
+            kurum: 'Enpara',
+            baslangic: gun),
+      ], [
         MevduatDonemi(
           id: 'd',
           sozlesmeId: sid,
@@ -140,6 +164,10 @@ void main() {
           stopaj: 17.5,
         ),
       ]);
+      final sembol = mevduatSembolu(sid).toUpperCase();
+      final q = await PriceService.instance.fetchQuotes([sembol]);
+      expect(q[sembol]!.regularMarketPrice, 1.0);
+      expect(q[sembol]!.regularMarketChangePercent, 0);
     });
 
     test('kotasyon ağa çıkmadan sözleşmeden gelir', () async {
