@@ -39,6 +39,7 @@ import '../theme/sandik.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
+import 'aralik_cipi.dart' show AralikMetni;
 import 'hedef_sheet.dart';
 import 'sandik_skeleton.dart';
 import 'sigan_metin.dart';
@@ -689,8 +690,14 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     switch (s) {
       case ReelGetiriSatiri():
         // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
+        // Önce ölçüm ayları ("Ağu 25 - Ağu 26", Özet'le aynı biçim): getiri
+        // yüzdesi Performans 1Y'den farklı pencereyi ölçüyor ve bunu ancak
+        // aralık söyler (2026-10-02 müşteri testi). Sığmazsa eski etiketler.
+        final pencere = s.pencere;
         return _BilgiKutusu(
           etiket: [
+            if (pencere != null)
+              '${l10n.todayRealLabel} · ${AralikMetni.olculenAylar(l10n, context.tarihDili, bas: pencere.seriBaslangici, bitis: pencere.seriBitisi)}',
             '${l10n.todayRealLabel} · ${l10n.todayRealYearly}',
             l10n.todayRealLabel,
           ],

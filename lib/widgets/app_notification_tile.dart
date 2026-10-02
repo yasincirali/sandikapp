@@ -100,6 +100,11 @@ class AppNotificationTile extends StatelessWidget {
                       Flexible(
                         child: Text(
                           bildirim.title,
+                          // İki satır (2026-10-02 müşteri testi): başlığın
+                          // asıl bilgisi sonda ("… son kapanışta %9,5
+                          // düştü") ve tek satırda üç noktanın altında
+                          // kalıyordu.
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
@@ -133,6 +138,18 @@ class AppNotificationTile extends StatelessWidget {
                         color: context.c.text58.withValues(alpha: alphaFactor),
                         decoration: TextDecoration.none),
                   ),
+                  // Etkin bildirimde de ne zaman geldiği yazar: aynı hisse
+                  // için "düştü" ve "yükseldi" alt alta duruyordu, hangisinin
+                  // bugün olduğu anlaşılmıyordu (2026-10-02 müşteri testi).
+                  if (!faded) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      _tarih(context, bildirim.sentAt),
+                      style: context.t.labelSmall?.copyWith(
+                          color: context.c.text36,
+                          decoration: TextDecoration.none),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -158,13 +175,17 @@ class AppNotificationTile extends StatelessWidget {
     );
   }
 
-  String _tarih(BuildContext context, DateTime d) {
+  String _tarih(BuildContext context, DateTime ham) {
+    // `sent_at` sunucudan UTC gelir (`DateTime.parse` "+00:00" → UTC);
+    // yerel saate çevrilmeden TR'de saat 3 geri, gece yarısı civarında
+    // gün de yanlış yazıyordu.
+    final d = ham.toLocal();
     final now = DateTime.now();
     final saat = '${d.hour.toString().padLeft(2, '0')}:'
         '${d.minute.toString().padLeft(2, '0')}';
     if (d.year == now.year && d.month == now.month && d.day == now.day) {
       return context.l10n.notifToday(saat);
     }
-    return '${d.day}.${d.month}.${d.year}';
+    return '${d.day}.${d.month}.${d.year} $saat';
   }
 }

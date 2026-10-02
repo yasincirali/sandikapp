@@ -17,6 +17,7 @@
 import '../utils/tr_format.dart' show dayKey;
 import 'bist_calendar.dart';
 import 'daily_summary.dart';
+import 'inflation_service.dart' show InflationWindow;
 import 'tuik_takvimi.dart';
 
 /// Yaklaşan olay türleri — hepsi ULUSAL takvimden, uydurma sebep yok.
@@ -104,9 +105,16 @@ class AylikOzetSatiri extends BugunSatiri {
 /// girdi — dönüşüme girmez, markanın kalbi her gün görünür. Sayı yine
 /// `RealReturnService.yillik`'ten gelir (tek hesap yolu).
 class ReelGetiriSatiri extends BugunSatiri {
-  const ReelGetiriSatiri({required this.nominal, required this.inflation});
+  const ReelGetiriSatiri(
+      {required this.nominal, required this.inflation, this.pencere});
   final double nominal;
   final double inflation;
+
+  /// İki sayının ölçüldüğü TÜFE penceresi — kutu etiketinde ay aralığı
+  /// olarak yazılır (2026-10-02 müşteri testi: Ana "%37,29", Performans 1Y
+  /// "%38,84" diyordu ve hangisinin hangi aralık olduğu yazmıyordu).
+  /// Bilinmiyorsa etiket "yıllık" der.
+  final InflationWindow? pencere;
 
   /// Puan farkı: getiri − TÜFE.
   double get fark => nominal - inflation;
