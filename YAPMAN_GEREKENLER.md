@@ -8,7 +8,7 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-02 Kontrol paneli: kayıt hunisi — 0097 + istemci (dal `feat/huni-paneli`, push YOK)
+## ⏳ 2026-10-02 Kontrol paneli: kayıt hunisi — 0097 + istemci (dal `feat/huni-paneli`)
 
 Panelin açılış ekranı artık **Kayıt hunisi**: indirip açtı → kayıt ekranı →
 kayıt → ilk giriş → ilk varlık; ara adımlar, gün gün, kırılım, kayıt hataları
@@ -18,13 +18,25 @@ ve kişi kişi yolculuk. Worktree: `C:/projects/PortfoyTakip-huni`.
       veriyle beş `admin_huni_*` RPC'si ve panel ekranı denendi; anon tabloyu /
       admin RPC'lerini çağıramıyor, admin olmayan "Yetkisiz" alıyor.
 - [x] `flutter analyze lib/ test/` temiz; ilgili 45 test dosyası (606 test) geçti.
-- [ ] **Emülatörde kontrol** (push kuralı): uygulamayı SİLİP kur → giriş ekranı
-      → kayıt ol → ilk varlığı ekle; panelde "Kurulumdan" görünümünde yolculuk
-      görünsün. Güncelleme ile kurulan cihaz huniye GİRMEMELİ.
-- [ ] **0097'yi iki sunucuya dağıt** (Frankfurt → Tokyo, `supabase-deploy.yml`
-      hedef `ikisi`) → `python tool/sema_esitlik.py`. İstemci sürümünden ÖNCE:
-      migration yokken istemci her açılışta tek bir non-fatal raporlar, akış
-      bozulmaz ama olaylar kuyrukta bekler.
+- [x] Tam paket 4219 test geçti; 5554'te güncelleme kurulumu açıldı, çökme yok,
+      `huni_aktif=false` (güncelleme ile gelen cihaz huniye girmiyor — doğru).
+- [ ] **0097'yi iki sunucuya dağıt** — Claude'un `db push`'u otomatik modda
+      reddedildi ("canlı dağıtım"). İki sunucu da 0096'da, yalnızca 0097 bekliyor
+      (kuru çalıştırma: "Would push 0097_kayit_hunisi.sql"). PowerShell'de:
+      ```
+      cd C:\projects\PortfoyTakip-huni
+      supabase link --project-ref ynwymnpdiwudrlxfrmuo   # Frankfurt
+      supabase db push --linked
+      supabase link --project-ref ybdbzouzhzwthjgwlbmk   # Tokyo
+      supabase db push --linked
+      cd C:\projects\PortfoyTakip && python tool/sema_esitlik.py
+      ```
+      İstemci sürümünden önce olması iyi; tersi olursa olaylar cihazda kuyrukta
+      bekler, akış bozulmaz.
+- [ ] **Masaüstü kısayolu** — Claude'un kısayol yazması da reddedildi. Başlatıcı
+      ve panel klasörü (`C:\projects\PortfoyTakip-panel`) hazır; yalnızca kısayol
+      eksik: `tool/admin_dashboard/README.md` → "Kısayolu yeniden oluşturmak"
+      bloğunu PowerShell'de çalıştır, eski `sandik destek paneli` kısayolunu sil.
 - [ ] **Gizlilik metni / Data Safety** kontrolü (hukuki adım, sende): yeni
       veri = cihazda üretilen rastgele kurulum kimliği + adım zamanları +
       kayıt hata kodları (mesaj yok), oturum açınca hesaba bağlanır, 400 gün

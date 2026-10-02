@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
+import 'crash_reporter.dart';
 import 'huni_kaydi.dart';
 
 /// Merkezi analytics servisi. Tüm event log'ları buradan geçer.
@@ -328,7 +327,10 @@ class AnalyticsService {
   /// burada — yeni bir adım eklerken `HuniKaydi.signupStepten`'e de ekle.
   Future<void> logSignupStep(String step) async {
     final adim = HuniKaydi.signupStepten(step);
-    if (adim != null) unawaited(HuniKaydi.instance.kaydet(adim));
+    if (adim != null) {
+      CrashReporter.arkaPlan(HuniKaydi.instance.kaydet(adim),
+          reason: 'HuniKaydi.kaydet');
+    }
     await _log('signup_step', {'step': step});
   }
 

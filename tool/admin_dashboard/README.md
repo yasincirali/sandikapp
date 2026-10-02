@@ -15,9 +15,25 @@ bağlanır, kapatınca biter.
 
 ## Açmak
 
-**Masaüstündeki `sandık destek paneli` kısayoluna çift tıkla.** Kısayol
-`baslat.cmd`'yi çağırır: bağımlılık eksikse kurar, dev sunucusunu kaldırır ve
-sunucu hazır olunca tarayıcıyı açar.
+**Masaüstündeki `sandık kontrol paneli` kısayoluna çift tıkla.** Panel her
+açılışta **`main`'in son hâliyle** gelir:
+
+1. Kısayol `%LOCALAPPDATA%\sandik-panel\guncel_baslat.ps1`'i çalıştırır.
+2. Betik, yalnızca panele ayrılmış `C:\projects\PortfoyTakip-panel`
+   klasörünü (ayrık HEAD) `origin/main`'e çeker. Klasör yoksa kendisi kurar
+   ve `.env.local`'ı ana klasörden kopyalar. `package-lock.json` değiştiyse
+   bağımlılıkları yeniden kurar. Ağ yoksa mevcut sürümle açılır.
+3. Sonra `baslat.cmd` dev sunucusunu kaldırır ve hazır olunca tarayıcıyı açar.
+
+Neden ayrı klasör: geliştirme klasörü çoğu zaman bir dalda ve işlenmemiş
+değişikliklerle durur; kısayol oradan açsaydı paneli o dalın hâliyle
+görürdün, sıfırlasaydı işini silerdi. Betik bu yüzden **dalda duran ya da
+değişiklik taşıyan klasöre dokunmaz**, yalnızca uyarır.
+
+Neden betik depo dışında: panel klasörünü güncelleyen betik o klasörün
+içinde dursaydı kendi dosyasını değiştirirdi. Depodaki
+`tool/admin_dashboard/guncel_baslat.ps1` asıl kaynaktır; dışarıdaki kopya her
+açılışta ondan tazelenir.
 
 Açılan **konsol penceresi sunucunun kendisidir** — görev çubuğunda simge
 durumunda durur. Paneli kapatmak için o pencereyi kapat; böylece panel arka
@@ -27,18 +43,26 @@ basarsan yeni sunucu açılmaz, var olan sekmeye döner.
 Kısayolu yeniden oluşturmak (taşındıysa veya silindiyse):
 
 ```powershell
+$dir = Join-Path $env:LOCALAPPDATA 'sandik-panel'
+New-Item -ItemType Directory -Force $dir | Out-Null
+Copy-Item 'C:\projects\PortfoyTakip	ooldmin_dashboard\guncel_baslat.ps1' $dir
 $ws = New-Object -ComObject WScript.Shell
-$s = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'sandik destek paneli.lnk'))
-$s.TargetPath = 'C:\projects\PortfoyTakip\tool\admin_dashboard\baslat.cmd'
-$s.WorkingDirectory = 'C:\projects\PortfoyTakip\tool\admin_dashboard'
-$s.IconLocation = 'C:\projects\PortfoyTakip\tool\admin_dashboard\panel.ico,0'
+$s = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'sandik kontrol paneli.lnk'))
+$s.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell1.0\powershell.exe"
+$s.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$dir\guncel_baslat.ps1`""
+$s.WorkingDirectory = $dir
+$s.IconLocation = 'C:\projects\PortfoyTakip-panel	ooldmin_dashboard\panel.ico,0'
 $s.WindowStyle = 7
 $s.Save()
 ```
 
+Yalnızca güncellemek (paneli açmadan):
+`powershell -File "$env:LOCALAPPDATA\sandik-panel\guncel_baslat.ps1" -YalnizGuncelle`
+
 > `baslat.cmd` **CRLF satır sonlarıyla ve saf ASCII** olarak tutulur. LF ile
 > kaydedilirse batch yorumlayıcısı `rem` satırlarını bölüp anlamsız hatalar
-> verir (`'em' is not recognized...`).
+> verir (`'em' is not recognized...`). `guncel_baslat.ps1` de saf ASCII:
+> Windows PowerShell 5.1 BOM'suz dosyayı ANSI okur.
 
 ### Elle kurulum
 
