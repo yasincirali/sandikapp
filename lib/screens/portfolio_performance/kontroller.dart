@@ -483,8 +483,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     _guncelle(() {
       _intradayKey = null;
       _intradayFuture = null;
-      // Özet'in kanonik serisi de yeniden kurulsun (`_OzetSerisi`).
+      // Özet'in kanonik serisi de yeniden kurulsun (`_OzetSerisi`); bellek
+      // de bırakılır — kullanıcı yenilemesi bilinçli bir yeniden ölçümdür.
       _ozetYenileme++;
+      _ozetBellek.temizle();
     });
     _zoomController?.reload();
   }

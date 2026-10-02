@@ -34,6 +34,7 @@ import '../utils/mum_turetici.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/islem_noktalari.dart';
+import '../utils/sonuc_bellegi.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import '../utils/dot_thinning.dart';
@@ -75,6 +76,7 @@ import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/kiyas_karti.dart';
 import '../services/kiyas_service.dart';
+import '../providers/kiyas_provider.dart';
 
 part 'portfolio_performance/grafik_kabi.dart';
 part 'portfolio_performance/seriler.dart';
@@ -83,6 +85,7 @@ part 'portfolio_performance/kartlar.dart';
 part 'portfolio_performance/yardimci_widgetlar.dart';
 part 'portfolio_performance/tur_dokumu_karti.dart';
 part 'portfolio_performance/ozet_yan_veri.dart';
+part 'portfolio_performance/ozet_bellek.dart';
 
 class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   final String? initialView;
@@ -258,6 +261,10 @@ class _PortfolioPerformanceScreenState
   /// tazelenmezdi.
   int _ozetYenileme = 0;
 
+  /// Özet serisi + yan veri belleği — sekme/dönem/kapsam geçişinde iskelet
+  /// titremesini önler. Gerekçe `_OzetBellek` notunda.
+  final _ozetBellek = _OzetBellek();
+
   // Ana grafik + volume subchart aynı X viewport'unu paylaşsın diye
   // ortak controller. Grafiğin fullMinX/fullMaxX'i period değiştikçe
   // güncellenir; ZoomableChart & ZoomableBarChart bunu dinler.
@@ -353,6 +360,7 @@ class _PortfolioPerformanceScreenState
     _viewport?.dispose();
     _basaDonBirak?.call();
     _scrollController.dispose();
+    _ozetBellek.kapat();
     super.dispose();
   }
 
@@ -584,11 +592,20 @@ class _PortfolioPerformanceScreenState
               // ── Body ────────────────────────────────────────────────────
               Expanded(
                 child: pStateAsync.when(
+                  // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
+                  // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
+                  // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
+                  // boşalıp doluyordu (titreme bulgusu 2026-10-02). Ana ekran aynı
+                  // şeyi `valueOrNull` ile baştan beri yapıyor.
+                  skipLoadingOnReload: true,
                   loading: () => const SandikLoadingScreen(),
                   error: (e, _) => SandikErrorView(
                       error: e,
                       onRetry: () => ref.invalidate(portfolioProvider)),
                   data: (pState) => partnerAssetsAsync.when(
+                    // Aynı gerekçe: `activePartnersProvider` her tazelendiğinde
+                    // bu sağlayıcı yeniden kurulur (`PartnerAssetsNotifier`).
+                    skipLoadingOnReload: true,
                     loading: () => const SandikLoadingScreen(),
                     error: (e, _) => SandikErrorView(
                         error: e,

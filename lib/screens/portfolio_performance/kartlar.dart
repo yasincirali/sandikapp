@@ -105,6 +105,10 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     final cizimBaslangici =
         isIntraday ? (breakdown.seansGunu ?? effectiveStart) : effectiveStart;
 
+    // Özet'in serisini ve yan verisini arkada hazırla — Grafik → Özet
+    // geçişi ve Özet'teki dönem dokunuşu iskelete düşmesin (`_OzetBellek`).
+    _ozetiIsit(chartAssets: chartAssets, targetAssets: targetAssets);
+
     final segments = _convertHistoryToSegments(
         historyMap, chartAssets, cizimBaslangici, endDate,
         currentTotalOverride: canliUc,
@@ -220,9 +224,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   )
           else
             _OzetSerisi(
-              key: ValueKey('ozet|$_view|${_typeFilter?.name}|'
-                  '$_selectedPeriodIdx|$_simulate|$_ozetYenileme|'
-                  '${chartAssets.map((a) => a.id).join(",")}'),
+              // Anahtar = bellek anahtarı: dönem/kapsam değişince yeni State
+              // kurulur ama bellekteki sonucu EŞZAMANLI okur (`_OzetBellek`).
+              key: ValueKey(_ozetSeriAnahtari(
+                  SummaryPeriod.fromIndex(_selectedPeriodIdx), chartAssets)),
+              bellek: _ozetBellek,
               chartAssets: chartAssets,
               period: SummaryPeriod.fromIndex(_selectedPeriodIdx),
               simulate: _simulate,
@@ -958,6 +964,9 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       period: period,
       summary: summary,
       assets: targetAssets,
+      bellek: _ozetBellek,
+      bellekAnahtari: _ozetYanAnahtari(period, targetAssets),
+      iskelet: _ozetIskeleti(context),
       kiyasKarti:
           kiyasGirdisi == null ? null : KiyasKarti(girdi: kiyasGirdisi),
       // Karakter/sabır yalnızca 1Y'de gösterilir; başka dönemde
@@ -1090,13 +1099,17 @@ class _YuzdeRozeti extends StatelessWidget {
 /// istek (`BugunYukleyici.haftalik`). `HistoryService._tierCache` sayesinde
 /// varsayılan zoom'da ağa ikinci kez çıkılmaz.
 ///
-/// Anahtar (dönem, kapsam, simülasyon, lot kimlikleri, yenileme sayacı)
-/// değişince yeniden kurulur; o sırada iskelet çizilir — yanlış sayıdan
-/// iyidir (`_ozetSekmesi` notu). GÜNLÜK bu yoldan geçmez: gün içi seri
+/// Anahtar (dönem, kapsam, simülasyon, lot imzası, yenileme sayacı)
+/// değişince yeniden kurulur. Sonuç ekranın belleğinde varsa (`_OzetBellek`)
+/// ilk karede EŞZAMANLI çizilir; yoksa iskelet — yanlış sayıdan iyidir
+/// (`_ozetSekmesi` notu). Eskiden her kurulum en az bir kare iskelet
+/// çiziyordu: Grafik → Özet ve dönem dokunuşu "titreme" olarak görüldü
+/// (kullanıcı bildirimi 2026-10-02). GÜNLÜK bu yoldan geçmez: gün içi seri
 /// canlıdır ve ana ekranla ortak katmandan gelir.
 class _OzetSerisi extends StatefulWidget {
   const _OzetSerisi({
-    super.key,
+    required super.key,
+    required this.bellek,
     required this.chartAssets,
     required this.period,
     required this.simulate,
@@ -1104,6 +1117,8 @@ class _OzetSerisi extends StatefulWidget {
     required this.builder,
   });
 
+  /// Ekranın Özet belleği; anahtar widget'ın kendi `key`'idir.
+  final _OzetBellek bellek;
   final List<Asset> chartAssets;
   final SummaryPeriod period;
   final bool simulate;
@@ -1116,28 +1131,27 @@ class _OzetSerisi extends StatefulWidget {
 
 class _OzetSerisiState extends State<_OzetSerisi> {
   PortfolioHistoryBreakdown? _seri;
-  int _istek = 0;
+
+  String get _anahtar => (widget.key! as ValueKey<String>).value;
 
   @override
   void initState() {
     super.initState();
-    _yukle();
+    _seri = widget.bellek.seriler.oku(_anahtar);
+    if (_seri == null || !widget.bellek.seriler.taze(_anahtar)) _yukle();
   }
 
   Future<void> _yukle() async {
-    final benim = ++_istek;
-    final now = DateTime.now();
-    final p = PeriodSummaryService.pencere(widget.period, now);
     try {
-      final bd = await HistoryService.instance
-          .getPortfolioHistoryBreakdownAtResolution(
-        assets: widget.chartAssets,
-        from: p.start,
-        to: p.end,
-        tier: ResolutionTierMeta.pickForSpan(widget.period.days.toDouble()),
-        simulate: widget.simulate,
+      final bd = await widget.bellek.seriler.yukle(
+        _anahtar,
+        () => _ozetSerisiniCek(
+            widget.period, widget.chartAssets, widget.simulate),
       );
-      if (!mounted || benim != _istek) return;
+      if (!mounted) return;
+      // Bellekten çizilmiş seri BOŞ bir tazelemeyle ezilmesin (ağ yok):
+      // elde ölçülmüş bir seri varken iskelete dönmek titremenin kendisi.
+      if (bd.total.isEmpty && _seri != null) return;
       setState(() => _seri = bd);
     } catch (e, st) {
       // Seri gelmezse iskelet kalır; sessiz değil — Crashlytics'e düşer.
