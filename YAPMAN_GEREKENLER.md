@@ -17,7 +17,7 @@ Supabase'de gerçek GoTrue token'larıyla doğrulandı (25 SQL senaryosu + uçta
 
 Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
 
-- [ ] **İki projede** (Tokyo + Frankfurt) Supabase → Authentication → Email
+- [x] (2026-10-03, yasin; marka tasarımlı şablon) **İki projede** (Tokyo + Frankfurt) Supabase → Authentication → Email
       Templates → **Magic Link** şablonuna kodu ekle: `{{ .Token }}`
       (örn. "Giriş kodun: {{ .Token }}"). Yeni cihaz kodu bu şablonla gider;
       yalnız bağlantı içeren varsayılan şablonda kullanıcıya **kod gitmez** ve
@@ -31,8 +31,10 @@ Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
       insert into public.cihaz_kontrol_muafiyeti (user_id, neden)
       select id, 'magaza inceleme' from auth.users where email = '<inceleme hesabı>';
       ```
-- [ ] Emülatörde (iki cihaz, aynı hesap) dene → sonra 0098'i `supabase-deploy.yml`
-      (hedef `ikisi`) ile gönder → `python tool/sema_esitlik.py`.
+- [x] 0098 iki sunucuda (2026-10-03, yasin yerel CLI: Frankfurt → Tokyo; `sema_esitlik`
+      ŞEMA EŞİT). Emülatör: 5554 ilk cihaz (kodsuz), 5556 kod ekranına düştü.
+- [ ] Emülatörde kodu gir → 5554 "başka cihazda açıldı" ile çıkmalı; Ayarlar ›
+      Hesap & Güvenlik › Kayıtlı cihazlar'da iki cihaz görünmeli, öbürü kaldırılabilmeli.
 - [ ] Bilinçli kararları onayla: (1) hiç kayıtlı cihazı olmayan hesabın İLK cihazı
       kodsuz kaydolur (aksi halde güncellemede herkese aynı anda kod giderdi);
       (2) yeni cihaz kapısı uygulamadadır — şifreyi bilen biri ham API ile veri

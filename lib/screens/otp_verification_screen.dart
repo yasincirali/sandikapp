@@ -617,6 +617,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           const SizedBox(height: 8),
           TextButton(
             onPressed: _submitting ? null : _vazgec,
+            // `amberText`: açık temada amber dolgu krem zeminde okunmuyor
+            // (emülatörde görüldü, 2026-10-03); metin tonu kontrastlı.
+            style: TextButton.styleFrom(foregroundColor: context.c.amberText),
             child: Text(context.l10n.cihazOtpVazgec),
           ),
         ],

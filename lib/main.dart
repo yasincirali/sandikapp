@@ -2219,6 +2219,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
               ),
               TextButton(
                 onPressed: () => ref.read(authProvider.notifier).logout(),
+                style: TextButton.styleFrom(
+                    foregroundColor: context.c.amberText),
                 child: Text(context.l10n.cihazOtpVazgec),
               ),
               const SizedBox(height: 16),
