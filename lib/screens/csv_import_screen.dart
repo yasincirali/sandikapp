@@ -65,7 +65,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// Önizleme başlığı — sonuç gelince görünür alana kaydırılır.
   final _sonucAnahtari = GlobalKey();
 
-  /// Önizle / dosya seçimi sonrası: sonuç Önizle düğmesinin ALTINDA, ekran
+  /// Önizle düğmesi: sonuç düğmenin ALTINDA, ekran
   /// dışında çiziliyordu; kullanıcı düğmeye basınca hiçbir şey olmadı sanıp
   /// iki kez bastı (2026-10-02 müşteri testi). Sonuca kaydırılır.
   void _onizleVeGoster() {
@@ -136,7 +136,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       _ekstre = sonuc;
       _dosyaAdi = dosya.name;
       _ctrl.text = sonuc.kanonikMetin();
-      _onizleVeGoster();
+      // Kaydırma YOK: dosyadan okununca hemen altta eşleme kartı belirir
+      // (görünür geri bildirim) ve kullanıcı önce onu doğrulamalı.
+      _parse();
     } catch (e, st) {
       // Okuma hatası mesajı bizimdir (`EkstreOkumaHatasi`); beklenmeyen
       // her şey Crashlytics'e — hangi biçimin kırıldığını görmek için.
