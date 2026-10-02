@@ -1826,7 +1826,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'The percentage comes only from what the market added. Dividends count as money leaving the portfolio because they went to your pocket.';
+      'The percentage comes only from what the market added. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.';
 
   @override
   String annualRatePct(String pct) {

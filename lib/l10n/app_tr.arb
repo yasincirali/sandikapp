@@ -1014,7 +1014,7 @@
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Yüzde yalnızca piyasanın kattığından hesaplanır. Temettü cebine girdiği için portföyden çıkış sayılır.",
+  "contributionNotReturn": "Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.",
   "annualRatePct": "{pct} yıllık",
   "@annualRatePct": {
     "placeholders": {

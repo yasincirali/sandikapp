@@ -224,6 +224,7 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
               children: [
                 for (final g in MevduatHesabi.hizliVadeler)
                   SozlesmeCipi(
+                    icerigeGore: true,
                     metin: l10n.depositDays(g),
                     secili: _vade == g,
                     renk: renk,
@@ -233,6 +234,7 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
                     }),
                   ),
                 SozlesmeCipi(
+                  icerigeGore: true,
                   metin: l10n.depositCustomDays,
                   secili: _vade == null,
                   renk: renk,

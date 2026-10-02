@@ -454,6 +454,16 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                   ),
                 ],
               ),
+              // Rakamın ölçüsü (2026-10-02 müşteri testi): aynı kullanıcı
+              // Ana'da %37,29, Performans 1Y'de %38,84, burada %23,1
+              // görüyordu; bu "seçimlerinin getirisi"dir (TWR) ve kart bunu
+              // söylemiyordu. Ayrı satır: alt cümleye önek olsaydı kesilirdi.
+              Text(
+                context.l10n.selectedPeriodReturn,
+                style: context.t.labelSmall?.copyWith(
+                  color: context.c.text58,
+                ),
+              ),
               const SizedBox(height: 3),
               Text(
                 subLine,

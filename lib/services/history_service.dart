@@ -583,6 +583,7 @@ class HistoryService {
       if (a.quantity <= 0) continue;
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
           (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
@@ -727,6 +728,7 @@ class HistoryService {
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
+              a.type == AssetType.kripto ||
               a.type.fiyatlamaTuru == AssetType.fon ||
               a.type == AssetType.doviz) {
             final map = tickerNormalizedDaily[a.ticker] ?? {};
@@ -1240,12 +1242,21 @@ class HistoryService {
         ? getHistorySafe(FiyatKaynagi.xauUsd)
         : Future.value(const <(int, double)>[]);
 
+    // Kripto bu tür listelerinde YOKTU (2026-10-02 müşteri testi): tür
+    // 2026-09-25'te eklendi; `FiyatKaynagi.seriyeGirer` ve `PriceService`
+    // kripto-seri yolunu biliyordu ama bu dosyadaki yedi sabit liste
+    // güncellenmemişti. Kripto hiç çekilmiyor, `currentPrice` ile DÜZ
+    // çiziliyordu: varlık ekranında her dönem %0,0, Bugün kartında günün
+    // hareketi kriptosuz (ONDO −%1,94 iken kart onu saymıyordu). Seri sunucuda
+    // TL'dir (`_isTryQuoted`); boş dönerse hisse gibi tohumla sabit kalır ve
+    // `gunIciVerisiYokTurler`'e düşer — grafik boşalmaz.
     final tickerFutures = <String, Future<List<(int, double)>>>{};
     for (final a in assets) {
       if (!a.isBuy) continue;
       if (a.quantity <= 0) continue;
       if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
         tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
       }
@@ -1668,6 +1679,7 @@ class HistoryService {
         }
       } else if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
           a.type == AssetType.doviz) {
         final map = tickerSlots[a.ticker] ?? {};
         double? unitLocal;
@@ -1827,6 +1839,7 @@ class HistoryService {
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
+              a.type == AssetType.kripto ||
               a.type == AssetType.doviz) {
             gunIciBeklenenTurler.add(a.type);
             final map = tickerSlots[a.ticker] ?? {};
@@ -2278,6 +2291,7 @@ class HistoryService {
       if (a.quantity <= 0) continue;
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
           (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
@@ -2419,6 +2433,7 @@ class HistoryService {
           }
         } else if (a.type == AssetType.hisse ||
             a.type == AssetType.emtia ||
+            a.type == AssetType.kripto ||
             a.type == AssetType.doviz ||
             a.type.fiyatlamaTuru == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};

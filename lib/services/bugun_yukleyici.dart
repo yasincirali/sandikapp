@@ -95,7 +95,8 @@ abstract final class BugunYukleyici {
       final r =
           await RealReturnService.yillik(state.activeAssets).timeout(enFazla);
       if (r == null) return null;
-      return ReelGetiriSatiri(nominal: r.nominal, inflation: r.inflation);
+      return ReelGetiriSatiri(
+          nominal: r.nominal, inflation: r.inflation, pencere: r.pencere);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'BugunYukleyici.reel');
       return null;

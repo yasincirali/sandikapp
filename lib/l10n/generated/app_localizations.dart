@@ -3287,7 +3287,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionNotReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Yüzde yalnızca piyasanın kattığından hesaplanır. Temettü cebine girdiği için portföyden çıkış sayılır.'**
+  /// **'Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.'**
   String get contributionNotReturn;
 
   /// No description provided for @annualRatePct.

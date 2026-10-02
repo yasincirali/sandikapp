@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/asset.dart';
+import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/money_format.dart';
 import '../theme/sandik.dart';
@@ -374,6 +375,13 @@ String hareketTurEtiketi(AppLocalizations l10n, Asset asset) {
         : l10n.txDeleted;
   }
   if (asset.isDividend) return l10n.txDividend;
+  // Mevduatta miktar iç hesabın birim payıdır ("100.000 birim"), kullanıcıya
+  // bir şey söylemez; tutar zaten solda yazılı. Varlık paneli bunu
+  // 2026-10-01'de kaldırmıştı, hareket satırı geride kalmıştı (2026-10-02
+  // müşteri testi).
+  if (asset.type == AssetType.mevduat) {
+    return asset.isSell ? l10n.txSell : l10n.txBuy;
+  }
   final miktar =
       qtyFormatter(maxDigits: asset.azamiOndalik).format(asset.quantity);
   final miktarMetni = asset.unitIsPrefix

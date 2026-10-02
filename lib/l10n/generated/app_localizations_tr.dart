@@ -1812,7 +1812,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'Yüzde yalnızca piyasanın kattığından hesaplanır. Temettü cebine girdiği için portföyden çıkış sayılır.';
+      'Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.';
 
   @override
   String annualRatePct(String pct) {
