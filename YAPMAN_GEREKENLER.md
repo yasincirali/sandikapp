@@ -22,6 +22,10 @@ Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
       (örn. "Giriş kodun: {{ .Token }}"). Yeni cihaz kodu bu şablonla gider;
       yalnız bağlantı içeren varsayılan şablonda kullanıcıya **kod gitmez** ve
       yeni cihazda giriş yapamaz. Kayıt/şifre sıfırlama şablonları zaten kodlu.
+- [ ] **Kod e-postası Outlook'ta Gereksiz'e düştü** (2026-10-03 emülatör testi). Uygulamaya
+      ipucu eklendi ama kalıcı çözüm gönderen alan adını doğrulamak: kendi alan adınla
+      (Resend/Brevo) SPF + DKIM + DMARC kaydı, Supabase SMTP "Sender email" o adres.
+      Gmail SMTP / `resend.dev` göndericisi Outlook'ta önemsize düşer.
 - [ ] Aynı yerde "Email OTP expiration" = 600 sn mi? (OTP ekranı 10 dk sayıyor.)
 - [ ] Auth → Rate Limits: saatlik e-posta sınırı geçişte yeterli mi (her yeni
       cihaz bir e-posta).
