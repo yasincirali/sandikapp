@@ -72,7 +72,7 @@ void main() {
       expect(p, closeTo(0, 1e-12));
     });
 
-    test('bugün açılan hesapta BUGÜN gün başından ölçülür', () {
+    test('bugün açılan günlük faizli hesap: gün içi düz, gün sonunda faiz', () {
       const id2 = 'aaaaaaaa-0000-0000-0000-000000000001';
       final bugun = DateTime(2026, 10, 1);
       SozlesmeDeposu.instance.yaz([
@@ -91,10 +91,17 @@ void main() {
             yillikFaiz: 40,
             stopaj: 17.5),
       ]);
-      final p = SozlesmeDeposu.instance.mevduatDegisimi(mevduatSembolu(id2),
-          bugun, bugun.add(const Duration(hours: 19)))!;
-      // Eskiden gün içi seri tek noktadan kaldığı için %0,00 yazıyordu.
-      expect(p, greaterThan(0.07));
+      final sym2 = mevduatSembolu(id2);
+      // Günlük faizli hesapta faiz gün sonunda eklenir (2026-10-02): açılış
+      // günü içinde değişim sıfır, gece yarısından sonra bir günlük net.
+      final gunIci = SozlesmeDeposu.instance.mevduatDegisimi(
+          sym2, bugun, bugun.add(const Duration(hours: 19)))!;
+      expect(gunIci, closeTo(0, 1e-12));
+      // Eskiden gün içi seri tek noktadan kaldığı için ertesi gün de %0,00
+      // yazıyordu; yüzde sözleşmeden ölçülür.
+      final ertesi = SozlesmeDeposu.instance.mevduatDegisimi(
+          sym2, bugun, bugun.add(const Duration(hours: 25)))!;
+      expect(ertesi, closeTo(40 * 0.825 / 365, 1e-9));
     });
   });
 
