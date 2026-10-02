@@ -1,12 +1,43 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-02 Müşteri testi düzeltmeleri — dal `fix/musteri-testi-116`, PUSH YOK
+
+Rapor: claude.ai artifact "sandık 1.1.6 müşteri testi". Kod dört yerel
+commit'te (worktree `C:/projects/PortfoyTakip-prodtest`), sunucu değişikliği
+yok. Emülatörde doğrulandı; iPhone'a özgü kısımlar sende.
+
+**Senin kararın gereken (koda dokunulmadı):**
+- [ ] **Açılış logosu:** Android yerel açılış `sandik_icon.png` (eski iki büyük
+      dalga) gösteriyor, Android 12+ bunu daireye kırpıyor; ardından uygulama
+      içi yeni logo geliyor. Hangi logo marka? Seçince `splash_icon.png`
+      dairenin güvenli alanına (çapın ~2/3'ü) sığacak şekilde yeniden üretilir.
+- [ ] **iOS açılış ekranı beyaz:** `ios/Runner/Base.lproj/LaunchScreen.storyboard`
+      arka planı `#FFFFFF`, `LaunchImage` 1×1 boş. Xcode'da: Assets'e
+      `LaunchBackground` renk varlığı (açık `#F4F0E8`, koyu `#13201A` ya da
+      uygulamanın koyu zemini) → storyboard arka planı bu renk. Xcode'suz
+      elle storyboard düzenlemek TestFlight derlemesini kırabilir; bu yüzden
+      yapılmadı.
+- [ ] **"Çıkış yap" düğmesi her sekmenin başında:** onay soruyor, kaza yok;
+      ama en görünür yeri kaplıyor. Yalnız Profil › Hesap'ta kalsın mı?
+      (Mevcut işlevi kaldırmak olduğu için sormadan yapılmadı.)
+- [ ] **Ekstrede komisyon:** motor komisyon sütununu tanımıyor, maliyet birim
+      fiyattan. Komisyon maliyete eklensin mi? (Yeni davranış; sorulmadan
+      eklenmedi.)
+
+**iPhone'da kontrol (yalnız iOS):**
+- [ ] **PrivacyInfo.xcprivacy:** dosya var ama `project.pbxproj`'ta referansı
+      yok, pakete girmiyor olabilir. Son TestFlight yüklemesinden sonra Apple'dan
+      ITMS-91053 "Missing API declaration" e-postası geldiyse Xcode'da dosyayı
+      Runner hedefine ekle (Target Membership). Gelmediyse eklentilerin kendi
+      bildirimleri yetiyor demektir.
 
 ## ⏳ 2026-10-02 ProGuard daraltması — gerçek cihazda 5 dakikalık kontrol
 
