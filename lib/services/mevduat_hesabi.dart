@@ -7,16 +7,29 @@ import '../models/sozlesme.dart';
 ///
 /// ## Neden birim değer (2026-09-30)
 /// Mevduat fon gibi fiyatlanır (`AssetType.fiyatlamaTuru`): lot miktarı
-/// "pay", fiyat pay başına TL. İlk dönem 1,0 ile başlar; her gün net faiz
-/// tahakkuk eder. Ek para yatırma o günün birim değerinden yeni bir alım
+/// "pay", fiyat pay başına TL. İlk dönem 1,0 ile başlar; net faiz vadeli
+/// hesapta vade sonunda, günlük faizli hesapta her gün eklenir. Ek para yatırma o günün birim değerinden yeni bir alım
 /// lotu, çekim satım lotudur — fonun NAV'ı gibi. Böylece toplam, kâr/zarar,
 /// tarihçe ve ortak görünümü hiçbir "mevduat hariç" dalı olmadan çalışır
 /// (0058'de silinen ilk sürümün bakım yükü tam olarak bu dallardı).
 ///
 /// ## Kurallar
-///   · **Vadeli dönem** basit faizle tahakkuk eder: banka faizi vade sonunda
-///     öder, `anapara × net × gün / 365`. Vade sonunda faiz anaparaya
-///     eklenir; yenilenen dönem bu tutardan başlar (bileşik zincir).
+///   · **Vadeli dönem** basit faizle hesaplanır, `anapara × net × gün / 365`,
+///     ve faiz VADE SONUNDA anaparaya eklenir; yenilenen dönem bu tutardan
+///     başlar (bileşik zincir). Vade içinde değer anaparada DÜZ kalır.
+///
+///     Neden düz (kullanıcı kararı, 2026-10-02): *"Vadelide kâr anlık kazanç
+///     şeklinde değil, vade sonunda yansıtılmalı."* Banka faizi vade sonunda
+///     öder; vadeyi bozan faiz almaz. Eskiden değer her gün tahakkukla
+///     artıyordu: portföy kâr/zarar ve "Bugün" henüz ele geçmemiş faizi
+///     kazanç gibi gösteriyor, erken "Çektim" faiz ödenmiş gibi satıyordu.
+///     Vade içinde faiz oranı değişirse (`mevduatFaizGuncelle`) dönem satırı
+///     güncellenir ve vade sonundaki kazanç SON girilen orana göre çıkar.
+///
+///     İstisna: dönem vadesinden ÖNCE bir sonraki dönemle kapanmışsa (eski
+///     sürümlerde erken yenileme / oran değişikliği yeni dönem açıyordu),
+///     o güne kadarki faiz geçiş anında eklenir — geçmiş kayıtların değeri
+///     değişmesin.
 ///   · **Vadesiz / günlük faizli** dönem günlük bileşiktir: bu hesaplar
 ///     faizi her gün öder.
 ///   · **Net = brüt × (1 − stopaj)**. Stopaj dönem satırında saklıdır; oran
@@ -65,6 +78,8 @@ abstract final class MevduatHesabi {
         bitis = sonraki;
       }
       if (bitis == null || t.isBefore(bitis)) {
+        // Vadeli dönemde faiz vade sonunda eklenir; o güne kadar düz.
+        if (!d.vadesiz) return b;
         return b * _donemCarpani(d, _gun(d.baslangic, t));
       }
       b *= _donemCarpani(d, _gun(d.baslangic, bitis));
@@ -135,6 +150,53 @@ abstract final class MevduatHesabi {
     final top = _gun(d.baslangic, v);
     if (top <= 0) return 1;
     return (_gun(d.baslangic, simdi) / top).clamp(0.0, 1.0);
+  }
+
+  /// Son vadeli dönemin VADE SONUNDA eklenecek net faizi (TL), [pay] için.
+  ///
+  /// Vadesizde ya da dönem başlamadıysa `null`. Vade içinde değer düz
+  /// kaldığı için kart ve portföy paneli kazancı bu "beklenen" tutarla
+  /// gösterir; vade gelince aynı tutar değere eklenir.
+  static double? vadeSonuNetFaizi(List<MevduatDonemi> donemler, double pay) {
+    final d = sonDonem(donemler);
+    final v = d?.vadeSonu;
+    if (d == null || v == null) return null;
+    final bas = birimDeger(donemler, d.baslangic);
+    final son = birimDeger(donemler, v);
+    if (bas == null || son == null) return null;
+    return pay * (son - bas);
+  }
+
+  /// Portföy panelindeki vade şeridinin verisi — son dönemin özeti.
+  ///
+  /// Vadeli: başlangıç, vade, ilerleme (0–1), kalan gün, vade sonunda
+  /// eklenecek net faiz. Vadesiz: günlük net faiz ([pay] × bugünkü birim
+  /// değer üzerinden). Dönem yoksa `null`.
+  static ({
+    DateTime baslangic,
+    DateTime? vade,
+    double? ilerleme,
+    int? kalanGun,
+    bool doldu,
+    double? vadeSonuNet,
+    double? gunlukNet,
+    double yillikFaiz,
+  })? ozet(List<MevduatDonemi> donemler, double pay, DateTime simdi) {
+    final d = sonDonem(donemler);
+    if (d == null) return null;
+    final bugun = birimDeger(donemler, simdi);
+    return (
+      baslangic: d.baslangic,
+      vade: d.vadeSonu,
+      ilerleme: donemIlerlemesi(donemler, simdi),
+      kalanGun: vadeyeKalanGun(donemler, simdi),
+      doldu: vadesiDoldu(donemler, simdi),
+      vadeSonuNet: vadeSonuNetFaizi(donemler, pay),
+      gunlukNet: d.vadesiz && bugun != null
+          ? pay * bugun * netOran(d) / 365
+          : null,
+      yillikFaiz: d.yillikFaiz,
+    );
   }
 
   /// Son dönemde kazanılan net faiz (TL) — kartın "Bu dönem net" satırı.

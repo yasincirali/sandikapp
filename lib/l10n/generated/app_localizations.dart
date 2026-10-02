@@ -7823,7 +7823,7 @@ abstract class AppLocalizations {
   /// No description provided for @depositAccrualNote.
   ///
   /// In tr, this message translates to:
-  /// **'Değer her gün tahakkuk eden net faizle artar. Vadeyi erken bozarsan banka faizi ödemeyebilir.'**
+  /// **'Faiz vade sonunda anaparaya eklenir; o güne kadar değer anaparada kalır. Vadeyi erken bozarsan banka faizi ödemeyebilir.'**
   String get depositAccrualNote;
 
   /// No description provided for @depositCardTitle.
@@ -8678,6 +8678,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sterlin'**
   String get marketPound;
+
+  /// No description provided for @depositInterestAtMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade sonunda net faiz'**
+  String get depositInterestAtMaturity;
+
+  /// No description provided for @depositInterestAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklenen net faiz'**
+  String get depositInterestAdded;
+
+  /// No description provided for @depositPaidAtMaturityNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Faiz vade sonunda eklenir; o güne kadar değer anaparada kalır. Vade içinde oranı güncellersen kazanç son girdiğin orana göre hesaplanır.'**
+  String get depositPaidAtMaturityNote;
+
+  /// No description provided for @depositRateMidTermHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade ve başlangıç aynı kalır. Vade sonundaki kazanç bu yeni orana göre hesaplanır.'**
+  String get depositRateMidTermHint;
+
+  /// No description provided for @depositRateSavedMidTerm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oran %{rate} oldu. Vade sonundaki kazanç bu orana göre hesaplanacak.'**
+  String depositRateSavedMidTerm(String rate);
+
+  /// No description provided for @depositStripRate.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{rate} brüt faiz'**
+  String depositStripRate(String rate);
 }
 
 class _AppLocalizationsDelegate

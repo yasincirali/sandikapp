@@ -3235,7 +3235,7 @@
   "depositErrorRate": "Enter the interest rate.",
   "depositErrorDays": "Enter the term in days.",
   "depositErrorWithholding": "Withholding tax must be between 0 and 100.",
-  "depositAccrualNote": "The value grows each day by the accrued net interest. If you break the term early, the bank may not pay the interest.",
+  "depositAccrualNote": "Interest is added to the principal at maturity; until then the value stays at the principal. If you break the term early, the bank may not pay the interest.",
   "depositCardTitle": "Deposit",
   "depositPeriodN": "Period {n}",
   "depositDaysLeft": "{n} days to maturity",
@@ -3592,5 +3592,25 @@
           }
       }
   },
-  "marketPound": "GBP"
+  "marketPound": "GBP",
+  "depositInterestAtMaturity": "Net interest at maturity",
+  "depositInterestAdded": "Net interest added",
+  "depositPaidAtMaturityNote": "Interest is added at maturity; until then the value stays at the principal. If you update the rate during the term, the gain uses the latest rate you entered.",
+  "depositRateMidTermHint": "The term and start date stay the same. The gain at maturity uses this new rate.",
+  "depositRateSavedMidTerm": "Rate is now {rate}%. The gain at maturity will use this rate.",
+  "@depositRateSavedMidTerm": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "depositStripRate": "{rate}% gross interest",
+  "@depositStripRate": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  }
 }

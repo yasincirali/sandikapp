@@ -498,14 +498,18 @@ List<_Adim> _adimlariKur() {
     // 2026-10-01: BES formu ana para + getiri sorar, geçmiş düz çizilir,
     // "Fon değiştir" eklendi — metin buna göre. Aynı gün: otomatik katkı
     // (0096) formda ve kartta; son cümle onu anlatır.
+    // 2026-10-02: vadeli faiz vade sonunda eklenir, vade içinde oran
+    // karttan güncellenir — mevduat cümlesi buna göre.
     _Adim(
       id: 'mevduat_bes',
       hedef: TourTarget.turSecici,
       rozet: 'YENİ',
       baslik: 'Mevduat ve BES',
       govde: "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "
-          'stopajıyla birlikte biz hesaplarız, vade dolunca varlık '
-          "sayfasından tek dokunuşla yenilersin. BES'i seç: şirketini, ana "
+          'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda eklenir; '
+          'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
+          'son orana göre çıkar. Vade dolunca varlık sayfasından tek '
+          "dokunuşla yenilersin. BES'i seç: şirketini, ana "
           'paranı, getirini ve fon dağılımını gir; geçmiş giriş tarihinden '
           'bugüne düz çizilir, bundan sonrası emeklilik fonlarının fiyatıyla '
           'yürür. Fonunu değiştirince grafik yeni fonlarla devam eder; devlet '
