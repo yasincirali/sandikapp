@@ -20,6 +20,7 @@ import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/tour_anchor.dart';
 import 'main_navigation_screen.dart';
+import '../widgets/sekme_basa_don.dart';
 import 'portfolio_performance_screen.dart';
 import '../demo/demo_modu.dart';
 
@@ -292,6 +293,19 @@ class _Adim {
 
 /// Gerçek alt menüde sekmeye geç; `+` için Varlık Ekle'yi aç.
 void _sekmeyeGec(int i) => MainNavigationScreen.sekmeIstegi.value = i;
+
+/// Sekmeye geç ve listesini BAŞA kaydır — hedef listenin üstündeyse.
+///
+/// **Neden (2026-10-03, kullanıcı bildirimi):** "Dönem seç" ve "Kapsam ve
+/// mod" metni çıkıyor ama oraya odaklanmıyordu. Performans listesi tembel;
+/// sekme aşağıda bırakılmışsa (Zirve adımı da listeyi en alta indirir, oradan
+/// "Geri" dönülebilir) en üstteki seçiciler sökülmüş oluyor, tur hedefi
+/// bulamayıp kartı ortada gösteriyordu. Kanal sekmeye ikinci dokunuşla aynı
+/// (`SekmeBasaDon`): yalnızca kaydırır, seçimlere dokunmaz.
+void _sekmeyeGecBasa(int i) {
+  _sekmeyeGec(i);
+  SekmeBasaDon.yayinla(i);
+}
 
 bool _sekmede(int i) => MainNavigationScreen.aktifSekme.value == i;
 
@@ -597,7 +611,7 @@ List<_Adim> _adimlariKur() {
       // (2026-10-01'den beri panel kapalıyken ağaçta da değil —
       // `SandikAcilir`). Ölçemediğimiz bir görevi
       // "tamamlandı" diye göstermektense görevsiz anlatım dürüst.
-      giris: (_) => _sekmeyeGec(3),
+      giris: (_) => _sekmeyeGecBasa(3),
     ),
     _Adim(
       id: 'kapsam',
@@ -610,7 +624,7 @@ List<_Adim> _adimlariKur() {
           'içindeki her alım ve satımla gerçek geçmişini çizer; Simülasyon '
           '"bugünkü portföyümü baştan elimde tutsaydım ne olurdu?" sorusunu '
           'yanıtlar.',
-      giris: (_) => _sekmeyeGec(3),
+      giris: (_) => _sekmeyeGecBasa(3),
     ),
     _Adim(
       id: 'zirve',

@@ -83,4 +83,19 @@ void main() {
     await tester.pumpWidget(agac(ilk: false, ikinci: false));
     expect(TourTargets.mounted(TourTarget.zirveKarti), isFalse);
   });
+
+  test('dönem ve kapsam adımları Performans listesini başa kaydırır', () {
+    // Liste tembel: sekme aşağıda bırakılmışsa (ya da Zirve adımından
+    // "Geri" dönülürse) en üstteki seçiciler sökülüyor, tur metni hedefsiz
+    // kalıyordu (kullanıcı bildirimi 2026-10-03).
+    for (final id in ['donem', 'kapsam']) {
+      final i = tur.indexOf("id: '$id'");
+      expect(i, greaterThan(0), reason: id);
+      final adim = tur.substring(i, tur.indexOf('_Adim(', i));
+      expect(adim, contains('giris: (_) => _sekmeyeGecBasa(3)'), reason: id);
+    }
+    final yardimci = _govde(tur, 'void _sekmeyeGecBasa(int i)');
+    expect(yardimci, contains('_sekmeyeGec(i)'));
+    expect(yardimci, contains('SekmeBasaDon.yayinla(i)'));
+  });
 }
