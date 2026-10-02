@@ -40,12 +40,12 @@ void main() {
         sentAt: dunUtc,
       );
 
-  testWidgets('başlık iki satıra kadar kesilmez', (tester) async {
+  testWidgets('başlık üç satıra kadar kesilmez', (tester) async {
     await kur(tester, bildirim());
     final baslik = tester.widget<Text>(find.text('▼ ARDYZ son kapanışta %9,5 düştü'));
     // Taşma ölçümü yapılmaz: test fontu (Ahem) her harfi kare çizer,
-    // gerçek genişliği temsil etmez. Kural iki satır izni.
-    expect(baslik.maxLines, 2);
+    // gerçek genişliği temsil etmez. Kural üç satır izni.
+    expect(baslik.maxLines, 3);
   });
 
   testWidgets('etkin bildirimde yerel saatli zaman yazar', (tester) async {

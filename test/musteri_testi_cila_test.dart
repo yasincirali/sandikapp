@@ -64,4 +64,20 @@ void main() {
     // Kaynakta kaçış dizisi olarak durur (görünmez karakter düz yazılmaz).
     expect(src, contains(r'\u2060${fmt.format(v.abs())}'));
   });
+
+  test('tür dökümü: pencere içinde alınmış, serisi olmayan tür atlanmaz', () {
+    // Haftalık katmanda bu hafta alınan varlığın serisi boş gelir; satır
+    // sessizce düşüyordu (1Y'de ₺237K kripto yoktu). Kural dar: simülasyonda
+    // yok, TÜM lotlar pencere başından sonra, canlı değer > 0.
+    final src = ekranKaynagiSync(
+        'lib/screens/portfolio_performance/tur_dokumu_karti.dart');
+    final i = src.indexOf('_pencereIciAlim(List<Asset> lotlar)');
+    expect(i, greaterThan(0));
+    final govde = src.substring(i, src.indexOf('\n  }\n', i));
+    expect(govde, contains('widget.simulate'));
+    expect(govde, contains('.every((a) => a.addedDate.millisecondsSinceEpoch > widget.tabanMs)'));
+    expect(govde, contains('canli <= 0'));
+    expect(src, contains('return _pencereIciAlim(lotlar);'));
+    expect(src, contains('...turLotlari.keys'));
+  });
 }

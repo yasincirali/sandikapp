@@ -100,11 +100,12 @@ class AppNotificationTile extends StatelessWidget {
                       Flexible(
                         child: Text(
                           bildirim.title,
-                          // İki satır (2026-10-02 müşteri testi): başlığın
-                          // asıl bilgisi sonda ("… son kapanışta %9,5
-                          // düştü") ve tek satırda üç noktanın altında
-                          // kalıyordu.
-                          maxLines: 2,
+                          // Üç satıra kadar (2026-10-02 müşteri testi):
+                          // başlığın asıl bilgisi sonda ("… son kapanışta
+                          // %9,5 düştü") ve tek satırda üç noktanın altında
+                          // kalıyordu. Yandaki tür rozeti yer kapladığı için
+                          // iki satır da "yükseldi"yi kesiyordu (emülatör).
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
