@@ -919,15 +919,21 @@ class IntradaySeriesCache {
 
   /// Ben yuvasını elle doldurur — sahip/gün kurallarının testi için.
   /// Boş defterin anahtarı `''`: testler `PortfolioState()` ile çağırır.
+  ///
+  /// [kume] verilirse yuva o kümenin anahtarına yazılır — dolu defterle
+  /// `get` çağıran test tohumu ancak böyle bulur (anahtar boş değildir).
+  /// Verilmezse eski davranış: anahtar `''`.
   @visibleForTesting
   void seedForTest({
     required Map<int, double> series,
     required DateTime fetchedAt,
     String ownerId = '',
     DateTime? seansGunu,
+    List<Asset>? kume,
   }) {
-    _benAnahtari = '';
-    _yuvalar[''] = _GunIciYuva()
+    final k = kume == null ? '' : anahtar(kume);
+    _benAnahtari = k;
+    _yuvalar[k] = _GunIciYuva()
       ..breakdown = PortfolioHistoryBreakdown(
         total: series,
         byType: const {},

@@ -80,8 +80,13 @@ void main() {
             (w) => w is Text && (w.data ?? '').contains(s),
           ),
         );
-    // Normalize edilmiş ticker önizlemede görünür (ham girdide `.IS` yok).
-    expect(onizlemede('KCHOL.IS'), findsOneWidget);
+    // Sembol BIST hissesi olarak tanınır (servis `.IS` ekler) ama ekranda
+    // iç sonek görünmez; türü satırın ikonu söyler (2026-10-02 müşteri
+    // testi: önizlemede "ASELS.IS", "TEFAS:MAC" görünüyordu).
+    expect(onizlemede('KCHOL ·'), findsOneWidget);
+    expect(onizlemede('KCHOL.IS'), findsNothing);
+    expect(onizlemede('21.01.2026'), findsOneWidget,
+        reason: 'işlem tarihi önizlemede yazar');
     expect(onizlemede('ALTIN_CEYREK'), findsOneWidget);
     // Sepete ekle butonu sayıyı taşır.
     expect(find.textContaining('Sepete ekle (2)'), findsOneWidget);

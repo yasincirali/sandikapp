@@ -142,6 +142,19 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   /// Aynı kanal deseni `MainNavigationScreen.sekmeIstegi` ile birebir.
   static final gunlukIstegi = ValueNotifier<bool?>(null);
 
+  /// Tanıtım turundan: "Zirvedeki Portföyler kartını göster".
+  ///
+  /// **Neden (2026-10-03, kullanıcı bildirimi):** tur adımı yalnızca
+  /// Performans sekmesine geçiyordu; kart Grafik yüzeyinde ve listenin EN
+  /// ALTINDA. Liste tembel kurulduğu için kart ağaçta yoktu, tur kaydıracak
+  /// hedef bulamıyor, metni boşluğun üstünde gösteriyordu. Özet yüzeyi
+  /// açıksa kart hiç kurulmuyordu.
+  ///
+  /// İstek yalnızca Grafik yüzeyine geçirir ve kart kurulana kadar aşağı
+  /// kaydırır; dönem, kapsam ve filtreye DOKUNMAZ. Kanal deseni
+  /// [gunlukIstegi] ile aynı (`false` = bekleyen istek yok).
+  static final zirveIstegi = ValueNotifier<bool>(false);
+
   /// Dönem başlangıcı — takvim ayına göre.
   ///
   /// Kullanıcı isteği (2026-09-12): "1 aylık grafik bir önceki ay aynı
@@ -307,6 +320,10 @@ class _PortfolioPerformanceScreenState
     // Dış yüzey dokunuşu. Soğuk açılışta istek bu ekran KURULMADAN önce
     // yazılmış olur (sekme isteği de öyle), o yüzden dinleyiciyi bağlamakla
     // yetinmeyip mevcut değeri bir kez okuyoruz.
+    PortfolioPerformanceScreen.zirveIstegi.addListener(_zirveIstegiGeldi);
+    if (PortfolioPerformanceScreen.zirveIstegi.value) {
+      Future.microtask(_zirveIstegiGeldi);
+    }
     PortfolioPerformanceScreen.gunlukIstegi.addListener(_gunlukIstegiGeldi);
     if (PortfolioPerformanceScreen.gunlukIstegi.value != null) {
       Future.microtask(_gunlukIstegiGeldi);
@@ -324,6 +341,36 @@ class _PortfolioPerformanceScreenState
   ///
   /// Özet sekmesi de kapatılır: dokunuşun vaadi grafiktir (kilit ekranında
   /// görülen eğrinin büyüğü), tablo değil.
+  /// [PortfolioPerformanceScreen.zirveIstegi] — bkz. orada.
+  void _zirveIstegiGeldi() {
+    if (!PortfolioPerformanceScreen.zirveIstegi.value) return;
+    if (!mounted) return;
+    PortfolioPerformanceScreen.zirveIstegi.value = false;
+    if (_ozetSekmesi) _guncelle(() => _ozetSekmesi = false);
+    _zirveyeKaydir(0);
+  }
+
+  /// Kart kurulana kadar listenin sonuna atlar (tembel liste her atlamada
+  /// birkaç çocuk daha kurar), kurulunca kartı görünür alana getirir.
+  /// Kart hiç gelmiyorsa (bayrak kapalı, demo) birkaç denemeden sonra durur.
+  void _zirveyeKaydir(int deneme) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final kart = TourTargets.context(TourTarget.zirveKarti);
+      if (kart != null) {
+        Scrollable.ensureVisible(kart,
+            alignment: 0.3,
+            duration: SandikMotion.surfaceOf(context),
+            curve: SandikMotion.enter);
+        return;
+      }
+      if (deneme >= 10) return;
+      final pos = _scrollController.position;
+      pos.jumpTo(pos.maxScrollExtent);
+      _zirveyeKaydir(deneme + 1);
+    });
+  }
+
   void _gunlukIstegiGeldi() {
     if (PortfolioPerformanceScreen.gunlukIstegi.value == null) return;
     // `mounted` kontrolü TÜKETMEDEN önce: sökülmüş bir state isteği yutarsa
@@ -353,6 +400,7 @@ class _PortfolioPerformanceScreenState
     // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
     // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).
     PortfolioPerformanceScreen.gunlukIstegi.removeListener(_gunlukIstegiGeldi);
+    PortfolioPerformanceScreen.zirveIstegi.removeListener(_zirveIstegiGeldi);
     _gorunurluk?.removeListener(_gorunurlukDegisti);
     IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     _nabziBirak?.call();

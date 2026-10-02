@@ -99,9 +99,14 @@ class SurumNotu {
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
     surum: '1.1.6',
-    tarih: 'Eylül 2026',
+    tarih: 'Ekim 2026',
     onemli: true,
-    baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
+    // Başlık ve ilk altı madde sürümün asıl hikâyesi (2026-10-02 müşteri
+    // testi): sayfa ilk altıyı gösterir, gerisi katlıdır
+    // (`YeniliklerSheet.oneCikanSayisi`). Kripto ve kilit ekranı bu yüzden
+    // öne alındı — App Store'daki 1.0.5'ten gelen kullanıcı ikisini de ilk
+    // kez görüyor.
+    baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
       // 2026-10-01: Bugün kartı "sakin pano" (kullanıcı seçimi D).
       Yenilik(
@@ -109,9 +114,9 @@ const List<SurumNotu> surumNotlari = [
         baslik: 'Bugün kartı yenilendi',
         aciklama: 'Günün hareketi büyük rakamla, yanında gün içi eğri; kesik '
             'çizgi gün başı seviyesi. Enflasyona göre durumun çubukla '
-            '(getirin dolu, TÜFE çizgi), son 7 gün ve artıdaki varlıkların '
-            'kendi kutusunda. Hedef ve aylık özet sarı kutularda, bir '
-            'dokunuşla.',
+            '(getirin dolu, TÜFE çizgi) ve hangi aylar arasında ölçüldüğüyle; '
+            'yanında son 7 gün ya da artıdaki varlıklar, günden güne '
+            'değişir. Hedef ve aylık özet sarı kutularda, bir dokunuşla.',
       ),
       // 2026-10-01: tek getiri dili (M1 + D2 + düzen A + kıyas kartı).
       // Ana rakam bu sürümde değişiyor (temettü dahil, para ağırlıklı);
@@ -133,6 +138,22 @@ const List<SurumNotu> surumNotlari = [
             'temettü ayrı yazılır. Yeni "Başka yere koysaydın" kartı, aynı '
             'paraları aynı günlerde dolara, altına ya da BIST 100\'e '
             'koysaydın ne olacağını gösterir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Kilit ekranında sandık (iPhone)',
+        aciklama: 'Kilit ekranına widget olarak ekle: günün yönü, yüzdesi '
+            've eğrisi tek kartta. Tutar yalnız "Kilit ekranında tutar '
+            "göster\" açıksa görünür. Dinamik Ada'da renkli yön halkası "
+            'günün yönünü ve büyüklüğünü tek bakışta gösterir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Kripto ekle',
+        aciklama: 'Varlık Ekle\'de yeni Kripto türü var: listeden coin\'i '
+            'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Türk lirası '
+            'paritesi olan tüm coin\'ler ve en çok işlem gören 250 coin '
+            'listede. Hızlı Giriş\'e "0,05 btc" yazman da yeter.',
       ),
       // 2026-10-01: evrensel ekstre motoru (docs/EKSTRE_MOTORU.md).
       Yenilik(
@@ -217,14 +238,6 @@ const List<SurumNotu> surumNotlari = [
       // `yeniNotlar`); Ayarlar › Yenilikler'de durur. Mağazadan 1.1.6'yı
       // ilk alan kullanıcı hepsini görür.
       Yenilik(
-        ikon: YenilikIkonu.grafik,
-        baslik: 'Kilit ekranında sandık (iPhone)',
-        aciklama: 'Kilit ekranına widget olarak ekle: günün yönü, yüzdesi '
-            've eğrisi tek kartta. Tutar yalnız "Kilit ekranında tutar '
-            "göster\" açıksa görünür. Dinamik Ada'da renkli yön halkası "
-            'günün yönünü ve büyüklüğünü tek bakışta gösterir.',
-      ),
-      Yenilik(
         ikon: YenilikIkonu.liste,
         baslik: 'Aracı kurum ekstresi: alış ve satış',
         aciklama: 'Toplu ekle › yapıştır artık kurumların sütun adlarını '
@@ -251,14 +264,6 @@ const List<SurumNotu> surumNotlari = [
       // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump
       // yapıyor, yani derleme 1.1.6 çıkacak. '1.1.7' notu hiç gösterilmezdi
       // (sessiz arıza, dosya başı). Bu yüzden 1.1.6 notuna katıldı.
-      Yenilik(
-        ikon: YenilikIkonu.para,
-        baslik: 'Kripto ekle',
-        aciklama: 'Varlık Ekle\'de yeni Kripto türü var: listeden coin\'i '
-            'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Türk lirası '
-            'paritesi olan tüm coin\'ler ve en çok işlem gören 250 coin '
-            'listede. Hızlı Giriş\'e "0,05 btc" yazman da yeter.',
-      ),
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Toplamda, grafikte, alarmda',

@@ -1804,7 +1804,10 @@ class _AssetDetailsPanel extends StatelessWidget {
           ],
           // Tam ad — satırda yalnızca kod (THYAO) gösterilen varlıklar için.
           // Kırpma yok: burada yer var, isim tam okunmalı.
-          if (rep.showTicker) ...[
+          // Ad koddan farksızsa ("TAM ADI: SAHOL") satır bilgi vermez.
+          if (rep.showTicker &&
+              rep.name.trim().toUpperCase() !=
+                  (rep.displayTicker ?? '').toUpperCase()) ...[
             _DetailItem(
                 label: context.l10n.assetFullName, value: rep.name, isText: true),
             const SizedBox(height: 12),

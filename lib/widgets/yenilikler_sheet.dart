@@ -17,10 +17,20 @@ import '../theme/sandik.dart';
 /// kurulumda açılmaz, aynı sürüm ikinci kez açılmaz, yalnızca `onemli`
 /// sürümler kendiliğinden açılır. Bu widget o kararı VERMEZ, yalnızca
 /// sunar — karar mantığı saf ve test edilebilir kalsın diye.
-class YeniliklerSheet extends StatelessWidget {
+class YeniliklerSheet extends StatefulWidget {
   const YeniliklerSheet({super.key, required this.notlar});
 
   final List<SurumNotu> notlar;
+
+  /// Kendiliğinden açılan sayfada görünen madde sayısı; gerisi "Tüm
+  /// değişiklikler" altında katlı durur.
+  ///
+  /// **Neden (2026-10-02 müşteri testi):** 1.1.6 notu 44 madde; App
+  /// Store'daki 1.0.5'ten güncelleyen herkese otomatik açılıyor ve altı ekran
+  /// kaydırma sürüyordu — kullanıcı büyük ihtimalle okumadan "Anladım"a
+  /// basar. Liste zaten en önemli önce yazılır; ilk altısı sürümün asıl
+  /// hikâyesi.
+  static const oneCikanSayisi = 6;
 
   /// Sheet'i açar ve kapanışta "görüldü" işaretini yazar.
   ///
@@ -46,8 +56,21 @@ class YeniliklerSheet extends StatelessWidget {
   }
 
   @override
+  State<YeniliklerSheet> createState() => _YeniliklerSheetState();
+}
+
+class _YeniliklerSheetState extends State<YeniliklerSheet> {
+  bool _tumu = false;
+
+  List<SurumNotu> get notlar => widget.notlar;
+
+  @override
   Widget build(BuildContext context) {
     final c = context.c;
+    final toplam = notlar.fold<int>(0, (n, s) => n + s.yenilikler.length);
+    final katli = !_tumu && toplam > YeniliklerSheet.oneCikanSayisi;
+    // Sürümler arası sıra korunur; sayaç tüm sürümlerin maddelerini sayar.
+    var gosterilen = 0;
     // Uzun liste ekranı taşırmasın: tek sürümde dört madde rahat sığar ama
     // atlanan sürümler biriktiğinde (1.0 → 1.3) liste uzar.
     final maxH = MediaQuery.of(context).size.height * 0.75;
@@ -100,11 +123,23 @@ class YeniliklerSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: SandikSpace.sm),
                     ],
-                    for (final y in notlar[i].yenilikler) ...[
-                      _YenilikSatiri(yenilik: y),
-                      const SizedBox(height: SandikSpace.md),
-                    ],
+                    for (final y in notlar[i].yenilikler)
+                      if (!katli ||
+                          gosterilen++ < YeniliklerSheet.oneCikanSayisi) ...[
+                        _YenilikSatiri(yenilik: y),
+                        const SizedBox(height: SandikSpace.md),
+                      ],
                   ],
+                  if (katli)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => setState(() => _tumu = true),
+                        icon: const Icon(Icons.expand_more_rounded),
+                        label: Text('Tüm değişiklikler '
+                            '(${toplam - YeniliklerSheet.oneCikanSayisi} madde daha)'),
+                      ),
+                    ),
                 ],
               ),
             ),

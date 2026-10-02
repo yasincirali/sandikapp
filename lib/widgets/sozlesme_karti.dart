@@ -518,6 +518,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                     }.toList()
                       ..sort())
                       SozlesmeCipi(
+                        icerigeGore: true,
                         metin: l10n.depositDays(g),
                         secili: _gun == g,
                         renk: renk,

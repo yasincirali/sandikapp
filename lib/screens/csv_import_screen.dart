@@ -62,6 +62,38 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     setState(() => _result = CsvImportService.parse(_ctrl.text));
   }
 
+  /// Önizleme başlığı — sonuç gelince görünür alana kaydırılır.
+  final _sonucAnahtari = GlobalKey();
+
+  /// Önizle düğmesi: sonuç düğmenin ALTINDA, ekran
+  /// dışında çiziliyordu; kullanıcı düğmeye basınca hiçbir şey olmadı sanıp
+  /// iki kez bastı (2026-10-02 müşteri testi). Sonuca kaydırılır.
+  void _onizleVeGoster() {
+    _parse();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _sonucAnahtari.currentContext;
+      if (ctx == null || !mounted) return;
+      Scrollable.ensureVisible(ctx,
+          duration: SandikMotion.surfaceOf(context),
+          curve: SandikMotion.enter,
+          alignment: 0.1);
+    });
+  }
+
+  /// Önizleme tarihi — ekstredeki biçimle aynı (`21.01.2026`); yerel ayar
+  /// verisine bağlı değil.
+  static String _tarih(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}.'
+      '${d.month.toString().padLeft(2, '0')}.${d.year}';
+
+  /// Satırda gösterilen kod: iç önek/sonek olmadan (`ASELS.IS` → `ASELS`,
+  /// `TEFAS:MAC` → `MAC`). Türü satırın ikonu söyler.
+  static String _gorunenKod(String ticker) => ticker
+      .replaceFirst(RegExp(r'^(TEFAS|KRIPTO):', caseSensitive: false), '')
+      .replaceAll('.IS', '')
+      .replaceAll('=X', '')
+      .trim();
+
   static const _turler = [
     XTypeGroup(
       label: 'Ekstre',
@@ -104,6 +136,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       _ekstre = sonuc;
       _dosyaAdi = dosya.name;
       _ctrl.text = sonuc.kanonikMetin();
+      // Kaydırma YOK: dosyadan okununca hemen altta eşleme kartı belirir
+      // (görünür geri bildirim) ve kullanıcı önce onu doğrulamalı.
       _parse();
     } catch (e, st) {
       // Okuma hatası mesajı bizimdir (`EkstreOkumaHatasi`); beklenmeyen
@@ -235,13 +269,14 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
             ),
             const SizedBox(height: SandikSpace.md),
             FilledButton.icon(
-              onPressed: _ctrl.text.trim().isEmpty ? null : _parse,
+              onPressed: _ctrl.text.trim().isEmpty ? null : _onizleVeGoster,
               icon: const Icon(Icons.preview_rounded),
               label: Text(context.l10n.preview),
             ),
             if (r != null) ...[
               const SizedBox(height: SandikSpace.lg),
               Text(
+                key: _sonucAnahtari,
                 '${context.l10n.csvRowsRead(r.rows.length)}'
                 '${r.errors.isEmpty ? '' : context.l10n.csvRowsSkipped(r.errors.length)}',
                 style: context.t.titleSmall?.copyWith(
@@ -261,9 +296,13 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                       Expanded(
                         child: Text(
                           '${row.satis ? '${context.l10n.cartSellTag} · ' : ''}'
-                          '${row.ticker} · ${fmtNumFlex(row.quantity)} '
+                          '${_gorunenKod(row.ticker)} · ${fmtNumFlex(row.quantity)} '
                           '${row.unitType == 'piece' ? context.l10n.unitPiece : row.unitType}'
-                          ' · ${row.price > 0 ? '${fmtNumFlex(row.price)} ${row.currency}' : context.l10n.closePriceWillBeFetched}',
+                          ' · ${row.price > 0 ? (row.currency == 'TRY' ? '₺${fmtNumFlex(row.price)}' : '${fmtNumFlex(row.price)} ${row.currency}') : context.l10n.closePriceWillBeFetched}'
+                          // İşlem tarihi: ekstre alış ve satışları kendi
+                          // tarihiyle deftere yazar; kullanıcı önizlemede
+                          // doğru okunduğunu görmeli.
+                          ' · ${_tarih(row.addedDate)}',
                           style: context.t.bodySmall?.copyWith(
                               color: row.satis ? c.loss : c.text90),
                           overflow: TextOverflow.ellipsis,
