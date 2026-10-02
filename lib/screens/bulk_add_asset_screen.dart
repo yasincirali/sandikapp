@@ -6,6 +6,7 @@ import '../models/asset.dart' show Asset, birimEtiketi;
 import '../providers/bulk_cart_provider.dart';
 import '../services/ice_aktarma_satislari.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/sozlesme_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../services/review_prompt_service.dart';
@@ -151,7 +152,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     // Satışlar burada YAZILMAZ (karar 5.4): alımlar defterde olmadan
     // "o gün elde kaç lot vardı" sorusu cevaplanamaz. Onlar 3. adımda.
     bool limitHit = false;
-    await Future.wait(items.where((i) => !i.satis).map((item) async {
+    await Future.wait(
+        items.where((i) => !i.satis && i.mevduat == null).map((item) async {
       try {
         await portfolio.addAsset(
           name: item.name,
@@ -175,6 +177,33 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         failures.add('${item.name}: ${friendlyError(e)}');
       }
     }));
+
+    // ── 2b) Vadeli mevduat (ekstreden): sözleşme + dönem + anapara lotu ──
+    // Lot tek başına anlamsız (birim değer faiz ve vadeden); `addAsset`
+    // değil, mevduat formunun kullandığı `mevduatAc`. Sıralı: her biri üç
+    // tablo yazar ve hatada kendi sözleşmesini geri alır.
+    final sozlesme = ref.read(sozlesmeProvider.notifier);
+    for (final item in items.where((i) => i.mevduat != null)) {
+      final m = item.mevduat!;
+      try {
+        await sozlesme.mevduatAc(
+          kurum: m.kurum,
+          ad: item.name,
+          anapara: item.quantity,
+          yillikFaiz: m.yillikFaiz,
+          stopaj: m.stopaj,
+          baslangic: item.addedDate,
+          vadeGun: m.vadeGun,
+        );
+        sepet.remove(item.id);
+        if (mounted) setState(() => _saved++);
+      } on AssetLimitExceededException {
+        limitHit = true;
+        failures.add(l.assetLimitReachedFor(item.name));
+      } catch (e) {
+        failures.add('${item.name}: ${friendlyError(e)}');
+      }
+    }
 
     // ── 3) Satışlar: güncel defterle planla, tarih sırasıyla yaz ──────────
     // Elde olandan fazla satış ve fiyatı bulunamayan satış YAZILMAZ; sepette
@@ -385,7 +414,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         final it = items[i];
         return _BulkItemTile(
           item: it,
-          onEdit: _saving ? null : () => _openAddForm(existing: it),
+          // Mevduat kalemi formda düzenlenmez: ekleme formu sözleşme
+          // alanlarını (faiz, vade) taşımıyor; silinip yeniden içe aktarılır.
+          onEdit: _saving || it.mevduat != null
+              ? null
+              : () => _openAddForm(existing: it),
           onDelete: _saving
               ? null
               : () => ref.read(bulkCartProvider.notifier).remove(it.id),
@@ -517,7 +550,14 @@ class _BulkItemTile extends StatelessWidget {
 
     // Satış satırı (karar 5.4) ilk kelimede ve renkte ayrışır: aynı sembolün
     // alışı ve satışı sepette alt alta durur, yön yalnız renkle anlatılmaz.
-    final subtitle = <String>[
+    final m = item.mevduat;
+    final subtitle = m != null
+        ? [
+            context.l10n.cartDepositSubtitle(fmtPct(m.yillikFaiz), m.vadeGun),
+            fmtTRY(item.quantity, digits: 2),
+            if (dateLabel != null) dateLabel,
+          ].join(' · ')
+        : <String>[
       if (item.satis) context.l10n.cartSellTag,
       '${_fmt(item.quantity)} ${_unitLabel()}',
       if (item.price > 0) '${_fmt(item.price)} ${item.currency}',

@@ -2905,6 +2905,35 @@ class AppLocalizationsTr extends AppLocalizations {
   String get importFixColumns => 'Sütunları düzelt';
 
   @override
+  String importDepositRow(String name, String amount, String rate, int days) {
+    return '$name · $amount · $rate faiz · $days gün vade';
+  }
+
+  @override
+  String importFundNotRecognized(String name) {
+    return 'Fon tanınmadı, eklenmedi: $name';
+  }
+
+  @override
+  String get importFundListFailed =>
+      'TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.';
+
+  @override
+  String importDepositsFound(int n) {
+    return '$n vadeli mevduat bulundu (vadesiz hesaplar alınmaz)';
+  }
+
+  @override
+  String importStatementDate(String date) {
+    return 'Ekstre tarihi $date: fonların maliyeti o günkü birim fiyat sayıldı.';
+  }
+
+  @override
+  String cartDepositSubtitle(String rate, int days) {
+    return 'Vadeli · $rate · $days gün';
+  }
+
+  @override
   String get importColumnNone => 'Yok';
 
   @override

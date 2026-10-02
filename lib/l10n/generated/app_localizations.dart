@@ -5006,6 +5006,42 @@ abstract class AppLocalizations {
   /// **'Sütunları düzelt'**
   String get importFixColumns;
 
+  /// No description provided for @importDepositRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} · {amount} · {rate} faiz · {days} gün vade'**
+  String importDepositRow(String name, String amount, String rate, int days);
+
+  /// No description provided for @importFundNotRecognized.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon tanınmadı, eklenmedi: {name}'**
+  String importFundNotRecognized(String name);
+
+  /// No description provided for @importFundListFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.'**
+  String get importFundListFailed;
+
+  /// No description provided for @importDepositsFound.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} vadeli mevduat bulundu (vadesiz hesaplar alınmaz)'**
+  String importDepositsFound(int n);
+
+  /// No description provided for @importStatementDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstre tarihi {date}: fonların maliyeti o günkü birim fiyat sayıldı.'**
+  String importStatementDate(String date);
+
+  /// No description provided for @cartDepositSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeli · {rate} · {days} gün'**
+  String cartDepositSubtitle(String rate, int days);
+
   /// No description provided for @importColumnNone.
   ///
   /// In tr, this message translates to:

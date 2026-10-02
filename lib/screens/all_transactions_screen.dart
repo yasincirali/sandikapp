@@ -135,6 +135,30 @@ DateTime _islemTarihi(Asset a) => a.addedDate;
   return (aktif: aktif, silinen: birlesik);
 }
 
+/// Ana sayfa "Portföy Hareketleri" akışı: kayıtlar GİRİLDİĞİ ana göre, en
+/// yeni önce.
+///
+/// ## Neden (kullanıcı bildirimi 2026-10-03: "dosyayla eklenenler portföyde
+/// var, hareketlerde yok")
+/// Akış işlem tarihine (`addedDate`) göre sıralıydı ve ilk 3 kaydı
+/// gösteriyordu. Ekstreden içe aktarılan kalem ekstrenin tarihini taşır
+/// (ör. 31.05) — Portföy'de hemen görünür ama akışın ilk üçüne hiç giremez;
+/// kullanıcı az önce yaptığı şeyi göremez. Akış "ne yaptım" sorusunu
+/// yanıtlar: giriş anı (`createdAt`, 0095). Eski satırlarda 0095
+/// `created_at = added_date` yazdığı için sıraları DEĞİŞMEZ; yalnız sonradan
+/// girilen geçmiş tarihli kayıt (içe aktarma, unutulan alış) öne gelir.
+/// `createdAt` yoksa (0095 öncesi kopya) işlem tarihi. Eşitlikte işlem
+/// tarihi. Tüm Hareketler ekranı defterdir: aya gruplu, işlem tarihine göre
+/// kalır (`hareketleriAyir`).
+List<Asset> sonGirilenler(List<Asset> aktif) {
+  DateTime giris(Asset a) => a.createdAt ?? a.addedDate;
+  return List.of(aktif)
+    ..sort((a, b) {
+      final d = giris(b).compareTo(giris(a));
+      return d != 0 ? d : b.addedDate.compareTo(a.addedDate);
+    });
+}
+
 /// ESKİ tip mezar taşlarını tek satırda toplar.
 ///
 /// ## Neden (kullanıcı bildirimi 2026-09-29: "silinenler doğru şekilde
