@@ -506,7 +506,8 @@ List<_Adim> _adimlariKur() {
       rozet: 'YENİ',
       baslik: 'Mevduat ve BES',
       govde: "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "
-          'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda eklenir; '
+          'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda (günlük faizli '
+          'hesapta her gün sonunda) eklenir; '
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
           'son orana göre çıkar. Vade dolunca varlık sayfasından tek '
           "dokunuşla yenilersin. BES'i seç: şirketini, ana "

@@ -4831,7 +4831,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositAccrualNoteDaily =>
-      'Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.';
+      'Faiz her gün sonunda net olarak eklenir; gün içinde değer değişmez.';
 
   @override
   String depositAlreadyMatured(String date) {

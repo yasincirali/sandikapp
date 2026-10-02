@@ -8135,7 +8135,7 @@ abstract class AppLocalizations {
   /// No description provided for @depositAccrualNoteDaily.
   ///
   /// In tr, this message translates to:
-  /// **'Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.'**
+  /// **'Faiz her gün sonunda net olarak eklenir; gün içinde değer değişmez.'**
   String get depositAccrualNoteDaily;
 
   /// No description provided for @depositAlreadyMatured.

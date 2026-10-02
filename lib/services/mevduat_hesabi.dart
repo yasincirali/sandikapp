@@ -8,7 +8,7 @@ import '../models/sozlesme.dart';
 /// ## Neden birim değer (2026-09-30)
 /// Mevduat fon gibi fiyatlanır (`AssetType.fiyatlamaTuru`): lot miktarı
 /// "pay", fiyat pay başına TL. İlk dönem 1,0 ile başlar; net faiz vadeli
-/// hesapta vade sonunda, günlük faizli hesapta her gün eklenir. Ek para yatırma o günün birim değerinden yeni bir alım
+/// hesapta vade sonunda, günlük faizli hesapta her gün sonunda eklenir. Ek para yatırma o günün birim değerinden yeni bir alım
 /// lotu, çekim satım lotudur — fonun NAV'ı gibi. Böylece toplam, kâr/zarar,
 /// tarihçe ve ortak görünümü hiçbir "mevduat hariç" dalı olmadan çalışır
 /// (0058'de silinen ilk sürümün bakım yükü tam olarak bu dallardı).
@@ -31,7 +31,13 @@ import '../models/sozlesme.dart';
 ///     o güne kadarki faiz geçiş anında eklenir — geçmiş kayıtların değeri
 ///     değişmesin.
 ///   · **Vadesiz / günlük faizli** dönem günlük bileşiktir: bu hesaplar
-///     faizi her gün öder.
+///     faizi her gün öder. Faiz GÜN SONUNDA eklenir; gün içinde değer düz
+///     kalır, gece yarısı o günün net faizi kadar artar.
+///
+///     Neden gün sonu (kullanıcı kararı, 2026-10-02): *"Günlük faizde de gün
+///     sonunda hak ettiğimiz kazancı görmeliyiz; gün içinde anlık kârımızı
+///     görmemeliyiz."* Eskiden saniye saniye tahakkuk ediyordu: 18:20'de
+///     açılan ₺100.000'lik %40 hesap açılır açılmaz ~₺70 kâr gösteriyordu.
 ///   · **Net = brüt × (1 − stopaj)**. Stopaj dönem satırında saklıdır; oran
 ///     kararla değişince eski dönem geriye dönük değişmez.
 ///   · **Uydurma yok** (fiyat kaynağı sözleşmesi madde 3): son dönemin
@@ -44,6 +50,14 @@ abstract final class MevduatHesabi {
   /// Gün cinsinden kesirli süre — gün içi seride eğri kademesiz olsun.
   static double _gun(DateTime a, DateTime b) =>
       b.difference(a).inSeconds / Duration.secondsPerDay;
+
+  /// [a] gününden [b] gününe kaç GÜN SONU geçti (takvim günü farkı, saat
+  /// yok sayılır). UTC gün farkı: yaz saati geçişinde 23/25 saatlik gün
+  /// `inDays`'i kaydırmasın.
+  static int _tamGun(DateTime a, DateTime b) =>
+      DateTime.utc(b.year, b.month, b.day)
+          .difference(DateTime.utc(a.year, a.month, a.day))
+          .inDays;
 
   /// Net yıllık oran (0,35 = %35).
   static double netOran(MevduatDonemi d) =>
@@ -80,9 +94,15 @@ abstract final class MevduatHesabi {
       if (bitis == null || t.isBefore(bitis)) {
         // Vadeli dönemde faiz vade sonunda eklenir; o güne kadar düz.
         if (!d.vadesiz) return b;
-        return b * _donemCarpani(d, _gun(d.baslangic, t));
+        // Günlük faizli dönemde faiz GÜN SONUNDA eklenir: yalnızca biten
+        // günler sayılır, gün içinde değer düz.
+        return b * _donemCarpani(d, _tamGun(d.baslangic, t).toDouble());
       }
-      b *= _donemCarpani(d, _gun(d.baslangic, bitis));
+      b *= _donemCarpani(
+          d,
+          d.vadesiz
+              ? _tamGun(d.baslangic, bitis).toDouble()
+              : _gun(d.baslangic, bitis));
     }
     return b;
   }

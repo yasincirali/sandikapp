@@ -4864,7 +4864,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositAccrualNoteDaily =>
-      'The value grows every day by the net interest; a daily-interest account pays it in every day.';
+      'Net interest is added at the end of each day; the value does not change during the day.';
 
   @override
   String depositAlreadyMatured(String date) {

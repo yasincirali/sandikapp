@@ -6,7 +6,7 @@ import 'package:portfoy_takip/services/mevduat_hesabi.dart';
 ///
 /// Kilitlenen kurallar (`mevduat_hesabi.dart` başlığı):
 ///   · vadeli dönem basit faiz, vade sonunda anaparaya eklenir (zincir);
-///   · vadesiz dönem günlük bileşik;
+///   · vadesiz dönem günlük bileşik, faiz GÜN SONUNDA eklenir (gün içi düz);
 ///   · net = brüt × (1 − stopaj);
 ///   · son vade dolup yeni dönem girilmediyse değer DÜZ kalır.
 void main() {
@@ -136,6 +136,24 @@ void main() {
     expect(v, closeTo(1.001 * 1.001, 1e-12));
     expect(MevduatHesabi.vadesiDoldu(d, DateTime(2030)), isFalse);
     expect(MevduatHesabi.vadeyeKalanGun(d, DateTime(2030)), isNull);
+  });
+
+  test('vadesiz: faiz gün sonunda eklenir, gün içinde değer düz (2026-10-02)',
+      () {
+    // Kullanıcı senaryosu: bugün 18:20'de ₺100.000, %40 brüt, %17,5 stopaj.
+    // Eskiden açılır açılmaz ~₺69,7 kâr görünüyordu.
+    final bugun = DateTime(2026, 10, 2);
+    final d = [donem(bugun, null, faiz: 40)];
+    final aksam = DateTime(2026, 10, 2, 18, 20);
+    expect(MevduatHesabi.birimDeger(d, aksam), 1.0);
+    expect(MevduatHesabi.birimDeger(d, DateTime(2026, 10, 2, 23, 59, 59)), 1.0);
+    // Gece yarısı bir günlük net faiz eklenir.
+    const gunluk = 0.40 * 0.825 / 365;
+    final yarin = MevduatHesabi.birimDeger(d, DateTime(2026, 10, 3))!;
+    expect(100000 * (yarin - 1), closeTo(100000 * gunluk, 1e-6));
+    expect(100000 * (yarin - 1), closeTo(90.41, 0.01));
+    // Ertesi gün içinde de düz.
+    expect(MevduatHesabi.birimDeger(d, DateTime(2026, 10, 3, 15)), yarin);
   });
 
   test('vadesiz hesapta oran değişimi yeni dönemdir, eski birikim korunur',

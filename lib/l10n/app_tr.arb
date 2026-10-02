@@ -3428,7 +3428,7 @@
   "depositCardRateValue": "%{rate} brüt · stopaj %{wht}",
   "@depositCardRateValue": {"placeholders": {"rate": {"type": "String"}, "wht": {"type": "String"}}},
   "depositWithholdingManual": "Bu oranı sen girdin; vade ya da tarih değişince öneri üstüne yazılmaz.",
-  "depositAccrualNoteDaily": "Değer her gün net faizle artar; günlük faizli hesapta faiz her gün hesabına geçer.",
+  "depositAccrualNoteDaily": "Faiz her gün sonunda net olarak eklenir; gün içinde değer değişmez.",
   "depositAlreadyMatured": "Bu dönemin vadesi {date} tarihinde dolmuş. Kaydettikten sonra karttan yeni dönemi başlatabilirsin.",
   "@depositAlreadyMatured": {"placeholders": {"date": {"type": "String"}}},
   "depositRenewStartHint": "Banka vadeli hesabı vade gününde yeniler. Başka bir günde yenilediysen tarihi değiştir; aradaki günler faizsiz sayılır.",
