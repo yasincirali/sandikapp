@@ -180,6 +180,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       lastUpdated: DateTime.now(),
       addedDate: bas,
       sozlesmeId: s.id,
+      createdAt: DateTime.now(), // bkz. PortfolioNotifier.addAsset
     );
 
     await SupabaseService.instance.insertSozlesme(s);

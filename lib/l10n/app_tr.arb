@@ -1952,6 +1952,59 @@
   "importMappingTitle": "Sütunlar böyle eşlendi",
   "importLowConfidence": "Bu dosyanın sütunlarından tam emin değiliz; eşlemeyi kontrol et, gerekirse düzelt.",
   "importFixColumns": "Sütunları düzelt",
+  "importDepositRow": "{name} · {amount} · {rate} faiz · {days} gün vade",
+  "@importDepositRow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "importFundNotRecognized": "Fon tanınmadı, eklenmedi: {name}",
+  "@importFundNotRecognized": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importFundListFailed": "TEFAS fon listesi alınamadı; adıyla yazılmış fonlar eklenemedi. Bağlantını kontrol edip dosyayı yeniden seç.",
+  "importDepositsFound": "{n} vadeli mevduat bulundu (vadesiz hesaplar alınmaz)",
+  "@importDepositsFound": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "importStatementDate": "Ekstre tarihi {date}: fonların maliyeti o günkü birim fiyat sayıldı.",
+  "@importStatementDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cartDepositSubtitle": "Vadeli · {rate} · {days} gün",
+  "@cartDepositSubtitle": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "importColumnNone": "Yok",
   "importApply": "Uygula",
   "importOrPaste": "ya da tabloyu yapıştır",
