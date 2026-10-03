@@ -136,10 +136,27 @@ class HomeWidgetService {
   /// ekranı açık bir bayrakla karar verir.
   static const _kHidden = 'sandik_hidden';
 
+  /// Kilit widget'ı rakamı Canlı Etkinlik'ten mi okusun (2026-10-03,
+  /// yasin: "Canlı aktivite, dinamik ada, kilit ekranı widget, performans
+  /// günlük aynı değeri göstermeli ve senkron olmalı").
+  ///
+  /// Uygulama kapalıyken widget'ı yalnız bu yazım besliyordu ve son
+  /// rakamda donuyordu; Canlı Etkinlik ise sunucudan dakikada bir ileri
+  /// taşınıyor (`push-live-activity`, `canli_etkinlik_dakikalik`). Açık
+  /// bir etkinlik varken widget onun son içeriğini okur — iki kilit
+  /// ekranı yüzeyi aynı push'tan beslenir. Aynı Remote Config bayrağına
+  /// bağlı: kapalıyken widget bugünkü gibi yalnız bu yazımı okur.
+  static const _kCanliEtkinligiIzle = 'sandik_lock_follow_la';
+
   /// [_kLockAmounts]'ın değeri — servis Riverpod okuyamaz; `main.dart`
   /// portföy dinleyicisi ve Ayarlar anahtarı buraya yazar (Canlı Etkinlik'teki
   /// `showAmountsOnLockScreen` ile aynı desen).
   bool lockScreenAmounts = false;
+
+  /// [_kCanliEtkinligiIzle]'nin değeri — `main.dart` Remote Config'ten
+  /// (`canli_etkinlik_dakikalik`) atar, Canlı Etkinlik'teki
+  /// `dakikalikGuncelleme` ile aynı anda.
+  bool canliEtkinligiIzle = false;
 
   /// Uygulamanın çözülmüş tema tercihi — tek kaynaktan OKUNUR.
   ///
@@ -301,6 +318,8 @@ class HomeWidgetService {
       // çiziliyor ve o da uygulamanın temasını izlemeli.
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
       await HomeWidget.saveWidgetData<bool>(_kLockAmounts, lockScreenAmounts);
+      await HomeWidget.saveWidgetData<bool>(
+          _kCanliEtkinligiIzle, canliEtkinligiIzle);
       // Gizliyken de yazılır: gizli widget da "Piyasa kapalı" satırı çizer.
       final yalnizBorsa = yalnizcaBorsaVarliklardan(state.assets);
       await HomeWidget.saveWidgetData<bool>(_kYalnizBorsa, yalnizBorsa);

@@ -78,6 +78,7 @@ void main() {
   tearDown(() {
     kanal.kaldir();
     HomeWidgetService.instance.lockScreenAmounts = false;
+    HomeWidgetService.instance.canliEtkinligiIzle = false;
   });
 
   group('Dart tarafı yazımı', () {
@@ -101,6 +102,52 @@ void main() {
       HomeWidgetService.instance.lockScreenAmounts = true;
       await HomeWidgetService.instance.update(_durum(), hideBalance: false);
       expect(kanal.yazilan['sandik_lock_amounts'], isTrue);
+    });
+  });
+
+  // 2026-10-03 (yasin): "Canlı aktivite, dinamik ada, kilit ekranı widget,
+  // performans günlük aynı değeri göstermeli ve senkron olmalı."
+  group('Canlı Etkinlik ile eşitleme', () {
+    final swift = _oku('ios/SandikWidget/SandikHomeWidget.swift');
+
+    test('bayrak (canli_etkinlik_dakikalik) widget deposuna taşınır', () async {
+      HomeWidgetService.instance.canliEtkinligiIzle = false;
+      await HomeWidgetService.instance.update(_durum(), hideBalance: false);
+      expect(kanal.yazilan['sandik_lock_follow_la'], isFalse);
+      HomeWidgetService.instance.canliEtkinligiIzle = true;
+      await HomeWidgetService.instance.update(_durum(), hideBalance: true);
+      expect(kanal.yazilan['sandik_lock_follow_la'], isTrue,
+          reason: 'gizliyken de yazılır; widget gizliliği ayrıca bilir');
+      final main = _oku('lib/main.dart');
+      expect(
+          main,
+          contains('HomeWidgetService.instance.canliEtkinligiIzle =\n'
+              '        RemoteConfigService.instance.canliEtkinlikDakikalik;'));
+    });
+
+    test('Swift: bayrak açıksa rakam açık etkinliğin içeriğinden', () {
+      expect(swift, contains('"sandik_lock_follow_la"'));
+      expect(swift, contains('import ActivityKit'));
+      expect(swift, contains('Activity<SandikActivityAttributes>.activities'));
+      // Bayatlamış ya da maskeli içerik rakam sayılmaz.
+      expect(swift, contains('bayat <= simdi'));
+      expect(swift, contains('if d.isHidden { return nil }'));
+      // Kendi gizlilik bayrağı önce gelir.
+      expect(swift,
+          contains('if !gizli, defaults.bool(forKey: KilitKeys.canliEtkinligiIzle)'));
+    });
+
+    test('Swift: işaretli yüzde Dart fmtPctIsaretli kuralıyla', () {
+      // Sıfıra işaret yok, eksi U+2212, ölçüm yoksa "—".
+      expect(swift, contains('let sifir = pct == "%0,00"'));
+      expect(swift, contains(r'(isPositive ? "+" : "\u{2212}") + pct'));
+      expect(swift, contains('isaretli = "—"'));
+    });
+
+    test('Swift: izlerken zaman çizelgesi kendini tazeler, 18:00 girdisi kalır',
+        () {
+      expect(swift, contains('entries: girdiler,\n'
+          '                policy: .after(Date().addingTimeInterval(5 * 60))'));
     });
   });
 

@@ -1,3 +1,4 @@
+import ActivityKit
 import SwiftUI
 import WidgetKit
 
@@ -325,6 +326,79 @@ private enum KilitKeys {
     static let lockAmounts = "sandik_lock_amounts"
     static let lockPct = "sandik_lock_pct"
     static let hidden = "sandik_hidden"
+    /// Bkz. `HomeWidgetService._kCanliEtkinligiIzle`.
+    static let canliEtkinligiIzle = "sandik_lock_follow_la"
+}
+
+// MARK: - Canlı Etkinlik ile eşitleme (2026-10-03)
+//
+// yasin: "Canlı aktivite, dinamik ada, kilit ekranı widget, performans
+// günlük aynı değeri göstermeli ve senkron olmalı."
+//
+// Uygulama kapalıyken widget'ı yalnız uygulamanın SON yazımı besliyordu;
+// Canlı Etkinlik (kilit kartı + Dinamik Ada) ise sunucudan dakikada bir
+// ileri taşınıyor. Kilit ekranında ikisi yan yana farklı rakam gösteriyordu.
+// Açık bir etkinlik varken widget rakamı onun SON içeriğinden okur: iki
+// yüzey tek push'tan beslenir, ikinci bir hesap yok.
+//
+// Sınır (Apple): widget'ın ne zaman yeniden çizileceğine sistem karar verir
+// (günlük yenileme bütçesi). Zaman çizelgesi etkinlik açıkken 5 dakika
+// sonrasını ister; sistem bunu seyreltebilir. Dakikalık tazelik yalnız
+// Canlı Etkinlik'e tanınıyor.
+
+/// Kilit widget'ının Canlı Etkinlik'ten aldığı alanlar.
+struct CanliEtkinlikRakami: Equatable {
+    let pctText: String
+    let changeText: String
+    let isPositive: Bool
+    let isFlat: Bool
+    let isMarketOpen: Bool
+    let sparkline: [Double]
+
+    /// Etkinliğin içeriğini kilit widget'ının diline çevirir.
+    ///
+    /// Etkinlik yüzdeyi İŞARETSİZ taşır (yön ayrı alan); widget işaretli
+    /// ister. Kural Dart `fmtPctIsaretli` ile aynı: sıfır yüzdeye işaret
+    /// konmaz, eksi işareti U+2212.
+    static func cevir(
+        pct: String, change: String, isPositive: Bool, isFlatChange: Bool,
+        isMarketOpen: Bool, sparkline: [Double]
+    ) -> CanliEtkinlikRakami {
+        let olcumYok = pct.isEmpty || pct == "—"
+        let sifir = pct == "%0,00"
+        let isaretli: String
+        if olcumYok {
+            isaretli = "—"
+        } else if sifir || isFlatChange {
+            isaretli = pct
+        } else {
+            isaretli = (isPositive ? "+" : "\u{2212}") + pct
+        }
+        return CanliEtkinlikRakami(
+            pctText: isaretli,
+            changeText: olcumYok ? "" : change,
+            isPositive: isPositive,
+            isFlat: olcumYok || sifir || isFlatChange,
+            isMarketOpen: isMarketOpen,
+            sparkline: sparkline)
+    }
+
+    /// Açık ve bayatlamamış etkinliğin son içeriği; yoksa `nil`.
+    ///
+    /// Gizli bakiyeli içerik ALINMAZ: widget gizliliği kendi bayrağından
+    /// okur, maskeli metni rakam sanmamalı.
+    static func oku(simdi: Date = Date()) -> CanliEtkinlikRakami? {
+        guard let etkinlik = Activity<SandikActivityAttributes>.activities
+            .last(where: { $0.activityState == .active }) else { return nil }
+        let icerik = etkinlik.content
+        if let bayat = icerik.staleDate, bayat <= simdi { return nil }
+        let d = icerik.state
+        if d.isHidden { return nil }
+        return cevir(
+            pct: d.changePctText, change: d.changeText,
+            isPositive: d.isPositive, isFlatChange: d.isFlatChange,
+            isMarketOpen: d.isMarketOpen, sparkline: d.sparkline)
+    }
 }
 
 struct SandikKilitEntry: TimelineEntry {
@@ -384,6 +458,23 @@ struct SandikKilitProvider: TimelineProvider {
                 .split(separator: ",")
                 .compactMap { Double($0) }
         let yuzde = defaults.string(forKey: KilitKeys.lockPct) ?? ""
+        // Açık Canlı Etkinlik varsa rakam ondan (bkz. CanliEtkinlikRakami).
+        if !gizli, defaults.bool(forKey: KilitKeys.canliEtkinligiIzle),
+           let canli = CanliEtkinlikRakami.oku() {
+            return SandikKilitEntry(
+                date: Date(),
+                hasData: true,
+                isHidden: false,
+                showsAmount: defaults.bool(forKey: KilitKeys.lockAmounts),
+                pctText: canli.pctText,
+                changeText: canli.changeText,
+                isPositive: canli.isPositive,
+                isFlat: canli.isFlat,
+                isMarketOpen: canli.isMarketOpen,
+                yalnizBorsa: yalnizBorsaOku(defaults),
+                sparkline: canli.sparkline.isEmpty ? seri : canli.sparkline
+            )
+        }
         return SandikKilitEntry(
             date: Date(),
             hasData: true,
@@ -415,6 +506,17 @@ struct SandikKilitProvider: TimelineProvider {
         if simdi.isMarketOpen, let bitis = BistSeans.aralik()?.upperBound,
            bitis > Date() {
             girdiler.append(simdi.kapali(at: bitis))
+        }
+        // Canlı Etkinlik'i izlerken widget'ın kendisi de tazelenmeli:
+        // uygulama kapalı, yenilemeyi isteyecek kimse yok. 5 dk sonrası
+        // istenir; sistem bütçeye göre seyreltebilir.
+        let izliyor = UserDefaults(suiteName: WidgetKeys.suite)?
+            .bool(forKey: KilitKeys.canliEtkinligiIzle) ?? false
+        if izliyor, CanliEtkinlikRakami.oku() != nil {
+            completion(Timeline(
+                entries: girdiler,
+                policy: .after(Date().addingTimeInterval(5 * 60))))
+            return
         }
         completion(Timeline(entries: girdiler, policy: .never))
     }
