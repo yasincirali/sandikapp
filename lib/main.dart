@@ -1848,6 +1848,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // eski değeri taşırdı.
     HomeWidgetService.instance.lockScreenAmounts =
         ref.read(lockScreenAmountsProvider);
+    // Kilit widget'ı açık Canlı Etkinlik'in (sunucunun dakikalık) rakamını
+    // okusun mu — etkinliğin dakikalık bayrağıyla aynı.
+    HomeWidgetService.instance.canliEtkinligiIzle =
+        RemoteConfigService.instance.canliEtkinlikDakikalik;
     CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
       snapshot,
       hideBalance: hideBalance,
