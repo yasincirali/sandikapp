@@ -176,6 +176,16 @@ class RemoteConfigService {
     // uydurma değil, kaynaklı mevzuat değeri; mevzuat değişirse Console'a
     // yeni değer (yayın gerekmez) ve bu satır birlikte güncellenir.
     'temettu_stopaj_orani': 0.15,
+
+    // Kilit ekranı (Live Activity) uygulama KAPALIYKEN de dakikada bir
+    // Performans GÜNLÜK ile aynı rakamı göstersin (2026-10-03, kullanıcı
+    // kararı: "canlı aktiviteler her zaman 1 dk'da bir performans günlükle
+    // eş olmalı"). Açıkken istemci özetle birlikte bir tarif yazar
+    // (`CanliEtkinlikTarifi`), sunucu onu canlı kotasyonla ileri taşır.
+    // KAPALI doğar (CLAUDE.md "riskli yeni davranış bayrakla açılır"):
+    // sunucu fonksiyonu ve dakikalık cron canlıya çıktıktan sonra Console'da
+    // açılır; kapalıyken kilit ekranı birebir eski davranışta kalır.
+    'canli_etkinlik_dakikalik': false,
   };
 
   Future<void> init() async {
@@ -335,6 +345,12 @@ class RemoteConfigService {
   bool get ipoCalendarEnabled =>
       _rc?.getBool('ipo_calendar_enabled') ??
       _defaults['ipo_calendar_enabled'] as bool;
+
+  /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
+  /// `_defaults['canli_etkinlik_dakikalik']`.
+  bool get canliEtkinlikDakikalik =>
+      _rc?.getBool('canli_etkinlik_dakikalik') ??
+      _defaults['canli_etkinlik_dakikalik'] as bool;
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

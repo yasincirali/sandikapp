@@ -502,7 +502,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     // SADECE analyze-signals yanıtlarına bak.
     //
     // `net._http_response` tablosu TÜM cron'ların yanıtlarını taşıyor ve
-    // `live-activity-push` 5 dakikada bir çalıştığı için listeyi domine
+    // `live-activity-push` sık çalıştığı (0100'den beri dakikada bir) için listeyi domine
     // ediyor. Ayrım yapılmadığında ekran onun `{"sent":2}` çıktısını okuyup
     // "zincir çalışıyor, 2 bildirim gönderildi" diyordu — oysa sinyal
     // push'u hiç gönderilmemişti ve kullanıcının iPhone'u kayıtlı bile
@@ -522,7 +522,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       return (
         baslik: 'Sinyal turu henüz çalışmamış',
         detay: 'Kayıtlı yanıtların hepsi başka cron\'lara ait (çoğunlukla '
-            'live-activity-push, 5 dk\'da bir). analyze-signals saat başı '
+            'sık çalışan live-activity-push). analyze-signals saat başı '
             've yalnızca bildirim penceresi içinde çalışır.',
         renk: context.c.amberText,
       );
