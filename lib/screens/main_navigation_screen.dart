@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
+import '../theme/yazi_boyutu.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
@@ -320,7 +321,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // karede GPU'ya tam bir arka plan okuması + bulanıklık ödetiyordu;
     // kaydırmanın takıldığı yerlerden biri. Açık temada zemin zaten opak
     // beyaz. Görünüm birebir aynı.
-    return TourAnchor(
+    // `CihazYaziOlcegi`: Ayarlar › Yazı boyutu alt menüyü büyütmez
+    // (alt menü değişmez kuralı); cihazın kendi ölçeği geçerli kalır.
+    return CihazYaziOlcegi(child: TourAnchor(
       target: TourTarget.altMenu,
       child: ClipRect(
       child: DecoratedBox(
@@ -350,7 +353,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         ),
       ),
       ),
-    );
+    ));
   }
 
   Widget _navItem(int index, IconData icon, String label) {

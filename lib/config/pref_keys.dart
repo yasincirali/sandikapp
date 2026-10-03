@@ -18,6 +18,9 @@ class PrefKeys {
   static const themeMode = 'pref_theme_mode'; // 'system' | 'light' | 'dark'
   /// Arayüz dili — 'tr' | 'en' | 'system' (3.20). Cihaz tercihi, kişiye özel değil.
   static const locale = 'pref_locale';
+  /// Uygulama içi yazı boyutu — `YaziBoyutu.index` (0 küçük, 1 normal,
+  /// 2 büyük, 3 çok büyük). Cihaz tercihi: ekran/göz meselesi, hesaba değil.
+  static const yaziBoyutu = 'pref_yazi_boyutu';
   static const signalNotifications = 'pref_signal_notifications';
   static const partnerNotifications = 'pref_partner_notifications';
   static const balanceHidden = 'pref_balance_hidden';

@@ -17,6 +17,7 @@ import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart' show IntradaySeriesCache;
 import '../services/tazelik_ritmi.dart';
 import '../theme/sandik.dart';
+import '../theme/yazi_boyutu.dart';
 import 'demo_modu.dart';
 import 'demo_saglayicilar.dart';
 
@@ -395,7 +396,8 @@ class _DemoSekmeleriState extends State<_DemoSekmeleri> {
   Widget _altMenu(BuildContext context) {
     final l10n = context.l10n;
     final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    return Container(
+    // Gerçek alt menüyle aynı: Ayarlar › Yazı boyutu menüyü büyütmez.
+    return CihazYaziOlcegi(child: Container(
       padding: EdgeInsets.only(
           bottom: bottomInset > 0 ? bottomInset : SandikSpace.smd),
       decoration: BoxDecoration(
@@ -414,7 +416,7 @@ class _DemoSekmeleriState extends State<_DemoSekmeleri> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _oge(int i, IconData ikon, String etiket, {bool vurgulu = false}) {
