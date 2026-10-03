@@ -306,6 +306,22 @@ class RemotePushService {
     return id;
   }
 
+  /// Cihazın push kimliği — YOKSA ÜRETMEZ. `oturum_al` (0098) bu kimlik
+  /// dışındaki push satırlarını düşürür; kimlik henüz yoksa temizlik bir
+  /// sonraki açılışa kalır (yanlışlıkla kendi satırını silmesin diye).
+  Future<String?> mevcutCihazKimligi() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final id = prefs.getString(_deviceIdKey);
+      return (id == null || id.isEmpty) ? null : id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Bu süreçte sunucuya yazılmış son token (yoksa null).
+  String? get mevcutToken => _currentToken;
+
   Future<void> _syncToken(String userId, String token) async {
     if (eskiTokenSilinmeli(_currentToken, token)) {
       try {

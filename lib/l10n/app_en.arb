@@ -100,7 +100,7 @@
   "settingsAccount": "Account & Security",
   "settingsHelp": "Help & Legal",
   "settingsAppearanceSubtitle": "Theme, base currency, language, investor level",
-  "settingsAccountSubtitle": "Biometric lock, download your data, delete account",
+  "settingsAccountSubtitle": "Biometric lock, registered devices, download your data, delete account",
   "settingsHelpSubtitle": "Contact us, tour, privacy and terms",
   "themeSystem": "System",
   "themeLight": "Light",
@@ -3618,5 +3618,22 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cihazOtpBaslik": "Verify this device",
+  "cihazOtpAciklama": "Your account is being opened on a device that isn't on your list. For your security, enter the code we emailed you.",
+  "cihazOtpIpucu": "Not you? Cancel and change your password. Verifying this device signs out your other devices.",
+  "cihazOtpVazgec": "Cancel and sign out",
+  "cihazKapisiHata": "Couldn't verify this device. Check your connection and try again.",
+  "baskaCihazdaAcildi": "Your account was opened on another device. You have been signed out here.",
+  "kayitliCihazlar": "Registered devices",
+  "kayitliCihazlarAlt": "Your account stays open on one device at a time",
+  "kayitliCihazlarAciklama": "Your account can be open on only one device at a time. When someone signs in from a device that isn't listed, a verification code is sent to your email. Remove any device you don't recognize and change your password.",
+  "buCihaz": "This device",
+  "cihazSonKullanim": "Last used: {tarih}",
+  "cihazKaldir": "Remove",
+  "cihazKaldirBaslik": "Remove this device?",
+  "cihazKaldirMesaj": "{ad} will need to be verified with an email code the next time it signs in.",
+  "cihazKaldirildi": "Device removed",
+  "cihazListesiBos": "No registered devices.",
+  "otpSpamIpucu": "Didn't get it? Check your Junk / Spam folder too."
 }

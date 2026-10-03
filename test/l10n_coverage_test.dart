@@ -59,6 +59,7 @@ void main() {
     'lib/screens/login_screen.dart': 0,
     'lib/screens/main_navigation_screen.dart': 0,
     'lib/screens/otp_verification_screen.dart': 0,
+    'lib/screens/kayitli_cihazlar_screen.dart': 0,
     'lib/screens/partnership_requests_screen.dart': 0,
     'lib/screens/portfolio_performance/kontroller.dart': 0,
     'lib/screens/portfolio_performance/seriler.dart': 0,

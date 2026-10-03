@@ -34,6 +34,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/friendly_error.dart';
+import 'kayitli_cihazlar_screen.dart';
 import 'kullanici_adi_screen.dart';
 import 'legal_doc_screen.dart';
 import 'onboarding_screen.dart';
@@ -757,6 +758,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 }
                 await ref.read(biometricLockProvider.notifier).set(v);
               },
+            ),
+            // Tek aktif cihaz (0098): kod ile doğrulanmış cihazlar; buradan
+            // kaldırılan cihaz bir sonraki girişte yeniden kod ister.
+            _SettingsTile(
+              icon: Icons.devices_rounded,
+              title: context.l10n.kayitliCihazlar,
+              subtitle: context.l10n.kayitliCihazlarAlt,
+              onTap: () => pushGuarded(
+                context,
+                adaptiveRoute<void>(
+                    builder: (_) => const KayitliCihazlarScreen()),
+              ),
             ),
             _SettingsTile(
               key: _disaAktarKaroKey,

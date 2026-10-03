@@ -4,6 +4,7 @@ import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
 import '../models/kripto_fiyat.dart';
+import '../models/kayitli_cihaz.dart';
 import '../models/kullanici_adi.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
@@ -355,6 +356,29 @@ class SupabaseService {
       op: 'UPDATE',
       request: {'id': asset.id, 'ticker': body['ticker']},
       call: () => _db.from('assets').update(body).eq('id', asset.id),
+    );
+  }
+
+  /// Fiyat turunun yazımı — YALNIZ fiyat sütunları.
+  ///
+  /// Eskiden fiyat turu [updateAsset] ile satırın TAMAMINI yazıyordu:
+  /// miktar, maliyet, not… bellekteki kopyadan. Bellekteki defter bayatsa
+  /// (aynı hesap başka cihazda açık, orada miktar düzeltildi; 2026-10-03
+  /// kullanıcı bildirimi) bu cihazın 5 dakikalık fiyat yazımı o düzeltmeyi
+  /// sessizce geri alıyordu — kayıp güncelleme. Fiyat turu yalnızca fiyatın
+  /// sahibidir; [alisFiyatiDa] yalnız maliyeti hiç girilmemiş lotta (tur
+  /// maliyeti güncel fiyata kilitlediğinde) true'dur.
+  Future<void> fiyatYaz(Asset asset, {bool alisFiyatiDa = false}) async {
+    await _log.log<void>(
+      source: 'SupabaseService.fiyatYaz',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {'id': asset.id, 'ticker': asset.ticker},
+      call: () => _db.from('assets').update({
+        'current_price': asset.currentPrice,
+        'last_updated': asset.lastUpdated?.toUtc().toIso8601String(),
+        if (alisFiyatiDa) 'purchase_price': asset.purchasePrice,
+      }).eq('id', asset.id),
     );
   }
 
@@ -941,6 +965,106 @@ class SupabaseService {
         onConflict: 'token',
       ),
     );
+  }
+
+  // ── Kayıtlı cihazlar / tek aktif cihaz (0098) ────────────────────────────
+
+  /// Bu cihazın hesaptaki durumu. `null`: sunucu tanımadığı bir değer döndü.
+  Future<CihazDurumu?> cihazDurumu(String cihazId) async {
+    final r = await _log.log<dynamic>(
+      source: 'SupabaseService.cihazDurumu',
+      table: 'kayitli_cihazlar',
+      op: 'RPC',
+      request: {},
+      call: () => _db.rpc<dynamic>('cihaz_durumu',
+          params: {'p_cihaz_id': cihazId}),
+    );
+    return CihazDurumu.parse(r);
+  }
+
+  /// Cihazı güvenilen listeye yazar. Sunucu ilk cihaz dışında son 15 dk'da
+  /// e-posta kodu kanıtı ister; yoksa `otp_gerekli` ile reddeder.
+  Future<void> cihazKaydet({
+    required String cihazId,
+    required String ad,
+    required String platform,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.cihazKaydet',
+      table: 'kayitli_cihazlar',
+      op: 'RPC',
+      request: {'platform': platform},
+      call: () => _db.rpc<dynamic>('cihaz_kaydet', params: {
+        'p_cihaz_id': cihazId,
+        'p_ad': ad,
+        'p_platform': platform,
+      }),
+    );
+  }
+
+  /// Bu cihazı hesabın TEK aktif cihazı yapar; diğer cihazların push
+  /// token'larını düşürür. Başka cihaz bu oturumun girişinden sonra aktif
+  /// olduysa `yerinden_edildi` ile reddeder.
+  Future<void> oturumAl({
+    required String cihazId,
+    String? pushCihazId,
+    String? pushToken,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.oturumAl',
+      table: 'aktif_cihaz',
+      op: 'RPC',
+      request: {},
+      call: () => _db.rpc<dynamic>('oturum_al', params: {
+        'p_cihaz_id': cihazId,
+        'p_push_cihaz_id': pushCihazId,
+        'p_push_token': pushToken,
+      }),
+    );
+  }
+
+  /// Hesabın şu an aktif cihazı. Satır yoksa (muaf ya da henüz alınmadı) null.
+  Future<String?> aktifCihazId(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.aktifCihazId',
+      table: 'aktif_cihaz',
+      op: 'SELECT',
+      request: {},
+      call: () => _db
+          .from('aktif_cihaz')
+          .select('cihaz_id')
+          .eq('user_id', userId)
+          .limit(1),
+    );
+    return rows.isEmpty ? null : rows.first['cihaz_id'] as String?;
+  }
+
+  Future<List<KayitliCihaz>> kayitliCihazlar(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kayitliCihazlar',
+      table: 'kayitli_cihazlar',
+      op: 'SELECT',
+      request: {},
+      call: () => _db
+          .from('kayitli_cihazlar')
+          .select('cihaz_id, ad, platform, ilk_kayit, son_gorulme')
+          .eq('user_id', userId)
+          .order('son_gorulme', ascending: false),
+    );
+    return rows.map<KayitliCihaz>(KayitliCihaz.fromSupabase).toList();
+  }
+
+  /// Cihazı güvenilen listeden çıkarır. Aktif cihaz silinemez
+  /// (`aktif_cihaz_silinemez`). Dönüş: silinen satır sayısı.
+  Future<int> cihazSil(String cihazId) async {
+    final r = await _log.log<dynamic>(
+      source: 'SupabaseService.cihazSil',
+      table: 'kayitli_cihazlar',
+      op: 'RPC',
+      request: {},
+      call: () => _db.rpc<dynamic>('cihaz_sil', params: {'p_cihaz_id': cihazId}),
+    );
+    return r is int ? r : 0;
   }
 
   Future<void> deletePushToken(String token) async {

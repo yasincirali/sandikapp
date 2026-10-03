@@ -575,7 +575,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAccountSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Biyometrik kilit, verilerini indir, hesabını sil'**
+  /// **'Biyometrik kilit, kayıtlı cihazlar, verilerini indir, hesabını sil'**
   String get settingsAccountSubtitle;
 
   /// No description provided for @settingsHelpSubtitle.
@@ -8750,6 +8750,108 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'%{rate} brüt faiz'**
   String depositStripRate(String rate);
+
+  /// No description provided for @cihazOtpBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihazı doğrula'**
+  String get cihazOtpBaslik;
+
+  /// No description provided for @cihazOtpAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın listede olmayan bir cihazda açılıyor. Güvenliğin için e-postana gönderdiğimiz kodu gir.'**
+  String get cihazOtpAciklama;
+
+  /// No description provided for @cihazOtpIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu sen değilsen vazgeç ve şifreni değiştir. Doğrulanan cihaz, diğer cihazlardaki oturumu kapatır.'**
+  String get cihazOtpIpucu;
+
+  /// No description provided for @cihazOtpVazgec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vazgeç ve çıkış yap'**
+  String get cihazOtpVazgec;
+
+  /// No description provided for @cihazKapisiHata.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihaz doğrulanamadı. Bağlantını kontrol edip tekrar dene.'**
+  String get cihazKapisiHata;
+
+  /// No description provided for @baskaCihazdaAcildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın başka bir cihazda açıldı. Bu cihazda oturum kapatıldı.'**
+  String get baskaCihazdaAcildi;
+
+  /// No description provided for @kayitliCihazlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıtlı cihazlar'**
+  String get kayitliCihazlar;
+
+  /// No description provided for @kayitliCihazlarAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın aynı anda tek cihazda açık kalır'**
+  String get kayitliCihazlarAlt;
+
+  /// No description provided for @kayitliCihazlarAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabın aynı anda yalnızca bir cihazda açık olabilir. Listede olmayan bir cihazdan giriş yapılınca e-postana doğrulama kodu gönderilir. Tanımadığın bir cihazı kaldır ve şifreni değiştir.'**
+  String get kayitliCihazlarAciklama;
+
+  /// No description provided for @buCihaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihaz'**
+  String get buCihaz;
+
+  /// No description provided for @cihazSonKullanim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son kullanım: {tarih}'**
+  String cihazSonKullanim(String tarih);
+
+  /// No description provided for @cihazKaldir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaldır'**
+  String get cihazKaldir;
+
+  /// No description provided for @cihazKaldirBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Cihaz kaldırılsın mı?'**
+  String get cihazKaldirBaslik;
+
+  /// No description provided for @cihazKaldirMesaj.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} bir sonraki girişte e-posta koduyla yeniden doğrulanmak zorunda kalır.'**
+  String cihazKaldirMesaj(String ad);
+
+  /// No description provided for @cihazKaldirildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Cihaz kaldırıldı'**
+  String get cihazKaldirildi;
+
+  /// No description provided for @cihazListesiBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıtlı cihaz yok.'**
+  String get cihazListesiBos;
+
+  /// No description provided for @otpSpamIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod gelmediyse Gereksiz / Spam klasörüne de bak.'**
+  String get otpSpamIpucu;
 }
 
 class _AppLocalizationsDelegate

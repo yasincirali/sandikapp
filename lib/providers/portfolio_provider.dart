@@ -286,6 +286,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final List<Asset> assets;
     try {
       assets = await SupabaseService.instance.fetchByUser(user.id);
+      _sonDefterOkuma = DateTime.now();
       // Başarılı çekim → son bilinen defteri diske yaz (PortfolioCache).
       CrashReporter.arkaPlan(PortfolioCache.write(user.id, assets), reason: 'portfolio_provider.PortfolioCache.write');
     } catch (e, st) {
@@ -952,6 +953,104 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// "eski defterle kur" ile "tur bitince kur" arasında buna göre seçer.
   bool get fiyatTuruSuruyor => _surenTur != null;
 
+  /// Defterin sunucudan son okunduğu an (build ya da [_defteriTazele]).
+  DateTime? _sonDefterOkuma;
+
+  /// Nabız turlarında defter en fazla bu sıklıkla yeniden okunur — tek
+  /// SELECT, 30 sn'lik nabzın dörtte biri.
+  static const _defterOmru = Duration(minutes: 2);
+
+  bool _defterBayat() {
+    final son = _sonDefterOkuma;
+    return son == null || DateTime.now().difference(son) >= _defterOmru;
+  }
+
+  /// Defteri sunucudan yeniden okur ve bellekteki canlı fiyatlarla birleştirir.
+  ///
+  /// ## Neden (kullanıcı bildirimi, 2026-10-03)
+  /// "Bir cihazda varlık ekleyince diğerinde kill edip açana kadar
+  /// varlıklar gözükmedi." Defter yalnızca `build()`'de okunuyordu; fiyat
+  /// turları (pull-to-refresh, açılış, 30 sn nabız, öne dönüş) yalnızca
+  /// BELLEKTEKİ listenin fiyatını tazeliyordu. Başka cihazda (ya da
+  /// sunucuda: BES otomatik katkı, sözleşme lotları) eklenen/silinen lot
+  /// süreç ölene kadar görünmüyordu — pull-to-refresh bile göstermiyordu.
+  ///
+  /// Yerel yazımla YARIŞMAZ: okuma sürerken bu cihazda ekleme/silme olduysa
+  /// (`assets` listesi değişti) sunucu yanıtı o yazımdan habersiz olabilir;
+  /// uygulanmaz, bir sonraki tur yeniden okur. Hata yutulur — defter
+  /// tazelenemedi diye fiyat turu düşmesin.
+  Future<PortfolioState> _defteriTazele(PortfolioState s) async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null || (s.ownerId.isNotEmpty && s.ownerId != uid)) return s;
+    final onceki = s.assets;
+    try {
+      final sunucu = await SupabaseService.instance.fetchByUser(uid);
+      _sonDefterOkuma = DateTime.now();
+      final simdiki = state.valueOrNull;
+      if (simdiki == null || !identical(simdiki.assets, onceki)) {
+        return simdiki ?? s;
+      }
+      if (ayniDefter(onceki, sunucu)) return simdiki;
+      final birlesik = defteriBirlestir(sunucu, onceki);
+      final yeni = simdiki.copyWith(assets: birlesik);
+      state = AsyncData(yeni);
+      // Defter değişti: gün içi seri eski deftere aitti (bkz.
+      // [_gunIciSeriyiDusur]); çevrimdışı önbellek de yeni deftere geçsin.
+      _gunIciSeriyiDusur();
+      CrashReporter.arkaPlan(PortfolioCache.write(uid, birlesik),
+          reason: 'portfolio_provider._defteriTazele.PortfolioCache.write');
+      return yeni;
+    } catch (e, st) {
+      if (!baglantiHatasiMi(e)) {
+        CrashReporter.report(e, st, reason: 'PortfolioNotifier._defteriTazele');
+      }
+      return state.valueOrNull ?? s;
+    }
+  }
+
+  /// İki defter aynı lotları aynı defter alanlarıyla mı taşıyor? Fiyat
+  /// alanlarına bakılmaz — onlar turun kendi işi.
+  @visibleForTesting
+  static bool ayniDefter(List<Asset> a, List<Asset> b) {
+    if (a.length != b.length) return false;
+    final byId = {for (final x in a) x.id: x};
+    for (final y in b) {
+      final x = byId[y.id];
+      if (x == null ||
+          x.quantity != y.quantity ||
+          x.purchasePrice != y.purchasePrice ||
+          x.isActive != y.isActive ||
+          x.kind != y.kind ||
+          x.notes != y.notes ||
+          x.addedDate != y.addedDate ||
+          x.isManualPrice != y.isManualPrice ||
+          (x.isManualPrice && x.currentPrice != y.currentPrice)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Sunucu defteri esastır (sıra, miktar, maliyet, silinmişlik); bellekteki
+  /// canlı fiyat sunucudakinden YENİYSE korunur — yoksa her okuma ekrandaki
+  /// fiyatı 5 dk'lık sunucu yazımına geri çekerdi. Elle fiyatlı lotta
+  /// sunucu esastır (başka cihazda elle girilmiş olabilir).
+  @visibleForTesting
+  static List<Asset> defteriBirlestir(List<Asset> sunucu, List<Asset> bellek) {
+    final byId = {for (final x in bellek) x.id: x};
+    for (final y in sunucu) {
+      final x = byId[y.id];
+      if (x == null || y.isManualPrice) continue;
+      final xZaman = x.lastUpdated;
+      final yZaman = y.lastUpdated;
+      if (xZaman != null && (yZaman == null || xZaman.isAfter(yZaman))) {
+        y.currentPrice = x.currentPrice;
+        y.lastUpdated = xZaman;
+      }
+    }
+    return sunucu;
+  }
+
   Future<void> _fiyatTuru({required bool force, required bool nabiz}) async {
     // Build henüz bitmediyse (ya da user null → boş state) — bekle. Aksi
     // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in
@@ -959,7 +1058,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // kaybolma bug'ı).
     final built = await future;
     // future'dan sonra en güncel state artık valid.
-    final s = state.valueOrNull ?? built;
+    var s = state.valueOrNull ?? built;
+    // Defter sunucudan yeniden okunur (bkz. [_defteriTazele]) — boşluk
+    // kontrolünden ÖNCE: başka yerden eklenen İLK varlık boş defterli
+    // cihazda da görünsün.
+    if (!nabiz || _defterBayat()) s = await _defteriTazele(s);
     // Sadece kendi varlıkları boşsa refresh yapılacak bir şey yok.
     if (s.assets.isEmpty) return;
     state = AsyncData(s.copyWith(isLoading: true, clearError: true));
@@ -1027,6 +1130,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       // Kendi varlıklarını güncelle
       final fiyatiDegisenler = <Asset>[];
+      final alisKilitlenen = <String>{};
       final updated = baseAssets.map((asset) {
         // **Silinmiş lot'a YAZMA — dirilirdi (kullanıcı bildirimi,
         // 2026-09-16).** `updateAsset` gövdenin tamamını yazıyor ve
@@ -1045,6 +1149,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
             // Alım fiyatı girilmemişse güncel fiyatı maliyet olarak kilitle
             if (asset.purchasePrice == 0) {
               asset.purchasePrice = price;
+              alisKilitlenen.add(asset.id);
             }
             fiyatiDegisenler.add(asset);
           }
@@ -1068,7 +1173,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
               TazelikRitmi.gunIciSeriOmru;
       if (sunucuyaYaz) {
         _sonSunucuYazimi = DateTime.now();
-        _fiyatlariYaz(fiyatiDegisenler);
+        _fiyatlariYaz(fiyatiDegisenler, alisKilitlenen);
       }
 
       // Ortak varlıkları sadece okunur (RLS) — fiyatları bellekte güncelliyoruz
@@ -1163,7 +1268,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   ///
   /// Eşzamanlılık bilerek korundu: yazmalar eskiden de paralel gidiyordu,
   /// sıraya dizmek 50 lotluk portföyde yenilemeyi dakikaya çıkarırdı.
-  void _fiyatlariYaz(List<Asset> assets) {
+  ///
+  /// Yalnız fiyat sütunları yazılır (`fiyatYaz`, 2026-10-03): tüm satırı
+  /// yazmak bayat bellekteki miktar/maliyeti sunucudakinin üstüne
+  /// geri yazabiliyordu.
+  void _fiyatlariYaz(List<Asset> assets, Set<String> alisKilitlenen) {
     if (assets.isEmpty) return;
     Object? ilkHata;
     StackTrace? ilkStack;
@@ -1171,7 +1280,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     CrashReporter.arkaPlan(
       Future.wait(assets.map((asset) async {
         try {
-          await SupabaseService.instance.updateAsset(asset);
+          await SupabaseService.instance.fiyatYaz(asset,
+              alisFiyatiDa: alisKilitlenen.contains(asset.id));
         } catch (e, st) {
           basarisiz++;
           ilkHata ??= e;

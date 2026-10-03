@@ -21,6 +21,9 @@ import 'models/asset_type.dart';
 import 'models/user_model.dart';
 import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/cihaz_provider.dart';
+import 'screens/otp_verification_screen.dart';
+import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
 import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
@@ -1637,6 +1640,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       _applySurfaceTheme(trustDeviceBrightness: true);
     });
 
+    // Tek aktif cihaz (0098): hesap başka cihazda açıldı → bu cihaz çıkar.
+    // Dinleyici burada çünkü `_AuthGate` uygulama boyunca mount'tur; kapı
+    // kararı hangi ekran açıkken değişirse değişsin buraya düşer. Çıkış
+    // yerel kapsamlıdır (`signOut` varsayılanı) — aktif cihazın oturumuna
+    // dokunmaz.
+    ref.listen<AsyncValue<CihazKapisi>>(cihazKapisiProvider, (_, next) {
+      if (next.valueOrNull != CihazKapisi.atildi) return;
+      if (ref.read(authProvider).valueOrNull == null) return;
+      _baskaCihazdaBildir();
+      ref.read(authProvider.notifier).logout();
+    });
+
     // BES otomatik katkı (0096): portföy kullanıcı için İLK kez yerleşince.
     // `isLoading` karesi atlanır: kullanıcı değişiminde AsyncLoading önceki
     // kullanıcının portföyünü taşır.
@@ -1902,6 +1917,14 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       return const SandikLoadingScreen(key: ValueKey('splash'));
     }
 
+    // Cihaz kapısı (0098) — yasal onaydan, addan, turdan ve veri
+    // beklemesinden ÖNCE: kayıtlı olmayan cihaz hesabın hiçbir yüzeyini
+    // görmeden e-posta kodunu girer.
+    if (user != null) {
+      final kapi = _cihazKapisi(user);
+      if (kapi != null) return kapi;
+    }
+
     // Ana ekrana geçmeden önce portföy verisi de hazır olmalı. Aksi halde
     // splash biter, HomeScreen mount olur ve KENDİ loading'ini gösterir —
     // kullanıcının gördüğü "arka arkaya iki loading" tam olarak budur.
@@ -2143,6 +2166,68 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     sandikSnack(context, context.l10n.sessionTimedOut,
         kind: SandikSnackKind.warning);
   }
+
+  /// Tek cihaz çıkışını AÇIKLA — [_zamanAsimiBildir] ile aynı gerekçe:
+  /// sebepsiz giriş ekranı arıza gibi görünür. `logout()` ÖNCESİ çağrılır.
+  void _baskaCihazdaBildir() {
+    if (!mounted) return;
+    sandikSnack(context, context.l10n.baskaCihazdaAcildi,
+        kind: SandikSnackKind.warning);
+  }
+
+  /// Cihaz kapısının ekranı; kapı açıksa null.
+  ///
+  /// Yeniden değerlendirme (kullanıcı değişimi, "Tekrar dene") sırasında
+  /// splash: `AsyncLoading` önceki kullanıcının kararını taşır, ona göre
+  /// içeri almak yanlış hesaba kapı açmak olurdu.
+  Widget? _cihazKapisi(AppUser user) {
+    final kapi = ref.watch(cihazKapisiProvider);
+    if (kapi.isLoading) {
+      return const SandikLoadingScreen(key: ValueKey('splash'));
+    }
+    if (kapi.hasError) return _cihazKapisiHatasi(kapi.error!);
+    switch (kapi.valueOrNull) {
+      case CihazKapisi.otpGerekli:
+        return OtpVerificationScreen(
+          key: const ValueKey('cihaz-otp'),
+          email: user.email,
+          amac: OtpAmaci.cihaz,
+        );
+      case CihazKapisi.hata:
+        return _cihazKapisiHatasi(context.l10n.cihazKapisiHata);
+      case CihazKapisi.atildi:
+        // Dinleyici çıkışı başlattı; giriş ekranı gelene kadar splash.
+        return const SandikLoadingScreen(key: ValueKey('splash'));
+      case CihazKapisi.serbest:
+      case null:
+        return null;
+    }
+  }
+
+  Widget _cihazKapisiHatasi(Object hata) => Scaffold(
+        key: const ValueKey('cihaz-hata'),
+        backgroundColor: context.c.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SandikErrorView(
+                  error: hata,
+                  onRetry: () =>
+                      ref.read(cihazKapisiProvider.notifier).yenidenDene(),
+                ),
+              ),
+              TextButton(
+                onPressed: () => ref.read(authProvider.notifier).logout(),
+                style: TextButton.styleFrom(
+                    foregroundColor: context.c.amberText),
+                child: Text(context.l10n.cihazOtpVazgec),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
 
   /// Soğuk açılışta kilit gerekiyor mu — kullanıcı başına BİR kez sorulur.
   String? _lockAtLaunchFor;

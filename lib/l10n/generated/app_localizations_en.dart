@@ -261,7 +261,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAccountSubtitle =>
-      'Biometric lock, download your data, delete account';
+      'Biometric lock, registered devices, download your data, delete account';
 
   @override
   String get settingsHelpSubtitle => 'Contact us, tour, privacy and terms';
@@ -5295,4 +5295,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String depositStripRate(String rate) {
     return '$rate% gross interest';
   }
+
+  @override
+  String get cihazOtpBaslik => 'Verify this device';
+
+  @override
+  String get cihazOtpAciklama =>
+      'Your account is being opened on a device that isn\'t on your list. For your security, enter the code we emailed you.';
+
+  @override
+  String get cihazOtpIpucu =>
+      'Not you? Cancel and change your password. Verifying this device signs out your other devices.';
+
+  @override
+  String get cihazOtpVazgec => 'Cancel and sign out';
+
+  @override
+  String get cihazKapisiHata =>
+      'Couldn\'t verify this device. Check your connection and try again.';
+
+  @override
+  String get baskaCihazdaAcildi =>
+      'Your account was opened on another device. You have been signed out here.';
+
+  @override
+  String get kayitliCihazlar => 'Registered devices';
+
+  @override
+  String get kayitliCihazlarAlt =>
+      'Your account stays open on one device at a time';
+
+  @override
+  String get kayitliCihazlarAciklama =>
+      'Your account can be open on only one device at a time. When someone signs in from a device that isn\'t listed, a verification code is sent to your email. Remove any device you don\'t recognize and change your password.';
+
+  @override
+  String get buCihaz => 'This device';
+
+  @override
+  String cihazSonKullanim(String tarih) {
+    return 'Last used: $tarih';
+  }
+
+  @override
+  String get cihazKaldir => 'Remove';
+
+  @override
+  String get cihazKaldirBaslik => 'Remove this device?';
+
+  @override
+  String cihazKaldirMesaj(String ad) {
+    return '$ad will need to be verified with an email code the next time it signs in.';
+  }
+
+  @override
+  String get cihazKaldirildi => 'Device removed';
+
+  @override
+  String get cihazListesiBos => 'No registered devices.';
+
+  @override
+  String get otpSpamIpucu =>
+      'Didn\'t get it? Check your Junk / Spam folder too.';
 }
