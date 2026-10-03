@@ -6,6 +6,7 @@ import '../models/asset.dart';
 import '../models/asset_type.dart';
 import 'price_service.dart';
 import 'crash_reporter.dart';
+import '../utils/tr_format.dart';
 
 /// **Fiyat kaynağı sözleşmesi — bir varlık HER YERDE aynı yerden beslenir.**
 ///
@@ -269,8 +270,7 @@ class FiyatKaynagi {
     required int Function(int ms) normalize,
   }) {
     if (!uluslararasiSustu(uluslararasi, simdi)) return null;
-    final gunBasi =
-        DateTime(simdi.year, simdi.month, simdi.day).millisecondsSinceEpoch;
+    final gunBasi = dayKey(simdi).millisecondsSinceEpoch;
     final simdiMs = simdi.millisecondsSinceEpoch;
     final out = <int, double>{};
     for (final (ts, fiyat) in yurtIci) {
