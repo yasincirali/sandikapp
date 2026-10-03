@@ -11,6 +11,7 @@ import 'bes_acilis.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'price_service.dart';
+import 'seri_disk_depo.dart';
 import 'sozlesme_deposu.dart';
 import 'supabase_service.dart';
 import '../utils/tr_format.dart';
@@ -363,6 +364,86 @@ class HistoryService {
     _cacheAt.clear();
     _bosYanitAt.clear();
     _ucusanIstekler.clear();
+    _sonIyi.clear();
+  }
+
+  /// TTL'in dolmasını taklit eder: taze önbellek ve negatif önbellek
+  /// silinir, son iyi seri KALIR. Gerçek saatle 15 dk beklemeden "önbellek
+  /// eskidi, ardından çekim düştü" senaryosunu ölçmek için.
+  @visibleForTesting
+  static void onbellegiEskit() {
+    _cache.clear();
+    _cacheAt.clear();
+    _bosYanitAt.clear();
+  }
+
+  // ── SON İYİ SERİ (bayat-ama-ölçülmüş yedek) ───────────────────────────────
+  //
+  // "Kripto varlık fiyatı her zaman çekilemiyor … düz çizgiye dönüyor, tüm
+  // varlıklar için gerekli bu çözüm" (yasin, 2026-10-03). Kök neden TÜRE
+  // değil KAPIYA aitti: [_cache] TTL'i (5/15 dk) dolunca giriş SİLİNİYOR,
+  // ardından gelen çekim düşerse (kripto-seri soğuk başlangıcı 8 sn'yi
+  // aşınca, Yahoo 429, truncgil kesintisi) kapı BOŞ dönüyor ve varlık
+  // `currentPrice` tohumuyla dümdüz çiziliyordu — bir dakika önce elde
+  // doğru seri varken. Üstelik 8 sn'de vazgeçilen yanıt birkaç saniye sonra
+  // gelse bile ATILIYORDU.
+  //
+  // Şimdi: başarılı her seri TTL'siz bir "son iyi" kopyaya da yazılır
+  // (bellek + [kaliciDepo]); çekim boş/hatalı/zaman aşımlı dönerse kapı onu
+  // döndürür. Noktalar ölçülmüş veridir (sözleşme madde 3 ihlal edilmez);
+  // son nokta zaten canlı toplama sabitlenir. Zaman aşımına uğrayan istek
+  // de bırakılmaz: geç gelen yanıt önbelleğe yazılır, sonraki tik onu çizer.
+
+  /// Son başarılı seri — TTL yok, [_cacheMaxEntries] ile LRU sınırlı.
+  static final Map<String, List<(int, double)>> _sonIyi = {};
+
+  /// Diskteki son iyi seri. `null` → yalnız bellek (testler, demo).
+  /// `main()` gerçek depoyu bağlar.
+  static SeriDiskDepo? kaliciDepo;
+
+  static void _sonIyiYaz(String key, String sym, List<(int, double)> pts) {
+    _sonIyi.remove(key);
+    _sonIyi[key] = pts;
+    while (_sonIyi.length > _cacheMaxEntries) {
+      _sonIyi.remove(_sonIyi.keys.first);
+    }
+    // Mevduat serisi ağdan gelmez, sözleşmeden hesaplanır (düşmez) ve
+    // kullanıcıya özeldir — diske yazılmaz. Demo verisi de yazılmaz.
+    if (sym.toUpperCase().startsWith(mevduatOneki) || DemoModu.aktif) return;
+    final depo = kaliciDepo;
+    if (depo != null) {
+      CrashReporter.arkaPlan(depo.yaz(key, pts),
+          reason: 'history_service.sonIyiDiske');
+    }
+  }
+
+  /// Çekim düştüğünde dönülecek seri: bellekteki son iyi → disk → boş.
+  ///
+  /// Gün içi (`1d`) seride yalnızca BUGÜNE ait kopya kullanılır: dünün gün
+  /// içi serisi bugünün grafiğine ve gün başı referansına karışırsa
+  /// "bugün" yüzdesi yanlış güne bağlanır — o durumda düz tohum daha
+  /// dürüsttür (ekranda "gün içi veri yok" rozetiyle açıklanır).
+  static Future<List<(int, double)>> _sonIyiOku(String key, String range) async {
+    var seri = _sonIyi[key];
+    if (seri == null) {
+      final depo = kaliciDepo;
+      if (depo == null || DemoModu.aktif) return const [];
+      seri = await depo.oku(key);
+      if (seri == null) return const [];
+      _sonIyi[key] = seri;
+    }
+    if (range == '1d' && !_bugunIcinde(seri)) return const [];
+    return seri;
+  }
+
+  static bool _bugunIcinde(List<(int, double)> seri) {
+    if (seri.isEmpty) return false;
+    final son = DateTime.fromMillisecondsSinceEpoch(
+        seri.fold<int>(0, (m, p) => p.$1 > m ? p.$1 : m));
+    final simdi = gunIciSaat();
+    return son.year == simdi.year &&
+        son.month == simdi.month &&
+        son.day == simdi.day;
   }
 
   // ── TEK ÇEKİM KAPISI ──────────────────────────────────────────────────────
@@ -444,7 +525,7 @@ class HistoryService {
 
     final bosAt = _bosYanitAt[key];
     if (bosAt != null && DateTime.now().difference(bosAt) <= _bosYanitTtl) {
-      return Future.value(const []);
+      return _sonIyiOku(key, range);
     }
 
     final ucusan = _ucusanIstekler[key];
@@ -458,28 +539,37 @@ class HistoryService {
   Future<List<(int, double)>> _seriCekHam(
       String sym, String range, String? interval, String key) async {
     final sure = Stopwatch()..start();
+    final ham = seriCekici(sym, range, interval);
     try {
-      final pts =
-          await seriCekici(sym, range, interval).timeout(_grafikCekimSuresi);
+      final pts = await ham.timeout(_grafikCekimSuresi);
       _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, pts.length,
           timedOut: false);
       if (pts.isNotEmpty) {
         _cachePut(key, pts);
+        _sonIyiYaz(key, sym, pts);
         _bosYanitAt.remove(key);
-      } else {
-        _bosYanitAt[key] = DateTime.now();
+        return pts;
       }
-      return pts;
+      _bosYanitAt[key] = DateTime.now();
+      return await _sonIyiOku(key, range);
     } on TimeoutException {
-      // Zaman aşımı HATA DEĞİL, bir karar: grafik o kaynak olmadan
-      // çizilir (altında yedek kaynak ya da `currentPrice` seed'i var).
+      // Zaman aşımı HATA DEĞİL, bir karar: grafik bu tikte son iyi seriyle
+      // (yoksa yedek kaynak ya da `currentPrice` seed'iyle) çizilir.
       _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, 0, timedOut: true);
       _bosYanitAt[key] = DateTime.now();
-      return const [];
+      // Geç gelen yanıt ATILMAZ: kripto-seri'nin soğuk başlangıcı gibi
+      // 8 sn'yi az aşan çekimler sonraki tikte önbellekten çizilir.
+      CrashReporter.arkaPlan(ham.then<void>((gec) {
+        if (gec.isEmpty) return;
+        _cachePut(key, gec);
+        _sonIyiYaz(key, sym, gec);
+        _bosYanitAt.remove(key);
+      }), reason: 'history_service.gecYanit');
+      return _sonIyiOku(key, range);
     } catch (e) {
       if (kDebugMode) debugPrint('seriCek($sym) failed: $e');
       _bosYanitAt[key] = DateTime.now();
-      return const [];
+      return _sonIyiOku(key, range);
     }
   }
 

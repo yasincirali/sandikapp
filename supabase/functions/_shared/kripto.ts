@@ -376,13 +376,14 @@ export async function binanceGet(
   yol: string,
   params: Record<string, string>,
   f: typeof fetch = fetch,
+  zamanAsimiMs = ZAMAN_ASIMI,
 ): Promise<unknown | null> {
   const qs = new URLSearchParams(params).toString();
   for (const taban of BINANCE_TABANLARI) {
     try {
       const res = await f(`${taban}${yol}${qs ? `?${qs}` : ''}`, {
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(ZAMAN_ASIMI),
+        signal: AbortSignal.timeout(zamanAsimiMs),
       });
       if (res.status === 429 || res.status === 418) {
         console.error(`binance ${yol}: ${res.status} (agirlik siniri)`);
@@ -461,12 +462,19 @@ export async function gunSatirlariniCek(
 /// Mumları sayfa sayfa çeker (başlangıçtan bugüne). `null` = sağlayıcı
 /// yanıt vermedi (boş seri ile karıştırılmasın: önbellekteki bayat seri
 /// o durumda korunur).
+///
+/// HERHANGİ bir sayfa düşerse `null` (2026-10-03). Eskiden ilk sayfadan
+/// sonraki hata o ana kadarki parçayı döndürüyordu; sayfalar eskiden yeniye
+/// gittiği için bu, son haftaları EKSİK bir seriydi ve bir saat boyunca
+/// önbellekte herkese dağıtılıyordu — grafik geçmişte bitip bugüne düz
+/// çizgiyle bağlanıyordu. Eksik seri yerine bayat-ama-tam seri doğrudur.
 export async function mumlariCek(
   sembol: string,
   aralik: string,
   baslangicMs: number,
   simdiMs: number,
   f: typeof fetch = fetch,
+  zamanAsimiMs = ZAMAN_ASIMI,
 ): Promise<[number, number][] | null> {
   const a = ARALIK[aralik];
   if (!a) return null;
@@ -481,8 +489,8 @@ export async function mumlariCek(
       // Günlük/haftalık mumlar İstanbul gece yarısında açılsın — "gün"
       // tanımı fiyat tablosuyla aynı. startTime her zaman UTC ms.
       timeZone: '3',
-    }, f);
-    if (rows === null) return sayfa === 0 ? null : out;
+    }, f, zamanAsimiMs);
+    if (rows === null) return null;
     const mumlar = mumlariCoz(rows);
     out.push(...mumlar);
     if (mumlar.length < SAYFA_MUM) break;
