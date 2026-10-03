@@ -37,7 +37,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Sabit: `latest` her koşuda GitHub API'sinden çözülür ve paylaşımlı
+          # runner IP'sinde rate limit'e takılıyordu (run 37079068456).
+          # Yükseltme elle; integration.yml + supabase-deploy.yml birlikte.
+          version: 2.119.0
 
       # 0000_base_schema.sql'den 00xx'e kadar her migration + seed.sql.
       # Bir migration taze yığında kırılırsa burada, PR'da görünür —
@@ -87,7 +90,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Sabit: `latest` her koşuda GitHub API'sinden çözülür ve paylaşımlı
+          # runner IP'sinde rate limit'e takılıyordu (run 37079068456).
+          # Yükseltme elle; integration.yml + supabase-deploy.yml birlikte.
+          version: 2.119.0
 
       # Runner saatini yığından ÖNCE eşitle (2026-09-21): NTP düzeltmesi
       # koşunun ortasında saati geri çekerse GoTrue'nun verdiği JWT

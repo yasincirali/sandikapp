@@ -136,7 +136,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Sabit: `latest` her koşuda GitHub API'sinden çözülür ve paylaşımlı
+          # runner IP'sinde rate limit'e takılıyordu (run 37079068456).
+          # Yükseltme elle; integration.yml + supabase-deploy.yml birlikte.
+          version: 2.119.0
 
       - name: Projeye bağlan
         run: supabase link --project-ref "$PROJECT_REF"
