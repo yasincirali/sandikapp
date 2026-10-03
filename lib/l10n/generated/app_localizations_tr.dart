@@ -293,6 +293,30 @@ class AppLocalizationsTr extends AppLocalizations {
       'İngilizce beta: yasal metinler, tanıtım turu ve altın/fon alt kategori adları Türkçe kalır.';
 
   @override
+  String get textSize => 'Yazı boyutu';
+
+  @override
+  String get textSizeSmall => 'Küçük';
+
+  @override
+  String get textSizeNormal => 'Normal';
+
+  @override
+  String get textSizeLarge => 'Büyük';
+
+  @override
+  String get textSizeXLarge => 'Çok büyük';
+
+  @override
+  String get textSizeNote =>
+      'Telefonunun yazı boyutu ayarının üstüne uygulanır. Ekranlar bozulmasın diye büyütmenin bir sınırı var.';
+
+  @override
+  String textSizeSemantics(String name) {
+    return '$name yazı boyutu';
+  }
+
+  @override
   String get investorLevel => 'Yatırımcı seviyesi';
 
   @override

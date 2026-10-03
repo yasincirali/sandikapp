@@ -632,6 +632,48 @@ abstract class AppLocalizations {
   /// **'İngilizce beta: yasal metinler, tanıtım turu ve altın/fon alt kategori adları Türkçe kalır.'**
   String get languageNote;
 
+  /// No description provided for @textSize.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yazı boyutu'**
+  String get textSize;
+
+  /// No description provided for @textSizeSmall.
+  ///
+  /// In tr, this message translates to:
+  /// **'Küçük'**
+  String get textSizeSmall;
+
+  /// No description provided for @textSizeNormal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Normal'**
+  String get textSizeNormal;
+
+  /// No description provided for @textSizeLarge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük'**
+  String get textSizeLarge;
+
+  /// No description provided for @textSizeXLarge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok büyük'**
+  String get textSizeXLarge;
+
+  /// No description provided for @textSizeNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefonunun yazı boyutu ayarının üstüne uygulanır. Ekranlar bozulmasın diye büyütmenin bir sınırı var.'**
+  String get textSizeNote;
+
+  /// No description provided for @textSizeSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} yazı boyutu'**
+  String textSizeSemantics(String name);
+
   /// No description provided for @investorLevel.
   ///
   /// In tr, this message translates to:

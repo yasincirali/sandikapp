@@ -686,7 +686,8 @@ List<_Adim> _adimlariKur() {
       baslik: 'Ayarlar',
       govde: 'Kullanıcı adın, kayıtlı cihazların, bildirimler, sinyal '
           'ayarları, günlük '
-          'brifingin saati (sabah / akşam), fiyat alarmları, tema, sessiz '
+          'brifingin saati (sabah / akşam), fiyat alarmları, tema, yazı '
+          'boyutu, sessiz '
           'saatler ve yasal belgeler. '
           'Bu turu da buradan yeniden izleyebilirsin.',
       giris: (_) => _sekmeyeGec(4),

@@ -71,6 +71,7 @@ import 'services/review_prompt_service.dart';
 import 'services/retention_tracker.dart';
 import 'services/surface_theme.dart';
 import 'theme/sandik.dart';
+import 'theme/yazi_boyutu.dart';
 import 'widgets/sandik_error_view.dart';
 import 'widgets/milestone_sheet.dart';
 import 'widgets/review_prompt_sheet.dart';
@@ -354,6 +355,9 @@ class SandikApp extends ConsumerWidget {
     // Arayüz dili (3.20): varsayılan tr_TR; `null` = sistem (kullanıcı
     // seçtiyse). İngilizce BETA — bkz. `LocaleNotifier`.
     final locale = ref.watch(localeProvider);
+    // Ayarlar › Görünüm › Yazı boyutu. "Normal" (varsayılan) cihaz ölçeğini
+    // aynen geçirir; bkz. `YaziBoyutuKapsami`.
+    final yaziBoyutu = ref.watch(yaziBoyutuProvider);
 
     return MaterialApp(
       title: 'sandık',
@@ -386,8 +390,12 @@ class SandikApp extends ConsumerWidget {
       // olursa olsun boşluğa dokununca klavye kapanır (bkz. widget notu).
       // `SunucuKapisi` en dışta: zorunlu güncelleme / sunucu değişimi
       // ekranı her rotanın ve turun ÖNÜNE geçer (köprü sürümü, K1).
-      builder: (context, child) => SunucuKapisi(
-          child: KlavyeKapatici(child: OnboardingTourHost(child: child!))),
+      // `YaziBoyutuKapsami` hepsinin dışında: kapı, tur ve her rota aynı
+      // yazı ölçeğini görür.
+      builder: (context, child) => YaziBoyutuKapsami(
+          boyut: yaziBoyutu,
+          child: SunucuKapisi(
+              child: KlavyeKapatici(child: OnboardingTourHost(child: child!)))),
       home: const _AuthGate(),
     );
   }

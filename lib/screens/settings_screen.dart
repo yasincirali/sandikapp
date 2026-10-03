@@ -30,6 +30,7 @@ import '../services/supabase_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
 import '../theme/sandik.dart';
+import '../theme/yazi_boyutu.dart';
 
 import '../widgets/sandik_app_bar.dart';
 import '../utils/sandik_snack.dart';
@@ -611,6 +612,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const _InvestorLevelPicker(),
             const SizedBox(height: 12),
             const _LanguagePicker(),
+            const SizedBox(height: 12),
+            const _YaziBoyutuPicker(),
             const SizedBox(height: 24),
 
       ];
@@ -1995,6 +1998,107 @@ class _QuietHoursTile extends ConsumerWidget {
               ],
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// Yazı boyutu (2026-10-03). Tema/dil seçicileriyle aynı dil: dört segment.
+///
+/// Seçim anında tüm uygulamaya uygulanır (`YaziBoyutuKapsami`); ayrı bir
+/// önizleme yok — kullanıcı bu ekranın kendisinin büyüdüğünü görür.
+/// Simge boyu kademeyle büyür: etiket okunmadan da sıra anlaşılsın.
+/// Sınırların gerekçesi `theme/yazi_boyutu.dart`'ta.
+class _YaziBoyutuPicker extends ConsumerWidget {
+  const _YaziBoyutuPicker();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(yaziBoyutuProvider);
+    final l = context.l10n;
+    final options = <(YaziBoyutu, double, String)>[
+      (YaziBoyutu.kucuk, 16, l.textSizeSmall),
+      (YaziBoyutu.normal, 19, l.textSizeNormal),
+      (YaziBoyutu.buyuk, 22, l.textSizeLarge),
+      (YaziBoyutu.cokBuyuk, 25, l.textSizeXLarge),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SubSectionTitle(l.textSize),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(SandikSpace.xs),
+          decoration: context.surfaceCard(),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (boyut, ikonBoyu, label) in options)
+                Expanded(
+                  child: SandikTappable(
+                    semanticLabel: l.textSizeSemantics(label),
+                    selected: current == boyut,
+                    onTap: () => ref
+                        .read(yaziBoyutuIndexProvider.notifier)
+                        .set(boyut.index),
+                    child: AnimatedContainer(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: current == boyut
+                            ? context.c.amberFill.withValues(alpha: 0.16)
+                            : Colors.transparent,
+                        borderRadius: SandikRadius.smAll,
+                      ),
+                      child: Column(
+                        children: [
+                          // Simgeler alt çizgiye hizalı dursun: en büyüğün
+                          // kutusu, küçükler altına oturur.
+                          SizedBox(
+                            height: 25,
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Icon(
+                                Icons.text_fields_rounded,
+                                size: ikonBoyu,
+                                color: current == boyut
+                                    ? context.c.amberText
+                                    : context.c.text36,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: SandikSpace.xs),
+                          Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: context.t.labelLarge?.copyWith(
+                              letterSpacing: 0,
+                              fontWeight: current == boyut
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: current == boyut
+                                  ? context.c.amberText
+                                  : context.c.text58,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            l.textSizeNote,
+            style: context.t.bodySmall?.copyWith(color: context.c.text36),
+          ),
+        ),
       ],
     );
   }

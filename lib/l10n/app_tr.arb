@@ -110,6 +110,20 @@
   "languageTurkish": "Türkçe",
   "languageEnglish": "English",
   "languageNote": "İngilizce beta: yasal metinler, tanıtım turu ve altın/fon alt kategori adları Türkçe kalır.",
+  "textSize": "Yazı boyutu",
+  "textSizeSmall": "Küçük",
+  "textSizeNormal": "Normal",
+  "textSizeLarge": "Büyük",
+  "textSizeXLarge": "Çok büyük",
+  "textSizeNote": "Telefonunun yazı boyutu ayarının üstüne uygulanır. Ekranlar bozulmasın diye büyütmenin bir sınırı var.",
+  "textSizeSemantics": "{name} yazı boyutu",
+  "@textSizeSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "investorLevel": "Yatırımcı seviyesi",
   "investorLevelNote": "Yalnızca hangi metriklerin GÖSTERİLECEĞİNİ değiştirir; hesaplar ve verilerin aynı kalır.",
   "levelBeginner": "Başlangıç",

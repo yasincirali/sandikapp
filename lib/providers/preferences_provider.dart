@@ -15,6 +15,7 @@ import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
+import '../theme/yazi_boyutu.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -324,6 +325,15 @@ final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool
 /// cihazı paylaşan iki kullanıcının tercihi karışmasın.
 final baseCurrencyIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.baseCurrency, 0, perUser: true));
+
+/// Uygulama içi yazı boyutu kademesi (`YaziBoyutu.index`). Varsayılan 1 =
+/// "Normal": ayarı hiç açmamış kullanıcı için hiçbir şey değişmez. Kişiye
+/// özel değil — aynı telefonda hesap değişince punto zıplamasın.
+final yaziBoyutuIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.yaziBoyutu, YaziBoyutu.normal.index));
+
+final yaziBoyutuProvider = Provider<YaziBoyutu>(
+    (ref) => YaziBoyutu.indekstenOku(ref.watch(yaziBoyutuIndexProvider)));
 
 /// Yatırımcı seviyesi (Ayarlar › Görünüm) — `YatirimciSeviyesi.index`.
 /// Varsayılan Orta = bugünkü görünüm; tercih sorulmaz, dayatılmaz (bkz.

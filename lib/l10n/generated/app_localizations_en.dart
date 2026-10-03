@@ -292,6 +292,30 @@ class AppLocalizationsEn extends AppLocalizations {
       'English is in beta: legal texts, the intro tour and gold/fund sub-category names stay Turkish.';
 
   @override
+  String get textSize => 'Text size';
+
+  @override
+  String get textSizeSmall => 'Small';
+
+  @override
+  String get textSizeNormal => 'Default';
+
+  @override
+  String get textSizeLarge => 'Large';
+
+  @override
+  String get textSizeXLarge => 'Extra large';
+
+  @override
+  String get textSizeNote =>
+      'Applied on top of your phone\'s text size setting. Enlarging has a limit so screens stay intact.';
+
+  @override
+  String textSizeSemantics(String name) {
+    return '$name text size';
+  }
+
+  @override
   String get investorLevel => 'Investor level';
 
   @override
