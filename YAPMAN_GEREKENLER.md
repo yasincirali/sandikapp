@@ -8,6 +8,19 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-03 Grafik düz çizgiye dönmesin — dal `claude/fiyat-duz-cizgi-lrmny0`
+
+**Ne:** Fiyat serisi bir an çekilemeyince grafik artık son ölçülmüş seriyle
+çizilir (bellek + disk), düz çizgiye dönmez; tüm türler. Kripto için
+`kripto-seri` fonksiyonu önbellekte seri varsa 5 sn'de bayat seriyi döner,
+tazelemeyi arka planda bitirir; eksik/boş seri önbelleğe yazılmaz.
+
+- [ ] PR birleşince **Supabase deploy**: hedef `ikisi`, migrations **kapalı**,
+      functions **`kripto-seri`** (migration yok). Yanıt biçimi aynı; eski
+      sürümler etkilenmez, onlar da hızlı yanıttan yararlanır.
+- [ ] TestFlight'ta: kripto varlığın 1G/1H grafiğini birkaç kez aç-kapat;
+      uçak modunda uygulamayı yeniden açıp grafiklere bak (son seri çizilmeli).
+
 ## ⏳ 2026-10-03 Kod e-postaları için kendi alan adı (SPF/DKIM) — ÖNCELİKLİ
 
 **Neden:** Kayıt, şifre sıfırlama ve yeni cihaz kodu (0098) e-postaları şu an

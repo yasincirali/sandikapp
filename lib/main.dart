@@ -58,6 +58,8 @@ import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/history_service.dart';
+import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
@@ -168,6 +170,9 @@ void main() async {
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
     // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
     await initPreferencesCache();
+    // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
+    // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
+    HistoryService.kaliciDepo = SeriDiskDepo();
     // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
     //
     // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
