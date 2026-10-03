@@ -1,12 +1,40 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-03 Kilit ekranı dakikada bir = Performans GÜNLÜK (0100) — dal `claude/canli-aktivite-performans-n33jkp`
+
+Karar (yasin, 2026-10-03): "Canlı aktiviteler her zaman 1 dk'da bir performans
+günlükle eş olmalı." Uygulama kapalıyken kilit ekranını sunucu tazeler; eskiden
+istemcinin son yazdığı metni 5 dk'da bir aynen basıyordu (rakam donuyordu).
+Yeni: istemci bir **tarif** yazar, sunucu onu canlı kotasyonla dakikada bir
+ileri taşır (`_shared/canli_etkinlik.ts`). Bayrak **kapalı** doğar.
+
+Dağıtım SIRASI önemli (eski sürümler etkilenmez; tarif yoksa davranış aynı):
+
+- [ ] PR'ı birleştir → yeni iOS build TestFlight'a (Info.plist'e sık güncelleme
+      izni `NSSupportsLiveActivitiesFrequentUpdates` eklendi).
+- [ ] **Supabase deploy, hedef `ikisi`:** ÖNCE fonksiyon `push-live-activity`
+      (migration KAPALI), SONRA migration (0100: cron `*/5` → `* * * * *`).
+      Ters sıra zararsız ama eski fonksiyon dakikalık çağrıda her satırı her
+      dakika aynı metinle push'lar (boşa APNs bütçesi).
+- [ ] Firebase Console › Remote Config: `canli_etkinlik_dakikalik` = `true`
+      (önce yalnızca kendi cihazın için bir koşulla dene). Kapatınca anında
+      eski davranış.
+- [ ] TestFlight'ta: kilit ekranında Canlı Etkinlik açıkken uygulamayı tamamen
+      kapat; seans içinde birkaç dakika bekle, rakam ve "Canlı" saati dakikada
+      bir değişmeli. Uygulamayı aç → Performans › GÜNLÜK ile aynı rakam.
+- Bilinen sınır: sunucu yalnızca uygulamanın o GÜN yazdığı tarifi ileri taşır.
+  Gün içinde uygulama hiç açılmadıysa (ör. sabah 10:00'dan önce açılıp kapandı)
+  yeni günün açılışını bilemez, eski davranışla son yazılı rakamı basar.
+  Grafikte uygulama kapalıyken son noktaya tek çizgi çekilir (ara 5 dk
+  noktaları uygulama açılınca gelir); rakamlar birebir aynıdır.
 
 ## ⏳ 2026-10-03 Grafik düz çizgiye dönmesin — dal `claude/fiyat-duz-cizgi-lrmny0`
 

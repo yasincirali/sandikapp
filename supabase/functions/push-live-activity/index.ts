@@ -9,7 +9,8 @@
 // bağlanılır.
 //
 // ## Çağrılma biçimi
-// `pg_cron` seans içinde periyodik tetikler (bkz. 0033/0034 migration) ve
+// `pg_cron` periyodik tetikler (0033: 5 dk; 0100'den beri dakikada bir —
+// tarifsiz satırlar yine 5 dk'da bir push'lanır, aşağı bkz.) ve
 // `x-cron-secret: <live_activity_cron_secret>` başlığı gönderir (0054;
 // Authorization gateway JWT'sine ayrılmıştır). Fonksiyon bu başlığı
 // `LIVE_ACTIVITY_CRON_SECRET` secret'ıyla doğrular (fail-closed; bkz.
@@ -22,6 +23,15 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
+import {
+  ileriTasi,
+  type IleriOzet,
+  istanbulGunMetni,
+  type Tarif,
+  tarifCoz,
+  tarifSembolleri,
+} from '../_shared/canli_etkinlik.ts';
+import { fetchLivePrices } from '../_shared/live_prices.ts';
 
 // ── APNs kimlik bilgileri ───────────────────────────────────────────────
 // Token bazlı kimlik doğrulama (sertifika değil): .p8 anahtarı 1 yıl
@@ -239,8 +249,40 @@ Deno.serve(async (request) => {
     });
   }
 
+  // ── Dakikalık ileri taşıma (2026-10-03) ───────────────────────────────
+  // Cron dakikada bir çağırır (0100). Tarifi OLMAYAN satır eski ritmini
+  // korur: yalnızca 5'in katı dakikalarda, yazılı metinle push'lanır —
+  // bayrak kapalı istemci ve eski sürümler için davranış birebir aynı.
+  // Tarifli satır her dakika canlı kotasyonla ileri taşınır
+  // (`_shared/canli_etkinlik.ts`). Kotasyonlar TEK turda çekilir: bütün
+  // oturumların sembol birleşimi, istemciyle aynı kaynaklardan.
+  const simdi = new Date();
+  const besinciDakika = simdi.getUTCMinutes() % 5 === 0;
+  const bugun = istanbulGunMetni(simdi);
+  const tarifler = new Map<string, Tarif>();
+  const semboller = new Set<string>();
+  for (const s of sessions) {
+    const row = s.summary as Record<string, unknown> | null;
+    if (!row || Number(row.schema ?? 1) < SUMMARY_SCHEMA_VERSION) continue;
+    const t = tarifCoz(row.dakikalik);
+    if (!t || t.gun !== bugun) continue;
+    tarifler.set(s.token, t);
+    for (const sym of tarifSembolleri(t)) semboller.add(sym);
+  }
+  let kotasyonlar = new Map<string, number>();
+  if (semboller.size > 0) {
+    try {
+      kotasyonlar = await fetchLivePrices(semboller, admin);
+    } catch (e) {
+      // Kotasyon turu düştü: bu dakika ileri taşıma yok, parçalar oranı 1
+      // alır ve sonuç yazılı rakamla aynı olur. Uydurma rakam basılmaz.
+      console.error('canli kotasyon alinamadi:', (e as Error)?.name ?? 'hata');
+    }
+  }
+
   let sent = 0;
   let removed = 0;
+  let forwarded = 0;
   // Eski şema yüzünden atlanan oturumlar — teşhis için yanıta konur.
   // Sürüm geçişinden sonra bu sayı sıfıra inmeli; inmiyorsa o kullanıcılar
   // uygulamayı hiç açmıyor ve kilit ekranları donmuş demektir.
@@ -278,15 +320,24 @@ Deno.serve(async (request) => {
       continue;
     }
 
-    const isPositive = row.isPositive === true;
     const showAmounts = s.show_amounts === true;
+
+    const tarif = tarifler.get(s.token);
+    const ileri: IleriOzet | null = tarif
+      ? ileriTasi(tarif, kotasyonlar, simdi.getTime(), bugun, showAmounts)
+      : null;
+    // İleri taşınamayan satır eski ritimde kalır (5 dakikada bir).
+    if (!ileri && !besinciDakika) continue;
+    if (ileri) forwarded++;
+
+    const isPositive = ileri ? ileri.isPositive : row.isPositive === true;
 
     // GİZLİLİK: tutar yalnızca kullanıcı izin verdiyse gönderilir.
     // Maskeleme sunum katmanında değil BURADA yapılır — rakam cihaza
     // hiç ulaşmasın.
     const contentState = {
-      totalText: showAmounts ? String(row.totalText ?? '') : '••••••',
-      changeText: showAmounts ? String(row.changeText ?? '') : '••••••',
+      totalText: showAmounts ? (ileri?.totalText ?? String(row.totalText ?? '')) : '••••••',
+      changeText: showAmounts ? (ileri?.changeText ?? String(row.changeText ?? '')) : '••••••',
       // Veri yoksa `'—'` — ASLA `'%0,00'`.
       //
       // Sıfır bir ÖLÇÜMDÜR: "bugün portföy değişmedi" der. Ölçüm yokken
@@ -295,7 +346,7 @@ Deno.serve(async (request) => {
       // yeşil bir "▲ +%0,00" görür ve bunu gerçek bir ölçüm sanır.
       // İstemci de aynı durumda `'—'` gönderir; iki taraf aynı dili
       // konuşmalı.
-      changePctText: String(row.changePctText ?? '—'),
+      changePctText: ileri?.changePctText ?? String(row.changePctText ?? '—'),
       isPositive,
       isHidden: false,
       // Zaman damgası SUNUCUDA üretilir: istemcinin yazdığı saat, push
@@ -324,7 +375,7 @@ Deno.serve(async (request) => {
       // hatası tüm güncellemeyi sessizce düşürüyordu — banner kilit ekranında
       // duruyor ama rakamlar hiç değişmiyordu (çökme ve log YOK).
       sessionEndsAtUnix: Math.floor(new Date(s.expires_at).getTime() / 1000),
-      sparkline: Array.isArray(row.sparkline) ? row.sparkline : [],
+      sparkline: ileri?.sparkline ?? (Array.isArray(row.sparkline) ? row.sparkline : []),
       showAmounts,
       // Piyasa durumu da push anına göre hesaplanır. Bu alan hiç
       // gönderilmediği için istemci varsayılanı ("açık") devreye giriyordu
@@ -340,11 +391,11 @@ Deno.serve(async (request) => {
       // eksen portföy büyüklüğünü doğrudan ele verir ve normalize seri
       // göndermenin bütün gerekçesi buydu. Boş gelince uzantı ekseni
       // hiç çizmez, grafiğin şekli görünmeye devam eder.
-      axisMinText: showAmounts ? String(row.axisMinText ?? '') : '',
-      axisMaxText: showAmounts ? String(row.axisMaxText ?? '') : '',
+      axisMinText: showAmounts ? (ileri?.axisMinText ?? String(row.axisMinText ?? '')) : '',
+      axisMaxText: showAmounts ? (ileri?.axisMaxText ?? String(row.axisMaxText ?? '')) : '',
       // Sıfır değişimde yön/renk bastırılır. Gizlilik kapısına TABİ
       // DEĞİL: yalnızca "bugün hareket yok" bilgisi, tutar taşımaz.
-      isFlatChange: row.isFlatChange === true,
+      isFlatChange: ileri ? ileri.isFlatChange : row.isFlatChange === true,
       // Uygulamanın SEÇİLİ teması. Sunucu temaya karar VERMEZ, taşır.
       //
       // **Önce SÜTUN, sonra özet.** İkisi de istemcinin yazdığı değerdir
@@ -382,7 +433,7 @@ Deno.serve(async (request) => {
   }
 
   return new Response(
-    JSON.stringify({ sent, removed, skippedStale, total: sessions.length }),
+    JSON.stringify({ sent, removed, skippedStale, forwarded, total: sessions.length }),
     { headers: { 'content-type': 'application/json' } },
   );
 });

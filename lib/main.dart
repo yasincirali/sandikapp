@@ -1864,6 +1864,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     la.startMinute = ref.read(liveActivityStartProvider);
     la.endMinute = ref.read(liveActivityEndProvider);
     la.includeWeekend = ref.read(liveActivityWeekendProvider);
+    // Uygulama kapalıyken dakikalık tazeleme (2026-10-03) — bayrak
+    // kapalıyken satıra tarif yazılmaz, sunucu eski davranışı sürdürür.
+    la.dakikalikGuncelleme =
+        RemoteConfigService.instance.canliEtkinlikDakikalik;
     CrashReporter.arkaPlan(LiveActivityService.instance.sync(
       snapshot,
       hideBalance: hideBalance,
