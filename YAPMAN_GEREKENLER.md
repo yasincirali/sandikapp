@@ -29,7 +29,9 @@ Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
 - [ ] Aynı yerde "Email OTP expiration" = 600 sn mi? (OTP ekranı 10 dk sayıyor.)
 - [ ] Auth → Rate Limits: saatlik e-posta sınırı geçişte yeterli mi (her yeni
       cihaz bir e-posta).
-- [ ] Mağaza **inceleme hesabı** ve ortak test hesapları muaf tutulmalı (inceleyici
+- [ ] **0099'u iki sunucuya gönder** (test.sandikapp@gmail.com muafiyeti; aynı
+      `dagitim0098` yöntemi, klasöre 0099'u kopyala). PR #72 ile birlikte yazıldı.
+- [x] (0099 ile) Mağaza **inceleme hesabı** ve ortak test hesapları muaf tutulmalı (inceleyici
       e-postayı okuyamaz, aynı hesabı birden çok cihazda açar). İKİ sunucuda:
       ```sql
       insert into public.cihaz_kontrol_muafiyeti (user_id, neden)
