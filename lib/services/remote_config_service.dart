@@ -186,6 +186,14 @@ class RemoteConfigService {
     // sunucu fonksiyonu ve dakikalık cron canlıya çıktıktan sonra Console'da
     // açılır; kapalıyken kilit ekranı birebir eski davranışta kalır.
     'canli_etkinlik_dakikalik': false,
+
+    // GÜNLÜK grafikte altın/dövizin şekli, uluslararası seri sustuğunda
+    // (hafta sonu) sunucunun yurt içi kotasyon kaydından çizilsin
+    // (2026-10-03, kullanıcı: "fiyat tutarlı ve doğru şeyi göstermeli").
+    // KAPALI doğar: `yurt-ici-kotasyon` fonksiyonu ve 0101 cron'u canlıda
+    // en az bir hafta sonu kayıt biriktirdikten sonra Console'da açılır.
+    // Kapalıyken GÜNLÜK birebir eski davranışta (hafta sonu düz) kalır.
+    'hafta_sonu_yurt_ici_seri': false,
   };
 
   Future<void> init() async {
@@ -351,6 +359,12 @@ class RemoteConfigService {
   bool get canliEtkinlikDakikalik =>
       _rc?.getBool('canli_etkinlik_dakikalik') ??
       _defaults['canli_etkinlik_dakikalik'] as bool;
+
+  /// Hafta sonu GÜNLÜK şeklinin yurt içi kayıttan çizilmesi — bkz.
+  /// `_defaults['hafta_sonu_yurt_ici_seri']`.
+  bool get haftaSonuYurtIciSeri =>
+      _rc?.getBool('hafta_sonu_yurt_ici_seri') ??
+      _defaults['hafta_sonu_yurt_ici_seri'] as bool;
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

@@ -1,12 +1,37 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-03 Hafta sonu GÜNLÜK'te dolar/altın düz değil (0101) — dal `claude/project-thread-fkhjy1`
+
+Soru (yasin): "Neden düz çizgi peki. Değeri oynak değil mi?" → "Evet bunu
+yapalım ama fiyat tutarlı ve doğru şeyi göstermeli." Uluslararası piyasa hafta
+sonu kapalı, Yahoo serisi Cuma'da bitiyor; yurt içi kotasyon (truncgil) ise
+oynuyor ama geçmişi tutulmuyordu. Sunucu artık 5 dk'da bir kaydediyor
+(`yurt_ici_kotasyon`), GÜNLÜK şekli uluslararası seri sustuğunda oradan çizilir.
+Bayrak **kapalı** doğar; yalnızca EKLER (eski sürümler etkilenmez).
+
+- [ ] PR'ı birleştir.
+- [ ] **Supabase deploy, hedef `ikisi`:** fonksiyon `yurt-ici-kotasyon` + migration
+      0101 (sıra fark etmez; cron ilk turda fonksiyonu bulamazsa 404 yazar, bir
+      sonraki turda düzelir). Yeni secret YOK: `PRICE_ALERTS_CRON_SECRET` /
+      Vault `price_alerts_cron_secret` paylaşılır. Frankfurt'ta cron'lar kapalıysa
+      bu iş de kapalı doğar (0089 deseni).
+- [ ] Bir hafta sonu kayıt biriksin. Kontrol (salt okunur):
+      `select sembol, count(*), min(fiyat), max(fiyat) from yurt_ici_kotasyon
+       where ts > now() - interval '1 day' group by 1;` — Cumartesi
+      min ≠ max ise yurt içi fiyat gerçekten oynuyor demektir.
+- [ ] Firebase Console › Remote Config: `hafta_sonu_yurt_ici_seri` = `true`
+      (önce yalnızca kendi cihazın için). Kapatınca anında eski davranış.
+- Not: hafta sonu GÜNLÜK yüzdesi = yurt içi kotasyonun bugün 00:00'dan beri
+  değişimi. Piyasa bandı ise truncgil'in kendi "Change" yüzdesini gösterir; hafta
+  sonu o yüzdenin neyi ölçtüğü `degisim_pct` kolonundan görülecek.
 
 ## ⏳ 2026-10-03 Kilit ekranı dakikada bir = Performans GÜNLÜK (0100) — dal `claude/canli-aktivite-performans-n33jkp`
 

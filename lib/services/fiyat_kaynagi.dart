@@ -215,6 +215,71 @@ class FiyatKaynagi {
         addedDate: DateTime(2000),
         isManualPrice: a.isManualPrice,
       );
+
+  // ── Yurt içi gün içi şekli (0101, 2026-10-03) ───────────────────────────
+  //
+  // Kullanıcı sorusu: "Neden düz çizgi peki. Değeri oynak değil mi?" Hafta
+  // sonu GÜNLÜK'te dolar/altın dümdüzdü: şekil Yahoo'dan, uluslararası
+  // piyasa Cumartesi 00:00 – Pazartesi 00:00 (TR) kapalı, seri Cuma'da
+  // bitiyor. Ekrandaki fiyat ise yurt içi kotasyon (truncgil) ve hafta sonu
+  // da oynuyor; sunucu artık onu beş dakikada bir kaydediyor
+  // (`yurt_ici_kotasyon`). Karar: "fiyat tutarlı ve doğru şeyi göstermeli."
+  //
+  // Bu yüzden yurt içi kayıt, uluslararası seri SUSTUĞUNDA şeklin TEK
+  // kaynağı olur — iki kaynak tek seride birleştirilmez (altın merdiveninin
+  // "karışım yasak" kuralı). Kayıt ekrandaki kotasyonun kendisi olduğundan
+  // ölçek hizalaması gerekmez: grafiğin ucu zaten görünen fiyattır.
+
+  /// Sunucunun gün içi kaydını tuttuğu semboller: tüm altın ayarları ve
+  /// truncgil'den fiyatlanan üç TL dövizi (`_shared/live_prices.ts`
+  /// `YURT_ICI_SEMBOLLER` ile aynı küme).
+  static bool yurtIciKayitli(String ticker) {
+    final t = ticker.trim().toUpperCase();
+    return altinMi(t) || t == usdTry || t == 'EURTRY=X' || t == 'GBPTRY=X';
+  }
+
+  /// Uluslararası seri bu kadar süredir nokta üretmiyorsa SUSMUŞ sayılır.
+  ///
+  /// Hafta içi döviz ve spot altın 5 dakikada bir nokta verir; tek boşluk
+  /// spot altının gece yarısı molası (~1 saat). 90 dakika o molayı atlatır,
+  /// hafta sonunu ise 01:30'dan itibaren yakalar (kayıt 00:00'dan başladığı
+  /// için şekil yine günün başından çizilir).
+  static const Duration uluslararasiSessizlik = Duration(minutes: 90);
+
+  /// Uluslararası seri [simdi] itibarıyla sustu mu? Boş seri de susmuştur
+  /// (Yahoo'nun hafta içi düştüğü tur dahil).
+  static bool uluslararasiSustu(Map<int, double> seri, DateTime simdi) {
+    if (seri.isEmpty) return true;
+    final son = seri.keys.reduce((a, b) => a > b ? a : b);
+    return simdi.millisecondsSinceEpoch - son >=
+        uluslararasiSessizlik.inMilliseconds;
+  }
+
+  /// Gün içi şekli için yurt içi kayıttan BUGÜNÜN serisi; kullanılmayacaksa
+  /// `null` (çağıran eski yoldan devam eder).
+  ///
+  /// Yalnızca bugünün (yerel 00:00 → [simdi]) noktaları alınır: dünün kaydı
+  /// bugünün gün başına karışırsa "bugün" yüzdesi yanlış güne bağlanır
+  /// (`HistoryService._sonIyiOku` ile aynı kural). İki noktadan az kayıt
+  /// şekil değildir. Damgalar [normalize] ile çağıranın ızgarasına oturur.
+  static Map<int, double>? yurtIciGunIciSekli({
+    required Map<int, double> uluslararasi,
+    required List<(int, double)> yurtIci,
+    required DateTime simdi,
+    required int Function(int ms) normalize,
+  }) {
+    if (!uluslararasiSustu(uluslararasi, simdi)) return null;
+    final gunBasi =
+        DateTime(simdi.year, simdi.month, simdi.day).millisecondsSinceEpoch;
+    final simdiMs = simdi.millisecondsSinceEpoch;
+    final out = <int, double>{};
+    for (final (ts, fiyat) in yurtIci) {
+      if (ts < gunBasi || ts > simdiMs) continue;
+      if (!fiyat.isFinite || fiyat <= 0) continue;
+      out[normalize(ts)] = fiyat;
+    }
+    return out.length >= 2 ? out : null;
+  }
 }
 
 /// "Başka yere koysaydın" kartının kıyas varlıkları — SEMBOL KARARI BURADA.

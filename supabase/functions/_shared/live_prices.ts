@@ -462,3 +462,60 @@ export async function fetchLiveQuotes(
 
   return out;
 }
+
+// ── Yurt içi kotasyon kaydı (0101, 2026-10-03) ─────────────────────────────
+
+/// Kaydedilen semboller: uygulamanın truncgil'den fiyatladığı HER altın ve
+/// döviz. Liste bu dosyadaki iki tablodan türer — ayrı bir kopya, istemcide
+/// yeni bir ayar eklendiğinde sessizce geride kalırdı.
+export const YURT_ICI_SEMBOLLER: readonly string[] = [
+  ...Object.keys(GOLD_KEYS),
+  ...FX_SYMBOLS,
+];
+
+/// Kayıt ızgarası: 5 dakika — istemcinin gün içi slotuyla
+/// (`getPortfolioHistoryHourlyBreakdown` `slotMinutes`) AYNI. Cron da beş
+/// dakikada bir koşar; geç kalan tur aynı kovaya yazar (upsert), çift satır
+/// oluşmaz.
+export const YURT_ICI_KOVA_MS = 5 * 60_000;
+
+export type YurtIciSatir = {
+  sembol: string;
+  ts: string;
+  fiyat: number;
+  degisim_pct: number | null;
+};
+
+/// truncgil yanıtı → kayıt satırları. Saf (test edilebilir).
+///
+/// Fiyat `extractTruncgil` ile — fiyat alarmı ve uygulamayla AYNI alan
+/// (`Buying` önce). Grafiğin ucu ekrandaki kotasyona oturacağı için başka
+/// bir alan (ör. `Selling`) seçmek ucu her noktada bir makas kadar
+/// kaydırırdı. Fiyatı okunamayan sembol satır ÜRETMEZ: uydurma nokta yok.
+///
+/// `degisim_pct` kaynağın kendi günlük yüzdesi; grafik onu kullanmaz, hafta
+/// sonu "truncgil'in yüzdesi neyi ölçüyor" sorusu ölçülebilsin diye tutulur.
+export function yurtIciSatirlari(
+  data: Record<string, unknown>,
+  simdi: Date,
+): YurtIciSatir[] {
+  const kova = new Date(
+    Math.floor(simdi.getTime() / YURT_ICI_KOVA_MS) * YURT_ICI_KOVA_MS,
+  ).toISOString();
+  const fiyatlar = extractTruncgil(data, [...YURT_ICI_SEMBOLLER]);
+  const out: YurtIciSatir[] = [];
+  for (const [sembol, fiyat] of fiyatlar) {
+    out.push({
+      sembol,
+      ts: kova,
+      fiyat,
+      degisim_pct: truncgilChange(truncgilKaydi(data, sembol)),
+    });
+  }
+  return out;
+}
+
+/// truncgil'i bir kez çekip kayıt satırlarını döner.
+export async function yurtIciKotasyonlariCek(simdi: Date): Promise<YurtIciSatir[]> {
+  return yurtIciSatirlari(await fetchTruncgil(), simdi);
+}
