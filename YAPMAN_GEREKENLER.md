@@ -1,12 +1,43 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-03 Kod e-postaları için kendi alan adı (SPF/DKIM) — ÖNCELİKLİ
+
+**Neden:** Kayıt, şifre sıfırlama ve yeni cihaz kodu (0098) e-postaları şu an
+**Gmail SMTP** ile `sandikapp.destek@gmail.com`'dan gidiyor. Emülatör testinde
+(2026-10-03) kod **Outlook'ta Gereksiz'e düştü**; ayrıca ücretsiz Gmail'in günde
+**~500 alıcı** sınırı var. Kod bulunamazsa kullanıcı yeni cihazda / kayıtta takılı
+kalır — tek cihaz kuralı yayında olduğu için bu artık giriş yolunun parçası.
+Geçici önlem: kod ekranında "Gereksiz / Spam klasörüne de bak" ipucu (main'de).
+
+- [ ] **1. Alan adı al.** Öneri: `sandik.app` ya da `sandikapp.com`. Kayıt firması
+      fark etmez (Cloudflare Registrar maliyet fiyatına satar; DNS de orada kolay).
+      Alan adını söyle → kalan adımları o ada göre birebir yazarım.
+- [ ] **2. Resend'e alan adını ekle** (resend.com, `sandikapp.destek@gmail.com`
+      hesabı; rehber `docs/SUPABASE_SMTP_SETUP.md` Seçenek B). Bölge: **eu-west-1**
+      (kullanıcılar Türkiye/Avrupa). Resend'in verdiği kayıtları DNS'e gir:
+      - **SPF** — `send` alt alanında TXT (`v=spf1 include:amazonses.com ~all`) + MX
+      - **DKIM** — `resend._domainkey` TXT (uzun anahtar)
+      - **DMARC** — `_dmarc` TXT: `v=DMARC1; p=none; rua=mailto:sandikapp.destek@gmail.com`
+        (birkaç hafta raporlar temizse `p=quarantine`'e çek)
+- [ ] **3. Resend'de "Verify"** — DNS yayılımı dakikalar, en geç 24 saat.
+- [ ] **4. API anahtarı** — Resend › API Keys › Sending access, yalnız bu alan adı.
+- [ ] **5. İKİ projede** (Tokyo + Frankfurt) Supabase › Authentication › SMTP Settings:
+      host `smtp.resend.com`, port `465`, user `resend`, password = API anahtarı,
+      sender `noreply@<alanadı>`, sender name `sandık`. Sonra Auth › Rate Limits'te
+      saatlik e-posta sınırını ihtiyaca göre yükselt.
+- [ ] **6. Dene:** aynı adrese kayıt kodu, şifre sıfırlama kodu ve yeni cihaz kodu —
+      Outlook/Hotmail **ve** Gmail gelen kutusuna düşmeli. İstersen
+      mail-tester.com ile puan al (hedef ≥ 9/10).
+- [ ] **7. Bitince:** `docs/SUPABASE_SMTP_SETUP.md`'ye hangi alan adı/gönderici
+      kullanıldığını yaz; e-posta şablonları (`supabase/templates/`) değişmez.
 
 ## ⏳ 2026-10-03 Tek aktif cihaz + kayıtlı cihazlar (0098) — dal `feat/tek-cihaz`
 
@@ -22,10 +53,8 @@ Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
       (örn. "Giriş kodun: {{ .Token }}"). Yeni cihaz kodu bu şablonla gider;
       yalnız bağlantı içeren varsayılan şablonda kullanıcıya **kod gitmez** ve
       yeni cihazda giriş yapamaz. Kayıt/şifre sıfırlama şablonları zaten kodlu.
-- [ ] **Kod e-postası Outlook'ta Gereksiz'e düştü** (2026-10-03 emülatör testi). Uygulamaya
-      ipucu eklendi ama kalıcı çözüm gönderen alan adını doğrulamak: kendi alan adınla
-      (Resend/Brevo) SPF + DKIM + DMARC kaydı, Supabase SMTP "Sender email" o adres.
-      Gmail SMTP / `resend.dev` göndericisi Outlook'ta önemsize düşer.
+- [ ] Kod e-postası Outlook'ta Gereksiz'e düşüyor → yukarıdaki **"Kod e-postaları için
+      kendi alan adı"** bölümü.
 - [ ] Aynı yerde "Email OTP expiration" = 600 sn mi? (OTP ekranı 10 dk sayıyor.)
 - [ ] Auth → Rate Limits: saatlik e-posta sınırı geçişte yeterli mi (her yeni
       cihaz bir e-posta).
