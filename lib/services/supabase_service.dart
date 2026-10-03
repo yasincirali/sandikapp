@@ -84,6 +84,45 @@ class SupabaseService {
     return out;
   }
 
+  // ── Yurt içi kotasyon kaydı (0101) ───────────────────────────────────────
+
+  /// [sembol]'ün [baslangic]'tan bu yana kaydedilmiş yurt içi kotasyonu
+  /// (`(ms, TL fiyat)`, artan sırada).
+  ///
+  /// Sembol başına AYRI istek: günde ~288 satır, PostgREST'in varsayılan
+  /// 1.000 satır sınırının altında kalır; birleşik sorgu birkaç sembolde
+  /// sınırı aşıp günün sonunu sessizce keserdi. Tablo yoksa (0101 henüz
+  /// koşmadı) istisna çağırana gider; çağıran Crashlytics'e yazıp eski
+  /// yoldan devam eder.
+  Future<List<(int, double)>> yurtIciKotasyonSerisi(
+    String sembol, {
+    required DateTime baslangic,
+  }) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.yurtIciKotasyonSerisi',
+      table: 'yurt_ici_kotasyon',
+      op: 'SELECT',
+      request: {'sembol': sembol, 'ts_gte': baslangic.toUtc().toIso8601String()},
+      call: () => _db
+          .from('yurt_ici_kotasyon')
+          .select('ts, fiyat')
+          .eq('sembol', sembol)
+          .gte('ts', baslangic.toUtc().toIso8601String())
+          .order('ts', ascending: true)
+          .limit(1000),
+    );
+    final out = <(int, double)>[];
+    for (final r in rows) {
+      final ts = DateTime.tryParse('${r['ts']}');
+      final fiyat = (r['fiyat'] as num?)?.toDouble();
+      if (ts == null || fiyat == null || !fiyat.isFinite || fiyat <= 0) {
+        continue;
+      }
+      out.add((ts.millisecondsSinceEpoch, fiyat));
+    }
+    return out;
+  }
+
   // ── Profiles ─────────────────────────────────────────────────────────────
 
   Future<AppUser?> getProfile(String userId) async {

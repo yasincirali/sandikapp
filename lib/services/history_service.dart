@@ -11,6 +11,7 @@ import 'bes_acilis.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'price_service.dart';
+import 'remote_config_service.dart';
 import 'seri_disk_depo.dart';
 import 'sozlesme_deposu.dart';
 import 'supabase_service.dart';
@@ -277,6 +278,47 @@ class HistoryService {
     }
   }
 
+  /// Yurt içi kotasyon kaydı (0101) — testler için değiştirilebilir.
+  /// `tefasNavGozlemKaynagi` ile aynı desen.
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String sembol, DateTime baslangic)
+      yurtIciKaynagi = _sunucuYurtIci;
+
+  /// Yurt içi şekil açık mı (Remote Config `hafta_sonu_yurt_ici_seri`,
+  /// varsayılan kapalı) — testler için değiştirilebilir.
+  @visibleForTesting
+  static bool Function() yurtIciSekilAcik =
+      () => RemoteConfigService.instance.haftaSonuYurtIciSeri;
+
+  static Future<List<(int, double)>> _sunucuYurtIci(
+      String sembol, DateTime baslangic) async {
+    if (DemoModu.aktif) return const [];
+    try {
+      return await SupabaseService.instance
+          .yurtIciKotasyonSerisi(sembol, baslangic: baslangic);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'HistoryService.yurtIciKotasyon');
+      return const [];
+    }
+  }
+
+  // Kayıt beş dakikada bir büyür; gün içi seri 30 sn'de bir yeniden
+  // kuruluyor. Anahtar sembol + gün — gece yarısı kendiliğinden düşer.
+  static final Map<String, (DateTime, List<(int, double)>)> _yurtIciCache = {};
+  static const _yurtIciCacheTtl = Duration(minutes: 2);
+
+  Future<List<(int, double)>> _yurtIciGetir(String sembol, DateTime gun) async {
+    final key = '$sembol|${gun.toIso8601String()}';
+    final c = _yurtIciCache[key];
+    if (c != null && DateTime.now().difference(c.$1) < _yurtIciCacheTtl) {
+      return c.$2;
+    }
+    final seri = await yurtIciKaynagi(sembol, gun);
+    _yurtIciCache.removeWhere((k, _) => !k.endsWith('|${gun.toIso8601String()}'));
+    _yurtIciCache[key] = (DateTime.now(), seri);
+    return seri;
+  }
+
   // Gözlem 5 dk önbellekte: gün içi seri 30 sn'de bir yeniden kuruluyor,
   // gözlem ise günde bir kez değişir. Anahtar kod kümesi — portföye fon
   // eklenince yeniden sorulur.
@@ -365,6 +407,7 @@ class HistoryService {
     _bosYanitAt.clear();
     _ucusanIstekler.clear();
     _sonIyi.clear();
+    _yurtIciCache.clear();
   }
 
   /// TTL'in dolmasını taklit eder: taze önbellek ve negatif önbellek
@@ -1433,6 +1476,45 @@ class HistoryService {
       tickerSlots[entry.key] = map;
     }
 
+    // ── Yurt içi şekil: uluslararası seri sustuysa (0101, bayrak arkasında)
+    //
+    // Hafta sonu altın/dövizin Yahoo serisi Cuma'da bitiyor ve GÜNLÜK dümdüz
+    // çiziliyordu (kullanıcı sorusu 2026-10-03). Seri sustuğunda o sembolün
+    // şekli sunucunun yurt içi kaydından (`yurt_ici_kotasyon`) alınır —
+    // ekranda görünen kotasyonun kendisi; ölçek hizalaması da, ürün bazlı
+    // uç taşıması da gerekmez. Karar `FiyatKaynagi.yurtIciGunIciSekli`'nde.
+    //
+    // Hafta içi seri canlıyken sorgu HİÇ atılmaz; davranış birebir eski.
+    final yurtIciSlots = <String, Map<int, double>>{};
+    if (yurtIciSekilAcik()) {
+      final adaylar = <String, Map<int, double>>{};
+      for (final a in assets) {
+        if (!a.isBuy || a.quantity <= 0) continue;
+        if (!FiyatKaynagi.yurtIciKayitli(a.ticker)) continue;
+        if (a.type == AssetType.altin) {
+          adaylar[a.ticker] = goldSlots;
+        } else if (a.type == AssetType.doviz) {
+          adaylar[a.ticker] = tickerSlots[a.ticker] ?? const {};
+        }
+      }
+      adaylar.removeWhere(
+          (_, seri) => !FiyatKaynagi.uluslararasiSustu(seri, now));
+      final gunBasi = dayKey(now);
+      final kayitlar = await Future.wait([
+        for (final s in adaylar.keys) _yurtIciGetir(s, gunBasi),
+      ]);
+      var i = 0;
+      for (final e in adaylar.entries) {
+        final sekil = FiyatKaynagi.yurtIciGunIciSekli(
+          uluslararasi: e.value,
+          yurtIci: kayitlar[i++],
+          simdi: now,
+          normalize: normalizeSlot,
+        );
+        if (sekil != null) yurtIciSlots[e.key] = sekil;
+      }
+    }
+
     // Fon NAV'ları: sembol → (önceki NAV, güncel NAV).
     //
     // "Önceki" = son yayımlanandan bir ÖNCEKİ gün. İkisi eşitse ya da
@@ -1876,7 +1958,19 @@ class HistoryService {
           expected++;
           double? v;
 
-          if (a.type == AssetType.altin) {
+          final yurtIci = yurtIciSlots[a.ticker];
+          if (yurtIci != null) {
+            // Ekrandaki kotasyonun kendi kaydı: birim fiyat doğrudan TL.
+            // Kayıttan önceki slot (gece yarısını geçen ilk tur gelmeden)
+            // aşağıdaki seed'e düşer — uydurma nokta yok.
+            gunIciBeklenenTurler.add(a.type);
+            final p = pastOrNull(yurtIci, hourTs);
+            if (p != null) {
+              v = p * qty;
+              slotGercekVeri = true;
+              gunIciGercekTurler.add(a.type);
+            }
+          } else if (a.type == AssetType.altin) {
             gunIciBeklenenTurler.add(a.type);
             final gram = pastOrNull(goldSlots, hourTs);
             if (gram != null) {
