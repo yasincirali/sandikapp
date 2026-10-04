@@ -16,6 +16,14 @@ haftalık çubuklar, fon büyüklüğü, yatırımcı sayısı ve kurala uyan b�
 giriş/çıkış günleri. Veri TEFAS'tan sunucuda toplanır (`akis-gozlem`, 0106).
 Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma.
 
+> **DAĞITILDI 2026-10-05** (Actions run 37238691709, hedef `ikisi`): migration
+> 0106 + 0107 + 0108 ve `akis-gozlem`, `hacim-gozlem`, `kripto-hacim-gozlem`,
+> `weekly-summary` iki sunucuda; ŞEMA EŞİT. Aşağıdaki "deploy" maddeleri
+> tamam; ilk doldurmayı cron kendiliğinden yapar (fon penceresi ~2 günde
+> dolar), beklemek istemezsen tetikleyicileri elle çağır. Numaralar iki kez
+> kaydı: canlıda 0105 zaten PR #90'a aitti; bu dal #90'ın üstüne oturur,
+> **önce #90'ı birleştir**.
+
 - [ ] Dalı incele, uygunsa PR aç / birleştir (birleştirme sende).
 - [ ] **Supabase deploy, hedef `ikisi`:** migration `0106_fon_akisi.sql` +
       fonksiyon `akis-gozlem`. Yeni secret YOK (`TEFAS_NAV_CRON_SECRET`
