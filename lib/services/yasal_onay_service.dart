@@ -22,6 +22,8 @@ class KayitOnayBaglami {
     required this.rizaBelgesiAcildi,
     this.kvkkBelgesiAcildi = false,
     this.gizlilikBelgesiAcildi = false,
+    this.sonunaKadarOkunanlar = const {},
+    this.yatirimUyarisiOnaylandi = false,
   });
 
   /// Bayrak `tek_onay_kutusu` ekran açılışında açık mıydı.
@@ -46,6 +48,16 @@ class KayitOnayBaglami {
   final bool kvkkBelgesiAcildi;
   final bool gizlilikBelgesiAcildi;
 
+  /// Zorunlu okumada (bayrak `zorunlu_okuma`) sonuna kadar okunup metnin
+  /// sonunda onaylanan türler (`YasalTur`). Bayrak kapalıyken boş: öğelere
+  /// `sonuna_kadar_okundu` anahtarı hiç girmez, yük birebir eski.
+  final Set<String> sonunaKadarOkunanlar;
+
+  /// Yatırım uyarısının TAM metni (`disclaimerText`) kayıt ekranında
+  /// sonuna kadar okunup onaylandı. Yalnız o zaman `yatirim_uyarisi` öğesi
+  /// kayda girer ve OTP sonrası `disclaimer_acceptances` yazılır.
+  final bool yatirimUyarisiOnaylandi;
+
   /// Kayıtta onaylanan metinler + her birinin gösterim değişkenleri — saf,
   /// test edilir.
   ///
@@ -59,11 +71,16 @@ class KayitOnayBaglami {
   ///   1.2'den beri). Açılıp açılmadığı `belge_acildi` ile yazılır — ispat
   ///   ne kadar güçlüyse o kadarını söylesin. Yer tutucu değerleri yalnız
   ///   o belgede geçenler ([YasalMetinKatalogu.belgeDegiskenleri]).
-  /// - Yatırım uyarısı (`disclaimerText`) GİRMEZ: kayıt ekranında
-  ///   gösterilmiyor. Kutunun "yatırım tavsiyesi değildir" maddesi kutu
-  ///   metninin içinde zaten kayıtlı. (`disclaimer_acceptances` eskisi gibi
-  ///   OTP sonrası yazılır — bozmama kuralı; o kaydın gösterilmemiş bir
-  ///   metnin hash'ini taşıdığı YAPMAN'da avukat sorusu.)
+  /// - Yatırım uyarısı (`disclaimerText`) YALNIZ zorunlu okumada girer
+  ///   ([yatirimUyarisiOnaylandi]): tam metni sonuna kadar okunup onaylandı,
+  ///   kanal `kayit` (0104 eşlemeye ekledi). Bayrak kapalıyken kayıt
+  ///   ekranında yalnız kutudaki özet görünür → girmez; uyarı OTP'den sonra
+  ///   kendi ekranında tam metniyle sorulur (2026-10-04'e kadar OTP
+  ///   gösterilmemiş tam metnin hash'iyle `disclaimer_acceptances`
+  ///   yazıyordu — kapanan hata).
+  /// - `sonuna_kadar_okundu: true`: yalnız [sonunaKadarOkunanlar]'daki
+  ///   metinlere; kutulara girmez (kutu okunacak bir metin değil, işaretlenen
+  ///   bir beyandır).
   List<Map<String, dynamic>> ogeler() {
     final kutular = tekKutu
         ? [
@@ -78,6 +95,7 @@ class KayitOnayBaglami {
     Map<String, dynamic> belge(YasalMetin m, bool acildi) => m.rpcOgesi({
           ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
           'belge_acildi': acildi,
+          if (sonunaKadarOkunanlar.contains(m.tur)) 'sonuna_kadar_okundu': true,
         });
     return [
       ...kutular,
@@ -85,6 +103,11 @@ class KayitOnayBaglami {
       belge(YasalMetinKatalogu.gizlilik(), gizlilikBelgesiAcildi),
       belge(YasalMetinKatalogu.kvkk(), kvkkBelgesiAcildi),
       belge(YasalMetinKatalogu.acikRiza(), rizaBelgesiAcildi),
+      if (yatirimUyarisiOnaylandi)
+        YasalMetinKatalogu.yatirimUyarisi().rpcOgesi({
+          'belge_acildi': true,
+          'sonuna_kadar_okundu': true,
+        }),
     ];
   }
 }
@@ -434,6 +457,7 @@ class YasalOnayService {
     required YasalKapiDurumu durum,
     required Map<String, String> belgeDegiskenleri,
     required Set<String> acilanBelgeler,
+    Set<String> sonunaKadarOkunanlar = const {},
     KapiKutuBaglami? kutu,
     bool yatirimUyarisiDahil = false,
     required String locale,
@@ -445,6 +469,7 @@ class YasalOnayService {
       durum: durum,
       belgeDegiskenleri: belgeDegiskenleri,
       acilanBelgeler: acilanBelgeler,
+      sonunaKadarOkunanlar: sonunaKadarOkunanlar,
       kutu: kutu,
       yatirimUyarisiDahil: yatirimUyarisiDahil,
     );
@@ -460,11 +485,14 @@ class YasalOnayService {
   }
 
   /// Kapının yazdığı öğeler — saf, test edilir. Her belgeye `onceki_surum`
-  /// (yoksa null = ilk onay) ve `belge_acildi` kanıt notu girer.
+  /// (yoksa null = ilk onay) ve `belge_acildi` kanıt notu girer; zorunlu
+  /// okumada (bayrak `zorunlu_okuma`) [sonunaKadarOkunanlar]'daki metinlere
+  /// `sonuna_kadar_okundu: true`. Bayrak kapalıyken küme boş → yük eski.
   static List<Map<String, dynamic>> kapiOgeleri({
     required YasalKapiDurumu durum,
     required Map<String, String> belgeDegiskenleri,
     required Set<String> acilanBelgeler,
+    Set<String> sonunaKadarOkunanlar = const {},
     KapiKutuBaglami? kutu,
     bool yatirimUyarisiDahil = false,
   }) =>
@@ -475,8 +503,16 @@ class YasalOnayService {
             ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
             'belge_acildi': acilanBelgeler.contains(m.tur),
             'onceki_surum': durum.oncekiSurum[m.tur],
+            if (sonunaKadarOkunanlar.contains(m.tur))
+              'sonuna_kadar_okundu': true,
           }),
-        if (yatirimUyarisiDahil) YasalMetinKatalogu.yatirimUyarisi().rpcOgesi(),
+        if (yatirimUyarisiDahil)
+          YasalMetinKatalogu.yatirimUyarisi().rpcOgesi({
+            if (sonunaKadarOkunanlar.contains(YasalTur.yatirimUyarisi)) ...{
+              'belge_acildi': true,
+              'sonuna_kadar_okundu': true,
+            },
+          }),
       ];
 
   // ── Kayıtlar ───────────────────────────────────────────────────────────
@@ -505,16 +541,31 @@ class YasalOnayService {
   }
 
   /// `DisclaimerAcceptanceScreen` onaylanınca: yatırım uyarısı.
-  Future<bool> yatirimUyarisiniKaydet({required String locale}) => _kaydet(
-        [YasalMetinKatalogu.yatirimUyarisi().rpcOgesi()],
+  /// [sonunaKadarOkundu]: zorunlu okumada metnin sonuna ulaşıldı.
+  Future<bool> yatirimUyarisiniKaydet({
+    required String locale,
+    bool sonunaKadarOkundu = false,
+  }) =>
+      _kaydet(
+        [
+          YasalMetinKatalogu.yatirimUyarisi()
+              .rpcOgesi({if (sonunaKadarOkundu) 'sonuna_kadar_okundu': true}),
+        ],
         kanal: 'yatirim_uyarisi_ekrani',
         locale: locale,
       );
 
   /// Zirve açık rızası sunucuya yazıldıktan sonra: kartın metni.
   /// Geri çekme sunucuda (`zirve_rizasi_ayarla`) aynı işlemde damgalanır.
-  Future<bool> zirveRizasiniKaydet({required String locale}) => _kaydet(
-        [YasalMetinKatalogu.zirveRiza().rpcOgesi()],
+  Future<bool> zirveRizasiniKaydet({
+    required String locale,
+    bool sonunaKadarOkundu = false,
+  }) =>
+      _kaydet(
+        [
+          YasalMetinKatalogu.zirveRiza()
+              .rpcOgesi({if (sonunaKadarOkundu) 'sonuna_kadar_okundu': true}),
+        ],
         kanal: 'zirve',
         locale: locale,
       );

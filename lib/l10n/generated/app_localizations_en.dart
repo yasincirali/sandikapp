@@ -5783,4 +5783,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalBelgeAcikRizaAciklama => 'International data transfer';
+
+  @override
+  String get zorunluOkumaIpucu => 'Scroll to the end to accept';
+
+  @override
+  String get zorunluOkumaIpucuKisa => 'Read to the end';
+
+  @override
+  String get zorunluOkumaIlerleme => 'Reading progress';
+
+  @override
+  String get zorunluOkumaOnayla => 'I\'ve read it and I accept';
+
+  @override
+  String get zorunluOkumaOnaylaKisa => 'I accept';
+
+  @override
+  String get zorunluOkumaRizaVer => 'I\'ve read it and I give explicit consent';
+
+  @override
+  String get zorunluOkumaRizaVerKisa => 'I give consent';
+
+  @override
+  String get zorunluOkumaOnaylandi => 'Accepted';
+
+  @override
+  String get zorunluOkumaBelgelerBaslik => 'Read and accept';
+
+  @override
+  String get zorunluOkumaBelgelerAciklama =>
+      'Open each document, read it to the end and accept it at the bottom.';
+
+  @override
+  String zorunluOkumaEksik(String belgeler) {
+    return 'To continue, read to the end and accept: $belgeler';
+  }
+
+  @override
+  String get zorunluOkumaKutuKilitli =>
+      'First read and accept every document above.';
+
+  @override
+  String zorunluOkumaSayac(int onayli, int toplam) {
+    return '$onayli/$toplam accepted';
+  }
+
+  @override
+  String get yasalBelgeYatirimUyarisi => 'Investment Disclaimer';
 }

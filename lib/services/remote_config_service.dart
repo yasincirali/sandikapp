@@ -299,6 +299,25 @@ class RemoteConfigService {
     // eski metni onaylatmaz (`YasalOnayService.uygulamaEski`).
     'yasal_kapi_en_yeni': true,
 
+    // Zorunlu okuma (kullanıcı kararı 2026-10-04: "Özeti değil hepsini
+    // okutmalıyız. Zorunlu okutup en sonda onaylatarak ilerleyelim." Kapsam:
+    // TÜM onay metinleri). Açıkken kayıt ekranı ve yeniden onay kapısı
+    // Koşullar, Gizlilik, KVKK, Açık Rıza Metni ve yatırım uyarısının TAM
+    // metnini açtırır; her metnin onayı metnin EN SONUNDADIR ve sona
+    // ulaşılmadan açılmaz. Hepsi onaylanmadan kutu işaretlenmez, akış
+    // ilerlemez. `DisclaimerAcceptanceScreen` ve Zirve rıza kartı da sona
+    // kadar okutur. Onay kaydına `sonuna_kadar_okundu` işareti girer;
+    // kayıtta yatırım uyarısı `yasal_onaylar`'a `kayit` kanalıyla yazılır
+    // (0104 kanal eşlemesine ekledi; ÖNCE 0104 iki sunucuya).
+    // Kapalıyken ekranlar birebir eski. Bayraktan BAĞIMSIZ tek düzeltme:
+    // OTP sonrası `disclaimer_acceptances` yalnız yatırım uyarısının tam
+    // metni kayıt ekranında onaylandıysa yazılır (aksi hâlde gösterilmemiş
+    // metne onay kaydı oluyordu); kapalıyken uyarı OTP'den sonra kendi
+    // ekranında tam metniyle sorulur.
+    // AÇIK doğar — kullanıcı kararı 2026-10-04 (zorunlu okuma "varsayılan
+    // AÇIK"). Uzaktan kapatma: Console'a anahtarı `false` olarak ekle.
+    'zorunlu_okuma': true,
+
     // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
     // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
     // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
@@ -604,6 +623,10 @@ class RemoteConfigService {
   /// Girişte yeniden onay kapısı — bkz. `_defaults['yasal_kapi_en_yeni']`.
   /// Tek başına okunmaz: etkinliği `YasalOnayService.kapiEtkin` (iki bayrak).
   bool get yenidenOnayKapisi => _bayrak('yasal_kapi_en_yeni');
+
+  /// Onay metinleri tam gösterilir, sona kadar okunmadan onaylanmaz — bkz.
+  /// `_defaults['zorunlu_okuma']`.
+  bool get zorunluOkuma => _bayrak('zorunlu_okuma');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

@@ -127,6 +127,11 @@ YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${A
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
   -d "{\"p_ogeler\":[{\"tur\":\"acik_riza_metni\",\"surum\":\"1.2\",\"dil\":\"tr\",\"hash\":\"$AHASH\"}],\"p_kanal\":\"zirve\"}")
 [[ "$HTTP" == "400" ]] || { echo "zirve kanalinda acik_riza_metni reddedilmedi: HTTP $HTTP"; exit 1; }
+# 0104: zorunlu okuma — kayit kanali yatirim uyarisinin tam metnini de yazar
+# (yukarida yeniden_onay ile yazildiysa 0 yeni satir; reddedilmemesi yeter).
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"yatirim_uyarisi\",\"surum\":\"1.0\",\"dil\":\"tr\",\"hash\":\"$YHASH\",\"degiskenler\":{\"belge_acildi\":true,\"sonuna_kadar_okundu\":true}}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "kayit kanalinda yatirim_uyarisi beklenmeyen donus: $YAZILAN (0104)"; exit 1; }
 # Istemcinin kapi sorgusu (YasalOnayService._etkinOnaylar) — RLS kendi
 # satiri + yasal_metinler gomulu; yeni RPC gerekmez.
 TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \

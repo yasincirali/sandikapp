@@ -8,6 +8,32 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-04 Zorunlu okuma (0104) — dal `feat/zorunlu-okuma` (yerel, push yok)
+
+Onay istenen her metin TAM gösterilir, sonuna kadar kaydırılmadan onay
+açılmaz; bayrak `zorunlu_okuma` (Remote Config, varsayılan AÇIK).
+
+**Dağıtım sırası (ters sıra kayıt onaylarını düşürür):**
+1. `0104_kayitta_yatirim_uyarisi.sql` İKİ sunucuya (`supabase-deploy.yml`,
+   hedef `ikisi`). Yalnız `yasal_onay_kaydet`'in `kayit` kanalına
+   `yatirim_uyarisi` ekler; geriye uyumlu.
+2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+3. ANCAK SONRA bu dalın istemcisi (main'e birleşme). 0104'süz sunucuda yeni
+   istemcinin kayıt onay çağrısı tümüyle reddedilir (tek işlem) — onaylar
+   yazılmaz, yeniden onay kapısı sonraki açılışta sorar.
+
+**Uzaktan kapatma:** Firebase Console → Remote Config → `zorunlu_okuma` =
+`false`. Kapalıyken ekranlar eski hâlinde; tek fark (bayraktan bağımsız):
+e-posta kaydında yatırım uyarısı OTP'den sonra kendi ekranında tam metniyle
+sorulur (eskiden gösterilmemiş tam metne onay kaydı yazılıyordu).
+
+**Metin notu (sürüm artırmadan bırakıldı):** Koşullar ve Gizlilik §3'teki
+"Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya
+Google ile ilk girişte tam metni ayrıca gösterilir." cümlesi hâlâ DOĞRU ama
+eksik (artık e-posta kaydında da tam metin gösteriliyor). Bir sonraki metin
+sürümünde "kayıtta ve ilk girişte tam metni gösterilir" diye güncelle;
+yalnız bunun için sürüm artırmak herkese yeniden onay kapısı açardı.
+
 ## ⏳ 2026-10-04 Yasal belgeler web ile tek kaynak (0103) — dal `feat/yasal-web-esleme` (yerel, push yok)
 
 Karar: *"Webdekiyle de her zaman eşleyelim."* Uygulama artık web'deki tam

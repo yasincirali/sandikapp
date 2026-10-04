@@ -9632,6 +9632,90 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yurt dışına veri aktarımı'**
   String get yasalBelgeAcikRizaAciklama;
+
+  /// Zorunlu okuma (bayrak zorunlu_okuma): sona ulaşılana kadar ekranın altındaki ipucu. Onay düğmesi metnin sonunda.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylamak için metni sona kadar oku'**
+  String get zorunluOkumaIpucu;
+
+  /// No description provided for @zorunluOkumaIpucuKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sona kadar oku'**
+  String get zorunluOkumaIpucuKisa;
+
+  /// No description provided for @zorunluOkumaIlerleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okuma ilerlemesi'**
+  String get zorunluOkumaIlerleme;
+
+  /// No description provided for @zorunluOkumaOnayla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okudum ve onaylıyorum'**
+  String get zorunluOkumaOnayla;
+
+  /// No description provided for @zorunluOkumaOnaylaKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylıyorum'**
+  String get zorunluOkumaOnaylaKisa;
+
+  /// No description provided for @zorunluOkumaRizaVer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okudum ve açık rıza veriyorum'**
+  String get zorunluOkumaRizaVer;
+
+  /// No description provided for @zorunluOkumaRizaVerKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açık rıza veriyorum'**
+  String get zorunluOkumaRizaVerKisa;
+
+  /// No description provided for @zorunluOkumaOnaylandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylandı'**
+  String get zorunluOkumaOnaylandi;
+
+  /// No description provided for @zorunluOkumaBelgelerBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okuyup onaylaman gerekenler'**
+  String get zorunluOkumaBelgelerBaslik;
+
+  /// No description provided for @zorunluOkumaBelgelerAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her metni aç, sonuna kadar oku ve en altta onayla.'**
+  String get zorunluOkumaBelgelerAciklama;
+
+  /// No description provided for @zorunluOkumaEksik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}'**
+  String zorunluOkumaEksik(String belgeler);
+
+  /// No description provided for @zorunluOkumaKutuKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce yukarıdaki metinlerin hepsini okuyup onayla.'**
+  String get zorunluOkumaKutuKilitli;
+
+  /// No description provided for @zorunluOkumaSayac.
+  ///
+  /// In tr, this message translates to:
+  /// **'{onayli}/{toplam} metin onaylandı'**
+  String zorunluOkumaSayac(int onayli, int toplam);
+
+  /// No description provided for @yasalBelgeYatirimUyarisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırım Uyarısı'**
+  String get yasalBelgeYatirimUyarisi;
 }
 
 class _AppLocalizationsDelegate

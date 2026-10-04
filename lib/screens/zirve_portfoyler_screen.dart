@@ -21,6 +21,7 @@ import '../widgets/zirve_donem_secici.dart';
 import '../widgets/zirve_fon_listesi.dart';
 import '../widgets/zirve_karti.dart';
 import '../widgets/zirve_riza_karti.dart';
+import '../widgets/zorunlu_okuma.dart';
 
 /// Zirvedeki Portföyler — tam ekran (kullanıcı seçimi 2026-09-29, "A ·
 /// Cetvel önde").
@@ -229,7 +230,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
 
   /// Rıza verildi → liste ve "Sen" yeniden çekilir. Hata kartta kalır
   /// (`SandikAsyncButton` yeniden basılabilir), durum değişmemiş sayılır.
-  Future<void> _katil() async {
+  Future<void> _katil({bool sonunaKadarOkundu = false}) async {
     // Onay kaydının dili — `await`'ten önce (context sonra geçersiz olabilir).
     final dil = Localizations.localeOf(context).toString();
     try {
@@ -242,7 +243,8 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     // `yasal_onay_kaydi`). `zirve_rizalari` asıl kapı; bu ispat kaydı —
     // beklenmez, fırlatmaz. Geri çekme sunucuda aynı işlemde damgalanır.
     CrashReporter.arkaPlan(
-        YasalOnayService.instance.zirveRizasiniKaydet(locale: dil),
+        YasalOnayService.instance.zirveRizasiniKaydet(
+            locale: dil, sonunaKadarOkundu: sonunaKadarOkundu),
         reason: 'YasalOnayService.zirve');
     if (!mounted) return;
     setState(() {
@@ -332,6 +334,13 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
           );
         }
         if (!riza) {
+          if (RemoteConfigService.instance.zorunluOkuma) {
+            return ZirveRizaOkumaGovdesi(
+              hp: hp,
+              onKatil: () => _katil(sonunaKadarOkundu: true),
+              onSimdiDegil: () => Navigator.of(context).maybePop(),
+            );
+          }
           return ListView(
             padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
             children: [
@@ -1226,6 +1235,63 @@ class _TurSatiri extends StatelessWidget {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Zorunlu okumada rıza kartı (bayrak `zorunlu_okuma`, 2026-10-04).
+///
+/// Kart rızanın TAM metnidir (katalogdaki `zirve_riza` gövdesi kartın
+/// sabitlerinden kurulur) ve "Katılıyorum" metnin son satırıdır — onay
+/// zaten metnin sonunda. Eklenen tek şey: kullanıcı kartın sonuna
+/// kaydırana kadar "Katılıyorum" kapalı, altta ipucu durur. Kart ekrana
+/// sığıyorsa düğme baştan açık. Metin değişmez (sürüm/migration gerekmez).
+class ZirveRizaOkumaGovdesi extends StatefulWidget {
+  const ZirveRizaOkumaGovdesi({
+    super.key,
+    required this.hp,
+    required this.onKatil,
+    required this.onSimdiDegil,
+  });
+
+  final double hp;
+  final Future<void> Function() onKatil;
+  final VoidCallback onSimdiDegil;
+
+  @override
+  State<ZirveRizaOkumaGovdesi> createState() => _ZirveRizaOkumaGovdesiState();
+}
+
+class _ZirveRizaOkumaGovdesiState extends State<ZirveRizaOkumaGovdesi> {
+  bool _sonaUlasti = false;
+  double _ilerleme = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: SonaKadarOkumaIzleyici(
+            // "Katılıyorum"dan sonra metin yok: "Şimdi değil" düğmesi ve
+            // liste alt boşluğu (bkz. OkumaOlcumu.sonaUlasti).
+            sonPay: SandikTouch.min + SandikSpace.xs + SandikSpace.lg,
+            onSonaUlasti: () => setState(() => _sonaUlasti = true),
+            onIlerleme: (v) => setState(() => _ilerleme = v),
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(
+                  widget.hp, SandikSpace.sm, widget.hp, SandikSpace.lg),
+              children: [
+                ZirveRizaKarti(
+                  onKatil: widget.onKatil,
+                  onSimdiDegil: widget.onSimdiDegil,
+                  katilEtkin: _sonaUlasti,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (!_sonaUlasti) OkumaIpucu(ilerleme: _ilerleme),
       ],
     );
   }

@@ -3737,5 +3737,19 @@
   "yasalKapiKayitHatasi": "Your acceptance couldn't be saved. Check your connection and try again.",
   "yasalKapiCikis": "Sign out",
   "yasalBelgeAcikRiza": "Explicit Consent Notice",
-  "yasalBelgeAcikRizaAciklama": "International data transfer"
+  "yasalBelgeAcikRizaAciklama": "International data transfer",
+  "zorunluOkumaIpucu": "Scroll to the end to accept",
+  "zorunluOkumaIpucuKisa": "Read to the end",
+  "zorunluOkumaIlerleme": "Reading progress",
+  "zorunluOkumaOnayla": "I've read it and I accept",
+  "zorunluOkumaOnaylaKisa": "I accept",
+  "zorunluOkumaRizaVer": "I've read it and I give explicit consent",
+  "zorunluOkumaRizaVerKisa": "I give consent",
+  "zorunluOkumaOnaylandi": "Accepted",
+  "zorunluOkumaBelgelerBaslik": "Read and accept",
+  "zorunluOkumaBelgelerAciklama": "Open each document, read it to the end and accept it at the bottom.",
+  "zorunluOkumaEksik": "To continue, read to the end and accept: {belgeler}",
+  "zorunluOkumaKutuKilitli": "First read and accept every document above.",
+  "zorunluOkumaSayac": "{onayli}/{toplam} accepted",
+  "yasalBelgeYatirimUyarisi": "Investment Disclaimer"
 }

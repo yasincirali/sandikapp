@@ -31,6 +31,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     'ortak_secimi_tasi',
     'yasal_onay_kaydi',
     'yasal_kapi_en_yeni',
+    'zorunlu_okuma',
   };
   await testMain();
 }

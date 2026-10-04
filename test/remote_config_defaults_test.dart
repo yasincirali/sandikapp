@@ -95,6 +95,7 @@ void main() {
       'ortak_secimi_tasi',
       'yasal_onay_kaydi',
       'yasal_kapi_en_yeni',
+      'zorunlu_okuma',
     ]) {
       test('$b açık doğar', () => expect(varsayilan(b), 'true'));
     }
