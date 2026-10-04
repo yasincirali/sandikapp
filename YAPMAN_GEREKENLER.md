@@ -8,6 +8,48 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
+
+Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
+değişikliği YOK. Yeni davranışların hepsi **kapalı doğan** Remote Config
+bayrağı arkasında; kapalıyken uygulama birebir eski. Emülatörde bayrakları
+açmak için derleme anahtarı: `.env.local`'a `RC_ACIK=bayrak1,bayrak2` (yalnız
+debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
+
+- [ ] Emülatör/cihaz testini bitir, sonra push + PR (birleştirme sende).
+- [ ] Firebase Console › Remote Config — önce kendi cihazın için bir koşulla aç:
+  - `ilk_varlik_kolay`: boş ana ekranda **Canlı fiyat vitrini** (₺0 kartı
+    gizlenir), Varlık Ekle'de "Yazarak ekle" / "Ekstreden aktar", komisyon +
+    not "Ayrıntı ekle" altında.
+  - `bugun_karti_kiyas`: Bugün kartı **H** düzeni (hareket + enflasyon kıyası
+    + en çok oynayan + hedef). Son 7 gün / artıdaki varlık / aylık özet /
+    olay bu düzende yok.
+  - `varlik_islem_cubugu`: varlık ekranında Al · Sat · Temettü çubuğu, dönem
+    yüzdesi tek yerde.
+  - `tek_ortak_secici`: Portföy / Hareketler / Takip'te Performans'la aynı
+    segment seçici.
+  - `tek_kiyas_yuzeyi`: varlık ekranının "Karşılaştır"ı Karşılaştır
+    ekranını o varlık + dönemle açar (mevduat/BES eski seçicide kalır).
+  - `siralama_tek_sayfa`: Yarış + Zirve tek "Sıralama" sayfası (Ortaklarım /
+    Herkes). Havuz küçükken açmak isteğe bağlı.
+  - `performans_ayar_sade`: grafik tipi yalnız Çizgi/Mum, "Bugünkü
+    portföyle" Ayarlar › Görünüm'de, Ayarlar grupları + katlanır Gelişmiş.
+  - `karsilama_tanitimi` açıkken giriş ekranında Apple/Google düğmeleri
+    formun ÜSTÜNDE (iOS'ta görünür; Android derlemesinde Google kimliği yok).
+- Bayraksız gelenler: jargon ("Piyasanın kattığı" → "Fiyat etkisi",
+  "Birikim değişimi" → "Toplam değişim", Özet başlıkları "Ne oldu? / Neden
+  böyle? / Ayrıntılar / Daha fazlası", "Dağ" → "Alan", Bugün kartında
+  "sadece fiyat etkisi"); tema yalnız Ayarlar'da (Profil'den kalktı);
+  ölü kod ve okunmayan `paywall_variant` / `free_signal_slots_per_day`
+  bayrakları silindi; köprüde "−₺0" artık "₺0"; Bugün kartında kıvılcım
+  çizilince tutarın küçülmesi düzeltildi.
+- [ ] **Hukuki karar (kod yazılmadı):** kayıttaki iki onay kutusunu
+      (koşullar + KVKK + 18 yaş / yurt dışı aktarım açık rızası) tek kutuya
+      indirmek avukat onayı ister. Onay gelirse tek PR.
+- Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
+  (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
+  vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).
+
 ## ⏳ 2026-10-04 Sadeleştirme 1. parti — dal `claude/project-thread-jpfk0o`
 
 İstek (yasin): "kullanıcı adı kalsın, diğer değişiklikleri yapalım; onboarding
