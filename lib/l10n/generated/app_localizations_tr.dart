@@ -5531,4 +5531,45 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get orWithEmail => 'veya e-postayla';
+
+  @override
+  String get vitrinWelcome => 'Hoş geldin';
+
+  @override
+  String get vitrinTitle => 'Neye sahipsin?';
+
+  @override
+  String get vitrinHint =>
+      'Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.';
+
+  @override
+  String get vitrinLive => 'Fiyatlar canlı';
+
+  @override
+  String get vitrinQuarterGold => 'Çeyrek altın';
+
+  @override
+  String get vitrinFundHint => 'TEFAS\'taki tüm fonlar';
+
+  @override
+  String get vitrinStockHint => 'Borsa İstanbul';
+
+  @override
+  String get vitrinOtherTypes => 'Kripto, emtia, mevduat, BES ve diğerleri';
+
+  @override
+  String get vitrinOtherTypesShort => 'Kripto, BES ve diğer türler';
+
+  @override
+  String get vitrinStatementHint =>
+      'Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde';
+
+  @override
+  String get vitrinStatementHintShort => 'PDF, Excel ya da CSV; tek seferde';
+
+  @override
+  String get vitrinTapToAdd => 'Eklemek için dokun';
+
+  @override
+  String get vitrinPriceUnknown => 'Fiyat henüz yok';
 }

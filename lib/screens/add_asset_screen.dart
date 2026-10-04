@@ -233,8 +233,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   void _hizliSecimiUygula() {
     final s = widget.hizliSecim;
     if (s == null || _isEditing || widget.cartInitial != null) return;
-    if (s == IlkVarlikSecimi.gramAltin) {
-      _yaz(_n.selectGold(GoldSubCategory.gr24));
+    if (s.altinAltTuru case final g?) {
+      _yaz(_n.selectGold(g));
     } else if (s.dovizEtiketi case final etiket?) {
       _yaz(_n.selectDoviz(dovizOptFor(etiket)));
     }

@@ -3962,5 +3962,18 @@
   "addDetails": "Ayrıntı ekle (komisyon, not)",
   "addByTyping": "Yazarak ekle",
   "importFromStatement": "Ekstreden aktar",
-  "orWithEmail": "veya e-postayla"
+  "orWithEmail": "veya e-postayla",
+  "vitrinWelcome": "Hoş geldin",
+  "vitrinTitle": "Neye sahipsin?",
+  "vitrinHint": "Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.",
+  "vitrinLive": "Fiyatlar canlı",
+  "vitrinQuarterGold": "Çeyrek altın",
+  "vitrinFundHint": "TEFAS'taki tüm fonlar",
+  "vitrinStockHint": "Borsa İstanbul",
+  "vitrinOtherTypes": "Kripto, emtia, mevduat, BES ve diğerleri",
+  "vitrinOtherTypesShort": "Kripto, BES ve diğer türler",
+  "vitrinStatementHint": "Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde",
+  "vitrinStatementHintShort": "PDF, Excel ya da CSV; tek seferde",
+  "vitrinTapToAdd": "Eklemek için dokun",
+  "vitrinPriceUnknown": "Fiyat henüz yok"
 }

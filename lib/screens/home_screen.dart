@@ -26,7 +26,7 @@ import '../theme/sandik.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
-import '../widgets/ilk_varlik_secici.dart';
+import '../widgets/ilk_varlik_vitrini.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
@@ -590,6 +590,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Hareket listesi ham defteri kullanmaya DEVAM eder — geçmiş orada
     // duruyor ve doğrusu da bu.
     final isEmptyOwn = ownView && aktifLotlar(myState.assets).isEmpty;
+    final toplamYerineVitrin = IlkVarlikVitrini.toplamKartiYerine(
+      bayrak: RemoteConfigService.instance.ilkVarlikKolay,
+      bosKendi: isEmptyOwn,
+      ortakVar: allActivePartners.isNotEmpty,
+    );
 
     return RefreshIndicator.adaptive(
       color: context.c.amberText,
@@ -775,79 +780,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           // Portfolio summary
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: hp),
-              child: TourAnchor(
-                target: TourTarget.heroKart,
-                // Ortak varken kartı sağa/sola kaydırmak sıradaki görünüme
-                // geçer (Ben → ortaklar → Birlikte). Çip ve alt sayfa hedefe
-                // doğrudan gider; kaydırma "bir sonrakine bak" hareketi.
-                // Kart parmağı takip eder, kenarda hedefin adı belirir,
-                // bırakınca kayarak geçer (`KaydirmaliGecis`).
-                child: KaydirmaliGecis(
-                  etkin: allActivePartners.isNotEmpty,
-                  // Çipten seçimde yönlü giriş için (bkz. `sira`).
-                  sira: GorunumCipi.sira(allActivePartners).indexOf(_view),
-                  ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
-                  onIpucuGosterildi: () => ref
-                      .read(kaydirmaIpucuGosterildiProvider.notifier)
-                      .set(true),
-                  // Komşu kart: o görünümün toplamı ve çipi, aynı hesapla.
-                  // Tür filtresi uygulanmaz — kart "o kişinin toplamı"dır.
-                  komsu: (ileri) {
-                    final hedef = GorunumCipi.sonraki(allActivePartners, _view,
-                        ileri: ileri);
-                    return PortfolioSummaryWidget(
-                      state: gorunumDurumu(gorunumVarliklari(hedef)),
+          //
+          // Vitrin açıkken (bayrak `ilk_varlik_kolay`, boş defter, ortak yok)
+          // ₺0 kartı ÇİZİLMEZ (kullanıcı 2026-10-04: "bozuk görünüyor").
+          // Yerini vitrinin karşılama başlığı alır; kural
+          // `IlkVarlikVitrini.toplamKartiYerine`'de (tur da onu sorar).
+          if (!toplamYerineVitrin)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hp),
+                child: TourAnchor(
+                  target: TourTarget.heroKart,
+                  // Ortak varken kartı sağa/sola kaydırmak sıradaki görünüme
+                  // geçer (Ben → ortaklar → Birlikte). Çip ve alt sayfa hedefe
+                  // doğrudan gider; kaydırma "bir sonrakine bak" hareketi.
+                  // Kart parmağı takip eder, kenarda hedefin adı belirir,
+                  // bırakınca kayarak geçer (`KaydirmaliGecis`).
+                  child: KaydirmaliGecis(
+                    etkin: allActivePartners.isNotEmpty,
+                    // Çipten seçimde yönlü giriş için (bkz. `sira`).
+                    sira: GorunumCipi.sira(allActivePartners).indexOf(_view),
+                    ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
+                    onIpucuGosterildi: () => ref
+                        .read(kaydirmaIpucuGosterildiProvider.notifier)
+                        .set(true),
+                    // Komşu kart: o görünümün toplamı ve çipi, aynı hesapla.
+                    // Tür filtresi uygulanmaz — kart "o kişinin toplamı"dır.
+                    komsu: (ileri) {
+                      final hedef = GorunumCipi.sonraki(allActivePartners, _view,
+                          ileri: ileri);
+                      return PortfolioSummaryWidget(
+                        state: gorunumDurumu(gorunumVarliklari(hedef)),
+                        hideBalance: ref.watch(balanceHiddenProvider),
+                        baz: baz,
+                        trailing: GorunumCipi(
+                          partners: allActivePartners,
+                          selectedId: hedef,
+                          toplamlar: gorunumToplamlari,
+                          gizli: ref.watch(balanceHiddenProvider),
+                          onChanged: (_) {},
+                        ),
+                      );
+                    },
+                    onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
+                        allActivePartners, _view,
+                        ileri: ileri)),
+                    // Sayfa noktaları kartın altında; sürüklerken canlı.
+                    altBilgi: (ctx, ilerleme) {
+                      final sira = GorunumCipi.sira(allActivePartners);
+                      return SayfaNoktalari(
+                        sayi: sira.length,
+                        secili: sira.indexOf(_view).clamp(0, sira.length - 1),
+                        ilerleme: ilerleme,
+                      );
+                    },
+                    child: PortfolioSummaryWidget(
+                      state: displayedState,
                       hideBalance: ref.watch(balanceHiddenProvider),
                       baz: baz,
-                      trailing: GorunumCipi(
-                        partners: allActivePartners,
-                        selectedId: hedef,
-                        toplamlar: gorunumToplamlari,
-                        gizli: ref.watch(balanceHiddenProvider),
-                        onChanged: (_) {},
-                      ),
-                    );
-                  },
-                  onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
-                      allActivePartners, _view,
-                      ileri: ileri)),
-                  // Sayfa noktaları kartın altında; sürüklerken canlı.
-                  altBilgi: (ctx, ilerleme) {
-                    final sira = GorunumCipi.sira(allActivePartners);
-                    return SayfaNoktalari(
-                      sayi: sira.length,
-                      secili: sira.indexOf(_view).clamp(0, sira.length - 1),
-                      ilerleme: ilerleme,
-                    );
-                  },
-                  child: PortfolioSummaryWidget(
-                    state: displayedState,
-                    hideBalance: ref.watch(balanceHiddenProvider),
-                    baz: baz,
-                    // Görünüm değişince toplam vurgusu yakılmaz.
-                    vurguKimligi: _view ?? 'birlikte',
-                    // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
-                    trailing: allActivePartners.isEmpty
-                        ? null
-                        : GorunumCipi(
-                            partners: allActivePartners,
-                            selectedId: _view,
-                            toplamlar: gorunumToplamlari,
-                            gizli: ref.watch(balanceHiddenProvider),
-                            onChanged: (v) => setState(() => _view = v),
-                          ),
+                      // Görünüm değişince toplam vurgusu yakılmaz.
+                      vurguKimligi: _view ?? 'birlikte',
+                      // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
+                      trailing: allActivePartners.isEmpty
+                          ? null
+                          : GorunumCipi(
+                              partners: allActivePartners,
+                              selectedId: _view,
+                              toplamlar: gorunumToplamlari,
+                              gizli: ref.watch(balanceHiddenProvider),
+                              onChanged: (v) => setState(() => _view = v),
+                            ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           if (isEmptyOwn)
             SliverToBoxAdapter(
+              // Anahtar: üstteki kart koşullu; anahtarsız sliver indeksi
+              // kayınca vitrin yeniden kurulur ve girişi ikinci kez oynardı.
+              key: const ValueKey('bos-portfoy'),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, SandikSpace.lg, hp, 0),
+                // Kart yokken vitrin şeridin hemen altından başlar.
+                padding: EdgeInsets.fromLTRB(hp,
+                    toplamYerineVitrin ? SandikSpace.sm : SandikSpace.lg, hp,
+                    toplamYerineVitrin ? SandikSpace.md : 0),
                 child: const _EmptyPortfolioCta(),
               ),
             ),
@@ -1887,11 +1904,39 @@ class _SignalBadgeButton extends ConsumerWidget {
 
 /// Boş portföy çağrısı. ("Bu türde varlık yok" dili ana sayfadaki tür
 /// filtresiyle birlikte kalktı, 2026-09-28.)
+///
+/// Bayrak `ilk_varlik_kolay` açıkken yerinde "Canlı fiyat vitrini" durur
+/// ([IlkVarlikVitrini]; kumbara, "Henüz varlık eklenmemiş", çip satırı ve
+/// "Başka bir tür ekle" düğmesi kalkar — bilgiyi vitrin taşıyor). Bayrak
+/// KAPALIYKEN aşağıdaki eski ekran birebir.
 class _EmptyPortfolioCta extends StatelessWidget {
   const _EmptyPortfolioCta();
 
+  void _ekstre(BuildContext context) => pushGuarded(
+        context,
+        adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
+      );
+
   @override
   Widget build(BuildContext context) {
+    if (RemoteConfigService.instance.ilkVarlikKolay) {
+      // Rotalar eski CTA'nınkiyle aynı: ön seçimli form, ön seçimsiz form,
+      // ekstre içe aktarma.
+      return TourAnchor(
+        target: TourTarget.ilkVarlikVitrini,
+        child: IlkVarlikVitrini(
+          onSec: (IlkVarlikSecimi s) => pushGuarded(
+            context,
+            adaptiveRoute<void>(builder: (_) => AddAssetScreen(hizliSecim: s)),
+          ),
+          onDiger: () => pushGuarded(
+            context,
+            adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
+          ),
+          onEkstre: () => _ekstre(context),
+        ),
+      );
+    }
     return Column(
       children: [
         Icon(Icons.savings_outlined, color: context.c.text36, size: 48),
@@ -1906,19 +1951,6 @@ class _EmptyPortfolioCta extends StatelessWidget {
           textAlign: TextAlign.center,
           style: context.t.bodyMedium?.copyWith(color: context.c.text36),
         ),
-        // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): "Ne biriktiriyorsun?"
-        // çipleri birincil yol; aşağıdaki düğme diğer türler (kripto, emtia,
-        // mevduat, BES) için kalır. Rota ve dönüş eskisiyle aynı.
-        if (RemoteConfigService.instance.ilkVarlikKolay) ...[
-          const SizedBox(height: SandikSpace.lg),
-          IlkVarlikSecici(
-            onSec: (IlkVarlikSecimi s) => pushGuarded(
-              context,
-              adaptiveRoute<void>(
-                  builder: (_) => AddAssetScreen(hizliSecim: s)),
-            ),
-          ),
-        ],
         const SizedBox(height: SandikSpace.lg),
         SandikTappable(
           haptic: SandikHaptic.medium,
@@ -1946,10 +1978,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
                   Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
                   const SizedBox(width: SandikSpace.sm),
                   Text(
-                    // Çipler varken bu düğme "diğer türler" yoludur.
-                    RemoteConfigService.instance.ilkVarlikKolay
-                        ? context.l10n.firstAssetOtherType
-                        : context.l10n.addFirstAsset,
+                    context.l10n.addFirstAsset,
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.c.amberText),
@@ -1967,10 +1996,7 @@ class _EmptyPortfolioCta extends StatelessWidget {
         ...[
           const SizedBox(height: SandikSpace.md),
           TextButton.icon(
-            onPressed: () => pushGuarded(
-              context,
-              adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
-            ),
+            onPressed: () => _ekstre(context),
             icon: Icon(Icons.content_paste_go_rounded,
                 size: 18, color: context.c.text58),
             label: Text(

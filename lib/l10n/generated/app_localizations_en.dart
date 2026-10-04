@@ -5583,4 +5583,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orWithEmail => 'or with email';
+
+  @override
+  String get vitrinWelcome => 'Welcome';
+
+  @override
+  String get vitrinTitle => 'What do you own?';
+
+  @override
+  String get vitrinHint =>
+      'Tap and type the amount. Prices are live; your sandık keeps itself up to date.';
+
+  @override
+  String get vitrinLive => 'Live prices';
+
+  @override
+  String get vitrinQuarterGold => 'Quarter gold';
+
+  @override
+  String get vitrinFundHint => 'Every fund on TEFAS';
+
+  @override
+  String get vitrinStockHint => 'Borsa Istanbul';
+
+  @override
+  String get vitrinOtherTypes =>
+      'Crypto, commodities, deposits, pension and more';
+
+  @override
+  String get vitrinOtherTypesShort => 'Crypto, pension and more';
+
+  @override
+  String get vitrinStatementHint => 'Broker PDF, Excel or CSV, all in one go';
+
+  @override
+  String get vitrinStatementHintShort => 'PDF, Excel or CSV in one go';
+
+  @override
+  String get vitrinTapToAdd => 'Tap to add';
+
+  @override
+  String get vitrinPriceUnknown => 'No price yet';
 }
