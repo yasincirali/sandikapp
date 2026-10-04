@@ -34,7 +34,7 @@ import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
 import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/dividend_dialog.dart';
 import '../widgets/quick_adjust_dialog.dart';
@@ -378,7 +378,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 80),
                       children: [
                         if (activePartners.isNotEmpty)
-                          ModernTabSelector(
+                          OrtakSecici(
+                            eski: EskiOrtakSecici.hap,
                             partners: activePartners,
                             selectedId: _view,
                             onChanged: (v) => setState(() {

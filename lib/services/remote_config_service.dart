@@ -207,7 +207,34 @@ class RemoteConfigService {
     // MA20/LOG, derinlik metrikleri) gizler. Kapalıyken tur adımı tek
     // seçici, Başlangıç yalnızca bugünkü üç kartı gizler (eski davranış).
     'seviye_anketi': false,
+
+    // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
+    // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
+    // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
+    // ekran birebir eski kabuğunda (`ModernTabSelector` / `KapsamKisiSecici`).
+    // Seçim sözleşmesi ve yazılan durum iki yolda da AYNI.
+    'tek_ortak_secici': false,
   };
+
+  /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
+  /// Firebase'e dokunmadan açılır. Yalnız debug/profile derlemede okunur;
+  /// release'de (mağaza, TestFlight) HİÇ etkisi yok, uzak değer tek kaynak.
+  /// Neden: bayrak arkasındaki ekranı emülatörde görmek için Console'da kendi
+  /// cihazına koşul yazmak gerekiyordu; emülatörün Firebase kimliği her
+  /// sıfırlamada değişiyor.
+  static const _yerelAcikHam = String.fromEnvironment('RC_ACIK');
+  static final Set<String> _yerelAcik = kReleaseMode || _yerelAcikHam.isEmpty
+      ? const {}
+      : _yerelAcikHam.split(',').map((e) => e.trim()).toSet();
+
+  /// Widget testinde bayrak açmak için (Firebase testte ayağa kalkmaz).
+  @visibleForTesting
+  static Set<String> testAcik = {};
+
+  bool _bayrak(String anahtar) =>
+      testAcik.contains(anahtar) ||
+      _yerelAcik.contains(anahtar) ||
+      (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -373,6 +400,9 @@ class RemoteConfigService {
   bool get ipoCalendarEnabled =>
       _rc?.getBool('ipo_calendar_enabled') ??
       _defaults['ipo_calendar_enabled'] as bool;
+
+  /// Tek ortak seçici görünüşü — bkz. `_defaults['tek_ortak_secici']`.
+  bool get tekOrtakSecici => _bayrak('tek_ortak_secici');
 
   /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
   /// `_defaults['canli_etkinlik_dakikalik']`.

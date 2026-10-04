@@ -146,7 +146,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
         // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
         if (activePartners.isNotEmpty) ...[
-          KapsamKisiSecici(
+          OrtakSecici(
+            eski: EskiOrtakSecici.segment,
             partners: activePartners,
             selectedId: _view,
             // Kapsam değişiminde gün içi TOHUMU da at.

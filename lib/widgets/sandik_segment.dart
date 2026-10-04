@@ -34,6 +34,7 @@ class SandikSegment extends StatelessWidget {
     this.icBosluk = 3,
     this.metinStili,
     this.semantik,
+    this.onSeciliDokunus,
   });
 
   final int adet;
@@ -61,6 +62,11 @@ class SandikSegment extends StatelessWidget {
   /// Ekran okuyucu etiketi; verilirse segmentin kendi anlamı dışlanır ve
   /// bu cümle okunur (ör. "1A, +%3,2").
   final String Function(int i)? semantik;
+
+  /// SEÇİLİ segmente dokunulunca (varsayılan: yok sayılır). Ortak seçicinin
+  /// "Ortaklar" segmenti seçiliyken de listeyi yeniden açabilmesi için
+  /// (`OrtakSecici`, 2026-10-04); öteki segmentlerde verilmez.
+  final ValueChanged<int>? onSeciliDokunus;
 
   /// Seçili/seçisiz metin stili — segment dışı yerlerde de aynı tonda
   /// kalmak için.
@@ -114,7 +120,10 @@ class SandikSegment extends StatelessWidget {
                       secili: i == secili,
                       semantik: semantik?.call(i),
                       onTap: () {
-                        if (i == secili) return;
+                        if (i == secili) {
+                          onSeciliDokunus?.call(i);
+                          return;
+                        }
                         SandikHaptic.selection.perform();
                         onSec(i);
                       },
@@ -154,6 +163,11 @@ class _Segment extends StatelessWidget {
         selected: secili,
         label: semantik,
         excludeSemantics: semantik != null,
+        // Dokunma eylemi AÇIKÇA: `excludeSemantics` alttaki düğmenin kendi
+        // eylemini de siliyor, düğüm okunur ama TalkBack'te etkinleştirilemez
+        // (2026-09-29 emülatör testi #28 — aynı tuzak `KapsamKisiSecici`'de
+        // düzeltilmişti). Etiket verilmeyince düğmenin eylemi zaten yerinde.
+        onTap: semantik != null ? onTap : null,
         child: CupertinoButton(
           minimumSize: SandikTouch.minSize,
           padding: EdgeInsets.zero,
