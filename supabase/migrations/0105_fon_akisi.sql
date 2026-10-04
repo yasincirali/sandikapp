@@ -1,4 +1,4 @@
--- 0103 — Fon para akışı ve büyük giriş/çıkış olayları (Balina B1, 2026-10-04)
+-- 0105 — Fon para akışı ve büyük giriş/çıkış olayları (Balina B1, 2026-10-04)
 --
 -- ## Neden
 -- Kullanıcı isteği: "toplu para girişi" gibi verileri fon bazında göstermek.
@@ -48,7 +48,7 @@ create index if not exists fon_akis_gunluk_tarih_idx
   on public.fon_akis_gunluk (tarih);
 
 comment on table public.fon_akis_gunluk is
-  'TEFAS fonlarinin gunluk pay adedi, buyuklugu ve net para akisi (0103). '
+  'TEFAS fonlarinin gunluk pay adedi, buyuklugu ve net para akisi (0105). '
   'Yalniz akis-gozlem (service_role) yazar, authenticated yalniz okur. 400 gun saklanir.';
 
 -- ── 2) Olaylar ──────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ create index if not exists balina_olay_tarih_idx
   on public.balina_olay (tarih);
 
 comment on table public.balina_olay is
-  'Kurala uyan buyuk para giris/cikis gunleri (0103). Kural _shared/balina.ts; '
+  'Kurala uyan buyuk para giris/cikis gunleri (0105). Kural _shared/balina.ts; '
   'yalniz akis-gozlem (service_role) yazar, authenticated yalniz okur.';
 
 -- ── 3) Tur defteri ──────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ create table if not exists public.fon_akis_tur (
 );
 
 comment on table public.fon_akis_tur is
-  'akis-gozlem tur defteri (0103): gun basina cekilen fon sayisi. Yalniz service_role.';
+  'akis-gozlem tur defteri (0105): gun basina cekilen fon sayisi. Yalniz service_role.';
 
 -- ── 4) RLS ──────────────────────────────────────────────────────────────────
 alter table public.fon_akis_gunluk enable row level security;
@@ -192,7 +192,7 @@ begin
                       where jobname <> 'akis-gozlem' and active) then
     perform cron.alter_job(job_id := jobid, active := false)
        from cron.job where jobname = 'akis-gozlem';
-    raise notice '0103: projede tum cron isleri kapali — akis-gozlem de kapali kuruldu.';
+    raise notice '0105: projede tum cron isleri kapali — akis-gozlem de kapali kuruldu.';
   end if;
 end $$;
 
@@ -203,14 +203,14 @@ declare
 begin
   foreach t in array array['fon_akis_gunluk', 'balina_olay'] loop
     if not has_table_privilege('authenticated', 'public.' || t, 'SELECT') then
-      raise exception '0103: authenticated icin % SELECT GRANT eksik', t;
+      raise exception '0105: authenticated icin % SELECT GRANT eksik', t;
     end if;
     if (select count(*) from pg_policies
          where schemaname = 'public' and tablename = t) <> 1
        or not exists (select 1 from pg_policies
                        where schemaname = 'public' and tablename = t
                          and policyname = t || '_select' and cmd = 'SELECT') then
-      raise exception '0103: % yalniz select politikasini tasimali', t;
+      raise exception '0105: % yalniz select politikasini tasimali', t;
     end if;
   end loop;
 
@@ -218,44 +218,44 @@ begin
     if has_table_privilege('authenticated', 'public.' || t, 'INSERT')
        or has_table_privilege('authenticated', 'public.' || t, 'UPDATE')
        or has_table_privilege('authenticated', 'public.' || t, 'DELETE') then
-      raise exception '0103: authenticated % tablosuna YAZAMAMALI', t;
+      raise exception '0105: authenticated % tablosuna YAZAMAMALI', t;
     end if;
     if has_table_privilege('anon', 'public.' || t, 'SELECT') then
-      raise exception '0103: anon % tablosunu okuyamamali', t;
+      raise exception '0105: anon % tablosunu okuyamamali', t;
     end if;
     if not has_table_privilege('service_role', 'public.' || t, 'INSERT')
        or not has_table_privilege('service_role', 'public.' || t, 'DELETE') then
-      raise exception '0103: service_role icin % INSERT/DELETE GRANT eksik', t;
+      raise exception '0105: service_role icin % INSERT/DELETE GRANT eksik', t;
     end if;
     if not exists (select 1 from pg_class
                     where oid = ('public.' || t)::regclass
                       and relrowsecurity and relforcerowsecurity) then
-      raise exception '0103: % RLS (enable + force) kapali', t;
+      raise exception '0105: % RLS (enable + force) kapali', t;
     end if;
   end loop;
 
   if has_table_privilege('authenticated', 'public.fon_akis_tur', 'SELECT') then
-    raise exception '0103: authenticated fon_akis_tur tablosunu okuyamamali';
+    raise exception '0105: authenticated fon_akis_tur tablosunu okuyamamali';
   end if;
   if exists (select 1 from pg_policies
               where schemaname = 'public' and tablename = 'fon_akis_tur') then
-    raise exception '0103: fon_akis_tur politika tasimamali (yalniz service_role)';
+    raise exception '0105: fon_akis_tur politika tasimamali (yalniz service_role)';
   end if;
 
   if has_function_privilege('authenticated', 'public.akis_sapma(date)', 'EXECUTE')
      or has_function_privilege('anon', 'public.akis_sapma(date)', 'EXECUTE') then
-    raise exception '0103: akis_sapma yalniz service_role tarafindan cagrilabilmeli';
+    raise exception '0105: akis_sapma yalniz service_role tarafindan cagrilabilmeli';
   end if;
   if not has_function_privilege('service_role', 'public.akis_sapma(date)', 'EXECUTE') then
-    raise exception '0103: service_role icin akis_sapma EXECUTE GRANT eksik';
+    raise exception '0105: service_role icin akis_sapma EXECUTE GRANT eksik';
   end if;
   if has_function_privilege('authenticated', 'public.trigger_akis_gozlem()', 'EXECUTE') then
-    raise exception '0103: trigger_akis_gozlem authenticated tarafindan cagrilabilir olmamali';
+    raise exception '0105: trigger_akis_gozlem authenticated tarafindan cagrilabilir olmamali';
   end if;
   if not exists (select 1 from cron.job
                   where jobname = 'akis-gozlem' and schedule = '15 5,8,11,16 * * *') then
-    raise exception '0103: akis-gozlem cron isi kurulmadi';
+    raise exception '0105: akis-gozlem cron isi kurulmadi';
   end if;
 
-  raise notice '0103 tamam: fon_akis_gunluk + balina_olay + RLS + GRANT + cron yerinde.';
+  raise notice '0105 tamam: fon_akis_gunluk + balina_olay + RLS + GRANT + cron yerinde.';
 end $$;

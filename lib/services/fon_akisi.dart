@@ -1,6 +1,6 @@
 /// Fon para akışı özeti (Balina B1, 2026-10-04) — SAF hesap.
 ///
-/// Veri sunucudan gelir (`fon_akis_gunluk`, `balina_olay`; 0103). Günlük net
+/// Veri sunucudan gelir (`fon_akis_gunluk`, `balina_olay`; 0105). Günlük net
 /// akışı ve "büyük giriş/çıkış" kararını SUNUCU verir (`_shared/balina.ts`);
 /// burada yalnızca gösterim için toplanır: haftalara bölme, son haftanın
 /// toplamı, dönem oranları, yatırımcı sayısı farkı, ardışık olay günlerinin

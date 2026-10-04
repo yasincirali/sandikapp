@@ -123,14 +123,14 @@ class SupabaseService {
     return out;
   }
 
-  // ── Fon para akışı (0103) ────────────────────────────────────────────────
+  // ── Fon para akışı (0105) ────────────────────────────────────────────────
 
   /// [fonKodu]'nun [baslangic]'tan bu yana günlük satırları (HAM, artan
   /// tarih). Ayrıştırma ve toplama `fon_akisi.dart`'ta (saf, testli).
   ///
   /// Kişisel veri değil: tablo oturum açmış herkese okunur (RLS `using
   /// (true)`), yazma yalnız `akis-gozlem`. 63 günde en çok ~45 satır.
-  /// Tablo yoksa (0103 henüz koşmadı) istisna çağırana gider; çağıran
+  /// Tablo yoksa (0105 henüz koşmadı) istisna çağırana gider; çağıran
   /// Crashlytics'e yazıp kartı çizmez.
   Future<List<Map<String, dynamic>>> fonAkisGunleri(
     String fonKodu, {
@@ -169,7 +169,7 @@ class SupabaseService {
           .from('balina_olay')
           .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
           .eq('ticker', ticker)
-          // Tablo 0104'ten beri hisse olaylarını da taşıyor.
+          // Tablo 0106'ten beri hisse olaylarını da taşıyor.
           .inFilter('tur', ['fon_giris', 'fon_cikis'])
           .gte('tarih', gun)
           .order('tarih', ascending: false)
@@ -179,7 +179,7 @@ class SupabaseService {
 
   /// BIST hissesinin ([sembol] 'THYAO.IS') [baslangic]'tan bu yana günlük
   /// kapanış ve para hacmi (HAM, artan tarih). Ayrıştırma `hisse_hacmi.dart`.
-  /// Tablo oturum açmış herkese okunur; yazma yalnız `hacim-gozlem` (0104).
+  /// Tablo oturum açmış herkese okunur; yazma yalnız `hacim-gozlem` (0106).
   Future<List<Map<String, dynamic>>> hisseHacimGunleri(
     String sembol, {
     required DateTime baslangic,
@@ -224,7 +224,7 @@ class SupabaseService {
   }
 
   /// Coin'in ([ticker] 'KRIPTO:BTC') günlük Binance USDT hacmi ve alıcı payı
-  /// (HAM, artan tarih). Yazma yalnız `kripto-hacim-gozlem` (0105).
+  /// (HAM, artan tarih). Yazma yalnız `kripto-hacim-gozlem` (0107).
   Future<List<Map<String, dynamic>>> kriptoHacimGunleri(
     String ticker, {
     required DateTime baslangic,

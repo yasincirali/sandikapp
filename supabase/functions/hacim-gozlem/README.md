@@ -3,7 +3,7 @@
 Portföylerde tutulan **BIST hisselerinin** (`ticker` `.IS` ile biten, `type =
 hisse`) günlük kapanış ve hacmini Yahoo'dan okur, `hisse_hacim_gunluk`'a yazar;
 olağandışı hacim günlerini `balina_olay`'a `hisse_hacim_yukselis` /
-`hisse_hacim_dusus` türüyle işler (0104). İstemci kartı ("Hacim radarı")
+`hisse_hacim_dusus` türüyle işler (0106). İstemci kartı ("Hacim radarı")
 Remote Config `balina_radari_acik` bayrağının arkasında.
 
 - Kaynak: Yahoo `chart` ucu, `interval=1d&range=3mo`; sembol başına tek istek,

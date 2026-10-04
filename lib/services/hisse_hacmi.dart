@@ -1,6 +1,6 @@
 /// Hisse hacim radarı özeti (Balina B2, 2026-10-04) — SAF hesap.
 ///
-/// Veri sunucudan gelir (`hisse_hacim_gunluk`, `balina_olay`; 0104). Hangi
+/// Veri sunucudan gelir (`hisse_hacim_gunluk`, `balina_olay`; 0106). Hangi
 /// günün "olağandışı" olduğuna SUNUCU karar verir (`_shared/hacim.ts`); burada
 /// yalnız gösterim için toplanır: son 20 gün, ortalama, son günün katı.
 ///

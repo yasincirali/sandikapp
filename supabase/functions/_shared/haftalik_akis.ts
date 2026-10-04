@@ -8,7 +8,7 @@
 // bütçesini (RETENTION_STRATEJISI.md §7) tüketirdi. Pazartesi özeti zaten
 // haftada bir konuşuyor; söz o hafta varsa akışa da değinir.
 //
-// ── Kaynak: `balina_olay` (0103) ────────────────────────────────────────────
+// ── Kaynak: `balina_olay` (0105) ────────────────────────────────────────────
 // Cümle, fon sayfasındaki "Büyük hareketler" listesiyle AYNI satırlardan
 // kurulur — kullanıcı bildirimi açıp karta baktığında aynı günü ve aynı
 // tutarı görür. Burada yeni eşik YOK; kural `_shared/balina.ts`'te.
@@ -24,7 +24,7 @@ export type HaftaOlayi = {
   tutar: number;
   bildirime_deger: boolean;
   /// `balina_olay.tur`. Verilmişse fon cümlesi yalnız `fon_*`, hacim cümlesi
-  /// yalnız `*_hacim_*` satırlarını alır (tablo 0104'ten beri karışık).
+  /// yalnız `*_hacim_*` satırlarını alır (tablo 0106'ten beri karışık).
   tur?: string;
 };
 

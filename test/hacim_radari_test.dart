@@ -369,7 +369,7 @@ void main() {
       expect(fn, contains('cronSecretZorunlu('));
       expect(fn, contains('cronYetkisiVarMi('));
       expect(fn, isNot(contains('err.message')));
-      final sql = ekranKaynagiSync('supabase/migrations/0104_hisse_hacim.sql');
+      final sql = ekranKaynagiSync('supabase/migrations/0106_hisse_hacim.sql');
       expect(
           sql,
           contains(

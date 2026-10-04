@@ -34,7 +34,7 @@
 //
 // ── Para akışı cümlesi (2026-10-04, `HAFTALIK_AKIS_SATIRI=1` ile açılır) ────
 // Kullanıcının tuttuğu fonlarda geçen hafta büyük para girişi/çıkışı olduysa
-// (`balina_olay`, 0103) özet buna değinir. Yüzde kapıları DEĞİŞMEDİ; kapıya
+// (`balina_olay`, 0105) özet buna değinir. Yüzde kapıları DEĞİŞMEDİ; kapıya
 // takılan haftada cümle varsa yüzdesiz "Haftanın özeti" mesajı gider. Olay
 // başına ayrı push açılmadı (kullanıcı kararı; bkz. `_shared/haftalik_akis.ts`).
 // Bayrak kapalıyken ya da cümle yokken davranış birebir eskisidir.
@@ -588,7 +588,7 @@ Deno.serve(async (request) => {
       }
     } catch (_) { /* herkes akışlı kalır */ }
 
-    // ── 5c) Tutulan fonlardaki büyük para hareketleri (0103) ────────────────
+    // ── 5c) Tutulan fonlardaki büyük para hareketleri (0105) ────────────────
     //
     // Kullanıcı kararı 2026-10-04: olay başına ayrı push yok; haftanın özeti
     // akışa da değinir. Cümle `balina_olay` satırlarından kurulur — fon
@@ -608,7 +608,7 @@ Deno.serve(async (request) => {
           .from('assets')
           .select('id, user_id, type, ticker, name, sub_category, currency, quantity, kind, added_date, ref_asset_id')
           .in('user_id', userIds)
-          // Hisse ve kripto (0104/0105): olağandışı hacim cümlesi için.
+          // Hisse ve kripto (0106/0107): olağandışı hacim cümlesi için.
           .in('type', ['fon', 'bes', 'hisse', 'kripto'])
           .is('deleted_at', null);
         if (fonErr) throw fonErr;

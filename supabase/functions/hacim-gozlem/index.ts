@@ -1,6 +1,6 @@
 // Hacim Gözlem Edge Function — HİSSE HACİM RADARI
 //
-// pg_cron ile iş günleri TR 18:45 ve 22:45'te koşar (0104_hisse_hacim.sql).
+// pg_cron ile iş günleri TR 18:45 ve 22:45'te koşar (0106_hisse_hacim.sql).
 // Portföylerde tutulan BIST hisselerinin günlük kapanış ve hacmini Yahoo'dan
 // okur, `hisse_hacim_gunluk`'a yazar; kurala uyan günleri `balina_olay`'a
 // `hisse_hacim_*` türüyle işler. Kural ve hesap `_shared/hacim.ts`'te.

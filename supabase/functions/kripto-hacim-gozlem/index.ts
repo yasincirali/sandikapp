@@ -1,6 +1,6 @@
 // Kripto Hacim Gözlem Edge Function — ALICI BASKISI VE HACİM
 //
-// pg_cron ile her gün TR 00:20 ve 06:20'de koşar (0105_kripto_hacim.sql).
+// pg_cron ile her gün TR 00:20 ve 06:20'de koşar (0107_kripto_hacim.sql).
 // Portföylerde tutulan coinlerin Binance USDT paritesindeki günlük mumlarını
 // okur; işlem hacmini ve alıcı payını `kripto_hacim_gunluk`'a yazar,
 // olağandışı hacim günlerini `balina_olay`'a `kripto_hacim_*` türüyle işler.
@@ -13,7 +13,7 @@
 // USDT'nin kendisi (ve USDT paritesi olmayan coin) atlanır — satır uydurulmaz.
 //
 // ── Secret ──────────────────────────────────────────────────────────────────
-// `PRICE_ALERTS_CRON_SECRET` PAYLAŞILIR (emsal 0101, 0104).
+// `PRICE_ALERTS_CRON_SECRET` PAYLAŞILIR (emsal 0101, 0106).
 //
 // Yanıt `{ ok, sembol, satir, olay, bos }`. Gövde `{ "dry_run": true }` →
 // okur, yazmaz. Hata ayrıntısı DÖNMEZ.

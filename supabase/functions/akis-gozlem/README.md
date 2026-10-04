@@ -2,7 +2,7 @@
 
 TEFAS'taki **tüm yatırım ve emeklilik fonlarının** günlük pay adedini ve
 toplam değerini okur, net para akışını hesaplayıp `fon_akis_gunluk`'a yazar;
-kurala uyan günleri `balina_olay`'a işler (0103). Amaç: fon sayfasındaki
+kurala uyan günleri `balina_olay`'a işler (0105). Amaç: fon sayfasındaki
 "Para akışı" kartı ve büyük giriş/çıkış listesi. İstemci tarafı Remote Config
 `balina_radari_acik` bayrağının arkasında (varsayılan kapalı).
 
