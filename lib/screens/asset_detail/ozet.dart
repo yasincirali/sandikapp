@@ -380,7 +380,15 @@ extension _DetayOzet on _AssetDetailScreenState {
     final days = _periods[_selectedPeriodIdx].days;
     final ist = _donemIstatistikleri[days];
     final pct = _donemYuzdesi(days, canliBirim);
-    if (ist == null || pct == null) return [_istatistikIskeleti()];
+    // Bayrak açıkken dönem yüzdesi yalnız fiyatın altında (madde 7);
+    // ızgara onu (GÜNLÜK'te "Bugün"ü de) yazmaz — bkz.
+    // `DonemIstatistikIzgarasi.donemGetirisiGizli`.
+    final tekYuzde = RemoteConfigService.instance.varlikIslemCubugu;
+    if (ist == null || pct == null) {
+      // İskelet gerçek ızgarayla aynı boyda kalsın (yerleşim oynamasın).
+      final hucre = !tekYuzde ? 4 : (days == 0 ? 2 : 3);
+      return [_istatistikIskeleti(hucre)];
+    }
     // Aralık canlı fiyatı da kapsar: seri haftalıkken bugünkü fiyat son
     // kapanışın dışına taşabilir; imleç yine çubuğun içinde doğru yerde.
     final canli = canliBirim > 0 ? canliBirim : ist.son;
@@ -393,6 +401,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         gun: days,
         donemPct: pct,
         bugunPct: _gunIciDestekli ? _donemYuzdesi(0, canliBirim) : null,
+        donemGetirisiGizli: tekYuzde,
       ),
       // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
       // seri): çubuk "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi
@@ -448,8 +457,9 @@ extension _DetayOzet on _AssetDetailScreenState {
       );
 
   /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
-  /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni).
-  Widget _istatistikIskeleti() {
+  /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni). [hucre] ızgaranın
+  /// çizeceği hücre sayısı: ikişerli satır, tek kalan satırı doldurur.
+  Widget _istatistikIskeleti(int hucre) {
     Widget kart() => Expanded(
           child: Container(
             padding: const EdgeInsets.all(SandikSpace.smd),
@@ -468,9 +478,16 @@ extension _DetayOzet on _AssetDetailScreenState {
       label: context.l10n.loadingEllipsis,
       child: Column(
         children: [
-          Row(children: [kart(), const SizedBox(width: SandikSpace.sm), kart()]),
-          const SizedBox(height: SandikSpace.sm),
-          Row(children: [kart(), const SizedBox(width: SandikSpace.sm), kart()]),
+          for (var i = 0; i < hucre; i += 2) ...[
+            if (i > 0) const SizedBox(height: SandikSpace.sm),
+            Row(children: [
+              kart(),
+              if (i + 1 < hucre) ...[
+                const SizedBox(width: SandikSpace.sm),
+                kart(),
+              ],
+            ]),
+          ],
         ],
       ),
     );

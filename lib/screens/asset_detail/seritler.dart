@@ -29,7 +29,15 @@ class _PozisyonKarti extends StatelessWidget {
     required this.donemEtiketi,
     required this.donem,
     this.birimGizli = false,
+    this.donemYuzdesiz = false,
   });
+
+  /// Dönem satırı yalnız TUTARI yazsın mı (Sadeleştirme 2, madde 7,
+  /// `varlik_islem_cubugu`). Satırın yüzdesi ürünün fiyat hareketidir —
+  /// fiyatın altındaki dönem yüzdesiyle AYNI sayı (`_donemDegisimi` ile
+  /// `_donemYuzdesi` aynı birim seri, aynı dönem başı). Tutar ise sahibin
+  /// piyasa etkisidir, başka bir ölçü: o kalır.
+  final bool donemYuzdesiz;
 
   /// Miktar ve birim fiyat satırları gizlensin mi — mevduatta "250.000
   /// birim × 1,03 ₺/birim" kullanıcıya bir şey söylemez; tutar satırları
@@ -88,6 +96,7 @@ class _PozisyonKarti extends StatelessWidget {
               // Yüzde ÜRÜNÜN fiyat hareketi, tutar SAHİBİN piyasa etkisi —
               // farklı tabanlar; etiket bunu söyler ("₺0 · fiyat −%7,55").
               yuzdeEtiketi: l.posPeriodPriceMove,
+              yuzdesiz: donemYuzdesiz,
             )
           else
             _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
@@ -116,12 +125,14 @@ class _PozisyonSatiri extends StatelessWidget {
     required ParaBicimi bicim,
     String Function(String yuzde)? yuzdeEtiketi,
     bool vurgulu = false,
+    bool yuzdesiz = false,
   }) {
     final k = kazancSatiri(
         tutar: tutar,
         yuzde: yuzde,
         tutarMetni: bicim.format,
-        yuzdeEtiketi: yuzdeEtiketi);
+        yuzdeEtiketi: yuzdeEtiketi,
+        yuzdesiz: yuzdesiz);
     return _PozisyonSatiri(
       etiket: etiket,
       deger: k?.metin,
@@ -204,14 +215,26 @@ enum _KazancRengi { gain, loss }
 ///
 /// Toplam satırında yüzde aynı tabandandır (kâr / maliyet), etiket yoktur;
 /// iki sayının işareti zaten aynıdır.
+///
+/// [yuzdesiz]: yalnız tutar (dönem satırı, `varlik_islem_cubugu` açıkken —
+/// yüzde fiyatın altında zaten yazıyor). Tutar sıfıra yuvarlanıyorsa
+/// `null` ("Değişim yok"): satırın sorusu sahibin kazancıdır.
 @visibleForTesting
 ({String metin, int yon})? kazancSatiri({
   required double tutar,
   required double yuzde,
   required String Function(double) tutarMetni,
   String Function(String yuzde)? yuzdeEtiketi,
+  bool yuzdesiz = false,
 }) {
   final tutarDuz = tutar.abs().round() == 0;
+  if (yuzdesiz) {
+    if (tutarDuz) return null;
+    return (
+      metin: '${tutar > 0 ? '+' : '−'}${tutarMetni(tutar.abs())}',
+      yon: tutar > 0 ? 1 : -1,
+    );
+  }
   if (tutarDuz && donemDuzMu(yuzde)) return null;
   final t = tutarDuz
       ? tutarMetni(0)

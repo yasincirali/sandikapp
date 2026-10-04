@@ -214,6 +214,13 @@ class RemoteConfigService {
     // "Ayrıntı ekle" altına katlanması. Kapalıyken boş ekran ve form birebir
     // eski.
     'ilk_varlik_kolay': false,
+
+    // Varlık ekranının altında sabit "Al · Sat · Temettü" çubuğu ve dönem
+    // yüzdesinin tek yerde (fiyatın altında) kalması (Sadeleştirme 2,
+    // madde 6/7, 2026-10-04). Bugün bu üç işlem yalnız Portföy kartını sola
+    // kaydırınca bulunuyor — keşfedilmesi zor. Kapalıyken varlık ekranı
+    // birebir eski; kaydırma her iki durumda da kısayol olarak kalır.
+    'varlik_islem_cubugu': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -411,6 +418,11 @@ class RemoteConfigService {
   bool get haftaSonuYurtIciSeri =>
       _rc?.getBool('hafta_sonu_yurt_ici_seri') ??
       _defaults['hafta_sonu_yurt_ici_seri'] as bool;
+
+  /// Varlık ekranının işlem çubuğu ve tek dönem yüzdesi — bkz.
+  /// `_defaults['varlik_islem_cubugu']`. Test/yerel deneme kapıları
+  /// `_bayrak`'ta (RC_ACIK yalnız debug/profile'da).
+  bool get varlikIslemCubugu => _bayrak('varlik_islem_cubugu');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

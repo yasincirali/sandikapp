@@ -35,9 +35,18 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     required this.gun,
     required this.donemPct,
     required this.bugunPct,
+    this.donemGetirisiGizli = false,
   });
 
   final DonemIstatistigi ist;
+
+  /// Dönem yüzdesi ekranda zaten fiyatın altında yazıyorsa `true`: ızgara
+  /// onu ikinci kez yazmaz (Sadeleştirme 2, madde 7, `varlik_islem_cubugu`
+  /// bayrağı — yalnız portföy varlık detayı verir). GÜNLÜK seçiliyken
+  /// "Bugün" hücresi de aynı sayıdır, o da düşer. Kalan hücreler ikişerli
+  /// satırlara dizilir; tek kalan satırı doldurur. Varsayılan `false`:
+  /// varlık sayfası ve bayrak kapalıyken 2×2 birebir eski.
+  final bool donemGetirisiGizli;
 
   /// Seçili dönemin gün sayısı — kısa dönemde oynaklık notu için.
   final int gun;
@@ -52,16 +61,18 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
     final bugun = bugunPct;
 
     final hucreler = <(String, String, Color)>[
-      (
-        l.vsPeriodReturnUpper,
-        fmtPctIsaretli(donemPct),
-        yon(donemPct),
-      ),
-      (
-        l.vsTodayUpper,
-        bugun == null ? '—' : fmtPctIsaretli(bugun),
-        bugun == null ? context.c.text58 : yon(bugun),
-      ),
+      if (!donemGetirisiGizli)
+        (
+          l.vsPeriodReturnUpper,
+          fmtPctIsaretli(donemPct),
+          yon(donemPct),
+        ),
+      if (!donemGetirisiGizli || gun != 0)
+        (
+          l.vsTodayUpper,
+          bugun == null ? '—' : fmtPctIsaretli(bugun),
+          bugun == null ? context.c.text58 : yon(bugun),
+        ),
       (
         l.vsMaxDrawdownUpper,
         fmtPctIsaretli(ist.enBuyukDususPct),
@@ -101,20 +112,23 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
           ),
         );
 
+    final satirlar = <Widget>[
+      for (var i = 0; i < hucreler.length; i += 2) ...[
+        if (i > 0) const SizedBox(height: SandikSpace.sm),
+        Row(children: [
+          hucre(hucreler[i]),
+          if (i + 1 < hucreler.length) ...[
+            const SizedBox(width: SandikSpace.sm),
+            hucre(hucreler[i + 1]),
+          ],
+        ]),
+      ],
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-          hucre(hucreler[0]),
-          const SizedBox(width: SandikSpace.sm),
-          hucre(hucreler[1]),
-        ]),
-        const SizedBox(height: SandikSpace.sm),
-        Row(children: [
-          hucre(hucreler[2]),
-          const SizedBox(width: SandikSpace.sm),
-          hucre(hucreler[3]),
-        ]),
+        ...satirlar,
         if (ist.oynaklikPct == null &&
             gun < DonemIstatistigi.oynaklikIcinAsgariDonemGun) ...[
           const SizedBox(height: SandikSpace.xs2),

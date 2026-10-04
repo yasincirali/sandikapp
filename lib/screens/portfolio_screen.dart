@@ -36,8 +36,7 @@ import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/modern_tab_selector.dart';
 import '../widgets/sandik_error_view.dart';
-import '../widgets/dividend_dialog.dart';
-import '../widgets/quick_adjust_dialog.dart';
+import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
 import 'asset_detail_screen.dart';
 import 'watchlist_screen.dart';
@@ -504,17 +503,20 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       ),
                                       onDelete: (p) =>
                                           _confirmDelete(context, ref, p),
-                                      onAdd: (p) => showQuickAdjustDialog(
+                                      // Varlık ekranının işlem çubuğuyla
+                                      // AYNI kod yolu (`pozisyonIslemiAc`).
+                                      onAdd: (p) => pozisyonIslemiAc(
                                           context, ref,
-                                          asset: p.asDisplayAsset(),
-                                          mode: QuickAdjustMode.add),
-                                      onRemove: (p) => showQuickAdjustDialog(
+                                          varlik: p.asDisplayAsset(),
+                                          islem: PozisyonIslemi.al),
+                                      onRemove: (p) => pozisyonIslemiAc(
                                           context, ref,
-                                          asset: p.asDisplayAsset(),
-                                          mode: QuickAdjustMode.remove),
-                                      onDividend: (p) => showDividendDialog(
-                                          context,
-                                          asset: p.asDisplayAsset()),
+                                          varlik: p.asDisplayAsset(),
+                                          islem: PozisyonIslemi.sat),
+                                      onDividend: (p) => pozisyonIslemiAc(
+                                          context, ref,
+                                          varlik: p.asDisplayAsset(),
+                                          islem: PozisyonIslemi.temettu),
                                     ).kartlar(),
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
@@ -1544,7 +1546,9 @@ class _AssetCardState extends State<_AssetCard>
       ),
     );
 
-    final showsDividend = a.supportsDividend;
+    // Kural varlık ekranının çubuğuyla ortak (`pozisyonIslemleri`).
+    final showsDividend =
+        pozisyonIslemleri(a).contains(PozisyonIslemi.temettu);
 
     if (canEdit) {
       card = ClipRRect(
