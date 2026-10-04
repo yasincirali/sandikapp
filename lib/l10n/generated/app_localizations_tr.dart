@@ -5731,4 +5731,52 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalBelgeAcikRizaAciklama => 'Yurt dışına veri aktarımı';
+
+  @override
+  String get zorunluOkumaIpucu => 'Onaylamak için metni sona kadar oku';
+
+  @override
+  String get zorunluOkumaIpucuKisa => 'Sona kadar oku';
+
+  @override
+  String get zorunluOkumaIlerleme => 'Okuma ilerlemesi';
+
+  @override
+  String get zorunluOkumaOnayla => 'Okudum ve onaylıyorum';
+
+  @override
+  String get zorunluOkumaOnaylaKisa => 'Onaylıyorum';
+
+  @override
+  String get zorunluOkumaRizaVer => 'Okudum ve açık rıza veriyorum';
+
+  @override
+  String get zorunluOkumaRizaVerKisa => 'Açık rıza veriyorum';
+
+  @override
+  String get zorunluOkumaOnaylandi => 'Onaylandı';
+
+  @override
+  String get zorunluOkumaBelgelerBaslik => 'Okuyup onaylaman gerekenler';
+
+  @override
+  String get zorunluOkumaBelgelerAciklama =>
+      'Her metni aç, sonuna kadar oku ve en altta onayla.';
+
+  @override
+  String zorunluOkumaEksik(String belgeler) {
+    return 'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: $belgeler';
+  }
+
+  @override
+  String get zorunluOkumaKutuKilitli =>
+      'Önce yukarıdaki metinlerin hepsini okuyup onayla.';
+
+  @override
+  String zorunluOkumaSayac(int onayli, int toplam) {
+    return '$onayli/$toplam metin onaylandı';
+  }
+
+  @override
+  String get yasalBelgeYatirimUyarisi => 'Yatırım Uyarısı';
 }

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/legal_block.dart';
+import '../services/disclaimer_service.dart';
 import '../services/sunucu_secimi.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sigan_metin.dart';
+import '../widgets/zorunlu_okuma.dart';
 
 export '../models/legal_block.dart';
+export '../widgets/zorunlu_okuma.dart' show ZorunluOkumaSonucu;
 
 // ─── Belgeler ─────────────────────────────────────────────────────────────────
 
@@ -68,6 +73,100 @@ class LegalDocs {
   static List<LegalBlock> get acikRiza => bloklar(YasalBelge.acikRiza);
 }
 
+// ─── Zorunlu okuma: onay istenen metinler ─────────────────────────────────────
+
+/// Onay istenen bir metin — kayıt ekranının ve yeniden onay kapısının
+/// listesi (bayrak `zorunlu_okuma`). Kimlik `YasalTur`; gösterim blokları
+/// tek kaynaktan gelir: belgeler `legal/tr/*.md`, yatırım uyarısı
+/// `disclaimerText` (onay kaydına hash'lenen metnin KENDİSİ). Burada yeni
+/// metin yazılmaz; yalnız ad, ikon ve onay düğmesi etiketi seçilir.
+@immutable
+class ZorunluMetin {
+  const ZorunluMetin({
+    required this.tur,
+    required this.adaylar,
+    required this.ikon,
+    required this.surum,
+    required this.bloklar,
+    required this.onayAdaylari,
+  });
+
+  final String tur;
+
+  /// Liste satırında ve başlıkta adı — sığan yazım adayları (uzundan kısaya).
+  final List<String> adaylar;
+  final IconData ikon;
+  final String surum;
+
+  /// Gösterim blokları — açılış anında kurulur (ülke yer tutucusu bağlı
+  /// sunucudan dolar).
+  final List<LegalBlock> Function() bloklar;
+
+  /// Metnin sonundaki onay düğmesinin yazımları.
+  final List<String> onayAdaylari;
+
+  /// Belgenin adı ve ikonu — kapının bayrak kapalı listesi de bunu okur.
+  static ZorunluMetin belge(AppLocalizations l, YasalBelge b) {
+    final (adaylar, ikon) = switch (b) {
+      YasalBelge.kosullar => ([l.yasalBelgeKosullar], Icons.gavel_rounded),
+      YasalBelge.gizlilik => ([l.yasalBelgeGizlilik], Icons.shield_outlined),
+      YasalBelge.kvkk => (
+          [l.yasalBelgeKvkk, l.yasalBelgeKvkkKisa],
+          Icons.privacy_tip_outlined
+        ),
+      YasalBelge.acikRiza => ([l.yasalBelgeAcikRiza], Icons.public_rounded),
+    };
+    return ZorunluMetin(
+      tur: b.tur,
+      adaylar: adaylar,
+      ikon: ikon,
+      surum: b.surum,
+      bloklar: () => LegalDocs.bloklar(b),
+      // Açık rıza metninin sonunda verilen şey rızadır; düğme bunu söyler
+      // (iki kutulu düzenin eski "Okudum ve açık rıza veriyorum" diliyle).
+      onayAdaylari: b == YasalBelge.acikRiza
+          ? [l.zorunluOkumaRizaVer, l.zorunluOkumaRizaVerKisa]
+          : [l.zorunluOkumaOnayla, l.zorunluOkumaOnaylaKisa],
+    );
+  }
+
+  /// Yatırım uyarısının TAM metni — `disclaimer_acceptances`'a ve
+  /// `yasal_onaylar`'a hash'i yazılan gövdenin aynısı.
+  static ZorunluMetin yatirimUyarisi(AppLocalizations l) => ZorunluMetin(
+        tur: YasalTur.yatirimUyarisi,
+        adaylar: [l.yasalBelgeYatirimUyarisi],
+        ikon: Icons.warning_amber_rounded,
+        surum: disclaimerVersion,
+        bloklar: () => const [LegalBlock.p(disclaimerText)],
+        onayAdaylari: [l.zorunluOkumaOnayla, l.zorunluOkumaOnaylaKisa],
+      );
+
+  /// Dört belge (kapı ve Ayarlar sırasıyla) + istenirse yatırım uyarısı.
+  static List<ZorunluMetin> liste(AppLocalizations l,
+          {required bool yatirimUyarisiDahil}) =>
+      [
+        for (final b in YasalBelge.values) belge(l, b),
+        if (yatirimUyarisiDahil) yatirimUyarisi(l),
+      ];
+}
+
+/// [m]'yi zorunlu okuma kipinde açar. `null`: kullanıcı onaylamadan geri
+/// döndü (ya da çift dokunma koruması ikinci açılışı düşürdü).
+Future<ZorunluOkumaSonucu?> zorunluOkumaAc(
+        BuildContext context, ZorunluMetin m) =>
+    pushGuarded<ZorunluOkumaSonucu>(
+      context,
+      adaptiveRoute(
+        builder: (_) => LegalDocScreen(
+          title: m.adaylar.first,
+          icon: m.ikon,
+          blocks: m.bloklar(),
+          zorunluOkuma: true,
+          onayAdaylari: m.onayAdaylari,
+        ),
+      ),
+    );
+
 // ─── Ekran ────────────────────────────────────────────────────────────────────
 
 class LegalDocScreen extends StatefulWidget {
@@ -81,6 +180,18 @@ class LegalDocScreen extends StatefulWidget {
   final bool confirmMode;
   final String confirmButtonLabel;
 
+  /// Zorunlu okuma (bayrak `zorunlu_okuma`, 2026-10-04): onay düğmesi
+  /// metnin EN SONUNDA, listenin son öğesidir ve ancak sona ulaşılınca
+  /// açılır; okurken altta ilerleme + "sona kadar oku" ipucu durur. Dönüş
+  /// [ZorunluOkumaSonucu]. [confirmMode]'dan ayrı: o kip (alt sabit çubuk,
+  /// `true` dönüşü) bayrak kapalıyken birebir kalır. Açmak için
+  /// [zorunluOkumaAc].
+  final bool zorunluOkuma;
+
+  /// Zorunlu okumada onay düğmesinin yazımları (uzundan kısaya, sığan ilki
+  /// — `SiganMetin`). Boşsa "Okudum ve onaylıyorum".
+  final List<String> onayAdaylari;
+
   const LegalDocScreen({
     super.key,
     required this.title,
@@ -88,6 +199,8 @@ class LegalDocScreen extends StatefulWidget {
     required this.icon,
     this.confirmMode = false,
     this.confirmButtonLabel = 'Okudum ve onaylıyorum',
+    this.zorunluOkuma = false,
+    this.onayAdaylari = const [],
   });
 
   @override
@@ -97,6 +210,9 @@ class LegalDocScreen extends StatefulWidget {
 class _LegalDocScreenState extends State<LegalDocScreen> {
   final _scrollCtrl = ScrollController();
   bool _reachedBottom = false;
+
+  /// Zorunlu okumada ipucu çubuğunun değeri (0..1).
+  double _ilerleme = 0;
 
   @override
   void initState() {
@@ -200,6 +316,40 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
             ),
           ),
           // ── İçerik ──────────────────────────────────────────────────────
+          if (widget.zorunluOkuma) ...[
+            Expanded(
+              child: SonaKadarOkumaIzleyici(
+                // Düğmeden sonraki boşluk: bölüm alt boşluğu + liste alt
+                // boşluğu + güvenli alan (bkz. OkumaOlcumu.sonaUlasti).
+                sonPay: SandikSpace.md +
+                    SandikSpace.sm +
+                    MediaQuery.paddingOf(context).bottom,
+                onSonaUlasti: () => setState(() => _reachedBottom = true),
+                onIlerleme: (v) => setState(() => _ilerleme = v),
+                // Tembel liste (ListView.builder) DEĞİL: onun uzunluğu
+                // kurulmamış öğeler için TAHMİNDİR. Tahmini sona varınca
+                // "okundu" yapışıyor, gerçek metnin sonu daha aşağıda
+                // kalıyordu (test yakaladı: 250 pt okunmadan onay açıldı).
+                // Tek sütun bütün metni bir kez yerleştirir; `extentAfter`
+                // kesin olur. Belge birkaç yüz paragraf — maliyeti ilk
+                // yerleşimde bir kez.
+                child: SingleChildScrollView(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < widget.blocks.length; i++)
+                        _buildBlock(widget.blocks[i], i),
+                      // Son öğe onay bölümü: onay metnin SONUNDA verilir.
+                      _sondakiOnay(context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (!_reachedBottom) OkumaIpucu(ilerleme: _ilerleme),
+          ] else
           Expanded(
             child: NotificationListener<ScrollMetricsNotification>(
               // Kısa belgelerde scroll gerekmiyorsa buton hemen aktifleşsin.
@@ -222,6 +372,84 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
           ),
           if (widget.confirmMode) _buildConfirmBar(context),
         ],
+      ),
+    );
+  }
+
+  /// Zorunlu okumada metnin sonundaki onay bölümü. Görünüş [_buildConfirmBar]
+  /// ile aynı dil (amber dolgu, kilit → onay ikonu); fark yalnız yeri ve
+  /// yüksekliğin sabit olmaması: yazı ×2'de etiket iki satıra inebilir.
+  Widget _sondakiOnay(BuildContext context) {
+    final active = _reachedBottom;
+    final adaylar = widget.onayAdaylari.isEmpty
+        ? [context.l10n.zorunluOkumaOnayla, context.l10n.zorunluOkumaOnaylaKisa]
+        : widget.onayAdaylari;
+    final renk = active
+        ? context.c.onAmber
+        : context.c.onAmber.withValues(alpha: 0.45);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            _kPH, SandikSpace.lg, _kPH, SandikSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Divider(color: context.c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.md),
+            Semantics(
+              // Kendi düğümü: ekran okuyucu düğmeye odaklanınca liste onu
+              // ekrana getirir (`showOnScreen`) → sona ulaşıldı sayılır.
+              container: true,
+              button: true,
+              enabled: active,
+              child: SandikBasma(
+                behavior: HitTestBehavior.opaque,
+                onTap: active
+                    ? () => Navigator.pop(
+                        context,
+                        const ZorunluOkumaSonucu(
+                            onaylandi: true, sonunaKadarOkundu: true))
+                    : null,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.md, vertical: SandikSpace.sm2),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? context.c.amberFill
+                        : context.c.amberFill.withValues(alpha: 0.30),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        active
+                            ? Icons.check_circle_rounded
+                            : Icons.lock_outline_rounded,
+                        size: 18,
+                        color: renk,
+                      ),
+                      const SizedBox(width: SandikSpace.sm),
+                      Flexible(
+                        child: SiganMetin(
+                          adaylar,
+                          textAlign: TextAlign.center,
+                          style: context.t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: renk,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4043,5 +4043,33 @@
   "@yasalBelgeAcikRiza": {
     "description": "legal/tr/ACIK_RIZA_METNI.md (yurt dışı aktarım açık rızası) — kayıttaki ve kapıdaki 'açık rıza' bağlantısı ile Ayarlar › Yasal bunu açar."
   },
-  "yasalBelgeAcikRizaAciklama": "Yurt dışına veri aktarımı"
+  "yasalBelgeAcikRizaAciklama": "Yurt dışına veri aktarımı",
+  "zorunluOkumaIpucu": "Onaylamak için metni sona kadar oku",
+  "@zorunluOkumaIpucu": {
+    "description": "Zorunlu okuma (bayrak zorunlu_okuma): sona ulaşılana kadar ekranın altındaki ipucu. Onay düğmesi metnin sonunda."
+  },
+  "zorunluOkumaIpucuKisa": "Sona kadar oku",
+  "zorunluOkumaIlerleme": "Okuma ilerlemesi",
+  "zorunluOkumaOnayla": "Okudum ve onaylıyorum",
+  "zorunluOkumaOnaylaKisa": "Onaylıyorum",
+  "zorunluOkumaRizaVer": "Okudum ve açık rıza veriyorum",
+  "zorunluOkumaRizaVerKisa": "Açık rıza veriyorum",
+  "zorunluOkumaOnaylandi": "Onaylandı",
+  "zorunluOkumaBelgelerBaslik": "Okuyup onaylaman gerekenler",
+  "zorunluOkumaBelgelerAciklama": "Her metni aç, sonuna kadar oku ve en altta onayla.",
+  "zorunluOkumaEksik": "Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}",
+  "@zorunluOkumaEksik": {
+    "placeholders": {
+      "belgeler": {"type": "String"}
+    }
+  },
+  "zorunluOkumaKutuKilitli": "Önce yukarıdaki metinlerin hepsini okuyup onayla.",
+  "zorunluOkumaSayac": "{onayli}/{toplam} metin onaylandı",
+  "@zorunluOkumaSayac": {
+    "placeholders": {
+      "onayli": {"type": "int"},
+      "toplam": {"type": "int"}
+    }
+  },
+  "yasalBelgeYatirimUyarisi": "Yatırım Uyarısı"
 }

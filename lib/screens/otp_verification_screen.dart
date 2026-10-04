@@ -194,18 +194,29 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         email: widget.email,
         token: code,
       );
-      // Sorumluluk reddi KAYIT ekranında zaten onaylandı ("Yasal Koşullar"
-      // kutusu disclaimer metnini içeriyor). Eskiden OTP sonrası
-      // DisclaimerAcceptanceScreen ikinci kez soruyordu — aynı oturumda
-      // iki kez aynı onay. Kaydı burada düşüyoruz ki _AuthGate kapısı
-      // geçsin; hata olursa eski davranış (ekran sorar) yedek olarak kalır.
+      // Sorumluluk reddi KAYIT ekranında onaylandıysa OTP sonrası
+      // DisclaimerAcceptanceScreen ikinci kez sormasın — aynı oturumda iki
+      // kez aynı onay. Kaydı burada düşüyoruz ki _AuthGate kapısı geçsin;
+      // hata olursa eski davranış (ekran sorar) yedek olarak kalır.
       //
       // Gerçek sürüm/dil/platform ve hata raporu serviste (2026-09-23
       // denetimi U18); başarısızlık akışı durdurmaz.
-      final onayKaydedildi = await DisclaimerService.instance.kabulKaydet(
-        userId: user.id,
-        locale: etkinDil,
-      );
+      //
+      // YALNIZ yatırım uyarısının TAM metni kayıt ekranında okunup
+      // onaylandıysa (zorunlu okuma, bayrak `zorunlu_okuma`). 2026-10-04'e
+      // kadar her kayıtta yazılıyordu; ama kutuda yalnız ÖZET vardı ve kayıt
+      // TAM metnin (`disclaimerText`) hash'ini taşıyordu — gösterilmemiş
+      // metne onay. Bayraktan BAĞIMSIZ düzeltme: tam metin gösterilmediyse
+      // kayıt yazılmaz, `_AuthGate` uyarıyı `DisclaimerAcceptanceScreen`'de
+      // tam metniyle sorar (Apple/Google ve eski hesapların zaten geçtiği
+      // yol). Bedeli bayrak kapalıyken e-posta kaydında bir ekran daha.
+      final kayitOnayi = widget.kayitOnayi;
+      final onayKaydedildi = kayitOnayi != null &&
+          kayitOnayi.yatirimUyarisiOnaylandi &&
+          await DisclaimerService.instance.kabulKaydet(
+            userId: user.id,
+            locale: etkinDil,
+          );
       // Kayıt kutularının ve andıkları belgelerin onayı (0102). Oturum
       // `verifyRegistrationOtp` ile açıldı; RPC `auth.uid()`'yi buradan
       // okur. Beklenmez ve fırlatmaz: kapı (`disclaimer_acceptances`)
@@ -213,7 +224,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // `userId`: yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`) bu
       // yazımı bekler ve başarıda kapı izini koyar — az önce aynı sürümleri
       // onaylayan yeni kullanıcı kapıyı görmez.
-      final kayitOnayi = widget.kayitOnayi;
       if (kayitOnayi != null) {
         CrashReporter.arkaPlan(
             YasalOnayService.instance.kayitOnaylariniKaydet(kayitOnayi,
