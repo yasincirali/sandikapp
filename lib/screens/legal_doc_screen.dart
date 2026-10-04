@@ -1,78 +1,43 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
+import '../models/legal_block.dart';
+import '../services/disclaimer_service.dart';
 import '../services/sunucu_secimi.dart';
+import '../services/yasal_metin_katalogu.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sigan_metin.dart';
+import '../widgets/zorunlu_okuma.dart';
 
-// ─── Belge veri modeli ────────────────────────────────────────────────────────
-
-enum LegalBlockType {
-  h1,
-  h2,
-  h3,
-  paragraph,
-  tableRow,
-  tableHeader,
-  divider,
-  meta
-}
-
-class LegalBlock {
-  final LegalBlockType type;
-  final String text;
-  final List<String> cells;
-
-  const LegalBlock.p(this.text)
-      : type = LegalBlockType.paragraph,
-        cells = const [];
-  const LegalBlock.h1(this.text)
-      : type = LegalBlockType.h1,
-        cells = const [];
-  const LegalBlock.h2(this.text)
-      : type = LegalBlockType.h2,
-        cells = const [];
-  const LegalBlock.h3(this.text)
-      : type = LegalBlockType.h3,
-        cells = const [];
-  const LegalBlock.meta(this.text)
-      : type = LegalBlockType.meta,
-        cells = const [];
-  const LegalBlock.divider()
-      : type = LegalBlockType.divider,
-        text = '',
-        cells = const [];
-  const LegalBlock.tableHeader(this.cells)
-      : type = LegalBlockType.tableHeader,
-        text = '';
-  const LegalBlock.tableRow(this.cells)
-      : type = LegalBlockType.tableRow,
-        text = '';
-  const LegalBlock._(this.type, this.text, this.cells);
-
-  /// Yer tutucuları doldurulmuş kopya — `LegalDocs._yerlestir`.
-  LegalBlock _doldur(String Function(String) f) =>
-      LegalBlock._(type, f(text), [for (final c in cells) f(c)]);
-}
+export '../models/legal_block.dart';
+export '../widgets/zorunlu_okuma.dart' show ZorunluOkumaSonucu;
 
 // ─── Belgeler ─────────────────────────────────────────────────────────────────
 
+/// Uygulamada gösterilen yasal belgeler — gösterim cephesi.
+///
+/// ## Tek kaynak: `legal/tr/*.md` (kullanıcı kararı 2026-10-04)
+/// *"Webdekiyle de her zaman eşleyelim."* 1.1'e kadar bu sınıf belgeleri
+/// elle yazılmış `const LegalBlock` listeleri olarak taşıyordu — web
+/// metninin kısaltılmış bir kopyası (Koşullar web'de 19, burada 14 bölüm).
+/// Artık metin YOK: bloklar md'den ayrıştırılır ([YasalBelge.sablonBloklari],
+/// `yasal_md.dart`), burada yalnız yer tutucular doldurulur. Yöntemin
+/// gerekçesi `yasal_metin_katalogu.dart` başında.
 class LegalDocs {
-  static const _company = 'Yasin Cirali (Bireysel Geliştirici)';
-  static const _email = 'sandikapp.destek@gmail.com';
   static const _web = 'yasincirali.github.io/sandikapp';
-  static const _address = 'Türkiye';
 
   // ── Verinin durduğu ülke (köprü sürümü, K1 — 2026-09-27) ────────────────
   //
   // Metin eskiden "ABD" yazıyordu; proje aslında Japonya'daydı (Tokyo),
   // Frankfurt'a taşınıyor. Rıza (KVKK 9) verinin GERÇEK yerine verilir, bu
-  // yüzden ülke bağlanılan projeden gelir. Belgeler `const` ŞABLON kalır;
-  // yer tutucular gösterimde doldurulur. Bilinmeyen proje (test, yerel
-  // yığın) için ülke uydurulmaz — genel ifade.
-  // ⚠️ Hukuki metin: web'deki eşleri (legal/*.md) taşıma Faz 5'te; metnin
-  // tamamı bir hukukçuya gösterilmeli (7499 s. Kanun, 1 Haziran 2024).
-  static const _ulke = '{SUPABASE_ULKE}';
-  static const _ulkede = '{SUPABASE_ULKEDE}';
+  // yüzden ülke bağlanılan projeden gelir. md ŞABLON kalır (`{SUPABASE_ULKE}`,
+  // `{SUPABASE_ULKEDE}`); yer tutucular gösterimde doldurulur. Bilinmeyen
+  // proje (test, yerel yığın) için ülke uydurulmaz — genel ifade. Web aynı
+  // yer tutucuyu iki sunucunun durumunu anlatan ifadeyle doldurur
+  // (`docs/_build_legal.py` → `YER_TUTUCULAR`).
+  // ⚠️ Hukuki metin: metnin tamamı bir hukukçuya gösterilmeli (7499 s.
+  // Kanun, 1 Haziran 2024).
 
   /// Gösterimde yer tutuculara giren değerler — anahtar süslü parantezsiz
   /// ad (`SUPABASE_ULKE`). Yasal onay kaydı (`YasalOnayService`) bunu
@@ -86,472 +51,121 @@ class LegalDocs {
     };
   }
 
-  static List<LegalBlock> _yerlestir(List<LegalBlock> sablon) {
+  /// [belge]'nin gösterim blokları — yer tutucular bağlı sunucunun
+  /// ülkesiyle doldurulmuş. Yer tutucusu olmayan belge şablonun KENDİSİNİ
+  /// döner (aynı nesne).
+  static List<LegalBlock> bloklar(YasalBelge belge) {
+    final sablon = belge.sablonBloklari;
+    if (!belge.md.contains('{')) return sablon;
     final d = yerTutucuDegerleri();
-    String f(String s) => s
-        .replaceAll(_ulke, d['SUPABASE_ULKE']!)
-        .replaceAll(_ulkede, d['SUPABASE_ULKEDE']!);
-    return [for (final b in sablon) b._doldur(f)];
+    String f(String s) {
+      var r = s;
+      d.forEach((ad, deger) => r = r.replaceAll('{$ad}', deger));
+      return r;
+    }
+
+    return [for (final b in sablon) b.doldur(f)];
   }
 
-  static List<LegalBlock> get privacy => _yerlestir(_privacy);
-  static List<LegalBlock> get kvkk => _yerlestir(_kvkk);
-
-  /// Yer tutucuları DOLDURULMAMIŞ şablonlar — yasal metin kataloğunun
-  /// (`yasal_metin_katalogu.dart`) kaynağı. Veritabanına (0102) ve hash'e
-  /// şablon girer; gösterim değişkenleri onay satırında ayrıca durur.
-  static List<LegalBlock> get privacySablonu => _privacy;
-  static List<LegalBlock> get kvkkSablonu => _kvkk;
-
-  // ── Gizlilik Politikası ──────────────────────────────────────────────────
-
-  static const List<LegalBlock> _privacy = [
-    LegalBlock.h1('Gizlilik Politikası'),
-    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
-    LegalBlock.divider(),
-    LegalBlock.h2('1. Veri Sorumlusu'),
-    LegalBlock.p(
-        'Bu uygulamayı (sandık) $_company ("biz", "geliştirici") işletmektedir.'),
-    LegalBlock.tableHeader(['Bilgi', 'Detay']),
-    LegalBlock.tableRow(['E-posta', _email]),
-    LegalBlock.tableRow(['Web', _web]),
-    LegalBlock.tableRow(['Adres', _address]),
-    LegalBlock.p(
-        'KVKK Madde 3(1)(ı) uyarınca veri sorumlusu sıfatıyla hareket ediyoruz.'),
-    LegalBlock.h2('2. Bu Politikanın Kapsamı'),
-    LegalBlock.p(
-      'Bu politika; Uygulamayı indirip kullandığınızda hangi kişisel verilerinizi topladığımızı, '
-      'neden topladığımızı, kimlerle paylaştığımızı, ne kadar sakladığımızı ve yasal haklarınızı açıklar. '
-      'Politika; KVKK (6698 sayılı Kanun), GDPR (EU 2016/679), Apple App Store Privacy Guidelines ve '
-      'Google Play Data Safety gerekliliklerini karşılayacak şekilde hazırlanmıştır.',
-    ),
-    LegalBlock.h2('3. Topladığımız Veriler'),
-    LegalBlock.h3('3.1 Hesap Verileri (zorunlu)'),
-    LegalBlock.tableHeader(['Veri', 'Amaç', 'Hukuki Dayanak']),
-    LegalBlock.tableRow([
-      'E-posta adresi',
-      'Hesap oluşturma, oturum açma, şifre sıfırlama',
-      'KVKK 5(2)(c) — sözleşme'
-    ]),
-    LegalBlock.tableRow(['Şifre (hash)', 'Kimlik doğrulama', 'KVKK 5(2)(c)']),
-    LegalBlock.tableRow(
-        ['Görünen ad', 'Ortaklık özelliğinde isim göstermek', 'KVKK 5(2)(c)']),
-    LegalBlock.h3('3.2 Uygulama İçeriği Verileri'),
-    LegalBlock.tableHeader(['Veri', 'Amaç']),
-    LegalBlock.tableRow([
-      'Varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)',
-      'Portföy takibi'
-    ]),
-    LegalBlock.tableRow(['Portföy snapshot geçmişi', 'Performans grafikleri']),
-    LegalBlock.tableRow([
-      'Dönemsel getiri (%), varlık türü payları (%) ve fon kodu bazında paylar (%) — sunucuda hesaplanır',
-      'Zirvedeki Portföyler (anonim karşılaştırma, bkz. 5.1)'
-    ]),
-    LegalBlock.tableRow(
-        ['Ortaklık davet kodları ve bağlantılar', 'Çoklu kullanıcı paylaşımı']),
-    LegalBlock.h3('3.3 Cihaz ve Bildirim Verileri'),
-    LegalBlock.tableHeader(['Veri', 'Amaç']),
-    LegalBlock.tableRow([
-      'Push bildirim token\'ı (FCM)',
-      'Ortaklık daveti ve sinyal bildirimleri'
-    ]),
-    LegalBlock.tableRow(
-        ['Cihaz modeli, OS sürümü, uygulama sürümü', 'Hata teşhisi']),
-    LegalBlock.tableRow(['Yerel ayar (locale)', 'Dil / tarih formatı']),
-    LegalBlock.h3('3.4 Toplamadığımız Veriler'),
-    LegalBlock.p(
-      'Konum · Telefon defteri · Fotoğraf / kamera · Reklam tanımlayıcısı · '
-      'Üçüncü taraf reklam ağı izleme verisi · Banka hesap bilgileri.',
-    ),
-    LegalBlock.h2('4. Verilerin Kullanım Amaçları'),
-    LegalBlock.p(
-      '1. Hesabınızı oluşturmak ve oturumunuzu sürdürmek\n'
-      '2. Portföyünüzü yerel cihazınızda ve sunucularımızda saklamak\n'
-      '3. Performans grafiklerinizi hesaplamak\n'
-      '4. Ortaklık davetlerinizi diğer kullanıcılara iletmek\n'
-      '5. Bildirim göndermek (yalnızca açıkça izin verdiyseniz)\n'
-      '6. Yasal yükümlülüklerimizi yerine getirmek\n'
-      '7. Hata teşhisi ve servis kalitesinin iyileştirilmesi\n'
-      '8. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin '
-      'getirisini ve varlık türü dağılımını, açık rıza veren katılımcılar '
-      'arasında anonim olarak göstermek (KVKK 5(1))',
-    ),
-    LegalBlock.h2('5. Üçüncü Taraflarla Paylaşım'),
-    LegalBlock.tableHeader(['Hizmet', 'Sağlayıcı', 'Amaç', 'Yer']),
-    LegalBlock.tableRow([
-      'Backend & veritabanı',
-      'Supabase Inc.',
-      'Saklama, kimlik doğrulama',
-      '$_ulke (AWS)'
-    ]),
-    LegalBlock.tableRow([
-      'Push bildirimi',
-      'Google Firebase (FCM)',
-      'Bildirim teslimi',
-      'Küresel'
-    ]),
-    LegalBlock.tableRow(
-        ['Hata raporu', 'Firebase Crashlytics', 'Çökme teşhisi', 'Küresel']),
-    LegalBlock.tableRow([
-      'Fiyat verisi',
-      'Yahoo Finance, TEFAS',
-      'Fiyat çekme (kişisel veri aktarılmaz)',
-      'Küresel'
-    ]),
-    LegalBlock.p(
-      'Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder.',
-    ),
-    // 2026-10-01 (0091): zirve havuzu AÇIK RIZAYA dayanır — kullanıcı kararı:
-    // "açık rıza ve in-app açıklama yazalım". 0083'teki beyansız havuz ve
-    // 5(2)(c)+(f) dayanağı kalktı; metin legal/tr/*.md ile aynı.
-    LegalBlock.h3('5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)'),
-    LegalBlock.p(
-      'Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1\'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.',
-    ),
-    LegalBlock.h2('6. Yurt Dışına Veri Aktarımı'),
-    LegalBlock.p(
-      'Supabase verileri $_ulkede, Firebase verileri ABD\'de barındırıldığından verileriniz Türkiye dışına aktarılır. '
-      'Bu ülkeler KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde olmadığından aktarım '
-      'KVKK Madde 9(1) kapsamında açık rızanıza dayanmaktadır.',
-    ),
-    LegalBlock.h2('7. Veri Saklama Süreleri'),
-    LegalBlock.tableHeader(['Veri', 'Süre']),
-    LegalBlock.tableRow(['Hesap verileri', 'Hesap silinene kadar']),
-    LegalBlock.tableRow(['Varlık kayıtları', 'Hesap silinene kadar']),
-    LegalBlock.tableRow(['Snapshot geçmişi', 'Son 365 gün (rolling)']),
-    LegalBlock.tableRow([
-      'Zirve havuzu ölçümleri (getiri %, tür payı %)',
-      'Son 365 gün (rolling); rıza geri alınınca ya da hesap silinince hemen'
-    ]),
-    LegalBlock.tableRow([
-      'Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı)',
-      'Hesap silindikten sonra 3 yıl (TBK 146)'
-    ]),
-    LegalBlock.tableRow(['Push token', 'Logout / uninstall\'a kadar']),
-    LegalBlock.tableRow(['Hata logları', '90 gün']),
-    LegalBlock.p(
-      'Hesabınızı sildiğinizde, yukarıda özel saklama süresi belirtilenlerin haricindeki tüm '
-      'verileriniz 30 gün içinde kalıcı olarak silinir.',
-    ),
-    LegalBlock.h2('8. Haklarınız (KVKK Madde 11 / GDPR Madde 15-22)'),
-    LegalBlock.p(
-      'Bilgi alma · Erişim · Düzeltme · Silme (right to erasure) · Taşınabilirlik (GDPR) · '
-      'İşlemeye itiraz (GDPR) · Açık rızayı geri çekme haklarına sahipsiniz.\n\n'
-      'Başvuru: $_email adresine veya Profil → Ayarlar → "Hesabımı Sil" üzerinden.\n'
-      'KVKK Madde 13(2) uyarınca taleplerinize 30 gün içinde yanıt veririz.\n\n'
-      'Şikayet: Kişisel Verileri Koruma Kurumu — kvkk.gov.tr',
-    ),
-    LegalBlock.h2('9. Veri Güvenliği'),
-    LegalBlock.p(
-      'TLS 1.2+ aktarım şifrelemesi · AES-256 at-rest şifreleme · Bcrypt şifre hash · '
-      'Row-Level Security (RLS) erişim kontrolü · Rate limiting · '
-      '10 dk idle session timeout · PII maskeleme (üretim logları).\n\n'
-      'Veri ihlali tespiti halinde 72 saat içinde KVK Kurulu\'na ve etkilenen kullanıcılara bildirim yapılır.',
-    ),
-    LegalBlock.h2('10. Yatırım Tavsiyesi Reddi'),
-    LegalBlock.p(
-      'sandık bir portföy takip aracıdır. SPK lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. '
-      'Uygulamada gösterilen fiyat, performans, sinyal ve grafikler bilgilendirme amaçlıdır ve '
-      'yatırım tavsiyesi niteliği taşımaz.',
-    ),
-    LegalBlock.h2('11. İletişim'),
-    LegalBlock.p('E-posta: $_email\nWeb: $_web'),
-    LegalBlock.divider(),
-    LegalBlock.meta(
-      'Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır.\nYorum farklılığında Türkçe versiyon esastır.',
-    ),
-  ];
-
-  // ── Kullanım Koşulları ───────────────────────────────────────────────────
-
-  static const List<LegalBlock> terms = [
-    LegalBlock.h1('Kullanım Koşulları'),
-    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
-    LegalBlock.divider(),
-    LegalBlock.h2('1. Taraflar ve Kabul'),
-    LegalBlock.p(
-      'Bu Kullanım Koşulları ("Koşullar"), $_company ("Geliştirici", "biz") tarafından sunulan '
-      'sandık mobil uygulaması ("Uygulama") ile uygulamayı kullanan gerçek kişi ("Kullanıcı", "siz") '
-      'arasındaki sözleşmedir.\n\n'
-      'Uygulamayı indirip hesap oluşturarak bu Koşulları, Gizlilik Politikası\'nı ve '
-      'KVKK Aydınlatma Metni\'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.',
-    ),
-    LegalBlock.h2('2. Hizmetin Tanımı'),
-    LegalBlock.p(
-      'sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bir kişisel portföy izleme aracıdır:\n\n'
-      '· BIST hisse senetleri\n'
-      '· TEFAS yatırım fonları\n'
-      '· Döviz (USD, EUR, GBP, vb.)\n'
-      '· Kıymetli madenler (altın)\n\n'
-      'Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz '
-      'sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.\n\n'
-      'Zirvedeki Portföyler (isteğe bağlı): uygulama içinde açık rıza verirseniz dönemsel getiriniz ve varlık türü '
-      'paylarınız anonim bir karşılaştırma havuzunda değerlendirilir (portföy 5 günden eski, en az 2 farklı varlık); '
-      'en çok kazanan portföylerin yalnızca sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik '
-      've tutar olmadan diğer katılımcılara gösterilir; karşılığında siz de katılımcıların aynı anonim bilgilerini '
-      'görürsünüz (ayrıntı: Gizlilik Politikası 5.1). İstediğiniz an ayrılabilirsiniz; katılmamak başka hiçbir '
-      'özelliği etkilemez.',
-    ),
-    LegalBlock.h2('3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi'),
-    LegalBlock.p(
-      'sandık BİR YATIRIM DANIŞMANI, ARACI KURUM VEYA PORTFÖY YÖNETİM ŞİRKETİ DEĞİLDİR.\n\n'
-      '· Geliştirici, Sermaye Piyasası Kurulu (SPK) tarafından lisanslı bir kurum değildir.\n'
-      '· Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler yalnızca bilgilendirme amaçlıdır.\n'
-      '· Hiçbir içerik yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık niteliği taşımaz.\n'
-      '· Verilerin doğruluğu için garanti verilmez; üçüncü taraf veri sağlayıcılarının verileri olduğu gibi sunulur.\n'
-      '· Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.\n'
-      '· Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan hiçbir '
-      'kâr/zarardan Geliştirici sorumlu tutulamaz.',
-    ),
-    LegalBlock.h2('4. Hesap'),
-    LegalBlock.h3('4.1 Hesap Açma'),
-    LegalBlock.p(
-        '· 18 yaşından büyük olmalısınız.\n· Geçerli bir e-posta adresi sağlamalısınız.\n· Doğru ve güncel bilgi vermelisiniz.'),
-    LegalBlock.h3('4.2 Hesap Güvenliği'),
-    LegalBlock.p(
-      '· Şifrenizi kimseyle paylaşmayın.\n'
-      '· Şifrenizin güvenliğinden siz sorumlusunuz.\n'
-      '· Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi bilgilendirin.\n'
-      '· Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.',
-    ),
-    LegalBlock.h2('5. Ortaklık Özelliği'),
-    LegalBlock.p(
-      'Uygulamada bir başka kullanıcıyı "ortak" olarak ekleyebilirsiniz. Bu özellik aktive edildiğinde:\n\n'
-      '· Ortağınız sizin portföyünüzdeki varlıkları görebilir.\n'
-      '· Siz de ortağınızın portföyünü görebilirsiniz.\n'
-      '· Bu paylaşım iki tarafın da onayıyla başlar (davet kodu sistemi).\n'
-      '· İstediğiniz zaman ortaklığı sonlandırabilirsiniz.\n\n'
-      'Davet kodunuzu yalnızca güvendiğiniz kişiyle paylaşın.',
-    ),
-    LegalBlock.h2('6. Kabul Edilebilir Kullanım'),
-    LegalBlock.p(
-      'Uygulamayı kullanırken yapılmaması gerekenler:\n\n'
-      '1. Yasalara aykırı amaçlarla kullanmak\n'
-      '2. Başkasının hesabına yetkisiz erişim sağlamaya çalışmak\n'
-      '3. Uygulamayı tersine mühendislik, decompile veya hack etmek\n'
-      '4. Otomatik scraping, bot veya zararlı yazılım kullanmak\n'
-      '5. Altyapıya aşırı yük bindiren talepler göndermek (DoS)\n'
-      '6. Sahte veya yanıltıcı bilgi girmek\n'
-      '7. Kara para aklama veya terör finansmanı amacıyla kullanmak\n\n'
-      'Bu kuralların ihlali halinde hesabınız bildirimsiz kapatılabilir.',
-    ),
-    LegalBlock.h2('7. Üçüncü Taraf Servisleri'),
-    LegalBlock.p(
-      'Uygulama; Supabase (backend), Firebase (bildirim), Yahoo Finance / TEFAS (fiyat verisi) '
-      'gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri veya hataları nedeniyle '
-      'oluşacak sorunlardan Geliştirici sorumlu değildir.',
-    ),
-    LegalBlock.h2('8. Fikri Mülkiyet'),
-    LegalBlock.p(
-      'Uygulamanın tasarımı, kodu, logosu, marka ismi ve içeriği Geliştiriciye aittir. '
-      '"sandık" markası, logo ve görsel kimliği telif hakkı ve marka koruması altındadır. '
-      'Kendi girdiğiniz veriler (varlık kayıtlarınız) size aittir.',
-    ),
-    LegalBlock.h2('9. Hizmet Değişiklikleri ve Sona Erdirme'),
-    LegalBlock.p(
-      '· Uygulamayı güncelleme, özellik kaldırma veya ekleme hakkı saklıdır.\n'
-      '· Hizmeti tamamen sonlandırma kararı alınırsa en az 30 gün önceden bildirim yapılır.\n'
-      '· İstediğiniz zaman hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).\n'
-      '· Koşulları ihlal ettiğiniz tespit edilirse hesabınız bildirimsiz askıya alınabilir.',
-    ),
-    LegalBlock.h2('10. Sorumluluğun Sınırlandırılması'),
-    LegalBlock.p(
-      'Uygulama "olduğu gibi" (as-is) sunulur; her türlü açık veya zımni garanti reddedilir. '
-      'Geliştiricinin toplam sorumluluğu, son 12 ayda ödenen toplam tutarla sınırlıdır '
-      '(ücretsiz kullanımda sıfır TL). Dolaylı, arızi veya cezai zararlardan sorumlu tutulamayız.\n\n'
-      'İstisna: Kasıtlı kusur veya ağır ihmalden doğan zararlar; tüketici hukuku kapsamındaki '
-      'devredilemez haklar bu sınırlamadan etkilenmez.',
-    ),
-    LegalBlock.h2('11. Tüketici Hakları'),
-    LegalBlock.p(
-      '6502 sayılı Tüketicinin Korunması Hakkında Kanun (TKHK) kapsamındaki devredilemez '
-      'haklarınız bu Koşullarla sınırlandırılamaz. Tüketici Hakem Heyeti veya Tüketici '
-      'Mahkemesi\'ne başvuru hakkınız saklıdır.',
-    ),
-    LegalBlock.h2('12. Uygulanacak Hukuk'),
-    LegalBlock.p(
-      'Uygulanacak hukuk: Türkiye Cumhuriyeti hukuku.\n'
-      'AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesinin zorunlu '
-      'tüketici koruma hükümleri saklıdır.',
-    ),
-    LegalBlock.h2('13. Koşullarda Değişiklik'),
-    LegalBlock.p(
-      'Değişiklik yapılırsa en az 30 gün önceden uygulama içi bildirim ve e-posta ile '
-      'haber verilir. Değişikliği kabul etmiyorsanız hesabınızı silme hakkınız vardır.',
-    ),
-    LegalBlock.h2('14. İletişim'),
-    LegalBlock.p('E-posta: $_email\nWeb: $_web'),
-    LegalBlock.divider(),
-    LegalBlock.meta(
-      'Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır.\nYorum farklılığında Türkçe versiyon esastır.',
-    ),
-  ];
-
-  // ── KVKK Aydınlatma Metni ───────────────────────────────────────────────
-
-  static const List<LegalBlock> _kvkk = [
-    LegalBlock.h1('KVKK Aydınlatma Metni'),
-    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
-    LegalBlock.divider(),
-    LegalBlock.h2('1. Veri Sorumlusunun Kimliği'),
-    LegalBlock.p(
-      '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 10 uyarınca, '
-      'kişisel verilerinizin işlenmesine ilişkin olarak veri sorumlusu sıfatıyla '
-      'aşağıdaki bilgilendirmeyi yaparız.',
-    ),
-    LegalBlock.tableHeader(['Bilgi', 'Detay']),
-    LegalBlock.tableRow(['Veri Sorumlusu', _company]),
-    LegalBlock.tableRow(['E-posta', _email]),
-    LegalBlock.tableRow(['Web', _web]),
-    LegalBlock.tableRow(['Adres', _address]),
-    LegalBlock.h2('2. İşlenen Kişisel Veri Kategorileri'),
-    LegalBlock.h3('2.1 Kimlik Verisi'),
-    LegalBlock.p('· E-posta adresi\n· Görünen ad (display name)'),
-    LegalBlock.h3('2.2 İletişim Verisi'),
-    LegalBlock.p('· Push bildirim için kayıtlı cihaz token\'ı'),
-    LegalBlock.h3('2.3 Müşteri İşlem Verisi'),
-    LegalBlock.p(
-        '· Portföy varlık kayıtları\n· Snapshot geçmişi\n· Ortaklık bağlantıları ve davet kodları\n'
-        '· Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu)'),
-    LegalBlock.h3('2.4 İşlem Güvenliği Verisi'),
-    LegalBlock.p(
-        '· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
-    LegalBlock.h3('2.5 Hukuki İşlem Verisi'),
-    LegalBlock.p(
-        '· Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama sürümü, dil'),
-    LegalBlock.h2('3. Kişisel Verilerin İşlenme Amaçları'),
-    LegalBlock.tableHeader(['Amaç', 'Veri Kategorileri']),
-    LegalBlock.tableRow(['Hesap oluşturma ve oturum yönetimi', '2.1, 2.4']),
-    LegalBlock.tableRow(['Portföy takibi (uygulamanın ana işlevi)', '2.3']),
-    LegalBlock.tableRow(['Zirvedeki Portföyler — anonim karşılaştırma', '2.3']),
-    LegalBlock.tableRow(['Performans grafiklerinin hesaplanması', '2.3']),
-    LegalBlock.tableRow(['Ortaklık özelliği', '2.1, 2.3']),
-    LegalBlock.tableRow(['Push bildirim gönderimi', '2.2']),
-    LegalBlock.tableRow(
-        ['Yasal yükümlülüklerin yerine getirilmesi', '2.5, 2.4']),
-    LegalBlock.tableRow(['Hata teşhisi ve uygulama güvenliği', '2.4']),
-    LegalBlock.p(
-      'Zirvedeki Portföyler: Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1\'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.',
-    ),
-    LegalBlock.h2('4. Hukuki Dayanak'),
-    LegalBlock.tableHeader(['Veri', 'Hukuki Sebep']),
-    LegalBlock.tableRow(
-        ['E-posta, şifre, display name', 'KVKK 5(2)(c) — sözleşmenin ifası']),
-    LegalBlock.tableRow(
-        ['Portföy verileri', 'KVKK 5(2)(c) — sözleşmenin ifası']),
-    LegalBlock.tableRow([
-      'Zirve havuzu ölçümleri (getiri %, tür payı %)',
-      'KVKK 5(1) — açık rıza (uygulama içinde, isteğe bağlı)'
-    ]),
-    LegalBlock.tableRow(['Push token', 'KVKK 5(1) — açık rıza']),
-    LegalBlock.tableRow(
-        ['IP, cihaz bilgisi', 'KVKK 5(2)(f) — meşru menfaat (güvenlik)']),
-    LegalBlock.tableRow(
-        ['Disclaimer onayı', 'KVKK 5(2)(a) — kanunlarda öngörülmesi']),
-    LegalBlock.tableRow(
-        ['Yurt dışı aktarımı', 'KVKK 5(1) ve 9(1) — açık rıza']),
-    LegalBlock.h2('5. Yurt Dışına Veri Aktarımı'),
-    LegalBlock.tableHeader(['Alıcı', 'Ülke', 'Amaç', 'Hukuki Sebep']),
-    LegalBlock.tableRow([
-      'Supabase Inc.',
-      _ulke,
-      'Veritabanı ve kimlik doğrulama',
-      'KVKK 9(1) — açık rıza'
-    ]),
-    LegalBlock.tableRow([
-      'Google LLC (Firebase)',
-      'ABD / Küresel',
-      'Push bildirim teslimi',
-      'KVKK 9(1) — açık rıza'
-    ]),
-    LegalBlock.tableRow([
-      'Google LLC (Crashlytics)',
-      'ABD / Küresel',
-      'Çökme teşhisi',
-      'KVKK 9(1) — açık rıza'
-    ]),
-    LegalBlock.p(
-      'Bu ülkeler KVK Kurulu\'nun "yeterli korumaya sahip ülkeler" listesinde bulunmamaktadır. '
-      'Yurt dışı aktarımı KVKK Madde 9(1) kapsamında açık rızanıza dayanmaktadır.',
-    ),
-    LegalBlock.h2('6. Veri Saklama Süreleri'),
-    LegalBlock.tableHeader(['Veri', 'Süre', 'Dayanak']),
-    LegalBlock.tableRow(
-        ['Hesap verileri', 'Hesap silinene kadar', 'Sözleşme süresi']),
-    LegalBlock.tableRow([
-      'Portföy varlık kayıtları',
-      'Hesap silinene kadar',
-      'Sözleşme süresi'
-    ]),
-    LegalBlock.tableRow(
-        ['Snapshot geçmişi', 'Son 365 gün rolling', 'Servis ihtiyacı']),
-    LegalBlock.tableRow([
-      'Zirve havuzu ölçümleri',
-      'Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen',
-      'Servis ihtiyacı'
-    ]),
-    LegalBlock.tableRow(
-        ['Push token', 'Logout / uninstall\'a kadar', 'Sözleşme süresi']),
-    LegalBlock.tableRow([
-      'Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı)',
-      'Hesap silinmesinden sonra 3 yıl',
-      'TBK Madde 146'
-    ]),
-    LegalBlock.tableRow(
-        ['Oturum logları (IP, cihaz)', '90 gün', 'KVKK 5(2)(f) meşru menfaat']),
-    LegalBlock.tableRow(
-        ['Hata logları', '30 gün', 'KVKK 5(2)(f) meşru menfaat']),
-    LegalBlock.h2('7. KVKK Madde 11 Kapsamındaki Haklarınız'),
-    LegalBlock.p(
-      'a) Kişisel verilerinizin işlenip işlenmediğini öğrenme\n'
-      'b) İşlenmişse buna ilişkin bilgi talep etme\n'
-      'c) İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme\n'
-      'ç) Yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme\n'
-      'd) Eksik veya yanlış işlenmişse düzeltilmesini isteme\n'
-      'e) KVKK Madde 7 kapsamında silinmesini veya yok edilmesini isteme\n'
-      'f) Yapılan işlemlerin üçüncü kişilere bildirilmesini isteme\n'
-      'g) Münhasıran otomatik sistemlerle aleyhinize sonuç çıkmasına itiraz etme\n'
-      'ğ) Kanuna aykırı işleme sebebiyle zararın giderilmesini talep etme',
-    ),
-    LegalBlock.h3('7.1 Başvuru Yöntemi'),
-    LegalBlock.p(
-      'KVKK Madde 13 uyarınca taleplerinizi şu yöntemlerden biriyle iletebilirsiniz:\n\n'
-      '1. Uygulama içi: Profil → Ayarlar → "Hesabımı Sil" / "Verilerimi İndir"\n'
-      '2. E-posta: $_email adresine kimlik bilgilerinizle yazılı başvuru\n\n'
-      'Başvurunuza 30 gün içinde ücretsiz olarak yanıt veririz.',
-    ),
-    LegalBlock.h3('7.2 KVK Kurulu\'na Şikayet'),
-    LegalBlock.p(
-      'Yanıttan memnun kalmazsanız Kişisel Verileri Koruma Kurulu\'na şikayet edebilirsiniz.\n\n'
-      'Kişisel Verileri Koruma Kurumu\n'
-      'Nasuh Akar Mah. Ziyabey Cad. 1407. Sok. No:4, 06520 Balgat / Ankara\n'
-      'Web: www.kvkk.gov.tr',
-    ),
-    LegalBlock.h2('8. Veri Güvenliği'),
-    LegalBlock.p(
-      'Teknik Önlemler: TLS 1.2+ aktarım şifrelemesi · AES-256 at-rest şifreleme · '
-      'Bcrypt şifre hash · Row-Level Security (RLS) · Rate limiting · '
-      '10 dk idle session timeout · PII maskeleme (üretim logları)\n\n'
-      'İdari Önlemler: Supabase ve Firebase ile yazılı DPA sözleşmeleri · '
-      'Least-privilege erişim prensibi · Veri ihlali yönetimi süreci\n\n'
-      'Veri ihlali tespiti halinde 72 saat içinde KVK Kurulu\'na ve etkilenen '
-      'kullanıcılara bildirim yapılır.',
-    ),
-    LegalBlock.h2('9. Politikada Değişiklikler'),
-    LegalBlock.p(
-      'Bu Aydınlatma Metni\'nde değişiklik yapıldığında yeni sürüm uygulama içinde gösterilir, '
-      '"Sürüm" numarası artırılır ve önemli değişikliklerde tekrar onay istenir.',
-    ),
-    LegalBlock.h2('10. İletişim'),
-    LegalBlock.p(
-        'Veri korumayla ilgili tüm soru, talep ve şikayetler için:\nE-posta: $_email\nWeb: $_web'),
-    LegalBlock.divider(),
-    LegalBlock.meta(
-      'Bu Aydınlatma Metni\'ni okuyup anladığınızı, kayıt sırasında ilgili onay kutusunu '
-      'işaretleyerek beyan etmektesiniz.',
-    ),
-  ];
+  static List<LegalBlock> get terms => bloklar(YasalBelge.kosullar);
+  static List<LegalBlock> get privacy => bloklar(YasalBelge.gizlilik);
+  static List<LegalBlock> get kvkk => bloklar(YasalBelge.kvkk);
+  static List<LegalBlock> get acikRiza => bloklar(YasalBelge.acikRiza);
 }
+
+// ─── Zorunlu okuma: onay istenen metinler ─────────────────────────────────────
+
+/// Onay istenen bir metin — kayıt ekranının ve yeniden onay kapısının
+/// listesi (bayrak `zorunlu_okuma`). Kimlik `YasalTur`; gösterim blokları
+/// tek kaynaktan gelir: belgeler `legal/tr/*.md`, yatırım uyarısı
+/// `disclaimerText` (onay kaydına hash'lenen metnin KENDİSİ). Burada yeni
+/// metin yazılmaz; yalnız ad, ikon ve onay düğmesi etiketi seçilir.
+@immutable
+class ZorunluMetin {
+  const ZorunluMetin({
+    required this.tur,
+    required this.adaylar,
+    required this.ikon,
+    required this.surum,
+    required this.bloklar,
+    required this.onayAdaylari,
+  });
+
+  final String tur;
+
+  /// Liste satırında ve başlıkta adı — sığan yazım adayları (uzundan kısaya).
+  final List<String> adaylar;
+  final IconData ikon;
+  final String surum;
+
+  /// Gösterim blokları — açılış anında kurulur (ülke yer tutucusu bağlı
+  /// sunucudan dolar).
+  final List<LegalBlock> Function() bloklar;
+
+  /// Metnin sonundaki onay düğmesinin yazımları.
+  final List<String> onayAdaylari;
+
+  /// Belgenin adı ve ikonu — kapının bayrak kapalı listesi de bunu okur.
+  static ZorunluMetin belge(AppLocalizations l, YasalBelge b) {
+    final (adaylar, ikon) = switch (b) {
+      YasalBelge.kosullar => ([l.yasalBelgeKosullar], Icons.gavel_rounded),
+      YasalBelge.gizlilik => ([l.yasalBelgeGizlilik], Icons.shield_outlined),
+      YasalBelge.kvkk => (
+          [l.yasalBelgeKvkk, l.yasalBelgeKvkkKisa],
+          Icons.privacy_tip_outlined
+        ),
+      YasalBelge.acikRiza => ([l.yasalBelgeAcikRiza], Icons.public_rounded),
+    };
+    return ZorunluMetin(
+      tur: b.tur,
+      adaylar: adaylar,
+      ikon: ikon,
+      surum: b.surum,
+      bloklar: () => LegalDocs.bloklar(b),
+      // Açık rıza metninin sonunda verilen şey rızadır; düğme bunu söyler
+      // (iki kutulu düzenin eski "Okudum ve açık rıza veriyorum" diliyle).
+      onayAdaylari: b == YasalBelge.acikRiza
+          ? [l.zorunluOkumaRizaVer, l.zorunluOkumaRizaVerKisa]
+          : [l.zorunluOkumaOnayla, l.zorunluOkumaOnaylaKisa],
+    );
+  }
+
+  /// Yatırım uyarısının TAM metni — `disclaimer_acceptances`'a ve
+  /// `yasal_onaylar`'a hash'i yazılan gövdenin aynısı.
+  static ZorunluMetin yatirimUyarisi(AppLocalizations l) => ZorunluMetin(
+        tur: YasalTur.yatirimUyarisi,
+        adaylar: [l.yasalBelgeYatirimUyarisi],
+        ikon: Icons.warning_amber_rounded,
+        surum: disclaimerVersion,
+        bloklar: () => const [LegalBlock.p(disclaimerText)],
+        onayAdaylari: [l.zorunluOkumaOnayla, l.zorunluOkumaOnaylaKisa],
+      );
+
+  /// Dört belge (kapı ve Ayarlar sırasıyla) + istenirse yatırım uyarısı.
+  static List<ZorunluMetin> liste(AppLocalizations l,
+          {required bool yatirimUyarisiDahil}) =>
+      [
+        for (final b in YasalBelge.values) belge(l, b),
+        if (yatirimUyarisiDahil) yatirimUyarisi(l),
+      ];
+}
+
+/// [m]'yi zorunlu okuma kipinde açar. `null`: kullanıcı onaylamadan geri
+/// döndü (ya da çift dokunma koruması ikinci açılışı düşürdü).
+Future<ZorunluOkumaSonucu?> zorunluOkumaAc(
+        BuildContext context, ZorunluMetin m) =>
+    pushGuarded<ZorunluOkumaSonucu>(
+      context,
+      adaptiveRoute(
+        builder: (_) => LegalDocScreen(
+          title: m.adaylar.first,
+          icon: m.ikon,
+          blocks: m.bloklar(),
+          zorunluOkuma: true,
+          onayAdaylari: m.onayAdaylari,
+        ),
+      ),
+    );
 
 // ─── Ekran ────────────────────────────────────────────────────────────────────
 
@@ -566,6 +180,18 @@ class LegalDocScreen extends StatefulWidget {
   final bool confirmMode;
   final String confirmButtonLabel;
 
+  /// Zorunlu okuma (bayrak `zorunlu_okuma`, 2026-10-04): onay düğmesi
+  /// metnin EN SONUNDA, listenin son öğesidir ve ancak sona ulaşılınca
+  /// açılır; okurken altta ilerleme + "sona kadar oku" ipucu durur. Dönüş
+  /// [ZorunluOkumaSonucu]. [confirmMode]'dan ayrı: o kip (alt sabit çubuk,
+  /// `true` dönüşü) bayrak kapalıyken birebir kalır. Açmak için
+  /// [zorunluOkumaAc].
+  final bool zorunluOkuma;
+
+  /// Zorunlu okumada onay düğmesinin yazımları (uzundan kısaya, sığan ilki
+  /// — `SiganMetin`). Boşsa "Okudum ve onaylıyorum".
+  final List<String> onayAdaylari;
+
   const LegalDocScreen({
     super.key,
     required this.title,
@@ -573,6 +199,8 @@ class LegalDocScreen extends StatefulWidget {
     required this.icon,
     this.confirmMode = false,
     this.confirmButtonLabel = 'Okudum ve onaylıyorum',
+    this.zorunluOkuma = false,
+    this.onayAdaylari = const [],
   });
 
   @override
@@ -582,6 +210,9 @@ class LegalDocScreen extends StatefulWidget {
 class _LegalDocScreenState extends State<LegalDocScreen> {
   final _scrollCtrl = ScrollController();
   bool _reachedBottom = false;
+
+  /// Zorunlu okumada ipucu çubuğunun değeri (0..1).
+  double _ilerleme = 0;
 
   @override
   void initState() {
@@ -685,6 +316,40 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
             ),
           ),
           // ── İçerik ──────────────────────────────────────────────────────
+          if (widget.zorunluOkuma) ...[
+            Expanded(
+              child: SonaKadarOkumaIzleyici(
+                // Düğmeden sonraki boşluk: bölüm alt boşluğu + liste alt
+                // boşluğu + güvenli alan (bkz. OkumaOlcumu.sonaUlasti).
+                sonPay: SandikSpace.md +
+                    SandikSpace.sm +
+                    MediaQuery.paddingOf(context).bottom,
+                onSonaUlasti: () => setState(() => _reachedBottom = true),
+                onIlerleme: (v) => setState(() => _ilerleme = v),
+                // Tembel liste (ListView.builder) DEĞİL: onun uzunluğu
+                // kurulmamış öğeler için TAHMİNDİR. Tahmini sona varınca
+                // "okundu" yapışıyor, gerçek metnin sonu daha aşağıda
+                // kalıyordu (test yakaladı: 250 pt okunmadan onay açıldı).
+                // Tek sütun bütün metni bir kez yerleştirir; `extentAfter`
+                // kesin olur. Belge birkaç yüz paragraf — maliyeti ilk
+                // yerleşimde bir kez.
+                child: SingleChildScrollView(
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < widget.blocks.length; i++)
+                        _buildBlock(widget.blocks[i], i),
+                      // Son öğe onay bölümü: onay metnin SONUNDA verilir.
+                      _sondakiOnay(context),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            if (!_reachedBottom) OkumaIpucu(ilerleme: _ilerleme),
+          ] else
           Expanded(
             child: NotificationListener<ScrollMetricsNotification>(
               // Kısa belgelerde scroll gerekmiyorsa buton hemen aktifleşsin.
@@ -707,6 +372,84 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
           ),
           if (widget.confirmMode) _buildConfirmBar(context),
         ],
+      ),
+    );
+  }
+
+  /// Zorunlu okumada metnin sonundaki onay bölümü. Görünüş [_buildConfirmBar]
+  /// ile aynı dil (amber dolgu, kilit → onay ikonu); fark yalnız yeri ve
+  /// yüksekliğin sabit olmaması: yazı ×2'de etiket iki satıra inebilir.
+  Widget _sondakiOnay(BuildContext context) {
+    final active = _reachedBottom;
+    final adaylar = widget.onayAdaylari.isEmpty
+        ? [context.l10n.zorunluOkumaOnayla, context.l10n.zorunluOkumaOnaylaKisa]
+        : widget.onayAdaylari;
+    final renk = active
+        ? context.c.onAmber
+        : context.c.onAmber.withValues(alpha: 0.45);
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            _kPH, SandikSpace.lg, _kPH, SandikSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Divider(color: context.c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.md),
+            Semantics(
+              // Kendi düğümü: ekran okuyucu düğmeye odaklanınca liste onu
+              // ekrana getirir (`showOnScreen`) → sona ulaşıldı sayılır.
+              container: true,
+              button: true,
+              enabled: active,
+              child: SandikBasma(
+                behavior: HitTestBehavior.opaque,
+                onTap: active
+                    ? () => Navigator.pop(
+                        context,
+                        const ZorunluOkumaSonucu(
+                            onaylandi: true, sonunaKadarOkundu: true))
+                    : null,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.md, vertical: SandikSpace.sm2),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? context.c.amberFill
+                        : context.c.amberFill.withValues(alpha: 0.30),
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        active
+                            ? Icons.check_circle_rounded
+                            : Icons.lock_outline_rounded,
+                        size: 18,
+                        color: renk,
+                      ),
+                      const SizedBox(width: SandikSpace.sm),
+                      Flexible(
+                        child: SiganMetin(
+                          adaylar,
+                          textAlign: TextAlign.center,
+                          style: context.t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: renk,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

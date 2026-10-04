@@ -2141,7 +2141,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?'**
+  /// **'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?'**
   String get deleteAccountBody;
 
   /// No description provided for @continueAction.
@@ -9516,7 +9516,7 @@ abstract class AppLocalizations {
   /// No description provided for @yasalKapiAciklamaGuncel.
   ///
   /// In tr, this message translates to:
-  /// **'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
+  /// **'Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
   String get yasalKapiAciklamaGuncel;
 
   /// No description provided for @yasalKapiAciklamaIlk.
@@ -9531,10 +9531,10 @@ abstract class AppLocalizations {
   /// **'Neler değişti'**
   String get yasalKapiNelerDegisti;
 
-  /// Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır.
+  /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.'**
+  /// **'Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki metinle birebir aynı ve uygulamanın bugünkü işleyişine göre güncellendi. Eklenenler: tek aktif cihaz ve yeni cihazda e-posta kodu, kullanım istatistikleri ve hata raporları (Firebase), Yarış, kayıt hunisi, kilit ekranı canlı etkinliği, ekstrenin yalnızca cihazda okunması, güncel saklama süreleri (portföy geçmişi 2 yıl) ve hesap silmenin anında gerçekleşmesi. Kullanım Koşulları\'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri girdi; yetkili mahkeme ve koşul değişikliği maddeleri netleşti. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -9620,6 +9620,102 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çıkış yap'**
   String get yasalKapiCikis;
+
+  /// legal/tr/ACIK_RIZA_METNI.md (yurt dışı aktarım açık rızası) — kayıttaki ve kapıdaki 'açık rıza' bağlantısı ile Ayarlar › Yasal bunu açar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açık Rıza Metni'**
+  String get yasalBelgeAcikRiza;
+
+  /// No description provided for @yasalBelgeAcikRizaAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yurt dışına veri aktarımı'**
+  String get yasalBelgeAcikRizaAciklama;
+
+  /// Zorunlu okuma (bayrak zorunlu_okuma): sona ulaşılana kadar ekranın altındaki ipucu. Onay düğmesi metnin sonunda.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylamak için metni sona kadar oku'**
+  String get zorunluOkumaIpucu;
+
+  /// No description provided for @zorunluOkumaIpucuKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sona kadar oku'**
+  String get zorunluOkumaIpucuKisa;
+
+  /// No description provided for @zorunluOkumaIlerleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okuma ilerlemesi'**
+  String get zorunluOkumaIlerleme;
+
+  /// No description provided for @zorunluOkumaOnayla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okudum ve onaylıyorum'**
+  String get zorunluOkumaOnayla;
+
+  /// No description provided for @zorunluOkumaOnaylaKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylıyorum'**
+  String get zorunluOkumaOnaylaKisa;
+
+  /// No description provided for @zorunluOkumaRizaVer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okudum ve açık rıza veriyorum'**
+  String get zorunluOkumaRizaVer;
+
+  /// No description provided for @zorunluOkumaRizaVerKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açık rıza veriyorum'**
+  String get zorunluOkumaRizaVerKisa;
+
+  /// No description provided for @zorunluOkumaOnaylandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylandı'**
+  String get zorunluOkumaOnaylandi;
+
+  /// No description provided for @zorunluOkumaBelgelerBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okuyup onaylaman gerekenler'**
+  String get zorunluOkumaBelgelerBaslik;
+
+  /// No description provided for @zorunluOkumaBelgelerAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her metni aç, sonuna kadar oku ve en altta onayla.'**
+  String get zorunluOkumaBelgelerAciklama;
+
+  /// No description provided for @zorunluOkumaEksik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}'**
+  String zorunluOkumaEksik(String belgeler);
+
+  /// No description provided for @zorunluOkumaKutuKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce yukarıdaki metinlerin hepsini okuyup onayla.'**
+  String get zorunluOkumaKutuKilitli;
+
+  /// No description provided for @zorunluOkumaSayac.
+  ///
+  /// In tr, this message translates to:
+  /// **'{onayli}/{toplam} metin onaylandı'**
+  String zorunluOkumaSayac(int onayli, int toplam);
+
+  /// No description provided for @yasalBelgeYatirimUyarisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırım Uyarısı'**
+  String get yasalBelgeYatirimUyarisi;
 
   /// No description provided for @flowTitleUpper.
   ///

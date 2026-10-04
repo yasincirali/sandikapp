@@ -187,6 +187,15 @@ bayrağı (geçişe kadar Frankfurt'ta kapalı). `0000_base_schema.sql` Tokyo'nu
 tahminiydi; bir şeyi "Frankfurt'ta var" diye silmeden önce Tokyo'da da var mı bak
 (0077'nin ilk yazımı Tokyo'yu `user_push_tokens` indeksiz bırakacaktı).
 
+**Yasal metin tek kaynak (kullanıcı kuralı, 2026-10-04).** Web ve uygulama yasal
+belgeleri her zaman aynı metindir: kaynak `legal/tr/*.md` (çevirisi `legal/en/*.md`);
+uygulamaya ya da `docs/` HTML'ine elle metin yazılmaz. Değişince: md + "Sürüm" artır →
+`python docs/_build_legal.py` (HTML + `lib/config/yasal_belge_kaynaklari.g.dart`) →
+INSERT üreteci → yeni migration (iki sunucu). `yasal_web_esleme_test` kırılırsa adımları söyler.
+Metin uygulamanın gerçek davranışını yazar; avukata sorulmaz. Yeni veri işleme, üçüncü taraf
+ya da saklama ekleyen her değişiklik aynı değişiklikte ilgili md'yi günceller; sürüm artar,
+migration yazılır, yeniden onay kapısı kullanıcıya sorar.
+
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.
 
@@ -299,5 +308,5 @@ koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Beti
 gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
 
 ---
-**Son güncelleme:** 2026-10-01 (canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-10-04 (yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).

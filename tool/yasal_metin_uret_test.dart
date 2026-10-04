@@ -9,9 +9,10 @@
 /// koşsa bile yalnız `build/` altına dosya yazar, hiçbir şeyi kırmaz.
 ///
 /// ## Kullanım (metin değişti, kilit testi kırıldı)
-/// 1. Değişen metnin sürümünü artır (ör. `LeaderboardService.zirveRizaMetniSurumu`,
-///    `YasalMetinKatalogu.belgeSurumu`, kutular için `disclaimerVersion`
-///    DEĞİL — kutu sürümünü katalogda ayır).
+/// 1. Değişen metnin sürümünü artır (ör. `LeaderboardService.zirveRizaMetniSurumu`;
+///    belgeler için `legal/tr/<BELGE>.md`'nin "**Sürüm:**" satırı + `python
+///    docs/_build_legal.py`; kutular için `disclaimerVersion` DEĞİL — kutu
+///    sürümünü katalogda ayır).
 /// 2. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
 /// 3. `build/yasal_metin_ekleri.sql`'i yeni bir migration'a koy (iki
 ///    sunucuya birlikte, `supabase-deploy.yml` hedef `ikisi`).
@@ -19,6 +20,10 @@
 ///
 /// `YASAL_CIKTI=yol` ile başka dosyaya yazılır; `YASAL_HEPSI=1` migration'da
 /// olanlar dahil hepsini yazar (0102 böyle üretildi).
+///
+/// ⚠️ "Eksik" (tür, sürüm, dil) üçlüsüne göre: migration'da aynı üçlü
+/// başka bir hash'le varsa yazılmaz — o durumda kilit testi kırılır ve
+/// sürüm artırılmalıdır (dağıtılmış migration'daki gövde değişmez).
 @Tags(['arac'])
 library;
 

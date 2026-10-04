@@ -26,11 +26,18 @@ class ZirveRizaKarti extends StatelessWidget {
     super.key,
     required this.onKatil,
     this.onSimdiDegil,
+    this.katilEtkin = true,
   });
 
   /// Rızayı sunucuya yazar; hata fırlatırsa kart yerinde kalır.
   final Future<void> Function() onKatil;
   final VoidCallback? onSimdiDegil;
+
+  /// Zorunlu okuma (bayrak `zorunlu_okuma`, 2026-10-04): kart rızanın TAM
+  /// metnidir ("Katılıyorum" metnin son satırı); ekran metnin sonuna
+  /// ulaşılana kadar düğmeyi kapalı verir. Metin değişmez — yalnız düğmenin
+  /// ne zaman açıldığı.
+  final bool katilEtkin;
 
   static const baslik = 'Zirvedeki Portföyler\'e katıl';
 
@@ -125,7 +132,7 @@ class ZirveRizaKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.md),
           SandikAsyncButton(
-            onPressed: onKatil,
+            onPressed: katilEtkin ? onKatil : null,
             child: const Text(katilEtiketi),
           ),
           if (onSimdiDegil != null) ...[

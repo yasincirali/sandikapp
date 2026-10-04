@@ -17,14 +17,14 @@ void main() {
     ReviewDurumu durum = ReviewDurumu.bos,
     int kurulumGunu = 30,
     int aktifGun = 10,
-    double? karZararTRY = 1500,
+    double? karZararOrani = 0.15,
   }) =>
       degerlendirmeSorulsunMu(
         an: an,
         durum: durum,
         kurulumGunu: kurulumGunu,
         aktifGun: aktifGun,
-        karZararTRY: karZararTRY,
+        karZararOrani: karZararOrani,
         simdi: simdi,
       );
 
@@ -39,44 +39,50 @@ void main() {
   });
 
   group('yeni kullanıcı kapısı', () {
-    test('kurulumdan 3 günden az geçtiyse sorulmaz', () {
-      expect(sor(kurulumGunu: 2), isFalse);
-      expect(sor(kurulumGunu: 3), isTrue);
+    test('kurulumdan 2 günden az geçtiyse sorulmaz', () {
+      expect(sor(kurulumGunu: 1), isFalse);
+      expect(sor(kurulumGunu: 2), isTrue);
     });
 
-    test('3 aktif günden azsa sorulmaz — kurulum eski olsa bile', () {
-      expect(sor(kurulumGunu: 60, aktifGun: 2), isFalse);
-      expect(sor(kurulumGunu: 60, aktifGun: 3), isTrue);
+    test('2 aktif günden azsa sorulmaz — kurulum eski olsa bile', () {
+      expect(sor(kurulumGunu: 60, aktifGun: 1), isFalse);
+      expect(sor(kurulumGunu: 60, aktifGun: 2), isTrue);
     });
   });
 
   group('kırmızı ekran kapısı', () {
-    test('portföy zarardaysa sorulmaz', () {
-      expect(sor(karZararTRY: -1), isFalse);
+    test('portföy belirgin zarardaysa (%10 üstü) sorulmaz', () {
+      expect(sor(karZararOrani: -0.11), isFalse);
+      expect(sor(karZararOrani: -0.50), isFalse);
+    });
+
+    test('küçük eksi engel değil — olağan dalgalanma', () {
+      expect(sor(karZararOrani: -0.01), isTrue);
+      expect(sor(karZararOrani: -0.10), isTrue);
     });
 
     test('sıfır kâr/zarar engel değil — kayıp yok', () {
-      expect(sor(karZararTRY: 0), isTrue);
+      expect(sor(karZararOrani: 0), isTrue);
     });
 
     test('kâr/zarar bilinmiyorsa (null) engel değil — anın kendisi olumlu',
         () {
-      expect(sor(karZararTRY: null), isTrue);
+      expect(sor(karZararOrani: null), isTrue);
     });
   });
 
   group('erteleme', () {
-    test('"Sonra" dendikten 30 gün geçmeden tekrar sorulmaz', () {
+    test('"Sonra" dendikten 14 gün geçmeden tekrar sorulmaz', () {
       final durum = ReviewDurumu(
-        sonSorulmaMs: msOnce(const Duration(days: 29)),
+        sonSorulmaMs: msOnce(const Duration(days: 13)),
         sorulmaSayisi: 1,
       );
       expect(sor(durum: durum), isFalse);
     });
 
-    test('30 gün geçince yeniden sorulur', () {
+    test('14 gün geçince yeniden sorulur', () {
       final durum = ReviewDurumu(
-        sonSorulmaMs: msOnce(const Duration(days: 30)),
+        sonSorulmaMs: msOnce(const Duration(days: 14)),
         sorulmaSayisi: 1,
       );
       expect(sor(durum: durum), isTrue);
@@ -90,13 +96,18 @@ void main() {
       expect(sor(an: ReviewAni.paylasim, durum: durum), isFalse);
     });
 
-    test('üç kez sorulduysa bir daha sorulmaz — üç "Sonra" bir "hayır"dır',
+    test('beş kez sorulduysa bir daha sorulmaz — beş "Sonra" bir "hayır"dır',
         () {
-      final durum = ReviewDurumu(
+      final dort = ReviewDurumu(
         sonSorulmaMs: msOnce(const Duration(days: 400)),
-        sorulmaSayisi: 3,
+        sorulmaSayisi: 4,
       );
-      expect(sor(durum: durum), isFalse);
+      expect(sor(durum: dort), isTrue);
+      final bes = ReviewDurumu(
+        sonSorulmaMs: msOnce(const Duration(days: 400)),
+        sorulmaSayisi: 5,
+      );
+      expect(sor(durum: bes), isFalse);
     });
   });
 
@@ -120,8 +131,13 @@ void main() {
     });
   });
 
-  test('sabitler mağaza tavanlarıyla uyumlu — Apple yılda en fazla 3', () {
-    expect(ReviewPromptService.maxSorulma, lessThanOrEqualTo(3));
-    expect(ReviewPromptService.ertelemeAraligi.inDays, greaterThanOrEqualTo(30));
+  // Apple'ın yılda 3 tavanı SİSTEM kartı içindir ve işletim sistemi uygular;
+  // ön sorumuz o kotayı harcamaz. Buradaki alt sınırlar "bıktırma" korumasıdır:
+  // kazara 1 güne / 50 isteme çekilirse test kırılsın.
+  test('sabitler bıktırma sınırları içinde', () {
+    expect(ReviewPromptService.maxSorulma, lessThanOrEqualTo(5));
+    expect(ReviewPromptService.ertelemeAraligi.inDays, greaterThanOrEqualTo(14));
+    expect(ReviewPromptService.minKurulumGunu, greaterThanOrEqualTo(1));
+    expect(ReviewPromptService.maxZararOrani, lessThanOrEqualTo(0.10));
   });
 }

@@ -94,7 +94,8 @@ void main() {
       'tek_onay_kutusu',
       'ortak_secimi_tasi',
       'yasal_onay_kaydi',
-      'yeniden_onay_kapisi',
+      'yasal_kapi_en_yeni',
+      'zorunlu_okuma',
     ]) {
       test('$b açık doğar', () => expect(varsayilan(b), 'true'));
     }

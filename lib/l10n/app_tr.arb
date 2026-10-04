@@ -705,7 +705,7 @@
   "searchTickerOrName": "Ticker veya isim ara…",
   "myPortfolioTab": "Portföyüm",
   "deleteAccountTitle": "Hesabını silmek üzeresin",
-  "deleteAccountBody": "Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?",
+  "deleteAccountBody": "Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?",
   "continueAction": "Devam et",
   "verifyIdentityTitle": "Kimliğini doğrula",
   "verifyIdentityBody": "Hesabın Apple/Google ile açılmış. Silmeden önce aynı hesapla bir kez daha giriş yapman istenecek.",
@@ -4013,12 +4013,12 @@
   "@yasalKapiBaslikIlk": {
     "description": "Yeniden onay kapısı başlığı: hiç onay kaydı olmayan kullanıcı (Apple/Google ile ilk giriş ya da onay kaydından önceki hesap)."
   },
-  "yasalKapiAciklamaGuncel": "Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.",
+  "yasalKapiAciklamaGuncel": "Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.",
   "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.",
   "yasalKapiNelerDegisti": "Neler değişti",
-  "yasalKapiDegisiklikNotu": "Sürüm 1.1: Zirvedeki Portföyler'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki metinle birebir aynı ve uygulamanın bugünkü işleyişine göre güncellendi. Eklenenler: tek aktif cihaz ve yeni cihazda e-posta kodu, kullanım istatistikleri ve hata raporları (Firebase), Yarış, kayıt hunisi, kilit ekranı canlı etkinliği, ekstrenin yalnızca cihazda okunması, güncel saklama süreleri (portföy geçmişi 2 yıl) ve hesap silmenin anında gerçekleşmesi. Kullanım Koşulları'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri girdi; yetkili mahkeme ve koşul değişikliği maddeleri netleşti. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.",
   "@yasalKapiDegisiklikNotu": {
-    "description": "Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır."
+    "description": "Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz."
   },
   "yasalBelgeKosullar": "Kullanım Koşulları",
   "yasalBelgeGizlilik": "Gizlilik Politikası",
@@ -4039,6 +4039,39 @@
   "yasalKapiKutuGerekli": "Devam etmek için kutuları işaretlemelisin.",
   "yasalKapiKayitHatasi": "Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.",
   "yasalKapiCikis": "Çıkış yap",
+  "yasalBelgeAcikRiza": "Açık Rıza Metni",
+  "@yasalBelgeAcikRiza": {
+    "description": "legal/tr/ACIK_RIZA_METNI.md (yurt dışı aktarım açık rızası) — kayıttaki ve kapıdaki 'açık rıza' bağlantısı ile Ayarlar › Yasal bunu açar."
+  },
+  "yasalBelgeAcikRizaAciklama": "Yurt dışına veri aktarımı",
+  "zorunluOkumaIpucu": "Onaylamak için metni sona kadar oku",
+  "@zorunluOkumaIpucu": {
+    "description": "Zorunlu okuma (bayrak zorunlu_okuma): sona ulaşılana kadar ekranın altındaki ipucu. Onay düğmesi metnin sonunda."
+  },
+  "zorunluOkumaIpucuKisa": "Sona kadar oku",
+  "zorunluOkumaIlerleme": "Okuma ilerlemesi",
+  "zorunluOkumaOnayla": "Okudum ve onaylıyorum",
+  "zorunluOkumaOnaylaKisa": "Onaylıyorum",
+  "zorunluOkumaRizaVer": "Okudum ve açık rıza veriyorum",
+  "zorunluOkumaRizaVerKisa": "Açık rıza veriyorum",
+  "zorunluOkumaOnaylandi": "Onaylandı",
+  "zorunluOkumaBelgelerBaslik": "Okuyup onaylaman gerekenler",
+  "zorunluOkumaBelgelerAciklama": "Her metni aç, sonuna kadar oku ve en altta onayla.",
+  "zorunluOkumaEksik": "Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}",
+  "@zorunluOkumaEksik": {
+    "placeholders": {
+      "belgeler": {"type": "String"}
+    }
+  },
+  "zorunluOkumaKutuKilitli": "Önce yukarıdaki metinlerin hepsini okuyup onayla.",
+  "zorunluOkumaSayac": "{onayli}/{toplam} metin onaylandı",
+  "@zorunluOkumaSayac": {
+    "placeholders": {
+      "onayli": {"type": "int"},
+      "toplam": {"type": "int"}
+    }
+  },
+  "yasalBelgeYatirimUyarisi": "Yatırım Uyarısı",
   "flowTitleUpper": "PARA AKIŞI",
   "flowLastWeekIn": "Son hafta net giriş",
   "flowLastWeekOut": "Son hafta net çıkış",

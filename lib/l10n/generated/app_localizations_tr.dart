@@ -1167,7 +1167,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?';
+      'Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?';
 
   @override
   String get continueAction => 'Devam et';
@@ -5667,7 +5667,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiAciklamaGuncel =>
-      'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.';
+      'Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.';
 
   @override
   String get yasalKapiAciklamaIlk =>
@@ -5678,7 +5678,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.';
+      'Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki metinle birebir aynı ve uygulamanın bugünkü işleyişine göre güncellendi. Eklenenler: tek aktif cihaz ve yeni cihazda e-posta kodu, kullanım istatistikleri ve hata raporları (Firebase), Yarış, kayıt hunisi, kilit ekranı canlı etkinliği, ekstrenin yalnızca cihazda okunması, güncel saklama süreleri (portföy geçmişi 2 yıl) ve hesap silmenin anında gerçekleşmesi. Kullanım Koşulları\'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri girdi; yetkili mahkeme ve koşul değişikliği maddeleri netleşti. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -5725,6 +5725,60 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiCikis => 'Çıkış yap';
+
+  @override
+  String get yasalBelgeAcikRiza => 'Açık Rıza Metni';
+
+  @override
+  String get yasalBelgeAcikRizaAciklama => 'Yurt dışına veri aktarımı';
+
+  @override
+  String get zorunluOkumaIpucu => 'Onaylamak için metni sona kadar oku';
+
+  @override
+  String get zorunluOkumaIpucuKisa => 'Sona kadar oku';
+
+  @override
+  String get zorunluOkumaIlerleme => 'Okuma ilerlemesi';
+
+  @override
+  String get zorunluOkumaOnayla => 'Okudum ve onaylıyorum';
+
+  @override
+  String get zorunluOkumaOnaylaKisa => 'Onaylıyorum';
+
+  @override
+  String get zorunluOkumaRizaVer => 'Okudum ve açık rıza veriyorum';
+
+  @override
+  String get zorunluOkumaRizaVerKisa => 'Açık rıza veriyorum';
+
+  @override
+  String get zorunluOkumaOnaylandi => 'Onaylandı';
+
+  @override
+  String get zorunluOkumaBelgelerBaslik => 'Okuyup onaylaman gerekenler';
+
+  @override
+  String get zorunluOkumaBelgelerAciklama =>
+      'Her metni aç, sonuna kadar oku ve en altta onayla.';
+
+  @override
+  String zorunluOkumaEksik(String belgeler) {
+    return 'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: $belgeler';
+  }
+
+  @override
+  String get zorunluOkumaKutuKilitli =>
+      'Önce yukarıdaki metinlerin hepsini okuyup onayla.';
+
+  @override
+  String zorunluOkumaSayac(int onayli, int toplam) {
+    return '$onayli/$toplam metin onaylandı';
+  }
+
+  @override
+  String get yasalBelgeYatirimUyarisi => 'Yatırım Uyarısı';
 
   @override
   String get flowTitleUpper => 'PARA AKIŞI';

@@ -9,7 +9,9 @@ import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
+import 'review_prompt_sheet.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
@@ -120,6 +122,10 @@ Future<PriceAlert?> alarmKurAkisi(
                 sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef)),
         kind: SandikSnackKind.success,
       );
+      // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
+      // çağıran (varlık ekranı zili) sonucu hemen alsın.
+      unawaited(
+          ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu));
     }
     return kayit;
   } catch (e) {

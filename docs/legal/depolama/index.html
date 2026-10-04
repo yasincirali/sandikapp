@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Çerezler ve Yerel Depolama — sandık</title>
 <meta name="description" content="Yerel depolama ve çerez kullanımı bilgilendirmesi.">
+<meta name="sandik-kaynak" content="legal/tr/COKEZ_VE_DEPOLAMA.md">
+<meta name="sandik-kaynak-sha256" content="27d5eca499dbacfd67d3b9ff59a71ff415812b9e7a83fd7d1630f5a7e3dd9195">
+<meta name="sandik-govde-sha256" content="8d3c3796eaa9470940e354e3cf683fda91ab95914d7217e6db0ddf4ba32b1902">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -60,20 +63,28 @@ button:hover { opacity: 0.9; }
   <div class="logo">S</div>
   <div class="brand">sandık<small>Depolama</small></div>
 </header>
-<p>﻿# Çerez ve Yerel Depolama Politikası — sandık</p>
-<p><strong>Yürürlük tarihi:</strong> 11 Mayıs 2026
-<strong>Sürüm:</strong> 1.0</p>
+<!-- sandik-govde:basla -->
+<h1>Çerez ve Yerel Depolama Politikası — sandık</h1>
+<p><strong>Yürürlük tarihi:</strong> 4 Ekim 2026
+<strong>Sürüm:</strong> 1.1</p>
 <hr />
 <h2>1. Genel</h2>
-<p><strong>sandık</strong> mobil bir uygulamadır ve geleneksel web çerezleri (HTTP cookies) <strong>kullanmaz</strong>. Bu politika, uygulamanın cihazınızda kullandığı yerel depolama mekanizmalarını açıklar ve KVKK + GDPR + ePrivacy Direktifi (2002/58/EC) uyumluluğunu sağlar.</p>
+<p><strong>sandık</strong> mobil bir uygulamadır ve geleneksel web çerezleri (HTTP cookies) <strong>kullanmaz</strong>. Bu politika, uygulamanın cihazınızda kullandığı yerel depolama mekanizmalarını ve uygulamadaki ölçüm araçlarını açıklar; KVKK, GDPR ve ePrivacy Direktifi (2002/58/EC) kapsamındaki bilgilendirme amacını taşır.</p>
 <hr />
 <h2>2. Kullanılan Yerel Depolama Türleri</h2>
-<h3>2.1 SharedPreferences (Android) / NSUserDefaults (iOS)</h3>
-<p>İşletim sisteminin sağladığı küçük key-value deposu. İçinde tutulan veriler:</p>
+<h3>2.1 Güvenli Anahtar Deposu (iOS Keychain / Android Keystore)</h3>
+<p>Oturum token'ları (Supabase Auth) burada saklanır:</p>
+<ul>
+<li><strong>Erişim token'ı (JWT):</strong> 1 saat geçerli</li>
+<li><strong>Yenileme token'ı:</strong> her yenilemede değişir</li>
+<li>Uygulama 10 dakikadan uzun arka planda kalırsa uygulama kilidi açıksa kilitlenir, değilse oturum kapanır</li>
+</ul>
+<p>Bu token'lar oturum açma için <strong>zorunludur</strong> (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)).</p>
+<h3>2.2 SharedPreferences (Android) / NSUserDefaults (iOS)</h3>
+<p>İşletim sisteminin sağladığı küçük anahtar-değer deposu. İçinde tutulanlar:</p>
 <table>
 <thead>
 <tr>
-<th>Anahtar</th>
 <th>İçerik</th>
 <th>Amaç</th>
 <th>Saklama süresi</th>
@@ -81,88 +92,90 @@ button:hover { opacity: 0.9; }
 </thead>
 <tbody>
 <tr>
-<td><code>last_login_email</code></td>
-<td>Kullanıcı isterse kayıtlı e-posta</td>
-<td>"Beni hatırla" özelliği</td>
-<td>Kullanıcı silene kadar</td>
+<td>Kayıtlı e-posta ("Beni hatırla" seçerseniz ya da kayıttan sonra)</td>
+<td>Giriş ekranını doldurmak</td>
+<td>"Beni hatırla" seçilmeden giriş yapılana ya da uygulama silinene kadar</td>
 </tr>
 <tr>
-<td><code>theme_mode</code></td>
-<td>Tema tercihi (dark/light/system)</td>
-<td>UI ayarı</td>
-<td>Uninstall'a kadar</td>
+<td>Tema, dil, yazı boyutu, görünüm tercihleri</td>
+<td>Arayüz ayarları</td>
+<td>Uygulama silinene kadar</td>
 </tr>
 <tr>
-<td><code>disclaimer_accepted_v1.0</code></td>
-<td>Disclaimer onay durumu</td>
-<td>Tekrar göstermemek</td>
-<td>Disclaimer sürümü değişene kadar</td>
-</tr>
-<tr>
-<td><code>notification_enabled</code></td>
-<td>Bildirim açık/kapalı</td>
+<td>Bildirim, uygulama kilidi ve gizlilik (tutarları gizle) tercihleri</td>
 <td>Kullanıcı tercihi</td>
-<td>Uninstall'a kadar</td>
+<td>Uygulama silinene kadar</td>
+</tr>
+<tr>
+<td>Yasal metin ve yatırım uyarısı onay durumu (yerel kopya)</td>
+<td>Onayı tekrar sormamak</td>
+<td>Metnin sürümü değişene kadar</td>
+</tr>
+<tr>
+<td>Rastgele cihaz numarası ve kurulum numarası</td>
+<td>Kayıtlı cihazlar ve kayıt hunisi</td>
+<td>Uygulama silinene kadar</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Kişisel veri içermez</strong> veya yalnızca kullanıcının açıkça izin verdiği e-posta'yı içerir.</p>
-<h3>2.2 Supabase Auth Session Token</h3>
-<p>Supabase SDK, oturum tokenlarını otomatik olarak güvenli bir şekilde saklar:</p>
+<h3>2.3 Önbellek</h3>
+<p>Çevrimdışı açılış ve hız için cihazda tutulur:</p>
 <ul>
-<li><strong>JWT access token:</strong> 1 saat geçerli</li>
-<li><strong>Refresh token:</strong> 7 gün geçerli, otomatik yenilenir</li>
-<li><strong>Saklama yeri:</strong> Android'de <code>EncryptedSharedPreferences</code>, iOS'ta Keychain</li>
+<li>Son portföy kaydı (hesabınıza ait varlık listesi)</li>
+<li>Fiyat ve grafik serisi önbelleği</li>
+<li>Son baktığınız varlıklar</li>
 </ul>
-<p>Bu token'lar oturum açma için <strong>zorunludur</strong> (sözleşmenin ifası — KVKK 5(2)(c) / GDPR 6(1)(b)). Kullanıcı izni gerektirmez.</p>
-<h3>2.3 SQLite Yerel Veritabanı (sqflite cache)</h3>
-<p>Performans için bazı veriler cihaz üzerinde önbelleğe alınır:</p>
-<ul>
-<li>Son fiyat bilgileri (geçici cache)</li>
-<li>Görsel asset'ler</li>
-</ul>
-<p><strong>Hiçbir kişisel veri</strong> SQLite'da kalıcı saklanmaz; tüm asıl veri Supabase'dedir.</p>
-<h3>2.4 Push Notification Token (FCM)</h3>
+<p>Asıl veri Supabase'dedir; çıkış yaptığınızda hesabınıza ait önbellek silinir.</p>
+<h3>2.4 Ana Ekran Widget'ı ve Kilit Ekranı</h3>
+<p>Ana ekran widget'ı için portföy özeti (toplam değer ve günlük değişim; "tutarları gizle" açıksa maskeli) iOS'ta uygulama grubunda, Android'de uygulama verisinde tutulur. iOS kilit ekranı canlı etkinliği açarsanız aynı özet Apple Push Notification service ile güncellenir. Çıkış yaptığınızda widget verisi temizlenir ve canlı etkinlik kapanır.</p>
+<h3>2.5 Push Notification Token (FCM)</h3>
 <p>Firebase Cloud Messaging, cihazınıza özel bir token üretir. Bu token:</p>
 <ul>
 <li>Yalnızca bildirim göndermek için kullanılır</li>
-<li>Kullanıcının <strong>açık rıza</strong> vermesiyle Supabase'e kaydedilir</li>
-<li>Logout veya uninstall'da silinir</li>
+<li>İşletim sisteminin bildirim izni verildiğinde Supabase'e kaydedilir</li>
+<li>Çıkış yapıldığında silinir; uygulama silinirse bir sonraki gönderimde geçersiz bulunup silinir</li>
 </ul>
 <hr />
-<h2>3. Kullanılmayan Mekanizmalar</h2>
+<h2>3. Ölçüm Araçları ve Kullanılmayan Mekanizmalar</h2>
+<p>Uygulamada şu Google Firebase araçları <strong>bulunur</strong> (ayrıntı: Gizlilik Politikası §3.5):</p>
+<ul>
+<li><strong>Firebase Analytics:</strong> kullanım istatistikleri (ekranlar, özellik kullanım olayları); tutar, miktar ve e-posta gönderilmez</li>
+<li><strong>Firebase Crashlytics:</strong> hata ve çökme raporları</li>
+<li><strong>Firebase Remote Config:</strong> özelliklerin uzaktan açılıp kapatılması</li>
+</ul>
 <p>Aşağıdakileri <strong>kullanmıyoruz</strong>:</p>
 <ul>
-<li>❌ HTTP çerezleri (cookies)</li>
-<li>❌ Web tracking pixel'leri</li>
-<li>❌ Üçüncü taraf reklam SDK'ları (Google AdMob, Facebook Audience, AppLovin, vb. — yok)</li>
-<li>❌ Üçüncü taraf analitik SDK'ları (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb. — yok)</li>
-<li>❌ Cross-app tracking (IDFA, GAID kullanımı yok)</li>
-<li>❌ Web view içinde third-party content</li>
+<li>HTTP çerezleri (cookies)</li>
+<li>Web tracking pixel'leri</li>
+<li>Üçüncü taraf reklam SDK'ları (Google AdMob, Facebook Audience, AppLovin, vb.)</li>
+<li>Firebase dışındaki analitik / atıf SDK'ları (Mixpanel, Amplitude, Segment, Adjust, AppsFlyer, vb.)</li>
+<li>Reklam kimliği ve uygulamalar arası izleme (IDFA, GAID); Android'de reklam kimliği izni uygulamadan çıkarılmıştır, iOS'ta izleme beyanı kapalıdır</li>
+<li>Web view içinde üçüncü taraf içerik</li>
 </ul>
 <hr />
 <h2>4. ePrivacy Direktifi ("Cookie Yasası")</h2>
 <p>ePrivacy Direktifi (2002/58/EC) ve Türkiye Elektronik Haberleşme Kanunu Madde 51 kapsamında, "kesinlikle gerekli olmayan" izleme/depolama için <strong>kullanıcı rızası</strong> gerekir.</p>
-<p>sandık'ın kullandığı tüm yerel depolama mekanizmaları <strong>hizmetin sağlanması için kesinlikle gereklidir</strong> veya kullanıcının açık tercihiyle (theme, "Beni hatırla", notification) etkinleştirilir. Bu nedenle ek bir "çerez bildirimi banner'ı" gerekmez.</p>
+<p>Oturum token'ı, önbellek ve tercihler hizmetin sağlanması için gereklidir ya da sizin seçiminizle (tema, "Beni hatırla", bildirim) etkinleşir. Firebase Analytics ve Crashlytics için yurt dışı aktarım, kayıt sırasında onayladığınız Açık Rıza Metni kapsamındadır.</p>
 <hr />
 <h2>5. Verilerinizi Cihazdan Silme</h2>
 <h3>5.1 Uygulama İçinden</h3>
 <ul>
-<li><strong>Logout:</strong> Profile → Çıkış Yap (oturum tokenı silinir; yerel cache temizlenir)</li>
-<li><strong>Hesap silme:</strong> Profile → Ayarlar → Hesabımı Sil (tüm yerel + sunucu verisi silinir)</li>
+<li><strong>Çıkış:</strong> Profil → Ayarlar → Çıkış Yap (oturum token'ı, hesabınıza ait önbellek ve tercihler ile widget verisi silinir)</li>
+<li><strong>Hesap silme:</strong> Profil → Ayarlar → Hesabımı Sil (sunucudaki verileriniz hemen silinir, yasal saklama süreleri hariç; cihazdaki oturum kapanır)</li>
 </ul>
 <h3>5.2 İşletim Sistemi Üzerinden</h3>
 <ul>
 <li><strong>Android:</strong> Ayarlar → Uygulamalar → sandık → Depolama → Verileri Temizle</li>
 <li><strong>iOS:</strong> Ayarlar → Genel → iPhone Depolama → sandık → Uygulamayı Sil</li>
 </ul>
-<p>Uninstall, cihaz üzerindeki <strong>tüm yerel depolamayı siler</strong>. Ancak Supabase'deki sunucu verisi durur — onu silmek için ayrıca hesap silme akışını kullanın.</p>
+<p>Uygulamayı kaldırmak cihaz üzerindeki <strong>tüm yerel depolamayı siler</strong>. Ancak sunucudaki verileriniz durur; onu silmek için hesap silme akışını kullanın.</p>
 <hr />
 <h2>6. Değişiklikler</h2>
-<p>Bu politikada değişiklik yapılırsa "Sürüm" numarası artırılır ve uygulama içi bildirim gösterilir.</p>
+<p>Bu politikada değişiklik yapılırsa "Sürüm" numarası artırılır ve güncel metin bu adreste yayımlanır.</p>
 <hr />
 <h2>7. İletişim</h2>
 <p>Yerel depolamayla ilgili sorular için: <code>sandikapp.destek@gmail.com</code></p>
+<!-- sandik-govde:bitti -->
 <footer>
   sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
 </footer>

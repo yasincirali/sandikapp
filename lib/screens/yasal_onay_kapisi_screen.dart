@@ -12,16 +12,18 @@ import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sigan_metin.dart';
+import '../widgets/zorunlu_okuma.dart';
 import 'legal_doc_screen.dart';
 import 'register_screen.dart' show YasalOnayKutusu;
 
-/// Yeniden onay kapısı (bayrak `yeniden_onay_kapisi`, 2026-10-04).
+/// Yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`, 2026-10-04).
 ///
 /// ## Neden
 /// Kullanıcı kararı: *"Eski rıza metnini onaylayanlar için ilk login'de
 /// güncel doküman sunulup onay istenmeli."* `_AuthGate` bu ekranı,
-/// kullanıcının Koşullar / Gizlilik / KVKK Aydınlatma'nın GÜNCEL sürümüne
-/// ya da kayıt kutusu taahhütlerine etkin onayı yoksa gösterir
+/// kullanıcının Koşullar / Gizlilik / KVKK Aydınlatma / Açık Rıza Metni'nin
+/// (1.2'den beri dördü) GÜNCEL sürümüne ya da kayıt kutusu taahhütlerine
+/// etkin onayı yoksa gösterir
 /// (`YasalOnayService.kapiDurumu`). Üç kullanıcı buraya düşer:
 /// - belgelerin eski sürümünü onaylamış olan → "Güncellenen belgeler" +
 ///   "Neler değişti" + tek onay düğmesi;
@@ -35,7 +37,11 @@ import 'register_screen.dart' show YasalOnayKutusu;
 ///   (`DisclaimerService.kabulKaydet`) ve o kapı aynen çalışır.
 ///
 /// Geri tuşuyla atlanamaz; tek çıkış "Çıkış yap". Belgeler okunabilir
-/// (`LegalDocScreen`, yalnız okuma). Onay `yasal_onay_kaydet` RPC'sine
+/// (`LegalDocScreen`, yalnız okuma). Zorunlu okumada (bayrak
+/// `zorunlu_okuma`, 2026-10-04) listedeki her metin — eksikse yatırım
+/// uyarısı da listeye girer — tam açılır, sonuna kadar okunup EN SONUNDA
+/// onaylanır; hepsi onaylanmadan kutular işaretlenmez ve "Okudum, kabul
+/// ediyorum" açılmaz. Onay `yasal_onay_kaydet` RPC'sine
 /// `yeniden_onay` kanalıyla gider. Bağlantı hatasında ekran hata gösterir
 /// ve kullanıcı yeniden dener; sunucu reddederse (metin kayması gibi bir
 /// hata) raporlanır ve kullanıcı KİLİTLENMEZ — bir sonraki açılışta kapı
@@ -71,14 +77,50 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
   /// Kutu düzeni kayıt ekranıyla aynı karar; ekran açılışında bir kez.
   late final bool _tekKutu = RemoteConfigService.instance.tekOnayKutusu;
 
+  /// Zorunlu okuma — ekran açılışında bir kez (bkz. kayıt ekranı).
+  late final bool _zorunlu = RemoteConfigService.instance.zorunluOkuma;
+
   bool _kosulKutusu = false;
   bool _rizaKutusu = false;
   bool _kutuHatasi = false;
   bool _kayitHatasi = false;
   final Set<String> _acilanlar = {};
 
+  /// Zorunlu okumada sonuna kadar okunup sonunda onaylanan türler.
+  final Set<String> _onaylananlar = {};
+
   bool get _kutularTamam =>
       !widget.durum.kutuEksik || (_kosulKutusu && _rizaKutusu);
+
+  List<ZorunluMetin> _metinler(AppLocalizations l) => ZorunluMetin.liste(l,
+      yatirimUyarisiDahil: widget.yatirimUyarisiDahil);
+
+  int _onayliSayisi(AppLocalizations l) =>
+      _metinler(l).where((m) => _onaylananlar.contains(m.tur)).length;
+
+  /// Zorunlu okuma kapalıyken her zaman `true`.
+  bool get _belgelerTamam {
+    if (!_zorunlu) return true;
+    final l = context.l10n;
+    return _onayliSayisi(l) == _metinler(l).length;
+  }
+
+  Future<void> _zorunluOku(ZorunluMetin m) async {
+    setState(() => _acilanlar.add(m.tur));
+    final sonuc = await zorunluOkumaAc(context, m);
+    if (!mounted || sonuc == null) return;
+    if (sonuc.onaylandi && sonuc.sonunaKadarOkundu) {
+      setState(() => _onaylananlar.add(m.tur));
+    }
+  }
+
+  /// Kutu değişimi — zorunlu okumada metinler bitmeden kutu işaretlenmez.
+  /// Hata durumuna alınmaz: kutunun kilit notu ve düğmenin üstündeki sayaç
+  /// neyin beklendiğini zaten söylüyor.
+  void _kutuDegistir(VoidCallback degistir) {
+    if (!_belgelerTamam) return;
+    setState(degistir);
+  }
 
   String _kutuUlkesi(BuildContext context) =>
       SunucuSecimi.instance.aktifOrNull?.ulke ??
@@ -86,32 +128,24 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
           ? context.l10n.tekOnayUlkeBilinmiyor
           : KayitKutuMetni.rizaUlkeBilinmiyor);
 
-  Future<void> _belgeyiAc(String tur) async {
-    final l = context.l10n;
-    final (baslik, ikon, bloklar) = switch (tur) {
-      YasalTur.kosullar => (
-          l.yasalBelgeKosullar,
-          Icons.gavel_rounded,
-          LegalDocs.terms
-        ),
-      YasalTur.gizlilik => (
-          l.yasalBelgeGizlilik,
-          Icons.shield_outlined,
-          LegalDocs.privacy
-        ),
-      _ => (l.yasalBelgeKvkk, Icons.privacy_tip_outlined, LegalDocs.kvkk),
-    };
-    setState(() => _acilanlar.add(tur));
+  /// Bayrak kapalıyken: belge yalnız okunur (`LegalDocScreen`). Ad ve ikon
+  /// [ZorunluMetin.belge]'den — iki kipte aynı.
+  Future<void> _belgeyiAc(YasalBelge belge) async {
+    final m = ZorunluMetin.belge(context.l10n, belge);
+    final bloklar = m.bloklar();
+    setState(() => _acilanlar.add(belge.tur));
     await pushGuarded<void>(
       context,
       adaptiveRoute(
-        builder: (_) =>
-            LegalDocScreen(title: baslik, icon: ikon, blocks: bloklar),
+        builder: (_) => LegalDocScreen(
+            title: m.adaylar.first, icon: m.ikon, blocks: bloklar),
       ),
     );
   }
 
   Future<void> _onayla() async {
+    // Düğme zaten kapalı; çift güvence (ör. erişilebilirlik eylemi).
+    if (!_belgelerTamam) return;
     if (!_kutularTamam) {
       setState(() => _kutuHatasi = true);
       return;
@@ -144,6 +178,7 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
         durum: widget.durum,
         belgeDegiskenleri: LegalDocs.yerTutucuDegerleri(),
         acilanBelgeler: _acilanlar,
+        sonunaKadarOkunanlar: _zorunlu ? {..._onaylananlar} : const {},
         kutu: kutu,
         yatirimUyarisiDahil: widget.yatirimUyarisiDahil,
         locale: locale,
@@ -167,20 +202,27 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
     final durum = widget.durum;
     final hp = SandikSpace.screenH(context);
 
-    final belgeler = [
-      for (final m in YasalMetinKatalogu.zorunluBelgeler())
-        _BelgeSatiri(
-          adaylar: switch (m.tur) {
-            YasalTur.kosullar => [l.yasalBelgeKosullar],
-            YasalTur.gizlilik => [l.yasalBelgeGizlilik],
-            _ => [l.yasalBelgeKvkk, l.yasalBelgeKvkkKisa],
-          },
-          surum: l.yasalBelgeSurum(m.surum),
-          acildi: _acilanlar.contains(m.tur),
-          acildiEtiketi: l.yasalBelgeAcildi,
-          onTap: () => _belgeyiAc(m.tur),
-        ),
-    ];
+    final belgeler = _zorunlu
+        ? [
+            for (final m in _metinler(l))
+              YasalBelgeSatiri(
+                adaylar: m.adaylar,
+                surum: l.yasalBelgeSurum(m.surum),
+                tamam: _onaylananlar.contains(m.tur),
+                tamamEtiketi: l.zorunluOkumaOnaylandi,
+                onTap: () => _zorunluOku(m),
+              ),
+          ]
+        : [
+            for (final b in YasalBelge.values)
+              YasalBelgeSatiri(
+                adaylar: ZorunluMetin.belge(l, b).adaylar,
+                surum: l.yasalBelgeSurum(b.surum),
+                tamam: _acilanlar.contains(b.tur),
+                tamamEtiketi: l.yasalBelgeAcildi,
+                onTap: () => _belgeyiAc(b),
+              ),
+          ];
 
     final icerik = <Widget>[
       Center(
@@ -233,6 +275,13 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
         ),
       ],
       const SizedBox(height: SandikSpace.lg),
+      if (_zorunlu) ...[
+        Text(
+          l.zorunluOkumaBelgelerAciklama,
+          style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+      ],
       SandikCard(
         padding: EdgeInsets.zero,
         child: Column(
@@ -253,7 +302,8 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
           style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],
-      if (widget.yatirimUyarisiDahil) ...[
+      // Zorunlu okumada uyarı listede bir satır (tam metin okuyucuda).
+      if (widget.yatirimUyarisiDahil && !_zorunlu) ...[
         const SizedBox(height: SandikSpace.lg),
         SandikSectionHeader(title: l.yasalKapiYatirimUyarisi),
         const SizedBox(height: SandikSpace.sm),
@@ -294,8 +344,23 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
             ),
             const SizedBox(height: SandikSpace.sm),
           ],
+          // Zorunlu okumada düğme kapalıyken neyin beklendiği: önce kaç
+          // metnin onaylandığı, metinler bitince kutular.
+          if (_zorunlu && (!_belgelerTamam || !_kutularTamam)) ...[
+            Text(
+              !_belgelerTamam
+                  ? l.zorunluOkumaSayac(
+                      _onayliSayisi(l), _metinler(l).length)
+                  : l.yasalKapiKutuGerekli,
+              textAlign: TextAlign.center,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+            const SizedBox(height: SandikSpace.sm),
+          ],
           SandikAsyncButton(
-            onPressed: _onayla,
+            onPressed: !_zorunlu || (_belgelerTamam && _kutularTamam)
+                ? _onayla
+                : null,
             child: SiganMetin(
               [l.yasalKapiOnayla, l.yasalKapiOnaylaKisa],
               textAlign: TextAlign.center,
@@ -346,10 +411,15 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
   /// Kayıt formundaki kutuların AYNISI — metinler katalogdan, düzen
   /// `tek_onay_kutusu`'na göre. Belgeler yukarıda listelendiği için kutuda
   /// bağlantı yok; kutu cümlesi düz metin (hash'lenen metinle aynı).
+  /// Zorunlu okumada metinler bitene kadar kilitli ve nedenini söyler
+  /// (kayıt ekranıyla aynı karar: kutu son metnin onayıyla kendiliğinden
+  /// işaretlenmez, açık rıza ayrı bir eylemdir).
   List<Widget> _kutular(BuildContext context) {
     final l = context.l10n;
     final ulke = _kutuUlkesi(context);
     final hata = _kutuHatasi && !_kutularTamam;
+    final belgelerTamam = _belgelerTamam;
+    final kilitNotu = _zorunlu ? l.zorunluOkumaKutuKilitli : null;
     if (_tekKutu) {
       return [
         YasalOnayKutusu(
@@ -359,9 +429,11 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
           bodyText: l.tekOnayAciklama(ulke),
           checkboxLabel: YasalMetinKatalogu.tekKutuCumlesi(l),
           accepted: _kosulKutusu && _rizaKutusu,
+          docConfirmed: belgelerTamam,
+          kilitNotu: kilitNotu,
           error: hata,
           errorMessage: l.tekOnayGerekli,
-          onToggle: () => setState(() {
+          onToggle: () => _kutuDegistir(() {
             final yeni = !(_kosulKutusu && _rizaKutusu);
             _kosulKutusu = yeni;
             _rizaKutusu = yeni;
@@ -377,9 +449,11 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
         bodyText: KayitKutuMetni.kosulGovde,
         checkboxLabel: KayitKutuMetni.kosulCumle,
         accepted: _kosulKutusu,
+        docConfirmed: belgelerTamam,
+        kilitNotu: kilitNotu,
         error: _kutuHatasi && !_kosulKutusu,
         errorMessage: l.yasalKapiKutuGerekli,
-        onToggle: () => setState(() => _kosulKutusu = !_kosulKutusu),
+        onToggle: () => _kutuDegistir(() => _kosulKutusu = !_kosulKutusu),
       ),
       const SizedBox(height: SandikSpace.md2),
       YasalOnayKutusu(
@@ -388,78 +462,12 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
         bodyText: KayitKutuMetni.rizaGovde(ulke),
         checkboxLabel: KayitKutuMetni.rizaCumle,
         accepted: _rizaKutusu,
+        docConfirmed: belgelerTamam,
+        kilitNotu: kilitNotu,
         error: _kutuHatasi && !_rizaKutusu,
         errorMessage: l.yasalKapiKutuGerekli,
-        onToggle: () => setState(() => _rizaKutusu = !_rizaKutusu),
+        onToggle: () => _kutuDegistir(() => _rizaKutusu = !_rizaKutusu),
       ),
     ];
-  }
-}
-
-/// Bir belge satırı: ad (sığan yazım), sürüm, okundu işareti; dokununca
-/// belge açılır.
-class _BelgeSatiri extends StatelessWidget {
-  const _BelgeSatiri({
-    required this.adaylar,
-    required this.surum,
-    required this.acildi,
-    required this.acildiEtiketi,
-    required this.onTap,
-  });
-
-  final List<String> adaylar;
-  final String surum;
-  final bool acildi;
-  final String acildiEtiketi;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SandikBasma(
-      onTap: onTap,
-      olcek: 0.98,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: SandikSpace.md, vertical: SandikSpace.smd),
-          child: Row(
-            children: [
-              Icon(Icons.description_outlined,
-                  size: 20, color: context.c.amberText),
-              const SizedBox(width: SandikSpace.smd),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SiganMetin(
-                      adaylar,
-                      style: context.t.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: context.c.text90,
-                      ),
-                    ),
-                    const SizedBox(height: SandikSpace.xxs),
-                    Text(
-                      acildi ? '$surum · $acildiEtiketi' : surum,
-                      style:
-                          context.t.bodySmall?.copyWith(color: context.c.text36),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: SandikSpace.sm),
-              Icon(
-                acildi
-                    ? Icons.check_circle_rounded
-                    : Icons.chevron_right_rounded,
-                size: 20,
-                color: acildi ? context.c.gain : context.c.text36,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

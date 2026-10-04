@@ -17,7 +17,7 @@ import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Yeniden onay kapısı ekranı (bayrak `yeniden_onay_kapisi`, 2026-10-04).
+/// Yeniden onay kapısı ekranı (bayrak `yasal_kapi_en_yeni`, 2026-10-04).
 ///
 /// Kullanıcı kararı: eski metni onaylayan girişte güncel belgeleri görüp
 /// onaylar; Apple/Google ile ilk kez gelen kayıt formundaki taahhütlerin
@@ -48,7 +48,7 @@ void main() {
       uyariKayitlari.add(userId);
       return true;
     };
-    RemoteConfigService.testAcik = {'yasal_onay_kaydi', 'yeniden_onay_kapisi'};
+    RemoteConfigService.testAcik = {'yasal_onay_kaydi', 'yasal_kapi_en_yeni'};
   });
   tearDown(() {
     YasalOnayService.rpcTesti = null;
@@ -57,11 +57,12 @@ void main() {
     RemoteConfigService.testAcik = {};
   });
 
-  /// Belgelerin eski (1.0) sürümünü onaylamış, kutuları tamam.
+  /// Belgelerin eski (1.1) sürümünü onaylamış, kutuları tamam; Açık Rıza
+  /// Metni (1.2'de ayrı belge oldu) hiç onaylanmamış.
   final guncelleme = YasalOnayService.eksikleriHesapla([
-    (YasalTur.kosullar, '1.0'),
-    (YasalTur.gizlilik, '1.0'),
-    (YasalTur.kvkk, '1.0'),
+    (YasalTur.kosullar, '1.1'),
+    (YasalTur.gizlilik, '1.1'),
+    (YasalTur.kvkk, '1.1'),
     (YasalTur.kayitKutuKosullar, YasalMetinKatalogu.kutuSurumu),
     (YasalTur.kayitKutuRiza, YasalMetinKatalogu.kutuSurumu),
   ]);
@@ -118,7 +119,7 @@ void main() {
           (o as Map)['tur'] as String,
       ];
 
-  testWidgets('güncellenen belgeler: başlık, "Neler değişti", üç belge, kutu '
+  testWidgets('güncellenen belgeler: başlık, "Neler değişti", dört belge, kutu '
       'YOK; tek dokunuş yazar ve kapıyı kapatır', (tester) async {
     await ac(tester, guncelleme);
     expect(find.text(l.yasalKapiBaslikGuncel), findsOneWidget);
@@ -127,19 +128,26 @@ void main() {
     expect(sigan(l.yasalBelgeKosullar), findsOneWidget);
     expect(sigan(l.yasalBelgeGizlilik), findsOneWidget);
     expect(sigan(l.yasalBelgeKvkk), findsOneWidget);
+    expect(sigan(l.yasalBelgeAcikRiza), findsOneWidget);
     expect(sigan(l.yasalKapiOnayla), findsOneWidget);
-    expect(find.text(l.yasalBelgeSurum(YasalMetinKatalogu.belgeSurumu)),
-        findsNWidgets(3));
+    expect(find.text(l.yasalBelgeSurum(YasalBelge.kosullar.surum)),
+        findsNWidgets(4));
     expect(find.text(l.yasalKapiTaahhutBaslik), findsNothing);
     expect(find.text(KayitKutuMetni.rizaCumle), findsNothing);
 
     await onayla(tester);
     expect(tamam, 1);
     expect(cagrilar.single['p_kanal'], 'yeniden_onay');
-    expect(turler(), [YasalTur.kosullar, YasalTur.gizlilik, YasalTur.kvkk]);
+    expect(turler(), [
+      YasalTur.kosullar,
+      YasalTur.gizlilik,
+      YasalTur.kvkk,
+      YasalTur.acikRiza,
+    ]);
     final ogeler = cagrilar.single['p_ogeler'] as List;
-    expect((ogeler.first as Map)['surum'], YasalMetinKatalogu.belgeSurumu);
-    expect((ogeler.first as Map)['degiskenler']['onceki_surum'], '1.0');
+    expect((ogeler.first as Map)['surum'], YasalBelge.kosullar.surum);
+    expect((ogeler.first as Map)['degiskenler']['onceki_surum'], '1.1');
+    expect((ogeler.last as Map)['degiskenler']['onceki_surum'], isNull);
     expect(uyariKayitlari, isEmpty);
   });
 
@@ -176,6 +184,7 @@ void main() {
       YasalTur.kosullar,
       YasalTur.gizlilik,
       YasalTur.kvkk,
+      YasalTur.acikRiza,
     ]);
     // Kutu metni kataloğun hash'iyle: sunucu aynı metni doğrular.
     expect(((cagrilar.single['p_ogeler'] as List).first as Map)['hash'],
@@ -186,7 +195,7 @@ void main() {
       (tester) async {
     RemoteConfigService.testAcik = {
       'yasal_onay_kaydi',
-      'yeniden_onay_kapisi',
+      'yasal_kapi_en_yeni',
       'tek_onay_kutusu',
     };
     await ac(tester, ilk);
@@ -211,12 +220,12 @@ void main() {
     await tester.pumpAndSettle();
     final belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
     expect(belge.blocks.length, LegalDocs.kvkk.length);
-    expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni');
+    expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni — sandık');
     expect(belge.confirmMode, isFalse);
     Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
     await tester.pumpAndSettle();
     expect(
-        find.text('${l.yasalBelgeSurum(YasalMetinKatalogu.belgeSurumu)} · '
+        find.text('${l.yasalBelgeSurum(YasalBelge.kvkk.surum)} · '
             '${l.yasalBelgeAcildi}'),
         findsOneWidget);
     await onayla(tester);
