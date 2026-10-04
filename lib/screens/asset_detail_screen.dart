@@ -845,7 +845,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // aktifken log ignore edilir.
                     final compareOn = _compareAsset != null;
                     final logOnPref = ref.watch(chartLogScaleProvider);
-                    final logOn = compareOn ? false : logOnPref;
+                    // Araçlar gizliyse (sade Başlangıç) önceden açılmış
+                    // MA20/LOG kapatılamaz hâlde kalmasın: etkisiz sayılır.
+                    final araclar =
+                        ref.watch(seviyeGorunurlukProvider).grafikAraclari;
+                    final logOn = compareOn || !araclar ? false : logOnPref;
 
                     final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
@@ -921,7 +925,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // MA20 overlay: aktif segmentin fiyat serisi üzerinden
                     // hesaplanır. İlk 19 nokta NaN olur (yetersiz veri) →
                     // atlanır. Kullanıcı chip ile açıp kapatır.
-                    final ma20On = ref.watch(chartMA20Provider);
+                    final ma20On = araclar && ref.watch(chartMA20Provider);
                     List<FlSpot>? ma20Spots;
                     if (ma20On && activeSeg.spots.length >= 20) {
                       // MA20 her zaman ham fiyat serisinden hesaplanır;
@@ -1053,6 +1057,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         _donemCipleri(pnl.currentUnitTRY),
                         const SizedBox(height: SandikSpace.sm),
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
+                        // Sade Başlangıç'ta (`seviye_anketi`) gizli.
+                        if (araclar)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [

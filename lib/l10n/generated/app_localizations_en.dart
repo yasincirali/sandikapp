@@ -5468,4 +5468,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeTagPartner => 'Shared portfolio';
+
+  @override
+  String get levelBeginnerDescSade =>
+      'Simple view: just the core numbers. Technical signals, chart tools and advanced metrics are hidden.';
+
+  @override
+  String get levelSurveyIntro =>
+      'Three quick questions to tailor the screens to you.';
+
+  @override
+  String levelSurveyProgress(int no, int toplam) {
+    return 'Question $no of $toplam';
+  }
+
+  @override
+  String get levelSurveyQ1 => 'How long have you been investing?';
+
+  @override
+  String get levelSurveyQ1A0 => 'Just starting';
+
+  @override
+  String get levelSurveyQ1A1 => '1–3 years';
+
+  @override
+  String get levelSurveyQ1A2 => 'More than 3 years';
+
+  @override
+  String get levelSurveyQ2 => 'Where are most of your savings?';
+
+  @override
+  String get levelSurveyQ2A0 => 'Gold, FX, deposits';
+
+  @override
+  String get levelSurveyQ2A1 => 'Funds and stocks';
+
+  @override
+  String get levelSurveyQ2A2 => 'Active stock and crypto trading';
+
+  @override
+  String get levelSurveyQ3 => 'Which of these terms are familiar?';
+
+  @override
+  String get levelSurveyQ3A0 => 'Not really';
+
+  @override
+  String get levelSurveyQ3A1 => 'Inflation-adjusted return, allocation';
+
+  @override
+  String get levelSurveyQ3A2 => 'Volatility, XIRR, RSI';
+
+  @override
+  String levelSurveyResult(String seviye) {
+    return 'The $seviye view suits you.';
+  }
+
+  @override
+  String get levelSurveyResultNote =>
+      'You can change it any time in Settings › Appearance.';
+
+  @override
+  String get levelSurveyRetake => 'Retake the survey';
+
+  @override
+  String get levelSurveyOpen => 'Find my level with 3 questions';
+
+  @override
+  String get levelSurveyBack => 'Back';
 }

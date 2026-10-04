@@ -123,6 +123,12 @@ class PeriodSummaryView extends StatelessWidget {
   /// katlı (2026-09-21 sadeleştirme). Testler varsayılanı açık görür.
   final bool derinlikAcik;
 
+  /// Derinlik bölümü HİÇ çizilsin mi. Sade Başlangıç'ta (`seviye_anketi`)
+  /// `false`: "bu dönem" sorusunun cevabı SONUÇ/NEDEN/AYRINTI'da tamam;
+  /// XIRR, endeks kıyası, karakter gibi kartlar yeni yatırımcıya ikinci,
+  /// üçüncü bir yüzde gösterip soru işareti doğuruyordu.
+  final bool derinlikGorunur;
+
   /// "Başka yere koysaydın" kıyas kartı — NEDEN bölümünün sonunda (5. sıra).
   ///
   /// Widget olarak alınır (sağlık kartıyla aynı gerekçe: hesap ağa çıkar,
@@ -161,6 +167,7 @@ class PeriodSummaryView extends StatelessWidget {
     this.xirr,
     this.enflasyonVerisiBekleniyor = false,
     this.derinlikAcik = true,
+    this.derinlikGorunur = true,
     this.kiyasKarti,
     this.tufeKoprusu,
     this.tufePenceresiKisaltildi = false,
@@ -204,7 +211,7 @@ class PeriodSummaryView extends StatelessWidget {
           const SizedBox(height: SandikSpace.sm),
           ..._arali(g.ayrinti),
         ],
-        if (g.derinlik.isNotEmpty) ...[
+        if (derinlikGorunur && g.derinlik.isNotEmpty) ...[
           const SizedBox(height: SandikSpace.md),
           _DerinlikBolumu(
             baslangictaAcik: derinlikAcik,

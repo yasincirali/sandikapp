@@ -156,7 +156,7 @@ class _KarsilamaScreenState extends ConsumerState<KarsilamaScreen> {
                   children: [
                     for (var i = 0; i < sayfalar.length; i++)
                       AnimatedContainer(
-                        duration: sure,
+                        duration: SandikMotion.stateOf(context),
                         curve: SandikMotion.enter,
                         margin: const EdgeInsets.symmetric(
                             horizontal: SandikSpace.xxs),

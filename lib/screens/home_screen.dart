@@ -12,7 +12,6 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/notification_service.dart';
@@ -664,8 +663,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // (`seviyeGorunurlugu`): sinyal, gösterge okumayı bilen
                   // kullanıcıya hitap eder. Varsayılan Orta olduğu için
                   // seçim yapmayan hiç kimse bunu kaybetmez.
-                  if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
-                      .teknikSinyaller) ...[
+                  //
+                  // `seviye_anketi` açıkken zil her seviyede görünür, yalnız
+                  // sinyal satırları Başlangıç'ta süzülür (`zilGorunurProvider`).
+                  if (ref.watch(zilGorunurProvider)) ...[
                     TourAnchor(
                       target: TourTarget.bildirimCani,
                       child: _SignalBadgeButton(onTap: _scrollToSignals),
@@ -1314,7 +1315,11 @@ class _SignalsBottomSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final signals = ref.watch(signalProvider).valueOrNull ?? const [];
+    // Başlangıç'ta sinyal satırı yok; zil yine alarm ve genel bildirimlerin
+    // kutusu (`zilGorunurProvider`).
+    final signals = ref.watch(zilSinyalleriGosterProvider)
+        ? (ref.watch(signalProvider).valueOrNull ?? const [])
+        : const <SignalAlert>[];
     // Fiyat alarmları AYRI tablodan gelir (0065) ve burada tek zaman
     // akışında harmanlanır — ayrılık veri modelinde, birlik sunumda.
     final alarmlar =
@@ -1812,7 +1817,9 @@ class _SignalBadgeButton extends ConsumerWidget {
     final sonGorulenMs = ref.watch(bildirimSonGorulenProvider);
     final count = yeniBildirimSayisi(
       bildirimAkisi(
-        ref.watch(activeSignalsProvider),
+        ref.watch(zilSinyalleriGosterProvider)
+            ? ref.watch(activeSignalsProvider)
+            : const [],
         ref.watch(activePriceAlertNotificationsProvider),
         ref.watch(activeAppNotificationsProvider),
       ),

@@ -65,7 +65,10 @@ import '../models/grafik_tipi.dart';
 import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart'
-    show leaderboardOptInProvider, yatirimciSeviyesiProvider;
+    show
+        leaderboardOptInProvider,
+        seviyeGorunurlukProvider,
+        yatirimciSeviyesiProvider;
 import 'leaderboard_screen.dart';
 import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';

@@ -5416,4 +5416,71 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get welcomeTagPartner => 'Ortak portföy';
+
+  @override
+  String get levelBeginnerDescSade =>
+      'Sade görünüm: yalnızca temel rakamlar. Teknik sinyaller, grafik araçları ve ileri metrikler gizlenir.';
+
+  @override
+  String get levelSurveyIntro =>
+      'Üç kısa soru; ekranları sana göre ayarlayalım.';
+
+  @override
+  String levelSurveyProgress(int no, int toplam) {
+    return 'Soru $no / $toplam';
+  }
+
+  @override
+  String get levelSurveyQ1 => 'Ne kadar süredir yatırım yapıyorsun?';
+
+  @override
+  String get levelSurveyQ1A0 => 'Yeni başlıyorum';
+
+  @override
+  String get levelSurveyQ1A1 => '1–3 yıldır';
+
+  @override
+  String get levelSurveyQ1A2 => '3 yıldan fazla';
+
+  @override
+  String get levelSurveyQ2 => 'Birikimin daha çok nerede?';
+
+  @override
+  String get levelSurveyQ2A0 => 'Altın, döviz, mevduat';
+
+  @override
+  String get levelSurveyQ2A1 => 'Fon ve hisse';
+
+  @override
+  String get levelSurveyQ2A2 => 'Aktif hisse ve kripto alım satımı';
+
+  @override
+  String get levelSurveyQ3 => 'Bu terimlerden hangileri sana tanıdık?';
+
+  @override
+  String get levelSurveyQ3A0 => 'Pek tanıdık değil';
+
+  @override
+  String get levelSurveyQ3A1 => 'Enflasyona göre getiri, dağılım';
+
+  @override
+  String get levelSurveyQ3A2 => 'Oynaklık, XIRR, RSI';
+
+  @override
+  String levelSurveyResult(String seviye) {
+    return 'Sana $seviye görünümü uygun.';
+  }
+
+  @override
+  String get levelSurveyResultNote =>
+      'İstediğin an Ayarlar › Görünüm\'den değiştirebilirsin.';
+
+  @override
+  String get levelSurveyRetake => 'Anketi yeniden yap';
+
+  @override
+  String get levelSurveyOpen => '3 soruyla seviyemi bul';
+
+  @override
+  String get levelSurveyBack => 'Geri';
 }

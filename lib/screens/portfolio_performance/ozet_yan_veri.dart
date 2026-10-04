@@ -646,6 +646,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       // gelir, diğerlerinde katlı: özet önce "bu dönem"i anlatsın.
       derinlikAcik:
           ref.watch(yatirimciSeviyesiProvider) == YatirimciSeviyesi.ileri,
+      derinlikGorunur: ref.watch(seviyeGorunurlukProvider).derinlik,
     );
   }
 

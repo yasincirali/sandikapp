@@ -1065,10 +1065,14 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // deneme surface2 + kenarlıklı çipti ve kartın içinde yabancı
           // duruyordu ("bulunduğu layera uygun olmalı") — kart zaten bir
           // yüzey, içine ikinci bir yüzey koymak katman hiyerarşisini bozar.
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
-          ),
+          //
+          // Sade Başlangıç'ta (`seviye_anketi`) seçici yok, grafik düz
+          // çizgide kalır (bkz. `seviyeGorunurlugu`, grafikAraclari).
+          if (ref.watch(seviyeGorunurlukProvider).grafikAraclari)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+            ),
         ],
           ),
           // Tam ekran çipi KALDIRILDI (kullanıcı kararı, 2026-09-17): "çok

@@ -16,7 +16,9 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
+import '../widgets/seviye_anketi.dart';
 import '../widgets/yenilikler_sheet.dart';
+import '../services/remote_config_service.dart';
 import '../services/surum_notu_service.dart';
 import '../services/review_prompt_service.dart';
 import '../services/crash_reporter.dart';
@@ -1185,10 +1187,24 @@ class _InvestorLevelPicker extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            '${current.aciklama(context)} ${context.l10n.investorLevelNote}',
+            '${current.aciklama(context, sade: RemoteConfigService.instance.seviyeAnketi)} '
+            '${context.l10n.investorLevelNote}',
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
         ),
+        // Anket (bayrak `seviye_anketi`): hangi seviyede olduğundan emin
+        // olmayan kullanıcı etiket seçmek yerine üç soruyu cevaplar.
+        if (RemoteConfigService.instance.seviyeAnketi)
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+            minimumSize: SandikTouch.minSize,
+            alignment: Alignment.centerLeft,
+            onPressed: () => seviyeAnketiniAc(context),
+            child: Text(
+              context.l10n.levelSurveyOpen,
+              style: context.t.bodyMedium?.copyWith(color: context.c.amberText),
+            ),
+          ),
       ],
     );
   }
