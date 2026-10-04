@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/leaderboard_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -347,7 +348,12 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
             return ListView(
               padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
               children: [
-                ZirveDonemSecici(secili: _donem, onSec: _donemSec),
+                ZirveDonemSecici(
+                  secili: _donem,
+                  onSec: _donemSec,
+                  // Sıralama › Ortaklarım ile aynı seçici kalsın (arena).
+                  kayan: RemoteConfigService.instance.yarisDuelloArena,
+                ),
                 const SizedBox(height: SandikSpace.md),
                 if (yukleniyor)
                   const _Iskelet()

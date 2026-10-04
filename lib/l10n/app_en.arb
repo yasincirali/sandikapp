@@ -3700,5 +3700,12 @@
   "settingsAdvancedUpper": "ADVANCED",
   "settingsAdvancedSemantics": "Advanced settings",
   "settingsThemeLabel": "Theme",
-  "settingsBaseCurrencyLabel": "Base currency"
+  "settingsBaseCurrencyLabel": "Base currency",
+  "arenaMeasuring": "Measuring the gap…",
+  "arenaBehind": "{ad} leads by {fark} pts · you can catch up",
+  "arenaNoDataYet": "No data yet",
+  "arenaWaiting": "The duel starts once both returns are measured",
+  "arenaStripDaily": "Leader day by day",
+  "arenaStripMonthly": "Leader month by month",
+  "arenaSwaps": "{n, plural, =0{No lead changes} =1{1 lead change} other{{n} lead changes}}"
 }

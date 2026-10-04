@@ -8,12 +8,14 @@ import '../models/position.dart';
 import '../providers/portfolio_provider.dart' show PortfolioState;
 import 'daily_summary.dart';
 import 'history_service.dart';
+import 'lider_seridi.dart';
 import 'period_summary_service.dart';
 import 'remote_config_service.dart';
 import 'secim_getirisi.dart';
 
 // Çağıranlar kapsamı seçer; enum'ı ayrıca içe aktarmasınlar.
 export 'secim_getirisi.dart' show SiralamaKapsami;
+export 'lider_seridi.dart' show LiderSeridi, SeritLider;
 import 'zirve_kiyas.dart';
 
 /// Kâr/zarar hesabı sonucu.
@@ -227,6 +229,39 @@ class LeaderboardService {
       // Fiyat geçmişi alınamadı — "veri yok" olarak göster. Uydurma bir
       // sayı basmak sıralamayı sessizce bozardı.
       CrashReporter.report(e, st, reason: 'LeaderboardService.donemGetirisiPct');
+      return null;
+    }
+  }
+
+  /// Düello arenasının lider şeridi (bayrak `yaris_duello_arena`): iki
+  /// kişinin seçimlerinin getirisini dönemin her günü kıyaslar.
+  ///
+  /// Sıralamayla AYNI motor ve kapsam (`ortaklar`): [donemGetirisiPct]'in
+  /// döngüsünün ara toplamları (`SecimGetirisi.donemSerisi`). İki kişiye
+  /// tek `simdi` verilir ki ölçüm anları hizalansın. Seri yoksa ya da
+  /// hata olursa `null` — şerit çizilmez, uydurma yok.
+  Future<LiderSeridi?> liderSeridi({
+    required List<Asset> benLotlari,
+    required List<Asset> rakipLotlari,
+    required int periodDays,
+  }) async {
+    if (benLotlari.isEmpty || rakipLotlari.isEmpty) return null;
+    try {
+      final simdi = DateTime.now();
+      final seriler = await Future.wait([
+        SecimGetirisi.donemSerisi(benLotlari, periodDays,
+            kapsam: SiralamaKapsami.ortaklar, simdi: simdi),
+        SecimGetirisi.donemSerisi(rakipLotlari, periodDays,
+            kapsam: SiralamaKapsami.ortaklar, simdi: simdi),
+      ]);
+      return liderSeridiKur(
+        ben: seriler[0],
+        rakip: seriler[1],
+        gun: periodDays,
+        nowMs: simdi.millisecondsSinceEpoch,
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'LeaderboardService.liderSeridi');
       return null;
     }
   }

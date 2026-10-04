@@ -60,6 +60,7 @@ void main() {
     'lib/screens/main_navigation_screen.dart': 0,
     'lib/screens/siralama_screen.dart': 0,
     'lib/widgets/zirve_donem_secici.dart': 0,
+    'lib/widgets/duello_arenasi.dart': 0,
     'lib/screens/otp_verification_screen.dart': 0,
     'lib/screens/kayitli_cihazlar_screen.dart': 0,
     'lib/screens/partnership_requests_screen.dart': 0,

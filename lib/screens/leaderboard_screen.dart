@@ -142,6 +142,9 @@ class YarisGovdesi extends ConsumerWidget {
     final partnerAssets = ref.watch(allPartnerAssetsProvider).valueOrNull ?? {};
     final pState = ref.watch(portfolioProvider).valueOrNull;
     final periodDays = _YarisDonemleri.liste[donemIdx].days;
+    // Düello arenası (bayrak `yaris_duello_arena`, 2026-10-04): iki kişide
+    // listenin yerine arena; dönem seçici kayan hap. Hesap değişmez.
+    final arena = RemoteConfigService.instance.yarisDuelloArena;
 
     if (!optIn) {
       return _OptInPrompt(
@@ -154,13 +157,16 @@ class YarisGovdesi extends ConsumerWidget {
     }
     return Column(
       children: [
-        if (sekmeli)
+        // Arena açıkken eski Yarış ekranı da Sıralama'nın seçicisini
+        // kullanır (1H · 1A · 1Y, kayan hap) — "7G / 30G" ikinci bir dil.
+        if (sekmeli || arena)
           Padding(
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
                 SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
             child: ZirveDonemSecici(
               secili: ZirveDonem.values[donemIdx],
               onSec: (d) => onDonem(ZirveDonem.values.indexOf(d)),
+              kayan: arena,
             ),
           )
         else
@@ -201,6 +207,7 @@ class YarisGovdesi extends ConsumerWidget {
                   partnerAssets: partnerAssets,
                   periodDays: periodDays,
                   pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
+                  arena: arena,
                 ),
         ),
         // Kendi satırının ek bilgisi (R1): paranın getirisi —
@@ -871,6 +878,9 @@ class _LeaderboardList extends StatefulWidget {
   final int periodDays;
   final double Function(double, String) pnlToTRY;
 
+  /// Düello arenası bayrağı — tam bir ortakta lider şeridi de hesaplanır.
+  final bool arena;
+
   const _LeaderboardList({
     required this.me,
     required this.myAssets,
@@ -878,6 +888,7 @@ class _LeaderboardList extends StatefulWidget {
     required this.partnerAssets,
     required this.periodDays,
     required this.pnlToTRY,
+    this.arena = false,
   });
 
   @override
@@ -895,6 +906,11 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   /// bunu izler (`YarisSahnesi.yenileme`).
   int _yenileme = 0;
   DateTime? _sonGuncelleme;
+
+  /// Arenanın lider şeridi — satırlarla AYNI turda hesaplanır ve atanır ki
+  /// şeridin "bugün"ü arenadaki lideri anlatsın. Yalnız bayrak açık ve tam
+  /// bir ortak varken; aksi hâlde hiç hesaplanmaz (maliyet yok).
+  LiderSeridi? _serit;
   // "Anlık" hissi için düzenli tick — her tetikte kendi ROI'sini
   // yeniden hesaplayıp upload eder, sonra partner ROI'lerini
   // Supabase'ten tazeler.
@@ -1039,6 +1055,17 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         roi: myRoi,
       ));
     }
+    // Lider şeridi sıralamayla paralel (aynı fiyat serileri; HistoryService
+    // sembol başına önbellekli). Ölçü değişmez: şerit aynı motorun gün gün
+    // birikimidir (`SecimGetirisi.donemSerisi`).
+    final seritIstegi = widget.arena && me != null && widget.partners.length == 1
+        ? LeaderboardService.instance.liderSeridi(
+            benLotlari: widget.myAssets,
+            rakipLotlari: widget.partnerAssets[widget.partners.first.id] ??
+                const [],
+            periodDays: donem,
+          )
+        : Future<LiderSeridi?>.value(null);
     // Ortakların getirisi paralel hesaplanır — her biri kendi fiyat serisini
     // çekiyor; sırayla beklemek ortak sayısıyla doğru orantılı gecikme
     // yaratırdı. `HistoryService` sembol başına önbellekli, yani aynı hisseye
@@ -1048,6 +1075,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
           widget.partnerAssets[p.id] ?? const [], widget.periodDays,
               kapsam: SiralamaKapsami.ortaklar)),
     );
+    final serit = await seritIstegi;
     for (var i = 0; i < widget.partners.length; i++) {
       final p = widget.partners[i];
       rows.add(_LeaderboardRow(
@@ -1068,6 +1096,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     });
     _yenileme++;
     _sonGuncelleme = DateTime.now();
+    _serit = serit;
     return rows;
   }
 
@@ -1113,6 +1142,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
                   yenileme: _yenileme,
                   sonGuncelleme: _sonGuncelleme,
                   donemGun: rows.first.donemGun,
+                  arena: widget.arena,
+                  liderSeridi: _serit,
                 ),
               ],
             ),

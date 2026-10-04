@@ -8,7 +8,9 @@ import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../services/lider_seridi.dart';
 import '../utils/tr_iyelik.dart';
+import 'duello_arenasi.dart';
 
 /// Yarış ekranının sahnesi — kullanıcı kararı 2026-09-29.
 ///
@@ -26,6 +28,13 @@ import '../utils/tr_iyelik.dart';
 ///     lider değişince yay çizerek karşı tarafa zıplar.
 ///   * **3+ kişide üstte kürsü.** İlk üç, yüksekliği sırayı anlatan
 ///     basamaklarda.
+///   * **Düello arenası (2026-10-04, bayrak `yaris_duello_arena`).** Tam
+///     iki kişide düello kartı + liste yerine tek bir arena
+///     (`duello_arenasi.dart`) ve gün gün lider şeridi; ortağın getirisi
+///     yoksa da arena çizilir. Arenada taç gösterisi dönem değişiminde de
+///     oynar (kullanıcının onayladığı prototip) — aşağıdaki "nadir an"
+///     kuralı eski düzen içindir; arenanın kendi sıklık kuralı sınıf
+///     notunda. Bayrak kapalıyken bu düzen birebir.
 ///
 /// Neşe yalnızca nadir anlara (Emil Kowalski'nin sıklık kuralı): taç
 /// zıplaması ve konfeti yalnızca CANLI yenilemede lider değişince oynar,
@@ -71,14 +80,24 @@ class YarisKatilimci {
 }
 
 /// Listenin üstünde ne duracak.
-enum YarisVitrini { yok, duello, kursu }
+///
+/// [arena]: düello arenası (bayrak `yaris_duello_arena`) — listenin
+/// YERİNE çizilir, üstüne değil.
+enum YarisVitrini { yok, duello, kursu, arena }
 
 /// Vitrin kuralı — saf, test edilir.
 ///
 /// Düello YALNIZCA tam iki kişi ve ikisinin de getirisi varken: biri
 /// "veri yok"ken halat çubuğu bir şey ölçmez. Kürsü getirisi olan en az üç
 /// kişiyle; boş basamak kürsüyü anlamsızlaştırır.
-YarisVitrini yarisVitrini(List<YarisKatilimci> k) {
+///
+/// [arena] açıkken (bayrak) tam iki kişi HER ZAMAN arenadır — ortağın
+/// getirisi henüz yoksa bile: arena o tarafta "Henüz veri yok" yazar, halat
+/// ortada durur. Eski kural o durumda vitrinsiz iki satırlık liste
+/// gösteriyordu; kullanıcı emülatörde bunu "animasyon kaldırılmış" sandı
+/// (2026-10-04).
+YarisVitrini yarisVitrini(List<YarisKatilimci> k, {bool arena = false}) {
+  if (arena && k.length == 2) return YarisVitrini.arena;
   final verili = k.where((x) => x.roi != null).length;
   if (k.length == 2 && verili == 2) return YarisVitrini.duello;
   if (verili >= 3) return YarisVitrini.kursu;
@@ -110,7 +129,17 @@ class YarisSahnesi extends StatefulWidget {
     required this.yenileme,
     required this.sonGuncelleme,
     required this.donemGun,
+    this.arena = false,
+    this.liderSeridi,
   });
+
+  /// Düello arenası açık mı (bayrak `yaris_duello_arena`). Yalnız tam iki
+  /// kişide etkili; 3+ kişide kürsü + liste aynen kalır.
+  final bool arena;
+
+  /// Arenanın altındaki gün gün lider şeridi; `null` → çizilmez (veri
+  /// yok ya da henüz hesaplanmadı — uydurma yok).
+  final LiderSeridi? liderSeridi;
 
   /// Getiriye göre sıralı (null'lar sonda).
   final List<YarisKatilimci> katilimcilar;
@@ -154,7 +183,8 @@ class _YarisSahnesiState extends State<YarisSahnesi> {
   @override
   Widget build(BuildContext context) {
     final k = widget.katilimcilar;
-    final vitrin = yarisVitrini(k);
+    final vitrin = yarisVitrini(k, arena: widget.arena);
+    if (vitrin == YarisVitrini.arena) return _arena(context, k);
     Widget? ust;
     switch (vitrin) {
       case YarisVitrini.duello:
@@ -164,6 +194,7 @@ class _YarisSahnesiState extends State<YarisSahnesi> {
       case YarisVitrini.kursu:
         ust = _Kursu(ilkUc: k.where((x) => x.roi != null).take(3).toList());
       case YarisVitrini.yok:
+      case YarisVitrini.arena:
         ust = null;
     }
     return Column(
@@ -184,6 +215,40 @@ class _YarisSahnesiState extends State<YarisSahnesi> {
           const SizedBox(height: SandikSpace.lg),
         ],
         _CanliListe(katilimcilar: k, donemGun: widget.donemGun),
+      ],
+    );
+  }
+
+  /// Arena düzeni: canlı başlık + arena + lider şeridi. İki satırlık liste
+  /// YOK — aynı iki kişiyi arena zaten gösteriyor (prototip).
+  Widget _arena(BuildContext context, List<YarisKatilimci> k) {
+    final ben = k.firstWhere((x) => x.ben, orElse: () => k.first);
+    final rakip = k.firstWhere((x) => x.id != ben.id);
+    final serit = widget.liderSeridi;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _CanliBaslik(yenileme: widget.yenileme, son: widget.sonGuncelleme),
+        const SizedBox(height: SandikSpace.smd),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            DuelloArenasi(ben: ben, rakip: rakip, donemGun: widget.donemGun),
+            Positioned.fill(
+              child: IgnorePointer(child: _Konfeti(tetik: _konfeti)),
+            ),
+          ],
+        ),
+        // Şerit yalnız AYNI dönemin verisiyse: dönem değişirken eski
+        // dönemin şeridi yeni arenanın altında kalmasın.
+        if (serit != null && serit.donemGun == widget.donemGun) ...[
+          const SizedBox(height: SandikSpace.md),
+          LiderSeridiKarti(
+            serit: serit,
+            benRengi: yarisciRengi(context, ben),
+            rakipRengi: yarisciRengi(context, rakip),
+          ),
+        ],
       ],
     );
   }
@@ -452,8 +517,11 @@ class _Avatar extends StatelessWidget {
 }
 
 /// Taç — küçük altın işaret. İkon setinde taç yok; yolu kendimiz çiziyoruz.
-class _Tac extends StatelessWidget {
-  const _Tac({this.genislik = 24});
+///
+/// Açık (public): düello arenası (`duello_arenasi.dart`) aynı tacı taşır;
+/// kopya yazılmadı.
+class YarisTaci extends StatelessWidget {
+  const YarisTaci({super.key, this.genislik = 24});
   final double genislik;
 
   @override
@@ -657,7 +725,7 @@ class _Duello extends StatelessWidget {
                       ),
                     );
                   },
-                  child: const _Tac(genislik: tacW),
+                  child: const YarisTaci(genislik: tacW),
                 ),
               ],
             );
@@ -932,7 +1000,7 @@ class _KursuSutunu extends StatelessWidget {
             opacity: lider ? 1 : 0,
             duration: SandikMotion.stateOf(context),
             curve: SandikMotion.enter,
-            child: const _Tac(genislik: SandikSpace.lg),
+            child: const YarisTaci(genislik: SandikSpace.lg),
           ),
         ),
         const SizedBox(height: SandikSpace.xs),

@@ -3958,5 +3958,29 @@
   "settingsAdvancedUpper": "GELİŞMİŞ",
   "settingsAdvancedSemantics": "Gelişmiş ayarlar",
   "settingsThemeLabel": "Tema",
-  "settingsBaseCurrencyLabel": "Baz para birimi"
+  "settingsBaseCurrencyLabel": "Baz para birimi",
+  "arenaMeasuring": "Fark ölçülüyor…",
+  "arenaBehind": "{ad} {fark} puan önde · yetişebilirsin",
+  "@arenaBehind": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "arenaNoDataYet": "Henüz veri yok",
+  "arenaWaiting": "Getiriler ölçülünce düello başlar",
+  "arenaStripDaily": "Gün gün önde olan",
+  "arenaStripMonthly": "Ay ay önde olan",
+  "arenaSwaps": "{n, plural, =0{Yer hiç değişmedi} other{{n} kez yer değişti}}",
+  "@arenaSwaps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }
