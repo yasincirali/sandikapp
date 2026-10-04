@@ -136,17 +136,16 @@ void main() {
     // Kullanıcı daha ilk adımda bilgilendirilmiş olmalı — KVKK açık rıza
     // "bilgilendirilmiş" olmayı ister.
     //
-    // 2026-10-04 (0102): kutu metinleri yasal metin kataloğuna taşındı
-    // (gösterilen = veritabanına hash'lenen). İddia aynı: kayıt ekranı
-    // kutuyu katalogdaki metinle çizer ve o metin uyarıyı taşır.
+    // 2026-10-04: kayıt tek kutulu (açıklaması `tekOnayAciklama`) ve
+    // yatırım uyarısının TAM metni zorunlu okuma listesinde (bayraklar
+    // 2026-10-05'te kalktı). İddia aynı: kayıt ekranındaki kutu metni
+    // uyarıyı taşır.
+    final kayit = oku('lib/screens/register_screen.dart');
+    expect(kayit.contains('bodyText: context.l10n.tekOnayAciklama('), isTrue);
+    expect(kayit.contains('yatirimUyarisiDahil: true'), isTrue);
     expect(
-      oku('lib/screens/register_screen.dart')
-          .contains('bodyText: KayitKutuMetni.kosulGovde'),
-      isTrue,
-    );
-    expect(
-      oku('lib/services/yasal_metin_katalogu.dart')
-          .contains('yatırım tavsiyesi değildir'),
+      oku('lib/l10n/app_tr.arb').contains(
+          '"tekOnayAciklama": "Uygulama yatırım tavsiyesi değildir'),
       isTrue,
     );
   });

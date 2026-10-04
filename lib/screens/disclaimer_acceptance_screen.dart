@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Colors, Icons;
 import '../services/crash_reporter.dart';
 import '../services/disclaimer_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -12,10 +11,10 @@ import '../l10n/l10n.dart';
 /// Varolan kullanıcılar için splash sonrası disclaimer onay ekranı.
 /// Geri butonu yok — onaylanmadan uygulama kullanılamaz.
 ///
-/// Zorunlu okuma (bayrak `zorunlu_okuma`, 2026-10-04): metin zaten TAM
-/// (`disclaimerText`); kutu ve "Kabul et" metnin sonunda. Kullanıcı sona
-/// kaydırana kadar kutu kilitlidir, altta ipucu durur. Metin ekrana
-/// sığıyorsa kilit baştan açıktır.
+/// Zorunlu okuma (2026-10-04; bayrak `zorunlu_okuma` 2026-10-05'te kalktı,
+/// davranış kalıcı): metin zaten TAM (`disclaimerText`); kutu ve "Kabul et"
+/// metnin sonunda. Kullanıcı sona kaydırana kadar kutu kilitlidir, altta
+/// ipucu durur. Metin ekrana sığıyorsa kilit baştan açıktır.
 class DisclaimerAcceptanceScreen extends StatefulWidget {
   final String userId;
   final VoidCallback onAccepted;
@@ -37,12 +36,10 @@ class _DisclaimerAcceptanceScreenState
   bool _loading = false;
   bool _showError = false;
 
-  /// Ekran açılışında bir kez okunur.
-  late final bool _zorunlu = RemoteConfigService.instance.zorunluOkuma;
   bool _sonaUlasti = false;
   double _ilerleme = 0;
 
-  bool get _kilitli => _zorunlu && !_sonaUlasti;
+  bool get _kilitli => !_sonaUlasti;
 
   /// Liste alt boşluğu: "Kabul et"ten sonra metin yok (bkz.
   /// `OkumaOlcumu.sonaUlasti`).
@@ -59,11 +56,11 @@ class _DisclaimerAcceptanceScreenState
       userId: widget.userId,
       locale: dil,
     );
-    // Gösterilen yatırım uyarısı metninin onayı (0102, bayrak
-    // `yasal_onay_kaydi`). Beklenmez, fırlatmaz; kapı yukarıdaki kayıtta.
+    // Gösterilen yatırım uyarısı metninin onayı (0102). Beklenmez,
+    // fırlatmaz; kapı yukarıdaki kayıtta.
     CrashReporter.arkaPlan(
         YasalOnayService.instance.yatirimUyarisiniKaydet(
-            locale: dil, sonunaKadarOkundu: _zorunlu && _sonaUlasti),
+            locale: dil, sonunaKadarOkundu: _sonaUlasti),
         reason: 'YasalOnayService.yatirim_uyarisi');
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) => widget.onAccepted());
@@ -78,21 +75,19 @@ class _DisclaimerAcceptanceScreenState
       child: CupertinoPageScaffold(
         backgroundColor: context.c.background,
         child: SafeArea(
-          child: !_zorunlu
-              ? liste
-              : Column(
-                  children: [
-                    Expanded(
-                      child: SonaKadarOkumaIzleyici(
-                        sonPay: _altBosluk,
-                        onSonaUlasti: () => setState(() => _sonaUlasti = true),
-                        onIlerleme: (v) => setState(() => _ilerleme = v),
-                        child: liste,
-                      ),
-                    ),
-                    if (!_sonaUlasti) OkumaIpucu(ilerleme: _ilerleme),
-                  ],
+          child: Column(
+            children: [
+              Expanded(
+                child: SonaKadarOkumaIzleyici(
+                  sonPay: _altBosluk,
+                  onSonaUlasti: () => setState(() => _sonaUlasti = true),
+                  onIlerleme: (v) => setState(() => _ilerleme = v),
+                  child: liste,
                 ),
+              ),
+              if (!_sonaUlasti) OkumaIpucu(ilerleme: _ilerleme),
+            ],
+          ),
         ),
       ),
     );
@@ -261,18 +256,15 @@ class _DisclaimerAcceptanceScreenState
           ),
         ),
     ];
-    // Zorunlu okumada tek sütun: tembel listenin uzunluğu kurulmamış öğeler
-    // için tahmindir, "sona ulaştı" erken yapışabilirdi (bkz.
-    // LegalDocScreen zorunlu kip). Bayrak kapalıyken liste birebir eski.
-    if (_zorunlu) {
-      return SingleChildScrollView(
-        padding: padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: ogeler,
-        ),
-      );
-    }
-    return ListView(padding: padding, children: ogeler);
+    // Tek sütun, tembel liste DEĞİL: tembel listenin uzunluğu kurulmamış
+    // öğeler için tahmindir, "sona ulaştı" erken yapışabilirdi (bkz.
+    // LegalDocScreen zorunlu kip).
+    return SingleChildScrollView(
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: ogeler,
+      ),
+    );
   }
 }

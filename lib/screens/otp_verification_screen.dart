@@ -40,7 +40,7 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 
   /// Kayıt ekranında gösterilen onay metinleri (yalnız [OtpAmaci.kayit],
   /// `RegisterScreen`'den gelir). Doğrulamadan sonra yasal onay kaydına
-  /// gider (`YasalOnayService`, bayrak `yasal_onay_kaydi`). Null → kayıt
+  /// gider (`YasalOnayService`, 0102). Null → kayıt
   /// yazılmaz (ör. ekran başka yoldan açıldıysa); akış aynı.
   final KayitOnayBaglami? kayitOnayi;
 
@@ -203,13 +203,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // denetimi U18); başarısızlık akışı durdurmaz.
       //
       // YALNIZ yatırım uyarısının TAM metni kayıt ekranında okunup
-      // onaylandıysa (zorunlu okuma, bayrak `zorunlu_okuma`). 2026-10-04'e
-      // kadar her kayıtta yazılıyordu; ama kutuda yalnız ÖZET vardı ve kayıt
-      // TAM metnin (`disclaimerText`) hash'ini taşıyordu — gösterilmemiş
-      // metne onay. Bayraktan BAĞIMSIZ düzeltme: tam metin gösterilmediyse
-      // kayıt yazılmaz, `_AuthGate` uyarıyı `DisclaimerAcceptanceScreen`'de
-      // tam metniyle sorar (Apple/Google ve eski hesapların zaten geçtiği
-      // yol). Bedeli bayrak kapalıyken e-posta kaydında bir ekran daha.
+      // onaylandıysa (zorunlu okuma). 2026-10-04'e kadar her kayıtta
+      // yazılıyordu; ama kutuda yalnız ÖZET vardı ve kayıt TAM metnin
+      // (`disclaimerText`) hash'ini taşıyordu — gösterilmemiş metne onay.
+      // Düzeltme: tam metin gösterilmediyse kayıt yazılmaz, `_AuthGate`
+      // uyarıyı `DisclaimerAcceptanceScreen`'de tam metniyle sorar
+      // (Apple/Google ve eski hesapların zaten geçtiği yol). Kayıt ekranı
+      // uyarıyı zorunlu okuttuğu için (bayrak 2026-10-05'te kalktı) e-posta
+      // kaydında bu koşul hep doğrudur; kayıt ekranı dışından gelen
+      // `kayitOnayi` için korunur.
       final kayitOnayi = widget.kayitOnayi;
       final onayKaydedildi = kayitOnayi != null &&
           kayitOnayi.yatirimUyarisiOnaylandi &&
@@ -221,7 +223,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // `verifyRegistrationOtp` ile açıldı; RPC `auth.uid()`'yi buradan
       // okur. Beklenmez ve fırlatmaz: kapı (`disclaimer_acceptances`)
       // yukarıdaki kayda bağlı, bu yalnız ispat kaydı.
-      // `userId`: yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`) bu
+      // `userId`: yeniden onay kapısı bu
       // yazımı bekler ve başarıda kapı izini koyar — az önce aynı sürümleri
       // onaylayan yeni kullanıcı kapıyı görmez.
       if (kayitOnayi != null) {

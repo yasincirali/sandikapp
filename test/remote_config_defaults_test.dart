@@ -77,9 +77,12 @@ void main() {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });
 
-    // Kullanıcı kararı 2026-10-04: bugünün bayrakları AÇIK doğar ("flagleri
-    // açık olarak mergele maine"). Merge'de sessizce `false`'a dönerse
-    // özellikler TestFlight'ta habersizce kaybolur.
+    // 2026-10-04'te AÇIK doğan sadeleştirme bayrakları 2026-10-05'te KODDAN
+    // KALDIRILDI (kullanıcı kararı: "önerilerin hepsini uygula"); davranış
+    // kalıcı. Bu kilit anahtarın `_defaults`'a ya da bir okuyucuya
+    // (`'anahtar'` dizgesi) geri gelmesini yakalar: geri gelen bayrak
+    // Console'daki eski `false` değerini yeniden okur ve kalıcı davranışı
+    // sessizce kapatabilir.
     for (final b in const [
       'ilk_varlik_kolay',
       'karsilama_tanitimi',
@@ -97,7 +100,17 @@ void main() {
       'yasal_kapi_en_yeni',
       'zorunlu_okuma',
     ]) {
-      test('$b açık doğar', () => expect(varsayilan(b), 'true'));
+      test('$b kaldırıldı: _defaults ve okuyucu kodda yok', () {
+        expect(varsayilan(b), isNull, reason: '_defaults geri gelmiş');
+        final okuyan = [
+          for (final f in Directory('lib').listSync(recursive: true))
+            if (f is File &&
+                f.path.endsWith('.dart') &&
+                f.readAsStringSync().contains("'$b'"))
+              f.path,
+        ];
+        expect(okuyan, isEmpty, reason: '$b anahtarını okuyan kod geri gelmiş');
+      });
     }
 
     test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {

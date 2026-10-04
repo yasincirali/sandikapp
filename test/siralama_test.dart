@@ -11,7 +11,6 @@ import 'package:portfoy_takip/screens/leaderboard_screen.dart';
 import 'package:portfoy_takip/screens/siralama_screen.dart';
 import 'package:portfoy_takip/screens/zirve_portfoyler_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/zirve_kiyas.dart';
 import 'package:portfoy_takip/widgets/leaderboard_hero_card.dart';
 import 'package:portfoy_takip/widgets/zirve_donem_secici.dart';
@@ -20,13 +19,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
 
-/// Yarış + Zirve tek "Sıralama" sayfası (sadeleştirme madde 8, bayrak
-/// `siralama_tek_sayfa`, varsayılan KAPALI).
+/// Yarış + Zirve tek "Sıralama" sayfası (sadeleştirme madde 8, 2026-10-04;
+/// bayrak `siralama_tek_sayfa` 2026-10-05'te kalktı — eski iki ekran ve
+/// onları sınayan "bayrak KAPALI" testleri silindi).
 ///
 /// Kilitlenenler:
-///   · bayrak KAPALI: giriş noktaları eski iki ekranı açar (birebir eski);
-///   · bayrak AÇIK: Yarış girişleri Sıralama › Ortaklarım, Zirve kartı
-///     Sıralama › Herkes açar — kartın dönemiyle;
+///   · Yarış girişleri Sıralama › Ortaklarım, Zirve kartı Sıralama › Herkes
+///     açar — kartın dönemiyle;
 ///   · rıza akışları atlanmaz: Ortaklarım'da yarış katılım daveti, Herkes'te
 ///     zirve açık rıza kartı (0091) aynen görünür;
 ///   · dönem iki sekmede ortak ve seçici AYNI bileşen;
@@ -99,7 +98,6 @@ void main() {
     DbLogger.silentInTests = true;
   });
   tearDownAll(() => DbLogger.silentInTests = false);
-  tearDown(() => RemoteConfigService.testAcik = {});
 
   test('Yarış dönemleri Zirve dönemleriyle birebir (7 · 30 · 365)', () {
     // Sıralama sayfası iki sekmede dönemi İNDEKSLE taşır.
@@ -107,16 +105,7 @@ void main() {
   });
 
   group('giriş kararı tek yerde', () {
-    test('bayrak KAPALI: eski iki ekran', () {
-      expect(RemoteConfigService.instance.siralamaTekSayfa, isFalse);
-      expect(yarisGirisEkrani(), isA<LeaderboardScreen>());
-      final z = zirveGirisEkrani(ZirveDonem.hafta);
-      expect(z, isA<ZirvePortfoylerScreen>());
-      expect((z as ZirvePortfoylerScreen).baslangic, ZirveDonem.hafta);
-    });
-
-    test('bayrak AÇIK: Sıralama, uygun sekme ve dönem', () {
-      RemoteConfigService.testAcik = {'siralama_tek_sayfa'};
+    test('Sıralama, uygun sekme ve dönem', () {
       final y = yarisGirisEkrani();
       expect(y, isA<SiralamaScreen>());
       expect((y as SiralamaScreen).sekme, SiralamaSekmesi.ortaklarim);
@@ -141,44 +130,23 @@ void main() {
   });
 
   group('Profil kartından giriş', () {
-    for (final acik in [false, true]) {
-      testWidgets('bayrak ${acik ? 'AÇIK' : 'KAPALI'}', (tester) async {
-        await _optIn(true);
-        if (acik) RemoteConfigService.testAcik = {'siralama_tek_sayfa'};
-        await _pump(
-            tester,
-            const Scaffold(
-                body: SingleChildScrollView(child: LeaderboardHeroCard())));
-        // `pushGuarded` çift dokunma penceresi GERÇEK saatle (500 ms):
-        // önceki testin itişi bu testi yutmasın.
-        await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 600)));
-        await tester.tap(find.byType(LeaderboardHeroCard));
-        await _gecis(tester);
-        if (acik) {
-          expect(find.byType(SiralamaScreen), findsOneWidget);
-          expect(find.byType(LeaderboardScreen), findsNothing);
-          expect(find.text('Sıralama'), findsOneWidget);
-          expect(find.byType(YarisGovdesi), findsOneWidget,
-              reason: 'Ortaklarım sekmesiyle açılmalı');
-        } else {
-          expect(find.byType(LeaderboardScreen), findsOneWidget);
-          expect(find.byType(SiralamaScreen), findsNothing);
-        }
-        expect(tester.takeException(), isNull);
-      });
-    }
-  });
-
-  group('bayrak KAPALI: Yarış ekranı birebir eski', () {
-    testWidgets('eski dönem çubuğu (7G · 30G · 1Y), sekme yok', (tester) async {
+    testWidgets('Sıralama › Ortaklarım açılır', (tester) async {
       await _optIn(true);
-      await _pump(tester, const LeaderboardScreen());
-      expect(find.text('7G'), findsOneWidget);
-      expect(find.text('30G'), findsOneWidget);
-      expect(find.byType(ZirveDonemSecici), findsNothing);
-      expect(find.text('Zirvedekiler'), findsNothing);
-      expect(find.text('Yarış'), findsOneWidget);
+      await _pump(
+          tester,
+          const Scaffold(
+              body: SingleChildScrollView(child: LeaderboardHeroCard())));
+      // `pushGuarded` çift dokunma penceresi GERÇEK saatle (500 ms):
+      // önceki testin itişi bu testi yutmasın.
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)));
+      await tester.tap(find.byType(LeaderboardHeroCard));
+      await _gecis(tester);
+      expect(find.byType(SiralamaScreen), findsOneWidget);
+      expect(find.text('Sıralama'), findsOneWidget);
+      expect(find.byType(YarisGovdesi), findsOneWidget,
+          reason: 'Ortaklarım sekmesiyle açılmalı');
+      expect(tester.takeException(), isNull);
     });
   });
 
@@ -248,8 +216,8 @@ void main() {
 
     // Dönem artık kabukta: gövde `didUpdateWidget` ile listeyi, havuzu ve
     // "Sen"i o dönemle yeniden ister (eskiden `_donemSec` içindeydi).
-    // İki kabuk (eski ekran, Sıralama) aynı gövdeyi kullanır; burada
-    // Sıralama yolu pump edilir (eski ekranın rıza okuması sunucu ister).
+    // Gövdeyi yalnız Sıralama kabuğu çizer (eski Zirve ekranı 2026-10-05'te
+    // silindi).
     testWidgets('Herkes içinde dönem değişimi gövdeyi yeniler', (tester) async {
       await _optIn(true);
       await _pump(

@@ -512,7 +512,6 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
             Padding(
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 0),
               child: OrtakSecici(
-                eski: EskiOrtakSecici.hap,
                 partners: activePartners,
                 selectedId: _view,
                 onChanged: (v) => setState(() {

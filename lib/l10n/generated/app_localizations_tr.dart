@@ -333,10 +333,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get levelAdvanced => 'İleri';
 
   @override
-  String get levelBeginnerDesc =>
-      'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.';
-
-  @override
   String get levelIntermediateDesc =>
       'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.';
 
@@ -346,13 +342,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get noAssetsYet => 'Henüz varlık eklenmemiş';
-
-  @override
-  String get noAssetsYetHint =>
-      'İlk varlığını ekleyerek sandığını oluşturmaya başla.';
-
-  @override
-  String get addFirstAsset => 'İlk Varlığını Ekle';
 
   @override
   String get addAssetTitle => 'Varlık Ekle';
@@ -368,11 +357,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get save => 'Kaydet';
-
-  @override
-  String posPeriodPriceMove(String pct) {
-    return 'fiyat $pct';
-  }
 
   @override
   String get assetType => 'Varlık Türü';
@@ -479,13 +463,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get registerPasswordsMismatch => 'Şifreler eşleşmiyor.';
-
-  @override
-  String get termsMustAccept => 'Yasal koşulları kabul etmelisin.';
-
-  @override
-  String get consentMustAccept =>
-      'Yurt dışı veri aktarımına açık rıza vermelisin.';
 
   @override
   String get refreshPrices => 'Fiyatları yenile';
@@ -984,9 +961,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String sinceCpiWindowBodyLate(String month) {
     return 'Üstteki rakam bu süreyi içeriyor; $month TÜFE\'si yüklenince bu kart güncellenir.';
   }
-
-  @override
-  String get demoTryButton => 'Önce bir göz at';
 
   @override
   String get demoBannerTitle => 'Örnek portföy';
@@ -1527,12 +1501,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tabSummary => 'Özet';
 
   @override
-  String get modeReal => 'Gerçek';
-
-  @override
-  String get modeSim => 'Bugünkü portföyle';
-
-  @override
   String modeInfoSemantics(String mode) {
     return '$mode modu hakkında bilgi';
   }
@@ -1600,15 +1568,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get simModeTitle => 'Bugünkü portföyle';
 
   @override
-  String get realModeTitle => 'Gerçek Mod';
-
-  @override
   String get simModeBody =>
       'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.';
-
-  @override
-  String get realModeBody =>
-      'Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür. Böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.';
 
   @override
   String get portfolioPerformance => 'Portföy Performans';
@@ -3770,9 +3731,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayRealHint => 'Yıllık getirin ile TÜFE farkı';
 
   @override
-  String get todayWeekLabel => 'Son 7 gün';
-
-  @override
   String get todayWeekHint => 'Piyasanın portföyüne etkisi · özet hazır';
 
   @override
@@ -3803,36 +3761,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get todayGreenLabel => 'Artıdaki varlık';
-
-  @override
-  String get todayGreenHint => 'Alış fiyatının üstündekiler';
-
-  @override
-  String todayGreenValue(int green, int total) {
-    return '$green / $total';
-  }
-
-  @override
   String get todayOpenAction => 'Aç';
-
-  @override
-  String todayEventCpiShort(String date) {
-    return 'TÜİK enflasyonu · $date';
-  }
-
-  @override
-  String todayEventHolidayShort(String date) {
-    return 'Borsa kapalı · $date';
-  }
-
-  @override
-  String get todayEventMonthEndShort => 'Ay sonu · aylık özet';
-
-  @override
-  String todayDaysShort(int n) {
-    return '$n gün';
-  }
 
   @override
   String get todayTitle => 'Bugün';
@@ -3888,12 +3817,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get todayWordToday => 'bugün';
-
-  @override
-  String get todayWordTomorrow => 'yarın';
-
-  @override
   String todayInDays(int n) {
     return '$n gün sonra';
   }
@@ -3934,61 +3857,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayMarketOnlyShort => 'fiyat etkisi';
 
   @override
-  String get todayGreenShort => 'Artıda';
-
-  @override
-  String get todayWeekReadyShort => 'Özet hazır';
-
-  @override
   String get todayGoalNewAction => 'Yenisini seç';
-
-  @override
-  String get todayMonthlyTileSubShort => 'Geçen ayın karnesi';
-
-  @override
-  String todayEventCpiTiny(String date) {
-    return 'TÜİK · $date';
-  }
-
-  @override
-  String todayEventHolidayTiny(String date) {
-    return 'Tatil · $date';
-  }
-
-  @override
-  String get todayEventMonthEndTiny => 'Ay sonu';
 
   @override
   String get todayMoveLabel => 'Günün hareketi';
 
   @override
   String get todayRealYearly => 'yıllık';
-
-  @override
-  String todayYourReturn(String pct) {
-    return 'Getirin $pct';
-  }
-
-  @override
-  String todayCpiShort(String pct) {
-    return 'TÜFE $pct';
-  }
-
-  @override
-  String todayWeekUp(String pct) {
-    return '$pct yükseliş';
-  }
-
-  @override
-  String todayWeekDown(String pct) {
-    return '$pct düşüş';
-  }
-
-  @override
-  String get todayWeekHintShort => 'Piyasanın portföyüne etkisi';
-
-  @override
-  String get todayWeekReady => 'Haftalık özet hazır';
 
   @override
   String get todayGoalSetAction => 'Hedef belirle';
@@ -4005,14 +3880,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String todayGoalLeftShort(String left) {
     return '$left kaldı';
   }
-
-  @override
-  String todayMonthlyTile(String month) {
-    return '$month özeti';
-  }
-
-  @override
-  String get todayMonthlyTileSub => 'Getiri, enflasyon, en iyi varlık';
 
   @override
   String get goalTitle => 'Portföy hedefi';
@@ -4050,10 +3917,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String raceRunningCount(int count) {
     return '$count kişi bugün yarışıyor';
   }
-
-  @override
-  String get emptyPasteHint =>
-      'Aracı kurum ekstreni (PDF, Excel ya da CSV) seç ya da yapıştır; her satır bir varlık olur.';
 
   @override
   String get marketDollar => 'Dolar';
@@ -4545,11 +4408,6 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String duelAhead(String ad, String adIyelik, String fark) {
     return '$adIyelik $fark puan önündesin';
-  }
-
-  @override
-  String duelBehind(String ad, String adIyelik, String fark) {
-    return '$adIyelik $fark puan gerisindesin';
   }
 
   @override
@@ -5698,16 +5556,10 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get yasalBelgeAcildi => 'Okundu';
-
-  @override
   String get yasalBelgelerTurkce => 'Belgeler Türkçedir.';
 
   @override
   String get yasalKapiTaahhutBaslik => 'Onayların';
-
-  @override
-  String get yasalKapiYatirimUyarisi => 'Yatırım uyarısı';
 
   @override
   String get yasalKapiOnayla => 'Okudum, kabul ediyorum';

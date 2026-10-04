@@ -37,7 +37,6 @@ import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../services/en_cok_oynayan.dart';
 import '../services/fiyat_kaynagi.dart';
-import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/pozisyon_etiketi.dart';
@@ -509,8 +508,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             children: [
               Row(
                 children: [
-                  const SandikSkeleton(
-                      width: _TarihKutusu.genislik, height: 46),
+                  // 46: eski takvim yaprağının genişliği (`_TarihKutusu`,
+                  // D düzeniyle 2026-10-05'te silindi); iskelet bugünkü
+                  // görünüşünü korusun diye sabit.
+                  const SandikSkeleton(width: 46, height: 46),
                   const SizedBox(width: SandikSpace.smd),
                   Expanded(
                     child: Column(
@@ -586,78 +587,18 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final gizli = ref.watch(balanceHiddenProvider);
     final dil = _dil;
 
-    // Sakin pano düzeni (2026-10-01, kullanıcı seçimi "D"): hesap aynı,
-    // satırlar KUTULARA ayrıldı. Eski almanakta beş defter satırı aynı
-    // ağırlıkta alt alta duruyordu; "ne kadar", "neye göre" ve "ne yapmalı"
-    // birbirine karışıyordu. Şimdi üç kat: ölçüm (hareket + gün içi eğri),
-    // bağlam (enflasyon / son 7 gün / artıdaki varlık — bilgi kutuları),
-    // eylem (hedef / aylık özet — amber kutular); olay yine ayakta.
-    //
-    // Kutular hesabın verdiği satırlardan türetilir; hangi satırın geldiği
-    // (`BugunService.hesapla`: sabit reel + haftalık, dönen havuz, hedef
-    // her gün) burada DEĞİŞMEZ — yalnızca nereye çizildiği.
-    final bilgi = <BugunSatiri>[
-      if (veri.reel != null) veri.reel!,
-      if (veri.haftalik != null) veri.haftalik!,
-      ...veri.ikincil.where((s) => s is! HedefSatiri),
-    ];
-    final eylem = <BugunSatiri>[
-      ...veri.ikincil.whereType<HedefSatiri>(),
-      if (veri.aylik != null) veri.aylik!,
-    ];
-
-    // Düzen H (bayrak `bugun_karti_kiyas`, kullanıcı seçimi 2026-10-04):
-    // hesap AYNI (`BugunService.hesapla`), yalnız çizim değişir. Kapalıyken
-    // aşağıdaki "D · Sakin pano" birebir.
-    if (RemoteConfigService.instance.bugunKartiKiyas) {
-      return Padding(
-        padding: widget.padding,
-        child: SandikCard(
-          padding: const EdgeInsets.all(SandikSpace.md),
-          child: _kiyasDuzeni(veri, ozet, now, gizli, dil),
-        ),
-      );
-    }
-
+    // Düzen H (kullanıcı seçimi 2026-10-04, sadeleştirme listesi madde 7):
+    // hesap AYNI (`BugunService.hesapla`), yalnız çizim. 2026-10-01'den
+    // 2026-10-04'e kadarki "D · Sakin pano" (takvim yaprağı, bilgi/eylem
+    // kutu ızgarası, son 7 gün, artıdaki varlık, aylık özet, olay ayak notu)
+    // bayrak `bugun_karti_kiyas` ile birlikte 2026-10-05'te silindi; o
+    // satırlar hesapta duruyor (gösterim ölçümü `_gosterimiOlc` onları da
+    // sayar), yalnız kartta çizilmiyorlar.
     return Padding(
       padding: widget.padding,
       child: SandikCard(
         padding: const EdgeInsets.all(SandikSpace.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Baslik(
-              now: now,
-              dil: dil,
-              etiket: widget.etiket,
-              durum: _durumMetni(veri.birincil, now),
-              acik: veri.birincil is GunlukDegisimSatiri &&
-                  BugunService.seansAcikMi(now),
-            ),
-            const SizedBox(height: SandikSpace.md2),
-            _Hareket(
-              birincil: veri.birincil,
-              seri: ozet?.sparkline ?? const [],
-              gizli: gizli,
-            ),
-            if (bilgi.isNotEmpty) ...[
-              const SizedBox(height: SandikSpace.md2),
-              Divider(height: 1, color: context.c.hairline),
-              const SizedBox(height: SandikSpace.md2),
-              _Izgara(
-                  children: [for (final s in bilgi) _bilgiKutusu(s, gizli)]),
-            ],
-            if (eylem.isNotEmpty) ...[
-              const SizedBox(height: SandikSpace.sm),
-              _Izgara(
-                  children: [for (final s in eylem) _eylemKutusu(s, gizli)]),
-            ],
-            if (veri.olay != null) ...[
-              const SizedBox(height: SandikSpace.smd),
-              _AyakNotu(olay: veri.olay!, dil: dil),
-            ],
-          ],
-        ),
+        child: _kiyasDuzeni(veri, ozet, now, gizli, dil),
       ),
     );
   }
@@ -727,7 +668,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final reel = veri.reel;
     final alt = <Widget>[
       if (oynayan != null) _oynayanKutusu(oynayan, gizli),
-      if (hedef != null) _eylemKutusu(hedef, gizli),
+      if (hedef != null) _hedefKutusu(hedef, gizli),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -789,7 +730,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     return _BilgiKutusu(
       etiket: [l10n.todayTopMoverLabel],
       deger: pozisyonEtiketi(o.positionKey, o.tur, l10n),
-      renk: renk,
       cubuk: Row(
         children: [
           Icon(
@@ -816,7 +756,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
           ),
         ],
       ),
-      altMetin: null,
       onTap: () {
         unawaited(AnalyticsService.instance.logTodayRowTapped(kind: 'oynayan'));
         _ozeteGit(periodIdx: SummaryPeriod.gunluk.index);
@@ -824,138 +763,40 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     );
   }
 
-  /// Bilgi kutusu: etiket › / değer / açıklama (+ enflasyon çubuğu).
-  Widget _bilgiKutusu(BugunSatiri s, bool gizli) {
+  /// Hedef kutusu (amber zemin): ikon + başlık + alt satır. (D düzeninde
+  /// aylık özet de bu kutudaydı; 2026-10-05'te D ile kalktı.)
+  Widget _hedefKutusu(HedefSatiri s, bool gizli) {
     final l10n = context.l10n;
-    final c = context.c;
-    switch (s) {
-      case ReelGetiriSatiri():
-        // Eski şeritle aynı hedef: Performans › Özet › 1Y (reel getiri kartı).
-        // Ölçüm ayları ("Ağu 25 - Ağu 26", Özet'le aynı biçim) alt metnin
-        // sonunda: getiri yüzdesi Performans 1Y'den farklı pencereyi
-        // ölçüyor ve bunu ancak aralık söyler (2026-10-02 müşteri testi).
-        // Başlık dar kutuda aralığa yer bırakmıyordu; alt metin iki satır.
-        // Sığmazsa eski metne düşer.
-        final pencere = s.pencere;
-        final degerler =
-            '${l10n.todayYourReturn(fmtPct(s.nominal))} · ${l10n.todayCpiShort(fmtPct(s.inflation))}';
-        return _BilgiKutusu(
-          etiket: [
-            '${l10n.todayRealLabel} · ${l10n.todayRealYearly}',
-            l10n.todayRealLabel,
-          ],
-          deger: reelFarkMetni(l10n, fark: s.fark, onde: s.onde),
-          renk: s.onde ? c.gain : c.loss,
-          yon: s.onde,
-          cubuk: _EnflasyonCubugu(nominal: s.nominal, tufe: s.inflation),
-          altMetin: [
-            if (pencere != null)
-              '$degerler · ${AralikMetni.olculenAylar(l10n, context.tarihDili, bas: pencere.seriBaslangici, bitis: pencere.seriBitisi)}',
-            degerler,
-          ],
-          onTap: _olcerek(
-              s, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
-        );
-      case HaftalikOzetSatiri():
-        // Eski çiple aynı hedef: Özet › 1H. Yön kelimeyle (F3): "%2,89 düşüş".
-        final yuzde = fmtPct(s.getiriPct.abs());
-        final sifir = s.getiriPct.abs() < 0.005;
-        return _BilgiKutusu(
-          etiket: [l10n.todayWeekLabel],
-          deger: sifir
-              ? isaretliYuzde(0)
-              : s.getiriPct > 0
-                  ? l10n.todayWeekUp(yuzde)
-                  : l10n.todayWeekDown(yuzde),
-          renk: s.getiriPct >= 0 ? c.gain : c.loss,
-          yon: sifir ? null : s.getiriPct > 0,
-          altMetin: [l10n.todayWeekHintShort],
-          rozet: [l10n.todayWeekReady, l10n.todayWeekReadyShort],
-          onTap: _olcerek(
-              s, () => _ozeteGit(periodIdx: SummaryPeriod.birHafta.index)),
-        );
-      case YesilOranSatiri():
-        return _BilgiKutusu(
-          etiket: [l10n.todayGreenLabel, l10n.todayGreenShort],
-          deger: l10n.todayGreenValue(s.yesil, s.toplam),
-          renk: s.yesil * 2 >= s.toplam ? c.gain : c.text90,
-          altMetin: [l10n.todayGreenHint],
-        );
-      // Eylem kutusunda ya da başlık/ayakta çizilirler.
-      case HedefSatiri():
-      case AylikOzetSatiri():
-      case GunlukDegisimSatiri():
-      case PiyasaKapaliSatiri():
-      case YaklasanOlaySatiri():
-        return const SizedBox.shrink();
+    final hedefAc = _olcerek(
+        s,
+        () => showHedefSheet(context, ref,
+            kapsam: widget.hedefKapsami, etiket: widget.etiket));
+    if (s.belirlenmedi) {
+      return _EylemKutusu(
+        ikon: Icons.flag_outlined,
+        baslik: l10n.todayGoalSetAction,
+        alt: [l10n.todayGoalSetSub],
+        onTap: hedefAc,
+      );
     }
-  }
-
-  /// Eylem kutusu (amber zemin): ikon + başlık + alt satır.
-  Widget _eylemKutusu(BugunSatiri s, bool gizli) {
-    final l10n = context.l10n;
-    switch (s) {
-      case HedefSatiri():
-        final hedefAc = _olcerek(
-            s,
-            () => showHedefSheet(context, ref,
-                kapsam: widget.hedefKapsami, etiket: widget.etiket));
-        if (s.belirlenmedi) {
-          return _EylemKutusu(
-            ikon: Icons.flag_outlined,
-            baslik: l10n.todayGoalSetAction,
-            alt: [l10n.todayGoalSetSub],
-            onTap: hedefAc,
-          );
-        }
-        final hedef = gizli ? '••••' : fmtTRYCompactSade(s.hedefTRY.toDouble());
-        if (s.ulasildi) {
-          return _EylemKutusu(
-            ikon: Icons.flag_rounded,
-            baslik: '${l10n.todayGoalLabel} · ${l10n.todayGoalDone}',
-            alt: [l10n.todayGoalDoneHint(hedef), l10n.todayGoalNewAction],
-            onTap: hedefAc,
-          );
-        }
-        return _EylemKutusu(
-          ikon: Icons.flag_outlined,
-          baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
-          alt: [
-            l10n.todayGoalLeftShort(
-                gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
-          ],
-          oran: s.oran,
-          onTap: hedefAc,
-        );
-      case AylikOzetSatiri():
-        return _EylemKutusu(
-          ikon: Icons.menu_book_outlined,
-          baslik: l10n.todayMonthlyTile(DateFormat.MMMM(_dil).format(s.ay)),
-          alt: [l10n.todayMonthlyTileSub, l10n.todayMonthlyTileSubShort],
-          onTap: _olcerek(
-            s,
-            () => pushGuarded<void>(
-              context,
-              adaptiveRoute<void>(
-                builder: (_) => PortfolioPerformanceScreen(
-                  showBackButton: true,
-                  initialOzet: true,
-                  initialView: _gecisGorunumu,
-                  // 1A — geçen ayın özeti; Özet sekmesi TÜFE farkını da taşır.
-                  initialPeriodIdx: 2,
-                ),
-              ),
-            ),
-          ),
-        );
-      case ReelGetiriSatiri():
-      case HaftalikOzetSatiri():
-      case YesilOranSatiri():
-      case GunlukDegisimSatiri():
-      case PiyasaKapaliSatiri():
-      case YaklasanOlaySatiri():
-        return const SizedBox.shrink();
+    final hedef = gizli ? '••••' : fmtTRYCompactSade(s.hedefTRY.toDouble());
+    if (s.ulasildi) {
+      return _EylemKutusu(
+        ikon: Icons.flag_rounded,
+        baslik: '${l10n.todayGoalLabel} · ${l10n.todayGoalDone}',
+        alt: [l10n.todayGoalDoneHint(hedef), l10n.todayGoalNewAction],
+        onTap: hedefAc,
+      );
     }
+    return _EylemKutusu(
+      ikon: Icons.flag_outlined,
+      baslik: l10n.todayGoalProgressTitle((s.oran * 100).floor()),
+      alt: [
+        l10n.todayGoalLeftShort(gizli ? '••••' : fmtTRYCompactSade(s.kalan)),
+      ],
+      oran: s.oran,
+      onTap: hedefAc,
+    );
   }
 
   String get _dil =>
@@ -975,11 +816,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ),
       );
 
-  /// Karttan açılan ekranın ortak seçimi. Bayrak kapalıyken eski davranış
-  /// (her zaman Ben); açıkken kartın gösterildiği seçim — bkz.
-  /// [BugunKarti.gorunum].
-  String? get _gecisGorunumu =>
-      RemoteConfigService.instance.ortakSecimiTasi ? widget.gorunum : '';
+  /// Karttan açılan ekranın ortak seçimi: kartın gösterildiği seçim — bkz.
+  /// [BugunKarti.gorunum] (2026-10-04; bayrak `ortak_secimi_tasi`
+  /// 2026-10-05'te kalktı — önceki davranış her zaman "Ben" idi).
+  String? get _gecisGorunumu => widget.gorunum;
 
   /// Gösterim ölçümü — gün + satır bileşimi başına BİR olay.
   ///
@@ -1026,158 +866,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         unawaited(AnalyticsService.instance.logTodayRowTapped(kind: _tur(s)));
         eylem();
       };
-}
-
-// ── Başlık: tarih kutusu + gün + durum ───────────────────────────────────────
-
-/// Yaprak takvim kutusu (amber ay bandı + gün rakamı), yanında "BUGÜN" /
-/// gün adı, sağda seans durumu. Tarih kartın "her gün değişir" hissini
-/// biçimle verir, metinle değil.
-class _Baslik extends StatelessWidget {
-  const _Baslik({
-    required this.now,
-    required this.dil,
-    required this.etiket,
-    required this.durum,
-    required this.acik,
-  });
-
-  final DateTime now;
-  final String dil;
-
-  /// Kapsam etiketi ("Ayşe'nin bugünü", "Birlikte") — kendi görünümünde
-  /// `null`, o zaman "BUGÜN" yazar. Görünüm çipi toplam kartında kimde
-  /// olduğunu söyler ama bu kart ondan aşağıda, kendi başına okunur.
-  final String? etiket;
-
-  /// Uzun → kısa adaylar; bkz. `_durumMetni`.
-  final List<String> durum;
-
-  /// Seans açık mı — durum noktasının rengi.
-  final bool acik;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        _TarihKutusu(now: now, dil: dil),
-        const SizedBox(width: SandikSpace.smd),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SiganMetin(
-                // Türkçe büyük harf: düz `toUpperCase` "AYŞE'NIN" verir.
-                // Uzun ortak adı sığmazsa iki satıra kırılır, kırpılmaz.
-                [trBuyukHarf(etiket ?? context.l10n.todayTitle)],
-                style: context.t.labelSmall?.copyWith(
-                  color: c.amberText,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Text(
-                // toUpperCase Türkçe "i"yi bozar (PAZARTESI); başlık hâli kalır.
-                DateFormat.EEEE(dil).format(now),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.t.titleMedium?.copyWith(
-                  color: c.text90,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: SandikSpace.sm),
-        Flexible(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: SandikSpace.xs2,
-                height: SandikSpace.xs2,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: acik ? c.gain : c.text36,
-                ),
-              ),
-              const SizedBox(width: SandikSpace.xs2),
-              Flexible(
-                child: SiganMetin(
-                  durum,
-                  textAlign: TextAlign.end,
-                  style: context.t.labelMedium?.copyWith(
-                    color: c.text58,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Amber ay bandı üstte, büyük gün rakamı altta — 46pt'lik takvim yaprağı.
-class _TarihKutusu extends StatelessWidget {
-  const _TarihKutusu({required this.now, required this.dil});
-
-  final DateTime now;
-  final String dil;
-
-  static const double genislik = 46;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    return Container(
-      width: genislik,
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.sm),
-        border: Border.all(color: c.hairline),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: double.infinity,
-            color: c.amberFill,
-            padding: const EdgeInsets.symmetric(vertical: SandikSpace.xxs),
-            child: Text(
-              // "Eki" → "EKİ": Türkçe büyük harf (noktalı İ) için trBuyukHarf.
-              trBuyukHarf(DateFormat.MMM(dil).format(now).replaceAll('.', '')),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              style: context.t.labelSmall?.copyWith(
-                color: c.onAmber,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-                0, SandikSpace.xs2, 0, SandikSpace.xs2),
-            child: Text(
-              '${now.day}',
-              style: context.t.titleLarge?.copyWith(
-                color: c.text90,
-                fontWeight: FontWeight.w800,
-                height: 1,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ── Düzen H: başlık ve enflasyon kıyası ─────────────────────────────────────
@@ -1761,29 +1449,20 @@ class _Izgara extends StatelessWidget {
 
 // ── Bilgi kutusu ─────────────────────────────────────────────────────────────
 
-/// Beyaz kutu: `etiket ›` / `▲ değer` / çubuk / açıklama / rozet.
+/// Beyaz kutu: `etiket ›` / değer / çubuk. (D düzenindeki yön oku, rozet ve
+/// alt açıklama 2026-10-05'te D ile kalktı.)
 class _BilgiKutusu extends StatelessWidget {
   const _BilgiKutusu({
     required this.etiket,
     required this.deger,
-    required this.renk,
-    this.yon,
     this.cubuk,
-    this.altMetin,
-    this.rozet,
     this.onTap,
   });
 
   /// Uzun → kısa yazımlar; sığan ilki tam yazılır (`SiganMetin`).
   final List<String> etiket;
   final String deger;
-  final Color renk;
-
-  /// `true` yukarı ok, `false` aşağı, `null` oksuz.
-  final bool? yon;
   final Widget? cubuk;
-  final List<String>? altMetin;
-  final List<String>? rozet;
   final VoidCallback? onTap;
 
   @override
@@ -1812,17 +1491,6 @@ class _BilgiKutusu extends StatelessWidget {
           const SizedBox(height: SandikSpace.xs2),
           Row(
             children: [
-              if (yon != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: SandikSpace.xxs),
-                  child: Icon(
-                    yon!
-                        ? Icons.arrow_drop_up_rounded
-                        : Icons.arrow_drop_down_rounded,
-                    size: 18,
-                    color: renk,
-                  ),
-                ),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -1845,22 +1513,6 @@ class _BilgiKutusu extends StatelessWidget {
               padding: const EdgeInsets.only(top: SandikSpace.xs2),
               child: cubuk,
             ),
-          if (altMetin != null)
-            Padding(
-              padding: const EdgeInsets.only(top: SandikSpace.xs2),
-              child: SiganMetin(
-                altMetin!,
-                maxLines: 2,
-                style: context.t.labelSmall?.copyWith(color: c.text58),
-              ),
-            ),
-          if (rozet != null) ...[
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.only(top: SandikSpace.xs2),
-              child: _Rozet(metin: rozet!),
-            ),
-          ],
         ],
       ),
     );
@@ -1885,98 +1537,9 @@ class _BilgiKutusu extends StatelessWidget {
     );
     return Semantics(
       button: onTap != null,
-      label: '${etiket.first}, $deger. ${altMetin?.first ?? ''}',
+      label: '${etiket.first}, $deger. ',
       excludeSemantics: true,
       child: kutu,
-    );
-  }
-}
-
-/// Amber zeminli küçük hap: "Haftalık özet hazır", "2 gün".
-class _Rozet extends StatelessWidget {
-  const _Rozet({required this.metin});
-
-  /// Uzun → kısa yazımlar ("Haftalık özet hazır" → "Özet hazır").
-  final List<String> metin;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
-      decoration: BoxDecoration(
-        color: c.amberFill.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-      ),
-      child: SiganMetin(
-        metin,
-        style: context.t.labelSmall?.copyWith(
-          color: c.amberText,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-}
-
-/// Getiri çubuğu + TÜFE imleci: "getirin nereye kadar, enflasyon nerede".
-///
-/// Ölçek ikisinin büyüğünün 1,25 katı — büyük olan çubuğun %80'ine gelir,
-/// imleç çubuğun içinde kalır. Negatif getiri çubuğu sıfıra çeker (uydurma
-/// uzunluk yok); fark zaten değer satırında kelimeyle söylenir.
-class _EnflasyonCubugu extends StatelessWidget {
-  const _EnflasyonCubugu({required this.nominal, required this.tufe});
-
-  final double nominal;
-  final double tufe;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    final buyuk = nominal > tufe ? nominal : tufe;
-    final olcek = buyuk <= 0 ? 1.0 : buyuk * 1.25;
-    final dolu = (nominal / olcek).clamp(0.0, 1.0);
-    final imlec = (tufe / olcek).clamp(0.0, 1.0);
-    return SizedBox(
-      height: SandikSpace.smd,
-      child: LayoutBuilder(
-        builder: (context, k) => Stack(
-          alignment: Alignment.centerLeft,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-              child: SizedBox(
-                height: SandikSpace.xs2,
-                width: double.infinity,
-                child: Stack(
-                  children: [
-                    ColoredBox(
-                        color: c.surface2, child: const SizedBox.expand()),
-                    FractionallySizedBox(
-                      widthFactor: dolu,
-                      child: ColoredBox(
-                          color: nominal >= tufe ? c.gain : c.loss,
-                          child: const SizedBox.expand()),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              left: (k.maxWidth * imlec - 1).clamp(0.0, k.maxWidth - 2),
-              child: Container(
-                width: 2,
-                height: SandikSpace.smd,
-                decoration: BoxDecoration(
-                  color: c.text90,
-                  borderRadius: BorderRadius.circular(1),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -2076,58 +1639,6 @@ class _EylemKutusu extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ── Ayak notu: yaklaşan olay ─────────────────────────────────────────────────
-
-/// "📅 TÜİK enflasyonu · 3 Ekim ········ [2 gün]" — kartın altındaki damga;
-/// kalan gün amber hapta.
-class _AyakNotu extends StatelessWidget {
-  const _AyakNotu({required this.olay, required this.dil});
-
-  final YaklasanOlaySatiri olay;
-  final String dil;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    final l10n = context.l10n;
-    final tarih = DateFormat('d MMMM', dil).format(olay.tarih);
-    // Uzun → kısa: "TÜİK enflasyonu · 3 Ekim" sığmazsa "TÜİK · 3 Ekim".
-    final ne = switch (olay.tur) {
-      BugunOlayTuru.tuikAciklamasi => [
-          l10n.todayEventCpiShort(tarih),
-          l10n.todayEventCpiTiny(tarih),
-        ],
-      BugunOlayTuru.bistTatili => [
-          l10n.todayEventHolidayShort(tarih),
-          l10n.todayEventHolidayTiny(tarih),
-        ],
-      BugunOlayTuru.aySonu => [
-          l10n.todayEventMonthEndShort,
-          l10n.todayEventMonthEndTiny,
-        ],
-    };
-    final kalan = switch (olay.gunKaldi) {
-      0 => l10n.todayWordToday,
-      1 => l10n.todayWordTomorrow,
-      _ => l10n.todayDaysShort(olay.gunKaldi),
-    };
-    return Row(
-      children: [
-        Icon(Icons.event_rounded, size: 16, color: c.text36),
-        const SizedBox(width: SandikSpace.sm),
-        Expanded(
-          child: SiganMetin(
-            ne,
-            style: context.t.bodySmall?.copyWith(color: c.text58),
-          ),
-        ),
-        const SizedBox(width: SandikSpace.sm),
-        _Rozet(metin: [kalan]),
-      ],
     );
   }
 }

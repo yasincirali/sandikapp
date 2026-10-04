@@ -9,7 +9,6 @@ import 'package:portfoy_takip/models/ilk_varlik_secimi.dart';
 import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/social_sign_in_buttons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -53,7 +52,6 @@ Future<void> _pump(WidgetTester tester, Widget ekran) async {
 void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
   setUp(() => SharedPreferences.setMockInitialValues({}));
-  tearDown(() => RemoteConfigService.testAcik = {});
 
   group('IlkVarlikSecimi', () {
     test('altın, dolar, euro varlığıyla hazır; fon ve hisse yalnız tür', () {
@@ -113,19 +111,9 @@ void main() {
     });
   });
 
-  group('bayrak ilk_varlik_kolay', () {
-    testWidgets('KAPALI: form eski — komisyon açıkta, iki yol yok',
+  group('ilk varlık kolaylığı (bayrak 2026-10-05\'te kalktı)', () {
+    testWidgets('yeni kayıt: iki yol görünür, komisyon "Ayrıntı ekle" altında',
         (tester) async {
-      await _pump(tester, const AddAssetScreen());
-      expect(find.text('Yazarak ekle'), findsNothing);
-      expect(find.text('Ekstreden aktar'), findsNothing);
-      expect(find.text('Komisyon / Masraf'), findsOneWidget);
-      expect(find.text('Not ekle'), findsOneWidget);
-    });
-
-    testWidgets('AÇIK: iki yol görünür, komisyon "Ayrıntı ekle" altında',
-        (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
       await _pump(tester, const AddAssetScreen());
       expect(find.text('Yazarak ekle'), findsOneWidget);
       expect(find.text('Ekstreden aktar'), findsOneWidget);
@@ -140,8 +128,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('AÇIK ama düzenleme: form eski', (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
+    testWidgets('düzenleme: form eski (iki yol yok)', (tester) async {
       await _pump(
           tester,
           AddAssetScreen(

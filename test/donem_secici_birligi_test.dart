@@ -59,7 +59,7 @@ void main() {
   test('indeksle açılan rotalar sayı değil adla yazılır', () {
     final bugun = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
     expect(bugun, contains('SummaryPeriod.birYil.index'));
-    expect(bugun, contains('SummaryPeriod.birHafta.index'));
+    expect(bugun, contains('SummaryPeriod.gunluk.index'));
     expect(ekranKaynagiSync('lib/services/notification_service.dart'),
         contains('SummaryPeriod.birAy.index'));
   });

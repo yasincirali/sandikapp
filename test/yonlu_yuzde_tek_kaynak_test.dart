@@ -112,21 +112,22 @@ void main() {
 
   group('#1 varlık ekranı kâr/zarar satırı — her sayı kendi yönünde', () {
     String tl(double v) => fmtTRY(v);
-    String fiyat(String y) => 'fiyat $y';
+    // 2026-10-05: dönem satırı 2026-10-04'ten beri yüzdeyi yazmıyor
+    // (`yuzdesiz`); "fiyat" etiketi (`yuzdeEtiketi`, `posPeriodPriceMove`)
+    // bayrak `varlik_islem_cubugu` ile kalktı. İşaret kuralı yüzdeli
+    // satırlarda (toplam kâr/zarar) aynen geçerli; burada etiketsiz sınanır.
 
     test('bugün alınan fon 1H düştü: yüzde EKSİ, tutar ₺0 nötr', () {
       // Emülatör: "1H kâr/zarar +₺0 · +%7,55" yeşil (fon düşmüştü).
-      final k = kazancSatiri(
-          tutar: 0.2, yuzde: -7.55, tutarMetni: tl, yuzdeEtiketi: fiyat)!;
-      expect(k.metin, '₺0 · fiyat −%7,55');
+      final k = kazancSatiri(tutar: 0.2, yuzde: -7.55, tutarMetni: tl)!;
+      expect(k.metin, '₺0 · −%7,55');
       expect(k.yon, 0, reason: '₺0 kazanç değil — renk nötr');
     });
 
     test('tutar ile yüzde zıt yönde: ikisi de kendi işaretini taşır', () {
       // Dönem içinde ucuzdan alım: ürün düştü ama alım fiyatından kâr.
-      final k = kazancSatiri(
-          tutar: 150, yuzde: -2.5, tutarMetni: tl, yuzdeEtiketi: fiyat)!;
-      expect(k.metin, '+₺150 · fiyat −%2,50');
+      final k = kazancSatiri(tutar: 150, yuzde: -2.5, tutarMetni: tl)!;
+      expect(k.metin, '+₺150 · −%2,50');
       expect(k.yon, 1, reason: 'renk "kâr/zarar"ın, yani tutarın yönü');
     });
 
@@ -140,21 +141,13 @@ void main() {
       expect(kazancSatiri(tutar: 0.3, yuzde: 0.001, tutarMetni: tl), isNull);
     });
 
-    test('kart dönem satırına "fiyat" etiketini verir; eski abs() kalmadı',
-        () {
+    test('kart dönem satırı yüzdesiz; eski abs() kalmadı', () {
       final src = yorumsuz(
           ekranKaynagiSync('lib/screens/asset_detail_screen.dart'));
-      expect(src.contains('yuzdeEtiketi: l.posPeriodPriceMove'), isTrue);
+      expect(src.contains('yuzdesiz: true'), isTrue);
       expect(src.contains('fmtPct(yuzde.abs()'), isFalse);
       expect(src.contains('fmtPct(pct.abs())'), isFalse);
       expect(src.contains('fmtPct(pnl.pnlPct.abs())'), isFalse);
-    });
-
-    test('etiket iki dilde', () {
-      expect(lookupAppLocalizations(const Locale('tr')).posPeriodPriceMove('x'),
-          'fiyat x');
-      expect(lookupAppLocalizations(const Locale('en')).posPeriodPriceMove('x'),
-          'price x');
     });
   });
 

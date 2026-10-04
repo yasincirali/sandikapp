@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/yasal_metin_katalogu.dart';
 import 'package:portfoy_takip/services/yasal_onay_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,18 +39,16 @@ void main() {
           (YasalTur.kayitTekKutu, YasalMetinKatalogu.kutuSurumu),
         ];
     YasalOnayService.instance.testSifirla();
-    RemoteConfigService.testAcik = {};
   });
   tearDown(() {
     YasalOnayService.sunucuSurumTesti = null;
     YasalOnayService.rpcTesti = null;
     YasalOnayService.sorguTesti = null;
     YasalOnayService.instance.testSifirla();
-    RemoteConfigService.testAcik = {};
   });
 
-  const ikiKutu = KayitOnayBaglami(
-    tekKutu: false,
+  // Kayıt yalnız tek kutulu (bayrak `tek_onay_kutusu` 2026-10-05'te kalktı).
+  const kayitBaglami = KayitOnayBaglami(
     dil: 'en',
     kutuUlkesi: 'Almanya (AB)',
     belgeDegiskenleri: {
@@ -66,7 +63,9 @@ void main() {
   List<String> turler(Map<String, dynamic> p) =>
       [for (final o in p['p_ogeler'] as List) (o as Map)['tur'] as String];
 
-  /// Katalogdaki güncel sürümlerle tam onay takımı (iki kutulu kayıt).
+  /// Katalogdaki güncel sürümlerle tam onay takımı — İKİ kutulu eski kayıt
+  /// (2026-10-04 öncesi kullanıcıların sunucudaki satırları; kapı onları da
+  /// tam saymalı).
   List<(String, String)> tamTakim() => [
         for (final m in YasalMetinKatalogu.zorunluBelgeler()) (m.tur, m.surum),
         (YasalTur.kayitKutuKosullar, YasalMetinKatalogu.kutuSurumu),
@@ -80,71 +79,56 @@ void main() {
     };
   }
 
-  test('bayrak KAPALI: hiçbir çağrı yok, akış eski', () async {
-    expect(
-        await YasalOnayService.instance
-            .kayitOnaylariniKaydet(ikiKutu, locale: 'tr_TR'),
-        isFalse);
-    expect(await YasalOnayService.instance.yatirimUyarisiniKaydet(locale: 'tr'),
-        isFalse);
-    expect(await YasalOnayService.instance.zirveRizasiniKaydet(locale: 'tr'),
-        isFalse);
-    expect(cagrilar, isEmpty);
-  });
-
-  group('bayrak AÇIK', () {
-    setUp(() => RemoteConfigService.testAcik = {'yasal_onay_kaydi'});
-
-    test('kayıt, iki kutu: iki kutu + dört belge, Türkçe, gösterilen ülke',
+  group('kayıt', () {
+    test('kayıt: tek kutu + dört belge, belgeler Türkçe, gösterilen ülke',
         () async {
       expect(
           await YasalOnayService.instance
-              .kayitOnaylariniKaydet(ikiKutu, locale: 'en_US'),
+              .kayitOnaylariniKaydet(kayitBaglami, locale: 'en_US'),
           isTrue);
       final p = cagrilar.single;
       expect(p['p_kanal'], 'kayit');
       expect(p['p_locale'], 'en_US');
       expect(p['p_app_version'], '1.1.7+8');
       expect(turler(p), [
-        YasalTur.kayitKutuKosullar,
-        YasalTur.kayitKutuRiza,
+        YasalTur.kayitTekKutu,
         YasalTur.kosullar,
         YasalTur.gizlilik,
         YasalTur.kvkk,
         YasalTur.acikRiza,
       ]);
       final ogeler = [for (final o in p['p_ogeler'] as List) o as Map];
-      // İki kutu her arayüz dilinde Türkçe çizilir.
-      expect(ogeler.every((o) => o['dil'] == 'tr'), isTrue);
-      expect(ogeler[1]['degiskenler'], {'SUPABASE_ULKE': 'Almanya (AB)'});
-      expect(ogeler[2]['degiskenler'], {'belge_acildi': true});
+      // Kutu arayüz dilinde; belgeler her dilde Türkçe.
+      expect(ogeler[0]['dil'], 'en');
+      expect(ogeler.skip(1).every((o) => o['dil'] == 'tr'), isTrue);
+      expect(ogeler[0]['degiskenler'], {'SUPABASE_ULKE': 'Almanya (AB)'});
+      expect(ogeler[1]['degiskenler'], {'belge_acildi': true});
       // Gizlilik 1.2'den beri kendi bağlantısıyla açılır (açılmadı).
-      expect(ogeler[3]['degiskenler'], {
+      expect(ogeler[2]['degiskenler'], {
         'SUPABASE_ULKE': 'Almanya (AB)',
         'SUPABASE_ULKEDE': "Almanya'da (AB)",
         'belge_acildi': false,
       });
       // KVKK Aydınlatma 2026-10-04'ten beri kayıt ekranından açılabiliyor;
       // eski "kayit_ekraninda_baglanti: false" notu kalktı.
-      expect(ogeler[4]['degiskenler']['belge_acildi'], isTrue);
-      expect(ogeler[4]['degiskenler'],
+      expect(ogeler[3]['degiskenler']['belge_acildi'], isTrue);
+      expect(ogeler[3]['degiskenler'],
           isNot(contains('kayit_ekraninda_baglanti')));
       // Yer tutucu değerleri yalnız belgede geçenler: KVKK yalnız ülke adı.
-      expect(ogeler[4]['degiskenler'],
+      expect(ogeler[3]['degiskenler'],
           {'SUPABASE_ULKE': 'Almanya (AB)', 'belge_acildi': true});
       // "açık rıza" bağlantısı 1.2'den beri Açık Rıza Metni'ni açar.
-      expect(ogeler[5]['degiskenler'],
+      expect(ogeler[4]['degiskenler'],
           {'SUPABASE_ULKEDE': "Almanya'da (AB)", 'belge_acildi': false});
-      expect(ogeler[0]['hash'], YasalMetinKatalogu.kayitKutuKosullar().hash);
+      expect(ogeler[0]['hash'], YasalMetinKatalogu.kayitTekKutu('en').hash);
       // Belgeler güncel sürümde.
-      expect(ogeler[2]['surum'], YasalBelge.kosullar.surum);
-      expect(ogeler[5]['surum'], YasalBelge.acikRiza.surum);
+      expect(ogeler[1]['surum'], YasalBelge.kosullar.surum);
+      expect(ogeler[4]['surum'], YasalBelge.acikRiza.surum);
     });
 
     test('kayıt, tek kutu: tek kutu arayüz dilinde, yatırım uyarısı YOK',
         () async {
       const tek = KayitOnayBaglami(
-        tekKutu: true,
         dil: 'en',
         kutuUlkesi: 'abroad',
         belgeDegiskenleri: {'SUPABASE_ULKE': 'Yurt dışı'},
@@ -280,27 +264,9 @@ void main() {
   });
 
   group('yeniden onay kapısı', () {
-    test('bayraklar kapalı: ağ yok, kapı yok', () async {
-      sorgu(() => const []);
-      final d = await YasalOnayService.instance.kapiDurumu('u1');
-      expect(d.gerekli, isFalse);
-      expect(sorguSayisi, 0);
-    });
-
-    test('yalnız yasal_kapi_en_yeni açık (kayıt kapalı): etkisiz', () async {
-      RemoteConfigService.testAcik = {'yasal_kapi_en_yeni'};
-      sorgu(() => const []);
-      expect(
-          (await YasalOnayService.instance.kapiDurumu('u1')).gerekli, isFalse);
-      expect(sorguSayisi, 0);
-    });
-
-    group('iki bayrak açık', () {
-      setUp(() => RemoteConfigService.testAcik = {
-            'yasal_onay_kaydi',
-            'yasal_kapi_en_yeni',
-          });
-
+    // Kapı koşulsuz (bayraklar `yasal_onay_kaydi` + `yasal_kapi_en_yeni`
+    // 2026-10-05'te kalktı; "bayrak kapalı: ağ yok" testleri onlarla gitti).
+    group('kapı', () {
       test('eski kullanıcı / sosyal girişle ilk kez (hiç onay yok): kapı',
           () async {
         sorgu(() => const []);
@@ -357,7 +323,7 @@ void main() {
         // açılırdı.
         sorgu(() => const []);
         final yazim = YasalOnayService.instance
-            .kayitOnaylariniKaydet(ikiKutu, locale: 'tr_TR', userId: 'yeni');
+            .kayitOnaylariniKaydet(kayitBaglami, locale: 'tr_TR', userId: 'yeni');
         final kapi = YasalOnayService.instance.kapiDurumu('yeni');
         await Future<void>.delayed(Duration.zero);
         rpcBitti.complete();
@@ -376,7 +342,6 @@ void main() {
 
       test('tek kutulu kayıt da kapıyı tamamlar', () async {
         const tek = KayitOnayBaglami(
-          tekKutu: true,
           dil: 'tr',
           kutuUlkesi: 'Almanya (AB)',
           belgeDegiskenleri: {},
@@ -395,7 +360,7 @@ void main() {
         YasalOnayService.rpcTesti =
             (_) async => throw const SocketException('yok');
         await YasalOnayService.instance
-            .kayitOnaylariniKaydet(ikiKutu, locale: 'tr_TR', userId: 'yeni');
+            .kayitOnaylariniKaydet(kayitBaglami, locale: 'tr_TR', userId: 'yeni');
         sorgu(() => const []);
         expect((await YasalOnayService.instance.kapiDurumu('yeni')).gerekli,
             isTrue);
@@ -412,8 +377,7 @@ void main() {
           durum: durum,
           belgeDegiskenleri: const {'SUPABASE_ULKE': 'Almanya (AB)'},
           acilanBelgeler: {YasalTur.kvkk},
-          kutu: const KapiKutuBaglami(
-              tekKutu: false, dil: 'tr', kutuUlkesi: 'Almanya (AB)'),
+          kutu: const KapiKutuBaglami(dil: 'tr', kutuUlkesi: 'Almanya (AB)'),
           yatirimUyarisiDahil: true,
           locale: 'tr_TR',
         );
@@ -421,8 +385,7 @@ void main() {
         final p = cagrilar.single;
         expect(p['p_kanal'], 'yeniden_onay');
         expect(turler(p), [
-          YasalTur.kayitKutuKosullar,
-          YasalTur.kayitKutuRiza,
+          YasalTur.kayitTekKutu,
           YasalTur.kosullar,
           YasalTur.gizlilik,
           YasalTur.kvkk,
@@ -430,15 +393,15 @@ void main() {
           YasalTur.yatirimUyarisi,
         ]);
         final o = [for (final x in p['p_ogeler'] as List) x as Map];
-        expect(o[2]['degiskenler'],
+        expect(o[1]['degiskenler'],
             {'belge_acildi': false, 'onceki_surum': '1.0'});
-        expect(o[3]['degiskenler']['onceki_surum'], isNull);
-        expect(o[4]['degiskenler']['belge_acildi'], isTrue);
-        expect(o[4]['degiskenler']['SUPABASE_ULKE'], 'Almanya (AB)');
+        expect(o[2]['degiskenler']['onceki_surum'], isNull);
+        expect(o[3]['degiskenler']['belge_acildi'], isTrue);
+        expect(o[3]['degiskenler']['SUPABASE_ULKE'], 'Almanya (AB)');
         // Açık Rıza Metni yalnız {SUPABASE_ULKEDE} taşır; verilmeyen değer
         // uydurulmaz.
         expect(
-            o[5]['degiskenler'], {'belge_acildi': false, 'onceki_surum': null});
+            o[4]['degiskenler'], {'belge_acildi': false, 'onceki_surum': null});
         // Başarı izi koyar: sonraki açılış ağa gitmez.
         sorgu(() => const []);
         expect((await YasalOnayService.instance.kapiDurumu('u1')).gerekli,
@@ -575,10 +538,6 @@ void main() {
     });
 
     test('eksik onay + uygulama eski: kapı AÇILMAZ, iz konmaz', () async {
-      RemoteConfigService.testAcik = {
-        'yasal_onay_kaydi',
-        'yasal_kapi_en_yeni',
-      };
       YasalOnayService.sunucuSurumTesti =
           () async => [(kosullar.tur, ileri(kosullar.surum))];
       sorgu(() => const []);
@@ -593,10 +552,6 @@ void main() {
 
     test('eksik onay + uygulama güncel: kapı açılır (tek seferde en yeni)',
         () async {
-      RemoteConfigService.testAcik = {
-        'yasal_onay_kaydi',
-        'yasal_kapi_en_yeni',
-      };
       sorgu(() => [(kosullar.tur, '1.0')]);
       final d = await YasalOnayService.instance.kapiDurumu('u1');
       expect(d.gerekli, isTrue);

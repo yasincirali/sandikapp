@@ -19,8 +19,8 @@ import 'register_screen.dart';
 /// 1. maddesi: değer görmeden hesap istemek huninin en büyük kaybı.
 ///
 /// ## Kurallar
-/// - Bayrak `karsilama_tanitimi` (varsayılan kapalı). Kapalıyken giriş
-///   ekranı birebir eski.
+/// - Bayrak `karsilama_tanitimi` 2026-10-04'te açıldı, 2026-10-05'te kalktı:
+///   tanıtım kalıcı.
 /// - Cihaz başına bir kez: "Giriş yap"/"Atla" ya da herhangi bir hesapla
 ///   oturum açılınca `karsilamaGorulduProvider` `true` olur; mevcut
 ///   kullanıcı çıkış yapınca bu ekranı görmez (`main.dart`).

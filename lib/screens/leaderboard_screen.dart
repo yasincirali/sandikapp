@@ -11,7 +11,6 @@ import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
-import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -20,41 +19,16 @@ import '../widgets/zirve_donem_secici.dart';
 import '../utils/polling.dart';
 import '../l10n/l10n.dart';
 
-class LeaderboardScreen extends ConsumerStatefulWidget {
-  const LeaderboardScreen({super.key});
-
-  @override
-  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
-}
-
-class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
-  int _periodIdx = 1; // 0=7g, 1=30g, 2=1y
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(
-        title: context.l10n.raceTitle,
-        actions: yarisEylemleri(context, ref),
-        transparent: true,
-      ),
-      body: SafeArea(
-        child: YarisGovdesi(
-          donemIdx: _periodIdx,
-          onDonem: (i) => setState(() => _periodIdx = i),
-        ),
-      ),
-    );
-  }
-}
+// NOT: `LeaderboardScreen` (ayrı Yarış ekranı) 2026-10-05'te silindi —
+// yalnız bayrak `siralama_tek_sayfa` kapalıyken açılıyordu. Yarış artık
+// yalnız Sıralama › Ortaklarım'da (`SiralamaScreen`); gövdesi aşağıda.
 
 /// Yarış'ın üst çubuk eylemleri: ayrılma menüsü (katılımcıya) ve "Getiri
 /// nasıl hesaplanıyor?" düğmesi.
 ///
 /// Fonksiyon olarak ayrıldı (sadeleştirme madde 8, 2026-10-04): tek
-/// "Sıralama" sayfası (`SiralamaScreen`, bayrak `siralama_tek_sayfa`)
-/// "Ortaklarım" sekmesindeyken AYNI eylemleri çizer — kopya yazılmaz.
+/// "Sıralama" sayfası (`SiralamaScreen`) "Ortaklarım" sekmesindeyken bu
+/// eylemleri çizer.
 List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
   final optIn = ref.watch(leaderboardOptInProvider);
   final me = ref.watch(authProvider).valueOrNull;
@@ -108,8 +82,9 @@ List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
 
 /// Yarış ekranının gövdesi — katılım daveti ya da sıralama.
 ///
-/// `LeaderboardScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04): tek
-/// "Sıralama" sayfasının "Ortaklarım" sekmesi AYNI gövdeyi çizer. Dönem
+/// `LeaderboardScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04; o
+/// kabuk 2026-10-05'te silindi): tek "Sıralama" sayfasının "Ortaklarım"
+/// sekmesi bu gövdeyi çizer. Dönem
 /// dışarıdan yönetilir ki sayfa iki sekmede tek dönem tutsun; metrik ve
 /// hesap burada değişmez (seçimlerinin getirisi, TWR — `secim_getirisi`).
 ///
@@ -120,17 +95,11 @@ class YarisGovdesi extends ConsumerWidget {
     super.key,
     required this.donemIdx,
     required this.onDonem,
-    this.sekmeli = false,
   });
 
   /// [_YarisDonemleri] içindeki seçili dönem (0=7g, 1=30g, 2=1y).
   final int donemIdx;
   final ValueChanged<int> onDonem;
-
-  /// Tek Sıralama sayfasında mı? Öyleyse dönem seçici "Herkes" sekmesiyle
-  /// AYNI bileşen (`ZirveDonemSecici`, 1H · 1A · 1Y) — sekme değişince
-  /// seçici yerinde kalır, etiket ve kabuk değişmez.
-  final bool sekmeli;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,10 +110,7 @@ class YarisGovdesi extends ConsumerWidget {
     final myAssets = ref.watch(portfolioProvider).valueOrNull?.assets ?? [];
     final partnerAssets = ref.watch(allPartnerAssetsProvider).valueOrNull ?? {};
     final pState = ref.watch(portfolioProvider).valueOrNull;
-    final periodDays = _YarisDonemleri.liste[donemIdx].days;
-    // Düello arenası (bayrak `yaris_duello_arena`, 2026-10-04): iki kişide
-    // listenin yerine arena; dönem seçici kayan hap. Hesap değişmez.
-    final arena = RemoteConfigService.instance.yarisDuelloArena;
+    final periodDays = _YarisDonemleri.gunler[donemIdx];
 
     if (!optIn) {
       return _OptInPrompt(
@@ -157,26 +123,19 @@ class YarisGovdesi extends ConsumerWidget {
     }
     return Column(
       children: [
-        // Arena açıkken eski Yarış ekranı da Sıralama'nın seçicisini
-        // kullanır (1H · 1A · 1Y, kayan hap) — "7G / 30G" ikinci bir dil.
-        if (sekmeli || arena)
-          Padding(
-            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
-                SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
-            child: ZirveDonemSecici(
-              secili: ZirveDonem.values[donemIdx],
-              onSec: (d) => onDonem(ZirveDonem.values.indexOf(d)),
-              kayan: arena,
-            ),
-          )
-        else
-          _PeriodBar(
-            selected: donemIdx,
-            onChange: onDonem,
-            periods: _YarisDonemleri.liste
-                .map((p) => p.label)
-                .toList(growable: false),
+        // Dönem seçici "Herkes" sekmesiyle AYNI bileşen (`ZirveDonemSecici`,
+        // 1H · 1A · 1Y, kayan hap) — sekme değişince seçici yerinde kalır,
+        // etiket ve kabuk değişmez. Eski "7G / 30G" amber seçici
+        // (`_PeriodBar`) düello arenası bayrağıyla birlikte 2026-10-05'te
+        // silindi.
+        Padding(
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+              SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
+          child: ZirveDonemSecici(
+            secili: ZirveDonem.values[donemIdx],
+            onSec: (d) => onDonem(ZirveDonem.values.indexOf(d)),
           ),
+        ),
         Expanded(
           child: activePartners.isEmpty
               // Küresel sıralama parametrik kapalıyken solo panel
@@ -207,7 +166,6 @@ class YarisGovdesi extends ConsumerWidget {
                   partnerAssets: partnerAssets,
                   periodDays: periodDays,
                   pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
-                  arena: arena,
                 ),
         ),
         // Kendi satırının ek bilgisi (R1): paranın getirisi —
@@ -252,17 +210,13 @@ class YarisGovdesi extends ConsumerWidget {
 /// tek Sıralama sayfası iki sekmede aynı dönemi indeksle taşır
 /// (`siralama_test` eşitliği kilitler).
 abstract final class _YarisDonemleri {
-  static const liste = [
-    (label: '7G', days: 7),
-    (label: '30G', days: 30),
-    (label: '1Y', days: 365),
-  ];
+  static const gunler = [7, 30, 365];
 }
 
 /// Test kilidi için dışa açık gün listesi (`ZirveDonem` eşitliği).
 @visibleForTesting
 List<int> get yarisDonemGunleri =>
-    [for (final p in _YarisDonemleri.liste) p.days];
+    _YarisDonemleri.gunler;
 
 /// Kendi satırının ek bilgisi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
 /// Performans › Özet'in aynı dönemdeki sayısı (R1, 2026-10-01).
@@ -790,86 +744,6 @@ class _SoloRoiCard extends StatelessWidget {
   }
 }
 
-/// iOS Cupertino-benzeri segmented control. Aktif segment altın gradient
-/// pill ile animate ederek kayar. Sade ama net & rekabet duygusu veren.
-class _PeriodBar extends StatelessWidget {
-  final int selected;
-  final void Function(int) onChange;
-  final List<String> periods;
-  const _PeriodBar({
-    required this.selected,
-    required this.onChange,
-    required this.periods,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Overflow-güvenli tasarım: LayoutBuilder + explicit width yerine
-    // Flex-only. Aktif pill de Stack yerine seçili segment'in Container
-    // BoxDecoration'ı ile yapılır — yuvarlama gap'i yok.
-    return Padding(
-      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 8),
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: context.c.overlay,
-          borderRadius: BorderRadius.circular(SandikRadius.lg),
-          border: Border.all(color: context.c.hairline),
-        ),
-        child: Row(
-          children: List.generate(periods.length, (i) {
-            final active = i == selected;
-            return Expanded(
-              child: SandikBasma(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChange(i),
-                // Token: elle 220 ms + ham eğri yerine seçicilerin ortak
-                // `state`/`enter`'ı (animasyon denetimi 2026-10-01).
-                child: AnimatedContainer(
-                  duration: SandikMotion.stateOf(context),
-                  curve: SandikMotion.enter,
-                  margin: EdgeInsets.symmetric(horizontal: active ? 0 : 2),
-                  decoration: BoxDecoration(
-                    // Seçili pill bir YÜZEY — dolgu token'ı kullanılır.
-                    // (Eskiden `[gold, amberText]` idi; ikisi de metin
-                    // token'ı olduğu için light'ta çöküyordu — bkz.
-                    // `SandikPalette.amberGradient`.)
-                    gradient: active ? context.c.amberGradient : null,
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    boxShadow: active
-                        ? [
-                            BoxShadow(
-                              color:
-                                  context.c.amberFill.withValues(alpha: 0.35),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Center(
-                    child: AnimatedDefaultTextStyle(
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
-                      style: context.t.bodyMedium!.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: active ? context.c.onAmber : context.c.text58,
-                        letterSpacing: 0.6,
-                      ),
-                      child: Text(periods[i]),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
-}
-
 class _LeaderboardList extends StatefulWidget {
   final AppUser? me;
   final List<Asset> myAssets;
@@ -878,9 +752,6 @@ class _LeaderboardList extends StatefulWidget {
   final int periodDays;
   final double Function(double, String) pnlToTRY;
 
-  /// Düello arenası bayrağı — tam bir ortakta lider şeridi de hesaplanır.
-  final bool arena;
-
   const _LeaderboardList({
     required this.me,
     required this.myAssets,
@@ -888,7 +759,6 @@ class _LeaderboardList extends StatefulWidget {
     required this.partnerAssets,
     required this.periodDays,
     required this.pnlToTRY,
-    this.arena = false,
   });
 
   @override
@@ -908,8 +778,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   DateTime? _sonGuncelleme;
 
   /// Arenanın lider şeridi — satırlarla AYNI turda hesaplanır ve atanır ki
-  /// şeridin "bugün"ü arenadaki lideri anlatsın. Yalnız bayrak açık ve tam
-  /// bir ortak varken; aksi hâlde hiç hesaplanmaz (maliyet yok).
+  /// şeridin "bugün"ü arenadaki lideri anlatsın. Yalnız tam bir ortak
+  /// varken; aksi hâlde hiç hesaplanmaz (maliyet yok).
   LiderSeridi? _serit;
   // "Anlık" hissi için düzenli tick — her tetikte kendi ROI'sini
   // yeniden hesaplayıp upload eder, sonra partner ROI'lerini
@@ -1058,7 +928,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     // Lider şeridi sıralamayla paralel (aynı fiyat serileri; HistoryService
     // sembol başına önbellekli). Ölçü değişmez: şerit aynı motorun gün gün
     // birikimidir (`SecimGetirisi.donemSerisi`).
-    final seritIstegi = widget.arena && me != null && widget.partners.length == 1
+    final seritIstegi = me != null && widget.partners.length == 1
         ? LeaderboardService.instance.liderSeridi(
             benLotlari: widget.myAssets,
             rakipLotlari: widget.partnerAssets[widget.partners.first.id] ??
@@ -1142,7 +1012,6 @@ class _LeaderboardListState extends State<_LeaderboardList> {
                   yenileme: _yenileme,
                   sonGuncelleme: _sonGuncelleme,
                   donemGun: rows.first.donemGun,
-                  arena: widget.arena,
                   liderSeridi: _serit,
                 ),
               ],

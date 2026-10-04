@@ -141,16 +141,15 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
-  /// Tek kıyas yüzeyi (`tek_kiyas_yuzeyi`, Sadeleştirme 2 madde 8): kıyas
-  /// Karşılaştır ekranında, bu varlık ve ekranın SEÇİLİ dönemi hazır
-  /// açılır. Bayrak kapalıysa ya da varlık orada satır olamıyorsa
-  /// (`ComparisonScreen.varligiAcabilir` — mevduat, BES, elle fiyat)
-  /// `false` döner ve eski grafik içi seçici açılır.
+  /// Tek kıyas yüzeyi (Sadeleştirme 2 madde 8, 2026-10-04; bayrak
+  /// `tek_kiyas_yuzeyi` 2026-10-05'te kalktı): kıyas Karşılaştır ekranında,
+  /// bu varlık ve ekranın SEÇİLİ dönemi hazır açılır. Varlık orada satır
+  /// olamıyorsa (`ComparisonScreen.varligiAcabilir` — mevduat, BES, elle
+  /// fiyat) `false` döner ve grafik içi seçici açılır.
   ///
   /// Varlık `_canli.asset`: ekranın kendi birim serisini kuran AYNI
   /// pozisyon (`_loadHistory`), iki ekranın çizgisi aynı girdiden çıksın.
   bool _kiyasEkraninaGit() {
-    if (!RemoteConfigService.instance.tekKiyasYuzeyi) return false;
     final varlik = _canli.asset;
     if (!ComparisonScreen.varligiAcabilir(varlik)) return false;
     final gun = _periods[_selectedPeriodIdx].days;
@@ -166,8 +165,8 @@ extension _DetayEylemler on _AssetDetailScreenState {
   }
 
   /// Alttaki sabit "Al · Sat · Temettü" çubuğu (Sadeleştirme 2, madde 6,
-  /// `varlik_islem_cubugu` bayrağı). Bayrak kapalıysa `null` — Scaffold'un
-  /// alt yuvası boş kalır, ekran birebir eski.
+  /// 2026-10-04; bayrak `varlik_islem_cubugu` 2026-10-05'te kalktı). Çubuk
+  /// çizilmeyecekse `null` — Scaffold'un alt yuvası boş kalır.
   ///
   /// Kurallar Portföy kartının kaydırmasıyla AYNI:
   ///   · Yalnız KENDİ varlığında (`isOwnAsset`). Kaydırma ortağın satırında
@@ -180,7 +179,6 @@ extension _DetayEylemler on _AssetDetailScreenState {
   ///     CANLI pozisyondur (`_canli.asset`), kaydırmadaki
   ///     `kendi.asDisplayAsset()`'in eşi.
   Widget? _islemCubugu(bool isOwnAsset) {
-    if (!RemoteConfigService.instance.varlikIslemCubugu) return null;
     if (!isOwnAsset) return null;
     final canli = _canli;
     if (!canli.acik) return null;

@@ -19,7 +19,6 @@ import '../demo/demo_kabugu.dart' show demoyuAc;
 import '../demo/demo_modu.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
-import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
@@ -181,11 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 48),
 
-                    // Sadeleştirme 2 (bayrak `karsilama_tanitimi`): Apple /
-                    // Google en üstte. E-posta yolu kod doğrulaması ister;
-                    // sosyal giriş istemez, ilk gün için en kısa yol.
-                    if (RemoteConfigService.instance.karsilamaTanitimi)
-                      const SocialSignInButtons(ustte: true),
+                    // Sadeleştirme 2 (2026-10-04; bayrak `karsilama_tanitimi`
+                    // 2026-10-05'te kalktı): Apple / Google en üstte. E-posta
+                    // yolu kod doğrulaması ister; sosyal giriş istemez, ilk
+                    // gün için en kısa yol.
+                    const SocialSignInButtons(ustte: true),
 
                     // E-posta
                     TextFormField(
@@ -401,10 +400,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Apple / Google — düğmeler platform ve yapılandırmaya
-                    // göre çizilir; yoksa bu satır boş kalır.
-                    if (!RemoteConfigService.instance.karsilamaTanitimi)
-                      const SocialSignInButtons(),
+                    // Apple / Google formun ÜSTÜNDE (yukarıda); 2026-10-05'e
+                    // kadar bayrak kapalıyken burada, "Kayıt ol"un üstündeydi.
 
                     // Kayıt ol
                     CupertinoButton(
@@ -422,11 +419,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // sönük renkte; birincil yol hâlâ giriş/kayıt. Bayrak
                     // `demo_mode_enabled` kapalıyken hiç çizilmez.
                     //
-                    // Sadeleştirme (bayrak `karsilama_tanitimi`, 2026-10-04):
-                    // demo hesap açmadan değeri görmenin tek yolu; sönük metin
-                    // bağlantısı yerine çerçeveli tam genişlik düğme olur.
-                    if (DemoModu.girisDugmesiAcik() &&
-                        RemoteConfigService.instance.karsilamaTanitimi)
+                    // Sadeleştirme (2026-10-04; bayrak `karsilama_tanitimi`
+                    // 2026-10-05'te kalktı): demo hesap açmadan değeri
+                    // görmenin tek yolu; sönük metin bağlantısı yerine
+                    // çerçeveli tam genişlik düğme.
+                    if (DemoModu.girisDugmesiAcik())
                       Padding(
                         padding: const EdgeInsets.only(top: SandikSpace.xs),
                         child: OutlinedButton(
@@ -444,14 +441,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 fontWeight: FontWeight.w600,
                                 color: context.c.amberText),
                           ),
-                        ),
-                      )
-                    else if (DemoModu.girisDugmesiAcik())
-                      CupertinoButton(
-                        onPressed: () => demoyuAc(context),
-                        child: Text(
-                          context.l10n.demoTryButton,
-                          style: context.t.bodyLarge?.copyWith(color: context.c.text58),
                         ),
                       ),
                     const SizedBox(height: 32),

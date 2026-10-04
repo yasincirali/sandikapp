@@ -16,10 +16,8 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
-import 'package:portfoy_takip/screens/leaderboard_screen.dart';
 import 'package:portfoy_takip/screens/siralama_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -82,7 +80,6 @@ void main() {
     DbLogger.silentInTests = true;
   });
   tearDownAll(() => DbLogger.silentInTests = false);
-  tearDown(() => RemoteConfigService.testAcik = {});
 
   Future<void> ciz(WidgetTester tester, String ad, Widget ekran,
       {bool optIn = true,
@@ -93,7 +90,6 @@ void main() {
     SharedPreferences.setMockInitialValues(
         optIn ? {'pref_leaderboard_opt_in': true} : {});
     await initPreferencesCache();
-    RemoteConfigService.testAcik = {'siralama_tek_sayfa'};
     tester.view.physicalSize = Size(genislik * 2, 915 * 2);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.reset);
@@ -171,10 +167,5 @@ void main() {
     await ciz(tester, 'siralama_ortaklarim_acik_320',
         SiralamaScreen(zirveRizaYukleyici: () async => true),
         acik: true, genislik: 320, ortakli: false);
-  });
-
-  testWidgets('kıyas: bayrak kapalıyken eski Yarış', (tester) async {
-    // `LeaderboardScreen` bayrağa bakmaz; bayrak kapalıyken girişler onu açar.
-    await ciz(tester, 'siralama_eski_yaris', const LeaderboardScreen());
   });
 }

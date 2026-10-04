@@ -13,7 +13,6 @@ import 'package:portfoy_takip/services/bugun_yukleyici.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/utils/tr_format.dart' show dayKey;
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +22,7 @@ import 'helpers/kaynak.dart';
 /// Karttan ekrana geçişte ortak seçimi taşınır (bayrak `ortak_secimi_tasi`,
 /// kullanıcı isteği 2026-10-04): "ana sayfa günlük kartından performans
 /// ekranına, ortağım ya da birlikte seçiliyse yine o seçili şekilde
-/// açılmalı." Bayrak kapalıyken eski davranış: Performans her zaman Ben.
+/// açılmalı." Bayrak 2026-10-05'te kalktı (önceki davranış: her zaman Ben).
 
 Asset _asset(String ticker, double qty, double alis, double simdi) => Asset(
       id: 'u-$ticker',
@@ -83,17 +82,12 @@ void main() {
     BugunKarti.anliklariTemizle();
     IntradaySeriesCache.instance.clear();
     BugunYukleyici.reelTest = null;
-    RemoteConfigService.testAcik = {};
   });
 
   /// Kartı [gorunum] ile kurar, "En çok oynayan" kutusuna (THYAO) dokunur
   /// ve açılan Performans ekranının `initialView`'ını döndürür.
   Future<String?> acilanGorunum(WidgetTester tester,
-      {required String? gorunum, required bool tasi}) async {
-    RemoteConfigService.testAcik = {
-      'bugun_karti_kiyas',
-      if (tasi) 'ortak_secimi_tasi',
-    };
+      {required String? gorunum}) async {
     tester.view.physicalSize = const Size(390 * 3, 1000 * 3);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
@@ -151,21 +145,17 @@ void main() {
     return (ekran as PortfolioPerformanceScreen).initialView;
   }
 
-  group('bayrak AÇIK: kartın seçimi Performans\'a taşınır', () {
+  group('kartın seçimi Performans\'a taşınır', () {
     testWidgets('ortak seçiliyken o ortak', (tester) async {
-      expect(await acilanGorunum(tester, gorunum: 'ortak-1', tasi: true),
+      expect(await acilanGorunum(tester, gorunum: 'ortak-1'),
           'ortak-1');
     });
     testWidgets('Birlikte (null) seçiliyken Birlikte', (tester) async {
-      expect(await acilanGorunum(tester, gorunum: null, tasi: true), isNull);
+      expect(await acilanGorunum(tester, gorunum: null), isNull);
     });
     testWidgets('Ben seçiliyken Ben', (tester) async {
-      expect(await acilanGorunum(tester, gorunum: '', tasi: true), '');
+      expect(await acilanGorunum(tester, gorunum: ''), '');
     });
-  });
-
-  testWidgets('bayrak KAPALI: eski davranış, her zaman Ben', (tester) async {
-    expect(await acilanGorunum(tester, gorunum: 'ortak-1', tasi: false), '');
   });
 
   test('kaynak: Bugün kartının her Performans geçişi seçimi verir', () {
@@ -174,7 +164,7 @@ void main() {
     expect(gecis, greaterThan(0));
     expect('initialView: _gecisGorunumu'.allMatches(kart).length, gecis,
         reason: 'Bugün kartından Performans açan her yer kartın ortak '
-            'seçimini taşımalı (bayrak ortak_secimi_tasi).');
+            'seçimini taşımalı.');
     final ana = ekranKaynagiSync('lib/screens/home_screen.dart');
     expect(ana, contains('gorunum: _view,'),
         reason: 'Ana ekran Bugün kartına seçili görünümü vermeli.');

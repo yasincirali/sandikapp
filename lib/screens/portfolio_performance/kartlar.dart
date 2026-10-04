@@ -141,13 +141,12 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // ── Kontroller: İKİ satır (+ ortak varsa kişi satırı) ────────────
         //
         // Kim: ortak varsa en üstte, tek dokunuşluk segmentler — ekranın
-        // öznesi, sık değiştirilir (gerekçe `KapsamKisiSecici`). Yüzey
+        // öznesi, sık değiştirilir (gerekçe `OrtakSecici`). Yüzey
         // anahtarı kapsam çipiyle AYNI satırda: dönem ikisi için de geçerli,
         // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
         // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
         if (activePartners.isNotEmpty) ...[
           OrtakSecici(
-            eski: EskiOrtakSecici.segment,
             partners: activePartners,
             selectedId: _view,
             // Kapsam değişiminde gün içi TOHUMU da at.
@@ -176,13 +175,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           const SizedBox(height: SandikSpace.sm),
         ],
         _buildScopeBar(),
-        _buildScopePanel(isIntraday),
-        // Mod Ayarlar'dayken (`performans_ayar_sade`) etkin olduğu ekranda
-        // görünür kalır. Gün içinde simülasyonun karşılığı yok (eski
-        // anahtar da orada çizilmiyordu) — rozet de çizilmez.
-        if (RemoteConfigService.instance.performansAyarSade &&
-            _simulate &&
-            !isIntraday) ...[
+        _buildScopePanel(),
+        // Mod Ayarlar'da (`performans_ayar_sade`, 2026-10-04) olduğu için
+        // etkin olduğu ekranda rozetle görünür kalır. Gün içinde
+        // simülasyonun karşılığı yok — rozet de çizilmez.
+        if (_simulate && !isIntraday) ...[
           const SizedBox(height: SandikSpace.xs),
           _buildBugunkuPortfoyRozeti(),
         ],
@@ -417,8 +414,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               child: ZirveKarti(
                 donem: ZirveDonem.yakin(
                     _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].days),
-                // Bayrak `siralama_tek_sayfa` açıksa Sıralama › Herkes
-                // (aynı gövde, aynı rıza akışı); kapalıysa Zirve ekranı.
+                // Sıralama › Zirvedekiler (aynı gövde, aynı rıza akışı).
                 onAc: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(

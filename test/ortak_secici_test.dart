@@ -3,10 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/watchlist_provider.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
-import 'package:portfoy_takip/widgets/kapsam_kisi_secici.dart';
-import 'package:portfoy_takip/widgets/modern_tab_selector.dart';
 import 'package:portfoy_takip/widgets/ortak_secici.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 
@@ -14,17 +11,16 @@ import 'helpers/kaynak.dart';
 
 /// `OrtakSecici` — sadeleştirme madde 8 (2026-10-04).
 ///
-/// Değişmez: bayrak `tek_ortak_secici` kapalı da açık da olsa seçim AYNI
-/// durumu aynı sözleşmeyle yazar (`null` Birlikte, `''` Ben, uuid ortak).
-/// Görünüş değişir, davranış değişmez. Bayrak kapalıyken çağıranın eski
-/// kabuğu birebir çizilir.
+/// Değişmez: seçim durumu sözleşmeyle yazar (`null` Birlikte, `''` Ben,
+/// uuid ortak). 2026-10-05'e kadar bayrak `tek_ortak_secici` kapalıyken
+/// eski iki kabuk (`ModernTabSelector`, `KapsamKisiSecici`) da aynı
+/// sözleşmeyle sınanıyordu; kabuklar bayrakla birlikte silindi.
 AppUser _ortak(String id, String ad) => AppUser(
     id: id, email: '$id@x.com', displayName: ad, createdAt: DateTime(2026));
 
 final _iki = [_ortak('p1', 'Ayşe Yılmaz'), _ortak('p2', 'Can Kaya')];
 
-Widget _uygulama(List<AppUser> ortaklar, EskiOrtakSecici eski) =>
-    ProviderScope(
+Widget _uygulama(List<AppUser> ortaklar) => ProviderScope(
       child: MaterialApp(
         theme: ThemeData(
           brightness: Brightness.dark,
@@ -37,7 +33,6 @@ Widget _uygulama(List<AppUser> ortaklar, EskiOrtakSecici eski) =>
               // Takip ekranındaki çağrının aynısı: seçim provider'a yazılır.
               child: Consumer(
                 builder: (context, ref, _) => OrtakSecici(
-                  eski: eski,
                   partners: ortaklar,
                   selectedId: ref.watch(watchlistCompareViewProvider),
                   onChanged: (v) =>
@@ -50,82 +45,58 @@ Widget _uygulama(List<AppUser> ortaklar, EskiOrtakSecici eski) =>
       ),
     );
 
-String? _durum(WidgetTester tester) => ProviderScope.containerOf(
-        tester.element(find.byType(OrtakSecici)))
-    .read(watchlistCompareViewProvider);
+String? _durum(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(OrtakSecici)))
+        .read(watchlistCompareViewProvider);
 
 void main() {
-  tearDown(() => RemoteConfigService.testAcik = {});
+  testWidgets('çok ortakta seçim sağlayıcıya sözleşmeyle yazılır',
+      (tester) async {
+    await tester.pumpWidget(_uygulama(_iki));
+    expect(_durum(tester), '', reason: 'varsayılan Ben');
+    expect(find.byType(SandikSegment), findsOneWidget);
 
-  for (final acik in [false, true]) {
-    for (final eski in EskiOrtakSecici.values) {
-      final ad = 'bayrak ${acik ? 'AÇIK' : 'kapalı'} · ${eski.name}';
+    await tester.tap(find.text('Birlikte'));
+    await tester.pumpAndSettle();
+    expect(_durum(tester), isNull, reason: 'Birlikte = null');
 
-      testWidgets('$ad: çok ortakta seçim aynı provider\'ı aynı '
-          'sözleşmeyle yazar', (tester) async {
-        if (acik) RemoteConfigService.testAcik = {'tek_ortak_secici'};
-        await tester.pumpWidget(_uygulama(_iki, eski));
-        expect(_durum(tester), '', reason: 'varsayılan Ben');
+    await tester.tap(find.text('Ben'));
+    await tester.pumpAndSettle();
+    expect(_durum(tester), '', reason: 'Ben = boş metin');
 
-        // Hangi kabuk çiziliyor?
-        if (acik) {
-          expect(find.byType(SandikSegment), findsOneWidget);
-          expect(find.byType(ModernTabSelector), findsNothing);
-          expect(find.byType(KapsamKisiSecici), findsNothing);
-        } else {
-          expect(find.byType(ModernTabSelector),
-              eski == EskiOrtakSecici.hap ? findsOneWidget : findsNothing);
-          expect(find.byType(KapsamKisiSecici),
-              eski == EskiOrtakSecici.segment ? findsOneWidget : findsNothing);
-          expect(find.byType(SandikSegment), findsNothing);
-        }
+    // Çok ortak: üçüncü segment listeyi açar, ortak id'si yazılır.
+    await tester.tap(find.text('Ortaklar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Can').last);
+    await tester.pumpAndSettle();
+    expect(_durum(tester), 'p2');
+    expect(find.text('Can'), findsOneWidget,
+        reason: 'seçili ortağın adı segmentte');
 
-        await tester.tap(find.text('Birlikte'));
-        await tester.pumpAndSettle();
-        expect(_durum(tester), isNull, reason: 'Birlikte = null');
+    // Ortak seçiliyken yeniden dokunuş listeyi açar → başka ortak.
+    await tester.tap(find.text('Can'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ayşe').last);
+    await tester.pumpAndSettle();
+    expect(_durum(tester), 'p1');
+  });
 
-        await tester.tap(find.text('Ben'));
-        await tester.pumpAndSettle();
-        expect(_durum(tester), '', reason: 'Ben = boş metin');
+  testWidgets('tek ortakta üçüncü segment tek dokunuşla seçer', (tester) async {
+    await tester.pumpWidget(_uygulama([_iki.first]));
+    await tester.tap(find.text('Ayşe'));
+    await tester.pumpAndSettle();
+    expect(_durum(tester), 'p1');
+    expect(find.byType(PopupMenuItem<String>), findsNothing,
+        reason: 'tek seçenek için menü açılmaz');
+  });
 
-        // Çok ortak: üçüncü segment listeyi açar, ortak id'si yazılır.
-        await tester.tap(find.text('Ortaklar'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Can').last);
-        await tester.pumpAndSettle();
-        expect(_durum(tester), 'p2');
-        expect(find.text('Can'), findsOneWidget,
-            reason: 'seçili ortağın adı segmentte');
-
-        // Ortak seçiliyken yeniden dokunuş listeyi açar → başka ortak.
-        await tester.tap(find.text('Can'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Ayşe').last);
-        await tester.pumpAndSettle();
-        expect(_durum(tester), 'p1');
-      });
-
-      testWidgets('$ad: tek ortakta üçüncü segment tek dokunuşla seçer',
-          (tester) async {
-        if (acik) RemoteConfigService.testAcik = {'tek_ortak_secici'};
-        await tester.pumpWidget(_uygulama([_iki.first], eski));
-        await tester.tap(find.text('Ayşe'));
-        await tester.pumpAndSettle();
-        expect(_durum(tester), 'p1');
-        expect(find.byType(PopupMenuItem<String>), findsNothing,
-            reason: 'tek seçenek için menü açılmaz');
-      });
-    }
-  }
-
-  testWidgets('bayrak AÇIK: segmentler ekran okuyucudan etkin ve seçili '
+  testWidgets(
+      'segmentler ekran okuyucudan etkin ve seçili '
       'durumlu', (tester) async {
-    RemoteConfigService.testAcik = {'tek_ortak_secici'};
     final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(_uygulama(_iki, EskiOrtakSecici.hap));
+    await tester.pumpWidget(_uygulama(_iki));
 
-    expect(
-        tester.getSemantics(find.bySemanticsLabel('Kimin portföyü: Ben')),
+    expect(tester.getSemantics(find.bySemanticsLabel('Kimin portföyü: Ben')),
         isSemantics(isButton: true, isSelected: true, hasTapAction: true));
     expect(
         tester.getSemantics(find.bySemanticsLabel('Kimin portföyü: Birlikte')),
@@ -142,13 +113,11 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('bayrak AÇIK: dar ekranda (320pt) taşma yok', (tester) async {
-    RemoteConfigService.testAcik = {'tek_ortak_secici'};
+  testWidgets('dar ekranda (320pt) taşma yok', (tester) async {
     await tester.binding.setSurfaceSize(const Size(320, 640));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(_uygulama(
-        [_ortak('p1', 'Muhammed Abdurrahman'), _ortak('p2', 'Can')],
-        EskiOrtakSecici.segment));
+    await tester.pumpWidget(
+        _uygulama([_ortak('p1', 'Muhammed Abdurrahman'), _ortak('p2', 'Can')]));
     await tester.tap(find.text('Ortaklar'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Muhammed').last);

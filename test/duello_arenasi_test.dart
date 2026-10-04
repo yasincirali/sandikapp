@@ -7,28 +7,27 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
-import 'package:portfoy_takip/screens/leaderboard_screen.dart';
 import 'package:portfoy_takip/screens/siralama_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/lider_seridi.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/duello_arenasi.dart';
 import 'package:portfoy_takip/widgets/sandik_segment.dart';
 import 'package:portfoy_takip/widgets/yaris_sahnesi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Yarış "Düello arenası" (kullanıcı seçimi 2026-10-04, bayrak
-/// `yaris_duello_arena`, varsayılan KAPALI).
+/// Yarış "Düello arenası" (kullanıcı seçimi 2026-10-04; bayrak
+/// `yaris_duello_arena` 2026-10-05'te kalktı — arena kalıcı).
 ///
 /// Kilitlenenler:
 ///   · tam 2 kişi → arena (ortağın verisi yoksa da: "Henüz veri yok",
-///     halat ortada); 3+ kişi → eski kürsü + liste; bayrak kapalı → eski;
+///     halat ortada); 3+ kişi → kürsü + liste;
 ///   · dönem değişince değerler yeni döneme akar, lider değişince taç karşı
 ///     tarafa geçer;
 ///   · animasyon bitince boşta kare istenmez (ticker durur);
 ///   · hareketi azalt: son hâl ilk karede, kıvılcım yok;
 ///   · 320/390 pt ve büyük yazıda taşma yok;
-///   · ekran: eski Yarış ve Sıralama › Ortaklarım aynı arenayı çizer.
+///   · ekran: Sıralama › Ortaklarım arenayı çizer (ayrı Yarış ekranı
+///     2026-10-05'te silindi).
 YarisKatilimci _k(String id, double? roi,
         {bool ben = false, String? ad, int renk = 1}) =>
     YarisKatilimci(
@@ -53,7 +52,6 @@ Future<void> _pump(
   double genislik = 390,
   double olcek = 1,
   bool hareketsiz = false,
-  bool arena = true,
   LiderSeridi? serit,
   Brightness parlaklik = Brightness.dark,
 }) async {
@@ -78,7 +76,6 @@ Future<void> _pump(
             // bulandırmasın: zaman damgası yok.
             sonGuncelleme: null,
             donemGun: donem,
-            arena: arena,
             liderSeridi: serit,
           ),
         ),
@@ -112,27 +109,17 @@ void main() {
     DbLogger.silentInTests = true;
   });
   tearDownAll(() => DbLogger.silentInTests = false);
-  tearDown(() => RemoteConfigService.testAcik = {});
 
   group('vitrin kuralı', () {
-    test('arena açık: tam 2 kişi HER ZAMAN arena (veri yoksa da)', () {
-      expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', 2)], arena: true),
-          YarisVitrini.arena);
-      expect(
-          yarisVitrini([_k('sen', 1, ben: true), _k('a', null)], arena: true),
-          YarisVitrini.arena);
-    });
-    test('arena açık: 3 kişi eski kürsü', () {
-      expect(
-          yarisVitrini([_k('sen', 1, ben: true), _k('a', 2), _k('b', 3)],
-              arena: true),
-          YarisVitrini.kursu);
-    });
-    test('arena kapalı: eski kural birebir', () {
+    test('tam 2 kişi HER ZAMAN arena (veri yoksa da)', () {
       expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', 2)]),
-          YarisVitrini.duello);
+          YarisVitrini.arena);
       expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', null)]),
-          YarisVitrini.yok);
+          YarisVitrini.arena);
+    });
+    test('3 kişi kürsü', () {
+      expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', 2), _k('b', 3)]),
+          YarisVitrini.kursu);
     });
   });
 
@@ -214,14 +201,6 @@ void main() {
     expect(find.byType(DuelloArenasi), findsNothing);
     expect(find.text('VS'), findsNothing);
     expect(find.text('Lidere 2,2 puan'), findsOneWidget);
-  });
-
-  testWidgets('bayrak kapalı (arena: false): eski düello kartı', (tester) async {
-    await _pump(tester, [_k('sen', -2.7, ben: true), _k('ayse', -3.2)],
-        arena: false);
-    await tester.pumpAndSettle();
-    expect(find.byType(DuelloArenasi), findsNothing);
-    expect(find.text('SEN'), findsOneWidget, reason: 'eski liste duruyor');
   });
 
   testWidgets('dönem değişince değerler yeni döneme akar, taç el değiştirir',
@@ -405,36 +384,28 @@ void main() {
       }
     }
 
-    testWidgets('eski Yarış, bayrak açık, tek ortak (verisi yok) → arena',
+    testWidgets('Sıralama › Ortaklarım, tek ortak (verisi yok) → arena',
         (tester) async {
-      RemoteConfigService.testAcik = {'yaris_duello_arena'};
-      await ekran(tester, const LeaderboardScreen(), ortak: 1);
+      await ekran(
+          tester, SiralamaScreen(zirveRizaYukleyici: () async => true),
+          ortak: 1);
       expect(find.byType(DuelloArenasi), findsOneWidget);
       expect(find.text('Henüz veri yok'), findsNWidgets(2));
-      // Seçici: kayan hap (ortak segment kontrolü), 1H · 1A · 1Y.
-      expect(find.byType(SandikSegment), findsOneWidget);
+      // Dönem seçici: kayan hap (ortak segment kontrolü), 1H · 1A · 1Y;
+      // eski "7G / 30G" amber seçici yok.
+      expect(find.byType(SandikSegment), findsWidgets);
       expect(find.text('1A'), findsOneWidget);
       expect(find.text('30G'), findsNothing);
     });
 
-    testWidgets('eski Yarış, bayrak kapalı → birebir eski', (tester) async {
-      await ekran(tester, const LeaderboardScreen(), ortak: 1);
-      expect(find.byType(DuelloArenasi), findsNothing);
-      expect(find.byType(SandikSegment), findsNothing);
-      expect(find.text('30G'), findsOneWidget);
-    });
-
     testWidgets('iki ortak (3 kişi) → arena yok', (tester) async {
-      RemoteConfigService.testAcik = {'yaris_duello_arena'};
-      await ekran(tester, const LeaderboardScreen(), ortak: 2);
+      await ekran(
+          tester, SiralamaScreen(zirveRizaYukleyici: () async => true),
+          ortak: 2);
       expect(find.byType(DuelloArenasi), findsNothing);
     });
 
     testWidgets('Sıralama › Ortaklarım aynı arenayı çizer', (tester) async {
-      RemoteConfigService.testAcik = {
-        'yaris_duello_arena',
-        'siralama_tek_sayfa',
-      };
       await ekran(
           tester, SiralamaScreen(zirveRizaYukleyici: () async => true),
           ortak: 1);

@@ -52,22 +52,19 @@ void main() {
       );
     });
 
-    test('bayrak kapalıyken (sade=false) Başlangıç araçları ve derinliği '
-        'GİZLEMEZ — eski davranış birebir', () {
-      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic);
-      expect(b.grafikAraclari, isTrue);
-      expect(b.derinlik, isTrue);
-    });
-
+    // Sade Başlangıç kalıcı (bayrak `seviye_anketi` 2026-10-05'te kalktı;
+    // "bayrak kapalı = Başlangıç araçları gizlemez" testi onunla gitti).
     test('sade Başlangıç grafik araçlarını ve derinliği gizler', () {
-      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic, sade: true);
+      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic);
       expect(b.grafikAraclari, isFalse);
       expect(b.derinlik, isFalse);
     });
 
-    test('sade bayrağı Orta ve İleri\'yi DEĞİŞTİRMEZ (mevcut kullanıcı)', () {
+    test('Orta ve İleri araçları ve derinliği gösterir (mevcut kullanıcı)',
+        () {
       for (final s in [YatirimciSeviyesi.orta, YatirimciSeviyesi.ileri]) {
-        expect(seviyeGorunurlugu(s, sade: true), seviyeGorunurlugu(s));
+        expect(seviyeGorunurlugu(s).grafikAraclari, isTrue, reason: s.name);
+        expect(seviyeGorunurlugu(s).derinlik, isTrue, reason: s.name);
       }
     });
 
@@ -122,7 +119,7 @@ void main() {
 
     test('sade açıklama iki dilde de var', () {
       for (final l in [AppLocalizationsTr(), AppLocalizationsEn()]) {
-        expect(YatirimciSeviyesi.baslangic.aciklamaOf(l, sade: true).trim(),
+        expect(YatirimciSeviyesi.baslangic.aciklamaOf(l).trim(),
             isNotEmpty);
       }
     });
@@ -180,12 +177,14 @@ void main() {
   // bağlantının kendisini kilitler.
   group('ekranlara bağlı', () {
     // 2026-10-04: zil sinyallerin yanında alarm ve davetlerin de kutusu;
-    // seviye artık zili değil zilin SİNYAL satırlarını süzer (bayraklı,
-    // `zilGorunurProvider` / `zilSinyalleriGosterProvider`).
-    test('ana ekran: sinyal zili ve sinyal satırları seviyeye bakar', () {
+    // seviye artık zili değil zilin SİNYAL satırlarını süzer
+    // (`zilSinyalleriGosterProvider`). Zil her seviyede çizilir —
+    // `zilGorunurProvider` bayrak `seviye_anketi` ile 2026-10-05'te kalktı.
+    test('ana ekran: zil her seviyede, sinyal satırları seviyeye bakar', () {
       final src = ekranKaynagiSync('lib/screens/home_screen.dart');
-      expect(src.contains('ref.watch(zilGorunurProvider)) ...['), isTrue,
-          reason: 'zil görünürlüğü seviye kuralına bağlı değil');
+      expect(src.contains('ref.watch(zilGorunurProvider)'), isFalse,
+          reason: 'zil yeniden seviyeye bağlanmış');
+      expect(src.contains('target: TourTarget.bildirimCani'), isTrue);
       expect(src.contains('zilSinyalleriGosterProvider'), isTrue,
           reason: 'zil sayfası/rozeti sinyalleri seviyeye göre süzmüyor');
       final prefs =

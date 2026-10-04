@@ -2,22 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../models/user_model.dart';
-import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
-import 'kapsam_kisi_secici.dart';
-import 'modern_tab_selector.dart';
 import 'sandik_segment.dart';
-
-/// Bayrak kapalıyken hangi eski kabuğun çizileceği — çağıranın o güne kadar
-/// kullandığı bileşen. Bayrak kalıcı açılınca bu parametre ve iki eski dosya
-/// birlikte silinir.
-enum EskiOrtakSecici {
-  /// `ModernTabSelector`: 48pt kayan amber hap (Portföy, Hareketler, Takip).
-  hap,
-
-  /// `KapsamKisiSecici`: 36pt sade segment (Performans denetim yığını).
-  segment,
-}
 
 /// "Kimin portföyü?" — uygulamanın TEK ortak seçicisi.
 ///
@@ -33,8 +19,24 @@ enum EskiOrtakSecici {
 /// indirilmişti ve dönem seçici ([DonemSecici]) üç grafik ekranında bu
 /// seçicinin hemen altında aynı kabukla duruyor. Kullanıcı Performans'ta
 /// dört tur geri bildirimle "kişi, dönem ve yüzey aynı sınıf denetim"
-/// kararına varmıştı (`KapsamKisiSecici` gerekçesi); tek görünüş o kararı
-/// öteki ekranlara taşır.
+/// kararına varmıştı (aşağıda); tek görünüş o kararı öteki ekranlara taşır.
+///
+/// ## Neden Birlikte · Ben · ortak (2026-09-15, dört tur kullanıcı geri
+/// bildirimi; silinen `KapsamKisiSecici`'nin gerekçesi)
+///   1. Kapsam panelinin arkasında, çipte "Ben · Tümü" — "görülebilir olmalı".
+///   2. Başlık çubuğunda avatar+ad çipi, açılır menü — "hızlı hızlı geçiş
+///      yapıp grafik karşılaştıracak var": menü her geçişi iki dokunuşa
+///      çıkarıyor.
+///   3. Başlıkta avatar şeridi, tek dokunuş — "o kadar yukarıda olması
+///      doğru olmadı, aşağıya gelmeli; Birlikte ve Ben hızlı tıklanabilir,
+///      ortaklar dropdown olabilir".
+///   4. Kontrollerin ilk satırında segmentli seçici: sık geçilen iki hedef
+///      (Birlikte/Ben) tek dokunuş, seyrek olan ortak listesi menüde.
+///
+/// ## Sabit ÜÇ segment — ortak sayısı kaç olursa olsun
+/// Silinen `ModernTabSelector`'ın ilk hâli genişliği ortak sayısına
+/// bölüyordu: 4 ortakta segment ~58px'e iniyor, "Birlikte" sığmıyor, dokunma
+/// hedefi `SandikTouch.minSize` altına düşüyordu. Genişlik N'den bağımsız.
 ///
 /// ## Ana ekrandaki `GorunumCipi` neden ayrı kalır
 /// Aynı kavram, farklı biçim: toplam kartının başlığında çip + alt sayfa
@@ -50,20 +52,20 @@ enum EskiOrtakSecici {
 /// ortak seçiliyken yeniden dokunuş da listeyi açar (başka ortağa geçmek
 /// için). Ortak yoksa çağıran satırı hiç çizmez.
 ///
-/// Bayrak `tek_ortak_secici` kapalıyken [eski] kabuk birebir çizilir.
+/// Bayrak `tek_ortak_secici` 2026-10-05'te kalktı: eski iki kabuk
+/// (`ModernTabSelector`, `KapsamKisiSecici`) ve onları seçen `eski`
+/// parametresi silindi; tek görünüş kalıcı.
 class OrtakSecici extends StatefulWidget {
   const OrtakSecici({
     super.key,
     required this.partners,
     required this.selectedId,
     required this.onChanged,
-    required this.eski,
   });
 
   final List<AppUser> partners;
   final String? selectedId;
   final ValueChanged<String?> onChanged;
-  final EskiOrtakSecici eski;
 
   static String _ilkAd(String ad) {
     final t = ad.trim();
@@ -81,21 +83,6 @@ class _OrtakSeciciState extends State<OrtakSecici> {
 
   @override
   Widget build(BuildContext context) {
-    if (!RemoteConfigService.instance.tekOrtakSecici) {
-      return switch (widget.eski) {
-        EskiOrtakSecici.hap => ModernTabSelector(
-            partners: widget.partners,
-            selectedId: widget.selectedId,
-            onChanged: widget.onChanged,
-          ),
-        EskiOrtakSecici.segment => KapsamKisiSecici(
-            partners: widget.partners,
-            selectedId: widget.selectedId,
-            onChanged: widget.onChanged,
-          ),
-      };
-    }
-
     final l = context.l10n;
     final partners = widget.partners;
     final tekOrtak = partners.length == 1;

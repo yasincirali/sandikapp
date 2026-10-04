@@ -41,11 +41,11 @@ class DonemIstatistikIzgarasi extends StatelessWidget {
   final DonemIstatistigi ist;
 
   /// Dönem yüzdesi ekranda zaten fiyatın altında yazıyorsa `true`: ızgara
-  /// onu ikinci kez yazmaz (Sadeleştirme 2, madde 7, `varlik_islem_cubugu`
-  /// bayrağı — yalnız portföy varlık detayı verir). GÜNLÜK seçiliyken
-  /// "Bugün" hücresi de aynı sayıdır, o da düşer. Kalan hücreler ikişerli
-  /// satırlara dizilir; tek kalan satırı doldurur. Varsayılan `false`:
-  /// varlık sayfası ve bayrak kapalıyken 2×2 birebir eski.
+  /// onu ikinci kez yazmaz (Sadeleştirme 2, madde 7, 2026-10-04 — yalnız
+  /// portföy varlık detayı verir). GÜNLÜK seçiliyken "Bugün" hücresi de aynı
+  /// sayıdır, o da düşer. Kalan hücreler ikişerli satırlara dizilir; tek
+  /// kalan satırı doldurur. Varsayılan `false`: varlık sayfası (takip /
+  /// arama) 2×2.
   final bool donemGetirisiGizli;
 
   /// Seçili dönemin gün sayısı — kısa dönemde oynaklık notu için.

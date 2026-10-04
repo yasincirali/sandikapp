@@ -14,7 +14,12 @@ import 'helpers/kaynak.dart';
 ///
 /// ## Candle
 /// 2026-09-14'e kadar yoktu (OHLC verisi yok diye). Artık `mum_turetici`
-/// eldeki noktalardan kova bazında OHLC türetiyor; Candle beşinci tip.
+/// eldeki noktalardan kova bazında OHLC türetiyor.
+///
+/// ## Yalnız Çizgi ve Mum (2026-10-05)
+/// Alan/Taban/Çubuk 2026-10-04'ten beri seçicide yoktu (`performans_ayar_sade`);
+/// bayrakla birlikte enum'dan ve çizimden silindi. Onların dolgu/gradyan/
+/// çubuk kaynak denetimleri de bu dosyadan kalktı.
 void main() {
   setUp(() => grafikTipiNotifier.value = GrafikTipi.varsayilan);
   tearDown(() => grafikTipiNotifier.value = GrafikTipi.varsayilan);
@@ -25,10 +30,9 @@ void main() {
       expect(grafikTipiNotifier.value, GrafikTipi.line);
     });
 
-    test('beş tip var — TradingView kümesi tamam, Candle sonda', () {
-      expect(GrafikTipi.values.length, 5);
+    test('iki tip var — Çizgi ve Mum', () {
       expect(GrafikTipi.values.map((e) => e.name).toList(),
-          ['line', 'mountain', 'baseline', 'bar', 'candle']);
+          ['line', 'candle']);
       expect(GrafikTipi.candle.etiket, 'Mum',
           reason: '"OHLC" değil: fitiller örneklenmiş noktaların uçları.');
     });
@@ -43,8 +47,8 @@ void main() {
 
   group('oturum durumu', () {
     test('seçim notifier üzerinden taşınır', () {
-      grafikTipiNotifier.value = GrafikTipi.bar;
-      expect(grafikTipiNotifier.value, GrafikTipi.bar);
+      grafikTipiNotifier.value = GrafikTipi.candle;
+      expect(grafikTipiNotifier.value, GrafikTipi.candle);
     });
 
     test('dinleyiciye ULAŞIR', () {
@@ -53,10 +57,10 @@ void main() {
       grafikTipiNotifier.addListener(dinle);
       addTearDown(() => grafikTipiNotifier.removeListener(dinle));
 
-      grafikTipiNotifier.value = GrafikTipi.mountain;
-      grafikTipiNotifier.value = GrafikTipi.baseline;
+      grafikTipiNotifier.value = GrafikTipi.candle;
+      grafikTipiNotifier.value = GrafikTipi.line;
 
-      expect(gelen, [GrafikTipi.mountain, GrafikTipi.baseline]);
+      expect(gelen, [GrafikTipi.candle, GrafikTipi.line]);
     });
 
     test('DİSKE yazılmaz — oturum bazlı', () {
@@ -77,7 +81,7 @@ void main() {
   });
 
   group('menü', () {
-    testWidgets('dört seçeneği de listeler', (tester) async {
+    testWidgets('iki seçeneği de listeler', (tester) async {
       await tester.pumpWidget(const MaterialApp(
         home: Scaffold(body: Center(child: GrafikTipiSecici())),
       ));
@@ -98,20 +102,20 @@ void main() {
 
       await tester.tap(find.byType(GrafikTipiSecici));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(GrafikTipi.bar.etiket).last);
+      await tester.tap(find.text(GrafikTipi.candle.etiket).last);
       await tester.pumpAndSettle();
 
-      expect(grafikTipiNotifier.value, GrafikTipi.bar);
+      expect(grafikTipiNotifier.value, GrafikTipi.candle);
     });
 
     testWidgets('seçili tip chip\'te görünür', (tester) async {
-      grafikTipiNotifier.value = GrafikTipi.mountain;
+      grafikTipiNotifier.value = GrafikTipi.candle;
       await tester.pumpWidget(const MaterialApp(
         home: Scaffold(body: Center(child: GrafikTipiSecici())),
       ));
       await tester.pump();
 
-      expect(find.text(GrafikTipi.mountain.etiket), findsOneWidget);
+      expect(find.text(GrafikTipi.candle.etiket), findsOneWidget);
     });
   });
 
@@ -119,19 +123,8 @@ void main() {
     final ekran = ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart')
         .replaceAll('\r\n', '\n');
 
-    test('dolgu YALNIZCA mountain\'da', () {
-      expect(ekran.contains('tip == GrafikTipi.mountain'), isTrue,
-          reason: 'Dolgu tipe bağlı değil — Line da dolgulu çizilir.');
-    });
-
-    test('bar tipinde çizgi gizlenir', () {
-      expect(ekran.contains('tip == GrafikTipi.bar ? 0.0'), isTrue,
-          reason: 'Çubukların üstüne bir de çizgi biner.');
-    });
-
-    test('baseline gradyanı bağlı', () {
-      expect(ekran.contains('_baselineGradient('), isTrue);
-      expect(ekran.contains('tip == GrafikTipi.baseline'), isTrue);
+    test('Çizgi tipi dolgusuz', () {
+      expect(ekran.contains('belowBarData: BarAreaData(show: false)'), isTrue);
     });
 
     test('tip değişince grafik YENİDEN çizilir', () {
@@ -140,9 +133,9 @@ void main() {
     });
 
     test('kapalı kuyruk HER tipte nötr kalır', () {
-      // Hafta sonu kuyruğu gerçek işlem değil; dolgu/renk onu birikim
-      // gibi göstermemeli.
-      expect(ekran.contains('&& !seg.piyasaKapali'), isTrue);
+      // Hafta sonu kuyruğu gerçek işlem değil; birikim gibi görünmemeli:
+      // kesikli çizilir (dolgu artık hiçbir tipte yok).
+      expect(ekran.contains('seg.piyasaKapali ? const [4, 4]'), isTrue);
     });
   });
 }

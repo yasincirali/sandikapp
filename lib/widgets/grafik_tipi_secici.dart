@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../models/grafik_tipi.dart';
 import '../l10n/l10n.dart';
-import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 
 /// Grafik tipi seçici — açılır menü; üç görünümü var ([GrafikTipiGorunum]).
@@ -16,7 +15,7 @@ import '../theme/sandik.dart';
 /// olanın yanında tik, seçim oturum boyunca korunuyor.
 ///
 /// ## Neden `PopupMenuButton`, bottom sheet değil
-/// Liste dört kısa satır ve chip'in hemen altında açılması konumsal
+/// Liste iki kısa satır ve chip'in hemen altında açılması konumsal
 /// bağlamı koruyor. Bottom sheet ekranın yarısını kaplar ve grafikle
 /// bağı kopar — kullanıcı seçtiği tipin etkisini göremeden sayfa örtülür.
 class GrafikTipiSecici extends StatelessWidget {
@@ -29,12 +28,9 @@ class GrafikTipiSecici extends StatelessWidget {
     return ValueListenableBuilder<GrafikTipi>(
       valueListenable: grafikTipiNotifier,
       builder: (context, kayitli, _) {
-        // Sade kümede (`performans_ayar_sade`) yalnız Çizgi ve Mum
-        // listelenir; kümede olmayan bir seçim Çizgi olarak GÖSTERİLİR ama
-        // notifier'a yazılmaz (bkz. `GrafikTipi.etkin`) — bayrak kapanınca
-        // eski seçim geri gelir.
-        final sade = RemoteConfigService.instance.performansAyarSade;
-        final secili = GrafikTipi.etkin(kayitli, sade: sade);
+        // Yalnız Çizgi ve Mum (gerekçe `GrafikTipi`). Seçici yalnız grafik
+        // araçları görünürken çizilir; seçili tip doğrudan kayıtlı seçim.
+        final secili = kayitli;
         // `Material` ZORUNLU ve POPUP'IN DIŞINDA olmalı.
         //
         // Bu ekran `CupertinoPageScaffold` altında çiziliyor;
@@ -58,7 +54,7 @@ class GrafikTipiSecici extends StatelessWidget {
           ),
           onSelected: (t) => grafikTipiNotifier.value = t,
           itemBuilder: (_) => [
-            for (final t in GrafikTipi.secilebilir(sade: sade))
+            for (final t in GrafikTipi.values)
               PopupMenuItem<GrafikTipi>(
                 value: t,
                 height: 48,

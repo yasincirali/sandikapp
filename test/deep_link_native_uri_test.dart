@@ -180,7 +180,9 @@ void main() {
       for (final beklenen in [
         '_selectedPeriodIdx = 0',
         '_ozetSekmesi = false',
-        '_simulate = false',
+        // `_simulate` artık Ayarlar tercihidir (2026-10-04; ekran alanı
+        // 2026-10-05'te kalktı) — dokunuş onu sıfırlamaz; GÜNLÜK'te
+        // simülasyonun karşılığı zaten yok.
         "_view = ''",
         '_typeFilter = null',
       ]) {

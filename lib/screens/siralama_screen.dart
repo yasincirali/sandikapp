@@ -21,24 +21,20 @@ enum SiralamaSekmesi {
 
 /// Yarış girişlerinin (Performans kupası, Profil kartı) açtığı ekran.
 ///
-/// Karar TEK yerde (sadeleştirme madde 8, 2026-10-04): bayrak
-/// `siralama_tek_sayfa` açıksa Sıralama › Ortaklarım, kapalıysa eski
-/// `LeaderboardScreen` birebir. Bayrak dokunma anında okunur; giriş
-/// noktaları kendi koşulunu yazmaz.
-Widget yarisGirisEkrani() => RemoteConfigService.instance.siralamaTekSayfa
-    ? const SiralamaScreen()
-    : const LeaderboardScreen();
+/// Karar TEK yerde (sadeleştirme madde 8, 2026-10-04): Sıralama ›
+/// Ortaklarım. Giriş noktaları kendi koşulunu yazmaz. Bayrak
+/// `siralama_tek_sayfa` 2026-10-05'te kalktı; kapalı yolun ayrı ekranları
+/// (`LeaderboardScreen`, `ZirvePortfoylerScreen`) silindi, gövdeleri bu
+/// sayfada yaşıyor.
+Widget yarisGirisEkrani() => const SiralamaScreen();
 
-/// Zirve kartının açtığı ekran: bayrak açıksa Sıralama › Herkes, kapalıysa
-/// eski `ZirvePortfoylerScreen`. İki yolda da açılış dönemi kartın
+/// Zirve kartının açtığı ekran: Sıralama › Herkes; açılış dönemi kartın
 /// (Performans seçicisinden eşlenen) dönemi.
 Widget zirveGirisEkrani(ZirveDonem donem) =>
-    RemoteConfigService.instance.siralamaTekSayfa
-        ? SiralamaScreen(sekme: SiralamaSekmesi.herkes, donem: donem)
-        : ZirvePortfoylerScreen(baslangic: donem);
+    SiralamaScreen(sekme: SiralamaSekmesi.herkes, donem: donem);
 
 /// Yarış + Zirve tek "Sıralama" sayfası (sadeleştirme listesi madde 8,
-/// bayrak `siralama_tek_sayfa`, varsayılan KAPALI).
+/// 2026-10-04; bayrak `siralama_tek_sayfa` 2026-10-05'te kalktı).
 ///
 /// ## Neden
 /// Sıralama kavramı üç yere dağılmıştı: Yarış ekranı (Performans kupası,
@@ -50,7 +46,7 @@ Widget zirveGirisEkrani(ZirveDonem donem) =>
 ///
 /// ## Ne değişmez
 /// - Gövdeler KOPYA değil: `YarisGovdesi` ve `ZirveGovdesi` eski ekranların
-///   kendi gövdeleri; bayrak kapalıyken o ekranlar aynı gövdeyi çizer.
+///   kendi gövdeleriydi (ekran kabukları 2026-10-05'te silindi).
 /// - Rıza akışları gövdelerin içinde: Yarış opt-in'i (0081) ve Zirve açık
 ///   rızası (0091) hangi kapıdan gelinirse gelinsin aynen sorulur.
 /// - Ölçü ve hesap: seçimlerinin getirisi (TWR, 0095). Sayfa yalnız
@@ -109,7 +105,6 @@ class _SiralamaScreenState extends ConsumerState<SiralamaScreen> {
       SiralamaSekmesi.ortaklarim => YarisGovdesi(
           donemIdx: ZirveDonem.values.indexOf(_donem),
           onDonem: (i) => setState(() => _donem = ZirveDonem.values[i]),
-          sekmeli: true,
         ),
       SiralamaSekmesi.herkes => ZirveGovdesi(
           donem: _donem,

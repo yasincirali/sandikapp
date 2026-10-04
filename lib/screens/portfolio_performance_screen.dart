@@ -199,26 +199,16 @@ class _PortfolioPerformanceScreenState
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
   //
-  // İki kaynak DEĞİL, bayrağa göre tek kaynak (`performans_ayar_sade`):
-  //   · kapalı → ekranın kendi oturum alanı `_simulateYerel` (eski davranış,
-  //     kapsam panelindeki Gerçek|Simülasyon anahtarı yazar);
-  //   · açık   → Ayarlar › Görünüm'deki `bugunkuPortfoyleProvider`; ekranda
-  //     anahtar yok, yalnız etkinken rozet. Sade Başlangıç'ta (grafik
-  //     araçları gizli) tercih açık kalsa da etkisizdir — kapatılamayan bir
-  //     mod olmasın; tercih silinmez, seviye değişince geri gelir.
-  // Yazan yolların hepsi (kapsam paneli, "Günlük'e git" isteği) eski yolda
-  // çalışır; setter bu yüzden yalnız yerel alanı yazar.
-  bool _simulateYerel = false;
-
-  bool get _simulate {
-    if (!RemoteConfigService.instance.performansAyarSade) {
-      return _simulateYerel;
-    }
-    return ref.read(bugunkuPortfoyleProvider) &&
-        ref.read(seviyeGorunurlukProvider).grafikAraclari;
-  }
-
-  set _simulate(bool v) => _simulateYerel = v;
+  // Tek kaynak: Ayarlar › Görünüm'deki `bugunkuPortfoyleProvider`
+  // (2026-10-04, `performans_ayar_sade`); ekranda anahtar yok, yalnız
+  // etkinken rozet. Sade Başlangıç'ta (grafik araçları gizli) tercih açık
+  // kalsa da etkisizdir — kapatılamayan bir mod olmasın; tercih silinmez,
+  // seviye değişince geri gelir. 2026-10-05'e kadar bayrak kapalıyken
+  // ekranın oturum alanı (`_simulateYerel`) ve kapsam panelindeki
+  // Gerçek|Simülasyon anahtarı vardı; bayrakla birlikte silindi.
+  bool get _simulate =>
+      ref.read(bugunkuPortfoyleProvider) &&
+      ref.read(seviyeGorunurlukProvider).grafikAraclari;
 
   /// Yüzey sekmesi: false = Grafik, true = Özet.
   ///
@@ -405,7 +395,6 @@ class _PortfolioPerformanceScreenState
     _guncelle(() {
       _selectedPeriodIdx = 0; // GÜNLÜK
       _ozetSekmesi = false;
-      _simulate = false;
       _view = ''; // yalnızca kendi portföyü — kilit ekranıyla aynı kapsam
       _typeFilter = null;
       // Gün içi future'ı bilerek düşür: dokunuş "şu anki hâlini göster"
@@ -519,10 +508,8 @@ class _PortfolioPerformanceScreenState
     final activePartners = ref.watch(activePartnersProvider);
     // `_simulate` Ayarlar'daki tercihi `ref.read` ile okur (build dışından
     // da çağrılıyor); değişince ekran yeniden kurulsun diye burada izlenir.
-    if (RemoteConfigService.instance.performansAyarSade) {
-      ref.watch(bugunkuPortfoyleProvider);
-      ref.watch(seviyeGorunurlukProvider);
-    }
+    ref.watch(bugunkuPortfoyleProvider);
+    ref.watch(seviyeGorunurlukProvider);
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     // Kapsam seçicinin `onChanged`'ı ile aynı yol: gün içi tohumu da atılır.
@@ -614,7 +601,7 @@ class _PortfolioPerformanceScreenState
                     // Kişi seçimi 2026-09-15'te bir süre buradaydı (çip,
                     // sonra avatar şeridi); kullanıcı: "o kadar yukarıda
                     // olması doğru olmadı, aşağıya gelmeli". Artık kontrol
-                    // yığınının ilk satırında (`KapsamKisiSecici`).
+                    // yığınının ilk satırında (`OrtakSecici`).
                     // Yarış bir GEZİNME girişi, grafik aracı değil: eskiden
                     // grafik araç satırında duruyordu ve o satırın tamamı
                     // kaldırıldı. Yeri üst çubuk.
@@ -636,8 +623,7 @@ class _PortfolioPerformanceScreenState
                             padding: EdgeInsets.zero,
                             onPressed: () => pushGuarded(
                               context,
-                              // Bayrak `siralama_tek_sayfa` açıksa
-                              // Sıralama › Ortaklarım; kapalıysa Yarış.
+                              // Sıralama › Ortaklarım.
                               adaptiveRoute<void>(
                                   builder: (_) => yarisGirisEkrani()),
                             ),

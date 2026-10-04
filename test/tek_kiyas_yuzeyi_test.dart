@@ -12,7 +12,6 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
 import 'package:portfoy_takip/screens/comparison_screen.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 
 /// Sadeleştirme 2, madde 8 — tek kıyas yüzeyi (`tek_kiyas_yuzeyi`).
 ///
@@ -102,11 +101,6 @@ Future<void> _karsilastiraBas(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 600));
 }
 
-void _bayrak(bool acik) {
-  RemoteConfigService.testAcik = acik ? {'tek_kiyas_yuzeyi'} : {};
-  addTearDown(() => RemoteConfigService.testAcik = {});
-}
-
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
@@ -114,25 +108,9 @@ void main() {
     await initPreferencesCache();
   });
 
-  test('bayrak varsayılanı KAPALI', () {
-    expect(RemoteConfigService.instance.tekKiyasYuzeyi, isFalse);
-  });
-
   group('varlık ekranı → kıyas', () {
-    testWidgets('bayrak kapalı: grafik içi seçici açılır (eski)',
+    testWidgets('Karşılaştır ekranı bu varlık ve seçili dönemle açılır',
         (tester) async {
-      _bayrak(false);
-      await _varlikEkrani(tester, _varlik());
-      await _karsilastiraBas(tester);
-      expect(find.byType(BottomSheet), findsOneWidget);
-      expect(find.byType(ComparisonScreen), findsNothing);
-      await tester.pump(const Duration(seconds: 10));
-    });
-
-    testWidgets(
-        'bayrak açık: Karşılaştır ekranı bu varlık ve seçili dönemle açılır',
-        (tester) async {
-      _bayrak(true);
       await _varlikEkrani(tester, _varlik());
       // Varlık ekranında 1 ay seçilir; kıyas aynı pencereyle açılmalı.
       await tester.tap(find.text('1 ay').first);
@@ -154,8 +132,7 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     });
 
-    testWidgets('bayrak açık ama mevduat: eski seçici kalır', (tester) async {
-      _bayrak(true);
+    testWidgets('mevduat: grafik içi seçici kalır', (tester) async {
       final mevduat = _varlik(
           type: AssetType.mevduat,
           ticker: 'MEVDUAT:abc',

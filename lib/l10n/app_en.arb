@@ -122,21 +122,14 @@
   "levelBeginner": "Beginner",
   "levelIntermediate": "Intermediate",
   "levelAdvanced": "Advanced",
-  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and annual return cards are hidden.",
   "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and annual return since your first buy.",
   "levelAdvancedDesc": "Intermediate + return per unit of risk, effect of your buy timing and recovery from drops (Summary › 1Y).",
   "noAssetsYet": "No assets added yet",
-  "noAssetsYetHint": "Start building your sandık by adding your first asset.",
-  "addFirstAsset": "Add Your First Asset",
   "addAssetTitle": "Add Asset",
   "editAsset": "Edit",
   "add": "Add",
   "update": "Update",
   "save": "Save",
-  "posPeriodPriceMove": "price {pct}",
-  "@posPeriodPriceMove": {
-    "placeholders": {"pct": {"type": "String"}}
-  },
   "assetType": "Asset Type",
   "assetName": "Asset name",
   "nameRequired": "Name required",
@@ -177,8 +170,6 @@
   "registerNameMissing": "Enter your full name.",
   "registerEmailInvalid": "Enter a valid email.",
   "registerPasswordsMismatch": "Passwords do not match.",
-  "termsMustAccept": "You must accept the legal terms.",
-  "consentMustAccept": "You must give explicit consent to the cross-border data transfer.",
   "refreshPrices": "Refresh prices",
   "portfolioActivity": "PORTFOLIO ACTIVITY",
   "seeAllTransactions": "See all transactions",
@@ -617,7 +608,6 @@
       }
     }
   },
-  "demoTryButton": "Take a look first",
   "demoBannerTitle": "Sample portfolio",
   "demoBannerSubtitle": "Sample holdings, live prices",
   "demoCreateAccount": "Create account",
@@ -866,8 +856,6 @@
   "generateCode": "Generate Code",
   "tabChart": "Chart",
   "tabSummary": "Summary",
-  "modeReal": "Actual",
-  "modeSim": "Simulation",
   "modeInfoSemantics": "About {mode} mode",
   "@modeInfoSemantics": {
     "placeholders": {
@@ -907,9 +895,7 @@
     }
   },
   "simModeTitle": "Simulation Mode",
-  "realModeTitle": "Actual Mode",
   "simModeBody": "How would the chart look if you had held today's net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.",
-  "realModeBody": "Each day's value is computed from the net quantity you held that day. Tap a point to see that day's portfolio value and any buy / sell amounts, so you can see exactly why the chart rose or fell.",
   "portfolioPerformance": "Portfolio Performance",
   "chartDataFailed": "Could not load chart data",
   "chartDataFailedBody": "Price history could not be fetched. Check your connection and try again.",
@@ -2604,7 +2590,6 @@
   "todayLoading": "Intraday data loading",
   "todayRealLabel": "Versus inflation",
   "todayRealHint": "Yearly return minus CPI",
-  "todayWeekLabel": "Last 7 days",
   "todayWeekHint": "Market effect on your portfolio · summary ready",
   "todayGoalLabel": "Goal",
   "todayGoalSetShort": "Pick an amount, see what's left daily",
@@ -2637,45 +2622,7 @@
       }
     }
   },
-  "todayGreenLabel": "Holdings in the green",
-  "todayGreenHint": "Above their buy price",
-  "todayGreenValue": "{green} / {total}",
-  "@todayGreenValue": {
-    "placeholders": {
-      "green": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "todayOpenAction": "Open",
-  "todayEventCpiShort": "CPI release · {date}",
-  "@todayEventCpiShort": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventHolidayShort": "Market holiday · {date}",
-  "@todayEventHolidayShort": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventMonthEndShort": "Month end · monthly summary",
-  "todayDaysShort": "{n} days",
-  "@todayDaysShort": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "todayTitle": "Today",
   "todayScopeOf": "{name}'s today",
   "@todayScopeOf": {
@@ -2756,8 +2703,6 @@
       }
     }
   },
-  "todayWordToday": "today",
-  "todayWordTomorrow": "tomorrow",
   "todayInDays": "in {n} days",
   "@todayInDays": {
     "placeholders": {
@@ -2809,63 +2754,9 @@
   },
   "todayClosedShort": "Closed",
   "todayMarketOnlyShort": "price effect",
-  "todayGreenShort": "In profit",
-  "todayWeekReadyShort": "Summary ready",
   "todayGoalNewAction": "Pick a new one",
-  "todayMonthlyTileSubShort": "Last month's report",
-  "todayEventCpiTiny": "CPI · {date}",
-  "@todayEventCpiTiny": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventHolidayTiny": "Holiday · {date}",
-  "@todayEventHolidayTiny": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventMonthEndTiny": "Month end",
   "todayMoveLabel": "Today's move",
   "todayRealYearly": "yearly",
-  "todayYourReturn": "Your return {pct}",
-  "@todayYourReturn": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayCpiShort": "CPI {pct}",
-  "@todayCpiShort": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekUp": "{pct} up",
-  "@todayWeekUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekDown": "{pct} down",
-  "@todayWeekDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekHintShort": "Market's effect on your portfolio",
-  "todayWeekReady": "Weekly summary ready",
   "todayGoalSetAction": "Set a goal",
   "todayGoalSetSub": "See what's left every day",
   "todayGoalProgressTitle": "{pct}% to goal",
@@ -2884,15 +2775,6 @@
       }
     }
   },
-  "todayMonthlyTile": "{month} summary",
-  "@todayMonthlyTile": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
-  "todayMonthlyTileSub": "Return, inflation, best holding",
   "goalTitle": "Portfolio goal",
   "goalHint": "Display only; it does not change any calculation.",
   "goalInvalid": "Enter a valid amount",
@@ -2930,7 +2812,6 @@
       }
     }
   },
-  "emptyPasteHint": "Choose or paste your broker statement (PDF, Excel or CSV); each row becomes a holding.",
   "marketDollar": "USD",
   "marketEuro": "EUR",
   "marketGold": "Gold (g)",
@@ -3175,7 +3056,6 @@
   "raceGapToLeader": "{fark} pts behind the leader",
   "duelTied": "Neck and neck",
   "duelAhead": "{fark} pts ahead of {ad}",
-  "duelBehind": "{fark} pts behind {ad}",
   "raceRankUp": "Up {n}",
   "raceRankDown": "Down {n}",
   "filterButton": "Filter",
@@ -3727,10 +3607,8 @@
   "yasalBelgeKvkk": "KVKK Privacy Notice",
   "yasalBelgeKvkkKisa": "KVKK Notice",
   "yasalBelgeSurum": "Version {surum}",
-  "yasalBelgeAcildi": "Read",
   "yasalBelgelerTurkce": "The documents are in Turkish.",
   "yasalKapiTaahhutBaslik": "Your consents",
-  "yasalKapiYatirimUyarisi": "Investment notice",
   "yasalKapiOnayla": "I have read and accept",
   "yasalKapiOnaylaKisa": "I accept",
   "yasalKapiKutuGerekli": "To continue, tick the boxes.",

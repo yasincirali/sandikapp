@@ -15,7 +15,6 @@ import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:portfoy_takip/screens/home_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/price_service.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/tazelik_ritmi.dart';
 import 'package:portfoy_takip/widgets/ilk_varlik_vitrini.dart';
 import 'package:portfoy_takip/widgets/piyasa_seridi.dart';
@@ -164,7 +163,6 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
   });
-  tearDown(() => RemoteConfigService.testAcik = {});
 
   group('kurallar', () {
     test('kutu fiyatı formun kaydedeceği sembolden — şeritle aynı altın', () {
@@ -186,35 +184,19 @@ void main() {
           reason: 'her seçenek vitrinde bir kez');
     });
 
-    test('₺0 kartı yalnız bayrak açık + boş defter + ortak yokken gizlenir',
-        () {
-      bool k(bool b, bool bos, bool ortak) =>
-          IlkVarlikVitrini.toplamKartiYerine(
-              bayrak: b, bosKendi: bos, ortakVar: ortak);
-      expect(k(true, true, false), isTrue);
-      expect(k(false, true, false), isFalse, reason: 'bayrak kapalı: eski');
-      expect(k(true, false, false), isFalse, reason: 'dolu defter');
-      expect(k(true, true, true), isFalse,
+    test('₺0 kartı yalnız boş defter + ortak yokken gizlenir', () {
+      bool k(bool bos, bool ortak) =>
+          IlkVarlikVitrini.toplamKartiYerine(bosKendi: bos, ortakVar: ortak);
+      expect(k(true, false), isTrue);
+      expect(k(false, false), isFalse, reason: 'dolu defter');
+      expect(k(true, true), isFalse,
           reason: 'ortak varken görünüm çipi kartın üstünde — kart kalır');
     });
   });
 
   group('ana ekran, boş portföy', () {
-    testWidgets('bayrak KAPALI: eski boş ekran + toplam kartı birebir',
+    testWidgets('vitrin var, ₺0 kartı ve eski boş ekran yok',
         (tester) async {
-      await _anaEkran(tester);
-      expect(find.byType(IlkVarlikVitrini), findsNothing);
-      expect(find.byType(PortfolioSummaryWidget), findsOneWidget);
-      expect(find.byIcon(Icons.savings_outlined), findsOneWidget);
-      expect(find.text('Henüz varlık eklenmemiş'), findsOneWidget);
-      expect(find.text('İlk Varlığını Ekle'), findsOneWidget);
-      expect(find.text('Başka bir tür ekle'), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('bayrak AÇIK: vitrin var, ₺0 kartı ve eski boş ekran yok',
-        (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
       await _anaEkran(tester);
       await tester.pump(const Duration(seconds: 1));
 
@@ -253,7 +235,6 @@ void main() {
 
     testWidgets('fiyat bilinmiyorsa sayı yazılmaz, "canlı" denmez',
         (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
       await _anaEkran(tester, yukleyici: _Yukleyici()..donen = const {});
       await tester.pump(const Duration(seconds: 1));
       expect(_vitrinde(find.text('—')), findsNWidgets(4));
@@ -263,7 +244,6 @@ void main() {
 
     for (final w in <double>[320, 390]) {
       testWidgets('${w.toInt()}pt: taşma yok', (tester) async {
-        RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
         await _anaEkran(tester, genislik: w);
         await tester.pump(const Duration(seconds: 1));
         expect(tester.takeException(), isNull);
@@ -276,7 +256,6 @@ void main() {
     }
 
     testWidgets('320pt + büyük yazı (1,3×): taşma yok', (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
       tester.view.physicalSize = const Size(320 * 3, 900 * 3);
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.reset);
@@ -305,7 +284,6 @@ void main() {
     });
 
     testWidgets('kutuya dokununca form o seçimle açılır', (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
       for (final (ad, beklenen) in [
         ('Çeyrek altın', IlkVarlikSecimi.ceyrekAltin),
         ('Euro', IlkVarlikSecimi.euro),
@@ -326,7 +304,6 @@ void main() {
     });
 
     testWidgets('"diğerleri" ön seçimsiz formu açar', (tester) async {
-      RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
       await _anaEkran(tester);
       await tester.pump(const Duration(seconds: 1));
       await _pushPenceresi(tester);
