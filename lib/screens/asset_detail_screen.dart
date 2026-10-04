@@ -9,21 +9,18 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
-import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
-import '../widgets/delete_asset_dialog.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/islem_isaretleri.dart';
 import '../utils/spot_lookup.dart';
-import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart';
 import '../models/technical_signal.dart';
@@ -43,7 +40,6 @@ import '../widgets/custom_loading_indicator.dart';
 import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
-import '../widgets/gorunum_cipi.dart';
 import '../models/varlik_kimligi.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
@@ -61,6 +57,8 @@ import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
 import '../services/sozlesme_deposu.dart';
+import '../services/remote_config_service.dart';
+import '../widgets/pozisyon_islemleri.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
@@ -131,7 +129,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// serisi geldi (ya da `acilisSiniri` doldu). Bir kez `true` olur; dönem
   /// değişimi ve nabız tazelemesi ekranı yeniden iskelete DÖNDÜRMEZ.
   bool _acildi = false;
-  String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
   late Future<Map<int, double>> _historyFuture;
   late ScrollController _scrollController;
   // Compare mode: seçili karşılaştırma varlığı (kullanıcının portföyünden).
@@ -390,7 +387,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// `userId` ile, çünkü iki sahibin aynı ürünü aynı pozisyon anahtarını
   /// taşır. Pozisyon artık yoksa (hepsi satıldı/silindi) açılış görünümü
   /// kalır; uydurma yok. Kaynak listeler değişmedikçe yeniden kurulmaz.
-  ({Asset asset, List<Asset> lots}) get _canli {
+  ({Asset asset, List<Asset> lots, bool acik}) get _canli {
     final pState = ref.read(portfolioProvider).valueOrNull;
     final ortaklar = ref.read(allPartnerAssetsProvider).valueOrNull;
     final kendi = pState?.assets;
@@ -408,16 +405,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           if (a.userId == sahip) a,
     ];
     final p = _positionOf(sahipLotlari);
+    // `acik`: sahibin bu üründe BUGÜN açık pozisyonu var mı
+    // (`aggregatePositions` kapanmışı döndürmez, CLAUDE.md "Kapanmış
+    // pozisyon"). İşlem çubuğu buna bakar — Portföy listesi de yalnız açık
+    // pozisyonu satır yapar, kaydırma yalnız orada vardır.
     final sonuc = p == null
-        ? (asset: widget.asset, lots: widget.lots ?? [widget.asset])
-        : (asset: p.asDisplayAsset(), lots: p.lots);
+        ? (asset: widget.asset, lots: widget.lots ?? [widget.asset], acik: false)
+        : (asset: p.asDisplayAsset(), lots: p.lots, acik: true);
     _canliKendi = kendi;
     _canliOrtaklar = ortaklar;
     _canliOnbellek = sonuc;
     return sonuc;
   }
 
-  ({Asset asset, List<Asset> lots})? _canliOnbellek;
+  ({Asset asset, List<Asset> lots, bool acik})? _canliOnbellek;
   List<Asset>? _canliKendi;
   Map<String, List<Asset>>? _canliOrtaklar;
 
@@ -542,24 +543,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     return null;
   }
 
-  double get _currentQuantity {
-    if (_view == '') return _canli.asset.quantity;
-
-    final allAssetsMap = ref.read(allPartnerAssetsProvider).valueOrNull ?? {};
-
-    if (_view != null) {
-      return _positionOf(allAssetsMap[_view] ?? [])?.totalQuantity ?? 0;
-    }
-
-    // Tümü
-    double total = _canli.asset.quantity;
-    final activePartners = ref.read(activePartnersProvider);
-    for (final p in activePartners) {
-      total += _positionOf(allAssetsMap[p.id] ?? [])?.totalQuantity ?? 0;
-    }
-    return total;
-  }
-
   /// `setState` sarmalayıcısı — part dosyalarındaki extension'lar için.
   ///
   /// Ekran 3.800 satırdı; sinyal widget'ları, şeritler, karşılaştırma seçici
@@ -604,15 +587,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
     // Logic moved inside FutureBuilder
 
-    final activePartners = ref.watch(activePartnersProvider);
-    final allPartnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
+    // Ortak lot'ları değişince ekran yeniden kurulsun: ortağın varlığı
+    // açıksa `_canli` onları `ref.read` ile okur, tetikleyici bu izlemedir.
+    //
+    // Ölü kod temizliği (Sadeleştirme 2, madde 11, 2026-10-04): burada bir
+    // de "Ben / ortak / Tümü" sekmesi (`ModernTabSelector`, `_view`) ve üst
+    // çubukta "Sil" menüsü vardı; ikisi de `!showBackButton` koşuluyla
+    // çiziliyordu ama ekranı açan HER yol (Ana, Portföy, `pozisyonuAc`,
+    // bildirim) `showBackButton: true` verir — hiç görünmüyorlardı. Silme
+    // Portföy kartının kaydırmasında; ortak görünümü Portföy'ün kendi
+    // seçicisinde.
+    ref.watch(allPartnerAssetsProvider);
     final pState = ref.watch(portfolioProvider).valueOrNull;
-    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
-    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
-    ref.listen(activePartnersProvider, (_, next) {
-      final v = GorunumCipi.gecerli(next, _view);
-      if (v != _view) setState(() => _view = v);
-    });
     // Mevduat dönemi eklenince seri yeniden üretilir (bkz.
     // `_sozlesmeSerileriniTazele`). Varlık sayfa ömrü boyunca değişmez,
     // dinleyici koşulu sabittir.
@@ -662,31 +648,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice),
               ),
             ),
-          if (isOwnAsset && !widget.showBackButton)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: context.c.text90),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md)),
-              onSelected: (v) {
-                if (v == 'delete') _confirmDelete(context);
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline_rounded,
-                          color: context.c.danger, size: 20),
-                      const SizedBox(width: 10),
-                      Text('Sil',
-                          style: TextStyle(color: context.c.danger)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
         ],
       ),
+      bottomNavigationBar: _islemCubugu(isOwnAsset),
       body: SafeArea(
         child: RefreshIndicator.adaptive(
       color: context.c.amberText,
@@ -698,35 +662,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
             child: Column(
               children: [
-                if (!widget.showBackButton)
-                  allPartnerAssetsAsync.maybeWhen(
-                    data: (allAssetsMap) {
-                      // Sekme yalnızca bu ürüne SAHİP ortaklar için çıkar.
-                      // Eşleşme `ticker` ile değil `positionKey` ile yapılır:
-                      // altın türleri (Gram/Çeyrek/Reşat) `subCategory` ile
-                      // ayrışır ve ticker eşleşmesi farklı türleri aynı sayardı.
-                      final matchingPartners = <AppUser>[
-                        for (final p in activePartners)
-                          if (_positionOf(allAssetsMap[p.id] ?? []) != null) p,
-                      ];
-
-                      if (matchingPartners.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-
-                      return Column(
-                        children: [
-                          ModernTabSelector(
-                            partners: matchingPartners,
-                            selectedId: _view,
-                            onChanged: (v) => setState(() => _view = v),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      );
-                    },
-                    orElse: () => const SizedBox.shrink(),
-                  ),
                 // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
                 Align(alignment: Alignment.centerLeft, child: _baslik()),
                 const SizedBox(height: SandikSpace.md),
@@ -1634,10 +1569,12 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   baz: baz,
                   pnl: pnl,
                   miktarMetni: widget.asset.miktarMetni(
-                      _currentQuantity, (v, d) => fmtNum(v, digits: d)),
+                      _canli.asset.quantity, (v, d) => fmtNum(v, digits: d)),
                   birimEtiketi: widget.asset.unitLabel,
                   birimBicim: _birimBicimi(pnl.currentUnitTRY),
                   birimGizli: widget.asset.type == AssetType.mevduat,
+                  donemYuzdesiz:
+                      RemoteConfigService.instance.varlikIslemCubugu,
                   donemEtiketi: donemEtiketi(
                       context.l10n, _periods[_selectedPeriodIdx].label),
                   // Seçili dönemin serisi gelmeden `null`: satır "—" yazar,

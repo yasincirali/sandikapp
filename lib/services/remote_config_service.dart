@@ -207,6 +207,13 @@ class RemoteConfigService {
     // MA20/LOG, derinlik metrikleri) gizler. Kapalıyken tur adımı tek
     // seçici, Başlangıç yalnızca bugünkü üç kartı gizler (eski davranış).
     'seviye_anketi': false,
+
+    // Varlık ekranının altında sabit "Al · Sat · Temettü" çubuğu ve dönem
+    // yüzdesinin tek yerde (fiyatın altında) kalması (Sadeleştirme 2,
+    // madde 6/7, 2026-10-04). Bugün bu üç işlem yalnız Portföy kartını sola
+    // kaydırınca bulunuyor — keşfedilmesi zor. Kapalıyken varlık ekranı
+    // birebir eski; kaydırma her iki durumda da kısayol olarak kalır.
+    'varlik_islem_cubugu': false,
   };
 
   Future<void> init() async {
@@ -385,6 +392,30 @@ class RemoteConfigService {
   bool get haftaSonuYurtIciSeri =>
       _rc?.getBool('hafta_sonu_yurt_ici_seri') ??
       _defaults['hafta_sonu_yurt_ici_seri'] as bool;
+
+  /// Varlık ekranının işlem çubuğu ve tek dönem yüzdesi — bkz.
+  /// `_defaults['varlik_islem_cubugu']`.
+  ///
+  /// Öncelik: test değeri → yerel deneme (`--dart-define=RC_ACIK=` virgüllü
+  /// anahtar listesi; emülatörde Console'a dokunmadan açmak için) → Remote
+  /// Config → varsayılan. Yerel deneme yalnız AÇAR; derlemede tanımlı
+  /// değilse (mağaza build'i) hiçbir etkisi yoktur.
+  bool get varlikIslemCubugu =>
+      testDegerleri['varlik_islem_cubugu'] ??
+      (_yereldeAcik('varlik_islem_cubugu') ? true : null) ??
+      _rc?.getBool('varlik_islem_cubugu') ??
+      _defaults['varlik_islem_cubugu'] as bool;
+
+  /// Widget testinde bayrağı zorlamak için: `init()` Firebase istediğinden
+  /// testte `_rc` hep `null` ve getter varsayılana düşer. Test sonunda
+  /// `clear()` ile boşaltılır.
+  @visibleForTesting
+  final Map<String, bool> testDegerleri = {};
+
+  static const _rcAcik = String.fromEnvironment('RC_ACIK');
+  static bool _yereldeAcik(String anahtar) =>
+      _rcAcik.isNotEmpty &&
+      _rcAcik.split(',').map((e) => e.trim()).contains(anahtar);
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

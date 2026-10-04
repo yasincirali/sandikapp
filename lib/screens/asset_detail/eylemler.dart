@@ -1,7 +1,9 @@
 part of '../asset_detail_screen.dart';
 
 /// Ekran eylemleri ve seri hazırlığı: sinyal paneline geçiş, dönem seçimi,
-/// karşılaştırma seçici, silme onayı, segment üretimi, eksen yuvarlama.
+/// karşılaştırma seçici, işlem çubuğu, segment üretimi, eksen yuvarlama.
+/// (Silme onayı 2026-10-04'te kalktı: çağıran menü hiç çizilmiyordu, bkz.
+/// `build`'deki ölü kod notu.)
 /// (Dönem çipleri 2026-09-28'de `ozet.dart`'a taşındı.) `asset_detail_screen.dart`'ın part'ı (2026-09-14): aynı
 /// kütüphane, davranış AYNEN; `setState` yerine `_guncelle`.
 extension _DetayEylemler on _AssetDetailScreenState {
@@ -138,17 +140,32 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
-  void _confirmDelete(BuildContext ctx) {
-    // Bu ekran aggregate edilmiş bir pozisyonla açılabiliyor; o durumda
-    // `widget.asset` sentetik bir görüntü nesnesidir (`id` = "pos:...") ve
-    // DB'de karşılığı yoktur. Silinecek gerçek kayıtlar `lots`'tur.
-    final lots =
-        (widget.lots ?? [widget.asset]).where((l) => !l.isDeleteLog).toList();
-    confirmAndDeletePosition(ctx, ref, name: widget.asset.name, lots: lots)
-        .then((deleted) {
-      // Varlık gitti — bu ekranın konusu kalmadı; listeye dön.
-      if (deleted && mounted) Navigator.pop(context);
-    });
+  /// Alttaki sabit "Al · Sat · Temettü" çubuğu (Sadeleştirme 2, madde 6,
+  /// `varlik_islem_cubugu` bayrağı). Bayrak kapalıysa `null` — Scaffold'un
+  /// alt yuvası boş kalır, ekran birebir eski.
+  ///
+  /// Kurallar Portföy kartının kaydırmasıyla AYNI:
+  ///   · Yalnız KENDİ varlığında (`isOwnAsset`). Kaydırma ortağın satırında
+  ///     yoktur (`canEdit: kendi != null`) — ortağın lot'una yazılamaz
+  ///     (RLS). Birlikte satırından açılan ekran zaten kendi parçanla açılır.
+  ///   · Yalnız AÇIK pozisyonda (`_canli.acik`): kapanmış pozisyon Portföy
+  ///     listesinde satır değildir, kaydırılacak kart yoktur. Portföy
+  ///     yüklenirken de çizilmez (açık olduğu henüz bilinmez).
+  ///   · İşlem listesi ve diyalog `pozisyon_islemleri.dart`'tan; varlık
+  ///     CANLI pozisyondur (`_canli.asset`), kaydırmadaki
+  ///     `kendi.asDisplayAsset()`'in eşi.
+  Widget? _islemCubugu(bool isOwnAsset) {
+    if (!RemoteConfigService.instance.varlikIslemCubugu) return null;
+    if (!isOwnAsset) return null;
+    final canli = _canli;
+    if (!canli.acik) return null;
+    return PozisyonIslemCubugu(
+      islemler: pozisyonIslemleri(canli.asset),
+      // Diyalog açıldığı andaki pozisyonu alır; fiyat turu araya girse de
+      // kayıt diyaloğun gösterdiği miktar/fiyatla yapılır.
+      onIslem: (islem) => pozisyonIslemiAc(context, ref,
+          varlik: _canli.asset, islem: islem),
+    );
   }
 
   List<TransactionSegment> _convertHistoryToSegments(

@@ -466,8 +466,15 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_portfoy',
       hedef: TourTarget.sekmePortfoy,
       baslik: 'Portföy sekmesi',
-      govde: 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
-          'dokununca detayına inersin.',
+      // Tur metni arayüzle birlikte değişir (2026-09-21 kuralı): işlem
+      // çubuğu (`varlik_islem_cubugu`) açıksa Al/Sat/Temettü'nün yeni yeri
+      // de söylenir; kapalıyken metin birebir eski.
+      govde: RemoteConfigService.instance.varlikIslemCubugu
+          ? 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
+              'dokununca detayına inersin; alış, satış ve temettüyü oradaki '
+              'alt çubuktan kaydedersin.'
+          : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
+              'dokununca detayına inersin.',
       gorev: 'Portföy sekmesine dokun',
       gorevBitti: 'Portföy açıldı',
       bitti: (_) => _sekmede(1),

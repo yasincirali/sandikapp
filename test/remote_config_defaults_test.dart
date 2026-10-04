@@ -84,6 +84,12 @@ void main() {
     test('deposits_enabled artık yok — vadeli mevduat koddan çıkarıldı', () {
       expect(varsayilan('deposits_enabled'), isNull);
     });
+
+    // Sadeleştirme 2 (2026-10-04): davranış değiştiren yüzey bayrakla gelir,
+    // varsayılan KAPALI (CLAUDE.md "riskli yeni davranış bayrakla açılır").
+    test('varlik_islem_cubugu kapalı doğar', () {
+      expect(varsayilan('varlik_islem_cubugu'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {
