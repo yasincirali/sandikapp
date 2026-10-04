@@ -1,12 +1,39 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-05 Bayrak temizliği — dal `feat/bayrak-temizligi` (yerel, PR senin onayında)
+
+Karar (2026-10-05): *"Önerilerin hepsini uygula."* 2026-10-04'te varsayılanı
+AÇIK yapılan **15 Remote Config bayrağı koddan kaldırıldı**; açık davranış
+kalıcı, eski (kapalı) yollar silindi: `ilk_varlik_kolay`,
+`karsilama_tanitimi`, `seviye_anketi`, `bugun_karti_kiyas`,
+`varlik_islem_cubugu`, `tek_ortak_secici`, `tek_kiyas_yuzeyi`,
+`siralama_tek_sayfa`, `performans_ayar_sade`, `yaris_duello_arena`,
+`tek_onay_kutusu`, `ortak_secimi_tasi`, `yasal_onay_kaydi`,
+`yasal_kapi_en_yeni`, `zorunlu_okuma`.
+
+- [ ] **PR'ı incele ve birleştir — bedeli:** bu PR birleşip yayımlanınca bu
+      15 özellik artık **Firebase Console'dan kapatılamaz**; geri almak yeni
+      sürüm ister. Aşağıdaki bölümlerdeki "Console'a `false` ekleyerek kapat"
+      talimatları o sürümden itibaren GEÇERSİZ (yalnız eski sürümlerde
+      çalışır). Birleşene kadar eski talimatlar geçerli.
+- [ ] Birleştikten ve yeni sürüm yaygınlaştıktan sonra (isteğe bağlı):
+      Console'da bu 15 anahtardan tanımlı olanları sil — yeni sürüm okumaz,
+      eski sürümler varsayılanı (açık) kullanır. Acele yok, zararsız.
+- [ ] **`yeniden_onay_kapisi` = `false` KALICI KALIR — silme, değiştirme.**
+      O anahtarı eski sürümler (#85) okuyor; bu PR ona dokunmaz.
+- [ ] Emülatörde bak: karşılama tanıtımı (uygulamayı sil-yükle), kayıt (tek
+      kutu + beş metin zorunlu okuma), Bugün kartı H düzeni, Profil/Performans
+      › Sıralama + tek ortakta düello arenası, Performans kapsam çipi +
+      "Bugünkü portföyle" rozeti (Ayarlar › Görünüm), Ayarlar grupları +
+      Gelişmiş, boş ana ekranda vitrin, varlık ekranında Al · Sat · Temettü.
 
 ## ⏳ 2026-10-04 Zorunlu okuma (0104) — dal `feat/zorunlu-okuma` (yerel, push yok)
 
@@ -23,7 +50,7 @@ açılmaz; bayrak `zorunlu_okuma` (Remote Config, varsayılan AÇIK).
    yazılmaz, yeniden onay kapısı sonraki açılışta sorar.
 
 **Uzaktan kapatma:** Firebase Console → Remote Config → `zorunlu_okuma` =
-`false`. Kapalıyken ekranlar eski hâlinde; tek fark (bayraktan bağımsız):
+`false`. (⚠️ `feat/bayrak-temizligi` birleşip yayımlanınca geçersiz: bayrak koddan kalktı, Console'dan kapatılamaz.) Kapalıyken ekranlar eski hâlinde; tek fark (bayraktan bağımsız):
 e-posta kaydında yatırım uyarısı OTP'den sonra kendi ekranında tam metniyle
 sorulur (eskiden gösterilmemiş tam metne onay kaydı yazılıyordu).
 
@@ -103,6 +130,7 @@ aşağıda). **2026-10-04 kullanıcı kararı: bugünün 14 bayrağı AÇIK doğ
 ("bugün yapılan tüm geliştirmeler için flagleri açık olarak mergele maine").
 Bir özelliği uzaktan KAPATMAK için Firebase Console › Remote Config'e o
 anahtarı `false` olarak ekle (uygulama yeniden yayımlanmadan çalışır).
+(⚠️ `feat/bayrak-temizligi` birleşip yayımlanınca geçersiz: bayrak koddan kalktı, Console'dan kapatılamaz.) Aşağıdaki listenin tamamı ve `tek_onay_kutusu` için geçerli.
 Liste ve ne açtıkları:
   - `ilk_varlik_kolay`: boş ana ekranda **Canlı fiyat vitrini** (₺0 kartı
     gizlenir), Varlık Ekle'de "Yazarak ekle" / "Ekstreden aktar", komisyon +
@@ -177,6 +205,7 @@ Liste ve ne açtıkları:
   VARSAYILAN AÇIK — 4. ve 6. adımlar Console işi değil, uygulama yayımlanınca
   kendiliğinden açılır. Bu yüzden **0102 iki sunucuya uygulama mağazaya
   çıkmadan ÖNCE dağıtılmalı**; kapatmak için Console'a `false` ekle.
+  (⚠️ `feat/bayrak-temizligi` birleşip yayımlanınca geçersiz: bayrak koddan kalktı, Console'dan kapatılamaz.)
   4. Firebase Console › Remote Config: `yasal_onay_kaydi` = `true` (önce
      kendi cihazın). Kapalıyken uygulama birebir eski; 0102'den ÖNCE açılırsa
      her kayıtta "fonksiyon yok" hatası Crashlytics'e düşer.
@@ -251,11 +280,13 @@ olmamalı, seviyeye göre detay." Sunucu değişikliği YOK; iki yeni bayrak
       Firebase'de `push_prompt_after_first_asset` = `false` eski davranışı
       (açılışta sor) geri getirir.
 - [ ] Firebase Console › Remote Config: `karsilama_tanitimi` = `true` (önce
-      kendi cihazın). Görmek için çıkış yap DEĞİL, uygulamayı silip yükle:
+      kendi cihazın). (2026-10-04'ten beri varsayılan AÇIK; 2026-10-05 bayrak
+      temizliğiyle koddan kalktı — Console adımı gereksiz.) Görmek için çıkış yap DEĞİL, uygulamayı silip yükle:
       tanıtım yalnızca bu cihazda hiç oturum açılmadıysa görünür.
       `demo_mode_enabled` Console'da `false` ise demo düğmesi çıkmaz; açmak
       önerilir.
-- [ ] `seviye_anketi` = `true`: turda 3 soruluk anket, Ayarlar › Görünüm'de
+- [ ] `seviye_anketi` = `true` (2026-10-05 bayrak temizliğiyle koddan
+      kalktı — Console adımı gereksiz, davranış kalıcı): turda 3 soruluk anket, Ayarlar › Görünüm'de
       "3 soruyla seviyemi bul", Başlangıç'ta Performans'ta grafik tipi,
       "Bugünkü portföyle" anahtarı, MA20/LOG ve Özet › Derinlik gizlenir; zil
       her seviyede görünür. Orta/İleri değişmez.
