@@ -29,6 +29,14 @@ Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma
       günde ~16 olay, fonların %21'inde en az bir olay; bunların 275'i
       bildirim kademesinde (≥ %5, ≥ ₺25 mn, penceredeki en büyük akış;
       203 fon). Oranların paydası akıştan önceki fon büyüklüğü. Eşikler `_shared/balina.ts`'te tek yerde.
+- [ ] **Haftanın özeti akış cümlesi** (kararın 2026-10-04: olay başına ayrı
+      bildirim yok, Pazartesi özeti akışa değinir). `weekly-summary`
+      fonksiyonunu da dağıt (hedef `ikisi`). Cümle KAPALI doğar; bayrağı
+      açtığın gün iki projede function secret olarak yaz:
+      `HAFTALIK_AKIS_SATIRI=1`. Kuru koşu:
+      `select public.trigger_weekly_summary();` yanıtında `flow_sentences`
+      (cümlesi olan kullanıcı) ve `sent_flow_only` (yüzdesi atlanıp yalnız
+      akışla giden) alanları. Kapalıyken haftalık özet birebir eskisi gibi.
 - [ ] Firebase Console › Remote Config: `balina_radari_acik` = `true`
       (önce kendi cihazına koşulla). Açılışla AYNI sürümde sürüm notu + tur
       adımı yazılacak (bayrak kapalıyken yazılmadı: görünmeyen özellik
