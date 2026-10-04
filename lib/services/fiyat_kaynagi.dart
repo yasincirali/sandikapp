@@ -196,18 +196,7 @@ class FiyatKaynagi {
   /// kalibrasyon (`altinKalibrasyonHaritasi`) gerçek lot'larla AYNI çıkar.
   /// Sözleşmenin (1) maddesi: serinin nereden geleceğine yine burası karar
   /// verir, ekran kendi merdivenini kurmaz.
-  ///
-  /// ## BES: ürünün serisi mi, sahibin serisi mi ([acilisKurali])
-  /// BES'te iki ayrı soru var (kullanıcı kararı, 2026-10-04):
-  ///   · ÜRÜN (varsayılan): fonun gerçek fiyat hareketi — varlık ekranının
-  ///     grafiği ve yüzdesi. Sözleşme taşınmaz, `BesAcilis` uygulanmaz.
-  ///   · SAHİP ([acilisKurali] `true`): sözleşme uygulamaya eklenmeden
-  ///     önceki günler açılış fiyatıyla düz (`BesAcilis`) — Performans
-  ///     dökümüyle aynı kural; varlık ekranının dönem TUTARI bundan
-  ///     hesaplanır ki Σ varlık == Performans tür filtresi korunsun.
-  /// İlk düzeltme sözleşmeyi koşulsuz taşıdı; grafik dümdüz çizildi ve
-  /// kullanıcı "değerleri öyle değil" dedi.
-  static Asset birimVarlik(Asset a, {bool acilisKurali = false}) => Asset(
+  static Asset birimVarlik(Asset a) => Asset(
         id: 'birim:${a.id}',
         userId: a.userId,
         name: a.name,
@@ -226,7 +215,6 @@ class FiyatKaynagi {
         // sıfırlamasın. Sabit tarih, önbellek anahtarlarını da oynatmaz.
         addedDate: DateTime(2000),
         isManualPrice: a.isManualPrice,
-        sozlesmeId: acilisKurali ? a.sozlesmeId : null,
       );
 
   // ── Yurt içi gün içi şekli (0101, 2026-10-03) ───────────────────────────

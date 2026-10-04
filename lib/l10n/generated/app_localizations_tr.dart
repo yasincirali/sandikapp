@@ -4968,7 +4968,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pensionHistoryHint =>
-      'Grafik giriş tarihinden bugüne bu birikimle düz çizilir; bundan sonrası fonlarının fiyatıyla yürür.';
+      'Grafik, bugünkü fon paylarını fonlarının gerçek fiyat geçmişiyle değerler; geçmişte dağılımın farklıydıysa eski dönemler birebir tutmaz.';
 
   @override
   String get pensionGovPrincipal => 'Devlet katkısı ana parası';

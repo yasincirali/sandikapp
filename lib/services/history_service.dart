@@ -7,13 +7,11 @@ import '../models/position.dart';
 import '../models/tefas_nav_gozlem.dart';
 import '../demo/demo_modu.dart';
 import 'analytics_service.dart';
-import 'bes_acilis.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'price_service.dart';
 import 'remote_config_service.dart';
 import 'seri_disk_depo.dart';
-import 'sozlesme_deposu.dart';
 import 'supabase_service.dart';
 import '../utils/tr_format.dart';
 
@@ -667,7 +665,6 @@ class HistoryService {
 
     final groupedPoints = <int, double>{};
     final now = DateTime.now();
-    await _besSozlesmeleriniYukle(assets);
 
     // Her bir varlık için günlük fiyat eşleşmesi tutalım donmuş/gerçek fiyatlar
     final Map<String, Map<int, double>> tickerNormalizedDaily = {};
@@ -866,10 +863,10 @@ class HistoryService {
               a.type == AssetType.doviz) {
             final map = tickerNormalizedDaily[a.ticker] ?? {};
             if (map.isNotEmpty) {
-              // BES: açılıştan önceki gün açılış fiyatıyla — düz çizgi
-              // (bkz. `BesAcilis`). Diğer türlerde `dayTs`'nin kendisi.
-              double price = _getClosestPrice(
-                  map, BesAcilis.fiyatAni(a, dayTs), null);
+              // BES de fonun gerçek serisiyle: açılıştan önce düz çizgi
+              // kuralı kaldırıldı (kullanıcı kararı 2026-10-04, gerekçe
+              // `SozlesmeNotifier.besAc`).
+              double price = _getClosestPrice(map, dayTs, null);
               // Kur: serinin kendi kuru → yoksa canlı kur → yoksa ÖLÇÜM YOK.
               // Sabit 35.0 varsayılanı buradaydı ve kur serisi boş döndüğü
               // her turda portföyü sessizce yanlış gösteriyordu.
@@ -990,14 +987,6 @@ class HistoryService {
     //     oluyordu; ölçülen hata %1,00 yerine %10,02 (9 puan) idi ve aynı
     //     yanlış rakam açıklama satırına da yazılıyordu.
     return clipToPeriod(groupedPoints, periodDays);
-  }
-
-  /// BES açılış anı sözleşmede durur; ortağın sözleşmesi depoda olmayabilir.
-  /// Yüklenemezse kural uygulanmaz (eski yol) — seri yine çizilir.
-  Future<void> _besSozlesmeleriniYukle(List<Asset> assets) async {
-    final eksik = BesAcilis.eksikler(assets);
-    if (eksik.isEmpty) return;
-    await SozlesmeDeposu.instance.eksikleriYukle(eksik);
   }
 
   double _getClosestPrice(
@@ -2459,7 +2448,6 @@ class HistoryService {
     bool simulate = false,
   }) async {
     if (assets.isEmpty) return const PortfolioHistoryBreakdown.empty();
-    await _besSozlesmeleriniYukle(assets);
 
     final normalizedFrom = tier.normalizeTs(from.millisecondsSinceEpoch);
     final normalizedTo = tier.normalizeTs(to.millisecondsSinceEpoch);
@@ -2482,21 +2470,6 @@ class HistoryService {
       tickerFutures.putIfAbsent(
           a.ticker, () => _fetchTickerAtTier(a.ticker, tier));
     }
-    // BES açılış fiyatı çözünürlükten BAĞIMSIZ tek sayıdır: açılış GÜNÜNÜN
-    // fiyatı. Haftalık katmanda bar haftanın SON kapanışını taşır; açılış
-    // anına en yakın bar o haftanın kapanışı olur ve düz çizgi yanlış
-    // seviyeye oturur. Açılış bu haftaysa bar canlı fiyata eşittir: 6A/1Y/5Y
-    // "%0,0" yazarken 1H/1A/3A "+%1,5" yazıyordu (2026-10-04 kullanıcı
-    // bildirimi, KED). Günlük seri açılışı kapsamıyorsa (1 yıldan eski)
-    // eski yola düşülür.
-    final besGunlukFutures = <String, Future<Map<int, double>>>{};
-    if (tier == ResolutionTier.weekly) {
-      for (final a in assets) {
-        if (a.ticker.isEmpty || BesAcilis.acilisMs(a) == null) continue;
-        besGunlukFutures.putIfAbsent(
-            a.ticker, () => _fetchTickerAtTier(a.ticker, ResolutionTier.daily));
-      }
-    }
     Future<Map<int, double>>? usdFuture;
     Future<Map<int, double>>? goldFuture;
     Future<Map<int, double>>? goldTryFuture;
@@ -2509,7 +2482,6 @@ class HistoryService {
     // Paralel bekle.
     await Future.wait([
       ...tickerFutures.values,
-      ...besGunlukFutures.values,
       if (usdFuture != null) usdFuture,
       if (goldFuture != null) goldFuture,
       if (goldTryFuture != null) goldTryFuture,
@@ -2518,10 +2490,6 @@ class HistoryService {
     final tickerMaps = <String, Map<int, double>>{};
     for (final entry in tickerFutures.entries) {
       tickerMaps[entry.key] = await entry.value;
-    }
-    final besGunluk = <String, Map<int, double>>{};
-    for (final entry in besGunlukFutures.entries) {
-      besGunluk[entry.key] = await entry.value;
     }
     final usdMap = kurSerisiniHizala(
         usdFuture != null ? await usdFuture : <int, double>{}, canliKur());
@@ -2641,13 +2609,7 @@ class HistoryService {
             a.type == AssetType.doviz ||
             a.type.fiyatlamaTuru == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};
-          // BES açılıştan önce düz (bkz. `BesAcilis`).
-          final fiyatAni = BesAcilis.fiyatAni(a, cursor);
-          // Açılıştan önce: açılış gününün fiyatı günlük seriden (yukarıda).
-          final price = (fiyatAni != cursor
-                  ? _pastOrNull(besGunluk[a.ticker] ?? const {}, fiyatAni)
-                  : null) ??
-              _closestOrNull(map, fiyatAni);
+          final price = _closestOrNull(map, cursor);
           if (price != null) {
             double p = price;
             var kurVar = true;

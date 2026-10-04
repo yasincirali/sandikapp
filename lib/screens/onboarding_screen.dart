@@ -515,7 +515,8 @@ List<_Adim> _adimlariKur() {
     // Mevduat ve BES (2026-09-30): tür seçicide Fon'un arkasına iki çip
     // girdi (tur metni arayüzle birlikte değişir kuralı). Aynı hedefte
     // ikinci adım: kripto adımı kendi özelliğini anlatmaya devam eder.
-    // 2026-10-01: BES formu ana para + getiri sorar, geçmiş düz çizilir,
+    // 2026-10-01: BES formu ana para + getiri sorar, geçmiş düz çizilir
+    // (2026-10-04: düz çizgi kalktı, fonun gerçek serisi — metin buna göre),
     // "Fon değiştir" eklendi — metin buna göre. Aynı gün: otomatik katkı
     // (0096) formda ve kartta; son cümle onu anlatır.
     // 2026-10-02: vadeli faiz vade sonunda eklenir, vade içinde oran
@@ -531,9 +532,8 @@ List<_Adim> _adimlariKur() {
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '
           'son orana göre çıkar. Vade dolunca varlık sayfasından tek '
           "dokunuşla yenilersin. BES'i seç: şirketini, ana "
-          'paranı, getirini ve fon dağılımını gir; geçmiş giriş tarihinden '
-          'bugüne düz çizilir, bundan sonrası emeklilik fonlarının fiyatıyla '
-          'yürür. Fonunu değiştirince grafik yeni fonlarla devam eder; devlet '
+          'paranı, getirini ve fon dağılımını gir; grafik ve dönem getirileri '
+          'emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu değiştirince grafik yeni fonlarla devam eder; devlet '
           'katkısı hak ediş oranıyla ayrı görünür. Katkı gününü yazıp '
           'otomatik eklemeyi açarsan aylık katkın o gün kendiliğinden eklenir; '
           'tutar farklıysa kartta tek dokunuşla düzeltirsin.',

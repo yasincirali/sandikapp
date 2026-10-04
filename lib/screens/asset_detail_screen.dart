@@ -211,32 +211,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// başlık ve istatistik ızgarası buradan okur (bkz. `asset_detail/ozet.dart`).
   final Map<int, Map<int, double>> _donemSerileri = {};
   final Map<int, double?> _donemIlk = {};
-
-  /// BES: dönem (gün) → SAHİBİN birim serisi (açılıştan önce düz,
-  /// `FiyatKaynagi.birimVarlik(acilisKurali: true)`). Yalnız dönem TUTARI
-  /// buradan hesaplanır; grafik ve yüzde fonun gerçek serisinde kalır
-  /// (kullanıcı kararı 2026-10-04). Diğer türlerde boş.
-  final Map<int, Map<int, double>> _sahipSerileri = {};
-
-  /// Dönem tutarı ayrı (sahip) seriden mi — sözleşmeli BES.
-  bool get _sahipSerisiGerek =>
-      widget.asset.type == AssetType.bes && widget.asset.sozlesmeId != null;
-
-  /// [days] döneminin sahip serisini yükler (gün içi hariç: fonun gün içi
-  /// fiyatı yok). Hata çipi/grafiği etkilemez; tutar satırı "—" kalır.
-  Future<void> _sahipSerisiYukle(int days) async {
-    if (!_sahipSerisiGerek || days == 0 || _sahipSerileri.containsKey(days)) {
-      return;
-    }
-    try {
-      final b = await _donemSerisi(
-          [FiyatKaynagi.birimVarlik(_canli.asset, acilisKurali: true)], days);
-      if (!mounted || b.total.length < 2) return;
-      _guncelle(() => _sahipSerileri[days] = b.total);
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'AssetDetail.sahipSerisi');
-    }
-  }
   final Map<int, DonemIstatistigi?> _donemIstatistikleri = {};
   DateTime? _gunIciSeansOnbellek;
 
@@ -371,7 +345,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     if (!mounted) return const {};
     final birim =
         await _donemSerisi([FiyatKaynagi.birimVarlik(_canli.asset)], days);
-    await _sahipSerisiYukle(days);
     if (mounted && sira == _yuklemeSirasi) {
       if (days == 0) _gunIciBaslangic = birim.seansGunu;
       if (birim.total.isNotEmpty) _lastHistory = birim.total;

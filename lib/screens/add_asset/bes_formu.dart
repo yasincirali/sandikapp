@@ -23,7 +23,8 @@ import '../../widgets/sozlesme_formu_ortak.dart';
 /// devlet katkısı ana parası ve getirisi, fon dağılımı. Birikim = ana para
 /// + getiri; ayrıca sorulmaz. Pay adedi sorulmaz — kimse bilmez; açılışta
 /// birikim ÷ bugünkü fon fiyatından hesaplanır (`SozlesmeNotifier.besAc`).
-/// Geçmiş, giriş tarihinden bugüne bu değerle DÜZ çizilir (`BesAcilis`).
+/// Geçmiş, bugünkü payların fonların gerçek fiyatıyla değerlenmesidir
+/// (2026-10-04; önce düz çiziliyordu — gerekçe `SozlesmeNotifier.besAc`).
 /// Devlet katkısı isteğe bağlıdır: fonu bilinmeyen devlet katkısı
 /// değerlenemez, uydurma fiyatla eklenmez.
 class BesFormu extends ConsumerStatefulWidget {
