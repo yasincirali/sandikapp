@@ -3965,5 +3965,18 @@
   "orWithEmail": "veya e-postayla",
   "todayTopMoverLabel": "En çok oynayan",
   "todayVsInflationYou": "Getirin",
-  "todayVsInflationCpi": "TÜFE"
+  "todayVsInflationCpi": "TÜFE",
+  "vitrinWelcome": "Hoş geldin",
+  "vitrinTitle": "Neye sahipsin?",
+  "vitrinHint": "Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.",
+  "vitrinLive": "Fiyatlar canlı",
+  "vitrinQuarterGold": "Çeyrek altın",
+  "vitrinFundHint": "TEFAS'taki tüm fonlar",
+  "vitrinStockHint": "Borsa İstanbul",
+  "vitrinOtherTypes": "Kripto, emtia, mevduat, BES ve diğerleri",
+  "vitrinOtherTypesShort": "Kripto, BES ve diğer türler",
+  "vitrinStatementHint": "Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde",
+  "vitrinStatementHintShort": "PDF, Excel ya da CSV; tek seferde",
+  "vitrinTapToAdd": "Eklemek için dokun",
+  "vitrinPriceUnknown": "Fiyat henüz yok"
 }

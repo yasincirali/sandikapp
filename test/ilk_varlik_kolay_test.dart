@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
+import 'package:portfoy_takip/models/asset_categories.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/ilk_varlik_secimi.dart';
 import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
-import 'package:portfoy_takip/widgets/ilk_varlik_secici.dart';
 import 'package:portfoy_takip/widgets/social_sign_in_buttons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -63,6 +63,13 @@ void main() {
       expect(IlkVarlikSecimi.fon.varlikHazir, isFalse);
       expect(IlkVarlikSecimi.hisse.varlikHazir, isFalse);
       expect(IlkVarlikSecimi.gramAltin.varlikHazir, isTrue);
+      // Vitrin (2026-10-04): çeyrek altın da varlığıyla hazır; alt türü
+      // formun `selectGold`'una giden enum.
+      expect(IlkVarlikSecimi.ceyrekAltin.tur, AssetType.altin);
+      expect(IlkVarlikSecimi.ceyrekAltin.varlikHazir, isTrue);
+      expect(IlkVarlikSecimi.ceyrekAltin.altinAltTuru, GoldSubCategory.ceyrek);
+      expect(IlkVarlikSecimi.gramAltin.altinAltTuru, GoldSubCategory.gr24);
+      expect(IlkVarlikSecimi.dolar.altinAltTuru, isNull);
       // Döviz etiketi `dovizOptions`'ta olmalı; yoksa `dovizOptFor` sessizce
       // USD'ye düşer ve Euro seçen dolar kaydeder.
       for (final s in IlkVarlikSecimi.values) {
@@ -73,18 +80,6 @@ void main() {
     });
   });
 
-  testWidgets('seçici beş çipi gösterir, dokunulanı bildirir', (tester) async {
-    IlkVarlikSecimi? secilen;
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: IlkVarlikSecici(onSec: (s) => secilen = s)),
-    ));
-    for (final t in ['Gram altın', 'Dolar', 'Euro', 'Bir fon', 'Bir hisse']) {
-      expect(find.text(t), findsOneWidget, reason: t);
-    }
-    await tester.tap(find.text('Euro'));
-    expect(secilen, IlkVarlikSecimi.euro);
-  });
-
   group('Varlık Ekle hızlı seçimle', () {
     testWidgets('gram altın seçili açılır', (tester) async {
       await _pump(tester,
@@ -93,6 +88,16 @@ void main() {
       expect(
           find.bySemanticsLabel(
               RegExp(r'Seçili altın türü: Gram Altın \(24 Ayar\)')),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('çeyrek altın seçili açılır', (tester) async {
+      await _pump(tester,
+          const AddAssetScreen(hizliSecim: IlkVarlikSecimi.ceyrekAltin));
+      await tester.pump();
+      expect(
+          find.bySemanticsLabel(RegExp(r'Seçili altın türü: Çeyrek Altın')),
           findsOneWidget);
       expect(tester.takeException(), isNull);
     });

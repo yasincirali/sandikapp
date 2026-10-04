@@ -20,6 +20,11 @@ enum TourTarget {
   /// Ana ekran: toplam net varlık kartı.
   heroKart,
 
+  /// Ana ekran, boş portföy: "Canlı fiyat vitrini" (bayrak `ilk_varlik_kolay`,
+  /// 2026-10-04). Ortak yokken ₺0 kartının yerini alır; tur bu durumda
+  /// `heroKart` yerine bunu anlatır.
+  ilkVarlikVitrini,
+
   /// Ana ekran: piyasa şeridi (dolar/euro/altın/BIST 100).
   piyasaSeridi,
 

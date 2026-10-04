@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/position.dart' show aktifLotlar;
 import '../models/yatirimci_seviyesi.dart';
+import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
@@ -18,6 +19,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/ilk_varlik_vitrini.dart' show IlkVarlikVitrini;
 import '../widgets/seviye_anketi.dart';
 import '../widgets/tour_anchor.dart';
 import 'main_navigation_screen.dart';
@@ -327,6 +329,19 @@ void _varlikEkleKapat() {
   Navigator.of(c).pop();
 }
 
+/// Kendi defteri boş mu? Ana ekranın boşluk ölçüsüyle aynı (`aktifLotlar`).
+bool _bosPortfoy(WidgetRef ref) => aktifLotlar(
+        ref.read(portfolioProvider).valueOrNull?.assets ?? const [])
+    .isEmpty;
+
+/// Ana ekranda ₺0 kartı yerine vitrin mi çiziliyor? Kural tek yerde
+/// (`IlkVarlikVitrini.toplamKartiYerine`), tur yalnızca sorar.
+bool _vitrinKartYerine(WidgetRef ref) => IlkVarlikVitrini.toplamKartiYerine(
+      bayrak: RemoteConfigService.instance.ilkVarlikKolay,
+      bosKendi: _bosPortfoy(ref),
+      ortakVar: ref.read(activePartnersProvider).isNotEmpty,
+    );
+
 /// Turun tamamı.
 ///
 /// Kapalı bayrakların özellikleri ANLATILMAZ; ekranda olmayan bir hedefe
@@ -367,6 +382,29 @@ List<_Adim> _adimlariKur() {
           'eklediğinde burası dolmaya başlar.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
+      // Vitrin ₺0 kartının yerini aldıysa anlatacak kart yok (bkz. 'vitrin').
+      kosul: (ref) => !_vitrinKartYerine(ref),
+    ),
+    // Boş portföyde "Canlı fiyat vitrini" (bayrak `ilk_varlik_kolay`,
+    // 2026-10-04). Tur metni arayüzle birlikte değişir kuralı: ₺0 kartı
+    // gizlendiğinde 'hero' adımı boşluğu anlatırdı; bu adım yeni ekranı
+    // anlatır. Koşul ekranın çizim koşuluyla aynı (`_EmptyPortfolioCta`).
+    _Adim(
+      id: 'vitrin',
+      hedef: TourTarget.ilkVarlikVitrini,
+      rozet: 'YENİ',
+      baslik: 'Neye sahipsin?',
+      govde: 'Sahip olduğun şeyin kutusuna dokun, yalnızca miktarını yaz: '
+          'gram altın, dolar, euro ve çeyrek altının fiyatı kutuda canlı '
+          'durur, kaydettiğin an toplamın hesaplanır. Fon ve hissede '
+          'listeden seçersin. Kripto, emtia, mevduat ve BES alttaki '
+          'bağlantıda; aracı kurum ekstren varsa "Ekstreden aktar" hepsini '
+          'tek seferde getirir. İlk varlığından sonra burada toplam net '
+          'varlığın görünür.',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+      kosul: (ref) =>
+          RemoteConfigService.instance.ilkVarlikKolay && _bosPortfoy(ref),
     ),
     _Adim(
       id: 'gizle',
@@ -797,6 +835,7 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
         ek: _seviyeSecici,
       ),
     tam['hero']!,
+    tam['vitrin']!,
     tam['bugun']!,
     tam['ekle']!,
     // Kripto ilk açılışta da anlatılır (kullanıcı kararı 2026-09-25):

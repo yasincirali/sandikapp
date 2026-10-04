@@ -3707,5 +3707,18 @@
   "orWithEmail": "or with email",
   "todayTopMoverLabel": "Biggest mover",
   "todayVsInflationYou": "Your return",
-  "todayVsInflationCpi": "CPI"
+  "todayVsInflationCpi": "CPI",
+  "vitrinWelcome": "Welcome",
+  "vitrinTitle": "What do you own?",
+  "vitrinHint": "Tap and type the amount. Prices are live; your sandık keeps itself up to date.",
+  "vitrinLive": "Live prices",
+  "vitrinQuarterGold": "Quarter gold",
+  "vitrinFundHint": "Every fund on TEFAS",
+  "vitrinStockHint": "Borsa Istanbul",
+  "vitrinOtherTypes": "Crypto, commodities, deposits, pension and more",
+  "vitrinOtherTypesShort": "Crypto, pension and more",
+  "vitrinStatementHint": "Broker PDF, Excel or CSV, all in one go",
+  "vitrinStatementHintShort": "PDF, Excel or CSV in one go",
+  "vitrinTapToAdd": "Tap to add",
+  "vitrinPriceUnknown": "No price yet"
 }

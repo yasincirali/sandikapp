@@ -9284,6 +9284,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'TÜFE'**
   String get todayVsInflationCpi;
+
+  /// No description provided for @vitrinWelcome.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hoş geldin'**
+  String get vitrinWelcome;
+
+  /// No description provided for @vitrinTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neye sahipsin?'**
+  String get vitrinTitle;
+
+  /// No description provided for @vitrinHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.'**
+  String get vitrinHint;
+
+  /// No description provided for @vitrinLive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar canlı'**
+  String get vitrinLive;
+
+  /// No description provided for @vitrinQuarterGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çeyrek altın'**
+  String get vitrinQuarterGold;
+
+  /// No description provided for @vitrinFundHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS\'taki tüm fonlar'**
+  String get vitrinFundHint;
+
+  /// No description provided for @vitrinStockHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borsa İstanbul'**
+  String get vitrinStockHint;
+
+  /// No description provided for @vitrinOtherTypes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto, emtia, mevduat, BES ve diğerleri'**
+  String get vitrinOtherTypes;
+
+  /// No description provided for @vitrinOtherTypesShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto, BES ve diğer türler'**
+  String get vitrinOtherTypesShort;
+
+  /// No description provided for @vitrinStatementHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde'**
+  String get vitrinStatementHint;
+
+  /// No description provided for @vitrinStatementHintShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF, Excel ya da CSV; tek seferde'**
+  String get vitrinStatementHintShort;
+
+  /// No description provided for @vitrinTapToAdd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklemek için dokun'**
+  String get vitrinTapToAdd;
+
+  /// No description provided for @vitrinPriceUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat henüz yok'**
+  String get vitrinPriceUnknown;
 }
 
 class _AppLocalizationsDelegate
