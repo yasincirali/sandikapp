@@ -75,6 +75,25 @@ echo "== 6b) anon RPC'yi cagiramamali"
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token"   -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json"   -d "{\"p_token\":\"$TOK-anon-0123456789\",\"p_platform\":\"android\"}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon claim_push_token HTTP $HTTP"; exit 1; }
 
+echo "== 6c) Yasal onay (0102) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir"
+# Metin anon ile okunur (belgeler herkese acik). Onay yalniz RPC ile ve
+# yalniz sunucudaki metnin hash'iyle yazilir; doğrudan INSERT yetkisi yok.
+# Satir silinemez (tasarim geregi) — tohum kullanicida kalir; CI yigini taze.
+HASH=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_metinler?select=govde_hash&tur=eq.kosullar&surum=eq.1.0&dil=eq.tr" \
+  -H "apikey: $SUPABASE_ANON_KEY" | json 'd[0]["govde_hash"]')
+[[ ${#HASH} == 64 ]] || { echo "kosullar/1.0/tr metni okunamadi (hash='$HASH')"; exit 1; }
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kosullar\",\"surum\":\"1.0\",\"dil\":\"tr\",\"hash\":\"$HASH\"}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "yasal_onay_kaydet beklenmeyen donus: $YAZILAN"; exit 1; }
+SATIR=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=id&kanal=eq.kayit" "${AUTH[@]}" | json 'len(d)')
+[[ "$SATIR" -ge 1 ]] || { echo "onay satiri geri okunamadi (adet=$SATIR)"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kosullar\",\"surum\":\"1.0\",\"dil\":\"tr\",\"hash\":\"$(printf '0%.0s' {1..64})\"}],\"p_kanal\":\"kayit\"}")
+[[ "$HTTP" == "400" ]] || { echo "yanlis hash reddedilmedi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/yasal_onaylar" "${AUTH[@]}" \
+  -d "{\"user_id\":\"$UID_SMOKE\",\"metin_id\":1,\"kanal\":\"kayit\"}")
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "yasal_onaylar dogrudan yazilabildi: HTTP $HTTP"; exit 1; }
+
 echo "== 7) Temizlik"
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/assets?id=eq.$ASSET_ID" "${AUTH[@]}" >/dev/null
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/user_push_tokens?device_id=eq.duman-cihaz-$$" "${AUTH[@]}" >/dev/null

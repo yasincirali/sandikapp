@@ -21,6 +21,8 @@ import '../services/kullanici_adi_denetimi.dart';
 import '../services/supabase_service.dart';
 import '../services/disclaimer_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/yasal_metin_katalogu.dart';
+import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
@@ -71,6 +73,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // Bu true olmadan ilgili checkbox'ı tıklayarak işaretleyemez.
   bool _termsDocConfirmed = false;
   bool _consentDocConfirmed = false;
+
+  // Belge (onaylansın ya da yalnız okunsun) en az bir kez AÇILDI mı. Yasal
+  // onay kaydına (`YasalOnayService`, 0102) kanıt olarak gider; ekranda
+  // hiçbir şeyi değiştirmez. Tek kutuda belge yalnız okunur (onay dönüşü
+  // yok), "açıldı" bilgisinin tek kaynağı bu.
+  bool _termsDocOpened = false;
+  bool _consentDocOpened = false;
 
   /// Tek onay kutusu (Sadeleştirme 2 madde 1, bayrak `tek_onay_kutusu`,
   /// varsayılan KAPALI — hukuki onay bekler). Açıkken iki kutu tek cümleli
@@ -195,6 +204,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// Kullanıcı belgeyi sonuna kadar kaydırıp "Okudum ve onaylıyorum" butonuna
   /// basınca dönüş `true` olur; checkbox otomatik işaretlenir.
   Future<void> _openTermsDoc() async {
+    _termsDocOpened = true;
     final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
@@ -221,6 +231,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   /// Açık Rıza (yurt dışı veri aktarımı) belgesini onay akışıyla aç.
   Future<void> _openConsentDoc() async {
+    _consentDocOpened = true;
     final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
@@ -258,6 +269,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     setState(() => _submitting = true);
     final emailForOtp = _emailCtrl.text.trim().toLowerCase();
+    // Kullanıcının GÖRDÜĞÜ onay metinleri — OTP doğrulanınca (oturum o an
+    // açılır) yasal onay kaydı bununla yazılır. `await`'ten önce: context
+    // ve ülke gönderim anındaki hâliyle.
+    final kayitOnayi = KayitOnayBaglami(
+      tekKutu: _tekOnay,
+      dil: context.l10n.localeName,
+      kutuUlkesi: SunucuSecimi.instance.aktifOrNull?.ulke ??
+          (_tekOnay
+              ? context.l10n.tekOnayUlkeBilinmiyor
+              : KayitKutuMetni.rizaUlkeBilinmiyor),
+      belgeDegiskenleri: LegalDocs.yerTutucuDegerleri(),
+      kosulBelgesiAcildi: _termsDocOpened,
+      rizaBelgesiAcildi: _consentDocOpened,
+    );
     try {
       // Confirm-email AÇIK — register signUp() çağırır ama session
       // vermez. Kullanıcı OTP doğrulanmadan authProvider hâlâ null.
@@ -292,7 +317,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       await pushGuarded(
         context,
         adaptiveRoute<void>(
-          builder: (_) => OtpVerificationScreen(email: emailForOtp),
+          builder: (_) => OtpVerificationScreen(
+            email: emailForOtp,
+            kayitOnayi: kayitOnayi,
+          ),
         ),
       );
     } catch (e) {
@@ -584,20 +612,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // ── Yasal Koşullar (birleşik — UC1 fix) ──────────────────────
                 // Disclaimer + KVKK aydınlatma + 18+ yaş tek onay altında.
                 // Detaylar linkler üzerinden tam metinle ulaşılabilir.
+                // Metinler `KayitKutuMetni`'nde (yasal metin kataloğu):
+                // gösterilen ile veritabanına hash'lenen aynı sabit.
                 _LegalConsentBox(
                   icon: Icons.gavel_rounded,
-                  title: 'Yasal Koşullar',
+                  title: KayitKutuMetni.kosulBaslik,
                   versionLabel: 'v$disclaimerVersion',
-                  bodyText:
-                      '• 18 yaşından büyük olduğunu beyan edersin.\n'
-                      '• Uygulama yatırım tavsiyesi değildir; gösterilen '
-                      'fiyatlar ve teknik analiz bilgi amaçlıdır.\n'
-                      '• Kayıt ile Kullanım Koşulları, KVKK Aydınlatma '
-                      'Metni ve Gizlilik Politikası\'nı kabul etmiş '
-                      'sayılırsın.',
-                  checkboxLabel:
-                      'Yasal Koşulları, KVKK Aydınlatma Metni\'ni ve '
-                      '18+ olduğumu kabul ediyorum.',
+                  bodyText: KayitKutuMetni.kosulGovde,
+                  checkboxLabel: KayitKutuMetni.kosulCumle,
                   linkLabel: _termsDocConfirmed
                       ? 'Belgeyi tekrar aç'
                       : 'Belgeyi aç ve onayla',
@@ -617,15 +639,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // KVKK Madde 9(1) zorunluluğu: açık rıza birleştirilemez.
                 _LegalConsentBox(
                   icon: Icons.public_rounded,
-                  title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
-                  bodyText:
-                      // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
-                      'Verilerin Supabase (${SunucuSecimi.instance.aktifOrNull?.ulke ?? 'yurt dışı'}) ve Firebase (ABD/Küresel) '
-                      'üzerinde saklanacak. KVKK Madde 9(1) gereği açık rıza '
-                      'gerekir. İstediğin zaman geri çekebilirsin (hesap silme).',
-                  checkboxLabel:
-                      'Verilerimin yurt dışına aktarılmasına açık rıza '
-                      'veriyorum.',
+                  title: KayitKutuMetni.rizaBaslik,
+                  // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
+                  bodyText: KayitKutuMetni.rizaGovde(
+                      SunucuSecimi.instance.aktifOrNull?.ulke ??
+                          KayitKutuMetni.rizaUlkeBilinmiyor),
+                  checkboxLabel: KayitKutuMetni.rizaCumle,
                   linkLabel: _consentDocConfirmed
                       ? 'Belgeyi tekrar aç'
                       : 'Belgeyi aç ve onayla',

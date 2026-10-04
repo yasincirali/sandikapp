@@ -57,6 +57,7 @@ curl -i -X POST \
 - `public.partnerships` (user_id_1 ve user_id_2)
 - `public.user_push_tokens`
 - `public.disclaimer_acceptances`
+- `public.yasal_onaylar` (0102 — hangi yasal metni ne zaman onayladığı; metinlerin kendisi `yasal_metinler`'de kalır)
 
 `public.db_logs` — `ON DELETE SET NULL` (logları silmeyiz, sadece user_id null'lar).
 

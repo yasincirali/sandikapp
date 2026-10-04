@@ -98,6 +98,12 @@ void main() {
     test('siralama_tek_sayfa kapalı doğar', () {
       expect(varsayilan('siralama_tek_sayfa'), 'false');
     });
+
+    // 0102 iki sunucuya dağıtılmadan açılırsa her kayıt/onay "fonksiyon
+    // yok" hatası üretir (YAPMAN: dağıt → sema_esitlik → aç).
+    test('yasal_onay_kaydi kapalı doğar', () {
+      expect(varsayilan('yasal_onay_kaydi'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {

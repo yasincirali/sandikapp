@@ -11,7 +11,8 @@
 ## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
 
 Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
-değişikliği YOK. Yeni davranışların hepsi **kapalı doğan** Remote Config
+değişikliği yalnız **0102 yasal onay kaydı** (dal `feat/yasal-onay-kaydi`,
+aşağıda). Yeni davranışların hepsi **kapalı doğan** Remote Config
 bayrağı arkasında; kapalıyken uygulama birebir eski. Emülatörde bayrakları
 açmak için derleme anahtarı: `.env.local`'a `RC_ACIK=bayrak1,bayrak2` (yalnız
 debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
@@ -53,6 +54,69 @@ debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
       bugün de (bayrak kapalıyken) sunucuya ayrı bir "açık rıza" kaydı
       yazılmıyor — OTP sonrası tek `disclaimer_acceptances` satırı düşüyor;
       iki kutu yalnız istemcide kapı. Ayrı rıza kaydı istenirse ayrı iş.
+- [ ] **Yasal metinler + kim neyi onayladı (0102)** — dal
+      `feat/yasal-onay-kaydi`, YEREL, push yok. İstek: "bu metinleri de db
+      de tutup her müşteri hangilerini onaylamış takip edilebilir olmalı."
+      Sıra (sen koşarsın; Claude canlıya dokunmaz):
+  1. `supabase/migrations/0102_yasal_metin_onaylari.sql`'i **iki sunucuya**
+     dağıt: GitHub Actions › `supabase-deploy.yml`, hedef `ikisi`
+     (Frankfurt → Tokyo). Frankfurt token'ı 403 verirse yerel CLI
+     (bkz. Frankfurt taşıması notları).
+  2. `python tool/sema_esitlik.py` → "ŞEMA EŞİT" görmeden 3'e geçme.
+  3. Kontrol (SQL Editor, salt okunur):
+     `select tur, surum, dil, govde_hash from yasal_metinler order by tur;`
+     → 9 satır. `select kanal, count(*) from yasal_onaylar group by 1;` →
+     yalnız `aktarim` (eski yatırım uyarısı + Zirve rızaları).
+  4. Firebase Console › Remote Config: `yasal_onay_kaydi` = `true` (önce
+     kendi cihazın). Kapalıyken uygulama birebir eski; 0102'den ÖNCE açılırsa
+     her kayıtta "fonksiyon yok" hatası Crashlytics'e düşer.
+  5. Cihazda: yeni hesap aç (OTP'ye kadar) → `select * from yasal_onay_durumu
+     where user_id = '<yeni id>';` → `kayit_kutu_kosullar`, `kayit_kutu_riza`,
+     `kosullar`, `gizlilik_politikasi`, `kvkk_aydinlatma` için `guncel_mi =
+     true`. Zirve'ye katıl → `zirve_riza` true; ayrıl → `geri_cekildi = true`.
+  - **Yönetici sorgusu** ("kim neyi onaylamış"):
+    ```sql
+    -- Güncel koşulları onaylamamış kullanıcılar
+    select user_id, onaylanan_surum, guncel_surum, onay_at
+      from yasal_onay_durumu
+     where tur = 'kosullar' and not guncel_mi;
+    -- Bir kullanıcının tam dökümü (metin ve gösterilen ülke dahil)
+    select m.tur, m.surum, m.dil, o.onay_at, o.kanal, o.degiskenler, o.geri_cekildi_at
+      from yasal_onaylar o join yasal_metinler m on m.id = o.metin_id
+     where o.user_id = '<id>' order by o.onay_at;
+    ```
+  - **Metin değişince:** sürümü artır → `flutter test --run-skipped --tags
+    arac tool/yasal_metin_uret_test.dart` → çıktıyı YENİ migration'a koy →
+    iki sunucuya dağıt. `test/yasal_metin_kilidi_test.dart` sürüm
+    artırılmadan değişen metni CI'da yakalar.
+  - **Avukata sorulacaklar:**
+    1. Hesap silinince onay ispatı `on delete cascade` ile gidiyor (hem
+       `yasal_onaylar` hem bugünkü `disclaimer_acceptances`). Gizlilik
+       Politikası ise "Disclaimer onay logu: hesap silindikten sonra 3 yıl
+       (TBK 146)" diyor — metin ile uygulama çelişiyor. Saklanacaksa
+       silmeden önce anonim/sözde anonim bir ispat tablosuna taşımak ayrı iş.
+    2. Eski kullanıcıların koşullar / KVKK / yurt dışı aktarım açık rızası
+       için sunucuda HİÇBİR kayıt yok (kutular yalnız istemcideydi); onay
+       uydurulmadı. Yeniden onay ekranı gerekir mi?
+    3. Belgelerin içeriği 11 Mayıs'tan beri değişti (ör. Zirve bölümleri
+       2026-10-01'de eklendi) ama hepsi hâlâ "Sürüm: 1.0". 0102 bugünkü
+       metni 1.0 olarak kaydetti; eskiden kayıt olanlar farklı bir "1.0"
+       gördü. Sürüm artırılıp yeniden onay istenmeli mi?
+    4. E-posta kaydında `disclaimer_acceptances` OTP sonrası yatırım uyarısı
+       metninin (`disclaimerText`) hash'iyle yazılıyor ama o metin kayıt
+       yolunda ekranda GÖSTERİLMİYOR (kutudaki "yatırım tavsiyesi değildir"
+       maddesi gösteriliyor). Yeni kayıt bu yüzden `yatirim_uyarisi`
+       YAZMIYOR (kutu metni yazılıyor); eski satırlar taşındı, kaynağı
+       not edildi. Kayıtta uyarı ekranı da gösterilsin mi?
+    5. Kayıt ekranındaki "KVKK Aydınlatma Metni'ni ... kabul ediyorum"
+       cümlesinin bağlantısı yalnız Kullanım Koşulları'nı açıyor; KVKK
+       metnine kayıt ekranından ulaşılamıyor (Ayarlar'da var). Kayıtta
+       `degiskenler.kayit_ekraninda_baglanti = false` olarak işaretleniyor.
+    6. Apple/Google ile girişte kayıt kutuları HİÇ gösterilmiyor; bu yolda
+       yalnız yatırım uyarısı ekranı var → koşullar/açık rıza kaydı oluşmaz.
+    7. Tek onay kutusu (`tek_onay_kutusu`) açılırsa kayıt `kayit_tek_kutu`
+       olarak ayrı metinle izlenir (TR + EN) — yukarıdaki hukuki karar
+       maddesiyle birlikte değerlendir.
 - Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
   (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
   vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).

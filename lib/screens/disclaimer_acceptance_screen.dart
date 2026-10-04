@@ -3,7 +3,9 @@ import 'package:flutter/material.dart'
     show
         Colors,
         Icons;
+import '../services/crash_reporter.dart';
 import '../services/disclaimer_service.dart';
+import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
@@ -37,10 +39,16 @@ class _DisclaimerAcceptanceScreenState
     // Kayıt hatası olsa bile onayı kabul et — akış kilitlenmez. Hata artık
     // yutulmaz; servis raporlar ve gerçek sürüm/dil/platformu yazar
     // (2026-09-23 denetimi U18).
+    final dil = Localizations.localeOf(context).toString();
     await DisclaimerService.instance.kabulKaydet(
       userId: widget.userId,
-      locale: Localizations.localeOf(context).toString(),
+      locale: dil,
     );
+    // Gösterilen yatırım uyarısı metninin onayı (0102, bayrak
+    // `yasal_onay_kaydi`). Beklenmez, fırlatmaz; kapı yukarıdaki kayıtta.
+    CrashReporter.arkaPlan(
+        YasalOnayService.instance.yatirimUyarisiniKaydet(locale: dil),
+        reason: 'YasalOnayService.yatirim_uyarisi');
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) => widget.onAccepted());
     }

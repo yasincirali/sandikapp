@@ -74,16 +74,34 @@ class LegalDocs {
   static const _ulke = '{SUPABASE_ULKE}';
   static const _ulkede = '{SUPABASE_ULKEDE}';
 
-  static List<LegalBlock> _yerlestir(List<LegalBlock> sablon) {
+  /// Gösterimde yer tutuculara giren değerler — anahtar süslü parantezsiz
+  /// ad (`SUPABASE_ULKE`). Yasal onay kaydı (`YasalOnayService`) bunu
+  /// `degiskenler` olarak saklar: veritabanındaki metin ŞABLON hâlidir,
+  /// kullanıcının gördüğü ülke ayrıca bilinmeli.
+  static Map<String, String> yerTutucuDegerleri() {
     final aktif = SunucuSecimi.instance.aktifOrNull;
-    final ulke = aktif?.ulke ?? 'Yurt dışı';
-    final ulkede = aktif?.ulkede ?? 'yurt dışında';
-    String f(String s) => s.replaceAll(_ulke, ulke).replaceAll(_ulkede, ulkede);
+    return {
+      'SUPABASE_ULKE': aktif?.ulke ?? 'Yurt dışı',
+      'SUPABASE_ULKEDE': aktif?.ulkede ?? 'yurt dışında',
+    };
+  }
+
+  static List<LegalBlock> _yerlestir(List<LegalBlock> sablon) {
+    final d = yerTutucuDegerleri();
+    String f(String s) => s
+        .replaceAll(_ulke, d['SUPABASE_ULKE']!)
+        .replaceAll(_ulkede, d['SUPABASE_ULKEDE']!);
     return [for (final b in sablon) b._doldur(f)];
   }
 
   static List<LegalBlock> get privacy => _yerlestir(_privacy);
   static List<LegalBlock> get kvkk => _yerlestir(_kvkk);
+
+  /// Yer tutucuları DOLDURULMAMIŞ şablonlar — yasal metin kataloğunun
+  /// (`yasal_metin_katalogu.dart`) kaynağı. Veritabanına (0102) ve hash'e
+  /// şablon girer; gösterim değişkenleri onay satırında ayrıca durur.
+  static List<LegalBlock> get privacySablonu => _privacy;
+  static List<LegalBlock> get kvkkSablonu => _kvkk;
 
   // ── Gizlilik Politikası ──────────────────────────────────────────────────
 

@@ -246,6 +246,16 @@ class RemoteConfigService {
     // Kapalıyken kayıt formu birebir eski (iki kutu).
     'tek_onay_kutusu': false,
 
+    // Yasal metin onay kaydı (kullanıcı isteği 2026-10-04: "bu metinleri de
+    // db'de tutup her müşteri hangilerini onaylamış takip edilebilir
+    // olmalı"). Açıkken kayıt (OTP sonrası), yatırım uyarısı ekranı ve Zirve
+    // rızası `yasal_onay_kaydet` RPC'siyle `yasal_onaylar`'a yazılır (0102).
+    // KAPALI DOĞAR: 0102 iki sunucuya dağıtılmadan açılırsa her kayıtta
+    // "fonksiyon yok" hatası üretir. Sıra: 0102 → `sema_esitlik.py` → aç.
+    // Kapalıyken hiçbir ağ çağrısı yok; `disclaimer_acceptances` iki
+    // durumda da eskisi gibi yazılır.
+    'yasal_onay_kaydi': false,
+
     // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
     // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
     // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
@@ -503,6 +513,10 @@ class RemoteConfigService {
   /// Kayıtta iki onay kutusu yerine tek kutu — bkz.
   /// `_defaults['tek_onay_kutusu']` (hukuki onay bekler, varsayılan kapalı).
   bool get tekOnayKutusu => _bayrak('tek_onay_kutusu');
+
+  /// Yasal metin onaylarının sunucuya kaydı — bkz.
+  /// `_defaults['yasal_onay_kaydi']` (0102 dağıtılınca açılır).
+  bool get yasalOnayKaydi => _bayrak('yasal_onay_kaydi');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

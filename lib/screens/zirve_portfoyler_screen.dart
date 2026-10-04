@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/yasal_onay_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -228,12 +230,20 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   /// Rıza verildi → liste ve "Sen" yeniden çekilir. Hata kartta kalır
   /// (`SandikAsyncButton` yeniden basılabilir), durum değişmemiş sayılır.
   Future<void> _katil() async {
+    // Onay kaydının dili — `await`'ten önce (context sonra geçersiz olabilir).
+    final dil = Localizations.localeOf(context).toString();
     try {
       await LeaderboardService.instance.setZirveRizasi(true);
     } catch (e) {
       if (mounted) showAppError(context, e);
       return;
     }
+    // Rıza kartının metni yasal onay kaydına (0102, bayrak
+    // `yasal_onay_kaydi`). `zirve_rizalari` asıl kapı; bu ispat kaydı —
+    // beklenmez, fırlatmaz. Geri çekme sunucuda aynı işlemde damgalanır.
+    CrashReporter.arkaPlan(
+        YasalOnayService.instance.zirveRizasiniKaydet(locale: dil),
+        reason: 'YasalOnayService.zirve');
     if (!mounted) return;
     setState(() {
       _riza = Future.value(true);
