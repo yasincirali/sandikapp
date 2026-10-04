@@ -3227,12 +3227,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Face ID ile koru',
-      'touchId': 'Touch ID ile koru',
-      'biyometrik': 'Biyometrik kilitle koru',
-      'other': 'Ekran kilidiyle koru',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID ile koru',
+        'touchId': 'Touch ID ile koru',
+        'biyometrik': 'Biyometrik kilitle koru',
+        'other': 'Ekran kilidiyle koru',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3263,12 +3266,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Face ID\'yi aç',
-      'touchId': 'Touch ID\'yi aç',
-      'biyometrik': 'Biyometrik kilidi aç',
-      'other': 'Uygulama kilidini aç',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Face ID\'yi aç',
+        'touchId': 'Touch ID\'yi aç',
+        'biyometrik': 'Biyometrik kilidi aç',
+        'other': 'Uygulama kilidini aç',
+      },
+    );
     return '$_temp0';
   }
 
@@ -5110,11 +5116,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  ) {
+      String date, String end, String change, String cpi) {
     return 'İlk alımından ($date) $end sonuna birikimin $change, enflasyon $cpi oldu.';
   }
 

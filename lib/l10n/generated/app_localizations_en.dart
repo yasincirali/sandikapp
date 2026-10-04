@@ -3253,12 +3253,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Protect with Face ID',
-      'touchId': 'Protect with Touch ID',
-      'biyometrik': 'Protect with biometrics',
-      'other': 'Protect with your screen lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Protect with Face ID',
+        'touchId': 'Protect with Touch ID',
+        'biyometrik': 'Protect with biometrics',
+        'other': 'Protect with your screen lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -3289,12 +3292,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(yontem, {
-      'faceId': 'Turn on Face ID',
-      'touchId': 'Turn on Touch ID',
-      'biyometrik': 'Turn on biometric lock',
-      'other': 'Turn on app lock',
-    });
+    String _temp0 = intl.Intl.selectLogic(
+      yontem,
+      {
+        'faceId': 'Turn on Face ID',
+        'touchId': 'Turn on Touch ID',
+        'biyometrik': 'Turn on biometric lock',
+        'other': 'Turn on app lock',
+      },
+    );
     return '$_temp0';
   }
 
@@ -5160,11 +5166,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-    String date,
-    String end,
-    String change,
-    String cpi,
-  ) {
+      String date, String end, String change, String cpi) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
