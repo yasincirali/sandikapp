@@ -1334,17 +1334,6 @@ class SandikLogo extends StatelessWidget {
   }
 }
 
-/// Uygulama launcher ikonunu önizlemek için — tam kare, rounded corner
-class SandikAppIcon extends StatelessWidget {
-  final double size;
-  const SandikAppIcon({super.key, this.size = 64});
-
-  @override
-  Widget build(BuildContext context) {
-    return SandikLogo(size: size, withBackground: false);
-  }
-}
-
 /// Tüm ekranlarda kullanılan standart logout butonu.
 /// Tasarım dili: kırmızı/loss tonu, 36×36 rounded icon box — ProfileScreen'deki
 /// _ActionIcon ile aynı görsel dil.

@@ -48,16 +48,18 @@ class RemoteConfigService {
     // artırılır"). Sunucuya yazılmadan önce istemcide kontrol edilir.
     'free_watchlist_limit': 7,
 
-    // Paywall UI variant'ı ('A' | 'B'). A/B test için.
-    'paywall_variant': 'A',
+    // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
+    // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
+    // bayrak getter'ıyla birlikte geri eklenir.
 
     // Aylık fiyat gösterimi (paywall'da lokalize göstermek için).
     'premium_price_monthly': '49₺/ay',
     'premium_price_yearly': '349₺/yıl',
 
-    // Free kullanıcıya günde kaç sinyal analiz slot'u verilsin (1 = sadece
-    // sabah, 2 = sabah+öğleden sonra). Premium her zaman 2.
-    'free_signal_slots_per_day': 1,
+    // NOT: `free_signal_slots_per_day` kaldırıldı (2026-10-04, sadeleştirme
+    // C) — ne istemci ne sunucu okuyordu; sinyal slot'u bugün herkese aynı.
+    // Premium planı ücretsiz kullanıcıya slot kapısı koyacak: kapı yazılınca
+    // bayrak (varsayılan 1 = yalnız sabah, Premium 2) geri eklenir.
 
     // NOT: `free_ai_report_enabled` kaldırıldı — AI portföy raporunun hiçbir
     // implementasyonu yoktu, flag var olmayan bir özelliği gate'liyordu.
@@ -285,10 +287,6 @@ class RemoteConfigService {
       _rc?.getInt('free_watchlist_limit') ??
       _defaults['free_watchlist_limit'] as int;
 
-  String get paywallVariant =>
-      _rc?.getString('paywall_variant') ??
-      _defaults['paywall_variant'] as String;
-
   String get premiumPriceMonthly =>
       _rc?.getString('premium_price_monthly') ??
       _defaults['premium_price_monthly'] as String;
@@ -296,10 +294,6 @@ class RemoteConfigService {
   String get premiumPriceYearly =>
       _rc?.getString('premium_price_yearly') ??
       _defaults['premium_price_yearly'] as String;
-
-  int get freeSignalSlotsPerDay =>
-      _rc?.getInt('free_signal_slots_per_day') ??
-      _defaults['free_signal_slots_per_day'] as int;
 
   bool get percentileStripEnabled =>
       _rc?.getBool('percentile_strip_enabled') ??

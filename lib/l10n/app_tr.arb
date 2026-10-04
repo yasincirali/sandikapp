@@ -874,8 +874,6 @@
   "requestPartnership": "Ortaklık İste",
   "generatingEllipsis": "Üretiliyor...",
   "generateCode": "Kod Üret",
-  "switchToDark": "Koyu temaya geç",
-  "switchToLight": "Açık temaya geç",
   "tabChart": "Grafik",
   "tabSummary": "Özet",
   "modeReal": "Gerçek",
@@ -1500,41 +1498,7 @@
   "realReturnLastYear": "son bir yıl",
   "realReturnYours": "Senin",
   "realReturnCpi": "TÜFE",
-  "weeklyFlatSemantics": "Bu hafta portföyün piyasa getirisi değişmedi",
-  "thisWeekFromMarket": "Bu hafta piyasadan ",
   "noChangeLower": "değişim yok",
-  "pctDown": "%{pct} eksi",
-  "@pctDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyDownSemantics": "Bu hafta portföyün piyasa getirisi yüzde {pct} ekside",
-  "@weeklyDownSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyUpSemantics": "Bu hafta portföyün piyasa getirisi yüzde {pct} artıda",
-  "@weeklyUpSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "pctUp": "%{pct} artı",
-  "@pctUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
   "totalNetHidden": "Toplam net varlık gizli",
   "totalNetWorth": "Toplam net varlık {amount}",
   "@totalNetWorth": {

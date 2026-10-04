@@ -2774,18 +2774,6 @@ abstract class AppLocalizations {
   /// **'Kod Üret'**
   String get generateCode;
 
-  /// No description provided for @switchToDark.
-  ///
-  /// In tr, this message translates to:
-  /// **'Koyu temaya geç'**
-  String get switchToDark;
-
-  /// No description provided for @switchToLight.
-  ///
-  /// In tr, this message translates to:
-  /// **'Açık temaya geç'**
-  String get switchToLight;
-
   /// No description provided for @tabChart.
   ///
   /// In tr, this message translates to:
@@ -4286,47 +4274,11 @@ abstract class AppLocalizations {
   /// **'TÜFE'**
   String get realReturnCpi;
 
-  /// No description provided for @weeklyFlatSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta portföyün piyasa getirisi değişmedi'**
-  String get weeklyFlatSemantics;
-
-  /// No description provided for @thisWeekFromMarket.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta piyasadan '**
-  String get thisWeekFromMarket;
-
   /// No description provided for @noChangeLower.
   ///
   /// In tr, this message translates to:
   /// **'değişim yok'**
   String get noChangeLower;
-
-  /// No description provided for @pctDown.
-  ///
-  /// In tr, this message translates to:
-  /// **'%{pct} eksi'**
-  String pctDown(String pct);
-
-  /// No description provided for @weeklyDownSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta portföyün piyasa getirisi yüzde {pct} ekside'**
-  String weeklyDownSemantics(String pct);
-
-  /// No description provided for @weeklyUpSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta portföyün piyasa getirisi yüzde {pct} artıda'**
-  String weeklyUpSemantics(String pct);
-
-  /// No description provided for @pctUp.
-  ///
-  /// In tr, this message translates to:
-  /// **'%{pct} artı'**
-  String pctUp(String pct);
 
   /// No description provided for @totalNetHidden.
   ///

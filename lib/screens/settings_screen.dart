@@ -673,6 +673,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const _QuietHoursTile(),
             const SizedBox(height: 8),
+            // Ortak bildirim anahtarları BURADA kalır, ortak yönetiminin
+            // (Profil) yanına taşınmaz (sadeleştirme değerlendirmesi
+            // 2026-10-04): kullanıcı "bildirimleri kapat"ı tek listede arar;
+            // sessiz saatler ve brifing saati de bu listede. Profil'e ikinci
+            // bir kopya ya da bağlantı eklemek,
+            // kaldırdığımız "aynı ayar iki yerde" sorununu geri getirirdi.
             _SwitchTile(
               icon: Icons.people_outline_rounded,
               title: context.l10n.partnerInviteNotifications,
@@ -957,7 +963,8 @@ class _ThemeModePicker extends ConsumerWidget {
                 // `_applySurfaceTheme`). Eskiden her ekran kendi itişini
                 // yapıyordu ve Profil başlığındaki hızlı geçiş bunu
                 // atlıyordu — aynı tercih iki yoldan değiştirildiğinde
-                // yüzeyler ayrışıyordu.
+                // yüzeyler ayrışıyordu. O geçiş 2026-10-04'te kaldırıldı;
+                // tema artık YALNIZ bu seçiciden değişir.
                 onTap: () => ref.read(themeModeProvider.notifier).set(mode),
                 child: AnimatedContainer(
                   duration: SandikMotion.stateOf(context),

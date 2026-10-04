@@ -1534,12 +1534,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generateCode => 'Generate Code';
 
   @override
-  String get switchToDark => 'Switch to dark theme';
-
-  @override
-  String get switchToLight => 'Switch to light theme';
-
-  @override
   String get tabChart => 'Chart';
 
   @override
@@ -2446,34 +2440,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get realReturnCpi => 'CPI';
 
   @override
-  String get weeklyFlatSemantics =>
-      'Your portfolio\'s market return did not change this week';
-
-  @override
-  String get thisWeekFromMarket => 'From the market this week: ';
-
-  @override
   String get noChangeLower => 'no change';
-
-  @override
-  String pctDown(String pct) {
-    return '$pct% down';
-  }
-
-  @override
-  String weeklyDownSemantics(String pct) {
-    return 'Your portfolio\'s market return is $pct percent down this week';
-  }
-
-  @override
-  String weeklyUpSemantics(String pct) {
-    return 'Your portfolio\'s market return is $pct percent up this week';
-  }
-
-  @override
-  String pctUp(String pct) {
-    return '$pct% up';
-  }
 
   @override
   String get totalNetHidden => 'Total net worth hidden';

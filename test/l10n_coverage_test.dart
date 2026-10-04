@@ -92,7 +92,6 @@ void main() {
     'lib/widgets/transaction_row.dart': 0,
     'lib/widgets/transaction_segment.dart': 0,
     'lib/widgets/watchlist_chart.dart': 0,
-    'lib/widgets/weekly_summary_chip.dart': 0,
     'lib/widgets/widget_install_sheet.dart': 0,
     'lib/widgets/zoom_data_controller.dart': 0,
     'lib/widgets/alarm_seridi.dart': 0,

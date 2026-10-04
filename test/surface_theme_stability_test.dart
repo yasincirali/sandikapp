@@ -259,9 +259,11 @@ void main() {
 
     test('tercih değişimi TEK dinleyiciden itiliyor', () {
       // İtişi ekranlara dağıtmak birini atlamak demekti: Profil
-      // başlığındaki hızlı geçiş (`_ThemeToggleButton`) hiç itmiyordu.
+      // başlığındaki hızlı geçiş (`_ThemeToggleButton`, 2026-10-04'te
+      // kaldırıldı) hiç itmiyordu. Bugün tek giriş Ayarlar; dinleyici yine
+      // merkezde kalır ki yeni bir giriş itişi atlayamasın.
       expect(kaynak.contains('ref.listen<ThemeMode>(themeModeProvider'), isTrue,
-          reason: 'merkezî dinleyici iki giriş noktasını da kapsar');
+          reason: 'merkezî dinleyici her giriş noktasını kapsar');
     });
 
     test('parlaklık değişimi yalnızca ÖNPLANDA kabul ediliyor', () {
@@ -372,12 +374,16 @@ void main() {
           reason: 'itiş merkezî dinleyicinin işi (ve artık getter)');
     });
 
-    test('Profil hızlı geçişi de yalnızca tercihi yazıyor', () async {
+    // Profil başlığındaki hızlı geçiş 2026-10-04 sadeleştirmesinde kaldırıldı
+    // (tema YALNIZ Ayarlar'da). Eski test geçişin provider üzerinden
+    // yazdığını kilitliyordu; şimdi Profil'in temaya hiç dokunmadığını
+    // kilitler — ikinci bir giriş geri gelirse bilinçli bir karar olsun.
+    test('Profil temaya dokunmuyor — tek giriş Ayarlar', () async {
       final src = _yorumsuz(
           await File('lib/screens/profile_screen.dart').readAsString());
       expect(src.contains('themeIsLight ='), isFalse);
-      expect(src.contains('themeModeProvider.notifier).set('), isTrue,
-          reason: 'hızlı geçiş aynı provider üzerinden gitmeli');
+      expect(src.contains('themeModeProvider'), isFalse,
+          reason: 'tema seçimi yalnız Ayarlar\'daki üçlü seçicide');
     });
   });
 }
