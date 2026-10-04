@@ -34,7 +34,10 @@ olmamalı, seviyeye göre detay." Sunucu değişikliği YOK; iki yeni bayrak
 - Bayraksız, herkese gelen: dönem etiketleri "Bugün · 1 hf · 1 ay · 3 ay ·
   6 ay · 1 yıl · 5 yıl"; "Simülasyon" → "Bugünkü portföyle"; Portföy ve
   Performans üst barından çıkış düğmesi kalktı (Ana + Profil'de duruyor);
-  "Kayıtlı cihazlar" → "Giriş yaptığın cihazlar".
+  "Kayıtlı cihazlar" → "Giriş yaptığın cihazlar"; Performans › Grafik
+  kartının manşeti artık Özet'le aynı "Paranın getirisi" (piyasa kazancı
+  + %), alım/satım dahil bakiye değişimi ikinci satıra indi (karar
+  "İkisi de getiri").
 
 ## ⏳ 2026-10-03 Hafta sonu GÜNLÜK'te dolar/altın düz değil (0101) — dal `claude/project-thread-fkhjy1`
 
