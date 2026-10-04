@@ -221,6 +221,13 @@ class RemoteConfigService {
     // kaydırınca bulunuyor — keşfedilmesi zor. Kapalıyken varlık ekranı
     // birebir eski; kaydırma her iki durumda da kısayol olarak kalır.
     'varlik_islem_cubugu': false,
+
+    // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
+    // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
+    // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
+    // ekran birebir eski kabuğunda (`ModernTabSelector` / `KapsamKisiSecici`).
+    // Seçim sözleşmesi ve yazılan durum iki yolda da AYNI.
+    'tek_ortak_secici': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -406,6 +413,9 @@ class RemoteConfigService {
   bool get ipoCalendarEnabled =>
       _rc?.getBool('ipo_calendar_enabled') ??
       _defaults['ipo_calendar_enabled'] as bool;
+
+  /// Tek ortak seçici görünüşü — bkz. `_defaults['tek_ortak_secici']`.
+  bool get tekOrtakSecici => _bayrak('tek_ortak_secici');
 
   /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
   /// `_defaults['canli_etkinlik_dakikalik']`.

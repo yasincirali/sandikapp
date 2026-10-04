@@ -70,7 +70,7 @@ import '../providers/preferences_provider.dart'
         seviyeGorunurlukProvider,
         yatirimciSeviyesiProvider;
 import 'leaderboard_screen.dart';
-import '../widgets/kapsam_kisi_secici.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/zirve_karti.dart';
