@@ -153,4 +153,42 @@ void main() {
             .every((e) => e.value == 0),
         isTrue);
   });
+
+  // 2026-10-04 kullanıcı bildirimi: Performans 1H dökümünde "BES › KED
+  // +%1,55", aynı fonun varlık ekranı −%1,12. Varlık ekranı serisini
+  // `FiyatKaynagi.birimVarlik` ile çekiyor; sentetik lot `sozlesmeId`
+  // taşımadığı için açılış kuralı uygulanmıyor, açılıştan önceki günler
+  // fonun kendi serisiyle çiziliyordu. İki ekran aynı pencerede aynı
+  // yüzdeyi vermeli (Σ varlık == Performans tür filtresi).
+  test('varlık ekranının birim serisi de açılıştan önce düz', () async {
+    final gunler = <(int, double)>[];
+    final bas = DateTime(simdi.year, simdi.month, simdi.day)
+        .subtract(const Duration(days: 60));
+    var fiyat = 5.0;
+    for (var g = 0; g <= 60; g++) {
+      gunler.add((bas.add(Duration(days: g)).millisecondsSinceEpoch, fiyat));
+      fiyat *= 1.01;
+    }
+    HistoryService.seriCekici = (sym, range, interval) async =>
+        sym == '${tefasOneki}AAA' ? gunler : const [];
+
+    Future<Map<int, double>> seri(Asset a) async =>
+        (await HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
+          assets: [a],
+          from: bas,
+          to: simdi,
+          tier: ResolutionTier.daily,
+        ))
+            .total;
+
+    final pozisyon = await seri(lot());
+    final birim = await seri(FiyatKaynagi.birimVarlik(lot()));
+    double yuzde(Map<int, double> m) {
+      final k = m.keys.toList()..sort();
+      return m[k.last]! / m[k.first]! - 1;
+    }
+
+    expect(yuzde(birim), closeTo(yuzde(pozisyon), 1e-9),
+        reason: 'varlık ekranı ile Performans dökümü aynı yüzdeyi vermeli');
+  });
 }

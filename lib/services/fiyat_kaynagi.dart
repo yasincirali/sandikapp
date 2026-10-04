@@ -215,6 +215,12 @@ class FiyatKaynagi {
         // sıfırlamasın. Sabit tarih, önbellek anahtarlarını da oynatmaz.
         addedDate: DateTime(2000),
         isManualPrice: a.isManualPrice,
+        // BES'te "hangi anın fiyatı" sözleşmenin açılış anına bağlıdır
+        // (`BesAcilis`: açılıştan önce düz çizgi). Sözleşme taşınmazsa
+        // varlık ekranı açılıştan önceki günleri fonun kendi serisiyle
+        // çizer ve Performans dökümünden ayrışır (2026-10-04 kullanıcı
+        // bildirimi, 1H: döküm +%1,55, varlık ekranı −%1,12).
+        sozlesmeId: a.sozlesmeId,
       );
 
   // ── Yurt içi gün içi şekli (0101, 2026-10-03) ───────────────────────────
