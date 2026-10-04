@@ -1,8 +1,8 @@
 # Kullanım Koşulları — sandık
 
-**Yürürlük tarihi:** 4 Ekim 2026
-**Son güncelleme:** 4 Ekim 2026
-**Sürüm:** 1.2
+**Yürürlük tarihi:** 5 Ekim 2026
+**Son güncelleme:** 5 Ekim 2026
+**Sürüm:** 1.3
 
 ---
 
@@ -11,6 +11,8 @@
 Bu Kullanım Koşulları ("Koşullar"), `Yasin Çıralı` ("Şirket", "biz") tarafından sunulan **sandık** mobil uygulaması ("Uygulama", "Hizmet") ile uygulamayı kullanan gerçek kişi ("Kullanıcı", "siz") arasındaki sözleşmedir.
 
 Uygulamayı indirip hesap oluşturarak bu Koşulları, **Gizlilik Politikası**'nı, **KVKK Aydınlatma Metni**'ni ve **Açık Rıza Metni**'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.
+
+Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) bu belgelerin ve yatırım uyarısının her biri size tam metniyle gösterilir; her birini sonuna kadar okuyup en altta onaylarsınız. Onay kutuları ancak bundan sonra işaretlenebilir.
 
 ---
 
@@ -45,7 +47,7 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
 
-Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya Google ile ilk girişte tam metni ayrıca gösterilir. Onayın kaydı yasal kanıt olarak saklanır.
+Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 

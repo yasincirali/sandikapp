@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
-**Yürürlük tarihi:** 4 Ekim 2026
-**Son güncelleme:** 4 Ekim 2026
-**Sürüm:** 1.2
+**Yürürlük tarihi:** 5 Ekim 2026
+**Son güncelleme:** 5 Ekim 2026
+**Sürüm:** 1.3
 
 ---
 
@@ -139,12 +139,13 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Push token | Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar | Sözleşme süresi |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
+| Anonim hesap silme kaydı (hesap kimliğinin tek yönlü özeti, e-posta alan adı, silme zamanı ve nedeni) | Hesap silinmesinden sonra **3 yıl**; süresi dolanlar her gün otomatik silinir | TBK Madde 146 (zamanaşımı) |
 | Bildirim kayıtları (uygulama içi, fiyat alarmı) | 90 gün | Servis ihtiyacı |
 | Hata kayıtları (db_logs, yalnızca hatalar) | 30 gün | KVKK 5(2)(f) meşru menfaat |
 | Hata raporları (Crashlytics) | 90 gün | KVKK 5(2)(f) meşru menfaat |
 | Kullanım istatistikleri (Firebase Analytics) | Firebase'deki saklama ayarı kadar, en fazla 14 ay | KVKK 5(2)(f) meşru menfaat |
 | Kayıt hunisi adımları | 400 gün | KVKK 5(2)(f) meşru menfaat |
-| Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı) | Supabase Auth güvenlik kaydında; uygulama bu kayıt için otomatik silme süresi tanımlamamıştır | KVKK 5(2)(f) meşru menfaat |
+| Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı; Supabase Auth güvenlik kaydı) | 90 gün; eskileri her gün otomatik silinir | KVKK 5(2)(f) meşru menfaat |
 
 Saklama süresi sona eren veriler **kalıcı olarak silinir veya anonimleştirilir**. Hesabınızı uygulamadan sildiğinizde hesabınız ve girdiğiniz veriler hemen silinir; yukarıda hesap silindikten sonra da süresi devam eden kayıtlar istisnadır (hata kayıtları ve kayıt hunisi adımları hesapla bağı kaldırılarak tutulur).
 
@@ -228,7 +229,7 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 ---
 
-*Bu Aydınlatma Metni'ni okuyup anladığınızı, kayıt sırasında ilgili onay kutusunu işaretleyerek beyan etmektesiniz.*
+*Bu Aydınlatma Metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size tam metniyle gösterilir; sonuna kadar okuyup en altta onaylayarak okuduğunuzu ve anladığınızı beyan edersiniz.*
 
 ---
 

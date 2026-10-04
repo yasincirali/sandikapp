@@ -1,9 +1,9 @@
 # Privacy Policy — sandık
 
-**Effective date:** October 4, 2026
-**Last updated:** October 4, 2026
-**Version:** 1.2
-**Source:** TR 1.2 (translation of the Turkish text; the Turkish version prevails)
+**Effective date:** October 5, 2026
+**Last updated:** October 5, 2026
+**Version:** 1.3
+**Source:** TR 1.3 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -156,9 +156,10 @@ The destination countries (Supabase: {SUPABASE_ULKE}; Firebase: USA) are not on 
 | Sign-up funnel steps | 400 days |
 | Crash reports (Crashlytics) | 90 days |
 | Usage statistics (Firebase Analytics) | As set in Firebase's retention setting, at most 14 months |
-| Sign-in security log (IP, device/browser) | Kept in the Supabase Auth security log; the App has not defined an automatic deletion period for this log |
+| Anonymous deletion record (one-way hash of the account ID, email domain, time and reason of deletion) | **3 years** after deletion (Turkish Code of Obligations Art. 146 limitation period); expired entries are deleted automatically every day |
+| Sign-in security log (IP, device/browser; Supabase Auth security log) | 90 days; older entries are deleted automatically every day |
 
-When you delete your account from the App, your account and all the data you entered are deleted from the live database **immediately**. Exceptions: legal text acceptance records (3 years), structured error logs and sign-up funnel steps (unlinked from the account, until the end of their own periods), crash reports and usage statistics in Firebase (until the end of their own periods), the sign-in security log, and an anonymous deletion record consisting of a one-way hash of your account ID and your email domain.
+When you delete your account from the App, your account and all the data you entered are deleted from the live database **immediately**. Exceptions: legal text acceptance records (3 years), structured error logs and sign-up funnel steps (unlinked from the account, until the end of their own periods), crash reports and usage statistics in Firebase (until the end of their own periods), the sign-in security log (90 days), and an anonymous deletion record consisting of a one-way hash of your account ID and your email domain (3 years).
 
 ---
 
@@ -232,7 +233,7 @@ When you sign out, the session token, your cache and preferences and the widget 
 
 **sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals and charts shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
 
-A summary of this notice is part of the consent box on the registration screen; on the first sign-in with Apple or Google the full text is shown separately. The record of your acceptance is kept as legal evidence.
+The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.
 
 ---
 

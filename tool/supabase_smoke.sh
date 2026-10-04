@@ -75,7 +75,7 @@ echo "== 6b) anon RPC'yi cagiramamali"
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token"   -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json"   -d "{\"p_token\":\"$TOK-anon-0123456789\",\"p_platform\":\"android\"}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon claim_push_token HTTP $HTTP"; exit 1; }
 
-echo "== 6c) Yasal onay (0102 + 0103) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu, 1.2 + acik riza metni"
+echo "== 6c) Yasal onay (0102 + 0103 + 0104 + 0105) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu, 1.2/1.3 + acik riza metni, saklama fonksiyonlari istemciye kapali"
 # Metin anon ile okunur (belgeler herkese acik). Onay yalniz RPC ile ve
 # yalniz sunucudaki metnin hash'iyle yazilir; doğrudan INSERT yetkisi yok.
 # Satir silinemez (tasarim geregi) — tohum kullanicida kalir; CI yigini taze.
@@ -139,6 +139,34 @@ TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!
 [[ "$TURLER" == *"kosullar@1.1"* && "$TURLER" == *"gizlilik_politikasi@1.1"* && "$TURLER" == *"yatirim_uyarisi@1.0"* \
    && "$TURLER" == *"acik_riza_metni@1.2"* ]] \
   || { echo "kapi sorgusu beklenen turleri dondurmedi: $TURLER"; exit 1; }
+# 0105: belgeler 1.3 (saklama sureleri + zorunlu okuma cumlesi). Dort belge
+# anon ile okunur, 1.2 satirlari yerinde; kapi kanali 1.3'u yazar ve kapi
+# sorgusu en yeni surumu gorur.
+for T in kosullar gizlilik_politikasi kvkk_aydinlatma acik_riza_metni; do
+  H=$(metin_hash "$T" 1.3 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.3/tr metni okunamadi (0105)"; exit 1; }
+  H=$(metin_hash "$T" 1.2 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.2/tr kaybolmus (0105 eski satira dokunmamali)"; exit 1; }
+done
+K13=$(metin_hash kosullar 1.3 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kosullar\",\"surum\":\"1.3\",\"dil\":\"tr\",\"hash\":\"$K13\",\"degiskenler\":{\"sonuna_kadar_okundu\":true}}],\"p_kanal\":\"yeniden_onay\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "kosullar/1.3 yeniden_onay beklenmeyen donus: $YAZILAN (0105)"; exit 1; }
+TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
+  "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
+[[ "$TURLER" == *"kosullar@1.3"* ]] || { echo "kapi sorgusu kosullar@1.3'u gormedi: $TURLER"; exit 1; }
+# 0105: iki saklama fonksiyonu (Auth guvenlik kaydi 90 gun, anonim silme
+# kaydi 3 yil) yalniz cron'dan kosar — istemci cagiramaz; silme kaydi
+# tablosu istemciye bos gorunur (RLS, politika yok — 0007).
+for F in auth_guvenlik_kaydi_saklama_temizle hesap_silme_kaydi_saklama_temizle; do
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/$F" "${AUTH[@]}" -d '{}')
+  [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "authenticated $F cagirabildi: HTTP $HTTP (0105)"; exit 1; }
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/$F" \
+    -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json" -d '{}')
+  [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon $F cagirabildi: HTTP $HTTP (0105)"; exit 1; }
+done
+SATIR=$(curl -sS "$SUPABASE_URL/rest/v1/account_deletion_log?select=id" "${AUTH[@]}" | json 'len(d) if isinstance(d, list) else 0')
+[[ "$SATIR" == "0" ]] || { echo "account_deletion_log istemciye gorunuyor (adet=$SATIR)"; exit 1; }
 # Hesap silme (satirlar kalir + damga, Zirve silinir, 3 yil saklama) burada
 # denenmez: tohum kullanici silinemez. Migration'in kendi dogrulama blogu
 # tetikleyiciyi, politikayi ve cron isini kontrol eder.

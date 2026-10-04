@@ -1,9 +1,9 @@
 # Terms of Service — sandık
 
-**Effective date:** October 4, 2026
-**Last updated:** October 4, 2026
-**Version:** 1.2
-**Source:** TR 1.2 (translation of the Turkish text; the Turkish version prevails)
+**Effective date:** October 5, 2026
+**Last updated:** October 5, 2026
+**Version:** 1.3
+**Source:** TR 1.3 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -12,6 +12,8 @@
 These Terms of Service ("Terms") form a contract between `Yasin Çıralı` ("Company", "we") and the natural person ("User", "you") who uses the **sandık** mobile application ("App", "Service").
 
 By downloading the App and creating an account, you declare that you have read, understood and accepted these Terms, the **Privacy Policy**, the **KVKK Disclosure** and the **Explicit Consent Notice**.
+
+During registration (and on the consent screen at the first sign-in with Apple or Google) each of these documents and the investment disclaimer is shown to you in full; you read each one to the end and accept it at the bottom. Only then can the consent boxes be ticked.
 
 ---
 
@@ -46,7 +48,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 - Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
 - **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
 
-A summary of this notice is part of the consent box on the registration screen; on the first sign-in with Apple or Google the full text is shown separately. The record of your acceptance is kept as legal evidence.
+The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.
 
 ---
 

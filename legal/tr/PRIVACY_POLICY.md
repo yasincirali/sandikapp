@@ -1,8 +1,8 @@
 # Gizlilik Politikası — sandık
 
-**Yürürlük tarihi:** 4 Ekim 2026
-**Son güncelleme:** 4 Ekim 2026
-**Sürüm:** 1.2
+**Yürürlük tarihi:** 5 Ekim 2026
+**Son güncelleme:** 5 Ekim 2026
+**Sürüm:** 1.3
 
 ---
 
@@ -155,9 +155,10 @@ Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), KVK Kurul
 | Kayıt hunisi adımları | 400 gün |
 | Hata raporları (Crashlytics) | 90 gün |
 | Kullanım istatistikleri (Firebase Analytics) | Firebase'deki saklama ayarı kadar, en fazla 14 ay |
-| Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı) | Supabase Auth güvenlik kaydında tutulur; uygulama bu kayıt için otomatik silme süresi tanımlamamıştır |
+| Anonim hesap silme kaydı (hesap kimliğinin tek yönlü özeti, e-posta alan adı, silme zamanı ve nedeni) | Silmeden sonra **3 yıl** (TBK Madde 146 zamanaşımı); süresi dolanlar her gün otomatik silinir |
+| Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı; Supabase Auth güvenlik kaydı) | 90 gün; eskileri her gün otomatik silinir |
 
-Hesabınızı uygulamadan sildiğinizde hesabınız ve girdiğiniz bütün veriler canlı veritabanından **hemen** silinir. İstisnalar: yasal metin onay kayıtları (3 yıl), yapısal hata kayıtları ve kayıt hunisi adımları (hesapla bağı kaldırılarak kendi sürelerinin sonuna kadar), Firebase'deki hata raporları ve kullanım istatistikleri (kendi sürelerinin sonuna kadar), oturum açma güvenlik kaydı ve hesap kimliğinizin tek yönlü özeti ile e-posta alan adınızdan oluşan anonim silme kaydı.
+Hesabınızı uygulamadan sildiğinizde hesabınız ve girdiğiniz bütün veriler canlı veritabanından **hemen** silinir. İstisnalar: yasal metin onay kayıtları (3 yıl), yapısal hata kayıtları ve kayıt hunisi adımları (hesapla bağı kaldırılarak kendi sürelerinin sonuna kadar), Firebase'deki hata raporları ve kullanım istatistikleri (kendi sürelerinin sonuna kadar), oturum açma güvenlik kaydı (90 gün) ve hesap kimliğinizin tek yönlü özeti ile e-posta alan adınızdan oluşan anonim silme kaydı (3 yıl).
 
 ---
 
@@ -231,7 +232,7 @@ Uygulama mobil ortamda çalıştığı için web çerezleri **kullanılmaz**. Ci
 
 **sandık** bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal ve grafikler bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.
 
-Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya Google ile ilk girişte tam metni ayrıca gösterilir. Onayın kaydı yasal kanıt olarak saklanır.
+Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 

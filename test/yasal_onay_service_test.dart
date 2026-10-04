@@ -9,6 +9,7 @@ import 'package:portfoy_takip/services/yasal_onay_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
+import 'helpers/yasal_migration.dart';
 
 /// `YasalOnayService` — yasal metin onay kaydı (0102, bayrak
 /// `yasal_onay_kaydi`) ve girişteki yeniden onay kapısı (bayrak
@@ -601,6 +602,125 @@ void main() {
       final d = await YasalOnayService.instance.kapiDurumu('u1');
       expect(d.gerekli, isTrue);
       expect(d.eksik, contains(kosullar.tur));
+    });
+  });
+
+  group('0105: belgeler 1.2 → 1.3, çift onay yok (gerçek migration sürümleri)',
+      () {
+    // Sunucu = migration dosyaları: 0105 dağıtılınca sunucuda 1.1, 1.2 VE
+    // 1.3 satırları birlikte durur (`yasal_metinler` değişmez).
+    final sunucu = [for (final m in migrationMetinleri()) (m.tur, m.surum)];
+    final sunucu0105Oncesi = [
+      for (final m in migrationMetinleri())
+        if (m.dosya.compareTo('0105') < 0) (m.tur, m.surum),
+    ];
+    final belgeler = [for (final b in YasalBelge.values) b.tur];
+
+    // Yayındaki 1.2 istemcisinin taşıdığı sürümler (0103/0104 sürümü).
+    final ikiNoktaIki = <String, String>{
+      for (final t in belgeler) t: '1.2',
+      YasalTur.kayitTekKutu: YasalMetinKatalogu.kutuSurumu,
+      YasalTur.kayitKutuKosullar: YasalMetinKatalogu.kutuSurumu,
+      YasalTur.kayitKutuRiza: YasalMetinKatalogu.kutuSurumu,
+    };
+
+    void kapiAcik() => RemoteConfigService.testAcik = {
+          'yasal_onay_kaydi',
+          'yasal_kapi_en_yeni',
+        };
+
+    test('bu derleme dört belgede 1.3 taşır; 0105 1.3\'ü ekler, 1.2 kalır', () {
+      for (final b in YasalBelge.values) {
+        expect(b.surum, '1.3', reason: b.kaynak);
+        expect(sunucu, contains((b.tur, '1.3')), reason: '${b.tur}/1.3');
+        expect(sunucu, contains((b.tur, '1.2')),
+            reason: '${b.tur}/1.2 yerinde kalmalı (eski onaylar)');
+        expect(sunucu0105Oncesi, isNot(contains((b.tur, '1.3'))));
+      }
+    });
+
+    test('0105 öncesi sunucu + 1.2 istemci: eski değil (kapı normal)', () {
+      expect(
+          YasalOnayService.uygulamaEski(sunucu0105Oncesi,
+              uygulamaSurumleri: ikiNoktaIki),
+          isFalse);
+    });
+
+    test('0105 dağıtıldı + 1.2 istemci: ESKİ — kapı açılmaz, 1.2 onaylatılmaz',
+        () {
+      expect(
+          YasalOnayService.uygulamaEski(sunucu,
+              uygulamaSurumleri: ikiNoktaIki),
+          isTrue);
+    });
+
+    test('0105 dağıtıldı + bu (1.3) istemci: eski değil', () {
+      expect(YasalOnayService.uygulamaEski(sunucu), isFalse);
+    });
+
+    test('1.2 onaylı kullanıcı, güncel istemci: dört belge TEK seferde 1.3',
+        () async {
+      kapiAcik();
+      YasalOnayService.sunucuSurumTesti = () async => sunucu;
+      sorgu(() => [
+            for (final t in belgeler) (t, '1.2'),
+            (YasalTur.kayitKutuKosullar, YasalMetinKatalogu.kutuSurumu),
+            (YasalTur.kayitKutuRiza, YasalMetinKatalogu.kutuSurumu),
+          ]);
+      final d = await YasalOnayService.instance.kapiDurumu('u1');
+      expect(d.gerekli, isTrue);
+      expect(d.eksik, belgeler.toSet(), reason: 'kutular tamam, belgeler eksik');
+      expect(d.guncellemeMi, isTrue, reason: '"Neler değişti" kartı görünür');
+
+      expect(
+          await YasalOnayService.instance.kapiOnaylariniKaydet(
+            userId: 'u1',
+            durum: d,
+            belgeDegiskenleri: const {},
+            acilanBelgeler: belgeler.toSet(),
+            sonunaKadarOkunanlar: belgeler.toSet(),
+            locale: 'tr_TR',
+          ),
+          KapiKayitSonucu.tamam);
+      expect(cagrilar, hasLength(1), reason: 'tek çağrı');
+      final ogeler = [
+        for (final o in cagrilar.single['p_ogeler'] as List) o as Map
+      ];
+      expect({for (final o in ogeler) o['tur']: o['surum']},
+          {for (final t in belgeler) t: '1.3'});
+      for (final o in ogeler) {
+        expect((o['degiskenler'] as Map)['onceki_surum'], '1.2');
+      }
+      // Onaydan sonra kapı kapalı: ikinci kez sorulmaz.
+      expect(
+          (await YasalOnayService.instance.kapiDurumu('u1')).gerekli, isFalse);
+    });
+
+    test('1.1 onaylı (1.2\'yi atlamış) kullanıcı: ara sürüm sorulmaz, 1.3',
+        () async {
+      kapiAcik();
+      YasalOnayService.sunucuSurumTesti = () async => sunucu;
+      sorgu(() => [
+            (YasalTur.kosullar, '1.1'),
+            (YasalTur.gizlilik, '1.1'),
+            (YasalTur.kvkk, '1.1'),
+            (YasalTur.kayitKutuKosullar, YasalMetinKatalogu.kutuSurumu),
+            (YasalTur.kayitKutuRiza, YasalMetinKatalogu.kutuSurumu),
+          ]);
+      final d = await YasalOnayService.instance.kapiDurumu('u1');
+      expect(d.eksik, belgeler.toSet());
+      await YasalOnayService.instance.kapiOnaylariniKaydet(
+        userId: 'u1',
+        durum: d,
+        belgeDegiskenleri: const {},
+        acilanBelgeler: const {},
+        locale: 'tr_TR',
+      );
+      final surumler = {
+        for (final o in cagrilar.single['p_ogeler'] as List)
+          (o as Map)['surum'],
+      };
+      expect(surumler, {'1.3'}, reason: '1.2 hiç onaylatılmaz');
     });
   });
 }

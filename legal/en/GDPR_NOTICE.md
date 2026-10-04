@@ -1,8 +1,8 @@
 # GDPR Notice — sandık
 
-**Effective date:** October 4, 2026
-**Last updated:** October 4, 2026
-**Version:** 1.1
+**Effective date:** October 5, 2026
+**Last updated:** October 5, 2026
+**Version:** 1.2
 
 > This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
@@ -96,7 +96,7 @@ You may request confirmation that we process your data and obtain a copy in a st
 You may correct inaccurate or incomplete data.
 
 ### 7.3 Right to Erasure / "Right to be Forgotten" (Art. 17)
-You may request deletion. In-app deletion takes effect immediately. Legal text acceptance records are kept for 3 years after deletion (Turkish Code of Obligations Art. 146 limitation period); other records kept after deletion are listed in Privacy Policy §7.
+You may request deletion. In-app deletion takes effect immediately. Legal text acceptance records and the anonymous deletion record (a one-way hash of your account ID and your email domain) are kept for 3 years after deletion (Turkish Code of Obligations Art. 146 limitation period); the sign-in security log (IP, device/browser) is kept for 90 days. Both are deleted automatically when their period ends; other records kept after deletion are listed in Privacy Policy §7.
 
 **In-app:** Profile → Settings → Delete Account.
 **Web:** `https://yasincirali.github.io/sandikapp/data-request`
