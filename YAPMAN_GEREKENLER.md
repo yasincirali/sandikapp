@@ -29,6 +29,12 @@ Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma
       günde ~16 olay, fonların %21'inde en az bir olay; bunların 275'i
       bildirim kademesinde (≥ %5, ≥ ₺25 mn, penceredeki en büyük akış;
       203 fon). Oranların paydası akıştan önceki fon büyüklüğü. Eşikler `_shared/balina.ts`'te tek yerde.
+- [ ] **Hisse hacim radarı (B2):** aynı dağıtımda migration
+      `0104_hisse_hacim.sql` + fonksiyon `hacim-gozlem` (hedef `ikisi`; yeni
+      secret YOK, `PRICE_ALERTS_CRON_SECRET` paylaşılır). İlk doldurma tek
+      çağrı: `select public.trigger_hacim_gozlem();` (3 aylık seri tek
+      istekte gelir). Kontrol:
+      `select count(distinct ticker), max(tarih) from hisse_hacim_gunluk;`
 - [ ] **Haftanın özeti akış cümlesi** (kararın 2026-10-04: olay başına ayrı
       bildirim yok, Pazartesi özeti akışa değinir). `weekly-summary`
       fonksiyonunu da dağıt (hedef `ikisi`). Cümle KAPALI doğar; bayrağı

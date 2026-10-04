@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../providers/fon_akisi_provider.dart';
+import '../screens/hafta_ozeti_screen.dart';
 import '../services/fon_akisi.dart';
 import '../services/fon_karnesi.dart' show fonKoduOf;
 import '../theme/sandik.dart';
@@ -45,10 +46,16 @@ class ParaAkisiKarti extends ConsumerWidget {
     required this.tur,
     required this.ticker,
     this.dis = const EdgeInsets.only(bottom: SandikSpace.lg),
+    this.haftaBaglantisi = false,
   });
 
   final AssetType tur;
   final String ticker;
+
+  /// Kartın altında "Tüm fonlarımın haftası" bağlantısı. Yalnız kullanıcının
+  /// KENDİ varlığının sayfasında: o ekran tuttuğu fonları listeler; takip /
+  /// önizleme sayfasında (portföyde olmayan fon) bağlantı yanıltırdı.
+  final bool haftaBaglantisi;
 
   /// Kart çizildiğinde çevresine bırakılan boşluk; çizilmezse boşluk da yok.
   final EdgeInsetsGeometry dis;
@@ -209,6 +216,18 @@ class ParaAkisiKarti extends ConsumerWidget {
                   l10n.flowFootnote(gunAy.format(ozet.veriTarihi)),
                   style: t.bodySmall?.copyWith(color: c.text36),
                 ),
+                if (haftaBaglantisi)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: () => pushGuarded(
+                        context,
+                        adaptiveRoute<void>(
+                            builder: (_) => const HaftaOzetiScreen()),
+                      ),
+                      child: Text(l10n.weekLink),
+                    ),
+                  ),
               ],
             ),
           ),

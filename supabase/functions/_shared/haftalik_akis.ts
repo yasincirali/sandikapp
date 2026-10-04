@@ -125,7 +125,7 @@ export function haftalikAkisCumlesi(hareketler: FonHareketi[]): string | null {
 export function yalnizAkisMesaji(cumle: string): { title: string; body: string } {
   return {
     title: 'Haftanın özeti',
-    body: `${cumle} Ayrıntı fon sayfasında. Yatırım tavsiyesi değildir.`,
+    body: `${cumle} Yatırım tavsiyesi değildir.`,
   };
 }
 

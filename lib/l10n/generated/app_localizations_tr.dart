@@ -5837,4 +5837,96 @@ class AppLocalizationsTr extends AppLocalizations {
   String flowEventEvidenceMulti(String amount, String pct, String days) {
     return '$amount · fon büyüklüğüne oranı $pct · $days işlem günü üst üste';
   }
+
+  @override
+  String get weekTitle => 'Haftanın özeti';
+
+  @override
+  String get weekIntro =>
+      'Tuttuğun fonlarda son haftanın para akışı. Bir fona dokununca ayrıntısı açılır.';
+
+  @override
+  String get weekFundsUpper => 'FONLARINDA PARA AKIŞI';
+
+  @override
+  String weekRowRange(String label, String range) {
+    return '$label · $range';
+  }
+
+  @override
+  String get weekRowIn => 'Net giriş';
+
+  @override
+  String get weekRowOut => 'Net çıkış';
+
+  @override
+  String get weekRowFlat => 'Net akış';
+
+  @override
+  String get weekRowBigIn => 'Bu hafta büyük giriş var';
+
+  @override
+  String get weekRowBigOut => 'Bu hafta büyük çıkış var';
+
+  @override
+  String get weekEmptyNoData =>
+      'Gösterecek para akışı yok. Portföyünde yatırım ya da emeklilik fonu olduğunda ve verisi geldiğinde burada görünür.';
+
+  @override
+  String get weekFootnote =>
+      'Kaynak: TEFAS. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.';
+
+  @override
+  String get weekLink => 'Tüm fonlarımın haftası';
+
+  @override
+  String get volTitleUpper => 'HACİM RADARI';
+
+  @override
+  String volLastDay(String date) {
+    return 'Para hacmi · $date';
+  }
+
+  @override
+  String volVsAverage(String times) {
+    return 'Önceki 20 günün ortalamasının $times katı';
+  }
+
+  @override
+  String volPriceSameDay(String pct) {
+    return 'Aynı gün fiyat $pct';
+  }
+
+  @override
+  String get volChartCaption => 'Günlük para hacmi · son 20 işlem günü';
+
+  @override
+  String volChartSemantics(String amount) {
+    return 'Son 20 işlem gününün günlük para hacmi. Son gün $amount.';
+  }
+
+  @override
+  String get volExplain =>
+      'Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.';
+
+  @override
+  String get volEventsTitle => 'Olağandışı hacim günleri · son 30 gün';
+
+  @override
+  String volEventTitle(String date) {
+    return 'Olağandışı hacim · $date';
+  }
+
+  @override
+  String volEventEvidence(String amount, String times, String pct) {
+    return '$amount · ortalamanın $times katı · fiyat $pct';
+  }
+
+  @override
+  String get volNoEvents => 'Son 30 günde olağandışı hacim günü yok.';
+
+  @override
+  String volFootnote(String date) {
+    return 'Kaynak: Yahoo Finance gün sonu verisi · veri tarihi $date. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.';
+  }
 }

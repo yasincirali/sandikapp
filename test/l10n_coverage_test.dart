@@ -74,6 +74,8 @@ void main() {
     'lib/widgets/fiyat_grafigi.dart': 0,
     'lib/widgets/fon_karnesi_karti.dart': 0,
     'lib/widgets/para_akisi_karti.dart': 0,
+    'lib/widgets/hacim_radari_karti.dart': 0,
+    'lib/screens/hafta_ozeti_screen.dart': 0,
     'lib/widgets/sozlesme_formu_ortak.dart': 0,
     'lib/widgets/sozlesme_karti.dart': 0,
     'lib/widgets/alarm_kur_sheet.dart': 0,

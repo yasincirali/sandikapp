@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/crash_reporter.dart';
 import '../services/fon_akisi.dart';
+import '../services/hisse_hacmi.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 
@@ -47,6 +48,35 @@ final fonAkisiProvider =
     return ozet;
   } catch (e, st) {
     CrashReporter.report(e, st, reason: 'fonAkisiProvider');
+    return null;
+  }
+});
+
+/// Bir BIST hissesinin hacim özeti (Balina B2). Kararlar `fonAkisiProvider`
+/// ile aynı: `null` = kart çizilmez, hata Crashlytics'e non-fatal, 30 dk tutma.
+final hisseHacmiProvider =
+    FutureProvider.autoDispose.family<HacimOzeti?, String>((ref, sembol) async {
+  final simdi = DateTime.now();
+  final baslangic = simdi.subtract(hacimSorguPenceresi);
+  try {
+    final svc = SupabaseService.instance;
+    final (gunSatirlari, olaySatirlari) = await (
+      svc.hisseHacimGunleri(sembol, baslangic: baslangic),
+      svc.hacimOlaylari(sembol, baslangic: baslangic),
+    ).wait;
+    final ozet = hacimOzeti(
+      gunSatirlari.map(HacimGunu.satirdan).nonNulls.toList(),
+      olaySatirlari.map(HacimOlayi.satirdan).nonNulls.toList(),
+      simdi: simdi,
+    );
+    if (ozet != null) {
+      final link = ref.keepAlive();
+      final zamanlayici = Timer(const Duration(minutes: 30), link.close);
+      ref.onDispose(zamanlayici.cancel);
+    }
+    return ozet;
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'hisseHacmiProvider');
     return null;
   }
 });

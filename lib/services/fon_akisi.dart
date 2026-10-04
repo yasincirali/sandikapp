@@ -360,6 +360,16 @@ FonAkisOzeti? fonAkisOzeti(
   );
 }
 
+/// Son haftaya (kartın başlığındaki hafta) düşen ilk büyük hareket; yoksa
+/// null. "Haftanın özeti" satırındaki rozet ve sıralama buna bakar.
+FonBalinaOlayi? sonHaftaOlayi(FonAkisOzeti ozet) {
+  final haftaBasi = ozet.haftalar.last.baslangic;
+  for (final o in ozet.olaylar) {
+    if (!o.tarih.isBefore(haftaBasi)) return o;
+  }
+  return null;
+}
+
 /// Son [gun] günün akışı. Dönem başı = hedef günde ya da hemen öncesindeki
 /// satır; o satırdan sonraki HER günün akışı bilinmeli — eksik gün varsa
 /// toplam eksik olurdu, oran verilmez (uydurma yok).

@@ -5889,4 +5889,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String flowEventEvidenceMulti(String amount, String pct, String days) {
     return '$amount · $pct of fund size · $days trading days in a row';
   }
+
+  @override
+  String get weekTitle => 'This week';
+
+  @override
+  String get weekIntro =>
+      'Money flow over the latest week in the funds you hold. Tap a fund for details.';
+
+  @override
+  String get weekFundsUpper => 'MONEY FLOW IN YOUR FUNDS';
+
+  @override
+  String weekRowRange(String label, String range) {
+    return '$label · $range';
+  }
+
+  @override
+  String get weekRowIn => 'Net inflow';
+
+  @override
+  String get weekRowOut => 'Net outflow';
+
+  @override
+  String get weekRowFlat => 'Net flow';
+
+  @override
+  String get weekRowBigIn => 'Large inflow this week';
+
+  @override
+  String get weekRowBigOut => 'Large outflow this week';
+
+  @override
+  String get weekEmptyNoData =>
+      'No money flow to show. It appears here once you hold a mutual or pension fund and its data arrives.';
+
+  @override
+  String get weekFootnote =>
+      'Source: TEFAS. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio\'s weekly return is under Performance, Summary. Not investment advice.';
+
+  @override
+  String get weekLink => 'My funds this week';
+
+  @override
+  String get volTitleUpper => 'VOLUME RADAR';
+
+  @override
+  String volLastDay(String date) {
+    return 'Traded value · $date';
+  }
+
+  @override
+  String volVsAverage(String times) {
+    return '$times× the average of the previous 20 days';
+  }
+
+  @override
+  String volPriceSameDay(String pct) {
+    return 'Price that day $pct';
+  }
+
+  @override
+  String get volChartCaption => 'Daily traded value · last 20 trading days';
+
+  @override
+  String volChartSemantics(String amount) {
+    return 'Daily traded value for the last 20 trading days. Latest day $amount.';
+  }
+
+  @override
+  String get volExplain =>
+      'Traded value is the total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in or out.';
+
+  @override
+  String get volEventsTitle => 'Unusual volume days · last 30 days';
+
+  @override
+  String volEventTitle(String date) {
+    return 'Unusual volume · $date';
+  }
+
+  @override
+  String volEventEvidence(String amount, String times, String pct) {
+    return '$amount · $times× the average · price $pct';
+  }
+
+  @override
+  String get volNoEvents => 'No unusual volume days in the last 30 days.';
+
+  @override
+  String volFootnote(String date) {
+    return 'Source: Yahoo Finance end-of-day data · as of $date. This data cannot show who bought or sold. Not investment advice.';
+  }
 }

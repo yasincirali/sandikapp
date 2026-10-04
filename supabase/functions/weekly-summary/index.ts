@@ -781,7 +781,11 @@ Deno.serve(async (request) => {
           body: mesaj.body,
           // `ay` (2026-10-01): bildirimin anlattığı takvim ayı. Eski
           // sürümler alanı yok sayar.
-          data: aylik ? { sent_on: bugun, ay: ay.donem.slice(0, 7) } : { sent_on: bugun },
+          data: aylik
+            ? { sent_on: bugun, ay: ay.donem.slice(0, 7) }
+            // `akis` (2026-10-04): mesaj fon akışına değiniyor; istemci
+            // dokunuşta "Haftanın özeti"ni açar. Eski sürümler yok sayar.
+            : akisCumlesi !== null ? { sent_on: bugun, akis: '1' } : { sent_on: bugun },
         }),
         cankaydi,
       );
@@ -796,6 +800,8 @@ Deno.serve(async (request) => {
         channelId: CHANNEL_ID,
         data: aylik
           ? { type: bildirimTipi, sent_on: bugun, ay: ay.donem.slice(0, 7) }
+          : akisCumlesi !== null
+          ? { type: bildirimTipi, sent_on: bugun, akis: '1' }
           : { type: bildirimTipi, sent_on: bugun },
       });
 

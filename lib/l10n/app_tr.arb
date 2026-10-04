@@ -4168,5 +4168,95 @@
         "type": "String"
       }
     }
+  },
+  "weekTitle": "Haftanın özeti",
+  "weekIntro": "Tuttuğun fonlarda son haftanın para akışı. Bir fona dokununca ayrıntısı açılır.",
+  "weekFundsUpper": "FONLARINDA PARA AKIŞI",
+  "weekRowRange": "{label} · {range}",
+  "@weekRowRange": {
+    "description": "Haftanın özeti satırı: 'Net çıkış · 28 Eyl - 2 Eki'.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "weekRowIn": "Net giriş",
+  "weekRowOut": "Net çıkış",
+  "weekRowFlat": "Net akış",
+  "weekRowBigIn": "Bu hafta büyük giriş var",
+  "weekRowBigOut": "Bu hafta büyük çıkış var",
+  "weekEmptyNoData": "Gösterecek para akışı yok. Portföyünde yatırım ya da emeklilik fonu olduğunda ve verisi geldiğinde burada görünür.",
+  "weekFootnote": "Kaynak: TEFAS. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet'te. Yatırım tavsiyesi değildir.",
+  "weekLink": "Tüm fonlarımın haftası",
+  "volTitleUpper": "HACİM RADARI",
+  "volLastDay": "Para hacmi · {date}",
+  "@volLastDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "volVsAverage": "Önceki 20 günün ortalamasının {times} katı",
+  "@volVsAverage": {
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "volPriceSameDay": "Aynı gün fiyat {pct}",
+  "@volPriceSameDay": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "volChartCaption": "Günlük para hacmi · son 20 işlem günü",
+  "volChartSemantics": "Son 20 işlem gününün günlük para hacmi. Son gün {amount}.",
+  "@volChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "volExplain": "Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.",
+  "volEventsTitle": "Olağandışı hacim günleri · son 30 gün",
+  "volEventTitle": "Olağandışı hacim · {date}",
+  "@volEventTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "volEventEvidence": "{amount} · ortalamanın {times} katı · fiyat {pct}",
+  "@volEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "volNoEvents": "Son 30 günde olağandışı hacim günü yok.",
+  "volFootnote": "Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
+  "@volFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   }
 }

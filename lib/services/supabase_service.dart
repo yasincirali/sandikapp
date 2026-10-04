@@ -169,6 +169,54 @@ class SupabaseService {
           .from('balina_olay')
           .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
           .eq('ticker', ticker)
+          // Tablo 0104'ten beri hisse olaylarını da taşıyor.
+          .inFilter('tur', ['fon_giris', 'fon_cikis'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  /// BIST hissesinin ([sembol] 'THYAO.IS') [baslangic]'tan bu yana günlük
+  /// kapanış ve para hacmi (HAM, artan tarih). Ayrıştırma `hisse_hacmi.dart`.
+  /// Tablo oturum açmış herkese okunur; yazma yalnız `hacim-gozlem` (0104).
+  Future<List<Map<String, dynamic>>> hisseHacimGunleri(
+    String sembol, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.hisseHacimGunleri',
+      table: 'hisse_hacim_gunluk',
+      op: 'SELECT',
+      request: {'ticker': sembol, 'tarih_gte': gun},
+      call: () => _db
+          .from('hisse_hacim_gunluk')
+          .select('tarih, kapanis, para_hacmi')
+          .eq('ticker', sembol)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// [sembol]'ün olağandışı hacim günleri (HAM). `balinaOlaylari`'ndan ayrı:
+  /// hisse olayının sütunları farklı (kat ve fiyat değişimi).
+  Future<List<Map<String, dynamic>>> hacimOlaylari(
+    String sembol, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.hacimOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': sembol, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
+          .eq('ticker', sembol)
+          .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus'])
           .gte('tarih', gun)
           .order('tarih', ascending: false)
           .limit(50),
