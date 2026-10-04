@@ -32,6 +32,30 @@ enum ReviewAni {
   /// Toplu ekleme (CSV / sepet) hatasız bittikten sonra. Aracı kurumdan
   /// taşınan bir portföyün tek seferde girmesi rahatlama anıdır.
   topluEkleme,
+
+  // ── 2026-10-04 genişletmesi (kullanıcı kararı: "daha fazla senaryoda
+  // çıkarmalıyız"). İlk üç an nadirdi: kilometre taşı ayda bir, paylaşım
+  // ve toplu ekleme çoğu kullanıcıda hiç yaşanmıyor — istem pratikte
+  // görünmüyordu. Aşağıdakiler de kullanıcının KENDİ başlattığı ve olumlu
+  // biten eylemlerdir; pasif an (açılış, ekran görüntüleme) yine yok.
+
+  /// Tekli varlık ekleme başarıyla bitip ekran kapandıktan sonra. En sık
+  /// yaşanan "iş bitti" anı; sıklık kapıları (erteleme, tavan) aşırıya
+  /// kaçmasını önler.
+  varlikEklendi,
+
+  /// Portföy hedefi konduktan sonra. Hedef koyan kullanıcı uygulamayla
+  /// uzun vadeli plan yapıyor demektir.
+  hedefKondu,
+
+  /// Fiyat alarmı başarıyla kurulduktan sonra.
+  alarmKuruldu,
+
+  /// Temettü kaydedildikten sonra — eline para geçmiş kullanıcı.
+  temettuKaydi,
+
+  /// Yıllık özet ("sandık Özeti") kapatıldıktan sonra, yıl artıdaysa.
+  ozetGoruldu,
 }
 
 /// Kullanıcının istemle geçmişte ne yaptığı — karar fonksiyonunun girdisi.
@@ -70,23 +94,27 @@ class ReviewDurumu {
 /// 2. **Yeni kullanıcıya sorulmaz:** kurulumdan en az [minKurulumGunu]
 ///    gün ve en az [minAktifGun] aktif gün. Üçüncü günde fikir oluşmamıştır;
 ///    ilk hafta kaybı yaşayanın puanı da uygulamaya değil piyasaya olur.
-/// 3. **Portföy zarardaysa sorulmaz.** Kullanıcı o an uygulamaya değil
-///    ekrandaki kırmızıya bakıyor; kırmızı ekranda istenen puan kırmızı olur.
+/// 3. **Portföy belirgin zarardaysa sorulmaz.** Kullanıcı o an uygulamaya
+///    değil ekrandaki kırmızıya bakıyor; kırmızı ekranda istenen puan kırmızı
+///    olur. Eşik [maxZararOrani]: 2026-10-04'e kadar "bir kuruş zarar"
+///    bile kapıyı kapatıyordu ve düşen piyasada kullanıcıların çoğu hiç
+///    görmüyordu; küçük eksi olağan dalgalanmadır, engel sayılmaz.
 ///    Hesaplanamıyorsa (null) engel sayılmaz — anın kendisi olumlu sinyaldir.
-/// 4. **"Sonra" 30 gün sonra tekrar** ([ertelemeAraligi]) — ama toplam
-///    [maxSorulma] kezden fazla sorulmaz. Apple'ın kendi tavanı da yılda
-///    üçtür; üç kez "Sonra" diyen kullanıcı "hayır" demiştir.
+/// 4. **"Sonra" [ertelemeAraligi] sonra tekrar** — ama toplam [maxSorulma]
+///    kezden fazla sorulmaz. Apple'ın yılda üç tavanı SİSTEM kartı içindir
+///    ve onu işletim sistemi uygular; bizim ön sorumuz o kotayı harcamaz
+///    (sistem kartı yalnızca "Evet" denince, bir kez istenir).
 /// 5. **Sorun bildiren kullanıcıya [geriBildirimSonrasi] boyunca sorulmaz.**
 ///    Sorunu çözülmeden puan istemek, mağazada yazılı şikâyete dönüşür.
 /// 6. **Bir kez aktif gün başına en fazla bir istem** — aynı gün iki mutlu
 ///    an art arda gelirse (paylaşım + toplu ekleme) ikincisi sessiz kalır;
-///    kural 4 zaten 30 günü kapsar, bu satır yalnızca aynı günü belirtir.
+///    kural 4 zaten erteleme aralığını kapsar, bu satır aynı günü belirtir.
 bool degerlendirmeSorulsunMu({
   required ReviewAni an,
   required ReviewDurumu durum,
   required int kurulumGunu,
   required int aktifGun,
-  required double? karZararTRY,
+  required double? karZararOrani,
   required DateTime simdi,
 }) {
   // (1) Zaten değerlendirdi.
@@ -97,7 +125,10 @@ bool degerlendirmeSorulsunMu({
   if (aktifGun < ReviewPromptService.minAktifGun) return false;
 
   // (3) Kırmızı ekran.
-  if (karZararTRY != null && karZararTRY < 0) return false;
+  if (karZararOrani != null &&
+      karZararOrani < -ReviewPromptService.maxZararOrani) {
+    return false;
+  }
 
   // (4) Tavan ve erteleme aralığı.
   if (durum.sorulmaSayisi >= ReviewPromptService.maxSorulma) return false;
@@ -135,11 +166,19 @@ class ReviewPromptService {
   ReviewPromptService._();
   static final ReviewPromptService instance = ReviewPromptService._();
 
-  static const int minKurulumGunu = 3;
-  static const int minAktifGun = 3;
-  static const int maxSorulma = 3;
-  static const Duration ertelemeAraligi = Duration(days: 30);
+  // 2026-10-04 gevşetmesi (kullanıcı kararı: "daha kolaylaştırmalıyız").
+  // Önceki değerler 3 gün / 3 aktif gün / 3 istem / 30 gün / sıfır zarar
+  // toleransıydı; nadir tetikleyicilerle birleşince istem neredeyse hiç
+  // görünmüyordu. İlk gün yine sorulmaz: fikir oluşmadan istenen puan
+  // uygulamaya değil ilk izlenime verilir.
+  static const int minKurulumGunu = 2;
+  static const int minAktifGun = 2;
+  static const int maxSorulma = 5;
+  static const Duration ertelemeAraligi = Duration(days: 14);
   static const Duration geriBildirimSonrasi = Duration(days: 90);
+
+  /// Toplam zarar maliyetin bu oranını aşarsa sorulmaz (0.10 = %10).
+  static const double maxZararOrani = 0.10;
 
   /// App Store kimliği — `openStoreListing` iOS'ta bunu ister
   /// (bkz. memory `app_store_arama_sandik`).
@@ -178,9 +217,10 @@ class ReviewPromptService {
       durum: d,
       kurulumGunu: await rt.daysSinceInstall(),
       aktifGun: await rt.activeDayCount(),
-      karZararTRY: state.assets.isEmpty
+      // Maliyet yoksa (boş portföy, yalnız bedelsiz kalem) oran tanımsız.
+      karZararOrani: state.assets.isEmpty || state.totalCost <= 0
           ? null
-          : state.totalValue - state.totalCost,
+          : (state.totalValue - state.totalCost) / state.totalCost,
       simdi: now(),
     );
   }

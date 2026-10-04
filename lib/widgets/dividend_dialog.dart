@@ -13,8 +13,10 @@ import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/review_prompt_service.dart';
 import '../services/temettu_gecmisi.dart';
 import 'custom_loading_indicator.dart';
+import 'review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 
 /// Nakit temettü kaydı.
@@ -67,6 +69,11 @@ Future<void> showDividendDialog(
   if (oneri != null) {
     unawaited(AnalyticsService.instance.logDividendSuggestion(
         action: kaydedildi == true ? 'recorded' : 'dismissed'));
+  }
+  // Temettü kaydedildi — eline para geçmiş kullanıcı; diyalog kapandıktan
+  // sonra sorulur. Karar ve sıklık `ReviewPromptService`'te.
+  if (kaydedildi == true && context.mounted) {
+    await ReviewPromptSheet.belkiGoster(context, ReviewAni.temettuKaydi);
   }
 }
 

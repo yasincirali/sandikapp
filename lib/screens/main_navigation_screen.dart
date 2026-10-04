@@ -8,6 +8,7 @@ import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmKurAkisi;
+import '../widgets/review_prompt_sheet.dart';
 import '../widgets/tour_anchor.dart';
 import 'home_screen.dart';
 import 'portfolio_screen.dart';
@@ -19,6 +20,7 @@ import '../services/tazelik_ritmi.dart';
 import '../services/crash_reporter.dart';
 import '../services/notification_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/review_prompt_service.dart';
 import '../l10n/l10n.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
@@ -270,6 +272,23 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ref.read(portfolioProvider.notifier).refreshPrices(),
       reason: 'MainNavigation.refreshPrices',
     );
+
+    // Değerlendirme istemi (`ReviewAni.varlikEklendi`, 2026-10-04): kayıt
+    // bitti, kullanıcı yeni satırını Portföy'de görüyor — "iş tamam" anı.
+    // Bekleme yüzey geçişinin ÜÇ katı: toplu eklemenin kendi istemi
+    // (`topluEkleme`, iki kat bekler) önce davransın ki an doğru adla
+    // ölçülsün; o gösterildiyse buradaki çağrı servis kapısında susar.
+    if (added == true || added is AlarmAdayi) {
+      final bekle = SandikMotion.surfaceOf(context) * 3;
+      CrashReporter.arkaPlan(
+        () async {
+          await Future<void>.delayed(bekle);
+          if (!mounted) return;
+          await ReviewPromptSheet.belkiGoster(context, ReviewAni.varlikEklendi);
+        }(),
+        reason: 'main_navigation.reviewPrompt',
+      );
+    }
   }
 
   Future<void> _confirmExit() async {
