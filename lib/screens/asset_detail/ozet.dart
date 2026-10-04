@@ -107,7 +107,8 @@ extension _DetayOzet on _AssetDetailScreenState {
     await Future.wait([
       for (final p in _periods)
         if (p.days != secili && !_donemSerileri.containsKey(p.days))
-          _donemSerisi([birim], p.days).then((b) {
+          _donemSerisi([birim], p.days).then((b) async {
+            await _sahipSerisiYukle(p.days);
             if (!mounted) return;
             // Açılış kapısı henüz açılmadıysa yalnız kaydet: kapının tek
             // `setState`'i hepsini birlikte çizer. Eskiden altı dönemin her
@@ -178,8 +179,13 @@ extension _DetayOzet on _AssetDetailScreenState {
     if (u == null || u.firstTs == u.lastTs) return null;
     // Son = grafiğin sağ ucu (canlı birim fiyat).
     final son = canliBirim > 0 ? canliBirim : u.last;
+    // BES: tutar SAHİBİN serisinden (açılıştan önce düz) — Performans
+    // dökümüyle aynı sayı; yüzde fonun gerçek hareketi olarak kalır.
+    final tutarSerisi =
+        _sahipSerisiGerek && days != 0 ? _sahipSerileri[days] : seri;
+    if (tutarSerisi == null) return null;
     final tutar = PeriodSummaryService.birimPiyasaEtkisi(
-      birimSeri: seri,
+      birimSeri: tutarSerisi,
       lotlar: _seriDefteri,
       start: start,
       end: end,

@@ -55,6 +55,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
     // Üçü birlikte: dönem başı (`_donemIlk`) kalırsa BUGÜN kartı eski dönem
     // başından yeni birim değere yüzde yazmaya devam eder.
     _donemSerileri.clear();
+    _sahipSerileri.clear();
     _donemIlk.clear();
     _donemIstatistikleri.clear();
     _guncelle(() {

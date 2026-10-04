@@ -155,12 +155,10 @@ void main() {
   });
 
   // 2026-10-04 kullanıcı bildirimi: Performans 1H dökümünde "BES › KED
-  // +%1,55", aynı fonun varlık ekranı −%1,12. Varlık ekranı serisini
-  // `FiyatKaynagi.birimVarlik` ile çekiyor; sentetik lot `sozlesmeId`
-  // taşımadığı için açılış kuralı uygulanmıyor, açılıştan önceki günler
-  // fonun kendi serisiyle çiziliyordu. İki ekran aynı pencerede aynı
-  // yüzdeyi vermeli (Σ varlık == Performans tür filtresi).
-  test('varlık ekranının birim serisi de açılıştan önce düz', () async {
+  // +%1,55", aynı fonun varlık ekranı −%1,12. Karar: varlık ekranının
+  // grafiği ve yüzdesi FONUN gerçek serisi (ürün), dönem TUTARI sahibin
+  // serisinden (`acilisKurali: true`) — o Performans dökümüyle aynı.
+  test('birim seri: ürün gerçek seriyi, sahip düz çizgiyi izler', () async {
     final gunler = <(int, double)>[];
     final bas = DateTime(simdi.year, simdi.month, simdi.day)
         .subtract(const Duration(days: 60));
@@ -182,14 +180,19 @@ void main() {
             .total;
 
     final pozisyon = await seri(lot());
-    final birim = await seri(FiyatKaynagi.birimVarlik(lot()));
+    final sahip =
+        await seri(FiyatKaynagi.birimVarlik(lot(), acilisKurali: true));
+    final urun = await seri(FiyatKaynagi.birimVarlik(lot()));
     double yuzde(Map<int, double> m) {
       final k = m.keys.toList()..sort();
       return m[k.last]! / m[k.first]! - 1;
     }
 
-    expect(yuzde(birim), closeTo(yuzde(pozisyon), 1e-9),
-        reason: 'varlık ekranı ile Performans dökümü aynı yüzdeyi vermeli');
+    expect(yuzde(sahip), closeTo(yuzde(pozisyon), 1e-9),
+        reason: 'dönem tutarının serisi Performans dökümüyle aynı olmalı');
+    // Fon 60 günde her gün +%1: ürün serisi bunu açılıştan önce de taşır.
+    expect(yuzde(urun), closeTo(0.8167, 1e-3),
+        reason: 'grafik fonun gerçek hareketi, düz çizgi değil');
   });
 
   // 2026-10-04: varlık ekranında 1H/1A/3A "+%1,5", 6A/1Y/5Y "%0,0". Haftalık
