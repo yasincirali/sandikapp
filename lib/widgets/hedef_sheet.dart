@@ -12,7 +12,9 @@ import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
+import 'review_prompt_sheet.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 
@@ -39,6 +41,11 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
   await ref.read(saglayici.notifier).set(sonuc);
   // Kaç kişinin hedef kullandığı, kartın bu satırı hak edip etmediğini söyler.
   unawaited(AnalyticsService.instance.logGoalSet(amountTRY: sonuc));
+  // Hedef KONDUYSA (0 = hedef kaldırıldı, mutlu an değil) değerlendirme
+  // istemi; sheet kapandı, kullanıcı kartına döndü. Karar serviste.
+  if (sonuc > 0 && context.mounted) {
+    await ReviewPromptSheet.belkiGoster(context, ReviewAni.hedefKondu);
+  }
 }
 
 class _HedefSheet extends StatefulWidget {

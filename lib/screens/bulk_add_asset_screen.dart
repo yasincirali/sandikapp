@@ -272,9 +272,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       //
       // Değerlendirme istemi bu ekran KAPANDIKTAN sonra, kök navigator
       // bağlamında sorulur: kullanıcı portföyünde yeni satırları görürken.
-      // Üç ve üzeri varlık eşiği bilinçli — bir-iki kalemlik ekleme
-      // "aracı kurumdan taşıdım" rahatlaması değil, gündelik iştir.
-      final sayi = items.length;
+      // Varlık sayısı eşiği YOK (2026-10-04'e kadar ≥3'tü): tekli ekleme de
+      // artık bir an (`ReviewAni.varlikEklendi`), iki kalemlik sepeti
+      // dışarıda bırakmak tutarsız olurdu. Sıklığı servis kapıları sınırlar.
       if (mounted) {
         final rootCtx = Navigator.of(context, rootNavigator: true).context;
         // İKİ pop art arda (bu ekran → AddAssetScreen → sekmeler) bitsin,
@@ -283,11 +283,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         // ÖNCE okunur; sonrasında bu State'in bağlamı geçersiz.
         final bekle = SandikMotion.surfaceOf(context) * 2;
         Navigator.of(context).pop(true);
-        if (sayi >= 3) {
-          await Future<void>.delayed(bekle);
-          if (rootCtx.mounted) {
-            await ReviewPromptSheet.belkiGoster(rootCtx, ReviewAni.topluEkleme);
-          }
+        await Future<void>.delayed(bekle);
+        if (rootCtx.mounted) {
+          await ReviewPromptSheet.belkiGoster(rootCtx, ReviewAni.topluEkleme);
         }
       }
     } else {

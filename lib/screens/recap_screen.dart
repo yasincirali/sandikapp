@@ -9,7 +9,9 @@ import '../services/analytics_service.dart';
 import '../services/real_return_service.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/review_prompt_service.dart';
 import '../services/supabase_service.dart';
+import '../widgets/review_prompt_sheet.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/share_card.dart';
@@ -33,11 +35,18 @@ class RecapScreen extends StatefulWidget {
 
   const RecapScreen({super.key, required this.data, required this.year});
 
-  static Future<void> show(BuildContext context, RecapData d, int year) {
-    AnalyticsService.instance.logRecapViewed(period: d.period);
-    return Navigator.of(context).push(
-      adaptiveRoute(builder: (_) => RecapScreen(data: d, year: year)),
+  static Future<void> show(BuildContext context, RecapData d, int year) async {
+    unawaited(AnalyticsService.instance.logRecapViewed(period: d.period));
+    await Navigator.of(context).push(
+      adaptiveRoute<void>(builder: (_) => RecapScreen(data: d, year: year)),
     );
+    // Özet kapandı. Yıl artıdaysa değerlendirme istemi: kullanıcı az önce
+    // kendi iyi yılını izledi. Ekside ("zor bir yıl" sayfası) sorulmaz;
+    // değişim bilinmiyorsa da sorulmaz — olumlu olduğunu bilmiyoruz.
+    final degisim = d.changePct;
+    if (degisim != null && degisim >= 0 && context.mounted) {
+      await ReviewPromptSheet.belkiGoster(context, ReviewAni.ozetGoruldu);
+    }
   }
 
   @override

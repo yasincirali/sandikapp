@@ -105,6 +105,12 @@ neyin işe yaradığı bilinemez.
    Kapılar: kurulum ≥3 gün + ≥3 aktif gün; portföy zararda değil; "Sonra"
    30 gün; toplam 3 istem; "Bir sorun var" → destek maili + 90 gün sessiz.
    Analytics olayı `review_prompt` (`action` × `moment`).
+   **2026-10-04 genişletme (kullanıcı kararı — "daha fazla senaryoda, daha
+   kolay"):** yeni tetikleyiciler tekli varlık ekleme, hedef koyma, fiyat
+   alarmı kurma, temettü kaydı, artıda biten yıllık özetin kapanması; toplu
+   eklemede ≥3 eşiği kalktı. Kapılar gevşedi: kurulum ≥2 gün + ≥2 aktif gün;
+   zarar yalnız %10'u aşınca engel; "Sonra" 14 gün; toplam 5 istem. "Bir
+   sorun var" 90 gün aynı. Yukarıdaki değerler tarihsel kayıttır.
    **Kullanıcı kararı:** plandaki "ön soru yazma" uyarısına rağmen ön soru
    ("sandık'ı seviyor musun?" — Evet / Sonra / Bir sorun var) İSTENDİ ve
    kuruldu; gerekçe memnun olmayanı mağazaya değil desteğe yönlendirmek.
