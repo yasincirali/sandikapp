@@ -998,22 +998,19 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
 }
 
 /// Dönem kartının alt katındaki tek kalem: küçük büyük harfli etiket,
-/// altında tutar (ve varsa "· %x" eki). İki kalem yan yana eşit genişlikte
+/// altında tutar. Yüzde rozeti 2026-10-04'te manşete taşındı ("İkisi de
+/// getiri" kararı); bu kalem yalnızca tutar taşır. İki kalem yan yana eşit genişlikte
 /// durur; tutar dar ekranda satır kırmak yerine punto düşürür.
 class _DegisimKalemi extends StatelessWidget {
   const _DegisimKalemi({
     required this.etiket,
     required this.deger,
     required this.renk,
-    this.rozet,
   });
 
   final String etiket;
   final String deger;
   final Color renk;
-
-  /// Değerin yanındaki yüzde rozeti (piyasanın kattığı kalemi).
-  final Widget? rozet;
 
   @override
   Widget build(BuildContext context) {
@@ -1033,24 +1030,14 @@ class _DegisimKalemi extends StatelessWidget {
           ),
         ),
         const SizedBox(height: SandikSpace.xs),
-        Row(
-          children: [
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  deger,
-                  maxLines: 1,
-                  style: context.t.numSmall.copyWith(color: renk),
-                ),
-              ),
-            ),
-            if (rozet != null) ...[
-              const SizedBox(width: SandikSpace.sm),
-              rozet!,
-            ],
-          ],
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            deger,
+            maxLines: 1,
+            style: context.t.numSmall.copyWith(color: renk),
+          ),
         ),
       ],
     );
