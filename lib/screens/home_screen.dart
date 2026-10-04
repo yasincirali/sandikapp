@@ -7,6 +7,7 @@ import '../models/app_notification.dart';
 import '../models/price_alert_notification.dart';
 import '../models/bildirim_akisi.dart';
 import '../models/asset.dart';
+import '../models/ilk_varlik_secimi.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -18,12 +19,14 @@ import '../services/notification_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
+import '../widgets/ilk_varlik_secici.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
@@ -1903,6 +1906,19 @@ class _EmptyPortfolioCta extends StatelessWidget {
           textAlign: TextAlign.center,
           style: context.t.bodyMedium?.copyWith(color: context.c.text36),
         ),
+        // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): "Ne biriktiriyorsun?"
+        // çipleri birincil yol; aşağıdaki düğme diğer türler (kripto, emtia,
+        // mevduat, BES) için kalır. Rota ve dönüş eskisiyle aynı.
+        if (RemoteConfigService.instance.ilkVarlikKolay) ...[
+          const SizedBox(height: SandikSpace.lg),
+          IlkVarlikSecici(
+            onSec: (IlkVarlikSecimi s) => pushGuarded(
+              context,
+              adaptiveRoute<void>(
+                  builder: (_) => AddAssetScreen(hizliSecim: s)),
+            ),
+          ),
+        ],
         const SizedBox(height: SandikSpace.lg),
         SandikTappable(
           haptic: SandikHaptic.medium,
@@ -1930,7 +1946,10 @@ class _EmptyPortfolioCta extends StatelessWidget {
                   Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
                   const SizedBox(width: SandikSpace.sm),
                   Text(
-                    context.l10n.addFirstAsset,
+                    // Çipler varken bu düğme "diğer türler" yoludur.
+                    RemoteConfigService.instance.ilkVarlikKolay
+                        ? context.l10n.firstAssetOtherType
+                        : context.l10n.addFirstAsset,
                     style: context.t.bodyLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.c.amberText),

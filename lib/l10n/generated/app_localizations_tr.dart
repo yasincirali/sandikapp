@@ -3227,15 +3227,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID ile koru',
-        'touchId': 'Touch ID ile koru',
-        'biyometrik': 'Biyometrik kilitle koru',
-        'other': 'Ekran kilidiyle koru',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID ile koru',
+      'touchId': 'Touch ID ile koru',
+      'biyometrik': 'Biyometrik kilitle koru',
+      'other': 'Ekran kilidiyle koru',
+    });
     return '$_temp0';
   }
 
@@ -3266,15 +3263,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Face ID\'yi aç',
-        'touchId': 'Touch ID\'yi aç',
-        'biyometrik': 'Biyometrik kilidi aç',
-        'other': 'Uygulama kilidini aç',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Face ID\'yi aç',
+      'touchId': 'Touch ID\'yi aç',
+      'biyometrik': 'Biyometrik kilidi aç',
+      'other': 'Uygulama kilidini aç',
+    });
     return '$_temp0';
   }
 
@@ -5116,7 +5110,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'İlk alımından ($date) $end sonuna birikimin $change, enflasyon $cpi oldu.';
   }
 
@@ -5494,4 +5492,41 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get balanceChangeInclBuys => 'Birikim değişimi (alımlar dahil)';
+
+  @override
+  String get firstAssetPickTitle => 'Ne biriktiriyorsun?';
+
+  @override
+  String get firstAssetPickHint =>
+      'Seç, miktarını yaz; fiyat kendiliğinden gelir.';
+
+  @override
+  String get firstAssetGoldGram => 'Gram altın';
+
+  @override
+  String get firstAssetUsd => 'Dolar';
+
+  @override
+  String get firstAssetEur => 'Euro';
+
+  @override
+  String get firstAssetFund => 'Bir fon';
+
+  @override
+  String get firstAssetStock => 'Bir hisse';
+
+  @override
+  String get firstAssetOtherType => 'Başka bir tür ekle';
+
+  @override
+  String get addDetails => 'Ayrıntı ekle (komisyon, not)';
+
+  @override
+  String get addByTyping => 'Yazarak ekle';
+
+  @override
+  String get importFromStatement => 'Ekstreden aktar';
+
+  @override
+  String get orWithEmail => 'veya e-postayla';
 }

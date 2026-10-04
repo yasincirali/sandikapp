@@ -207,7 +207,34 @@ class RemoteConfigService {
     // MA20/LOG, derinlik metrikleri) gizler. Kapalıyken tur adımı tek
     // seçici, Başlangıç yalnızca bugünkü üç kartı gizler (eski davranış).
     'seviye_anketi': false,
+
+    // Sadeleştirme 2 (2026-10-04), liste madde 4: boş ana ekranda "Ne
+    // biriktiriyorsun?" çipleri (seç → miktar yaz → bitti), Varlık Ekle'de
+    // "Yazarak ekle" / "Ekstreden aktar" görünür düğmeleri ve komisyon + notun
+    // "Ayrıntı ekle" altına katlanması. Kapalıyken boş ekran ve form birebir
+    // eski.
+    'ilk_varlik_kolay': false,
   };
+
+  /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
+  /// Firebase'e dokunmadan açılır. Yalnız debug/profile derlemede okunur;
+  /// release'de (mağaza, TestFlight) HİÇ etkisi yok, uzak değer tek kaynak.
+  /// Neden: bayrak arkasındaki ekranı emülatörde görmek için Console'da kendi
+  /// cihazına koşul yazmak gerekiyordu; emülatörün Firebase kimliği her
+  /// sıfırlamada değişiyor.
+  static const _yerelAcikHam = String.fromEnvironment('RC_ACIK');
+  static final Set<String> _yerelAcik = kReleaseMode || _yerelAcikHam.isEmpty
+      ? const {}
+      : _yerelAcikHam.split(',').map((e) => e.trim()).toSet();
+
+  /// Widget testinde bayrak açmak için (Firebase testte ayağa kalkmaz).
+  @visibleForTesting
+  static Set<String> testAcik = {};
+
+  bool _bayrak(String anahtar) =>
+      testAcik.contains(anahtar) ||
+      _yerelAcik.contains(anahtar) ||
+      (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -351,12 +378,11 @@ class RemoteConfigService {
       _rc?.getBool('demo_mode_enabled') ??
       _defaults['demo_mode_enabled'] as bool;
 
-  bool get karsilamaTanitimi =>
-      _rc?.getBool('karsilama_tanitimi') ??
-      _defaults['karsilama_tanitimi'] as bool;
+  bool get karsilamaTanitimi => _bayrak('karsilama_tanitimi');
 
-  bool get seviyeAnketi =>
-      _rc?.getBool('seviye_anketi') ?? _defaults['seviye_anketi'] as bool;
+  bool get seviyeAnketi => _bayrak('seviye_anketi');
+
+  bool get ilkVarlikKolay => _bayrak('ilk_varlik_kolay');
 
   bool get lockOfferAfterFirstAsset =>
       _rc?.getBool('lock_offer_after_first_asset') ??

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 import '../services/social_auth_service.dart';
+import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'custom_loading_indicator.dart';
@@ -19,10 +20,17 @@ class SocialSignInButtons extends ConsumerStatefulWidget {
   final TargetPlatform? platformOverride;
   final bool? googleConfiguredOverride;
 
+  /// Formun ÜSTÜNDE mi (sadeleştirme 2, bayrak `karsilama_tanitimi`)?
+  /// Apple/Google e-posta kodu istemeyen en kısa yol; değerlendirme "en
+  /// üste al" dedi. Üstteyken ayırıcı düğmelerin ALTINA iner ve "veya
+  /// e-postayla" der; alttayken eski düzen (ayırıcı üstte, "veya").
+  final bool ustte;
+
   const SocialSignInButtons({
     super.key,
     this.platformOverride,
     this.googleConfiguredOverride,
+    this.ustte = false,
   });
 
   @override
@@ -54,31 +62,42 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
   Widget build(BuildContext context) {
     final providers = _providers;
     if (providers.isEmpty) return const SizedBox.shrink();
+    final ayirici = Row(
+      children: [
+        Expanded(child: Container(height: 1, color: context.c.hairline)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
+          child: Text(widget.ustte ? context.l10n.orWithEmail : 'veya',
+              style: context.t.bodySmall?.copyWith(color: context.c.text36)),
+        ),
+        Expanded(child: Container(height: 1, color: context.c.hairline)),
+      ],
+    );
+    final dugmeler = [
+      for (final p in providers) ...[
+        _SocialButton(
+          provider: p,
+          busy: _busy == p,
+          enabled: _busy == null,
+          onTap: () => _tap(p),
+        ),
+        const SizedBox(height: SandikSpace.sm2),
+      ],
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(child: Container(height: 1, color: context.c.hairline)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.smd),
-              child: Text('veya',
-                  style: context.t.bodySmall?.copyWith(color: context.c.text36)),
-            ),
-            Expanded(child: Container(height: 1, color: context.c.hairline)),
-          ],
-        ),
-        const SizedBox(height: SandikSpace.md),
-        for (final p in providers) ...[
-          _SocialButton(
-            provider: p,
-            busy: _busy == p,
-            enabled: _busy == null,
-            onTap: () => _tap(p),
-          ),
-          const SizedBox(height: SandikSpace.sm2),
-        ],
-      ],
+      children: widget.ustte
+          ? [
+              ...dugmeler,
+              const SizedBox(height: SandikSpace.sm),
+              ayirici,
+              const SizedBox(height: SandikSpace.lg),
+            ]
+          : [
+              ayirici,
+              const SizedBox(height: SandikSpace.md),
+              ...dugmeler,
+            ],
     );
   }
 }

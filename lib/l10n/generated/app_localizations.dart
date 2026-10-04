@@ -95,7 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('tr')
+    Locale('tr'),
   ];
 
   /// No description provided for @appName.
@@ -8575,7 +8575,11 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İlk alımından ({date}) {end} sonuna birikimin {change}, enflasyon {cpi} oldu.'**
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi);
+    String date,
+    String end,
+    String change,
+    String cpi,
+  );
 
   /// No description provided for @savingsRose.
   ///
@@ -9194,6 +9198,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Birikim değişimi (alımlar dahil)'**
   String get balanceChangeInclBuys;
+
+  /// No description provided for @firstAssetPickTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne biriktiriyorsun?'**
+  String get firstAssetPickTitle;
+
+  /// No description provided for @firstAssetPickHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seç, miktarını yaz; fiyat kendiliğinden gelir.'**
+  String get firstAssetPickHint;
+
+  /// No description provided for @firstAssetGoldGram.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram altın'**
+  String get firstAssetGoldGram;
+
+  /// No description provided for @firstAssetUsd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get firstAssetUsd;
+
+  /// No description provided for @firstAssetEur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Euro'**
+  String get firstAssetEur;
+
+  /// No description provided for @firstAssetFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir fon'**
+  String get firstAssetFund;
+
+  /// No description provided for @firstAssetStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir hisse'**
+  String get firstAssetStock;
+
+  /// No description provided for @firstAssetOtherType.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka bir tür ekle'**
+  String get firstAssetOtherType;
+
+  /// No description provided for @addDetails.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrıntı ekle (komisyon, not)'**
+  String get addDetails;
+
+  /// No description provided for @addByTyping.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yazarak ekle'**
+  String get addByTyping;
+
+  /// No description provided for @importFromStatement.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreden aktar'**
+  String get importFromStatement;
+
+  /// No description provided for @orWithEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'veya e-postayla'**
+  String get orWithEmail;
 }
 
 class _AppLocalizationsDelegate
@@ -9223,8 +9299,9 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   }
 
   throw FlutterError(
-      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-      'an issue with the localizations generation tool. Please file an issue '
-      'on GitHub with a reproducible sample app and the gen-l10n configuration '
-      'that was used.');
+    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+    'an issue with the localizations generation tool. Please file an issue '
+    'on GitHub with a reproducible sample app and the gen-l10n configuration '
+    'that was used.',
+  );
 }

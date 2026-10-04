@@ -3253,15 +3253,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferTitle(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Protect with Face ID',
-        'touchId': 'Protect with Touch ID',
-        'biyometrik': 'Protect with biometrics',
-        'other': 'Protect with your screen lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Protect with Face ID',
+      'touchId': 'Protect with Touch ID',
+      'biyometrik': 'Protect with biometrics',
+      'other': 'Protect with your screen lock',
+    });
     return '$_temp0';
   }
 
@@ -3292,15 +3289,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String lockOfferAccept(String yontem) {
-    String _temp0 = intl.Intl.selectLogic(
-      yontem,
-      {
-        'faceId': 'Turn on Face ID',
-        'touchId': 'Turn on Touch ID',
-        'biyometrik': 'Turn on biometric lock',
-        'other': 'Turn on app lock',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(yontem, {
+      'faceId': 'Turn on Face ID',
+      'touchId': 'Turn on Touch ID',
+      'biyometrik': 'Turn on biometric lock',
+      'other': 'Turn on app lock',
+    });
     return '$_temp0';
   }
 
@@ -5166,7 +5160,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String cpiSentenceSinceFirstBuy(
-      String date, String end, String change, String cpi) {
+    String date,
+    String end,
+    String change,
+    String cpi,
+  ) {
     return 'From your first purchase ($date) to the end of $end your savings $change; inflation was $cpi.';
   }
 
@@ -5546,4 +5544,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get balanceChangeInclBuys => 'Balance change (incl. buys)';
+
+  @override
+  String get firstAssetPickTitle => 'What are you saving in?';
+
+  @override
+  String get firstAssetPickHint =>
+      'Pick one, type the amount; the price fills itself.';
+
+  @override
+  String get firstAssetGoldGram => 'Gram gold';
+
+  @override
+  String get firstAssetUsd => 'Dollar';
+
+  @override
+  String get firstAssetEur => 'Euro';
+
+  @override
+  String get firstAssetFund => 'A fund';
+
+  @override
+  String get firstAssetStock => 'A stock';
+
+  @override
+  String get firstAssetOtherType => 'Add another type';
+
+  @override
+  String get addDetails => 'Add details (fee, note)';
+
+  @override
+  String get addByTyping => 'Add by typing';
+
+  @override
+  String get importFromStatement => 'Import statement';
+
+  @override
+  String get orWithEmail => 'or with email';
 }

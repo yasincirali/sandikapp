@@ -545,7 +545,10 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.hizliGiris,
       rozet: 'BİZE ÖZEL',
       baslik: 'Cümleyle ekle',
-      govde: 'Mikrofon Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
+      // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): aynı sayfa formun
+      // üstündeki "Yazarak ekle" düğmesiyle de açılır; metin ikisini söyler.
+      govde: '${RemoteConfigService.instance.ilkVarlikKolay ? '"Yazarak ekle" (ya da mikrofon)' : 'Mikrofon'} '
+          'Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
           '"GARAN 500 adet" yazman (veya söylemen) yeter. Her satır ayrı bir '
           'varlık olur; fiyat yazmazsan güncel fiyat kendiliğinden çekilir.',
       giris: (_) => _varlikEkleAc(),
@@ -559,11 +562,19 @@ List<_Adim> _adimlariKur() {
       // satış satırlarını da okuyor; tur yüzeyin güncel hâlini anlatır.
       // 2026-10-01: ekstre dosyadan da okunuyor (PDF/Excel/CSV, evrensel
       // motor) — tur "dosyadan seç"i anlatır.
-      govde: 'Birden çok varlığı sepete atıp tek onayda kaydet. Aracı kurum '
-          'ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da '
-          'tabloyu yapıştır; sütunlar kendiliğinden tanınır, alışlar ve '
-          'satışlar tarihleriyle gelir. Portföyünü ilk kez kurarken en hızlı '
-          'yol bu.',
+      // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): hedef formdaki
+      // "Ekstreden aktar" düğmesi; metin oradan başlar.
+      govde: RemoteConfigService.instance.ilkVarlikKolay
+          ? '"Ekstreden aktar": aracı kurum ya da banka ekstreni (PDF, Excel '
+              'veya CSV) dosyadan seç ya da tabloyu yapıştır; sütunlar '
+              'kendiliğinden tanınır, alışlar ve satışlar tarihleriyle gelir, '
+              'tek onayda kaydedersin. Portföyünü ilk kez kurarken en hızlı '
+              'yol bu.'
+          : 'Birden çok varlığı sepete atıp tek onayda kaydet. Aracı kurum '
+              'ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da '
+              'tabloyu yapıştır; sütunlar kendiliğinden tanınır, alışlar ve '
+              'satışlar tarihleriyle gelir. Portföyünü ilk kez kurarken en hızlı '
+              'yol bu.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
       cikis: (_) => _varlikEkleKapat(),
@@ -773,8 +784,11 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       id: 'toplu_son',
       hedef: TourTarget.topluEkle,
       baslik: 'Hazırsın',
-      govde: 'En hızlı yol: "Toplu ekle" › ekstreden içe aktar. Kurumunun '
-          'PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
+      // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): hedef formdaki
+      // "Ekstreden aktar" düğmesi.
+      govde: 'En hızlı yol: '
+          '${RemoteConfigService.instance.ilkVarlikKolay ? '"Ekstreden aktar".' : '"Toplu ekle" › ekstreden içe aktar.'} '
+          'Kurumunun PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
           'tarihiyle deftere girer. Tek tek girmek istersen tür seçmen yeter, '
           'fiyat kendiliğinden gelir.',
       giris: (_) => _varlikEkleAc(),

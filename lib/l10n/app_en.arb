@@ -3692,5 +3692,17 @@
   "levelSurveyBack": "Back",
   "todaysReturn": "Today's return",
   "returnSince": "Return since {date}",
-  "balanceChangeInclBuys": "Balance change (incl. buys)"
+  "balanceChangeInclBuys": "Balance change (incl. buys)",
+  "firstAssetPickTitle": "What are you saving in?",
+  "firstAssetPickHint": "Pick one, type the amount; the price fills itself.",
+  "firstAssetGoldGram": "Gram gold",
+  "firstAssetUsd": "Dollar",
+  "firstAssetEur": "Euro",
+  "firstAssetFund": "A fund",
+  "firstAssetStock": "A stock",
+  "firstAssetOtherType": "Add another type",
+  "addDetails": "Add details (fee, note)",
+  "addByTyping": "Add by typing",
+  "importFromStatement": "Import statement",
+  "orWithEmail": "or with email"
 }

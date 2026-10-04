@@ -3950,5 +3950,17 @@
   "todaysReturn": "Bugünkü getirin",
   "returnSince": "{date} itibarıyla getirin",
   "@returnSince": {"placeholders": {"date": {"type": "String"}}},
-  "balanceChangeInclBuys": "Birikim değişimi (alımlar dahil)"
+  "balanceChangeInclBuys": "Birikim değişimi (alımlar dahil)",
+  "firstAssetPickTitle": "Ne biriktiriyorsun?",
+  "firstAssetPickHint": "Seç, miktarını yaz; fiyat kendiliğinden gelir.",
+  "firstAssetGoldGram": "Gram altın",
+  "firstAssetUsd": "Dolar",
+  "firstAssetEur": "Euro",
+  "firstAssetFund": "Bir fon",
+  "firstAssetStock": "Bir hisse",
+  "firstAssetOtherType": "Başka bir tür ekle",
+  "addDetails": "Ayrıntı ekle (komisyon, not)",
+  "addByTyping": "Yazarak ekle",
+  "importFromStatement": "Ekstreden aktar",
+  "orWithEmail": "veya e-postayla"
 }
