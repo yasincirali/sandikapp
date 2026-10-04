@@ -23,7 +23,12 @@ enum GrafikTipi {
   line('Çizgi', Icons.show_chart_rounded),
 
   /// Çizgi + altında gradyan dolgu.
-  mountain('Dağ', Icons.landscape_rounded),
+  ///
+  /// Etiket 2026-10-04'e kadar "Dağ"dı (İngilizce "mountain"ın çevirisi).
+  /// Türkçe grafik araçlarındaki yerleşik ad "Alan" (alan grafiği);
+  /// kullanıcı "Dağ"ı bir grafik türü olarak tanımıyordu (sadeleştirme 2).
+  /// "Taban" kaldı: Türkçe araçlardaki "taban çizgisi" ile aynı ad.
+  mountain('Alan', Icons.landscape_rounded),
 
   /// Dönem başına göre üstü kazanç, altı kayıp renginde.
   baseline('Taban', Icons.multiline_chart_rounded),

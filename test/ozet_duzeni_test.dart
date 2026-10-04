@@ -241,17 +241,17 @@ void main() {
       await kur(t, tam(kiyas: const Text('KIYAS-KARTI')));
 
       final sira = [
-        find.text('SONUÇ'),
+        find.text('Ne oldu?'),
         find.text('Paranın getirisi · 1 yıl'),
         find.text('Enflasyona göre'),
         find.text('Özetini paylaş'),
-        find.text('NEDEN'),
+        find.text('Neden böyle?'),
         find.text('Nereden geldi'),
         find.text('Yıl eğrisi'),
         find.text('KIYAS-KARTI'),
-        find.text('AYRINTI'),
+        find.text('Ayrıntılar'),
         find.text('BİRİKİM-KARTI'),
-        find.text('DERİNLİK'),
+        find.text('Daha fazlası'),
       ];
       for (final f in sira) {
         expect(f, findsOneWidget, reason: '$f yok');
@@ -260,8 +260,11 @@ void main() {
         expect(y(t, sira[i]), greaterThan(y(t, sira[i - 1])),
             reason: '${sira[i]} → ${sira[i - 1]} altında olmalı');
       }
-      // Eski başlıklar kalmadı.
+      // Eski başlıklar kalmadı (BU DÖNEM/VARLIKLAR 2026-10-01, büyük
+      // harfli SONUÇ/DERİNLİK 2026-10-04 sadeleştirme 2).
       expect(find.text('BU DÖNEM'), findsNothing);
+      expect(find.text('SONUÇ'), findsNothing);
+      expect(find.text('DERİNLİK'), findsNothing);
       expect(find.text('VARLIKLAR'), findsNothing);
     });
 
@@ -270,7 +273,7 @@ void main() {
       expect(find.text('KIYAS-KARTI'), findsNothing);
       // Slot boşken NEDEN'in son kartı uçlar kartıdır — araya boş kutu
       // girmedi: AYRINTI başlığı hemen ardından gelir.
-      expect(find.text('NEDEN'), findsOneWidget);
+      expect(find.text('Neden böyle?'), findsOneWidget);
     });
 
     testWidgets('kıyas kartı uçlardan SONRA, AYRINTI\'dan önce', (t) async {
@@ -283,7 +286,7 @@ void main() {
       expect(
           y(t, find.text('KIYAS-KARTI')), greaterThan(y(t, find.text('BBB'))));
       expect(
-          y(t, find.text('KIYAS-KARTI')), lessThan(y(t, find.text('AYRINTI'))));
+          y(t, find.text('KIYAS-KARTI')), lessThan(y(t, find.text('Ayrıntılar'))));
     });
 
     testWidgets('birikim kartı yoksa AYRINTI başlığı da yok', (t) async {
@@ -295,8 +298,8 @@ void main() {
           karakter: PortfolioCharacter.dengeli,
         ),
       );
-      expect(find.text('AYRINTI'), findsNothing);
-      expect(find.text('DERİNLİK'), findsOneWidget);
+      expect(find.text('Ayrıntılar'), findsNothing);
+      expect(find.text('Daha fazlası'), findsOneWidget);
     });
 
     testWidgets('320pt\'de çipler ve köprü taşmıyor', (t) async {
@@ -317,9 +320,9 @@ void main() {
         ),
         locale: const Locale('en'),
       );
-      expect(find.text('RESULT'), findsOneWidget);
-      expect(find.text('WHY'), findsOneWidget);
-      expect(find.text('DETAIL'), findsOneWidget);
+      expect(find.text('What happened?'), findsOneWidget);
+      expect(find.text('Why?'), findsOneWidget);
+      expect(find.text('Details'), findsOneWidget);
       expect(find.text('Return on your money · 1Y'), findsOneWidget);
       expect(find.text('1 Oct 25 - today'), findsOneWidget);
       expect(find.text('Aug 25 - Aug 26'), findsOneWidget);

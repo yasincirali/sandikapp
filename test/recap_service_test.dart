@@ -339,7 +339,7 @@ void main() {
       expect(metin.contains('Piyasa getirim: +%47,3'), isTrue);
       expect(metin.contains('Enflasyonun 11,4 puan önündeyim (reel +%8,3)'),
           isTrue);
-      expect(metin.contains('Yıllıklandırılmış getiri (XIRR): +%41,2'), isTrue);
+      expect(metin.contains('Yıllık getiri (ilk alımdan beri): +%41,2'), isTrue);
       expect(metin.contains('En iyi: THYAO +%82,2'), isTrue);
       expect(metin.contains('En zayıf: SISE −%12,0'), isTrue);
       expect(metin.contains("250 işlem gününün 132'i artıda"), isTrue);

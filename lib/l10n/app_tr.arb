@@ -129,9 +129,9 @@
   "levelBeginner": "Başlangıç",
   "levelIntermediate": "Orta",
   "levelAdvanced": "İleri",
-  "levelBeginnerDesc": "Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve XIRR kartları gizlenir.",
-  "levelIntermediateDesc": "Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve paranın getirisi (XIRR).",
-  "levelAdvancedDesc": "Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).",
+  "levelBeginnerDesc": "Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.",
+  "levelIntermediateDesc": "Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.",
+  "levelAdvancedDesc": "Orta + riske göre getiri, alım zamanlamanın etkisi ve düşüşten toparlanma (Özet › 1 yıl).",
   "noAssetsYet": "Henüz varlık eklenmemiş",
   "noAssetsYetHint": "İlk varlığını ekleyerek sandığını oluşturmaya başla.",
   "addFirstAsset": "İlk Varlığını Ekle",
@@ -1028,7 +1028,7 @@
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.",
+  "contributionNotReturn": "Yüzde yalnızca fiyat etkisinden hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.",
   "annualRatePct": "{pct} yıllık",
   "@annualRatePct": {
     "placeholders": {
@@ -2404,7 +2404,7 @@
   },
   "noMatchingRecords": "Filtreye uyan kayıt yok",
   "noTransactionsYet": "Henüz işlem yok",
-  "todaysBalanceChange": "Bugünkü birikim değişimi",
+  "todaysBalanceChange": "Bugünkü toplam değişim",
   "sinceDateToToday": "{date} → bugün",
   "@sinceDateToToday": {
     "placeholders": {
@@ -2413,7 +2413,7 @@
       }
     }
   },
-  "balanceChangeSince": "{date} birikim değişimi",
+  "balanceChangeSince": "{date} toplam değişim",
   "@balanceChangeSince": {
     "placeholders": {
       "date": {
@@ -2429,7 +2429,7 @@
       }
     }
   },
-  "periodBalanceChange": "{period} birikim değişimi",
+  "periodBalanceChange": "{period} toplam değişim",
   "@periodBalanceChange": {
     "placeholders": {
       "period": {
@@ -2635,7 +2635,7 @@
       }
     }
   },
-  "shareCardXirr": "Yıllık (XIRR)",
+  "shareCardXirr": "Yıllık getiri",
   "shareCardDrawdown": "En derin düşüş",
   "shareCardPatient": "En sabırlı",
   "shareCardAllocation": "Dağılım",
@@ -3080,11 +3080,11 @@
       }
     }
   },
-  "sectionResult": "SONUÇ",
-  "sectionWhy": "NEDEN",
-  "sectionDetail": "AYRINTI",
-  "sectionDepth": "DERİNLİK",
-  "sectionDepthHint": "XIRR, sağlık, ileri metrikler, karakter",
+  "sectionResult": "Ne oldu?",
+  "sectionWhy": "Neden böyle?",
+  "sectionDetail": "Ayrıntılar",
+  "sectionDepth": "Daha fazlası",
+  "sectionDepthHint": "Yıllık getiri, sağlık, karakter",
   "myAlarms": "Alarmlarım",
   "viewChipLabel": "Görünüm",
   "identityCrypto": "Kripto Para",
@@ -3729,9 +3729,9 @@
       }
   },
   "investedRow": "Yatırdığın",
-  "marketAddedRow": "Piyasanın kattığı",
+  "marketAddedRow": "Fiyat etkisi",
   "dividendPocketRow": "Cebine aldığın temettü",
-  "flowBuyBalance": "Alım +{flow} · birikim {change}",
+  "flowBuyBalance": "Alım +{flow} · toplam {change}",
   "@flowBuyBalance": {
       "placeholders": {
           "flow": {
@@ -3742,7 +3742,7 @@
           }
       }
   },
-  "flowSellBalance": "Satış −{flow} · birikim {change}",
+  "flowSellBalance": "Satış −{flow} · toplam {change}",
   "@flowSellBalance": {
       "placeholders": {
           "flow": {
@@ -3950,5 +3950,5 @@
   "todaysReturn": "Bugünkü getirin",
   "returnSince": "{date} itibarıyla getirin",
   "@returnSince": {"placeholders": {"date": {"type": "String"}}},
-  "balanceChangeInclBuys": "Birikim değişimi (alımlar dahil)"
+  "balanceChangeInclBuys": "Toplam değişim (alımlar dahil)"
 }

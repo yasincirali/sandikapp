@@ -707,19 +707,19 @@ abstract class AppLocalizations {
   /// No description provided for @levelBeginnerDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve XIRR kartları gizlenir.'**
+  /// **'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.'**
   String get levelBeginnerDesc;
 
   /// No description provided for @levelIntermediateDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve paranın getirisi (XIRR).'**
+  /// **'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.'**
   String get levelIntermediateDesc;
 
   /// No description provided for @levelAdvancedDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).'**
+  /// **'Orta + riske göre getiri, alım zamanlamanın etkisi ve düşüşten toparlanma (Özet › 1 yıl).'**
   String get levelAdvancedDesc;
 
   /// No description provided for @noAssetsYet.
@@ -3329,7 +3329,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionNotReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.'**
+  /// **'Yüzde yalnızca fiyat etkisinden hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.'**
   String get contributionNotReturn;
 
   /// No description provided for @annualRatePct.
@@ -5885,7 +5885,7 @@ abstract class AppLocalizations {
   /// No description provided for @todaysBalanceChange.
   ///
   /// In tr, this message translates to:
-  /// **'Bugünkü birikim değişimi'**
+  /// **'Bugünkü toplam değişim'**
   String get todaysBalanceChange;
 
   /// No description provided for @sinceDateToToday.
@@ -5897,7 +5897,7 @@ abstract class AppLocalizations {
   /// No description provided for @balanceChangeSince.
   ///
   /// In tr, this message translates to:
-  /// **'{date} birikim değişimi'**
+  /// **'{date} toplam değişim'**
   String balanceChangeSince(String date);
 
   /// No description provided for @periodChangeSim.
@@ -5909,7 +5909,7 @@ abstract class AppLocalizations {
   /// No description provided for @periodBalanceChange.
   ///
   /// In tr, this message translates to:
-  /// **'{period} birikim değişimi'**
+  /// **'{period} toplam değişim'**
   String periodBalanceChange(String period);
 
   /// No description provided for @marketOnlyRow.
@@ -6245,7 +6245,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareCardXirr.
   ///
   /// In tr, this message translates to:
-  /// **'Yıllık (XIRR)'**
+  /// **'Yıllık getiri'**
   String get shareCardXirr;
 
   /// No description provided for @shareCardDrawdown.
@@ -6941,31 +6941,31 @@ abstract class AppLocalizations {
   /// No description provided for @sectionResult.
   ///
   /// In tr, this message translates to:
-  /// **'SONUÇ'**
+  /// **'Ne oldu?'**
   String get sectionResult;
 
   /// No description provided for @sectionWhy.
   ///
   /// In tr, this message translates to:
-  /// **'NEDEN'**
+  /// **'Neden böyle?'**
   String get sectionWhy;
 
   /// No description provided for @sectionDetail.
   ///
   /// In tr, this message translates to:
-  /// **'AYRINTI'**
+  /// **'Ayrıntılar'**
   String get sectionDetail;
 
   /// No description provided for @sectionDepth.
   ///
   /// In tr, this message translates to:
-  /// **'DERİNLİK'**
+  /// **'Daha fazlası'**
   String get sectionDepth;
 
   /// No description provided for @sectionDepthHint.
   ///
   /// In tr, this message translates to:
-  /// **'XIRR, sağlık, ileri metrikler, karakter'**
+  /// **'Yıllık getiri, sağlık, karakter'**
   String get sectionDepthHint;
 
   /// No description provided for @myAlarms.
@@ -8670,7 +8670,7 @@ abstract class AppLocalizations {
   /// No description provided for @marketAddedRow.
   ///
   /// In tr, this message translates to:
-  /// **'Piyasanın kattığı'**
+  /// **'Fiyat etkisi'**
   String get marketAddedRow;
 
   /// No description provided for @dividendPocketRow.
@@ -8682,13 +8682,13 @@ abstract class AppLocalizations {
   /// No description provided for @flowBuyBalance.
   ///
   /// In tr, this message translates to:
-  /// **'Alım +{flow} · birikim {change}'**
+  /// **'Alım +{flow} · toplam {change}'**
   String flowBuyBalance(String flow, String change);
 
   /// No description provided for @flowSellBalance.
   ///
   /// In tr, this message translates to:
-  /// **'Satış −{flow} · birikim {change}'**
+  /// **'Satış −{flow} · toplam {change}'**
   String flowSellBalance(String flow, String change);
 
   /// No description provided for @ofLastNMonths.
@@ -9192,7 +9192,7 @@ abstract class AppLocalizations {
   /// No description provided for @balanceChangeInclBuys.
   ///
   /// In tr, this message translates to:
-  /// **'Birikim değişimi (alımlar dahil)'**
+  /// **'Toplam değişim (alımlar dahil)'**
   String get balanceChangeInclBuys;
 }
 

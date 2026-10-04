@@ -579,13 +579,18 @@ List<_Adim> _adimlariKur() {
       // 2026-10-02 (müşteri testi sadeleştirmesi): enflasyon kartı tek sayı
       // söyler (kaç puan önde/geride), Grafik kartındaki yüzde yalnızca
       // piyasanın kattığıdır — tur metni de bunu söylüyor.
+      // 2026-10-04 (sadeleştirme 2, jargon): ekrandaki adlar değişti —
+      // "Piyasanın kattığı" → "Fiyat etkisi", Özet başlıkları "Ne oldu?" /
+      // "Neden böyle?" / "Ayrıntılar" / "Daha fazlası". Tur aynı adları
+      // kullanır, yoksa kullanıcı ekranda tarif edileni bulamaz.
       govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
-          'dönemi görebilirsin. Grafik kartında yüzde yalnızca piyasanın '
-          'kattığıdır; yatırdığın para ayrı yazılır. Özet soru sırasıyla '
-          'ilerler: SONUÇ (paranın getirisi ve enflasyona göre kaç puan '
-          'önde ya da geride olduğun), NEDEN (nereden geldi, hangi '
-          'varlıklar) ve AYRINTI (birikim, istersen açtığın derinlik). Her '
-          'yüzdenin yanındaki mavi çip ölçüldüğü aralığı yazar.',
+          'dönemi görebilirsin. Grafik kartında yüzde yalnızca fiyat '
+          'etkisidir; yatırdığın para ayrı yazılır. Özet soru sırasıyla '
+          'ilerler: "Ne oldu?" (paranın getirisi ve enflasyona göre kaç puan '
+          'önde ya da geride olduğun), "Neden böyle?" (nereden geldi, hangi '
+          'varlıklar) ve "Ayrıntılar" (birikim düzenin; istersen "Daha '
+          'fazlası"nı açarsın). Her yüzdenin yanındaki mavi çip ölçüldüğü '
+          'aralığı yazar.',
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),
