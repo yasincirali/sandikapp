@@ -3,7 +3,7 @@
 **Yürürlük tarihi:** 4 Ekim 2026
 **Sürüm:** 1.2
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metni dikkatle okuyup, devamındaki onay kutularını bilinçli iradenizle işaretlemeniz beklenmektedir.
+> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Kayıt sırasında onay kutusunu işaretleyerek (ya da Apple veya Google ile ilk girişte onay ekranında) verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay kutusu yoktur. E bölümündeki rıza uygulama içinde ayrıca istenir.
 
 ---
 
@@ -13,51 +13,47 @@
 
 ### A) Yurt Dışına Veri Aktarımı
 
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.** ve **Amerika Birleşik Devletleri'nde (ABD)** bulunan **Google LLC (Firebase)** servislerine aktarılmasına;
+KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.**'e, **Amerika Birleşik Devletleri'nde (ABD)** ve küresel altyapıda çalışan **Google LLC (Firebase: bildirim, hata raporu, kullanım istatistiği, uzaktan ayar; Gmail e-posta altyapısı)** ile **Apple Inc. (iOS bildirimleri ve kilit ekranı canlı etkinliği)** servislerine;
 
 - E-posta adresim
-- Görünen adım (display name)
+- Kullanıcı adım (görünen adım)
 - Şifremin hash hâli
-- Portföy varlık kayıtlarım (sembol, miktar, alış fiyatı, tarih, not)
-- Performans snapshot geçmişim
+- Portföy varlık kayıtlarım (sembol, tür, miktar, alış fiyatı, tarih, not) ile vadeli mevduat ve BES sözleşme bilgilerim
+- Performans anlık görüntü geçmişim
 - Ortaklık bağlantı kayıtlarım
-- Push bildirim token'ım
-- Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm
-- Disclaimer onayımın metadatası (zaman, sürüm, platform, IP)
+- Push bildirim token'ım ve bildirimlerin içeriği
+- Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm ve kayıtlı cihazlarım
+- Hata raporlarım ve uygulama kullanım istatistiklerim (tutar, miktar ve e-posta içermeden)
+- Yasal metin onaylarımın kaydı (onaylanan metin ve sürümü, zaman, platform, uygulama sürümü, dil)
 
-amacıyla aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
+aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
 
-☐ **Onaylıyorum** *(zorunlu — kayıt için gerekli)*
-
----
-
-### B) Push Bildirim Servisi
-
-Aşağıdaki bildirim türlerinin tarafıma gönderilmesi için cihaz bildirim token'ımın işlenmesine ve yukarıdaki Firebase servisi üzerinden iletilmesine **AÇIK RIZA VERİYORUM**:
-
-- Ortaklık daveti bildirimleri
-- Servis duyuruları (önemli güvenlik uyarıları, politika değişiklikleri)
-- (Opsiyonel) Teknik analiz sinyal bildirimleri
-
-☐ **Bildirimleri kabul ediyorum** *(opsiyonel — istediğiniz zaman uygulama ayarlarından geri alabilirsiniz)*
+Bu rıza kayıt için zorunludur; kayıt ekranındaki onay kutusuyla verilir.
 
 ---
 
-### C) (Opsiyonel — Eklenirse) Hata Raporu Toplama
+### B) Push Bildirimleri
 
-Uygulamada teknik bir çökme yaşanması durumunda, çökme nedenini teşhis edebilmek için cihaz modeli, OS sürümü, uygulama sürümü ve hata stack trace bilgisinin **Firebase Crashlytics** üzerinden tarafımıza gönderilmesine **AÇIK RIZA VERİYORUM**.
+Bildirim izni bu metinle değil, **işletim sisteminin izin penceresiyle** verilir; uygulama bu pencereyi bildirimin işe yarayacağı bir anda (ör. ilk varlığınızı ekledikten sonra) gösterir. İzin verirseniz cihaz bildirim token'ınız sunucuya kaydedilir ve bildirimler Firebase Cloud Messaging (iPhone'da ayrıca Apple Push Notification service) üzerinden iletilir:
 
-Bu rapor **e-posta, parola, portföy değeri** gibi kişisel veri içermez; cihaz tanımlayıcı (anonymous device id) ve teknik hata bilgisi içerir.
+- Fiyat alarmları ve teknik analiz sinyalleri (açtıysanız)
+- Günlük brifing, haftalık ve aylık özet
+- Ortaklık daveti ve ortak etkinliği bildirimleri
+- Temettü ve takvim hatırlatmaları
 
-☐ **Hata raporlarını paylaşmayı kabul ediyorum** *(opsiyonel)*
+İzni istediğiniz zaman cihaz ayarlarından kapatabilirsiniz; bildirim türlerini uygulamada Ayarlar → Bildirimler'den yönetebilirsiniz.
 
 ---
 
-### D) (Opsiyonel — Eklenirse) Pazarlama İletişimi
+### C) Hata Raporları ve Kullanım İstatistikleri
 
-Yeni özellik duyuruları, kampanyalar ve kullanım ipuçlarının e-posta adresime gönderilmesine **AÇIK RIZA VERİYORUM**.
+Uygulamada teknik bir çökme ya da hata yaşandığında hata kaydı, cihaz modeli, OS sürümü ve uygulama sürümü **Firebase Crashlytics** üzerinden; uygulamanın nasıl kullanıldığına dair olaylar (görüntülenen ekranlar, kullanılan özellikler) **Firebase Analytics** üzerinden Google'a gönderilir. Bu kayıtlar e-posta, parola, tutar ve miktar içermez; rastgele kurulum kimliği ve hesap numaranız (rastgele kullanıcı kimliği) ile ilişkilendirilir. Bu verilerin yurt dışına aktarımı yukarıdaki A bölümündeki açık rızanız kapsamındadır. Uygulamada bunlar için ayrı bir kapatma seçeneği yoktur.
 
-☐ **E-posta pazarlamasını kabul ediyorum** *(opsiyonel — her e-postada "abonelikten çık" linki bulunur)*
+---
+
+### D) Pazarlama İletişimi
+
+Uygulama size **pazarlama e-postası veya reklam iletisi göndermez**. Size gönderilen e-postalar yalnızca hesap e-postalarıdır (kayıt, giriş ve yeni cihaz doğrulama kodları, şifre sıfırlama). İleride pazarlama iletişimi eklenirse bunun için ayrıca onayınız istenir.
 
 ---
 
@@ -65,7 +61,7 @@ Yeni özellik duyuruları, kampanyalar ve kullanım ipuçlarının e-posta adres
 
 Bu rıza kayıt sırasında DEĞİL, Zirvedeki Portföyler ekranını ilk açtığımda ayrı bir kartla istenir. Dönemsel getiri yüzdemin, varlık türü paylarımın ve fonlarda TEFAS fon kodu ile portföy içindeki payının anonim bir karşılaştırma havuzunda işlenmesine ve havuza katılan diğer kullanıcılara kimliğim, tutarlarım ve miktarlarım olmadan gösterilmesine; karşılığında katılımcıların aynı anonim bilgilerini görmeye **AÇIK RIZA VERİYORUM** (ayrıntı: Gizlilik Politikası §5.1, KVKK Aydınlatma Metni §5.3). Rıza vermezsem getirim bu amaçla hesaplanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanın verildiği tarih ve gösterilen metnin sürümü ispat için kaydedilir.
 
-☐ **Zirvedeki Portföyler'e katılıyorum** *(opsiyonel — ekrandaki "Katılıyorum" düğmesiyle verilir)*
+Bu rıza ekrandaki "Katılıyorum" düğmesiyle verilir; isteğe bağlıdır.
 
 ---
 
@@ -73,11 +69,9 @@ Bu rıza kayıt sırasında DEĞİL, Zirvedeki Portföyler ekranını ilk açtı
 
 Vermiş olduğum açık rızayı, KVKK Madde 7 ve 11 uyarınca **istediğim zaman geri alabileceğimi** biliyorum:
 
-- **Push bildirimi rızası:** Uygulama → Profil → Ayarlar → Bildirimler → Kapat
-- **Hata raporu rızası:** Uygulama → Profil → Ayarlar → Hata raporları → Kapat
-- **Pazarlama rızası:** Her e-postanın altındaki "abonelikten çık" linki veya Profil → Ayarlar → İletişim tercihi
 - **Zirvedeki Portföyler rızası:** Performans → Zirvedeki Portföyler → "Zirvedeki Portföyler'den ayrıl" (havuzdaki ölçümler anında silinir)
 - **Yurt dışı aktarım rızası:** Açık rızamın geri çekilmesi, hizmetin sunulamaması anlamına gelir; bu durumda hesabımı silmem gerekir (Profil → Ayarlar → Hesabımı Sil).
+- **Bildirim izni:** Cihaz ayarlarından kapatılır (B bölümü).
 
 Rızamı geri çektiğim tarihten önceki işleme faaliyetleri hukuka uygun sayılmaya devam eder.
 
@@ -85,12 +79,11 @@ Rızamı geri çektiğim tarihten önceki işleme faaliyetleri hukuka uygun say�
 
 ## 3. Açık Rızanın Geri Alınmasının Sonuçları
 
-| Geri çekilen rıza | Sonuç |
+| Geri çekilen rıza ya da izin | Sonuç |
 |---|---|
-| Yurt dışı aktarım (A) | Hizmet sunulamaz, hesap silinir |
-| Push bildirimi (B) | Bildirim alamazsınız; ortaklık davetlerini uygulama içinden manuel kontrol edersiniz |
-| Hata raporu (C) | Çökme yaşadığınızda otomatik teşhis yapamayız; destek talebine yanıt süremiz uzar |
-| Pazarlama (D) | Promosyon e-postası alamazsınız; servis e-postaları (güvenlik, fatura) gönderilmeye devam eder |
+| Yurt dışı aktarım (A) | Hizmet sunulamaz; hesabınızı silerek rızanızı geri çekersiniz |
+| Bildirim izni (B) | Bildirim alamazsınız; ortaklık davetlerini ve bildirimleri uygulama içinden kontrol edersiniz |
+| Zirvedeki Portföyler (E) | Havuzdaki ölçümleriniz silinir; zirve listesini göremezsiniz, diğer özellikler etkilenmez |
 
 ---
 
@@ -105,12 +98,10 @@ beyan ve kabul ederim.
 
 ---
 
-**Tarih:** [Onay anında otomatik kaydedilir]
+**Tarih:** Onay anında otomatik kaydedilir
 **Sürüm:** 1.2
-**IP:** [Onay anında otomatik kaydedilir]
-**Platform:** [Android / iOS — otomatik kaydedilir]
+**Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
 
 ---
 
-*Açık rıza onayınız, KVKK Madde 12 uyarınca hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır.*
-
+*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*

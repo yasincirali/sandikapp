@@ -705,7 +705,7 @@
   "searchTickerOrName": "Ticker veya isim ara…",
   "myPortfolioTab": "Portföyüm",
   "deleteAccountTitle": "Hesabını silmek üzeresin",
-  "deleteAccountBody": "Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların 30 gün içinde kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?",
+  "deleteAccountBody": "Bu işlem GERİ ALINAMAZ.\n\nTüm portföy kayıtların, performans geçmişin ve ortaklık bağlantıların hemen ve kalıcı olarak silinecek.\n\nDevam etmek istiyor musun?",
   "continueAction": "Devam et",
   "verifyIdentityTitle": "Kimliğini doğrula",
   "verifyIdentityBody": "Hesabın Apple/Google ile açılmış. Silmeden önce aynı hesapla bir kez daha giriş yapman istenecek.",
@@ -4016,7 +4016,7 @@
   "yasalKapiAciklamaGuncel": "Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.",
   "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.",
   "yasalKapiNelerDegisti": "Neler değişti",
-  "yasalKapiDegisiklikNotu": "Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki tam metinle birebir aynı. Kullanım Koşulları'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri; Gizlilik Politikası'na otomatik toplanan veriler, çocukların verileri, yerel depolama ve AB kullanıcılarına özgü haklar; KVKK Aydınlatma Metni'ne verilerin toplanma yöntemi, başvuru yolları ve veri ihlali bildirimi girdi. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki metinle birebir aynı ve uygulamanın bugünkü işleyişine göre güncellendi. Eklenenler: tek aktif cihaz ve yeni cihazda e-posta kodu, kullanım istatistikleri ve hata raporları (Firebase), Yarış, kayıt hunisi, kilit ekranı canlı etkinliği, ekstrenin yalnızca cihazda okunması, güncel saklama süreleri (portföy geçmişi 2 yıl) ve hesap silmenin anında gerçekleşmesi. Kullanım Koşulları'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri girdi; yetkili mahkeme ve koşul değişikliği maddeleri netleşti. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.",
   "@yasalKapiDegisiklikNotu": {
     "description": "Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz."
   },

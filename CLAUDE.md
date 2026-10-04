@@ -192,6 +192,9 @@ belgeleri her zaman aynı metindir: kaynak `legal/tr/*.md` (çevirisi `legal/en/
 uygulamaya ya da `docs/` HTML'ine elle metin yazılmaz. Değişince: md + "Sürüm" artır →
 `python docs/_build_legal.py` (HTML + `lib/config/yasal_belge_kaynaklari.g.dart`) →
 INSERT üreteci → yeni migration (iki sunucu). `yasal_web_esleme_test` kırılırsa adımları söyler.
+Metin uygulamanın gerçek davranışını yazar; avukata sorulmaz. Yeni veri işleme, üçüncü taraf
+ya da saklama ekleyen her değişiklik aynı değişiklikte ilgili md'yi günceller; sürüm artar,
+migration yazılır, yeniden onay kapısı kullanıcıya sorar.
 
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.

@@ -34,6 +34,47 @@ void main() {
   String oku(String yol) => File(yol).readAsStringSync();
   String sha(String s) => sha256.convert(utf8.encode(s)).toString();
 
+  group('yayımlanan metinde şablon yok', () {
+    // Kullanıcı kuralı (2026-10-04): "sözleşmeler ve rızalarda uygulamada
+    // ne varsa uyumlu olmalı." Web'de aylarca `[YETKİLİ MAHKEME — örn. …]`
+    // şablonu ve "[Onay anında otomatik kaydedilir]" yayında kaldı; 1.2'de
+    // ikisi de uygulamada onaylatılacaktı. Doldurulmamış hiçbir şablon
+    // yayımlanmaz. İzinli yer tutucular yalnız ülke (web ve uygulama doldurur).
+    const izinliYerTutucular = {'SUPABASE_ULKE', 'SUPABASE_ULKEDE'};
+    final dosyalar = [
+      for (final dizin in ['legal/tr', 'legal/en'])
+        for (final f in Directory(dizin).listSync().whereType<File>())
+          if (f.path.endsWith('.md')) '$dizin/${f.uri.pathSegments.last}',
+      'legal/DATA_DELETION_REQUEST_FORM.md',
+    ];
+
+    test('köşeli parantezli şablon, "örn." / TODO kalıbı yok', () {
+      // Markdown bağlantısı `[metin](adres)` serbest; çıplak `[...]` yasak.
+      final kosesiz = RegExp(r'\[[^\]\n]*\](?!\()');
+      final kalip = RegExp(r'örn\.|\bTODO\b|\bXXX\b|\{\{|PLACEHOLDER',
+          caseSensitive: false);
+      for (final yol in dosyalar) {
+        final satirlar = oku(yol).split('\n');
+        for (var i = 0; i < satirlar.length; i++) {
+          final s = satirlar[i];
+          expect(kosesiz.firstMatch(s), isNull,
+              reason: '$yol:${i + 1} doldurulmamış şablon: $s');
+          expect(kalip.firstMatch(s), isNull,
+              reason: '$yol:${i + 1} şablon kalıbı: $s');
+        }
+      }
+    });
+
+    test('yalnız ülke yer tutucuları', () {
+      for (final yol in dosyalar) {
+        expect(
+            yasalMdYerTutuculari(oku(yol)).difference(izinliYerTutucular),
+            isEmpty,
+            reason: '$yol: bilinmeyen yer tutucu');
+      }
+    });
+  });
+
   group('(a) uygulama metni == md', () {
     test('üretilen sabit her belgede md dosyasının kanonik hâli', () {
       for (final b in YasalBelge.values) {

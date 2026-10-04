@@ -283,6 +283,14 @@ class YasalMetin {
 /// doküman sunulup onay istenmeli."* ve *"Webdekiyle de her zaman
 /// eşleyelim."* Bunun için:
 ///
+/// **Metin gerçeği yazar (kullanıcı kuralı 2026-10-04):** *"mahkemeye bişey
+/// sormayacağız, yeni bir versiyon geldiğinde sürüm güncelleyip bunu
+/// müşteriye onaylatacağız. Ve sözleşmeler ve rızalarda uygulamada ne varsa
+/// uyumlu olmalı."* Gerçeğin kaynağı kod ve migration'lardır. Yeni veri
+/// işleme, üçüncü taraf ya da saklama süresi ekleyen her değişiklik AYNI
+/// değişiklikte ilgili md'yi günceller ve aşağıdaki adımları izler. 1.2,
+/// yayımlanmış web metninin uygulamaya karşı denetlenmiş hâlidir (0103).
+///
 /// **Belgeler** (Koşullar, Gizlilik, KVKK, Açık Rıza):
 /// 1. `legal/tr/<BELGE>.md`'yi düzenle VE künyesini güncelle: "**Sürüm:**"
 ///    satırını artır (açık rıza metninde iki yerde), "**Yürürlük tarihi:**"

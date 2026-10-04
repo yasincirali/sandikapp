@@ -1180,7 +1180,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted within 30 days.\n\nDo you want to continue?';
+      'This CANNOT be undone.\n\nAll your portfolio records, performance history and partner links will be permanently deleted immediately.\n\nDo you want to continue?';
 
   @override
   String get continueAction => 'Continue';
@@ -5731,7 +5731,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.2: the documents in the app are now identical to the full text on our website. The Terms of Use gained the one-account, indemnification, force majeure, notices, assignment and severability clauses; the Privacy Policy gained automatically collected data, children\'s data, local storage and EU-specific rights; the KVKK Privacy Notice gained how data is collected, ways to apply and data breach notification. Explicit consent for international data transfer is now a separate document: the Explicit Consent Notice.';
+      'Version 1.2: the documents in the app are now identical to the text on our website and updated to how the app works today. Added: single active device and an email code on a new device, usage statistics and crash reports (Firebase), the Race, the sign-up funnel, the lock-screen Live Activity, statements being read only on your device, current retention periods (portfolio history 2 years) and immediate account deletion. The Terms of Use gained the one-account, indemnification, force majeure, notices, assignment and severability clauses; the jurisdiction and changes-to-terms clauses were clarified. Explicit consent for international data transfer is now a separate document: the Explicit Consent Notice.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';

@@ -10,7 +10,7 @@
 
 Bu Kullanım Koşulları ("Koşullar"), `Yasin Çıralı` ("Şirket", "biz") tarafından sunulan **sandık** mobil uygulaması ("Uygulama", "Hizmet") ile uygulamayı kullanan gerçek kişi ("Kullanıcı", "siz") arasındaki sözleşmedir.
 
-Uygulamayı indirip hesap oluşturarak bu Koşulları, **Gizlilik Politikası**'nı ve **KVKK Aydınlatma Metni**'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.
+Uygulamayı indirip hesap oluşturarak bu Koşulları, **Gizlilik Politikası**'nı, **KVKK Aydınlatma Metni**'ni ve **Açık Rıza Metni**'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.
 
 ---
 
@@ -21,12 +21,16 @@ sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bi
 - BIST hisse senetleri
 - TEFAS yatırım fonları
 - Döviz (USD, EUR, GBP, vb.)
-- Kıymetli madenler (altın, gümüş)
-- Kripto para (varsa)
+- Altın ve diğer emtialar
+- Kripto paralar
+- Vadeli mevduat ve bireysel emeklilik (BES) sözleşmeleri
+- Elle tanımladığınız diğer varlıklar
 
-Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini gösterir. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
+Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini, fiyat alarmlarını ve dönemsel özetleri gösterir. Varlıklarınızı elle, toplu olarak ya da banka/aracı kurum ekstresinden içe aktararak girebilirsiniz. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
 
 **Zirvedeki Portföyler (isteğe bağlı):** Uygulama içinde açık rıza verirseniz dönemsel getiriniz ve varlık türü paylarınız anonim bir karşılaştırma havuzunda değerlendirilir (portföy 5 günden eski, en az 2 farklı varlık); en çok kazanan portföylerin yalnızca sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik ve tutar olmadan diğer katılımcılara gösterilir; karşılığında siz de katılımcıların aynı anonim bilgilerini görürsünüz (ayrıntı: Gizlilik Politikası §5.1). İstediğiniz an ayrılabilirsiniz; katılmamak başka hiçbir özelliği etkilemez.
+
+**Yarış (isteğe bağlı):** Yarış'a katılırsanız dönemsel getiriniz ve varlık türü paylarınız günlük olarak sunucuda hesaplanır; katılımcılar arasındaki yeriniz size yüzdelik dilim olarak gösterilir, ortağınızla getirinizi karşılaştırabilirsiniz. Diğer katılımcılara kimliğiniz ve tutarlarınız gösterilmez. Yarış'tan istediğiniz an ayrılabilirsiniz.
 
 ---
 
@@ -37,11 +41,11 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 - Şirket, Sermaye Piyasası Kurulu (SPK) tarafından lisanslı bir kurum değildir.
 - Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
 - Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
-- Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf veri sağlayıcılarının (Yahoo Finance, TEFAS, vb.) verileri olduğu gibi sunulur.
+- Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf veri sağlayıcılarının (Yahoo Finance, TEFAS, finans.truncgil.com, Binance vb.) verileri olduğu gibi sunulur.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
 
-Bu uyarı, uygulamayı ilk açtığınızda ayrı bir disclaimer ekranında onaylatılır ve onay kaydı yasal kanıt olarak saklanır.
+Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya Google ile ilk girişte tam metni ayrıca gösterilir. Onayın kaydı yasal kanıt olarak saklanır.
 
 ---
 
@@ -49,12 +53,14 @@ Bu uyarı, uygulamayı ilk açtığınızda ayrı bir disclaimer ekranında onay
 
 ### 4.1 Hesap Açma
 - 18 yaşından büyük olmalısınız.
-- Geçerli bir e-posta adresi sağlamalısınız.
+- Geçerli bir e-posta adresi sağlamalı ya da Apple veya Google hesabınızla giriş yapmalısınız.
+- Benzersiz bir kullanıcı adı seçmelisiniz; kullanıcı adınız ortağınıza ve bildirimlerde görünür, uygunsuz ifade içeremez.
 - Doğru ve güncel bilgi vermelisiniz.
 
 ### 4.2 Hesap Güvenliği
 - Şifrenizi kimseyle paylaşmayın.
 - Şifrenizin güvenliğinden siz sorumlusunuz.
+- Hesabınız aynı anda yalnızca bir cihazda açık kalır. Yeni bir cihazda giriş yaptığınızda e-posta adresinize gelen kod istenir ve önceki cihazdaki oturum kapanır. Kayıtlı cihazlarınızı Ayarlar'dan görebilir ve silebilirsiniz.
 - Yetkisiz erişim şüphesinde derhal şifrenizi değiştirin ve bizi `sandikapp.destek@gmail.com` adresinden bilgilendirin.
 - Hesap üzerinden gerçekleştirilen tüm işlemler size ait sayılır.
 
@@ -101,7 +107,7 @@ Bu kuralların ihlali halinde **hesabınız bildirimsiz kapatılabilir**.
 
 ## 7. Üçüncü Taraf Servisleri
 
-Uygulama; Supabase (backend), Firebase (bildirim), Yahoo Finance / TEFAS (fiyat verisi) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
+Uygulama; Supabase (sunucu, veritabanı ve kimlik doğrulama), Google Firebase (bildirim, hata raporu, kullanım istatistiği, uzaktan ayar), Apple (iOS bildirimleri ve kilit ekranı canlı etkinliği), Apple ile Giriş ve Google ile Giriş (seçerseniz), Google'ın e-posta altyapısı (doğrulama kodları) ve fiyat verisi sağlayıcıları (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, TCMB, EGM vb.) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
 
 Yahoo Finance, TEFAS gibi veri kaynaklarının sağladığı bilgiler dahil olmak üzere üçüncü taraf veri sağlayıcılarının kendi kullanım koşulları geçerlidir. Veri çekiminin geçici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri girişi seçenekleri sunulabilir.
 
@@ -124,8 +130,9 @@ Yahoo Finance, TEFAS gibi veri kaynaklarının sağladığı bilgiler dahil olma
 - Hizmeti tamamen sonlandırma kararı alırsak en az **30 gün önceden** bildirim yaparız ve verilerinizi indirme imkanı sunarız.
 
 ### 9.2 Kullanıcının Hakları
-- İstediğiniz zaman hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
-- Hesap silme talebi 30 gün içinde işleme alınır; tüm verileriniz kalıcı olarak silinir (yasal saklama yükümlülükleri hariç — bkz. Gizlilik Politikası §7).
+- İstediğiniz zaman hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil). Uygulamadan yapılan silme anında gerçekleşir: hesabınız ve girdiğiniz veriler canlı veritabanından hemen silinir; yasal saklama süresi olan kayıtlar istisnadır (bkz. Gizlilik Politikası §7).
+- E-postayla iletilen silme talepleri 30 gün içinde işleme alınır.
+- Verilerinizin bir kopyasını istediğiniz zaman alabilirsiniz (Profil → Ayarlar → Verilerimi İndir, JSON dosyası).
 
 ### 9.3 Şirketin Sona Erdirme Hakkı
 Bu Koşulları ihlal ettiğiniz tespit edilirse hesabınızı bildirimsiz askıya alabilir veya silebiliriz. Yasal mevzuat gereği zorunlu durumlarda yetkili mercilere bildirim yaparız.
@@ -194,9 +201,9 @@ Bu Koşulların herhangi bir maddesi geçersiz sayılırsa, geri kalan maddeler 
 ## 17. Uygulanacak Hukuk ve Yetkili Mahkeme
 
 - **Uygulanacak hukuk:** Türkiye Cumhuriyeti hukuku
-- **Yetkili mahkeme:** `[YETKİLİ MAHKEME — örn. İstanbul Anadolu Tüketici Mahkemeleri ve İcra Daireleri]`
+- **Yetkili mahkeme:** Bu Koşullardan doğan uyuşmazlıklarda Türkiye Cumhuriyeti mahkemeleri ve icra daireleri yetkilidir.
 
-Tüketici sıfatı taşıyan kullanıcılar için TKHK uyarınca yerleşim yeri mahkemeleri de yetkilidir.
+Tüketici işlemlerinde 6502 sayılı Tüketicinin Korunması Hakkında Kanun uyarınca, parasal sınırlar dahilinde tüketicinin yerleşim yerindeki tüketici hakem heyetleri, bu sınırların üzerinde tüketicinin yerleşim yerindeki tüketici mahkemeleri yetkilidir.
 
 AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesinin zorunlu tüketici koruma hükümleri saklıdır.
 
@@ -204,11 +211,11 @@ AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesin
 
 ## 18. Koşullarda Değişiklik
 
-Bu Koşullarda değişiklik yaparsak:
-- En az **30 gün önceden** uygulama içi bildirim ve e-posta ile haber veririz.
-- Önemli değişiklikler için tekrar onay isteyebiliriz.
-- Değişikliği kabul etmiyorsanız hesabınızı silme hakkınız vardır.
-- 30 gün içinde itiraz etmezseniz değişikliği kabul etmiş sayılırsınız.
+Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
+- Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır.
+- Önemli değişiklikler uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir ve yeniden onayınız istenir.
+- Onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
+- Hangi sürümü ne zaman onayladığınız kayıt altında tutulur.
 
 ---
 
@@ -221,5 +228,4 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar [Türkçe] ve [İngilizce] olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*
-
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*
