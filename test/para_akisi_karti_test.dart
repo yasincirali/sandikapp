@@ -395,7 +395,7 @@ void main() {
       expect(sunucu, contains('export const ASGARI_BUYUKLUK = 250_000_000;'));
       // Bildirim kademesi olayla aynı satırda: B4 ayrı kural yazmaz.
       expect(sunucu, contains('bildirime_deger:'));
-      expect(ekranKaynagiSync('supabase/migrations/0105_fon_akisi.sql'),
+      expect(ekranKaynagiSync('supabase/migrations/0106_fon_akisi.sql'),
           contains('bildirime_deger boolean not null default false'));
     });
 
@@ -410,7 +410,7 @@ void main() {
 
     test('migration: RLS + GRANT + doğrulama, istemci yazamaz', () {
       final sql =
-          ekranKaynagiSync('supabase/migrations/0105_fon_akisi.sql');
+          ekranKaynagiSync('supabase/migrations/0106_fon_akisi.sql');
       for (final tablo in ['fon_akis_gunluk', 'balina_olay', 'fon_akis_tur']) {
         expect(sql,
             contains('alter table public.$tablo enable row level security'));
@@ -425,7 +425,7 @@ void main() {
           .allMatches(sql)
           .length;
       expect(definer, RegExp(r'security definer').allMatches(sql).length);
-      expect(sql, contains("raise exception '0105:"));
+      expect(sql, contains("raise exception '0106:"));
     });
   });
 }

@@ -198,7 +198,7 @@ class RemoteConfigService {
 
     // Fon sayfasında "Para akışı" kartı ve büyük giriş/çıkış olayları
     // (Balina B1, 2026-10-04). KAPALI doğar: veri `akis-gozlem` fonksiyonu
-    // ve 0105 cron'u iki sunucuda koşup pencereyi doldurduktan sonra gelir;
+    // ve 0106 cron'u iki sunucuda koşup pencereyi doldurduktan sonra gelir;
     // tablo boşken kart zaten çizilmez ama bayrak, dağıtım sırasını
     // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
     'balina_radari_acik': false,
@@ -614,7 +614,7 @@ class RemoteConfigService {
   /// `_bayrak`'ta (RC_ACIK yalnız debug/profile'da).
   bool get varlikIslemCubugu => _bayrak('varlik_islem_cubugu');
 
-  /// Fon sayfasında para akışı kartı (0105). Gerekçe `_defaults`'ta.
+  /// Fon sayfasında para akışı kartı (0106). Gerekçe `_defaults`'ta.
   bool get balinaRadariAcik => _bayrak('balina_radari_acik');
 
   /// Varlık ekranının kıyası Karşılaştır ekranına bağlanır — bkz.

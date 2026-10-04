@@ -1,6 +1,6 @@
 // Akış Gözlem Edge Function — FON PARA AKIŞI VE BÜYÜK GİRİŞ/ÇIKIŞ TESPİTİ
 //
-// pg_cron ile günde dört kez koşar (0105_fon_akisi.sql). TEFAS'ın büyüklük
+// pg_cron ile günde dört kez koşar (0106_fon_akisi.sql). TEFAS'ın büyüklük
 // ucundan her fonun günlük pay adedini ve toplam değerini okur, net para
 // akışını hesaplayıp `fon_akis_gunluk`'a yazar; kurala uyan günleri
 // `balina_olay`'a işler. Kural ve hesap `_shared/balina.ts`'te (saf, testli).

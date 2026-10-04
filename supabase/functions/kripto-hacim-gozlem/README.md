@@ -4,7 +4,7 @@ Portföylerde tutulan **coinlerin** (`ticker` `KRIPTO:` önekli, `type = kripto`
 Binance USDT paritesindeki günlük mumlarını okur; işlem hacmini (USDT) ve
 alıcı payını `kripto_hacim_gunluk`'a yazar, olağandışı hacim günlerini
 `balina_olay`'a `kripto_hacim_yukselis` / `kripto_hacim_dusus` türüyle işler
-(0107). İstemci kartı ("Alıcı baskısı") `balina_radari_acik` bayrağının
+(0108). İstemci kartı ("Alıcı baskısı") `balina_radari_acik` bayrağının
 arkasında.
 
 - Kaynak: Binance `/api/v3/klines`, `interval=1d&limit=90&timeZone=3` (gün

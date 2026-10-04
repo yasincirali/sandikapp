@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-04 (fon para akışı, 0105); önce: 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-04 (fon para akışı, 0106); önce: 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -12,11 +12,11 @@
 
 Fon/BES sayfasında "Para akışı" kartı: son haftanın net girişi/çıkışı, 8
 haftalık çubuklar, fon büyüklüğü, yatırımcı sayısı ve kurala uyan büyük
-giriş/çıkış günleri. Veri TEFAS'tan sunucuda toplanır (`akis-gozlem`, 0105).
+giriş/çıkış günleri. Veri TEFAS'tan sunucuda toplanır (`akis-gozlem`, 0106).
 Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma.
 
 - [ ] Dalı incele, uygunsa PR aç / birleştir (birleştirme sende).
-- [ ] **Supabase deploy, hedef `ikisi`:** migration `0105_fon_akisi.sql` +
+- [ ] **Supabase deploy, hedef `ikisi`:** migration `0106_fon_akisi.sql` +
       fonksiyon `akis-gozlem`. Yeni secret YOK (`TEFAS_NAV_CRON_SECRET`
       paylaşılır). Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
 - [ ] İlk doldurma (cron'u beklemeden, etkin sunucuda SQL Editor):
@@ -30,12 +30,12 @@ Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma
       bildirim kademesinde (≥ %5, ≥ ₺25 mn, penceredeki en büyük akış;
       203 fon). Oranların paydası akıştan önceki fon büyüklüğü. Eşikler `_shared/balina.ts`'te tek yerde.
 - [ ] **Hisse hacim radarı (B2):** aynı dağıtımda migration
-      `0106_hisse_hacim.sql` + fonksiyon `hacim-gozlem` (hedef `ikisi`; yeni
+      `0107_hisse_hacim.sql` + fonksiyon `hacim-gozlem` (hedef `ikisi`; yeni
       secret YOK, `PRICE_ALERTS_CRON_SECRET` paylaşılır). İlk doldurma tek
       çağrı: `select public.trigger_hacim_gozlem();` (3 aylık seri tek
       istekte gelir). Kontrol:
       `select count(distinct ticker), max(tarih) from hisse_hacim_gunluk;`
-- [ ] **Kripto alıcı baskısı (B3):** migration `0107_kripto_hacim.sql` +
+- [ ] **Kripto alıcı baskısı (B3):** migration `0108_kripto_hacim.sql` +
       fonksiyon `kripto-hacim-gozlem` (yeni secret YOK). İlk doldurma tek
       çağrı: `select public.trigger_kripto_hacim_gozlem();` Kontrol:
       `select count(distinct ticker), max(tarih) from kripto_hacim_gunluk;`

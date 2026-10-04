@@ -143,7 +143,7 @@ TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!
 # denenmez: tohum kullanici silinemez. Migration'in kendi dogrulama blogu
 # tetikleyiciyi, politikayi ve cron isini kontrol eder.
 
-echo "== 6d) Fon para akisi (0105) — oturum okur, yazamaz; anon okuyamaz; ic tablo ve RPC kapali"
+echo "== 6d) Fon para akisi (0106) — oturum okur, yazamaz; anon okuyamaz; ic tablo ve RPC kapali"
 # Tablolar piyasa verisi: authenticated yalniz SELECT. Taze yiginda bos
 # olmalari normal (veriyi akis-gozlem yazar); sinanan sey yetki siniri.
 for T in fon_akis_gunluk balina_olay hisse_hacim_gunluk kripto_hacim_gunluk; do

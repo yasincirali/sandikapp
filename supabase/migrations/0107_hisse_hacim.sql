@@ -1,7 +1,7 @@
--- 0106 — Hisse hacim radarı (Balina B2, 2026-10-04)
+-- 0107 — Hisse hacim radarı (Balina B2, 2026-10-04)
 --
 -- ## Neden
--- Fon tarafında para akışı ölçülebiliyor (0105). Hissede lisanssız veriyle
+-- Fon tarafında para akışı ölçülebiliyor (0106). Hissede lisanssız veriyle
 -- ölçülebilen tek şey HACİM: bir günün para hacmi (işlem adedi × kapanış)
 -- kendi son 20 gününe göre olağandışı büyük mü. `hacim-gozlem` edge
 -- function'ı portföylerde tutulan BIST hisselerinin günlük kapanış ve
@@ -13,9 +13,9 @@
 -- Yalnızca EKLER / gevşetir: yeni tablo, `balina_olay`'a iki boş bırakılabilir
 -- sütun, `tur` listesine iki değer, `buyukluk_orani` artık boş olabilir
 -- (hisse olayında "fon büyüklüğüne oran" yoktur; sıfır yazmak uydurma olurdu).
--- 0105'ün istemcisi fon satırlarını `ticker` ile süzer, hisse satırı görmez.
+-- 0106'ün istemcisi fon satırlarını `ticker` ile süzer, hisse satırı görmez.
 --
--- ## Yetki: 0105 ile aynı — oturum okur, yalnız service_role yazar.
+-- ## Yetki: 0106 ile aynı — oturum okur, yalnız service_role yazar.
 
 -- ── 1) Günlük hacim ─────────────────────────────────────────────────────────
 create table if not exists public.hisse_hacim_gunluk (
@@ -35,7 +35,7 @@ create index if not exists hisse_hacim_gunluk_tarih_idx
   on public.hisse_hacim_gunluk (tarih);
 
 comment on table public.hisse_hacim_gunluk is
-  'Portfoylerde tutulan BIST hisselerinin gunluk kapanis ve hacmi (0106). '
+  'Portfoylerde tutulan BIST hisselerinin gunluk kapanis ve hacmi (0107). '
   'Yalniz hacim-gozlem (service_role) yazar, authenticated yalniz okur. 400 gun saklanir.';
 
 alter table public.hisse_hacim_gunluk enable row level security;
@@ -107,7 +107,7 @@ select cron.schedule('hacim-gozlem', '45 15,19 * * 1-5',
   $$select public.trigger_hacim_gozlem()$$);
 
 -- İki sunucu birebir: proje "tüm cron kapalı" kipindeyse yeni iş de kapalı
--- doğar (0086/0089/0101/0105 gerekçesi).
+-- doğar (0086/0089/0101/0106 gerekçesi).
 do $$
 begin
   if exists (select 1 from cron.job where jobname <> 'hacim-gozlem')
@@ -115,7 +115,7 @@ begin
                       where jobname <> 'hacim-gozlem' and active) then
     perform cron.alter_job(job_id := jobid, active := false)
        from cron.job where jobname = 'hacim-gozlem';
-    raise notice '0106: projede tum cron isleri kapali — hacim-gozlem de kapali kuruldu.';
+    raise notice '0107: projede tum cron isleri kapali — hacim-gozlem de kapali kuruldu.';
   end if;
 end $$;
 
@@ -123,44 +123,44 @@ end $$;
 do $$
 begin
   if not has_table_privilege('authenticated', 'public.hisse_hacim_gunluk', 'SELECT') then
-    raise exception '0106: authenticated icin hisse_hacim_gunluk SELECT GRANT eksik';
+    raise exception '0107: authenticated icin hisse_hacim_gunluk SELECT GRANT eksik';
   end if;
   if has_table_privilege('authenticated', 'public.hisse_hacim_gunluk', 'INSERT')
      or has_table_privilege('authenticated', 'public.hisse_hacim_gunluk', 'UPDATE')
      or has_table_privilege('authenticated', 'public.hisse_hacim_gunluk', 'DELETE') then
-    raise exception '0106: authenticated hisse_hacim_gunluk tablosuna YAZAMAMALI';
+    raise exception '0107: authenticated hisse_hacim_gunluk tablosuna YAZAMAMALI';
   end if;
   if has_table_privilege('anon', 'public.hisse_hacim_gunluk', 'SELECT') then
-    raise exception '0106: anon hisse_hacim_gunluk tablosunu okuyamamali';
+    raise exception '0107: anon hisse_hacim_gunluk tablosunu okuyamamali';
   end if;
   if not has_table_privilege('service_role', 'public.hisse_hacim_gunluk', 'INSERT')
      or not has_table_privilege('service_role', 'public.hisse_hacim_gunluk', 'DELETE') then
-    raise exception '0106: service_role icin hisse_hacim_gunluk INSERT/DELETE GRANT eksik';
+    raise exception '0107: service_role icin hisse_hacim_gunluk INSERT/DELETE GRANT eksik';
   end if;
   if not exists (select 1 from pg_class
                   where oid = 'public.hisse_hacim_gunluk'::regclass
                     and relrowsecurity and relforcerowsecurity) then
-    raise exception '0106: hisse_hacim_gunluk RLS (enable + force) kapali';
+    raise exception '0107: hisse_hacim_gunluk RLS (enable + force) kapali';
   end if;
   if (select count(*) from pg_policies
        where schemaname = 'public' and tablename = 'hisse_hacim_gunluk') <> 1 then
-    raise exception '0106: hisse_hacim_gunluk yalniz select politikasini tasimali';
+    raise exception '0107: hisse_hacim_gunluk yalniz select politikasini tasimali';
   end if;
   if has_table_privilege('authenticated', 'public.balina_olay', 'INSERT') then
-    raise exception '0106: authenticated balina_olay tablosuna YAZAMAMALI';
+    raise exception '0107: authenticated balina_olay tablosuna YAZAMAMALI';
   end if;
   if not exists (select 1 from information_schema.columns
                   where table_schema = 'public' and table_name = 'balina_olay'
                     and column_name = 'ortalama_kati') then
-    raise exception '0106: balina_olay.ortalama_kati eksik';
+    raise exception '0107: balina_olay.ortalama_kati eksik';
   end if;
   if has_function_privilege('authenticated', 'public.trigger_hacim_gozlem()', 'EXECUTE') then
-    raise exception '0106: trigger_hacim_gozlem authenticated tarafindan cagrilabilir olmamali';
+    raise exception '0107: trigger_hacim_gozlem authenticated tarafindan cagrilabilir olmamali';
   end if;
   if not exists (select 1 from cron.job
                   where jobname = 'hacim-gozlem' and schedule = '45 15,19 * * 1-5') then
-    raise exception '0106: hacim-gozlem cron isi kurulmadi';
+    raise exception '0107: hacim-gozlem cron isi kurulmadi';
   end if;
 
-  raise notice '0106 tamam: hisse_hacim_gunluk + balina_olay hisse turleri + cron yerinde.';
+  raise notice '0107 tamam: hisse_hacim_gunluk + balina_olay hisse turleri + cron yerinde.';
 end $$;

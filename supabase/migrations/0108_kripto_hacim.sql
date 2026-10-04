@@ -1,7 +1,7 @@
--- 0107 — Kripto alıcı baskısı ve hacim (Balina B3, 2026-10-05)
+-- 0108 — Kripto alıcı baskısı ve hacim (Balina B3, 2026-10-05)
 --
 -- ## Neden
--- Hisse hacim radarının (0106) kripto karşılığı. Binance günlük mumları iki
+-- Hisse hacim radarının (0107) kripto karşılığı. Binance günlük mumları iki
 -- şey veriyor: işlem hacmi (USDT) ve piyasa emriyle ALAN tarafın o hacimdeki
 -- payı. `kripto-hacim-gozlem` edge function'ı portföylerde tutulan coinler
 -- için bunları `kripto_hacim_gunluk`'a yazar; olağandışı hacim günlerini
@@ -13,10 +13,10 @@
 --
 -- ## Eski sürümler
 -- Yalnızca EKLER / gevşetir: yeni tablo, `balina_olay.tur` listesine iki
--- değer, bir boş bırakılabilir sütun. 0105/0106 istemcisi kripto satırlarını
+-- değer, bir boş bırakılabilir sütun. 0106/0107 istemcisi kripto satırlarını
 -- `tur` süzgeciyle hiç okumaz.
 --
--- ## Yetki: 0105/0106 ile aynı — oturum okur, yalnız service_role yazar.
+-- ## Yetki: 0106/0107 ile aynı — oturum okur, yalnız service_role yazar.
 
 create table if not exists public.kripto_hacim_gunluk (
   -- Uygulamadaki ticker ile birebir: 'KRIPTO:BTC'.
@@ -36,7 +36,7 @@ create index if not exists kripto_hacim_gunluk_tarih_idx
   on public.kripto_hacim_gunluk (tarih);
 
 comment on table public.kripto_hacim_gunluk is
-  'Portfoylerde tutulan coinlerin gunluk Binance USDT hacmi ve alici payi (0107). '
+  'Portfoylerde tutulan coinlerin gunluk Binance USDT hacmi ve alici payi (0108). '
   'Yalniz kripto-hacim-gozlem (service_role) yazar, authenticated yalniz okur. 400 gun saklanir.';
 
 alter table public.kripto_hacim_gunluk enable row level security;
@@ -75,7 +75,7 @@ alter table public.balina_olay add constraint balina_olay_alan_tutarliligi check
 
 -- ── Tetikleyici ─────────────────────────────────────────────────────────────
 -- Secret fiyat alarmıyla PAYLAŞILIR (`price_alerts_cron_secret`): ikisi de
--- Binance'ten salt-okur piyasa verisi çeken işler (emsal 0101, 0106).
+-- Binance'ten salt-okur piyasa verisi çeken işler (emsal 0101, 0107).
 create or replace function public.trigger_kripto_hacim_gozlem()
 returns void
 language plpgsql
@@ -108,7 +108,7 @@ begin
                       where jobname <> 'kripto-hacim-gozlem' and active) then
     perform cron.alter_job(job_id := jobid, active := false)
        from cron.job where jobname = 'kripto-hacim-gozlem';
-    raise notice '0107: projede tum cron isleri kapali — kripto-hacim-gozlem de kapali kuruldu.';
+    raise notice '0108: projede tum cron isleri kapali — kripto-hacim-gozlem de kapali kuruldu.';
   end if;
 end $$;
 
@@ -116,36 +116,36 @@ end $$;
 do $$
 begin
   if not has_table_privilege('authenticated', 'public.kripto_hacim_gunluk', 'SELECT') then
-    raise exception '0107: authenticated icin kripto_hacim_gunluk SELECT GRANT eksik';
+    raise exception '0108: authenticated icin kripto_hacim_gunluk SELECT GRANT eksik';
   end if;
   if has_table_privilege('authenticated', 'public.kripto_hacim_gunluk', 'INSERT')
      or has_table_privilege('authenticated', 'public.kripto_hacim_gunluk', 'UPDATE')
      or has_table_privilege('authenticated', 'public.kripto_hacim_gunluk', 'DELETE') then
-    raise exception '0107: authenticated kripto_hacim_gunluk tablosuna YAZAMAMALI';
+    raise exception '0108: authenticated kripto_hacim_gunluk tablosuna YAZAMAMALI';
   end if;
   if has_table_privilege('anon', 'public.kripto_hacim_gunluk', 'SELECT') then
-    raise exception '0107: anon kripto_hacim_gunluk tablosunu okuyamamali';
+    raise exception '0108: anon kripto_hacim_gunluk tablosunu okuyamamali';
   end if;
   if not has_table_privilege('service_role', 'public.kripto_hacim_gunluk', 'INSERT')
      or not has_table_privilege('service_role', 'public.kripto_hacim_gunluk', 'DELETE') then
-    raise exception '0107: service_role icin kripto_hacim_gunluk INSERT/DELETE GRANT eksik';
+    raise exception '0108: service_role icin kripto_hacim_gunluk INSERT/DELETE GRANT eksik';
   end if;
   if not exists (select 1 from pg_class
                   where oid = 'public.kripto_hacim_gunluk'::regclass
                     and relrowsecurity and relforcerowsecurity) then
-    raise exception '0107: kripto_hacim_gunluk RLS (enable + force) kapali';
+    raise exception '0108: kripto_hacim_gunluk RLS (enable + force) kapali';
   end if;
   if (select count(*) from pg_policies
        where schemaname = 'public' and tablename = 'kripto_hacim_gunluk') <> 1 then
-    raise exception '0107: kripto_hacim_gunluk yalniz select politikasini tasimali';
+    raise exception '0108: kripto_hacim_gunluk yalniz select politikasini tasimali';
   end if;
   if has_function_privilege('authenticated', 'public.trigger_kripto_hacim_gozlem()', 'EXECUTE') then
-    raise exception '0107: trigger_kripto_hacim_gozlem authenticated tarafindan cagrilabilir olmamali';
+    raise exception '0108: trigger_kripto_hacim_gozlem authenticated tarafindan cagrilabilir olmamali';
   end if;
   if not exists (select 1 from cron.job
                   where jobname = 'kripto-hacim-gozlem' and schedule = '20 21,3 * * *') then
-    raise exception '0107: kripto-hacim-gozlem cron isi kurulmadi';
+    raise exception '0108: kripto-hacim-gozlem cron isi kurulmadi';
   end if;
 
-  raise notice '0107 tamam: kripto_hacim_gunluk + balina_olay kripto turleri + cron yerinde.';
+  raise notice '0108 tamam: kripto_hacim_gunluk + balina_olay kripto turleri + cron yerinde.';
 end $$;
