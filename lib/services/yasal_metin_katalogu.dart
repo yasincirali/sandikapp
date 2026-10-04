@@ -311,7 +311,7 @@ class YasalMetin {
 ///    metin yok" diye reddedilir ve kapı her açılışta yeniden sorar). Web
 ///    `main`'e girince Pages'te yayınlanır. Yeni sürüm yayına çıkınca eski
 ///    sürümü onaylamış her kullanıcı bir sonraki açılışta yeniden onay
-///    kapısını (`YasalOnayKapisiScreen`, bayrak `yeniden_onay_kapisi`)
+///    kapısını (`YasalOnayKapisiScreen`, bayrak `yasal_kapi_en_yeni`)
 ///    görür; eski onay satırı ve eski metin satırı DB'de aynen kalır.
 ///
 /// **Kutular / Zirve:** kutu metni değişirse [YasalMetinKatalogu.kutuSurumu],

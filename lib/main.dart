@@ -893,7 +893,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   String? _checkedUserId;
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
 
-  /// Yeniden onay kapısı (bayrak `yeniden_onay_kapisi`, 2026-10-04) —
+  /// Yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`, 2026-10-04) —
   /// null = kontrol bekleniyor. Bayrak kapalıyken servis ağa gitmeden
   /// [YasalKapiDurumu.tamam] döner: davranış birebir eski.
   YasalKapiDurumu? _yasalKapi;
@@ -2043,7 +2043,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
     _oturumVardi = true;
 
-    // Yeniden onay kapısı (bayrak `yeniden_onay_kapisi`, 2026-10-04) —
+    // Yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`, 2026-10-04) —
     // yatırım uyarısı kapısıyla AYNI yerde, kullanıcı adından ve turdan
     // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı belgeleri ve kayıt
     // kutusu taahhütlerini (18+, yurt dışı aktarım açık rızası) uygulamaya

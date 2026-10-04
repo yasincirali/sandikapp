@@ -27,7 +27,7 @@ açılışta yeniden sorar):**
 - [ ] 3. ANCAK SONRA uygulama (PR → main). `main`'e girince Pages web'i de
       yayınlar (docs/ HTML 1.2). Yayınla birlikte 1.1'i onaylamış herkes bir
       sonraki açılışta kapıda "Güncellenen belgeler"i görür (bayraklar
-      `yasal_onay_kaydi` + `yeniden_onay_kapisi` açık).
+      `yasal_onay_kaydi` + `yasal_kapi_en_yeni` açık).
 
 **Karar: metin uygulamaya uyduruldu (2026-10-04).** Kullanıcı kuralı:
 *"mahkemeye bişey sormayacağız, yeni bir versiyon geldiğinde sürüm güncelleyip
@@ -140,7 +140,14 @@ Liste ve ne açtıkları:
      `select kanal, count(*) from yasal_onaylar group by 1;` → yalnız
      `aktarim` (eski yatırım uyarısı + Zirve rızaları).
      `select jobname, active from cron.job where jobname = 'yasal-onay-saklama';`
-  ⚠️ 2026-10-04: `yasal_onay_kaydi` ve `yeniden_onay_kapisi` artık
+- [ ] **ŞİMDİ — Firebase Console › Remote Config: `yeniden_onay_kapisi` =
+  `false` (KALICI, tüm kullanıcılar).** #85 sürümünün onay kapısı yalnız 1.1'i
+  bilir ve sunucuda 1.2 olsa da 1.1'i onaylatır; #86 gelince kullanıcı ikinci
+  kez onaylardı ("çift onay olmamalı" kuralı). #86'dan itibaren kapı yeni
+  anahtar `yasal_kapi_en_yeni`'yi (varsayılan açık) okur ve sunucuda daha
+  yeni metin varsa eski metni hiç onaylatmaz — kullanıcı yalnız en yeniyi,
+  bir kez onaylar. Eski anahtarı geri açma.
+  ⚠️ 2026-10-04: `yasal_onay_kaydi` ve `yasal_kapi_en_yeni` artık
   VARSAYILAN AÇIK — 4. ve 6. adımlar Console işi değil, uygulama yayımlanınca
   kendiliğinden açılır. Bu yüzden **0102 iki sunucuya uygulama mağazaya
   çıkmadan ÖNCE dağıtılmalı**; kapatmak için Console'a `false` ekle.
@@ -151,7 +158,7 @@ Liste ve ne açtıkları:
      where user_id = '<yeni id>';` → `kayit_kutu_kosullar`, `kayit_kutu_riza`,
      `kosullar`, `gizlilik_politikasi`, `kvkk_aydinlatma` için `guncel_mi =
      true`. Zirve'ye katıl → `zirve_riza` true; ayrıl → `geri_cekildi = true`.
-  6. **Sonra** `yeniden_onay_kapisi` = `true` (önce kendi cihazın). Yalnız
+  6. **Sonra** `yasal_kapi_en_yeni` = `true` (önce kendi cihazın). Yalnız
      `yasal_onay_kaydi` de açıkken etkili. Açılınca girişte: belgelerin
      güncel sürümüne (1.1) ve kayıt kutusu taahhütlerine onayı olmayan
      HERKES (yani bugünkü tüm kullanıcılar — sunucuda kanıtları yok) bir kez
@@ -183,7 +190,7 @@ Liste ve ne açtıkları:
       §5.1). Yatırım uyarısı onayı (`disclaimer_acceptances`, cascade —
       dokunulmadı) silmeden önce `yasal_onaylar`'a taşınır.
     - Eski kullanıcılardan yeniden onay → **karar: evet**, girişte kapı
-      (bayrak `yeniden_onay_kapisi`).
+      (bayrak `yasal_kapi_en_yeni`).
     - Belgelerin sürümü → **karar: 1.1** (yürürlük 4 Ekim 2026). "1.0"
       adıyla birden çok farklı metin yayımlandığı için DB'ye "1.0" arşivi
       yazılmadı; DB'deki ilk belge sürümü 1.1.

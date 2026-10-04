@@ -17,7 +17,7 @@ import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Yeniden onay kapısı ekranı (bayrak `yeniden_onay_kapisi`, 2026-10-04).
+/// Yeniden onay kapısı ekranı (bayrak `yasal_kapi_en_yeni`, 2026-10-04).
 ///
 /// Kullanıcı kararı: eski metni onaylayan girişte güncel belgeleri görüp
 /// onaylar; Apple/Google ile ilk kez gelen kayıt formundaki taahhütlerin
@@ -48,7 +48,7 @@ void main() {
       uyariKayitlari.add(userId);
       return true;
     };
-    RemoteConfigService.testAcik = {'yasal_onay_kaydi', 'yeniden_onay_kapisi'};
+    RemoteConfigService.testAcik = {'yasal_onay_kaydi', 'yasal_kapi_en_yeni'};
   });
   tearDown(() {
     YasalOnayService.rpcTesti = null;
@@ -195,7 +195,7 @@ void main() {
       (tester) async {
     RemoteConfigService.testAcik = {
       'yasal_onay_kaydi',
-      'yeniden_onay_kapisi',
+      'yasal_kapi_en_yeni',
       'tek_onay_kutusu',
     };
     await ac(tester, ilk);

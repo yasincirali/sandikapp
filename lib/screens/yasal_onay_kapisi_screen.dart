@@ -15,7 +15,7 @@ import '../widgets/sigan_metin.dart';
 import 'legal_doc_screen.dart';
 import 'register_screen.dart' show YasalOnayKutusu;
 
-/// Yeniden onay kapısı (bayrak `yeniden_onay_kapisi`, 2026-10-04).
+/// Yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`, 2026-10-04).
 ///
 /// ## Neden
 /// Kullanıcı kararı: *"Eski rıza metnini onaylayanlar için ilk login'de
