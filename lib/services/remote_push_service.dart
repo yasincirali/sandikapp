@@ -10,6 +10,7 @@ import '../config/pref_keys.dart';
 
 import 'notification_service.dart';
 import 'push_message_router.dart';
+import 'remote_config_service.dart';
 import 'supabase_service.dart';
 import 'crash_reporter.dart';
 
@@ -170,12 +171,32 @@ class RemotePushService {
 
     _activeUserId = userId;
 
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    // İzin GİRİŞTE sorulmaz (2026-10-04, sadeleştirme madde 2): eskiden her
+    // oturum açılışında `requestPermission` çağrılıyordu; bu, ilk varlıktan
+    // sonra bağlamıyla sorma akışını (`push_prompt_after_first_asset`)
+    // fiilen boşa çıkarıyordu — sistem diyaloğu kullanıcı hiçbir değer
+    // görmeden çıkıyordu. Artık izin yoksa token yazılmadan dönülür; izin
+    // ilk varlıktan sonra verilince [izinSonrasiYenidenBaslat] bu akışı
+    // yeniden çalıştırır. Bayrak kapatılırsa eski davranış birebir döner.
+    final mevcut = await _messaging.getNotificationSettings();
+    final izinVar =
+        mevcut.authorizationStatus == AuthorizationStatus.authorized ||
+            mevcut.authorizationStatus == AuthorizationStatus.provisional;
+    if (!izinVar && RemoteConfigService.instance.pushPromptAfterFirstAsset) {
+      try {
+        await FirebaseCrashlytics.instance.log(
+            'push_permission=${mevcut.authorizationStatus.name} → ertelendi');
+      } catch (_) {}
+      return;
+    }
+    final settings = izinVar
+        ? mevcut
+        : await _messaging.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+            provisional: false,
+          );
 
     // Debug: TestFlight'ta gerçekten hangi iznin verildiğini Crashlytics
     // log'una yaz. Firebase Console → Crashlytics → cihazın loglarında
@@ -251,6 +272,18 @@ class RemotePushService {
     if (token == null || token.isEmpty) return;
 
     await _syncToken(userId, token);
+  }
+
+  /// Bildirim izni sonradan (ilk varlıktan sonra) verildiğinde token
+  /// kaydını yeniden dener. Oturum yoksa ya da push kullanılamıyorsa no-op.
+  Future<void> izinSonrasiYenidenBaslat() async {
+    final uid = _activeUserId;
+    if (uid == null) return;
+    try {
+      await start(uid);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'remote_push_izin_sonrasi');
+    }
   }
 
   Future<void> stop() async {

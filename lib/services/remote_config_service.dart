@@ -194,6 +194,19 @@ class RemoteConfigService {
     // en az bir hafta sonu kayıt biriktirdikten sonra Console'da açılır.
     // Kapalıyken GÜNLÜK birebir eski davranışta (hafta sonu düz) kalır.
     'hafta_sonu_yurt_ici_seri': false,
+
+    // ── Sadeleştirme (2026-10-04) ────────────────────────────────────────
+    // Kullanıcı isteği: "onboarding öncesi müşteri uygulama yetkinliklerini
+    // anlamalı". Girişten önce 4 sayfalık tanıtım + demo birincil düğme.
+    // Yalnızca oturumsuz, daha önce hiç giriş yapmamış cihazda görünür
+    // (`karsilamaGorulduProvider`); kapalıyken giriş ekranı birebir eski.
+    'karsilama_tanitimi': false,
+
+    // Yatırımcı seviyesi turda 3 soruluk anketle belirlenir ve Başlangıç
+    // seviyesi Performans'ta ileri kontrolleri (grafik tipi, simülasyon,
+    // MA20/LOG, derinlik metrikleri) gizler. Kapalıyken tur adımı tek
+    // seçici, Başlangıç yalnızca bugünkü üç kartı gizler (eski davranış).
+    'seviye_anketi': false,
   };
 
   Future<void> init() async {
@@ -337,6 +350,13 @@ class RemoteConfigService {
   bool get demoModeEnabled =>
       _rc?.getBool('demo_mode_enabled') ??
       _defaults['demo_mode_enabled'] as bool;
+
+  bool get karsilamaTanitimi =>
+      _rc?.getBool('karsilama_tanitimi') ??
+      _defaults['karsilama_tanitimi'] as bool;
+
+  bool get seviyeAnketi =>
+      _rc?.getBool('seviye_anketi') ?? _defaults['seviye_anketi'] as bool;
 
   bool get lockOfferAfterFirstAsset =>
       _rc?.getBool('lock_offer_after_first_asset') ??

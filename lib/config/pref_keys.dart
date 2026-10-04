@@ -83,6 +83,15 @@ class PrefKeys {
   /// DEĞİŞİNCE kaydedilir; yoksa her açılış bir "izin verdi" olayı olurdu.
   static const iosPushPermissionLast = 'ios_push_permission_last';
 
+  /// Varlığı olan kullanıcıya ertelenmiş bildirim izni bir kez soruldu mu
+  /// (`NotificationService.varlikliKullaniciyaBirKezSor`).
+  static const pushIzniVarlikliSoruldu = 'push_izni_varlikli_soruldu';
+
+  /// Girişten önceki tanıtım (karşılama) görüldü mü — cihaz başına. Bu
+  /// cihazda herhangi bir hesapla oturum açılınca da `true` yazılır: mevcut
+  /// kullanıcı çıkış yapınca tanıtımı görmesin.
+  static const karsilamaGoruldu = 'karsilama_goruldu';
+
   /// Son bilinen varlık defteri (JSON); kullanıcı kimliği soneklenir.
   static const portfolioCachePrefix = 'portfolio_cache_v1_';
 

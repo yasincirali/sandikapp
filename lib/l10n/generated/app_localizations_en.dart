@@ -5381,4 +5381,91 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get otpSpamIpucu =>
       'Didn\'t get it? Check your Junk / Spam folder too.';
+
+  @override
+  String get welcomeSkip => 'Skip';
+
+  @override
+  String get welcomeNext => 'Continue';
+
+  @override
+  String get welcomeCreateAccount => 'Create account';
+
+  @override
+  String get welcomeTryDemo => 'Explore a sample portfolio';
+
+  @override
+  String get welcomeHaveAccount => 'I have an account, sign in';
+
+  @override
+  String welcomePageOf(int sayfa, int toplam) {
+    return 'Introduction, page $sayfa of $toplam';
+  }
+
+  @override
+  String get welcomeP1Title => 'All your savings on one screen';
+
+  @override
+  String get welcomeP1Body =>
+      'Enter what you bought once and sandık keeps prices current. See your total, profit and allocation any time.';
+
+  @override
+  String get welcomeP2Title => 'Are you really earning?';
+
+  @override
+  String get welcomeP2Body =>
+      'Compare your return with inflation, the dollar and gold. See what your money itself earned, not your new purchases.';
+
+  @override
+  String get welcomeP3Title => 'Follow without opening the app';
+
+  @override
+  String get welcomeP3Body =>
+      'The home screen widget and morning brief bring your portfolio to you. On iPhone, follow it live on the lock screen.';
+
+  @override
+  String get welcomeP4Title => 'Set alerts, track together';
+
+  @override
+  String get welcomeP4Body =>
+      'We\'ll let you know when a price hits your target. Track a shared portfolio with your partner or family.';
+
+  @override
+  String get welcomeTagStock => 'Stocks';
+
+  @override
+  String get welcomeTagFund => 'Funds';
+
+  @override
+  String get welcomeTagGold => 'Gold';
+
+  @override
+  String get welcomeTagFx => 'FX';
+
+  @override
+  String get welcomeTagCrypto => 'Crypto';
+
+  @override
+  String get welcomeTagPension => 'Pension';
+
+  @override
+  String get welcomeTagInflation => 'Inflation';
+
+  @override
+  String get welcomeTagUsd => 'Dollar';
+
+  @override
+  String get welcomeTagWidget => 'Widget';
+
+  @override
+  String get welcomeTagLock => 'Lock screen';
+
+  @override
+  String get welcomeTagBrief => 'Morning brief';
+
+  @override
+  String get welcomeTagAlarm => 'Price alert';
+
+  @override
+  String get welcomeTagPartner => 'Shared portfolio';
 }

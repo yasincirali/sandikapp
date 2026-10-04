@@ -8894,6 +8894,168 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kod gelmediyse Gereksiz / Spam klasörüne de bak.'**
   String get otpSpamIpucu;
+
+  /// No description provided for @welcomeSkip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Atla'**
+  String get welcomeSkip;
+
+  /// No description provided for @welcomeNext.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam'**
+  String get welcomeNext;
+
+  /// No description provided for @welcomeCreateAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap oluştur'**
+  String get welcomeCreateAccount;
+
+  /// No description provided for @welcomeTryDemo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örnek portföye göz at'**
+  String get welcomeTryDemo;
+
+  /// No description provided for @welcomeHaveAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabım var, giriş yap'**
+  String get welcomeHaveAccount;
+
+  /// No description provided for @welcomePageOf.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tanıtım, sayfa {sayfa} / {toplam}'**
+  String welcomePageOf(int sayfa, int toplam);
+
+  /// No description provided for @welcomeP1Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm birikimin tek ekranda'**
+  String get welcomeP1Title;
+
+  /// No description provided for @welcomeP1Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne aldığını bir kez yaz, fiyatları sandık güncellesin. Toplamını, kârını ve dağılımını her an gör.'**
+  String get welcomeP1Body;
+
+  /// No description provided for @welcomeP2Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekten kazanıyor musun?'**
+  String get welcomeP2Title;
+
+  /// No description provided for @welcomeP2Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirini enflasyonla, dolarla ve altınla kıyasla. Yeni alımlar değil, paranın kendisinin ne getirdiğini gör.'**
+  String get welcomeP2Body;
+
+  /// No description provided for @welcomeP3Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı açmadan takip et'**
+  String get welcomeP3Title;
+
+  /// No description provided for @welcomeP3Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekran widget\'ı ve sabah özeti portföyünü sana getirir. iPhone\'da kilit ekranında canlı takip edersin.'**
+  String get welcomeP3Body;
+
+  /// No description provided for @welcomeP4Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kur, birlikte takip et'**
+  String get welcomeP4Title;
+
+  /// No description provided for @welcomeP4Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef fiyata gelince haber verelim. Eşinle ya da ailenle ortak portföyü birlikte izle.'**
+  String get welcomeP4Body;
+
+  /// No description provided for @welcomeTagStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hisse'**
+  String get welcomeTagStock;
+
+  /// No description provided for @welcomeTagFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon'**
+  String get welcomeTagFund;
+
+  /// No description provided for @welcomeTagGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın'**
+  String get welcomeTagGold;
+
+  /// No description provided for @welcomeTagFx.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz'**
+  String get welcomeTagFx;
+
+  /// No description provided for @welcomeTagCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto'**
+  String get welcomeTagCrypto;
+
+  /// No description provided for @welcomeTagPension.
+  ///
+  /// In tr, this message translates to:
+  /// **'BES'**
+  String get welcomeTagPension;
+
+  /// No description provided for @welcomeTagInflation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyon'**
+  String get welcomeTagInflation;
+
+  /// No description provided for @welcomeTagUsd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get welcomeTagUsd;
+
+  /// No description provided for @welcomeTagWidget.
+  ///
+  /// In tr, this message translates to:
+  /// **'Widget'**
+  String get welcomeTagWidget;
+
+  /// No description provided for @welcomeTagLock.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilit ekranı'**
+  String get welcomeTagLock;
+
+  /// No description provided for @welcomeTagBrief.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabah özeti'**
+  String get welcomeTagBrief;
+
+  /// No description provided for @welcomeTagAlarm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmı'**
+  String get welcomeTagAlarm;
+
+  /// No description provided for @welcomeTagPartner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak portföy'**
+  String get welcomeTagPartner;
 }
 
 class _AppLocalizationsDelegate

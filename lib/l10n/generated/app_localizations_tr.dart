@@ -5329,4 +5329,91 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get otpSpamIpucu => 'Kod gelmediyse Gereksiz / Spam klasörüne de bak.';
+
+  @override
+  String get welcomeSkip => 'Atla';
+
+  @override
+  String get welcomeNext => 'Devam';
+
+  @override
+  String get welcomeCreateAccount => 'Hesap oluştur';
+
+  @override
+  String get welcomeTryDemo => 'Örnek portföye göz at';
+
+  @override
+  String get welcomeHaveAccount => 'Hesabım var, giriş yap';
+
+  @override
+  String welcomePageOf(int sayfa, int toplam) {
+    return 'Tanıtım, sayfa $sayfa / $toplam';
+  }
+
+  @override
+  String get welcomeP1Title => 'Tüm birikimin tek ekranda';
+
+  @override
+  String get welcomeP1Body =>
+      'Ne aldığını bir kez yaz, fiyatları sandık güncellesin. Toplamını, kârını ve dağılımını her an gör.';
+
+  @override
+  String get welcomeP2Title => 'Gerçekten kazanıyor musun?';
+
+  @override
+  String get welcomeP2Body =>
+      'Getirini enflasyonla, dolarla ve altınla kıyasla. Yeni alımlar değil, paranın kendisinin ne getirdiğini gör.';
+
+  @override
+  String get welcomeP3Title => 'Uygulamayı açmadan takip et';
+
+  @override
+  String get welcomeP3Body =>
+      'Ana ekran widget\'ı ve sabah özeti portföyünü sana getirir. iPhone\'da kilit ekranında canlı takip edersin.';
+
+  @override
+  String get welcomeP4Title => 'Alarm kur, birlikte takip et';
+
+  @override
+  String get welcomeP4Body =>
+      'Hedef fiyata gelince haber verelim. Eşinle ya da ailenle ortak portföyü birlikte izle.';
+
+  @override
+  String get welcomeTagStock => 'Hisse';
+
+  @override
+  String get welcomeTagFund => 'Fon';
+
+  @override
+  String get welcomeTagGold => 'Altın';
+
+  @override
+  String get welcomeTagFx => 'Döviz';
+
+  @override
+  String get welcomeTagCrypto => 'Kripto';
+
+  @override
+  String get welcomeTagPension => 'BES';
+
+  @override
+  String get welcomeTagInflation => 'Enflasyon';
+
+  @override
+  String get welcomeTagUsd => 'Dolar';
+
+  @override
+  String get welcomeTagWidget => 'Widget';
+
+  @override
+  String get welcomeTagLock => 'Kilit ekranı';
+
+  @override
+  String get welcomeTagBrief => 'Sabah özeti';
+
+  @override
+  String get welcomeTagAlarm => 'Fiyat alarmı';
+
+  @override
+  String get welcomeTagPartner => 'Ortak portföy';
 }

@@ -338,6 +338,11 @@ final yaziBoyutuProvider = Provider<YaziBoyutu>(
 /// Yatırımcı seviyesi (Ayarlar › Görünüm) — `YatirimciSeviyesi.index`.
 /// Varsayılan Orta = bugünkü görünüm; tercih sorulmaz, dayatılmaz (bkz.
 /// `models/yatirimci_seviyesi.dart`). Kişiye özel.
+/// Girişten önceki tanıtım ekranı görüldü mü (cihaz tercihi). Bkz.
+/// `PrefKeys.karsilamaGoruldu`, `KarsilamaScreen`.
+final karsilamaGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.karsilamaGoruldu, false));
+
 final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(
         PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
