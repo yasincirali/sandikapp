@@ -189,7 +189,10 @@ class _IlkVarlikVitriniState extends ConsumerState<IlkVarlikVitrini>
         _kotasyon = q;
         _yuklendi = true;
       });
-      if (degisti && _fiyatVar) unawaited(_nabizAt(ilk ? 2 : 1));
+      if (degisti && _fiyatVar) {
+        CrashReporter.arkaPlan(_nabizAt(ilk ? 2 : 1),
+            reason: 'IlkVarlikVitrini.nabiz');
+      }
     } catch (e, st) {
       // Vitrin fiyatsız da çalışır (kutular dokunulabilir); sessiz kalmasın.
       CrashReporter.report(e, st, reason: 'IlkVarlikVitrini.yukle');
