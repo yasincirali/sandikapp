@@ -52,7 +52,7 @@ void main() {
     final src = ekranKaynagiSync('lib/services/disclaimer_service.dart');
     final start = src.indexOf('Future<bool> kabulKaydet(');
     final body = src.substring(start, src.indexOf('\n  }\n', start));
-    expect(body, contains('_surumEtiketi()'));
+    expect(body, contains('surumEtiketi()'));
     expect(body, contains('platformEtiketi(defaultTargetPlatform)'));
     expect(body, contains('CrashReporter.report('));
     expect(src, contains('PackageInfo.fromPlatform()'));

@@ -102,6 +102,12 @@ void main() {
     test('ortak_secimi_tasi kapalı doğar', () {
       expect(varsayilan('ortak_secimi_tasi'), 'false');
     });
+
+    // 0102 iki sunucuya dağıtılmadan açılırsa her kayıt/onay "fonksiyon
+    // yok" hatası üretir (YAPMAN: dağıt → sema_esitlik → aç).
+    test('yasal_onay_kaydi kapalı doğar', () {
+      expect(varsayilan('yasal_onay_kaydi'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {
