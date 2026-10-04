@@ -239,6 +239,94 @@ void main() {
         findsOneWidget);
   });
 
+  group('kripto alıcı baskısı kartı', () {
+    HacimOzeti kriptoOzet() => hacimOzeti(
+          [
+            for (var i = 0; i < 21; i++)
+              HacimGunu(
+                tarih: DateTime.utc(2026, 9, 2 + i),
+                kapanis: 60000,
+                paraHacmi: i == 20 ? 2.62e9 : 1e9,
+                aliciPayi: i >= 14 ? 0.52 : 0.49,
+              ),
+          ],
+          [
+            HacimOlayi(
+                tarih: _g(9, 21),
+                yukselis: true,
+                paraHacmi: 2.62e9,
+                ortalamaKati: 2.3,
+                fiyatDegisim: 0.0729,
+                aliciPayi: 0.5183),
+          ],
+          simdi: simdi,
+        )!;
+
+    Future<void> kur(WidgetTester t, Widget kart, {HacimOzeti? ozet}) async {
+      t.view.physicalSize = const Size(390, 1800);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(ProviderScope(
+        overrides: [
+          balinaRadariAcikProvider.overrideWithValue(true),
+          kriptoBaskiProvider.overrideWith((ref, ticker) async {
+            expect(ticker, 'KRIPTO:BTC');
+            return ozet;
+          }),
+        ],
+        child: MaterialApp(
+          theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('tr'),
+          home: Scaffold(body: SingleChildScrollView(child: kart)),
+        ),
+      ));
+      await t.pumpAndSettle();
+    }
+
+    testWidgets('alıcı payı, 7 gün ortalaması, dolar hacim ve olay', (t) async {
+      await kur(
+          t,
+          const KriptoBaskiKarti(
+              tur: AssetType.kripto, ticker: 'kripto:btc'),
+          ozet: kriptoOzet());
+      expect(find.text('ALICI BASKISI'), findsOneWidget);
+      expect(find.text('Alıcı payı · 22 Eyl'), findsOneWidget);
+      expect(find.text('%52,0'), findsOneWidget);
+      expect(find.text('Son 7 günün ortalaması %52,0'), findsOneWidget);
+      expect(find.text(r'İşlem hacmi $2,62Mr'), findsOneWidget);
+      expect(
+          find.text(r'$2,62Mr · ortalamanın 2,3 katı · fiyat +%7,3 · '
+              'alıcı payı %51,8'),
+          findsOneWidget);
+      expect(find.textContaining('Yalnız Binance'), findsOneWidget);
+      expect(find.textContaining('₺'), findsNothing);
+    });
+
+    testWidgets('USDT, veri yok ve kripto dışı varlıkta çizilmez', (t) async {
+      await kur(t,
+          const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'KRIPTO:USDT'));
+      expect(find.byType(SandikCard), findsNothing);
+      await kur(t,
+          const KriptoBaskiKarti(tur: AssetType.hisse, ticker: 'THYAO.IS'));
+      expect(find.byType(SandikCard), findsNothing);
+    });
+
+    test('alıcı payı 7 günün hepsinde yoksa ortalama verilmez', () {
+      final o = hacimOzeti(_seri(21), const [], simdi: simdi)!;
+      expect(o.aliciPayi, isNull);
+      expect(o.aliciPayi7, isNull);
+    });
+
+    test('kisaDolar ve kriptoTickeri', () {
+      expect(kisaDolar(243e6), r'$243,00M');
+      expect(kriptoTickeri(tur: AssetType.kripto, ticker: 'kripto:eth'),
+          'KRIPTO:ETH');
+      expect(kriptoTickeri(tur: AssetType.kripto, ticker: 'ETH'), isNull);
+    });
+  });
+
   group('değişmezler (kaynak taraması)', () {
     test('kart metinleri akış/balina dili kullanmaz', () {
       for (final arb in ['lib/l10n/app_tr.arb', 'lib/l10n/app_en.arb']) {

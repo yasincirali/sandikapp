@@ -9792,7 +9792,7 @@ abstract class AppLocalizations {
   /// No description provided for @weekIntro.
   ///
   /// In tr, this message translates to:
-  /// **'Tuttuğun fonlarda son haftanın para akışı. Bir fona dokununca ayrıntısı açılır.'**
+  /// **'Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.'**
   String get weekIntro;
 
   /// No description provided for @weekFundsUpper.
@@ -9840,13 +9840,13 @@ abstract class AppLocalizations {
   /// No description provided for @weekEmptyNoData.
   ///
   /// In tr, this message translates to:
-  /// **'Gösterecek para akışı yok. Portföyünde yatırım ya da emeklilik fonu olduğunda ve verisi geldiğinde burada görünür.'**
+  /// **'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.'**
   String get weekEmptyNoData;
 
   /// No description provided for @weekFootnote.
   ///
   /// In tr, this message translates to:
-  /// **'Kaynak: TEFAS. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.'**
+  /// **'Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.'**
   String get weekFootnote;
 
   /// No description provided for @weekLink.
@@ -9926,6 +9926,73 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.'**
   String volFootnote(String date);
+
+  /// No description provided for @cryTitleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'ALICI BASKISI'**
+  String get cryTitleUpper;
+
+  /// No description provided for @cryShareLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı payı · {date}'**
+  String cryShareLabel(String date);
+
+  /// No description provided for @cryShareAvg.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 7 günün ortalaması {pct}'**
+  String cryShareAvg(String pct);
+
+  /// No description provided for @cryExplain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.'**
+  String get cryExplain;
+
+  /// No description provided for @cryVolumeLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem hacmi {amount}'**
+  String cryVolumeLabel(String amount);
+
+  /// No description provided for @cryChartCaption.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük işlem hacmi (USDT) · son 20 gün'**
+  String get cryChartCaption;
+
+  /// No description provided for @cryChartSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 20 günün günlük işlem hacmi. Son gün {amount}.'**
+  String cryChartSemantics(String amount);
+
+  /// No description provided for @cryEventEvidence.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
+  String cryEventEvidence(
+      String amount, String times, String pct, String share);
+
+  /// No description provided for @cryFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: Binance, USDT paritesi · veri tarihi {date}. Yalnız Binance\'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.'**
+  String cryFootnote(String date);
+
+  /// No description provided for @weekVolumeUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'OLAĞANDIŞI HACİM'**
+  String get weekVolumeUpper;
+
+  /// No description provided for @weekVolumeRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Olağandışı hacim · {date}'**
+  String weekVolumeRow(String date);
 }
 
 class _AppLocalizationsDelegate

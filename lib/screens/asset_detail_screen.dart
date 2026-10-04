@@ -1591,6 +1591,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 _fonKarnesi(),
                 _paraAkisi(),
                 _hacimRadari(),
+                _kriptoBaski(),
                 if (isOwnAsset) _sozlesmeKarti(),
                 if (isOwnAsset && pState != null) _temettuKarti(pState),
                 _kapBaglantisi(),

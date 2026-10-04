@@ -23,6 +23,9 @@ export type HaftaOlayi = {
   tarih: string;
   tutar: number;
   bildirime_deger: boolean;
+  /// `balina_olay.tur`. Verilmişse fon cümlesi yalnız `fon_*`, hacim cümlesi
+  /// yalnız `*_hacim_*` satırlarını alır (tablo 0104'ten beri karışık).
+  tur?: string;
 };
 
 /// Bir fonun haftadaki olaylarının toplamı.
@@ -72,6 +75,9 @@ export function fonHareketleri(
 ): FonHareketi[] {
   const m = new Map<string, FonHareketi>();
   for (const o of olaylar) {
+    // Hisse/kripto hacim olayının `tutar`ı para hacmidir, akış DEĞİL; fon
+    // cümlesine girerse "para girişi" diye yanlış anlatılırdı.
+    if (o.tur !== undefined && !o.tur.startsWith('fon_')) continue;
     const kod = varlikKodu(o.ticker);
     if (!tutulan.has(kod) || !Number.isFinite(o.tutar)) continue;
     const eski = m.get(kod);
@@ -132,4 +138,48 @@ export function yalnizAkisMesaji(cumle: string): { title: string; body: string }
 /// Yüzdeli haftalık mesajın gövdesine akış cümlesini ekler (başa).
 export function govdeyeAkisEkle(govde: string, cumle: string | null): string {
   return cumle === null ? govde : `${cumle} ${govde}`;
+}
+
+// ── Hisse / kripto: olağandışı hacim ────────────────────────────────────────
+//
+// Hacim olayı yön ve tutar taşımaz (bkz. `hacim.ts`): cümle yalnız HANGİ
+// varlıklarda görüldüğünü söyler, "giriş/çıkış" demez.
+
+/// `THYAO.IS` → `THYAO`, `KRIPTO:BTC` → `BTC`.
+export function hacimVarlikAdi(ticker: string): string {
+  const t = String(ticker ?? '').trim().toUpperCase();
+  if (t.startsWith('KRIPTO:')) return t.slice('KRIPTO:'.length);
+  return t.endsWith('.IS') ? t.slice(0, -3) : t;
+}
+
+/// Kullanıcının tuttuğu varlıklardan geçen hafta olağandışı hacim görülenler
+/// (ad sırasıyla, tekil). [tutulan] `balina_olay.ticker` biçimindedir.
+export function hacimVarliklari(olaylar: HaftaOlayi[], tutulan: Set<string>): string[] {
+  const adlar = new Set<string>();
+  for (const o of olaylar) {
+    if (o.tur === undefined || !o.tur.includes('_hacim_')) continue;
+    const t = String(o.ticker ?? '').trim().toUpperCase();
+    if (tutulan.has(t)) adlar.add(hacimVarlikAdi(t));
+  }
+  return [...adlar].sort((a, b) => a.localeCompare(b));
+}
+
+///   1 : "Geçen hafta olağandışı hacim görülen varlık: ASTOR."
+///   2 : "Geçen hafta olağandışı hacim görülen varlıklar: ASELS, ASTOR."
+///   3+: "… varlıklar: ASELS, ASTOR ve 2 varlık daha."
+export function hacimCumlesi(adlar: string[]): string | null {
+  if (adlar.length === 0) return null;
+  if (adlar.length === 1) {
+    return `Geçen hafta olağandışı hacim görülen varlık: ${adlar[0]}.`;
+  }
+  const kalan = adlar.length - ADIYLA_ANILAN_FON;
+  const son = kalan > 0 ? ` ve ${kalan} varlık daha` : '';
+  return 'Geçen hafta olağandışı hacim görülen varlıklar: ' +
+    `${adlar.slice(0, ADIYLA_ANILAN_FON).join(', ')}${son}.`;
+}
+
+/// Fon cümlesi ile hacim cümlesini birleştirir; ikisi de yoksa `null`.
+export function ozetCumlesi(fon: string | null, hacim: string | null): string | null {
+  const parcalar = [fon, hacim].filter((c): c is string => c !== null);
+  return parcalar.length === 0 ? null : parcalar.join(' ');
 }

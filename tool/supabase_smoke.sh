@@ -125,7 +125,7 @@ TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!
 echo "== 6d) Fon para akisi (0103) — oturum okur, yazamaz; anon okuyamaz; ic tablo ve RPC kapali"
 # Tablolar piyasa verisi: authenticated yalniz SELECT. Taze yiginda bos
 # olmalari normal (veriyi akis-gozlem yazar); sinanan sey yetki siniri.
-for T in fon_akis_gunluk balina_olay hisse_hacim_gunluk; do
+for T in fon_akis_gunluk balina_olay hisse_hacim_gunluk kripto_hacim_gunluk; do
   HTTP=$(curl -sS -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/$T?select=tarih&limit=1" "${AUTH[@]}")
   [[ "$HTTP" == "200" ]] || { echo "$T oturumla okunamadi: HTTP $HTTP"; exit 1; }
   HTTP=$(curl -sS -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/$T?select=tarih&limit=1"     -H "apikey: $SUPABASE_ANON_KEY")
@@ -140,6 +140,9 @@ HTTP=$(curl -sS -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/fon_akis_t
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/hisse_hacim_gunluk" "${AUTH[@]}" \
   -d '{"ticker":"ZZZZZ.IS","tarih":"2026-01-02","kapanis":1,"hacim":1,"para_hacmi":1}')
 [[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "hisse_hacim_gunluk istemciden yazilabildi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/kripto_hacim_gunluk" "${AUTH[@]}" \
+  -d '{"ticker":"KRIPTO:ZZZ","tarih":"2026-01-02","kapanis":1,"para_hacmi":1,"alici_payi":0.5}')
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "kripto_hacim_gunluk istemciden yazilabildi: HTTP $HTTP"; exit 1; }
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/akis_sapma" "${AUTH[@]}"   -d '{"p_gun":"2026-01-02"}')
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "akis_sapma istemciye acik: HTTP $HTTP"; exit 1; }
 

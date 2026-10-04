@@ -387,6 +387,12 @@ extension _DetayOzet on _AssetDetailScreenState {
       ticker: widget.asset.ticker,
       dis: const EdgeInsets.only(top: SandikSpace.lg));
 
+  /// Alıcı baskısı (Balina B3) — yalnız kripto varlıkta çizilir.
+  Widget _kriptoBaski() => KriptoBaskiKarti(
+      tur: widget.asset.type,
+      ticker: widget.asset.ticker,
+      dis: const EdgeInsets.only(top: SandikSpace.lg));
+
   /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
   /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
   /// değil şirkete ait.

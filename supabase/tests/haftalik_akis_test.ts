@@ -15,7 +15,10 @@ import { assertEquals } from 'jsr:@std/assert@1';
 import {
   fonHareketleri,
   govdeyeAkisEkle,
+  hacimCumlesi,
+  hacimVarliklari,
   haftalikAkisCumlesi,
+  ozetCumlesi,
   isaretliTutar,
   varlikKodu,
   yalnizAkisMesaji,
@@ -154,4 +157,57 @@ Deno.test('yüzdeli mesajın gövdesine cümle BAŞA eklenir; yoksa gövde aynen
   );
   // Üçüncü argüman verilmezse davranış BİREBİR eski (bozmama kuralı).
   assertEquals(buildWeeklyMessage(-2.4, 31.8), buildWeeklyMessage(-2.4, 31.8, null));
+});
+
+// ── hisse / kripto hacim cümlesi ────────────────────────────────────────────
+
+const hacim = (ticker: string, tur = 'hisse_hacim_yukselis') => ({
+  ticker,
+  tarih: '2026-10-01',
+  tutar: 35e9,
+  bildirime_deger: false,
+  tur,
+});
+
+Deno.test('hacim olayı fon cümlesine GİRMEZ (tutarı akış değil)', () => {
+  const h = fonHareketleri(
+    [hacim('THYAO.IS'), { ...olay('DOV', -2e9), tur: 'fon_cikis' }],
+    new Set(['DOV', 'THYAO.IS']),
+  );
+  assertEquals(h.map((x) => x.kod), ['DOV']);
+});
+
+Deno.test('hacimVarliklari: yalnız tutulan, tekil, ada göre sıralı; fon olayı sayılmaz', () => {
+  const adlar = hacimVarliklari(
+    [
+      hacim('THYAO.IS'),
+      hacim('THYAO.IS', 'hisse_hacim_dusus'),
+      hacim('KRIPTO:BTC', 'kripto_hacim_yukselis'),
+      hacim('ASELS.IS'),
+      { ...olay('DOV', -2e9), tur: 'fon_cikis' },
+    ],
+    new Set(['THYAO.IS', 'KRIPTO:BTC', 'TEFAS:DOV']),
+  );
+  assertEquals(adlar, ['BTC', 'THYAO']);
+});
+
+Deno.test('hacim cümlesi: 1, 2 ve 3+ varlık; yön ve tutar yazmaz', () => {
+  assertEquals(hacimCumlesi([]), null);
+  assertEquals(hacimCumlesi(['ASTOR']), 'Geçen hafta olağandışı hacim görülen varlık: ASTOR.');
+  assertEquals(
+    hacimCumlesi(['ASELS', 'ASTOR']),
+    'Geçen hafta olağandışı hacim görülen varlıklar: ASELS, ASTOR.',
+  );
+  const uc = hacimCumlesi(['ASELS', 'ASTOR', 'BTC', 'SISE'])!;
+  assertEquals(uc, 'Geçen hafta olağandışı hacim görülen varlıklar: ASELS, ASTOR ve 2 varlık daha.');
+  for (const yasak of ['giriş', 'çıkış', '₺', 'balina']) {
+    assertEquals(uc.includes(yasak), false, yasak);
+  }
+});
+
+Deno.test('ozetCumlesi fon ve hacim cümlelerini birleştirir', () => {
+  assertEquals(ozetCumlesi(null, null), null);
+  assertEquals(ozetCumlesi('A.', null), 'A.');
+  assertEquals(ozetCumlesi(null, 'B.'), 'B.');
+  assertEquals(ozetCumlesi('A.', 'B.'), 'A. B.');
 });

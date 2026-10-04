@@ -5843,7 +5843,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get weekIntro =>
-      'Tuttuğun fonlarda son haftanın para akışı. Bir fona dokununca ayrıntısı açılır.';
+      'Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.';
 
   @override
   String get weekFundsUpper => 'FONLARINDA PARA AKIŞI';
@@ -5870,11 +5870,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get weekEmptyNoData =>
-      'Gösterecek para akışı yok. Portföyünde yatırım ya da emeklilik fonu olduğunda ve verisi geldiğinde burada görünür.';
+      'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.';
 
   @override
   String get weekFootnote =>
-      'Kaynak: TEFAS. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.';
+      'Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.';
 
   @override
   String get weekLink => 'Tüm fonlarımın haftası';
@@ -5928,5 +5928,54 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String volFootnote(String date) {
     return 'Kaynak: Yahoo Finance gün sonu verisi · veri tarihi $date. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.';
+  }
+
+  @override
+  String get cryTitleUpper => 'ALICI BASKISI';
+
+  @override
+  String cryShareLabel(String date) {
+    return 'Alıcı payı · $date';
+  }
+
+  @override
+  String cryShareAvg(String pct) {
+    return 'Son 7 günün ortalaması $pct';
+  }
+
+  @override
+  String get cryExplain =>
+      'Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.';
+
+  @override
+  String cryVolumeLabel(String amount) {
+    return 'İşlem hacmi $amount';
+  }
+
+  @override
+  String get cryChartCaption => 'Günlük işlem hacmi (USDT) · son 20 gün';
+
+  @override
+  String cryChartSemantics(String amount) {
+    return 'Son 20 günün günlük işlem hacmi. Son gün $amount.';
+  }
+
+  @override
+  String cryEventEvidence(
+      String amount, String times, String pct, String share) {
+    return '$amount · ortalamanın $times katı · fiyat $pct · alıcı payı $share';
+  }
+
+  @override
+  String cryFootnote(String date) {
+    return 'Kaynak: Binance, USDT paritesi · veri tarihi $date. Yalnız Binance\'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.';
+  }
+
+  @override
+  String get weekVolumeUpper => 'OLAĞANDIŞI HACİM';
+
+  @override
+  String weekVolumeRow(String date) {
+    return 'Olağandışı hacim · $date';
   }
 }

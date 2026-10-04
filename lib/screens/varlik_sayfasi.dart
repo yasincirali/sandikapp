@@ -485,6 +485,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       FonKarnesiKarti(tur: k.type, ticker: k.ticker),
       ParaAkisiKarti(tur: k.type, ticker: k.ticker),
       HacimRadariKarti(tur: k.type, ticker: k.ticker),
+      KriptoBaskiKarti(tur: k.type, ticker: k.ticker),
       // Sahip olunmayan varlık için de teknik göstergeler hesaplanır; panel
       // bir `Asset` istemez.
       TechnicalSignalPanel(

@@ -223,6 +223,50 @@ class SupabaseService {
     );
   }
 
+  /// Coin'in ([ticker] 'KRIPTO:BTC') günlük Binance USDT hacmi ve alıcı payı
+  /// (HAM, artan tarih). Yazma yalnız `kripto-hacim-gozlem` (0105).
+  Future<List<Map<String, dynamic>>> kriptoHacimGunleri(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoHacimGunleri',
+      table: 'kripto_hacim_gunluk',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('kripto_hacim_gunluk')
+          .select('tarih, kapanis, para_hacmi, alici_payi')
+          .eq('ticker', ticker)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// Coin'in olağandışı hacim günleri (HAM).
+  Future<List<Map<String, dynamic>>> kriptoHacimOlaylari(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoHacimOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
+          .eq('ticker', ticker)
+          .inFilter('tur', ['kripto_hacim_yukselis', 'kripto_hacim_dusus'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
   static String _isoGun(DateTime t) =>
       '${t.year.toString().padLeft(4, '0')}-'
       '${t.month.toString().padLeft(2, '0')}-'

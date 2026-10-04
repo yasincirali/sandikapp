@@ -80,3 +80,32 @@ final hisseHacmiProvider =
     return null;
   }
 });
+
+/// Bir coinin alıcı baskısı / hacim özeti (Balina B3). Kararlar
+/// `hisseHacmiProvider` ile aynı; anahtar uygulamadaki ticker ('KRIPTO:BTC').
+final kriptoBaskiProvider =
+    FutureProvider.autoDispose.family<HacimOzeti?, String>((ref, ticker) async {
+  final simdi = DateTime.now();
+  final baslangic = simdi.subtract(hacimSorguPenceresi);
+  try {
+    final svc = SupabaseService.instance;
+    final (gunSatirlari, olaySatirlari) = await (
+      svc.kriptoHacimGunleri(ticker, baslangic: baslangic),
+      svc.kriptoHacimOlaylari(ticker, baslangic: baslangic),
+    ).wait;
+    final ozet = hacimOzeti(
+      gunSatirlari.map(HacimGunu.satirdan).nonNulls.toList(),
+      olaySatirlari.map(HacimOlayi.satirdan).nonNulls.toList(),
+      simdi: simdi,
+    );
+    if (ozet != null) {
+      final link = ref.keepAlive();
+      final zamanlayici = Timer(const Duration(minutes: 30), link.close);
+      ref.onDispose(zamanlayici.cancel);
+    }
+    return ozet;
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'kriptoBaskiProvider');
+    return null;
+  }
+});

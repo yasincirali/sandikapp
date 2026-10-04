@@ -4170,7 +4170,7 @@
     }
   },
   "weekTitle": "Haftanın özeti",
-  "weekIntro": "Tuttuğun fonlarda son haftanın para akışı. Bir fona dokununca ayrıntısı açılır.",
+  "weekIntro": "Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.",
   "weekFundsUpper": "FONLARINDA PARA AKIŞI",
   "weekRowRange": "{label} · {range}",
   "@weekRowRange": {
@@ -4189,8 +4189,8 @@
   "weekRowFlat": "Net akış",
   "weekRowBigIn": "Bu hafta büyük giriş var",
   "weekRowBigOut": "Bu hafta büyük çıkış var",
-  "weekEmptyNoData": "Gösterecek para akışı yok. Portföyünde yatırım ya da emeklilik fonu olduğunda ve verisi geldiğinde burada görünür.",
-  "weekFootnote": "Kaynak: TEFAS. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet'te. Yatırım tavsiyesi değildir.",
+  "weekEmptyNoData": "Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.",
+  "weekFootnote": "Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet'te. Yatırım tavsiyesi değildir.",
   "weekLink": "Tüm fonlarımın haftası",
   "volTitleUpper": "HACİM RADARI",
   "volLastDay": "Para hacmi · {date}",
@@ -4253,6 +4253,75 @@
   "volNoEvents": "Son 30 günde olağandışı hacim günü yok.",
   "volFootnote": "Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
   "@volFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryTitleUpper": "ALICI BASKISI",
+  "cryShareLabel": "Alıcı payı · {date}",
+  "@cryShareLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryShareAvg": "Son 7 günün ortalaması {pct}",
+  "@cryShareAvg": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "cryExplain": "Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.",
+  "cryVolumeLabel": "İşlem hacmi {amount}",
+  "@cryVolumeLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryChartCaption": "Günlük işlem hacmi (USDT) · son 20 gün",
+  "cryChartSemantics": "Son 20 günün günlük işlem hacmi. Son gün {amount}.",
+  "@cryChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryEventEvidence": "{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}",
+  "@cryEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "cryFootnote": "Kaynak: Binance, USDT paritesi · veri tarihi {date}. Yalnız Binance'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
+  "@cryFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "weekVolumeUpper": "OLAĞANDIŞI HACİM",
+  "weekVolumeRow": "Olağandışı hacim · {date}",
+  "@weekVolumeRow": {
     "placeholders": {
       "date": {
         "type": "String"

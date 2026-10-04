@@ -35,6 +35,10 @@ Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma
       çağrı: `select public.trigger_hacim_gozlem();` (3 aylık seri tek
       istekte gelir). Kontrol:
       `select count(distinct ticker), max(tarih) from hisse_hacim_gunluk;`
+- [ ] **Kripto alıcı baskısı (B3):** migration `0105_kripto_hacim.sql` +
+      fonksiyon `kripto-hacim-gozlem` (yeni secret YOK). İlk doldurma tek
+      çağrı: `select public.trigger_kripto_hacim_gozlem();` Kontrol:
+      `select count(distinct ticker), max(tarih) from kripto_hacim_gunluk;`
 - [ ] **Haftanın özeti akış cümlesi** (kararın 2026-10-04: olay başına ayrı
       bildirim yok, Pazartesi özeti akışa değinir). `weekly-summary`
       fonksiyonunu da dağıt (hedef `ikisi`). Cümle KAPALI doğar; bayrağı

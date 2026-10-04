@@ -5895,7 +5895,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weekIntro =>
-      'Money flow over the latest week in the funds you hold. Tap a fund for details.';
+      'Highlights of the latest week in the assets you hold. Tap a row for details.';
 
   @override
   String get weekFundsUpper => 'MONEY FLOW IN YOUR FUNDS';
@@ -5922,11 +5922,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weekEmptyNoData =>
-      'No money flow to show. It appears here once you hold a mutual or pension fund and its data arrives.';
+      'Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.';
 
   @override
   String get weekFootnote =>
-      'Source: TEFAS. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio\'s weekly return is under Performance, Summary. Not investment advice.';
+      'Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio\'s weekly return is under Performance, Summary. Not investment advice.';
 
   @override
   String get weekLink => 'My funds this week';
@@ -5980,5 +5980,54 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String volFootnote(String date) {
     return 'Source: Yahoo Finance end-of-day data · as of $date. This data cannot show who bought or sold. Not investment advice.';
+  }
+
+  @override
+  String get cryTitleUpper => 'BUYER PRESSURE';
+
+  @override
+  String cryShareLabel(String date) {
+    return 'Buyer share · $date';
+  }
+
+  @override
+  String cryShareAvg(String pct) {
+    return 'Average of the last 7 days $pct';
+  }
+
+  @override
+  String get cryExplain =>
+      'Buyer share is the part of the day\'s volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.';
+
+  @override
+  String cryVolumeLabel(String amount) {
+    return 'Volume $amount';
+  }
+
+  @override
+  String get cryChartCaption => 'Daily volume (USDT) · last 20 days';
+
+  @override
+  String cryChartSemantics(String amount) {
+    return 'Daily volume for the last 20 days. Latest day $amount.';
+  }
+
+  @override
+  String cryEventEvidence(
+      String amount, String times, String pct, String share) {
+    return '$amount · $times× the average · price $pct · buyer share $share';
+  }
+
+  @override
+  String cryFootnote(String date) {
+    return 'Source: Binance, USDT pair · as of $date. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.';
+  }
+
+  @override
+  String get weekVolumeUpper => 'UNUSUAL VOLUME';
+
+  @override
+  String weekVolumeRow(String date) {
+    return 'Unusual volume · $date';
   }
 }

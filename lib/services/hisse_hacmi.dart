@@ -20,10 +20,15 @@ class HacimGunu {
     required this.tarih,
     required this.kapanis,
     required this.paraHacmi,
+    this.aliciPayi,
   });
 
   final DateTime tarih;
   final double kapanis;
+
+  /// Kripto: piyasa emriyle ALAN tarafın hacimdeki payı (0–1). Hissede null
+  /// (o veri aracı kurum dağılımıdır, lisans ister).
+  final double? aliciPayi;
 
   /// Kapanış × işlem adedi, TL.
   final double paraHacmi;
@@ -40,7 +45,13 @@ class HacimGunu {
         !para.isFinite) {
       return null;
     }
-    return HacimGunu(tarih: tarih, kapanis: kapanis, paraHacmi: para);
+    final pay = (r['alici_payi'] as num?)?.toDouble();
+    return HacimGunu(
+      tarih: tarih,
+      kapanis: kapanis,
+      paraHacmi: para,
+      aliciPayi: pay != null && pay >= 0 && pay <= 1 ? pay : null,
+    );
   }
 }
 
@@ -51,9 +62,13 @@ class HacimOlayi {
     required this.paraHacmi,
     required this.ortalamaKati,
     required this.fiyatDegisim,
+    this.aliciPayi,
   });
 
   final DateTime tarih;
+
+  /// Kripto olayında o günün alıcı payı; hissede null.
+  final double? aliciPayi;
 
   /// O gün fiyat yükseldi mi (hacmin yönü DEĞİL).
   final bool yukselis;
@@ -71,9 +86,12 @@ class HacimOlayi {
     final para = (r['tutar'] as num?)?.toDouble();
     final kat = (r['ortalama_kati'] as num?)?.toDouble();
     final degisim = (r['fiyat_degisim'] as num?)?.toDouble();
-    final yukselis = tur == 'hisse_hacim_yukselis';
+    final yukselis = tur.endsWith('_hacim_yukselis');
+    final dusus = tur.endsWith('_hacim_dusus');
+    final taninan = tur.startsWith('hisse_') || tur.startsWith('kripto_');
     if (tarih == null ||
-        (!yukselis && tur != 'hisse_hacim_dusus') ||
+        !taninan ||
+        (!yukselis && !dusus) ||
         para == null ||
         kat == null ||
         degisim == null ||
@@ -86,7 +104,8 @@ class HacimOlayi {
         yukselis: yukselis,
         paraHacmi: para,
         ortalamaKati: kat,
-        fiyatDegisim: degisim);
+        fiyatDegisim: degisim,
+        aliciPayi: (r['alici_payi'] as num?)?.toDouble());
   }
 }
 
@@ -98,7 +117,14 @@ class HacimOzeti {
     required this.kat,
     required this.fiyatDegisim,
     required this.olaylar,
+    this.aliciPayi,
+    this.aliciPayi7,
   });
+
+  /// Kripto: son günün alıcı payı ve son 7 günün ortalaması (7 gün de
+  /// biliniyorsa). Hissede ikisi de null.
+  final double? aliciPayi;
+  final double? aliciPayi7;
 
   /// Grafikteki günler (en çok [grafikGun]), eskiden yeniye; sonuncusu
   /// [sonGun].
@@ -169,7 +195,32 @@ HacimOzeti? hacimOzeti(
         ? son.kapanis / sirali[sirali.length - 2].kapanis - 1
         : null,
     olaylar: gosterilen.take(hacimOlayUstu).toList(),
+    aliciPayi: son.aliciPayi,
+    aliciPayi7: _sonYediOrtalama(sirali),
   );
+}
+
+/// Son verili günden geriye 7 takvim günü içindeki en yeni olağandışı hacim
+/// günü; yoksa null. "Haftanın özeti" buna bakar.
+HacimOlayi? sonHaftaHacimOlayi(HacimOzeti ozet) {
+  final t = ozet.sonGun.tarih;
+  final esik = DateTime.utc(t.year, t.month, t.day - 6);
+  for (final o in ozet.olaylar) {
+    if (!o.tarih.isBefore(esik)) return o;
+  }
+  return null;
+}
+
+/// Son 7 günün alıcı payı ortalaması; 7 günün HEPSİNDE pay yoksa null.
+double? _sonYediOrtalama(List<HacimGunu> sirali) {
+  if (sirali.length < 7) return null;
+  var toplam = 0.0;
+  for (var i = sirali.length - 7; i < sirali.length; i++) {
+    final p = sirali[i].aliciPayi;
+    if (p == null) return null;
+    toplam += p;
+  }
+  return toplam / 7;
 }
 
 DateTime? _gun(Object? ham) {

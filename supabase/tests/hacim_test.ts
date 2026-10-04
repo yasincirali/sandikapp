@@ -12,8 +12,11 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
+  ASGARI_KRIPTO_HACMI,
   ASGARI_PARA_HACMI,
+  binanceGunleri,
   bistSembolu,
+  bitenKriptoGunleri,
   hacimOlayi,
   HacimGunu,
   KAT_ESIGI,
@@ -110,4 +113,39 @@ Deno.test('20 önceki gün yoksa ya da hacim hiç oynamamışsa olay yok', () =>
   const duz = g.map((x, i, a) => ({ ...x, hacim: i === a.length - 1 ? 32_000_000 : 10_000_000 }));
   assertEquals(hacimOlayi(duz, duz.length - 1), null); // sapma 0
   assertEquals(hacimOlayi(g, 99), null);
+});
+
+// ── kripto ──────────────────────────────────────────────────────────────────
+
+Deno.test('binanceGunleri: quote hacmi ve alıcı payı okunur; bozuk satır atılır', () => {
+  const ac = Date.UTC(2026, 9, 1, 21); // 2 Ekim 00:00 TR
+  const g = binanceGunleri([
+    [ac, '1', '1', '1', '60000', '1000', ac + 1, '50000000', 10, '580', '29000000', '0'],
+    [ac + 86400000, '1', '1', '1', '61000', '900', 0, '0', 1, '0', '0', '0'], // hacimsiz
+    [ac + 2 * 86400000, '1', '1', '1', '62000', '900', 0, '100', 1, '0', '500', '0'], // alış > toplam
+    'bozuk',
+  ]);
+  assertEquals(g, [{ tarih: '2026-10-02', kapanis: 60000, hacim: 1000, para: 50000000, aliciPayi: 0.58 }]);
+  assertEquals(paraHacmi(g[0]), 50000000);
+  assertEquals(binanceGunleri(null), []);
+});
+
+Deno.test('bitenKriptoGunleri bugünün yarım mumunu atar', () => {
+  const g = [
+    { tarih: '2026-10-03', kapanis: 1, hacim: 1 },
+    { tarih: '2026-10-04', kapanis: 1, hacim: 1 },
+  ];
+  // 4 Ekim 23:00 TR = 20:00Z: gün bitmedi.
+  assertEquals(bitenKriptoGunleri(g, new Date(Date.UTC(2026, 9, 4, 20))).length, 1);
+  assertEquals(bitenKriptoGunleri(g, new Date(Date.UTC(2026, 9, 4, 21, 5))).length, 2);
+});
+
+Deno.test('kripto olayı kendi tabanını ve kendi tür önekini kullanır', () => {
+  assertEquals(ASGARI_KRIPTO_HACMI, 10_000_000);
+  // Ortalama 100 mn, son gün 320 mn: hem hisse hem kripto tabanının üstünde.
+  const g = seri(32_000_000 / 1.04, 10.4);
+  assertEquals(hacimOlayi(g, g.length - 1, 'kripto', ASGARI_KRIPTO_HACMI)?.tur, 'kripto_hacim_yukselis');
+  assertEquals(hacimOlayi(g, g.length - 1)?.tur, 'hisse_hacim_yukselis');
+  // Taban parametresi etkili: çıta günün hacminin üstündeyse olay yok.
+  assertEquals(hacimOlayi(g, g.length - 1, 'kripto', 400_000_000), null);
 });

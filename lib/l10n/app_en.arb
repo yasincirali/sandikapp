@@ -3863,7 +3863,7 @@
     }
   },
   "weekTitle": "This week",
-  "weekIntro": "Money flow over the latest week in the funds you hold. Tap a fund for details.",
+  "weekIntro": "Highlights of the latest week in the assets you hold. Tap a row for details.",
   "weekFundsUpper": "MONEY FLOW IN YOUR FUNDS",
   "weekRowRange": "{label} · {range}",
   "@weekRowRange": {
@@ -3881,8 +3881,8 @@
   "weekRowFlat": "Net flow",
   "weekRowBigIn": "Large inflow this week",
   "weekRowBigOut": "Large outflow this week",
-  "weekEmptyNoData": "No money flow to show. It appears here once you hold a mutual or pension fund and its data arrives.",
-  "weekFootnote": "Source: TEFAS. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio's weekly return is under Performance, Summary. Not investment advice.",
+  "weekEmptyNoData": "Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.",
+  "weekFootnote": "Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio's weekly return is under Performance, Summary. Not investment advice.",
   "weekLink": "My funds this week",
   "volTitleUpper": "VOLUME RADAR",
   "volLastDay": "Traded value · {date}",
@@ -3945,6 +3945,75 @@
   "volNoEvents": "No unusual volume days in the last 30 days.",
   "volFootnote": "Source: Yahoo Finance end-of-day data · as of {date}. This data cannot show who bought or sold. Not investment advice.",
   "@volFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryTitleUpper": "BUYER PRESSURE",
+  "cryShareLabel": "Buyer share · {date}",
+  "@cryShareLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryShareAvg": "Average of the last 7 days {pct}",
+  "@cryShareAvg": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "cryExplain": "Buyer share is the part of the day's volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.",
+  "cryVolumeLabel": "Volume {amount}",
+  "@cryVolumeLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryChartCaption": "Daily volume (USDT) · last 20 days",
+  "cryChartSemantics": "Daily volume for the last 20 days. Latest day {amount}.",
+  "@cryChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryEventEvidence": "{amount} · {times}× the average · price {pct} · buyer share {share}",
+  "@cryEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "cryFootnote": "Source: Binance, USDT pair · as of {date}. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.",
+  "@cryFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "weekVolumeUpper": "UNUSUAL VOLUME",
+  "weekVolumeRow": "Unusual volume · {date}",
+  "@weekVolumeRow": {
     "placeholders": {
       "date": {
         "type": "String"

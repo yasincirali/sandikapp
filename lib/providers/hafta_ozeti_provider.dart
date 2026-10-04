@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/position.dart';
 import '../services/fon_akisi.dart';
 import '../services/fon_karnesi.dart' show fonKoduOf;
+import '../services/hisse_hacmi.dart';
+import '../widgets/hacim_radari_karti.dart' show bistSembolu, kriptoTickeri;
 import 'fon_akisi_provider.dart';
 import 'portfolio_provider.dart';
 
@@ -62,3 +64,51 @@ List<FonHaftasi> haftaSirasi(List<FonHaftasi> liste) {
       return oran(b).compareTo(oran(a));
     });
 }
+
+/// "Haftanın özeti"nde olağandışı hacim satırı: tutulan bir hisse ya da coin
+/// ve son haftasındaki (en yeni) olağandışı hacim günü.
+class HacimHaftasi {
+  const HacimHaftasi(
+      {required this.pozisyon, required this.olay, required this.kripto});
+
+  final Position pozisyon;
+  final HacimOlayi olay;
+
+  /// Tutar USDT mi (kripto) TL mi (hisse).
+  final bool kripto;
+}
+
+/// Tutulan hisse ve coinlerde son 7 günün olağandışı hacim günleri (B2/B3).
+/// Kartların kullandığı AYNI provider'lar okunur; olayı olmayan varlık
+/// listeye girmez. Yalnız kendi pozisyonları (fon listesiyle aynı kural).
+final haftaHacimProvider =
+    FutureProvider.autoDispose<List<HacimHaftasi>>((ref) async {
+  final durum = ref.watch(portfolioProvider).valueOrNull;
+  if (durum == null) return const [];
+  final kendi = [
+    for (final a in durum.assets)
+      if (a.userId == durum.ownerId) a,
+  ];
+
+  final isler = <Future<HacimHaftasi?>>[];
+  final gorulen = <String>{};
+  for (final p in aggregatePositions(kendi)) {
+    final v = p.representative;
+    final hisse = bistSembolu(tur: v.type, ticker: v.ticker);
+    final coin = kriptoTickeri(tur: v.type, ticker: v.ticker);
+    final anahtar = hisse ?? coin;
+    if (anahtar == null || !gorulen.add(anahtar)) continue;
+    final ozet = hisse != null
+        ? ref.watch(hisseHacmiProvider(hisse).future)
+        : ref.watch(kriptoBaskiProvider(coin!).future);
+    isler.add(ozet.then((o) {
+      final olay = o == null ? null : sonHaftaHacimOlayi(o);
+      return olay == null
+          ? null
+          : HacimHaftasi(pozisyon: p, olay: olay, kripto: coin != null);
+    }));
+  }
+  final liste = (await Future.wait(isler)).nonNulls.toList()
+    ..sort((a, b) => b.olay.tarih.compareTo(a.olay.tarih));
+  return liste;
+});

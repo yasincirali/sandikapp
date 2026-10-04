@@ -77,8 +77,11 @@ import { trGun } from '../_shared/tefas_nav.ts';
 import {
   fonHareketleri,
   govdeyeAkisEkle,
+  hacimCumlesi,
+  hacimVarliklari,
   haftalikAkisCumlesi,
   HaftaOlayi,
+  ozetCumlesi,
   varlikKodu,
   yalnizAkisMesaji,
 } from '../_shared/haftalik_akis.ts';
@@ -605,22 +608,35 @@ Deno.serve(async (request) => {
           .from('assets')
           .select('id, user_id, type, ticker, name, sub_category, currency, quantity, kind, added_date, ref_asset_id')
           .in('user_id', userIds)
-          .in('type', ['fon', 'bes'])
+          // Hisse ve kripto (0104/0105): olağandışı hacim cümlesi için.
+          .in('type', ['fon', 'bes', 'hisse', 'kripto'])
           .is('deleted_at', null);
         if (fonErr) throw fonErr;
         const tutulan = new Map<string, Set<string>>();
+        const hacimTutulan = new Map<string, Set<string>>();
         for (const lot of acikPozisyonLotlari((fonRows ?? []) as PozisyonLot[])) {
-          const kod = varlikKodu(String(lot.ticker ?? ''));
+          const ham = String(lot.ticker ?? '').trim().toUpperCase();
+          if (lot.type === 'hisse' || lot.type === 'kripto') {
+            // `balina_olay.ticker` biçimi: 'THYAO.IS', 'KRIPTO:BTC'.
+            if (!ham.endsWith('.IS') && !ham.startsWith('KRIPTO:')) continue;
+            const hs = hacimTutulan.get(lot.user_id);
+            if (hs) hs.add(ham); else hacimTutulan.set(lot.user_id, new Set([ham]));
+            continue;
+          }
+          const kod = varlikKodu(ham);
           if (kod.length === 0) continue;
           const set = tutulan.get(lot.user_id);
           if (set) set.add(kod); else tutulan.set(lot.user_id, new Set([kod]));
         }
-        const tumKodlar = [...new Set([...tutulan.values()].flatMap((k) => [...k]))];
+        const tumKodlar = [
+          ...new Set([...tutulan.values()].flatMap((k) => [...k]).map((k) => `TEFAS:${k}`)),
+          ...new Set([...hacimTutulan.values()].flatMap((k) => [...k])),
+        ];
         if (tumKodlar.length > 0) {
           const { data: olayRows, error: olayErr } = await admin
             .from('balina_olay')
-            .select('ticker, tarih, tutar, bildirime_deger')
-            .in('ticker', tumKodlar.map((k) => `TEFAS:${k}`))
+            .select('ticker, tarih, tur, tutar, bildirime_deger')
+            .in('ticker', tumKodlar)
             .gte('tarih', trGun(new Date(fromMs)))
             .lte('tarih', trGun(new Date(toMs)));
           if (olayErr) throw olayErr;
@@ -629,9 +645,14 @@ Deno.serve(async (request) => {
             tarih: String(r.tarih),
             tutar: Number(r.tutar),
             bildirime_deger: r.bildirime_deger === true,
+            tur: String(r.tur),
           } as HaftaOlayi));
-          for (const [uid, kodlar] of tutulan) {
-            const cumle = haftalikAkisCumlesi(fonHareketleri(olaylar, kodlar));
+          const bos = new Set<string>();
+          for (const uid of new Set([...tutulan.keys(), ...hacimTutulan.keys()])) {
+            const cumle = ozetCumlesi(
+              haftalikAkisCumlesi(fonHareketleri(olaylar, tutulan.get(uid) ?? bos)),
+              hacimCumlesi(hacimVarliklari(olaylar, hacimTutulan.get(uid) ?? bos)),
+            );
             if (cumle !== null) akisCumleleri.set(uid, cumle);
           }
         }

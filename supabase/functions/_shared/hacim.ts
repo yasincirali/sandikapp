@@ -23,11 +23,25 @@
 import { trGun } from './tefas_nav.ts';
 
 /// Bir hissenin bir işlem günü.
-export type HacimGunu = { tarih: string; kapanis: number; hacim: number };
+export type HacimGunu = {
+  tarih: string;
+  kapanis: number;
+  hacim: number;
+  /// Kaynağın verdiği para hacmi (kripto: Binance `quoteVolume`). Verilmişse
+  /// `kapanis × hacim` yerine BU kullanılır — gün içi fiyatlarla toplanmış
+  /// gerçek tutar, kapanışla çarpılmış tahminden doğrudur.
+  para?: number;
+  /// Kripto: piyasa emriyle ALAN tarafın hacimdeki payı (0–1).
+  aliciPayi?: number;
+};
 
 /// Tespit edilen olay (`balina_olay` satırının hesaplanan alanları).
 export type HacimOlayi = {
-  tur: 'hisse_hacim_yukselis' | 'hisse_hacim_dusus';
+  tur:
+    | 'hisse_hacim_yukselis'
+    | 'hisse_hacim_dusus'
+    | 'kripto_hacim_yukselis'
+    | 'kripto_hacim_dusus';
   /// Günün para hacmi, TL (yön taşımaz; yön `tur`'da).
   tutar: number;
   /// Para hacmi / son 20 günün ortalaması.
@@ -91,14 +105,23 @@ export function tamamlananGunler(gunler: HacimGunu[], simdi: Date): HacimGunu[] 
   return gunler.filter((g) => g.tarih < bugun || (g.tarih === bugun && seansBitti));
 }
 
-export const paraHacmi = (g: HacimGunu) => Math.round(g.kapanis * g.hacim * 100) / 100;
+export const paraHacmi = (g: HacimGunu) =>
+  Math.round((g.para ?? g.kapanis * g.hacim) * 100) / 100;
 
 /// [i]. gün olağandışı hacim günü mü? Önceki `ORTALAMA_GUN` işlem günü tam
 /// değilse ya da sapma sıfırsa `null` — eşik tahmin edilmez.
-export function hacimOlayi(gunler: HacimGunu[], i: number): HacimOlayi | null {
+///
+/// [sinif] türün önekini, [asgari] tabanı belirler: hisse TL, kripto USDT
+/// (birimler karışmasın diye taban çağıran tarafından verilir).
+export function hacimOlayi(
+  gunler: HacimGunu[],
+  i: number,
+  sinif: 'hisse' | 'kripto' = 'hisse',
+  asgari: number = ASGARI_PARA_HACMI,
+): HacimOlayi | null {
   if (i < ORTALAMA_GUN || i >= gunler.length) return null;
   const x = paraHacmi(gunler[i]);
-  if (!(x >= ASGARI_PARA_HACMI)) return null;
+  if (!(x >= asgari)) return null;
 
   let toplam = 0;
   const onceki: number[] = [];
@@ -119,10 +142,61 @@ export function hacimOlayi(gunler: HacimGunu[], i: number): HacimOlayi | null {
 
   const degisim = gunler[i].kapanis / gunler[i - 1].kapanis - 1;
   return {
-    tur: degisim >= 0 ? 'hisse_hacim_yukselis' : 'hisse_hacim_dusus',
+    tur: `${sinif}_hacim_${degisim >= 0 ? 'yukselis' : 'dusus'}`,
     tutar: x,
     ortalama_kati: Math.round(kat * 10) / 10,
     sapma_kati: Math.round(z * 10) / 10,
     fiyat_degisim: Math.round(degisim * 10000) / 10000,
   };
+}
+
+// ── Kripto (Balina B3) ──────────────────────────────────────────────────────
+//
+// Kaynak yalnız Binance (kullanıcı kararı 2026-09-25) ve USDT paritesi: en
+// derin tahta odur, TRY paritesi çoğu coinde sığ. Tutarlar bu yüzden USDT'dir
+// ve kart "$" ile yazar; TL'ye çevrilmez (günlük hacmi tek bir kurla çarpmak
+// gün içi kur hareketini yok sayardı).
+//
+// Alıcı payı = taker alış hacmi / toplam hacim. "Taker" piyasa emriyle
+// karşı tarafın fiyatını KABUL eden taraftır; payın %50'nin üstünde olması
+// alıcıların daha istekli olduğunu gösterir — yine de her işlemin bir
+// satıcısı vardır, bu bir "para girişi" ölçüsü değildir.
+
+/// Kripto olay tabanı (USDT). Sığ coinlerde birkaç milyon dolarlık günü
+/// "3 kat" diye olay yapmamak için.
+export const ASGARI_KRIPTO_HACMI = 10_000_000;
+
+/// Binance günlük kline satırları → günler, eskiden yeniye.
+///
+/// Satır: [açılış ms, o, h, l, kapanış, hacim, kapanış ms, quote hacim,
+/// işlem sayısı, taker alış (base), taker alış (quote), …]. `timeZone=3` ile
+/// istenir; açılış anı İstanbul gece yarısıdır ve gün ona göre adlanır.
+export function binanceGunleri(rows: unknown): HacimGunu[] {
+  if (!Array.isArray(rows)) return [];
+  const m = new Map<string, HacimGunu>();
+  for (const r of rows) {
+    if (!Array.isArray(r) || r.length < 11) continue;
+    const t = Number(r[0]);
+    const kapanis = Number(r[4]);
+    const hacim = Number(r[5]);
+    const para = Number(r[7]);
+    const alis = Number(r[10]);
+    if (![t, kapanis, hacim, para, alis].every(Number.isFinite)) continue;
+    if (!(kapanis > 0) || !(para > 0) || alis < 0 || alis > para) continue;
+    const tarih = trGun(new Date(t));
+    m.set(tarih, {
+      tarih,
+      kapanis,
+      hacim,
+      para,
+      aliciPayi: Math.round((alis / para) * 10000) / 10000,
+    });
+  }
+  return [...m.values()].sort((a, b) => a.tarih.localeCompare(b.tarih));
+}
+
+/// Kripto 7/24 işlem görür: bugünün mumu gün bitene kadar yarımdır.
+export function bitenKriptoGunleri(gunler: HacimGunu[], simdi: Date): HacimGunu[] {
+  const bugun = trGun(simdi);
+  return gunler.filter((g) => g.tarih < bugun);
 }

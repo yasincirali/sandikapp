@@ -9,6 +9,7 @@ import 'package:portfoy_takip/models/position.dart';
 import 'package:portfoy_takip/providers/hafta_ozeti_provider.dart';
 import 'package:portfoy_takip/screens/hafta_ozeti_screen.dart';
 import 'package:portfoy_takip/services/fon_akisi.dart';
+import 'package:portfoy_takip/services/hisse_hacmi.dart';
 import 'package:portfoy_takip/services/notification_service.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
@@ -72,12 +73,17 @@ FonBalinaOlayi _olay(int ay, int gun, double tutar) => FonBalinaOlayi(
     tarih: _g(ay, gun), tutar: tutar, buyuklukOrani: 0.05, sapmaKati: 5);
 
 Future<void> _kur(WidgetTester t, List<FonHaftasi> liste,
-    {double genislik = 390, double olcek = 1}) async {
+    {double genislik = 390,
+    double olcek = 1,
+    List<HacimHaftasi> hacimler = const []}) async {
   t.view.physicalSize = Size(genislik, 1600);
   t.view.devicePixelRatio = 1;
   addTearDown(t.view.reset);
   await t.pumpWidget(ProviderScope(
-    overrides: [haftaOzetiProvider.overrideWith((ref) async => liste)],
+    overrides: [
+      haftaOzetiProvider.overrideWith((ref) async => liste),
+      haftaHacimProvider.overrideWith((ref) async => hacimler),
+    ],
     child: MaterialApp(
       theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -124,7 +130,8 @@ void main() {
   testWidgets('boş liste: açıklayıcı boş durum, kart yok', (t) async {
     await _kur(t, const []);
     expect(find.byType(SandikCard), findsNothing);
-    expect(find.textContaining('Gösterecek para akışı yok'), findsOneWidget);
+    expect(find.textContaining('Bu hafta gösterecek bir şey yok'),
+        findsOneWidget);
   });
 
   testWidgets('dar ekran (320) ve büyük yazı (1,5×) taşmaz', (t) async {
@@ -141,6 +148,79 @@ void main() {
     );
     expect(t.takeException(), isNull);
     expect(find.text('−₺26,34M'), findsOneWidget);
+  });
+
+  testWidgets('olağandışı hacim bölümü: hisse TL, kripto dolar ve alıcı payı',
+      (t) async {
+    final hisse = aggregatePositions([
+      Asset(
+        id: 'h',
+        userId: 'u1',
+        name: 'Astor Enerji',
+        ticker: 'ASTOR.IS',
+        type: AssetType.hisse,
+        quantity: 1,
+        purchasePrice: 1,
+        currency: 'TRY',
+        notes: '',
+        isManualPrice: false,
+        currentPrice: 1,
+        addedDate: DateTime(2026, 3, 14),
+      ),
+    ]).single;
+    await _kur(t, const [], hacimler: [
+      HacimHaftasi(
+        pozisyon: hisse,
+        kripto: false,
+        olay: HacimOlayi(
+            tarih: _g(10, 1),
+            yukselis: true,
+            paraHacmi: 35.46e9,
+            ortalamaKati: 4.7,
+            fiyatDegisim: 0.0997),
+      ),
+      HacimHaftasi(
+        pozisyon: hisse,
+        kripto: true,
+        olay: HacimOlayi(
+            tarih: _g(9, 30),
+            yukselis: false,
+            paraHacmi: 2.62e9,
+            ortalamaKati: 2.3,
+            fiyatDegisim: -0.03,
+            aliciPayi: 0.482),
+      ),
+    ]);
+    expect(find.text('OLAĞANDIŞI HACİM'), findsOneWidget);
+    expect(find.text('FONLARINDA PARA AKIŞI'), findsNothing);
+    expect(find.text('Olağandışı hacim · 1 Eki'), findsOneWidget);
+    expect(find.text('₺35,46Mr · ortalamanın 4,7 katı · fiyat +%10,0'),
+        findsOneWidget);
+    expect(
+        find.text(r'$2,62Mr · ortalamanın 2,3 katı · fiyat −%3,0 · '
+            'alıcı payı %48,2'),
+        findsOneWidget);
+    expect(find.textContaining('Bu hafta gösterecek'), findsNothing);
+  });
+
+  test('sonHaftaHacimOlayi: son 7 gün içindeki en yeni olay', () {
+    HacimOzeti ozet(List<HacimOlayi> olaylar) => HacimOzeti(
+          gunler: const [],
+          sonGun: HacimGunu(tarih: _g(10, 2), kapanis: 1, paraHacmi: 1),
+          ortalama: null,
+          kat: null,
+          fiyatDegisim: null,
+          olaylar: olaylar,
+        );
+    HacimOlayi o(int ay, int gun) => HacimOlayi(
+        tarih: _g(ay, gun),
+        yukselis: true,
+        paraHacmi: 1,
+        ortalamaKati: 3,
+        fiyatDegisim: 0);
+    expect(sonHaftaHacimOlayi(ozet([o(9, 25)])), isNull);
+    expect(sonHaftaHacimOlayi(ozet([o(10, 1), o(9, 26)]))!.tarih, _g(10, 1));
+    expect(sonHaftaHacimOlayi(ozet([o(9, 26)]))!.tarih, _g(9, 26));
   });
 
   group('sıra ve yardımcılar', () {
@@ -187,7 +267,10 @@ void main() {
     final kaynak = ekranKaynagiSync('lib/screens/hafta_ozeti_screen.dart') +
         ekranKaynagiSync('lib/providers/hafta_ozeti_provider.dart');
     expect(kaynak, isNot(contains('PeriodSummary')));
-    expect(kaynak, isNot(contains('fmtPct')));
+    // `fmtPct` hacim satırındaki fiyat değişimi için var; portföy getirisi
+    // için değil — dönem özeti servisi ya da XIRR buraya girmez.
+    expect(kaynak, isNot(contains('xirr')));
+    expect(kaynak, isNot(contains('getiriPct')));
     // Sayılar kartla aynı provider'dan.
     expect(kaynak, contains('fonAkisiProvider('));
   });
