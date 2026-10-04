@@ -177,7 +177,7 @@ void main() {
       expect(find.text('7G'), findsOneWidget);
       expect(find.text('30G'), findsOneWidget);
       expect(find.byType(ZirveDonemSecici), findsNothing);
-      expect(find.text('Herkes'), findsNothing);
+      expect(find.text('Zirvedekiler'), findsNothing);
       expect(find.text('Yarış'), findsOneWidget);
     });
   });
@@ -192,7 +192,7 @@ void main() {
       expect(find.text("Yarış'a katıl"), findsOneWidget);
       expect(find.byType(ZirveDonemSecici), findsNothing);
       // Herkes: zirve açık rıza kartı — liste YOK.
-      await tester.tap(find.text('Herkes'));
+      await tester.tap(find.text('Zirvedekiler'));
       await _gecis(tester);
       expect(find.byType(ZirveRizaKarti), findsOneWidget);
       expect(find.byType(ZirveDonemSecici), findsNothing);
@@ -231,7 +231,7 @@ void main() {
           tester.widget<ZirveDonemSecici>(find.byType(ZirveDonemSecici)).secili,
           ZirveDonem.yil);
       // Herkes'e geç: dönem korunur.
-      await tester.tap(find.text('Herkes'));
+      await tester.tap(find.text('Zirvedekiler'));
       await _gecis(tester);
       expect(find.byType(ZirveGovdesi), findsOneWidget);
       expect(
@@ -272,7 +272,7 @@ void main() {
       expect(find.byIcon(Icons.info_outline_rounded), findsOneWidget);
       expect(find.byIcon(Icons.more_vert_rounded), findsOneWidget,
           reason: 'yarıştan ayrılma menüsü');
-      await tester.tap(find.text('Herkes'));
+      await tester.tap(find.text('Zirvedekiler'));
       await _gecis(tester);
       expect(find.byIcon(Icons.info_outline_rounded), findsNothing);
       expect(find.byIcon(Icons.more_vert_rounded), findsNothing);
@@ -290,7 +290,7 @@ void main() {
                   zirveRizaYukleyici: () async => optIn ? true : false),
               width: w);
           expect(tester.takeException(), isNull);
-          await tester.tap(find.text('Herkes'));
+          await tester.tap(find.text('Zirvedekiler'));
           await _gecis(tester);
           expect(tester.takeException(), isNull);
         });

@@ -5608,7 +5608,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingTabPartners => 'My partners';
 
   @override
-  String get rankingTabEveryone => 'Everyone';
+  String get rankingTabEveryone => 'Top portfolios';
 
   @override
   String get todaysPortfolioBadge => 'With today\'s portfolio';

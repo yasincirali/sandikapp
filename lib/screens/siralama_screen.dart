@@ -45,7 +45,8 @@ Widget zirveGirisEkrani(ZirveDonem donem) =>
 /// Profil kartı), Zirvedeki Portföyler (Performans grafiğinin altı) ve
 /// yüzdelik şeridi. Kullanıcı "kim önde?" sorusunu iki ayrı ekranda,
 /// iki ayrı dönem seçicisiyle arıyordu. Tek sayfa, iki sekme: "Ortaklarım"
-/// (tanıdıklarla yarış) ve "Herkes" (anonim havuz).
+/// (tanıdıklarla yarış) ve "Zirvedekiler" (anonim havuz; kullanıcı 2026-10-04
+/// "Herkes" yerine bu adı istedi — sekme kimlerin olduğunu söylesin).
 ///
 /// ## Ne değişmez
 /// - Gövdeler KOPYA değil: `YarisGovdesi` ve `ZirveGovdesi` eski ekranların

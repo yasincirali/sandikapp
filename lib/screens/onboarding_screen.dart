@@ -724,14 +724,14 @@ List<_Adim> _adimlariKur() {
       // 2026-10-01 (0095): ölçü "seçimlerinin getirisi" (TWR) oldu; metin
       // neyin yarıştığını söyler — para ekleme zamanı değil, seçimler.
       // 2026-10-04 (sadeleştirme madde 8, bayrak `siralama_tek_sayfa`):
-      // bayrak açıkken kart ayrı ekranı değil Sıralama sayfasının "Herkes"
+      // bayrak açıkken kart ayrı ekranı değil Sıralama sayfasının "Zirvedekiler"
       // sekmesini açar; Yarış da aynı sayfanın "Ortaklarım" sekmesi. Metin
       // açılan yüzeyi doğru adlandırsın diye iki hâlde ayrı.
       govde: RemoteConfigService.instance.siralamaTekSayfa
           ? 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
               'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
               'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
-              'Dokununca Sıralama sayfasının Herkes sekmesi açılır: '
+              'Dokununca Sıralama sayfasının Zirvedekiler sekmesi açılır: '
               'haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
               'üstünde. Ortaklarınla yarışın yanındaki Ortaklarım '
               'sekmesinde, aynı dönemle. Katılım isteğe bağlı ve anonim: '

@@ -9330,7 +9330,7 @@ abstract class AppLocalizations {
   /// No description provided for @rankingTabEveryone.
   ///
   /// In tr, this message translates to:
-  /// **'Herkes'**
+  /// **'Zirvedekiler'**
   String get rankingTabEveryone;
 
   /// No description provided for @todaysPortfolioBadge.

@@ -5556,7 +5556,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rankingTabPartners => 'Ortaklarım';
 
   @override
-  String get rankingTabEveryone => 'Herkes';
+  String get rankingTabEveryone => 'Zirvedekiler';
 
   @override
   String get todaysPortfolioBadge => 'Bugünkü portföyle';
