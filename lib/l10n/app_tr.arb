@@ -3962,5 +3962,8 @@
   "addDetails": "Ayrıntı ekle (komisyon, not)",
   "addByTyping": "Yazarak ekle",
   "importFromStatement": "Ekstreden aktar",
-  "orWithEmail": "veya e-postayla"
+  "orWithEmail": "veya e-postayla",
+  "todayTopMoverLabel": "En çok oynayan",
+  "todayVsInflationYou": "Getirin",
+  "todayVsInflationCpi": "TÜFE"
 }

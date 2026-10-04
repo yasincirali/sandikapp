@@ -5531,4 +5531,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get orWithEmail => 'veya e-postayla';
+
+  @override
+  String get todayTopMoverLabel => 'En çok oynayan';
+
+  @override
+  String get todayVsInflationYou => 'Getirin';
+
+  @override
+  String get todayVsInflationCpi => 'TÜFE';
 }

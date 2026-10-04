@@ -9266,6 +9266,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'veya e-postayla'**
   String get orWithEmail;
+
+  /// No description provided for @todayTopMoverLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok oynayan'**
+  String get todayTopMoverLabel;
+
+  /// No description provided for @todayVsInflationYou.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirin'**
+  String get todayVsInflationYou;
+
+  /// No description provided for @todayVsInflationCpi.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE'**
+  String get todayVsInflationCpi;
 }
 
 class _AppLocalizationsDelegate

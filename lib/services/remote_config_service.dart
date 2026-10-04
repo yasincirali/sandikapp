@@ -228,6 +228,13 @@ class RemoteConfigService {
     // ekran birebir eski kabuğunda (`ModernTabSelector` / `KapsamKisiSecici`).
     // Seçim sözleşmesi ve yazılan durum iki yolda da AYNI.
     'tek_ortak_secici': false,
+
+    // Bugün kartı "H · enflasyon kıyası öne" düzeni (kullanıcı seçimi
+    // 2026-10-04, sadeleştirme listesi madde 7): günün hareketi (eğri
+    // rakamın sağında), geniş Getirin–TÜFE kıyası, en çok oynayan ve hedef.
+    // Son 7 gün, artıdaki varlık, aylık özet ve olay ayak notu bu düzende
+    // yok. Kapalıyken kart birebir "D · Sakin pano".
+    'bugun_karti_kiyas': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -416,6 +423,8 @@ class RemoteConfigService {
 
   /// Tek ortak seçici görünüşü — bkz. `_defaults['tek_ortak_secici']`.
   bool get tekOrtakSecici => _bayrak('tek_ortak_secici');
+
+  bool get bugunKartiKiyas => _bayrak('bugun_karti_kiyas');
 
   /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
   /// `_defaults['canli_etkinlik_dakikalik']`.

@@ -26,6 +26,8 @@
 // ayrıdır (`_dataWaitTimer`).
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import 'bugun_service.dart';
@@ -86,10 +88,17 @@ abstract final class BugunYukleyici {
   /// dakikada Ana ekran "5,4 puan önde", Özet "4,5 puan" yazdı. Getiri
   /// hesaplayan her yüzey aynı kümeyi okumalı (`PortfolioState.activeAssets`
   /// notu).
+  /// Testte reel satırını ağsız vermek için (TÜFE ve seri testte ağa
+  /// çıkamaz; `HistoryService.seriCekici` ile aynı desen).
+  @visibleForTesting
+  static ReelGetiriSatiri? Function(PortfolioState state)? reelTest;
+
   static Future<ReelGetiriSatiri?> reel(
     PortfolioState state, {
     Duration enFazla = varsayilanButce,
   }) async {
+    final test = reelTest;
+    if (test != null) return test(state);
     if (!RemoteConfigService.instance.realReturnEnabled) return null;
     try {
       final r =

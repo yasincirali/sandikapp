@@ -5583,4 +5583,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get orWithEmail => 'or with email';
+
+  @override
+  String get todayTopMoverLabel => 'Biggest mover';
+
+  @override
+  String get todayVsInflationYou => 'Your return';
+
+  @override
+  String get todayVsInflationCpi => 'CPI';
 }

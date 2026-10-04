@@ -400,16 +400,26 @@ List<_Adim> _adimlariKur() {
       // vaat etmez.
       // 2026-10-04 (sadeleştirme 2, kullanıcı kararı): "piyasa etkisi" →
       // "fiyat etkisi"; Özet köprüsündeki aynı rakamla tek ad.
-      govde: 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
-          'hareketi: sadece fiyat etkisi, yatırdığın para sayılmaz; '
-          'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
-          'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
-          'çizgi TÜFE; başlıkta hangi aylar arasında ölçüldüğü), yanında '
-          'son 7 gün ya da artıdaki varlıkların, günden güne. Sarı kutular '
-          'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '
-          'tarih. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
-          'Birlikte\'ye geçince kart o defterin gününü anlatır, başında '
-          'kimin olduğu yazar.',
+      // 2026-10-04 düzen H (bayrak `bugun_karti_kiyas`): kart başka
+      // parçalar taşıyor; metin bayrağa göre o düzeni anlatır.
+      govde: RemoteConfigService.instance.bugunKartiKiyas
+          ? 'Üstte gün ve seans durumu. Büyük rakam günün hareketi: sadece '
+              'fiyat etkisi, yatırdığın para sayılmaz; yanındaki eğride kesik '
+              'çizgi gün başı seviyesidir. Altında getirinin enflasyonla '
+              'kıyası: iki çubuk, getirin ve TÜFE, başlıkta hangi aylar '
+              'arasında ölçüldüğü. En altta günün en çok oynayan varlığı ve '
+              'hedefine kalan. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
+              'Birlikte\'ye geçince kart o defterin gününü anlatır.'
+          : 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
+              'hareketi: sadece fiyat etkisi, yatırdığın para sayılmaz; '
+              'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
+              'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
+              'çizgi TÜFE; başlıkta hangi aylar arasında ölçüldüğü), yanında '
+              'son 7 gün ya da artıdaki varlıkların, günden güne. Sarı kutular '
+              'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '
+              'tarih. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
+              'Birlikte\'ye geçince kart o defterin gününü anlatır, başında '
+              'kimin olduğu yazar.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,

@@ -2,49 +2,11 @@ part of '../portfolio_performance_screen.dart';
 
 /// Özet sekmesinin ağa çıkan yan verileri (TÜFE, yüzdelik, sağlık, XIRR) ve
 /// pozisyon etiketi. `portfolio_performance_screen.dart`'ın part'ı (2026-09-14).
-/// `positionKey` insan-okunur etikete çevrilir.
-///
-/// Anahtar `type|core|currency` biçimindedir (bkz. `positionKey`); `core`
-/// altında `sub:` öneki altın/döviz alt kategorisini, `name:` öneki
-/// ticker'sız varlığın adını taşır. Ham anahtarı ekrana basmak
-/// "altin|sub:çeyrek|TRY" gibi bir şey gösterirdi.
-///
-/// **Neden üst seviyeye çıktı:** iki yer okuyor — tür dökümü kartı ve Özet
-/// sekmesinin en iyi/en zayıf satırları. Kopyalamak bu projede ons→gram
-/// formülünü beş yere dağıtan sınıf hatanın aynısıydı.
-String _positionLabel(String key, AssetType type, AppLocalizations l) {
-  final parts = key.split('|');
-  var core = parts.length > 1 ? parts[1] : key;
-  if (core.startsWith('sub:')) {
-    core = core.substring(4);
-  } else if (core.startsWith('name:')) {
-    core = core.substring(5);
-  } else {
-    // Sembol çekirdeği: `ARDYZ.IS` / `TEFAS:AFT` / `KRIPTO:BTC` → kod
-    // (`pozisyonKodu`; 2026-09-29 emülatör testinde GÜNLÜK'ün "en çok
-    // hareket eden"i ham `ARDYZ.IS` yazıyordu).
-    core = pozisyonKodu(core);
-  }
-  if (core.isEmpty) return type.labelOf(l);
-  // Döviz: ham Yahoo sembolü ("EURTRY=X") müşteriye sızıyordu (emülatör
-  // testi 2026-10-01, GÜNLÜK "en çok hareket eden"). Piyasa şeridiyle aynı
-  // adlar (`piyasa_seridi`: Dolar / Euro), sterlin de eklendi.
-  if (type == AssetType.doviz) {
-    final kod = core.toUpperCase().replaceAll('TRY=X', '');
-    final ad = switch (kod) {
-      'USD' => l.marketDollar,
-      'EUR' => l.marketEuro,
-      'GBP' => l.marketPound,
-      _ => null,
-    };
-    if (ad != null) return ad;
-  }
-  // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
-  // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
-  return core.length > 1
-      ? core[0].toUpperCase() + core.substring(1)
-      : core.toUpperCase();
-}
+/// `positionKey` → insan-okunur etiket. Gövde `lib/utils/pozisyon_etiketi.dart`
+/// (2026-10-04): Bugün kartının "en çok oynayan"ı da aynı adı yazsın diye
+/// ortak dosyaya taşındı; buradaki ad part'ın çağıranları değişmesin diye kaldı.
+String _positionLabel(String key, AssetType type, AppLocalizations l) =>
+    pozisyonEtiketi(key, type, l);
 
 /// Özet'in ağa çıkan yan verilerinin TEK ölçümü — [_yanVeriYukle] üretir,
 /// `_OzetBellek` saklar, `_OzetYanVeriState` çizer.

@@ -3704,5 +3704,8 @@
   "addDetails": "Add details (fee, note)",
   "addByTyping": "Add by typing",
   "importFromStatement": "Import statement",
-  "orWithEmail": "or with email"
+  "orWithEmail": "or with email",
+  "todayTopMoverLabel": "Biggest mover",
+  "todayVsInflationYou": "Your return",
+  "todayVsInflationCpi": "CPI"
 }

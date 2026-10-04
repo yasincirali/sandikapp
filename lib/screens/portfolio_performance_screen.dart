@@ -31,6 +31,7 @@ import 'main_navigation_screen.dart' show MainNavigationScreen;
 import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
+import '../utils/pozisyon_etiketi.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/islem_noktalari.dart';

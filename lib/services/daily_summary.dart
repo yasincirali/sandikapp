@@ -909,6 +909,15 @@ class IntradaySeriesCache {
     return sonuc;
   }
 
+  /// Kümenin önbellekteki breakdown'ı — ağa ÇIKMAZ.
+  ///
+  /// Bugün kartının "en çok oynayan"ı (2026-10-04) seriyle AYNI nesneden
+  /// okunur: kart seriyi [breakdown] ile zaten çekti; ikinci çekim hem
+  /// boşa ağ turu hem de iki farklı anın verisi olurdu ("gün içi tek
+  /// seri" kuralı).
+  PortfolioHistoryBreakdown? onbellekte(List<Asset> assets) =>
+      _yuvalar[anahtar(assets)]?.breakdown;
+
   /// Oturum kapanışında ve defter değişince çağrılır — bir sonraki
   /// kullanıcı öncekinin grafiğini görmemeli, alım/satım sonrası eski
   /// gün başıyla hesap yapılmamalı.
@@ -930,6 +939,8 @@ class IntradaySeriesCache {
     String ownerId = '',
     DateTime? seansGunu,
     List<Asset>? kume,
+    Map<String, Map<int, double>> byPosition = const {},
+    Map<String, AssetType> positionType = const {},
   }) {
     final k = kume == null ? '' : anahtar(kume);
     _benAnahtari = k;
@@ -937,8 +948,8 @@ class IntradaySeriesCache {
       ..breakdown = PortfolioHistoryBreakdown(
         total: series,
         byType: const {},
-        byPosition: const {},
-        positionType: const {},
+        byPosition: byPosition,
+        positionType: positionType,
         seansGunu: seansGunu,
       )
       ..fetchedAt = fetchedAt
