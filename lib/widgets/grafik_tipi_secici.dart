@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/grafik_tipi.dart';
 import '../l10n/l10n.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 
 /// Grafik tipi seçici — açılır menü; üç görünümü var ([GrafikTipiGorunum]).
@@ -27,7 +28,13 @@ class GrafikTipiSecici extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<GrafikTipi>(
       valueListenable: grafikTipiNotifier,
-      builder: (context, secili, _) {
+      builder: (context, kayitli, _) {
+        // Sade kümede (`performans_ayar_sade`) yalnız Çizgi ve Mum
+        // listelenir; kümede olmayan bir seçim Çizgi olarak GÖSTERİLİR ama
+        // notifier'a yazılmaz (bkz. `GrafikTipi.etkin`) — bayrak kapanınca
+        // eski seçim geri gelir.
+        final sade = RemoteConfigService.instance.performansAyarSade;
+        final secili = GrafikTipi.etkin(kayitli, sade: sade);
         // `Material` ZORUNLU ve POPUP'IN DIŞINDA olmalı.
         //
         // Bu ekran `CupertinoPageScaffold` altında çiziliyor;
@@ -51,7 +58,7 @@ class GrafikTipiSecici extends StatelessWidget {
           ),
           onSelected: (t) => grafikTipiNotifier.value = t,
           itemBuilder: (_) => [
-            for (final t in GrafikTipi.values)
+            for (final t in GrafikTipi.secilebilir(sade: sade))
               PopupMenuItem<GrafikTipi>(
                 value: t,
                 height: 48,

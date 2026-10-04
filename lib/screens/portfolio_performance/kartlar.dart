@@ -177,6 +177,15 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ],
         _buildScopeBar(),
         _buildScopePanel(isIntraday),
+        // Mod Ayarlar'dayken (`performans_ayar_sade`) etkin olduğu ekranda
+        // görünür kalır. Gün içinde simülasyonun karşılığı yok (eski
+        // anahtar da orada çizilmiyordu) — rozet de çizilmez.
+        if (RemoteConfigService.instance.performansAyarSade &&
+            _simulate &&
+            !isIntraday) ...[
+          const SizedBox(height: SandikSpace.xs),
+          _buildBugunkuPortfoyRozeti(),
+        ],
         const SizedBox(height: SandikSpace.sm),
         // Dönem seçici grafiğin ÜSTÜNDE — üç grafik ekranında da (kullanıcı
         // kararı 2026-09-28, aynı gün içinde iki adım): önce "üç ekranda

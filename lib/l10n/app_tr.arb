@@ -3978,5 +3978,18 @@
   "vitrinStatementHint": "Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde",
   "vitrinStatementHintShort": "PDF, Excel ya da CSV; tek seferde",
   "vitrinTapToAdd": "Eklemek için dokun",
-  "vitrinPriceUnknown": "Fiyat henüz yok"
+  "vitrinPriceUnknown": "Fiyat henüz yok",
+  "todaysPortfolioBadge": "Bugünkü portföyle",
+  "todaysPortfolioBadgeHint": "Bu görünümü Ayarlar › Görünüm'den kapatabilirsin.",
+  "todaysPortfolioSettingTitle": "Bugünkü portföyle göster",
+  "todaysPortfolioSettingSubtitle": "Performans, bugünkü varlıklarını dönem boyunca elinde tutmuşsun gibi çizilir. Kapalıyken gerçek geçmişin görünür.",
+  "settingsGroupGeneral": "GENEL",
+  "settingsGroupPortfolioView": "PORTFÖY GÖRÜNÜMÜ",
+  "settingsGroupSecurityAccount": "GÜVENLİK VE HESAP",
+  "settingsGroupData": "VERİ",
+  "settingsGroupAbout": "UYGULAMA HAKKINDA",
+  "settingsAdvancedUpper": "GELİŞMİŞ",
+  "settingsAdvancedSemantics": "Gelişmiş ayarlar",
+  "settingsThemeLabel": "Tema",
+  "settingsBaseCurrencyLabel": "Baz para birimi"
 }

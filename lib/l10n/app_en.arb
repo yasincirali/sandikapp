@@ -3720,5 +3720,18 @@
   "vitrinStatementHint": "Broker PDF, Excel or CSV, all in one go",
   "vitrinStatementHintShort": "PDF, Excel or CSV in one go",
   "vitrinTapToAdd": "Tap to add",
-  "vitrinPriceUnknown": "No price yet"
+  "vitrinPriceUnknown": "No price yet",
+  "todaysPortfolioBadge": "With today's portfolio",
+  "todaysPortfolioBadgeHint": "You can turn this view off in Settings › Appearance.",
+  "todaysPortfolioSettingTitle": "Show with today's portfolio",
+  "todaysPortfolioSettingSubtitle": "Performance is drawn as if you had held today's holdings for the whole period. When off, your actual history is shown.",
+  "settingsGroupGeneral": "GENERAL",
+  "settingsGroupPortfolioView": "PORTFOLIO VIEW",
+  "settingsGroupSecurityAccount": "SECURITY & ACCOUNT",
+  "settingsGroupData": "DATA",
+  "settingsGroupAbout": "ABOUT THE APP",
+  "settingsAdvancedUpper": "ADVANCED",
+  "settingsAdvancedSemantics": "Advanced settings",
+  "settingsThemeLabel": "Theme",
+  "settingsBaseCurrencyLabel": "Base currency"
 }

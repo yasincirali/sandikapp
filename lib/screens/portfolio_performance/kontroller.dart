@@ -105,7 +105,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         _typeFilter == null ? l.allTypes : _typeFilter!.labelOf(l);
     return [
       l.scopeCategory(kategori),
-      if (_simulate) l.modeSim,
+      // `performans_ayar_sade` açıkken mod bu çipin panelinde değil
+      // (Ayarlar › Görünüm); çipte yazmak paneli açanı boş panelle
+      // karşılardı. Mod o yolda kapsam çubuğunun altındaki rozette.
+      if (_simulate && !RemoteConfigService.instance.performansAyarSade)
+        l.modeSim,
     ].join(' · ');
   }
 
@@ -116,7 +120,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     // Kim seçimi artık başlıktaki kişi çipinde; bu çip yalnız tür + mod
     // filtresini yansıtır. `_view` buraya girince "Ben" seçili her
     // kullanıcıda çip sürekli amber yanıyordu — filtre yokken de.
-    final filtreli = _typeFilter != null || _simulate;
+    final filtreli = _typeFilter != null ||
+        (_simulate && !RemoteConfigService.instance.performansAyarSade);
     // Varsayılan (filtresiz) durumda da ton koyu: çip soluk `text58` iken
     // düz bir etiket gibi duruyordu ve dokunulabilir olduğu anlaşılmıyordu
     // (kullanıcı bildirimi 2026-09-15: "kişi seçimi çok efektif olmamış").
@@ -200,7 +205,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     // Anahtar gizlenirken simülasyon açık kaldıysa kapatılamaz hâlde
     // kalmasın: gerçek geçmişe dön (seviye oturum içinde değişmiş olabilir).
     final araclar = ref.watch(seviyeGorunurlukProvider).grafikAraclari;
-    if (!araclar && _simulate) {
+    // Ayarlar yolunda (`performans_ayar_sade`) sıfırlama YOK: tercih
+    // kalıcıdır ve `_simulate` araçlar gizliyken onu zaten etkisiz sayar.
+    final ayarYolu = RemoteConfigService.instance.performansAyarSade;
+    if (!ayarYolu && !araclar && _simulate) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _guncelle(() => _simulate = false);
       });
@@ -229,7 +237,12 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
             // Simülasyon anahtarı sade Başlangıç'ta yok (`seviye_anketi`):
             // "bugünkü portföyü hep tutsaydım" ikinci bir eğri ve ikinci bir
             // yüzde demek; yeni yatırımcıda gerçek geçmiş tek doğru.
-            if (!isIntraday && !_ozetSekmesi && araclar) ...[
+            //
+            // `performans_ayar_sade` açıkken anahtar burada YOK: Ayarlar ›
+            // Görünüm'e taşındı (madde 5). Dönemden döneme değiştirilen bir
+            // kontrol değil, bir bakış tercihi; panelde kaldığında her
+            // açılışta "Gerçek mi, Bugünkü mü?" sorusu soruyordu.
+            if (!ayarYolu && !isIntraday && !_ozetSekmesi && araclar) ...[
               const SizedBox(height: SandikSpace.sm),
               _buildModeToggle(),
             ],
@@ -311,6 +324,61 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
+  /// "Bugünkü portföyle" rozeti — `performans_ayar_sade` açıkken ve mod
+  /// etkinken kapsam çubuğunun altında.
+  ///
+  /// Anahtar Ayarlar › Görünüm'e taşındı; burada bir şey kalmasa kullanıcı
+  /// gördüğü eğrinin GERÇEK geçmiş olmadığını bilemezdi ("görünmeyen
+  /// filtre", bkz. `_buildScopeBar`). Rozet durum söyler, kontrol değildir:
+  /// dokununca modun ne olduğunu ve nereden kapatılacağını anlatır.
+  Widget _buildBugunkuPortfoyRozeti() {
+    final etiket = context.l10n.todaysPortfolioBadge;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Semantics(
+        button: true,
+        label: context.l10n.modeInfoSemantics(etiket),
+        child: ExcludeSemantics(
+          child: CupertinoButton(
+            minimumSize: SandikTouch.minSize,
+            padding: EdgeInsets.zero,
+            onPressed: () => _showModeInfoSheet(forSim: true, ayarIpucu: true),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.sm2, vertical: SandikSpace.xs),
+              decoration: BoxDecoration(
+                color: context.c.amberFill.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(
+                    color: context.c.amberFill.withValues(alpha: 0.55)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_toggle_off_rounded,
+                      size: 15, color: context.c.amberText),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Flexible(
+                    child: Text(
+                      etiket,
+                      style: context.t.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.c.amberText,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Icon(Icons.info_outline_rounded,
+                      size: 15, color: context.c.amberText),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Gerçek geçmiş / Simülasyon toggle'ı.
   /// - Gerçek: her günün o günkü net miktarına göre değer (alım/satışlar
   ///   tarihlerine göre).
@@ -380,11 +448,14 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
-  void _showModeInfoSheet({required bool forSim}) {
+  void _showModeInfoSheet({required bool forSim, bool ayarIpucu = false}) {
     final title = forSim ? context.l10n.simModeTitle : context.l10n.realModeTitle;
     final body = forSim
         ? context.l10n.simModeBody
         : context.l10n.realModeBody;
+    // Rozetten açıldıysa nereden kapatılacağı da yazılır: anahtar artık
+    // bu ekranda değil (`performans_ayar_sade`).
+    final ipucu = ayarIpucu ? context.l10n.todaysPortfolioBadgeHint : null;
 
     // Uygulamanın öteki ~30 sheet'i gibi Material alt sayfası (animasyon
     // denetimi 2026-10-01): bu tek Cupertino açılır penceresiydi — 335 ms
@@ -432,6 +503,16 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                       height: 1.5,
                       decoration: TextDecoration.none),
                 ),
+                if (ipucu != null) ...[
+                  const SizedBox(height: SandikSpace.sm),
+                  Text(
+                    ipucu,
+                    style: context.t.bodyMedium?.copyWith(
+                        color: context.c.amberText,
+                        height: 1.5,
+                        decoration: TextDecoration.none),
+                  ),
+                ],
               ],
             ),
           ),
