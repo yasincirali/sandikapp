@@ -324,7 +324,10 @@ class YasalMetin {
 /// arşiv satırı UYDURULMADI — DB'deki ilk belge sürümü 1.1'dir (uygulamanın
 /// kısaltılmış kopyası). 1.2 (0103): web'deki tam metin; Açık Rıza Metni
 /// ayrı tür olarak 1.2 ile başlar. Web'in "1.0" etiketli eski metinleri de
-/// arşivlenmedi (onaya bağlı değillerdi).
+/// arşivlenmedi (onaya bağlı değillerdi). 1.3 (0105, 2026-10-05): Auth
+/// güvenlik kaydı 90 gün + anonim silme kaydı 3 yıl (ikisi de cron'la
+/// silinir) ve zorunlu okumanın gerçeği ("her metin tam gösterilir,
+/// sonuna kadar okunur, en altta onaylanır"); dört belge birlikte arttı.
 abstract final class YasalMetinKatalogu {
   /// Kayıt kutularının sürümü. Kutu başlığında `v$disclaimerVersion`
   /// görünüyor; kullanıcının gördüğü etiketle aynı kalsın diye o sayı.

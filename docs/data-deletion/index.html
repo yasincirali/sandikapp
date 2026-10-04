@@ -6,8 +6,8 @@
 <title>Hesap Silme Talebi — sandık</title>
 <meta name="description" content="Hesap silme talep formu — 30 gün içinde işleme alınır.">
 <meta name="sandik-kaynak" content="legal/DATA_DELETION_REQUEST_FORM.md">
-<meta name="sandik-kaynak-sha256" content="a5abd1267915444fb39e14598bfc730efb78b06c1596e64add2ca647a86b3d58">
-<meta name="sandik-govde-sha256" content="201674166571fd4a276a0f207357df683a1ba30043c66128684c2b2a22a90dad">
+<meta name="sandik-kaynak-sha256" content="f18025e75f55b92b469ff7707d2d112c8a0e13244b6d3c85412ce2ad17a0e89e">
+<meta name="sandik-govde-sha256" content="be103044cc81ff32633674117ddfc5936a17ea4101d71fe9895023a56719dbff">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -110,8 +110,8 @@ Açıklama (opsiyonel): ___________________
 <li><strong>Hata kayıtları:</strong> hesabınızla bağı kaldırılarak en geç 30 gün içinde silinir</li>
 <li><strong>Kayıt hunisi adımları:</strong> hesabınızla bağı kaldırılarak, rastgele kurulum numarasıyla en geç 400 gün içinde silinir</li>
 <li><strong>Firebase'deki hata raporları ve kullanım istatistikleri:</strong> kendi saklama süreleri sonunda (hata raporları 90 gün, kullanım istatistikleri en fazla 14 ay) silinir</li>
-<li><strong>Anonim silme kaydı:</strong> hesap kimliğinizin tek yönlü özeti ve e-posta adresinizin alan adı (ör. gmail.com)</li>
-<li><strong>Oturum açma güvenlik kaydı</strong> (IP, cihaz/tarayıcı): Supabase Auth güvenlik kaydında tutulur</li>
+<li><strong>Anonim silme kaydı:</strong> hesap kimliğinizin tek yönlü özeti ve e-posta adresinizin alan adı (ör. gmail.com); silmeden sonra <strong>3 yıl</strong> saklanır, süresi dolunca otomatik silinir</li>
+<li><strong>Oturum açma güvenlik kaydı</strong> (IP, cihaz/tarayıcı): Supabase Auth güvenlik kaydında tutulur; 90 günden eski kayıtlar her gün otomatik silinir</li>
 </ul>
 <p>Ayrıntı: Gizlilik Politikası §7.</p>
 <h3>Soru?</h3>
@@ -153,8 +153,8 @@ Notes (optional): ___________________
 <li><strong>Error logs:</strong> unlinked from your account and deleted within 30 days at the latest</li>
 <li><strong>Sign-up funnel steps:</strong> unlinked from your account, kept under a random installation number and deleted within 400 days at the latest</li>
 <li><strong>Crash reports and usage statistics in Firebase:</strong> deleted at the end of their own retention periods (crash reports 90 days, usage statistics at most 14 months)</li>
-<li><strong>Anonymous deletion record:</strong> a one-way hash of your account ID and the domain of your email address (e.g. gmail.com)</li>
-<li><strong>Sign-in security log</strong> (IP, device/browser): kept in the Supabase Auth security log</li>
+<li><strong>Anonymous deletion record:</strong> a one-way hash of your account ID and the domain of your email address (e.g. gmail.com); kept for <strong>3 years</strong> after deletion, then deleted automatically</li>
+<li><strong>Sign-in security log</strong> (IP, device/browser): kept in the Supabase Auth security log; entries older than 90 days are deleted automatically every day</li>
 </ul>
 <p>Details: Privacy Policy §7.</p>
 <h3>Questions?</h3>

@@ -1,6 +1,7 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
 **Tarih:** 2026-05-11 · **Son ek:** 2026-10-04 (fon para akışı, 0106); önce: 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (saklama süreleri + belgeler 1.3, 0105); önce: 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -51,6 +52,75 @@ Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma
       (önce kendi cihazına koşulla). Açılışla AYNI sürümde sürüm notu + tur
       adımı yazılacak (bayrak kapalıyken yazılmadı: görünmeyen özellik
       duyurulmaz).
+## ✅ 2026-10-04/05 oturumu — cihazda senin bakacakların
+
+Kod ve sunucu tarafı bitti (PR #85–#89, 0102–0105 iki sunucuda). Emülatörde
+görülemeyenler — gerçek cihazda bak:
+
+- [ ] **Kaydı sonuna kadar götür (yeni e-posta hesabı):** beş metin (Koşullar,
+      Gizlilik, KVKK, Açık Rıza, Yatırım Uyarısı) tek tek açılıp sonunda
+      onaylanır → kutu → Kayıt Ol → OTP. OTP sonrası yatırım uyarısı ekranı
+      ÇIKMAMALI. Sunucuda: `select * from yasal_onay_durumu where user_id =
+      '<yeni id>';` → beş tür + kayıt kutusu `guncel_mi = true`; `kayit`
+      kanalında `yatirim_uyarisi` ve `degiskenler.sonuna_kadar_okundu = true`.
+- [ ] **Apple / Google ile ilk giriş (iOS):** onay ekranı → beş satır, her
+      biri sonuna kadar okunup onaylanır → kullanıcı adı ekranı (aynen kalır).
+- [ ] **Eski hesapla giriş (1.3 sürümüyle):** "Güncellenen belgeler" bir kez
+      çıkar, dört belge 1.3; onaydan sonra bir daha sorulmaz. 1.2/1.1 taşıyan
+      eski sürümde kapı HİÇ açılmamalı (çift onay yok kuralı).
+- [ ] **TalkBack / büyük yazı (×2):** Koşullar'ı yalnız kaydırma hareketiyle
+      sona getirip onaylamak mümkün olmalı (kilitlenme yok).
+- [ ] **Yarış düellosu tam hâli:** ortağın da portföyü olan iki hesapla
+      Performans › Yarış › Ortaklarım → taç zıplaması, kıvılcım, lider şeridi;
+      gerçek cihazda avatar parıltısı ve akıcılık.
+- [ ] **Zirve rıza kartı** küçük ekranda: sona gelmeden "Katılıyorum" kapalı.
+- [ ] **Firebase Console:** `yeniden_onay_kapisi = false` KALICI kalsın
+      (2026-10-04'te yapıldı; geri açma).
+- [ ] **Bayrak temizliği PR'ı** (dal `feat/bayrak-temizligi`): 15 bayrak ve eski
+      kod yolları silinir; birleşince bu özellikler artık Console'dan
+      KAPATILAMAZ. Yayın sorunsuz oturduktan sonra birleştir.
+- [ ] **Tokyo Auth güvenlik kaydı:** 0105 sonrası 90 günden eski kayıtlar her
+      gece silinir; ilk silme ~2026-10-27/28. Eski IP geçmişi gerekiyorsa
+      önce dışa aktar.
+
+## ⏳ 2026-10-05 Saklama süreleri + belgeler 1.3 (0105) — dal `feat/saklama-1-3` (yerel, push yok)
+
+Kullanıcı kararı (2026-10-05): *"Önerilerin hepsini uygula."* Süresiz iki
+kayıt artık otomatik silinir: **Supabase Auth güvenlik kaydı**
+(`auth.audit_log_entries`: IP, cihaz/tarayıcı) **90 gün**, **anonim hesap
+silme kaydı** (`account_deletion_log`) silmeden sonra **3 yıl**. Koşullar,
+Gizlilik, KVKK ve Açık Rıza Metni **1.3**: yeni süreler + "her onay metni
+tam gösterilir, sonuna kadar okunur, onay en altta verilir" (zorunlu okuma).
+Silme formu (web) ve EN Terms/Privacy (1.3) + GDPR Notice (1.2) aynı.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı reddedilir, kapı her
+açılışta yeniden sorar):**
+- [ ] 1. `supabase/migrations/0105_saklama_sureleri_belgeler_1_3.sql` → **iki
+      sunucuya** (`supabase-deploy.yml`, hedef `ikisi`; Frankfurt → Tokyo).
+      Migration fonksiyon sahibinin (`postgres`) `auth.audit_log_entries`
+      üzerinde DELETE yetkisi yoksa BİLEREK düşer (her gece sessizce hata
+      veren cron yerine). Doğrula (salt okunur):
+      `select jobname, schedule, active from cron.job where jobname in ('auth-guvenlik-kaydi-saklama', 'hesap-silme-kaydi-saklama');`
+      → Tokyo'da ikisi `true`, Frankfurt'ta (tüm cron kapalı kipi) `false`.
+      `select tur, surum from yasal_metinler where surum = '1.3' order by 1;`
+      → 4 satır; 1.2 satırları yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). Pages web'i de 1.3 ile yayınlar.
+      1.2'yi onaylamış herkes bir sonraki açılışta kapıda "Güncellenen
+      belgeler" + yeni "Neler değişti" notunu görür ve dört belgeyi TEK
+      seferde onaylar. 1.2 taşıyan eski sürümler sunucuda 1.3'ü görünce
+      kapıyı hiç açmaz (çift onay yok — `uygulamaEski`, test kanıtı
+      `test/yasal_onay_service_test.dart` "0105").
+
+**⚠️ Tokyo'da ilk silme:** dağıtım günü 90 günden eski güvenlik kaydı yok
+(en eskisi 2026-07-29, 2399 satır). İlk satırlar **2026-10-27/28 gecesi**
+(03:55 UTC) gider, sonra her gece 90 günü dolanlar. Geri alınamaz: o
+tarihten önceki IP/oturum geçmişine ihtiyacın varsa (ör. açık bir kötüye
+kullanım incelemesi) dağıtımdan önce dışa aktar. Frankfurt'ta 0 satır ve
+işler kapalı doğar.
+**Yan etki:** yönetim panelinin Güvenlik ekranı ve kayıt hunisinin "ilk
+giriş" adımı 90 günden eskiyi artık göremez (`TECHNICAL_DEBT.md`).
+
 ## ⏳ 2026-10-04 Zorunlu okuma (0104) — dal `feat/zorunlu-okuma` (yerel, push yok)
 
 Onay istenen her metin TAM gösterilir, sonuna kadar kaydırılmadan onay
@@ -70,6 +140,10 @@ açılmaz; bayrak `zorunlu_okuma` (Remote Config, varsayılan AÇIK).
 e-posta kaydında yatırım uyarısı OTP'den sonra kendi ekranında tam metniyle
 sorulur (eskiden gösterilmemiş tam metne onay kaydı yazılıyordu).
 
+**✅ KAPANDI (0105, belgeler 1.3):** aşağıdaki cümle "Bu uyarının tam
+metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay
+ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta
+onaylarsınız." oldu.
 **Metin notu (sürüm artırmadan bırakıldı):** Koşullar ve Gizlilik §3'teki
 "Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya
 Google ile ilk girişte tam metni ayrıca gösterilir." cümlesi hâlâ DOĞRU ama
@@ -119,11 +193,12 @@ uyarısı da "30 gün içinde" yerine "hemen" diyor.
 INSERT üreteci → yeni migration → yeniden onay kapısı kullanıcıya sorar.
 
 **Kalan, kodla ilgili kararlar (metin bugünkü gerçeği yazıyor):**
-- [ ] **Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı):** `auth.audit_log_entries`
-      için otomatik silme yok; metin bunu açıkça yazıyor. Bir saklama süresi
-      (ör. 90 gün) istersen ayrı migration + metin 1.3.
-- [ ] **Anonim silme kaydı** (`account_deletion_log`): 0007'deki 3 yıllık
-      temizleme cron'u yorum satırında, kurulu değil. Metin süre yazmıyor.
+- [x] **Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı):** ~~otomatik silme
+      yok~~ → **KAPANDI (0105):** 90 gün, günlük cron
+      `auth-guvenlik-kaydi-saklama`; metin 1.3.
+- [x] **Anonim silme kaydı** (`account_deletion_log`): ~~0007'deki cron yorum
+      satırında~~ → **KAPANDI (0105):** 3 yıl, günlük cron
+      `hesap-silme-kaydi-saklama`; metin 1.3 süreyi yazıyor.
 - [ ] **E-posta altyapısı:** metin "Google (Gmail)" diyor (bugünkü SMTP).
       Resend'e geçilirse aynı değişiklikte Gizlilik §5, KVKK §5.2, Açık Rıza
       A ve EN'leri güncelle → 1.3.

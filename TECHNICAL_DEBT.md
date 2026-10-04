@@ -5,7 +5,28 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+
+---
+
+## 🟡 AÇIK — Auth güvenlik kaydı 90 gün: panel ve huni 90 günden eskiyi göremiyor (2026-10-05, 0105)
+
+**Ne:** 0105 `auth.audit_log_entries`'i 90 günde siler (Gizlilik §7 / KVKK
+§6, 1.3). İki okuyucu bu defterden daha uzun pencere isteyebiliyor:
+yönetim panelinin Güvenlik ekranı (`admin_auth_*`, 0070) ve kayıt
+hunisinin "ilk giriş" adımı (0097, `p_gun` ≤ 365). 90 günden uzun
+pencerede huni, o tarihten önce kayıt olup giriş yapmış kullanıcıyı "hiç
+giriş yapmadı" sayar.
+
+**Neden ertelendi:** saklama süresi kullanıcı kararı; okuyucuların
+pencereyi kendi başına düzeltmesi ayrı iş. Bugün panel varsayılanı 30 gün,
+yani günlük kullanımda fark yok.
+
+**Maliyet:** yalnız > 90 günlük huni raporunda "ilk giriş" eksik sayılır.
+
+**Ne zaman / nasıl:** huni panelinde 90+ gün seçilince ya (a) `p_gun`'u
+90'a kırp ve ekranda söyle, ya da (b) "ilk giriş" anını kayıt anında
+`huni_olaylari`'na (400 gün) yazıp defterden okumayı bırak.
 
 ---
 
