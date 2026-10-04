@@ -256,6 +256,18 @@ class RemoteConfigService {
     // durumda da eskisi gibi yazılır.
     'yasal_onay_kaydi': false,
 
+    // Yeniden onay kapısı (kullanıcı kararı 2026-10-04: "Eski rıza metnini
+    // onaylayanlar için ilk login'de güncel doküman sunulup onay
+    // istenmeli"). Açıkken girişte kullanıcının Koşullar / Gizlilik / KVKK
+    // Aydınlatma'nın GÜNCEL sürümüne ve kayıt kutusu taahhütlerine (18+,
+    // yurt dışı aktarım açık rızası) etkin onayı yoksa `YasalOnayKapisiScreen`
+    // gösterilir — Apple/Google ile ilk kez gelen kullanıcı dahil. YALNIZ
+    // `yasal_onay_kaydi` de açıkken etkili (`YasalOnayService.kapiEtkin`):
+    // onay yazılamazsa kapı her açılışta yeniden sorardı. Sıra: 0102 iki
+    // sunucu → sema_esitlik → `yasal_onay_kaydi` → bunu aç. Kapalıyken
+    // hiçbir ağ çağrısı yok, giriş akışı birebir eski.
+    'yeniden_onay_kapisi': false,
+
     // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
     // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
     // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
@@ -529,6 +541,10 @@ class RemoteConfigService {
   /// Yasal metin onaylarının sunucuya kaydı — bkz.
   /// `_defaults['yasal_onay_kaydi']` (0102 dağıtılınca açılır).
   bool get yasalOnayKaydi => _bayrak('yasal_onay_kaydi');
+
+  /// Girişte yeniden onay kapısı — bkz. `_defaults['yeniden_onay_kapisi']`.
+  /// Tek başına okunmaz: etkinliği `YasalOnayService.kapiEtkin` (iki bayrak).
+  bool get yenidenOnayKapisi => _bayrak('yeniden_onay_kapisi');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

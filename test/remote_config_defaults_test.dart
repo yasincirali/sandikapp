@@ -108,6 +108,12 @@ void main() {
     test('yasal_onay_kaydi kapalı doğar', () {
       expect(varsayilan('yasal_onay_kaydi'), 'false');
     });
+
+    // Girişte yeniden onay kapısı: 0102 + yasal_onay_kaydi açılmadan
+    // açılırsa onay yazılamaz ve kapı her açılışta yeniden sorar.
+    test('yeniden_onay_kapisi kapalı doğar', () {
+      expect(varsayilan('yeniden_onay_kapisi'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {

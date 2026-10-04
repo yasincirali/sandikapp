@@ -30,8 +30,8 @@ void main() {
   const eskiKosulHatasi = 'Devam etmek için yasal koşulları kabul etmelisin.';
   const eskiRizaHatasi =
       'Devam etmek için yurt dışı aktarım rızasını kabul etmelisin.';
-  final tekCumle =
-      l.tekOnayCumle(l.tekOnayKosullarBaglanti, l.tekOnayRizaBaglanti);
+  final tekCumle = l.tekOnayCumle(l.tekOnayKosullarBaglanti,
+      l.tekOnayKvkkBaglanti, l.tekOnayRizaBaglanti);
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -117,6 +117,33 @@ void main() {
       expect(find.text('Açık Rıza: Yurt Dışı Veri Aktarımı'), findsOneWidget);
       expect(find.text(tekCumle, findRichText: true), findsNothing);
       expect(find.text('Belgeyi aç ve onayla'), findsNWidgets(2));
+    });
+
+    testWidgets(
+        'KVKK Aydınlatma Metni kendi bağlantısıyla açılır (2026-10-04 '
+        'öncesi kayıt ekranından açılamıyordu); Koşullar bağlantısı Koşulları',
+        (tester) async {
+      await ac(tester);
+      await tester.tap(find.text(l.yasalBelgeKvkk));
+      await tester.pumpAndSettle();
+      var belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
+      expect(belge.title, l.yasalBelgeKvkk);
+      expect(belge.blocks.length, LegalDocs.kvkk.length);
+      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni');
+      // Aydınlatma yalnız okunur; kutuyu işaretlemez.
+      expect(belge.confirmMode, isFalse);
+      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
+
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)));
+      await tester.tap(find.text('Belgeyi aç ve onayla').first);
+      await tester.pumpAndSettle();
+      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
+      expect(belge.title, l.yasalBelgeKosullar);
+      expect(belge.blocks, same(LegalDocs.terms));
+      expect(belge.confirmMode, isTrue);
     });
 
     testWidgets('kutular boşken "Kayıt ol" iki kutunun hatasını da açar',
@@ -205,9 +232,26 @@ void main() {
           descendentOf: find.text(tekCumle, findRichText: true)));
       await tester.pumpAndSettle();
       var belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      expect(belge.title, 'Yasal Koşullar & KVKK Aydınlatma');
+      // Başlık eskiden "Yasal Koşullar & KVKK Aydınlatma"ydı ama sayfa
+      // yalnız Koşulları gösteriyordu.
+      expect(belge.title, l.yasalBelgeKosullar);
       expect(belge.blocks, same(LegalDocs.terms));
       // Tek kutuda belge yalnız okunur; onay kutunun kendisidir.
+      expect(belge.confirmMode, isFalse);
+      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
+
+      // KVKK Aydınlatma Metni cümlede AYRI bağlantı.
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)));
+      await tester.tapOnText(find.textRange.ofSubstring(l.tekOnayKvkkBaglanti,
+          descendentOf: find.text(tekCumle, findRichText: true)));
+      await tester.pumpAndSettle();
+      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
+      expect(belge.title, l.yasalBelgeKvkk);
+      expect(belge.blocks.length, LegalDocs.kvkk.length);
+      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni');
       expect(belge.confirmMode, isFalse);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
       await tester.pumpAndSettle();

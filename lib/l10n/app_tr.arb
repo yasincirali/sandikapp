@@ -3968,15 +3968,17 @@
     }
   },
   "tekOnayUlkeBilinmiyor": "yurt dışı",
-  "tekOnayCumle": "{kosullar}'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.",
+  "tekOnayCumle": "{kosullar}, {kvkk}'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.",
   "@tekOnayCumle": {
-    "description": "Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayRizaBaglanti).",
+    "description": "Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar, kvkk ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayKvkkBaglanti, tekOnayRizaBaglanti). 2026-10-04: KVKK ayrı bağlantı oldu; okunan cümle harfi harfine aynı kaldı (hash'i yasal_metinler'de, kayit_tek_kutu). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).",
     "placeholders": {
       "kosullar": {"type": "String"},
+      "kvkk": {"type": "String"},
       "riza": {"type": "String"}
     }
   },
-  "tekOnayKosullarBaglanti": "Yasal Koşulları, KVKK Aydınlatma Metni",
+  "tekOnayKosullarBaglanti": "Yasal Koşulları",
+  "tekOnayKvkkBaglanti": "KVKK Aydınlatma Metni",
   "tekOnayRizaBaglanti": "açık rıza",
   "tekOnayGerekli": "Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.",
   "arenaMeasuring": "Fark ölçülüyor…",
@@ -4002,5 +4004,39 @@
         "type": "int"
       }
     }
-  }
+  },
+  "yasalKapiBaslikGuncel": "Güncellenen belgeler",
+  "@yasalKapiBaslikGuncel": {
+    "description": "Yeniden onay kapısı (bayrak yeniden_onay_kapisi) başlığı: kullanıcı belgelerin eski bir sürümünü onaylamış, güncel sürüm onay bekliyor."
+  },
+  "yasalKapiBaslikIlk": "Yasal belgeler",
+  "@yasalKapiBaslikIlk": {
+    "description": "Yeniden onay kapısı başlığı: hiç onay kaydı olmayan kullanıcı (Apple/Google ile ilk giriş ya da onay kaydından önceki hesap)."
+  },
+  "yasalKapiAciklamaGuncel": "Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.",
+  "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.",
+  "yasalKapiNelerDegisti": "Neler değişti",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.1: Zirvedeki Portföyler'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.",
+  "@yasalKapiDegisiklikNotu": {
+    "description": "Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır."
+  },
+  "yasalBelgeKosullar": "Kullanım Koşulları",
+  "yasalBelgeGizlilik": "Gizlilik Politikası",
+  "yasalBelgeKvkk": "KVKK Aydınlatma Metni",
+  "yasalBelgeKvkkKisa": "KVKK Metni",
+  "yasalBelgeSurum": "Sürüm {surum}",
+  "@yasalBelgeSurum": {
+    "placeholders": {
+      "surum": {"type": "String"}
+    }
+  },
+  "yasalBelgeAcildi": "Okundu",
+  "yasalBelgelerTurkce": "Belgeler Türkçedir.",
+  "yasalKapiTaahhutBaslik": "Onayların",
+  "yasalKapiYatirimUyarisi": "Yatırım uyarısı",
+  "yasalKapiOnayla": "Okudum, kabul ediyorum",
+  "yasalKapiOnaylaKisa": "Kabul ediyorum",
+  "yasalKapiKutuGerekli": "Devam etmek için kutuları işaretlemelisin.",
+  "yasalKapiKayitHatasi": "Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.",
+  "yasalKapiCikis": "Çıkış yap"
 }

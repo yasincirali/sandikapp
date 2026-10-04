@@ -5663,12 +5663,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tekOnayUlkeBilinmiyor => 'abroad';
 
   @override
-  String tekOnayCumle(String kosullar, String riza) {
-    return 'I accept the $kosullar and confirm I am 18+; I give my $riza to the transfer of my data abroad.';
+  String tekOnayCumle(String kosullar, String kvkk, String riza) {
+    return 'I accept the $kosullar and $kvkk and confirm I am 18+; I give my $riza to the transfer of my data abroad.';
   }
 
   @override
-  String get tekOnayKosullarBaglanti => 'Legal Terms and KVKK Privacy Notice';
+  String get tekOnayKosullarBaglanti => 'Legal Terms';
+
+  @override
+  String get tekOnayKvkkBaglanti => 'KVKK Privacy Notice';
 
   @override
   String get tekOnayRizaBaglanti => 'explicit consent';
@@ -5708,4 +5711,70 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get yasalKapiBaslikGuncel => 'Updated documents';
+
+  @override
+  String get yasalKapiBaslikIlk => 'Legal documents';
+
+  @override
+  String get yasalKapiAciklamaGuncel =>
+      'We\'ve updated the Terms of Use, the Privacy Policy and the KVKK Privacy Notice. To continue, read and accept their current versions.';
+
+  @override
+  String get yasalKapiAciklamaIlk =>
+      'Before you start using the app, read and accept the documents below.';
+
+  @override
+  String get yasalKapiNelerDegisti => 'What changed';
+
+  @override
+  String get yasalKapiDegisiklikNotu =>
+      'Version 1.1: how Top Portfolios (optional, anonymous comparison) works was added, the country of the server storing your data was updated, and it now states clearly that consent records are kept for 3 years after account deletion.';
+
+  @override
+  String get yasalBelgeKosullar => 'Terms of Use';
+
+  @override
+  String get yasalBelgeGizlilik => 'Privacy Policy';
+
+  @override
+  String get yasalBelgeKvkk => 'KVKK Privacy Notice';
+
+  @override
+  String get yasalBelgeKvkkKisa => 'KVKK Notice';
+
+  @override
+  String yasalBelgeSurum(String surum) {
+    return 'Version $surum';
+  }
+
+  @override
+  String get yasalBelgeAcildi => 'Read';
+
+  @override
+  String get yasalBelgelerTurkce => 'The documents are in Turkish.';
+
+  @override
+  String get yasalKapiTaahhutBaslik => 'Your consents';
+
+  @override
+  String get yasalKapiYatirimUyarisi => 'Investment notice';
+
+  @override
+  String get yasalKapiOnayla => 'I have read and accept';
+
+  @override
+  String get yasalKapiOnaylaKisa => 'I accept';
+
+  @override
+  String get yasalKapiKutuGerekli => 'To continue, tick the boxes.';
+
+  @override
+  String get yasalKapiKayitHatasi =>
+      'Your acceptance couldn\'t be saved. Check your connection and try again.';
+
+  @override
+  String get yasalKapiCikis => 'Sign out';
 }

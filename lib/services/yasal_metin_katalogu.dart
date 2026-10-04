@@ -172,10 +172,41 @@ class YasalMetin {
   }
 }
 
+/// ## Metin değişince ne yapılır (sürüm artırma süreci, 2026-10-04)
+/// Kullanıcı kararı: *"Metin değişirse her user'ın onayladığı rıza metni
+/// neyse o şekilde tutulması. Metin değiştikçe eski rıza metinleri de DB'de
+/// tutulmalı. Eski rıza metnini onaylayanlar için ilk login'de güncel
+/// doküman sunulup onay istenmeli."* Bunun için:
+///
+/// 1. Metni değiştir VE sürümünü artır — belgeler: [YasalMetinKatalogu.
+///    belgeSurumu] + [YasalMetinKatalogu.belgeYururluk] + belgedeki meta
+///    satırı ("Yürürlük tarihi: … · Sürüm: …", `LegalDocs`); kutular:
+///    [YasalMetinKatalogu.kutuSurumu]; Zirve: `LeaderboardService.
+///    zirveRizaMetniSurumu`. Belgeler değiştiyse kapı ekranının "Neler
+///    değişti" notunu (`yasalKapiDegisiklikNotu`, iki .arb) yeni sürüme göre
+///    yaz.
+/// 2. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
+///    → `build/yasal_metin_ekleri.sql`.
+/// 3. Çıktıyı YENİ bir migration'a koy (iki sunucuya birlikte). Eski satıra
+///    DOKUNMA: `yasal_metinler` değişmezdir, eski onaylar o metni gösterir.
+/// 4. `flutter test test/yasal_metin_kilidi_test.dart` yeşil olmalı.
+/// 5. Dağıtım sırası: migration iki sunucuda → `sema_esitlik.py` → ancak
+///    sonra bu istemci yayına. Yeni sürüm yayına çıkınca eski sürümü
+///    onaylamış her kullanıcı bir sonraki açılışta yeniden onay kapısını
+///    (`YasalOnayKapisiScreen`, bayrak `yeniden_onay_kapisi`) görür; eski
+///    onay satırı ve eski metin satırı DB'de aynen kalır.
+///
+/// ⚠️ Geçmiş: 2026-05-11 ile 2026-10-04 arasında belgeler "Sürüm: 1.0"
+/// etiketiyle BİRDEN ÇOK kez değişti (Zirve bölümleri, sunucu ülkesi).
+/// O metinler hiçbir onaya bağlı değildi; git geçmişinden "1.0" diye
+/// arşiv satırı UYDURULMADI — DB'deki ilk belge sürümü 1.1'dir.
 abstract final class YasalMetinKatalogu {
-  /// Belgelerin sürümü — metinlerin meta satırındaki "Sürüm: 1.0".
-  static const belgeSurumu = '1.0';
-  static const belgeYururluk = '2026-05-11';
+  /// Belgelerin sürümü — metinlerin meta satırındaki "Sürüm: 1.1".
+  /// 1.0 → 1.1 (2026-10-04): Zirvedeki Portföyler bölümleri, sunucu ülkesi
+  /// yer tutucusu ve onay kayıtlarının saklanması (silmeden sonra 3 yıl)
+  /// metne girmişti ama sürüm artmamıştı.
+  static const belgeSurumu = '1.1';
+  static const belgeYururluk = '2026-10-04';
 
   /// Kayıt kutularının sürümü. Kutu başlığında `v$disclaimerVersion`
   /// görünüyor; kullanıcının gördüğü etiketle aynı kalsın diye o sayı.
@@ -266,9 +297,19 @@ abstract final class YasalMetinKatalogu {
       baslik: l.tekOnayBaslik,
       govde: '${l.tekOnayBaslik}\n\n'
           '${l.tekOnayAciklama('{SUPABASE_ULKE}')}\n\n'
-          '${l.tekOnayCumle(l.tekOnayKosullarBaglanti, l.tekOnayRizaBaglanti)}',
+          '${tekKutuCumlesi(l)}',
     );
   }
+
+  /// Tek kutunun cümlesi, ekranda okunduğu düz hâliyle. 2026-10-04: KVKK
+  /// Aydınlatma Metni cümlede AYRI bağlantı oldu (eskiden "Yasal Koşulları,
+  /// KVKK Aydınlatma Metni" tek bağlantıydı ve yalnız Koşulları açıyordu);
+  /// okunan metin harfi harfine aynı kaldı → hash ve sürüm aynı.
+  static String tekKutuCumlesi(AppLocalizations l) => l.tekOnayCumle(
+      l.tekOnayKosullarBaglanti, l.tekOnayKvkkBaglanti, l.tekOnayRizaBaglanti);
+
+  /// Yeniden onay kapısının aradığı belgeler — katalogdaki GÜNCEL sürümleri.
+  static List<YasalMetin> zorunluBelgeler() => [kosullar(), gizlilik(), kvkk()];
 
   /// Zirve açık rıza kartı — kartın gösterdiği sırayla.
   static YasalMetin zirveRiza() => YasalMetin(

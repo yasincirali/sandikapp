@@ -5611,13 +5611,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get tekOnayUlkeBilinmiyor => 'yurt dışı';
 
   @override
-  String tekOnayCumle(String kosullar, String riza) {
-    return '$kosullar\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına $riza veriyorum.';
+  String tekOnayCumle(String kosullar, String kvkk, String riza) {
+    return '$kosullar, $kvkk\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına $riza veriyorum.';
   }
 
   @override
-  String get tekOnayKosullarBaglanti =>
-      'Yasal Koşulları, KVKK Aydınlatma Metni';
+  String get tekOnayKosullarBaglanti => 'Yasal Koşulları';
+
+  @override
+  String get tekOnayKvkkBaglanti => 'KVKK Aydınlatma Metni';
 
   @override
   String get tekOnayRizaBaglanti => 'açık rıza';
@@ -5656,4 +5658,71 @@ class AppLocalizationsTr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get yasalKapiBaslikGuncel => 'Güncellenen belgeler';
+
+  @override
+  String get yasalKapiBaslikIlk => 'Yasal belgeler';
+
+  @override
+  String get yasalKapiAciklamaGuncel =>
+      'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.';
+
+  @override
+  String get yasalKapiAciklamaIlk =>
+      'Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.';
+
+  @override
+  String get yasalKapiNelerDegisti => 'Neler değişti';
+
+  @override
+  String get yasalKapiDegisiklikNotu =>
+      'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.';
+
+  @override
+  String get yasalBelgeKosullar => 'Kullanım Koşulları';
+
+  @override
+  String get yasalBelgeGizlilik => 'Gizlilik Politikası';
+
+  @override
+  String get yasalBelgeKvkk => 'KVKK Aydınlatma Metni';
+
+  @override
+  String get yasalBelgeKvkkKisa => 'KVKK Metni';
+
+  @override
+  String yasalBelgeSurum(String surum) {
+    return 'Sürüm $surum';
+  }
+
+  @override
+  String get yasalBelgeAcildi => 'Okundu';
+
+  @override
+  String get yasalBelgelerTurkce => 'Belgeler Türkçedir.';
+
+  @override
+  String get yasalKapiTaahhutBaslik => 'Onayların';
+
+  @override
+  String get yasalKapiYatirimUyarisi => 'Yatırım uyarısı';
+
+  @override
+  String get yasalKapiOnayla => 'Okudum, kabul ediyorum';
+
+  @override
+  String get yasalKapiOnaylaKisa => 'Kabul ediyorum';
+
+  @override
+  String get yasalKapiKutuGerekli =>
+      'Devam etmek için kutuları işaretlemelisin.';
+
+  @override
+  String get yasalKapiKayitHatasi =>
+      'Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.';
+
+  @override
+  String get yasalKapiCikis => 'Çıkış yap';
 }

@@ -210,11 +210,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // `verifyRegistrationOtp` ile açıldı; RPC `auth.uid()`'yi buradan
       // okur. Beklenmez ve fırlatmaz: kapı (`disclaimer_acceptances`)
       // yukarıdaki kayda bağlı, bu yalnız ispat kaydı.
+      // `userId`: yeniden onay kapısı (bayrak `yeniden_onay_kapisi`) bu
+      // yazımı bekler ve başarıda kapı izini koyar — az önce aynı sürümleri
+      // onaylayan yeni kullanıcı kapıyı görmez.
       final kayitOnayi = widget.kayitOnayi;
       if (kayitOnayi != null) {
         CrashReporter.arkaPlan(
-            YasalOnayService.instance
-                .kayitOnaylariniKaydet(kayitOnayi, locale: etkinDil),
+            YasalOnayService.instance.kayitOnaylariniKaydet(kayitOnayi,
+                locale: etkinDil, userId: user.id),
             reason: 'YasalOnayService.kayit');
       }
       // Kayıt hunisi (F11). Yalnızca olay; akış değişmez.

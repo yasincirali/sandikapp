@@ -107,7 +107,7 @@ class LegalDocs {
 
   static const List<LegalBlock> _privacy = [
     LegalBlock.h1('Gizlilik Politikası'),
-    LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
+    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
     LegalBlock.divider(),
     LegalBlock.h2('1. Veri Sorumlusu'),
     LegalBlock.p(
@@ -223,8 +223,10 @@ class LegalDocs {
       'Zirve havuzu ölçümleri (getiri %, tür payı %)',
       'Son 365 gün (rolling); rıza geri alınınca ya da hesap silinince hemen'
     ]),
-    LegalBlock.tableRow(
-        ['Disclaimer onay logu', 'Hesap silindikten sonra 3 yıl (TBK 146)']),
+    LegalBlock.tableRow([
+      'Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı)',
+      'Hesap silindikten sonra 3 yıl (TBK 146)'
+    ]),
     LegalBlock.tableRow(['Push token', 'Logout / uninstall\'a kadar']),
     LegalBlock.tableRow(['Hata logları', '90 gün']),
     LegalBlock.p(
@@ -264,7 +266,7 @@ class LegalDocs {
 
   static const List<LegalBlock> terms = [
     LegalBlock.h1('Kullanım Koşulları'),
-    LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
+    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
     LegalBlock.divider(),
     LegalBlock.h2('1. Taraflar ve Kabul'),
     LegalBlock.p(
@@ -389,7 +391,7 @@ class LegalDocs {
 
   static const List<LegalBlock> _kvkk = [
     LegalBlock.h1('KVKK Aydınlatma Metni'),
-    LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
+    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
     LegalBlock.divider(),
     LegalBlock.h2('1. Veri Sorumlusunun Kimliği'),
     LegalBlock.p(
@@ -415,7 +417,8 @@ class LegalDocs {
     LegalBlock.p(
         '· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
     LegalBlock.h3('2.5 Hukuki İşlem Verisi'),
-    LegalBlock.p('· Disclaimer onay zamanı, sürümü, platformu, IP\'si'),
+    LegalBlock.p(
+        '· Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama sürümü, dil'),
     LegalBlock.h2('3. Kişisel Verilerin İşlenme Amaçları'),
     LegalBlock.tableHeader(['Amaç', 'Veri Kategorileri']),
     LegalBlock.tableRow(['Hesap oluşturma ve oturum yönetimi', '2.1, 2.4']),
@@ -490,7 +493,7 @@ class LegalDocs {
     LegalBlock.tableRow(
         ['Push token', 'Logout / uninstall\'a kadar', 'Sözleşme süresi']),
     LegalBlock.tableRow([
-      'Disclaimer onay logu',
+      'Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı)',
       'Hesap silinmesinden sonra 3 yıl',
       'TBK Madde 146'
     ]),

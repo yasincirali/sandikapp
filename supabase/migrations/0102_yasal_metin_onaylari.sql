@@ -52,10 +52,51 @@
 --     kanıt YOK → onay UYDURULMAZ. Yeniden onay gerekip gerekmediği avukat
 --     sorusu (YAPMAN).
 --
+-- ## Düzeltme — dağıtımdan ÖNCE, yerinde (2026-10-04, ikinci tur)
+-- Bu dosya hiçbir sunucuya gitmeden düzeltildi (yeni migration açılmadı).
+-- Kullanıcı kararı: "Metin değişirse her user'ın onayladığı rıza metni
+-- neyse o şekilde tutulması. Metin değiştikçe eski rıza metinleri de DB'de
+-- tutulmalı. Eski rıza metnini onaylayanlar için ilk login'de güncel
+-- doküman sunulup onay istenmeli."
+-- 7. Hesap silinince onay satırı KALIR. İlk yazımda `user_id` auth.users'a
+--    `on delete cascade` idi; Gizlilik Politikası §7 ve KVKK Aydınlatma §6
+--    "onay kayıtları hesap silindikten sonra 3 yıl" diyor. FK kaldırıldı
+--    (uuid ispat kimliği olarak kalır); `auth.users` BEFORE DELETE
+--    tetikleyicisi satırları `hesap_silindi_at` ile damgalar — panelden,
+--    `delete-account`'tan (admin.deleteUser) ya da SQL'den, her silme yolu
+--    auth.users satırından geçer. Damgadan 3 yıl sonra günlük saklama işi
+--    siler (`yasal-onay-saklama`, pg_cron).
+--    İSTİSNA — Zirve rızası (`zirve_riza`): Gizlilik §5.1 "Hesabınızı
+--    sildiğinizde bu kayıtlar ... da silinir" diyor → hesap silinince
+--    hemen silinir. Politikayla birebir.
+--    Yatırım uyarısı (`disclaimer_acceptances`, 0000) hâlâ cascade ile
+--    gidiyor (o tabloya dokunulmadı — bozmama); tetikleyici silmeden ÖNCE
+--    hash'i katalog metniyle eşleşen satırları buraya taşır (geri
+--    doldurmayla aynı kural), böylece "yatırım uyarısı onay logu" da 3 yıl
+--    kalır.
+-- 8. RLS: silinmiş hesabın satırını KİMSE okuyamaz (anon/authenticated);
+--    hesap silindikten sonra hâlâ geçerli olan JWT (≤ 1 saat) dahil.
+--    Yalnız service_role (ve SQL Editor'daki postgres). RPC de silinmiş
+--    hesaba yazmaz.
+-- 9. Yeni kanal `yeniden_onay`: girişteki yeniden onay kapısı
+--    (`YasalOnayKapisiScreen`, bayrak `yeniden_onay_kapisi`). Belgeler,
+--    kayıt kutusu taahhütleri ve (kapı aynı ekranda gösterdiyse) yatırım
+--    uyarısı bu kanalla yazılır. Eski sürümü onaylamış kullanıcının eski
+--    satırı ve eski metin satırı aynen kalır: yeni onay YENİ satırdır
+--    (farklı metin_id), değişmezlik tetikleyicileri bunu zaten zorluyor.
+-- 10. Belgeler 1.0 → 1.1. Uygulama içi belgelere Zirve bölümleri, sunucu
+--    ülkesi yer tutucusu ve onay kayıtlarının saklanması girmişti ama
+--    "Sürüm: 1.0" yazıyordu. 2026-05-11'den bu yana "1.0" adıyla birden
+--    çok farklı metin yayımlandı ve hiçbiri bir onaya bağlanmadı → git
+--    geçmişinden "1.0" diye arşiv satırı UYDURULMADI. DB'deki ilk belge
+--    sürümü 1.1'dir; kayıt kutuları (metni aynı) 1.0'da kaldı.
+--
 -- ## Eski istemciler
 -- Yalnız EKLER: yeni tablolar, yeni RPC; `zirve_rizasi_ayarla` imzası ve
 -- dönüşü aynı. İstemci kaydı Remote Config `yasal_onay_kaydi` arkasında
 -- (varsayılan KAPALI) — bu migration iki sunucuya gitmeden açılmaz.
+-- Yeniden onay kapısı ayrıca `yeniden_onay_kapisi` arkasında (KAPALI) ve
+-- yalnız `yasal_onay_kaydi` açıkken etkili.
 --
 -- ## Metin ekleme
 -- INSERT'ler `tool/yasal_metin_uret_test.dart` çıktısıdır (katalog:
@@ -127,15 +168,17 @@ grant select on table public.yasal_metinler to anon, authenticated, service_role
 -- ── 2) Onaylar ──────────────────────────────────────────────────────────────
 create table if not exists public.yasal_onaylar (
   id              bigint generated always as identity primary key,
-  -- Hesap silinince onaylar da gider (diğer kişisel verilerle aynı). ⚠️
-  -- Gizlilik Politikası "onay logu silmeden sonra 3 yıl" diyor; bugün
-  -- `disclaimer_acceptances` da cascade ile siliniyor — avukat sorusu.
-  user_id         uuid not null references auth.users(id) on delete cascade,
+  -- auth.users'a FK YOK (bkz. başlık madde 7): cascade ispatı hesapla
+  -- birlikte silerdi, `set null` ise kimin onayladığını. Uuid ispat
+  -- kimliğidir; hesap silinince satır kalır, `hesap_silindi_at` damgalanır.
+  user_id         uuid not null,
+  -- Metin ASLA silinmez (değişmez + restrict): onay hangi metni gösterdiğini
+  -- kaybetmesin.
   metin_id        bigint not null references public.yasal_metinler(id) on delete restrict,
   onay_at         timestamptz not null default now(),
   -- Onayın alındığı yüzey. `aktarim` = bu migration'ın geri doldurması.
   kanal           text not null
-    constraint yasal_onaylar_kanal_check check (kanal in ('kayit', 'yatirim_uyarisi_ekrani', 'zirve', 'aktarim')),
+    constraint yasal_onaylar_kanal_check check (kanal in ('kayit', 'yatirim_uyarisi_ekrani', 'zirve', 'yeniden_onay', 'aktarim')),
   app_version     text check (length(app_version) <= 64),
   platform        text check (length(platform) <= 16),
   locale          text check (length(locale) <= 35),
@@ -144,6 +187,9 @@ create table if not exists public.yasal_onaylar (
   degiskenler     jsonb not null default '{}'::jsonb
     check (jsonb_typeof(degiskenler) = 'object'),
   geri_cekildi_at timestamptz,
+  -- Hesap silinme anı (auth.users BEFORE DELETE tetikleyicisi). Doluysa
+  -- satır yalnız ispattır: kimse okuyamaz (RLS), 3 yıl sonra silinir.
+  hesap_silindi_at timestamptz,
   constraint yasal_onaylar_geri_cekme_sirasi
     check (geri_cekildi_at is null or geri_cekildi_at >= onay_at)
 );
@@ -151,7 +197,8 @@ create table if not exists public.yasal_onaylar (
 comment on table public.yasal_onaylar is
   'Kullanicinin hangi yasal metni (yasal_metinler) ne zaman onayladigi '
   '(0102). Yalniz yasal_onay_kaydet RPC yazar; kullanici yalniz kendi '
-  'satirini okur.';
+  'satirini okur. Hesap silinince kalir (hesap_silindi_at), 3 yil sonra '
+  'yasal-onay-saklama siler; zirve_riza hesapla birlikte silinir.';
 
 create unique index if not exists yasal_onaylar_etkin_tekil
   on public.yasal_onaylar (user_id, metin_id)
@@ -160,23 +207,35 @@ create index if not exists yasal_onaylar_user_idx
   on public.yasal_onaylar (user_id, onay_at desc);
 create index if not exists yasal_onaylar_metin_idx
   on public.yasal_onaylar (metin_id);
+-- Saklama işi yalnız damgalı satırlara bakar.
+create index if not exists yasal_onaylar_silinen_idx
+  on public.yasal_onaylar (hesap_silindi_at)
+  where hesap_silindi_at is not null;
 
--- Satırda değişebilen tek şey: `geri_cekildi_at`, null → dolu, bir kez.
--- (DELETE yalnız hesap silinince cascade ile; istemcide DELETE yetkisi yok.)
+-- Satırda değişebilen iki şey: `geri_cekildi_at` ve `hesap_silindi_at`,
+-- her biri null → dolu, bir kez. Onayın kendisi (kim, hangi metin, ne
+-- zaman, nereden) asla değişmez.
+-- (DELETE yalnız iki yerden: hesap silinirken Zirve rızası satırları
+-- — tetikleyici — ve 3 yıl dolunca saklama işi; istemcide DELETE yetkisi
+-- yok.)
 create or replace function public.yasal_onaylar_yalniz_geri_cekme()
 returns trigger
 language plpgsql
 set search_path = public, pg_temp
 as $$
 begin
-  if old.geri_cekildi_at is not null
-     or new.geri_cekildi_at is null
-     or (new.id, new.user_id, new.metin_id, new.onay_at, new.kanal,
-         new.app_version, new.platform, new.locale, new.degiskenler)
-        is distinct from
-        (old.id, old.user_id, old.metin_id, old.onay_at, old.kanal,
-         old.app_version, old.platform, old.locale, old.degiskenler) then
-    raise exception 'yasal_onaylar: yalniz geri_cekildi_at bir kez damgalanabilir (0102)'
+  if (new.id, new.user_id, new.metin_id, new.onay_at, new.kanal,
+      new.app_version, new.platform, new.locale, new.degiskenler)
+     is distinct from
+     (old.id, old.user_id, old.metin_id, old.onay_at, old.kanal,
+      old.app_version, old.platform, old.locale, old.degiskenler)
+     or (old.geri_cekildi_at is not null
+         and new.geri_cekildi_at is distinct from old.geri_cekildi_at)
+     or (old.hesap_silindi_at is not null
+         and new.hesap_silindi_at is distinct from old.hesap_silindi_at)
+     or (new.geri_cekildi_at is not distinct from old.geri_cekildi_at
+         and new.hesap_silindi_at is not distinct from old.hesap_silindi_at) then
+    raise exception 'yasal_onaylar: yalniz geri_cekildi_at / hesap_silindi_at bir kez damgalanabilir (0102)'
       using errcode = '42501';
   end if;
   return new;
@@ -193,10 +252,12 @@ alter table public.yasal_onaylar enable row level security;
 alter table public.yasal_onaylar force row level security;
 
 drop policy if exists yasal_onaylar_own_select on public.yasal_onaylar;
+-- Silinmiş hesabın satırı KİMSEYE görünmez: hesap silindikten sonra
+-- geçerliliğini koruyan JWT (≤ 1 saat) kendi eski satırlarını okuyamaz.
 create policy yasal_onaylar_own_select
   on public.yasal_onaylar
   for select to authenticated
-  using ((select auth.uid()) = user_id);
+  using ((select auth.uid()) = user_id and hesap_silindi_at is null);
 
 -- Doğrudan yazma yok: hash karşılaştırması RPC'de; doğrudan INSERT onu
 -- atlatırdı.
@@ -233,7 +294,12 @@ begin
   if v_uid is null then
     raise exception 'oturum yok' using errcode = '42501';
   end if;
-  if p_kanal is null or p_kanal not in ('kayit', 'yatirim_uyarisi_ekrani', 'zirve') then
+  -- Hesap silindikten sonra JWT bir süre geçerli kalır; silinmiş hesaba
+  -- onay yazılmaz (damgasız satır saklama işinden kaçardı).
+  if not exists (select 1 from auth.users u where u.id = v_uid) then
+    raise exception 'oturum yok' using errcode = '42501';
+  end if;
+  if p_kanal is null or p_kanal not in ('kayit', 'yatirim_uyarisi_ekrani', 'zirve', 'yeniden_onay') then
     raise exception 'gecersiz kanal' using errcode = '22023';
   end if;
   if p_ogeler is null or jsonb_typeof(p_ogeler) <> 'array'
@@ -249,10 +315,15 @@ begin
       raise exception 'oge nesne olmali' using errcode = '22023';
     end if;
     v_tur := v_oge->>'tur';
-    -- Kanal yalnız kendi yüzeyinin metinlerini yazar.
+    -- Kanal yalnız kendi yüzeyinin metinlerini yazar. Yeniden onay kapısı
+    -- kayıt formunun metinlerini (+ aynı ekranda gösterdiyse yatırım
+    -- uyarısını) yazar; Zirve rızası yalnız kendi kartından.
     if not (
          (p_kanal = 'kayit' and v_tur in ('kayit_kutu_kosullar', 'kayit_kutu_riza',
             'kayit_tek_kutu', 'kosullar', 'gizlilik_politikasi', 'kvkk_aydinlatma'))
+      or (p_kanal = 'yeniden_onay' and v_tur in ('kayit_kutu_kosullar', 'kayit_kutu_riza',
+            'kayit_tek_kutu', 'kosullar', 'gizlilik_politikasi', 'kvkk_aydinlatma',
+            'yatirim_uyarisi'))
       or (p_kanal = 'yatirim_uyarisi_ekrani' and v_tur = 'yatirim_uyarisi')
       or (p_kanal = 'zirve' and v_tur = 'zirve_riza')) then
       raise exception 'tur % bu kanalda kaydedilemez', v_tur using errcode = '22023';
@@ -364,15 +435,115 @@ $$;
 revoke all on function public.zirve_rizasi_ayarla(boolean, text) from public, anon;
 grant execute on function public.zirve_rizasi_ayarla(boolean, text) to authenticated;
 
+-- ── 4b) Hesap silinince: damga, Zirve istisnası, yatırım uyarısı taşıma ───
+-- auth.users BEFORE DELETE: her silme yolu (delete-account →
+-- admin.deleteUser, Supabase paneli, SQL) bu satırdan geçer; bir edge
+-- function'a bağlamak paneli kaçırırdı. BEFORE çünkü cascade
+-- `disclaimer_acceptances`'ı silmeden ÖNCE okumak gerekiyor.
+-- Hata yutulmaz: tetikleyici düşerse silme de düşer ve kullanıcı yeniden
+-- dener. Yutulsaydı damgasız satır kalırdı → saklama işi onu hiç silmez,
+-- politika "3 yıl" derken sonsuza dek saklanırdı.
+-- SECURITY DEFINER: silmeyi yapan rol (supabase_auth_admin) public
+-- tablolara yazamaz; sahip (migration rolü) RLS'yi aşar — 0102'nin
+-- başındaki geri doldurma kontrolü bunu zaten doğruluyor.
+create or replace function public.yasal_onaylar_hesap_silindi()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  -- 1) Yatırım uyarısı onay logu (politika: silmeden sonra 3 yıl).
+  --    `disclaimer_acceptances` cascade ile gidecek; hash'i katalog
+  --    metniyle EŞİT olanlar taşınır (geri doldurmayla aynı kural).
+  insert into public.yasal_onaylar
+    (user_id, metin_id, onay_at, kanal, app_version, platform, locale, degiskenler)
+  select d.user_id, m.id, d.accepted_at, 'aktarim', d.app_version, d.platform, d.locale,
+         jsonb_build_object(
+           'kaynak', 'disclaimer_acceptances',
+           'kaynak_id', d.id,
+           'not', 'hesap silinirken tasindi')
+    from public.disclaimer_acceptances d
+    join public.yasal_metinler m
+      on m.tur = 'yatirim_uyarisi'
+     and m.surum = d.disclaimer_version
+     and m.dil = 'tr'
+     and m.govde_hash = d.disclaimer_hash
+   where d.user_id = old.id
+  on conflict (user_id, metin_id) where geri_cekildi_at is null do nothing;
+
+  -- 2) Zirve rızası: Gizlilik §5.1 "Hesabınızı sildiğinizde bu kayıtlar
+  --    ve havuzdaki ölçümleriniz de silinir" → saklanmaz.
+  delete from public.yasal_onaylar o
+   using public.yasal_metinler m
+   where m.id = o.metin_id
+     and m.tur = 'zirve_riza'
+     and o.user_id = old.id;
+
+  -- 3) Geri kalanı ispat olarak kalır; silinme anı damgalanır.
+  update public.yasal_onaylar
+     set hesap_silindi_at = now()
+   where user_id = old.id
+     and hesap_silindi_at is null;
+  return old;
+end;
+$$;
+revoke all on function public.yasal_onaylar_hesap_silindi() from public, anon, authenticated;
+
+drop trigger if exists yasal_onaylar_hesap_silindi on auth.users;
+create trigger yasal_onaylar_hesap_silindi
+  before delete on auth.users
+  for each row execute function public.yasal_onaylar_hesap_silindi();
+
+-- ── 4c) Saklama: damgadan 3 yıl sonra sil ──────────────────────────────────
+-- Gizlilik §7 / KVKK §6: "Yasal metin onay kayıtları — hesap silindikten
+-- sonra 3 yıl". Desen 0056 (db_logs) / 0077 (snapshots): günlük tek iş.
+create or replace function public.yasal_onaylar_saklama_temizle()
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_n integer;
+begin
+  delete from public.yasal_onaylar
+   where hesap_silindi_at is not null
+     and hesap_silindi_at < now() - interval '3 years';
+  get diagnostics v_n = row_count;
+  return v_n;
+end;
+$$;
+revoke all on function public.yasal_onaylar_saklama_temizle() from public, anon, authenticated;
+
+select cron.unschedule(jobid) from cron.job where jobname = 'yasal-onay-saklama';
+select cron.schedule('yasal-onay-saklama', '45 3 * * *',
+  $$select public.yasal_onaylar_saklama_temizle()$$);
+
+-- İki sunucu birebir: proje "tüm cron kapalı" kipindeyse (Frankfurt,
+-- geçişe kadar) yeni iş de kapalı doğar (0086/0101 gerekçesi; proje ref'i
+-- sabit yazılmaz). İş yalnız SQL silmesi, dışarı istek atmaz; yine de
+-- kipe uyar ki "tek bilinçli fark" kuralı tek kural kalsın.
+do $$
+begin
+  if exists (select 1 from cron.job where jobname <> 'yasal-onay-saklama')
+     and not exists (select 1 from cron.job
+                      where jobname <> 'yasal-onay-saklama' and active) then
+    perform cron.alter_job(job_id := jobid, active := false)
+       from cron.job where jobname = 'yasal-onay-saklama';
+    raise notice '0102: projede tum cron isleri kapali — yasal-onay-saklama da kapali kuruldu.';
+  end if;
+end $$;
+
 -- ── 5) Metinler (tool/yasal_metin_uret_test.dart çıktısı) ───────────────────
--- kosullar/1.0/tr  (Kullanım Koşulları)
+-- kosullar/1.1/tr  (Kullanım Koşulları)
 insert into public.yasal_metinler
   (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
-values ('kosullar', '1.0', 'tr', 'Kullanım Koşulları', date '2026-05-11',
-  '14012525a90672cbd7148ccacc29284b9515d3556eab659f301ee186338584b7',
+values ('kosullar', '1.1', 'tr', 'Kullanım Koşulları', date '2026-10-04',
+  'e406fa3c384635f0cd6c46ccb4f6dd95ee217ac1ec89e50011d19ad62f1acdec',
   replace($yasal$# Kullanım Koşulları
 
-> Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0
+> Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1
 
 ---
 
@@ -491,14 +662,14 @@ Web: yasincirali.github.io/sandikapp
 Yorum farklılığında Türkçe versiyon esastır.$yasal$, chr(13), ''))
 on conflict (tur, surum, dil) do nothing;
 
--- gizlilik_politikasi/1.0/tr  (Gizlilik Politikası)
+-- gizlilik_politikasi/1.1/tr  (Gizlilik Politikası)
 insert into public.yasal_metinler
   (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
-values ('gizlilik_politikasi', '1.0', 'tr', 'Gizlilik Politikası', date '2026-05-11',
-  '6b64f07684c0892a2db04bca05f1e948b8b2be1635444c58a5a8e3932c4c310e',
+values ('gizlilik_politikasi', '1.1', 'tr', 'Gizlilik Politikası', date '2026-10-04',
+  '5589fe81d5b1fefc2cd6e764fd4b16c6d61d670ab11cea21d3073edf6d238545',
   replace($yasal$# Gizlilik Politikası
 
-> Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0
+> Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1
 
 ---
 
@@ -609,7 +780,7 @@ Supabase verileri {SUPABASE_ULKEDE}, Firebase verileri ABD'de barındırıldığ
 
 | Zirve havuzu ölçümleri (getiri %, tür payı %) | Son 365 gün (rolling); rıza geri alınınca ya da hesap silinince hemen |
 
-| Disclaimer onay logu | Hesap silindikten sonra 3 yıl (TBK 146) |
+| Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı) | Hesap silindikten sonra 3 yıl (TBK 146) |
 
 | Push token | Logout / uninstall'a kadar |
 
@@ -647,14 +818,14 @@ Web: yasincirali.github.io/sandikapp
 Yorum farklılığında Türkçe versiyon esastır.$yasal$, chr(13), ''))
 on conflict (tur, surum, dil) do nothing;
 
--- kvkk_aydinlatma/1.0/tr  (KVKK Aydınlatma Metni)
+-- kvkk_aydinlatma/1.1/tr  (KVKK Aydınlatma Metni)
 insert into public.yasal_metinler
   (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
-values ('kvkk_aydinlatma', '1.0', 'tr', 'KVKK Aydınlatma Metni', date '2026-05-11',
-  'e0af55df0a0ef92c107c51dd75235b24ac2d840c105fc5a89e99712b425494ed',
+values ('kvkk_aydinlatma', '1.1', 'tr', 'KVKK Aydınlatma Metni', date '2026-10-04',
+  '48dee00def03dcc3c235e4bda3da0dc94f7a552a8b0e2a99fea5eed4fda6ba6d',
   replace($yasal$# KVKK Aydınlatma Metni
 
-> Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0
+> Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1
 
 ---
 
@@ -700,7 +871,7 @@ values ('kvkk_aydinlatma', '1.0', 'tr', 'KVKK Aydınlatma Metni', date '2026-05-
 
 ### 2.5 Hukuki İşlem Verisi
 
-· Disclaimer onay zamanı, sürümü, platformu, IP'si
+· Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama sürümü, dil
 
 ## 3. Kişisel Verilerin İşlenme Amaçları
 
@@ -772,7 +943,7 @@ Bu ülkeler KVK Kurulu'nun "yeterli korumaya sahip ülkeler" listesinde bulunmam
 
 | Push token | Logout / uninstall'a kadar | Sözleşme süresi |
 
-| Disclaimer onay logu | Hesap silinmesinden sonra 3 yıl | TBK Madde 146 |
+| Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı) | Hesap silinmesinden sonra 3 yıl | TBK Madde 146 |
 
 | Oturum logları (IP, cihaz) | 90 gün | KVKK 5(2)(f) meşru menfaat |
 
@@ -1072,6 +1243,34 @@ begin
                     and proconfig is not null
                     and exists (select 1 from unnest(proconfig) c where c like 'search_path=%')) then
     raise exception '0102: yasal_onay_kaydet security definer + search_path olmali';
+  end if;
+
+  -- Hesap silinince satır kalır: auth.users'a FK yok, tetikleyici var
+  if exists (select 1 from pg_constraint
+              where conrelid = 'public.yasal_onaylar'::regclass
+                and contype = 'f'
+                and confrelid = 'auth.users'::regclass) then
+    raise exception '0102: yasal_onaylar auth.users FK tasimamali (silmede ispat gider)';
+  end if;
+  if not exists (select 1 from pg_trigger
+                  where tgrelid = 'auth.users'::regclass
+                    and tgname = 'yasal_onaylar_hesap_silindi'
+                    and not tgisinternal) then
+    raise exception '0102: auth.users silme tetikleyicisi yok';
+  end if;
+  if not exists (select 1 from pg_policies
+                  where schemaname = 'public' and tablename = 'yasal_onaylar'
+                    and policyname = 'yasal_onaylar_own_select'
+                    and qual like '%hesap_silindi_at IS NULL%') then
+    raise exception '0102: yasal_onaylar politikasi silinmis hesabi gizlemiyor';
+  end if;
+  if has_function_privilege('authenticated', 'public.yasal_onaylar_saklama_temizle()', 'EXECUTE')
+     or has_function_privilege('anon', 'public.yasal_onaylar_saklama_temizle()', 'EXECUTE')
+     or has_function_privilege('authenticated', 'public.yasal_onaylar_hesap_silindi()', 'EXECUTE') then
+    raise exception '0102: saklama/silme fonksiyonlari istemciye acik olmamali';
+  end if;
+  if not exists (select 1 from cron.job where jobname = 'yasal-onay-saklama') then
+    raise exception '0102: yasal-onay-saklama cron isi yok';
   end if;
 
   -- Zirve fonksiyonu: 0094 davranışı korunmuş + yeni damga

@@ -9429,17 +9429,23 @@ abstract class AppLocalizations {
   /// **'yurt dışı'**
   String get tekOnayUlkeBilinmiyor;
 
-  /// Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayRizaBaglanti).
+  /// Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar, kvkk ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayKvkkBaglanti, tekOnayRizaBaglanti). 2026-10-04: KVKK ayrı bağlantı oldu; okunan cümle harfi harfine aynı kaldı (hash'i yasal_metinler'de, kayit_tek_kutu). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).
   ///
   /// In tr, this message translates to:
-  /// **'{kosullar}\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.'**
-  String tekOnayCumle(String kosullar, String riza);
+  /// **'{kosullar}, {kvkk}\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.'**
+  String tekOnayCumle(String kosullar, String kvkk, String riza);
 
   /// No description provided for @tekOnayKosullarBaglanti.
   ///
   /// In tr, this message translates to:
-  /// **'Yasal Koşulları, KVKK Aydınlatma Metni'**
+  /// **'Yasal Koşulları'**
   String get tekOnayKosullarBaglanti;
+
+  /// No description provided for @tekOnayKvkkBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'KVKK Aydınlatma Metni'**
+  String get tekOnayKvkkBaglanti;
 
   /// No description provided for @tekOnayRizaBaglanti.
   ///
@@ -9494,6 +9500,126 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{n, plural, =0{Yer hiç değişmedi} other{{n} kez yer değişti}}'**
   String arenaSwaps(int n);
+
+  /// Yeniden onay kapısı (bayrak yeniden_onay_kapisi) başlığı: kullanıcı belgelerin eski bir sürümünü onaylamış, güncel sürüm onay bekliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncellenen belgeler'**
+  String get yasalKapiBaslikGuncel;
+
+  /// Yeniden onay kapısı başlığı: hiç onay kaydı olmayan kullanıcı (Apple/Google ile ilk giriş ya da onay kaydından önceki hesap).
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal belgeler'**
+  String get yasalKapiBaslikIlk;
+
+  /// No description provided for @yasalKapiAciklamaGuncel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
+  String get yasalKapiAciklamaGuncel;
+
+  /// No description provided for @yasalKapiAciklamaIlk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.'**
+  String get yasalKapiAciklamaIlk;
+
+  /// No description provided for @yasalKapiNelerDegisti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neler değişti'**
+  String get yasalKapiNelerDegisti;
+
+  /// Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.'**
+  String get yasalKapiDegisiklikNotu;
+
+  /// No description provided for @yasalBelgeKosullar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım Koşulları'**
+  String get yasalBelgeKosullar;
+
+  /// No description provided for @yasalBelgeGizlilik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik Politikası'**
+  String get yasalBelgeGizlilik;
+
+  /// No description provided for @yasalBelgeKvkk.
+  ///
+  /// In tr, this message translates to:
+  /// **'KVKK Aydınlatma Metni'**
+  String get yasalBelgeKvkk;
+
+  /// No description provided for @yasalBelgeKvkkKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'KVKK Metni'**
+  String get yasalBelgeKvkkKisa;
+
+  /// No description provided for @yasalBelgeSurum.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürüm {surum}'**
+  String yasalBelgeSurum(String surum);
+
+  /// No description provided for @yasalBelgeAcildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okundu'**
+  String get yasalBelgeAcildi;
+
+  /// No description provided for @yasalBelgelerTurkce.
+  ///
+  /// In tr, this message translates to:
+  /// **'Belgeler Türkçedir.'**
+  String get yasalBelgelerTurkce;
+
+  /// No description provided for @yasalKapiTaahhutBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onayların'**
+  String get yasalKapiTaahhutBaslik;
+
+  /// No description provided for @yasalKapiYatirimUyarisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırım uyarısı'**
+  String get yasalKapiYatirimUyarisi;
+
+  /// No description provided for @yasalKapiOnayla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okudum, kabul ediyorum'**
+  String get yasalKapiOnayla;
+
+  /// No description provided for @yasalKapiOnaylaKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kabul ediyorum'**
+  String get yasalKapiOnaylaKisa;
+
+  /// No description provided for @yasalKapiKutuGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için kutuları işaretlemelisin.'**
+  String get yasalKapiKutuGerekli;
+
+  /// No description provided for @yasalKapiKayitHatasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.'**
+  String get yasalKapiKayitHatasi;
+
+  /// No description provided for @yasalKapiCikis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış yap'**
+  String get yasalKapiCikis;
 }
 
 class _AppLocalizationsDelegate

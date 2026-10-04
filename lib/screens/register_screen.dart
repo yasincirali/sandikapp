@@ -80,6 +80,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // yok), "açıldı" bilgisinin tek kaynağı bu.
   bool _termsDocOpened = false;
   bool _consentDocOpened = false;
+  bool _kvkkDocOpened = false;
 
   /// Tek onay kutusu (Sadeleştirme 2 madde 1, bayrak `tek_onay_kutusu`,
   /// varsayılan KAPALI — hukuki onay bekler). Açıkken iki kutu tek cümleli
@@ -92,6 +93,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   late final bool _tekOnay = RemoteConfigService.instance.tekOnayKutusu;
   late final TapGestureRecognizer _kosullarBaglantisi = TapGestureRecognizer()
     ..onTap = _openTermsDoc;
+  late final TapGestureRecognizer _kvkkBaglantisi = TapGestureRecognizer()
+    ..onTap = _openKvkkDoc;
   late final TapGestureRecognizer _rizaBaglantisi = TapGestureRecognizer()
     ..onTap = _openConsentDoc;
   bool _emailTouched = false; // focus kaybedince hata göster
@@ -196,6 +199,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passCtrl.dispose();
     _passConfirmCtrl.dispose();
     _kosullarBaglantisi.dispose();
+    _kvkkBaglantisi.dispose();
     _rizaBaglantisi.dispose();
     super.dispose();
   }
@@ -211,8 +215,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         // Tek kutuda belge yalnız okunur: onay kutunun kendisidir; belgeden
         // dönen "onayladım" iki bayraktan yalnız birini açıp kutuyu yarım
         // bırakırdı.
+        //
+        // Başlık 2026-10-04'e kadar "Yasal Koşullar & KVKK Aydınlatma"ydı
+        // ama sayfa YALNIZ Koşulları gösteriyordu; KVKK Aydınlatma Metni
+        // kayıt ekranından hiç açılamıyordu. KVKK artık kendi bağlantısıyla
+        // açılır ([_openKvkkDoc]).
         builder: (_) => LegalDocScreen(
-          title: 'Yasal Koşullar & KVKK Aydınlatma',
+          title: context.l10n.yasalBelgeKosullar,
           icon: Icons.gavel_rounded,
           blocks: LegalDocs.terms,
           confirmMode: !_tekOnay,
@@ -227,6 +236,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _termsError = false;
       });
     }
+  }
+
+  /// KVKK Aydınlatma Metni — yalnız okunur (iki düzende de). Aydınlatma
+  /// bir bilgilendirmedir, ayrı bir onay dönüşü yok: kutu cümlesi onu
+  /// adıyla anar ve kutuyu işaretlemek "okudum" beyanıdır. Açıldığı bilgisi
+  /// onay kaydına kanıt notu olarak gider (`KayitOnayBaglami`).
+  Future<void> _openKvkkDoc() async {
+    _kvkkDocOpened = true;
+    await pushGuarded<void>(
+      context,
+      adaptiveRoute(
+        // const değil: `LegalDocs.kvkk` verinin ülkesini çalışma anında
+        // doldurur (köprü sürümü).
+        builder: (_) => LegalDocScreen(
+          title: context.l10n.yasalBelgeKvkk,
+          icon: Icons.privacy_tip_outlined,
+          blocks: LegalDocs.kvkk,
+        ),
+      ),
+    );
   }
 
   /// Açık Rıza (yurt dışı veri aktarımı) belgesini onay akışıyla aç.
@@ -282,6 +311,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       belgeDegiskenleri: LegalDocs.yerTutucuDegerleri(),
       kosulBelgesiAcildi: _termsDocOpened,
       rizaBelgesiAcildi: _consentDocOpened,
+      kvkkBelgesiAcildi: _kvkkDocOpened,
     );
     try {
       // Confirm-email AÇIK — register signUp() çağırır ama session
@@ -331,13 +361,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  /// Tek onay cümlesi, iki belge bağlantısı cümlenin İÇİNDE. Metin tek
-  /// l10n anahtarından gelir (dile göre bağlantıların yeri değişir); yer
-  /// tutuculara ayraç verilip bölünür, her ayracın yerine bağlantı girer.
+  /// Tek onay cümlesi, üç belge bağlantısı cümlenin İÇİNDE (Koşullar,
+  /// KVKK Aydınlatma, açık rıza → Gizlilik). Metin tek l10n anahtarından
+  /// gelir (dile göre bağlantıların yeri değişir); yer tutuculara ayraç
+  /// verilip bölünür, her ayracın yerine bağlantı girer. 2026-10-04'e kadar
+  /// "Yasal Koşulları, KVKK Aydınlatma Metni" TEK bağlantıydı ve yalnız
+  /// Koşulları açıyordu; okunan cümle aynı kaldı (hash aynı).
   InlineSpan _tekOnayCumlesi(BuildContext context) {
     const kosulAyraci = '\u0001';
+    const kvkkAyraci = '\u0003';
     const rizaAyraci = '\u0002';
-    final ham = context.l10n.tekOnayCumle(kosulAyraci, rizaAyraci);
+    final ham =
+        context.l10n.tekOnayCumle(kosulAyraci, kvkkAyraci, rizaAyraci);
     final baglanti = TextStyle(
       color: context.c.amberText,
       decoration: TextDecoration.underline,
@@ -345,15 +380,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
     final parcalar = <InlineSpan>[];
     var i = 0;
-    for (final m in RegExp('[$kosulAyraci$rizaAyraci]').allMatches(ham)) {
+    for (final m in RegExp('[$kosulAyraci$kvkkAyraci$rizaAyraci]')
+        .allMatches(ham)) {
       if (m.start > i) parcalar.add(TextSpan(text: ham.substring(i, m.start)));
-      final kosul = m[0] == kosulAyraci;
+      final (metin, tanima) = switch (m[0]) {
+        kosulAyraci => (
+            context.l10n.tekOnayKosullarBaglanti,
+            _kosullarBaglantisi
+          ),
+        kvkkAyraci => (context.l10n.tekOnayKvkkBaglanti, _kvkkBaglantisi),
+        _ => (context.l10n.tekOnayRizaBaglanti, _rizaBaglantisi),
+      };
       parcalar.add(TextSpan(
-        text: kosul
-            ? context.l10n.tekOnayKosullarBaglanti
-            : context.l10n.tekOnayRizaBaglanti,
+        text: metin,
         style: baglanti,
-        recognizer: kosul ? _kosullarBaglantisi : _rizaBaglantisi,
+        recognizer: tanima,
       ));
       i = m.end;
     }
@@ -582,7 +623,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // İki kutunun cümleleri tek cümlede; iki belgeye cümle içi
                 // bağlantı. İşaretlemek iki onayı birlikte verir (bkz.
                 // `_tekOnay`). Hata kutunun altında, eski desenle.
-                _LegalConsentBox(
+                YasalOnayKutusu(
                   icon: Icons.gavel_rounded,
                   title: context.l10n.tekOnayBaslik,
                   versionLabel: 'v$disclaimerVersion',
@@ -591,9 +632,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   bodyText: context.l10n.tekOnayAciklama(
                       SunucuSecimi.instance.aktifOrNull?.ulke ??
                           context.l10n.tekOnayUlkeBilinmiyor),
-                  checkboxLabel: context.l10n.tekOnayCumle(
-                      context.l10n.tekOnayKosullarBaglanti,
-                      context.l10n.tekOnayRizaBaglanti),
+                  checkboxLabel:
+                      YasalMetinKatalogu.tekKutuCumlesi(context.l10n),
                   checkboxSpan: _tekOnayCumlesi(context),
                   accepted: _termsAccepted && _consentAccepted,
                   error: _termsError || _consentError,
@@ -614,7 +654,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Detaylar linkler üzerinden tam metinle ulaşılabilir.
                 // Metinler `KayitKutuMetni`'nde (yasal metin kataloğu):
                 // gösterilen ile veritabanına hash'lenen aynı sabit.
-                _LegalConsentBox(
+                YasalOnayKutusu(
                   icon: Icons.gavel_rounded,
                   title: KayitKutuMetni.kosulBaslik,
                   versionLabel: 'v$disclaimerVersion',
@@ -623,6 +663,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   linkLabel: _termsDocConfirmed
                       ? 'Belgeyi tekrar aç'
                       : 'Belgeyi aç ve onayla',
+                  // Kutu cümlesi KVKK Aydınlatma Metni'ni adıyla anıyor;
+                  // 2026-10-04'e kadar ekrandan açılamıyordu.
+                  ekLinkLabel: context.l10n.yasalBelgeKvkk,
+                  onEkLink: _openKvkkDoc,
                   accepted: _termsAccepted,
                   docConfirmed: _termsDocConfirmed,
                   error: _termsError,
@@ -637,7 +681,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                 // ── Açık Rıza — Yurt Dışı Veri Aktarımı (ayrı kalır) ─────────
                 // KVKK Madde 9(1) zorunluluğu: açık rıza birleştirilemez.
-                _LegalConsentBox(
+                YasalOnayKutusu(
                   icon: Icons.public_rounded,
                   title: KayitKutuMetni.rizaBaslik,
                   // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
@@ -791,7 +835,11 @@ class _SifreKurallariListesi extends StatelessWidget {
 
 /// Yasal onay kutusu — başlık + metin + (opsiyonel) tam metin linki + checkbox.
 /// Hata durumunda kırmızı border ve hata mesajı gösterir.
-class _LegalConsentBox extends StatelessWidget {
+///
+/// Public (2026-10-04): yeniden onay kapısı (`YasalOnayKapisiScreen`) kayıt
+/// kutularını AYNI görünüşle gösterir — Apple/Google ile ilk kez gelen
+/// kullanıcı kayıt formundaki taahhütlerin aynısını görür.
+class YasalOnayKutusu extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? versionLabel;
@@ -803,6 +851,10 @@ class _LegalConsentBox extends StatelessWidget {
   final InlineSpan? checkboxSpan;
   final String? linkLabel;
   final VoidCallback? onShowText;
+
+  /// İkinci belge bağlantısı (Koşullar kutusunda KVKK Aydınlatma Metni).
+  final String? ekLinkLabel;
+  final VoidCallback? onEkLink;
   final bool accepted;
   final bool error;
   final String errorMessage;
@@ -811,7 +863,8 @@ class _LegalConsentBox extends StatelessWidget {
   /// etiketini ("tekrar aç") etkiler; işaretlemeyi KİLİTLEMEZ.
   final bool docConfirmed;
 
-  const _LegalConsentBox({
+  const YasalOnayKutusu({
+    super.key,
     required this.icon,
     required this.title,
     this.versionLabel,
@@ -820,6 +873,8 @@ class _LegalConsentBox extends StatelessWidget {
     this.checkboxSpan,
     this.linkLabel,
     this.onShowText,
+    this.ekLinkLabel,
+    this.onEkLink,
     required this.accepted,
     required this.error,
     required this.errorMessage,
@@ -891,6 +946,20 @@ class _LegalConsentBox extends StatelessWidget {
               ),
             ),
           ],
+          if (onEkLink != null && ekLinkLabel != null)
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              minimumSize: SandikTouch.minSize,
+              onPressed: onEkLink,
+              child: Text(
+                ekLinkLabel!,
+                style: context.t.bodySmall?.copyWith(
+                  color: context.c.amberText,
+                  decoration: TextDecoration.underline,
+                  decorationColor: context.c.amberText,
+                ),
+              ),
+            ),
           const SizedBox(height: 14),
           GestureDetector(
             // 2026-09: "belgeyi açıp sonuna kadar kaydır" zorunluluğu

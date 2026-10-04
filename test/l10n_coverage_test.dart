@@ -62,6 +62,7 @@ void main() {
     'lib/widgets/zirve_donem_secici.dart': 0,
     'lib/widgets/duello_arenasi.dart': 0,
     'lib/screens/otp_verification_screen.dart': 0,
+    'lib/screens/yasal_onay_kapisi_screen.dart': 0,
     'lib/screens/kayitli_cihazlar_screen.dart': 0,
     'lib/screens/partnership_requests_screen.dart': 0,
     'lib/screens/portfolio_performance/kontroller.dart': 0,
@@ -137,7 +138,7 @@ void main() {
     'lib/screens/signal_settings_screen.dart': 19,
     'lib/screens/add_asset_screen.dart': 18,
     'lib/screens/comparison_screen.dart': 23,
-    'lib/screens/register_screen.dart': 25,
+    'lib/screens/register_screen.dart': 10,
   };
 
   for (final e in tavan.entries) {
