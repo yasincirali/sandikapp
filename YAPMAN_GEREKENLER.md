@@ -8,6 +8,67 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-04 Yasal belgeler web ile tek kaynak (0103) — dal `feat/yasal-web-esleme` (yerel, push yok)
+
+Karar: *"Webdekiyle de her zaman eşleyelim."* Uygulama artık web'deki tam
+metni gösterir (`legal/tr/*.md` tek kaynak); Koşullar, Gizlilik, KVKK **1.2**,
+Açık Rıza Metni yeni belge (1.2). Kayıttaki "açık rıza" bağlantısı Açık Rıza
+Metni'ni açar; yeniden onay kapısı dört belgeyi ister. Web ile uygulama
+`test/yasal_web_esleme_test.dart` ile CI'da kilitli.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı reddedilir ve kapı her
+açılışta yeniden sorar):**
+- [ ] 1. `supabase/migrations/0103_yasal_web_tek_kaynak.sql` → **iki sunucuya**
+      (`supabase-deploy.yml`, hedef `ikisi`). Doğrula:
+      `select tur, surum from yasal_metinler where surum = '1.2' order by 1;`
+      → 4 satır (`acik_riza_metni`, `gizlilik_politikasi`, `kosullar`,
+      `kvkk_aydinlatma`); 1.1 satırları yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). `main`'e girince Pages web'i de
+      yayınlar (docs/ HTML 1.2). Yayınla birlikte 1.1'i onaylamış herkes bir
+      sonraki açılışta kapıda "Güncellenen belgeler"i görür (bayraklar
+      `yasal_onay_kaydi` + `yeniden_onay_kapisi` açık).
+
+**Karar: metin uygulamaya uyduruldu (2026-10-04).** Kullanıcı kuralı:
+*"mahkemeye bişey sormayacağız, yeni bir versiyon geldiğinde sürüm güncelleyip
+bunu müşteriye onaylatacağız. Ve sözleşmeler ve rızalarda uygulamada ne varsa
+uyumlu olmalı."* Avukat sorusu YOK. 0103 dağıtılmadığı için 1.2 yerinde
+düzeltildi: dört belge + çerez politikası + EN Terms/Privacy/GDPR + hesap
+silme formu kod ve migration'lara karşı denetlendi; yetkili mahkeme şablonu,
+"30 gün önce bildirim" vaadi, IP iddiası (onayda IP yok; oturum açma IP'si
+Supabase Auth güvenlik kaydında), "analitik SDK'sı yok", "SQLite cache",
+`kvkk-history`, Açık Rıza Metni'nin B/C/D kutuları, 365 gün portföy geçmişi
+(gerçeği 730), 30 günde silme (gerçeği anında) düzeltildi; Firebase
+Analytics/Crashlytics/Remote Config, Apple bildirim hizmeti, Gmail e-posta
+altyapısı, Apple/Google ile giriş, Yarış, kayıt hunisi, kayıtlı cihazlar,
+canlı etkinlik ve bildirim kayıtları metne girdi. Uygulamadaki silme
+uyarısı da "30 gün içinde" yerine "hemen" diyor.
+
+**Süreç kuralı (CLAUDE.md "Yasal metin tek kaynak"):** yeni veri işleme,
+üçüncü taraf ya da saklama ekleyen her değişiklik aynı değişiklikte ilgili
+`legal/tr/*.md`'yi günceller → sürüm artar → `python docs/_build_legal.py` →
+INSERT üreteci → yeni migration → yeniden onay kapısı kullanıcıya sorar.
+
+**Kalan, kodla ilgili kararlar (metin bugünkü gerçeği yazıyor):**
+- [ ] **Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı):** `auth.audit_log_entries`
+      için otomatik silme yok; metin bunu açıkça yazıyor. Bir saklama süresi
+      (ör. 90 gün) istersen ayrı migration + metin 1.3.
+- [ ] **Anonim silme kaydı** (`account_deletion_log`): 0007'deki 3 yıllık
+      temizleme cron'u yorum satırında, kurulu değil. Metin süre yazmıyor.
+- [ ] **E-posta altyapısı:** metin "Google (Gmail)" diyor (bugünkü SMTP).
+      Resend'e geçilirse aynı değişiklikte Gizlilik §5, KVKK §5.2, Açık Rıza
+      A ve EN'leri güncelle → 1.3.
+- [ ] **Kayıtta yatırım uyarısı kaydı:** e-posta kaydında
+      `disclaimer_acceptances` gösterilmeyen tam metnin hash'iyle yazılıyor
+      (kutuda yalnız özet var). Metin "özeti kayıt kutusunda" diyor; kayıt
+      da özete bağlanmalı mı — kod kararı.
+- [ ] **GDPR_NOTICE "yalnız Türkiye mağazasında dağıtılıyor"** iddiası
+      mağaza ayarlarıyla doğrulanmalı (koddan görünmüyor).
+- [ ] İngilizce: KVKK Aydınlatma ve Açık Rıza Metni'nin İngilizcesi YOK
+      (`GDPR_NOTICE` KVKK'nın çevirisi değil, AB'ye özgü ayrı belge).
+      Uygulama İngilizce arayüzde de Türkçe belge gösterir ve onay `tr`
+      yazılır. EN Terms/Privacy "Source: TR 1.2" ile TR 1.2'nin çevirisi.
+
 ## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
 
 Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
@@ -49,12 +110,12 @@ Liste ve ne açtıkları:
   çizilince tutarın küçülmesi düzeltildi.
 - [ ] **Hukuki karar:** kayıttaki iki onay kutusunu
       (koşullar + KVKK + 18 yaş / yurt dışı aktarım açık rızası) tek kutuya
-      indirmek avukat onayı ister. **Kod hazır, bayrak `tek_onay_kutusu`
-      (dal `feat/sade2-tek-onay`); avukat onayı gelince aç.** Avukata
-      gösterilecek cümle: "Yasal Koşulları, KVKK Aydınlatma Metni'ni ve 18+
+      indirmek senin kararın (2026-10-04: avukata sorulmuyor). **Kod hazır,
+      bayrak `tek_onay_kutusu` (dal `feat/sade2-tek-onay`).** Kutudaki
+      cümle: "Yasal Koşulları, KVKK Aydınlatma Metni'ni ve 18+
       olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına açık
       rıza veriyorum." (üç bağlantı cümle içinde: Koşullar, KVKK Aydınlatma,
-      açık rıza → Gizlilik). Açık rıza kaydı artık ayrı tutuluyor: 0102
+      açık rıza → Açık Rıza Metni, 1.2'den beri). Açık rıza kaydı artık ayrı tutuluyor: 0102
       (`yasal_onay_kaydi` açıkken) kutu metnini ve belgeleri `yasal_onaylar`'a
       yazar.
 - [ ] **Yasal metinler + kim neyi onayladı (0102) + yeniden onay kapısı** —
@@ -95,7 +156,6 @@ Liste ve ne açtıkları:
      güncel sürümüne (1.1) ve kayıt kutusu taahhütlerine onayı olmayan
      HERKES (yani bugünkü tüm kullanıcılar — sunucuda kanıtları yok) bir kez
      "Yasal belgeler" ekranını görür; Apple/Google ile ilk kez gelen de.
-     Bunu açmadan önce aşağıdaki avukat sorularını kapat.
   - **Yönetici sorgusu** ("kim neyi onaylamış"):
     ```sql
     -- Güncel koşulları onaylamamış kullanıcılar
@@ -134,30 +194,11 @@ Liste ve ne açtıkları:
     - Apple/Google girişinde kutular → **çözüldü:** kapı ilk girişte
       belgeleri + kayıt kutularının aynısını (18+, yurt dışı aktarım açık
       rızası) gösterir; zorunlu kullanıcı adı ekranı ondan SONRA aynen.
-  - **Avukata sorulacaklar (açık):**
-    1. Belgeler 1.1'de iki ifade netleştirildi: saklama satırı "Disclaimer
-       onay logu" → "Yasal metin onay kayıtları (Koşullar, Gizlilik
-       Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası,
-       yatırım uyarısı) — hesap silindikten sonra 3 yıl"; KVKK §2.5
-       "Disclaimer onay zamanı, sürümü, platformu, IP'si" → "Yasal metin
-       onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama
-       sürümü, dil" (uygulama IP saklamıyor). Uygun mu? Dayanak "TBK 146"
-       genel zamanaşımı 10 yıl — "3 yıl" ile tutarlı mı?
-    2. Kapıdaki yürürlük: Koşullar §13 "değişiklikten en az 30 gün önce
-       bildirim" diyor; kapı bunu girişte ister ve onay alınca hemen geçerli
-       sayar. Uygun mu, yoksa 30 gün bekleyip mi açılmalı?
-    3. E-posta kaydında `disclaimer_acceptances` OTP sonrası yatırım uyarısı
-       metninin (`disclaimerText`) hash'iyle yazılıyor ama o metin kayıt
-       yolunda ekranda GÖSTERİLMİYOR (kutudaki "yatırım tavsiyesi değildir"
-       maddesi gösteriliyor). Kapı (sosyal giriş) ise uyarının TAM metnini
-       gösterip öyle yazar. Kayıtta da gösterilsin mi?
-    4. Tek onay kutusu (`tek_onay_kutusu`) açılırsa kayıt ve kapı
-       `kayit_tek_kutu` (TR + EN) yazar — yukarıdaki hukuki karar
-       maddesiyle birlikte değerlendir.
-    5. Web'deki belgeler (`legal/*.md`, `docs/legal/**`, `docs/privacy*`,
-       `docs/terms*`) uygulama içi metinden AYRIŞMIŞ (bölüm sayıları farklı,
-       ör. Koşullar web 19 / uygulama 14 bölüm) ve hepsi "Sürüm: 1.0".
-       Sürüm satırı hizalanmadı (aynı metin değiller); hangisi esas, birleşsin mi?
+  - **Yasal metin soruları → karar: metin uygulamaya uyduruldu (2026-10-04).**
+    Avukata sorulmuyor (kullanıcı kuralı). Saklama satırı, IP iddiası, "30
+    gün önce bildirim" ve web/uygulama ayrışması 1.2'de gerçeğe göre yazıldı
+    (ayrıntı: yukarıda "Yasal belgeler web ile tek kaynak (0103)"). Açık kalan
+    tek konu kodda: kayıt yolundaki yatırım uyarısı kaydı (aynı bölümde).
 - Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
   (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
   vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).
@@ -2538,7 +2579,12 @@ grep -rn "\[" legal/ | grep -v "^Binary" | grep -E "\[[A-Z]"
 
 ### 2.3 Hukuki Onay
 
-Hazırladığım belgeler **kapsamlı şablon**. Ama **bir avukatla** mutlaka iki şeyi onaylat:
+> **2026-10-04 kullanıcı kuralı — bu bölümün yerine geçer:** avukata
+> sorulmuyor. Yeni sürüm gelince sürüm artırılır ve müşteriye onaylatılır
+> (yeniden onay kapısı); sözleşme ve rıza metinleri uygulamanın gerçek
+> davranışına uydurulur. Aşağıdaki 2026-05 notu arşivdir.
+
+~~Hazırladığım belgeler **kapsamlı şablon**. Ama **bir avukatla** mutlaka iki şeyi onaylat:~~
 
 1. **Yatırım disclaimer'ı** — SPK avukatına: "Çoklu kullanıcı ortaklık özelliği 'kollektif portföy yönetimi' olarak yorumlanabilir mi?" sorusunu sor. Risk varsa "ortaklık" özelliğini "salt görüntüleme" olarak kısıtla.
 2. **KVKK uygulanabilirliği** — KVKK avukatına: tüzel kişilik kararına göre VERBİS zorunlu mu, açık rıza metni yeterli mi.

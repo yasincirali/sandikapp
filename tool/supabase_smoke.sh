@@ -75,7 +75,7 @@ echo "== 6b) anon RPC'yi cagiramamali"
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token"   -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json"   -d "{\"p_token\":\"$TOK-anon-0123456789\",\"p_platform\":\"android\"}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon claim_push_token HTTP $HTTP"; exit 1; }
 
-echo "== 6c) Yasal onay (0102) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu"
+echo "== 6c) Yasal onay (0102 + 0103) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu, 1.2 + acik riza metni"
 # Metin anon ile okunur (belgeler herkese acik). Onay yalniz RPC ile ve
 # yalniz sunucudaki metnin hash'iyle yazilir; doğrudan INSERT yetkisi yok.
 # Satir silinemez (tasarim geregi) — tohum kullanicida kalir; CI yigini taze.
@@ -112,11 +112,27 @@ ZHASH=$(metin_hash zirve_riza 2026-10-01 tr)
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
   -d "{\"p_ogeler\":[{\"tur\":\"zirve_riza\",\"surum\":\"2026-10-01\",\"dil\":\"tr\",\"hash\":\"$ZHASH\"}],\"p_kanal\":\"yeniden_onay\"}")
 [[ "$HTTP" == "400" ]] || { echo "yeniden_onay kanalinda zirve reddedilmedi: HTTP $HTTP"; exit 1; }
+# 0103: belgeler 1.2 (web ile tek kaynak, legal/tr/*.md) + yeni tur
+# acik_riza_metni. Kayit ve kapi kanali acik riza metnini yazar; Zirve
+# kanali yazamaz. 1.1 satirlari yerinde (eski istemci).
+for T in kosullar gizlilik_politikasi kvkk_aydinlatma acik_riza_metni; do
+  H=$(metin_hash "$T" 1.2 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.2/tr metni okunamadi (0103)"; exit 1; }
+done
+[[ ${#GHASH} == 64 ]] || { echo "gizlilik_politikasi/1.1/tr kaybolmus (0103 eski satira dokunmamali)"; exit 1; }
+AHASH=$(metin_hash acik_riza_metni 1.2 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"acik_riza_metni\",\"surum\":\"1.2\",\"dil\":\"tr\",\"hash\":\"$AHASH\",\"degiskenler\":{\"belge_acildi\":true}}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "acik_riza_metni kayit beklenmeyen donus: $YAZILAN"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"acik_riza_metni\",\"surum\":\"1.2\",\"dil\":\"tr\",\"hash\":\"$AHASH\"}],\"p_kanal\":\"zirve\"}")
+[[ "$HTTP" == "400" ]] || { echo "zirve kanalinda acik_riza_metni reddedilmedi: HTTP $HTTP"; exit 1; }
 # Istemcinin kapi sorgusu (YasalOnayService._etkinOnaylar) — RLS kendi
 # satiri + yasal_metinler gomulu; yeni RPC gerekmez.
 TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
   "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
-[[ "$TURLER" == *"kosullar@1.1"* && "$TURLER" == *"gizlilik_politikasi@1.1"* && "$TURLER" == *"yatirim_uyarisi@1.0"* ]] \
+[[ "$TURLER" == *"kosullar@1.1"* && "$TURLER" == *"gizlilik_politikasi@1.1"* && "$TURLER" == *"yatirim_uyarisi@1.0"* \
+   && "$TURLER" == *"acik_riza_metni@1.2"* ]] \
   || { echo "kapi sorgusu beklenen turleri dondurmedi: $TURLER"; exit 1; }
 # Hesap silme (satirlar kalir + damga, Zirve silinir, 3 yil saklama) burada
 # denenmez: tohum kullanici silinemez. Migration'in kendi dogrulama blogu

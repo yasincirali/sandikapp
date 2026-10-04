@@ -21,6 +21,7 @@ class KayitOnayBaglami {
     required this.kosulBelgesiAcildi,
     required this.rizaBelgesiAcildi,
     this.kvkkBelgesiAcildi = false,
+    this.gizlilikBelgesiAcildi = false,
   });
 
   /// Bayrak `tek_onay_kutusu` ekran açılışında açık mıydı.
@@ -38,21 +39,26 @@ class KayitOnayBaglami {
   final Map<String, String> belgeDegiskenleri;
 
   /// Kullanıcı bağlantıdan belgeyi en az bir kez açtı mı (kanıt notu).
+  /// [rizaBelgesiAcildi]: "açık rıza" bağlantısı — 1.2'den beri Açık Rıza
+  /// Metni'ni açar (1.1'de Gizlilik Politikası'nı açıyordu).
   final bool kosulBelgesiAcildi;
   final bool rizaBelgesiAcildi;
   final bool kvkkBelgesiAcildi;
+  final bool gizlilikBelgesiAcildi;
 
   /// Kayıtta onaylanan metinler + her birinin gösterim değişkenleri — saf,
   /// test edilir.
   ///
   /// ## Ne girer, ne girmez
   /// - Kutu(lar): kullanıcının işaretlediği cümle(ler), gördüğü düzende.
-  /// - Belgeler: kutu cümlesinin adıyla andığı üç belge. Üçü de kayıt
-  ///   ekranından bağlantıyla açılır (KVKK Aydınlatma Metni 2026-10-04'ten
-  ///   beri kendi bağlantısıyla; öncesinde "Yasal Koşullar & KVKK
-  ///   Aydınlatma" başlıklı sayfa yalnız Koşulları gösteriyordu). Açılıp
-  ///   açılmadığı `belge_acildi` ile yazılır — ispat ne kadar güçlüyse o
-  ///   kadarını söylesin.
+  /// - Belgeler: dört belgenin dördü de ([YasalBelge]). Koşullar, KVKK ve
+  ///   açık rıza kutu cümlesinde adıyla geçer; Gizlilik Politikası iki
+  ///   kutulu düzende kutu metninde adıyla, her düzende Koşullar §1'de
+  ///   atıfla. Dördü de kayıt ekranından bağlantıyla açılır (KVKK
+  ///   2026-10-04'ten, Açık Rıza Metni ve Gizlilik'in kendi bağlantısı
+  ///   1.2'den beri). Açılıp açılmadığı `belge_acildi` ile yazılır — ispat
+  ///   ne kadar güçlüyse o kadarını söylesin. Yer tutucu değerleri yalnız
+  ///   o belgede geçenler ([YasalMetinKatalogu.belgeDegiskenleri]).
   /// - Yatırım uyarısı (`disclaimerText`) GİRMEZ: kayıt ekranında
   ///   gösterilmiyor. Kutunun "yatırım tavsiyesi değildir" maddesi kutu
   ///   metninin içinde zaten kayıtlı. (`disclaimer_acceptances` eskisi gibi
@@ -69,14 +75,16 @@ class KayitOnayBaglami {
             YasalMetinKatalogu.kayitKutuRiza()
                 .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
           ];
+    Map<String, dynamic> belge(YasalMetin m, bool acildi) => m.rpcOgesi({
+          ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
+          'belge_acildi': acildi,
+        });
     return [
       ...kutular,
-      YasalMetinKatalogu.kosullar()
-          .rpcOgesi({'belge_acildi': kosulBelgesiAcildi}),
-      YasalMetinKatalogu.gizlilik().rpcOgesi(
-          {...belgeDegiskenleri, 'belge_acildi': rizaBelgesiAcildi}),
-      YasalMetinKatalogu.kvkk().rpcOgesi(
-          {...belgeDegiskenleri, 'belge_acildi': kvkkBelgesiAcildi}),
+      belge(YasalMetinKatalogu.kosullar(), kosulBelgesiAcildi),
+      belge(YasalMetinKatalogu.gizlilik(), gizlilikBelgesiAcildi),
+      belge(YasalMetinKatalogu.kvkk(), kvkkBelgesiAcildi),
+      belge(YasalMetinKatalogu.acikRiza(), rizaBelgesiAcildi),
     ];
   }
 }
@@ -90,8 +98,8 @@ class YasalKapiDurumu {
   /// Kapı yok: onaylar tam, bayrak kapalı ya da sorgu düştü (fail-open).
   static const tamam = YasalKapiDurumu();
 
-  /// Eksik türler: [YasalTur.kosullar] / `gizlilik` / `kvkk` ve kayıt
-  /// kutusu taahhütleri için [YasalOnayService.kutuAnahtari].
+  /// Eksik türler: belgeler ([YasalBelge] türleri) ve kayıt kutusu
+  /// taahhütleri için [YasalOnayService.kutuAnahtari].
   final Set<String> eksik;
 
   /// Tür → kullanıcının etkin onayı olan EN YENİ sürüm (eksik olsa bile —
@@ -363,7 +371,7 @@ class YasalOnayService {
     ];
   }
 
-  /// Kapı ekranında "Okudum, kabul ediyorum": üç güncel belge (zaten
+  /// Kapı ekranında "Okudum, kabul ediyorum": dört güncel belge (zaten
   /// onaylı olan tekrar yazılmaz — sunucu `on conflict do nothing`, ilk an
   /// korunur), [kutu] verildiyse kayıt kutusu taahhütleri,
   /// [yatirimUyarisiDahil] ise ekranda gösterilen yatırım uyarısı.
@@ -411,7 +419,7 @@ class YasalOnayService {
         if (kutu != null) ...kutu.ogeler(),
         for (final m in YasalMetinKatalogu.zorunluBelgeler())
           m.rpcOgesi({
-            if (m.tur != YasalTur.kosullar) ...belgeDegiskenleri,
+            ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
             'belge_acildi': acilanBelgeler.contains(m.tur),
             'onceki_surum': durum.oncekiSurum[m.tur],
           }),

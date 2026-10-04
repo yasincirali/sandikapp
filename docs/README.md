@@ -10,15 +10,44 @@ Bu klasör https://yasincirali.github.io/sandikapp/ adresinde yayınlanan sandı
 4. Branch: `main` / `/docs` folder → Save
 5. 1-2 dakika içinde https://yasincirali.github.io/sandikapp/ yayınlanır
 
-## HTML'leri yeniden üret
+## Yasal metinler: web ve uygulama tek kaynak
 
-Legal Markdown dosyalarını değiştirdiysen (`legal/tr/*.md`, `legal/en/*.md`), HTML'leri yeniden derle:
+Kullanıcı kararı (2026-10-04): *"Webdekiyle de her zaman eşleyelim."*
+`legal/tr/*.md` (çevirisi `legal/en/*.md`) hem bu sitedeki yasal sayfaların
+hem de uygulamanın gösterip onaylattığı belgelerin (Kullanım Koşulları,
+Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni) **tek
+kaynağıdır**. HTML'e de, uygulamaya da elle metin yazılmaz.
 
-```bash
-python docs/_build_legal.py
-```
+Metin değişince sıra:
 
-Bu komut `_build_legal.py` içindeki sayfa listesindeki her Markdown'ı okur, ortak layout'a sarar, `docs/` altına ilgili URL path'ine yazar.
+1. `legal/tr/<BELGE>.md`'yi düzenle; künyede **"Sürüm"** satırını artır,
+   "Yürürlük tarihi" / "Son güncelleme" o gün. Çevirisi varsa
+   `legal/en/<BELGE>.md`'yi de çevir: "Version" ve "Source: TR x" yeni TR
+   sürümünü yazsın.
+2. `python docs/_build_legal.py` — sayfa listesindeki her md'yi ortak
+   layout'a sarar, `docs/` altına yazar **ve** uygulamanın sabitini
+   (`lib/config/yasal_belge_kaynaklari.g.dart`) üretir. `docs/index.html`'e
+   dokunmaz (elle bakılır).
+3. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
+   → `build/yasal_metin_ekleri.sql`'i YENİ bir migration'a koy (iki sunucu).
+4. Kapının "Neler değişti" notu: `yasalKapiDegisiklikNotu` (iki .arb +
+   `flutter gen-l10n`).
+5. `flutter test test/yasal_web_esleme_test.dart test/yasal_metin_kilidi_test.dart`.
+
+Ülke yer tutucuları (`{SUPABASE_ULKE}`, `{SUPABASE_ULKEDE}`): web'de
+`_build_legal.py` → `YER_TUTUCULAR` ile (iki sunucunun durumu), uygulamada
+bağlı sunucunun ülkesiyle dolar. Veritabanındaki metin ve hash şablon
+hâlidir.
+
+Kilit (`test/yasal_web_esleme_test.dart`, CI'da koşar): her HTML başlığına
+kaynak md'nin sha256'sı (`sandik-kaynak-sha256`) ve sayfa gövdesinin sha256'sı
+(`sandik-govde-sha256`) gömülür. md değişip betik koşulmazsa ya da HTML elle
+düzenlenirse test kırılır; uygulama belgelerinde kaynak hash'i
+veritabanındaki `govde_hash` ile aynıdır. Ayrıntı:
+`lib/services/yasal_metin_katalogu.dart` → "Metin değişince ne yapılır".
+
+Yalnız web'deki diğer md'leri (`COKEZ_VE_DEPOLAMA.md`,
+`DATA_DELETION_REQUEST_FORM.md`, `GDPR_NOTICE.md`) değiştirdiysen 1–2 yeter.
 
 ## Yapı
 

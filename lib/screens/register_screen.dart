@@ -81,6 +81,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _termsDocOpened = false;
   bool _consentDocOpened = false;
   bool _kvkkDocOpened = false;
+  bool _privacyDocOpened = false;
 
   /// Tek onay kutusu (Sadeleştirme 2 madde 1, bayrak `tek_onay_kutusu`,
   /// varsayılan KAPALI — hukuki onay bekler). Açıkken iki kutu tek cümleli
@@ -258,18 +259,43 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  /// Açık Rıza (yurt dışı veri aktarımı) belgesini onay akışıyla aç.
+  /// Gizlilik Politikası — yalnız okunur (iki düzende de). 1.1'de "açık
+  /// rıza" bağlantısı bu belgeyi açıyordu; 1.2'de o bağlantı Açık Rıza
+  /// Metni'ne geçince Gizlilik kayıt ekranından açılamaz olacaktı. İki
+  /// kutulu düzende kutu metni onu adıyla anıyor, Koşullar §1 her düzende
+  /// atıf yapıyor → ayrı bir okuma bağlantısı (kutu metnine dokunmaz,
+  /// hash'i değiştirmez).
+  Future<void> _openPrivacyDoc() async {
+    _privacyDocOpened = true;
+    await pushGuarded<void>(
+      context,
+      adaptiveRoute(
+        builder: (_) => LegalDocScreen(
+          title: context.l10n.yasalBelgeGizlilik,
+          icon: Icons.shield_outlined,
+          blocks: LegalDocs.privacy,
+        ),
+      ),
+    );
+  }
+
+  /// Açık Rıza Metni'ni (yurt dışı veri aktarımı) onay akışıyla aç.
+  ///
+  /// 1.2 (2026-10-04, "webdekiyle eşleyelim"): web'de 2026-05'ten beri ayrı
+  /// bir "Açık Rıza Metni" (`legal/tr/ACIK_RIZA_METNI.md`) vardı ama bu
+  /// bağlantı "Açık Rıza: Yurt Dışı Veri Aktarımı" başlığıyla Gizlilik
+  /// Politikası'nı açıyordu. Artık açık rıza belgesinin kendisini açar.
   Future<void> _openConsentDoc() async {
     _consentDocOpened = true;
     final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
-        // const değil: `LegalDocs.privacy` verinin ülkesini çalışma anında
+        // const değil: `LegalDocs.acikRiza` verinin ülkesini çalışma anında
         // doldurur (köprü sürümü).
         builder: (_) => LegalDocScreen(
-          title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
+          title: context.l10n.yasalBelgeAcikRiza,
           icon: Icons.public_rounded,
-          blocks: LegalDocs.privacy,
+          blocks: LegalDocs.acikRiza,
           confirmMode: !_tekOnay,
           confirmButtonLabel: 'Okudum ve açık rıza veriyorum',
         ),
@@ -312,6 +338,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       kosulBelgesiAcildi: _termsDocOpened,
       rizaBelgesiAcildi: _consentDocOpened,
       kvkkBelgesiAcildi: _kvkkDocOpened,
+      gizlilikBelgesiAcildi: _privacyDocOpened,
     );
     try {
       // Confirm-email AÇIK — register signUp() çağırır ama session
@@ -635,6 +662,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   checkboxLabel:
                       YasalMetinKatalogu.tekKutuCumlesi(context.l10n),
                   checkboxSpan: _tekOnayCumlesi(context),
+                  // Cümle Gizlilik Politikası'nı anmıyor (cümleye bağlantı
+                  // eklemek kutu metnini, dolayısıyla hash'ini değiştirirdi);
+                  // okuma bağlantısı kutunun altında.
+                  ekLinkLabel: context.l10n.yasalBelgeGizlilik,
+                  onEkLink: _openPrivacyDoc,
                   accepted: _termsAccepted && _consentAccepted,
                   error: _termsError || _consentError,
                   errorMessage: context.l10n.tekOnayGerekli,
@@ -702,6 +734,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     if (_consentAccepted) _consentError = false;
                   }),
                   onShowText: _openConsentDoc,
+                  // Kutu metnindeki "Gizlilik Politikası" (bkz. _openPrivacyDoc).
+                  ekLinkLabel: context.l10n.yasalBelgeGizlilik,
+                  onEkLink: _openPrivacyDoc,
                 ),
               ],
               const SizedBox(height: 24),

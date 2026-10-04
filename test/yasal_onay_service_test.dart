@@ -89,7 +89,7 @@ void main() {
   group('bayrak AÇIK', () {
     setUp(() => RemoteConfigService.testAcik = {'yasal_onay_kaydi'});
 
-    test('kayıt, iki kutu: iki kutu + üç belge, Türkçe, gösterilen ülke',
+    test('kayıt, iki kutu: iki kutu + dört belge, Türkçe, gösterilen ülke',
         () async {
       expect(
           await YasalOnayService.instance
@@ -105,22 +105,34 @@ void main() {
         YasalTur.kosullar,
         YasalTur.gizlilik,
         YasalTur.kvkk,
+        YasalTur.acikRiza,
       ]);
       final ogeler = [for (final o in p['p_ogeler'] as List) o as Map];
       // İki kutu her arayüz dilinde Türkçe çizilir.
       expect(ogeler.every((o) => o['dil'] == 'tr'), isTrue);
       expect(ogeler[1]['degiskenler'], {'SUPABASE_ULKE': 'Almanya (AB)'});
       expect(ogeler[2]['degiskenler'], {'belge_acildi': true});
-      expect(ogeler[3]['degiskenler']['belge_acildi'], isFalse);
-      expect(ogeler[3]['degiskenler']['SUPABASE_ULKEDE'], "Almanya'da (AB)");
+      // Gizlilik 1.2'den beri kendi bağlantısıyla açılır (açılmadı).
+      expect(ogeler[3]['degiskenler'], {
+        'SUPABASE_ULKE': 'Almanya (AB)',
+        'SUPABASE_ULKEDE': "Almanya'da (AB)",
+        'belge_acildi': false,
+      });
       // KVKK Aydınlatma 2026-10-04'ten beri kayıt ekranından açılabiliyor;
       // eski "kayit_ekraninda_baglanti: false" notu kalktı.
       expect(ogeler[4]['degiskenler']['belge_acildi'], isTrue);
       expect(ogeler[4]['degiskenler'],
           isNot(contains('kayit_ekraninda_baglanti')));
+      // Yer tutucu değerleri yalnız belgede geçenler: KVKK yalnız ülke adı.
+      expect(ogeler[4]['degiskenler'],
+          {'SUPABASE_ULKE': 'Almanya (AB)', 'belge_acildi': true});
+      // "açık rıza" bağlantısı 1.2'den beri Açık Rıza Metni'ni açar.
+      expect(ogeler[5]['degiskenler'],
+          {'SUPABASE_ULKEDE': "Almanya'da (AB)", 'belge_acildi': false});
       expect(ogeler[0]['hash'], YasalMetinKatalogu.kayitKutuKosullar().hash);
       // Belgeler güncel sürümde.
-      expect(ogeler[2]['surum'], YasalMetinKatalogu.belgeSurumu);
+      expect(ogeler[2]['surum'], YasalBelge.kosullar.surum);
+      expect(ogeler[5]['surum'], YasalBelge.acikRiza.surum);
     });
 
     test('kayıt, tek kutu: tek kutu arayüz dilinde, yatırım uyarısı YOK',
@@ -141,6 +153,7 @@ void main() {
         YasalTur.kosullar,
         YasalTur.gizlilik,
         YasalTur.kvkk,
+        YasalTur.acikRiza,
       ]);
       final kutu = (p['p_ogeler'] as List).first as Map;
       expect(kutu['dil'], 'en');
@@ -179,12 +192,13 @@ void main() {
           greaterThan(0));
     });
 
-    test('hiç onay yok: üç belge + kutu eksik, "ilk kez"', () {
+    test('hiç onay yok: dört belge + kutu eksik, "ilk kez"', () {
       final d = YasalOnayService.eksikleriHesapla(const []);
       expect(d.eksik, {
         YasalTur.kosullar,
         YasalTur.gizlilik,
         YasalTur.kvkk,
+        YasalTur.acikRiza,
         YasalOnayService.kutuAnahtari,
       });
       expect(d.kutuEksik, isTrue);
@@ -197,16 +211,23 @@ void main() {
 
     test('belgelerin eski sürümü: yalnız belgeler eksik, "güncellendi"', () {
       final d = YasalOnayService.eksikleriHesapla([
-        (YasalTur.kosullar, '1.0'),
-        (YasalTur.gizlilik, '1.0'),
-        (YasalTur.kvkk, '1.0'),
+        (YasalTur.kosullar, '1.1'),
+        (YasalTur.gizlilik, '1.1'),
+        (YasalTur.kvkk, '1.1'),
         (YasalTur.kayitKutuKosullar, YasalMetinKatalogu.kutuSurumu),
         (YasalTur.kayitKutuRiza, YasalMetinKatalogu.kutuSurumu),
       ]);
-      expect(d.eksik, {YasalTur.kosullar, YasalTur.gizlilik, YasalTur.kvkk});
+      // 1.1 → 1.2: üç belge güncellendi, Açık Rıza Metni ilk kez isteniyor.
+      expect(d.eksik, {
+        YasalTur.kosullar,
+        YasalTur.gizlilik,
+        YasalTur.kvkk,
+        YasalTur.acikRiza,
+      });
       expect(d.kutuEksik, isFalse);
       expect(d.guncellemeMi, isTrue);
-      expect(d.oncekiSurum[YasalTur.kosullar], '1.0');
+      expect(d.oncekiSurum[YasalTur.kosullar], '1.1');
+      expect(d.oncekiSurum[YasalTur.acikRiza], isNull);
     });
 
     test('daha YENİ sürüm onaylı: eski istemci geri onaylatmaz', () {
@@ -243,8 +264,8 @@ void main() {
 
     test('cihaz izinin anahtarı sürümleri taşır (sürüm artınca geçersiz)', () {
       final a = YasalOnayService.izAnahtari('u1');
-      expect(a,
-          contains('${YasalTur.kosullar}@${YasalMetinKatalogu.belgeSurumu}'));
+      expect(a, contains('${YasalTur.kosullar}@${YasalBelge.kosullar.surum}'));
+      expect(a, contains('${YasalTur.acikRiza}@${YasalBelge.acikRiza.surum}'));
       expect(
           a,
           contains('${YasalOnayService.kutuAnahtari}@'
@@ -376,7 +397,7 @@ void main() {
         expect(sorguSayisi, 1);
       });
 
-      test('kapı kaydı: yeniden_onay kanalı, üç belge + kutu + uyarı',
+      test('kapı kaydı: yeniden_onay kanalı, dört belge + kutu + uyarı',
           () async {
         final durum = YasalOnayService.eksikleriHesapla([
           (YasalTur.kosullar, '1.0'),
@@ -400,6 +421,7 @@ void main() {
           YasalTur.kosullar,
           YasalTur.gizlilik,
           YasalTur.kvkk,
+          YasalTur.acikRiza,
           YasalTur.yatirimUyarisi,
         ]);
         final o = [for (final x in p['p_ogeler'] as List) x as Map];
@@ -408,6 +430,10 @@ void main() {
         expect(o[3]['degiskenler']['onceki_surum'], isNull);
         expect(o[4]['degiskenler']['belge_acildi'], isTrue);
         expect(o[4]['degiskenler']['SUPABASE_ULKE'], 'Almanya (AB)');
+        // Açık Rıza Metni yalnız {SUPABASE_ULKEDE} taşır; verilmeyen değer
+        // uydurulmaz.
+        expect(o[5]['degiskenler'],
+            {'belge_acildi': false, 'onceki_surum': null});
         // Başarı izi koyar: sonraki açılış ağa gitmez.
         sorgu(() => const []);
         expect((await YasalOnayService.instance.kapiDurumu('u1')).gerekli,
@@ -425,7 +451,7 @@ void main() {
           locale: 'tr_TR',
         );
         expect(turler(cagrilar.single),
-            [YasalTur.kosullar, YasalTur.gizlilik, YasalTur.kvkk]);
+            [YasalTur.kosullar, YasalTur.gizlilik, YasalTur.kvkk, YasalTur.acikRiza]);
       });
 
       test('kapı kaydı hataları: ağ → agHatasi, sunucu → sunucuHatasi; iz yok',

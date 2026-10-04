@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GDPR Notice — sandık</title>
 <meta name="description" content="GDPR notice for EU/EEA users of Sandık.">
+<meta name="sandik-kaynak" content="legal/en/GDPR_NOTICE.md">
+<meta name="sandik-kaynak-sha256" content="b9154f62c1e0b641f83b8d829d703b951c3d223a7aa3964ffd2f31dc115669d7">
+<meta name="sandik-govde-sha256" content="f9046a7857929c38c8ff4c8fa18f3f8958c405ecd377a972d6da15fcac09e172">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -60,12 +63,13 @@ button:hover { opacity: 0.9; }
   <div class="logo">S</div>
   <div class="brand">sandık<small>GDPR</small></div>
 </header>
+<!-- sandik-govde:basla -->
 <h1>GDPR Notice — sandık</h1>
-<p><strong>Effective date:</strong> May 11, 2026
-<strong>Last updated:</strong> September 29, 2026
-<strong>Version:</strong> 1.0</p>
+<p><strong>Effective date:</strong> October 4, 2026
+<strong>Last updated:</strong> October 4, 2026
+<strong>Version:</strong> 1.1</p>
 <blockquote>
-<p>This document supplements the <a href="PRIVACY_POLICY.md">Privacy Policy</a> and <a href="TERMS_OF_SERVICE.md">Terms of Service</a> with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).</p>
+<p>This document supplements the <a href="https://yasincirali.github.io/sandikapp/privacy-en">Privacy Policy</a> and <a href="https://yasincirali.github.io/sandikapp/terms-en">Terms of Service</a> with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).</p>
 </blockquote>
 <hr />
 <h2>1. Identity of the Controller</h2>
@@ -89,7 +93,7 @@ and this section updated.</p>
 </blockquote>
 <hr />
 <h2>2. Categories of Personal Data Processed</h2>
-<p>See <a href="PRIVACY_POLICY.md#3-data-we-collect">Privacy Policy §3</a> for the detailed inventory.</p>
+<p>See <a href="https://yasincirali.github.io/sandikapp/privacy-en">Privacy Policy §3</a> for the detailed inventory.</p>
 <p>We do <strong>not</strong> process special categories of personal data (Art. 9): no health, racial/ethnic origin, political opinions, religious beliefs, biometric, genetic, sexual orientation data.</p>
 <hr />
 <h2>3. Legal Bases for Processing (Art. 6)</h2>
@@ -106,16 +110,24 @@ and this section updated.</p>
 <td>Art. 6(1)(b) — performance of a contract</td>
 </tr>
 <tr>
-<td>Push notifications, marketing emails (if any)</td>
-<td>Art. 6(1)(a) — consent</td>
+<td>Push notifications (after you grant the operating system's notification permission)</td>
+<td>Art. 6(1)(b) — performance of a contract</td>
 </tr>
 <tr>
-<td>Storing disclaimer acceptance log</td>
-<td>Art. 6(1)(c) — legal obligation</td>
+<td>Storing legal text acceptance records (incl. the investment disclaimer)</td>
+<td>Art. 6(1)(f) — legitimate interests (proof of acceptance); Art. 6(1)(c) — legal obligation where applicable</td>
 </tr>
 <tr>
-<td>Security measures (rate limiting, abuse detection, error logs)</td>
+<td>Security measures (single active device, rate limiting, abuse detection, sign-in security log, error logs)</td>
 <td>Art. 6(1)(f) — legitimate interests</td>
+</tr>
+<tr>
+<td>Crash reports and usage statistics (Firebase Crashlytics, Firebase Analytics); sign-up funnel</td>
+<td>Art. 6(1)(f) — legitimate interests (diagnostics, product improvement)</td>
+</tr>
+<tr>
+<td>Race (optional; period return %, asset-type shares %)</td>
+<td>Art. 6(1)(b) — performance of a contract (feature you turn on)</td>
 </tr>
 <tr>
 <td>Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %)</td>
@@ -129,9 +141,9 @@ and this section updated.</p>
 </table>
 <hr />
 <h2>4. Recipients (Art. 13(1)(e))</h2>
-<p>See <a href="PRIVACY_POLICY.md#5-third-party-recipients-data-processors">Privacy Policy §5</a>.</p>
+<p>See <a href="https://yasincirali.github.io/sandikapp/privacy-en">Privacy Policy §5</a> (Supabase, Google Firebase and Gmail email infrastructure, Apple Push Notification service, Sign in with Apple / Google Sign-In).</p>
 <p>All processors are bound by Data Processing Agreements (DPAs) under Art. 28.</p>
-<p>Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see <a href="PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios">Privacy Policy §5.1</a>.</p>
+<p>Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see <a href="https://yasincirali.github.io/sandikapp/privacy-en">Privacy Policy §5.1</a>.</p>
 <hr />
 <h2>5. International Transfers (Art. 44-49)</h2>
 <p>The database is hosted in Japan (AWS Tokyo), which benefits from the EU adequacy decision for Japan
@@ -153,9 +165,14 @@ company) and Google act as processors under the mechanisms below:</p>
 <td>https://supabase.com/privacy</td>
 </tr>
 <tr>
-<td>Google Firebase</td>
+<td>Google Firebase and Gmail</td>
 <td>EU-U.S. Data Privacy Framework + SCCs</td>
 <td>https://firebase.google.com/support/privacy</td>
+</tr>
+<tr>
+<td>Apple (Push Notification service, Sign in with Apple)</td>
+<td>EU-U.S. Data Privacy Framework + SCCs</td>
+<td>https://www.apple.com/legal/privacy/</td>
 </tr>
 </tbody>
 </table>
@@ -163,7 +180,7 @@ company) and Google act as processors under the mechanisms below:</p>
 <p>You may request a copy of the SCCs by emailing <code>sandikapp.destek@gmail.com</code>.</p>
 <hr />
 <h2>6. Retention Periods (Art. 13(2)(a))</h2>
-<p>See <a href="PRIVACY_POLICY.md#7-retention-periods">Privacy Policy §7</a>.</p>
+<p>See <a href="https://yasincirali.github.io/sandikapp/privacy-en">Privacy Policy §7</a>.</p>
 <hr />
 <h2>7. Your Rights (Art. 15-22)</h2>
 <h3>7.1 Right of Access (Art. 15)</h3>
@@ -171,7 +188,7 @@ company) and Google act as processors under the mechanisms below:</p>
 <h3>7.2 Right to Rectification (Art. 16)</h3>
 <p>You may correct inaccurate or incomplete data.</p>
 <h3>7.3 Right to Erasure / "Right to be Forgotten" (Art. 17)</h3>
-<p>You may request deletion. We will erase your data unless retention is required by law (e.g., disclaimer log under Turkish CO Art. 146).</p>
+<p>You may request deletion. In-app deletion takes effect immediately. Legal text acceptance records are kept for 3 years after deletion (Turkish Code of Obligations Art. 146 limitation period); other records kept after deletion are listed in Privacy Policy §7.</p>
 <p><strong>In-app:</strong> Profile → Settings → Delete Account.
 <strong>Web:</strong> <code>https://yasincirali.github.io/sandikapp/data-request</code></p>
 <h3>7.4 Right to Restriction (Art. 18)</h3>
@@ -218,10 +235,6 @@ company) and Google act as processors under the mechanisms below:</p>
 <td>Web form</td>
 <td><code>https://yasincirali.github.io/sandikapp/data-request</code></td>
 </tr>
-<tr>
-<td>Postal mail</td>
-<td><code>Istanbul, Türkiye</code></td>
-</tr>
 </tbody>
 </table>
 <p><strong>Identity verification:</strong> We may ask you to verify your identity (e.g., confirm via the email associated with your account). If we have reasonable doubts about your identity, we may request additional information (Art. 12(6)).</p>
@@ -239,7 +252,7 @@ company) and Google act as processors under the mechanisms below:</p>
 <p>Our service is not directed to children under 16. We do not knowingly process data of children under 16 without parental consent. If you believe a child has provided data, contact us at <code>sandikapp.destek@gmail.com</code> for immediate deletion.</p>
 <hr />
 <h2>11. Changes to This Notice</h2>
-<p>Material changes will be communicated via in-app notification and email at least <strong>30 days in advance</strong>. The current version is always available at <code>https://yasincirali.github.io/sandikapp/legal/gdpr</code>.</p>
+<p>Material changes to the legal documents are announced in the App: on the next launch the current documents and a summary of the changes are shown and your renewed acceptance is requested. The current version of this notice is always available at <code>https://yasincirali.github.io/sandikapp/legal/gdpr</code>.</p>
 <hr />
 <h2>12. Contact</h2>
 <table>
@@ -265,7 +278,8 @@ company) and Google act as processors under the mechanisms below:</p>
 </tbody>
 </table>
 <hr />
-<p><em>This document is provided in English. A Turkish version is available at <a href="../tr/KVKK_AYDINLATMA_METNI.md">legal/tr/KVKK_AYDINLATMA_METNI.md</a>, which covers Turkish KVKK obligations.</em></p>
+<p><em>This document is provided in English. The Turkish KVKK Disclosure, which covers Turkish KVKK obligations, is available at https://yasincirali.github.io/sandikapp/legal/kvkk.</em></p>
+<!-- sandik-govde:bitti -->
 <footer>
   sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
 </footer>

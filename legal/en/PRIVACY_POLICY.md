@@ -1,30 +1,30 @@
 # Privacy Policy — sandık
 
-**Effective date:** May 11, 2026
-**Last updated:** September 29, 2026
-**Version:** 1.0
-
-> **Note:** Published version. Data controller is an individual developer; VERBIS registration is not required unless commercial activity is initiated in Türkiye (kvkk.gov.tr). Contact for privacy inquiries: sandikapp.destek@gmail.com.
+**Effective date:** October 4, 2026
+**Last updated:** October 4, 2026
+**Version:** 1.2
+**Source:** TR 1.2 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
 ## 1. Data Controller
 
-This application (**sandık**, the "App") is operated by `Yasin Çıralı` ("we", "us", "Company").
+This application (**sandık**, the "App") is operated by `Yasin Çıralı` ("we", "Company").
 
 - **Address:** `Istanbul, Türkiye`
 - **Email:** `sandikapp.destek@gmail.com`
-- **Website:** `https://yasincirali.github.io/sandikapp`
+- **Web:** `https://yasincirali.github.io/sandikapp`
+- **VERBIS:** `Not registered (individual developer)` (where applicable)
 
-We act as data controller under GDPR Article 4(7) and Turkish KVKK Article 3(1)(ı).
+We act as data controller within the meaning of KVKK Article 3(1)(ı).
 
 ---
 
-## 2. Scope
+## 2. Scope of This Policy
 
-This policy explains what personal data we collect when you download and use the App, why we collect it, with whom we share it, how long we retain it, and what your legal rights are.
+This policy explains which personal data we collect when you download and use the App, why we collect it, with whom we share it, how long we keep it and your legal rights.
 
-The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkish KVKK (Law No. 6698), Apple App Store Privacy Guidelines and Google Play Data Safety.
+The policy is prepared to meet the requirements of KVKK (Turkish Personal Data Protection Law No. 6698), the GDPR (EU 2016/679), the Apple App Store Privacy Guidelines and Google Play Data Safety.
 
 ---
 
@@ -33,57 +33,70 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 ### 3.1 Account Data (mandatory)
 | Data | Purpose | Legal basis |
 |---|---|---|
-| Email address | Account creation, login, password reset | GDPR 6(1)(b) — contract |
-| Password (hashed) | Authentication | GDPR 6(1)(b) |
-| Display name | Visible to other users in the partnership feature | GDPR 6(1)(b) |
+| Email address | Account creation, sign-in, password reset, new-device verification code | KVKK 5(2)(c) — contract; GDPR 6(1)(b) |
+| Password (hash) | Authentication (no password with Apple or Google sign-in) | KVKK 5(2)(c); GDPR 6(1)(b) |
+| Username (display name) | Name shown to your partner, in notifications and in invite responses | KVKK 5(2)(c); GDPR 6(1)(b) |
+| Email and name shared by the provider when you sign in with Apple or Google | Account creation; the name is used only as the initial display name | KVKK 5(2)(c); GDPR 6(1)(b) |
 
-### 3.2 In-App Content (entered by user)
+### 3.2 In-App Content (entered by the user)
 | Data | Purpose |
 |---|---|
-| Asset records (symbol, quantity, purchase price, date, note) | Portfolio tracking (core functionality) |
-| Portfolio snapshot history | Performance charts |
-| Period return (%), asset-type shares (%) and per-fund-code shares (%) — computed on our servers | Top Portfolios (anonymous comparison, see §5.1) |
-| Partnership invite codes & mutual links | Multi-user sharing feature |
+| Asset records (symbol, type, quantity, purchase price, commission, currency, date, note), time deposit and pension (BES) contract details, dividend records | Portfolio tracking (the App's core function) |
+| Watchlist, price alerts, notification preferences (signal settings, quiet hours, briefing time), target amount | Operation of the respective features |
+| Portfolio snapshots (hourly total value) | Performance charts |
+| Period return (%), asset-type shares (%) and per-fund-code shares (%) — computed on the server | Top Portfolios (anonymous comparison, see §5.1; only if you give explicit consent) |
+| Period return (%) and asset-type shares (%) — computed daily on the server | Race (optional; your percentile and comparison with your partner) |
+| Partnership invite codes and mutual links | Multi-user sharing feature |
+
+**Statement import:** A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved.
 
 ### 3.3 Device & Notification Data
 | Data | Purpose |
 |---|---|
-| Push notification token (FCM) | Partnership invite & signal notifications |
-| Device model, OS version, app version | Diagnostics (only at disclaimer acceptance) |
-| Locale | Language/date format |
+| Push notification token (FCM) | Notification delivery (price alerts, signals, daily briefing, periodic summaries, partnership, dividend and calendar reminders) |
+| Registered devices: device name (model, iOS version), platform, a random device number generated by the App, first and last seen time | Account security: the account stays signed in on one device at a time; email code on a new device |
+| Lock-screen Live Activity (iOS, if you turn it on): activity token and the portfolio total and daily change text (masked when "hide amounts" is on) | Updating the portfolio summary on the lock screen |
+| Device model, OS version, app version | Diagnostics, registered devices list, acceptance records |
+| Locale | Language/date format, acceptance records |
+| IP address and device/browser information (at sign-in, code verification and session refresh) | Account security and abuse detection (Supabase Auth security log) |
 
 ### 3.4 Legal Acceptance Records
 | Data | Purpose | Legal basis |
 |---|---|---|
-| Disclaimer acceptance timestamp, IP, version, platform | Proof of investment-advice disclaimer | GDPR 6(1)(c) — legal obligation |
+| Legal text acceptances: the accepted text and its version, time of acceptance, the screen where it was given, platform, app version, language and the server country shown to you; for the investment disclaimer also the device model | Proof of which text you accepted, in which version and when | KVKK 5(2)(e) — establishment, exercise or protection of a right; for the investment disclaimer KVKK 5(2)(a) |
 
 ### 3.5 Automatically Collected Data
 | Data | Purpose |
 |---|---|
-| Crash reports (Crashlytics) | Crash diagnostics (no personal data, anonymous device id) |
-| Structured error logs | Only in production for **errors**; sensitive fields (email, password, token) are masked |
+| Crash reports (Firebase Crashlytics): crash and error record, device model, OS and app version, Crashlytics' random installation ID | Crash diagnostics; email, name and portfolio value are not sent |
+| Usage statistics (Firebase Analytics): your account number (random user ID), screens viewed, feature usage events (e.g. asset added and its type, notification opened, signal viewed and its symbol), coarse ranges (e.g. asset count range), device and app information, approximate location (country/city) derived by Google from the IP address | Understanding and improving how the product is used; amounts, quantities and email are not sent, no advertising ID is collected |
+| Remote configuration (Firebase Remote Config): Firebase's random installation ID | Turning features on and off remotely |
+| Sign-up steps (sign-up funnel): a random installation number generated by the App, the step (first launch, registration screen, code verification, etc.), platform, app version, sign-up error code; linked to your account after sign-in | Detecting problems in the sign-up process |
+| Structured error logs | Only on **errors**; request information and error message, with sensitive fields (email, password, token, IP) masked |
 
 ### Data We Do NOT Collect
-- Location
+- GPS location (the App does not request location permission)
 - Contacts
 - Photos / camera
 - Advertising identifier
-- Third-party advertising network tracking data
-- Bank account information (the App does not connect to any bank API)
+- Third-party ad-network tracking data
+- Bank account details (the App connects to no bank API; a statement file is read only on the device)
+- Biometric data (the app lock uses the device's own Face ID / fingerprint check; biometric data never reaches the App)
 
 ---
 
 ## 4. Purposes of Processing
 
-1. To create and maintain your account
-2. To store your portfolio on your local device and our servers
-3. To compute your performance charts
-4. To deliver your partnership invitations
-5. To send notifications (only if you have explicitly opted in)
-6. To meet legal obligations (disclaimer proof, lawful authority requests)
-7. For diagnostics and service improvement
-8. To detect abuse, fraud, and cyberattacks (GDPR 6(1)(f) — legitimate interest)
-9. Top Portfolios: to show, anonymously, the return and asset-type allocation of the period's top-gaining portfolios among participants (GDPR 6(1)(a) — consent, opt-in in the App)
+1. Creating your account and maintaining your session
+2. Storing your portfolio on your device and on our servers
+3. Calculating your performance charts
+4. Delivering your partnership invitations to other users
+5. Sending notifications (only if the operating system's notification permission was granted)
+6. Meeting our legal obligations and proving your acceptances (legal text acceptances, lawful authority requests)
+7. Diagnostics and service quality improvement; usage statistics
+8. Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)
+9. Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)
+10. Race: if you join, calculating your period return and showing your percentile and comparison with your partner
 
 ---
 
@@ -91,27 +104,36 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 
 | Service | Provider | Data | Purpose | Location |
 |---|---|---|---|---|
-| Backend & database | Supabase Inc. | All account & app data | Storage, authentication | Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU) |
+| Backend & database | Supabase Inc. | All account and app data, security logs | Storage, authentication | {SUPABASE_ULKE} |
 | Push notifications | Google Firebase Cloud Messaging | Push token, notification content | Notification delivery | Global (Google) |
-| Crash reports (when added) | Google Firebase Crashlytics | Device model, OS, error stack trace | Crash diagnostics | Global |
-| Stock/fund prices | Yahoo Finance, TEFAS, finans.truncgil.com | NONE — only symbol query is sent | Price retrieval | Global |
+| iOS notifications and Live Activity | Apple Push Notification service | Notification content, Live Activity token and lock-screen summary | Delivery to the iPhone | Global (Apple) |
+| Crash reports | Google Firebase Crashlytics | Error record, device model, OS and app version | Crash diagnostics | Global (Google) |
+| Usage statistics | Google Firebase Analytics | See §3.5 | Product improvement | Global (Google) |
+| Remote configuration | Google Firebase Remote Config | Random installation ID | Feature settings | Global (Google) |
+| Email delivery | Google (Gmail email infrastructure) | Email address, verification / sign-in code | Delivering code emails | Global (Google) |
+| Sign in with Apple / Google Sign-In (if you choose them) | Apple Inc. / Google LLC | Verification with the provider during sign-in | Authentication | Global |
+| Price and market data | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, CBRT EVDS, EGM, open.er-api.com, yasincirali.github.io (IPO calendar) | No personal data is sent; only symbol / fund-code queries. For requests sent from the device, the provider sees the device's IP address as with any internet request | Price retrieval | Global |
 
-**These providers act solely as data processors on our instructions. Controllership remains with us.**
+**These providers act solely as data processors, on our instructions. We remain the data controller.**
 
 ### 5.1 Anonymous Sharing with Other Users (Top Portfolios)
 
-Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days and holds at least 2 different assets and your account is older than 7 days, your period return (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on our servers twice a day and kept in an anonymous comparison pool. When the pool holds at least 8 portfolios, only the rank, return percentage, asset-type shares and, for funds, the public TEFAS fund code with its share of the portfolio (funds below 1% or without a code grouped together) of up to 4 top-gaining portfolios are shown to other participating users; fund names come from the official TEFAS list. In return, you see — in the same anonymous form — which asset types participating users hold, in what proportions, and their returns; this comparison is available only to participants. Names, e-mail addresses, usernames, amounts, quantities, the names or symbols of stocks and other assets, and any names or notes you give your assets are never shared; the displayed information contains no data that reveals your identity. If you do not consent, your return is neither computed nor stored for this purpose, and no other feature of the App is affected. You can withdraw consent at any time from the Top Portfolios screen; your pool measurements are then deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your pool measurements are deleted as well.
+Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days, your account is older than 7 days and your portfolio holds at least 2 different assets, your period returns (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on the server twice a day and kept in an anonymous comparison pool. If the pool holds at least 8 portfolios, for at most the 4 best-performing portfolios only the rank, return percentage, type shares and, for fund holdings, the public TEFAS fund code and its share in the portfolio (funds with a share below 1% or without a code are grouped) are shown to other users who have joined the pool; fund names come from the official TEFAS list. In return you see, in the same anonymous form, which asset types participating users hold in which proportions and their returns; this comparison service is available only to participants. Name, email, username, amounts, quantities, the names or symbols of shares and other assets, and the names and notes you give your assets are never shared; the information shown contains no data that would reveal your identity. If you do not consent, your return is neither computed nor stored for this purpose; other features of the App are unaffected. You can withdraw your consent at any time from the Top Portfolios screen; when you do, your measurements in the pool are deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your measurements in the pool are deleted too.
+
+### 5.2 Sharing with Your Partner and in the Race
+
+A user you have a partnership with sees your username and the assets, quantities and performance in your portfolio. In the Race your identity and amounts are not shown to other participants; you are shown only your own percentile and can compare returns with your partner.
 
 ---
 
 ## 6. International Data Transfers
 
-Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye (and, for Firebase, outside the EEA). The in-app text shows the country of the server you are connected to. Under GDPR Articles 44-49 and KVKK Article 9:
+Because the Supabase database is hosted {SUPABASE_ULKEDE} and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in and email services also run on global infrastructure. Under KVKK Article 9 and GDPR Articles 44-49:
 
 - **For EU/EEA users:** Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.
-- **For Turkish users:** **Explicit consent** is collected at registration (the consent checkbox in the KVKK Disclosure Document).
+- **For Turkish users:** **Explicit consent** is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni") you accept at registration.
 
-The destination countries (Japan, USA; Germany after the migration) are not on the Turkish DPA's list of countries with adequate protection; therefore international transfer is based on **explicit consent**.
+The destination countries (Supabase: {SUPABASE_ULKE}; Firebase: USA) are not on the list of countries with adequate protection announced by the Turkish Data Protection Board; therefore international transfer is based on your **explicit consent**.
 
 ---
 
@@ -120,109 +142,118 @@ The destination countries (Japan, USA; Germany after the migration) are not on t
 | Data | Period |
 |---|---|
 | Account data | Until account deletion |
-| Asset records | Until account deletion |
-| Snapshot history | Last 365 days (rolling, older entries auto-deleted) |
-| Top Portfolios pool measurements (return %, type share %) | Last 365 days (rolling); immediately on consent withdrawal or account deletion |
-| Disclaimer acceptance log | **3 years** after account deletion (Turkish CO Art. 146 statute of limitations) |
-| Push token | Auto-deleted on app uninstall or logout |
-| Crash reports | 90 days |
-| db_logs (errors only) | 30 days |
+| Asset records and contract details | Until account deletion |
+| Portfolio snapshots | Last 2 years (730 days) rolling; older entries are deleted automatically every day |
+| Top Portfolios pool measurements (return %, type share %) | Last 365 days rolling; immediately on consent withdrawal or account deletion |
+| Race measurements (return %, type share %) | Last 365 days rolling; immediately on account deletion |
+| Registered devices | Until you remove the device from the list or delete your account |
+| Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish Code of Obligations Art. 146 limitation period) |
+| Push token | Deleted on sign-out; if the App is uninstalled, found invalid and deleted at the next send |
+| Notification records (in-app notifications, price alert notifications) | 90 days |
+| Signal notifications | Until you delete them or delete your account |
+| Notification delivery logs (to avoid sending the same notification twice) | 30 days to 18 months depending on type |
+| Structured error logs (db_logs, errors only) | 30 days |
+| Sign-up funnel steps | 400 days |
+| Crash reports (Crashlytics) | 90 days |
+| Usage statistics (Firebase Analytics) | As set in Firebase's retention setting, at most 14 months |
+| Sign-in security log (IP, device/browser) | Kept in the Supabase Auth security log; the App has not defined an automatic deletion period for this log |
 
-When you delete your account, all your data — except records with statutory retention listed above — is **permanently deleted within 30 days**.
+When you delete your account from the App, your account and all the data you entered are deleted from the live database **immediately**. Exceptions: legal text acceptance records (3 years), structured error logs and sign-up funnel steps (unlinked from the account, until the end of their own periods), crash reports and usage statistics in Firebase (until the end of their own periods), the sign-in security log, and an anonymous deletion record consisting of a one-way hash of your account ID and your email domain.
 
 ---
 
-## 8. Your Rights (GDPR Art. 15-22 / KVKK Art. 11)
+## 8. Your Rights (KVKK Article 11 / GDPR Articles 15-22)
 
 You may exercise the following rights by contacting us:
 
-- **Right to information**
-- **Right of access** — receive a copy of your data
-- **Right to rectification**
-- **Right to erasure ("right to be forgotten")**
-- **Right to data portability** — receive your data in machine-readable JSON format
-- **Right to object** to processing based on legitimate interest
-- **Right to withdraw consent** at any time
+- **Right to information:** Learn which of your data is processed
+- **Right of access:** Request a copy of your data
+- **Right to rectification:** Correction of inaccurate/incomplete data
+- **Right to erasure:** Deletion of your data
+- **Right to data portability (GDPR):** Receive your data in machine-readable format (JSON)
+- **Right to object (GDPR):** Object to processing based on legitimate interest
+- **Right to withdraw consent:** Stop future processing
 
-**How to request:**
+**How to make a request:**
 1. **In-app:** Profile → Settings → "Delete Account" / "Download My Data"
-2. **Email:** `sandikapp.destek@gmail.com` with identity-verification information
+2. **Email:** Apply to `sandikapp.destek@gmail.com` with identifying information
 3. **Web form:** `https://yasincirali.github.io/sandikapp/data-request`
 
-We respond to requests within **30 days** (GDPR Art. 12(3) / KVKK Art. 13(2)).
+Under KVKK Article 13(2) we respond to your requests within **30 days**.
 
-**Right to lodge a complaint:**
-- EU/EEA: Your local Data Protection Authority
-- Türkiye: Kişisel Verileri Koruma Kurumu — kvkk.gov.tr
+**Right to complain:** If the response is not satisfactory:
+- Türkiye: Personal Data Protection Authority — kvkk.gov.tr
+- EU: Your local data protection authority (DPA)
 
 ---
 
 ## 9. Children's Data
 
-The App is not intended for users under 18. You confirm being 18+ at registration. If we learn that a user under 18 has provided data, the account is deleted promptly. We do not accept users under 16 (GDPR Art. 8 parental consent threshold).
+The App is not designed for people under 18. At registration you declare that you are over 18. If we notice that a user under 18 has entered data, the account is deleted immediately.
+
+Under GDPR Article 8, parental consent is required for under-16s in the EU; we do not accept this age group.
 
 ---
 
 ## 10. Data Security
 
-Technical and organizational measures we apply:
+Technical and organisational measures we take:
 
-- **In transit:** TLS 1.2+ (HTTPS) enforced
-- **At rest:** AES-256 encryption (Supabase)
-- **Access:** Row-Level Security (RLS) — each user can access only their own data
-- **Passwords:** Bcrypt hash (Supabase Auth)
-- **Sessions:** JWT, 1-hour access + 7-day refresh; in-app 10-minute idle timeout
-- **Logging:** Production logs only errors; sensitive fields (email, password, token) are masked
-- **Developer access:** Only during a support request and with customer consent
+- **Transport:** TLS 1.2+ (HTTPS) mandatory
+- **Storage:** At-rest encryption on the Supabase side (AES-256)
+- **Access:** With Row-Level Security (RLS) each user can access only their own data (and the shared portfolio of their partner)
+- **Password:** Bcrypt hash (Supabase Auth)
+- **Session:** A 1-hour access token and a refresh token that changes on every refresh; the token is stored in the device's secure key store (Keychain / Android Keystore). If the App stays in the background for more than 10 minutes, it locks when the app lock is on, otherwise the session ends. The account stays signed in on one device at a time; a new device requires an email code
+- **Abuse:** Server-side rate limiting
+- **Logging:** Only errors in production; sensitive fields (email, password, token, IP) are masked
+- **Developer access:** Only the developer has technical access to the database, used only for support, diagnostics and legal obligations. The admin panel (permission checked on the server) shows error logs, sign-in security logs, the sign-up funnel and account information (email, name, asset count); it does not show portfolio contents
 
-**Breach notification:**
-- Within **72 hours** to the relevant supervisory authority (GDPR Art. 33 / KVKK Art. 12)
+Under KVKK Article 12, if a data breach is detected:
+- Notification to the Turkish Data Protection Board within **72 hours** at the latest
 - Direct notification to affected users
-- Compliance with GDPR Art. 33-34
+- A GDPR Articles 33-34 compliant process for EU users
 
 ---
 
 ## 11. Cookies and Local Storage
 
-The App runs in a mobile environment, so web cookies are **not used**. Local storage (SharedPreferences, SQLite cache) is used only for:
+As a mobile app, the App does **not** use web cookies. Stored on the device:
 
-- Session token (Supabase Auth)
-- Theme/language preference
-- Saved email (if user opts in)
-- Disclaimer acceptance status (local copy)
+- Session token — in the secure key store (Keychain / Android Keystore)
+- Preferences (theme, language, appearance, notification and lock settings) and, if you choose "Remember me" (or right after registration), your email address — SharedPreferences / NSUserDefaults
+- The last portfolio record and a price and chart cache for offline launch
+- A portfolio summary for the home-screen widget (app group on iOS, app data on Android)
 
-No third-party tracking, analytics, or advertising SDKs are included.
+When you sign out, the session token, your cache and preferences and the widget data are removed from the device. The App contains Firebase Analytics (usage statistics) and Crashlytics (crash reports) (see §3.5); it contains no advertising SDK and no advertising ID. Details: Cookie and Local Storage Policy.
 
 ---
 
 ## 12. Investment Advice Disclaimer
 
-**sandık** is a portfolio tracking tool. We are NOT a licensed investment advisor or brokerage. Prices, performance figures, signals and charts shown in the App are for informational purposes only and do not constitute investment advice. Consult a licensed advisor before making investment decisions.
+**sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals and charts shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
 
-This disclaimer is shown and acknowledged at first launch; the acknowledgement is recorded as legal evidence.
+A summary of this notice is part of the consent box on the registration screen; on the first sign-in with Apple or Google the full text is shown separately. The record of your acceptance is kept as legal evidence.
 
 ---
 
 ## 13. Changes to This Policy
 
 When we change this policy:
-- An in-app notification is shown
+- The new text is published with a new version number; the text on the website and in the App is always the same
 - The "Last updated" date is refreshed
-- Material changes are also sent via email
-- Changes that require a new KVKK consent will trigger re-acceptance
-
-If you do not object within 30 days, you are deemed to have accepted the changes.
+- For material changes, the current text and a summary of the changes are shown on the next launch and your renewed acceptance is requested
+- A new processing activity, third party or retention period is added only by updating this text
 
 ---
 
 ## 14. Contact
 
-For all data protection questions, requests and complaints:
+For all questions, requests and complaints about data protection:
 
 - **Email:** `sandikapp.destek@gmail.com`
 - **Address:** `Istanbul, Türkiye`
-- **Data Protection Officer (DPO, if appointed):** `Not appointed — inquiries to sandikapp.destek@gmail.com`
+- **Data Protection Officer (DPO):** Not appointed. Data protection contact: `sandikapp.destek@gmail.com`
 
 ---
 
-*This policy is provided in [Turkish] and [English]. In case of discrepancy, the Turkish version prevails.*
+*This policy is provided in Turkish and English. In case of discrepancy, the Turkish version prevails.*

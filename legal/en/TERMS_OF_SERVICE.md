@@ -1,8 +1,9 @@
 # Terms of Service — sandık
 
-**Effective date:** May 11, 2026
-**Last updated:** September 29, 2026
-**Version:** 1.0
+**Effective date:** October 4, 2026
+**Last updated:** October 4, 2026
+**Version:** 1.2
+**Source:** TR 1.2 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -10,109 +11,115 @@
 
 These Terms of Service ("Terms") form a contract between `Yasin Çıralı` ("Company", "we") and the natural person ("User", "you") who uses the **sandık** mobile application ("App", "Service").
 
-By downloading the App and creating an account, you confirm that you have read, understood and accepted these Terms, the **Privacy Policy** and the **KVKK Disclosure Document**.
+By downloading the App and creating an account, you declare that you have read, understood and accepted these Terms, the **Privacy Policy**, the **KVKK Disclosure** and the **Explicit Consent Notice**.
 
 ---
 
 ## 2. Description of the Service
 
-sandık is a personal portfolio tracking tool for the following asset types:
+sandık is a personal portfolio tracking tool that lets users track the following asset types:
 
-- BIST stocks
+- BIST (Borsa Istanbul) equities
 - TEFAS investment funds
-- Currencies (USD, EUR, GBP, etc.)
-- Precious metals (gold, silver)
-- Cryptocurrencies (where supported)
+- Foreign currencies (USD, EUR, GBP, etc.)
+- Gold and other commodities
+- Cryptocurrencies
+- Time deposits and private pension (BES) contracts
+- Other assets you define manually
 
-The App displays portfolio value, allocation, performance and (optionally) technical-analysis signals. The partnership feature allows two users to share their portfolios with mutual consent.
+The App shows portfolio value, allocation and performance and, optionally, technical-analysis signals, price alerts and periodic summaries. You can enter assets manually, in bulk, or by importing a bank / brokerage statement. With the partnership feature two users can share their portfolios.
 
-**Top Portfolios (optional):** With your explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); only the rank, return, type shares and, for funds, the TEFAS fund codes with their shares of top-gaining portfolios are shown to other participants, without identity or amounts, and in return you see the same anonymous information about them (details: Privacy Policy §5.1). You can leave at any time; not joining affects no other feature.
+**Top Portfolios (optional):** If you give explicit consent in the App, your period return and asset-type shares are evaluated in an anonymous comparison pool (portfolio older than 5 days, at least 2 different assets); for the best-performing portfolios only the rank, return, type shares and TEFAS fund codes with their shares are shown to other participants, without identity or amounts; in return you see the same anonymous information about participants (details: Privacy Policy §5.1). You can leave at any time; not participating affects no other feature.
+
+**Race (optional):** If you join the Race, your period return and asset-type shares are calculated daily on the server; your standing among participants is shown to you as a percentile, and you can compare your return with your partner. Your identity and amounts are not shown to other participants. You can leave the Race at any time.
 
 ---
 
 ## 3. IMPORTANT NOTICE — Investment Advice Disclaimer
 
-**sandık IS NOT AN INVESTMENT ADVISOR, BROKER OR PORTFOLIO MANAGEMENT FIRM.**
+**sandık IS NOT AN INVESTMENT ADVISER, BROKERAGE OR PORTFOLIO MANAGEMENT COMPANY.**
 
-- The Company is not licensed by the Capital Markets Board of Türkiye (SPK) or any equivalent foreign authority.
-- Prices, performance figures, signals and charts shown in the App are for **informational purposes only**.
-- No content constitutes **investment advice, buy/sell recommendation, or financial advice**.
-- We make no warranty as to the accuracy, timeliness, or completeness of the data; data from third-party providers (Yahoo Finance, TEFAS, etc.) is shown as-is.
-- Make investment decisions in consultation with a **licensed broker or investment advisor**.
-- The Company shall not be liable for **any profit or loss** resulting from investment decisions you make based on data displayed in the App.
+- The Company is not licensed by the Capital Markets Board of Türkiye (SPK).
+- Prices, performance figures, signals and charts shown in the App are **for information only**.
+- No content constitutes **investment advice, a buy/sell recommendation or financial consultancy**.
+- We do not guarantee the accuracy, timeliness or completeness of data; data from third-party providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, etc.) is presented as is.
+- Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
+- **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
 
-This notice is acknowledged at first launch on a separate disclaimer screen; the acknowledgement is recorded as legal evidence.
+A summary of this notice is part of the consent box on the registration screen; on the first sign-in with Apple or Google the full text is shown separately. The record of your acceptance is kept as legal evidence.
 
 ---
 
 ## 4. Account
 
 ### 4.1 Account Creation
-- You must be 18 or older.
-- You must provide a valid email address.
-- You must provide accurate and current information.
+- You must be over 18.
+- You must provide a valid email address or sign in with your Apple or Google account.
+- You must choose a unique username; your username is visible to your partner and in notifications and may not contain offensive language.
+- You must provide accurate and up-to-date information.
 
 ### 4.2 Account Security
 - Do not share your password with anyone.
-- You are responsible for the security of your password.
-- If you suspect unauthorized access, immediately change your password and notify us at `sandikapp.destek@gmail.com`.
-- All actions performed on your account are deemed to be performed by you.
+- You are responsible for keeping your password secure.
+- Your account stays signed in on only one device at a time. When you sign in on a new device, a code sent to your email address is required and the session on the previous device ends. You can see and remove your registered devices in Settings.
+- If you suspect unauthorised access, change your password immediately and inform us at `sandikapp.destek@gmail.com`.
+- All actions performed through your account are deemed yours.
 
 ### 4.3 One Account
-- One person may create only one account.
-- You may not transfer or sell your account.
+- A person may create only one account.
+- You may not transfer or sell your account to others.
 
 ---
 
 ## 5. Partnership Feature
 
-You may add another user as a "partner" within the App. When this feature is active:
+You can add another user as a "partner" in the App. When this feature is activated:
 
-- Your partner can see your assets, quantities and performance.
+- Your partner can see the assets, quantities and performance in your portfolio.
 - You can see your partner's portfolio.
-- The link starts only with **mutual consent** (invite-code system).
-- You may end the partnership at any time.
+- Sharing starts only **with the consent of both parties** (invite-code system).
+- You can end the partnership at any time.
 
 **Responsibility:**
-- Share your invite code only with people you trust.
+- Share your invite code only with someone you trust.
 - The Company is not responsible for data shared while a partnership is active.
-- Once a partnership ends, data the other party previously saw may remain on their device.
+- When you end a partnership, data the other party has already seen may remain with them.
 
 ---
 
 ## 6. Acceptable Use
 
-You will **NOT** use the App to:
+While using the App you **WILL NOT**:
 
-1. Engage in unlawful activity
-2. Attempt unauthorized access to another's account
+1. Use it for unlawful purposes
+2. Attempt to gain unauthorised access to another account
 3. Reverse engineer, decompile or hack the App
-4. Use scraping, bots or malware
+4. Use automated scraping, bots or malware
 5. Send requests that overload the Company's infrastructure (DoS)
-6. Submit false or misleading information
+6. Enter false or misleading information
 7. Harass, threaten or spam other users
-8. Conduct money laundering or terrorist financing
-9. Patch the App or use it on a modified APK / jailbroken device / emulator to evade detection
-10. Infringe copyright or trademarks
+8. Use the App for money laundering or terrorist financing
+9. Use the App with a modified APK / jailbroken device / patches to avoid emulator detection
+10. Infringe copyrights or trademarks
 
-Violations may result in **immediate, unannounced account termination**.
+If these rules are breached, **your account may be closed without notice**.
 
 ---
 
 ## 7. Third-Party Services
 
-The App uses third-party services such as Supabase (backend), Firebase (notifications), Yahoo Finance / TEFAS (price data). The Company is **not responsible** for outages, delays or errors of these services.
+The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes) and price data providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, the Central Bank of the Republic of Türkiye, EGM, etc.). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
 
-The terms of use of third-party data providers (including Yahoo Finance, TEFAS) apply. If data retrieval is temporarily blocked, we may offer alternative sources or manual entry.
+The terms of use of third-party data providers, including information provided by sources such as Yahoo Finance and TEFAS, apply. If data retrieval is temporarily blocked, alternative sources or manual data entry options may be offered.
 
 ---
 
 ## 8. Intellectual Property
 
-- The design, code, logo, brand name and content of the App belong to `Yasin Çıralı`.
-- The "sandık" trademark, logo and visual identity are protected by copyright and trademark laws.
-- You receive a **non-exclusive, non-transferable, non-sublicensable** license to download and use the App for personal use.
-- Data you enter (your asset records) belongs to you; the Company may process this data only to provide the Service to you.
+- The App's design, code, logo, brand name and content belong to `Yasin Çıralı`.
+- The "sandık" brand, logo and visual identity are protected by copyright and trademark.
+- You have the right to download and use the App for personal use; this is a **non-transferable, non-sublicensable, non-exclusive** licence.
+- Data you enter (your asset records) belongs to you; the Company is authorised to process it only to provide the service to you.
 
 ---
 
@@ -120,15 +127,16 @@ The terms of use of third-party data providers (including Yahoo Finance, TEFAS) 
 
 ### 9.1 Company's Rights
 - We may update the App with or without prior notice.
-- We may remove features or add new ones.
-- If we decide to terminate the Service entirely, we will give at least **30 days' notice** and provide a way to export your data.
+- We may remove certain features or add new ones.
+- If we decide to discontinue the service entirely, we will give at least **30 days'** notice and let you download your data.
 
 ### 9.2 User's Rights
-- You may delete your account at any time (Profile → Settings → Delete Account).
-- Account deletion requests are processed within 30 days; all your data is permanently erased (except statutory retention — see Privacy Policy §7).
+- You can delete your account at any time (Profile → Settings → Delete Account). Deletion from the App takes effect immediately: your account and the data you entered are deleted from the live database at once; records with a statutory retention period are the exception (see Privacy Policy §7).
+- Deletion requests sent by email are processed within 30 days.
+- You can get a copy of your data at any time (Profile → Settings → Download My Data, JSON file).
 
 ### 9.3 Company's Termination Right
-We may suspend or delete your account without notice if these Terms are violated. We comply with lawful authority requests.
+If we determine that you have breached these Terms, we may suspend or delete your account without notice. Where required by law we notify the competent authorities.
 
 ---
 
@@ -136,32 +144,32 @@ We may suspend or delete your account without notice if these Terms are violated
 
 To the maximum extent permitted by applicable law:
 
-- The App is provided "as is"; all express and implied warranties are disclaimed.
-- The Company does not warrant that the App will be uninterrupted, error-free or secure.
-- The Company's total liability is limited to the amount you paid the Company in the past 12 months (zero for free use).
-- We are not liable for indirect, incidental, special or punitive damages (lost profits, data loss, business interruption).
+- The App is provided "as is"; all express or implied warranties are disclaimed.
+- The Company does not guarantee that the App will operate uninterrupted, error-free or securely.
+- The Company's total liability is limited to the total amount you paid the Company in the last 12 months (**zero TRY** for free use).
+- We cannot be held liable for indirect, incidental, special or punitive damages (loss of profit, loss of data, business interruption).
 
-**Exceptions:** Damages from the Company's intentional misconduct or gross negligence; non-waivable consumer rights are not affected.
+**Exceptions:** Damages arising from the Company's wilful misconduct or gross negligence, and non-waivable rights under consumer law, are not affected by this limitation.
 
 ---
 
 ## 11. Indemnification
 
-You agree to indemnify the Company against losses, lawsuits, costs and attorney's fees arising from your violation of these Terms (Section 6) or your harm to third parties.
+You are **responsible** for all damages you cause to the Company or third parties by breaching the App rules (Section 6), including litigation costs and attorney fees, and agree to indemnify the Company.
 
 ---
 
 ## 12. Consumer Rights
 
-Non-waivable rights under Turkish Consumer Protection Law No. 6502 (TKHK) cannot be limited by these Terms. Your right to apply to the Consumer Arbitration Committee or Consumer Court is reserved.
+Your non-waivable rights under Turkish Consumer Protection Law No. 6502 (TKHK) cannot be limited by these Terms. Your right to apply to the Consumer Arbitration Committee or the Consumer Court is reserved.
 
-For EU consumers: Rights under GDPR and EU consumer law are reserved. EU online dispute resolution platform: https://ec.europa.eu/consumers/odr
+For EU consumers: rights arising from the GDPR and EU consumer law are reserved. Online dispute resolution platform: https://ec.europa.eu/consumers/odr
 
 ---
 
 ## 13. Force Majeure
 
-We are not liable for service disruptions caused by circumstances beyond our control: natural disasters, war, terrorism, epidemics, government decisions, internet infrastructure outages, third-party service outages.
+We are not responsible for service disruptions arising from causes beyond the Company's control such as natural disasters, war, terrorism, epidemics, government decisions, internet infrastructure outages or third-party service outages.
 
 ---
 
@@ -169,46 +177,46 @@ We are not liable for service disruptions caused by circumstances beyond our con
 
 All notices to us must be sent to `sandikapp.destek@gmail.com`.
 
-Notices to you may be delivered via:
+Notices to you may be sent by:
 - In-app notification
-- Email to your account address
-- Push notification (if opted in)
+- Email to your account email
+- Push notification (if you allowed it)
 
-and are deemed delivered on the sending date.
+and are deemed delivered on the date of sending.
 
 ---
 
 ## 15. Assignment
 
-- You may not assign your rights/obligations to a third party.
-- The Company may assign rights and obligations to a successor in the event of merger, acquisition or restructuring; 30 days' notice will be given.
+- You may not assign your rights/obligations to anyone else.
+- The Company may assign its rights and obligations to its successor in case of a merger, acquisition or restructuring; in that case 30 days' prior notice is given.
 
 ---
 
 ## 16. Severability
 
-If any provision of these Terms is held invalid, the remaining provisions remain in effect.
+If any provision of these Terms is held invalid, the remaining provisions remain in force.
 
 ---
 
 ## 17. Governing Law and Jurisdiction
 
 - **Governing law:** Laws of the Republic of Türkiye
-- **Jurisdiction:** `Istanbul Anatolian Courts and Enforcement Offices`
+- **Jurisdiction:** The courts and enforcement offices of the Republic of Türkiye have jurisdiction over disputes arising from these Terms.
 
-For users with consumer status, the courts of their place of residence also have jurisdiction under TKHK.
+For consumer transactions, under Consumer Protection Law No. 6502, the consumer arbitration committees at the consumer's place of residence have jurisdiction within the monetary limits, and above those limits the consumer courts at the consumer's place of residence.
 
-For EU consumers, mandatory consumer-protection rules of the country of residence apply under Rome I Regulation.
+For EU consumers, the mandatory consumer protection provisions of the country of residence are reserved under the Rome I Regulation.
 
 ---
 
-## 18. Changes to Terms
+## 18. Changes to the Terms
 
-If we change these Terms:
-- We will notify you in-app and via email at least **30 days in advance**.
-- Material changes may require re-acceptance.
-- If you do not accept the changes, you may delete your account.
-- If you do not object within 30 days, you are deemed to have accepted the changes.
+When we change these Terms or the other legal documents:
+- The new text is published with a new version number; the text on the website and in the App is always the same.
+- Material changes are announced in the App: on the next launch the current documents and a summary of the changes are shown and your renewed acceptance is requested.
+- You cannot continue using the App without accepting; if you do not accept the change, you can delete your account (Profile → Settings → Delete Account).
+- Which version you accepted and when is recorded.
 
 ---
 
@@ -221,4 +229,4 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*These Terms are provided in [Turkish] and [English]. In case of discrepancy, the Turkish version prevails.*
+*These Terms are provided in Turkish and English. In case of discrepancy, the Turkish version prevails.*
