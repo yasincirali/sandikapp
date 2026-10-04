@@ -47,6 +47,7 @@ import '../widgets/donem_istatistik.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/varlik_iskeleti.dart';
+import '../widgets/varlik_ozeti.dart';
 import '../widgets/grafik_stili.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';

@@ -200,38 +200,15 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   // ── Başlık ───────────────────────────────────────────────────────────────
 
-  Widget _baslik() {
-    final a = widget.asset;
-    final l = context.l10n;
-    return Semantics(
-      header: true,
-      label: l.assetPerformanceSemantics(a.name),
-      excludeSemantics: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _kimlik.kisaEtiket,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
-          ),
-          // Sembolü olmayan (elle fiyatlanan) varlıkta kısa etiket adın
-          // kendisidir; alt satırda adı tekrarlamak "Kadıköy daire / Kadıköy
-          // daire · Diğer" gibi okunur.
-          Text(
-            _kimlik.kisaEtiket == a.name
-                ? a.type.labelOf(l)
-                : '${a.name} · ${a.type.labelOf(l)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.bodySmall?.copyWith(color: context.c.text58),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Başlık — ortak [VarlikBasligi] (varlık sayfasıyla aynı parça,
+  /// Sadeleştirme 2 madde 6). Sembolü olmayan varlıkta alt satır adı
+  /// tekrarlamaz (`adTekrariniAtla`).
+  Widget _baslik() => VarlikBasligi(
+        kimlik: _kimlik,
+        adTekrariniAtla: true,
+        semantikEtiket:
+            context.l10n.assetPerformanceSemantics(widget.asset.name),
+      );
 
   /// Takip listesi ve varlık sayfasıyla AYNI anahtar (`VarlikKimligi.key`).
   VarlikKimligi get _kimlik {
@@ -262,23 +239,15 @@ extension _DetayOzet on _AssetDetailScreenState {
     // satırı da yalnız yüzdeyi yazar.
     final mevduat = widget.asset.type == AssetType.mevduat;
 
-    final String degisim;
-    final Color degisimRenk;
-    if (pct == null || (ilk == null && !mevduat)) {
-      degisim = ' ';
-      degisimRenk = context.c.text36;
-    } else if (donemDuzMu(pct)) {
-      degisim = l.periodNoChange(etiket);
-      degisimRenk = context.c.text36;
-    } else if (mevduat) {
-      degisim = '${fmtPctIsaretli(pct)} · $etiket';
-      degisimRenk = context.signColor(pct);
-    } else {
-      final fark = canli - ilk!;
-      degisim = '${fmtPctIsaretli(pct)} · '
-          '${fark >= 0 ? '+' : '−'}${bicim.format(fark.abs())} · $etiket';
-      degisimRenk = context.signColor(pct);
-    }
+    // Biçim ve düz-değişim kuralı varlık sayfasıyla ORTAK
+    // (`donemDegisimSatiri`); sayılar burada, birim seriden.
+    final degisim = donemDegisimSatiri(
+      context,
+      pct: ilk == null && !mevduat ? null : pct,
+      donem: etiket,
+      fark: mevduat || ilk == null ? null : canli - ilk,
+      bicim: bicim,
+    );
 
     final pnlDuz =
         pnl.totalPnlTRY.abs().round() == 0 && pnl.pnlPct.abs() < 0.005;
@@ -287,60 +256,30 @@ extension _DetayOzet on _AssetDetailScreenState {
         : (pnl.gainPositive ? context.c.gain : context.c.loss);
     final isaret = pnlDuz ? '' : (pnl.gainPositive ? '+' : '−');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              mevduat ? l.currentValueUpper : l.currentPriceUpper,
-              style: context.t.labelSmall?.copyWith(
-                  letterSpacing: 0.9,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36),
-            ),
-            // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
-            // okunduğu yerde (eskiden grafiğin altındaydı).
-            if (widget.asset.type == AssetType.kripto) ...[
-              const SizedBox(width: SandikSpace.sm),
-              Flexible(
-                  child: KriptoGecikmeEtiketi(sembol: widget.asset.ticker)),
-            ],
-          ],
+    return VarlikFiyatBlogu(
+      etiket: mevduat ? l.currentValueUpper : l.currentPriceUpper,
+      // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
+      // okunduğu yerde (eskiden grafiğin altındaydı).
+      etiketYani: widget.asset.type == AssetType.kripto
+          ? KriptoGecikmeEtiketi(sembol: widget.asset.ticker)
+          : null,
+      fiyat: mevduat
+          ? baz.fmt(pnl.currentValueTRY)
+          : (canli > 0 ? bicim.format(canli) : '—'),
+      fiyatRengi: context.c.gold,
+      degisim: degisim,
+      // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
+      // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
+      altSatir: Text(
+        l.adPositionLine(
+          '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
+          pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
         ),
-        const SizedBox(height: SandikSpace.xs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            mevduat
-                ? baz.fmt(pnl.currentValueTRY)
-                : (canli > 0 ? bicim.format(canli) : '—'),
-            maxLines: 1,
-            style: context.t.numLarge.copyWith(color: context.c.gold),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        Text(
-          degisim,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall.copyWith(color: degisimRenk),
-        ),
-        const SizedBox(height: SandikSpace.xs2),
-        // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
-        // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
-        Text(
-          l.adPositionLine(
-            '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
-            pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall
-              .copyWith(color: pnlRenk, fontWeight: FontWeight.w600),
-        ),
-      ],
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.numSmall
+            .copyWith(color: pnlRenk, fontWeight: FontWeight.w600),
+      ),
     );
   }
 

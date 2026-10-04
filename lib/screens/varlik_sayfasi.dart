@@ -25,6 +25,7 @@ import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
+import '../widgets/varlik_ozeti.dart';
 import 'asset_detail_screen.dart'
     show TechnicalSignalPanel, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
@@ -433,27 +434,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
           SandikSpace.screenH(context), 0, SandikSpace.xs, SandikSpace.xs),
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  k.kisaEtiket,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90),
-                ),
-                Text(
-                  '${k.name} · ${k.type.labelOf(context.l10n)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text58),
-                ),
-              ],
-            ),
-          ),
+          // Başlık portföy varlık detayıyla ORTAK parça (Sadeleştirme 2
+          // madde 6); burada yalnız kapatma düğmesi yanına eklenir.
+          Expanded(child: VarlikBasligi(kimlik: k)),
           IconButton(
             tooltip: context.l10n.close,
             onPressed: () => Navigator.pop(context),
@@ -519,46 +502,24 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     ];
   }
 
+  /// Fiyat bloğu — portföy varlık detayıyla ORTAK [VarlikFiyatBlogu];
+  /// sayılar burada, sembol serisinin istatistiğinden ([DonemIstatistigi]).
+  /// Düz değişim `isFlat` ile (ızgara ve detay ekranıyla aynı eşik).
   Widget _fiyatBlogu(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen) {
-    final renk = ist == null || ist.isFlat
-        ? context.c.text36
-        : context.signColor(ist.degisimPct);
     final donem = cizilen == null ? '' : _donemEtiketi(cizilen);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.currentPriceUpper,
-          style: context.t.labelSmall?.copyWith(
-              letterSpacing: 0.9,
-              fontWeight: FontWeight.w700,
-              color: context.c.text36),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            ist == null ? '—' : bicim.format(ist.son),
-            maxLines: 1,
-            style: context.t.numLarge.copyWith(color: context.c.text90),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        Text(
-          ist == null
-              ? ' '
-              : ist.isFlat
-                  ? context.l10n.periodNoChange(donem)
-                  : '${fmtPctIsaretli(ist.degisimPct)} · '
-                      '${ist.fark >= 0 ? '+' : '−'}'
-                      '${bicim.format(ist.fark.abs())} · $donem',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall.copyWith(color: renk),
-        ),
-      ],
+    return VarlikFiyatBlogu(
+      etiket: context.l10n.currentPriceUpper,
+      fiyat: ist == null ? '—' : bicim.format(ist.son),
+      fiyatRengi: context.c.text90,
+      degisim: donemDegisimSatiri(
+        context,
+        pct: ist?.degisimPct,
+        donem: donem,
+        fark: ist?.fark,
+        bicim: bicim,
+        duz: ist?.isFlat,
+      ),
     );
   }
 
