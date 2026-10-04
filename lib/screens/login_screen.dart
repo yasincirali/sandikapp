@@ -181,6 +181,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 48),
 
+                    // Sadeleştirme 2 (bayrak `karsilama_tanitimi`): Apple /
+                    // Google en üstte. E-posta yolu kod doğrulaması ister;
+                    // sosyal giriş istemez, ilk gün için en kısa yol.
+                    if (RemoteConfigService.instance.karsilamaTanitimi)
+                      const SocialSignInButtons(ustte: true),
+
                     // E-posta
                     TextFormField(
                       controller: _emailCtrl,
@@ -397,7 +403,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // Apple / Google — düğmeler platform ve yapılandırmaya
                     // göre çizilir; yoksa bu satır boş kalır.
-                    const SocialSignInButtons(),
+                    if (!RemoteConfigService.instance.karsilamaTanitimi)
+                      const SocialSignInButtons(),
 
                     // Kayıt ol
                     CupertinoButton(

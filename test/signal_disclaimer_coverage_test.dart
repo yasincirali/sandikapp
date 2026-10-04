@@ -135,8 +135,18 @@ void main() {
   test('kayıt ekranı onayında da geçer', () {
     // Kullanıcı daha ilk adımda bilgilendirilmiş olmalı — KVKK açık rıza
     // "bilgilendirilmiş" olmayı ister.
+    //
+    // 2026-10-04 (0102): kutu metinleri yasal metin kataloğuna taşındı
+    // (gösterilen = veritabanına hash'lenen). İddia aynı: kayıt ekranı
+    // kutuyu katalogdaki metinle çizer ve o metin uyarıyı taşır.
     expect(
-      oku('lib/screens/register_screen.dart').contains('yatırım tavsiyesi'),
+      oku('lib/screens/register_screen.dart')
+          .contains('bodyText: KayitKutuMetni.kosulGovde'),
+      isTrue,
+    );
+    expect(
+      oku('lib/services/yasal_metin_katalogu.dart')
+          .contains('yatırım tavsiyesi değildir'),
       isTrue,
     );
   });

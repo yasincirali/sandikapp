@@ -12,7 +12,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../services/islem_notu.dart';
@@ -511,7 +511,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
           if (activePartners.isNotEmpty)
             Padding(
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 0),
-              child: ModernTabSelector(
+              child: OrtakSecici(
+                eski: EskiOrtakSecici.hap,
                 partners: activePartners,
                 selectedId: _view,
                 onChanged: (v) => setState(() {

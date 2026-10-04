@@ -707,19 +707,19 @@ abstract class AppLocalizations {
   /// No description provided for @levelBeginnerDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve XIRR kartları gizlenir.'**
+  /// **'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.'**
   String get levelBeginnerDesc;
 
   /// No description provided for @levelIntermediateDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve paranın getirisi (XIRR).'**
+  /// **'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.'**
   String get levelIntermediateDesc;
 
   /// No description provided for @levelAdvancedDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).'**
+  /// **'Orta + riske göre getiri, alım zamanlamanın etkisi ve düşüşten toparlanma (Özet › 1 yıl).'**
   String get levelAdvancedDesc;
 
   /// No description provided for @noAssetsYet.
@@ -2774,18 +2774,6 @@ abstract class AppLocalizations {
   /// **'Kod Üret'**
   String get generateCode;
 
-  /// No description provided for @switchToDark.
-  ///
-  /// In tr, this message translates to:
-  /// **'Koyu temaya geç'**
-  String get switchToDark;
-
-  /// No description provided for @switchToLight.
-  ///
-  /// In tr, this message translates to:
-  /// **'Açık temaya geç'**
-  String get switchToLight;
-
   /// No description provided for @tabChart.
   ///
   /// In tr, this message translates to:
@@ -2975,7 +2963,7 @@ abstract class AppLocalizations {
   /// No description provided for @changeByTypeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TÜRE GÖRE · PİYASANIN KATTIĞI'**
+  /// **'TÜRE GÖRE · FİYAT ETKİSİ'**
   String get changeByTypeUpper;
 
   /// No description provided for @noData.
@@ -3329,7 +3317,7 @@ abstract class AppLocalizations {
   /// No description provided for @contributionNotReturn.
   ///
   /// In tr, this message translates to:
-  /// **'Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.'**
+  /// **'Yüzde yalnızca fiyat etkisinden hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.'**
   String get contributionNotReturn;
 
   /// No description provided for @annualRatePct.
@@ -4286,47 +4274,11 @@ abstract class AppLocalizations {
   /// **'TÜFE'**
   String get realReturnCpi;
 
-  /// No description provided for @weeklyFlatSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta portföyün piyasa getirisi değişmedi'**
-  String get weeklyFlatSemantics;
-
-  /// No description provided for @thisWeekFromMarket.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta piyasadan '**
-  String get thisWeekFromMarket;
-
   /// No description provided for @noChangeLower.
   ///
   /// In tr, this message translates to:
   /// **'değişim yok'**
   String get noChangeLower;
-
-  /// No description provided for @pctDown.
-  ///
-  /// In tr, this message translates to:
-  /// **'%{pct} eksi'**
-  String pctDown(String pct);
-
-  /// No description provided for @weeklyDownSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta portföyün piyasa getirisi yüzde {pct} ekside'**
-  String weeklyDownSemantics(String pct);
-
-  /// No description provided for @weeklyUpSemantics.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu hafta portföyün piyasa getirisi yüzde {pct} artıda'**
-  String weeklyUpSemantics(String pct);
-
-  /// No description provided for @pctUp.
-  ///
-  /// In tr, this message translates to:
-  /// **'%{pct} artı'**
-  String pctUp(String pct);
 
   /// No description provided for @totalNetHidden.
   ///
@@ -5885,7 +5837,7 @@ abstract class AppLocalizations {
   /// No description provided for @todaysBalanceChange.
   ///
   /// In tr, this message translates to:
-  /// **'Bugünkü birikim değişimi'**
+  /// **'Bugünkü toplam değişim'**
   String get todaysBalanceChange;
 
   /// No description provided for @sinceDateToToday.
@@ -5897,7 +5849,7 @@ abstract class AppLocalizations {
   /// No description provided for @balanceChangeSince.
   ///
   /// In tr, this message translates to:
-  /// **'{date} birikim değişimi'**
+  /// **'{date} toplam değişim'**
   String balanceChangeSince(String date);
 
   /// No description provided for @periodChangeSim.
@@ -5909,13 +5861,13 @@ abstract class AppLocalizations {
   /// No description provided for @periodBalanceChange.
   ///
   /// In tr, this message translates to:
-  /// **'{period} birikim değişimi'**
+  /// **'{period} toplam değişim'**
   String periodBalanceChange(String period);
 
   /// No description provided for @marketOnlyRow.
   ///
   /// In tr, this message translates to:
-  /// **'Sadece piyasa etkisi'**
+  /// **'Sadece fiyat etkisi'**
   String get marketOnlyRow;
 
   /// No description provided for @rowExpandedSemantics.
@@ -6245,7 +6197,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareCardXirr.
   ///
   /// In tr, this message translates to:
-  /// **'Yıllık (XIRR)'**
+  /// **'Yıllık getiri'**
   String get shareCardXirr;
 
   /// No description provided for @shareCardDrawdown.
@@ -6365,7 +6317,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayMarketOnly.
   ///
   /// In tr, this message translates to:
-  /// **'sadece piyasa etkisi'**
+  /// **'sadece fiyat etkisi'**
   String get todayMarketOnly;
 
   /// No description provided for @todaySessionOpen.
@@ -6647,7 +6599,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayMarketOnlyShort.
   ///
   /// In tr, this message translates to:
-  /// **'piyasa etkisi'**
+  /// **'fiyat etkisi'**
   String get todayMarketOnlyShort;
 
   /// No description provided for @todayGreenShort.
@@ -6941,31 +6893,31 @@ abstract class AppLocalizations {
   /// No description provided for @sectionResult.
   ///
   /// In tr, this message translates to:
-  /// **'SONUÇ'**
+  /// **'Ne oldu?'**
   String get sectionResult;
 
   /// No description provided for @sectionWhy.
   ///
   /// In tr, this message translates to:
-  /// **'NEDEN'**
+  /// **'Neden böyle?'**
   String get sectionWhy;
 
   /// No description provided for @sectionDetail.
   ///
   /// In tr, this message translates to:
-  /// **'AYRINTI'**
+  /// **'Ayrıntılar'**
   String get sectionDetail;
 
   /// No description provided for @sectionDepth.
   ///
   /// In tr, this message translates to:
-  /// **'DERİNLİK'**
+  /// **'Daha fazlası'**
   String get sectionDepth;
 
   /// No description provided for @sectionDepthHint.
   ///
   /// In tr, this message translates to:
-  /// **'XIRR, sağlık, ileri metrikler, karakter'**
+  /// **'Yıllık getiri, sağlık, karakter'**
   String get sectionDepthHint;
 
   /// No description provided for @myAlarms.
@@ -8670,7 +8622,7 @@ abstract class AppLocalizations {
   /// No description provided for @marketAddedRow.
   ///
   /// In tr, this message translates to:
-  /// **'Piyasanın kattığı'**
+  /// **'Fiyat etkisi'**
   String get marketAddedRow;
 
   /// No description provided for @dividendPocketRow.
@@ -8682,13 +8634,13 @@ abstract class AppLocalizations {
   /// No description provided for @flowBuyBalance.
   ///
   /// In tr, this message translates to:
-  /// **'Alım +{flow} · birikim {change}'**
+  /// **'Alım +{flow} · toplam {change}'**
   String flowBuyBalance(String flow, String change);
 
   /// No description provided for @flowSellBalance.
   ///
   /// In tr, this message translates to:
-  /// **'Satış −{flow} · birikim {change}'**
+  /// **'Satış −{flow} · toplam {change}'**
   String flowSellBalance(String flow, String change);
 
   /// No description provided for @ofLastNMonths.
@@ -9192,8 +9144,482 @@ abstract class AppLocalizations {
   /// No description provided for @balanceChangeInclBuys.
   ///
   /// In tr, this message translates to:
-  /// **'Birikim değişimi (alımlar dahil)'**
+  /// **'Toplam değişim (alımlar dahil)'**
   String get balanceChangeInclBuys;
+
+  /// No description provided for @firstAssetPickTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne biriktiriyorsun?'**
+  String get firstAssetPickTitle;
+
+  /// No description provided for @firstAssetPickHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seç, miktarını yaz; fiyat kendiliğinden gelir.'**
+  String get firstAssetPickHint;
+
+  /// No description provided for @firstAssetGoldGram.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gram altın'**
+  String get firstAssetGoldGram;
+
+  /// No description provided for @firstAssetUsd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get firstAssetUsd;
+
+  /// No description provided for @firstAssetEur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Euro'**
+  String get firstAssetEur;
+
+  /// No description provided for @firstAssetFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir fon'**
+  String get firstAssetFund;
+
+  /// No description provided for @firstAssetStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir hisse'**
+  String get firstAssetStock;
+
+  /// No description provided for @firstAssetOtherType.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başka bir tür ekle'**
+  String get firstAssetOtherType;
+
+  /// No description provided for @addDetails.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrıntı ekle (komisyon, not)'**
+  String get addDetails;
+
+  /// No description provided for @addByTyping.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yazarak ekle'**
+  String get addByTyping;
+
+  /// No description provided for @importFromStatement.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreden aktar'**
+  String get importFromStatement;
+
+  /// No description provided for @orWithEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'veya e-postayla'**
+  String get orWithEmail;
+
+  /// No description provided for @todayTopMoverLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'En çok oynayan'**
+  String get todayTopMoverLabel;
+
+  /// No description provided for @todayVsInflationYou.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirin'**
+  String get todayVsInflationYou;
+
+  /// No description provided for @todayVsInflationCpi.
+  ///
+  /// In tr, this message translates to:
+  /// **'TÜFE'**
+  String get todayVsInflationCpi;
+
+  /// No description provided for @vitrinWelcome.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hoş geldin'**
+  String get vitrinWelcome;
+
+  /// No description provided for @vitrinTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neye sahipsin?'**
+  String get vitrinTitle;
+
+  /// No description provided for @vitrinHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.'**
+  String get vitrinHint;
+
+  /// No description provided for @vitrinLive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar canlı'**
+  String get vitrinLive;
+
+  /// No description provided for @vitrinQuarterGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çeyrek altın'**
+  String get vitrinQuarterGold;
+
+  /// No description provided for @vitrinFundHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS\'taki tüm fonlar'**
+  String get vitrinFundHint;
+
+  /// No description provided for @vitrinStockHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borsa İstanbul'**
+  String get vitrinStockHint;
+
+  /// No description provided for @vitrinOtherTypes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto, emtia, mevduat, BES ve diğerleri'**
+  String get vitrinOtherTypes;
+
+  /// No description provided for @vitrinOtherTypesShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto, BES ve diğer türler'**
+  String get vitrinOtherTypesShort;
+
+  /// No description provided for @vitrinStatementHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde'**
+  String get vitrinStatementHint;
+
+  /// No description provided for @vitrinStatementHintShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF, Excel ya da CSV; tek seferde'**
+  String get vitrinStatementHintShort;
+
+  /// No description provided for @vitrinTapToAdd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklemek için dokun'**
+  String get vitrinTapToAdd;
+
+  /// No description provided for @vitrinPriceUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat henüz yok'**
+  String get vitrinPriceUnknown;
+
+  /// No description provided for @rankingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama'**
+  String get rankingTitle;
+
+  /// No description provided for @rankingTabPartners.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortaklarım'**
+  String get rankingTabPartners;
+
+  /// No description provided for @rankingTabEveryone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirvedekiler'**
+  String get rankingTabEveryone;
+
+  /// No description provided for @todaysPortfolioBadge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü portföyle'**
+  String get todaysPortfolioBadge;
+
+  /// No description provided for @todaysPortfolioBadgeHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu görünümü Ayarlar › Görünüm\'den kapatabilirsin.'**
+  String get todaysPortfolioBadgeHint;
+
+  /// No description provided for @todaysPortfolioSettingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü portföyle göster'**
+  String get todaysPortfolioSettingTitle;
+
+  /// No description provided for @todaysPortfolioSettingSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Performans, bugünkü varlıklarını dönem boyunca elinde tutmuşsun gibi çizilir. Kapalıyken gerçek geçmişin görünür.'**
+  String get todaysPortfolioSettingSubtitle;
+
+  /// No description provided for @settingsGroupGeneral.
+  ///
+  /// In tr, this message translates to:
+  /// **'GENEL'**
+  String get settingsGroupGeneral;
+
+  /// No description provided for @settingsGroupPortfolioView.
+  ///
+  /// In tr, this message translates to:
+  /// **'PORTFÖY GÖRÜNÜMÜ'**
+  String get settingsGroupPortfolioView;
+
+  /// No description provided for @settingsGroupSecurityAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÜVENLİK VE HESAP'**
+  String get settingsGroupSecurityAccount;
+
+  /// No description provided for @settingsGroupData.
+  ///
+  /// In tr, this message translates to:
+  /// **'VERİ'**
+  String get settingsGroupData;
+
+  /// No description provided for @settingsGroupAbout.
+  ///
+  /// In tr, this message translates to:
+  /// **'UYGULAMA HAKKINDA'**
+  String get settingsGroupAbout;
+
+  /// No description provided for @settingsAdvancedUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'GELİŞMİŞ'**
+  String get settingsAdvancedUpper;
+
+  /// No description provided for @settingsAdvancedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gelişmiş ayarlar'**
+  String get settingsAdvancedSemantics;
+
+  /// No description provided for @settingsThemeLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tema'**
+  String get settingsThemeLabel;
+
+  /// No description provided for @settingsBaseCurrencyLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Baz para birimi'**
+  String get settingsBaseCurrencyLabel;
+
+  /// No description provided for @tekOnayBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal Koşullar'**
+  String get tekOnayBaslik;
+
+  /// Tek onay kutusunun açıklaması; eski iki kutunun gövde metinlerinden derlendi. ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).'**
+  String tekOnayAciklama(String ulke);
+
+  /// No description provided for @tekOnayUlkeBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'yurt dışı'**
+  String get tekOnayUlkeBilinmiyor;
+
+  /// Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar, kvkk ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayKvkkBaglanti, tekOnayRizaBaglanti). 2026-10-04: KVKK ayrı bağlantı oldu; okunan cümle harfi harfine aynı kaldı (hash'i yasal_metinler'de, kayit_tek_kutu). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).
+  ///
+  /// In tr, this message translates to:
+  /// **'{kosullar}, {kvkk}\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.'**
+  String tekOnayCumle(String kosullar, String kvkk, String riza);
+
+  /// No description provided for @tekOnayKosullarBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal Koşulları'**
+  String get tekOnayKosullarBaglanti;
+
+  /// No description provided for @tekOnayKvkkBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'KVKK Aydınlatma Metni'**
+  String get tekOnayKvkkBaglanti;
+
+  /// No description provided for @tekOnayRizaBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'açık rıza'**
+  String get tekOnayRizaBaglanti;
+
+  /// No description provided for @tekOnayGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.'**
+  String get tekOnayGerekli;
+
+  /// No description provided for @arenaMeasuring.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fark ölçülüyor…'**
+  String get arenaMeasuring;
+
+  /// No description provided for @arenaBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} {fark} puan önde · yetişebilirsin'**
+  String arenaBehind(String ad, String fark);
+
+  /// No description provided for @arenaNoDataYet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz veri yok'**
+  String get arenaNoDataYet;
+
+  /// No description provided for @arenaWaiting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiriler ölçülünce düello başlar'**
+  String get arenaWaiting;
+
+  /// No description provided for @arenaStripDaily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün gün önde olan'**
+  String get arenaStripDaily;
+
+  /// No description provided for @arenaStripMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay ay önde olan'**
+  String get arenaStripMonthly;
+
+  /// No description provided for @arenaSwaps.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =0{Yer hiç değişmedi} other{{n} kez yer değişti}}'**
+  String arenaSwaps(int n);
+
+  /// Yeniden onay kapısı (bayrak yeniden_onay_kapisi) başlığı: kullanıcı belgelerin eski bir sürümünü onaylamış, güncel sürüm onay bekliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncellenen belgeler'**
+  String get yasalKapiBaslikGuncel;
+
+  /// Yeniden onay kapısı başlığı: hiç onay kaydı olmayan kullanıcı (Apple/Google ile ilk giriş ya da onay kaydından önceki hesap).
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal belgeler'**
+  String get yasalKapiBaslikIlk;
+
+  /// No description provided for @yasalKapiAciklamaGuncel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
+  String get yasalKapiAciklamaGuncel;
+
+  /// No description provided for @yasalKapiAciklamaIlk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.'**
+  String get yasalKapiAciklamaIlk;
+
+  /// No description provided for @yasalKapiNelerDegisti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neler değişti'**
+  String get yasalKapiNelerDegisti;
+
+  /// Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.'**
+  String get yasalKapiDegisiklikNotu;
+
+  /// No description provided for @yasalBelgeKosullar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım Koşulları'**
+  String get yasalBelgeKosullar;
+
+  /// No description provided for @yasalBelgeGizlilik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik Politikası'**
+  String get yasalBelgeGizlilik;
+
+  /// No description provided for @yasalBelgeKvkk.
+  ///
+  /// In tr, this message translates to:
+  /// **'KVKK Aydınlatma Metni'**
+  String get yasalBelgeKvkk;
+
+  /// No description provided for @yasalBelgeKvkkKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'KVKK Metni'**
+  String get yasalBelgeKvkkKisa;
+
+  /// No description provided for @yasalBelgeSurum.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürüm {surum}'**
+  String yasalBelgeSurum(String surum);
+
+  /// No description provided for @yasalBelgeAcildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okundu'**
+  String get yasalBelgeAcildi;
+
+  /// No description provided for @yasalBelgelerTurkce.
+  ///
+  /// In tr, this message translates to:
+  /// **'Belgeler Türkçedir.'**
+  String get yasalBelgelerTurkce;
+
+  /// No description provided for @yasalKapiTaahhutBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onayların'**
+  String get yasalKapiTaahhutBaslik;
+
+  /// No description provided for @yasalKapiYatirimUyarisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırım uyarısı'**
+  String get yasalKapiYatirimUyarisi;
+
+  /// No description provided for @yasalKapiOnayla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okudum, kabul ediyorum'**
+  String get yasalKapiOnayla;
+
+  /// No description provided for @yasalKapiOnaylaKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kabul ediyorum'**
+  String get yasalKapiOnaylaKisa;
+
+  /// No description provided for @yasalKapiKutuGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için kutuları işaretlemelisin.'**
+  String get yasalKapiKutuGerekli;
+
+  /// No description provided for @yasalKapiKayitHatasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.'**
+  String get yasalKapiKayitHatasi;
+
+  /// No description provided for @yasalKapiCikis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış yap'**
+  String get yasalKapiCikis;
 }
 
 class _AppLocalizationsDelegate

@@ -392,9 +392,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ?.copyWith(color: context.c.text90),
                         ),
                       ),
-                      const _ThemeToggleButton(),
-                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
-                      const SizedBox(width: SandikSpace.sm),
+                      // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
+                      // kaldırıldı — tema YALNIZ Ayarlar'daki üçlü seçicide.
+                      // Aynı tercih iki yerde duruyordu ve "sistem" yalnız
+                      // Ayarlar'dan seçilebildiği için ikisi farklı şey
+                      // anlatıyordu.
                       TourAnchor(
                         target: TourTarget.ayarlar,
                         child: CupertinoButton(
@@ -416,6 +418,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                         ),
                       ),
+                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
                       const SizedBox(width: SandikSpace.sm),
                       SandikLogoutButton(
                         onPressed: _logout,
@@ -1187,64 +1190,6 @@ class _ActionIcon extends StatelessWidget {
           border: Border.all(color: iconColor.withValues(alpha: 0.18)),
         ),
         child: Center(child: Icon(icon, color: iconColor, size: 20)),
-      ),
-    );
-  }
-}
-
-/// Tema modu hızlı geçişi — Profil başlığında.
-///
-/// **Neden burada:** iOS HIG ve Material 3, görünüm ayarını hesap/ayarlar
-/// bölgesine koyar. Ana sayfa başlığına eklemek düşünüldü ama orada zaten
-/// dört aksiyon var ve satır 17px taşıyordu (bkz. `home_screen` yorumu);
-/// beşincisi yerleşimi kırardı. Profil başlığı hem boş hem de kullanıcının
-/// "kendi tercihlerim" diye aradığı yer.
-///
-/// Ayarlar'daki üçlü seçici (`_ThemeModePicker`) kalır — bu onun kısayolu.
-/// Tek dokunuşla **açık ↔ koyu** arasında gider; "sistem" bilinçli bir
-/// tercih olduğu için yalnızca Ayarlar'dan seçilir. Kullanıcı sistemdeyken
-/// dokunursa, o an ekranda ne görüyorsa onun tersine geçer.
-class _ThemeToggleButton extends ConsumerWidget {
-  const _ThemeToggleButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Tercih değişince yeniden çizilmek için izlenir; kararı `context`
-    // verir çünkü `system` modda ekrandaki gerçek parlaklık cihazdan gelir.
-    ref.watch(themeModeProvider);
-    final showingLight = context.isLight;
-    final next = showingLight ? ThemeMode.dark : ThemeMode.light;
-
-    return SandikTappable(
-      semanticLabel:
-          showingLight ? context.l10n.switchToDark : context.l10n.switchToLight,
-      onTap: () => ref.read(themeModeProvider.notifier).set(next),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: context.c.text90.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.text90.withValues(alpha: 0.18)),
-        ),
-        child: Center(
-          // Gösterilen ikon HEDEFI anlatır: açık temadayken ay ikonu
-          // "koyuya geç" der. Mevcut durumu göstermek daha yaygın bir
-          // hata — kullanıcı ikona bakıp ne olacağını bilmek ister.
-          child: AnimatedSwitcher(
-            duration: SandikMotion.stateOf(context),
-            switchInCurve: SandikMotion.enter,
-            switchOutCurve: SandikMotion.exit,
-            child: Icon(
-              showingLight
-                  ? Icons.dark_mode_rounded
-                  : Icons.light_mode_rounded,
-              key: ValueKey(showingLight),
-              color: context.c.text90,
-              size: 20,
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -58,7 +58,11 @@ void main() {
     'lib/screens/lock_screen.dart': 0,
     'lib/screens/login_screen.dart': 0,
     'lib/screens/main_navigation_screen.dart': 0,
+    'lib/screens/siralama_screen.dart': 0,
+    'lib/widgets/zirve_donem_secici.dart': 0,
+    'lib/widgets/duello_arenasi.dart': 0,
     'lib/screens/otp_verification_screen.dart': 0,
+    'lib/screens/yasal_onay_kapisi_screen.dart': 0,
     'lib/screens/kayitli_cihazlar_screen.dart': 0,
     'lib/screens/partnership_requests_screen.dart': 0,
     'lib/screens/portfolio_performance/kontroller.dart': 0,
@@ -78,6 +82,7 @@ void main() {
     'lib/widgets/h_scroll_with_fade.dart': 0,
     'lib/widgets/kiyas_karti.dart': 0,
     'lib/widgets/milestone_sheet.dart': 0,
+    'lib/widgets/ilk_varlik_vitrini.dart': 0,
     // review_prompt_sheet: 2 literal e-posta İÇERİĞİ (konu + imza), UI
     // metni değil; UI metinlerinin tamamı l10n'da.
     'lib/widgets/review_prompt_sheet.dart': 2,
@@ -92,7 +97,6 @@ void main() {
     'lib/widgets/transaction_row.dart': 0,
     'lib/widgets/transaction_segment.dart': 0,
     'lib/widgets/watchlist_chart.dart': 0,
-    'lib/widgets/weekly_summary_chip.dart': 0,
     'lib/widgets/widget_install_sheet.dart': 0,
     'lib/widgets/zoom_data_controller.dart': 0,
     'lib/widgets/alarm_seridi.dart': 0,
@@ -134,7 +138,7 @@ void main() {
     'lib/screens/signal_settings_screen.dart': 19,
     'lib/screens/add_asset_screen.dart': 18,
     'lib/screens/comparison_screen.dart': 23,
-    'lib/screens/register_screen.dart': 25,
+    'lib/screens/register_screen.dart': 10,
   };
 
   for (final e in tavan.entries) {

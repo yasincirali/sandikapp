@@ -50,7 +50,37 @@ class ComparisonScreen extends ConsumerStatefulWidget {
   /// "bununla karşılaştır" akışı için.
   final List<String> initialTickers;
 
-  const ComparisonScreen({super.key, this.initialTickers = const []});
+  /// Varlık ekranından gelen ön seçim (`tek_kiyas_yuzeyi`, Sadeleştirme 2
+  /// madde 8). Varlık ekranının kendi kıyas seçicisi yerine kıyas BURADA
+  /// yapılır; ekran bu varlık seçili açılır, kullanıcı kısayol çipleriyle
+  /// ya da aramayla ikinci seriyi ekler.
+  ///
+  /// Sembol değil VARLIK alınır: seri `FiyatKaynagi.birimVarlik` ile, varlık
+  /// ekranının çizgisiyle aynı motor ve aynı para birimi kararıyla gelir
+  /// (bkz. [_fetch]). `getSymbolHistory` para birimini TICKER'dan tahmin
+  /// eder; TL kote bir emtiayı kurla çarpıp yüzdeye kur hareketini katardı.
+  /// Yalnız [varligiAcabilir] olan varlıklar için verilir.
+  final Asset? baslangicVarligi;
+
+  /// Açılış dönemi — verilmezse eski varsayılan (3A). Varlık ekranı kendi
+  /// seçili dönemini taşır ki kullanıcı aynı pencereye bakmaya devam etsin.
+  final SummaryPeriod? baslangicDonemi;
+
+  const ComparisonScreen({
+    super.key,
+    this.initialTickers = const [],
+    this.baslangicVarligi,
+    this.baslangicDonemi,
+  });
+
+  /// Bu varlık Karşılaştır ekranında bir satır olarak doğru çizilir mi?
+  ///
+  /// Hayır olanlar: sözleşmeli (mevduat, BES — eğri sözleşmenin
+  /// tahakkukudur, sembolü `MEVDUAT:<uuid>` gibi kullanıcıya gösterilemez
+  /// ve satırın Al/Sat düğmeleri onlara uymaz), elle fiyatlanan ve "diğer"
+  /// (piyasa serisi yok). Bunlarda varlık ekranı kendi seçicisini korur.
+  static bool varligiAcabilir(Asset a) =>
+      !a.type.sozlesmeli && !a.isManualPrice && a.type != AssetType.diger;
 
   @override
   ConsumerState<ComparisonScreen> createState() => _ComparisonScreenState();
@@ -114,6 +144,23 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @override
   void initState() {
     super.initState();
+    final donem = widget.baslangicDonemi;
+    if (donem != null) {
+      _periodIdx = donem.index;
+      _cizilenDonemIdx = donem.index;
+    }
+    // Varlık ekranından gelen satır İLK karede seçili olsun: kare sonrasına
+    // bırakılsaydı ekran bir kare "kıyaslamak için varlık ekle" boş hâlini
+    // gösterirdi. `_add` setState çağırdığı için burada alanlar doğrudan
+    // yazılır, yükleme `_load` ile başlar.
+    final varlik = widget.baslangicVarligi;
+    if (varlik != null) {
+      _selected.add(SymbolHit(
+          ticker: varlik.ticker, name: varlik.name, source: varlik.type.label));
+      _loading.add(varlik.ticker);
+      CrashReporter.arkaPlan(_load(varlik.ticker),
+          reason: 'comparison_screen.baslangicVarligi');
+    }
     // Detay ekranından gelen ön seçimler.
     if (widget.initialTickers.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -168,6 +215,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Future<NormalizedSeries?> _fetch(String ticker, int days) async {
+    // Varlık ekranından gelen varlık BİRİM serisiyle çizilir — bkz.
+    // [ComparisonScreen.baslangicVarligi]. Pencere motoru portföy serisiyle
+    // aynı (`getPortfolioHistory`), yani grafikteki öteki satırlarla aynı
+    // eksene oturur.
+    final varlik = widget.baslangicVarligi;
+    if (varlik != null && ticker == varlik.ticker) {
+      return normalizeSeries(await HistoryService.instance
+          .getPortfolioHistory([FiyatKaynagi.birimVarlik(varlik)], days));
+    }
 
     // Portföy serileri piyasada kote DEĞİLDİR — lot'lardan hesaplanır.
     // Bu yüzden sembol geçmişi yerine portföy geçmişi yolundan geçerler.

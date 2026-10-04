@@ -1046,7 +1046,7 @@ void main() {
       expect(metin.contains('En iyi: THYAO +%82,2'), isTrue);
       expect(metin.contains('En zayıf: SISE −%12,0'), isTrue);
       expect(metin.contains("250 işlem gününün 132'i artıda"), isTrue);
-      expect(metin.contains('Yıllıklandırılmış getiri (XIRR): +%41,2'), isTrue);
+      expect(metin.contains('Yıllık getiri (ilk alımdan beri): +%41,2'), isTrue);
       // Zengin satırlar da tutar kuralına uyar.
       expect(metin.contains('₺'), isFalse);
       expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse);

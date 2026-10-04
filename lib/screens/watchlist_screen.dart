@@ -27,7 +27,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/donem_secici.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
@@ -282,7 +282,8 @@ class _ChartCard extends ConsumerWidget {
           if (partners.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 0, 10),
-              child: ModernTabSelector(
+              child: OrtakSecici(
+                eski: EskiOrtakSecici.hap,
                 partners: partners,
                 selectedId: view,
                 onChanged: (v) =>

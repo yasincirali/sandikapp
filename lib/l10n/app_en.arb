@@ -122,9 +122,9 @@
   "levelBeginner": "Beginner",
   "levelIntermediate": "Intermediate",
   "levelAdvanced": "Advanced",
-  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and XIRR cards are hidden.",
-  "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and money-weighted return (XIRR).",
-  "levelAdvancedDesc": "Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).",
+  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and annual return cards are hidden.",
+  "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and annual return since your first buy.",
+  "levelAdvancedDesc": "Intermediate + return per unit of risk, effect of your buy timing and recovery from drops (Summary › 1Y).",
   "noAssetsYet": "No assets added yet",
   "noAssetsYetHint": "Start building your sandık by adding your first asset.",
   "addFirstAsset": "Add Your First Asset",
@@ -864,8 +864,6 @@
   "requestPartnership": "Request Partnership",
   "generatingEllipsis": "Generating...",
   "generateCode": "Generate Code",
-  "switchToDark": "Switch to dark theme",
-  "switchToLight": "Switch to light theme",
   "tabChart": "Chart",
   "tabSummary": "Summary",
   "modeReal": "Actual",
@@ -925,7 +923,7 @@
   },
   "retryLower": "Try again",
   "raceUpper": "RACE",
-  "changeByTypeUpper": "BY TYPE · MARKET ADDED",
+  "changeByTypeUpper": "BY TYPE · PRICE EFFECT",
   "noData": "No data",
   "tooltipReturn": "\nReturn ",
   "tooltipBuy": "\nBuy  +",
@@ -1018,7 +1016,7 @@
   "marketWord": "Market",
   "cashDividend": "Of which cash dividends",
   "commissionPaid": "Commission paid",
-  "contributionNotReturn": "The percentage comes only from what the market added. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.",
+  "contributionNotReturn": "The percentage comes only from the price effect. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.",
   "annualRatePct": "{pct} a year",
   "@annualRatePct": {
     "placeholders": {
@@ -1488,41 +1486,7 @@
   "realReturnLastYear": "last year",
   "realReturnYours": "Yours",
   "realReturnCpi": "CPI",
-  "weeklyFlatSemantics": "Your portfolio's market return did not change this week",
-  "thisWeekFromMarket": "From the market this week: ",
   "noChangeLower": "no change",
-  "pctDown": "{pct}% down",
-  "@pctDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyDownSemantics": "Your portfolio's market return is {pct} percent down this week",
-  "@weeklyDownSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyUpSemantics": "Your portfolio's market return is {pct} percent up this week",
-  "@weeklyUpSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "pctUp": "{pct}% up",
-  "@pctUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
   "totalNetHidden": "Total net worth hidden",
   "totalNetWorth": "Total net worth {amount}",
   "@totalNetWorth": {
@@ -2343,7 +2307,7 @@
   },
   "noMatchingRecords": "No records match the filter",
   "noTransactionsYet": "No transactions yet",
-  "todaysBalanceChange": "Today's balance change",
+  "todaysBalanceChange": "Today's total change",
   "sinceDateToToday": "{date} → today",
   "@sinceDateToToday": {
     "placeholders": {
@@ -2352,7 +2316,7 @@
       }
     }
   },
-  "balanceChangeSince": "Balance change since {date}",
+  "balanceChangeSince": "Total change since {date}",
   "@balanceChangeSince": {
     "placeholders": {
       "date": {
@@ -2368,7 +2332,7 @@
       }
     }
   },
-  "periodBalanceChange": "{period} balance change",
+  "periodBalanceChange": "{period} total change",
   "@periodBalanceChange": {
     "placeholders": {
       "period": {
@@ -2376,7 +2340,7 @@
       }
     }
   },
-  "marketOnlyRow": "Market effect only",
+  "marketOnlyRow": "Price effect only",
   "rowExpandedSemantics": "{label}, expanded. Double tap to collapse.",
   "@rowExpandedSemantics": {
     "placeholders": {
@@ -2574,7 +2538,7 @@
       }
     }
   },
-  "shareCardXirr": "Annualized (XIRR)",
+  "shareCardXirr": "Annual return",
   "shareCardDrawdown": "Max drawdown",
   "shareCardPatient": "Most patient",
   "shareCardAllocation": "Allocation",
@@ -2618,7 +2582,7 @@
   "reviewPromptIssue": "Something's off",
   "rateAppTitle": "Rate sandık",
   "rateAppSubtitle": "Leave a rating on the store",
-  "todayMarketOnly": "market effect only",
+  "todayMarketOnly": "price effect only",
   "todaySessionOpen": "Session open · closes {close}",
   "@todaySessionOpen": {
     "placeholders": {
@@ -2844,7 +2808,7 @@
     }
   },
   "todayClosedShort": "Closed",
-  "todayMarketOnlyShort": "market only",
+  "todayMarketOnlyShort": "price effect",
   "todayGreenShort": "In profit",
   "todayWeekReadyShort": "Summary ready",
   "todayGoalNewAction": "Pick a new one",
@@ -3018,11 +2982,11 @@
       }
     }
   },
-  "sectionResult": "RESULT",
-  "sectionWhy": "WHY",
-  "sectionDetail": "DETAIL",
-  "sectionDepth": "DEPTH",
-  "sectionDepthHint": "XIRR, health, advanced metrics, character",
+  "sectionResult": "What happened?",
+  "sectionWhy": "Why?",
+  "sectionDetail": "Details",
+  "sectionDepth": "More",
+  "sectionDepthHint": "Annual return, health, character",
   "myAlarms": "My alerts",
   "viewChipLabel": "View",
   "identityCrypto": "Cryptocurrency",
@@ -3489,9 +3453,9 @@
       }
   },
   "investedRow": "You put in",
-  "marketAddedRow": "Market added",
+  "marketAddedRow": "Price effect",
   "dividendPocketRow": "Dividends you pocketed",
-  "flowBuyBalance": "Bought {flow} · balance {change}",
+  "flowBuyBalance": "Bought {flow} · total {change}",
   "@flowBuyBalance": {
       "placeholders": {
           "flow": {
@@ -3502,7 +3466,7 @@
           }
       }
   },
-  "flowSellBalance": "Sold {flow} · balance {change}",
+  "flowSellBalance": "Sold {flow} · total {change}",
   "@flowSellBalance": {
       "placeholders": {
           "flow": {
@@ -3692,5 +3656,84 @@
   "levelSurveyBack": "Back",
   "todaysReturn": "Today's return",
   "returnSince": "Return since {date}",
-  "balanceChangeInclBuys": "Balance change (incl. buys)"
+  "balanceChangeInclBuys": "Total change (incl. buys)",
+  "firstAssetPickTitle": "What are you saving in?",
+  "firstAssetPickHint": "Pick one, type the amount; the price fills itself.",
+  "firstAssetGoldGram": "Gram gold",
+  "firstAssetUsd": "Dollar",
+  "firstAssetEur": "Euro",
+  "firstAssetFund": "A fund",
+  "firstAssetStock": "A stock",
+  "firstAssetOtherType": "Add another type",
+  "addDetails": "Add details (fee, note)",
+  "addByTyping": "Add by typing",
+  "importFromStatement": "Import statement",
+  "orWithEmail": "or with email",
+  "todayTopMoverLabel": "Biggest mover",
+  "todayVsInflationYou": "Your return",
+  "todayVsInflationCpi": "CPI",
+  "vitrinWelcome": "Welcome",
+  "vitrinTitle": "What do you own?",
+  "vitrinHint": "Tap and type the amount. Prices are live; your sandık keeps itself up to date.",
+  "vitrinLive": "Live prices",
+  "vitrinQuarterGold": "Quarter gold",
+  "vitrinFundHint": "Every fund on TEFAS",
+  "vitrinStockHint": "Borsa Istanbul",
+  "vitrinOtherTypes": "Crypto, commodities, deposits, pension and more",
+  "vitrinOtherTypesShort": "Crypto, pension and more",
+  "vitrinStatementHint": "Broker PDF, Excel or CSV, all in one go",
+  "vitrinStatementHintShort": "PDF, Excel or CSV in one go",
+  "vitrinTapToAdd": "Tap to add",
+  "vitrinPriceUnknown": "No price yet",
+  "rankingTitle": "Rankings",
+  "rankingTabPartners": "My partners",
+  "rankingTabEveryone": "Top portfolios",
+  "todaysPortfolioBadge": "With today's portfolio",
+  "todaysPortfolioBadgeHint": "You can turn this view off in Settings › Appearance.",
+  "todaysPortfolioSettingTitle": "Show with today's portfolio",
+  "todaysPortfolioSettingSubtitle": "Performance is drawn as if you had held today's holdings for the whole period. When off, your actual history is shown.",
+  "settingsGroupGeneral": "GENERAL",
+  "settingsGroupPortfolioView": "PORTFOLIO VIEW",
+  "settingsGroupSecurityAccount": "SECURITY & ACCOUNT",
+  "settingsGroupData": "DATA",
+  "settingsGroupAbout": "ABOUT THE APP",
+  "settingsAdvancedUpper": "ADVANCED",
+  "settingsAdvancedSemantics": "Advanced settings",
+  "settingsThemeLabel": "Theme",
+  "settingsBaseCurrencyLabel": "Base currency",
+  "tekOnayBaslik": "Legal Terms",
+  "tekOnayAciklama": "The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ({ulke}) and Firebase (USA/global); you can withdraw your explicit consent at any time (account deletion).",
+  "tekOnayUlkeBilinmiyor": "abroad",
+  "tekOnayCumle": "I accept the {kosullar} and {kvkk} and confirm I am 18+; I give my {riza} to the transfer of my data abroad.",
+  "tekOnayKosullarBaglanti": "Legal Terms",
+  "tekOnayKvkkBaglanti": "KVKK Privacy Notice",
+  "tekOnayRizaBaglanti": "explicit consent",
+  "tekOnayGerekli": "To continue, accept the legal terms and give explicit consent to the cross-border data transfer.",
+  "arenaMeasuring": "Measuring the gap…",
+  "arenaBehind": "{ad} leads by {fark} pts · you can catch up",
+  "arenaNoDataYet": "No data yet",
+  "arenaWaiting": "The duel starts once both returns are measured",
+  "arenaStripDaily": "Leader day by day",
+  "arenaStripMonthly": "Leader month by month",
+  "arenaSwaps": "{n, plural, =0{No lead changes} =1{1 lead change} other{{n} lead changes}}",
+  "yasalKapiBaslikGuncel": "Updated documents",
+  "yasalKapiBaslikIlk": "Legal documents",
+  "yasalKapiAciklamaGuncel": "We've updated the Terms of Use, the Privacy Policy and the KVKK Privacy Notice. To continue, read and accept their current versions.",
+  "yasalKapiAciklamaIlk": "Before you start using the app, read and accept the documents below.",
+  "yasalKapiNelerDegisti": "What changed",
+  "yasalKapiDegisiklikNotu": "Version 1.1: how Top Portfolios (optional, anonymous comparison) works was added, the country of the server storing your data was updated, and it now states clearly that consent records are kept for 3 years after account deletion.",
+  "yasalBelgeKosullar": "Terms of Use",
+  "yasalBelgeGizlilik": "Privacy Policy",
+  "yasalBelgeKvkk": "KVKK Privacy Notice",
+  "yasalBelgeKvkkKisa": "KVKK Notice",
+  "yasalBelgeSurum": "Version {surum}",
+  "yasalBelgeAcildi": "Read",
+  "yasalBelgelerTurkce": "The documents are in Turkish.",
+  "yasalKapiTaahhutBaslik": "Your consents",
+  "yasalKapiYatirimUyarisi": "Investment notice",
+  "yasalKapiOnayla": "I have read and accept",
+  "yasalKapiOnaylaKisa": "I accept",
+  "yasalKapiKutuGerekli": "To continue, tick the boxes.",
+  "yasalKapiKayitHatasi": "Your acceptance couldn't be saved. Check your connection and try again.",
+  "yasalKapiCikis": "Sign out"
 }

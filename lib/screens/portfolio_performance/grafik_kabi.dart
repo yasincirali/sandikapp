@@ -5,6 +5,15 @@ part of '../portfolio_performance_screen.dart';
 /// part = aynı kütüphane, private alanlara erişim ve davranış AYNEN; yalnızca
 /// dosya sınırı değişti. `setState` yerine `_guncelle` (bkz. ana dosya).
 extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
+  /// Çizilecek grafik tipi: seçim (`grafikTipiNotifier`) sade kümeye
+  /// (`performans_ayar_sade`) ve seviyenin grafik araçlarına göre eşlenir.
+  /// Eşleme saf ve tek yerde (`GrafikTipi.etkin`); seçim değiştirilmez.
+  GrafikTipi get _etkinGrafikTipi => GrafikTipi.etkin(
+        grafikTipiNotifier.value,
+        sade: RemoteConfigService.instance.performansAyarSade,
+        araclar: ref.read(seviyeGorunurlukProvider).grafikAraclari,
+      );
+
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,
       {bool intraday = false, List<Asset>? allTargetAssets}) {
@@ -101,7 +110,7 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       // o değerden başlıyor ve taban pencerenin dışında kalırsa alt uçları
       // kırpılır — yarım çubuklar "veri yok" gibi okunur. Diğer tiplerde
       // aralık dokunulmadan kalır (dar bant gün içi hassasiyeti için şart).
-      if (grafikTipiNotifier.value == GrafikTipi.bar && taban != null) {
+      if (_etkinGrafikTipi == GrafikTipi.bar && taban != null) {
         if (taban.first < minY) minY = taban.first;
         if (taban.first > maxY) maxY = taban.first;
       }
@@ -315,8 +324,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
 
       // Seçili grafik tipi — oturum boyunca yaşar (bkz. `grafikTipiNotifier`).
       // `ValueListenableBuilder` dışarıda: burada okumak yeterli çünkü
-      // seçim değiştiğinde builder tüm grafiği yeniden kuruyor.
-      final tip = grafikTipiNotifier.value;
+      // seçim değiştiğinde builder tüm grafiği yeniden kuruyor. Seçim değil
+      // ETKİN tip çizilir (sade küme / sade Başlangıç, `_etkinGrafikTipi`).
+      final tip = _etkinGrafikTipi;
 
       return LineChartData(
         minX: viewMinX,

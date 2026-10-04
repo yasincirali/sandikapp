@@ -109,10 +109,10 @@ void main() {
       // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
       // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".
       expect(
-          sigan('Günün hareketi · sadece piyasa etkisi')
+          sigan('Günün hareketi · sadece fiyat etkisi')
                   .evaluate()
                   .isNotEmpty ||
-              sigan('Günün hareketi · piyasa etkisi').evaluate().isNotEmpty ||
+              sigan('Günün hareketi · fiyat etkisi').evaluate().isNotEmpty ||
               sigan('Günün hareketi').evaluate().isNotEmpty,
           isTrue);
       expect(sigan('Hedef belirle'), findsOneWidget);

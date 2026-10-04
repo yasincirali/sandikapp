@@ -146,7 +146,8 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         // yüzey ise hangi sunumu gördüğünü belirler. Seyrek kullanılan ikili
         // (hangi tür / hangi mod) çipin arkasında. Gerekçe `_buildScopeBar`.
         if (activePartners.isNotEmpty) ...[
-          KapsamKisiSecici(
+          OrtakSecici(
+            eski: EskiOrtakSecici.segment,
             partners: activePartners,
             selectedId: _view,
             // Kapsam değişiminde gün içi TOHUMU da at.
@@ -176,6 +177,15 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
         ],
         _buildScopeBar(),
         _buildScopePanel(isIntraday),
+        // Mod Ayarlar'dayken (`performans_ayar_sade`) etkin olduğu ekranda
+        // görünür kalır. Gün içinde simülasyonun karşılığı yok (eski
+        // anahtar da orada çizilmiyordu) — rozet de çizilmez.
+        if (RemoteConfigService.instance.performansAyarSade &&
+            _simulate &&
+            !isIntraday) ...[
+          const SizedBox(height: SandikSpace.xs),
+          _buildBugunkuPortfoyRozeti(),
+        ],
         const SizedBox(height: SandikSpace.sm),
         // Dönem seçici grafiğin ÜSTÜNDE — üç grafik ekranında da (kullanıcı
         // kararı 2026-09-28, aynı gün içinde iki adım): önce "üç ekranda
@@ -407,14 +417,14 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               child: ZirveKarti(
                 donem: ZirveDonem.yakin(
                     _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].days),
+                // Bayrak `siralama_tek_sayfa` açıksa Sıralama › Herkes
+                // (aynı gövde, aynı rıza akışı); kapalıysa Zirve ekranı.
                 onAc: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(
-                    builder: (_) => ZirvePortfoylerScreen(
-                      baslangic: ZirveDonem.yakin(
-                          _PortfolioPerformanceScreenState
-                              ._periods[_selectedPeriodIdx].days),
-                    ),
+                    builder: (_) => zirveGirisEkrani(ZirveDonem.yakin(
+                        _PortfolioPerformanceScreenState
+                            ._periods[_selectedPeriodIdx].days)),
                   ),
                 ),
               ),

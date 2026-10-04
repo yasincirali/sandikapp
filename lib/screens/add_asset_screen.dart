@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
@@ -14,6 +15,7 @@ import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -25,6 +27,7 @@ import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
+import 'csv_import_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
@@ -97,6 +100,12 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   final double? prefillPrice;
   final DateTime? prefillDate;
 
+  /// Boş ana ekrandaki "Ne biriktiriyorsun?" seçimi (bayrak
+  /// `ilk_varlik_kolay`). Tür her zaman, gram altın / dolar / euro'da varlık
+  /// da seçili açılır; kullanıcıya yalnız miktar kalır. Düzenleme ve sepet
+  /// değerleri yine kazanır (prefill kuralı).
+  final IlkVarlikSecimi? hizliSecim;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
@@ -107,6 +116,7 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillType,
     this.prefillPrice,
     this.prefillDate,
+    this.hizliSecim,
   });
 
   @override
@@ -130,7 +140,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     editingAsset: widget.editingAsset,
     cartInitial: widget.cartInitial,
     prefillTicker: widget.prefillTicker,
-    prefillType: widget.prefillType,
+    prefillType: widget.prefillType ?? widget.hizliSecim?.tur,
     prefillDate: widget.prefillDate,
   );
   AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
@@ -206,9 +216,59 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _notes = TextEditingController(text: a?.notes ?? '');
     _commission = TextEditingController(
         text: (a?.commission ?? 0) > 0 ? _fmt(a!.commission) : '');
-    // Form açılışında preview'ı bir kere tetikle.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPricePreview());
+    // Form açılışında preview'ı bir kere tetikle. Hızlı seçim AYNI karede ve
+    // önce: seçim geçişleri (`selectGold`, `selectDoviz`) sağlayıcıya yazar,
+    // `initState` içinde yazmak kurulum sırasında değişiklik hatası verir.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _hizliSecimiUygula();
+      _refreshPricePreview();
+    });
   }
+
+  /// [AddAssetScreen.hizliSecim]'i formun KENDİ seçim geçişleriyle uygular:
+  /// çipe dokunmuş gibi. Ayrı bir ön doldurma yolu yazılmadı; altın birimi
+  /// (gram), döviz para birimi (TRY karşılığı) ve elle fiyat bayrağı o
+  /// geçişlerin kuralı.
+  void _hizliSecimiUygula() {
+    final s = widget.hizliSecim;
+    if (s == null || _isEditing || widget.cartInitial != null) return;
+    if (s.altinAltTuru case final g?) {
+      _yaz(_n.selectGold(g));
+    } else if (s.dovizEtiketi case final etiket?) {
+      _yaz(_n.selectDoviz(dovizOptFor(etiket)));
+    }
+  }
+
+  /// "Ekstreden aktar": içe aktarma sepeti doldurur, onay Toplu Ekle'de.
+  /// Toplu ekleme bitince bu form da kapanır (uygulama çubuğundaki Toplu
+  /// Ekle ile aynı kural: arkada boş formda mahsur kalınmasın).
+  Future<void> _ekstredenAktar() async {
+    final aktarildi = await pushGuarded<bool>(
+      context,
+      adaptiveRoute(builder: (_) => const CsvImportScreen()),
+    );
+    if (aktarildi != true || !mounted) return;
+    final eklendi = await pushGuarded<bool>(
+      context,
+      adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+    );
+    if (eklendi == true && mounted) Navigator.of(context).pop(true);
+  }
+
+  /// Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): yeni kayıtta iki hızlı yol
+  /// görünür düğme, komisyon + not "Ayrıntı ekle" altında. Düzenleme ve
+  /// sepet modunda form eskisi gibi: orada kullanıcı zaten bir kaydın
+  /// ayrıntısındadır.
+  /// Tur hedefi `topluEkle` TEK yerde kurulur: bayrakta formdaki "Ekstreden
+  /// aktar" düğmesinde, değilse uygulama çubuğundaki Toplu Ekle ikonunda.
+  Widget _topluCapa(Widget w) =>
+      _kolay ? w : TourAnchor(target: TourTarget.topluEkle, child: w);
+
+  bool get _kolay =>
+      RemoteConfigService.instance.ilkVarlikKolay &&
+      !_isEditing &&
+      !widget.cartMode;
 
   @override
   void dispose() {
@@ -319,9 +379,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[
-            TourAnchor(
-              target: TourTarget.topluEkle,
-              child: IconButton(
+            _topluCapa(
+              IconButton(
               tooltip: context.l10n.bulkAdd,
               icon: Icon(Icons.playlist_add_rounded, color: context.c.text58),
               // Toplu ekleme başarıyla bittiğinde `true` döner; o zaman bu
@@ -379,6 +438,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (_kolay) ...[
+                      _ikiYol(),
+                      const SizedBox(height: SandikSpace.lgs),
+                    ],
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
                     _typeSelector(cs),
@@ -432,11 +495,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     const SizedBox(height: 16),
 
                     // ── Komisyon / masraf ────────────────────────────────
-                    _commissionBlock(cs),
-                    const SizedBox(height: 16),
+                    // Bayrakta "Ayrıntı ekle" katlanmasının içinde: ilk
+                    // varlığı giren kişi komisyonu çoğu zaman bilmez, boş
+                    // bırakılan alan 0 sayılır (değişmedi).
+                    if (!_kolay) ...[
+                      _commissionBlock(cs),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── Notlar (collapsible) ─────────────────────────────
-                    _notesCollapsible(cs),
+                    _notesCollapsible(cs, komisyonDahil: _kolay),
                     ],
                   ],
                   ),
@@ -1197,8 +1265,58 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  // ── İki hızlı yol (bayrak `ilk_varlik_kolay`) ─────────────────────────────
+  // Hızlı Giriş ("GARAN 500 adet 105 lira") ve ekstre içe aktarma rakiplerden
+  // ayrıştıran iki yol; bugün biri etiketsiz mikrofon ikonu, diğeri Toplu
+  // Ekle'nin içinde. Burada formun en üstünde, adıyla.
+  Widget _ikiYol() {
+    return Row(
+      children: [
+        Expanded(
+          child: _yolDugmesi(
+            ikon: Icons.edit_note_rounded,
+            etiket: context.l10n.addByTyping,
+            onTap: _showQuickEntrySheet,
+          ),
+        ),
+        const SizedBox(width: SandikSpace.sm),
+        Expanded(
+          child: TourAnchor(
+            target: TourTarget.topluEkle,
+            child: _yolDugmesi(
+              ikon: Icons.content_paste_go_rounded,
+              etiket: context.l10n.importFromStatement,
+              onTap: _ekstredenAktar,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _yolDugmesi({
+    required IconData ikon,
+    required String etiket,
+    required VoidCallback onTap,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(ikon, size: 18),
+      // Dar ekranda iki düğme yan yana: metin kırpılmaz, küçülür.
+      label: FittedBox(fit: BoxFit.scaleDown, child: Text(etiket)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: context.c.amberText,
+        side: BorderSide(color: context.c.hairline),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+      ),
+    );
+  }
+
   // ── Notlar collapsible ─────────────────────────────────────────────────────
-  Widget _notesCollapsible(ColorScheme cs) {
+  Widget _notesCollapsible(ColorScheme cs, {bool komisyonDahil = false}) {
+    final doluIcerik = _notes.text.isNotEmpty ||
+        (komisyonDahil && _commission.text.isNotEmpty);
     return Container(
       decoration: BoxDecoration(
         color: context.c.surface1,
@@ -1220,16 +1338,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   // taşıyordu. Tembel liste bu satırı ekran dışında hiç
                   // kurmadığı için `text_scale_overflow_test` görmüyordu;
                   // form tümüyle kurulunca ortaya çıktı.
-                  Flexible(
-                    child: Text(context.l10n.addNote,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  //
+                  // Expanded, `Flexible + Spacer` DEĞİL (2026-10-04): ikisi
+                  // eşit pay alıyordu, metin satırın yarısına sıkışıyor ve
+                  // "Ayrıntı ekle (komisyon, not)" 412pt'de kırpılıyordu.
+                  // Kısa "Not ekle"de görünüm aynı; sığmazsa ikinci satıra
+                  // kırılır (metin tam okunur kuralı).
+                  Expanded(
+                    child: Text(
+                        komisyonDahil
+                            ? context.l10n.addDetails
+                            : context.l10n.addNote,
+                        maxLines: 2,
                         style: context.t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
-                  const Spacer(),
-                  if (_notes.text.isNotEmpty && !_notesExpanded)
+                  if (doluIcerik && !_notesExpanded)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: Container(
@@ -1259,12 +1384,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             acik: _notesExpanded,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: TextFormField(
-                controller: _notes,
-                style: context.t.titleMedium?.copyWith(color: context.c.text90),
-                maxLines: 3,
-                onTapOutside: _klavyeyiKapat,
-                decoration: context.inputDecoration(context.l10n.notesHint),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (komisyonDahil) ...[
+                    _commissionBlock(cs),
+                    const SizedBox(height: SandikSpace.smd),
+                  ],
+                  TextFormField(
+                    controller: _notes,
+                    style: context.t.titleMedium
+                        ?.copyWith(color: context.c.text90),
+                    maxLines: 3,
+                    onTapOutside: _klavyeyiKapat,
+                    decoration:
+                        context.inputDecoration(context.l10n.notesHint),
+                  ),
+                ],
               ),
             ),
           ),

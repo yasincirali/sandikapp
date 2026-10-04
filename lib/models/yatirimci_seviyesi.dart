@@ -76,11 +76,21 @@ enum YatirimciSeviyesi {
 /// Kullanıcı isteği: Performans *"çelişkili olmamalı, kafada soru işareti
 /// oluşturmamalı; yatırımcı seviyesine göre detaylı bilgiler sergilenebilir."*
 /// [sade] açıkken Başlangıç ayrıca şunları gizler:
-///   * [grafikAraclari] — grafik tipi seçici (Dağ/Taban/çubuk/mum),
+///   * [grafikAraclari] — grafik tipi seçici (Alan/Taban/çubuk/mum),
 ///     Gerçek|Simülasyon anahtarı, varlık grafiğinde MA20/LOG çipleri.
 ///     Grafik düz çizgide kalır, rakamlar gerçek geçmişten gelir.
-///   * [derinlik] — Özet'in DERİNLİK bölümü (endeks kıyası, XIRR, sağlık,
-///     karakter, sabır). SONUÇ / NEDEN / AYRINTI aynen durur.
+///   * [derinlik] — Özet'in "Daha fazlası" bölümü (eski adı DERİNLİK:
+///     endeks kıyası, XIRR, sağlık, karakter, sabır). "Ne oldu?" /
+///     "Neden böyle?" / "Ayrıntılar" aynen durur.
+///
+/// ## İleri terimler seviye dışında (2026-10-04, sadeleştirme 2)
+/// "Risk-ayarlı getiri" ve "Zamanlama etkisi" yalnız [ileri] kartında
+/// çizilir; seviye dışında yalnız seviye AÇIKLAMASINDA geçer ve orada
+/// gündelik karşılıkla yazılır ("riske göre getiri", "alım zamanlamanın
+/// etkisi"). "XIRR" Orta'da görünen yüzeylerden (Derinlik ipucu, paylaşım
+/// kartı/metni, seviye açıklamaları) çıkarıldı → "yıllık getiri". Bu
+/// yüzden yeni görünürlük alanı GEREKMEDİ: metin her seviyede anlaşılır,
+/// gizleme kararı değişmedi.
 /// Kapalıyken iki alan da her seviyede `true`: eski davranış birebir.
 /// Orta ve İleri [sade]'den etkilenmez — mevcut kullanıcının varsayılanı
 /// Orta olduğu için hiç dokunmayan kimse bir şey kaybetmez.

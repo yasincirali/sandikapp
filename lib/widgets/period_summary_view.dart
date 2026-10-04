@@ -188,6 +188,11 @@ class PeriodSummaryView extends StatelessWidget {
     //   · AYRINTI — birikim disiplini + katlanır DERİNLİK (ileri seviyede
     //               açık gelir).
     // Hiçbir kart kaldırılmadı; yalnızca yer ve sıra değişti.
+    // 2026-10-04 (sadeleştirme 2, jargon): başlık METİNLERİ gündelik dile
+    // çevrildi — "Ne oldu?" / "Neden böyle?" / "Ayrıntılar" / "Daha
+    // fazlası". Büyük harfli tek kelime (SONUÇ, DERİNLİK) rapor dili gibi
+    // okunuyordu; soru biçimi düzen A'nın zaten anlattığı soru sırasını
+    // ekrana taşır. Kod içi adlar (sonuc/neden/ayrinti/derinlik) aynı kaldı.
     final g = _gruplar(context);
     final l10n = context.l10n;
     return Column(
@@ -781,10 +786,14 @@ class _CubukSatiri extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final yazi = isaretli
-        ? '${deger >= 0 ? '+' : '−'}'
-            '${baz.fmt(deger.abs())}'
-        : baz.fmt(deger.abs());
+    // Yazılan tutar sıfıra yuvarlanıyorsa işaret YOK: "−₺0" yönü olmayan
+    // bir şeye yön yazardı (emülatör 2026-10-04, durgun günde "Fiyat etkisi
+    // −₺0"; `isaretliYuzde` ile aynı kural).
+    final mutlak = baz.fmt(deger.abs());
+    final sifir = !RegExp(r'[1-9]').hasMatch(mutlak);
+    final yazi = isaretli && !sifir
+        ? '${deger >= 0 ? '+' : '−'}$mutlak'
+        : mutlak;
 
     return Semantics(
       label: '$etiket $yazi',
@@ -2421,7 +2430,8 @@ class _BosDurum extends StatelessWidget {
 
 /// Derinlik — katlanır bölüm (2026-09-21).
 ///
-/// Başlık satırı her zaman görünür ("DERİNLİK · XIRR, sağlık…"), içerik
+/// Başlık satırı her zaman görünür ("Daha fazlası · Yıllık getiri, sağlık,
+/// karakter"; 2026-10-04'e kadar "DERİNLİK · XIRR, sağlık…"), içerik
 /// dokununca açılır. [SandikAcilir] yükseklik + solma geçişi yapar; kapalı
 /// durumda (kapanış bittikten sonra) çocuklar ağaçta DEĞİLDİR — kapalıyken
 /// hesaplama/çizim maliyeti sıfır (CPU/GPU kaygısı). Açık/kapalı durumu oturum içi, tercih değil.

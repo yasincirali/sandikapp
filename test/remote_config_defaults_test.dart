@@ -77,6 +77,28 @@ void main() {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });
 
+    // Kullanıcı kararı 2026-10-04: bugünün bayrakları AÇIK doğar ("flagleri
+    // açık olarak mergele maine"). Merge'de sessizce `false`'a dönerse
+    // özellikler TestFlight'ta habersizce kaybolur.
+    for (final b in const [
+      'ilk_varlik_kolay',
+      'karsilama_tanitimi',
+      'seviye_anketi',
+      'bugun_karti_kiyas',
+      'varlik_islem_cubugu',
+      'tek_ortak_secici',
+      'tek_kiyas_yuzeyi',
+      'siralama_tek_sayfa',
+      'performans_ayar_sade',
+      'yaris_duello_arena',
+      'tek_onay_kutusu',
+      'ortak_secimi_tasi',
+      'yasal_onay_kaydi',
+      'yeniden_onay_kapisi',
+    ]) {
+      test('$b açık doğar', () => expect(varsayilan(b), 'true'));
+    }
+
     test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {
       expect(varsayilan('paywall_enabled'), 'false');
     });

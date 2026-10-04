@@ -129,9 +129,9 @@
   "levelBeginner": "Başlangıç",
   "levelIntermediate": "Orta",
   "levelAdvanced": "İleri",
-  "levelBeginnerDesc": "Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve XIRR kartları gizlenir.",
-  "levelIntermediateDesc": "Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve paranın getirisi (XIRR).",
-  "levelAdvancedDesc": "Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).",
+  "levelBeginnerDesc": "Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.",
+  "levelIntermediateDesc": "Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.",
+  "levelAdvancedDesc": "Orta + riske göre getiri, alım zamanlamanın etkisi ve düşüşten toparlanma (Özet › 1 yıl).",
   "noAssetsYet": "Henüz varlık eklenmemiş",
   "noAssetsYetHint": "İlk varlığını ekleyerek sandığını oluşturmaya başla.",
   "addFirstAsset": "İlk Varlığını Ekle",
@@ -874,8 +874,6 @@
   "requestPartnership": "Ortaklık İste",
   "generatingEllipsis": "Üretiliyor...",
   "generateCode": "Kod Üret",
-  "switchToDark": "Koyu temaya geç",
-  "switchToLight": "Açık temaya geç",
   "tabChart": "Grafik",
   "tabSummary": "Özet",
   "modeReal": "Gerçek",
@@ -935,7 +933,7 @@
   },
   "retryLower": "Tekrar dene",
   "raceUpper": "YARIŞ",
-  "changeByTypeUpper": "TÜRE GÖRE · PİYASANIN KATTIĞI",
+  "changeByTypeUpper": "TÜRE GÖRE · FİYAT ETKİSİ",
   "noData": "Veri yok",
   "tooltipReturn": "\nGetiri ",
   "tooltipBuy": "\nAlım  +",
@@ -1028,7 +1026,7 @@
   "marketWord": "Piyasa",
   "cashDividend": "Bunun nakit temettüsü",
   "commissionPaid": "Ödenen komisyon",
-  "contributionNotReturn": "Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.",
+  "contributionNotReturn": "Yüzde yalnızca fiyat etkisinden hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.",
   "annualRatePct": "{pct} yıllık",
   "@annualRatePct": {
     "placeholders": {
@@ -1500,41 +1498,7 @@
   "realReturnLastYear": "son bir yıl",
   "realReturnYours": "Senin",
   "realReturnCpi": "TÜFE",
-  "weeklyFlatSemantics": "Bu hafta portföyün piyasa getirisi değişmedi",
-  "thisWeekFromMarket": "Bu hafta piyasadan ",
   "noChangeLower": "değişim yok",
-  "pctDown": "%{pct} eksi",
-  "@pctDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyDownSemantics": "Bu hafta portföyün piyasa getirisi yüzde {pct} ekside",
-  "@weeklyDownSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyUpSemantics": "Bu hafta portföyün piyasa getirisi yüzde {pct} artıda",
-  "@weeklyUpSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "pctUp": "%{pct} artı",
-  "@pctUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
   "totalNetHidden": "Toplam net varlık gizli",
   "totalNetWorth": "Toplam net varlık {amount}",
   "@totalNetWorth": {
@@ -2404,7 +2368,7 @@
   },
   "noMatchingRecords": "Filtreye uyan kayıt yok",
   "noTransactionsYet": "Henüz işlem yok",
-  "todaysBalanceChange": "Bugünkü birikim değişimi",
+  "todaysBalanceChange": "Bugünkü toplam değişim",
   "sinceDateToToday": "{date} → bugün",
   "@sinceDateToToday": {
     "placeholders": {
@@ -2413,7 +2377,7 @@
       }
     }
   },
-  "balanceChangeSince": "{date} birikim değişimi",
+  "balanceChangeSince": "{date} toplam değişim",
   "@balanceChangeSince": {
     "placeholders": {
       "date": {
@@ -2429,7 +2393,7 @@
       }
     }
   },
-  "periodBalanceChange": "{period} birikim değişimi",
+  "periodBalanceChange": "{period} toplam değişim",
   "@periodBalanceChange": {
     "placeholders": {
       "period": {
@@ -2437,7 +2401,7 @@
       }
     }
   },
-  "marketOnlyRow": "Sadece piyasa etkisi",
+  "marketOnlyRow": "Sadece fiyat etkisi",
   "rowExpandedSemantics": "{label}, açık. Kapatmak için çift dokun.",
   "@rowExpandedSemantics": {
     "placeholders": {
@@ -2635,7 +2599,7 @@
       }
     }
   },
-  "shareCardXirr": "Yıllık (XIRR)",
+  "shareCardXirr": "Yıllık getiri",
   "shareCardDrawdown": "En derin düşüş",
   "shareCardPatient": "En sabırlı",
   "shareCardAllocation": "Dağılım",
@@ -2679,7 +2643,7 @@
   "reviewPromptIssue": "Bir sorun var",
   "rateAppTitle": "sandık'ı değerlendir",
   "rateAppSubtitle": "Mağazada puan ver",
-  "todayMarketOnly": "sadece piyasa etkisi",
+  "todayMarketOnly": "sadece fiyat etkisi",
   "todaySessionOpen": "Seans açık · {close} kapanış",
   "@todaySessionOpen": {
     "placeholders": {
@@ -2906,7 +2870,7 @@
     }
   },
   "todayClosedShort": "Kapalı",
-  "todayMarketOnlyShort": "piyasa etkisi",
+  "todayMarketOnlyShort": "fiyat etkisi",
   "todayGreenShort": "Artıda",
   "todayWeekReadyShort": "Özet hazır",
   "todayGoalNewAction": "Yenisini seç",
@@ -3080,11 +3044,11 @@
       }
     }
   },
-  "sectionResult": "SONUÇ",
-  "sectionWhy": "NEDEN",
-  "sectionDetail": "AYRINTI",
-  "sectionDepth": "DERİNLİK",
-  "sectionDepthHint": "XIRR, sağlık, ileri metrikler, karakter",
+  "sectionResult": "Ne oldu?",
+  "sectionWhy": "Neden böyle?",
+  "sectionDetail": "Ayrıntılar",
+  "sectionDepth": "Daha fazlası",
+  "sectionDepthHint": "Yıllık getiri, sağlık, karakter",
   "myAlarms": "Alarmlarım",
   "viewChipLabel": "Görünüm",
   "identityCrypto": "Kripto Para",
@@ -3729,9 +3693,9 @@
       }
   },
   "investedRow": "Yatırdığın",
-  "marketAddedRow": "Piyasanın kattığı",
+  "marketAddedRow": "Fiyat etkisi",
   "dividendPocketRow": "Cebine aldığın temettü",
-  "flowBuyBalance": "Alım +{flow} · birikim {change}",
+  "flowBuyBalance": "Alım +{flow} · toplam {change}",
   "@flowBuyBalance": {
       "placeholders": {
           "flow": {
@@ -3742,7 +3706,7 @@
           }
       }
   },
-  "flowSellBalance": "Satış −{flow} · birikim {change}",
+  "flowSellBalance": "Satış −{flow} · toplam {change}",
   "@flowSellBalance": {
       "placeholders": {
           "flow": {
@@ -3950,5 +3914,129 @@
   "todaysReturn": "Bugünkü getirin",
   "returnSince": "{date} itibarıyla getirin",
   "@returnSince": {"placeholders": {"date": {"type": "String"}}},
-  "balanceChangeInclBuys": "Birikim değişimi (alımlar dahil)"
+  "balanceChangeInclBuys": "Toplam değişim (alımlar dahil)",
+  "firstAssetPickTitle": "Ne biriktiriyorsun?",
+  "firstAssetPickHint": "Seç, miktarını yaz; fiyat kendiliğinden gelir.",
+  "firstAssetGoldGram": "Gram altın",
+  "firstAssetUsd": "Dolar",
+  "firstAssetEur": "Euro",
+  "firstAssetFund": "Bir fon",
+  "firstAssetStock": "Bir hisse",
+  "firstAssetOtherType": "Başka bir tür ekle",
+  "addDetails": "Ayrıntı ekle (komisyon, not)",
+  "addByTyping": "Yazarak ekle",
+  "importFromStatement": "Ekstreden aktar",
+  "orWithEmail": "veya e-postayla",
+  "todayTopMoverLabel": "En çok oynayan",
+  "todayVsInflationYou": "Getirin",
+  "todayVsInflationCpi": "TÜFE",
+  "vitrinWelcome": "Hoş geldin",
+  "vitrinTitle": "Neye sahipsin?",
+  "vitrinHint": "Dokun, miktarını yaz. Fiyat canlı gelir, sandığın kendini günceller.",
+  "vitrinLive": "Fiyatlar canlı",
+  "vitrinQuarterGold": "Çeyrek altın",
+  "vitrinFundHint": "TEFAS'taki tüm fonlar",
+  "vitrinStockHint": "Borsa İstanbul",
+  "vitrinOtherTypes": "Kripto, emtia, mevduat, BES ve diğerleri",
+  "vitrinOtherTypesShort": "Kripto, BES ve diğer türler",
+  "vitrinStatementHint": "Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde",
+  "vitrinStatementHintShort": "PDF, Excel ya da CSV; tek seferde",
+  "vitrinTapToAdd": "Eklemek için dokun",
+  "vitrinPriceUnknown": "Fiyat henüz yok",
+  "rankingTitle": "Sıralama",
+  "rankingTabPartners": "Ortaklarım",
+  "rankingTabEveryone": "Zirvedekiler",
+  "todaysPortfolioBadge": "Bugünkü portföyle",
+  "todaysPortfolioBadgeHint": "Bu görünümü Ayarlar › Görünüm'den kapatabilirsin.",
+  "todaysPortfolioSettingTitle": "Bugünkü portföyle göster",
+  "todaysPortfolioSettingSubtitle": "Performans, bugünkü varlıklarını dönem boyunca elinde tutmuşsun gibi çizilir. Kapalıyken gerçek geçmişin görünür.",
+  "settingsGroupGeneral": "GENEL",
+  "settingsGroupPortfolioView": "PORTFÖY GÖRÜNÜMÜ",
+  "settingsGroupSecurityAccount": "GÜVENLİK VE HESAP",
+  "settingsGroupData": "VERİ",
+  "settingsGroupAbout": "UYGULAMA HAKKINDA",
+  "settingsAdvancedUpper": "GELİŞMİŞ",
+  "settingsAdvancedSemantics": "Gelişmiş ayarlar",
+  "settingsThemeLabel": "Tema",
+  "settingsBaseCurrencyLabel": "Baz para birimi",
+  "tekOnayBaslik": "Yasal Koşullar",
+  "tekOnayAciklama": "Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).",
+  "@tekOnayAciklama": {
+    "description": "Tek onay kutusunun açıklaması; eski iki kutunun gövde metinlerinden derlendi. ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.",
+    "placeholders": {
+      "ulke": {"type": "String"}
+    }
+  },
+  "tekOnayUlkeBilinmiyor": "yurt dışı",
+  "tekOnayCumle": "{kosullar}, {kvkk}'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.",
+  "@tekOnayCumle": {
+    "description": "Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar, kvkk ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayKvkkBaglanti, tekOnayRizaBaglanti). 2026-10-04: KVKK ayrı bağlantı oldu; okunan cümle harfi harfine aynı kaldı (hash'i yasal_metinler'de, kayit_tek_kutu). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).",
+    "placeholders": {
+      "kosullar": {"type": "String"},
+      "kvkk": {"type": "String"},
+      "riza": {"type": "String"}
+    }
+  },
+  "tekOnayKosullarBaglanti": "Yasal Koşulları",
+  "tekOnayKvkkBaglanti": "KVKK Aydınlatma Metni",
+  "tekOnayRizaBaglanti": "açık rıza",
+  "tekOnayGerekli": "Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.",
+  "arenaMeasuring": "Fark ölçülüyor…",
+  "arenaBehind": "{ad} {fark} puan önde · yetişebilirsin",
+  "@arenaBehind": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "arenaNoDataYet": "Henüz veri yok",
+  "arenaWaiting": "Getiriler ölçülünce düello başlar",
+  "arenaStripDaily": "Gün gün önde olan",
+  "arenaStripMonthly": "Ay ay önde olan",
+  "arenaSwaps": "{n, plural, =0{Yer hiç değişmedi} other{{n} kez yer değişti}}",
+  "@arenaSwaps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "yasalKapiBaslikGuncel": "Güncellenen belgeler",
+  "@yasalKapiBaslikGuncel": {
+    "description": "Yeniden onay kapısı (bayrak yeniden_onay_kapisi) başlığı: kullanıcı belgelerin eski bir sürümünü onaylamış, güncel sürüm onay bekliyor."
+  },
+  "yasalKapiBaslikIlk": "Yasal belgeler",
+  "@yasalKapiBaslikIlk": {
+    "description": "Yeniden onay kapısı başlığı: hiç onay kaydı olmayan kullanıcı (Apple/Google ile ilk giriş ya da onay kaydından önceki hesap)."
+  },
+  "yasalKapiAciklamaGuncel": "Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.",
+  "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.",
+  "yasalKapiNelerDegisti": "Neler değişti",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.1: Zirvedeki Portföyler'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.",
+  "@yasalKapiDegisiklikNotu": {
+    "description": "Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır."
+  },
+  "yasalBelgeKosullar": "Kullanım Koşulları",
+  "yasalBelgeGizlilik": "Gizlilik Politikası",
+  "yasalBelgeKvkk": "KVKK Aydınlatma Metni",
+  "yasalBelgeKvkkKisa": "KVKK Metni",
+  "yasalBelgeSurum": "Sürüm {surum}",
+  "@yasalBelgeSurum": {
+    "placeholders": {
+      "surum": {"type": "String"}
+    }
+  },
+  "yasalBelgeAcildi": "Okundu",
+  "yasalBelgelerTurkce": "Belgeler Türkçedir.",
+  "yasalKapiTaahhutBaslik": "Onayların",
+  "yasalKapiYatirimUyarisi": "Yatırım uyarısı",
+  "yasalKapiOnayla": "Okudum, kabul ediyorum",
+  "yasalKapiOnaylaKisa": "Kabul ediyorum",
+  "yasalKapiKutuGerekli": "Devam etmek için kutuları işaretlemelisin.",
+  "yasalKapiKayitHatasi": "Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.",
+  "yasalKapiCikis": "Çıkış yap"
 }

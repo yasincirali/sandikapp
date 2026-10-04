@@ -6,7 +6,9 @@ import '../providers/auth_provider.dart';
 import '../providers/cihaz_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/disclaimer_service.dart';
+import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
@@ -35,10 +37,18 @@ enum OtpAmaci {
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String email;
   final OtpAmaci amac;
+
+  /// Kayıt ekranında gösterilen onay metinleri (yalnız [OtpAmaci.kayit],
+  /// `RegisterScreen`'den gelir). Doğrulamadan sonra yasal onay kaydına
+  /// gider (`YasalOnayService`, bayrak `yasal_onay_kaydi`). Null → kayıt
+  /// yazılmaz (ör. ekran başka yoldan açıldıysa); akış aynı.
+  final KayitOnayBaglami? kayitOnayi;
+
   const OtpVerificationScreen({
     super.key,
     required this.email,
     this.amac = OtpAmaci.kayit,
+    this.kayitOnayi,
   });
 
   @override
@@ -196,6 +206,20 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         userId: user.id,
         locale: etkinDil,
       );
+      // Kayıt kutularının ve andıkları belgelerin onayı (0102). Oturum
+      // `verifyRegistrationOtp` ile açıldı; RPC `auth.uid()`'yi buradan
+      // okur. Beklenmez ve fırlatmaz: kapı (`disclaimer_acceptances`)
+      // yukarıdaki kayda bağlı, bu yalnız ispat kaydı.
+      // `userId`: yeniden onay kapısı (bayrak `yeniden_onay_kapisi`) bu
+      // yazımı bekler ve başarıda kapı izini koyar — az önce aynı sürümleri
+      // onaylayan yeni kullanıcı kapıyı görmez.
+      final kayitOnayi = widget.kayitOnayi;
+      if (kayitOnayi != null) {
+        CrashReporter.arkaPlan(
+            YasalOnayService.instance.kayitOnaylariniKaydet(kayitOnayi,
+                locale: etkinDil, userId: user.id),
+            reason: 'YasalOnayService.kayit');
+      }
       // Kayıt hunisi (F11). Yalnızca olay; akış değişmez.
       // - `disclaimer_accepted` yalnız kayıt BAŞARILIYSA: başarısızsa kapı
       //   ekranı yeniden sorar ve olay oradan (main.dart) gider — iki kez

@@ -8,6 +8,160 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
+
+Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
+değişikliği yalnız **0102 yasal onay kaydı** (dal `feat/yasal-onay-kaydi`,
+aşağıda). **2026-10-04 kullanıcı kararı: bugünün 14 bayrağı AÇIK doğar**
+("bugün yapılan tüm geliştirmeler için flagleri açık olarak mergele maine").
+Bir özelliği uzaktan KAPATMAK için Firebase Console › Remote Config'e o
+anahtarı `false` olarak ekle (uygulama yeniden yayımlanmadan çalışır).
+Liste ve ne açtıkları:
+  - `ilk_varlik_kolay`: boş ana ekranda **Canlı fiyat vitrini** (₺0 kartı
+    gizlenir), Varlık Ekle'de "Yazarak ekle" / "Ekstreden aktar", komisyon +
+    not "Ayrıntı ekle" altında.
+  - `bugun_karti_kiyas`: Bugün kartı **H** düzeni (hareket + enflasyon kıyası
+    + en çok oynayan + hedef). Son 7 gün / artıdaki varlık / aylık özet /
+    olay bu düzende yok.
+  - `varlik_islem_cubugu`: varlık ekranında Al · Sat · Temettü çubuğu, dönem
+    yüzdesi tek yerde.
+  - `tek_ortak_secici`: Portföy / Hareketler / Takip'te Performans'la aynı
+    segment seçici.
+  - `tek_kiyas_yuzeyi`: varlık ekranının "Karşılaştır"ı Karşılaştır
+    ekranını o varlık + dönemle açar (mevduat/BES eski seçicide kalır).
+  - `siralama_tek_sayfa`: Yarış + Zirve tek "Sıralama" sayfası (Ortaklarım /
+    Zirvedekiler). Havuz küçükken açmak isteğe bağlı.
+  - `yaris_duello_arena`: tam iki kişilik yarışta Düello arenası (halat,
+    taç, lider şeridi; 1H · 1A · 1Y). 3+ kişide kürsü + liste aynen.
+  - `ortak_secimi_tasi`: Ana ekranda Birlikte / ortak seçiliyken Bugün
+    kartından açılan Performans › Özet aynı seçimle açılır (kapalıyken her
+    zaman Ben).
+  - `performans_ayar_sade`: grafik tipi yalnız Çizgi/Mum, "Bugünkü
+    portföyle" Ayarlar › Görünüm'de, Ayarlar grupları + katlanır Gelişmiş.
+  - `karsilama_tanitimi` açıkken giriş ekranında Apple/Google düğmeleri
+    formun ÜSTÜNDE (iOS'ta görünür; Android derlemesinde Google kimliği yok).
+- Bayraksız gelenler: jargon ("Piyasanın kattığı" → "Fiyat etkisi",
+  "Birikim değişimi" → "Toplam değişim", Özet başlıkları "Ne oldu? / Neden
+  böyle? / Ayrıntılar / Daha fazlası", "Dağ" → "Alan", Bugün kartında
+  "sadece fiyat etkisi"); tema yalnız Ayarlar'da (Profil'den kalktı);
+  ölü kod ve okunmayan `paywall_variant` / `free_signal_slots_per_day`
+  bayrakları silindi; köprüde "−₺0" artık "₺0"; Bugün kartında kıvılcım
+  çizilince tutarın küçülmesi düzeltildi.
+- [ ] **Hukuki karar:** kayıttaki iki onay kutusunu
+      (koşullar + KVKK + 18 yaş / yurt dışı aktarım açık rızası) tek kutuya
+      indirmek avukat onayı ister. **Kod hazır, bayrak `tek_onay_kutusu`
+      (dal `feat/sade2-tek-onay`); avukat onayı gelince aç.** Avukata
+      gösterilecek cümle: "Yasal Koşulları, KVKK Aydınlatma Metni'ni ve 18+
+      olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına açık
+      rıza veriyorum." (üç bağlantı cümle içinde: Koşullar, KVKK Aydınlatma,
+      açık rıza → Gizlilik). Açık rıza kaydı artık ayrı tutuluyor: 0102
+      (`yasal_onay_kaydi` açıkken) kutu metnini ve belgeleri `yasal_onaylar`'a
+      yazar.
+- [ ] **Yasal metinler + kim neyi onayladı (0102) + yeniden onay kapısı** —
+      dal `feat/yasal-onay-2` (worktree `PortfoyTakip-yasal2`), YEREL, push
+      yok. İstekler: "bu metinleri de db de tutup her müşteri hangilerini
+      onaylamış takip edilebilir olmalı" + (2026-10-04) "Metin değişirse her
+      user'ın onayladığı rıza metni neyse o şekilde tutulması. Metin
+      değiştikçe eski rıza metinleri de DB'de tutulmalı. Eski rıza metnini
+      onaylayanlar için ilk login'de güncel doküman sunulup onay istenmeli."
+      **Dağıtım sırası** (sen koşarsın; Claude canlıya dokunmaz):
+  1. `supabase/migrations/0102_yasal_metin_onaylari.sql`'i **iki sunucuya**
+     dağıt: GitHub Actions › `supabase-deploy.yml`, hedef `ikisi`
+     (Frankfurt → Tokyo). Frankfurt token'ı 403 verirse yerel CLI
+     (bkz. Frankfurt taşıması notları). 0102 `auth.users` üzerine bir
+     BEFORE DELETE tetikleyicisi ve `yasal-onay-saklama` cron işi kurar
+     (Frankfurt "tüm cron kapalı" kipindeyse iş kapalı doğar).
+  2. `python tool/sema_esitlik.py` → "ŞEMA EŞİT" görmeden 3'e geçme.
+  3. Kontrol (SQL Editor, salt okunur):
+     `select tur, surum, dil, govde_hash from yasal_metinler order by tur;`
+     → 9 satır; belgeler (`kosullar`, `gizlilik_politikasi`,
+     `kvkk_aydinlatma`) **1.1**, kutular ve yatırım uyarısı 1.0.
+     `select kanal, count(*) from yasal_onaylar group by 1;` → yalnız
+     `aktarim` (eski yatırım uyarısı + Zirve rızaları).
+     `select jobname, active from cron.job where jobname = 'yasal-onay-saklama';`
+  ⚠️ 2026-10-04: `yasal_onay_kaydi` ve `yeniden_onay_kapisi` artık
+  VARSAYILAN AÇIK — 4. ve 6. adımlar Console işi değil, uygulama yayımlanınca
+  kendiliğinden açılır. Bu yüzden **0102 iki sunucuya uygulama mağazaya
+  çıkmadan ÖNCE dağıtılmalı**; kapatmak için Console'a `false` ekle.
+  4. Firebase Console › Remote Config: `yasal_onay_kaydi` = `true` (önce
+     kendi cihazın). Kapalıyken uygulama birebir eski; 0102'den ÖNCE açılırsa
+     her kayıtta "fonksiyon yok" hatası Crashlytics'e düşer.
+  5. Cihazda: yeni hesap aç (OTP'ye kadar) → `select * from yasal_onay_durumu
+     where user_id = '<yeni id>';` → `kayit_kutu_kosullar`, `kayit_kutu_riza`,
+     `kosullar`, `gizlilik_politikasi`, `kvkk_aydinlatma` için `guncel_mi =
+     true`. Zirve'ye katıl → `zirve_riza` true; ayrıl → `geri_cekildi = true`.
+  6. **Sonra** `yeniden_onay_kapisi` = `true` (önce kendi cihazın). Yalnız
+     `yasal_onay_kaydi` de açıkken etkili. Açılınca girişte: belgelerin
+     güncel sürümüne (1.1) ve kayıt kutusu taahhütlerine onayı olmayan
+     HERKES (yani bugünkü tüm kullanıcılar — sunucuda kanıtları yok) bir kez
+     "Yasal belgeler" ekranını görür; Apple/Google ile ilk kez gelen de.
+     Bunu açmadan önce aşağıdaki avukat sorularını kapat.
+  - **Yönetici sorgusu** ("kim neyi onaylamış"):
+    ```sql
+    -- Güncel koşulları onaylamamış kullanıcılar
+    select user_id, onaylanan_surum, guncel_surum, onay_at
+      from yasal_onay_durumu
+     where tur = 'kosullar' and not guncel_mi;
+    -- Bir kullanıcının tam dökümü (metin ve gösterilen ülke dahil)
+    select m.tur, m.surum, m.dil, o.onay_at, o.kanal, o.degiskenler,
+           o.geri_cekildi_at, o.hesap_silindi_at
+      from yasal_onaylar o join yasal_metinler m on m.id = o.metin_id
+     where o.user_id = '<id>' order by o.onay_at;
+    ```
+  - **Metin değişince** (süreç `lib/services/yasal_metin_katalogu.dart`
+    başında): sürümü + meta satırını + kapının "Neler değişti" notunu
+    güncelle → `flutter test --run-skipped --tags arac
+    tool/yasal_metin_uret_test.dart` → çıktıyı YENİ migration'a koy → iki
+    sunucuya dağıt → istemciyi yayınla. Eski sürümü onaylayan herkes bir
+    sonraki açılışta kapıda yenisini görür; eski onay ve eski metin satırı
+    DB'de aynen kalır. Kilit testi sürüm artırılmadan değişen metni CI'da
+    yakalar.
+  - **Çözülen sorular (karar 2026-10-04):**
+    - Hesap silinince onay ispatı → **karar: kalır.** `yasal_onaylar`
+      auth.users'a bağlı değil; silmede `hesap_silindi_at` damgalanır,
+      3 yıl sonra cron siler; Zirve rızası kaydı hemen silinir (Gizlilik
+      §5.1). Yatırım uyarısı onayı (`disclaimer_acceptances`, cascade —
+      dokunulmadı) silmeden önce `yasal_onaylar`'a taşınır.
+    - Eski kullanıcılardan yeniden onay → **karar: evet**, girişte kapı
+      (bayrak `yeniden_onay_kapisi`).
+    - Belgelerin sürümü → **karar: 1.1** (yürürlük 4 Ekim 2026). "1.0"
+      adıyla birden çok farklı metin yayımlandığı için DB'ye "1.0" arşivi
+      yazılmadı; DB'deki ilk belge sürümü 1.1.
+    - KVKK Aydınlatma bağlantısı → **çözüldü:** kayıtta iki düzende de ayrı
+      bağlantı, `LegalDocs.kvkk`'yı açar; Koşullar bağlantısının başlığı
+      artık "Kullanım Koşulları". Okunan kutu cümlesi harfi harfine aynı
+      (kutu sürümü 1.0'da kaldı).
+    - Apple/Google girişinde kutular → **çözüldü:** kapı ilk girişte
+      belgeleri + kayıt kutularının aynısını (18+, yurt dışı aktarım açık
+      rızası) gösterir; zorunlu kullanıcı adı ekranı ondan SONRA aynen.
+  - **Avukata sorulacaklar (açık):**
+    1. Belgeler 1.1'de iki ifade netleştirildi: saklama satırı "Disclaimer
+       onay logu" → "Yasal metin onay kayıtları (Koşullar, Gizlilik
+       Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası,
+       yatırım uyarısı) — hesap silindikten sonra 3 yıl"; KVKK §2.5
+       "Disclaimer onay zamanı, sürümü, platformu, IP'si" → "Yasal metin
+       onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama
+       sürümü, dil" (uygulama IP saklamıyor). Uygun mu? Dayanak "TBK 146"
+       genel zamanaşımı 10 yıl — "3 yıl" ile tutarlı mı?
+    2. Kapıdaki yürürlük: Koşullar §13 "değişiklikten en az 30 gün önce
+       bildirim" diyor; kapı bunu girişte ister ve onay alınca hemen geçerli
+       sayar. Uygun mu, yoksa 30 gün bekleyip mi açılmalı?
+    3. E-posta kaydında `disclaimer_acceptances` OTP sonrası yatırım uyarısı
+       metninin (`disclaimerText`) hash'iyle yazılıyor ama o metin kayıt
+       yolunda ekranda GÖSTERİLMİYOR (kutudaki "yatırım tavsiyesi değildir"
+       maddesi gösteriliyor). Kapı (sosyal giriş) ise uyarının TAM metnini
+       gösterip öyle yazar. Kayıtta da gösterilsin mi?
+    4. Tek onay kutusu (`tek_onay_kutusu`) açılırsa kayıt ve kapı
+       `kayit_tek_kutu` (TR + EN) yazar — yukarıdaki hukuki karar
+       maddesiyle birlikte değerlendir.
+    5. Web'deki belgeler (`legal/*.md`, `docs/legal/**`, `docs/privacy*`,
+       `docs/terms*`) uygulama içi metinden AYRIŞMIŞ (bölüm sayıları farklı,
+       ör. Koşullar web 19 / uygulama 14 bölüm) ve hepsi "Sürüm: 1.0".
+       Sürüm satırı hizalanmadı (aynı metin değiller); hangisi esas, birleşsin mi?
+- Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
+  (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
+  vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).
+
 ## ⏳ 2026-10-04 Sadeleştirme 1. parti — dal `claude/project-thread-jpfk0o`
 
 İstek (yasin): "kullanıcı adı kalsın, diğer değişiklikleri yapalım; onboarding

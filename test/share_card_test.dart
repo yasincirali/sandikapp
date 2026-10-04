@@ -94,7 +94,7 @@ void main() {
       expect(find.text('YATIRIMCILARIN'), findsOneWidget);
       expect(find.text("%88'inden iyi"), findsOneWidget);
       // Beşinci ve sonrası çizilmez: 320 px'te altı kutu okunmaz.
-      expect(find.text('YILLIK (XIRR)'), findsNothing);
+      expect(find.text('YILLIK GETİRİ'), findsNothing);
       expect(find.text('EN DERİN DÜŞÜŞ'), findsNothing);
       expect(find.text('EN SABIRLI'), findsNothing);
       expect(find.text('TAKİP'), findsNothing);
@@ -117,7 +117,8 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('YILLIK (XIRR)'), findsOneWidget);
+      // Etiket 2026-10-04'e kadar "Yıllık (XIRR)" idi (sadeleştirme 2).
+      expect(find.text('YILLIK GETİRİ'), findsOneWidget);
       expect(find.text('+%41,2'), findsOneWidget);
       expect(find.text('EN DERİN DÜŞÜŞ'), findsOneWidget);
       expect(find.text('−%14,2'), findsOneWidget);

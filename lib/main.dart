@@ -31,6 +31,7 @@ import 'providers/sozlesme_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
 import 'screens/karsilama_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
+import 'screens/yasal_onay_kapisi_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/lock_offer_screen.dart';
 import 'services/tazelik_ritmi.dart';
@@ -54,6 +55,7 @@ import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
+import 'services/yasal_onay_service.dart';
 import 'services/ilk_acilis_sirasi.dart';
 import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
@@ -890,6 +892,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
   String? _checkedUserId;
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
+
+  /// Yeniden onay kapısı (bayrak `yeniden_onay_kapisi`, 2026-10-04) —
+  /// null = kontrol bekleniyor. Bayrak kapalıyken servis ağa gitmeden
+  /// [YasalKapiDurumu.tamam] döner: davranış birebir eski.
+  YasalKapiDurumu? _yasalKapi;
+
+  /// Yasal kapıların ikisi de geçildi mi (yatırım uyarısı + yeniden onay).
+  bool get _yasalKapilarGecildi =>
+      _disclaimerAccepted == true && _yasalKapi?.gerekli == false;
   bool? _onboardingDone; // null = kontrol bekleniyor
   bool _splashDone = false;
 
@@ -1087,6 +1098,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
         _onboardingDone = null;
+        _yasalKapi = null;
         _kilometreTasiSessizKullanici = null;
         // Yeniden girişte kilit teklifi yeniden değerlendirilir (F2).
         _kilitTeklifiErtelenen = null;
@@ -1190,6 +1202,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         DisclaimerService.instance.hasAccepted(user.id).then((accepted) {
           if (!mounted) return;
           setState(() => _disclaimerAccepted = accepted);
+        });
+        // Yeniden onay kapısı: güncel belge sürümlerine ve kayıt kutusu
+        // taahhütlerine onay var mı. Onayı tam kullanıcıda cihaz izinden
+        // döner (ağ yok); sorgu düşerse kapı yok sayılır (fail-open).
+        _yasalKapi = null;
+        final kapiKullanici = user.id;
+        YasalOnayService.instance.kapiDurumu(kapiKullanici).then((d) {
+          if (!mounted || _checkedUserId != kapiKullanici) return;
+          setState(() => _yasalKapi = d);
         });
         OnboardingScreen.isCompleted(user.id).then((done) {
           if (!mounted) return;
@@ -1344,14 +1365,17 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // uygun olduğunda açılmalı.
     for (var deneme = 0; deneme < 20; deneme++) {
       if (!mounted) return;
-      if (_onboardingDone == true &&
-          _disclaimerAccepted == true &&
-          !_locked) {
+      if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) {
         break;
       }
       await Future<void>.delayed(_yenilikYoklamaAraligi);
     }
-    if (!mounted || _locked || _onboardingDone != true) return;
+    if (!mounted ||
+        _locked ||
+        _onboardingDone != true ||
+        !_yasalKapilarGecildi) {
+      return;
+    }
 
     final ctx = appNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) return;
@@ -1366,6 +1390,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   bool _kutlamaYeriUygun() {
     if (!mounted || _locked) return false;
     if (_onboardingDone != true || _disclaimerAccepted != true) return false;
+    if (_yasalKapi?.gerekli != false) return false;
     if (tanitimTuruAktif) return false;
     if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
       return false;
@@ -1650,11 +1675,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
     // Tema tercihi değişince uygulama DIŞI yüzeyleri tazele.
     //
-    // Dinleyici BURADA, tek yerde: tercih iki yerden değiştirilebiliyor
-    // (Ayarlar'daki üçlü seçici ve Profil başlığındaki hızlı geçiş) ve
-    // itişi ekranlara dağıtmak birini atlamak demekti — Profil'deki geçiş
-    // tam olarak bunu yapıyordu, widget ve kilit ekranı bir sonraki
-    // portföy yayınına kadar eski temada kalıyordu.
+    // Dinleyici BURADA, tek yerde: tercih eskiden iki yerden
+    // değiştirilebiliyordu (Ayarlar'daki üçlü seçici ve Profil başlığındaki
+    // hızlı geçiş) ve itişi ekranlara dağıtmak birini atlamak demekti —
+    // Profil'deki geçiş tam olarak bunu yapıyordu, widget ve kilit ekranı
+    // bir sonraki portföy yayınına kadar eski temada kalıyordu. Profil
+    // geçişi 2026-10-04'te kaldırıldı; dinleyici yine burada kalır ki
+    // ileride eklenecek ikinci bir giriş aynı hatayı tekrarlamasın.
     //
     // `_AuthGate` `MaterialApp.home`'dur, yani uygulama yaşadığı sürece
     // mount'tur; üstüne açılan ekranlardan yapılan değişim de buraya düşer.
@@ -1950,7 +1977,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     if (!_splashDone ||
         (auth.isLoading && !auth.hasValue) ||
         (user != null &&
-            (_disclaimerAccepted == null || _onboardingDone == null))) {
+            (_disclaimerAccepted == null ||
+                _yasalKapi == null ||
+                _onboardingDone == null))) {
       return const SandikLoadingScreen(key: ValueKey('splash'));
     }
 
@@ -1971,7 +2000,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // `_dataWaitExpired` sonrası ana ekrana geç, HomeScreen kendi hata/boş
     // durumunu gösterir.
     if (user != null &&
-        _disclaimerAccepted == true &&
+        _yasalKapilarGecildi &&
         _onboardingDone == true &&
         !_dataWaitExpired &&
         !veriHazir) {
@@ -2013,6 +2042,35 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       return const LoginScreen(key: ValueKey('login'));
     }
     _oturumVardi = true;
+
+    // Yeniden onay kapısı (bayrak `yeniden_onay_kapisi`, 2026-10-04) —
+    // yatırım uyarısı kapısıyla AYNI yerde, kullanıcı adından ve turdan
+    // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı belgeleri ve kayıt
+    // kutusu taahhütlerini (18+, yurt dışı aktarım açık rızası) uygulamaya
+    // girmeden onaylar; zorunlu kullanıcı adı ekranı ondan sonra AYNEN
+    // gelir. İki yasal ekran art arda gelmesin diye yatırım uyarısı da
+    // eksikse o metin bu ekrana girer ve `disclaimer_acceptances` aynı
+    // çağrıyla (`kabulKaydet`) yazılır; yalnız uyarı eksikse aşağıdaki eski
+    // ekran birebir gelir.
+    final yasalKapi = _yasalKapi;
+    if (yasalKapi != null && yasalKapi.gerekli) {
+      final uyariDahil = _disclaimerAccepted == false;
+      return YasalOnayKapisiScreen(
+        key: const ValueKey('yasal-kapi'),
+        userId: user.id,
+        durum: yasalKapi,
+        yatirimUyarisiDahil: uyariDahil,
+        onTamam: () {
+          if (uyariDahil) {
+            AnalyticsService.instance.logSignupStep('disclaimer_accepted');
+          }
+          setState(() {
+            _yasalKapi = YasalKapiDurumu.tamam;
+            if (uyariDahil) _disclaimerAccepted = true;
+          });
+        },
+      );
+    }
 
     if (_disclaimerAccepted == false) {
       return DisclaimerAcceptanceScreen(

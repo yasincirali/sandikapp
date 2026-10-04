@@ -333,15 +333,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get levelBeginnerDesc =>
-      'Simple view: technical signals, percentile, health and XIRR cards are hidden.';
+      'Simple view: technical signals, percentile, health and annual return cards are hidden.';
 
   @override
   String get levelIntermediateDesc =>
-      'Today\'s view: technical signals, percentile, health card and money-weighted return (XIRR).';
+      'Today\'s view: technical signals, percentile, health card and annual return since your first buy.';
 
   @override
   String get levelAdvancedDesc =>
-      'Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).';
+      'Intermediate + return per unit of risk, effect of your buy timing and recovery from drops (Summary › 1Y).';
 
   @override
   String get noAssetsYet => 'No assets added yet';
@@ -1534,12 +1534,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get generateCode => 'Generate Code';
 
   @override
-  String get switchToDark => 'Switch to dark theme';
-
-  @override
-  String get switchToLight => 'Switch to light theme';
-
-  @override
   String get tabChart => 'Chart';
 
   @override
@@ -1651,7 +1645,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceUpper => 'RACE';
 
   @override
-  String get changeByTypeUpper => 'BY TYPE · MARKET ADDED';
+  String get changeByTypeUpper => 'BY TYPE · PRICE EFFECT';
 
   @override
   String get noData => 'No data';
@@ -1850,7 +1844,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'The percentage comes only from what the market added. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.';
+      'The percentage comes only from the price effect. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.';
 
   @override
   String annualRatePct(String pct) {
@@ -2446,34 +2440,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get realReturnCpi => 'CPI';
 
   @override
-  String get weeklyFlatSemantics =>
-      'Your portfolio\'s market return did not change this week';
-
-  @override
-  String get thisWeekFromMarket => 'From the market this week: ';
-
-  @override
   String get noChangeLower => 'no change';
-
-  @override
-  String pctDown(String pct) {
-    return '$pct% down';
-  }
-
-  @override
-  String weeklyDownSemantics(String pct) {
-    return 'Your portfolio\'s market return is $pct percent down this week';
-  }
-
-  @override
-  String weeklyUpSemantics(String pct) {
-    return 'Your portfolio\'s market return is $pct percent up this week';
-  }
-
-  @override
-  String pctUp(String pct) {
-    return '$pct% up';
-  }
 
   @override
   String get totalNetHidden => 'Total net worth hidden';
@@ -3507,7 +3474,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactionsYet => 'No transactions yet';
 
   @override
-  String get todaysBalanceChange => 'Today\'s balance change';
+  String get todaysBalanceChange => 'Today\'s total change';
 
   @override
   String sinceDateToToday(String date) {
@@ -3516,7 +3483,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String balanceChangeSince(String date) {
-    return 'Balance change since $date';
+    return 'Total change since $date';
   }
 
   @override
@@ -3526,11 +3493,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String periodBalanceChange(String period) {
-    return '$period balance change';
+    return '$period total change';
   }
 
   @override
-  String get marketOnlyRow => 'Market effect only';
+  String get marketOnlyRow => 'Price effect only';
 
   @override
   String rowExpandedSemantics(String label) {
@@ -3737,7 +3704,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get shareCardXirr => 'Annualized (XIRR)';
+  String get shareCardXirr => 'Annual return';
 
   @override
   String get shareCardDrawdown => 'Max drawdown';
@@ -3804,7 +3771,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateAppSubtitle => 'Leave a rating on the store';
 
   @override
-  String get todayMarketOnly => 'market effect only';
+  String get todayMarketOnly => 'price effect only';
 
   @override
   String todaySessionOpen(String close) {
@@ -3993,7 +3960,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayClosedShort => 'Closed';
 
   @override
-  String get todayMarketOnlyShort => 'market only';
+  String get todayMarketOnlyShort => 'price effect';
 
   @override
   String get todayGreenShort => 'In profit';
@@ -4177,19 +4144,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sectionResult => 'RESULT';
+  String get sectionResult => 'What happened?';
 
   @override
-  String get sectionWhy => 'WHY';
+  String get sectionWhy => 'Why?';
 
   @override
-  String get sectionDetail => 'DETAIL';
+  String get sectionDetail => 'Details';
 
   @override
-  String get sectionDepth => 'DEPTH';
+  String get sectionDepth => 'More';
 
   @override
-  String get sectionDepthHint => 'XIRR, health, advanced metrics, character';
+  String get sectionDepthHint => 'Annual return, health, character';
 
   @override
   String get myAlarms => 'My alerts';
@@ -5228,19 +5195,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get investedRow => 'You put in';
 
   @override
-  String get marketAddedRow => 'Market added';
+  String get marketAddedRow => 'Price effect';
 
   @override
   String get dividendPocketRow => 'Dividends you pocketed';
 
   @override
   String flowBuyBalance(String flow, String change) {
-    return 'Bought $flow · balance $change';
+    return 'Bought $flow · total $change';
   }
 
   @override
   String flowSellBalance(String flow, String change) {
-    return 'Sold $flow · balance $change';
+    return 'Sold $flow · total $change';
   }
 
   @override
@@ -5545,5 +5512,269 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get balanceChangeInclBuys => 'Balance change (incl. buys)';
+  String get balanceChangeInclBuys => 'Total change (incl. buys)';
+
+  @override
+  String get firstAssetPickTitle => 'What are you saving in?';
+
+  @override
+  String get firstAssetPickHint =>
+      'Pick one, type the amount; the price fills itself.';
+
+  @override
+  String get firstAssetGoldGram => 'Gram gold';
+
+  @override
+  String get firstAssetUsd => 'Dollar';
+
+  @override
+  String get firstAssetEur => 'Euro';
+
+  @override
+  String get firstAssetFund => 'A fund';
+
+  @override
+  String get firstAssetStock => 'A stock';
+
+  @override
+  String get firstAssetOtherType => 'Add another type';
+
+  @override
+  String get addDetails => 'Add details (fee, note)';
+
+  @override
+  String get addByTyping => 'Add by typing';
+
+  @override
+  String get importFromStatement => 'Import statement';
+
+  @override
+  String get orWithEmail => 'or with email';
+
+  @override
+  String get todayTopMoverLabel => 'Biggest mover';
+
+  @override
+  String get todayVsInflationYou => 'Your return';
+
+  @override
+  String get todayVsInflationCpi => 'CPI';
+
+  @override
+  String get vitrinWelcome => 'Welcome';
+
+  @override
+  String get vitrinTitle => 'What do you own?';
+
+  @override
+  String get vitrinHint =>
+      'Tap and type the amount. Prices are live; your sandık keeps itself up to date.';
+
+  @override
+  String get vitrinLive => 'Live prices';
+
+  @override
+  String get vitrinQuarterGold => 'Quarter gold';
+
+  @override
+  String get vitrinFundHint => 'Every fund on TEFAS';
+
+  @override
+  String get vitrinStockHint => 'Borsa Istanbul';
+
+  @override
+  String get vitrinOtherTypes =>
+      'Crypto, commodities, deposits, pension and more';
+
+  @override
+  String get vitrinOtherTypesShort => 'Crypto, pension and more';
+
+  @override
+  String get vitrinStatementHint => 'Broker PDF, Excel or CSV, all in one go';
+
+  @override
+  String get vitrinStatementHintShort => 'PDF, Excel or CSV in one go';
+
+  @override
+  String get vitrinTapToAdd => 'Tap to add';
+
+  @override
+  String get vitrinPriceUnknown => 'No price yet';
+
+  @override
+  String get rankingTitle => 'Rankings';
+
+  @override
+  String get rankingTabPartners => 'My partners';
+
+  @override
+  String get rankingTabEveryone => 'Top portfolios';
+
+  @override
+  String get todaysPortfolioBadge => 'With today\'s portfolio';
+
+  @override
+  String get todaysPortfolioBadgeHint =>
+      'You can turn this view off in Settings › Appearance.';
+
+  @override
+  String get todaysPortfolioSettingTitle => 'Show with today\'s portfolio';
+
+  @override
+  String get todaysPortfolioSettingSubtitle =>
+      'Performance is drawn as if you had held today\'s holdings for the whole period. When off, your actual history is shown.';
+
+  @override
+  String get settingsGroupGeneral => 'GENERAL';
+
+  @override
+  String get settingsGroupPortfolioView => 'PORTFOLIO VIEW';
+
+  @override
+  String get settingsGroupSecurityAccount => 'SECURITY & ACCOUNT';
+
+  @override
+  String get settingsGroupData => 'DATA';
+
+  @override
+  String get settingsGroupAbout => 'ABOUT THE APP';
+
+  @override
+  String get settingsAdvancedUpper => 'ADVANCED';
+
+  @override
+  String get settingsAdvancedSemantics => 'Advanced settings';
+
+  @override
+  String get settingsThemeLabel => 'Theme';
+
+  @override
+  String get settingsBaseCurrencyLabel => 'Base currency';
+
+  @override
+  String get tekOnayBaslik => 'Legal Terms';
+
+  @override
+  String tekOnayAciklama(String ulke) {
+    return 'The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ($ulke) and Firebase (USA/global); you can withdraw your explicit consent at any time (account deletion).';
+  }
+
+  @override
+  String get tekOnayUlkeBilinmiyor => 'abroad';
+
+  @override
+  String tekOnayCumle(String kosullar, String kvkk, String riza) {
+    return 'I accept the $kosullar and $kvkk and confirm I am 18+; I give my $riza to the transfer of my data abroad.';
+  }
+
+  @override
+  String get tekOnayKosullarBaglanti => 'Legal Terms';
+
+  @override
+  String get tekOnayKvkkBaglanti => 'KVKK Privacy Notice';
+
+  @override
+  String get tekOnayRizaBaglanti => 'explicit consent';
+
+  @override
+  String get tekOnayGerekli =>
+      'To continue, accept the legal terms and give explicit consent to the cross-border data transfer.';
+
+  @override
+  String get arenaMeasuring => 'Measuring the gap…';
+
+  @override
+  String arenaBehind(String ad, String fark) {
+    return '$ad leads by $fark pts · you can catch up';
+  }
+
+  @override
+  String get arenaNoDataYet => 'No data yet';
+
+  @override
+  String get arenaWaiting => 'The duel starts once both returns are measured';
+
+  @override
+  String get arenaStripDaily => 'Leader day by day';
+
+  @override
+  String get arenaStripMonthly => 'Leader month by month';
+
+  @override
+  String arenaSwaps(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n lead changes',
+      one: '1 lead change',
+      zero: 'No lead changes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get yasalKapiBaslikGuncel => 'Updated documents';
+
+  @override
+  String get yasalKapiBaslikIlk => 'Legal documents';
+
+  @override
+  String get yasalKapiAciklamaGuncel =>
+      'We\'ve updated the Terms of Use, the Privacy Policy and the KVKK Privacy Notice. To continue, read and accept their current versions.';
+
+  @override
+  String get yasalKapiAciklamaIlk =>
+      'Before you start using the app, read and accept the documents below.';
+
+  @override
+  String get yasalKapiNelerDegisti => 'What changed';
+
+  @override
+  String get yasalKapiDegisiklikNotu =>
+      'Version 1.1: how Top Portfolios (optional, anonymous comparison) works was added, the country of the server storing your data was updated, and it now states clearly that consent records are kept for 3 years after account deletion.';
+
+  @override
+  String get yasalBelgeKosullar => 'Terms of Use';
+
+  @override
+  String get yasalBelgeGizlilik => 'Privacy Policy';
+
+  @override
+  String get yasalBelgeKvkk => 'KVKK Privacy Notice';
+
+  @override
+  String get yasalBelgeKvkkKisa => 'KVKK Notice';
+
+  @override
+  String yasalBelgeSurum(String surum) {
+    return 'Version $surum';
+  }
+
+  @override
+  String get yasalBelgeAcildi => 'Read';
+
+  @override
+  String get yasalBelgelerTurkce => 'The documents are in Turkish.';
+
+  @override
+  String get yasalKapiTaahhutBaslik => 'Your consents';
+
+  @override
+  String get yasalKapiYatirimUyarisi => 'Investment notice';
+
+  @override
+  String get yasalKapiOnayla => 'I have read and accept';
+
+  @override
+  String get yasalKapiOnaylaKisa => 'I accept';
+
+  @override
+  String get yasalKapiKutuGerekli => 'To continue, tick the boxes.';
+
+  @override
+  String get yasalKapiKayitHatasi =>
+      'Your acceptance couldn\'t be saved. Check your connection and try again.';
+
+  @override
+  String get yasalKapiCikis => 'Sign out';
 }

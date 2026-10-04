@@ -146,7 +146,7 @@ const List<SurumNotu> surumNotlari = [
             'Enflasyon karşılaştırması tek sayı söyler: kaç puan önde ya da '
             "geride olduğun, hangi aylar arasında ölçüldüğüyle birlikte; "
             'ayrıntı "Nasıl hesaplandı" altında. Grafik kartındaki yüzde '
-            'yalnızca piyasanın kattığıdır; yatırdığın para ve cebine aldığın '
+            'yalnızca fiyat etkisidir; yatırdığın para ve cebine aldığın '
             'temettü ayrı yazılır. Yeni "Başka yere koysaydın" kartı, aynı '
             'paraları aynı günlerde dolara, altına ya da BIST 100\'e '
             'koysaydın ne olacağını gösterir.',

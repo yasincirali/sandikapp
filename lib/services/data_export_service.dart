@@ -26,7 +26,7 @@ class DataExportService {
 
   /// Dosya biçimi sürümü — yeni tablo eklenince artırılır; içe aktarım
   /// (gelecek) bununla ayrışır.
-  static const String exportVersion = '1.0';
+  static const String exportVersion = '1.1';
 
   /// Dışa aktarılan tablolar: (tablo, süzgeç sütunu, dosyadaki anahtar).
   ///
@@ -47,6 +47,11 @@ class DataExportService {
     ('signal_notifications', 'user_id', 'signal_notifications'),
     ('milestones', 'user_id', 'milestones'),
     ('live_activity_sessions', 'user_id', 'live_activity_sessions'),
+    // 0102 (2026-10-04): hangi yasal metnin hangi sürümünü ne zaman
+    // onayladığı — KVKK 11(b) "işlenmişse bilgi talep etme"nin doğrudan
+    // cevabı. Sürüm 1.1 bu tablo yüzünden. 0102 dağıtılmadan önce tablo
+    // yoktur; `topla` onu yer tutucuyla geçer, export durmaz.
+    ('yasal_onaylar', 'user_id', 'yasal_onaylar'),
   ];
 
   /// Bir tablo çekilemediğinde dosyaya giden yer tutucu.

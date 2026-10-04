@@ -74,22 +74,40 @@ class LegalDocs {
   static const _ulke = '{SUPABASE_ULKE}';
   static const _ulkede = '{SUPABASE_ULKEDE}';
 
-  static List<LegalBlock> _yerlestir(List<LegalBlock> sablon) {
+  /// Gösterimde yer tutuculara giren değerler — anahtar süslü parantezsiz
+  /// ad (`SUPABASE_ULKE`). Yasal onay kaydı (`YasalOnayService`) bunu
+  /// `degiskenler` olarak saklar: veritabanındaki metin ŞABLON hâlidir,
+  /// kullanıcının gördüğü ülke ayrıca bilinmeli.
+  static Map<String, String> yerTutucuDegerleri() {
     final aktif = SunucuSecimi.instance.aktifOrNull;
-    final ulke = aktif?.ulke ?? 'Yurt dışı';
-    final ulkede = aktif?.ulkede ?? 'yurt dışında';
-    String f(String s) => s.replaceAll(_ulke, ulke).replaceAll(_ulkede, ulkede);
+    return {
+      'SUPABASE_ULKE': aktif?.ulke ?? 'Yurt dışı',
+      'SUPABASE_ULKEDE': aktif?.ulkede ?? 'yurt dışında',
+    };
+  }
+
+  static List<LegalBlock> _yerlestir(List<LegalBlock> sablon) {
+    final d = yerTutucuDegerleri();
+    String f(String s) => s
+        .replaceAll(_ulke, d['SUPABASE_ULKE']!)
+        .replaceAll(_ulkede, d['SUPABASE_ULKEDE']!);
     return [for (final b in sablon) b._doldur(f)];
   }
 
   static List<LegalBlock> get privacy => _yerlestir(_privacy);
   static List<LegalBlock> get kvkk => _yerlestir(_kvkk);
 
+  /// Yer tutucuları DOLDURULMAMIŞ şablonlar — yasal metin kataloğunun
+  /// (`yasal_metin_katalogu.dart`) kaynağı. Veritabanına (0102) ve hash'e
+  /// şablon girer; gösterim değişkenleri onay satırında ayrıca durur.
+  static List<LegalBlock> get privacySablonu => _privacy;
+  static List<LegalBlock> get kvkkSablonu => _kvkk;
+
   // ── Gizlilik Politikası ──────────────────────────────────────────────────
 
   static const List<LegalBlock> _privacy = [
     LegalBlock.h1('Gizlilik Politikası'),
-    LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
+    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
     LegalBlock.divider(),
     LegalBlock.h2('1. Veri Sorumlusu'),
     LegalBlock.p(
@@ -205,8 +223,10 @@ class LegalDocs {
       'Zirve havuzu ölçümleri (getiri %, tür payı %)',
       'Son 365 gün (rolling); rıza geri alınınca ya da hesap silinince hemen'
     ]),
-    LegalBlock.tableRow(
-        ['Disclaimer onay logu', 'Hesap silindikten sonra 3 yıl (TBK 146)']),
+    LegalBlock.tableRow([
+      'Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı)',
+      'Hesap silindikten sonra 3 yıl (TBK 146)'
+    ]),
     LegalBlock.tableRow(['Push token', 'Logout / uninstall\'a kadar']),
     LegalBlock.tableRow(['Hata logları', '90 gün']),
     LegalBlock.p(
@@ -246,7 +266,7 @@ class LegalDocs {
 
   static const List<LegalBlock> terms = [
     LegalBlock.h1('Kullanım Koşulları'),
-    LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
+    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
     LegalBlock.divider(),
     LegalBlock.h2('1. Taraflar ve Kabul'),
     LegalBlock.p(
@@ -371,7 +391,7 @@ class LegalDocs {
 
   static const List<LegalBlock> _kvkk = [
     LegalBlock.h1('KVKK Aydınlatma Metni'),
-    LegalBlock.meta('Yürürlük tarihi: 11 Mayıs 2026  ·  Sürüm: 1.0'),
+    LegalBlock.meta('Yürürlük tarihi: 4 Ekim 2026  ·  Sürüm: 1.1'),
     LegalBlock.divider(),
     LegalBlock.h2('1. Veri Sorumlusunun Kimliği'),
     LegalBlock.p(
@@ -397,7 +417,8 @@ class LegalDocs {
     LegalBlock.p(
         '· Şifre (bcrypt hash — geri çevrilemez)\n· Oturum tokenı (JWT)\n· Cihaz IP adresi (oturum açma anında)\n· Cihaz modeli, OS sürümü, uygulama sürümü'),
     LegalBlock.h3('2.5 Hukuki İşlem Verisi'),
-    LegalBlock.p('· Disclaimer onay zamanı, sürümü, platformu, IP\'si'),
+    LegalBlock.p(
+        '· Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama sürümü, dil'),
     LegalBlock.h2('3. Kişisel Verilerin İşlenme Amaçları'),
     LegalBlock.tableHeader(['Amaç', 'Veri Kategorileri']),
     LegalBlock.tableRow(['Hesap oluşturma ve oturum yönetimi', '2.1, 2.4']),
@@ -472,7 +493,7 @@ class LegalDocs {
     LegalBlock.tableRow(
         ['Push token', 'Logout / uninstall\'a kadar', 'Sözleşme süresi']),
     LegalBlock.tableRow([
-      'Disclaimer onay logu',
+      'Yasal metin onay kayıtları (Koşullar, Gizlilik Politikası, KVKK Aydınlatma Metni, yurt dışı aktarım açık rızası, yatırım uyarısı)',
       'Hesap silinmesinden sonra 3 yıl',
       'TBK Madde 146'
     ]),

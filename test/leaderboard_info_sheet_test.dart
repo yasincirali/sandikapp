@@ -80,7 +80,13 @@ void main() {
       final i = kart.indexOf('class _SoloHero');
       expect(i, greaterThan(0));
       final govde = kart.substring(i, i + 1200);
-      expect(govde.contains('LeaderboardScreen'), isTrue,
+      // 2026-10-04: hedef `yarisGirisEkrani()` üzerinden — bayrak
+      // `siralama_tek_sayfa` kapalıyken `LeaderboardScreen`, açıkken
+      // Sıralama › Ortaklarım (`siralama_test` iki kolu da pump eder).
+      expect(
+          govde.contains('LeaderboardScreen') ||
+              govde.contains('yarisGirisEkrani()'),
+          isTrue,
           reason: 'kart yalnızca bilgi vermez, ekranı AÇAR');
     });
   });

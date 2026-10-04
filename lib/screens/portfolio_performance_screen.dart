@@ -31,6 +31,7 @@ import 'main_navigation_screen.dart' show MainNavigationScreen;
 import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
+import '../utils/pozisyon_etiketi.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/islem_noktalari.dart';
@@ -66,16 +67,16 @@ import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart'
     show
+        bugunkuPortfoyleProvider,
         leaderboardOptInProvider,
         seviyeGorunurlukProvider,
         yatirimciSeviyesiProvider;
-import 'leaderboard_screen.dart';
-import '../widgets/kapsam_kisi_secici.dart';
+import 'siralama_screen.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
-import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/kiyas_karti.dart';
 import '../services/kiyas_service.dart';
@@ -197,7 +198,27 @@ class _PortfolioPerformanceScreenState
   late AssetType? _typeFilter;
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
-  bool _simulate = false;
+  //
+  // İki kaynak DEĞİL, bayrağa göre tek kaynak (`performans_ayar_sade`):
+  //   · kapalı → ekranın kendi oturum alanı `_simulateYerel` (eski davranış,
+  //     kapsam panelindeki Gerçek|Simülasyon anahtarı yazar);
+  //   · açık   → Ayarlar › Görünüm'deki `bugunkuPortfoyleProvider`; ekranda
+  //     anahtar yok, yalnız etkinken rozet. Sade Başlangıç'ta (grafik
+  //     araçları gizli) tercih açık kalsa da etkisizdir — kapatılamayan bir
+  //     mod olmasın; tercih silinmez, seviye değişince geri gelir.
+  // Yazan yolların hepsi (kapsam paneli, "Günlük'e git" isteği) eski yolda
+  // çalışır; setter bu yüzden yalnız yerel alanı yazar.
+  bool _simulateYerel = false;
+
+  bool get _simulate {
+    if (!RemoteConfigService.instance.performansAyarSade) {
+      return _simulateYerel;
+    }
+    return ref.read(bugunkuPortfoyleProvider) &&
+        ref.read(seviyeGorunurlukProvider).grafikAraclari;
+  }
+
+  set _simulate(bool v) => _simulateYerel = v;
 
   /// Yüzey sekmesi: false = Grafik, true = Özet.
   ///
@@ -496,6 +517,12 @@ class _PortfolioPerformanceScreenState
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
+    // `_simulate` Ayarlar'daki tercihi `ref.read` ile okur (build dışından
+    // da çağrılıyor); değişince ekran yeniden kurulsun diye burada izlenir.
+    if (RemoteConfigService.instance.performansAyarSade) {
+      ref.watch(bugunkuPortfoyleProvider);
+      ref.watch(seviyeGorunurlukProvider);
+    }
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     // Kapsam seçicinin `onChanged`'ı ile aynı yol: gün içi tohumu da atılır.
@@ -609,8 +636,10 @@ class _PortfolioPerformanceScreenState
                             padding: EdgeInsets.zero,
                             onPressed: () => pushGuarded(
                               context,
+                              // Bayrak `siralama_tek_sayfa` açıksa
+                              // Sıralama › Ortaklarım; kapalıysa Yarış.
                               adaptiveRoute<void>(
-                                  builder: (_) => const LeaderboardScreen()),
+                                  builder: (_) => yarisGirisEkrani()),
                             ),
                             // Üst çubuk düğmeleri her ekranda aynı kabuk
                             // (44pt kutu) ve aynı aralık (`SandikSpace.sm`)

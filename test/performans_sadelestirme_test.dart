@@ -175,7 +175,7 @@ void main() {
           reason: 'temettü hariç — Birikim disiplinin kartıyla aynı sayı');
       expect(find.text('Cebine aldığın temettü'), findsOneWidget);
       expect(find.text('−₺150.045'), findsOneWidget);
-      expect(find.text('Piyasanın kattığı'), findsOneWidget);
+      expect(find.text('Fiyat etkisi'), findsOneWidget);
       // Ana rakam + köprü satırı: aynı sayı iki yerde.
       expect(find.text('+₺136.676'), findsNWidgets(2));
       expect(find.text('₺1.422.472'), findsOneWidget);
@@ -319,9 +319,11 @@ void main() {
 
     test('Grafik sekmesi: ham sembol ve "işlem hacmi" dili kalmadı', () {
       expect(trMetni('tradeVolumeUpper'), 'ALIM · SATIŞ');
-      expect(trMetni('changeByTypeUpper'), contains('PİYASANIN KATTIĞI'));
-      final o = ekranKaynagiSync(
-          'lib/screens/portfolio_performance/ozet_yan_veri.dart');
+      // 2026-10-04: "piyasanın kattığı" → "fiyat etkisi" (Özet köprüsü ve Bugün
+      // kartıyla tek ad); anlam aynı: satır piyasa etkisini söyler.
+      expect(trMetni('changeByTypeUpper'), contains('FİYAT ETKİSİ'));
+      // Etiket gövdesi 2026-10-04'te `pozisyonEtiketi`'ne taşındı.
+      final o = ekranKaynagiSync('lib/utils/pozisyon_etiketi.dart');
       expect(o.contains("'EUR' => l.marketEuro"), isTrue,
           reason: 'EURTRY=X müşteriye sızmasın');
     });

@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
+import '../services/remote_config_service.dart';
+import '../services/yasal_onay_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
@@ -14,6 +17,7 @@ import '../widgets/sandik_skeleton.dart';
 import '../widgets/zirve_ayna_kiyas.dart';
 import '../widgets/zirve_cetveli.dart';
 import '../widgets/zirve_dagilim_seridi.dart';
+import '../widgets/zirve_donem_secici.dart';
 import '../widgets/zirve_fon_listesi.dart';
 import '../widgets/zirve_karti.dart';
 import '../widgets/zirve_riza_karti.dart';
@@ -44,19 +48,63 @@ import '../widgets/zirve_riza_karti.dart';
 /// ## Dil
 /// Sayı yalnız başına konuşmaz; cümleler `ZirveKiyas`'ta. Dağılım farkı
 /// renklendirilmez (iyi/kötü değil); renk yalnızca getiride.
-class ZirvePortfoylerScreen extends ConsumerStatefulWidget {
+class ZirvePortfoylerScreen extends StatefulWidget {
   const ZirvePortfoylerScreen({super.key, this.baslangic = ZirveDonem.ay});
 
   /// Açılış dönemi — kart Performans'ın dönemini eşleyip geçirir.
   final ZirveDonem baslangic;
 
   @override
-  ConsumerState<ZirvePortfoylerScreen> createState() =>
-      _ZirvePortfoylerScreenState();
+  State<ZirvePortfoylerScreen> createState() => _ZirvePortfoylerScreenState();
 }
 
-class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
+class _ZirvePortfoylerScreenState extends State<ZirvePortfoylerScreen> {
   late ZirveDonem _donem = widget.baslangic;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.c.background,
+      appBar: SandikAppBar(title: 'Zirvedeki Portföyler'),
+      body: SafeArea(
+        child: ZirveGovdesi(
+          donem: _donem,
+          onDonem: (d) => setState(() => _donem = d),
+        ),
+      ),
+    );
+  }
+}
+
+/// Zirve ekranının gövdesi — rıza kartı ya da cetvel.
+///
+/// `ZirvePortfoylerScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04):
+/// tek "Sıralama" sayfasının "Herkes" sekmesi AYNI gövdeyi çizer. Dönem
+/// dışarıdan yönetilir ki sayfa iki sekmede tek dönem tutsun. Açık rıza
+/// akışı (0091) gövdede kalır: hangi kapıdan gelinirse gelinsin rızasız
+/// liste istenmez, "Şimdi değil" eski davranışla sayfayı kapatır.
+class ZirveGovdesi extends ConsumerStatefulWidget {
+  const ZirveGovdesi({
+    super.key,
+    required this.donem,
+    required this.onDonem,
+    this.rizaYukleyici,
+  });
+
+  final ZirveDonem donem;
+  final ValueChanged<ZirveDonem> onDonem;
+
+  /// Test için rıza durumu; null → `LeaderboardService.fetchZirveRizasi`
+  /// (`ZirveKarti.rizaYukleyici` ile aynı kalıp).
+  final Future<bool?> Function()? rizaYukleyici;
+
+  @override
+  ConsumerState<ZirveGovdesi> createState() => _ZirveGovdesiState();
+}
+
+class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
+  /// Dönem sahibi kabuk (ekran ya da Sıralama sayfası); gövde okur.
+  ZirveDonem get _donem => widget.donem;
   String _secili = '1';
 
   /// Son seçimin yönü (+1 sağa / −1 sola, cetvelde). Başlık ve cümle bu
@@ -70,7 +118,10 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   late Future<int?> _havuz = _havuzCek();
 
   /// Geçerli zirve rızası (0091). `null` = okunamadı; rıza varsayılmaz.
-  late Future<bool?> _riza = LeaderboardService.instance.fetchZirveRizasi();
+  late Future<bool?> _riza = _rizaCek();
+
+  Future<bool?> _rizaCek() =>
+      (widget.rizaYukleyici ?? LeaderboardService.instance.fetchZirveRizasi)();
   double? _senRoi;
 
   /// "Sen" değerleri sunucudan mı (havuzdasın, 0085 `zirve_benim`)? Öyleyse
@@ -113,11 +164,17 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
 
   void _donemSec(ZirveDonem d) {
     if (d == _donem) return;
-    setState(() {
-      _donem = d;
-      _satirlar = _cek();
-      _havuz = _havuzCek();
-    });
+    widget.onDonem(d);
+  }
+
+  /// Dönem kabukta değişti → liste, havuz ve "Sen" o dönemle yeniden.
+  /// (Eskiden `_donemSec` içindeydi; dönem artık dışarıda tutuluyor.)
+  @override
+  void didUpdateWidget(covariant ZirveGovdesi old) {
+    super.didUpdateWidget(old);
+    if (old.donem == widget.donem) return;
+    _satirlar = _cek();
+    _havuz = _havuzCek();
     _senYenile();
   }
 
@@ -173,12 +230,20 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   /// Rıza verildi → liste ve "Sen" yeniden çekilir. Hata kartta kalır
   /// (`SandikAsyncButton` yeniden basılabilir), durum değişmemiş sayılır.
   Future<void> _katil() async {
+    // Onay kaydının dili — `await`'ten önce (context sonra geçersiz olabilir).
+    final dil = Localizations.localeOf(context).toString();
     try {
       await LeaderboardService.instance.setZirveRizasi(true);
     } catch (e) {
       if (mounted) showAppError(context, e);
       return;
     }
+    // Rıza kartının metni yasal onay kaydına (0102, bayrak
+    // `yasal_onay_kaydi`). `zirve_rizalari` asıl kapı; bu ispat kaydı —
+    // beklenmez, fırlatmaz. Geri çekme sunucuda aynı işlemde damgalanır.
+    CrashReporter.arkaPlan(
+        YasalOnayService.instance.zirveRizasiniKaydet(locale: dil),
+        reason: 'YasalOnayService.zirve');
     if (!mounted) return;
     setState(() {
       _riza = Future.value(true);
@@ -250,42 +315,35 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
   Widget build(BuildContext context) {
     ref.listen(portfolioProvider, (_, __) => _senYenile());
     final hp = SandikSpace.screenH(context);
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(title: 'Zirvedeki Portföyler'),
-      body: SafeArea(
-        child: FutureBuilder<bool?>(
-          future: _riza,
-          builder: (context, rizaSnap) {
-            if (rizaSnap.connectionState != ConnectionState.done) {
-              return ListView(
-                padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
-                children: const [_Iskelet()],
-              );
-            }
-            final riza = rizaSnap.data;
-            if (riza == null) {
-              return SandikErrorView(
-                error: 'Katılım durumun okunamadı.',
-                onRetry: () => setState(() =>
-                    _riza = LeaderboardService.instance.fetchZirveRizasi()),
-              );
-            }
-            if (!riza) {
-              return ListView(
-                padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
-                children: [
-                  ZirveRizaKarti(
-                    onKatil: _katil,
-                    onSimdiDegil: () => Navigator.of(context).maybePop(),
-                  ),
-                ],
-              );
-            }
-            return _liste(hp);
-          },
-        ),
-      ),
+    return FutureBuilder<bool?>(
+      future: _riza,
+      builder: (context, rizaSnap) {
+        if (rizaSnap.connectionState != ConnectionState.done) {
+          return ListView(
+            padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+            children: const [_Iskelet()],
+          );
+        }
+        final riza = rizaSnap.data;
+        if (riza == null) {
+          return SandikErrorView(
+            error: 'Katılım durumun okunamadı.',
+            onRetry: () => setState(() => _riza = _rizaCek()),
+          );
+        }
+        if (!riza) {
+          return ListView(
+            padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+            children: [
+              ZirveRizaKarti(
+                onKatil: _katil,
+                onSimdiDegil: () => Navigator.of(context).maybePop(),
+              ),
+            ],
+          );
+        }
+        return _liste(hp);
+      },
     );
   }
 
@@ -300,7 +358,12 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
             return ListView(
               padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
               children: [
-                _DonemSecici(secili: _donem, onSec: _donemSec),
+                ZirveDonemSecici(
+                  secili: _donem,
+                  onSec: _donemSec,
+                  // Sıralama › Ortaklarım ile aynı seçici kalsın (arena).
+                  kayan: RemoteConfigService.instance.yarisDuelloArena,
+                ),
                 const SizedBox(height: SandikSpace.md),
                 if (yukleniyor)
                   const _Iskelet()
@@ -431,83 +494,6 @@ class _ZirvePortfoylerScreenState extends ConsumerState<ZirvePortfoylerScreen> {
 }
 
 // ── Parçalar ─────────────────────────────────────────────────────────────────
-
-/// Üç duraklı dönem seçici. Yarış ekranındaki `_PeriodBar` ile aynı dil
-/// (amber dolgu, kaydırmalı seçim); süre `SandikMotion` üzerinden ki
-/// "hareketi azalt" saygı görsün.
-class _DonemSecici extends StatelessWidget {
-  const _DonemSecici({required this.secili, required this.onSec});
-
-  final ZirveDonem secili;
-  final ValueChanged<ZirveDonem> onSec;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: SandikTouch.min + SandikSpace.xs2,
-      padding: const EdgeInsets.all(SandikSpace.xs2),
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: context.c.hairline),
-      ),
-      child: Row(
-        children: [
-          for (final d in ZirveDonem.values)
-            Expanded(
-              child: Semantics(
-                button: true,
-                selected: d == secili,
-                label: d.ad,
-                child: ExcludeSemantics(
-                  child: SandikBasma(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onSec(d),
-                    // Zemin metinle AYNI sürede (`state`): eskiden zemin 240,
-                    // metin 180 ms'de varıyordu (animasyon denetimi
-                    // 2026-10-01).
-                    child: AnimatedContainer(
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
-                      margin: EdgeInsets.symmetric(
-                          horizontal: d == secili ? 0 : 2),
-                      decoration: BoxDecoration(
-                        gradient: d == secili ? context.c.amberGradient : null,
-                        borderRadius: BorderRadius.circular(SandikRadius.md),
-                        boxShadow: d == secili
-                            ? [
-                                BoxShadow(
-                                  color: context.c.amberFill
-                                      .withValues(alpha: 0.35),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Center(
-                        child: AnimatedDefaultTextStyle(
-                          duration: SandikMotion.stateOf(context),
-                          curve: SandikMotion.enter,
-                          style: context.t.bodyMedium!.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: d == secili
-                                ? context.c.onAmber
-                                : context.c.text58,
-                          ),
-                          child: Text(d.kisa),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 /// Cümle + iki hücre (Sen · Zirve). Renk yalnızca getiride.
 class _Hero extends StatelessWidget {

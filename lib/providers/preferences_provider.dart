@@ -1044,6 +1044,19 @@ final chartMA20Provider = NotifierProvider<_BoolPrefNotifier, bool>(
 final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kChartLogScaleKey, false));
 
+/// Performans "Bugünkü portföyle" görünümü (simülasyon: bugünkü net
+/// portföy tüm dönem boyunca elde tutulmuş gibi). TEK KAYNAK — Ayarlar ›
+/// Görünüm yazar, Performans okur (bayrak `performans_ayar_sade`).
+///
+/// Neden kalıcı (eski Performans anahtarı oturumluktu): Ayarlar'daki bir
+/// anahtarın uygulama yeniden açılınca kendiliğinden kapanması "ayar
+/// tutmuyor" diye okunur. Unutulup açık kalma riskine karşı Performans
+/// etkinken rozet gösterir ("görünmeyen filtre" sınıfı hata, bkz.
+/// `_buildScopeBar`). Varsayılan kapalı: gerçek geçmiş.
+final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false,
+        perUser: true));
+
 // ─── Leaderboard opt-in ───────────────────────────────────────────────────────
 // Kullanıcı yarış (partner leaderboard) özelliğine katılmak için explicit
 // consent verir. Default kapalı (KVKK). Ortakların yarış'ında görünmek için
@@ -1106,4 +1119,5 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   liveActivityWeekendProvider,
   leaderboardOptInProvider,
   bildirimSonGorulenProvider,
+  bugunkuPortfoyleProvider,
 ];

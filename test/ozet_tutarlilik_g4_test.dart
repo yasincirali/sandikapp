@@ -168,10 +168,10 @@ void main() {
       expect(pozisyonKodu('.IS'), '.IS');
     });
 
-    test('_positionLabel sembol çekirdeğini pozisyonKodu ile sadeleştirir', () {
-      final src =
-          ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart');
-      final i = src.indexOf('String _positionLabel(');
+    // Gövde 2026-10-04'te `pozisyonEtiketi`'ne taşındı (Bugün kartı da okur).
+    test('pozisyonEtiketi sembol çekirdeğini pozisyonKodu ile sadeleştirir', () {
+      final src = ekranKaynagiSync('lib/utils/pozisyon_etiketi.dart');
+      final i = src.indexOf('String pozisyonEtiketi(');
       expect(i, greaterThanOrEqualTo(0));
       final govde = src.substring(i, src.indexOf('\n}', i));
       expect(govde, contains('pozisyonKodu(core)'));

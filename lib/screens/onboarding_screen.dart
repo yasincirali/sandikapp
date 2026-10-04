@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/position.dart' show aktifLotlar;
 import '../models/yatirimci_seviyesi.dart';
+import '../providers/auth_provider.dart' show activePartnersProvider;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
@@ -18,6 +19,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/ilk_varlik_vitrini.dart' show IlkVarlikVitrini;
 import '../widgets/seviye_anketi.dart';
 import '../widgets/tour_anchor.dart';
 import 'main_navigation_screen.dart';
@@ -327,6 +329,19 @@ void _varlikEkleKapat() {
   Navigator.of(c).pop();
 }
 
+/// Kendi defteri boş mu? Ana ekranın boşluk ölçüsüyle aynı (`aktifLotlar`).
+bool _bosPortfoy(WidgetRef ref) => aktifLotlar(
+        ref.read(portfolioProvider).valueOrNull?.assets ?? const [])
+    .isEmpty;
+
+/// Ana ekranda ₺0 kartı yerine vitrin mi çiziliyor? Kural tek yerde
+/// (`IlkVarlikVitrini.toplamKartiYerine`), tur yalnızca sorar.
+bool _vitrinKartYerine(WidgetRef ref) => IlkVarlikVitrini.toplamKartiYerine(
+      bayrak: RemoteConfigService.instance.ilkVarlikKolay,
+      bosKendi: _bosPortfoy(ref),
+      ortakVar: ref.read(activePartnersProvider).isNotEmpty,
+    );
+
 /// Turun tamamı.
 ///
 /// Kapalı bayrakların özellikleri ANLATILMAZ; ekranda olmayan bir hedefe
@@ -367,6 +382,29 @@ List<_Adim> _adimlariKur() {
           'eklediğinde burası dolmaya başlar.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
+      // Vitrin ₺0 kartının yerini aldıysa anlatacak kart yok (bkz. 'vitrin').
+      kosul: (ref) => !_vitrinKartYerine(ref),
+    ),
+    // Boş portföyde "Canlı fiyat vitrini" (bayrak `ilk_varlik_kolay`,
+    // 2026-10-04). Tur metni arayüzle birlikte değişir kuralı: ₺0 kartı
+    // gizlendiğinde 'hero' adımı boşluğu anlatırdı; bu adım yeni ekranı
+    // anlatır. Koşul ekranın çizim koşuluyla aynı (`_EmptyPortfolioCta`).
+    _Adim(
+      id: 'vitrin',
+      hedef: TourTarget.ilkVarlikVitrini,
+      rozet: 'YENİ',
+      baslik: 'Neye sahipsin?',
+      govde: 'Sahip olduğun şeyin kutusuna dokun, yalnızca miktarını yaz: '
+          'gram altın, dolar, euro ve çeyrek altının fiyatı kutuda canlı '
+          'durur, kaydettiğin an toplamın hesaplanır. Fon ve hissede '
+          'listeden seçersin. Kripto, emtia, mevduat ve BES alttaki '
+          'bağlantıda; aracı kurum ekstren varsa "Ekstreden aktar" hepsini '
+          'tek seferde getirir. İlk varlığından sonra burada toplam net '
+          'varlığın görünür.',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+      kosul: (ref) =>
+          RemoteConfigService.instance.ilkVarlikKolay && _bosPortfoy(ref),
     ),
     _Adim(
       id: 'gizle',
@@ -398,16 +436,28 @@ List<_Adim> _adimlariKur() {
       // 2026-10-02: enflasyon kutusu ölçüm aylarını yazar; ikinci kutu
       // (son 7 gün / artıdaki varlık) dönüşümlü — metin ikisini birden
       // vaat etmez.
-      govde: 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
-          'hareketi: sadece piyasa etkisi, yatırdığın para sayılmaz; '
-          'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
-          'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
-          'çizgi TÜFE; başlıkta hangi aylar arasında ölçüldüğü), yanında '
-          'son 7 gün ya da artıdaki varlıkların, günden güne. Sarı kutular '
-          'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '
-          'tarih. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
-          'Birlikte\'ye geçince kart o defterin gününü anlatır, başında '
-          'kimin olduğu yazar.',
+      // 2026-10-04 (sadeleştirme 2, kullanıcı kararı): "piyasa etkisi" →
+      // "fiyat etkisi"; Özet köprüsündeki aynı rakamla tek ad.
+      // 2026-10-04 düzen H (bayrak `bugun_karti_kiyas`): kart başka
+      // parçalar taşıyor; metin bayrağa göre o düzeni anlatır.
+      govde: RemoteConfigService.instance.bugunKartiKiyas
+          ? 'Üstte gün ve seans durumu. Büyük rakam günün hareketi: sadece '
+              'fiyat etkisi, yatırdığın para sayılmaz; yanındaki eğride kesik '
+              'çizgi gün başı seviyesidir. Altında getirinin enflasyonla '
+              'kıyası: iki çubuk, getirin ve TÜFE, başlıkta hangi aylar '
+              'arasında ölçüldüğü. En altta günün en çok oynayan varlığı ve '
+              'hedefine kalan. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
+              'Birlikte\'ye geçince kart o defterin gününü anlatır.'
+          : 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
+              'hareketi: sadece fiyat etkisi, yatırdığın para sayılmaz; '
+              'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
+              'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
+              'çizgi TÜFE; başlıkta hangi aylar arasında ölçüldüğü), yanında '
+              'son 7 gün ya da artıdaki varlıkların, günden güne. Sarı kutular '
+              'eylemdir: hedef belirle, ayın özetini aç. En altta yaklaşan '
+              'tarih. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
+              'Birlikte\'ye geçince kart o defterin gününü anlatır, başında '
+              'kimin olduğu yazar.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
@@ -466,8 +516,15 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_portfoy',
       hedef: TourTarget.sekmePortfoy,
       baslik: 'Portföy sekmesi',
-      govde: 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
-          'dokununca detayına inersin.',
+      // Tur metni arayüzle birlikte değişir (2026-09-21 kuralı): işlem
+      // çubuğu (`varlik_islem_cubugu`) açıksa Al/Sat/Temettü'nün yeni yeri
+      // de söylenir; kapalıyken metin birebir eski.
+      govde: RemoteConfigService.instance.varlikIslemCubugu
+          ? 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
+              'dokununca detayına inersin; alış, satış ve temettüyü oradaki '
+              'alt çubuktan kaydedersin.'
+          : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
+              'dokununca detayına inersin.',
       gorev: 'Portföy sekmesine dokun',
       gorevBitti: 'Portföy açıldı',
       bitti: (_) => _sekmede(1),
@@ -545,7 +602,10 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.hizliGiris,
       rozet: 'BİZE ÖZEL',
       baslik: 'Cümleyle ekle',
-      govde: 'Mikrofon Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
+      // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): aynı sayfa formun
+      // üstündeki "Yazarak ekle" düğmesiyle de açılır; metin ikisini söyler.
+      govde: '${RemoteConfigService.instance.ilkVarlikKolay ? '"Yazarak ekle" (ya da mikrofon)' : 'Mikrofon'} '
+          'Hızlı Giriş\'i açar: "10 gram altın 4500 lira" ya da '
           '"GARAN 500 adet" yazman (veya söylemen) yeter. Her satır ayrı bir '
           'varlık olur; fiyat yazmazsan güncel fiyat kendiliğinden çekilir.',
       giris: (_) => _varlikEkleAc(),
@@ -559,11 +619,19 @@ List<_Adim> _adimlariKur() {
       // satış satırlarını da okuyor; tur yüzeyin güncel hâlini anlatır.
       // 2026-10-01: ekstre dosyadan da okunuyor (PDF/Excel/CSV, evrensel
       // motor) — tur "dosyadan seç"i anlatır.
-      govde: 'Birden çok varlığı sepete atıp tek onayda kaydet. Aracı kurum '
-          'ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da '
-          'tabloyu yapıştır; sütunlar kendiliğinden tanınır, alışlar ve '
-          'satışlar tarihleriyle gelir. Portföyünü ilk kez kurarken en hızlı '
-          'yol bu.',
+      // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): hedef formdaki
+      // "Ekstreden aktar" düğmesi; metin oradan başlar.
+      govde: RemoteConfigService.instance.ilkVarlikKolay
+          ? '"Ekstreden aktar": aracı kurum ya da banka ekstreni (PDF, Excel '
+              'veya CSV) dosyadan seç ya da tabloyu yapıştır; sütunlar '
+              'kendiliğinden tanınır, alışlar ve satışlar tarihleriyle gelir, '
+              'tek onayda kaydedersin. Portföyünü ilk kez kurarken en hızlı '
+              'yol bu.'
+          : 'Birden çok varlığı sepete atıp tek onayda kaydet. Aracı kurum '
+              'ya da banka ekstreni (PDF, Excel veya CSV) dosyadan seç ya da '
+              'tabloyu yapıştır; sütunlar kendiliğinden tanınır, alışlar ve '
+              'satışlar tarihleriyle gelir. Portföyünü ilk kez kurarken en hızlı '
+              'yol bu.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
       cikis: (_) => _varlikEkleKapat(),
@@ -579,13 +647,18 @@ List<_Adim> _adimlariKur() {
       // 2026-10-02 (müşteri testi sadeleştirmesi): enflasyon kartı tek sayı
       // söyler (kaç puan önde/geride), Grafik kartındaki yüzde yalnızca
       // piyasanın kattığıdır — tur metni de bunu söylüyor.
+      // 2026-10-04 (sadeleştirme 2, jargon): ekrandaki adlar değişti —
+      // "Piyasanın kattığı" → "Fiyat etkisi", Özet başlıkları "Ne oldu?" /
+      // "Neden böyle?" / "Ayrıntılar" / "Daha fazlası". Tur aynı adları
+      // kullanır, yoksa kullanıcı ekranda tarif edileni bulamaz.
       govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
-          'dönemi görebilirsin. Grafik kartında yüzde yalnızca piyasanın '
-          'kattığıdır; yatırdığın para ayrı yazılır. Özet soru sırasıyla '
-          'ilerler: SONUÇ (paranın getirisi ve enflasyona göre kaç puan '
-          'önde ya da geride olduğun), NEDEN (nereden geldi, hangi '
-          'varlıklar) ve AYRINTI (birikim, istersen açtığın derinlik). Her '
-          'yüzdenin yanındaki mavi çip ölçüldüğü aralığı yazar.',
+          'dönemi görebilirsin. Grafik kartında yüzde yalnızca fiyat '
+          'etkisidir; yatırdığın para ayrı yazılır. Özet soru sırasıyla '
+          'ilerler: "Ne oldu?" (paranın getirisi ve enflasyona göre kaç puan '
+          'önde ya da geride olduğun), "Neden böyle?" (nereden geldi, hangi '
+          'varlıklar) ve "Ayrıntılar" (birikim düzenin; istersen "Daha '
+          'fazlası"nı açarsın). Her yüzdenin yanındaki mavi çip ölçüldüğü '
+          'aralığı yazar.',
       gorev: 'Performans sekmesine dokun',
       gorevBitti: 'Performans açıldı',
       bitti: (_) => _sekmede(3),
@@ -618,13 +691,27 @@ List<_Adim> _adimlariKur() {
       id: 'kapsam',
       hedef: TourTarget.kapsamSecici,
       rozet: 'BİZE ÖZEL',
-      baslik: 'Kapsam ve mod',
-      govde: 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
-          'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
-          'kişi çipi seçer.\n\nGerçek mod dönem '
-          'içindeki her alım ve satımla gerçek geçmişini çizer; "Bugünkü '
-          'portföyle" modu "bugünkü portföyümü baştan elimde tutsaydım ne '
-          'olurdu?" sorusunu yanıtlar.',
+      // `performans_ayar_sade` (2026-10-04, madde 5): mod anahtarı kapsam
+      // panelinden Ayarlar › Görünüm'e taşındı; çip yalnız türü yazar,
+      // mod açıkken çipin altında "Bugünkü portföyle" rozeti durur. Tur
+      // metni gerçek ekranı anlatmalı (tur metni arayüzle değişir kuralı).
+      baslik: RemoteConfigService.instance.performansAyarSade
+          ? 'Kapsam'
+          : 'Kapsam ve mod',
+      govde: RemoteConfigService.instance.performansAyarSade
+          ? 'Bu çip hangi varlık türüne baktığını yazar; dokununca türler '
+              'açılır. Kimin portföyü olduğunu başlıktaki kişi çipi '
+              'seçer.\n\nGrafik dönem içindeki her alım ve satımla gerçek '
+              'geçmişini çizer. "Bugünkü portföyümü baştan elimde tutsaydım '
+              'ne olurdu?" diye merak edersen Ayarlar › Görünüm\'de '
+              '"Bugünkü portföyle göster"i aç; açıkken bu çipin altında '
+              'rozet görünür.'
+          : 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
+              'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
+              'kişi çipi seçer.\n\nGerçek mod dönem '
+              'içindeki her alım ve satımla gerçek geçmişini çizer; "Bugünkü '
+              'portföyle" modu "bugünkü portföyümü baştan elimde tutsaydım ne '
+              'olurdu?" sorusunu yanıtlar.',
       giris: (_) => _sekmeyeGecBasa(3),
     ),
     _Adim(
@@ -636,14 +723,31 @@ List<_Adim> _adimlariKur() {
       // ekranı ve cetveli var. Tur uygulamanın güncel hâlini anlatmalı.
       // 2026-10-01 (0095): ölçü "seçimlerinin getirisi" (TWR) oldu; metin
       // neyin yarıştığını söyler — para ekleme zamanı değil, seçimler.
-      govde: 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
-          'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
-          'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
-          'Dokununca yeni ekran: haftalık, aylık ve '
-          'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
-          'neye yatırdığını ve senden farkını oku. Katılım isteğe bağlı ve '
-          'anonim: katılanlar birbirinin tür dağılımını ve getirisini görür; '
-          'kimlik, miktar ve TL asla paylaşılmaz.',
+      // 2026-10-04 (sadeleştirme madde 8, bayrak `siralama_tek_sayfa`):
+      // bayrak açıkken kart ayrı ekranı değil Sıralama sayfasının "Zirvedekiler"
+      // sekmesini açar; Yarış da aynı sayfanın "Ortaklarım" sekmesi. Metin
+      // açılan yüzeyi doğru adlandırsın diye iki hâlde ayrı.
+      // 2026-10-04 (bayrak `yaris_duello_arena`): tek ortaklı yarış artık
+      // liste değil düello arenası; bayrak açıkken metin arenayı anlatır
+      // (`_arenaCumlesi`) — tur gerçek ekranın üstünde çalışır.
+      govde: RemoteConfigService.instance.siralamaTekSayfa
+          ? 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
+              'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
+              'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
+              'Dokununca Sıralama sayfasının Zirvedekiler sekmesi açılır: '
+              'haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
+              'üstünde. Ortaklarınla yarışın yanındaki Ortaklarım '
+              'sekmesinde, aynı dönemle.$_arenaCumlesi Katılım isteğe bağlı '
+              've anonim: katılanlar birbirinin tür dağılımını ve getirisini '
+              'görür; kimlik, miktar ve TL asla paylaşılmaz.'
+          : 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
+              'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
+              'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
+              'Dokununca yeni ekran: haftalık, aylık ve '
+              'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
+              'neye yatırdığını ve senden farkını oku.$_arenaCumlesi Katılım '
+              'isteğe bağlı ve anonim: katılanlar birbirinin tür dağılımını ve '
+              'getirisini görür; kimlik, miktar ve TL asla paylaşılmaz.',
       // Kartı GÖSTER (2026-10-03): kart Grafik yüzeyinde ve listenin en
       // altında; sekmeye geçmek yetmiyordu, metin boşluğun üstünde
       // kalıyordu. Ekran Grafik'e geçer ve kartı görünür alana getirir.
@@ -661,8 +765,10 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_profil',
       hedef: TourTarget.sekmeProfil,
       baslik: 'Profil sekmesi',
-      govde: 'Ortaklık, bildirimler, sinyal ayarları, fiyat alarmları, tema '
-          've yasal belgeler burada.',
+      // Tema 2026-10-04'e kadar Profil başlığında da bir düğmeydi; artık
+      // yalnız Ayarlar'da. Metin neyin nerede olduğunu ayırır.
+      govde: 'Ortaklık burada; bildirimler, sinyal ayarları, fiyat '
+          'alarmları, tema ve yasal belgeler sağ üstteki Ayarlar\'da.',
       gorev: 'Profil sekmesine dokun',
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),
@@ -685,12 +791,23 @@ List<_Adim> _adimlariKur() {
       id: 'ayarlar',
       hedef: TourTarget.ayarlar,
       baslik: 'Ayarlar',
-      govde: 'Kullanıcı adın, kayıtlı cihazların, bildirimler, sinyal '
-          'ayarları, günlük '
-          'brifingin saati (sabah / akşam), fiyat alarmları, tema, yazı '
-          'boyutu, sessiz '
-          'saatler ve yasal belgeler. '
-          'Bu turu da buradan yeniden izleyebilirsin.',
+      // `performans_ayar_sade` açıkken bölümler gruplu ve Performans'ın
+      // "Bugünkü portföyle" görünümü Görünüm'de; metin bölüm adlarıyla
+      // anlatır ki kullanıcı ekranda aynı başlıkları bulsun.
+      govde: RemoteConfigService.instance.performansAyarSade
+          ? 'Dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
+              'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
+              'Bildirimler (sinyal ayarları, fiyat alarmları, günlük '
+              'brifingin saati, sessiz saatler), Hesap & Güvenlik '
+              '(kullanıcı adın, kilit, kayıtlı cihazların, verilerin) ve '
+              'Yardım & Yasal. '
+              'Bu turu da buradan yeniden izleyebilirsin.'
+          : 'Kullanıcı adın, kayıtlı cihazların, bildirimler, sinyal '
+              'ayarları, günlük '
+              'brifingin saati (sabah / akşam), fiyat alarmları, tema, yazı '
+              'boyutu, sessiz '
+              'saatler ve yasal belgeler. '
+              'Bu turu da buradan yeniden izleyebilirsin.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),
@@ -762,6 +879,7 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
         ek: _seviyeSecici,
       ),
     tam['hero']!,
+    tam['vitrin']!,
     tam['bugun']!,
     tam['ekle']!,
     // Kripto ilk açılışta da anlatılır (kullanıcı kararı 2026-09-25):
@@ -773,8 +891,11 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
       id: 'toplu_son',
       hedef: TourTarget.topluEkle,
       baslik: 'Hazırsın',
-      govde: 'En hızlı yol: "Toplu ekle" › ekstreden içe aktar. Kurumunun '
-          'PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
+      // Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): hedef formdaki
+      // "Ekstreden aktar" düğmesi.
+      govde: 'En hızlı yol: '
+          '${RemoteConfigService.instance.ilkVarlikKolay ? '"Ekstreden aktar".' : '"Toplu ekle" › ekstreden içe aktar.'} '
+          'Kurumunun PDF, Excel ya da CSV ekstresini seç; her alış ve satış kendi '
           'tarihiyle deftere girer. Tek tek girmek istersen tür seçmen yeter, '
           'fiyat kendiliğinden gelir.',
       giris: (_) => _varlikEkleAc(),
@@ -782,6 +903,15 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
     ),
   ];
 }
+
+/// Yarış düello arenası (bayrak `yaris_duello_arena`, 2026-10-04) açıkken
+/// zirve adımına eklenen cümle; kapalıyken boş — metin birebir eski.
+/// Ekranda gördüğünü anlatır: karşılıklı getiriler, halat, taç, lider şeridi.
+String get _arenaCumlesi => RemoteConfigService.instance.yarisDuelloArena
+    ? " Yarış'ta tek ortağın varsa ikiniz düello arenasında karşılaşırsınız: "
+        'getiriler yan yana akar, halat aradaki farkı, taç öndekini gösterir; '
+        'altındaki şerit dönemin her günü kimin önde olduğunu.'
+    : '';
 
 Widget _seviyeSecici(BuildContext context) => const _SeviyeSecici();
 
