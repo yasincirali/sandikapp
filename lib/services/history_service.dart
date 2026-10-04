@@ -2482,6 +2482,21 @@ class HistoryService {
       tickerFutures.putIfAbsent(
           a.ticker, () => _fetchTickerAtTier(a.ticker, tier));
     }
+    // BES açılış fiyatı çözünürlükten BAĞIMSIZ tek sayıdır: açılış GÜNÜNÜN
+    // fiyatı. Haftalık katmanda bar haftanın SON kapanışını taşır; açılış
+    // anına en yakın bar o haftanın kapanışı olur ve düz çizgi yanlış
+    // seviyeye oturur. Açılış bu haftaysa bar canlı fiyata eşittir: 6A/1Y/5Y
+    // "%0,0" yazarken 1H/1A/3A "+%1,5" yazıyordu (2026-10-04 kullanıcı
+    // bildirimi, KED). Günlük seri açılışı kapsamıyorsa (1 yıldan eski)
+    // eski yola düşülür.
+    final besGunlukFutures = <String, Future<Map<int, double>>>{};
+    if (tier == ResolutionTier.weekly) {
+      for (final a in assets) {
+        if (a.ticker.isEmpty || BesAcilis.acilisMs(a) == null) continue;
+        besGunlukFutures.putIfAbsent(
+            a.ticker, () => _fetchTickerAtTier(a.ticker, ResolutionTier.daily));
+      }
+    }
     Future<Map<int, double>>? usdFuture;
     Future<Map<int, double>>? goldFuture;
     Future<Map<int, double>>? goldTryFuture;
@@ -2494,6 +2509,7 @@ class HistoryService {
     // Paralel bekle.
     await Future.wait([
       ...tickerFutures.values,
+      ...besGunlukFutures.values,
       if (usdFuture != null) usdFuture,
       if (goldFuture != null) goldFuture,
       if (goldTryFuture != null) goldTryFuture,
@@ -2502,6 +2518,10 @@ class HistoryService {
     final tickerMaps = <String, Map<int, double>>{};
     for (final entry in tickerFutures.entries) {
       tickerMaps[entry.key] = await entry.value;
+    }
+    final besGunluk = <String, Map<int, double>>{};
+    for (final entry in besGunlukFutures.entries) {
+      besGunluk[entry.key] = await entry.value;
     }
     final usdMap = kurSerisiniHizala(
         usdFuture != null ? await usdFuture : <int, double>{}, canliKur());
@@ -2622,7 +2642,12 @@ class HistoryService {
             a.type.fiyatlamaTuru == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};
           // BES açılıştan önce düz (bkz. `BesAcilis`).
-          final price = _closestOrNull(map, BesAcilis.fiyatAni(a, cursor));
+          final fiyatAni = BesAcilis.fiyatAni(a, cursor);
+          // Açılıştan önce: açılış gününün fiyatı günlük seriden (yukarıda).
+          final price = (fiyatAni != cursor
+                  ? _pastOrNull(besGunluk[a.ticker] ?? const {}, fiyatAni)
+                  : null) ??
+              _closestOrNull(map, fiyatAni);
           if (price != null) {
             double p = price;
             var kurVar = true;

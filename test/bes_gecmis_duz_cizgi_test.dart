@@ -191,4 +191,53 @@ void main() {
     expect(yuzde(birim), closeTo(yuzde(pozisyon), 1e-9),
         reason: 'varlık ekranı ile Performans dökümü aynı yüzdeyi vermeli');
   });
+
+  // 2026-10-04: varlık ekranında 1H/1A/3A "+%1,5", 6A/1Y/5Y "%0,0". Haftalık
+  // bar haftanın SON kapanışını taşıyor; açılış fiyatı diye o okunuyordu.
+  test('haftalık katman: düz çizgi açılış GÜNÜNÜN fiyatında', () async {
+    final bugun = DateTime(simdi.year, simdi.month, simdi.day);
+    // Açılış haftanın ortasında (Salı): haftanın kapanışından ayrışsın.
+    final g = bugun.subtract(const Duration(days: 21));
+    final sali = g.subtract(Duration(days: g.weekday - 2));
+    SozlesmeDeposu.instance.yaz([
+      Sozlesme(
+        id: 'bes-2',
+        userId: 'u1',
+        tur: SozlesmeTuru.bes,
+        kurum: 'Test Emeklilik',
+        baslangic: giris,
+        fonDagilimi: const [FonPayi(kod: 'AAA', oran: 100)],
+        olusturuldu: sali.add(const Duration(hours: 12)),
+      ),
+    ], const []);
+    final gunler = <(int, double)>[];
+    final bas = bugun.subtract(const Duration(days: 60));
+    var fiyat = 5.0;
+    double? acilisFiyati;
+    for (var i = 0; i <= 60; i++) {
+      final d = bas.add(Duration(days: i));
+      gunler.add((d.millisecondsSinceEpoch, fiyat));
+      if (d == sali) acilisFiyati = fiyat;
+      fiyat *= 1.01;
+    }
+    HistoryService.seriCekici = (sym, range, interval) async =>
+        sym == '${tefasOneki}AAA' ? gunler : const [];
+    HistoryService.instance.clearTierCache();
+
+    final sonuc =
+        await HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
+      assets: [lot(sozlesmeId: 'bes-2')],
+      from: bas,
+      to: simdi,
+      tier: ResolutionTier.weekly,
+    );
+    final once = [
+      for (final e in sonuc.total.entries)
+        if (e.key < sali.millisecondsSinceEpoch) e.value,
+    ];
+    expect(once, isNotEmpty);
+    for (final v in once) {
+      expect(v, closeTo(100 * acilisFiyati!, 1e-6));
+    }
+  });
 }
