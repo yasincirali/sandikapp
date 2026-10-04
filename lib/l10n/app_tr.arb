@@ -3978,5 +3978,29 @@
   },
   "tekOnayKosullarBaglanti": "Yasal Koşulları, KVKK Aydınlatma Metni",
   "tekOnayRizaBaglanti": "açık rıza",
-  "tekOnayGerekli": "Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin."
+  "tekOnayGerekli": "Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.",
+  "arenaMeasuring": "Fark ölçülüyor…",
+  "arenaBehind": "{ad} {fark} puan önde · yetişebilirsin",
+  "@arenaBehind": {
+    "placeholders": {
+      "ad": {
+        "type": "String"
+      },
+      "fark": {
+        "type": "String"
+      }
+    }
+  },
+  "arenaNoDataYet": "Henüz veri yok",
+  "arenaWaiting": "Getiriler ölçülünce düello başlar",
+  "arenaStripDaily": "Gün gün önde olan",
+  "arenaStripMonthly": "Ay ay önde olan",
+  "arenaSwaps": "{n, plural, =0{Yer hiç değişmedi} other{{n} kez yer değişti}}",
+  "@arenaSwaps": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

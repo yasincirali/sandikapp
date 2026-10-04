@@ -5676,4 +5676,36 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tekOnayGerekli =>
       'To continue, accept the legal terms and give explicit consent to the cross-border data transfer.';
+
+  @override
+  String get arenaMeasuring => 'Measuring the gap…';
+
+  @override
+  String arenaBehind(String ad, String fark) {
+    return '$ad leads by $fark pts · you can catch up';
+  }
+
+  @override
+  String get arenaNoDataYet => 'No data yet';
+
+  @override
+  String get arenaWaiting => 'The duel starts once both returns are measured';
+
+  @override
+  String get arenaStripDaily => 'Leader day by day';
+
+  @override
+  String get arenaStripMonthly => 'Leader month by month';
+
+  @override
+  String arenaSwaps(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n lead changes',
+      one: '1 lead change',
+      zero: 'No lead changes',
+    );
+    return '$_temp0';
+  }
 }

@@ -145,7 +145,39 @@ List<int> olcumAnlari(int basMs, int nowMs) {
 /// [birimFiyat]: pozisyonun `t` anındaki BİRİM TL fiyatı; serisi yoksa
 /// `null`. [yedekBirimFiyat]: serisi olmayan pozisyonun bugünkü tahmini
 /// birim TL değeri — yalnız kapsama kararı için (0 → bilinmiyor).
+///
+/// Sonuç [secimGetirisiSerisi]'nin SON noktasıdır: iki fonksiyon tek
+/// döngüyü paylaşır (düello arenası lider şeridi, 2026-10-04) — şeridin
+/// "bugün"ü sıralamadaki sayıdan ayrı bir hesap olamaz.
 double? secimGetirisiPct({
+  required List<PozisyonGecmisi> gecmis,
+  required double? Function(PozisyonGecmisi p, int tMs) birimFiyat,
+  required double Function(PozisyonGecmisi p) yedekBirimFiyat,
+  required int nowMs,
+  required int gun,
+}) =>
+    secimGetirisiSerisi(
+      gecmis: gecmis,
+      birimFiyat: birimFiyat,
+      yedekBirimFiyat: yedekBirimFiyat,
+      nowMs: nowMs,
+      gun: gun,
+    )?.last.pct;
+
+/// Seçimlerinin getirisinin GÜN GÜN birikimi: her ölçüm anında dönem
+/// başından o ana kadarki TWR (%). Kapılar (asgari ölçüm, kapsama)
+/// [secimGetirisiPct] ile aynı; geçemezse `null`.
+///
+/// Neden ayrı bir seri: Yarış'ın düello arenası (bayrak
+/// `yaris_duello_arena`) dönemin her günü kimin önde olduğunu çizer. Sunucu
+/// günlük TWR yazmıyor (snapshot yalnız dönem sonunu tutar); ama bu döngü
+/// zaten her günün çarpanını hesaplıyor — ara toplamları atmak yerine
+/// döndürür. Yeni hesap ya da yeni veri kaynağı değil.
+///
+/// Bir gün ölçülemezse (o gün fiyatlanan pozisyon yok) birikim değişmez ve
+/// nokta önceki değerle tekrarlanır; ilk ölçülen günden önce nokta yok
+/// (uydurma yok — şerit o günleri "bilinmiyor" çizer).
+List<({int an, double pct})>? secimGetirisiSerisi({
   required List<PozisyonGecmisi> gecmis,
   required double? Function(PozisyonGecmisi p, int tMs) birimFiyat,
   required double Function(PozisyonGecmisi p) yedekBirimFiyat,
@@ -178,6 +210,7 @@ double? secimGetirisiPct({
   final anlar = olcumAnlari(bas > ilk ? bas : ilk, nowMs);
   var carpim = 1.0;
   var olculdu = false;
+  final noktalar = <({int an, double pct})>[];
   for (var i = 1; i < anlar.length; i++) {
     final a = anlar[i - 1];
     final b = anlar[i];
@@ -192,14 +225,20 @@ double? secimGetirisiPct({
       payda += q * pa;
       pay += q * pb;
     }
-    if (payda <= 0) continue;
+    if (payda <= 0) {
+      if (olculdu) noktalar.add((an: b, pct: noktalar.last.pct));
+      continue;
+    }
     carpim *= pay / payda;
     olculdu = true;
+    final roi = (carpim - 1) * 100;
+    noktalar.add((
+      an: b,
+      pct: roi.isFinite ? roi.clamp(-100.0, 100000.0).toDouble() : double.nan,
+    ));
   }
-  if (!olculdu) return null;
-  final roi = (carpim - 1) * 100;
-  if (!roi.isFinite) return null;
-  return roi.clamp(-100.0, 100000.0).toDouble();
+  if (!olculdu || !noktalar.last.pct.isFinite) return null;
+  return noktalar;
 }
 
 /// Sıralı seride `t` anındaki değer: `t`'den önceki son nokta; seri `t`'den
@@ -229,6 +268,19 @@ abstract final class SecimGetirisi {
   /// çözünürlükte: sunucu da günlük seriyle ölçer; haftalık ızgara 1Y'de
   /// alım/satım gününü bir haftaya yuvarlardı.
   static Future<double?> donemPct(
+    List<Asset> lotlar,
+    int gun, {
+    required SiralamaKapsami kapsam,
+    DateTime? simdi,
+  }) async =>
+      (await donemSerisi(lotlar, gun, kapsam: kapsam, simdi: simdi))
+          ?.last
+          .pct;
+
+  /// [donemPct]'in gün gün birikimi ([secimGetirisiSerisi]) — aynı seri,
+  /// aynı kapılar; son nokta [donemPct]'tir. İki kişiyi gün gün kıyaslarken
+  /// ikisine AYNI [simdi] verilir ki ölçüm anları hizalansın.
+  static Future<List<({int an, double pct})>?> donemSerisi(
     List<Asset> lotlar,
     int gun, {
     required SiralamaKapsami kapsam,
@@ -265,7 +317,7 @@ abstract final class SecimGetirisi {
       ]..sort((a, b) => a.$1.compareTo(b.$1));
       if (noktalar.isNotEmpty) seriler[p.anahtar] = noktalar;
     }
-    return secimGetirisiPct(
+    return secimGetirisiSerisi(
       gecmis: gecmis,
       birimFiyat: (p, t) {
         final s = seriler[p.anahtar];

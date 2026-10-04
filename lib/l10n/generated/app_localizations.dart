@@ -9452,6 +9452,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.'**
   String get tekOnayGerekli;
+
+  /// No description provided for @arenaMeasuring.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fark ölçülüyor…'**
+  String get arenaMeasuring;
+
+  /// No description provided for @arenaBehind.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} {fark} puan önde · yetişebilirsin'**
+  String arenaBehind(String ad, String fark);
+
+  /// No description provided for @arenaNoDataYet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz veri yok'**
+  String get arenaNoDataYet;
+
+  /// No description provided for @arenaWaiting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiriler ölçülünce düello başlar'**
+  String get arenaWaiting;
+
+  /// No description provided for @arenaStripDaily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün gün önde olan'**
+  String get arenaStripDaily;
+
+  /// No description provided for @arenaStripMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay ay önde olan'**
+  String get arenaStripMonthly;
+
+  /// No description provided for @arenaSwaps.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =0{Yer hiç değişmedi} other{{n} kez yer değişti}}'**
+  String arenaSwaps(int n);
 }
 
 class _AppLocalizationsDelegate

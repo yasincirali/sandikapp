@@ -727,6 +727,9 @@ List<_Adim> _adimlariKur() {
       // bayrak açıkken kart ayrı ekranı değil Sıralama sayfasının "Zirvedekiler"
       // sekmesini açar; Yarış da aynı sayfanın "Ortaklarım" sekmesi. Metin
       // açılan yüzeyi doğru adlandırsın diye iki hâlde ayrı.
+      // 2026-10-04 (bayrak `yaris_duello_arena`): tek ortaklı yarış artık
+      // liste değil düello arenası; bayrak açıkken metin arenayı anlatır
+      // (`_arenaCumlesi`) — tur gerçek ekranın üstünde çalışır.
       govde: RemoteConfigService.instance.siralamaTekSayfa
           ? 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
               'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
@@ -734,17 +737,17 @@ List<_Adim> _adimlariKur() {
               'Dokununca Sıralama sayfasının Zirvedekiler sekmesi açılır: '
               'haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
               'üstünde. Ortaklarınla yarışın yanındaki Ortaklarım '
-              'sekmesinde, aynı dönemle. Katılım isteğe bağlı ve anonim: '
-              'katılanlar birbirinin tür dağılımını ve getirisini görür; '
-              'kimlik, miktar ve TL asla paylaşılmaz.'
+              'sekmesinde, aynı dönemle.$_arenaCumlesi Katılım isteğe bağlı '
+              've anonim: katılanlar birbirinin tür dağılımını ve getirisini '
+              'görür; kimlik, miktar ve TL asla paylaşılmaz.'
           : 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
               'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
               'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
               'Dokununca yeni ekran: haftalık, aylık ve '
               'yıllık; herkes aynı çizgide, sen de üstünde. Bir portföye dokun, '
-              'neye yatırdığını ve senden farkını oku. Katılım isteğe bağlı ve '
-              'anonim: katılanlar birbirinin tür dağılımını ve getirisini görür; '
-              'kimlik, miktar ve TL asla paylaşılmaz.',
+              'neye yatırdığını ve senden farkını oku.$_arenaCumlesi Katılım '
+              'isteğe bağlı ve anonim: katılanlar birbirinin tür dağılımını ve '
+              'getirisini görür; kimlik, miktar ve TL asla paylaşılmaz.',
       // Kartı GÖSTER (2026-10-03): kart Grafik yüzeyinde ve listenin en
       // altında; sekmeye geçmek yetmiyordu, metin boşluğun üstünde
       // kalıyordu. Ekran Grafik'e geçer ve kartı görünür alana getirir.
@@ -900,6 +903,15 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
     ),
   ];
 }
+
+/// Yarış düello arenası (bayrak `yaris_duello_arena`, 2026-10-04) açıkken
+/// zirve adımına eklenen cümle; kapalıyken boş — metin birebir eski.
+/// Ekranda gördüğünü anlatır: karşılıklı getiriler, halat, taç, lider şeridi.
+String get _arenaCumlesi => RemoteConfigService.instance.yarisDuelloArena
+    ? " Yarış'ta tek ortağın varsa ikiniz düello arenasında karşılaşırsınız: "
+        'getiriler yan yana akar, halat aradaki farkı, taç öndekini gösterir; '
+        'altındaki şerit dönemin her günü kimin önde olduğunu.'
+    : '';
 
 Widget _seviyeSecici(BuildContext context) => const _SeviyeSecici();
 

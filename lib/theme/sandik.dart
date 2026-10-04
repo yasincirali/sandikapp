@@ -387,6 +387,13 @@ abstract final class SandikMotion {
   /// Uzun, yumuşak süzülme — genişlik ve konum akışı ([flow] ile).
   static const Curve glide = Curves.easeOutQuart;
 
+  /// Esneyerek oturan ölçü — bir kuvvetin dengesini gösteren gösterge
+  /// (Yarış düello arenasının halat ayrımı, 2026-10-04). [spring]'den
+  /// belirgin daha canlı: hedefi birkaç kez sönerek aşar. Prototipteki
+  /// `easeOutElastic` ile birebir (periyot 0,3). Yalnız tek bir göstergede
+  /// ve [flow]'un katlarıyla; metinde, listede, yüzeyde kullanılmaz.
+  static const Curve elastik = ElasticOutCurve(0.3);
+
   // ── Jest sonrası fizik ────────────────────────────────────────────────────
   //
   // Parmak bırakıldığında sabit süreli bir eğri, parmağın HIZINI atar: kart

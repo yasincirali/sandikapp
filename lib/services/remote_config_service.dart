@@ -278,6 +278,14 @@ class RemoteConfigService {
     // etkinken rozet), Ayarlar net başlıklı gruplara ve katlanır
     // "Gelişmiş"e ayrılır. Kapalıyken üç yüzey birebir eski.
     'performans_ayar_sade': false,
+
+    // Yarış "Düello arenası" (kullanıcı seçimi 2026-10-04, artifact
+    // seçeneği 2): tam iki kişilik yarışta canlı listenin yerine arena —
+    // karşılıklı avatarlar, sayaç gibi akan getiriler, halat çekme çubuğu,
+    // el değiştiren taç ve dönemin gün gün lider şeridi; dönem seçici
+    // kayan hap. 3+ kişide kürsü + liste aynen kalır. Hesap değişmez
+    // (seçimlerinin getirisi, TWR). Kapalıyken yarış ekranı birebir eski.
+    'yaris_duello_arena': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -463,6 +471,9 @@ class RemoteConfigService {
 
   /// Yarış + Zirve tek Sıralama sayfası — bkz. `_defaults['siralama_tek_sayfa']`.
   bool get siralamaTekSayfa => _bayrak('siralama_tek_sayfa');
+
+  /// Yarış düello arenası — bkz. `_defaults['yaris_duello_arena']`.
+  bool get yarisDuelloArena => _bayrak('yaris_duello_arena');
 
   /// Performans araçları + Ayarlar sadeleştirmesi — bkz.
   /// `_defaults['performans_ayar_sade']`.

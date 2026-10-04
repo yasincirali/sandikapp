@@ -5625,4 +5625,35 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get tekOnayGerekli =>
       'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.';
+
+  @override
+  String get arenaMeasuring => 'Fark ölçülüyor…';
+
+  @override
+  String arenaBehind(String ad, String fark) {
+    return '$ad $fark puan önde · yetişebilirsin';
+  }
+
+  @override
+  String get arenaNoDataYet => 'Henüz veri yok';
+
+  @override
+  String get arenaWaiting => 'Getiriler ölçülünce düello başlar';
+
+  @override
+  String get arenaStripDaily => 'Gün gün önde olan';
+
+  @override
+  String get arenaStripMonthly => 'Ay ay önde olan';
+
+  @override
+  String arenaSwaps(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n kez yer değişti',
+      zero: 'Yer hiç değişmedi',
+    );
+    return '$_temp0';
+  }
 }

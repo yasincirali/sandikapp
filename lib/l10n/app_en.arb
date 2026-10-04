@@ -3707,5 +3707,12 @@
   "tekOnayCumle": "I accept the {kosullar} and confirm I am 18+; I give my {riza} to the transfer of my data abroad.",
   "tekOnayKosullarBaglanti": "Legal Terms and KVKK Privacy Notice",
   "tekOnayRizaBaglanti": "explicit consent",
-  "tekOnayGerekli": "To continue, accept the legal terms and give explicit consent to the cross-border data transfer."
+  "tekOnayGerekli": "To continue, accept the legal terms and give explicit consent to the cross-border data transfer.",
+  "arenaMeasuring": "Measuring the gap…",
+  "arenaBehind": "{ad} leads by {fark} pts · you can catch up",
+  "arenaNoDataYet": "No data yet",
+  "arenaWaiting": "The duel starts once both returns are measured",
+  "arenaStripDaily": "Leader day by day",
+  "arenaStripMonthly": "Leader month by month",
+  "arenaSwaps": "{n, plural, =0{No lead changes} =1{1 lead change} other{{n} lead changes}}"
 }
