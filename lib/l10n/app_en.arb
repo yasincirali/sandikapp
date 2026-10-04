@@ -3601,7 +3601,7 @@
   "yasalKapiAciklamaGuncel": "We've updated our legal documents. To continue, read and accept their current versions.",
   "yasalKapiAciklamaIlk": "Before you start using the app, read and accept the documents below.",
   "yasalKapiNelerDegisti": "What changed",
-  "yasalKapiDegisiklikNotu": "Version 1.2: the documents in the app are now identical to the text on our website and updated to how the app works today. Added: single active device and an email code on a new device, usage statistics and crash reports (Firebase), the Race, the sign-up funnel, the lock-screen Live Activity, statements being read only on your device, current retention periods (portfolio history 2 years) and immediate account deletion. The Terms of Use gained the one-account, indemnification, force majeure, notices, assignment and severability clauses; the jurisdiction and changes-to-terms clauses were clarified. Explicit consent for international data transfer is now a separate document: the Explicit Consent Notice.",
+  "yasalKapiDegisiklikNotu": "Version 1.3: two records that had no retention period now have one and are deleted automatically: the sign-in security log (IP, device/browser) is kept for 90 days and the anonymous account deletion record for 3 years after deletion. The documents also now describe how consent works today: during registration and at the first sign-in with Apple or Google, every text is shown in full, read to the end and accepted at the bottom.",
   "yasalBelgeKosullar": "Terms of Use",
   "yasalBelgeGizlilik": "Privacy Policy",
   "yasalBelgeKvkk": "KVKK Privacy Notice",

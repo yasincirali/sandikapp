@@ -5536,7 +5536,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki metinle birebir aynı ve uygulamanın bugünkü işleyişine göre güncellendi. Eklenenler: tek aktif cihaz ve yeni cihazda e-posta kodu, kullanım istatistikleri ve hata raporları (Firebase), Yarış, kayıt hunisi, kilit ekranı canlı etkinliği, ekstrenin yalnızca cihazda okunması, güncel saklama süreleri (portföy geçmişi 2 yıl) ve hesap silmenin anında gerçekleşmesi. Kullanım Koşulları\'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri girdi; yetkili mahkeme ve koşul değişikliği maddeleri netleşti. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.';
+      'Sürüm 1.3: Süresi belirtilmemiş iki kayda saklama süresi geldi ve artık otomatik siliniyorlar: oturum açma güvenlik kaydı (IP, cihaz/tarayıcı) 90 gün, anonim hesap silme kaydı silmeden sonra 3 yıl tutulur. Ayrıca onay metinlerinin sunuluşu bugünkü işleyişe göre yazıldı: kayıtta ve Apple veya Google ile ilk girişte her metin tam gösterilir, sonuna kadar okunur ve en altta onaylanır.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';

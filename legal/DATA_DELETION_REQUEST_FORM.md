@@ -53,8 +53,8 @@ Silmeden önce verilerinizin bir kopyasını almak isterseniz: Profil → Ayarla
 - **Hata kayıtları:** hesabınızla bağı kaldırılarak en geç 30 gün içinde silinir
 - **Kayıt hunisi adımları:** hesabınızla bağı kaldırılarak, rastgele kurulum numarasıyla en geç 400 gün içinde silinir
 - **Firebase'deki hata raporları ve kullanım istatistikleri:** kendi saklama süreleri sonunda (hata raporları 90 gün, kullanım istatistikleri en fazla 14 ay) silinir
-- **Anonim silme kaydı:** hesap kimliğinizin tek yönlü özeti ve e-posta adresinizin alan adı (ör. gmail.com)
-- **Oturum açma güvenlik kaydı** (IP, cihaz/tarayıcı): Supabase Auth güvenlik kaydında tutulur
+- **Anonim silme kaydı:** hesap kimliğinizin tek yönlü özeti ve e-posta adresinizin alan adı (ör. gmail.com); silmeden sonra **3 yıl** saklanır, süresi dolunca otomatik silinir
+- **Oturum açma güvenlik kaydı** (IP, cihaz/tarayıcı): Supabase Auth güvenlik kaydında tutulur; 90 günden eski kayıtlar her gün otomatik silinir
 
 Ayrıntı: Gizlilik Politikası §7.
 
@@ -106,8 +106,8 @@ To keep a copy of your data before deleting: Profile → Settings → "Download 
 - **Error logs:** unlinked from your account and deleted within 30 days at the latest
 - **Sign-up funnel steps:** unlinked from your account, kept under a random installation number and deleted within 400 days at the latest
 - **Crash reports and usage statistics in Firebase:** deleted at the end of their own retention periods (crash reports 90 days, usage statistics at most 14 months)
-- **Anonymous deletion record:** a one-way hash of your account ID and the domain of your email address (e.g. gmail.com)
-- **Sign-in security log** (IP, device/browser): kept in the Supabase Auth security log
+- **Anonymous deletion record:** a one-way hash of your account ID and the domain of your email address (e.g. gmail.com); kept for **3 years** after deletion, then deleted automatically
+- **Sign-in security log** (IP, device/browser): kept in the Supabase Auth security log; entries older than 90 days are deleted automatically every day
 
 Details: Privacy Policy §7.
 

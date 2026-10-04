@@ -274,4 +274,59 @@ void main() {
     // FK yok: cascade ispatı hesapla birlikte silerdi.
     expect(sql, contains('user_id         uuid not null,\n'));
   });
+
+  test('0105: süresiz iki kaydın süresi metinde ve şemada aynı', () {
+    // Kullanıcı kararı 2026-10-05: Supabase Auth güvenlik kaydı 90 gün,
+    // anonim hesap silme kaydı 3 yıl; ikisi de günlük cron'la silinir.
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    for (final (ad, metin) in [('Gizlilik', gizlilik), ('KVKK', kvkk)]) {
+      expect(metin, isNot(contains('otomatik silme süresi tanımlamamıştır')),
+          reason: '$ad: 1.2 ifadesi kalkmalı');
+      expect(
+          metin,
+          contains('| Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı; '
+              'Supabase Auth güvenlik kaydı) | 90 gün; eskileri her gün '
+              'otomatik silinir |'),
+          reason: ad);
+      expect(metin, contains('| Anonim hesap silme kaydı'), reason: ad);
+    }
+    expect(gizlilik, contains('| Silmeden sonra **3 yıl** (TBK Madde 146'));
+    expect(kvkk, contains('| Hesap silinmesinden sonra **3 yıl**; süresi'));
+
+    final (dosya, sql) = migrationDosyalari().lastWhere(
+        (d) => d.$2.contains('auth_guvenlik_kaydi_saklama_temizle'));
+    expect(dosya, startsWith('0105_'));
+    expect(
+        sql,
+        contains('delete from auth.audit_log_entries\n'
+            "   where created_at < now() - interval '90 days';"));
+    expect(
+        sql,
+        contains('delete from public.account_deletion_log\n'
+            "   where deleted_at < now() - interval '3 years';"));
+    expect(sql, contains("cron.schedule('auth-guvenlik-kaydi-saklama'"));
+    expect(sql, contains("cron.schedule('hesap-silme-kaydi-saklama'"));
+    // auth şemasında yalnız DELETE: tablo/şema değişmez.
+    expect(sql, isNot(contains(RegExp(r'(alter|drop|create)\s+\w*\s*\w*\s*auth\.'))));
+  });
+
+  test('1.3: onay metinleri tam gösterilir, sonuna kadar okunur (0104 gerçeği)',
+      () {
+    // 1.2'deki "Bu uyarının özeti kayıt ekranındaki onay kutusunda yer
+    // alır" cümlesi zorunlu okumayla (bayrak `zorunlu_okuma`) yanlış oldu.
+    const eski = 'Bu uyarının özeti kayıt ekranındaki onay kutusunda';
+    const yeni = 'Bu uyarının tam metni kayıt sırasında';
+    for (final m in [
+      YasalMetinKatalogu.kosullar(),
+      YasalMetinKatalogu.gizlilik(),
+    ]) {
+      expect(m.govde, isNot(contains(eski)), reason: m.anahtar);
+      expect(m.govde, contains(yeni), reason: m.anahtar);
+    }
+    expect(YasalMetinKatalogu.kvkk().govde,
+        contains('size tam metniyle gösterilir; sonuna kadar okuyup en altta'));
+    expect(YasalMetinKatalogu.acikRiza().govde,
+        contains('size tam olarak gösterilir; sonuna kadar okuyup en altta'));
+  });
 }

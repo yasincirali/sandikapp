@@ -124,11 +124,11 @@ Future<PriceAlert?> alarmKurAkisi(
         kind: SandikSnackKind.success,
       );
       // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
-      // çağıran (varlık ekranı zili) sonucu hemen alsın. Hata çökme değil
-      // non-fatal kayıt (`arka_plan_hata_yutma_test`).
+      // çağıran (varlık ekranı zili) sonucu hemen alsın.
+      // Hata yutulmaz: Crashlytics'e gider (arka_plan_hata_yutma_test).
       CrashReporter.arkaPlan(
           ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu),
-          reason: 'alarm_kur_sheet.degerlendirmeIstemi');
+          reason: 'alarmKur.degerlendirmeIstemi');
     }
     return kayit;
   } catch (e) {
