@@ -691,13 +691,27 @@ List<_Adim> _adimlariKur() {
       id: 'kapsam',
       hedef: TourTarget.kapsamSecici,
       rozet: 'BİZE ÖZEL',
-      baslik: 'Kapsam ve mod',
-      govde: 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
-          'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
-          'kişi çipi seçer.\n\nGerçek mod dönem '
-          'içindeki her alım ve satımla gerçek geçmişini çizer; "Bugünkü '
-          'portföyle" modu "bugünkü portföyümü baştan elimde tutsaydım ne '
-          'olurdu?" sorusunu yanıtlar.',
+      // `performans_ayar_sade` (2026-10-04, madde 5): mod anahtarı kapsam
+      // panelinden Ayarlar › Görünüm'e taşındı; çip yalnız türü yazar,
+      // mod açıkken çipin altında "Bugünkü portföyle" rozeti durur. Tur
+      // metni gerçek ekranı anlatmalı (tur metni arayüzle değişir kuralı).
+      baslik: RemoteConfigService.instance.performansAyarSade
+          ? 'Kapsam'
+          : 'Kapsam ve mod',
+      govde: RemoteConfigService.instance.performansAyarSade
+          ? 'Bu çip hangi varlık türüne baktığını yazar; dokununca türler '
+              'açılır. Kimin portföyü olduğunu başlıktaki kişi çipi '
+              'seçer.\n\nGrafik dönem içindeki her alım ve satımla gerçek '
+              'geçmişini çizer. "Bugünkü portföyümü baştan elimde tutsaydım '
+              'ne olurdu?" diye merak edersen Ayarlar › Görünüm\'de '
+              '"Bugünkü portföyle göster"i aç; açıkken bu çipin altında '
+              'rozet görünür.'
+          : 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
+              'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
+              'kişi çipi seçer.\n\nGerçek mod dönem '
+              'içindeki her alım ve satımla gerçek geçmişini çizer; "Bugünkü '
+              'portföyle" modu "bugünkü portföyümü baştan elimde tutsaydım ne '
+              'olurdu?" sorusunu yanıtlar.',
       giris: (_) => _sekmeyeGecBasa(3),
     ),
     _Adim(
@@ -772,12 +786,23 @@ List<_Adim> _adimlariKur() {
       id: 'ayarlar',
       hedef: TourTarget.ayarlar,
       baslik: 'Ayarlar',
-      govde: 'Kullanıcı adın, kayıtlı cihazların, bildirimler, sinyal '
-          'ayarları, günlük '
-          'brifingin saati (sabah / akşam), fiyat alarmları, tema, yazı '
-          'boyutu, sessiz '
-          'saatler ve yasal belgeler. '
-          'Bu turu da buradan yeniden izleyebilirsin.',
+      // `performans_ayar_sade` açıkken bölümler gruplu ve Performans'ın
+      // "Bugünkü portföyle" görünümü Görünüm'de; metin bölüm adlarıyla
+      // anlatır ki kullanıcı ekranda aynı başlıkları bulsun.
+      govde: RemoteConfigService.instance.performansAyarSade
+          ? 'Dört bölüm: Görünüm (tema, yazı boyutu, dil, baz para birimi, '
+              'yatırımcı seviyesi ve "Bugünkü portföyle" görünümü), '
+              'Bildirimler (sinyal ayarları, fiyat alarmları, günlük '
+              'brifingin saati, sessiz saatler), Hesap & Güvenlik '
+              '(kullanıcı adın, kilit, kayıtlı cihazların, verilerin) ve '
+              'Yardım & Yasal. '
+              'Bu turu da buradan yeniden izleyebilirsin.'
+          : 'Kullanıcı adın, kayıtlı cihazların, bildirimler, sinyal '
+              'ayarları, günlük '
+              'brifingin saati (sabah / akşam), fiyat alarmları, tema, yazı '
+              'boyutu, sessiz '
+              'saatler ve yasal belgeler. '
+              'Bu turu da buradan yeniden izleyebilirsin.',
       giris: (_) => _sekmeyeGec(4),
       dokunulabilir: false,
     ),

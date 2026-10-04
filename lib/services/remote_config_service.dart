@@ -255,6 +255,15 @@ class RemoteConfigService {
     // diyordu; kullanıcı 2026-10-04'te sadeleştirmenin tüm adımlarına devam
     // dedi → kapalı bayrakla gelir, açma kararı havuz büyüklüğüne göre.
     'siralama_tek_sayfa': false,
+
+    // Performans araçları + Ayarlar sadeleştirmesi (sadeleştirme listesi
+    // madde 5 ve 10'un kalanı, 2026-10-04): grafik tipi seçicisi her
+    // seviyede yalnız Çizgi ve Mum (Alan/Taban/Çubuk kalkar, seçilmişse
+    // Çizgi çizilir), "Bugünkü portföyle" (simülasyon) anahtarı Performans
+    // kapsam panelinden Ayarlar › Görünüm'e taşınır (Performans'ta yalnız
+    // etkinken rozet), Ayarlar net başlıklı gruplara ve katlanır
+    // "Gelişmiş"e ayrılır. Kapalıyken üç yüzey birebir eski.
+    'performans_ayar_sade': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -448,6 +457,10 @@ class RemoteConfigService {
 
   /// Yarış + Zirve tek Sıralama sayfası — bkz. `_defaults['siralama_tek_sayfa']`.
   bool get siralamaTekSayfa => _bayrak('siralama_tek_sayfa');
+
+  /// Performans araçları + Ayarlar sadeleştirmesi — bkz.
+  /// `_defaults['performans_ayar_sade']`.
+  bool get performansAyarSade => _bayrak('performans_ayar_sade');
 
   /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
   /// `_defaults['canli_etkinlik_dakikalik']`.

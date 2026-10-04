@@ -3723,5 +3723,18 @@
   "vitrinPriceUnknown": "No price yet",
   "rankingTitle": "Rankings",
   "rankingTabPartners": "My partners",
-  "rankingTabEveryone": "Everyone"
+  "rankingTabEveryone": "Everyone",
+  "todaysPortfolioBadge": "With today's portfolio",
+  "todaysPortfolioBadgeHint": "You can turn this view off in Settings › Appearance.",
+  "todaysPortfolioSettingTitle": "Show with today's portfolio",
+  "todaysPortfolioSettingSubtitle": "Performance is drawn as if you had held today's holdings for the whole period. When off, your actual history is shown.",
+  "settingsGroupGeneral": "GENERAL",
+  "settingsGroupPortfolioView": "PORTFOLIO VIEW",
+  "settingsGroupSecurityAccount": "SECURITY & ACCOUNT",
+  "settingsGroupData": "DATA",
+  "settingsGroupAbout": "ABOUT THE APP",
+  "settingsAdvancedUpper": "ADVANCED",
+  "settingsAdvancedSemantics": "Advanced settings",
+  "settingsThemeLabel": "Theme",
+  "settingsBaseCurrencyLabel": "Base currency"
 }

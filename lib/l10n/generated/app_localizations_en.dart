@@ -5642,4 +5642,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rankingTabEveryone => 'Everyone';
+
+  @override
+  String get todaysPortfolioBadge => 'With today\'s portfolio';
+
+  @override
+  String get todaysPortfolioBadgeHint =>
+      'You can turn this view off in Settings › Appearance.';
+
+  @override
+  String get todaysPortfolioSettingTitle => 'Show with today\'s portfolio';
+
+  @override
+  String get todaysPortfolioSettingSubtitle =>
+      'Performance is drawn as if you had held today\'s holdings for the whole period. When off, your actual history is shown.';
+
+  @override
+  String get settingsGroupGeneral => 'GENERAL';
+
+  @override
+  String get settingsGroupPortfolioView => 'PORTFOLIO VIEW';
+
+  @override
+  String get settingsGroupSecurityAccount => 'SECURITY & ACCOUNT';
+
+  @override
+  String get settingsGroupData => 'DATA';
+
+  @override
+  String get settingsGroupAbout => 'ABOUT THE APP';
+
+  @override
+  String get settingsAdvancedUpper => 'ADVANCED';
+
+  @override
+  String get settingsAdvancedSemantics => 'Advanced settings';
+
+  @override
+  String get settingsThemeLabel => 'Theme';
+
+  @override
+  String get settingsBaseCurrencyLabel => 'Base currency';
 }

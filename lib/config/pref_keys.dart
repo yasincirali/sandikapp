@@ -112,4 +112,10 @@ class PrefKeys {
   /// Rozet yalnız bundan SONRA gelen aktif bildirimleri "yeni" sayar.
   /// Kişiye özel (`perUser`): A'nın gördüğü, B'nin rozetini düşürmez.
   static const bildirimSonGorulen = 'pref_bildirim_son_gorulen_ms';
+
+  /// Performans "Bugünkü portföyle" (simülasyon) görünümü — Ayarlar ›
+  /// Görünüm'deki anahtar (bayrak `performans_ayar_sade`). Kişiye özel
+  /// (`perUser`): A'nın görünümü B'nin grafiğini değiştirmez. Bayrak
+  /// kapalıyken OKUNMAZ: o yolda mod ekranın kendi oturum alanında yaşar.
+  static const performansBugunkuPortfoy = 'pref_performans_bugunku_portfoy';
 }

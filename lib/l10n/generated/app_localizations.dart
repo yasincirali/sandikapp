@@ -9380,6 +9380,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Herkes'**
   String get rankingTabEveryone;
+
+  /// No description provided for @todaysPortfolioBadge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü portföyle'**
+  String get todaysPortfolioBadge;
+
+  /// No description provided for @todaysPortfolioBadgeHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu görünümü Ayarlar › Görünüm\'den kapatabilirsin.'**
+  String get todaysPortfolioBadgeHint;
+
+  /// No description provided for @todaysPortfolioSettingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü portföyle göster'**
+  String get todaysPortfolioSettingTitle;
+
+  /// No description provided for @todaysPortfolioSettingSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Performans, bugünkü varlıklarını dönem boyunca elinde tutmuşsun gibi çizilir. Kapalıyken gerçek geçmişin görünür.'**
+  String get todaysPortfolioSettingSubtitle;
+
+  /// No description provided for @settingsGroupGeneral.
+  ///
+  /// In tr, this message translates to:
+  /// **'GENEL'**
+  String get settingsGroupGeneral;
+
+  /// No description provided for @settingsGroupPortfolioView.
+  ///
+  /// In tr, this message translates to:
+  /// **'PORTFÖY GÖRÜNÜMÜ'**
+  String get settingsGroupPortfolioView;
+
+  /// No description provided for @settingsGroupSecurityAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÜVENLİK VE HESAP'**
+  String get settingsGroupSecurityAccount;
+
+  /// No description provided for @settingsGroupData.
+  ///
+  /// In tr, this message translates to:
+  /// **'VERİ'**
+  String get settingsGroupData;
+
+  /// No description provided for @settingsGroupAbout.
+  ///
+  /// In tr, this message translates to:
+  /// **'UYGULAMA HAKKINDA'**
+  String get settingsGroupAbout;
+
+  /// No description provided for @settingsAdvancedUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'GELİŞMİŞ'**
+  String get settingsAdvancedUpper;
+
+  /// No description provided for @settingsAdvancedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gelişmiş ayarlar'**
+  String get settingsAdvancedSemantics;
+
+  /// No description provided for @settingsThemeLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tema'**
+  String get settingsThemeLabel;
+
+  /// No description provided for @settingsBaseCurrencyLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Baz para birimi'**
+  String get settingsBaseCurrencyLabel;
 }
 
 class _AppLocalizationsDelegate

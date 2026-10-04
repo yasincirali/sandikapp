@@ -16,6 +16,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
+import '../widgets/sandik_acilir.dart';
 import '../widgets/seviye_anketi.dart';
 import '../widgets/yenilikler_sheet.dart';
 import '../services/remote_config_service.dart';
@@ -87,6 +88,17 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
   bool _exporting = false;
+
+  /// Hub'ın "Gelişmiş" grubu açık mı (yalnız `performans_ayar_sade`).
+  /// Kapalı başlar: içindekiler teknik ve nadir; ilk bakışta yer kaplamasın.
+  bool _gelismisAcik = false;
+
+  /// Ayarlar sadeleştirmesi (sadeleştirme listesi madde 10, bayrak
+  /// `performans_ayar_sade`): bölümler net başlıklı gruplara ayrılır,
+  /// teknik satırlar hub'da katlanır "Gelişmiş"e iner. HİÇBİR satır
+  /// kalkmaz ve tercih anahtarları değişmez — yalnız sıra ve başlık.
+  /// Kapalıyken her bölüm birebir eski düzeninde.
+  bool get _sadeAyar => RemoteConfigService.instance.performansAyarSade;
 
   /// Kurulu sürüm — paketten okunur, elle yazılmaz (bkz. sayfa dibindeki
   /// sürüm satırı). Yüklenene kadar null.
@@ -532,6 +544,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           subtitle: context.l10n.settingsHelpSubtitle,
           onTap: () => _bolumAc(SettingsBolum.yardim),
         ),
+            ...() {
+              final teknik = _teknikBolumler();
+              if (!_sadeAyar || teknik.isEmpty) return teknik;
+              // Sade düzende teknik satırlar katlanır "Gelişmiş" grubunda:
+              // tanılama ve geliştirici araçları gündelik ayar değildir,
+              // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
+              // olduğundan kalabalık gösteriyordu (madde 10).
+              return <Widget>[
+                const SizedBox(height: 28),
+                _GelismisGrup(
+                  acik: _gelismisAcik,
+                  onDegis: () =>
+                      setState(() => _gelismisAcik = !_gelismisAcik),
+                  children: teknik,
+                ),
+              ];
+            }(),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
+              // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
+              // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
+              // söyler.
+              child: Text(
+                context.l10n.appVersionLabel(_surum ?? '…'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: context.c.text36,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+      ];
+
+  /// Teknik bölümler — admin tanılama ve debug geliştirici. Eski düzende
+  /// hub'da doğrudan, sade düzende "Gelişmiş" grubunun içinde çizilir.
+  List<Widget> _teknikBolumler() => [
             // Push teşhisi debug kapısının DIŞINDA, admin'e açık.
             //
             // Bu ekranın tek işi zincirin neresinin koptuğunu göstermek ve
@@ -583,26 +634,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               ),
             ],
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              // Sürüm SABİT yazılmıyordu artık: fastlane CI'da bump ettiği
-              // için elle yazılan değer bayatlıyordu (gerçek 1.1.4 iken
-              // burada "1.0.0" görünüyordu). `PackageInfo` kurulu olanı
-              // söyler.
-              child: Text(
-                context.l10n.appVersionLabel(_surum ?? '…'),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: context.c.text36,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
       ];
 
-  List<Widget> _gorunum() => [
+  List<Widget> _gorunum() => _sadeAyar ? _gorunumGruplu() : [
             const SizedBox(height: 4),
             const _ThemeModePicker(),
             const SizedBox(height: 12),
@@ -619,6 +653,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 24),
 
       ];
+
+  /// Görünüm — sade düzen (`performans_ayar_sade`): iki grup.
+  ///
+  ///   · GENEL: uygulamanın kendisi (tema, yazı boyutu, dil)
+  ///   · PORTFÖY GÖRÜNÜMÜ: rakamların nasıl gösterildiği (baz birim,
+  ///     yatırımcı seviyesi, "Bugünkü portföyle")
+  ///
+  /// Eski düzende beş seçici başlıksız alt alta duruyordu; tema ve baz
+  /// birim satırlarının ne seçtiği ancak simgelerden anlaşılıyordu.
+  /// "Bugünkü portföyle" Performans'ın kapsam panelinden buraya taşındı
+  /// (madde 5): dönemden döneme değişen bir kontrol değil, bir bakış
+  /// tercihi. Sade Başlangıç'ta (grafik araçları gizli) satır yok — orada
+  /// etkisiz olurdu (bkz. `_simulate`).
+  List<Widget> _gorunumGruplu() {
+    final l = context.l10n;
+    return [
+      const SizedBox(height: 4),
+      SandikSectionHeader(title: l.settingsGroupGeneral),
+      _SubSectionTitle(l.settingsThemeLabel),
+      const SizedBox(height: 8),
+      const _ThemeModePicker(),
+      const SizedBox(height: 12),
+      const _YaziBoyutuPicker(),
+      const SizedBox(height: 12),
+      const _LanguagePicker(),
+      const SizedBox(height: 28),
+      SandikSectionHeader(title: l.settingsGroupPortfolioView),
+      _SubSectionTitle(l.settingsBaseCurrencyLabel),
+      const SizedBox(height: 8),
+      const _BaseCurrencyPicker(),
+      const SizedBox(height: 12),
+      const _InvestorLevelPicker(),
+      if (ref.watch(seviyeGorunurlukProvider).grafikAraclari) ...[
+        const SizedBox(height: 12),
+        const _BugunkuPortfoyAnahtari(),
+      ],
+      const SizedBox(height: 24),
+    ];
+  }
 
   List<Widget> _bildirimler() => [
             SandikSectionHeader(title: context.l10n.notificationsUpper),
@@ -713,8 +786,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
       ];
 
-  List<Widget> _hesap() => [
-            const SizedBox(height: 4),
+  List<Widget> _hesap() {
+    final hesapSatirlari = <Widget>[
             // Kullanıcı adı (0079): ortağın gördüğü ad. İlk girişte zorunlu
             // seçilir, buradan değiştirilir — aynı ekran, geri oklu.
             _SettingsTile(
@@ -776,6 +849,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     builder: (_) => const KayitliCihazlarScreen()),
               ),
             ),
+    ];
+    final veriSatirlari = <Widget>[
             _SettingsTile(
               key: _disaAktarKaroKey,
               icon: Icons.download_outlined,
@@ -794,26 +869,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _deleting ? const CustomLoadingIndicator(size: 18) : null,
               onTap: _deleting ? null : _confirmDeleteAccount,
             ),
-      ];
+    ];
+    if (!_sadeAyar) {
+      return [const SizedBox(height: 4), ...hesapSatirlari, ...veriSatirlari];
+    }
+    // Sade düzen: kim olduğun ve nasıl korunduğun bir grup, verinin
+    // kendisi (dışa aktarma, silme) ayrı grup. Silme en altta kalır.
+    return [
+      SandikSectionHeader(title: context.l10n.settingsGroupSecurityAccount),
+      const SizedBox(height: 12),
+      ...hesapSatirlari,
+      const SizedBox(height: 28),
+      SandikSectionHeader(title: context.l10n.settingsGroupData),
+      const SizedBox(height: 12),
+      ...veriSatirlari,
+    ];
+  }
 
-  List<Widget> _yardim() => [
-            SandikSectionHeader(title: context.l10n.supportUpper),
-            const SizedBox(height: 12),
-            _SettingsTile(
+  List<Widget> _yardim() {
+    final iletisim = _SettingsTile(
               icon: Icons.mail_outline_rounded,
               title: context.l10n.contactUs,
               subtitle: _supportEmail,
               onTap: () => _sendMail(subject: 'Sandık uygulama iletişim'),
-            ),
-            _SettingsTile(
+            );
+    final puan = _SettingsTile(
               icon: Icons.star_outline_rounded,
               title: context.l10n.rateAppTitle,
               subtitle: context.l10n.rateAppSubtitle,
               // Kapı yok: kullanıcı bilerek geliyor. Otomatik istemi
               // "Sonra" diye geçiştirdiyse puanı buradan verir.
               onTap: () => ReviewPromptService.instance.magazayiAc(),
-            ),
-            _SettingsTile(
+            );
+    final yenilikler = _SettingsTile(
               icon: Icons.auto_awesome_outlined,
               title: context.l10n.whatsNewTitle,
               subtitle: context.l10n.whatsNewSubtitle,
@@ -832,22 +920,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 }
                 await YeniliklerSheet.goster(context, notlar);
               },
-            ),
-            _SettingsTile(
+            );
+    final tur = _SettingsTile(
               icon: Icons.explore_outlined,
               title: context.l10n.replayTour,
               subtitle: context.l10n.replayTourSubtitle,
               // Tur gerçek sekmelerin üstünde çalışır; Ayarlar kapanır,
               // köke dönülür ve katman orada açılır.
               onTap: () => OnboardingScreen.yenidenBaslat(context),
-            ),
-            _SettingsTile(
+            );
+    final geriBildirim = _SettingsTile(
               icon: Icons.rate_review_outlined,
               title: context.l10n.feedbackTitle,
               subtitle: context.l10n.feedbackSubtitle,
               onTap: _openFeedbackSheet,
-            ),
-            const SizedBox(height: 28),
+            );
+    final yasal = <Widget>[
             SandikSectionHeader(title: context.l10n.legalUpper),
             const SizedBox(height: 12),
             _SettingsTile(
@@ -878,7 +966,110 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _showDisclaimerText,
             ),
             const SizedBox(height: 28),
+    ];
+    if (!_sadeAyar) {
+      return [
+        SandikSectionHeader(title: context.l10n.supportUpper),
+        const SizedBox(height: 12),
+        iletisim,
+        puan,
+        yenilikler,
+        tur,
+        geriBildirim,
+        const SizedBox(height: 28),
+        ...yasal,
       ];
+    }
+    // Sade düzen: "bize yaz" türü satırlar (iletişim, geri bildirim, puan)
+    // DESTEK'te yan yana; uygulamanın kendini anlattığı satırlar
+    // (yenilikler, tanıtım turu) UYGULAMA HAKKINDA'da; yasal belgeler aynı.
+    return [
+      SandikSectionHeader(title: context.l10n.supportUpper),
+      const SizedBox(height: 12),
+      iletisim,
+      geriBildirim,
+      puan,
+      const SizedBox(height: 28),
+      SandikSectionHeader(title: context.l10n.settingsGroupAbout),
+      const SizedBox(height: 12),
+      yenilikler,
+      tur,
+      const SizedBox(height: 28),
+      ...yasal,
+    ];
+  }
+}
+
+/// Hub'ın katlanır "Gelişmiş" grubu (sade düzen, `performans_ayar_sade`).
+///
+/// Başlık `SandikSectionHeader` + açılır ok; gövde ortak `SandikAcilir`
+/// (Performans kapsam paneli ve Özet'in "Daha fazlası" ile aynı hareket).
+/// Kapalıyken içerik ağaçta değil — teknik satırlar gerçekten "geride".
+class _GelismisGrup extends StatelessWidget {
+  const _GelismisGrup({
+    required this.acik,
+    required this.onDegis,
+    required this.children,
+  });
+
+  final bool acik;
+  final VoidCallback onDegis;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          expanded: acik,
+          label: context.l10n.settingsAdvancedSemantics,
+          child: ExcludeSemantics(
+            child: CupertinoButton(
+              minimumSize: SandikTouch.minSize,
+              padding: EdgeInsets.zero,
+              onPressed: onDegis,
+              child: SandikSectionHeader(
+                title: context.l10n.settingsAdvancedUpper,
+                trailing: SandikAcilirOk(
+                  acik: acik,
+                  child: Icon(Icons.expand_more_rounded,
+                      size: 18, color: context.c.text58),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SandikAcilir(
+          acik: acik,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Bugünkü portföyle" — Performans'ın simülasyon görünümü (sade düzen).
+///
+/// TEK KAYNAK `bugunkuPortfoyleProvider`: burası yazar, Performans okur
+/// (`_simulate`). Performans'ta anahtar yok, yalnız etkinken rozet.
+class _BugunkuPortfoyAnahtari extends ConsumerWidget {
+  const _BugunkuPortfoyAnahtari();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _SwitchTile(
+      icon: Icons.history_toggle_off_rounded,
+      title: context.l10n.todaysPortfolioSettingTitle,
+      subtitle: context.l10n.todaysPortfolioSettingSubtitle,
+      value: ref.watch(bugunkuPortfoyleProvider),
+      onChanged: (v) => ref.read(bugunkuPortfoyleProvider.notifier).set(v),
+    );
+  }
 }
 
 /// Bölüm İÇİ alt başlık — ör. "Canlı Etkinlikler > Gizlilik".

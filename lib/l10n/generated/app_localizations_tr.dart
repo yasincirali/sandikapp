@@ -5590,4 +5590,45 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rankingTabEveryone => 'Herkes';
+
+  @override
+  String get todaysPortfolioBadge => 'Bugünkü portföyle';
+
+  @override
+  String get todaysPortfolioBadgeHint =>
+      'Bu görünümü Ayarlar › Görünüm\'den kapatabilirsin.';
+
+  @override
+  String get todaysPortfolioSettingTitle => 'Bugünkü portföyle göster';
+
+  @override
+  String get todaysPortfolioSettingSubtitle =>
+      'Performans, bugünkü varlıklarını dönem boyunca elinde tutmuşsun gibi çizilir. Kapalıyken gerçek geçmişin görünür.';
+
+  @override
+  String get settingsGroupGeneral => 'GENEL';
+
+  @override
+  String get settingsGroupPortfolioView => 'PORTFÖY GÖRÜNÜMÜ';
+
+  @override
+  String get settingsGroupSecurityAccount => 'GÜVENLİK VE HESAP';
+
+  @override
+  String get settingsGroupData => 'VERİ';
+
+  @override
+  String get settingsGroupAbout => 'UYGULAMA HAKKINDA';
+
+  @override
+  String get settingsAdvancedUpper => 'GELİŞMİŞ';
+
+  @override
+  String get settingsAdvancedSemantics => 'Gelişmiş ayarlar';
+
+  @override
+  String get settingsThemeLabel => 'Tema';
+
+  @override
+  String get settingsBaseCurrencyLabel => 'Baz para birimi';
 }
