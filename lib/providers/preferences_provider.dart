@@ -338,6 +338,11 @@ final yaziBoyutuProvider = Provider<YaziBoyutu>(
 /// Yatırımcı seviyesi (Ayarlar › Görünüm) — `YatirimciSeviyesi.index`.
 /// Varsayılan Orta = bugünkü görünüm; tercih sorulmaz, dayatılmaz (bkz.
 /// `models/yatirimci_seviyesi.dart`). Kişiye özel.
+/// Girişten önceki tanıtım ekranı görüldü mü (cihaz tercihi). Bkz.
+/// `PrefKeys.karsilamaGoruldu`, `KarsilamaScreen`.
+final karsilamaGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.karsilamaGoruldu, false));
+
 final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(
         PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
@@ -345,6 +350,29 @@ final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
 
 final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
     (ref) => YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
+
+/// Seviyenin görünürlük tablosu, `seviye_anketi` bayrağıyla (sade Başlangıç).
+/// Yeni kapılar (grafik araçları, derinlik) bunu okur; bayrak kapalıyken
+/// `seviyeGorunurlugu(seviye)` ile birebir aynı.
+final seviyeGorunurlukProvider = Provider<SeviyeGorunurluk>((ref) =>
+    seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider),
+        sade: RemoteConfigService.instance.seviyeAnketi));
+
+/// Ana ekran bildirim zili görünsün mü.
+///
+/// Zil yalnız sinyallerin değil fiyat alarmları ve ortak davetleri gibi
+/// genel bildirimlerin de TEK gelen kutusu. Başlangıç seviyesi zili
+/// tümden gizlediği için o kullanıcı alarm ve davetlerini de göremiyordu
+/// (sadeleştirme değerlendirmesi 2026-10-04). `seviye_anketi` açıkken zil
+/// her seviyede görünür; Başlangıç'ta yalnızca sinyal satırları süzülür
+/// ([zilSinyalleriGosterProvider]). Kapalıyken eski kural.
+final zilGorunurProvider = Provider<bool>((ref) =>
+    RemoteConfigService.instance.seviyeAnketi ||
+    seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller);
+
+/// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır).
+final zilSinyalleriGosterProvider = Provider<bool>((ref) =>
+    seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller);
 
 /// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
 /// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu

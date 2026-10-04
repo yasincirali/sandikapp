@@ -145,7 +145,7 @@ void main() {
     for (final w in [320.0, 375.0, 430.0]) {
       testWidgets('${w.toInt()}pt: beş dönem de tam görünür', (tester) async {
         await _pump(tester, partners: const [], width: w);
-        for (final d in ['GÜNLÜK', '1H', '1A', '6A', '1Y']) {
+        for (final d in ['Bugün', '1 hf', '1 ay', '6 ay', '1 yıl']) {
           _kirpilmamis(tester, d);
         }
         expect(tester.takeException(), isNull);
@@ -164,7 +164,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       await _pump(tester, partners: const []);
 
-      var node = tester.getSemantics(find.text('GÜNLÜK')).parent;
+      var node = tester.getSemantics(find.text('Bugün')).parent;
       while (node != null) {
         expect(node.tooltip, isNot('Grafiği tam ekran aç'),
             reason: 'dönem düğmeleri tam ekran ipucunun altında');
@@ -260,9 +260,9 @@ void main() {
 
       // Kabuk genişliği ilk ve son segmentin uçlarından ölçülür — araya
       // giren `Container`/`Padding` katmanlarını aramaktan bağımsız.
-      final gunluk = tester.getRect(find.text('GÜNLÜK'));
-      final birY = tester.getRect(find.text('1Y'));
-      final birH = tester.getRect(find.text('1H'));
+      final gunluk = tester.getRect(find.text('Bugün'));
+      final birY = tester.getRect(find.text('1 yıl'));
+      final birH = tester.getRect(find.text('1 hf'));
       final kabukGenislik = birY.right - gunluk.left;
 
       expect(kabukGenislik, greaterThan(280),

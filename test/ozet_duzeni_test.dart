@@ -97,7 +97,7 @@ void main() {
     testWidgets('ana rakam: "Paranın getirisi" + "1 Eki 25 - bugün"',
         (t) async {
       await kur(t, PeriodSummaryView(summary: ozet(), simdi: simdi));
-      expect(find.text('Paranın getirisi · 1Y'), findsOneWidget);
+      expect(find.text('Paranın getirisi · 1 yıl'), findsOneWidget);
       expect(find.text('1 Eki 25 - bugün'), findsOneWidget);
       // Eski başlık ve "→" aralık satırı kalmadı.
       expect(find.textContaining('piyasa getirisi'), findsNothing);
@@ -242,7 +242,7 @@ void main() {
 
       final sira = [
         find.text('SONUÇ'),
-        find.text('Paranın getirisi · 1Y'),
+        find.text('Paranın getirisi · 1 yıl'),
         find.text('Enflasyona göre'),
         find.text('Özetini paylaş'),
         find.text('NEDEN'),

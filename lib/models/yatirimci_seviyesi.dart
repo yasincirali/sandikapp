@@ -29,7 +29,8 @@ enum YatirimciSeviyesi {
   /// Etiket ve açıklama dile göre (3.20) — enum bağlamsız, `context` ister;
   /// `...Of(l)` sürümleri testte sözlükle doğrudan çağrılır.
   String etiket(BuildContext context) => etiketOf(context.l10n);
-  String aciklama(BuildContext context) => aciklamaOf(context.l10n);
+  String aciklama(BuildContext context, {bool sade = false}) =>
+      aciklamaOf(context.l10n, sade: sade);
 
   String etiketOf(AppLocalizations l) => switch (this) {
         YatirimciSeviyesi.baslangic => l.levelBeginner,
@@ -37,8 +38,11 @@ enum YatirimciSeviyesi {
         YatirimciSeviyesi.ileri => l.levelAdvanced,
       };
 
-  String aciklamaOf(AppLocalizations l) => switch (this) {
-        YatirimciSeviyesi.baslangic => l.levelBeginnerDesc,
+  /// [sade]: `seviye_anketi` bayrağı açık — Başlangıç daha çok şey gizler
+  /// (bkz. [seviyeGorunurlugu]); açıklama bunu söylemeli.
+  String aciklamaOf(AppLocalizations l, {bool sade = false}) => switch (this) {
+        YatirimciSeviyesi.baslangic =>
+          sade ? l.levelBeginnerDescSade : l.levelBeginnerDesc,
         YatirimciSeviyesi.orta => l.levelIntermediateDesc,
         YatirimciSeviyesi.ileri => l.levelAdvancedDesc,
       };
@@ -67,15 +71,30 @@ enum YatirimciSeviyesi {
 ///
 /// Kural değişmedi: **Başlangıç yalnızca GİZLER, İleri yalnızca EKLER**,
 /// Orta bugünkü görünümdür. Hiçbir hesap seviyeye bakmaz.
+///
+/// ## Sade Başlangıç (2026-10-04, bayrak `seviye_anketi`)
+/// Kullanıcı isteği: Performans *"çelişkili olmamalı, kafada soru işareti
+/// oluşturmamalı; yatırımcı seviyesine göre detaylı bilgiler sergilenebilir."*
+/// [sade] açıkken Başlangıç ayrıca şunları gizler:
+///   * [grafikAraclari] — grafik tipi seçici (Dağ/Taban/çubuk/mum),
+///     Gerçek|Simülasyon anahtarı, varlık grafiğinde MA20/LOG çipleri.
+///     Grafik düz çizgide kalır, rakamlar gerçek geçmişten gelir.
+///   * [derinlik] — Özet'in DERİNLİK bölümü (endeks kıyası, XIRR, sağlık,
+///     karakter, sabır). SONUÇ / NEDEN / AYRINTI aynen durur.
+/// Kapalıyken iki alan da her seviyede `true`: eski davranış birebir.
+/// Orta ve İleri [sade]'den etkilenmez — mevcut kullanıcının varsayılanı
+/// Orta olduğu için hiç dokunmayan kimse bir şey kaybetmez.
 typedef SeviyeGorunurluk = ({
   bool saglik,
   bool xirr,
   bool percentile,
   bool teknikSinyaller,
   bool ileri,
+  bool grafikAraclari,
+  bool derinlik,
 });
 
-SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s) {
+SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s, {bool sade = false}) {
   switch (s) {
     case YatirimciSeviyesi.baslangic:
       return (
@@ -84,6 +103,8 @@ SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s) {
         percentile: false,
         teknikSinyaller: false,
         ileri: false,
+        grafikAraclari: !sade,
+        derinlik: !sade,
       );
     case YatirimciSeviyesi.orta:
       return (
@@ -92,6 +113,8 @@ SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s) {
         percentile: true,
         teknikSinyaller: true,
         ileri: false,
+        grafikAraclari: true,
+        derinlik: true,
       );
     case YatirimciSeviyesi.ileri:
       return (
@@ -100,9 +123,34 @@ SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s) {
         percentile: true,
         teknikSinyaller: true,
         ileri: true,
+        grafikAraclari: true,
+        derinlik: true,
       );
   }
 }
+
+/// Seviye anketi (2026-10-04) — üç sorunun cevabından seviye. Saf fonksiyon.
+///
+/// Kullanıcı sorusu: *"Seviyeyi de bir anketle mi almak mantıklı?"* Evet:
+/// "Başlangıç mısın, İleri misin" diye sorulan kişi kendini çoğu zaman
+/// olduğundan yukarıda ya da aşağıda konumlar, ve "Başlangıç" etiketi
+/// kimseye hoş gelmez. Davranışa dair üç soru daha isabetli ve etiketsiz.
+///
+/// Her cevap 0 (yeni), 1 (orta) ya da 2 (deneyimli) puan. Toplam 0–6:
+///   0–1 → Başlangıç, 2–4 → Orta, 5–6 → İleri.
+/// Eşikler bilinçli olarak Orta'yı geniş tutar: Orta bugünkü görünümdür,
+/// yanlış sınıflamanın en ucuz olduğu seviye.
+/// Eksik/geçersiz cevap listesi → `null` (seviye değişmez).
+YatirimciSeviyesi? seviyeAnketSonucu(List<int> cevaplar) {
+  if (cevaplar.length != seviyeAnketSoruSayisi) return null;
+  if (cevaplar.any((c) => c < 0 || c > 2)) return null;
+  final toplam = cevaplar.fold<int>(0, (a, b) => a + b);
+  if (toplam <= 1) return YatirimciSeviyesi.baslangic;
+  if (toplam >= 5) return YatirimciSeviyesi.ileri;
+  return YatirimciSeviyesi.orta;
+}
+
+const seviyeAnketSoruSayisi = 3;
 
 /// İleri seviye metrikleri — Özet 1Y bloğunun ek kartı. Saf hesap.
 ///

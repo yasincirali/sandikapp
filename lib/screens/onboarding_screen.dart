@@ -18,6 +18,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/seviye_anketi.dart';
 import '../widgets/tour_anchor.dart';
 import 'main_navigation_screen.dart';
 import '../widgets/sekme_basa_don.dart';
@@ -186,7 +187,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // İlk açılış KISA tur (bkz. `_kisaAdimlar`); tam tur Ayarlar'dan.
     _Tur.baslat(
       kisa: true,
-      seviyeSorusu: RemoteConfigService.instance.lockOfferAfterFirstAsset,
+      seviyeSorusu: RemoteConfigService.instance.lockOfferAfterFirstAsset ||
+          RemoteConfigService.instance.seviyeAnketi,
       onBitti: (tamamlandi) async {
         // Kayıt hunisi (F11): tur KAPANDI — sonuna kadar gezildi ya da
         // atlandı. Atlama ayrıca `onboarding_skipped` ile ölçülüyor; huni
@@ -457,10 +459,8 @@ List<_Adim> _adimlariKur() {
           'uygulama kapalıyken de çalışır.',
       giris: (_) => _sekmeyeGec(0),
       dokunulabilir: false,
-      // Zil Başlangıç seviyesinde gizli (`home_screen.dart`, aynı koşul).
-      kosul: (ref) =>
-          seviyeGorunurlugu(ref.read(yatirimciSeviyesiProvider))
-              .teknikSinyaller,
+      // Zil görünürlüğü `home_screen.dart` ile aynı koşul.
+      kosul: (ref) => ref.read(zilGorunurProvider),
     ),
     _Adim(
       id: 'sekme_portfoy',
@@ -600,8 +600,9 @@ List<_Adim> _adimlariKur() {
       // Karşılaştır ve varlık ekranlarında da var.
       // 2026-09-28: seçici üç grafik ekranında da grafiğin ÜSTÜNDE
       // (bkz. `kartlar.dart` kontrol yığını notu).
-      govde: 'Grafiğin üstündeki seçici: GÜNLÜK gün içini saat saat çizer; '
-          '1H / 1A / 3A / 6A / 1Y / 5Y daha geniş pencereler. Aynı seçici '
+      govde: 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
+          'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha geniş '
+          'pencereler. Aynı seçici '
           'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
           'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
           'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
@@ -621,9 +622,9 @@ List<_Adim> _adimlariKur() {
       govde: 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
           'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
           'kişi çipi seçer.\n\nGerçek mod dönem '
-          'içindeki her alım ve satımla gerçek geçmişini çizer; Simülasyon '
-          '"bugünkü portföyümü baştan elimde tutsaydım ne olurdu?" sorusunu '
-          'yanıtlar.',
+          'içindeki her alım ve satımla gerçek geçmişini çizer; "Bugünkü '
+          'portföyle" modu "bugünkü portföyümü baştan elimde tutsaydım ne '
+          'olurdu?" sorusunu yanıtlar.',
       giris: (_) => _sekmeyeGecBasa(3),
     ),
     _Adim(
@@ -738,7 +739,20 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
     // adımlardan önce: sonraki adımlar zaten gerçek ekranı gösterdiği için
     // ekran seçilen seviyeyle anlatılır. Ayrı bir ön ekran yerine tur adımı:
     // "Atla" ve ilerleme göstergesi bedava gelir, tur yapısı değişmez.
-    if (seviyeSorusu)
+    //
+    // Anket (2026-10-04, bayrak `seviye_anketi`): üç seçenekli etiket yerine
+    // davranışa dair üç kısa soru; kullanıcı kendini "Başlangıç" diye
+    // etiketlemek zorunda kalmaz. Cevaplamadan "Devam" denirse seviye
+    // değişmez (varsayılan Orta).
+    if (seviyeSorusu && RemoteConfigService.instance.seviyeAnketi)
+      const _Adim(
+        id: 'seviye',
+        baslik: 'Ekranları sana göre ayarlayalım',
+        govde: 'Üç kısa soru. Cevabına göre ekranlar sadeleşir ya da '
+            "ayrıntılanır; Ayarlar › Görünüm'den istediğin an değiştirirsin.",
+        ek: _seviyeAnketi,
+      )
+    else if (seviyeSorusu)
       const _Adim(
         id: 'seviye',
         baslik: 'Yatırımda neredesin?',
@@ -770,6 +784,8 @@ List<_Adim> _kisaAdimlar({required bool seviyeSorusu}) {
 }
 
 Widget _seviyeSecici(BuildContext context) => const _SeviyeSecici();
+
+Widget _seviyeAnketi(BuildContext context) => const SeviyeAnketi();
 
 /// Seviye adımının seçicisi — Ayarlar › Görünüm'deki seçiciyle aynı dil
 /// (üç eşit segment + seçilenin tek satırlık açıklaması) ve AYNI tercih

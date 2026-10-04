@@ -29,6 +29,7 @@ import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'temettu_gecmisi.dart';
 import 'kilit_kapisi.dart';
+import 'remote_push_service.dart';
 import 'retention_tracker.dart';
 import 'period_summary_service.dart' show SummaryPeriod;
 
@@ -89,13 +90,24 @@ class NotificationService {
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  bool _varlikliSoruBakildi = false;
   GlobalKey<NavigatorState>? _navigatorKey;
 
   /// Biyometrik kilit altında bildirim dokunuşunu bekleten kapı —
   /// `_AuthGate` durumunu yazar. Gerekçe [KilitKapisi]'nda.
   final kilitKapisi = KilitKapisi();
 
-  Future<void> init({GlobalKey<NavigatorState>? navigatorKey}) async {
+  /// [iosIzniErtele]: iOS bildirim izni açılışta SORULMAZ; ilk varlık
+  /// eklendikten sonra [requestPermission] ister (2026-10-04, sadeleştirme
+  /// madde 2). Eskiden `DarwinInitializationSettings` izni uygulama ilk
+  /// açıldığında, giriş ekranından bile önce soruyordu: iOS izni tek sefer
+  /// sorduğu için değer görmeden "İzin verme" diyen kullanıcıya hiçbir
+  /// bildirim ulaşmıyordu. `push_prompt_after_first_asset` kapatılırsa eski
+  /// davranış (açılışta sor) birebir geri gelir.
+  Future<void> init({
+    GlobalKey<NavigatorState>? navigatorKey,
+    bool iosIzniErtele = false,
+  }) async {
     if (navigatorKey != null) {
       _navigatorKey = navigatorKey;
     }
@@ -105,12 +117,12 @@ class NotificationService {
     // alfa kanalını kullanır. `@mipmap/ic_launcher` renkli olduğu için düz
     // beyaz kare olarak görünüyordu.
     const android = AndroidInitializationSettings('ic_stat_sandik');
-    const darwin = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
+    final darwin = DarwinInitializationSettings(
+      requestAlertPermission: !iosIzniErtele,
+      requestBadgePermission: !iosIzniErtele,
+      requestSoundPermission: !iosIzniErtele,
     );
-    const settings = InitializationSettings(android: android, iOS: darwin);
+    final settings = InitializationSettings(android: android, iOS: darwin);
 
     await _plugin.initialize(
       settings,
@@ -232,12 +244,29 @@ class NotificationService {
   /// yerlerdeki kabul oranını karşılaştırabilmek için ölçülür. İzin oranı
   /// tutunmanın en büyük tek kaldıracı olduğu için sonucu kaydedilir.
   ///
-  /// **iOS burada ölçülmez.** Orada izin `init()` içindeki
-  /// `requestAlertPermission` ile daha önce istenmiş oluyor; buradan ikinci
-  /// bir çağrı yapılmıyor ve sonuç bilinmiyor. iOS tarafı
-  /// [_iosIzinDurumunuOlc] ile sistem ayarından OKUNARAK ölçülür.
+  /// **iOS:** izin açılışta ertelendiyse (`init(iosIzniErtele: true)`)
+  /// burada `requestPermissions` ile istenir. Açılışta zaten istendiyse bu
+  /// çağrı diyalog göstermez, mevcut durumu döndürür. Ölçüm iOS'ta yine
+  /// [_iosIzinDurumunuOlc] ile sistem ayarından okunarak yapılır (çift
+  /// kayıt olmasın).
+  ///
+  /// İzin verilince uzak push yeniden başlatılır: ertelenen kullanıcının
+  /// FCM token'ı girişte yazılmamıştı (`RemotePushService.start`).
   Future<void> requestPermission({String promptContext = 'unknown'}) async {
     if (!_initialized) await init();
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios == null) return;
+      final granted =
+          await ios.requestPermissions(alert: true, badge: true, sound: true);
+      if (granted == true) {
+        await RemotePushService.instance.izinSonrasiYenidenBaslat();
+      }
+      CrashReporter.arkaPlan(_iosIzinDurumunuOlc(),
+          reason: 'notification_service.iosIzinOlc');
+      return;
+    }
     final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin == null) return;
@@ -247,6 +276,28 @@ class NotificationService {
       granted: granted,
       promptContext: promptContext,
     );
+    if (granted) await RemotePushService.instance.izinSonrasiYenidenBaslat();
+  }
+
+  /// Portföyü DOLU olup izni hiç sorulmamış kullanıcıya bir kez sor.
+  ///
+  /// İlk-varlık tetiği yalnızca oturum içindeki 0→1 geçişini görür. Erteleme
+  /// gelmeden önce varlık eklemiş, ama girişteki eski istemi görmemiş
+  /// (ör. Android 13'te diyaloğu kapatmış) kullanıcı bir daha hiç
+  /// sorulmazdı. İzin zaten verilmiş/reddedilmişse işletim sistemi diyalog
+  /// göstermez; işaret cihaz başına bir kez yazılır.
+  Future<void> varlikliKullaniciyaBirKezSor() async {
+    // Portföy dinleyicisi her yazımda çağırır; oturum içinde tek bakış.
+    if (_varlikliSoruBakildi) return;
+    _varlikliSoruBakildi = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(PrefKeys.pushIzniVarlikliSoruldu) ?? false) return;
+      await prefs.setBool(PrefKeys.pushIzniVarlikliSoruldu, true);
+      await requestPermission(promptContext: 'mevcut_varlikli');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'push_izni_varlikli');
+    }
   }
 
   /// iOS'ta izin durumunu sistem ayarından okur ve tutunma ölçümüne yazar.

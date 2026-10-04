@@ -29,6 +29,7 @@ import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
 import 'providers/sozlesme_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
+import 'screens/karsilama_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/lock_offer_screen.dart';
@@ -261,7 +262,11 @@ void main() async {
         ),
       ),
     );
-    await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    await NotificationService.instance.init(
+      navigatorKey: appNavigatorKey,
+      // İzin ilk varlıktan sonra sorulur; açılışta değil (sadeleştirme 2).
+      iosIzniErtele: RemoteConfigService.instance.pushPromptAfterFirstAsset,
+    );
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
     CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
@@ -1165,6 +1170,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           });
         }
         _checkedUserId = user.id;
+        // Bu cihazda oturum açıldı: çıkışta tanıtım değil giriş formu gelsin.
+        if (!ref.read(karsilamaGorulduProvider)) {
+          ref.read(karsilamaGorulduProvider.notifier).set(true);
+        }
         // Portföy ve ortak varlıklarını SPLASH sırasında ısıt. Bu provider'lar
         // lazy — eskiden ilk `watch` HomeScreen mount olunca gerçekleşiyordu,
         // yani veri çekimi splash BİTTİKTEN sonra başlıyor ve arka arkaya
@@ -1712,6 +1721,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           ilkVarlikEklendi) {
         NotificationService.instance
             .requestPermission(promptContext: 'after_first_asset');
+      } else if (RemoteConfigService.instance.pushPromptAfterFirstAsset &&
+          !next.isLoading &&
+          currCount >= 1) {
+        // Açılışta portföyü zaten dolu olan kullanıcı: izin girişte artık
+        // sorulmadığı için hiç sorulmamışsa burada BİR KEZ sorulur (cihaz
+        // başına işaret; izin zaten belirliyse sistem diyalog göstermez).
+        NotificationService.instance.varlikliKullaniciyaBirKezSor();
       }
 
       // Widget kurulum önerisi — aynı an, ama izin isteminden SONRA.
@@ -1986,6 +2002,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (_oturumVardi) {
         _oturumVardi = false;
         _kokeDon();
+      }
+      // Girişten önce tanıtım (sadeleştirme 1, bayrak `karsilama_tanitimi`):
+      // bu cihazda hiç oturum açılmadıysa önce uygulamanın ne yaptığı
+      // anlatılır; giriş formu "Giriş yap"/"Atla" ile gelir.
+      if (RemoteConfigService.instance.karsilamaTanitimi &&
+          !ref.watch(karsilamaGorulduProvider)) {
+        return const KarsilamaScreen(key: ValueKey('karsilama'));
       }
       return const LoginScreen(key: ValueKey('login'));
     }

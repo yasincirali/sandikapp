@@ -342,7 +342,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get levelAdvancedDesc =>
-      'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1Y).';
+      'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).';
 
   @override
   String get noAssetsYet => 'Henüz varlık eklenmemiş';
@@ -1115,22 +1115,22 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get periodDaily => 'GÜNLÜK';
+  String get periodDaily => 'Bugün';
 
   @override
-  String get period1W => '1H';
+  String get period1W => '1 hf';
 
   @override
-  String get period1M => '1A';
+  String get period1M => '1 ay';
 
   @override
-  String get period3M => '3A';
+  String get period3M => '3 ay';
 
   @override
-  String get period6M => '6A';
+  String get period6M => '6 ay';
 
   @override
-  String get period1Y => '1Y';
+  String get period1Y => '1 yıl';
 
   @override
   String assetPerformanceSemantics(String name) {
@@ -1536,7 +1536,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get modeReal => 'Gerçek';
 
   @override
-  String get modeSim => 'Simülasyon';
+  String get modeSim => 'Bugünkü portföyle';
 
   @override
   String modeInfoSemantics(String mode) {
@@ -1571,7 +1571,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get youngPortfolioBody =>
-      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi GÜNLÜK görünümünde görebilirsin.';
+      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi “Bugün” görünümünde görebilirsin.';
 
   @override
   String get forceUpdateTitle => 'Güncelleme gerekli';
@@ -1603,7 +1603,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get simModeTitle => 'Simülasyon Modu';
+  String get simModeTitle => 'Bugünkü portföyle';
 
   @override
   String get realModeTitle => 'Gerçek Mod';
@@ -2276,7 +2276,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get selectedPeriodReturnBody =>
-      'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.';
+      'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.';
 
   @override
   String get depositsDontChangeRankBody =>
@@ -3494,7 +3494,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String periodChangeSim(String period) {
-    return '$period değişim · simülasyon';
+    return '$period değişim · bugünkü portföyle';
   }
 
   @override
@@ -4207,7 +4207,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get period5Y => '5Y';
+  String get period5Y => '5 yıl';
 
   @override
   String get vsPeriodReturnUpper => 'DÖNEM GETİRİSİ';
@@ -5293,7 +5293,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Hesabın başka bir cihazda açıldı. Bu cihazda oturum kapatıldı.';
 
   @override
-  String get kayitliCihazlar => 'Kayıtlı cihazlar';
+  String get kayitliCihazlar => 'Giriş yaptığın cihazlar';
 
   @override
   String get kayitliCihazlarAlt => 'Hesabın aynı anda tek cihazda açık kalır';
@@ -5329,4 +5329,169 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get otpSpamIpucu => 'Kod gelmediyse Gereksiz / Spam klasörüne de bak.';
+
+  @override
+  String get welcomeSkip => 'Atla';
+
+  @override
+  String get welcomeNext => 'Devam';
+
+  @override
+  String get welcomeCreateAccount => 'Hesap oluştur';
+
+  @override
+  String get welcomeTryDemo => 'Örnek portföye göz at';
+
+  @override
+  String get welcomeHaveAccount => 'Hesabım var, giriş yap';
+
+  @override
+  String welcomePageOf(int sayfa, int toplam) {
+    return 'Tanıtım, sayfa $sayfa / $toplam';
+  }
+
+  @override
+  String get welcomeP1Title => 'Tüm birikimin tek ekranda';
+
+  @override
+  String get welcomeP1Body =>
+      'Ne aldığını bir kez yaz, fiyatları sandık güncellesin. Toplamını, kârını ve dağılımını her an gör.';
+
+  @override
+  String get welcomeP2Title => 'Gerçekten kazanıyor musun?';
+
+  @override
+  String get welcomeP2Body =>
+      'Getirini enflasyonla, dolarla ve altınla kıyasla. Yeni alımlar değil, paranın kendisinin ne getirdiğini gör.';
+
+  @override
+  String get welcomeP3Title => 'Uygulamayı açmadan takip et';
+
+  @override
+  String get welcomeP3Body =>
+      'Ana ekran widget\'ı ve sabah özeti portföyünü sana getirir. iPhone\'da kilit ekranında canlı takip edersin.';
+
+  @override
+  String get welcomeP4Title => 'Alarm kur, birlikte takip et';
+
+  @override
+  String get welcomeP4Body =>
+      'Hedef fiyata gelince haber verelim. Eşinle ya da ailenle ortak portföyü birlikte izle.';
+
+  @override
+  String get welcomeTagStock => 'Hisse';
+
+  @override
+  String get welcomeTagFund => 'Fon';
+
+  @override
+  String get welcomeTagGold => 'Altın';
+
+  @override
+  String get welcomeTagFx => 'Döviz';
+
+  @override
+  String get welcomeTagCrypto => 'Kripto';
+
+  @override
+  String get welcomeTagPension => 'BES';
+
+  @override
+  String get welcomeTagInflation => 'Enflasyon';
+
+  @override
+  String get welcomeTagUsd => 'Dolar';
+
+  @override
+  String get welcomeTagWidget => 'Widget';
+
+  @override
+  String get welcomeTagLock => 'Kilit ekranı';
+
+  @override
+  String get welcomeTagBrief => 'Sabah özeti';
+
+  @override
+  String get welcomeTagAlarm => 'Fiyat alarmı';
+
+  @override
+  String get welcomeTagPartner => 'Ortak portföy';
+
+  @override
+  String get levelBeginnerDescSade =>
+      'Sade görünüm: yalnızca temel rakamlar. Teknik sinyaller, grafik araçları ve ileri metrikler gizlenir.';
+
+  @override
+  String get levelSurveyIntro =>
+      'Üç kısa soru; ekranları sana göre ayarlayalım.';
+
+  @override
+  String levelSurveyProgress(int no, int toplam) {
+    return 'Soru $no / $toplam';
+  }
+
+  @override
+  String get levelSurveyQ1 => 'Ne kadar süredir yatırım yapıyorsun?';
+
+  @override
+  String get levelSurveyQ1A0 => 'Yeni başlıyorum';
+
+  @override
+  String get levelSurveyQ1A1 => '1-3 yıldır';
+
+  @override
+  String get levelSurveyQ1A2 => '3 yıldan fazla';
+
+  @override
+  String get levelSurveyQ2 => 'Birikimin daha çok nerede?';
+
+  @override
+  String get levelSurveyQ2A0 => 'Altın, döviz, mevduat';
+
+  @override
+  String get levelSurveyQ2A1 => 'Fon ve hisse';
+
+  @override
+  String get levelSurveyQ2A2 => 'Aktif hisse ve kripto alım satımı';
+
+  @override
+  String get levelSurveyQ3 => 'Bu terimlerden hangileri sana tanıdık?';
+
+  @override
+  String get levelSurveyQ3A0 => 'Pek tanıdık değil';
+
+  @override
+  String get levelSurveyQ3A1 => 'Enflasyona göre getiri, dağılım';
+
+  @override
+  String get levelSurveyQ3A2 => 'Oynaklık, XIRR, RSI';
+
+  @override
+  String levelSurveyResult(String seviye) {
+    return 'Sana $seviye görünümü uygun.';
+  }
+
+  @override
+  String get levelSurveyResultNote =>
+      'İstediğin an Ayarlar › Görünüm\'den değiştirebilirsin.';
+
+  @override
+  String get levelSurveyRetake => 'Anketi yeniden yap';
+
+  @override
+  String get levelSurveyOpen => '3 soruyla seviyemi bul';
+
+  @override
+  String get levelSurveyBack => 'Geri';
+
+  @override
+  String get todaysReturn => 'Bugünkü getirin';
+
+  @override
+  String returnSince(String date) {
+    return '$date itibarıyla getirin';
+  }
+
+  @override
+  String get balanceChangeInclBuys => 'Birikim değişimi (alımlar dahil)';
 }

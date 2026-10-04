@@ -197,6 +197,14 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Mod anahtarı yalnızca gün dışı dönemde anlamlı (gün içi seride
   /// simülasyonun karşılığı yok), bu yüzden orada hiç çizilmez.
   Widget _buildScopePanel(bool isIntraday) {
+    // Anahtar gizlenirken simülasyon açık kaldıysa kapatılamaz hâlde
+    // kalmasın: gerçek geçmişe dön (seviye oturum içinde değişmiş olabilir).
+    final araclar = ref.watch(seviyeGorunurlukProvider).grafikAraclari;
+    if (!araclar && _simulate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _guncelle(() => _simulate = false);
+      });
+    }
     // Ortak katlanır bölüm (animasyon denetimi 2026-10-01).
     return SandikAcilir(
       acik: _kapsamAcik,
@@ -218,7 +226,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                   _typeChip(t, t.labelOf(context.l10n)),
               ],
             ),
-            if (!isIntraday && !_ozetSekmesi) ...[
+            // Simülasyon anahtarı sade Başlangıç'ta yok (`seviye_anketi`):
+            // "bugünkü portföyü hep tutsaydım" ikinci bir eğri ve ikinci bir
+            // yüzde demek; yeni yatırımcıda gerçek geçmiş tek doğru.
+            if (!isIntraday && !_ozetSekmesi && araclar) ...[
               const SizedBox(height: SandikSpace.sm),
               _buildModeToggle(),
             ],

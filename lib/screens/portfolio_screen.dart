@@ -316,10 +316,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: SandikSpace.sm),
-                    SandikLogoutButton(
-                      onPressed: () => confirmAndLogout(context, ref),
-                    ),
+                    // Çıkış düğmesi KALDIRILDI (sadeleştirme 2026-10-04):
+                    // dört sekmenin dördünde de duruyordu; yanlışlıkla
+                    // dokunulan, işi bitiren bir eylem. Ana ekran üst barında
+                    // (kullanıcı kuralı) ve Profil'de kalır.
                   ],
                 ),
               ),

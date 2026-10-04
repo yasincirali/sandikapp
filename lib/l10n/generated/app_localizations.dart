@@ -719,7 +719,7 @@ abstract class AppLocalizations {
   /// No description provided for @levelAdvancedDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1Y).'**
+  /// **'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).'**
   String get levelAdvancedDesc;
 
   /// No description provided for @noAssetsYet.
@@ -2045,37 +2045,37 @@ abstract class AppLocalizations {
   /// No description provided for @periodDaily.
   ///
   /// In tr, this message translates to:
-  /// **'GÜNLÜK'**
+  /// **'Bugün'**
   String get periodDaily;
 
   /// No description provided for @period1W.
   ///
   /// In tr, this message translates to:
-  /// **'1H'**
+  /// **'1 hf'**
   String get period1W;
 
   /// No description provided for @period1M.
   ///
   /// In tr, this message translates to:
-  /// **'1A'**
+  /// **'1 ay'**
   String get period1M;
 
   /// No description provided for @period3M.
   ///
   /// In tr, this message translates to:
-  /// **'3A'**
+  /// **'3 ay'**
   String get period3M;
 
   /// No description provided for @period6M.
   ///
   /// In tr, this message translates to:
-  /// **'6A'**
+  /// **'6 ay'**
   String get period6M;
 
   /// No description provided for @period1Y.
   ///
   /// In tr, this message translates to:
-  /// **'1Y'**
+  /// **'1 yıl'**
   String get period1Y;
 
   /// No description provided for @assetPerformanceSemantics.
@@ -2807,7 +2807,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeSim.
   ///
   /// In tr, this message translates to:
-  /// **'Simülasyon'**
+  /// **'Bugünkü portföyle'**
   String get modeSim;
 
   /// No description provided for @modeInfoSemantics.
@@ -2861,7 +2861,7 @@ abstract class AppLocalizations {
   /// No description provided for @youngPortfolioBody.
   ///
   /// In tr, this message translates to:
-  /// **'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi GÜNLÜK görünümünde görebilirsin.'**
+  /// **'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi “Bugün” görünümünde görebilirsin.'**
   String get youngPortfolioBody;
 
   /// No description provided for @forceUpdateTitle.
@@ -2915,7 +2915,7 @@ abstract class AppLocalizations {
   /// No description provided for @simModeTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Simülasyon Modu'**
+  /// **'Bugünkü portföyle'**
   String get simModeTitle;
 
   /// No description provided for @realModeTitle.
@@ -4049,7 +4049,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectedPeriodReturnBody.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.'**
+  /// **'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.'**
   String get selectedPeriodReturnBody;
 
   /// No description provided for @depositsDontChangeRankBody.
@@ -5903,7 +5903,7 @@ abstract class AppLocalizations {
   /// No description provided for @periodChangeSim.
   ///
   /// In tr, this message translates to:
-  /// **'{period} değişim · simülasyon'**
+  /// **'{period} değişim · bugünkü portföyle'**
   String periodChangeSim(String period);
 
   /// No description provided for @periodBalanceChange.
@@ -7049,7 +7049,7 @@ abstract class AppLocalizations {
   /// No description provided for @period5Y.
   ///
   /// In tr, this message translates to:
-  /// **'5Y'**
+  /// **'5 yıl'**
   String get period5Y;
 
   /// No description provided for @vsPeriodReturnUpper.
@@ -8832,7 +8832,7 @@ abstract class AppLocalizations {
   /// No description provided for @kayitliCihazlar.
   ///
   /// In tr, this message translates to:
-  /// **'Kayıtlı cihazlar'**
+  /// **'Giriş yaptığın cihazlar'**
   String get kayitliCihazlar;
 
   /// No description provided for @kayitliCihazlarAlt.
@@ -8894,6 +8894,306 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kod gelmediyse Gereksiz / Spam klasörüne de bak.'**
   String get otpSpamIpucu;
+
+  /// No description provided for @welcomeSkip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Atla'**
+  String get welcomeSkip;
+
+  /// No description provided for @welcomeNext.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam'**
+  String get welcomeNext;
+
+  /// No description provided for @welcomeCreateAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap oluştur'**
+  String get welcomeCreateAccount;
+
+  /// No description provided for @welcomeTryDemo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örnek portföye göz at'**
+  String get welcomeTryDemo;
+
+  /// No description provided for @welcomeHaveAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabım var, giriş yap'**
+  String get welcomeHaveAccount;
+
+  /// No description provided for @welcomePageOf.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tanıtım, sayfa {sayfa} / {toplam}'**
+  String welcomePageOf(int sayfa, int toplam);
+
+  /// No description provided for @welcomeP1Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm birikimin tek ekranda'**
+  String get welcomeP1Title;
+
+  /// No description provided for @welcomeP1Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne aldığını bir kez yaz, fiyatları sandık güncellesin. Toplamını, kârını ve dağılımını her an gör.'**
+  String get welcomeP1Body;
+
+  /// No description provided for @welcomeP2Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekten kazanıyor musun?'**
+  String get welcomeP2Title;
+
+  /// No description provided for @welcomeP2Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getirini enflasyonla, dolarla ve altınla kıyasla. Yeni alımlar değil, paranın kendisinin ne getirdiğini gör.'**
+  String get welcomeP2Body;
+
+  /// No description provided for @welcomeP3Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı açmadan takip et'**
+  String get welcomeP3Title;
+
+  /// No description provided for @welcomeP3Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana ekran widget\'ı ve sabah özeti portföyünü sana getirir. iPhone\'da kilit ekranında canlı takip edersin.'**
+  String get welcomeP3Body;
+
+  /// No description provided for @welcomeP4Title.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alarm kur, birlikte takip et'**
+  String get welcomeP4Title;
+
+  /// No description provided for @welcomeP4Body.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hedef fiyata gelince haber verelim. Eşinle ya da ailenle ortak portföyü birlikte izle.'**
+  String get welcomeP4Body;
+
+  /// No description provided for @welcomeTagStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hisse'**
+  String get welcomeTagStock;
+
+  /// No description provided for @welcomeTagFund.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon'**
+  String get welcomeTagFund;
+
+  /// No description provided for @welcomeTagGold.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın'**
+  String get welcomeTagGold;
+
+  /// No description provided for @welcomeTagFx.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz'**
+  String get welcomeTagFx;
+
+  /// No description provided for @welcomeTagCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto'**
+  String get welcomeTagCrypto;
+
+  /// No description provided for @welcomeTagPension.
+  ///
+  /// In tr, this message translates to:
+  /// **'BES'**
+  String get welcomeTagPension;
+
+  /// No description provided for @welcomeTagInflation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyon'**
+  String get welcomeTagInflation;
+
+  /// No description provided for @welcomeTagUsd.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dolar'**
+  String get welcomeTagUsd;
+
+  /// No description provided for @welcomeTagWidget.
+  ///
+  /// In tr, this message translates to:
+  /// **'Widget'**
+  String get welcomeTagWidget;
+
+  /// No description provided for @welcomeTagLock.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kilit ekranı'**
+  String get welcomeTagLock;
+
+  /// No description provided for @welcomeTagBrief.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabah özeti'**
+  String get welcomeTagBrief;
+
+  /// No description provided for @welcomeTagAlarm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmı'**
+  String get welcomeTagAlarm;
+
+  /// No description provided for @welcomeTagPartner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak portföy'**
+  String get welcomeTagPartner;
+
+  /// No description provided for @levelBeginnerDescSade.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sade görünüm: yalnızca temel rakamlar. Teknik sinyaller, grafik araçları ve ileri metrikler gizlenir.'**
+  String get levelBeginnerDescSade;
+
+  /// No description provided for @levelSurveyIntro.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üç kısa soru; ekranları sana göre ayarlayalım.'**
+  String get levelSurveyIntro;
+
+  /// No description provided for @levelSurveyProgress.
+  ///
+  /// In tr, this message translates to:
+  /// **'Soru {no} / {toplam}'**
+  String levelSurveyProgress(int no, int toplam);
+
+  /// No description provided for @levelSurveyQ1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne kadar süredir yatırım yapıyorsun?'**
+  String get levelSurveyQ1;
+
+  /// No description provided for @levelSurveyQ1A0.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni başlıyorum'**
+  String get levelSurveyQ1A0;
+
+  /// No description provided for @levelSurveyQ1A1.
+  ///
+  /// In tr, this message translates to:
+  /// **'1-3 yıldır'**
+  String get levelSurveyQ1A1;
+
+  /// No description provided for @levelSurveyQ1A2.
+  ///
+  /// In tr, this message translates to:
+  /// **'3 yıldan fazla'**
+  String get levelSurveyQ1A2;
+
+  /// No description provided for @levelSurveyQ2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikimin daha çok nerede?'**
+  String get levelSurveyQ2;
+
+  /// No description provided for @levelSurveyQ2A0.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altın, döviz, mevduat'**
+  String get levelSurveyQ2A0;
+
+  /// No description provided for @levelSurveyQ2A1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon ve hisse'**
+  String get levelSurveyQ2A1;
+
+  /// No description provided for @levelSurveyQ2A2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktif hisse ve kripto alım satımı'**
+  String get levelSurveyQ2A2;
+
+  /// No description provided for @levelSurveyQ3.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu terimlerden hangileri sana tanıdık?'**
+  String get levelSurveyQ3;
+
+  /// No description provided for @levelSurveyQ3A0.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pek tanıdık değil'**
+  String get levelSurveyQ3A0;
+
+  /// No description provided for @levelSurveyQ3A1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enflasyona göre getiri, dağılım'**
+  String get levelSurveyQ3A1;
+
+  /// No description provided for @levelSurveyQ3A2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oynaklık, XIRR, RSI'**
+  String get levelSurveyQ3A2;
+
+  /// No description provided for @levelSurveyResult.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sana {seviye} görünümü uygun.'**
+  String levelSurveyResult(String seviye);
+
+  /// No description provided for @levelSurveyResultNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'İstediğin an Ayarlar › Görünüm\'den değiştirebilirsin.'**
+  String get levelSurveyResultNote;
+
+  /// No description provided for @levelSurveyRetake.
+  ///
+  /// In tr, this message translates to:
+  /// **'Anketi yeniden yap'**
+  String get levelSurveyRetake;
+
+  /// No description provided for @levelSurveyOpen.
+  ///
+  /// In tr, this message translates to:
+  /// **'3 soruyla seviyemi bul'**
+  String get levelSurveyOpen;
+
+  /// No description provided for @levelSurveyBack.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri'**
+  String get levelSurveyBack;
+
+  /// No description provided for @todaysReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü getirin'**
+  String get todaysReturn;
+
+  /// No description provided for @returnSince.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} itibarıyla getirin'**
+  String returnSince(String date);
+
+  /// No description provided for @balanceChangeInclBuys.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikim değişimi (alımlar dahil)'**
+  String get balanceChangeInclBuys;
 }
 
 class _AppLocalizationsDelegate

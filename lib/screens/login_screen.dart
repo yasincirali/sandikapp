@@ -9,12 +9,17 @@ import 'package:flutter/material.dart'
         GlobalKey,
         Icons,
         Material,
+        OutlinedButton,
+        RoundedRectangleBorder,
+        BorderSide,
+        Size,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_kabugu.dart' show demoyuAc;
 import '../demo/demo_modu.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
@@ -409,7 +414,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // görmek için. İkincil: kayıt bağlantısının altında,
                     // sönük renkte; birincil yol hâlâ giriş/kayıt. Bayrak
                     // `demo_mode_enabled` kapalıyken hiç çizilmez.
-                    if (DemoModu.girisDugmesiAcik())
+                    //
+                    // Sadeleştirme (bayrak `karsilama_tanitimi`, 2026-10-04):
+                    // demo hesap açmadan değeri görmenin tek yolu; sönük metin
+                    // bağlantısı yerine çerçeveli tam genişlik düğme olur.
+                    if (DemoModu.girisDugmesiAcik() &&
+                        RemoteConfigService.instance.karsilamaTanitimi)
+                      Padding(
+                        padding: const EdgeInsets.only(top: SandikSpace.xs),
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: context.c.amberText,
+                            side: BorderSide(color: context.c.hairline),
+                            minimumSize: const Size.fromHeight(52),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: SandikRadius.mdAll),
+                          ),
+                          onPressed: () => demoyuAc(context),
+                          child: Text(
+                            context.l10n.welcomeTryDemo,
+                            style: context.t.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: context.c.amberText),
+                          ),
+                        ),
+                      )
+                    else if (DemoModu.girisDugmesiAcik())
                       CupertinoButton(
                         onPressed: () => demoyuAc(context),
                         child: Text(

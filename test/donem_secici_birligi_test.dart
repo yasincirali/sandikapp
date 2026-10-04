@@ -96,7 +96,7 @@ void main() {
   testWidgets('320pt\'de yedi dönem taşmaz ve hepsi görünür', (t) async {
     await kur(t, 320);
     expect(t.takeException(), isNull);
-    for (final p in ['GÜNLÜK', '1H', '1A', '3A', '6A', '1Y', '5Y']) {
+    for (final p in ['Bugün', '1 hf', '1 ay', '3 ay', '6 ay', '1 yıl', '5 yıl']) {
       expect(find.text(p), findsOneWidget, reason: p);
     }
   });

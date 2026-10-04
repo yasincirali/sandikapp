@@ -91,7 +91,7 @@ void main() {
 
     expect(find.text('GÜNCEL FİYAT'), findsOneWidget);
     expect(find.textContaining('Pozisyonun:'), findsOneWidget);
-    expect(find.text('5Y'), findsOneWidget);
+    expect(find.text('5 yıl'), findsOneWidget);
     // Eski pozisyon bölümü yerinde (veri kaybı yok): başlık + adet satırı.
     expect(find.text('POZİSYONUN'), findsOneWidget);
 

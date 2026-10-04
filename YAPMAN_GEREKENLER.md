@@ -8,6 +8,37 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-04 Sadeleştirme 1. parti — dal `claude/project-thread-jpfk0o`
+
+İstek (yasin): "kullanıcı adı kalsın, diğer değişiklikleri yapalım; onboarding
+öncesi müşteri uygulama yetkinliklerini anlamalı; Performans çelişkili
+olmamalı, seviyeye göre detay." Sunucu değişikliği YOK; iki yeni bayrak
+**kapalı** doğar, kapalıyken uygulama birebir eski.
+
+- [ ] PR'ı birleştir.
+- [ ] TestFlight'ta bildirim izni: uygulamayı SİL-YÜKLE (iOS izni tek sefer
+      sorar). Beklenen: açılışta ve girişte izin penceresi YOK; ilk varlığı
+      ekleyince gelir. İzin ver → birkaç dakika içinde sabah brifingi/alarm
+      push'u gelmeli (token ilk varlıktan sonra yazılıyor). Sorun çıkarsa
+      Firebase'de `push_prompt_after_first_asset` = `false` eski davranışı
+      (açılışta sor) geri getirir.
+- [ ] Firebase Console › Remote Config: `karsilama_tanitimi` = `true` (önce
+      kendi cihazın). Görmek için çıkış yap DEĞİL, uygulamayı silip yükle:
+      tanıtım yalnızca bu cihazda hiç oturum açılmadıysa görünür.
+      `demo_mode_enabled` Console'da `false` ise demo düğmesi çıkmaz; açmak
+      önerilir.
+- [ ] `seviye_anketi` = `true`: turda 3 soruluk anket, Ayarlar › Görünüm'de
+      "3 soruyla seviyemi bul", Başlangıç'ta Performans'ta grafik tipi,
+      "Bugünkü portföyle" anahtarı, MA20/LOG ve Özet › Derinlik gizlenir; zil
+      her seviyede görünür. Orta/İleri değişmez.
+- Bayraksız, herkese gelen: dönem etiketleri "Bugün · 1 hf · 1 ay · 3 ay ·
+  6 ay · 1 yıl · 5 yıl"; "Simülasyon" → "Bugünkü portföyle"; Portföy ve
+  Performans üst barından çıkış düğmesi kalktı (Ana + Profil'de duruyor);
+  "Kayıtlı cihazlar" → "Giriş yaptığın cihazlar"; Performans › Grafik
+  kartının manşeti artık Özet'le aynı "Paranın getirisi" (piyasa kazancı
+  + %), alım/satım dahil bakiye değişimi ikinci satıra indi (karar
+  "İkisi de getiri").
+
 ## ⏳ 2026-10-03 Hafta sonu GÜNLÜK'te dolar/altın düz değil (0101) — dal `claude/project-thread-fkhjy1`
 
 Soru (yasin): "Neden düz çizgi peki. Değeri oynak değil mi?" → "Evet bunu

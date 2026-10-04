@@ -65,7 +65,10 @@ import '../models/grafik_tipi.dart';
 import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart'
-    show leaderboardOptInProvider, yatirimciSeviyesiProvider;
+    show
+        leaderboardOptInProvider,
+        seviyeGorunurlukProvider,
+        yatirimciSeviyesiProvider;
 import 'leaderboard_screen.dart';
 import '../widgets/kapsam_kisi_secici.dart';
 import '../widgets/zoom_data_controller.dart';
@@ -626,14 +629,10 @@ class _PortfolioPerformanceScreenState
                           ),
                         ),
                       ),
-                      const SizedBox(width: SandikSpace.sm),
                     ],
-                    // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
-                    // beklenmeyen bir eylem olurdu.
-                    if (!widget.showBackButton)
-                      SandikLogoutButton(
-                        onPressed: () => confirmAndLogout(context, ref),
-                      ),
+                    // Çıkış düğmesi KALDIRILDI (sadeleştirme 2026-10-04):
+                    // Ana ekran üst barında ve Profil'de duruyor; dört sekmede
+                    // birden olması yanlışlıkla çıkışa davetiye çıkarıyordu.
                   ],
                 ),
               ),

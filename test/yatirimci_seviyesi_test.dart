@@ -45,9 +45,30 @@ void main() {
           xirr: true,
           percentile: true,
           teknikSinyaller: true,
-          ileri: false
+          ileri: false,
+          grafikAraclari: true,
+          derinlik: true,
         ),
       );
+    });
+
+    test('bayrak kapalıyken (sade=false) Başlangıç araçları ve derinliği '
+        'GİZLEMEZ — eski davranış birebir', () {
+      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic);
+      expect(b.grafikAraclari, isTrue);
+      expect(b.derinlik, isTrue);
+    });
+
+    test('sade Başlangıç grafik araçlarını ve derinliği gizler', () {
+      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic, sade: true);
+      expect(b.grafikAraclari, isFalse);
+      expect(b.derinlik, isFalse);
+    });
+
+    test('sade bayrağı Orta ve İleri\'yi DEĞİŞTİRMEZ (mevcut kullanıcı)', () {
+      for (final s in [YatirimciSeviyesi.orta, YatirimciSeviyesi.ileri]) {
+        expect(seviyeGorunurlugu(s, sade: true), seviyeGorunurlugu(s));
+      }
     });
 
     test('Başlangıç yalnızca gizler', () {
@@ -78,6 +99,32 @@ void main() {
       expect(b.teknikSinyaller, isFalse,
           reason: 'ana ekran sinyal zili + tekil varlık sinyal kartı/paneli');
       expect(b.percentile, isFalse, reason: 'ana ekran yüzdelik şeridi');
+    });
+  });
+
+  group('seviyeAnketSonucu', () {
+    test('eşikler: 0–1 Başlangıç, 2–4 Orta, 5–6 İleri', () {
+      expect(seviyeAnketSonucu([0, 0, 0]), YatirimciSeviyesi.baslangic);
+      expect(seviyeAnketSonucu([1, 0, 0]), YatirimciSeviyesi.baslangic);
+      expect(seviyeAnketSonucu([1, 1, 0]), YatirimciSeviyesi.orta);
+      expect(seviyeAnketSonucu([1, 1, 1]), YatirimciSeviyesi.orta);
+      expect(seviyeAnketSonucu([2, 2, 0]), YatirimciSeviyesi.orta);
+      expect(seviyeAnketSonucu([2, 2, 1]), YatirimciSeviyesi.ileri);
+      expect(seviyeAnketSonucu([2, 2, 2]), YatirimciSeviyesi.ileri);
+    });
+
+    test('eksik ya da aralık dışı cevap → null (seviye değişmez)', () {
+      expect(seviyeAnketSonucu([]), isNull);
+      expect(seviyeAnketSonucu([0, 1]), isNull);
+      expect(seviyeAnketSonucu([0, 1, 3]), isNull);
+      expect(seviyeAnketSonucu([-1, 1, 1]), isNull);
+    });
+
+    test('sade açıklama iki dilde de var', () {
+      for (final l in [AppLocalizationsTr(), AppLocalizationsEn()]) {
+        expect(YatirimciSeviyesi.baslangic.aciklamaOf(l, sade: true).trim(),
+            isNotEmpty);
+      }
     });
   });
 
@@ -132,12 +179,18 @@ void main() {
   // tek bir (ve çoğu kullanıcıda boş kalan) yüzeye bağlı olmasıydı. Bu grup
   // bağlantının kendisini kilitler.
   group('ekranlara bağlı', () {
-    test('ana ekran: sinyal zili seviyeye bakar', () {
+    // 2026-10-04: zil sinyallerin yanında alarm ve davetlerin de kutusu;
+    // seviye artık zili değil zilin SİNYAL satırlarını süzer (bayraklı,
+    // `zilGorunurProvider` / `zilSinyalleriGosterProvider`).
+    test('ana ekran: sinyal zili ve sinyal satırları seviyeye bakar', () {
       final src = ekranKaynagiSync('lib/screens/home_screen.dart');
-      expect(src.contains('seviyeGorunurlugu'), isTrue,
-          reason: 'ana ekran seviye tablosunu okumuyor');
-      expect(src.contains('.teknikSinyaller) ...['), isTrue,
-          reason: 'sinyal zili seviyeye bağlı değil');
+      expect(src.contains('ref.watch(zilGorunurProvider)) ...['), isTrue,
+          reason: 'zil görünürlüğü seviye kuralına bağlı değil');
+      expect(src.contains('zilSinyalleriGosterProvider'), isTrue,
+          reason: 'zil sayfası/rozeti sinyalleri seviyeye göre süzmüyor');
+      final prefs =
+          ekranKaynagiSync('lib/providers/preferences_provider.dart');
+      expect(prefs.contains('.teknikSinyaller'), isTrue);
     });
 
     // 2026-09-21: yüzdelik şeridi ana ekrandan Profil'e (Yarış kartının
