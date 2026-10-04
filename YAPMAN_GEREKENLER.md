@@ -12,13 +12,11 @@
 
 Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
 değişikliği yalnız **0102 yasal onay kaydı** (dal `feat/yasal-onay-kaydi`,
-aşağıda). Yeni davranışların hepsi **kapalı doğan** Remote Config
-bayrağı arkasında; kapalıyken uygulama birebir eski. Emülatörde bayrakları
-açmak için derleme anahtarı: `.env.local`'a `RC_ACIK=bayrak1,bayrak2` (yalnız
-debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
-
-- [ ] Emülatör/cihaz testini bitir, sonra push + PR (birleştirme sende).
-- [ ] Firebase Console › Remote Config — önce kendi cihazın için bir koşulla aç:
+aşağıda). **2026-10-04 kullanıcı kararı: bugünün 14 bayrağı AÇIK doğar**
+("bugün yapılan tüm geliştirmeler için flagleri açık olarak mergele maine").
+Bir özelliği uzaktan KAPATMAK için Firebase Console › Remote Config'e o
+anahtarı `false` olarak ekle (uygulama yeniden yayımlanmadan çalışır).
+Liste ve ne açtıkları:
   - `ilk_varlik_kolay`: boş ana ekranda **Canlı fiyat vitrini** (₺0 kartı
     gizlenir), Varlık Ekle'de "Yazarak ekle" / "Ekstreden aktar", komisyon +
     not "Ayrıntı ekle" altında.
@@ -81,6 +79,10 @@ debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
      `select kanal, count(*) from yasal_onaylar group by 1;` → yalnız
      `aktarim` (eski yatırım uyarısı + Zirve rızaları).
      `select jobname, active from cron.job where jobname = 'yasal-onay-saklama';`
+  ⚠️ 2026-10-04: `yasal_onay_kaydi` ve `yeniden_onay_kapisi` artık
+  VARSAYILAN AÇIK — 4. ve 6. adımlar Console işi değil, uygulama yayımlanınca
+  kendiliğinden açılır. Bu yüzden **0102 iki sunucuya uygulama mağazaya
+  çıkmadan ÖNCE dağıtılmalı**; kapatmak için Console'a `false` ekle.
   4. Firebase Console › Remote Config: `yasal_onay_kaydi` = `true` (önce
      kendi cihazın). Kapalıyken uygulama birebir eski; 0102'den ÖNCE açılırsa
      her kayıtta "fonksiyon yok" hatası Crashlytics'e düşer.

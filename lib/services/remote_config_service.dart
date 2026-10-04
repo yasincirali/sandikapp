@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
 
-
 /// Firebase Remote Config wrapper.
 ///
 /// Server-side kontrol edilebilir feature flag'ler için tek merkez. Firebase
@@ -202,27 +201,39 @@ class RemoteConfigService {
     // anlamalı". Girişten önce 4 sayfalık tanıtım + demo birincil düğme.
     // Yalnızca oturumsuz, daha önce hiç giriş yapmamış cihazda görünür
     // (`karsilamaGorulduProvider`); kapalıyken giriş ekranı birebir eski.
-    'karsilama_tanitimi': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'karsilama_tanitimi': true,
 
     // Yatırımcı seviyesi turda 3 soruluk anketle belirlenir ve Başlangıç
     // seviyesi Performans'ta ileri kontrolleri (grafik tipi, simülasyon,
     // MA20/LOG, derinlik metrikleri) gizler. Kapalıyken tur adımı tek
     // seçici, Başlangıç yalnızca bugünkü üç kartı gizler (eski davranış).
-    'seviye_anketi': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'seviye_anketi': true,
 
     // Sadeleştirme 2 (2026-10-04), liste madde 4: boş ana ekranda "Ne
     // biriktiriyorsun?" çipleri (seç → miktar yaz → bitti), Varlık Ekle'de
     // "Yazarak ekle" / "Ekstreden aktar" görünür düğmeleri ve komisyon + notun
     // "Ayrıntı ekle" altına katlanması. Kapalıyken boş ekran ve form birebir
     // eski.
-    'ilk_varlik_kolay': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'ilk_varlik_kolay': true,
 
     // Varlık ekranının altında sabit "Al · Sat · Temettü" çubuğu ve dönem
     // yüzdesinin tek yerde (fiyatın altında) kalması (Sadeleştirme 2,
     // madde 6/7, 2026-10-04). Bugün bu üç işlem yalnız Portföy kartını sola
     // kaydırınca bulunuyor — keşfedilmesi zor. Kapalıyken varlık ekranı
     // birebir eski; kaydırma her iki durumda da kısayol olarak kalır.
-    'varlik_islem_cubugu': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'varlik_islem_cubugu': true,
 
     // Tek kıyas yüzeyi (Sadeleştirme 2, liste madde 8, 2026-10-04). Varlık
     // ekranındaki "Karşılaştır" şeridi kendi seçicisini (BIST100 + 3 döviz +
@@ -232,7 +243,10 @@ class RemoteConfigService {
     // Özet'teki "Başka yere koysaydın" kartı BAĞLANMAZ: o para ağırlıklı
     // (kendi akışlarınla) bir cevap, Karşılaştır fiyat yüzdesi — yan yana
     // iki farklı "altın getirisi" gösterirdi. Kapalıyken birebir eski.
-    'tek_kiyas_yuzeyi': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'tek_kiyas_yuzeyi': true,
 
     // Kayıtta tek onay kutusu (Sadeleştirme 2, liste madde 1, 2026-10-04).
     // İki zorunlu kutu (Yasal Koşullar + KVKK aydınlatma + 18 yaş / yurt dışı
@@ -244,7 +258,10 @@ class RemoteConfigService {
     // onayından ayrı alınması gerekip gerekmediği avukata soruldu; onay
     // gelmeden açılmaz (YAPMAN_GEREKENLER "Sadeleştirme 2. parti").
     // Kapalıyken kayıt formu birebir eski (iki kutu).
-    'tek_onay_kutusu': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'tek_onay_kutusu': true,
 
     // Yasal metin onay kaydı (kullanıcı isteği 2026-10-04: "bu metinleri de
     // db'de tutup her müşteri hangilerini onaylamış takip edilebilir
@@ -254,7 +271,10 @@ class RemoteConfigService {
     // "fonksiyon yok" hatası üretir. Sıra: 0102 → `sema_esitlik.py` → aç.
     // Kapalıyken hiçbir ağ çağrısı yok; `disclaimer_acceptances` iki
     // durumda da eskisi gibi yazılır.
-    'yasal_onay_kaydi': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'yasal_onay_kaydi': true,
 
     // Yeniden onay kapısı (kullanıcı kararı 2026-10-04: "Eski rıza metnini
     // onaylayanlar için ilk login'de güncel doküman sunulup onay
@@ -266,21 +286,30 @@ class RemoteConfigService {
     // onay yazılamazsa kapı her açılışta yeniden sorardı. Sıra: 0102 iki
     // sunucu → sema_esitlik → `yasal_onay_kaydi` → bunu aç. Kapalıyken
     // hiçbir ağ çağrısı yok, giriş akışı birebir eski.
-    'yeniden_onay_kapisi': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'yeniden_onay_kapisi': true,
 
     // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
     // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
     // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
     // ekran birebir eski kabuğunda (`ModernTabSelector` / `KapsamKisiSecici`).
     // Seçim sözleşmesi ve yazılan durum iki yolda da AYNI.
-    'tek_ortak_secici': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'tek_ortak_secici': true,
 
     // Bugün kartı "H · enflasyon kıyası öne" düzeni (kullanıcı seçimi
     // 2026-10-04, sadeleştirme listesi madde 7): günün hareketi (eğri
     // rakamın sağında), geniş Getirin–TÜFE kıyası, en çok oynayan ve hedef.
     // Son 7 gün, artıdaki varlık, aylık özet ve olay ayak notu bu düzende
     // yok. Kapalıyken kart birebir "D · Sakin pano".
-    'bugun_karti_kiyas': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'bugun_karti_kiyas': true,
 
     // Yarış + Zirve tek "Sıralama" sayfası (sadeleştirme listesi madde 8,
     // 2026-10-04): iki sekme — "Ortaklarım" (Yarış'ın ortak sıralaması) ve
@@ -290,7 +319,10 @@ class RemoteConfigService {
     // Kapalıyken iki ayrı ekran birebir eski. Önceki not "havuz büyüyünce"
     // diyordu; kullanıcı 2026-10-04'te sadeleştirmenin tüm adımlarına devam
     // dedi → kapalı bayrakla gelir, açma kararı havuz büyüklüğüne göre.
-    'siralama_tek_sayfa': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'siralama_tek_sayfa': true,
 
     // Performans araçları + Ayarlar sadeleştirmesi (sadeleştirme listesi
     // madde 5 ve 10'un kalanı, 2026-10-04): grafik tipi seçicisi her
@@ -299,7 +331,10 @@ class RemoteConfigService {
     // kapsam panelinden Ayarlar › Görünüm'e taşınır (Performans'ta yalnız
     // etkinken rozet), Ayarlar net başlıklı gruplara ve katlanır
     // "Gelişmiş"e ayrılır. Kapalıyken üç yüzey birebir eski.
-    'performans_ayar_sade': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'performans_ayar_sade': true,
 
     // Yarış "Düello arenası" (kullanıcı seçimi 2026-10-04, artifact
     // seçeneği 2): tam iki kişilik yarışta canlı listenin yerine arena —
@@ -307,7 +342,10 @@ class RemoteConfigService {
     // el değiştiren taç ve dönemin gün gün lider şeridi; dönem seçici
     // kayan hap. 3+ kişide kürsü + liste aynen kalır. Hesap değişmez
     // (seçimlerinin getirisi, TWR). Kapalıyken yarış ekranı birebir eski.
-    'yaris_duello_arena': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'yaris_duello_arena': true,
 
     // Ortak seçimi geçişte taşınır (kullanıcı isteği 2026-10-04): seçili
     // kapsama (Birlikte / Ben / ortak) göre bilgi gösteren bir karttan ortak
@@ -315,7 +353,10 @@ class RemoteConfigService {
     // ekranda Ayşe seçiliyken Bugün kartının satırı Performans › Özet'i
     // Ayşe'de açar. Kapalıyken eski davranış: Bugün kartı Performans'ı her
     // zaman "Ben" ile açar.
-    'ortak_secimi_tasi': false,
+    // AÇIK doğar — kullanıcı kararı 2026-10-04: "bugün yapılan tüm
+    // geliştirmeler için flagleri açık olarak mergele maine". Uzaktan
+    // kapatma: Console'a anahtarı `false` olarak ekle (bkz. Sprint 1 notu).
+    'ortak_secimi_tasi': true,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -333,10 +374,19 @@ class RemoteConfigService {
   @visibleForTesting
   static Set<String> testAcik = {};
 
+  /// Widget testinde bayrağı KAPATMAK için. Açık doğan bir bayrağın eski
+  /// (kapalı) dalı ancak böyle sınanır; [testAcik] her zaman kazanır.
+  /// 2026-10-04'te açık doğan bayraklar `test/flutter_test_config.dart`'ta
+  /// buraya konur: o güne kadar yazılmış testler "bayrak kapalı = eski
+  /// davranış" diye kuruldu, açık dal [testAcik] ile ayrıca sınanıyor.
+  @visibleForTesting
+  static Set<String> testKapali = {};
+
   bool _bayrak(String anahtar) =>
       testAcik.contains(anahtar) ||
-      _yerelAcik.contains(anahtar) ||
-      (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
+      (!testKapali.contains(anahtar) &&
+          (_yerelAcik.contains(anahtar) ||
+              (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool)));
 
   Future<void> init() async {
     if (_initialized) return;
@@ -368,8 +418,8 @@ class RemoteConfigService {
           await _rc!.activate();
           _sunucuyaBildir();
         },
-        onError: (Object e, StackTrace st) =>
-            CrashReporter.report(e, st, reason: 'remote_config_service.onConfigUpdated'),
+        onError: (Object e, StackTrace st) => CrashReporter.report(e, st,
+            reason: 'remote_config_service.onConfigUpdated'),
       );
       _initialized = true;
     } catch (e) {
@@ -535,7 +585,8 @@ class RemoteConfigService {
   bool get tekKiyasYuzeyi => _bayrak('tek_kiyas_yuzeyi');
 
   /// Kayıtta iki onay kutusu yerine tek kutu — bkz.
-  /// `_defaults['tek_onay_kutusu']` (hukuki onay bekler, varsayılan kapalı).
+  /// `_defaults['tek_onay_kutusu']` (2026-10-04 kullanıcı kararıyla açık;
+  /// avukat görüşü YAPMAN'da).
   bool get tekOnayKutusu => _bayrak('tek_onay_kutusu');
 
   /// Yasal metin onaylarının sunucuya kaydı — bkz.

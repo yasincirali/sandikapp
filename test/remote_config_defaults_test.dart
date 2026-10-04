@@ -77,42 +77,34 @@ void main() {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });
 
+    // Kullanıcı kararı 2026-10-04: bugünün bayrakları AÇIK doğar ("flagleri
+    // açık olarak mergele maine"). Merge'de sessizce `false`'a dönerse
+    // özellikler TestFlight'ta habersizce kaybolur.
+    for (final b in const [
+      'ilk_varlik_kolay',
+      'karsilama_tanitimi',
+      'seviye_anketi',
+      'bugun_karti_kiyas',
+      'varlik_islem_cubugu',
+      'tek_ortak_secici',
+      'tek_kiyas_yuzeyi',
+      'siralama_tek_sayfa',
+      'performans_ayar_sade',
+      'yaris_duello_arena',
+      'tek_onay_kutusu',
+      'ortak_secimi_tasi',
+      'yasal_onay_kaydi',
+      'yeniden_onay_kapisi',
+    ]) {
+      test('$b açık doğar', () => expect(varsayilan(b), 'true'));
+    }
+
     test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {
       expect(varsayilan('paywall_enabled'), 'false');
     });
 
     test('deposits_enabled artık yok — vadeli mevduat koddan çıkarıldı', () {
       expect(varsayilan('deposits_enabled'), isNull);
-    });
-
-    // Sadeleştirme 2 (2026-10-04): davranış değiştiren yüzey bayrakla gelir,
-    // varsayılan KAPALI (CLAUDE.md "riskli yeni davranış bayrakla açılır").
-    test('varlik_islem_cubugu kapalı doğar', () {
-      expect(varsayilan('varlik_islem_cubugu'), 'false');
-    });
-
-    test('tek_kiyas_yuzeyi kapalı doğar', () {
-      expect(varsayilan('tek_kiyas_yuzeyi'), 'false');
-    });
-
-    test('siralama_tek_sayfa kapalı doğar', () {
-      expect(varsayilan('siralama_tek_sayfa'), 'false');
-    });
-
-    test('ortak_secimi_tasi kapalı doğar', () {
-      expect(varsayilan('ortak_secimi_tasi'), 'false');
-    });
-
-    // 0102 iki sunucuya dağıtılmadan açılırsa her kayıt/onay "fonksiyon
-    // yok" hatası üretir (YAPMAN: dağıt → sema_esitlik → aç).
-    test('yasal_onay_kaydi kapalı doğar', () {
-      expect(varsayilan('yasal_onay_kaydi'), 'false');
-    });
-
-    // Girişte yeniden onay kapısı: 0102 + yasal_onay_kaydi açılmadan
-    // açılırsa onay yazılamaz ve kapı her açılışta yeniden sorar.
-    test('yeniden_onay_kapisi kapalı doğar', () {
-      expect(varsayilan('yeniden_onay_kapisi'), 'false');
     });
   });
 
