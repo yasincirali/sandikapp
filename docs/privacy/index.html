@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="c75a6cda0ab0c2cd477a84aa0f6d0af08445c18d0900f77dd286b2613c13473e">
-<meta name="sandik-govde-sha256" content="997f1df4b3143e7ccbd4e567df2ab764faeb062281bd3a5c4b2b6ecf49a5e9ba">
+<meta name="sandik-kaynak-sha256" content="d062478d702eced97012667105c927ce37faa8ded93e5b7ee91c492c1d08a362">
+<meta name="sandik-govde-sha256" content="2a99024a4f2d88c364154bce0cf0f7da34f32560a53aebd248f40f283c980751">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -65,9 +65,9 @@ button:hover { opacity: 0.9; }
 </header>
 <!-- sandik-govde:basla -->
 <h1>Gizlilik Politikası — sandık</h1>
-<p><strong>Yürürlük tarihi:</strong> 4 Ekim 2026
-<strong>Son güncelleme:</strong> 4 Ekim 2026
-<strong>Sürüm:</strong> 1.2</p>
+<p><strong>Yürürlük tarihi:</strong> 5 Ekim 2026
+<strong>Son güncelleme:</strong> 5 Ekim 2026
+<strong>Sürüm:</strong> 1.3</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
 <p>Bu uygulamayı (<strong>sandık</strong>, "Uygulama") <code>Yasin Çıralı</code> ("biz", "Şirket") işletmektedir.</p>
@@ -421,12 +421,16 @@ button:hover { opacity: 0.9; }
 <td>Firebase'deki saklama ayarı kadar, en fazla 14 ay</td>
 </tr>
 <tr>
-<td>Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı)</td>
-<td>Supabase Auth güvenlik kaydında tutulur; uygulama bu kayıt için otomatik silme süresi tanımlamamıştır</td>
+<td>Anonim hesap silme kaydı (hesap kimliğinin tek yönlü özeti, e-posta alan adı, silme zamanı ve nedeni)</td>
+<td>Silmeden sonra <strong>3 yıl</strong> (TBK Madde 146 zamanaşımı); süresi dolanlar her gün otomatik silinir</td>
+</tr>
+<tr>
+<td>Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı; Supabase Auth güvenlik kaydı)</td>
+<td>90 gün; eskileri her gün otomatik silinir</td>
 </tr>
 </tbody>
 </table>
-<p>Hesabınızı uygulamadan sildiğinizde hesabınız ve girdiğiniz bütün veriler canlı veritabanından <strong>hemen</strong> silinir. İstisnalar: yasal metin onay kayıtları (3 yıl), yapısal hata kayıtları ve kayıt hunisi adımları (hesapla bağı kaldırılarak kendi sürelerinin sonuna kadar), Firebase'deki hata raporları ve kullanım istatistikleri (kendi sürelerinin sonuna kadar), oturum açma güvenlik kaydı ve hesap kimliğinizin tek yönlü özeti ile e-posta alan adınızdan oluşan anonim silme kaydı.</p>
+<p>Hesabınızı uygulamadan sildiğinizde hesabınız ve girdiğiniz bütün veriler canlı veritabanından <strong>hemen</strong> silinir. İstisnalar: yasal metin onay kayıtları (3 yıl), yapısal hata kayıtları ve kayıt hunisi adımları (hesapla bağı kaldırılarak kendi sürelerinin sonuna kadar), Firebase'deki hata raporları ve kullanım istatistikleri (kendi sürelerinin sonuna kadar), oturum açma güvenlik kaydı (90 gün) ve hesap kimliğinizin tek yönlü özeti ile e-posta alan adınızdan oluşan anonim silme kaydı (3 yıl).</p>
 <hr />
 <h2>8. Haklarınız (KVKK Madde 11 / GDPR Madde 15-22)</h2>
 <p>Bize başvurarak şu haklarınızı kullanabilirsiniz:</p>
@@ -481,7 +485,7 @@ button:hover { opacity: 0.9; }
 <hr />
 <h2>12. Yatırım Tavsiyesi Reddi (Disclaimer)</h2>
 <p><strong>sandık</strong> bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal ve grafikler bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.</p>
-<p>Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya Google ile ilk girişte tam metni ayrıca gösterilir. Onayın kaydı yasal kanıt olarak saklanır.</p>
+<p>Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.</p>
 <hr />
 <h2>13. Politikada Değişiklikler</h2>
 <p>Bu politikada değişiklik yaptığımızda:

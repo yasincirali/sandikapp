@@ -1,14 +1,156 @@
-// ÜRETİLDİ — elle düzenleme. Kaynak: legal/tr/*.md; üreten:
-// `python docs/_build_legal.py`. Kayma kilidi: test/yasal_web_esleme_test.dart.
-//
-// Değerler md'nin KANONİK hâlidir (BOM yok, LF, sondaki boşluk kırpılmış;
-// yer tutucular doldurulmamış). Veritabanındaki `govde` ve `govde_hash`
-// bu metinlerdir (`YasalMetinKatalogu`).
+-- 0105 — Süresiz iki kayda saklama süresi + belgeler 1.3 (2026-10-05)
+--
+-- ## İstek
+-- Kullanıcı kararı (2026-10-05): "Önerilerin hepsini uygula." Bu işe düşen
+-- iki öneri: (1) saklama süresi olmayan iki kayıt otomatik silinsin;
+-- (2) Koşullar §3 ve Gizlilik §12'deki "Bu uyarının özeti kayıt ekranındaki
+-- onay kutusunda yer alır; Apple veya Google ile ilk girişte tam metni
+-- ayrıca gösterilir." cümlesi artık yanlış: zorunlu okuma (bayrak
+-- `zorunlu_okuma`, açık; 0104) ile kayıtta da TAM metin okutuluyor. Metin
+-- gerçeği söylesin.
+--
+-- ## Bugüne kadar
+-- * `auth.audit_log_entries` — Supabase Auth güvenlik kaydı (IP, cihaz/
+--   tarayıcı; GoTrue yazar). Hiçbir silme yoktu; Gizlilik §7 ve KVKK §6
+--   1.2: "uygulama bu kayıt için otomatik silme süresi tanımlamamıştır".
+--   Ölçüm (2026-10-05): Tokyo 2399 satır, en eskisi 2026-07-29; Frankfurt
+--   0 satır. `postgres` rolünün tabloda DELETE yetkisi var (aynı ölçüm).
+-- * `public.account_deletion_log` (0007; anonim: tuzlu hash + e-posta alan
+--   adı) — tablo yorumu "KVKK kanıtı için 3 yıl saklanır" diyordu ama
+--   temizleme cron'u YORUM SATIRINDA kaldı; satırlar süresiz birikiyordu.
+--   Metin bu kayda süre yazmıyordu.
+--
+-- ## Karar
+-- 1. Güvenlik kaydı **90 gün**, ölçüt `created_at` (GoTrue'nun damgası).
+--    Eski metin bir zaman "oturum logları 90 gün" diyordu; Crashlytics ve
+--    bildirim kayıtlarıyla aynı ufuk. `created_at` boş satır silinmez:
+--    yaşı bilinmeyen satıra süre uydurulmaz (GoTrue her satıra yazar).
+--    Bedeli: yönetim panelinin Güvenlik ekranı (0070) ve kayıt hunisinin
+--    "ilk giriş" adımı (0097, pencere ≤ 365 gün) 90 günden eskisini artık
+--    göremez — TECHNICAL_DEBT'e yazıldı.
+-- 2. Anonim silme kaydı **3 yıl**, ölçüt `deleted_at` (0007, not null).
+--    0007'deki yorum satırı planıyla aynı süre ve sorgu; yasal metin onay
+--    kayıtlarıyla (0102, `yasal-onay-saklama`) aynı dayanak: TBK 146
+--    zamanaşımı. Silme isteğinin yerine getirildiğinin kanıtı, onay
+--    kanıtıyla aynı süre yaşar. 0007'nin haftalık planı yerine günlük iş:
+--    "3 yıl" metni bir haftaya kadar aşılmasın; tablo küçük.
+-- 3. Desen 0056 / 0077 / 0102: SECURITY DEFINER silme fonksiyonu
+--    (`set search_path`, tam nitelikli adlar) + günlük pg_cron işi;
+--    anon/authenticated için EXECUTE yok. auth şemasında YALNIZ DELETE:
+--    tablo, indeks, sahiplik, GRANT değişmez (GoTrue'nun şeması, Supabase
+--    yönetir). Silme hakkı fonksiyon sahibinin (migration'ı koşan
+--    `postgres`) DELETE yetkisinden gelir; doğrulama bloğu bunu bakar ve
+--    yoksa migration'ı düşürür — her gece sessizce hata veren bir cron
+--    yerine dağıtımda görünen hata.
+-- 4. Belgeler 1.3 (yürürlük 2026-10-05):
+--    * Gizlilik §7 ve KVKK §6: güvenlik kaydı "90 gün; eskileri her gün
+--      otomatik silinir"; anonim hesap silme kaydı tabloya girdi ("silmeden
+--      sonra 3 yıl"). Gizlilik §7 alt paragrafı istisnaların sürelerini
+--      yazar. "Otomatik silme tanımlı değil" ifadesi kalktı.
+--    * Koşullar §1 + §3, Gizlilik §12: onay metinleri kayıtta ve Apple/
+--      Google ile ilk girişte tam gösterilir, sonuna kadar okunur, onay en
+--      altta verilir. KVKK'nın kapanış cümlesi ve Açık Rıza Metni'nin giriş
+--      notu + A bölümünün son cümlesi aynı gerçeği yazar → dördü de 1.3.
+--    * 1.2 satırları yerinde (`yasal_metinler` değişmez; eski onaylar o
+--      metni gösterir). Çerez politikası değişmedi (1.1).
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: iki fonksiyon, iki cron işi, dört metin satırı. 1.2
+-- taşıyan istemci sunucuda 1.3'ü görünce eksik onaylı kullanıcıya kapıyı
+-- HİÇ açmaz (`YasalOnayService.uygulamaEski`, çift onay kuralı): 1.2'yi
+-- onaylatıp güncellemeden sonra 1.3'ü ikinci kez sormaz; güncel istemci
+-- 1.3'ü tek seferde sorar (`test/yasal_onay_service_test.dart`, "0105").
+-- 1.2'yi onaylamış kullanıcı eski istemcide kapı görmez (onayı tamam).
+--
+-- ## Dağıtım sırası
+-- Bu migration İKİ sunucuya → `python tool/sema_esitlik.py` → ANCAK SONRA
+-- 1.3'ü gösteren istemci. Ters sırada yeni istemcinin onayı "yasal metin
+-- yok: kosullar/1.3/tr" ile reddedilir; kapı kilitlemez (fail-open) ama
+-- her açılışta yeniden sorar.
+-- ⚠️ Tokyo'da güvenlik kaydının ilk silmesi: dağıtım günü 90 günden eski
+-- satır yok (en eskisi 2026-07-29); ilk satırlar 2026-10-27/28 gecesi
+-- gider, sonra her gece 90 günü dolanlar. Frankfurt'ta işler kapalı doğar.
+--
+-- ## Metin ekleme
+-- INSERT'ler `tool/yasal_metin_uret_test.dart` çıktısıdır. Gövdelere elle
+-- dokunma (hash check'i tutmaz); `test/yasal_metin_kilidi_test` ve
+-- `test/yasal_web_esleme_test` md == katalog == bu dosya der.
 
-/// Uygulamada gösterilen yasal belgelerin kanonik md metni — anahtar
-/// depo köküne göre kaynak yolu.
-const yasalBelgeKaynaklari = <String, String>{
-  'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
+-- ── 1) Supabase Auth güvenlik kaydı: 90 gün ────────────────────────────────
+create or replace function public.auth_guvenlik_kaydi_saklama_temizle()
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_n integer;
+begin
+  delete from auth.audit_log_entries
+   where created_at < now() - interval '90 days';
+  get diagnostics v_n = row_count;
+  return v_n;
+end;
+$$;
+revoke all on function public.auth_guvenlik_kaydi_saklama_temizle() from public, anon, authenticated;
+comment on function public.auth_guvenlik_kaydi_saklama_temizle() is
+  'Gizlilik §7 / KVKK §6 (1.3): oturum açma güvenlik kaydı 90 gün. Yalnız DELETE; auth şeması değişmez (0105).';
+
+-- ── 2) Anonim hesap silme kaydı: 3 yıl ─────────────────────────────────────
+create or replace function public.hesap_silme_kaydi_saklama_temizle()
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_n integer;
+begin
+  delete from public.account_deletion_log
+   where deleted_at < now() - interval '3 years';
+  get diagnostics v_n = row_count;
+  return v_n;
+end;
+$$;
+revoke all on function public.hesap_silme_kaydi_saklama_temizle() from public, anon, authenticated;
+comment on function public.hesap_silme_kaydi_saklama_temizle() is
+  'Gizlilik §7 / KVKK §6 (1.3): anonim hesap silme kaydı silmeden sonra 3 yıl (TBK 146). 0007 planı (0105).';
+
+-- ── 3) Günlük işler ─────────────────────────────────────────────────────────
+-- Saatler mevcut saklama işlerinin arasında (03:15 db_logs, 03:25
+-- snapshots, 03:45 yasal onaylar).
+select cron.unschedule(jobid) from cron.job where jobname = 'auth-guvenlik-kaydi-saklama';
+select cron.schedule('auth-guvenlik-kaydi-saklama', '55 3 * * *',
+  $$select public.auth_guvenlik_kaydi_saklama_temizle()$$);
+select cron.unschedule(jobid) from cron.job where jobname = 'hesap-silme-kaydi-saklama';
+select cron.schedule('hesap-silme-kaydi-saklama', '5 4 * * *',
+  $$select public.hesap_silme_kaydi_saklama_temizle()$$);
+
+-- İki sunucu birebir: proje "tüm cron kapalı" kipindeyse (Frankfurt,
+-- geçişe kadar) yeni işler de kapalı doğar (0102 deseni birebir; proje
+-- ref'i sabit yazılmaz). İşler yalnız SQL silmesi, dışarı istek atmaz;
+-- yine de kipe uyar ki "tek bilinçli fark" kuralı tek kural kalsın.
+do $$
+begin
+  if exists (select 1 from cron.job
+              where jobname not in ('auth-guvenlik-kaydi-saklama', 'hesap-silme-kaydi-saklama'))
+     and not exists (select 1 from cron.job
+                      where jobname not in ('auth-guvenlik-kaydi-saklama', 'hesap-silme-kaydi-saklama')
+                        and active) then
+    perform cron.alter_job(job_id := jobid, active := false)
+       from cron.job
+      where jobname in ('auth-guvenlik-kaydi-saklama', 'hesap-silme-kaydi-saklama');
+    raise notice '0105: projede tum cron isleri kapali — iki saklama isi de kapali kuruldu.';
+  end if;
+end $$;
+
+-- ── 4) Metinler 1.3 (tool/yasal_metin_uret_test.dart çıktısı) ──────────────
+-- kosullar/1.3/tr  (Kullanım Koşulları)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kosullar', '1.3', 'tr', 'Kullanım Koşulları', date '2026-10-05',
+  '7d5eb04639d19849aecfe9ec11742b2c051ebba02045905a89d99a0d853543aa',
+  replace($yasal$# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -240,8 +382,15 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- gizlilik_politikasi/1.3/tr  (Gizlilik Politikası)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('gizlilik_politikasi', '1.3', 'tr', 'Gizlilik Politikası', date '2026-10-05',
+  'd062478d702eced97012667105c927ce37faa8ded93e5b7ee91c492c1d08a362',
+  replace($yasal$# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -499,8 +648,15 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
 ---
 
-*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
+*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kvkk_aydinlatma/1.3/tr  (KVKK Aydınlatma Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kvkk_aydinlatma', '1.3', 'tr', 'KVKK Aydınlatma Metni', date '2026-10-05',
+  '50eeac6113a8a0c2152ca5d560b6d5fc6ecd775913a85f436af4e4c5ed015ab3',
+  replace($yasal$# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -737,8 +893,15 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**''',
-  'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
+**`sandikapp.destek@gmail.com`**$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- acik_riza_metni/1.3/tr  (Açık Rıza Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('acik_riza_metni', '1.3', 'tr', 'Açık Rıza Metni', date '2026-10-05',
+  'bdb092aae02011149a54321c8c515a706f30432fac34475f9b052a3e3cda7eac',
+  replace($yasal$# Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Sürüm:** 1.3
@@ -844,5 +1007,100 @@ beyan ve kabul ederim.
 
 ---
 
-*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*''',
-};
+*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- ── 5) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+declare
+  v_fn text;
+  v_tur text;
+begin
+  -- Silinen tablolar yerinde (auth şemasına dokunulmadı; yalnız okunur).
+  if to_regclass('auth.audit_log_entries') is null then
+    raise exception '0105: auth.audit_log_entries yok';
+  end if;
+  if to_regclass('public.account_deletion_log') is null then
+    raise exception '0105: public.account_deletion_log yok (0007)';
+  end if;
+
+  foreach v_fn in array array[
+      'public.auth_guvenlik_kaydi_saklama_temizle()',
+      'public.hesap_silme_kaydi_saklama_temizle()'] loop
+    -- SECURITY DEFINER + search_path
+    if not exists (select 1 from pg_proc
+                    where oid = v_fn::regprocedure
+                      and prosecdef
+                      and proconfig is not null
+                      and exists (select 1 from unnest(proconfig) c where c like 'search_path=%')) then
+      raise exception '0105: % security definer + search_path olmali', v_fn;
+    end if;
+    -- GRANT: istemci çağıramaz
+    if has_function_privilege('anon', v_fn, 'EXECUTE')
+       or has_function_privilege('authenticated', v_fn, 'EXECUTE') then
+      raise exception '0105: % istemciye acik olmamali', v_fn;
+    end if;
+  end loop;
+
+  -- Silme yetkisi fonksiyonun SAHİBİNDE (definer olarak o koşar). Yoksa
+  -- cron her gece "permission denied" ile düşerdi; dağıtımda düşsün.
+  if not has_table_privilege(
+       (select proowner from pg_proc
+         where oid = 'public.auth_guvenlik_kaydi_saklama_temizle()'::regprocedure),
+       'auth.audit_log_entries'::regclass, 'DELETE') then
+    raise exception '0105: fonksiyon sahibinin auth.audit_log_entries DELETE yetkisi yok';
+  end if;
+  if not has_table_privilege(
+       (select proowner from pg_proc
+         where oid = 'public.hesap_silme_kaydi_saklama_temizle()'::regprocedure),
+       'public.account_deletion_log'::regclass, 'DELETE') then
+    raise exception '0105: fonksiyon sahibinin account_deletion_log DELETE yetkisi yok';
+  end if;
+
+  -- Süreler metinle aynı (Gizlilik §7 / KVKK §6, 1.3).
+  if position('interval ''90 days''' in pg_get_functiondef(
+       'public.auth_guvenlik_kaydi_saklama_temizle()'::regprocedure)) = 0 then
+    raise exception '0105: guvenlik kaydi suresi 90 gun degil';
+  end if;
+  if position('interval ''3 years''' in pg_get_functiondef(
+       'public.hesap_silme_kaydi_saklama_temizle()'::regprocedure)) = 0 then
+    raise exception '0105: silme kaydi suresi 3 yil degil';
+  end if;
+
+  -- İşler kurulu ve doğru fonksiyonu çağırıyor (etkinliği projenin kipine
+  -- bağlı: Frankfurt'ta kapalı doğar).
+  if not exists (select 1 from cron.job
+                  where jobname = 'auth-guvenlik-kaydi-saklama'
+                    and command like '%auth_guvenlik_kaydi_saklama_temizle()%') then
+    raise exception '0105: auth-guvenlik-kaydi-saklama cron isi yok';
+  end if;
+  if not exists (select 1 from cron.job
+                  where jobname = 'hesap-silme-kaydi-saklama'
+                    and command like '%hesap_silme_kaydi_saklama_temizle()%') then
+    raise exception '0105: hesap-silme-kaydi-saklama cron isi yok';
+  end if;
+
+  -- Belgelerin 1.3'ü var; 1.2 satırları yerinde (eski onaylar onu gösterir).
+  foreach v_tur in array array['kosullar', 'gizlilik_politikasi', 'kvkk_aydinlatma',
+      'acik_riza_metni'] loop
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = '1.3' and dil = 'tr') then
+      raise exception '0105: %/1.3/tr metni yok', v_tur;
+    end if;
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = '1.2' and dil = 'tr') then
+      raise exception '0105: %/1.2/tr metni kaybolmus (degismez olmaliydi)', v_tur;
+    end if;
+  end loop;
+
+  -- 0102'nin güvenlik zemini bozulmadı (RLS + GRANT).
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity)
+     or has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
+    raise exception '0105: yasal_metinler RLS/GRANT zemini bozuk';
+  end if;
+
+  raise notice '0105 tamam: guvenlik kaydi 90 gun + silme kaydi 3 yil (cron), % metin; belgeler 1.3.',
+    (select count(*) from public.yasal_metinler);
+end $$;

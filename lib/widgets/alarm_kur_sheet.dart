@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
 import '../providers/price_alert_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import 'review_prompt_sheet.dart';
@@ -124,8 +125,10 @@ Future<PriceAlert?> alarmKurAkisi(
       );
       // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
       // çağıran (varlık ekranı zili) sonucu hemen alsın.
-      unawaited(
-          ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu));
+      // Hata yutulmaz: Crashlytics'e gider (arka_plan_hata_yutma_test).
+      CrashReporter.arkaPlan(
+          ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu),
+          reason: 'alarmKur.degerlendirmeIstemi');
     }
     return kayit;
   } catch (e) {

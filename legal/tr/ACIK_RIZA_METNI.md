@@ -1,9 +1,9 @@
 # Açık Rıza Metni — sandık
 
-**Yürürlük tarihi:** 4 Ekim 2026
-**Sürüm:** 1.2
+**Yürürlük tarihi:** 5 Ekim 2026
+**Sürüm:** 1.3
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Kayıt sırasında onay kutusunu işaretleyerek (ya da Apple veya Google ile ilk girişte onay ekranında) verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay kutusu yoktur. E bölümündeki rıza uygulama içinde ayrıca istenir.
+> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuyup en altta açık rıza verdiğinizi onayladıktan sonra onay kutusunu işaretlersiniz. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay kutusu yoktur. E bölümündeki rıza uygulama içinde ayrıca istenir.
 
 ---
 
@@ -28,7 +28,7 @@ KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPAB
 
 aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
 
-Bu rıza kayıt için zorunludur; kayıt ekranındaki onay kutusuyla verilir.
+Bu rıza kayıt için zorunludur; metin sonuna kadar okunup onaylandıktan sonra kayıt ekranındaki (Apple veya Google ile ilk girişte onay ekranındaki) onay kutusuyla verilir.
 
 ---
 
@@ -99,7 +99,7 @@ beyan ve kabul ederim.
 ---
 
 **Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.2
+**Sürüm:** 1.3
 **Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
 
 ---

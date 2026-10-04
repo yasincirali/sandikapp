@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="50f71326f112bbfd99cadd9d92e95d1f8f3d48f9356052ab7b68f62308a91352">
-<meta name="sandik-govde-sha256" content="25e78d3815fad7069baca194be63941c77e6fbe607bed7dc0ed4483de32d535b">
+<meta name="sandik-kaynak-sha256" content="7fce091fd62c35e937ad6604c4ab8d4d5999946ec19ee892c771884514a11548">
+<meta name="sandik-govde-sha256" content="fa382d677100e93c03ced01b496d104cc4501594ab8002d16d5c140f69ebc282">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -65,10 +65,10 @@ button:hover { opacity: 0.9; }
 </header>
 <!-- sandik-govde:basla -->
 <h1>Privacy Policy — sandık</h1>
-<p><strong>Effective date:</strong> October 4, 2026
-<strong>Last updated:</strong> October 4, 2026
-<strong>Version:</strong> 1.2
-<strong>Source:</strong> TR 1.2 (translation of the Turkish text; the Turkish version prevails)</p>
+<p><strong>Effective date:</strong> October 5, 2026
+<strong>Last updated:</strong> October 5, 2026
+<strong>Version:</strong> 1.3
+<strong>Source:</strong> TR 1.3 (translation of the Turkish text; the Turkish version prevails)</p>
 <hr />
 <h2>1. Data Controller</h2>
 <p>This application (<strong>sandık</strong>, the "App") is operated by <code>Yasin Çıralı</code> ("we", "Company").</p>
@@ -422,12 +422,16 @@ button:hover { opacity: 0.9; }
 <td>As set in Firebase's retention setting, at most 14 months</td>
 </tr>
 <tr>
-<td>Sign-in security log (IP, device/browser)</td>
-<td>Kept in the Supabase Auth security log; the App has not defined an automatic deletion period for this log</td>
+<td>Anonymous deletion record (one-way hash of the account ID, email domain, time and reason of deletion)</td>
+<td><strong>3 years</strong> after deletion (Turkish Code of Obligations Art. 146 limitation period); expired entries are deleted automatically every day</td>
+</tr>
+<tr>
+<td>Sign-in security log (IP, device/browser; Supabase Auth security log)</td>
+<td>90 days; older entries are deleted automatically every day</td>
 </tr>
 </tbody>
 </table>
-<p>When you delete your account from the App, your account and all the data you entered are deleted from the live database <strong>immediately</strong>. Exceptions: legal text acceptance records (3 years), structured error logs and sign-up funnel steps (unlinked from the account, until the end of their own periods), crash reports and usage statistics in Firebase (until the end of their own periods), the sign-in security log, and an anonymous deletion record consisting of a one-way hash of your account ID and your email domain.</p>
+<p>When you delete your account from the App, your account and all the data you entered are deleted from the live database <strong>immediately</strong>. Exceptions: legal text acceptance records (3 years), structured error logs and sign-up funnel steps (unlinked from the account, until the end of their own periods), crash reports and usage statistics in Firebase (until the end of their own periods), the sign-in security log (90 days), and an anonymous deletion record consisting of a one-way hash of your account ID and your email domain (3 years).</p>
 <hr />
 <h2>8. Your Rights (KVKK Article 11 / GDPR Articles 15-22)</h2>
 <p>You may exercise the following rights by contacting us:</p>
@@ -482,7 +486,7 @@ button:hover { opacity: 0.9; }
 <hr />
 <h2>12. Investment Advice Disclaimer</h2>
 <p><strong>sandık</strong> is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals and charts shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.</p>
-<p>A summary of this notice is part of the consent box on the registration screen; on the first sign-in with Apple or Google the full text is shown separately. The record of your acceptance is kept as legal evidence.</p>
+<p>The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.</p>
 <hr />
 <h2>13. Changes to This Policy</h2>
 <p>When we change this policy:

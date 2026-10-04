@@ -330,13 +330,21 @@ class YasalOnayService {
   /// güncellenince ikinci bir onay doğurur. Bu durumda kapı HİÇ açılmaz
   /// (kısmi onay da sorulmaz) ve iz konmaz: güncel uygulama hepsini tek
   /// seferde sorar. Kullanıcının onayı zaten tamsa bu kontrol devreye girmez.
-  static bool uygulamaEski(Iterable<(String, String)> sunucuSurumleri) {
-    final benim = <String, String>{
-      for (final m in YasalMetinKatalogu.zorunluBelgeler()) m.tur: m.surum,
-      YasalTur.kayitTekKutu: YasalMetinKatalogu.kutuSurumu,
-      YasalTur.kayitKutuKosullar: YasalMetinKatalogu.kutuSurumu,
-      YasalTur.kayitKutuRiza: YasalMetinKatalogu.kutuSurumu,
-    };
+  ///
+  /// [uygulamaSurumleri] (tür → sürüm) yalnız test içindir: yayındaki ESKİ
+  /// bir istemcinin taşıdığı sürümleri canlandırır (ör. 1.2 taşıyan sürüm
+  /// sunucuda 1.3'ü görünce, 0105). Verilmezse bu derlemenin kataloğu.
+  static bool uygulamaEski(
+    Iterable<(String, String)> sunucuSurumleri, {
+    Map<String, String>? uygulamaSurumleri,
+  }) {
+    final benim = uygulamaSurumleri ??
+        <String, String>{
+          for (final m in YasalMetinKatalogu.zorunluBelgeler()) m.tur: m.surum,
+          YasalTur.kayitTekKutu: YasalMetinKatalogu.kutuSurumu,
+          YasalTur.kayitKutuKosullar: YasalMetinKatalogu.kutuSurumu,
+          YasalTur.kayitKutuRiza: YasalMetinKatalogu.kutuSurumu,
+        };
     for (final (tur, surum) in sunucuSurumleri) {
       final b = benim[tur];
       if (b != null && surumKarsilastir(surum, b) > 0) return true;
