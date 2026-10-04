@@ -191,7 +191,12 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   /// Birim fiyat biçimi — ₺ kalır: fiyat bir DEĞER değildir, baz para
   /// birimine çevrilmez (`money_format_scope_test` değer/fiyat ayrımı).
-  NumberFormat get _birimBicim => tryFormatter(digits: 2);
+  ///
+  /// Ondalık [fiyatOndaligi]'ndan: 1 ₺ altındaki fiyat 2 haneyle
+  /// okunmuyordu (BES fonu KED ₺0,179147 → "₺0,18", haftalık değişim
+  /// "+₺0,00"; 2026-10-04 kullanıcı bildirimi). 1 ₺ ve üstü yine 2 hane.
+  NumberFormat _birimBicimi(double birimFiyat) =>
+      tryFormatter(digits: fiyatOndaligi(birimFiyat));
 
   // ── Başlık ───────────────────────────────────────────────────────────────
 
@@ -251,7 +256,7 @@ extension _DetayOzet on _AssetDetailScreenState {
     final canli = pnl.currentUnitTRY;
     final pct = _donemYuzdesi(days, canli);
     final ilk = _donemIlk[days];
-    final bicim = _birimBicim;
+    final bicim = _birimBicimi(canli);
     // Mevduatta büyük sayı birim değer değil (₺1,37 — iç hesabın payı,
     // 2026-10-01 emülatör testi) pozisyonun bugünkü değeridir; değişim
     // satırı da yalnız yüzdeyi yazar.
@@ -401,7 +406,7 @@ extension _DetayOzet on _AssetDetailScreenState {
           dusuk: dusuk,
           yuksek: yuksek,
           konum: (canli - dusuk) / aralik,
-          bicim: _birimBicim,
+          bicim: _birimBicimi(canli),
         ),
       ],
     ];

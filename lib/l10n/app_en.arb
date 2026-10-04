@@ -3321,7 +3321,7 @@
   "pensionPrincipalHint": "Total you have paid in so far; shown as \"contributions\" on your statement.",
   "pensionGain": "Return (profit)",
   "pensionGainHint": "The return on your statement. Use a minus sign for a loss.",
-  "pensionHistoryHint": "The chart shows this balance as a flat line from your entry date to today; from now on it follows your funds' prices.",
+  "pensionHistoryHint": "The chart values today's fund units with your funds' real price history; if your allocation was different in the past, older periods won't match exactly.",
   "pensionGovPrincipal": "Government contribution principal",
   "pensionGovGain": "Government contribution return",
   "pensionErrorPrincipal": "Enter the principal.",

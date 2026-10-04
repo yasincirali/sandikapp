@@ -5015,7 +5015,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pensionHistoryHint =>
-      'The chart shows this balance as a flat line from your entry date to today; from now on it follows your funds\' prices.';
+      'The chart values today\'s fund units with your funds\' real price history; if your allocation was different in the past, older periods won\'t match exactly.';
 
   @override
   String get pensionGovPrincipal => 'Government contribution principal';

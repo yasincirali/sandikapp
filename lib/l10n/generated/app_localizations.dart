@@ -8339,7 +8339,7 @@ abstract class AppLocalizations {
   /// No description provided for @pensionHistoryHint.
   ///
   /// In tr, this message translates to:
-  /// **'Grafik giriş tarihinden bugüne bu birikimle düz çizilir; bundan sonrası fonlarının fiyatıyla yürür.'**
+  /// **'Grafik, bugünkü fon paylarını fonlarının gerçek fiyat geçmişiyle değerler; geçmişte dağılımın farklıydıysa eski dönemler birebir tutmaz.'**
   String get pensionHistoryHint;
 
   /// No description provided for @pensionGovPrincipal.

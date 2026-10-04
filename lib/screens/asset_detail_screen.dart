@@ -1630,7 +1630,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   miktarMetni: widget.asset.miktarMetni(
                       _currentQuantity, (v, d) => fmtNum(v, digits: d)),
                   birimEtiketi: widget.asset.unitLabel,
-                  birimBicim: _birimBicim,
+                  birimBicim: _birimBicimi(pnl.currentUnitTRY),
                   birimGizli: widget.asset.type == AssetType.mevduat,
                   donemEtiketi: donemEtiketi(
                       context.l10n, _periods[_selectedPeriodIdx].label),

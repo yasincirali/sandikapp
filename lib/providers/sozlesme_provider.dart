@@ -326,13 +326,18 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
   /// getiri ve devlet katkısı (ana para + getiri). Geçmiş katkıların
   /// tarihleri ve pay adetleri bilinmiyor; bugünkü fonların serisini geçmişe
   /// uygulamak, dağılım sık değiştiyse uydurma bir tarihçe olurdu. Bu yüzden
-  /// birikim sisteme giriş gününde var sayılır ve açılış anına kadar DÜZ
-  /// çizilir (`BesAcilis`). Sonuç: kâr ilk günden görünür, açılış günü
-  /// sahte bir "piyasa etkisi" sıçraması olmaz, geçmiş dönemlerin piyasa
-  /// etkisi 0'dır.
+  /// birikim sisteme giriş gününde var sayılır: kâr ilk günden görünür,
+  /// açılış günü sahte bir "piyasa etkisi" sıçraması olmaz.
   ///
-  /// Önceden açılış lotları BUGÜN tarihliydi; o kayıtlarda açılış anı ile
-  /// lot anı aynı olduğundan düz çizgi kuralı etkisizdir (geriye uyumlu).
+  /// ## Geçmiş fonun GERÇEK serisiyle değerlenir (kullanıcı kararı 2026-10-04)
+  /// 2026-10-01'de açılış anına kadar DÜZ çiziliyordu (`BesAcilis`). Üç gün
+  /// sonra kullanıcı geri aldı: grafik dümdüzdü ("aslında öyle değil
+  /// değerleri"), varlık ekranı fonun hareketini (KED 1H −%1,12),
+  /// Performans dökümü açılıştan bu yana kazancı (+%1,55) gösteriyordu ve
+  /// hiçbiri TEFAS ile örtüşmüyordu. Karar: *"her yerde aynı zaman
+  /// aralığında aynı kâr zararı"* — her yüzey bugünkü payları fonun gerçek
+  /// fiyatıyla değerler. Bilinen bedel: geçmişte dağılım farklıydıysa eski
+  /// dönemler gerçek geçmişi yansıtmaz.
   ///
   /// [adUret] lot adını kurar (`Anadolu Hayat · AH5`); dil ekranın işi.
   Future<void> besAc({

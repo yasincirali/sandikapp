@@ -3530,7 +3530,7 @@
   "pensionPrincipalHint": "Bugüne kadar cebinden yatırdığın toplam; ekstrende \"katkı payı\" diye geçer.",
   "pensionGain": "Getiri (kâr)",
   "pensionGainHint": "Ekstrendeki getiri. Zarardaysan eksiyle yaz.",
-  "pensionHistoryHint": "Grafik giriş tarihinden bugüne bu birikimle düz çizilir; bundan sonrası fonlarının fiyatıyla yürür.",
+  "pensionHistoryHint": "Grafik, bugünkü fon paylarını fonlarının gerçek fiyat geçmişiyle değerler; geçmişte dağılımın farklıydıysa eski dönemler birebir tutmaz.",
   "pensionGovPrincipal": "Devlet katkısı ana parası",
   "pensionGovGain": "Devlet katkısı getirisi",
   "pensionErrorPrincipal": "Ana parayı yaz.",

@@ -75,13 +75,17 @@ String fmtTRY(double value, {int digits = 0}) {
 /// Birim FİYAT (tutar değil): 1 ₺ ve üstünde 2 ondalık, altında en az 4
 /// anlamlı hane (en çok 8 ondalık). SHIB ~0,0004 ₺ `fmtTRY(digits: 2)` ile
 /// "₺0,00" okunurdu — sıfır fiyatlı gibi. Toplam/değer için `fmtTRY` kalır.
-String fmtTRYFiyat(double value) {
+String fmtTRYFiyat(double value) =>
+    fmtTRY(value, digits: fiyatOndaligi(value));
+
+/// [fmtTRYFiyat]'ın ondalık kuralı — biçimleyiciyi kendisi kuran yerler
+/// (varlık ekranının birim fiyatı) aynı kuralı buradan alır.
+int fiyatOndaligi(double value) {
   final a = value.abs();
-  var digits = 2;
   if (a > 0 && a < 1) {
-    digits = ((-math.log(a) / math.ln10).floor() + 4).clamp(2, 8);
+    return ((-math.log(a) / math.ln10).floor() + 4).clamp(2, 8);
   }
-  return fmtTRY(value, digits: digits);
+  return 2;
 }
 
 /// Kısa TRY: `₺1.5K` yerine `₺1,5K`, `₺2.3M` yerine `₺2,3M`. Sadece grafik

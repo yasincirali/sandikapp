@@ -101,7 +101,7 @@ void main() {
     expect(ad.contains('baz.formatter(digits: 0)'), isTrue,
         reason: 'dönem değişim tutarı portföy değeridir');
     expect(ad.contains('tryFormatter(digits: 0)'), isFalse);
-    expect(ad.contains('tryFormatter(digits: 2)'), isTrue,
-        reason: 'fiyat ipucu (₺, 2 ondalık) çevrilmez');
+    expect(ad.contains('tryFormatter(digits: fiyatOndaligi('), isTrue,
+        reason: 'fiyat ipucu (₺; 1 ₺ ve üstü 2 ondalık) çevrilmez');
   });
 }

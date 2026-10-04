@@ -185,10 +185,9 @@ const List<SurumNotu> surumNotlari = [
             've vadeyi yaz; net getiriyi stopajıyla birlikte hesaplarız, '
             'vade dolunca varlık sayfasından yeni faizle yenilersin. Günlük '
             'faizli hesaplar da olur. BES: şirketini, ana paranı, getirini '
-            've fon dağılımını gir; geçmişin giriş tarihinden bugüne düz '
-            'çizilir, kârın korunur. Bundan sonrası emeklilik fonlarının '
-            'fiyatıyla yürür; fonunu değiştirdiğinde grafik yeni fonlarla '
-            'devam eder. Devlet katkısı hak ediş oranıyla ayrı durur, aylık '
+            've fon dağılımını gir; kârın korunur, grafik ve dönem getirileri '
+            'emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu '
+            'değiştirdiğinde grafik yeni fonlarla devam eder. Devlet katkısı hak ediş oranıyla ayrı durur, aylık '
             'katkını tek dokunuşla eklersin.',
       ),
       Yenilik(
