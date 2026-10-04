@@ -1,8 +1,9 @@
 # Privacy Policy — sandık
 
-**Effective date:** May 11, 2026
-**Last updated:** September 29, 2026
-**Version:** 1.0
+**Effective date:** October 4, 2026
+**Last updated:** October 4, 2026
+**Version:** 1.2
+**Source:** TR 1.2 (translation of the Turkish text; the Turkish version prevails)
 
 > **Note:** Published version. Data controller is an individual developer; VERBIS registration is not required unless commercial activity is initiated in Türkiye (kvkk.gov.tr). Contact for privacy inquiries: sandikapp.destek@gmail.com.
 
@@ -91,7 +92,7 @@ The policy is designed to satisfy the requirements of GDPR (EU 2016/679), Turkis
 
 | Service | Provider | Data | Purpose | Location |
 |---|---|---|---|---|
-| Backend & database | Supabase Inc. | All account & app data | Storage, authentication | Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU) |
+| Backend & database | Supabase Inc. | All account & app data | Storage, authentication | {SUPABASE_ULKE} |
 | Push notifications | Google Firebase Cloud Messaging | Push token, notification content | Notification delivery | Global (Google) |
 | Crash reports (when added) | Google Firebase Crashlytics | Device model, OS, error stack trace | Crash diagnostics | Global |
 | Stock/fund prices | Yahoo Finance, TEFAS, finans.truncgil.com | NONE — only symbol query is sent | Price retrieval | Global |
@@ -106,12 +107,12 @@ Top Portfolios is optional and covers only users who give explicit consent in th
 
 ## 6. International Data Transfers
 
-Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye (and, for Firebase, outside the EEA). The in-app text shows the country of the server you are connected to. Under GDPR Articles 44-49 and KVKK Article 9:
+Because the Supabase database is hosted {SUPABASE_ULKEDE} and Firebase in the USA, your data is transferred outside Türkiye (and, for Firebase, outside the EEA). The in-app text shows the country of the server you are connected to. Under GDPR Articles 44-49 and KVKK Article 9:
 
 - **For EU/EEA users:** Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.
-- **For Turkish users:** **Explicit consent** is collected at registration (the consent checkbox in the KVKK Disclosure Document).
+- **For Turkish users:** **Explicit consent** is collected at registration with the Explicit Consent Notice ("Açık Rıza Metni").
 
-The destination countries (Japan, USA; Germany after the migration) are not on the Turkish DPA's list of countries with adequate protection; therefore international transfer is based on **explicit consent**.
+The destination countries (Supabase: {SUPABASE_ULKE}; Firebase: USA) are not on the Turkish DPA's list of countries with adequate protection; therefore international transfer is based on **explicit consent**.
 
 ---
 
@@ -123,7 +124,7 @@ The destination countries (Japan, USA; Germany after the migration) are not on t
 | Asset records | Until account deletion |
 | Snapshot history | Last 365 days (rolling, older entries auto-deleted) |
 | Top Portfolios pool measurements (return %, type share %) | Last 365 days (rolling); immediately on consent withdrawal or account deletion |
-| Disclaimer acceptance log | **3 years** after account deletion (Turkish CO Art. 146 statute of limitations) |
+| Legal acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish CO Art. 146 statute of limitations) |
 | Push token | Auto-deleted on app uninstall or logout |
 | Crash reports | 90 days |
 | db_logs (errors only) | 30 days |

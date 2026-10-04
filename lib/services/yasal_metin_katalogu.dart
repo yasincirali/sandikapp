@@ -3,53 +3,96 @@ import 'dart:ui' show Locale;
 
 import 'package:crypto/crypto.dart';
 
+import '../config/yasal_belge_kaynaklari.g.dart';
 import '../l10n/generated/app_localizations.dart';
-import '../screens/legal_doc_screen.dart';
+import '../models/legal_block.dart';
 import '../widgets/zirve_riza_karti.dart';
 import 'disclaimer_service.dart';
 import 'leaderboard_service.dart';
+import 'yasal_md.dart';
 
 /// Yasal metin kataloğu — kullanıcıya onaylatılan HER metnin tek kaynağı
 /// (kullanıcı isteği 2026-10-04: "bu metinleri de db'de tutup her müşteri
 /// hangilerini onaylamış takip edilebilir olmalı").
 ///
 /// ## Neden katalog
-/// Onayın ispatı "hangi metni gördü" sorusuna cevap vermeli. Metinler
-/// ekranlarda sabit olarak duruyordu (`LegalDocs`, kayıt kutuları,
-/// `ZirveRizaKarti`, `disclaimerText`); veritabanında hiçbiri yoktu.
-/// Katalog bu sabitleri OKUR (kopyalamaz) ve her birine (tür, sürüm, dil)
-/// kimliği verir; gövdenin sha256'sı ÇALIŞMA ANINDA hesaplanır. Ekrandaki
-/// metin değişirse hash de değişir.
+/// Onayın ispatı "hangi metni gördü" sorusuna cevap vermeli. Katalog
+/// ekranların gösterdiği metinleri OKUR (kopyalamaz) ve her birine (tür,
+/// sürüm, dil) kimliği verir; gövdenin sha256'sı ÇALIŞMA ANINDA hesaplanır.
+/// Ekrandaki metin değişirse hash de değişir.
+///
+/// ## Belgeler: web tek kaynak (kullanıcı kararı 2026-10-04)
+/// *"Webdekiyle de her zaman eşleyelim."* Kullanım Koşulları, Gizlilik
+/// Politikası, KVKK Aydınlatma Metni ve Açık Rıza Metni'nin TEK kaynağı
+/// `legal/tr/*.md`'dir — web (`docs/`) de uygulama da oradan üretilir.
+/// 1.1'e kadar uygulama elle yazılmış, web metninin kısaltılmış bir Dart
+/// kopyasını gösteriyordu (Koşullar web'de 19, uygulamada 14 bölüm); iki
+/// metin ayrışmıştı ve kullanıcı web'de yayımlanan metne değil kopyaya onay
+/// veriyordu. Web metni esas alındı: daha kapsamlı ve yayımlanmış olan o.
+///
+/// Yöntem — (b) md'den üretilen const Dart + kayma testi, (a) md'yi Flutter
+/// asset'i olarak paketleyip çalışma anında okumak yerine:
+/// - **Deterministik kanonik metin + hash:** üretilen sabit md'nin kanonik
+///   hâlidir (BOM yok, LF, sondaki boşluk kırpılmış — `yasalMdKanonik`).
+///   Asset yolunda paketlenen dosya Windows'ta `core.autocrlf` ile CRLF'e
+///   dönmüş olabilirdi; normalleştirme her okumada çalışma anında yapılmak
+///   zorunda kalırdı. Burada derlemede sabitlenir, `govde_hash` sabittir.
+/// - **Çevrimdışı ve senkron açılış:** `rootBundle.loadString` asenkron;
+///   katalog, onay servisi, kapı ve kayıt ekranı bugün senkron okuyor.
+///   Asset yolu hepsini `Future`'a çevirir ve "belge yüklenemedi" diye yeni
+///   bir hata durumu açardı. Sabit metin binary'nin içindedir.
+/// - **Test edilebilirlik:** testler belgeyi asset bundle'ı taklit etmeden
+///   okur; `test/yasal_web_esleme_test.dart` sabit == md dosyası der.
+/// Bedeli tek adım: md değişince `python docs/_build_legal.py` koşulur.
+/// Aynı komut web HTML'ini de üretir; unutulursa kilit testi kırılır.
+/// Gösterimde md bloklara çevrilir (`yasalMdBloklari`): başlıklar, tablolar,
+/// künye (meta) kutusu ve `{SUPABASE_ULKE}` ülke doldurma korunur.
 ///
 /// ## Kayma kilidi
 /// Migration'lar (`yasal_metinler`, 0102+) aynı dörtlüyü (tür, sürüm, dil,
 /// hash) ve gövdeyi taşır. `test/yasal_metin_kilidi_test.dart` katalogdaki
-/// her dörtlünün migration'larda bulunduğunu doğrular: metin sürüm
-/// artırılmadan değişirse test kırılır ve ne yapılacağını söyler (sürümü
-/// artır → `tool/yasal_metin_uret_test.dart` ile INSERT üret → yeni
-/// migration). Sunucu da `yasal_onay_kaydet`'te hash'i karşılaştırır:
-/// kilit atlanıp gönderilse bile yanlış metne onay yazılmaz.
+/// her dörtlünün migration'larda bulunduğunu doğrular; `yasal_web_esleme_
+/// test` md == katalog, docs HTML güncel, md sürümü == katalog == migration
+/// ve İngilizce çevirinin TR sürümüne bağlılığını kilitler. Sunucu da
+/// `yasal_onay_kaydet`'te hash'i karşılaştırır: kilit atlanıp gönderilse
+/// bile yanlış metne onay yazılmaz.
 ///
 /// ## Şablon hâli
 /// Veritabanına ve hash'e metnin ŞABLON hâli girer (`{SUPABASE_ULKE}` gibi
 /// yer tutucular doldurulmadan). Gösterimde doldurulan değerler onay
 /// satırının `degiskenler` alanında durur. Böylece Tokyo'dan Frankfurt'a
 /// taşınınca metin sürümü değişmez, ama kimin hangi ülkeyi gördüğü bilinir.
+/// Web aynı yer tutucuyu kendi ifadesiyle doldurur (`_build_legal.py` →
+/// `YER_TUTUCULAR`): "Japonya (AWS Tokyo); Almanya'ya … taşınma sürecinde".
+///
+/// ## İngilizce: uygulamada gösterilmez (karar 2026-10-04)
+/// `legal/en/*.md` web'de yayımlanır ve TR'nin çevirisidir (her dosya
+/// "**Source:** TR x" satırıyla hangi TR sürümünü çevirdiğini beyan eder;
+/// TR sürümü artıp EN güncellenmezse kilit testi kırılır). Uygulama İngilizce
+/// arayüzde de TÜRKÇE belgeyi gösterir ve onay `dil = 'tr'` yazılır:
+/// 1. Bağlayıcı metin Türkçedir ("yorum farklılığında Türkçe esastır");
+///    onayın ispatı bağlayıcı metne verilmeli.
+/// 2. İngilizce takım eksik: KVKK Aydınlatma Metni'nin ve Açık Rıza
+///    Metni'nin İngilizcesi YOK. `GDPR_NOTICE.md` KVKK'nın çevirisi DEĞİL,
+///    AB/AEA kullanıcıları için ayrı bir hukuk rejiminin bildirimidir. Yarı
+///    İngilizce yarı Türkçe bir onay seti tek onayı iki dile bölerdi;
+///    eksikleri uydurma çeviriyle doldurmak hukuk işi.
+/// 3. İngilizce arayüz BETA. Kapı ekranı "Belgeler Türkçedir." der.
 ///
 /// ## Uydurma çeviri yok
 /// Yalnız kullanıcıya gerçekten gösterilen diller girer. Belgeler ve eski
 /// iki kayıt kutusu yalnız Türkçe gösteriliyor (İngilizce arayüzde de) →
 /// yalnız `tr`. Tek onay kutusu l10n'dan geliyor → `tr` ve `en`.
 abstract final class YasalTur {
-  /// Kullanım Koşulları (`LegalDocs.terms`).
+  /// Kullanım Koşulları (`legal/tr/TERMS_OF_SERVICE.md`).
   static const kosullar = 'kosullar';
 
-  /// Gizlilik Politikası (`LegalDocs.privacy`). Kayıtta "Açık Rıza: Yurt
-  /// Dışı Veri Aktarımı" başlığıyla bu belge açılır; ayrı bir açık rıza
-  /// belgesi yok — bu yüzden tür belgenin kendi adını taşır.
+  /// Gizlilik Politikası (`legal/tr/PRIVACY_POLICY.md`). 1.1'e kadar kayıtta
+  /// "Açık Rıza: Yurt Dışı Veri Aktarımı" başlığıyla bu belge açılıyordu;
+  /// 1.2'den beri açık rıza kendi belgesidir ([acikRiza]).
   static const gizlilik = 'gizlilik_politikasi';
 
-  /// KVKK Aydınlatma Metni (`LegalDocs.kvkk`).
+  /// KVKK Aydınlatma Metni (`legal/tr/KVKK_AYDINLATMA_METNI.md`).
   static const kvkk = 'kvkk_aydinlatma';
 
   /// Yatırım tavsiyesi reddi (`disclaimerText`, `DisclaimerAcceptanceScreen`).
@@ -69,8 +112,14 @@ abstract final class YasalTur {
   /// Zirvedeki Portföyler açık rıza kartı (`ZirveRizaKarti`, 0091).
   static const zirveRiza = 'zirve_riza';
 
-  /// 0102'deki `check` listesiyle aynı sıra. Yeni tür = yeni migration'da
-  /// check'i genişlet + buraya ekle (kilit testi ikisini karşılaştırır).
+  /// Açık Rıza Metni (`legal/tr/ACIK_RIZA_METNI.md`, 0103). Web'de 2026-05'ten
+  /// beri ayrı bir belgeydi; uygulama yerine Gizlilik Politikası'nı
+  /// açıyordu. Kayıttaki ve kapıdaki "açık rıza" bağlantısı artık bunu açar.
+  static const acikRiza = 'acik_riza_metni';
+
+  /// Migration'daki `yasal_metinler_tur_check` listesiyle aynı sıra (0102,
+  /// 0103 sona ekledi). Yeni tür = yeni migration'da check'i genişlet +
+  /// buraya ekle (kilit testi ikisini karşılaştırır).
   static const hepsi = [
     kosullar,
     gizlilik,
@@ -80,7 +129,56 @@ abstract final class YasalTur {
     kayitKutuRiza,
     kayitTekKutu,
     zirveRiza,
+    acikRiza,
   ];
+}
+
+/// Uygulamada gösterilen ve onaylatılan yasal belgeler — her biri bir
+/// `legal/tr/*.md`. Sıra: kapı ekranındaki ve Ayarlar'daki sıra.
+///
+/// Sürüm, yürürlük tarihi ve başlık md'nin KENDİSİNDEN okunur ("**Sürüm:**
+/// 1.2" satırı): web, uygulama ve veritabanı aynı sayıyı taşır, ayrı bir
+/// Dart sabiti yoktur. Çerez ve Yerel Depolama Politikası
+/// (`COKEZ_VE_DEPOLAMA.md`) uygulamada hiçbir yere bağlı değil ve onay
+/// istemez → burada yok; yalnız web'de.
+enum YasalBelge {
+  kosullar(YasalTur.kosullar, 'legal/tr/TERMS_OF_SERVICE.md'),
+  gizlilik(YasalTur.gizlilik, 'legal/tr/PRIVACY_POLICY.md'),
+  kvkk(YasalTur.kvkk, 'legal/tr/KVKK_AYDINLATMA_METNI.md'),
+  acikRiza(YasalTur.acikRiza, 'legal/tr/ACIK_RIZA_METNI.md');
+
+  const YasalBelge(this.tur, this.kaynak);
+
+  final String tur;
+
+  /// Depo köküne göre md yolu — `yasalBelgeKaynaklari` anahtarı.
+  final String kaynak;
+
+  /// Kanonik md (şablon; yer tutucular doldurulmamış).
+  String get md {
+    final m = yasalBelgeKaynaklari[kaynak];
+    if (m == null) {
+      throw StateError('$kaynak üretilmemiş: python docs/_build_legal.py');
+    }
+    return m;
+  }
+
+  String get surum => yasalMdSurum(md);
+  String? get yururluk => yasalMdYururluk(md);
+  String get baslik => yasalMdBaslik(md);
+
+  static final Map<YasalBelge, List<LegalBlock>> _bloklar = {};
+
+  /// Şablon bloklar (yer tutucular doldurulmamış), süreç başına bir kez.
+  List<LegalBlock> get sablonBloklari =>
+      _bloklar[this] ??= List.unmodifiable(yasalMdBloklari(md));
+
+  static YasalBelge? turden(String tur) {
+    for (final b in values) {
+      if (b.tur == tur) return b;
+    }
+    return null;
+  }
 }
 
 /// Kayıt formundaki iki kutunun metinleri — `RegisterScreen` bunları
@@ -100,7 +198,7 @@ abstract final class KayitKutuMetni {
   static const rizaBaslik = 'Açık Rıza: Yurt Dışı Veri Aktarımı';
 
   /// [ulke] bağlanılan Supabase projesinin ülkesi (köprü sürümü — bkz.
-  /// `LegalDocs._ulke`); bilinmiyorsa [rizaUlkeBilinmiyor].
+  /// `LegalDocs.yerTutucuDegerleri`); bilinmiyorsa [rizaUlkeBilinmiyor].
   static String rizaGovde(String ulke) =>
       'Verilerin Supabase ($ulke) ve Firebase (ABD/Küresel) '
       'üzerinde saklanacak. KVKK Madde 9(1) gereği açık rıza '
@@ -126,7 +224,9 @@ class YasalMetin {
   final String dil;
   final String baslik;
 
-  /// Kanonik, yer tutucuları doldurulmamış düz metin.
+  /// Kanonik, yer tutucuları doldurulmamış metin. Belgelerde (1.2+) md'nin
+  /// kendisi; 1.1 belge satırları eski blok biçimindeydi (0102), onlara
+  /// dokunulmaz.
   final String govde;
 
   /// Metnin KENDİSİNDE yazan yürürlük tarihi (`yyyy-mm-dd`). Metin tarih
@@ -139,8 +239,12 @@ class YasalMetin {
 
   String get anahtar => '$tur/$surum/$dil';
 
+  /// Gövdede geçen yer tutucuların adları (`SUPABASE_ULKE`…).
+  Set<String> get yerTutuculari => yasalMdYerTutuculari(govde);
+
   /// `yasal_onay_kaydet` RPC'sinin bir öğesi.
-  Map<String, dynamic> rpcOgesi([Map<String, Object?> degiskenler = const {}]) =>
+  Map<String, dynamic> rpcOgesi(
+          [Map<String, Object?> degiskenler = const {}]) =>
       {
         'tur': tur,
         'surum': surum,
@@ -176,85 +280,72 @@ class YasalMetin {
 /// Kullanıcı kararı: *"Metin değişirse her user'ın onayladığı rıza metni
 /// neyse o şekilde tutulması. Metin değiştikçe eski rıza metinleri de DB'de
 /// tutulmalı. Eski rıza metnini onaylayanlar için ilk login'de güncel
-/// doküman sunulup onay istenmeli."* Bunun için:
+/// doküman sunulup onay istenmeli."* ve *"Webdekiyle de her zaman
+/// eşleyelim."* Bunun için:
 ///
-/// 1. Metni değiştir VE sürümünü artır — belgeler: [YasalMetinKatalogu.
-///    belgeSurumu] + [YasalMetinKatalogu.belgeYururluk] + belgedeki meta
-///    satırı ("Yürürlük tarihi: … · Sürüm: …", `LegalDocs`); kutular:
-///    [YasalMetinKatalogu.kutuSurumu]; Zirve: `LeaderboardService.
-///    zirveRizaMetniSurumu`. Belgeler değiştiyse kapı ekranının "Neler
-///    değişti" notunu (`yasalKapiDegisiklikNotu`, iki .arb) yeni sürüme göre
-///    yaz.
-/// 2. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
+/// **Belgeler** (Koşullar, Gizlilik, KVKK, Açık Rıza):
+/// 1. `legal/tr/<BELGE>.md`'yi düzenle VE künyesini güncelle: "**Sürüm:**"
+///    satırını artır (açık rıza metninde iki yerde), "**Yürürlük tarihi:**"
+///    ve "**Son güncelleme:**" o günün tarihi. Çevirisi olan belgelerde
+///    `legal/en/<BELGE>.md`'yi de çevir; "**Version:**" ve "**Source:** TR
+///    x" satırları yeni TR sürümünü yazsın. Kapının "Neler değişti" notunu
+///    (`yasalKapiDegisiklikNotu`, iki .arb + `flutter gen-l10n`) yaz.
+/// 2. `python docs/_build_legal.py` → web HTML'i + `lib/config/
+///    yasal_belge_kaynaklari.g.dart` (uygulamanın sabiti).
+/// 3. `flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart`
 ///    → `build/yasal_metin_ekleri.sql`.
-/// 3. Çıktıyı YENİ bir migration'a koy (iki sunucuya birlikte). Eski satıra
+/// 4. Çıktıyı YENİ bir migration'a koy (iki sunucuya birlikte). Eski satıra
 ///    DOKUNMA: `yasal_metinler` değişmezdir, eski onaylar o metni gösterir.
-/// 4. `flutter test test/yasal_metin_kilidi_test.dart` yeşil olmalı.
-/// 5. Dağıtım sırası: migration iki sunucuda → `sema_esitlik.py` → ancak
-///    sonra bu istemci yayına. Yeni sürüm yayına çıkınca eski sürümü
-///    onaylamış her kullanıcı bir sonraki açılışta yeniden onay kapısını
-///    (`YasalOnayKapisiScreen`, bayrak `yeniden_onay_kapisi`) görür; eski
-///    onay satırı ve eski metin satırı DB'de aynen kalır.
+/// 5. `flutter test test/yasal_metin_kilidi_test.dart
+///    test/yasal_web_esleme_test.dart` yeşil olmalı.
+/// 6. Dağıtım sırası: migration iki sunucuda → `sema_esitlik.py` → ancak
+///    sonra bu istemci yayına (ters sırada yeni istemcinin onayı "yasal
+///    metin yok" diye reddedilir ve kapı her açılışta yeniden sorar). Web
+///    `main`'e girince Pages'te yayınlanır. Yeni sürüm yayına çıkınca eski
+///    sürümü onaylamış her kullanıcı bir sonraki açılışta yeniden onay
+///    kapısını (`YasalOnayKapisiScreen`, bayrak `yeniden_onay_kapisi`)
+///    görür; eski onay satırı ve eski metin satırı DB'de aynen kalır.
+///
+/// **Kutular / Zirve:** kutu metni değişirse [YasalMetinKatalogu.kutuSurumu],
+/// Zirve kartı değişirse `LeaderboardService.zirveRizaMetniSurumu`; sonra
+/// 3–6.
 ///
 /// ⚠️ Geçmiş: 2026-05-11 ile 2026-10-04 arasında belgeler "Sürüm: 1.0"
 /// etiketiyle BİRDEN ÇOK kez değişti (Zirve bölümleri, sunucu ülkesi).
 /// O metinler hiçbir onaya bağlı değildi; git geçmişinden "1.0" diye
-/// arşiv satırı UYDURULMADI — DB'deki ilk belge sürümü 1.1'dir.
+/// arşiv satırı UYDURULMADI — DB'deki ilk belge sürümü 1.1'dir (uygulamanın
+/// kısaltılmış kopyası). 1.2 (0103): web'deki tam metin; Açık Rıza Metni
+/// ayrı tür olarak 1.2 ile başlar. Web'in "1.0" etiketli eski metinleri de
+/// arşivlenmedi (onaya bağlı değillerdi).
 abstract final class YasalMetinKatalogu {
-  /// Belgelerin sürümü — metinlerin meta satırındaki "Sürüm: 1.1".
-  /// 1.0 → 1.1 (2026-10-04): Zirvedeki Portföyler bölümleri, sunucu ülkesi
-  /// yer tutucusu ve onay kayıtlarının saklanması (silmeden sonra 3 yıl)
-  /// metne girmişti ama sürüm artmamıştı.
-  static const belgeSurumu = '1.1';
-  static const belgeYururluk = '2026-10-04';
-
   /// Kayıt kutularının sürümü. Kutu başlığında `v$disclaimerVersion`
   /// görünüyor; kullanıcının gördüğü etiketle aynı kalsın diye o sayı.
   static const kutuSurumu = disclaimerVersion;
 
-  /// LegalBlock listesi → düz metin. Biçim kararlıdır: değiştirmek BÜTÜN
-  /// belge hash'lerini değiştirir (yeni sürüm demektir).
-  static String bloklardanMetin(List<LegalBlock> bloklar) {
-    String satir(LegalBlock b) => switch (b.type) {
-          LegalBlockType.h1 => '# ${b.text}',
-          LegalBlockType.h2 => '## ${b.text}',
-          LegalBlockType.h3 => '### ${b.text}',
-          LegalBlockType.paragraph => b.text,
-          LegalBlockType.meta => '> ${b.text}',
-          LegalBlockType.divider => '---',
-          LegalBlockType.tableHeader =>
-            '| ${b.cells.join(' | ')} |\n|${' --- |' * b.cells.length}',
-          LegalBlockType.tableRow => '| ${b.cells.join(' | ')} |',
-        };
-    return bloklar.map(satir).join('\n\n');
-  }
-
-  static YasalMetin kosullar() => YasalMetin(
-        tur: YasalTur.kosullar,
-        surum: belgeSurumu,
+  /// Bir belgenin katalog kaydı — gövde md'nin kendisi (şablon).
+  static YasalMetin belge(YasalBelge b) => YasalMetin(
+        tur: b.tur,
+        surum: b.surum,
         dil: 'tr',
-        baslik: 'Kullanım Koşulları',
-        govde: bloklardanMetin(LegalDocs.terms),
-        yururlukTarihi: belgeYururluk,
+        baslik: b.baslik,
+        govde: b.md,
+        yururlukTarihi: b.yururluk,
       );
 
-  static YasalMetin gizlilik() => YasalMetin(
-        tur: YasalTur.gizlilik,
-        surum: belgeSurumu,
-        dil: 'tr',
-        baslik: 'Gizlilik Politikası',
-        govde: bloklardanMetin(LegalDocs.privacySablonu),
-        yururlukTarihi: belgeYururluk,
-      );
+  static YasalMetin kosullar() => belge(YasalBelge.kosullar);
+  static YasalMetin gizlilik() => belge(YasalBelge.gizlilik);
+  static YasalMetin kvkk() => belge(YasalBelge.kvkk);
+  static YasalMetin acikRiza() => belge(YasalBelge.acikRiza);
 
-  static YasalMetin kvkk() => YasalMetin(
-        tur: YasalTur.kvkk,
-        surum: belgeSurumu,
-        dil: 'tr',
-        baslik: 'KVKK Aydınlatma Metni',
-        govde: bloklardanMetin(LegalDocs.kvkkSablonu),
-        yururlukTarihi: belgeYururluk,
-      );
+  /// Onay satırının `degiskenler`'i için: [tum] gösterim değerlerinden
+  /// yalnız [m]'nin gövdesinde geçen yer tutucular. Koşullar ülke yazmıyor;
+  /// ona ülke yazmak "bu metinde ülke gösterildi" diye yanlış ispat olurdu.
+  static Map<String, Object?> belgeDegiskenleri(
+          YasalMetin m, Map<String, String> tum) =>
+      {
+        for (final ad in m.yerTutuculari)
+          if (tum.containsKey(ad)) ad: tum[ad],
+      };
 
   /// Gövde `disclaimerText`'in KENDİSİ (sarmalama yok): hash
   /// `disclaimerHash` ile aynı olmalı ki eski kayıtlar eşleşsin.
@@ -304,12 +395,15 @@ abstract final class YasalMetinKatalogu {
   /// Tek kutunun cümlesi, ekranda okunduğu düz hâliyle. 2026-10-04: KVKK
   /// Aydınlatma Metni cümlede AYRI bağlantı oldu (eskiden "Yasal Koşulları,
   /// KVKK Aydınlatma Metni" tek bağlantıydı ve yalnız Koşulları açıyordu);
-  /// okunan metin harfi harfine aynı kaldı → hash ve sürüm aynı.
+  /// okunan metin harfi harfine aynı kaldı → hash ve sürüm aynı. "açık
+  /// rıza" bağlantısı 1.2'den beri Açık Rıza Metni'ni açar (önceden Gizlilik
+  /// Politikası'nı); cümle aynı.
   static String tekKutuCumlesi(AppLocalizations l) => l.tekOnayCumle(
       l.tekOnayKosullarBaglanti, l.tekOnayKvkkBaglanti, l.tekOnayRizaBaglanti);
 
   /// Yeniden onay kapısının aradığı belgeler — katalogdaki GÜNCEL sürümleri.
-  static List<YasalMetin> zorunluBelgeler() => [kosullar(), gizlilik(), kvkk()];
+  static List<YasalMetin> zorunluBelgeler() =>
+      [for (final b in YasalBelge.values) belge(b)];
 
   /// Zirve açık rıza kartı — kartın gösterdiği sırayla.
   static YasalMetin zirveRiza() => YasalMetin(
@@ -331,9 +425,7 @@ abstract final class YasalMetinKatalogu {
 
   /// Kataloğun tamamı — kilit testi ve INSERT üreteci bunu dolaşır.
   static List<YasalMetin> tumu() => [
-        kosullar(),
-        gizlilik(),
-        kvkk(),
+        ...zorunluBelgeler(),
         yatirimUyarisi(),
         kayitKutuKosullar(),
         kayitKutuRiza(),

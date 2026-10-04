@@ -5667,7 +5667,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiAciklamaGuncel =>
-      'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.';
+      'Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.';
 
   @override
   String get yasalKapiAciklamaIlk =>
@@ -5678,7 +5678,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.';
+      'Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki tam metinle birebir aynı. Kullanım Koşulları\'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri; Gizlilik Politikası\'na otomatik toplanan veriler, çocukların verileri, yerel depolama ve AB kullanıcılarına özgü haklar; KVKK Aydınlatma Metni\'ne verilerin toplanma yöntemi, başvuru yolları ve veri ihlali bildirimi girdi. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -5725,4 +5725,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiCikis => 'Çıkış yap';
+
+  @override
+  String get yasalBelgeAcikRiza => 'Açık Rıza Metni';
+
+  @override
+  String get yasalBelgeAcikRizaAciklama => 'Yurt dışına veri aktarımı';
 }

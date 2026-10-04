@@ -3718,10 +3718,10 @@
   "arenaSwaps": "{n, plural, =0{No lead changes} =1{1 lead change} other{{n} lead changes}}",
   "yasalKapiBaslikGuncel": "Updated documents",
   "yasalKapiBaslikIlk": "Legal documents",
-  "yasalKapiAciklamaGuncel": "We've updated the Terms of Use, the Privacy Policy and the KVKK Privacy Notice. To continue, read and accept their current versions.",
+  "yasalKapiAciklamaGuncel": "We've updated our legal documents. To continue, read and accept their current versions.",
   "yasalKapiAciklamaIlk": "Before you start using the app, read and accept the documents below.",
   "yasalKapiNelerDegisti": "What changed",
-  "yasalKapiDegisiklikNotu": "Version 1.1: how Top Portfolios (optional, anonymous comparison) works was added, the country of the server storing your data was updated, and it now states clearly that consent records are kept for 3 years after account deletion.",
+  "yasalKapiDegisiklikNotu": "Version 1.2: the documents in the app are now identical to the full text on our website. The Terms of Use gained the one-account, indemnification, force majeure, notices, assignment and severability clauses; the Privacy Policy gained automatically collected data, children's data, local storage and EU-specific rights; the KVKK Privacy Notice gained how data is collected, ways to apply and data breach notification. Explicit consent for international data transfer is now a separate document: the Explicit Consent Notice.",
   "yasalBelgeKosullar": "Terms of Use",
   "yasalBelgeGizlilik": "Privacy Policy",
   "yasalBelgeKvkk": "KVKK Privacy Notice",
@@ -3735,5 +3735,7 @@
   "yasalKapiOnaylaKisa": "I accept",
   "yasalKapiKutuGerekli": "To continue, tick the boxes.",
   "yasalKapiKayitHatasi": "Your acceptance couldn't be saved. Check your connection and try again.",
-  "yasalKapiCikis": "Sign out"
+  "yasalKapiCikis": "Sign out",
+  "yasalBelgeAcikRiza": "Explicit Consent Notice",
+  "yasalBelgeAcikRizaAciklama": "International data transfer"
 }

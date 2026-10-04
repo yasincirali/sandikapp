@@ -129,7 +129,7 @@ void main() {
       var belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
       expect(belge.title, l.yasalBelgeKvkk);
       expect(belge.blocks.length, LegalDocs.kvkk.length);
-      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni');
+      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni — sandık');
       // Aydınlatma yalnız okunur; kutuyu işaretlemez.
       expect(belge.confirmMode, isFalse);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
@@ -251,7 +251,7 @@ void main() {
       belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
       expect(belge.title, l.yasalBelgeKvkk);
       expect(belge.blocks.length, LegalDocs.kvkk.length);
-      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni');
+      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni — sandık');
       expect(belge.confirmMode, isFalse);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
       await tester.pumpAndSettle();
@@ -265,8 +265,25 @@ void main() {
           descendentOf: find.text(tekCumle, findRichText: true)));
       await tester.pumpAndSettle();
       belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      expect(belge.title, 'Açık Rıza: Yurt Dışı Veri Aktarımı');
-      expect(belge.blocks.length, LegalDocs.privacy.length);
+      // 1.2: "açık rıza" Açık Rıza Metni'ni açar (önceden Gizlilik
+      // Politikası'nı "Açık Rıza: Yurt Dışı Veri Aktarımı" başlığıyla).
+      expect(belge.title, l.yasalBelgeAcikRiza);
+      expect(belge.blocks.length, LegalDocs.acikRiza.length);
+      expect(belge.blocks.first.text, 'Açık Rıza Metni — sandık');
+      expect(belge.confirmMode, isFalse);
+      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
+
+      // Gizlilik Politikası kutunun altındaki okuma bağlantısıyla açılır.
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)));
+      await tester.ensureVisible(find.text(l.yasalBelgeGizlilik));
+      await tester.tap(find.text(l.yasalBelgeGizlilik));
+      await tester.pumpAndSettle();
+      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
+      expect(belge.title, l.yasalBelgeGizlilik);
+      expect(belge.blocks.first.text, 'Gizlilik Politikası — sandık');
       expect(belge.confirmMode, isFalse);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
       await tester.pumpAndSettle();

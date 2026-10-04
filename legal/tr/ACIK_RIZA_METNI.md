@@ -1,7 +1,7 @@
-﻿# Açık Rıza Metni — sandık
+# Açık Rıza Metni — sandık
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Sürüm:** 1.0
+**Yürürlük tarihi:** 4 Ekim 2026
+**Sürüm:** 1.2
 
 > Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metni dikkatle okuyup, devamındaki onay kutularını bilinçli iradenizle işaretlemeniz beklenmektedir.
 
@@ -13,7 +13,7 @@
 
 ### A) Yurt Dışına Veri Aktarımı
 
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde)** bulunan **Supabase Inc.** ve **Amerika Birleşik Devletleri'nde (ABD)** bulunan **Google LLC (Firebase)** servislerine aktarılmasına;
+KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.** ve **Amerika Birleşik Devletleri'nde (ABD)** bulunan **Google LLC (Firebase)** servislerine aktarılmasına;
 
 - E-posta adresim
 - Görünen adım (display name)
@@ -106,7 +106,7 @@ beyan ve kabul ederim.
 ---
 
 **Tarih:** [Onay anında otomatik kaydedilir]
-**Sürüm:** 1.0
+**Sürüm:** 1.2
 **IP:** [Onay anında otomatik kaydedilir]
 **Platform:** [Android / iOS — otomatik kaydedilir]
 

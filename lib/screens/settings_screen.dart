@@ -965,6 +965,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => _showLegalDoc(context.l10n.kvkkNotice,
                   LegalDocs.kvkk, Icons.shield_outlined),
             ),
+            // 1.2 (2026-10-04): kayıtta onaylanan dört belgenin dördü de
+            // burada; hepsi `legal/tr/*.md`'den (web ile aynı metin).
+            _SettingsTile(
+              icon: Icons.public_rounded,
+              title: context.l10n.yasalBelgeAcikRiza,
+              subtitle: context.l10n.yasalBelgeAcikRizaAciklama,
+              onTap: () => _showLegalDoc(context.l10n.yasalBelgeAcikRiza,
+                  LegalDocs.acikRiza, Icons.public_rounded),
+            ),
             _SettingsTile(
               icon: Icons.gavel_rounded,
               title: context.l10n.investmentDisclaimer,

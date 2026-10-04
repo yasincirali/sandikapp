@@ -9516,7 +9516,7 @@ abstract class AppLocalizations {
   /// No description provided for @yasalKapiAciklamaGuncel.
   ///
   /// In tr, this message translates to:
-  /// **'Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni\'ni güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
+  /// **'Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
   String get yasalKapiAciklamaGuncel;
 
   /// No description provided for @yasalKapiAciklamaIlk.
@@ -9531,10 +9531,10 @@ abstract class AppLocalizations {
   /// **'Neler değişti'**
   String get yasalKapiNelerDegisti;
 
-  /// Kapının 'Neler değişti' kartı. Belge sürümü (YasalMetinKatalogu.belgeSurumu) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır.
+  /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.1: Zirvedeki Portföyler\'in (isteğe bağlı, anonim karşılaştırma) nasıl çalıştığı eklendi, verilerinin saklandığı sunucunun ülkesi güncellendi ve onay kayıtlarının hesap silindikten sonra 3 yıl saklandığı açıkça yazıldı.'**
+  /// **'Sürüm 1.2: Uygulamadaki belgeler artık web sitemizdeki tam metinle birebir aynı. Kullanım Koşulları\'na tek hesap, tazminat, mücbir sebep, bildirimler, devir ve bölünebilirlik maddeleri; Gizlilik Politikası\'na otomatik toplanan veriler, çocukların verileri, yerel depolama ve AB kullanıcılarına özgü haklar; KVKK Aydınlatma Metni\'ne verilerin toplanma yöntemi, başvuru yolları ve veri ihlali bildirimi girdi. Yurt dışı aktarım açık rızası artık ayrı bir belge: Açık Rıza Metni.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -9620,6 +9620,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çıkış yap'**
   String get yasalKapiCikis;
+
+  /// legal/tr/ACIK_RIZA_METNI.md (yurt dışı aktarım açık rızası) — kayıttaki ve kapıdaki 'açık rıza' bağlantısı ile Ayarlar › Yasal bunu açar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açık Rıza Metni'**
+  String get yasalBelgeAcikRiza;
+
+  /// No description provided for @yasalBelgeAcikRizaAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yurt dışına veri aktarımı'**
+  String get yasalBelgeAcikRizaAciklama;
 }
 
 class _AppLocalizationsDelegate

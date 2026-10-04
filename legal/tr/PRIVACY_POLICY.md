@@ -1,8 +1,8 @@
-﻿# Gizlilik Politikası — sandık
+# Gizlilik Politikası — sandık
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Son güncelleme:** 29 Eylül 2026
-**Sürüm:** 1.0
+**Yürürlük tarihi:** 4 Ekim 2026
+**Son güncelleme:** 4 Ekim 2026
+**Sürüm:** 1.2
 
 ---
 
@@ -90,7 +90,7 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 
 | Hizmet | Sağlayıcı | Veri | Amaç | Yer |
 |---|---|---|---|---|
-| Backend & veritabanı | Supabase Inc. | Tüm hesap ve uygulama verileri | Saklama, kimlik doğrulama | Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde |
+| Backend & veritabanı | Supabase Inc. | Tüm hesap ve uygulama verileri | Saklama, kimlik doğrulama | {SUPABASE_ULKE} |
 | Push bildirimi | Google Firebase Cloud Messaging | Push token, bildirim içeriği | Bildirim teslimi | Küresel (Google) |
 | Hata raporu (eklenirse) | Google Firebase Crashlytics | Cihaz modeli, OS, hata stack trace | Çökme teşhisi | Küresel |
 | Hisse/fon fiyat bilgisi | Yahoo Finance, TEFAS, finans.truncgil.com | YOK — sadece sembol query'si gönderilir | Fiyat çekme | Küresel |
@@ -105,12 +105,12 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 
 ## 6. Yurt Dışına Veri Aktarımı
 
-Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
+Supabase veritabanı {SUPABASE_ULKEDE}, Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
 
 - **AB üyesi kullanıcılar için:** Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.
-- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı kayıt sırasında onayladığınız "KVKK Aydınlatma Metni" içerisindeki onay kutusuyla vermektesiniz.
+- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı kayıt sırasında onayladığınız "Açık Rıza Metni" ile vermektesiniz.
 
-Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
+Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
 
 ---
 
@@ -122,7 +122,7 @@ Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), KVK Kurul
 | Varlık kayıtları | Hesap silinene kadar |
 | Snapshot geçmişi | Son 365 gün rolling (eski kayıtlar otomatik silinir) |
 | Zirve havuzu ölçümleri (getiri %, tür payı %) | Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen |
-| Disclaimer onay logu | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
+| Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
 | Push token | Cihaz uygulamayı sildiğinde veya logout'ta otomatik silinir |
 | Hata raporları | 90 gün |
 | db_logs (yalnızca hatalar) | 30 gün |

@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hesap Silme Talebi — sandık</title>
 <meta name="description" content="Hesap silme talep formu — 30 gün içinde işleme alınır.">
+<meta name="sandik-kaynak" content="legal/DATA_DELETION_REQUEST_FORM.md">
+<meta name="sandik-kaynak-sha256" content="f25e20185d5c006cd5cf4234232ff6a4126f8f830412683d3c9bbdf226a21892">
+<meta name="sandik-govde-sha256" content="ff395f3ed7c9837df5cce638c2b423169f9e7108d812c7d915a7e83e2b167460">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -60,6 +63,7 @@ button:hover { opacity: 0.9; }
   <div class="logo">S</div>
   <div class="brand">sandık<small>Hesap Silme</small></div>
 </header>
+<!-- sandik-govde:basla -->
 <h1>Veri Silme Talep Formu / Data Deletion Request Form</h1>
 <!-- Bu dosya docs/_build_legal.py ile data-deletion/ ve data-request/
      sayfalarına basılır; buraya yazılan her satır Play incelemecisinin
@@ -190,6 +194,7 @@ Notes (optional): ___________________
 <blockquote>
 <p>Production'da <code>mailto:</code> yerine bir backend endpoint (örn. Supabase Edge Function veya basit bir web form servisi) kullanın ki spam'e karşı korunabilesiniz ve talep otomatik kuyruğa girsin.</p>
 </blockquote>
+<!-- sandik-govde:bitti -->
 <footer>
   sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
 </footer>

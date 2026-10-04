@@ -37,6 +37,9 @@ void main() {
   test('lib/ kullanıcı metinlerinde uzun/orta tire yok', () {
     const haric = {
       'lib/screens/legal_doc_screen.dart',
+      // Yasal metnin kendisi (legal/tr/*.md'den üretilir, web ile aynı;
+      // 2026-10-04'e kadar legal_doc_screen.dart'taydı).
+      'lib/config/yasal_belge_kaynaklari.g.dart',
       'lib/screens/push_diagnostics_screen.dart',
     };
     final literal = RegExp(

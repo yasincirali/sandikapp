@@ -8,6 +8,58 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-04 Yasal belgeler web ile tek kaynak (0103) — dal `feat/yasal-web-esleme` (yerel, push yok)
+
+Karar: *"Webdekiyle de her zaman eşleyelim."* Uygulama artık web'deki tam
+metni gösterir (`legal/tr/*.md` tek kaynak); Koşullar, Gizlilik, KVKK **1.2**,
+Açık Rıza Metni yeni belge (1.2). Kayıttaki "açık rıza" bağlantısı Açık Rıza
+Metni'ni açar; yeniden onay kapısı dört belgeyi ister. Web ile uygulama
+`test/yasal_web_esleme_test.dart` ile CI'da kilitli.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı reddedilir ve kapı her
+açılışta yeniden sorar):**
+- [ ] 1. `supabase/migrations/0103_yasal_web_tek_kaynak.sql` → **iki sunucuya**
+      (`supabase-deploy.yml`, hedef `ikisi`). Doğrula:
+      `select tur, surum from yasal_metinler where surum = '1.2' order by 1;`
+      → 4 satır (`acik_riza_metni`, `gizlilik_politikasi`, `kosullar`,
+      `kvkk_aydinlatma`); 1.1 satırları yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). `main`'e girince Pages web'i de
+      yayınlar (docs/ HTML 1.2). Yayınla birlikte 1.1'i onaylamış herkes bir
+      sonraki açılışta kapıda "Güncellenen belgeler"i görür (bayraklar
+      `yasal_onay_kaydi` + `yeniden_onay_kapisi` açık).
+
+**Yayından önce bakman gerekenler (web metnindeki, uygulamaya da girdi):**
+- [ ] Kullanım Koşulları §17 **yetkili mahkeme hâlâ şablon**:
+      `[YETKİLİ MAHKEME — örn. İstanbul Anadolu Tüketici Mahkemeleri ve İcra
+      Daireleri]`. Web'de 2026-05'ten beri böyle yayında; artık uygulamada da
+      görünüyor ve onaylatılıyor. Doldurulursa metin değişir → 1.3 (süreç
+      `yasal_metin_katalogu.dart` başında). En iyisi 0103 dağıtılmadan önce
+      doldurup 1.2'yi o hâliyle üretmek (o zaman ben yeniden üretirim).
+- [ ] **IP iddiası:** Gizlilik §3.4 "Disclaimer onay zamanı, IP, …", Açık Rıza
+      Metni A) "Disclaimer onayımın metadatası (… IP)" ve imza bloğu "IP:
+      [Onay anında otomatik kaydedilir]" — uygulama IP SAKLAMIYOR
+      (`disclaimer_acceptances` ve `yasal_onaylar`'da IP sütunu yok). KVKK
+      §2.5'teki aynı iddia 1.1 kararıyla kaldırılmıştı; diğerleri web metni
+      olduğu için dokunulmadı. Avukat sorusu.
+- [ ] Açık Rıza Metni B/C/D kutuları (push, Crashlytics "eklenirse",
+      pazarlama e-postası) uygulamada ayrı kutu olarak YOK; metin "☐" ile
+      onları sayıyor. Kayıtta tek onay A) yurt dışı aktarım. Metin
+      uygulamanın akışına göre sadeleşsin mi?
+- [ ] Gizlilik §11 "Üçüncü taraf takip / analitik / reklam SDK'sı içermez" —
+      uygulama Firebase Analytics kullanıyor; "SQLite cache" artık yok.
+- [ ] KVKK §10 "Önceki sürümlere …/legal/kvkk-history adresinden ulaşılabilir"
+      — böyle bir sayfa yok.
+- [ ] Yürürlük tarihi 4 Ekim 2026 yazıldı; Koşullar §18 "değişiklikten en az
+      30 gün önce bildirim" diyor (avukat sorusu 2 ile aynı konu).
+- [ ] İngilizce: KVKK Aydınlatma ve Açık Rıza Metni'nin İngilizcesi YOK
+      (`GDPR_NOTICE` KVKK'nın çevirisi değil, AB'ye özgü ayrı belge).
+      Uygulama İngilizce arayüzde de Türkçe belge gösterir ve onay `tr`
+      yazılır. `legal/en/PRIVACY_POLICY.md` ve `TERMS_OF_SERVICE.md` "Source:
+      TR 1.2" beyan eder; içerikleri TR'nin uyarlamalı çevirisi (ör. EN
+      Gizlilik §3.4 GDPR dayanağı yazar, TR KVKK) — bir çevirmen/hukukçu
+      gözü gerekir.
+
 ## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
 
 Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
@@ -154,10 +206,10 @@ Liste ve ne açtıkları:
     4. Tek onay kutusu (`tek_onay_kutusu`) açılırsa kayıt ve kapı
        `kayit_tek_kutu` (TR + EN) yazar — yukarıdaki hukuki karar
        maddesiyle birlikte değerlendir.
-    5. Web'deki belgeler (`legal/*.md`, `docs/legal/**`, `docs/privacy*`,
-       `docs/terms*`) uygulama içi metinden AYRIŞMIŞ (bölüm sayıları farklı,
-       ör. Koşullar web 19 / uygulama 14 bölüm) ve hepsi "Sürüm: 1.0".
-       Sürüm satırı hizalanmadı (aynı metin değiller); hangisi esas, birleşsin mi?
+    5. ~~Web'deki belgeler uygulama içi metinden AYRIŞMIŞ; hangisi esas?~~
+       → **karar (2026-10-04): web tek kaynak, 1.2.** "Webdekiyle de her
+       zaman eşleyelim." Ayrıntı ve dağıtım sırası aşağıda, "Yasal
+       belgeler web ile tek kaynak (0103)".
 - Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
   (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
   vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).

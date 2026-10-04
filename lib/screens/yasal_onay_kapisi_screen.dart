@@ -20,8 +20,9 @@ import 'register_screen.dart' show YasalOnayKutusu;
 /// ## Neden
 /// Kullanıcı kararı: *"Eski rıza metnini onaylayanlar için ilk login'de
 /// güncel doküman sunulup onay istenmeli."* `_AuthGate` bu ekranı,
-/// kullanıcının Koşullar / Gizlilik / KVKK Aydınlatma'nın GÜNCEL sürümüne
-/// ya da kayıt kutusu taahhütlerine etkin onayı yoksa gösterir
+/// kullanıcının Koşullar / Gizlilik / KVKK Aydınlatma / Açık Rıza Metni'nin
+/// (1.2'den beri dördü) GÜNCEL sürümüne ya da kayıt kutusu taahhütlerine
+/// etkin onayı yoksa gösterir
 /// (`YasalOnayService.kapiDurumu`). Üç kullanıcı buraya düşer:
 /// - belgelerin eski sürümünü onaylamış olan → "Güncellenen belgeler" +
 ///   "Neler değişti" + tek onay düğmesi;
@@ -86,22 +87,24 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
           ? context.l10n.tekOnayUlkeBilinmiyor
           : KayitKutuMetni.rizaUlkeBilinmiyor);
 
-  Future<void> _belgeyiAc(String tur) async {
-    final l = context.l10n;
-    final (baslik, ikon, bloklar) = switch (tur) {
-      YasalTur.kosullar => (
-          l.yasalBelgeKosullar,
-          Icons.gavel_rounded,
-          LegalDocs.terms
-        ),
-      YasalTur.gizlilik => (
-          l.yasalBelgeGizlilik,
-          Icons.shield_outlined,
-          LegalDocs.privacy
-        ),
-      _ => (l.yasalBelgeKvkk, Icons.privacy_tip_outlined, LegalDocs.kvkk),
-    };
-    setState(() => _acilanlar.add(tur));
+  /// Belge satırının adı (sığan yazım adayları) ve ikonu.
+  static (List<String>, IconData) _belgeGorunumu(
+          AppLocalizations l, YasalBelge belge) =>
+      switch (belge) {
+        YasalBelge.kosullar => ([l.yasalBelgeKosullar], Icons.gavel_rounded),
+        YasalBelge.gizlilik => ([l.yasalBelgeGizlilik], Icons.shield_outlined),
+        YasalBelge.kvkk => (
+            [l.yasalBelgeKvkk, l.yasalBelgeKvkkKisa],
+            Icons.privacy_tip_outlined
+          ),
+        YasalBelge.acikRiza => ([l.yasalBelgeAcikRiza], Icons.public_rounded),
+      };
+
+  Future<void> _belgeyiAc(YasalBelge belge) async {
+    final (adlar, ikon) = _belgeGorunumu(context.l10n, belge);
+    final baslik = adlar.first;
+    final bloklar = LegalDocs.bloklar(belge);
+    setState(() => _acilanlar.add(belge.tur));
     await pushGuarded<void>(
       context,
       adaptiveRoute(
@@ -168,17 +171,13 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
     final hp = SandikSpace.screenH(context);
 
     final belgeler = [
-      for (final m in YasalMetinKatalogu.zorunluBelgeler())
+      for (final b in YasalBelge.values)
         _BelgeSatiri(
-          adaylar: switch (m.tur) {
-            YasalTur.kosullar => [l.yasalBelgeKosullar],
-            YasalTur.gizlilik => [l.yasalBelgeGizlilik],
-            _ => [l.yasalBelgeKvkk, l.yasalBelgeKvkkKisa],
-          },
-          surum: l.yasalBelgeSurum(m.surum),
-          acildi: _acilanlar.contains(m.tur),
+          adaylar: _belgeGorunumu(l, b).$1,
+          surum: l.yasalBelgeSurum(b.surum),
+          acildi: _acilanlar.contains(b.tur),
           acildiEtiketi: l.yasalBelgeAcildi,
-          onTap: () => _belgeyiAc(m.tur),
+          onTap: () => _belgeyiAc(b),
         ),
     ];
 

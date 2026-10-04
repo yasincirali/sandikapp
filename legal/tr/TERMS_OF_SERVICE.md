@@ -1,8 +1,8 @@
-﻿# Kullanım Koşulları — sandık
+# Kullanım Koşulları — sandık
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Son güncelleme:** 29 Eylül 2026
-**Sürüm:** 1.0
+**Yürürlük tarihi:** 4 Ekim 2026
+**Son güncelleme:** 4 Ekim 2026
+**Sürüm:** 1.2
 
 ---
 

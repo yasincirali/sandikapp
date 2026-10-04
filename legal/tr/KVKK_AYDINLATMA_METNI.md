@@ -1,8 +1,8 @@
-﻿# KVKK Aydınlatma Metni — sandık
+# KVKK Aydınlatma Metni — sandık
 
-**Yürürlük tarihi:** 11 Mayıs 2026
-**Son güncelleme:** 29 Eylül 2026
-**Sürüm:** 1.0
+**Yürürlük tarihi:** 4 Ekim 2026
+**Son güncelleme:** 4 Ekim 2026
+**Sürüm:** 1.2
 
 ---
 
@@ -44,7 +44,7 @@
 - Cihaz modeli, OS sürümü, uygulama sürümü
 
 ### 2.5 Hukuki İşlem Verisi
-- Disclaimer (yatırım tavsiyesi reddi) onay zamanı, sürümü, platformu, IP'si
+- Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, platform, uygulama sürümü, dil
 
 ---
 
@@ -80,7 +80,7 @@
 | Push token | KVKK 5(1) — açık rıza |
 | IP, cihaz bilgisi | KVKK 5(2)(f) — meşru menfaat (güvenlik) |
 | Disclaimer onayı | KVKK 5(2)(a) — kanunlarda öngörülmesi (SPK) |
-| Yurt dışı aktarımı (Supabase Japonya → Almanya, Firebase ABD) | KVKK 5(1) ve 9(1) — açık rıza |
+| Yurt dışı aktarımı (Supabase: {SUPABASE_ULKE}; Firebase: ABD) | KVKK 5(1) ve 9(1) — açık rıza |
 
 ---
 
@@ -93,11 +93,11 @@ Mevcut işleme faaliyetlerinde **yurt içi üçüncü taraf aktarımı yapılmam
 
 | Alıcı | Ülke | Veri | Amaç | Hukuki sebep |
 |---|---|---|---|---|
-| Supabase Inc. | Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde | Tüm hesap ve uygulama verileri | Veritabanı ve kimlik doğrulama altyapısı | KVKK 9(1) — açık rıza |
+| Supabase Inc. | {SUPABASE_ULKE} | Tüm hesap ve uygulama verileri | Veritabanı ve kimlik doğrulama altyapısı | KVKK 9(1) — açık rıza |
 | Google LLC (Firebase Cloud Messaging) | ABD / Küresel | Push token, bildirim içeriği | Bildirim teslimi | KVKK 9(1) — açık rıza |
 | Google LLC (Firebase Crashlytics) - **eklendiğinde** | ABD / Küresel | Cihaz modeli, OS, hata stack trace | Çökme teşhisi | KVKK 5(2)(f) ve 9(1) — açık rıza |
 
-Aktarım yapılan ülkeler (Japonya, ABD; taşınma sonrası Almanya), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
+Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
 Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içerisinde belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
@@ -116,7 +116,7 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Snapshot geçmişi | Son 365 gün rolling | Servis ihtiyacı |
 | Zirve havuzu ölçümleri | Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen | Servis ihtiyacı |
 | Push token | Logout veya uninstall'a kadar | Sözleşme süresi |
-| Disclaimer onay logu | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
+| Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
 | Oturum logları (IP, cihaz) | 90 gün | KVKK 5(2)(f) meşru menfaat |
 | Hata logları (error db_logs) | 30 gün | KVKK 5(2)(f) meşru menfaat |
 

@@ -1,8 +1,9 @@
 # Terms of Service — sandık
 
-**Effective date:** May 11, 2026
-**Last updated:** September 29, 2026
-**Version:** 1.0
+**Effective date:** October 4, 2026
+**Last updated:** October 4, 2026
+**Version:** 1.2
+**Source:** TR 1.2 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
