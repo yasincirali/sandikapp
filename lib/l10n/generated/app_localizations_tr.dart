@@ -342,7 +342,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get levelAdvancedDesc =>
-      'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1Y).';
+      'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).';
 
   @override
   String get noAssetsYet => 'Henüz varlık eklenmemiş';
@@ -1115,22 +1115,22 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get periodDaily => 'GÜNLÜK';
+  String get periodDaily => 'Bugün';
 
   @override
-  String get period1W => '1H';
+  String get period1W => '1 hf';
 
   @override
-  String get period1M => '1A';
+  String get period1M => '1 ay';
 
   @override
-  String get period3M => '3A';
+  String get period3M => '3 ay';
 
   @override
-  String get period6M => '6A';
+  String get period6M => '6 ay';
 
   @override
-  String get period1Y => '1Y';
+  String get period1Y => '1 yıl';
 
   @override
   String assetPerformanceSemantics(String name) {
@@ -1536,7 +1536,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get modeReal => 'Gerçek';
 
   @override
-  String get modeSim => 'Simülasyon';
+  String get modeSim => 'Bugünkü portföyle';
 
   @override
   String modeInfoSemantics(String mode) {
@@ -1571,7 +1571,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get youngPortfolioBody =>
-      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi GÜNLÜK görünümünde görebilirsin.';
+      'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi “Bugün” görünümünde görebilirsin.';
 
   @override
   String get forceUpdateTitle => 'Güncelleme gerekli';
@@ -1603,7 +1603,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get simModeTitle => 'Simülasyon Modu';
+  String get simModeTitle => 'Bugünkü portföyle';
 
   @override
   String get realModeTitle => 'Gerçek Mod';
@@ -2276,7 +2276,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get selectedPeriodReturnBody =>
-      'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.';
+      'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.';
 
   @override
   String get depositsDontChangeRankBody =>
@@ -3494,7 +3494,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String periodChangeSim(String period) {
-    return '$period değişim · simülasyon';
+    return '$period değişim · bugünkü portföyle';
   }
 
   @override
@@ -4207,7 +4207,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get period5Y => '5Y';
+  String get period5Y => '5 yıl';
 
   @override
   String get vsPeriodReturnUpper => 'DÖNEM GETİRİSİ';
@@ -5293,7 +5293,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Hesabın başka bir cihazda açıldı. Bu cihazda oturum kapatıldı.';
 
   @override
-  String get kayitliCihazlar => 'Kayıtlı cihazlar';
+  String get kayitliCihazlar => 'Giriş yaptığın cihazlar';
 
   @override
   String get kayitliCihazlarAlt => 'Hesabın aynı anda tek cihazda açık kalır';
@@ -5437,7 +5437,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get levelSurveyQ1A0 => 'Yeni başlıyorum';
 
   @override
-  String get levelSurveyQ1A1 => '1–3 yıldır';
+  String get levelSurveyQ1A1 => '1-3 yıldır';
 
   @override
   String get levelSurveyQ1A2 => '3 yıldan fazla';
@@ -5483,4 +5483,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get levelSurveyBack => 'Geri';
+
+  @override
+  String get todaysReturn => 'Bugünkü getirin';
+
+  @override
+  String returnSince(String date) {
+    return '$date itibarıyla getirin';
+  }
+
+  @override
+  String get balanceChangeInclBuys => 'Birikim değişimi (alımlar dahil)';
 }

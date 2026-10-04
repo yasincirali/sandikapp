@@ -149,7 +149,7 @@ void main() {
         expect(find.text('Tümü'), findsWidgets,
             reason: 'tip filtresi değişiminde çipler kayboldu — '
                 'yükleme tüm bloğu sildi');
-        expect(find.text('GÜNLÜK'), findsWidgets,
+        expect(find.text('Bugün'), findsWidgets,
             reason: 'tip filtresi değişiminde periyot toggle kayboldu');
       }
 
@@ -162,14 +162,14 @@ void main() {
       await _pump(tester);
       await _paneliAc(tester);
 
-      final aylik = find.text('1A');
+      final aylik = find.text('1 ay');
       if (aylik.evaluate().isNotEmpty) {
         await tester.tap(aylik.first, warnIfMissed: false);
         await tester.pump(); // yükleme karesi
 
         expect(find.text('Tümü'), findsWidgets,
             reason: 'periyot değişiminde tip çipleri kayboldu');
-        expect(find.text('GÜNLÜK'), findsWidgets,
+        expect(find.text('Bugün'), findsWidgets,
             reason: 'periyot değişiminde toggle kayboldu');
       }
 

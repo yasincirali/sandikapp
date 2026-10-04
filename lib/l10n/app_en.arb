@@ -3675,7 +3675,7 @@
   "levelSurveyProgress": "Question {no} of {toplam}",
   "levelSurveyQ1": "How long have you been investing?",
   "levelSurveyQ1A0": "Just starting",
-  "levelSurveyQ1A1": "1–3 years",
+  "levelSurveyQ1A1": "1-3 years",
   "levelSurveyQ1A2": "More than 3 years",
   "levelSurveyQ2": "Where are most of your savings?",
   "levelSurveyQ2A0": "Gold, FX, deposits",
@@ -3689,5 +3689,8 @@
   "levelSurveyResultNote": "You can change it any time in Settings › Appearance.",
   "levelSurveyRetake": "Retake the survey",
   "levelSurveyOpen": "Find my level with 3 questions",
-  "levelSurveyBack": "Back"
+  "levelSurveyBack": "Back",
+  "todaysReturn": "Today's return",
+  "returnSince": "Return since {date}",
+  "balanceChangeInclBuys": "Balance change (incl. buys)"
 }

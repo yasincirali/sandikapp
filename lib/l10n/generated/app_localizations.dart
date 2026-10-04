@@ -719,7 +719,7 @@ abstract class AppLocalizations {
   /// No description provided for @levelAdvancedDesc.
   ///
   /// In tr, this message translates to:
-  /// **'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1Y).'**
+  /// **'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).'**
   String get levelAdvancedDesc;
 
   /// No description provided for @noAssetsYet.
@@ -2045,37 +2045,37 @@ abstract class AppLocalizations {
   /// No description provided for @periodDaily.
   ///
   /// In tr, this message translates to:
-  /// **'GÜNLÜK'**
+  /// **'Bugün'**
   String get periodDaily;
 
   /// No description provided for @period1W.
   ///
   /// In tr, this message translates to:
-  /// **'1H'**
+  /// **'1 hf'**
   String get period1W;
 
   /// No description provided for @period1M.
   ///
   /// In tr, this message translates to:
-  /// **'1A'**
+  /// **'1 ay'**
   String get period1M;
 
   /// No description provided for @period3M.
   ///
   /// In tr, this message translates to:
-  /// **'3A'**
+  /// **'3 ay'**
   String get period3M;
 
   /// No description provided for @period6M.
   ///
   /// In tr, this message translates to:
-  /// **'6A'**
+  /// **'6 ay'**
   String get period6M;
 
   /// No description provided for @period1Y.
   ///
   /// In tr, this message translates to:
-  /// **'1Y'**
+  /// **'1 yıl'**
   String get period1Y;
 
   /// No description provided for @assetPerformanceSemantics.
@@ -2807,7 +2807,7 @@ abstract class AppLocalizations {
   /// No description provided for @modeSim.
   ///
   /// In tr, this message translates to:
-  /// **'Simülasyon'**
+  /// **'Bugünkü portföyle'**
   String get modeSim;
 
   /// No description provided for @modeInfoSemantics.
@@ -2861,7 +2861,7 @@ abstract class AppLocalizations {
   /// No description provided for @youngPortfolioBody.
   ///
   /// In tr, this message translates to:
-  /// **'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi GÜNLÜK görünümünde görebilirsin.'**
+  /// **'Portföyün seçtiğin dönemden daha yeni. Grafik işlem günleri geçtikçe dolacak. Bugünkü hareketi “Bugün” görünümünde görebilirsin.'**
   String get youngPortfolioBody;
 
   /// No description provided for @forceUpdateTitle.
@@ -2915,7 +2915,7 @@ abstract class AppLocalizations {
   /// No description provided for @simModeTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Simülasyon Modu'**
+  /// **'Bugünkü portföyle'**
   String get simModeTitle;
 
   /// No description provided for @realModeTitle.
@@ -4049,7 +4049,7 @@ abstract class AppLocalizations {
   /// No description provided for @selectedPeriodReturnBody.
   ///
   /// In tr, this message translates to:
-  /// **'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki 7G / 30G / 1Y seçimi sonucu doğrudan değiştirir.'**
+  /// **'Dönem günlere bölünür. Her gün, o gün elinde olan varlıklar piyasa fiyatıyla değerlenir ve günlerin getirisi birbirine eklenir (çarpılır).\n\nSatıp başka bir varlık aldıysan ikisi de yalnız tuttuğun günlerde sayılır. Yukarıdaki dönem seçimi sonucu doğrudan değiştirir.'**
   String get selectedPeriodReturnBody;
 
   /// No description provided for @depositsDontChangeRankBody.
@@ -5903,7 +5903,7 @@ abstract class AppLocalizations {
   /// No description provided for @periodChangeSim.
   ///
   /// In tr, this message translates to:
-  /// **'{period} değişim · simülasyon'**
+  /// **'{period} değişim · bugünkü portföyle'**
   String periodChangeSim(String period);
 
   /// No description provided for @periodBalanceChange.
@@ -7049,7 +7049,7 @@ abstract class AppLocalizations {
   /// No description provided for @period5Y.
   ///
   /// In tr, this message translates to:
-  /// **'5Y'**
+  /// **'5 yıl'**
   String get period5Y;
 
   /// No description provided for @vsPeriodReturnUpper.
@@ -8832,7 +8832,7 @@ abstract class AppLocalizations {
   /// No description provided for @kayitliCihazlar.
   ///
   /// In tr, this message translates to:
-  /// **'Kayıtlı cihazlar'**
+  /// **'Giriş yaptığın cihazlar'**
   String get kayitliCihazlar;
 
   /// No description provided for @kayitliCihazlarAlt.
@@ -9090,7 +9090,7 @@ abstract class AppLocalizations {
   /// No description provided for @levelSurveyQ1A1.
   ///
   /// In tr, this message translates to:
-  /// **'1–3 yıldır'**
+  /// **'1-3 yıldır'**
   String get levelSurveyQ1A1;
 
   /// No description provided for @levelSurveyQ1A2.
@@ -9176,6 +9176,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geri'**
   String get levelSurveyBack;
+
+  /// No description provided for @todaysReturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü getirin'**
+  String get todaysReturn;
+
+  /// No description provided for @returnSince.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} itibarıyla getirin'**
+  String returnSince(String date);
+
+  /// No description provided for @balanceChangeInclBuys.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikim değişimi (alımlar dahil)'**
+  String get balanceChangeInclBuys;
 }
 
 class _AppLocalizationsDelegate

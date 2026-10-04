@@ -634,19 +634,28 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     // Gün içi başlık, çizilen günü söyler. Kuyruk varsa aralık yazılır
     // ("11 Eyl → bugün"): eksen artık tek gün değil, kullanıcı isteği
     // gereği hafta sonunu da kapsıyor (2026-09-12).
+    //
+    // **Manşet = paranın getirisi (kullanıcı kararı 2026-10-04, "İkisi de
+    // getiri").** Grafik ve Özet aynı dönem için iki farklı manşet yüzde
+    // gösteriyordu: burada alımları da sayan birikim değişimi, Özet'te
+    // arındırılmış getiri. Kullanıcı "kazandım mı?" sorusuna iki cevap
+    // görüyordu. Artık iki sekmenin manşeti aynı rakam (Özet'in
+    // `moneyReturnPeriod` başlığı, ana sayfa Bugün kartı ile aynı
+    // fonksiyon); birikim değişimi alttaki kalemlere indi. 2026-09-24
+    // kararı ("birikim alımları içermeli") rakamı korur, yerini değiştirir.
     final gunIciBaslik = gunIciBugun
-        ? context.l10n.todaysBalanceChange
+        ? context.l10n.todaysReturn
         : kapaliKuyruk
             ? context.l10n.sinceDateToToday(
                 DateFormat('d MMM', context.tarihDili).format(start))
-            : context.l10n.balanceChangeSince(
+            : context.l10n.returnSince(
                 DateFormat('d MMMM', context.tarihDili).format(start));
 
     final title = intraday
         ? gunIciBaslik
         : _simulate
             ? context.l10n.periodChangeSim(periodLabel)
-            : context.l10n.periodBalanceChange(periodLabel);
+            : context.l10n.moneyReturnPeriod(periodLabel);
 
     // Düzen (2026-09-24, kullanıcı: "gözüme çok estetik gelmedi"):
     //
@@ -744,17 +753,17 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    isFlat
+                    piyasaFlat
                         ? context.l10n.noChange
-                        : '${positive ? '+' : '−'}${tryFmt.format(change.abs())}',
+                        : '${piyasa >= 0 ? '+' : '−'}${tryFmt.format(piyasa.abs())}',
                     maxLines: 1,
-                    style: context.t.numMedium.copyWith(color: color),
+                    style: context.t.numMedium.copyWith(color: piyasaColor),
                   ),
                 ),
               ),
-              if (pct != null && !isFlat && !akisVar) ...[
+              if (piyasaPct != null && !piyasaFlat) ...[
                 const SizedBox(width: SandikSpace.sm),
-                _YuzdeRozeti(pct: pct, renk: color),
+                _YuzdeRozeti(pct: piyasaPct, renk: piyasaColor),
               ],
             ],
           ),
@@ -795,16 +804,16 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               ],
             ),
             const SizedBox(height: SandikSpace.sm2),
+            // Birikim değişimi (alımlar dahil) — eski manşet. Yüzde YOK:
+            // yatırılan parayı da sayan bir yüzde getiri diye okunuyordu
+            // ("+%934" 5Y, müşteri testi 2026-10-01).
             _DegisimKalemi(
-              etiket: context.l10n.marketAddedRow,
-              deger: piyasaFlat
+              etiket: context.l10n.balanceChangeInclBuys,
+              deger: isFlat
                   ? context.l10n.noChange
-                  : '${piyasa >= 0 ? '+' : '−'}'
-                      '${tryFmt.format(piyasa.abs())}',
-              rozet: piyasaPct != null && !piyasaFlat
-                  ? _YuzdeRozeti(pct: piyasaPct, renk: piyasaColor)
-                  : null,
-              renk: piyasaColor,
+                  : '${positive ? '+' : '−'}'
+                      '${tryFmt.format(change.abs())}',
+              renk: color,
             ),
           ],
         ],

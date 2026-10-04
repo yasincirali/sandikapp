@@ -629,14 +629,10 @@ class _PortfolioPerformanceScreenState
                           ),
                         ),
                       ),
-                      const SizedBox(width: SandikSpace.sm),
                     ],
-                    // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
-                    // beklenmeyen bir eylem olurdu.
-                    if (!widget.showBackButton)
-                      SandikLogoutButton(
-                        onPressed: () => confirmAndLogout(context, ref),
-                      ),
+                    // Çıkış düğmesi KALDIRILDI (sadeleştirme 2026-10-04):
+                    // Ana ekran üst barında ve Profil'de duruyor; dört sekmede
+                    // birden olması yanlışlıkla çıkışa davetiye çıkarıyordu.
                   ],
                 ),
               ),

@@ -5489,7 +5489,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get levelSurveyQ1A0 => 'Just starting';
 
   @override
-  String get levelSurveyQ1A1 => '1–3 years';
+  String get levelSurveyQ1A1 => '1-3 years';
 
   @override
   String get levelSurveyQ1A2 => 'More than 3 years';
@@ -5535,4 +5535,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get levelSurveyBack => 'Back';
+
+  @override
+  String get todaysReturn => 'Today\'s return';
+
+  @override
+  String returnSince(String date) {
+    return 'Return since $date';
+  }
+
+  @override
+  String get balanceChangeInclBuys => 'Balance change (incl. buys)';
 }

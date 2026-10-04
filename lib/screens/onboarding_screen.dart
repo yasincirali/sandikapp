@@ -600,8 +600,9 @@ List<_Adim> _adimlariKur() {
       // Karşılaştır ve varlık ekranlarında da var.
       // 2026-09-28: seçici üç grafik ekranında da grafiğin ÜSTÜNDE
       // (bkz. `kartlar.dart` kontrol yığını notu).
-      govde: 'Grafiğin üstündeki seçici: GÜNLÜK gün içini saat saat çizer; '
-          '1H / 1A / 3A / 6A / 1Y / 5Y daha geniş pencereler. Aynı seçici '
+      govde: 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
+          'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha geniş '
+          'pencereler. Aynı seçici '
           'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
           'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
           'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
@@ -621,9 +622,9 @@ List<_Adim> _adimlariKur() {
       govde: 'Bu çip ne gördüğünü yazar: hangi varlık türü ve hangi mod; '
           'dokununca ikisi de açılır. Kimin portföyü olduğunu başlıktaki '
           'kişi çipi seçer.\n\nGerçek mod dönem '
-          'içindeki her alım ve satımla gerçek geçmişini çizer; Simülasyon '
-          '"bugünkü portföyümü baştan elimde tutsaydım ne olurdu?" sorusunu '
-          'yanıtlar.',
+          'içindeki her alım ve satımla gerçek geçmişini çizer; "Bugünkü '
+          'portföyle" modu "bugünkü portföyümü baştan elimde tutsaydım ne '
+          'olurdu?" sorusunu yanıtlar.',
       giris: (_) => _sekmeyeGecBasa(3),
     ),
     _Adim(
