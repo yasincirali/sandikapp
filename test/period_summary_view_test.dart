@@ -188,13 +188,13 @@ void main() {
       // "Yatırdığın" = alım − satış (2026-10-01): temettü ayrı çubukta,
       // böylece Birikim disiplinin kartıyla aynı sayı.
       expect(find.text('Yatırdığın'), findsOneWidget);
-      expect(find.text('Piyasanın kattığı'), findsOneWidget);
+      expect(find.text('Fiyat etkisi'), findsOneWidget);
       expect(find.text('Şimdi'), findsOneWidget);
 
       // Açıklama satırı: yüzdenin yalnızca piyasadan geldiğini söylemek
       // zorunda.
       expect(
-        find.textContaining('piyasanın kattığından'),
+        find.textContaining('fiyat etkisinden'),
         findsOneWidget,
         reason: 'köprünün tek argümanı bu cümle — kaybolmamalı',
       );

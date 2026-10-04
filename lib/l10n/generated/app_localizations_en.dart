@@ -333,15 +333,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get levelBeginnerDesc =>
-      'Simple view: technical signals, percentile, health and XIRR cards are hidden.';
+      'Simple view: technical signals, percentile, health and annual return cards are hidden.';
 
   @override
   String get levelIntermediateDesc =>
-      'Today\'s view: technical signals, percentile, health card and money-weighted return (XIRR).';
+      'Today\'s view: technical signals, percentile, health card and annual return since your first buy.';
 
   @override
   String get levelAdvancedDesc =>
-      'Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).';
+      'Intermediate + return per unit of risk, effect of your buy timing and recovery from drops (Summary › 1Y).';
 
   @override
   String get noAssetsYet => 'No assets added yet';
@@ -1850,7 +1850,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'The percentage comes only from what the market added. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.';
+      'The percentage comes only from the price effect. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.';
 
   @override
   String annualRatePct(String pct) {
@@ -3507,7 +3507,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noTransactionsYet => 'No transactions yet';
 
   @override
-  String get todaysBalanceChange => 'Today\'s balance change';
+  String get todaysBalanceChange => 'Today\'s total change';
 
   @override
   String sinceDateToToday(String date) {
@@ -3516,7 +3516,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String balanceChangeSince(String date) {
-    return 'Balance change since $date';
+    return 'Total change since $date';
   }
 
   @override
@@ -3526,7 +3526,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String periodBalanceChange(String period) {
-    return '$period balance change';
+    return '$period total change';
   }
 
   @override
@@ -3737,7 +3737,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get shareCardXirr => 'Annualized (XIRR)';
+  String get shareCardXirr => 'Annual return';
 
   @override
   String get shareCardDrawdown => 'Max drawdown';
@@ -4177,19 +4177,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sectionResult => 'RESULT';
+  String get sectionResult => 'What happened?';
 
   @override
-  String get sectionWhy => 'WHY';
+  String get sectionWhy => 'Why?';
 
   @override
-  String get sectionDetail => 'DETAIL';
+  String get sectionDetail => 'Details';
 
   @override
-  String get sectionDepth => 'DEPTH';
+  String get sectionDepth => 'More';
 
   @override
-  String get sectionDepthHint => 'XIRR, health, advanced metrics, character';
+  String get sectionDepthHint => 'Annual return, health, character';
 
   @override
   String get myAlarms => 'My alerts';
@@ -5228,19 +5228,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get investedRow => 'You put in';
 
   @override
-  String get marketAddedRow => 'Market added';
+  String get marketAddedRow => 'Price effect';
 
   @override
   String get dividendPocketRow => 'Dividends you pocketed';
 
   @override
   String flowBuyBalance(String flow, String change) {
-    return 'Bought $flow · balance $change';
+    return 'Bought $flow · total $change';
   }
 
   @override
   String flowSellBalance(String flow, String change) {
-    return 'Sold $flow · balance $change';
+    return 'Sold $flow · total $change';
   }
 
   @override
@@ -5545,7 +5545,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get balanceChangeInclBuys => 'Balance change (incl. buys)';
+  String get balanceChangeInclBuys => 'Total change (incl. buys)';
 
   @override
   String get firstAssetPickTitle => 'What are you saving in?';

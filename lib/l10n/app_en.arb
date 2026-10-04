@@ -122,9 +122,9 @@
   "levelBeginner": "Beginner",
   "levelIntermediate": "Intermediate",
   "levelAdvanced": "Advanced",
-  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and XIRR cards are hidden.",
-  "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and money-weighted return (XIRR).",
-  "levelAdvancedDesc": "Intermediate + risk-adjusted return, timing effect and recovery (Summary › 1Y).",
+  "levelBeginnerDesc": "Simple view: technical signals, percentile, health and annual return cards are hidden.",
+  "levelIntermediateDesc": "Today's view: technical signals, percentile, health card and annual return since your first buy.",
+  "levelAdvancedDesc": "Intermediate + return per unit of risk, effect of your buy timing and recovery from drops (Summary › 1Y).",
   "noAssetsYet": "No assets added yet",
   "noAssetsYetHint": "Start building your sandık by adding your first asset.",
   "addFirstAsset": "Add Your First Asset",
@@ -1018,7 +1018,7 @@
   "marketWord": "Market",
   "cashDividend": "Of which cash dividends",
   "commissionPaid": "Commission paid",
-  "contributionNotReturn": "The percentage comes only from what the market added. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.",
+  "contributionNotReturn": "The percentage comes only from the price effect. Cash dividends are part of the return; they went to your pocket, so the bridge shows them on their own line as an outflow.",
   "annualRatePct": "{pct} a year",
   "@annualRatePct": {
     "placeholders": {
@@ -2343,7 +2343,7 @@
   },
   "noMatchingRecords": "No records match the filter",
   "noTransactionsYet": "No transactions yet",
-  "todaysBalanceChange": "Today's balance change",
+  "todaysBalanceChange": "Today's total change",
   "sinceDateToToday": "{date} → today",
   "@sinceDateToToday": {
     "placeholders": {
@@ -2352,7 +2352,7 @@
       }
     }
   },
-  "balanceChangeSince": "Balance change since {date}",
+  "balanceChangeSince": "Total change since {date}",
   "@balanceChangeSince": {
     "placeholders": {
       "date": {
@@ -2368,7 +2368,7 @@
       }
     }
   },
-  "periodBalanceChange": "{period} balance change",
+  "periodBalanceChange": "{period} total change",
   "@periodBalanceChange": {
     "placeholders": {
       "period": {
@@ -2574,7 +2574,7 @@
       }
     }
   },
-  "shareCardXirr": "Annualized (XIRR)",
+  "shareCardXirr": "Annual return",
   "shareCardDrawdown": "Max drawdown",
   "shareCardPatient": "Most patient",
   "shareCardAllocation": "Allocation",
@@ -3018,11 +3018,11 @@
       }
     }
   },
-  "sectionResult": "RESULT",
-  "sectionWhy": "WHY",
-  "sectionDetail": "DETAIL",
-  "sectionDepth": "DEPTH",
-  "sectionDepthHint": "XIRR, health, advanced metrics, character",
+  "sectionResult": "What happened?",
+  "sectionWhy": "Why?",
+  "sectionDetail": "Details",
+  "sectionDepth": "More",
+  "sectionDepthHint": "Annual return, health, character",
   "myAlarms": "My alerts",
   "viewChipLabel": "View",
   "identityCrypto": "Cryptocurrency",
@@ -3489,9 +3489,9 @@
       }
   },
   "investedRow": "You put in",
-  "marketAddedRow": "Market added",
+  "marketAddedRow": "Price effect",
   "dividendPocketRow": "Dividends you pocketed",
-  "flowBuyBalance": "Bought {flow} · balance {change}",
+  "flowBuyBalance": "Bought {flow} · total {change}",
   "@flowBuyBalance": {
       "placeholders": {
           "flow": {
@@ -3502,7 +3502,7 @@
           }
       }
   },
-  "flowSellBalance": "Sold {flow} · balance {change}",
+  "flowSellBalance": "Sold {flow} · total {change}",
   "@flowSellBalance": {
       "placeholders": {
           "flow": {
@@ -3692,7 +3692,7 @@
   "levelSurveyBack": "Back",
   "todaysReturn": "Today's return",
   "returnSince": "Return since {date}",
-  "balanceChangeInclBuys": "Balance change (incl. buys)",
+  "balanceChangeInclBuys": "Total change (incl. buys)",
   "firstAssetPickTitle": "What are you saving in?",
   "firstAssetPickHint": "Pick one, type the amount; the price fills itself.",
   "firstAssetGoldGram": "Gram gold",

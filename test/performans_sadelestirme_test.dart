@@ -175,7 +175,7 @@ void main() {
           reason: 'temettü hariç — Birikim disiplinin kartıyla aynı sayı');
       expect(find.text('Cebine aldığın temettü'), findsOneWidget);
       expect(find.text('−₺150.045'), findsOneWidget);
-      expect(find.text('Piyasanın kattığı'), findsOneWidget);
+      expect(find.text('Fiyat etkisi'), findsOneWidget);
       // Ana rakam + köprü satırı: aynı sayı iki yerde.
       expect(find.text('+₺136.676'), findsNWidgets(2));
       expect(find.text('₺1.422.472'), findsOneWidget);

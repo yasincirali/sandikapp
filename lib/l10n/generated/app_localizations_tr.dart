@@ -334,15 +334,15 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get levelBeginnerDesc =>
-      'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve XIRR kartları gizlenir.';
+      'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.';
 
   @override
   String get levelIntermediateDesc =>
-      'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve paranın getirisi (XIRR).';
+      'Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.';
 
   @override
   String get levelAdvancedDesc =>
-      'Orta + risk-ayarlı getiri, zamanlama etkisi ve toparlanma (Özet › 1 yıl).';
+      'Orta + riske göre getiri, alım zamanlamanın etkisi ve düşüşten toparlanma (Özet › 1 yıl).';
 
   @override
   String get noAssetsYet => 'Henüz varlık eklenmemiş';
@@ -1836,7 +1836,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get contributionNotReturn =>
-      'Yüzde yalnızca piyasanın kattığından hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.';
+      'Yüzde yalnızca fiyat etkisinden hesaplanır. Nakit temettü de getiriye dahildir; cebine girdiği için köprüde ayrı satırda, çıkış olarak durur.';
 
   @override
   String annualRatePct(String pct) {
@@ -3480,7 +3480,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get noTransactionsYet => 'Henüz işlem yok';
 
   @override
-  String get todaysBalanceChange => 'Bugünkü birikim değişimi';
+  String get todaysBalanceChange => 'Bugünkü toplam değişim';
 
   @override
   String sinceDateToToday(String date) {
@@ -3489,7 +3489,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String balanceChangeSince(String date) {
-    return '$date birikim değişimi';
+    return '$date toplam değişim';
   }
 
   @override
@@ -3499,7 +3499,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String periodBalanceChange(String period) {
-    return '$period birikim değişimi';
+    return '$period toplam değişim';
   }
 
   @override
@@ -3708,7 +3708,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get shareCardXirr => 'Yıllık (XIRR)';
+  String get shareCardXirr => 'Yıllık getiri';
 
   @override
   String get shareCardDrawdown => 'En derin düşüş';
@@ -4148,19 +4148,19 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get sectionResult => 'SONUÇ';
+  String get sectionResult => 'Ne oldu?';
 
   @override
-  String get sectionWhy => 'NEDEN';
+  String get sectionWhy => 'Neden böyle?';
 
   @override
-  String get sectionDetail => 'AYRINTI';
+  String get sectionDetail => 'Ayrıntılar';
 
   @override
-  String get sectionDepth => 'DERİNLİK';
+  String get sectionDepth => 'Daha fazlası';
 
   @override
-  String get sectionDepthHint => 'XIRR, sağlık, ileri metrikler, karakter';
+  String get sectionDepthHint => 'Yıllık getiri, sağlık, karakter';
 
   @override
   String get myAlarms => 'Alarmlarım';
@@ -5178,19 +5178,19 @@ class AppLocalizationsTr extends AppLocalizations {
   String get investedRow => 'Yatırdığın';
 
   @override
-  String get marketAddedRow => 'Piyasanın kattığı';
+  String get marketAddedRow => 'Fiyat etkisi';
 
   @override
   String get dividendPocketRow => 'Cebine aldığın temettü';
 
   @override
   String flowBuyBalance(String flow, String change) {
-    return 'Alım +$flow · birikim $change';
+    return 'Alım +$flow · toplam $change';
   }
 
   @override
   String flowSellBalance(String flow, String change) {
-    return 'Satış −$flow · birikim $change';
+    return 'Satış −$flow · toplam $change';
   }
 
   @override
@@ -5493,7 +5493,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get balanceChangeInclBuys => 'Birikim değişimi (alımlar dahil)';
+  String get balanceChangeInclBuys => 'Toplam değişim (alımlar dahil)';
 
   @override
   String get firstAssetPickTitle => 'Ne biriktiriyorsun?';
