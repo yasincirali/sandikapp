@@ -3530,7 +3530,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get marketOnlyRow => 'Market effect only';
+  String get marketOnlyRow => 'Price effect only';
 
   @override
   String rowExpandedSemantics(String label) {
@@ -3804,7 +3804,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateAppSubtitle => 'Leave a rating on the store';
 
   @override
-  String get todayMarketOnly => 'market effect only';
+  String get todayMarketOnly => 'price effect only';
 
   @override
   String todaySessionOpen(String close) {
@@ -3993,7 +3993,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayClosedShort => 'Closed';
 
   @override
-  String get todayMarketOnlyShort => 'market only';
+  String get todayMarketOnlyShort => 'price effect';
 
   @override
   String get todayGreenShort => 'In profit';

@@ -398,8 +398,10 @@ List<_Adim> _adimlariKur() {
       // 2026-10-02: enflasyon kutusu ölçüm aylarını yazar; ikinci kutu
       // (son 7 gün / artıdaki varlık) dönüşümlü — metin ikisini birden
       // vaat etmez.
+      // 2026-10-04 (sadeleştirme 2, kullanıcı kararı): "piyasa etkisi" →
+      // "fiyat etkisi"; Özet köprüsündeki aynı rakamla tek ad.
       govde: 'Üstte takvim yaprağı ve seans durumu. Büyük rakam günün '
-          'hareketi: sadece piyasa etkisi, yatırdığın para sayılmaz; '
+          'hareketi: sadece fiyat etkisi, yatırdığın para sayılmaz; '
           'yanındaki küçük eğride kesik çizgi gün başı seviyesidir. Sonra iki '
           'sütunlu kutular: enflasyona göre durumun (çubukta getirin, '
           'çizgi TÜFE; başlıkta hangi aylar arasında ölçüldüğü), yanında '

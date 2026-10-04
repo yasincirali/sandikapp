@@ -3503,7 +3503,7 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get marketOnlyRow => 'Sadece piyasa etkisi';
+  String get marketOnlyRow => 'Sadece fiyat etkisi';
 
   @override
   String rowExpandedSemantics(String label) {
@@ -3775,7 +3775,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get rateAppSubtitle => 'Mağazada puan ver';
 
   @override
-  String get todayMarketOnly => 'sadece piyasa etkisi';
+  String get todayMarketOnly => 'sadece fiyat etkisi';
 
   @override
   String todaySessionOpen(String close) {
@@ -3964,7 +3964,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayClosedShort => 'Kapalı';
 
   @override
-  String get todayMarketOnlyShort => 'piyasa etkisi';
+  String get todayMarketOnlyShort => 'fiyat etkisi';
 
   @override
   String get todayGreenShort => 'Artıda';

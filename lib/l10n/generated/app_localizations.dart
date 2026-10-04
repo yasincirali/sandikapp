@@ -5915,7 +5915,7 @@ abstract class AppLocalizations {
   /// No description provided for @marketOnlyRow.
   ///
   /// In tr, this message translates to:
-  /// **'Sadece piyasa etkisi'**
+  /// **'Sadece fiyat etkisi'**
   String get marketOnlyRow;
 
   /// No description provided for @rowExpandedSemantics.
@@ -6365,7 +6365,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayMarketOnly.
   ///
   /// In tr, this message translates to:
-  /// **'sadece piyasa etkisi'**
+  /// **'sadece fiyat etkisi'**
   String get todayMarketOnly;
 
   /// No description provided for @todaySessionOpen.
@@ -6647,7 +6647,7 @@ abstract class AppLocalizations {
   /// No description provided for @todayMarketOnlyShort.
   ///
   /// In tr, this message translates to:
-  /// **'piyasa etkisi'**
+  /// **'fiyat etkisi'**
   String get todayMarketOnlyShort;
 
   /// No description provided for @todayGreenShort.

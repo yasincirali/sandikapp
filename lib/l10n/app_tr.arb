@@ -2437,7 +2437,7 @@
       }
     }
   },
-  "marketOnlyRow": "Sadece piyasa etkisi",
+  "marketOnlyRow": "Sadece fiyat etkisi",
   "rowExpandedSemantics": "{label}, açık. Kapatmak için çift dokun.",
   "@rowExpandedSemantics": {
     "placeholders": {
@@ -2679,7 +2679,7 @@
   "reviewPromptIssue": "Bir sorun var",
   "rateAppTitle": "sandık'ı değerlendir",
   "rateAppSubtitle": "Mağazada puan ver",
-  "todayMarketOnly": "sadece piyasa etkisi",
+  "todayMarketOnly": "sadece fiyat etkisi",
   "todaySessionOpen": "Seans açık · {close} kapanış",
   "@todaySessionOpen": {
     "placeholders": {
@@ -2906,7 +2906,7 @@
     }
   },
   "todayClosedShort": "Kapalı",
-  "todayMarketOnlyShort": "piyasa etkisi",
+  "todayMarketOnlyShort": "fiyat etkisi",
   "todayGreenShort": "Artıda",
   "todayWeekReadyShort": "Özet hazır",
   "todayGoalNewAction": "Yenisini seç",
