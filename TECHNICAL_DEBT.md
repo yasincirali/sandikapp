@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
 
@@ -80,6 +80,43 @@ mutlak değerler birkaç kat küçük, ORANLAR geçerli. Kazançlar
   gerekir — tasarım kararı.
 - Ana toplamın rakamlarının yuvarlanması yapılmadı: günde onlarca kez
   görülen sayı; `DegisimVurgusu` kararı (yalnız renk) korunur.
+
+---
+
+## 🟡 AÇIK — İki varlık yüzeyi: üst özet ortak, grafik ve veri yolu hâlâ iki ayrı (2026-10-04)
+
+**Ne:** Sadeleştirme 2 madde 6 ("aynı varlık sayfası iki kez yazılmış").
+Portföy varlık detayı (`asset_detail_screen.dart` + `asset_detail/`, tam
+ekran) ile varlık sayfası (`varlik_sayfasi.dart`, alt sayfa) için ilk adım
+yapıldı: başlık, fiyat bloğu ve "%x · +₺y · dönem" satırı tek parçaya indi
+(`widgets/varlik_ozeti.dart`, kilit `test/varlik_ozeti_test.dart`). Dönem
+seçici, istatistik ızgarası, aralık çubuğu, iskelet, fon karnesi ve teknik
+panel zaten ortaktı. İki giriş biçimi (tam ekran / alt sayfa) kaldı.
+
+**Bilerek bırakılan — neden:**
+- **Veri yolu.** Detay ekranı BİRİM seriyi pozisyon motorundan
+  (`FiyatKaynagi.birimVarlik` + `...BreakdownAtResolution`) ve canlı birim
+  fiyattan kurar; varlık sayfası `getSymbolHistory` sembol serisini ve son
+  noktasını kullanır. Birleştirmek ya sayfaya `Asset` sokar
+  (`varlik_sayfasi_test`'in yasakladığı sızıntı) ya da detayın "grafik = 1
+  birim, tutar = piyasa etkisi" sözleşmesini bozar. Hesap değişir → yapılmadı.
+- **Grafik.** Detay ~850 satırlık satır içi grafik (MA20, LOG, karşılaştırma,
+  işlem işaretleri, odak daraltma, canlı uç); sayfa `FiyatGrafigi`. Biri
+  ötekinin alt kümesi değil; birleştirme görünür fark doğurur.
+- **Grafik boş/yükleniyor kutusu, istatistik sarmalayıcısı.** Metin stili
+  (bodySmall/bodyMedium) ve aralık kuralı (detayda canlı fiyata genişler,
+  mevduatta/düz seride gizli) farklı; ortaklamak görünür fark.
+- **Takip / eylem.** Detay üst çubukta `TakipYildizi` + alarm zili + alt
+  işlem çubuğu; sayfa alt çubukta Takip et / Portföyüme ekle / Pozisyonuma
+  git. Farklı soru, farklı eylem.
+
+**Maliyet:** Grafikte yapılan bir stil düzeltmesi iki yere yazılır
+(`grafik_stili_birligi_test` ortak stil sabitlerini kilitliyor, yapıyı
+değil).
+
+**Ne zaman:** Detay grafiği `FiyatGrafigi`'ne (ya da tersine) taşınacaksa,
+önce iki grafik `tek_varlik_gorsel_onizleme_test` ile önce/sonra çizilip
+`tek_varlik_sayfasi` bayrağı arkasında denenmeli.
 
 ---
 
