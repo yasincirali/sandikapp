@@ -66,6 +66,8 @@ hatasıdır.
 | R-11 | Sessiz saatler | Ayarlar → Bildirimler → sessiz saati şimdiyi kapsayacak yap → R-01 | `skipped_quiet_hours` > 0 | 🟡 |
 | R-12 | Cron zamanlaması | `select jobname, schedule from cron.job order by jobname;` | `daily-brief='45 6 * * 2-5'`, `weekly-summary='45 6 * * 1'` — Pazartesi İKİSİ BİRDEN koşmamalı | 🟡 |
 | R-13 | Fail-closed kapısı | (yalnız denetimde) Bir function secret'ını geçici sil → tetikle | `503 cron_secret_missing`. Secret yokken çağrı **geçmemeli** — geçiyorsa `CRON_AUTH_ALLOW_UNSET` üretime sızmıştır | 🟡 |
+| R-14 | Fon para akışı turu (0103) | `select public.trigger_akis_gozlem();` → 60-90 sn bekle | `200`, `ok:true`. İlk kurulumda `gun:14` ve `kalan:0`'a inene kadar birkaç tur gerekir (130 günlük pencere); sonraki turlarda `gun:1-2` **normaldir** (son iki gün her tur yeniden çekilir). `ok:false` + 500 = TEFAS yanıt vermedi; sonraki tur kaldığı günden sürer, gün atlamaz | 🟠 |
+| R-15 | Fon para akışı tazeliği | `select max(tarih), count(*) from fon_akis_tur where fon_sayisi > 0;` | `max` son işlem günü (hafta içi öğleden sonra: dün ya da bugün). 3 işlem gününden eskiyse cron ya da secret kopmuştur — R-14'ü koş, `net._http_response`'a bak | 🟠 |
 
 ---
 
@@ -126,6 +128,9 @@ Otomatik testlerle de korunuyor; elle koşması sürüm öncesi duman testi.
 | R-68 | CSV içe aktarma | Toplu Ekle → CSV yapıştır (TR sayı, `;` ayraç) | Önizleme doğru; hatalı satırlar nedeniyle birlikte listelenir | 🟡 |
 | R-69 | Yüzdelik şerit k-anonimliği | Ana ekrandaki getiri sıralaması şeridi | Havuzda <8 kişi varsa "Yakında". **Doğru davranış** — KVKK k-anonimliği, migration eksikliği değil | 🟡 |
 | R-70 | Ham hata sızıntısı | Ağı kapatıp birkaç akışı zorla | Hiçbir ekranda `Exception:` / stack trace görünmez; hepsi `friendlyError` | 🟠 |
+| R-71 | Para akışı kartı — tutarlılık | Bayrak `balina_radari_acik` açıkken bir fonun sayfası → PARA AKIŞI kartı | "Fon büyüklüğü" TEFAS fon sayfasındaki toplam değerle, "veri tarihi" fonun son fiyat günüyle aynı. Son hafta tutarı = o haftanın çubuğu. Hisse/altın/döviz sayfasında kart **yok** | 🟠 |
+| R-72 | Para akışı kartı — veri yokken | Bayrak açık; tabloda satırı olmayan (çok yeni) bir fon ya da çevrimdışı | Kart **hiç çizilmez**, yerinde boşluk kalmaz, hata gösterilmez. Eski sayı "güncel" gibi görünmez (12 günden eski veri de kartı gizler) | 🟠 |
+| R-73 | Para akışı — yanlış alarm denetimi | 10 fonda "Büyük hareketler" listesini TEFAS'taki pay adedi değişimiyle karşılaştır | Her satır gerçek bir pay değişimine denk gelir; küçük (₺50 mn altı) fonda olay yok. Kartta "balina" sözcüğü geçmez | 🟡 |
 
 ---
 

@@ -369,6 +369,14 @@ extension _DetayOzet on _AssetDetailScreenState {
       ticker: widget.asset.ticker,
       dis: const EdgeInsets.only(top: SandikSpace.lg));
 
+  /// Para akışı (Balina B1) — fon karnesinin hemen altında: karne "getirisi
+  /// nasıl", bu kart "parası nereye gidiyor" sorusunu yanıtlar. Çizilmeme
+  /// koşulları ve boşluk kuralı karneyle aynı (bkz. `ParaAkisiKarti`).
+  Widget _paraAkisi() => ParaAkisiKarti(
+      tur: widget.asset.type,
+      ticker: widget.asset.ticker,
+      dis: const EdgeInsets.only(top: SandikSpace.lg));
+
   /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
   /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
   /// değil şirkete ait.

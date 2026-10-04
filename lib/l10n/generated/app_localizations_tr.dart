@@ -5725,4 +5725,81 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiCikis => 'Çıkış yap';
+
+  @override
+  String get flowTitleUpper => 'PARA AKIŞI';
+
+  @override
+  String get flowLastWeekIn => 'Son hafta net giriş';
+
+  @override
+  String get flowLastWeekOut => 'Son hafta net çıkış';
+
+  @override
+  String get flowLastWeekFlat => 'Son hafta net akış';
+
+  @override
+  String flowRange(String from, String to) {
+    return '$from - $to';
+  }
+
+  @override
+  String get flowChartCaption => 'Haftalık net akış · son 8 hafta';
+
+  @override
+  String flowChartSemantics(String amount) {
+    return 'Son 8 haftanın haftalık net para akışı. Son hafta $amount.';
+  }
+
+  @override
+  String flowWeekOf(String date) {
+    return '$date haftası';
+  }
+
+  @override
+  String get flowFundSize => 'Fon büyüklüğü';
+
+  @override
+  String get flowInvestors => 'Yatırımcı sayısı';
+
+  @override
+  String flowInvestorsDelta(String count, String delta) {
+    return '$count ($delta)';
+  }
+
+  @override
+  String get flowEventsTitle => 'Büyük hareketler · son 30 gün';
+
+  @override
+  String flowEventIn(String date) {
+    return 'Büyük giriş · $date';
+  }
+
+  @override
+  String flowEventOut(String date) {
+    return 'Büyük çıkış · $date';
+  }
+
+  @override
+  String flowEventEvidence(String amount, String pct, String times) {
+    return '$amount · fon büyüklüğüne oranı $pct · olağan günlük hareketin $times katı';
+  }
+
+  @override
+  String flowEventInvestors(String delta) {
+    return 'Aynı gün yatırımcı sayısı $delta';
+  }
+
+  @override
+  String get flowNoEvents =>
+      'Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.';
+
+  @override
+  String get flowExplain =>
+      'Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.';
+
+  @override
+  String flowFootnote(String date) {
+    return 'Kaynak: TEFAS · veri tarihi $date. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.';
+  }
 }

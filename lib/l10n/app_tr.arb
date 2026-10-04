@@ -4038,5 +4038,76 @@
   "yasalKapiOnaylaKisa": "Kabul ediyorum",
   "yasalKapiKutuGerekli": "Devam etmek için kutuları işaretlemelisin.",
   "yasalKapiKayitHatasi": "Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.",
-  "yasalKapiCikis": "Çıkış yap"
+  "yasalKapiCikis": "Çıkış yap",
+  "flowTitleUpper": "PARA AKIŞI",
+  "flowLastWeekIn": "Son hafta net giriş",
+  "flowLastWeekOut": "Son hafta net çıkış",
+  "flowLastWeekFlat": "Son hafta net akış",
+  "flowRange": "{from} - {to}",
+  "@flowRange": {
+    "description": "Para akışı kartında son haftanın tarih aralığı: '29 Eyl - 2 Eki'.",
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "flowChartCaption": "Haftalık net akış · son 8 hafta",
+  "flowChartSemantics": "Son 8 haftanın haftalık net para akışı. Son hafta {amount}.",
+  "@flowChartSemantics": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "flowWeekOf": "{date} haftası",
+  "@flowWeekOf": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowFundSize": "Fon büyüklüğü",
+  "flowInvestors": "Yatırımcı sayısı",
+  "flowInvestorsDelta": "{count} ({delta})",
+  "@flowInvestorsDelta": {
+    "description": "Yatırımcı sayısı ve bir önceki işlem gününe göre farkı: '40.518 (+12)'.",
+    "placeholders": {
+      "count": {"type": "String"},
+      "delta": {"type": "String"}
+    }
+  },
+  "flowEventsTitle": "Büyük hareketler · son 30 gün",
+  "flowEventIn": "Büyük giriş · {date}",
+  "@flowEventIn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventOut": "Büyük çıkış · {date}",
+  "@flowEventOut": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventEvidence": "{amount} · fon büyüklüğüne oranı {pct} · olağan günlük hareketin {times} katı",
+  "@flowEventEvidence": {
+    "description": "Olayın kanıt satırı. amount işaretli tutar, pct yüzde, times bir ondalıklı kat.",
+    "placeholders": {
+      "amount": {"type": "String"},
+      "pct": {"type": "String"},
+      "times": {"type": "String"}
+    }
+  },
+  "flowEventInvestors": "Aynı gün yatırımcı sayısı {delta}",
+  "@flowEventInvestors": {
+    "placeholders": {
+      "delta": {"type": "String"}
+    }
+  },
+  "flowNoEvents": "Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.",
+  "flowExplain": "Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.",
+  "flowFootnote": "Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.",
+  "@flowFootnote": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  }
 }

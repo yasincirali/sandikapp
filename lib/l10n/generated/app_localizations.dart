@@ -9620,6 +9620,120 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Çıkış yap'**
   String get yasalKapiCikis;
+
+  /// No description provided for @flowTitleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'PARA AKIŞI'**
+  String get flowTitleUpper;
+
+  /// No description provided for @flowLastWeekIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son hafta net giriş'**
+  String get flowLastWeekIn;
+
+  /// No description provided for @flowLastWeekOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son hafta net çıkış'**
+  String get flowLastWeekOut;
+
+  /// No description provided for @flowLastWeekFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son hafta net akış'**
+  String get flowLastWeekFlat;
+
+  /// Para akışı kartında son haftanın tarih aralığı: '29 Eyl - 2 Eki'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{from} - {to}'**
+  String flowRange(String from, String to);
+
+  /// No description provided for @flowChartCaption.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık net akış · son 8 hafta'**
+  String get flowChartCaption;
+
+  /// No description provided for @flowChartSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 8 haftanın haftalık net para akışı. Son hafta {amount}.'**
+  String flowChartSemantics(String amount);
+
+  /// No description provided for @flowWeekOf.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} haftası'**
+  String flowWeekOf(String date);
+
+  /// No description provided for @flowFundSize.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon büyüklüğü'**
+  String get flowFundSize;
+
+  /// No description provided for @flowInvestors.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırımcı sayısı'**
+  String get flowInvestors;
+
+  /// Yatırımcı sayısı ve bir önceki işlem gününe göre farkı: '40.518 (+12)'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} ({delta})'**
+  String flowInvestorsDelta(String count, String delta);
+
+  /// No description provided for @flowEventsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük hareketler · son 30 gün'**
+  String get flowEventsTitle;
+
+  /// No description provided for @flowEventIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük giriş · {date}'**
+  String flowEventIn(String date);
+
+  /// No description provided for @flowEventOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük çıkış · {date}'**
+  String flowEventOut(String date);
+
+  /// Olayın kanıt satırı. amount işaretli tutar, pct yüzde, times bir ondalıklı kat.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · fon büyüklüğüne oranı {pct} · olağan günlük hareketin {times} katı'**
+  String flowEventEvidence(String amount, String pct, String times);
+
+  /// No description provided for @flowEventInvestors.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı gün yatırımcı sayısı {delta}'**
+  String flowEventInvestors(String delta);
+
+  /// No description provided for @flowNoEvents.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.'**
+  String get flowNoEvents;
+
+  /// No description provided for @flowExplain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.'**
+  String get flowExplain;
+
+  /// No description provided for @flowFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.'**
+  String flowFootnote(String date);
 }
 
 class _AppLocalizationsDelegate

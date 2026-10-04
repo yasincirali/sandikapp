@@ -5777,4 +5777,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiCikis => 'Sign out';
+
+  @override
+  String get flowTitleUpper => 'MONEY FLOW';
+
+  @override
+  String get flowLastWeekIn => 'Net inflow, latest week';
+
+  @override
+  String get flowLastWeekOut => 'Net outflow, latest week';
+
+  @override
+  String get flowLastWeekFlat => 'Net flow, latest week';
+
+  @override
+  String flowRange(String from, String to) {
+    return '$from - $to';
+  }
+
+  @override
+  String get flowChartCaption => 'Weekly net flow · last 8 weeks';
+
+  @override
+  String flowChartSemantics(String amount) {
+    return 'Weekly net money flow for the last 8 weeks. Latest week $amount.';
+  }
+
+  @override
+  String flowWeekOf(String date) {
+    return 'Week of $date';
+  }
+
+  @override
+  String get flowFundSize => 'Fund size';
+
+  @override
+  String get flowInvestors => 'Investors';
+
+  @override
+  String flowInvestorsDelta(String count, String delta) {
+    return '$count ($delta)';
+  }
+
+  @override
+  String get flowEventsTitle => 'Large moves · last 30 days';
+
+  @override
+  String flowEventIn(String date) {
+    return 'Large inflow · $date';
+  }
+
+  @override
+  String flowEventOut(String date) {
+    return 'Large outflow · $date';
+  }
+
+  @override
+  String flowEventEvidence(String amount, String pct, String times) {
+    return '$amount · $pct of fund size · $times× the usual daily move';
+  }
+
+  @override
+  String flowEventInvestors(String delta) {
+    return 'Investors that day $delta';
+  }
+
+  @override
+  String get flowNoEvents =>
+      'No unusually large inflow or outflow in the last 30 days.';
+
+  @override
+  String get flowExplain =>
+      'Net flow is money entering the fund minus money leaving it; price changes are not included.';
+
+  @override
+  String flowFootnote(String date) {
+    return 'Source: TEFAS · data as of $date. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.';
+  }
 }

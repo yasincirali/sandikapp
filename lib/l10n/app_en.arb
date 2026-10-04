@@ -3735,5 +3735,73 @@
   "yasalKapiOnaylaKisa": "I accept",
   "yasalKapiKutuGerekli": "To continue, tick the boxes.",
   "yasalKapiKayitHatasi": "Your acceptance couldn't be saved. Check your connection and try again.",
-  "yasalKapiCikis": "Sign out"
+  "yasalKapiCikis": "Sign out",
+  "flowTitleUpper": "MONEY FLOW",
+  "flowLastWeekIn": "Net inflow, latest week",
+  "flowLastWeekOut": "Net outflow, latest week",
+  "flowLastWeekFlat": "Net flow, latest week",
+  "flowRange": "{from} - {to}",
+  "@flowRange": {
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "flowChartCaption": "Weekly net flow · last 8 weeks",
+  "flowChartSemantics": "Weekly net money flow for the last 8 weeks. Latest week {amount}.",
+  "@flowChartSemantics": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "flowWeekOf": "Week of {date}",
+  "@flowWeekOf": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowFundSize": "Fund size",
+  "flowInvestors": "Investors",
+  "flowInvestorsDelta": "{count} ({delta})",
+  "@flowInvestorsDelta": {
+    "placeholders": {
+      "count": {"type": "String"},
+      "delta": {"type": "String"}
+    }
+  },
+  "flowEventsTitle": "Large moves · last 30 days",
+  "flowEventIn": "Large inflow · {date}",
+  "@flowEventIn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventOut": "Large outflow · {date}",
+  "@flowEventOut": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventEvidence": "{amount} · {pct} of fund size · {times}× the usual daily move",
+  "@flowEventEvidence": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "pct": {"type": "String"},
+      "times": {"type": "String"}
+    }
+  },
+  "flowEventInvestors": "Investors that day {delta}",
+  "@flowEventInvestors": {
+    "placeholders": {
+      "delta": {"type": "String"}
+    }
+  },
+  "flowNoEvents": "No unusually large inflow or outflow in the last 30 days.",
+  "flowExplain": "Net flow is money entering the fund minus money leaving it; price changes are not included.",
+  "flowFootnote": "Source: TEFAS · data as of {date}. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.",
+  "@flowFootnote": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  }
 }

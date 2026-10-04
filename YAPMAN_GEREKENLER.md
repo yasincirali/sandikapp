@@ -1,12 +1,37 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-04 (fon para akışı, 0103); önce: 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-04 Fon para akışı (Balina B1) — dal `feat/balina-fon-akisi` (yerel, push yok)
+
+Fon/BES sayfasında "Para akışı" kartı: son haftanın net girişi/çıkışı, 8
+haftalık çubuklar, fon büyüklüğü, yatırımcı sayısı ve kurala uyan büyük
+giriş/çıkış günleri. Veri TEFAS'tan sunucuda toplanır (`akis-gozlem`, 0103).
+Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma.
+
+- [ ] Dalı incele, uygunsa PR aç / birleştir (birleştirme sende).
+- [ ] **Supabase deploy, hedef `ikisi`:** migration `0103_fon_akisi.sql` +
+      fonksiyon `akis-gozlem`. Yeni secret YOK (`TEFAS_NAV_CRON_SECRET`
+      paylaşılır). Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] İlk doldurma (cron'u beklemeden, etkin sunucuda SQL Editor):
+      `select public.trigger_akis_gozlem();` — 90 sn arayla ~7 kez. Kontrol:
+      `select count(*), min(tarih), max(tarih) from fon_akis_tur where fon_sayisi > 0;`
+      → ~89 gün, `max` son işlem günü.
+- [ ] Yanlış alarm denetimi (R-73): elindeki 10 fonda "Büyük hareketler"
+      listesi makul mü? Yerel ölçüm (2026-10-04, 29 işlem günü, 1.375 fon):
+      günde ~30 olay, fonların %41'inde en az bir olay. Çok geliyorsa eşikler
+      `_shared/balina.ts`'te tek yerde (`SAPMA_KATI`, `BUYUKLUK_ORANI`,
+      `ASGARI_BUYUKLUK`).
+- [ ] Firebase Console › Remote Config: `balina_radari_acik` = `true`
+      (önce kendi cihazına koşulla). Açılışla AYNI sürümde sürüm notu + tur
+      adımı yazılacak (bayrak kapalıyken yazılmadı: görünmeyen özellik
+      duyurulmaz).
 
 ## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
 

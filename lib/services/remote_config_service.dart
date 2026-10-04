@@ -196,6 +196,13 @@ class RemoteConfigService {
     // Kapalıyken GÜNLÜK birebir eski davranışta (hafta sonu düz) kalır.
     'hafta_sonu_yurt_ici_seri': false,
 
+    // Fon sayfasında "Para akışı" kartı ve büyük giriş/çıkış olayları
+    // (Balina B1, 2026-10-04). KAPALI doğar: veri `akis-gozlem` fonksiyonu
+    // ve 0103 cron'u iki sunucuda koşup pencereyi doldurduktan sonra gelir;
+    // tablo boşken kart zaten çizilmez ama bayrak, dağıtım sırasını
+    // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
+    'balina_radari_acik': false,
+
     // ── Sadeleştirme (2026-10-04) ────────────────────────────────────────
     // Kullanıcı isteği: "onboarding öncesi müşteri uygulama yetkinliklerini
     // anlamalı". Girişten önce 4 sayfalık tanıtım + demo birincil düğme.
@@ -579,6 +586,9 @@ class RemoteConfigService {
   /// `_defaults['varlik_islem_cubugu']`. Test/yerel deneme kapıları
   /// `_bayrak`'ta (RC_ACIK yalnız debug/profile'da).
   bool get varlikIslemCubugu => _bayrak('varlik_islem_cubugu');
+
+  /// Fon sayfasında para akışı kartı (0103). Gerekçe `_defaults`'ta.
+  bool get balinaRadariAcik => _bayrak('balina_radari_acik');
 
   /// Varlık ekranının kıyası Karşılaştır ekranına bağlanır — bkz.
   /// `_defaults['tek_kiyas_yuzeyi']`.
