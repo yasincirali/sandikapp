@@ -100,6 +100,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
   }
 
   void _openComparePicker() {
+    if (_kiyasEkraninaGit()) return;
     final pState = ref.read(portfolioProvider).valueOrNull;
     // `aktifLotlar`: tamamen satılmış pozisyon karşılaştırma listesinde
     // çıkmamalı — kullanıcı artık tutmadığı bir varlıkla kıyas kuramaz.
@@ -138,6 +139,30 @@ extension _DetayEylemler on _AssetDetailScreenState {
         );
       },
     );
+  }
+
+  /// Tek kıyas yüzeyi (`tek_kiyas_yuzeyi`, Sadeleştirme 2 madde 8): kıyas
+  /// Karşılaştır ekranında, bu varlık ve ekranın SEÇİLİ dönemi hazır
+  /// açılır. Bayrak kapalıysa ya da varlık orada satır olamıyorsa
+  /// (`ComparisonScreen.varligiAcabilir` — mevduat, BES, elle fiyat)
+  /// `false` döner ve eski grafik içi seçici açılır.
+  ///
+  /// Varlık `_canli.asset`: ekranın kendi birim serisini kuran AYNI
+  /// pozisyon (`_loadHistory`), iki ekranın çizgisi aynı girdiden çıksın.
+  bool _kiyasEkraninaGit() {
+    if (!RemoteConfigService.instance.tekKiyasYuzeyi) return false;
+    final varlik = _canli.asset;
+    if (!ComparisonScreen.varligiAcabilir(varlik)) return false;
+    final gun = _periods[_selectedPeriodIdx].days;
+    final donem = SummaryPeriod.values.where((p) => p.days == gun).firstOrNull;
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) =>
+            ComparisonScreen(baslangicVarligi: varlik, baslangicDonemi: donem),
+      ),
+    );
+    return true;
   }
 
   /// Alttaki sabit "Al · Sat · Temettü" çubuğu (Sadeleştirme 2, madde 6,

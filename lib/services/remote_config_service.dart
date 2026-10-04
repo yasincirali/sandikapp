@@ -222,6 +222,16 @@ class RemoteConfigService {
     // birebir eski; kaydırma her iki durumda da kısayol olarak kalır.
     'varlik_islem_cubugu': false,
 
+    // Tek kıyas yüzeyi (Sadeleştirme 2, liste madde 8, 2026-10-04). Varlık
+    // ekranındaki "Karşılaştır" şeridi kendi seçicisini (BIST100 + 3 döviz +
+    // altın kataloğu) açmak yerine Karşılaştır ekranını bu varlık ve aynı
+    // dönem seçili açar — "X, Y'ye göre nasıl gitti" sorusunun tek yeri.
+    // Premium'un "1 seri ücretsiz" kapısı da böylece tek yerde kurulur.
+    // Özet'teki "Başka yere koysaydın" kartı BAĞLANMAZ: o para ağırlıklı
+    // (kendi akışlarınla) bir cevap, Karşılaştır fiyat yüzdesi — yan yana
+    // iki farklı "altın getirisi" gösterirdi. Kapalıyken birebir eski.
+    'tek_kiyas_yuzeyi': false,
+
     // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
     // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
     // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
@@ -442,6 +452,10 @@ class RemoteConfigService {
   /// `_defaults['varlik_islem_cubugu']`. Test/yerel deneme kapıları
   /// `_bayrak`'ta (RC_ACIK yalnız debug/profile'da).
   bool get varlikIslemCubugu => _bayrak('varlik_islem_cubugu');
+
+  /// Varlık ekranının kıyası Karşılaştır ekranına bağlanır — bkz.
+  /// `_defaults['tek_kiyas_yuzeyi']`.
+  bool get tekKiyasYuzeyi => _bayrak('tek_kiyas_yuzeyi');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

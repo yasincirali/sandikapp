@@ -59,6 +59,7 @@ import '../providers/sozlesme_provider.dart';
 import '../services/sozlesme_deposu.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/pozisyon_islemleri.dart';
+import 'comparison_screen.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
