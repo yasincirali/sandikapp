@@ -5633,4 +5633,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vitrinPriceUnknown => 'No price yet';
+
+  @override
+  String get rankingTitle => 'Rankings';
+
+  @override
+  String get rankingTabPartners => 'My partners';
+
+  @override
+  String get rankingTabEveryone => 'Everyone';
 }

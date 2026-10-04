@@ -9362,6 +9362,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Fiyat henüz yok'**
   String get vitrinPriceUnknown;
+
+  /// No description provided for @rankingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama'**
+  String get rankingTitle;
+
+  /// No description provided for @rankingTabPartners.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortaklarım'**
+  String get rankingTabPartners;
+
+  /// No description provided for @rankingTabEveryone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Herkes'**
+  String get rankingTabEveryone;
 }
 
 class _AppLocalizationsDelegate

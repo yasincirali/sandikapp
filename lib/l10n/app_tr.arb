@@ -3978,5 +3978,8 @@
   "vitrinStatementHint": "Aracı kurum PDF, Excel ya da CSV; hepsi tek seferde",
   "vitrinStatementHintShort": "PDF, Excel ya da CSV; tek seferde",
   "vitrinTapToAdd": "Eklemek için dokun",
-  "vitrinPriceUnknown": "Fiyat henüz yok"
+  "vitrinPriceUnknown": "Fiyat henüz yok",
+  "rankingTitle": "Sıralama",
+  "rankingTabPartners": "Ortaklarım",
+  "rankingTabEveryone": "Herkes"
 }

@@ -90,6 +90,10 @@ void main() {
     test('varlik_islem_cubugu kapalı doğar', () {
       expect(varsayilan('varlik_islem_cubugu'), 'false');
     });
+
+    test('siralama_tek_sayfa kapalı doğar', () {
+      expect(varsayilan('siralama_tek_sayfa'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {

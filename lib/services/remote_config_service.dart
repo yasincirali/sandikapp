@@ -235,6 +235,16 @@ class RemoteConfigService {
     // Son 7 gün, artıdaki varlık, aylık özet ve olay ayak notu bu düzende
     // yok. Kapalıyken kart birebir "D · Sakin pano".
     'bugun_karti_kiyas': false,
+
+    // Yarış + Zirve tek "Sıralama" sayfası (sadeleştirme listesi madde 8,
+    // 2026-10-04): iki sekme — "Ortaklarım" (Yarış'ın ortak sıralaması) ve
+    // "Herkes" (Zirvedeki Portföyler). Performans kupası, Profil kartı ve
+    // Zirve kartı bu sayfayı uygun sekmeyle açar. Rıza akışları (yarış
+    // opt-in'i, zirve açık rızası 0091) gövdelerle birlikte AYNEN taşınır.
+    // Kapalıyken iki ayrı ekran birebir eski. Önceki not "havuz büyüyünce"
+    // diyordu; kullanıcı 2026-10-04'te sadeleştirmenin tüm adımlarına devam
+    // dedi → kapalı bayrakla gelir, açma kararı havuz büyüklüğüne göre.
+    'siralama_tek_sayfa': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -425,6 +435,9 @@ class RemoteConfigService {
   bool get tekOrtakSecici => _bayrak('tek_ortak_secici');
 
   bool get bugunKartiKiyas => _bayrak('bugun_karti_kiyas');
+
+  /// Yarış + Zirve tek Sıralama sayfası — bkz. `_defaults['siralama_tek_sayfa']`.
+  bool get siralamaTekSayfa => _bayrak('siralama_tek_sayfa');
 
   /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
   /// `_defaults['canli_etkinlik_dakikalik']`.

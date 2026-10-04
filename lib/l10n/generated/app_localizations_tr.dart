@@ -5581,4 +5581,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get vitrinPriceUnknown => 'Fiyat henüz yok';
+
+  @override
+  String get rankingTitle => 'Sıralama';
+
+  @override
+  String get rankingTabPartners => 'Ortaklarım';
+
+  @override
+  String get rankingTabEveryone => 'Herkes';
 }
