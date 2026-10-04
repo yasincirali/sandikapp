@@ -9410,6 +9410,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Baz para birimi'**
   String get settingsBaseCurrencyLabel;
+
+  /// No description provided for @tekOnayBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal Koşullar'**
+  String get tekOnayBaslik;
+
+  /// Tek onay kutusunun açıklaması; eski iki kutunun gövde metinlerinden derlendi. ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).'**
+  String tekOnayAciklama(String ulke);
+
+  /// No description provided for @tekOnayUlkeBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'yurt dışı'**
+  String get tekOnayUlkeBilinmiyor;
+
+  /// Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayRizaBaglanti).
+  ///
+  /// In tr, this message translates to:
+  /// **'{kosullar}\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.'**
+  String tekOnayCumle(String kosullar, String riza);
+
+  /// No description provided for @tekOnayKosullarBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yasal Koşulları, KVKK Aydınlatma Metni'**
+  String get tekOnayKosullarBaglanti;
+
+  /// No description provided for @tekOnayRizaBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'açık rıza'**
+  String get tekOnayRizaBaglanti;
+
+  /// No description provided for @tekOnayGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.'**
+  String get tekOnayGerekli;
 }
 
 class _AppLocalizationsDelegate

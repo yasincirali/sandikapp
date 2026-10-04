@@ -5650,4 +5650,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBaseCurrencyLabel => 'Base currency';
+
+  @override
+  String get tekOnayBaslik => 'Legal Terms';
+
+  @override
+  String tekOnayAciklama(String ulke) {
+    return 'The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ($ulke) and Firebase (USA/global); you can withdraw your explicit consent at any time (account deletion).';
+  }
+
+  @override
+  String get tekOnayUlkeBilinmiyor => 'abroad';
+
+  @override
+  String tekOnayCumle(String kosullar, String riza) {
+    return 'I accept the $kosullar and confirm I am 18+; I give my $riza to the transfer of my data abroad.';
+  }
+
+  @override
+  String get tekOnayKosullarBaglanti => 'Legal Terms and KVKK Privacy Notice';
+
+  @override
+  String get tekOnayRizaBaglanti => 'explicit consent';
+
+  @override
+  String get tekOnayGerekli =>
+      'To continue, accept the legal terms and give explicit consent to the cross-border data transfer.';
 }

@@ -43,9 +43,16 @@ debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
   ölü kod ve okunmayan `paywall_variant` / `free_signal_slots_per_day`
   bayrakları silindi; köprüde "−₺0" artık "₺0"; Bugün kartında kıvılcım
   çizilince tutarın küçülmesi düzeltildi.
-- [ ] **Hukuki karar (kod yazılmadı):** kayıttaki iki onay kutusunu
+- [ ] **Hukuki karar:** kayıttaki iki onay kutusunu
       (koşullar + KVKK + 18 yaş / yurt dışı aktarım açık rızası) tek kutuya
-      indirmek avukat onayı ister. Onay gelirse tek PR.
+      indirmek avukat onayı ister. **Kod hazır, bayrak `tek_onay_kutusu`
+      (dal `feat/sade2-tek-onay`); avukat onayı gelince aç.** Avukata
+      gösterilecek cümle: "Yasal Koşulları, KVKK Aydınlatma Metni'ni ve 18+
+      olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına açık
+      rıza veriyorum." (iki bağlantı cümle içinde). Sorulacak ek nokta:
+      bugün de (bayrak kapalıyken) sunucuya ayrı bir "açık rıza" kaydı
+      yazılmıyor — OTP sonrası tek `disclaimer_acceptances` satırı düşüyor;
+      iki kutu yalnız istemcide kapı. Ayrı rıza kaydı istenirse ayrı iş.
 - Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
   (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
   vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).

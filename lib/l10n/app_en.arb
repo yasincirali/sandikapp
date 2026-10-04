@@ -3700,5 +3700,12 @@
   "settingsAdvancedUpper": "ADVANCED",
   "settingsAdvancedSemantics": "Advanced settings",
   "settingsThemeLabel": "Theme",
-  "settingsBaseCurrencyLabel": "Base currency"
+  "settingsBaseCurrencyLabel": "Base currency",
+  "tekOnayBaslik": "Legal Terms",
+  "tekOnayAciklama": "The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ({ulke}) and Firebase (USA/global); you can withdraw your explicit consent at any time (account deletion).",
+  "tekOnayUlkeBilinmiyor": "abroad",
+  "tekOnayCumle": "I accept the {kosullar} and confirm I am 18+; I give my {riza} to the transfer of my data abroad.",
+  "tekOnayKosullarBaglanti": "Legal Terms and KVKK Privacy Notice",
+  "tekOnayRizaBaglanti": "explicit consent",
+  "tekOnayGerekli": "To continue, accept the legal terms and give explicit consent to the cross-border data transfer."
 }

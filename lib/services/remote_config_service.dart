@@ -234,6 +234,18 @@ class RemoteConfigService {
     // iki farklı "altın getirisi" gösterirdi. Kapalıyken birebir eski.
     'tek_kiyas_yuzeyi': false,
 
+    // Kayıtta tek onay kutusu (Sadeleştirme 2, liste madde 1, 2026-10-04).
+    // İki zorunlu kutu (Yasal Koşullar + KVKK aydınlatma + 18 yaş / yurt dışı
+    // aktarım açık rızası) tek cümleli tek kutuya iner; cümlede iki belgeye
+    // bağlantı vardır. Kutu işaretlenince ekran İKİ onay bayrağını da
+    // eskisi gibi ayrı ayrı açar — kayıt kapısı, `register` çağrısı ve OTP
+    // sonrası `disclaimer_acceptances` satırı birebir aynı; sunucu/şema
+    // değişmez. HUKUKİ KARAR BEKLER: KVKK m.9 açık rızasının aydınlatma
+    // onayından ayrı alınması gerekip gerekmediği avukata soruldu; onay
+    // gelmeden açılmaz (YAPMAN_GEREKENLER "Sadeleştirme 2. parti").
+    // Kapalıyken kayıt formu birebir eski (iki kutu).
+    'tek_onay_kutusu': false,
+
     // "Kimin portföyü?" seçicisinin tek görünüşü (sadeleştirme madde 8,
     // 2026-10-04). Portföy, Hareketler, Takip kıyası ve Performans aynı
     // `OrtakSecici`'yi (ortak `SandikSegment` kabuğu) çizer. Kapalıyken her
@@ -476,6 +488,10 @@ class RemoteConfigService {
   /// Varlık ekranının kıyası Karşılaştır ekranına bağlanır — bkz.
   /// `_defaults['tek_kiyas_yuzeyi']`.
   bool get tekKiyasYuzeyi => _bayrak('tek_kiyas_yuzeyi');
+
+  /// Kayıtta iki onay kutusu yerine tek kutu — bkz.
+  /// `_defaults['tek_onay_kutusu']` (hukuki onay bekler, varsayılan kapalı).
+  bool get tekOnayKutusu => _bayrak('tek_onay_kutusu');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

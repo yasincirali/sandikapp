@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart'
     show
         Colors,
@@ -19,6 +20,7 @@ import '../services/auth_service.dart';
 import '../services/kullanici_adi_denetimi.dart';
 import '../services/supabase_service.dart';
 import '../services/disclaimer_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
@@ -29,6 +31,17 @@ import '../l10n/l10n.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
+
+  /// Yalnız widget testi: `AuthService.register` yerine çağrılır (Supabase
+  /// testte ayağa kalkmaz). Tek onay kutusu bayrağının (`tek_onay_kutusu`)
+  /// kayıt isteğini DEĞİŞTİRMEDİĞİ bununla kanıtlanır — iki yolda aynı
+  /// argümanlar, onay alanı yok (onay kaydı OTP sonrası `kabulKaydet`).
+  @visibleForTesting
+  static Future<void> Function({
+    required String email,
+    required String displayName,
+    required String password,
+  })? kayitIstegiTesti;
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -58,6 +71,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // Bu true olmadan ilgili checkbox'ı tıklayarak işaretleyemez.
   bool _termsDocConfirmed = false;
   bool _consentDocConfirmed = false;
+
+  /// Tek onay kutusu (Sadeleştirme 2 madde 1, bayrak `tek_onay_kutusu`,
+  /// varsayılan KAPALI — hukuki onay bekler). Açıkken iki kutu tek cümleli
+  /// tek kutuya iner ama durum yine İKİ bayraktır: kutu `_termsAccepted` ile
+  /// `_consentAccepted`'ı birlikte açar/kapar. Kapı (`_canSubmit`,
+  /// `_register`, `_eksikleriGoster`) ve OTP sonrası onay kaydı bu iki
+  /// bayrağı eskisi gibi okur; kayıt biçimi ve onay sayısı değişmez.
+  /// Ekran açılışında bir kez okunur: form doldurulurken Remote Config
+  /// yenilenirse kutu sayısı göz önünde değişmesin.
+  late final bool _tekOnay = RemoteConfigService.instance.tekOnayKutusu;
+  late final TapGestureRecognizer _kosullarBaglantisi = TapGestureRecognizer()
+    ..onTap = _openTermsDoc;
+  late final TapGestureRecognizer _rizaBaglantisi = TapGestureRecognizer()
+    ..onTap = _openConsentDoc;
   bool _emailTouched = false; // focus kaybedince hata göster
   // "Kayıt ol"a eksik formla basıldı mı? Basıldıysa her alan kendi hatasını
   // gösterir (yalnızca ilk eksik bir uyarıda değil) ve şifre kuralları
@@ -91,6 +118,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (passError != null) return passError;
     if (_passCtrl.text != _passConfirmCtrl.text) {
       return context.l10n.registerPasswordsMismatch;
+    }
+    if (_tekOnay && !(_termsAccepted && _consentAccepted)) {
+      return context.l10n.tekOnayGerekli;
     }
     if (!_termsAccepted) return context.l10n.termsMustAccept;
     if (!_consentAccepted) {
@@ -156,6 +186,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _passConfirmCtrl.dispose();
+    _kosullarBaglantisi.dispose();
+    _rizaBaglantisi.dispose();
     super.dispose();
   }
 
@@ -166,11 +198,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final confirmed = await pushGuarded<bool>(
       context,
       adaptiveRoute(
-        builder: (_) => const LegalDocScreen(
+        // Tek kutuda belge yalnız okunur: onay kutunun kendisidir; belgeden
+        // dönen "onayladım" iki bayraktan yalnız birini açıp kutuyu yarım
+        // bırakırdı.
+        builder: (_) => LegalDocScreen(
           title: 'Yasal Koşullar & KVKK Aydınlatma',
           icon: Icons.gavel_rounded,
           blocks: LegalDocs.terms,
-          confirmMode: true,
+          confirmMode: !_tekOnay,
           confirmButtonLabel: 'Okudum ve onaylıyorum',
         ),
       ),
@@ -195,7 +230,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
           icon: Icons.public_rounded,
           blocks: LegalDocs.privacy,
-          confirmMode: true,
+          confirmMode: !_tekOnay,
           confirmButtonLabel: 'Okudum ve açık rıza veriyorum',
         ),
       ),
@@ -229,11 +264,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       // Sadece AuthService.register çağırıp OtpVerificationScreen'e
       // yönlendiriyoruz. Disclaimer/onboarding OTP sonrasına ertelenir
       // (_AuthGate zaten user != null olduğunda ilgili akışa yönlendirir).
-      await AuthService.instance.register(
-        email: emailForOtp,
-        displayName: _nameCtrl.text,
-        password: _passCtrl.text,
-      );
+      final testIstegi = RegisterScreen.kayitIstegiTesti;
+      if (testIstegi != null) {
+        await testIstegi(
+          email: emailForOtp,
+          displayName: _nameCtrl.text,
+          password: _passCtrl.text,
+        );
+      } else {
+        await AuthService.instance.register(
+          email: emailForOtp,
+          displayName: _nameCtrl.text,
+          password: _passCtrl.text,
+        );
+      }
       // `register` döndüyse sunucu doğrulama kodunu gönderdi (confirm-email
       // açık). `mounted`'tan önce: ekran kapanmış olsa da kod gitti.
       // "Yeni kod iste" tekrar gönderimidir, huniye ayrı adım yazılmaz.
@@ -257,6 +301,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  /// Tek onay cümlesi, iki belge bağlantısı cümlenin İÇİNDE. Metin tek
+  /// l10n anahtarından gelir (dile göre bağlantıların yeri değişir); yer
+  /// tutuculara ayraç verilip bölünür, her ayracın yerine bağlantı girer.
+  InlineSpan _tekOnayCumlesi(BuildContext context) {
+    const kosulAyraci = '\u0001';
+    const rizaAyraci = '\u0002';
+    final ham = context.l10n.tekOnayCumle(kosulAyraci, rizaAyraci);
+    final baglanti = TextStyle(
+      color: context.c.amberText,
+      decoration: TextDecoration.underline,
+      decorationColor: context.c.amberText,
+    );
+    final parcalar = <InlineSpan>[];
+    var i = 0;
+    for (final m in RegExp('[$kosulAyraci$rizaAyraci]').allMatches(ham)) {
+      if (m.start > i) parcalar.add(TextSpan(text: ham.substring(i, m.start)));
+      final kosul = m[0] == kosulAyraci;
+      parcalar.add(TextSpan(
+        text: kosul
+            ? context.l10n.tekOnayKosullarBaglanti
+            : context.l10n.tekOnayRizaBaglanti,
+        style: baglanti,
+        recognizer: kosul ? _kosullarBaglantisi : _rizaBaglantisi,
+      ));
+      i = m.end;
+    }
+    if (i < ham.length) parcalar.add(TextSpan(text: ham.substring(i)));
+    return TextSpan(children: parcalar);
   }
 
   @override
@@ -475,65 +549,98 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 28),
 
-              // ── Yasal Koşullar (birleşik — UC1 fix) ──────────────────────
-              // Disclaimer + KVKK aydınlatma + 18+ yaş tek onay altında.
-              // Detaylar linkler üzerinden tam metinle ulaşılabilir.
-              _LegalConsentBox(
-                icon: Icons.gavel_rounded,
-                title: 'Yasal Koşullar',
-                versionLabel: 'v$disclaimerVersion',
-                bodyText:
-                    '• 18 yaşından büyük olduğunu beyan edersin.\n'
-                    '• Uygulama yatırım tavsiyesi değildir; gösterilen '
-                    'fiyatlar ve teknik analiz bilgi amaçlıdır.\n'
-                    '• Kayıt ile Kullanım Koşulları, KVKK Aydınlatma '
-                    'Metni ve Gizlilik Politikası\'nı kabul etmiş '
-                    'sayılırsın.',
-                checkboxLabel:
-                    'Yasal Koşulları, KVKK Aydınlatma Metni\'ni ve '
-                    '18+ olduğumu kabul ediyorum.',
-                linkLabel: _termsDocConfirmed
-                    ? 'Belgeyi tekrar aç'
-                    : 'Belgeyi aç ve onayla',
-                accepted: _termsAccepted,
-                docConfirmed: _termsDocConfirmed,
-                error: _termsError,
-                errorMessage: 'Devam etmek için yasal koşulları kabul etmelisin.',
-                onToggle: () => setState(() {
-                  _termsAccepted = !_termsAccepted;
-                  if (_termsAccepted) _termsError = false;
-                }),
-                onShowText: _openTermsDoc,
-              ),
-              const SizedBox(height: 14),
+              if (_tekOnay)
+                // ── Tek onay (bayrak `tek_onay_kutusu`) ─────────────────────
+                // İki kutunun cümleleri tek cümlede; iki belgeye cümle içi
+                // bağlantı. İşaretlemek iki onayı birlikte verir (bkz.
+                // `_tekOnay`). Hata kutunun altında, eski desenle.
+                _LegalConsentBox(
+                  icon: Icons.gavel_rounded,
+                  title: context.l10n.tekOnayBaslik,
+                  versionLabel: 'v$disclaimerVersion',
+                  // Ülke bağlanılan projeden (köprü sürümü), eski açık rıza
+                  // kutusuyla aynı kaynak — bkz. LegalDocs._ulke.
+                  bodyText: context.l10n.tekOnayAciklama(
+                      SunucuSecimi.instance.aktifOrNull?.ulke ??
+                          context.l10n.tekOnayUlkeBilinmiyor),
+                  checkboxLabel: context.l10n.tekOnayCumle(
+                      context.l10n.tekOnayKosullarBaglanti,
+                      context.l10n.tekOnayRizaBaglanti),
+                  checkboxSpan: _tekOnayCumlesi(context),
+                  accepted: _termsAccepted && _consentAccepted,
+                  error: _termsError || _consentError,
+                  errorMessage: context.l10n.tekOnayGerekli,
+                  onToggle: () => setState(() {
+                    final yeni = !(_termsAccepted && _consentAccepted);
+                    _termsAccepted = yeni;
+                    _consentAccepted = yeni;
+                    if (yeni) {
+                      _termsError = false;
+                      _consentError = false;
+                    }
+                  }),
+                )
+              else ...[
+                // ── Yasal Koşullar (birleşik — UC1 fix) ──────────────────────
+                // Disclaimer + KVKK aydınlatma + 18+ yaş tek onay altında.
+                // Detaylar linkler üzerinden tam metinle ulaşılabilir.
+                _LegalConsentBox(
+                  icon: Icons.gavel_rounded,
+                  title: 'Yasal Koşullar',
+                  versionLabel: 'v$disclaimerVersion',
+                  bodyText:
+                      '• 18 yaşından büyük olduğunu beyan edersin.\n'
+                      '• Uygulama yatırım tavsiyesi değildir; gösterilen '
+                      'fiyatlar ve teknik analiz bilgi amaçlıdır.\n'
+                      '• Kayıt ile Kullanım Koşulları, KVKK Aydınlatma '
+                      'Metni ve Gizlilik Politikası\'nı kabul etmiş '
+                      'sayılırsın.',
+                  checkboxLabel:
+                      'Yasal Koşulları, KVKK Aydınlatma Metni\'ni ve '
+                      '18+ olduğumu kabul ediyorum.',
+                  linkLabel: _termsDocConfirmed
+                      ? 'Belgeyi tekrar aç'
+                      : 'Belgeyi aç ve onayla',
+                  accepted: _termsAccepted,
+                  docConfirmed: _termsDocConfirmed,
+                  error: _termsError,
+                  errorMessage: 'Devam etmek için yasal koşulları kabul etmelisin.',
+                  onToggle: () => setState(() {
+                    _termsAccepted = !_termsAccepted;
+                    if (_termsAccepted) _termsError = false;
+                  }),
+                  onShowText: _openTermsDoc,
+                ),
+                const SizedBox(height: 14),
 
-              // ── Açık Rıza — Yurt Dışı Veri Aktarımı (ayrı kalır) ─────────
-              // KVKK Madde 9(1) zorunluluğu: açık rıza birleştirilemez.
-              _LegalConsentBox(
-                icon: Icons.public_rounded,
-                title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
-                bodyText:
-                    // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
-                    'Verilerin Supabase (${SunucuSecimi.instance.aktifOrNull?.ulke ?? 'yurt dışı'}) ve Firebase (ABD/Küresel) '
-                    'üzerinde saklanacak. KVKK Madde 9(1) gereği açık rıza '
-                    'gerekir. İstediğin zaman geri çekebilirsin (hesap silme).',
-                checkboxLabel:
-                    'Verilerimin yurt dışına aktarılmasına açık rıza '
-                    'veriyorum.',
-                linkLabel: _consentDocConfirmed
-                    ? 'Belgeyi tekrar aç'
-                    : 'Belgeyi aç ve onayla',
-                accepted: _consentAccepted,
-                docConfirmed: _consentDocConfirmed,
-                error: _consentError,
-                errorMessage: 'Devam etmek için yurt dışı aktarım rızasını '
-                    'kabul etmelisin.',
-                onToggle: () => setState(() {
-                  _consentAccepted = !_consentAccepted;
-                  if (_consentAccepted) _consentError = false;
-                }),
-                onShowText: _openConsentDoc,
-              ),
+                // ── Açık Rıza — Yurt Dışı Veri Aktarımı (ayrı kalır) ─────────
+                // KVKK Madde 9(1) zorunluluğu: açık rıza birleştirilemez.
+                _LegalConsentBox(
+                  icon: Icons.public_rounded,
+                  title: 'Açık Rıza: Yurt Dışı Veri Aktarımı',
+                  bodyText:
+                      // Ülke bağlanılan projeden (köprü sürümü) — bkz. LegalDocs._ulke.
+                      'Verilerin Supabase (${SunucuSecimi.instance.aktifOrNull?.ulke ?? 'yurt dışı'}) ve Firebase (ABD/Küresel) '
+                      'üzerinde saklanacak. KVKK Madde 9(1) gereği açık rıza '
+                      'gerekir. İstediğin zaman geri çekebilirsin (hesap silme).',
+                  checkboxLabel:
+                      'Verilerimin yurt dışına aktarılmasına açık rıza '
+                      'veriyorum.',
+                  linkLabel: _consentDocConfirmed
+                      ? 'Belgeyi tekrar aç'
+                      : 'Belgeyi aç ve onayla',
+                  accepted: _consentAccepted,
+                  docConfirmed: _consentDocConfirmed,
+                  error: _consentError,
+                  errorMessage: 'Devam etmek için yurt dışı aktarım rızasını '
+                      'kabul etmelisin.',
+                  onToggle: () => setState(() {
+                    _consentAccepted = !_consentAccepted;
+                    if (_consentAccepted) _consentError = false;
+                  }),
+                  onShowText: _openConsentDoc,
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Kayıt Ol butonu — GestureDetector(opaque) instead of
@@ -671,6 +778,10 @@ class _LegalConsentBox extends StatelessWidget {
   final String? versionLabel;
   final String bodyText;
   final String checkboxLabel;
+
+  /// Verilirse kutu cümlesi bununla çizilir (cümle içi bağlantılar için);
+  /// [checkboxLabel] yine düz metin karşılığıdır (erişilebilirlik etiketi).
+  final InlineSpan? checkboxSpan;
   final String? linkLabel;
   final VoidCallback? onShowText;
   final bool accepted;
@@ -687,6 +798,7 @@ class _LegalConsentBox extends StatelessWidget {
     this.versionLabel,
     required this.bodyText,
     required this.checkboxLabel,
+    this.checkboxSpan,
     this.linkLabel,
     this.onShowText,
     required this.accepted,
@@ -806,14 +918,21 @@ class _LegalConsentBox extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    docConfirmed
-                        ? checkboxLabel
-                        : '$checkboxLabel\n(Önce belgeyi oku)',
-                    style: context.t.titleSmall?.copyWith(
-                      color: error ? context.c.loss : context.c.text58,
-                    ),
-                  ),
+                  child: checkboxSpan != null
+                      ? Text.rich(
+                          checkboxSpan!,
+                          style: context.t.titleSmall?.copyWith(
+                            color: error ? context.c.loss : context.c.text58,
+                          ),
+                        )
+                      : Text(
+                          docConfirmed
+                              ? checkboxLabel
+                              : '$checkboxLabel\n(Önce belgeyi oku)',
+                          style: context.t.titleSmall?.copyWith(
+                            color: error ? context.c.loss : context.c.text58,
+                          ),
+                        ),
                 ),
               ],
             ),

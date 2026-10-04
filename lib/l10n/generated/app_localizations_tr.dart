@@ -5598,4 +5598,31 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get settingsBaseCurrencyLabel => 'Baz para birimi';
+
+  @override
+  String get tekOnayBaslik => 'Yasal Koşullar';
+
+  @override
+  String tekOnayAciklama(String ulke) {
+    return 'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ($ulke) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).';
+  }
+
+  @override
+  String get tekOnayUlkeBilinmiyor => 'yurt dışı';
+
+  @override
+  String tekOnayCumle(String kosullar, String riza) {
+    return '$kosullar\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına $riza veriyorum.';
+  }
+
+  @override
+  String get tekOnayKosullarBaglanti =>
+      'Yasal Koşulları, KVKK Aydınlatma Metni';
+
+  @override
+  String get tekOnayRizaBaglanti => 'açık rıza';
+
+  @override
+  String get tekOnayGerekli =>
+      'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.';
 }

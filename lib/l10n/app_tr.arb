@@ -3958,5 +3958,25 @@
   "settingsAdvancedUpper": "GELİŞMİŞ",
   "settingsAdvancedSemantics": "Gelişmiş ayarlar",
   "settingsThemeLabel": "Tema",
-  "settingsBaseCurrencyLabel": "Baz para birimi"
+  "settingsBaseCurrencyLabel": "Baz para birimi",
+  "tekOnayBaslik": "Yasal Koşullar",
+  "tekOnayAciklama": "Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).",
+  "@tekOnayAciklama": {
+    "description": "Tek onay kutusunun açıklaması; eski iki kutunun gövde metinlerinden derlendi. ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.",
+    "placeholders": {
+      "ulke": {"type": "String"}
+    }
+  },
+  "tekOnayUlkeBilinmiyor": "yurt dışı",
+  "tekOnayCumle": "{kosullar}'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.",
+  "@tekOnayCumle": {
+    "description": "Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayRizaBaglanti).",
+    "placeholders": {
+      "kosullar": {"type": "String"},
+      "riza": {"type": "String"}
+    }
+  },
+  "tekOnayKosullarBaglanti": "Yasal Koşulları, KVKK Aydınlatma Metni",
+  "tekOnayRizaBaglanti": "açık rıza",
+  "tekOnayGerekli": "Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin."
 }
