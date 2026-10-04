@@ -4109,5 +4109,64 @@
     "placeholders": {
       "date": {"type": "String"}
     }
+  },
+  "flowStreakIn": "{count} haftadır üst üste net giriş",
+  "@flowStreakIn": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowStreakOut": "{count} haftadır üst üste net çıkış",
+  "@flowStreakOut": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriod1m": "Son 1 ay",
+  "flowPeriod3m": "Son 3 ay",
+  "flowPeriodValue": "{amount} · {pct}",
+  "@flowPeriodValue": {
+    "description": "Dönem akışı: işaretli tutar ve dönem başındaki fon büyüklüğüne oranı.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriodNote": "Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.",
+  "flowDecompose": "Son 1 ayda fon büyüklüğü {total} değişti: fiyat etkisi {price}, para akışı {flow}.",
+  "@flowDecompose": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "flow": {
+        "type": "String"
+      }
+    }
+  },
+  "flowEventEvidenceMulti": "{amount} · fon büyüklüğüne oranı {pct} · {days} işlem günü üst üste",
+  "@flowEventEvidenceMulti": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
   }
 }

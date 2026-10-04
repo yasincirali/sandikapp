@@ -283,7 +283,7 @@ Deno.serve(async (request) => {
       // silinip yeniden yazılır — yeniden çekilen günde artık kurala uymayan
       // bir satır listede asılı kalmasın.
       if (gun >= gunEkle(bugun, -OLAY_PENCERE_GUN)) {
-        const istRows = await tumSayfalar<{ fon_kodu: string; gozlem: number; sapma: number | null }>(
+        const istRows = await tumSayfalar<{ fon_kodu: string; gozlem: number; sapma: number | null; en_buyuk: number | null }>(
           (bas, son) => client.rpc('akis_sapma', { p_gun: gun }).order('fon_kodu').range(bas, son),
         );
         const ist = new Map<string, AkisIstatistigi>();
@@ -291,11 +291,12 @@ Deno.serve(async (request) => {
           ist.set(String(r.fon_kodu), {
             gozlem: Number(r.gozlem),
             sapma: r.sapma === null ? null : Number(r.sapma),
+            enBuyuk: r.en_buyuk === null ? null : Number(r.en_buyuk),
           });
         }
         const olaylar = [];
         for (const s of satirlar) {
-          const o = balinaOlayi(s.net_akis, s.portfoy_degeri, ist.get(s.fon_kodu));
+          const o = balinaOlayi(s.net_akis, s.portfoy_degeri, ist.get(s.fon_kodu), s.fon_turu);
           if (o !== null) olaylar.push({ ticker: `TEFAS:${s.fon_kodu}`, tarih: gun, ...o });
         }
         const { error: silErr } = await client

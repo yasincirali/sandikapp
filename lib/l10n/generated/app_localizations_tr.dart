@@ -5802,4 +5802,39 @@ class AppLocalizationsTr extends AppLocalizations {
   String flowFootnote(String date) {
     return 'Kaynak: TEFAS · veri tarihi $date. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.';
   }
+
+  @override
+  String flowStreakIn(String count) {
+    return '$count haftadır üst üste net giriş';
+  }
+
+  @override
+  String flowStreakOut(String count) {
+    return '$count haftadır üst üste net çıkış';
+  }
+
+  @override
+  String get flowPeriod1m => 'Son 1 ay';
+
+  @override
+  String get flowPeriod3m => 'Son 3 ay';
+
+  @override
+  String flowPeriodValue(String amount, String pct) {
+    return '$amount · $pct';
+  }
+
+  @override
+  String get flowPeriodNote =>
+      'Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.';
+
+  @override
+  String flowDecompose(String total, String price, String flow) {
+    return 'Son 1 ayda fon büyüklüğü $total değişti: fiyat etkisi $price, para akışı $flow.';
+  }
+
+  @override
+  String flowEventEvidenceMulti(String amount, String pct, String days) {
+    return '$amount · fon büyüklüğüne oranı $pct · $days işlem günü üst üste';
+  }
 }

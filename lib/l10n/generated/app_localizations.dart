@@ -9734,6 +9734,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.'**
   String flowFootnote(String date);
+
+  /// No description provided for @flowStreakIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} haftadır üst üste net giriş'**
+  String flowStreakIn(String count);
+
+  /// No description provided for @flowStreakOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} haftadır üst üste net çıkış'**
+  String flowStreakOut(String count);
+
+  /// No description provided for @flowPeriod1m.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 1 ay'**
+  String get flowPeriod1m;
+
+  /// No description provided for @flowPeriod3m.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 3 ay'**
+  String get flowPeriod3m;
+
+  /// Dönem akışı: işaretli tutar ve dönem başındaki fon büyüklüğüne oranı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · {pct}'**
+  String flowPeriodValue(String amount, String pct);
+
+  /// No description provided for @flowPeriodNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.'**
+  String get flowPeriodNote;
+
+  /// No description provided for @flowDecompose.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 1 ayda fon büyüklüğü {total} değişti: fiyat etkisi {price}, para akışı {flow}.'**
+  String flowDecompose(String total, String price, String flow);
+
+  /// No description provided for @flowEventEvidenceMulti.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · fon büyüklüğüne oranı {pct} · {days} işlem günü üst üste'**
+  String flowEventEvidenceMulti(String amount, String pct, String days);
 }
 
 class _AppLocalizationsDelegate

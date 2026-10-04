@@ -22,6 +22,8 @@ import 'helpers/kaynak.dart';
 /// 4. Bilinmeyen yatırımcı sayısı satırı çizilmez (uydurma yok).
 /// 5. Kart "balina" demez, "kimin aldığı bilinemez" der.
 /// 6. Dar ekranda ve büyük yazıda taşma yok.
+/// 7. Dönem oranı ve seri yalnız biliniyorsa çizilir; birleşmiş olay tarih
+///    aralığıyla yazılır.
 DateTime _g(int ay, int gun) => DateTime.utc(2026, ay, gun);
 
 FonAkisOzeti _ozet({
@@ -29,6 +31,9 @@ FonAkisOzeti _ozet({
   int? yatirimci = 48210,
   int? yatirimciDegisimi = 38,
   List<FonBalinaOlayi> olaylar = const [],
+  DonemAkisi? ay1,
+  DonemAkisi? ay3,
+  HaftaSerisi? seri,
 }) =>
     FonAkisOzeti(
       haftalar: [
@@ -45,6 +50,9 @@ FonAkisOzeti _ozet({
       yatirimci: yatirimci,
       yatirimciDegisimi: yatirimciDegisimi,
       olaylar: olaylar,
+      ay1: ay1,
+      ay3: ay3,
+      seri: seri,
     );
 
 int _sorguSayisi = 0;
@@ -245,6 +253,103 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('dönem akışı: tutar + oran, not ve büyüme ayrıştırması',
+      (t) async {
+    await _kur(
+      t,
+      ozet: _ozet(
+        ay1: const DonemAkisi(
+            para: -120.5e6, paraOrani: -0.043, toplamDegisim: -0.124),
+        ay3: const DonemAkisi(
+            para: 310e6, paraOrani: 0.118, toplamDegisim: 0.25),
+      ),
+    );
+    expect(find.text('Son 1 ay'), findsOneWidget);
+    expect(find.text('−₺120,50M · −%4,3'), findsOneWidget);
+    expect(find.text('Son 3 ay'), findsOneWidget);
+    expect(find.text('+₺310,00M · +%11,8'), findsOneWidget);
+    expect(
+        find.text('Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.'),
+        findsOneWidget);
+    // −%12,4 toplam = −%8,1 fiyat + −%4,3 para.
+    expect(
+        find.text('Son 1 ayda fon büyüklüğü −%12,4 değişti: '
+            'fiyat etkisi −%8,1, para akışı −%4,3.'),
+        findsOneWidget);
+  });
+
+  testWidgets('oran dönem başı büyüklüğünü aşıyorsa yalnız tutar yazılır',
+      (t) async {
+    // Fon bir ayda birkaç katına çıkıp boşalmış: yüzde ve ayrıştırma
+    // okunmaz (+%302,8 / fiyat etkisi −%363,2). Tutar yine doğru.
+    await _kur(
+      t,
+      ozet: _ozet(
+        ay1: const DonemAkisi(
+            para: 15.99e9, paraOrani: 3.028, toplamDegisim: -0.604),
+      ),
+    );
+    expect(find.text('Son 1 ay'), findsOneWidget);
+    expect(find.text('+₺15,99Mr'), findsOneWidget);
+    expect(find.textContaining('%302'), findsNothing);
+    expect(find.textContaining('fiyat etkisi'), findsNothing);
+    expect(find.textContaining('dönem başındaki fon büyüklüğüne'),
+        findsNothing);
+  });
+
+  testWidgets('dönem akışı bilinmiyorsa bölüm hiç çizilmez', (t) async {
+    await _kur(t);
+    expect(find.text('Son 1 ay'), findsNothing);
+    expect(find.text('Son 3 ay'), findsNothing);
+    expect(find.textContaining('dönem başındaki fon büyüklüğüne'),
+        findsNothing);
+  });
+
+  testWidgets('yalnız 1 ay biliniyorsa 3 ay satırı yok', (t) async {
+    await _kur(
+      t,
+      ozet: _ozet(
+          ay1: const DonemAkisi(
+              para: 5e6, paraOrani: 0.01, toplamDegisim: 0.03)),
+    );
+    expect(find.text('Son 1 ay'), findsOneWidget);
+    expect(find.text('Son 3 ay'), findsNothing);
+  });
+
+  testWidgets('hafta serisi yön diliyle yazılır; yoksa satır yok', (t) async {
+    await _kur(t,
+        ozet: _ozet(
+            net: -5e6, seri: const HaftaSerisi(hafta: 4, giris: false)));
+    expect(find.text('4 haftadır üst üste net çıkış'), findsOneWidget);
+  });
+
+  testWidgets('seri yoksa seri satırı çizilmez', (t) async {
+    await _kur(t);
+    expect(find.textContaining('haftadır üst üste'), findsNothing);
+  });
+
+  testWidgets('birleşmiş olay tarih aralığı ve gün sayısıyla yazılır',
+      (t) async {
+    await _kur(
+      t,
+      ozet: _ozet(olaylar: [
+        FonBalinaOlayi(
+            tarih: _g(9, 22),
+            ilkGun: _g(9, 21),
+            gunSayisi: 2,
+            tutar: -4.3e9,
+            buyuklukOrani: 0.062,
+            sapmaKati: 4.9),
+      ]),
+    );
+    expect(find.text('Büyük çıkış · 21 Eyl - 22 Eyl'), findsOneWidget);
+    expect(
+        find.text('−₺4,30Mr · fon büyüklüğüne oranı %6,2 · '
+            '2 işlem günü üst üste'),
+        findsOneWidget);
+    expect(find.textContaining('olağan günlük hareketin'), findsNothing);
+  });
+
   group('değişmezler (kaynak taraması)', () {
     test('bayrak varsayılanı KAPALI', () {
       // Veri sunucuda birikmeden kart açılmamalı; açılış Console'dan.
@@ -285,9 +390,13 @@ void main() {
       expect(istemci, isNot(contains('ASGARI_BUYUKLUK')));
       final sunucu =
           ekranKaynagiSync('supabase/functions/_shared/balina.ts');
-      expect(sunucu, contains('export const SAPMA_KATI = 3;'));
-      expect(sunucu, contains('export const BUYUKLUK_ORANI = 0.02;'));
-      expect(sunucu, contains('export const ASGARI_BUYUKLUK = 50_000_000;'));
+      expect(sunucu, contains('export const SAPMA_KATI = 4;'));
+      expect(sunucu, contains('export const BUYUKLUK_ORANI = 0.03;'));
+      expect(sunucu, contains('export const ASGARI_BUYUKLUK = 250_000_000;'));
+      // Bildirim kademesi olayla aynı satırda: B4 ayrı kural yazmaz.
+      expect(sunucu, contains('bildirime_deger:'));
+      expect(ekranKaynagiSync('supabase/migrations/0103_fon_akisi.sql'),
+          contains('bildirime_deger boolean not null default false'));
     });
 
     test('sunucu: cron kapısı fail-closed, yanıt ayrıntı sızdırmaz', () {

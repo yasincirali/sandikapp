@@ -130,7 +130,7 @@ Otomatik testlerle de korunuyor; elle koşması sürüm öncesi duman testi.
 | R-70 | Ham hata sızıntısı | Ağı kapatıp birkaç akışı zorla | Hiçbir ekranda `Exception:` / stack trace görünmez; hepsi `friendlyError` | 🟠 |
 | R-71 | Para akışı kartı — tutarlılık | Bayrak `balina_radari_acik` açıkken bir fonun sayfası → PARA AKIŞI kartı | "Fon büyüklüğü" TEFAS fon sayfasındaki toplam değerle, "veri tarihi" fonun son fiyat günüyle aynı. Son hafta tutarı = o haftanın çubuğu. Hisse/altın/döviz sayfasında kart **yok** | 🟠 |
 | R-72 | Para akışı kartı — veri yokken | Bayrak açık; tabloda satırı olmayan (çok yeni) bir fon ya da çevrimdışı | Kart **hiç çizilmez**, yerinde boşluk kalmaz, hata gösterilmez. Eski sayı "güncel" gibi görünmez (12 günden eski veri de kartı gizler) | 🟠 |
-| R-73 | Para akışı — yanlış alarm denetimi | 10 fonda "Büyük hareketler" listesini TEFAS'taki pay adedi değişimiyle karşılaştır | Her satır gerçek bir pay değişimine denk gelir; küçük (₺50 mn altı) fonda olay yok. Kartta "balina" sözcüğü geçmez | 🟡 |
+| R-73 | Para akışı — yanlış alarm denetimi | 10 fonda "Büyük hareketler" listesini TEFAS'taki pay adedi değişimiyle karşılaştır | Her satır gerçek bir pay değişimine denk gelir; küçük (₺250 mn altı) fonda ve para piyasası fonunda olay yok; ardışık iki günün olayı tek satırda. Kartta "balina" sözcüğü geçmez | 🟡 |
 
 ---
 

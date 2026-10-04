@@ -174,6 +174,158 @@ void main() {
     });
   });
 
+  group('dönem akışı (1 ay / 3 ay)', () {
+    // 1 Eylül'den 2 Ekim'e her hafta içi gün; günde +1 mn akış.
+    List<FonAkisGunu> seri({double? delik}) {
+      final out = <FonAkisGunu>[];
+      var d = DateTime.utc(2026, 9, 1);
+      while (!d.isAfter(_g(10, 2))) {
+        if (d.weekday <= 5) {
+          final bosGun = delik != null && d == _g(9, 15);
+          out.add(FonAkisGunu(
+              tarih: d,
+              portfoyDegeri: d == _g(9, 2) ? 100e6 : 120e6,
+              netAkis: bosGun ? null : 1e6));
+        }
+        d = d.add(const Duration(days: 1));
+      }
+      return out;
+    }
+
+    test('oran = akış / dönem BAŞINDAKİ büyüklük; kalan fiyat etkisi', () {
+      final ozet = fonAkisOzeti(seri(), const [], simdi: simdi)!;
+      final ay1 = ozet.ay1!;
+      // Dönem başı 2 Eylül (2 Ekim − 30 gün), büyüklük 100 mn.
+      // 3 Eylül–2 Ekim arası 22 işlem günü × 1 mn = 22 mn.
+      expect(ay1.para, 22e6);
+      expect(ay1.paraOrani, closeTo(0.22, 1e-9));
+      // 100 → 120 mn: toplam %20; fiyat etkisi %20 − %22 = −%2.
+      expect(ay1.toplamDegisim, closeTo(0.20, 1e-9));
+      expect(ay1.fiyatEtkisi, closeTo(-0.02, 1e-9));
+    });
+
+    test('dönem içinde akışı bilinmeyen gün varsa oran VERİLMEZ', () {
+      final ozet = fonAkisOzeti(seri(delik: 1), const [], simdi: simdi)!;
+      expect(ozet.ay1, isNull);
+    });
+
+    test('geçmiş dönemi kapsamıyorsa oran verilmez (3 ay için 1 aylık veri)',
+        () {
+      final ozet = fonAkisOzeti(seri(), const [], simdi: simdi)!;
+      expect(ozet.ay3, isNull);
+    });
+
+    test('dönem başı satırı hedeften çok eskiyse oran verilmez', () {
+      // Tek eski satır 10 Ağustos, sonra 28 Eylül'e kadar boşluk: "1 ay"
+      // aslında 7 haftayı kapsardı.
+      final ozet = fonAkisOzeti([
+        _gun(8, 10, 1e6),
+        _gun(9, 28, 1e6),
+        _gun(10, 2, 1e6),
+      ], const [], simdi: simdi)!;
+      expect(ozet.ay1, isNull);
+    });
+  });
+
+  test('oranAnlamli: akış ya da değişim dönem başı büyüklüğünü aşınca false',
+      () {
+    expect(
+        const DonemAkisi(para: 1, paraOrani: 0.5, toplamDegisim: -0.9)
+            .oranAnlamli,
+        isTrue);
+    expect(
+        const DonemAkisi(para: 1, paraOrani: 3.028, toplamDegisim: -0.604)
+            .oranAnlamli,
+        isFalse);
+    expect(
+        const DonemAkisi(para: 1, paraOrani: 0.4, toplamDegisim: 1.6)
+            .oranAnlamli,
+        isFalse);
+  });
+
+  group('hafta serisi', () {
+    test('son haftadan geriye aynı yönlü haftalar sayılır', () {
+      final ozet = fonAkisOzeti([
+        _gun(9, 8, 5e6), // giriş — seriyi keser
+        _gun(9, 15, -1e6),
+        _gun(9, 22, -2e6),
+        _gun(9, 29, -3e6),
+      ], const [], simdi: simdi)!;
+      expect(ozet.seri!.hafta, 3);
+      expect(ozet.seri!.giris, isFalse);
+    });
+
+    test('tek hafta seri değildir; verisiz hafta seriyi keser', () {
+      expect(
+          fonAkisOzeti([_gun(9, 22, 2e6), _gun(9, 29, -3e6)], const [],
+                  simdi: simdi)!
+              .seri,
+          isNull);
+      // 22 Eylül haftası yok: 15 ve 29 Eylül ardışık sayılmaz.
+      expect(
+          fonAkisOzeti([_gun(9, 15, -2e6), _gun(9, 29, -3e6)], const [],
+                  simdi: simdi)!
+              .seri,
+          isNull);
+    });
+  });
+
+  group('ardışık olay günleri birleşir', () {
+    FonBalinaOlayi olay(int ay, int gun, double tutar, {double kat = 4}) =>
+        FonBalinaOlayi(
+            tarih: _g(ay, gun),
+            tutar: tutar,
+            buyuklukOrani: 0.03,
+            sapmaKati: kat);
+
+    final gunler = [
+      _gun(9, 18, -1e6), // Cuma
+      _gun(9, 21, -50e6), // Pazartesi
+      _gun(9, 22, -40e6),
+      _gun(9, 23, 1e6),
+      _gun(9, 24, 60e6),
+      _gun(10, 2, 1e6),
+    ];
+
+    test('aynı yönlü ardışık iki gün tek satır: tutar ve oran toplanır', () {
+      final ozet = fonAkisOzeti(
+        gunler,
+        [olay(9, 21, -50e6, kat: 4.9), olay(9, 22, -40e6, kat: 3.7)],
+        simdi: simdi,
+      )!;
+      expect(ozet.olaylar, hasLength(1));
+      final o = ozet.olaylar.single;
+      expect(o.ilkGun, _g(9, 21));
+      expect(o.tarih, _g(9, 22));
+      expect(o.gunSayisi, 2);
+      expect(o.tutar, -90e6);
+      expect(o.buyuklukOrani, closeTo(0.06, 1e-9));
+      expect(o.sapmaKati, 4.9);
+    });
+
+    test('Cuma ve Pazartesi ardışık işlem günüdür', () {
+      final ozet = fonAkisOzeti(
+        gunler,
+        [olay(9, 18, -30e6), olay(9, 21, -50e6)],
+        simdi: simdi,
+      )!;
+      expect(ozet.olaylar.single.gunSayisi, 2);
+      expect(ozet.olaylar.single.ilkGun, _g(9, 18));
+    });
+
+    test('yön değişirse ya da arada gün varsa birleşmez', () {
+      final ozet = fonAkisOzeti(
+        gunler,
+        [olay(9, 22, -40e6), olay(9, 24, 60e6), olay(9, 21, -50e6)],
+        simdi: simdi,
+      )!;
+      // 21+22 birleşir; 24 (giriş, arada 23 var) ayrı.
+      expect(ozet.olaylar.map((o) => o.gunSayisi), [1, 2]);
+      expect(ozet.olaylar.first.giris, isTrue);
+      expect(ozet.olaylar.first.ilkGun, isNull);
+    });
+  });
+
   group('satır ayrıştırma', () {
     test('sunucu satırı okunur; sayı metin gelse de tarih güne iner', () {
       final g = FonAkisGunu.satirdan({

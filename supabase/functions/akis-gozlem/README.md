@@ -11,9 +11,16 @@ kurala uyan günleri `balina_olay`'a işler (0103). Amaç: fon sayfasındaki
   fonlar için `fonBilgiGetir` (yatırımcı sayısı).
 - Net akış = (pay − önceki günün payı) × (değer / pay). Önceki gün yoksa
   `NULL`; fiyat hareketi akış sayılmaz.
-- Olay kuralı (`_shared/balina.ts`): |akış| ≥ max(3 × 90 günlük sapma,
-  fon büyüklüğünün %2'si), fon ≥ ₺50 mn, en az 20 gözlem. Sapma
+- Olay kuralı (`_shared/balina.ts`): |akış| ≥ max(4 × 90 günlük sapma,
+  akıştan ÖNCEKİ fon büyüklüğünün %3'ü), fon ≥ ₺250 mn, en az 20 gözlem, para piyasası
+  fonu değil (`fon_turu`). Sapma ve penceredeki en büyük akış
   `akis_sapma(p_gun)` RPC'sinden (yalnız service_role).
+- Bildirim kademesi (`balina_olay.bildirime_deger`): ayrıca ≥ %5, ≥ ₺25 mn
+  ve penceredeki en büyük akış. Bildirimi bu fonksiyon GÖNDERMEZ; bayrak
+  olay akışı diliminde (B4) okunacak.
+- Ölçüm (2026-10-04, 29 işlem günü): günde ~16 olay, 1.375 fonun 293'ünde en
+  az bir olay; 275 olay bildirim kademesinde (203 fon). Eşiği değiştiren
+  sıklığı yeniden ölçsün.
 - Sıra eskiden yeniye; çekilemeyen günde tur durur (gün atlanmaz). Son iki
   gün her tur yeniden çekilir (TEFAS fon fon yayınlıyor), eskiler
   `fon_akis_tur.kesin` ile kilitlenir.

@@ -14,27 +14,47 @@
 // = 1,184301).
 //
 // ── "Balina" neden iki eşikli ───────────────────────────────────────────────
-// Yalnız sapma kuralı (3σ) sakin bir fonda küçük bir hareketi olay yapar;
-// yalnız büyüklük kuralı (%2) hareketli bir fonda her günü olay yapar.
-// İkisinin BÜYÜĞÜ aşılmalı. Küçük fonlarda tek kişinin birikimi bile %2'yi
-// geçer; bu yüzden büyüklük tabanı var (yanlış alarm, hiç alarm vermemekten
-// kötü: kullanıcı kartı bir kez boşa çıkarsa bir daha inanmaz).
+// Yalnız sapma kuralı sakin bir fonda küçük bir hareketi olay yapar; yalnız
+// büyüklük kuralı hareketli bir fonda her günü olay yapar. İkisinin BÜYÜĞÜ
+// aşılmalı. Küçük fonlarda tek kişinin birikimi bile oranı geçer; bu yüzden
+// büyüklük tabanı var (yanlış alarm, hiç alarm vermemekten kötü: kullanıcı
+// kartı bir kez boşa çıkarsa bir daha inanmaz).
+//
+// ── Eşikler neden bu sayılar (ölçüm 2026-10-04, 29 işlem günü, 1.144 fon) ───
+// İlk kural (3 sapma, %2, fon ≥ 50 mn) fon başına ayda ~1 olay üretti: dört
+// fonu olan kullanıcı ayda dört "büyük hareket" görür, olay olağanlaşır.
+// Fon akışları yığınlı (birkaç büyük yatırımcı); sapma kuralı sık tetiklenir.
+// 4 sapma + %3 + fon ≥ 250 mn sıklığı ~0,4'e indirdi (kullanıcı onayı
+// 2026-10-04). Para piyasası fonları hiç olay üretmez: günlük giriş-çıkış o
+// fonların işleyişidir, haber değil.
+//
+// ── İki kademe: liste ve bildirim ───────────────────────────────────────────
+// Kartta listelenen her olay bildirim gönderilecek kadar önemli değildir.
+// `bildirime_deger` daha sıkı üç koşulu birden ister (%5, 25 mn TL, son ~60
+// işlem gününün en büyüğü). Bildirimi B4 gönderir; bayrak burada, olayla
+// AYNI satırda durur ki liste ile bildirim farklı kural okumasın.
 
 /// TEFAS büyüklük ucundan süzülmüş, bir fonun bir günkü durumu.
-export type BuyuklukSatiri = { kod: string; pay: number; deger: number };
+export type BuyuklukSatiri = { kod: string; pay: number; deger: number; tur: string | null };
 
 /// `fon_akis_gunluk` satırı (yazılacak hâli).
 export type AkisSatiri = {
   fon_kodu: string;
   tarih: string;
   fon_tipi: string;
+  fon_turu: string | null;
   pay_adedi: number;
   portfoy_degeri: number;
   net_akis: number | null;
 };
 
 /// Olay kararı için bir fonun geçmiş istatistiği (`akis_sapma` RPC'si).
-export type AkisIstatistigi = { gozlem: number; sapma: number | null };
+export type AkisIstatistigi = {
+  gozlem: number;
+  sapma: number | null;
+  /// Penceredeki en büyük |günlük akış|; bildirim kademesi buna bakar.
+  enBuyuk?: number | null;
+};
 
 /// Tespit edilen olay (`balina_olay` satırının hesaplanan alanları).
 export type BalinaOlayi = {
@@ -42,6 +62,7 @@ export type BalinaOlayi = {
   tutar: number;
   buyukluk_orani: number;
   sapma_kati: number;
+  bildirime_deger: boolean;
 };
 
 /// Geriye dönük doldurma penceresi (takvim günü). Sapma 90 takvim günü
@@ -65,13 +86,19 @@ export const KESINLESME_GUN = 2;
 export const ASGARI_GOZLEM = 20;
 
 /// Akış, geçmiş günlük akışların sapmasının en az bu katı olmalı.
-export const SAPMA_KATI = 3;
+export const SAPMA_KATI = 4;
 
 /// Akış, fon büyüklüğünün en az bu oranı olmalı.
-export const BUYUKLUK_ORANI = 0.02;
+export const BUYUKLUK_ORANI = 0.03;
 
 /// Bundan küçük fonlarda olay üretilmez (TL).
-export const ASGARI_BUYUKLUK = 50_000_000;
+export const ASGARI_BUYUKLUK = 250_000_000;
+
+/// Bildirim kademesi: akış fon büyüklüğünün en az bu oranı olmalı.
+export const BILDIRIM_ORANI = 0.05;
+
+/// Bildirim kademesi: akış en az bu tutar olmalı (TL).
+export const BILDIRIM_TUTARI = 25_000_000;
 
 /// Olayların üretildiği geriye dönük süre (takvim günü). Kart son 30 günü
 /// gösterir; pay, turun geç koştuğu günler için.
@@ -141,7 +168,8 @@ export function buyuklukSatirlari(resultList: unknown): BuyuklukSatiri[] {
     const pay = sayi(r.sonPayAdedi);
     const deger = sayi(r.sonPortfoyDegeri);
     if (pay === null || deger === null || pay <= 0 || deger <= 0) continue;
-    out.set(kod, { kod, pay, deger });
+    const turHam = typeof r.fonTurAciklama === 'string' ? r.fonTurAciklama.trim() : '';
+    out.set(kod, { kod, pay, deger, tur: turHam.length > 0 ? turHam.slice(0, 80) : null });
   }
   return [...out.values()];
 }
@@ -182,6 +210,7 @@ export function gunSatirlari(
       fon_kodu: s.kod,
       tarih: gun,
       fon_tipi: fonTipi,
+      fon_turu: s.tur,
       pay_adedi: s.pay,
       portfoy_degeri: s.deger,
       net_akis: netAkis(s.pay, s.deger, oncekiPay.get(s.kod)),
@@ -191,30 +220,49 @@ export function gunSatirlari(
   return out;
 }
 
+/// Para piyasası fonu mu? TEFAS tür adı üzerinden ("Para Piyasası Fonu",
+/// "Katılım Para Piyasası…"). Tür bilinmiyorsa `false`: bilinmeyeni
+/// susturmak, gerçek bir olayı gizlemek olurdu.
+export function paraPiyasasiMi(fonTuru: string | null | undefined): boolean {
+  if (!fonTuru) return false;
+  return fonTuru.toLocaleLowerCase('tr-TR').includes('para piyasası');
+}
+
 /// Bu günkü akış bir "büyük giriş/çıkış" olayı mı?
 ///
-/// Dört koşulun HEPSİ: fon yeterince büyük, yeterli geçmiş var, akış fon
-/// büyüklüğünün %2'sini VE geçmiş sapmanın 3 katını aşıyor. Biri eksikse
-/// `null` (olay yok).
+/// Koşulların HEPSİ: para piyasası fonu değil, fon yeterince büyük, yeterli
+/// geçmiş var, akış fon büyüklüğünün %3'ünü VE geçmiş sapmanın 4 katını
+/// aşıyor. Biri eksikse `null` (olay yok).
 export function balinaOlayi(
   netAkisTl: number | null,
   portfoyDegeri: number,
   ist: AkisIstatistigi | undefined,
+  fonTuru?: string | null,
 ): BalinaOlayi | null {
+  if (paraPiyasasiMi(fonTuru)) return null;
   if (netAkisTl === null || !Number.isFinite(netAkisTl) || netAkisTl === 0) return null;
-  if (!(portfoyDegeri >= ASGARI_BUYUKLUK)) return null;
+  // Oranın paydası akıştan ÖNCEKİ büyüklük (bugünkü değer − bugünkü akış).
+  // Bugünkü değere bölmek büyük çıkışı şişirir: 34 mr'lik fondan 20 mr
+  // çıkınca kalan 14 mr'ye oran %143 çıkıyordu (DOH, 18 Eylül 2026 ölçümü);
+  // doğrusu %59. Fon akışı raporlamasında payda dönem başı varlıktır.
+  const taban = portfoyDegeri - netAkisTl;
+  if (!(taban >= ASGARI_BUYUKLUK)) return null;
   if (ist === undefined || ist.gozlem < ASGARI_GOZLEM) return null;
   if (ist.sapma === null || !(ist.sapma > 0)) return null;
 
   const mutlak = Math.abs(netAkisTl);
-  const esik = Math.max(SAPMA_KATI * ist.sapma, BUYUKLUK_ORANI * portfoyDegeri);
+  const esik = Math.max(SAPMA_KATI * ist.sapma, BUYUKLUK_ORANI * taban);
   if (mutlak < esik) return null;
 
   return {
     tur: netAkisTl > 0 ? 'fon_giris' : 'fon_cikis',
     tutar: netAkisTl,
-    buyukluk_orani: Math.round((mutlak / portfoyDegeri) * 10000) / 10000,
+    buyukluk_orani: Math.round((mutlak / taban) * 10000) / 10000,
     sapma_kati: Math.round((mutlak / ist.sapma) * 10) / 10,
+    // Üç koşul birden; penceredeki en büyük akış bilinmiyorsa bildirim YOK.
+    bildirime_deger: mutlak >= BILDIRIM_ORANI * taban &&
+      mutlak >= BILDIRIM_TUTARI &&
+      typeof ist.enBuyuk === 'number' && mutlak > ist.enBuyuk,
   };
 }
 

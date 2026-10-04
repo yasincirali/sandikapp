@@ -27,6 +27,9 @@ create table if not exists public.fon_akis_gunluk (
   tarih           date not null,
   -- 'YAT' yatırım fonu, 'EMK' emeklilik (BES) fonu.
   fon_tipi        text not null check (fon_tipi in ('YAT', 'EMK')),
+  -- TEFAS tür adı ('Hisse Senedi Fonu', 'Para Piyasası Fonu'). Olay kuralı
+  -- para piyasası fonlarını bununla eler; kaynak vermediyse NULL.
+  fon_turu        text check (fon_turu is null or length(fon_turu) <= 80),
   -- Dolaşımdaki pay adedi (emeklilik fonlarında kesirli).
   pay_adedi       numeric not null check (pay_adedi > 0),
   -- Fon toplam değeri, TL.
@@ -62,6 +65,9 @@ create table if not exists public.balina_olay (
   buyukluk_orani  numeric not null check (buyukluk_orani > 0),
   -- |tutar| / geçmiş günlük akışların standart sapması.
   sapma_kati      numeric not null check (sapma_kati > 0),
+  -- Daha sıkı kademe (>= %5, >= 25 mn TL, penceredeki en büyük akış): yalnız
+  -- bu satırlar bildirim adayıdır. Liste ile bildirim aynı satırı okur.
+  bildirime_deger boolean not null default false,
   primary key (ticker, tarih)
 );
 
@@ -125,7 +131,7 @@ grant select, insert, update, delete on table public.fon_akis_tur    to service_
 -- başına tek satır döner. Pencere `p_gun`'den ÖNCEKİ 90 takvim günü (~60
 -- işlem günü): günün kendi akışı kendi eşiğini şişirmesin.
 create or replace function public.akis_sapma(p_gun date)
-returns table (fon_kodu text, gozlem integer, sapma numeric)
+returns table (fon_kodu text, gozlem integer, sapma numeric, en_buyuk numeric)
 language sql
 stable
 security invoker
@@ -133,7 +139,8 @@ set search_path = public
 as $$
   select g.fon_kodu,
          count(g.net_akis)::integer,
-         stddev_samp(g.net_akis)
+         stddev_samp(g.net_akis),
+         max(abs(g.net_akis))
     from public.fon_akis_gunluk g
    where g.tarih < p_gun
      and g.tarih >= p_gun - 90

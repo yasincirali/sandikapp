@@ -5854,4 +5854,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String flowFootnote(String date) {
     return 'Source: TEFAS · data as of $date. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.';
   }
+
+  @override
+  String flowStreakIn(String count) {
+    return 'Net inflow for $count weeks in a row';
+  }
+
+  @override
+  String flowStreakOut(String count) {
+    return 'Net outflow for $count weeks in a row';
+  }
+
+  @override
+  String get flowPeriod1m => 'Last 1 month';
+
+  @override
+  String get flowPeriod3m => 'Last 3 months';
+
+  @override
+  String flowPeriodValue(String amount, String pct) {
+    return '$amount · $pct';
+  }
+
+  @override
+  String get flowPeriodNote =>
+      'Percentages are the flow relative to fund size at the start of the period.';
+
+  @override
+  String flowDecompose(String total, String price, String flow) {
+    return 'Fund size changed $total over the last month: price effect $price, money flow $flow.';
+  }
+
+  @override
+  String flowEventEvidenceMulti(String amount, String pct, String days) {
+    return '$amount · $pct of fund size · $days trading days in a row';
+  }
 }

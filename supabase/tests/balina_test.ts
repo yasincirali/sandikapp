@@ -8,8 +8,9 @@
 //    değer kazansa da net akış SIFIRDIR.
 // 2. **Uydurma yok.** Önceki gün bilinmiyorsa akış `null`; geçmiş yetersizse
 //    ya da sapma sıfırsa olay YOK.
-// 3. **Yanlış alarm yok.** Küçük fon, büyüklüğün %2'sinin altı ve sapmanın
-//    3 katının altı olay üretmez — iki eşiğin BÜYÜĞÜ aşılmalı.
+// 3. **Yanlış alarm yok.** Küçük fon, para piyasası fonu, büyüklüğün
+//    %3'ünün altı ve sapmanın 4 katının altı olay üretmez — iki eşiğin
+//    BÜYÜĞÜ aşılmalı. Bildirim kademesi ayrıca daha sıkı.
 // 4. **Gün sırası ve yeniden çekme.** Günler eskiden yeniye; kesinleşmiş gün
 //    sorulmaz, hafta sonu hiç sorulmaz, son iki gün her tur yeniden sorulur.
 //
@@ -21,6 +22,9 @@ import {
   ASGARI_BUYUKLUK,
   ASGARI_GOZLEM,
   balinaOlayi,
+  BILDIRIM_ORANI,
+  BILDIRIM_TUTARI,
+  BUYUKLUK_ORANI,
   buyuklukSatirlari,
   cekilecekGunler,
   gunEkle,
@@ -28,6 +32,8 @@ import {
   gunSatirlari,
   haftaSonuMu,
   netAkis,
+  paraPiyasasiMi,
+  SAPMA_KATI,
   tefasGunParam,
   yatirimciSayisi,
 } from '../functions/_shared/balina.ts';
@@ -92,7 +98,7 @@ Deno.test('TEFAS satırından kod, pay ve değer okunur (son* alanları)', () =>
       sonPayAdedi: 2013904583,
     },
   ]);
-  assertEquals(satirlar, [{ kod: 'TTE', pay: 2013904583, deger: 2385068751.83 }]);
+  assertEquals(satirlar, [{ kod: 'TTE', pay: 2013904583, deger: 2385068751.83, tur: null }]);
 });
 
 Deno.test('bozuk satır atılır: sıfır pay, eksik değer, geçersiz kod', () => {
@@ -112,10 +118,18 @@ Deno.test('bozuk satır atılır: sıfır pay, eksik değer, geçersiz kod', () 
   assertEquals(buyuklukSatirlari({}), []);
 });
 
+Deno.test('fon türü okunur; boşsa null', () => {
+  const s = buyuklukSatirlari([
+    { fonKodu: 'AAA', sonPayAdedi: 1, sonPortfoyDegeri: 1, fonTurAciklama: ' Para Piyasası Fonu ' },
+    { fonKodu: 'BBB', sonPayAdedi: 1, sonPortfoyDegeri: 1, fonTurAciklama: '' },
+  ]);
+  assertEquals(s.map((x) => x.tur), ['Para Piyasası Fonu', null]);
+});
+
 Deno.test('emeklilik fonunun kesirli payı korunur', () => {
   assertEquals(
     buyuklukSatirlari([{ fonKodu: 'AH5', sonPayAdedi: 8732336930.353, sonPortfoyDegeri: 23005415532.74 }]),
-    [{ kod: 'AH5', pay: 8732336930.353, deger: 23005415532.74 }],
+    [{ kod: 'AH5', pay: 8732336930.353, deger: 23005415532.74, tur: null }],
   );
 });
 
@@ -150,53 +164,64 @@ Deno.test('gerçek TEFAS örneği: TTE 1→2 Ekim 2026', () => {
 Deno.test('gunSatirlari akışı önceki paya göre yazar ve haritayı ilerletir', () => {
   const onceki = new Map<string, number>([['AAA', 900]]);
   const g1 = gunSatirlari('2026-10-01', 'YAT', [
-    { kod: 'AAA', pay: 1000, deger: 2000 },
-    { kod: 'YENI', pay: 50, deger: 500 },
+    { kod: 'AAA', pay: 1000, deger: 2000, tur: 'Hisse Senedi Fonu' },
+    { kod: 'YENI', pay: 50, deger: 500, tur: null },
   ], onceki);
   assertEquals(g1.map((s) => [s.fon_kodu, s.net_akis]), [['AAA', 200], ['YENI', null]]);
   assertEquals(g1[0].tarih, '2026-10-01');
   assertEquals(g1[0].fon_tipi, 'YAT');
+  assertEquals(g1.map((x) => x.fon_turu), ['Hisse Senedi Fonu', null]);
 
   // İkinci gün: harita ilk günün paylarını taşıyor.
   const g2 = gunSatirlari('2026-10-02', 'YAT', [
-    { kod: 'AAA', pay: 1000, deger: 2100 },
-    { kod: 'YENI', pay: 60, deger: 600 },
+    { kod: 'AAA', pay: 1000, deger: 2100, tur: null },
+    { kod: 'YENI', pay: 60, deger: 600, tur: null },
   ], onceki);
   assertEquals(g2.map((s) => [s.fon_kodu, s.net_akis]), [['AAA', 0], ['YENI', 100]]);
 });
 
 // ── balinaOlayi ─────────────────────────────────────────────────────────────
 
-const YETERLI = { gozlem: 40, sapma: 1_000_000 };
-const BUYUK_FON = 1_000_000_000; // 1 mr TL → %2'si 20 mn
+const YETERLI = { gozlem: 40, sapma: 1_000_000, enBuyuk: 10_000_000 };
+// Akıştan ÖNCEKİ büyüklük (oranın paydası). Testler ikinci argümana
+// BUYUK_FON + akış verir: fonksiyon günün (akış sonrası) değerini alır.
+const BUYUK_FON = 1_000_000_000; // 1 mr TL → %3'ü 30 mn, %5'i 50 mn
+
+Deno.test('eşik sabitleri: 4 sapma, %3, fon ≥ 250 mn; bildirim %5 ve 25 mn', () => {
+  // Sayılar ölçümle seçildi (bkz. balina.ts başlığı). Değiştiren, sıklığı
+  // yeniden ölçmeden değiştirmesin.
+  assertEquals([SAPMA_KATI, BUYUKLUK_ORANI, ASGARI_BUYUKLUK], [4, 0.03, 250_000_000]);
+  assertEquals([BILDIRIM_ORANI, BILDIRIM_TUTARI], [0.05, 25_000_000]);
+});
 
 Deno.test('iki eşiği de aşan giriş olaydır; kanıt alanları dolar', () => {
-  const o = balinaOlayi(31_000_000, BUYUK_FON, YETERLI);
+  const o = balinaOlayi(31_000_000, BUYUK_FON + (31_000_000), YETERLI);
   assertEquals(o, {
     tur: 'fon_giris',
     tutar: 31_000_000,
     buyukluk_orani: 0.031,
     sapma_kati: 31,
+    bildirime_deger: false, // %3,1 < %5
   });
 });
 
 Deno.test('çıkış eksi tutarla ve fon_cikis türüyle gelir', () => {
-  const o = balinaOlayi(-25_000_000, BUYUK_FON, YETERLI);
+  const o = balinaOlayi(-35_000_000, BUYUK_FON + (-35_000_000), YETERLI);
   assertEquals(o?.tur, 'fon_cikis');
-  assertEquals(o?.tutar, -25_000_000);
-  assertEquals(o?.buyukluk_orani, 0.025);
+  assertEquals(o?.tutar, -35_000_000);
+  assertEquals(o?.buyukluk_orani, 0.035);
 });
 
-Deno.test('büyüklüğün %2\'sinin altı olay değil (sapmayı aşsa bile)', () => {
-  // 19 mn < 20 mn (%2), sapmanın 19 katı.
-  assertEquals(balinaOlayi(19_000_000, BUYUK_FON, YETERLI), null);
+Deno.test('büyüklüğün yüzde 3 altı olay değil (sapmayı aşsa bile)', () => {
+  // 29 mn < 30 mn (%3), sapmanın 29 katı.
+  assertEquals(balinaOlayi(29_000_000, BUYUK_FON + (29_000_000), YETERLI), null);
 });
 
-Deno.test('sapmanın 3 katının altı olay değil (%2\'yi aşsa bile)', () => {
-  // Hareketli fon: sapma 10 mn → eşik 30 mn; 25 mn %2,5 ama 2,5 kat.
-  assertEquals(balinaOlayi(25_000_000, BUYUK_FON, { gozlem: 40, sapma: 10_000_000 }), null);
+Deno.test('sapmanın 4 katının altı olay değil (yüzde 3 aşılsa bile)', () => {
+  // Hareketli fon: sapma 10 mn → eşik 40 mn; 35 mn %3,5 ama 3,5 kat.
+  assertEquals(balinaOlayi(35_000_000, BUYUK_FON + (35_000_000), { gozlem: 40, sapma: 10_000_000 }), null);
   // Tam eşikte olaydır.
-  assertEquals(balinaOlayi(30_000_000, BUYUK_FON, { gozlem: 40, sapma: 10_000_000 })?.tur, 'fon_giris');
+  assertEquals(balinaOlayi(40_000_000, BUYUK_FON + (40_000_000), { gozlem: 40, sapma: 10_000_000 })?.tur, 'fon_giris');
 });
 
 Deno.test('küçük fonda olay üretilmez', () => {
@@ -204,17 +229,59 @@ Deno.test('küçük fonda olay üretilmez', () => {
   assertEquals(balinaOlayi(kucuk * 0.5, kucuk, { gozlem: 40, sapma: 1000 }), null);
 });
 
+Deno.test('para piyasası fonu olay üretmez; tür bilinmiyorsa kural işler', () => {
+  assertEquals(balinaOlayi(80_000_000, BUYUK_FON + (80_000_000), YETERLI, 'Para Piyasası Fonu'), null);
+  assertEquals(balinaOlayi(80_000_000, BUYUK_FON + (80_000_000), YETERLI, 'Katılım Para Piyasası (TL) Fonu'), null);
+  assertEquals(balinaOlayi(80_000_000, BUYUK_FON + (80_000_000), YETERLI, 'Hisse Senedi Fonu')?.tur, 'fon_giris');
+  assertEquals(balinaOlayi(80_000_000, BUYUK_FON + (80_000_000), YETERLI, null)?.tur, 'fon_giris');
+  assertEquals(paraPiyasasiMi('PARA PİYASASI FONU'), true);
+  assertEquals(paraPiyasasiMi(undefined), false);
+});
+
 Deno.test('geçmiş yetersizse ya da sapma yoksa olay üretilmez', () => {
-  assertEquals(balinaOlayi(50_000_000, BUYUK_FON, { gozlem: ASGARI_GOZLEM - 1, sapma: 1_000_000 }), null);
-  assertEquals(balinaOlayi(50_000_000, BUYUK_FON, { gozlem: 40, sapma: null }), null);
-  assertEquals(balinaOlayi(50_000_000, BUYUK_FON, { gozlem: 40, sapma: 0 }), null);
-  assertEquals(balinaOlayi(50_000_000, BUYUK_FON, undefined), null);
+  assertEquals(balinaOlayi(50_000_000, BUYUK_FON + (50_000_000), { gozlem: ASGARI_GOZLEM - 1, sapma: 1_000_000 }), null);
+  assertEquals(balinaOlayi(50_000_000, BUYUK_FON + (50_000_000), { gozlem: 40, sapma: null }), null);
+  assertEquals(balinaOlayi(50_000_000, BUYUK_FON + (50_000_000), { gozlem: 40, sapma: 0 }), null);
+  assertEquals(balinaOlayi(50_000_000, BUYUK_FON + (50_000_000), undefined), null);
 });
 
 Deno.test('akış yok ya da sıfırsa olay yok', () => {
   assertEquals(balinaOlayi(null, BUYUK_FON, YETERLI), null);
-  assertEquals(balinaOlayi(0, BUYUK_FON, YETERLI), null);
+  assertEquals(balinaOlayi(0, BUYUK_FON + (0), YETERLI), null);
   assertEquals(balinaOlayi(Number.NaN, BUYUK_FON, YETERLI), null);
+});
+
+Deno.test('oranın paydası akıştan önceki büyüklük (büyük çıkış şişmez)', () => {
+  // 34 mr'lik fondan 20 mr çıktı, kalan 14 mr: oran %59, %143 değil.
+  const o = balinaOlayi(-20_000_000_000, 14_000_000_000, { gozlem: 40, sapma: 1_000_000_000, enBuyuk: 5_000_000_000 });
+  assertEquals(o?.buyukluk_orani, 0.5882);
+  // Çıkış sonrası küçülen fon da sayılır: taban (34 mr) eşiğin üstünde.
+  assertEquals(balinaOlayi(-300_000_000, 100_000_000, { gozlem: 40, sapma: 1_000_000 })?.tur, 'fon_cikis');
+});
+
+// ── bildirim kademesi ───────────────────────────────────────────────────────
+
+Deno.test('bildirime değer: %5, 25 mn ve penceredeki en büyük akış — üçü birden', () => {
+  // 60 mn = %6, > 25 mn, önceki en büyük 10 mn.
+  assertEquals(balinaOlayi(60_000_000, BUYUK_FON + (60_000_000), YETERLI)?.bildirime_deger, true);
+  assertEquals(balinaOlayi(-60_000_000, BUYUK_FON + (-60_000_000), YETERLI)?.bildirime_deger, true);
+});
+
+Deno.test('bildirim: oran, tutar ya da rekor koşulu eksikse false (olay yine listede)', () => {
+  // %4 — olay ama bildirim değil.
+  assertEquals(balinaOlayi(40_000_000, BUYUK_FON + (40_000_000), YETERLI)?.bildirime_deger, false);
+  // 300 mn'lik fonda 20 mn: %6,7 ama 25 mn'nin altı.
+  assertEquals(balinaOlayi(20_000_000, 320_000_000, YETERLI)?.bildirime_deger, false);
+  // Pencerede daha büyüğü görülmüş.
+  assertEquals(
+    balinaOlayi(60_000_000, BUYUK_FON + (60_000_000), { gozlem: 40, sapma: 1_000_000, enBuyuk: 70_000_000 })?.bildirime_deger,
+    false,
+  );
+  // En büyük akış bilinmiyor: bildirim yok.
+  assertEquals(
+    balinaOlayi(60_000_000, BUYUK_FON + (60_000_000), { gozlem: 40, sapma: 1_000_000 })?.bildirime_deger,
+    false,
+  );
 });
 
 // ── yatirimciSayisi ─────────────────────────────────────────────────────────

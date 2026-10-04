@@ -3803,5 +3803,63 @@
     "placeholders": {
       "date": {"type": "String"}
     }
+  },
+  "flowStreakIn": "Net inflow for {count} weeks in a row",
+  "@flowStreakIn": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowStreakOut": "Net outflow for {count} weeks in a row",
+  "@flowStreakOut": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriod1m": "Last 1 month",
+  "flowPeriod3m": "Last 3 months",
+  "flowPeriodValue": "{amount} · {pct}",
+  "@flowPeriodValue": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriodNote": "Percentages are the flow relative to fund size at the start of the period.",
+  "flowDecompose": "Fund size changed {total} over the last month: price effect {price}, money flow {flow}.",
+  "@flowDecompose": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "flow": {
+        "type": "String"
+      }
+    }
+  },
+  "flowEventEvidenceMulti": "{amount} · {pct} of fund size · {days} trading days in a row",
+  "@flowEventEvidenceMulti": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
   }
 }

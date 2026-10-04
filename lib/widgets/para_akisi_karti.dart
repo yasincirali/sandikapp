@@ -27,9 +27,12 @@ import '../utils/tr_format.dart';
 /// ## Okuma sırası (yukarıdan aşağı)
 /// 1. Tek sayı: son haftanın net girişi/çıkışı ve hangi günleri kapsadığı.
 /// 2. Sekiz haftalık çubuklar — sayı tek başına büyük mü küçük mü, bağlamı.
-/// 3. Fon büyüklüğü ve yatırımcı sayısı — sayının neye göre büyük olduğu.
-/// 4. Büyük hareketler — kurala uyan günler, kanıtıyla.
-/// 5. Kaynak, veri tarihi ve sınır: "kimin aldığı bilinemez".
+/// 3. Son 1 ve 3 ayın akışı, fon büyüklüğüne oranıyla; büyüklük değişiminin
+///    ne kadarı fiyat, ne kadarı para (ikisi karıştırılmasın).
+/// 4. Fon büyüklüğü ve yatırımcı sayısı — sayının neye göre büyük olduğu.
+/// 5. Büyük hareketler — kurala uyan günler, kanıtıyla; ardışık günler tek
+///    satır.
+/// 6. Kaynak, veri tarihi ve sınır: "kimin aldığı bilinemez".
 ///
 /// ## Dil
 /// "Balina" denmez: TEFAS kimin alıp sattığını vermiyor; bilmediğimizi ima
@@ -94,6 +97,16 @@ class ParaAkisiKarti extends ConsumerWidget {
                       gunAy.format(ozet.veriTarihi)),
                   style: t.bodySmall?.copyWith(color: c.text58),
                 ),
+                if (ozet.seri != null) ...[
+                  const SizedBox(height: SandikSpace.xxs),
+                  Text(
+                    ozet.seri!.giris
+                        ? l10n.flowStreakIn('${ozet.seri!.hafta}')
+                        : l10n.flowStreakOut('${ozet.seri!.hafta}'),
+                    style: t.bodySmall?.copyWith(
+                        color: c.text58, fontWeight: FontWeight.w600),
+                  ),
+                ],
                 const SizedBox(height: SandikSpace.md),
 
                 // 2) Sekiz hafta.
@@ -124,7 +137,40 @@ class ParaAkisiKarti extends ConsumerWidget {
                 Text(l10n.flowExplain,
                     style: t.bodySmall?.copyWith(color: c.text58)),
 
-                // 3) Bağlam.
+                // 3) Dönem akışı: tutar + dönem başındaki büyüklüğe oranı.
+                if (ozet.ay1 != null || ozet.ay3 != null) ...[
+                  _Ayrac(),
+                  if (ozet.ay1 != null)
+                    _Satir(
+                        etiket: l10n.flowPeriod1m,
+                        deger: _donemDegeri(l10n, ozet.ay1!)),
+                  if (ozet.ay1 != null && ozet.ay3 != null)
+                    const SizedBox(height: SandikSpace.sm),
+                  if (ozet.ay3 != null)
+                    _Satir(
+                        etiket: l10n.flowPeriod3m,
+                        deger: _donemDegeri(l10n, ozet.ay3!)),
+                  if ((ozet.ay1?.oranAnlamli ?? false) ||
+                      (ozet.ay3?.oranAnlamli ?? false)) ...[
+                    const SizedBox(height: SandikSpace.sm),
+                    Text(l10n.flowPeriodNote,
+                        style: t.bodySmall?.copyWith(color: c.text36)),
+                  ],
+                  if (ozet.ay1?.oranAnlamli ?? false) ...[
+                    const SizedBox(height: SandikSpace.sm),
+                    Text(
+                      l10n.flowDecompose(
+                        fmtPctIsaretli(ozet.ay1!.toplamDegisim * 100,
+                            digits: 1),
+                        fmtPctIsaretli(ozet.ay1!.fiyatEtkisi * 100, digits: 1),
+                        fmtPctIsaretli(ozet.ay1!.paraOrani * 100, digits: 1),
+                      ),
+                      style: t.bodySmall?.copyWith(color: c.text58),
+                    ),
+                  ],
+                ],
+
+                // 4) Bağlam.
                 _Ayrac(),
                 _Satir(
                     etiket: l10n.flowFundSize,
@@ -140,7 +186,7 @@ class ParaAkisiKarti extends ConsumerWidget {
                   ),
                 ],
 
-                // 4) Büyük hareketler.
+                // 5) Büyük hareketler.
                 _Ayrac(),
                 Text(
                   l10n.flowEventsTitle,
@@ -157,7 +203,7 @@ class ParaAkisiKarti extends ConsumerWidget {
                     _OlaySatiri(olay: ozet.olaylar[i], gunAy: gunAy),
                   ],
 
-                // 5) Kaynak ve sınır.
+                // 6) Kaynak ve sınır.
                 const SizedBox(height: SandikSpace.md),
                 Text(
                   l10n.flowFootnote(gunAy.format(ozet.veriTarihi)),
@@ -309,7 +355,11 @@ class _OlaySatiri extends StatelessWidget {
     final l10n = context.l10n;
     final c = context.c;
     final t = context.t;
-    final tarih = gunAy.format(olay.tarih);
+    final cokGun = olay.gunSayisi > 1 && olay.ilkGun != null;
+    final tarih = cokGun
+        ? l10n.flowRange(gunAy.format(olay.ilkGun!), gunAy.format(olay.tarih))
+        : gunAy.format(olay.tarih);
+    final oran = fmtPct(olay.buyuklukOrani * 100, digits: 1);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,11 +386,14 @@ class _OlaySatiri extends StatelessWidget {
               ),
               const SizedBox(height: SandikSpace.xxs),
               Text(
-                l10n.flowEventEvidence(
-                  isaretliTutar(olay.tutar),
-                  fmtPct(olay.buyuklukOrani * 100, digits: 1),
-                  fmtNum(olay.sapmaKati, digits: 1),
-                ),
+                cokGun
+                    ? l10n.flowEventEvidenceMulti(
+                        isaretliTutar(olay.tutar), oran, '${olay.gunSayisi}')
+                    : l10n.flowEventEvidence(
+                        isaretliTutar(olay.tutar),
+                        oran,
+                        fmtNum(olay.sapmaKati, digits: 1),
+                      ),
                 style: t.bodySmall?.copyWith(color: c.text58),
               ),
               if (olay.yatirimciDegisimi != null) ...[
@@ -367,6 +420,11 @@ String isaretliTutar(double v) {
   if (v < 0) return '−$govde';
   return govde;
 }
+
+String _donemDegeri(AppLocalizations l10n, DonemAkisi d) => d.oranAnlamli
+    ? l10n.flowPeriodValue(
+        isaretliTutar(d.para), fmtPctIsaretli(d.paraOrani * 100, digits: 1))
+    : isaretliTutar(d.para);
 
 String _adet(int n) => fmtNum(n.toDouble(), digits: 0);
 

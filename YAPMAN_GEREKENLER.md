@@ -24,10 +24,11 @@ Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma
       `select count(*), min(tarih), max(tarih) from fon_akis_tur where fon_sayisi > 0;`
       → ~89 gün, `max` son işlem günü.
 - [ ] Yanlış alarm denetimi (R-73): elindeki 10 fonda "Büyük hareketler"
-      listesi makul mü? Yerel ölçüm (2026-10-04, 29 işlem günü, 1.375 fon):
-      günde ~30 olay, fonların %41'inde en az bir olay. Çok geliyorsa eşikler
-      `_shared/balina.ts`'te tek yerde (`SAPMA_KATI`, `BUYUKLUK_ORANI`,
-      `ASGARI_BUYUKLUK`).
+      listesi makul mü? Kural (2026-10-04): 4 sapma + %3 + fon ≥ ₺250 mn,
+      para piyasası fonları hariç. Yerel ölçüm (29 işlem günü, 1.375 fon):
+      günde ~16 olay, fonların %21'inde en az bir olay; bunların 275'i
+      bildirim kademesinde (≥ %5, ≥ ₺25 mn, penceredeki en büyük akış;
+      203 fon). Oranların paydası akıştan önceki fon büyüklüğü. Eşikler `_shared/balina.ts`'te tek yerde.
 - [ ] Firebase Console › Remote Config: `balina_radari_acik` = `true`
       (önce kendi cihazına koşulla). Açılışla AYNI sürümde sürüm notu + tur
       adımı yazılacak (bayrak kapalıyken yazılmadı: görünmeyen özellik

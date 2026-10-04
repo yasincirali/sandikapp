@@ -3,8 +3,16 @@
 /// Veri sunucudan gelir (`fon_akis_gunluk`, `balina_olay`; 0103). Günlük net
 /// akışı ve "büyük giriş/çıkış" kararını SUNUCU verir (`_shared/balina.ts`);
 /// burada yalnızca gösterim için toplanır: haftalara bölme, son haftanın
-/// toplamı, yatırımcı sayısı farkı. Kural burada yeniden yazılmaz — kart,
-/// olay listesi ve ileride bildirim aynı satırı okumalı.
+/// toplamı, dönem oranları, yatırımcı sayısı farkı, ardışık olay günlerinin
+/// tek satırda birleşmesi. Kural burada yeniden yazılmaz — kart, olay
+/// listesi ve ileride bildirim aynı satırı okumalı.
+///
+/// ## Dönem oranı = akış / dönem BAŞINDAKİ büyüklük
+/// ₺50 mn giriş 500 mn'lik fonda büyük, 50 mr'lik fonda gürültüdür; mutlak
+/// tutar fonlar arasında kıyaslanamaz. Fon akışı raporlamasında yerleşik
+/// ölçü budur ("organik büyüme"). Büyüklük değişimi ikiye ayrılır: para
+/// akışının payı ve kalan (fiyat etkisi) — "fon büyüdü" ile "fona para
+/// girdi" aynı şey değildir, kart ikisini ayrı söyler.
 ///
 /// ## Neden "son hafta", "bu hafta" değil
 /// Fon fiyatı bir gün gecikmeli yayınlanır; Pazartesi sabahı içinde bulunulan
@@ -65,9 +73,18 @@ class FonBalinaOlayi {
     required this.buyuklukOrani,
     required this.sapmaKati,
     this.yatirimciDegisimi,
+    this.ilkGun,
+    this.gunSayisi = 1,
   });
 
+  /// Olayın (birleşmişse SON) günü.
   final DateTime tarih;
+
+  /// Birleşmiş olayın ilk günü; tek günlük olayda null.
+  final DateTime? ilkGun;
+
+  /// Ardışık kaç işlem günü birleşti (1 = tek gün).
+  final int gunSayisi;
 
   /// Net akış, TL; girişte artı, çıkışta eksi.
   final double tutar;
@@ -109,6 +126,58 @@ class FonBalinaOlayi {
         sapmaKati: sapmaKati,
         yatirimciDegisimi: degisim,
       );
+
+  /// Bir sonraki işlem günündeki aynı yönlü olayla birleşim. Tutar ve oran
+  /// toplanır (iki günde çıkan para), kat en yükseği; yatırımcı farkı yalnız
+  /// iki günün de farkı biliniyorsa toplanır.
+  FonBalinaOlayi _birles(FonBalinaOlayi sonraki) => FonBalinaOlayi(
+        tarih: sonraki.tarih,
+        ilkGun: ilkGun ?? tarih,
+        gunSayisi: gunSayisi + sonraki.gunSayisi,
+        tutar: tutar + sonraki.tutar,
+        buyuklukOrani: buyuklukOrani + sonraki.buyuklukOrani,
+        sapmaKati:
+            sapmaKati > sonraki.sapmaKati ? sapmaKati : sonraki.sapmaKati,
+        yatirimciDegisimi:
+            yatirimciDegisimi != null && sonraki.yatirimciDegisimi != null
+                ? yatirimciDegisimi! + sonraki.yatirimciDegisimi!
+                : null,
+      );
+}
+
+/// Bir dönemin (1 ay, 3 ay) para akışı ve büyüklük değişiminin ayrıştırması.
+class DonemAkisi {
+  const DonemAkisi({
+    required this.para,
+    required this.paraOrani,
+    required this.toplamDegisim,
+  });
+
+  /// Dönemdeki net akış, TL.
+  final double para;
+
+  /// [para] / dönem başındaki fon büyüklüğü (0,043 = %4,3).
+  final double paraOrani;
+
+  /// Fon büyüklüğünün dönemdeki toplam değişimi (oran).
+  final double toplamDegisim;
+
+  /// Büyüklük değişiminin para akışıyla açıklanmayan kısmı.
+  double get fiyatEtkisi => toplamDegisim - paraOrani;
+
+  /// Oran ve ayrıştırma okunabilir mi? Akış ya da değişim dönem başındaki
+  /// büyüklüğü AŞTIYSA (fon birkaç katına çıkmış ya da boşalmış) "dönem
+  /// başına oran" anlamını yitirir: gerçek veride +%3.014 akış ve −%363
+  /// "fiyat etkisi" çıktı (DOH, 2026-09; emülatör 2026-10-04). O durumda
+  /// yalnız tutar gösterilir.
+  bool get oranAnlamli => paraOrani.abs() <= 1 && toplamDegisim.abs() <= 1;
+}
+
+/// Üst üste aynı yönde akan haftalar (en az iki).
+class HaftaSerisi {
+  const HaftaSerisi({required this.hafta, required this.giris});
+  final int hafta;
+  final bool giris;
 }
 
 /// Bir haftanın toplam net akışı.
@@ -133,7 +202,17 @@ class FonAkisOzeti {
     required this.yatirimci,
     required this.yatirimciDegisimi,
     required this.olaylar,
+    this.ay1,
+    this.ay3,
+    this.seri,
   });
+
+  /// Son 30 / 90 günün akışı; dönem eksiksiz kurulamıyorsa null.
+  final DonemAkisi? ay1;
+  final DonemAkisi? ay3;
+
+  /// Son hafta dahil üst üste aynı yönlü hafta sayısı; ikiden azsa null.
+  final HaftaSerisi? seri;
 
   /// [haftaSayisi] hafta, eskiden yeniye; sonuncusu en yeni verinin haftası.
   final List<HaftaAkisi> haftalar;
@@ -171,8 +250,13 @@ const int olayUstu = 4;
 /// sonu + yayın gecikmesi sığar; bundan uzunu kaynağın durduğunu gösterir.
 const Duration bayatlikSiniri = Duration(days: 12);
 
-/// İstemcinin sunucudan isteyeceği geriye dönük süre: 8 hafta + pay.
-const Duration akisSorguPenceresi = Duration(days: 63);
+/// İstemcinin sunucudan isteyeceği geriye dönük süre: 3 aylık dönem (90
+/// gün) + dönem başını bulmak için pay. ~75 satır.
+const Duration akisSorguPenceresi = Duration(days: 105);
+
+/// Dönem başı satırı hedef günden en çok bu kadar eski olabilir (hafta sonu
+/// + bayram). Daha eskiyse dönem "1 ay" değildir; oran verilmez.
+const int _donemBasiPayi = 9;
 
 /// Günlük satırlardan ve olaylardan kart özeti. Bkz. dosya başlığı.
 FonAkisOzeti? fonAkisOzeti(
@@ -221,11 +305,43 @@ FonAkisOzeti? fonAkisOzeti(
   final gunIndeksi = {
     for (var i = 0; i < sirali.length; i++) sirali[i].tarih: i,
   };
-  final gosterilen = [
+  final pencerede = [
     for (final o in olaylar)
       if (!o.tarih.isBefore(esik) && !o.tarih.isAfter(son.tarih))
         o._yatirimciyla(fark(gunIndeksi[o.tarih] ?? -1)),
-  ]..sort((a, b) => b.tarih.compareTo(a.tarih));
+  ]..sort((a, b) => a.tarih.compareTo(b.tarih));
+
+  // Ardışık İŞLEM günlerindeki aynı yönlü olaylar tek satır: iki günde çıkan
+  // para kullanıcı için tek harekettir (ör. 21 ve 22 Eylül). "Ardışık"
+  // takvimle değil satır sırasıyla ölçülür — Cuma ile Pazartesi ardışıktır.
+  final birlesik = <FonBalinaOlayi>[];
+  for (final o in pencerede) {
+    final onceki = birlesik.isEmpty ? null : birlesik.last;
+    final i = gunIndeksi[o.tarih];
+    final j = onceki == null ? null : gunIndeksi[onceki.tarih];
+    if (onceki != null &&
+        i != null &&
+        j != null &&
+        i == j + 1 &&
+        onceki.giris == o.giris) {
+      birlesik[birlesik.length - 1] = onceki._birles(o);
+    } else {
+      birlesik.add(o);
+    }
+  }
+  final gosterilen = birlesik.reversed.toList();
+
+  // Üst üste aynı yönlü haftalar, son haftadan geriye. Verisi olmayan ya da
+  // sıfır akışlı hafta seriyi keser.
+  final sonYon = toplam[sonHaftaBasi]!;
+  var seriHafta = 0;
+  if (sonYon != 0) {
+    for (var h = sonHaftaBasi;; h = _gunEkle(h, -7)) {
+      final net = toplam[h];
+      if (net == null || net == 0 || (net > 0) != (sonYon > 0)) break;
+      seriHafta++;
+    }
+  }
 
   return FonAkisOzeti(
     haftalar: haftalar,
@@ -236,6 +352,39 @@ FonAkisOzeti? fonAkisOzeti(
     yatirimci: son.yatirimci,
     yatirimciDegisimi: fark(sirali.length - 1),
     olaylar: gosterilen.take(olayUstu).toList(),
+    ay1: _donemAkisi(sirali, 30),
+    ay3: _donemAkisi(sirali, 90),
+    seri: seriHafta >= 2
+        ? HaftaSerisi(hafta: seriHafta, giris: sonYon > 0)
+        : null,
+  );
+}
+
+/// Son [gun] günün akışı. Dönem başı = hedef günde ya da hemen öncesindeki
+/// satır; o satırdan sonraki HER günün akışı bilinmeli — eksik gün varsa
+/// toplam eksik olurdu, oran verilmez (uydurma yok).
+DonemAkisi? _donemAkisi(List<FonAkisGunu> sirali, int gun) {
+  final son = sirali.last;
+  final hedef = _gunEkle(son.tarih, -gun);
+  var bas = -1;
+  for (var i = 0; i < sirali.length; i++) {
+    if (sirali[i].tarih.isAfter(hedef)) break;
+    bas = i;
+  }
+  if (bas < 0 || bas == sirali.length - 1) return null;
+  if (hedef.difference(sirali[bas].tarih).inDays > _donemBasiPayi) return null;
+
+  var para = 0.0;
+  for (var i = bas + 1; i < sirali.length; i++) {
+    final akis = sirali[i].netAkis;
+    if (akis == null) return null;
+    para += akis;
+  }
+  final ilk = sirali[bas].portfoyDegeri;
+  return DonemAkisi(
+    para: para,
+    paraOrani: para / ilk,
+    toplamDegisim: (son.portfoyDegeri - ilk) / ilk,
   );
 }
 
