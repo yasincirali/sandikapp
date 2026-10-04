@@ -935,7 +935,7 @@
   },
   "retryLower": "Tekrar dene",
   "raceUpper": "YARIŞ",
-  "changeByTypeUpper": "TÜRE GÖRE · PİYASANIN KATTIĞI",
+  "changeByTypeUpper": "TÜRE GÖRE · FİYAT ETKİSİ",
   "noData": "Veri yok",
   "tooltipReturn": "\nGetiri ",
   "tooltipBuy": "\nAlım  +",

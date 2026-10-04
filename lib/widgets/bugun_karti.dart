@@ -778,7 +778,7 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final tutar = gizli
         ? '••••'
         : '${o.degisimTRY >= 0 ? '+' : '−'}${fmtTRY(o.degisimTRY.abs())}';
-    final yuzde = fmtPct(o.degisimPct.abs());
+    final yuzde = isaretliYuzde(o.degisimPct);
     return _BilgiKutusu(
       etiket: [l10n.todayTopMoverLabel],
       deger: pozisyonEtiketi(o.positionKey, o.tur, l10n),

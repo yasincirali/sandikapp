@@ -1651,7 +1651,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get raceUpper => 'RACE';
 
   @override
-  String get changeByTypeUpper => 'BY TYPE · MARKET ADDED';
+  String get changeByTypeUpper => 'BY TYPE · PRICE EFFECT';
 
   @override
   String get noData => 'No data';

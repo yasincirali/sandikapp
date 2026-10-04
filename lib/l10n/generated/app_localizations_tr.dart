@@ -1638,7 +1638,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get raceUpper => 'YARIŞ';
 
   @override
-  String get changeByTypeUpper => 'TÜRE GÖRE · PİYASANIN KATTIĞI';
+  String get changeByTypeUpper => 'TÜRE GÖRE · FİYAT ETKİSİ';
 
   @override
   String get noData => 'Veri yok';

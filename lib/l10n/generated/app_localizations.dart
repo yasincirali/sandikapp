@@ -2975,7 +2975,7 @@ abstract class AppLocalizations {
   /// No description provided for @changeByTypeUpper.
   ///
   /// In tr, this message translates to:
-  /// **'TÜRE GÖRE · PİYASANIN KATTIĞI'**
+  /// **'TÜRE GÖRE · FİYAT ETKİSİ'**
   String get changeByTypeUpper;
 
   /// No description provided for @noData.

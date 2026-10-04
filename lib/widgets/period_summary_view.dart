@@ -786,10 +786,14 @@ class _CubukSatiri extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final yazi = isaretli
-        ? '${deger >= 0 ? '+' : '−'}'
-            '${baz.fmt(deger.abs())}'
-        : baz.fmt(deger.abs());
+    // Yazılan tutar sıfıra yuvarlanıyorsa işaret YOK: "−₺0" yönü olmayan
+    // bir şeye yön yazardı (emülatör 2026-10-04, durgun günde "Fiyat etkisi
+    // −₺0"; `isaretliYuzde` ile aynı kural).
+    final mutlak = baz.fmt(deger.abs());
+    final sifir = !RegExp(r'[1-9]').hasMatch(mutlak);
+    final yazi = isaretli && !sifir
+        ? '${deger >= 0 ? '+' : '−'}$mutlak'
+        : mutlak;
 
     return Semantics(
       label: '$etiket $yazi',
