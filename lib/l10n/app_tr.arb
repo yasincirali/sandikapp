@@ -4071,5 +4071,294 @@
       "toplam": {"type": "int"}
     }
   },
-  "yasalBelgeYatirimUyarisi": "Yatırım Uyarısı"
+  "yasalBelgeYatirimUyarisi": "Yatırım Uyarısı",
+  "flowTitleUpper": "PARA AKIŞI",
+  "flowLastWeekIn": "Son hafta net giriş",
+  "flowLastWeekOut": "Son hafta net çıkış",
+  "flowLastWeekFlat": "Son hafta net akış",
+  "flowRange": "{from} - {to}",
+  "@flowRange": {
+    "description": "Para akışı kartında son haftanın tarih aralığı: '29 Eyl - 2 Eki'.",
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "flowChartCaption": "Haftalık net akış · son 8 hafta",
+  "flowChartSemantics": "Son 8 haftanın haftalık net para akışı. Son hafta {amount}.",
+  "@flowChartSemantics": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "flowWeekOf": "{date} haftası",
+  "@flowWeekOf": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowFundSize": "Fon büyüklüğü",
+  "flowInvestors": "Yatırımcı sayısı",
+  "flowInvestorsDelta": "{count} ({delta})",
+  "@flowInvestorsDelta": {
+    "description": "Yatırımcı sayısı ve bir önceki işlem gününe göre farkı: '40.518 (+12)'.",
+    "placeholders": {
+      "count": {"type": "String"},
+      "delta": {"type": "String"}
+    }
+  },
+  "flowEventsTitle": "Büyük hareketler · son 30 gün",
+  "flowEventIn": "Büyük giriş · {date}",
+  "@flowEventIn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventOut": "Büyük çıkış · {date}",
+  "@flowEventOut": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventEvidence": "{amount} · fon büyüklüğüne oranı {pct} · olağan günlük hareketin {times} katı",
+  "@flowEventEvidence": {
+    "description": "Olayın kanıt satırı. amount işaretli tutar, pct yüzde, times bir ondalıklı kat.",
+    "placeholders": {
+      "amount": {"type": "String"},
+      "pct": {"type": "String"},
+      "times": {"type": "String"}
+    }
+  },
+  "flowEventInvestors": "Aynı gün yatırımcı sayısı {delta}",
+  "@flowEventInvestors": {
+    "placeholders": {
+      "delta": {"type": "String"}
+    }
+  },
+  "flowNoEvents": "Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.",
+  "flowExplain": "Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.",
+  "flowFootnote": "Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.",
+  "@flowFootnote": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowStreakIn": "{count} haftadır üst üste net giriş",
+  "@flowStreakIn": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowStreakOut": "{count} haftadır üst üste net çıkış",
+  "@flowStreakOut": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriod1m": "Son 1 ay",
+  "flowPeriod3m": "Son 3 ay",
+  "flowPeriodValue": "{amount} · {pct}",
+  "@flowPeriodValue": {
+    "description": "Dönem akışı: işaretli tutar ve dönem başındaki fon büyüklüğüne oranı.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriodNote": "Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.",
+  "flowDecompose": "Son 1 ayda fon büyüklüğü {total} değişti: fiyat etkisi {price}, para akışı {flow}.",
+  "@flowDecompose": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "flow": {
+        "type": "String"
+      }
+    }
+  },
+  "flowEventEvidenceMulti": "{amount} · fon büyüklüğüne oranı {pct} · {days} işlem günü üst üste",
+  "@flowEventEvidenceMulti": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "weekTitle": "Haftanın özeti",
+  "weekIntro": "Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.",
+  "weekFundsUpper": "FONLARINDA PARA AKIŞI",
+  "weekRowRange": "{label} · {range}",
+  "@weekRowRange": {
+    "description": "Haftanın özeti satırı: 'Net çıkış · 28 Eyl - 2 Eki'.",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "weekRowIn": "Net giriş",
+  "weekRowOut": "Net çıkış",
+  "weekRowFlat": "Net akış",
+  "weekRowBigIn": "Bu hafta büyük giriş var",
+  "weekRowBigOut": "Bu hafta büyük çıkış var",
+  "weekEmptyNoData": "Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.",
+  "weekFootnote": "Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet'te. Yatırım tavsiyesi değildir.",
+  "weekLink": "Tüm fonlarımın haftası",
+  "volTitleUpper": "HACİM RADARI",
+  "volLastDay": "Para hacmi · {date}",
+  "@volLastDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "volVsAverage": "Önceki 20 günün ortalamasının {times} katı",
+  "@volVsAverage": {
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "volPriceSameDay": "Aynı gün fiyat {pct}",
+  "@volPriceSameDay": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "volChartCaption": "Günlük para hacmi · son 20 işlem günü",
+  "volChartSemantics": "Son 20 işlem gününün günlük para hacmi. Son gün {amount}.",
+  "@volChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "volExplain": "Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.",
+  "volEventsTitle": "Olağandışı hacim günleri · son 30 gün",
+  "volEventTitle": "Olağandışı hacim · {date}",
+  "@volEventTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "volEventEvidence": "{amount} · ortalamanın {times} katı · fiyat {pct}",
+  "@volEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "volNoEvents": "Son 30 günde olağandışı hacim günü yok.",
+  "volFootnote": "Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
+  "@volFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryTitleUpper": "ALICI BASKISI",
+  "cryShareLabel": "Alıcı payı · {date}",
+  "@cryShareLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryShareAvg": "Son 7 günün ortalaması {pct}",
+  "@cryShareAvg": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "cryExplain": "Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.",
+  "cryVolumeLabel": "İşlem hacmi {amount}",
+  "@cryVolumeLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryChartCaption": "Günlük işlem hacmi (USDT) · son 20 gün",
+  "cryChartSemantics": "Son 20 günün günlük işlem hacmi. Son gün {amount}.",
+  "@cryChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryEventEvidence": "{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}",
+  "@cryEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "cryFootnote": "Kaynak: Binance, USDT paritesi · veri tarihi {date}. Yalnız Binance'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.",
+  "@cryFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "weekVolumeUpper": "OLAĞANDIŞI HACİM",
+  "weekVolumeRow": "Olağandışı hacim · {date}",
+  "@weekVolumeRow": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }

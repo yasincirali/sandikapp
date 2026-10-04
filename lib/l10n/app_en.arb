@@ -3751,5 +3751,289 @@
   "zorunluOkumaEksik": "To continue, read to the end and accept: {belgeler}",
   "zorunluOkumaKutuKilitli": "First read and accept every document above.",
   "zorunluOkumaSayac": "{onayli}/{toplam} accepted",
-  "yasalBelgeYatirimUyarisi": "Investment Disclaimer"
+  "yasalBelgeYatirimUyarisi": "Investment Disclaimer",
+  "flowTitleUpper": "MONEY FLOW",
+  "flowLastWeekIn": "Net inflow, latest week",
+  "flowLastWeekOut": "Net outflow, latest week",
+  "flowLastWeekFlat": "Net flow, latest week",
+  "flowRange": "{from} - {to}",
+  "@flowRange": {
+    "placeholders": {
+      "from": {"type": "String"},
+      "to": {"type": "String"}
+    }
+  },
+  "flowChartCaption": "Weekly net flow · last 8 weeks",
+  "flowChartSemantics": "Weekly net money flow for the last 8 weeks. Latest week {amount}.",
+  "@flowChartSemantics": {
+    "placeholders": {
+      "amount": {"type": "String"}
+    }
+  },
+  "flowWeekOf": "Week of {date}",
+  "@flowWeekOf": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowFundSize": "Fund size",
+  "flowInvestors": "Investors",
+  "flowInvestorsDelta": "{count} ({delta})",
+  "@flowInvestorsDelta": {
+    "placeholders": {
+      "count": {"type": "String"},
+      "delta": {"type": "String"}
+    }
+  },
+  "flowEventsTitle": "Large moves · last 30 days",
+  "flowEventIn": "Large inflow · {date}",
+  "@flowEventIn": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventOut": "Large outflow · {date}",
+  "@flowEventOut": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowEventEvidence": "{amount} · {pct} of fund size · {times}× the usual daily move",
+  "@flowEventEvidence": {
+    "placeholders": {
+      "amount": {"type": "String"},
+      "pct": {"type": "String"},
+      "times": {"type": "String"}
+    }
+  },
+  "flowEventInvestors": "Investors that day {delta}",
+  "@flowEventInvestors": {
+    "placeholders": {
+      "delta": {"type": "String"}
+    }
+  },
+  "flowNoEvents": "No unusually large inflow or outflow in the last 30 days.",
+  "flowExplain": "Net flow is money entering the fund minus money leaving it; price changes are not included.",
+  "flowFootnote": "Source: TEFAS · data as of {date}. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.",
+  "@flowFootnote": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "flowStreakIn": "Net inflow for {count} weeks in a row",
+  "@flowStreakIn": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowStreakOut": "Net outflow for {count} weeks in a row",
+  "@flowStreakOut": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriod1m": "Last 1 month",
+  "flowPeriod3m": "Last 3 months",
+  "flowPeriodValue": "{amount} · {pct}",
+  "@flowPeriodValue": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "flowPeriodNote": "Percentages are the flow relative to fund size at the start of the period.",
+  "flowDecompose": "Fund size changed {total} over the last month: price effect {price}, money flow {flow}.",
+  "@flowDecompose": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "flow": {
+        "type": "String"
+      }
+    }
+  },
+  "flowEventEvidenceMulti": "{amount} · {pct} of fund size · {days} trading days in a row",
+  "@flowEventEvidenceMulti": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "weekTitle": "This week",
+  "weekIntro": "Highlights of the latest week in the assets you hold. Tap a row for details.",
+  "weekFundsUpper": "MONEY FLOW IN YOUR FUNDS",
+  "weekRowRange": "{label} · {range}",
+  "@weekRowRange": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "weekRowIn": "Net inflow",
+  "weekRowOut": "Net outflow",
+  "weekRowFlat": "Net flow",
+  "weekRowBigIn": "Large inflow this week",
+  "weekRowBigOut": "Large outflow this week",
+  "weekEmptyNoData": "Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.",
+  "weekFootnote": "Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio's weekly return is under Performance, Summary. Not investment advice.",
+  "weekLink": "My funds this week",
+  "volTitleUpper": "VOLUME RADAR",
+  "volLastDay": "Traded value · {date}",
+  "@volLastDay": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "volVsAverage": "{times}× the average of the previous 20 days",
+  "@volVsAverage": {
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "volPriceSameDay": "Price that day {pct}",
+  "@volPriceSameDay": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "volChartCaption": "Daily traded value · last 20 trading days",
+  "volChartSemantics": "Daily traded value for the last 20 trading days. Latest day {amount}.",
+  "@volChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "volExplain": "Traded value is the total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in or out.",
+  "volEventsTitle": "Unusual volume days · last 30 days",
+  "volEventTitle": "Unusual volume · {date}",
+  "@volEventTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "volEventEvidence": "{amount} · {times}× the average · price {pct}",
+  "@volEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "volNoEvents": "No unusual volume days in the last 30 days.",
+  "volFootnote": "Source: Yahoo Finance end-of-day data · as of {date}. This data cannot show who bought or sold. Not investment advice.",
+  "@volFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryTitleUpper": "BUYER PRESSURE",
+  "cryShareLabel": "Buyer share · {date}",
+  "@cryShareLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "cryShareAvg": "Average of the last 7 days {pct}",
+  "@cryShareAvg": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "cryExplain": "Buyer share is the part of the day's volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.",
+  "cryVolumeLabel": "Volume {amount}",
+  "@cryVolumeLabel": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryChartCaption": "Daily volume (USDT) · last 20 days",
+  "cryChartSemantics": "Daily volume for the last 20 days. Latest day {amount}.",
+  "@cryChartSemantics": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cryEventEvidence": "{amount} · {times}× the average · price {pct} · buyer share {share}",
+  "@cryEventEvidence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "times": {
+        "type": "String"
+      },
+      "pct": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "cryFootnote": "Source: Binance, USDT pair · as of {date}. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.",
+  "@cryFootnote": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "weekVolumeUpper": "UNUSUAL VOLUME",
+  "weekVolumeRow": "Unusual volume · {date}",
+  "@weekVolumeRow": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  }
 }
