@@ -70,13 +70,12 @@ import '../providers/preferences_provider.dart'
         leaderboardOptInProvider,
         seviyeGorunurlukProvider,
         yatirimciSeviyesiProvider;
-import 'leaderboard_screen.dart';
+import 'siralama_screen.dart';
 import '../widgets/ortak_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
-import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/kiyas_karti.dart';
 import '../services/kiyas_service.dart';
@@ -610,8 +609,10 @@ class _PortfolioPerformanceScreenState
                             padding: EdgeInsets.zero,
                             onPressed: () => pushGuarded(
                               context,
+                              // Bayrak `siralama_tek_sayfa` açıksa
+                              // Sıralama › Ortaklarım; kapalıysa Yarış.
                               adaptiveRoute<void>(
-                                  builder: (_) => const LeaderboardScreen()),
+                                  builder: (_) => yarisGirisEkrani()),
                             ),
                             // Üst çubuk düğmeleri her ekranda aynı kabuk
                             // (44pt kutu) ve aynı aralık (`SandikSpace.sm`)

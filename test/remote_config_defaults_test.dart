@@ -94,6 +94,10 @@ void main() {
     test('tek_kiyas_yuzeyi kapalı doğar', () {
       expect(varsayilan('tek_kiyas_yuzeyi'), 'false');
     });
+
+    test('siralama_tek_sayfa kapalı doğar', () {
+      expect(varsayilan('siralama_tek_sayfa'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {

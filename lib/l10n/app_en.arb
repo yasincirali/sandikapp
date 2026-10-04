@@ -3720,5 +3720,8 @@
   "vitrinStatementHint": "Broker PDF, Excel or CSV, all in one go",
   "vitrinStatementHintShort": "PDF, Excel or CSV in one go",
   "vitrinTapToAdd": "Tap to add",
-  "vitrinPriceUnknown": "No price yet"
+  "vitrinPriceUnknown": "No price yet",
+  "rankingTitle": "Rankings",
+  "rankingTabPartners": "My partners",
+  "rankingTabEveryone": "Everyone"
 }

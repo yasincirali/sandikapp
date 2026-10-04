@@ -408,14 +408,14 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
               child: ZirveKarti(
                 donem: ZirveDonem.yakin(
                     _PortfolioPerformanceScreenState._periods[_selectedPeriodIdx].days),
+                // Bayrak `siralama_tek_sayfa` açıksa Sıralama › Herkes
+                // (aynı gövde, aynı rıza akışı); kapalıysa Zirve ekranı.
                 onAc: () => pushGuarded(
                   context,
                   adaptiveRoute<void>(
-                    builder: (_) => ZirvePortfoylerScreen(
-                      baslangic: ZirveDonem.yakin(
-                          _PortfolioPerformanceScreenState
-                              ._periods[_selectedPeriodIdx].days),
-                    ),
+                    builder: (_) => zirveGirisEkrani(ZirveDonem.yakin(
+                        _PortfolioPerformanceScreenState
+                            ._periods[_selectedPeriodIdx].days)),
                   ),
                 ),
               ),

@@ -9,12 +9,14 @@ import '../providers/preferences_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/yaris_sahnesi.dart';
+import '../widgets/zirve_donem_secici.dart';
 import '../utils/polling.dart';
 import '../l10n/l10n.dart';
 
@@ -28,14 +30,110 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   int _periodIdx = 1; // 0=7g, 1=30g, 2=1y
 
-  static const _periods = [
-    (label: '7G', days: 7),
-    (label: '30G', days: 30),
-    (label: '1Y', days: 365),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: context.c.background,
+      appBar: SandikAppBar(
+        title: context.l10n.raceTitle,
+        actions: yarisEylemleri(context, ref),
+        transparent: true,
+      ),
+      body: SafeArea(
+        child: YarisGovdesi(
+          donemIdx: _periodIdx,
+          onDonem: (i) => setState(() => _periodIdx = i),
+        ),
+      ),
+    );
+  }
+}
+
+/// Yarış'ın üst çubuk eylemleri: ayrılma menüsü (katılımcıya) ve "Getiri
+/// nasıl hesaplanıyor?" düğmesi.
+///
+/// Fonksiyon olarak ayrıldı (sadeleştirme madde 8, 2026-10-04): tek
+/// "Sıralama" sayfası (`SiralamaScreen`, bayrak `siralama_tek_sayfa`)
+/// "Ortaklarım" sekmesindeyken AYNI eylemleri çizer — kopya yazılmaz.
+List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
+  final optIn = ref.watch(leaderboardOptInProvider);
+  final me = ref.watch(authProvider).valueOrNull;
+  return [
+    // "Yarış'a katıl" anahtarı Ayarlar'dan buraya taşındı (2026-09-14):
+    // katılım bu ekranın CTA'sı, ayrılma da bu ekranın menüsü. Bir
+    // özelliğin açma/kapama yeri özelliğin kendisidir.
+    if (optIn)
+      PopupMenuButton<String>(
+        icon: Icon(Icons.more_vert_rounded, color: context.c.text58),
+        tooltip: context.l10n.raceOptions,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SandikRadius.md)),
+        onSelected: (v) async {
+          if (v != 'ayril') return;
+          final ok = await showSandikConfirm(
+            context: context,
+            title: context.l10n.leaveRace,
+            message: context.l10n.leaveRaceBody,
+            confirmLabel: context.l10n.leaveWord,
+            destructive: true,
+          );
+          if (ok) {
+            await ref.read(leaderboardOptInProvider.notifier).set(false);
+            LeaderboardService.instance.optInSunucuyaYaz(me?.id, false);
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'ayril', child: Text(context.l10n.leaveRace)),
+        ],
+      ),
+    // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
+    // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
+    // yan yana görünce "hangisi doğru?" diye soruyor — açıklama burada.
+    IconButton(
+      icon: Icon(Icons.info_outline_rounded, color: context.c.text58, size: 22),
+      tooltip: context.l10n.howReturnCalculated,
+      onPressed: () => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: context.c.surface1,
+        isScrollControlled: true,
+        useSafeArea: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => const _RoiInfoSheet(),
+      ),
+    ),
+  ];
+}
+
+/// Yarış ekranının gövdesi — katılım daveti ya da sıralama.
+///
+/// `LeaderboardScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04): tek
+/// "Sıralama" sayfasının "Ortaklarım" sekmesi AYNI gövdeyi çizer. Dönem
+/// dışarıdan yönetilir ki sayfa iki sekmede tek dönem tutsun; metrik ve
+/// hesap burada değişmez (seçimlerinin getirisi, TWR — `secim_getirisi`).
+///
+/// Katılım akışı (opt-in → sunucuya yaz, 0081) gövdede kalır: hangi kapıdan
+/// gelinirse gelinsin rızasız sıralama çizilmez.
+class YarisGovdesi extends ConsumerWidget {
+  const YarisGovdesi({
+    super.key,
+    required this.donemIdx,
+    required this.onDonem,
+    this.sekmeli = false,
+  });
+
+  /// [_YarisDonemleri] içindeki seçili dönem (0=7g, 1=30g, 2=1y).
+  final int donemIdx;
+  final ValueChanged<int> onDonem;
+
+  /// Tek Sıralama sayfasında mı? Öyleyse dönem seçici "Herkes" sekmesiyle
+  /// AYNI bileşen (`ZirveDonemSecici`, 1H · 1A · 1Y) — sekme değişince
+  /// seçici yerinde kalır, etiket ve kabuk değişmez.
+  final bool sekmeli;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final optIn = ref.watch(leaderboardOptInProvider);
     final kuresel = RemoteConfigService.instance.globalLeaderboardEnabled;
     final me = ref.watch(authProvider).valueOrNull;
@@ -43,154 +141,121 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final myAssets = ref.watch(portfolioProvider).valueOrNull?.assets ?? [];
     final partnerAssets = ref.watch(allPartnerAssetsProvider).valueOrNull ?? {};
     final pState = ref.watch(portfolioProvider).valueOrNull;
+    final periodDays = _YarisDonemleri.liste[donemIdx].days;
 
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(
-        title: context.l10n.raceTitle,
-        actions: [
-          // "Yarış'a katıl" anahtarı Ayarlar'dan buraya taşındı (2026-09-14):
-          // katılım bu ekranın CTA'sı, ayrılma da bu ekranın menüsü. Bir
-          // özelliğin açma/kapama yeri özelliğin kendisidir.
-          if (optIn)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: context.c.text58),
-              tooltip: context.l10n.raceOptions,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md)),
-              onSelected: (v) async {
-                if (v != 'ayril') return;
-                final ok = await showSandikConfirm(
-                  context: context,
-                  title: context.l10n.leaveRace,
-                  message: context.l10n.leaveRaceBody,
-                  confirmLabel: context.l10n.leaveWord,
-                  destructive: true,
-                );
-                if (ok) {
-                  await ref.read(leaderboardOptInProvider.notifier).set(false);
-                  LeaderboardService.instance.optInSunucuyaYaz(me?.id, false);
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                    value: 'ayril', child: Text(context.l10n.leaveRace)),
-              ],
+    if (!optIn) {
+      return _OptInPrompt(
+        onEnable: () {
+          ref.read(leaderboardOptInProvider.notifier).set(true);
+          // Sunucu da bilsin: günlük snapshot bu bayrağa bakar (0081).
+          LeaderboardService.instance.optInSunucuyaYaz(me?.id, true);
+        },
+      );
+    }
+    return Column(
+      children: [
+        if (sekmeli)
+          Padding(
+            padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
+            child: ZirveDonemSecici(
+              secili: ZirveDonem.values[donemIdx],
+              onSec: (d) => onDonem(ZirveDonem.values.indexOf(d)),
             ),
-          // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
-          // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
-          // yan yana görünce "hangisi doğru?" diye soruyor — açıklama burada.
-          IconButton(
-            icon: Icon(Icons.info_outline_rounded,
-                color: context.c.text58, size: 22),
-            tooltip: context.l10n.howReturnCalculated,
-            onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              backgroundColor: context.c.surface1,
-              isScrollControlled: true,
-              useSafeArea: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (_) => const _RoiInfoSheet(),
-            ),
+          )
+        else
+          _PeriodBar(
+            selected: donemIdx,
+            onChange: onDonem,
+            periods: _YarisDonemleri.liste
+                .map((p) => p.label)
+                .toList(growable: false),
           ),
+        Expanded(
+          child: activePartners.isEmpty
+              // Küresel sıralama parametrik kapalıyken solo panel
+              // (küresel dilim + en çok kazandıranlar) anlamsız:
+              // ortak ekleme daveti gösterilir (2026-09-21).
+              ? (kuresel
+                  ? _SoloPanel(
+                      me: me,
+                      myAssets: myAssets,
+                      periodDays: periodDays,
+                      pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
+                    )
+                  : Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(SandikSpace.lg),
+                        child: Text(
+                          context.l10n.racePitch,
+                          textAlign: TextAlign.center,
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ),
+                    ))
+              : _LeaderboardList(
+                  me: me,
+                  myAssets: myAssets,
+                  partners: activePartners,
+                  partnerAssets: partnerAssets,
+                  periodDays: periodDays,
+                  pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
+                ),
+        ),
+        // Kendi satırının ek bilgisi (R1): paranın getirisi —
+        // Performans ile aynı sayı. Sıralama seçimleri ölçer.
+        if (me != null && pState != null)
+          _ParaninGetirisiSatiri(
+            portfoy: pState,
+            periodDays: periodDays,
+          ),
+        if (kuresel) ...[
+          // Genel sıralama (yüzdelik dilim) GEÇİCİ olarak kapalı
+          // (kullanıcı kararı 2026-09-29): havuz k_min'i geçene kadar
+          // "sıran açılacak" kartı boş vaat. Bayrak yeni değil —
+          // aynı kavramın ana ekran şeridiyle ortak anahtarı
+          // `percentile_strip_enabled`; ikisi birlikte açılır,
+          // yayın gerekmez. Zirve portföyler 2026-09-29'da
+          // Performans sekmesine taşındı (`ZirveKarti` +
+          // `ZirvePortfoylerScreen`): zirve bir kıyas verisi,
+          // yarış değil; kıyas ekranı Performans.
+          if (RemoteConfigService.instance.percentileStripEnabled)
+            _GlobalPercentileTeaser(periodDays: periodDays),
         ],
-        transparent: true,
-      ),
-      body: SafeArea(
-        child: !optIn
-            ? _OptInPrompt(
-                onEnable: () {
-                  ref.read(leaderboardOptInProvider.notifier).set(true);
-                  // Sunucu da bilsin: günlük snapshot bu bayrağa bakar (0081).
-                  LeaderboardService.instance.optInSunucuyaYaz(me?.id, true);
-                },
-              )
-            : Column(
-                children: [
-                  _PeriodBar(
-                    selected: _periodIdx,
-                    onChange: (i) => setState(() => _periodIdx = i),
-                    periods:
-                        _periods.map((p) => p.label).toList(growable: false),
-                  ),
-                  Expanded(
-                    child: activePartners.isEmpty
-                        // Küresel sıralama parametrik kapalıyken solo panel
-                        // (küresel dilim + en çok kazandıranlar) anlamsız:
-                        // ortak ekleme daveti gösterilir (2026-09-21).
-                        ? (kuresel
-                            ? _SoloPanel(
-                                me: me,
-                                myAssets: myAssets,
-                                periodDays: _periods[_periodIdx].days,
-                                pnlToTRY: (val, cur) =>
-                                    pState?.toTRY(val, cur) ?? val,
-                              )
-                            : Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(SandikSpace.lg),
-                                  child: Text(
-                                    context.l10n.racePitch,
-                                    textAlign: TextAlign.center,
-                                    style: context.t.bodyMedium
-                                        ?.copyWith(color: context.c.text58),
-                                  ),
-                                ),
-                              ))
-                        : _LeaderboardList(
-                            me: me,
-                            myAssets: myAssets,
-                            partners: activePartners,
-                            partnerAssets: partnerAssets,
-                            periodDays: _periods[_periodIdx].days,
-                            pnlToTRY: (val, cur) =>
-                                pState?.toTRY(val, cur) ?? val,
-                          ),
-                  ),
-                  // Kendi satırının ek bilgisi (R1): paranın getirisi —
-                  // Performans ile aynı sayı. Sıralama seçimleri ölçer.
-                  if (me != null && pState != null)
-                    _ParaninGetirisiSatiri(
-                      portfoy: pState,
-                      periodDays: _periods[_periodIdx].days,
-                    ),
-                  if (kuresel) ...[
-                    // Genel sıralama (yüzdelik dilim) GEÇİCİ olarak kapalı
-                    // (kullanıcı kararı 2026-09-29): havuz k_min'i geçene kadar
-                    // "sıran açılacak" kartı boş vaat. Bayrak yeni değil —
-                    // aynı kavramın ana ekran şeridiyle ortak anahtarı
-                    // `percentile_strip_enabled`; ikisi birlikte açılır,
-                    // yayın gerekmez. Zirve portföyler 2026-09-29'da
-                    // Performans sekmesine taşındı (`ZirveKarti` +
-                    // `ZirvePortfoylerScreen`): zirve bir kıyas verisi,
-                    // yarış değil; kıyas ekranı Performans.
-                    if (RemoteConfigService.instance.percentileStripEnabled)
-                      _GlobalPercentileTeaser(
-                        periodDays: _periods[_periodIdx].days,
-                      ),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    child: Text(
-                      activePartners.isEmpty
-                          ? context.l10n.raceFooterGlobal
-                          : context.l10n.raceFooterPartners,
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        color: context.c.text36,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-      ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Text(
+            activePartners.isEmpty
+                ? context.l10n.raceFooterGlobal
+                : context.l10n.raceFooterPartners,
+            style: context.t.labelMedium?.copyWith(
+              letterSpacing: 0,
+              color: context.c.text36,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }
+
+/// Yarış dönemleri. Gün sayıları `ZirveDonem` ile BİREBİR (7 · 30 · 365):
+/// tek Sıralama sayfası iki sekmede aynı dönemi indeksle taşır
+/// (`siralama_test` eşitliği kilitler).
+abstract final class _YarisDonemleri {
+  static const liste = [
+    (label: '7G', days: 7),
+    (label: '30G', days: 30),
+    (label: '1Y', days: 365),
+  ];
+}
+
+/// Test kilidi için dışa açık gün listesi (`ZirveDonem` eşitliği).
+@visibleForTesting
+List<int> get yarisDonemGunleri =>
+    [for (final p in _YarisDonemleri.liste) p.days];
 
 /// Kendi satırının ek bilgisi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
 /// Performans › Özet'in aynı dönemdeki sayısı (R1, 2026-10-01).
