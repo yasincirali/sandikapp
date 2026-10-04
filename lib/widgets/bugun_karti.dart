@@ -102,6 +102,7 @@ class BugunKarti extends ConsumerStatefulWidget {
     this.kisisel = true,
     this.etiket,
     this.hedefKapsami = '',
+    this.gorunum = '',
   });
 
   /// Kartın anlattığı defter — seçili kapsamın (2026-09-21).
@@ -127,6 +128,12 @@ class BugunKarti extends ConsumerStatefulWidget {
   /// Kendi görünümünde `null`: kartın kimin olduğu sorusu yalnızca başka
   /// bir defter gösterilirken doğar.
   final String? etiket;
+
+  /// Kartın gösterildiği ortak seçimi — `GorunumCipi` sözleşmesi: `null`
+  /// Birlikte, `''` Ben, uuid o ortak. Karttan açılan Performans bu
+  /// seçimle açılır (bayrak `ortak_secimi_tasi`, 2026-10-04): kart
+  /// Ayşe'nin gününü anlatıp dokununca senin Özet'ine düşürmemeli.
+  final String? gorunum;
 
   /// Kapsam başına son yükleme önbelleğini boşaltır (testler).
   @visibleForTesting
@@ -930,9 +937,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             () => pushGuarded<void>(
               context,
               adaptiveRoute<void>(
-                builder: (_) => const PortfolioPerformanceScreen(
+                builder: (_) => PortfolioPerformanceScreen(
                   showBackButton: true,
                   initialOzet: true,
+                  initialView: _gecisGorunumu,
                   // 1A — geçen ayın özeti; Özet sekmesi TÜFE farkını da taşır.
                   initialPeriodIdx: 2,
                 ),
@@ -962,9 +970,16 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             showBackButton: true,
             initialOzet: true,
             initialPeriodIdx: periodIdx,
+            initialView: _gecisGorunumu,
           ),
         ),
       );
+
+  /// Karttan açılan ekranın ortak seçimi. Bayrak kapalıyken eski davranış
+  /// (her zaman Ben); açıkken kartın gösterildiği seçim — bkz.
+  /// [BugunKarti.gorunum].
+  String? get _gecisGorunumu =>
+      RemoteConfigService.instance.ortakSecimiTasi ? widget.gorunum : '';
 
   /// Gösterim ölçümü — gün + satır bileşimi başına BİR olay.
   ///

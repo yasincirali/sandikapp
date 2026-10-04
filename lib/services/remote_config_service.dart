@@ -286,6 +286,14 @@ class RemoteConfigService {
     // kayan hap. 3+ kişide kürsü + liste aynen kalır. Hesap değişmez
     // (seçimlerinin getirisi, TWR). Kapalıyken yarış ekranı birebir eski.
     'yaris_duello_arena': false,
+
+    // Ortak seçimi geçişte taşınır (kullanıcı isteği 2026-10-04): seçili
+    // kapsama (Birlikte / Ben / ortak) göre bilgi gösteren bir karttan ortak
+    // seçicili bir ekrana gidince o ekran AYNI seçimle açılır. Örnek: Ana
+    // ekranda Ayşe seçiliyken Bugün kartının satırı Performans › Özet'i
+    // Ayşe'de açar. Kapalıyken eski davranış: Bugün kartı Performans'ı her
+    // zaman "Ben" ile açar.
+    'ortak_secimi_tasi': false,
   };
 
   /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
@@ -474,6 +482,10 @@ class RemoteConfigService {
 
   /// Yarış düello arenası — bkz. `_defaults['yaris_duello_arena']`.
   bool get yarisDuelloArena => _bayrak('yaris_duello_arena');
+
+  /// Karttan ekrana geçişte ortak seçimi taşınır — bkz.
+  /// `_defaults['ortak_secimi_tasi']`.
+  bool get ortakSecimiTasi => _bayrak('ortak_secimi_tasi');
 
   /// Performans araçları + Ayarlar sadeleştirmesi — bkz.
   /// `_defaults['performans_ayar_sade']`.

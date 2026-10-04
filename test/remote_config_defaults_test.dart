@@ -98,6 +98,10 @@ void main() {
     test('siralama_tek_sayfa kapalı doğar', () {
       expect(varsayilan('siralama_tek_sayfa'), 'false');
     });
+
+    test('ortak_secimi_tasi kapalı doğar', () {
+      expect(varsayilan('ortak_secimi_tasi'), 'false');
+    });
   });
 
   test('free_price_alert_limit sayısal ve makul', () {

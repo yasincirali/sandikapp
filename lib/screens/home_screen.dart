@@ -917,6 +917,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   state: benGorunumu ? myState : gorunumDurumu(ledgerAssets),
                   kisisel: benGorunumu,
                   etiket: _bugunEtiketi(allActivePartners),
+                  gorunum: _view,
                   // Her kartın kendi hedefi (2026-09-30): hedef satırı
                   // Birlikte'ye/ortağa geçince kayboluyordu.
                   hedefKapsami: _view == ''

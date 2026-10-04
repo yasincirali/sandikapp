@@ -31,7 +31,12 @@ debug/profile derlemede okunur, mağaza derlemesinde etkisiz).
   - `tek_kiyas_yuzeyi`: varlık ekranının "Karşılaştır"ı Karşılaştır
     ekranını o varlık + dönemle açar (mevduat/BES eski seçicide kalır).
   - `siralama_tek_sayfa`: Yarış + Zirve tek "Sıralama" sayfası (Ortaklarım /
-    Herkes). Havuz küçükken açmak isteğe bağlı.
+    Zirvedekiler). Havuz küçükken açmak isteğe bağlı.
+  - `yaris_duello_arena`: tam iki kişilik yarışta Düello arenası (halat,
+    taç, lider şeridi; 1H · 1A · 1Y). 3+ kişide kürsü + liste aynen.
+  - `ortak_secimi_tasi`: Ana ekranda Birlikte / ortak seçiliyken Bugün
+    kartından açılan Performans › Özet aynı seçimle açılır (kapalıyken her
+    zaman Ben).
   - `performans_ayar_sade`: grafik tipi yalnız Çizgi/Mum, "Bugünkü
     portföyle" Ayarlar › Görünüm'de, Ayarlar grupları + katlanır Gelişmiş.
   - `karsilama_tanitimi` açıkken giriş ekranında Apple/Google düğmeleri
