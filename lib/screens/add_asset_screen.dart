@@ -1338,18 +1338,22 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   // taşıyordu. Tembel liste bu satırı ekran dışında hiç
                   // kurmadığı için `text_scale_overflow_test` görmüyordu;
                   // form tümüyle kurulunca ortaya çıktı.
-                  Flexible(
+                  //
+                  // Expanded, `Flexible + Spacer` DEĞİL (2026-10-04): ikisi
+                  // eşit pay alıyordu, metin satırın yarısına sıkışıyor ve
+                  // "Ayrıntı ekle (komisyon, not)" 412pt'de kırpılıyordu.
+                  // Kısa "Not ekle"de görünüm aynı; sığmazsa ikinci satıra
+                  // kırılır (metin tam okunur kuralı).
+                  Expanded(
                     child: Text(
                         komisyonDahil
                             ? context.l10n.addDetails
                             : context.l10n.addNote,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
                         style: context.t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
-                  const Spacer(),
                   if (doluIcerik && !_notesExpanded)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
