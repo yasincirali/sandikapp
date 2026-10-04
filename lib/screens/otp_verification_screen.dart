@@ -210,7 +210,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       // `verifyRegistrationOtp` ile açıldı; RPC `auth.uid()`'yi buradan
       // okur. Beklenmez ve fırlatmaz: kapı (`disclaimer_acceptances`)
       // yukarıdaki kayda bağlı, bu yalnız ispat kaydı.
-      // `userId`: yeniden onay kapısı (bayrak `yeniden_onay_kapisi`) bu
+      // `userId`: yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`) bu
       // yazımı bekler ve başarıda kapı izini koyar — az önce aynı sürümleri
       // onaylayan yeni kullanıcı kapıyı görmez.
       final kayitOnayi = widget.kayitOnayi;

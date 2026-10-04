@@ -176,7 +176,7 @@ enum KapiKayitSonucu {
 /// GÜNCEL sürümüne etkin onayı var mı diye bakar; yoksa `_AuthGate`
 /// `YasalOnayKapisiScreen`'i gösterir. Metin sürümü her arttığında
 /// kendiliğinden çalışır (cihaz izinin anahtarında sürümler var). Bayrak
-/// `yeniden_onay_kapisi` (KAPALI) yalnız `yasal_onay_kaydi` de açıkken
+/// `yasal_kapi_en_yeni` (KAPALI) yalnız `yasal_onay_kaydi` de açıkken
 /// etkilidir: kayıt yazılamazsa kapı her açılışta yeniden sorardı.
 ///
 /// ## En iyi gayret / fail-open
@@ -206,6 +206,10 @@ class YasalOnayService {
   /// onaylarını (tür, sürüm) döner.
   @visibleForTesting
   static Future<List<(String, String)>> Function(String userId)? sorguTesti;
+
+  /// Yalnız test: sunucudaki metin sürümleri (tür, sürüm) sorgusu yerine.
+  @visibleForTesting
+  static Future<List<(String, String)>> Function()? sunucuSurumTesti;
 
   /// userId → kapı tamam (bu süreçte doğrulandı).
   final Set<String> _tamam = {};
@@ -293,13 +297,38 @@ class YasalOnayService {
     return YasalKapiDurumu(eksik: eksik, oncekiSurum: enYeni);
   }
 
+  /// Uygulama, kapının soracağı metinlerden birinin sunucudaki EN YENİ
+  /// sürümünü taşımıyor mu? Saf.
+  ///
+  /// Kullanıcı kuralı (2026-10-04): *"eğer yeni güncel bir sürüm geldiyse
+  /// ve onaylatılacaksa en yeni sürüm onaylatılmalı; çift onay olmamalı 2
+  /// güncelleme geldiyse."* Uygulama yalnız kendi taşıdığı metni
+  /// gösterebilir. Sunucuda daha yenisi varsa eskiyi onaylatmak, uygulama
+  /// güncellenince ikinci bir onay doğurur. Bu durumda kapı HİÇ açılmaz
+  /// (kısmi onay da sorulmaz) ve iz konmaz: güncel uygulama hepsini tek
+  /// seferde sorar. Kullanıcının onayı zaten tamsa bu kontrol devreye girmez.
+  static bool uygulamaEski(Iterable<(String, String)> sunucuSurumleri) {
+    final benim = <String, String>{
+      for (final m in YasalMetinKatalogu.zorunluBelgeler()) m.tur: m.surum,
+      YasalTur.kayitTekKutu: YasalMetinKatalogu.kutuSurumu,
+      YasalTur.kayitKutuKosullar: YasalMetinKatalogu.kutuSurumu,
+      YasalTur.kayitKutuRiza: YasalMetinKatalogu.kutuSurumu,
+    };
+    for (final (tur, surum) in sunucuSurumleri) {
+      final b = benim[tur];
+      if (b != null && surumKarsilastir(surum, b) > 0) return true;
+    }
+    return false;
+  }
+
   /// Cihaz izinin anahtarı — gereken sürümleri taşır: herhangi bir metnin
   /// sürümü artınca iz kendiliğinden geçersiz olur (`DisclaimerService`
   /// `_deviceKey` deseni).
   @visibleForTesting
   static String izAnahtari(String userId) {
     final imza = [
-      for (final m in YasalMetinKatalogu.zorunluBelgeler()) '${m.tur}@${m.surum}',
+      for (final m in YasalMetinKatalogu.zorunluBelgeler())
+        '${m.tur}@${m.surum}',
       '$kutuAnahtari@${YasalMetinKatalogu.kutuSurumu}',
     ].join('|');
     return 'yasal_onay_tam_${imza}_$userId';
@@ -341,9 +370,18 @@ class YasalOnayService {
       }
     } catch (_) {}
     try {
-      final onaylar = await _etkinOnaylar(userId).timeout(_kapiTimeout);
+      final (onaylar, sunucu) = await (
+        _etkinOnaylar(userId),
+        _sunucuSurumleri(),
+      ).wait.timeout(_kapiTimeout);
       final durum = eksikleriHesapla(onaylar);
-      if (!durum.gerekli) await _tamamIsaretle(userId);
+      if (!durum.gerekli) {
+        await _tamamIsaretle(userId);
+        return durum;
+      }
+      // Sunucuda daha yeni metin var: eskiyi onaylatma (bkz.
+      // [uygulamaEski]). İz konmaz; güncel uygulama en yeniyi sorar.
+      if (uygulamaEski(sunucu)) return YasalKapiDurumu.tamam;
       return durum;
     } catch (e, st) {
       if (!CrashReporter.agHatasiMi(e)) {
@@ -351,6 +389,20 @@ class YasalOnayService {
       }
       return YasalKapiDurumu.tamam;
     }
+  }
+
+  /// Sunucudaki tüm metin sürümleri (tür, sürüm) — `yasal_metinler`
+  /// herkese okunur ve küçüktür (tür × sürüm × dil).
+  Future<List<(String, String)>> _sunucuSurumleri() async {
+    final test = sunucuSurumTesti;
+    if (test != null) return test();
+    final rows = await Supabase.instance.client
+        .from('yasal_metinler')
+        .select('tur, surum');
+    return [
+      for (final r in rows)
+        if (r case {'tur': final String t, 'surum': final String s}) (t, s),
+    ];
   }
 
   /// Kullanıcının etkin (geri çekilmemiş) onaylarının (tür, sürüm)
@@ -366,7 +418,8 @@ class YasalOnayService {
         .isFilter('geri_cekildi_at', null);
     return [
       for (final r in rows)
-        if (r['yasal_metinler'] case {'tur': final String t, 'surum': final String s})
+        if (r['yasal_metinler']
+            case {'tur': final String t, 'surum': final String s})
           (t, s),
     ];
   }
@@ -444,11 +497,9 @@ class YasalOnayService {
     }();
     if (userId != null) {
       _bekleyen[userId] = f;
-      CrashReporter.arkaPlan(
-          f.whenComplete(() {
-            if (identical(_bekleyen[userId], f)) _bekleyen.remove(userId);
-          }),
-          reason: 'YasalOnayService.bekleyenTemizle');
+      CrashReporter.arkaPlan(f.whenComplete(() {
+        if (identical(_bekleyen[userId], f)) _bekleyen.remove(userId);
+      }), reason: 'YasalOnayService.bekleyenTemizle');
     }
     return f;
   }

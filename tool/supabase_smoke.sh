@@ -101,7 +101,7 @@ HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/ya
   -d "{\"user_id\":\"$UID_SMOKE\",\"metin_id\":1,\"kanal\":\"kayit\"}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "yasal_onaylar dogrudan yazilabildi: HTTP $HTTP"; exit 1; }
 
-# Yeniden onay kapisi (bayrak yeniden_onay_kapisi): yeni kanal belgeyi ve
+# Yeniden onay kapisi (bayrak yasal_kapi_en_yeni): yeni kanal belgeyi ve
 # kapi ayni ekranda gosterdiyse yatirim uyarisini yazar; Zirve'yi yazamaz.
 GHASH=$(metin_hash gizlilik_politikasi 1.1 tr)
 YHASH=$(metin_hash yatirim_uyarisi 1.0 tr)
