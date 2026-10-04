@@ -1521,12 +1521,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get generateCode => 'Kod Üret';
 
   @override
-  String get switchToDark => 'Koyu temaya geç';
-
-  @override
-  String get switchToLight => 'Açık temaya geç';
-
-  @override
   String get tabChart => 'Grafik';
 
   @override
@@ -2430,34 +2424,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get realReturnCpi => 'TÜFE';
 
   @override
-  String get weeklyFlatSemantics =>
-      'Bu hafta portföyün piyasa getirisi değişmedi';
-
-  @override
-  String get thisWeekFromMarket => 'Bu hafta piyasadan ';
-
-  @override
   String get noChangeLower => 'değişim yok';
-
-  @override
-  String pctDown(String pct) {
-    return '%$pct eksi';
-  }
-
-  @override
-  String weeklyDownSemantics(String pct) {
-    return 'Bu hafta portföyün piyasa getirisi yüzde $pct ekside';
-  }
-
-  @override
-  String weeklyUpSemantics(String pct) {
-    return 'Bu hafta portföyün piyasa getirisi yüzde $pct artıda';
-  }
-
-  @override
-  String pctUp(String pct) {
-    return '%$pct artı';
-  }
 
   @override
   String get totalNetHidden => 'Toplam net varlık gizli';

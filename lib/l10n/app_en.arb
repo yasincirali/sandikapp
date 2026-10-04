@@ -864,8 +864,6 @@
   "requestPartnership": "Request Partnership",
   "generatingEllipsis": "Generating...",
   "generateCode": "Generate Code",
-  "switchToDark": "Switch to dark theme",
-  "switchToLight": "Switch to light theme",
   "tabChart": "Chart",
   "tabSummary": "Summary",
   "modeReal": "Actual",
@@ -1488,41 +1486,7 @@
   "realReturnLastYear": "last year",
   "realReturnYours": "Yours",
   "realReturnCpi": "CPI",
-  "weeklyFlatSemantics": "Your portfolio's market return did not change this week",
-  "thisWeekFromMarket": "From the market this week: ",
   "noChangeLower": "no change",
-  "pctDown": "{pct}% down",
-  "@pctDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyDownSemantics": "Your portfolio's market return is {pct} percent down this week",
-  "@weeklyDownSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "weeklyUpSemantics": "Your portfolio's market return is {pct} percent up this week",
-  "@weeklyUpSemantics": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "pctUp": "{pct}% up",
-  "@pctUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
   "totalNetHidden": "Total net worth hidden",
   "totalNetWorth": "Total net worth {amount}",
   "@totalNetWorth": {

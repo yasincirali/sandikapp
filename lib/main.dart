@@ -1650,11 +1650,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
     // Tema tercihi değişince uygulama DIŞI yüzeyleri tazele.
     //
-    // Dinleyici BURADA, tek yerde: tercih iki yerden değiştirilebiliyor
-    // (Ayarlar'daki üçlü seçici ve Profil başlığındaki hızlı geçiş) ve
-    // itişi ekranlara dağıtmak birini atlamak demekti — Profil'deki geçiş
-    // tam olarak bunu yapıyordu, widget ve kilit ekranı bir sonraki
-    // portföy yayınına kadar eski temada kalıyordu.
+    // Dinleyici BURADA, tek yerde: tercih eskiden iki yerden
+    // değiştirilebiliyordu (Ayarlar'daki üçlü seçici ve Profil başlığındaki
+    // hızlı geçiş) ve itişi ekranlara dağıtmak birini atlamak demekti —
+    // Profil'deki geçiş tam olarak bunu yapıyordu, widget ve kilit ekranı
+    // bir sonraki portföy yayınına kadar eski temada kalıyordu. Profil
+    // geçişi 2026-10-04'te kaldırıldı; dinleyici yine burada kalır ki
+    // ileride eklenecek ikinci bir giriş aynı hatayı tekrarlamasın.
     //
     // `_AuthGate` `MaterialApp.home`'dur, yani uygulama yaşadığı sürece
     // mount'tur; üstüne açılan ekranlardan yapılan değişim de buraya düşer.

@@ -121,8 +121,6 @@ void main() {
     const istisna = {
       // Pencere GEÇMİŞTE biter (TÜFE'nin son açıklanan ayı).
       'lib/services/real_return_service.dart',
-      // Hiçbir yerde çağrılmayan eski bileşen (`kapsam_enflasyon_seridi_test`).
-      'lib/widgets/weekly_summary_chip.dart',
     };
     final dosyalar = Directory('lib')
         .listSync(recursive: true)

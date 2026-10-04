@@ -762,8 +762,10 @@ List<_Adim> _adimlariKur() {
       id: 'sekme_profil',
       hedef: TourTarget.sekmeProfil,
       baslik: 'Profil sekmesi',
-      govde: 'Ortaklık, bildirimler, sinyal ayarları, fiyat alarmları, tema '
-          've yasal belgeler burada.',
+      // Tema 2026-10-04'e kadar Profil başlığında da bir düğmeydi; artık
+      // yalnız Ayarlar'da. Metin neyin nerede olduğunu ayırır.
+      govde: 'Ortaklık burada; bildirimler, sinyal ayarları, fiyat '
+          'alarmları, tema ve yasal belgeler sağ üstteki Ayarlar\'da.',
       gorev: 'Profil sekmesine dokun',
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),

@@ -630,7 +630,15 @@ o zaman kullanıcı iki sayıyı yan yana görecek.
 
 ---
 
-## 🟡 AÇIK — `RealReturnStrip` ve `WeeklySummaryChip` ana ekrandan kalktı; widget'lar dosyada duruyor
+## 🟡 AÇIK (yarısı kapandı) — `RealReturnStrip` ana ekrandan kalktı; widget dosyada duruyor
+
+**Kapanan yarı (2026-10-04, `7f2ce77`, sadeleştirme C).** `WeeklySummaryChip`
+(`lib/widgets/weekly_summary_chip.dart`) ve `weekly_chip_percent_test`
+silindi; yalnız onun kullandığı l10n anahtarları (`pctUp`/`pctDown`,
+`weekly*Semantics`, `thisWeekFromMarket`) da çıktı. Testin kilitlediği
+"çift % işareti" değişmezinin konusu olan şablonlar artık yok; haftalık
+rakam Bugün kartında `PeriodSummaryService` üzerinden yaşıyor. Aşağıdaki
+metin iki widget için yazılmıştı; açık kalan yalnız `RealReturnStrip`.
 
 **Ne.** 2026-09-21 "Bugün kartı kapsamı izler" kararıyla iki şerit ana
 ekrandan tümden çıktı (reel ve haftalık her görünümde kartın satırı). İki
@@ -645,7 +653,9 @@ o değişmezlerin karta ya da servise taşınması gerekir. Bu tur kapsam
 değişikliğine sunum temizliği karıştırılmadı.
 
 **Ne zaman.** Bir sonraki sadeleştirme turunda: değişmez testleri
-`bugun_karti` / servis seviyesine taşı, iki widget'ı ve testlerini sil.
+`bugun_karti` / servis seviyesine taşı, `RealReturnStrip` /
+`RealReturnBadge`'i ve testlerini sil. (Sadeleştirme C'de bilinçli olarak
+dokunulmadı: kural "testten kullanılan dosya ölü sayılmaz".)
 
 ---
 
