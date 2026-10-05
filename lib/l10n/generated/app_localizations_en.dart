@@ -5601,24 +5601,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yasalBelgeKvkkKisa => 'KVKK Notice';
 
   @override
-  String yasalBelgeSurum(String surum) {
-    return 'Version $surum';
-  }
-
-  @override
   String get yasalBelgelerTurkce => 'The documents are in Turkish.';
-
-  @override
-  String get yasalKapiTaahhutBaslik => 'Your consents';
 
   @override
   String get yasalKapiOnayla => 'I have read and accept';
 
   @override
   String get yasalKapiOnaylaKisa => 'I accept';
-
-  @override
-  String get yasalKapiKutuGerekli => 'To continue, tick the box.';
 
   @override
   String get yasalKapiKayitHatasi =>
@@ -5655,23 +5644,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zorunluOkumaRizaVerKisa => 'I give consent';
 
   @override
-  String get zorunluOkumaOnaylandi => 'Accepted';
-
-  @override
-  String get zorunluOkumaBelgelerBaslik => 'Legal documents';
-
-  @override
-  String get zorunluOkumaBelgelerAciklama =>
-      'Read the marked texts to the end and accept them at the bottom; tap the other documents to read them.';
-
-  @override
   String zorunluOkumaEksik(String belgeler) {
     return 'To continue, read to the end and accept: $belgeler';
-  }
-
-  @override
-  String zorunluOkumaSayac(int onayli, int toplam) {
-    return '$onayli/$toplam accepted';
   }
 
   @override
@@ -5937,5 +5911,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yasalBelgeAcildi => 'Opened';
 
   @override
-  String get zorunluOkumaSatirEtiketi => 'Read to the end and accept';
+  String yasalAdimKayitBaslik(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi steps to sign up',
+      one: '1 step to sign up',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String yasalAdimKapiBaslik(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi steps',
+      one: '1 step',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get yasalAdimUyariAciklama =>
+      'A short text explaining that the app is not investment advice. Read it to the end and accept at the bottom.';
+
+  @override
+  String get yasalAdimRizaAciklama =>
+      'Explicit consent to transferring your data abroad. Read it to the end and give your consent at the bottom.';
+
+  @override
+  String get yasalAdimKutuBaslik => 'Accept the Terms of Use';
+
+  @override
+  String yasalAdimGuncellendi(String belgeler) {
+    return '$belgeler updated';
+  }
+
+  @override
+  String yasalAdimListeVe(String onceki, String son) {
+    return '$onceki and $son';
+  }
+
+  @override
+  String get yasalAdimKosulGuncelAciklama =>
+      'You can read the changes in the document; reading it is optional. Tick the box to continue.';
+
+  @override
+  String get yasalAdimBilgiGuncelAciklama =>
+      'This is for your information; reading it is optional. Tick the box to confirm you have been informed.';
+
+  @override
+  String get yasalAdimOkuOnayla => 'Read and accept';
+
+  @override
+  String get yasalAdimOkunduOnaylandi => 'Read and accepted';
+
+  @override
+  String yasalAdimSemantik(int sira, int toplam, String ad, String durum) {
+    return 'Step $sira of $toplam, $ad, $durum';
+  }
+
+  @override
+  String get yasalAdimDurumTamam => 'completed';
+
+  @override
+  String get yasalAdimDurumBekliyor => 'waiting';
+
+  @override
+  String get yasalAdimDurumSonra => 'comes later';
+
+  @override
+  String yasalAdimDigerBelgeler(int sayi) {
+    return 'Other documents (for information) · $sayi';
+  }
+
+  @override
+  String yasalAdimSayac(int tamam, int toplam) {
+    return '$tamam/$toplam steps completed';
+  }
+
+  @override
+  String get yasalKapiBaslikGuncelTek => 'Updated document';
 }

@@ -9333,23 +9333,11 @@ abstract class AppLocalizations {
   /// **'KVKK Metni'**
   String get yasalBelgeKvkkKisa;
 
-  /// No description provided for @yasalBelgeSurum.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sürüm {surum}'**
-  String yasalBelgeSurum(String surum);
-
   /// No description provided for @yasalBelgelerTurkce.
   ///
   /// In tr, this message translates to:
   /// **'Belgeler Türkçedir.'**
   String get yasalBelgelerTurkce;
-
-  /// No description provided for @yasalKapiTaahhutBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Onayların'**
-  String get yasalKapiTaahhutBaslik;
 
   /// No description provided for @yasalKapiOnayla.
   ///
@@ -9362,12 +9350,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kabul ediyorum'**
   String get yasalKapiOnaylaKisa;
-
-  /// No description provided for @yasalKapiKutuGerekli.
-  ///
-  /// In tr, this message translates to:
-  /// **'Devam etmek için kutuyu işaretlemelisin.'**
-  String get yasalKapiKutuGerekli;
 
   /// No description provided for @yasalKapiKayitHatasi.
   ///
@@ -9435,35 +9417,11 @@ abstract class AppLocalizations {
   /// **'Açık rıza veriyorum'**
   String get zorunluOkumaRizaVerKisa;
 
-  /// No description provided for @zorunluOkumaOnaylandi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Onaylandı'**
-  String get zorunluOkumaOnaylandi;
-
-  /// No description provided for @zorunluOkumaBelgelerBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yasal metinler'**
-  String get zorunluOkumaBelgelerBaslik;
-
-  /// No description provided for @zorunluOkumaBelgelerAciklama.
-  ///
-  /// In tr, this message translates to:
-  /// **'İşaretli metinleri sonuna kadar okuyup en altta onayla; diğer belgeleri dokunarak okuyabilirsin.'**
-  String get zorunluOkumaBelgelerAciklama;
-
   /// No description provided for @zorunluOkumaEksik.
   ///
   /// In tr, this message translates to:
   /// **'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}'**
   String zorunluOkumaEksik(String belgeler);
-
-  /// No description provided for @zorunluOkumaSayac.
-  ///
-  /// In tr, this message translates to:
-  /// **'{onayli}/{toplam} metin onaylandı'**
-  String zorunluOkumaSayac(int onayli, int toplam);
 
   /// No description provided for @yasalBelgeYatirimUyarisi.
   ///
@@ -9856,11 +9814,113 @@ abstract class AppLocalizations {
   /// **'Açıldı'**
   String get yasalBelgeAcildi;
 
-  /// Yasal metin listesinde sonuna kadar okunması gereken satırın (Açık Rıza Metni, Yatırım Uyarısı) işareti; onaylanınca 'Onaylandı' olur.
+  /// Kayıt ekranındaki adım kartının başlığı (kullanıcı kararı 2026-10-05, seçenek C).
   ///
   /// In tr, this message translates to:
-  /// **'Sonuna kadar oku ve onayla'**
-  String get zorunluOkumaSatirEtiketi;
+  /// **'Kayıt için {sayi} adım'**
+  String yasalAdimKayitBaslik(int sayi);
+
+  /// Yeniden onay kapısındaki adım kartının başlığı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} adım'**
+  String yasalAdimKapiBaslik(int sayi);
+
+  /// No description provided for @yasalAdimUyariAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin. Sonuna kadar okuyup en altta onayla.'**
+  String get yasalAdimUyariAciklama;
+
+  /// No description provided for @yasalAdimRizaAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilerinin yurt dışına aktarılmasına açık rıza. Sonuna kadar okuyup rızanı en altta ver.'**
+  String get yasalAdimRizaAciklama;
+
+  /// No description provided for @yasalAdimKutuBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım Koşulları\'nı kabul et'**
+  String get yasalAdimKutuBaslik;
+
+  /// Kapıda kutu adımının başlığı: güncellenen belge adları.
+  ///
+  /// In tr, this message translates to:
+  /// **'{belgeler} güncellendi'**
+  String yasalAdimGuncellendi(String belgeler);
+
+  /// No description provided for @yasalAdimListeVe.
+  ///
+  /// In tr, this message translates to:
+  /// **'{onceki} ve {son}'**
+  String yasalAdimListeVe(String onceki, String son);
+
+  /// No description provided for @yasalAdimKosulGuncelAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değişiklikleri belgeden okuyabilirsin; okuman zorunlu değil. Devam etmek için kutuyu işaretle.'**
+  String get yasalAdimKosulGuncelAciklama;
+
+  /// No description provided for @yasalAdimBilgiGuncelAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgilendirme amaçlıdır; okuman zorunlu değil. Kutuyu işaretleyerek bilgilendirildiğini belirt.'**
+  String get yasalAdimBilgiGuncelAciklama;
+
+  /// No description provided for @yasalAdimOkuOnayla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oku ve onayla'**
+  String get yasalAdimOkuOnayla;
+
+  /// No description provided for @yasalAdimOkunduOnaylandi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okundu ve onaylandı'**
+  String get yasalAdimOkunduOnaylandi;
+
+  /// Ekran okuyucu: adımlar sırayla okunur ("Adım 2/3, Açık Rıza Metni, bekliyor").
+  ///
+  /// In tr, this message translates to:
+  /// **'Adım {sira}/{toplam}, {ad}, {durum}'**
+  String yasalAdimSemantik(int sira, int toplam, String ad, String durum);
+
+  /// No description provided for @yasalAdimDurumTamam.
+  ///
+  /// In tr, this message translates to:
+  /// **'tamamlandı'**
+  String get yasalAdimDurumTamam;
+
+  /// No description provided for @yasalAdimDurumBekliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'bekliyor'**
+  String get yasalAdimDurumBekliyor;
+
+  /// No description provided for @yasalAdimDurumSonra.
+  ///
+  /// In tr, this message translates to:
+  /// **'sırası gelecek'**
+  String get yasalAdimDurumSonra;
+
+  /// No description provided for @yasalAdimDigerBelgeler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer belgeler (bilgi amaçlı) · {sayi}'**
+  String yasalAdimDigerBelgeler(int sayi);
+
+  /// No description provided for @yasalAdimSayac.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tamam}/{toplam} adım tamamlandı'**
+  String yasalAdimSayac(int tamam, int toplam);
+
+  /// No description provided for @yasalKapiBaslikGuncelTek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncellenen belge'**
+  String get yasalKapiBaslikGuncelTek;
 }
 
 class _AppLocalizationsDelegate

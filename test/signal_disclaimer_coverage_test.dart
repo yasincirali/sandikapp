@@ -139,10 +139,13 @@ void main() {
     // 2026-10-04: kayıt tek kutulu (açıklaması `tekOnayAciklama`) ve
     // yatırım uyarısının TAM metni zorunlu okuma listesinde (bayraklar
     // 2026-10-05'te kalktı). İddia aynı: kayıt ekranındaki kutu metni
-    // uyarıyı taşır.
+    // uyarıyı taşır. Adım düzeninden (2026-10-05) beri uyarı kaydın 1.
+    // adımı: `YasalAdimPlani.kayit()` (adımları `yasal_adim_plani_test`).
     final kayit = oku('lib/screens/register_screen.dart');
     expect(kayit.contains('bodyText: context.l10n.tekOnayAciklama('), isTrue);
-    expect(kayit.contains('yatirimUyarisiDahil: true'), isTrue);
+    expect(kayit.contains('YasalAdimPlani.kayit()'), isTrue);
+    expect(oku('lib/services/yasal_adim_plani.dart'),
+        contains('_kur(uyari: true, riza: true, kutu: true)'));
     expect(
       oku('lib/l10n/app_tr.arb').contains(
           '"tekOnayAciklama": "Uygulama yatırım tavsiyesi değildir'),

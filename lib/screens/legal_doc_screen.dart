@@ -4,10 +4,12 @@ import '../l10n/l10n.dart';
 import '../models/legal_block.dart';
 import '../services/disclaimer_service.dart';
 import '../services/sunucu_secimi.dart';
+import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sigan_metin.dart';
+import '../widgets/yasal_adimlar.dart';
 import '../widgets/zorunlu_okuma.dart';
 
 export '../models/legal_block.dart';
@@ -106,17 +108,11 @@ class ZorunluMetin {
   /// Metnin sonundaki onay düğmesinin yazımları.
   final List<String> onayAdaylari;
 
-  /// Belgenin adı ve ikonu — kapının bayrak kapalı listesi de bunu okur.
+  /// Belgenin adı ve ikonu — adım listesindeki adla aynı kaynaktan
+  /// ([yasalBelgeAdaylari], [yasalBelgeIkonu]).
   static ZorunluMetin belge(AppLocalizations l, YasalBelge b) {
-    final (adaylar, ikon) = switch (b) {
-      YasalBelge.kosullar => ([l.yasalBelgeKosullar], Icons.gavel_rounded),
-      YasalBelge.gizlilik => ([l.yasalBelgeGizlilik], Icons.shield_outlined),
-      YasalBelge.kvkk => (
-          [l.yasalBelgeKvkk, l.yasalBelgeKvkkKisa],
-          Icons.privacy_tip_outlined
-        ),
-      YasalBelge.acikRiza => ([l.yasalBelgeAcikRiza], Icons.public_rounded),
-    };
+    final adaylar = yasalBelgeAdaylari(l, b);
+    final ikon = yasalBelgeIkonu(b);
     return ZorunluMetin(
       tur: b.tur,
       adaylar: adaylar,
@@ -142,19 +138,18 @@ class ZorunluMetin {
         onayAdaylari: [l.zorunluOkumaOnayla, l.zorunluOkumaOnaylaKisa],
       );
 
-  /// Sonuna kadar okunup sonunda onaylanması gereken metinler — 1.4'ten
-  /// (okuma sadeleştirme, 2026-10-05) beri YALNIZ Açık Rıza Metni
-  /// ([YasalBelge.sonunaKadarOkunur]) + istenirse yatırım uyarısı. [riza]
-  /// `false`: rıza zaten geçerli (kapıda yalnız diğer metinler eksik).
-  /// Koşullar, Gizlilik ve KVKK bu listede DEĞİL — [belgeyiAc] ile salt
-  /// okunur açılır.
-  static List<ZorunluMetin> liste(AppLocalizations l,
-          {required bool yatirimUyarisiDahil, bool riza = true}) =>
-      [
-        for (final b in YasalBelge.values)
-          if (b.sonunaKadarOkunur && riza) belge(l, b),
-        if (yatirimUyarisiDahil) yatirimUyarisi(l),
-      ];
+  /// Okuma adımının metni ([YasalAdimTuru.okunur]): uyarı ya da Açık Rıza
+  /// Metni. 1.4'ten (okuma sadeleştirme, 2026-10-05) beri sonuna kadar
+  /// okunanlar YALNIZ bu ikisi; Koşullar, Gizlilik ve KVKK [belgeyiAc] ile
+  /// salt okunur açılır. Hangisinin sorulacağına `YasalAdimPlani` karar
+  /// verir (2026-10-05 adım düzeni; eskiden `liste`).
+  static ZorunluMetin adim(AppLocalizations l, YasalAdimTuru tur) =>
+      switch (tur) {
+        YasalAdimTuru.yatirimUyarisi => yatirimUyarisi(l),
+        YasalAdimTuru.acikRiza => belge(l, YasalBelge.acikRiza),
+        YasalAdimTuru.kutu =>
+          throw ArgumentError.value(tur, 'tur', 'kutu okunmaz'),
+      };
 }
 
 /// [b]'yi SALT OKUNUR açar (onay düğmesi yok, okuma şartı yok) — kayıt ve

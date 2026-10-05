@@ -5,7 +5,6 @@ import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart'
     show
         Colors,
-        Divider,
         Form,
         FormState,
         GlobalKey,
@@ -20,6 +19,7 @@ import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
 import '../services/kullanici_adi_denetimi.dart';
 import '../services/supabase_service.dart';
+import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
@@ -28,7 +28,7 @@ import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/social_sign_in_buttons.dart';
-import '../widgets/zorunlu_okuma.dart';
+import '../widgets/yasal_adimlar.dart';
 import '../l10n/l10n.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -76,9 +76,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   //    "bilgilendirildim" (bilgilendirme belgeleri onaylatılmaz; KVKK Kurumu
   //    aydınlatmanın rıza gibi alınmasını önermez). Üç belge listede ve
   //    kutu cümlesinde bağlantıdır, salt okunur açılır.
-  // Kutu artık metinlere KİLİTLİ DEĞİL: Koşulların kabulü rızanın okunmasına
-  // bağlı değil; üçü birbirinden bağımsız eylemlerdir. "Kayıt ol" üçünü de
-  // ister ve eksik olanı adıyla söyler.
+  // Kutu metinlere KİLİTLİ DEĞİL: Koşulların kabulü rızanın okunmasına
+  // bağlı değil; üçü birbirinden bağımsız eylemlerdir. (Adım düzeninde kutu
+  // okumalardan SONRA görünür — üçü de zorunlu olduğundan istenen değişmez,
+  // yalnız sıralanır; işaret kaldırılabilir.) "Kayıt ol" üçünü de ister ve
+  // eksik olanı adıyla söyler.
   //
   // Geçmiş: UC1 dört kutuyu (yatırım uyarısı, KVKK, 18+, yurt dışı aktarım)
   // ikiye indirdi — bilişsel yük; aktarım açık rızası KVKK m.9(1) gereği
@@ -87,7 +89,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // okuma (2026-10-04, bayrak `zorunlu_okuma`) beş metni de okutup kutuyu
   // onlara kilitledi. 2026-10-05: iki bayrak kalktı, ardından bu
   // sadeleştirme — rıza yeniden kutudan ayrıldı, bu kez kendi metninin
-  // sonuna.
+  // sonuna. Aynı gün adım düzeni (kullanıcı kararı, seçenek "C · Adım
+  // adım"): üç eylem numaralı adımlar oldu (uyarı → Açık Rıza → kutu),
+  // eylem yalnız sıradaki adımda; kutu son adımın içinde. Bilgi amaçlı
+  // üç belge katlanır "Diğer belgeler"de. Kayıt (KayitOnayBaglami) aynı.
 
   /// Kutu işaretli mi (kutu 1.1, `kayit_tek_kutu`).
   bool _kutuIsaretli = false;
@@ -105,16 +110,23 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   /// "Kayıt ol"a okunması gereken metinler eksikken basıldı.
   bool _belgeHatasi = false;
 
-  /// Sonuna kadar okunacak metinler: Açık Rıza Metni + yatırım uyarısı.
-  List<ZorunluMetin> _metinler(AppLocalizations l) =>
-      ZorunluMetin.liste(l, yatirimUyarisiDahil: true);
+  /// Adım düzeni (kullanıcı kararı 2026-10-05, seçenek C): 1 Yatırım
+  /// Uyarısı, 2 Açık Rıza Metni (oku/onayla), 3 kutu. Yazım değişmedi —
+  /// gönderimde aynı [KayitOnayBaglami] kurulur.
+  static final _plan = YasalAdimPlani.kayit();
 
-  List<ZorunluMetin> _eksikMetinler(AppLocalizations l) => [
-        for (final m in _metinler(l))
-          if (!_onaylananlar.contains(m.tur)) m,
+  /// Tamamlanmamış OKUMA adımları (uyarı, Açık Rıza), sırayla.
+  List<YasalAdim> get _eksikOkumalar => [
+        for (final a in _plan.eksikler(
+            onaylananlar: _onaylananlar, kutuIsaretli: _kutuIsaretli))
+          if (a.tur.okunur) a,
       ];
 
-  bool get _belgelerTamam => _eksikMetinler(context.l10n).isEmpty;
+  bool get _belgelerTamam => _eksikOkumalar.isEmpty;
+
+  /// Eksik okuma adımlarının adları — hata satırı ve uyarı tostu.
+  String _eksikAdlari(AppLocalizations l) =>
+      _eksikOkumalar.map((a) => yasalAdimAdi(l, a)).join(', ');
 
   late final YasalKutuBaglantilari _kutuBaglantilari =
       YasalKutuBaglantilari(_belgeyiAc);
@@ -133,8 +145,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _isValidEmail(_emailCtrl.text) &&
       AuthService.validatePassword(_passCtrl.text) == null &&
       _passCtrl.text == _passConfirmCtrl.text &&
-      _belgelerTamam &&
-      _kutuIsaretli;
+      _plan.hepsiTamam(
+          onaylananlar: _onaylananlar, kutuIsaretli: _kutuIsaretli);
 
   /// First missing requirement, in the order the user filled the form.
   /// null → form is valid.
@@ -153,12 +165,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (_passCtrl.text != _passConfirmCtrl.text) {
       return context.l10n.registerPasswordsMismatch;
     }
-    // Zorunlu okuma: hangi metnin okunmadığını adıyla söyle (girdi kuralı
-    // istemcide — kullanıcı neyin eksik olduğunu basmadan önce bilir).
-    final eksikMetinler = _eksikMetinler(context.l10n);
-    if (eksikMetinler.isNotEmpty) {
-      return context.l10n.zorunluOkumaEksik(
-          eksikMetinler.map((m) => m.adaylar.first).join(', '));
+    // Eksik adım: hangi metnin okunmadığını adıyla söyle (girdi kuralı
+    // istemcide — kullanıcı neyin eksik olduğunu basmadan önce bilir);
+    // okumalar tamamsa son adım, kutu.
+    if (!_belgelerTamam) {
+      return context.l10n.zorunluOkumaEksik(_eksikAdlari(context.l10n));
     }
     if (!_kutuIsaretli) return context.l10n.tekOnayGerekli;
     return null;
@@ -191,7 +202,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() {
       _gonderimDenendi = true;
       _emailTouched = true;
-      _kutuHatasi = !_kutuIsaretli;
+      // Kutu son adım: okumalar bitmeden görünmez, hatası da sırası
+      // gelince (yoksa kutu ilk göründüğü an kırmızı açılırdı).
+      _kutuHatasi = _belgelerTamam && !_kutuIsaretli;
       _belgeHatasi = !_belgelerTamam;
     });
     _formKey.currentState?.validate();
@@ -204,9 +217,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         if (_kutuIsaretli) _kutuHatasi = false;
       });
 
-  /// [m]'yi (Açık Rıza Metni ya da yatırım uyarısı) zorunlu okumada açar;
-  /// sonuna kadar okunup sonunda onaylanırsa listeye işlenir.
-  Future<void> _zorunluOku(ZorunluMetin m) async {
+  /// Okuma adımının metnini (Açık Rıza Metni ya da yatırım uyarısı)
+  /// zorunlu okumada açar; sonuna kadar okunup sonunda onaylanırsa adım
+  /// tamamlanır.
+  Future<void> _zorunluOku(YasalAdimTuru tur) async {
+    final m = ZorunluMetin.adim(context.l10n, tur);
     final sonuc = await zorunluOkumaAc(context, m);
     if (!mounted || sonuc == null) return;
     if (sonuc.onaylandi && sonuc.sonunaKadarOkundu) {
@@ -277,7 +292,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final eksikBelge = !_belgelerTamam;
     if (eksikKutu || eksikBelge) {
       setState(() {
-        _kutuHatasi = eksikKutu;
+        _kutuHatasi = !eksikBelge && eksikKutu;
         _belgeHatasi = eksikBelge;
       });
       return;
@@ -349,87 +364,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  /// Yasal metin listesi — kapıdaki listeyle aynı satır ([YasalBelgeSatiri]).
-  /// Sıra Ayarlar ve kapıyla aynı: Koşullar, Gizlilik, KVKK (bağlantı),
-  /// Açık Rıza Metni ve Yatırım Uyarısı (sonuna kadar okunur; amber "Sonuna
-  /// kadar oku ve onayla" notu). Okunması gerekenler eksikken "Kayıt ol"a
-  /// basılırsa çerçeve kırmızıya döner ve eksikler adıyla yazılır.
-  Widget _belgeListesi(BuildContext context) {
+  /// Yasal adımlar — kapıyla AYNI bileşen ([YasalAdimListesi]): 1 Yatırım
+  /// Uyarısı, 2 Açık Rıza Metni (sonuna kadar oku, onayla), 3 kutu.
+  /// Bilgi amaçlı Koşullar, Gizlilik, KVKK katlanır "Diğer belgeler"de
+  /// bağlantıdır. Okunacaklar eksikken "Kayıt ol"a basılırsa kart kırmızı
+  /// çerçeve alır ve eksikler adıyla yazılır; okumalar tamamsa hata kutunun
+  /// altındadır.
+  Widget _adimListesi(BuildContext context) {
     final l = context.l10n;
-    final metinler = _metinler(l);
-    final eksik = _eksikMetinler(l);
-    final hata = _belgeHatasi && eksik.isNotEmpty;
-    final satirlar = <Widget>[
-      for (final b in YasalBelge.kutuylaAlinanlar)
-        YasalBelgeSatiri(
-          adaylar: ZorunluMetin.belge(l, b).adaylar,
-          surum: l.yasalBelgeSurum(b.surum),
-          tamam: _acildi(b),
-          tamamEtiketi: l.yasalBelgeAcildi,
-          onayli: false,
-          onTap: () => _belgeyiAc(b),
-        ),
-      for (final m in metinler)
-        YasalBelgeSatiri(
-          adaylar: m.adaylar,
-          surum: l.yasalBelgeSurum(m.surum),
-          tamam: _onaylananlar.contains(m.tur),
-          tamamEtiketi: l.zorunluOkumaOnaylandi,
-          bekleyenEtiketi: l.zorunluOkumaSatirEtiketi,
-          onTap: () => _zorunluOku(m),
-        ),
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        color: hata ? context.c.loss.withValues(alpha: 0.08) : null,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(
-          color: hata
-              ? context.c.loss.withValues(alpha: 0.5)
-              : context.c.overlay,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.md,
-                SandikSpace.md, SandikSpace.xs),
-            child: Text(
-              l.zorunluOkumaBelgelerBaslik,
-              style: context.t.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: context.c.amberText,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
-            child: Text(
-              '${l.zorunluOkumaBelgelerAciklama} '
-              '${l.zorunluOkumaSayac(metinler.length - eksik.length, metinler.length)}',
-              style: context.t.bodySmall?.copyWith(
-                color: context.c.text58,
-                height: 1.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: SandikSpace.sm),
-          for (var i = 0; i < satirlar.length; i++) ...[
-            if (i > 0) Divider(height: 1, color: context.c.overlay),
-            satirlar[i],
-          ],
-          if (hata)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  SandikSpace.md, SandikSpace.xs, SandikSpace.md, SandikSpace.md),
-              child: Text(
-                l.zorunluOkumaEksik(
-                    eksik.map((m) => m.adaylar.first).join(', ')),
-                style: context.t.bodySmall?.copyWith(color: context.c.loss),
-              ),
-            ),
-        ],
+    final hata = _belgeHatasi && !_belgelerTamam
+        ? l.zorunluOkumaEksik(_eksikAdlari(l))
+        : null;
+    final kutuAdimi =
+        _plan.adimlar.firstWhere((a) => a.tur == YasalAdimTuru.kutu);
+    return YasalAdimListesi(
+      plan: _plan,
+      baslik: l.yasalAdimKayitBaslik(_plan.adimlar.length),
+      onaylananlar: _onaylananlar,
+      kutuIsaretli: _kutuIsaretli,
+      acilanlar: {
+        for (final b in YasalBelge.values)
+          if (_acildi(b)) b.tur,
+      },
+      hata: hata,
+      onOku: _zorunluOku,
+      onBelgeAc: _belgeyiAc,
+      // ── Tek onay (kutu 1.1) — son adımın içinde ──────────────────────
+      // Koşulların kabulü + 18+ + Gizlilik/KVKK ile bilgilendirildim; üç
+      // belge adı cümle içinde bağlantı (listedekiyle aynı salt okunur
+      // açılış). Açık rıza bu kutuda DEĞİL — Açık Rıza Metni'nin sonunda
+      // verilir. Hata kutunun altında.
+      kutu: YasalOnayKutusu(
+        icon: Icons.gavel_rounded,
+        title: context.l10n.tekOnayBaslik,
+        versionLabel: 'v${YasalMetinKatalogu.kutuSurumu}',
+        // Ülke bağlanılan projeden (köprü sürümü) — bkz.
+        // LegalDocs._ulke.
+        bodyText: context.l10n.tekOnayAciklama(
+            SunucuSecimi.instance.aktifOrNull?.ulke ??
+                context.l10n.tekOnayUlkeBilinmiyor),
+        checkboxLabel: YasalMetinKatalogu.tekKutuCumlesi(context.l10n),
+        checkboxSpan: _kutuBaglantilari.span(context,
+            vurgulu: kutuAdimi.guncellenenler.toSet()),
+        accepted: _kutuIsaretli,
+        error: _kutuHatasi,
+        errorMessage: context.l10n.tekOnayGerekli,
+        onToggle: _kutuDegistir,
       ),
     );
   }
@@ -650,31 +630,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 28),
 
-              // ── Yasal metinler: bağlantılar + sonuna kadar okunanlar ───
-              _belgeListesi(context),
-              const SizedBox(height: SandikSpace.md2),
-
-              // ── Tek onay (kutu 1.1) ──────────────────────────────────
-              // Koşulların kabulü + 18+ + Gizlilik/KVKK ile bilgilendirildim;
-              // üç belge adı cümle içinde bağlantı (listedekiyle aynı salt
-              // okunur açılış). Açık rıza bu kutuda DEĞİL — Açık Rıza
-              // Metni'nin sonunda verilir. Hata kutunun altında.
-              YasalOnayKutusu(
-                icon: Icons.gavel_rounded,
-                title: context.l10n.tekOnayBaslik,
-                versionLabel: 'v${YasalMetinKatalogu.kutuSurumu}',
-                // Ülke bağlanılan projeden (köprü sürümü) — bkz.
-                // LegalDocs._ulke.
-                bodyText: context.l10n.tekOnayAciklama(
-                    SunucuSecimi.instance.aktifOrNull?.ulke ??
-                        context.l10n.tekOnayUlkeBilinmiyor),
-                checkboxLabel: YasalMetinKatalogu.tekKutuCumlesi(context.l10n),
-                checkboxSpan: _kutuBaglantilari.span(context),
-                accepted: _kutuIsaretli,
-                error: _kutuHatasi,
-                errorMessage: context.l10n.tekOnayGerekli,
-                onToggle: _kutuDegistir,
-              ),
+              // ── Yasal adımlar: uyarı → Açık Rıza → kutu ──────────────
+              _adimListesi(context),
               const SizedBox(height: 24),
 
               // Kayıt Ol butonu — GestureDetector(opaque) instead of
@@ -823,7 +780,11 @@ class YasalKutuBaglantilari {
   late final TapGestureRecognizer _kvkk = TapGestureRecognizer()
     ..onTap = () => _ac(YasalBelge.kvkk);
 
-  InlineSpan span(BuildContext context) {
+  /// [vurgulu]: kapıda güncellenen belgeler — adları cümlede kalın yazılır
+  /// ("güncellenen belge adı vurgulu", adım düzeni 2026-10-05). Yalnız
+  /// biçim; okunan düz metin aynı kalır.
+  InlineSpan span(BuildContext context,
+      {Set<YasalBelge> vurgulu = const {}}) {
     const kosulAyraci = '\u0001';
     const gizlilikAyraci = '\u0002';
     const kvkkAyraci = '\u0003';
@@ -834,17 +795,29 @@ class YasalKutuBaglantilari {
       decoration: TextDecoration.underline,
       decorationColor: context.c.amberText,
     );
+    final vurguluBaglanti = baglanti.copyWith(fontWeight: FontWeight.w800);
     final parcalar = <InlineSpan>[];
     var i = 0;
     for (final m in RegExp('[$kosulAyraci$gizlilikAyraci$kvkkAyraci]')
         .allMatches(ham)) {
       if (m.start > i) parcalar.add(TextSpan(text: ham.substring(i, m.start)));
-      final (metin, tanima) = switch (m[0]) {
-        kosulAyraci => (l.tekOnayKosullarBaglanti, _kosullar),
-        gizlilikAyraci => (l.tekOnayGizlilikBaglanti, _gizlilik),
-        _ => (l.tekOnayKvkkBaglanti, _kvkk),
+      final (metin, tanima, belge) = switch (m[0]) {
+        kosulAyraci => (
+            l.tekOnayKosullarBaglanti,
+            _kosullar,
+            YasalBelge.kosullar
+          ),
+        gizlilikAyraci => (
+            l.tekOnayGizlilikBaglanti,
+            _gizlilik,
+            YasalBelge.gizlilik
+          ),
+        _ => (l.tekOnayKvkkBaglanti, _kvkk, YasalBelge.kvkk),
       };
-      parcalar.add(TextSpan(text: metin, style: baglanti, recognizer: tanima));
+      parcalar.add(TextSpan(
+          text: metin,
+          style: vurgulu.contains(belge) ? vurguluBaglanti : baglanti,
+          recognizer: tanima));
       i = m.end;
     }
     if (i < ham.length) parcalar.add(TextSpan(text: ham.substring(i)));
