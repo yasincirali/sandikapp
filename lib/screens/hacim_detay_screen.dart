@@ -268,13 +268,11 @@ class _Saatlik extends StatelessWidget {
     final s = secili == null ? null : akis.saatler[secili!];
     final String bilgi;
     if (secili == null) {
-      bilgi = l10n.rdrGuneDokun;
+      bilgi = l10n.rdrSaateDokun;
     } else if (s == null) {
       bilgi = l10n.rdrVeriYok;
     } else {
-      bilgi = l10n.rdrSecilenGunFiyatsiz(
-          l10n.flowRange(saatEtiketi(context, s.saat),
-              saatEtiketi(context, s.saat.add(const Duration(hours: 1)))),
+      bilgi = l10n.rdrSecilenGunFiyatsiz(saatAraligi(context, akis, s.saat),
           '${isaretliDolar(s.netAlim)} · ${l10n.rdrAlici(fmtPct(s.aliciPayi * 100, digits: 1))}');
     }
     return Column(

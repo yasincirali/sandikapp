@@ -525,12 +525,23 @@ class EnIstekliSaat extends StatelessWidget {
       s == null
           ? l10n.rdrIstekliSaatYok
           : l10n.rdrEnIstekliSaat(
-              l10n.flowRange(saatEtiketi(context, s.saat),
-                  saatEtiketi(context, s.saat.add(const Duration(hours: 1)))),
-              isaretliDolar(s.netAlim)),
+              saatAraligi(context, akis, s.saat), isaretliDolar(s.netAlim)),
       style: context.t.bodySmall?.copyWith(color: context.c.text58),
     );
   }
+}
+
+/// "21:00 - 22:00"; saat en yeni mumun gününden önceyse "Dün 21:00 - 22:00".
+/// 24 saatlik pencere iki güne yayılır; yalnız saat aralığı hangi gün
+/// olduğunu söylemiyordu (2026-10-05 web testi). Karşılaştırma cihaz saatinde.
+String saatAraligi(BuildContext context, SaatlikAkis akis, DateTime saat) {
+  final l10n = context.l10n;
+  final aralik = l10n.flowRange(saatEtiketi(context, saat),
+      saatEtiketi(context, saat.add(const Duration(hours: 1))));
+  final sonMum = akis.saatler.lastWhere((x) => x != null)!.saat.toLocal();
+  return DateUtils.dateOnly(saat.toLocal()) == DateUtils.dateOnly(sonMum)
+      ? aralik
+      : l10n.rdrDunAralik(aralik);
 }
 
 /// Cihaz saatinde "14:00".

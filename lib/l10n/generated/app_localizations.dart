@@ -10612,6 +10612,18 @@ abstract class AppLocalizations {
   /// **'Son 7 günde olağandışı gün: {olay}'**
   String rdrKartHaftaOlayi(String olay);
 
+  /// No description provided for @rdrDunAralik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dün {aralik}'**
+  String rdrDunAralik(String aralik);
+
+  /// No description provided for @rdrSaateDokun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.'**
+  String get rdrSaateDokun;
+
   /// No description provided for @rdrSatirKriptoOrtsuz.
   ///
   /// In tr, this message translates to:

@@ -403,6 +403,29 @@ void main() {
       expect(find.textContaining('₺'), findsNothing);
     });
 
+    testWidgets('en istekli saat dünse "Dün" der (24 saat iki güne yayılır)',
+        (t) async {
+      // Son mum 23 Eyl 10:00; en istekli saat 22 Eyl 21:00 (UTC test saati).
+      final akis = saatlikAkis([
+        for (var h = 0; h < 24; h++)
+          KriptoSaati(
+              saat: DateTime.utc(2026, 9, 22, 11).add(Duration(hours: h)),
+              paraHacmi: 100e6,
+              aliciPayi: h == 10 ? 0.9 : 0.5),
+      ], simdi: DateTime.utc(2026, 9, 23, 10, 30))!;
+      await t.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('tr'),
+        theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+        home: Scaffold(body: EnIstekliSaat(akis: akis)),
+      ));
+      final yerel = DateTime.utc(2026, 9, 22, 21).toLocal();
+      final ayni = DateUtils.dateOnly(yerel) ==
+          DateUtils.dateOnly(DateTime.utc(2026, 9, 23, 10).toLocal());
+      expect(find.textContaining('Dün '), ayni ? findsNothing : findsOneWidget);
+    });
+
     testWidgets('saatlik veri yoksa saatlik bölüm yok, kaynak günlük',
         (t) async {
       await kur(t,
@@ -431,6 +454,11 @@ void main() {
           of: find.byType(SaatlikCubuklar),
           matching: find.byType(GestureDetector));
       await t.scrollUntilVisible(saatler.first, 200);
+      // Saatlik bölümün ipucu saati anlatır (günlük grafiğinkini değil).
+      expect(
+          find.text(
+              'Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.'),
+          findsOneWidget);
       await t.tap(saatler.at(3));
       await t.pumpAndSettle();
       expect(find.textContaining(r'+$80,00M · Alıcı %90,0'), findsOneWidget);

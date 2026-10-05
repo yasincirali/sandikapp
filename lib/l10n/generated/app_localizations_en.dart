@@ -6445,6 +6445,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String rdrDunAralik(String aralik) {
+    return 'Yesterday $aralik';
+  }
+
+  @override
+  String get rdrSaateDokun =>
+      'Tap an hour to see its net buying and buyer share here.';
+
+  @override
   String rdrSatirKriptoOrtsuz(String yuzde) {
     return 'Buyer share on the last day $yuzde';
   }

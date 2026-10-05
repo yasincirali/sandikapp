@@ -4256,6 +4256,13 @@
       "olay": {"type": "String"}
     }
   },
+  "rdrDunAralik": "Yesterday {aralik}",
+  "@rdrDunAralik": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "rdrSaateDokun": "Tap an hour to see its net buying and buyer share here.",
   "rdrSatirKriptoOrtsuz": "Buyer share on the last day {yuzde}",
   "@rdrSatirKriptoOrtsuz": {
     "placeholders": {

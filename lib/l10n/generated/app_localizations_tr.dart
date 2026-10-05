@@ -6382,6 +6382,15 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String rdrDunAralik(String aralik) {
+    return 'Dün $aralik';
+  }
+
+  @override
+  String get rdrSaateDokun =>
+      'Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.';
+
+  @override
   String rdrSatirKriptoOrtsuz(String yuzde) {
     return 'Son gün alıcı payı $yuzde';
   }
