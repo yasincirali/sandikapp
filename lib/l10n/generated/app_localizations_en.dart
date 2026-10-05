@@ -5993,4 +5993,636 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiBaslikGuncelTek => 'Updated document';
+
+  @override
+  String get rdrKademeSakin => 'calm';
+
+  @override
+  String get rdrKademeHareketli => 'active';
+
+  @override
+  String get rdrKademeCok => 'very active';
+
+  @override
+  String get rdrHaftaSakin => 'Calm week';
+
+  @override
+  String get rdrHaftaHareketli => 'Active week';
+
+  @override
+  String get rdrHaftaCok => 'Very active week';
+
+  @override
+  String get rdrGunSakin => 'Calm day';
+
+  @override
+  String get rdrGunHareketli => 'Active day';
+
+  @override
+  String get rdrGunCok => 'Very active day';
+
+  @override
+  String rdrOlcekSemantics(String kademe) {
+    return 'Compared with its own normal: $kademe';
+  }
+
+  @override
+  String get rdrAyrinti => 'Details';
+
+  @override
+  String rdrKaynakSatiri(String kaynak, String tarih) {
+    return '$kaynak · $tarih · not advice';
+  }
+
+  @override
+  String rdrYasal(String kaynak) {
+    return 'Data comes from $kaynak and does not show who bought or sold. Past movement does not indicate future returns; this is not investment advice.';
+  }
+
+  @override
+  String get rdrNasilOkunur => 'How to read';
+
+  @override
+  String get rdrKoc1 =>
+      'The sentence at the top tells you the latest in one line. The number under it is the evidence.';
+
+  @override
+  String get rdrKoc2 =>
+      'The scale shows how big the number is compared with this asset\'s own normal: calm, active, very active.';
+
+  @override
+  String get rdrKoc3 => 'Tap any dotted-underlined word to see what it means.';
+
+  @override
+  String rdrKocAdim(String adim) {
+    return '$adim / 3';
+  }
+
+  @override
+  String get rdrIleri => 'Next';
+
+  @override
+  String get rdrAnladim => 'Got it';
+
+  @override
+  String get rdrTerimNetAkis => 'Net flow';
+
+  @override
+  String get rdrTerimNetAkisTanim =>
+      'Money that came into the fund minus money that left. Changes in the fund\'s price are not included; only what investors put in and took out.';
+
+  @override
+  String get rdrTerimBuyukluk => 'Fund size';
+
+  @override
+  String get rdrTerimBuyuklukTanim =>
+      'The current value of all money in the fund. It grows both when new money comes in and when its holdings gain value.';
+
+  @override
+  String get rdrTerimAyristirma => 'Price and new money';
+
+  @override
+  String get rdrTerimAyristirmaTanim =>
+      'A change in fund size has two sources: the value of its holdings (price) and the money investors put in or took out (new money). Together they make up the size change.';
+
+  @override
+  String get rdrTerimYatirimci => 'Number of investors';
+
+  @override
+  String get rdrTerimYatirimciTanim =>
+      'How many people hold units of the fund. The same amount can come from a few large investors or many small ones; this number shows which.';
+
+  @override
+  String get rdrTerimSira => 'Flow rank in category';
+
+  @override
+  String get rdrTerimSiraTanim =>
+      'Funds in the same TEFAS category ranked from the largest net inflow to the largest net outflow in the same week. Only funds with data for every day of that week are ranked.';
+
+  @override
+  String get rdrTerimBuyukHareket => 'Big move';
+
+  @override
+  String get rdrTerimBuyukHareketTanim =>
+      'A day when money in or out is at least 3% of fund size and at least 4 times the fund\'s usual daily move. Both must hold; funds under ₺250M and money market funds are never flagged.';
+
+  @override
+  String get rdrTerimOlcek => 'Scale';
+
+  @override
+  String get rdrTerimOlcekTanim =>
+      'How big the number is against this asset\'s own history. For funds the last week is compared with the average of previous weeks; for stocks the last day\'s volume with the previous 20 days. For crypto it is how far the buyer share is from 50%: 2 points is active, 5 points very active. If a big move or unusual volume was flagged, the scale is at the top.';
+
+  @override
+  String get rdrTerimHacim => 'Trading value';
+
+  @override
+  String get rdrTerimHacimTanim =>
+      'The total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in.';
+
+  @override
+  String get rdrTerimKat => 'Times the average';
+
+  @override
+  String get rdrTerimKatTanim =>
+      'The last day\'s volume divided by the average of the previous 20 trading days. 1× is an ordinary day.';
+
+  @override
+  String get rdrTerimOlagandisi => 'Unusual volume';
+
+  @override
+  String get rdrTerimOlagandisiTanim =>
+      'A day when volume is at least twice the 20-day average and the jump is far outside the asset\'s usual swings.';
+
+  @override
+  String get rdrTerimAliciPayi => 'Buyer share';
+
+  @override
+  String get rdrTerimAliciPayiTanim =>
+      'How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow.';
+
+  @override
+  String get rdrTerimNetAlim => 'Net buying';
+
+  @override
+  String get rdrTerimNetAlimTanim =>
+      'Market-buy volume minus market-sell volume (USDT). Covers Binance trades only.';
+
+  @override
+  String rdrTerimOrnek(String deger) {
+    return 'For this asset: $deger';
+  }
+
+  @override
+  String get rdrFonGirisSakin =>
+      'The fund had a normal amount of money come in last week.';
+
+  @override
+  String get rdrFonGirisHareketli =>
+      'More money than usual came into the fund last week.';
+
+  @override
+  String get rdrFonGirisCok =>
+      'Far more money than usual came into the fund last week.';
+
+  @override
+  String get rdrFonCikisSakin =>
+      'A normal amount of money left the fund last week.';
+
+  @override
+  String get rdrFonCikisHareketli =>
+      'More money than usual left the fund last week.';
+
+  @override
+  String get rdrFonCikisCok =>
+      'Far more money than usual left the fund last week.';
+
+  @override
+  String get rdrFonGiris => 'Money came into the fund last week.';
+
+  @override
+  String get rdrFonCikis => 'Money left the fund last week.';
+
+  @override
+  String get rdrFonDenge =>
+      'Money in and out of the fund balanced out last week.';
+
+  @override
+  String get rdrFonKarisik => 'The fund had a big money move last week.';
+
+  @override
+  String rdrFonNetAralik(String aralik) {
+    return 'net flow · $aralik';
+  }
+
+  @override
+  String get rdrSon8Hafta => 'last 8 weeks';
+
+  @override
+  String rdrBuyukHareketSayisi(String sayi) {
+    return '$sayi big move(s)';
+  }
+
+  @override
+  String get rdrBuyukHareketYok => 'no big moves';
+
+  @override
+  String rdrFonDetayBaslik(String kod) {
+    return '$kod · Money flow';
+  }
+
+  @override
+  String get rdrHaftayaDokun => 'Tap a week to see its number here.';
+
+  @override
+  String rdrSecilenHafta(String aralik) {
+    return 'Week of $aralik';
+  }
+
+  @override
+  String get rdrVeriYok => 'no data';
+
+  @override
+  String rdrAyristirmaCumle(String yuzde) {
+    return 'Over the last month the fund size changed $yuzde.';
+  }
+
+  @override
+  String rdrFiyat(String yuzde) {
+    return 'price $yuzde';
+  }
+
+  @override
+  String rdrYeniPara(String yuzde) {
+    return 'new money $yuzde';
+  }
+
+  @override
+  String rdrOlaganinKati(String kat) {
+    return '$kat× a usual week';
+  }
+
+  @override
+  String get rdrDonemUpper => 'PERIOD';
+
+  @override
+  String get rdrBaglamUpper => 'CONTEXT';
+
+  @override
+  String get rdrSiraUpper => 'FLOW RANK IN CATEGORY';
+
+  @override
+  String rdrSiraAlt(String kategori) {
+    return '$kategori · largest net inflow the same week';
+  }
+
+  @override
+  String get rdrSiraBuFon => 'this fund';
+
+  @override
+  String rdrSiraToplam(String sayi) {
+    return 'out of $sayi funds';
+  }
+
+  @override
+  String get rdrHareketlerUpper => 'BIG MOVES · LAST 30 DAYS';
+
+  @override
+  String rdrHisseSakin(String tarih) {
+    return 'On $tarih this stock traded a normal amount.';
+  }
+
+  @override
+  String rdrHisseHareketli(String tarih) {
+    return 'On $tarih this stock traded more than usual.';
+  }
+
+  @override
+  String rdrHisseCok(String tarih) {
+    return 'On $tarih this stock traded far more than usual.';
+  }
+
+  @override
+  String rdrHisseYalin(String tarih, String tutar) {
+    return 'On $tarih this stock traded $tutar.';
+  }
+
+  @override
+  String rdrHacimAlt(String yuzde) {
+    return 'trading value · price $yuzde';
+  }
+
+  @override
+  String get rdrHacimAltFiyatsiz => 'trading value';
+
+  @override
+  String get rdrOrtalamaCizgisi => 'dashed line: previous 20-day average';
+
+  @override
+  String rdrHacimDetayBaslik(String kod) {
+    return '$kod · Volume radar';
+  }
+
+  @override
+  String get rdrGuneDokun => 'Tap a day to see its volume and price here.';
+
+  @override
+  String rdrSecilenGun(String tarih, String tutar, String yuzde) {
+    return '$tarih: $tutar · price $yuzde';
+  }
+
+  @override
+  String rdrSecilenGunFiyatsiz(String tarih, String tutar) {
+    return '$tarih: $tutar';
+  }
+
+  @override
+  String get rdrOlagandisiUpper => 'UNUSUAL VOLUME DAYS · LAST 30 DAYS';
+
+  @override
+  String rdrKriptoAlici(String tarih) {
+    return 'On $tarih buyers were more eager than sellers.';
+  }
+
+  @override
+  String rdrKriptoAliciCok(String tarih) {
+    return 'On $tarih buyers were clearly more eager than sellers.';
+  }
+
+  @override
+  String rdrKriptoSatici(String tarih) {
+    return 'On $tarih sellers were more eager than buyers.';
+  }
+
+  @override
+  String rdrKriptoSaticiCok(String tarih) {
+    return 'On $tarih sellers were clearly more eager than buyers.';
+  }
+
+  @override
+  String rdrKriptoDenge(String tarih) {
+    return 'On $tarih buyers and sellers were balanced.';
+  }
+
+  @override
+  String rdrAlici(String yuzde) {
+    return 'Buyers $yuzde';
+  }
+
+  @override
+  String rdrSatici(String yuzde) {
+    return 'Sellers $yuzde';
+  }
+
+  @override
+  String rdrYediGunOrt(String yuzde) {
+    return '7-day average: buyers $yuzde';
+  }
+
+  @override
+  String get rdrSaatlikUpper => 'LAST 24 HOURS · NET BUYING BY HOUR';
+
+  @override
+  String rdrEnIstekliSaat(String aralik, String tutar) {
+    return '$aralik buyers were most eager · $tutar net buying';
+  }
+
+  @override
+  String get rdrIstekliSaatYok =>
+      'Buyers did not outweigh sellers in any hour of the last 24.';
+
+  @override
+  String rdrSonMum(String saat) {
+    return 'last candle $saat';
+  }
+
+  @override
+  String rdrKriptoDetayBaslik(String kod) {
+    return '$kod · Buying pressure';
+  }
+
+  @override
+  String get rdrIslemHacmiUpper => 'TRADING VOLUME · LAST 20 DAYS';
+
+  @override
+  String rdrHaftaBaslikVar(String sayi) {
+    return '$sayi of your assets had unusual moves in the last week.';
+  }
+
+  @override
+  String get rdrHaftaBaslikYok =>
+      'None of your assets had unusual moves in the last week.';
+
+  @override
+  String get rdrRozetBuyukGiris => 'Big inflow';
+
+  @override
+  String get rdrRozetBuyukCikis => 'Big outflow';
+
+  @override
+  String get rdrRozetHacim => 'Unusual volume';
+
+  @override
+  String get rdrRozetAlici => 'Buyers eager';
+
+  @override
+  String get rdrRozetSatici => 'Sellers eager';
+
+  @override
+  String get rdrRozetHareketli => 'Active';
+
+  @override
+  String get rdrRozetSakin => 'Calm';
+
+  @override
+  String rdrSatirFon(String tutar, String yuzde) {
+    return 'Net $tutar · $yuzde of size';
+  }
+
+  @override
+  String rdrSatirFonOransiz(String tutar) {
+    return 'Net $tutar';
+  }
+
+  @override
+  String rdrSatirHacim(String tarih, String kat, String yuzde) {
+    return '$tarih · volume $kat× · price $yuzde';
+  }
+
+  @override
+  String rdrSatirKripto(String yuzde, String ort) {
+    return 'Buyers $yuzde · 7-day avg $ort';
+  }
+
+  @override
+  String rdrSatirKriptoOrtsuz(String yuzde) {
+    return 'Buyers $yuzde';
+  }
+
+  @override
+  String rdrSatirNot(String metin) {
+    return 'Note: $metin';
+  }
+
+  @override
+  String get rdrHaftaKaynak =>
+      'Fund flow TEFAS · volume Yahoo Finance · crypto Binance · not advice';
+
+  @override
+  String rdrAylikRaporSatir(String ay) {
+    return '$ay report';
+  }
+
+  @override
+  String get rdrOku => 'Read';
+
+  @override
+  String rdrSeritSayi(String sayi) {
+    return '$sayi of your assets had unusual moves in the last week';
+  }
+
+  @override
+  String get rdrAyarHareketSatiri => 'Movement line in the Monday summary';
+
+  @override
+  String get rdrAyarHareketSatiriAlt =>
+      'Include big fund flows and unusual volume in the weekly notification.';
+
+  @override
+  String get rdrAyarSakinGoster => 'Show calm assets in the summary';
+
+  @override
+  String get rdrAyarSakinGosterAlt => 'Also list assets that had a quiet week.';
+
+  @override
+  String get prmUcretsiz => 'Free';
+
+  @override
+  String get prmPremium => 'Premium';
+
+  @override
+  String get prmSatirVarlik => 'Assets';
+
+  @override
+  String get prmSatirAkis => 'Money flow';
+
+  @override
+  String get prmSatirHacim => 'Volume radar';
+
+  @override
+  String get prmSatirNot => 'Weekly note';
+
+  @override
+  String get prmSatirAylik => 'Monthly report';
+
+  @override
+  String get prmSinirsiz => 'unlimited';
+
+  @override
+  String get prmAkisUcretsiz => 'last week';
+
+  @override
+  String get prmAkisPremium => '8 weeks + events';
+
+  @override
+  String get prmHacimUcretsiz => 'last day';
+
+  @override
+  String get prmHacimPremium => '20 days';
+
+  @override
+  String get prmNotUcretsiz => 'first sentence';
+
+  @override
+  String get prmNotPremium => 'full note';
+
+  @override
+  String prmKilitAkis(String sayi) {
+    return '8-week trend and $sayi big move(s) in Premium';
+  }
+
+  @override
+  String get prmKilitAyrinti => 'Details in Premium';
+
+  @override
+  String get prmKilitNot => 'Full note in Premium';
+
+  @override
+  String get prmHediyeBaslik => 'You\'re one of our first users';
+
+  @override
+  String prmHediyeGovde(String gun, String tarih) {
+    return '$gun days of Premium are yours, no card needed. It ends on $tarih; none of your data is deleted when it does.';
+  }
+
+  @override
+  String get prmTesekkurler => 'Thanks';
+
+  @override
+  String get prmAbonelikAylik => 'Premium · monthly';
+
+  @override
+  String get prmAbonelikYillik => 'Premium · yearly';
+
+  @override
+  String get prmAbonelikHediye => 'Premium · early-user gift';
+
+  @override
+  String prmYenileme(String tarih, String magaza) {
+    return 'Renews $tarih · $magaza';
+  }
+
+  @override
+  String prmBitis(String tarih) {
+    return 'Ends on $tarih';
+  }
+
+  @override
+  String get prmYonet => 'Manage';
+
+  @override
+  String get prmGeriYukle => 'Restore purchases';
+
+  @override
+  String get anzNotUpper => 'WEEKLY NOTE · AI';
+
+  @override
+  String anzMeta(String sayi, String aralik) {
+    return '$sayi points · $aralik';
+  }
+
+  @override
+  String get anzNotuOku => 'Read note';
+
+  @override
+  String anzDetayBaslik(String kod) {
+    return '$kod · weekly note';
+  }
+
+  @override
+  String anzAylikDetayBaslik(String kod) {
+    return '$kod · monthly note';
+  }
+
+  @override
+  String anzAltSatir(String kaynak, String tarih) {
+    return 'Written with AI · input $kaynak, $tarih · not investment advice';
+  }
+
+  @override
+  String get anzIseYaradi => 'Was this useful?';
+
+  @override
+  String get anzYanlisSayi => 'I saw a wrong number';
+
+  @override
+  String get anzYanlisIpucu => 'Which number is wrong? (optional)';
+
+  @override
+  String get anzGonder => 'Send';
+
+  @override
+  String get anzTesekkur => 'Thanks, we\'ll review the note.';
+
+  @override
+  String get anzAylikUpper => 'MONTHLY REPORT';
+
+  @override
+  String anzAylikBaslik(String ay) {
+    return '$ay report';
+  }
+
+  @override
+  String anzAylikOzetVar(String toplam, String sayi) {
+    return '$sayi of your $toplam assets had a notable month.';
+  }
+
+  @override
+  String get anzAylikOzetYok => 'None of your assets had a notable month.';
+
+  @override
+  String get anzAylikBos => 'This month\'s report is not ready yet.';
+
+  @override
+  String get anzOkunamadi => 'The note could not be opened right now.';
 }

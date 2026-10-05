@@ -3924,5 +3924,452 @@
   "yasalAdimDurumSonra": "comes later",
   "yasalAdimDigerBelgeler": "Other documents (for information) · {sayi}",
   "yasalAdimSayac": "{tamam}/{toplam} steps completed",
-  "yasalKapiBaslikGuncelTek": "Updated document"
+  "yasalKapiBaslikGuncelTek": "Updated document",
+  "rdrKademeSakin": "calm",
+  "rdrKademeHareketli": "active",
+  "rdrKademeCok": "very active",
+  "rdrHaftaSakin": "Calm week",
+  "rdrHaftaHareketli": "Active week",
+  "rdrHaftaCok": "Very active week",
+  "rdrGunSakin": "Calm day",
+  "rdrGunHareketli": "Active day",
+  "rdrGunCok": "Very active day",
+  "rdrOlcekSemantics": "Compared with its own normal: {kademe}",
+  "@rdrOlcekSemantics": {
+    "placeholders": {
+      "kademe": {"type": "String"}
+    }
+  },
+  "rdrAyrinti": "Details",
+  "rdrKaynakSatiri": "{kaynak} · {tarih} · not advice",
+  "@rdrKaynakSatiri": {
+    "placeholders": {
+      "kaynak": {"type": "String"},
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrYasal": "Data comes from {kaynak} and does not show who bought or sold. Past movement does not indicate future returns; this is not investment advice.",
+  "@rdrYasal": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "rdrNasilOkunur": "How to read",
+  "rdrKoc1": "The sentence at the top tells you the latest in one line. The number under it is the evidence.",
+  "rdrKoc2": "The scale shows how big the number is compared with this asset's own normal: calm, active, very active.",
+  "rdrKoc3": "Tap any dotted-underlined word to see what it means.",
+  "rdrKocAdim": "{adim} / 3",
+  "@rdrKocAdim": {
+    "placeholders": {
+      "adim": {"type": "String"}
+    }
+  },
+  "rdrIleri": "Next",
+  "rdrAnladim": "Got it",
+  "rdrTerimNetAkis": "Net flow",
+  "rdrTerimNetAkisTanim": "Money that came into the fund minus money that left. Changes in the fund's price are not included; only what investors put in and took out.",
+  "rdrTerimBuyukluk": "Fund size",
+  "rdrTerimBuyuklukTanim": "The current value of all money in the fund. It grows both when new money comes in and when its holdings gain value.",
+  "rdrTerimAyristirma": "Price and new money",
+  "rdrTerimAyristirmaTanim": "A change in fund size has two sources: the value of its holdings (price) and the money investors put in or took out (new money). Together they make up the size change.",
+  "rdrTerimYatirimci": "Number of investors",
+  "rdrTerimYatirimciTanim": "How many people hold units of the fund. The same amount can come from a few large investors or many small ones; this number shows which.",
+  "rdrTerimSira": "Flow rank in category",
+  "rdrTerimSiraTanim": "Funds in the same TEFAS category ranked from the largest net inflow to the largest net outflow in the same week. Only funds with data for every day of that week are ranked.",
+  "rdrTerimBuyukHareket": "Big move",
+  "rdrTerimBuyukHareketTanim": "A day when money in or out is at least 3% of fund size and at least 4 times the fund's usual daily move. Both must hold; funds under ₺250M and money market funds are never flagged.",
+  "rdrTerimOlcek": "Scale",
+  "rdrTerimOlcekTanim": "How big the number is against this asset's own history. For funds the last week is compared with the average of previous weeks; for stocks the last day's volume with the previous 20 days. For crypto it is how far the buyer share is from 50%: 2 points is active, 5 points very active. If a big move or unusual volume was flagged, the scale is at the top.",
+  "rdrTerimHacim": "Trading value",
+  "rdrTerimHacimTanim": "The total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in.",
+  "rdrTerimKat": "Times the average",
+  "rdrTerimKatTanim": "The last day's volume divided by the average of the previous 20 trading days. 1× is an ordinary day.",
+  "rdrTerimOlagandisi": "Unusual volume",
+  "rdrTerimOlagandisiTanim": "A day when volume is at least twice the 20-day average and the jump is far outside the asset's usual swings.",
+  "rdrTerimAliciPayi": "Buyer share",
+  "rdrTerimAliciPayiTanim": "How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow.",
+  "rdrTerimNetAlim": "Net buying",
+  "rdrTerimNetAlimTanim": "Market-buy volume minus market-sell volume (USDT). Covers Binance trades only.",
+  "rdrTerimOrnek": "For this asset: {deger}",
+  "@rdrTerimOrnek": {
+    "placeholders": {
+      "deger": {"type": "String"}
+    }
+  },
+  "rdrFonGirisSakin": "The fund had a normal amount of money come in last week.",
+  "rdrFonGirisHareketli": "More money than usual came into the fund last week.",
+  "rdrFonGirisCok": "Far more money than usual came into the fund last week.",
+  "rdrFonCikisSakin": "A normal amount of money left the fund last week.",
+  "rdrFonCikisHareketli": "More money than usual left the fund last week.",
+  "rdrFonCikisCok": "Far more money than usual left the fund last week.",
+  "rdrFonGiris": "Money came into the fund last week.",
+  "rdrFonCikis": "Money left the fund last week.",
+  "rdrFonDenge": "Money in and out of the fund balanced out last week.",
+  "rdrFonKarisik": "The fund had a big money move last week.",
+  "rdrFonNetAralik": "net flow · {aralik}",
+  "@rdrFonNetAralik": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "rdrSon8Hafta": "last 8 weeks",
+  "rdrBuyukHareketSayisi": "{sayi} big move(s)",
+  "@rdrBuyukHareketSayisi": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrBuyukHareketYok": "no big moves",
+  "rdrFonDetayBaslik": "{kod} · Money flow",
+  "@rdrFonDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "rdrHaftayaDokun": "Tap a week to see its number here.",
+  "rdrSecilenHafta": "Week of {aralik}",
+  "@rdrSecilenHafta": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "rdrVeriYok": "no data",
+  "rdrAyristirmaCumle": "Over the last month the fund size changed {yuzde}.",
+  "@rdrAyristirmaCumle": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrFiyat": "price {yuzde}",
+  "@rdrFiyat": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYeniPara": "new money {yuzde}",
+  "@rdrYeniPara": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrOlaganinKati": "{kat}× a usual week",
+  "@rdrOlaganinKati": {
+    "placeholders": {
+      "kat": {"type": "String"}
+    }
+  },
+  "rdrDonemUpper": "PERIOD",
+  "rdrBaglamUpper": "CONTEXT",
+  "rdrSiraUpper": "FLOW RANK IN CATEGORY",
+  "rdrSiraAlt": "{kategori} · largest net inflow the same week",
+  "@rdrSiraAlt": {
+    "placeholders": {
+      "kategori": {"type": "String"}
+    }
+  },
+  "rdrSiraBuFon": "this fund",
+  "rdrSiraToplam": "out of {sayi} funds",
+  "@rdrSiraToplam": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrHareketlerUpper": "BIG MOVES · LAST 30 DAYS",
+  "rdrHisseSakin": "On {tarih} this stock traded a normal amount.",
+  "@rdrHisseSakin": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrHisseHareketli": "On {tarih} this stock traded more than usual.",
+  "@rdrHisseHareketli": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrHisseCok": "On {tarih} this stock traded far more than usual.",
+  "@rdrHisseCok": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrHisseYalin": "On {tarih} this stock traded {tutar}.",
+  "@rdrHisseYalin": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrHacimAlt": "trading value · price {yuzde}",
+  "@rdrHacimAlt": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrHacimAltFiyatsiz": "trading value",
+  "rdrOrtalamaCizgisi": "dashed line: previous 20-day average",
+  "rdrHacimDetayBaslik": "{kod} · Volume radar",
+  "@rdrHacimDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "rdrGuneDokun": "Tap a day to see its volume and price here.",
+  "rdrSecilenGun": "{tarih}: {tutar} · price {yuzde}",
+  "@rdrSecilenGun": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSecilenGunFiyatsiz": "{tarih}: {tutar}",
+  "@rdrSecilenGunFiyatsiz": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrOlagandisiUpper": "UNUSUAL VOLUME DAYS · LAST 30 DAYS",
+  "rdrKriptoAlici": "On {tarih} buyers were more eager than sellers.",
+  "@rdrKriptoAlici": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoAliciCok": "On {tarih} buyers were clearly more eager than sellers.",
+  "@rdrKriptoAliciCok": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoSatici": "On {tarih} sellers were more eager than buyers.",
+  "@rdrKriptoSatici": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoSaticiCok": "On {tarih} sellers were clearly more eager than buyers.",
+  "@rdrKriptoSaticiCok": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoDenge": "On {tarih} buyers and sellers were balanced.",
+  "@rdrKriptoDenge": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrAlici": "Buyers {yuzde}",
+  "@rdrAlici": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatici": "Sellers {yuzde}",
+  "@rdrSatici": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYediGunOrt": "7-day average: buyers {yuzde}",
+  "@rdrYediGunOrt": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSaatlikUpper": "LAST 24 HOURS · NET BUYING BY HOUR",
+  "rdrEnIstekliSaat": "{aralik} buyers were most eager · {tutar} net buying",
+  "@rdrEnIstekliSaat": {
+    "placeholders": {
+      "aralik": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrIstekliSaatYok": "Buyers did not outweigh sellers in any hour of the last 24.",
+  "rdrSonMum": "last candle {saat}",
+  "@rdrSonMum": {
+    "placeholders": {
+      "saat": {"type": "String"}
+    }
+  },
+  "rdrKriptoDetayBaslik": "{kod} · Buying pressure",
+  "@rdrKriptoDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "rdrIslemHacmiUpper": "TRADING VOLUME · LAST 20 DAYS",
+  "rdrHaftaBaslikVar": "{sayi} of your assets had unusual moves in the last week.",
+  "@rdrHaftaBaslikVar": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrHaftaBaslikYok": "None of your assets had unusual moves in the last week.",
+  "rdrRozetBuyukGiris": "Big inflow",
+  "rdrRozetBuyukCikis": "Big outflow",
+  "rdrRozetHacim": "Unusual volume",
+  "rdrRozetAlici": "Buyers eager",
+  "rdrRozetSatici": "Sellers eager",
+  "rdrRozetHareketli": "Active",
+  "rdrRozetSakin": "Calm",
+  "rdrSatirFon": "Net {tutar} · {yuzde} of size",
+  "@rdrSatirFon": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatirFonOransiz": "Net {tutar}",
+  "@rdrSatirFonOransiz": {
+    "placeholders": {
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrSatirHacim": "{tarih} · volume {kat}× · price {yuzde}",
+  "@rdrSatirHacim": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "kat": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatirKripto": "Buyers {yuzde} · 7-day avg {ort}",
+  "@rdrSatirKripto": {
+    "placeholders": {
+      "yuzde": {"type": "String"},
+      "ort": {"type": "String"}
+    }
+  },
+  "rdrSatirKriptoOrtsuz": "Buyers {yuzde}",
+  "@rdrSatirKriptoOrtsuz": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatirNot": "Note: {metin}",
+  "@rdrSatirNot": {
+    "placeholders": {
+      "metin": {"type": "String"}
+    }
+  },
+  "rdrHaftaKaynak": "Fund flow TEFAS · volume Yahoo Finance · crypto Binance · not advice",
+  "rdrAylikRaporSatir": "{ay} report",
+  "@rdrAylikRaporSatir": {
+    "placeholders": {
+      "ay": {"type": "String"}
+    }
+  },
+  "rdrOku": "Read",
+  "rdrSeritSayi": "{sayi} of your assets had unusual moves in the last week",
+  "@rdrSeritSayi": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrAyarHareketSatiri": "Movement line in the Monday summary",
+  "rdrAyarHareketSatiriAlt": "Include big fund flows and unusual volume in the weekly notification.",
+  "rdrAyarSakinGoster": "Show calm assets in the summary",
+  "rdrAyarSakinGosterAlt": "Also list assets that had a quiet week.",
+  "prmUcretsiz": "Free",
+  "prmPremium": "Premium",
+  "prmSatirVarlik": "Assets",
+  "prmSatirAkis": "Money flow",
+  "prmSatirHacim": "Volume radar",
+  "prmSatirNot": "Weekly note",
+  "prmSatirAylik": "Monthly report",
+  "prmSinirsiz": "unlimited",
+  "prmAkisUcretsiz": "last week",
+  "prmAkisPremium": "8 weeks + events",
+  "prmHacimUcretsiz": "last day",
+  "prmHacimPremium": "20 days",
+  "prmNotUcretsiz": "first sentence",
+  "prmNotPremium": "full note",
+  "prmKilitAkis": "8-week trend and {sayi} big move(s) in Premium",
+  "@prmKilitAkis": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "prmKilitAyrinti": "Details in Premium",
+  "prmKilitNot": "Full note in Premium",
+  "prmHediyeBaslik": "You're one of our first users",
+  "prmHediyeGovde": "{gun} days of Premium are yours, no card needed. It ends on {tarih}; none of your data is deleted when it does.",
+  "@prmHediyeGovde": {
+    "placeholders": {
+      "gun": {"type": "String"},
+      "tarih": {"type": "String"}
+    }
+  },
+  "prmTesekkurler": "Thanks",
+  "prmAbonelikAylik": "Premium · monthly",
+  "prmAbonelikYillik": "Premium · yearly",
+  "prmAbonelikHediye": "Premium · early-user gift",
+  "prmYenileme": "Renews {tarih} · {magaza}",
+  "@prmYenileme": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "magaza": {"type": "String"}
+    }
+  },
+  "prmBitis": "Ends on {tarih}",
+  "@prmBitis": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "prmYonet": "Manage",
+  "prmGeriYukle": "Restore purchases",
+  "anzNotUpper": "WEEKLY NOTE · AI",
+  "anzMeta": "{sayi} points · {aralik}",
+  "@anzMeta": {
+    "placeholders": {
+      "sayi": {"type": "String"},
+      "aralik": {"type": "String"}
+    }
+  },
+  "anzNotuOku": "Read note",
+  "anzDetayBaslik": "{kod} · weekly note",
+  "@anzDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "anzAylikDetayBaslik": "{kod} · monthly note",
+  "@anzAylikDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "anzAltSatir": "Written with AI · input {kaynak}, {tarih} · not investment advice",
+  "@anzAltSatir": {
+    "placeholders": {
+      "kaynak": {"type": "String"},
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzIseYaradi": "Was this useful?",
+  "anzYanlisSayi": "I saw a wrong number",
+  "anzYanlisIpucu": "Which number is wrong? (optional)",
+  "anzGonder": "Send",
+  "anzTesekkur": "Thanks, we'll review the note.",
+  "anzAylikUpper": "MONTHLY REPORT",
+  "anzAylikBaslik": "{ay} report",
+  "@anzAylikBaslik": {
+    "placeholders": {
+      "ay": {"type": "String"}
+    }
+  },
+  "anzAylikOzetVar": "{sayi} of your {toplam} assets had a notable month.",
+  "@anzAylikOzetVar": {
+    "placeholders": {
+      "toplam": {"type": "String"},
+      "sayi": {"type": "String"}
+    }
+  },
+  "anzAylikOzetYok": "None of your assets had a notable month.",
+  "anzAylikBos": "This month's report is not ready yet.",
+  "anzOkunamadi": "The note could not be opened right now."
 }

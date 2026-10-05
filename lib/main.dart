@@ -19,6 +19,7 @@ import 'l10n/sen_material_localizations.dart';
 import 'models/asset.dart';
 import 'models/asset_type.dart';
 import 'models/user_model.dart';
+import 'providers/premium_provider.dart';
 import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
@@ -40,6 +41,7 @@ import 'screens/lock_screen.dart';
 import 'utils/sandik_snack.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'widgets/premium_hediye_sayfasi.dart';
 import 'widgets/klavye_kapatici.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
@@ -1220,7 +1222,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Onboarding'den AYRI ve ondan sonra gelir: yeni kullanıcı tanıtım
         // turunu görür, sürüm notunu görmez (`yeniNotlar` ilk kurulumda boş
         // döner). Karar `SurumNotuService`'te; burada yalnızca tetiklenir.
-        CrashReporter.arkaPlan(_yenilikleriKontrolEt(), reason: 'main._yenilikleriKontrolEt');
+        CrashReporter.arkaPlan(
+            _yenilikleriKontrolEt().then((_) => _hediyeyiKontrolEt()),
+            reason: 'main._yenilikleriKontrolEt');
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
         // Leaderboard opt-in server-side hydration: kullanıcı başka bir cihazda
@@ -1379,6 +1383,36 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     final ctx = appNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) return;
     await YeniliklerSheet.goster(ctx, notlar);
+  }
+
+  /// Erken kullanıcı hediyesi sayfası (Balina S13-A, 2026-10-05): sunucuda
+  /// geçerli bir 'erken_kullanici' hakkı varsa BİR KEZ. Yeniliklerden SONRA
+  /// (zincir `_yenilikleriKontrolEt().then`): iki sheet üst üste açılmasın.
+  /// Paywall kapalıyken `premiumHaklariProvider` sorgu atmaz, boş döner →
+  /// hiçbir şey olmaz.
+  Future<void> _hediyeyiKontrolEt() async {
+    if (!mounted || !ref.read(paywallVisibleProvider)) return;
+    if (ref.read(premiumHediyeGosterildiProvider)) return;
+    await ref.read(premiumHaklariProvider.future);
+    if (!mounted) return;
+    final hak = ref.read(gecerliPremiumHakkiProvider);
+    if (hak == null || !hak.hediye || hak.bitis == null) return;
+    for (var deneme = 0; deneme < 20; deneme++) {
+      if (!mounted) return;
+      if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) break;
+      await Future<void>.delayed(_yenilikYoklamaAraligi);
+    }
+    if (!mounted ||
+        _locked ||
+        _onboardingDone != true ||
+        !_yasalKapilarGecildi) {
+      return;
+    }
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    await ref.read(premiumHediyeGosterildiProvider.notifier).set(true);
+    if (!ctx.mounted) return;
+    await PremiumHediyeSayfasi.goster(ctx, hak);
   }
 
   /// Kutlama sheet'inin açılabileceği TEK yer: ana ekran, üstünde hiçbir

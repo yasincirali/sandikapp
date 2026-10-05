@@ -69,6 +69,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   _HeroCard(),
                   const SizedBox(height: 24),
                   const _FeatureList(),
+                  if (rc.balinaRadariAcik) ...[
+                    const SizedBox(height: 8),
+                    _KarsilastirmaTablosu(varlikSiniri: rc.freeAssetLimit),
+                  ],
                   const SizedBox(height: 24),
                   _PlanCard(
                     plan: _Plan.yearly,
@@ -344,6 +348,74 @@ class _FeatureList extends StatelessWidget {
           const SizedBox(height: 12),
         ],
       ],
+    );
+  }
+}
+
+// ── Ücretsiz / Premium karşılaştırma (S11-B, 2026-10-05) ─────────────────
+//
+// "Takip ücretsiz, anlam ücretli" ilkesi tek bakışta: her satırda ücretsizde
+// ne kaldığı da yazar — kullanıcı neyi kaybettiğini değil neyi kazanacağını
+// görür. Satırlar yalnız radar bayrağı açıkken (özellik uygulamada yokken
+// listelenmez; bkz. `_FeatureList` uyarısı).
+class _KarsilastirmaTablosu extends StatelessWidget {
+  const _KarsilastirmaTablosu({required this.varlikSiniri});
+
+  final int varlikSiniri;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    final satirlar = <(String, String, String)>[
+      (l.prmSatirVarlik, '$varlikSiniri', l.prmSinirsiz),
+      (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
+      (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
+      (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),
+      (l.prmSatirAylik, '-', '✓'),
+    ];
+    final baslik = t.labelSmall?.copyWith(
+        color: c.text58, fontWeight: FontWeight.w800, letterSpacing: 1.0);
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+      child: Table(
+        columnWidths: const {
+          0: FlexColumnWidth(1.3),
+          1: FlexColumnWidth(1),
+          2: FlexColumnWidth(1.1),
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: [
+          TableRow(children: [
+            const SizedBox.shrink(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+              child: Text(l.prmUcretsiz.toUpperCase(), style: baslik),
+            ),
+            Text(l.prmPremium.toUpperCase(),
+                style: baslik?.copyWith(color: c.amberText)),
+          ]),
+          for (final r in satirlar)
+            TableRow(
+              decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: c.hairline))),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+                  child: Text(r.$1,
+                      style: t.bodyMedium?.copyWith(
+                          color: c.text90, fontWeight: FontWeight.w600)),
+                ),
+                Text(r.$2, style: t.bodySmall?.copyWith(color: c.text58)),
+                Text(r.$3,
+                    style: t.bodySmall?.copyWith(
+                        color: c.text90, fontWeight: FontWeight.w700)),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

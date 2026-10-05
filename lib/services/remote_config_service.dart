@@ -269,6 +269,11 @@ class RemoteConfigService {
       _yerelAcik.contains(anahtar) ||
       (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
 
+  /// Adıyla bayrak (sürüm notu maddesi gibi veri tarafından anılan
+  /// bayraklar için). Varsayılanlarda olmayan ad → kapalı.
+  bool bayrakAcik(String anahtar) =>
+      _defaults[anahtar] is bool && _bayrak(anahtar);
+
   Future<void> init() async {
     if (_initialized) return;
     try {

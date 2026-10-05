@@ -55,6 +55,7 @@ import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
+import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/sozlesme_karti.dart';
@@ -1589,6 +1590,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 _paraAkisi(),
                 _hacimRadari(),
                 _kriptoBaski(),
+                _analizNotu(),
                 if (isOwnAsset) _sozlesmeKarti(),
                 if (isOwnAsset && pState != null) _temettuKarti(pState),
                 _kapBaglantisi(),

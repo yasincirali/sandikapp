@@ -656,6 +656,23 @@ Deno.serve(async (request) => {
             if (cumle !== null) akisCumleleri.set(uid, cumle);
           }
         }
+        // Kullanıcı satırı kapattıysa (0118, Ayarlar › Bildirimler) cümle
+        // eklenmez. Sorgu düşerse cümle KALIR: kolon yeni, varsayılanı açık;
+        // tercihi okuyamamak bugünkü davranıştan sapmamalı.
+        if (akisCumleleri.size > 0) {
+          const { data: kapali, error: tercihErr } = await admin
+            .from('profiles')
+            .select('id')
+            .in('id', [...akisCumleleri.keys()])
+            .eq('haftalik_hareket_satiri', false);
+          if (tercihErr) {
+            console.error('weekly-summary: hareket satiri tercihi okunamadi', tercihErr.code);
+          } else {
+            for (const r of (kapali ?? []) as Array<Record<string, unknown>>) {
+              akisCumleleri.delete(String(r.id));
+            }
+          }
+        }
       } catch (e) {
         akisCumlesiHatasi = true;
         console.error('weekly-summary: akis cumlesi kurulamadi', e);

@@ -9,6 +9,8 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/premium_provider.dart';
+import '../widgets/premium_abonelik_satiri.dart';
 import 'paywall_screen.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
@@ -1205,7 +1207,14 @@ class _ProfilePremiumBanner extends ConsumerWidget {
     // Paywall master switch kapalıysa banner hiç gösterilmez.
     if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
     final premium = ref.watch(effectivePremiumProvider);
-    if (premium) return const _PremiumActiveBadge();
+    if (premium) {
+      // Sunucu hakkı varsa (abonelik, erken kullanıcı hediyesi) türü ve
+      // bitişiyle tek satır (S14-A); yalnız cihaz anahtarı açıksa eski rozet.
+      final hak = ref.watch(gecerliPremiumHakkiProvider);
+      return hak == null
+          ? const _PremiumActiveBadge()
+          : PremiumAbonelikSatiri(hak: hak);
+    }
     return SandikBasma(
       onTap: () {
         AnalyticsService.instance

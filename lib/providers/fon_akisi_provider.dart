@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/crash_reporter.dart';
 import '../services/fon_akisi.dart';
 import '../services/hisse_hacmi.dart';
+import '../services/radar_okuma.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 
@@ -106,6 +107,51 @@ final kriptoBaskiProvider =
     return ozet;
   } catch (e, st) {
     CrashReporter.report(e, st, reason: 'kriptoBaskiProvider');
+    return null;
+  }
+});
+
+/// Fonun kategorisindeki akış sırası (S3), kartın "son hafta"sıyla AYNI
+/// aralık: `fonAkisiProvider`'ın son haftası. `null` = kategori tek fonlu,
+/// fon sıralanamadı (haftanın bir günü eksik) ya da okunamadı.
+final fonKategoriSirasiProvider = FutureProvider.autoDispose
+    .family<List<KategoriSirasi>?, String>((ref, kod) async {
+  final ozet = await ref.watch(fonAkisiProvider(kod).future);
+  if (ozet == null) return null;
+  try {
+    final satirlar = await SupabaseService.instance.fonKategoriSirasi(
+      kod,
+      baslangic: ozet.haftalar.last.baslangic,
+      bitis: ozet.veriTarihi,
+    );
+    final liste = satirlar.map(KategoriSirasi.satirdan).nonNulls.toList()
+      ..sort((a, b) => a.sira.compareTo(b.sira));
+    return liste.any((s) => s.kendi) ? liste : null;
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'fonKategoriSirasiProvider');
+    return null;
+  }
+});
+
+/// Coinin son 24 saatinin saatlik net alımı (S5). Sunucu saatte bir yazar
+/// (0115 `kripto-hacim-saatlik`); 10 dk tutulur.
+final kriptoSaatlikProvider = FutureProvider.autoDispose
+    .family<SaatlikAkis?, String>((ref, ticker) async {
+  final simdi = DateTime.now();
+  try {
+    final satirlar = await SupabaseService.instance.kriptoSaatleri(ticker,
+        baslangic: simdi.subtract(const Duration(hours: 30)));
+    final akis = saatlikAkis(
+        satirlar.map(KriptoSaati.satirdan).nonNulls.toList(),
+        simdi: simdi);
+    if (akis != null) {
+      final link = ref.keepAlive();
+      final zamanlayici = Timer(const Duration(minutes: 10), link.close);
+      ref.onDispose(zamanlayici.cancel);
+    }
+    return akis;
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'kriptoSaatlikProvider');
     return null;
   }
 });

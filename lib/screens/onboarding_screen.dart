@@ -11,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/position.dart' show aktifLotlar;
 import '../providers/auth_provider.dart' show activePartnersProvider;
+import '../providers/hafta_ozeti_provider.dart'
+    show haftaOlagandisiSayisiProvider;
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
@@ -451,6 +453,24 @@ List<_Adim> _adimlariKur() {
       kosul: (ref) => aktifLotlar(
               ref.read(portfolioProvider).valueOrNull?.assets ?? const [])
           .isNotEmpty,
+    ),
+    // Balina radarı (S10-A, 2026-10-05): şerit yalnız bayrak açık ve bu
+    // hafta olağandışı hareket varken çizilir; anlatacak şerit yoksa adım
+    // gösterilmez. Kısa turda yok: ilk açılışta portföy boş, radar susar.
+    _Adim(
+      id: 'radar',
+      hedef: TourTarget.radarSeridi,
+      baslik: 'Varlıklarında olağandışı bir şey var mı?',
+      govde: 'Bu şerit yalnız söyleyecek bir şey olduğunda çıkar: fonuna '
+          'büyük para girdiyse ya da çıktıysa, hissende hacim olağanın '
+          'çok üstündeyse, kriptoda alıcılar ya da satıcılar belirgin '
+          'biçimde istekliyse. Dokununca Haftanın özeti açılır; her '
+          'varlığın satırında ne olduğu tek kelimelik bir etiketle yazar, '
+          'ayrıntısı varlığın sayfasında. Yatırım tavsiyesi değildir.',
+      rozet: 'YENİ',
+      giris: (_) => _sekmeyeGec(0),
+      dokunulabilir: false,
+      kosul: (ref) => ref.read(haftaOlagandisiSayisiProvider) > 0,
     ),
     _Adim(
       id: 'piyasa',
