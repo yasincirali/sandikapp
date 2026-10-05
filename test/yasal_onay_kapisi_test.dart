@@ -169,8 +169,11 @@ void main() {
     await tester.tap(find.text(l.yasalKapiNelerDegisti));
     await tester.pumpAndSettle();
     expect(find.text(l.yasalKapiDegisiklikNotu), findsOneWidget);
-    expect(l.yasalKapiDegisiklikNotu,
-        startsWith('Sürüm ${YasalBelge.kosullar.surum}'));
+    // Not EN YENİ belge sürümüyle başlar (1.6'dan beri belgeler farklı
+    // sürümde: Koşullar 1.5, Gizlilik/KVKK 1.6).
+    final enYeni = YasalBelge.values.map((b) => b.surum).reduce((a, b) =>
+        YasalOnayService.surumKarsilastir(a, b) >= 0 ? a : b);
+    expect(l.yasalKapiDegisiklikNotu, startsWith('Sürüm $enYeni'));
     await tester.tap(find.text(l.yasalKapiNelerDegisti));
     await tester.pumpAndSettle();
     expect(find.text(l.yasalKapiDegisiklikNotu), findsNothing);

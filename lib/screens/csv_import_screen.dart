@@ -15,7 +15,6 @@ import '../services/supabase_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
@@ -58,6 +57,11 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   /// AI sütun eşleme isteği sürüyor (düğme döner).
   bool _aiEsleniyor = false;
+
+  /// Kartın altında satır içi bilgi (kopyalandı, AI sonucu). Toast DEĞİL:
+  /// bu ekranda toast kullanılmaz (toast_temizligi_test #25); mesaj
+  /// eylemin yapıldığı kartta kalır.
+  String? _kartMesaji;
 
   /// Adla yazılmış fonlar için TEFAS listesi alınamadı: her ad için ayrı
   /// "tanınmadı" demek yerine tek, nedenini söyleyen satır.
@@ -227,13 +231,16 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final e = _ekstre;
     if (e == null || _aiEsleniyor) return;
     final l = context.l10n;
-    setState(() => _aiEsleniyor = true);
+    setState(() {
+      _aiEsleniyor = true;
+      _kartMesaji = null;
+    });
     try {
       final yanit = await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
       final yeni = e.aiEslemesiyle(yanit);
       if (!mounted) return;
       if (yeni == null) {
-        sandikSnack(context, l.importAiNoMatch);
+        setState(() => _kartMesaji = l.importAiNoMatch);
         return;
       }
       final cozulmus = await _fonAdlariniCoz(yeni);
@@ -246,14 +253,23 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (h.premium) {
         await PaywallScreen.show(context, source: 'ekstre_ai');
       } else {
-        sandikSnackError(context, h.kota ? l.importAiLimit : l.importAiFailed);
+        setState(() =>
+            _kartMesaji = h.kota ? l.importAiLimit : l.importAiFailed);
       }
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
-      if (mounted) sandikSnackError(context, l.importAiFailed);
+      if (mounted) setState(() => _kartMesaji = l.importAiFailed);
     } finally {
       if (mounted) setState(() => _aiEsleniyor = false);
     }
+  }
+
+  Future<void> _iskeletiKopyala() async {
+    final e = _ekstre;
+    if (e == null) return;
+    final l = context.l10n;
+    await Clipboard.setData(ClipboardData(text: ekstreIskeleti(e)));
+    if (mounted) setState(() => _kartMesaji = l.importDiagnosticCopied);
   }
 
   Future<void> _eslemeyiDuzelt() async {
@@ -323,6 +339,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 // Premium'a özel (yasin, 2026-10-05). Kilitliyken düğme yerine
                 // paywall'a götüren kilit satırı; sunucu da ayrıca denetler.
                 aiKilitli: ref.watch(radarKilitliProvider),
+                mesaj: _kartMesaji,
+                onKopyala: _iskeletiKopyala,
               ),
             ],
             const SizedBox(height: SandikSpace.md),
@@ -458,6 +476,8 @@ class _EslemeKarti extends StatelessWidget {
     required this.onAi,
     required this.aiEsleniyor,
     required this.aiKilitli,
+    required this.mesaj,
+    required this.onKopyala,
   });
 
   final EkstreOkumaSonucu sonuc;
@@ -466,6 +486,8 @@ class _EslemeKarti extends StatelessWidget {
   final VoidCallback onAi;
   final bool aiEsleniyor;
   final bool aiKilitli;
+  final String? mesaj;
+  final VoidCallback onKopyala;
 
   @override
   Widget build(BuildContext context) {
@@ -608,21 +630,23 @@ class _EslemeKarti extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
-                onPressed: () => _iskeletiKopyala(context),
+                onPressed: onKopyala,
                 icon: const Icon(Icons.content_copy_rounded, size: 18),
                 label: Text(context.l10n.importCopyDiagnostic),
               ),
             ),
           ],
+          if (mesaj != null)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                mesaj!,
+                style: context.t.bodySmall?.copyWith(color: c.text90),
+              ),
+            ),
         ],
       ),
     );
-  }
-
-  Future<void> _iskeletiKopyala(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: ekstreIskeleti(sonuc)));
-    if (!context.mounted) return;
-    sandikSnack(context, context.l10n.importDiagnosticCopied);
   }
 }
 
