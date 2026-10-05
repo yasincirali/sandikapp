@@ -102,7 +102,10 @@ Deno.serve(async (req: Request) => {
       model: MODEL,
       girdi_token: yanit.usage?.input_tokens ?? null,
       cikti_token: yanit.usage?.output_tokens ?? null,
-      maliyet_usd: maliyetUsd(MODEL, yanit.usage ?? {}, false),
+      maliyet_usd: maliyetUsd(MODEL, {
+        input_tokens: yanit.usage?.input_tokens,
+        output_tokens: yanit.usage?.output_tokens,
+      }, false),
       tablo_sayisi: tablolar.length,
     });
     return jsonResponse({ ok: true, tablolar });
