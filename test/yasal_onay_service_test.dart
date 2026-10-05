@@ -207,7 +207,8 @@ void main() {
       expect(d.guncellemeMi, isFalse);
     });
 
-    test('kutu gerekli: kutu YA DA Koşullar/Gizlilik/KVKK eksikse; yalnız '
+    test(
+        'kutu gerekli: kutu YA DA Koşullar/Gizlilik/KVKK eksikse; yalnız '
         'rıza eksikse kutu sorulmaz', () {
       final kutuTamam = (YasalTur.kayitTekKutu, YasalMetinKatalogu.kutuSurumu);
       List<(String, String)> belgelerHaric(String tur) => [
@@ -232,7 +233,8 @@ void main() {
       expect(YasalOnayService.eksikleriHesapla(tamTakim()).gerekli, isFalse);
     });
 
-    test('belgelerin eski sürümü + iki kutulu 1.0: belgeler ve kutu eksik, '
+    test(
+        'belgelerin eski sürümü + iki kutulu 1.0: belgeler ve kutu eksik, '
         '"güncellendi"', () {
       final d = YasalOnayService.eksikleriHesapla([
         (YasalTur.kosullar, '1.1'),
@@ -263,7 +265,8 @@ void main() {
       expect(d.gerekli, isFalse);
     });
 
-    test('kutu yalnız tek kutu 1.1 ile tamam; 1.0 (tek ya da iki kutu) '
+    test(
+        'kutu yalnız tek kutu 1.1 ile tamam; 1.0 (tek ya da iki kutu) '
         'tamam sayılmaz', () {
       expect(YasalMetinKatalogu.kutuSurumu, '1.1');
       final belgeler = [
@@ -282,8 +285,7 @@ void main() {
           (YasalTur.kayitKutuRiza, '1.0'),
         ],
       ]) {
-        expect(
-            YasalOnayService.eksikleriHesapla([...belgeler, ...eski]).eksik,
+        expect(YasalOnayService.eksikleriHesapla([...belgeler, ...eski]).eksik,
             {YasalOnayService.kutuAnahtari});
       }
     });
@@ -365,8 +367,10 @@ void main() {
         // Sunucuda henüz satır yok (yazım bitmedi) — sorgu yapılırsa kapı
         // açılırdı.
         sorgu(() => const []);
-        final yazim = YasalOnayService.instance
-            .kayitOnaylariniKaydet(kayitBaglami, locale: 'tr_TR', userId: 'yeni');
+        final yazim = YasalOnayService.instance.kayitOnaylariniKaydet(
+            kayitBaglami,
+            locale: 'tr_TR',
+            userId: 'yeni');
         final kapi = YasalOnayService.instance.kapiDurumu('yeni');
         await Future<void>.delayed(Duration.zero);
         rpcBitti.complete();
@@ -402,8 +406,8 @@ void main() {
       test('kayıt yazımı düşerse kapı sunucuya sorar', () async {
         YasalOnayService.rpcTesti =
             (_) async => throw const SocketException('yok');
-        await YasalOnayService.instance
-            .kayitOnaylariniKaydet(kayitBaglami, locale: 'tr_TR', userId: 'yeni');
+        await YasalOnayService.instance.kayitOnaylariniKaydet(kayitBaglami,
+            locale: 'tr_TR', userId: 'yeni');
         sorgu(() => const []);
         expect((await YasalOnayService.instance.kapiDurumu('yeni')).gerekli,
             isTrue);
@@ -654,9 +658,12 @@ void main() {
       YasalTur.kayitKutuRiza: '1.0',
     };
 
-    test('bu derleme 1.4 + kutu 1.1 taşır; 0109 ekler, eskiler kalır', () {
+    test('0109 1.4 + kutu 1.1 ekler, eskiler kalır', () {
       for (final b in YasalBelge.values) {
-        expect(b.surum, '1.4', reason: b.kaynak);
+        // 0120'den beri Koşullar/Gizlilik/KVKK 1.5; Açık Rıza 1.4'te kaldı.
+        expect(YasalOnayService.surumKarsilastir(b.surum, '1.4'),
+            greaterThanOrEqualTo(0),
+            reason: b.kaynak);
         expect(sunucu, contains((b.tur, '1.4')), reason: '${b.tur}/1.4');
         expect(sunucu, contains((b.tur, '1.3')),
             reason: '${b.tur}/1.3 yerinde kalmalı (eski onaylar)');
@@ -677,8 +684,7 @@ void main() {
     test('0109 dağıtıldı + 1.3 istemci: ESKİ — kapı açılmaz, 1.3 onaylatılmaz',
         () {
       expect(
-          YasalOnayService.uygulamaEski(sunucu,
-              uygulamaSurumleri: birNoktaUc),
+          YasalOnayService.uygulamaEski(sunucu, uygulamaSurumleri: birNoktaUc),
           isTrue);
     });
 
@@ -716,9 +722,12 @@ void main() {
       final ogeler = [
         for (final o in cagrilar.single['p_ogeler'] as List) o as Map
       ];
-      expect({for (final o in ogeler) o['tur']: o['surum']}, {
+      // Ara sürüm (1.4) sorulmaz: her belge bu derlemenin EN YENİ sürümüyle.
+      expect({
+        for (final o in ogeler) o['tur']: o['surum']
+      }, {
         YasalTur.kayitTekKutu: '1.1',
-        for (final t in belgeler) t: '1.4',
+        for (final b in YasalBelge.values) b.tur: b.surum,
       });
       for (final o in ogeler.skip(1)) {
         expect((o['degiskenler'] as Map)['onceki_surum'], '1.3');
@@ -755,7 +764,51 @@ void main() {
         for (final o in cagrilar.single['p_ogeler'] as List)
           if ((o as Map)['tur'] != YasalTur.kayitTekKutu) o['surum'],
       };
-      expect(surumler, {'1.4'}, reason: '1.3 hiç onaylatılmaz');
+      expect(surumler, {for (final b in YasalBelge.values) b.surum},
+          reason: 'ara sürümler hiç onaylatılmaz');
+    });
+  });
+
+  group('0120: Koşullar/Gizlilik/KVKK 1.4 → 1.5, Açık Rıza değişmez', () {
+    final sunucu = [for (final m in migrationMetinleri()) (m.tur, m.surum)];
+    final ucBelge = [
+      YasalBelge.kosullar.tur,
+      YasalBelge.gizlilik.tur,
+      YasalBelge.kvkk.tur,
+    ];
+
+    test('bu derleme: üç belge 1.5, Açık Rıza 1.4; sunucuda ikisi de var', () {
+      for (final t in ucBelge) {
+        expect(sunucu, contains((t, '1.5')), reason: '$t/1.5');
+        expect(sunucu, contains((t, '1.4')), reason: '$t/1.4 yerinde kalmalı');
+      }
+      expect(YasalBelge.acikRiza.surum, '1.4');
+      expect(sunucu, isNot(contains((YasalTur.acikRiza, '1.5'))));
+    });
+
+    test('0120 dağıtıldı + 1.4 istemci: ESKİ — kapı açılmaz', () {
+      expect(
+          YasalOnayService.uygulamaEski(sunucu, uygulamaSurumleri: {
+            for (final b in YasalBelge.values) b.tur: '1.4',
+            YasalTur.kayitTekKutu: '1.1',
+          }),
+          isTrue);
+      expect(YasalOnayService.uygulamaEski(sunucu), isFalse);
+    });
+
+    test(
+        '1.4 onaylı kullanıcı: üç belge + kutu sorulur, rıza yeniden okutulmaz',
+        () async {
+      YasalOnayService.sunucuSurumTesti = () async => sunucu;
+      sorgu(() => [
+            for (final b in YasalBelge.values) (b.tur, '1.4'),
+            (YasalTur.kayitTekKutu, '1.1'),
+          ]);
+      final d = await YasalOnayService.instance.kapiDurumu('u1');
+      expect(d.eksik, ucBelge.toSet());
+      expect(d.kutuGerekli, isTrue, reason: 'Koşullar kutuyla kabul edilir');
+      expect(d.rizaEksik, isFalse);
+      expect(d.guncellemeMi, isTrue);
     });
   });
 }

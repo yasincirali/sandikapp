@@ -169,7 +169,8 @@ void main() {
     await tester.tap(find.text(l.yasalKapiNelerDegisti));
     await tester.pumpAndSettle();
     expect(find.text(l.yasalKapiDegisiklikNotu), findsOneWidget);
-    expect(l.yasalKapiDegisiklikNotu, startsWith('Sürüm 1.4'));
+    expect(l.yasalKapiDegisiklikNotu,
+        startsWith('Sürüm ${YasalBelge.kosullar.surum}'));
     await tester.tap(find.text(l.yasalKapiNelerDegisti));
     await tester.pumpAndSettle();
     expect(find.text(l.yasalKapiDegisiklikNotu), findsNothing);

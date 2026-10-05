@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="cfcde39d525152ea05bc92bd57765470072c4721acb5b139348c88c94061a062">
-<meta name="sandik-govde-sha256" content="9fdc7806ad6dc077e6c73750cace7eae3f6fa9a74fa10d2673b4a4e3907727e0">
+<meta name="sandik-kaynak-sha256" content="a105649ddc78831dc41145c984ac0b9af6716de35f37bab2c41da686fee08ee2">
+<meta name="sandik-govde-sha256" content="73ae49216967d8997cfd75edc4ed4159b77b8ac41d5f4fc0c8a19ee41c692fba">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,8 +67,8 @@ button:hover { opacity: 0.9; }
 <h1>Privacy Policy — sandık</h1>
 <p><strong>Effective date:</strong> October 5, 2026
 <strong>Last updated:</strong> October 5, 2026
-<strong>Version:</strong> 1.4
-<strong>Source:</strong> TR 1.4 (translation of the Turkish text; the Turkish version prevails)</p>
+<strong>Version:</strong> 1.5
+<strong>Source:</strong> TR 1.5 (translation of the Turkish text; the Turkish version prevails)</p>
 <hr />
 <h2>1. Data Controller</h2>
 <p>This application (<strong>sandık</strong>, the "App") is operated by <code>Yasin Çıralı</code> ("we", "Company").</p>
@@ -149,6 +149,14 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Partnership invite codes and mutual links</td>
 <td>Multi-user sharing feature</td>
+</tr>
+<tr>
+<td>Your feedback on asset notes (optional): the note's asset and period, a "helpful / not helpful" vote, a "wrong number" flag, an explanation of up to 500 characters</td>
+<td>Measuring note quality, finding and correcting faulty notes (see §5.3)</td>
+</tr>
+<tr>
+<td>Premium entitlement: its source (gift, store subscription or support), start and end time, store and product name, whether renewal was turned off</td>
+<td>Verifying access to Premium content on the server. Payment and card details never reach us; Apple or Google collects the payment</td>
 </tr>
 </tbody>
 </table>
@@ -260,6 +268,8 @@ button:hover { opacity: 0.9; }
 <li>Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)</li>
 <li>Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)</li>
 <li>Race: if you join, calculating your period return and showing your percentile and comparison with your partner</li>
+<li>Premium: verifying your right to access Premium content (full asset notes, monthly report)</li>
+<li>Using your feedback on asset notes to measure and improve their accuracy</li>
 </ol>
 <hr />
 <h2>5. Third-Party Recipients (Data Processors)</h2>
@@ -337,6 +347,13 @@ button:hover { opacity: 0.9; }
 <td>Price retrieval</td>
 <td>Global</td>
 </tr>
+<tr>
+<td>Writing asset notes (AI)</td>
+<td>Anthropic PBC</td>
+<td>No personal data is sent; only the asset's symbol and market metrics (price, trading volume, fund size, money flow and investor count)</td>
+<td>Weekly asset note and monthly report text (see §5.3)</td>
+<td>USA</td>
+</tr>
 </tbody>
 </table>
 <p><strong>These providers act solely as data processors, on our instructions. We remain the data controller.</strong></p>
@@ -344,6 +361,10 @@ button:hover { opacity: 0.9; }
 <p>Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days, your account is older than 7 days and your portfolio holds at least 2 different assets, your period returns (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on the server twice a day and kept in an anonymous comparison pool. If the pool holds at least 8 portfolios, for at most the 4 best-performing portfolios only the rank, return percentage, type shares and, for fund holdings, the public TEFAS fund code and its share in the portfolio (funds with a share below 1% or without a code are grouped) are shown to other users who have joined the pool; fund names come from the official TEFAS list. In return you see, in the same anonymous form, which asset types participating users hold in which proportions and their returns; this comparison service is available only to participants. Name, email, username, amounts, quantities, the names or symbols of shares and other assets, and the names and notes you give your assets are never shared; the information shown contains no data that would reveal your identity. If you do not consent, your return is neither computed nor stored for this purpose; other features of the App are unaffected. You can withdraw your consent at any time from the Top Portfolios screen; when you do, your measurements in the pool are deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your measurements in the pool are deleted too.</p>
 <h3>5.2 Sharing with Your Partner and in the Race</h3>
 <p>A user you have a partnership with sees your username and the assets, quantities and performance in your portfolio. In the Race your identity and amounts are not shown to other participants; you are shown only your own percentile and can compare returns with your partner.</p>
+<h3>5.3 AI-Written Asset Notes</h3>
+<p>The weekly asset notes on asset pages and the monthly report are written on our server with Anthropic's AI model (Claude). A note is written once <strong>per asset</strong>, not per user: everyone holding the same asset reads the same note. Opening or reading a note sends no request to the AI; the note is read from the database.</p>
+<p>Only the asset's symbol and public market metrics are sent to the model (price change, trading volume, fund size, money flow and investor count). Your name, email, account ID, username, the quantity and amount you hold, or who holds an asset are not sent. The assets that get a note are selected from the aggregate list of assets held in users' portfolios (most-held first); this selection is not sent to the model either.</p>
+<p>Notes are generated automatically and checked automatically before publication: every number in the text is compared with the source data, and a note using buy/sell/target-price language is not published. No person reads each note; notes may contain errors. If you flag "wrong number" on a note or write an explanation, that feedback is stored with your account and used only to correct notes; it is not shown to other users.</p>
 <hr />
 <h2>6. International Data Transfers</h2>
 <p>Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in and email services also run on global infrastructure. Under KVKK Article 9 and GDPR Articles 44-49:</p>
@@ -385,6 +406,14 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Registered devices</td>
 <td>Until you remove the device from the list or delete your account</td>
+</tr>
+<tr>
+<td>Feedback on asset notes</td>
+<td>Until account deletion</td>
+</tr>
+<tr>
+<td>Premium entitlement records</td>
+<td>Until account deletion</td>
 </tr>
 <tr>
 <td>Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer)</td>
@@ -486,7 +515,7 @@ button:hover { opacity: 0.9; }
 <p>When you sign out, the session token, your cache and preferences and the widget data are removed from the device. The App contains Firebase Analytics (usage statistics) and Crashlytics (crash reports) (see §3.5); it contains no advertising SDK and no advertising ID. Details: Cookie and Local Storage Policy.</p>
 <hr />
 <h2>12. Investment Advice Disclaimer</h2>
-<p><strong>sandık</strong> is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals and charts shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.</p>
+<p><strong>sandık</strong> is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals, charts, market-movement metrics (money flow, volume radar, buyer pressure) and AI-written asset notes shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.</p>
 <p>The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.</p>
 <hr />
 <h2>13. Changes to This Policy</h2>

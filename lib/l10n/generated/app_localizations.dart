@@ -9306,7 +9306,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.4: Onay adımları sadeleşti. Açık Rıza Metni yine sonuna kadar okunur ve rızan metnin sonunda verilir; bu rıza artık başka bir beyanla birlikte alınmıyor. Kullanım Koşulları\'nı tek bir kutuyla kabul ediyorsun. Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır: bağlantıyla açılır, onayına bağlı değildir. Belgeler bu işleyişi anlatacak şekilde güncellendi; işlenen veriler, üçüncü taraflar ve saklama süreleri değişmedi.'**
+  /// **'Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
