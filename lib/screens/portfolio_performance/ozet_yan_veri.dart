@@ -534,6 +534,13 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       kovaSayisi: 6,
     );
 
+    // Aylık birikim serisi (bayrak `birikim_serisi`, kapalı doğar). Saf
+    // hesap, aynı defterden; kısa geçmişte (`gosterilir`) çizilmez.
+    final seriHam = RemoteConfigService.instance.birikimSerisi
+        ? BirikimSerisiService.hesapla(widget.assets, now: DateTime.now())
+        : null;
+    final seri = (seriHam?.gosterilir ?? false) ? seriHam : null;
+
     // Yoğunlaşma bugünkü portföyden — dönem penceresi almaz.
     final pState = ref.watch(portfolioProvider).valueOrNull;
     final yogunlasma = pState == null
@@ -594,6 +601,9 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
               ozet: katki,
               aralik: _katkiAralik,
               onAralik: (a) => setState(() => _katkiAralik = a),
+              seri: seri,
+              besDahil: seri != null &&
+                  widget.assets.any((a) => a.type == AssetType.bes),
             ),
       // Tek metrik bile yoksa kart çizilmesin — `hasData` o kapıyı
       // widget'ın içinde tutuyor ama boş bir kabuk geçirmenin de anlamı
