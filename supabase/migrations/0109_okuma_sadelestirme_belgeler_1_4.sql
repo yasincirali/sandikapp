@@ -1,14 +1,92 @@
-// ÜRETİLDİ — elle düzenleme. Kaynak: legal/tr/*.md; üreten:
-// `python docs/_build_legal.py`. Kayma kilidi: test/yasal_web_esleme_test.dart.
-//
-// Değerler md'nin KANONİK hâlidir (BOM yok, LF, sondaki boşluk kırpılmış;
-// yer tutucular doldurulmamış). Veritabanındaki `govde` ve `govde_hash`
-// bu metinlerdir (`YasalMetinKatalogu`).
+-- 0109 — Okuma sadeleştirme: belgeler 1.4 + kayıt kutusu 1.1 (2026-10-05)
+--
+-- ⚠️ NUMARA GEÇİCİ. Dal `origin/main` @ 00efcfd'den açıldı (son migration
+-- 0108). Dağıtımdan ÖNCE canlı defter (iki sunucuda
+-- `supabase_migrations.schema_migrations`) sorgulanır; 0109 doluysa dosya
+-- sıradaki boş numaraya yeniden adlandırılır (balina dersi). İçerik
+-- yalnız EKLEDİĞİ ve kendi doğrulamasını yaptığı için numara değişimi
+-- gövdeyi etkilemez.
+--
+-- ## İstek
+-- Kullanıcı (2026-10-05): "Tüm hepsini içinden onaylatmak çok uzun bir
+-- process gibi oldu." 1.3'te kayıtta ve yeniden onay kapısında beş metnin
+-- beşi (dört belge + yatırım uyarısı) sonuna kadar okunup sonunda
+-- onaylanıyor, kutu ancak ondan sonra açılıyordu. Kabul edilen öneri:
+-- * Sonuna kadar okuma YALNIZ Açık Rıza Metni'nde: rıza metnin sonundaki
+--   düğmeyle verilir ve başka hiçbir beyanla paketlenmez.
+-- * Yatırım uyarısı tam metniyle okunup onaylanır (kısa; aynı bileşen).
+-- * Kullanım Koşulları sözleşmedir → tek açık eylemle (kutu) kabul edilir.
+-- * Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirmedir → bağlantı
+--   olarak sunulur; kutu cümlesi onları "kabul" değil "bilgilendirildim"
+--   diye anar (KVKK Kurumu aydınlatmanın rıza gibi onaylatılmasını önermez).
+--
+-- ## Bu migration
+-- 1. Dört belgenin 1.4 metni (yürürlük 2026-10-05). 1.3'te "her metin tam
+--    gösterilir, sonuna kadar okunur, onay en altta verilir" diyen cümleler
+--    gerçeğe göre yazıldı: Koşullar §1 + §18, Gizlilik §3.4 + §6 + §13,
+--    KVKK §2.5 + §5.2 + §10 + kapanış notu, Açık Rıza Metni giriş notu +
+--    A bölümü (aktarılan veri listesi + son cümle). Koşullar §3 ve Gizlilik
+--    §12 (yatırım uyarısı: "tam metni gösterilir, sonuna kadar okuyup en
+--    altta onaylarsınız") hâlâ doğru → aynen kaldı. İşlenen veri, üçüncü
+--    taraf ve saklama süresi DEĞİŞMEDİ; onay kaydının anlatımı genişledi
+--    (`belge_acildi`, `sonuna_kadar_okundu` 0102'den beri yazılıyordu, artık
+--    metinde de var; `nitelik` aynı `degiskenler` jsonb'sine girer).
+-- 2. `kayit_tek_kutu` 1.1 (tr + en). 1.0 cümlesi: "Yasal Koşulları, KVKK
+--    Aydınlatma Metni'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt
+--    dışına aktarılmasına açık rıza veriyorum." 1.1: "Kullanım Koşulları'nı
+--    kabul ediyorum ve 18 yaşından büyüğüm. Gizlilik Politikası ve KVKK
+--    Aydınlatma Metni ile bilgilendirildim." Açıklama satırındaki "açık
+--    rızanı geri çekebilirsin" de çıktı — kutu metninin TAMAMI açık rıza
+--    içermez (doğrulama bloğu bakar).
+--
+-- ## Karar: aynı tür, yeni sürüm; şema/fonksiyon değişmez
+-- Kutu `kayit_tek_kutu` türünde kalır, sürüm 1.1. Yeni tür açmak tür
+-- check'ini ve `yasal_onay_kaydet`'in kanal–tür eşlemesini değiştirmeyi
+-- (fonksiyon gövdesini 0104'ten yeniden yazmayı) gerektirirdi; kazancı yok:
+-- her sürümün metni kendi satırında, 1.0'ın rıza içerdiği 1.1'in içermediği
+-- kayıttan okunur. Bu yüzden fonksiyona, tablolara, RLS'ye ve GRANT'lara
+-- DOKUNULMAZ; doğrulama bloğu 0104 eşlemesinin yeni istemcinin göndereceği
+-- her türü taşıdığını yine de bakar.
+-- İstemci 1.0 kutuyu tamam SAYMAZ: Koşullar 1.4'ün kabulü bu kutuyla
+-- verilir ve kapı 1.4 için herkese zaten bir kez açılır — kutu o tek
+-- seferde alınır, ikinci ekran olmaz.
+--
+-- ## Onay kaydı (istemci, `degiskenler`)
+-- * `kosullar`: `nitelik: kabul`, `belge_acildi`, `sonuna_kadar_okundu: false`
+-- * `gizlilik_politikasi`, `kvkk_aydinlatma`: `nitelik: bilgilendirme`,
+--   `belge_acildi`, `sonuna_kadar_okundu: false` — sunulduklarının kaydı
+-- * `acik_riza_metni`: `nitelik: acik_riza`, `belge_acildi: true`,
+--   `sonuna_kadar_okundu: true` — YALNIZ metnin sonunda onaylandıysa yazılır
+-- Kapının "eksik" hesabı dört belgeyi + kutuyu istemeye devam eder; hepsi
+-- tek onay eyleminde (tek RPC çağrısı) yazılır.
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: altı metin satırı. 1.3 taşıyan istemci sunucuda 1.4'ü (ve
+-- kutu 1.1'i) görünce eksik onaylı kullanıcıya kapıyı HİÇ açmaz
+-- (`YasalOnayService.uygulamaEski`, çift onay kuralı): 1.3'ü onaylatıp
+-- güncellemeden sonra 1.4'ü ikinci kez sormaz. 1.3'ü onaylamış kullanıcı
+-- eski istemcide kapı görmez (onayı tamam); güncel istemcide 1.4'ü BİR KEZ
+-- görür. Yeni istemcide kayıt olan kullanıcının kutusu 1.1'dir; eski
+-- istemci `>=` kuralıyla onu kendi 1.0'ının yerine sayar.
+--
+-- ## Dağıtım sırası
+-- Bu migration İKİ sunucuya (Frankfurt → Tokyo) → `python tool/sema_esitlik.py`
+-- → ANCAK SONRA 1.4'ü gösteren istemci. Ters sırada yeni istemcinin onayı
+-- "yasal metin yok: kosullar/1.4/tr" ile reddedilir; kapı kilitlemez
+-- (fail-open) ama her açılışta yeniden sorar.
+--
+-- ## Metin ekleme
+-- INSERT'ler `tool/yasal_metin_uret_test.dart` çıktısıdır. Gövdelere elle
+-- dokunma (hash check'i tutmaz); `test/yasal_metin_kilidi_test` ve
+-- `test/yasal_web_esleme_test` md == katalog == bu dosya der.
 
-/// Uygulamada gösterilen yasal belgelerin kanonik md metni — anahtar
-/// depo köküne göre kaynak yolu.
-const yasalBelgeKaynaklari = <String, String>{
-  'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
+-- ── 1) Metinler: belgeler 1.4 + kutu 1.1 (tool/yasal_metin_uret_test.dart çıktısı)
+-- kosullar/1.4/tr  (Kullanım Koşulları)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kosullar', '1.4', 'tr', 'Kullanım Koşulları', date '2026-10-05',
+  'a5acc587180dd45afd110c84de2e86b27d3f1212c614b904f78119a4679f2ba4',
+  replace($yasal$# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -243,8 +321,15 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- gizlilik_politikasi/1.4/tr  (Gizlilik Politikası)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('gizlilik_politikasi', '1.4', 'tr', 'Gizlilik Politikası', date '2026-10-05',
+  '95a3d89449a31ad8abc04ed971e2bdd4d26421c7d52c5f6fe8a7bbf6388f9e49',
+  replace($yasal$# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -504,8 +589,15 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
 ---
 
-*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
+*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kvkk_aydinlatma/1.4/tr  (KVKK Aydınlatma Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kvkk_aydinlatma', '1.4', 'tr', 'KVKK Aydınlatma Metni', date '2026-10-05',
+  '0256c9709ed90d60fdde2fba2f656bc04b5336692eea7593c3a2dd099d8eeaac',
+  replace($yasal$# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -742,8 +834,15 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**''',
-  'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
+**`sandikapp.destek@gmail.com`**$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- acik_riza_metni/1.4/tr  (Açık Rıza Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('acik_riza_metni', '1.4', 'tr', 'Açık Rıza Metni', date '2026-10-05',
+  'dfd884ba41d685f726135e315a9d5790d4b895b9079eb86a1abebab5777bebc4',
+  replace($yasal$# Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Sürüm:** 1.4
@@ -849,5 +948,127 @@ beyan ve kabul ederim.
 
 ---
 
-*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*''',
-};
+*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kayit_tek_kutu/1.1/tr  (Yasal Koşullar)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kayit_tek_kutu', '1.1', 'tr', 'Yasal Koşullar', null,
+  '3873dfb3c7cbaaadc551463b9bf22ab425ddf5b8a9644b0d4746d75b93be3b38',
+  replace($yasal$Yasal Koşullar
+
+Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({SUPABASE_ULKE}) ve Firebase (ABD/Küresel) üzerinde saklanır; ayrıntısı Gizlilik Politikası ve KVKK Aydınlatma Metni'nde.
+
+Kullanım Koşulları'nı kabul ediyorum ve 18 yaşından büyüğüm. Gizlilik Politikası ve KVKK Aydınlatma Metni ile bilgilendirildim.$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kayit_tek_kutu/1.1/en  (Legal Terms)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kayit_tek_kutu', '1.1', 'en', 'Legal Terms', null,
+  '4f29fe952103ae10cadcb430c1a6a0cd3e8ca4085cfa34163eeaaf3cab006c1b',
+  replace($yasal$Legal Terms
+
+The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ({SUPABASE_ULKE}) and Firebase (USA/global); details are in the Privacy Policy and the KVKK Privacy Notice.
+
+I accept the Terms of Use and I am over 18. I have been informed by the Privacy Policy and the KVKK Privacy Notice.$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- ── 2) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+declare
+  v_def text := pg_get_functiondef(
+    'public.yasal_onay_kaydet(jsonb, text, text, text, text)'::regprocedure);
+  v_tur text;
+  v_dil text;
+  v_kol text;
+begin
+  -- 0102'nin güvenlik zemini bozulmadı (RLS enable + force, GRANT).
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity)
+     or not exists (select 1 from pg_class
+                  where oid = 'public.yasal_onaylar'::regclass
+                    and relrowsecurity and relforcerowsecurity) then
+    raise exception '0109: yasal tablolarda RLS (enable + force) kapali';
+  end if;
+  if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT')
+     or has_table_privilege('authenticated', 'public.yasal_onaylar', 'INSERT')
+     or has_table_privilege('anon', 'public.yasal_onaylar', 'SELECT') then
+    raise exception '0109: yasal tablolar istemciden yazilabilir / anon okuyabilir';
+  end if;
+
+  -- RPC (0104, dokunulmadı): GRANT + security definer + search_path.
+  if not has_function_privilege('authenticated',
+       'public.yasal_onay_kaydet(jsonb, text, text, text, text)', 'EXECUTE')
+     or has_function_privilege('anon',
+       'public.yasal_onay_kaydet(jsonb, text, text, text, text)', 'EXECUTE') then
+    raise exception '0109: yasal_onay_kaydet GRANT bozuk (authenticated evet, anon hayir)';
+  end if;
+  if not exists (select 1 from pg_proc
+                  where oid = 'public.yasal_onay_kaydet(jsonb, text, text, text, text)'::regprocedure
+                    and prosecdef
+                    and proconfig is not null
+                    and exists (select 1 from unnest(proconfig) c where c like 'search_path=%')) then
+    raise exception '0109: yasal_onay_kaydet security definer + search_path olmali';
+  end if;
+
+  -- Kanal–tür eşlemesi yeni istemcinin göndereceği her türü taşıyor: kayıt
+  -- ve kapı tek RPC çağrısıdır, tek yabancı tür bütün kaydı düşürür.
+  foreach v_kol in array array['kayit', 'yeniden_onay'] loop
+    foreach v_tur in array array['kayit_tek_kutu', 'kosullar', 'gizlilik_politikasi',
+        'kvkk_aydinlatma', 'acik_riza_metni', 'yatirim_uyarisi'] loop
+      if v_def !~ ('p_kanal = ''' || v_kol || ''' and v_tur in \([^)]*''' || v_tur || '''') then
+        raise exception '0109: % kanali % turunu yazamiyor (0104 eslemesi)', v_kol, v_tur;
+      end if;
+    end loop;
+  end loop;
+
+  -- Belgelerin 1.4'ü var; 1.3 satırları yerinde (eski onaylar onu gösterir).
+  foreach v_tur in array array['kosullar', 'gizlilik_politikasi', 'kvkk_aydinlatma',
+      'acik_riza_metni'] loop
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = '1.4' and dil = 'tr'
+                      and yururluk_tarihi = date '2026-10-05') then
+      raise exception '0109: %/1.4/tr metni yok', v_tur;
+    end if;
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = '1.3' and dil = 'tr') then
+      raise exception '0109: %/1.3/tr metni kaybolmus (degismez olmaliydi)', v_tur;
+    end if;
+  end loop;
+
+  -- Kutu 1.1 iki dilde; 1.0 yerinde. 1.1'in TAMAMI açık rıza içermez (rıza
+  -- yalnız Açık Rıza Metni'nin sonunda verilir — başka beyanla paketlenmez).
+  foreach v_dil in array array['tr', 'en'] loop
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = 'kayit_tek_kutu' and surum = '1.1' and dil = v_dil) then
+      raise exception '0109: kayit_tek_kutu/1.1/% metni yok', v_dil;
+    end if;
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = 'kayit_tek_kutu' and surum = '1.0' and dil = v_dil) then
+      raise exception '0109: kayit_tek_kutu/1.0/% kaybolmus (degismez olmaliydi)', v_dil;
+    end if;
+  end loop;
+  if exists (select 1 from public.yasal_metinler
+              where tur = 'kayit_tek_kutu' and surum = '1.1'
+                and (position('açık rıza' in govde) > 0
+                     or position('Açık rıza' in govde) > 0
+                     or position('Açık Rıza' in govde) > 0
+                     or position('explicit consent' in lower(govde)) > 0)) then
+    raise exception '0109: kayit_tek_kutu/1.1 acik riza iceriyor';
+  end if;
+
+  -- Gövde == hash (tablo check'i de zorlar; burada adıyla düşsün).
+  if exists (select 1 from public.yasal_metinler
+              where ((surum = '1.4' and tur in ('kosullar', 'gizlilik_politikasi',
+                        'kvkk_aydinlatma', 'acik_riza_metni'))
+                     or (tur = 'kayit_tek_kutu' and surum = '1.1'))
+                and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
+    raise exception '0109: govde_hash tutmuyor';
+  end if;
+
+  raise notice '0109 tamam: belgeler 1.4 + kayit_tek_kutu 1.1 (tr, en); % metin.',
+    (select count(*) from public.yasal_metinler);
+end $$;

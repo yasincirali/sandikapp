@@ -3826,27 +3826,26 @@
   "settingsThemeLabel": "Tema",
   "settingsBaseCurrencyLabel": "Baz para birimi",
   "tekOnayBaslik": "Yasal Koşullar",
-  "tekOnayAciklama": "Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).",
+  "tekOnayAciklama": "Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; ayrıntısı Gizlilik Politikası ve KVKK Aydınlatma Metni'nde.",
   "@tekOnayAciklama": {
-    "description": "Tek onay kutusunun açıklaması; eski iki kutunun gövde metinlerinden derlendi. ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.",
+    "description": "Tek onay kutusunun açıklaması (kutu 1.1, 2026-10-05: açık rıza cümlesi çıktı — rıza yalnız Açık Rıza Metni'nin sonunda verilir). ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.",
     "placeholders": {
       "ulke": {"type": "String"}
     }
   },
   "tekOnayUlkeBilinmiyor": "yurt dışı",
-  "tekOnayCumle": "{kosullar}, {kvkk}'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.",
+  "tekOnayCumle": "{kosullar}'nı kabul ediyorum ve 18 yaşından büyüğüm. {gizlilik} ve {kvkk} ile bilgilendirildim.",
   "@tekOnayCumle": {
-    "description": "Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar, kvkk ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayKvkkBaglanti, tekOnayRizaBaglanti). 2026-10-04: KVKK ayrı bağlantı oldu; okunan cümle harfi harfine aynı kaldı (hash'i yasal_metinler'de, kayit_tek_kutu). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).",
+    "description": "Kayıt formunun ve yeniden onay kapısının tek onay kutusu (kutu 1.1, 2026-10-05). Kullanım Koşulları sözleşmedir, kutuyla kabul edilir; Gizlilik ve KVKK bilgilendirmedir, 'kabul' değil 'bilgilendirildim' denir. AÇIK RIZA İÇERMEZ: rıza yalnız Açık Rıza Metni'nin sonunda verilir (başka beyanla paketlenmez). kosullar, gizlilik ve kvkk yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayGizlilikBaglanti, tekOnayKvkkBaglanti). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).",
     "placeholders": {
       "kosullar": {"type": "String"},
-      "kvkk": {"type": "String"},
-      "riza": {"type": "String"}
+      "gizlilik": {"type": "String"},
+      "kvkk": {"type": "String"}
     }
   },
-  "tekOnayKosullarBaglanti": "Yasal Koşulları",
+  "tekOnayKosullarBaglanti": "Kullanım Koşulları",
   "tekOnayKvkkBaglanti": "KVKK Aydınlatma Metni",
-  "tekOnayRizaBaglanti": "açık rıza",
-  "tekOnayGerekli": "Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.",
+  "tekOnayGerekli": "Devam etmek için kutuyu işaretleyip Kullanım Koşulları'nı kabul etmelisin.",
   "arenaMeasuring": "Fark ölçülüyor…",
   "arenaBehind": "{ad} {fark} puan önde · yetişebilirsin",
   "@arenaBehind": {
@@ -3879,10 +3878,10 @@
   "@yasalKapiBaslikIlk": {
     "description": "Yeniden onay kapısı başlığı: hiç onay kaydı olmayan kullanıcı (Apple/Google ile ilk giriş ya da onay kaydından önceki hesap)."
   },
-  "yasalKapiAciklamaGuncel": "Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.",
-  "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.",
+  "yasalKapiAciklamaGuncel": "Yasal belgelerimizi güncelledik. Devam etmek için aşağıdaki adımları tamamla.",
+  "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki adımları tamamla.",
   "yasalKapiNelerDegisti": "Neler değişti",
-  "yasalKapiDegisiklikNotu": "Sürüm 1.3: Süresi belirtilmemiş iki kayda saklama süresi geldi ve artık otomatik siliniyorlar: oturum açma güvenlik kaydı (IP, cihaz/tarayıcı) 90 gün, anonim hesap silme kaydı silmeden sonra 3 yıl tutulur. Ayrıca onay metinlerinin sunuluşu bugünkü işleyişe göre yazıldı: kayıtta ve Apple veya Google ile ilk girişte her metin tam gösterilir, sonuna kadar okunur ve en altta onaylanır.",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.4: Onay adımları sadeleşti. Açık Rıza Metni yine sonuna kadar okunur ve rızan metnin sonunda verilir; bu rıza artık başka bir beyanla birlikte alınmıyor. Kullanım Koşulları'nı tek bir kutuyla kabul ediyorsun. Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır: bağlantıyla açılır, onayına bağlı değildir. Belgeler bu işleyişi anlatacak şekilde güncellendi; işlenen veriler, üçüncü taraflar ve saklama süreleri değişmedi.",
   "@yasalKapiDegisiklikNotu": {
     "description": "Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz."
   },
@@ -3900,7 +3899,7 @@
   "yasalKapiTaahhutBaslik": "Onayların",
   "yasalKapiOnayla": "Okudum, kabul ediyorum",
   "yasalKapiOnaylaKisa": "Kabul ediyorum",
-  "yasalKapiKutuGerekli": "Devam etmek için kutuları işaretlemelisin.",
+  "yasalKapiKutuGerekli": "Devam etmek için kutuyu işaretlemelisin.",
   "yasalKapiKayitHatasi": "Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.",
   "yasalKapiCikis": "Çıkış yap",
   "yasalBelgeAcikRiza": "Açık Rıza Metni",
@@ -3919,15 +3918,14 @@
   "zorunluOkumaRizaVer": "Okudum ve açık rıza veriyorum",
   "zorunluOkumaRizaVerKisa": "Açık rıza veriyorum",
   "zorunluOkumaOnaylandi": "Onaylandı",
-  "zorunluOkumaBelgelerBaslik": "Okuyup onaylaman gerekenler",
-  "zorunluOkumaBelgelerAciklama": "Her metni aç, sonuna kadar oku ve en altta onayla.",
+  "zorunluOkumaBelgelerBaslik": "Yasal metinler",
+  "zorunluOkumaBelgelerAciklama": "İşaretli metinleri sonuna kadar okuyup en altta onayla; diğer belgeleri dokunarak okuyabilirsin.",
   "zorunluOkumaEksik": "Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}",
   "@zorunluOkumaEksik": {
     "placeholders": {
       "belgeler": {"type": "String"}
     }
   },
-  "zorunluOkumaKutuKilitli": "Önce yukarıdaki metinlerin hepsini okuyup onayla.",
   "zorunluOkumaSayac": "{onayli}/{toplam} metin onaylandı",
   "@zorunluOkumaSayac": {
     "placeholders": {
@@ -4224,5 +4222,14 @@
         "type": "String"
       }
     }
+  },
+  "tekOnayGizlilikBaglanti": "Gizlilik Politikası",
+  "yasalBelgeAcildi": "Açıldı",
+  "@yasalBelgeAcildi": {
+    "description": "Bilgilendirme belgesinin (Koşullar, Gizlilik, KVKK) satırında hafif iz: belge en az bir kez açıldı. Onay DEĞİL — onay işareti yalnız sonuna kadar okunan metinlerde."
+  },
+  "zorunluOkumaSatirEtiketi": "Sonuna kadar oku ve onayla",
+  "@zorunluOkumaSatirEtiketi": {
+    "description": "Yasal metin listesinde sonuna kadar okunması gereken satırın (Açık Rıza Metni, Yatırım Uyarısı) işareti; onaylanınca 'Onaylandı' olur."
   }
 }

@@ -2,7 +2,7 @@
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 
 ---
 
@@ -10,9 +10,12 @@
 
 Bu Kullanım Koşulları ("Koşullar"), `Yasin Çıralı` ("Şirket", "biz") tarafından sunulan **sandık** mobil uygulaması ("Uygulama", "Hizmet") ile uygulamayı kullanan gerçek kişi ("Kullanıcı", "siz") arasındaki sözleşmedir.
 
-Uygulamayı indirip hesap oluşturarak bu Koşulları, **Gizlilik Politikası**'nı, **KVKK Aydınlatma Metni**'ni ve **Açık Rıza Metni**'ni okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan edersiniz.
+Hesap oluştururken bu Koşulları kabul edersiniz. **Gizlilik Politikası** ve **KVKK Aydınlatma Metni** kişisel verilerinizin nasıl işlendiğini anlatan bilgilendirme belgeleridir; kabulünüze bağlı değildir. Yurt dışına veri aktarımı için açık rızanız bu Koşulların kabulünden ayrıdır ve yalnız **Açık Rıza Metni** ile alınır.
 
-Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) bu belgelerin ve yatırım uyarısının her biri size tam metniyle gösterilir; her birini sonuna kadar okuyup en altta onaylarsınız. Onay kutuları ancak bundan sonra işaretlenebilir.
+Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da):
+- Kullanım Koşulları, Gizlilik Politikası ve KVKK Aydınlatma Metni bağlantı olarak sunulur; dokunduğunuzda tam metni açılır. Bu Koşulları tek bir onay kutusunu işaretleyerek kabul edersiniz; aynı kutuyla 18 yaşından büyük olduğunuzu beyan eder, Gizlilik Politikası ve KVKK Aydınlatma Metni ile bilgilendirildiğinizi belirtirsiniz. Onay kutusu açık rıza içermez.
+- Açık Rıza Metni size tam metniyle gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz.
+- Yatırım uyarısı (§3) tam metniyle gösterilir; sonuna kadar okuduktan sonra en altta onaylarsınız.
 
 ---
 
@@ -215,9 +218,9 @@ AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesin
 
 Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır.
-- Önemli değişiklikler uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir ve yeniden onayınız istenir.
+- Önemli değişiklikler uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız metnin sonunda yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
 - Onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
-- Hangi sürümü ne zaman onayladığınız kayıt altında tutulur.
+- Hangi sürümü ne zaman kabul ettiğiniz ya da hangi sürümün size ne zaman sunulduğu kayıt altında tutulur.
 
 ---
 

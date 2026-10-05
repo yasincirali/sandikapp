@@ -15,6 +15,12 @@ import 'sigan_metin.dart';
 /// Aydınlatma, Açık Rıza Metni, yatırım uyarısı, Zirve açık rızası). Onay
 /// düğmesi metnin EN SONUNDA durur ve kullanıcı sona ulaşınca açılır.
 ///
+/// Kapsam daraldı (kullanıcı kararı 2026-10-05: *"Tüm hepsini içinden
+/// onaylatmak çok uzun bir process gibi oldu."*): sonuna kadar okuma artık
+/// yalnız AÇIK RIZA metinlerinde (Açık Rıza Metni, Zirve rızası) ve yatırım
+/// uyarısında. Koşullar kutuyla kabul edilir; Gizlilik ve KVKK bilgilendirme
+/// olarak bağlantıyla sunulur (`YasalBelge.sonunaKadarOkunur`).
+///
 /// ## "Sona ulaştı" neden kaydırma konumundan okunur
 /// Tek kaynak `ScrollMetrics.extentAfter`: kaydırılabilir alanın altında
 /// kalan içerik [OkumaOlcumu.tolerans]'tan azsa metin okunmuş sayılır.
@@ -207,6 +213,13 @@ class OkumaIpucu extends StatelessWidget {
 ///
 /// Yeniden onay kapısındaki satırdan taşındı (2026-10-04): kayıt ekranı
 /// zorunlu okumada aynı listeyi gösterir, iki ayrı görünüş olmasın.
+///
+/// İki tür satır (okuma sadeleştirme, 2026-10-05): sonuna kadar okunan
+/// metin ([onayli] `true`: Açık Rıza Metni, yatırım uyarısı) bitince yeşil
+/// onay işareti alır ve bitene kadar [bekleyenEtiketi]'ni amberle yazar;
+/// bilgilendirme/kabul belgesi bağlantısı ([onayli] `false`: Koşullar,
+/// Gizlilik, KVKK) açılınca yalnız hafif bir "Açıldı" izi alır — onay
+/// işareti almaz, çünkü belge sonunda onay verilmedi.
 class YasalBelgeSatiri extends StatelessWidget {
   const YasalBelgeSatiri({
     super.key,
@@ -215,15 +228,22 @@ class YasalBelgeSatiri extends StatelessWidget {
     required this.tamam,
     required this.tamamEtiketi,
     required this.onTap,
+    this.onayli = true,
+    this.bekleyenEtiketi,
   });
 
   final List<String> adaylar;
   final String surum;
 
-  /// Kapıda (bayrak kapalı) "açıldı"; zorunlu okumada "onaylandı".
+  /// Sonuna kadar okunan metinde "onaylandı"; bağlantıda "açıldı".
   final bool tamam;
   final String tamamEtiketi;
   final VoidCallback onTap;
+  final bool onayli;
+
+  /// [tamam] değilken sürümün yanına yazılan not — okunması gereken satırı
+  /// listede ayırır ("Sonuna kadar oku ve onayla").
+  final String? bekleyenEtiketi;
 
   @override
   Widget build(BuildContext context) {
@@ -255,20 +275,26 @@ class YasalBelgeSatiri extends StatelessWidget {
                       ),
                       const SizedBox(height: SandikSpace.xxs),
                       Text(
-                        tamam ? '$surum · $tamamEtiketi' : surum,
-                        style: context.t.bodySmall
-                            ?.copyWith(color: context.c.text36),
+                        tamam
+                            ? '$surum · $tamamEtiketi'
+                            : (bekleyenEtiketi == null
+                                ? surum
+                                : '$surum · $bekleyenEtiketi'),
+                        style: context.t.bodySmall?.copyWith(
+                            color: !tamam && bekleyenEtiketi != null
+                                ? context.c.amberText
+                                : context.c.text36),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: SandikSpace.sm),
                 Icon(
-                  tamam
+                  tamam && onayli
                       ? Icons.check_circle_rounded
                       : Icons.chevron_right_rounded,
                   size: 20,
-                  color: tamam ? context.c.gain : context.c.text36,
+                  color: tamam && onayli ? context.c.gain : context.c.text36,
                 ),
               ],
             ),

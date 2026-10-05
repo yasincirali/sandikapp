@@ -2,7 +2,7 @@
 
 **Effective date:** October 5, 2026
 **Last updated:** October 5, 2026
-**Version:** 1.2
+**Version:** 1.3
 
 > This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
@@ -165,7 +165,7 @@ Our service is not directed to children under 16. We do not knowingly process da
 
 ## 11. Changes to This Notice
 
-Material changes to the legal documents are announced in the App: on the next launch the current documents and a summary of the changes are shown and your renewed acceptance is requested. The current version of this notice is always available at `https://yasincirali.github.io/sandikapp/legal/gdpr`.
+Material changes to the legal documents are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service and your explicit consent under the Explicit Consent Notice are requested again; the information documents (Privacy Policy and KVKK Disclosure) are presented to you and you state that you have been informed. The current version of this notice is always available at `https://yasincirali.github.io/sandikapp/legal/gdpr`.
 
 ---
 

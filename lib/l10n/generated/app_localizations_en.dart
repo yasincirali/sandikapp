@@ -5514,29 +5514,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tekOnayAciklama(String ulke) {
-    return 'The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ($ulke) and Firebase (USA/global); you can withdraw your explicit consent at any time (account deletion).';
+    return 'The app is not investment advice; prices and technical analysis are for information only. Your data is stored on Supabase ($ulke) and Firebase (USA/global); details are in the Privacy Policy and the KVKK Privacy Notice.';
   }
 
   @override
   String get tekOnayUlkeBilinmiyor => 'abroad';
 
   @override
-  String tekOnayCumle(String kosullar, String kvkk, String riza) {
-    return 'I accept the $kosullar and $kvkk and confirm I am 18+; I give my $riza to the transfer of my data abroad.';
+  String tekOnayCumle(String kosullar, String gizlilik, String kvkk) {
+    return 'I accept the $kosullar and I am over 18. I have been informed by the $gizlilik and the $kvkk.';
   }
 
   @override
-  String get tekOnayKosullarBaglanti => 'Legal Terms';
+  String get tekOnayKosullarBaglanti => 'Terms of Use';
 
   @override
   String get tekOnayKvkkBaglanti => 'KVKK Privacy Notice';
 
   @override
-  String get tekOnayRizaBaglanti => 'explicit consent';
-
-  @override
   String get tekOnayGerekli =>
-      'To continue, accept the legal terms and give explicit consent to the cross-border data transfer.';
+      'To continue, tick the box to accept the Terms of Use.';
 
   @override
   String get arenaMeasuring => 'Measuring the gap…';
@@ -5578,18 +5575,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiAciklamaGuncel =>
-      'We\'ve updated our legal documents. To continue, read and accept their current versions.';
+      'We\'ve updated our legal documents. To continue, complete the steps below.';
 
   @override
   String get yasalKapiAciklamaIlk =>
-      'Before you start using the app, read and accept the documents below.';
+      'Before you start using the app, complete the steps below.';
 
   @override
   String get yasalKapiNelerDegisti => 'What changed';
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.3: two records that had no retention period now have one and are deleted automatically: the sign-in security log (IP, device/browser) is kept for 90 days and the anonymous account deletion record for 3 years after deletion. The documents also now describe how consent works today: during registration and at the first sign-in with Apple or Google, every text is shown in full, read to the end and accepted at the bottom.';
+      'Version 1.4: the consent steps are simpler. The Explicit Consent Notice is still read to the end and your consent is given at the end of the text; it is no longer collected together with any other declaration. You accept the Terms of Use with a single box. The Privacy Policy and the KVKK Privacy Notice are for information: they open as links and do not depend on your acceptance. The documents now describe this; the data processed, third parties and retention periods have not changed.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -5621,7 +5618,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yasalKapiOnaylaKisa => 'I accept';
 
   @override
-  String get yasalKapiKutuGerekli => 'To continue, tick the boxes.';
+  String get yasalKapiKutuGerekli => 'To continue, tick the box.';
 
   @override
   String get yasalKapiKayitHatasi =>
@@ -5661,20 +5658,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get zorunluOkumaOnaylandi => 'Accepted';
 
   @override
-  String get zorunluOkumaBelgelerBaslik => 'Read and accept';
+  String get zorunluOkumaBelgelerBaslik => 'Legal documents';
 
   @override
   String get zorunluOkumaBelgelerAciklama =>
-      'Open each document, read it to the end and accept it at the bottom.';
+      'Read the marked texts to the end and accept them at the bottom; tap the other documents to read them.';
 
   @override
   String zorunluOkumaEksik(String belgeler) {
     return 'To continue, read to the end and accept: $belgeler';
   }
-
-  @override
-  String get zorunluOkumaKutuKilitli =>
-      'First read and accept every document above.';
 
   @override
   String zorunluOkumaSayac(int onayli, int toplam) {
@@ -5936,4 +5929,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String weekVolumeRow(String date) {
     return 'Unusual volume · $date';
   }
+
+  @override
+  String get tekOnayGizlilikBaglanti => 'Privacy Policy';
+
+  @override
+  String get yasalBelgeAcildi => 'Opened';
+
+  @override
+  String get zorunluOkumaSatirEtiketi => 'Read to the end and accept';
 }

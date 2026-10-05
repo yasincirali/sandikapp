@@ -17,12 +17,15 @@ class KayitOnayBaglami {
     required this.kutuUlkesi,
     required this.belgeDegiskenleri,
     required this.kosulBelgesiAcildi,
-    required this.rizaBelgesiAcildi,
     this.kvkkBelgesiAcildi = false,
     this.gizlilikBelgesiAcildi = false,
     this.sonunaKadarOkunanlar = const {},
     this.yatirimUyarisiOnaylandi = false,
   });
+
+  // NOT: `rizaBelgesiAcildi` 2026-10-05'te kalktı (okuma sadeleştirme):
+  // Açık Rıza Metni yalnız sonuna kadar okunup sonunda onaylanınca kayda
+  // girer ([sonunaKadarOkunanlar]) — okunduysa açılmıştır, ayrı not gerekmez.
 
   // NOT: `tekKutu` alanı 2026-10-05'te kalktı — kayıt ekranı yalnız tek
   // kutuyu çizer (bayrak `tek_onay_kutusu` kalıcı açık). Eski iki kutunun
@@ -40,17 +43,15 @@ class KayitOnayBaglami {
   /// (`LegalDocs.yerTutucuDegerleri`).
   final Map<String, String> belgeDegiskenleri;
 
-  /// Kullanıcı bağlantıdan belgeyi en az bir kez açtı mı (kanıt notu).
-  /// [rizaBelgesiAcildi]: "açık rıza" bağlantısı — 1.2'den beri Açık Rıza
-  /// Metni'ni açar (1.1'de Gizlilik Politikası'nı açıyordu).
+  /// Bilgilendirme/kabul belgesi (Koşullar, Gizlilik, KVKK) bağlantıdan en
+  /// az bir kez açıldı mı — kanıt notu (`belge_acildi`).
   final bool kosulBelgesiAcildi;
-  final bool rizaBelgesiAcildi;
   final bool kvkkBelgesiAcildi;
   final bool gizlilikBelgesiAcildi;
 
-  /// Zorunlu okumada (2026-10-04) sonuna kadar okunup metnin sonunda
-  /// onaylanan türler (`YasalTur`). Boşsa öğelere `sonuna_kadar_okundu`
-  /// anahtarı hiç girmez.
+  /// Sonuna kadar okunup metnin sonunda onaylanan türler (`YasalTur`):
+  /// 1.4'ten beri Açık Rıza Metni ve yatırım uyarısı. Açık Rıza Metni
+  /// YALNIZ burada varsa kayda girer.
   final Set<String> sonunaKadarOkunanlar;
 
   /// Yatırım uyarısının TAM metni (`disclaimerText`) kayıt ekranında
@@ -61,37 +62,42 @@ class KayitOnayBaglami {
   /// Kayıtta onaylanan metinler + her birinin gösterim değişkenleri — saf,
   /// test edilir.
   ///
-  /// ## Ne girer, ne girmez
-  /// - Kutu: kullanıcının işaretlediği tek cümle (`kayit_tek_kutu`).
-  /// - Belgeler: dört belgenin dördü de ([YasalBelge]). Koşullar, KVKK ve
-  ///   açık rıza kutu cümlesinde adıyla geçer; Gizlilik Politikası
-  ///   Koşullar §1'de atıfla. Dördü de kayıt ekranından bağlantıyla açılır (KVKK
-  ///   2026-10-04'ten, Açık Rıza Metni ve Gizlilik'in kendi bağlantısı
-  ///   1.2'den beri). Açılıp açılmadığı `belge_acildi` ile yazılır — ispat
-  ///   ne kadar güçlüyse o kadarını söylesin. Yer tutucu değerleri yalnız
-  ///   o belgede geçenler ([YasalMetinKatalogu.belgeDegiskenleri]).
+  /// ## Ne girer, ne girmez (1.4, okuma sadeleştirme 2026-10-05)
+  /// - Kutu: kullanıcının işaretlediği tek cümle (`kayit_tek_kutu` 1.1):
+  ///   Koşulların kabulü + 18+ + Gizlilik ve KVKK ile bilgilendirildim.
+  /// - Koşullar, Gizlilik, KVKK ([YasalBelge.kutuylaAlinanlar]): kutuyla
+  ///   birlikte HER ZAMAN girer — sunuldular ve kutu onları adıyla anar.
+  ///   `nitelik` kaydın neyin kanıtı olduğunu söyler (Koşullar `kabul`,
+  ///   ikisi `bilgilendirme`); `belge_acildi` bağlantıdan açılıp açılmadığı;
+  ///   `sonuna_kadar_okundu: false` — artık okutulmuyor, ispat ne kadar
+  ///   güçlüyse o kadarını söylesin. Yer tutucu değerleri yalnız o belgede
+  ///   geçenler ([YasalMetinKatalogu.belgeDegiskenleri]).
+  /// - Açık Rıza Metni YALNIZ sonuna kadar okunup sonunda onaylandıysa
+  ///   ([sonunaKadarOkunanlar]) girer: rıza o düğmeyle verilir, kutunun yan
+  ///   etkisi değildir. Kayıt ekranı onaysız göndermez; bağlam başka yoldan
+  ///   kurulursa rıza YAZILMAZ (uydurma rıza olmaz).
   /// - Yatırım uyarısı (`disclaimerText`) YALNIZ zorunlu okumada girer
   ///   ([yatirimUyarisiOnaylandi]): tam metni sonuna kadar okunup onaylandı,
   ///   kanal `kayit` (0104 eşlemeye ekledi). Onaylanmadıysa girmez; uyarı
   ///   OTP'den sonra kendi ekranında tam metniyle sorulur (2026-10-04'e
   ///   kadar OTP gösterilmemiş tam metnin hash'iyle `disclaimer_acceptances`
   ///   yazıyordu — kapanan hata).
-  /// - `sonuna_kadar_okundu: true`: yalnız [sonunaKadarOkunanlar]'daki
-  ///   metinlere; kutulara girmez (kutu okunacak bir metin değil, işaretlenen
-  ///   bir beyandır).
   List<Map<String, dynamic>> ogeler() {
-    Map<String, dynamic> belge(YasalMetin m, bool acildi) => m.rpcOgesi({
-          ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
-          'belge_acildi': acildi,
-          if (sonunaKadarOkunanlar.contains(m.tur)) 'sonuna_kadar_okundu': true,
-        });
+    bool acildi(YasalBelge b) => switch (b) {
+          YasalBelge.kosullar => kosulBelgesiAcildi,
+          YasalBelge.gizlilik => gizlilikBelgesiAcildi,
+          YasalBelge.kvkk => kvkkBelgesiAcildi,
+          YasalBelge.acikRiza => true,
+        };
     return [
       YasalMetinKatalogu.kayitTekKutu(dil)
           .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
-      belge(YasalMetinKatalogu.kosullar(), kosulBelgesiAcildi),
-      belge(YasalMetinKatalogu.gizlilik(), gizlilikBelgesiAcildi),
-      belge(YasalMetinKatalogu.kvkk(), kvkkBelgesiAcildi),
-      belge(YasalMetinKatalogu.acikRiza(), rizaBelgesiAcildi),
+      for (final b in YasalBelge.kutuylaAlinanlar)
+        YasalOnayService.belgeOgesi(b, belgeDegiskenleri,
+            acildi: acildi(b), okundu: false),
+      if (sonunaKadarOkunanlar.contains(YasalTur.acikRiza))
+        YasalOnayService.belgeOgesi(YasalBelge.acikRiza, belgeDegiskenleri,
+            acildi: true, okundu: true),
       if (yatirimUyarisiOnaylandi)
         YasalMetinKatalogu.yatirimUyarisi().rpcOgesi({
           'belge_acildi': true,
@@ -120,9 +126,22 @@ class YasalKapiDurumu {
 
   bool get gerekli => eksik.isNotEmpty;
 
-  /// Kayıt kutusu taahhütleri (18+, yurt dışı aktarım açık rızası) eksik
-  /// mi — kapı kutuları gösterir.
+  /// Kutu taahhüdünün güncel sürümü (1.1: Koşullar kabulü + 18+ +
+  /// bilgilendirildim) eksik mi.
   bool get kutuEksik => eksik.contains(YasalOnayService.kutuAnahtari);
+
+  /// Kapı kutuyu göstermeli mi: kutu eksik YA DA kutuyla alınan bir belge
+  /// (Koşullar, Gizlilik, KVKK) eksik. 1.4'ten beri Koşulların kabulü ve
+  /// bilgilendirme belgelerinin "bilgilendirildim"i KUTUYLA verilir — belge
+  /// sonu onayı yok; kutusuz bir kapı bu belgeleri onaysız yazardı.
+  bool get kutuGerekli =>
+      kutuEksik ||
+      YasalBelge.kutuylaAlinanlar.any((b) => eksik.contains(b.tur));
+
+  /// Açık Rıza Metni'nin güncel sürümü eksik mi — kapı onu sonuna kadar
+  /// okutur. Eksik değilse bağlantı olarak (salt okunur) listelenir;
+  /// geçerli rıza ikinci kez istenmez.
+  bool get rizaEksik => eksik.contains(YasalTur.acikRiza);
 
   /// Belgelerden en az birinin eski sürümü onaylı: başlık "Güncellenen
   /// belgeler" der; hiç yoksa (sosyal girişle ilk kez, 0102 öncesi hesap)
@@ -132,7 +151,9 @@ class YasalKapiDurumu {
 }
 
 /// Kapı ekranının kurduğu kutu — kayıt ekranıyla aynı tek kutu. (İki
-/// kutulu düzen `tek_onay_kutusu` bayrağıyla 2026-10-05'te kalktı.)
+/// kutulu düzen `tek_onay_kutusu` bayrağıyla 2026-10-05'te kalktı.) Kutu
+/// verilirse kapı Koşullar/Gizlilik/KVKK öğelerini de yazar
+/// ([YasalOnayService.kapiOgeleri]).
 @immutable
 class KapiKutuBaglami {
   const KapiKutuBaglami({
@@ -270,8 +291,11 @@ class YasalOnayService {
   /// sürümü yeni bir cihazda onaylamışsa eski istemci onu eski sürüme
   /// geri onaylatmasın.
   ///
-  /// Kayıt kutusu taahhütleri iki düzenin biriyle tamamlanır: iki kutu
-  /// (koşullar kutusu + yurt dışı aktarım rızası kutusu) YA DA tek kutu.
+  /// Kutu taahhüdü YALNIZ tek kutunun güncel sürümüyle ([YasalMetinKatalogu
+  /// .kutuSurumu], 1.1) tamamlanır. 2026-10-05'e kadar iki eski kutu
+  /// (`kayit_kutu_kosullar` + `kayit_kutu_riza`, 1.0) da tamamlıyordu;
+  /// kutu 1.1'e çıkınca 1.0 satırları (iki kutulu ya da tek kutulu) tamam
+  /// sayılmaz — gerekçe `kutuSurumu` notunda.
   static YasalKapiDurumu eksikleriHesapla(Iterable<(String, String)> onaylar) {
     final enYeni = <String, String>{};
     for (final (tur, surum) in onaylar) {
@@ -289,11 +313,9 @@ class YasalOnayService {
       for (final m in YasalMetinKatalogu.zorunluBelgeler())
         if (!tamamMi(m.tur, m.surum)) m.tur,
     };
-    const kutu = YasalMetinKatalogu.kutuSurumu;
-    final kutuTamam = tamamMi(YasalTur.kayitTekKutu, kutu) ||
-        (tamamMi(YasalTur.kayitKutuKosullar, kutu) &&
-            tamamMi(YasalTur.kayitKutuRiza, kutu));
-    if (!kutuTamam) eksik.add(kutuAnahtari);
+    if (!tamamMi(YasalTur.kayitTekKutu, YasalMetinKatalogu.kutuSurumu)) {
+      eksik.add(kutuAnahtari);
+    }
     return YasalKapiDurumu(eksik: eksik, oncekiSurum: enYeni);
   }
 
@@ -319,8 +341,8 @@ class YasalOnayService {
         <String, String>{
           for (final m in YasalMetinKatalogu.zorunluBelgeler()) m.tur: m.surum,
           YasalTur.kayitTekKutu: YasalMetinKatalogu.kutuSurumu,
-          YasalTur.kayitKutuKosullar: YasalMetinKatalogu.kutuSurumu,
-          YasalTur.kayitKutuRiza: YasalMetinKatalogu.kutuSurumu,
+          YasalTur.kayitKutuKosullar: YasalMetinKatalogu.eskiKutuSurumu,
+          YasalTur.kayitKutuRiza: YasalMetinKatalogu.eskiKutuSurumu,
         };
     for (final (tur, surum) in sunucuSurumleri) {
       final b = benim[tur];
@@ -431,11 +453,9 @@ class YasalOnayService {
     ];
   }
 
-  /// Kapı ekranında "Okudum, kabul ediyorum": dört güncel belge (zaten
-  /// onaylı olan tekrar yazılmaz — sunucu `on conflict do nothing`, ilk an
-  /// korunur), [kutu] verildiyse kayıt kutusu taahhütleri,
-  /// [yatirimUyarisiDahil] ise ekranda gösterilen yatırım uyarısı.
-  /// Kanal `yeniden_onay`.
+  /// Kapı ekranında "Okudum, kabul ediyorum" — öğeler [kapiOgeleri]'nde.
+  /// Zaten onaylı olan tekrar yazılmaz (sunucu `on conflict do nothing`,
+  /// ilk an korunur). Kanal `yeniden_onay`.
   Future<KapiKayitSonucu> kapiOnaylariniKaydet({
     required String userId,
     required YasalKapiDurumu durum,
@@ -465,10 +485,39 @@ class YasalOnayService {
     }
   }
 
-  /// Kapının yazdığı öğeler — saf, test edilir. Her belgeye `onceki_surum`
-  /// (yoksa null = ilk onay) ve `belge_acildi` kanıt notu girer; zorunlu
-  /// okumada [sonunaKadarOkunanlar]'daki metinlere `sonuna_kadar_okundu:
-  /// true`.
+  /// Bir belgenin RPC öğesi — kayıt ve kapı AYNI biçimi yazar. Saf.
+  ///
+  /// `degiskenler`: belgede geçen yer tutucuların gösterim değerleri,
+  /// `nitelik` ([YasalBelge.nitelik]), `belge_acildi`, `sonuna_kadar_okundu`
+  /// ve verilirse ([oncekiEkle]) `onceki_surum` (null = ilk kez).
+  static Map<String, dynamic> belgeOgesi(
+    YasalBelge b,
+    Map<String, String> belgeDegiskenleri, {
+    required bool acildi,
+    required bool okundu,
+    bool oncekiEkle = false,
+    String? oncekiSurum,
+  }) {
+    final m = YasalMetinKatalogu.belge(b);
+    return m.rpcOgesi({
+      ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
+      'nitelik': b.nitelik,
+      'belge_acildi': acildi,
+      'sonuna_kadar_okundu': okundu,
+      if (oncekiEkle) 'onceki_surum': oncekiSurum,
+    });
+  }
+
+  /// Kapının yazdığı öğeler — saf, test edilir (1.4, okuma sadeleştirme).
+  ///
+  /// - [kutu] verildiyse (kapı kutuyu gösterdi ve işaretlendi —
+  ///   [YasalKapiDurumu.kutuGerekli]): kutu + Koşullar, Gizlilik, KVKK'nın
+  ///   güncel sürümü (`sonuna_kadar_okundu: false`). Kutu yoksa bu üçü
+  ///   YAZILMAZ: kabulleri/bilgilendirmeleri kutuyla verilir.
+  /// - Açık Rıza Metni YALNIZ [sonunaKadarOkunanlar]'daysa (sonuna kadar
+  ///   okundu, sonunda onaylandı). Kapı rızayı yalnız eksikse okutur;
+  ///   geçerli rıza yeniden yazılmaz.
+  /// - Her belgeye `onceki_surum` (yoksa null = ilk kez) girer.
   static List<Map<String, dynamic>> kapiOgeleri({
     required YasalKapiDurumu durum,
     required Map<String, String> belgeDegiskenleri,
@@ -478,15 +527,21 @@ class YasalOnayService {
     bool yatirimUyarisiDahil = false,
   }) =>
       [
-        if (kutu != null) ...kutu.ogeler(),
-        for (final m in YasalMetinKatalogu.zorunluBelgeler())
-          m.rpcOgesi({
-            ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
-            'belge_acildi': acilanBelgeler.contains(m.tur),
-            'onceki_surum': durum.oncekiSurum[m.tur],
-            if (sonunaKadarOkunanlar.contains(m.tur))
-              'sonuna_kadar_okundu': true,
-          }),
+        if (kutu != null) ...[
+          ...kutu.ogeler(),
+          for (final b in YasalBelge.kutuylaAlinanlar)
+            belgeOgesi(b, belgeDegiskenleri,
+                acildi: acilanBelgeler.contains(b.tur),
+                okundu: false,
+                oncekiEkle: true,
+                oncekiSurum: durum.oncekiSurum[b.tur]),
+        ],
+        if (sonunaKadarOkunanlar.contains(YasalTur.acikRiza))
+          belgeOgesi(YasalBelge.acikRiza, belgeDegiskenleri,
+              acildi: true,
+              okundu: true,
+              oncekiEkle: true,
+              oncekiSurum: durum.oncekiSurum[YasalTur.acikRiza]),
         if (yatirimUyarisiDahil)
           YasalMetinKatalogu.yatirimUyarisi().rpcOgesi({
             if (sonunaKadarOkunanlar.contains(YasalTur.yatirimUyarisi)) ...{

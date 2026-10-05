@@ -5,6 +5,7 @@ import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/screens/legal_doc_screen.dart';
 import 'package:portfoy_takip/screens/register_screen.dart';
+import 'package:portfoy_takip/services/yasal_metin_katalogu.dart';
 import 'package:portfoy_takip/widgets/zorunlu_okuma.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,8 +19,10 @@ import 'helpers/kaynak.dart';
 ///
 /// 2026-10-05: bayraklar `tek_onay_kutusu` ve `zorunlu_okuma` kalktı. İki
 /// kutulu eski düzenin testleri ve "iki yolda aynı kayıt isteği"
-/// karşılaştırması silindi; kutu artık metinler okunmadan işaretlenmez
-/// ([hepsiniOku]; okuma mekaniği `zorunlu_okuma_test`'te).
+/// karşılaştırması silindi. Aynı gün okuma sadeleştirme (kutu 1.1): kutu
+/// Koşulların kabulü + 18+ + Gizlilik/KVKK ile "bilgilendirildim"; açık
+/// rıza İÇERMEZ (Açık Rıza Metni'nin sonunda verilir). Kutu metinlere
+/// kilitli değil; üç belge adı cümlede salt okunur bağlantı.
 void main() {
   final l = AppLocalizationsTr();
   // Eski kutularda belge açılmadan etiketin altına "(Önce belgeyi oku)"
@@ -31,7 +34,7 @@ void main() {
   const eskiRizaHatasi =
       'Devam etmek için yurt dışı aktarım rızasını kabul etmelisin.';
   final tekCumle = l.tekOnayCumle(l.tekOnayKosullarBaglanti,
-      l.tekOnayKvkkBaglanti, l.tekOnayRizaBaglanti);
+      l.tekOnayGizlilikBaglanti, l.tekOnayKvkkBaglanti);
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -102,12 +105,21 @@ void main() {
     return istekler;
   }
 
-  /// Her metni açar ve okuyucuyu "sonuna kadar okundu, onaylandı" ile
-  /// kapatır — kutunun kilidi açılsın diye.
-  Future<void> hepsiniOku(WidgetTester tester) async {
-    final n = find.byType(YasalBelgeSatiri).evaluate().length;
+  /// Kutunun karesi (cümlede belge bağlantıları var; ortasına dokunmak
+  /// bağlantıya denk gelebilir).
+  Finder kare() => find.descendant(
+      of: find.byType(YasalOnayKutusu),
+      matching: find.byType(AnimatedContainer));
+
+  /// Okunacak her metni (Açık Rıza, uyarı) açar ve okuyucuyu "sonuna kadar
+  /// okundu, onaylandı" ile kapatır.
+  Future<void> okunacaklariOku(WidgetTester tester) async {
+    Finder satirlar() => find.byWidgetPredicate(
+        (w) => w is YasalBelgeSatiri && w.bekleyenEtiketi != null);
+    final n = satirlar().evaluate().length;
+    expect(n, 2);
     for (var i = 0; i < n; i++) {
-      final satir = find.byType(YasalBelgeSatiri).at(i);
+      final satir = satirlar().at(i);
       await tester.ensureVisible(satir);
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 600)));
@@ -127,12 +139,13 @@ void main() {
       expect(find.text(eskiRizaCumlesi), findsNothing);
       expect(find.text('Açık Rıza: Yurt Dışı Veri Aktarımı'), findsNothing);
       expect(find.text('Belgeyi aç ve onayla'), findsNothing);
-      // Cümle iki eski kutunun cümlelerinin birleşimi; yeni iddia yok.
+      // Kutu 1.1: Koşullar kabul, 18+, Gizlilik ve KVKK bilgilendirme.
       expect(
           tekCumle,
-          'Yasal Koşulları, KVKK Aydınlatma Metni\'ni ve 18+ olduğumu kabul '
-          'ediyorum; verilerimin yurt dışına aktarılmasına açık rıza '
-          'veriyorum.');
+          'Kullanım Koşulları\'nı kabul ediyorum ve 18 yaşından büyüğüm. '
+          'Gizlilik Politikası ve KVKK Aydınlatma Metni ile '
+          'bilgilendirildim.');
+      expect(find.text('v${YasalMetinKatalogu.kutuSurumu}'), findsOneWidget);
     });
 
     testWidgets('işaretlenmeden "Kayıt ol" → kayıt yok, hata kutunun altında',
@@ -155,75 +168,66 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('metinler okununca kutuya basmak işaretler, ikinci basış '
-        'kaldırır', (tester) async {
+    testWidgets(
+        'kutu metinlere KİLİTLİ DEĞİL: okumadan işaretlenir, ikinci basış '
+        'kaldırır; okumak kutuyu işaretlemez', (tester) async {
       await ac(tester);
-      await hepsiniOku(tester);
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
-      await tester.tap(find.text(tekCumle, findRichText: true),
-          warnIfMissed: false);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+      await tester.tap(kare());
       await tester.pump();
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
-      await tester.tap(find.text(tekCumle, findRichText: true),
-          warnIfMissed: false);
+      await tester.tap(kare());
       await tester.pump();
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
+      // Açık rızayı vermek (metnin sonunda) kutuyu işaretlemez.
+      await okunacaklariOku(tester);
       expect(find.byIcon(Icons.check_rounded), findsNothing);
     });
 
-    testWidgets('bağlantılar doğru belgeyi zorunlu okumada açar, kutuyu '
-        'işaretlemez',
-        (tester) async {
+    testWidgets(
+        'cümledeki üç bağlantı doğru belgeyi SALT OKUNUR açar (onay '
+        'düğmesi yok), kutuyu işaretlemez', (tester) async {
       await ac(tester);
-      // Önceki testin itişi `pushGuarded` penceresinde (gerçek saat) kalmasın.
-      await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 600)));
-      await tester.tapOnText(find.textRange.ofSubstring(
+      for (final (baglanti, baslik, bloklar, ilk) in [
+        (
           l.tekOnayKosullarBaglanti,
-          descendentOf: find.text(tekCumle, findRichText: true)));
-      await tester.pumpAndSettle();
-      var belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      // Başlık eskiden "Yasal Koşullar & KVKK Aydınlatma"ydı ama sayfa
-      // yalnız Koşulları gösteriyordu.
-      expect(belge.title, l.yasalBelgeKosullar);
-      expect(belge.blocks, same(LegalDocs.terms));
-      // Belge zorunlu okumada; dönüşsüz kapanış onay değildir.
-      expect(belge.zorunluOkuma, isTrue);
-      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
-
-      // KVKK Aydınlatma Metni cümlede AYRI bağlantı.
-      await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 600)));
-      await tester.tapOnText(find.textRange.ofSubstring(l.tekOnayKvkkBaglanti,
-          descendentOf: find.text(tekCumle, findRichText: true)));
-      await tester.pumpAndSettle();
-      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      expect(belge.title, l.yasalBelgeKvkk);
-      expect(belge.blocks.length, LegalDocs.kvkk.length);
-      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni — sandık');
-      expect(belge.zorunluOkuma, isTrue);
-      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
-
-      // `pushGuarded` çift dokunma penceresi gerçek saatle (500 ms) işler.
-      await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 600)));
-      await tester.tapOnText(find.textRange.ofSubstring(
-          l.tekOnayRizaBaglanti,
-          descendentOf: find.text(tekCumle, findRichText: true)));
-      await tester.pumpAndSettle();
-      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      // 1.2: "açık rıza" Açık Rıza Metni'ni açar (önceden Gizlilik
-      // Politikası'nı "Açık Rıza: Yurt Dışı Veri Aktarımı" başlığıyla).
-      expect(belge.title, l.yasalBelgeAcikRiza);
-      expect(belge.blocks.length, LegalDocs.acikRiza.length);
-      expect(belge.blocks.first.text, 'Açık Rıza Metni — sandık');
-      expect(belge.zorunluOkuma, isTrue);
-      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
+          l.yasalBelgeKosullar,
+          LegalDocs.terms,
+          'Kullanım Koşulları — sandık'
+        ),
+        (
+          l.tekOnayGizlilikBaglanti,
+          l.yasalBelgeGizlilik,
+          LegalDocs.privacy,
+          'Gizlilik Politikası — sandık'
+        ),
+        (
+          l.tekOnayKvkkBaglanti,
+          l.yasalBelgeKvkk,
+          LegalDocs.kvkk,
+          'KVKK Aydınlatma Metni — sandık'
+        ),
+      ]) {
+        // `pushGuarded` çift dokunma penceresi gerçek saatle (500 ms) işler.
+        await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 600)));
+        await tester.tapOnText(find.textRange.ofSubstring(baglanti,
+            descendentOf: find.text(tekCumle, findRichText: true)));
+        await tester.pumpAndSettle();
+        final belge =
+            tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
+        expect(belge.title, baslik);
+        expect(belge.blocks.length, bloklar.length);
+        expect(belge.blocks.first.text, ilk);
+        // Bilgilendirme/kabul belgesi: okuma şartı ve belge sonu onayı yok.
+        expect(belge.zorunluOkuma, isFalse, reason: baslik);
+        expect(find.byType(OkumaIpucu), findsNothing);
+        Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
+        await tester.pumpAndSettle();
+        expect(find.byIcon(Icons.check_rounded), findsNothing);
+      }
+      // Cümlede "açık rıza" bağlantısı yok.
+      expect(tekCumle.toLowerCase(), isNot(contains('açık rıza')));
     });
   });
 
@@ -234,8 +238,8 @@ void main() {
     final servis = ekranKaynagiSync('lib/services/disclaimer_service.dart');
     expect(servis, isNot(contains('tekOnayKutusu')));
     final kayit = ekranKaynagiSync('lib/screens/register_screen.dart');
-    // Kapı iki bayrağı eskisi gibi okur.
-    expect(kayit, contains('_termsAccepted &&\n      _consentAccepted;'));
+    // "Kayıt ol": okunacak metinler (Açık Rıza, uyarı) + kutu.
+    expect(kayit, contains('_belgelerTamam &&\n      _kutuIsaretli;'));
     expect(kayit, isNot(contains('tekOnayKutusu')));
   });
 

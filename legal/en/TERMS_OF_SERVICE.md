@@ -2,8 +2,8 @@
 
 **Effective date:** October 5, 2026
 **Last updated:** October 5, 2026
-**Version:** 1.3
-**Source:** TR 1.3 (translation of the Turkish text; the Turkish version prevails)
+**Version:** 1.4
+**Source:** TR 1.4 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -11,9 +11,12 @@
 
 These Terms of Service ("Terms") form a contract between `Yasin Çıralı` ("Company", "we") and the natural person ("User", "you") who uses the **sandık** mobile application ("App", "Service").
 
-By downloading the App and creating an account, you declare that you have read, understood and accepted these Terms, the **Privacy Policy**, the **KVKK Disclosure** and the **Explicit Consent Notice**.
+You accept these Terms when you create an account. The **Privacy Policy** and the **KVKK Disclosure** are information documents that explain how your personal data is processed; they do not depend on your acceptance. Your explicit consent to the international transfer of data is separate from accepting these Terms and is given only through the **Explicit Consent Notice**.
 
-During registration (and on the consent screen at the first sign-in with Apple or Google) each of these documents and the investment disclaimer is shown to you in full; you read each one to the end and accept it at the bottom. Only then can the consent boxes be ticked.
+During registration (and on the consent screen at the first sign-in with Apple or Google):
+- The Terms of Service, the Privacy Policy and the KVKK Disclosure are offered as links; tapping one opens its full text. You accept these Terms by ticking a single box; with the same box you declare that you are over 18 and state that you have been informed by the Privacy Policy and the KVKK Disclosure. The box does not include explicit consent.
+- The Explicit Consent Notice is shown to you in full; after reading it to the end you give your explicit consent with the button at the end of the text.
+- The investment disclaimer (§3) is shown in full; you accept it at the bottom after reading it to the end.
 
 ---
 
@@ -216,9 +219,9 @@ For EU consumers, the mandatory consumer protection provisions of the country of
 
 When we change these Terms or the other legal documents:
 - The new text is published with a new version number; the text on the website and in the App is always the same.
-- Material changes are announced in the App: on the next launch the current documents and a summary of the changes are shown and your renewed acceptance is requested.
+- Material changes are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service is requested again with the box and your consent under the Explicit Consent Notice at the end of that text; in the same box you state that you have been informed by the current Privacy Policy and KVKK Disclosure.
 - You cannot continue using the App without accepting; if you do not accept the change, you can delete your account (Profile → Settings → Delete Account).
-- Which version you accepted and when is recorded.
+- Which version you accepted and when, or which version was presented to you and when, is recorded.
 
 ---
 

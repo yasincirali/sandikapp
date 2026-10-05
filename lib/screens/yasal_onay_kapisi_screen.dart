@@ -13,7 +13,7 @@ import '../widgets/sandik_async_button.dart';
 import '../widgets/sigan_metin.dart';
 import '../widgets/zorunlu_okuma.dart';
 import 'legal_doc_screen.dart';
-import 'register_screen.dart' show YasalOnayKutusu;
+import 'register_screen.dart' show YasalKutuBaglantilari, YasalOnayKutusu;
 
 /// Yeniden onay kapısı (2026-10-04; bayrak `yasal_kapi_en_yeni`
 /// 2026-10-05'te kalktı, kapı koşulsuz).
@@ -22,30 +22,37 @@ import 'register_screen.dart' show YasalOnayKutusu;
 /// Kullanıcı kararı: *"Eski rıza metnini onaylayanlar için ilk login'de
 /// güncel doküman sunulup onay istenmeli."* `_AuthGate` bu ekranı,
 /// kullanıcının Koşullar / Gizlilik / KVKK Aydınlatma / Açık Rıza Metni'nin
-/// (1.2'den beri dördü) GÜNCEL sürümüne ya da kayıt kutusu taahhütlerine
-/// etkin onayı yoksa gösterir
-/// (`YasalOnayService.kapiDurumu`). Üç kullanıcı buraya düşer:
+/// (1.2'den beri dördü) GÜNCEL sürümüne ya da kutu taahhüdüne etkin kaydı
+/// yoksa gösterir (`YasalOnayService.kapiDurumu`). Üç kullanıcı buraya
+/// düşer:
 /// - belgelerin eski sürümünü onaylamış olan → "Güncellenen belgeler" +
 ///   "Neler değişti" + tek onay düğmesi;
 /// - Apple/Google ile ilk kez gelen (kayıt formunu hiç görmedi) ve onay
-///   kaydından önce açılmış hesap → belgeler + kayıt formundaki kutuların
-///   AYNISI (18+, yurt dışı aktarım açık rızası; aynı katalog metni, aynı
-///   tek kutu).
+///   kaydından önce açılmış hesap → kayıt formundakinin AYNISI (aynı
+///   katalog metni, aynı tek kutu);
 /// - Yatırım uyarısı da eksikse ([yatirimUyarisiDahil]) uyarı metni bu
 ///   ekrana girer: iki yasal ekran art arda gelmesin. `disclaimer_acceptances`
 ///   kaydı `DisclaimerAcceptanceScreen`'deki AYNI çağrıyla yazılır
 ///   (`DisclaimerService.kabulKaydet`) ve o kapı aynen çalışır.
 ///
-/// Geri tuşuyla atlanamaz; tek çıkış "Çıkış yap". Zorunlu okuma (2026-10-04;
-/// bayrak `zorunlu_okuma` 2026-10-05'te kalktı): listedeki her metin —
-/// eksikse yatırım uyarısı da listeye girer — tam açılır, sonuna kadar
-/// okunup EN SONUNDA onaylanır; hepsi onaylanmadan kutu işaretlenmez ve
-/// "Okudum, kabul ediyorum" açılmaz. (Bayrak kapalıyken belgeler yalnız
-/// okunuyor, uyarı metni ekranda düz yazı duruyordu; o yol silindi.) Onay `yasal_onay_kaydet` RPC'sine
-/// `yeniden_onay` kanalıyla gider. Bağlantı hatasında ekran hata gösterir
-/// ve kullanıcı yeniden dener; sunucu reddederse (metin kayması gibi bir
-/// hata) raporlanır ve kullanıcı KİLİTLENMEZ — bir sonraki açılışta kapı
-/// yeniden sorar.
+/// ## Ne okunur, neye dokunulur (okuma sadeleştirme, 2026-10-05)
+/// Kayıt ekranıyla AYNI kural (kullanıcı kararı: *"Tüm hepsini içinden
+/// onaylatmak çok uzun bir process gibi oldu."*):
+/// - Açık Rıza Metni — eksikse sonuna kadar okunur, rıza metnin sonunda
+///   verilir; geçerliyse bağlantı olarak durur, ikinci kez istenmez.
+/// - Yatırım uyarısı — eksikse tam metni okunup onaylanır.
+/// - Koşullar, Gizlilik, KVKK — bağlantı (salt okunur). Biri eksikse ya da
+///   kutu eksikse ([YasalKapiDurumu.kutuGerekli]) kutu gösterilir: Koşulların
+///   kabulü + 18+ + "bilgilendirildim" kutuyla verilir. Kutu metinlere
+///   kilitli değildir.
+/// Geri tuşuyla atlanamaz; tek çıkış "Çıkış yap". 1.3'te listedeki her
+/// metin (dört belge + uyarı) sonuna kadar okunup sonunda onaylanıyor ve
+/// kutu onlara kilitleniyordu.
+///
+/// Onay `yasal_onay_kaydet` RPC'sine `yeniden_onay` kanalıyla gider.
+/// Bağlantı hatasında ekran hata gösterir ve kullanıcı yeniden dener;
+/// sunucu reddederse (metin kayması gibi bir hata) raporlanır ve kullanıcı
+/// KİLİTLENMEZ — bir sonraki açılışta kapı yeniden sorar.
 class YasalOnayKapisiScreen extends ConsumerStatefulWidget {
   const YasalOnayKapisiScreen({
     super.key,
@@ -74,20 +81,33 @@ class YasalOnayKapisiScreen extends ConsumerStatefulWidget {
 }
 
 class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
-  /// Tek kutu (kayıt ekranıyla aynı): 18+ ve yurt dışı aktarım açık rızası
-  /// birlikte. İki kutulu düzen `tek_onay_kutusu` ile 2026-10-05'te kalktı.
+  /// Tek kutu (kayıt ekranıyla aynı, kutu 1.1).
   bool _kutu = false;
   bool _kutuHatasi = false;
   bool _kayitHatasi = false;
+
+  /// Bağlantıyla açılan belgeler (`belge_acildi` kanıt notu, "Açıldı" izi).
   final Set<String> _acilanlar = {};
 
-  /// Zorunlu okumada sonuna kadar okunup sonunda onaylanan türler.
+  /// Sonuna kadar okunup sonunda onaylanan türler.
   final Set<String> _onaylananlar = {};
 
-  bool get _kutularTamam => !widget.durum.kutuEksik || _kutu;
+  late final YasalKutuBaglantilari _kutuBaglantilari =
+      YasalKutuBaglantilari(_belgeyiAc);
 
+  @override
+  void dispose() {
+    _kutuBaglantilari.dispose();
+    super.dispose();
+  }
+
+  bool get _kutuGerekli => widget.durum.kutuGerekli;
+  bool get _kutularTamam => !_kutuGerekli || _kutu;
+
+  /// Sonuna kadar okunacaklar: Açık Rıza Metni (eksikse) + uyarı (dahilse).
   List<ZorunluMetin> _metinler(AppLocalizations l) => ZorunluMetin.liste(l,
-      yatirimUyarisiDahil: widget.yatirimUyarisiDahil);
+      yatirimUyarisiDahil: widget.yatirimUyarisiDahil,
+      riza: widget.durum.rizaEksik);
 
   int _onayliSayisi(AppLocalizations l) =>
       _metinler(l).where((m) => _onaylananlar.contains(m.tur)).length;
@@ -106,12 +126,10 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
     }
   }
 
-  /// Kutu değişimi — zorunlu okumada metinler bitmeden kutu işaretlenmez.
-  /// Hata durumuna alınmaz: kutunun kilit notu ve düğmenin üstündeki sayaç
-  /// neyin beklendiğini zaten söylüyor.
-  void _kutuDegistir(VoidCallback degistir) {
-    if (!_belgelerTamam) return;
-    setState(degistir);
+  /// Bağlantı belgesini salt okunur açar (kayıt ekranıyla aynı yol).
+  Future<void> _belgeyiAc(YasalBelge b) async {
+    setState(() => _acilanlar.add(b.tur));
+    await belgeyiAc(context, b);
   }
 
   String _kutuUlkesi(BuildContext context) =>
@@ -126,7 +144,7 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
       return;
     }
     final locale = Localizations.localeOf(context).toString();
-    final kutu = widget.durum.kutuEksik
+    final kutu = _kutuGerekli
         ? KapiKutuBaglami(
             dil: context.l10n.localeName,
             kutuUlkesi: _kutuUlkesi(context),
@@ -175,16 +193,25 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
     final l = context.l10n;
     final durum = widget.durum;
     final hp = SandikSpace.screenH(context);
+    final metinler = _metinler(l);
 
+    // Sıra Ayarlar ve kayıt ekranıyla aynı: Koşullar, Gizlilik, KVKK, Açık
+    // Rıza Metni, (eksikse) yatırım uyarısı.
     final belgeler = [
-      for (final m in _metinler(l))
-        YasalBelgeSatiri(
-          adaylar: m.adaylar,
-          surum: l.yasalBelgeSurum(m.surum),
-          tamam: _onaylananlar.contains(m.tur),
-          tamamEtiketi: l.zorunluOkumaOnaylandi,
-          onTap: () => _zorunluOku(m),
-        ),
+      for (final b in YasalBelge.values)
+        if (b.sonunaKadarOkunur && durum.rizaEksik)
+          _zorunluSatir(l, ZorunluMetin.belge(l, b))
+        else
+          YasalBelgeSatiri(
+            adaylar: ZorunluMetin.belge(l, b).adaylar,
+            surum: l.yasalBelgeSurum(b.surum),
+            tamam: _acilanlar.contains(b.tur),
+            tamamEtiketi: l.yasalBelgeAcildi,
+            onayli: false,
+            onTap: () => _belgeyiAc(b),
+          ),
+      if (widget.yatirimUyarisiDahil)
+        _zorunluSatir(l, ZorunluMetin.yatirimUyarisi(l)),
     ];
 
     final icerik = <Widget>[
@@ -263,12 +290,11 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
           style: context.t.bodySmall?.copyWith(color: context.c.text36),
         ),
       ],
-      // Yatırım uyarısı eksikse listede bir satır (tam metin okuyucuda).
-      if (durum.kutuEksik) ...[
+      if (_kutuGerekli) ...[
         const SizedBox(height: SandikSpace.lg),
         SandikSectionHeader(title: l.yasalKapiTaahhutBaslik),
         const SizedBox(height: SandikSpace.sm),
-        ..._kutular(context),
+        _kutuWidget(context),
       ],
     ];
 
@@ -286,13 +312,12 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
             ),
             const SizedBox(height: SandikSpace.sm),
           ],
-          // Düğme kapalıyken neyin beklendiği: önce kaç metnin onaylandığı,
-          // metinler bitince kutu.
+          // Düğme kapalıyken neyin beklendiği: okunacak metinlerin sayacı,
+          // metinler bitince (ya da hiç yoksa) kutu.
           if (!_belgelerTamam || !_kutularTamam) ...[
             Text(
               !_belgelerTamam
-                  ? l.zorunluOkumaSayac(
-                      _onayliSayisi(l), _metinler(l).length)
+                  ? l.zorunluOkumaSayac(_onayliSayisi(l), metinler.length)
                   : l.yasalKapiKutuGerekli,
               textAlign: TextAlign.center,
               style: context.t.bodySmall?.copyWith(color: context.c.text58),
@@ -348,27 +373,32 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
     );
   }
 
-  /// Kayıt formundaki kutunun AYNISI — metin katalogdan. Belgeler yukarıda
-  /// listelendiği için kutuda bağlantı yok; kutu cümlesi düz metin
-  /// (hash'lenen metinle aynı). Metinler bitene kadar kilitli ve nedenini
-  /// söyler (kayıt ekranıyla aynı karar: kutu son metnin onayıyla
-  /// kendiliğinden işaretlenmez, açık rıza ayrı bir eylemdir).
-  List<Widget> _kutular(BuildContext context) {
+  /// Sonuna kadar okunacak metnin satırı (Açık Rıza Metni, uyarı).
+  Widget _zorunluSatir(AppLocalizations l, ZorunluMetin m) => YasalBelgeSatiri(
+        adaylar: m.adaylar,
+        surum: l.yasalBelgeSurum(m.surum),
+        tamam: _onaylananlar.contains(m.tur),
+        tamamEtiketi: l.zorunluOkumaOnaylandi,
+        bekleyenEtiketi: l.zorunluOkumaSatirEtiketi,
+        onTap: () => _zorunluOku(m),
+      );
+
+  /// Kayıt formundaki kutunun AYNISI — metin katalogdan, üç belge adı
+  /// cümle içinde bağlantı. Kilitsiz: Koşulların kabulü rızanın
+  /// okunmasından bağımsız bir eylemdir (kayıt ekranıyla aynı karar).
+  Widget _kutuWidget(BuildContext context) {
     final l = context.l10n;
-    return [
-      YasalOnayKutusu(
-        icon: Icons.gavel_rounded,
-        title: l.tekOnayBaslik,
-        versionLabel: 'v${YasalMetinKatalogu.kutuSurumu}',
-        bodyText: l.tekOnayAciklama(_kutuUlkesi(context)),
-        checkboxLabel: YasalMetinKatalogu.tekKutuCumlesi(l),
-        accepted: _kutu,
-        docConfirmed: _belgelerTamam,
-        kilitNotu: l.zorunluOkumaKutuKilitli,
-        error: _kutuHatasi && !_kutularTamam,
-        errorMessage: l.tekOnayGerekli,
-        onToggle: () => _kutuDegistir(() => _kutu = !_kutu),
-      ),
-    ];
+    return YasalOnayKutusu(
+      icon: Icons.gavel_rounded,
+      title: l.tekOnayBaslik,
+      versionLabel: 'v${YasalMetinKatalogu.kutuSurumu}',
+      bodyText: l.tekOnayAciklama(_kutuUlkesi(context)),
+      checkboxLabel: YasalMetinKatalogu.tekKutuCumlesi(l),
+      checkboxSpan: _kutuBaglantilari.span(context),
+      accepted: _kutu,
+      error: _kutuHatasi && !_kutularTamam,
+      errorMessage: l.tekOnayGerekli,
+      onToggle: () => setState(() => _kutu = !_kutu),
+    );
   }
 }

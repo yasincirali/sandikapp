@@ -2044,9 +2044,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
     // Yeniden onay kapısı (2026-10-04; bayrağı 2026-10-05'te kalktı) —
     // yatırım uyarısı kapısıyla AYNI yerde, kullanıcı adından ve turdan
-    // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı belgeleri ve kayıt
-    // kutusu taahhütlerini (18+, yurt dışı aktarım açık rızası) uygulamaya
-    // girmeden onaylar; zorunlu kullanıcı adı ekranı ondan sonra AYNEN
+    // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı Açık Rıza Metni'ni
+    // sonuna kadar okuyup rızasını, kutuyla Koşulların kabulünü (+ 18+,
+    // bilgilendirildim; 1.4) uygulamaya girmeden verir; zorunlu kullanıcı
+    // adı ekranı ondan sonra AYNEN
     // gelir. İki yasal ekran art arda gelmesin diye yatırım uyarısı da
     // eksikse o metin bu ekrana girer ve `disclaimer_acceptances` aynı
     // çağrıyla (`kabulKaydet`) yazılır; yalnız uyarı eksikse aşağıdaki eski

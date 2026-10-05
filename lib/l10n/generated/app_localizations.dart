@@ -9195,10 +9195,10 @@ abstract class AppLocalizations {
   /// **'Yasal Koşullar'**
   String get tekOnayBaslik;
 
-  /// Tek onay kutusunun açıklaması; eski iki kutunun gövde metinlerinden derlendi. ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.
+  /// Tek onay kutusunun açıklaması (kutu 1.1, 2026-10-05: açık rıza cümlesi çıktı — rıza yalnız Açık Rıza Metni'nin sonunda verilir). ulke = bağlanılan Supabase projesinin ülkesi (SunucuSecimi), bilinmiyorsa tekOnayUlkeBilinmiyor.
   ///
   /// In tr, this message translates to:
-  /// **'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).'**
+  /// **'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ({ulke}) ve Firebase (ABD/Küresel) üzerinde saklanır; ayrıntısı Gizlilik Politikası ve KVKK Aydınlatma Metni\'nde.'**
   String tekOnayAciklama(String ulke);
 
   /// No description provided for @tekOnayUlkeBilinmiyor.
@@ -9207,16 +9207,16 @@ abstract class AppLocalizations {
   /// **'yurt dışı'**
   String get tekOnayUlkeBilinmiyor;
 
-  /// Kayıt formundaki tek onay kutusunun cümlesi (bayrak tek_onay_kutusu). Eski iki kutunun cümlelerinin birleşimi; yeni hukuki iddia eklenmez. kosullar, kvkk ve riza yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayKvkkBaglanti, tekOnayRizaBaglanti). 2026-10-04: KVKK ayrı bağlantı oldu; okunan cümle harfi harfine aynı kaldı (hash'i yasal_metinler'de, kayit_tek_kutu). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).
+  /// Kayıt formunun ve yeniden onay kapısının tek onay kutusu (kutu 1.1, 2026-10-05). Kullanım Koşulları sözleşmedir, kutuyla kabul edilir; Gizlilik ve KVKK bilgilendirmedir, 'kabul' değil 'bilgilendirildim' denir. AÇIK RIZA İÇERMEZ: rıza yalnız Açık Rıza Metni'nin sonunda verilir (başka beyanla paketlenmez). kosullar, gizlilik ve kvkk yerine dokunulabilir bağlantı metinleri gelir (tekOnayKosullarBaglanti, tekOnayGizlilikBaglanti, tekOnayKvkkBaglanti). Okunan cümle değişirse kutu sürümü artar (YasalMetinKatalogu.kutuSurumu).
   ///
   /// In tr, this message translates to:
-  /// **'{kosullar}, {kvkk}\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına {riza} veriyorum.'**
-  String tekOnayCumle(String kosullar, String kvkk, String riza);
+  /// **'{kosullar}\'nı kabul ediyorum ve 18 yaşından büyüğüm. {gizlilik} ve {kvkk} ile bilgilendirildim.'**
+  String tekOnayCumle(String kosullar, String gizlilik, String kvkk);
 
   /// No description provided for @tekOnayKosullarBaglanti.
   ///
   /// In tr, this message translates to:
-  /// **'Yasal Koşulları'**
+  /// **'Kullanım Koşulları'**
   String get tekOnayKosullarBaglanti;
 
   /// No description provided for @tekOnayKvkkBaglanti.
@@ -9225,16 +9225,10 @@ abstract class AppLocalizations {
   /// **'KVKK Aydınlatma Metni'**
   String get tekOnayKvkkBaglanti;
 
-  /// No description provided for @tekOnayRizaBaglanti.
-  ///
-  /// In tr, this message translates to:
-  /// **'açık rıza'**
-  String get tekOnayRizaBaglanti;
-
   /// No description provided for @tekOnayGerekli.
   ///
   /// In tr, this message translates to:
-  /// **'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.'**
+  /// **'Devam etmek için kutuyu işaretleyip Kullanım Koşulları\'nı kabul etmelisin.'**
   String get tekOnayGerekli;
 
   /// No description provided for @arenaMeasuring.
@@ -9294,13 +9288,13 @@ abstract class AppLocalizations {
   /// No description provided for @yasalKapiAciklamaGuncel.
   ///
   /// In tr, this message translates to:
-  /// **'Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.'**
+  /// **'Yasal belgelerimizi güncelledik. Devam etmek için aşağıdaki adımları tamamla.'**
   String get yasalKapiAciklamaGuncel;
 
   /// No description provided for @yasalKapiAciklamaIlk.
   ///
   /// In tr, this message translates to:
-  /// **'Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.'**
+  /// **'Uygulamayı kullanmaya başlamadan önce aşağıdaki adımları tamamla.'**
   String get yasalKapiAciklamaIlk;
 
   /// No description provided for @yasalKapiNelerDegisti.
@@ -9312,7 +9306,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.3: Süresi belirtilmemiş iki kayda saklama süresi geldi ve artık otomatik siliniyorlar: oturum açma güvenlik kaydı (IP, cihaz/tarayıcı) 90 gün, anonim hesap silme kaydı silmeden sonra 3 yıl tutulur. Ayrıca onay metinlerinin sunuluşu bugünkü işleyişe göre yazıldı: kayıtta ve Apple veya Google ile ilk girişte her metin tam gösterilir, sonuna kadar okunur ve en altta onaylanır.'**
+  /// **'Sürüm 1.4: Onay adımları sadeleşti. Açık Rıza Metni yine sonuna kadar okunur ve rızan metnin sonunda verilir; bu rıza artık başka bir beyanla birlikte alınmıyor. Kullanım Koşulları\'nı tek bir kutuyla kabul ediyorsun. Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır: bağlantıyla açılır, onayına bağlı değildir. Belgeler bu işleyişi anlatacak şekilde güncellendi; işlenen veriler, üçüncü taraflar ve saklama süreleri değişmedi.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -9372,7 +9366,7 @@ abstract class AppLocalizations {
   /// No description provided for @yasalKapiKutuGerekli.
   ///
   /// In tr, this message translates to:
-  /// **'Devam etmek için kutuları işaretlemelisin.'**
+  /// **'Devam etmek için kutuyu işaretlemelisin.'**
   String get yasalKapiKutuGerekli;
 
   /// No description provided for @yasalKapiKayitHatasi.
@@ -9450,13 +9444,13 @@ abstract class AppLocalizations {
   /// No description provided for @zorunluOkumaBelgelerBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Okuyup onaylaman gerekenler'**
+  /// **'Yasal metinler'**
   String get zorunluOkumaBelgelerBaslik;
 
   /// No description provided for @zorunluOkumaBelgelerAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Her metni aç, sonuna kadar oku ve en altta onayla.'**
+  /// **'İşaretli metinleri sonuna kadar okuyup en altta onayla; diğer belgeleri dokunarak okuyabilirsin.'**
   String get zorunluOkumaBelgelerAciklama;
 
   /// No description provided for @zorunluOkumaEksik.
@@ -9464,12 +9458,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}'**
   String zorunluOkumaEksik(String belgeler);
-
-  /// No description provided for @zorunluOkumaKutuKilitli.
-  ///
-  /// In tr, this message translates to:
-  /// **'Önce yukarıdaki metinlerin hepsini okuyup onayla.'**
-  String get zorunluOkumaKutuKilitli;
 
   /// No description provided for @zorunluOkumaSayac.
   ///
@@ -9855,6 +9843,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Olağandışı hacim · {date}'**
   String weekVolumeRow(String date);
+
+  /// No description provided for @tekOnayGizlilikBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik Politikası'**
+  String get tekOnayGizlilikBaglanti;
+
+  /// Bilgilendirme belgesinin (Koşullar, Gizlilik, KVKK) satırında hafif iz: belge en az bir kez açıldı. Onay DEĞİL — onay işareti yalnız sonuna kadar okunan metinlerde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açıldı'**
+  String get yasalBelgeAcildi;
+
+  /// Yasal metin listesinde sonuna kadar okunması gereken satırın (Açık Rıza Metni, Yatırım Uyarısı) işareti; onaylanınca 'Onaylandı' olur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonuna kadar oku ve onayla'**
+  String get zorunluOkumaSatirEtiketi;
 }
 
 class _AppLocalizationsDelegate
