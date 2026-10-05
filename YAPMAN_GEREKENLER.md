@@ -16,14 +16,18 @@ girmiyordu (30 TL'den alınıp 41 TL'den satılan 100 $ → 0 TL kâr). Düzeltm
 yeni satış satırı satış günü kurunu `assets.sell_fx_rate`'e yazar; maliyet
 alım kuruyla kalır. Geçmiş satışlar değişmez (o günün kuru kayıtlı değil).
 
+> **BİRLEŞTİ VE DAĞITILDI 2026-10-05:** PR #98 main'de (693ad2b); 0111 iki
+> sunucuda (Actions run 37307983966, hedef `ikisi`, yalnız migration), şema
+> parmak izi Tokyo = Frankfurt. Kalan tek adım 4: bayrağı açmak (sende).
+
 **Dağıtım sırası (ters sırada bayrak açıkken dövizli satış PGRST204 ile
 reddedilir):**
-- [ ] 1. PR'ı birleştir (bayrak kapalı: davranış birebir eski).
-- [ ] 2. Migration `0111_satis_gunu_kuru.sql` → **iki sunucuya**
+- [x] 1. PR'ı birleştir (bayrak kapalı: davranış birebir eski).
+- [x] 2. Migration `0111_satis_gunu_kuru.sql` → **iki sunucuya**
       (`supabase-deploy.yml`, hedef `ikisi`). Yalnız boş geçilebilir sütun.
       Doğrula (salt okunur):
       `select column_name from information_schema.columns where table_name = 'assets' and column_name = 'sell_fx_rate';`
-- [ ] 3. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [x] 3. `python tool/sema_esitlik.py` → ŞEMA EŞİT (deploy'un eşitlik kapısı geçti).
 - [ ] 4. ANCAK SONRA Firebase › Remote Config: `satis_gunu_kuru` = `true`
       (önce kendi cihazına). Dövizli bir varlıktan küçük bir satış yap;
       Özet'teki "gerçekleşen" satırı kur farkını göstermeli.
