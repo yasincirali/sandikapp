@@ -2883,6 +2883,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get importFixColumns => 'Fix columns';
 
   @override
+  String get importCopyDiagnostic => 'Copy diagnostic text';
+
+  @override
+  String get importDiagnosticHint =>
+      'Copies the table layout so we can fix an unreadable statement. Names, numbers and amounts are masked.';
+
+  @override
+  String get importDiagnosticCopied => 'Diagnostic text copied.';
+
+  @override
+  String get importAiButton => 'Map with AI';
+
+  @override
+  String get importAiHint =>
+      'Only the table layout is sent: names, numbers and amounts are hidden, the document never leaves your phone.';
+
+  @override
+  String get importAiSuggested =>
+      'AI suggested the columns; check the mapping and fix it if needed.';
+
+  @override
+  String get importAiNoMatch =>
+      'AI couldn\'t find a holdings table in this file either.';
+
+  @override
+  String get importAiLimit =>
+      'You\'ve used today\'s AI mapping allowance; try again tomorrow.';
+
+  @override
+  String get importAiFailed =>
+      'AI mapping isn\'t available right now. Try again a bit later.';
+
+  @override
+  String importTradesApplied(int count) {
+    return 'Actual purchase date and price for $count holdings taken from account transactions.';
+  }
+
+  @override
   String importDepositRow(String name, String amount, String rate, int days) {
     return '$name · $amount · $rate interest · $days-day term';
   }
@@ -5586,7 +5624,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it. The Explicit Consent Notice has not changed.';
+      'Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it. The Explicit Consent Notice has not changed.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -6640,6 +6678,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prmKilitNot => 'Full note in Premium';
+
+  @override
+  String get prmKilitEkstreAi => 'AI mapping is in Premium';
+
+  @override
+  String get prmSatirEkstreAi => 'Read statements with AI';
 
   @override
   String get prmHediyeBaslik => 'You\'re one of our first users';

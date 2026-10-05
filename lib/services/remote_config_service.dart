@@ -221,6 +221,27 @@ class RemoteConfigService {
     // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
     'birikim_serisi': false,
 
+    // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
+    // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
+    // kartında "Tanılama metnini kopyala" çıkar: tablo düzeni korunur, ad/
+    // rakam maskelenir (`ekstreIskeleti`), kullanıcı kendisi gönderir. KAPALI
+    // doğar: önce yasin'in cihazında; kapalıyken kart birebir eski.
+    'ekstre_tanilama': false,
+
+    // Ekstre hesap hareketlerinden gerçek alış tarihi/fiyatı (2026-10-05,
+    // yasin: "bunun içinden varlık alım satımları nasıl ayıklarsın").
+    // Varlık satırı dönem içindeki alışlara bölünür; maliyet ekstre günü
+    // fiyatı yerine gerçek alış fiyatı olur (`hareket_tablosu.dart`). KAPALI
+    // doğar: içe aktarılan maliyeti değiştirir; kapalıyken çıktı birebir eski.
+    'ekstre_hareketleri': false,
+
+    // Ekstre AI sütun eşleme (2026-10-05, yasin kararı: "AI sütun eşleme").
+    // Okuyucu emin değilken kartta "Yapay zekâyla eşle": anonim iskelet
+    // `ekstre-esle` (0121) üzerinden Claude'a gider, yalnız sütun numaraları
+    // döner. KAPALI doğar: önce 0121 + fonksiyon iki sunucuya, Gizlilik 1.6
+    // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
+    'ekstre_ai_esleme': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -455,6 +476,15 @@ class RemoteConfigService {
 
   /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
   bool get birikimSerisi => _bayrak('birikim_serisi');
+
+  /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
+  bool get ekstreTanilama => _bayrak('ekstre_tanilama');
+
+  /// Ekstre hareketlerinden gerçek alış. Gerekçe `_defaults`'ta.
+  bool get ekstreHareketleri => _bayrak('ekstre_hareketleri');
+
+  /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
+  bool get ekstreAiEsleme => _bayrak('ekstre_ai_esleme');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

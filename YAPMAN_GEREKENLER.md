@@ -8,6 +8,38 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
+
+Bayraksız gelen iki düzeltme (mağazadaki davranışı yalnız iyileştirir):
+TEFAS fon listesi boş gelince artık "fon listesi alınamadı" yazar (önceden
+banka ekstresindeki fonların hepsi sessizce düşüyordu); "PORTFÖY" geçen fon
+unvanı sembol sanılmaz (üç fonluk banka tablosu hiç anlaşılmıyordu).
+
+Üç yeni bayrak, hepsi KAPALI doğar (Firebase Console'da anahtarı oluştur):
+- `ekstre_hareketleri`: banka ekstresindeki hesap hareketlerinden dönem içi
+  alışların GERÇEK tarih ve fiyatı (yoksa maliyet ekstre günü fiyatı).
+  Sunucu işi yok; önce kendi cihazında aç, kendi Mayıs ekstrenle dene.
+- `ekstre_tanilama`: okunamayan ekstrede "Tanılama metnini kopyala"
+  (ad/numara/tutar maskeli tablo düzeni). Sunucu işi yok.
+- `ekstre_ai_esleme`: "Yapay zekâyla eşle" — **Premium'a özel** (senin
+  kararın). Kapı varlık notlarıyla aynı (`premium_icerik_gorebilir`): paywall
+  kapalıyken herkes kullanır, `paywall_enabled` açılınca yalnız Premium;
+  sunucu da ayrıca denetler (403). Sırası önemli:
+  1. PR birleşince **Supabase deploy** (main, hedef `ikisi`, migrations +
+     fonksiyon `ekstre-esle`) → 0121 + 0122 + 0123 iki sunucuya; şema eşitliği
+     yeşil. Bunu Claude yapar. `ANTHROPIC_API_KEY` zaten iki sunucuda.
+     İsteğe bağlı secret'lar: `EKSTRE_GUNLUK_HAK` (kullanıcı başına günlük
+     istek, yoksa 10), `EKSTRE_AYLIK_TAVAN_USD` (yoksa 10 $; dolunca 429).
+  2. Gizlilik ve KVKK 1.6 (Koşullar 1.5, Açık Rıza 1.4 kalır). 1.6'yı
+     taşıyan build mağazaya 0122'den SONRA çıkar; eski build'ler 1.6'yı
+     görünce kapıyı açmaz, yeni build bir kez sorar.
+  3. Bayrağı önce kendi cihazında aç.
+- **Admin hesabı Premium'u kilitsiz görür** (senin isteğin): admin =
+  `push_admins` tablosundaki hesap (push tanılamasıyla aynı). Sunucu 0123
+  (`premium_mi_kullanici` admin'e true), uygulama `effectivePremiumProvider`
+  (`is_push_admin`). Bayrak yok: admin olmayan herkes için sonuç birebir eski.
+- RevenueCat metne girince sürüm artık **1.7** olacak (1.6 bu iş için kullanıldı).
+
 ## ⏳ 2026-10-05 Yasal metin 1.5: varlık notları, geri bildirim, Premium hakkı (0120)
 
 Koşullar, Gizlilik ve KVKK 1.5 oldu (Açık Rıza Metni 1.4'te kaldı: yapay

@@ -528,7 +528,11 @@ final effectivePremiumProvider = Provider<bool>((ref) {
   // Sunucu hakkı (0116; RevenueCat aboneliği, erken kullanıcı hediyesi,
   // manuel). Cihaz anahtarı test/geliştirici yolu olarak kalır.
   final sunucu = ref.watch(gecerliPremiumHakkiProvider) != null;
-  return (unlocked || sunucu) && RemoteConfigService.instance.premiumEnabled;
+  // Admin hesabı Premium alanlarını kilitsiz görür (yasin, 2026-10-05).
+  // Sunucuda aynı karar `premium_mi_kullanici` içinde (0123, push_admins).
+  final admin = ref.watch(isPushAdminProvider).valueOrNull == true;
+  return (unlocked || sunucu || admin) &&
+      RemoteConfigService.instance.premiumEnabled;
 });
 
 /// Free tier varlık limiti — Remote Config'ten dinamik.

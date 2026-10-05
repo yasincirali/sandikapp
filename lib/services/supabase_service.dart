@@ -15,6 +15,7 @@ import '../models/user_model.dart';
 import '../models/watchlist_item.dart';
 import 'crash_reporter.dart';
 import 'db_logger.dart';
+import 'ekstre/ekstre_tablosu.dart' show EkstreAiHatasi;
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
 /// RLS kuralları Supabase tarafında uygulandığı için burada
@@ -1705,6 +1706,34 @@ class SupabaseService {
   }
 
   // ── Edge Functions ────────────────────────────────────────────────────────
+
+  /// Ekstre AI sütun eşleme (0121, `ekstre-esle`). [iskelet] ANONİM
+  /// tanılama iskeletidir (`ekstreIskeleti`); günlüğe yalnız uzunluğu
+  /// yazılır. Yanıt `tablolar` listesi; 2xx dışında `FunctionException`.
+  Future<List<Map<String, dynamic>>> ekstreEsle(String iskelet) async {
+    final FunctionResponse res;
+    try {
+      res = await _log.log(
+        source: 'SupabaseService.ekstreEsle',
+        table: 'functions/ekstre-esle',
+        op: 'FUNCTION',
+        request: {'uzunluk': iskelet.length},
+        timeout: const Duration(seconds: 60),
+        call: () => _db.functions.invoke(
+          'ekstre-esle',
+          body: {'iskelet': iskelet},
+        ),
+      );
+    } on FunctionException catch (e, st) {
+      if (e.status != 429 && e.status != 403) {
+        CrashReporter.report(e, st, reason: 'ekstre_esle_${e.status}');
+      }
+      throw EkstreAiHatasi(kota: e.status == 429, premium: e.status == 403);
+    }
+    final t = (res.data is Map) ? (res.data as Map)['tablolar'] : null;
+    if (t is! List) return const [];
+    return [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)];
+  }
 
   Future<void> sendPartnerInvitePush(String inviteId) async {
     final response = await _log.log(

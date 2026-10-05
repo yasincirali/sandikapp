@@ -7,13 +7,16 @@ import '../../providers/bulk_cart_provider.dart';
 import '../mevduat_hesabi.dart';
 import 'ekstre_tablosu.dart';
 import 'fon_adi.dart';
+import 'hareket_tablosu.dart';
 import 'mevduat_tablosu.dart';
 import 'pdf_okuyucu.dart';
 import 'tablo_anlama.dart';
 import 'tablo_okuyucular.dart';
 
-export 'ekstre_tablosu.dart' show EkstreOkumaHatasi;
+export 'ekstre_tablosu.dart' show EkstreAiHatasi, EkstreOkumaHatasi;
 export 'mevduat_tablosu.dart' show EkstreMevduati;
+export 'ekstre_iskeleti.dart' show ekstreIskeleti;
+export 'hareket_tablosu.dart' show EkstreHareketi;
 export 'tablo_anlama.dart' show EkstreAnlami, EkstreRol, EkstreRolAdi;
 
 /// Evrensel ekstre içe aktarma — dosya baytlarından `CsvImportService`'e.
@@ -47,9 +50,25 @@ class EkstreOkumaSonucu {
     this.belgeTarihi,
     this.kurum,
     this.adKodlari = const {},
+    this.tablolar = const [],
+    this.hareketler = const [],
+    this.aiOnerisi = false,
   });
 
   final EkstreBicimi bicim;
+
+  /// Okuyucunun ürettiği ham tablolar (anlamadan önce). Yalnız tanılama
+  /// iskeleti okur (`ekstreIskeleti`): "PDF'te sütunlar doğru bölündü mü"
+  /// sorusu anlama katmanından değil buradan yanıtlanır.
+  final List<EkstreTablosu> tablolar;
+
+  /// Hesap hareketlerindeki alım/satımlar (`hareket_tablosu.dart`). Yalnız
+  /// `kanonikMetin(hareketlerle: true)` kullanır (bayrak `ekstre_hareketleri`).
+  final List<EkstreHareketi> hareketler;
+
+  /// Eşleme yapay zekâ önerisinden geldi ([aiEslemesiyle]); kart
+  /// "kontrol et" der.
+  final bool aiOnerisi;
 
   /// En güçlüsü başta. Birden fazlası XLSX'in ayrı sayfaları ya da ayrı
   /// HTML/PDF tablolarıdır (ör. "Hisse" ve "Fon" sayfaları).
@@ -88,24 +107,47 @@ class EkstreOkumaSonucu {
   }
 
   /// Emin olunan tabloların birleşik kanonik metni.
-  String kanonikMetin() {
+  ///
+  /// [hareketlerle]: dönem içinde alınmış payların satırı, hesap
+  /// hareketindeki gerçek tarih ve fiyatla bölünür ([hareketlerleIncelt]).
+  /// Kapalıyken (bayrak `ekstre_hareketleri` kapalı) çıktı birebir eski.
+  String kanonikMetin({bool hareketlerle = false}) {
+    final k = _kanonik();
+    if (k == null) return '';
+    final satirlar = hareketlerle
+        ? hareketlerleIncelt(k.satirlar, k.sutunlar, hareketler).satirlar
+        : k.satirlar;
+    return [k.sutunlar.map((r) => r.kanonikBaslik).join('\t'), ...satirlar]
+        .join('\n');
+  }
+
+  /// Hareketle inceltilen varlık sayısı (önizleme notu için).
+  int hareketleIncelenen() {
+    final k = _kanonik();
+    if (k == null || hareketler.isEmpty) return 0;
+    return hareketlerleIncelt(k.satirlar, k.sutunlar, hareketler).incelen;
+  }
+
+  ({List<EkstreRol> sutunlar, List<String> satirlar})? _kanonik() {
     final secilen = _secilen;
-    if (secilen.isEmpty) return '';
+    if (secilen.isEmpty) return null;
     final tarihEkle = belgeTarihi != null &&
         secilen.any((a) => !a.roller.containsKey(EkstreRol.tarih));
     final sutunlar = EkstreAnlami.kanonikSutunlar(
       secilen,
       tarihEkle: tarihEkle,
     );
-    return [
-      sutunlar.map((r) => r.kanonikBaslik).join('\t'),
-      for (final a in secilen)
-        ...a.kanonikSatirlar(
-          sutunlar,
-          adKodlari: adKodlari,
-          varsayilanTarih: belgeTarihi,
-        ),
-    ].join('\n');
+    return (
+      sutunlar: sutunlar,
+      satirlar: [
+        for (final a in secilen)
+          ...a.kanonikSatirlar(
+            sutunlar,
+            adKodlari: adKodlari,
+            varsayilanTarih: belgeTarihi,
+          ),
+      ],
+    );
   }
 
   /// Koda çözülmesi gereken fon adları (tekil, belge sırasıyla).
@@ -155,9 +197,32 @@ class EkstreOkumaSonucu {
           ),
       ];
 
+  /// AI sütun eşlemesini uygular (`ekstre-esle` yanıtı). Tablo numarası
+  /// iskeletteki gibi 1'den; satır/sütun numaraları ham tablonun.
+  /// İçerik kapısını geçemeyen eşleme düşer ([tabloyuRollerleAnla]); hiçbiri
+  /// geçmezse `null` — ekran eski eşlemeyle kalır.
+  EkstreOkumaSonucu? aiEslemesiyle(List<Map<String, dynamic>> yanit) {
+    final yeni = <EkstreAnlami>[];
+    for (final x in yanit) {
+      final t = x['tablo'], b = x['baslik_satiri'], r = x['roller'];
+      if (t is! int || t < 1 || t > tablolar.length || r is! Map) continue;
+      final roller = <EkstreRol, int>{
+        for (final rol in EkstreRol.values)
+          if (r[rol.aiAdi] case final int c) rol: c,
+      };
+      final a = tabloyuRollerleAnla(
+          tablolar[t - 1], b is int ? b : -1, roller);
+      if (a != null) yeni.add(a);
+    }
+    if (yeni.isEmpty) return null;
+    yeni.sort((a, b) => b.veri.length.compareTo(a.veri.length));
+    return _kopya(anlamlar: yeni, aiOnerisi: true);
+  }
+
   EkstreOkumaSonucu _kopya({
     List<EkstreAnlami>? anlamlar,
     Map<String, String>? adKodlari,
+    bool? aiOnerisi,
   }) =>
       EkstreOkumaSonucu(
         bicim: bicim,
@@ -167,6 +232,9 @@ class EkstreOkumaSonucu {
         belgeTarihi: belgeTarihi,
         kurum: kurum,
         adKodlari: adKodlari ?? this.adKodlari,
+        tablolar: tablolar,
+        hareketler: hareketler,
+        aiOnerisi: aiOnerisi ?? this.aiOnerisi,
       );
 }
 
@@ -224,6 +292,8 @@ EkstreOkumaSonucu ekstreyiAnla(
     notlar: mevduat.notlar,
     belgeTarihi: belgeTarihiBul(metin),
     kurum: bankaAdiBul(metin),
+    tablolar: tablolar,
+    hareketler: hareketleriBul(tablolar),
   );
 }
 

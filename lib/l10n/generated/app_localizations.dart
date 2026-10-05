@@ -4934,6 +4934,66 @@ abstract class AppLocalizations {
   /// **'Sütunları düzelt'**
   String get importFixColumns;
 
+  /// No description provided for @importCopyDiagnostic.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tanılama metnini kopyala'**
+  String get importCopyDiagnostic;
+
+  /// No description provided for @importDiagnosticHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okunamayan ekstreyi düzeltebilmemiz için tablonun yapısını kopyalar. Ad, numara ve tutarlar maskelenir.'**
+  String get importDiagnosticHint;
+
+  /// No description provided for @importDiagnosticCopied.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tanılama metni kopyalandı.'**
+  String get importDiagnosticCopied;
+
+  /// No description provided for @importAiButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâyla eşle'**
+  String get importAiButton;
+
+  /// No description provided for @importAiHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tablonun yalnız yapısı gönderilir: ad, numara ve tutarlar gizlenir, belge telefonundan çıkmaz.'**
+  String get importAiHint;
+
+  /// No description provided for @importAiSuggested.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sütunları yapay zekâ önerdi; eşlemeyi kontrol et, gerekirse düzelt.'**
+  String get importAiSuggested;
+
+  /// No description provided for @importAiNoMatch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ da bu dosyada varlık tablosu bulamadı.'**
+  String get importAiNoMatch;
+
+  /// No description provided for @importAiLimit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünlük yapay zekâ eşleme hakkın doldu; yarın yeniden dene.'**
+  String get importAiLimit;
+
+  /// No description provided for @importAiFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâ eşlemesi şu an yapılamadı. Biraz sonra yeniden dene.'**
+  String get importAiFailed;
+
+  /// No description provided for @importTradesApplied.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} varlığın gerçek alış tarihi ve fiyatı hesap hareketlerinden alındı.'**
+  String importTradesApplied(int count);
+
   /// No description provided for @importDepositRow.
   ///
   /// In tr, this message translates to:
@@ -9306,7 +9366,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.'**
+  /// **'Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -10941,6 +11001,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Notun tamamı Premium\'da'**
   String get prmKilitNot;
+
+  /// No description provided for @prmKilitEkstreAi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâyla eşleme Premium\'da'**
+  String get prmKilitEkstreAi;
+
+  /// No description provided for @prmSatirEkstreAi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreyi yapay zekâyla okutma'**
+  String get prmSatirEkstreAi;
 
   /// No description provided for @prmHediyeBaslik.
   ///

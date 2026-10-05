@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="3652685b2ab1b158bc0c025fcdedeec492e11535b800ee2e86cff709497e1985">
-<meta name="sandik-govde-sha256" content="7879ba32d27a4f05352f2da581973bf58dc107ae9856d6d9202ef1b75fafab0c">
+<meta name="sandik-kaynak-sha256" content="4eed9d1f6e3f15ec5dd87a296695f946d5f2d487ca9d4b64efd48b6afaf103f3">
+<meta name="sandik-govde-sha256" content="e27bfc1d2796be19c8fab62d925190ade16b783b90f52edfb47d2e7bda76351f">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,7 +67,7 @@ button:hover { opacity: 0.9; }
 <h1>Gizlilik Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 5 Ekim 2026
 <strong>Son güncelleme:</strong> 5 Ekim 2026
-<strong>Sürüm:</strong> 1.5</p>
+<strong>Sürüm:</strong> 1.6</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
 <p>Bu uygulamayı (<strong>sandık</strong>, "Uygulama") <code>Yasin Çıralı</code> ("biz", "Şirket") işletmektedir.</p>
@@ -159,7 +159,7 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
-<p><strong>Ekstre içe aktarma:</strong> İçe aktardığınız banka veya aracı kurum ekstresi (PDF, Excel, CSV) yalnızca cihazınızda okunur; dosya sunucuya gönderilmez ve saklanmaz. Yalnızca sizin onayladığınız varlık kayıtları kaydedilir.</p>
+<p><strong>Ekstre içe aktarma:</strong> İçe aktardığınız banka veya aracı kurum ekstresi (PDF, Excel, CSV) yalnızca cihazınızda okunur; dosya sunucuya gönderilmez ve saklanmaz. Yalnızca sizin onayladığınız varlık kayıtları kaydedilir. Uygulama ekstrenin sütunlarından emin olamazsa ve siz "Yapay zekâyla eşle"ye basarsanız, tablonun anonim iskeleti (bkz. §5.4) sunucumuz üzerinden yapay zekâya gönderilir; dosyanın kendisi yine gönderilmez.</p>
 <h3>3.3 Cihaz ve Bildirim Verileri</h3>
 <table>
 <thead>
@@ -267,7 +267,7 @@ button:hover { opacity: 0.9; }
 <li>Hesap güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu) ile kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)</li>
 <li>Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)</li>
 <li>Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek</li>
-<li>Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor) erişim hakkınızı doğrulamak</li>
+<li>Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor, ekstrenin yapay zekâyla eşlenmesi) erişim hakkınızı doğrulamak</li>
 <li>Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek</li>
 </ol>
 <hr />
@@ -353,6 +353,13 @@ button:hover { opacity: 0.9; }
 <td>Haftalık varlık notu ve aylık rapor metni (bkz. §5.3)</td>
 <td>ABD</td>
 </tr>
+<tr>
+<td>Ekstre sütun eşleme (yapay zekâ; yalnızca siz isterseniz)</td>
+<td>Anthropic PBC</td>
+<td>Ekstredeki tabloların anonim iskeleti: sütun başlıkları ve genel finans kelimeleri; ad, numara, tutar ve tarihler maskeli</td>
+<td>Hangi sütunun sembol, adet, fiyat olduğunu bulmak (bkz. §5.4)</td>
+<td>ABD</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.</strong></p>
@@ -364,6 +371,10 @@ button:hover { opacity: 0.9; }
 <p>Varlık sayfalarındaki haftalık varlık notları ve aylık rapor, sunucumuzda Anthropic'in yapay zekâ modeli (Claude) ile yazılır. Not kullanıcı başına değil <strong>varlık başına</strong> bir kez yazılır: aynı varlığı tutan herkes aynı notu okur. Notunuzu açtığınızda ya da okuduğunuzda yapay zekâya bir istek gitmez; not veritabanından okunur.</p>
 <p>Modele yalnızca varlığın sembolü ve kamuya açık piyasa ölçümleri gönderilir (fiyat değişimi, işlem hacmi, fon büyüklüğü, para akışı ve yatırımcı sayısı). Adınız, e-postanız, hesap numaranız, kullanıcı adınız, tuttuğunuz miktar ve tutar ya da bir varlığı kimlerin tuttuğu gönderilmez. Hangi varlıklara not yazılacağı, kullanıcıların portföylerinde tutulan varlıkların toplu listesinden (en çok tutulandan başlayarak) seçilir; bu seçim de modele gitmez.</p>
 <p>Notlar otomatik üretilir ve yayımlanmadan önce otomatik olarak denetlenir: metindeki her sayı kaynak veriyle karşılaştırılır, al/sat/hedef fiyat dili içeren not yayımlanmaz. Notları bir insan tek tek okumaz; hata içerebilirler. Bir notta "yanlış sayı var" işaretlerseniz ya da açıklama yazarsanız bu geri bildirim hesabınızla birlikte saklanır ve yalnızca notların düzeltilmesi için kullanılır; başka kullanıcılara gösterilmez.</p>
+<h3>5.4 Ekstre Sütunlarının Yapay Zekâ ile Eşlenmesi</h3>
+<p>Ekstre dosyası her zaman cihazınızda okunur. Uygulama, tanımadığı bir düzende hangi sütunun sembol, adet ya da fiyat olduğundan emin olamazsa size "Yapay zekâyla eşle" seçeneğini gösterir. Bu seçeneğe <strong>siz basmadıkça</strong> hiçbir şey gönderilmez. Bu seçenek Premium içeriktir.</p>
+<p>Basarsanız cihazınız tablonun anonim bir iskeletini çıkarır ve sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderir. İskelette tablonun düzeni, sütun başlıkları ve genel finans kelimeleri ("Pay Adedi", "Birim Fiyat", "PORTFÖY") bulunur; ad, müşteri ve hesap numarası, T.C. kimlik numarası, adres, tutar ve tarihler maskelenir (her harf "A", her rakam "9" olur). Sunucumuz maskelenmemiş rakam içeren bir iskeleti modele göndermeden reddeder. Model yalnızca hangi sütunun ne olduğunu söyler; değerler yine cihazınızda dosyadan okunur ve eklemeden önce size gösterilir.</p>
+<p>İskelet ve modelin yanıtı saklanmaz. Kötüye kullanımı ve maliyeti sınırlamak için yalnızca isteğin zamanı, kullanılan model ve maliyeti hesabınızla birlikte 40 gün tutulur.</p>
 <hr />
 <h2>6. Yurt Dışına Veri Aktarımı</h2>
 <p>Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş ve e-posta hizmetleri de küresel altyapıda çalışır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
@@ -413,6 +424,10 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Premium hakkı kayıtları</td>
 <td>Hesap silinene kadar</td>
+</tr>
+<tr>
+<td>Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet ve yanıt saklanmaz)</td>
+<td>40 gün</td>
 </tr>
 <tr>
 <td>Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı)</td>
