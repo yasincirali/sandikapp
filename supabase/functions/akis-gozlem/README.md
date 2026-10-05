@@ -27,7 +27,7 @@ kurala uyan günleri `balina_olay`'a işler (0106). Amaç: fon sayfasındaki
 - İlk kurulum: 130 günlük pencere tur başına 14 günle dolar (~7 tur). Cron
   beklemeden doldurmak için `select public.trigger_akis_gozlem();` 90 sn
   arayla, yanıt `gun` küçülene kadar.
-- Saklama: 400 gün; eski satırlar aynı turda silinir.
+- Saklama: 140 gün (geri doldurma penceresi 130 + pay; 2026-10-05 DB kotası kararı); eski satırlar aynı turda silinir.
 - Auth: `x-cron-secret` = `TEFAS_NAV_CRON_SECRET` (Vault:
   `tefas_nav_cron_secret`) — observe-tefas-nav ile paylaşılır, fail-closed.
 - Gövde `{"dry_run": true}` → ilk günü okur, yazmaz.
