@@ -75,7 +75,7 @@ echo "== 6b) anon RPC'yi cagiramamali"
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token"   -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json"   -d "{\"p_token\":\"$TOK-anon-0123456789\",\"p_platform\":\"android\"}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon claim_push_token HTTP $HTTP"; exit 1; }
 
-echo "== 6c) Yasal onay (0102 + 0103 + 0104 + 0105) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu, 1.2/1.3 + acik riza metni, saklama fonksiyonlari istemciye kapali"
+echo "== 6c) Yasal onay (0102 + 0103 + 0104 + 0105 + 0109) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu, 1.2/1.3/1.4 + acik riza metni + kutu 1.1, saklama fonksiyonlari istemciye kapali"
 # Metin anon ile okunur (belgeler herkese acik). Onay yalniz RPC ile ve
 # yalniz sunucudaki metnin hash'iyle yazilir; doğrudan INSERT yetkisi yok.
 # Satir silinemez (tasarim geregi) — tohum kullanicida kalir; CI yigini taze.
@@ -155,6 +155,38 @@ YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${A
 TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
   "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
 [[ "$TURLER" == *"kosullar@1.3"* ]] || { echo "kapi sorgusu kosullar@1.3'u gormedi: $TURLER"; exit 1; }
+# 0109: okuma sadelestirme — belgeler 1.4 + kayit_tek_kutu 1.1 (tr, en).
+# Dort belge ve iki kutu anon ile okunur; 1.3 ve kutu 1.0 yerinde (degismez).
+# Yeni istemcinin kayit cagrisi TEK cagridir: kutu 1.1 + kosullar (nitelik
+# kabul) + gizlilik/kvkk (nitelik bilgilendirme, sonuna kadar okunmadi) +
+# acik riza (sonuna kadar okundu). Fonksiyon degismedi; eslemenin bu
+# turlerin hepsini kabul ettigi burada da sinanir. Kapi sorgusu en yeni
+# surumleri gorur.
+for T in kosullar gizlilik_politikasi kvkk_aydinlatma acik_riza_metni; do
+  H=$(metin_hash "$T" 1.4 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.4/tr metni okunamadi (0109)"; exit 1; }
+  H=$(metin_hash "$T" 1.3 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.3/tr kaybolmus (0109 eski satira dokunmamali)"; exit 1; }
+done
+for D in tr en; do
+  H=$(metin_hash kayit_tek_kutu 1.1 "$D")
+  [[ ${#H} == 64 ]] || { echo "kayit_tek_kutu/1.1/$D metni okunamadi (0109)"; exit 1; }
+  H=$(metin_hash kayit_tek_kutu 1.0 "$D")
+  [[ ${#H} == 64 ]] || { echo "kayit_tek_kutu/1.0/$D kaybolmus (0109 eski satira dokunmamali)"; exit 1; }
+done
+KU11=$(metin_hash kayit_tek_kutu 1.1 tr)
+K14=$(metin_hash kosullar 1.4 tr)
+G14=$(metin_hash gizlilik_politikasi 1.4 tr)
+V14=$(metin_hash kvkk_aydinlatma 1.4 tr)
+A14=$(metin_hash acik_riza_metni 1.4 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kayit_tek_kutu\",\"surum\":\"1.1\",\"dil\":\"tr\",\"hash\":\"$KU11\",\"degiskenler\":{\"SUPABASE_ULKE\":\"duman\"}},{\"tur\":\"kosullar\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$K14\",\"degiskenler\":{\"nitelik\":\"kabul\",\"belge_acildi\":false,\"sonuna_kadar_okundu\":false}},{\"tur\":\"gizlilik_politikasi\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$G14\",\"degiskenler\":{\"nitelik\":\"bilgilendirme\",\"belge_acildi\":true,\"sonuna_kadar_okundu\":false}},{\"tur\":\"kvkk_aydinlatma\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$V14\",\"degiskenler\":{\"nitelik\":\"bilgilendirme\",\"belge_acildi\":false,\"sonuna_kadar_okundu\":false}},{\"tur\":\"acik_riza_metni\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$A14\",\"degiskenler\":{\"nitelik\":\"acik_riza\",\"belge_acildi\":true,\"sonuna_kadar_okundu\":true}}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" =~ ^[0-5]$ ]] || { echo "0109 kayit cagrisi beklenmeyen donus: $YAZILAN"; exit 1; }
+TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
+  "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
+[[ "$TURLER" == *"kayit_tek_kutu@1.1"* && "$TURLER" == *"kosullar@1.4"* && "$TURLER" == *"gizlilik_politikasi@1.4"* \
+   && "$TURLER" == *"kvkk_aydinlatma@1.4"* && "$TURLER" == *"acik_riza_metni@1.4"* ]] \
+  || { echo "kapi sorgusu 0109 surumlerini gormedi: $TURLER"; exit 1; }
 # 0105: iki saklama fonksiyonu (Auth guvenlik kaydi 90 gun, anonim silme
 # kaydi 3 yil) yalniz cron'dan kosar — istemci cagiramaz; silme kaydi
 # tablosu istemciye bos gorunur (RLS, politika yok — 0007).

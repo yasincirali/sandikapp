@@ -106,7 +106,12 @@ abstract final class YasalTur {
   /// Kayıt formu, iki kutulu düzen: "Açık Rıza: Yurt Dışı Veri Aktarımı".
   static const kayitKutuRiza = 'kayit_kutu_riza';
 
-  /// Kayıt formu, tek kutulu düzen (bayrak `tek_onay_kutusu`).
+  /// Kayıt formunun ve yeniden onay kapısının tek kutusu. 1.0 (2026-10-04):
+  /// Koşullar + KVKK + 18+ + yurt dışı aktarım AÇIK RIZASI tek cümlede.
+  /// 1.1 (2026-10-05, okuma sadeleştirme): Koşulların kabulü + 18+ +
+  /// Gizlilik ve KVKK ile "bilgilendirildim"; açık rıza ÇIKTI (yalnız Açık
+  /// Rıza Metni'nin sonunda verilir). Tür aynı kaldı — bkz.
+  /// [YasalMetinKatalogu.kutuSurumu].
   static const kayitTekKutu = 'kayit_tek_kutu';
 
   /// Zirvedeki Portföyler açık rıza kartı (`ZirveRizaKarti`, 0091).
@@ -166,6 +171,37 @@ enum YasalBelge {
   String get surum => yasalMdSurum(md);
   String? get yururluk => yasalMdYururluk(md);
   String get baslik => yasalMdBaslik(md);
+
+  /// Kayıtta ve kapıda sonuna kadar okunup EN SONUNDA onaylanan belge mi?
+  ///
+  /// Kullanıcı kararı (2026-10-05): *"Tüm hepsini içinden onaylatmak çok
+  /// uzun bir process gibi oldu."* 1.3'te dört belgenin dördü sonuna kadar
+  /// okutuluyordu. 1.4'ten beri YALNIZ Açık Rıza Metni:
+  /// - rıza en sıkı tutulması gereken metindir (KVKK m.3: "belirli bir
+  ///   konuya ilişkin, bilgilendirilmeye dayanan ve özgür iradeyle
+  ///   açıklanan") ve kısadır; rıza metnin sonundaki düğmeyle verilir,
+  ///   başka hiçbir beyanla paketlenmez;
+  /// - Kullanım Koşulları sözleşmedir: kabul tek açık eylemle (kutu)
+  ///   alınır, okuma şartı kabulün geçerliliğini artırmıyordu;
+  /// - Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirmedir: KVKK
+  ///   Kurumu aydınlatmanın rıza gibi "onaylatılmasını" önermez — sunulur,
+  ///   kutu cümlesi "bilgilendirildim" der.
+  /// Diğer üçü bağlantıdır, salt okunur açılır ([nitelik]).
+  bool get sonunaKadarOkunur => this == acikRiza;
+
+  /// Onay kaydının `degiskenler.nitelik` alanı — kaydın neyin kanıtı
+  /// olduğunu kendisi söylesin: `kabul` (sözleşme, kutuyla), `bilgilendirme`
+  /// (sunuldu; onaya bağlı değil), `acik_riza` (metnin sonunda verildi).
+  String get nitelik => switch (this) {
+        kosullar => 'kabul',
+        gizlilik || kvkk => 'bilgilendirme',
+        acikRiza => 'acik_riza',
+      };
+
+  /// Kutuyla kabul edilen ya da kutuda "bilgilendirildim" denen belgeler
+  /// (Koşullar, Gizlilik, KVKK). Bunlardan biri eksikse kapı kutuyu sorar.
+  static List<YasalBelge> get kutuylaAlinanlar =>
+      [for (final b in values) if (!b.sonunaKadarOkunur) b];
 
   static final Map<YasalBelge, List<LegalBlock>> _bloklar = {};
 
@@ -314,7 +350,7 @@ class YasalMetin {
 ///    kapısını (`YasalOnayKapisiScreen`, bayrak `yasal_kapi_en_yeni`)
 ///    görür; eski onay satırı ve eski metin satırı DB'de aynen kalır.
 ///
-/// **Kutular / Zirve:** kutu metni değişirse [YasalMetinKatalogu.kutuSurumu],
+/// **Kutu / Zirve:** kutu metni değişirse [YasalMetinKatalogu.kutuSurumu],
 /// Zirve kartı değişirse `LeaderboardService.zirveRizaMetniSurumu`; sonra
 /// 3–6.
 ///
@@ -328,10 +364,37 @@ class YasalMetin {
 /// güvenlik kaydı 90 gün + anonim silme kaydı 3 yıl (ikisi de cron'la
 /// silinir) ve zorunlu okumanın gerçeği ("her metin tam gösterilir,
 /// sonuna kadar okunur, en altta onaylanır"); dört belge birlikte arttı.
+/// 1.4 (0109, 2026-10-05, okuma sadeleştirme): yalnız Açık Rıza Metni
+/// sonuna kadar okunur ([YasalBelge.sonunaKadarOkunur]); Koşullar kutuyla
+/// kabul edilir, Gizlilik ve KVKK bilgilendirme olarak sunulur. Dört
+/// belgenin dördü bunu anlatan cümlelerle arttı; kutu 1.1.
 abstract final class YasalMetinKatalogu {
-  /// Kayıt kutularının sürümü. Kutu başlığında `v$disclaimerVersion`
-  /// görünüyor; kullanıcının gördüğü etiketle aynı kalsın diye o sayı.
-  static const kutuSurumu = disclaimerVersion;
+  /// Tek kutunun sürümü — kutu cümlesi değişince artar.
+  ///
+  /// 1.0'a kadar `disclaimerVersion`'a bağlıydı (kutu başlığı `v1.0`
+  /// yazıyordu, yatırım uyarısıyla aynı sayı). 1.1'de (2026-10-05) kutu
+  /// cümlesi değişti — açık rıza çıktı, Gizlilik/KVKK "bilgilendirildim"
+  /// oldu — ama yatırım uyarısı değişmedi; `disclaimerVersion`'ı artırmak
+  /// `disclaimer_acceptances` kapısını herkese yeniden açardı. Ayrıldı.
+  ///
+  /// ## Karar: aynı tür (`kayit_tek_kutu`), yeni sürüm; 1.0 tamam SAYILMAZ
+  /// - Aynı tür: kutu aynı yerde aynı işi görür (kayıt/kapı taahhüdü). Tür
+  ///   check'i ve RPC'nin kanal–tür eşlemesi değişmez (fonksiyon gövdesine
+  ///   dokunulmaz); her sürümün metni `yasal_metinler`'de kendi satırında
+  ///   durduğu için 1.0'ın rıza içerdiği, 1.1'in içermediği kayıttan okunur.
+  ///   Eski istemci de doğru davranır: `>=` kuralıyla 1.1'i kendi 1.0'ının
+  ///   yerine sayar; sunucuda 1.1'i görünce `uygulamaEski` kapıyı açmaz.
+  /// - 1.0 tamam sayılmaz: Koşullar 1.4'ün kabulü bu kutuyla verilir, kapı
+  ///   1.4 için herkese zaten bir kez açılacak ve kutuyu o tek seferde
+  ///   sorar — ek yük yok, çift onay yok (iki ayrı ekran olmaz). 1.0'ı
+  ///   tamam saymak, kutusu 1.0 olan bir hesabın Koşullar 1.4 kabulünü
+  ///   kutusuz bırakabilirdi (ör. belgeleri başka yoldan 1.4'e gelen).
+  static const kutuSurumu = '1.1';
+
+  /// Eski iki kutunun (`kayit_kutu_kosullar`, `kayit_kutu_riza`) sürümü —
+  /// 2026-10-04'te kalktılar; metinleri onları onaylamış kullanıcıların
+  /// kayıtları için katalogda ve DB'de durur. Değişmez.
+  static const eskiKutuSurumu = disclaimerVersion;
 
   /// Bir belgenin katalog kaydı — gövde md'nin kendisi (şablon).
   static YasalMetin belge(YasalBelge b) => YasalMetin(
@@ -370,7 +433,7 @@ abstract final class YasalMetinKatalogu {
 
   static YasalMetin kayitKutuKosullar() => const YasalMetin(
         tur: YasalTur.kayitKutuKosullar,
-        surum: kutuSurumu,
+        surum: eskiKutuSurumu,
         dil: 'tr',
         baslik: KayitKutuMetni.kosulBaslik,
         govde: '${KayitKutuMetni.kosulBaslik}\n\n'
@@ -380,7 +443,7 @@ abstract final class YasalMetinKatalogu {
 
   static YasalMetin kayitKutuRiza() => YasalMetin(
         tur: YasalTur.kayitKutuRiza,
-        surum: kutuSurumu,
+        surum: eskiKutuSurumu,
         dil: 'tr',
         baslik: KayitKutuMetni.rizaBaslik,
         govde: '${KayitKutuMetni.rizaBaslik}\n\n'
@@ -403,16 +466,21 @@ abstract final class YasalMetinKatalogu {
     );
   }
 
-  /// Tek kutunun cümlesi, ekranda okunduğu düz hâliyle. 2026-10-04: KVKK
-  /// Aydınlatma Metni cümlede AYRI bağlantı oldu (eskiden "Yasal Koşulları,
-  /// KVKK Aydınlatma Metni" tek bağlantıydı ve yalnız Koşulları açıyordu);
-  /// okunan metin harfi harfine aynı kaldı → hash ve sürüm aynı. "açık
-  /// rıza" bağlantısı 1.2'den beri Açık Rıza Metni'ni açar (önceden Gizlilik
-  /// Politikası'nı); cümle aynı.
+  /// Tek kutunun cümlesi, ekranda okunduğu düz hâliyle (üç belge adı
+  /// ekranda bağlantıdır). Kutu 1.1 (2026-10-05): "Kullanım Koşulları'nı
+  /// kabul ediyorum ve 18 yaşından büyüğüm. Gizlilik Politikası ve KVKK
+  /// Aydınlatma Metni ile bilgilendirildim." — açık rıza İÇERMEZ (rıza
+  /// başka beyanla paketlenmez; `test/zorunlu_okuma_test` kilitler). 1.0
+  /// cümlesi Koşullar + KVKK'yı "kabul" ediyor ve aynı cümlede yurt dışı
+  /// aktarıma açık rıza veriyordu (metni DB'de, `kayit_tek_kutu/1.0`).
   static String tekKutuCumlesi(AppLocalizations l) => l.tekOnayCumle(
-      l.tekOnayKosullarBaglanti, l.tekOnayKvkkBaglanti, l.tekOnayRizaBaglanti);
+      l.tekOnayKosullarBaglanti,
+      l.tekOnayGizlilikBaglanti,
+      l.tekOnayKvkkBaglanti);
 
   /// Yeniden onay kapısının aradığı belgeler — katalogdaki GÜNCEL sürümleri.
+  /// Dördü de aranır (bilgilendirme belgeleri de: sunulduklarının kaydı
+  /// tutulur); NASIL alındıkları [YasalBelge.sonunaKadarOkunur]'a bağlı.
   static List<YasalMetin> zorunluBelgeler() =>
       [for (final b in YasalBelge.values) belge(b)];
 

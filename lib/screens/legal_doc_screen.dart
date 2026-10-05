@@ -75,8 +75,9 @@ class LegalDocs {
 
 // ─── Zorunlu okuma: onay istenen metinler ─────────────────────────────────────
 
-/// Onay istenen bir metin — kayıt ekranının ve yeniden onay kapısının
-/// listesi (bayrak `zorunlu_okuma`). Kimlik `YasalTur`; gösterim blokları
+/// Bir yasal metnin ekrandaki kimliği — ad, ikon, bloklar ve (zorunlu
+/// okumada) sonundaki onay düğmesinin yazımı. Sonuna kadar okutulanlar
+/// [liste]'dedir (1.4: Açık Rıza Metni + yatırım uyarısı). Kimlik `YasalTur`; gösterim blokları
 /// tek kaynaktan gelir: belgeler `legal/tr/*.md`, yatırım uyarısı
 /// `disclaimerText` (onay kaydına hash'lenen metnin KENDİSİ). Burada yeni
 /// metin yazılmaz; yalnız ad, ikon ve onay düğmesi etiketi seçilir.
@@ -141,13 +142,37 @@ class ZorunluMetin {
         onayAdaylari: [l.zorunluOkumaOnayla, l.zorunluOkumaOnaylaKisa],
       );
 
-  /// Dört belge (kapı ve Ayarlar sırasıyla) + istenirse yatırım uyarısı.
+  /// Sonuna kadar okunup sonunda onaylanması gereken metinler — 1.4'ten
+  /// (okuma sadeleştirme, 2026-10-05) beri YALNIZ Açık Rıza Metni
+  /// ([YasalBelge.sonunaKadarOkunur]) + istenirse yatırım uyarısı. [riza]
+  /// `false`: rıza zaten geçerli (kapıda yalnız diğer metinler eksik).
+  /// Koşullar, Gizlilik ve KVKK bu listede DEĞİL — [belgeyiAc] ile salt
+  /// okunur açılır.
   static List<ZorunluMetin> liste(AppLocalizations l,
-          {required bool yatirimUyarisiDahil}) =>
+          {required bool yatirimUyarisiDahil, bool riza = true}) =>
       [
-        for (final b in YasalBelge.values) belge(l, b),
+        for (final b in YasalBelge.values)
+          if (b.sonunaKadarOkunur && riza) belge(l, b),
         if (yatirimUyarisiDahil) yatirimUyarisi(l),
       ];
+}
+
+/// [b]'yi SALT OKUNUR açar (onay düğmesi yok, okuma şartı yok) — kayıt ve
+/// kapıdaki bilgilendirme/kabul belgeleri (Koşullar, Gizlilik, KVKK) ve
+/// geçerli rızası olan kullanıcıda Açık Rıza Metni. Ayarlar'daki belgelerle
+/// aynı görünüş; ad ve ikon [ZorunluMetin.belge]'den (liste satırıyla aynı).
+Future<void> belgeyiAc(BuildContext context, YasalBelge b) {
+  final m = ZorunluMetin.belge(context.l10n, b);
+  return pushGuarded<void>(
+    context,
+    adaptiveRoute(
+      builder: (_) => LegalDocScreen(
+        title: m.adaylar.first,
+        icon: m.ikon,
+        blocks: m.bloklar(),
+      ),
+    ),
+  );
 }
 
 /// [m]'yi zorunlu okuma kipinde açar. `null`: kullanıcı onaylamadan geri
@@ -177,7 +202,8 @@ class LegalDocScreen extends StatefulWidget {
   /// Zorunlu okuma (2026-10-04): onay düğmesi metnin EN SONUNDA, listenin
   /// son öğesidir ve ancak sona ulaşılınca açılır; okurken altta ilerleme +
   /// "sona kadar oku" ipucu durur. Dönüş [ZorunluOkumaSonucu]. Açmak için
-  /// [zorunluOkumaAc]. `false` = yalnız okuma (Ayarlar'daki belgeler).
+  /// [zorunluOkumaAc]. `false` = yalnız okuma (Ayarlar'daki belgeler;
+  /// 1.4'ten beri kayıt/kapıdaki Koşullar, Gizlilik, KVKK — [belgeyiAc]).
   ///
   /// 2026-10-05: eski onay kipi `confirmMode` (alt sabit "Okudum ve
   /// onaylıyorum" çubuğu, `true` dönüşü) yalnız bayrak `zorunlu_okuma`

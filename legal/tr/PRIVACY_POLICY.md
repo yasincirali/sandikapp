@@ -2,7 +2,7 @@
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 
 ---
 
@@ -62,7 +62,9 @@ Politika; KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu), GDPR (EU 20
 ### 3.4 Yasal Onay Kayıtları
 | Veri | Amaç | Hukuki dayanak |
 |---|---|---|
-| Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, onayın alındığı ekran, platform, uygulama sürümü, dil ve size gösterilen sunucu ülkesi; yatırım uyarısında ayrıca cihaz modeli | Hangi metni hangi sürümüyle ne zaman onayladığınızın kanıtı | KVKK 5(2)(e) — bir hakkın tesisi, kullanılması veya korunması; yatırım uyarısı için KVKK 5(2)(a) |
+| Yasal metin onay ve bilgilendirme kayıtları: kabul edilen ya da size sunulan metin ve sürümü, zamanı, alındığı ekran, platform, uygulama sürümü, dil, size gösterilen sunucu ülkesi, belgeyi açıp açmadığınız ve metnin sonuna kadar okunup okunmadığı; yatırım uyarısında ayrıca cihaz modeli | Hangi metni hangi sürümüyle ne zaman kabul ettiğinizin ya da size sunulduğunun kanıtı | KVKK 5(2)(e) — bir hakkın tesisi, kullanılması veya korunması; yatırım uyarısı için KVKK 5(2)(a) |
+
+Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır ve kabulünüze bağlı değildir: kayıtta ve onay ekranında bağlantı olarak sunulur; kayıt, metnin size sunulduğunu ve onay kutusunda bilgilendirildiğinizi belirttiğinizi gösterir.
 
 ### 3.5 Otomatik Toplanan Veriler
 | Veri | Amaç |
@@ -130,7 +132,7 @@ Ortaklık kurduğunuz kullanıcı, kullanıcı adınızı, portföyünüzdeki va
 Supabase veritabanı {SUPABASE_ULKEDE}, Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş ve e-posta hizmetleri de küresel altyapıda çalışır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
 
 - **AB üyesi kullanıcılar için:** Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.
-- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı kayıt sırasında onayladığınız "Açık Rıza Metni" ile vermektesiniz.
+- **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
 
@@ -241,7 +243,7 @@ Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte a
 Bu politikada değişiklik yaptığımızda:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır
 - "Son güncelleme" tarihi yenilenir
-- Önemli değişikliklerde bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir ve yeniden onayınız istenir
+- Önemli değişikliklerde bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir; devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
 - Yeni bir veri işleme, üçüncü taraf ya da saklama süresi ancak bu metin güncellenerek eklenir
 
 ---

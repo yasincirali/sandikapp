@@ -1,12 +1,43 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-05 Okuma sadeleştirme — belgeler 1.4 + kutu 1.1 (0109) — dal `feat/okuma-sadelestir` (yerel, push yok)
+
+Kullanıcı kararı (2026-10-05): *"Tüm hepsini içinden onaylatmak çok uzun bir
+process gibi oldu."* Kayıtta ve kapıda artık YALNIZ **Açık Rıza Metni**
+(sonuna kadar okunur, rıza metnin sonunda) ve **Yatırım Uyarısı** okunur.
+Koşullar / Gizlilik / KVKK salt okunur bağlantı; tek kutu (1.1): "Kullanım
+Koşulları'nı kabul ediyorum ve 18 yaşından büyüğüm. Gizlilik Politikası ve
+KVKK Aydınlatma Metni ile bilgilendirildim." — açık rıza İÇERMEZ.
+
+**⚠️ Migration numarası GEÇİCİ (0109).** Dağıtımdan önce iki sunucunun
+defterini sorgula (`supabase_migrations.schema_migrations`, son numara);
+0109 doluysa dosyayı sıradaki boş numaraya yeniden adlandır (balina dersi).
+İçerik yalnız ekler ve kendini doğrular; numara gövdeyi etkilemez.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı "yasal metin yok:
+kosullar/1.4/tr" ile reddedilir, kapı her açılışta yeniden sorar):**
+- [ ] 1. Migration → **iki sunucuya** (`supabase-deploy.yml`, hedef `ikisi`;
+      Frankfurt → Tokyo). Fonksiyon/şema değişmez, yalnız 6 metin satırı.
+      Doğrula (salt okunur):
+      `select tur, surum, dil from yasal_metinler where surum = '1.4' or (tur = 'kayit_tek_kutu' and surum = '1.1') order by 1, 3;`
+      → 4 belge 1.4 + kutu 1.1 (tr, en); 1.3 ve kutu 1.0 yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). Pages web'i de 1.4 ile yayınlar.
+- **1.3'ü onaylamış herkes 1.4'ü BİR KEZ görür:** bir sonraki açılışta kapıda
+  "Güncellenen belgeler" + "Neler değişti" (1.4); Açık Rıza Metni'ni sonuna
+  kadar okuyup onaylar, kutuyu işaretler, tek dokunuşla biter (tek RPC).
+  Eski kutu 1.0 tamam sayılmaz — kutu o tek seferde alınır, ikinci ekran yok.
+  1.3 taşıyan eski sürümler sunucuda 1.4'ü görünce kapıyı hiç açmaz (çift
+  onay yok — `uygulamaEski`, test `test/yasal_onay_service_test.dart`
+  "0109").
 
 ## ⏳ 2026-10-05 Bayrak temizliği — dal `feat/bayrak-temizligi` (yerel, PR senin onayında)
 

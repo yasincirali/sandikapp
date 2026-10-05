@@ -2,8 +2,8 @@
 
 **Effective date:** October 5, 2026
 **Last updated:** October 5, 2026
-**Version:** 1.3
-**Source:** TR 1.3 (translation of the Turkish text; the Turkish version prevails)
+**Version:** 1.4
+**Source:** TR 1.4 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -63,7 +63,9 @@ The policy is prepared to meet the requirements of KVKK (Turkish Personal Data P
 ### 3.4 Legal Acceptance Records
 | Data | Purpose | Legal basis |
 |---|---|---|
-| Legal text acceptances: the accepted text and its version, time of acceptance, the screen where it was given, platform, app version, language and the server country shown to you; for the investment disclaimer also the device model | Proof of which text you accepted, in which version and when | KVKK 5(2)(e) — establishment, exercise or protection of a right; for the investment disclaimer KVKK 5(2)(a) |
+| Legal text acceptance and information records: the text accepted by you or presented to you and its version, the time, the screen, platform, app version, language, the server country shown to you, whether you opened the document and whether the text was read to the end; for the investment disclaimer also the device model | Proof of which text you accepted, or which text was presented to you, in which version and when | KVKK 5(2)(e) — establishment, exercise or protection of a right; for the investment disclaimer KVKK 5(2)(a) |
+
+The Privacy Policy and the KVKK Disclosure are for information and do not depend on your acceptance: they are offered as links at registration and on the consent screen; the record shows that the text was presented to you and that you stated in the box that you have been informed.
 
 ### 3.5 Automatically Collected Data
 | Data | Purpose |
@@ -131,7 +133,7 @@ A user you have a partnership with sees your username and the assets, quantities
 Because the Supabase database is hosted {SUPABASE_ULKEDE} and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in and email services also run on global infrastructure. Under KVKK Article 9 and GDPR Articles 44-49:
 
 - **For EU/EEA users:** Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.
-- **For Turkish users:** **Explicit consent** is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni") you accept at registration.
+- **For Turkish users:** **Explicit consent** is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni"), which you read to the end and accept at the end of the text during registration (or on the consent screen at the first sign-in with Apple or Google); this consent is not collected together with any other declaration.
 
 The destination countries (Supabase: {SUPABASE_ULKE}; Firebase: USA) are not on the list of countries with adequate protection announced by the Turkish Data Protection Board; therefore international transfer is based on your **explicit consent**.
 
@@ -242,7 +244,7 @@ The full text of this notice is shown to you during registration (and on the con
 When we change this policy:
 - The new text is published with a new version number; the text on the website and in the App is always the same
 - The "Last updated" date is refreshed
-- For material changes, the current text and a summary of the changes are shown on the next launch and your renewed acceptance is requested
+- For material changes, the current text and a summary of the changes are shown on the next launch; before continuing you are asked to state in the box that you have been informed by the current text
 - A new processing activity, third party or retention period is added only by updating this text
 
 ---

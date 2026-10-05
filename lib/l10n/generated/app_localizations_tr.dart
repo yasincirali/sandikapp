@@ -5462,29 +5462,26 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String tekOnayAciklama(String ulke) {
-    return 'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ($ulke) ve Firebase (ABD/Küresel) üzerinde saklanır; açık rızanı istediğin zaman geri çekebilirsin (hesap silme).';
+    return 'Uygulama yatırım tavsiyesi değildir; gösterilen fiyatlar ve teknik analiz bilgi amaçlıdır. Verilerin Supabase ($ulke) ve Firebase (ABD/Küresel) üzerinde saklanır; ayrıntısı Gizlilik Politikası ve KVKK Aydınlatma Metni\'nde.';
   }
 
   @override
   String get tekOnayUlkeBilinmiyor => 'yurt dışı';
 
   @override
-  String tekOnayCumle(String kosullar, String kvkk, String riza) {
-    return '$kosullar, $kvkk\'ni ve 18+ olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına $riza veriyorum.';
+  String tekOnayCumle(String kosullar, String gizlilik, String kvkk) {
+    return '$kosullar\'nı kabul ediyorum ve 18 yaşından büyüğüm. $gizlilik ve $kvkk ile bilgilendirildim.';
   }
 
   @override
-  String get tekOnayKosullarBaglanti => 'Yasal Koşulları';
+  String get tekOnayKosullarBaglanti => 'Kullanım Koşulları';
 
   @override
   String get tekOnayKvkkBaglanti => 'KVKK Aydınlatma Metni';
 
   @override
-  String get tekOnayRizaBaglanti => 'açık rıza';
-
-  @override
   String get tekOnayGerekli =>
-      'Devam etmek için yasal koşulları kabul edip yurt dışı aktarıma açık rıza vermelisin.';
+      'Devam etmek için kutuyu işaretleyip Kullanım Koşulları\'nı kabul etmelisin.';
 
   @override
   String get arenaMeasuring => 'Fark ölçülüyor…';
@@ -5525,18 +5522,18 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiAciklamaGuncel =>
-      'Yasal belgelerimizi güncelledik. Devam etmek için güncel hâllerini okuyup onaylaman gerekiyor.';
+      'Yasal belgelerimizi güncelledik. Devam etmek için aşağıdaki adımları tamamla.';
 
   @override
   String get yasalKapiAciklamaIlk =>
-      'Uygulamayı kullanmaya başlamadan önce aşağıdaki belgeleri okuyup onaylaman gerekiyor.';
+      'Uygulamayı kullanmaya başlamadan önce aşağıdaki adımları tamamla.';
 
   @override
   String get yasalKapiNelerDegisti => 'Neler değişti';
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.3: Süresi belirtilmemiş iki kayda saklama süresi geldi ve artık otomatik siliniyorlar: oturum açma güvenlik kaydı (IP, cihaz/tarayıcı) 90 gün, anonim hesap silme kaydı silmeden sonra 3 yıl tutulur. Ayrıca onay metinlerinin sunuluşu bugünkü işleyişe göre yazıldı: kayıtta ve Apple veya Google ile ilk girişte her metin tam gösterilir, sonuna kadar okunur ve en altta onaylanır.';
+      'Sürüm 1.4: Onay adımları sadeleşti. Açık Rıza Metni yine sonuna kadar okunur ve rızan metnin sonunda verilir; bu rıza artık başka bir beyanla birlikte alınmıyor. Kullanım Koşulları\'nı tek bir kutuyla kabul ediyorsun. Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır: bağlantıyla açılır, onayına bağlı değildir. Belgeler bu işleyişi anlatacak şekilde güncellendi; işlenen veriler, üçüncü taraflar ve saklama süreleri değişmedi.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -5568,8 +5565,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yasalKapiOnaylaKisa => 'Kabul ediyorum';
 
   @override
-  String get yasalKapiKutuGerekli =>
-      'Devam etmek için kutuları işaretlemelisin.';
+  String get yasalKapiKutuGerekli => 'Devam etmek için kutuyu işaretlemelisin.';
 
   @override
   String get yasalKapiKayitHatasi =>
@@ -5609,20 +5605,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String get zorunluOkumaOnaylandi => 'Onaylandı';
 
   @override
-  String get zorunluOkumaBelgelerBaslik => 'Okuyup onaylaman gerekenler';
+  String get zorunluOkumaBelgelerBaslik => 'Yasal metinler';
 
   @override
   String get zorunluOkumaBelgelerAciklama =>
-      'Her metni aç, sonuna kadar oku ve en altta onayla.';
+      'İşaretli metinleri sonuna kadar okuyup en altta onayla; diğer belgeleri dokunarak okuyabilirsin.';
 
   @override
   String zorunluOkumaEksik(String belgeler) {
     return 'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: $belgeler';
   }
-
-  @override
-  String get zorunluOkumaKutuKilitli =>
-      'Önce yukarıdaki metinlerin hepsini okuyup onayla.';
 
   @override
   String zorunluOkumaSayac(int onayli, int toplam) {
@@ -5884,4 +5876,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String weekVolumeRow(String date) {
     return 'Olağandışı hacim · $date';
   }
+
+  @override
+  String get tekOnayGizlilikBaglanti => 'Gizlilik Politikası';
+
+  @override
+  String get yasalBelgeAcildi => 'Açıldı';
+
+  @override
+  String get zorunluOkumaSatirEtiketi => 'Sonuna kadar oku ve onayla';
 }

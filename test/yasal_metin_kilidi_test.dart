@@ -131,7 +131,8 @@ void main() {
         kutuUlkesi: 'Almanya (AB)',
         belgeDegiskenleri: const {'SUPABASE_ULKE': 'Almanya (AB)'},
         kosulBelgesiAcildi: false,
-        rizaBelgesiAcildi: false,
+        // Açık Rıza Metni yalnız sonuna kadar okunup onaylanınca girer.
+        sonunaKadarOkunanlar: {if (zorunlu) YasalTur.acikRiza},
         // Zorunlu okuma: yatırım uyarısı da kayıt öğesi olur (0104).
         yatirimUyarisiOnaylandi: zorunlu,
       ).ogeler();
@@ -185,7 +186,6 @@ void main() {
         kutuUlkesi: 'x',
         belgeDegiskenleri: const {},
         kosulBelgesiAcildi: true,
-        rizaBelgesiAcildi: true,
         sonunaKadarOkunanlar: {
           for (final b in YasalBelge.values) b.tur,
           YasalTur.yatirimUyarisi,
@@ -311,22 +311,50 @@ void main() {
     expect(sql, isNot(contains(RegExp(r'(alter|drop|create)\s+\w*\s*\w*\s*auth\.'))));
   });
 
-  test('1.3: onay metinleri tam gösterilir, sonuna kadar okunur (0104 gerçeği)',
-      () {
-    // 1.2'deki "Bu uyarının özeti kayıt ekranındaki onay kutusunda yer
-    // alır" cümlesi zorunlu okumayla (bayrak `zorunlu_okuma`) yanlış oldu.
-    const eski = 'Bu uyarının özeti kayıt ekranındaki onay kutusunda';
-    const yeni = 'Bu uyarının tam metni kayıt sırasında';
-    for (final m in [
-      YasalMetinKatalogu.kosullar(),
-      YasalMetinKatalogu.gizlilik(),
-    ]) {
-      expect(m.govde, isNot(contains(eski)), reason: m.anahtar);
-      expect(m.govde, contains(yeni), reason: m.anahtar);
+  test(
+      '1.4: yalnız Açık Rıza Metni sonuna kadar okunur; Koşullar kutuyla, '
+      'Gizlilik ve KVKK bilgilendirme (okuma sadeleştirme 2026-10-05)', () {
+    // 1.3'ün "her metin tam gösterilir, sonuna kadar okunur, onay en altta
+    // verilir" cümleleri uygulamanın yeni davranışında yanlış olurdu.
+    final kosullar = YasalMetinKatalogu.kosullar().govde;
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    final riza = YasalMetinKatalogu.acikRiza().govde;
+    expect(kosullar,
+        isNot(contains('her birini sonuna kadar okuyup en altta onaylarsınız')));
+    expect(kosullar, isNot(contains('Onay kutuları ancak bundan sonra')));
+    // Koşullar Gizlilik/KVKK/Açık Rıza'yı "kabul" diye paketlemez.
+    expect(kosullar,
+        isNot(contains('okuduğunuzu, anladığınızı ve kabul ettiğinizi')));
+    expect(kosullar, contains('Bu Koşulları tek bir onay kutusunu işaretleyerek'));
+    expect(kosullar, contains('Onay kutusu açık rıza içermez.'));
+    expect(kvkk, isNot(contains('sonuna kadar okuyup en altta onaylayarak')));
+    expect(kvkk, contains('size bağlantı olarak sunulur'));
+    expect(kvkk, contains('onayınıza bağlı değildir'));
+    expect(gizlilik, contains('bilgilendirme amaçlıdır ve kabulünüze bağlı değildir'));
+    expect(riza, isNot(contains('onay kutusunu işaretlersiniz')));
+    expect(riza, isNot(contains('onay kutusuyla verilir')));
+    expect(riza, contains('Rıza yalnız bu düğmeyle verilir'));
+    // Yatırım uyarısı hâlâ tam metniyle okunup onaylanır (§3 / §12 aynen).
+    for (final m in [kosullar, gizlilik]) {
+      expect(m, contains('Bu uyarının tam metni kayıt sırasında'));
     }
-    expect(YasalMetinKatalogu.kvkk().govde,
-        contains('size tam metniyle gösterilir; sonuna kadar okuyup en altta'));
-    expect(YasalMetinKatalogu.acikRiza().govde,
-        contains('size tam olarak gösterilir; sonuna kadar okuyup en altta'));
+    for (final b in YasalBelge.values) {
+      expect(b.surum, '1.4', reason: b.kaynak);
+    }
+  });
+
+  test('kutu 1.1: metnin TAMAMI açık rıza içermez (rıza paketlenmez)', () {
+    for (final d in YasalMetinKatalogu.tekKutuDilleri) {
+      final k = YasalMetinKatalogu.kayitTekKutu(d);
+      expect(k.surum, '1.1');
+      final g = k.govde.toLowerCase();
+      for (final yasak in ['açık rıza', 'açık rızan', 'explicit consent']) {
+        expect(g, isNot(contains(yasak)), reason: '${k.anahtar}: $yasak');
+      }
+    }
+    // 1.0 satırı (rıza içeren eski kutu) DB'de değişmeden durur.
+    expect(migrationda['kayit_tek_kutu/1.0/tr']?.govde,
+        contains('açık rıza veriyorum'));
   });
 }

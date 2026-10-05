@@ -1,9 +1,9 @@
 # Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuyup en altta açık rıza verdiğinizi onayladıktan sonra onay kutusunu işaretlersiniz. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay kutusu yoktur. E bölümündeki rıza uygulama içinde ayrıca istenir.
+> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz. Rıza yalnız bu düğmeyle verilir: kayıt ekranındaki onay kutusu Kullanım Koşulları'nın kabulü içindir ve açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
 
 ---
 
@@ -24,11 +24,11 @@ KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPAB
 - Push bildirim token'ım ve bildirimlerin içeriği
 - Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm ve kayıtlı cihazlarım
 - Hata raporlarım ve uygulama kullanım istatistiklerim (tutar, miktar ve e-posta içermeden)
-- Yasal metin onaylarımın kaydı (onaylanan metin ve sürümü, zaman, platform, uygulama sürümü, dil)
+- Yasal metin onay ve bilgilendirme kayıtlarım (kabul ettiğim ya da bana sunulan metin ve sürümü, zaman, platform, uygulama sürümü, dil)
 
 aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
 
-Bu rıza kayıt için zorunludur; metin sonuna kadar okunup onaylandıktan sonra kayıt ekranındaki (Apple veya Google ile ilk girişte onay ekranındaki) onay kutusuyla verilir.
+Bu rıza kayıt için zorunludur; metin sonuna kadar okunduktan sonra metnin sonundaki düğmeyle verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
 
 ---
 
@@ -99,7 +99,7 @@ beyan ve kabul ederim.
 ---
 
 **Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 **Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
 
 ---

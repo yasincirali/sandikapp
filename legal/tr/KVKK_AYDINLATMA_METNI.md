@@ -2,7 +2,7 @@
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 
 ---
 
@@ -50,7 +50,7 @@
 - Hata kayıtları ve hata raporları (hassas alanlar maskelenerek)
 
 ### 2.5 Hukuki İşlem Verisi
-- Yasal metin onayları: onaylanan metin ve sürümü, onay zamanı, onayın alındığı ekran, platform, uygulama sürümü, dil ve size gösterilen sunucu ülkesi; yatırım uyarısında ayrıca cihaz modeli
+- Yasal metin onay ve bilgilendirme kayıtları: kabul edilen ya da size sunulan metin ve sürümü, zamanı, alındığı ekran, platform, uygulama sürümü, dil, size gösterilen sunucu ülkesi, belgeyi açıp açmadığınız ve metnin sonuna kadar okunup okunmadığı; yatırım uyarısında ayrıca cihaz modeli
 
 ### 2.6 Kullanım Verisi
 - Kullanım istatistikleri (Firebase Analytics): hesap numaranız (rastgele kullanıcı kimliği), görüntülenen ekranlar, özellik kullanım olayları, kaba aralıklar, cihaz ve uygulama bilgisi, IP adresinden çıkarılan yaklaşık konum; tutar, miktar ve e-posta gönderilmez
@@ -119,7 +119,7 @@ Fiyat ve piyasa verisi sağlayıcılarına (Yahoo Finance, TEFAS, finans.truncgi
 
 Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
-Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" ile belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
+Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
 ### 5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)
 
@@ -224,12 +224,12 @@ KVKK Madde 12(5) uyarınca, kişisel verilerinizin yetkisiz kişilerce ele geçi
 Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 - Yeni sürüm uygulama içinde ve web sitesinde aynı metinle yayımlanır
 - "Sürüm" numarası artırılır
-- Önemli değişikliklerde bir sonraki açılışta güncel metin gösterilir ve tekrar onay isteriz
-- Önceki sürümlerin tam metni ve hangi sürümü ne zaman onayladığınız kayıt altında tutulur; talep ederseniz e-postayla gönderilir
+- Önemli değişikliklerde bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir; devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
+- Önceki sürümlerin tam metni ve hangi sürümün size ne zaman sunulduğu kayıt altında tutulur; talep ederseniz e-postayla gönderilir
 
 ---
 
-*Bu Aydınlatma Metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size tam metniyle gösterilir; sonuna kadar okuyup en altta onaylayarak okuduğunuzu ve anladığınızı beyan edersiniz.*
+*Bu Aydınlatma Metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size bağlantı olarak sunulur; dokunduğunuzda tam metni açılır. Aydınlatma bilgilendirme amaçlıdır ve onayınıza bağlı değildir: onay kutusunda bu metinle bilgilendirildiğinizi belirtirsiniz ve metnin size sunulduğu kayıt altına alınır. Yurt dışı aktarım için açık rızanız bundan ayrı olarak Açık Rıza Metni ile alınır.*
 
 ---
 
