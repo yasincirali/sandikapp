@@ -6454,6 +6454,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Tap an hour to see its net buying and buyer share here.';
 
   @override
+  String get anzYararli => 'Helpful';
+
+  @override
+  String get anzYararsiz => 'Not helpful';
+
+  @override
   String rdrSatirKriptoOrtsuz(String yuzde) {
     return 'Buyer share on the last day $yuzde';
   }

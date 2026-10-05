@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../providers/premium_provider.dart';
+import '../services/crash_reporter.dart';
 import '../services/supabase_service.dart';
 import '../services/varlik_analizi.dart';
 import '../theme/sandik.dart';
@@ -60,16 +61,43 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
   int? _oy;
   bool _yanlisBildirildi = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _oncekiniYukle();
+  }
+
+  /// Önceki oy/bildirim. Okunamazsa sessiz (oy boş başlar); kullanıcı yine
+  /// oy verebilir, satır upsert ile tekilleşir.
+  Future<void> _oncekiniYukle() async {
+    try {
+      final r = await SupabaseService.instance.notGeriBildirimim(
+          ticker: widget.ticker, tur: widget.tur, donem: widget.donem);
+      if (r == null || !mounted) return;
+      setState(() {
+        _oy ??= r.oy;
+        _yanlisBildirildi = _yanlisBildirildi || r.yanlisSayi;
+      });
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'AnalizNotuScreen._oncekiniYukle');
+    }
+  }
+
+  /// Seçili oya yeniden dokunmak oyu geri alır.
   Future<void> _oyVer(int oy) async {
     final onceki = _oy;
-    setState(() => _oy = oy);
+    final yeni = onceki == oy ? null : oy;
+    setState(() => _oy = yeni);
     try {
       await SupabaseService.instance.notGeriBildirim(
           ticker: widget.ticker,
           tur: widget.tur,
           donem: widget.donem,
-          oy: oy,
-          yanlisSayi: _yanlisBildirildi);
+          oy: switch (yeni) {
+            1 => NotGeriBildirimi.yararli,
+            -1 => NotGeriBildirimi.yararsiz,
+            _ => NotGeriBildirimi.geriAl,
+          });
     } catch (e) {
       if (!mounted) return;
       setState(() => _oy = onceki);
@@ -91,9 +119,8 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
           ticker: widget.ticker,
           tur: widget.tur,
           donem: widget.donem,
-          oy: _oy,
           yanlisSayi: true,
-          aciklama: aciklama.isEmpty ? null : aciklama);
+          yanlisSayiAciklamasi: aciklama.isEmpty ? null : aciklama);
       if (!mounted) return;
       setState(() => _yanlisBildirildi = true);
       sandikSnack(context, context.l10n.anzTesekkur,
@@ -245,14 +272,14 @@ class _Not extends StatelessWidget {
                   style: t.bodyMedium?.copyWith(color: c.text90)),
             ),
             IconButton(
-              tooltip: '👍',
+              tooltip: l10n.anzYararli,
               onPressed: () => onOy(1),
               icon: Icon(
                   oy == 1 ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                   color: oy == 1 ? c.gain : c.text58),
             ),
             IconButton(
-              tooltip: '👎',
+              tooltip: l10n.anzYararsiz,
               onPressed: () => onOy(-1),
               icon: Icon(
                   oy == -1

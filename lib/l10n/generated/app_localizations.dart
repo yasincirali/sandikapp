@@ -10624,6 +10624,18 @@ abstract class AppLocalizations {
   /// **'Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.'**
   String get rdrSaateDokun;
 
+  /// No description provided for @anzYararli.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşime yaradı'**
+  String get anzYararli;
+
+  /// No description provided for @anzYararsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşime yaramadı'**
+  String get anzYararsiz;
+
   /// No description provided for @rdrSatirKriptoOrtsuz.
   ///
   /// In tr, this message translates to:

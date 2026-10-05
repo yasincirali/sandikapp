@@ -4634,6 +4634,8 @@
     }
   },
   "rdrSaateDokun": "Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.",
+  "anzYararli": "İşime yaradı",
+  "anzYararsiz": "İşime yaramadı",
   "rdrSatirKriptoOrtsuz": "Son gün alıcı payı {yuzde}",
   "@rdrSatirKriptoOrtsuz": {
     "placeholders": {

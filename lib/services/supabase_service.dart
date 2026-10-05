@@ -371,14 +371,50 @@ class SupabaseService {
     );
   }
 
+  /// Kullanıcının bu nota önceki oyu ve yanlış sayı bildirimi; yoksa null.
+  /// Ekran yeniden açıldığında 👍 boş görünmesin.
+  Future<({int? oy, bool yanlisSayi})?> notGeriBildirimim({
+    required String ticker,
+    required String tur,
+    required DateTime donem,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    final r = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.notGeriBildirimim',
+      table: 'not_geri_bildirim',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tur': tur},
+      call: () => _db
+          .from('not_geri_bildirim')
+          .select('oy, yanlis_sayi')
+          .eq('user_id', uid)
+          .eq('ticker', ticker)
+          .eq('tur', tur)
+          .eq('donem', _isoGun(donem))
+          .maybeSingle(),
+    );
+    if (r == null) return null;
+    return (
+      oy: (r['oy'] as num?)?.toInt(),
+      yanlisSayi: r['yanlis_sayi'] == true,
+    );
+  }
+
   /// Not geri bildirimi (0117 `not_geri_bildirim`): oy ve/veya "yanlış sayı".
+  ///
+  /// Oy ile "yanlış sayı" bildirimi aynı satırdadır ama AYRI çağrılardır:
+  /// gövde yalnız o çağrının alanlarını taşır (upsert yalnız gönderilen
+  /// kolonları günceller). Tüm kolonları göndermek, yanlış sayı bildirimiyle
+  /// önceki 👍'yu, sonraki oyla da açıklamayı siliyordu (2026-10-05 web
+  /// testi: ekran yeniden açılınca `_oy` boş başlar).
   Future<void> notGeriBildirim({
     required String ticker,
     required String tur,
     required DateTime donem,
-    int? oy,
+    NotGeriBildirimi? oy,
+    String? yanlisSayiAciklamasi,
     bool yanlisSayi = false,
-    String? aciklama,
   }) async {
     final uid = _uid;
     if (uid == null) return;
@@ -387,9 +423,11 @@ class SupabaseService {
       'ticker': ticker,
       'tur': tur,
       'donem': _isoGun(donem),
-      'oy': oy,
-      'yanlis_sayi': yanlisSayi,
-      'aciklama': aciklama,
+      if (oy != null) 'oy': oy.deger,
+      if (yanlisSayi) ...{
+        'yanlis_sayi': true,
+        'aciklama': yanlisSayiAciklamasi,
+      },
     };
     await _log.log<void>(
       source: 'SupabaseService.notGeriBildirim',
@@ -398,7 +436,7 @@ class SupabaseService {
       request: {
         'ticker': ticker,
         'tur': tur,
-        'oy': oy,
+        'oy': oy?.deger,
         'yanlis_sayi': yanlisSayi
       },
       call: () => _db
@@ -2197,4 +2235,14 @@ class SupabaseService {
       return false;
     }
   }
+}
+
+/// Not oyu. `geriAl` oyu kaldırır (NULL); oy hiç gönderilmezse dokunulmaz.
+enum NotGeriBildirimi {
+  yararli(1),
+  yararsiz(-1),
+  geriAl(null);
+
+  const NotGeriBildirimi(this.deger);
+  final int? deger;
 }

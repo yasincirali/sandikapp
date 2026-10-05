@@ -6391,6 +6391,12 @@ class AppLocalizationsTr extends AppLocalizations {
       'Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.';
 
   @override
+  String get anzYararli => 'İşime yaradı';
+
+  @override
+  String get anzYararsiz => 'İşime yaramadı';
+
+  @override
   String rdrSatirKriptoOrtsuz(String yuzde) {
     return 'Son gün alıcı payı $yuzde';
   }

@@ -4263,6 +4263,8 @@
     }
   },
   "rdrSaateDokun": "Tap an hour to see its net buying and buyer share here.",
+  "anzYararli": "Helpful",
+  "anzYararsiz": "Not helpful",
   "rdrSatirKriptoOrtsuz": "Buyer share on the last day {yuzde}",
   "@rdrSatirKriptoOrtsuz": {
     "placeholders": {
