@@ -1,9 +1,11 @@
 import '../models/asset.dart';
 import '../models/position.dart';
+import 'birikim_serisi.dart';
 
 /// Geçilen bir kilometre taşı.
 class Milestone {
   /// `portfolio_value` | `gold_count` | `portfolio_age` | `diversification`
+  /// | `contribution_streak`
   final String kind;
 
   /// Eşiğin kimliği — aynı eşik iki kez kutlanmasın diye.
@@ -95,13 +97,24 @@ class MilestoneService {
   /// Kaç farklı varlık TÜRÜ eşiği.
   static const typeCounts = <int>[3, 5];
 
+  /// Aylık birikim serisi eşikleri (ay). Bayrak `birikim_serisi`.
+  ///
+  /// Eşik bir İŞLEME değil sürekliliğe bağlı: tek alım hiçbir şey açmaz,
+  /// üç ay art arda biriktirmek açar ("birikimi kutla, işlemi değil").
+  static const streakMonths = <int>[3, 6, 12, 24, 36];
+
   /// Portföyün geçtiği tüm eşikler.
   ///
   /// [now] test için enjekte edilir.
+  ///
+  /// [seri] verilirse (bayrak açık) birikim serisi eşikleri de döner;
+  /// "ulaşılan" eşik EN UZUN seriye göre — seri sonradan sıfırlansa da
+  /// geçilmiş eşik geçilmiştir ve aynı eşik ikinci kez kutlanmaz.
   static List<Milestone> evaluate({
     required List<Asset> assets,
     required double totalTRY,
     required DateTime now,
+    BirikimSerisi? seri,
   }) {
     // `aktifLotlar` + aggregate: ham `isBuy` tamamen SATILMIŞ pozisyonu da
     // "elimde" sayardı — kullanıcı sattığı altından "altın biriktirici",
@@ -115,7 +128,27 @@ class MilestoneService {
       ..._goldMilestones(aktif),
       ..._ageMilestones(aktif, now),
       ..._diversificationMilestones(aktif),
+      if (seri != null) ..._streakMilestones(seri),
     ];
+  }
+
+  static List<Milestone> _streakMilestones(BirikimSerisi seri) {
+    final out = <Milestone>[];
+    for (final ay in streakMonths) {
+      if (seri.enUzun < ay) break;
+      out.add(Milestone(
+        kind: 'contribution_streak',
+        value: '${ay}m',
+        rank: ay.toDouble(),
+        title: '$ay ay art arda birikim',
+        body: ay >= 12
+            ? '${ay ~/ 12} yıldır her ay portföyüne ekleme yapıyorsun. '
+                'Düzen, piyasadan bağımsız tek şey.'
+            : '$ay aydır her ay portföyüne ekleme yapıyorsun. Düzen, '
+                'piyasadan bağımsız tek şey.',
+      ));
+    }
+    return out;
   }
 
   static List<Milestone> _valueMilestones(double totalTRY) {
@@ -244,12 +277,19 @@ class MilestoneService {
   ///   gözlenmiş bir geçiştir.
   ///
   /// SAF — yer (ana ekran mı) ve kullanıcı kontrolleri çağıranda.
+  ///
+  /// Seri eşiği yalnız BU AYIN katkısı seriyi tam o eşiğe getirdiyse
+  /// kutlanır ([seri] `buAyKatkiVar` ve `guncel == eşik`). Geçmiş tarihli
+  /// alım girip seriyi geriye dönük uzatmak bir an değil, veri girişidir;
+  /// bayrak açıldığında eski serisi olan kullanıcı da eşiklerini sessiz
+  /// kaydeder.
   static ({List<Milestone> kutla, List<Milestone> sessiz}) ayir({
     required List<Milestone> yeniler,
     required List<Asset> assets,
     required DateTime now,
     required bool girisSonrasi,
     required bool ilkKez,
+    BirikimSerisi? seri,
   }) {
     if (girisSonrasi || ilkKez) return (kutla: const [], sessiz: yeniler);
     final enEski = _enEskiAlim(_aktifGorunum(assets));
@@ -263,6 +303,10 @@ class MilestoneService {
             !now.isBefore(yildonumu) &&
             now.difference(yildonumu) <= yildonumuPenceresi;
         (yakin ? kutla : sessiz).add(m);
+      } else if (m.kind == 'contribution_streak') {
+        final ay = int.tryParse(m.value.replaceAll('m', '')) ?? 0;
+        final simdi = seri != null && seri.buAyKatkiVar && seri.guncel == ay;
+        (simdi ? kutla : sessiz).add(m);
       } else {
         kutla.add(m);
       }
@@ -284,13 +328,16 @@ class MilestoneService {
     return enEski;
   }
 
-  /// yaşı (en nadir ve en duygusal) → portföy değeri → altın → çeşitlendirme.
+  /// yaşı (en nadir ve en duygusal) → birikim serisi → portföy değeri →
+  /// altın → çeşitlendirme. Seri değerden önce: kullanıcının kendi
+  /// davranışı, piyasanın getirdiği büyümeden daha doğru bir kutlama.
   ///
   /// Hepsini arka arkaya göstermek kutlamayı bildirim yağmuruna çevirirdi.
   static Milestone? pickOne(List<Milestone> yeniler) {
     if (yeniler.isEmpty) return null;
     const oncelik = [
       'portfolio_age',
+      'contribution_streak',
       'portfolio_value',
       'gold_count',
       'diversification',

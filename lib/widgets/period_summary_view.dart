@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/asset_type.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/contribution_history_service.dart';
+import '../services/birikim_serisi.dart';
 import '../services/daily_summary.dart' show DailySummary;
 import '../services/inflation_service.dart'
     show EnflasyonHukmu, InflationService;
@@ -1797,12 +1798,23 @@ class ContributionKarti extends StatelessWidget {
   /// Gösterim birimi (Faz 3.2); varsayılan ₺.
   final BazPara baz;
 
+  /// Aylık birikim serisi (bayrak `birikim_serisi`). `null` iken kart
+  /// birebir eski hâlinde çizilir. Aralık seçicisinden BAĞIMSIZ: seri her
+  /// zaman aylıktır (yasin kararı 2026-10-05), haftalık çubuklara bakarken
+  /// de aynı seri görünür.
+  final BirikimSerisi? seri;
+
+  /// Defterde BES var mı — "BES otomatik katkıları dahil" notu için.
+  final bool besDahil;
+
   const ContributionKarti({
     super.key,
     required this.ozet,
     required this.aralik,
     this.onAralik,
     this.baz = const BazPara.lira(),
+    this.seri,
+    this.besDahil = false,
   });
 
   /// Kova ifadesi: "Eylül ayında" / "29 Eyl haftasında" / "2025 yılında".
@@ -1979,10 +1991,202 @@ class ContributionKarti extends StatelessWidget {
               style: context.t.bodySmall?.copyWith(color: c.text58),
             ),
           ],
+
+          // Seri en altta: kartın mevcut düzenine dokunmadan eklenir ve
+          // bayrak kapalıyken hiçbir şey çizilmez.
+          if (seri != null) ...[
+            const SizedBox(height: SandikSpace.md),
+            Divider(color: c.hairline, height: 1),
+            const SizedBox(height: SandikSpace.smd),
+            _SeriBolumu(seri: seri!, besDahil: besDahil),
+          ],
         ],
       ),
     );
   }
+}
+
+/// Birikim serisi bölümü — sayı, 12 aylık şerit, en uzun seri, mola hakkı.
+///
+/// Ton (`RETENTION_STRATEJISI.md` §5.D, §8): kırmızı yok, alev/emoji yok,
+/// geri sayım yok. Seri sıfırlandığında "kaybettin" değil "yeniden
+/// başladı" denir ve en uzun seri görünür kalır. Açık ay bir uyarı değil,
+/// bilgidir: "ay sonuna kadar açık".
+class _SeriBolumu extends StatelessWidget {
+  const _SeriBolumu({required this.seri, required this.besDahil});
+
+  final BirikimSerisi seri;
+  final bool besDahil;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final l = context.l10n;
+    final dil = context.tarihDili;
+    final kaydedilen =
+        seri.serit.where((a) => a.durum == SeriAyDurumu.birikim).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l.streakTitle,
+          style: context.t.bodySmall?.copyWith(color: c.text36),
+        ),
+        const SizedBox(height: SandikSpace.xxs),
+        Text(
+          seri.yenidenBasladi ? l.streakRestarted : l.streakMonths('${seri.guncel}'),
+          style: context.t.numMedium.copyWith(color: c.amberText),
+        ),
+        const SizedBox(height: SandikSpace.smd),
+        Semantics(
+          label: l.streakStripSemantics(
+              '${seri.serit.length}', '$kaydedilen'),
+          excludeSemantics: true,
+          child: Row(
+            children: [
+              for (var i = 0; i < seri.serit.length; i++) ...[
+                if (i > 0) const SizedBox(width: SandikSpace.xs),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _SeriNoktasi(durum: seri.serit[i].durum),
+                      const SizedBox(height: SandikSpace.xs),
+                      Text(
+                        DateFormat('MMMMM', dil).format(seri.serit[i].ay),
+                        style: context.t.labelSmall
+                            ?.copyWith(color: c.text36),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        Wrap(
+          spacing: SandikSpace.smd,
+          runSpacing: SandikSpace.xs,
+          children: [
+            _SeriLejant(durum: SeriAyDurumu.birikim, etiket: l.streakLegendSaving),
+            _SeriLejant(durum: SeriAyDurumu.mola, etiket: l.streakLegendPause),
+            _SeriLejant(durum: SeriAyDurumu.ara, etiket: l.streakLegendGap),
+            _SeriLejant(durum: SeriAyDurumu.acik, etiket: l.streakLegendOpen),
+          ],
+        ),
+        const SizedBox(height: SandikSpace.smd),
+        _SeriSatiri(
+          etiket: l.streakLongest,
+          deger: l.streakMonthsValue('${seri.enUzun}'),
+        ),
+        const SizedBox(height: SandikSpace.xs2),
+        _SeriSatiri(
+          etiket: l.streakPause,
+          deger: seri.kalanMola > 0 || seri.molaAcilisAyi == null
+              ? l.streakPauseAvailable
+              : l.streakPauseUsed(
+                  DateFormat('MMMM', dil).format(seri.molaAcilisAyi!)),
+        ),
+        if (!seri.buAyKatkiVar && seri.guncel > 0) ...[
+          const SizedBox(height: SandikSpace.smd),
+          Text(
+            l.streakOpenMonth,
+            style: context.t.bodySmall?.copyWith(color: c.text58),
+          ),
+        ],
+        const SizedBox(height: SandikSpace.sm),
+        Text(
+          besDahil ? '${l.streakExplain} ${l.streakBesIncluded}' : l.streakExplain,
+          style: context.t.bodySmall?.copyWith(color: c.text36),
+        ),
+      ],
+    );
+  }
+}
+
+/// Şeritteki tek ay: dolu amber = birikim, amber halka = mola, sönük dolu =
+/// ara, kesik olmayan sönük halka = açık ay ya da başlangıç öncesi boşluk.
+class _SeriNoktasi extends StatelessWidget {
+  const _SeriNoktasi({required this.durum, this.boyut = SandikSpace.md});
+
+  final SeriAyDurumu durum;
+  final double boyut;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final (dolgu, cerceve) = switch (durum) {
+      SeriAyDurumu.birikim => (c.amberFill, null),
+      SeriAyDurumu.mola => (null, c.amberText),
+      SeriAyDurumu.ara => (c.text20, null),
+      SeriAyDurumu.acik => (null, c.text36),
+      SeriAyDurumu.oncesi => (null, c.hairline),
+    };
+    return Container(
+      width: boyut,
+      height: boyut,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: dolgu,
+        border: cerceve == null
+            ? null
+            : Border.all(color: cerceve, width: SandikSpace.xxs),
+      ),
+    );
+  }
+}
+
+/// [_KucukSatir] gibi, ama değer de esner: mola satırının değeri
+/// ("Kullanıldı · Haziran ayında açılır") dar ekranda sayı değil cümledir
+/// ve sabit genişlikli değer satırı taşırırdı.
+class _SeriSatiri extends StatelessWidget {
+  const _SeriSatiri({required this.etiket, required this.deger});
+
+  final String etiket;
+  final String deger;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Text(
+              etiket,
+              style: context.t.bodySmall?.copyWith(color: context.c.text36),
+            ),
+          ),
+          const SizedBox(width: SandikSpace.sm),
+          Flexible(
+            flex: 2,
+            child: Text(
+              deger,
+              textAlign: TextAlign.end,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
+            ),
+          ),
+        ],
+      );
+}
+
+class _SeriLejant extends StatelessWidget {
+  const _SeriLejant({required this.durum, required this.etiket});
+
+  final SeriAyDurumu durum;
+  final String etiket;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _SeriNoktasi(durum: durum, boyut: SandikSpace.sm2),
+          const SizedBox(width: SandikSpace.xs),
+          Text(
+            etiket,
+            style: context.t.labelSmall?.copyWith(color: context.c.text58),
+          ),
+        ],
+      );
 }
 
 /// Tek bir birikim çubuğu — yükseklik oranla, renk işaretle.

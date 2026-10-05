@@ -4295,5 +4295,52 @@
       }
     }
   },
-  "yasalKapiBaslikGuncelTek": "Güncellenen belge"
+  "yasalKapiBaslikGuncelTek": "Güncellenen belge",
+  "streakTitle": "Birikim serin",
+  "streakMonths": "{n} ay art arda",
+  "@streakMonths": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "streakRestarted": "Seri yeniden başladı",
+  "streakLongest": "En uzun seri",
+  "streakMonthsValue": "{n} ay",
+  "@streakMonthsValue": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "streakPause": "Mola hakkı",
+  "streakPauseAvailable": "1 ay, kullanılabilir",
+  "streakPauseUsed": "Kullanıldı · {month} ayında açılır",
+  "@streakPauseUsed": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "streakOpenMonth": "Bu ay henüz ekleme yok; ay sonuna kadar açık.",
+  "streakExplain": "Portföyüne para eklediğin ayları sayar. Son 12 ayda bir boş ay seriyi bozmaz.",
+  "streakBesIncluded": "BES otomatik katkıları dahil.",
+  "streakLegendSaving": "birikim",
+  "streakLegendPause": "mola",
+  "streakLegendGap": "ara",
+  "streakLegendOpen": "bu ay",
+  "streakStripSemantics": "Son {total} ay: {saved} birikim ayı",
+  "@streakStripSemantics": {
+      "placeholders": {
+          "total": {
+              "type": "String"
+          },
+          "saved": {
+              "type": "String"
+          }
+      }
+  }
 }

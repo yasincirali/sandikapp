@@ -5993,4 +5993,62 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiBaslikGuncelTek => 'Updated document';
+
+  @override
+  String get streakTitle => 'Your saving streak';
+
+  @override
+  String streakMonths(String n) {
+    return '$n months in a row';
+  }
+
+  @override
+  String get streakRestarted => 'Streak started again';
+
+  @override
+  String get streakLongest => 'Longest streak';
+
+  @override
+  String streakMonthsValue(String n) {
+    return '$n months';
+  }
+
+  @override
+  String get streakPause => 'Pause';
+
+  @override
+  String get streakPauseAvailable => '1 month, available';
+
+  @override
+  String streakPauseUsed(String month) {
+    return 'Used · available again in $month';
+  }
+
+  @override
+  String get streakOpenMonth =>
+      'No contribution yet this month; it stays open until month end.';
+
+  @override
+  String get streakExplain =>
+      'Counts the months you added money to your portfolio. One empty month in any 12 does not break it.';
+
+  @override
+  String get streakBesIncluded => 'Automatic pension contributions included.';
+
+  @override
+  String get streakLegendSaving => 'saved';
+
+  @override
+  String get streakLegendPause => 'pause';
+
+  @override
+  String get streakLegendGap => 'gap';
+
+  @override
+  String get streakLegendOpen => 'this month';
+
+  @override
+  String streakStripSemantics(String total, String saved) {
+    return 'Last $total months: $saved saving months';
+  }
 }
