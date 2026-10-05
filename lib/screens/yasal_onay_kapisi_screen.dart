@@ -229,28 +229,7 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
       ),
       if (durum.guncellemeMi) ...[
         const SizedBox(height: SandikSpace.lg),
-        SandikCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l.yasalKapiNelerDegisti,
-                style: context.t.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: context.c.amberText,
-                ),
-              ),
-              const SizedBox(height: SandikSpace.xs2),
-              Text(
-                l.yasalKapiDegisiklikNotu,
-                style: context.t.bodyMedium?.copyWith(
-                  color: context.c.text58,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
+        const _NelerDegisti(),
       ],
       const SizedBox(height: SandikSpace.lg),
       YasalAdimListesi(
@@ -356,6 +335,98 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
       error: false,
       errorMessage: l.tekOnayGerekli,
       onToggle: () => setState(() => _kutu = !_kutu),
+    );
+  }
+}
+
+/// "Neler değişti" — katlanır bilgi alanı, varsayılan KAPALI (kullanıcı
+/// geri bildirimi 2026-10-05: *"en tepedeki neler değişti collapsable info
+/// alanı gibi kapalı default olarak gelebilir"*). Açık hâlde not uzun bir
+/// paragraf olduğundan adımları ekranın altına itiyor, kullanıcı asıl
+/// eylemi (sıradaki adım) görmek için kaydırıyordu. Not bilgi amaçlıdır,
+/// onaya bağlı değildir; kapalı başlamak onay kaydını değiştirmez. Görünüm
+/// adım listesindeki "Diğer belgeler" katlanır bölümüyle aynı dil.
+class _NelerDegisti extends StatefulWidget {
+  const _NelerDegisti();
+
+  @override
+  State<_NelerDegisti> createState() => _NelerDegistiState();
+}
+
+class _NelerDegistiState extends State<_NelerDegisti> {
+  bool _acik = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
+      decoration: BoxDecoration(
+        color: context.c.surface1,
+        borderRadius: SandikRadius.mdAll,
+        border: Border.all(color: context.c.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            expanded: _acik,
+            child: SandikBasma(
+              olcek: 0.99,
+              onTap: () => setState(() => _acik = !_acik),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 18, color: context.c.amberText),
+                    const SizedBox(width: SandikSpace.smd),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: SandikSpace.sm),
+                        child: Text(
+                          l.yasalKapiNelerDegisti,
+                          style: context.t.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.c.amberText,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: SandikSpace.sm),
+                    AnimatedRotation(
+                      turns: _acik ? 0.5 : 0,
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.move,
+                      child: Icon(Icons.expand_more_rounded,
+                          size: 20, color: context.c.text36),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: SandikMotion.surfaceOf(context),
+            curve: SandikMotion.enter,
+            alignment: Alignment.topCenter,
+            child: _acik
+                ? Padding(
+                    padding: const EdgeInsets.only(bottom: SandikSpace.md),
+                    child: Text(
+                      l.yasalKapiDegisiklikNotu,
+                      style: context.t.bodyMedium?.copyWith(
+                        color: context.c.text58,
+                        height: 1.5,
+                      ),
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -164,8 +164,15 @@ void main() {
     await ac(tester, guncelleme);
     expect(find.text(l.yasalKapiBaslikGuncel), findsOneWidget);
     expect(find.text(l.yasalKapiNelerDegisti), findsOneWidget);
+    // Katlanır, varsayılan kapalı (2026-10-05): not başlığa dokununca açılır.
+    expect(find.text(l.yasalKapiDegisiklikNotu), findsNothing);
+    await tester.tap(find.text(l.yasalKapiNelerDegisti));
+    await tester.pumpAndSettle();
     expect(find.text(l.yasalKapiDegisiklikNotu), findsOneWidget);
     expect(l.yasalKapiDegisiklikNotu, startsWith('Sürüm 1.4'));
+    await tester.tap(find.text(l.yasalKapiNelerDegisti));
+    await tester.pumpAndSettle();
+    expect(find.text(l.yasalKapiDegisiklikNotu), findsNothing);
     expect(find.text(l.yasalAdimKapiBaslik(2)), findsOneWidget);
     expect(sigan(l.yasalKapiOnayla), findsOneWidget);
     // 1. adım Açık Rıza (sıradaki), 2. adım kutu (başlığı görünür, kutu
