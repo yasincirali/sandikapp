@@ -19,6 +19,24 @@ artık "Atla" ve kapı adımlarından geçer.
 - [ ] TestFlight'ta: kapı (eski onaylı hesap) ve kayıt ekranında kutucuk
       görünür mü, Açık Rıza onaylanınca ekran kutuya kayıyor mu.
 
+## ⏳ 2026-10-05 Eylül TÜFE'si gelmedi — takvim düzeltmesi (0110) — dal `claude/aylik-enflasyon-eylul-358xmm`
+
+Belirti: Eylül TÜFE'si açıklandı, uygulamada aylık enflasyon hâlâ Ağustos.
+Kök neden: `fetch-inflation` yalnız ayın 3'ü/4'ü koşuyordu; Ekim'de ikisi
+de hafta sonu (TÜİK/EVDS iş gününde yayımlar) → tablo Ağustos'ta kaldı,
+sonraki deneme Kasım'dı. Aylık özet push'u da aynı sebeple gitmedi.
+0110: çekim ve aylık özet ayın 3'ü–12'si her gün (çekim 10:05 + 16:05,
+özet 10:30). Yalnız takvim; istemci değişmez, eski sürümler etkilenmez.
+
+- [ ] Teşhisi doğrula (salt okunur, Tokyo SQL Editor):
+      `select max(period) from inflation_index;` → `2026-08-01` beklenir.
+- [ ] PR'ı birleştir → Supabase deploy, dal `main`, hedef `ikisi`,
+      yalnız migration (fonksiyon değişmedi). Numara 0110 doluysa yeniden adlandır.
+- [ ] Bu ayı beklemeden kapatmak istersen (normal cron yolu, push göndermez):
+      `select public.trigger_fetch_inflation();` → birkaç sn sonra
+      `select max(period) from inflation_index;` → `2026-09-01`.
+      Aylık özet push'u ertesi sabah 10:30'da kendiliğinden gider.
+
 ## ⏳ 2026-10-05 Okuma sadeleştirme — belgeler 1.4 + kutu 1.1 (0109) — dal `feat/okuma-sadelestir` (yerel, push yok)
 
 Kullanıcı kararı (2026-10-05): *"Tüm hepsini içinden onaylatmak çok uzun bir
