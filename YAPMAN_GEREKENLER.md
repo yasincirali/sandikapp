@@ -8,6 +8,17 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-05 Onay ekranı düzeni (#95) + duman testi (#96)
+
+#95 main'de (TestFlight/Play build'i tetiklendi; sunucu değişikliği yok,
+deploy gerekmez): yasal koşullar kutucuğu büyük ve amber çerçeveli (kayıt +
+kapı), bir adım onaylanınca liste sıradaki adıma kendiliğinden kayar, kapının
+"Neler değişti" notu katlanır ve kapalı gelir. #96: emülatör duman testi
+#92'den beri kırmızıydı (karşılama tanıtımı + koşulsuz yasal kapı); test
+artık "Atla" ve kapı adımlarından geçer.
+- [ ] TestFlight'ta: kapı (eski onaylı hesap) ve kayıt ekranında kutucuk
+      görünür mü, Açık Rıza onaylanınca ekran kutuya kayıyor mu.
+
 ## ⏳ 2026-10-05 Okuma sadeleştirme — belgeler 1.4 + kutu 1.1 (0109) — dal `feat/okuma-sadelestir` (yerel, push yok)
 
 Kullanıcı kararı (2026-10-05): *"Tüm hepsini içinden onaylatmak çok uzun bir
