@@ -200,3 +200,50 @@ export function bitenKriptoGunleri(gunler: HacimGunu[], simdi: Date): HacimGunu[
   const bugun = trGun(simdi);
   return gunler.filter((g) => g.tarih < bugun);
 }
+
+// ── Saatlik alıcı baskısı (0115, 2026-10-05) ────────────────────────────────
+// Günlük mum dünü anlatır; kart "son 24 saat"i saat saat gösterir. Aynı
+// alanlar (`quote hacim`, `taker alış quote`), `interval=1h`.
+
+/// Bir saatlik mum: açılış anı (UTC, ISO), USDT hacim ve alıcı payı.
+export type KriptoSaati = {
+  saat: string;
+  para: number;
+  aliciPayi: number;
+};
+
+const SAAT_MS = 60 * 60 * 1000;
+
+/// Binance saatlik kline satırları → KAPANMIŞ saatler, eskiden yeniye.
+///
+/// Yarım saat (açılış + 1 sa > şimdi) yazılmaz: 14:10'da 14:00 mumu on
+/// dakikalıktır ve "o saatte az işlem oldu" diye okunurdu. Bozuk satır
+/// (sayı değil, hacim ≤ 0, alış > toplam) atlanır; satır uydurulmaz.
+export function binanceSaatleri(rows: unknown, simdi: Date): KriptoSaati[] {
+  if (!Array.isArray(rows)) return [];
+  const m = new Map<number, KriptoSaati>();
+  for (const r of rows) {
+    if (!Array.isArray(r) || r.length < 11) continue;
+    const t = Number(r[0]);
+    const para = Number(r[7]);
+    const alis = Number(r[10]);
+    if (![t, para, alis].every(Number.isFinite)) continue;
+    if (!(para > 0) || alis < 0 || alis > para) continue;
+    if (t % SAAT_MS !== 0) continue;
+    if (t + SAAT_MS > simdi.getTime()) continue;
+    m.set(t, {
+      saat: new Date(t).toISOString(),
+      para,
+      aliciPayi: Math.round((alis / para) * 10000) / 10000,
+    });
+  }
+  return [...m.entries()].sort((a, b) => a[0] - b[0]).map(([, s]) => s);
+}
+
+/// Net alım (USDT) = alıcı hacmi − satıcı hacmi = (2 × pay − 1) × hacim.
+/// Artı: piyasa emriyle alanlar daha istekliydi. Para girişi DEĞİLDİR (her
+/// işlemin bir satıcısı vardır); kart da böyle yazar.
+/// (`2 × hacim × pay − hacim` sırası: 0,6 × 1000 gibi tam değerler kayan
+/// nokta artığı olmadan çıksın.)
+export const netAlim = (para: number, aliciPayi: number) =>
+  2 * para * aliciPayi - para;

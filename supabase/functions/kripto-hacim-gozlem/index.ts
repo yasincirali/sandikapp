@@ -15,10 +15,15 @@
 // ── Secret ──────────────────────────────────────────────────────────────────
 // `PRICE_ALERTS_CRON_SECRET` PAYLAŞILIR (emsal 0101, 0107).
 //
-// Yanıt `{ ok, sembol, satir, olay, bos }`. Gövde `{ "dry_run": true }` →
-// okur, yazmaz. Hata ayrıntısı DÖNMEZ.
+// ── Saatlik mod (0115) ──────────────────────────────────────────────────────
+// Gövde `{ "mod": "saatlik" }` (cron her saatin 7. dakikası) → aynı coinlerin
+// son 48 saatlik mumlarını `kripto_hacim_saatlik`'a yazar, 8 günden eskiyi
+// siler. Günlük tablo ve olaylara DOKUNMAZ; günlük mod eskisi gibi.
+//
+// Yanıt `{ ok, sembol, satir, olay, bos }` (saatlikte `olay` yok, `mod`
+// var). Gövde `{ "dry_run": true }` → okur, yazmaz. Hata ayrıntısı DÖNMEZ.
 
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { trGun } from '../_shared/tefas_nav.ts';
 import { gunEkle } from '../_shared/balina.ts';
@@ -26,6 +31,7 @@ import { binanceGet, KRIPTO_ONEKI, kriptoKodu } from '../_shared/kripto.ts';
 import {
   ASGARI_KRIPTO_HACMI,
   binanceGunleri,
+  binanceSaatleri,
   bitenKriptoGunleri,
   HACIM_OLAY_PENCERE_GUN,
   hacimOlayi,
@@ -50,6 +56,9 @@ const SAKLAMA_GUN = 400;
 const YAZMA_PENCERE_GUN = 75;
 /// İstenen günlük mum sayısı: 20 günlük ortalama + olay penceresi + pay.
 const MUM_SAYISI = '90';
+/// Saatlik mod: 24 saatlik kart + kaçan turları telafi payı.
+const SAAT_MUM_SAYISI = '48';
+const SAATLIK_SAKLAMA_GUN = 8;
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
@@ -72,12 +81,14 @@ Deno.serve(async (request) => {
     }
 
     let dryRun = false;
+    let saatlik = false;
     try {
       const body = await request.json();
       if (body?.dry_run === true) dryRun = true;
+      if (body?.mod === 'saatlik') saatlik = true;
     } catch (_) { /* gövde opsiyonel */ }
 
-    const client = createClient(supabaseUrl, serviceRoleKey);
+    const client: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
     const simdi = new Date();
     const bugun = trGun(simdi);
 
@@ -99,6 +110,10 @@ Deno.serve(async (request) => {
 
     if (kodlar.length === 0) {
       return jsonResponse({ ok: true, sembol: 0, satir: 0, olay: 0, bos: 0 });
+    }
+
+    if (saatlik) {
+      return jsonResponse(await saatlikTur(client, kodlar, simdi, dryRun));
     }
 
     const yazmaBasi = gunEkle(bugun, -YAZMA_PENCERE_GUN);
@@ -205,3 +220,59 @@ Deno.serve(async (request) => {
     return jsonResponse({ ok: false }, 500);
   }
 });
+
+/// Saatlik mod (0115): son 48 saatlik kapanmış mumlar → `kripto_hacim_saatlik`.
+async function saatlikTur(
+  client: SupabaseClient,
+  kodlar: string[],
+  simdi: Date,
+  dryRun: boolean,
+): Promise<Record<string, unknown>> {
+  const satirlar: Array<Record<string, unknown>> = [];
+  let okunan = 0;
+  let bos = 0;
+  const CONCURRENCY = 3;
+  for (let i = 0; i < kodlar.length; i += CONCURRENCY) {
+    const batch = kodlar.slice(i, i + CONCURRENCY);
+    const sonuclar = await Promise.all(batch.map(async (kod) => ({
+      kod,
+      rows: await binanceGet('/api/v3/klines', {
+        symbol: `${kod}USDT`,
+        interval: '1h',
+        limit: SAAT_MUM_SAYISI,
+      }),
+    })));
+    for (const { kod, rows } of sonuclar) {
+      const saatler = binanceSaatleri(rows, simdi);
+      if (saatler.length === 0) { bos += 1; continue; }
+      okunan += 1;
+      for (const s of saatler) {
+        satirlar.push({
+          ticker: `${KRIPTO_ONEKI}${kod}`,
+          saat: s.saat,
+          para_hacmi: s.para,
+          alici_payi: s.aliciPayi,
+        });
+      }
+    }
+  }
+
+  if (dryRun) {
+    return { ok: true, dry_run: true, mod: 'saatlik', sembol: okunan, satir: satirlar.length, bos };
+  }
+
+  for (let i = 0; i < satirlar.length; i += 500) {
+    const { error } = await client
+      .from('kripto_hacim_saatlik')
+      .upsert(satirlar.slice(i, i + 500), { onConflict: 'ticker,saat' });
+    if (error) throw error;
+  }
+  const sinir = new Date(simdi.getTime() - SAATLIK_SAKLAMA_GUN * 24 * 60 * 60 * 1000);
+  const { error: silErr } = await client
+    .from('kripto_hacim_saatlik')
+    .delete()
+    .lt('saat', sinir.toISOString());
+  if (silErr) throw silErr;
+
+  return { ok: true, mod: 'saatlik', sembol: okunan, satir: satirlar.length, bos };
+}

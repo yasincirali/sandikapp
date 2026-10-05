@@ -15,11 +15,13 @@ import {
   ASGARI_KRIPTO_HACMI,
   ASGARI_PARA_HACMI,
   binanceGunleri,
+  binanceSaatleri,
   bistSembolu,
   bitenKriptoGunleri,
   hacimOlayi,
   HacimGunu,
   KAT_ESIGI,
+  netAlim,
   ORTALAMA_GUN,
   paraHacmi,
   tamamlananGunler,
@@ -148,4 +150,48 @@ Deno.test('kripto olayı kendi tabanını ve kendi tür önekini kullanır', () 
   assertEquals(hacimOlayi(g, g.length - 1)?.tur, 'hisse_hacim_yukselis');
   // Taban parametresi etkili: çıta günün hacminin üstündeyse olay yok.
   assertEquals(hacimOlayi(g, g.length - 1, 'kripto', 400_000_000), null);
+});
+
+// ── Saatlik alıcı baskısı (0115) ────────────────────────────────────────────
+
+const SA = 60 * 60 * 1000;
+const t0 = Date.UTC(2026, 9, 5, 10); // 10:00 UTC
+const saatSatiri = (t: number, para: string, alis: string) =>
+  [t, '1', '1', '1', '1', '5', t + SA - 1, para, 100, '2', alis];
+
+Deno.test('binanceSaatleri: yalnız KAPANMIŞ saatler, eskiden yeniye', () => {
+  const rows = [
+    saatSatiri(t0 + SA, '2000', '500'),
+    saatSatiri(t0, '1000', '600'),
+    saatSatiri(t0 + 2 * SA, '3000', '1500'), // 12:00 mumu, şimdi 12:30 → yarım
+  ];
+  const s = binanceSaatleri(rows, new Date(t0 + 2 * SA + 30 * 60 * 1000));
+  assertEquals(s.map((x) => x.saat), [
+    new Date(t0).toISOString(),
+    new Date(t0 + SA).toISOString(),
+  ]);
+  assertEquals(s[0].aliciPayi, 0.6);
+  assertEquals(s[1].aliciPayi, 0.25);
+});
+
+Deno.test('binanceSaatleri: bozuk satır uydurulmaz', () => {
+  const simdi = new Date(t0 + 10 * SA);
+  const rows = [
+    saatSatiri(t0, '0', '0'), // hacim yok
+    saatSatiri(t0 + SA, '100', '150'), // alış > toplam
+    saatSatiri(t0 + 2 * SA, 'x', '1'), // sayı değil
+    [t0 + 3 * SA, '1'], // kısa satır
+    saatSatiri(t0 + 4 * SA + 5, '100', '50'), // saat başı değil
+    saatSatiri(t0 + 5 * SA, '100', '50'),
+  ];
+  const s = binanceSaatleri(rows, simdi);
+  assertEquals(s.length, 1);
+  assertEquals(s[0].saat, new Date(t0 + 5 * SA).toISOString());
+  assertEquals(binanceSaatleri('bozuk', simdi), []);
+});
+
+Deno.test('netAlim = (2 × pay − 1) × hacim; %50 sıfır', () => {
+  assertEquals(netAlim(1000, 0.6), 200);
+  assertEquals(netAlim(1000, 0.5), 0);
+  assertEquals(netAlim(1000, 0.25), -500);
 });

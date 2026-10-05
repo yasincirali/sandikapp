@@ -395,6 +395,12 @@ deno_version = 2
 [functions.bildirim-karti]
 verify_jwt = false
 
+# RevenueCat webhook (0116): RevenueCat sabit bir `Authorization: Bearer
+# <REVENUECAT_WEBHOOK_SECRET>` gönderir; gateway bunu JWT sanıp reddederdi.
+# Kapıyı fonksiyon içindeki fail-closed secret karşılaştırması tutar.
+[functions.revenuecat-webhook]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
