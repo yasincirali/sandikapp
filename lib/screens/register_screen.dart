@@ -949,56 +949,65 @@ class YasalOnayKutusu extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          GestureDetector(
-            // 2026-09: "belgeyi açıp sonuna kadar kaydır" zorunluluğu
-            // kaldırıldı. 2026-10-04 (bayrak `zorunlu_okuma`) TÜM metinler
-            // için geri geldi ve kutu metinlere kilitlendi. 2026-10-05
-            // (okuma sadeleştirme): sonuna kadar okuma yalnız Açık Rıza
-            // Metni'nde ve uyarıda kaldı; kutu kilitsiz.
+          // Erişilebilirlik (2026-10-05): kutu kendi çizimimiz; durumunu
+          // ekran okuyucuya bildirmezse TalkBack/VoiceOver onu kutu olarak
+          // okumaz ve yasal onay sesle verilemez. Cümledeki belge
+          // bağlantıları ayrı düğüm olarak kalır (container).
+          Semantics(
+            container: true,
+            checked: accepted,
             onTap: onToggle,
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnimatedContainer(
-                  duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
-                  curve: SandikMotion.enter,
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: accepted
-                        ? context.c.amberText
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                    border: Border.all(
+            child: GestureDetector(
+              // 2026-09: "belgeyi açıp sonuna kadar kaydır" zorunluluğu
+              // kaldırıldı. 2026-10-04 (bayrak `zorunlu_okuma`) TÜM metinler
+              // için geri geldi ve kutu metinlere kilitlendi. 2026-10-05
+              // (okuma sadeleştirme): sonuna kadar okuma yalnız Açık Rıza
+              // Metni'nde ve uyarıda kaldı; kutu kilitsiz.
+              onTap: onToggle,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedContainer(
+                    duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
+                    curve: SandikMotion.enter,
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
                       color: accepted
                           ? context.c.amberText
-                          : (error ? context.c.loss : context.c.text36),
-                      width: 2,
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(SandikRadius.sm),
+                      border: Border.all(
+                        color: accepted
+                            ? context.c.amberText
+                            : (error ? context.c.loss : context.c.text36),
+                        width: 2,
+                      ),
                     ),
+                    child: accepted
+                        ? Icon(Icons.check_rounded,
+                            size: 14, color: context.c.onAmber)
+                        : null,
                   ),
-                  child: accepted
-                      ? Icon(Icons.check_rounded,
-                          size: 14, color: context.c.onAmber)
-                      : null,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: checkboxSpan != null
-                      ? Text.rich(
-                          checkboxSpan!,
-                          style: context.t.titleSmall?.copyWith(
-                            color: error ? context.c.loss : context.c.text58,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: checkboxSpan != null
+                        ? Text.rich(
+                            checkboxSpan!,
+                            style: context.t.titleSmall?.copyWith(
+                              color: error ? context.c.loss : context.c.text58,
+                            ),
+                          )
+                        : Text(
+                            checkboxLabel,
+                            style: context.t.titleSmall?.copyWith(
+                              color: error ? context.c.loss : context.c.text58,
+                            ),
                           ),
-                        )
-                      : Text(
-                          checkboxLabel,
-                          style: context.t.titleSmall?.copyWith(
-                            color: error ? context.c.loss : context.c.text58,
-                          ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
           if (error) ...[

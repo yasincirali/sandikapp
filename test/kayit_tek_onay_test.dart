@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsAction, SemanticsActionEvent;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -132,7 +134,6 @@ void main() {
   }
 
   group('tek kutu', () {
-
     testWidgets('tek kutu, tek cümle; eski rıza kutusu yok', (tester) async {
       await ac(tester);
       expect(find.text(tekCumle, findRichText: true), findsOneWidget);
@@ -146,6 +147,34 @@ void main() {
           'Gizlilik Politikası ve KVKK Aydınlatma Metni ile '
           'bilgilendirildim.');
       expect(find.text('v${YasalMetinKatalogu.kutuSurumu}'), findsOneWidget);
+    });
+
+    testWidgets(
+        'erişilebilirlik: kutu durumunu ekran okuyucuya bildirir, sesle '
+        'işaretlenebilir', (tester) async {
+      final semantik = tester.ensureSemantics();
+      await ac(tester);
+      final dugum = find.descendant(
+          of: find.byType(YasalOnayKutusu),
+          matching: find.byWidgetPredicate(
+              (w) => w is Semantics && w.properties.checked != null));
+      expect(dugum, findsOneWidget);
+      expect(
+          tester.getSemantics(dugum),
+          isSemantics(
+              hasCheckedState: true, isChecked: false, hasTapAction: true));
+      // Ekran okuyucunun "dokun" eylemi kutuyu işaretler.
+      tester.binding.performSemanticsAction(SemanticsActionEvent(
+        type: SemanticsAction.tap,
+        viewId: tester.view.viewId,
+        nodeId: tester.getSemantics(dugum).id,
+      ));
+      await tester.pump();
+      expect(
+          tester.getSemantics(dugum),
+          isSemantics(
+              hasCheckedState: true, isChecked: true, hasTapAction: true));
+      semantik.dispose();
     });
 
     testWidgets('işaretlenmeden "Kayıt ol" → kayıt yok, hata kutunun altında',
