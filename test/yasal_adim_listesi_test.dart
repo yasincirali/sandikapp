@@ -40,13 +40,17 @@ void main() {
     Size boyut = const Size(390, 2400),
     double olcek = 1.0,
     Locale dil = const Locale('tr', 'TR'),
+    bool hareketsiz = false,
   }) async {
     tester.view.physicalSize = boyut * 3;
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(ProviderScope(
       child: MediaQuery(
-        data: MediaQueryData(size: boyut, textScaler: TextScaler.linear(olcek)),
+        data: MediaQueryData(
+            size: boyut,
+            textScaler: TextScaler.linear(olcek),
+            disableAnimations: hareketsiz),
         child: MaterialApp(
           locale: dil,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -234,5 +238,30 @@ void main() {
       expect(kutu.bottom, lessThanOrEqualTo(alan.bottom),
           reason: 'kutu kaydırmadan görünür olmalı');
     });
+  });
+
+  testWidgets(
+      'hareketi azalt açık (CI emülatörü): adımlar ilerler, katlanırlar '
+      'açılıp kapanır, sıfır süreli boyut geçişi hata atmaz', (tester) async {
+    // #96: animasyonları kapalı emülatörde sıfır süreli `AnimatedSize`
+    // "RenderAnimatedSize was mutated in its own performLayout" ile düştü.
+    await kur(
+        tester,
+        kapi(YasalOnayService.eksikleriHesapla([
+          for (final b in YasalBelge.values) (b.tur, '1.3'),
+          (YasalTur.kayitTekKutu, '1.0'),
+        ]), uyari: true),
+        boyut: const Size(390, 700),
+        hareketsiz: true);
+    await tester.tap(find.text(tr.yasalKapiNelerDegisti));
+    await tester.pumpAndSettle();
+    expect(find.text(tr.yasalKapiDegisiklikNotu), findsOneWidget);
+    await tester.tap(find.text(tr.yasalKapiNelerDegisti));
+    await tester.pumpAndSettle();
+    expect(find.text(tr.yasalKapiDegisiklikNotu), findsNothing);
+    await adimlariOku(tester, tr.yasalAdimOkuOnayla, adet: 2);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byType(YasalOnayKutusu), findsOneWidget);
   });
 }
