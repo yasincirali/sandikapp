@@ -17,6 +17,9 @@
 // ── Anlar ───────────────────────────────────────────────────────────────────
 // · TÜFE günü (0048): gövdesiz ya da `occasion: inflation_day`.
 // · Yıl sonu özeti (0087): `occasion: year_end_recap`, 26 Aralık 20:00 TR.
+// · Maaş günü birikim hatırlatması (0119): `occasion: saving_reminder`,
+//   her gün 10:30 TR; kullanıcı başına, yalnız günü seçene ve o ay alımı
+//   olmayana.
 // Yeni an gövdeden seçilir; TÜFE yolu olduğu gibi kalır.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -311,6 +314,242 @@ async function yilSonuAni(p: {
   });
 }
 
+// ── Maaş günü birikim hatırlatması (0119) ──────────────────────────────────
+//
+// Kullanıcı başına an: `profiles.birikim_hatirlatma_gunu` (1–31, null =
+// kapalı). O gün TR 10:30'da, o TR ayında HİÇ alım satırı yoksa tek push.
+// Alım varsa gitmez: hatırlatmanın işi unutulan eklemeyi yakalamak, zaten
+// ekleme yapmış kullanıcıyı rahatsız etmek değil (RETENTION_STRATEJISI §7
+// bildirim bütçesi). Kişiye özel RAKAM taşımaz (yukarıdaki iki anla aynı
+// ilke) ve seriyi kaybetme korkusu kurmaz: "serin bozulacak" yok.
+
+/// Gövdedeki an adı — `trigger_calendar_nudge_birikim()` bunu yollar.
+export const BIRIKIM = 'saving_reminder';
+
+/// Ayın son günü (TR takvimi; ay 1–12).
+export function ayinSonGunu(yil: number, ay: number): number {
+  return new Date(Date.UTC(yil, ay, 0)).getUTCDate();
+}
+
+/// Bugün hatırlatılacak gün seçimleri: seçilen gün bugünse, ya da bugün
+/// ayın SON günüyse ve seçilen gün bu ayda yoksa (Şubat'ta 30 → 28/29).
+export function bugununSecimleri(gun: number, sonGun: number): number[] {
+  if (gun < sonGun) return [gun];
+  const out: number[] = [];
+  for (let g = gun; g <= 31; g++) out.push(g);
+  return out;
+}
+
+/// Defter anahtarı: hatırlatmanın ait olduğu TR ayı.
+export function birikimDonemi(yil: number, ay: number): string {
+  return `${yil}-${ay.toString().padStart(2, '0')}-01`;
+}
+
+/// TR ayının başlangıcı, UTC ISO (TR sabit UTC+3): `added_date` karşılaştırması.
+export function trAyBasiUtc(yil: number, ay: number): string {
+  return new Date(Date.UTC(yil, ay - 1, 1) - 3 * 60 * 60 * 1000).toISOString();
+}
+
+export function birikimMesaji(): { title: string; body: string } {
+  return {
+    title: 'Maaş günü hatırlatman',
+    body: 'Bu ay portföyüne bir ekleme yaptıysan sandık\'a işlemeyi unutma. '
+      + 'Birikim serin ay ay sayılıyor.',
+  };
+}
+
+/// Hedef kullanıcılar: bugün seçmiş olanlardan defterde bu ay kaydı ve bu
+/// TR ayında alımı OLMAYANLAR. Saf — sorgular çağıranda.
+export function birikimHedefleri(
+  secenler: string[],
+  zatenGonderilen: Set<string>,
+  buAyAlimiOlan: Set<string>,
+): string[] {
+  return secenler.filter((u) => !zatenGonderilen.has(u) && !buAyAlimiOlan.has(u));
+}
+
+/// `in` filtresi için parçalar (URL boyu; PostgREST `max_rows` 1000).
+function parcala<T>(dizi: T[], boy = 200): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < dizi.length; i += boy) out.push(dizi.slice(i, i + boy));
+  return out;
+}
+
+async function birikimAni(p: {
+  admin: SupabaseClient;
+  fcmProjectId: string;
+  fcmServiceAccountJson: string;
+  dryRun: boolean;
+  now: Date;
+}): Promise<Response> {
+  const { admin, now } = p;
+  const { yil, ay, gun } = trTarihi(now);
+  const secimler = bugununSecimleri(gun, ayinSonGunu(yil, ay));
+  const donem = birikimDonemi(yil, ay);
+
+  // 1) Bugünü seçenler — sayfalı (max_rows 1000).
+  const secenler: string[] = [];
+  const SAYFA = 1000;
+  for (let bas = 0;; bas += SAYFA) {
+    const { data, error } = await admin
+      .from('profiles')
+      .select('id')
+      .in('birikim_hatirlatma_gunu', secimler)
+      .order('id')
+      .range(bas, bas + SAYFA - 1);
+    if (error) throw new Error(`Profiller alinamadi: ${error.message}`);
+    const satirlar = (data ?? []) as Array<{ id: string }>;
+    for (const r of satirlar) secenler.push(String(r.id));
+    if (satirlar.length < SAYFA) break;
+  }
+  if (secenler.length === 0) {
+    return jsonResponse({ ok: true, occasion: BIRIKIM, reason: 'Bugun hatirlatma secen yok.', sent: 0 });
+  }
+
+  // 2) Defter ve bu ayın alımları. Okunamıyorsa DUR: defteri okumadan
+  //    göndermek çift push, alımı okumadan göndermek gereksiz push riskidir.
+  const zatenGonderilen = new Set<string>();
+  const buAyAlimiOlan = new Set<string>();
+  const ayBasi = trAyBasiUtc(yil, ay);
+  for (const parca of parcala(secenler)) {
+    const defter = await admin
+      .from('birikim_hatirlatma_log')
+      .select('user_id')
+      .eq('period', donem)
+      .in('user_id', parca);
+    if (defter.error) throw new Error(`Defter okunamadi: ${defter.error.message}`);
+    for (const r of (defter.data ?? []) as Array<{ user_id: string }>) {
+      zatenGonderilen.add(String(r.user_id));
+    }
+
+    // Alım: `kind = 'buy'` (satış, temettü, silme kaydı sayılmaz). BES'in
+    // otomatik yazılan katkısı da bir alım satırıdır — o kullanıcıya gitmez.
+    const alimlar = await admin
+      .from('assets')
+      .select('user_id')
+      .eq('kind', 'buy')
+      .is('deleted_at', null)
+      .gte('added_date', ayBasi)
+      .in('user_id', parca);
+    if (alimlar.error) throw new Error(`Alimlar okunamadi: ${alimlar.error.message}`);
+    for (const r of (alimlar.data ?? []) as Array<{ user_id: string }>) {
+      buAyAlimiOlan.add(String(r.user_id));
+    }
+  }
+
+  const hedefKullanicilar = birikimHedefleri(secenler, zatenGonderilen, buAyAlimiOlan);
+  if (hedefKullanicilar.length === 0) {
+    return jsonResponse({
+      ok: true,
+      occasion: BIRIKIM,
+      reason: 'Hedef yok (bu ay eklemesi olan ya da zaten hatirlatilan).',
+      sent: 0,
+      skipped_has_contribution: buAyAlimiOlan.size,
+    });
+  }
+
+  // 3) Token'lar — yalnız hedef kullanıcılarınki.
+  const tokenRows: TokenRow[] = [];
+  for (const parca of parcala(hedefKullanicilar)) {
+    const { data } = await admin
+      .from('user_push_tokens')
+      .select('token, user_id, device_id, platform, updated_at')
+      .in('user_id', parca);
+    tokenRows.push(...((data ?? []) as TokenRow[]));
+  }
+  const hedefler = collapseTokens(tokenRows);
+  const mesaj = birikimMesaji();
+  if (p.dryRun) {
+    return jsonResponse({
+      ok: true,
+      dry_run: true,
+      occasion: BIRIKIM,
+      would_send: hedefler.length,
+      users: hedefKullanicilar.length,
+      title: mesaj.title,
+    });
+  }
+  if (hedefler.length === 0) {
+    return jsonResponse({ ok: true, occasion: BIRIKIM, reason: 'Token yok.', sent: 0 });
+  }
+
+  const accessToken = await createAccessToken(
+    JSON.parse(p.fcmServiceAccountJson) as ServiceAccount,
+  );
+  let sent = 0;
+  let skippedQuietHours = 0;
+  const failures: string[] = [];
+  const cankaydi = new Set<string>();
+  const gonderilenKullanicilar = new Set<string>();
+  const sessiz = await sessizKullanicilar(admin, hedefler.map((t) => t.user_id), now);
+  for (const t of hedefler) {
+    if (sessiz.has(t.user_id)) { skippedQuietHours += 1; continue; }
+    const kayitHatasi = await recordAppNotification(
+      admin,
+      appNotificationRow({
+        userId: t.user_id,
+        type: 'calendar_nudge',
+        title: mesaj.title,
+        body: mesaj.body,
+        data: { occasion: BIRIKIM },
+      }),
+      cankaydi,
+    );
+    if (kayitHatasi) failures.push(kayitHatasi);
+
+    const r = await sendFcmNotification({
+      accessToken,
+      projectId: p.fcmProjectId,
+      token: t.token,
+      title: mesaj.title,
+      body: mesaj.body,
+      channelId: CHANNEL_ID,
+      data: { type: 'calendar_nudge', occasion: BIRIKIM },
+    });
+    if (r.ok) {
+      sent += 1;
+      gonderilenKullanicilar.add(t.user_id);
+    } else {
+      console.error('[calendar-nudge] birikim FCM basarisiz:', r.rawText.slice(0, 500));
+      failures.push(`fcm: ${r.hataKodu}`);
+      if (r.shouldDeleteToken) {
+        await admin.from('user_push_tokens').delete().eq('token', t.token);
+      }
+    }
+  }
+
+  // Defter: yalnız en az bir cihazına gerçekten giden kullanıcılar. Sessiz
+  // saatte atlanan kullanıcı defterlenmez; ama cron günde bir koştuğu için
+  // o ay o kullanıcıya yeniden denenmez (sessiz saat 10:30'u kapsıyorsa
+  // hatırlatmayı istememiş sayılır).
+  // Saklama: yalnız bu ay ve bir önceki ay tutulur (defterin tek işi aynı
+  // ayın ikinci push'unu durdurmak). KVKK aydınlatma metni "bildirim
+  // kayıtları 90 gün" diyor; bu, o sınırın içinde kalır.
+  try {
+    await admin
+      .from('birikim_hatirlatma_log')
+      .delete()
+      .lt('period', birikimDonemi(ay === 1 ? yil - 1 : yil, ay === 1 ? 12 : ay - 1));
+  } catch (_) { /* bir sonraki koşuda yeniden denenir */ }
+
+  if (gonderilenKullanicilar.size > 0) {
+    try {
+      await admin.from('birikim_hatirlatma_log').upsert(
+        [...gonderilenKullanicilar].map((u) => ({ user_id: u, period: donem })),
+        { onConflict: 'user_id,period' },
+      );
+    } catch (_) { /* en kötü: elle ikinci tetikte ikinci bildirim */ }
+  }
+
+  return jsonResponse({
+    ok: true,
+    occasion: BIRIKIM,
+    sent,
+    users: gonderilenKullanicilar.size,
+    skipped_quiet_hours: skippedQuietHours,
+    failures: failures.slice(0, 5),
+  });
+}
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
@@ -351,6 +590,15 @@ Deno.serve(async (request) => {
 
     // Yıl sonu anı (0087) kendi yolundan; gövdesiz / başka an → TÜFE günü
     // (0048'in `inflation_day` gövdesi dahil — eski davranış korunur).
+    if (occasion === BIRIKIM) {
+      return await birikimAni({
+        admin,
+        fcmProjectId,
+        fcmServiceAccountJson,
+        dryRun,
+        now: new Date(),
+      });
+    }
     if (occasion === YIL_SONU) {
       return await yilSonuAni({
         admin,

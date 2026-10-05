@@ -8,6 +8,20 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-05 Maaş günü birikim hatırlatması (Faz 2, 0119)
+
+Ayarlar › Bildirimler'de "Maaş günü hatırlatması" (yalnız `birikim_serisi`
+bayrağı açıkken görünür): ayın bir günü seçilir, o gün 10:30'da, o ay hiç
+alım yoksa tek push gider; alım varsa gitmez. Varsayılan kapalı (opt-in) —
+migration canlıda kimseye push göndermez. Yasal metin değişmedi: "takvim
+hatırlatmaları" + "bildirim tercihleri" kapsıyor; defter en çok ~2 ay tutulur.
+- [ ] Sıra: PR birleş → Supabase deploy (dal `main`, hedef `ikisi`,
+      migration + `calendar-nudge` fonksiyonu). Uygulama kolonu yalnız
+      bayrak açıkken okur; deploy'dan önce bayrağı açma.
+- [ ] Deneme: kendi cihazında bayrak açık, Ayarlar'da bugünün gününü seç,
+      o ay alımın yoksa Tokyo'da `select public.trigger_calendar_nudge_birikim();`
+      (alımın varsa push gitmez, beklenen bu).
+
 ## ⏳ 2026-10-05 Aylık birikim serisi (Faz 1) — bayrak `birikim_serisi` KAPALI
 
 Kararların (5 Ekim): ritim aylık, son 12 ayda 1 mola, BES otomatik katkısı

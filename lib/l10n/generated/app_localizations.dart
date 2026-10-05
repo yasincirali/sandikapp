@@ -10017,6 +10017,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Son {total} ay: {saved} birikim ayı'**
   String streakStripSemantics(String total, String saved);
+
+  /// No description provided for @savingReminderTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Maaş günü hatırlatması'**
+  String get savingReminderTitle;
+
+  /// No description provided for @savingReminderOff.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapalı'**
+  String get savingReminderOff;
+
+  /// No description provided for @savingReminderOn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayın {day}. günü, 10:30 · o ay ekleme yoksa'**
+  String savingReminderOn(String day);
+
+  /// No description provided for @savingReminderSheetBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin gün, o ay portföyüne hiç ekleme yapmadıysan tek bir hatırlatma gelir. Ekleme yaptıysan gelmez. Seçtiğin gün o ayda yoksa (ör. Şubat\'ta 30) ayın son günü gelir.'**
+  String get savingReminderSheetBody;
+
+  /// No description provided for @savingReminderDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayın {day}. günü'**
+  String savingReminderDay(String day);
 }
 
 class _AppLocalizationsDelegate
