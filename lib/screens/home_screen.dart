@@ -273,6 +273,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // gidiyordu; anlatılan hisse ikisinde de yoktu.
         NotificationService.instance.openDailyBrief(b.data);
       case AppNotification.weeklySummary:
+        // Push'la AYNI kural ve hedef (bkz. `haftaOzetineGider`).
+        if (NotificationService.haftaOzetineGider(b.data)) {
+          NotificationService.instance.openHaftaOzeti();
+          break;
+        }
         Navigator.push(
           context,
           adaptiveRoute<void>(

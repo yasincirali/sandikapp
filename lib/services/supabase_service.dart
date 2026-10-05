@@ -123,6 +123,155 @@ class SupabaseService {
     return out;
   }
 
+  // ── Fon para akışı (0106) ────────────────────────────────────────────────
+
+  /// [fonKodu]'nun [baslangic]'tan bu yana günlük satırları (HAM, artan
+  /// tarih). Ayrıştırma ve toplama `fon_akisi.dart`'ta (saf, testli).
+  ///
+  /// Kişisel veri değil: tablo oturum açmış herkese okunur (RLS `using
+  /// (true)`), yazma yalnız `akis-gozlem`. 63 günde en çok ~45 satır.
+  /// Tablo yoksa (0106 henüz koşmadı) istisna çağırana gider; çağıran
+  /// Crashlytics'e yazıp kartı çizmez.
+  Future<List<Map<String, dynamic>>> fonAkisGunleri(
+    String fonKodu, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fonAkisGunleri',
+      table: 'fon_akis_gunluk',
+      op: 'SELECT',
+      request: {'fon_kodu': fonKodu, 'tarih_gte': gun},
+      call: () => _db
+          .from('fon_akis_gunluk')
+          .select('tarih, portfoy_degeri, net_akis, yatirimci')
+          .eq('fon_kodu', fonKodu)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// [ticker]'ın ('TEFAS:TTE') [baslangic]'tan bu yana büyük giriş/çıkış
+  /// olayları (HAM, yeniden eskiye). Kuralı sunucu uygular; istemci yalnız
+  /// okur.
+  Future<List<Map<String, dynamic>>> balinaOlaylari(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.balinaOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
+          .eq('ticker', ticker)
+          // Tablo 0107'ten beri hisse olaylarını da taşıyor.
+          .inFilter('tur', ['fon_giris', 'fon_cikis'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  /// BIST hissesinin ([sembol] 'THYAO.IS') [baslangic]'tan bu yana günlük
+  /// kapanış ve para hacmi (HAM, artan tarih). Ayrıştırma `hisse_hacmi.dart`.
+  /// Tablo oturum açmış herkese okunur; yazma yalnız `hacim-gozlem` (0107).
+  Future<List<Map<String, dynamic>>> hisseHacimGunleri(
+    String sembol, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.hisseHacimGunleri',
+      table: 'hisse_hacim_gunluk',
+      op: 'SELECT',
+      request: {'ticker': sembol, 'tarih_gte': gun},
+      call: () => _db
+          .from('hisse_hacim_gunluk')
+          .select('tarih, kapanis, para_hacmi')
+          .eq('ticker', sembol)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// [sembol]'ün olağandışı hacim günleri (HAM). `balinaOlaylari`'ndan ayrı:
+  /// hisse olayının sütunları farklı (kat ve fiyat değişimi).
+  Future<List<Map<String, dynamic>>> hacimOlaylari(
+    String sembol, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.hacimOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': sembol, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
+          .eq('ticker', sembol)
+          .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  /// Coin'in ([ticker] 'KRIPTO:BTC') günlük Binance USDT hacmi ve alıcı payı
+  /// (HAM, artan tarih). Yazma yalnız `kripto-hacim-gozlem` (0108).
+  Future<List<Map<String, dynamic>>> kriptoHacimGunleri(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoHacimGunleri',
+      table: 'kripto_hacim_gunluk',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('kripto_hacim_gunluk')
+          .select('tarih, kapanis, para_hacmi, alici_payi')
+          .eq('ticker', ticker)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// Coin'in olağandışı hacim günleri (HAM).
+  Future<List<Map<String, dynamic>>> kriptoHacimOlaylari(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoHacimOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
+          .eq('ticker', ticker)
+          .inFilter('tur', ['kripto_hacim_yukselis', 'kripto_hacim_dusus'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  static String _isoGun(DateTime t) =>
+      '${t.year.toString().padLeft(4, '0')}-'
+      '${t.month.toString().padLeft(2, '0')}-'
+      '${t.day.toString().padLeft(2, '0')}';
+
   // ── Profiles ─────────────────────────────────────────────────────────────
 
   Future<AppUser?> getProfile(String userId) async {

@@ -17,6 +17,8 @@ import '../screens/main_navigation_screen.dart' show MainNavigationScreen;
 import '../screens/partnership_requests_screen.dart';
 import '../screens/portfolio_performance_screen.dart';
 import '../screens/asset_detail_screen.dart';
+import '../screens/hafta_ozeti_screen.dart';
+import 'remote_config_service.dart';
 import '../screens/asset_not_found_screen.dart';
 import '../theme/sandik.dart' show adaptiveRoute, Sandik;
 import '../config/pref_keys.dart';
@@ -564,6 +566,13 @@ class NotificationService {
     // orada. Aylıkta 1A dönemi. Çan sayfasındaki dokunuşla aynı hedef
     // (`home_screen._genelBildirimeGit`). 2026-09-20'ye kadar haftalık
     // push ana ekranda kalıyordu — kullanıcı özeti aramak zorundaydı.
+    // Akış cümlesi taşıyan haftalık özet → "Haftanın özeti": bildirimin
+    // anlattığı fon hareketi orada. Bayrak kapalıysa (kart da görünmez)
+    // eski hedef.
+    if (type == weeklySummaryType && haftaOzetineGider(data)) {
+      openHaftaOzeti();
+      return;
+    }
     if (type == weeklySummaryType || type == monthlySummaryType) {
       _openOzet(
           periodIdx:
@@ -692,6 +701,28 @@ class NotificationService {
   /// [periodIdx] null → ekranın varsayılan dönemi (haftalık için 1H'yi
   /// zorlamıyoruz; Özet sekmesi en son bakılan dönemi hatırlar).
   /// Navigator hazır değilse [_openPartnerInvite] ile aynı yeniden deneme.
+  /// Haftalık özet bildirimi "Haftanın özeti" ekranına mı gitmeli?
+  /// Sunucu akış cümlesi eklediyse `akis: '1'` yazar (weekly-summary).
+  static bool haftaOzetineGider(Map<String, dynamic> data) =>
+      data['akis']?.toString() == '1' &&
+      RemoteConfigService.instance.balinaRadariAcik;
+
+  /// Push ve çan sayfası AYNI hedefi açsın diye tek fonksiyon.
+  void openHaftaOzeti({int deneme = 0}) {
+    if (kilitKapisi.ertele(() => openHaftaOzeti())) return;
+    final navigator = _navigatorKey?.currentState;
+    if (navigator == null) {
+      if (deneme >= _yenidenDenemeSiniri) return;
+      Future<void>.delayed(
+        _yenidenDenemeAraligi,
+        () => openHaftaOzeti(deneme: deneme + 1),
+      );
+      return;
+    }
+    navigator.push(
+        adaptiveRoute<void>(builder: (_) => const HaftaOzetiScreen()));
+  }
+
   void _openOzet({int? periodIdx, int deneme = 0}) {
     if (kilitKapisi.ertele(() => _openOzet(periodIdx: periodIdx))) return;
     final navigator = _navigatorKey?.currentState;

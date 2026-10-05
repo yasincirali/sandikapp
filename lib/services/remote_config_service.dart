@@ -196,6 +196,13 @@ class RemoteConfigService {
     // Kapalıyken GÜNLÜK birebir eski davranışta (hafta sonu düz) kalır.
     'hafta_sonu_yurt_ici_seri': false,
 
+    // Fon sayfasında "Para akışı" kartı ve büyük giriş/çıkış olayları
+    // (Balina B1, 2026-10-04). KAPALI doğar: veri `akis-gozlem` fonksiyonu
+    // ve 0106 cron'u iki sunucuda koşup pencereyi doldurduktan sonra gelir;
+    // tablo boşken kart zaten çizilmez ama bayrak, dağıtım sırasını
+    // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
+    'balina_radari_acik': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -231,11 +238,27 @@ class RemoteConfigService {
     //   · ortak_secimi_tasi   → karttan açılan ekran kartın ortak seçimiyle.
   };
 
-  // NOT: `RC_ACIK` yerel deneme anahtarı, `testAcik` / `testKapali` test
-  // kancaları ve `_bayrak` okuyucusu 2026-10-05'te kaldırıldı — yalnız
-  // yukarıdaki 15 sadeleştirme bayrağı kullanıyordu. Yeni bir bayrağın
-  // kapalı dalını emülatörde/testte açmak gerekirse 433e0e8'deki biçimiyle
-  // geri eklenir (release'de etkisiz kalması şartıyla).
+  /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
+  /// Firebase'e dokunmadan açılır. Yalnız debug/profile derlemede okunur;
+  /// release'de (mağaza, TestFlight) HİÇ etkisi yok, uzak değer tek kaynak.
+  /// Neden: bayrak arkasındaki ekranı emülatörde görmek için Console'da kendi
+  /// cihazına koşul yazmak gerekiyordu; emülatörün Firebase kimliği her
+  /// sıfırlamada değişiyor. (2026-10-05: 15 sadeleştirme bayrağı kalkınca bu
+  /// altyapı da kalkmıştı; `balina_radari_acik` kullandığı için geri geldi.
+  /// Eski 15 bayrağa özgü `testKapali` kancası geri gelmedi.)
+  static const _yerelAcikHam = String.fromEnvironment('RC_ACIK');
+  static final Set<String> _yerelAcik = kReleaseMode || _yerelAcikHam.isEmpty
+      ? const {}
+      : _yerelAcikHam.split(',').map((e) => e.trim()).toSet();
+
+  /// Widget testinde bayrak açmak için (Firebase testte ayağa kalkmaz).
+  @visibleForTesting
+  static Set<String> testAcik = {};
+
+  bool _bayrak(String anahtar) =>
+      testAcik.contains(anahtar) ||
+      _yerelAcik.contains(anahtar) ||
+      (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -398,6 +421,9 @@ class RemoteConfigService {
   bool get haftaSonuYurtIciSeri =>
       _rc?.getBool('hafta_sonu_yurt_ici_seri') ??
       _defaults['hafta_sonu_yurt_ici_seri'] as bool;
+
+  /// Fon sayfasında para akışı kartı (0106). Gerekçe `_defaults`'ta.
+  bool get balinaRadariAcik => _bayrak('balina_radari_acik');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

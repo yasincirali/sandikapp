@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -35,6 +35,57 @@ kalıcı, eski (kapalı) yollar silindi: `ilk_varlik_kolay`,
       "Bugünkü portföyle" rozeti (Ayarlar › Görünüm), Ayarlar grupları +
       Gelişmiş, boş ana ekranda vitrin, varlık ekranında Al · Sat · Temettü.
 
+## ⏳ 2026-10-04 Fon para akışı (Balina B1) — dal `feat/balina-fon-akisi` (yerel, push yok)
+
+Fon/BES sayfasında "Para akışı" kartı: son haftanın net girişi/çıkışı, 8
+haftalık çubuklar, fon büyüklüğü, yatırımcı sayısı ve kurala uyan büyük
+giriş/çıkış günleri. Veri TEFAS'tan sunucuda toplanır (`akis-gozlem`, 0106).
+Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma.
+
+> **DAĞITILDI 2026-10-05** (Actions run 37238691709, hedef `ikisi`): migration
+> 0106 + 0107 + 0108 ve `akis-gozlem`, `hacim-gozlem`, `kripto-hacim-gozlem`,
+> `weekly-summary` iki sunucuda; ŞEMA EŞİT. Aşağıdaki "deploy" maddeleri
+> tamam; ilk doldurmayı cron kendiliğinden yapar (fon penceresi ~2 günde
+> dolar), beklemek istemezsen tetikleyicileri elle çağır. Numaralar iki kez
+> kaydı: canlıda 0105 zaten PR #90'a aitti; bu dal #90'ın üstüne oturur,
+> **önce #90'ı birleştir**.
+
+- [ ] Dalı incele, uygunsa PR aç / birleştir (birleştirme sende).
+- [ ] **Supabase deploy, hedef `ikisi`:** migration `0106_fon_akisi.sql` +
+      fonksiyon `akis-gozlem`. Yeni secret YOK (`TEFAS_NAV_CRON_SECRET`
+      paylaşılır). Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] İlk doldurma (cron'u beklemeden, etkin sunucuda SQL Editor):
+      `select public.trigger_akis_gozlem();` — 90 sn arayla ~7 kez. Kontrol:
+      `select count(*), min(tarih), max(tarih) from fon_akis_tur where fon_sayisi > 0;`
+      → ~89 gün, `max` son işlem günü.
+- [ ] Yanlış alarm denetimi (R-73): elindeki 10 fonda "Büyük hareketler"
+      listesi makul mü? Kural (2026-10-04): 4 sapma + %3 + fon ≥ ₺250 mn,
+      para piyasası fonları hariç. Yerel ölçüm (29 işlem günü, 1.375 fon):
+      günde ~16 olay, fonların %21'inde en az bir olay; bunların 275'i
+      bildirim kademesinde (≥ %5, ≥ ₺25 mn, penceredeki en büyük akış;
+      203 fon). Oranların paydası akıştan önceki fon büyüklüğü. Eşikler `_shared/balina.ts`'te tek yerde.
+- [ ] **Hisse hacim radarı (B2):** aynı dağıtımda migration
+      `0107_hisse_hacim.sql` + fonksiyon `hacim-gozlem` (hedef `ikisi`; yeni
+      secret YOK, `PRICE_ALERTS_CRON_SECRET` paylaşılır). İlk doldurma tek
+      çağrı: `select public.trigger_hacim_gozlem();` (3 aylık seri tek
+      istekte gelir). Kontrol:
+      `select count(distinct ticker), max(tarih) from hisse_hacim_gunluk;`
+- [ ] **Kripto alıcı baskısı (B3):** migration `0108_kripto_hacim.sql` +
+      fonksiyon `kripto-hacim-gozlem` (yeni secret YOK). İlk doldurma tek
+      çağrı: `select public.trigger_kripto_hacim_gozlem();` Kontrol:
+      `select count(distinct ticker), max(tarih) from kripto_hacim_gunluk;`
+- [ ] **Haftanın özeti akış cümlesi** (kararın 2026-10-04: olay başına ayrı
+      bildirim yok, Pazartesi özeti akışa değinir). `weekly-summary`
+      fonksiyonunu da dağıt (hedef `ikisi`). Cümle KAPALI doğar; bayrağı
+      açtığın gün iki projede function secret olarak yaz:
+      `HAFTALIK_AKIS_SATIRI=1`. Kuru koşu:
+      `select public.trigger_weekly_summary();` yanıtında `flow_sentences`
+      (cümlesi olan kullanıcı) ve `sent_flow_only` (yüzdesi atlanıp yalnız
+      akışla giden) alanları. Kapalıyken haftalık özet birebir eskisi gibi.
+- [ ] Firebase Console › Remote Config: `balina_radari_acik` = `true`
+      (önce kendi cihazına koşulla). Açılışla AYNI sürümde sürüm notu + tur
+      adımı yazılacak (bayrak kapalıyken yazılmadı: görünmeyen özellik
+      duyurulmaz).
 ## ✅ 2026-10-04/05 oturumu — cihazda senin bakacakların
 
 Kod ve sunucu tarafı bitti (PR #85–#89, 0102–0105 iki sunucuda). Emülatörde

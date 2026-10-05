@@ -5683,4 +5683,257 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalBelgeYatirimUyarisi => 'Investment Disclaimer';
+
+  @override
+  String get flowTitleUpper => 'MONEY FLOW';
+
+  @override
+  String get flowLastWeekIn => 'Net inflow, latest week';
+
+  @override
+  String get flowLastWeekOut => 'Net outflow, latest week';
+
+  @override
+  String get flowLastWeekFlat => 'Net flow, latest week';
+
+  @override
+  String flowRange(String from, String to) {
+    return '$from - $to';
+  }
+
+  @override
+  String get flowChartCaption => 'Weekly net flow · last 8 weeks';
+
+  @override
+  String flowChartSemantics(String amount) {
+    return 'Weekly net money flow for the last 8 weeks. Latest week $amount.';
+  }
+
+  @override
+  String flowWeekOf(String date) {
+    return 'Week of $date';
+  }
+
+  @override
+  String get flowFundSize => 'Fund size';
+
+  @override
+  String get flowInvestors => 'Investors';
+
+  @override
+  String flowInvestorsDelta(String count, String delta) {
+    return '$count ($delta)';
+  }
+
+  @override
+  String get flowEventsTitle => 'Large moves · last 30 days';
+
+  @override
+  String flowEventIn(String date) {
+    return 'Large inflow · $date';
+  }
+
+  @override
+  String flowEventOut(String date) {
+    return 'Large outflow · $date';
+  }
+
+  @override
+  String flowEventEvidence(String amount, String pct, String times) {
+    return '$amount · $pct of fund size · $times× the usual daily move';
+  }
+
+  @override
+  String flowEventInvestors(String delta) {
+    return 'Investors that day $delta';
+  }
+
+  @override
+  String get flowNoEvents =>
+      'No unusually large inflow or outflow in the last 30 days.';
+
+  @override
+  String get flowExplain =>
+      'Net flow is money entering the fund minus money leaving it; price changes are not included.';
+
+  @override
+  String flowFootnote(String date) {
+    return 'Source: TEFAS · data as of $date. This data cannot show who bought or sold. Past flows do not indicate future returns; not investment advice.';
+  }
+
+  @override
+  String flowStreakIn(String count) {
+    return 'Net inflow for $count weeks in a row';
+  }
+
+  @override
+  String flowStreakOut(String count) {
+    return 'Net outflow for $count weeks in a row';
+  }
+
+  @override
+  String get flowPeriod1m => 'Last 1 month';
+
+  @override
+  String get flowPeriod3m => 'Last 3 months';
+
+  @override
+  String flowPeriodValue(String amount, String pct) {
+    return '$amount · $pct';
+  }
+
+  @override
+  String get flowPeriodNote =>
+      'Percentages are the flow relative to fund size at the start of the period.';
+
+  @override
+  String flowDecompose(String total, String price, String flow) {
+    return 'Fund size changed $total over the last month: price effect $price, money flow $flow.';
+  }
+
+  @override
+  String flowEventEvidenceMulti(String amount, String pct, String days) {
+    return '$amount · $pct of fund size · $days trading days in a row';
+  }
+
+  @override
+  String get weekTitle => 'This week';
+
+  @override
+  String get weekIntro =>
+      'Highlights of the latest week in the assets you hold. Tap a row for details.';
+
+  @override
+  String get weekFundsUpper => 'MONEY FLOW IN YOUR FUNDS';
+
+  @override
+  String weekRowRange(String label, String range) {
+    return '$label · $range';
+  }
+
+  @override
+  String get weekRowIn => 'Net inflow';
+
+  @override
+  String get weekRowOut => 'Net outflow';
+
+  @override
+  String get weekRowFlat => 'Net flow';
+
+  @override
+  String get weekRowBigIn => 'Large inflow this week';
+
+  @override
+  String get weekRowBigOut => 'Large outflow this week';
+
+  @override
+  String get weekEmptyNoData =>
+      'Nothing to show this week. Money flow in your funds and unusual volume days in your stocks or crypto appear here once their data arrives.';
+
+  @override
+  String get weekFootnote =>
+      'Sources: TEFAS, Yahoo Finance, Binance. Net flow is money entering minus money leaving the fund; this data cannot show who bought or sold. Your portfolio\'s weekly return is under Performance, Summary. Not investment advice.';
+
+  @override
+  String get weekLink => 'My funds this week';
+
+  @override
+  String get volTitleUpper => 'VOLUME RADAR';
+
+  @override
+  String volLastDay(String date) {
+    return 'Traded value · $date';
+  }
+
+  @override
+  String volVsAverage(String times) {
+    return '$times× the average of the previous 20 days';
+  }
+
+  @override
+  String volPriceSameDay(String pct) {
+    return 'Price that day $pct';
+  }
+
+  @override
+  String get volChartCaption => 'Daily traded value · last 20 trading days';
+
+  @override
+  String volChartSemantics(String amount) {
+    return 'Daily traded value for the last 20 trading days. Latest day $amount.';
+  }
+
+  @override
+  String get volExplain =>
+      'Traded value is the total value of shares that changed hands that day. Every trade has a buyer and a seller; high volume alone does not mean money flowed in or out.';
+
+  @override
+  String get volEventsTitle => 'Unusual volume days · last 30 days';
+
+  @override
+  String volEventTitle(String date) {
+    return 'Unusual volume · $date';
+  }
+
+  @override
+  String volEventEvidence(String amount, String times, String pct) {
+    return '$amount · $times× the average · price $pct';
+  }
+
+  @override
+  String get volNoEvents => 'No unusual volume days in the last 30 days.';
+
+  @override
+  String volFootnote(String date) {
+    return 'Source: Yahoo Finance end-of-day data · as of $date. This data cannot show who bought or sold. Not investment advice.';
+  }
+
+  @override
+  String get cryTitleUpper => 'BUYER PRESSURE';
+
+  @override
+  String cryShareLabel(String date) {
+    return 'Buyer share · $date';
+  }
+
+  @override
+  String cryShareAvg(String pct) {
+    return 'Average of the last 7 days $pct';
+  }
+
+  @override
+  String get cryExplain =>
+      'Buyer share is the part of the day\'s volume that came from market-order buyers. Above 50% means buyers were more eager, below means sellers were; it is not a measure of money flowing in.';
+
+  @override
+  String cryVolumeLabel(String amount) {
+    return 'Volume $amount';
+  }
+
+  @override
+  String get cryChartCaption => 'Daily volume (USDT) · last 20 days';
+
+  @override
+  String cryChartSemantics(String amount) {
+    return 'Daily volume for the last 20 days. Latest day $amount.';
+  }
+
+  @override
+  String cryEventEvidence(
+      String amount, String times, String pct, String share) {
+    return '$amount · $times× the average · price $pct · buyer share $share';
+  }
+
+  @override
+  String cryFootnote(String date) {
+    return 'Source: Binance, USDT pair · as of $date. Covers trades on Binance only; this data cannot show who bought or sold. Not investment advice.';
+  }
+
+  @override
+  String get weekVolumeUpper => 'UNUSUAL VOLUME';
+
+  @override
+  String weekVolumeRow(String date) {
+    return 'Unusual volume · $date';
+  }
 }

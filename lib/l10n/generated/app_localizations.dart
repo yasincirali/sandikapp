@@ -9482,6 +9482,379 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yatırım Uyarısı'**
   String get yasalBelgeYatirimUyarisi;
+
+  /// No description provided for @flowTitleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'PARA AKIŞI'**
+  String get flowTitleUpper;
+
+  /// No description provided for @flowLastWeekIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son hafta net giriş'**
+  String get flowLastWeekIn;
+
+  /// No description provided for @flowLastWeekOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son hafta net çıkış'**
+  String get flowLastWeekOut;
+
+  /// No description provided for @flowLastWeekFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son hafta net akış'**
+  String get flowLastWeekFlat;
+
+  /// Para akışı kartında son haftanın tarih aralığı: '29 Eyl - 2 Eki'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{from} - {to}'**
+  String flowRange(String from, String to);
+
+  /// No description provided for @flowChartCaption.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık net akış · son 8 hafta'**
+  String get flowChartCaption;
+
+  /// No description provided for @flowChartSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 8 haftanın haftalık net para akışı. Son hafta {amount}.'**
+  String flowChartSemantics(String amount);
+
+  /// No description provided for @flowWeekOf.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} haftası'**
+  String flowWeekOf(String date);
+
+  /// No description provided for @flowFundSize.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon büyüklüğü'**
+  String get flowFundSize;
+
+  /// No description provided for @flowInvestors.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yatırımcı sayısı'**
+  String get flowInvestors;
+
+  /// Yatırımcı sayısı ve bir önceki işlem gününe göre farkı: '40.518 (+12)'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} ({delta})'**
+  String flowInvestorsDelta(String count, String delta);
+
+  /// No description provided for @flowEventsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük hareketler · son 30 gün'**
+  String get flowEventsTitle;
+
+  /// No description provided for @flowEventIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük giriş · {date}'**
+  String flowEventIn(String date);
+
+  /// No description provided for @flowEventOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Büyük çıkış · {date}'**
+  String flowEventOut(String date);
+
+  /// Olayın kanıt satırı. amount işaretli tutar, pct yüzde, times bir ondalıklı kat.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · fon büyüklüğüne oranı {pct} · olağan günlük hareketin {times} katı'**
+  String flowEventEvidence(String amount, String pct, String times);
+
+  /// No description provided for @flowEventInvestors.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı gün yatırımcı sayısı {delta}'**
+  String flowEventInvestors(String delta);
+
+  /// No description provided for @flowNoEvents.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.'**
+  String get flowNoEvents;
+
+  /// No description provided for @flowExplain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.'**
+  String get flowExplain;
+
+  /// No description provided for @flowFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: TEFAS · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.'**
+  String flowFootnote(String date);
+
+  /// No description provided for @flowStreakIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} haftadır üst üste net giriş'**
+  String flowStreakIn(String count);
+
+  /// No description provided for @flowStreakOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} haftadır üst üste net çıkış'**
+  String flowStreakOut(String count);
+
+  /// No description provided for @flowPeriod1m.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 1 ay'**
+  String get flowPeriod1m;
+
+  /// No description provided for @flowPeriod3m.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 3 ay'**
+  String get flowPeriod3m;
+
+  /// Dönem akışı: işaretli tutar ve dönem başındaki fon büyüklüğüne oranı.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · {pct}'**
+  String flowPeriodValue(String amount, String pct);
+
+  /// No description provided for @flowPeriodNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.'**
+  String get flowPeriodNote;
+
+  /// No description provided for @flowDecompose.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 1 ayda fon büyüklüğü {total} değişti: fiyat etkisi {price}, para akışı {flow}.'**
+  String flowDecompose(String total, String price, String flow);
+
+  /// No description provided for @flowEventEvidenceMulti.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · fon büyüklüğüne oranı {pct} · {days} işlem günü üst üste'**
+  String flowEventEvidenceMulti(String amount, String pct, String days);
+
+  /// No description provided for @weekTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftanın özeti'**
+  String get weekTitle;
+
+  /// No description provided for @weekIntro.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.'**
+  String get weekIntro;
+
+  /// No description provided for @weekFundsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'FONLARINDA PARA AKIŞI'**
+  String get weekFundsUpper;
+
+  /// Haftanın özeti satırı: 'Net çıkış · 28 Eyl - 2 Eki'.
+  ///
+  /// In tr, this message translates to:
+  /// **'{label} · {range}'**
+  String weekRowRange(String label, String range);
+
+  /// No description provided for @weekRowIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net giriş'**
+  String get weekRowIn;
+
+  /// No description provided for @weekRowOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net çıkış'**
+  String get weekRowOut;
+
+  /// No description provided for @weekRowFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net akış'**
+  String get weekRowFlat;
+
+  /// No description provided for @weekRowBigIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hafta büyük giriş var'**
+  String get weekRowBigIn;
+
+  /// No description provided for @weekRowBigOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hafta büyük çıkış var'**
+  String get weekRowBigOut;
+
+  /// No description provided for @weekEmptyNoData.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.'**
+  String get weekEmptyNoData;
+
+  /// No description provided for @weekFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.'**
+  String get weekFootnote;
+
+  /// No description provided for @weekLink.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm fonlarımın haftası'**
+  String get weekLink;
+
+  /// No description provided for @volTitleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'HACİM RADARI'**
+  String get volTitleUpper;
+
+  /// No description provided for @volLastDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para hacmi · {date}'**
+  String volLastDay(String date);
+
+  /// No description provided for @volVsAverage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önceki 20 günün ortalamasının {times} katı'**
+  String volVsAverage(String times);
+
+  /// No description provided for @volPriceSameDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı gün fiyat {pct}'**
+  String volPriceSameDay(String pct);
+
+  /// No description provided for @volChartCaption.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük para hacmi · son 20 işlem günü'**
+  String get volChartCaption;
+
+  /// No description provided for @volChartSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 20 işlem gününün günlük para hacmi. Son gün {amount}.'**
+  String volChartSemantics(String amount);
+
+  /// No description provided for @volExplain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.'**
+  String get volExplain;
+
+  /// No description provided for @volEventsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Olağandışı hacim günleri · son 30 gün'**
+  String get volEventsTitle;
+
+  /// No description provided for @volEventTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Olağandışı hacim · {date}'**
+  String volEventTitle(String date);
+
+  /// No description provided for @volEventEvidence.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · ortalamanın {times} katı · fiyat {pct}'**
+  String volEventEvidence(String amount, String times, String pct);
+
+  /// No description provided for @volNoEvents.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 30 günde olağandışı hacim günü yok.'**
+  String get volNoEvents;
+
+  /// No description provided for @volFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: Yahoo Finance gün sonu verisi · veri tarihi {date}. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.'**
+  String volFootnote(String date);
+
+  /// No description provided for @cryTitleUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'ALICI BASKISI'**
+  String get cryTitleUpper;
+
+  /// No description provided for @cryShareLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı payı · {date}'**
+  String cryShareLabel(String date);
+
+  /// No description provided for @cryShareAvg.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 7 günün ortalaması {pct}'**
+  String cryShareAvg(String pct);
+
+  /// No description provided for @cryExplain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.'**
+  String get cryExplain;
+
+  /// No description provided for @cryVolumeLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem hacmi {amount}'**
+  String cryVolumeLabel(String amount);
+
+  /// No description provided for @cryChartCaption.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük işlem hacmi (USDT) · son 20 gün'**
+  String get cryChartCaption;
+
+  /// No description provided for @cryChartSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 20 günün günlük işlem hacmi. Son gün {amount}.'**
+  String cryChartSemantics(String amount);
+
+  /// No description provided for @cryEventEvidence.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} · ortalamanın {times} katı · fiyat {pct} · alıcı payı {share}'**
+  String cryEventEvidence(
+      String amount, String times, String pct, String share);
+
+  /// No description provided for @cryFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynak: Binance, USDT paritesi · veri tarihi {date}. Yalnız Binance\'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.'**
+  String cryFootnote(String date);
+
+  /// No description provided for @weekVolumeUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'OLAĞANDIŞI HACİM'**
+  String get weekVolumeUpper;
+
+  /// No description provided for @weekVolumeRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Olağandışı hacim · {date}'**
+  String weekVolumeRow(String date);
 }
 
 class _AppLocalizationsDelegate

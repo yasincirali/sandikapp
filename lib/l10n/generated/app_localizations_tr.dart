@@ -5631,4 +5631,257 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalBelgeYatirimUyarisi => 'Yatırım Uyarısı';
+
+  @override
+  String get flowTitleUpper => 'PARA AKIŞI';
+
+  @override
+  String get flowLastWeekIn => 'Son hafta net giriş';
+
+  @override
+  String get flowLastWeekOut => 'Son hafta net çıkış';
+
+  @override
+  String get flowLastWeekFlat => 'Son hafta net akış';
+
+  @override
+  String flowRange(String from, String to) {
+    return '$from - $to';
+  }
+
+  @override
+  String get flowChartCaption => 'Haftalık net akış · son 8 hafta';
+
+  @override
+  String flowChartSemantics(String amount) {
+    return 'Son 8 haftanın haftalık net para akışı. Son hafta $amount.';
+  }
+
+  @override
+  String flowWeekOf(String date) {
+    return '$date haftası';
+  }
+
+  @override
+  String get flowFundSize => 'Fon büyüklüğü';
+
+  @override
+  String get flowInvestors => 'Yatırımcı sayısı';
+
+  @override
+  String flowInvestorsDelta(String count, String delta) {
+    return '$count ($delta)';
+  }
+
+  @override
+  String get flowEventsTitle => 'Büyük hareketler · son 30 gün';
+
+  @override
+  String flowEventIn(String date) {
+    return 'Büyük giriş · $date';
+  }
+
+  @override
+  String flowEventOut(String date) {
+    return 'Büyük çıkış · $date';
+  }
+
+  @override
+  String flowEventEvidence(String amount, String pct, String times) {
+    return '$amount · fon büyüklüğüne oranı $pct · olağan günlük hareketin $times katı';
+  }
+
+  @override
+  String flowEventInvestors(String delta) {
+    return 'Aynı gün yatırımcı sayısı $delta';
+  }
+
+  @override
+  String get flowNoEvents =>
+      'Son 30 günde olağandışı büyüklükte bir giriş ya da çıkış yok.';
+
+  @override
+  String get flowExplain =>
+      'Net akış, fona giren ve fondan çıkan paranın farkıdır; fiyat değişimi dahil değildir.';
+
+  @override
+  String flowFootnote(String date) {
+    return 'Kaynak: TEFAS · veri tarihi $date. Kimin alıp sattığı bu veriden bilinemez. Geçmişteki para akışı gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.';
+  }
+
+  @override
+  String flowStreakIn(String count) {
+    return '$count haftadır üst üste net giriş';
+  }
+
+  @override
+  String flowStreakOut(String count) {
+    return '$count haftadır üst üste net çıkış';
+  }
+
+  @override
+  String get flowPeriod1m => 'Son 1 ay';
+
+  @override
+  String get flowPeriod3m => 'Son 3 ay';
+
+  @override
+  String flowPeriodValue(String amount, String pct) {
+    return '$amount · $pct';
+  }
+
+  @override
+  String get flowPeriodNote =>
+      'Yüzdeler, akışın dönem başındaki fon büyüklüğüne oranıdır.';
+
+  @override
+  String flowDecompose(String total, String price, String flow) {
+    return 'Son 1 ayda fon büyüklüğü $total değişti: fiyat etkisi $price, para akışı $flow.';
+  }
+
+  @override
+  String flowEventEvidenceMulti(String amount, String pct, String days) {
+    return '$amount · fon büyüklüğüne oranı $pct · $days işlem günü üst üste';
+  }
+
+  @override
+  String get weekTitle => 'Haftanın özeti';
+
+  @override
+  String get weekIntro =>
+      'Tuttuğun varlıklarda son haftanın öne çıkanları. Bir satıra dokununca ayrıntısı açılır.';
+
+  @override
+  String get weekFundsUpper => 'FONLARINDA PARA AKIŞI';
+
+  @override
+  String weekRowRange(String label, String range) {
+    return '$label · $range';
+  }
+
+  @override
+  String get weekRowIn => 'Net giriş';
+
+  @override
+  String get weekRowOut => 'Net çıkış';
+
+  @override
+  String get weekRowFlat => 'Net akış';
+
+  @override
+  String get weekRowBigIn => 'Bu hafta büyük giriş var';
+
+  @override
+  String get weekRowBigOut => 'Bu hafta büyük çıkış var';
+
+  @override
+  String get weekEmptyNoData =>
+      'Bu hafta gösterecek bir şey yok. Portföyündeki fonların para akışı ve hisse ya da kriptolarındaki olağandışı hacim günleri, verisi geldiğinde burada görünür.';
+
+  @override
+  String get weekFootnote =>
+      'Kaynak: TEFAS, Yahoo Finance, Binance. Net akış fona giren ve çıkan paranın farkıdır; kimin alıp sattığı bu veriden bilinemez. Portföyünün haftalık getirisi Performans sekmesindeki Özet\'te. Yatırım tavsiyesi değildir.';
+
+  @override
+  String get weekLink => 'Tüm fonlarımın haftası';
+
+  @override
+  String get volTitleUpper => 'HACİM RADARI';
+
+  @override
+  String volLastDay(String date) {
+    return 'Para hacmi · $date';
+  }
+
+  @override
+  String volVsAverage(String times) {
+    return 'Önceki 20 günün ortalamasının $times katı';
+  }
+
+  @override
+  String volPriceSameDay(String pct) {
+    return 'Aynı gün fiyat $pct';
+  }
+
+  @override
+  String get volChartCaption => 'Günlük para hacmi · son 20 işlem günü';
+
+  @override
+  String volChartSemantics(String amount) {
+    return 'Son 20 işlem gününün günlük para hacmi. Son gün $amount.';
+  }
+
+  @override
+  String get volExplain =>
+      'Para hacmi, o gün el değiştiren hisselerin toplam tutarıdır. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi ya da çıkışı demek değildir.';
+
+  @override
+  String get volEventsTitle => 'Olağandışı hacim günleri · son 30 gün';
+
+  @override
+  String volEventTitle(String date) {
+    return 'Olağandışı hacim · $date';
+  }
+
+  @override
+  String volEventEvidence(String amount, String times, String pct) {
+    return '$amount · ortalamanın $times katı · fiyat $pct';
+  }
+
+  @override
+  String get volNoEvents => 'Son 30 günde olağandışı hacim günü yok.';
+
+  @override
+  String volFootnote(String date) {
+    return 'Kaynak: Yahoo Finance gün sonu verisi · veri tarihi $date. Kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.';
+  }
+
+  @override
+  String get cryTitleUpper => 'ALICI BASKISI';
+
+  @override
+  String cryShareLabel(String date) {
+    return 'Alıcı payı · $date';
+  }
+
+  @override
+  String cryShareAvg(String pct) {
+    return 'Son 7 günün ortalaması $pct';
+  }
+
+  @override
+  String get cryExplain =>
+      'Alıcı payı, o günkü işlem hacminin ne kadarının piyasa emriyle alım yapanlardan geldiğini gösterir. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğu anlamına gelir; para girişi ölçüsü değildir.';
+
+  @override
+  String cryVolumeLabel(String amount) {
+    return 'İşlem hacmi $amount';
+  }
+
+  @override
+  String get cryChartCaption => 'Günlük işlem hacmi (USDT) · son 20 gün';
+
+  @override
+  String cryChartSemantics(String amount) {
+    return 'Son 20 günün günlük işlem hacmi. Son gün $amount.';
+  }
+
+  @override
+  String cryEventEvidence(
+      String amount, String times, String pct, String share) {
+    return '$amount · ortalamanın $times katı · fiyat $pct · alıcı payı $share';
+  }
+
+  @override
+  String cryFootnote(String date) {
+    return 'Kaynak: Binance, USDT paritesi · veri tarihi $date. Yalnız Binance\'teki işlemleri kapsar; kimin alıp sattığı bu veriden bilinemez. Yatırım tavsiyesi değildir.';
+  }
+
+  @override
+  String get weekVolumeUpper => 'OLAĞANDIŞI HACİM';
+
+  @override
+  String weekVolumeRow(String date) {
+    return 'Olağandışı hacim · $date';
+  }
 }
