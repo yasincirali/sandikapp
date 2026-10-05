@@ -16,6 +16,7 @@ import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
+import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
@@ -486,6 +487,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       ParaAkisiKarti(tur: k.type, ticker: k.ticker),
       HacimRadariKarti(tur: k.type, ticker: k.ticker),
       KriptoBaskiKarti(tur: k.type, ticker: k.ticker),
+      AnalizNotuKutusu(tur: k.type, ticker: k.ticker),
       // Sahip olunmayan varlık için de teknik göstergeler hesaplanır; panel
       // bir `Asset` istemez.
       TechnicalSignalPanel(

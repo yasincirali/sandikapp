@@ -8,6 +8,56 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-05 Balina radarı tamamlama + yapay zekâ notu + Premium altyapısı (0115–0118) — dal `claude/project-thread-w9jtzj`
+
+Her şey bayrak arkasında: `balina_radari_acik` ve `paywall_enabled`
+KAPALI kaldıkça mağazadaki kullanıcı hiçbir değişiklik görmez. Migration'lar
+yalnız ekler (yeni tablo/kolon/RPC); eski sürümlerin okuduğu hiçbir şey
+değişmedi. 0118 `profiles.haftalik_hareket_satiri` varsayılanı `true`: bugün
+Pazartesi bildirimine giren hareket satırı aynen gelmeye devam eder.
+
+Yayın sırası (sıra önemli):
+- [ ] PR'ı birleştir → Supabase deploy, dal `main`, hedef `ikisi`,
+      migration + fonksiyonlar (`analiz-hazirla`, `analiz-topla`,
+      `revenuecat-webhook`, `weekly-summary`, `kripto-hacim-gozlem`).
+- [ ] Secret'lar (iki sunucuya da): `ANTHROPIC_API_KEY` notları açar.
+      Anahtar yokken haftalık/aylık cron 503 `anahtar_yok` döner, para
+      harcanmaz. Anahtarı ancak notların üretilmesini istediğinde koy.
+      Aylık harcama tavanı `ANALIZ_AYLIK_TAVAN_USD` (yoksa 50 $; aşılınca
+      daha ucuz modele iner).
+- [ ] İlk notları kendi cihazında gör: Pazar 17:00 UTC cron'u ya da
+      Tokyo SQL Editor'da `select public.trigger_analiz_hazirla('haftalik');`
+      → ~1 saat sonra `analiz-topla` toplar. Reddedilen not yayınlanmaz;
+      neden `varlik_analizi.red_nedeni`'nde.
+- [ ] `balina_radari_acik` = true (önce kendi cihazında). Açılınca:
+      Ana sayfa "Bugün" şeridi (yalnız olağandışı hareket varsa), fon/hisse/
+      kripto kartları + ayrıntı ekranları, Haftanın özeti listesi, not
+      kutusu, Ayarlar › Bildirimler'de iki anahtar, tur adımı "radar" ve
+      sürüm notu maddesi görünür.
+- [ ] Yasal metin (bayrak açılmadan ÖNCE, aynı yayında): not geri bildirimi
+      (👍👎 + "yanlış sayı" metni, `not_geri_bildirim`) yeni bir saklama;
+      RevenueCat yeni üçüncü taraf. `legal/tr/*.md` + sürüm + `_build_legal.py`
+      + migration + yeniden onay. Anthropic'e kişisel veri GİTMEZ (yalnız
+      piyasa ölçümleri), yine de alt işleyen listesine yazılması önerilir.
+      Bayrak kapalıyken metne yazmadım: yeniden onay kapısı bugün bütün
+      kullanıcılara görünmeyen bir özellik için açılırdı.
+- [ ] Premium (ayrı karar): uygulamadaki satın alma hâlâ temsili
+      (`paywall_screen.dart`); RevenueCat SDK'sı senin kararını bekliyor.
+      Sunucu hazır: `revenuecat-webhook` için `REVENUECAT_WEBHOOK_SECRET` ve
+      `REVENUECAT_API_KEY`. Açılış günü sırası:
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `paywall_enabled` (Remote Config, yayılsın) →
+      `update public.premium_ayar set kapi_acik = true;`. Sıra önemli:
+      kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu
+      "açılamadı" gibi görür (ekran artık bu durumda kilidi gösteriyor ama
+      kartlar boş kalır).
+      Fiyat (kararın 2026-10-05): aylık 49 ₺, yıllık 399 ₺. Mağaza ürünleri bu
+      fiyatla açılır; Remote Config `premium_price_yearly` = `399₺/yıl` (kod
+      varsayılanı da 399). Apple Small Business Program'a kayıt ol (yoksa ilk
+      yıl %30 kesinti). Hesap: /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
+      Notlar üretilmeden paywall'u açma: karşılaştırma tablosu notu vaat
+      ediyor.
+
 ## ⏳ 2026-10-05 Maaş günü birikim hatırlatması (Faz 2, 0119)
 
 Ayarlar › Bildirimler'de "Maaş günü hatırlatması" (yalnız `birikim_serisi`

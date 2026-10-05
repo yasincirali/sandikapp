@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../services/remote_config_service.dart';
 import '../config/surum_notlari.dart';
 import '../services/analytics_service.dart';
 import '../services/surum_notu_service.dart';
@@ -67,7 +68,17 @@ class _YeniliklerSheetState extends State<YeniliklerSheet> {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final toplam = notlar.fold<int>(0, (n, s) => n + s.yenilikler.length);
+    // Bayrak arkasındaki madde bayrak kapalıyken hiç yok (sayaca da girmez).
+    final maddeler = [
+      for (final n in notlar)
+        [
+          for (final y in n.yenilikler)
+            if (y.bayrak == null ||
+                RemoteConfigService.instance.bayrakAcik(y.bayrak!))
+              y,
+        ],
+    ];
+    final toplam = maddeler.fold<int>(0, (n, m) => n + m.length);
     final katli = !_tumu && toplam > YeniliklerSheet.oneCikanSayisi;
     // Sürümler arası sıra korunur; sayaç tüm sürümlerin maddelerini sayar.
     var gosterilen = 0;
@@ -123,7 +134,7 @@ class _YeniliklerSheetState extends State<YeniliklerSheet> {
                       ),
                       const SizedBox(height: SandikSpace.sm),
                     ],
-                    for (final y in notlar[i].yenilikler)
+                    for (final y in maddeler[i])
                       if (!katli ||
                           gosterilen++ < YeniliklerSheet.oneCikanSayisi) ...[
                         _YenilikSatiri(yenilik: y),

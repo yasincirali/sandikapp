@@ -10,6 +10,7 @@ import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
+import 'premium_provider.dart';
 import '../config/pref_keys.dart';
 import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
@@ -524,7 +525,10 @@ final effectivePremiumProvider = Provider<bool>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return false;
   final unlocked = ref.watch(premiumUnlockedProvider);
-  return unlocked && RemoteConfigService.instance.premiumEnabled;
+  // Sunucu hakkı (0116; RevenueCat aboneliği, erken kullanıcı hediyesi,
+  // manuel). Cihaz anahtarı test/geliştirici yolu olarak kalır.
+  final sunucu = ref.watch(gecerliPremiumHakkiProvider) != null;
+  return (unlocked || sunucu) && RemoteConfigService.instance.premiumEnabled;
 });
 
 /// Free tier varlık limiti — Remote Config'ten dinamik.
@@ -1051,6 +1055,22 @@ final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false,
         perUser: true));
 
+// ─── Balina Radarı (2026-10-05) ───────────────────────────────────────────────
+
+/// "Nasıl okunur" gezintisi bir kez (`radar_ortak.dart`).
+final radarKocuGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.radarKocuGoruldu, false, perUser: true));
+
+/// Haftanın özetinde sakin varlıklar da listelensin mi.
+final haftaSakinGosterProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.haftaSakinGoster, true, perUser: true));
+
+/// Erken kullanıcı hediyesi sayfası gösterildi mi (bir kez).
+final premiumHediyeGosterildiProvider =
+    NotifierProvider<_BoolPrefNotifier, bool>(() => _BoolPrefNotifier(
+        PrefKeys.premiumHediyeGosterildi, false,
+        perUser: true));
+
 // ─── Leaderboard opt-in ───────────────────────────────────────────────────────
 // Kullanıcı yarış (partner leaderboard) özelliğine katılmak için explicit
 // consent verir. Default kapalı (KVKK). Ortakların yarış'ında görünmek için
@@ -1114,4 +1134,7 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   leaderboardOptInProvider,
   bildirimSonGorulenProvider,
   bugunkuPortfoyleProvider,
+  radarKocuGorulduProvider,
+  haftaSakinGosterProvider,
+  premiumHediyeGosterildiProvider,
 ];

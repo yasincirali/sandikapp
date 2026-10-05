@@ -22,6 +22,7 @@ import '../services/analytics_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
@@ -928,6 +929,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : 'ortak_$_view',
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
+              ),
+            ),
+          // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde
+          // — Haftanın özeti kendi pozisyonlarını anlatır, ortağınkini değil.
+          // Bayrak kapalıyken ya da hareket yokken yer kaplamaz.
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: TourAnchor(
+                target: TourTarget.radarSeridi,
+                child: RadarSeridi(
+                    padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
               ),
             ),
           // Mini cards

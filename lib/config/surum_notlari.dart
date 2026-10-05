@@ -29,7 +29,14 @@ class Yenilik {
     required this.baslik,
     required this.aciklama,
     this.ikon = YenilikIkonu.genel,
+    this.bayrak,
   });
+
+  /// Remote Config bayrağı: verilirse madde YALNIZ bayrak açıkken görünür
+  /// (2026-10-05, Balina radarı). Bayrak arkasındaki özellik derlemeyle
+  /// birlikte gelir ama kapalıdır; notu bayraksız yazmak kullanıcıya
+  /// göremeyeceği bir şeyi anlatmak olurdu.
+  final String? bayrak;
 
   final String baslik;
   final String aciklama;
@@ -108,6 +115,19 @@ const List<SurumNotu> surumNotlari = [
     // kez görüyor.
     baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
+      // 2026-10-05: Balina radarı (S10-A). Bayrak `balina_radari_acik`
+      // açılınca görünür; kapalıyken madde sayılmaz bile.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        bayrak: 'balina_radari_acik',
+        baslik: 'Varlıklarında olağandışı hareket',
+        aciklama: 'Fonuna büyük para girdiğinde ya da çıktığında, hissende '
+            'hacim olağanın çok üstüne çıktığında, kriptoda alıcılar ya da '
+            'satıcılar belirgin biçimde istekli olduğunda ana ekranda bir '
+            'şerit çıkar. Dokununca Haftanın özeti: her varlık tek kelimelik '
+            'etiketiyle. Varlığın sayfasında haftalık seyir; altı noktalı '
+            'terimlere dokununca ne anlama geldiği açılır.',
+      ),
       // 2026-10-03: tek aktif cihaz + kayıtlı cihazlar (0098). Kullanıcı
       // ilk kez kod ekranı ya da "başka cihazda açıldı" çıkışı görünce
       // nedenini buradan öğrenir; sessiz kalsa arıza sanılırdı.

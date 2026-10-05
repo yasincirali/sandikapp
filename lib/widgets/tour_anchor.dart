@@ -72,6 +72,11 @@ enum TourTarget {
   /// Portföy boşken çizilmez; tur hedefi bulamazsa adımı atlar.
   bugunKarti,
 
+  /// Ana ekran: radar şeridi ("N varlığında bu hafta olağandışı hareket
+  /// var", Balina S7-A 2026-10-05). Yalnız bayrak açık ve söylenecek hareket
+  /// varken çizilir; tur hedefi bulamazsa adımı atlar.
+  radarSeridi,
+
   /// Ana ekran: bildirim çanı (teknik sinyaller + fiyat alarmları).
   ///
   /// 1.2.0'da eklendi — tur, uygulamanın güncel hâlini anlatmalı. Yeni

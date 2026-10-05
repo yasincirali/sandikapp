@@ -267,8 +267,213 @@ class SupabaseService {
     );
   }
 
-  static String _isoGun(DateTime t) =>
-      '${t.year.toString().padLeft(4, '0')}-'
+  /// Fonun kategorisindeki akış sırası (0115 `fon_kategori_akis_sirasi`):
+  /// ilk 5 + (ilk 5'te değilse) fonun kendisi. Aralık en çok 14 gün.
+  Future<List<Map<String, dynamic>>> fonKategoriSirasi(
+    String fonKodu, {
+    required DateTime baslangic,
+    required DateTime bitis,
+  }) async {
+    final params = {
+      'p_fon_kodu': fonKodu,
+      'p_baslangic': _isoGun(baslangic),
+      'p_bitis': _isoGun(bitis),
+    };
+    final ham = await _log.log<dynamic>(
+      source: 'SupabaseService.fonKategoriSirasi',
+      table: 'rpc/fon_kategori_akis_sirasi',
+      op: 'RPC',
+      request: params,
+      call: () => _db.rpc('fon_kategori_akis_sirasi', params: params),
+    );
+    return [
+      for (final r in (ham as List? ?? const []))
+        Map<String, dynamic>.from(r as Map)
+    ];
+  }
+
+  /// Coinin saatlik mumları (0115 `kripto_hacim_saatlik`), [baslangic]'tan
+  /// bu yana, eskiden yeniye.
+  Future<List<Map<String, dynamic>>> kriptoSaatleri(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final an = baslangic.toUtc().toIso8601String();
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoSaatleri',
+      table: 'kripto_hacim_saatlik',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'saat_gte': an},
+      call: () => _db
+          .from('kripto_hacim_saatlik')
+          .select('saat, para_hacmi, alici_payi')
+          .eq('ticker', ticker)
+          .gte('saat', an)
+          .order('saat', ascending: true)
+          .limit(60),
+    );
+  }
+
+  /// Oturumdaki kullanıcının Premium hakları (0116 `premium_haklari`; RLS
+  /// yalnız kendi satırlarını verir).
+  Future<List<Map<String, dynamic>>> premiumHaklari() {
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.premiumHaklari',
+      table: 'premium_haklari',
+      op: 'SELECT',
+      request: const {},
+      call: () => _db
+          .from('premium_haklari')
+          .select('kaynak, urun, magaza, bitis, iptal_edildi, baslangic'),
+    );
+  }
+
+  /// Varlıkların en yeni yayındaki notunun başlığı (0117 `analiz_ozetleri`;
+  /// ücretsiz katmanın gördüğü kısım).
+  Future<List<Map<String, dynamic>>> analizOzetleri(
+    List<String> tickerlar, {
+    String tur = 'haftalik',
+  }) async {
+    final params = {'p_tickerlar': tickerlar, 'p_tur': tur};
+    final ham = await _log.log<dynamic>(
+      source: 'SupabaseService.analizOzetleri',
+      table: 'rpc/analiz_ozetleri',
+      op: 'RPC',
+      request: params,
+      call: () => _db.rpc('analiz_ozetleri', params: params),
+    );
+    return [
+      for (final r in (ham as List? ?? const []))
+        Map<String, dynamic>.from(r as Map)
+    ];
+  }
+
+  /// Notun tamamı (0117 `varlik_analizi`). Premium kapısı açıkken RLS
+  /// Premium olmayana satır vermez → `null`.
+  Future<Map<String, dynamic>?> varlikAnalizi(
+    String ticker, {
+    required String tur,
+    required DateTime donem,
+  }) {
+    final gun = _isoGun(donem);
+    return _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.varlikAnalizi',
+      table: 'varlik_analizi',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tur': tur, 'donem': gun},
+      call: () => _db
+          .from('varlik_analizi')
+          .select('ticker, tur, donem, baslik, maddeler, rozet, girdi')
+          .eq('ticker', ticker)
+          .eq('tur', tur)
+          .eq('donem', gun)
+          .maybeSingle(),
+    );
+  }
+
+  /// Kullanıcının bu nota önceki oyu ve yanlış sayı bildirimi; yoksa null.
+  /// Ekran yeniden açıldığında 👍 boş görünmesin.
+  Future<({int? oy, bool yanlisSayi})?> notGeriBildirimim({
+    required String ticker,
+    required String tur,
+    required DateTime donem,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    final r = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.notGeriBildirimim',
+      table: 'not_geri_bildirim',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tur': tur},
+      call: () => _db
+          .from('not_geri_bildirim')
+          .select('oy, yanlis_sayi')
+          .eq('user_id', uid)
+          .eq('ticker', ticker)
+          .eq('tur', tur)
+          .eq('donem', _isoGun(donem))
+          .maybeSingle(),
+    );
+    if (r == null) return null;
+    return (
+      oy: (r['oy'] as num?)?.toInt(),
+      yanlisSayi: r['yanlis_sayi'] == true,
+    );
+  }
+
+  /// Not geri bildirimi (0117 `not_geri_bildirim`): oy ve/veya "yanlış sayı".
+  ///
+  /// Oy ile "yanlış sayı" bildirimi aynı satırdadır ama AYRI çağrılardır:
+  /// gövde yalnız o çağrının alanlarını taşır (upsert yalnız gönderilen
+  /// kolonları günceller). Tüm kolonları göndermek, yanlış sayı bildirimiyle
+  /// önceki 👍'yu, sonraki oyla da açıklamayı siliyordu (2026-10-05 web
+  /// testi: ekran yeniden açılınca `_oy` boş başlar).
+  Future<void> notGeriBildirim({
+    required String ticker,
+    required String tur,
+    required DateTime donem,
+    NotGeriBildirimi? oy,
+    String? yanlisSayiAciklamasi,
+    bool yanlisSayi = false,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return;
+    final body = {
+      'user_id': uid,
+      'ticker': ticker,
+      'tur': tur,
+      'donem': _isoGun(donem),
+      if (oy != null) 'oy': oy.deger,
+      if (yanlisSayi) ...{
+        'yanlis_sayi': true,
+        'aciklama': yanlisSayiAciklamasi,
+      },
+    };
+    await _log.log<void>(
+      source: 'SupabaseService.notGeriBildirim',
+      table: 'not_geri_bildirim',
+      op: 'UPSERT',
+      request: {
+        'ticker': ticker,
+        'tur': tur,
+        'oy': oy?.deger,
+        'yanlis_sayi': yanlisSayi
+      },
+      call: () => _db
+          .from('not_geri_bildirim')
+          .upsert(body, onConflict: 'user_id,ticker,tur,donem'),
+    );
+  }
+
+  /// Pazartesi özetinde hareket satırı (0118 `profiles.haftalik_hareket_satiri`).
+  Future<bool?> haftalikHareketSatiri(String userId) async {
+    final row = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.haftalikHareketSatiri',
+      table: 'profiles',
+      op: 'SELECT',
+      request: {'id': userId},
+      call: () => _db
+          .from('profiles')
+          .select('haftalik_hareket_satiri')
+          .eq('id', userId)
+          .maybeSingle(),
+    );
+    return row?['haftalik_hareket_satiri'] as bool?;
+  }
+
+  Future<void> setHaftalikHareketSatiri(String userId, bool acik) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setHaftalikHareketSatiri',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'haftalik_hareket_satiri': acik},
+      call: () => _db
+          .from('profiles')
+          .update({'haftalik_hareket_satiri': acik}).eq('id', userId),
+    );
+  }
+
+  static String _isoGun(DateTime t) => '${t.year.toString().padLeft(4, '0')}-'
       '${t.month.toString().padLeft(2, '0')}-'
       '${t.day.toString().padLeft(2, '0')}';
 
@@ -2061,4 +2266,14 @@ class SupabaseService {
       return false;
     }
   }
+}
+
+/// Not oyu. `geriAl` oyu kaldırır (NULL); oy hiç gönderilmezse dokunulmaz.
+enum NotGeriBildirimi {
+  yararli(1),
+  yararsiz(-1),
+  geriAl(null);
+
+  const NotGeriBildirimi(this.deger);
+  final int? deger;
 }

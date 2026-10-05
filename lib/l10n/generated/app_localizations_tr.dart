@@ -6005,4 +6005,681 @@ class AppLocalizationsTr extends AppLocalizations {
   String savingReminderDay(String day) {
     return 'Ayın $day. günü';
   }
+
+  @override
+  String get rdrKademeSakin => 'sakin';
+
+  @override
+  String get rdrKademeHareketli => 'hareketli';
+
+  @override
+  String get rdrKademeCok => 'çok hareketli';
+
+  @override
+  String get rdrHaftaSakin => 'Sakin hafta';
+
+  @override
+  String get rdrHaftaHareketli => 'Hareketli hafta';
+
+  @override
+  String get rdrHaftaCok => 'Çok hareketli hafta';
+
+  @override
+  String get rdrGunSakin => 'Sakin gün';
+
+  @override
+  String get rdrGunHareketli => 'Hareketli gün';
+
+  @override
+  String get rdrGunCok => 'Çok hareketli gün';
+
+  @override
+  String rdrOlcekSemantics(String kademe) {
+    return 'Kendi olağanına göre: $kademe';
+  }
+
+  @override
+  String get rdrAyrinti => 'Ayrıntı';
+
+  @override
+  String rdrKaynakSatiri(String kaynak, String tarih) {
+    return '$kaynak · $tarih · tavsiye değildir';
+  }
+
+  @override
+  String rdrYasal(String kaynak) {
+    return 'Veriler $kaynak kaynaklıdır ve kimin alıp sattığını göstermez. Geçmişteki hareket gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.';
+  }
+
+  @override
+  String get rdrNasilOkunur => 'Nasıl okunur';
+
+  @override
+  String get rdrKoc1 =>
+      'Üstteki cümle bu varlığın son durumunu tek satırda anlatır. Altındaki sayı o cümlenin kanıtıdır.';
+
+  @override
+  String get rdrKoc2 =>
+      'Ölçek, sayının bu varlığın kendi olağanına göre ne kadar büyük olduğunu gösterir: sakin, hareketli, çok hareketli.';
+
+  @override
+  String get rdrKoc3 =>
+      'Altı noktalı kelimelere dokunursan ne anlama geldiğini görürsün.';
+
+  @override
+  String rdrKocAdim(String adim) {
+    return '$adim / 3';
+  }
+
+  @override
+  String get rdrIleri => 'İleri';
+
+  @override
+  String get rdrAnladim => 'Anladım';
+
+  @override
+  String get rdrTerimNetAkis => 'Net akış';
+
+  @override
+  String get rdrTerimNetAkisTanim =>
+      'Fona giren paradan çıkan para düşülünce kalan tutar. Fon fiyatının artması ya da düşmesi buna girmez; yalnız yatırımcıların koyduğu ve çektiği para sayılır.';
+
+  @override
+  String get rdrTerimBuyukluk => 'Fon büyüklüğü';
+
+  @override
+  String get rdrTerimBuyuklukTanim =>
+      'Fondaki toplam paranın bugünkü değeri. Hem yeni para girince hem de fonun içindekiler değer kazanınca büyür.';
+
+  @override
+  String get rdrTerimAyristirma => 'Fiyat ve yeni para';
+
+  @override
+  String get rdrTerimAyristirmaTanim =>
+      'Fon büyüklüğündeki değişim iki kaynaktan gelir: fondaki varlıkların değerinin değişmesi (fiyat) ve yatırımcıların koyup çektiği para (yeni para). İkisinin toplamı büyüklük değişimidir.';
+
+  @override
+  String get rdrTerimYatirimci => 'Yatırımcı sayısı';
+
+  @override
+  String get rdrTerimYatirimciTanim =>
+      'Fonda payı olan kişi sayısı. Aynı tutar az kişiden büyük paralarla da, çok kişiden küçük paralarla da gelebilir; bu sayı farkı gösterir.';
+
+  @override
+  String get rdrTerimSira => 'Kategoride akış sırası';
+
+  @override
+  String get rdrTerimSiraTanim =>
+      'Aynı TEFAS kategorisindeki fonların, aynı hafta en çok net para girişi olandan en çok net çıkışı olana sırası. Yalnız o haftanın her gününde verisi olan fonlar sıralanır.';
+
+  @override
+  String get rdrTerimBuyukHareket => 'Büyük hareket';
+
+  @override
+  String get rdrTerimBuyukHareketTanim =>
+      'Bir günde giren ya da çıkan paranın hem fon büyüklüğünün en az %3\'ü hem de fonun olağan günlük hareketinin en az 4 katı olması. İkisi birden olmadıkça işaretlenmez; ₺250 mn altındaki fonlarda ve para piyasası fonlarında hiç işaretlenmez.';
+
+  @override
+  String get rdrTerimOlcek => 'Ölçek';
+
+  @override
+  String get rdrTerimOlcekTanim =>
+      'Sayının bu varlığın kendi geçmişine göre büyüklüğü. Fonda son hafta önceki haftaların ortalamasıyla, hissede son günün hacmi önceki 20 günün ortalamasıyla kıyaslanır. Kriptoda alıcı payının %50\'den uzaklığına bakılır: 2 puan hareketli, 5 puan çok hareketli. O gün büyük hareket ya da olağandışı hacim işaretlendiyse ölçek en üsttedir.';
+
+  @override
+  String get rdrTerimHacim => 'Para hacmi';
+
+  @override
+  String get rdrTerimHacimTanim =>
+      'O gün el değiştiren hisselerin toplam tutarı. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi demek değildir.';
+
+  @override
+  String get rdrTerimKat => 'Ortalamanın katı';
+
+  @override
+  String get rdrTerimKatTanim =>
+      'Son günün hacminin önceki 20 işlem gününün ortalamasına oranı. 1 kat olağan bir gün demektir.';
+
+  @override
+  String get rdrTerimOlagandisi => 'Olağandışı hacim';
+
+  @override
+  String get rdrTerimOlagandisiTanim =>
+      'Hacmin önceki 20 günün ortalamasının en az 2 katı olduğu ve bu sıçramanın o varlığın olağan dalgalanmasının çok dışında kaldığı gün.';
+
+  @override
+  String get rdrTerimAliciPayi => 'Alıcı payı';
+
+  @override
+  String get rdrTerimAliciPayiTanim =>
+      'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.';
+
+  @override
+  String get rdrTerimNetAlim => 'Net alım';
+
+  @override
+  String get rdrTerimNetAlimTanim =>
+      'Piyasa emriyle alanların hacminden satanların hacmi düşülünce kalan tutar (USDT). Yalnız Binance\'teki işlemleri kapsar.';
+
+  @override
+  String rdrTerimOrnek(String deger) {
+    return 'Bu varlıkta: $deger';
+  }
+
+  @override
+  String get rdrFonGirisSakin => 'Bu fona son hafta olağan ölçüde para girdi.';
+
+  @override
+  String get rdrFonGirisHareketli =>
+      'Bu fona son hafta olağandan fazla para girdi.';
+
+  @override
+  String get rdrFonGirisCok =>
+      'Bu fona son hafta olağanın çok üstünde para girdi.';
+
+  @override
+  String get rdrFonCikisSakin =>
+      'Bu fondan son hafta olağan ölçüde para çıktı.';
+
+  @override
+  String get rdrFonCikisHareketli =>
+      'Bu fondan son hafta olağandan fazla para çıktı.';
+
+  @override
+  String get rdrFonCikisCok =>
+      'Bu fondan son hafta olağanın çok üstünde para çıktı.';
+
+  @override
+  String get rdrFonGiris => 'Bu fona son hafta para girdi.';
+
+  @override
+  String get rdrFonCikis => 'Bu fondan son hafta para çıktı.';
+
+  @override
+  String get rdrFonDenge =>
+      'Bu fonda son hafta giren ve çıkan para dengedeydi.';
+
+  @override
+  String get rdrFonKarisik => 'Bu fonda son hafta büyük para hareketi oldu.';
+
+  @override
+  String rdrFonNetAralik(String aralik) {
+    return 'net akış · $aralik';
+  }
+
+  @override
+  String get rdrSon8Hafta => 'son 8 hafta';
+
+  @override
+  String rdrBuyukHareketSayisi(String sayi) {
+    return '$sayi büyük hareket';
+  }
+
+  @override
+  String get rdrBuyukHareketYok => 'büyük hareket yok';
+
+  @override
+  String rdrFonDetayBaslik(String kod) {
+    return '$kod · Para akışı';
+  }
+
+  @override
+  String get rdrHaftayaDokun =>
+      'Bir haftaya dokun, o haftanın rakamı burada görünür.';
+
+  @override
+  String rdrSecilenHafta(String aralik) {
+    return '$aralik haftası';
+  }
+
+  @override
+  String get rdrVeriYok => 'veri yok';
+
+  @override
+  String rdrAyristirmaCumle(String yuzde) {
+    return 'Son 1 ayda fon büyüklüğü $yuzde değişti.';
+  }
+
+  @override
+  String rdrFiyat(String yuzde) {
+    return 'fiyat $yuzde';
+  }
+
+  @override
+  String rdrYeniPara(String yuzde) {
+    return 'yeni para $yuzde';
+  }
+
+  @override
+  String rdrOlaganinKati(String kat) {
+    return 'olağan haftanın $kat katı';
+  }
+
+  @override
+  String get rdrDonemUpper => 'DÖNEM';
+
+  @override
+  String get rdrBaglamUpper => 'BAĞLAM';
+
+  @override
+  String get rdrSiraUpper => 'KATEGORİDE AKIŞ SIRASI';
+
+  @override
+  String rdrSiraAlt(String kategori) {
+    return '$kategori · aynı haftanın net akışına göre sıra';
+  }
+
+  @override
+  String get rdrSiraBuFon => 'bu fon';
+
+  @override
+  String rdrSiraToplam(String sayi) {
+    return '$sayi fon içinde';
+  }
+
+  @override
+  String get rdrHareketlerUpper => 'BÜYÜK HAREKETLER · SON 30 GÜN';
+
+  @override
+  String rdrHisseSakin(String tarih) {
+    return '$tarih günü bu hissede olağan miktarda işlem yapıldı.';
+  }
+
+  @override
+  String rdrHisseHareketli(String tarih) {
+    return '$tarih günü bu hissede olağandan fazla işlem yapıldı.';
+  }
+
+  @override
+  String rdrHisseCok(String tarih) {
+    return '$tarih günü bu hissede olağanın çok üstünde işlem yapıldı.';
+  }
+
+  @override
+  String rdrHisseYalin(String tarih, String tutar) {
+    return '$tarih günü bu hissede $tutar tutarında işlem yapıldı.';
+  }
+
+  @override
+  String rdrHacimAlt(String yuzde) {
+    return 'para hacmi · fiyat $yuzde';
+  }
+
+  @override
+  String get rdrHacimAltFiyatsiz => 'para hacmi';
+
+  @override
+  String get rdrOrtalamaCizgisi => 'kesikli çizgi: önceki 20 günün ortalaması';
+
+  @override
+  String rdrHacimDetayBaslik(String kod) {
+    return '$kod · Hacim radarı';
+  }
+
+  @override
+  String get rdrGuneDokun =>
+      'Bir güne dokun, o günün hacmi ve fiyatı burada görünür.';
+
+  @override
+  String rdrSecilenGun(String tarih, String tutar, String yuzde) {
+    return '$tarih: $tutar · fiyat $yuzde';
+  }
+
+  @override
+  String rdrSecilenGunFiyatsiz(String tarih, String tutar) {
+    return '$tarih: $tutar';
+  }
+
+  @override
+  String get rdrOlagandisiUpper => 'OLAĞANDIŞI HACİM GÜNLERİ · SON 30 GÜN';
+
+  @override
+  String rdrKriptoAlici(String tarih) {
+    return '$tarih günü alanlar satanlardan daha istekliydi.';
+  }
+
+  @override
+  String rdrKriptoAliciCok(String tarih) {
+    return '$tarih günü alanlar satanlardan belirgin biçimde daha istekliydi.';
+  }
+
+  @override
+  String rdrKriptoSatici(String tarih) {
+    return '$tarih günü satanlar alanlardan daha istekliydi.';
+  }
+
+  @override
+  String rdrKriptoSaticiCok(String tarih) {
+    return '$tarih günü satanlar alanlardan belirgin biçimde daha istekliydi.';
+  }
+
+  @override
+  String rdrKriptoDenge(String tarih) {
+    return '$tarih günü alanlar ile satanlar dengedeydi.';
+  }
+
+  @override
+  String rdrAlici(String yuzde) {
+    return 'Alıcı $yuzde';
+  }
+
+  @override
+  String rdrSatici(String yuzde) {
+    return 'Satıcı $yuzde';
+  }
+
+  @override
+  String rdrYediGunOrt(String yuzde) {
+    return '7 günde alıcı payı: $yuzde';
+  }
+
+  @override
+  String get rdrSaatlikUpper => 'SON 24 SAAT · SAAT SAAT NET ALIM';
+
+  @override
+  String rdrEnIstekliSaat(String aralik, String tutar) {
+    return '$aralik alıcıların en istekli olduğu saat · $tutar net alım';
+  }
+
+  @override
+  String get rdrIstekliSaatYok =>
+      'Son 24 saatte alıcıların ağır bastığı bir saat olmadı.';
+
+  @override
+  String rdrSonMum(String saat) {
+    return 'son mum $saat';
+  }
+
+  @override
+  String rdrKriptoDetayBaslik(String kod) {
+    return '$kod · Alıcı baskısı';
+  }
+
+  @override
+  String get rdrIslemHacmiUpper => 'İŞLEM HACMİ · SON 20 GÜN';
+
+  @override
+  String rdrHaftaBaslikVar(String sayi) {
+    return 'Son haftada $sayi varlığında olağandışı hareket var.';
+  }
+
+  @override
+  String get rdrHaftaBaslikYok =>
+      'Son haftada varlıklarında olağandışı bir hareket yok.';
+
+  @override
+  String get rdrRozetBuyukGiris => 'Büyük giriş';
+
+  @override
+  String get rdrRozetBuyukCikis => 'Büyük çıkış';
+
+  @override
+  String get rdrRozetHacim => 'Olağandışı hacim';
+
+  @override
+  String get rdrRozetAlici => 'Alıcı istekli';
+
+  @override
+  String get rdrRozetSatici => 'Satıcı istekli';
+
+  @override
+  String get rdrRozetHareketli => 'Hareketli';
+
+  @override
+  String get rdrRozetSakin => 'Sakin';
+
+  @override
+  String rdrSatirFon(String tutar, String yuzde) {
+    return 'Net $tutar · büyüklüğün $yuzde';
+  }
+
+  @override
+  String rdrSatirFonOransiz(String tutar) {
+    return 'Net $tutar';
+  }
+
+  @override
+  String rdrSatirHacim(String tarih, String kat, String yuzde) {
+    return '$tarih · hacim $kat kat · fiyat $yuzde';
+  }
+
+  @override
+  String rdrSatirKripto(String ort, String yuzde) {
+    return '7 günde alıcı payı $ort · son gün $yuzde';
+  }
+
+  @override
+  String rdrYatirimciHafta(String sayi, String fark) {
+    return '$sayi · son hafta $fark';
+  }
+
+  @override
+  String rdrKartHaftaOlayi(String olay) {
+    return 'Son 7 günde olağandışı gün: $olay';
+  }
+
+  @override
+  String rdrDunAralik(String aralik) {
+    return 'Dün $aralik';
+  }
+
+  @override
+  String get rdrSaateDokun =>
+      'Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.';
+
+  @override
+  String get anzYararli => 'İşime yaradı';
+
+  @override
+  String get anzYararsiz => 'İşime yaramadı';
+
+  @override
+  String rdrSatirKriptoOrtsuz(String yuzde) {
+    return 'Son gün alıcı payı $yuzde';
+  }
+
+  @override
+  String rdrSatirNot(String metin) {
+    return 'Not: $metin';
+  }
+
+  @override
+  String get rdrHaftaKaynak =>
+      'Fon akışı TEFAS · hacim Yahoo Finance · kripto Binance · tavsiye değildir';
+
+  @override
+  String rdrAylikRaporSatir(String ay) {
+    return '$ay raporu';
+  }
+
+  @override
+  String get rdrOku => 'Oku';
+
+  @override
+  String rdrSeritSayi(String sayi) {
+    return '$sayi varlığında son haftada olağandışı hareket var';
+  }
+
+  @override
+  String get rdrAyarHareketSatiri => 'Pazartesi özetinde hareket satırı';
+
+  @override
+  String get rdrAyarHareketSatiriAlt =>
+      'Haftalık bildirimde fonlarındaki büyük giriş-çıkışı ve olağandışı hacmi de yaz.';
+
+  @override
+  String get rdrAyarSakinGoster => 'Sakin varlıkları özette göster';
+
+  @override
+  String get rdrAyarSakinGosterAlt =>
+      'Haftanın özetinde hareketsiz geçen varlıkları da listele.';
+
+  @override
+  String get prmUcretsiz => 'Ücretsiz';
+
+  @override
+  String get prmPremium => 'Premium';
+
+  @override
+  String get prmSatirVarlik => 'Varlık';
+
+  @override
+  String get prmSatirAkis => 'Para akışı';
+
+  @override
+  String get prmSatirHacim => 'Hacim radarı';
+
+  @override
+  String get prmSatirNot => 'Haftalık not';
+
+  @override
+  String get prmSatirAylik => 'Aylık rapor';
+
+  @override
+  String get prmSinirsiz => 'sınırsız';
+
+  @override
+  String prmYillikTasarruf(String oran) {
+    return '%$oran tasarruf';
+  }
+
+  @override
+  String get prmVarErisim => 'Var';
+
+  @override
+  String get prmYokErisim => 'Yok';
+
+  @override
+  String get prmAkisUcretsiz => 'son hafta';
+
+  @override
+  String get prmAkisPremium => '8 hafta + olaylar';
+
+  @override
+  String get prmHacimUcretsiz => 'son gün';
+
+  @override
+  String get prmHacimPremium => '20 gün';
+
+  @override
+  String get prmNotUcretsiz => 'ilk cümle';
+
+  @override
+  String get prmNotPremium => 'tamamı';
+
+  @override
+  String prmKilitAkis(String sayi) {
+    return '8 haftalık seyir ve $sayi büyük hareket Premium\'da';
+  }
+
+  @override
+  String get prmKilitAyrinti => 'Ayrıntılar Premium\'da';
+
+  @override
+  String get prmKilitNot => 'Notun tamamı Premium\'da';
+
+  @override
+  String get prmHediyeBaslik => 'İlk kullanıcılarımızdansın';
+
+  @override
+  String prmHediyeGovde(String gun, String tarih) {
+    return '$gun gün Premium senin; kart bilgisi gerekmez. $tarih tarihinde biter, bitince verilerinden hiçbiri silinmez.';
+  }
+
+  @override
+  String get prmTesekkurler => 'Teşekkürler';
+
+  @override
+  String get prmAbonelikAylik => 'Premium · aylık';
+
+  @override
+  String get prmAbonelikYillik => 'Premium · yıllık';
+
+  @override
+  String get prmAbonelikHediye => 'Premium · erken kullanıcı hediyesi';
+
+  @override
+  String prmYenileme(String tarih, String magaza) {
+    return 'Yenileme $tarih · $magaza';
+  }
+
+  @override
+  String prmBitis(String tarih) {
+    return '$tarih tarihinde biter';
+  }
+
+  @override
+  String get prmYonet => 'Yönet';
+
+  @override
+  String get prmGeriYukle => 'Satın alımları geri yükle';
+
+  @override
+  String get anzNotUpper => 'HAFTALIK NOT · YAPAY ZEKÂ';
+
+  @override
+  String anzMeta(String sayi, String aralik) {
+    return '$sayi madde · $aralik';
+  }
+
+  @override
+  String get anzNotuOku => 'Notu oku';
+
+  @override
+  String anzDetayBaslik(String kod) {
+    return '$kod · haftalık not';
+  }
+
+  @override
+  String anzAylikDetayBaslik(String kod) {
+    return '$kod · aylık not';
+  }
+
+  @override
+  String anzAltSatir(String kaynak, String tarih) {
+    return 'Yapay zekâ ile oluşturuldu · girdi $kaynak, $tarih · yatırım tavsiyesi değildir';
+  }
+
+  @override
+  String get anzIseYaradi => 'İşine yaradı mı?';
+
+  @override
+  String get anzYanlisSayi => 'Yanlış bir sayı gördüm';
+
+  @override
+  String get anzYanlisIpucu => 'Hangi sayı yanlış? (isteğe bağlı)';
+
+  @override
+  String get anzGonder => 'Gönder';
+
+  @override
+  String get anzTesekkur => 'Teşekkürler, not incelenecek.';
+
+  @override
+  String get anzAylikUpper => 'AYLIK RAPOR';
+
+  @override
+  String anzAylikBaslik(String ay) {
+    return '$ay raporu';
+  }
+
+  @override
+  String anzAylikOzetVar(String toplam, String sayi) {
+    return 'Notu çıkan $toplam varlığından $sayi tanesinde ay boyunca belirgin hareket oldu.';
+  }
+
+  @override
+  String anzAylikEksik(String kodlar) {
+    return '$kodlar için bu ay not çıkmadı; sayıları kendi sayfalarında.';
+  }
+
+  @override
+  String get anzAylikOzetYok =>
+      'Bu ay varlıklarında belirgin bir hareket olmadı.';
+
+  @override
+  String get anzAylikBos => 'Bu ayın raporu henüz hazır değil.';
+
+  @override
+  String get anzOkunamadi => 'Not şu an açılamadı.';
 }

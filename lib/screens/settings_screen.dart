@@ -13,6 +13,7 @@ import '../providers/base_currency_provider.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/fon_akisi_provider.dart' show balinaRadariAcikProvider;
 import '../providers/preferences_provider.dart';
 import '../l10n/l10n.dart';
 import '../providers/quiet_hours_provider.dart';
@@ -747,6 +748,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (ref.watch(activePartnersProvider).isNotEmpty)
               const _PartnerActivitySwitch(),
             const _BriefSlotTile(),
+            if (ref.watch(balinaRadariAcikProvider)) const _RadarAyarlari(),
             // Maaş günü birikim hatırlatması (0119) — birikim serisiyle aynı
             // bayrak: seri görünmüyorken "serin ay ay sayılıyor" diyen bir
             // hatırlatma anlamsız olurdu.
@@ -2427,6 +2429,80 @@ class _YaziBoyutuPicker extends ConsumerWidget {
             l.textSizeNote,
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Balina radarı ayarları (S19-A, 2026-10-05) — Bildirimler bölümünde iki
+/// anahtar. Yalnız bayrak açıkken görünür; kapalıyken anlatacak özellik yok.
+///
+/// "Pazartesi özetinde hareket satırı" SUNUCUDA (0118
+/// `profiles.haftalik_hareket_satiri`): cümleyi kuran weekly-summary. Açılışta
+/// okunur; okunamazsa anahtar gösterilmez (yanlış bir "açık" göstermektense).
+/// "Sakin varlıkları göster" yereldir, yalnız Haftanın özeti ekranını
+/// etkiler.
+class _RadarAyarlari extends ConsumerStatefulWidget {
+  const _RadarAyarlari();
+
+  @override
+  ConsumerState<_RadarAyarlari> createState() => _RadarAyarlariState();
+}
+
+class _RadarAyarlariState extends ConsumerState<_RadarAyarlari> {
+  bool? _hareketSatiri;
+
+  @override
+  void initState() {
+    super.initState();
+    _oku();
+  }
+
+  Future<void> _oku() async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null) return;
+    try {
+      final v = await SupabaseService.instance.haftalikHareketSatiri(uid);
+      if (mounted) setState(() => _hareketSatiri = v ?? true);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: '_RadarAyarlari._oku');
+    }
+  }
+
+  Future<void> _yaz(bool v) async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null) return;
+    final onceki = _hareketSatiri;
+    setState(() => _hareketSatiri = v);
+    try {
+      await SupabaseService.instance.setHaftalikHareketSatiri(uid, v);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _hareketSatiri = onceki);
+      showAppError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      children: [
+        if (_hareketSatiri != null)
+          _SwitchTile(
+            icon: Icons.radar_rounded,
+            title: l10n.rdrAyarHareketSatiri,
+            subtitle: l10n.rdrAyarHareketSatiriAlt,
+            value: _hareketSatiri!,
+            onChanged: _yaz,
+          ),
+        _SwitchTile(
+          icon: Icons.format_list_bulleted_rounded,
+          title: l10n.rdrAyarSakinGoster,
+          subtitle: l10n.rdrAyarSakinGosterAlt,
+          value: ref.watch(haftaSakinGosterProvider),
+          onChanged: (v) => ref.read(haftaSakinGosterProvider.notifier).set(v),
         ),
       ],
     );

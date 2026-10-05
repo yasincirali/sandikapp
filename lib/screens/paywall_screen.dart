@@ -7,6 +7,7 @@ import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
+import '../utils/tr_format.dart' show parseTrNumber;
 import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
 
@@ -43,6 +44,33 @@ class PaywallScreen extends ConsumerStatefulWidget {
 
 enum _Plan { monthly, yearly }
 
+/// Yıllık planın aylığa göre tasarrufu, fiyat metinlerinden hesaplanır.
+///
+/// **Neden:** rozet eskiden sabit '%40' idi; fiyatlar Remote Config'ten
+/// geliyor, fiyat değişince rozet yanlış bir indirim vaat ederdi (49₺ ×
+/// 12 = 588₺, 349₺ → %40,6 idi; 399₺ ile %32). Yüzde aşağı
+/// yuvarlanır (abartmaz); fiyat okunamazsa ya da tasarruf yoksa rozet
+/// hiç çıkmaz: uydurma sayı yazılmaz.
+String? _tasarrufRozeti(BuildContext context, String aylik, String yillik) {
+  final oran = yillikTasarrufOrani(aylik, yillik);
+  if (oran == null) return null;
+  return context.l10n.prmYillikTasarruf('$oran');
+}
+
+/// Saf hesap (test edilir): '49₺/ay', '399₺/yıl' → 32. Okunamaz ya da
+/// tasarruf 1 puanın altındaysa null.
+int? yillikTasarrufOrani(String aylik, String yillik) {
+  double? sayi(String m) {
+    final e = RegExp(r'\d[\d.,]*').firstMatch(m);
+    return e == null ? null : parseTrNumber(e.group(0)!);
+  }
+
+  final a = sayi(aylik), y = sayi(yillik);
+  if (a == null || y == null || a <= 0) return null;
+  final oran = ((1 - y / (a * 12)) * 100).floor();
+  return oran >= 1 ? oran : null;
+}
+
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   _Plan _selected = _Plan.yearly;
   bool _busy = false;
@@ -69,13 +97,17 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   _HeroCard(),
                   const SizedBox(height: 24),
                   const _FeatureList(),
+                  if (rc.balinaRadariAcik) ...[
+                    const SizedBox(height: 8),
+                    _KarsilastirmaTablosu(varlikSiniri: rc.freeAssetLimit),
+                  ],
                   const SizedBox(height: 24),
                   _PlanCard(
                     plan: _Plan.yearly,
                     title: context.l10n.planYearly,
                     price: priceYearly,
                     subtitle: context.l10n.planYearlySubtitle,
-                    badgeText: '%40 tasarruf',
+                    badgeText: _tasarrufRozeti(context, priceMonthly, priceYearly),
                     selected: _selected == _Plan.yearly,
                     onTap: () => setState(() => _selected = _Plan.yearly),
                   ),
@@ -344,6 +376,90 @@ class _FeatureList extends StatelessWidget {
           const SizedBox(height: 12),
         ],
       ],
+    );
+  }
+}
+
+// ── Ücretsiz / Premium karşılaştırma (S11-B, 2026-10-05) ─────────────────
+//
+// "Takip ücretsiz, anlam ücretli" ilkesi tek bakışta: her satırda ücretsizde
+// ne kaldığı da yazar — kullanıcı neyi kaybettiğini değil neyi kazanacağını
+// görür. Satırlar yalnız radar bayrağı açıkken (özellik uygulamada yokken
+// listelenmez; bkz. `_FeatureList` uyarısı).
+class _KarsilastirmaTablosu extends StatelessWidget {
+  const _KarsilastirmaTablosu({required this.varlikSiniri});
+
+  final int varlikSiniri;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final c = context.c;
+    final t = context.t;
+    // Aylık rapor satırı metin değil simge: '✓'/'-' karakterleri DM Sans'ta
+    // yok, web'de kutu çiziyordu; ekran okuyucu da "Var/Yok" duysun.
+    final satirlar = <(String, String?, String?)>[
+      (l.prmSatirVarlik, '$varlikSiniri', l.prmSinirsiz),
+      (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
+      (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
+      (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),
+      (l.prmSatirAylik, null, null),
+    ];
+    Widget hucre(String? metin, {required bool premium}) {
+      if (metin == null) {
+        return Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Icon(premium ? Icons.check_rounded : Icons.remove_rounded,
+              size: 18,
+              color: premium ? c.amberText : c.text36,
+              semanticLabel: premium ? l.prmVarErisim : l.prmYokErisim),
+        );
+      }
+      return Text(metin,
+          style: premium
+              ? t.bodySmall?.copyWith(color: c.text90, fontWeight: FontWeight.w700)
+              : t.bodySmall?.copyWith(color: c.text58));
+    }
+
+    final baslik = t.labelSmall?.copyWith(
+        color: c.text58, fontWeight: FontWeight.w800, letterSpacing: 1.0);
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md, vertical: SandikSpace.sm),
+      child: Table(
+        columnWidths: const {
+          0: FlexColumnWidth(1.3),
+          1: FlexColumnWidth(1),
+          2: FlexColumnWidth(1.1),
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: [
+          TableRow(children: [
+            const SizedBox.shrink(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+              child: Text(l.prmUcretsiz.toUpperCase(), style: baslik),
+            ),
+            Text(l.prmPremium.toUpperCase(),
+                style: baslik?.copyWith(color: c.amberText)),
+          ]),
+          for (final r in satirlar)
+            TableRow(
+              decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: c.hairline))),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+                  child: Text(r.$1,
+                      style: t.bodyMedium?.copyWith(
+                          color: c.text90, fontWeight: FontWeight.w600)),
+                ),
+                hucre(r.$2, premium: false),
+                hucre(r.$3, premium: true),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

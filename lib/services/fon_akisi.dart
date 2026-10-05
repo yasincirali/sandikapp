@@ -205,6 +205,8 @@ class FonAkisOzeti {
     this.ay1,
     this.ay3,
     this.seri,
+    this.sonHaftaBasBuyukluk,
+    this.yatirimciHaftaFarki,
   });
 
   /// Son 30 / 90 günün akışı; dönem eksiksiz kurulamıyorsa null.
@@ -229,14 +231,35 @@ class FonAkisOzeti {
   /// En yeni fon büyüklüğü, TL.
   final double buyukluk;
 
+  /// Son haftanın BAŞINDAKİ büyüklük: haftadan önceki son satır, yoksa
+  /// haftanın ilk satırı. "Büyüklüğün %X'i" oranının paydası budur; sunucu
+  /// notu (`_shared/analiz.ts` `akis_orani`) aynı kuralı kullanır. Paydası
+  /// en yeni büyüklük olsaydı, haftanın girişi paydayı da büyütür ve satır
+  /// notla farklı yüzde yazardı (TTE: %4,1 ↔ %4,4, 2026-10-05 web testi).
+  /// Bilinmiyorsa null: oran yazılmaz.
+  final double? sonHaftaBasBuyukluk;
+
   /// En yeni günün yatırımcı sayısı; bilinmiyorsa null (satır çizilmez).
   final int? yatirimci;
 
   /// Bir önceki işlem gününe göre yatırımcı farkı; iki gün de biliniyorsa.
   final int? yatirimciDegisimi;
 
+  /// Son haftadaki yatırımcı farkı: haftadan önceki son bilinen sayıdan en
+  /// yeni sayıya. Ayrıntı ekranı haftalık sayfa olduğu için bunu yazar; günlük
+  /// farkı ("+8") etiketsiz yazınca not "+479" derken çelişiyordu. Sunucu
+  /// notunun `yatirimci_degisim` ölçüsüyle aynı kural. Bilinmiyorsa null.
+  final int? yatirimciHaftaFarki;
+
   /// Son [olayGun] gündeki olaylar, yeniden eskiye, en çok [olayUstu].
   final List<FonBalinaOlayi> olaylar;
+}
+
+/// Son haftanın akışının hafta başı büyüklüğüne oranı (işaretli, 0,041 =
+/// %4,1). Hafta başı büyüklüğü bilinmiyorsa null: oran uydurulmaz.
+double? fonHaftaOrani(FonAkisOzeti o) {
+  final bas = o.sonHaftaBasBuyukluk;
+  return bas == null || bas <= 0 ? null : o.sonHaftaNet / bas;
 }
 
 /// Grafikteki hafta sayısı.
@@ -291,6 +314,8 @@ FonAkisOzeti? fonAkisOzeti(
 
   final sonHaftaIlk =
       akisli.firstWhere((g) => _pazartesi(g.tarih) == sonHaftaBasi).tarih;
+  final haftaOncesi = sirali.lastWhere((g) => g.tarih.isBefore(sonHaftaBasi),
+      orElse: () => sirali.firstWhere((g) => !g.tarih.isBefore(sonHaftaBasi)));
 
   // Yatırımcı farkı yalnız ARDIŞIK iki satırda da sayı varsa: arada boş gün
   // kalmışsa fark birden çok günün toplamı olurdu.
@@ -357,7 +382,21 @@ FonAkisOzeti? fonAkisOzeti(
     seri: seriHafta >= 2
         ? HaftaSerisi(hafta: seriHafta, giris: sonYon > 0)
         : null,
+    sonHaftaBasBuyukluk:
+        haftaOncesi.portfoyDegeri > 0 ? haftaOncesi.portfoyDegeri : null,
+    yatirimciHaftaFarki: _haftaKisiFarki(sirali, sonHaftaBasi),
   );
+}
+
+int? _haftaKisiFarki(List<FonAkisGunu> sirali, DateTime haftaBasi) {
+  final son = sirali.last.yatirimci;
+  if (son == null) return null;
+  int? once;
+  for (final g in sirali) {
+    if (!g.tarih.isBefore(haftaBasi)) break;
+    if (g.yatirimci != null) once = g.yatirimci;
+  }
+  return once == null ? null : son - once;
 }
 
 /// Son haftaya (kartın başlığındaki hafta) düşen ilk büyük hareket; yoksa
@@ -402,8 +441,7 @@ DonemAkisi? _donemAkisi(List<FonAkisGunu> sirali, int gun) {
 DateTime? _gun(Object? ham) {
   final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch('${ham ?? ''}');
   if (m == null) return null;
-  return DateTime.utc(
-      int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
+  return DateTime.utc(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
 }
 
 DateTime _gunBasi(DateTime t) => DateTime.utc(t.year, t.month, t.day);

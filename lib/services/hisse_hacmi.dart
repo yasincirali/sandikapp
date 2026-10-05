@@ -211,16 +211,23 @@ HacimOlayi? sonHaftaHacimOlayi(HacimOzeti ozet) {
   return null;
 }
 
-/// Son 7 günün alıcı payı ortalaması; 7 günün HEPSİNDE pay yoksa null.
+/// Son 7 günün HACİM AĞIRLIKLI alıcı payı; 7 günün HEPSİNDE pay yoksa null.
+///
+/// Basit ortalama değil (2026-10-05 web testi): hacmi 3 kat olan gün,
+/// sakin bir günle aynı ağırlığı almamalı. Sunucu notunun `alici_payi`
+/// ölçüsü (`_shared/analiz.ts` `hacimPaketi`) de böyle; basit ortalamayla
+/// satır %56,9, not %56,8 yazıyordu.
 double? _sonYediOrtalama(List<HacimGunu> sirali) {
   if (sirali.length < 7) return null;
-  var toplam = 0.0;
+  var alim = 0.0;
+  var hacim = 0.0;
   for (var i = sirali.length - 7; i < sirali.length; i++) {
     final p = sirali[i].aliciPayi;
     if (p == null) return null;
-    toplam += p;
+    alim += sirali[i].paraHacmi * p;
+    hacim += sirali[i].paraHacmi;
   }
-  return toplam / 7;
+  return hacim > 0 ? alim / hacim : null;
 }
 
 DateTime? _gun(Object? ham) {

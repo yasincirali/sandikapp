@@ -53,7 +53,9 @@ class RemoteConfigService {
 
     // Aylık fiyat gösterimi (paywall'da lokalize göstermek için).
     'premium_price_monthly': '49₺/ay',
-    'premium_price_yearly': '349₺/yıl',
+    // 349 → 399 (yasin, 2026-10-05): yıllıkta KDV + mağaza sonrası aya
+    // 20,6 ₺ kalıyordu; hesap /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
+    'premium_price_yearly': '399₺/yıl',
 
     // NOT: `free_signal_slots_per_day` kaldırıldı (2026-10-04, sadeleştirme
     // C) — ne istemci ne sunucu okuyordu; sinyal slot'u bugün herkese aynı.
@@ -276,6 +278,11 @@ class RemoteConfigService {
       _yerelAcik.contains(anahtar) ||
       (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
 
+  /// Adıyla bayrak (sürüm notu maddesi gibi veri tarafından anılan
+  /// bayraklar için). Varsayılanlarda olmayan ad → kapalı.
+  bool bayrakAcik(String anahtar) =>
+      _defaults[anahtar] is bool && _bayrak(anahtar);
+
   Future<void> init() async {
     if (_initialized) return;
     try {
@@ -339,8 +346,10 @@ class RemoteConfigService {
   /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
   /// edilmez; add-asset limit'i devreye girmez. Store + RevenueCat hazır
   /// olunca Firebase Console'dan true'ya çekilecek.
-  bool get paywallEnabled =>
-      _rc?.getBool('paywall_enabled') ?? _defaults['paywall_enabled'] as bool;
+  // `_bayrak` üstünden: yerel testte RC_ACIK ile açılabilsin (sunucu kapısı
+  // açık bir yığında istemci kilidi kapalı kalınca not "açılamadı" diyordu).
+  // Release'te `_yerelAcik` boş, davranış değişmez.
+  bool get paywallEnabled => _bayrak('paywall_enabled');
 
   bool get premiumEnabled =>
       _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;

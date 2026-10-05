@@ -4361,5 +4361,488 @@
               "type": "String"
           }
       }
-  }
+  },
+  "rdrKademeSakin": "sakin",
+  "rdrKademeHareketli": "hareketli",
+  "rdrKademeCok": "çok hareketli",
+  "rdrHaftaSakin": "Sakin hafta",
+  "rdrHaftaHareketli": "Hareketli hafta",
+  "rdrHaftaCok": "Çok hareketli hafta",
+  "rdrGunSakin": "Sakin gün",
+  "rdrGunHareketli": "Hareketli gün",
+  "rdrGunCok": "Çok hareketli gün",
+  "rdrOlcekSemantics": "Kendi olağanına göre: {kademe}",
+  "@rdrOlcekSemantics": {
+    "placeholders": {
+      "kademe": {"type": "String"}
+    }
+  },
+  "rdrAyrinti": "Ayrıntı",
+  "rdrKaynakSatiri": "{kaynak} · {tarih} · tavsiye değildir",
+  "@rdrKaynakSatiri": {
+    "placeholders": {
+      "kaynak": {"type": "String"},
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrYasal": "Veriler {kaynak} kaynaklıdır ve kimin alıp sattığını göstermez. Geçmişteki hareket gelecekteki getiriyi göstermez; yatırım tavsiyesi değildir.",
+  "@rdrYasal": {
+    "placeholders": {
+      "kaynak": {"type": "String"}
+    }
+  },
+  "rdrNasilOkunur": "Nasıl okunur",
+  "rdrKoc1": "Üstteki cümle bu varlığın son durumunu tek satırda anlatır. Altındaki sayı o cümlenin kanıtıdır.",
+  "rdrKoc2": "Ölçek, sayının bu varlığın kendi olağanına göre ne kadar büyük olduğunu gösterir: sakin, hareketli, çok hareketli.",
+  "rdrKoc3": "Altı noktalı kelimelere dokunursan ne anlama geldiğini görürsün.",
+  "rdrKocAdim": "{adim} / 3",
+  "@rdrKocAdim": {
+    "placeholders": {
+      "adim": {"type": "String"}
+    }
+  },
+  "rdrIleri": "İleri",
+  "rdrAnladim": "Anladım",
+  "rdrTerimNetAkis": "Net akış",
+  "rdrTerimNetAkisTanim": "Fona giren paradan çıkan para düşülünce kalan tutar. Fon fiyatının artması ya da düşmesi buna girmez; yalnız yatırımcıların koyduğu ve çektiği para sayılır.",
+  "rdrTerimBuyukluk": "Fon büyüklüğü",
+  "rdrTerimBuyuklukTanim": "Fondaki toplam paranın bugünkü değeri. Hem yeni para girince hem de fonun içindekiler değer kazanınca büyür.",
+  "rdrTerimAyristirma": "Fiyat ve yeni para",
+  "rdrTerimAyristirmaTanim": "Fon büyüklüğündeki değişim iki kaynaktan gelir: fondaki varlıkların değerinin değişmesi (fiyat) ve yatırımcıların koyup çektiği para (yeni para). İkisinin toplamı büyüklük değişimidir.",
+  "rdrTerimYatirimci": "Yatırımcı sayısı",
+  "rdrTerimYatirimciTanim": "Fonda payı olan kişi sayısı. Aynı tutar az kişiden büyük paralarla da, çok kişiden küçük paralarla da gelebilir; bu sayı farkı gösterir.",
+  "rdrTerimSira": "Kategoride akış sırası",
+  "rdrTerimSiraTanim": "Aynı TEFAS kategorisindeki fonların, aynı hafta en çok net para girişi olandan en çok net çıkışı olana sırası. Yalnız o haftanın her gününde verisi olan fonlar sıralanır.",
+  "rdrTerimBuyukHareket": "Büyük hareket",
+  "rdrTerimBuyukHareketTanim": "Bir günde giren ya da çıkan paranın hem fon büyüklüğünün en az %3'ü hem de fonun olağan günlük hareketinin en az 4 katı olması. İkisi birden olmadıkça işaretlenmez; ₺250 mn altındaki fonlarda ve para piyasası fonlarında hiç işaretlenmez.",
+  "rdrTerimOlcek": "Ölçek",
+  "rdrTerimOlcekTanim": "Sayının bu varlığın kendi geçmişine göre büyüklüğü. Fonda son hafta önceki haftaların ortalamasıyla, hissede son günün hacmi önceki 20 günün ortalamasıyla kıyaslanır. Kriptoda alıcı payının %50'den uzaklığına bakılır: 2 puan hareketli, 5 puan çok hareketli. O gün büyük hareket ya da olağandışı hacim işaretlendiyse ölçek en üsttedir.",
+  "rdrTerimHacim": "Para hacmi",
+  "rdrTerimHacimTanim": "O gün el değiştiren hisselerin toplam tutarı. Her işlemin bir alıcısı ve bir satıcısı vardır; yüksek hacim tek başına para girişi demek değildir.",
+  "rdrTerimKat": "Ortalamanın katı",
+  "rdrTerimKatTanim": "Son günün hacminin önceki 20 işlem gününün ortalamasına oranı. 1 kat olağan bir gün demektir.",
+  "rdrTerimOlagandisi": "Olağandışı hacim",
+  "rdrTerimOlagandisiTanim": "Hacmin önceki 20 günün ortalamasının en az 2 katı olduğu ve bu sıçramanın o varlığın olağan dalgalanmasının çok dışında kaldığı gün.",
+  "rdrTerimAliciPayi": "Alıcı payı",
+  "rdrTerimAliciPayiTanim": "İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.",
+  "rdrTerimNetAlim": "Net alım",
+  "rdrTerimNetAlimTanim": "Piyasa emriyle alanların hacminden satanların hacmi düşülünce kalan tutar (USDT). Yalnız Binance'teki işlemleri kapsar.",
+  "rdrTerimOrnek": "Bu varlıkta: {deger}",
+  "@rdrTerimOrnek": {
+    "placeholders": {
+      "deger": {"type": "String"}
+    }
+  },
+  "rdrFonGirisSakin": "Bu fona son hafta olağan ölçüde para girdi.",
+  "rdrFonGirisHareketli": "Bu fona son hafta olağandan fazla para girdi.",
+  "rdrFonGirisCok": "Bu fona son hafta olağanın çok üstünde para girdi.",
+  "rdrFonCikisSakin": "Bu fondan son hafta olağan ölçüde para çıktı.",
+  "rdrFonCikisHareketli": "Bu fondan son hafta olağandan fazla para çıktı.",
+  "rdrFonCikisCok": "Bu fondan son hafta olağanın çok üstünde para çıktı.",
+  "rdrFonGiris": "Bu fona son hafta para girdi.",
+  "rdrFonCikis": "Bu fondan son hafta para çıktı.",
+  "rdrFonDenge": "Bu fonda son hafta giren ve çıkan para dengedeydi.",
+  "rdrFonKarisik": "Bu fonda son hafta büyük para hareketi oldu.",
+  "rdrFonNetAralik": "net akış · {aralik}",
+  "@rdrFonNetAralik": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "rdrSon8Hafta": "son 8 hafta",
+  "rdrBuyukHareketSayisi": "{sayi} büyük hareket",
+  "@rdrBuyukHareketSayisi": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrBuyukHareketYok": "büyük hareket yok",
+  "rdrFonDetayBaslik": "{kod} · Para akışı",
+  "@rdrFonDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "rdrHaftayaDokun": "Bir haftaya dokun, o haftanın rakamı burada görünür.",
+  "rdrSecilenHafta": "{aralik} haftası",
+  "@rdrSecilenHafta": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "rdrVeriYok": "veri yok",
+  "rdrAyristirmaCumle": "Son 1 ayda fon büyüklüğü {yuzde} değişti.",
+  "@rdrAyristirmaCumle": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrFiyat": "fiyat {yuzde}",
+  "@rdrFiyat": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYeniPara": "yeni para {yuzde}",
+  "@rdrYeniPara": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrOlaganinKati": "olağan haftanın {kat} katı",
+  "@rdrOlaganinKati": {
+    "placeholders": {
+      "kat": {"type": "String"}
+    }
+  },
+  "rdrDonemUpper": "DÖNEM",
+  "rdrBaglamUpper": "BAĞLAM",
+  "rdrSiraUpper": "KATEGORİDE AKIŞ SIRASI",
+  "rdrSiraAlt": "{kategori} · aynı haftanın net akışına göre sıra",
+  "@rdrSiraAlt": {
+    "placeholders": {
+      "kategori": {"type": "String"}
+    }
+  },
+  "rdrSiraBuFon": "bu fon",
+  "rdrSiraToplam": "{sayi} fon içinde",
+  "@rdrSiraToplam": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrHareketlerUpper": "BÜYÜK HAREKETLER · SON 30 GÜN",
+  "rdrHisseSakin": "{tarih} günü bu hissede olağan miktarda işlem yapıldı.",
+  "@rdrHisseSakin": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrHisseHareketli": "{tarih} günü bu hissede olağandan fazla işlem yapıldı.",
+  "@rdrHisseHareketli": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrHisseCok": "{tarih} günü bu hissede olağanın çok üstünde işlem yapıldı.",
+  "@rdrHisseCok": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrHisseYalin": "{tarih} günü bu hissede {tutar} tutarında işlem yapıldı.",
+  "@rdrHisseYalin": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrHacimAlt": "para hacmi · fiyat {yuzde}",
+  "@rdrHacimAlt": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrHacimAltFiyatsiz": "para hacmi",
+  "rdrOrtalamaCizgisi": "kesikli çizgi: önceki 20 günün ortalaması",
+  "rdrHacimDetayBaslik": "{kod} · Hacim radarı",
+  "@rdrHacimDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "rdrGuneDokun": "Bir güne dokun, o günün hacmi ve fiyatı burada görünür.",
+  "rdrSecilenGun": "{tarih}: {tutar} · fiyat {yuzde}",
+  "@rdrSecilenGun": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSecilenGunFiyatsiz": "{tarih}: {tutar}",
+  "@rdrSecilenGunFiyatsiz": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrOlagandisiUpper": "OLAĞANDIŞI HACİM GÜNLERİ · SON 30 GÜN",
+  "rdrKriptoAlici": "{tarih} günü alanlar satanlardan daha istekliydi.",
+  "@rdrKriptoAlici": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoAliciCok": "{tarih} günü alanlar satanlardan belirgin biçimde daha istekliydi.",
+  "@rdrKriptoAliciCok": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoSatici": "{tarih} günü satanlar alanlardan daha istekliydi.",
+  "@rdrKriptoSatici": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoSaticiCok": "{tarih} günü satanlar alanlardan belirgin biçimde daha istekliydi.",
+  "@rdrKriptoSaticiCok": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrKriptoDenge": "{tarih} günü alanlar ile satanlar dengedeydi.",
+  "@rdrKriptoDenge": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "rdrAlici": "Alıcı {yuzde}",
+  "@rdrAlici": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatici": "Satıcı {yuzde}",
+  "@rdrSatici": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYediGunOrt": "7 günde alıcı payı: {yuzde}",
+  "@rdrYediGunOrt": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSaatlikUpper": "SON 24 SAAT · SAAT SAAT NET ALIM",
+  "rdrEnIstekliSaat": "{aralik} alıcıların en istekli olduğu saat · {tutar} net alım",
+  "@rdrEnIstekliSaat": {
+    "placeholders": {
+      "aralik": {"type": "String"},
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrIstekliSaatYok": "Son 24 saatte alıcıların ağır bastığı bir saat olmadı.",
+  "rdrSonMum": "son mum {saat}",
+  "@rdrSonMum": {
+    "placeholders": {
+      "saat": {"type": "String"}
+    }
+  },
+  "rdrKriptoDetayBaslik": "{kod} · Alıcı baskısı",
+  "@rdrKriptoDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "rdrIslemHacmiUpper": "İŞLEM HACMİ · SON 20 GÜN",
+  "rdrHaftaBaslikVar": "Son haftada {sayi} varlığında olağandışı hareket var.",
+  "@rdrHaftaBaslikVar": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrHaftaBaslikYok": "Son haftada varlıklarında olağandışı bir hareket yok.",
+  "rdrRozetBuyukGiris": "Büyük giriş",
+  "rdrRozetBuyukCikis": "Büyük çıkış",
+  "rdrRozetHacim": "Olağandışı hacim",
+  "rdrRozetAlici": "Alıcı istekli",
+  "rdrRozetSatici": "Satıcı istekli",
+  "rdrRozetHareketli": "Hareketli",
+  "rdrRozetSakin": "Sakin",
+  "rdrSatirFon": "Net {tutar} · büyüklüğün {yuzde}",
+  "@rdrSatirFon": {
+    "placeholders": {
+      "tutar": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatirFonOransiz": "Net {tutar}",
+  "@rdrSatirFonOransiz": {
+    "placeholders": {
+      "tutar": {"type": "String"}
+    }
+  },
+  "rdrSatirHacim": "{tarih} · hacim {kat} kat · fiyat {yuzde}",
+  "@rdrSatirHacim": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "kat": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatirKripto": "7 günde alıcı payı {ort} · son gün {yuzde}",
+  "@rdrSatirKripto": {
+    "placeholders": {
+      "ort": {"type": "String"},
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYatirimciHafta": "{sayi} · son hafta {fark}",
+  "@rdrYatirimciHafta": {
+    "placeholders": {
+      "sayi": {"type": "String"},
+      "fark": {"type": "String"}
+    }
+  },
+  "rdrKartHaftaOlayi": "Son 7 günde olağandışı gün: {olay}",
+  "@rdrKartHaftaOlayi": {
+    "placeholders": {
+      "olay": {"type": "String"}
+    }
+  },
+  "rdrDunAralik": "Dün {aralik}",
+  "@rdrDunAralik": {
+    "placeholders": {
+      "aralik": {"type": "String"}
+    }
+  },
+  "rdrSaateDokun": "Bir saate dokun, o saatin net alımı ve alıcı payı burada görünür.",
+  "anzYararli": "İşime yaradı",
+  "anzYararsiz": "İşime yaramadı",
+  "rdrSatirKriptoOrtsuz": "Son gün alıcı payı {yuzde}",
+  "@rdrSatirKriptoOrtsuz": {
+    "placeholders": {
+      "yuzde": {"type": "String"}
+    }
+  },
+  "rdrSatirNot": "Not: {metin}",
+  "@rdrSatirNot": {
+    "placeholders": {
+      "metin": {"type": "String"}
+    }
+  },
+  "rdrHaftaKaynak": "Fon akışı TEFAS · hacim Yahoo Finance · kripto Binance · tavsiye değildir",
+  "rdrAylikRaporSatir": "{ay} raporu",
+  "@rdrAylikRaporSatir": {
+    "placeholders": {
+      "ay": {"type": "String"}
+    }
+  },
+  "rdrOku": "Oku",
+  "rdrSeritSayi": "{sayi} varlığında son haftada olağandışı hareket var",
+  "@rdrSeritSayi": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "rdrAyarHareketSatiri": "Pazartesi özetinde hareket satırı",
+  "rdrAyarHareketSatiriAlt": "Haftalık bildirimde fonlarındaki büyük giriş-çıkışı ve olağandışı hacmi de yaz.",
+  "rdrAyarSakinGoster": "Sakin varlıkları özette göster",
+  "rdrAyarSakinGosterAlt": "Haftanın özetinde hareketsiz geçen varlıkları da listele.",
+  "prmUcretsiz": "Ücretsiz",
+  "prmPremium": "Premium",
+  "prmSatirVarlik": "Varlık",
+  "prmSatirAkis": "Para akışı",
+  "prmSatirHacim": "Hacim radarı",
+  "prmSatirNot": "Haftalık not",
+  "prmSatirAylik": "Aylık rapor",
+  "prmSinirsiz": "sınırsız",
+  "prmYillikTasarruf": "%{oran} tasarruf",
+  "@prmYillikTasarruf": {
+    "placeholders": {
+      "oran": {"type": "String"}
+    }
+  },
+  "prmVarErisim": "Var",
+  "prmYokErisim": "Yok",
+  "prmAkisUcretsiz": "son hafta",
+  "prmAkisPremium": "8 hafta + olaylar",
+  "prmHacimUcretsiz": "son gün",
+  "prmHacimPremium": "20 gün",
+  "prmNotUcretsiz": "ilk cümle",
+  "prmNotPremium": "tamamı",
+  "prmKilitAkis": "8 haftalık seyir ve {sayi} büyük hareket Premium'da",
+  "@prmKilitAkis": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "prmKilitAyrinti": "Ayrıntılar Premium'da",
+  "prmKilitNot": "Notun tamamı Premium'da",
+  "prmHediyeBaslik": "İlk kullanıcılarımızdansın",
+  "prmHediyeGovde": "{gun} gün Premium senin; kart bilgisi gerekmez. {tarih} tarihinde biter, bitince verilerinden hiçbiri silinmez.",
+  "@prmHediyeGovde": {
+    "placeholders": {
+      "gun": {"type": "String"},
+      "tarih": {"type": "String"}
+    }
+  },
+  "prmTesekkurler": "Teşekkürler",
+  "prmAbonelikAylik": "Premium · aylık",
+  "prmAbonelikYillik": "Premium · yıllık",
+  "prmAbonelikHediye": "Premium · erken kullanıcı hediyesi",
+  "prmYenileme": "Yenileme {tarih} · {magaza}",
+  "@prmYenileme": {
+    "placeholders": {
+      "tarih": {"type": "String"},
+      "magaza": {"type": "String"}
+    }
+  },
+  "prmBitis": "{tarih} tarihinde biter",
+  "@prmBitis": {
+    "placeholders": {
+      "tarih": {"type": "String"}
+    }
+  },
+  "prmYonet": "Yönet",
+  "prmGeriYukle": "Satın alımları geri yükle",
+  "anzNotUpper": "HAFTALIK NOT · YAPAY ZEKÂ",
+  "anzMeta": "{sayi} madde · {aralik}",
+  "@anzMeta": {
+    "placeholders": {
+      "sayi": {"type": "String"},
+      "aralik": {"type": "String"}
+    }
+  },
+  "anzNotuOku": "Notu oku",
+  "anzDetayBaslik": "{kod} · haftalık not",
+  "@anzDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "anzAylikDetayBaslik": "{kod} · aylık not",
+  "@anzAylikDetayBaslik": {
+    "placeholders": {
+      "kod": {"type": "String"}
+    }
+  },
+  "anzAltSatir": "Yapay zekâ ile oluşturuldu · girdi {kaynak}, {tarih} · yatırım tavsiyesi değildir",
+  "@anzAltSatir": {
+    "placeholders": {
+      "kaynak": {"type": "String"},
+      "tarih": {"type": "String"}
+    }
+  },
+  "anzIseYaradi": "İşine yaradı mı?",
+  "anzYanlisSayi": "Yanlış bir sayı gördüm",
+  "anzYanlisIpucu": "Hangi sayı yanlış? (isteğe bağlı)",
+  "anzGonder": "Gönder",
+  "anzTesekkur": "Teşekkürler, not incelenecek.",
+  "anzAylikUpper": "AYLIK RAPOR",
+  "anzAylikBaslik": "{ay} raporu",
+  "@anzAylikBaslik": {
+    "placeholders": {
+      "ay": {"type": "String"}
+    }
+  },
+  "anzAylikOzetVar": "Notu çıkan {toplam} varlığından {sayi} tanesinde ay boyunca belirgin hareket oldu.",
+  "@anzAylikOzetVar": {
+    "placeholders": {
+      "toplam": {"type": "String"},
+      "sayi": {"type": "String"}
+    }
+  },
+  "anzAylikEksik": "{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.",
+  "@anzAylikEksik": {
+    "placeholders": {
+      "kodlar": {"type": "String"}
+    }
+  },
+  "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",
+  "anzAylikBos": "Bu ayın raporu henüz hazır değil.",
+  "anzOkunamadi": "Not şu an açılamadı."
 }
