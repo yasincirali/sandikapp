@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart'
     show
-        Colors,
         Form,
         FormState,
         GlobalKey,
@@ -882,10 +881,15 @@ class YasalOnayKutusu extends StatelessWidget {
             ? context.c.loss.withValues(alpha: 0.08)
             : context.c.overlay,
         borderRadius: BorderRadius.circular(SandikRadius.md),
+        // İşaretlenmemiş kutu amber çerçeveyle çağırır (kullanıcı geri
+        // bildirimi 2026-10-05: "kutucuk gözle görülür olmalı"); işaretlenince
+        // çerçeve söner — iş bitti, göz bir sonraki eyleme gitsin.
         border: Border.all(
           color: error
               ? context.c.loss.withValues(alpha: 0.5)
-              : context.c.overlay,
+              : (accepted
+                  ? context.c.overlay
+                  : context.c.amberText.withValues(alpha: 0.45)),
         ),
       ),
       child: Column(
@@ -938,32 +942,39 @@ class YasalOnayKutusu extends StatelessWidget {
               // Metni'nde ve uyarıda kaldı; kutu kilitsiz.
               onTap: onToggle,
               behavior: HitTestBehavior.opaque,
-              child: Row(
+              // Kare 26 px, çerçevesi amber (eskiden 22 px, `text36` gri
+              // çerçeve: koyu temada zemine karışıyordu — kullanıcı geri
+              // bildirimi 2026-10-05). Satırın tamamı dokunma alanıdır ve
+              // en az [SandikTouch.min] yüksekliktedir.
+              child: ConstrainedBox(
+                constraints:
+                    const BoxConstraints(minHeight: SandikTouch.min),
+                child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AnimatedContainer(
-                    duration: SandikMotion.of(context, const Duration(milliseconds: 150)),
+                    duration: SandikMotion.stateOf(context),
                     curve: SandikMotion.enter,
-                    width: 22,
-                    height: 22,
+                    width: 26,
+                    height: 26,
                     decoration: BoxDecoration(
                       color: accepted
                           ? context.c.amberText
-                          : Colors.transparent,
+                          : context.c.amberText.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(SandikRadius.sm),
                       border: Border.all(
-                        color: accepted
-                            ? context.c.amberText
-                            : (error ? context.c.loss : context.c.text36),
+                        color: error && !accepted
+                            ? context.c.loss
+                            : context.c.amberText,
                         width: 2,
                       ),
                     ),
                     child: accepted
                         ? Icon(Icons.check_rounded,
-                            size: 14, color: context.c.onAmber)
+                            size: 18, color: context.c.onAmber)
                         : null,
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: checkboxSpan != null
                         ? Text.rich(
@@ -980,6 +991,7 @@ class YasalOnayKutusu extends StatelessWidget {
                           ),
                   ),
                 ],
+              ),
               ),
             ),
           ),

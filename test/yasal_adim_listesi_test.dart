@@ -192,6 +192,10 @@ void main() {
               final diger = find.textContaining(
                   ll.yasalAdimDigerBelgeler(0).split(' (').first);
               await tester.scrollUntilVisible(diger, 200, scrollable: liste);
+              // Kısmen görünürse (alt kenarda) dokunuş alttaki "Çıkış yap"a
+              // düşer: tamamen görünür alana al.
+              await tester.ensureVisible(diger);
+              await tester.pumpAndSettle();
               await tester.tap(diger);
               await tester.pumpAndSettle();
               expect(tester.takeException(), isNull);
@@ -205,5 +209,30 @@ void main() {
         }
       }
     }
+  });
+
+  group('odak sıradaki adıma geçer (2026-10-05)', () {
+    testWidgets(
+        'kısa ekranda okuma bitince liste sıradaki adıma kendiliğinden '
+        'kayar; kutu adımı görünür alanda', (tester) async {
+      await kur(tester, kapi(durum(YasalBelge.values.toSet()), uyari: true),
+          boyut: const Size(390, 700));
+      final liste = find.byType(Scrollable).first;
+      double ofset() =>
+          tester.state<ScrollableState>(liste).position.pixels;
+      expect(ofset(), 0);
+      // Uyarı → Açık Rıza: iki okuma, ardından kutu adımı sıradaki.
+      await adimlariOku(tester, tr.yasalAdimOkuOnayla, adet: 2);
+      expect(ofset(), greaterThan(0),
+          reason: 'kullanıcı kaydırmadan sıradaki adıma gelinmeli');
+      final kare = find.descendant(
+          of: find.byType(YasalOnayKutusu),
+          matching: find.byType(AnimatedContainer));
+      final alan = tester.getRect(liste);
+      final kutu = tester.getRect(kare);
+      expect(kutu.top, greaterThanOrEqualTo(alan.top));
+      expect(kutu.bottom, lessThanOrEqualTo(alan.bottom),
+          reason: 'kutu kaydırmadan görünür olmalı');
+    });
   });
 }

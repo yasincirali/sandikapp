@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../l10n/l10n.dart';
 import '../services/yasal_adim_plani.dart';
@@ -123,6 +126,77 @@ class YasalAdimListesi extends StatefulWidget {
 class _YasalAdimListesiState extends State<YasalAdimListesi> {
   bool _digerAcik = false;
 
+  /// Adım satırlarının anahtarları — sıradaki adıma kaydırmak için.
+  final List<GlobalKey> _adimAnahtarlari = [];
+
+  /// Bir adım tamamlanınca odak sıradakine geçer (kullanıcı geri bildirimi
+  /// 2026-10-05: "dokümanlar onaylandıkça bir sonrakine odaklanmalı").
+  /// Okuyucu tam ekran açılıp kapandığı için kullanıcı döndüğünde sıradaki
+  /// adım ekranın altında kalabiliyordu ve kaydırması gerekiyordu. Sıradaki
+  /// adım görünür alana kaydırılır ve ekran okuyucuya adın + durumun
+  /// duyurulur. Yalnız sıra İLERİ gidince: işaret kaldırılınca (sıra geri
+  /// gelir) kullanıcı zaten oradadır, ekran zıplamaz. Hareketi azalt
+  /// açıkken kaydırma anında.
+  ///
+  /// Önceki sıra durumda tutulur, `eski` widget'tan hesaplanmaz: ekranlar
+  /// `onaylananlar` kümesini yerinde değiştirir, eski ve yeni widget aynı
+  /// kümeyi gösterir.
+  int? _sonAktif;
+  Timer? _odakZamanlayici;
+
+  @override
+  void initState() {
+    super.initState();
+    _sonAktif = _aktifSira(widget);
+  }
+
+  @override
+  void dispose() {
+    _odakZamanlayici?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(YasalAdimListesi eski) {
+    super.didUpdateWidget(eski);
+    final onceki = _sonAktif;
+    final simdi = _sonAktif = _aktifSira(widget);
+    if (simdi == null || (onceki != null && simdi <= onceki)) return;
+    // Adımın içeriği (düğme / kutu) `AnimatedSize` ile açılıyor: kaydırma
+    // o bitince hesaplanır, yoksa hedef açılmamış yüksekliğe göre kalır.
+    _odakZamanlayici?.cancel();
+    _odakZamanlayici = Timer(SandikMotion.surfaceOf(context), () {
+      if (!mounted || simdi >= _adimAnahtarlari.length) return;
+      final hedef = _adimAnahtarlari[simdi].currentContext;
+      if (hedef == null) return;
+      // Adımın ALTI görünür alana gelir: eylem (düğme, kutu) adımın en
+      // altında. Adım zaten görünürse ekran kımıldamaz; görünür alandan
+      // uzunsa başlığı yukarıda kalır, eylemin kendisi görünür.
+      Scrollable.ensureVisible(
+        hedef,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        duration: SandikMotion.surfaceOf(hedef),
+        curve: SandikMotion.move,
+      );
+      final l = hedef.l10n;
+      final a = widget.plan.adimlar[simdi];
+      SemanticsService.sendAnnouncement(
+        View.of(hedef),
+        l.yasalAdimSemantik(simdi + 1, widget.plan.adimlar.length,
+            yasalAdimAdi(l, a), l.yasalAdimDurumBekliyor),
+        Directionality.of(hedef),
+      );
+    });
+  }
+
+  /// Sıradaki (aktif) adımın indeksi; hepsi tamamsa `null`.
+  static int? _aktifSira(YasalAdimListesi w) {
+    final d = w.plan.durumlar(
+        onaylananlar: w.onaylananlar, kutuIsaretli: w.kutuIsaretli);
+    final i = d.indexOf(YasalAdimDurumu.aktif);
+    return i < 0 ? null : i;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -165,6 +239,7 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
               const SizedBox(height: SandikSpace.md),
               for (var i = 0; i < plan.adimlar.length; i++)
                 _AdimSatiri(
+                  key: _anahtar(i),
                   sira: i + 1,
                   toplam: plan.adimlar.length,
                   adim: plan.adimlar[i],
@@ -197,6 +272,13 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
         ],
       ],
     );
+  }
+
+  GlobalKey _anahtar(int i) {
+    while (_adimAnahtarlari.length <= i) {
+      _adimAnahtarlari.add(GlobalKey());
+    }
+    return _adimAnahtarlari[i];
   }
 
   /// Adımın başlığın altındaki içeriği; yoksa `null`.
@@ -327,6 +409,7 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
 /// Numaralı daire + başlık + içerik; altında bir sonraki adıma çizgi.
 class _AdimSatiri extends StatelessWidget {
   const _AdimSatiri({
+    super.key,
     required this.sira,
     required this.toplam,
     required this.adim,
