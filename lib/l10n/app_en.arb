@@ -3987,7 +3987,7 @@
   "rdrTerimOlagandisi": "Unusual volume",
   "rdrTerimOlagandisiTanim": "A day when volume is at least twice the 20-day average and the jump is far outside the asset's usual swings.",
   "rdrTerimAliciPayi": "Buyer share",
-  "rdrTerimAliciPayiTanim": "How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow.",
+  "rdrTerimAliciPayiTanim": "How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow. Over several days it is volume weighted: a busier day counts more.",
   "rdrTerimNetAlim": "Net buying",
   "rdrTerimNetAlimTanim": "Market-buy volume minus market-sell volume (USDT). Covers Binance trades only.",
   "rdrTerimOrnek": "For this asset: {deger}",
@@ -4173,7 +4173,7 @@
       "yuzde": {"type": "String"}
     }
   },
-  "rdrYediGunOrt": "7-day average: buyers {yuzde}",
+  "rdrYediGunOrt": "Buyer share over 7 days: {yuzde}",
   "@rdrYediGunOrt": {
     "placeholders": {
       "yuzde": {"type": "String"}
@@ -4236,14 +4236,14 @@
       "yuzde": {"type": "String"}
     }
   },
-  "rdrSatirKripto": "Buyers {yuzde} · 7-day avg {ort}",
+  "rdrSatirKripto": "Buyer share over 7 days {ort} · last day {yuzde}",
   "@rdrSatirKripto": {
     "placeholders": {
-      "yuzde": {"type": "String"},
-      "ort": {"type": "String"}
+      "ort": {"type": "String"},
+      "yuzde": {"type": "String"}
     }
   },
-  "rdrSatirKriptoOrtsuz": "Buyers {yuzde}",
+  "rdrSatirKriptoOrtsuz": "Buyer share on the last day {yuzde}",
   "@rdrSatirKriptoOrtsuz": {
     "placeholders": {
       "yuzde": {"type": "String"}

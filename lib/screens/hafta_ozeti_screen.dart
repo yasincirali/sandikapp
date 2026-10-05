@@ -6,6 +6,7 @@ import '../l10n/l10n.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../services/fon_akisi.dart' show fonHaftaOrani;
 import '../services/varlik_analizi.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -310,10 +311,10 @@ List<String> satirCumleleri(BuildContext context, HaftaSatiri s) {
   final fon = s.fon;
   if (fon != null) {
     final net = isaretliTutar(fon.sonHaftaNet);
+    final oran = fonHaftaOrani(fon);
     return [
-      fon.buyukluk > 0
-          ? l10n.rdrSatirFon(net,
-              fmtPct(fon.sonHaftaNet.abs() / fon.buyukluk * 100, digits: 1))
+      oran != null
+          ? l10n.rdrSatirFon(net, fmtPct(oran.abs() * 100, digits: 1))
           : l10n.rdrSatirFonOransiz(net),
     ];
   }
@@ -321,10 +322,12 @@ List<String> satirCumleleri(BuildContext context, HaftaSatiri s) {
   final olay = s.hacimOlayi;
   final cumleler = <String>[];
   if (s.tur == HaftaVarlikTuru.kripto && h.aliciPayi != null) {
+    // Haftalık listede önce hafta (rozetin dayandığı sayı), sonra son gün.
     final pay = fmtPct(h.aliciPayi! * 100, digits: 1);
     cumleler.add(h.aliciPayi7 == null
         ? l10n.rdrSatirKriptoOrtsuz(pay)
-        : l10n.rdrSatirKripto(pay, fmtPct(h.aliciPayi7! * 100, digits: 1)));
+        // Yer tutucu sırası metindeki sıradır: (ort, yuzde).
+        : l10n.rdrSatirKripto(fmtPct(h.aliciPayi7! * 100, digits: 1), pay));
   }
   if (olay != null) {
     cumleler.add(l10n.rdrSatirHacim(

@@ -168,6 +168,11 @@ const icinde = (t: string, bas: string, bit: string) => t >= bas && t <= bit;
 
 /// Fon/BES paketi. Dönemde hiç akış satırı yoksa `null` (not üretilmez —
 /// "bu hafta ₺0" diye uydurma bir not çıkmasın).
+/// `akis_kati` için bakılan önceki hafta sayısı ve en az verili hafta
+/// (uygulamada `haftaSayisi - 1` ve `fonAsgariHafta`).
+export const ONCEKI_HAFTA = 7;
+export const ASGARI_ONCEKI_HAFTA = 3;
+
 export function fonPaketi(
   ticker: string,
   tur: NotTuru,
@@ -203,6 +208,26 @@ export function fonPaketi(
   o.push({ anahtar: 'fiyat_etkisi', ad: 'Büyüklük değişiminin fiyattan gelen kısmı',
     deger: degisim - net / basBuyukluk, gosterim: yuzde(degisim - net / basBuyukluk, true),
     kaynak: 'TEFAS', tarih: son.tarih });
+
+  // Haftalık: akışın önceki haftaların ortalamasına katı. Uygulamadaki
+  // "Hareketli" rozetinin ölçüsüyle aynı kural (`radar_okuma.dart`
+  // `fonOkunusu`): önceki 7 takvim haftasından verisi olanların |net|
+  // ortalaması, en az 3 hafta. Bu ölçü olmadan model, rozeti "Hareketli"
+  // olan haftayı "olağan" diye anlatabiliyordu (2026-10-05 web testi).
+  if (tur === 'haftalik') {
+    const onceki: number[] = [];
+    for (let i = 1; i <= ONCEKI_HAFTA; i++) {
+      const bas = gunEkle(aralik.baslangic, -7 * i);
+      const son6 = gunEkle(bas, 6);
+      const hafta = sirali.filter((g) => g.net_akis !== null && icinde(g.tarih, bas, son6));
+      if (hafta.length > 0) onceki.push(Math.abs(hafta.reduce((t, g) => t + (g.net_akis as number), 0)));
+    }
+    const ort = onceki.length >= ASGARI_ONCEKI_HAFTA ? onceki.reduce((a, b) => a + b, 0) / onceki.length : 0;
+    if (ort > 0) {
+      o.push({ anahtar: 'akis_kati', ad: 'Haftalık akışın önceki haftaların ortalamasına göre katı',
+        deger: Math.abs(net) / ort, gosterim: kat(Math.abs(net) / ort), kaynak: 'TEFAS', tarih: sonGun });
+    }
+  }
 
   const kisililer = donemde.filter((g) => g.yatirimci !== null);
   const kisiOnce = sirali.filter((g) => g.tarih < aralik.baslangic && g.yatirimci !== null).pop();
@@ -380,6 +405,7 @@ Kesin kurallar:
 6. Kripto alıcı payı, piyasa emriyle alan tarafın hacimdeki payıdır; %50'nin üstü alıcıların daha istekli olduğunu gösterir, para girişi değildir.
 7. Sade Türkçe, "sen" hitabı yok, ünlem yok, emoji yok. "Yatırım tavsiyesi değildir" yazma; uygulama kendisi ekler.
 8. Dönem sakinse kısa yaz: başlık + 1 madde yeter.
+9. "Olağan", "hareketli", "olağandışı" sözcüklerini uygulamadaki rozetlerle aynı ölçekte kullan. Fonda akis_kati 1,5 katın altı olağan, 1,5 ile 3 kat arası hareketli, 3 kat ve üstü çok hareketli. Hisse ve kriptoda hacim_kati 1,3 katın altı olağan, 1,3 ile 2 kat arası hareketli, 2 kat ve üstü çok hareketli. Kriptoda alıcı payı %52 ile %55 arası hafif, %55 ve üstü belirgin alıcı ağırlığıdır (%48 ile %45 arası ve %45 altı satıcı için aynı). Kat ölçüsü yoksa bu sözcükleri kullanma. Bu eşik sayılarını metne yazma.
 
 Çıktı: "baslik" tek cümle (en çok 140 karakter), dönemin en önemli gözlemi. "maddeler" en az 1, en çok 4; her madde tek cümle (en çok 220 karakter) ve "kanit" alanında dayandığı ölçümlerin "anahtar" değerleri.`;
 

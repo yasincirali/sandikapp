@@ -10171,7 +10171,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrTerimAliciPayiTanim.
   ///
   /// In tr, this message translates to:
-  /// **'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir.'**
+  /// **'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.'**
   String get rdrTerimAliciPayiTanim;
 
   /// No description provided for @rdrTerimNetAlim.
@@ -10483,7 +10483,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrYediGunOrt.
   ///
   /// In tr, this message translates to:
-  /// **'7 günlük ortalama: alıcı {yuzde}'**
+  /// **'7 günde alıcı payı: {yuzde}'**
   String rdrYediGunOrt(String yuzde);
 
   /// No description provided for @rdrSaatlikUpper.
@@ -10597,13 +10597,13 @@ abstract class AppLocalizations {
   /// No description provided for @rdrSatirKripto.
   ///
   /// In tr, this message translates to:
-  /// **'Alıcı {yuzde} · 7 gün ort. {ort}'**
-  String rdrSatirKripto(String yuzde, String ort);
+  /// **'7 günde alıcı payı {ort} · son gün {yuzde}'**
+  String rdrSatirKripto(String ort, String yuzde);
 
   /// No description provided for @rdrSatirKriptoOrtsuz.
   ///
   /// In tr, this message translates to:
-  /// **'Alıcı {yuzde}'**
+  /// **'Son gün alıcı payı {yuzde}'**
   String rdrSatirKriptoOrtsuz(String yuzde);
 
   /// No description provided for @rdrSatirNot.

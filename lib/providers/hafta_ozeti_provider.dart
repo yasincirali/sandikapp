@@ -78,7 +78,7 @@ HaftaSatiri fonSatiri(Position p, String kod, FonAkisOzeti o) {
     rozet: rozet,
     // Mutlak tutar değil oran: 50 mr'lik fonda ₺100 mn gürültü, 500 mn'lik
     // fonda haberdir.
-    onem: o.buyukluk > 0 ? o.sonHaftaNet.abs() / o.buyukluk : 0,
+    onem: fonHaftaOrani(o)?.abs() ?? 0,
     fon: o,
   );
 }
@@ -90,8 +90,9 @@ HaftaSatiri hacimSatiri(Position p, String anahtar, HacimOzeti o,
   final HaftaRozeti rozet;
   final double onem;
   if (kripto) {
-    final okunus = kriptoOkunusu(o);
-    onem = o.aliciPayi == null ? 0 : (o.aliciPayi! - 0.5).abs();
+    final okunus = kriptoHaftaOkunusu(o);
+    final pay = o.aliciPayi7 ?? o.aliciPayi;
+    onem = pay == null ? 0 : (pay - 0.5).abs();
     if (olay != null) {
       rozet = HaftaRozeti.olagandisiHacim;
     } else if (okunus != null && okunus.kademe == Kademe.cokHareketli) {

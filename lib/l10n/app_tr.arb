@@ -4358,7 +4358,7 @@
   "rdrTerimOlagandisi": "Olağandışı hacim",
   "rdrTerimOlagandisiTanim": "Hacmin önceki 20 günün ortalamasının en az 2 katı olduğu ve bu sıçramanın o varlığın olağan dalgalanmasının çok dışında kaldığı gün.",
   "rdrTerimAliciPayi": "Alıcı payı",
-  "rdrTerimAliciPayiTanim": "İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir.",
+  "rdrTerimAliciPayiTanim": "İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.",
   "rdrTerimNetAlim": "Net alım",
   "rdrTerimNetAlimTanim": "Piyasa emriyle alanların hacminden satanların hacmi düşülünce kalan tutar (USDT). Yalnız Binance'teki işlemleri kapsar.",
   "rdrTerimOrnek": "Bu varlıkta: {deger}",
@@ -4544,7 +4544,7 @@
       "yuzde": {"type": "String"}
     }
   },
-  "rdrYediGunOrt": "7 günlük ortalama: alıcı {yuzde}",
+  "rdrYediGunOrt": "7 günde alıcı payı: {yuzde}",
   "@rdrYediGunOrt": {
     "placeholders": {
       "yuzde": {"type": "String"}
@@ -4607,14 +4607,14 @@
       "yuzde": {"type": "String"}
     }
   },
-  "rdrSatirKripto": "Alıcı {yuzde} · 7 gün ort. {ort}",
+  "rdrSatirKripto": "7 günde alıcı payı {ort} · son gün {yuzde}",
   "@rdrSatirKripto": {
     "placeholders": {
-      "yuzde": {"type": "String"},
-      "ort": {"type": "String"}
+      "ort": {"type": "String"},
+      "yuzde": {"type": "String"}
     }
   },
-  "rdrSatirKriptoOrtsuz": "Alıcı {yuzde}",
+  "rdrSatirKriptoOrtsuz": "Son gün alıcı payı {yuzde}",
   "@rdrSatirKriptoOrtsuz": {
     "placeholders": {
       "yuzde": {"type": "String"}

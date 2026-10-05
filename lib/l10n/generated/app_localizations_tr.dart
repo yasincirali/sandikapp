@@ -6075,7 +6075,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get rdrTerimAliciPayiTanim =>
-      'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir.';
+      'İşlem hacminin ne kadarının hemen almak isteyenlerden (piyasa emriyle alanlardan) geldiği. %50\'nin üstü alıcıların, altı satıcıların daha istekli olduğunu gösterir. Para girişi ölçüsü değildir. Birden çok günde hacim ağırlıklıdır: işlemi çok olan gün daha çok sayılır.';
 
   @override
   String get rdrTerimNetAlim => 'Net alım';
@@ -6293,7 +6293,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String rdrYediGunOrt(String yuzde) {
-    return '7 günlük ortalama: alıcı $yuzde';
+    return '7 günde alıcı payı: $yuzde';
   }
 
   @override
@@ -6367,13 +6367,13 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String rdrSatirKripto(String yuzde, String ort) {
-    return 'Alıcı $yuzde · 7 gün ort. $ort';
+  String rdrSatirKripto(String ort, String yuzde) {
+    return '7 günde alıcı payı $ort · son gün $yuzde';
   }
 
   @override
   String rdrSatirKriptoOrtsuz(String yuzde) {
-    return 'Alıcı $yuzde';
+    return 'Son gün alıcı payı $yuzde';
   }
 
   @override

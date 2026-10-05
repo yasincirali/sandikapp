@@ -131,7 +131,19 @@ class KriptoOkunusu {
 
 KriptoOkunusu? kriptoOkunusu(HacimOzeti o) {
   final p = o.aliciPayi;
-  if (p == null) return null;
+  return p == null ? null : kriptoPayOkunusu(p);
+}
+
+/// Haftanın okunuşu: 7 günün hacim ağırlıklı payı (yoksa son gün). Haftanın
+/// özeti satırının rozeti buna bakar; son günün payına bakarsa haftalık
+/// listede rozet bir günü, cümle haftayı anlatırdı. Sunucu notunun rozeti
+/// de haftalık hacim ağırlıklı paydan (`alici_istekli` ≥ 0,55).
+KriptoOkunusu? kriptoHaftaOkunusu(HacimOzeti o) {
+  final p = o.aliciPayi7 ?? o.aliciPayi;
+  return p == null ? null : kriptoPayOkunusu(p);
+}
+
+KriptoOkunusu kriptoPayOkunusu(double p) {
   // Kayan nokta payı: 0,45 − 0,5 = −0,04999… çıkar; sunucu rozeti (≤ 0,45)
   // ile sınırda aynı karar verilmeli.
   final fark = (p - 0.5).abs() + 1e-9;

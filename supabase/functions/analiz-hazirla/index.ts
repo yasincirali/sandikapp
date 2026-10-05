@@ -38,6 +38,7 @@ import {
   ayAraligi,
   FonGunu,
   fonPaketi,
+  ONCEKI_HAFTA,
   haftaAraligi,
   HacimSatiri,
   hacimPaketi,
@@ -127,9 +128,10 @@ export async function paketleriKur(
   tur: NotTuru,
   aralik: { baslangic: string; bitis: string },
 ): Promise<Paket[]> {
-  // Dönem öncesi pay: fonda önceki gün (oran paydası, yatırımcı farkı),
-  // hacimde 20 işlem günü ortalaması (~30 takvim günü, tatil payıyla 45).
-  const fonBasi = gunEkle(aralik.baslangic, -10);
+  // Dönem öncesi pay: fonda önceki gün (oran paydası, yatırımcı farkı);
+  // haftalıkta ayrıca `akis_kati` için önceki 7 hafta. Hacimde 20 işlem
+  // günü ortalaması (~30 takvim günü, tatil payıyla 45).
+  const fonBasi = gunEkle(aralik.baslangic, tur === 'haftalik' ? -7 * ONCEKI_HAFTA - 3 : -10);
   const hacimBasi = gunEkle(aralik.baslangic, -45);
   const fonlar = secilen.filter((s) => s.varlik === 'fon');
   const hisseler = secilen.filter((s) => s.varlik === 'hisse');

@@ -26,7 +26,8 @@ FonAkisOzeti _fon(double son,
   final haftalar = [
     for (var i = 0; i < onceki.length; i++)
       HaftaAkisi(
-          baslangic: _g(9, 28).subtract(Duration(days: 7 * (onceki.length - i))),
+          baslangic:
+              _g(9, 28).subtract(Duration(days: 7 * (onceki.length - i))),
           net: onceki[i]),
     HaftaAkisi(baslangic: _g(9, 28), net: son),
   ];
@@ -72,7 +73,15 @@ void main() {
   group('fon', () {
     test('cümle ve işaret çelişmez (her kademe)', () {
       for (final son in [
-        -900e6, -250e6, -120e6, -40e6, 0.0, 40e6, 120e6, 250e6, 900e6,
+        -900e6,
+        -250e6,
+        -120e6,
+        -40e6,
+        0.0,
+        40e6,
+        120e6,
+        250e6,
+        900e6,
       ]) {
         final o = fonOkunusu(_fon(son));
         final cumle = fonCumlesi(l, o);
@@ -105,18 +114,28 @@ void main() {
     });
 
     test('son haftada sunucu olayı → en üst kademe', () {
-      final o = fonOkunusu(
-          _fon(20e6, olaylar: [_olay(400e6, _g(9, 30))]));
+      final o = fonOkunusu(_fon(20e6, olaylar: [_olay(400e6, _g(9, 30))]));
       expect(o.kademe, Kademe.cokHareketli);
       expect(o.karsiYonOlay, isFalse);
     });
 
     test('olay net yönün tersiyse cümle yön söylemez', () {
-      final o = fonOkunusu(
-          _fon(20e6, olaylar: [_olay(-400e6, _g(9, 29))]));
+      final o = fonOkunusu(_fon(20e6, olaylar: [_olay(-400e6, _g(9, 29))]));
       expect(o.yon, Yon.giris);
       expect(o.karsiYonOlay, isTrue);
       expect(fonCumlesi(l, o), l.rdrFonKarisik);
+    });
+
+    test('haftanın oranı hafta BAŞI büyüklüğüne (sunucu notuyla aynı payda)',
+        () {
+      final o = fonAkisOzeti([
+        FonAkisGunu(tarih: _g(9, 25), portfoyDegeri: 3.18e9, netAkis: 0),
+        FonAkisGunu(tarih: _g(9, 29), portfoyDegeri: 3.30e9, netAkis: 137.66e6),
+        FonAkisGunu(tarih: _g(10, 2), portfoyDegeri: 3.32e9, netAkis: 0),
+      ], const [], simdi: _g(10, 5))!;
+      expect(o.sonHaftaBasBuyukluk, 3.18e9);
+      // 137,66 / 3.180 = %4,33; en yeni büyüklükle %4,15 olurdu.
+      expect(fonHaftaOrani(o), closeTo(0.0433, 1e-4));
     });
 
     test('önceki haftanın olayı son haftayı etkilemez', () {
@@ -152,8 +171,8 @@ void main() {
       expect(kriptoOkunusu(_hacim(aliciPayi: 0.515))!.kademe, Kademe.sakin);
       expect(kriptoOkunusu(_hacim(aliciPayi: 0.52))!.kademe, Kademe.hareketli);
       expect(kriptoOkunusu(_hacim(aliciPayi: 0.52))!.yon, Yon.giris);
-      expect(kriptoOkunusu(_hacim(aliciPayi: 0.45))!.kademe,
-          Kademe.cokHareketli);
+      expect(
+          kriptoOkunusu(_hacim(aliciPayi: 0.45))!.kademe, Kademe.cokHareketli);
       expect(kriptoOkunusu(_hacim(aliciPayi: 0.45))!.yon, Yon.cikis);
       expect(kriptoOkunusu(_hacim()), isNull);
     });
@@ -191,8 +210,11 @@ void main() {
 
     test('bozuk satır reddedilir', () {
       expect(
-          KriptoSaati.satirdan(
-              {'saat': '2026-10-05T10:00:00Z', 'para_hacmi': 1, 'alici_payi': 1.2}),
+          KriptoSaati.satirdan({
+            'saat': '2026-10-05T10:00:00Z',
+            'para_hacmi': 1,
+            'alici_payi': 1.2
+          }),
           isNull);
       expect(
           KriptoSaati.satirdan(
@@ -262,8 +284,7 @@ void main() {
               {'ticker': 'X', 'donem': '2026-09-28', 'baslik': ''}),
           isNull);
       expect(
-          AnalizOzeti.satirdan(
-              {'ticker': 'X', 'donem': 'dün', 'baslik': 'a'}),
+          AnalizOzeti.satirdan({'ticker': 'X', 'donem': 'dün', 'baslik': 'a'}),
           isNull);
       expect(
           AnalizOzeti.satirdan({

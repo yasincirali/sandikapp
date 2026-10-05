@@ -6139,7 +6139,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rdrTerimAliciPayiTanim =>
-      'How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow.';
+      'How much of the volume came from people who wanted to buy right away (market buy orders). Above 50% buyers were more eager, below 50% sellers. It is not a measure of money inflow. Over several days it is volume weighted: a busier day counts more.';
 
   @override
   String get rdrTerimNetAlim => 'Net buying';
@@ -6356,7 +6356,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rdrYediGunOrt(String yuzde) {
-    return '7-day average: buyers $yuzde';
+    return 'Buyer share over 7 days: $yuzde';
   }
 
   @override
@@ -6430,13 +6430,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String rdrSatirKripto(String yuzde, String ort) {
-    return 'Buyers $yuzde · 7-day avg $ort';
+  String rdrSatirKripto(String ort, String yuzde) {
+    return 'Buyer share over 7 days $ort · last day $yuzde';
   }
 
   @override
   String rdrSatirKriptoOrtsuz(String yuzde) {
-    return 'Buyers $yuzde';
+    return 'Buyer share on the last day $yuzde';
   }
 
   @override

@@ -85,6 +85,26 @@ Deno.test('fonPaketi: net akış, oran paydası dönem başı, fiyat etkisi, yat
   assertEquals(p.bitis, '2026-09-29');
 });
 
+Deno.test('fonPaketi: akis_kati uygulamadaki "Hareketli" ölçüsüyle aynı (önceki haftalar, en az 3)', () => {
+  // Önceki üç haftanın |net|'i 10, 20, 30 mn → ortalama 20 mn; bu hafta 50 mn → 2,5 kat.
+  const gunler = [
+    fonGunu('2026-09-08', -10_000_000, 1e9),
+    fonGunu('2026-09-15', 15_000_000, 1e9), fonGunu('2026-09-16', 5_000_000, 1e9),
+    fonGunu('2026-09-22', -30_000_000, 1e9),
+    fonGunu('2026-09-28', 50_000_000, 1e9),
+  ];
+  const p = fonPaketi('TEFAS:TTE', 'haftalik', ARALIK, gunler, [], null)!;
+  const o = Object.fromEntries(p.olcumler.map((x) => [x.anahtar, x]));
+  assertAlmostEquals(o.akis_kati.deger, 2.5);
+  assertEquals(o.akis_kati.gosterim, '2,5 kat');
+  // İki önceki hafta yetmez: ölçek uydurulmaz.
+  const az = fonPaketi('TEFAS:TTE', 'haftalik', ARALIK, gunler.slice(2), [], null)!;
+  assert(!az.olcumler.some((x) => x.anahtar === 'akis_kati'));
+  // Aylık notta yok (ay, haftalık ölçekle anlatılmaz).
+  const ay = fonPaketi('TEFAS:TTE', 'aylik', { baslangic: '2026-09-01', bitis: '2026-09-30' }, gunler, [], null)!;
+  assert(!ay.olcumler.some((x) => x.anahtar === 'akis_kati'));
+});
+
 Deno.test('fonPaketi: dönemde akış yoksa paket yok', () => {
   assertEquals(fonPaketi('TEFAS:TTE', 'haftalik', ARALIK, [
     fonGunu('2026-09-25', 5, 1e9), fonGunu('2026-09-28', null, 1e9),

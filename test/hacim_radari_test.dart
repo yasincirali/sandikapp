@@ -152,8 +152,11 @@ void main() {
     test('satır ayrıştırma: bozuk satır atılır, fon türü hisse olayı değildir',
         () {
       expect(
-          HacimGunu.satirdan(
-                  {'tarih': '2026-10-02', 'kapanis': 310.5, 'para_hacmi': 4.8e9})!
+          HacimGunu.satirdan({
+            'tarih': '2026-10-02',
+            'kapanis': 310.5,
+            'para_hacmi': 4.8e9
+          })!
               .paraHacmi,
           4.8e9);
       expect(HacimGunu.satirdan({'tarih': '2026-10-02', 'kapanis': 0}), isNull);
@@ -181,15 +184,16 @@ void main() {
       (t) async {
     await _kur(t);
     expect(find.text('HACİM RADARI'), findsOneWidget);
-    expect(find.text('22 Eyl günü bu hissede olağanın çok üstünde işlem yapıldı.'),
+    expect(
+        find.text('22 Eyl günü bu hissede olağanın çok üstünde işlem yapıldı.'),
         findsOneWidget);
     expect(find.text('₺320,00M'), findsOneWidget);
     expect(find.text('Çok hareketli gün'), findsOneWidget);
     expect(find.text('para hacmi · fiyat +%4,0'), findsOneWidget);
     expect(find.byType(OlcekCubugu), findsOneWidget);
     expect(find.byType(GunCubuklari), findsOneWidget);
-    expect(find.text('kesikli çizgi: önceki 20 günün ortalaması'),
-        findsOneWidget);
+    expect(
+        find.text('kesikli çizgi: önceki 20 günün ortalaması'), findsOneWidget);
     expect(find.textContaining('Yahoo Finance · 22 Eyl · tavsiye değildir'),
         findsOneWidget);
     // Hissede yön dili yok: hacim giriş/çıkış değildir.
@@ -258,10 +262,11 @@ void main() {
               _seri(21), [_olay(9, 19), _olay(9, 10, yukselis: false)],
               simdi: simdi));
       expect(find.text('THYAO · Hacim radarı'), findsOneWidget);
-      expect(find.text('Önceki 20 günün ortalamasının 3,2 katı'),
-          findsOneWidget);
+      expect(
+          find.text('Önceki 20 günün ortalamasının 3,2 katı'), findsOneWidget);
       final gunler = find.descendant(
-          of: find.byType(GunCubuklari), matching: find.byType(GestureDetector));
+          of: find.byType(GunCubuklari),
+          matching: find.byType(GestureDetector));
       await t.tap(gunler.last);
       await t.pumpAndSettle();
       expect(find.text('22 Eyl: ₺320,00M · fiyat +%4,0'), findsOneWidget);
@@ -324,8 +329,7 @@ void main() {
         bool kilitli = false,
         double genislik = 390,
         double olcek = 1}) async {
-      SharedPreferences.setMockInitialValues(
-          {PrefKeys.radarKocuGoruldu: true});
+      SharedPreferences.setMockInitialValues({PrefKeys.radarKocuGoruldu: true});
       await initPreferencesCache();
       t.view.physicalSize = Size(genislik, 2400);
       t.view.devicePixelRatio = 1;
@@ -358,21 +362,22 @@ void main() {
       await t.pumpAndSettle();
     }
 
-    testWidgets('kart (S5-A): cümle, halat, 7 gün, ölçek, saatlik',
-        (t) async {
-      await kur(
-          t, const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'kripto:btc'),
+    testWidgets('kart (S5-A): cümle, halat, 7 gün, ölçek, saatlik', (t) async {
+      await kur(t,
+          const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'kripto:btc'),
           ozet: kriptoOzet(), akis: saatlik());
       expect(find.text('ALICI BASKISI'), findsOneWidget);
       expect(find.text('22 Eyl günü alanlar satanlardan daha istekliydi.'),
           findsOneWidget);
       expect(find.text('Alıcı %52,0'), findsOneWidget);
       expect(find.text('Satıcı %48,0'), findsOneWidget);
-      expect(find.text('7 günlük ortalama: alıcı %52,0'), findsOneWidget);
+      expect(find.text('7 günde alıcı payı: %52,0'), findsOneWidget);
       expect(find.byType(OlcekCubugu), findsOneWidget);
       expect(find.byType(SaatlikCubuklar), findsOneWidget);
       // 03:00–04:00: 100 mn × (2 × 0,9 − 1) = +$80 mn.
-      expect(find.textContaining(r'alıcıların en istekli olduğu saat · +$80,00M net alım'),
+      expect(
+          find.textContaining(
+              r'alıcıların en istekli olduğu saat · +$80,00M net alım'),
           findsOneWidget);
       expect(find.textContaining('Binance · son mum'), findsOneWidget);
       expect(find.textContaining('₺'), findsNothing);
@@ -380,16 +385,16 @@ void main() {
 
     testWidgets('saatlik veri yoksa saatlik bölüm yok, kaynak günlük',
         (t) async {
-      await kur(
-          t, const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'KRIPTO:BTC'),
+      await kur(t,
+          const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'KRIPTO:BTC'),
           ozet: kriptoOzet());
       expect(find.byType(SaatlikCubuklar), findsNothing);
       expect(find.textContaining('Binance · 22 Eyl'), findsOneWidget);
     });
 
     testWidgets('kilitli: halat açık, saatlik kilitli', (t) async {
-      await kur(
-          t, const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'KRIPTO:BTC'),
+      await kur(t,
+          const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'KRIPTO:BTC'),
           ozet: kriptoOzet(), akis: saatlik(), kilitli: true);
       expect(find.text('Alıcı %52,0'), findsOneWidget);
       expect(find.byType(SaatlikCubuklar), findsNothing);
@@ -420,8 +425,8 @@ void main() {
           const KriptoBaskiKarti(tur: AssetType.kripto, ticker: 'KRIPTO:USDT'),
           ozet: kriptoOzet());
       expect(find.byType(SandikCard), findsNothing);
-      await kur(t,
-          const KriptoBaskiKarti(tur: AssetType.hisse, ticker: 'THYAO.IS'),
+      await kur(
+          t, const KriptoBaskiKarti(tur: AssetType.hisse, ticker: 'THYAO.IS'),
           ozet: kriptoOzet());
       expect(find.byType(SandikCard), findsNothing);
     });
@@ -430,6 +435,24 @@ void main() {
       final o = hacimOzeti(_seri(21), const [], simdi: simdi)!;
       expect(o.aliciPayi, isNull);
       expect(o.aliciPayi7, isNull);
+    });
+
+    test('7 günlük alıcı payı hacim ağırlıklı (sunucu notuyla aynı)', () {
+      // 6 sakin gün %50 (1 mr), 1 yoğun gün %80 (4 mr).
+      // Basit ortalama %54,3; hacim ağırlıklı (6×0,5 + 4×0,8) / 10 = %62.
+      final gunler = [
+        for (var i = 0; i < 7; i++)
+          HacimGunu(
+              tarih: DateTime.utc(2026, 9, 16 + i),
+              kapanis: 1,
+              paraHacmi: i == 6 ? 4e9 : 1e9,
+              aliciPayi: i == 6 ? 0.8 : 0.5),
+      ];
+      final o = hacimOzeti(gunler, const [], simdi: DateTime.utc(2026, 9, 23))!;
+      expect(o.aliciPayi7, closeTo(0.62, 1e-9));
+      // Haftalık okunuş haftanın payına, kartın okunuşu son güne bakar.
+      expect(kriptoHaftaOkunusu(o)!.kademe, Kademe.cokHareketli);
+      expect(kriptoOkunusu(o)!.kademe, Kademe.cokHareketli);
     });
 
     test('kisaDolar ve kriptoTickeri', () {
@@ -492,7 +515,8 @@ void main() {
           contains(
               'grant select on table public.hisse_hacim_gunluk to authenticated'));
       expect(sql, contains('balina_olay_alan_tutarliligi'));
-      expect(RegExp(r'security definer\s+set search_path').allMatches(sql).length,
+      expect(
+          RegExp(r'security definer\s+set search_path').allMatches(sql).length,
           RegExp(r'security definer').allMatches(sql).length);
     });
   });

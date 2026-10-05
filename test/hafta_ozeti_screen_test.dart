@@ -67,6 +67,8 @@ FonAkisOzeti _ozet(double net,
       yatirimci: null,
       yatirimciDegisimi: null,
       olaylar: olaylar,
+      // Hafta başı büyüklüğü = en yeni büyüklük (oranlar tam okunsun).
+      sonHaftaBasBuyukluk: buyukluk,
     );
 
 Position _hisse(String sembol, String ad, AssetType tur) => aggregatePositions([
@@ -96,8 +98,12 @@ HaftaSatiri _fon(String kod, double net,
 FonBalinaOlayi _olay(int ay, int gun, double tutar) => FonBalinaOlayi(
     tarih: _g(ay, gun), tutar: tutar, buyuklukOrani: 0.05, sapmaKati: 5);
 
+/// [pay7] verilmezse haftanın payı son günle aynı.
 HacimOzeti _hacimOzeti(
-        {double? kat, double? pay, List<HacimOlayi> olaylar = const []}) =>
+        {double? kat,
+        double? pay,
+        double? pay7,
+        List<HacimOlayi> olaylar = const []}) =>
     HacimOzeti(
       gunler: const [],
       sonGun: HacimGunu(
@@ -107,7 +113,7 @@ HacimOzeti _hacimOzeti(
       fiyatDegisim: 0.012,
       olaylar: olaylar,
       aliciPayi: pay,
-      aliciPayi7: pay == null ? null : 0.51,
+      aliciPayi7: pay7 ?? pay,
     );
 
 HacimOlayi _hacimOlayi() => HacimOlayi(
@@ -176,8 +182,10 @@ void main() {
       hacimSatiri(_hisse('THYAO.IS', 'Türk Hava Yolları', AssetType.hisse),
           'THYAO.IS', _hacimOzeti(kat: 1.4, olaylar: [_hacimOlayi()]),
           kripto: false),
+      // Son gün alıcı ağır, hafta satıcı ağır: haftalık listede rozet
+      // haftayı anlatır.
       hacimSatiri(_hisse('KRIPTO:BTC', 'Bitcoin', AssetType.kripto),
-          'KRIPTO:BTC', _hacimOzeti(pay: 0.44),
+          'KRIPTO:BTC', _hacimOzeti(pay: 0.56, pay7: 0.44),
           kripto: true),
     ]);
     double y(String metin) => t.getTopLeft(find.text(metin)).dy;
@@ -190,7 +198,8 @@ void main() {
     expect(find.text('Hareketli'), findsOneWidget);
     expect(find.text('Sakin'), findsOneWidget);
     expect(find.text('1 Eki · hacim 4,7 kat · fiyat +%10,0'), findsOneWidget);
-    expect(find.text('Alıcı %44,0 · 7 gün ort. %51,0'), findsOneWidget);
+    expect(
+        find.text('7 günde alıcı payı %44,0 · son gün %56,0'), findsOneWidget);
     expect(find.text('Son haftada 2 varlığında olağandışı hareket var.'),
         findsOneWidget);
   });
