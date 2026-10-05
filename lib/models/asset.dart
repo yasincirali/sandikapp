@@ -168,6 +168,26 @@ class Asset {
   /// Sell işleminde gerçekleşen birim satış fiyatı (raporlama/kar-zarar için).
   final double? sellPrice;
 
+  /// Satış GÜNÜNÜN kuru (1 birim döviz = ? TL) — yalnız dövizli sell
+  /// satırlarında, 0110 sütunu `sell_fx_rate`.
+  ///
+  /// ## Neden (2026-10-05, kullanıcı onayı)
+  /// Satış satırı [purchaseFxRate]'te ALIM kurunu (pozisyonun ağırlıklı alım
+  /// kurunu) taşır; ele geçen tutar da o kurla TL'ye çevriliyordu. 30 TL'den
+  /// alınıp 41 TL'den satılan dolar varlığın kur kazancı gerçekleşen
+  /// kâra ve nakit akışına (para ağırlıklı getiri, XIRR) hiç girmiyordu.
+  /// Maliyet yine alım kuruyla kalır (bankacılık standardı, [totalCostTRY]);
+  /// yalnız SATIŞ TARAFI bu kurla çevrilir.
+  ///
+  /// `null` → eski kayıt ya da `satis_gunu_kuru` bayrağı kapalıyken yazılmış
+  /// satış: hesap birebir eski davranışa (alım kuru) düşer.
+  final double? sellFxRate;
+
+  /// Satış tarafını TL'ye çeviren kur: satış günü kuru varsa o, yoksa alım
+  /// kuru (eski davranış). Komisyon da satışla aynı anda ödendiği için bu
+  /// kurdan çevrilir.
+  double get satisKuru => sellFxRate ?? purchaseFxRate;
+
   /// İşlem komisyonu + masrafı — varlığın PARA BİRİMİNDE (purchasePrice ile
   /// aynı birim), işlem başına toplam (birim başına değil).
   ///
@@ -243,6 +263,7 @@ class Asset {
     this.kind = AssetKind.buy,
     this.refAssetId,
     this.sellPrice,
+    this.sellFxRate,
     this.commission = 0,
     this.dividendAmount = 0,
     this.deletedCount = 0,
@@ -294,9 +315,10 @@ class Asset {
   /// [sellPrice] yalnızca sell satırlarında ve migration sonrası kayıtlarda
   /// dolu; boşsa maliyete düşülür (eski davranış) — yaklaşık ama sıfırdan
   /// iyi. Komisyon satışta ele geçeni AZALTIR, bu yüzden çıkarılır.
+  /// Kur [satisKuru]: satış günü kuru kayıtlıysa o (0110), yoksa alım kuru.
   double get sellProceedsTRY {
     final unit = sellPrice ?? purchasePrice;
-    return (quantity * unit - commission) * purchaseFxRate;
+    return (quantity * unit - commission) * satisKuru;
   }
 
   /// Toplam maliyet — komisyon DAHİL (gerçekte cebinden çıkan para).
@@ -455,6 +477,7 @@ class Asset {
         kind: kind,
         refAssetId: refAssetId,
         sellPrice: sellPrice,
+        sellFxRate: sellFxRate,
         commission: commission,
         dividendAmount: dividendAmount,
         deletedCount: deletedCount,
@@ -507,6 +530,9 @@ class Asset {
         // PostgREST bilinmeyen sütun için TÜM varlık yazımlarını reddederdi
         // (PGRST204) — mevduat/BES dışındaki kullanıcı da kaydedemezdi.
         if (sozlesmeId != null) 'sozlesme_id': sozlesmeId,
+        // Aynı gerekçe (0110): yalnız `satis_gunu_kuru` bayrağı açıkken
+        // dolu, bayrak sütun iki sunucuya ulaşınca açılır.
+        if (sellFxRate != null) 'sell_fx_rate': sellFxRate,
       };
 
   /// Sunucu satırından okur — sembolü [kanonikTicker] biçimine çevirerek.
@@ -569,6 +595,8 @@ class Asset {
         kind: AssetKind.fromDb(m['kind'] as String?),
         refAssetId: m['ref_asset_id'] as String?,
         sellPrice: (m['sell_price'] as num?)?.toDouble(),
+        // Migration 0110 öncesi satırlarda sütun yok → null (alım kuru).
+        sellFxRate: (m['sell_fx_rate'] as num?)?.toDouble(),
         // Migration 0019 öncesi kayıtlarda sütun yok → 0.
         commission: (m['commission'] as num?)?.toDouble() ?? 0,
         // Migration 0020 öncesi kayıtlarda sütun yok → 0.

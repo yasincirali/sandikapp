@@ -203,6 +203,15 @@ class RemoteConfigService {
     // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
     'balina_radari_acik': false,
 
+    // Dövizli satışta ele geçen tutar SATIŞ GÜNÜNÜN kuruyla TL'ye çevrilsin
+    // (2026-10-05, kullanıcı onayı). Eskiden alım kuruyla çevriliyordu:
+    // dolar varlığın kur kazancı gerçekleşen kâra ve nakit akışına girmiyordu.
+    // KAPALI doğar: açıkken yeni satış satırı `sell_fx_rate` (0110) yazar —
+    // sütun iki sunucuya ulaşmadan açılırsa PostgREST satışı reddeder
+    // (PGRST204). Önce migration, sonra Console. Kapalıyken satış birebir
+    // eski; geçmiş satırlar hiçbir zaman değişmez (kur bilinmiyor).
+    'satis_gunu_kuru': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -424,6 +433,9 @@ class RemoteConfigService {
 
   /// Fon sayfasında para akışı kartı (0106). Gerekçe `_defaults`'ta.
   bool get balinaRadariAcik => _bayrak('balina_radari_acik');
+
+  /// Dövizli satışta satış günü kuru (0110). Gerekçe `_defaults`'ta.
+  bool get satisGunuKuru => _bayrak('satis_gunu_kuru');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

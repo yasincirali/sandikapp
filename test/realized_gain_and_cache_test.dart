@@ -12,6 +12,7 @@ Asset _lot({
   double buy = 100,
   double? sell,
   double fx = 1.0,
+  double? sellFx,
   String currency = 'TRY',
   DateTime? deletedAt,
 }) =>
@@ -29,6 +30,7 @@ Asset _lot({
       addedDate: DateTime(2026, 1, 1),
       kind: kind,
       sellPrice: sell,
+      sellFxRate: sellFx,
       purchaseFxRate: fx,
       deletedAt: deletedAt,
     );
@@ -46,6 +48,63 @@ void main() {
       expect(s.hasRealized, isTrue);
       // 4 × 30 = 120 ; 2 × (−2) × 30 = −120 → 0
       expect(s.realizedGainLoss, closeTo(0, 1e-9));
+    });
+
+    // 0110 (2026-10-05): dövizli satışta ele geçen tutar satış günü kuruyla.
+    // 1 adet $100'dan alındı (kur 30), $100'dan satıldı (kur 41): dolar
+    // bazında kâr yok, TL bazında kur kazancı 1.100 TL.
+    test('satış günü kuru varsa kur kazancı gerçekleşen kâra girer', () {
+      final s = PortfolioState(assets: [
+        _lot(id: 's1', kind: AssetKind.sell, qty: 1, buy: 100, sell: 100,
+            fx: 30, sellFx: 41, currency: 'USD'),
+      ]);
+      expect(s.realizedGainLoss, closeTo(1100, 1e-9));
+    });
+
+    test('satış komisyonu satış kuruyla düşer', () {
+      final lot = Asset(
+        id: 's1',
+        userId: 'u1',
+        name: 'Test',
+        ticker: 'AAPL',
+        type: AssetType.hisse,
+        quantity: 1,
+        purchasePrice: 100,
+        currency: 'USD',
+        notes: '',
+        kind: AssetKind.sell,
+        sellPrice: 100,
+        purchaseFxRate: 30,
+        sellFxRate: 41,
+        commission: 2,
+      );
+      // 100×41 − 100×30 − 2×41
+      expect(PortfolioState(assets: [lot]).realizedGainLoss,
+          closeTo(1100 - 82, 1e-9));
+      // Ele geçen: (100 − 2) × 41
+      expect(lot.sellProceedsTRY, closeTo(98 * 41, 1e-9));
+    });
+
+    test('satış günü kuru yoksa eski davranış: alım kuru', () {
+      final eski = _lot(id: 's1', kind: AssetKind.sell, qty: 1, buy: 100,
+          sell: 100, fx: 30, currency: 'USD');
+      expect(eski.satisKuru, 30);
+      expect(eski.sellProceedsTRY, closeTo(3000, 1e-9));
+      expect(PortfolioState(assets: [eski]).realizedGainLoss, 0);
+    });
+
+    test('sell_fx_rate yalnız doluyken yazılır, okunur', () {
+      final eski = _lot(id: 's1', kind: AssetKind.sell, sell: 1, fx: 30);
+      expect(eski.toSupabase().containsKey('sell_fx_rate'), isFalse,
+          reason: 'bayrak kapalıyken gövde eskisiyle birebir olmalı '
+              '(0110 sunucuda yokken PGRST204)');
+      final yeni = _lot(id: 's2', kind: AssetKind.sell, sell: 1, fx: 30,
+          sellFx: 41, currency: 'USD');
+      final m = yeni.toSupabase();
+      expect(m['sell_fx_rate'], 41);
+      expect(Asset.fromSupabase(m).sellFxRate, 41);
+      expect(Asset.fromSupabase(eski.toSupabase()).sellFxRate, isNull);
+      expect(yeni.copyWithDeletedAt(null).sellFxRate, 41);
     });
 
     test('sell_price olmayan eski satış satırı SAYILMAZ', () {

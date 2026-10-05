@@ -419,7 +419,9 @@ class PeriodSummaryService {
       if (!a.isBuy && !a.isSell) continue;
       final ms = a.addedDate.millisecondsSinceEpoch;
       if (ms < startMs || ms > endMs) continue;
-      toplam += a.commission * a.purchaseFxRate;
+      // Satış komisyonu satışla aynı anda ödenir: satış kuru (0110;
+      // kayıtlı değilse alım kuru — eski davranış).
+      toplam += a.commission * (a.isSell ? a.satisKuru : a.purchaseFxRate);
     }
     return toplam;
   }
