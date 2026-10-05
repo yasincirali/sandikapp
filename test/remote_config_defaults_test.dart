@@ -73,7 +73,7 @@ void main() {
 
     // Karar 8.1 (2026-09-30): kâr payı stopajı %15 (9286 s. CBK, RG
     // 22.12.2024). Değer değişirse mevzuat değişmiş olmalı — kaynağı yaz.
-    // 0110: açılırsa yeni satış `sell_fx_rate` yazar; sütun sunucuda yokken
+    // 0111: açılırsa yeni satış `sell_fx_rate` yazar; sütun sunucuda yokken
     // açık doğarsa her dövizli satış PGRST204 ile düşer.
     test('satış günü kuru KAPALI doğar', () {
       expect(varsayilan('satis_gunu_kuru'), 'false');

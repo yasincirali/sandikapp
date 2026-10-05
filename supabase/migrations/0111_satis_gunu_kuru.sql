@@ -1,4 +1,4 @@
--- 0110 — Dövizli satışta satış günü kuru: assets.sell_fx_rate (2026-10-05)
+-- 0111 — Dövizli satışta satış günü kuru: assets.sell_fx_rate (2026-10-05)
 --
 -- ## Neden (kullanıcı onayı 2026-10-05)
 -- Satış satırı `purchase_fx_rate`'te ALIM kurunu taşır ve ele geçen tutar
@@ -25,7 +25,7 @@ alter table public.assets
   check (sell_fx_rate is null or sell_fx_rate > 0);
 
 comment on column public.assets.sell_fx_rate is
-  'Satis gunu kuru (1 doviz = ? TL), yalniz dovizli sell satirlarinda (0110). NULL: alim kuru (purchase_fx_rate) kullanilir.';
+  'Satis gunu kuru (1 doviz = ? TL), yalniz dovizli sell satirlarinda (0111). NULL: alim kuru (purchase_fx_rate) kullanilir.';
 
 -- ── Doğrulama ──────────────────────────────────────────────────────────────
 do $$
@@ -35,7 +35,7 @@ begin
      where table_schema = 'public' and table_name = 'assets'
        and column_name = 'sell_fx_rate' and is_nullable = 'YES'
   ) then
-    raise exception '0110: assets.sell_fx_rate kurulmadi';
+    raise exception '0111: assets.sell_fx_rate kurulmadi';
   end if;
-  raise notice '0110 tamam: assets.sell_fx_rate (bos gecilebilir) yerinde.';
+  raise notice '0111 tamam: assets.sell_fx_rate (bos gecilebilir) yerinde.';
 end $$;

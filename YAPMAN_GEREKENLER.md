@@ -8,7 +8,7 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-05 Dövizli satışta satış günü kuru (0110) — bayrak `satis_gunu_kuru` KAPALI
+## ⏳ 2026-10-05 Dövizli satışta satış günü kuru (0111) — bayrak `satis_gunu_kuru` KAPALI
 
 Sorun: dolar/euro cinsi varlık satılınca ele geçen tutar TL'ye **alım
 kuruyla** çevriliyordu; kur kazancı gerçekleşen kâra ve nakit akışına
@@ -19,7 +19,7 @@ alım kuruyla kalır. Geçmiş satışlar değişmez (o günün kuru kayıtlı d
 **Dağıtım sırası (ters sırada bayrak açıkken dövizli satış PGRST204 ile
 reddedilir):**
 - [ ] 1. PR'ı birleştir (bayrak kapalı: davranış birebir eski).
-- [ ] 2. Migration `0110_satis_gunu_kuru.sql` → **iki sunucuya**
+- [ ] 2. Migration `0111_satis_gunu_kuru.sql` → **iki sunucuya**
       (`supabase-deploy.yml`, hedef `ikisi`). Yalnız boş geçilebilir sütun.
       Doğrula (salt okunur):
       `select column_name from information_schema.columns where table_name = 'assets' and column_name = 'sell_fx_rate';`

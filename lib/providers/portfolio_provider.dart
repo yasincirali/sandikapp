@@ -250,7 +250,7 @@ class PortfolioState {
   /// satış satırı alım maliyetini (`purchasePrice`, ağırlıklı ortalama) ve
   /// alım kurunu taşıyor — ama hiçbir ekran "sattıklarımdan ne kazandım"
   /// demiyordu. Hesap: Σ satış fiyatı × miktar × satış kuru − maliyet ×
-  /// miktar × alım kuru (satış kuru: `Asset.satisKuru`, 0110).
+  /// miktar × alım kuru (satış kuru: `Asset.satisKuru`, 0111).
   /// `sell_price` olmayan eski satış satırları atlanır — uydurmak yerine
   /// eksik bırakılır.
   /// **Komisyon (denetim, 2026-09-22):** satış komisyonu buradan DÜŞER.
@@ -264,7 +264,7 @@ class PortfolioState {
     double t = 0;
     for (final a in activeAssets) {
       if (!a.isSell || a.sellPrice == null) continue;
-      // Ele geçen satış kuruyla, maliyet alım kuruyla (0110, 2026-10-05):
+      // Ele geçen satış kuruyla, maliyet alım kuruyla (0111, 2026-10-05):
       // fark dövizli varlığın kur kazancını da taşır. `sellFxRate` yoksa
       // `satisKuru == purchaseFxRate` ve formül eskisiyle birebir aynı.
       t += a.sellPrice! * a.quantity * a.satisKuru -
@@ -546,12 +546,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
-    // Satış GÜNÜNÜN kuru (0110, bayrak `satis_gunu_kuru`, KAPALI doğar).
+    // Satış GÜNÜNÜN kuru (0111, bayrak `satis_gunu_kuru`, KAPALI doğar).
     // Alımdaki `_alisKuru` ile aynı kural: bugünkü satışta canlı kur,
     // geriye tarihli satışta o günün kapanışı. Bilinmiyorsa (1.0 yer
     // tutucu) YAZILMAZ — uydurma kurla satış tutarını bozmak yerine eski
     // davranışa (alım kuru) düşülür. Bayrak kapalıyken alan hiç yazılmaz
-    // ve gövde birebir eski (0110 sunucuya ulaşmadan da güvenli).
+    // ve gövde birebir eski (0111 sunucuya ulaşmadan da güvenli).
     double? satisKuru;
     if (RemoteConfigService.instance.satisGunuKuru &&
         FxRateMigrationService.fxSembolu(asset.currency) != null) {

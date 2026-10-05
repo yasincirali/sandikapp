@@ -50,7 +50,7 @@ void main() {
       expect(s.realizedGainLoss, closeTo(0, 1e-9));
     });
 
-    // 0110 (2026-10-05): dövizli satışta ele geçen tutar satış günü kuruyla.
+    // 0111 (2026-10-05): dövizli satışta ele geçen tutar satış günü kuruyla.
     // 1 adet $100'dan alındı (kur 30), $100'dan satıldı (kur 41): dolar
     // bazında kâr yok, TL bazında kur kazancı 1.100 TL.
     test('satış günü kuru varsa kur kazancı gerçekleşen kâra girer', () {
@@ -97,7 +97,7 @@ void main() {
       final eski = _lot(id: 's1', kind: AssetKind.sell, sell: 1, fx: 30);
       expect(eski.toSupabase().containsKey('sell_fx_rate'), isFalse,
           reason: 'bayrak kapalıyken gövde eskisiyle birebir olmalı '
-              '(0110 sunucuda yokken PGRST204)');
+              '(0111 sunucuda yokken PGRST204)');
       final yeni = _lot(id: 's2', kind: AssetKind.sell, sell: 1, fx: 30,
           sellFx: 41, currency: 'USD');
       final m = yeni.toSupabase();
