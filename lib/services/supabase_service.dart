@@ -1388,7 +1388,7 @@ class SupabaseService {
 
   // ── Kripto (0074) ─────────────────────────────────────────────────────────
   //
-  // Kripto fiyatını telefon DEĞİL sunucu çeker (kripto-fiyat, dakikada bir);
+  // Kripto fiyatını telefon DEĞİL sunucu çeker (kripto-fiyat, iki dakikada bir — 0113);
   // burası yalnızca tabloyu okur. Gerekçe `supabase/functions/_shared/kripto.ts`.
 
   /// Kod → sunucudaki son TL fiyat satırı. Katalogda olmayan ya da henüz
