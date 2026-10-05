@@ -6051,4 +6051,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String streakStripSemantics(String total, String saved) {
     return 'Last $total months: $saved saving months';
   }
+
+  @override
+  String get savingReminderTitle => 'Payday reminder';
+
+  @override
+  String get savingReminderOff => 'Off';
+
+  @override
+  String savingReminderOn(String day) {
+    return 'Day $day of the month, 10:30 · only if nothing added';
+  }
+
+  @override
+  String get savingReminderSheetBody =>
+      'On the day you pick, you get one reminder if you haven\'t added anything to your portfolio that month. If you have, nothing is sent. If the day doesn\'t exist that month (e.g. the 30th in February), it comes on the last day.';
+
+  @override
+  String savingReminderDay(String day) {
+    return 'Day $day';
+  }
 }

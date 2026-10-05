@@ -4342,5 +4342,24 @@
               "type": "String"
           }
       }
+  },
+  "savingReminderTitle": "Maaş günü hatırlatması",
+  "savingReminderOff": "Kapalı",
+  "savingReminderOn": "Ayın {day}. günü, 10:30 · o ay ekleme yoksa",
+  "@savingReminderOn": {
+      "placeholders": {
+          "day": {
+              "type": "String"
+          }
+      }
+  },
+  "savingReminderSheetBody": "Seçtiğin gün, o ay portföyüne hiç ekleme yapmadıysan tek bir hatırlatma gelir. Ekleme yaptıysan gelmez. Seçtiğin gün o ayda yoksa (ör. Şubat'ta 30) ayın son günü gelir.",
+  "savingReminderDay": "Ayın {day}. günü",
+  "@savingReminderDay": {
+      "placeholders": {
+          "day": {
+              "type": "String"
+          }
+      }
   }
 }

@@ -11,6 +11,12 @@
 import { assertEquals } from 'jsr:@std/assert@1';
 import {
   annualInflation,
+  ayinSonGunu,
+  birikimDonemi,
+  birikimHedefleri,
+  birikimMesaji,
+  bugununSecimleri,
+  trAyBasiUtc,
   buildInflationMessage,
   endeksAyGeri,
   formatPct,
@@ -117,4 +123,41 @@ Deno.test('yıl sınırını doğru geçer — Ocak ayından 12 ay geri', () => 
 Deno.test('bozuk endeks değeri null sayılır', () => {
   const s = seri([['2026-08', 131.51], ['2025-08', 0]]);
   assertEquals(endeksAyGeri(s, '2026-08', 12), null);
+});
+
+// ── Maaş günü birikim hatırlatması (0119) ───────────────────────────────────
+
+Deno.test('birikim: ayın son günü (artık yıl dahil)', () => {
+  assertEquals(ayinSonGunu(2026, 2), 28);
+  assertEquals(ayinSonGunu(2028, 2), 29);
+  assertEquals(ayinSonGunu(2026, 10), 31);
+  assertEquals(ayinSonGunu(2026, 4), 30);
+});
+
+Deno.test('birikim: ayın içinde yalnız o gün; son günde taşan seçimler de', () => {
+  assertEquals(bugununSecimleri(15, 31), [15]);
+  // Şubat 28: 28, 29, 30, 31 seçenlerin hepsi bugün.
+  assertEquals(bugununSecimleri(28, 28), [28, 29, 30, 31]);
+  assertEquals(bugununSecimleri(30, 30), [30, 31]);
+  assertEquals(bugununSecimleri(31, 31), [31]);
+});
+
+Deno.test('birikim: dönem ve TR ay başı (UTC+3)', () => {
+  assertEquals(birikimDonemi(2026, 3), '2026-03-01');
+  // 1 Ekim 00:00 TR = 30 Eylül 21:00 UTC — ayın ilk saatlerindeki alım sayılır.
+  assertEquals(trAyBasiUtc(2026, 10), '2026-09-30T21:00:00.000Z');
+});
+
+Deno.test('birikim: bu ay alımı olan ve zaten hatırlatılan hedef değil', () => {
+  assertEquals(
+    birikimHedefleri(['a', 'b', 'c', 'd'], new Set(['b']), new Set(['c'])),
+    ['a', 'd'],
+  );
+});
+
+Deno.test('birikim: mesaj rakam ve korku dili taşımaz', () => {
+  const m = birikimMesaji();
+  const metin = `${m.title} ${m.body}`;
+  assertEquals(/\d/.test(metin), false, 'kişiye özel rakam yok');
+  assertEquals(/bozul|kaybet|son şans|kaçırma/i.test(metin), false);
 });
