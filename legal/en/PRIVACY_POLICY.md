@@ -101,7 +101,7 @@ The Privacy Policy and the KVKK Disclosure are for information and do not depend
 8. Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)
 9. Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)
 10. Race: if you join, calculating your period return and showing your percentile and comparison with your partner
-11. Premium: verifying your right to access Premium content (full asset notes, monthly report)
+11. Premium: verifying your right to access Premium content (full asset notes, monthly report, AI mapping of statements)
 12. Using your feedback on asset notes to measure and improve their accuracy
 
 ---
@@ -142,7 +142,7 @@ Notes are generated automatically and checked automatically before publication: 
 
 ### 5.4 AI Mapping of Statement Columns
 
-A statement file is always read on your device. When the App can't tell, in a layout it doesn't recognise, which column is the symbol, quantity or price, it offers you "Map with AI". **Nothing is sent unless you tap it.**
+A statement file is always read on your device. When the App can't tell, in a layout it doesn't recognise, which column is the symbol, quantity or price, it offers you "Map with AI". **Nothing is sent unless you tap it.** This option is Premium content.
 
 If you tap it, your device builds an anonymous skeleton of the tables and sends it via our server to Anthropic's AI model (Claude). The skeleton contains the table layout, column headings and generic finance words ("Pay Adedi", "Birim Fiyat", "PORTFÖY"); names, customer and account numbers, national ID numbers, addresses, amounts and dates are masked (every letter becomes "A", every digit "9"). Our server rejects a skeleton containing unmasked digits before it reaches the model. The model only says which column is which; the values are still read from the file on your device and shown to you before anything is added.
 

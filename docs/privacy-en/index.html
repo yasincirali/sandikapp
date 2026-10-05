@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="1997cd8fc9b903e1a58f8831c786d5bc9fec847f6f28f6aa29180315837447c0">
-<meta name="sandik-govde-sha256" content="9a4e5e17f2f4a09e8103809c0ab45b73f00581d65d387cd751b90bdefbf44ba4">
+<meta name="sandik-kaynak-sha256" content="417a0f5adaebcacefa2f0c01f0ccc285c1e521922515aaaa20b54692899443a1">
+<meta name="sandik-govde-sha256" content="f8dedb89a8f61add7b66df3da39fc469eb7f1291866b66e9a9848c7e65c8fd3f">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -268,7 +268,7 @@ button:hover { opacity: 0.9; }
 <li>Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)</li>
 <li>Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)</li>
 <li>Race: if you join, calculating your period return and showing your percentile and comparison with your partner</li>
-<li>Premium: verifying your right to access Premium content (full asset notes, monthly report)</li>
+<li>Premium: verifying your right to access Premium content (full asset notes, monthly report, AI mapping of statements)</li>
 <li>Using your feedback on asset notes to measure and improve their accuracy</li>
 </ol>
 <hr />
@@ -373,7 +373,7 @@ button:hover { opacity: 0.9; }
 <p>Only the asset's symbol and public market metrics are sent to the model (price change, trading volume, fund size, money flow and investor count). Your name, email, account ID, username, the quantity and amount you hold, or who holds an asset are not sent. The assets that get a note are selected from the aggregate list of assets held in users' portfolios (most-held first); this selection is not sent to the model either.</p>
 <p>Notes are generated automatically and checked automatically before publication: every number in the text is compared with the source data, and a note using buy/sell/target-price language is not published. No person reads each note; notes may contain errors. If you flag "wrong number" on a note or write an explanation, that feedback is stored with your account and used only to correct notes; it is not shown to other users.</p>
 <h3>5.4 AI Mapping of Statement Columns</h3>
-<p>A statement file is always read on your device. When the App can't tell, in a layout it doesn't recognise, which column is the symbol, quantity or price, it offers you "Map with AI". <strong>Nothing is sent unless you tap it.</strong></p>
+<p>A statement file is always read on your device. When the App can't tell, in a layout it doesn't recognise, which column is the symbol, quantity or price, it offers you "Map with AI". <strong>Nothing is sent unless you tap it.</strong> This option is Premium content.</p>
 <p>If you tap it, your device builds an anonymous skeleton of the tables and sends it via our server to Anthropic's AI model (Claude). The skeleton contains the table layout, column headings and generic finance words ("Pay Adedi", "Birim Fiyat", "PORTFÖY"); names, customer and account numbers, national ID numbers, addresses, amounts and dates are masked (every letter becomes "A", every digit "9"). Our server rejects a skeleton containing unmasked digits before it reaches the model. The model only says which column is which; the values are still read from the file on your device and shown to you before anything is added.</p>
 <p>The skeleton and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.</p>
 <hr />

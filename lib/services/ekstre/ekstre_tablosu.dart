@@ -43,8 +43,11 @@ class EkstreOkumaHatasi implements KullaniciMesajli {
 
 /// AI sütun eşleme (`ekstre-esle`) başarısız. [kota]: günlük hak ya da
 /// aylık maliyet tavanı doldu (429) — kullanıcıya "yarın yeniden dene"
-/// denir; diğer her durumda genel mesaj. Ham sunucu yanıtı gösterilmez.
+/// denir. [premium]: sunucunun Premium kapısı reddetti (403; istemci
+/// hakkı henüz bilmiyordu) — paywall açılır. Diğer her durumda genel
+/// mesaj. Ham sunucu yanıtı gösterilmez.
 class EkstreAiHatasi implements Exception {
-  const EkstreAiHatasi({required this.kota});
+  const EkstreAiHatasi({this.kota = false, this.premium = false});
   final bool kota;
+  final bool premium;
 }

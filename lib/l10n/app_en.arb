@@ -4408,6 +4408,8 @@
   },
   "prmKilitAyrinti": "Details in Premium",
   "prmKilitNot": "Full note in Premium",
+  "prmKilitEkstreAi": "AI mapping is in Premium",
+  "prmSatirEkstreAi": "Read statements with AI",
   "prmHediyeBaslik": "You're one of our first users",
   "prmHediyeGovde": "{gun} days of Premium are yours, no card needed. It ends on {tarih}; none of your data is deleted when it does.",
   "@prmHediyeGovde": {

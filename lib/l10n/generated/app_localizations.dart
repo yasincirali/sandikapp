@@ -11002,6 +11002,18 @@ abstract class AppLocalizations {
   /// **'Notun tamamı Premium\'da'**
   String get prmKilitNot;
 
+  /// No description provided for @prmKilitEkstreAi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yapay zekâyla eşleme Premium\'da'**
+  String get prmKilitEkstreAi;
+
+  /// No description provided for @prmSatirEkstreAi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreyi yapay zekâyla okutma'**
+  String get prmSatirEkstreAi;
+
   /// No description provided for @prmHediyeBaslik.
   ///
   /// In tr, this message translates to:

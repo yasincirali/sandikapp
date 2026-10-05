@@ -6617,6 +6617,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmKilitNot => 'Notun tamamı Premium\'da';
 
   @override
+  String get prmKilitEkstreAi => 'Yapay zekâyla eşleme Premium\'da';
+
+  @override
+  String get prmSatirEkstreAi => 'Ekstreyi yapay zekâyla okutma';
+
+  @override
   String get prmHediyeBaslik => 'İlk kullanıcılarımızdansın';
 
   @override

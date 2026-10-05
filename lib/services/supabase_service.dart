@@ -1725,10 +1725,10 @@ class SupabaseService {
         ),
       );
     } on FunctionException catch (e, st) {
-      if (e.status != 429) {
+      if (e.status != 429 && e.status != 403) {
         CrashReporter.report(e, st, reason: 'ekstre_esle_${e.status}');
       }
-      throw EkstreAiHatasi(kota: e.status == 429);
+      throw EkstreAiHatasi(kota: e.status == 429, premium: e.status == 403);
     }
     final t = (res.data is Map) ? (res.data as Map)['tablolar'] : null;
     if (t is! List) return const [];

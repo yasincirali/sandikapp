@@ -7,13 +7,14 @@
 -- * Anthropic'e yeni gönderim: kullanıcı "Yapay zekâyla eşle"ye basarsa
 --   ekstre tablolarının ANONİM iskeleti (başlıklar ve genel finans
 --   kelimeleri; ad, numara, tutar ve tarihler maskeli). Dosya gitmez.
+--   Premium içeriktir (`premium_icerik_gorebilir`).
 -- * `ekstre_esleme_kaydi` (0121): istek zamanı, model, maliyet; 40 gün.
 -- İskelet kişisel veri içermediği için Açık Rıza Metni (yurt dışı aktarım
 -- rızası) DEĞİŞMEDİ: 1.4 kalır. Koşullar değişmedi: 1.5 kalır.
 --
 -- ## Bu migration
 -- İki belgenin 1.6 metni (yürürlük 2026-10-05): Gizlilik §3 (ekstre) + §4
--- (Anthropic satırı) + yeni §5.4 + §7, KVKK §4.2 + §5.2 + §6. Fonksiyon,
+-- (Anthropic satırı) + §4 madde 11 (Premium) + yeni §5.4 + §7, KVKK §4.2 + §5.2 + §6. Fonksiyon,
 -- tablo, RLS ve GRANT'a DOKUNULMAZ.
 --
 -- ## Eski istemciler
@@ -34,7 +35,7 @@
 insert into public.yasal_metinler
   (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
 values ('gizlilik_politikasi', '1.6', 'tr', 'Gizlilik Politikası', date '2026-10-05',
-  'c7ddbdae489bf63ef43578f72dc18776f35162805e3fdd2026ab43d44ed96fff',
+  '4eed9d1f6e3f15ec5dd87a296695f946d5f2d487ca9d4b64efd48b6afaf103f3',
   replace($yasal$# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
@@ -137,7 +138,7 @@ Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır ve kab
 8. Hesap güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu) ile kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)
 9. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)
 10. Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek
-11. Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor) erişim hakkınızı doğrulamak
+11. Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor, ekstrenin yapay zekâyla eşlenmesi) erişim hakkınızı doğrulamak
 12. Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek
 
 ---
@@ -178,7 +179,7 @@ Notlar otomatik üretilir ve yayımlanmadan önce otomatik olarak denetlenir: me
 
 ### 5.4 Ekstre Sütunlarının Yapay Zekâ ile Eşlenmesi
 
-Ekstre dosyası her zaman cihazınızda okunur. Uygulama, tanımadığı bir düzende hangi sütunun sembol, adet ya da fiyat olduğundan emin olamazsa size "Yapay zekâyla eşle" seçeneğini gösterir. Bu seçeneğe **siz basmadıkça** hiçbir şey gönderilmez.
+Ekstre dosyası her zaman cihazınızda okunur. Uygulama, tanımadığı bir düzende hangi sütunun sembol, adet ya da fiyat olduğundan emin olamazsa size "Yapay zekâyla eşle" seçeneğini gösterir. Bu seçeneğe **siz basmadıkça** hiçbir şey gönderilmez. Bu seçenek Premium içeriktir.
 
 Basarsanız cihazınız tablonun anonim bir iskeletini çıkarır ve sunucumuz üzerinden Anthropic'in yapay zekâ modeline (Claude) gönderir. İskelette tablonun düzeni, sütun başlıkları ve genel finans kelimeleri ("Pay Adedi", "Birim Fiyat", "PORTFÖY") bulunur; ad, müşteri ve hesap numarası, T.C. kimlik numarası, adres, tutar ve tarihler maskelenir (her harf "A", her rakam "9" olur). Sunucumuz maskelenmemiş rakam içeren bir iskeleti modele göndermeden reddeder. Model yalnızca hangi sütunun ne olduğunu söyler; değerler yine cihazınızda dosyadan okunur ve eklemeden önce size gösterilir.
 

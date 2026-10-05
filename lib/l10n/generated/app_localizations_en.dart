@@ -6680,6 +6680,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmKilitNot => 'Full note in Premium';
 
   @override
+  String get prmKilitEkstreAi => 'AI mapping is in Premium';
+
+  @override
+  String get prmSatirEkstreAi => 'Read statements with AI';
+
+  @override
   String get prmHediyeBaslik => 'You\'re one of our first users';
 
   @override

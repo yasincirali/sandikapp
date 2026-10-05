@@ -21,7 +21,10 @@ unvanı sembol sanılmaz (üç fonluk banka tablosu hiç anlaşılmıyordu).
   Sunucu işi yok; önce kendi cihazında aç, kendi Mayıs ekstrenle dene.
 - `ekstre_tanilama`: okunamayan ekstrede "Tanılama metnini kopyala"
   (ad/numara/tutar maskeli tablo düzeni). Sunucu işi yok.
-- `ekstre_ai_esleme`: "Yapay zekâyla eşle". Sırası önemli:
+- `ekstre_ai_esleme`: "Yapay zekâyla eşle" — **Premium'a özel** (senin
+  kararın). Kapı varlık notlarıyla aynı (`premium_icerik_gorebilir`): paywall
+  kapalıyken herkes kullanır, `paywall_enabled` açılınca yalnız Premium;
+  sunucu da ayrıca denetler (403). Sırası önemli:
   1. PR birleşince **Supabase deploy** (main, hedef `ikisi`, migrations +
      fonksiyon `ekstre-esle`) → 0121 + 0122 iki sunucuya; şema eşitliği
      yeşil. Bunu Claude yapar. `ANTHROPIC_API_KEY` zaten iki sunucuda.

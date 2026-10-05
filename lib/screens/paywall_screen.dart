@@ -404,6 +404,10 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
       (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),
       (l.prmSatirAylik, null, null),
+      // Ekstreyi yapay zekâyla okutma (0121): yalnız özellik açıkken
+      // satır olur — açılmamış bir şey satılmaz.
+      if (RemoteConfigService.instance.ekstreAiEsleme)
+        (l.prmSatirEkstreAi, null, null),
     ];
     Widget hucre(String? metin, {required bool premium}) {
       if (metin == null) {

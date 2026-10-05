@@ -8,6 +8,7 @@
 //
 // Akış:
 // 1. JWT → kullanıcı (anonim çağrı yok).
+// 1b. Premium kapısı (`premium_icerik_gorebilir`, 0116) → 403 `premium`.
 // 2. İskelet biçim + maske denetimi (maskesiz rakam → 400, model çağrılmaz).
 // 3. Kota: kullanıcı başına günde EKSTRE_GUNLUK_HAK (varsayılan 10) istek;
 //    ay toplamı EKSTRE_AYLIK_TAVAN_USD (varsayılan 10) aşılınca 429.
@@ -50,11 +51,23 @@ Deno.serve(async (req: Request) => {
 
   const auth = req.headers.get('Authorization');
   if (!auth) return jsonResponse({ ok: false, neden: 'kimlik' }, 401);
-  const { data: u, error: ue } = await createClient(url, anon, {
+  const kullanici = createClient(url, anon, {
     global: { headers: { Authorization: auth } },
-  }).auth.getUser();
+  });
+  const { data: u, error: ue } = await kullanici.auth.getUser();
   if (ue || !u?.user) return jsonResponse({ ok: false, neden: 'kimlik' }, 401);
   const userId = u.user.id;
+
+  // Premium'a özel (yasin, 2026-10-05: "ai ile okutup ekletmek premium wall
+  // arkasında olmalı"). Kapı varlık notlarıyla aynı: `premium_icerik_gorebilir`
+  // (0116) — paywall kapısı kapalıyken herkes, açıkken yalnız Premium.
+  // İstemci kilidi yalnız görünüm; asıl kapı burası.
+  const { data: gorebilir, error: pe } = await kullanici.rpc('premium_icerik_gorebilir');
+  if (pe) {
+    console.error('ekstre-esle premium', pe.code ?? 'hata');
+    return jsonResponse({ ok: false, neden: 'sunucu' }, 500);
+  }
+  if (gorebilir !== true) return jsonResponse({ ok: false, neden: 'premium' }, 403);
 
   let govde: { iskelet?: unknown };
   try {

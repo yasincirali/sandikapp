@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/bulk_cart_provider.dart';
+import '../providers/premium_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/csv_import_service.dart';
 import '../services/ekstre/ekstre_ice_aktarma.dart';
 import '../services/remote_config_service.dart';
+import 'paywall_screen.dart';
 import '../services/supabase_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
@@ -16,6 +18,7 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import '../widgets/sandik_app_bar.dart';
 import '../l10n/l10n.dart';
 
@@ -239,7 +242,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       _ctrl.text = cozulmus.kanonikMetin(hareketlerle: _hareketlerle);
       _parse();
     } on EkstreAiHatasi catch (h) {
-      if (mounted) sandikSnackError(context, h.kota ? l.importAiLimit : l.importAiFailed);
+      if (!mounted) return;
+      if (h.premium) {
+        await PaywallScreen.show(context, source: 'ekstre_ai');
+      } else {
+        sandikSnackError(context, h.kota ? l.importAiLimit : l.importAiFailed);
+      }
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
       if (mounted) sandikSnackError(context, l.importAiFailed);
@@ -312,6 +320,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 onDuzelt: _eslemeyiDuzelt,
                 onAi: _aiIleEsle,
                 aiEsleniyor: _aiEsleniyor,
+                // Premium'a özel (yasin, 2026-10-05). Kilitliyken düğme yerine
+                // paywall'a götüren kilit satırı; sunucu da ayrıca denetler.
+                aiKilitli: ref.watch(radarKilitliProvider),
               ),
             ],
             const SizedBox(height: SandikSpace.md),
@@ -446,6 +457,7 @@ class _EslemeKarti extends StatelessWidget {
     required this.onDuzelt,
     required this.onAi,
     required this.aiEsleniyor,
+    required this.aiKilitli,
   });
 
   final EkstreOkumaSonucu sonuc;
@@ -453,6 +465,7 @@ class _EslemeKarti extends StatelessWidget {
   final VoidCallback onDuzelt;
   final VoidCallback onAi;
   final bool aiEsleniyor;
+  final bool aiKilitli;
 
   @override
   Widget build(BuildContext context) {
@@ -559,6 +572,10 @@ class _EslemeKarti extends StatelessWidget {
                   a.eminDegil ||
                   sonuc.kanonikMetin().isEmpty)) ...[
             const SizedBox(height: SandikSpace.xs),
+            if (aiKilitli)
+              KilitSatiri(
+                  metin: context.l10n.prmKilitEkstreAi, kaynak: 'ekstre_ai')
+            else ...[
             Text(
               context.l10n.importAiHint,
               style: context.t.bodySmall?.copyWith(color: c.text58),
@@ -573,6 +590,7 @@ class _EslemeKarti extends StatelessWidget {
                 label: Text(context.l10n.importAiButton),
               ),
             ),
+            ],
           ],
           // Tanılama (bayrak `ekstre_tanilama`, 2026-10-05): motor dosyayı
           // tam anlamadıysa anonim iskelet kopyalanır; belge cihazdan çıkmaz,

@@ -4779,6 +4779,8 @@
   },
   "prmKilitAyrinti": "Ayrıntılar Premium'da",
   "prmKilitNot": "Notun tamamı Premium'da",
+  "prmKilitEkstreAi": "Yapay zekâyla eşleme Premium'da",
+  "prmSatirEkstreAi": "Ekstreyi yapay zekâyla okutma",
   "prmHediyeBaslik": "İlk kullanıcılarımızdansın",
   "prmHediyeGovde": "{gun} gün Premium senin; kart bilgisi gerekmez. {tarih} tarihinde biter, bitince verilerinden hiçbiri silinmez.",
   "@prmHediyeGovde": {
