@@ -1,15 +1,21 @@
-// Kripto Fiyat Edge Function — tüm kripto fiyatları, dakikada bir, TEK turda
+// Kripto Fiyat Edge Function — tüm kripto fiyatları, iki dakikada bir, TEK turda
 //
-// pg_cron ile her dakika koşar (0074_kripto.sql). `kripto_varlik`'taki aktif
+// pg_cron ile iki dakikada bir koşar (0074_kripto.sql; 0113'te dakikadan
+// ikiye çekildi, aşağıya bkz.). `kripto_varlik`'taki aktif
 // coin'lerin TL fiyatını ve İstanbul gününün açılışını `kripto_fiyat`'a
 // yazar. Uygulama, widget'lar ve (sonraki adımda) fiyat alarmları kripto
 // fiyatını YALNIZCA bu tablodan okur.
 //
-// ── Neden dakikada bir ──────────────────────────────────────────────────────
+// ── Ritim ──────────────────────────────────────────────────────────────────
 // Uygulamanın fiyat nabzı 30 sn (`tazelik_ritmi.dart`). Kripto 7/24 hareket
 // ediyor; bir dakikalık tazelik, nabzın her iki turundan birinde yeni sayı
 // demek. Daha sıkı cron, Supabase çağrı kotasını harcar, ekranda fark
 // yaratmaz.
+//
+// 0113 (2026-10-05): Supabase Free plan log kotası aşıldı (1.22 / 1 GB) ve
+// sunucudaki zamanlanmış çağrıların ~%78'i bu işti. İki dakika: fiyat en
+// çok ~2 dk yaşlı, "gecikmeli" eşiği (10 dk) çok uzakta; log ve çağrı payı
+// yarıya iner.
 //
 // ── Maliyet ─────────────────────────────────────────────────────────────────
 // Binance `ticker/tradingDay` 100 sembollük parçalar hâlinde; parça başına
