@@ -2197,6 +2197,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             kind: a.kind,
             refAssetId: a.refAssetId,
             sellPrice: a.sellPrice,
+            sellFxRate: a.sellFxRate,
             commission: a.commission,
             // Bu kopya kaydın TÜM alanlarını taşımalı; eksik bırakılan alan
             // tarih düzenlemesinde sessizce sıfırlanır (temettü tutarı

@@ -20,6 +20,7 @@ import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
 import '../services/portfolio_cache.dart';
+import '../services/remote_config_service.dart';
 import '../services/tazelik_ritmi.dart';
 
 const _uuid = Uuid();
@@ -248,7 +249,8 @@ class PortfolioState {
   /// Değerlendirme (2026-09) §5.5: satış fiyatı `sell_price`'ta saklanıyor,
   /// satış satırı alım maliyetini (`purchasePrice`, ağırlıklı ortalama) ve
   /// alım kurunu taşıyor — ama hiçbir ekran "sattıklarımdan ne kazandım"
-  /// demiyordu. Hesap: Σ (satış fiyatı − maliyet) × miktar × alım kuru.
+  /// demiyordu. Hesap: Σ satış fiyatı × miktar × satış kuru − maliyet ×
+  /// miktar × alım kuru (satış kuru: `Asset.satisKuru`, 0111).
   /// `sell_price` olmayan eski satış satırları atlanır — uydurmak yerine
   /// eksik bırakılır.
   /// **Komisyon (denetim, 2026-09-22):** satış komisyonu buradan DÜŞER.
@@ -262,8 +264,12 @@ class PortfolioState {
     double t = 0;
     for (final a in activeAssets) {
       if (!a.isSell || a.sellPrice == null) continue;
-      t += (a.sellPrice! - a.purchasePrice) * a.quantity * a.purchaseFxRate;
-      t -= a.commission * a.purchaseFxRate;
+      // Ele geçen satış kuruyla, maliyet alım kuruyla (0111, 2026-10-05):
+      // fark dövizli varlığın kur kazancını da taşır. `sellFxRate` yoksa
+      // `satisKuru == purchaseFxRate` ve formül eskisiyle birebir aynı.
+      t += a.sellPrice! * a.quantity * a.satisKuru -
+          a.purchasePrice * a.quantity * a.purchaseFxRate;
+      t -= a.commission * a.satisKuru;
     }
     return t;
   }
@@ -540,6 +546,20 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
+    // Satış GÜNÜNÜN kuru (0111, bayrak `satis_gunu_kuru`, KAPALI doğar).
+    // Alımdaki `_alisKuru` ile aynı kural: bugünkü satışta canlı kur,
+    // geriye tarihli satışta o günün kapanışı. Bilinmiyorsa (1.0 yer
+    // tutucu) YAZILMAZ — uydurma kurla satış tutarını bozmak yerine eski
+    // davranışa (alım kuru) düşülür. Bayrak kapalıyken alan hiç yazılmaz
+    // ve gövde birebir eski (0111 sunucuya ulaşmadan da güvenli).
+    double? satisKuru;
+    if (RemoteConfigService.instance.satisGunuKuru &&
+        FxRateMigrationService.fxSembolu(asset.currency) != null) {
+      final s = state.valueOrNull ?? const PortfolioState();
+      final k = await _alisKuru(asset.currency, addedDate, s);
+      if (k > 1.0) satisKuru = k;
+    }
+
     final transaction = Asset(
       id: _uuid.v4(),
       userId: user.id,
@@ -563,6 +583,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       createdAt: DateTime.now(), // bkz. addAsset
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       sellPrice: sellPrice,
+      sellFxRate: satisKuru,
       addedDate: addedDate,
       // Mevduat/BES satışı da sözleşmesine bağlı kalır (net bakiye ve
       // katkı hesapları lotları sözleşmeden toplar).
