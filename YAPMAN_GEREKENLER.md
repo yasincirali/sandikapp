@@ -8,7 +8,7 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-05 Supabase Free plan kotası — cron geçmişi saklama (0112) + kripto 2 dk (0113)
+## ⏳ 2026-10-05 Supabase Free plan kotası — cron geçmişi saklama (0112) + kripto 2 dk (0113) + db_logs başarılı satır 1 gün (0114)
 
 Durum (Tokyo, bu dönem): DB 342/500 MB, Log Ingestion 1.22/1 GB, Log Query
 206/100 GB. Log limitleri **2027 başına kadar uygulanmıyor** (yumuşak
@@ -23,9 +23,11 @@ log sekmesi saniyelerle yeniden sorgular.
 
 - [ ] PR'ı birleştir → Supabase deploy, dal `main`, hedef `ikisi`,
       yalnız migration (fonksiyonda yalnız yorum değişti).
-- [ ] Ertesi sabah (03:35 UTC'den sonra), Tokyo SQL Editor, bir kez:
-      `vacuum full cron.job_run_details;` (silinen yer ancak böyle diske döner;
-      birkaç sn tabloyu kilitler, cron o an yazamazsa bir tur kaçar).
+- [ ] Ertesi sabah (03:35 UTC'den sonra), Tokyo SQL Editor, bir kez
+      (silinen yer ancak böyle diske döner; tablo birkaç sn kilitlenir):
+      `vacuum full public.db_logs;` ve `vacuum full cron.job_run_details;`
+- Ölçüm 2026-10-05 (Tokyo): db_logs 198 MB / ~305 bin satır, fon_akis_gunluk
+  42 MB, net._http_response 35 MB, cron.job_run_details 6 MB.
 - [ ] Salt okunur ölçüm (Tokyo SQL Editor), sonucu thread'e yapıştır:
       ```sql
       select n.nspname||'.'||c.relname as tablo,
