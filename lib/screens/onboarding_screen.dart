@@ -465,7 +465,7 @@ List<_Adim> _adimlariKur() {
           'büyük para girdiyse ya da çıktıysa, hissende hacim olağanın '
           'çok üstündeyse, kriptoda alıcılar ya da satıcılar belirgin '
           'biçimde istekliyse. Dokununca Haftanın özeti açılır; her '
-          'varlığın satırında ne olduğu tek kelimelik bir etiketle yazar, '
+          'varlığın satırında ne olduğu kısa bir etiketle yazar, '
           'ayrıntısı varlığın sayfasında. Yatırım tavsiyesi değildir.',
       rozet: 'YENİ',
       giris: (_) => _sekmeyeGec(0),

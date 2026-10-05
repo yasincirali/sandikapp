@@ -183,3 +183,11 @@ export function ozetCumlesi(fon: string | null, hacim: string | null): string | 
   const parcalar = [fon, hacim].filter((c): c is string => c !== null);
   return parcalar.length === 0 ? null : parcalar.join(' ');
 }
+
+/// Hareket satırının sonuna not eki (S19, 2026-10-05): kullanıcının tuttuğu
+/// varlıklardan en az birinin bu haftaki yapay zekâ notu YAYINDAYSA "Notların
+/// hazır." eklenir. Not yoksa ya da hepsi reddedildiyse cümle aynen kalır:
+/// bildirim, açınca bulunamayacak bir şey vaat etmez.
+export function notEkiyle(cumle: string, notVar: boolean): string {
+  return notVar ? `${cumle} Varlık notların hazır.` : cumle;
+}

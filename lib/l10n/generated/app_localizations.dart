@@ -10744,6 +10744,24 @@ abstract class AppLocalizations {
   /// **'sınırsız'**
   String get prmSinirsiz;
 
+  /// No description provided for @prmYillikTasarruf.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{oran} tasarruf'**
+  String prmYillikTasarruf(String oran);
+
+  /// No description provided for @prmVarErisim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Var'**
+  String get prmVarErisim;
+
+  /// No description provided for @prmYokErisim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yok'**
+  String get prmYokErisim;
+
   /// No description provided for @prmAkisUcretsiz.
   ///
   /// In tr, this message translates to:
@@ -10939,8 +10957,14 @@ abstract class AppLocalizations {
   /// No description provided for @anzAylikOzetVar.
   ///
   /// In tr, this message translates to:
-  /// **'{toplam} varlığından {sayi} tanesinde ay boyunca belirgin hareket oldu.'**
+  /// **'Notu çıkan {toplam} varlığından {sayi} tanesinde ay boyunca belirgin hareket oldu.'**
   String anzAylikOzetVar(String toplam, String sayi);
+
+  /// No description provided for @anzAylikEksik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.'**
+  String anzAylikEksik(String kodlar);
 
   /// No description provided for @anzAylikOzetYok.
   ///

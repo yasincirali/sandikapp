@@ -4674,6 +4674,14 @@
   "prmSatirNot": "Haftalık not",
   "prmSatirAylik": "Aylık rapor",
   "prmSinirsiz": "sınırsız",
+  "prmYillikTasarruf": "%{oran} tasarruf",
+  "@prmYillikTasarruf": {
+    "placeholders": {
+      "oran": {"type": "String"}
+    }
+  },
+  "prmVarErisim": "Var",
+  "prmYokErisim": "Yok",
   "prmAkisUcretsiz": "son hafta",
   "prmAkisPremium": "8 hafta + olaylar",
   "prmHacimUcretsiz": "son gün",
@@ -4755,11 +4763,17 @@
       "ay": {"type": "String"}
     }
   },
-  "anzAylikOzetVar": "{toplam} varlığından {sayi} tanesinde ay boyunca belirgin hareket oldu.",
+  "anzAylikOzetVar": "Notu çıkan {toplam} varlığından {sayi} tanesinde ay boyunca belirgin hareket oldu.",
   "@anzAylikOzetVar": {
     "placeholders": {
       "toplam": {"type": "String"},
       "sayi": {"type": "String"}
+    }
+  },
+  "anzAylikEksik": "{kodlar} için bu ay not çıkmadı; sayıları kendi sayfalarında.",
+  "@anzAylikEksik": {
+    "placeholders": {
+      "kodlar": {"type": "String"}
     }
   },
   "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",

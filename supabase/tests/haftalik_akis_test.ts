@@ -18,6 +18,7 @@ import {
   hacimCumlesi,
   hacimVarliklari,
   haftalikAkisCumlesi,
+  notEkiyle,
   ozetCumlesi,
   isaretliTutar,
   varlikKodu,
@@ -210,4 +211,9 @@ Deno.test('ozetCumlesi fon ve hacim cümlelerini birleştirir', () => {
   assertEquals(ozetCumlesi('A.', null), 'A.');
   assertEquals(ozetCumlesi(null, 'B.'), 'B.');
   assertEquals(ozetCumlesi('A.', 'B.'), 'A. B.');
+});
+
+Deno.test('notEkiyle yalnız yayındaki not varken ek yapar', () => {
+  assertEquals(notEkiyle('Geçen hafta X.', false), 'Geçen hafta X.');
+  assertEquals(notEkiyle('Geçen hafta X.', true), 'Geçen hafta X. Varlık notların hazır.');
 });

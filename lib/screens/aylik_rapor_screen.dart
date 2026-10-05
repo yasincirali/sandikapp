@@ -17,7 +17,8 @@ import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
 /// Rapor, tuttuğun her varlığın o ayki yapay zekâ notunun bir araya
 /// gelmesidir; ayrı bir "portföy yorumu" üretilmez (portföyün aylık
 /// getirisi Performans'ta, tek kaynak orası). Özet cümlesi yalnız sayar:
-/// kaç varlığın notu var, kaçında belirgin hareket (rozet ≠ sakin) olmuş.
+/// kaç varlığın notu var, kaçında belirgin hareket (rozet ≠ sakin) olmuş;
+/// notu çıkmayan varlıklar sonda adlarıyla anılır.
 /// Sıra haftanın özetiyle aynı (rozet önemi), kullanıcı iki ekranı aynı
 /// mantıkla okur.
 class AylikRaporScreen extends ConsumerWidget {
@@ -58,6 +59,14 @@ class AylikRaporScreen extends ConsumerWidget {
             });
           if (buAy.isEmpty) return _Bos(metin: l10n.anzAylikBos);
           final hareketli = buAy.where((n) => n.rozet != 'sakin').length;
+          // Tutup notu çıkmayan varlıklar (ay boyu veri yetmedi ya da not
+          // sayı kapısından geçmedi). Sessizce düşerse titiz okur "5
+          // varlığım var, rapor 3 diyor" diye takılır; adlarıyla söylenir.
+          final notlu = {for (final n in buAy) n.ticker};
+          final eksik = [
+            for (final k in anahtarlar)
+              if (!notlu.contains(k)) notKodu(k)
+          ]..sort();
           final yatay = SandikSpace.screenH(context);
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -74,6 +83,11 @@ class AylikRaporScreen extends ConsumerWidget {
               for (final n in buAy) ...[
                 _VarlikKarti(not: n),
                 const SizedBox(height: SandikSpace.smd),
+              ],
+              if (eksik.isNotEmpty) ...[
+                Text(l10n.anzAylikEksik(eksik.join(', ')),
+                    style: t.bodySmall?.copyWith(color: c.text58)),
+                const SizedBox(height: SandikSpace.sm),
               ],
               Text(l10n.rdrHaftaKaynak,
                   style: t.bodySmall?.copyWith(color: c.text36)),

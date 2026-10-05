@@ -6462,6 +6462,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSinirsiz => 'sınırsız';
 
   @override
+  String prmYillikTasarruf(String oran) {
+    return '%$oran tasarruf';
+  }
+
+  @override
+  String get prmVarErisim => 'Var';
+
+  @override
+  String get prmYokErisim => 'Yok';
+
+  @override
   String get prmAkisUcretsiz => 'son hafta';
 
   @override
@@ -6577,7 +6588,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String anzAylikOzetVar(String toplam, String sayi) {
-    return '$toplam varlığından $sayi tanesinde ay boyunca belirgin hareket oldu.';
+    return 'Notu çıkan $toplam varlığından $sayi tanesinde ay boyunca belirgin hareket oldu.';
+  }
+
+  @override
+  String anzAylikEksik(String kodlar) {
+    return '$kodlar için bu ay not çıkmadı; sayıları kendi sayfalarında.';
   }
 
   @override

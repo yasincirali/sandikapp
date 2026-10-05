@@ -80,6 +80,7 @@ import {
   hacimCumlesi,
   hacimVarliklari,
   haftalikAkisCumlesi,
+  notEkiyle,
   HaftaOlayi,
   ozetCumlesi,
   varlikKodu,
@@ -654,6 +655,32 @@ Deno.serve(async (request) => {
               hacimCumlesi(hacimVarliklari(olaylar, hacimTutulan.get(uid) ?? bos)),
             );
             if (cumle !== null) akisCumleleri.set(uid, cumle);
+          }
+          // Not eki (S19): bu haftanın yayındaki notları. Sorgu düşerse ek
+          // yok, cümle kalır (ek bilgi, satırı düşürmemeli).
+          if (akisCumleleri.size > 0) {
+            const { data: notRows, error: notErr } = await admin
+              .from('varlik_analizi')
+              .select('ticker')
+              .eq('tur', 'haftalik')
+              .eq('durum', 'yayinda')
+              .in('ticker', tumKodlar)
+              .gte('donem', trGun(new Date(fromMs - 6 * 86_400_000)))
+              .lte('donem', trGun(new Date(toMs)));
+            if (notErr) {
+              console.error('weekly-summary: not eki okunamadi', notErr.code);
+            } else {
+              const notlu = new Set(
+                ((notRows ?? []) as Array<Record<string, unknown>>).map((r) => String(r.ticker)),
+              );
+              for (const [uid, cumle] of akisCumleleri) {
+                const kendi = [
+                  ...[...(tutulan.get(uid) ?? bos)].map((k) => `TEFAS:${k}`),
+                  ...(hacimTutulan.get(uid) ?? bos),
+                ];
+                akisCumleleri.set(uid, notEkiyle(cumle, kendi.some((k) => notlu.has(k))));
+              }
+            }
           }
         }
         // Kullanıcı satırı kapattıysa (0118, Ayarlar › Bildirimler) cümle

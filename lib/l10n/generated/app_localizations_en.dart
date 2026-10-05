@@ -6524,6 +6524,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSinirsiz => 'unlimited';
 
   @override
+  String prmYillikTasarruf(String oran) {
+    return 'Save $oran%';
+  }
+
+  @override
+  String get prmVarErisim => 'Included';
+
+  @override
+  String get prmYokErisim => 'Not included';
+
+  @override
   String get prmAkisUcretsiz => 'last week';
 
   @override
@@ -6639,7 +6650,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String anzAylikOzetVar(String toplam, String sayi) {
-    return '$sayi of your $toplam assets had a notable month.';
+    return '$sayi of the $toplam assets with a note had a notable month.';
+  }
+
+  @override
+  String anzAylikEksik(String kodlar) {
+    return 'No note this month for $kodlar; their numbers are on their own pages.';
   }
 
   @override

@@ -4303,6 +4303,14 @@
   "prmSatirNot": "Weekly note",
   "prmSatirAylik": "Monthly report",
   "prmSinirsiz": "unlimited",
+  "prmYillikTasarruf": "Save {oran}%",
+  "@prmYillikTasarruf": {
+    "placeholders": {
+      "oran": {"type": "String"}
+    }
+  },
+  "prmVarErisim": "Included",
+  "prmYokErisim": "Not included",
   "prmAkisUcretsiz": "last week",
   "prmAkisPremium": "8 weeks + events",
   "prmHacimUcretsiz": "last day",
@@ -4384,11 +4392,17 @@
       "ay": {"type": "String"}
     }
   },
-  "anzAylikOzetVar": "{sayi} of your {toplam} assets had a notable month.",
+  "anzAylikOzetVar": "{sayi} of the {toplam} assets with a note had a notable month.",
   "@anzAylikOzetVar": {
     "placeholders": {
       "toplam": {"type": "String"},
       "sayi": {"type": "String"}
+    }
+  },
+  "anzAylikEksik": "No note this month for {kodlar}; their numbers are on their own pages.",
+  "@anzAylikEksik": {
+    "placeholders": {
+      "kodlar": {"type": "String"}
     }
   },
   "anzAylikOzetYok": "None of your assets had a notable month.",
