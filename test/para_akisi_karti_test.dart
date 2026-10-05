@@ -296,7 +296,7 @@ void main() {
       expect(find.text('14 fon içinde'), findsOneWidget);
       expect(
           find.text(
-              'Hisse Senedi Fonu · aynı hafta en çok net para girişi olanlar'),
+              'Hisse Senedi Fonu · aynı haftanın net akışına göre sıra'),
           findsOneWidget);
     });
 

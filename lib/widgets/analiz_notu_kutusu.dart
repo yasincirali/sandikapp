@@ -43,7 +43,8 @@ class AnalizNotuKutusu extends ConsumerWidget {
     final t = context.t;
     final gunAy =
         DateFormat('d MMM', Localizations.localeOf(context).toString());
-    final bitis = not.donem.add(const Duration(days: 6));
+    final bas = not.veriBaslangic ?? not.donem;
+    final bitis = not.veriBitis ?? not.donem.add(const Duration(days: 6));
     final kod = notKodu(anahtar);
     void ac() => pushGuarded(
           context,
@@ -81,7 +82,7 @@ class AnalizNotuKutusu extends ConsumerWidget {
                         l10n.anzMeta(
                             '${not.maddeSayisi}',
                             l10n.flowRange(
-                                gunAy.format(not.donem), gunAy.format(bitis))),
+                                gunAy.format(bas), gunAy.format(bitis))),
                         style: t.bodySmall?.copyWith(color: c.text58),
                       ),
                     ),

@@ -4432,7 +4432,7 @@
   "rdrDonemUpper": "DÖNEM",
   "rdrBaglamUpper": "BAĞLAM",
   "rdrSiraUpper": "KATEGORİDE AKIŞ SIRASI",
-  "rdrSiraAlt": "{kategori} · aynı hafta en çok net para girişi olanlar",
+  "rdrSiraAlt": "{kategori} · aynı haftanın net akışına göre sıra",
   "@rdrSiraAlt": {
     "placeholders": {
       "kategori": {"type": "String"}
@@ -4612,6 +4612,19 @@
     "placeholders": {
       "ort": {"type": "String"},
       "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYatirimciHafta": "{sayi} · son hafta {fark}",
+  "@rdrYatirimciHafta": {
+    "placeholders": {
+      "sayi": {"type": "String"},
+      "fark": {"type": "String"}
+    }
+  },
+  "rdrKartHaftaOlayi": "Son 7 günde olağandışı gün: {olay}",
+  "@rdrKartHaftaOlayi": {
+    "placeholders": {
+      "olay": {"type": "String"}
     }
   },
   "rdrSatirKriptoOrtsuz": "Son gün alıcı payı {yuzde}",

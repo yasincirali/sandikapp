@@ -6253,7 +6253,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String rdrSiraAlt(String kategori) {
-    return '$kategori · largest net inflow the same week';
+    return '$kategori · ranked by net flow the same week';
   }
 
   @override
@@ -6432,6 +6432,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String rdrSatirKripto(String ort, String yuzde) {
     return 'Buyer share over 7 days $ort · last day $yuzde';
+  }
+
+  @override
+  String rdrYatirimciHafta(String sayi, String fark) {
+    return '$sayi · last week $fark';
+  }
+
+  @override
+  String rdrKartHaftaOlayi(String olay) {
+    return 'Unusual day in the last 7 days: $olay';
   }
 
   @override

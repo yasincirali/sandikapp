@@ -206,6 +206,7 @@ class FonAkisOzeti {
     this.ay3,
     this.seri,
     this.sonHaftaBasBuyukluk,
+    this.yatirimciHaftaFarki,
   });
 
   /// Son 30 / 90 günün akışı; dönem eksiksiz kurulamıyorsa null.
@@ -243,6 +244,12 @@ class FonAkisOzeti {
 
   /// Bir önceki işlem gününe göre yatırımcı farkı; iki gün de biliniyorsa.
   final int? yatirimciDegisimi;
+
+  /// Son haftadaki yatırımcı farkı: haftadan önceki son bilinen sayıdan en
+  /// yeni sayıya. Ayrıntı ekranı haftalık sayfa olduğu için bunu yazar; günlük
+  /// farkı ("+8") etiketsiz yazınca not "+479" derken çelişiyordu. Sunucu
+  /// notunun `yatirimci_degisim` ölçüsüyle aynı kural. Bilinmiyorsa null.
+  final int? yatirimciHaftaFarki;
 
   /// Son [olayGun] gündeki olaylar, yeniden eskiye, en çok [olayUstu].
   final List<FonBalinaOlayi> olaylar;
@@ -377,7 +384,19 @@ FonAkisOzeti? fonAkisOzeti(
         : null,
     sonHaftaBasBuyukluk:
         haftaOncesi.portfoyDegeri > 0 ? haftaOncesi.portfoyDegeri : null,
+    yatirimciHaftaFarki: _haftaKisiFarki(sirali, sonHaftaBasi),
   );
+}
+
+int? _haftaKisiFarki(List<FonAkisGunu> sirali, DateTime haftaBasi) {
+  final son = sirali.last.yatirimci;
+  if (son == null) return null;
+  int? once;
+  for (final g in sirali) {
+    if (!g.tarih.isBefore(haftaBasi)) break;
+    if (g.yatirimci != null) once = g.yatirimci;
+  }
+  return once == null ? null : son - once;
 }
 
 /// Son haftaya (kartın başlığındaki hafta) düşen ilk büyük hareket; yoksa

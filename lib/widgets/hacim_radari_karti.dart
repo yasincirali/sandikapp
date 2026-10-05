@@ -103,6 +103,7 @@ class HacimRadariKarti extends ConsumerWidget {
                   const SizedBox(height: SandikSpace.xs),
                   OlcekCubugu(kademe: kademe),
                 ],
+                HaftaOlayiSatiri(ozet: ozet),
                 const SizedBox(height: SandikSpace.md),
                 if (kilitli)
                   KilitSatiri(
@@ -396,6 +397,7 @@ class KriptoBaskiKarti extends ConsumerWidget {
                 ),
                 const SizedBox(height: SandikSpace.xs),
                 OlcekCubugu(kademe: okunus.kademe),
+                HaftaOlayiSatiri(ozet: ozet),
                 const SizedBox(height: SandikSpace.md),
                 if (kilitli)
                   KilitSatiri(
@@ -535,3 +537,45 @@ class EnIstekliSaat extends StatelessWidget {
 String saatEtiketi(BuildContext context, DateTime utc) =>
     DateFormat('HH:mm', Localizations.localeOf(context).toString())
         .format(utc.toLocal());
+
+/// Kartın konusu SON GÜN; Haftanın özeti ise son 7 günü okur. Listeden
+/// "Olağandışı hacim" rozetiyle gelen kullanıcı kartta yalnız "sakin gün"
+/// görürse rozet yanlış sanılır (2026-10-05 web testi: THYAO 1 Eki 3,4 kat,
+/// kart 2 Eki'yi anlatıyordu). Son 7 günde son gün DIŞINDA olağandışı gün
+/// varsa kart onu da tek satırla söyler; son günse kademe zaten en üsttedir.
+class HaftaOlayiSatiri extends StatelessWidget {
+  const HaftaOlayiSatiri({super.key, required this.ozet});
+
+  final HacimOzeti ozet;
+
+  @override
+  Widget build(BuildContext context) {
+    final olay = sonHaftaHacimOlayi(ozet);
+    if (olay == null || olay.tarih == ozet.sonGun.tarih) {
+      return const SizedBox.shrink();
+    }
+    final l10n = context.l10n;
+    final gunAy =
+        DateFormat('d MMM', Localizations.localeOf(context).toString());
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.bolt_rounded,
+              size: SandikSpace.md, color: context.c.amberText),
+          const SizedBox(width: SandikSpace.xs),
+          Expanded(
+            child: Text(
+              l10n.rdrKartHaftaOlayi(l10n.rdrSatirHacim(
+                  gunAy.format(olay.tarih),
+                  fmtNum(olay.ortalamaKati, digits: 1),
+                  fmtPctIsaretli(olay.fiyatDegisim * 100, digits: 1))),
+              style: context.t.bodySmall?.copyWith(color: context.c.text90),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

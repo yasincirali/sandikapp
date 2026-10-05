@@ -201,6 +201,26 @@ void main() {
     expect(find.textContaining('çıktı'), findsNothing);
   });
 
+  testWidgets(
+      'son 7 günde son gün DIŞINDA olağandışı gün varsa kart onu da söyler',
+      (t) async {
+    // Son gün 22 Eyl; olay 19 Eyl (listede "Olağandışı hacim" rozeti).
+    await _kur(t, ozet: hacimOzeti(_seri(21), [_olay(9, 19)], simdi: simdi));
+    expect(
+        find.text(
+            'Son 7 günde olağandışı gün: 19 Eyl · hacim 4,7 kat · fiyat +%10,0'),
+        findsOneWidget);
+    // Olay son günün kendisiyse satır yok (kademe zaten en üstte).
+    // (Önce ağacı boşalt: aynı ProviderScope eski sonucu tutar.)
+    await t.pumpWidget(const SizedBox());
+    await _kur(t, ozet: hacimOzeti(_seri(21), [_olay(9, 22)], simdi: simdi));
+    expect(find.textContaining('Son 7 günde olağandışı gün'), findsNothing);
+    // 7 günden eski olay söylenmez.
+    await t.pumpWidget(const SizedBox());
+    await _kur(t, ozet: hacimOzeti(_seri(21), [_olay(9, 10)], simdi: simdi));
+    expect(find.textContaining('Son 7 günde olağandışı gün'), findsNothing);
+  });
+
   testWidgets('20 gün dolmadıysa ölçek yok, cümle yalın', (t) async {
     final kisa = hacimOzeti(_seri(8), const [], simdi: DateTime(2026, 9, 12));
     await _kur(t, ozet: kisa);

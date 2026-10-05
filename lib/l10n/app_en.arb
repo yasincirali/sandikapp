@@ -4061,7 +4061,7 @@
   "rdrDonemUpper": "PERIOD",
   "rdrBaglamUpper": "CONTEXT",
   "rdrSiraUpper": "FLOW RANK IN CATEGORY",
-  "rdrSiraAlt": "{kategori} · largest net inflow the same week",
+  "rdrSiraAlt": "{kategori} · ranked by net flow the same week",
   "@rdrSiraAlt": {
     "placeholders": {
       "kategori": {"type": "String"}
@@ -4241,6 +4241,19 @@
     "placeholders": {
       "ort": {"type": "String"},
       "yuzde": {"type": "String"}
+    }
+  },
+  "rdrYatirimciHafta": "{sayi} · last week {fark}",
+  "@rdrYatirimciHafta": {
+    "placeholders": {
+      "sayi": {"type": "String"},
+      "fark": {"type": "String"}
+    }
+  },
+  "rdrKartHaftaOlayi": "Unusual day in the last 7 days: {olay}",
+  "@rdrKartHaftaOlayi": {
+    "placeholders": {
+      "olay": {"type": "String"}
     }
   },
   "rdrSatirKriptoOrtsuz": "Buyer share on the last day {yuzde}",

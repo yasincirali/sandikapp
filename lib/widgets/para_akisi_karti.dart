@@ -173,7 +173,13 @@ class ParaAkisiKarti extends ConsumerWidget {
                 if (haftaBaglantisi)
                   Align(
                     alignment: AlignmentDirectional.centerStart,
+                    // Yatay dolgu yok: bağlantı üstündeki kaynak satırıyla
+                    // aynı hizadan başlasın (web testinde içeride kalıyordu).
+                    // Dokunma alanı yükseklikte korunur.
                     child: TextButton(
+                      style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: SandikTouch.minSize),
                       onPressed: () => pushGuarded(
                         context,
                         adaptiveRoute<void>(

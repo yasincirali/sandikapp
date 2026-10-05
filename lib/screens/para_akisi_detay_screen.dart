@@ -108,11 +108,12 @@ class _ParaAkisiDetayScreenState extends ConsumerState<ParaAkisiDetayScreen> {
                             metin: l10n.flowInvestors,
                             stil: t.bodyMedium?.copyWith(color: c.text58),
                           ),
-                          deger: ozet.yatirimciDegisimi == null
+                          // Haftalık fark, etiketli (notun "+479"u ile aynı).
+                          deger: ozet.yatirimciHaftaFarki == null
                               ? fmtNum(ozet.yatirimci!.toDouble(), digits: 0)
-                              : l10n.flowInvestorsDelta(
+                              : l10n.rdrYatirimciHafta(
                                   fmtNum(ozet.yatirimci!.toDouble(), digits: 0),
-                                  isaretliAdet(ozet.yatirimciDegisimi!)),
+                                  isaretliAdet(ozet.yatirimciHaftaFarki!)),
                         ),
                     ],
                   ),

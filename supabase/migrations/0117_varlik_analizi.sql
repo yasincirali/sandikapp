@@ -83,7 +83,12 @@ returns table (
   donem date,
   baslik text,
   rozet text,
-  madde_sayisi integer
+  madde_sayisi integer,
+  -- Notun dayandığı verinin ilk/son günü (fonda iş günleri: 28 Eyl - 2 Eki).
+  -- Kutudaki tarih, aynı haftanın para akışı kartıyla aynı aralığı yazsın;
+  -- `donem + 6` takvim haftası (4 Eki) farklı görünüyordu (2026-10-05 web testi).
+  veri_baslangic date,
+  veri_bitis date
 )
 language sql
 stable
@@ -91,7 +96,8 @@ security definer
 set search_path = public
 as $$
   select distinct on (v.ticker)
-         v.ticker, v.donem, v.baslik, v.rozet, jsonb_array_length(v.maddeler)
+         v.ticker, v.donem, v.baslik, v.rozet, jsonb_array_length(v.maddeler),
+         nullif(v.girdi->>'baslangic', '')::date, nullif(v.girdi->>'bitis', '')::date
     from public.varlik_analizi v
    where (select auth.uid()) is not null
      and v.durum = 'yayinda'

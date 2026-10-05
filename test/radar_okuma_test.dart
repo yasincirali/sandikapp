@@ -129,11 +129,27 @@ void main() {
     test('haftanın oranı hafta BAŞI büyüklüğüne (sunucu notuyla aynı payda)',
         () {
       final o = fonAkisOzeti([
-        FonAkisGunu(tarih: _g(9, 25), portfoyDegeri: 3.18e9, netAkis: 0),
+        FonAkisGunu(
+            tarih: _g(9, 25),
+            portfoyDegeri: 3.18e9,
+            netAkis: 0,
+            yatirimci: 30230),
         FonAkisGunu(tarih: _g(9, 29), portfoyDegeri: 3.30e9, netAkis: 137.66e6),
-        FonAkisGunu(tarih: _g(10, 2), portfoyDegeri: 3.32e9, netAkis: 0),
+        FonAkisGunu(
+            tarih: _g(10, 1),
+            portfoyDegeri: 3.31e9,
+            netAkis: 0,
+            yatirimci: 30701),
+        FonAkisGunu(
+            tarih: _g(10, 2),
+            portfoyDegeri: 3.32e9,
+            netAkis: 0,
+            yatirimci: 30709),
       ], const [], simdi: _g(10, 5))!;
       expect(o.sonHaftaBasBuyukluk, 3.18e9);
+      // Ayrıntı ekranı haftalık farkı yazar (+479), günlük farkı (+8) değil.
+      expect(o.yatirimciDegisimi, 8);
+      expect(o.yatirimciHaftaFarki, 479);
       // 137,66 / 3.180 = %4,33; en yeni büyüklükle %4,15 olurdu.
       expect(fonHaftaOrani(o), closeTo(0.0433, 1e-4));
     });
@@ -295,6 +311,20 @@ void main() {
           })!
               .maddeSayisi,
           3);
+      // Veri aralığı (kutudaki tarih): fonda iş günleri, takvim haftası değil.
+      final o = AnalizOzeti.satirdan({
+        'ticker': 'TEFAS:TTE',
+        'donem': '2026-09-28',
+        'baslik': 'a',
+        'veri_baslangic': '2026-09-28',
+        'veri_bitis': '2026-10-02',
+      })!;
+      expect(o.veriBitis, _g(10, 2));
+      expect(
+          AnalizOzeti.satirdan(
+                  {'ticker': 'X', 'donem': '2026-09-28', 'baslik': 'a'})!
+              .veriBitis,
+          isNull);
     });
   });
 }

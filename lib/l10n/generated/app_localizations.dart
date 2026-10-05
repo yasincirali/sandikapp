@@ -10345,7 +10345,7 @@ abstract class AppLocalizations {
   /// No description provided for @rdrSiraAlt.
   ///
   /// In tr, this message translates to:
-  /// **'{kategori} · aynı hafta en çok net para girişi olanlar'**
+  /// **'{kategori} · aynı haftanın net akışına göre sıra'**
   String rdrSiraAlt(String kategori);
 
   /// No description provided for @rdrSiraBuFon.
@@ -10599,6 +10599,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'7 günde alıcı payı {ort} · son gün {yuzde}'**
   String rdrSatirKripto(String ort, String yuzde);
+
+  /// No description provided for @rdrYatirimciHafta.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} · son hafta {fark}'**
+  String rdrYatirimciHafta(String sayi, String fark);
+
+  /// No description provided for @rdrKartHaftaOlayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 7 günde olağandışı gün: {olay}'**
+  String rdrKartHaftaOlayi(String olay);
 
   /// No description provided for @rdrSatirKriptoOrtsuz.
   ///

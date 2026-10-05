@@ -6189,7 +6189,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String rdrSiraAlt(String kategori) {
-    return '$kategori · aynı hafta en çok net para girişi olanlar';
+    return '$kategori · aynı haftanın net akışına göre sıra';
   }
 
   @override
@@ -6369,6 +6369,16 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String rdrSatirKripto(String ort, String yuzde) {
     return '7 günde alıcı payı $ort · son gün $yuzde';
+  }
+
+  @override
+  String rdrYatirimciHafta(String sayi, String fark) {
+    return '$sayi · son hafta $fark';
+  }
+
+  @override
+  String rdrKartHaftaOlayi(String olay) {
+    return 'Son 7 günde olağandışı gün: $olay';
   }
 
   @override

@@ -16,6 +16,8 @@ class AnalizOzeti {
     required this.baslik,
     required this.rozet,
     required this.maddeSayisi,
+    this.veriBaslangic,
+    this.veriBitis,
   });
 
   final String ticker;
@@ -25,6 +27,12 @@ class AnalizOzeti {
   final String baslik;
   final String? rozet;
   final int maddeSayisi;
+
+  /// Notun dayandığı verinin ilk/son günü (fonda iş günleri). Kutudaki tarih
+  /// bunu yazar: aynı haftanın kartı da veri aralığını yazar. Eski satırda
+  /// yoksa null; o zaman dönem haftası/ayı yazılır.
+  final DateTime? veriBaslangic;
+  final DateTime? veriBitis;
 
   static AnalizOzeti? satirdan(Map<String, dynamic> r) {
     final ticker = r['ticker'] as String?;
@@ -39,6 +47,8 @@ class AnalizOzeti {
       baslik: baslik,
       rozet: r['rozet'] as String?,
       maddeSayisi: (r['madde_sayisi'] as num?)?.toInt() ?? 0,
+      veriBaslangic: _gun(r['veri_baslangic']),
+      veriBitis: _gun(r['veri_bitis']),
     );
   }
 }
