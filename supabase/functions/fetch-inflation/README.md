@@ -227,12 +227,19 @@ deno test --allow-read --allow-net supabase/tests/fetch_inflation_test.ts
 
 | Job | Zamanlama (UTC) | TR |
 |---|---|---|
-| `fetch-inflation` | `5 7 3 * *` | ayın 3'ü 10:05 |
-| `fetch-inflation-retry` | `5 7 4 * *` | ayın 4'ü 10:05 |
+| `fetch-inflation` | `5 7 3-12 * *` | ayın 3'ü–12'si her gün 10:05 (0110) |
+| `fetch-inflation-retry` | `5 13 3-12 * *` | ayın 3'ü–12'si her gün 16:05 (0110) |
 | ~~`calendar-nudge-inflation`~~ | ~~`15 7 3 * *`~~ | 0093 ile kalktı — TÜFE aylık özetle gider |
 | ~~`calendar-nudge-inflation-retry`~~ | ~~`15 7 4 * *`~~ | 0093 ile kalktı |
-| `monthly-summary` | `30 7 3,4 * *` | ayın 3'ü/4'ü 10:30 — ayın TÜFE'si + aylık özet (0093) |
+| `monthly-summary` | `30 7 3-12 * *` | ayın 3'ü–12'si 10:30 — ayın TÜFE'si gelince tek aylık özet (0093, 0110) |
 | `calendar-nudge-log-cleanup` | `40 22 * * 0` | Pazar 01:40 |
+
+**Neden 3'ü–12'si (0110, 2026-10-05).** İlk takvim yalnız 3'ü ve 4'üydü.
+Ekim 2026'da ikisi de hafta sonuydu; TÜİK bülteni ilk iş gününe kaydırır,
+EVDS iş gününde yayımlar → iki tur da `no_new_data`, Eylül TÜFE'si Kasım'a
+kadar gelmeyecekti ve aylık özet push'u da gitmedi. Çekim upsert olduğu
+için her gün koşmak zararsız; aylık özet `inflation_push_log` kilidiyle ay
+başına bir kez gider.
 
 ## Sonrası: `real_return_enabled`
 

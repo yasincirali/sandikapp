@@ -57,7 +57,8 @@ uyuşmaz ve güveni bozar. Kapsama yoksa `skipped_coverage`.
 
 ## Aylık özet — aynı fonksiyon, `{"period":"month"}` (2026-09-20)
 
-Migration `0093` (2026-10-01) her ayın 3'ü ve 4'ü TR 10:30'da (`30 7 3,4 * *`)
+Migration `0093` (2026-10-01) her ayın 3'ü ve 4'ü TR 10:30'da (`30 7 3,4 * *`;
+`0110` ile 3'ü–12'si her gün, `30 7 3-12 * *` — 3'ü/4'ü hafta sonuysa TÜFE gelmiyordu)
 aynı fonksiyonu `period=month` gövdesiyle çağırır; **geçen takvim ayı**
 anlatılır (`ayPenceresi`, Europe/Istanbul). İlk hâli (`0067`) ayın 1'iydi ve
 ayın TÜFE'si henüz açıklanmamıştı — Özet'te bir önceki ayın enflasyonu
