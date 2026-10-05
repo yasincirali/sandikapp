@@ -5,18 +5,21 @@ import 'package:portfoy_takip/l10n/generated/app_localizations.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/screens/legal_doc_screen.dart';
 import 'package:portfoy_takip/screens/register_screen.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
+import 'package:portfoy_takip/widgets/zorunlu_okuma.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
 
 /// Kayıtta tek onay kutusu — Sadeleştirme 2, liste madde 1 (2026-10-04).
 ///
-/// Bayrak `tek_onay_kutusu` varsayılan KAPALI (hukuki onay bekler). Kapalıyken
-/// iki kutu birebir eski; açıkken tek cümleli tek kutu, cümlede iki belgeye
-/// bağlantı. Değişmez: kutu işaretlenince İKİ onay da verilmiş olur ve kayıt
-/// isteği iki yolda AYNIDIR — onay kaydının kendisi OTP sonrası
-/// `DisclaimerService.kabulKaydet`'te, bayraktan bağımsız.
+/// Tek cümleli tek kutu, cümlede belgelere bağlantı. Değişmez: kutu
+/// işaretlenince İKİ onay da verilmiş olur; onay kaydının kendisi OTP
+/// sonrası `DisclaimerService.kabulKaydet`'te.
+///
+/// 2026-10-05: bayraklar `tek_onay_kutusu` ve `zorunlu_okuma` kalktı. İki
+/// kutulu eski düzenin testleri ve "iki yolda aynı kayıt isteği"
+/// karşılaştırması silindi; kutu artık metinler okunmadan işaretlenmez
+/// ([hepsiniOku]; okuma mekaniği `zorunlu_okuma_test`'te).
 void main() {
   final l = AppLocalizationsTr();
   // Eski kutularda belge açılmadan etiketin altına "(Önce belgeyi oku)"
@@ -24,9 +27,6 @@ void main() {
   const eskiRizaCumlesi =
       'Verilerimin yurt dışına aktarılmasına açık rıza veriyorum.\n'
       '(Önce belgeyi oku)';
-  const eskiKosulCumlesi =
-      'Yasal Koşulları, KVKK Aydınlatma Metni\'ni ve 18+ olduğumu kabul '
-      'ediyorum.\n(Önce belgeyi oku)';
   const eskiKosulHatasi = 'Devam etmek için yasal koşulları kabul etmelisin.';
   const eskiRizaHatasi =
       'Devam etmek için yurt dışı aktarım rızasını kabul etmelisin.';
@@ -35,11 +35,9 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    RemoteConfigService.testAcik = {};
     RegisterScreen.kayitIstegiTesti = null;
   });
   tearDown(() {
-    RemoteConfigService.testAcik = {};
     RegisterScreen.kayitIstegiTesti = null;
   });
 
@@ -104,77 +102,24 @@ void main() {
     return istekler;
   }
 
-  /// OTP ekranının sayaçları test sonunda açık kalmasın.
-  Future<void> kapat(WidgetTester tester) async {
-    await tester.pumpWidget(const SizedBox());
-    await tester.pump(const Duration(seconds: 5));
-  }
-
-  group('bayrak KAPALI — eski iki kutu birebir', () {
-    testWidgets('iki kutu görünür, tek cümle yok', (tester) async {
-      await ac(tester);
-      expect(find.text(eskiRizaCumlesi), findsOneWidget);
-      expect(find.text('Açık Rıza: Yurt Dışı Veri Aktarımı'), findsOneWidget);
-      expect(find.text(tekCumle, findRichText: true), findsNothing);
-      expect(find.text('Belgeyi aç ve onayla'), findsNWidgets(2));
-    });
-
-    testWidgets(
-        'KVKK Aydınlatma Metni kendi bağlantısıyla açılır (2026-10-04 '
-        'öncesi kayıt ekranından açılamıyordu); Koşullar bağlantısı Koşulları',
-        (tester) async {
-      await ac(tester);
-      await tester.tap(find.text(l.yasalBelgeKvkk));
-      await tester.pumpAndSettle();
-      var belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      expect(belge.title, l.yasalBelgeKvkk);
-      expect(belge.blocks.length, LegalDocs.kvkk.length);
-      expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni — sandık');
-      // Aydınlatma yalnız okunur; kutuyu işaretlemez.
-      expect(belge.confirmMode, isFalse);
-      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
-
+  /// Her metni açar ve okuyucuyu "sonuna kadar okundu, onaylandı" ile
+  /// kapatır — kutunun kilidi açılsın diye.
+  Future<void> hepsiniOku(WidgetTester tester) async {
+    final n = find.byType(YasalBelgeSatiri).evaluate().length;
+    for (var i = 0; i < n; i++) {
+      final satir = find.byType(YasalBelgeSatiri).at(i);
+      await tester.ensureVisible(satir);
       await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 600)));
-      await tester.tap(find.text('Belgeyi aç ve onayla').first);
+      await tester.tap(satir);
       await tester.pumpAndSettle();
-      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      expect(belge.title, l.yasalBelgeKosullar);
-      expect(belge.blocks, same(LegalDocs.terms));
-      expect(belge.confirmMode, isTrue);
-    });
+      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop(
+          const ZorunluOkumaSonucu(onaylandi: true, sonunaKadarOkundu: true));
+      await tester.pumpAndSettle();
+    }
+  }
 
-    testWidgets('kutular boşken "Kayıt ol" iki kutunun hatasını da açar',
-        (tester) async {
-      final istekler = istekleriYakala();
-      await ac(tester);
-      await formuDoldur(tester);
-      await kayitaBas(tester);
-      expect(find.text(eskiKosulHatasi), findsOneWidget);
-      expect(find.text(eskiRizaHatasi), findsOneWidget);
-      expect(istekler, isEmpty);
-      await tester.pump(const Duration(seconds: 5));
-    });
-
-    testWidgets('yalnız koşullar işaretliyse kayıt yok, rıza hatası görünür',
-        (tester) async {
-      final istekler = istekleriYakala();
-      await ac(tester);
-      await formuDoldur(tester);
-      await tester.tap(find.text(eskiKosulCumlesi));
-      await tester.pump();
-      await kayitaBas(tester);
-      expect(find.text(eskiKosulHatasi), findsNothing);
-      expect(find.text(eskiRizaHatasi), findsOneWidget);
-      expect(istekler, isEmpty);
-      await tester.pump(const Duration(seconds: 5));
-    });
-  });
-
-  group('bayrak AÇIK — tek kutu', () {
-    setUp(() => RemoteConfigService.testAcik = {'tek_onay_kutusu'});
+  group('tek kutu', () {
 
     testWidgets('tek kutu, tek cümle; eski rıza kutusu yok', (tester) async {
       await ac(tester);
@@ -210,9 +155,10 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     });
 
-    testWidgets('kutuya basmak işaretler, ikinci basış kaldırır',
-        (tester) async {
+    testWidgets('metinler okununca kutuya basmak işaretler, ikinci basış '
+        'kaldırır', (tester) async {
       await ac(tester);
+      await hepsiniOku(tester);
       expect(find.byIcon(Icons.check_rounded), findsNothing);
       await tester.tap(find.text(tekCumle, findRichText: true),
           warnIfMissed: false);
@@ -224,9 +170,13 @@ void main() {
       expect(find.byIcon(Icons.check_rounded), findsNothing);
     });
 
-    testWidgets('bağlantılar doğru belgeyi açar, kutuyu işaretlemez',
+    testWidgets('bağlantılar doğru belgeyi zorunlu okumada açar, kutuyu '
+        'işaretlemez',
         (tester) async {
       await ac(tester);
+      // Önceki testin itişi `pushGuarded` penceresinde (gerçek saat) kalmasın.
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 600)));
       await tester.tapOnText(find.textRange.ofSubstring(
           l.tekOnayKosullarBaglanti,
           descendentOf: find.text(tekCumle, findRichText: true)));
@@ -236,8 +186,8 @@ void main() {
       // yalnız Koşulları gösteriyordu.
       expect(belge.title, l.yasalBelgeKosullar);
       expect(belge.blocks, same(LegalDocs.terms));
-      // Tek kutuda belge yalnız okunur; onay kutunun kendisidir.
-      expect(belge.confirmMode, isFalse);
+      // Belge zorunlu okumada; dönüşsüz kapanış onay değildir.
+      expect(belge.zorunluOkuma, isTrue);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.check_rounded), findsNothing);
@@ -252,7 +202,7 @@ void main() {
       expect(belge.title, l.yasalBelgeKvkk);
       expect(belge.blocks.length, LegalDocs.kvkk.length);
       expect(belge.blocks.first.text, 'KVKK Aydınlatma Metni — sandık');
-      expect(belge.confirmMode, isFalse);
+      expect(belge.zorunluOkuma, isTrue);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.check_rounded), findsNothing);
@@ -270,60 +220,14 @@ void main() {
       expect(belge.title, l.yasalBelgeAcikRiza);
       expect(belge.blocks.length, LegalDocs.acikRiza.length);
       expect(belge.blocks.first.text, 'Açık Rıza Metni — sandık');
-      expect(belge.confirmMode, isFalse);
-      Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
-      await tester.pumpAndSettle();
-      expect(find.byIcon(Icons.check_rounded), findsNothing);
-
-      // Gizlilik Politikası kutunun altındaki okuma bağlantısıyla açılır.
-      await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 600)));
-      await tester.ensureVisible(find.text(l.yasalBelgeGizlilik));
-      await tester.tap(find.text(l.yasalBelgeGizlilik));
-      await tester.pumpAndSettle();
-      belge = tester.widget<LegalDocScreen>(find.byType(LegalDocScreen));
-      expect(belge.title, l.yasalBelgeGizlilik);
-      expect(belge.blocks.first.text, 'Gizlilik Politikası — sandık');
-      expect(belge.confirmMode, isFalse);
+      expect(belge.zorunluOkuma, isTrue);
       Navigator.of(tester.element(find.byType(LegalDocScreen))).pop();
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.check_rounded), findsNothing);
     });
   });
 
-  testWidgets(
-      'iki onay: tek kutu işaretlenince kayıt isteği iki kutulu eski yolla '
-      'BİREBİR aynı', (tester) async {
-    // Eski yol: iki kutu ayrı ayrı.
-    final eski = istekleriYakala();
-    await ac(tester);
-    await formuDoldur(tester);
-    await tester.tap(find.text(eskiKosulCumlesi));
-    await tester.tap(find.text(eskiRizaCumlesi));
-    await tester.pump();
-    await kayitaBas(tester);
-    await tester.pumpAndSettle();
-    await kapat(tester);
-    expect(eski, hasLength(1));
-
-    // Yeni yol: tek kutu.
-    RemoteConfigService.testAcik = {'tek_onay_kutusu'};
-    final yeni = istekleriYakala();
-    await ac(tester);
-    await formuDoldur(tester);
-    await tester.tap(find.text(tekCumle, findRichText: true),
-        warnIfMissed: false);
-    await tester.pump();
-    await kayitaBas(tester);
-    await tester.pumpAndSettle();
-    await kapat(tester);
-    expect(yeni, hasLength(1));
-    expect(yeni.single, eski.single);
-    expect(yeni.single['email'], 'deneme@ornek.com');
-  });
-
-  test('onay kaydı bayraktan bağımsız: OTP sonrası tek kabulKaydet, ekran '
-      'bayrağı yalnız kutu görünüşü için okur', () {
+  test('onay kaydı: OTP sonrası tek kabulKaydet; bayrak okuması kalmadı', () {
     final otp = ekranKaynagiSync('lib/screens/otp_verification_screen.dart');
     expect(otp, contains('DisclaimerService.instance.kabulKaydet('));
     expect(otp, isNot(contains('tekOnayKutusu')));
@@ -332,11 +236,10 @@ void main() {
     final kayit = ekranKaynagiSync('lib/screens/register_screen.dart');
     // Kapı iki bayrağı eskisi gibi okur.
     expect(kayit, contains('_termsAccepted &&\n      _consentAccepted;'));
-    expect('tekOnayKutusu'.allMatches(kayit), hasLength(1));
+    expect(kayit, isNot(contains('tekOnayKutusu')));
   });
 
-  group('dar ekranda taşma yok (bayrak açık)', () {
-    setUp(() => RemoteConfigService.testAcik = {'tek_onay_kutusu'});
+  group('dar ekranda taşma yok', () {
     for (final boyut in const [Size(320, 568), Size(360, 640)]) {
       for (final olcek in const [1.0, 1.3, 1.6]) {
         testWidgets('${boyut.width.toInt()} dp, yazı x$olcek', (tester) async {

@@ -19,7 +19,6 @@ import '../providers/quiet_hours_provider.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/seviye_anketi.dart';
 import '../widgets/yenilikler_sheet.dart';
-import '../services/remote_config_service.dart';
 import '../services/surum_notu_service.dart';
 import '../services/review_prompt_service.dart';
 import '../services/crash_reporter.dart';
@@ -89,16 +88,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
   bool _exporting = false;
 
-  /// Hub'ın "Gelişmiş" grubu açık mı (yalnız `performans_ayar_sade`).
-  /// Kapalı başlar: içindekiler teknik ve nadir; ilk bakışta yer kaplamasın.
+  /// Hub'ın "Gelişmiş" grubu açık mı. Kapalı başlar: içindekiler teknik ve
+  /// nadir; ilk bakışta yer kaplamasın.
   bool _gelismisAcik = false;
 
-  /// Ayarlar sadeleştirmesi (sadeleştirme listesi madde 10, bayrak
-  /// `performans_ayar_sade`): bölümler net başlıklı gruplara ayrılır,
-  /// teknik satırlar hub'da katlanır "Gelişmiş"e iner. HİÇBİR satır
-  /// kalkmaz ve tercih anahtarları değişmez — yalnız sıra ve başlık.
-  /// Kapalıyken her bölüm birebir eski düzeninde.
-  bool get _sadeAyar => RemoteConfigService.instance.performansAyarSade;
+  // Ayarlar sadeleştirmesi (sadeleştirme listesi madde 10, 2026-10-04):
+  // bölümler net başlıklı gruplara ayrılır, teknik satırlar hub'da katlanır
+  // "Gelişmiş"e iner. HİÇBİR satır kalkmadı ve tercih anahtarları değişmedi
+  // — yalnız sıra ve başlık. Bayrak `performans_ayar_sade` (ve `_sadeAyar`)
+  // 2026-10-05'te kalktı; eski başlıksız düzenler silindi.
 
   /// Kurulu sürüm — paketten okunur, elle yazılmaz (bkz. sayfa dibindeki
   /// sürüm satırı). Yüklenene kadar null.
@@ -546,8 +544,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
             ...() {
               final teknik = _teknikBolumler();
-              if (!_sadeAyar || teknik.isEmpty) return teknik;
-              // Sade düzende teknik satırlar katlanır "Gelişmiş" grubunda:
+              if (teknik.isEmpty) return teknik;
+              // Teknik satırlar katlanır "Gelişmiş" grubunda:
               // tanılama ve geliştirici araçları gündelik ayar değildir,
               // hub'ın dört bölümüyle aynı ağırlıkta durmaları listeyi
               // olduğundan kalabalık gösteriyordu (madde 10).
@@ -636,25 +634,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
       ];
 
-  List<Widget> _gorunum() => _sadeAyar ? _gorunumGruplu() : [
-            const SizedBox(height: 4),
-            const _ThemeModePicker(),
-            const SizedBox(height: 12),
-            const _BaseCurrencyPicker(),
-            const SizedBox(height: 12),
-            // Portföy hedefi satırı 2026-09-21'de kaldırıldı: görünüm ayarı
-            // değil; hedef ana ekrandaki Bugün kartından kurulup düzenleniyor
-            // (`showHedefSheet`). İki giriş aynı sheet'i açıyordu.
-            const _InvestorLevelPicker(),
-            const SizedBox(height: 12),
-            const _LanguagePicker(),
-            const SizedBox(height: 12),
-            const _YaziBoyutuPicker(),
-            const SizedBox(height: 24),
-
-      ];
-
-  /// Görünüm — sade düzen (`performans_ayar_sade`): iki grup.
+  /// Görünüm — iki grup (sadeleştirme madde 10, 2026-10-04).
   ///
   ///   · GENEL: uygulamanın kendisi (tema, yazı boyutu, dil)
   ///   · PORTFÖY GÖRÜNÜMÜ: rakamların nasıl gösterildiği (baz birim,
@@ -666,7 +646,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// (madde 5): dönemden döneme değişen bir kontrol değil, bir bakış
   /// tercihi. Sade Başlangıç'ta (grafik araçları gizli) satır yok — orada
   /// etkisiz olurdu (bkz. `_simulate`).
-  List<Widget> _gorunumGruplu() {
+  List<Widget> _gorunum() {
     final l = context.l10n;
     return [
       const SizedBox(height: 4),
@@ -876,10 +856,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: _deleting ? null : _confirmDeleteAccount,
             ),
     ];
-    if (!_sadeAyar) {
-      return [const SizedBox(height: 4), ...hesapSatirlari, ...veriSatirlari];
-    }
-    // Sade düzen: kim olduğun ve nasıl korunduğun bir grup, verinin
+    // Kim olduğun ve nasıl korunduğun bir grup, verinin
     // kendisi (dışa aktarma, silme) ayrı grup. Silme en altta kalır.
     return [
       SandikSectionHeader(title: context.l10n.settingsGroupSecurityAccount),
@@ -982,20 +959,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 28),
     ];
-    if (!_sadeAyar) {
-      return [
-        SandikSectionHeader(title: context.l10n.supportUpper),
-        const SizedBox(height: 12),
-        iletisim,
-        puan,
-        yenilikler,
-        tur,
-        geriBildirim,
-        const SizedBox(height: 28),
-        ...yasal,
-      ];
-    }
-    // Sade düzen: "bize yaz" türü satırlar (iletişim, geri bildirim, puan)
+    // "Bize yaz" türü satırlar (iletişim, geri bildirim, puan)
     // DESTEK'te yan yana; uygulamanın kendini anlattığı satırlar
     // (yenilikler, tanıtım turu) UYGULAMA HAKKINDA'da; yasal belgeler aynı.
     return [
@@ -1015,7 +979,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-/// Hub'ın katlanır "Gelişmiş" grubu (sade düzen, `performans_ayar_sade`).
+/// Hub'ın katlanır "Gelişmiş" grubu (sadeleştirme madde 10, 2026-10-04).
 ///
 /// Başlık `SandikSectionHeader` + açılır ok; gövde ortak `SandikAcilir`
 /// (Performans kapsam paneli ve Özet'in "Daha fazlası" ile aynı hareket).
@@ -1394,24 +1358,24 @@ class _InvestorLevelPicker extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
-            '${current.aciklama(context, sade: RemoteConfigService.instance.seviyeAnketi)} '
+            '${current.aciklama(context)} '
             '${context.l10n.investorLevelNote}',
             style: context.t.bodySmall?.copyWith(color: context.c.text36),
           ),
         ),
-        // Anket (bayrak `seviye_anketi`): hangi seviyede olduğundan emin
-        // olmayan kullanıcı etiket seçmek yerine üç soruyu cevaplar.
-        if (RemoteConfigService.instance.seviyeAnketi)
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
-            minimumSize: SandikTouch.minSize,
-            alignment: Alignment.centerLeft,
-            onPressed: () => seviyeAnketiniAc(context),
-            child: Text(
-              context.l10n.levelSurveyOpen,
-              style: context.t.bodyMedium?.copyWith(color: context.c.amberText),
-            ),
+        // Anket (2026-10-04; bayrak `seviye_anketi` 2026-10-05'te kalktı):
+        // hangi seviyede olduğundan emin olmayan kullanıcı etiket seçmek
+        // yerine üç soruyu cevaplar.
+        CupertinoButton(
+          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+          minimumSize: SandikTouch.minSize,
+          alignment: Alignment.centerLeft,
+          onPressed: () => seviyeAnketiniAc(context),
+          child: Text(
+            context.l10n.levelSurveyOpen,
+            style: context.t.bodyMedium?.copyWith(color: context.c.amberText),
           ),
+        ),
       ],
     );
   }

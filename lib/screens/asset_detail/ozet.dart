@@ -319,13 +319,12 @@ extension _DetayOzet on _AssetDetailScreenState {
     final days = _periods[_selectedPeriodIdx].days;
     final ist = _donemIstatistikleri[days];
     final pct = _donemYuzdesi(days, canliBirim);
-    // Bayrak açıkken dönem yüzdesi yalnız fiyatın altında (madde 7);
-    // ızgara onu (GÜNLÜK'te "Bugün"ü de) yazmaz — bkz.
-    // `DonemIstatistikIzgarasi.donemGetirisiGizli`.
-    final tekYuzde = RemoteConfigService.instance.varlikIslemCubugu;
+    // Dönem yüzdesi yalnız fiyatın altında (madde 7, 2026-10-04; bayrak
+    // `varlik_islem_cubugu` 2026-10-05'te kalktı); ızgara onu (GÜNLÜK'te
+    // "Bugün"ü de) yazmaz — bkz. `DonemIstatistikIzgarasi.donemGetirisiGizli`.
     if (ist == null || pct == null) {
       // İskelet gerçek ızgarayla aynı boyda kalsın (yerleşim oynamasın).
-      final hucre = !tekYuzde ? 4 : (days == 0 ? 2 : 3);
+      final hucre = days == 0 ? 2 : 3;
       return [_istatistikIskeleti(hucre)];
     }
     // Aralık canlı fiyatı da kapsar: seri haftalıkken bugünkü fiyat son
@@ -340,7 +339,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         gun: days,
         donemPct: pct,
         bugunPct: _gunIciDestekli ? _donemYuzdesi(0, canliBirim) : null,
-        donemGetirisiGizli: tekYuzde,
+        donemGetirisiGizli: true,
       ),
       // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
       // seri): çubuk "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi

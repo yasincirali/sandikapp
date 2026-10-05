@@ -194,7 +194,7 @@ Map<String, Map<int, double>> ortakPencereyeHizala(
 
 /// Kıyas çizgisine hangi varlıklar girer?
 ///
-/// `ModernTabSelector` sözleşmesi:
+/// `OrtakSecici` sözleşmesi:
 ///   · `''`   → yalnızca ben
 ///   · uuid   → yalnızca o ortak
 ///   · `null` → Birlikte (ben + tüm aktif ortaklar)
@@ -266,7 +266,7 @@ final watchlistPeriodProvider =
 
 /// Grafikteki portföy çizgisinin KİMİ gösterdiği.
 ///
-/// Uygulamanın geri kalanıyla AYNI sözleşme (`_view`, `ModernTabSelector`):
+/// Uygulamanın geri kalanıyla AYNI sözleşme (`_view`, `OrtakSecici`):
 ///   · `null` → Birlikte (ben + tüm aktif ortaklar)
 ///   · `''`   → yalnızca ben
 ///   · uuid   → yalnızca o ortak

@@ -15,7 +15,6 @@ import 'package:portfoy_takip/screens/register_screen.dart';
 import 'package:portfoy_takip/screens/yasal_onay_kapisi_screen.dart';
 import 'package:portfoy_takip/screens/zirve_portfoyler_screen.dart';
 import 'package:portfoy_takip/services/disclaimer_service.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/yasal_metin_katalogu.dart';
 import 'package:portfoy_takip/services/yasal_onay_service.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
@@ -32,9 +31,8 @@ import 'helpers/kaynak.dart';
 /// kaydırılmadan onay düğmesi açılmaz, onay metnin EN SONUNDADIR; bütün
 /// metinler onaylanmadan akış ilerlemez.
 ///
-/// Bayrak testlerde KAPALI doğar (`flutter_test_config.dart`); açık dal
-/// burada `RemoteConfigService.testAcik` ile sınanır. Kapalı dal mevcut
-/// testlerde (kayıt, kapı, Zirve) birebir sınanmaya devam ediyor.
+/// Bayrak `zorunlu_okuma` (ve `tek_onay_kutusu`) 2026-10-05'te kalktı:
+/// davranış kalıcı, testler iki kutulu ve "bayrak kapalı" dalları sınamaz.
 void main() {
   final l = AppLocalizationsTr();
 
@@ -47,10 +45,8 @@ void main() {
       buildNumber: '8',
       buildSignature: '',
     );
-    RemoteConfigService.testAcik = {'zorunlu_okuma'};
   });
   tearDown(() {
-    RemoteConfigService.testAcik = {};
     RegisterScreen.kayitIstegiTesti = null;
     YasalOnayService.rpcTesti = null;
     YasalOnayKapisiScreen.uyariKaydiTesti = null;
@@ -445,126 +441,102 @@ void main() {
       await tester.pump(const Duration(seconds: 5));
     }
 
-    for (final tekKutu in [true, false]) {
-      final duzen = tekKutu ? 'tek kutu' : 'iki kutu';
-      testWidgets(
-          '$duzen: beş metin listelenir; hiçbiri okunmadan kutu '
-          'işaretlenmez, "Kayıt ol" eksik metinleri adıyla söyler',
-          (tester) async {
-        if (tekKutu) {
-          RemoteConfigService.testAcik = {'zorunlu_okuma', 'tek_onay_kutusu'};
-        }
-        final istekler = istekleriYakala();
-        await kur(tester, const RegisterScreen(), boyut: const Size(390, 2400));
-        await formuDoldur(tester);
+    testWidgets(
+        'beş metin listelenir; hiçbiri okunmadan kutu '
+        'işaretlenmez, "Kayıt ol" eksik metinleri adıyla söyler',
+        (tester) async {
+      final istekler = istekleriYakala();
+      await kur(tester, const RegisterScreen(), boyut: const Size(390, 2400));
+      await formuDoldur(tester);
 
-        // Kullanıcı adı alanı aynen yerinde (kullanıcı kuralı).
-        expect(alan(l.kullaniciAdiEtiket), findsOneWidget);
-        expect(find.text(l.zorunluOkumaBelgelerBaslik), findsOneWidget);
-        final adlar = find
-            .byType(YasalBelgeSatiri)
-            .evaluate()
-            .map((e) => (e.widget as YasalBelgeSatiri).adaylar.first)
-            .toList();
-        expect(adlar, [
-          l.yasalBelgeKosullar,
-          l.yasalBelgeGizlilik,
-          l.yasalBelgeKvkk,
-          l.yasalBelgeAcikRiza,
-          l.yasalBelgeYatirimUyarisi,
-        ]);
-        // Kutu cümlesi görünür ama kilitli ve nedenini söylüyor.
-        expect(find.text(l.zorunluOkumaKutuKilitli),
-            findsNWidgets(tekKutu ? 1 : 2));
-        final cumle = tekKutu
-            ? find.text(YasalMetinKatalogu.tekKutuCumlesi(l),
-                findRichText: true)
-            : find.text(KayitKutuMetni.rizaCumle);
-        await tester.ensureVisible(cumle);
-        await tester.tap(cumle, warnIfMissed: false);
-        await tester.pump();
-        expect(find.byIcon(Icons.check_rounded), findsNothing);
+      // Kullanıcı adı alanı aynen yerinde (kullanıcı kuralı).
+      expect(alan(l.kullaniciAdiEtiket), findsOneWidget);
+      expect(find.text(l.zorunluOkumaBelgelerBaslik), findsOneWidget);
+      final adlar = find
+          .byType(YasalBelgeSatiri)
+          .evaluate()
+          .map((e) => (e.widget as YasalBelgeSatiri).adaylar.first)
+          .toList();
+      expect(adlar, [
+        l.yasalBelgeKosullar,
+        l.yasalBelgeGizlilik,
+        l.yasalBelgeKvkk,
+        l.yasalBelgeAcikRiza,
+        l.yasalBelgeYatirimUyarisi,
+      ]);
+      // Kutu cümlesi görünür ama kilitli ve nedenini söylüyor.
+      expect(find.text(l.zorunluOkumaKutuKilitli), findsOneWidget);
+      final cumle =
+          find.text(YasalMetinKatalogu.tekKutuCumlesi(l), findRichText: true);
+      await tester.ensureVisible(cumle);
+      await tester.tap(cumle, warnIfMissed: false);
+      await tester.pump();
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
 
-        await kayitaBas(tester);
-        expect(istekler, isEmpty);
-        final hata = l.zorunluOkumaEksik([
-          l.yasalBelgeKosullar,
-          l.yasalBelgeGizlilik,
-          l.yasalBelgeKvkk,
-          l.yasalBelgeAcikRiza,
-          l.yasalBelgeYatirimUyarisi,
-        ].join(', '));
-        expect(find.text(hata), findsWidgets);
-        await kapat(tester);
-      });
+      await kayitaBas(tester);
+      expect(istekler, isEmpty);
+      final hata = l.zorunluOkumaEksik([
+        l.yasalBelgeKosullar,
+        l.yasalBelgeGizlilik,
+        l.yasalBelgeKvkk,
+        l.yasalBelgeAcikRiza,
+        l.yasalBelgeYatirimUyarisi,
+      ].join(', '));
+      expect(find.text(hata), findsWidgets);
+      await kapat(tester);
+    });
 
-      testWidgets(
-          '$duzen: hepsi sonuna kadar okunup onaylanınca kutu açılır, '
-          'kayıt gider; onay kaydı tam uyarıyı ve okuma işaretini taşır',
-          (tester) async {
-        if (tekKutu) {
-          RemoteConfigService.testAcik = {'zorunlu_okuma', 'tek_onay_kutusu'};
-        }
-        final istekler = istekleriYakala();
-        await kur(tester, const RegisterScreen(), boyut: const Size(390, 2400));
-        await formuDoldur(tester);
-        await hepsiniOku(tester);
-        // Her satırda "Sürüm x · Onaylandı" + yeşil onay işareti.
-        expect(find.textContaining(l.zorunluOkumaOnaylandi), findsNWidgets(5));
-        expect(find.text(l.zorunluOkumaKutuKilitli), findsNothing);
+    testWidgets(
+        'hepsi sonuna kadar okunup onaylanınca kutu açılır, '
+        'kayıt gider; onay kaydı tam uyarıyı ve okuma işaretini taşır',
+        (tester) async {
+      final istekler = istekleriYakala();
+      await kur(tester, const RegisterScreen(), boyut: const Size(390, 2400));
+      await formuDoldur(tester);
+      await hepsiniOku(tester);
+      // Her satırda "Sürüm x · Onaylandı" + yeşil onay işareti.
+      expect(find.textContaining(l.zorunluOkumaOnaylandi), findsNWidgets(5));
+      expect(find.text(l.zorunluOkumaKutuKilitli), findsNothing);
 
-        if (tekKutu) {
-          // Kutunun kendisine dokun (cümlede belge bağlantıları var).
-          final kare = find.descendant(
-              of: find.byType(YasalOnayKutusu),
-              matching: find.byType(AnimatedContainer));
-          await tester.ensureVisible(kare);
-          await tester.tap(kare);
-        } else {
-          for (final c in [
-            KayitKutuMetni.kosulCumle,
-            KayitKutuMetni.rizaCumle
-          ]) {
-            await tester.ensureVisible(find.text(c));
-            await tester.tap(find.text(c));
-          }
-        }
-        await tester.pump();
-        expect(
-            find.byIcon(Icons.check_rounded), findsNWidgets(tekKutu ? 1 : 2));
-        await gercekBekle(tester); // OTP ekranı da pushGuarded ile açılır
-        await kayitaBas(tester);
-        await tester.pumpAndSettle();
-        expect(istekler, ['deneme@ornek.com']);
+      // Kutunun kendisine dokun (cümlede belge bağlantıları var).
+      final kare = find.descendant(
+          of: find.byType(YasalOnayKutusu),
+          matching: find.byType(AnimatedContainer));
+      await tester.ensureVisible(kare);
+      await tester.tap(kare);
+      await tester.pump();
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      await gercekBekle(tester); // OTP ekranı da pushGuarded ile açılır
+      await kayitaBas(tester);
+      await tester.pumpAndSettle();
+      expect(istekler, ['deneme@ornek.com']);
 
-        final baglam = tester
-            .widget<OtpVerificationScreen>(find.byType(OtpVerificationScreen))
-            .kayitOnayi!;
-        expect(baglam.yatirimUyarisiOnaylandi, isTrue);
-        final ogeler = {
-          for (final o in baglam.ogeler()) o['tur'] as String: o,
-        };
-        final uyari = ogeler[YasalTur.yatirimUyarisi]!;
-        expect(uyari['hash'], disclaimerHash,
-            reason: 'gösterilen TAM metnin hash\'i');
-        expect(uyari['degiskenler'],
-            {'belge_acildi': true, 'sonuna_kadar_okundu': true});
-        for (final b in YasalBelge.values) {
-          expect((ogeler[b.tur]!['degiskenler'] as Map)['sonuna_kadar_okundu'],
-              isTrue,
-              reason: b.tur);
-          expect((ogeler[b.tur]!['degiskenler'] as Map)['belge_acildi'], isTrue,
-              reason: b.tur);
-        }
-        await kapat(tester);
-      });
-    }
+      final baglam = tester
+          .widget<OtpVerificationScreen>(find.byType(OtpVerificationScreen))
+          .kayitOnayi!;
+      expect(baglam.yatirimUyarisiOnaylandi, isTrue);
+      final ogeler = {
+        for (final o in baglam.ogeler()) o['tur'] as String: o,
+      };
+      final uyari = ogeler[YasalTur.yatirimUyarisi]!;
+      expect(uyari['hash'], disclaimerHash,
+          reason: 'gösterilen TAM metnin hash\'i');
+      expect(uyari['degiskenler'],
+          {'belge_acildi': true, 'sonuna_kadar_okundu': true});
+      for (final b in YasalBelge.values) {
+        expect((ogeler[b.tur]!['degiskenler'] as Map)['sonuna_kadar_okundu'],
+            isTrue,
+            reason: b.tur);
+        expect((ogeler[b.tur]!['degiskenler'] as Map)['belge_acildi'], isTrue,
+            reason: b.tur);
+      }
+      await kapat(tester);
+    });
 
-    test(
-        'bayrak kapalı: kayıt bağlamı eskisi gibi — uyarı yok, okuma '
-        'işareti yok', () {
+    // Kayıt ekranı her zaman okutur; bağlam başka yoldan (okumasız)
+    // kurulursa uyarı ve okuma işareti GİRMEZ — OTP koşulu buna dayanır.
+    test('okunmamış bağlam: uyarı yok, okuma işareti yok', () {
       const b = KayitOnayBaglami(
-        tekKutu: true,
         dil: 'tr',
         kutuUlkesi: 'Almanya (AB)',
         belgeDegiskenleri: {},
@@ -607,11 +579,6 @@ void main() {
         uyariKayitlari.add(userId);
         return true;
       };
-      RemoteConfigService.testAcik = {
-        'yasal_onay_kaydi',
-        'yasal_kapi_en_yeni',
-        'zorunlu_okuma',
-      };
     });
 
     testWidgets(
@@ -638,8 +605,9 @@ void main() {
       expect(find.text(disclaimerText), findsNothing);
 
       // Kutu kilitli.
-      await tester.ensureVisible(find.text(KayitKutuMetni.kosulCumle));
-      await tester.tap(find.text(KayitKutuMetni.kosulCumle));
+      final cumle = find.text(YasalMetinKatalogu.tekKutuCumlesi(l));
+      await tester.ensureVisible(cumle);
+      await tester.tap(cumle);
       await tester.pump();
       expect(find.byIcon(Icons.check_rounded), findsNothing);
 
@@ -653,11 +621,9 @@ void main() {
       expect(find.text(l.yasalKapiKutuGerekli), findsOneWidget);
       expect(dugme().onPressed, isNull);
 
-      for (final c in [KayitKutuMetni.kosulCumle, KayitKutuMetni.rizaCumle]) {
-        await tester.ensureVisible(find.text(c));
-        await tester.tap(find.text(c));
-        await tester.pump();
-      }
+      await tester.ensureVisible(cumle);
+      await tester.tap(cumle);
+      await tester.pump();
       expect(dugme().onPressed, isNotNull);
       await tester.ensureVisible(find.byType(SandikAsyncButton));
       await tester.tap(find.byType(SandikAsyncButton));
@@ -754,7 +720,6 @@ void main() {
               '${dil.languageCode} ${boyut.width.toInt()} dp, yazı x$olcek';
 
           testWidgets('kayıt ekranı — $ad', (tester) async {
-            RemoteConfigService.testAcik = {'zorunlu_okuma', 'tek_onay_kutusu'};
             await kur(tester, const RegisterScreen(),
                 boyut: boyut, olcek: olcek, dil: dil);
             await tester.pump(const Duration(seconds: 1));
@@ -785,12 +750,7 @@ void main() {
             expect(tester.takeException(), isNull);
           });
 
-          testWidgets('kapı (uyarı + kutular) — $ad', (tester) async {
-            RemoteConfigService.testAcik = {
-              'yasal_onay_kaydi',
-              'yasal_kapi_en_yeni',
-              'zorunlu_okuma',
-            };
+          testWidgets('kapı (uyarı + kutu) — $ad', (tester) async {
             await kur(
               tester,
               YasalOnayKapisiScreen(
@@ -803,8 +763,11 @@ void main() {
               olcek: olcek,
               dil: dil,
             );
+            final ll = dil.languageCode == 'en'
+                ? AppLocalizationsEn()
+                : AppLocalizationsTr();
             await tester.scrollUntilVisible(
-                find.text(KayitKutuMetni.rizaCumle), 200,
+                find.text(YasalMetinKatalogu.tekKutuCumlesi(ll)), 200,
                 scrollable: find.byType(Scrollable).first);
             await tester.pump();
             expect(tester.takeException(), isNull);

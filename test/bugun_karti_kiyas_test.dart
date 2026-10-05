@@ -12,7 +12,6 @@ import 'package:portfoy_takip/services/bugun_yukleyici.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/utils/tr_format.dart' show dayKey;
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
 import 'package:portfoy_takip/widgets/sigan_metin.dart';
@@ -75,12 +74,9 @@ void main() {
     BugunKarti.anliklariTemizle();
     IntradaySeriesCache.instance.clear();
     BugunYukleyici.reelTest = null;
-    RemoteConfigService.testAcik = {};
   });
 
-  Future<void> kur(WidgetTester tester,
-      {required double genislik, required bool kiyas}) async {
-    RemoteConfigService.testAcik = kiyas ? {'bugun_karti_kiyas'} : {};
+  Future<void> kur(WidgetTester tester, {required double genislik}) async {
     tester.view.physicalSize = Size(genislik * 3, 1000 * 3);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
@@ -127,7 +123,7 @@ void main() {
   for (final genislik in [390.0, 320.0]) {
     testWidgets('H ${genislik.toInt()}pt: dört parça, taşma yok',
         (tester) async {
-      await kur(tester, genislik: genislik, kiyas: true);
+      await kur(tester, genislik: genislik);
       expect(tester.takeException(), isNull);
       // Enflasyon kıyası: iki çubuğun etiketleri.
       expect(find.text('Getirin'), findsOneWidget);
@@ -143,13 +139,4 @@ void main() {
       expect(sigan('Son 7 gün'), findsNothing);
     });
   }
-
-  testWidgets('bayrak KAPALI: D düzeni, en çok oynayan yok', (tester) async {
-    await kur(tester, genislik: 390, kiyas: false);
-    expect(tester.takeException(), isNull);
-    expect(sigan('En çok oynayan'), findsNothing);
-    expect(find.text('Getirin'), findsNothing);
-    // D'nin takvim yaprağı başlığı.
-    expect(sigan('BUGÜN'), findsOneWidget);
-  });
 }

@@ -378,7 +378,6 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       children: [
                         if (activePartners.isNotEmpty)
                           OrtakSecici(
-                            eski: EskiOrtakSecici.hap,
                             partners: activePartners,
                             selectedId: _view,
                             onChanged: (v) => setState(() {

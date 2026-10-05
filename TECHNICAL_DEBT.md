@@ -5,7 +5,45 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+
+---
+
+## ✅ KAPANDI — Sadeleştirme bayraklarının eski (kapalı) yolları (2026-10-05, `c0230d7`)
+
+**Ne:** 2026-10-04'te AÇIK doğan 15 Remote Config bayrağının her biri eski
+ekranı/kabuğu kodda tutuyordu ("bayrak kalıcı açılınca eski kabuk silinir"
+notu `EskiOrtakSecici`'de duruyordu; aynı borç kayıt, kapı, Bugün kartı,
+Yarış, grafik tipi ve Ayarlar'da da vardı). Testler bayrakları
+`flutter_test_config`'teki `testKapali` listesiyle KAPALI koşuyor, açık dal
+`testAcik` ile ayrıca sınanıyordu — iki yolun da bakımı.
+
+**KAPANDI:** kullanıcı kararıyla ("önerilerin hepsini uygula") bayraklar,
+kapalı yollar, `testAcik`/`testKapali`/`RC_ACIK` kancaları ve yalnız eski
+yolun kullandığı ~40 l10n anahtarı silindi; `remote_config_defaults_test`
+anahtarların geri gelmesini kilitler. Bedel: bu özellikler Console'dan
+kapatılamaz (YAPMAN_GEREKENLER 2026-10-05).
+
+---
+
+## 🟡 AÇIK — Bugün kartı çizmediği satırları hesaplıyor ve "gösterildi" sayıyor (2026-10-05)
+
+**Ne:** Kart 2026-10-04'ten beri "H" düzeninde (hareket, enflasyon kıyası,
+en çok oynayan, hedef). `BugunService.hesapla` yine D düzeninin satırlarını
+üretiyor (son 7 gün, artıdaki varlık, aylık özet, yaklaşan olay) ve
+`_haftalikYukle` haftalık getiriyi ağdan çekiyor; `_gosterimiOlc` bu
+satırlar için de `today_row_shown` olayı yazıyor — ekranda olmadıkları hâlde.
+
+**Neden bırakıldı:** bayrak temizliğinin kuralı "davranış birebir" idi;
+hesap ve analitik bayraktan bağımsızdı, kaldırmak ölçüm serisini değiştirir.
+
+**Maliyet:** bir haftalık seri isteği + yanlış "gösterildi" sayıları
+(`today_row_shown` olayında `haftalik`/`aylik`/`yesil`/`olay_*` türleri
+kartta görünmediği hâlde sayılıyor).
+
+**Ne zaman:** analitik serisi değiştirilebilir olduğunda — hesabı H'nin
+satırlarına daralt (`BugunService.hesapla`), `_haftalikYukle`'yi kaldır,
+`_gosterimiOlc`'yi çizilen satırlarla sınırla.
 
 ---
 

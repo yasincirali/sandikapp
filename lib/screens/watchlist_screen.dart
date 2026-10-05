@@ -283,7 +283,6 @@ class _ChartCard extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 0, 10),
               child: OrtakSecici(
-                eski: EskiOrtakSecici.hap,
                 partners: partners,
                 selectedId: view,
                 onChanged: (v) =>
@@ -397,7 +396,7 @@ class _ChartCard extends ConsumerWidget {
     );
   }
 
-  /// Kıyas çizgisinin adı. `ModernTabSelector` ile AYNI sözleşme:
+  /// Kıyas çizgisinin adı. `OrtakSecici` ile AYNI sözleşme:
   /// `null` → Birlikte, `''` → Ben, uuid → o ortak.
   ///
   /// Ortağın adı seçicideki gibi yalnızca İLK ADI — tam ad grafiğin

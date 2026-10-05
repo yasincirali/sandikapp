@@ -91,17 +91,17 @@ class IlkVarlikVitrini extends ConsumerStatefulWidget {
 
   /// Vitrin açıkken toplam kartı (₺0) çizilmez mi?
   ///
-  /// Yalnız bayrak açık, kendi defteri boş ve ORTAK YOKKEN. Ortak varsa
+  /// Yalnız kendi defteri boş ve ORTAK YOKKEN (bayrak `ilk_varlik_kolay`
+  /// 2026-10-05'te kalktı; vitrin kalıcı). Ortak varsa
   /// kart kalır: görünüm çipi (Ben / ortak / Birlikte) ve kaydırarak geçiş
   /// o kartın üstünde; kartı gizlemek ortağın toplamına giden yolu da
   /// gizlerdi. Tur da aynı kuralı sorar (`onboarding_screen` 'hero' ve
   /// 'vitrin' adımları) — iki kopya olmasın diye burada.
   static bool toplamKartiYerine({
-    required bool bayrak,
     required bool bosKendi,
     required bool ortakVar,
   }) =>
-      bayrak && bosKendi && !ortakVar;
+      bosKendi && !ortakVar;
 
   @override
   ConsumerState<IlkVarlikVitrini> createState() => _IlkVarlikVitriniState();

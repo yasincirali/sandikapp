@@ -123,14 +123,10 @@ void main() {
   });
 
   test('kayıt öğeleri RPC sınırına (12) sığar ve katalogda var', () {
-    for (final (tek, zorunlu) in [
-      (false, false),
-      (true, false),
-      (false, true),
-      (true, true),
-    ]) {
+    // Kayıt yalnız tek kutulu (bayrak `tek_onay_kutusu` 2026-10-05'te
+    // kalktı; iki kutulu düzenin öğe kümesi artık kurulmaz).
+    for (final zorunlu in [false, true]) {
       final ogeler = KayitOnayBaglami(
-        tekKutu: tek,
         dil: 'en',
         kutuUlkesi: 'Almanya (AB)',
         belgeDegiskenleri: const {'SUPABASE_ULKE': 'Almanya (AB)'},
@@ -184,21 +180,19 @@ void main() {
     // tek işlemdir, tek bir yabancı tür bütün kaydı düşürür. Zorunlu okuma
     // (bayrak `zorunlu_okuma`) kayıtta yatırım uyarısını da gönderir → 0104.
     final kayitTurleri = {
-      for (final tek in [false, true])
-        for (final o in KayitOnayBaglami(
-          tekKutu: tek,
-          dil: 'tr',
-          kutuUlkesi: 'x',
-          belgeDegiskenleri: const {},
-          kosulBelgesiAcildi: true,
-          rizaBelgesiAcildi: true,
-          sonunaKadarOkunanlar: {
-            for (final b in YasalBelge.values) b.tur,
-            YasalTur.yatirimUyarisi,
-          },
-          yatirimUyarisiOnaylandi: true,
-        ).ogeler())
-          o['tur'] as String,
+      for (final o in KayitOnayBaglami(
+        dil: 'tr',
+        kutuUlkesi: 'x',
+        belgeDegiskenleri: const {},
+        kosulBelgesiAcildi: true,
+        rizaBelgesiAcildi: true,
+        sonunaKadarOkunanlar: {
+          for (final b in YasalBelge.values) b.tur,
+          YasalTur.yatirimUyarisi,
+        },
+        yatirimUyarisiOnaylandi: true,
+      ).ogeler())
+        o['tur'] as String,
     };
     expect(kayitTurleri, contains(YasalTur.yatirimUyarisi));
     for (final t in kayitTurleri) {
@@ -206,15 +200,14 @@ void main() {
           reason: '$dosya: kayit kanalı $t türünü yazamıyor');
     }
     final kapiTurleri = {
-      for (final tek in [false, true])
-        for (final o in YasalOnayService.kapiOgeleri(
-          durum: YasalKapiDurumu.tamam,
-          belgeDegiskenleri: const {},
-          acilanBelgeler: const {},
-          kutu: KapiKutuBaglami(tekKutu: tek, dil: 'tr', kutuUlkesi: 'x'),
-          yatirimUyarisiDahil: true,
-        ))
-          o['tur'] as String,
+      for (final o in YasalOnayService.kapiOgeleri(
+        durum: YasalKapiDurumu.tamam,
+        belgeDegiskenleri: const {},
+        acilanBelgeler: const {},
+        kutu: const KapiKutuBaglami(dil: 'tr', kutuUlkesi: 'x'),
+        yatirimUyarisiDahil: true,
+      ))
+        o['tur'] as String,
     };
     for (final t in kapiTurleri) {
       expect(kol('yeniden_onay'), contains("'$t'"),

@@ -179,12 +179,8 @@ void main() {
   });
 
   group('#26 Bugün kartı haftalık satırı', () {
-    test('etiket tanımla uyuşur: kayan 7 gün', () {
-      expect(trMetni('todayWeekLabel'), 'Son 7 gün');
-      expect(lookupAppLocalizations(const Locale('en')).todayWeekLabel,
-          'Last 7 days');
-    });
-
+    // Kartta "Son 7 gün" kutusu D düzeniyle 2026-10-05'te kalktı
+    // (`todayWeekLabel` silindi); hesap hâlâ yapılır (gösterim ölçümü).
     test('hesap Özet 1H ile aynı pencere (kayan, ucu canlı)', () {
       final src = ekranKaynagiSync('lib/services/bugun_yukleyici.dart');
       final i = src.indexOf('static Future<double?> haftalik(');

@@ -332,10 +332,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get levelAdvanced => 'Advanced';
 
   @override
-  String get levelBeginnerDesc =>
-      'Simple view: technical signals, percentile, health and annual return cards are hidden.';
-
-  @override
   String get levelIntermediateDesc =>
       'Today\'s view: technical signals, percentile, health card and annual return since your first buy.';
 
@@ -345,13 +341,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noAssetsYet => 'No assets added yet';
-
-  @override
-  String get noAssetsYetHint =>
-      'Start building your sandık by adding your first asset.';
-
-  @override
-  String get addFirstAsset => 'Add Your First Asset';
 
   @override
   String get addAssetTitle => 'Add Asset';
@@ -367,11 +356,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get save => 'Save';
-
-  @override
-  String posPeriodPriceMove(String pct) {
-    return 'price $pct';
-  }
 
   @override
   String get assetType => 'Asset Type';
@@ -478,13 +462,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerPasswordsMismatch => 'Passwords do not match.';
-
-  @override
-  String get termsMustAccept => 'You must accept the legal terms.';
-
-  @override
-  String get consentMustAccept =>
-      'You must give explicit consent to the cross-border data transfer.';
 
   @override
   String get refreshPrices => 'Refresh prices';
@@ -997,9 +974,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String sinceCpiWindowBodyLate(String month) {
     return 'The figure above includes this stretch; this card updates once $month CPI is loaded.';
   }
-
-  @override
-  String get demoTryButton => 'Take a look first';
 
   @override
   String get demoBannerTitle => 'Sample portfolio';
@@ -1540,12 +1514,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabSummary => 'Summary';
 
   @override
-  String get modeReal => 'Actual';
-
-  @override
-  String get modeSim => 'Simulation';
-
-  @override
   String modeInfoSemantics(String mode) {
     return 'About $mode mode';
   }
@@ -1613,15 +1581,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get simModeTitle => 'Simulation Mode';
 
   @override
-  String get realModeTitle => 'Actual Mode';
-
-  @override
   String get simModeBody =>
       'How would the chart look if you had held today\'s net portfolio for the whole period? It ignores past buy/sell decisions and shows only the price change of your current position.';
-
-  @override
-  String get realModeBody =>
-      'Each day\'s value is computed from the net quantity you held that day. Tap a point to see that day\'s portfolio value and any buy / sell amounts, so you can see exactly why the chart rose or fell.';
 
   @override
   String get portfolioPerformance => 'Portfolio Performance';
@@ -3799,9 +3760,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayRealHint => 'Yearly return minus CPI';
 
   @override
-  String get todayWeekLabel => 'Last 7 days';
-
-  @override
   String get todayWeekHint => 'Market effect on your portfolio · summary ready';
 
   @override
@@ -3832,36 +3790,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get todayGreenLabel => 'Holdings in the green';
-
-  @override
-  String get todayGreenHint => 'Above their buy price';
-
-  @override
-  String todayGreenValue(int green, int total) {
-    return '$green / $total';
-  }
-
-  @override
   String get todayOpenAction => 'Open';
-
-  @override
-  String todayEventCpiShort(String date) {
-    return 'CPI release · $date';
-  }
-
-  @override
-  String todayEventHolidayShort(String date) {
-    return 'Market holiday · $date';
-  }
-
-  @override
-  String get todayEventMonthEndShort => 'Month end · monthly summary';
-
-  @override
-  String todayDaysShort(int n) {
-    return '$n days';
-  }
 
   @override
   String get todayTitle => 'Today';
@@ -3917,12 +3846,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get todayWordToday => 'today';
-
-  @override
-  String get todayWordTomorrow => 'tomorrow';
-
-  @override
   String todayInDays(int n) {
     return 'in $n days';
   }
@@ -3963,61 +3886,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayMarketOnlyShort => 'price effect';
 
   @override
-  String get todayGreenShort => 'In profit';
-
-  @override
-  String get todayWeekReadyShort => 'Summary ready';
-
-  @override
   String get todayGoalNewAction => 'Pick a new one';
-
-  @override
-  String get todayMonthlyTileSubShort => 'Last month\'s report';
-
-  @override
-  String todayEventCpiTiny(String date) {
-    return 'CPI · $date';
-  }
-
-  @override
-  String todayEventHolidayTiny(String date) {
-    return 'Holiday · $date';
-  }
-
-  @override
-  String get todayEventMonthEndTiny => 'Month end';
 
   @override
   String get todayMoveLabel => 'Today\'s move';
 
   @override
   String get todayRealYearly => 'yearly';
-
-  @override
-  String todayYourReturn(String pct) {
-    return 'Your return $pct';
-  }
-
-  @override
-  String todayCpiShort(String pct) {
-    return 'CPI $pct';
-  }
-
-  @override
-  String todayWeekUp(String pct) {
-    return '$pct up';
-  }
-
-  @override
-  String todayWeekDown(String pct) {
-    return '$pct down';
-  }
-
-  @override
-  String get todayWeekHintShort => 'Market\'s effect on your portfolio';
-
-  @override
-  String get todayWeekReady => 'Weekly summary ready';
 
   @override
   String get todayGoalSetAction => 'Set a goal';
@@ -4034,14 +3909,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String todayGoalLeftShort(String left) {
     return '$left to go';
   }
-
-  @override
-  String todayMonthlyTile(String month) {
-    return '$month summary';
-  }
-
-  @override
-  String get todayMonthlyTileSub => 'Return, inflation, best holding';
 
   @override
   String get goalTitle => 'Portfolio goal';
@@ -4079,10 +3946,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String raceRunningCount(int count) {
     return '$count racing today';
   }
-
-  @override
-  String get emptyPasteHint =>
-      'Choose or paste your broker statement (PDF, Excel or CSV); each row becomes a holding.';
 
   @override
   String get marketDollar => 'USD';
@@ -4577,11 +4440,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String duelAhead(String ad, String adIyelik, String fark) {
     return '$fark pts ahead of $ad';
-  }
-
-  @override
-  String duelBehind(String ad, String adIyelik, String fark) {
-    return '$fark pts behind $ad';
   }
 
   @override
@@ -5751,16 +5609,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get yasalBelgeAcildi => 'Read';
-
-  @override
   String get yasalBelgelerTurkce => 'The documents are in Turkish.';
 
   @override
   String get yasalKapiTaahhutBaslik => 'Your consents';
-
-  @override
-  String get yasalKapiYatirimUyarisi => 'Investment notice';
 
   @override
   String get yasalKapiOnayla => 'I have read and accept';

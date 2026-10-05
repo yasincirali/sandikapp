@@ -5,13 +5,11 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
-import '../services/remote_config_service.dart';
 import '../services/yasal_onay_service.dart';
 import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/polling.dart';
-import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/zirve_ayna_kiyas.dart';
@@ -23,8 +21,11 @@ import '../widgets/zirve_karti.dart';
 import '../widgets/zirve_riza_karti.dart';
 import '../widgets/zorunlu_okuma.dart';
 
-/// Zirvedeki Portföyler — tam ekran (kullanıcı seçimi 2026-09-29, "A ·
-/// Cetvel önde").
+/// Zirvedeki Portföyler (kullanıcı seçimi 2026-09-29, "A · Cetvel önde").
+///
+/// 2026-10-05: tam ekran kabuğu (`ZirvePortfoylerScreen`) bayrak
+/// `siralama_tek_sayfa` ile birlikte silindi; gövde ([ZirveGovdesi]) yalnız
+/// Sıralama › Zirvedekiler sekmesinde çizilir. Aşağıdaki not gövdeyi anlatır.
 ///
 /// Üstte dönem seçici (1H · 1A · 1Y), altındaki her şey o döneme göre
 /// yeniden yazılır: cümle, iki büyük sayı, cetveldeki işaretler, seçili
@@ -49,38 +50,11 @@ import '../widgets/zorunlu_okuma.dart';
 /// ## Dil
 /// Sayı yalnız başına konuşmaz; cümleler `ZirveKiyas`'ta. Dağılım farkı
 /// renklendirilmez (iyi/kötü değil); renk yalnızca getiride.
-class ZirvePortfoylerScreen extends StatefulWidget {
-  const ZirvePortfoylerScreen({super.key, this.baslangic = ZirveDonem.ay});
-
-  /// Açılış dönemi — kart Performans'ın dönemini eşleyip geçirir.
-  final ZirveDonem baslangic;
-
-  @override
-  State<ZirvePortfoylerScreen> createState() => _ZirvePortfoylerScreenState();
-}
-
-class _ZirvePortfoylerScreenState extends State<ZirvePortfoylerScreen> {
-  late ZirveDonem _donem = widget.baslangic;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(title: 'Zirvedeki Portföyler'),
-      body: SafeArea(
-        child: ZirveGovdesi(
-          donem: _donem,
-          onDonem: (d) => setState(() => _donem = d),
-        ),
-      ),
-    );
-  }
-}
-
-/// Zirve ekranının gövdesi — rıza kartı ya da cetvel.
 ///
-/// `ZirvePortfoylerScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04):
-/// tek "Sıralama" sayfasının "Herkes" sekmesi AYNI gövdeyi çizer. Dönem
+/// ## Gövde — rıza kartı ya da cetvel
+/// `ZirvePortfoylerScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04; o
+/// kabuk 2026-10-05'te silindi): tek "Sıralama" sayfasının "Herkes" sekmesi
+/// bu gövdeyi çizer. Dönem
 /// dışarıdan yönetilir ki sayfa iki sekmede tek dönem tutsun. Açık rıza
 /// akışı (0091) gövdede kalır: hangi kapıdan gelinirse gelinsin rızasız
 /// liste istenmez, "Şimdi değil" eski davranışla sayfayı kapatır.
@@ -230,7 +204,11 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
 
   /// Rıza verildi → liste ve "Sen" yeniden çekilir. Hata kartta kalır
   /// (`SandikAsyncButton` yeniden basılabilir), durum değişmemiş sayılır.
-  Future<void> _katil({bool sonunaKadarOkundu = false}) async {
+  ///
+  /// Rıza her zaman zorunlu okumadan gelir ([ZirveRizaOkumaGovdesi]:
+  /// "Katılıyorum" metnin sonuna kaydırılmadan açılmaz) → kayıt
+  /// `sonuna_kadar_okundu` taşır. Bayrak `zorunlu_okuma` 2026-10-05'te kalktı.
+  Future<void> _katil() async {
     // Onay kaydının dili — `await`'ten önce (context sonra geçersiz olabilir).
     final dil = Localizations.localeOf(context).toString();
     try {
@@ -239,12 +217,12 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       if (mounted) showAppError(context, e);
       return;
     }
-    // Rıza kartının metni yasal onay kaydına (0102, bayrak
-    // `yasal_onay_kaydi`). `zirve_rizalari` asıl kapı; bu ispat kaydı —
+    // Rıza kartının metni yasal onay kaydına (0102). `zirve_rizalari` asıl
+    // kapı; bu ispat kaydı —
     // beklenmez, fırlatmaz. Geri çekme sunucuda aynı işlemde damgalanır.
     CrashReporter.arkaPlan(
         YasalOnayService.instance.zirveRizasiniKaydet(
-            locale: dil, sonunaKadarOkundu: sonunaKadarOkundu),
+            locale: dil, sonunaKadarOkundu: true),
         reason: 'YasalOnayService.zirve');
     if (!mounted) return;
     setState(() {
@@ -334,21 +312,10 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
           );
         }
         if (!riza) {
-          if (RemoteConfigService.instance.zorunluOkuma) {
-            return ZirveRizaOkumaGovdesi(
-              hp: hp,
-              onKatil: () => _katil(sonunaKadarOkundu: true),
-              onSimdiDegil: () => Navigator.of(context).maybePop(),
-            );
-          }
-          return ListView(
-            padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
-            children: [
-              ZirveRizaKarti(
-                onKatil: _katil,
-                onSimdiDegil: () => Navigator.of(context).maybePop(),
-              ),
-            ],
+          return ZirveRizaOkumaGovdesi(
+            hp: hp,
+            onKatil: _katil,
+            onSimdiDegil: () => Navigator.of(context).maybePop(),
           );
         }
         return _liste(hp);
@@ -367,12 +334,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
             return ListView(
               padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
               children: [
-                ZirveDonemSecici(
-                  secili: _donem,
-                  onSec: _donemSec,
-                  // Sıralama › Ortaklarım ile aynı seçici kalsın (arena).
-                  kayan: RemoteConfigService.instance.yarisDuelloArena,
-                ),
+                ZirveDonemSecici(secili: _donem, onSec: _donemSec),
                 const SizedBox(height: SandikSpace.md),
                 if (yukleniyor)
                   const _Iskelet()
@@ -1240,7 +1202,8 @@ class _TurSatiri extends StatelessWidget {
   }
 }
 
-/// Zorunlu okumada rıza kartı (bayrak `zorunlu_okuma`, 2026-10-04).
+/// Zorunlu okumada rıza kartı (2026-10-04; bayrak `zorunlu_okuma`
+/// 2026-10-05'te kalktı — rıza yalnız böyle sorulur).
 ///
 /// Kart rızanın TAM metnidir (katalogdaki `zirve_riza` gövdesi kartın
 /// sabitlerinden kurulur) ve "Katılıyorum" metnin son satırıdır — onay

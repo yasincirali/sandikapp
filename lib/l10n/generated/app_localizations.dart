@@ -704,12 +704,6 @@ abstract class AppLocalizations {
   /// **'İleri'**
   String get levelAdvanced;
 
-  /// No description provided for @levelBeginnerDesc.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.'**
-  String get levelBeginnerDesc;
-
   /// No description provided for @levelIntermediateDesc.
   ///
   /// In tr, this message translates to:
@@ -727,18 +721,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Henüz varlık eklenmemiş'**
   String get noAssetsYet;
-
-  /// No description provided for @noAssetsYetHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'İlk varlığını ekleyerek sandığını oluşturmaya başla.'**
-  String get noAssetsYetHint;
-
-  /// No description provided for @addFirstAsset.
-  ///
-  /// In tr, this message translates to:
-  /// **'İlk Varlığını Ekle'**
-  String get addFirstAsset;
 
   /// No description provided for @addAssetTitle.
   ///
@@ -769,12 +751,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kaydet'**
   String get save;
-
-  /// Varlık ekranı pozisyon kartında dönem kâr/zarar satırının yüzdesi: tutar sahibin piyasa etkisi, yüzde ise 1 birimin (ürünün) fiyat hareketi. Etiket iki sayının farklı tabanı olduğunu söyler.
-  ///
-  /// In tr, this message translates to:
-  /// **'fiyat {pct}'**
-  String posPeriodPriceMove(String pct);
 
   /// No description provided for @assetType.
   ///
@@ -973,18 +949,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Şifreler eşleşmiyor.'**
   String get registerPasswordsMismatch;
-
-  /// No description provided for @termsMustAccept.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yasal koşulları kabul etmelisin.'**
-  String get termsMustAccept;
-
-  /// No description provided for @consentMustAccept.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yurt dışı veri aktarımına açık rıza vermelisin.'**
-  String get consentMustAccept;
 
   /// No description provided for @refreshPrices.
   ///
@@ -1795,12 +1759,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Üstteki rakam bu süreyi içeriyor; {month} TÜFE\'si yüklenince bu kart güncellenir.'**
   String sinceCpiWindowBodyLate(String month);
-
-  /// No description provided for @demoTryButton.
-  ///
-  /// In tr, this message translates to:
-  /// **'Önce bir göz at'**
-  String get demoTryButton;
 
   /// No description provided for @demoBannerTitle.
   ///
@@ -2786,18 +2744,6 @@ abstract class AppLocalizations {
   /// **'Özet'**
   String get tabSummary;
 
-  /// No description provided for @modeReal.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gerçek'**
-  String get modeReal;
-
-  /// No description provided for @modeSim.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bugünkü portföyle'**
-  String get modeSim;
-
   /// No description provided for @modeInfoSemantics.
   ///
   /// In tr, this message translates to:
@@ -2906,23 +2852,11 @@ abstract class AppLocalizations {
   /// **'Bugünkü portföyle'**
   String get simModeTitle;
 
-  /// No description provided for @realModeTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Gerçek Mod'**
-  String get realModeTitle;
-
   /// No description provided for @simModeBody.
   ///
   /// In tr, this message translates to:
   /// **'Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.'**
   String get simModeBody;
-
-  /// No description provided for @realModeBody.
-  ///
-  /// In tr, this message translates to:
-  /// **'Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür. Böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.'**
-  String get realModeBody;
 
   /// No description provided for @portfolioPerformance.
   ///
@@ -6362,12 +6296,6 @@ abstract class AppLocalizations {
   /// **'Yıllık getirin ile TÜFE farkı'**
   String get todayRealHint;
 
-  /// No description provided for @todayWeekLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son 7 gün'**
-  String get todayWeekLabel;
-
   /// No description provided for @todayWeekHint.
   ///
   /// In tr, this message translates to:
@@ -6416,53 +6344,11 @@ abstract class AppLocalizations {
   /// **'Hedefin {goal} · yenisini seç'**
   String todayGoalDoneHint(String goal);
 
-  /// No description provided for @todayGreenLabel.
-  ///
-  /// In tr, this message translates to:
-  /// **'Artıdaki varlık'**
-  String get todayGreenLabel;
-
-  /// No description provided for @todayGreenHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Alış fiyatının üstündekiler'**
-  String get todayGreenHint;
-
-  /// No description provided for @todayGreenValue.
-  ///
-  /// In tr, this message translates to:
-  /// **'{green} / {total}'**
-  String todayGreenValue(int green, int total);
-
   /// No description provided for @todayOpenAction.
   ///
   /// In tr, this message translates to:
   /// **'Aç'**
   String get todayOpenAction;
-
-  /// No description provided for @todayEventCpiShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜİK enflasyonu · {date}'**
-  String todayEventCpiShort(String date);
-
-  /// No description provided for @todayEventHolidayShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Borsa kapalı · {date}'**
-  String todayEventHolidayShort(String date);
-
-  /// No description provided for @todayEventMonthEndShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ay sonu · aylık özet'**
-  String get todayEventMonthEndShort;
-
-  /// No description provided for @todayDaysShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} gün'**
-  String todayDaysShort(int n);
 
   /// No description provided for @todayTitle.
   ///
@@ -6536,18 +6422,6 @@ abstract class AppLocalizations {
   /// **'Hedefine ulaştın: {goal}'**
   String todayGoalReached(String goal);
 
-  /// No description provided for @todayWordToday.
-  ///
-  /// In tr, this message translates to:
-  /// **'bugün'**
-  String get todayWordToday;
-
-  /// No description provided for @todayWordTomorrow.
-  ///
-  /// In tr, this message translates to:
-  /// **'yarın'**
-  String get todayWordTomorrow;
-
   /// No description provided for @todayInDays.
   ///
   /// In tr, this message translates to:
@@ -6602,47 +6476,11 @@ abstract class AppLocalizations {
   /// **'fiyat etkisi'**
   String get todayMarketOnlyShort;
 
-  /// No description provided for @todayGreenShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Artıda'**
-  String get todayGreenShort;
-
-  /// No description provided for @todayWeekReadyShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Özet hazır'**
-  String get todayWeekReadyShort;
-
   /// No description provided for @todayGoalNewAction.
   ///
   /// In tr, this message translates to:
   /// **'Yenisini seç'**
   String get todayGoalNewAction;
-
-  /// No description provided for @todayMonthlyTileSubShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Geçen ayın karnesi'**
-  String get todayMonthlyTileSubShort;
-
-  /// No description provided for @todayEventCpiTiny.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜİK · {date}'**
-  String todayEventCpiTiny(String date);
-
-  /// No description provided for @todayEventHolidayTiny.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tatil · {date}'**
-  String todayEventHolidayTiny(String date);
-
-  /// No description provided for @todayEventMonthEndTiny.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ay sonu'**
-  String get todayEventMonthEndTiny;
 
   /// No description provided for @todayMoveLabel.
   ///
@@ -6655,42 +6493,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'yıllık'**
   String get todayRealYearly;
-
-  /// No description provided for @todayYourReturn.
-  ///
-  /// In tr, this message translates to:
-  /// **'Getirin {pct}'**
-  String todayYourReturn(String pct);
-
-  /// No description provided for @todayCpiShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜFE {pct}'**
-  String todayCpiShort(String pct);
-
-  /// No description provided for @todayWeekUp.
-  ///
-  /// In tr, this message translates to:
-  /// **'{pct} yükseliş'**
-  String todayWeekUp(String pct);
-
-  /// No description provided for @todayWeekDown.
-  ///
-  /// In tr, this message translates to:
-  /// **'{pct} düşüş'**
-  String todayWeekDown(String pct);
-
-  /// No description provided for @todayWeekHintShort.
-  ///
-  /// In tr, this message translates to:
-  /// **'Piyasanın portföyüne etkisi'**
-  String get todayWeekHintShort;
-
-  /// No description provided for @todayWeekReady.
-  ///
-  /// In tr, this message translates to:
-  /// **'Haftalık özet hazır'**
-  String get todayWeekReady;
 
   /// No description provided for @todayGoalSetAction.
   ///
@@ -6715,18 +6517,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{left} kaldı'**
   String todayGoalLeftShort(String left);
-
-  /// No description provided for @todayMonthlyTile.
-  ///
-  /// In tr, this message translates to:
-  /// **'{month} özeti'**
-  String todayMonthlyTile(String month);
-
-  /// No description provided for @todayMonthlyTileSub.
-  ///
-  /// In tr, this message translates to:
-  /// **'Getiri, enflasyon, en iyi varlık'**
-  String get todayMonthlyTileSub;
 
   /// No description provided for @goalTitle.
   ///
@@ -6787,12 +6577,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{count} kişi bugün yarışıyor'**
   String raceRunningCount(int count);
-
-  /// No description provided for @emptyPasteHint.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aracı kurum ekstreni (PDF, Excel ya da CSV) seç ya da yapıştır; her satır bir varlık olur.'**
-  String get emptyPasteHint;
 
   /// No description provided for @marketDollar.
   ///
@@ -7627,12 +7411,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{adIyelik} {fark} puan önündesin'**
   String duelAhead(String ad, String adIyelik, String fark);
-
-  /// No description provided for @duelBehind.
-  ///
-  /// In tr, this message translates to:
-  /// **'{adIyelik} {fark} puan gerisindesin'**
-  String duelBehind(String ad, String adIyelik, String fark);
 
   /// No description provided for @raceRankUp.
   ///
@@ -9567,12 +9345,6 @@ abstract class AppLocalizations {
   /// **'Sürüm {surum}'**
   String yasalBelgeSurum(String surum);
 
-  /// No description provided for @yasalBelgeAcildi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Okundu'**
-  String get yasalBelgeAcildi;
-
   /// No description provided for @yasalBelgelerTurkce.
   ///
   /// In tr, this message translates to:
@@ -9584,12 +9356,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Onayların'**
   String get yasalKapiTaahhutBaslik;
-
-  /// No description provided for @yasalKapiYatirimUyarisi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yatırım uyarısı'**
-  String get yasalKapiYatirimUyarisi;
 
   /// No description provided for @yasalKapiOnayla.
   ///

@@ -11,7 +11,7 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
-import 'package:portfoy_takip/widgets/kapsam_kisi_secici.dart';
+import 'package:portfoy_takip/widgets/ortak_secici.dart';
 
 /// Performans ekranı kontrol yığını — gerçek cihaz bildirimleri (2026-09-15).
 ///
@@ -177,7 +177,7 @@ void main() {
   group('kişi seçici — kontrol yığınının ilk satırı', () {
     testWidgets('ortak yokken çizilmez', (tester) async {
       await _pump(tester, partners: const []);
-      expect(find.byType(KapsamKisiSecici), findsNothing);
+      expect(find.byType(OrtakSecici), findsNothing);
     });
 
     testWidgets('tek ortak: üç segment, hepsi TEK dokunuş', (tester) async {
@@ -186,7 +186,7 @@ void main() {
         PartnerAccount(user: _ortak(), isActive: true),
       ]);
 
-      expect(find.byType(KapsamKisiSecici), findsOneWidget);
+      expect(find.byType(OrtakSecici), findsOneWidget);
       final ben = find.bySemanticsLabel('Kimin portföyü: Ben');
       final mehmet = find.bySemanticsLabel('Kimin portföyü: Mehmet');
       expect(ben, findsOneWidget);
@@ -234,7 +234,7 @@ void main() {
       await _pump(tester, partners: [
         PartnerAccount(user: _ortak(), isActive: false),
       ]);
-      expect(find.byType(KapsamKisiSecici), findsNothing,
+      expect(find.byType(OrtakSecici), findsNothing,
           reason: 'aktif ortak yok → satır çizilmez');
     });
   });

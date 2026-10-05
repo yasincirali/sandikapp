@@ -165,7 +165,7 @@ class _Segment extends StatelessWidget {
         excludeSemantics: semantik != null,
         // Dokunma eylemi AÇIKÇA: `excludeSemantics` alttaki düğmenin kendi
         // eylemini de siliyor, düğüm okunur ama TalkBack'te etkinleştirilemez
-        // (2026-09-29 emülatör testi #28 — aynı tuzak `KapsamKisiSecici`'de
+        // (2026-09-29 emülatör testi #28 — aynı tuzak `OrtakSecici`'de
         // düzeltilmişti). Etiket verilmeyince düğmenin eylemi zaten yerinde.
         onTap: semantik != null ? onTap : null,
         child: CupertinoButton(

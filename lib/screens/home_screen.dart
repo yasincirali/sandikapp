@@ -19,7 +19,6 @@ import '../services/notification_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
-import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
@@ -596,7 +595,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // duruyor ve doğrusu da bu.
     final isEmptyOwn = ownView && aktifLotlar(myState.assets).isEmpty;
     final toplamYerineVitrin = IlkVarlikVitrini.toplamKartiYerine(
-      bayrak: RemoteConfigService.instance.ilkVarlikKolay,
       bosKendi: isEmptyOwn,
       ortakVar: allActivePartners.isNotEmpty,
     );
@@ -672,20 +670,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // (Severity: High) çiğniyordu. Takip listesi bir VARLIK
                   // LİSTESİDİR; yeri Portföy sekmesinin gövdesi
                   // (`portfolio_screen.dart`), üst bar değil.
-                  // Teknik sinyal zili Başlangıç seviyesinde GİZLİ
-                  // (`seviyeGorunurlugu`): sinyal, gösterge okumayı bilen
-                  // kullanıcıya hitap eder. Varsayılan Orta olduğu için
-                  // seçim yapmayan hiç kimse bunu kaybetmez.
-                  //
-                  // `seviye_anketi` açıkken zil her seviyede görünür, yalnız
-                  // sinyal satırları Başlangıç'ta süzülür (`zilGorunurProvider`).
-                  if (ref.watch(zilGorunurProvider)) ...[
-                    TourAnchor(
-                      target: TourTarget.bildirimCani,
-                      child: _SignalBadgeButton(onTap: _scrollToSignals),
-                    ),
-                    const SizedBox(width: SandikSpace.sm),
-                  ],
+                  // Bildirim zili HER seviyede görünür (2026-10-04, sade
+                  // Başlangıç): zil yalnız sinyallerin değil fiyat alarmları
+                  // ve ortak davetlerinin de TEK gelen kutusu; Başlangıç'ta
+                  // yalnızca sinyal satırları süzülür
+                  // (`zilSinyalleriGosterProvider`). 2026-10-04'e kadar zil
+                  // Başlangıç'ta tümden gizliydi; bayrak `seviye_anketi`
+                  // (ve onu soran `zilGorunurProvider`) 2026-10-05'te kalktı.
+                  TourAnchor(
+                    target: TourTarget.bildirimCani,
+                    child: _SignalBadgeButton(onTap: _scrollToSignals),
+                  ),
+                  const SizedBox(width: SandikSpace.sm),
                   SandikLogoutButton(
                       onPressed: () => confirmAndLogout(context, ref)),
                 ],
@@ -1342,7 +1338,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Başlangıç'ta sinyal satırı yok; zil yine alarm ve genel bildirimlerin
-    // kutusu (`zilGorunurProvider`).
+    // kutusu (zil her seviyede görünür, bkz. üst çubuk).
     final signals = ref.watch(zilSinyalleriGosterProvider)
         ? (ref.watch(signalProvider).valueOrNull ?? const [])
         : const <SignalAlert>[];
@@ -1908,116 +1904,37 @@ class _SignalBadgeButton extends ConsumerWidget {
   }
 }
 
-/// Boş portföy çağrısı. ("Bu türde varlık yok" dili ana sayfadaki tür
-/// filtresiyle birlikte kalktı, 2026-09-28.)
+/// Boş portföy çağrısı: "Canlı fiyat vitrini" ([IlkVarlikVitrini]).
 ///
-/// Bayrak `ilk_varlik_kolay` açıkken yerinde "Canlı fiyat vitrini" durur
-/// ([IlkVarlikVitrini]; kumbara, "Henüz varlık eklenmemiş", çip satırı ve
-/// "Başka bir tür ekle" düğmesi kalkar — bilgiyi vitrin taşıyor). Bayrak
-/// KAPALIYKEN aşağıdaki eski ekran birebir.
+/// 2026-10-04 (sadeleştirme 2, bayrak `ilk_varlik_kolay`): kumbara,
+/// "Henüz varlık eklenmemiş", "İlk varlığını ekle" düğmesi ve "Ekstreden
+/// yapıştır" bağlantısı vitrine bıraktı — bilgiyi vitrin taşıyor, ekstre
+/// yolu vitrinin alt bağlantısında. Bayrak 2026-10-05'te kalktı; eski ekran
+/// silindi. ("Bu türde varlık yok" dili ana sayfadaki tür filtresiyle
+/// birlikte kalktı, 2026-09-28.)
 class _EmptyPortfolioCta extends StatelessWidget {
   const _EmptyPortfolioCta();
 
-  void _ekstre(BuildContext context) => pushGuarded(
-        context,
-        adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
-      );
-
   @override
   Widget build(BuildContext context) {
-    if (RemoteConfigService.instance.ilkVarlikKolay) {
-      // Rotalar eski CTA'nınkiyle aynı: ön seçimli form, ön seçimsiz form,
-      // ekstre içe aktarma.
-      return TourAnchor(
-        target: TourTarget.ilkVarlikVitrini,
-        child: IlkVarlikVitrini(
-          onSec: (IlkVarlikSecimi s) => pushGuarded(
-            context,
-            adaptiveRoute<void>(builder: (_) => AddAssetScreen(hizliSecim: s)),
-          ),
-          onDiger: () => pushGuarded(
-            context,
-            adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
-          ),
-          onEkstre: () => _ekstre(context),
+    // Rotalar eski CTA'nınkiyle aynı: ön seçimli form, ön seçimsiz form,
+    // ekstre içe aktarma.
+    return TourAnchor(
+      target: TourTarget.ilkVarlikVitrini,
+      child: IlkVarlikVitrini(
+        onSec: (IlkVarlikSecimi s) => pushGuarded(
+          context,
+          adaptiveRoute<void>(builder: (_) => AddAssetScreen(hizliSecim: s)),
         ),
-      );
-    }
-    return Column(
-      children: [
-        Icon(Icons.savings_outlined, color: context.c.text36, size: 48),
-        const SizedBox(height: SandikSpace.md),
-        Text(
-          context.l10n.noAssetsYet,
-          style: context.t.titleLarge?.copyWith(color: context.c.text90),
+        onDiger: () => pushGuarded(
+          context,
+          adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
         ),
-        const SizedBox(height: SandikSpace.sm),
-        Text(
-          context.l10n.noAssetsYetHint,
-          textAlign: TextAlign.center,
-          style: context.t.bodyMedium?.copyWith(color: context.c.text36),
+        onEkstre: () => pushGuarded(
+          context,
+          adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
         ),
-        const SizedBox(height: SandikSpace.lg),
-        SandikTappable(
-          haptic: SandikHaptic.medium,
-          semanticLabel: context.l10n.addAsset,
-          onTap: () => pushGuarded(
-            context,
-            adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-            decoration: BoxDecoration(
-              color: context.c.amberFill.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border:
-                  Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
-            ),
-            // 28pt yatay padding + ikon + etiket dar ekranda
-            // sığmıyor. FittedBox içeriği kırpmadan küçültür;
-            // düğme metni her cihazda tam okunur.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
-                  const SizedBox(width: SandikSpace.sm),
-                  Text(
-                    context.l10n.addFirstAsset,
-                    style: context.t.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: context.c.amberText),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        // İkinci yol: ekstre yapıştır (2026-09-20). Portföyünü ilk kez kuran
-        // kullanıcı için en hızlı yol bu; eskiden yalnızca + › Toplu › Yapıştır
-        // ile üç dokunuş derindeydi ve ilk 10 dakikada bulunmuyordu. (Eskiden
-        // `!filtered` koşuluyla gizlenirdi; tür filtresi 2026-09-28'de
-        // kalktı, bu widget artık yalnızca gerçekten boş portföyde çizilir.)
-        ...[
-          const SizedBox(height: SandikSpace.md),
-          TextButton.icon(
-            onPressed: () => _ekstre(context),
-            icon: Icon(Icons.content_paste_go_rounded,
-                size: 18, color: context.c.text58),
-            label: Text(
-              context.l10n.pasteFromStatement,
-              style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600, color: context.c.text58),
-            ),
-          ),
-          Text(
-            context.l10n.emptyPasteHint,
-            textAlign: TextAlign.center,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }

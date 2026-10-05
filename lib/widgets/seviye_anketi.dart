@@ -80,7 +80,7 @@ class _SeviyeAnketiState extends ConsumerState<SeviyeAnketi> {
           ),
           const SizedBox(height: SandikSpace.xs),
           Text(
-            '${sonuc.aciklama(context, sade: true)} '
+            '${sonuc.aciklama(context)} '
             '${context.l10n.levelSurveyResultNote}',
             style: context.t.bodySmall?.copyWith(color: p.text58, height: 1.4),
           ),

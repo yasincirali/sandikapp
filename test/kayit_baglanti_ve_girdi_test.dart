@@ -204,8 +204,9 @@ void main() {
       expect(find.text(l.registerUsernameMissing), findsWidgets);
       // Şifre boş olsa da kurallar görünür (neyin gerektiği söylenir).
       expect(find.text(l.sifreKuralUzunluk), findsOneWidget);
-      expect(find.text('Devam etmek için yasal koşulları kabul etmelisin.'),
-          findsOneWidget);
+      // Tek onay kutusu (2026-10-04): hata kutunun altında; eksik metinler
+      // listede (zorunlu okuma).
+      expect(find.text(l.tekOnayGerekli), findsWidgets);
       // Uyarının kendisi (tost/diyalog) kapanana kadar bekle.
       await tester.pump(const Duration(seconds: 5));
     });

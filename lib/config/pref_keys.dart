@@ -114,8 +114,8 @@ class PrefKeys {
   static const bildirimSonGorulen = 'pref_bildirim_son_gorulen_ms';
 
   /// Performans "Bugünkü portföyle" (simülasyon) görünümü — Ayarlar ›
-  /// Görünüm'deki anahtar (bayrak `performans_ayar_sade`). Kişiye özel
-  /// (`perUser`): A'nın görünümü B'nin grafiğini değiştirmez. Bayrak
-  /// kapalıyken OKUNMAZ: o yolda mod ekranın kendi oturum alanında yaşar.
+  /// Görünüm'deki anahtar (2026-10-04, `performans_ayar_sade`). Kişiye özel
+  /// (`perUser`): A'nın görünümü B'nin grafiğini değiştirmez. Modun TEK
+  /// kaynağı (bayrak ve ekranın oturum alanı 2026-10-05'te kalktı).
   static const performansBugunkuPortfoy = 'pref_performans_bugunku_portfoy';
 }

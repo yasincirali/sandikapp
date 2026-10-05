@@ -15,21 +15,20 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 import 'package:portfoy_takip/screens/settings_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/grafik_tipi_secici.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Sadeleştirme listesi madde 5 ve 10'un kalanı — bayrak
-/// `performans_ayar_sade` (varsayılan KAPALI).
+/// Sadeleştirme listesi madde 5 ve 10'un kalanı (2026-10-04; bayrak
+/// `performans_ayar_sade` 2026-10-05'te kalktı, davranış kalıcı — eski
+/// düzenleri sınayan "bayrak kapalı" testleri de onunla gitti).
 ///
-///   a) Grafik tipi seçicisi 5 → 2 (Çizgi, Mum); kümede olmayan seçim
-///      Çizgi çizilir ama seçim DEĞİŞMEZ — bayrak kapanınca geri gelir.
+///   a) Grafik tipi seçicisi 5 → 2 (Çizgi, Mum); Alan/Taban/Çubuk enum'dan
+///      silindi (seçim oturumluk, göç gerekmedi).
 ///   b) "Bugünkü portföyle" Performans kapsam panelinden Ayarlar ›
 ///      Görünüm'e; Performans aynı provider'ı okur, etkinken rozet.
 ///   c) Ayarlar gruplu başlıklar + katlanır "Gelişmiş"; hiçbir satır kaybolmaz.
 final _tr = AppLocalizationsTr();
-const _bayrak = 'performans_ayar_sade';
 const _uid = 'user-1';
 
 class _FakeAuth extends AuthNotifier {
@@ -124,36 +123,23 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
-    RemoteConfigService.testAcik = {};
     grafikTipiNotifier.value = GrafikTipi.varsayilan;
   });
   tearDown(() {
-    RemoteConfigService.testAcik = {};
     grafikTipiNotifier.value = GrafikTipi.varsayilan;
   });
 
-  test('bayrak varsayılanı KAPALI', () {
-    expect(RemoteConfigService.instance.performansAyarSade, isFalse);
-  });
-
   group('a) grafik tipi — eşleme saf', () {
-    test('sade küme yalnız Çizgi ve Mum', () {
-      expect(GrafikTipi.secilebilir(sade: true),
-          [GrafikTipi.line, GrafikTipi.candle]);
-      expect(GrafikTipi.secilebilir(sade: false), GrafikTipi.values);
-    });
-
-    test('kümede olmayan seçim Çizgi çizilir; kapalıyken aynen', () {
-      for (final t in [GrafikTipi.mountain, GrafikTipi.baseline, GrafikTipi.bar]) {
-        expect(GrafikTipi.etkin(t, sade: true), GrafikTipi.line, reason: t.name);
-        expect(GrafikTipi.etkin(t, sade: false), t, reason: t.name);
+    test('yalnız Çizgi ve Mum; seçim olduğu gibi çizilir', () {
+      expect(GrafikTipi.values, [GrafikTipi.line, GrafikTipi.candle]);
+      for (final t in GrafikTipi.values) {
+        expect(GrafikTipi.etkin(t), t, reason: t.name);
       }
-      expect(GrafikTipi.etkin(GrafikTipi.candle, sade: true), GrafikTipi.candle);
     });
 
     test('grafik araçları gizliyse (sade Başlangıç) her zaman Çizgi', () {
       for (final t in GrafikTipi.values) {
-        expect(GrafikTipi.etkin(t, sade: false, araclar: false), GrafikTipi.line);
+        expect(GrafikTipi.etkin(t, araclar: false), GrafikTipi.line);
       }
     });
   });
@@ -167,38 +153,13 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('bayrak açık: menüde iki tip', (tester) async {
-      RemoteConfigService.testAcik = {_bayrak};
+    testWidgets('menüde iki tip', (tester) async {
       await ac(tester);
       expect(find.byType(PopupMenuItem<GrafikTipi>), findsNWidgets(2));
       for (final ad in ['Alan', 'Taban', 'Çubuk']) {
         expect(find.text(ad), findsNothing, reason: ad);
       }
       expect(find.text('Mum'), findsOneWidget);
-    });
-
-    testWidgets('bayrak kapalı: beş tip (eski)', (tester) async {
-      await ac(tester);
-      expect(find.byType(PopupMenuItem<GrafikTipi>), findsNWidgets(5));
-    });
-
-    testWidgets('kayıtlı "Alan" açıkta Çizgi görünür, kapalıda geri gelir',
-        (tester) async {
-      grafikTipiNotifier.value = GrafikTipi.mountain;
-      RemoteConfigService.testAcik = {_bayrak};
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: Center(child: GrafikTipiSecici())),
-      ));
-      expect(find.text('Çizgi'), findsOneWidget);
-      expect(find.text('Alan'), findsNothing);
-      expect(grafikTipiNotifier.value, GrafikTipi.mountain,
-          reason: 'seçim yazılmaz, yalnız okunurken eşlenir');
-
-      RemoteConfigService.testAcik = {};
-      await tester.pumpWidget(const MaterialApp(
-        home: Scaffold(body: Center(child: GrafikTipiSecici(key: Key('y')))),
-      ));
-      expect(find.text('Alan'), findsOneWidget);
     });
   });
 
@@ -213,33 +174,16 @@ void main() {
       await tester.pumpAndSettle(const Duration(milliseconds: 50));
     }
 
-    testWidgets('bayrak kapalı: anahtar kapsam panelinde, rozet yok',
+    testWidgets('panelde anahtar yok; Ayarlar tercihi rozet açar',
         (tester) async {
-      // Geniş: test fontu (Ahem) her harfi punto genişliğinde çizer; eski
-      // anahtarın "Bugünkü portföyle" yarısı 375pt'te Ahem'le taşıyor
-      // (DM Sans'la sığıyor). Bu test yerleşimi değil, varlığı ölçer.
-      await _boyut(tester, 700);
-      final c = _kap();
-      await tester.pumpWidget(_uygulama(c, const PortfolioPerformanceScreen()));
-      await _bekle(tester);
-      await donemSec(tester, '1 ay');
-      await kapsamAc(tester);
-      expect(find.text(_tr.modeReal), findsOneWidget);
-      expect(find.text(_tr.todaysPortfolioBadge), findsOneWidget,
-          reason: 'TR modeSim aynı metin — panel anahtarının sağ yarısı');
-    });
-
-    testWidgets('bayrak açık: panelde anahtar yok; Ayarlar tercihi rozet açar',
-        (tester) async {
-      RemoteConfigService.testAcik = {_bayrak};
       await _boyut(tester, 375);
       final c = _kap();
       await tester.pumpWidget(_uygulama(c, const PortfolioPerformanceScreen()));
       await _bekle(tester);
       await donemSec(tester, '1 ay');
       await kapsamAc(tester);
-      expect(find.text(_tr.modeReal), findsNothing,
-          reason: 'Gerçek|Bugünkü anahtarı Ayarlar › Görünüm\'e taşındı');
+      // Eski Gerçek|Bugünkü anahtarı (`modeReal` = "Gerçek") yok.
+      expect(find.text('Gerçek'), findsNothing);
       expect(find.text(_tr.todaysPortfolioBadge), findsNothing,
           reason: 'tercih kapalı → rozet yok');
 
@@ -261,7 +205,6 @@ void main() {
 
     testWidgets('Ayarlar anahtarı provider\'a yazar; Performans rozeti görür',
         (tester) async {
-      RemoteConfigService.testAcik = {_bayrak};
       await _boyut(tester, 375, h: 2000);
       final c = _kap();
       await tester.pumpWidget(
@@ -285,7 +228,6 @@ void main() {
 
     testWidgets('sade Başlangıç\'ta Ayarlar satırı yok, tercih etkisiz',
         (tester) async {
-      RemoteConfigService.testAcik = {_bayrak, 'seviye_anketi'};
       await _boyut(tester, 375, h: 2000);
       final c = _kap();
       await c
@@ -304,7 +246,6 @@ void main() {
     });
 
     testWidgets('320pt: rozetli Performans taşmaz', (tester) async {
-      RemoteConfigService.testAcik = {_bayrak};
       await _boyut(tester, 320);
       final c = _kap();
       await c.read(bugunkuPortfoyleProvider.notifier).set(true);
@@ -356,24 +297,19 @@ void main() {
       ],
     };
 
-    for (final acik in [false, true]) {
-      for (final e in beklenen.entries) {
-        testWidgets('${acik ? 'açık' : 'kapalı'}: ${e.key.name} tam',
-            (tester) async {
-          if (acik) RemoteConfigService.testAcik = {_bayrak};
-          await _boyut(tester, 1200, h: 4000);
-          await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: e.key)));
-          await _bekle(tester);
-          for (final t in e.value) {
-            expect(find.text(t), findsAtLeastNWidgets(1),
-                reason: '${e.key.name}: "$t" kayboldu');
-          }
-        });
-      }
+    for (final e in beklenen.entries) {
+      testWidgets('${e.key.name} tam', (tester) async {
+        await _boyut(tester, 1200, h: 4000);
+        await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: e.key)));
+        await _bekle(tester);
+        for (final t in e.value) {
+          expect(find.text(t), findsAtLeastNWidgets(1),
+              reason: '${e.key.name}: "$t" kayboldu');
+        }
+      });
     }
 
-    testWidgets('açık: bölümler net başlıklı', (tester) async {
-      RemoteConfigService.testAcik = {_bayrak};
+    testWidgets('bölümler net başlıklı', (tester) async {
       await _boyut(tester, 1200, h: 4000);
       Future<void> bak(SettingsBolum b, List<String> basliklar) async {
         await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: b)));
@@ -391,9 +327,8 @@ void main() {
           [_tr.supportUpper, _tr.settingsGroupAbout, _tr.legalUpper]);
     });
 
-    testWidgets('açık: hub\'da teknik satırlar katlanır "Gelişmiş"te',
+    testWidgets('hub\'da teknik satırlar katlanır "Gelişmiş"te',
         (tester) async {
-      RemoteConfigService.testAcik = {_bayrak};
       await _boyut(tester, 1200, h: 4000);
       await tester.pumpWidget(_uygulama(_kap(), const SettingsScreen()));
       await _bekle(tester);
@@ -409,19 +344,9 @@ void main() {
       expect(find.text('Test Crash (debug-only)'), findsOneWidget);
     });
 
-    testWidgets('kapalı: hub birebir eski (Gelişmiş yok, geliştirici açık)',
-        (tester) async {
-      await _boyut(tester, 1200, h: 4000);
-      await tester.pumpWidget(_uygulama(_kap(), const SettingsScreen()));
-      await _bekle(tester);
-      expect(find.text(_tr.settingsAdvancedUpper), findsNothing);
-      expect(find.text('Test Crash (debug-only)'), findsOneWidget);
-    });
-
-    group('açık: dar ekranda taşma yok', () {
+    group('dar ekranda taşma yok', () {
       for (final w in <double>[320, 360]) {
         testWidgets('${w.toInt()}pt hub (Gelişmiş açık)', (tester) async {
-          RemoteConfigService.testAcik = {_bayrak};
           await _boyut(tester, w, h: 1400);
           await tester.pumpWidget(_uygulama(_kap(), const SettingsScreen()));
           await _bekle(tester);
@@ -431,7 +356,6 @@ void main() {
         });
         for (final b in SettingsBolum.values) {
           testWidgets('${w.toInt()}pt ${b.name}', (tester) async {
-            RemoteConfigService.testAcik = {_bayrak};
             await _boyut(tester, w);
             await tester.pumpWidget(_uygulama(_kap(), SettingsScreen(bolum: b)));
             await _bekle(tester);
@@ -441,7 +365,6 @@ void main() {
       }
 
       testWidgets('320pt Görünüm, metin 1.6×', (tester) async {
-        RemoteConfigService.testAcik = {_bayrak};
         await _boyut(tester, 320);
         await tester.pumpWidget(_uygulama(
             _kap(), const SettingsScreen(bolum: SettingsBolum.gorunum),

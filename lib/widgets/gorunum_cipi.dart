@@ -1,10 +1,10 @@
 // Görünüm çipi — Ben / ortak / Birlikte, toplam kartının başlığında.
 //
-// 2026-09-21 sadeleştirme: `ModernTabSelector` ana ekranda kendi satırını
-// tutuyordu; aynı seçim artık hero kartın başlığında tek çip. Üç sekmelik
+// 2026-09-21 sadeleştirme: `ModernTabSelector` (bugün `OrtakSecici`) ana
+// ekranda kendi satırını tutuyordu; aynı seçim artık hero kartın başlığında tek çip. Üç sekmelik
 // seçici 320pt'te başlıkla yan yana sığmazdı; çip + alt sayfa hem sığar hem
 // Performans'taki kapsam çipiyle aynı dili konuşur. Anlam ve kimlik
-// sözleşmesi ModernTabSelector ile AYNI: '' = Ben, ortak id = ortak,
+// sözleşmesi OrtakSecici ile AYNI: '' = Ben, ortak id = ortak,
 // null = Birlikte (`home_screen._view`).
 //
 // 2026-09-21 (2. tur, kullanıcı isteği): "hızlı geçiş, çok daha fazla

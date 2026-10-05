@@ -60,7 +60,6 @@ import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
 import '../services/sozlesme_deposu.dart';
-import '../services/remote_config_service.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
 
@@ -595,7 +594,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // açıksa `_canli` onları `ref.read` ile okur, tetikleyici bu izlemedir.
     //
     // Ölü kod temizliği (Sadeleştirme 2, madde 11, 2026-10-04): burada bir
-    // de "Ben / ortak / Tümü" sekmesi (`ModernTabSelector`, `_view`) ve üst
+    // de "Ben / ortak / Tümü" sekmesi (`OrtakSecici`, `_view`) ve üst
     // çubukta "Sil" menüsü vardı; ikisi de `!showBackButton` koşuluyla
     // çiziliyordu ama ekranı açan HER yol (Ana, Portföy, `pozisyonuAc`,
     // bildirim) `showBackButton: true` verir — hiç görünmüyorlardı. Silme
@@ -1577,8 +1576,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   birimEtiketi: widget.asset.unitLabel,
                   birimBicim: _birimBicimi(pnl.currentUnitTRY),
                   birimGizli: widget.asset.type == AssetType.mevduat,
-                  donemYuzdesiz:
-                      RemoteConfigService.instance.varlikIslemCubugu,
                   donemEtiketi: donemEtiketi(
                       context.l10n, _periods[_selectedPeriodIdx].label),
                   // Seçili dönemin serisi gelmeden `null`: satır "—" yazar,

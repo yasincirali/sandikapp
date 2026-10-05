@@ -22,20 +22,6 @@ enum GrafikTipi {
   /// Düz çizgi — varsayılan.
   line('Çizgi', Icons.show_chart_rounded),
 
-  /// Çizgi + altında gradyan dolgu.
-  ///
-  /// Etiket 2026-10-04'e kadar "Dağ"dı (İngilizce "mountain"ın çevirisi).
-  /// Türkçe grafik araçlarındaki yerleşik ad "Alan" (alan grafiği);
-  /// kullanıcı "Dağ"ı bir grafik türü olarak tanımıyordu (sadeleştirme 2).
-  /// "Taban" kaldı: Türkçe araçlardaki "taban çizgisi" ile aynı ad.
-  mountain('Alan', Icons.landscape_rounded),
-
-  /// Dönem başına göre üstü kazanç, altı kayıp renginde.
-  baseline('Taban', Icons.multiline_chart_rounded),
-
-  /// Her noktada dikey çubuk.
-  bar('Çubuk', Icons.bar_chart_rounded),
-
   /// Kova bazlı mum: gövde açılış→kapanış, fitil en düşük→en yüksek.
   candle('Mum', Icons.candlestick_chart_rounded);
 
@@ -50,37 +36,24 @@ enum GrafikTipi {
   /// Uygulamanın açılış varsayılanı.
   static const varsayilan = GrafikTipi.line;
 
-  /// Sade küme (bayrak `performans_ayar_sade`, sadeleştirme madde 5):
-  /// yalnız Çizgi ve Mum.
-  ///
-  /// Neden bu ikisi: Çizgi "değer nasıl gitti"yi, Mum "dönem içinde ne
-  /// kadar oynadı"yı söyler — iki ayrı soru. Alan, Çizgi'nin altı boyanmış
-  /// hâli; Taban, Özet'teki dönem başı kıyasının grafikteki tekrarı; Çubuk
-  /// ise portföy değerinde (sürekli bir seri) yanlış bir "adet" çağrışımı
-  /// yapıyor. Beş seçenek yeni kullanıcıya "hangisi doğru?" sorusu
-  /// sorduruyordu; cevap verilebilir iki seçenek kaldı.
-  static const sadeKume = [GrafikTipi.line, GrafikTipi.candle];
-
-  /// Seçicide listelenen tipler.
-  static List<GrafikTipi> secilebilir({required bool sade}) =>
-      sade ? sadeKume : GrafikTipi.values;
+  // ## Yalnız Çizgi ve Mum (sadeleştirme madde 5, 2026-10-04)
+  // Çizgi "değer nasıl gitti"yi, Mum "dönem içinde ne kadar oynadı"yı
+  // söyler — iki ayrı soru. Alan, Çizgi'nin altı boyanmış hâliydi; Taban,
+  // Özet'teki dönem başı kıyasının grafikteki tekrarı; Çubuk ise portföy
+  // değerinde (sürekli bir seri) yanlış bir "adet" çağrışımı yapıyordu. Beş
+  // seçenek yeni kullanıcıya "hangisi doğru?" sorusu sorduruyordu. Bayrak
+  // `performans_ayar_sade` açıkken seçici yalnız bu ikisini listeliyordu;
+  // bayrak 2026-10-05'te kalkınca Alan/Taban/Çubuk enum'dan ve çizimden
+  // silindi (seçim oturumluk, diske yazılmadığı için göç gerekmedi).
 
   /// Seçimden ÇİZİLECEK tipe — saf eşleme, seçimi DEĞİŞTİRMEZ.
   ///
-  /// Seçim ([grafikTipiNotifier]) olduğu gibi kalır; yalnız okunurken
-  /// eşlenir. Böylece bayrak kapanınca kullanıcının eski seçimi (ör. Alan)
-  /// geri gelir — eşleme yazılsaydı bayrak geri alındığında tercih
-  /// sessizce kaybolurdu.
-  ///   * [araclar] false (sade Başlangıç, `seviye_anketi`): seçici yok,
-  ///     grafik düz çizgi — Orta'da Mum seçip Başlangıç'a geçen kullanıcı
-  ///     kapatamayacağı bir Mum'da kalmasın.
-  ///   * [sade] true: kümede olmayan tip Çizgi'ye düşer.
-  static GrafikTipi etkin(GrafikTipi secim,
-      {required bool sade, bool araclar = true}) {
-    if (!araclar) return GrafikTipi.line;
-    if (sade && !sadeKume.contains(secim)) return GrafikTipi.line;
-    return secim;
-  }
+  /// [araclar] false (sade Başlangıç): seçici yok, grafik düz çizgi —
+  /// Orta'da Mum seçip Başlangıç'a geçen kullanıcı kapatamayacağı bir
+  /// Mum'da kalmasın. Seçim ([grafikTipiNotifier]) olduğu gibi kalır;
+  /// seviye geri gelince Mum da geri gelir.
+  static GrafikTipi etkin(GrafikTipi secim, {bool araclar = true}) =>
+      araclar ? secim : GrafikTipi.line;
 }
 
 /// Seçili grafik tipi — OTURUM boyunca yaşar.

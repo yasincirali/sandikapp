@@ -29,8 +29,7 @@ enum YatirimciSeviyesi {
   /// Etiket ve açıklama dile göre (3.20) — enum bağlamsız, `context` ister;
   /// `...Of(l)` sürümleri testte sözlükle doğrudan çağrılır.
   String etiket(BuildContext context) => etiketOf(context.l10n);
-  String aciklama(BuildContext context, {bool sade = false}) =>
-      aciklamaOf(context.l10n, sade: sade);
+  String aciklama(BuildContext context) => aciklamaOf(context.l10n);
 
   String etiketOf(AppLocalizations l) => switch (this) {
         YatirimciSeviyesi.baslangic => l.levelBeginner,
@@ -38,11 +37,12 @@ enum YatirimciSeviyesi {
         YatirimciSeviyesi.ileri => l.levelAdvanced,
       };
 
-  /// [sade]: `seviye_anketi` bayrağı açık — Başlangıç daha çok şey gizler
-  /// (bkz. [seviyeGorunurlugu]); açıklama bunu söylemeli.
-  String aciklamaOf(AppLocalizations l, {bool sade = false}) => switch (this) {
-        YatirimciSeviyesi.baslangic =>
-          sade ? l.levelBeginnerDescSade : l.levelBeginnerDesc,
+  /// Başlangıç sade düzende daha çok şey gizler (bkz. [seviyeGorunurlugu]);
+  /// açıklama bunu söyler. Bayrak `seviye_anketi` kapalıyken kullanılan
+  /// kısa Başlangıç açıklaması (`levelBeginnerDesc`) bayrakla birlikte
+  /// 2026-10-05'te kalktı.
+  String aciklamaOf(AppLocalizations l) => switch (this) {
+        YatirimciSeviyesi.baslangic => l.levelBeginnerDescSade,
         YatirimciSeviyesi.orta => l.levelIntermediateDesc,
         YatirimciSeviyesi.ileri => l.levelAdvancedDesc,
       };
@@ -72,10 +72,10 @@ enum YatirimciSeviyesi {
 /// Kural değişmedi: **Başlangıç yalnızca GİZLER, İleri yalnızca EKLER**,
 /// Orta bugünkü görünümdür. Hiçbir hesap seviyeye bakmaz.
 ///
-/// ## Sade Başlangıç (2026-10-04, bayrak `seviye_anketi`)
+/// ## Sade Başlangıç (2026-10-04; bayrak `seviye_anketi` 2026-10-05'te kalktı)
 /// Kullanıcı isteği: Performans *"çelişkili olmamalı, kafada soru işareti
 /// oluşturmamalı; yatırımcı seviyesine göre detaylı bilgiler sergilenebilir."*
-/// [sade] açıkken Başlangıç ayrıca şunları gizler:
+/// Başlangıç ayrıca şunları gizler:
 ///   * [grafikAraclari] — grafik tipi seçici (Alan/Taban/çubuk/mum),
 ///     Gerçek|Simülasyon anahtarı, varlık grafiğinde MA20/LOG çipleri.
 ///     Grafik düz çizgide kalır, rakamlar gerçek geçmişten gelir.
@@ -91,9 +91,8 @@ enum YatirimciSeviyesi {
 /// kartı/metni, seviye açıklamaları) çıkarıldı → "yıllık getiri". Bu
 /// yüzden yeni görünürlük alanı GEREKMEDİ: metin her seviyede anlaşılır,
 /// gizleme kararı değişmedi.
-/// Kapalıyken iki alan da her seviyede `true`: eski davranış birebir.
-/// Orta ve İleri [sade]'den etkilenmez — mevcut kullanıcının varsayılanı
-/// Orta olduğu için hiç dokunmayan kimse bir şey kaybetmez.
+/// Orta ve İleri bundan etkilenmez — mevcut kullanıcının varsayılanı Orta
+/// olduğu için hiç dokunmayan kimse bir şey kaybetmez.
 typedef SeviyeGorunurluk = ({
   bool saglik,
   bool xirr,
@@ -104,7 +103,7 @@ typedef SeviyeGorunurluk = ({
   bool derinlik,
 });
 
-SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s, {bool sade = false}) {
+SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s) {
   switch (s) {
     case YatirimciSeviyesi.baslangic:
       return (
@@ -113,8 +112,8 @@ SeviyeGorunurluk seviyeGorunurlugu(YatirimciSeviyesi s, {bool sade = false}) {
         percentile: false,
         teknikSinyaller: false,
         ileri: false,
-        grafikAraclari: !sade,
-        derinlik: !sade,
+        grafikAraclari: false,
+        derinlik: false,
       );
     case YatirimciSeviyesi.orta:
       return (

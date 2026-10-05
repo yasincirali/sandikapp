@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'crash_reporter.dart';
 import 'disclaimer_service.dart';
-import 'remote_config_service.dart';
 import 'yasal_metin_katalogu.dart';
 
 /// Kayıt ekranında kullanıcının GÖRDÜĞÜ onay düzeni — `RegisterScreen`
@@ -14,7 +13,6 @@ import 'yasal_metin_katalogu.dart';
 @immutable
 class KayitOnayBaglami {
   const KayitOnayBaglami({
-    required this.tekKutu,
     required this.dil,
     required this.kutuUlkesi,
     required this.belgeDegiskenleri,
@@ -26,11 +24,13 @@ class KayitOnayBaglami {
     this.yatirimUyarisiOnaylandi = false,
   });
 
-  /// Bayrak `tek_onay_kutusu` ekran açılışında açık mıydı.
-  final bool tekKutu;
+  // NOT: `tekKutu` alanı 2026-10-05'te kalktı — kayıt ekranı yalnız tek
+  // kutuyu çizer (bayrak `tek_onay_kutusu` kalıcı açık). Eski iki kutunun
+  // metinleri (`kayit_kutu_kosullar` / `kayit_kutu_riza`) katalogda durur:
+  // onları onaylamış kullanıcıların kayıtları o hash'lerle eşleşir.
 
-  /// Tek kutu l10n'dan çizilir → arayüz dili (`tr`/`en`). İki kutu ve
-  /// belgeler her dilde Türkçe gösterilir; onlar için kullanılmaz.
+  /// Tek kutu l10n'dan çizilir → arayüz dili (`tr`/`en`). Belgeler her
+  /// dilde Türkçe gösterilir; onlar için kullanılmaz.
   final String dil;
 
   /// Kutu metnindeki `{SUPABASE_ULKE}` yerine ekranda yazan değer.
@@ -48,9 +48,9 @@ class KayitOnayBaglami {
   final bool kvkkBelgesiAcildi;
   final bool gizlilikBelgesiAcildi;
 
-  /// Zorunlu okumada (bayrak `zorunlu_okuma`) sonuna kadar okunup metnin
-  /// sonunda onaylanan türler (`YasalTur`). Bayrak kapalıyken boş: öğelere
-  /// `sonuna_kadar_okundu` anahtarı hiç girmez, yük birebir eski.
+  /// Zorunlu okumada (2026-10-04) sonuna kadar okunup metnin sonunda
+  /// onaylanan türler (`YasalTur`). Boşsa öğelere `sonuna_kadar_okundu`
+  /// anahtarı hiç girmez.
   final Set<String> sonunaKadarOkunanlar;
 
   /// Yatırım uyarısının TAM metni (`disclaimerText`) kayıt ekranında
@@ -62,43 +62,32 @@ class KayitOnayBaglami {
   /// test edilir.
   ///
   /// ## Ne girer, ne girmez
-  /// - Kutu(lar): kullanıcının işaretlediği cümle(ler), gördüğü düzende.
+  /// - Kutu: kullanıcının işaretlediği tek cümle (`kayit_tek_kutu`).
   /// - Belgeler: dört belgenin dördü de ([YasalBelge]). Koşullar, KVKK ve
-  ///   açık rıza kutu cümlesinde adıyla geçer; Gizlilik Politikası iki
-  ///   kutulu düzende kutu metninde adıyla, her düzende Koşullar §1'de
-  ///   atıfla. Dördü de kayıt ekranından bağlantıyla açılır (KVKK
+  ///   açık rıza kutu cümlesinde adıyla geçer; Gizlilik Politikası
+  ///   Koşullar §1'de atıfla. Dördü de kayıt ekranından bağlantıyla açılır (KVKK
   ///   2026-10-04'ten, Açık Rıza Metni ve Gizlilik'in kendi bağlantısı
   ///   1.2'den beri). Açılıp açılmadığı `belge_acildi` ile yazılır — ispat
   ///   ne kadar güçlüyse o kadarını söylesin. Yer tutucu değerleri yalnız
   ///   o belgede geçenler ([YasalMetinKatalogu.belgeDegiskenleri]).
   /// - Yatırım uyarısı (`disclaimerText`) YALNIZ zorunlu okumada girer
   ///   ([yatirimUyarisiOnaylandi]): tam metni sonuna kadar okunup onaylandı,
-  ///   kanal `kayit` (0104 eşlemeye ekledi). Bayrak kapalıyken kayıt
-  ///   ekranında yalnız kutudaki özet görünür → girmez; uyarı OTP'den sonra
-  ///   kendi ekranında tam metniyle sorulur (2026-10-04'e kadar OTP
-  ///   gösterilmemiş tam metnin hash'iyle `disclaimer_acceptances`
+  ///   kanal `kayit` (0104 eşlemeye ekledi). Onaylanmadıysa girmez; uyarı
+  ///   OTP'den sonra kendi ekranında tam metniyle sorulur (2026-10-04'e
+  ///   kadar OTP gösterilmemiş tam metnin hash'iyle `disclaimer_acceptances`
   ///   yazıyordu — kapanan hata).
   /// - `sonuna_kadar_okundu: true`: yalnız [sonunaKadarOkunanlar]'daki
   ///   metinlere; kutulara girmez (kutu okunacak bir metin değil, işaretlenen
   ///   bir beyandır).
   List<Map<String, dynamic>> ogeler() {
-    final kutular = tekKutu
-        ? [
-            YasalMetinKatalogu.kayitTekKutu(dil)
-                .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
-          ]
-        : [
-            YasalMetinKatalogu.kayitKutuKosullar().rpcOgesi(),
-            YasalMetinKatalogu.kayitKutuRiza()
-                .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
-          ];
     Map<String, dynamic> belge(YasalMetin m, bool acildi) => m.rpcOgesi({
           ...YasalMetinKatalogu.belgeDegiskenleri(m, belgeDegiskenleri),
           'belge_acildi': acildi,
           if (sonunaKadarOkunanlar.contains(m.tur)) 'sonuna_kadar_okundu': true,
         });
     return [
-      ...kutular,
+      YasalMetinKatalogu.kayitTekKutu(dil)
+          .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
       belge(YasalMetinKatalogu.kosullar(), kosulBelgesiAcildi),
       belge(YasalMetinKatalogu.gizlilik(), gizlilikBelgesiAcildi),
       belge(YasalMetinKatalogu.kvkk(), kvkkBelgesiAcildi),
@@ -118,7 +107,7 @@ class KayitOnayBaglami {
 class YasalKapiDurumu {
   const YasalKapiDurumu({this.eksik = const {}, this.oncekiSurum = const {}});
 
-  /// Kapı yok: onaylar tam, bayrak kapalı ya da sorgu düştü (fail-open).
+  /// Kapı yok: onaylar tam ya da sorgu düştü (fail-open).
   static const tamam = YasalKapiDurumu();
 
   /// Eksik türler: belgeler ([YasalBelge] türleri) ve kayıt kutusu
@@ -142,30 +131,22 @@ class YasalKapiDurumu {
       .any((m) => oncekiSurum.containsKey(m.tur));
 }
 
-/// Kapı ekranının kurduğu kutu düzeni (kayıt ekranıyla aynı karar:
-/// `tek_onay_kutusu` açıksa tek kutu, değilse iki kutu).
+/// Kapı ekranının kurduğu kutu — kayıt ekranıyla aynı tek kutu. (İki
+/// kutulu düzen `tek_onay_kutusu` bayrağıyla 2026-10-05'te kalktı.)
 @immutable
 class KapiKutuBaglami {
   const KapiKutuBaglami({
-    required this.tekKutu,
     required this.dil,
     required this.kutuUlkesi,
   });
 
-  final bool tekKutu;
   final String dil;
   final String kutuUlkesi;
 
-  List<Map<String, dynamic>> ogeler() => tekKutu
-      ? [
-          YasalMetinKatalogu.kayitTekKutu(dil)
-              .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
-        ]
-      : [
-          YasalMetinKatalogu.kayitKutuKosullar().rpcOgesi(),
-          YasalMetinKatalogu.kayitKutuRiza()
-              .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
-        ];
+  List<Map<String, dynamic>> ogeler() => [
+        YasalMetinKatalogu.kayitTekKutu(dil)
+            .rpcOgesi({'SUPABASE_ULKE': kutuUlkesi}),
+      ];
 }
 
 /// Kapı ekranındaki kaydın sonucu.
@@ -184,14 +165,13 @@ enum KapiKayitSonucu {
 /// Yasal metin onaylarını sunucuya (`yasal_onaylar`, 0102) yazar ve
 /// yeniden onay kapısının kararını verir.
 ///
-/// ## Neden ayrı servis, neden bayrak
+/// ## Neden ayrı servis
 /// `disclaimer_acceptances` yalnız yatırım uyarısını tutuyordu; kayıt
 /// kutuları (koşullar, KVKK, yurt dışı aktarım açık rızası) hiç
 /// kaydedilmiyordu. 0102 her metni (tür, sürüm, dil, hash) ile saklar ve
-/// onayı RPC ile alır. Remote Config `yasal_onay_kaydi` varsayılan KAPALI:
-/// 0102 iki sunucuya dağıtılmadan açılırsa her kayıtta "fonksiyon yok"
-/// hatası üretir. Kapalıyken hiçbir ağ çağrısı yapılmaz — davranış birebir
-/// eski.
+/// onayı RPC ile alır. Remote Config `yasal_onay_kaydi` 0102 iki sunucuya
+/// dağıtılana kadar KAPALI tutuldu ("fonksiyon yok" hatası); 2026-10-04'te
+/// açıldı, 2026-10-05'te bayrak kalktı — yazım koşulsuz.
 ///
 /// ## Yeniden onay kapısı (kullanıcı kararı 2026-10-04)
 /// *"Eski rıza metnini onaylayanlar için ilk login'de güncel doküman
@@ -199,8 +179,10 @@ enum KapiKayitSonucu {
 /// GÜNCEL sürümüne etkin onayı var mı diye bakar; yoksa `_AuthGate`
 /// `YasalOnayKapisiScreen`'i gösterir. Metin sürümü her arttığında
 /// kendiliğinden çalışır (cihaz izinin anahtarında sürümler var). Bayrak
-/// `yasal_kapi_en_yeni` (KAPALI) yalnız `yasal_onay_kaydi` de açıkken
-/// etkilidir: kayıt yazılamazsa kapı her açılışta yeniden sorardı.
+/// `yasal_kapi_en_yeni` (yalnız `yasal_onay_kaydi` de açıkken etkiliydi:
+/// kayıt yazılamazsa kapı her açılışta yeniden sorardı) 2026-10-05'te
+/// kalktı; kapı koşulsuz. Eski anahtar `yeniden_onay_kapisi` Console'da
+/// KALICI `false`: onu okuyan eski sürümlerin kapısı açılmasın.
 ///
 /// ## En iyi gayret / fail-open
 /// Kayıt yöntemleri fırlatmaz. Kapı sorgusu düşerse kullanıcı KİLİTLENMEZ
@@ -246,11 +228,6 @@ class YasalOnayService {
     _tamam.clear();
     _bekleyen.clear();
   }
-
-  /// Kapı etkin mi — iki bayrak birden.
-  static bool get kapiEtkin =>
-      RemoteConfigService.instance.yasalOnayKaydi &&
-      RemoteConfigService.instance.yenidenOnayKapisi;
 
   /// `yasal_onay_kaydet` parametreleri — saf, test edilir.
   static Map<String, dynamic> parametreler({
@@ -380,12 +357,11 @@ class YasalOnayService {
 
   /// Kullanıcıya yeniden onay kapısı gösterilmeli mi?
   ///
-  /// Sıra: bayraklar → sürmekte olan kayıt yazımı → bellek → cihaz izi →
+  /// Sıra: sürmekte olan kayıt yazımı → bellek → cihaz izi →
   /// sunucu. Onayı tam olan kullanıcı için ağa YALNIZ BİR KEZ gidilir (iz
   /// konur); her açılışta gidiş-dönüş eklenmez. Sorgu düşerse
   /// [YasalKapiDurumu.tamam] (fail-open, iz yok → sonraki açılışta yine).
   Future<YasalKapiDurumu> kapiDurumu(String userId) async {
-    if (!kapiEtkin) return YasalKapiDurumu.tamam;
     final bekleyen = _bekleyen[userId];
     if (bekleyen != null) {
       try {
@@ -470,9 +446,6 @@ class YasalOnayService {
     bool yatirimUyarisiDahil = false,
     required String locale,
   }) async {
-    if (!RemoteConfigService.instance.yasalOnayKaydi) {
-      return KapiKayitSonucu.sunucuHatasi;
-    }
     final ogeler = kapiOgeleri(
       durum: durum,
       belgeDegiskenleri: belgeDegiskenleri,
@@ -494,8 +467,8 @@ class YasalOnayService {
 
   /// Kapının yazdığı öğeler — saf, test edilir. Her belgeye `onceki_surum`
   /// (yoksa null = ilk onay) ve `belge_acildi` kanıt notu girer; zorunlu
-  /// okumada (bayrak `zorunlu_okuma`) [sonunaKadarOkunanlar]'daki metinlere
-  /// `sonuna_kadar_okundu: true`. Bayrak kapalıyken küme boş → yük eski.
+  /// okumada [sonunaKadarOkunanlar]'daki metinlere `sonuna_kadar_okundu:
+  /// true`.
   static List<Map<String, dynamic>> kapiOgeleri({
     required YasalKapiDurumu durum,
     required Map<String, String> belgeDegiskenleri,
@@ -583,7 +556,6 @@ class YasalOnayService {
     required String kanal,
     required String locale,
   }) async {
-    if (!RemoteConfigService.instance.yasalOnayKaydi) return false;
     try {
       await _rpc(ogeler, kanal: kanal, locale: locale);
       return true;

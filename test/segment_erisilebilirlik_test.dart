@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
-import 'package:portfoy_takip/widgets/kapsam_kisi_secici.dart';
-import 'package:portfoy_takip/widgets/modern_tab_selector.dart';
+import 'package:portfoy_takip/widgets/ortak_secici.dart';
 
 import 'helpers/kaynak.dart';
 
@@ -56,16 +55,11 @@ void main() {
   });
 
   for (final cift in <(String, Widget Function(ValueChanged<String?>))>[
+    // 2026-10-05: eski iki kabuk (`ModernTabSelector`, `KapsamKisiSecici`)
+    // bayrak `tek_ortak_secici` ile silindi; tek kabuk sınanır.
     (
-      'ModernTabSelector',
-      (f) => ModernTabSelector(
-          partners: [_ortak('p1', 'Ayşe Y'), _ortak('p2', 'Can K')],
-          selectedId: '',
-          onChanged: f)
-    ),
-    (
-      'KapsamKisiSecici',
-      (f) => KapsamKisiSecici(
+      'OrtakSecici',
+      (f) => OrtakSecici(
           partners: [_ortak('p1', 'Ayşe Y'), _ortak('p2', 'Can K')],
           selectedId: '',
           onChanged: f)

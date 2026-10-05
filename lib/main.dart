@@ -893,9 +893,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   String? _checkedUserId;
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
 
-  /// Yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`, 2026-10-04) —
-  /// null = kontrol bekleniyor. Bayrak kapalıyken servis ağa gitmeden
-  /// [YasalKapiDurumu.tamam] döner: davranış birebir eski.
+  /// Yeniden onay kapısı (2026-10-04; bayrak `yasal_kapi_en_yeni`
+  /// 2026-10-05'te kaldırıldı, kapı koşulsuz) — null = kontrol bekleniyor.
   YasalKapiDurumu? _yasalKapi;
 
   /// Yasal kapıların ikisi de geçildi mi (yatırım uyarısı + yeniden onay).
@@ -2032,18 +2031,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _oturumVardi = false;
         _kokeDon();
       }
-      // Girişten önce tanıtım (sadeleştirme 1, bayrak `karsilama_tanitimi`):
+      // Girişten önce tanıtım (sadeleştirme 1, 2026-10-04; bayrak
+      // `karsilama_tanitimi` 2026-10-05'te kaldırıldı, davranış kalıcı):
       // bu cihazda hiç oturum açılmadıysa önce uygulamanın ne yaptığı
       // anlatılır; giriş formu "Giriş yap"/"Atla" ile gelir.
-      if (RemoteConfigService.instance.karsilamaTanitimi &&
-          !ref.watch(karsilamaGorulduProvider)) {
+      if (!ref.watch(karsilamaGorulduProvider)) {
         return const KarsilamaScreen(key: ValueKey('karsilama'));
       }
       return const LoginScreen(key: ValueKey('login'));
     }
     _oturumVardi = true;
 
-    // Yeniden onay kapısı (bayrak `yasal_kapi_en_yeni`, 2026-10-04) —
+    // Yeniden onay kapısı (2026-10-04; bayrağı 2026-10-05'te kalktı) —
     // yatırım uyarısı kapısıyla AYNI yerde, kullanıcı adından ve turdan
     // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı belgeleri ve kayıt
     // kutusu taahhütlerini (18+, yurt dışı aktarım açık rızası) uygulamaya

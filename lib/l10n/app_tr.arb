@@ -129,22 +129,14 @@
   "levelBeginner": "Başlangıç",
   "levelIntermediate": "Orta",
   "levelAdvanced": "İleri",
-  "levelBeginnerDesc": "Sade görünüm: teknik sinyaller, yüzdelik dilim, sağlık ve yıllık getiri kartları gizlenir.",
   "levelIntermediateDesc": "Bugünkü görünüm: teknik sinyaller, yüzdelik dilim, sağlık kartı ve başlangıçtan beri yıllık getiri.",
   "levelAdvancedDesc": "Orta + riske göre getiri, alım zamanlamanın etkisi ve düşüşten toparlanma (Özet › 1 yıl).",
   "noAssetsYet": "Henüz varlık eklenmemiş",
-  "noAssetsYetHint": "İlk varlığını ekleyerek sandığını oluşturmaya başla.",
-  "addFirstAsset": "İlk Varlığını Ekle",
   "addAssetTitle": "Varlık Ekle",
   "editAsset": "Düzenle",
   "add": "Ekle",
   "update": "Güncelle",
   "save": "Kaydet",
-  "posPeriodPriceMove": "fiyat {pct}",
-  "@posPeriodPriceMove": {
-    "description": "Varlık ekranı pozisyon kartında dönem kâr/zarar satırının yüzdesi: tutar sahibin piyasa etkisi, yüzde ise 1 birimin (ürünün) fiyat hareketi. Etiket iki sayının farklı tabanı olduğunu söyler.",
-    "placeholders": {"pct": {"type": "String"}}
-  },
   "assetType": "Varlık Türü",
   "assetName": "Varlık adı",
   "nameRequired": "Ad zorunlu",
@@ -187,8 +179,6 @@
   "registerNameMissing": "Ad soyad gir.",
   "registerEmailInvalid": "Geçerli bir e-posta gir.",
   "registerPasswordsMismatch": "Şifreler eşleşmiyor.",
-  "termsMustAccept": "Yasal koşulları kabul etmelisin.",
-  "consentMustAccept": "Yurt dışı veri aktarımına açık rıza vermelisin.",
   "refreshPrices": "Fiyatları yenile",
   "portfolioActivity": "PORTFÖY HAREKETLERİ",
   "seeAllTransactions": "Tüm hareketleri gör",
@@ -627,7 +617,6 @@
       }
     }
   },
-  "demoTryButton": "Önce bir göz at",
   "demoBannerTitle": "Örnek portföy",
   "demoBannerSubtitle": "Varlıklar örnek, fiyatlar canlı",
   "demoCreateAccount": "Hesap oluştur",
@@ -876,8 +865,6 @@
   "generateCode": "Kod Üret",
   "tabChart": "Grafik",
   "tabSummary": "Özet",
-  "modeReal": "Gerçek",
-  "modeSim": "Bugünkü portföyle",
   "modeInfoSemantics": "{mode} modu hakkında bilgi",
   "@modeInfoSemantics": {
     "placeholders": {
@@ -917,9 +904,7 @@
     }
   },
   "simModeTitle": "Bugünkü portföyle",
-  "realModeTitle": "Gerçek Mod",
   "simModeBody": "Bugünkü net portföyünü seçili dönem boyunca elinde tutmuş olsaydın grafik nasıl görünürdü? Geçmişteki alım/satış kararlarını yok sayar, sadece güncel pozisyonun fiyat değişimini gösterir.",
-  "realModeBody": "Her günün grafikteki değeri, o gün elinde olan net miktara göre hesaplanır. Bir noktaya dokununca o günkü portföy değeri ve varsa alım / satış tutarları görünür. Böylece grafiğin neden yükseldiğini veya düştüğünü net görebilirsin.",
   "portfolioPerformance": "Portföy Performans",
   "chartDataFailed": "Grafik verisi alınamadı",
   "chartDataFailedBody": "Fiyat geçmişi şu an getirilemedi. Bağlantını kontrol edip tekrar deneyebilirsin.",
@@ -2665,7 +2650,6 @@
   "todayLoading": "Gün içi veri geliyor",
   "todayRealLabel": "Enflasyona göre",
   "todayRealHint": "Yıllık getirin ile TÜFE farkı",
-  "todayWeekLabel": "Son 7 gün",
   "todayWeekHint": "Piyasanın portföyüne etkisi · özet hazır",
   "todayGoalLabel": "Hedef",
   "todayGoalSetShort": "Tutar seç, kalanı her gün gör",
@@ -2698,45 +2682,7 @@
       }
     }
   },
-  "todayGreenLabel": "Artıdaki varlık",
-  "todayGreenHint": "Alış fiyatının üstündekiler",
-  "todayGreenValue": "{green} / {total}",
-  "@todayGreenValue": {
-    "placeholders": {
-      "green": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "todayOpenAction": "Aç",
-  "todayEventCpiShort": "TÜİK enflasyonu · {date}",
-  "@todayEventCpiShort": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventHolidayShort": "Borsa kapalı · {date}",
-  "@todayEventHolidayShort": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventMonthEndShort": "Ay sonu · aylık özet",
-  "todayDaysShort": "{n} gün",
-  "@todayDaysShort": {
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
   "todayTitle": "Bugün",
   "todayScopeOf": "{name} bugünü",
   "@todayScopeOf": {
@@ -2818,8 +2764,6 @@
       }
     }
   },
-  "todayWordToday": "bugün",
-  "todayWordTomorrow": "yarın",
   "todayInDays": "{n} gün sonra",
   "@todayInDays": {
     "placeholders": {
@@ -2871,63 +2815,9 @@
   },
   "todayClosedShort": "Kapalı",
   "todayMarketOnlyShort": "fiyat etkisi",
-  "todayGreenShort": "Artıda",
-  "todayWeekReadyShort": "Özet hazır",
   "todayGoalNewAction": "Yenisini seç",
-  "todayMonthlyTileSubShort": "Geçen ayın karnesi",
-  "todayEventCpiTiny": "TÜİK · {date}",
-  "@todayEventCpiTiny": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventHolidayTiny": "Tatil · {date}",
-  "@todayEventHolidayTiny": {
-    "placeholders": {
-      "date": {
-        "type": "String"
-      }
-    }
-  },
-  "todayEventMonthEndTiny": "Ay sonu",
   "todayMoveLabel": "Günün hareketi",
   "todayRealYearly": "yıllık",
-  "todayYourReturn": "Getirin {pct}",
-  "@todayYourReturn": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayCpiShort": "TÜFE {pct}",
-  "@todayCpiShort": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekUp": "{pct} yükseliş",
-  "@todayWeekUp": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekDown": "{pct} düşüş",
-  "@todayWeekDown": {
-    "placeholders": {
-      "pct": {
-        "type": "String"
-      }
-    }
-  },
-  "todayWeekHintShort": "Piyasanın portföyüne etkisi",
-  "todayWeekReady": "Haftalık özet hazır",
   "todayGoalSetAction": "Hedef belirle",
   "todayGoalSetSub": "Kalanı her gün gör",
   "todayGoalProgressTitle": "Hedefe %{pct}",
@@ -2946,15 +2836,6 @@
       }
     }
   },
-  "todayMonthlyTile": "{month} özeti",
-  "@todayMonthlyTile": {
-    "placeholders": {
-      "month": {
-        "type": "String"
-      }
-    }
-  },
-  "todayMonthlyTileSub": "Getiri, enflasyon, en iyi varlık",
   "goalTitle": "Portföy hedefi",
   "goalHint": "Yalnızca gösterim için; hesapları değiştirmez.",
   "goalInvalid": "Geçerli bir tutar gir",
@@ -2992,7 +2873,6 @@
       }
     }
   },
-  "emptyPasteHint": "Aracı kurum ekstreni (PDF, Excel ya da CSV) seç ya da yapıştır; her satır bir varlık olur.",
   "marketDollar": "Dolar",
   "marketEuro": "Euro",
   "marketGold": "Gram altın",
@@ -3260,20 +3140,6 @@
   "duelTied": "Başa baş gidiyorsunuz",
   "duelAhead": "{adIyelik} {fark} puan önündesin",
   "@duelAhead": {
-    "placeholders": {
-      "ad": {
-        "type": "String"
-      },
-      "adIyelik": {
-        "type": "String"
-      },
-      "fark": {
-        "type": "String"
-      }
-    }
-  },
-  "duelBehind": "{adIyelik} {fark} puan gerisindesin",
-  "@duelBehind": {
     "placeholders": {
       "ad": {
         "type": "String"
@@ -4030,10 +3896,8 @@
       "surum": {"type": "String"}
     }
   },
-  "yasalBelgeAcildi": "Okundu",
   "yasalBelgelerTurkce": "Belgeler Türkçedir.",
   "yasalKapiTaahhutBaslik": "Onayların",
-  "yasalKapiYatirimUyarisi": "Yatırım uyarısı",
   "yasalKapiOnayla": "Okudum, kabul ediyorum",
   "yasalKapiOnaylaKisa": "Kabul ediyorum",
   "yasalKapiKutuGerekli": "Devam etmek için kutuları işaretlemelisin.",

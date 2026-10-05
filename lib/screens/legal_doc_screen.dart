@@ -174,18 +174,14 @@ class LegalDocScreen extends StatefulWidget {
   final List<LegalBlock> blocks;
   final IconData icon;
 
-  /// Onay akışında kullanılıyorsa: sayfanın sonunda "Okudum ve onaylıyorum"
-  /// butonu görünür. Buton yalnızca kullanıcı en aşağıya kaydırdıktan sonra
-  /// aktifleşir. Butona basınca `Navigator.pop(ctx, true)` döner.
-  final bool confirmMode;
-  final String confirmButtonLabel;
-
-  /// Zorunlu okuma (bayrak `zorunlu_okuma`, 2026-10-04): onay düğmesi
-  /// metnin EN SONUNDA, listenin son öğesidir ve ancak sona ulaşılınca
-  /// açılır; okurken altta ilerleme + "sona kadar oku" ipucu durur. Dönüş
-  /// [ZorunluOkumaSonucu]. [confirmMode]'dan ayrı: o kip (alt sabit çubuk,
-  /// `true` dönüşü) bayrak kapalıyken birebir kalır. Açmak için
-  /// [zorunluOkumaAc].
+  /// Zorunlu okuma (2026-10-04): onay düğmesi metnin EN SONUNDA, listenin
+  /// son öğesidir ve ancak sona ulaşılınca açılır; okurken altta ilerleme +
+  /// "sona kadar oku" ipucu durur. Dönüş [ZorunluOkumaSonucu]. Açmak için
+  /// [zorunluOkumaAc]. `false` = yalnız okuma (Ayarlar'daki belgeler).
+  ///
+  /// 2026-10-05: eski onay kipi `confirmMode` (alt sabit "Okudum ve
+  /// onaylıyorum" çubuğu, `true` dönüşü) yalnız bayrak `zorunlu_okuma`
+  /// kapalıyken kayıt ekranında kullanılıyordu; bayrakla birlikte silindi.
   final bool zorunluOkuma;
 
   /// Zorunlu okumada onay düğmesinin yazımları (uzundan kısaya, sığan ilki
@@ -197,8 +193,6 @@ class LegalDocScreen extends StatefulWidget {
     required this.title,
     required this.blocks,
     required this.icon,
-    this.confirmMode = false,
-    this.confirmButtonLabel = 'Okudum ve onaylıyorum',
     this.zorunluOkuma = false,
     this.onayAdaylari = const [],
   });
@@ -215,27 +209,9 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
   double _ilerleme = 0;
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.confirmMode) {
-      _scrollCtrl.addListener(_onScroll);
-    }
-  }
-
-  @override
   void dispose() {
-    _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_reachedBottom) return;
-    // maxScrollExtent'e yakınsak (~40px tolerans) "okundu" say.
-    if (_scrollCtrl.position.pixels >=
-        _scrollCtrl.position.maxScrollExtent - 40) {
-      setState(() => _reachedBottom = true);
-    }
   }
 
   @override
@@ -351,34 +327,21 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
             if (!_reachedBottom) OkumaIpucu(ilerleme: _ilerleme),
           ] else
           Expanded(
-            child: NotificationListener<ScrollMetricsNotification>(
-              // Kısa belgelerde scroll gerekmiyorsa buton hemen aktifleşsin.
-              onNotification: (n) {
-                if (!widget.confirmMode || _reachedBottom) return false;
-                if (n.metrics.maxScrollExtent <= 0) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) setState(() => _reachedBottom = true);
-                  });
-                }
-                return false;
-              },
-              child: ListView.builder(
-                controller: _scrollCtrl,
-                padding: EdgeInsets.only(bottom: widget.confirmMode ? 24 : 48),
-                itemCount: widget.blocks.length,
-                itemBuilder: (_, i) => _buildBlock(widget.blocks[i], i),
-              ),
+            child: ListView.builder(
+              controller: _scrollCtrl,
+              padding: const EdgeInsets.only(bottom: 48),
+              itemCount: widget.blocks.length,
+              itemBuilder: (_, i) => _buildBlock(widget.blocks[i], i),
             ),
           ),
-          if (widget.confirmMode) _buildConfirmBar(context),
         ],
       ),
     );
   }
 
-  /// Zorunlu okumada metnin sonundaki onay bölümü. Görünüş [_buildConfirmBar]
-  /// ile aynı dil (amber dolgu, kilit → onay ikonu); fark yalnız yeri ve
-  /// yüksekliğin sabit olmaması: yazı ×2'de etiket iki satıra inebilir.
+  /// Zorunlu okumada metnin sonundaki onay bölümü: amber dolgu, kilit →
+  /// onay ikonu (silinen alt sabit onay çubuğuyla aynı dil); yüksekliği
+  /// sabit değil: yazı ×2'de etiket iki satıra inebilir.
   Widget _sondakiOnay(BuildContext context) {
     final active = _reachedBottom;
     final adaylar = widget.onayAdaylari.isEmpty
@@ -445,91 +408,6 @@ class _LegalDocScreenState extends State<LegalDocScreen> {
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConfirmBar(BuildContext context) {
-    final active = _reachedBottom;
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: BoxDecoration(
-          color: context.c.surface2,
-          border: Border(
-            top: BorderSide(color: context.c.hairline, width: 0.5),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!active)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 16, color: context.c.text58),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        'Onaylamak için belgeyi sona kadar oku',
-                        style: context.t.bodySmall
-                            ?.copyWith(color: context.c.text58),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            SandikBasma(
-              behavior: HitTestBehavior.opaque,
-              onTap: active ? () => Navigator.pop(context, true) : null,
-              child: Container(
-                height: 48,
-                decoration: BoxDecoration(
-                  color: active
-                      ? context.c.amberFill
-                      : context.c.amberFill.withValues(alpha: 0.30),
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                ),
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      active
-                          ? Icons.check_circle_rounded
-                          : Icons.lock_outline_rounded,
-                      size: 18,
-                      // Pasif hâlde de `onAmber` kullanılır, sadece
-                      // soluklaştırılır. Eskiden sabit siyahtı ve koyu
-                      // temada amber zemin üstünde okunmuyordu.
-                      color: active
-                          ? context.c.onAmber
-                          : context.c.onAmber.withValues(alpha: 0.45),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        widget.confirmButtonLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: active
-                              ? context.c.onAmber
-                              : context.c.onAmber.withValues(alpha: 0.45),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),

@@ -85,7 +85,6 @@ class _OnizlemeState extends State<_Onizleme> {
         children: [
           ZirveDonemSecici(
             secili: donem,
-            kayan: true,
             onSec: (x) => setState(() {
               donem = x;
               yenileme++;
@@ -97,7 +96,6 @@ class _OnizlemeState extends State<_Onizleme> {
             yenileme: yenileme,
             sonGuncelleme: null,
             donemGun: donem.gun,
-            arena: true,
             liderSeridi: widget.rakipVeriYok ? null : _serit(donem.gun),
           ),
         ],

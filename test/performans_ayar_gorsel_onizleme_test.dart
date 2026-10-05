@@ -21,7 +21,6 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
 import 'package:portfoy_takip/screens/settings_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/grafik_tipi_secici.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -98,10 +97,8 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
-    RemoteConfigService.testAcik = {'performans_ayar_sade'};
   });
   tearDown(() {
-    RemoteConfigService.testAcik = {};
     grafikTipiNotifier.value = GrafikTipi.varsayilan;
   });
 

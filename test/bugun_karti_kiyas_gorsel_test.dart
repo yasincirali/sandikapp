@@ -21,7 +21,6 @@ import 'package:portfoy_takip/services/bugun_yukleyici.dart';
 import 'package:portfoy_takip/services/daily_summary.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/history_service.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/utils/tr_format.dart' show dayKey;
 import 'package:portfoy_takip/widgets/bugun_karti.dart';
@@ -80,13 +79,11 @@ void main() {
     IntradaySeriesCache.instance.clear();
     BugunYukleyici.reelTest = (_) =>
         const ReelGetiriSatiri(nominal: 48.2, inflation: 45.1);
-    RemoteConfigService.testAcik = {'bugun_karti_kiyas'};
   });
   tearDown(() {
     HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
     IntradaySeriesCache.instance.clear();
     BugunYukleyici.reelTest = null;
-    RemoteConfigService.testAcik = {};
   });
 
   for (final b in [Brightness.dark, Brightness.light]) {

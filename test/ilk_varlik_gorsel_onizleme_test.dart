@@ -16,7 +16,6 @@ import 'package:portfoy_takip/models/ilk_varlik_secimi.dart';
 import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/models/signal_alert.dart';
 import 'package:portfoy_takip/models/user_model.dart';
@@ -114,9 +113,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     await initPreferencesCache();
-    RemoteConfigService.testAcik = {'ilk_varlik_kolay'};
   });
-  tearDown(() => RemoteConfigService.testAcik = {});
 
   Future<void> ciz(WidgetTester tester, String ad, Widget ekran,
       {Future<void> Function()? sonra,

@@ -10,21 +10,19 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/asset_detail_screen.dart';
-import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/services/varlik_istatistik.dart';
 import 'package:portfoy_takip/widgets/donem_istatistik.dart';
 import 'package:portfoy_takip/widgets/pozisyon_islemleri.dart';
 
 import 'helpers/kaynak.dart';
 
-/// Sadeleştirme 2 (2026-10-04), varlık ekranı maddeleri — hepsi
-/// `varlik_islem_cubugu` bayrağının arkasında:
+/// Sadeleştirme 2 (2026-10-04), varlık ekranı maddeleri (bayrak
+/// `varlik_islem_cubugu` 2026-10-05'te kalktı, davranış kalıcı):
 ///   · madde 6: varlık ekranının altında "Al · Sat · Temettü" çubuğu;
 ///     kaydırmayla AYNI kod yolu ve AYNI kurallar.
 ///   · madde 7: dönem yüzdesi tek yerde (fiyatın altında).
 ///   · madde 11: hiç çizilmeyen Sil menüsü ve ortak sekmesi silindi.
-/// Bayrak kapalıyken ekran birebir eski kalmalı (kullanıcı kuralı:
-/// "varolan hiçbir özelliği bozma").
+/// "Bayrak kapalı = eski ekran" testleri bayrakla birlikte silindi.
 
 const _uid = 'user-1';
 
@@ -91,11 +89,6 @@ Future<void> _ac(WidgetTester tester, Asset ekran, List<Asset> defter) async {
   await tester.pump(const Duration(milliseconds: 100));
 }
 
-void _bayrak(bool acik) {
-  RemoteConfigService.testAcik = acik ? {'varlik_islem_cubugu'} : {};
-  addTearDown(() => RemoteConfigService.testAcik = {});
-}
-
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('tr_TR');
@@ -103,20 +96,8 @@ void main() {
     await initPreferencesCache();
   });
 
-  test('bayrak varsayılanı KAPALI', () {
-    expect(RemoteConfigService.instance.varlikIslemCubugu, isFalse);
-  });
-
   group('madde 6 — işlem çubuğu', () {
-    testWidgets('bayrak kapalı: çubuk yok (eski ekran)', (tester) async {
-      _bayrak(false);
-      await _ac(tester, _varlik(), [_varlik()]);
-      expect(find.byType(PozisyonIslemCubugu), findsNothing);
-      await tester.pump(const Duration(seconds: 10));
-    });
-
-    testWidgets('bayrak açık: hissede Al · Sat · Temettü', (tester) async {
-      _bayrak(true);
+    testWidgets('hissede Al · Sat · Temettü', (tester) async {
       await _ac(tester, _varlik(), [_varlik()]);
       expect(find.byType(PozisyonIslemCubugu), findsOneWidget);
       expect(find.byKey(const ValueKey('pozisyon-islemi-al')), findsOneWidget);
@@ -129,7 +110,6 @@ void main() {
 
     testWidgets('Al dokunuşu hızlı alış diyaloğunu açar (kaydırmayla aynı yol)',
         (tester) async {
-      _bayrak(true);
       await _ac(tester, _varlik(), [_varlik()]);
       await tester.tap(find.byKey(const ValueKey('pozisyon-islemi-al')));
       await tester.pump();
@@ -145,7 +125,6 @@ void main() {
     });
 
     testWidgets('temettü dağıtmayan türde Temettü yok', (tester) async {
-      _bayrak(true);
       final altin = _varlik(
           type: AssetType.altin, ticker: 'ALTIN_GRAM', subCategory: 'Gram');
       await _ac(tester, altin, [altin]);
@@ -157,7 +136,6 @@ void main() {
 
     testWidgets('ortağın varlığında çubuk yok (kaydırma da yok)',
         (tester) async {
-      _bayrak(true);
       await _ac(tester, _varlik(userId: 'ortak-1'), [_varlik()]);
       expect(find.byType(PozisyonIslemCubugu), findsNothing);
       await tester.pump(const Duration(seconds: 10));
@@ -165,7 +143,6 @@ void main() {
 
     testWidgets('kapanmış/defterde olmayan pozisyonda çubuk yok',
         (tester) async {
-      _bayrak(true);
       await _ac(tester, _varlik(), const []);
       expect(find.byType(PozisyonIslemCubugu), findsNothing);
       await tester.pump(const Duration(seconds: 10));
@@ -192,7 +169,6 @@ void main() {
           reason: 'temettü kuralı ortak listeden');
       expect(detay, contains('pozisyonIslemiAc('));
       expect(detay, contains('pozisyonIslemleri('));
-      expect(detay, contains('RemoteConfigService.instance.varlikIslemCubugu'));
     });
   });
 
@@ -251,20 +227,8 @@ void main() {
 
     test('dönem satırı yüzdesiz: yalnız tutar (piyasa etkisi)', () {
       String tl(double v) => '₺${v.round()}';
-      // Eski hâl korunur: tutar + "fiyat %" eki.
-      expect(
-          kazancSatiri(
-              tutar: 120,
-              yuzde: -2.5,
-              tutarMetni: tl,
-              yuzdeEtiketi: (y) => 'fiyat $y')?.metin,
-          '+₺120 · fiyat −%2,50');
       final k = kazancSatiri(
-          tutar: 120,
-          yuzde: -2.5,
-          tutarMetni: tl,
-          yuzdeEtiketi: (y) => 'fiyat $y',
-          yuzdesiz: true);
+          tutar: 120, yuzde: -2.5, tutarMetni: tl, yuzdesiz: true);
       expect(k?.metin, '+₺120');
       expect(k?.yon, 1);
       // Tutar sıfırsa fiyat oynamış olsa da "Değişim yok": satırın sorusu
@@ -274,10 +238,10 @@ void main() {
           isNull);
     });
 
-    test('pozisyon kartı ve ızgara bayrağa bağlı', () {
+    test('pozisyon kartı yüzdesiz, ızgara dönem getirisini gizler', () {
       final detay = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
-      expect(detay, contains('donemYuzdesiz:'));
-      expect(detay, contains('donemGetirisiGizli: tekYuzde'));
+      expect(detay, contains('yuzdesiz: true'));
+      expect(detay, contains('donemGetirisiGizli: true'));
     });
   });
 

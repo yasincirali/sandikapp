@@ -15,7 +15,6 @@ import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
 import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -100,8 +99,8 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   final double? prefillPrice;
   final DateTime? prefillDate;
 
-  /// Boş ana ekrandaki "Ne biriktiriyorsun?" seçimi (bayrak
-  /// `ilk_varlik_kolay`). Tür her zaman, gram altın / dolar / euro'da varlık
+  /// Boş ana ekrandaki "Ne biriktiriyorsun?" seçimi (2026-10-04, ilk
+  /// varlık kolaylığı). Tür her zaman, gram altın / dolar / euro'da varlık
   /// da seçili açılır; kullanıcıya yalnız miktar kalır. Düzenleme ve sepet
   /// değerleri yine kazanır (prefill kuralı).
   final IlkVarlikSecimi? hizliSecim;
@@ -256,19 +255,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (eklendi == true && mounted) Navigator.of(context).pop(true);
   }
 
-  /// Sadeleştirme 2 (bayrak `ilk_varlik_kolay`): yeni kayıtta iki hızlı yol
+  /// Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
+  /// kalktı, davranış kalıcı): yeni kayıtta iki hızlı yol
   /// görünür düğme, komisyon + not "Ayrıntı ekle" altında. Düzenleme ve
   /// sepet modunda form eskisi gibi: orada kullanıcı zaten bir kaydın
   /// ayrıntısındadır.
-  /// Tur hedefi `topluEkle` TEK yerde kurulur: bayrakta formdaki "Ekstreden
-  /// aktar" düğmesinde, değilse uygulama çubuğundaki Toplu Ekle ikonunda.
+  /// Tur hedefi `topluEkle` TEK yerde kurulur: yeni kayıtta formdaki
+  /// "Ekstreden aktar" düğmesinde, düzenleme/sepette uygulama çubuğundaki
+  /// Toplu Ekle ikonunda.
   Widget _topluCapa(Widget w) =>
       _kolay ? w : TourAnchor(target: TourTarget.topluEkle, child: w);
 
-  bool get _kolay =>
-      RemoteConfigService.instance.ilkVarlikKolay &&
-      !_isEditing &&
-      !widget.cartMode;
+  bool get _kolay => !_isEditing && !widget.cartMode;
 
   @override
   void dispose() {
@@ -1265,7 +1263,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── İki hızlı yol (bayrak `ilk_varlik_kolay`) ─────────────────────────────
+  // ── İki hızlı yol (sadeleştirme 2, 2026-10-04) ─────────────────────────────
   // Hızlı Giriş ("GARAN 500 adet 105 lira") ve ekstre içe aktarma rakiplerden
   // ayrıştıran iki yol; bugün biri etiketsiz mikrofon ikonu, diğeri Toplu
   // Ekle'nin içinde. Burada formun en üstünde, adıyla.

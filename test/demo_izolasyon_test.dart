@@ -299,13 +299,13 @@ void main() {
     DemoModu.girisDugmesiAcik = () => false;
     await kur();
     await tester.pump();
-    expect(find.text(trMetni('demoTryButton')), findsNothing);
+    expect(find.text(trMetni('welcomeTryDemo')), findsNothing);
 
     DemoModu.girisDugmesiAcik = () => true;
     await tester.pumpWidget(const SizedBox.shrink());
     await kur();
     await tester.pump();
-    expect(find.text(trMetni('demoTryButton')), findsOneWidget);
+    expect(find.text(trMetni('welcomeTryDemo')), findsOneWidget);
 
     await _sok(tester);
   });
