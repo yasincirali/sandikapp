@@ -368,6 +368,11 @@ class YasalMetin {
 /// sonuna kadar okunur ([YasalBelge.sonunaKadarOkunur]); Koşullar kutuyla
 /// kabul edilir, Gizlilik ve KVKK bilgilendirme olarak sunulur. Dört
 /// belgenin dördü bunu anlatan cümlelerle arttı; kutu 1.1.
+/// 1.5 (0120, 2026-10-05, varlık notları): Koşullar, Gizlilik ve KVKK —
+/// not geri bildirimi (0117), Premium hakkı (0116) ve Anthropic (yalnız
+/// piyasa ölçümü, kişisel veri gitmez). Kişisel veri yeni bir alıcıya
+/// aktarılmadığı için Açık Rıza Metni 1.4'te kaldı; kapı rızayı yeniden
+/// okutmaz.
 abstract final class YasalMetinKatalogu {
   /// Tek kutunun sürümü — kutu cümlesi değişince artar.
   ///

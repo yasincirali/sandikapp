@@ -8,6 +8,18 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-05 Yasal metin 1.5: varlık notları, geri bildirim, Premium hakkı (0120)
+
+Koşullar, Gizlilik ve KVKK 1.5 oldu (Açık Rıza Metni 1.4'te kaldı: yapay
+zekâya kişisel veri gitmiyor). Yayın sırası:
+1. PR birleşince **Supabase deploy** (main, hedef `ikisi`, migrations) → 0120
+   iki sunucuya; şema eşitliği yeşil olmalı. Bunu Claude yapar.
+2. Ancak ondan sonra 1.5'i taşıyan build mağazaya. Eski build'ler (1.4)
+   sunucuda 1.5'i görünce kapıyı açmaz; yeni build bir kez sorar
+   (kutu + bilgilendirme; rıza yeniden okutulmaz).
+3. Web (`docs/`) main'e girince GitHub Pages'te kendiliğinden yayınlanır.
+4. RevenueCat SDK gelince metne RevenueCat eklenecek (1.6, aynı süreç).
+
 ## ⏳ 2026-10-05 Balina radarı tamamlama + yapay zekâ notu + Premium altyapısı (0115–0118) — dal `claude/project-thread-w9jtzj`
 
 Her şey bayrak arkasında: `balina_radari_acik` ve `paywall_enabled`

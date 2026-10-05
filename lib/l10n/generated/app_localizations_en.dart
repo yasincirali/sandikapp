@@ -5586,7 +5586,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.4: the consent steps are simpler. The Explicit Consent Notice is still read to the end and your consent is given at the end of the text; it is no longer collected together with any other declaration. You accept the Terms of Use with a single box. The Privacy Policy and the KVKK Privacy Notice are for information: they open as links and do not depend on your acceptance. The documents now describe this; the data processed, third parties and retention periods have not changed.';
+      'Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it. The Explicit Consent Notice has not changed.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';

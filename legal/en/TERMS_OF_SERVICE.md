@@ -2,8 +2,8 @@
 
 **Effective date:** October 5, 2026
 **Last updated:** October 5, 2026
-**Version:** 1.4
-**Source:** TR 1.4 (translation of the Turkish text; the Turkish version prevails)
+**Version:** 1.5
+**Source:** TR 1.5 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -38,6 +38,8 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 
 **Race (optional):** If you join the Race, your period return and asset-type shares are calculated daily on the server; your standing among participants is shown to you as a percentile, and you can compare your return with your partner. Your identity and amounts are not shown to other participants. You can leave the Race at any time.
 
+**Market movement and asset notes:** From public market data, the App shows money flowing into and out of funds (money flow), unusual trading volume in equities (volume radar) and buyer pressure in crypto. Weekly asset notes and a monthly report for the assets in your portfolio are prepared automatically with AI (details: Privacy Policy §5.3). Full notes and the monthly report may be available to Premium members; the free tier shows the first sentence of a note.
+
 ---
 
 ## 3. IMPORTANT NOTICE — Investment Advice Disclaimer
@@ -47,6 +49,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 - The Company is not licensed by the Capital Markets Board of Türkiye (SPK).
 - Prices, performance figures, signals and charts shown in the App are **for information only**.
 - No content constitutes **investment advice, a buy/sell recommendation or financial consultancy**.
+- Market-movement metrics (money flow, volume radar, buyer pressure) and **AI-written asset notes** describe past market data and do not predict the future. Notes are generated automatically and are not checked one by one by a person; although numbers are compared with the source data automatically, they may contain errors. Do not make a note the sole basis of an investment decision.
 - We do not guarantee the accuracy, timeliness or completeness of data; data from third-party providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, etc.) is presented as is.
 - Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
 - **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
@@ -113,7 +116,7 @@ If these rules are breached, **your account may be closed without notice**.
 
 ## 7. Third-Party Services
 
-The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes) and price data providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, the Central Bank of the Republic of Türkiye, EGM, etc.). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
+The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes with AI; no personal data is sent) and price data providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, the Central Bank of the Republic of Türkiye, EGM, etc.). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
 
 The terms of use of third-party data providers, including information provided by sources such as Yahoo Finance and TEFAS, apply. If data retrieval is temporarily blocked, alternative sources or manual data entry options may be offered.
 

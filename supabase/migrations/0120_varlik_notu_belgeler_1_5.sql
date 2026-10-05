@@ -1,14 +1,53 @@
-// ÜRETİLDİ — elle düzenleme. Kaynak: legal/tr/*.md; üreten:
-// `python docs/_build_legal.py`. Kayma kilidi: test/yasal_web_esleme_test.dart.
-//
-// Değerler md'nin KANONİK hâlidir (BOM yok, LF, sondaki boşluk kırpılmış;
-// yer tutucular doldurulmamış). Veritabanındaki `govde` ve `govde_hash`
-// bu metinlerdir (`YasalMetinKatalogu`).
+-- 0120 — Varlık notları ve Premium hakkı: Koşullar, Gizlilik, KVKK 1.5 (2026-10-05)
+--
+-- ⚠️ NUMARA GEÇİCİ. Dal `origin/main` @ b34dcb1'den açıldı (son migration
+-- 0119). Dağıtımdan ÖNCE canlı defter iki sunucuda sorgulanır; 0120 doluysa
+-- dosya sıradaki boş numaraya yeniden adlandırılır. İçerik yalnız EKLER ve
+-- kendi doğrulamasını yapar; numara değişimi gövdeyi etkilemez.
+--
+-- ## Neden
+-- Yasal metin kuralı (2026-10-04): yeni veri işleme, üçüncü taraf ya da
+-- saklama AYNI değişiklikte metne girer. #103 (0116, 0117) şunları ekledi
+-- ve 1.4 bunları anlatmıyordu:
+-- * `not_geri_bildirim` (0117): oy, "yanlış sayı" işareti, ≤500 karakter
+--   açıklama; kullanıcının kendi satırı, hesapla `on delete cascade`.
+-- * `premium_haklari` (0116): kaynak, ürün, mağaza, başlangıç/bitiş, iptal;
+--   hesapla `on delete cascade`. Ödeme/kart bilgisi hiç gelmez.
+-- * Anthropic (analiz-hazirla): varlık başına not. Modele yalnız sembol ve
+--   piyasa ölçümleri gider (fon akışı/büyüklük/yatırımcı, hacim, fiyat,
+--   olay); kişisel veri, tutan sayısı ve kimin tuttuğu gitmez — sayım yalnız
+--   sıralama içindir (`varliklariSec`). Kişisel veri aktarılmadığı için
+--   Açık Rıza Metni (yurt dışı aktarım rızası) DEĞİŞMEDİ: 1.4 kalır, kapı
+--   rızayı yeniden okutmaz.
+-- RevenueCat metne GİRMEDİ: SDK henüz yok, satın alma benzetim. SDK gelince
+-- aynı süreçle 1.6.
+--
+-- ## Bu migration
+-- Üç belgenin 1.5 metni (yürürlük 2026-10-05): Koşullar §2 + §3 + §7,
+-- Gizlilik §3.2 + §4 + §5 (+ yeni §5.3) + §7 + §12, KVKK §2.3 + §3 + §4.2
+-- + §5.2 + §6. Fonksiyon, tablo, RLS ve GRANT'a DOKUNULMAZ.
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: üç metin satırı. 1.4 taşıyan istemci sunucuda 1.5'i görünce
+-- kapıyı HİÇ açmaz (`YasalOnayService.uygulamaEski`, çift onay kuralı);
+-- güncel istemci 1.5'i bir kez sorar (kutu + bilgilendirme; rıza değil).
+--
+-- ## Dağıtım sırası
+-- Bu migration İKİ sunucuya (Frankfurt → Tokyo) → `python tool/sema_esitlik.py`
+-- → ANCAK SONRA 1.5'i gösteren istemci.
+--
+-- ## Metin ekleme
+-- INSERT'ler `tool/yasal_metin_uret_test.dart` çıktısıdır; gövdelere elle
+-- dokunma (hash check'i tutmaz).
 
-/// Uygulamada gösterilen yasal belgelerin kanonik md metni — anahtar
-/// depo köküne göre kaynak yolu.
-const yasalBelgeKaynaklari = <String, String>{
-  'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
+-- ── 1) Metinler: Koşullar, Gizlilik, KVKK 1.5 (tool/yasal_metin_uret_test.dart çıktısı)
+
+-- kosullar/1.5/tr  (Kullanım Koşulları)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kosullar', '1.5', 'tr', 'Kullanım Koşulları', date '2026-10-05',
+  '739276d17381a1598168474da9477b919d25cb3287f6cdac42ae738b02ed3603',
+  replace($yasal$# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -246,8 +285,15 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- gizlilik_politikasi/1.5/tr  (Gizlilik Politikası)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('gizlilik_politikasi', '1.5', 'tr', 'Gizlilik Politikası', date '2026-10-05',
+  '3652685b2ab1b158bc0c025fcdedeec492e11535b800ee2e86cff709497e1985',
+  replace($yasal$# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -522,8 +568,15 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
 ---
 
-*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
+*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kvkk_aydinlatma/1.5/tr  (KVKK Aydınlatma Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kvkk_aydinlatma', '1.5', 'tr', 'KVKK Aydınlatma Metni', date '2026-10-05',
+  '842c7c0acb8c1250ca73d244001bbfce32a8e42dca7fec617218320c41a468de',
+  replace($yasal$# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 5 Ekim 2026
 **Son güncelleme:** 5 Ekim 2026
@@ -770,112 +823,49 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**''',
-  'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
+**`sandikapp.destek@gmail.com`**$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Sürüm:** 1.4
+-- ── 2) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+declare
+  v_tur text;
+begin
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity) then
+    raise exception '0120: yasal_metinler RLS (enable + force) kapali';
+  end if;
+  if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
+    raise exception '0120: yasal_metinler istemciden yazilabilir';
+  end if;
 
-> Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz. Rıza yalnız bu düğmeyle verilir: kayıt ekranındaki onay kutusu Kullanım Koşulları'nın kabulü içindir ve açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
+  -- Üç belgenin 1.5'i var; 1.4 satırları yerinde (eski onaylar onu gösterir).
+  foreach v_tur in array array['kosullar', 'gizlilik_politikasi', 'kvkk_aydinlatma'] loop
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = '1.5' and dil = 'tr'
+                      and yururluk_tarihi = date '2026-10-05') then
+      raise exception '0120: %/1.5/tr metni yok', v_tur;
+    end if;
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = '1.4' and dil = 'tr') then
+      raise exception '0120: %/1.4/tr metni kaybolmus (degismez olmaliydi)', v_tur;
+    end if;
+  end loop;
 
----
+  -- Açık Rıza Metni değişmedi: 1.5 satırı OLMAMALI (kapı rızayı yeniden okutmaz).
+  if exists (select 1 from public.yasal_metinler
+              where tur = 'acik_riza_metni' and surum = '1.5') then
+    raise exception '0120: acik_riza_metni/1.5 beklenmiyordu';
+  end if;
 
-## 1. Açık Rıza Veriyorum
+  if exists (select 1 from public.yasal_metinler
+              where surum = '1.5'
+                and tur in ('kosullar', 'gizlilik_politikasi', 'kvkk_aydinlatma')
+                and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
+    raise exception '0120: govde_hash tutmuyor';
+  end if;
 
-`Yasin Çıralı` ("Şirket") tarafından sunulan **sandık** mobil uygulamasını kullanmak amacıyla:
-
-### A) Yurt Dışına Veri Aktarımı
-
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.**'e, **Amerika Birleşik Devletleri'nde (ABD)** ve küresel altyapıda çalışan **Google LLC (Firebase: bildirim, hata raporu, kullanım istatistiği, uzaktan ayar; Gmail e-posta altyapısı)** ile **Apple Inc. (iOS bildirimleri ve kilit ekranı canlı etkinliği)** servislerine;
-
-- E-posta adresim
-- Kullanıcı adım (görünen adım)
-- Şifremin hash hâli
-- Portföy varlık kayıtlarım (sembol, tür, miktar, alış fiyatı, tarih, not) ile vadeli mevduat ve BES sözleşme bilgilerim
-- Performans anlık görüntü geçmişim
-- Ortaklık bağlantı kayıtlarım
-- Push bildirim token'ım ve bildirimlerin içeriği
-- Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm ve kayıtlı cihazlarım
-- Hata raporlarım ve uygulama kullanım istatistiklerim (tutar, miktar ve e-posta içermeden)
-- Yasal metin onay ve bilgilendirme kayıtlarım (kabul ettiğim ya da bana sunulan metin ve sürümü, zaman, platform, uygulama sürümü, dil)
-
-aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
-
-Bu rıza kayıt için zorunludur; metin sonuna kadar okunduktan sonra metnin sonundaki düğmeyle verilir (kayıt ekranında ya da Apple veya Google ile ilk girişte açılan onay ekranında).
-
----
-
-### B) Push Bildirimleri
-
-Bildirim izni bu metinle değil, **işletim sisteminin izin penceresiyle** verilir; uygulama bu pencereyi bildirimin işe yarayacağı bir anda (ör. ilk varlığınızı ekledikten sonra) gösterir. İzin verirseniz cihaz bildirim token'ınız sunucuya kaydedilir ve bildirimler Firebase Cloud Messaging (iPhone'da ayrıca Apple Push Notification service) üzerinden iletilir:
-
-- Fiyat alarmları ve teknik analiz sinyalleri (açtıysanız)
-- Günlük brifing, haftalık ve aylık özet
-- Ortaklık daveti ve ortak etkinliği bildirimleri
-- Temettü ve takvim hatırlatmaları
-
-İzni istediğiniz zaman cihaz ayarlarından kapatabilirsiniz; bildirim türlerini uygulamada Ayarlar → Bildirimler'den yönetebilirsiniz.
-
----
-
-### C) Hata Raporları ve Kullanım İstatistikleri
-
-Uygulamada teknik bir çökme ya da hata yaşandığında hata kaydı, cihaz modeli, OS sürümü ve uygulama sürümü **Firebase Crashlytics** üzerinden; uygulamanın nasıl kullanıldığına dair olaylar (görüntülenen ekranlar, kullanılan özellikler) **Firebase Analytics** üzerinden Google'a gönderilir. Bu kayıtlar e-posta, parola, tutar ve miktar içermez; rastgele kurulum kimliği ve hesap numaranız (rastgele kullanıcı kimliği) ile ilişkilendirilir. Bu verilerin yurt dışına aktarımı yukarıdaki A bölümündeki açık rızanız kapsamındadır. Uygulamada bunlar için ayrı bir kapatma seçeneği yoktur.
-
----
-
-### D) Pazarlama İletişimi
-
-Uygulama size **pazarlama e-postası veya reklam iletisi göndermez**. Size gönderilen e-postalar yalnızca hesap e-postalarıdır (kayıt, giriş ve yeni cihaz doğrulama kodları, şifre sıfırlama). İleride pazarlama iletişimi eklenirse bunun için ayrıca onayınız istenir.
-
----
-
-### E) Zirvedeki Portföyler (uygulama içinde ayrıca istenir)
-
-Bu rıza kayıt sırasında DEĞİL, Zirvedeki Portföyler ekranını ilk açtığımda ayrı bir kartla istenir. Dönemsel getiri yüzdemin, varlık türü paylarımın ve fonlarda TEFAS fon kodu ile portföy içindeki payının anonim bir karşılaştırma havuzunda işlenmesine ve havuza katılan diğer kullanıcılara kimliğim, tutarlarım ve miktarlarım olmadan gösterilmesine; karşılığında katılımcıların aynı anonim bilgilerini görmeye **AÇIK RIZA VERİYORUM** (ayrıntı: Gizlilik Politikası §5.1, KVKK Aydınlatma Metni §5.3). Rıza vermezsem getirim bu amaçla hesaplanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanın verildiği tarih ve gösterilen metnin sürümü ispat için kaydedilir.
-
-Bu rıza ekrandaki "Katılıyorum" düğmesiyle verilir; isteğe bağlıdır.
-
----
-
-## 2. Açık Rızamın Geri Alınması
-
-Vermiş olduğum açık rızayı, KVKK Madde 7 ve 11 uyarınca **istediğim zaman geri alabileceğimi** biliyorum:
-
-- **Zirvedeki Portföyler rızası:** Performans → Zirvedeki Portföyler → "Zirvedeki Portföyler'den ayrıl" (havuzdaki ölçümler anında silinir)
-- **Yurt dışı aktarım rızası:** Açık rızamın geri çekilmesi, hizmetin sunulamaması anlamına gelir; bu durumda hesabımı silmem gerekir (Profil → Ayarlar → Hesabımı Sil).
-- **Bildirim izni:** Cihaz ayarlarından kapatılır (B bölümü).
-
-Rızamı geri çektiğim tarihten önceki işleme faaliyetleri hukuka uygun sayılmaya devam eder.
-
----
-
-## 3. Açık Rızanın Geri Alınmasının Sonuçları
-
-| Geri çekilen rıza ya da izin | Sonuç |
-|---|---|
-| Yurt dışı aktarım (A) | Hizmet sunulamaz; hesabınızı silerek rızanızı geri çekersiniz |
-| Bildirim izni (B) | Bildirim alamazsınız; ortaklık davetlerini ve bildirimleri uygulama içinden kontrol edersiniz |
-| Zirvedeki Portföyler (E) | Havuzdaki ölçümleriniz silinir; zirve listesini göremezsiniz, diğer özellikler etkilenmez |
-
----
-
-## 4. Beyan
-
-- Bu Açık Rıza Metni'ni okuduğumu,
-- Kişisel verilerimin nasıl işleneceğini, hangi amaçlarla kullanılacağını, kimlere aktarılacağını ve haklarımı **KVKK Aydınlatma Metni**'nden ayrıntılı olarak öğrendiğimi,
-- Verdiğim açık rızanın **özgür iradem ile, belirli ve bilgilendirilmiş** şekilde verildiğini,
-- 18 yaşından büyük olduğumu ve bu rızayı verme ehliyetinin bulunduğunu
-
-beyan ve kabul ederim.
-
----
-
-**Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.4
-**Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
-
----
-
-*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*''',
-};
+  raise notice '0120 tamam: Kosullar, Gizlilik, KVKK 1.5; % metin.',
+    (select count(*) from public.yasal_metinler);
+end $$;

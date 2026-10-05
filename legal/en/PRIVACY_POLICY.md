@@ -2,8 +2,8 @@
 
 **Effective date:** October 5, 2026
 **Last updated:** October 5, 2026
-**Version:** 1.4
-**Source:** TR 1.4 (translation of the Turkish text; the Turkish version prevails)
+**Version:** 1.5
+**Source:** TR 1.5 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -47,6 +47,8 @@ The policy is prepared to meet the requirements of KVKK (Turkish Personal Data P
 | Period return (%), asset-type shares (%) and per-fund-code shares (%) — computed on the server | Top Portfolios (anonymous comparison, see §5.1; only if you give explicit consent) |
 | Period return (%) and asset-type shares (%) — computed daily on the server | Race (optional; your percentile and comparison with your partner) |
 | Partnership invite codes and mutual links | Multi-user sharing feature |
+| Your feedback on asset notes (optional): the note's asset and period, a "helpful / not helpful" vote, a "wrong number" flag, an explanation of up to 500 characters | Measuring note quality, finding and correcting faulty notes (see §5.3) |
+| Premium entitlement: its source (gift, store subscription or support), start and end time, store and product name, whether renewal was turned off | Verifying access to Premium content on the server. Payment and card details never reach us; Apple or Google collects the payment |
 
 **Statement import:** A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved.
 
@@ -99,6 +101,8 @@ The Privacy Policy and the KVKK Disclosure are for information and do not depend
 8. Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)
 9. Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)
 10. Race: if you join, calculating your period return and showing your percentile and comparison with your partner
+11. Premium: verifying your right to access Premium content (full asset notes, monthly report)
+12. Using your feedback on asset notes to measure and improve their accuracy
 
 ---
 
@@ -115,6 +119,7 @@ The Privacy Policy and the KVKK Disclosure are for information and do not depend
 | Email delivery | Google (Gmail email infrastructure) | Email address, verification / sign-in code | Delivering code emails | Global (Google) |
 | Sign in with Apple / Google Sign-In (if you choose them) | Apple Inc. / Google LLC | Verification with the provider during sign-in | Authentication | Global |
 | Price and market data | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, CBRT EVDS, EGM, open.er-api.com, yasincirali.github.io (IPO calendar) | No personal data is sent; only symbol / fund-code queries. For requests sent from the device, the provider sees the device's IP address as with any internet request | Price retrieval | Global |
+| Writing asset notes (AI) | Anthropic PBC | No personal data is sent; only the asset's symbol and market metrics (price, trading volume, fund size, money flow and investor count) | Weekly asset note and monthly report text (see §5.3) | USA |
 
 **These providers act solely as data processors, on our instructions. We remain the data controller.**
 
@@ -125,6 +130,14 @@ Top Portfolios is optional and covers only users who give explicit consent in th
 ### 5.2 Sharing with Your Partner and in the Race
 
 A user you have a partnership with sees your username and the assets, quantities and performance in your portfolio. In the Race your identity and amounts are not shown to other participants; you are shown only your own percentile and can compare returns with your partner.
+
+### 5.3 AI-Written Asset Notes
+
+The weekly asset notes on asset pages and the monthly report are written on our server with Anthropic's AI model (Claude). A note is written once **per asset**, not per user: everyone holding the same asset reads the same note. Opening or reading a note sends no request to the AI; the note is read from the database.
+
+Only the asset's symbol and public market metrics are sent to the model (price change, trading volume, fund size, money flow and investor count). Your name, email, account ID, username, the quantity and amount you hold, or who holds an asset are not sent. The assets that get a note are selected from the aggregate list of assets held in users' portfolios (most-held first); this selection is not sent to the model either.
+
+Notes are generated automatically and checked automatically before publication: every number in the text is compared with the source data, and a note using buy/sell/target-price language is not published. No person reads each note; notes may contain errors. If you flag "wrong number" on a note or write an explanation, that feedback is stored with your account and used only to correct notes; it is not shown to other users.
 
 ---
 
@@ -149,6 +162,8 @@ The destination countries (Supabase: {SUPABASE_ULKE}; Firebase: USA) are not on 
 | Top Portfolios pool measurements (return %, type share %) | Last 365 days rolling; immediately on consent withdrawal or account deletion |
 | Race measurements (return %, type share %) | Last 365 days rolling; immediately on account deletion |
 | Registered devices | Until you remove the device from the list or delete your account |
+| Feedback on asset notes | Until account deletion |
+| Premium entitlement records | Until account deletion |
 | Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish Code of Obligations Art. 146 limitation period) |
 | Push token | Deleted on sign-out; if the App is uninstalled, found invalid and deleted at the next send |
 | Notification records (in-app notifications, price alert notifications) | 90 days |
@@ -233,7 +248,7 @@ When you sign out, the session token, your cache and preferences and the widget 
 
 ## 12. Investment Advice Disclaimer
 
-**sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals and charts shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
+**sandık** is a portfolio tracking tool. It is NOT an investment adviser or brokerage licensed by the SPK (Capital Markets Board of Türkiye). Prices, performance, signals, charts, market-movement metrics (money flow, volume radar, buyer pressure) and AI-written asset notes shown in the App are for information only and do not constitute investment advice. Make your investment decisions after consulting an SPK-licensed adviser.
 
 The full text of this notice is shown to you during registration (and on the consent screen at the first sign-in with Apple or Google); you accept it at the bottom after reading it to the end. The record of your acceptance is kept as legal evidence.
 

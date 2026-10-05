@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="95a3d89449a31ad8abc04ed971e2bdd4d26421c7d52c5f6fe8a7bbf6388f9e49">
-<meta name="sandik-govde-sha256" content="4bbab91f3f5e0768df2deb2b46654a62d8b8260c27500fed1227f514a591326a">
+<meta name="sandik-kaynak-sha256" content="3652685b2ab1b158bc0c025fcdedeec492e11535b800ee2e86cff709497e1985">
+<meta name="sandik-govde-sha256" content="7879ba32d27a4f05352f2da581973bf58dc107ae9856d6d9202ef1b75fafab0c">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,7 +67,7 @@ button:hover { opacity: 0.9; }
 <h1>Gizlilik Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 5 Ekim 2026
 <strong>Son güncelleme:</strong> 5 Ekim 2026
-<strong>Sürüm:</strong> 1.4</p>
+<strong>Sürüm:</strong> 1.5</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
 <p>Bu uygulamayı (<strong>sandık</strong>, "Uygulama") <code>Yasin Çıralı</code> ("biz", "Şirket") işletmektedir.</p>
@@ -148,6 +148,14 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Ortaklık davet kodları ve karşılıklı bağlantılar</td>
 <td>Çoklu kullanıcı paylaşımı özelliği</td>
+</tr>
+<tr>
+<td>Varlık notlarına geri bildiriminiz (isteğe bağlı): notun varlığı ve dönemi, "işe yaradı / yaramadı" oyu, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama</td>
+<td>Notların kalitesini ölçmek, hatalı notları bulup düzeltmek (bkz. §5.3)</td>
+</tr>
+<tr>
+<td>Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı, yenilemenin kapatılıp kapatılmadığı</td>
+<td>Premium içeriğe erişimin sunucuda doğrulanması. Ödeme ve kart bilgisi bize ulaşmaz; tahsilatı Apple ya da Google yapar</td>
 </tr>
 </tbody>
 </table>
@@ -259,6 +267,8 @@ button:hover { opacity: 0.9; }
 <li>Hesap güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu) ile kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)</li>
 <li>Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)</li>
 <li>Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek</li>
+<li>Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor) erişim hakkınızı doğrulamak</li>
+<li>Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek</li>
 </ol>
 <hr />
 <h2>5. Verilerin Paylaşıldığı Üçüncü Taraflar (Veri İşleyenler)</h2>
@@ -336,6 +346,13 @@ button:hover { opacity: 0.9; }
 <td>Fiyat çekme</td>
 <td>Küresel</td>
 </tr>
+<tr>
+<td>Varlık notlarının yazımı (yapay zekâ)</td>
+<td>Anthropic PBC</td>
+<td>Kişisel veri gönderilmez; yalnızca varlığın sembolü ve piyasa ölçümleri (fiyat, işlem hacmi, fon büyüklüğü, para akışı ve yatırımcı sayısı)</td>
+<td>Haftalık varlık notu ve aylık rapor metni (bkz. §5.3)</td>
+<td>ABD</td>
+</tr>
 </tbody>
 </table>
 <p><strong>Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.</strong></p>
@@ -343,6 +360,10 @@ button:hover { opacity: 0.9; }
 <p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
 <h3>5.2 Ortağınızla ve Yarış'ta Paylaşım</h3>
 <p>Ortaklık kurduğunuz kullanıcı, kullanıcı adınızı, portföyünüzdeki varlıkları, miktarları ve performansı görür. Yarış'ta diğer katılımcılara kimliğiniz ve tutarlarınız gösterilmez; size yalnızca kendi yüzdelik diliminiz gösterilir, ortağınızla getirilerinizi karşılaştırabilirsiniz.</p>
+<h3>5.3 Yapay Zekâ ile Hazırlanan Varlık Notları</h3>
+<p>Varlık sayfalarındaki haftalık varlık notları ve aylık rapor, sunucumuzda Anthropic'in yapay zekâ modeli (Claude) ile yazılır. Not kullanıcı başına değil <strong>varlık başına</strong> bir kez yazılır: aynı varlığı tutan herkes aynı notu okur. Notunuzu açtığınızda ya da okuduğunuzda yapay zekâya bir istek gitmez; not veritabanından okunur.</p>
+<p>Modele yalnızca varlığın sembolü ve kamuya açık piyasa ölçümleri gönderilir (fiyat değişimi, işlem hacmi, fon büyüklüğü, para akışı ve yatırımcı sayısı). Adınız, e-postanız, hesap numaranız, kullanıcı adınız, tuttuğunuz miktar ve tutar ya da bir varlığı kimlerin tuttuğu gönderilmez. Hangi varlıklara not yazılacağı, kullanıcıların portföylerinde tutulan varlıkların toplu listesinden (en çok tutulandan başlayarak) seçilir; bu seçim de modele gitmez.</p>
+<p>Notlar otomatik üretilir ve yayımlanmadan önce otomatik olarak denetlenir: metindeki her sayı kaynak veriyle karşılaştırılır, al/sat/hedef fiyat dili içeren not yayımlanmaz. Notları bir insan tek tek okumaz; hata içerebilirler. Bir notta "yanlış sayı var" işaretlerseniz ya da açıklama yazarsanız bu geri bildirim hesabınızla birlikte saklanır ve yalnızca notların düzeltilmesi için kullanılır; başka kullanıcılara gösterilmez.</p>
 <hr />
 <h2>6. Yurt Dışına Veri Aktarımı</h2>
 <p>Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş ve e-posta hizmetleri de küresel altyapıda çalışır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
@@ -384,6 +405,14 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Kayıtlı cihazlar</td>
 <td>Cihazı listeden silene ya da hesap silinene kadar</td>
+</tr>
+<tr>
+<td>Varlık notlarına geri bildirimler</td>
+<td>Hesap silinene kadar</td>
+</tr>
+<tr>
+<td>Premium hakkı kayıtları</td>
+<td>Hesap silinene kadar</td>
 </tr>
 <tr>
 <td>Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı)</td>
@@ -485,7 +514,7 @@ button:hover { opacity: 0.9; }
 <p>Çıkış yaptığınızda oturum token'ı, size ait önbellek ve tercihler ile widget verisi cihazdan silinir. Uygulamada Firebase Analytics (kullanım istatistiği) ve Crashlytics (hata raporu) bulunur (bkz. §3.5); reklam SDK'sı ve reklam kimliği yoktur. Ayrıntı: Çerez ve Yerel Depolama Politikası.</p>
 <hr />
 <h2>12. Yatırım Tavsiyesi Reddi (Disclaimer)</h2>
-<p><strong>sandık</strong> bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal ve grafikler bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.</p>
+<p><strong>sandık</strong> bir portföy takip aracıdır. SPK (Sermaye Piyasası Kurulu) lisanslı bir yatırım danışmanı veya aracı kurum DEĞİLDİR. Uygulamada gösterilen fiyat, performans, sinyal, grafikler, piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve yapay zekâ ile hazırlanan varlık notları bilgilendirme amaçlıdır ve yatırım tavsiyesi niteliği taşımaz. Yatırım kararlarınızı SPK lisanslı bir danışmana danışarak veriniz.</p>
 <p>Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta onaylarsınız. Onayın kaydı yasal kanıt olarak saklanır.</p>
 <hr />
 <h2>13. Politikada Değişiklikler</h2>

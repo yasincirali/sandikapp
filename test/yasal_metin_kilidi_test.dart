@@ -96,13 +96,18 @@ void main() {
   test('onay değişkenleri yalnız belgede geçen yer tutucular', () {
     const tum = {'SUPABASE_ULKE': 'Japonya', 'SUPABASE_ULKEDE': "Japonya'da"};
     expect(
-        YasalMetinKatalogu.belgeDegiskenleri(YasalMetinKatalogu.kosullar(), tum),
+        YasalMetinKatalogu.belgeDegiskenleri(
+            YasalMetinKatalogu.kosullar(), tum),
         isEmpty);
-    expect(YasalMetinKatalogu.belgeDegiskenleri(YasalMetinKatalogu.gizlilik(), tum),
+    expect(
+        YasalMetinKatalogu.belgeDegiskenleri(
+            YasalMetinKatalogu.gizlilik(), tum),
         tum);
     expect(YasalMetinKatalogu.belgeDegiskenleri(YasalMetinKatalogu.kvkk(), tum),
         {'SUPABASE_ULKE': 'Japonya'});
-    expect(YasalMetinKatalogu.belgeDegiskenleri(YasalMetinKatalogu.acikRiza(), tum),
+    expect(
+        YasalMetinKatalogu.belgeDegiskenleri(
+            YasalMetinKatalogu.acikRiza(), tum),
         {'SUPABASE_ULKEDE': "Japonya'da"});
   });
 
@@ -260,8 +265,12 @@ void main() {
     expect(kvkk, contains('Hesap silinmesinden sonra **3 yıl**'));
     // Saklama satırı onaylatılan her belgeyi adıyla anar (Açık Rıza Metni
     // 1.2'de ayrı belge oldu).
-    for (final ad in ['Kullanım Koşulları', 'Gizlilik Politikası',
-        'KVKK Aydınlatma Metni', 'Açık Rıza Metni']) {
+    for (final ad in [
+      'Kullanım Koşulları',
+      'Gizlilik Politikası',
+      'KVKK Aydınlatma Metni',
+      'Açık Rıza Metni'
+    ]) {
       expect(gizlilik, contains(ad), reason: ad);
       expect(kvkk, contains(ad), reason: ad);
     }
@@ -294,8 +303,8 @@ void main() {
     expect(gizlilik, contains('| Silmeden sonra **3 yıl** (TBK Madde 146'));
     expect(kvkk, contains('| Hesap silinmesinden sonra **3 yıl**; süresi'));
 
-    final (dosya, sql) = migrationDosyalari().lastWhere(
-        (d) => d.$2.contains('auth_guvenlik_kaydi_saklama_temizle'));
+    final (dosya, sql) = migrationDosyalari()
+        .lastWhere((d) => d.$2.contains('auth_guvenlik_kaydi_saklama_temizle'));
     expect(dosya, startsWith('0105_'));
     expect(
         sql,
@@ -308,7 +317,8 @@ void main() {
     expect(sql, contains("cron.schedule('auth-guvenlik-kaydi-saklama'"));
     expect(sql, contains("cron.schedule('hesap-silme-kaydi-saklama'"));
     // auth şemasında yalnız DELETE: tablo/şema değişmez.
-    expect(sql, isNot(contains(RegExp(r'(alter|drop|create)\s+\w*\s*\w*\s*auth\.'))));
+    expect(sql,
+        isNot(contains(RegExp(r'(alter|drop|create)\s+\w*\s*\w*\s*auth\.'))));
   });
 
   test(
@@ -320,18 +330,22 @@ void main() {
     final gizlilik = YasalMetinKatalogu.gizlilik().govde;
     final kvkk = YasalMetinKatalogu.kvkk().govde;
     final riza = YasalMetinKatalogu.acikRiza().govde;
-    expect(kosullar,
-        isNot(contains('her birini sonuna kadar okuyup en altta onaylarsınız')));
+    expect(
+        kosullar,
+        isNot(
+            contains('her birini sonuna kadar okuyup en altta onaylarsınız')));
     expect(kosullar, isNot(contains('Onay kutuları ancak bundan sonra')));
     // Koşullar Gizlilik/KVKK/Açık Rıza'yı "kabul" diye paketlemez.
     expect(kosullar,
         isNot(contains('okuduğunuzu, anladığınızı ve kabul ettiğinizi')));
-    expect(kosullar, contains('Bu Koşulları tek bir onay kutusunu işaretleyerek'));
+    expect(
+        kosullar, contains('Bu Koşulları tek bir onay kutusunu işaretleyerek'));
     expect(kosullar, contains('Onay kutusu açık rıza içermez.'));
     expect(kvkk, isNot(contains('sonuna kadar okuyup en altta onaylayarak')));
     expect(kvkk, contains('size bağlantı olarak sunulur'));
     expect(kvkk, contains('onayınıza bağlı değildir'));
-    expect(gizlilik, contains('bilgilendirme amaçlıdır ve kabulünüze bağlı değildir'));
+    expect(gizlilik,
+        contains('bilgilendirme amaçlıdır ve kabulünüze bağlı değildir'));
     expect(riza, isNot(contains('onay kutusunu işaretlersiniz')));
     expect(riza, isNot(contains('onay kutusuyla verilir')));
     expect(riza, contains('Rıza yalnız bu düğmeyle verilir'));
@@ -339,8 +353,41 @@ void main() {
     for (final m in [kosullar, gizlilik]) {
       expect(m, contains('Bu uyarının tam metni kayıt sırasında'));
     }
+    // 0120'den beri Koşullar/Gizlilik/KVKK 1.5; Açık Rıza 1.4'te kaldı.
     for (final b in YasalBelge.values) {
-      expect(b.surum, '1.4', reason: b.kaynak);
+      expect(YasalOnayService.surumKarsilastir(b.surum, '1.4'),
+          greaterThanOrEqualTo(0),
+          reason: b.kaynak);
+    }
+  });
+
+  test(
+      '1.5: varlık notları (Anthropic, kişisel veri gitmez), geri bildirim ve '
+      'Premium hakkı metinde (0116, 0117)', () {
+    final kosullar = YasalMetinKatalogu.kosullar().govde;
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    for (final m in [kosullar, gizlilik, kvkk]) {
+      expect(m, contains('Anthropic'));
+    }
+    expect(
+        gizlilik, contains('### 5.3 Yapay Zekâ ile Hazırlanan Varlık Notları'));
+    expect(gizlilik, contains('Kişisel veri gönderilmez'));
+    for (final m in [gizlilik, kvkk]) {
+      expect(m, contains('Varlık notlarına geri bildirim'));
+      expect(m, contains('Premium hakkı'));
+      expect(m, contains('500 karakter'));
+    }
+    expect(kosullar, contains('yapay zekâ ile hazırlanan varlık notları'));
+    // Kişisel veri yurt dışına yeni bir alıcıya gitmez: rıza metni aynı.
+    expect(YasalBelge.acikRiza.surum, '1.4');
+    expect(YasalMetinKatalogu.acikRiza().govde, isNot(contains('Anthropic')));
+    for (final b in [
+      YasalBelge.kosullar,
+      YasalBelge.gizlilik,
+      YasalBelge.kvkk
+    ]) {
+      expect(b.surum, '1.5', reason: b.kaynak);
     }
   });
 
