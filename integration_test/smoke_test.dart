@@ -18,10 +18,12 @@
 // hiç dönmez. Bunun yerine `_bekle`: her 200 ms'de bir kare basıp finder'ı
 // yoklar, süre dolunca ağacı döker.
 //
-// ## Yasal uyarı ekranı
-// Tohum kullanıcı onboarding'i tamamlamış ama yasal uyarıyı ONAYLAMAMIŞ
-// durumda (bkz. seed.sql — sürüm/hash bayatlamasın diye). Test onu gerçek
-// kullanıcı gibi geçer: onay satırına dokunur, "Kabul" düğmesine basar.
+// ## Karşılama, yasal kapı ve yasal uyarı
+// Tohum kullanıcı onboarding'i tamamlamış ama yasal uyarıyı ve yasal
+// belgeleri ONAYLAMAMIŞ durumda (bkz. seed.sql — sürüm/hash bayatlamasın
+// diye). Test hepsini gerçek kullanıcı gibi geçer: girişten önceki
+// tanıtımı "Atla" ile, yeniden onay kapısını adım adım (okuma + kutu),
+// yalnız uyarı eksikse eski uyarı ekranını onay satırı + "Kabul" ile.
 //
 // Çalıştırma (yerel):
 //   supabase start
@@ -36,7 +38,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/main.dart' as app;
+import 'package:portfoy_takip/screens/legal_doc_screen.dart';
 import 'package:portfoy_takip/screens/onboarding_screen.dart';
+import 'package:portfoy_takip/screens/register_screen.dart'
+    show YasalOnayKutusu;
+import 'package:portfoy_takip/screens/yasal_onay_kapisi_screen.dart';
+import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 
 /// `seed.sql` ile birebir.
 const _smokeEmail = 'smoke@sandik.test';
@@ -74,25 +81,76 @@ void main() {
 
     app.main();
 
+    final tr = AppLocalizationsTr();
+
+    // ── 0) Karşılama tanıtımı (girişten önce) ───────────────────────────────
+    // Bu cihazda hiç oturum açılmadıysa giriş formundan önce tanıtım gelir
+    // (sadeleştirme 1; bayrağı #92'de kalktı, koşulsuz). Test onu gerçek
+    // kullanıcı gibi "Atla" ile geçer. Eskiden test doğrudan "Giriş Yap"
+    // bekliyordu ve #92'den beri CI'da 30 sn'de düşüyordu (ekranda
+    // "Tüm birikimin tek ekranda", "Atla").
+    final girisDugmesi = find.text(tr.signIn);
+    final atla = find.text(tr.welcomeSkip);
+    await _bekleKosul(
+      tester,
+      () => girisDugmesi.evaluate().isNotEmpty || atla.evaluate().isNotEmpty,
+      neden: 'karşılama ya da giriş ekranı',
+      sure: const Duration(seconds: 30),
+    );
+    if (girisDugmesi.evaluate().isEmpty) {
+      await tester.tap(atla.first);
+      await tester.pump();
+    }
+
     // ── 1) Giriş ────────────────────────────────────────────────────────────
-    await _bekle(tester, find.text('Giriş Yap'),
-        neden: 'giriş ekranı', sure: const Duration(seconds: 30));
+    await _bekle(tester, girisDugmesi, neden: 'giriş ekranı');
     await tester.enterText(_alan(tester, 'E-posta'), _smokeEmail);
     await tester.enterText(_alan(tester, 'Şifre'), _smokePassword);
     await tester.pump();
-    await tester.tap(find.text('Giriş Yap'));
+    await tester.tap(girisDugmesi);
 
-    // ── 2) Yasal uyarı (ilk girişte) ────────────────────────────────────────
-    // Ekran gelirse geç; gelmezse (tohum onaylı olsaydı) doğrudan ana ekran.
+    // ── 2) Yasal onay kapısı (ilk girişte) ──────────────────────────────────
+    // Tohum kullanıcının yasal onay kaydı yok: kapı (bayrağı 2026-10-05'te
+    // kalktı, koşulsuz) yatırım uyarısını da içine alarak gelir — adımlar
+    // uyarı → Açık Rıza (ikisi sonuna kadar okunur) → kutu. Test gerçek
+    // kullanıcı gibi geçer. Kapı gelmezse (sunucu durumu okunamadı → kapı
+    // açık geçer) eski yasal uyarı ekranı ya da ana ekran gelir.
+    final kapi = find.byType(YasalOnayKapisiScreen);
     final onaySatiri =
         find.text('Yukarıdaki yasal uyarıyı okudum ve kabul ediyorum.');
     final anaEkranFab = find.bySemanticsLabel('Varlık ekle');
+    final adUygun = find.byWidgetPredicate((w) =>
+        w is Text &&
+        (w.data == tr.kullaniciAdiUygunDevam ||
+            w.data == tr.kullaniciAdiUygun));
+    final simdiDegil = find.text('Şimdi değil');
     await _bekleKosul(
       tester,
-      () => onaySatiri.evaluate().isNotEmpty || anaEkranFab.evaluate().isNotEmpty,
-      neden: 'yasal uyarı ya da ana ekran',
+      () =>
+          kapi.evaluate().isNotEmpty ||
+          onaySatiri.evaluate().isNotEmpty ||
+          adUygun.evaluate().isNotEmpty ||
+          simdiDegil.evaluate().isNotEmpty ||
+          anaEkranFab.evaluate().isNotEmpty,
+      neden: 'yasal kapı, yasal uyarı ya da sonraki ekran',
       sure: const Duration(seconds: 45),
     );
+    if (kapi.evaluate().isNotEmpty) {
+      await _yasalKapiyiGec(tester, tr);
+      await _bekleKosul(
+        tester,
+        () =>
+            kapi.evaluate().isEmpty &&
+            (onaySatiri.evaluate().isNotEmpty ||
+                adUygun.evaluate().isNotEmpty ||
+                simdiDegil.evaluate().isNotEmpty ||
+                anaEkranFab.evaluate().isNotEmpty),
+        neden: 'yasal kapıdan sonraki ekran',
+        sure: const Duration(seconds: 45),
+      );
+    }
+
+    // ── 2') Yasal uyarı (yalnız uyarı eksikse eski ekran) ───────────────────
     if (onaySatiri.evaluate().isNotEmpty) {
       await tester.tap(onaySatiri);
       await tester.pump();
@@ -116,12 +174,6 @@ void main() {
     // literal arıyordu; ekran zorunlu kipe geçince (5c9f7d3) CI'da 45 sn
     // bekleyip düştü (ekranda "Bu ad uygun…" duruyordu). Sözlükten okumak
     // metin bir daha değişirse testi birlikte taşır.
-    final tr = AppLocalizationsTr();
-    final adUygun = find.byWidgetPredicate((w) =>
-        w is Text &&
-        (w.data == tr.kullaniciAdiUygunDevam ||
-            w.data == tr.kullaniciAdiUygun));
-    final simdiDegil = find.text('Şimdi değil');
     await _bekleKosul(
       tester,
       () =>
@@ -233,6 +285,66 @@ void main() {
     // Gövdenin SONUNDA — yukarıdaki gerekçe.
     semanticsKapat();
   });
+}
+
+/// Yeniden onay kapısını gerçek kullanıcı gibi geçer: sıradaki her okuma
+/// adımında "Oku ve onayla" → okuyucuda parmakla sona kaydır → en alttaki
+/// onay; kutu adımı varsa kutuyu işaretler; sonra "Okudum, kabul ediyorum".
+/// Adım sayısı sunucudaki eksiklere göre değişir; döngü ekrandakini okur.
+Future<void> _yasalKapiyiGec(WidgetTester tester, AppLocalizationsTr tr) async {
+  final kapi = find.byType(YasalOnayKapisiScreen);
+  final okuDugmesi = find.descendant(
+      of: kapi, matching: find.text(tr.yasalAdimOkuOnayla));
+  final okuyucu = find.byType(LegalDocScreen);
+  final okuyucuListesi =
+      find.descendant(of: okuyucu, matching: find.byType(Scrollable));
+  final etkinOnay = find.descendant(
+      of: okuyucu,
+      matching: find.byIcon(Icons.check_circle_rounded, skipOffstage: false),
+      skipOffstage: false);
+
+  for (var adim = 0; adim < 5 && okuDugmesi.evaluate().isNotEmpty; adim++) {
+    await tester.ensureVisible(okuDugmesi.first);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(okuDugmesi.first);
+    await _bekle(tester, okuyucu, neden: 'zorunlu okuma ($adim)');
+    // Sona ulaşılınca onay düğmesinin kilidi açılır (kilit → onay ikonu).
+    final bitis = DateTime.now().add(const Duration(seconds: 60));
+    while (etkinOnay.evaluate().isEmpty && DateTime.now().isBefore(bitis)) {
+      await tester.drag(okuyucuListesi.first, const Offset(0, -1500));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await _bekle(tester, etkinOnay, neden: 'okuyucu sonundaki onay ($adim)');
+    await tester.ensureVisible(etkinOnay);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(etkinOnay);
+    await _bekleKosul(tester, () => okuyucu.evaluate().isEmpty,
+        neden: 'okuyucu kapandı ($adim)');
+    // Sıradaki adım açılır ve liste ona kayar (AnimatedSize + kaydırma).
+    await tester.pump(const Duration(seconds: 1));
+  }
+
+  final kutu = find.descendant(
+      of: find.byType(YasalOnayKutusu),
+      matching: find.byType(AnimatedContainer));
+  if (kutu.evaluate().isNotEmpty) {
+    await tester.ensureVisible(kutu.first);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(kutu.first);
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  final onayla = find.descendant(
+      of: kapi, matching: find.byType(SandikAsyncButton));
+  await _bekleKosul(
+    tester,
+    () =>
+        onayla.evaluate().isNotEmpty &&
+        tester.widget<SandikAsyncButton>(onayla.first).onPressed != null,
+    neden: 'kapının onay düğmesi etkin',
+  );
+  await tester.tap(onayla.first);
+  await tester.pump();
 }
 
 /// `labelText` ile TextFormField (giriş ekranı).
