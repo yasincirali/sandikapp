@@ -10,6 +10,7 @@ import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/sigan_metin.dart';
 import '../widgets/yasal_adimlar.dart';
@@ -396,10 +397,8 @@ class _NelerDegistiState extends State<_NelerDegisti> {
                       ),
                     ),
                     const SizedBox(width: SandikSpace.sm),
-                    AnimatedRotation(
-                      turns: _acik ? 0.5 : 0,
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.move,
+                    SandikAcilirOk(
+                      acik: _acik,
                       child: Icon(Icons.expand_more_rounded,
                           size: 20, color: context.c.text36),
                     ),
@@ -408,22 +407,21 @@ class _NelerDegistiState extends State<_NelerDegisti> {
               ),
             ),
           ),
-          AnimatedSize(
-            duration: SandikMotion.surfaceOf(context),
-            curve: SandikMotion.enter,
-            alignment: Alignment.topCenter,
-            child: _acik
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: SandikSpace.md),
-                    child: Text(
-                      l.yasalKapiDegisiklikNotu,
-                      style: context.t.bodyMedium?.copyWith(
-                        color: context.c.text58,
-                        height: 1.5,
-                      ),
-                    ),
-                  )
-                : const SizedBox(width: double.infinity),
+          // Uygulamanın tek katlanır hareketi: hareketi azalt açıkken sıfır
+          // süreli `AnimatedSize` "mutated in its own performLayout" ile
+          // düşüyordu (CI emülatörü, #96).
+          SandikAcilir(
+            acik: _acik,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: SandikSpace.md),
+              child: Text(
+                l.yasalKapiDegisiklikNotu,
+                style: context.t.bodyMedium?.copyWith(
+                  color: context.c.text58,
+                  height: 1.5,
+                ),
+              ),
+            ),
           ),
         ],
       ),

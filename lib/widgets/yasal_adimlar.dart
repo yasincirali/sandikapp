@@ -7,6 +7,7 @@ import '../l10n/l10n.dart';
 import '../services/yasal_adim_plani.dart';
 import '../services/yasal_metin_katalogu.dart';
 import '../theme/sandik.dart';
+import 'sandik_acilir.dart';
 import 'sigan_metin.dart';
 
 /// Belgenin ekrandaki adı — sığan yazım adayları (uzundan kısaya). Adım
@@ -367,10 +368,8 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
                       ),
                     ),
                     const SizedBox(width: SandikSpace.sm),
-                    AnimatedRotation(
-                      turns: _digerAcik ? 0.5 : 0,
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.move,
+                    SandikAcilirOk(
+                      acik: _digerAcik,
                       child: Icon(Icons.expand_more_rounded,
                           size: 20, color: context.c.text36),
                     ),
@@ -379,26 +378,22 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
               ),
             ),
           ),
-          AnimatedSize(
-            duration: SandikMotion.surfaceOf(context),
-            curve: SandikMotion.enter,
-            alignment: Alignment.topCenter,
-            child: _digerAcik
-                ? Padding(
-                    padding: const EdgeInsets.only(bottom: SandikSpace.xs),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final b in belgeler)
-                          _BelgeBaglantisi(
-                            belge: b,
-                            acildi: widget.acilanlar.contains(b.tur),
-                            onTap: () => widget.onBelgeAc(b),
-                          ),
-                      ],
+          SandikAcilir(
+            acik: _digerAcik,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: SandikSpace.xs),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final b in belgeler)
+                    _BelgeBaglantisi(
+                      belge: b,
+                      acildi: widget.acilanlar.contains(b.tur),
+                      onTap: () => widget.onBelgeAc(b),
                     ),
-                  )
-                : const SizedBox(width: double.infinity),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -500,10 +495,7 @@ class _AdimSatiri extends StatelessWidget {
                         ),
                       ),
                     ),
-                    AnimatedSize(
-                      duration: SandikMotion.surfaceOf(context),
-                      curve: SandikMotion.enter,
-                      alignment: Alignment.topLeft,
+                    _IcerikGecisi(
                       child: icerik == null
                           ? const SizedBox(width: double.infinity)
                           : Padding(
@@ -519,6 +511,28 @@ class _AdimSatiri extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Adım içeriğinin yükseklik geçişi; hareketi azalt açıkken HİÇ
+/// `AnimatedSize` kurmaz. Sıfır süreli `AnimatedSize` boyut değişiminde
+/// "RenderAnimatedSize was mutated in its own performLayout" assert'iyle
+/// düşer (animasyonları kapalı CI emülatöründe duman testi, #96; aynı ders
+/// `portfolio_summary_widget` `_BoyGecisi`). Süre sıfırsa geçiş zaten yok.
+class _IcerikGecisi extends StatelessWidget {
+  const _IcerikGecisi({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (SandikMotion.surfaceOf(context) == Duration.zero) return child;
+    return AnimatedSize(
+      duration: SandikMotion.surfaceOf(context),
+      curve: SandikMotion.enter,
+      alignment: Alignment.topLeft,
+      child: child,
     );
   }
 }
