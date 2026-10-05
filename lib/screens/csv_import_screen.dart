@@ -1,5 +1,6 @@
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -7,9 +8,12 @@ import '../providers/bulk_cart_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/csv_import_service.dart';
 import '../services/ekstre/ekstre_ice_aktarma.dart';
+import '../services/remote_config_service.dart';
+import '../services/supabase_service.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -48,6 +52,9 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   EkstreOkumaSonucu? _ekstre;
   String? _dosyaAdi;
   bool _okunuyor = false;
+
+  /// AI sütun eşleme isteği sürüyor (düğme döner).
+  bool _aiEsleniyor = false;
 
   /// Adla yazılmış fonlar için TEFAS listesi alınamadı: her ad için ayrı
   /// "tanınmadı" demek yerine tek, nedenini söyleyen satır.
@@ -95,11 +102,22 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// Banka ekstresi fonu adla yazar; kod TEFAS unvanından (tek ve kesin
   /// eşleşme, `fonKoduBul`). Liste önbellekten gelir (24 saat); alınamazsa
   /// adlı satırlar içe aktarılmaz, önizleme nedenini söyler.
+  bool get _hareketlerle => RemoteConfigService.instance.ekstreHareketleri;
+
   Future<EkstreOkumaSonucu> _fonAdlariniCoz(EkstreOkumaSonucu s) async {
     _fonListesiAlinamadi = false;
     if (s.cozulecekFonAdlari.isEmpty) return s;
     try {
       final fonlar = await TefasService.instance.fetchAllFunds();
+      // `fetchAllFunds` ağ hatasını yutar ve BOŞ liste döner (fırlatmaz).
+      // Boş listeyle her fon "tanınmadı" olur ve kullanıcı nedenini
+      // göremez: banka ekstresindeki fonların hepsi sessizce düşüyordu
+      // (yasin, 2026-10-05: "hata vermiyor ama varlıkları ayıklayamıyor").
+      // Boş liste = alınamadı; uyarı ve yeniden deneme yolu görünür.
+      if (fonlar.isEmpty) {
+        _fonListesiAlinamadi = true;
+        return s;
+      }
       return s.kodlarla([for (final f in fonlar) (kod: f.code, unvan: f.name)]);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'ekstre_fon_listesi');
@@ -182,7 +200,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (!mounted) return;
       _ekstre = sonuc;
       _dosyaAdi = dosya.name;
-      _ctrl.text = sonuc.kanonikMetin();
+      _ctrl.text = sonuc.kanonikMetin(hareketlerle: _hareketlerle);
       // Kaydırma YOK: dosyadan okununca hemen altta eşleme kartı belirir
       // (görünür geri bildirim) ve kullanıcı önce onu doğrulamalı.
       _parse();
@@ -195,6 +213,38 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (mounted) showAppError(context, e);
     } finally {
       if (mounted) setState(() => _okunuyor = false);
+    }
+  }
+
+  /// AI sütun eşleme (bayrak `ekstre_ai_esleme`, 0121). Belge cihazdan
+  /// çıkmaz: yalnız anonim iskelet (`ekstreIskeleti`) gider, yalnız sütun
+  /// numaraları döner; değerler yine belgeden okunur. Kullanıcı düğmeye
+  /// basmadan hiçbir şey gönderilmez.
+  Future<void> _aiIleEsle() async {
+    final e = _ekstre;
+    if (e == null || _aiEsleniyor) return;
+    final l = context.l10n;
+    setState(() => _aiEsleniyor = true);
+    try {
+      final yanit = await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
+      final yeni = e.aiEslemesiyle(yanit);
+      if (!mounted) return;
+      if (yeni == null) {
+        sandikSnack(context, l.importAiNoMatch);
+        return;
+      }
+      final cozulmus = await _fonAdlariniCoz(yeni);
+      if (!mounted) return;
+      _ekstre = cozulmus;
+      _ctrl.text = cozulmus.kanonikMetin(hareketlerle: _hareketlerle);
+      _parse();
+    } on EkstreAiHatasi catch (h) {
+      if (mounted) sandikSnackError(context, h.kota ? l.importAiLimit : l.importAiFailed);
+    } catch (err, st) {
+      CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
+      if (mounted) sandikSnackError(context, l.importAiFailed);
+    } finally {
+      if (mounted) setState(() => _aiEsleniyor = false);
     }
   }
 
@@ -212,7 +262,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     if (yeni == null || !mounted) return;
     final duzeltilmis = e.anaDuzeltildi(yeni);
     _ekstre = duzeltilmis;
-    _ctrl.text = duzeltilmis.kanonikMetin();
+    _ctrl.text = duzeltilmis.kanonikMetin(hareketlerle: _hareketlerle);
     _parse();
   }
 
@@ -260,6 +310,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 sonuc: _ekstre!,
                 dosyaAdi: _dosyaAdi ?? '',
                 onDuzelt: _eslemeyiDuzelt,
+                onAi: _aiIleEsle,
+                aiEsleniyor: _aiEsleniyor,
               ),
             ],
             const SizedBox(height: SandikSpace.md),
@@ -392,11 +444,15 @@ class _EslemeKarti extends StatelessWidget {
     required this.sonuc,
     required this.dosyaAdi,
     required this.onDuzelt,
+    required this.onAi,
+    required this.aiEsleniyor,
   });
 
   final EkstreOkumaSonucu sonuc;
   final String dosyaAdi;
   final VoidCallback onDuzelt;
+  final VoidCallback onAi;
+  final bool aiEsleniyor;
 
   @override
   Widget build(BuildContext context) {
@@ -457,6 +513,17 @@ class _EslemeKarti extends StatelessWidget {
                 style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
             ),
+          // Hareketlerden gerçek alış (bayrak `ekstre_hareketleri`): maliyet
+          // ekstre günü fiyatı değil — kullanıcı neyin değiştiğini bilsin.
+          if (RemoteConfigService.instance.ekstreHareketleri &&
+              sonuc.hareketleIncelenen() > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                context.l10n.importTradesApplied(sonuc.hareketleIncelenen()),
+                style: context.t.bodySmall?.copyWith(color: c.text90),
+              ),
+            ),
           if (sonuc.mevduatlar.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: SandikSpace.xs),
@@ -475,9 +542,69 @@ class _EslemeKarti extends StatelessWidget {
               ),
             ),
           ],
+          if (sonuc.aiOnerisi)
+            Padding(
+              padding: const EdgeInsets.only(top: SandikSpace.xs),
+              child: Text(
+                context.l10n.importAiSuggested,
+                style: context.t.bodySmall?.copyWith(color: c.amberText),
+              ),
+            ),
+          // AI sütun eşleme (bayrak `ekstre_ai_esleme`): yalnız motor emin
+          // değilken ve henüz AI önerisi alınmamışken. Ne gittiği düğmenin
+          // üstünde yazar (Gizlilik 1.6).
+          if (RemoteConfigService.instance.ekstreAiEsleme &&
+              !sonuc.aiOnerisi &&
+              (a == null ||
+                  a.eminDegil ||
+                  sonuc.kanonikMetin().isEmpty)) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              context.l10n.importAiHint,
+              style: context.t.bodySmall?.copyWith(color: c.text58),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: aiEsleniyor ? null : onAi,
+                icon: aiEsleniyor
+                    ? const CustomLoadingIndicator(size: 18)
+                    : const Icon(Icons.auto_awesome_rounded, size: 18),
+                label: Text(context.l10n.importAiButton),
+              ),
+            ),
+          ],
+          // Tanılama (bayrak `ekstre_tanilama`, 2026-10-05): motor dosyayı
+          // tam anlamadıysa anonim iskelet kopyalanır; belge cihazdan çıkmaz,
+          // kullanıcı metni kendisi gönderir. Anlaşılan dosyada gösterilmez.
+          if (RemoteConfigService.instance.ekstreTanilama &&
+              (a == null ||
+                  a.eminDegil ||
+                  sonuc.kanonikMetin().isEmpty ||
+                  sonuc.cozulemeyenFonlar.isNotEmpty)) ...[
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              context.l10n.importDiagnosticHint,
+              style: context.t.bodySmall?.copyWith(color: c.text58),
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _iskeletiKopyala(context),
+                icon: const Icon(Icons.content_copy_rounded, size: 18),
+                label: Text(context.l10n.importCopyDiagnostic),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _iskeletiKopyala(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: ekstreIskeleti(sonuc)));
+    if (!context.mounted) return;
+    sandikSnack(context, context.l10n.importDiagnosticCopied);
   }
 }
 

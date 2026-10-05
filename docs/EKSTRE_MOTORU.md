@@ -163,6 +163,36 @@ yatırım ve vadeli mevduatlar içeride olmalı."*
 | Kodsuz fon | TEFAS unvanı kelime öneki, tek aday | Bulanık benzerlik; ISIN tablosu | Yanlış fon eklemek eklememekten kötü; ISIN→kod açık kaynağı yok (DLY'nin ISIN'i kodu içeriyor, YAY'ınki içermiyor) |
 | Vadeli mevduat | Sepette sözleşmeyle, kayıt `mevduatAc` | CSV satırı | Lot sözleşmesiz anlamsız; form ile aynı yazım yolu |
 
+## Hesap hareketleri ve tanılama (2026-10-05)
+
+Kullanıcı (yasin) kendi banka varlık ekstresini yükledi: "hata vermiyor ama varlıkları
+ayıklayamıyor", ardından "hangi banka olduğu önemli değil, tüm banka ve aracı kurumları
+kapsamalıyız" ve "bunun içinden varlık alım satımları nasıl ayıklarsın".
+
+- **Sessiz arıza:** `TefasService.fetchAllFunds` ağ hatasını yutup BOŞ liste döner. Boş
+  listeyle adla yazılmış her fon "tanınmadı" olur ve kullanıcı nedenini görmez. Ekran artık
+  boş listeyi "fon listesi alınamadı" sayar (`csv_import_screen.dart` `_fonAdlariniCoz`).
+- **Fon unvanı sembol sayılıyordu:** "GARANTİ PORTFÖY ALTIN…" altın deyiminden 0,9,
+  "YAPI KREDİ PORTFÖY…" ilk kelimesinden 0,7 alıyordu; üç fonluk tabloda ad sütununun sembol
+  oranı 0,5'i aştı, `isim` rolü düştü, tablo anlaşılmadı. "PORTFÖY" geçen hücre artık sembol
+  puanı almaz (`sembolPuani`).
+- **Hareketlerden gerçek alış** (`hareket_tablosu.dart`, bayrak `ekstre_hareketleri`):
+  başlığında "Açıklama" ve "Tarih" olan tablolarda `KOD adet x fiyat` kalıbı aranır; adet ×
+  fiyat ≈ |tutar| (±%2) tutmazsa alınmaz (stopaj satırı kalıbı taşır, tutarı tutmaz). **Yön
+  paranın işaretinden:** hesaptan çıkan para (eksi ya da Çekilen/Borç sütunu) alış, giren
+  satış — banka gözünden yazılmış kelimeler ("Müşteriye Fon Satış") kurumdan kuruma değişir,
+  işaret değişmez. Hareket tek başına içe aktarılmaz; yalnız varlık tablosunda aynı kodla
+  duran satırı inceltir: dönemdeki alışlar eldekini aşmıyorsa alışlar gerçek tarih/fiyatla
+  ayrı satır olur, kalan adet ekstre gününde kalır. Satışlı ya da alışı eldekini aşan kod
+  dokunulmaz (sıra tahmini yok). Bankanın iç süpürme fonu ("FON5", KAPTAN) varlık tablosunda
+  olmadığı için hiçbir yere girmez.
+- **Tanılama iskeleti** (`ekstre_iskeleti.dart`, bayrak `ekstre_tanilama`): motor dosyayı
+  tam anlamadığında kartta "Tanılama metnini kopyala". Ham tablolar (PDF geometrisinin
+  böldüğü hâli) + motorun kararı; başlık sözlüğü ve genel finans kelimeleri dışında her
+  kelime maskelenir (harf A/a, rakam 9, noktalama ve uzunluk korunur). Belge cihazdan
+  çıkmaz; kullanıcı metni kendisi gönderir. Sonraki adım (yasin kararı): bu iskelet, motor
+  emin olmadığında sunucu üzerinden Claude'a gidip sütun eşlemesi alınacak (Gizlilik 1.6).
+
 ## Riskler ve açık işler
 
 - **Gerçek kurum örneği: yalnız DenizBank** (PDF, 2026-10-03; kişisel veri olduğu için

@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="a105649ddc78831dc41145c984ac0b9af6716de35f37bab2c41da686fee08ee2">
-<meta name="sandik-govde-sha256" content="73ae49216967d8997cfd75edc4ed4159b77b8ac41d5f4fc0c8a19ee41c692fba">
+<meta name="sandik-kaynak-sha256" content="1997cd8fc9b903e1a58f8831c786d5bc9fec847f6f28f6aa29180315837447c0">
+<meta name="sandik-govde-sha256" content="9a4e5e17f2f4a09e8103809c0ab45b73f00581d65d387cd751b90bdefbf44ba4">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,8 +67,8 @@ button:hover { opacity: 0.9; }
 <h1>Privacy Policy — sandık</h1>
 <p><strong>Effective date:</strong> October 5, 2026
 <strong>Last updated:</strong> October 5, 2026
-<strong>Version:</strong> 1.5
-<strong>Source:</strong> TR 1.5 (translation of the Turkish text; the Turkish version prevails)</p>
+<strong>Version:</strong> 1.6
+<strong>Source:</strong> TR 1.6 (translation of the Turkish text; the Turkish version prevails)</p>
 <hr />
 <h2>1. Data Controller</h2>
 <p>This application (<strong>sandık</strong>, the "App") is operated by <code>Yasin Çıralı</code> ("we", "Company").</p>
@@ -160,7 +160,7 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
-<p><strong>Statement import:</strong> A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved.</p>
+<p><strong>Statement import:</strong> A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved. If the App is unsure about the statement's columns and you tap "Map with AI", an anonymous skeleton of the tables (see §5.4) is sent to AI via our server; the file itself is still not sent.</p>
 <h3>3.3 Device &amp; Notification Data</h3>
 <table>
 <thead>
@@ -354,6 +354,13 @@ button:hover { opacity: 0.9; }
 <td>Weekly asset note and monthly report text (see §5.3)</td>
 <td>USA</td>
 </tr>
+<tr>
+<td>Statement column mapping (AI; only if you ask)</td>
+<td>Anthropic PBC</td>
+<td>An anonymous skeleton of the statement's tables: column headings and generic finance words; names, numbers, amounts and dates masked</td>
+<td>Finding which column is the symbol, quantity, price (see §5.4)</td>
+<td>USA</td>
+</tr>
 </tbody>
 </table>
 <p><strong>These providers act solely as data processors, on our instructions. We remain the data controller.</strong></p>
@@ -365,6 +372,10 @@ button:hover { opacity: 0.9; }
 <p>The weekly asset notes on asset pages and the monthly report are written on our server with Anthropic's AI model (Claude). A note is written once <strong>per asset</strong>, not per user: everyone holding the same asset reads the same note. Opening or reading a note sends no request to the AI; the note is read from the database.</p>
 <p>Only the asset's symbol and public market metrics are sent to the model (price change, trading volume, fund size, money flow and investor count). Your name, email, account ID, username, the quantity and amount you hold, or who holds an asset are not sent. The assets that get a note are selected from the aggregate list of assets held in users' portfolios (most-held first); this selection is not sent to the model either.</p>
 <p>Notes are generated automatically and checked automatically before publication: every number in the text is compared with the source data, and a note using buy/sell/target-price language is not published. No person reads each note; notes may contain errors. If you flag "wrong number" on a note or write an explanation, that feedback is stored with your account and used only to correct notes; it is not shown to other users.</p>
+<h3>5.4 AI Mapping of Statement Columns</h3>
+<p>A statement file is always read on your device. When the App can't tell, in a layout it doesn't recognise, which column is the symbol, quantity or price, it offers you "Map with AI". <strong>Nothing is sent unless you tap it.</strong></p>
+<p>If you tap it, your device builds an anonymous skeleton of the tables and sends it via our server to Anthropic's AI model (Claude). The skeleton contains the table layout, column headings and generic finance words ("Pay Adedi", "Birim Fiyat", "PORTFÖY"); names, customer and account numbers, national ID numbers, addresses, amounts and dates are masked (every letter becomes "A", every digit "9"). Our server rejects a skeleton containing unmasked digits before it reaches the model. The model only says which column is which; the values are still read from the file on your device and shown to you before anything is added.</p>
+<p>The skeleton and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.</p>
 <hr />
 <h2>6. International Data Transfers</h2>
 <p>Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in and email services also run on global infrastructure. Under KVKK Article 9 and GDPR Articles 44-49:</p>
@@ -414,6 +425,10 @@ button:hover { opacity: 0.9; }
 <tr>
 <td>Premium entitlement records</td>
 <td>Until account deletion</td>
+</tr>
+<tr>
+<td>Statement column mapping request records (time, model and cost only; the skeleton and the answer are not stored)</td>
+<td>40 days</td>
 </tr>
 <tr>
 <td>Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer)</td>

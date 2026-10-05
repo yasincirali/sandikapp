@@ -2,8 +2,8 @@
 
 **Effective date:** October 5, 2026
 **Last updated:** October 5, 2026
-**Version:** 1.5
-**Source:** TR 1.5 (translation of the Turkish text; the Turkish version prevails)
+**Version:** 1.6
+**Source:** TR 1.6 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -50,7 +50,7 @@ The policy is prepared to meet the requirements of KVKK (Turkish Personal Data P
 | Your feedback on asset notes (optional): the note's asset and period, a "helpful / not helpful" vote, a "wrong number" flag, an explanation of up to 500 characters | Measuring note quality, finding and correcting faulty notes (see §5.3) |
 | Premium entitlement: its source (gift, store subscription or support), start and end time, store and product name, whether renewal was turned off | Verifying access to Premium content on the server. Payment and card details never reach us; Apple or Google collects the payment |
 
-**Statement import:** A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved.
+**Statement import:** A bank or brokerage statement you import (PDF, Excel, CSV) is read only on your device; the file is not sent to the server and is not stored. Only the asset records you confirm are saved. If the App is unsure about the statement's columns and you tap "Map with AI", an anonymous skeleton of the tables (see §5.4) is sent to AI via our server; the file itself is still not sent.
 
 ### 3.3 Device & Notification Data
 | Data | Purpose |
@@ -120,6 +120,7 @@ The Privacy Policy and the KVKK Disclosure are for information and do not depend
 | Sign in with Apple / Google Sign-In (if you choose them) | Apple Inc. / Google LLC | Verification with the provider during sign-in | Authentication | Global |
 | Price and market data | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, CBRT EVDS, EGM, open.er-api.com, yasincirali.github.io (IPO calendar) | No personal data is sent; only symbol / fund-code queries. For requests sent from the device, the provider sees the device's IP address as with any internet request | Price retrieval | Global |
 | Writing asset notes (AI) | Anthropic PBC | No personal data is sent; only the asset's symbol and market metrics (price, trading volume, fund size, money flow and investor count) | Weekly asset note and monthly report text (see §5.3) | USA |
+| Statement column mapping (AI; only if you ask) | Anthropic PBC | An anonymous skeleton of the statement's tables: column headings and generic finance words; names, numbers, amounts and dates masked | Finding which column is the symbol, quantity, price (see §5.4) | USA |
 
 **These providers act solely as data processors, on our instructions. We remain the data controller.**
 
@@ -138,6 +139,14 @@ The weekly asset notes on asset pages and the monthly report are written on our 
 Only the asset's symbol and public market metrics are sent to the model (price change, trading volume, fund size, money flow and investor count). Your name, email, account ID, username, the quantity and amount you hold, or who holds an asset are not sent. The assets that get a note are selected from the aggregate list of assets held in users' portfolios (most-held first); this selection is not sent to the model either.
 
 Notes are generated automatically and checked automatically before publication: every number in the text is compared with the source data, and a note using buy/sell/target-price language is not published. No person reads each note; notes may contain errors. If you flag "wrong number" on a note or write an explanation, that feedback is stored with your account and used only to correct notes; it is not shown to other users.
+
+### 5.4 AI Mapping of Statement Columns
+
+A statement file is always read on your device. When the App can't tell, in a layout it doesn't recognise, which column is the symbol, quantity or price, it offers you "Map with AI". **Nothing is sent unless you tap it.**
+
+If you tap it, your device builds an anonymous skeleton of the tables and sends it via our server to Anthropic's AI model (Claude). The skeleton contains the table layout, column headings and generic finance words ("Pay Adedi", "Birim Fiyat", "PORTFÖY"); names, customer and account numbers, national ID numbers, addresses, amounts and dates are masked (every letter becomes "A", every digit "9"). Our server rejects a skeleton containing unmasked digits before it reaches the model. The model only says which column is which; the values are still read from the file on your device and shown to you before anything is added.
+
+The skeleton and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.
 
 ---
 
@@ -164,6 +173,7 @@ The destination countries (Supabase: {SUPABASE_ULKE}; Firebase: USA) are not on 
 | Registered devices | Until you remove the device from the list or delete your account |
 | Feedback on asset notes | Until account deletion |
 | Premium entitlement records | Until account deletion |
+| Statement column mapping request records (time, model and cost only; the skeleton and the answer are not stored) | 40 days |
 | Legal text acceptance records (Terms of Service, Privacy Policy, KVKK Disclosure, Explicit Consent Notice, investment disclaimer) | **3 years** after account deletion (Turkish Code of Obligations Art. 146 limitation period) |
 | Push token | Deleted on sign-out; if the App is uninstalled, found invalid and deleted at the next send |
 | Notification records (in-app notifications, price alert notifications) | 90 days |

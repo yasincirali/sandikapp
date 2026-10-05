@@ -2857,6 +2857,44 @@ class AppLocalizationsTr extends AppLocalizations {
   String get importFixColumns => 'Sütunları düzelt';
 
   @override
+  String get importCopyDiagnostic => 'Tanılama metnini kopyala';
+
+  @override
+  String get importDiagnosticHint =>
+      'Okunamayan ekstreyi düzeltebilmemiz için tablonun yapısını kopyalar. Ad, numara ve tutarlar maskelenir.';
+
+  @override
+  String get importDiagnosticCopied => 'Tanılama metni kopyalandı.';
+
+  @override
+  String get importAiButton => 'Yapay zekâyla eşle';
+
+  @override
+  String get importAiHint =>
+      'Tablonun yalnız yapısı gönderilir: ad, numara ve tutarlar gizlenir, belge telefonundan çıkmaz.';
+
+  @override
+  String get importAiSuggested =>
+      'Sütunları yapay zekâ önerdi; eşlemeyi kontrol et, gerekirse düzelt.';
+
+  @override
+  String get importAiNoMatch =>
+      'Yapay zekâ da bu dosyada varlık tablosu bulamadı.';
+
+  @override
+  String get importAiLimit =>
+      'Bugünlük yapay zekâ eşleme hakkın doldu; yarın yeniden dene.';
+
+  @override
+  String get importAiFailed =>
+      'Yapay zekâ eşlemesi şu an yapılamadı. Biraz sonra yeniden dene.';
+
+  @override
+  String importTradesApplied(int count) {
+    return '$count varlığın gerçek alış tarihi ve fiyatı hesap hareketlerinden alındı.';
+  }
+
+  @override
   String importDepositRow(String name, String amount, String rate, int days) {
     return '$name · $amount · $rate faiz · $days gün vade';
   }
@@ -5533,7 +5571,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.';
+      'Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';

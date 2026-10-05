@@ -40,3 +40,11 @@ class EkstreOkumaHatasi implements KullaniciMesajli {
   @override
   String toString() => mesaj;
 }
+
+/// AI sütun eşleme (`ekstre-esle`) başarısız. [kota]: günlük hak ya da
+/// aylık maliyet tavanı doldu (429) — kullanıcıya "yarın yeniden dene"
+/// denir; diğer her durumda genel mesaj. Ham sunucu yanıtı gösterilmez.
+class EkstreAiHatasi implements Exception {
+  const EkstreAiHatasi({required this.kota});
+  final bool kota;
+}

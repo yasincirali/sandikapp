@@ -1904,6 +1904,23 @@
   "importMappingTitle": "Columns were matched like this",
   "importLowConfidence": "We're not fully sure about this file's columns; check the mapping and fix it if needed.",
   "importFixColumns": "Fix columns",
+  "importCopyDiagnostic": "Copy diagnostic text",
+  "importDiagnosticHint": "Copies the table layout so we can fix an unreadable statement. Names, numbers and amounts are masked.",
+  "importDiagnosticCopied": "Diagnostic text copied.",
+  "importAiButton": "Map with AI",
+  "importAiHint": "Only the table layout is sent: names, numbers and amounts are hidden, the document never leaves your phone.",
+  "importAiSuggested": "AI suggested the columns; check the mapping and fix it if needed.",
+  "importAiNoMatch": "AI couldn't find a holdings table in this file either.",
+  "importAiLimit": "You've used today's AI mapping allowance; try again tomorrow.",
+  "importAiFailed": "AI mapping isn't available right now. Try again a bit later.",
+  "importTradesApplied": "Actual purchase date and price for {count} holdings taken from account transactions.",
+  "@importTradesApplied": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "importDepositRow": "{name} · {amount} · {rate} interest · {days}-day term",
   "importFundNotRecognized": "Fund not recognized, skipped: {name}",
   "importFundListFailed": "Couldn't load the TEFAS fund list; funds listed by name were skipped. Check your connection and pick the file again.",
@@ -3600,7 +3617,7 @@
   "yasalKapiAciklamaGuncel": "We've updated our legal documents. To continue, complete the steps below.",
   "yasalKapiAciklamaIlk": "Before you start using the app, complete the steps below.",
   "yasalKapiNelerDegisti": "What changed",
-  "yasalKapiDegisiklikNotu": "Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset's market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it. The Explicit Consent Notice has not changed.",
+  "yasalKapiDegisiklikNotu": "Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset's market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it. The Explicit Consent Notice has not changed.",
   "yasalBelgeKosullar": "Terms of Use",
   "yasalBelgeGizlilik": "Privacy Policy",
   "yasalBelgeKvkk": "KVKK Privacy Notice",

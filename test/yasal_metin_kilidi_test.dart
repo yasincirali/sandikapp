@@ -382,13 +382,34 @@ void main() {
     // Kişisel veri yurt dışına yeni bir alıcıya gitmez: rıza metni aynı.
     expect(YasalBelge.acikRiza.surum, '1.4');
     expect(YasalMetinKatalogu.acikRiza().govde, isNot(contains('Anthropic')));
-    for (final b in [
-      YasalBelge.kosullar,
-      YasalBelge.gizlilik,
-      YasalBelge.kvkk
-    ]) {
-      expect(b.surum, '1.5', reason: b.kaynak);
+    // 1.6 (0122) yalnız Gizlilik ve KVKK'yı ilerletti; Koşullar 1.5'te.
+    expect(YasalBelge.kosullar.surum, '1.5');
+    for (final b in [YasalBelge.gizlilik, YasalBelge.kvkk]) {
+      expect(
+          YasalOnayService.surumKarsilastir(b.surum, '1.5'), greaterThan(0),
+          reason: b.kaynak);
     }
+  });
+
+  test(
+      '1.6: ekstre AI sütun eşleme — yalnız anonim iskelet, isteğe bağlı, '
+      'kayıt 40 gün (0121, 0122)', () {
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    expect(gizlilik,
+        contains('### 5.4 Ekstre Sütunlarının Yapay Zekâ ile Eşlenmesi'));
+    expect(gizlilik, contains('siz basmadıkça'));
+    expect(gizlilik, contains('maskelenmemiş rakam içeren bir iskeleti'));
+    for (final m in [gizlilik, kvkk]) {
+      expect(m, contains('Yapay zekâyla eşle'));
+      expect(m, contains('anonim iskelet'));
+      expect(m, contains('40 gün'));
+    }
+    // İskelet kişisel veri değil: rıza metni ve Koşullar aynı kaldı.
+    expect(YasalBelge.acikRiza.surum, '1.4');
+    expect(YasalBelge.kosullar.surum, '1.5');
+    expect(YasalBelge.gizlilik.surum, '1.6');
+    expect(YasalBelge.kvkk.surum, '1.6');
   });
 
   test('kutu 1.1: metnin TAMAMI açık rıza içermez (rıza paketlenmez)', () {
