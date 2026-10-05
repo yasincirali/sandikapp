@@ -647,6 +647,37 @@ class SupabaseService {
     );
   }
 
+  /// Maaş günü birikim hatırlatması (0119): ayın günü 1–31, `null` = kapalı.
+  ///
+  /// Okuma hatasında `null` (kapalı) döner: sunucu varsayılanı da kapalı;
+  /// ağ hatası anahtarı açık gösterip "açtım" yanılgısı vermesin.
+  Future<int?> getBirikimHatirlatmaGunu(String userId) async {
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('birikim_hatirlatma_gunu')
+          .eq('id', userId)
+          .maybeSingle();
+      final v = row?['birikim_hatirlatma_gunu'];
+      return v is num ? v.toInt() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setBirikimHatirlatmaGunu(String userId, int? gun) async {
+    assert(gun == null || (gun >= 1 && gun <= 31));
+    await _log.log<void>(
+      source: 'SupabaseService.setBirikimHatirlatmaGunu',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'birikim_hatirlatma_gunu': gun},
+      call: () => _db
+          .from('profiles')
+          .update({'birikim_hatirlatma_gunu': gun}).eq('id', userId),
+    );
+  }
+
   /// Sessiz saatler (0057) — TR saati, null = kapalı.
   Future<({int? start, int? end})> getQuietHours(String userId) async {
     final row = await _log.log<Map<String, dynamic>?>(

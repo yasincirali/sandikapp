@@ -29,6 +29,7 @@ import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/disclaimer_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/live_activity_service.dart';
@@ -748,6 +749,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const _PartnerActivitySwitch(),
             const _BriefSlotTile(),
             if (ref.watch(balinaRadariAcikProvider)) const _RadarAyarlari(),
+            // Maaş günü birikim hatırlatması (0119) — birikim serisiyle aynı
+            // bayrak: seri görünmüyorken "serin ay ay sayılıyor" diyen bir
+            // hatırlatma anlamsız olurdu.
+            if (RemoteConfigService.instance.birikimSerisi)
+              const _BirikimHatirlatmaTile(),
             const SizedBox(height: 28),
 
             // -- CANLI ETKİNLİKLER ---------------------------------
@@ -1970,6 +1976,142 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
       icon: Icons.schedule_rounded,
       title: l10n.briefSlotTitle,
       subtitle: slot == 'evening' ? l10n.briefSlotEvening : l10n.briefSlotMorning,
+      onTap: _sec,
+    );
+  }
+}
+
+/// Maaş günü birikim hatırlatması (0119, birikim serisi Faz 2).
+///
+/// Tercih SUNUCUDA (`profiles.birikim_hatirlatma_gunu`) çünkü push'u
+/// `calendar-nudge` gönderiyor. Varsayılan KAPALI (opt-in): yasin kararı
+/// 2026-10-05; bildirim bütçesi (RETENTION_STRATEJISI §7) kullanıcının
+/// istemediği bir hatırlatmayı kaldırmaz. O ay ekleme yapan kullanıcıya
+/// hiç gitmez — sayfadaki açıklama bunu söyler.
+class _BirikimHatirlatmaTile extends ConsumerStatefulWidget {
+  const _BirikimHatirlatmaTile();
+
+  @override
+  ConsumerState<_BirikimHatirlatmaTile> createState() =>
+      _BirikimHatirlatmaTileState();
+}
+
+class _BirikimHatirlatmaTileState
+    extends ConsumerState<_BirikimHatirlatmaTile> {
+  int? _gun;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _oku());
+  }
+
+  Future<void> _oku() async {
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    final v = await SupabaseService.instance.getBirikimHatirlatmaGunu(me.id);
+    if (mounted) setState(() => _gun = v);
+  }
+
+  Future<void> _yaz(int? v) async {
+    final me = ref.read(authProvider).valueOrNull;
+    if (me == null) return;
+    final onceki = _gun;
+    setState(() => _gun = v);
+    try {
+      await SupabaseService.instance.setBirikimHatirlatmaGunu(me.id, v);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _gun = onceki);
+      sandikSnack(context, 'Ayar kaydedilemedi, tekrar dene.',
+          kind: SandikSnackKind.error);
+    }
+  }
+
+  /// Kapalı + 31 gün. Liste kaydırılır; sayfa ekranın yarısını geçmez.
+  /// "Kapalı" ayrı bir değer (0) taşır çünkü sayfanın `null` dönüşü
+  /// "vazgeçti" demek.
+  Future<void> _sec() async {
+    final l10n = context.l10n;
+    final mevcut = _gun ?? 0;
+    final secim = await showModalBottomSheet<int>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(ctx).height * 0.7),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(SandikSpace.lg,
+                    SandikSpace.lg, SandikSpace.lg, SandikSpace.xs),
+                child: Text(
+                  l10n.savingReminderTitle,
+                  style: ctx.t.titleMedium?.copyWith(
+                    color: ctx.c.text90,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(SandikSpace.lg, 0,
+                    SandikSpace.lg, SandikSpace.sm),
+                child: Text(
+                  l10n.savingReminderSheetBody,
+                  style: ctx.t.bodySmall?.copyWith(color: ctx.c.text58),
+                ),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (var g = 0; g <= 31; g++)
+                      ListTile(
+                        leading: Icon(
+                          g == mevcut
+                              ? Icons.radio_button_checked_rounded
+                              : Icons.radio_button_off_rounded,
+                          color:
+                              g == mevcut ? ctx.c.amberText : ctx.c.text58,
+                        ),
+                        title: Text(
+                          g == 0
+                              ? l10n.savingReminderOff
+                              : l10n.savingReminderDay('$g'),
+                          style: ctx.t.bodyLarge
+                              ?.copyWith(color: ctx.c.text90),
+                        ),
+                        onTap: () => Navigator.pop(ctx, g),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SandikSpace.sm),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (secim != null && secim != mevcut) await _yaz(secim == 0 ? null : secim);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final gun = _gun;
+    return _SettingsTile(
+      icon: Icons.savings_outlined,
+      title: l10n.savingReminderTitle,
+      subtitle:
+          gun == null ? l10n.savingReminderOff : l10n.savingReminderOn('$gun'),
       onTap: _sec,
     );
   }

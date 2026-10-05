@@ -5987,6 +5987,26 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get savingReminderTitle => 'Maaş günü hatırlatması';
+
+  @override
+  String get savingReminderOff => 'Kapalı';
+
+  @override
+  String savingReminderOn(String day) {
+    return 'Ayın $day. günü, 10:30 · o ay ekleme yoksa';
+  }
+
+  @override
+  String get savingReminderSheetBody =>
+      'Seçtiğin gün, o ay portföyüne hiç ekleme yapmadıysan tek bir hatırlatma gelir. Ekleme yaptıysan gelmez. Seçtiğin gün o ayda yoksa (ör. Şubat\'ta 30) ayın son günü gelir.';
+
+  @override
+  String savingReminderDay(String day) {
+    return 'Ayın $day. günü';
+  }
+
+  @override
   String get rdrKademeSakin => 'sakin';
 
   @override
