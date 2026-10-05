@@ -51,6 +51,10 @@ Yayın sırası (sıra önemli):
       kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu
       "açılamadı" gibi görür (ekran artık bu durumda kilidi gösteriyor ama
       kartlar boş kalır).
+      Fiyat (kararın 2026-10-05): aylık 49 ₺, yıllık 399 ₺. Mağaza ürünleri bu
+      fiyatla açılır; Remote Config `premium_price_yearly` = `399₺/yıl` (kod
+      varsayılanı da 399). Apple Small Business Program'a kayıt ol (yoksa ilk
+      yıl %30 kesinti). Hesap: /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
       Notlar üretilmeden paywall'u açma: karşılaştırma tablosu notu vaat
       ediyor.
 

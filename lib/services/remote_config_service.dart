@@ -53,7 +53,9 @@ class RemoteConfigService {
 
     // Aylık fiyat gösterimi (paywall'da lokalize göstermek için).
     'premium_price_monthly': '49₺/ay',
-    'premium_price_yearly': '349₺/yıl',
+    // 349 → 399 (yasin, 2026-10-05): yıllıkta KDV + mağaza sonrası aya
+    // 20,6 ₺ kalıyordu; hesap /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
+    'premium_price_yearly': '399₺/yıl',
 
     // NOT: `free_signal_slots_per_day` kaldırıldı (2026-10-04, sadeleştirme
     // C) — ne istemci ne sunucu okuyordu; sinyal slot'u bugün herkese aynı.

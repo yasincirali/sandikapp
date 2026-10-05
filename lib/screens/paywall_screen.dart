@@ -48,7 +48,7 @@ enum _Plan { monthly, yearly }
 ///
 /// **Neden:** rozet eskiden sabit '%40' idi; fiyatlar Remote Config'ten
 /// geliyor, fiyat değişince rozet yanlış bir indirim vaat ederdi (49₺ ×
-/// 12 = 588₺, 349₺ → %40,6 bugün doğru, yarın değil). Yüzde aşağı
+/// 12 = 588₺, 349₺ → %40,6 idi; 399₺ ile %32). Yüzde aşağı
 /// yuvarlanır (abartmaz); fiyat okunamazsa ya da tasarruf yoksa rozet
 /// hiç çıkmaz: uydurma sayı yazılmaz.
 String? _tasarrufRozeti(BuildContext context, String aylik, String yillik) {
@@ -57,7 +57,7 @@ String? _tasarrufRozeti(BuildContext context, String aylik, String yillik) {
   return context.l10n.prmYillikTasarruf('$oran');
 }
 
-/// Saf hesap (test edilir): '49₺/ay', '349₺/yıl' → 40. Okunamaz ya da
+/// Saf hesap (test edilir): '49₺/ay', '399₺/yıl' → 32. Okunamaz ya da
 /// tasarruf 1 puanın altındaysa null.
 int? yillikTasarrufOrani(String aylik, String yillik) {
   double? sayi(String m) {

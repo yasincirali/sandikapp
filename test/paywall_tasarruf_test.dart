@@ -5,7 +5,8 @@ import 'package:portfoy_takip/screens/paywall_screen.dart'
 /// Yıllık plan rozeti fiyat metinlerinden hesaplanır (sabit '%40' değil).
 /// Fiyat Remote Config'ten değişince rozet yanlış indirim vaat etmemeli.
 void main() {
-  test('bugünkü fiyatlar: 49×12=588, 349 → %40 (aşağı yuvarlanır)', () {
+  test('bugünkü fiyatlar: 49×12=588, 399 → %32 (aşağı yuvarlanır)', () {
+    expect(yillikTasarrufOrani('49₺/ay', '399₺/yıl'), 32);
     expect(yillikTasarrufOrani('49₺/ay', '349₺/yıl'), 40);
   });
 
