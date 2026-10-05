@@ -146,7 +146,13 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
     final yatay = SandikSpace.screenH(context);
 
     Widget govde;
-    if (kilitli) {
+    // Başlık listeden geldiyse not VAR; satır yine de boş dönerse sunucu
+    // kapısı (premium_icerik_gorebilir) gizlemiştir: istemci bayrağı henüz
+    // gelmemiş ya da RC okunamamış olabilir. Kullanıcı "açılamadı" hatası
+    // değil, kilidi görsün.
+    final sunucuKilitledi =
+        !kilitli && widget.baslik != null && not!.hasValue && not.value == null;
+    if (kilitli || sunucuKilitledi) {
       govde = ListView(
         padding:
             EdgeInsets.fromLTRB(yatay, SandikSpace.md, yatay, SandikSpace.xl),

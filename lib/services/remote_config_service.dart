@@ -337,8 +337,10 @@ class RemoteConfigService {
   /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
   /// edilmez; add-asset limit'i devreye girmez. Store + RevenueCat hazır
   /// olunca Firebase Console'dan true'ya çekilecek.
-  bool get paywallEnabled =>
-      _rc?.getBool('paywall_enabled') ?? _defaults['paywall_enabled'] as bool;
+  // `_bayrak` üstünden: yerel testte RC_ACIK ile açılabilsin (sunucu kapısı
+  // açık bir yığında istemci kilidi kapalı kalınca not "açılamadı" diyordu).
+  // Release'te `_yerelAcik` boş, davranış değişmez.
+  bool get paywallEnabled => _bayrak('paywall_enabled');
 
   bool get premiumEnabled =>
       _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;

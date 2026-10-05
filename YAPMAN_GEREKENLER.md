@@ -46,7 +46,11 @@ Yayın sırası (sıra önemli):
       Sunucu hazır: `revenuecat-webhook` için `REVENUECAT_WEBHOOK_SECRET` ve
       `REVENUECAT_API_KEY`. Açılış günü sırası:
       `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
-      `update public.premium_ayar set kapi_acik = true;` → `paywall_enabled`.
+      `paywall_enabled` (Remote Config, yayılsın) →
+      `update public.premium_ayar set kapi_acik = true;`. Sıra önemli:
+      kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu
+      "açılamadı" gibi görür (ekran artık bu durumda kilidi gösteriyor ama
+      kartlar boş kalır).
       Notlar üretilmeden paywall'u açma: karşılaştırma tablosu notu vaat
       ediyor.
 
