@@ -5548,24 +5548,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yasalBelgeKvkkKisa => 'KVKK Metni';
 
   @override
-  String yasalBelgeSurum(String surum) {
-    return 'Sürüm $surum';
-  }
-
-  @override
   String get yasalBelgelerTurkce => 'Belgeler Türkçedir.';
-
-  @override
-  String get yasalKapiTaahhutBaslik => 'Onayların';
 
   @override
   String get yasalKapiOnayla => 'Okudum, kabul ediyorum';
 
   @override
   String get yasalKapiOnaylaKisa => 'Kabul ediyorum';
-
-  @override
-  String get yasalKapiKutuGerekli => 'Devam etmek için kutuyu işaretlemelisin.';
 
   @override
   String get yasalKapiKayitHatasi =>
@@ -5602,23 +5591,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get zorunluOkumaRizaVerKisa => 'Açık rıza veriyorum';
 
   @override
-  String get zorunluOkumaOnaylandi => 'Onaylandı';
-
-  @override
-  String get zorunluOkumaBelgelerBaslik => 'Yasal metinler';
-
-  @override
-  String get zorunluOkumaBelgelerAciklama =>
-      'İşaretli metinleri sonuna kadar okuyup en altta onayla; diğer belgeleri dokunarak okuyabilirsin.';
-
-  @override
   String zorunluOkumaEksik(String belgeler) {
     return 'Devam etmek için şunları sonuna kadar okuyup onaylamalısın: $belgeler';
-  }
-
-  @override
-  String zorunluOkumaSayac(int onayli, int toplam) {
-    return '$onayli/$toplam metin onaylandı';
   }
 
   @override
@@ -5884,5 +5858,74 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yasalBelgeAcildi => 'Açıldı';
 
   @override
-  String get zorunluOkumaSatirEtiketi => 'Sonuna kadar oku ve onayla';
+  String yasalAdimKayitBaslik(int sayi) {
+    return 'Kayıt için $sayi adım';
+  }
+
+  @override
+  String yasalAdimKapiBaslik(int sayi) {
+    return '$sayi adım';
+  }
+
+  @override
+  String get yasalAdimUyariAciklama =>
+      'Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin. Sonuna kadar okuyup en altta onayla.';
+
+  @override
+  String get yasalAdimRizaAciklama =>
+      'Verilerinin yurt dışına aktarılmasına açık rıza. Sonuna kadar okuyup rızanı en altta ver.';
+
+  @override
+  String get yasalAdimKutuBaslik => 'Kullanım Koşulları\'nı kabul et';
+
+  @override
+  String yasalAdimGuncellendi(String belgeler) {
+    return '$belgeler güncellendi';
+  }
+
+  @override
+  String yasalAdimListeVe(String onceki, String son) {
+    return '$onceki ve $son';
+  }
+
+  @override
+  String get yasalAdimKosulGuncelAciklama =>
+      'Değişiklikleri belgeden okuyabilirsin; okuman zorunlu değil. Devam etmek için kutuyu işaretle.';
+
+  @override
+  String get yasalAdimBilgiGuncelAciklama =>
+      'Bilgilendirme amaçlıdır; okuman zorunlu değil. Kutuyu işaretleyerek bilgilendirildiğini belirt.';
+
+  @override
+  String get yasalAdimOkuOnayla => 'Oku ve onayla';
+
+  @override
+  String get yasalAdimOkunduOnaylandi => 'Okundu ve onaylandı';
+
+  @override
+  String yasalAdimSemantik(int sira, int toplam, String ad, String durum) {
+    return 'Adım $sira/$toplam, $ad, $durum';
+  }
+
+  @override
+  String get yasalAdimDurumTamam => 'tamamlandı';
+
+  @override
+  String get yasalAdimDurumBekliyor => 'bekliyor';
+
+  @override
+  String get yasalAdimDurumSonra => 'sırası gelecek';
+
+  @override
+  String yasalAdimDigerBelgeler(int sayi) {
+    return 'Diğer belgeler (bilgi amaçlı) · $sayi';
+  }
+
+  @override
+  String yasalAdimSayac(int tamam, int toplam) {
+    return '$tamam/$toplam adım tamamlandı';
+  }
+
+  @override
+  String get yasalKapiBaslikGuncelTek => 'Güncellenen belge';
 }

@@ -3889,17 +3889,9 @@
   "yasalBelgeGizlilik": "Gizlilik Politikası",
   "yasalBelgeKvkk": "KVKK Aydınlatma Metni",
   "yasalBelgeKvkkKisa": "KVKK Metni",
-  "yasalBelgeSurum": "Sürüm {surum}",
-  "@yasalBelgeSurum": {
-    "placeholders": {
-      "surum": {"type": "String"}
-    }
-  },
   "yasalBelgelerTurkce": "Belgeler Türkçedir.",
-  "yasalKapiTaahhutBaslik": "Onayların",
   "yasalKapiOnayla": "Okudum, kabul ediyorum",
   "yasalKapiOnaylaKisa": "Kabul ediyorum",
-  "yasalKapiKutuGerekli": "Devam etmek için kutuyu işaretlemelisin.",
   "yasalKapiKayitHatasi": "Onayın kaydedilemedi. Bağlantını kontrol edip tekrar dene.",
   "yasalKapiCikis": "Çıkış yap",
   "yasalBelgeAcikRiza": "Açık Rıza Metni",
@@ -3917,20 +3909,10 @@
   "zorunluOkumaOnaylaKisa": "Onaylıyorum",
   "zorunluOkumaRizaVer": "Okudum ve açık rıza veriyorum",
   "zorunluOkumaRizaVerKisa": "Açık rıza veriyorum",
-  "zorunluOkumaOnaylandi": "Onaylandı",
-  "zorunluOkumaBelgelerBaslik": "Yasal metinler",
-  "zorunluOkumaBelgelerAciklama": "İşaretli metinleri sonuna kadar okuyup en altta onayla; diğer belgeleri dokunarak okuyabilirsin.",
   "zorunluOkumaEksik": "Devam etmek için şunları sonuna kadar okuyup onaylamalısın: {belgeler}",
   "@zorunluOkumaEksik": {
     "placeholders": {
       "belgeler": {"type": "String"}
-    }
-  },
-  "zorunluOkumaSayac": "{onayli}/{toplam} metin onaylandı",
-  "@zorunluOkumaSayac": {
-    "placeholders": {
-      "onayli": {"type": "int"},
-      "toplam": {"type": "int"}
     }
   },
   "yasalBelgeYatirimUyarisi": "Yatırım Uyarısı",
@@ -4228,8 +4210,90 @@
   "@yasalBelgeAcildi": {
     "description": "Bilgilendirme belgesinin (Koşullar, Gizlilik, KVKK) satırında hafif iz: belge en az bir kez açıldı. Onay DEĞİL — onay işareti yalnız sonuna kadar okunan metinlerde."
   },
-  "zorunluOkumaSatirEtiketi": "Sonuna kadar oku ve onayla",
-  "@zorunluOkumaSatirEtiketi": {
-    "description": "Yasal metin listesinde sonuna kadar okunması gereken satırın (Açık Rıza Metni, Yatırım Uyarısı) işareti; onaylanınca 'Onaylandı' olur."
-  }
+  "yasalAdimKayitBaslik": "Kayıt için {sayi} adım",
+  "@yasalAdimKayitBaslik": {
+    "description": "Kayıt ekranındaki adım kartının başlığı (kullanıcı kararı 2026-10-05, seçenek C).",
+    "placeholders": {
+      "sayi": {
+        "type": "int"
+      }
+    }
+  },
+  "yasalAdimKapiBaslik": "{sayi} adım",
+  "@yasalAdimKapiBaslik": {
+    "description": "Yeniden onay kapısındaki adım kartının başlığı.",
+    "placeholders": {
+      "sayi": {
+        "type": "int"
+      }
+    }
+  },
+  "yasalAdimUyariAciklama": "Uygulamanın yatırım tavsiyesi olmadığını anlatan kısa metin. Sonuna kadar okuyup en altta onayla.",
+  "yasalAdimRizaAciklama": "Verilerinin yurt dışına aktarılmasına açık rıza. Sonuna kadar okuyup rızanı en altta ver.",
+  "yasalAdimKutuBaslik": "Kullanım Koşulları'nı kabul et",
+  "yasalAdimGuncellendi": "{belgeler} güncellendi",
+  "@yasalAdimGuncellendi": {
+    "description": "Kapıda kutu adımının başlığı: güncellenen belge adları.",
+    "placeholders": {
+      "belgeler": {
+        "type": "String"
+      }
+    }
+  },
+  "yasalAdimListeVe": "{onceki} ve {son}",
+  "@yasalAdimListeVe": {
+    "placeholders": {
+      "onceki": {
+        "type": "String"
+      },
+      "son": {
+        "type": "String"
+      }
+    }
+  },
+  "yasalAdimKosulGuncelAciklama": "Değişiklikleri belgeden okuyabilirsin; okuman zorunlu değil. Devam etmek için kutuyu işaretle.",
+  "yasalAdimBilgiGuncelAciklama": "Bilgilendirme amaçlıdır; okuman zorunlu değil. Kutuyu işaretleyerek bilgilendirildiğini belirt.",
+  "yasalAdimOkuOnayla": "Oku ve onayla",
+  "yasalAdimOkunduOnaylandi": "Okundu ve onaylandı",
+  "yasalAdimSemantik": "Adım {sira}/{toplam}, {ad}, {durum}",
+  "@yasalAdimSemantik": {
+    "description": "Ekran okuyucu: adımlar sırayla okunur (\"Adım 2/3, Açık Rıza Metni, bekliyor\").",
+    "placeholders": {
+      "sira": {
+        "type": "int"
+      },
+      "toplam": {
+        "type": "int"
+      },
+      "ad": {
+        "type": "String"
+      },
+      "durum": {
+        "type": "String"
+      }
+    }
+  },
+  "yasalAdimDurumTamam": "tamamlandı",
+  "yasalAdimDurumBekliyor": "bekliyor",
+  "yasalAdimDurumSonra": "sırası gelecek",
+  "yasalAdimDigerBelgeler": "Diğer belgeler (bilgi amaçlı) · {sayi}",
+  "@yasalAdimDigerBelgeler": {
+    "placeholders": {
+      "sayi": {
+        "type": "int"
+      }
+    }
+  },
+  "yasalAdimSayac": "{tamam}/{toplam} adım tamamlandı",
+  "@yasalAdimSayac": {
+    "placeholders": {
+      "tamam": {
+        "type": "int"
+      },
+      "toplam": {
+        "type": "int"
+      }
+    }
+  },
+  "yasalKapiBaslikGuncelTek": "Güncellenen belge"
 }

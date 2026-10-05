@@ -58,6 +58,7 @@ void main() {
     'lib/screens/lock_screen.dart': 0,
     'lib/screens/login_screen.dart': 0,
     'lib/screens/main_navigation_screen.dart': 0,
+    'lib/widgets/yasal_adimlar.dart': 0,
     'lib/screens/siralama_screen.dart': 0,
     'lib/widgets/zirve_donem_secici.dart': 0,
     'lib/widgets/duello_arenasi.dart': 0,
