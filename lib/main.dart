@@ -70,6 +70,7 @@ import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
+import 'services/birikim_serisi.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
 import 'services/review_prompt_service.dart';
@@ -1457,10 +1458,19 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         mounted && ref.read(authProvider).valueOrNull?.id == user.id;
 
     final now = DateTime.now();
+    // Birikim serisi (bayrak `birikim_serisi`) yalnız KENDİ lotlarından:
+    // Birlikte görünümünde `state.assets` ortağın defterini de taşır ve
+    // ortağın alımı benim serimi uzatmamalı.
+    final seri = RemoteConfigService.instance.birikimSerisi
+        ? BirikimSerisiService.hesapla(
+            [for (final a in state.assets) if (a.userId == user.id) a],
+            now: now)
+        : null;
     final gecilenler = MilestoneService.evaluate(
       assets: state.assets,
       totalTRY: DailySummary.liveTotalTRY(state),
       now: now,
+      seri: seri,
     );
     if (gecilenler.isEmpty) return;
 
@@ -1483,6 +1493,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       girisSonrasi: girisSonrasi,
       // Sunucuda hiç kaydı yok → mevcut portföyünü giriyor, bir şey geçmedi.
       ilkKez: onceden.isEmpty,
+      seri: seri,
     );
     if (ayrim.sessiz.isNotEmpty) await repo.recordReached(user.id, ayrim.sessiz);
     if (ayrim.kutla.isEmpty || !ayniKullanici()) return;

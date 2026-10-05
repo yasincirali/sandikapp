@@ -3925,6 +3925,53 @@
   "yasalAdimDigerBelgeler": "Other documents (for information) · {sayi}",
   "yasalAdimSayac": "{tamam}/{toplam} steps completed",
   "yasalKapiBaslikGuncelTek": "Updated document",
+  "streakTitle": "Your saving streak",
+  "streakMonths": "{n} months in a row",
+  "@streakMonths": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "streakRestarted": "Streak started again",
+  "streakLongest": "Longest streak",
+  "streakMonthsValue": "{n} months",
+  "@streakMonthsValue": {
+      "placeholders": {
+          "n": {
+              "type": "String"
+          }
+      }
+  },
+  "streakPause": "Pause",
+  "streakPauseAvailable": "1 month, available",
+  "streakPauseUsed": "Used · available again in {month}",
+  "@streakPauseUsed": {
+      "placeholders": {
+          "month": {
+              "type": "String"
+          }
+      }
+  },
+  "streakOpenMonth": "No contribution yet this month; it stays open until month end.",
+  "streakExplain": "Counts the months you added money to your portfolio. One empty month in any 12 does not break it.",
+  "streakBesIncluded": "Automatic pension contributions included.",
+  "streakLegendSaving": "saved",
+  "streakLegendPause": "pause",
+  "streakLegendGap": "gap",
+  "streakLegendOpen": "this month",
+  "streakStripSemantics": "Last {total} months: {saved} saving months",
+  "@streakStripSemantics": {
+      "placeholders": {
+          "total": {
+              "type": "String"
+          },
+          "saved": {
+              "type": "String"
+          }
+      }
+  },
   "rdrKademeSakin": "calm",
   "rdrKademeHareketli": "active",
   "rdrKademeCok": "very active",

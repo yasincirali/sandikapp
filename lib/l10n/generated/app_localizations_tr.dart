@@ -5930,6 +5930,63 @@ class AppLocalizationsTr extends AppLocalizations {
   String get yasalKapiBaslikGuncelTek => 'Güncellenen belge';
 
   @override
+  String get streakTitle => 'Birikim serin';
+
+  @override
+  String streakMonths(String n) {
+    return '$n ay art arda';
+  }
+
+  @override
+  String get streakRestarted => 'Seri yeniden başladı';
+
+  @override
+  String get streakLongest => 'En uzun seri';
+
+  @override
+  String streakMonthsValue(String n) {
+    return '$n ay';
+  }
+
+  @override
+  String get streakPause => 'Mola hakkı';
+
+  @override
+  String get streakPauseAvailable => '1 ay, kullanılabilir';
+
+  @override
+  String streakPauseUsed(String month) {
+    return 'Kullanıldı · $month ayında açılır';
+  }
+
+  @override
+  String get streakOpenMonth => 'Bu ay henüz ekleme yok; ay sonuna kadar açık.';
+
+  @override
+  String get streakExplain =>
+      'Portföyüne para eklediğin ayları sayar. Son 12 ayda bir boş ay seriyi bozmaz.';
+
+  @override
+  String get streakBesIncluded => 'BES otomatik katkıları dahil.';
+
+  @override
+  String get streakLegendSaving => 'birikim';
+
+  @override
+  String get streakLegendPause => 'mola';
+
+  @override
+  String get streakLegendGap => 'ara';
+
+  @override
+  String get streakLegendOpen => 'bu ay';
+
+  @override
+  String streakStripSemantics(String total, String saved) {
+    return 'Son $total ay: $saved birikim ayı';
+  }
+
+  @override
   String get rdrKademeSakin => 'sakin';
 
   @override

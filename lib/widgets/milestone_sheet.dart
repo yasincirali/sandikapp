@@ -33,6 +33,7 @@ class MilestoneSheet extends StatelessWidget {
         'portfolio_age' => Icons.hourglass_bottom_rounded,
         'gold_count' => Icons.star_rounded,
         'diversification' => Icons.pie_chart_rounded,
+        'contribution_streak' => Icons.savings_rounded,
         _ => Icons.trending_up_rounded,
       };
 

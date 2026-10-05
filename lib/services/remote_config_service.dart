@@ -212,6 +212,13 @@ class RemoteConfigService {
     // eski; geçmiş satırlar hiçbir zaman değişmez (kur bilinmiyor).
     'satis_gunu_kuru': false,
 
+    // Aylık birikim serisi (2026-10-05, yasin kararları: aylık ritim, son 12
+    // ayda 1 mola, BES dahil). Özet › Birikim disiplini kartına seri satırı
+    // ve 12 aylık şerit, `contribution_streak` kilometre taşı. KAPALI doğar:
+    // ana yüzeyde yeni bilgi; önce yasin'in cihazında açılır. Sunucu
+    // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
+    'birikim_serisi': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -443,6 +450,9 @@ class RemoteConfigService {
 
   /// Dövizli satışta satış günü kuru (0111). Gerekçe `_defaults`'ta.
   bool get satisGunuKuru => _bayrak('satis_gunu_kuru');
+
+  /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
+  bool get birikimSerisi => _bayrak('birikim_serisi');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

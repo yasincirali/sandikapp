@@ -9922,6 +9922,102 @@ abstract class AppLocalizations {
   /// **'Güncellenen belge'**
   String get yasalKapiBaslikGuncelTek;
 
+  /// No description provided for @streakTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikim serin'**
+  String get streakTitle;
+
+  /// No description provided for @streakMonths.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ay art arda'**
+  String streakMonths(String n);
+
+  /// No description provided for @streakRestarted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seri yeniden başladı'**
+  String get streakRestarted;
+
+  /// No description provided for @streakLongest.
+  ///
+  /// In tr, this message translates to:
+  /// **'En uzun seri'**
+  String get streakLongest;
+
+  /// No description provided for @streakMonthsValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} ay'**
+  String streakMonthsValue(String n);
+
+  /// No description provided for @streakPause.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mola hakkı'**
+  String get streakPause;
+
+  /// No description provided for @streakPauseAvailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 ay, kullanılabilir'**
+  String get streakPauseAvailable;
+
+  /// No description provided for @streakPauseUsed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıldı · {month} ayında açılır'**
+  String streakPauseUsed(String month);
+
+  /// No description provided for @streakOpenMonth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ay henüz ekleme yok; ay sonuna kadar açık.'**
+  String get streakOpenMonth;
+
+  /// No description provided for @streakExplain.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyüne para eklediğin ayları sayar. Son 12 ayda bir boş ay seriyi bozmaz.'**
+  String get streakExplain;
+
+  /// No description provided for @streakBesIncluded.
+  ///
+  /// In tr, this message translates to:
+  /// **'BES otomatik katkıları dahil.'**
+  String get streakBesIncluded;
+
+  /// No description provided for @streakLegendSaving.
+  ///
+  /// In tr, this message translates to:
+  /// **'birikim'**
+  String get streakLegendSaving;
+
+  /// No description provided for @streakLegendPause.
+  ///
+  /// In tr, this message translates to:
+  /// **'mola'**
+  String get streakLegendPause;
+
+  /// No description provided for @streakLegendGap.
+  ///
+  /// In tr, this message translates to:
+  /// **'ara'**
+  String get streakLegendGap;
+
+  /// No description provided for @streakLegendOpen.
+  ///
+  /// In tr, this message translates to:
+  /// **'bu ay'**
+  String get streakLegendOpen;
+
+  /// No description provided for @streakStripSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son {total} ay: {saved} birikim ayı'**
+  String streakStripSemantics(String total, String saved);
+
   /// No description provided for @rdrKademeSakin.
   ///
   /// In tr, this message translates to:

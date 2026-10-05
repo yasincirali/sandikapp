@@ -54,6 +54,25 @@ Yayın sırası (sıra önemli):
       Notlar üretilmeden paywall'u açma: karşılaştırma tablosu notu vaat
       ediyor.
 
+## ⏳ 2026-10-05 Aylık birikim serisi (Faz 1) — bayrak `birikim_serisi` KAPALI
+
+Kararların (5 Ekim): ritim aylık, son 12 ayda 1 mola, BES otomatik katkısı
+sayılır, maaş günü hatırlatması yapılacak (Faz 2, ayrı PR). Rapor:
+https://claude.ai/artifact/SVA5cQaxt5431EMkFmxsdw
+
+Bu PR yalnız uygulama tarafı; **sunucu değişikliği ve deploy yok**. Bayrak
+kapalıyken Özet ve kutlamalar birebir eski. Açınca: Performans › Özet ›
+"Birikim disiplinin" kartının altında "N ay art arda", 12 aylık nokta şeridi,
+en uzun seri, mola hakkı; 3/6/12/24/36 aylık seriler, yalnız o ayın alımı
+seriyi tam eşiğe getirdiğinde kutlanır (ayda en çok bir kutlama kuralı aynı).
+- [ ] PR birleşince Firebase Remote Config'te `birikim_serisi` = true,
+      önce yalnız kendi cihazın (koşul: kullanıcı/cihaz), Özet'e bak.
+- [ ] Herkese açmadan önce: sürüm notu (`surum_notlari.dart`) + Performans
+      tur adımı metnine "birikim serin" eklenmeli (bayrak kapalıyken eklenmedi;
+      tur kapalı özelliği anlatmasın diye).
+- Bilinen sınır: Birlikte görünümünde Özet kartındaki seri ortak defterden
+  sayılır (kartın diğer sayıları gibi); kutlama yalnız kendi lotlarından.
+
 ## ⏳ 2026-10-05 Supabase Free plan kotası — cron geçmişi saklama (0112) + kripto 2 dk (0113) + db_logs başarılı satır 1 gün (0114)
 
 Durum (Tokyo, bu dönem): DB 342/500 MB, Log Ingestion 1.22/1 GB, Log Query

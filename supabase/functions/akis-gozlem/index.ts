@@ -71,9 +71,16 @@ const USER_AGENT =
 const TEFAS = 'https://www.tefas.gov.tr/api/funds';
 const FON_TIPLERI = ['YAT', 'EMK'] as const;
 
-/// Saklama süresi (gün). Kart 8 hafta gösterir; bir yıllık pay ileride
-/// "geçen yıla göre" kıyasına ve teşhise yeter.
-const SAKLAMA_GUN = 400;
+/// Saklama süresi (gün). Kart 8 hafta, istemci sorgusu 105 gün
+/// (`akisSorguPenceresi`), sapma istatistiği 90 gün okur.
+///
+/// 400'den 140'a (kullanıcı kararı, 2026-10-05): Supabase Free plan DB'si
+/// 342/500 MB'tı; bu tablo 90 günle 42 MB, 400 günde ~135 MB olacaktı.
+/// 140 = geri doldurma penceresi (`PENCERE_GUN` 130) + pay. Daha kısa
+/// olsaydı silinen `fon_akis_tur` günleri pencerede "hiç çekilmemiş"
+/// görünür ve her tur TEFAS'tan yeniden çekilirdi. Yıllık kıyas gerekirse
+/// eski günler DB yerine Storage'a arşivlenir (DB kotasından ayrı).
+const SAKLAMA_GUN = 140;
 
 /// Ardışık TEFAS istekleri arası bekleme. Uç art arda isteklerde bağlantıyı
 /// kesiyor (ölçüldü 2026-10-04); gün başına iki istek için bedeli küçük.

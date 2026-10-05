@@ -79,6 +79,11 @@ void main() {
       expect(varsayilan('satis_gunu_kuru'), 'false');
     });
 
+    // Ana yüzeyde yeni bilgi (Özet kartı + kutlama); önce yasin'in cihazı.
+    test('birikim serisi KAPALI doğar', () {
+      expect(varsayilan('birikim_serisi'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });
