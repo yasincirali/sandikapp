@@ -331,8 +331,16 @@ class RemoteConfigService {
       // bildirir ama ETKİNLEŞTİRMEZ — activate şart.
       _rc!.onConfigUpdated.listen(
         (_) async {
-          await _rc!.activate();
-          _sunucuyaBildir();
+          // `onError` yalnızca akışın hatasını alır, bu async gövdenin
+          // fırlattığını değil — activate düşerse zone'a ÇÖKME olarak
+          // giderdi. Etkinleşmeyen değer saatlik fetch'te yine gelir.
+          try {
+            await _rc!.activate();
+            _sunucuyaBildir();
+          } catch (e, st) {
+            CrashReporter.report(e, st,
+                reason: 'remote_config_service.onConfigUpdated.activate');
+          }
         },
         onError: (Object e, StackTrace st) => CrashReporter.report(e, st,
             reason: 'remote_config_service.onConfigUpdated'),

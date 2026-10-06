@@ -215,7 +215,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       SekmeBasaDon.yayinla(index);
     }
     if (index == 0 && _currentIndex != 0) {
-      ref.read(portfolioProvider.notifier).refreshPrices();
+      CrashReporter.arkaPlan(
+          ref.read(portfolioProvider.notifier).refreshPrices(),
+          reason: 'MainNavigation.homeTabRefresh');
     }
     _sekmeyeGec(index);
   }
