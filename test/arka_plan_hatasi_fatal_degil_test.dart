@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' show ClientException;
 import 'package:portfoy_takip/services/crash_reporter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthRetryableFetchException, FunctionException, PostgrestException;
 
 /// Üretim çökmesinin (Crashlytics, 2026-09-19) tekrar etmemesi için ratchet.
 ///
@@ -57,6 +59,61 @@ void main() {
       expect(CrashReporter.agHatasiMi(RangeError('index')), isFalse);
       expect(CrashReporter.agHatasiMi(Exception('beklenmeyen')), isFalse);
       expect(CrashReporter.agHatasiMi(null), isFalse);
+    });
+  });
+
+  group('CrashReporter.geciciSunucuHatasiMi / fatalMi', () {
+    // Üretim raporu 2026-10-06 (Android): "Fatal Exception: FlutterError:
+    // PostgrestException(message: , code: 504, details: Gateway Timeout)
+    // — Error thrown runZonedGuarded".
+    test('ağ geçidi zaman aşımı geçicidir, fatal değildir', () {
+      const e504 = PostgrestException(
+          message: '', code: '504', details: 'Gateway Timeout');
+      expect(CrashReporter.geciciSunucuHatasiMi(e504), isTrue);
+      expect(CrashReporter.fatalMi(e504), isFalse);
+      for (final kod in ['502', '503', '522', '524', 'PGRST003']) {
+        expect(
+          CrashReporter.fatalMi(PostgrestException(message: '', code: kod)),
+          isFalse,
+          reason: kod,
+        );
+      }
+      expect(
+        CrashReporter.fatalMi(FunctionException(status: 503)),
+        isFalse,
+      );
+      expect(
+        CrashReporter.fatalMi(AuthRetryableFetchException()),
+        isFalse,
+      );
+      // Tipi kaybolmuş, metne çevrilmiş hâl.
+      expect(
+        CrashReporter.fatalMi(
+            'PostgrestException(message: , code: 504, details: Gateway Timeout, hint: null)'),
+        isFalse,
+      );
+    });
+
+    test('bizim hatamız olan sunucu yanıtları fatal kalır', () {
+      // RLS / şema / kısıt / SQL hatası: kod düzeltilmeli, gizlenmemeli.
+      for (final kod in ['42501', '42P01', '23505', 'PGRST116', '400', '500']) {
+        expect(
+          CrashReporter.fatalMi(PostgrestException(message: 'x', code: kod)),
+          isTrue,
+          reason: kod,
+        );
+      }
+      expect(CrashReporter.fatalMi(FunctionException(status: 500)), isTrue);
+      expect(CrashReporter.fatalMi(StateError('build')), isTrue);
+    });
+
+    test('agHatasiMi 504\'ü TANIMAZ — servislerin davranışı değişmedi', () {
+      expect(
+        CrashReporter.agHatasiMi(
+            const PostgrestException(message: '', code: '504')),
+        isFalse,
+      );
+      expect(CrashReporter.fatalMi(TimeoutException('15 sn')), isFalse);
     });
   });
 
@@ -117,7 +174,7 @@ void main() {
       );
     });
 
-    test('global handler fatal kararını agHatasiMi\'ye sorar', () {
+    test('global handler fatal kararını fatalMi\'ye sorar', () {
       final main = File('lib/main.dart')
           .readAsLinesSync()
           .where((l) => !_yorum(l))
@@ -129,7 +186,7 @@ void main() {
             'çökmesiz kullanıcı oranını düşürür.',
       );
       expect(
-        'fatal: !CrashReporter.agHatasiMi('.allMatches(main).length,
+        'fatal: CrashReporter.fatalMi('.allMatches(main).length,
         greaterThanOrEqualTo(3),
         reason: 'FlutterError.onError, PlatformDispatcher.onError ve '
             'runZonedGuarded — üçü de sınıflandırmadan geçmeli.',

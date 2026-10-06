@@ -198,8 +198,9 @@ void main() async {
 
       // Senkron Flutter framework hataları
       //
-      // `fatal` kararı `CrashReporter.agHatasiMi`'den gelir: timeout/soket
-      // hatası kullanıcının BAĞLANTISIDIR, uygulamanın çökmesi değil. Hepsini
+      // `fatal` kararı `CrashReporter.fatalMi`'den gelir: timeout/soket
+      // hatası kullanıcının BAĞLANTISIDIR, 502/503/504 sunucunun geçici
+      // yokluğudur (2026-10-06); ikisi de uygulamanın çökmesi değil. Hepsini
       // `fatal: true` yazmak "çökmesiz kullanıcı" oranını olmayan çökmelerle
       // düşürüyor ve gerçek çökmeleri gürültüde gizliyordu (2026-09-19).
       FlutterError.onError = (details) {
@@ -210,7 +211,7 @@ void main() async {
           details.exceptionAsString(),
           details.stack,
           reason: details.context?.toDescription() ?? 'FlutterError.onError',
-          fatal: !CrashReporter.agHatasiMi(details.exception),
+          fatal: CrashReporter.fatalMi(details.exception),
         );
       };
 
@@ -220,7 +221,7 @@ void main() async {
           error,
           stack,
           reason: 'PlatformDispatcher.onError',
-          fatal: !CrashReporter.agHatasiMi(error),
+          fatal: CrashReporter.fatalMi(error),
         );
         return true;
       };
@@ -287,12 +288,12 @@ void main() async {
   }, (error, stack) {
     // Zone-level: yakalanmayan async hataları.
     // `CrashReporter` Firebase kurulu değilse sessizce no-op'tur; ağ hatası
-    // burada da non-fatal (yukarıdaki gerekçe).
+    // ve geçici sunucu hatası burada da non-fatal (yukarıdaki gerekçe).
     CrashReporter.report(
       error,
       stack,
       reason: 'runZonedGuarded',
-      fatal: !CrashReporter.agHatasiMi(error),
+      fatal: CrashReporter.fatalMi(error),
     );
   });
 }

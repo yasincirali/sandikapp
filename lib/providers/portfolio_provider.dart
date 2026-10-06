@@ -1077,7 +1077,19 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in
     // üzerine sıfır yazma race'i oluşur (bkz. varlıkların bir görünüp
     // kaybolma bug'ı).
-    final built = await future;
+    //
+    // Build HATAYLA bittiyse (ör. `fetchByUser` 504, önbellek yok) `future`
+    // o hatayı yeniden fırlatır. Çağıranların bir kısmı bunu beklemiyor:
+    // `RefreshIndicator` `onRefresh` sonucunu bırakır, hata zone handler'ına
+    // düşüp ÇÖKME sayılıyordu (Crashlytics 2026-10-06). Tazelenecek fiyat
+    // zaten yok; hata ekranda build'in kendi AsyncError'ıyla görünüyor.
+    final PortfolioState built;
+    try {
+      built = await future;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'PortfolioNotifier._fiyatTuru.build');
+      return;
+    }
     // future'dan sonra en güncel state artık valid.
     var s = state.valueOrNull ?? built;
     // Defter sunucudan yeniden okunur (bkz. [_defteriTazele]) — boşluk

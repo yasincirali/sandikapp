@@ -294,8 +294,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _poll = BackoffPoller(
       check: () async {
         if (!mounted) return true;
-        final status =
-            await SupabaseService.instance.getInviteStatus(inviteId);
+        // `check` zamanlayıcıdan sahipsiz çağrılır: hata zone handler'ına
+        // düşüp ÇÖKME sayılırdı (bkz. `PartnersNotifier._tick`). Tur düşerse
+        // yoklama sürer, bir sonraki aralıkta yeniden sorulur.
+        final String? status;
+        try {
+          status = await SupabaseService.instance.getInviteStatus(inviteId);
+        } catch (e, st) {
+          CrashReporter.report(e, st, reason: 'ProfileScreen.inviteStatusPoll');
+          return false;
+        }
         if (status == 'accepted') {
           await ref.read(partnersProvider.notifier).refresh();
           CrashReporter.arkaPlan(

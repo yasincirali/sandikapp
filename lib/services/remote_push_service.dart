@@ -105,7 +105,15 @@ class RemotePushService {
     _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((token) async {
       final userId = _activeUserId;
       if (userId == null) return;
-      await _syncToken(userId, token);
+      // Dinleyici geri çağrısının future'ını kimse beklemez (`listen`'in
+      // onError'ı async gövdeyi kapsamaz): `claim_push_token` 504 verirse
+      // hata zone handler'ına düşüp ÇÖKME sayılırdı (2026-10-06). Token bir
+      // sonraki açılışta `start` içinde yeniden eşitlenir.
+      try {
+        await _syncToken(userId, token);
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'RemotePushService.onTokenRefresh');
+      }
     });
 
     _foregroundSubscription =
