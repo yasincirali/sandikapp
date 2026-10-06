@@ -158,6 +158,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // bundan sonra gelenleri "yeni" sayar. Kapanışta da yazılır: sayfa
     // açıkken düşen bildirim listede görüldü, rozette yeniden belirmesin.
     _bildirimleriGorulduSay();
+    // Sayfa açılırken sunucudaki iki listeyi tazele (2026-10-06): uygulama
+    // önde açıkken gelen alarm/özet kaydı başka türlü ancak bir sonraki
+    // öne dönüşte görünürdü. Sheet provider'ı izlediği için satır, liste
+    // açıkken yerine oturur.
+    _sunucuBildirimleriniTazele();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -240,6 +245,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ).whenComplete(() {
       if (mounted) _bildirimleriGorulduSay();
     });
+  }
+
+  void _sunucuBildirimleriniTazele() {
+    CrashReporter.arkaPlan(
+      ref.read(priceAlertNotificationProvider.notifier).refresh(),
+      reason: 'home.alarmBildirimTazele',
+    );
+    CrashReporter.arkaPlan(
+      ref.read(appNotificationProvider.notifier).refresh(),
+      reason: 'home.genelBildirimTazele',
+    );
   }
 
   void _bildirimleriGorulduSay() {
@@ -603,8 +619,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return RefreshIndicator.adaptive(
       color: context.c.amberText,
       // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
-      onRefresh: () =>
-          ref.read(portfolioProvider.notifier).refreshPrices(force: true),
+      // Çan listeleri de tazelenir (2026-10-06): "aşağı çektim, yeni
+      // bildirim yok" denmesin. Fiyat yenilemesini beklemez.
+      onRefresh: () {
+        _sunucuBildirimleriniTazele();
+        return ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+      },
       child: CustomScrollView(
         controller: _scrollCtrl,
         physics: const BouncingScrollPhysics(

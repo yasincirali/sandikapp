@@ -20,6 +20,7 @@ import 'models/asset.dart';
 import 'models/asset_type.dart';
 import 'models/user_model.dart';
 import 'providers/premium_provider.dart';
+import 'providers/app_notification_provider.dart';
 import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
@@ -1691,6 +1692,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         if (ref.read(authProvider).valueOrNull != null) {
           CrashReporter.arkaPlan(
             ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
+          );
+          // Genel bildirimler (aylık/haftalık özet, brifing, TÜFE, takip
+          // listesi, temettü, ortaklık — `app_notifications`, 0066) de
+          // sunucuda yazılır ve uygulama arkadayken gelir. 2026-10-06'ya
+          // kadar bu liste YALNIZCA açılışta okunuyordu: süreç arkada canlı
+          // kaldıysa sabah gelen aylık özet çan sayfasında hiç görünmüyordu
+          // (yasin: "aylık özeti kapattım, bildirim merkezinde göremedim").
+          CrashReporter.arkaPlan(
+            ref.read(appNotificationProvider.notifier).refresh(),
+            reason: 'main.genelBildirimTazele',
           );
         }
         // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —

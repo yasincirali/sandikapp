@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_notification.dart';
+import '../services/crash_reporter.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 
@@ -30,7 +31,11 @@ class AppNotificationNotifier extends AsyncNotifier<List<AppNotification>> {
       state = AsyncData(await SupabaseService.instance
           .fetchAppNotifications(userId: user.id));
     } catch (e, st) {
-      state = AsyncError(e, st);
+      // Tazeleme artık her öne dönüşte ve çan açılışında koşuyor
+      // (2026-10-06). Geçici bir 5xx eldeki listeyi SİLMESİN: veri varsa
+      // korunur, yoksa hata durumuna geçilir (ikincil yüzey, bkz. build).
+      CrashReporter.report(e, st, reason: 'AppNotificationNotifier.refresh');
+      if (!state.hasValue) state = AsyncError(e, st);
     }
   }
 
