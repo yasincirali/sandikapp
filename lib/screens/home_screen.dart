@@ -671,7 +671,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onTap: _reload,
                       semanticLabel: context.l10n.refreshPrices,
                       // Eski düğme SandikTappable varsayılanıyla titreşirdi.
+                      zemin: context.chip(selected: false),
                       child: _HeaderIconKutusu(
+                        kutusuz: true,
                         child: Icon(Icons.refresh_rounded,
                             color: context.c.text58, size: 22),
                       ),
@@ -1859,14 +1861,18 @@ class _BalanceToggleButton extends ConsumerWidget {
 /// ([SandikAsyncTap]) — yenile düğmesi isteği beklediği için.
 class _HeaderIconKutusu extends StatelessWidget {
   final Widget child;
-  const _HeaderIconKutusu({required this.child});
+
+  /// `true` → kutu [SandikAsyncTap.zemin]'de (yenile düğmesi): istek
+  /// sürerken kutu yerinde kalır, yalnız ikon göstergeye yer açar.
+  final bool kutusuz;
+  const _HeaderIconKutusu({required this.child, this.kutusuz = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 44,
       height: 44,
-      decoration: context.chip(selected: false),
+      decoration: kutusuz ? null : context.chip(selected: false),
       child: Center(child: child),
     );
   }

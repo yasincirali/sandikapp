@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Bağlantı hatalarında kullanıcıya gösterilen ortak mesaj.
 ///
@@ -519,12 +520,18 @@ class _OnayIslemEylemleriState extends State<_OnayIslemEylemleri> {
             onTap: _mesgul ? null : () => Navigator.of(context).pop(false),
           ),
         ),
+        // Göstergeyi düğme KENDİ kutusunda çizer (`showIndicator: false`):
+        // SandikAsyncTap tüm çocuğu gizler; dolgu ve çerçeve de gidince
+        // "Yine de sil" meşgulken yok olmuş gibi görünüyordu (web ekran
+        // görüntüsü 2026-10-08).
         SandikAsyncTap(
           onTap: _onayla,
+          showIndicator: false,
           child: _DialogButton(
             label: widget.confirmLabel,
             color: widget.accent,
             filled: true,
+            mesgul: _mesgul,
             // Dokunuşu dıştaki SandikAsyncTap alır.
             onTap: null,
           ),
@@ -540,11 +547,15 @@ class _DialogButton extends StatelessWidget {
     required this.color,
     required this.filled,
     required this.onTap,
+    this.mesgul = false,
   });
 
   final String label;
   final Color color;
   final bool filled;
+
+  /// Kutu (dolgu + çerçeve) yerinde kalır, etiketin yerinde gösterge.
+  final bool mesgul;
 
   /// `null` → dokunuşu sarmalayan alır (ör. [SandikAsyncTap]).
   final VoidCallback? onTap;
@@ -568,12 +579,23 @@ class _DialogButton extends StatelessWidget {
                 color: color.withValues(alpha: filled ? 0.45 : 0.25),
               ),
             ),
-            child: Text(
-              label,
-              style: context.t.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: mesgul ? 0 : 1,
+                  child: Text(
+                    label,
+                    style: context.t.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
+                if (mesgul)
+                  const CustomLoadingIndicator(
+                      size: CustomLoadingIndicator.small),
+              ],
             ),
           ),
         ),

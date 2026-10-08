@@ -86,6 +86,48 @@ void main() {
     }
   });
 
+  group('kutu meşgulken yerinde kalır', () {
+    // Web ekran görüntüsü 2026-10-08: onay diyaloğunda "Yine de sil"
+    // meşgulken dolgusu ve çerçevesiyle birlikte kayboluyordu.
+    testWidgets('SandikAsyncTap.zemin gizlenmez', (t) async {
+      final c = Completer<void>();
+      const z = BoxDecoration(color: Color(0xFF123456));
+      await t.pumpWidget(MaterialApp(
+        home: Center(
+          child: SandikAsyncTap(
+            onTap: () => c.future,
+            zemin: z,
+            child: const SizedBox(width: 44, height: 44, child: Text('x')),
+          ),
+        ),
+      ));
+      await t.tap(find.text('x'));
+      await t.pump();
+      expect(find.byType(CustomLoadingIndicator), findsOneWidget);
+      final kutu = t.widget<DecoratedBox>(find.ancestor(
+          of: find.byType(CustomLoadingIndicator),
+          matching: find.byType(DecoratedBox)).first);
+      expect(kutu.decoration, z);
+      final opak = t.widgetList<Opacity>(find.ancestor(
+          of: find.byType(DecoratedBox), matching: find.byType(Opacity)));
+      expect(opak.where((o) => o.opacity == 0), isEmpty);
+      c.complete();
+      await t.pumpAndSettle();
+    });
+
+    test('kutulu hedefler kutuyu zemin\'e verir', () {
+      // Bilinen kutulu SandikAsyncTap hedefleri: çıkış, yenile, ortak ikonları.
+      final tema = File('lib/theme/sandik.dart').readAsStringSync();
+      expect(tema, contains('zemin: BoxDecoration('));
+      final ana = File('lib/screens/home_screen.dart').readAsStringSync();
+      expect(ana, contains('zemin: context.chip(selected: false)'));
+      final profil = File('lib/screens/profile_screen.dart').readAsStringSync();
+      expect('zemin: _ActionIcon.kutu('.allMatches(profil).length, 2);
+      final onay = File('lib/utils/friendly_error.dart').readAsStringSync();
+      expect(onay, contains('mesgul: _mesgul,'));
+    });
+  });
+
   group('ekranlar kendi döneni yazmaz', () {
     final dosyalar = [
       ...Directory('lib/screens').listSync(recursive: true),

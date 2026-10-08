@@ -1467,17 +1467,19 @@ class SandikLogoutButton extends StatelessWidget {
         : Sandik.loss;
     return SandikAsyncTap(
       onTap: disabled ? null : onPressed,
+      // Kutu `zemin`de: çıkış sürerken çerçeve yerinde, ikonun yerinde
+      // gösterge.
+      zemin: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: SandikRadius.mdAll,
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
       child: Semantics(
         button: true,
         label: context.l10n.signOutAction,
-        child: Container(
+        child: SizedBox(
           width: SandikTouch.min,
           height: SandikTouch.min,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: SandikRadius.mdAll,
-            border: Border.all(color: color.withValues(alpha: 0.18)),
-          ),
           child: Center(
             child: Icon(Icons.logout_rounded, color: color, size: 20),
           ),

@@ -185,10 +185,17 @@ class SandikAsyncTap extends StatefulWidget {
     this.indicatorSize = CustomLoadingIndicator.small,
     this.semanticLabel,
     this.haptic = SandikHaptic.medium,
+    this.zemin,
   });
 
   final Future<void> Function()? onTap;
   final Widget child;
+
+  /// Hedefin kutusu (dolgu, çerçeve). Meşgulken GİZLENMEZ — yalnız
+  /// [child] (ikon/etiket) göstergeye yer açar. Kutuyu çocuğun içine
+  /// çizen hedef meşgulken tümden kayboluyordu (onay diyaloğundaki "Yine
+  /// de sil", web ekran görüntüsü 2026-10-08).
+  final Decoration? zemin;
 
   /// false ise içerik yerinde kalır, yalnızca dokunma kilitlenir.
   final bool showIndicator;
@@ -227,7 +234,7 @@ class _SandikAsyncTapState extends State<SandikAsyncTap> {
       semanticLabel: widget.semanticLabel,
       // Gösterge içeriğin ÜSTÜNDE, içerik görünmez ama yer tutar: hedefin
       // boyu meşgulken değişmez ([SandikAsyncButton] ile aynı kural).
-      child: Stack(
+      child: _zeminli(Stack(
         alignment: Alignment.center,
         children: [
           Opacity(
@@ -236,7 +243,12 @@ class _SandikAsyncTapState extends State<SandikAsyncTap> {
           if (_busy && widget.showIndicator)
             CustomLoadingIndicator(size: widget.indicatorSize),
         ],
-      ),
+      )),
     );
+  }
+
+  Widget _zeminli(Widget icerik) {
+    final z = widget.zemin;
+    return z == null ? icerik : DecoratedBox(decoration: z, child: icerik);
   }
 }

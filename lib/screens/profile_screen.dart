@@ -864,7 +864,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 }
               }
             },
+            zemin: _ActionIcon.kutu(
+                p.isActive ? context.c.text58 : context.c.gain),
             child: _ActionIcon(
+              kutusuz: true,
               icon: p.isActive
                   ? Icons.visibility_off_rounded
                   : Icons.visibility_rounded,
@@ -875,7 +878,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(width: 8),
           SandikAsyncTap(
             onTap: () => _confirmRemove(p.user.id, p.user.displayName),
+            zemin: _ActionIcon.kutu(context.c.loss),
             child: _ActionIcon(
+              kutusuz: true,
               icon: Icons.delete_outline_rounded,
               color: context.c.loss,
               semanticLabel: context.l10n.removePartnerSemantics,
@@ -1131,7 +1136,18 @@ class _ActionIcon extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.semanticLabel,
+    this.kutusuz = false,
   });
+
+  /// `true` → kutu [SandikAsyncTap.zemin]'de çizilir: istek sürerken kutu
+  /// yerinde kalır, yalnız ikon göstergeye yer açar.
+  final bool kutusuz;
+
+  static BoxDecoration kutu(Color renk) => BoxDecoration(
+        color: renk.withValues(alpha: 0.10),
+        borderRadius: SandikRadius.mdAll,
+        border: Border.all(color: renk.withValues(alpha: 0.18)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -1142,11 +1158,7 @@ class _ActionIcon extends StatelessWidget {
       child: Container(
         width: 44,
         height: 44,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: iconColor.withValues(alpha: 0.18)),
-        ),
+        decoration: kutusuz ? null : kutu(iconColor),
         child: Center(child: Icon(icon, color: iconColor, size: 20)),
       ),
     );
