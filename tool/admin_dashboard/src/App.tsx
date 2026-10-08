@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { configHatasi, rpc, supabase } from './supabase';
 import Genel from './pages/Genel';
+import Huni from './pages/Huni';
 import Kullanicilar from './pages/Kullanicilar';
 import Seanslar from './pages/Seanslar';
 import Cihazlar from './pages/Cihazlar';
@@ -11,7 +12,7 @@ import type { Overview } from './types';
 import { useRpc } from './useRpc';
 import { fmtNum } from './format';
 
-type Sekme = 'genel' | 'kullanicilar' | 'seanslar' | 'cihazlar' | 'guvenlik' | 'servisler';
+type Sekme = 'huni' | 'genel' | 'kullanicilar' | 'seanslar' | 'cihazlar' | 'guvenlik' | 'servisler';
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -124,7 +125,7 @@ function Giris() {
           <span className="dot" />
           <span>
             sandık
-            <small>destek paneli</small>
+            <small>kontrol paneli</small>
           </span>
         </div>
         <p>
@@ -162,7 +163,9 @@ function Giris() {
 /* ── Panel kabuğu ────────────────────────────────────────────────────── */
 
 function Panel({ email }: { email: string }) {
-  const [sekme, setSekme] = useState<Sekme>('genel');
+  // Varsayılan sekme huni (2026-10-02): panel artık önce "büyüyor muyuz"
+  // sorusuna, sonra "bir şey bozuk mu" sorusuna bakılan yer.
+  const [sekme, setSekme] = useState<Sekme>('huni');
   const [saat, setSaat] = useState(24);
   const [kullaniciSorgu, setKullaniciSorgu] = useState('');
 
@@ -183,10 +186,18 @@ function Panel({ email }: { email: string }) {
           <span className="dot" />
           <span>
             sandık
-            <small>destek paneli</small>
+            <small>kontrol paneli</small>
           </span>
         </div>
 
+        <div className="nav-group">Büyüme</div>
+        <NavDugme
+          aktif={sekme === 'huni'}
+          tikla={() => setSekme('huni')}
+          etiket="Kayıt hunisi"
+        />
+
+        <div className="nav-group">Destek</div>
         <NavDugme
           aktif={sekme === 'genel'}
           tikla={() => setSekme('genel')}
@@ -238,6 +249,7 @@ function Panel({ email }: { email: string }) {
       </aside>
 
       <main className="main">
+        {sekme === 'huni' && <Huni kullaniciyaGit={kullaniciyaGit} />}
         {sekme === 'genel' && (
           <Genel saat={saat} saatAyarla={setSaat} kullaniciyaGit={kullaniciyaGit} />
         )}

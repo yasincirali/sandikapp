@@ -1,6 +1,6 @@
 @echo off
 setlocal
-title sandik destek paneli
+title sandik kontrol paneli
 
 rem Masaustu kisayolunun hedefi. Tek isi: dev sunucusunu ayaga kaldirip
 rem tarayiciyi acmak, pencere kapaninca sunucuyu da birlikte goturmek.
@@ -57,7 +57,7 @@ if not errorlevel 1 (
 )
 
 echo.
-echo  sandik destek paneli baslatiliyor...
+echo  sandik kontrol paneli baslatiliyor...
 echo  Bu pencereyi kapatmak paneli de kapatir.
 echo.
 

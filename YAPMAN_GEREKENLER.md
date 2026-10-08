@@ -8,6 +8,18 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
+
+PR #69 (2 Ekim) main'e hiç girmemişti: 0097 önce dağıtılmalıydı, 3 Ekim'de
+yalnız SQL'i main'e alındı (iki sunucuda canlı), istemci dalda kaldı. Şimdi
+güncel main'le birleşti. Sunucu değişikliği YOK.
+
+- [ ] Remote Config'e `kayit_hunisi` (Boolean, varsayılan `false`, TestFlight
+      koşulu `true`). Kapalıyken uygulama ağa çıkmaz; adımlar cihazda
+      kuyrukta bekler, açılınca gönderilir. Yalnız bu sürümle KURULAN
+      cihazlar huniye girer (güncelleme ile gelen girmez).
+- [ ] Panel kısayolu (yerel): `tool/admin_dashboard/README.md` → "Kısayolu
+      yeniden oluşturmak". Yasal metin zaten huniyi anlatıyor (1.2+), dokunulmadı.
 ## ⏳ 2026-10-08 Yeni paywall: sandık + kart destesi (dal `claude/project-thread-uryvqf`)
 
 Yeni tasarım bayrak arkasında; bayrak kapalıyken eski paywall birebir.

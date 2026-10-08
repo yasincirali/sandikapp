@@ -319,3 +319,78 @@ export type UserDetail = {
   } | null;
   son_gorulme: string | null;
 };
+
+/* ── Migration 0097: kayıt hunisi ─────────────────────────────────────── */
+
+/** `kurulum`: bu dönemde başlayan kurulumlar (yalnızca 0097 istemcisi).
+ *  `hesap`: bu dönemde açılan hesaplar (tüm sürümler). */
+export type HuniKaynak = 'kurulum' | 'hesap';
+
+export type HuniAdimSatiri = {
+  /** Adım kodu; ek satırlar: `yolculuk` (taban), `geri_donen`, `kayit_hatasi`. */
+  adim: string;
+  sira: number;
+  /** Ana huni adımı mı (true) yoksa ara adım mı. */
+  ana: boolean;
+  adet: number;
+  /** Süresi ölçülebilen yolculuk sayısı (iki uç da var, sıra doğru). */
+  olcum: number;
+  /** Bir önceki adımdan bu adıma geçiş, saniye. */
+  p50_sn: number | null;
+  p90_sn: number | null;
+};
+
+export type HuniGunluk = { gun: string; adim: string; adet: number };
+
+export type HuniKirilim = {
+  deger: string;
+  yolculuk: number;
+  ilk_acilis: number;
+  kayit_ekrani: number;
+  kayit: number;
+  ilk_giris: number;
+  ilk_varlik: number;
+  hata: number;
+};
+
+export type HuniYolculuk = {
+  kurulum_id: string | null;
+  user_id: string | null;
+  email: string | null;
+  display_name: string | null;
+  platform: string;
+  surum: string | null;
+  saglayici: string | null;
+  baslangic: string;
+  geri_donen: boolean;
+  /** Ulaşılan son ana adım; `hesap` = hesap var ama huni olayı yok. */
+  son_adim: string;
+  ilk_acilis: string | null;
+  kayit_ekrani: string | null;
+  kayit_formu: string | null;
+  otp_gonderildi: string | null;
+  otp_dogrulandi: string | null;
+  kayit: string | null;
+  ilk_giris: string | null;
+  yasal_onay: string | null;
+  kullanici_adi: string | null;
+  tur: string | null;
+  ana_ekran: string | null;
+  ilk_varlik: string | null;
+  /** 0095 öncesi dolgu ya da hesaptan önceki damga: giriş anı değil. */
+  ilk_varlik_tahmini: boolean;
+  hata_sayisi: number;
+  son_hata: string | null;
+  varlik_sayisi: number;
+};
+
+export type HuniHata = {
+  /** `kayit`: oturumsuz hata (huni_olaylari). `ilk_gun`: hesabın ilk 48 saati (db_logs). */
+  kaynak: 'kayit' | 'ilk_gun';
+  anahtar: string;
+  servis: string | null;
+  ornek: string | null;
+  adet: number;
+  kisi: number;
+  son: string;
+};

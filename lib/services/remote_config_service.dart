@@ -262,6 +262,14 @@ class RemoteConfigService {
     // lotu (bayrak açıkken eklenmiş) yine görünür ve fiyatlanır.
     'eurobond': false,
 
+    // Kayıt hunisi birinci taraf ölçümü (0097, PR #69; yasin 2026-10-08).
+    // 0097 iki sunucuda canlı ama istemci main'e hiç girmemişti. KAPALI
+    // doğar: kapalıyken `HuniKaydi` yalnız cihazda kurulum kimliği ve
+    // bekleyen adım kuyruğu tutar, ağa hiç çıkmaz (`huni_kaydet` çağrılmaz).
+    // Açılınca kuyruk sırayla gönderilir — kapalıyken biriken adımlar
+    // (tavan 30) kaybolmaz. Firebase `signup_step` (F11) bundan bağımsız.
+    'kayit_hunisi': false,
+
     // Portföy satırından varlık ekranına başlık uçuşu (yol haritası 2.14,
     // yasin 2026-10-08: "bunları sen yapamıyor musun"). KAPALI doğar: uçuş
     // iki farklı yazı boyutu arasında ölçekleniyor ve cihazda görülmedi
@@ -611,6 +619,9 @@ class RemoteConfigService {
 
   /// Eurobond türü. Gerekçe `_defaults`'ta.
   bool get eurobond => _bayrak('eurobond');
+
+  /// Kayıt hunisinin sunucuya gönderimi (0097). Gerekçe `_defaults`'ta.
+  bool get kayitHunisi => _bayrak('kayit_hunisi');
 
   /// Tür SEÇENEK olarak sunulsun mu (ekleme çipi, filtre, sinyal ayarı)?
   ///

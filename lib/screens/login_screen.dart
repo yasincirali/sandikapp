@@ -21,6 +21,7 @@ import '../demo/demo_kabugu.dart' show demoyuAc;
 import '../demo/demo_modu.dart';
 import '../providers/auth_provider.dart';
 import '../services/auth_service.dart';
+import '../services/huni_kaydi.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
@@ -49,6 +50,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    // Huni (0097): "kayıt ekranına gelen". Oturumsuz kullanıcının ilk
+    // gördüğü ekran bu — sosyal kayıt da buradan, form da buradan açılır.
+    HuniKaydi.instance.kaydet(HuniAdimi.kayitEkrani);
     _loadSavedEmail();
   }
 

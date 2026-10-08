@@ -59,6 +59,7 @@ import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
+import 'services/huni_kaydi.dart';
 import 'services/yasal_onay_service.dart';
 import 'services/ilk_acilis_sirasi.dart';
 import 'models/position.dart' show aktifLotlar;
@@ -179,6 +180,10 @@ void main() async {
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
     // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
     await initPreferencesCache();
+    // Kayıt hunisi (0097): yeni kurulum mu? RetentionTracker kurulum
+    // gününü yazmadan ÖNCE (o deferred init'te) — yazdıktan sonra her cihaz
+    // "eski" görünürdü. Yalnızca tercih dosyası; ağ yok.
+    await HuniKaydi.instance.hazirla();
     // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
     // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
     HistoryService.kaliciDepo = SeriDiskDepo();
@@ -270,6 +275,10 @@ void main() async {
         ),
       ),
     );
+    await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    // Önceki açılışlardan kalan huni olayları (ilk açılış dahil) — Supabase
+    // ancak burada hazır. Beklenmez.
+    CrashReporter.arkaPlan(HuniKaydi.instance.bosalt(), reason: 'main.HuniKaydi.bosalt');
     await NotificationService.instance.init(
       navigatorKey: appNavigatorKey,
       // İzin ilk varlıktan sonra sorulur; açılışta değil (sadeleştirme 2).
@@ -2145,6 +2154,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     }
     _oturumVardi = true;
 
+    // Huni (0097): bu kurulumda ilk oturum. Sunucu bununla kurulumun
+    // oturumsuz adımlarını kişiye bağlar. Tekrar eleme `HuniKaydi`'nde;
+    // kare sonunda, build'de yan etki olmasın.
+    if (!_huniGirisBildirildi) {
+      _huniGirisBildirildi = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => HuniKaydi.instance.kaydet(HuniAdimi.ilkGiris));
+    }
+
     // Yeniden onay kapısı (2026-10-04; bayrağı 2026-10-05'te kalktı) —
     // yatırım uyarısı kapısıyla AYNI yerde, kullanıcı adından ve turdan
     // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı Açık Rıza Metni'ni
@@ -2293,6 +2311,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   /// Bu süreçte `home_first_seen` denetimi tetiklendi mi — build her
   /// karede çalışır, kare sonu geri çağrısı bir kez kurulsun.
   bool _anaEkranBildirildi = false;
+
+  /// Bu süreçte huni `ilk_giris` adımı tetiklendi mi (bkz. build).
+  bool _huniGirisBildirildi = false;
 
   /// Kilit teklifinin bu OTURUM için ertelendiği kullanıcı.
   ///

@@ -1,6 +1,9 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 
+import 'crash_reporter.dart';
+import 'huni_kaydi.dart';
+
 /// Merkezi analytics servisi. Tüm event log'ları buradan geçer.
 ///
 /// Firebase init başarısız olursa (debug build veya config eksik) sessizce
@@ -318,8 +321,18 @@ class AnalyticsService {
 
   /// Kayıt/ilk açılış hunisinin adımı: form_opened, otp_sent, otp_verified,
   /// disclaimer_accepted, username_set, tour_done, home_first_seen.
-  Future<void> logSignupStep(String step) =>
-      _log('signup_step', {'step': step});
+  ///
+  /// Aynı adım kontrol paneli için sunucuya da yazılır ([HuniKaydi], 0097):
+  /// panel Firebase'i okuyamaz. Çağrı yerleri tek kalsın diye ikinci hedef
+  /// burada — yeni bir adım eklerken `HuniKaydi.signupStepten`'e de ekle.
+  Future<void> logSignupStep(String step) async {
+    final adim = HuniKaydi.signupStepten(step);
+    if (adim != null) {
+      CrashReporter.arkaPlan(HuniKaydi.instance.kaydet(adim),
+          reason: 'HuniKaydi.kaydet');
+    }
+    await _log('signup_step', {'step': step});
+  }
 
   Future<void> logDemoOpened() => _log('demo_opened');
 
