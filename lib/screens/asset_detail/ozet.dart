@@ -426,6 +426,22 @@ extension _DetayOzet on _AssetDetailScreenState {
         defter: pState.assets,
       );
 
+  // ── Eurobond ─────────────────────────────────────────────────────────────
+
+  /// "Tahvil bilgileri" kartı — pozisyon kartının hemen altında: kullanıcı
+  /// "ne kadar kazandım"dan sonra "bu tahvil ne veriyor, ne zaman, bankaya
+  /// satsam kaç eder" diye sorar. Yalnız eurobond lotunda; tür bayrak
+  /// (`eurobond`) kapalıyken eklenemediğinden bayrakla eski ekran birebir.
+  /// Ortağın varlığında da çizilir — sözleşme kişiye değil tahvile ait.
+  /// Nominal `_canli`'den: açık pozisyonun miktarı.
+  Widget _eurobondKarti() {
+    if (widget.asset.type != AssetType.eurobond) return const SizedBox.shrink();
+    return EurobondBilgiKarti(
+      ticker: widget.asset.ticker,
+      nominal: _canli.asset.quantity,
+    );
+  }
+
   // ── Masraflar ────────────────────────────────────────────────────────────
 
   /// "Masraflar" kartı (bayrak `varlik_masraflari`, 2026-10-08). Yalnız

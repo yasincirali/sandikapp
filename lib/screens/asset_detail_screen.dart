@@ -59,6 +59,7 @@ import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/masraf_karti.dart';
+import '../widgets/eurobond_karti.dart';
 import '../services/varlik_masraflari.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/sozlesme_karti.dart';
@@ -1587,6 +1588,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   donem: _donemDegisimi(period.days, startDate, endDate,
                       pnl.currentUnitTRY),
                 ),
+                _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
