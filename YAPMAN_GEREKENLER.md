@@ -8,6 +8,43 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`
+
+Üç yeni bayrak, hepsi KAPALI doğar (Firebase Console'da anahtarı oluştur):
+`abd_hisse`, `eurobond`, `varlik_masraflari`. Kapalıyken ekranlar birebir
+eski. **Bayraktan bağımsız tek görünür etki:** Gizlilik ve KVKK 1.7 (iki
+yeni fiyat kaynağı: Börse Frankfurt, Ziraat Bankası; yalnız sunucudan,
+kişisel veri yok). Yeni build'i alan herkes metni BİR KEZ kutuyla onaylar
+(rıza değil); eski build 1.7'yi görünce kapıyı açmaz.
+
+Sıra önemli:
+- [ ] PR'ı birleştir (CI yeşil olunca).
+- [ ] **Supabase deploy** (Actions, `main`, hedef `ikisi`): migrations
+      (0124 eurobond tabloları + cron, 0125 belgeler 1.7) ve functions
+      `eurobond-fiyat`, `eurobond-seri` ve ortak kodu değişenler: `analyze-signals`,
+      `check-price-alerts`, `daily-brief`, `fetch-inflation`, `leaderboard-snapshot`,
+      `push-live-activity`, `yurt-ici-kotasyon` (en kolayı: functions = tümü). Yeni secret YOK:
+      eurobond cron'u `KRIPTO_CRON_SECRET`'ı kullanır.
+- [ ] `python tool/sema_esitlik.py` — iki sunucu eşit mi.
+- [ ] İlk fiyat turunu bekle (hafta içi 09:00–19:40 TR, 20 dk'da bir) ya da
+      Tokyo'da elle: `select public.trigger_eurobond_fiyat();` Sonra
+      kontrol: `select count(*), max(guncellendi) from eurobond_fiyat;`
+      (37–38 tahvil beklenir).
+- [ ] Bayrakları önce kendi cihazında (TestFlight koşulu) aç:
+      `abd_hisse` → `varlik_masraflari` → `eurobond`. `eurobond`'u fiyat
+      tablosu dolmadan açma: eklenen lot fiyatsız kalır.
+- [ ] Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI): Varlık
+      Ekle'de arama + gruplu tür ızgarası. Sunucu işi yok; önce kendi
+      cihazında aç, kapalıyken çip satırı birebir eski.
+- [ ] Karar (bende varsayılan): eurobond değeri **piyasa fiyatından**
+      (Frankfurt temiz + işlemiş faiz); Ziraat alış fiyatı yalnız "bankaya
+      satarsan" satırında. Banka alış fiyatıyla değerleme istersen söyle.
+
+Bilinen sınırlar: yalnız USD eurobond eklenebilir (EUR tahvil için geçmiş
+değer yolu kur bilmiyor; `TECHNICAL_DEBT.md`); ABD hissesinde temettü
+otomatik yakalanmaz; Live Activity ve widget'ın "borsa açık" saati BIST'e
+göre.
+
 ## ⏳ 2026-10-08 Sadeleştirme kalanları + bulut oturumu kurulumu — PR #110 (dal `claude/project-thread-ad3on0`)
 
 Sunucu, şema ve bayrak değişikliği YOK; dağıtım gerekmez. Bugün kartının

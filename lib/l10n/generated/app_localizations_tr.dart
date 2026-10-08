@@ -5550,7 +5550,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.';
+      'Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -6815,4 +6815,252 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pwGeriYukHata =>
       'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.';
+
+  @override
+  String get assetTypeEurobond => 'Eurobond';
+
+  @override
+  String get tickerHintEurobond =>
+      'Listeden seç ya da ISIN yaz, örn. US900123DF45';
+
+  @override
+  String get stockMarketBist => 'BIST';
+
+  @override
+  String get stockMarketUs => 'ABD';
+
+  @override
+  String stockMarketSemantics(String market) {
+    return 'Hisse pazarı: $market';
+  }
+
+  @override
+  String get usStocks => 'ABD Hisseleri';
+
+  @override
+  String get pickUsStock => 'ABD hissesi seç';
+
+  @override
+  String get pickUsStockTap => 'ABD hissesi seçmek için dokun...';
+
+  @override
+  String get usSymbolHint => 'Sembol yaz (örn: AAPL, BRK-B)';
+
+  @override
+  String selectedUsStockSemantics(String name) {
+    return 'Seçili ABD hissesi: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
+  String get usStockCurrencyLocked => 'ABD hissesi dolarla kaydedilir';
+
+  @override
+  String get costsUpper => 'MASRAFLAR';
+
+  @override
+  String get costsPaid => 'Ödenen';
+
+  @override
+  String get costsEstimatedOnSale => 'Satarken tahmini';
+
+  @override
+  String get costTagPaid => 'Ödendi';
+
+  @override
+  String get costTagEstimated => 'Tahmini';
+
+  @override
+  String get costTagInfo => 'Bilgi';
+
+  @override
+  String costsShowAll(int count) {
+    return 'Tümünü gör ($count)';
+  }
+
+  @override
+  String get costsShowLess => 'Daha az göster';
+
+  @override
+  String get identityEurobond => 'Tahvil';
+
+  @override
+  String get pickEurobondTap => 'Tahvil seçmek için dokun';
+
+  @override
+  String get pickEurobondPrompt => 'Bir eurobond seç';
+
+  @override
+  String eurobondSelectedSemantics(String name) {
+    return 'Seçili tahvil: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
+  String get eurobondPickerTitle => 'Eurobondlar';
+
+  @override
+  String get eurobondLoading => 'Tahvil listesi yükleniyor';
+
+  @override
+  String get eurobondLoadFailed => 'Tahvil listesi yüklenemedi';
+
+  @override
+  String get eurobondSourceNote =>
+      'Şimdilik yalnız USD tahviller. Fiyat temiz fiyattır, nominalin yüzdesi. Yatırım tavsiyesi değildir.';
+
+  @override
+  String eurobondMaturityShort(String date) {
+    return 'Vade $date';
+  }
+
+  @override
+  String eurobondYieldShort(String pct) {
+    return 'Getiri $pct';
+  }
+
+  @override
+  String get eurobondIsinInvalid =>
+      'Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.';
+
+  @override
+  String get eurobondIsinNotListed =>
+      'Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.';
+
+  @override
+  String get eurobondCleanPrice => 'Temiz fiyat (%)';
+
+  @override
+  String get eurobondCleanPriceRequired => 'Temiz fiyatı yaz';
+
+  @override
+  String get eurobondCurrencyLocked => 'Tahvilin para birimi';
+
+  @override
+  String eurobondAccruedLine(String accrued, String paid) {
+    return 'İşlemiş faiz: $accrued · Ödenen: $paid';
+  }
+
+  @override
+  String eurobondAccruedOnly(String accrued) {
+    return 'İşlemiş faiz: $accrued';
+  }
+
+  @override
+  String eurobondTotalBreakdown(String nominal, String dirty) {
+    return '$nominal nominal × kirli $dirty';
+  }
+
+  @override
+  String get bondInfoUpper => 'TAHVİL BİLGİLERİ';
+
+  @override
+  String get bondCleanPrice => 'Temiz fiyat';
+
+  @override
+  String get bondAccrued => 'İşlemiş faiz';
+
+  @override
+  String get bondDirtyPrice => 'Kirli fiyat';
+
+  @override
+  String get bondPerNominalNote => 'Fiyatlar 100 nominal başına.';
+
+  @override
+  String get bondYtm => 'Vadeye getiri';
+
+  @override
+  String get bondCoupon => 'Kupon';
+
+  @override
+  String bondCouponValue(String rate, String count) {
+    return '$rate · yılda $count kez';
+  }
+
+  @override
+  String get bondNextCoupon => 'Sonraki kupon';
+
+  @override
+  String bondNextCouponValue(String date, String amount) {
+    return '$date · $amount';
+  }
+
+  @override
+  String bondWithholding(String rate) {
+    return 'Stopaj $rate';
+  }
+
+  @override
+  String get bondMaturity => 'Vade';
+
+  @override
+  String bondMaturityValue(String date, String days) {
+    return '$date · $days gün kaldı';
+  }
+
+  @override
+  String get bondIssuer => 'İhraççı';
+
+  @override
+  String get bondIssuerTreasury => 'Hazine';
+
+  @override
+  String get bondIssuerCorporate => 'Özel sektör';
+
+  @override
+  String get bondBankSellUpper => 'BANKAYA SATARSAN';
+
+  @override
+  String get bondBankZiraat => 'Ziraat Bankası';
+
+  @override
+  String bondBankUpdated(String bank, String time) {
+    return '$bank · $time';
+  }
+
+  @override
+  String get bondBankBid => 'Banka alış';
+
+  @override
+  String get bondBankAsk => 'Banka satış';
+
+  @override
+  String get bondBankSpread => 'Makas';
+
+  @override
+  String get bondBankProceeds => 'Bugün satarsan eline geçen';
+
+  @override
+  String get bondBankNote =>
+      'Banka fiyatları kirli fiyattır (işlemiş faiz dahil).';
+
+  @override
+  String typePickerSearchHint(String examples) {
+    return 'Ara: $examples…';
+  }
+
+  @override
+  String get typePickerGroupMarkets => 'Borsa ve fon';
+
+  @override
+  String get typePickerGroupFxPrecious => 'Döviz ve değerli';
+
+  @override
+  String get typePickerGroupSavings => 'Birikim';
+
+  @override
+  String get typePickerUsStock => 'ABD hisse';
+
+  @override
+  String get typePickerChange => 'Değiştir';
+
+  @override
+  String get typePickerChangeSemantics => 'Varlık türünü değiştir';
+
+  @override
+  String get typePickerHintBistOpen => 'BIST açık';
+
+  @override
+  String get typePickerHintBistClosed => 'BIST kapalı';
+
+  @override
+  String get typePickerHint247 => '7/24';
 }

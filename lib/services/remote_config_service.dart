@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
 
@@ -235,6 +236,14 @@ class RemoteConfigService {
     // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
     'birikim_serisi': false,
 
+    // Eurobond varlık türü (2026-10-08, yasin: "varlık tiplerimize eurobond
+    // … eklemeliyiz"). Varlık Ekle çipi, sinyal ayarı ve filtrelerdeki tür
+    // seçeneği buna bağlı. KAPALI doğar: fiyat tablosu (0124) iki sunucuya
+    // dağıtılıp eurobond-fiyat ilk turunu atmadan açılırsa eklenen lot
+    // fiyatsız kalır. Kapalıyken ekranlar birebir eski; kayıtlı eurobond
+    // lotu (bayrak açıkken eklenmiş) yine görünür ve fiyatlanır.
+    'eurobond': false,
+
     // Portföy satırından varlık ekranına başlık uçuşu (yol haritası 2.14,
     // yasin 2026-10-08: "bunları sen yapamıyor musun"). KAPALI doğar: uçuş
     // iki farklı yazı boyutu arasında ölçekleniyor ve cihazda görülmedi
@@ -262,6 +271,30 @@ class RemoteConfigService {
     // döner. KAPALI doğar: önce 0121 + fonksiyon iki sunucuya, Gizlilik 1.6
     // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
     'ekstre_ai_esleme': false,
+
+    // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
+    // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
+    // tür DEĞİL: `type='hisse'`, `sub_category='abd'`, `currency='USD'`,
+    // sembol Yahoo'nunki (AAPL, BRK-B). Eski sürümler `.IS` olmayan USD
+    // hisseyi zaten Yahoo + USDTRY ile fiyatlıyor; yeni enum değeri eski
+    // build'de "Diğer"e düşer, tam satır yazımı türü ezerdi. KAPALI doğar:
+    // kapalıyken form, arama ve rozetler birebir eski.
+    'abd_hisse': false,
+
+    // Varlık ekranında "Masraflar" kartı (2026-10-08, kullanıcı: "her
+    // varlık türü için detaycı olmalıyız, kendine has masraflarını ekranda
+    // gösterebilmeliyiz"). Tutar yalnız kayıtlı komisyondan ya da resmî
+    // orandan (`varlik_masraflari.dart`); aracı kurum makası uydurulmaz.
+    // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
+    'varlik_masraflari': false,
+
+    // Varlık Ekle tür seçicisi: arama + gruplu ızgara (2026-10-08, yasin:
+    // "göz alıcı ama işlevsel" tür seçici). Tür sayısı 11'e çıktı (ABD,
+    // eurobond); çip yığını sayfanın ilk sorusunu kalabalıklaştırıyordu.
+    // Açıkken üstte arama (THYAO/Apple/BTC/ISIN → tür + kimlik tek dokunuşta),
+    // altında üç gruplu 4 sütunlu ızgara; seçimden sonra tek satıra katlanır.
+    // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
+    'tur_secici_izgara': false,
 
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
@@ -518,6 +551,16 @@ class RemoteConfigService {
   /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
   bool get birikimSerisi => _bayrak('birikim_serisi');
 
+  /// Eurobond türü. Gerekçe `_defaults`'ta.
+  bool get eurobond => _bayrak('eurobond');
+
+  /// Tür SEÇENEK olarak sunulsun mu (ekleme çipi, filtre, sinyal ayarı)?
+  ///
+  /// Bayrağa bağlı türlerin tek kapısı: her yüzey kendi `if`'ini yazarsa
+  /// biri unutulur ve bayrak kapalıyken tür sızar. Kayıtlı veriyi
+  /// göstermek bu kapıya TAKILMAZ — kullanıcının varlığı gizlenmez.
+  bool turSecenegi(AssetType t) => t != AssetType.eurobond || eurobond;
+
   /// Varlık başlığı uçuşu. Gerekçe `_defaults`'ta.
   bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
 
@@ -529,6 +572,15 @@ class RemoteConfigService {
 
   /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
   bool get ekstreAiEsleme => _bayrak('ekstre_ai_esleme');
+
+  /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
+  bool get abdHisse => _bayrak('abd_hisse');
+
+  /// Varlık ekranında Masraflar kartı. Gerekçe `_defaults`'ta.
+  bool get varlikMasraflari => _bayrak('varlik_masraflari');
+
+  /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
+  bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

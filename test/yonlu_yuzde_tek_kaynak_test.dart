@@ -250,9 +250,14 @@ void main() {
       expect(m, '₺49,00');
     });
 
-    test('varlık sayfası da kotasyon sembolüyle yazar', () {
+    // Seri denetimi 2026-10-08: varlık sayfası sayıları SEMBOL SERİSİNDEN
+    // okur ve o seri her sembolde TL'dir; simge ₺ (`sembolSerisiSimgesi`).
+    // Kotasyon simgesi USD kote varlıkta TL sayıyı "$" ile yazıyordu.
+    test('varlık sayfası seri simgesiyle (₺) yazar', () {
       final src = ekranKaynagiSync('lib/screens/varlik_sayfasi.dart');
-      expect(src.contains('kotasyonSembolu(k.ticker, k.currency)'), isTrue);
+      expect(src.contains('symbol: sembolSerisiSimgesi'), isTrue);
+      expect(src.contains('kotasyonSembolu(k.ticker, k.currency)'), isFalse);
+      expect(sembolSerisiSimgesi, '₺');
     });
   });
 

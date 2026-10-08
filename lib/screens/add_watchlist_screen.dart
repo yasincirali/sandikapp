@@ -118,7 +118,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     // 250 ms: her tuş vuruşunda TEFAS'a gitmemek için. Yerleşik listeler
     // zaten bellekte ama fon araması ağa çıkabiliyor.
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () => _ara(v));
+    _debounce = Timer(SymbolSearchService.aramaBeklemesi, () => _ara(v));
   }
 
   Future<void> _ara(String q) async {
@@ -203,8 +203,12 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     final owned =
         aktifLotlar(ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
     final ownedKeys = <String>{
+      // `varlikAnahtari`: kimlik/takip anahtarıyla TEK kural (formül
+      // eskiden burada satır içi kopyaydı; ABD alt kategorisi istisnası
+      // kopyada ayrışırdı).
       for (final a in owned)
-        '${a.type.name}|${(a.subCategory?.trim().isNotEmpty ?? false) ? 'sub:${a.subCategory!.trim().toUpperCase()}' : a.ticker.trim().toUpperCase()}',
+        varlikAnahtari(
+            type: a.type, ticker: a.ticker, subCategory: a.subCategory),
     };
 
     Widget satir(VarlikKimligi c) => Padding(

@@ -564,10 +564,21 @@ List<_Adim> _adimlariKur() {
       // sonra, Emtia'dan önce (`AssetType.eklemeSirasi`). 2026-09-29'dan
       // beri çipler sarmalı (#29): Kripto dar ekranda Fon'la aynı satıra
       // düşmeyebilir, bu yüzden metin konum ("Fon'un yanında") söylemez.
-      govde: 'Tür çiplerinde Kripto da var: listeden coin\'i '
-          'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
-          'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
-          'grafikte hafta sonu da görünür.',
+      // 2026-10-08 (bayrak `tur_secici_izgara`): çipler yerine arama +
+      // gruplu ızgara. Bayrak açıkken metin aramayı ve grubu anlatır
+      // (tur metni arayüzle birlikte değişir); kapalıyken birebir eski.
+      govde: RemoteConfigService.instance.turSeciciIzgara
+          ? 'Üstteki aramaya sembolü ya da adı yaz (THYAO, BTC…): '
+              'sonuca dokununca tür de varlık da seçilir. Aramadan seçmek '
+              'istemezsen türler üç grupta durur; Kripto "Borsa ve fon" '
+              'grubunda. Seçince ızgara tek satıra katlanır, "Değiştir" '
+              'geri açar. Coin\'in fiyatı TL karşılığıyla kendiliğinden '
+              'gelir, miktar gerektiği kadar ondalıkla tutulur (0,00045 BTC '
+              'gibi); kripto 7/24 işlediği için grafikte hafta sonu da görünür.'
+          : 'Tür çiplerinde Kripto da var: listeden coin\'i '
+              'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Miktar gerektiği kadar '
+              'ondalıkla tutulur (0,00045 BTC gibi); kripto 7/24 işlediği için '
+              'grafikte hafta sonu da görünür.',
       giris: (_) => _varlikEkleAc(),
       dokunulabilir: false,
     ),
@@ -585,7 +596,10 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.turSecici,
       rozet: 'YENİ',
       baslik: 'Mevduat ve BES',
-      govde: "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "
+      // Izgarada (bayrak `tur_secici_izgara`) Mevduat ve BES "Birikim"
+      // grubunda; yalnız ilk cümlenin yeri söylenir, gerisi aynı.
+      govde: '${RemoteConfigService.instance.turSeciciIzgara ? 'Birikim grubunda ' : ''}'
+          "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "
           'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda (günlük faizli '
           'hesapta her gün sonunda) eklenir; '
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '

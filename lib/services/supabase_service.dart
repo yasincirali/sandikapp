@@ -3,6 +3,7 @@ import '../demo/demo_modu.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
+import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/kayitli_cihaz.dart';
 import '../models/kullanici_adi.dart';
@@ -1691,6 +1692,90 @@ class SupabaseService {
         'kripto-seri',
         body: {'kod': kod, 'aralik': aralik, 'donem': donem},
         headers: const {'x-region': 'eu-central-1'},
+      ),
+    );
+    final noktalar = (res.data is Map) ? (res.data as Map)['noktalar'] : null;
+    if (noktalar is! List) return const [];
+    final out = <(int, double)>[];
+    for (final n in noktalar) {
+      if (n is! List || n.length < 2) continue;
+      final t = (n[0] as num?)?.toInt();
+      final v = (n[1] as num?)?.toDouble();
+      if (t != null && v != null && v > 0) out.add((t, v));
+    }
+    return out;
+  }
+
+  // ── Eurobond (0124) ──────────────────────────────────────────────────────
+  // Kripto gibi: fiyatı sunucu çeker (eurobond-fiyat, hafta içi 20 dk'da
+  // bir), telefon yalnızca tabloyu okur. Gerekçe `_shared/eurobond.ts`.
+
+  /// Etkin eurobond kataloğu, vadeye göre; son fiyat gömülü gelir.
+  Future<List<(EurobondSozlesmesi, EurobondFiyati?)>> eurobondKatalogu() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.eurobondKatalogu',
+      table: 'eurobond_katalog',
+      op: 'SELECT',
+      request: const {'aktif': true},
+      call: () => _db
+          .from('eurobond_katalog')
+          .select('isin, ad, para_birimi, kupon_orani, vade, ihrac_yili, '
+              'kupon_sikligi, ihracci, eurobond_fiyat(*)')
+          .eq('aktif', true)
+          .order('vade', ascending: true),
+    );
+    final out = <(EurobondSozlesmesi, EurobondFiyati?)>[];
+    for (final r in rows) {
+      final s = eurobondSozlesmesiFromMap(r);
+      if (s == null) continue;
+      final f = r['eurobond_fiyat'];
+      final fm = f is List ? (f.isEmpty ? null : f.first) : f;
+      out.add((s, fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null));
+    }
+    return out;
+  }
+
+  /// [isinler] için katalog + son fiyat (portföydeki eurobondlar).
+  Future<Map<String, (EurobondSozlesmesi, EurobondFiyati?)>> eurobondlar(
+      List<String> isinler) async {
+    if (isinler.isEmpty) return const {};
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.eurobondlar',
+      table: 'eurobond_katalog',
+      op: 'SELECT',
+      request: {'isin': isinler},
+      call: () => _db
+          .from('eurobond_katalog')
+          .select('isin, ad, para_birimi, kupon_orani, vade, ihrac_yili, '
+              'kupon_sikligi, ihracci, eurobond_fiyat(*)')
+          .inFilter('isin', isinler),
+    );
+    final out = <String, (EurobondSozlesmesi, EurobondFiyati?)>{};
+    for (final r in rows) {
+      final s = eurobondSozlesmesiFromMap(r);
+      if (s == null) continue;
+      final f = r['eurobond_fiyat'];
+      final fm = f is List ? (f.isEmpty ? null : f.first) : f;
+      out[s.isin] = (s, fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null);
+    }
+    return out;
+  }
+
+  /// Grafik noktaları (TEMİZ fiyat) — `eurobond-seri`, paylaşılan önbellekli.
+  /// [aralik]/[donem] Yahoo adlarıdır (kriptoSerisi gibi).
+  Future<List<(int, double)>> eurobondSerisi({
+    required String isin,
+    required String aralik,
+    required String donem,
+  }) async {
+    final res = await _log.log(
+      source: 'SupabaseService.eurobondSerisi',
+      table: 'functions/eurobond-seri',
+      op: 'FUNCTION',
+      request: {'isin': isin, 'aralik': aralik, 'donem': donem},
+      call: () => _db.functions.invoke(
+        'eurobond-seri',
+        body: {'isin': isin, 'aralik': aralik, 'donem': donem},
       ),
     );
     final noktalar = (res.data is Map) ? (res.data as Map)['noktalar'] : null;

@@ -427,6 +427,44 @@ extension _DetayOzet on _AssetDetailScreenState {
         defter: pState.assets,
       );
 
+  // ── Eurobond ─────────────────────────────────────────────────────────────
+
+  /// "Tahvil bilgileri" kartı — pozisyon kartının hemen altında: kullanıcı
+  /// "ne kadar kazandım"dan sonra "bu tahvil ne veriyor, ne zaman, bankaya
+  /// satsam kaç eder" diye sorar. Yalnız eurobond lotunda; tür bayrak
+  /// (`eurobond`) kapalıyken eklenemediğinden bayrakla eski ekran birebir.
+  /// Ortağın varlığında da çizilir — sözleşme kişiye değil tahvile ait.
+  /// Nominal `_canli`'den: açık pozisyonun miktarı.
+  Widget _eurobondKarti() {
+    if (widget.asset.type != AssetType.eurobond) return const SizedBox.shrink();
+    return EurobondBilgiKarti(
+      ticker: widget.asset.ticker,
+      nominal: _canli.asset.quantity,
+    );
+  }
+
+  // ── Masraflar ────────────────────────────────────────────────────────────
+
+  /// "Masraflar" kartı (bayrak `varlik_masraflari`, 2026-10-08). Yalnız
+  /// KENDİ varlığında — komisyon kaydı sahibin defterinden. Hesap servis
+  /// tarafında (`varlikMasraflari`); burada yalnız girdiler toplanır.
+  ///
+  /// Lot'lar `_canli` pozisyonundan: açık pozisyonun alım, satım ve temettü
+  /// satırları — komisyon onların hepsinde ödenmiş olabilir. Kur, durumda
+  /// henüz ölçülmemişse (`usdTry` varsayılanı 1,0) `null` geçer: ABD
+  /// tahmini kalemleri bilinmeyen kurla tutar üretmez, bilgiye iner.
+  Widget _masrafKarti(PortfolioState pState) {
+    final canli = _canli;
+    return MasrafKarti(
+      ozet: varlikMasraflari(
+        varlik: canli.asset,
+        lotlar: canli.lots,
+        usdTry: pState.usdTry > 1.0 ? pState.usdTry : null,
+        temettuStopajOrani: RemoteConfigService.instance.temettuStopajOrani,
+      ),
+    );
+  }
+
   /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
   /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni). [hucre] ızgaranın
   /// çizeceği hücre sayısı: ikişerli satır, tek kalan satırı doldurur.

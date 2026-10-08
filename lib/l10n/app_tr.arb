@@ -3893,7 +3893,7 @@
   "yasalKapiAciklamaGuncel": "Yasal belgelerimizi güncelledik. Devam etmek için aşağıdaki adımları tamamla.",
   "yasalKapiAciklamaIlk": "Uygulamayı kullanmaya başlamadan önce aşağıdaki adımları tamamla.",
   "yasalKapiNelerDegisti": "Neler değişti",
-  "yasalKapiDegisiklikNotu": "Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.",
+  "yasalKapiDegisiklikNotu": "Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.",
   "@yasalKapiDegisiklikNotu": {
     "description": "Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz."
   },
@@ -4919,5 +4919,199 @@
   "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
   "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
   "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
-  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene."
+  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.",
+  "assetTypeEurobond": "Eurobond",
+  "tickerHintEurobond": "Listeden seç ya da ISIN yaz, örn. US900123DF45",
+  "stockMarketBist": "BIST",
+  "stockMarketUs": "ABD",
+  "stockMarketSemantics": "Hisse pazarı: {market}",
+  "@stockMarketSemantics": {
+    "placeholders": {
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "usStocks": "ABD Hisseleri",
+  "pickUsStock": "ABD hissesi seç",
+  "pickUsStockTap": "ABD hissesi seçmek için dokun...",
+  "usSymbolHint": "Sembol yaz (örn: AAPL, BRK-B)",
+  "selectedUsStockSemantics": "Seçili ABD hissesi: {name}. Değiştirmek için çift dokun.",
+  "@selectedUsStockSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "usStockCurrencyLocked": "ABD hissesi dolarla kaydedilir",
+  "costsUpper": "MASRAFLAR",
+  "costsPaid": "Ödenen",
+  "costsEstimatedOnSale": "Satarken tahmini",
+  "costTagPaid": "Ödendi",
+  "costTagEstimated": "Tahmini",
+  "costTagInfo": "Bilgi",
+  "costsShowAll": "Tümünü gör ({count})",
+  "@costsShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "costsShowLess": "Daha az göster",
+  "identityEurobond": "Tahvil",
+  "pickEurobondTap": "Tahvil seçmek için dokun",
+  "pickEurobondPrompt": "Bir eurobond seç",
+  "eurobondSelectedSemantics": "Seçili tahvil: {name}. Değiştirmek için çift dokun.",
+  "@eurobondSelectedSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eurobondPickerTitle": "Eurobondlar",
+  "eurobondLoading": "Tahvil listesi yükleniyor",
+  "eurobondLoadFailed": "Tahvil listesi yüklenemedi",
+  "eurobondSourceNote": "Şimdilik yalnız USD tahviller. Fiyat temiz fiyattır, nominalin yüzdesi. Yatırım tavsiyesi değildir.",
+  "eurobondMaturityShort": "Vade {date}",
+  "@eurobondMaturityShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "eurobondYieldShort": "Getiri {pct}",
+  "@eurobondYieldShort": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
+  "eurobondIsinInvalid": "Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.",
+  "eurobondIsinNotListed": "Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.",
+  "eurobondCleanPrice": "Temiz fiyat (%)",
+  "eurobondCleanPriceRequired": "Temiz fiyatı yaz",
+  "eurobondCurrencyLocked": "Tahvilin para birimi",
+  "eurobondAccruedLine": "İşlemiş faiz: {accrued} · Ödenen: {paid}",
+  "@eurobondAccruedLine": {
+    "placeholders": {
+      "accrued": {
+        "type": "String"
+      },
+      "paid": {
+        "type": "String"
+      }
+    }
+  },
+  "eurobondAccruedOnly": "İşlemiş faiz: {accrued}",
+  "@eurobondAccruedOnly": {
+    "placeholders": {
+      "accrued": {
+        "type": "String"
+      }
+    }
+  },
+  "eurobondTotalBreakdown": "{nominal} nominal × kirli {dirty}",
+  "@eurobondTotalBreakdown": {
+    "placeholders": {
+      "nominal": {
+        "type": "String"
+      },
+      "dirty": {
+        "type": "String"
+      }
+    }
+  },
+  "bondInfoUpper": "TAHVİL BİLGİLERİ",
+  "bondCleanPrice": "Temiz fiyat",
+  "bondAccrued": "İşlemiş faiz",
+  "bondDirtyPrice": "Kirli fiyat",
+  "bondPerNominalNote": "Fiyatlar 100 nominal başına.",
+  "bondYtm": "Vadeye getiri",
+  "bondCoupon": "Kupon",
+  "bondCouponValue": "{rate} · yılda {count} kez",
+  "@bondCouponValue": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "bondNextCoupon": "Sonraki kupon",
+  "bondNextCouponValue": "{date} · {amount}",
+  "@bondNextCouponValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "bondWithholding": "Stopaj {rate}",
+  "@bondWithholding": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "bondMaturity": "Vade",
+  "bondMaturityValue": "{date} · {days} gün kaldı",
+  "@bondMaturityValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "bondIssuer": "İhraççı",
+  "bondIssuerTreasury": "Hazine",
+  "bondIssuerCorporate": "Özel sektör",
+  "bondBankSellUpper": "BANKAYA SATARSAN",
+  "bondBankZiraat": "Ziraat Bankası",
+  "bondBankUpdated": "{bank} · {time}",
+  "@bondBankUpdated": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bondBankBid": "Banka alış",
+  "bondBankAsk": "Banka satış",
+  "bondBankSpread": "Makas",
+  "bondBankProceeds": "Bugün satarsan eline geçen",
+  "bondBankNote": "Banka fiyatları kirli fiyattır (işlemiş faiz dahil).",
+  "typePickerSearchHint": "Ara: {examples}…",
+  "@typePickerSearchHint": {
+    "placeholders": {
+      "examples": {
+        "type": "String"
+      }
+    }
+  },
+  "typePickerGroupMarkets": "Borsa ve fon",
+  "typePickerGroupFxPrecious": "Döviz ve değerli",
+  "typePickerGroupSavings": "Birikim",
+  "typePickerUsStock": "ABD hisse",
+  "typePickerChange": "Değiştir",
+  "typePickerChangeSemantics": "Varlık türünü değiştir",
+  "typePickerHintBistOpen": "BIST açık",
+  "typePickerHintBistClosed": "BIST kapalı",
+  "typePickerHint247": "7/24"
 }

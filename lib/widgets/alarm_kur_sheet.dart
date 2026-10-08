@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/eurobond.dart' show eurobondOneki;
 import '../models/price_alert.dart';
 import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart' show priceAlertLimitProvider;
@@ -41,10 +42,22 @@ class AlarmKurulumu {
 /// Altında alt kategori (ALTIN_GRAM…) sembolün kendisidir; hissede ticker.
 /// Manuel fiyatlı ya da kodu olmayan varlık alarm kuramaz — sunucu onun
 /// fiyatını çekemez ve alarm hiç çalışmazdı.
+///
+/// **Eurobond alarm kuramaz (seri denetimi, 2026-10-08).** Kural yalnız
+/// ekleme formundaydı (`add_asset_screen`, "Eurobond alarmı yok"); varlık
+/// ekranının zili ve Fiyat Alarmları adayları aynı sembolü bu fonksiyondan
+/// aldığı için tahvilde zil görünüyor ve kurulan alarm hiç tetiklenmiyordu
+/// (o tarihteki sunucu `EUROBOND:` sembolünü Yahoo'ya soruyordu; fiyat
+/// birim değerdir, kirli/100 — kullanıcının "hedef fiyat" diye yazacağı
+/// temiz % ile aynı ölçek değil). Sunucu artık tahvili fiyatlayabiliyor
+/// (`live_prices.ts` › eurobond kovası) ama alarm ölçek sorusu çözülene
+/// dek KAPALI kalır. Kapı tek yerde: her çağıran `null`'u "alarm yok"
+/// diye okur.
 String? alarmSembolu(String ticker, String? subCategory) {
   final sub = subCategory?.trim() ?? '';
   if (sub.startsWith('ALTIN_')) return sub;
   final t = ticker.trim();
+  if (t.toUpperCase().startsWith(eurobondOneki)) return null;
   return t.isEmpty ? null : t;
 }
 

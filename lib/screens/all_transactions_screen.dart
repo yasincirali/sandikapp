@@ -16,6 +16,7 @@ import '../widgets/ortak_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../services/islem_notu.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
@@ -1130,6 +1131,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                       onTap: () => setState(() => _tur = null),
                     ),
                     for (final t in AssetType.values)
+                      if (RemoteConfigService.instance.turSecenegi(t))
                       _SecimKutusu(
                         etiket: t.labelOf(l),
                         ikon: t.icon,

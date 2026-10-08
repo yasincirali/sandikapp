@@ -457,10 +457,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
-    // Fiyatın sembolü kotasyonun para birimi: dolar kuru "₺49,00", "$" değil
-    // (2026-09-29 emülatör testi #13; bkz. [kotasyonSembolu]).
-    final bicim =
-        tryFormatter(digits: 2, symbol: kotasyonSembolu(k.ticker, k.currency));
+    // Sayılar sembol serisinden (`getSymbolHistory`) ve o seri her sembolde
+    // TL: simge ₺ ([sembolSerisiSimgesi], seri denetimi 2026-10-08). Eskiden
+    // kotasyonun para biriminden seçiliyordu; ABD hissesi/eurobond/emtia
+    // TL sayıyı "$" ile yazıyordu. Dolar kuru "₺49,00" (2026-09-29
+    // emülatör testi #13) bu kuralın özel hâli.
+    final bicim = tryFormatter(digits: 2, symbol: sembolSerisiSimgesi);
     final bayat = cizilen != null && cizilen != _gun;
 
     if (!_acildi) {

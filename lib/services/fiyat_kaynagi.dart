@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/eurobond.dart';
 import 'price_service.dart';
 import 'crash_reporter.dart';
 import '../utils/tr_format.dart';
@@ -77,6 +78,20 @@ class FiyatKaynagi {
   static bool kriptoMu(String ticker) =>
       ticker.trim().toUpperCase().startsWith(kriptoOneki);
 
+  /// Eurobond sembolü mü (`EUROBOND:<ISIN>`)?
+  ///
+  /// Fiyat ve seri SUNUCUDAN gelir (`eurobond_fiyat`, `eurobond-seri`;
+  /// 0124): Frankfurt temiz fiyatı, istemcide işlemiş faizle kirliye çıkar.
+  /// Kotasyon tahvilin kendi para biriminde, 1 nominal birim başına.
+  static bool eurobondMu(String ticker) =>
+      ticker.trim().toUpperCase().startsWith(eurobondOneki);
+
+  /// Eurobond varlığı ticker serisiyle mi değerlenir? Geçmiş değer
+  /// yollarının tür listelerine bu girer: yalnız USD tahvil (bkz.
+  /// [seriyeGirer]); EUR tahvil düz çizgiye bile girmez.
+  static bool eurobondSerili(Asset a) =>
+      a.type == AssetType.eurobond && usdKote(a);
+
   /// Varlık 7/24 işlem görüyor mu? Hafta sonu gün içi ızgarası buna bakar
   /// (`HistoryService.gridSlotlari`).
   static bool yediGun(Asset a) => a.type == AssetType.kripto;
@@ -120,6 +135,11 @@ class FiyatKaynagi {
       case AssetType.doviz:
       case AssetType.kripto:
         return a.ticker.trim().isNotEmpty;
+      case AssetType.eurobond:
+        // Yalnız USD: geçmiş değer yolları (`HistoryService`) USD ve TRY
+        // dışında kur bilmez; EUR tahvil seriye girseydi değeri kursuz TL
+        // sayılırdı. Ekleme akışı da şimdilik yalnız USD tahvil sunar.
+        return a.ticker.trim().isNotEmpty && usdKote(a);
       case AssetType.fon:
         // Elle fiyatlanan fonun yayımlanmış NAV serisi yoktur.
         return a.ticker.trim().isNotEmpty && !a.isManualPrice;
