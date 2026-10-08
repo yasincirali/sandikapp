@@ -1,9 +1,10 @@
 # Terms of Service — sandık
 
-**Effective date:** October 5, 2026
-**Last updated:** October 5, 2026
-**Version:** 1.5
-**Source:** TR 1.5 (translation of the Turkish text; the Turkish version prevails)
+**Effective date:** October 8, 2026
+**Last updated:** October 8, 2026
+**Version:** 1.6
+**Consent version:** 1.6
+**Source:** TR 1.6 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -24,7 +25,8 @@ During registration (and on the consent screen at the first sign-in with Apple o
 
 sandık is a personal portfolio tracking tool that lets users track the following asset types:
 
-- BIST (Borsa Istanbul) equities
+- Equities (Borsa Istanbul and foreign exchanges)
+- Bonds (eurobonds)
 - TEFAS investment funds
 - Foreign currencies (USD, EUR, GBP, etc.)
 - Gold and other commodities
@@ -42,6 +44,30 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 
 ---
 
+## 2A. Premium Subscription
+
+This section applies once Premium is offered for sale in the App.
+
+**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. additional technical indicators, the full asset notes and monthly report, reading statements with AI). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
+
+**Price and payment.** The subscription is monthly or yearly. The price is the amount shown by the App Store or Google Play on the purchase screen (taxes included). Payment is collected by your device's store (Apple or Google), not by the Company; your card details never reach the Company.
+
+**Auto-renewal.** Unless cancelled before the period ends (on Apple, at least 24 hours before), the subscription renews automatically for the same period at the then current price. If the price increases, the store notifies you in advance and asks for your consent where required.
+
+**Free trial.** If the store offers a trial, its length is shown on the purchase screen; if not, no trial is promised. Unless you cancel before the trial ends, the first period is charged when it ends. A trial can be used once per account under the store's rules.
+
+**Cancellation.** You can cancel at any time in the store (iPhone: Settings › Apple ID › Subscriptions; Android: Google Play › Payments & subscriptions › Subscriptions). Cancellation takes effect at the end of the paid period; Premium stays on until then. Deleting the app or your account does **not** cancel the subscription; cancel in the store first.
+
+**Refunds and withdrawal.** Refund requests are handled by the store's own process (Apple: reportaproblem.apple.com; Google: order history in Google Play). Under Article 15(1)(ğ) of the Turkish Distance Contracts Regulation, the right of withdrawal does not apply to services performed immediately in electronic form and intangible goods delivered immediately, once performance has begun with your consent; starting the subscription on the purchase screen constitutes that consent. Your non-waivable consumer rights remain unaffected (see Section 12).
+
+**Recognition of the entitlement.** When a purchase completes, the store transaction is verified through our subscription provider RevenueCat and Premium is linked to your account. It also turns on on other devices where you sign in with the same account; after changing devices you can relink it with "Restore purchase" on the purchase screen.
+
+**Gift Premium.** The Company may grant certain users (e.g. those who registered before a given date) a one-time, free, non-renewing Premium period. No payment is taken when it ends; Premium simply turns off.
+
+**Changes.** If Premium's scope changes, features you paid for in the current period remain until its end. Price changes apply only to later periods.
+
+---
+
 ## 3. IMPORTANT NOTICE — Investment Advice Disclaimer
 
 **sandık IS NOT AN INVESTMENT ADVISER, BROKERAGE OR PORTFOLIO MANAGEMENT COMPANY.**
@@ -50,7 +76,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 - Prices, performance figures, signals and charts shown in the App are **for information only**.
 - No content constitutes **investment advice, a buy/sell recommendation or financial consultancy**.
 - Market-movement metrics (money flow, volume radar, buyer pressure) and **AI-written asset notes** describe past market data and do not predict the future. Notes are generated automatically and are not checked one by one by a person; although numbers are compared with the source data automatically, they may contain errors. Do not make a note the sole basis of an investment decision.
-- We do not guarantee the accuracy, timeliness or completeness of data; data from third-party providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, etc.) is presented as is.
+- We do not guarantee the accuracy, timeliness or completeness of data; data from third-party market-data providers is presented as is.
 - Make your investment decisions **after consulting an SPK-licensed brokerage or investment adviser**.
 - **The Company cannot be held liable for any profit or loss** arising from investment decisions you make based on data shown in the App.
 
@@ -116,9 +142,9 @@ If these rules are breached, **your account may be closed without notice**.
 
 ## 7. Third-Party Services
 
-The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes with AI; no personal data is sent) and price data providers (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, the Central Bank of the Republic of Türkiye, EGM, etc.). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
+The App uses third-party services such as Supabase (server, database and authentication), Google Firebase (notifications, crash reports, usage statistics, remote configuration), Apple (iOS notifications and the lock-screen Live Activity), Sign in with Apple and Google Sign-In (if you choose them), Google's email infrastructure (verification codes), Anthropic (writing asset notes with AI; no personal data is sent), RevenueCat (Premium subscription verification), the App Store and Google Play (Premium payment) and public market-data providers (exchanges, banks, fund platforms, official institutions and exchange-rate and price data services). **The Company is not responsible** for problems arising from outages, delays or errors of these services.
 
-The terms of use of third-party data providers, including information provided by sources such as Yahoo Finance and TEFAS, apply. If data retrieval is temporarily blocked, alternative sources or manual data entry options may be offered.
+The terms of use of third-party data providers, including information provided by market-data sources, apply. If data retrieval is temporarily blocked, alternative sources or manual data entry options may be offered.
 
 ---
 
@@ -222,8 +248,9 @@ For EU consumers, the mandatory consumer protection provisions of the country of
 
 When we change these Terms or the other legal documents:
 - The new text is published with a new version number; the text on the website and in the App is always the same.
-- Material changes are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service is requested again with the box and your consent under the Explicit Consent Notice at the end of that text; in the same box you state that you have been informed by the current Privacy Policy and KVKK Disclosure.
-- You cannot continue using the App without accepting; if you do not accept the change, you can delete your account (Profile → Settings → Delete Account).
+- Material changes (the "Consent version" is also moved to the new version) are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service is requested again with the box and your consent under the Explicit Consent Notice at the end of that text; in the same box you state that you have been informed by the current Privacy Policy and KVKK Disclosure.
+- For corrections that do not change your rights and obligations or how personal data is processed, only the "Version" changes; no new confirmation is requested.
+- You cannot continue using the App without accepting a material change; if you do not accept the change, you can delete your account (Profile → Settings → Delete Account).
 - Which version you accepted and when, or which version was presented to you and when, is recorded.
 
 ---

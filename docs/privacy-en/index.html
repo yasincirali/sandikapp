@@ -6,8 +6,8 @@
 <title>Privacy Policy — sandık</title>
 <meta name="description" content="Sandık app privacy policy — GDPR compliant.">
 <meta name="sandik-kaynak" content="legal/en/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="783fd7d3237a6e01f6c422927dfbf697abed07f66dae03592b1493553366d630">
-<meta name="sandik-govde-sha256" content="e9b9b1e5cda5afd241399ad5ffc4781ac650c197751121a4e8aea47f57c236c8">
+<meta name="sandik-kaynak-sha256" content="527b6d813fa7d24dfe0be2bbc28f67931ebf78e00bbd73d502957ae5aeca8202">
+<meta name="sandik-govde-sha256" content="1d5e0f54dcd4e01b54fd0bcc2bb5188c51f151b6d6a04b155a10ae016fd4c1f3">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,8 +67,9 @@ button:hover { opacity: 0.9; }
 <h1>Privacy Policy — sandık</h1>
 <p><strong>Effective date:</strong> October 8, 2026
 <strong>Last updated:</strong> October 8, 2026
-<strong>Version:</strong> 1.7
-<strong>Source:</strong> TR 1.7 (translation of the Turkish text; the Turkish version prevails)</p>
+<strong>Version:</strong> 1.8
+<strong>Consent version:</strong> 1.8
+<strong>Source:</strong> TR 1.8 (translation of the Turkish text; the Turkish version prevails)</p>
 <hr />
 <h2>1. Data Controller</h2>
 <p>This application (<strong>sandık</strong>, the "App") is operated by <code>Yasin Çıralı</code> ("we", "Company").</p>
@@ -245,6 +246,24 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
+<h3>3.6 Subscription Data (only if you buy Premium)</h3>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Purpose</th>
+<th>Legal basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Your account number (random user ID), store transaction record, product (monthly or yearly), store (App Store or Google Play), start and end dates, cancellation status, whether it is a test purchase</td>
+<td>Verifying the purchase with the store, linking Premium to your account, applying renewals, cancellations and refunds</td>
+<td>KVKK 5(2)(c) — conclusion and performance of a contract</td>
+</tr>
+</tbody>
+</table>
+<p>Card number, billing address and payment method <strong>never reach us</strong>: your device's store (Apple or Google) collects the payment and processes this information under its own privacy policy.</p>
 <h3>Data We Do NOT Collect</h3>
 <ul>
 <li>GPS location (the App does not request location permission)</li>
@@ -268,7 +287,7 @@ button:hover { opacity: 0.9; }
 <li>Account security (single active device, email code on a new device) and detection of abuse, fraud and cyberattacks (KVKK 5(2)(f) legitimate interest)</li>
 <li>Top Portfolios: showing the returns and asset-type allocation of the period's best-performing portfolios anonymously among participants (KVKK 5(1) — explicit consent; optional, given in the App)</li>
 <li>Race: if you join, calculating your period return and showing your percentile and comparison with your partner</li>
-<li>Premium: verifying your right to access Premium content (full asset notes, monthly report, AI mapping of statements)</li>
+<li>Premium: verifying the subscription you bought and recognising your right to access Premium content</li>
 <li>Using your feedback on asset notes to measure and improve their accuracy</li>
 </ol>
 <hr />
@@ -341,10 +360,17 @@ button:hover { opacity: 0.9; }
 <td>Global</td>
 </tr>
 <tr>
+<td>Subscription verification (only if you buy Premium)</td>
+<td>RevenueCat, Inc.</td>
+<td>Your account number (random user ID), store transaction record and receipt, device and app version, IP address</td>
+<td>Verifying the purchase with the store and reporting the Premium entitlement to our server (see §3.6)</td>
+<td>USA</td>
+</tr>
+<tr>
 <td>Price and market data</td>
-<td>Yahoo Finance, TEFAS, finans.truncgil.com, Binance, Börse Frankfurt (eurobond price and chart), Ziraat Bankası (eurobond list and bank bid/ask price), CBRT EVDS, EGM, open.er-api.com, yasincirali.github.io (IPO calendar)</td>
-<td>No personal data is sent; only symbol / fund-code / ISIN queries. For requests sent from the device, the provider sees the device's IP address as with any internet request; requests to Börse Frankfurt and Ziraat Bankası are sent only from our server</td>
-<td>Price retrieval</td>
+<td>Public market-data providers: exchanges, banks, fund platforms, official institutions (e.g. CBRT) and exchange-rate and price data services</td>
+<td>No personal data is sent; only the asset's symbol, fund code or ISIN is queried. For requests sent from the device, the provider sees the device's IP address as with any internet request; some sources are contacted only from our server</td>
+<td>Fetching prices and price history</td>
 <td>Global</td>
 </tr>
 <tr>
@@ -363,7 +389,8 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
-<p><strong>These providers act solely as data processors, on our instructions. We remain the data controller.</strong></p>
+<p><strong>These providers act solely as data processors, on our instructions. We remain the data controller.</strong> Apple and Google, which collect the Premium payment, are independent controllers for your payment details.</p>
+<p>Market-data providers receive no personal data and are therefore not listed individually; adding a new price source does not change this policy. A new provider that receives personal data is used only after it is added to this table.</p>
 <h3>5.1 Anonymous Sharing with Other Users (Top Portfolios)</h3>
 <p>Top Portfolios is optional and covers only users who give explicit consent in the App. Once you consent, if your portfolio is older than 5 days, your account is older than 7 days and your portfolio holds at least 2 different assets, your period returns (weekly, monthly, six-monthly, yearly) and asset-type shares (e.g. "gold 56%, funds 28%") are computed on the server twice a day and kept in an anonymous comparison pool. If the pool holds at least 8 portfolios, for at most the 4 best-performing portfolios only the rank, return percentage, type shares and, for fund holdings, the public TEFAS fund code and its share in the portfolio (funds with a share below 1% or without a code are grouped) are shown to other users who have joined the pool; fund names come from the official TEFAS list. In return you see, in the same anonymous form, which asset types participating users hold in which proportions and their returns; this comparison service is available only to participants. Name, email, username, amounts, quantities, the names or symbols of shares and other assets, and the names and notes you give your assets are never shared; the information shown contains no data that would reveal your identity. If you do not consent, your return is neither computed nor stored for this purpose; other features of the App are unaffected. You can withdraw your consent at any time from the Top Portfolios screen; when you do, your measurements in the pool are deleted immediately. The date of consent and the version of the text shown to you are recorded as proof of consent. When you delete your account, these records and your measurements in the pool are deleted too.</p>
 <h3>5.2 Sharing with Your Partner and in the Race</h3>
@@ -378,12 +405,12 @@ button:hover { opacity: 0.9; }
 <p>The skeleton and the model's answer are not stored. To limit abuse and cost, only the time of the request, the model used and its cost are kept with your account for 40 days.</p>
 <hr />
 <h2>6. International Data Transfers</h2>
-<p>Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in and email services also run on global infrastructure. Under KVKK Article 9 and GDPR Articles 44-49:</p>
+<p>Because the Supabase database is hosted in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU) and Firebase in the USA, your data is transferred outside Türkiye. The in-app text shows the country of the server you are connected to. Apple's and Google's notification, sign-in, email and store payment services also run on global infrastructure. If you buy Premium, your subscription record is verified through RevenueCat (USA). Under KVKK Article 9 and GDPR Articles 44-49:</p>
 <ul>
 <li><strong>For EU/EEA users:</strong> Transfers are made under Standard Contractual Clauses (SCCs) and the providers' GDPR-compliance commitments.</li>
 <li><strong>For Turkish users:</strong> <strong>Explicit consent</strong> is collected under KVKK Article 9(1). You give it with the Explicit Consent Notice ("Açık Rıza Metni"), which you read to the end and accept at the end of the text during registration (or on the consent screen at the first sign-in with Apple or Google); this consent is not collected together with any other declaration.</li>
 </ul>
-<p>The destination countries (Supabase: Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU); Firebase: USA) are not on the list of countries with adequate protection announced by the Turkish Data Protection Board; therefore international transfer is based on your <strong>explicit consent</strong>.</p>
+<p>The destination countries (Supabase: Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU); Firebase and RevenueCat: USA) are not on the list of countries with adequate protection announced by the Turkish Data Protection Board; therefore international transfer is based on your <strong>explicit consent</strong>.</p>
 <hr />
 <h2>7. Retention Periods</h2>
 <table>
@@ -423,8 +450,8 @@ button:hover { opacity: 0.9; }
 <td>Until account deletion</td>
 </tr>
 <tr>
-<td>Premium entitlement records</td>
-<td>Until account deletion</td>
+<td>Premium entitlement and subscription records</td>
+<td>Until account deletion; deleted immediately when you delete your account. The transaction record at RevenueCat stays for RevenueCat's retention period, and payment and invoice records stay with Apple or Google for their own periods</td>
 </tr>
 <tr>
 <td>Statement column mapping request records (time, model and cost only; the skeleton and the answer are not stored)</td>
@@ -537,8 +564,9 @@ button:hover { opacity: 0.9; }
 <p>When we change this policy:
 - The new text is published with a new version number; the text on the website and in the App is always the same
 - The "Last updated" date is refreshed
-- For material changes, the current text and a summary of the changes are shown on the next launch; before continuing you are asked to state in the box that you have been informed by the current text
-- A new processing activity, third party or retention period is added only by updating this text</p>
+- For material changes (new personal data, a new third party receiving personal data, a new purpose or retention period) the "Consent version" is also moved to the new version; the current text and a summary of the changes are shown on the next launch and before continuing you are asked to state in the box that you have been informed by the current text
+- For corrections that do not change how personal data is processed (wording, clarifications, a market-data source that receives no personal data) only the "Version" and "Last updated" change; no new confirmation is requested
+- A new processing activity, a third party receiving personal data or a retention period is added only by updating this text</p>
 <hr />
 <h2>14. Contact</h2>
 <p>For all questions, requests and complaints about data protection:</p>

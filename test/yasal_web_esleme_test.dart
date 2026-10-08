@@ -120,10 +120,10 @@ void main() {
       }
     });
 
-    test('web\'in tam metni: Koşullar 19 bölüm, tablo ve künye korunur', () {
+    test('web\'in tam metni: Koşullar 20 bölüm (1.6: §2A Premium), tablo ve künye korunur', () {
       // 1.1'de uygulama web'in kısaltılmış kopyasını gösteriyordu (14 bölüm).
       final kosullar = YasalBelge.kosullar.sablonBloklari;
-      expect(kosullar.where((b) => b.type == LegalBlockType.h2), hasLength(19));
+      expect(kosullar.where((b) => b.type == LegalBlockType.h2), hasLength(20));
       expect(kosullar.first.type, LegalBlockType.h1);
       expect(kosullar[1].type, LegalBlockType.meta);
       final gizlilik = YasalBelge.gizlilik.sablonBloklari;

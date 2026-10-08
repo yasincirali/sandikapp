@@ -1,7 +1,7 @@
 # Açık Rıza Metni — sandık
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Sürüm:** 1.4
+**Yürürlük tarihi:** 8 Ekim 2026
+**Sürüm:** 1.5
 
 > Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 5(1) ve 9(1) uyarınca **açık rızanızı** almak için hazırlanmıştır. Bu metin kayıt sırasında (ya da Apple veya Google ile ilk girişte açılan onay ekranında) size tam olarak gösterilir; sonuna kadar okuduktan sonra açık rızanızı metnin sonundaki düğmeyle verirsiniz. Rıza yalnız bu düğmeyle verilir: kayıt ekranındaki onay kutusu Kullanım Koşulları'nın kabulü içindir ve açık rıza içermez. Bu şekilde verdiğiniz rıza aşağıdaki A bölümünü kapsar. B, C ve D bölümleri uygulamanın bu konulardaki işleyişini açıklar; ayrı bir onay istenmez. E bölümündeki rıza uygulama içinde ayrıca istenir.
 
@@ -13,7 +13,7 @@
 
 ### A) Yurt Dışına Veri Aktarımı
 
-KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.**'e, **Amerika Birleşik Devletleri'nde (ABD)** ve küresel altyapıda çalışan **Google LLC (Firebase: bildirim, hata raporu, kullanım istatistiği, uzaktan ayar; Gmail e-posta altyapısı)** ile **Apple Inc. (iOS bildirimleri ve kilit ekranı canlı etkinliği)** servislerine;
+KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPABASE_ULKEDE}** bulunan **Supabase Inc.**'e, **Amerika Birleşik Devletleri'nde (ABD)** ve küresel altyapıda çalışan **Google LLC (Firebase: bildirim, hata raporu, kullanım istatistiği, uzaktan ayar; Gmail e-posta altyapısı)** ile **Apple Inc. (iOS bildirimleri ve kilit ekranı canlı etkinliği)** servislerine; Premium satın alırsam ayrıca abonelik doğrulaması için **ABD'deki RevenueCat, Inc.**'e;
 
 - E-posta adresim
 - Kullanıcı adım (görünen adım)
@@ -24,6 +24,7 @@ KVKK Madde 9(1) uyarınca aşağıdaki kişisel verilerimin sunucuları **{SUPAB
 - Push bildirim token'ım ve bildirimlerin içeriği
 - Oturum açma anındaki IP adresim, cihaz modelim, OS sürümüm ve kayıtlı cihazlarım
 - Hata raporlarım ve uygulama kullanım istatistiklerim (tutar, miktar ve e-posta içermeden)
+- Premium satın alırsam abonelik ve mağaza işlem kayıtlarım (kart ve ödeme bilgisi hariç)
 - Yasal metin onay ve bilgilendirme kayıtlarım (kabul ettiğim ya da bana sunulan metin ve sürümü, zaman, platform, uygulama sürümü, dil)
 
 aktarılmasına; bu ülkelerin KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmadığını** bildiğimi beyan ederek **AÇIK RIZA VERİYORUM**.
@@ -99,7 +100,7 @@ beyan ve kabul ederim.
 ---
 
 **Tarih:** Onay anında otomatik kaydedilir
-**Sürüm:** 1.4
+**Sürüm:** 1.5
 **Platform:** Android / iOS, uygulama sürümü ve dil onay anında otomatik kaydedilir
 
 ---

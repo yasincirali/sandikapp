@@ -6,8 +6,8 @@
 <title>Gizlilik Politikası — sandık</title>
 <meta name="description" content="Sandık uygulamasının gizlilik politikası — KVKK ve GDPR uyumlu.">
 <meta name="sandik-kaynak" content="legal/tr/PRIVACY_POLICY.md">
-<meta name="sandik-kaynak-sha256" content="5f1949f2cf3ee72c90c47e61a8d86c3cf99e4d5467af619c66ab0e247d6f1541">
-<meta name="sandik-govde-sha256" content="08a13ba11ecb30d097b91d7d6ae11d6ebeb28a9493d02f69f68724abc66c5706">
+<meta name="sandik-kaynak-sha256" content="da537fa7c652bba6f8d58a5016996ff911d4779c366a1863182fee74cca81c71">
+<meta name="sandik-govde-sha256" content="931350b1ea9c34d66971a400d6626d750ed264f586d8b86d54ddcfbb65b75701">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -67,7 +67,8 @@ button:hover { opacity: 0.9; }
 <h1>Gizlilik Politikası — sandık</h1>
 <p><strong>Yürürlük tarihi:</strong> 8 Ekim 2026
 <strong>Son güncelleme:</strong> 8 Ekim 2026
-<strong>Sürüm:</strong> 1.7</p>
+<strong>Sürüm:</strong> 1.8
+<strong>Onay sürümü:</strong> 1.8</p>
 <hr />
 <h2>1. Veri Sorumlusu</h2>
 <p>Bu uygulamayı (<strong>sandık</strong>, "Uygulama") <code>Yasin Çıralı</code> ("biz", "Şirket") işletmektedir.</p>
@@ -244,6 +245,24 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
+<h3>3.6 Abonelik Verileri (yalnızca Premium satın alırsanız)</h3>
+<table>
+<thead>
+<tr>
+<th>Veri</th>
+<th>Amaç</th>
+<th>Hukuki dayanak</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı, ürün (aylık ya da yıllık), mağaza (App Store ya da Google Play), başlangıç ve bitiş tarihleri, iptal durumu, test satın alımı olup olmadığı</td>
+<td>Satın almayı mağazayla doğrulamak, Premium'u hesabınıza bağlamak, yenileme, iptal ve iadeyi uygulamak</td>
+<td>KVKK 5(2)(c) — sözleşmenin kurulması ve ifası</td>
+</tr>
+</tbody>
+</table>
+<p>Kart numarası, fatura adresi ve ödeme yöntemi bize <strong>ulaşmaz</strong>: ödemeyi cihazınızın mağazası (Apple ya da Google) tahsil eder ve bu bilgileri kendi gizlilik politikasıyla işler.</p>
 <h3>Toplamadığımız Veriler</h3>
 <ul>
 <li>GPS konumu (uygulama konum izni istemez)</li>
@@ -267,7 +286,7 @@ button:hover { opacity: 0.9; }
 <li>Hesap güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu) ile kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)</li>
 <li>Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)</li>
 <li>Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek</li>
-<li>Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor, ekstrenin yapay zekâyla eşlenmesi) erişim hakkınızı doğrulamak</li>
+<li>Premium: satın aldığınız aboneliği doğrulamak ve Premium içeriğe erişim hakkınızı tanımak</li>
 <li>Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek</li>
 </ol>
 <hr />
@@ -340,10 +359,17 @@ button:hover { opacity: 0.9; }
 <td>Küresel</td>
 </tr>
 <tr>
+<td>Abonelik doğrulama (yalnızca Premium satın alırsanız)</td>
+<td>RevenueCat, Inc.</td>
+<td>Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi</td>
+<td>Satın almayı mağazayla doğrulamak ve Premium hakkını sunucumuza bildirmek (bkz. §3.6)</td>
+<td>ABD</td>
+</tr>
+<tr>
 <td>Fiyat ve piyasa verisi</td>
-<td>Yahoo Finance, TEFAS, finans.truncgil.com, Binance, Börse Frankfurt (eurobond fiyatı ve grafiği), Ziraat Bankası (eurobond listesi ve banka alış-satış fiyatı), TCMB EVDS, EGM, open.er-api.com, yasincirali.github.io (halka arz takvimi)</td>
-<td>Kişisel veri gönderilmez; yalnızca sembol / fon kodu / ISIN sorgusu. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; Börse Frankfurt ve Ziraat Bankası'na istekler yalnızca sunucumuzdan gider</td>
-<td>Fiyat çekme</td>
+<td>Kamuya açık piyasa verisi sağlayıcıları: borsalar, bankalar, fon platformları, resmî kurumlar (ör. TCMB) ile kur ve fiyat veri servisleri</td>
+<td>Kişisel veri gönderilmez; yalnızca varlığın sembolü, fon kodu ya da ISIN'i sorulur. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; bazı kaynaklara istekler yalnızca sunucumuzdan gider</td>
+<td>Fiyat ve fiyat geçmişi çekme</td>
 <td>Küresel</td>
 </tr>
 <tr>
@@ -362,7 +388,8 @@ button:hover { opacity: 0.9; }
 </tr>
 </tbody>
 </table>
-<p><strong>Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.</strong></p>
+<p><strong>Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.</strong> Premium ödemesini tahsil eden Apple ve Google, ödeme bilgileriniz için kendi başına veri sorumlusudur.</p>
+<p>Piyasa verisi sağlayıcıları kişisel veri almadığı için tek tek sayılmaz; yeni bir fiyat kaynağı eklemek bu politikayı değiştirmez. Kişisel veri alan yeni bir sağlayıcı ise ancak bu tabloya eklenerek kullanılır.</p>
 <h3>5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)</h3>
 <p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
 <h3>5.2 Ortağınızla ve Yarış'ta Paylaşım</h3>
@@ -377,12 +404,12 @@ button:hover { opacity: 0.9; }
 <p>İskelet ve modelin yanıtı saklanmaz. Kötüye kullanımı ve maliyeti sınırlamak için yalnızca isteğin zamanı, kullanılan model ve maliyeti hesabınızla birlikte 40 gün tutulur.</p>
 <hr />
 <h2>6. Yurt Dışına Veri Aktarımı</h2>
-<p>Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş ve e-posta hizmetleri de küresel altyapıda çalışır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
+<p>Supabase veritabanı Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde), Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş, e-posta ve mağaza ödeme hizmetleri de küresel altyapıda çalışır. Premium satın alırsanız abonelik kaydınız RevenueCat (ABD) üzerinden doğrulanır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:</p>
 <ul>
 <li><strong>AB üyesi kullanıcılar için:</strong> Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.</li>
 <li><strong>Türk kullanıcılar için:</strong> KVKK Madde 9(1) kapsamında <strong>açık rıza</strong> alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.</li>
 </ul>
-<p>Aktarım yapılan ülkeler (Supabase: Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde; Firebase: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı <strong>açık rızanıza</strong> dayanmaktadır.</p>
+<p>Aktarım yapılan ülkeler (Supabase: Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde; Firebase ve RevenueCat: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı <strong>açık rızanıza</strong> dayanmaktadır.</p>
 <hr />
 <h2>7. Veri Saklama Süreleri</h2>
 <table>
@@ -422,8 +449,8 @@ button:hover { opacity: 0.9; }
 <td>Hesap silinene kadar</td>
 </tr>
 <tr>
-<td>Premium hakkı kayıtları</td>
-<td>Hesap silinene kadar</td>
+<td>Premium hakkı ve abonelik kayıtları</td>
+<td>Hesap silinene kadar; hesabı silince hemen. RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince, ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır</td>
 </tr>
 <tr>
 <td>Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet ve yanıt saklanmaz)</td>
@@ -536,8 +563,9 @@ button:hover { opacity: 0.9; }
 <p>Bu politikada değişiklik yaptığımızda:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır
 - "Son güncelleme" tarihi yenilenir
-- Önemli değişikliklerde bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir; devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
-- Yeni bir veri işleme, üçüncü taraf ya da saklama süresi ancak bu metin güncellenerek eklenir</p>
+- Esaslı değişikliklerde (yeni bir kişisel veri, kişisel veri alan yeni bir üçüncü taraf, yeni bir amaç ya da saklama süresi) "Onay sürümü" de yeni sürüme çekilir; bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir ve devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
+- Kişisel veri işleyişini değiştirmeyen düzeltmelerde (yazım, açıklama, kişisel veri almayan bir piyasa verisi kaynağı) yalnızca "Sürüm" ve "Son güncelleme" değişir; yeniden onay istenmez
+- Yeni bir veri işleme, kişisel veri alan bir üçüncü taraf ya da saklama süresi ancak bu metin güncellenerek eklenir</p>
 <hr />
 <h2>14. İletişim</h2>
 <p>Veri korumayla ilgili tüm soru, talep ve şikayetler için:</p>

@@ -1,14 +1,46 @@
-// ÜRETİLDİ — elle düzenleme. Kaynak: legal/tr/*.md; üreten:
-// `python docs/_build_legal.py`. Kayma kilidi: test/yasal_web_esleme_test.dart.
-//
-// Değerler md'nin KANONİK hâlidir (BOM yok, LF, sondaki boşluk kırpılmış;
-// yer tutucular doldurulmamış). Veritabanındaki `govde` ve `govde_hash`
-// bu metinlerdir (`YasalMetinKatalogu`).
+-- 0127 — Yasal metinler: Gizlilik/KVKK 1.8, Koşullar 1.6, Açık Rıza 1.5 (2026-10-08)
+--
+-- Numara koordinatörden: 0126 UI/UX dalında (sinyal_varlik_secimi). Bu
+-- migration ondan önce dağıtılırsa sonraki deploy `include_all` ile koşar.
+--
+-- ## Neden
+-- Kullanıcı (2026-10-08): *"her geliştirmeden neden kvkk değişiyor generic
+-- bişey yapmaz mıyız"*. İki değişiklik:
+-- 1. Fiyat kaynakları artık tek tek sayılmıyor ("kamuya açık piyasa verisi
+--    sağlayıcıları"). KVKK m.10 alıcı GRUPLARINI ister; bu kaynaklara
+--    kişisel veri gitmez. Yeni fiyat kaynağı metne dokunmaz.
+-- 2. Belgelere "Onay sürümü" satırı (son esaslı değişiklik). İstemci kapısı
+--    artık onu arar (`yasalMdOnaySurumu`); kişisel veri işleyişini
+--    değiştirmeyen düzeltmede yalnız "Sürüm" artar, kapı açılmaz. Sunucu
+--    kapı hesaplamaz; bu migration yalnız metin ekler.
+-- Aynı sürümde Premium abonelik maddesi (Koşullar §2A; Gizlilik §3.6, §5,
+-- §6, §7; KVKK §2.3, §5.2, §6) ve RevenueCat (ABD) yurt dışı aktarım
+-- alıcısı olarak Açık Rıza Metni'ne girdi — paywall açılmadan ikinci bir
+-- onay turu çıkmasın diye bu turla birlikte (koordinatör notu, kullanıcı
+-- "Evet").
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: dört metin satırı. Eski sürümü taşıyan istemci sunucuda
+-- daha yenisini görünce kapıyı HİÇ açmaz (`YasalOnayService.uygulamaEski`,
+-- çift onay kuralı); yeni istemci hepsini bir kez sorar (Açık Rıza adımı +
+-- kutu). Fonksiyon, tablo, RLS ve GRANT'a DOKUNULMAZ.
+--
+-- ## Dağıtım sırası
+-- İKİ sunucuya (Frankfurt → Tokyo) → `python tool/sema_esitlik.py` →
+-- ANCAK SONRA 1.8'i gösteren istemci.
+--
+-- ## Metin ekleme
+-- INSERT'ler `tool/yasal_metin_uret_test.dart` çıktısıdır; gövdelere elle
+-- dokunma (hash check'i tutmaz).
 
-/// Uygulamada gösterilen yasal belgelerin kanonik md metni — anahtar
-/// depo köküne göre kaynak yolu.
-const yasalBelgeKaynaklari = <String, String>{
-  'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
+-- ── 1) Metinler (tool/yasal_metin_uret_test.dart çıktısı)
+
+-- kosullar/1.6/tr  (Kullanım Koşulları)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kosullar', '1.6', 'tr', 'Kullanım Koşulları', date '2026-10-08',
+  '851f202ee131c9e67854ce272175542317a8c66937c83045ae13c7ae897ba49c',
+  replace($yasal$# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 8 Ekim 2026
@@ -273,8 +305,15 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- gizlilik_politikasi/1.8/tr  (Gizlilik Politikası)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('gizlilik_politikasi', '1.8', 'tr', 'Gizlilik Politikası', date '2026-10-08',
+  'da537fa7c652bba6f8d58a5016996ff911d4779c366a1863182fee74cca81c71',
+  replace($yasal$# Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 8 Ekim 2026
@@ -571,8 +610,15 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 
 ---
 
-*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
-  'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
+*Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- kvkk_aydinlatma/1.8/tr  (KVKK Aydınlatma Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kvkk_aydinlatma', '1.8', 'tr', 'KVKK Aydınlatma Metni', date '2026-10-08',
+  '069d0e758d04385deba8a271b21096249ec576bd7cae4525829fda1043d150f6',
+  replace($yasal$# KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 8 Ekim 2026
@@ -828,8 +874,15 @@ Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 
 **`Yasin Çıralı`**
 **`Türkiye`**
-**`sandikapp.destek@gmail.com`**''',
-  'legal/tr/ACIK_RIZA_METNI.md': r'''# Açık Rıza Metni — sandık
+**`sandikapp.destek@gmail.com`**$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- acik_riza_metni/1.5/tr  (Açık Rıza Metni)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('acik_riza_metni', '1.5', 'tr', 'Açık Rıza Metni', date '2026-10-08',
+  '43d684717cec03cfdbd82a6b2022ef657021a23a853ca17d757518602593ed98',
+  replace($yasal$# Açık Rıza Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Sürüm:** 1.5
@@ -936,5 +989,41 @@ beyan ve kabul ederim.
 
 ---
 
-*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*''',
-};
+*Açık rıza onayınız, hesabınız silinene kadar Şirket tarafından kanıt olarak saklanır. Sildiğiniz hesabın açık rıza kayıtları, TBK Madde 146 zamanaşımı süresi olan **3 yıl** boyunca saklanır; Zirvedeki Portföyler rızasının kaydı hesapla birlikte silinir.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- ── 2) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+declare
+  v_tur text;
+  v_surum text;
+begin
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity) then
+    raise exception '0127: yasal_metinler RLS (enable + force) kapali';
+  end if;
+  if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
+    raise exception '0127: yasal_metinler istemciden yazilabilir';
+  end if;
+
+  for v_tur, v_surum in
+    select * from (values ('kosullar', '1.6'), ('gizlilik_politikasi', '1.8'),
+                          ('kvkk_aydinlatma', '1.8'), ('acik_riza_metni', '1.5')) t
+  loop
+    if not exists (select 1 from public.yasal_metinler
+                    where tur = v_tur and surum = v_surum and dil = 'tr'
+                      and yururluk_tarihi = date '2026-10-08') then
+      raise exception '0127: %/%/tr metni yok', v_tur, v_surum;
+    end if;
+  end loop;
+
+  if exists (select 1 from public.yasal_metinler
+              where yururluk_tarihi = date '2026-10-08'
+                and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
+    raise exception '0127: govde_hash tutmuyor';
+  end if;
+
+  raise notice '0127 tamam: Gizlilik/KVKK 1.8, Kosullar 1.6, Acik Riza 1.5; % metin.',
+    (select count(*) from public.yasal_metinler);
+end $$;

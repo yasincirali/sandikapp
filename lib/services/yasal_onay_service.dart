@@ -309,9 +309,13 @@ class YasalOnayService {
       return s != null && surumKarsilastir(s, gereken) >= 0;
     }
 
+    // Gereken sürüm belgenin "Onay sürümü"dür (son esaslı değişiklik),
+    // güncel sürümü değil: kişisel veri işleyişini değiştirmeyen bir
+    // düzeltme kapıyı açmaz (kullanıcı kararı 2026-10-08). Onay yazılırken
+    // yine GÜNCEL sürüm yazılır (`kapiOgeleri`).
     final eksik = <String>{
-      for (final m in YasalMetinKatalogu.zorunluBelgeler())
-        if (!tamamMi(m.tur, m.surum)) m.tur,
+      for (final b in YasalBelge.values)
+        if (!tamamMi(b.tur, b.onaySurumu)) b.tur,
     };
     if (!tamamMi(YasalTur.kayitTekKutu, YasalMetinKatalogu.kutuSurumu)) {
       eksik.add(kutuAnahtari);

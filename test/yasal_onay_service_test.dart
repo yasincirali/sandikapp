@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:portfoy_takip/services/yasal_md.dart';
 import 'package:portfoy_takip/services/yasal_metin_katalogu.dart';
 import 'package:portfoy_takip/services/yasal_onay_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -782,8 +783,11 @@ void main() {
         expect(sunucu, contains((t, '1.5')), reason: '$t/1.5');
         expect(sunucu, contains((t, '1.4')), reason: '$t/1.4 yerinde kalmalı');
       }
-      expect(YasalBelge.acikRiza.surum, '1.4');
-      expect(sunucu, isNot(contains((YasalTur.acikRiza, '1.5'))));
+      // 0120 Açık Rıza'ya dokunmadı; 1.5'i 0127 (RevenueCat) getirdi.
+      expect(sunucu, contains((YasalTur.acikRiza, '1.4')));
+      expect(
+          YasalOnayService.surumKarsilastir(YasalBelge.acikRiza.surum, '1.4'),
+          greaterThanOrEqualTo(0));
     });
 
     test('0120 dağıtıldı + 1.4 istemci: ESKİ — kapı açılmaz', () {
@@ -805,10 +809,47 @@ void main() {
             (YasalTur.kayitTekKutu, '1.1'),
           ]);
       final d = await YasalOnayService.instance.kapiDurumu('u1');
-      expect(d.eksik, ucBelge.toSet());
+      // Rıza yalnız Açık Rıza'nın KENDİ onay sürümü 1.4'ü geçtiyse sorulur
+      // (0127: RevenueCat → 1.5); üç belgenin artışı onu tetiklemez.
+      final rizaYeni = YasalOnayService.surumKarsilastir(
+              YasalBelge.acikRiza.onaySurumu, '1.4') >
+          0;
+      expect(d.eksik, {...ucBelge, if (rizaYeni) YasalTur.acikRiza});
       expect(d.kutuGerekli, isTrue, reason: 'Koşullar kutuyla kabul edilir');
-      expect(d.rizaEksik, isFalse);
+      expect(d.rizaEksik, rizaYeni);
       expect(d.guncellemeMi, isTrue);
+    });
+  });
+
+  group('onay sürümü: esaslı olmayan düzeltme kapıyı açmaz (2026-10-08)', () {
+    const md = '# Belge\n\n**Sürüm:** 1.9\n**Onay sürümü:** 1.8\n\nmetin\n';
+
+    test('satır varsa onu, yoksa Sürüm\'ü döner', () {
+      expect(yasalMdOnaySurumu(md), '1.8');
+      expect(yasalMdOnaySurumu('# B\n\n**Sürüm:** 1.3\n'), '1.3');
+    });
+
+    test('her belgede onay sürümü güncel sürümü geçmez', () {
+      for (final b in YasalBelge.values) {
+        expect(
+            YasalOnayService.surumKarsilastir(b.onaySurumu, b.surum),
+            lessThanOrEqualTo(0),
+            reason: b.kaynak);
+      }
+    });
+
+    test('Açık Rıza Metni\'nde satır yok: rızanın her değişikliği yeniden '
+        'rıza ister', () {
+      expect(yasalMdAlan(YasalBelge.acikRiza.md, 'Onay sürümü'), isEmpty);
+      expect(YasalBelge.acikRiza.onaySurumu, YasalBelge.acikRiza.surum);
+    });
+
+    test('onay sürümünü onaylamış kullanıcıya kapı açılmaz', () {
+      final d = YasalOnayService.eksikleriHesapla([
+        for (final b in YasalBelge.values) (b.tur, b.onaySurumu),
+        (YasalTur.kayitTekKutu, YasalMetinKatalogu.kutuSurumu),
+      ]);
+      expect(d.gerekli, isFalse);
     });
   });
 }

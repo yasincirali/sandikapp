@@ -43,8 +43,9 @@ final _tabloAyrac = RegExp(r'^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?$');
 /// "**İstisnalar:** …" gibi kalın etiketli tek satırlık paragraf gövde
 /// metnidir, künye değil.
 const _kunyeAnahtarlari = {
-  'Yürürlük tarihi', 'Son güncelleme', 'Sürüm', 'Tarih', 'IP', 'Platform', //
-  'Effective date', 'Last updated', 'Version', 'Source',
+  'Yürürlük tarihi', 'Son güncelleme', 'Sürüm', 'Onay sürümü', 'Tarih', //
+  'IP', 'Platform', //
+  'Effective date', 'Last updated', 'Version', 'Consent version', 'Source',
 };
 final _anahtarDeger = RegExp(r'^\*\*([^*]+):\*\*');
 bool _kunyeSatiri(String s) =>
@@ -185,6 +186,26 @@ String yasalMdSurum(String md, {String etiket = 'Sürüm'}) {
     throw StateError('yasal md: "$etiket" satırı tek değer değil: $hepsi');
   }
   return hepsi.single;
+}
+
+/// "Onay sürümü" satırı: kullanıcının onaylamış olması gereken EN ESKİ
+/// sürüm (son esaslı değişiklik). Satır yoksa [yasalMdSurum] — her sürüm
+/// artışı yeniden sorar (eski davranış).
+///
+/// Kullanıcı kararı (2026-10-08): *"her geliştirmeden neden kvkk değişiyor
+/// generic bişey yapmaz mıyız"*. Metin her değiştiğinde sürüm artar (web,
+/// uygulama ve veritabanı aynı sayıyı taşır, hash ispatı buna bağlı), ama
+/// kişisel veri işleyişini değiştirmeyen bir düzeltme herkese yeniden onay
+/// kapısı açmamalı. Esaslı değişiklikte (yeni kişisel veri, yeni alıcı,
+/// yeni amaç ya da saklama) "Onay sürümü" = "Sürüm" yazılır; yazım ya da
+/// kişisel veri içermeyen değişiklikte yalnız "Sürüm" artar.
+String yasalMdOnaySurumu(String md) {
+  final alan = yasalMdAlan(md, 'Onay sürümü').toSet();
+  if (alan.isEmpty) return yasalMdSurum(md);
+  if (alan.length != 1) {
+    throw StateError('yasal md: "Onay sürümü" satırı tek değer değil: $alan');
+  }
+  return alan.single;
 }
 
 const _aylar = [
