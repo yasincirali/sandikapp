@@ -8,6 +8,8 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import '../services/crash_reporter.dart';
+import '../services/fx_rate_migration_service.dart';
 import '../services/price_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
@@ -250,6 +252,44 @@ DateTime? haftaSonuKapanisGunu(DateTime secilen, {required bool yediGun}) {
     _ => null,
   };
 }
+
+// ─── TL karşılığı ────────────────────────────────────────────────────────────
+
+/// Dövizli alımın formda gösterilen TL karşılığı için kur (yasin
+/// 2026-10-08: "dolar olarak gösteriyor, TL karşılığı da gösterilmeli").
+///
+/// Kayıttaki kuralın aynısı (`PortfolioNotifier._alisKuru`): bugünkü
+/// alımda canlı kur, geriye tarihli alımda ALIM GÜNÜNÜN kuru — portföy
+/// toplamına giren maliyet tam olarak bu sayıyla çevrilir, form başka bir
+/// sayı söylemesin. [tarihli] o günün kapanış kuru (yüklenmediyse `null`).
+/// Kur bilinmiyorsa `null`: TL satırı hiç çizilmez, 1.0 ya da sabit bir
+/// kurla uydurma tutar yazılmaz (fiyat kaynağı sözleşmesi (3)).
+double? tlKarsiligiKuru({
+  required String currency,
+  required DateTime tarih,
+  required double canliKur,
+  required double? tarihli,
+  DateTime? now,
+}) {
+  if (currency.toUpperCase() == 'TRY') return null;
+  final geriTarihli = dayKey(tarih).isBefore(dayKey(now ?? DateTime.now()));
+  final kur = geriTarihli ? tarihli : canliKur;
+  return kur != null && kur > 1.0 ? kur : null;
+}
+
+/// Geriye tarihli dövizli alımın kuru — yalnız form önizlemesi için.
+/// Bugünkü alımda sorgu atılmaz (canlı kur portföy durumunda hazır).
+final alimGunuKuruProvider = FutureProvider.autoDispose
+    .family<double?, ({String currency, DateTime gun})>((ref, k) async {
+  final sembol = FxRateMigrationService.fxSembolu(k.currency);
+  if (sembol == null) return null;
+  try {
+    return await PriceService.instance.fetchHistoricalFxRate(sembol, k.gun);
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'alimGunuKuruProvider');
+    return null;
+  }
+});
 
 // ─── Durum ───────────────────────────────────────────────────────────────────
 

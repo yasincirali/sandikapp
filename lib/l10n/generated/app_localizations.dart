@@ -1448,6 +1448,12 @@ abstract class AppLocalizations {
   /// **'Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.'**
   String get commissionNote;
 
+  /// Dövizli alımın toplam maliyet kartında TL karşılığı ve kullanılan kur
+  ///
+  /// In tr, this message translates to:
+  /// **'≈ {amount} · 1 {currency} = {rate}'**
+  String totalCostTlEquivalent(String amount, String currency, String rate);
+
   /// No description provided for @costPreviewHint.
   ///
   /// In tr, this message translates to:

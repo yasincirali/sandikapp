@@ -15,10 +15,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// seçicisi, seçilmeden kayıt yok, temiz fiyat ön dolumu, işlemiş faiz
 /// satırı ve kayıtta KİRLİ birim değer.
 class _KaydedenPortfoy extends PortfolioNotifier {
+  _KaydedenPortfoy({this.usdTry = 1.0});
+  final double usdTry;
   final kayitlar = <({String ticker, double fiyat, String para, double miktar})>[];
 
   @override
-  Future<PortfolioState> build() async => const PortfolioState();
+  Future<PortfolioState> build() async => PortfolioState(usdTry: usdTry);
 
   @override
   Future<void> addAsset({
@@ -184,5 +186,110 @@ void main() {
     ));
     await tester.pump();
     expect(find.text('Eurobond'), findsNothing);
+  });
+
+  group('toplam kartında TL karşılığı (yasin 2026-10-08)', () {
+    Future<void> tahvilSec(WidgetTester tester, {required double usdTry}) async {
+      tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          portfolioProvider.overrideWith(() => _KaydedenPortfoy(usdTry: usdTry)),
+          addAssetPriceLookupProvider.overrideWithValue(_AgYok()),
+          eurobondKatalogProvider.overrideWith((ref) async => [
+                (
+                  _tr28,
+                  EurobondFiyati(
+                      isin: _tr28.isin,
+                      temizFiyat: 100,
+                      guncellendi: DateTime.utc(2026, 10, 8)),
+                ),
+              ]),
+        ],
+        child: MaterialApp(
+          theme: ThemeData.light(),
+          home: const AddAssetScreen(prefillType: AssetType.eurobond),
+        ),
+      ));
+      await tester.pump();
+      await tester.enterText(find.widgetWithText(TextField, '0').first, '1000');
+      await tester.pump();
+      await tester.tap(find.text('Tahvil seçmek için dokun'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Türkiye %9,875 2028'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('canlı kur biliniyorsa dolar tutarın altında ₺ satırı',
+        (tester) async {
+      await tahvilSec(tester, usdTry: 41.5);
+      final satir = find.byKey(const ValueKey('toplam-tl-karsiligi'),
+          skipOffstage: false);
+      expect(satir, findsOneWidget);
+      final metin = (tester.widget<Text>(satir)).data!;
+      expect(metin, startsWith('≈ ₺'));
+      expect(metin, contains('1 USD = 41,5000'));
+    });
+
+    testWidgets('kur bilinmiyorsa (1.0) TL satırı YOK — uydurma tutar yok',
+        (tester) async {
+      await tahvilSec(tester, usdTry: 1.0);
+      expect(find.byKey(const ValueKey('toplam-tl-karsiligi')), findsNothing);
+    });
+  });
+
+  group('tlKarsiligiKuru', () {
+    final bugun = DateTime(2026, 10, 8, 14);
+    test('TRY için kur yok', () {
+      expect(
+          tlKarsiligiKuru(
+              currency: 'TRY',
+              tarih: bugun,
+              canliKur: 41.5,
+              tarihli: null,
+              now: bugun),
+          isNull);
+    });
+    test('bugünkü alımda canlı kur', () {
+      expect(
+          tlKarsiligiKuru(
+              currency: 'USD',
+              tarih: bugun,
+              canliKur: 41.5,
+              tarihli: 30,
+              now: bugun),
+          41.5);
+    });
+    test('geriye tarihli alımda alım günü kuru, canlı kur DEĞİL', () {
+      expect(
+          tlKarsiligiKuru(
+              currency: 'USD',
+              tarih: DateTime(2026, 3, 2),
+              canliKur: 41.5,
+              tarihli: 36.2,
+              now: bugun),
+          36.2);
+    });
+    test('geriye tarihli ve kur henüz yok: null (canlıya düşmez)', () {
+      expect(
+          tlKarsiligiKuru(
+              currency: 'USD',
+              tarih: DateTime(2026, 3, 2),
+              canliKur: 41.5,
+              tarihli: null,
+              now: bugun),
+          isNull);
+    });
+    test('yüklenmemiş kur (1.0) gösterilmez', () {
+      expect(
+          tlKarsiligiKuru(
+              currency: 'USD',
+              tarih: bugun,
+              canliKur: 1.0,
+              tarihli: null,
+              now: bugun),
+          isNull);
+    });
   });
 }

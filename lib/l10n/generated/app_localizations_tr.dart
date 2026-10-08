@@ -764,6 +764,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Alım-satım komisyonu maliyete eklenir; kâr/zarar gerçek rakamı gösterir.';
 
   @override
+  String totalCostTlEquivalent(String amount, String currency, String rate) {
+    return '≈ $amount · 1 $currency = $rate';
+  }
+
+  @override
   String get costPreviewHint =>
       'Miktar girince toplam maliyet burada görünecek.';
 
