@@ -8,6 +8,35 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-08 Sadeleştirme 2 — yedi değişiklik bayrak altında (dal `claude/project-thread-v5c9qb`)
+
+Plan: "sandık Sade Ekran Planı" (https://claude.ai/artifact/GDtX7QQzjB1nxBg5QRr8hW),
+önce/sonra: https://claude.ai/artifact/JTisJaCXH8pH8NiPcnph6m. Sunucu, şema,
+migration YOK; dağıtım gerekmez. Yedi bayrak da kodda KAPALI doğar; kapalıyken
+ekranlar birebir eski. Tek bayraksız değişiklik: varlık sayfasındaki teknik
+sinyal paneli artık yatırımcı seviyesine bakıyor (Başlangıç'ta gizli, varlık
+detayıyla aynı kural — hata düzeltmesi).
+
+- [ ] PR birleşip TestFlight build'i gelince Firebase › Remote Config'e yedi
+      anahtarı **boolean, varsayılan false** ekle ve "TestFlight" koşuluyla
+      `true` yap; telefonda dene:
+      - `donem_hafizasi` — seçtiğin dönem Performans, varlık detayı/sayfası,
+        Takip listesi ve Karşılaştır'da ortak.
+      - `performans_tek_akis` — Performans tek sayfa; Grafik|Özet yok, dönem +
+        Filtre tek satır (yalnız `period_summary_enabled` açıkken).
+      - `portfoy_dagilim_cubugu` — Portföy'de halka yerine dağılım çubuğu,
+        "Halka ›" eski halkayı açar.
+      - `varlik_detay_katmanli` — varlık detayı: Pozisyonun (3 rakam +
+        Ayrıntı) → Analiz (katlı) → Geçmiş ve belgeler.
+      - `sinyal_on_ayar` — Sinyal ayarlarında Az / Dengeli / Çok; ayrıntı
+        "Kategoriye göre özelleştir" altında. Dengeli = bugünkü varsayılanlar.
+      - `raporlar_kapisi` — Performans'ta kupa yerine "Raporlar" (hafta özeti,
+        aylık rapor, yıl özeti, Sıralama).
+      - `genel_arama` — Ana ekranda Yenile yerine Ara (varlıklarım, piyasa,
+        eylemler); yenileme aşağı çekerek.
+- [ ] Denedikten sonra hangilerinin herkese açılacağını söyle; açılanlar için
+      sürüm notu + tanıtım turu adımı (CLAUDE.md "Yenilikler") ayrıca yazılır.
+
 ## ⏳ 2026-10-08 Sadeleştirme kalanları + bulut oturumu kurulumu — PR #110 (dal `claude/project-thread-ad3on0`)
 
 Sunucu, şema ve bayrak değişikliği YOK; dağıtım gerekmez. Bugün kartının
