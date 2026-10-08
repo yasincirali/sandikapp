@@ -317,6 +317,38 @@ double onerilenStopaj(DateTime baslangic, int? gun) {
   return satir.uzun;
 }
 
+/// Hızlı Al/Sat'ta mevduat işleminin kaydedilecek payı ve birim fiyatı.
+///
+/// ## Neden tutarla (kullanıcı bildirimi, 2026-10-08)
+/// *"Vadeli mevduatta lot değil TL değeri alıyor olmalı. Satış değeri de
+/// direkt ne yazıldıysa o; stopaj zaten kesilip kâr olarak üstüne ekleniyor."*
+/// Diyalog mevduatta da hisse gibi "Miktar" (pay) soruyordu: birim değer
+/// 1,05 iken ₺10.000 çekmek isteyen 10.000 yazıyor, satış 10.000 × 1,05 =
+/// ₺10.500 kaydediliyordu — kazanılmış net faiz bir kez daha "kâr payı"
+/// olarak tutara biniyordu. Alışta da birim fiyat alanı birim değerle dolu
+/// geliyor, yazılan tutar paya bölünmeden kaydediliyordu.
+///
+/// Kural: kullanıcı TL TUTARI yazar; pay = tutar / birim, fiyat = birim.
+/// Böylece alışın maliyeti ve satışın değeri tam yazılan tutardır; faiz
+/// birim değerde (sözleşmeden) kalır, iki kez sayılmaz.
+///
+/// Satışta "Hepsi": tutar eldeki bakiyeye kuruş payıyla eşitse pay eldekinin
+/// TAMAMI olur — 1e-9'luk pay artığı pozisyonu açık bırakmasın. Bakiyeyi
+/// aşan satış ya da geçersiz giriş `null` döner (çağıran hata gösterir).
+({double pay, double birim})? mevduatTutarIslemi({
+  required double tutar,
+  required double birim,
+  required double eldekiPay,
+  required bool satis,
+}) {
+  if (!(tutar > 0) || !(birim > 0) || !tutar.isFinite) return null;
+  if (!satis) return (pay: tutar / birim, birim: birim);
+  final bakiye = eldekiPay * birim;
+  if ((tutar - bakiye).abs() < 0.01) return (pay: eldekiPay, birim: birim);
+  if (tutar > bakiye) return null;
+  return (pay: tutar / birim, birim: birim);
+}
+
 /// Yahoo `range` → seri penceresinin süresi (mevduat sentetik serisi için).
 Duration aralikSuresi(String range) => switch (range) {
       '1d' => const Duration(days: 1),

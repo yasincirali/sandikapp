@@ -4472,6 +4472,18 @@ abstract class AppLocalizations {
   /// **'Mevcut miktarı ({qty}) aşamazsın'**
   String cannotExceedQuantity(String qty);
 
+  /// No description provided for @depositAmountLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar'**
+  String get depositAmountLabel;
+
+  /// No description provided for @cannotExceedBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevcut bakiyeyi ({amount}) aşamazsın'**
+  String cannotExceedBalance(String amount);
+
   /// No description provided for @boughtAmount.
   ///
   /// In tr, this message translates to:

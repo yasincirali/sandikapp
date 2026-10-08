@@ -2568,6 +2568,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get depositAmountLabel => 'Tutar';
+
+  @override
+  String cannotExceedBalance(String amount) {
+    return 'Mevcut bakiyeyi ($amount) aşamazsın';
+  }
+
+  @override
   String boughtAmount(String qty, String unit) {
     return '$qty $unit alındı';
   }
