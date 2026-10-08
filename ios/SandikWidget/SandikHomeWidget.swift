@@ -415,6 +415,16 @@ struct SandikKilitEntry: TimelineEntry {
     /// Bkz. `WidgetKeys.yalnizBorsa`.
     let yalnizBorsa: Bool
     let sparkline: [Double]
+    /// Rakamın uygulamadaki saati ("13:05"); yalnız uygulamanın kaydından
+    /// okunduğunda dolu, Canlı Etkinlik'ten okununca boş.
+    ///
+    /// Neden (kullanıcı bildirimi + kararı "Yalnız saat damgası",
+    /// 2026-10-08): kilit ekranında widget +%0,12 / ₺3.383, hemen altındaki
+    /// Canlı Etkinlik +%0,09 / ₺2.703 gösteriyordu. Formül aynı, an farklı:
+    /// Canlı Etkinlik'i sunucu dakikada bir tazeliyor, widget ise uygulamanın
+    /// son ön plan kaydını gösteriyor (zaman çizelgesi `.never`). Sunucudan
+    /// çekme yerine farkı GÖRÜNÜR kılıyoruz: hangi anın rakamı olduğu yazar.
+    var asOfText: String = ""
 
     /// Yön yalnız gerçek, görünür bir hareket varken (ana ekranla aynı kural).
     var hasDirection: Bool { hasData && !isHidden && !isFlat }
@@ -425,7 +435,7 @@ struct SandikKilitEntry: TimelineEntry {
             date: tarih, hasData: hasData, isHidden: isHidden,
             showsAmount: showsAmount, pctText: pctText, changeText: changeText,
             isPositive: isPositive, isFlat: isFlat, isMarketOpen: false,
-            yalnizBorsa: yalnizBorsa, sparkline: sparkline)
+            yalnizBorsa: yalnizBorsa, sparkline: sparkline, asOfText: asOfText)
     }
 
     static let placeholder = SandikKilitEntry(
@@ -486,7 +496,8 @@ struct SandikKilitProvider: TimelineProvider {
             isFlat: defaults.bool(forKey: WidgetKeys.isFlat),
             isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
             yalnizBorsa: yalnizBorsaOku(defaults),
-            sparkline: seri
+            sparkline: seri,
+            asOfText: gizli ? "" : (defaults.string(forKey: WidgetKeys.updatedAt) ?? "")
         )
     }
 
@@ -527,6 +538,13 @@ struct SandikKilitView: View {
 
     private var ok: String? {
         entry.hasDirection ? directionArrow(entry.isPositive) : nil
+    }
+
+    /// Seans açıkken ve rakam uygulamanın kaydındansa saati yazılır; kapalı
+    /// seansta rakam zaten donmuştur, sağdaki "açılış" bilgisi yeter.
+    private var saatGorunur: Bool {
+        entry.hasData && !entry.isHidden && entry.isMarketOpen
+            && !entry.asOfText.isEmpty
     }
 
     private var tutarGorunur: Bool {
@@ -648,6 +666,15 @@ struct SandikKilitView: View {
                     .minimumScaleFactor(0.7)
                     // Kilitliyken sistem örter; Face ID ile bakınca açılır.
                     .privacySensitive()
+            }
+            if saatGorunur {
+                // Tutar varken yer dar (12 mini ~157 pt, sağda geri sayım):
+                // yalnız saat. Tutar yokken "itibarıyla" da sığar.
+                Text(tutarGorunur ? "· \(entry.asOfText)"
+                                  : "\(entry.asOfText) itibarıyla")
+                    .font(.sandikNumber(11, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             Spacer(minLength: 4)
             seansBilgisi

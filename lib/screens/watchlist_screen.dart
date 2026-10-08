@@ -816,110 +816,110 @@ class _AddHeader extends ConsumerWidget {
       // düğme 44 pt, etiketler `bodySmall`, şerit 4 pt. Bir ara segment
       // seçicinin 48/40 ölçüsüne indirilmişti; kullanıcı taslağı istedi —
       // kart bir seçici değil, bilgi + eylem kartı; kendi ölçüsü olabilir.
-      child: Container(
+      // Kabuk kenarsız `SandikCard` (2. tur, 2026-10-08) — piksel aynı.
+      child: SizedBox(
         height: 56,
-        padding: const EdgeInsets.only(
-            left: SandikSpace.md2, right: SandikSpace.xs2),
-        decoration: BoxDecoration(
-          color: c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Semantics(
-                label: sinirli
-                    ? context.l10n.watchlistCountOfLimit(n, limit)
-                    : '${context.l10n.watchlistInListLabel} $n',
-                excludeSemantics: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(context.l10n.watchlistInListLabel,
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: c.text58)),
-                        const Spacer(),
-                        Text.rich(
-                          TextSpan(
-                            text: '$n',
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: dolu ? c.loss : c.text90),
-                            children: [
-                              if (sinirli)
-                                TextSpan(
-                                    text: '/$limit',
-                                    style: TextStyle(color: c.text36)),
-                            ],
+        child: SandikCard(
+          bordered: false,
+          padding: const EdgeInsets.only(
+              left: SandikSpace.md2, right: SandikSpace.xs2),
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: sinirli
+                      ? context.l10n.watchlistCountOfLimit(n, limit)
+                      : '${context.l10n.watchlistInListLabel} $n',
+                  excludeSemantics: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(context.l10n.watchlistInListLabel,
+                              style: context.t.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: c.text58)),
+                          const Spacer(),
+                          Text.rich(
+                            TextSpan(
+                              text: '$n',
+                              style: context.t.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: dolu ? c.loss : c.text90),
+                              children: [
+                                if (sinirli)
+                                  TextSpan(
+                                      text: '/$limit',
+                                      style: TextStyle(color: c.text36)),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      if (sinirli) ...[
+                        const SizedBox(height: SandikSpace.xs2 + 1),
+                        _KapasiteSeridi(dolu: n, toplam: limit),
                       ],
-                    ),
-                    if (sinirli) ...[
-                      const SizedBox(height: SandikSpace.xs2 + 1),
-                      _KapasiteSeridi(dolu: n, toplam: limit),
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: SandikSpace.smd),
-            SandikTappable(
-              semanticLabel: dolu
-                  ? context.l10n.watchlistLimitReached(limit)
-                  : context.l10n.addToWatchlist,
-              onTap: dolu
-                  ? () => sandikSnack(
-                        context,
-                        context.l10n.watchlistLimitReached(limit),
-                        kind: SandikSnackKind.warning,
-                      )
-                  : () => _ekle(context),
-              // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
-              // (taslak), 6 pt dikey pay.
-              child: SizedBox(
-                height: 56,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: SandikSpace.md2),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: dolu ? Colors.transparent : c.amberFill,
-                      borderRadius: BorderRadius.circular(SandikSpace.sm2),
-                      border: dolu ? Border.all(color: c.hairline) : null,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (!dolu) ...[
-                          Icon(Icons.add_rounded,
-                              size: 18, color: c.onStatus),
-                          const SizedBox(width: SandikSpace.xs),
+              const SizedBox(width: SandikSpace.smd),
+              SandikTappable(
+                semanticLabel: dolu
+                    ? context.l10n.watchlistLimitReached(limit)
+                    : context.l10n.addToWatchlist,
+                onTap: dolu
+                    ? () => sandikSnack(
+                          context,
+                          context.l10n.watchlistLimitReached(limit),
+                          kind: SandikSnackKind.warning,
+                        )
+                    : () => _ekle(context),
+                // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
+                // (taslak), 6 pt dikey pay.
+                child: SizedBox(
+                  height: 56,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: SandikSpace.md2),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: dolu ? Colors.transparent : c.amberFill,
+                        borderRadius: BorderRadius.circular(SandikSpace.sm2),
+                        border: dolu ? Border.all(color: c.hairline) : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!dolu) ...[
+                            Icon(Icons.add_rounded,
+                                size: 18, color: c.onStatus),
+                            const SizedBox(width: SandikSpace.xs),
+                          ],
+                          Text(
+                            dolu
+                                ? context.l10n.watchlistFullShort
+                                : context.l10n.watchlistAddShort,
+                            style: context.t.titleSmall?.copyWith(
+                                color: dolu ? c.text58 : c.onStatus,
+                                fontWeight: FontWeight.w700),
+                          ),
                         ],
-                        Text(
-                          dolu
-                              ? context.l10n.watchlistFullShort
-                              : context.l10n.watchlistAddShort,
-                          style: context.t.titleSmall?.copyWith(
-                              color: dolu ? c.text58 : c.onStatus,
-                              fontWeight: FontWeight.w700),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

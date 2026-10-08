@@ -177,7 +177,7 @@ class _DemoKabuguState extends State<DemoKabugu> {
     if (ctx == null) return;
     _sayfaAcik = true;
     CrashReporter.arkaPlan(
-      showModalBottomSheet<bool>(
+      showSandikSheet<bool>(
         context: ctx,
         backgroundColor: Colors.transparent,
         isScrollControlled: true,

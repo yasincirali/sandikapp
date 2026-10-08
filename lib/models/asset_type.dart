@@ -55,14 +55,11 @@ enum AssetType {
       context.isLight ? onLightSurface : color;
 
   /// [onSurface]'in light dalı — test edilebilsin diye `BuildContext`'siz.
-  Color get onLightSurface {
-    // 0,28: amber/gold gibi sıcak, parlak tonların light zeminde 4,5:1'e
-    // ulaştığı en yüksek açıklık (0,32'de altın 4,03:1 kalıyordu).
-    final hsl = HSLColor.fromColor(color);
-    return hsl
-        .withLightness(hsl.lightness > 0.28 ? 0.28 : hsl.lightness)
-        .toColor();
-  }
+  // 0,28: amber/gold gibi sıcak, parlak tonların light zeminde 4,5:1'e
+  // ulaştığı en yüksek açıklık (0,32'de altın 4,03:1 kalıyordu). Hesap
+  // `SandikOkunurRenk.acikZemindeMetin`'de — Varlık Ekle seçicileri aynı
+  // kuralı türü bilmeden (yalnız `Color`) uyguluyor.
+  Color get onLightSurface => color.acikZemindeMetin;
 
   /// Ekranda görünen tür adı — dile göre (3.20).
   ///

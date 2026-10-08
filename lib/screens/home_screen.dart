@@ -45,7 +45,7 @@ import 'main_navigation_screen.dart' show MainNavigationScreen;
 import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
 import 'portfolio_performance_screen.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/piyasa_seridi.dart';
 import 'add_watchlist_screen.dart';
 import '../widgets/tour_anchor.dart';
@@ -68,7 +68,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // üçüncü kez taşıyordu ve toplam kartıyla hareket listesinin arasını
   // uzatıyordu. Ana sayfadaki toplam/hareketler artık filtresizdir.
   final _scrollCtrl = ScrollController();
-  bool _reloading = false;
 
   /// Açık Ana sekmesine yeniden dokununca başa dön (bkz. [SekmeBasaDon]).
   late final VoidCallback _basaDonBirak;
@@ -101,18 +100,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _reload() async {
-    if (_reloading) return;
-    setState(() => _reloading = true);
-    // `refreshPrices` hatayı kendi içinde yakalar; finally yalnızca beklenmeyen
-    // bir istisnada döner butonunun sonsuza dek kilitli kalmamasını sağlar
-    // (handler sahipsiz: onPressed future'ı beklemiyor).
-    try {
-      await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
-    } finally {
-      if (mounted) setState(() => _reloading = false);
-    }
-  }
+  /// Fiyatları zorla tazeler. Kendi `_reloading` bayrağı YOK (2026-10-08,
+  /// tek yükleniyor davranışı): üst çubuktaki yenile düğmesinin kilidi ve
+  /// döneni [SandikAsyncTap]'te. Bayrağın öteki işi — çift dokunuşta ikinci
+  /// tur atmamak — provider'da: `refreshPrices` süren zorlamalı tura katılır
+  /// (`_surenTur`), şerit "tekrar dene"si ve hata görünümü de böylece tek
+  /// turla kalır. `refreshPrices` hatayı kendi içinde yakalar.
+  Future<void> _reload() =>
+      ref.read(portfolioProvider.notifier).refreshPrices(force: true);
 
   @override
   void initState() {
@@ -163,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // öne dönüşte görünürdü. Sheet provider'ı izlediği için satır, liste
     // açıkken yerine oturur.
     _sunucuBildirimleriniTazele();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -205,7 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Portföy listesiyle AYNI nesne: pozisyon görünümü. Ham lot
             // satış/silinmiş kayıtsa grafik boş kalır (bkz. `pozisyonGorunumu`).
             final gorunum = pozisyonGorunumu(assets!, asset);
-            Navigator.push(
+            pushGuarded(
               context,
               adaptiveRoute<void>(
                   builder: (_) => AssetDetailScreen(
@@ -295,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           NotificationService.instance.openHaftaOzeti();
           break;
         }
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -309,7 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         MainNavigationScreen.sekmeIstegi.value = 1;
       case AppNotification.inflationDay:
         // TÜFE günü → Özet: reel getiri kartı orada.
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -320,7 +315,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       case AppNotification.monthlySummary:
         // Aylık özet → 1A dönemi; bildirimin anlattığı ay orada.
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -669,13 +664,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   TourAnchor(
                     target: TourTarget.yenileTusu,
-                    child: _HeaderIconButton(
+                    // Kilit + gösterge standart bileşende: ikon görünmez
+                    // ama yer tutar, gösterge üstünde (eskiden ikonla yer
+                    // değiştiriyordu, aynı boy).
+                    child: SandikAsyncTap(
                       onTap: _reload,
                       semanticLabel: context.l10n.refreshPrices,
-                      child: _reloading
-                          ? const CustomLoadingIndicator(size: 20)
-                          : Icon(Icons.refresh_rounded,
-                              color: context.c.text58, size: 22),
+                      // Eski düğme SandikTappable varsayılanıyla titreşirdi.
+                      zemin: context.chip(selected: false),
+                      child: _HeaderIconKutusu(
+                        kutusuz: true,
+                        child: Icon(Icons.refresh_rounded,
+                            color: context.c.text58, size: 22),
+                      ),
                     ),
                   ),
                   const SizedBox(width: SandikSpace.sm),
@@ -698,13 +699,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // (`zilSinyalleriGosterProvider`). 2026-10-04'e kadar zil
                   // Başlangıç'ta tümden gizliydi; bayrak `seviye_anketi`
                   // (ve onu soran `zilGorunurProvider`) 2026-10-05'te kalktı.
+                  // Çıkış düğmesi BURADA DEĞİL (yasin, 2026-10-08: "sadece
+                  // profilden logoff yapılabilsin"). 2026-10-04'te Portföy ve
+                  // Performans çubuklarından kalkmış, ana ekranda kalmıştı;
+                  // artık tek yeri Profil üst çubuğu. Hesap işi Profil'de,
+                  // ana ekran portföyün kendisi — yanlışlıkla dokunuş da
+                  // kalkıyor.
                   TourAnchor(
                     target: TourTarget.bildirimCani,
                     child: _SignalBadgeButton(onTap: _scrollToSignals),
                   ),
-                  const SizedBox(width: SandikSpace.sm),
-                  SandikLogoutButton(
-                      onPressed: () => confirmAndLogout(context, ref)),
                 ],
               ),
             ),
@@ -1299,6 +1303,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required String baslik,
     required String mesaj,
     required String eylem,
+    Future<void> Function()? islem,
   }) async {
     return showSandikConfirm(
       context: context,
@@ -1306,6 +1311,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
       message: mesaj,
       confirmLabel: eylem,
       destructive: true,
+      islem: islem,
     );
   }
 
@@ -1482,7 +1488,12 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         // Sheet ARTIK HEMEN KAPANMIYOR: eskiden `Navigator.pop`
                         // silme işleminin sonucunu beklemeden çağrılıyordu ve
                         // hata olsa bile kullanıcı temizlenmiş sanıyordu.
+                        //
+                        // İstek onay düğmesinin İÇİNDE koşar (2026-10-08,
+                        // tek yükleniyor davranışı): diyalog göstergeyle
+                        // açık kalır, iş bitince kapanır; hata yolu aynı.
                         onTap: () async {
+                          var temizlendi = false;
                           final onay = await _onayAl(
                             context,
                             baslik: context.l10n.clearAllLower,
@@ -1493,14 +1504,17 @@ class _SignalsBottomSheet extends ConsumerWidget {
                             // "sildim ama duruyor" hissi doğuyordu.
                             mesaj: context.l10n.clearAllSignalsBody(active.length),
                             eylem: context.l10n.clearVerb,
+                            islem: () async {
+                              try {
+                                await onDismissAll();
+                                temizlendi = true;
+                              } catch (_) {
+                                if (context.mounted) _hataGoster(context);
+                              }
+                            },
                           );
-                          if (!onay) return;
-                          try {
-                            await onDismissAll();
-                            if (context.mounted) Navigator.pop(context);
-                          } catch (_) {
-                            if (context.mounted) _hataGoster(context);
-                          }
+                          if (!onay || !temizlendi) return;
+                          if (context.mounted) Navigator.pop(context);
                         },
                         child: Text(
                           context.l10n.clearAllUpper,
@@ -1565,7 +1579,12 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                         decoration: TextDecoration.none),
                                   ),
                                   const Spacer(),
-                                  SandikTappable(
+                                  // SandikAsyncTap: "hepsini sil" yolunda
+                                  // onay diyaloğu yok (kapsam sorusu onay
+                                  // yerine geçer), istek bu düğmede
+                                  // göstergeli koşar; ikinci dokunuş ikinci
+                                  // diyalog/istek açmaz.
+                                  SandikAsyncTap(
                                     semanticLabel:
                                         context.l10n.deleteHistoryCount(history.length),
                                     onTap: () async {
@@ -1582,26 +1601,31 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                             );
                                       if (hepsiniSil == null) return;
                                       if (!context.mounted) return;
-                                      if (!hepsiniSil) {
-                                        final onay = await _onayAl(
-                                          context,
-                                          baslik: context.l10n.deleteHistoryTitle,
-                                          mesaj: context.l10n.deleteHistoryBody(history.length),
-                                          eylem: context.l10n.permanentDeleteUpper,
-                                        );
-                                        if (!onay) return;
-                                      }
-                                      try {
-                                        if (hepsiniSil) {
-                                          await onDeleteAll();
-                                        } else {
-                                          await onDeleteHistory();
-                                        }
-                                      } catch (_) {
-                                        if (context.mounted) {
-                                          _hataGoster(context);
+                                      Future<void> sil() async {
+                                        try {
+                                          if (hepsiniSil) {
+                                            await onDeleteAll();
+                                          } else {
+                                            await onDeleteHistory();
+                                          }
+                                        } catch (_) {
+                                          if (context.mounted) {
+                                            _hataGoster(context);
+                                          }
                                         }
                                       }
+
+                                      if (hepsiniSil) return sil();
+                                      // Yalnız geçmiş: silme onay düğmesinin
+                                      // içinde (diyalog göstergeyle açık
+                                      // kalır, iş bitince kapanır).
+                                      await _onayAl(
+                                        context,
+                                        baslik: context.l10n.deleteHistoryTitle,
+                                        mesaj: context.l10n.deleteHistoryBody(history.length),
+                                        eylem: context.l10n.permanentDeleteUpper,
+                                        islem: sil,
+                                      );
                                     },
                                     // 44pt dokunma hedefi: metin ~18pt,
                                     // dikey padding ile eşiğe çıkar.
@@ -1760,7 +1784,8 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               )
             else if (onDelete != null)
               IconButton(
@@ -1768,7 +1793,8 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               ),
           ],
         ),
@@ -1831,27 +1857,23 @@ class _BalanceToggleButton extends ConsumerWidget {
 
 // ── Header ikon kutusu ────────────────────────────────────────────────────────
 
-class _HeaderIconButton extends StatelessWidget {
-  final VoidCallback onTap;
+/// Üst çubuk ikon kutusu (44×44 çip). Dokunma sarmalayanda
+/// ([SandikAsyncTap]) — yenile düğmesi isteği beklediği için.
+class _HeaderIconKutusu extends StatelessWidget {
   final Widget child;
-  final String semanticLabel;
-  const _HeaderIconButton({
-    required this.onTap,
-    required this.child,
-    required this.semanticLabel,
-  });
+
+  /// `true` → kutu [SandikAsyncTap.zemin]'de (yenile düğmesi): istek
+  /// sürerken kutu yerinde kalır, yalnız ikon göstergeye yer açar.
+  final bool kutusuz;
+  const _HeaderIconKutusu({required this.child, this.kutusuz = false});
 
   @override
   Widget build(BuildContext context) {
-    return SandikTappable(
-      onTap: onTap,
-      semanticLabel: semanticLabel,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: context.chip(selected: false),
-        child: Center(child: child),
-      ),
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: kutusuz ? null : context.chip(selected: false),
+      child: Center(child: child),
     );
   }
 }

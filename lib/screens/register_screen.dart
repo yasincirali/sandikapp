@@ -4,11 +4,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart' show TapGestureRecognizer;
 import 'package:flutter/material.dart'
     show
+        BorderSide,
+        ButtonStyle,
+        FilledButton,
         Form,
         FormState,
         GlobalKey,
         Icons,
         Material,
+        RoundedRectangleBorder,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/kullanici_adi.dart';
@@ -26,6 +30,7 @@ import '../utils/friendly_error.dart';
 import 'legal_doc_screen.dart';
 import 'otp_verification_screen.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/social_sign_in_buttons.dart';
 import '../widgets/yasal_adimlar.dart';
 import '../l10n/l10n.dart';
@@ -135,7 +140,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   // gösterir (yalnızca ilk eksik bir uyarıda değil) ve şifre kuralları
   // karşılanmayanı kırmızıyla işaretler (kullanıcı kararı 2026-09-29).
   bool _gonderimDenendi = false;
-  bool _submitting = false; // register çağrısı + başarı dialog süresince
 
 
 
@@ -298,7 +302,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _submitting = true);
     final emailForOtp = _emailCtrl.text.trim().toLowerCase();
     // Kullanıcının GÖRDÜĞÜ onay metinleri — OTP doğrulanınca (oturum o an
     // açılır) yasal onay kaydı bununla yazılır. `await`'ten önce: context
@@ -358,8 +361,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
       showAppError(context, e);
-    } finally {
-      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -415,9 +416,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // isLoading: register çağrısı devam ediyor VEYA başarı dialog süresince
-    // buton devre dışı kalsın.
-    final isLoading = ref.watch(authProvider).isLoading || _submitting;
+    // Kayıt isteği + OTP ekranı açıkken düğmenin kilidi ve göstergesi
+    // [SandikAsyncButton]'da (eski `_submitting` bayrağı, 2026-10-08).
+    // Burada yalnız auth sağlayıcısının kendi yüklemesi (ör. sosyal giriş
+    // sürüyor) düğmeyi pasifler.
+    final isLoading = ref.watch(authProvider).isLoading;
 
     return CupertinoPageScaffold(
       backgroundColor: context.c.background,
@@ -570,7 +573,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         : AuthService.validatePassword(_passCtrl.text),
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.lock_outline,
+                      child: Icon(Icons.lock_outline_rounded,
                           color: context.c.text36, size: 20),
                     ),
                     suffixIcon: CupertinoButton(
@@ -621,7 +624,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         : null,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.lock_outline,
+                      child: Icon(Icons.lock_outline_rounded,
                           color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
@@ -633,51 +636,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               _adimListesi(context),
               const SizedBox(height: 24),
 
-              // Kayıt Ol butonu — GestureDetector(opaque) instead of
-              // CupertinoButton: on iOS release the CupertinoButton was
-              // losing the gesture arena to the enclosing Scrollable.
-              // Button stays tappable even when incomplete so we can tell
-              // the user WHICH requirement is missing.
-              SandikBasma(
-                behavior: HitTestBehavior.opaque,
-                onTap: isLoading
-                    ? null
-                    : () {
-                        final missing = _firstMissingRequirement();
-                        if (missing != null) {
-                          _eksikleriGoster();
-                          showAppError(context, AuthException(missing));
-                          return;
-                        }
-                        _register();
-                      },
-                child: Container(
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: (isLoading || !_canSubmit)
-                        ? context.c.amberFill.withValues(alpha: 0.45)
-                        : context.c.amberFill.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    border: Border.all(
-                        color: context.c.amberFill.withValues(alpha: 0.60)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: context.c.amberFill.withValues(alpha: 0.28),
-                        blurRadius: 18,
-                        spreadRadius: -4,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+              // Kayıt Ol butonu. Eksik varken de basılabilir kalır ki
+              // kullanıcıya HANGİ şartın eksik olduğunu söyleyebilelim;
+              // eksikken dolgu sönük (0.45) ama düğme etkin.
+              //
+              // Tek yükleniyor davranışı (2026-10-08): [SandikAsyncButton],
+              // eski cam görünüm `style` + dış gölge ile birebir. Eski not:
+              // CupertinoButton iOS release'te jest yarışını kaydırmaya
+              // kaptırıyordu; FilledButton düz dokunma tanıyıcısı kullanır.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: SandikRadius.mdAll,
+                  boxShadow: [
+                    BoxShadow(
+                      color: context.c.amberFill.withValues(alpha: 0.28),
+                      blurRadius: 18,
+                      spreadRadius: -4,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: SandikAsyncButton(
+                  style: _kayitDugmeStili(context, soluk: !_canSubmit),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final missing = _firstMissingRequirement();
+                          if (missing != null) {
+                            _eksikleriGoster();
+                            showAppError(context, AuthException(missing));
+                            return;
+                          }
+                          await _register();
+                        },
+                  child: Text(
+                    context.l10n.register,
+                    style: context.t.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.c.onAmber),
                   ),
-                  alignment: Alignment.center,
-                  child: isLoading
-                      ? const CustomLoadingIndicator(size: 20)
-                      : Text(
-                          context.l10n.register,
-                          style: context.t.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: context.c.onAmber),
-                        ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -1007,3 +1004,18 @@ class YasalOnayKutusu extends StatelessWidget {
     );
   }
 }
+
+/// "Kayıt ol" cam düğmesi — eski `Container` süslemesinin `ButtonStyle`
+/// karşılığı. [soluk]: şartlar eksik ama düğme etkin (0.45); meşgul/pasif
+/// de 0.45 (eski `isLoading` rengi).
+ButtonStyle _kayitDugmeStili(BuildContext context, {required bool soluk}) =>
+    FilledButton.styleFrom(
+      backgroundColor:
+          context.c.amberFill.withValues(alpha: soluk ? 0.45 : 0.92),
+      foregroundColor: context.c.onAmber,
+      disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.45),
+      disabledForegroundColor: context.c.onAmber,
+      textStyle: context.t.bodyLarge,
+      side: BorderSide(color: context.c.amberFill.withValues(alpha: 0.60)),
+      shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+    );

@@ -9,6 +9,7 @@ import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
+import 'sandik_async_button.dart';
 
 /// Takibe al / takipten çıkar — varlık sayfasıyla portföy varlık detayının
 /// ORTAK eylemi.
@@ -81,24 +82,29 @@ class TakipYildizi extends ConsumerStatefulWidget {
 }
 
 class _TakipYildiziState extends ConsumerState<TakipYildizi> {
-  bool _islem = false;
-
   @override
   Widget build(BuildContext context) {
     final k = widget.kimlik;
     final takipte = (ref.watch(watchlistProvider).valueOrNull ?? const [])
         .any((w) => w.key == k.key);
     if (!takipte) return const SizedBox.shrink();
-    return IconButton(
-      tooltip: context.l10n.vsUnwatchSemantics(k.name),
-      onPressed: _islem
-          ? null
-          : () async {
-              setState(() => _islem = true);
-              await takipDegistir(context, ref, k, takipte: true);
-              if (mounted) setState(() => _islem = false);
-            },
-      icon: Icon(Icons.star_rounded, color: context.c.gold),
+    final etiket = context.l10n.vsUnwatchSemantics(k.name);
+    // Kilit + gösterge standart bileşende (tek yükleniyor davranışı,
+    // 2026-10-08). Eski `_islem` bayrağı `finally`'siz kuruluydu: istek
+    // hata verirse yıldız kalıcı olarak pasif kalıyordu. IconButton'un
+    // ipucu ve 48pt hedefi korunur.
+    return Tooltip(
+      message: etiket,
+      child: SandikAsyncTap(
+        semanticLabel: etiket,
+        onTap: () => takipDegistir(context, ref, k, takipte: true),
+        child: SizedBox.square(
+          dimension: 48,
+          child: Center(
+            child: Icon(Icons.star_rounded, color: context.c.gold),
+          ),
+        ),
+      ),
     );
   }
 }

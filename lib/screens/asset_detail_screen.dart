@@ -109,6 +109,10 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
   /// sessizce YOK SAYILIR ve varsayılan seçilir — bkz. `_gunIciDestekli`.
   final int? initialPeriodDays;
 
+  /// Portföy satırından gelen başlık uçuşunun etiketi (yol haritası 2.14,
+  /// bayrak `varlik_hero_gecisi`). Satır verir; ekran kendisi uydurmaz.
+  final Object? heroEtiketi;
+
   const AssetDetailScreen({
     super.key,
     required this.asset,
@@ -116,6 +120,7 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
     this.lots,
     this.initialScrollOffset = 0,
     this.initialPeriodDays,
+    this.heroEtiketi,
   });
 
   @override
@@ -1095,7 +1100,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // verisi değil" hissini korur.
                             return AnimatedOpacity(
                               opacity: isStale ? 0.35 : 1.0,
-                              duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+                              duration: SandikMotion.stateOf(context),
                               curve: SandikMotion.enter,
                               child: Container(
                           // Kart Performans'la AYNI (ortak grafik stili).

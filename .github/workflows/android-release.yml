@@ -135,6 +135,9 @@ jobs:
           # define boş kalır: Google düğmesi görünmez, build kırılmaz.
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          # RevenueCat public SDK anahtarı (paywall). Secret yoksa define boş
+          # kalır: satın alma "kullanılamıyor" der, build kırılmaz.
+          REVENUECAT_ANDROID_KEY: ${{ secrets.REVENUECAT_ANDROID_KEY }}
         # --build-number: versionCode her koşuda ARTMALI. Eskiden pubspec'in +N'si
         # (7) kullanılıyordu; ikinci AAB Play'de "sürüm kodu kullanıldı" diye
         # reddedilirdi (2026-09-27 fark edildi, ilk yükleme 7). 100 + koşu no:
@@ -149,7 +152,8 @@ jobs:
             --dart-define=SUPABASE_URL_EU=$SUPABASE_URL_EU \
             --dart-define=SUPABASE_ANON_KEY_EU=$SUPABASE_ANON_KEY_EU \
             --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
-            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID \
+            --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY
 
       # Yan yükleme / doğrudan dağıtım için. --split-per-abi olmadan üretilen
       # APK üç ABI'yi birden taşır ve gereksiz büyük olur.
@@ -164,6 +168,9 @@ jobs:
           SUPABASE_ANON_KEY_EU: ${{ secrets.SUPABASE_ANON_KEY_EU }}
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          # RevenueCat public SDK anahtarı (paywall). Secret yoksa define boş
+          # kalır: satın alma "kullanılamıyor" der, build kırılmaz.
+          REVENUECAT_ANDROID_KEY: ${{ secrets.REVENUECAT_ANDROID_KEY }}
         run: |
           flutter build apk --release --split-per-abi \
             --build-number=$((100 + GITHUB_RUN_NUMBER)) \
@@ -173,7 +180,8 @@ jobs:
             --dart-define=SUPABASE_URL_EU=$SUPABASE_URL_EU \
             --dart-define=SUPABASE_ANON_KEY_EU=$SUPABASE_ANON_KEY_EU \
             --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
-            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID \
+            --dart-define=REVENUECAT_ANDROID_KEY=$REVENUECAT_ANDROID_KEY
 
       # Play'e yüklenen AAB'nin sembolleri strip'lenmiş olur; crash'lerin
       # okunabilir kalması için sembolleri ayrıca sakla.

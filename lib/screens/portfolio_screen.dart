@@ -10,8 +10,7 @@ import 'package:flutter/material.dart'
         Material,
         MaterialType,
         ListTile,
-        Divider,
-        showModalBottomSheet;
+        Divider;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
@@ -35,6 +34,9 @@ import '../widgets/asset_sparkline.dart';
 import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/ortak_secici.dart';
+import '../widgets/sandik_segment.dart';
+import '../widgets/varlik_baslik_hero.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
@@ -492,13 +494,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       // detay ekranını iki kez açıyor, Android'de
                                       // de iOS geçişi veriyordu (2026-09-23
                                       // denetimi F21).
-                                      onTap: (p) => pushGuarded(
+                                      heroAcik: RemoteConfigService
+                                          .instance.varlikHeroGecisi,
+                                      onTap: (p, hero) => pushGuarded(
                                         context,
                                         adaptiveRoute<void>(
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,
                                                   lots: p.lots,
+                                                  heroEtiketi: hero,
                                                 )),
                                       ),
                                       onDelete: (p) =>
@@ -572,93 +577,68 @@ class _BodyTabs extends StatelessWidget {
   final int count;
   final ValueChanged<int> onChanged;
 
+  // Kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol haritası
+  // 2.12). Eskiden amber dolgulu, kendi elle yazılmış bir segmentti; hemen
+  // altındaki ortak seçici (`OrtakSecici`) kayan zeminliydi ve aynı ekranda
+  // iki farklı "birini seç" görünüşü vardı. Dokunma hedefi (≥ 44 pt,
+  // `SandikTouch`), seçili/düğme semantiği ve seçiliye dokunuşun yok
+  // sayılması artık bileşenin sözleşmesi; burada tekrar yazılmaz.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
+    final etiketler = [context.l10n.myAssets, context.l10n.watchlist];
+    final rozetler = <int?>[null, count > 0 ? count : null];
+    return SandikSegment(
+      adet: 2,
+      secili: selected,
+      onSec: onChanged,
+      // Rozetli sekme sayıyı da okutur ("Takip listesi, 3 varlık").
+      semantik: (i) => rozetler[i] == null
+          ? etiketler[i]
+          : context.l10n.tabSemanticsCount(etiketler[i], rozetler[i]!),
+      oge: (context, i, secili) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _tab(context, 0, context.l10n.myAssets, null),
-          _tab(context, 1, context.l10n.watchlist, count > 0 ? count : null),
+          Flexible(
+            child: Text(
+              etiketler[i],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (rozetler[i] != null) ...[
+            const SizedBox(width: 6),
+            _SayiRozeti(sayi: rozetler[i]!),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _tab(BuildContext context, int i, String label, int? rozet) {
-    final secili = i == selected;
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: secili,
-        label: rozet == null ? label : context.l10n.tabSemanticsCount(label, rozet),
-        child: ExcludeSemantics(
-          child: SandikBasma(
-            // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın.
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (secili) return;
-              SandikHaptic.selection.perform();
-              onChanged(i);
-            },
-            child: Container(
-              // 44pt HIG dokunma hedefi.
-              constraints: const BoxConstraints(minHeight: 36),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                // Seçili değilken dolgu YOK — `Colors` bu dosyada import
-                // edilmiyor (material yalnızca `show` listesiyle geliyor).
-                color: secili ? context.c.amberFill : null,
-                borderRadius: BorderRadius.circular(SandikRadius.sm),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: secili ? context.c.onAmber : context.c.text58,
-                      ),
-                    ),
-                  ),
-                  if (rozet != null) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: secili
-                            ? context.c.onAmber.withValues(alpha: 0.18)
-                            : context.c.amberFill.withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: Text(
-                        '$rozet',
-                        style: context.t.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color:
-                              secili ? context.c.onAmber : context.c.amberText,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+/// Gövde sekmesindeki sayı rozeti. Seçimden bağımsız tek ton: seçim artık
+/// amber dolgu değil kayan nötr zemin olduğu için rozetin seçiliye göre
+/// renk tersinmesi (onAmber) gereksizleşti.
+class _SayiRozeti extends StatelessWidget {
+  const _SayiRozeti({required this.sayi});
+
+  final int sayi;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: context.c.amberFill.withValues(alpha: 0.20),
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
+        ),
+        child: Text(
+          '$sayi',
+          style: context.t.labelSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: context.c.amberText,
           ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 // ── Empty State ───────────────────────────────────────────────────────────────
@@ -872,7 +852,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
               },
               child: AnimatedOpacity(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 150)),
+                    SandikMotion.stateOf(context),
                 // Eksikti: curve verilmeyince Curves.linear devreye girer.
                 // Lejant sönümlemesi bir DURUM değişimidir → enter.
                 curve: SandikMotion.enter,
@@ -881,8 +861,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AnimatedContainer(
-                      duration: SandikMotion.of(
-                          context, const Duration(milliseconds: 150)),
+                      duration: SandikMotion.stateOf(context),
                       curve: SandikMotion.enter,
                       width: isTouched ? 10 : 8,
                       height: isTouched ? 10 : 8,
@@ -939,8 +918,13 @@ class _AssetList {
   final PortfolioState pState;
   final BazPara baz;
   final String? currentUserId;
-  final void Function(Position) onTap;
+
+  /// İkinci argüman başlık uçuşunun etiketi (bayrak kapalı → `null`).
+  final void Function(Position, Object? heroEtiketi) onTap;
   final void Function(Position) onDelete;
+
+  /// `varlik_hero_gecisi` (yol haritası 2.14).
+  final bool heroAcik;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
   // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
   // `void` kalsaydı `await` beklemez, panel yine erken kapanırdı.
@@ -964,6 +948,7 @@ class _AssetList {
     required this.onAdd,
     required this.onRemove,
     required this.onDividend,
+    this.heroAcik = false,
   });
 
   /// Kullanıcının bu satırdaki KENDİ pozisyonu — yoksa `null` (satır
@@ -982,7 +967,11 @@ class _AssetList {
           _kart(position, _kendiParcasi(position)),
       ];
 
-  Widget _kart(Position position, Position? kendi) => _YeniVarlikParlamasi(
+  Widget _kart(Position position, Position? kendi) {
+    // Etiket GÖSTERİLEN satırın anahtarından: tekil (`ValueKey` ile aynı),
+    // açılan pozisyon ortak satırda farklı olsa da.
+    final hero = heroAcik ? varlikHeroEtiketi(position.key) : null;
+    return _YeniVarlikParlamasi(
         key: ValueKey(position.key),
         aktif: position.key == vurgulanan,
         child: _AssetCard(
@@ -991,16 +980,18 @@ class _AssetList {
           pState: pState,
           baz: baz,
           canEdit: kendi != null,
+          heroEtiketi: hero,
           // Varlık ekranı tek sahipli pozisyon bekler; birleşik satırda
           // önce kendi parçası, yoksa ilk sahibinki.
-          onTap: (p) => onTap(kendi ??
-              (p is BirlesikPozisyon ? p.parcalar.first : p)),
+          onTap: (p) => onTap(
+              kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p), hero),
           onDelete: (_) => onDelete(kendi!),
           onAdd: (_) => onAdd(kendi!),
           onRemove: (_) => onRemove(kendi!),
           onDividend: (_) => onDividend(kendi!),
         ),
       );
+  }
 }
 
 /// Yeni eklenen satırın tek seferlik parlaması: amber çerçeve belirir ve
@@ -1350,6 +1341,9 @@ class _AssetCard extends StatefulWidget {
   final PortfolioState pState;
   final BazPara baz;
   final bool canEdit;
+
+  /// Başlık uçuşu etiketi (`varlik_baslik_hero.dart`); `null` → uçuş yok.
+  final Object? heroEtiketi;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
@@ -1365,6 +1359,7 @@ class _AssetCard extends StatefulWidget {
     required this.pState,
     required this.baz,
     required this.canEdit,
+    this.heroEtiketi,
     required this.onTap,
     required this.onDelete,
     required this.onAdd,
@@ -1446,16 +1441,19 @@ class _AssetCardState extends State<_AssetCard>
                             Row(
                               children: [
                                 Flexible(
-                                  child: Text(
-                                    a.showTicker ? a.displayTicker! : a.name,
-                                    maxLines: a.showTicker ? 1 : 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: context.t.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: context.c.text90,
-                                      height: 1.25,
-                                      letterSpacing:
-                                          a.showTicker ? 0.2 : -0.2,
+                                  child: VarlikBaslikHero(
+                                    etiket: widget.heroEtiketi,
+                                    child: Text(
+                                      a.showTicker ? a.displayTicker! : a.name,
+                                      maxLines: a.showTicker ? 1 : 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: context.t.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: context.c.text90,
+                                        height: 1.25,
+                                        letterSpacing:
+                                            a.showTicker ? 0.2 : -0.2,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -2075,7 +2073,7 @@ class _SortButton extends StatelessWidget {
     return CupertinoButton(
       minimumSize: SandikTouch.minSize,
       padding: EdgeInsets.zero,
-      onPressed: () => showModalBottomSheet<void>(
+      onPressed: () => showSandikSheet<void>(
         context: context,
         backgroundColor: context.c.surface1,
         shape: const RoundedRectangleBorder(

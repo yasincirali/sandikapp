@@ -2603,9 +2603,11 @@ sorusunun cevabı DEĞİLDİR.
    koyu gölge varsayıyor. Light modda cam yüzeyler (hero kart, bazı sheet'ler)
    olması gerekenden soluk görünür. `context.elevatedCard()` yazıldı ama
    glass helper'ları henüz ona taşınmadı.
-2. **`legal_doc_screen.dart` kendi paletini taşıyor** (~29 sabit renk).
-   Hukuki belge render'ı kasten sabit kontrastlı; light modda da koyu kalır.
-   Bilinçli, ama tutarsız görünüyor — ürün kararı.
+2. ~~**`legal_doc_screen.dart` kendi paletini taşıyor**~~ **KAPANDI**
+   (2026-09-10'da tokenlara taşınmıştı — kullanıcı bildirimi: "yasal
+   dokümanların olduğu sayfalar eski ve dark/light mode'a göre değil";
+   bu madde güncellenmemişti). 2026-10-08: iki temada, iki kipte (salt
+   okuma / zorunlu okuma) `acik_tema_ekran_kontrast_test` ile AA'ya bağlandı.
 3. ~~**`asset_type.dart` kategori renkleri tek ton.**~~ **KAPANDI 2026-09-14:**
    `AssetType.onSurface(context)` light'ta açıklığı 0,28'e kısılmış tonu
    verir (hue korunur); 8 ikon/metin sitesi buna geçti, dolgular ham renkte
@@ -2615,16 +2617,55 @@ sorusunun cevabı DEĞİLDİR.
    olarak kullanıldıkları yerde light varyantı gerekiyor.
 4. ~~**`fl_chart` grid/tooltip renkleri** elle verilmiş~~ — 2026-09-14'te
    sayıldı: üç grafikte de grid `context.c.overlay/hairline`, tooltip
-   `surface2`; elle verilen kalmamış. Yalnızca görsel doğrulama eksik; grafik ekranları
-   light modda test edilmedi.
-5. **Varsayılan mod hâlâ `ThemeMode.dark`.** `system` yapmak ürün kararı —
-   marka "dark-first" olduğu için değiştirilmedi.
+   `surface2`; elle verilen kalmamış. **2026-10-08:** grafiklerin asıl
+   açık tema hatası crosshair hapındaydı — `ZoomableChart` hapı iki modda
+   da sabit koyu zemindi (`0xFF0A1E15`), ayrıntı satırlarının renkleri ise
+   temadan geliyordu: açık temada koyu `loss` 2,2:1, koyu `gold` 1,09:1.
+   Hap artık açık temada `surface2` + kart gölgesi; seri renkleri metin
+   olarak `okunurUstunde(zemin)` ile okunur tona kaydırılır (karşılaştırma
+   grafiğinin amber/turkuaz serileri beyaz üstünde 2:1 idi). Test:
+   `acik_tema_ekran_kontrast_test` (karşılaştırma + fiyat grafiği, iki tema).
+5. ~~**Varsayılan mod hâlâ `ThemeMode.dark`.**~~ **KAPANDI:** varsayılan
+   artık `ThemeMode.system` (`ThemeModeNotifier`). Açık temalı telefonlar
+   aşağıdaki ekranları ilk açılışta görüyor — 2026-10-08 denetiminin sebebi.
 
 **Doğrulama notu:** emülatör Flutter'ı render edemiyor (bkz. yukarıdaki
 emülatör maddesi). Light mode gerçek cihazda **kısmen** doğrulandı —
 kullanıcı 2026-08-09'da Profil ve Ana Sayfa ekran görüntüsü gönderdi ve
 iki hata çıktı (aşağıda). Diğer ekranlar (grafik, yarış, auth, mevduat)
-**hâlâ gözle görülmedi**.
+gözle görülmedi; **2026-10-08'de makineyle denetlendi** (aşağıdaki tur).
+Gerçek cihazda göz hâlâ gerekli: denetim gradyan zeminli metni (yarış
+kahraman kartı, giriş ekranı arka planı) ve `Stack` kardeşi olarak çizilen
+zemini ölçemez; ikon dışı grafikler (çizgi, çubuk) kapsam dışı.
+
+### Üçüncü tur — makine denetimi: metin ↔ gerçek zemin (2026-10-08)
+
+`test/helpers/kontrast_denetimi.dart` pompalanmış ağaçtaki her metnin
+rengini, element atalarındaki ilk opak zemine (yarı saydam katmanlar
+harmanlanarak) karşı ölçer: AA 4,5:1, büyük metin ve ikon 3:1. Palet
+testinin göremediği sınıfı yakalar — doğru token, yanlış zemin. İki
+dosya, iki tema: `acik_tema_ekran_kontrast_test` (yasal belge ×2, giriş,
+kayıt, kod, şifre sıfırlama, karşılaştırma + fiyat grafiği hapı) ve
+`acik_tema_ozellik_kontrast_test` (Sıralama ×3, yarış kürsü/düello, zirve
+cetveli, mevduat/BES kartı, vade şeridi, Varlık Ekle'nin 9 tür formu).
+
+| Bulgu | Tema | Kök sebep | Düzeltme |
+|---|---|---|---|
+| Grafik crosshair hapı ayrıntıları okunmuyor | açık | Sabit koyu hap + temadan gelen koyu `gain/loss/gold` (1,09–2,3:1) | Hap temaya bağlı; seri rengi `okunurUstunde` |
+| TextButton / OutlinedButton yazısı ("Şimdi değil") | açık | Tema `foregroundColor: amberFill` — dolgu tonu, beyazda 1,94:1 | `amberText` (koyu temada aynı renk); Cupertino `primaryColor` de |
+| Amber düğmede beyaz yazı ("Ekle", "Doğrula", "Yenile", "Bu ayın katkısını ekle", paywall, halka arz, filtre, toplu ekle) | **koyu** | `context.t.*` stili `text90` taşır ve `FilledButton.foregroundColor`'ı ezer (1,87:1) | Metne açıkça `onAmber`; pasif hâlde eski ton |
+| Varlık Ekle seçili tür çipi ikonu, seçici rozet/✓ | açık | Ham kategori rengi kendi %16-18 dolgusu üstünde (1,3–2,6:1) | `onSurface(context)` / `Color.metinTonu(context)` |
+| Mevduat vade şeridi ikonu ve faiz tutarı | açık | Ham çelik mavisi ikon 2,2:1; %8 tint `gain`'i 4,49'a indiriyor | İkon `onSurface`; açıkta tint %5 |
+
+Bilinçli istisna: boş formda pasif "Kayıt Ol" (koyu temada 2,25:1) —
+WCAG 1.4.3 pasif bileşeni kapsam dışı tutar; testte gerekçesiyle hariç.
+Yasal belge, auth (giriş/kayıt/şifre), Sıralama, yarış, zirve cetveli ve
+BES kartı açık temada temiz çıktı.
+
+**Açık kalan:** Sıralama/Zirve'nin SUNUCU verisiyle dolu hâli (katılımcı
+listesi, kahraman kart) ve Performans/varlık sayfası grafik kabukları
+testte boş/verisiz kuruluyor; hapın kendisi ortak bileşen olduğu için
+kapsandı, kabuk metinleri gerçek cihazda bakılmalı.
 
 ### Ekran görüntüsünden çıkan düzeltmeler (2026-08-09)
 

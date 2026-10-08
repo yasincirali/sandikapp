@@ -169,7 +169,7 @@ class GorunumCipi extends StatelessWidget {
 
   Future<void> _ac(BuildContext context) async {
     // Sheet `null` döndürünce iptal; Birlikte (id null) ' ' ile taşınır.
-    final secim = await showModalBottomSheet<String>(
+    final secim = await showSandikSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,

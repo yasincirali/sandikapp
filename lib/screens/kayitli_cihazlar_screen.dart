@@ -11,6 +11,7 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_error_view.dart';
 
 /// Ayarlar › Hesap › Kayıtlı cihazlar (0098).
@@ -28,8 +29,10 @@ class KayitliCihazlarScreen extends ConsumerStatefulWidget {
 }
 
 class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
-  String? _silinen;
-
+  // Eski `_silinen` bayrağı (hangi kart dönüyor + diğer kartları kilitle)
+  // 2026-10-08'de kalktı: tek yükleniyor davranışı gereği "Kaldır" düğmesi
+  // [SandikAsyncButton]; onay + istek tek Future, gösterge düğmenin içinde.
+  // Farklı cihazları art arda kaldırmak zararsız, kartlar arası kilit yok.
   Future<void> _kaldir(KayitliCihaz c) async {
     final l = context.l10n;
     final onay = await showSandikConfirm(
@@ -41,15 +44,12 @@ class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
       destructive: true,
     );
     if (!onay || !mounted) return;
-    setState(() => _silinen = c.cihazId);
     try {
       await CihazOturumuService.instance.sil(c.cihazId);
       ref.invalidate(kayitliCihazlarProvider);
       if (mounted) sandikSnack(context, l.cihazKaldirildi);
     } catch (e) {
       if (mounted) showAppError(context, e);
-    } finally {
-      if (mounted) setState(() => _silinen = null);
     }
   }
 
@@ -92,8 +92,7 @@ class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
                   _CihazKarti(
                     cihaz: c,
                     buCihaz: c.cihazId == v.buCihaz,
-                    siliniyor: _silinen == c.cihazId,
-                    onKaldir: _silinen == null ? () => _kaldir(c) : null,
+                    onKaldir: () => _kaldir(c),
                   ),
                   const SizedBox(height: SandikSpace.sm),
                 ],
@@ -109,13 +108,11 @@ class _KayitliCihazlarScreenState extends ConsumerState<KayitliCihazlarScreen> {
 class _CihazKarti extends StatelessWidget {
   final KayitliCihaz cihaz;
   final bool buCihaz;
-  final bool siliniyor;
-  final VoidCallback? onKaldir;
+  final Future<void> Function() onKaldir;
 
   const _CihazKarti({
     required this.cihaz,
     required this.buCihaz,
-    required this.siliniyor,
     required this.onKaldir,
   });
 
@@ -158,14 +155,12 @@ class _CihazKarti extends StatelessWidget {
             ),
           ),
           if (!buCihaz)
-            siliniyor
-                ? const CustomLoadingIndicator(size: 18)
-                : TextButton(
-                    onPressed: onKaldir,
-                    style: TextButton.styleFrom(
-                        foregroundColor: context.c.loss),
-                    child: Text(context.l10n.cihazKaldir),
-                  ),
+            SandikAsyncButton.kompakt(
+              tur: SandikAsyncTur.metin,
+              onPressed: onKaldir,
+              style: TextButton.styleFrom(foregroundColor: context.c.loss),
+              child: Text(context.l10n.cihazKaldir),
+            ),
         ],
       ),
     );

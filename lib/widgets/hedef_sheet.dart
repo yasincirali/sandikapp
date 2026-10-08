@@ -28,7 +28,7 @@ Future<void> showHedefSheet(BuildContext context, WidgetRef ref,
   if (DemoModu.yazmaKapisi('hedef')) return; // Demo: hedef bir tercih yazımı (F1).
   final saglayici = kapsamHedefiProvider(kapsam);
   final mevcut = ref.read(saglayici);
-  final sonuc = await showModalBottomSheet<int>(
+  final sonuc = await showSandikSheet<int>(
     context: context,
     isScrollControlled: true,
     backgroundColor: context.c.surface2,

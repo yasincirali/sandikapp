@@ -11,6 +11,7 @@ import '../models/sozlesme.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
 import 'bes_dagilim_editoru.dart';
+import 'sandik_async_button.dart';
 import 'sozlesme_formu_ortak.dart';
 import '../services/bes_hesabi.dart';
 import '../services/crash_reporter.dart';
@@ -90,44 +91,66 @@ class _Baslik extends StatelessWidget {
 
 /// Kart içi eylem düğmesi.
 class _Eylem extends StatelessWidget {
-  const _Eylem({required this.metin, required this.bas, this.birincil = false});
+  const _Eylem({
+    required this.metin,
+    this.bas,
+    this.isle,
+    this.birincil = false,
+  }) : assert((bas == null) != (isle == null), 'bas YA DA isle');
   final String metin;
-  final VoidCallback bas;
+
+  /// Eşzamanlı eylem (form doğrula + kapat).
+  final VoidCallback? bas;
+
+  /// İstek atan eylem (tek yükleniyor davranışı, 2026-10-08): düğme
+  /// [SandikAsyncButton.kompakt] olur — iş sürerken pasif, etiketin yerinde
+  /// gösterge, ikinci dokunuş yutulur. Görünüş [bas] ile birebir aynı.
+  final Future<void> Function()? isle;
   final bool birincil;
 
   @override
   // En az 44pt, üstü serbest: büyük metin ölçeğinde etiket iki satıra
   // sarabilsin (sabit yükseklik metni kırpardı).
-  Widget build(BuildContext context) => ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        child: birincil
-            ? FilledButton(
-                onPressed: bas,
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.c.amberFill,
-                  foregroundColor: context.c.onAmber,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: SandikRadius.mdAll),
-                ),
-                child: Text(metin,
-                    textAlign: TextAlign.center,
-                    style: context.t.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-              )
-            : OutlinedButton(
-                onPressed: bas,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.c.text90,
-                  side: BorderSide(color: context.c.hairline),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: SandikRadius.mdAll),
-                ),
-                child: Text(metin,
-                    textAlign: TextAlign.center,
-                    style: context.t.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-              ),
-      );
+  Widget build(BuildContext context) {
+    final stil = birincil
+        ? FilledButton.styleFrom(
+            backgroundColor: context.c.amberFill,
+            foregroundColor: context.c.onAmber,
+            shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+          )
+        : OutlinedButton.styleFrom(
+            foregroundColor: context.c.text90,
+            side: BorderSide(color: context.c.hairline),
+            shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+          );
+    final etiket = birincil
+        // Renk açıkça `onAmber`: `bodyMedium` kendi rengini (`text90`)
+        // taşır ve `foregroundColor`'ı ezer — koyu temada amber üstüne
+        // beyaz 1,87:1 kalıyordu (açık tema denetimi 2026-10-08).
+        ? Text(metin,
+            textAlign: TextAlign.center,
+            style: context.t.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w800, color: context.c.onAmber))
+        : Text(metin,
+            textAlign: TextAlign.center,
+            style:
+                context.t.bodyMedium?.copyWith(fontWeight: FontWeight.w700));
+    final isle = this.isle;
+    final Widget dugme = isle != null
+        ? SandikAsyncButton.kompakt(
+            tur: birincil ? SandikAsyncTur.dolu : SandikAsyncTur.cerceve,
+            style: stil,
+            onPressed: isle,
+            child: etiket,
+          )
+        : birincil
+            ? FilledButton(onPressed: bas, style: stil, child: etiket)
+            : OutlinedButton(onPressed: bas, style: stil, child: etiket);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SandikTouch.min),
+      child: dugme,
+    );
+  }
 }
 
 // ── Mevduat ──────────────────────────────────────────────────────────────
@@ -273,7 +296,9 @@ class _MevduatGovdesi extends ConsumerWidget {
                         ? l10n.depositRateUpdate
                         : l10n.depositRenew,
                     birincil: doldu,
-                    bas: () => vadeIci
+                    // Sayfa açıkken de kilitli: ikinci dokunuş ikinci sayfa
+                    // açmaz; istek sayfa kapanınca bu düğmede döner.
+                    isle: () => vadeIci
                         ? _faizGuncelle(context, ref, son)
                         : _yenile(context, ref, son),
                   ),
@@ -282,7 +307,7 @@ class _MevduatGovdesi extends ConsumerWidget {
                 Expanded(
                   child: _Eylem(
                     metin: l10n.depositWithdraw,
-                    bas: () => _cek(context, ref, pay * bugun),
+                    isle: () => _cek(context, ref, pay * bugun),
                   ),
                 ),
               ],
@@ -297,7 +322,7 @@ class _MevduatGovdesi extends ConsumerWidget {
       BuildContext context, WidgetRef ref, MevduatDonemi son) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<_YeniDonem>(
+    final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -339,7 +364,7 @@ class _MevduatGovdesi extends ConsumerWidget {
       BuildContext context, WidgetRef ref, MevduatDonemi son) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<_YeniDonem>(
+    final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -371,30 +396,34 @@ class _MevduatGovdesi extends ConsumerWidget {
   Future<void> _cek(BuildContext context, WidgetRef ref, double deger) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
+    var cekildi = false;
     final onay = await showSandikConfirm(
       context: context,
       title: l10n.depositWithdrawTitle,
       message: l10n.depositWithdrawBody(fmtTRY(deger, digits: 2)),
       confirmLabel: l10n.depositWithdrawConfirm,
       cancelLabel: MaterialLocalizations.of(context).cancelButtonLabel,
+      // Çekim onay düğmesinin İÇİNDE koşar (tek yükleniyor davranışı,
+      // 2026-10-08); hata yolu aynı: Crashlytics + snackbar, diyalog kapanır.
+      islem: () async {
+        try {
+          await ref.read(sozlesmeProvider.notifier).mevduatCek(s.id);
+          cekildi = true;
+        } catch (e, st) {
+          CrashReporter.report(e, st, reason: 'SozlesmeKarti.cek');
+          if (context.mounted) {
+            sandikSnack(context, friendlyError(e),
+                kind: SandikSnackKind.error);
+          }
+        }
+      },
     );
-    if (!onay || !context.mounted) return;
-    try {
-      await ref.read(sozlesmeProvider.notifier).mevduatCek(s.id);
-      if (context.mounted) {
-        sandikSnack(context, l10n.depositWithdrawn,
-            kind: SandikSnackKind.success);
-        // Çekilen mevduatın sayfasında kalmanın anlamı yok: sayfa açık
-        // pozisyonu (bugünkü değer ₺100.086) göstermeye devam ediyordu
-        // (2026-10-01 emülatör testi). Portföye dönülür; satır kalkmıştır.
-        await Navigator.of(context).maybePop();
-      }
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'SozlesmeKarti.cek');
-      if (context.mounted) {
-        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
-      }
-    }
+    if (!onay || !cekildi || !context.mounted) return;
+    sandikSnack(context, l10n.depositWithdrawn, kind: SandikSnackKind.success);
+    // Çekilen mevduatın sayfasında kalmanın anlamı yok: sayfa açık
+    // pozisyonu (bugünkü değer ₺100.086) göstermeye devam ediyordu
+    // (2026-10-01 emülatör testi). Portföye dönülür; satır kalkmıştır.
+    await Navigator.of(context).maybePop();
   }
 }
 
@@ -769,12 +798,12 @@ class _BesGovdesi extends ConsumerWidget {
                   ? l10n.pensionAddExtraContribution
                   : l10n.pensionAddContribution,
               birincil: katkiBekliyor,
-              bas: () => _katkiEkle(context, ref),
+              isle: () => _katkiEkle(context, ref),
             ),
             const SizedBox(height: SandikSpace.sm),
             _Eylem(
               metin: l10n.pensionSwitchFunds,
-              bas: () => _fonDegistir(context, ref),
+              isle: () => _fonDegistir(context, ref),
             ),
           ],
         ],
@@ -787,7 +816,7 @@ class _BesGovdesi extends ConsumerWidget {
     final l10n = context.l10n;
     final n = ref.read(sozlesmeProvider.notifier);
     final simdi = DateTime.now();
-    final sonuc = await showModalBottomSheet<({double tutar, double dk})>(
+    final sonuc = await showSandikSheet<({double tutar, double dk})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -859,8 +888,8 @@ class _OtomatikKatkiSorusu extends StatelessWidget {
   });
   final DateTime gun;
   final double tutar;
-  final VoidCallback dogru;
-  final VoidCallback guncelle;
+  final Future<void> Function() dogru;
+  final Future<void> Function() guncelle;
 
   @override
   Widget build(BuildContext context) {
@@ -883,13 +912,14 @@ class _OtomatikKatkiSorusu extends StatelessWidget {
           const SizedBox(height: SandikSpace.smd),
           Row(
             children: [
-              Expanded(child: _Eylem(metin: l10n.pensionAutoConfirm, bas: dogru)),
+              Expanded(
+                  child: _Eylem(metin: l10n.pensionAutoConfirm, isle: dogru)),
               const SizedBox(width: SandikSpace.sm),
               Expanded(
                 child: _Eylem(
                     metin: l10n.pensionAutoUpdate,
                     birincil: true,
-                    bas: guncelle),
+                    isle: guncelle),
               ),
             ],
           ),
@@ -940,7 +970,7 @@ extension on _BesGovdesi {
       BuildContext context, WidgetRef ref, double tutar) async {
     if (DemoModu.yazmaKapisi('bes')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<({double tutar, bool plan})>(
+    final sonuc = await showSandikSheet<({double tutar, bool plan})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -1075,7 +1105,7 @@ extension on _BesGovdesi {
       ];
     }
     final sonuc =
-        await showModalBottomSheet<({List<FonPayi> dagilim, bool katki})>(
+        await showSandikSheet<({List<FonPayi> dagilim, bool katki})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,

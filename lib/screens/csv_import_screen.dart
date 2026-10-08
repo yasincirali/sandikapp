@@ -17,6 +17,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import '../widgets/sandik_app_bar.dart';
 import '../l10n/l10n.dart';
@@ -54,9 +55,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   EkstreOkumaSonucu? _ekstre;
   String? _dosyaAdi;
   bool _okunuyor = false;
-
-  /// AI sütun eşleme isteği sürüyor (düğme döner).
-  bool _aiEsleniyor = false;
 
   /// Kartın altında satır içi bilgi (kopyalandı, AI sonucu). Toast DEĞİL:
   /// bu ekranda toast kullanılmaz (toast_temizligi_test #25); mesaj
@@ -229,12 +227,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
   /// basmadan hiçbir şey gönderilmez.
   Future<void> _aiIleEsle() async {
     final e = _ekstre;
-    if (e == null || _aiEsleniyor) return;
+    // Çift dokunuş koruması ve gösterge düğmede (SandikAsyncButton,
+    // 2026-10-08 tek yükleniyor davranışı); eski `_aiEsleniyor` bayrağı
+    // yalnızca bunu yapıyordu.
+    if (e == null) return;
     final l = context.l10n;
-    setState(() {
-      _aiEsleniyor = true;
-      _kartMesaji = null;
-    });
+    setState(() => _kartMesaji = null);
     try {
       final yanit = await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
       final yeni = e.aiEslemesiyle(yanit);
@@ -259,8 +257,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
       if (mounted) setState(() => _kartMesaji = l.importAiFailed);
-    } finally {
-      if (mounted) setState(() => _aiEsleniyor = false);
     }
   }
 
@@ -276,7 +272,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final e = _ekstre;
     final ana = e?.ana;
     if (e == null || ana == null) return;
-    final yeni = await showModalBottomSheet<Map<EkstreRol, int>>(
+    final yeni = await showSandikSheet<Map<EkstreRol, int>>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -319,6 +315,12 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
               style: context.t.bodyMedium?.copyWith(color: c.text58),
             ),
             const SizedBox(height: SandikSpace.md),
+            // BİLİNÇLİ İSTİSNA (tek yükleniyor davranışı, 2026-10-08):
+            // SandikAsyncButton DEĞİL. (1) Meşgulken etiket "Okunuyor…"
+            // olur — standart bileşen etiketi gizler, aşama kaybolurdu.
+            // (2) `_dosyaSec` önce sistem dosya seçicisini bekler; standart
+            // düğme seçici açıkken de dönerdi. Burada gösterge yalnız dosya
+            // seçildikten sonraki okuma sırasında, düğme o sırada pasif.
             FilledButton.icon(
               onPressed: _okunuyor ? null : _dosyaSec,
               icon: _okunuyor
@@ -335,7 +337,6 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 dosyaAdi: _dosyaAdi ?? '',
                 onDuzelt: _eslemeyiDuzelt,
                 onAi: _aiIleEsle,
-                aiEsleniyor: _aiEsleniyor,
                 // Premium'a özel (yasin, 2026-10-05). Kilitliyken düğme yerine
                 // paywall'a götüren kilit satırı; sunucu da ayrıca denetler.
                 aiKilitli: ref.watch(radarKilitliProvider),
@@ -474,7 +475,6 @@ class _EslemeKarti extends StatelessWidget {
     required this.dosyaAdi,
     required this.onDuzelt,
     required this.onAi,
-    required this.aiEsleniyor,
     required this.aiKilitli,
     required this.mesaj,
     required this.onKopyala,
@@ -483,8 +483,7 @@ class _EslemeKarti extends StatelessWidget {
   final EkstreOkumaSonucu sonuc;
   final String dosyaAdi;
   final VoidCallback onDuzelt;
-  final VoidCallback onAi;
-  final bool aiEsleniyor;
+  final Future<void> Function() onAi;
   final bool aiKilitli;
   final String? mesaj;
   final VoidCallback onKopyala;
@@ -604,12 +603,11 @@ class _EslemeKarti extends StatelessWidget {
             ),
             Align(
               alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: aiEsleniyor ? null : onAi,
-                icon: aiEsleniyor
-                    ? const CustomLoadingIndicator(size: 18)
-                    : const Icon(Icons.auto_awesome_rounded, size: 18),
-                label: Text(context.l10n.importAiButton),
+              child: SandikAsyncButton.kompakt(
+                tur: SandikAsyncTur.metin,
+                onPressed: onAi,
+                icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                child: Text(context.l10n.importAiButton),
               ),
             ),
             ],

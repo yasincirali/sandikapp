@@ -17,13 +17,16 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       DateTime end, List<Asset> assets,
       {bool intraday = false, List<Asset>? allTargetAssets}) {
     if (segments.isEmpty) {
-      return Container(
+      // Boş grafik yeri: kenarsız `SandikCard` (2. tur, 2026-10-08) — piksel aynı.
+      return SizedBox(
         height: 280,
-        decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.lg)),
-        child: Center(
-            child: Text(context.l10n.noData, style: TextStyle(color: context.c.text36))),
+        child: SandikCard(
+          padding: EdgeInsets.zero,
+          bordered: false,
+          radius: SandikRadius.lg,
+          child: Center(
+              child: Text(context.l10n.noData, style: TextStyle(color: context.c.text36))),
+        ),
       );
     }
 

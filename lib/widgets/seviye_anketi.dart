@@ -158,7 +158,7 @@ class _SeviyeAnketiState extends ConsumerState<SeviyeAnketi> {
 
 /// Ayarlar › Görünüm'den açılan anket sayfası.
 Future<void> seviyeAnketiniAc(BuildContext context) {
-  return showModalBottomSheet<void>(
+  return showSandikSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: context.c.background,

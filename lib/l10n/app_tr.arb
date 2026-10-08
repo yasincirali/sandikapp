@@ -383,7 +383,6 @@
   "assetTypeFx": "Döviz",
   "assetTypeGold": "Altın",
   "assetTypeCrypto": "Kripto",
-  "assetTypeEurobond": "Eurobond",
   "assetTypeCommodity": "Emtia",
   "assetTypeOther": "Diğer",
   "tickerHintStock": "Örn: THYAO.IS, GARAN.IS  (Borsa İstanbul için .IS ekle)",
@@ -391,7 +390,6 @@
   "tickerHintFx": "Örn: USDTRY=X, EURTRY=X, GBPTRY=X",
   "tickerHintGold": "Örn: XAUTRY=X (gram altın TL) veya GC=F (ons, USD)",
   "tickerHintCrypto": "Listeden seç, örn. BTC, ETH",
-  "tickerHintEurobond": "Listeden seç ya da ISIN yaz, örn. US900123DF45",
   "tickerHintCommodity": "Örn: CL=F (petrol), NG=F (doğalgaz), GC=F (altın ons)",
   "tickerHintOther": "Yahoo Finance sembolü ya da boş bırak",
   "assetTypeSemantics": "{type} türü",
@@ -407,7 +405,7 @@
   "quickEntryVoice": "Sesli / Hızlı giriş",
   "orNotInList": "veya listede yok",
   "symbolHint": "Sembol yaz (örn: AAPL, THYAO.IS)",
-  "companyNameHint": "Şirket adı (opsiyonel, semboldan otomatik çekilir)",
+  "companyNameHint": "Şirket adı (opsiyonel, sembolden otomatik çekilir)",
   "goldSemantics": "{kind} altın",
   "@goldSemantics": {
     "placeholders": {
@@ -830,7 +828,7 @@
   "rejectRequest": "Ortaklık isteğini reddet",
   "acceptRequest": "Ortaklık isteğini kabul et",
   "sandikPremium": "Sandık Premium",
-  "premiumPitch": "Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi",
+  "premiumPitch": "Sınırsız varlık ve premium göstergeler",
   "premiumActive": "Premium aktif",
   "premiumActiveBody": "Tüm gelişmiş özellikler açık",
   "codeCopied": "Kod üretildi ve panoya kopyalandı",
@@ -1351,13 +1349,13 @@
   "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
   "planMonthly": "Aylık",
   "planMonthlySubtitle": "İstediğin zaman iptal edebilirsin",
-  "subscriptionTerms": "Abonelik App Store hesabına yansır. Otomatik yenilenir, iptal için Ayarlar → Apple ID → Abonelikler menüsünden yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; iptal etmezsen deneme sonunda ücret tahsil edilir.",
+  "subscriptionTerms": "Ödeme App Store hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Ayarlar › Apple ID › Abonelikler'den yönetebilir ya da iptal edebilirsin.",
   "premiumUnlocked": "Premium açıldı",
-  "premiumUnlockedBody": "Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve daha fazlası açıldı.",
+  "premiumUnlockedBody": "Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.",
   "greatWord": "Harika",
   "sandikPremiumUpper": "SANDIK PREMIUM",
   "paywallHeadline": "Portföyünü daha derinlemesine\ntakip et",
-  "paywallSubhead": "Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.",
+  "paywallSubhead": "Sınırsız varlık ve gelişmiş göstergeler. Portföy takibi her zaman ücretsiz.",
   "restorePurchase": "Satın alımı geri yükle",
   "recapTitle": "sandık Özetin",
   "recapInYear": "{year} yılında",
@@ -2142,11 +2140,15 @@
       }
     }
   },
-  "betterThanPctInvestors": "Yatırımcıların %{pct}'inden iyi",
+  "betterThanPctInvestors": "Yatırımcıların %{pct}'{ek} iyi",
   "@betterThanPctInvestors": {
+    "description": "ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden",
     "placeholders": {
       "pct": {
         "type": "int"
+      },
+      "ek": {
+        "type": "String"
       }
     }
   },
@@ -2596,11 +2598,15 @@
   "shareCardAllocation": "Dağılım",
   "shareCardTracked": "Takip",
   "shareCardInvestors": "Yatırımcıların",
-  "shareCardBetterThanPct": "%{pct}'inden iyi",
+  "shareCardBetterThanPct": "%{pct}'{ek} iyi",
   "@shareCardBetterThanPct": {
+    "description": "ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden",
     "placeholders": {
       "pct": {
         "type": "int"
+      },
+      "ek": {
+        "type": "String"
       }
     }
   },
@@ -4853,6 +4859,69 @@
   "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",
   "anzAylikBos": "Bu ayın raporu henüz hazır değil.",
   "anzOkunamadi": "Not şu an açılamadı.",
+  "sgnPremiumAktif": "Premium göstergeler açık",
+  "sgnPremiumAktifGovde": "ADX, Williams %R ve CCI sinyal analizine katılıyor.",
+  "sgnPremiumKilitBaslik": "Premium göstergeler",
+  "sgnPremiumKilitGovde": "ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.",
+  "sgnPremiumGec": "Premium'a geç",
+  "pwOzSinirsiz": "Sınırsız varlık ve tüm varlık türleri",
+  "pwOzGosterge": "Sinyal analizinde ADX, Williams %R ve CCI",
+  "pwOzSiklik": "Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)",
+  "pwOzKarsilastir": "Karşılaştır'da 5 seriye kadar",
+  "pwOzOrtak": "Birden fazla ortakla portföy paylaşımı",
+  "sgnSlotNotu": "Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium'da seçtiğin sıklık geri gelir.",
+  "sgnSlotKilitli": "{secenek}, Premium",
+  "@sgnSlotKilitli": {
+    "placeholders": {
+      "secenek": {
+        "type": "String"
+      }
+    }
+  },
+  "cmpSinirPremium": "Premium ile 5 seriye kadar",
+  "cmpSinirDolu": "En fazla 5 varlık",
+  "pwOzRadar": "Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı",
+  "pwFiyatAylik": "{fiyat}/ay",
+  "@pwFiyatAylik": {
+    "placeholders": {
+      "fiyat": {"type": "String"}
+    }
+  },
+  "pwFiyatYillik": "{fiyat}/yıl",
+  "@pwFiyatYillik": {
+    "placeholders": {
+      "fiyat": {"type": "String"}
+    }
+  },
+  "pwDenemeAltyazi": "{gun} gün ücretsiz, sonra otomatik yenilenir",
+  "@pwDenemeAltyazi": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwYenilenirAltyazi": "Otomatik yenilenir, istediğin zaman iptal edebilirsin",
+  "pwDenemeDugme": "{gun} gün ücretsiz dene",
+  "@pwDenemeDugme": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwAboneOl": "Abone ol",
+  "pwKosulAndroid": "Ödeme Google Play hesabından alınır. Abonelik, dönem bitmeden iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Google Play › Ödemeler ve abonelikler › Abonelikler'den yönetebilir ya da iptal edebilirsin.",
+  "pwDenemeKosul": "{gun} günlük ücretsiz deneme bitmeden iptal etmezsen deneme sonunda ücret alınır.",
+  "@pwDenemeKosul": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwKullanilamaz": "Satın alma şu an kullanılamıyor. Biraz sonra yeniden dene.",
+  "pwBeklemede": "Ödemen onay bekliyor. Onaylanınca Premium kendiliğinden açılır.",
+  "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
+  "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
+  "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
+  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.",
+  "assetTypeEurobond": "Eurobond",
+  "tickerHintEurobond": "Listeden seç ya da ISIN yaz, örn. US900123DF45",
   "stockMarketBist": "BIST",
   "stockMarketUs": "ABD",
   "stockMarketSemantics": "Hisse pazarı: {market}",
@@ -4895,26 +4964,68 @@
   "pickEurobondTap": "Tahvil seçmek için dokun",
   "pickEurobondPrompt": "Bir eurobond seç",
   "eurobondSelectedSemantics": "Seçili tahvil: {name}. Değiştirmek için çift dokun.",
-  "@eurobondSelectedSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "@eurobondSelectedSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondPickerTitle": "Eurobondlar",
   "eurobondLoading": "Tahvil listesi yükleniyor",
   "eurobondLoadFailed": "Tahvil listesi yüklenemedi",
   "eurobondSourceNote": "Şimdilik yalnız USD tahviller. Fiyat temiz fiyattır, nominalin yüzdesi. Yatırım tavsiyesi değildir.",
   "eurobondMaturityShort": "Vade {date}",
-  "@eurobondMaturityShort": {"placeholders": {"date": {"type": "String"}}},
+  "@eurobondMaturityShort": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondYieldShort": "Getiri {pct}",
-  "@eurobondYieldShort": {"placeholders": {"pct": {"type": "String"}}},
+  "@eurobondYieldShort": {
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondIsinInvalid": "Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.",
   "eurobondIsinNotListed": "Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.",
   "eurobondCleanPrice": "Temiz fiyat (%)",
   "eurobondCleanPriceRequired": "Temiz fiyatı yaz",
   "eurobondCurrencyLocked": "Tahvilin para birimi",
   "eurobondAccruedLine": "İşlemiş faiz: {accrued} · Ödenen: {paid}",
-  "@eurobondAccruedLine": {"placeholders": {"accrued": {"type": "String"}, "paid": {"type": "String"}}},
+  "@eurobondAccruedLine": {
+    "placeholders": {
+      "accrued": {
+        "type": "String"
+      },
+      "paid": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondAccruedOnly": "İşlemiş faiz: {accrued}",
-  "@eurobondAccruedOnly": {"placeholders": {"accrued": {"type": "String"}}},
+  "@eurobondAccruedOnly": {
+    "placeholders": {
+      "accrued": {
+        "type": "String"
+      }
+    }
+  },
   "eurobondTotalBreakdown": "{nominal} nominal × kirli {dirty}",
-  "@eurobondTotalBreakdown": {"placeholders": {"nominal": {"type": "String"}, "dirty": {"type": "String"}}},
+  "@eurobondTotalBreakdown": {
+    "placeholders": {
+      "nominal": {
+        "type": "String"
+      },
+      "dirty": {
+        "type": "String"
+      }
+    }
+  },
   "bondInfoUpper": "TAHVİL BİLGİLERİ",
   "bondCleanPrice": "Temiz fiyat",
   "bondAccrued": "İşlemiş faiz",
@@ -4923,22 +5034,64 @@
   "bondYtm": "Vadeye getiri",
   "bondCoupon": "Kupon",
   "bondCouponValue": "{rate} · yılda {count} kez",
-  "@bondCouponValue": {"placeholders": {"rate": {"type": "String"}, "count": {"type": "String"}}},
+  "@bondCouponValue": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "bondNextCoupon": "Sonraki kupon",
   "bondNextCouponValue": "{date} · {amount}",
-  "@bondNextCouponValue": {"placeholders": {"date": {"type": "String"}, "amount": {"type": "String"}}},
+  "@bondNextCouponValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "bondWithholding": "Stopaj {rate}",
-  "@bondWithholding": {"placeholders": {"rate": {"type": "String"}}},
+  "@bondWithholding": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
   "bondMaturity": "Vade",
   "bondMaturityValue": "{date} · {days} gün kaldı",
-  "@bondMaturityValue": {"placeholders": {"date": {"type": "String"}, "days": {"type": "String"}}},
+  "@bondMaturityValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "bondIssuer": "İhraççı",
   "bondIssuerTreasury": "Hazine",
   "bondIssuerCorporate": "Özel sektör",
   "bondBankSellUpper": "BANKAYA SATARSAN",
   "bondBankZiraat": "Ziraat Bankası",
   "bondBankUpdated": "{bank} · {time}",
-  "@bondBankUpdated": {"placeholders": {"bank": {"type": "String"}, "time": {"type": "String"}}},
+  "@bondBankUpdated": {
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "bondBankBid": "Banka alış",
   "bondBankAsk": "Banka satış",
   "bondBankSpread": "Makas",

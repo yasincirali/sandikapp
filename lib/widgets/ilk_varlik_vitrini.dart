@@ -392,49 +392,45 @@ class _IlkVarlikVitriniState extends ConsumerState<IlkVarlikVitrini>
       button: true,
       label: '${l10n.importFromStatement}. ${l10n.vitrinStatementHint}',
       excludeSemantics: true,
-      child: SandikBasma(
+      // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı: surface2 +
+      // saç teli + tema gölgesi, basma geri bildirimi `SandikBasma`.
+      child: SandikCard(
         onTap: widget.onEkstre,
-        child: Container(
-          padding: const EdgeInsets.all(SandikSpace.smd),
-          decoration: BoxDecoration(
-            color: context.c.surface2,
-            borderRadius: SandikRadius.mdAll,
-            border: Border.all(color: context.c.hairline),
-            boxShadow: context.c.cardShadow,
-          ),
-          child: Row(
-            children: [
-              _IkonKutusu(
-                ikon: Icons.content_paste_go_rounded,
-                zemin: context.c.amberFill.withValues(alpha: 0.16),
-                renk: context.c.amberText,
+        elevated: true,
+        shadowed: true,
+        padding: const EdgeInsets.all(SandikSpace.smd),
+        child: Row(
+          children: [
+            _IkonKutusu(
+              ikon: Icons.content_paste_go_rounded,
+              zemin: context.c.amberFill.withValues(alpha: 0.16),
+              renk: context.c.amberText,
+            ),
+            const SizedBox(width: SandikSpace.smd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.importFromStatement,
+                    style: context.t.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700, color: context.c.text90),
+                  ),
+                  const SizedBox(height: SandikSpace.xxs),
+                  SiganMetin(
+                    // Tek satır tercih; 320pt'te kısa yazım, o da
+                    // sığmazsa (büyük yazı) iki satıra kırılır.
+                    [l10n.vitrinStatementHint, l10n.vitrinStatementHintShort],
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58),
+                  ),
+                ],
               ),
-              const SizedBox(width: SandikSpace.smd),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.importFromStatement,
-                      style: context.t.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700, color: context.c.text90),
-                    ),
-                    const SizedBox(height: SandikSpace.xxs),
-                    SiganMetin(
-                      // Tek satır tercih; 320pt'te kısa yazım, o da
-                      // sığmazsa (büyük yazı) iki satıra kırılır.
-                      [l10n.vitrinStatementHint, l10n.vitrinStatementHintShort],
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text58),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: SandikSpace.xs),
-              Icon(Icons.chevron_right_rounded,
-                  size: 20, color: context.c.text36),
-            ],
-          ),
+            ),
+            const SizedBox(width: SandikSpace.xs),
+            Icon(Icons.chevron_right_rounded,
+                size: 20, color: context.c.text36),
+          ],
         ),
       ),
     );
@@ -511,17 +507,15 @@ class _VitrinKutusu extends StatelessWidget {
       label: etiket,
       hint: l10n.vitrinTapToAdd,
       excludeSemantics: true,
-      child: SandikBasma(
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 112),
+      // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı; 112pt alt
+      // sınır kartın dışından verilir (eski `Container.constraints`).
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 112),
+        child: SandikCard(
+          onTap: onTap,
+          elevated: true,
+          shadowed: true,
           padding: const EdgeInsets.all(SandikSpace.smd),
-          decoration: BoxDecoration(
-            color: context.c.surface2,
-            borderRadius: SandikRadius.mdAll,
-            border: Border.all(color: context.c.hairline),
-            boxShadow: context.c.cardShadow,
-          ),
           // Üstten akar (spaceBetween DEĞİL): dar ekranda bir kutunun
           // fiyat satırı alta kırılırsa komşu kutuların adları yine aynı
           // hizada kalır; artan boy kutunun altında boşluk olur.

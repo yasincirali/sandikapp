@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Icons;
+import 'package:flutter/material.dart'
+    show Icons, OutlinedButton, RoundedRectangleBorder;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/auth_provider.dart';
@@ -7,7 +8,7 @@ import '../services/social_auth_service.dart';
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import 'custom_loading_indicator.dart';
+import 'sandik_async_button.dart';
 
 /// Giriş ve kayıt ekranlarının altındaki "Apple / Google ile devam et" bloğu.
 ///
@@ -38,6 +39,9 @@ class SocialSignInButtons extends ConsumerStatefulWidget {
 }
 
 class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
+  /// Hangi sağlayıcının isteği sürüyor. Kilit ve gösterge dokunulan
+  /// düğmede ([SandikAsyncButton]); bu bayrak yalnız ÖTEKİ düğmeyi
+  /// pasifleyip soldurmak için kalır (Apple sürerken Google'a basılmasın).
   SocialProvider? _busy;
 
   List<SocialProvider> get _providers => widget.googleConfiguredOverride == null
@@ -50,9 +54,12 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
   Future<void> _tap(SocialProvider p) async {
     if (_busy != null) return;
     setState(() => _busy = p);
-    await ref.read(authProvider.notifier).loginWithSocial(p);
+    try {
+      await ref.read(authProvider.notifier).loginWithSocial(p);
+    } finally {
+      if (mounted) setState(() => _busy = null);
+    }
     if (!mounted) return;
-    setState(() => _busy = null);
     final st = ref.read(authProvider);
     if (st.hasError) showAppError(context, st.error);
     // Başarıda AuthGate (lib/main.dart) yönlendirir — burada push yok.
@@ -106,7 +113,7 @@ class _SocialButton extends StatelessWidget {
   final SocialProvider provider;
   final bool busy;
   final bool enabled;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
 
   const _SocialButton({
     required this.provider,
@@ -125,40 +132,36 @@ class _SocialButton extends StatelessWidget {
       SocialProvider.apple => Icons.apple,
       SocialProvider.google => Icons.g_mobiledata_rounded,
     };
+    // Tek yükleniyor davranışı (2026-10-08): [SandikAsyncButton] çerçeve
+    // türü; eski kutu (surface2 zemin, hairline kenar, 48 boy) `style` ile
+    // birebir. Pasif renkler etkinle aynı: başka sağlayıcı sürerken
+    // soldurmayı yalnız dıştaki opaklık yapar (0.5), çift solma olmaz.
     return Semantics(
       button: true,
       label: label,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: enabled ? onTap : null,
-        child: AnimatedOpacity(
-          duration: SandikMotion.stateOf(context),
-          curve: SandikMotion.enter,
-          opacity: enabled || busy ? 1 : 0.5,
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: context.c.surface2,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
+      child: AnimatedOpacity(
+        duration: SandikMotion.stateOf(context),
+        curve: SandikMotion.enter,
+        opacity: enabled || busy ? 1 : 0.5,
+        child: SandikAsyncButton(
+          height: 48,
+          tur: SandikAsyncTur.cerceve,
+          onPressed: enabled ? onTap : null,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: context.c.surface2,
+            disabledBackgroundColor: context.c.surface2,
+            foregroundColor: context.c.text90,
+            disabledForegroundColor: context.c.text90,
+            side: BorderSide(color: context.c.hairline),
+            shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+          ),
+          icon: Icon(icon, size: 22, color: context.c.text90),
+          child: Text(
+            label,
+            style: context.t.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: context.c.text90,
             ),
-            alignment: Alignment.center,
-            child: busy
-                ? const CustomLoadingIndicator(size: 20)
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(icon, size: 22, color: context.c.text90),
-                      const SizedBox(width: SandikSpace.sm),
-                      Text(
-                        label,
-                        style: context.t.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.c.text90,
-                        ),
-                      ),
-                    ],
-                  ),
           ),
         ),
       ),

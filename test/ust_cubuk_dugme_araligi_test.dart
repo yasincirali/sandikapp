@@ -109,7 +109,12 @@ Future<void> _pump(WidgetTester tester, Widget ekran) async {
 /// Başlık satırındaki 44×44 kutular, soldan sağa.
 List<Rect> _basilikKutulari(WidgetTester tester) {
   final kutular = <Rect>[];
-  for (final e in find.byType(Container).evaluate()) {
+  // `DecoratedBox` da sayılır: istek atan kutulu düğmeler kutularını
+  // `SandikAsyncTap.zemin`e verir (çıkış düğmesi, 2026-10-08).
+  for (final e in [
+    ...find.byType(Container).evaluate(),
+    ...find.byType(DecoratedBox).evaluate(),
+  ]) {
     final ro = e.renderObject;
     if (ro is! RenderBox || !ro.hasSize || !ro.attached) continue;
     final s = ro.size;

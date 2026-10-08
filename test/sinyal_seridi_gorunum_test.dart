@@ -26,15 +26,21 @@ void main() {
 
   group('sinyal şeridi kabuğu', () {
     test('zemin NÖTR — sinyal rengiyle boyanmaz', () {
-      expect(kabuk.contains('color: context.c.surface1'), isTrue,
+      // 2026-10-08: kabuk `SandikCard` oldu; zemin kartın varsayılanı
+      // (`elevated: false` → `surface1`). Elle zemin verilmemeli.
+      expect(kabuk.contains('SandikCard('), isTrue,
           reason: 'Kabuk sayfanın kart zeminini kullanmıyor.');
+      expect(kabuk.contains('elevated: true'), isFalse);
       expect(kabuk.contains('color: renk.withValues(alpha: 0.07)'), isFalse,
           reason: 'Renkli zemin geri gelmiş — şerit yine uyarı kutusuna '
               'dönüşür.');
     });
 
     test('kenarlık NÖTR — sayfanın hairline\'ı', () {
-      expect(kabuk.contains('color: context.c.hairline'), isTrue);
+      // `SandikCard` varsayılanı `bordered: true` → hairline kenarlık.
+      expect(kabuk.contains('SandikCard('), isTrue);
+      expect(kabuk.contains('bordered: false'), isFalse,
+          reason: 'Kenarlık kaldırılmış.');
       expect(kabuk.contains('renk.withValues(alpha: 0.28)'), isFalse,
           reason: 'Renkli kenarlık geri gelmiş.');
     });

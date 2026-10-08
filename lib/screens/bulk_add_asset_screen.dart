@@ -461,6 +461,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             SizedBox(
               width: double.infinity,
               height: 52,
+              // BİLİNÇLİ İSTİSNA (tek yükleniyor davranışı, 2026-10-08):
+              // SandikAsyncButton DEĞİL. Meşgul düğme yalnız gösterge değil
+              // "3/10 kaydediliyor" ilerlemesini de taşır; standart bileşen
+              // etiketi gizleyip yalnız gösterge koyar. `_saving` zaten
+              // ekranın tamamını kilitler (geri tuşu, satır düzenle/sil,
+              // Varlık Ekle) — çift dokunuş koruması oradan gelir.
               child: FilledButton(
                 onPressed: _saving || items.isEmpty ? null : _saveAll,
                 style: FilledButton.styleFrom(
@@ -488,8 +494,15 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                         items.isEmpty
                             ? 'Kaydet'
                             : context.l10n.saveAllCount(items.length),
-                        style: context.t.bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        // Renk açıkça `onAmber` (açık tema denetimi
+                        // 2026-10-08): `bodyLarge` kendi rengini (`text90`)
+                        // taşır ve düğmenin `foregroundColor`'ını ezer —
+                        // koyu temada amber üstüne beyaz 1,87:1 kalıyordu.
+                        // Pasifken (boş sepet) eski ton: soluk dolguda koyu
+                        // yazı okunmazdı.
+                        style: context.t.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: items.isEmpty ? null : context.c.onAmber),
                       ),
               ),
             ),

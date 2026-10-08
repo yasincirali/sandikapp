@@ -10,7 +10,7 @@ import '../services/sozlesme_deposu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
-import 'custom_loading_indicator.dart';
+import 'sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
@@ -575,23 +575,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 const SizedBox(width: 10),
                 Expanded(
                   flex: 2,
-                  child: FilledButton(
-                    onPressed: _saving ? null : _submit,
+                  // Gösterge + çift dokunuş kilidi standart bileşende (tek
+                  // yükleniyor davranışı, 2026-10-08). `_saving` kalır:
+                  // kayıt sürerken İptal pasif.
+                  child: SandikAsyncButton.kompakt(
+                    onPressed: _submit,
+                    mesgul: _saving,
                     style: FilledButton.styleFrom(
                       backgroundColor: accent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
-                    child: _saving
-                        ? const CustomLoadingIndicator(size: 18)
-                        : Text(
-                            _isAdd
-                                ? context.l10n.buyAction
-                                : context.l10n.sellAction,
-                            style: context.t.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: context.c.text90)),
+                    child: Text(
+                        _isAdd
+                            ? context.l10n.buyAction
+                            : context.l10n.sellAction,
+                        style: context.t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: context.c.text90)),
                   ),
                 ),
               ],

@@ -171,6 +171,37 @@ const PERIOD_HOURS: Partial<Record<SignalFrequency, number>> = {
   every_3h: 3,
 };
 
+/// 10:00–18:00 penceresinde günde en fazla kaç tur. İstemcideki
+/// `SignalFrequency.gunlukEnFazla` ile birebir (`sinyal_slot_kapisi_test`).
+export const GUNLUK_EN_FAZLA: Record<SignalFrequency, number> = {
+  hourly: 9,
+  every_2h: 5,
+  every_3h: 3,
+  twice_daily: 2,
+  daily: 1,
+};
+
+/// Ücretsiz sürümün günlük bildirim kapısı (Premium planı, 2026-10-08).
+///
+/// Tercih satırı DEĞİŞTİRİLMEZ: kullanıcının seçtiği sıklık saklı kalır,
+/// Premium alınca kendiliğinden geri gelir. Yalnız bu turun kararı için
+/// sığdırılmış bir kopya döner: sığmayan sıklık "günde 1 kez"e, saati
+/// seçtiği İLK saate (yoksa 11:00, yani sabah) iner. `slot` 0 ya da
+/// tanımsızsa kapı kapalıdır ve tercih olduğu gibi döner.
+export function slotaSigdir<
+  T extends { frequency?: SignalFrequency; notify_hours?: number[] },
+>(pref: T | undefined, slot: number | undefined): T | undefined {
+  if (!slot || slot <= 0) return pref;
+  const freq = pref?.frequency ?? DEFAULT_FREQUENCY;
+  if (GUNLUK_EN_FAZLA[freq] <= slot) return pref;
+  // Periyodik sıklıkta `notify_hours` eski bir seçimden kalmış olabilir;
+  // orada anlamlı tek saat varsayılanın ilkidir.
+  const saatli = freq === 'daily' || freq === 'twice_daily';
+  const ilk = (saatli ? pref?.notify_hours?.[0] : undefined)
+    ?? DEFAULT_NOTIFY_HOURS[0];
+  return { ...(pref ?? {}), frequency: 'daily', notify_hours: [ilk] } as T;
+}
+
 /// Şu anki TR saati (0-23). Sunucu UTC çalışır; TR sabit UTC+3
 /// (2016'dan beri yaz saati uygulaması yok, bu yüzden ofset sabit).
 function istanbulHour(now: Date): number {
@@ -582,6 +613,41 @@ Deno.serve(async (request) => {
       }
     }
 
+    // ── 3b) Ücretsiz günlük bildirim kapısı ─────────────────────────────────
+    //
+    // `SINYAL_UCRETSIZ_SLOT` secret'ı (ör. "1") tanımlı DEĞİLSE kapı yoktur
+    // ve davranış birebir eskisidir — paywall açılmadan herkes seçtiği
+    // sıklığı alır. Paywall açılırken (Remote Config `paywall_enabled`) bu
+    // secret da konur; istemci aynı kuralı `free_signal_slots_per_day` ile
+    // gösterir. Premium = `premium_mi_kullanici` ile aynı karar: geçerli
+    // hak satırı ya da admin (0116/0123). Tek tek RPC yerine iki toplu okuma.
+    const ucretsizSlot = Number(Deno.env.get('SINYAL_UCRETSIZ_SLOT') ?? '0') || 0;
+    const premiumKullanicilar = new Set<string>();
+    let premiumOkundu = false;
+    if (ucretsizSlot > 0) {
+      const simdi = Date.now();
+      const [haklar, adminler] = await Promise.all([
+        admin.from('premium_haklari').select('user_id, bitis').in('user_id', userIds),
+        admin.from('push_admins').select('user_id').in('user_id', userIds),
+      ]);
+      // Okunamazsa kapı uygulanmaz: abone olmuş birinin bildirimini yanlışlıkla
+      // kısmak, ücretsiz birine bir tur fazla göndermekten pahalıdır.
+      if (haklar.error || adminler.error) {
+        console.error('[analyze-signals] premium okunamadi, slot kapisi bu tur atlandi');
+      } else {
+        premiumOkundu = true;
+        for (const h of (haklar.data ?? []) as { user_id: string; bitis: string | null }[]) {
+          // Postgres zaman biçimi ISO dizgesiyle sözlük sırasında kıyaslanamaz
+          // ("+00:00" ↔ "Z"); sayıya çevrilir.
+          if (h.bitis === null || Date.parse(h.bitis) > simdi) premiumKullanicilar.add(h.user_id);
+        }
+        for (const a of (adminler.data ?? []) as { user_id: string }[]) {
+          premiumKullanicilar.add(a.user_id);
+        }
+      }
+    }
+    const slotKapisi = ucretsizSlot > 0 && premiumOkundu;
+
     const now = new Date();
     // Sıklık/pencere yüzünden atlananlar — teşhiste "neden gönderilmedi"
     // sorusunun cevabı. Bu sayaç olmadan sessiz atlama hata gibi görünür.
@@ -596,7 +662,12 @@ Deno.serve(async (request) => {
     const aktifAssets = assets.filter((a) => {
       const pref = prefs.get(prefKey(a.user_id, a.type));
       if (pref && !pref.signals_enabled) return false;
-      if (!dryRun && !shouldNotifyNow(pref, now)) {
+      // Kapı yalnız bu kararı etkiler; tercih satırı ve sonraki eşik/
+      // gösterge okumaları kullanıcının kendi değerleriyle kalır.
+      const zamanlama = slotKapisi && !premiumKullanicilar.has(a.user_id)
+        ? slotaSigdir(pref, ucretsizSlot)
+        : pref;
+      if (!dryRun && !shouldNotifyNow(zamanlama, now)) {
         skippedByFrequency++;
         return false;
       }
