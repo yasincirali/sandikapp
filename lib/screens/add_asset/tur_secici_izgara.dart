@@ -62,11 +62,10 @@ class TurSeciciIzgara extends ConsumerStatefulWidget {
   ConsumerState<TurSeciciIzgara> createState() => _TurSeciciIzgaraState();
 }
 
-/// Ağ aramasının beklemesi — takip listesi aramasıyla aynı çeyrek saniye
-/// (`AddWatchlistScreen._sorguDegisti`): her tuşta TEFAS'a gitmemek için.
-/// Hareket süresi DEĞİL, bu yüzden `SandikMotion` değil. Yerleşik liste
+/// Ağ aramasının beklemesi takip listesiyle aynı sabitten
+/// (`SymbolSearchService.aramaBeklemesi`). Yerleşik liste
 /// (hisse/altın/döviz/ABD) beklemeden, her tuşta gösterilir.
-final _aramaBeklemesi = const Duration(seconds: 1) ~/ 4;
+const _aramaBeklemesi = SymbolSearchService.aramaBeklemesi;
 
 class _TurSeciciIzgaraState extends ConsumerState<TurSeciciIzgara> {
   final _ctrl = TextEditingController();

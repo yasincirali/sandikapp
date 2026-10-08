@@ -117,7 +117,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     // 250 ms: her tuş vuruşunda TEFAS'a gitmemek için. Yerleşik listeler
     // zaten bellekte ama fon araması ağa çıkabiliyor.
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () => _ara(v));
+    _debounce = Timer(SymbolSearchService.aramaBeklemesi, () => _ara(v));
   }
 
   Future<void> _ara(String q) async {

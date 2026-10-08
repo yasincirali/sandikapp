@@ -117,6 +117,11 @@ class SymbolSearchService {
   SymbolSearchService._();
   static final instance = SymbolSearchService._();
 
+  /// Yazarken ağ aramasının beklemesi — her tuşta TEFAS'a gitmemek için.
+  /// Takip listesi araması ve ekleme sayfasının tür seçicisi AYNI süreyi
+  /// kullanır (tek kaynak; hareket süresi olmadığı için `SandikMotion` değil).
+  static const aramaBeklemesi = Duration(milliseconds: 250);
+
   static final _cache = <String, List<SymbolHit>>{};
 
   /// ABD sonucunun köken etiketi; `VarlikKimligi.fromSymbolHit` buna bakıp

@@ -118,6 +118,15 @@ const List<SurumNotu> surumNotlari = [
       // 2026-10-08: ABD borsası, eurobond, masraflar. Üçü de kendi
       // bayrağıyla görünür; kapalıyken madde sayılmaz.
       Yenilik(
+        ikon: YenilikIkonu.liste,
+        bayrak: 'tur_secici_izgara',
+        baslik: 'Varlık eklemek daha kolay',
+        aciklama: 'Ekleme sayfasının başında arama: THYAO, Apple, BTC ya da '
+            'ISIN yaz, türü uygulama bulsun. Aranmayanlar üç grupta: Borsa '
+            've fon, Döviz ve değerli, Birikim. Seçince liste tek satıra '
+            'iner.',
+      ),
+      Yenilik(
         ikon: YenilikIkonu.grafik,
         bayrak: 'abd_hisse',
         baslik: 'ABD hisseleri ve ETF\'ler',
