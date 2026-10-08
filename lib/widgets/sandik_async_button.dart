@@ -39,6 +39,7 @@ class SandikAsyncButton extends StatefulWidget {
     this.haptic = SandikHaptic.medium,
     this.tur = SandikAsyncTur.dolu,
     this.icon,
+    this.mesgul = false,
   });
 
   /// Kompakt düğme (diyalog, kart içi eylem): boy ve genişlik içerikten.
@@ -51,6 +52,7 @@ class SandikAsyncButton extends StatefulWidget {
     this.haptic = SandikHaptic.medium,
     this.tur = SandikAsyncTur.dolu,
     this.icon,
+    this.mesgul = false,
   })  : expand = false,
         height = null;
 
@@ -61,6 +63,11 @@ class SandikAsyncButton extends StatefulWidget {
   /// Etiketin önündeki ikon (`FilledButton.icon` karşılığı). Meşgulken
   /// ikon + etiketin tamamı göstergeyle yer değiştirir.
   final Widget? icon;
+
+  /// Aynı iş düğmeden GEÇMEDEN de başlayabiliyorsa (klavyede "Bitti", OTP'de
+  /// 6. hane) ekranın bayrağı: düğme aynı göstergeyle kilitlenir. Ekran
+  /// kendi göstergesini etikete koymaz — tek gösterge buradan çizilir.
+  final bool mesgul;
 
   /// Asenkron iş. Devam ederken buton kilitlidir.
   final Future<void> Function()? onPressed;
@@ -89,7 +96,7 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
 
   Future<void> _handleTap() async {
     // Kilit: ikinci dokunuş sessizce yok sayılır.
-    if (_busy || widget.onPressed == null) return;
+    if (_busy || widget.mesgul || widget.onPressed == null) return;
     // Haptic kilidin ARDINDAN: yutulan ikinci dokunuş titreşim de vermemeli,
     // aksi halde kullanıcı isteğin gittiğini sanır.
     widget.haptic.perform();
@@ -106,7 +113,8 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
   @override
   Widget build(BuildContext context) {
     // Meşgulken null → Flutter'ın kendi pasif görünümü devreye girer.
-    final basinca = widget.onPressed == null || _busy ? null : _handleTap;
+    final mesgul = _busy || widget.mesgul;
+    final basinca = widget.onPressed == null || mesgul ? null : _handleTap;
     final ikon = widget.icon;
     final etiket = ikon == null
         ? widget.child
@@ -121,12 +129,12 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
       alignment: Alignment.center,
       children: [
         AnimatedOpacity(
-          opacity: _busy ? 0 : 1,
+          opacity: mesgul ? 0 : 1,
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           child: etiket,
         ),
-        if (_busy)
+        if (mesgul)
           const CustomLoadingIndicator(
             key: ValueKey('busy'),
             size: CustomLoadingIndicator.small,

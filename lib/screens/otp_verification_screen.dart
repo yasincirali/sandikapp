@@ -12,7 +12,6 @@ import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
@@ -594,23 +593,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         ),
       );
     }
-    // Otomatik gönderimde (6. hane) düğme basılmadan meşguldür: o yolda
-    // gösterge etiketin yerine çizilir. Düğmeden tetiklenince göstergeyi
-    // bileşen çizer, bu etiket görünmez kalır — iki gösterge üst üste binmez.
+    // Otomatik gönderimde (6. hane) düğme basılmadan meşguldür: `mesgul:`
+    // ile o yolda da gösterge bileşenden çizilir (tek gösterge).
     return SandikAsyncButton(
-      onPressed: _submitting ? null : _submit,
+      onPressed: _submit,
+      mesgul: _submitting,
       haptic: SandikHaptic.none,
       style: stil,
-      child: _submitting
-          ? const CustomLoadingIndicator(size: CustomLoadingIndicator.small)
-          : Text(
-              context.l10n.verify,
-              // Renk açıkça `onAmber` — yukarıdaki nota bak.
-              style: context.t.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: context.c.onAmber,
-              ),
-            ),
+      child: Text(
+        context.l10n.verify,
+        // Renk açıkça `onAmber` — yukarıdaki nota bak.
+        style: context.t.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: context.c.onAmber,
+        ),
+      ),
     );
   }
 

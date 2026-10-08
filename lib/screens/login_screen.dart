@@ -26,7 +26,6 @@ import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
 import 'register_screen.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/social_sign_in_buttons.dart';
 import '../l10n/l10n.dart';
@@ -372,25 +371,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // FilledButton düz dokunma tanıyıcısı kullanır, sorun yok.
                     //
                     // `_loading` KALIR: klavyedeki "Bitti" de girişi
-                    // tetikler (düğmeden geçmez). O yolda düğme pasifleşir
-                    // ve gösterge etiketin yerine çizilir; düğmeden
-                    // tetiklenince göstergeyi bileşen kendisi çizer (etiket
-                    // görünmez kalır, iki gösterge üst üste binmez).
+                    // tetikler (düğmeden geçmez); `mesgul:` ile o yolda da
+                    // aynı gösterge bileşenden çizilir.
                     _AmberCamGolge(
                       child: SandikAsyncButton(
-                        onPressed: _loading ? null : _login,
+                        onPressed: _login,
+                        mesgul: _loading,
                         haptic: SandikHaptic.none,
                         style: _amberCamStili(context),
-                        child: _loading
-                            ? const CustomLoadingIndicator(
-                                size: CustomLoadingIndicator.small)
-                            : Text(
-                                context.l10n.signIn,
-                                style: context.t.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: context.c.onAmber,
-                                ),
-                              ),
+                        child: Text(
+                          context.l10n.signIn,
+                          style: context.t.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.c.onAmber,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),

@@ -15,7 +15,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
@@ -184,7 +183,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 24),
           _primaryButton(
             label: context.l10n.sendCode,
-            onTap: _loading ? null : _sendCode,
+            onTap: _sendCode,
           ),
         ],
       ),
@@ -309,7 +308,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           _primaryButton(
             label: context.l10n.updatePassword,
-            onTap: _loading ? null : _verifyAndUpdate,
+            onTap: _verifyAndUpdate,
           ),
           const SizedBox(height: 12),
           CupertinoButton(
@@ -338,10 +337,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   /// kullanır.
   ///
   /// `_loading` KALIR: klavyedeki "Bitti" de isteği tetikler (düğmeden
-  /// geçmez) ve "Başka e-posta dene" istek sürerken kapalıdır. Klavye
-  /// yolunda düğme pasifleşir, gösterge etiketin yerine çizilir; düğmeden
-  /// tetiklenince göstergeyi bileşen çizer (etiket görünmez, çift gösterge
-  /// olmaz).
+  /// geçmez) ve "Başka e-posta dene" istek sürerken kapalıdır. `mesgul:`
+  /// ile klavye yolunda da gösterge bileşenden çizilir (tek gösterge).
   Widget _primaryButton(
       {required String label, Future<void> Function()? onTap}) {
     return DecoratedBox(
@@ -358,6 +355,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       ),
       child: SandikAsyncButton(
         onPressed: onTap,
+        mesgul: _loading,
         haptic: SandikHaptic.none,
         style: FilledButton.styleFrom(
           backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
@@ -368,15 +366,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           side: BorderSide(color: context.c.amberFill.withValues(alpha: 0.60)),
           shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
         ),
-        child: _loading
-            ? const CustomLoadingIndicator(size: CustomLoadingIndicator.small)
-            : Text(
-                label,
-                style: context.t.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: context.c.onAmber,
-                ),
-              ),
+        child: Text(
+          label,
+          style: context.t.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: context.c.onAmber,
+          ),
+        ),
       ),
     );
   }
