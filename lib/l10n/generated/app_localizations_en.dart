@@ -6775,4 +6775,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get anzOkunamadi => 'The note could not be opened right now.';
+
+  @override
+  String get stockMarketBist => 'BIST';
+
+  @override
+  String get stockMarketUs => 'US';
+
+  @override
+  String stockMarketSemantics(String market) {
+    return 'Stock market: $market';
+  }
+
+  @override
+  String get usStocks => 'US Stocks';
+
+  @override
+  String get pickUsStock => 'Pick a US stock';
+
+  @override
+  String get pickUsStockTap => 'Tap to pick a US stock...';
+
+  @override
+  String get usSymbolHint => 'Type a symbol (e.g. AAPL, BRK-B)';
+
+  @override
+  String selectedUsStockSemantics(String name) {
+    return 'Selected US stock: $name. Double tap to change.';
+  }
+
+  @override
+  String get usStockCurrencyLocked => 'US stocks are recorded in dollars';
+
+  @override
+  String get costsUpper => 'COSTS';
+
+  @override
+  String get costsPaid => 'Paid';
+
+  @override
+  String get costsEstimatedOnSale => 'Estimated on sale';
+
+  @override
+  String get costTagPaid => 'Paid';
+
+  @override
+  String get costTagEstimated => 'Estimated';
+
+  @override
+  String get costTagInfo => 'Info';
+
+  @override
+  String costsShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get costsShowLess => 'Show less';
 }

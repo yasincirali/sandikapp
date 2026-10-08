@@ -4481,5 +4481,22 @@
   },
   "anzAylikOzetYok": "None of your assets had a notable month.",
   "anzAylikBos": "This month's report is not ready yet.",
-  "anzOkunamadi": "The note could not be opened right now."
+  "anzOkunamadi": "The note could not be opened right now.",
+  "stockMarketBist": "BIST",
+  "stockMarketUs": "US",
+  "stockMarketSemantics": "Stock market: {market}",
+  "usStocks": "US Stocks",
+  "pickUsStock": "Pick a US stock",
+  "pickUsStockTap": "Tap to pick a US stock...",
+  "usSymbolHint": "Type a symbol (e.g. AAPL, BRK-B)",
+  "selectedUsStockSemantics": "Selected US stock: {name}. Double tap to change.",
+  "usStockCurrencyLocked": "US stocks are recorded in dollars",
+  "costsUpper": "COSTS",
+  "costsPaid": "Paid",
+  "costsEstimatedOnSale": "Estimated on sale",
+  "costTagPaid": "Paid",
+  "costTagEstimated": "Estimated",
+  "costTagInfo": "Info",
+  "costsShowAll": "Show all ({count})",
+  "costsShowLess": "Show less"
 }

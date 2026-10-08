@@ -2195,7 +2195,12 @@ class _SortSheet extends StatelessWidget {
 /// ("Anadolu Hayat · Devlet katkısı").
 String _satirAltMetni(BuildContext context, Asset a) {
   final l10n = context.l10n;
-  final tur = a.type.labelOf(l10n);
+  // ABD hissesi (bayrak `abd_hisse`): satırda yalnız sembol (AAPL) var;
+  // pazar yazılmazsa BIST hissesinden ayırt edilmez. Yalnız `'abd'` alt
+  // kategorili lot'ta — o lot ancak bayrak açıkken doğar.
+  final tur = a.abdHissesi
+      ? '${a.type.labelOf(l10n)} · ${l10n.stockMarketUs}'
+      : a.type.labelOf(l10n);
   if (a.type == AssetType.mevduat) return tur;
   if (a.type == AssetType.bes) {
     final kurum = a.besKurumu;

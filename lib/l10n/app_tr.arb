@@ -4852,5 +4852,43 @@
   },
   "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",
   "anzAylikBos": "Bu ayın raporu henüz hazır değil.",
-  "anzOkunamadi": "Not şu an açılamadı."
+  "anzOkunamadi": "Not şu an açılamadı.",
+  "stockMarketBist": "BIST",
+  "stockMarketUs": "ABD",
+  "stockMarketSemantics": "Hisse pazarı: {market}",
+  "@stockMarketSemantics": {
+    "placeholders": {
+      "market": {
+        "type": "String"
+      }
+    }
+  },
+  "usStocks": "ABD Hisseleri",
+  "pickUsStock": "ABD hissesi seç",
+  "pickUsStockTap": "ABD hissesi seçmek için dokun...",
+  "usSymbolHint": "Sembol yaz (örn: AAPL, BRK-B)",
+  "selectedUsStockSemantics": "Seçili ABD hissesi: {name}. Değiştirmek için çift dokun.",
+  "@selectedUsStockSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "usStockCurrencyLocked": "ABD hissesi dolarla kaydedilir",
+  "costsUpper": "MASRAFLAR",
+  "costsPaid": "Ödenen",
+  "costsEstimatedOnSale": "Satarken tahmini",
+  "costTagPaid": "Ödendi",
+  "costTagEstimated": "Tahmini",
+  "costTagInfo": "Bilgi",
+  "costsShowAll": "Tümünü gör ({count})",
+  "@costsShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "costsShowLess": "Daha az göster"
 }

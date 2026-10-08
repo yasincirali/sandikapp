@@ -11157,6 +11157,108 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Not şu an açılamadı.'**
   String get anzOkunamadi;
+
+  /// No description provided for @stockMarketBist.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST'**
+  String get stockMarketBist;
+
+  /// No description provided for @stockMarketUs.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD'**
+  String get stockMarketUs;
+
+  /// No description provided for @stockMarketSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hisse pazarı: {market}'**
+  String stockMarketSemantics(String market);
+
+  /// No description provided for @usStocks.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD Hisseleri'**
+  String get usStocks;
+
+  /// No description provided for @pickUsStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hissesi seç'**
+  String get pickUsStock;
+
+  /// No description provided for @pickUsStockTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hissesi seçmek için dokun...'**
+  String get pickUsStockTap;
+
+  /// No description provided for @usSymbolHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sembol yaz (örn: AAPL, BRK-B)'**
+  String get usSymbolHint;
+
+  /// No description provided for @selectedUsStockSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili ABD hissesi: {name}. Değiştirmek için çift dokun.'**
+  String selectedUsStockSemantics(String name);
+
+  /// No description provided for @usStockCurrencyLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hissesi dolarla kaydedilir'**
+  String get usStockCurrencyLocked;
+
+  /// No description provided for @costsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'MASRAFLAR'**
+  String get costsUpper;
+
+  /// No description provided for @costsPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödenen'**
+  String get costsPaid;
+
+  /// No description provided for @costsEstimatedOnSale.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satarken tahmini'**
+  String get costsEstimatedOnSale;
+
+  /// No description provided for @costTagPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödendi'**
+  String get costTagPaid;
+
+  /// No description provided for @costTagEstimated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmini'**
+  String get costTagEstimated;
+
+  /// No description provided for @costTagInfo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgi'**
+  String get costTagInfo;
+
+  /// No description provided for @costsShowAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünü gör ({count})'**
+  String costsShowAll(int count);
+
+  /// No description provided for @costsShowLess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha az göster'**
+  String get costsShowLess;
 }
 
 class _AppLocalizationsDelegate

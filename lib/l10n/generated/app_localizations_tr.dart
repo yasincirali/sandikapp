@@ -6713,4 +6713,61 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get anzOkunamadi => 'Not şu an açılamadı.';
+
+  @override
+  String get stockMarketBist => 'BIST';
+
+  @override
+  String get stockMarketUs => 'ABD';
+
+  @override
+  String stockMarketSemantics(String market) {
+    return 'Hisse pazarı: $market';
+  }
+
+  @override
+  String get usStocks => 'ABD Hisseleri';
+
+  @override
+  String get pickUsStock => 'ABD hissesi seç';
+
+  @override
+  String get pickUsStockTap => 'ABD hissesi seçmek için dokun...';
+
+  @override
+  String get usSymbolHint => 'Sembol yaz (örn: AAPL, BRK-B)';
+
+  @override
+  String selectedUsStockSemantics(String name) {
+    return 'Seçili ABD hissesi: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
+  String get usStockCurrencyLocked => 'ABD hissesi dolarla kaydedilir';
+
+  @override
+  String get costsUpper => 'MASRAFLAR';
+
+  @override
+  String get costsPaid => 'Ödenen';
+
+  @override
+  String get costsEstimatedOnSale => 'Satarken tahmini';
+
+  @override
+  String get costTagPaid => 'Ödendi';
+
+  @override
+  String get costTagEstimated => 'Tahmini';
+
+  @override
+  String get costTagInfo => 'Bilgi';
+
+  @override
+  String costsShowAll(int count) {
+    return 'Tümünü gör ($count)';
+  }
+
+  @override
+  String get costsShowLess => 'Daha az göster';
 }
