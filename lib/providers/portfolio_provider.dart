@@ -27,6 +27,25 @@ const _uuid = Uuid();
 
 /// Free tier varlık limiti aşıldığında `addAsset` bunu fırlatır. UI yakalayıp
 /// paywall gösterir + `premium_gate_shown` event log'lar.
+/// Ücretsiz varlık kotasının saydığı anahtarlar: kullanıcının KENDİ ve BUGÜN
+/// tuttuğu pozisyonlar (tür|sembol|para birimi). Saf, test edilir.
+///
+/// ## Neden (yasin, 2026-10-08: "aktif 5 varlığı olan eleman 6.'yı
+/// ekleyemiyor")
+/// Kota ham deftere bakıyordu (`isBuy && isActive`): tamamen satılmış
+/// pozisyonun alım satırı defterde durduğu için kapanmış varlıklar da
+/// sayılıyordu; durum ayrıca ortağın lot'larını taşıdığı için (Birlikte
+/// görünümü) ortağın varlıkları da kullanıcının kotasına yazılıyordu. Kota
+/// "bugün kaç varlığın var" sorusudur → `aktifLotlar` + sahibi kendisi.
+@visibleForTesting
+Set<String> kotaAnahtarlari(Iterable<Asset> lotlar, String userId) => {
+      for (final a in aktifLotlar(lotlar.where((a) => a.userId == userId)))
+        if (a.isBuy) kotaAnahtari(a.type, a.ticker, a.currency),
+    };
+
+String kotaAnahtari(AssetType type, String ticker, String currency) =>
+    '${type.name}|$ticker|$currency';
+
 class AssetLimitExceededException implements Exception {
   final int currentCount;
   final int limit;
@@ -410,15 +429,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // yeni "varlık" sayılmasın (kullanıcı zaten sahip olduğuna ekliyor).
     final limit = ref.read(assetLimitProvider);
     if (limit < (1 << 30)) {
-      final existingKeys = <String>{};
-      for (final a in currentState.assets) {
-        // Silinmiş varlık kotayı işgal etmemeli — kullanıcı sildiği halde
-        // limite takılırdı.
-        if (a.isBuy && a.isActive) {
-          existingKeys.add('${a.type.name}|${a.ticker}|${a.currency}');
-        }
-      }
-      final newKey = '${type.name}|$ticker|$currency';
+      // Silinmiş, tamamen satılmış ve ortağa ait lot kotayı işgal etmez
+      // (gerekçe [kotaAnahtarlari]).
+      final existingKeys = kotaAnahtarlari(currentState.assets, user.id);
+      final newKey = kotaAnahtari(type, ticker, currency);
       if (!existingKeys.contains(newKey) && existingKeys.length >= limit) {
         unawaited(AnalyticsService.instance
             .logPremiumGateShown(feature: 'asset_limit'));
@@ -507,12 +521,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final currentState = state.valueOrNull ?? const PortfolioState();
     final limit = ref.read(assetLimitProvider);
     if (limit < (1 << 30)) {
-      final mevcut = <String>{
-        for (final a in currentState.assets)
-          if (a.isBuy && a.isActive) '${a.type.name}|${a.ticker}|${a.currency}',
-      };
+      final userId = ref.read(authProvider).valueOrNull?.id ?? lots.first.userId;
+      final mevcut = kotaAnahtarlari(currentState.assets, userId);
       final yeni = {
-        for (final a in lots) '${a.type.name}|${a.ticker}|${a.currency}',
+        for (final a in lots) kotaAnahtari(a.type, a.ticker, a.currency),
       }.difference(mevcut);
       if (yeni.isNotEmpty && mevcut.length + yeni.length > limit) {
         unawaited(AnalyticsService.instance
