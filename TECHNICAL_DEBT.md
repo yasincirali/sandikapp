@@ -170,6 +170,10 @@ panel zaten ortaktı. İki giriş biçimi (tam ekran / alt sayfa) kaldı.
 (`grafik_stili_birligi_test` ortak stil sabitlerini kilitliyor, yapıyı
 değil).
 
+**Kullanıcı kararı (2026-10-08): olduğu gibi kalır.** Birleştirme kullanıcıya
+fayda getirmiyor, yalnız bakım kolaylığı; görünür fark ve görsel doğrulama
+maliyeti ağır bastı. Aşağıdaki koşul yalnız ileride yeniden açılırsa geçerli.
+
 **Ne zaman:** Detay grafiği `FiyatGrafigi`'ne (ya da tersine) taşınacaksa,
 önce iki grafik `tek_varlik_gorsel_onizleme_test` ile önce/sonra çizilip
 `tek_varlik_sayfasi` bayrağı arkasında denenmeli.

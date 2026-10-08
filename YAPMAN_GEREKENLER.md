@@ -27,8 +27,8 @@ görünümü aynı. **Analitik:** `today_row_shown` olayında `yesil`/`haftalik`
       — `.gitignore` artık yalnız `.claude/skills/`'i içeri alır;
       `settings.local.json`, hook'lar, yerel bellek dışarıda kalır. Bunu
       yapana kadar bulut oturumunda CLAUDE.md tablosundaki skill'ler YOK.
-- [ ] Karar: varlık detayı (tam ekran) ile varlık sayfası (alt sayfa) tek
-      grafiğe insin mi? (`TECHNICAL_DEBT.md` "İki varlık yüzeyi")
+- [x] Karar (2026-10-08): varlık detayı ile varlık sayfası **olduğu gibi
+      kalır** — iki grafik ayrı (`TECHNICAL_DEBT.md` "İki varlık yüzeyi").
 - [ ] Gerçek cihazda açık tema: yasal metin ekranı ve grafik ekranları.
 
 ## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
