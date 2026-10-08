@@ -12,6 +12,8 @@ on:
     paths:
       - tool/kaynak_olcum.py
       - tool/kaynak_ornek.py
+      - tool/eurobond_canli.ts
+      - supabase/functions/_shared/eurobond.ts
       - .github/workflows/kaynak-olcum.yml
 
 permissions:
@@ -23,5 +25,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Biçim örnekleri
-        run: python3 tool/kaynak_ornek.py
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Eurobond ayrıştırıcıları canlı kaynakta
+        run: deno run --allow-net tool/eurobond_canli.ts
