@@ -11319,6 +11319,90 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.'**
   String get pwGeriYukHata;
+
+  /// No description provided for @s7AraSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get s7AraSemantics;
+
+  /// No description provided for @s7AramaIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık, sembol ya da işlem ara'**
+  String get s7AramaIpucu;
+
+  /// No description provided for @s7VarliklarimUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'VARLIKLARIM'**
+  String get s7VarliklarimUpper;
+
+  /// No description provided for @s7PiyasaUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'PİYASA'**
+  String get s7PiyasaUpper;
+
+  /// No description provided for @s7EylemlerUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'EYLEMLER'**
+  String get s7EylemlerUpper;
+
+  /// No description provided for @s7EylemFiyatAlarmlari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmları'**
+  String get s7EylemFiyatAlarmlari;
+
+  /// No description provided for @s7EylemSinyalAyarlari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal ayarları'**
+  String get s7EylemSinyalAyarlari;
+
+  /// No description provided for @s7EylemEkstreAktar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreden aktar (CSV)'**
+  String get s7EylemEkstreAktar;
+
+  /// No description provided for @s7EylemTopluEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplu ekle'**
+  String get s7EylemTopluEkle;
+
+  /// No description provided for @s7EylemTumHareketler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm hareketler'**
+  String get s7EylemTumHareketler;
+
+  /// No description provided for @s7EylemKarsilastir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Karşılaştır'**
+  String get s7EylemKarsilastir;
+
+  /// No description provided for @s7EylemTakipListesi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takibe al'**
+  String get s7EylemTakipListesi;
+
+  /// No description provided for @s7EylemBildirimler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler'**
+  String get s7EylemBildirimler;
+
+  /// No description provided for @s7EylemAyarlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarlar'**
+  String get s7EylemAyarlar;
 }
 
 class _AppLocalizationsDelegate

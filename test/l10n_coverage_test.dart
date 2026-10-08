@@ -54,6 +54,7 @@ void main() {
     'lib/screens/csv_import_screen.dart': 0,
     'lib/screens/disclaimer_acceptance_screen.dart': 0,
     'lib/screens/forgot_password_screen.dart': 0,
+    'lib/screens/genel_arama_screen.dart': 0,
     'lib/screens/halka_arz_screen.dart': 0,
     'lib/screens/lock_screen.dart': 0,
     'lib/screens/login_screen.dart': 0,
