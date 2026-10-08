@@ -57,12 +57,20 @@ abstract final class CanliEtkinlikTarifi {
   ///     dakika fon başına TEFAS'a istek atmak boşa yük.
   ///   * mevduat / BES — fiyat sözleşmeden hesaplanır, kotasyon yok.
   ///   * diğer — elle girilen değer.
+  ///
+  /// Eurobond (seri denetimi 2026-10-08): sunucu tahvili artık uygulamayla
+  /// AYNI ölçekte (kirli/100) `eurobond_fiyat`'tan okur
+  /// (`_shared/live_prices.ts` › eurobond kovası). Dışarıda kalsaydı tahvil
+  /// parçası sabit kalır, USD/TRY hareketi bile kilit ekranına yansımazdı.
+  /// Eski sunucu sembolü fiyatlayamaz: parça oranı 1 alır, kur oranı yine
+  /// işler — bugünkünden kötü değil.
   static const oynayanTurler = {
     AssetType.hisse,
     AssetType.doviz,
     AssetType.altin,
     AssetType.emtia,
     AssetType.kripto,
+    AssetType.eurobond,
   };
 
   /// Para birimi → kotasyon sembolü (`PortfolioState.toTRY` ile aynı üçlü;

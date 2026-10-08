@@ -763,6 +763,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   static AssetType _typeOf(String ticker) {
     if (ticker.startsWith('TEFAS:')) return AssetType.fon;
     if (ticker.startsWith(kriptoOneki)) return AssetType.kripto;
+    // Eurobond (seri denetimi 2026-10-08): emtiaya düşseydi ekleme formu
+    // tahvili "Emtia" olarak, sembolü serbest metin diye açardı. Form
+    // eurobond türünde açılır; tahvil katalogdan seçilir.
+    if (FiyatKaynagi.eurobondMu(ticker)) return AssetType.eurobond;
     if (ticker.startsWith('ALTIN_')) return AssetType.altin;
     if (ticker.endsWith('TRY=X')) return AssetType.doviz;
     if (ticker.endsWith('.IS')) return AssetType.hisse;

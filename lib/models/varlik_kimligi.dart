@@ -1,6 +1,7 @@
 import '../services/symbol_search_service.dart';
 import 'asset_categories.dart';
 import 'asset_type.dart';
+import 'eurobond.dart';
 import 'watchlist_item.dart';
 
 /// Bir varlığın KİMLİĞİ — sahiplik ve takip bilgisinden bağımsız.
@@ -92,6 +93,14 @@ class VarlikKimligi {
       return VarlikKimligi(
           ticker: t, name: h.name, type: AssetType.kripto, currency: 'TRY');
     }
+    if (eurobondIsin(t) != null) {
+      // Eurobond (bayrak `eurobond`, seri denetimi 2026-10-08). Aşağıdaki
+      // BIST düşüşüne bırakılsaydı TRY kote hisse sayılır, birim değeri
+      // (kirli/100, USD) lira gibi gösterilir ve takip anahtarı portföydeki
+      // tahvilinkiyle (`eurobond|…`) tutmazdı. Aramada yalnız USD tahvil
+      // listelenir (`eklenebilirEurobondlar`).
+      return eurobond(t, h.name);
+    }
     if (t.startsWith('ALTIN_')) {
       return VarlikKimligi(
         ticker: t,
@@ -157,6 +166,15 @@ class VarlikKimligi {
   /// (bkz. `anahtarAltKategorisi`); takip kaydı sembolle tanınır.
   static VarlikKimligi abdHisse(String ticker, String ad) => VarlikKimligi(
       ticker: ticker, name: ad, type: AssetType.hisse, currency: 'USD');
+
+  /// Eurobond — sembol `EUROBOND:<ISIN>`, kotasyon USD (tahvilin para
+  /// birimi; ekleme ve arama yalnız USD tahvil sunar). Portföy lotu da
+  /// alt kategorisizdir, anahtarlar aynı çıkar.
+  static VarlikKimligi eurobond(String sembol, String ad) => VarlikKimligi(
+      ticker: sembol.trim().toUpperCase(),
+      name: ad,
+      type: AssetType.eurobond,
+      currency: 'USD');
 
   static VarlikKimligi fon(String kod, String ad) => VarlikKimligi(
       ticker: 'TEFAS:$kod', name: ad, type: AssetType.fon, currency: 'TRY');

@@ -8,7 +8,8 @@
 // kaynaklar arasında kayar; bu yüzden burada her nokta [ms, kapanış]
 // çiftidir ve "t anındaki fiyat" [fiyatAninda] ile okunur.
 //
-// Kaynaklar `price_history.ts` ile AYNI (Yahoo / TEFAS / Binance) — fiyat
+// Kaynaklar `price_history.ts` ile AYNI (Yahoo / TEFAS / Binance /
+// Frankfurt eurobond) — fiyat
 // kaynağı sözleşmesi (istemci `fiyat_kaynagi.dart`) sunucuda da tek
 // merdiven. Menzil 1 yıl: yarışın en uzun dönemi 365 gün.
 //
@@ -18,6 +19,15 @@
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { kriptoKodu, mumlariCek, tlSerisi } from './kripto.ts';
+import {
+  BF_API,
+  bfGecmisiniCoz,
+  birimDeger,
+  EUROBOND_ONEKI,
+  isinGecerli,
+  sozlesmeSatiri,
+  TARAYICI_UA,
+} from './eurobond.ts';
 
 /// [ms, kapanış] — artan zaman sırasında.
 export type Seri = [number, number][];
@@ -107,6 +117,47 @@ export async function fetchKriptoDated(
   return noktalariTopla(noktalar);
 }
 
+/// Eurobond günlük kapanışları — uygulamanın lot fiyatıyla AYNI ölçekte:
+/// her nokta o günün KİRLİ fiyatı / 100 (1 nominal birim, tahvilin para
+/// biriminde).
+///
+/// ## Neden (seri denetimi, 2026-10-08)
+/// `EUROBOND:` sembolü Yahoo'ya düşüyor, seri boş dönüyordu. Yarış
+/// snapshot'ı eurobond lotunu "karanlık" sayıyor; eurobond ağırlıklı
+/// portföy kapsama eşiğinin (%80) altında kalıp sıralamadan düşüyordu —
+/// veri Frankfurt'ta VARKEN. Kaynak grafikle aynı (`eurobond-seri`,
+/// Frankfurt `1D`); temiz kapanışa noktanın kendi gününün işlemiş faizi
+/// eklenir (istemci `PriceService._eurobondSerisi` ile aynı kural).
+/// Katalogda olmayan ISIN için Frankfurt'a gidilmez.
+export async function fetchEurobondDated(
+  client: SupabaseClient,
+  symbol: string,
+  f: typeof fetch = fetch,
+): Promise<Seri> {
+  const isin = symbol.trim().toUpperCase().slice(EUROBOND_ONEKI.length);
+  if (!symbol.trim().toUpperCase().startsWith(EUROBOND_ONEKI) || !isinGecerli(isin)) return [];
+  const { data: satir } = await client
+    .from('eurobond_katalog')
+    .select('isin, para_birimi, kupon_orani, vade, ihrac_yili, kupon_sikligi')
+    .eq('isin', isin)
+    .maybeSingle();
+  const s = satir ? sozlesmeSatiri(satir as Record<string, unknown>) : null;
+  if (!s) return [];
+  const to = Math.floor(Date.now() / 1000);
+  const from = to - MENZIL_GUN * 24 * 60 * 60;
+  const res = await f(
+    `${BF_API}/tradingview/history?symbol=XFRA:${isin}&resolution=1D&from=${from}&to=${to}`,
+    {
+      headers: { 'User-Agent': TARAYICI_UA, Accept: 'application/json' },
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  if (!res.ok) return [];
+  return noktalariTopla(
+    bfGecmisiniCoz(await res.json()).map(([t, temiz]) => [t, birimDeger(s, temiz, t)]),
+  );
+}
+
 /// Sembole göre kaynak seçer; tek sembolün hatası boş seri döner, turu
 /// düşürmez.
 export async function fetchDatedSeries(
@@ -116,6 +167,9 @@ export async function fetchDatedSeries(
 ): Promise<Seri> {
   try {
     if (kriptoKodu(symbol)) return await fetchKriptoDated(client, symbol, f);
+    if (symbol.trim().toUpperCase().startsWith(EUROBOND_ONEKI)) {
+      return await fetchEurobondDated(client, symbol, f);
+    }
     if (symbol.startsWith(TEFAS_PREFIX)) {
       return await fetchTefasDated(symbol.slice(TEFAS_PREFIX.length), f);
     }

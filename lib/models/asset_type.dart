@@ -299,6 +299,23 @@ String kotasyonSembolu(String ticker, String currency) {
   return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
 }
 
+/// SEMBOL SERİSİNDEN okunan fiyatın simgesi — her zaman ₺.
+///
+/// ## Neden ayrı (seri denetimi, 2026-10-08)
+/// Takip listesi satırı ve varlık sayfası fiyatı canlı kotasyondan değil
+/// `HistoryService.getSymbolHistory` serisinin SON noktasından okur (aynı
+/// sayı grafiğin ucudur — fiyat kaynağı sözleşmesi madde 2). O seri HER
+/// sembolde TL'dir: TRY kote olanlar olduğu gibi, kalanlar (ABD hissesi,
+/// eurobond, emtia, ons) o günün USD/TRY kuruyla çevrilir. Simge ise
+/// [kotasyonSembolu] ile varlığın kotasyon para biriminden seçiliyordu:
+/// AAPL satırı TL sayıyı "$" ile yazıyordu (kodu okuyarak bulundu: 255
+/// dolarlık hisse TL karşılığıyla "$10.506,00" gibi). ABD hissesi ve eurobond takibe açılınca bu her USD
+/// satırında görünürdü. Sayı ile simge aynı kaynaktan: seri TL ise ₺.
+///
+/// [kotasyonSembolu] CANLI kotasyon gösteren yerde (arama satırı,
+/// `aramaFiyatMetni`) doğru kalır — orada sayı kotasyonun kendi birimidir.
+const String sembolSerisiSimgesi = '₺';
+
 /// BIST endeksi mi (`XU100.IS`, `XU030.IS`, `XUSIN.IS`)?
 ///
 /// Endeks PUANDIR, fiyat değil: para simgesi ve kuruş anlamsız ("BIST 100

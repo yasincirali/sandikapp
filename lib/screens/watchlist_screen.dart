@@ -996,16 +996,17 @@ extension on WatchlistItem {
 
 /// Satırdaki fiyat metni. Endeks puandır: para simgesi ve kuruş yok
 /// (arama satırı ve piyasa bandıyla aynı kural, `bistEndeksiMi`).
-/// Diğerleri kotasyonun kendi para birimiyle — `kotasyonSembolu`: döviz
-/// paritesinde KARŞI para birimi (`USDTRY=X` → ₺49,00; eskiden miktar
-/// sembolüyle "$49,00" yazıyordu — 2026-09-29 emülatör testi #13, arama
-/// satırı ve varlık sayfasıyla aynı kural).
+///
+/// Diğerleri ₺ ile ([sembolSerisiSimgesi], seri denetimi 2026-10-08):
+/// `currentPrice` sembol serisinin son noktasıdır ve seri her sembolde TL'dir
+/// (`WatchlistNotifier._withPrices`). Eskiden simge kotasyonun para
+/// biriminden seçiliyordu (`kotasyonSembolu`) ve USD kote satır TL sayıyı
+/// "$" ile yazıyordu. Döviz paritesi zaten ₺ idi (2026-09-29 emülatör
+/// testi #13); o kural bu genellemenin özel hâli.
 @visibleForTesting
 String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
   if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
-  return tryFormatter(
-          digits: 2, symbol: kotasyonSembolu(item.ticker, item.currency))
-      .format(f);
+  return tryFormatter(digits: 2, symbol: sembolSerisiSimgesi).format(f);
 }

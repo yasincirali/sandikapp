@@ -70,6 +70,24 @@ void main() {
     test('vadeden sonra sıfır', () {
       expect(tahvil.islemisFaiz(DateTime.utc(2031, 1, 1)), 0);
     });
+    // Sunucu eşiyle (`_shared/eurobond.ts` › `islemisFaiz`) AYNI vektör —
+    // `supabase/tests/eurobond_seri_denetimi_test.ts`. Kilit ekranı ve
+    // yarış snapshot'ı eurobondu sunucuda bu aritmetikle değerler;
+    // ayrışırsa iki yüzey farklı değer yazar.
+    test('sunucu paritesi: DF45, 2026-10-08 → 83/180 kupon', () {
+      final df45 = eurobondSozlesmesiFromMap({
+        'isin': 'US900123DF45',
+        'para_birimi': 'USD',
+        'kupon_orani': 0.09875,
+        'vade': '2028-01-15',
+        'ihrac_yili': 2022,
+        'kupon_sikligi': 2,
+      })!;
+      expect(df45.islemisFaiz(DateTime.utc(2026, 10, 8)),
+          closeTo(4.9375 * 83 / 180, 1e-9));
+      expect(df45.islemisFaiz(DateTime.utc(2026, 10, 9)),
+          closeTo(4.9375 * 84 / 180, 1e-9));
+    });
   });
 
   group('kupon stopajı', () {
