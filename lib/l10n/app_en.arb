@@ -4554,5 +4554,14 @@
   "s7EylemKarsilastir": "Compare",
   "s7EylemTakipListesi": "Add to watchlist",
   "s7EylemBildirimler": "Notifications",
-  "s7EylemAyarlar": "Settings"
+  "s7EylemAyarlar": "Settings",
+  "s4AnalysisUpper": "ANALYSIS",
+  "s4HistoryDocsUpper": "HISTORY & DOCUMENTS",
+  "s4Details": "Details",
+  "s4RowSignals": "Technical signals",
+  "s4RowFundReport": "Fund report card",
+  "s4RowFlow": "Money flow",
+  "s4RowVolume": "Volume radar",
+  "s4RowCrypto": "Buyer pressure",
+  "s4RowNote": "Analysis note"
 }

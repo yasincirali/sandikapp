@@ -6919,4 +6919,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get s7EylemAyarlar => 'Settings';
+
+  @override
+  String get s4AnalysisUpper => 'ANALYSIS';
+
+  @override
+  String get s4HistoryDocsUpper => 'HISTORY & DOCUMENTS';
+
+  @override
+  String get s4Details => 'Details';
+
+  @override
+  String get s4RowSignals => 'Technical signals';
+
+  @override
+  String get s4RowFundReport => 'Fund report card';
+
+  @override
+  String get s4RowFlow => 'Money flow';
+
+  @override
+  String get s4RowVolume => 'Volume radar';
+
+  @override
+  String get s4RowCrypto => 'Buyer pressure';
+
+  @override
+  String get s4RowNote => 'Analysis note';
 }

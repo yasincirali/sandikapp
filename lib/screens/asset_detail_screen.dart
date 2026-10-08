@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -55,6 +56,20 @@ import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
+import '../widgets/sandik_acilir.dart';
+import '../providers/fon_karnesi_provider.dart'
+    show fonKarnesiAcikProvider, fonKarnesiProvider;
+import '../providers/fon_akisi_provider.dart'
+    show
+        balinaRadariAcikProvider,
+        fonAkisiProvider,
+        hisseHacmiProvider,
+        kriptoBaskiProvider;
+import '../providers/analiz_provider.dart'
+    show notAnahtari, varlikNotOzetiProvider;
+import '../services/fon_karnesi.dart' show fonKoduOf;
+import '../services/radar_okuma.dart' show kriptoOkunusu;
+import '../services/remote_config_service.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
@@ -70,6 +85,7 @@ part 'asset_detail/sinyal_widgetlari.dart';
 part 'asset_detail/seritler.dart';
 part 'asset_detail/karsilastirma_secici.dart';
 part 'asset_detail/ozet.dart';
+part 'asset_detail/katmanlar.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -663,6 +679,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
     final pnl = _pnlOzeti(pState);
+    // Katmanlı düzen (S4, `varlik_detay_katmanli`): grafiğin altı
+    // `asset_detail/katmanlar.dart`'ta. Kapalıyken aşağıdaki eski yığın
+    // birebir.
+    final katmanli = RemoteConfigService.instance.varlikDetayKatmanli;
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -742,7 +762,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 // Sinyal kartı ve aşağıdaki gösterge paneli Başlangıç
                 // seviyesinde GİZLİ (`seviyeGorunurlugu`): AL/SAT göstergesi
                 // yorumlanmadan okunduğunda yanıltıcıdır. Varsayılan Orta.
-                if (_sinyalYuzeyleri)
+                // Katmanlı düzende kart "Analiz" bölümüne, gösterge
+                // panelinin yanına taşınır (`_analizKatmanlari`).
+                if (_sinyalYuzeyleri && !katmanli)
                   AssetSignalCard(
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
@@ -1602,6 +1624,31 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   },
                 ),
                 const SizedBox(height: SandikSpace.lg),
+                if (katmanli)
+                  ..._katmanliGovde(
+                    baz: baz,
+                    pnl: pnl,
+                    isOwnAsset: isOwnAsset,
+                    pState: pState,
+                    // Eski kartın satırları, kabuksuz — "Ayrıntı"da açılır.
+                    // Argümanlar aşağıdaki eski kartla aynı.
+                    ayrinti: _PozisyonKarti(
+                      kabuksuz: true,
+                      baz: baz,
+                      pnl: pnl,
+                      miktarMetni: widget.asset.miktarMetni(
+                          _canli.asset.quantity,
+                          (v, d) => fmtNum(v, digits: d)),
+                      birimEtiketi: widget.asset.unitLabel,
+                      birimBicim: _birimBicimi(pnl.currentUnitTRY),
+                      birimGizli: widget.asset.type == AssetType.mevduat,
+                      donemEtiketi: donemEtiketi(
+                          context.l10n, _periods[_selectedPeriodIdx].label),
+                      donem: _donemDegisimi(period.days, startDate, endDate,
+                          pnl.currentUnitTRY),
+                    ),
+                  )
+                else ...[
                 // ── Pozisyon ── (A tasarımı): grafiğin altında, tek kart.
                 //
                 // 2026-09-28 (kullanıcı): "kaçtan aldığım, toplam kâr/zarar
@@ -1650,6 +1697,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
                 ],
+                ], // eski yığın (katmanlı değil)
                 ],
               ],
             ),

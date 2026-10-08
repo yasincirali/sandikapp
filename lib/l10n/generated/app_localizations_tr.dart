@@ -6857,4 +6857,31 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get s7EylemAyarlar => 'Ayarlar';
+
+  @override
+  String get s4AnalysisUpper => 'ANALİZ';
+
+  @override
+  String get s4HistoryDocsUpper => 'GEÇMİŞ VE BELGELER';
+
+  @override
+  String get s4Details => 'Ayrıntı';
+
+  @override
+  String get s4RowSignals => 'Teknik sinyaller';
+
+  @override
+  String get s4RowFundReport => 'Fon karnesi';
+
+  @override
+  String get s4RowFlow => 'Para akışı';
+
+  @override
+  String get s4RowVolume => 'Hacim radarı';
+
+  @override
+  String get s4RowCrypto => 'Alıcı baskısı';
+
+  @override
+  String get s4RowNote => 'Analiz notu';
 }
