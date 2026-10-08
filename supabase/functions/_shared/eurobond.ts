@@ -218,7 +218,7 @@ export function bfGecmisiniCoz(j: unknown): [number, number][] {
 // `supported_resolutions`); daha ince istek en yakına yuvarlanır.
 
 const DONEM_GUN: Record<string, number> = {
-  '1d': 1, '5d': 5, '1mo': 31, '3mo': 92, '6mo': 183, 'ytd': 366, '1y': 366, '2y': 731, '5y': 1827,
+  '1d': 1, '5d': 5, '1mo': 31, '3mo': 92, '6mo': 183, 'ytd': 366, '1y': 366, '2y': 731, '5y': 1827, 'max': 3653,
 };
 
 export interface SeriIstegi {

@@ -189,11 +189,39 @@ List<MasrafKalemi> turKalemleri(MasrafGirdisi g) {
     case AssetType.altin:
     case AssetType.doviz:
       return makasKalemleri(g);
+    case AssetType.eurobond:
+      return eurobondKalemleri(g);
     case AssetType.emtia:
     case AssetType.diger:
       return const [];
   }
 }
+
+/// Eurobond: banka alış-satış makası, işlemiş faiz ve kupon stopajı (bilgi).
+///
+/// Tutar yok: makas bankadan bankaya değişir (Ziraat kotasyonu varlık
+/// ekranında ayrı satırda), stopaj ihraççıya ve vadeye bağlı — [MasrafGirdisi]
+/// sözleşmeyi taşımaz, oranı burada tahmin etmek uydurma olurdu.
+List<MasrafKalemi> eurobondKalemleri(MasrafGirdisi g) => const [
+      MasrafKalemi(
+        baslik: 'Banka alış-satış makası',
+        aciklama: 'Banka eurobondu piyasa fiyatından düşüğe alır, yükseğe '
+            'satar; fark alım ve satışta ödediğin örtük masraftır.',
+        nitelik: MasrafNiteligi.bilgi,
+      ),
+      MasrafKalemi(
+        baslik: 'İşlemiş faiz',
+        aciklama: 'Kupon tarihleri arasında alırsan son kupondan beri '
+            'işlemiş faizi satıcıya ödersin; ilk kuponla geri alırsın.',
+        nitelik: MasrafNiteligi.bilgi,
+      ),
+      MasrafKalemi(
+        baslik: 'Kupon stopajı',
+        aciklama: 'Hazine eurobondunda %0. Özel sektör tahvilinde vadeye '
+            'göre %7 (1 yıldan kısa), %3 (1-3 yıl), %0 (3 yıl ve üzeri).',
+        nitelik: MasrafNiteligi.bilgi,
+      ),
+    ];
 
 /// Kayıtlı komisyonların TL toplamı.
 ///
