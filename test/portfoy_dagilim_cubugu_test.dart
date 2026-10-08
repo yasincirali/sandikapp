@@ -12,14 +12,19 @@ import 'package:portfoy_takip/screens/portfolio_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Sadeleştirme 2 — Portföy dağılım şeridi (bayrak `portfoy_dagilim_cubugu`).
+/// Sadeleştirme 2 — Portföy küçük halkası (bayrak `portfoy_dagilim_cubugu`).
 ///
+/// yasin'in seçimi (2026-10-08, "C"): şerit yerine küçük halka + lejant.
 /// Kilitlenen davranışlar:
-/// 1. Bayrak kapalı: eski halka (PieChart) ekranda, şerit yok.
-/// 2. Bayrak açık: halka yerine "Dağılım" kartı; çipler "Tür %xx,x".
-/// 3. Çip halka dilimi gibi süzer; aynı çipe ya da "Tümü"ye dokunmak kaldırır.
-/// 4. "Halka ›" eski halkayı alt sayfada açar; dilim/lejant dokunuşu yine
-///    listeyi süzer.
+/// 1. Bayrak kapalı: eski büyük halka (PieChart) ekranda, küçük halka yok.
+/// 2. Bayrak açık: büyük halka yerine küçük halka; lejant "Tür  %xx,x",
+///    ortada toplam.
+/// 3. Lejant satırı halka dilimi gibi süzer; aynı satıra yeniden dokunmak
+///    kaldırır. Seçiliyken ortada türün payı görünür.
+/// 4. Küçük halkaya dokunmak büyük halkayı alt sayfada açar; oradaki
+///    lejant dokunuşu yine listeyi süzer.
+/// 5. Dörtten fazla tür: ilk üçü + "+N tür" satırı (büyük halkayı açar).
+/// 6. Halka dönerek dolar; hareketi azalt açıkken ilk karede dolu.
 const _uid = 'user-1';
 
 Asset _lot(String id, String ticker, AssetType tur, double adet, double fiyat) =>
@@ -68,23 +73,46 @@ final _varliklar = [
   _lot('b', 'AFT', AssetType.fon, 100, 10),
 ];
 
-Future<void> _pump(WidgetTester tester) async {
+Future<void> _pump(WidgetTester tester,
+    {List<Asset>? varliklar, bool hareketiAzalt = false}) async {
   tester.view.physicalSize = const Size(390 * 3, 1400 * 3);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
     overrides: [
       authProvider.overrideWith(_FakeAuth.new),
-      portfolioProvider.overrideWith(() => _FakePortfolio(_varliklar)),
+      portfolioProvider
+          .overrideWith(() => _FakePortfolio(varliklar ?? _varliklar)),
       partnersProvider.overrideWith(_FakePartners.new),
     ],
-    child: MaterialApp(theme: ThemeData.dark(), home: const PortfolioScreen()),
+    child: MaterialApp(
+      theme: ThemeData.dark(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(disableAnimations: hareketiAzalt),
+        child: child!,
+      ),
+      home: const PortfolioScreen(),
+    ),
   ));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
 }
 
 Finder _satir(String ticker) => find.textContaining(ticker);
+
+/// Küçük halkanın düğmesi (anlam etiketi `s3HalkayiAc`).
+final _kucukHalka = find.bySemanticsLabel('Dağılımı büyük halkada aç');
+
+// Altı tür, her biri farklı tutarda: lejant 3 satır + "+3 tür".
+final _altiTur = [
+  _lot('a', 'THYAO', AssetType.hisse, 10, 600),
+  _lot('b', 'AFT', AssetType.fon, 100, 50),
+  _lot('c', 'GRAM', AssetType.altin, 1, 4000),
+  _lot('d', 'USD', AssetType.doviz, 1, 3000),
+  _lot('e', 'BTC', AssetType.kripto, 1, 2000),
+  _lot('f', 'BRENT', AssetType.emtia, 1, 1000),
+];
 
 void main() {
   setUpAll(() async {
@@ -93,69 +121,59 @@ void main() {
   });
   tearDown(() => RemoteConfigService.testAcik = {});
 
-  testWidgets('bayrak kapalı: eski halka, şerit yok', (tester) async {
+  testWidgets('bayrak kapalı: eski halka, küçük halka yok', (tester) async {
     await _pump(tester);
     expect(find.byType(PieChart), findsOneWidget);
-    expect(find.text('Dağılım'), findsNothing);
-    expect(find.text('Halka ›'), findsNothing);
+    expect(_kucukHalka, findsNothing);
   });
 
-  testWidgets('bayrak açık: halka yerine dağılım kartı ve yüzde çipleri',
+  testWidgets('bayrak açık: küçük halka, lejantta yüzdeler, ortada toplam',
       (tester) async {
     RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     expect(find.byType(PieChart), findsNothing);
-    expect(find.text('Dağılım'), findsOneWidget);
-    expect(find.text('Halka ›'), findsOneWidget);
-    expect(find.textContaining('%75,0'), findsOneWidget);
-    expect(find.textContaining('%25,0'), findsOneWidget);
-    expect(find.text('Tümü'), findsOneWidget);
+    expect(_kucukHalka, findsOneWidget);
+    expect(find.text('%75,0'), findsOneWidget);
+    expect(find.text('%25,0'), findsOneWidget);
+    expect(find.text('toplam'), findsOneWidget);
   });
 
-  testWidgets('çip süzer; aynı çip ve "Tümü" süzgeci kaldırır',
-      (tester) async {
+  testWidgets('lejant süzer; aynı satır süzgeci kaldırır', (tester) async {
     RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     expect(_satir('THYAO'), findsWidgets);
     expect(_satir('AFT'), findsWidgets);
 
-    await tester.tap(find.textContaining('%25,0'));
+    await tester.tap(find.text('%25,0'));
     await tester.pumpAndSettle();
     expect(_satir('THYAO'), findsNothing);
     expect(_satir('AFT'), findsWidgets);
+    // Ortada artık toplam değil, seçili türün payı.
+    expect(find.text('toplam'), findsNothing);
 
-    // Aynı çipe yeniden dokunmak kaldırır.
-    await tester.tap(find.textContaining('%25,0'));
+    await tester.tap(find.text('%25,0').last);
     await tester.pumpAndSettle();
     expect(_satir('THYAO'), findsWidgets);
-
-    // "Tümü" de kaldırır.
-    await tester.tap(find.textContaining('%75,0'));
-    await tester.pumpAndSettle();
-    expect(_satir('AFT'), findsNothing);
-    await tester.tap(find.text('Tümü'));
-    await tester.pumpAndSettle();
-    expect(_satir('AFT'), findsWidgets);
-    expect(_satir('THYAO'), findsWidgets);
+    expect(find.text('toplam'), findsOneWidget);
   });
 
-  testWidgets('çip dokunma hedefi en az 44pt', (tester) async {
+  testWidgets('lejant satırı dokunma hedefi en az 44pt', (tester) async {
     RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
     final boy = tester.getSize(find.ancestor(
-        of: find.text('Tümü'), matching: find.byType(ConstrainedBox)).first);
+        of: find.text('%75,0'), matching: find.byType(ConstrainedBox)).first);
     expect(boy.height, greaterThanOrEqualTo(44));
   });
 
-  testWidgets('"Halka ›" halkayı alt sayfada açar, dilim seçimi süzer',
+  testWidgets('küçük halka büyük halkayı alt sayfada açar, seçim süzer',
       (tester) async {
     RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester);
-    await tester.tap(find.text('Halka ›'));
+    await tester.tap(_kucukHalka);
     await tester.pumpAndSettle();
     expect(find.byType(PieChart), findsOneWidget);
 
-    // Halkanın lejantı (dilimle aynı geri çağrı) arkadaki listeyi süzer.
+    // Büyük halkanın lejantı (dilimle aynı geri çağrı) arkadaki listeyi süzer.
     final lejant = find.descendant(
         of: find.byType(BottomSheet), matching: find.textContaining('%25,0'));
     await tester.tap(lejant);
@@ -164,6 +182,35 @@ void main() {
     await tester.pumpAndSettle();
     expect(_satir('THYAO'), findsNothing);
     expect(_satir('AFT'), findsWidgets);
+  });
+
+  testWidgets('dörtten fazla tür: üç satır + "+N tür", o da halkayı açar',
+      (tester) async {
+    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
+    await _pump(tester, varliklar: _altiTur);
+    expect(find.text('+3 tür'), findsOneWidget);
+    await tester.tap(find.text('+3 tür'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PieChart), findsOneWidget);
+  });
+
+  testWidgets('halka dönerek dolar; hareketi azalt açıkken anında dolu',
+      (tester) async {
+    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
+    await _pump(tester);
+    double ilerleme() => (tester
+            .widget<CustomPaint>(find.descendant(
+                of: _kucukHalka, matching: find.byType(CustomPaint)).first)
+            .painter as dynamic)
+        .ilerleme as double;
+    // _pump 100 ms ilerletti: dolma sürüyor.
+    expect(ilerleme(), inExclusiveRange(0, 1));
+    await tester.pumpAndSettle();
+    expect(ilerleme(), 1);
+
+    await tester.pumpWidget(const SizedBox());
+    await _pump(tester, hareketiAzalt: true);
+    expect(ilerleme(), 1);
   });
 
   test('turDagilimi: büyükten küçüğe, paylar toplamı 1', () {

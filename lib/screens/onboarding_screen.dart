@@ -540,12 +540,14 @@ List<_Adim> _adimlariKur() {
       // Tur metni arayüzle birlikte değişir (2026-09-21 kuralı): işlem
       // çubuğu (2026-10-04; bayrak `varlik_islem_cubugu` 2026-10-05'te
       // kalktı) Al/Sat/Temettü'nün yerini söyler.
-      // Bayrak `portfoy_dagilim_cubugu` açıkken halka yerini dağılım
-      // şeridine bırakır (halka "Halka ›" ile alt sayfada); metin hangi
-      // yüzey görünüyorsa onu anlatır. Kapalıyken eski metin birebir.
+      // Bayrak `portfoy_dagilim_cubugu` açıkken büyük halka yerini küçük
+      // halka + lejanta bırakır (büyük halka küçüğe dokununca alt sayfada);
+      // metin hangi yüzey görünüyorsa onu anlatır. Kapalıyken eski metin
+      // birebir.
       govde: RemoteConfigService.instance.portfoyDagilimCubugu
-          ? 'Varlıklarının listesi ve tür dağılımı şeridi burada; bir türe '
-              'dokununca liste o türe süzülür. Bir varlığa dokununca '
+          ? 'Varlıklarının listesi ve tür dağılımı burada; yandaki bir türe '
+              'dokununca liste o türe süzülür, halkaya dokununca büyür. Bir '
+              'varlığa dokununca '
               'detayına inersin; alış, satış ve temettüyü oradaki alt '
               'çubuktan kaydedersin.'
           : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '

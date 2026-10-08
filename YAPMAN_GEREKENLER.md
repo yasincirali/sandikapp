@@ -24,8 +24,9 @@ detayıyla aynı kural — hata düzeltmesi).
         Takip listesi ve Karşılaştır'da ortak.
       - `performans_tek_akis` — Performans tek sayfa; Grafik|Özet yok, dönem +
         Filtre tek satır (yalnız `period_summary_enabled` açıkken).
-      - `portfoy_dagilim_cubugu` — Portföy'de halka yerine dağılım çubuğu,
-        "Halka ›" eski halkayı açar.
+      - `portfoy_dagilim_cubugu` — Portföy'de büyük halka yerine küçük
+        halka + lejant (senin seçimin "C"); açılışta dönerek dolar, halkaya
+        dokununca büyük halka açılır.
       - `varlik_detay_katmanli` — varlık detayı: Pozisyonun (3 rakam +
         Ayrıntı) → Analiz (katlı) → Geçmiş ve belgeler.
       - `sinyal_on_ayar` — Sinyal ayarlarında Az / Dengeli / Çok; ayrıntı

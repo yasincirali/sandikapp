@@ -7161,7 +7161,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s3DagilimBaslik => 'Dağılım';
 
   @override
-  String get s3HalkaBaglanti => 'Halka ›';
+  String get s3HalkayiAc => 'Dağılımı büyük halkada aç';
+
+  @override
+  String s3DigerTurler(int n) {
+    return '+$n tür';
+  }
 
   @override
   String get s5OnAyarSoru => 'Ne sıklıkta haber verelim?';

@@ -281,8 +281,10 @@ class RemoteConfigService {
     // S2 — Performans tek akış: Grafik | Özet sekmesi kalkar, ikisi tek
     // kaydırmada; kontrol satırı 3 → 1 (dönem + Filtre).
     'performans_tek_akis': false,
-    // S3 — Portföy: halka yerine tek satır dağılım çubuğu (ilk ekranda
-    // 2 yerine 5–6 varlık); halka bir dokunuşla açılır.
+    // S3 — Portföy: büyük halka yerine küçük halka + lejant (yasin'in
+    // seçimi "C", 2026-10-08; ilk ekranda daha çok varlık, vitrin hissi
+    // kalır). Ad tarihî: ilk taslak çubuktu, anahtar Console'da aynı kalsın.
+    // Büyük halka küçüğe dokununca açılır.
     'portfoy_dagilim_cubugu': false,
     // S4 — varlık detayı katmanlı sıra: fiyat+grafik → pozisyonun → analiz
     // (katlı) → geçmiş ve belgeler.

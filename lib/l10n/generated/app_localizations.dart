@@ -11932,11 +11932,17 @@ abstract class AppLocalizations {
   /// **'Dağılım'**
   String get s3DagilimBaslik;
 
-  /// No description provided for @s3HalkaBaglanti.
+  /// No description provided for @s3HalkayiAc.
   ///
   /// In tr, this message translates to:
-  /// **'Halka ›'**
-  String get s3HalkaBaglanti;
+  /// **'Dağılımı büyük halkada aç'**
+  String get s3HalkayiAc;
+
+  /// No description provided for @s3DigerTurler.
+  ///
+  /// In tr, this message translates to:
+  /// **'+{n} tür'**
+  String s3DigerTurler(int n);
 
   /// No description provided for @s5OnAyarSoru.
   ///

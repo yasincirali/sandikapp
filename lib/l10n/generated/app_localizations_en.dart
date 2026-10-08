@@ -7223,7 +7223,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s3DagilimBaslik => 'Allocation';
 
   @override
-  String get s3HalkaBaglanti => 'Ring ›';
+  String get s3HalkayiAc => 'Open allocation as a large ring';
+
+  @override
+  String s3DigerTurler(int n) {
+    return '+$n more';
+  }
 
   @override
   String get s5OnAyarSoru => 'How often should we notify you?';

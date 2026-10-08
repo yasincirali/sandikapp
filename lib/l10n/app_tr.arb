@@ -5146,7 +5146,15 @@
   "s4RowCrypto": "Alıcı baskısı",
   "s4RowNote": "Analiz notu",
   "s3DagilimBaslik": "Dağılım",
-  "s3HalkaBaglanti": "Halka ›",
+  "s3HalkayiAc": "Dağılımı büyük halkada aç",
+  "s3DigerTurler": "+{n} tür",
+  "@s3DigerTurler": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "s5OnAyarSoru": "Ne sıklıkta haber verelim?",
   "s5OnAyarAz": "Az",
   "s5OnAyarDengeli": "Dengeli",
