@@ -2584,6 +2584,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get depositAmountLabel => 'Amount';
+
+  @override
+  String cannotExceedBalance(String amount) {
+    return 'You can\'t exceed the current balance ($amount)';
+  }
+
+  @override
   String boughtAmount(String qty, String unit) {
     return 'Bought $qty $unit';
   }
