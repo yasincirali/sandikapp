@@ -572,6 +572,28 @@ final assetLimitProvider = Provider<int>((ref) {
   return RemoteConfigService.instance.freeAssetLimit;
 });
 
+/// Tür başına günlük sinyal bildirimi sınırı — `assetLimitProvider` kalıbı.
+/// Paywall kapalıyken ya da Premium'da pratikte sınırsız: seçilen sıklık
+/// olduğu gibi kalır. Ekranda gösterilen zamanlama `slotaSigdir` ile
+/// hesaplanır; sunucu aynı kuralı `SINYAL_UCRETSIZ_SLOT` ile uygular.
+final sinyalSlotSiniriProvider = Provider<int>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return 1 << 30;
+  if (ref.watch(effectivePremiumProvider)) return 1 << 30;
+  final v = RemoteConfigService.instance.freeSignalSlotsPerDay;
+  return v <= 0 ? 1 << 30 : v;
+});
+
+/// Karşılaştır grafiğindeki en fazla seri. Beş, paletin sınırıdır ve
+/// Premium'un değeridir; ücretsizde `free_compare_series` (varsayılan 2 =
+/// kendi serine ek bir kıyas). Paywall kapalıyken herkese 5, eskisi gibi.
+const kKarsilastirmaEnFazla = 5;
+final karsilastirmaSeriSiniriProvider = Provider<int>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return kKarsilastirmaEnFazla;
+  if (ref.watch(effectivePremiumProvider)) return kKarsilastirmaEnFazla;
+  return RemoteConfigService.instance.freeCompareSeries
+      .clamp(1, kKarsilastirmaEnFazla);
+});
+
 /// Free tier fiyat alarmı limiti — `assetLimitProvider` ile AYNI kalıp.
 ///
 /// Paywall kapalıyken sınırsız: satın alınabilir bir premium yokken

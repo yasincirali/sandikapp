@@ -439,14 +439,19 @@ class _FeatureList extends StatelessWidget {
   //   - "Aylık AI portföy raporu" → hiçbir servis/edge function yok
   //   - "Fiyat alarmları"        → yalnızca bu ekranda geçiyordu
   //   - "Yıllık vergi PDF raporu" → yalnızca bu ekranda geçiyordu
-  //   - "Günde 2 sinyal", "Sınırsız partner", "5 yıl grafik" (2026-10-08)
-  //     → Temmuz planından kalmıştı; ücretsizde de açık, hiçbiri kilitli değil.
+  //   - "Sınırsız partner", "5 yıl grafik" (2026-10-08)
+  //     → Temmuz planından kalmıştı; ücretsizde de açık, kilitli değil.
+  // Günde birden fazla sinyal bildirimi ve Karşılaştır'da 5 seri, kapıları
+  // yazılınca (2026-10-08, `sinyalSlotSiniriProvider`,
+  // `karsilastirmaSeriSiniriProvider`) listeye girdi.
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final features = <(IconData, String)>[
       (Icons.all_inclusive_rounded, l.pwOzSinirsiz),
       (Icons.trending_up_rounded, l.pwOzGosterge),
+      (Icons.notifications_active_outlined, l.pwOzSiklik),
+      (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
       if (radar) (Icons.radar_rounded, l.pwOzRadar),
     ];
     return Column(

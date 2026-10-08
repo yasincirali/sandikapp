@@ -4500,6 +4500,19 @@
   "sgnPremiumGec": "Go Premium",
   "pwOzSinirsiz": "Unlimited assets of every type",
   "pwOzGosterge": "ADX, Williams %R and CCI in signal analysis",
+  "pwOzSiklik": "More than one signal notification a day (hourly, twice a day…)",
+  "pwOzKarsilastir": "Up to 5 series in Compare",
+  "sgnSlotNotu": "On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.",
+  "sgnSlotKilitli": "{secenek}, Premium",
+  "@sgnSlotKilitli": {
+    "placeholders": {
+      "secenek": {
+        "type": "String"
+      }
+    }
+  },
+  "cmpSinirPremium": "Up to 5 series with Premium",
+  "cmpSinirDolu": "At most 5 assets",
   "pwOzRadar": "Full money-flow and volume-radar detail, the whole weekly note",
   "pwFiyatAylik": "{fiyat}/mo",
   "@pwFiyatAylik": {

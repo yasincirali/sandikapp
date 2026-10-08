@@ -140,7 +140,7 @@ void main() {
     'lib/screens/profile_screen.dart': 11,
     'lib/screens/signal_settings_screen.dart': 15,
     'lib/screens/add_asset_screen.dart': 18,
-    'lib/screens/comparison_screen.dart': 23,
+    'lib/screens/comparison_screen.dart': 22,
     'lib/screens/register_screen.dart': 1,
   };
 

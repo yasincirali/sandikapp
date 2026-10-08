@@ -29,6 +29,8 @@ class SignalSettingsScreen extends ConsumerWidget {
     final thresholds = ref.watch(signalThresholdProvider);
     final schedules = ref.watch(signalScheduleProvider);
     final neutralPush = ref.watch(signalNeutralPushProvider);
+    // Ücretsiz günlük bildirim kapısı (paywall kapalıyken sınırsız).
+    final slot = ref.watch(sinyalSlotSiniriProvider);
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -147,12 +149,31 @@ class SignalSettingsScreen extends ConsumerWidget {
               onThresholdChanged: (v) => ref
                   .read(signalThresholdProvider.notifier)
                   .setForType(type, v),
-              schedule: schedules[type] ?? kDefaultSchedule,
-              onFrequencyChanged: (f) => ref
-                  .read(signalScheduleProvider.notifier)
-                  .setFrequency(type, f),
-              onHoursChanged: (h) =>
-                  ref.read(signalScheduleProvider.notifier).setHours(type, h),
+              // Ekranda UYGULANAN zamanlama: ücretsizde kapıya sığdırılmış
+              // hâl. Kayıtlı tercih değişmez, Premium'da geri gelir.
+              schedule: slotaSigdir(schedules[type] ?? kDefaultSchedule, slot),
+              slot: slot,
+              onFrequencyChanged: (f) {
+                if (f.gunlukEnFazla > slot) {
+                  AnalyticsService.instance
+                      .logPremiumGateShown(feature: 'signal_frequency');
+                  PaywallScreen.show(context, source: 'signal_frequency');
+                  return;
+                }
+                ref.read(signalScheduleProvider.notifier).setFrequency(type, f);
+              },
+              onHoursChanged: (h) async {
+                // Kısılmış hâlde saat seçmek, gösterilen sıklığı (günde 1)
+                // bilerek seçmektir: kayıt da ona çekilir ki saat sayısı ile
+                // sıklık tutarsız kalmasın.
+                final kayitli = schedules[type] ?? kDefaultSchedule;
+                final notifier = ref.read(signalScheduleProvider.notifier);
+                final gosterilen = slotaSigdir(kayitli, slot);
+                if (gosterilen.frequency != kayitli.frequency) {
+                  await notifier.setFrequency(type, gosterilen.frequency);
+                }
+                await notifier.setHours(type, h);
+              },
             ),
             const SizedBox(height: 20),
           ],
@@ -261,6 +282,7 @@ class _CategorySection extends StatelessWidget {
   final void Function(String id) onToggle;
   final void Function(int threshold) onThresholdChanged;
   final SignalSchedule schedule;
+  final int slot;
   final void Function(SignalFrequency freq) onFrequencyChanged;
   final void Function(List<int> hours) onHoursChanged;
 
@@ -273,6 +295,7 @@ class _CategorySection extends StatelessWidget {
     required this.onToggle,
     required this.onThresholdChanged,
     required this.schedule,
+    required this.slot,
     required this.onFrequencyChanged,
     required this.onHoursChanged,
   });
@@ -327,6 +350,7 @@ class _CategorySection extends StatelessWidget {
           _FrequencyRow(
             type: type,
             schedule: schedule,
+            slot: slot,
             onFrequencyChanged: onFrequencyChanged,
             onHoursChanged: onHoursChanged,
           ),
@@ -364,12 +388,16 @@ class _CategorySection extends StatelessWidget {
 class _FrequencyRow extends StatelessWidget {
   final AssetType type;
   final SignalSchedule schedule;
+
+  /// Günlük bildirim sınırı; bunu aşan sıklıklar kilitli çizilir.
+  final int slot;
   final void Function(SignalFrequency freq) onFrequencyChanged;
   final void Function(List<int> hours) onHoursChanged;
 
   const _FrequencyRow({
     required this.type,
     required this.schedule,
+    required this.slot,
     required this.onFrequencyChanged,
     required this.onHoursChanged,
   });
@@ -535,6 +563,7 @@ class _FrequencyRow extends StatelessWidget {
                   _FrequencyOption(
                     frequency: SignalFrequency.values[i],
                     secili: SignalFrequency.values[i] == freq,
+                    kilitli: SignalFrequency.values[i].gunlukEnFazla > slot,
                     // Saat gerektiren sıklıkta seçili satırın altında
                     // saatler gösterilir — ayrı bir kutu aramaya gerek kalmaz.
                     hoursLabel: SignalFrequency.values[i] == freq &&
@@ -549,6 +578,15 @@ class _FrequencyRow extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          if (SignalFrequency.values.any((f) => f.gunlukEnFazla > slot))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                context.l10n.sgnSlotNotu,
+                style: context.t.bodySmall
+                    ?.copyWith(color: context.c.text58, height: 1.4),
+              ),
+            ),
           if (!freq.needsHourPicker)
             Text(
               '${freq.description}, '
@@ -575,6 +613,10 @@ class _FrequencyOption extends StatelessWidget {
   final SignalFrequency frequency;
   final bool secili;
 
+  /// Ücretsiz günlük sınırı aşıyor: kilit simgesiyle çizilir, dokunuş
+  /// paywall'u açar (karar üst katmanda, `onFrequencyChanged`).
+  final bool kilitli;
+
   /// Seçili ve saat gerektiren sıklıkta gösterilecek saat metni.
   /// null ise saat satırı çizilmez.
   final String? hoursLabel;
@@ -584,6 +626,7 @@ class _FrequencyOption extends StatelessWidget {
   const _FrequencyOption({
     required this.frequency,
     required this.secili,
+    this.kilitli = false,
     required this.hoursLabel,
     required this.onTap,
     required this.onHoursTap,
@@ -595,6 +638,9 @@ class _FrequencyOption extends StatelessWidget {
       inMutuallyExclusiveGroup: true,
       selected: secili,
       button: true,
+      label: kilitli
+          ? context.l10n.sgnSlotKilitli(frequency.label)
+          : null,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -620,13 +666,19 @@ class _FrequencyOption extends StatelessWidget {
                       child: Text(
                         frequency.label,
                         style: context.t.bodyMedium?.copyWith(
-                          color:
-                              secili ? context.c.amberText : context.c.text90,
+                          color: secili
+                              ? context.c.amberText
+                              : kilitli
+                                  ? context.c.text36
+                                  : context.c.text90,
                           // Ağırlık BİLİNÇLİ olarak sabit — bkz. sınıf notu.
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
+                    if (kilitli)
+                      Icon(Icons.lock_outline_rounded,
+                          size: 16, color: context.c.amberText),
                   ],
                 ),
               ),

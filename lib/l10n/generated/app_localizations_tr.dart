@@ -6750,6 +6750,28 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwOzGosterge => 'Sinyal analizinde ADX, Williams %R ve CCI';
 
   @override
+  String get pwOzSiklik =>
+      'Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)';
+
+  @override
+  String get pwOzKarsilastir => 'Karşılaştır\'da 5 seriye kadar';
+
+  @override
+  String get sgnSlotNotu =>
+      'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
+  }
+
+  @override
+  String get cmpSinirPremium => 'Premium ile 5 seriye kadar';
+
+  @override
+  String get cmpSinirDolu => 'En fazla 5 varlık';
+
+  @override
   String get pwOzRadar =>
       'Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı';
 

@@ -4871,6 +4871,19 @@
   "sgnPremiumGec": "Premium'a geç",
   "pwOzSinirsiz": "Sınırsız varlık ve tüm varlık türleri",
   "pwOzGosterge": "Sinyal analizinde ADX, Williams %R ve CCI",
+  "pwOzSiklik": "Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)",
+  "pwOzKarsilastir": "Karşılaştır'da 5 seriye kadar",
+  "sgnSlotNotu": "Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium'da seçtiğin sıklık geri gelir.",
+  "sgnSlotKilitli": "{secenek}, Premium",
+  "@sgnSlotKilitli": {
+    "placeholders": {
+      "secenek": {
+        "type": "String"
+      }
+    }
+  },
+  "cmpSinirPremium": "Premium ile 5 seriye kadar",
+  "cmpSinirDolu": "En fazla 5 varlık",
   "pwOzRadar": "Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı",
   "pwFiyatAylik": "{fiyat}/ay",
   "@pwFiyatAylik": {

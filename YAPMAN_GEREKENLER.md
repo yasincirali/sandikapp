@@ -41,6 +41,14 @@ Paywall'u açmadan önce sırayla:
       aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.
 - [ ] Açılış günü sırası yukarıdaki 0115–0118 bölümünde (hediye → bayrak →
       `kapi_acik`).
+- [ ] Aynı gün sinyal kapısı: Supabase secret `SINYAL_UCRETSIZ_SLOT=1` (iki
+      sunucu) + `analyze-signals` yeniden deploy. Ücretsiz kullanıcıya tür başına
+      günde 1 bildirim gider (seçtiği ilk saat, periyodikte 11:00); tercihi
+      silinmez, Premium alınca geri gelir. Secret yoksa sunucu kısıtlamaz
+      (uygulama "günde 1" gösterir ama 2 gelir; zararsız ama tutarsız).
+- [ ] İsteğe bağlı Remote Config: `free_signal_slots_per_day` (varsayılan 1),
+      `free_compare_series` (varsayılan 2 = kendi serine ek bir kıyas;
+      Premium 5). İkisi de yalnız `paywall_enabled` açıkken işler.
 
 ## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
 

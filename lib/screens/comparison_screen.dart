@@ -10,6 +10,8 @@ import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
+import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
@@ -25,6 +27,7 @@ import '../utils/tr_format.dart';
 import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
+import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
 
@@ -183,8 +186,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   Future<void> _add(SymbolHit hit) async {
     if (_selected.any((s) => s.ticker == hit.ticker)) return;
     // Beşten fazla seri grafiği okunamaz hale getirir; renk paleti de
-    // beş renkte bitiyor.
-    if (_selected.length >= 5) return;
+    // beş renkte bitiyor. Ücretsizde sınır daha düşük olabilir
+    // (`karsilastirmaSeriSiniriProvider`, yalnız paywall açıkken); o zaman
+    // dolu grafiğe ekleme isteği paywall'u açar.
+    if (_selected.length >= ref.read(karsilastirmaSeriSiniriProvider)) {
+      if (_premiumSiniri) _paywallAc();
+      return;
+    }
 
     setState(() {
       _selected.add(hit);
@@ -192,6 +200,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       _failed.remove(hit.ticker);
     });
     await _load(hit.ticker);
+  }
+
+  /// Grafik Premium'un sınırında değil, ücretsiz sınırda mı dolu.
+  bool get _premiumSiniri =>
+      ref.read(karsilastirmaSeriSiniriProvider) < kKarsilastirmaEnFazla;
+
+  void _paywallAc() {
+    AnalyticsService.instance.logPremiumGateShown(feature: 'compare_series');
+    PaywallScreen.show(context, source: 'compare_series');
   }
 
   Future<void> _load(String ticker) async {
@@ -851,7 +868,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   ];
 
   Widget _benchmarkChips(SandikPalette p) {
-    final full = _selected.length >= 5;
+    final sinir = ref.watch(karsilastirmaSeriSiniriProvider);
+    final full = _selected.length >= sinir;
+    final kilitli = full && sinir < kKarsilastirmaEnFazla;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -863,7 +882,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             return SandikTappable(
               semanticLabel:
                   on ? '${b.name} zaten kıyasta' : '${b.name} kıyasa ekle',
-              onTap: (on || full) ? null : () => _add(b),
+              onTap: on
+                  ? null
+                  : kilitli
+                      ? _paywallAc
+                      : full
+                          ? null
+                          : () => _add(b),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.md, vertical: SandikSpace.xs + 2),
@@ -897,13 +922,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Widget _addButton(SandikPalette p) {
-    final full = _selected.length >= 5;
+    final sinir = ref.watch(karsilastirmaSeriSiniriProvider);
+    final full = _selected.length >= sinir;
+    final kilitli = full && sinir < kKarsilastirmaEnFazla;
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: full ? null : _openSearch,
-        icon: const Icon(Icons.add_rounded, size: 18),
-        label: Text(full ? 'En fazla 5 varlık' : 'Varlık ekle'),
+        onPressed: kilitli ? _paywallAc : (full ? null : _openSearch),
+        icon: Icon(kilitli ? Icons.lock_outline_rounded : Icons.add_rounded,
+            size: 18),
+        label: Text(kilitli
+            ? context.l10n.cmpSinirPremium
+            : full
+                ? context.l10n.cmpSinirDolu
+                : 'Varlık ekle'),
         style: OutlinedButton.styleFrom(
           foregroundColor: p.amberText,
           side: BorderSide(color: p.hairline),

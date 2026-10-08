@@ -11224,6 +11224,42 @@ abstract class AppLocalizations {
   /// **'Sinyal analizinde ADX, Williams %R ve CCI'**
   String get pwOzGosterge;
 
+  /// No description provided for @pwOzSiklik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)'**
+  String get pwOzSiklik;
+
+  /// No description provided for @pwOzKarsilastir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Karşılaştır\'da 5 seriye kadar'**
+  String get pwOzKarsilastir;
+
+  /// No description provided for @sgnSlotNotu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.'**
+  String get sgnSlotNotu;
+
+  /// No description provided for @sgnSlotKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{secenek}, Premium'**
+  String sgnSlotKilitli(String secenek);
+
+  /// No description provided for @cmpSinirPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium ile 5 seriye kadar'**
+  String get cmpSinirPremium;
+
+  /// No description provided for @cmpSinirDolu.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla 5 varlık'**
+  String get cmpSinirDolu;
+
   /// No description provided for @pwOzRadar.
   ///
   /// In tr, this message translates to:

@@ -6812,6 +6812,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwOzGosterge => 'ADX, Williams %R and CCI in signal analysis';
 
   @override
+  String get pwOzSiklik =>
+      'More than one signal notification a day (hourly, twice a day…)';
+
+  @override
+  String get pwOzKarsilastir => 'Up to 5 series in Compare';
+
+  @override
+  String get sgnSlotNotu =>
+      'On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
+  }
+
+  @override
+  String get cmpSinirPremium => 'Up to 5 series with Premium';
+
+  @override
+  String get cmpSinirDolu => 'At most 5 assets';
+
+  @override
   String get pwOzRadar =>
       'Full money-flow and volume-radar detail, the whole weekly note';
 
