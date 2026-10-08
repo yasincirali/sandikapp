@@ -35,6 +35,7 @@ import '../widgets/asset_sparkline.dart';
 import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/ortak_secici.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
@@ -572,93 +573,68 @@ class _BodyTabs extends StatelessWidget {
   final int count;
   final ValueChanged<int> onChanged;
 
+  // Kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol haritası
+  // 2.12). Eskiden amber dolgulu, kendi elle yazılmış bir segmentti; hemen
+  // altındaki ortak seçici (`OrtakSecici`) kayan zeminliydi ve aynı ekranda
+  // iki farklı "birini seç" görünüşü vardı. Dokunma hedefi (≥ 44 pt,
+  // `SandikTouch`), seçili/düğme semantiği ve seçiliye dokunuşun yok
+  // sayılması artık bileşenin sözleşmesi; burada tekrar yazılmaz.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
+    final etiketler = [context.l10n.myAssets, context.l10n.watchlist];
+    final rozetler = <int?>[null, count > 0 ? count : null];
+    return SandikSegment(
+      adet: 2,
+      secili: selected,
+      onSec: onChanged,
+      // Rozetli sekme sayıyı da okutur ("Takip listesi, 3 varlık").
+      semantik: (i) => rozetler[i] == null
+          ? etiketler[i]
+          : context.l10n.tabSemanticsCount(etiketler[i], rozetler[i]!),
+      oge: (context, i, secili) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _tab(context, 0, context.l10n.myAssets, null),
-          _tab(context, 1, context.l10n.watchlist, count > 0 ? count : null),
+          Flexible(
+            child: Text(
+              etiketler[i],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (rozetler[i] != null) ...[
+            const SizedBox(width: 6),
+            _SayiRozeti(sayi: rozetler[i]!),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _tab(BuildContext context, int i, String label, int? rozet) {
-    final secili = i == selected;
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: secili,
-        label: rozet == null ? label : context.l10n.tabSemanticsCount(label, rozet),
-        child: ExcludeSemantics(
-          child: SandikBasma(
-            // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın.
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (secili) return;
-              SandikHaptic.selection.perform();
-              onChanged(i);
-            },
-            child: Container(
-              // 44pt HIG dokunma hedefi.
-              constraints: const BoxConstraints(minHeight: 36),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                // Seçili değilken dolgu YOK — `Colors` bu dosyada import
-                // edilmiyor (material yalnızca `show` listesiyle geliyor).
-                color: secili ? context.c.amberFill : null,
-                borderRadius: BorderRadius.circular(SandikRadius.sm),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: secili ? context.c.onAmber : context.c.text58,
-                      ),
-                    ),
-                  ),
-                  if (rozet != null) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: secili
-                            ? context.c.onAmber.withValues(alpha: 0.18)
-                            : context.c.amberFill.withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: Text(
-                        '$rozet',
-                        style: context.t.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color:
-                              secili ? context.c.onAmber : context.c.amberText,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+/// Gövde sekmesindeki sayı rozeti. Seçimden bağımsız tek ton: seçim artık
+/// amber dolgu değil kayan nötr zemin olduğu için rozetin seçiliye göre
+/// renk tersinmesi (onAmber) gereksizleşti.
+class _SayiRozeti extends StatelessWidget {
+  const _SayiRozeti({required this.sayi});
+
+  final int sayi;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: context.c.amberFill.withValues(alpha: 0.20),
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
+        ),
+        child: Text(
+          '$sayi',
+          style: context.t.labelSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: context.c.amberText,
           ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 // ── Empty State ───────────────────────────────────────────────────────────────

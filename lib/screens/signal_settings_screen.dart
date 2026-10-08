@@ -8,6 +8,7 @@ import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../widgets/sandik_segment.dart';
 import 'paywall_screen.dart';
 import '../l10n/l10n.dart';
 
@@ -783,6 +784,14 @@ class _IndicatorRow extends StatelessWidget {
   }
 }
 
+/// Bildirim eşiği (%50 · %70 · %85).
+///
+/// Kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol haritası
+/// 2.12): eskiden amber çerçeveli, elle yazılmış bir kopyaydı ve dokunma
+/// hedefi metnin boyu kadardı (~30 pt). Satırda `Spacer`'ın yanında durduğu
+/// için genişliği sabit verilir — bileşen genişliği paylardan hesaplar,
+/// kendi içeriğine göre boyutlanmaz. Segment başına bir dokunma hedefi
+/// (44 pt): üç kısa etiket rahat sığar, satır 360pt'te taşmaz.
 class _ThresholdSegment extends StatelessWidget {
   final int value;
   final void Function(int) onChanged;
@@ -791,46 +800,14 @@ class _ThresholdSegment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final opt in kSignalThresholdOptions)
-            SandikBasma(
-              onTap: () => onChanged(opt),
-              child: AnimatedContainer(
-                duration: SandikMotion.stateOf(context),
-                curve: SandikMotion.enter,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: value == opt
-                      ? context.c.amberFill.withValues(alpha: 0.20)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  border: Border.all(
-                    color: value == opt
-                        ? context.c.amberFill.withValues(alpha: 0.55)
-                        : Colors.transparent,
-                  ),
-                ),
-                child: Text(
-                  '%$opt',
-                  style: context.t.titleSmall?.copyWith(
-                    fontWeight:
-                        value == opt ? FontWeight.w800 : FontWeight.w600,
-                    color:
-                        value == opt ? context.c.amberText : context.c.text58,
-                  ),
-                ),
-              ),
-            ),
-        ],
+    const secenekler = kSignalThresholdOptions;
+    return SizedBox(
+      width: SandikTouch.min * (secenekler.length + 1),
+      child: SandikSegment(
+        adet: secenekler.length,
+        secili: secenekler.indexOf(value),
+        onSec: (i) => onChanged(secenekler[i]),
+        oge: (_, i, __) => Text('%${secenekler[i]}'),
       ),
     );
   }

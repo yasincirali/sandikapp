@@ -126,6 +126,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     return TourAnchor(
       target: TourTarget.kapsamSecici,
       child: Semantics(
+        // Kendi düğümü (2026-10-08): yanındaki yüzey anahtarının segmentleri
+        // birleşik düğüm olunca (`SandikSegment` → `MergeSemantics`) bu
+        // kapsayıcısız yapılandırma satırın düğümüne sızıyordu; "Kapsam: …"
+        // etiketi bütün satırı kaplıyor, ekran okuyucu çipi ayrı bulamıyordu.
+        container: true,
         button: true,
         expanded: acik,
         label: '${context.l10n.scopeLabel}: ${_kapsamOzeti()}',

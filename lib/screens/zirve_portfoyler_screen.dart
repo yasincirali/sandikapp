@@ -11,6 +11,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/polling.dart';
 import '../widgets/sandik_error_view.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/zirve_ayna_kiyas.dart';
 import '../widgets/zirve_cetveli.dart';
@@ -815,6 +816,11 @@ class _SeciliPortfoy extends StatelessWidget {
 
 /// Ayna kıyasının karşısı: 1. · 2. · 3. (kendi satırın hariç). Seçmek
 /// cetvelde o işareti seçmekle aynı — imleç de oraya kayar.
+///
+/// Kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol haritası
+/// 2.12): eskiden aralıklı ayrı çiplerdi; aynı ekranın dönem seçicisi
+/// (`ZirveDonemSecici`) kayan zeminli olduğundan bir ekranda iki seçim
+/// dili vardı. Yükseklik eski çiplerin 44 pt'si — ROI rakamı sığsın.
 class _KiyasSecici extends StatelessWidget {
   const _KiyasSecici({
     required this.adaylar,
@@ -828,46 +834,19 @@ class _KiyasSecici extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final a in adaylar)
-          Expanded(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: SandikSpace.xs2 / 2),
-              child: Semantics(
-                button: true,
-                selected: a.rank == secili,
-                label: '${a.rank}. portföyle kıyasla',
-                child: ExcludeSemantics(
-                  child: SandikBasma(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => onSec(a.rank),
-                    child: AnimatedContainer(
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
-                      height: SandikTouch.min,
-                      alignment: Alignment.center,
-                      decoration: context.chip(selected: a.rank == secili),
-                      child: Text(
-                        '${a.rank}.  ${ZirveKiyas.isaretliYuzde(a.roiPct)}',
-                        style: context.t.labelMedium?.copyWith(
-                          letterSpacing: 0,
-                          fontWeight: a.rank == secili
-                              ? FontWeight.w800
-                              : FontWeight.w600,
-                          color: a.rank == secili
-                              ? context.c.text90
-                              : context.c.text58,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return SandikSegment(
+      adet: adaylar.length,
+      secili: adaylar.indexWhere((a) => a.rank == secili),
+      onSec: (i) => onSec(adaylar[i].rank),
+      yukseklik: SandikTouch.min,
+      metinStili: context.t.labelMedium?.copyWith(letterSpacing: 0),
+      semantik: (i) => '${adaylar[i].rank}. portföyle kıyasla',
+      oge: (_, i, __) => Text(
+        '${adaylar[i].rank}.  '
+        '${ZirveKiyas.isaretliYuzde(adaylar[i].roiPct)}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 }

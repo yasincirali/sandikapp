@@ -19,6 +19,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/donem_secici.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
@@ -968,7 +969,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 /// Arama sayfasının `Varlıklar | Ortaklar` seçicisi.
 ///
 /// Periyot seçicisiyle AYNI dil — aynı sayfada iki farklı segment biçimi
-/// görmek "bunlar farklı türde kontroller mi?" sorusunu doğururdu.
+/// görmek "bunlar farklı türde kontroller mi?" sorusunu doğururdu. Bu
+/// yüzden kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol
+/// haritası 2.12); eskiden amber dolgulu elle yazılmış bir kopyaydı ve
+/// periyot seçici `SandikSegment`'e geçince yeniden ayrışmıştı.
 class _SheetTabs extends StatelessWidget {
   const _SheetTabs({required this.selected, required this.onChanged});
 
@@ -978,49 +982,17 @@ class _SheetTabs extends StatelessWidget {
   static const _labels = ['Varlıklar', 'Ortaklar'];
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: p.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < _labels.length; i++)
-            Expanded(
-              child: SandikBasma(
-                // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın —
-                // yalnızca metnin üstü hedef olsaydı isabet zorlaşırdı.
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  if (i == selected) return;
-                  SandikHaptic.selection.perform();
-                  onChanged(i);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: i == selected ? p.amberFill : Colors.transparent,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  child: Text(
-                    _labels[i],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: i == selected ? p.onAmber : p.text58,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SandikSegment(
+        adet: _labels.length,
+        secili: selected,
+        onSec: onChanged,
+        oge: (_, i, __) => Text(
+          _labels[i],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+      );
 }
 
 // ── Arama sayfası ───────────────────────────────────────────────────────────
