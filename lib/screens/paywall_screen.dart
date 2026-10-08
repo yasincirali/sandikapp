@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart' show Package;
 
-import '../providers/preferences_provider.dart' show ortakSiniriDoluProvider;
+import '../providers/preferences_provider.dart'
+    show kKarsilastirmaEnFazla, ortakSiniriDoluProvider;
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/remote_config_service.dart';
@@ -13,9 +15,12 @@ import '../services/yasal_metin_katalogu.dart' show YasalBelge;
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart' show parseTrNumber;
+import '../widgets/kart_destesi.dart';
 import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 import 'legal_doc_screen.dart' show belgeyiAc;
+
+part 'paywall/paywall_deste.dart';
 
 /// Premium'a geçiş için paywall (RevenueCat, 2026-10-08).
 ///
@@ -44,15 +49,13 @@ class PaywallScreen extends ConsumerStatefulWidget {
   final String source;
   const PaywallScreen({super.key, required this.source});
 
-  static Future<bool?> show(BuildContext context,
-      {required String source}) {
+  static Future<bool?> show(BuildContext context, {required String source}) {
     // Güvenlik ağı: master switch kapalıyken paywall açılmasın. UI trigger'lar
     // zaten gate'leniyor ama merkezi bir noktada da tut.
     if (!RemoteConfigService.instance.paywallEnabled) {
       return Future.value(null);
     }
-    AnalyticsService.instance
-        .logPremiumUpgradeStarted(source: source);
+    AnalyticsService.instance.logPremiumUpgradeStarted(source: source);
     return Navigator.of(context).push<bool>(
       adaptiveRoute(
         fullscreenDialog: true,
@@ -98,6 +101,10 @@ int? tasarrufOrani(double aylik, double yillik) {
   return oran >= 1 ? oran : null;
 }
 
+/// Saf: Remote Config fiyat metninden birim ekini atar ('49₺/ay' → '49₺').
+/// Desteli paywall eki kendisi koyar; mağaza fiyatı zaten eksizdir.
+String _birimsiz(String rcFiyat) => rcFiyat.split('/').first.trim();
+
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   _Plan _selected = _Plan.yearly;
   bool _busy = false;
@@ -135,9 +142,31 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         : yillikTasarrufOrani(rc.premiumPriceMonthly, rc.premiumPriceYearly);
     final yillikDeneme = yillikUrun == null ? null : denemeGunu(yillikUrun);
     final aylikDeneme = aylikUrun == null ? null : denemeGunu(aylikUrun);
-    final seciliDeneme =
-        _selected == _Plan.yearly ? yillikDeneme : aylikDeneme;
+    final seciliDeneme = _selected == _Plan.yearly ? yillikDeneme : aylikDeneme;
     final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+    // Kart desteli tasarım (bayrak `paywall_deste`). Satın alma, geri
+    // yükleme ve fiyat/deneme okuması bu State'te kalır; yalnız görünüm
+    // değişir. Ham fiyat metni verilir, birim eki (/ay, /yıl) gövdede.
+    if (rc.paywallDeste) {
+      return _DesteGovdesi(
+        source: widget.source,
+        yillik: _selected == _Plan.yearly,
+        onPlan: (y) =>
+            setState(() => _selected = y ? _Plan.yearly : _Plan.monthly),
+        fiyatYillik:
+            yillikUrun?.priceString ?? _birimsiz(rc.premiumPriceYearly),
+        fiyatAylik: aylikUrun?.priceString ?? _birimsiz(rc.premiumPriceMonthly),
+        aylikKarsiligi: yillikUrun?.pricePerMonthString,
+        oran: oran,
+        yillikDeneme: yillikDeneme,
+        aylikDeneme: aylikDeneme,
+        android: android,
+        busy: _busy,
+        onSatinAl: _satinAl,
+        onGeriYukle: _geriYukle,
+      );
+    }
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -145,7 +174,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         child: Stack(
           children: [
             SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 220),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8,
+                  SandikSpace.screenH(context), 220),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -303,7 +333,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       builder: (ctx) => SafeArea(
         top: false,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 20, SandikSpace.screenH(context), 28),
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 20,
+              SandikSpace.screenH(context), 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -316,7 +347,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   color: context.c.amberFill.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: context.c.amberFill.withValues(alpha: 0.45), width: 2),
+                      color: context.c.amberFill.withValues(alpha: 0.45),
+                      width: 2),
                 ),
                 child: Icon(Icons.check_rounded,
                     color: context.c.amberText, size: 40),
@@ -324,14 +356,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               const SizedBox(height: 16),
               Text(context.l10n.premiumUnlocked,
                   style: context.t.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: context.c.text90)),
+                      fontWeight: FontWeight.w800, color: context.c.text90)),
               const SizedBox(height: 8),
               Text(
                 context.l10n.premiumUnlockedBody,
                 textAlign: TextAlign.center,
-                style: context.t.bodyMedium?.copyWith(
-                    color: context.c.text58, height: 1.5),
+                style: context.t.bodyMedium
+                    ?.copyWith(color: context.c.text58, height: 1.5),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -403,12 +434,12 @@ class _HeroCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: context.c.amberFill.withValues(alpha: 0.20),
               borderRadius: BorderRadius.circular(SandikRadius.sm),
-              border: Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
+              border:
+                  Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
             ),
             child: Text(
               context.l10n.sandikPremiumUpper,
@@ -562,7 +593,8 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       }
       return Text(metin,
           style: premium
-              ? t.bodySmall?.copyWith(color: c.text90, fontWeight: FontWeight.w700)
+              ? t.bodySmall
+                  ?.copyWith(color: c.text90, fontWeight: FontWeight.w700)
               : t.bodySmall?.copyWith(color: c.text58));
     }
 
@@ -644,9 +676,7 @@ class _PlanCard extends StatelessWidget {
               : context.c.surface1,
           borderRadius: BorderRadius.circular(SandikRadius.md),
           border: Border.all(
-            color: selected
-                ? context.c.amberText
-                : context.c.overlay,
+            color: selected ? context.c.amberText : context.c.overlay,
             width: selected ? 2 : 1,
           ),
         ),
@@ -692,7 +722,8 @@ class _PlanCard extends StatelessWidget {
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: context.c.gain.withValues(alpha: 0.20),
-                            borderRadius: BorderRadius.circular(SandikRadius.sm),
+                            borderRadius:
+                                BorderRadius.circular(SandikRadius.sm),
                           ),
                           child: Text(
                             badgeText!,
@@ -707,9 +738,8 @@ class _PlanCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(subtitle,
-                      style: context.t.bodySmall?.copyWith(
-                          color: context.c.text58,
-                          height: 1.4)),
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58, height: 1.4)),
                 ],
               ),
             ),
@@ -734,11 +764,15 @@ class _BottomBar extends StatelessWidget {
   final Future<void> Function() onSubscribe;
   final Future<void> Function() onRestore;
 
+  /// Desteli paywall geri yüklemeyi başlıkta gösterir; altta tekrar etmez.
+  final bool geriYukleGoster;
+
   const _BottomBar({
     required this.busy,
     required this.etiket,
     required this.onSubscribe,
     required this.onRestore,
+    this.geriYukleGoster = true,
   });
 
   @override
@@ -776,18 +810,18 @@ class _BottomBar extends StatelessWidget {
                 // Renk açıkça `onAmber` — `text90` düğme rengini
                 // ezerdi (açık tema denetimi 2026-10-08).
                 style: context.t.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: context.c.onAmber),
+                    fontWeight: FontWeight.w800, color: context.c.onAmber),
               ),
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: busy ? null : onRestore,
-              child: Text(context.l10n.restorePurchase,
-                  style: context.t.titleSmall?.copyWith(
-                      color: context.c.text58,
-                      fontWeight: FontWeight.w600)),
-            ),
+            if (geriYukleGoster) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: busy ? null : onRestore,
+                child: Text(context.l10n.restorePurchase,
+                    style: context.t.titleSmall?.copyWith(
+                        color: context.c.text58, fontWeight: FontWeight.w600)),
+              ),
+            ],
           ],
         ),
       ),

@@ -8,6 +8,21 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-08 Yeni paywall: sandık + kart destesi (dal `claude/project-thread-uryvqf`)
+
+Yeni tasarım bayrak arkasında; bayrak kapalıyken eski paywall birebir.
+Sunucu değişikliği ve migration yok.
+- [ ] Remote Config'e `paywall_deste` (Boolean, varsayılan `false`) ekle;
+      "TestFlight" koşulunda `true`. Paywall'u görmek için `paywall_enabled`
+      da açık olmalı ve admin olmayan bir test hesabı gerekir (admin her
+      kapıyı açık görür).
+- [ ] TestFlight'ta dene: kartları iki yöne kaydır, okları hızlı art arda bas,
+      farklı kilitlerden aç (varlık sınırı, Karşılaştır'da 3. seri, ortak
+      ekle, sinyal sıklığı): deste o kilidin kartıyla başlamalı.
+- [ ] Yıllık deneme süresi (yok / 7 / 14 gün; öneri 7) koddan değil mağaza
+      ürününden gelir: App Store Connect "Introductory Offer" ve Play
+      "free trial" aşaması. Deneme tanımlanmazsa ekran deneme göstermez.
+
 ## ⏳ 2026-10-08 Sadeleştirme 2 — yedi değişiklik bayrak altında (dal `claude/project-thread-v5c9qb`)
 
 Plan: "sandık Sade Ekran Planı" (https://claude.ai/artifact/GDtX7QQzjB1nxBg5QRr8hW),

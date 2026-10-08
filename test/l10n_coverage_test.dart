@@ -135,6 +135,8 @@ void main() {
     'lib/widgets/leaderboard_hero_card.dart': 5,
     'lib/models/signal_frequency.dart': 7,
     'lib/screens/paywall_screen.dart': 0,
+    'lib/screens/paywall/paywall_deste.dart': 0,
+    'lib/widgets/kart_destesi.dart': 0,
     'lib/screens/asset_detail_screen.dart': 2,
     'lib/screens/watchlist_screen.dart': 5,
     'lib/models/asset_type.dart': 3,
