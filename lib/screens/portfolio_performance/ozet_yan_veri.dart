@@ -290,6 +290,11 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
   /// (`_ozetIskeleti`), iki bekleme tek ve kesintisiz bir iskelet görünür.
   final Widget iskelet;
 
+  /// Tek akış (`performans_tek_akis`): ana rakam kartı dönem kartında,
+  /// tür dökümü NEDEN'in sonunda. Bkz. `PeriodSummaryView.anaRakamGizli`.
+  final bool anaRakamGizli;
+  final Widget? nedenEki;
+
   const _OzetYanVeri({
     required this.period,
     required this.summary,
@@ -301,6 +306,8 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
     this.karakter,
     this.enSabirli,
     this.enSabirliGun,
+    this.anaRakamGizli = false,
+    this.nedenEki,
   });
 
   @override
@@ -619,6 +626,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       derinlikAcik:
           ref.watch(yatirimciSeviyesiProvider) == YatirimciSeviyesi.ileri,
       derinlikGorunur: ref.watch(seviyeGorunurlukProvider).derinlik,
+      anaRakamGizli: widget.anaRakamGizli,
+      nedenEki: widget.nedenEki,
     );
   }
 

@@ -7087,4 +7087,175 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get typePickerHint247 => '7/24';
+
+  @override
+  String get s7AraSemantics => 'Ara';
+
+  @override
+  String get s7AramaIpucu => 'Varlık, sembol ya da işlem ara';
+
+  @override
+  String get s7VarliklarimUpper => 'VARLIKLARIM';
+
+  @override
+  String get s7PiyasaUpper => 'PİYASA';
+
+  @override
+  String get s7EylemlerUpper => 'EYLEMLER';
+
+  @override
+  String get s7EylemFiyatAlarmlari => 'Fiyat alarmları';
+
+  @override
+  String get s7EylemSinyalAyarlari => 'Sinyal ayarları';
+
+  @override
+  String get s7EylemEkstreAktar => 'Ekstreden aktar (CSV)';
+
+  @override
+  String get s7EylemTopluEkle => 'Toplu ekle';
+
+  @override
+  String get s7EylemTumHareketler => 'Tüm hareketler';
+
+  @override
+  String get s7EylemKarsilastir => 'Karşılaştır';
+
+  @override
+  String get s7EylemTakipListesi => 'Takibe al';
+
+  @override
+  String get s7EylemBildirimler => 'Bildirimler';
+
+  @override
+  String get s7EylemAyarlar => 'Ayarlar';
+
+  @override
+  String get s4AnalysisUpper => 'ANALİZ';
+
+  @override
+  String get s4HistoryDocsUpper => 'GEÇMİŞ VE BELGELER';
+
+  @override
+  String get s4Details => 'Ayrıntı';
+
+  @override
+  String get s4RowSignals => 'Teknik sinyaller';
+
+  @override
+  String get s4RowFundReport => 'Fon karnesi';
+
+  @override
+  String get s4RowFlow => 'Para akışı';
+
+  @override
+  String get s4RowVolume => 'Hacim radarı';
+
+  @override
+  String get s4RowCrypto => 'Alıcı baskısı';
+
+  @override
+  String get s4RowNote => 'Analiz notu';
+
+  @override
+  String get s3DagilimBaslik => 'Dağılım';
+
+  @override
+  String get s3HalkayiAc => 'Dağılımı büyük halkada aç';
+
+  @override
+  String s3DigerTurler(int n) {
+    return '+$n tür';
+  }
+
+  @override
+  String get s5OnAyarSoru => 'Ne sıklıkta haber verelim?';
+
+  @override
+  String get s5OnAyarAz => 'Az';
+
+  @override
+  String get s5OnAyarDengeli => 'Dengeli';
+
+  @override
+  String get s5OnAyarCok => 'Çok';
+
+  @override
+  String get s5OnAyarOzel => 'Özel';
+
+  @override
+  String get s5OnAyarAzAciklama =>
+      'Yalnız güçlü sinyaller (%85 güven), günde 1 kez, RSI ve MACD ile.';
+
+  @override
+  String get s5OnAyarDengeliAciklama =>
+      'Önerilen: %70 güven, günde 2 kez (11:00 ve 15:00), temel göstergelerin tümü.';
+
+  @override
+  String get s5OnAyarCokAciklama =>
+      '%50 güvenden itibaren, 2 saatte bir, temel göstergelerin tümü.';
+
+  @override
+  String get s5OnAyarOzelAciklama =>
+      'Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.';
+
+  @override
+  String get s5KategoriyeGoreOzellestir => 'Kategoriye göre özelleştir';
+
+  @override
+  String get s2Filtre => 'Filtre';
+
+  @override
+  String s2FiltreSayili(int n) {
+    return 'Filtre · $n';
+  }
+
+  @override
+  String s2FiltreEtkin(int n) {
+    return 'Filtre, $n etkin';
+  }
+
+  @override
+  String get s2FiltreKisi => 'Kişi';
+
+  @override
+  String get s2FiltreKategori => 'Kategori';
+
+  @override
+  String s2BakiyeArttiAlim(String tutar, String alim) {
+    return 'Bakiye $tutar arttı; bunun $alim kadarı yeni alım.';
+  }
+
+  @override
+  String s2BakiyeAzaldiAlim(String tutar, String alim) {
+    return 'Bakiye $tutar azaldı; dönemde $alim yeni alım yaptın.';
+  }
+
+  @override
+  String s2BakiyeArttiSatis(String tutar, String satis) {
+    return 'Bakiye $tutar arttı; dönemde $satis satış yaptın.';
+  }
+
+  @override
+  String s2BakiyeAzaldiSatis(String tutar, String satis) {
+    return 'Bakiye $tutar azaldı; bunun $satis kadarı satış.';
+  }
+
+  @override
+  String get s6Raporlar => 'Raporlar';
+
+  @override
+  String get s6HaftaOzetiAlt => 'Fonlarında ve hisselerinde bu hafta olanlar';
+
+  @override
+  String get s6AylikRapor => 'Aylık rapor';
+
+  @override
+  String get s6YilOzeti => 'Yıl özeti';
+
+  @override
+  String get s6Siralama => 'Sıralama';
+
+  @override
+  String get s6SiralamaAlt => 'Zirvedeki portföyler ve ortaklarınla yarış';
 }

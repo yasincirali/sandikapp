@@ -11787,6 +11787,312 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'7/24'**
   String get typePickerHint247;
+
+  /// No description provided for @s7AraSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get s7AraSemantics;
+
+  /// No description provided for @s7AramaIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık, sembol ya da işlem ara'**
+  String get s7AramaIpucu;
+
+  /// No description provided for @s7VarliklarimUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'VARLIKLARIM'**
+  String get s7VarliklarimUpper;
+
+  /// No description provided for @s7PiyasaUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'PİYASA'**
+  String get s7PiyasaUpper;
+
+  /// No description provided for @s7EylemlerUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'EYLEMLER'**
+  String get s7EylemlerUpper;
+
+  /// No description provided for @s7EylemFiyatAlarmlari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmları'**
+  String get s7EylemFiyatAlarmlari;
+
+  /// No description provided for @s7EylemSinyalAyarlari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal ayarları'**
+  String get s7EylemSinyalAyarlari;
+
+  /// No description provided for @s7EylemEkstreAktar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreden aktar (CSV)'**
+  String get s7EylemEkstreAktar;
+
+  /// No description provided for @s7EylemTopluEkle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplu ekle'**
+  String get s7EylemTopluEkle;
+
+  /// No description provided for @s7EylemTumHareketler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm hareketler'**
+  String get s7EylemTumHareketler;
+
+  /// No description provided for @s7EylemKarsilastir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Karşılaştır'**
+  String get s7EylemKarsilastir;
+
+  /// No description provided for @s7EylemTakipListesi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takibe al'**
+  String get s7EylemTakipListesi;
+
+  /// No description provided for @s7EylemBildirimler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler'**
+  String get s7EylemBildirimler;
+
+  /// No description provided for @s7EylemAyarlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarlar'**
+  String get s7EylemAyarlar;
+
+  /// No description provided for @s4AnalysisUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'ANALİZ'**
+  String get s4AnalysisUpper;
+
+  /// No description provided for @s4HistoryDocsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'GEÇMİŞ VE BELGELER'**
+  String get s4HistoryDocsUpper;
+
+  /// No description provided for @s4Details.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrıntı'**
+  String get s4Details;
+
+  /// No description provided for @s4RowSignals.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik sinyaller'**
+  String get s4RowSignals;
+
+  /// No description provided for @s4RowFundReport.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon karnesi'**
+  String get s4RowFundReport;
+
+  /// No description provided for @s4RowFlow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para akışı'**
+  String get s4RowFlow;
+
+  /// No description provided for @s4RowVolume.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hacim radarı'**
+  String get s4RowVolume;
+
+  /// No description provided for @s4RowCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı baskısı'**
+  String get s4RowCrypto;
+
+  /// No description provided for @s4RowNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Analiz notu'**
+  String get s4RowNote;
+
+  /// No description provided for @s3DagilimBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılım'**
+  String get s3DagilimBaslik;
+
+  /// No description provided for @s3HalkayiAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılımı büyük halkada aç'**
+  String get s3HalkayiAc;
+
+  /// No description provided for @s3DigerTurler.
+  ///
+  /// In tr, this message translates to:
+  /// **'+{n} tür'**
+  String s3DigerTurler(int n);
+
+  /// No description provided for @s5OnAyarSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne sıklıkta haber verelim?'**
+  String get s5OnAyarSoru;
+
+  /// No description provided for @s5OnAyarAz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Az'**
+  String get s5OnAyarAz;
+
+  /// No description provided for @s5OnAyarDengeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dengeli'**
+  String get s5OnAyarDengeli;
+
+  /// No description provided for @s5OnAyarCok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok'**
+  String get s5OnAyarCok;
+
+  /// No description provided for @s5OnAyarOzel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel'**
+  String get s5OnAyarOzel;
+
+  /// No description provided for @s5OnAyarAzAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız güçlü sinyaller (%85 güven), günde 1 kez, RSI ve MACD ile.'**
+  String get s5OnAyarAzAciklama;
+
+  /// No description provided for @s5OnAyarDengeliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önerilen: %70 güven, günde 2 kez (11:00 ve 15:00), temel göstergelerin tümü.'**
+  String get s5OnAyarDengeliAciklama;
+
+  /// No description provided for @s5OnAyarCokAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'%50 güvenden itibaren, 2 saatte bir, temel göstergelerin tümü.'**
+  String get s5OnAyarCokAciklama;
+
+  /// No description provided for @s5OnAyarOzelAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.'**
+  String get s5OnAyarOzelAciklama;
+
+  /// No description provided for @s5KategoriyeGoreOzellestir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategoriye göre özelleştir'**
+  String get s5KategoriyeGoreOzellestir;
+
+  /// No description provided for @s2Filtre.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtre'**
+  String get s2Filtre;
+
+  /// No description provided for @s2FiltreSayili.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtre · {n}'**
+  String s2FiltreSayili(int n);
+
+  /// No description provided for @s2FiltreEtkin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtre, {n} etkin'**
+  String s2FiltreEtkin(int n);
+
+  /// No description provided for @s2FiltreKisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişi'**
+  String get s2FiltreKisi;
+
+  /// No description provided for @s2FiltreKategori.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori'**
+  String get s2FiltreKategori;
+
+  /// No description provided for @s2BakiyeArttiAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} arttı; bunun {alim} kadarı yeni alım.'**
+  String s2BakiyeArttiAlim(String tutar, String alim);
+
+  /// No description provided for @s2BakiyeAzaldiAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} azaldı; dönemde {alim} yeni alım yaptın.'**
+  String s2BakiyeAzaldiAlim(String tutar, String alim);
+
+  /// No description provided for @s2BakiyeArttiSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} arttı; dönemde {satis} satış yaptın.'**
+  String s2BakiyeArttiSatis(String tutar, String satis);
+
+  /// No description provided for @s2BakiyeAzaldiSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} azaldı; bunun {satis} kadarı satış.'**
+  String s2BakiyeAzaldiSatis(String tutar, String satis);
+
+  /// No description provided for @s6Raporlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporlar'**
+  String get s6Raporlar;
+
+  /// No description provided for @s6HaftaOzetiAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlarında ve hisselerinde bu hafta olanlar'**
+  String get s6HaftaOzetiAlt;
+
+  /// No description provided for @s6AylikRapor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık rapor'**
+  String get s6AylikRapor;
+
+  /// No description provided for @s6YilOzeti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl özeti'**
+  String get s6YilOzeti;
+
+  /// No description provided for @s6Siralama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama'**
+  String get s6Siralama;
+
+  /// No description provided for @s6SiralamaAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirvedeki portföyler ve ortaklarınla yarış'**
+  String get s6SiralamaAlt;
 }
 
 class _AppLocalizationsDelegate

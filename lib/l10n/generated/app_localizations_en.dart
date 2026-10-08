@@ -7149,4 +7149,176 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get typePickerHint247 => '24/7';
+
+  @override
+  String get s7AraSemantics => 'Search';
+
+  @override
+  String get s7AramaIpucu => 'Search assets, symbols or actions';
+
+  @override
+  String get s7VarliklarimUpper => 'MY ASSETS';
+
+  @override
+  String get s7PiyasaUpper => 'MARKET';
+
+  @override
+  String get s7EylemlerUpper => 'ACTIONS';
+
+  @override
+  String get s7EylemFiyatAlarmlari => 'Price alerts';
+
+  @override
+  String get s7EylemSinyalAyarlari => 'Signal settings';
+
+  @override
+  String get s7EylemEkstreAktar => 'Import statement (CSV)';
+
+  @override
+  String get s7EylemTopluEkle => 'Bulk add';
+
+  @override
+  String get s7EylemTumHareketler => 'All transactions';
+
+  @override
+  String get s7EylemKarsilastir => 'Compare';
+
+  @override
+  String get s7EylemTakipListesi => 'Add to watchlist';
+
+  @override
+  String get s7EylemBildirimler => 'Notifications';
+
+  @override
+  String get s7EylemAyarlar => 'Settings';
+
+  @override
+  String get s4AnalysisUpper => 'ANALYSIS';
+
+  @override
+  String get s4HistoryDocsUpper => 'HISTORY & DOCUMENTS';
+
+  @override
+  String get s4Details => 'Details';
+
+  @override
+  String get s4RowSignals => 'Technical signals';
+
+  @override
+  String get s4RowFundReport => 'Fund report card';
+
+  @override
+  String get s4RowFlow => 'Money flow';
+
+  @override
+  String get s4RowVolume => 'Volume radar';
+
+  @override
+  String get s4RowCrypto => 'Buyer pressure';
+
+  @override
+  String get s4RowNote => 'Analysis note';
+
+  @override
+  String get s3DagilimBaslik => 'Allocation';
+
+  @override
+  String get s3HalkayiAc => 'Open allocation as a large ring';
+
+  @override
+  String s3DigerTurler(int n) {
+    return '+$n more';
+  }
+
+  @override
+  String get s5OnAyarSoru => 'How often should we notify you?';
+
+  @override
+  String get s5OnAyarAz => 'Less';
+
+  @override
+  String get s5OnAyarDengeli => 'Balanced';
+
+  @override
+  String get s5OnAyarCok => 'More';
+
+  @override
+  String get s5OnAyarOzel => 'Custom';
+
+  @override
+  String get s5OnAyarAzAciklama =>
+      'Only strong signals (85% confidence), once a day, with RSI and MACD.';
+
+  @override
+  String get s5OnAyarDengeliAciklama =>
+      'Recommended: 70% confidence, twice a day (11:00 and 15:00), all core indicators.';
+
+  @override
+  String get s5OnAyarCokAciklama =>
+      'From 50% confidence, every 2 hours, all core indicators.';
+
+  @override
+  String get s5OnAyarOzelAciklama =>
+      'Your categories have their own settings. Picking an option applies it to every category.';
+
+  @override
+  String get s5KategoriyeGoreOzellestir => 'Customise by category';
+
+  @override
+  String get s2Filtre => 'Filter';
+
+  @override
+  String s2FiltreSayili(int n) {
+    return 'Filter · $n';
+  }
+
+  @override
+  String s2FiltreEtkin(int n) {
+    return 'Filter, $n active';
+  }
+
+  @override
+  String get s2FiltreKisi => 'Person';
+
+  @override
+  String get s2FiltreKategori => 'Category';
+
+  @override
+  String s2BakiyeArttiAlim(String tutar, String alim) {
+    return 'Balance up $tutar; $alim of that is new buys.';
+  }
+
+  @override
+  String s2BakiyeAzaldiAlim(String tutar, String alim) {
+    return 'Balance down $tutar; you bought $alim in the period.';
+  }
+
+  @override
+  String s2BakiyeArttiSatis(String tutar, String satis) {
+    return 'Balance up $tutar; you sold $satis in the period.';
+  }
+
+  @override
+  String s2BakiyeAzaldiSatis(String tutar, String satis) {
+    return 'Balance down $tutar; $satis of that is sales.';
+  }
+
+  @override
+  String get s6Raporlar => 'Reports';
+
+  @override
+  String get s6HaftaOzetiAlt =>
+      'What happened in your funds and stocks this week';
+
+  @override
+  String get s6AylikRapor => 'Monthly report';
+
+  @override
+  String get s6YilOzeti => 'Year in review';
+
+  @override
+  String get s6Siralama => 'Leaderboard';
+
+  @override
+  String get s6SiralamaAlt => 'Top portfolios and the race with your partners';
 }

@@ -40,6 +40,10 @@ typedef _PnlOzeti = ({
   bool gainPositive,
 });
 
+/// Grafiğin altındaki kartların üst boşluğu (eski yığın). Katmanlı düzen
+/// (`katmanlar.dart`) kendi daha sıkı boşluğunu verir.
+const _kartBoslugu = EdgeInsets.only(top: SandikSpace.lg);
+
 extension _DetayOzet on _AssetDetailScreenState {
   /// Pozisyonun alış → bugün özeti (bkz. [_PnlOzeti]).
   _PnlOzeti _pnlOzeti(PortfolioState? pState) {
@@ -301,7 +305,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       getiriler: [
         for (final p in _periods) _donemYuzdesi(p.days, canliBirim),
       ],
-      onSec: _selectPeriod,
+      onSec: donemHafizasiAcik ? _ortakDonemSec : _selectPeriod,
     );
   }
 
@@ -364,42 +368,40 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// varlık fon değilse ya da karne kurulamıyorsa kart hiç yer kaplamaz
   /// (boşluk `dis` ile kartın içinde; çizilmezse o da yok). Hub'a yalnızca
   /// çağrı satırı girer — gövde bu part'ta (CLAUDE.md: yeni kod part'a).
-  Widget _fonKarnesi() => FonKarnesiKarti(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _fonKarnesi({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      FonKarnesiKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   /// Para akışı (Balina B1) — fon karnesinin hemen altında: karne "getirisi
   /// nasıl", bu kart "parası nereye gidiyor" sorusunu yanıtlar. Çizilmeme
   /// koşulları ve boşluk kuralı karneyle aynı (bkz. `ParaAkisiKarti`).
-  Widget _paraAkisi() => ParaAkisiKarti(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      // Bağlantı yalnız kendi varlığında: "fonlarım" ortağın fonunu kapsamaz.
-      haftaBaglantisi:
-          widget.asset.userId == ref.read(portfolioProvider).valueOrNull?.ownerId,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _paraAkisi({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      ParaAkisiKarti(
+          tur: widget.asset.type,
+          ticker: widget.asset.ticker,
+          // Bağlantı yalnız kendi varlığında: "fonlarım" ortağın fonunu
+          // kapsamaz.
+          haftaBaglantisi: widget.asset.userId ==
+              ref.read(portfolioProvider).valueOrNull?.ownerId,
+          dis: dis);
 
   /// Hacim radarı (Balina B2) — yalnız BIST hissesinde çizilir (koşul
   /// widget'ta); fon kartıyla aynı bayrak, aynı boşluk kuralı.
-  Widget _hacimRadari() => HacimRadariKarti(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _hacimRadari({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      HacimRadariKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   /// Alıcı baskısı (Balina B3) — yalnız kripto varlıkta çizilir.
-  Widget _kriptoBaski() => KriptoBaskiKarti(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _kriptoBaski({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      KriptoBaskiKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   /// Haftalık yapay zekâ notu (Balina F2, S15-B) — radar kartlarının hemen
   /// altında: kartlar sayıyı, not o sayıların hikâyesini verir. Yayında not
   /// yoksa hiç yer kaplamaz.
-  Widget _analizNotu() => AnalizNotuKutusu(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _analizNotu({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      AnalizNotuKutusu(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
   /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
@@ -407,12 +409,12 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// Mevduat / BES sözleşme kartı (2026-09-30): dönem, vade, yenileme;
   /// BES'te birikim dökümü, hak ediş ve aylık katkı. Yalnız KENDİ
   /// varlığında — eylemler sözleşmeye yazar, ortak yalnız okur (RLS).
-  Widget _sozlesmeKarti() => SozlesmeKarti(varlik: _canli.asset);
+  Widget _sozlesmeKarti({EdgeInsets dis = _kartBoslugu}) =>
+      SozlesmeKarti(varlik: _canli.asset, dis: dis);
 
-  Widget _kapBaglantisi() => KapBaglantisi(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _kapBaglantisi({EdgeInsets dis = _kartBoslugu}) =>
+      KapBaglantisi(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   // ── Temettü ──────────────────────────────────────────────────────────────
 

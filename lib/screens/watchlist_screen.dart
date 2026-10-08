@@ -20,6 +20,7 @@ import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
 import '../providers/preferences_provider.dart' show watchlistLimitProvider;
+import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
@@ -138,7 +139,16 @@ class _PeriodToggle extends ConsumerWidget {
       child: DonemSecici(
         donemler: SummaryPeriod.values,
         secili: ref.watch(watchlistPeriodProvider),
-        onSec: (i) => ref.read(watchlistPeriodProvider.notifier).state = i,
+        // Bayrak açıkken ortak dönem yazılır; `watchlistPeriodProvider`
+        // ondan türediği için kendiliğinden izler.
+        onSec: (i) {
+          if (donemHafizasiAcik) {
+            ref.read(seciliDonemProvider.notifier).state =
+                SummaryPeriod.values[i];
+          } else {
+            ref.read(watchlistPeriodProvider.notifier).state = i;
+          }
+        },
       ),
     );
   }

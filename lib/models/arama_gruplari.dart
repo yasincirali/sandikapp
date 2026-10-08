@@ -20,6 +20,7 @@ class AramaGrubu {
   bool get kisaltildi => ogeler.length < toplam;
 }
 
+
 /// Grupta varsayılan olarak gösterilen satır sayısı.
 ///
 /// Neden 3 (arama tasarımı, 2026-09-28): "altın" araması 10+ altın ürünü,

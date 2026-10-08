@@ -152,6 +152,23 @@ class PeriodSummaryView extends StatelessWidget {
   /// tarihi geçti mi). `null` ise `DateTime.now()`; testler sabitler.
   final DateTime? simdi;
 
+  /// "Ne oldu?" bölümünün ana rakam kartı çizilmesin mi (bayrak
+  /// `performans_tek_akis`, sadeleştirme 2 S2).
+  ///
+  /// Tek akışta Özet grafiğin ALTINDA durur ve dönem kartı zaten aynı
+  /// rakamı manşet yapar (`_buildPeriodChangeCard` notu: iki yüzeyin manşeti
+  /// bilinçli olarak aynı fonksiyon). Aynı sayıyı tek kaydırmada iki kez
+  /// göstermek "özet" değil tekrar olurdu. Varsayılan `false`: Özet sekmesi
+  /// ve testler eskisi gibi kartı görür.
+  final bool anaRakamGizli;
+
+  /// NEDEN bölümünün SONUNA eklenen kart (tek akışta "Türe göre" dökümü).
+  ///
+  /// Tek akışta Grafik ve Özet tek listede; tür dökümü "neden böyle?"
+  /// sorusunun bir cevabıdır (hangi tür ne kattı), ayrı bir bölüm açmak
+  /// yerine oraya girer. `null` ise hiçbir şey eklenmez — eski düzen.
+  final Widget? nedenEki;
+
   const PeriodSummaryView({
     super.key,
     required this.summary,
@@ -174,11 +191,26 @@ class PeriodSummaryView extends StatelessWidget {
     this.tufeKoprusu,
     this.tufePenceresiKisaltildi = false,
     this.simdi,
+    this.anaRakamGizli = false,
+    this.nedenEki,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (!summary.isMeaningful) return _BosDurum(period: summary.period);
+    if (!summary.isMeaningful) {
+      // Tek akışta boş özetin altında da tür dökümü kalır: döküm grafiğin
+      // serisinden beslenir, özetin "anlamlı" kapısına bağlı değildir.
+      final ek = nedenEki;
+      if (ek == null) return _BosDurum(period: summary.period);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _BosDurum(period: summary.period),
+          const SizedBox(height: SandikSpace.smd),
+          ek,
+        ],
+      );
+    }
 
     // 2026-09-21 sadeleştirme: on altı kart art arda değil, üç başlık
     // (BU DÖNEM / VARLIKLAR / katlanır DERİNLİK).
@@ -200,11 +232,15 @@ class PeriodSummaryView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SandikSectionHeader(title: l10n.sectionResult),
-        const SizedBox(height: SandikSpace.sm),
-        ..._arali(g.sonuc),
+        // Ana rakam gizliyken (tek akış) SONUÇ boş kalabilir; boş başlık
+        // çizilmez. Eski düzende ana rakam hep vardır — koşul hep doğru.
+        if (g.sonuc.isNotEmpty) ...[
+          SandikSectionHeader(title: l10n.sectionResult),
+          const SizedBox(height: SandikSpace.sm),
+          ..._arali(g.sonuc),
+        ],
         if (g.neden.isNotEmpty) ...[
-          const SizedBox(height: SandikSpace.md),
+          if (g.sonuc.isNotEmpty) const SizedBox(height: SandikSpace.md),
           SandikSectionHeader(title: l10n.sectionWhy),
           const SizedBox(height: SandikSpace.sm),
           ..._arali(g.neden),
@@ -248,12 +284,13 @@ class PeriodSummaryView extends StatelessWidget {
     final simdi = this.simdi ?? DateTime.now();
     // SONUÇ her zaman ana rakamla açılır; reel getiri (varsa) hemen altında.
     final sonuc = <Widget>[
-      _AnaRakamKarti(
-        summary: summary,
-        uzunDonemPct: uzunDonemPct,
-        baz: baz,
-        simdi: simdi,
-      ),
+      if (!anaRakamGizli)
+        _AnaRakamKarti(
+          summary: summary,
+          uzunDonemPct: uzunDonemPct,
+          baz: baz,
+          simdi: simdi,
+        ),
     ];
     // NEDEN üç parçadan kurulur ve bu sırayla birleşir: köprü → seyir →
     // varlıklar → kıyas. Seyir (eğri/gün sayımı) köprünün hemen altında:
@@ -382,6 +419,7 @@ class PeriodSummaryView extends StatelessWidget {
       // Kıyas slotu (5. sıra): kartı başka bir ajan/ekran kurar, burası yalnız
       // yerini tutar. null'sa hiçbir şey eklenmez.
       if (kiyasKarti != null) kiyasKarti!,
+      if (nedenEki != null) nedenEki!,
     ];
 
     // Birikim disiplini: gün içi hariç her dönemde, AYRINTI'da. Döneme bağlı

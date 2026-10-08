@@ -3,7 +3,10 @@ part of '../portfolio_performance_screen.dart';
 /// Kontroller: tür çipleri, dönem/yüzey/mod anahtarları, boş durumlar.
 /// `portfolio_performance_screen.dart`'ın part'ı (2026-09-14).
 extension _PerformansKontroller on _PortfolioPerformanceScreenState {
-  Widget _typeChip(AssetType? type, String label) {
+  /// [sonra]: seçimden sonra çağrılır — Filtre alt sayfası (tek akış) kendi
+  /// içeriğini yeniler; sayfa ayrı bir rota, ekranın `setState`'i onu
+  /// yeniden kurmaz.
+  Widget _typeChip(AssetType? type, String label, {VoidCallback? sonra}) {
     final selected = _typeFilter == type;
     final color = type?.color ?? context.c.amberText;
     return Padding(
@@ -18,10 +21,13 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         // Tür filtresi de tohumu atar — kapsamla aynı gerekçe
         // (`_gunIciTohumuAt`): başka bir türün serisi bu türün özeti
         // sanılmamalı.
-        onPressed: () => _guncelle(() {
-          _typeFilter = type;
-          _gunIciTohumuAt();
-        }),
+        onPressed: () {
+          _guncelle(() {
+            _typeFilter = type;
+            _gunIciTohumuAt();
+          });
+          sonra?.call();
+        },
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
@@ -269,7 +275,232 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       onSec: (i) {
         _guncelle(() => _selectedPeriodIdx = i);
         _startIntradayTickIfNeeded();
+        // Tek akışta Özet hep görünür; "Özet görüldü" ölçümü sekme
+        // geçişinden değil dönem seçiminden gelir (eski düzende sekme
+        // anahtarı yazıyordu, bkz. `_buildSurfaceToggle`).
+        if (_tekAkis) {
+          AnalyticsService.instance.logPeriodSummaryViewed(
+            period: SummaryPeriod.fromIndex(i).name,
+          );
+        }
       },
+    );
+  }
+
+  // ── Tek akış kontrolleri (bayrak `performans_tek_akis`, S2) ────────────
+
+  /// Tek akışın TEK kontrol satırı: dönem seçici + Filtre çipi.
+  ///
+  /// Eski yığın üç satırdı (kişi, Grafik|Özet + kapsam çipi, dönem). Tek
+  /// akışta yüzey anahtarı yok; kişi, kategori ve "bugünkü portföyle" ise
+  /// SEYREK değişen üç kapsam ayarı — sıklık ilkesi (`_buildScopeBar` notu)
+  /// aynen geçerli: sık olan (dönem) kalıcı satırda, seyrekler tek çipin
+  /// arkasında. Çip seçili filtre SAYISINI yazar ("Filtre · 1"): görünmeyen
+  /// filtre "portföyüm neden eksik" sınıfı hatanın kaynağıdır, sayı onu
+  /// görünür tutar.
+  Widget _buildTekSatirKontroller(List<AppUser> partners) {
+    return Row(
+      children: [
+        Expanded(child: _buildPeriodRow()),
+        const SizedBox(width: SandikSpace.sm),
+        _buildFiltreCipi(partners),
+      ],
+    );
+  }
+
+  /// Varsayılan dışındaki filtre sayısı: kişi (ortak varken "Ben" dışı),
+  /// kategori ("Tümü" dışı), bugünkü portföyle (etkinse).
+  int _filtreSayisi(List<AppUser> partners) =>
+      (partners.isNotEmpty && _view != '' ? 1 : 0) +
+      (_typeFilter != null ? 1 : 0) +
+      (_simulate ? 1 : 0);
+
+  Widget _buildFiltreCipi(List<AppUser> partners) {
+    final l = context.l10n;
+    final n = _filtreSayisi(partners);
+    final filtreli = n > 0;
+    final ton = filtreli ? context.c.amberText : context.c.text90;
+    // Dar ekranda (320pt) yedi dönem etiketi zaten küçülüyor; çip yalnız
+    // ikon (+ sayı) olur ki dönem seçicinin payı kırpılmasın. Etiket ekran
+    // okuyucuda her genişlikte tam.
+    final dar = MediaQuery.sizeOf(context).width < 360;
+    final metin = filtreli
+        ? (dar ? '$n' : l.s2FiltreSayili(n))
+        : (dar ? null : l.s2Filtre);
+    // Tur hedefi: tek akışta kapsam adımı bu çipi gösterir (eski düzende
+    // kapsam çipi). Aynı hedef iki yerde aynı anda kurulmaz — dallar ayrık.
+    return TourAnchor(
+      target: TourTarget.kapsamSecici,
+      child: Semantics(
+        container: true,
+        button: true,
+        label: filtreli ? l.s2FiltreEtkin(n) : l.s2Filtre,
+        child: ExcludeSemantics(
+          child: CupertinoButton(
+            minimumSize: SandikTouch.minSize,
+            padding: EdgeInsets.zero,
+            onPressed: _filtreSayfasiniAc,
+            child: SizedBox(
+              height: SandikTouch.min,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
+                  height: DonemSecici.tekSatirYukseklik,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: SandikSpace.sm2),
+                  // Kapsam çipiyle aynı kabuk: varsayılan `surface2` +
+                  // `hairline`, filtreliyken amber (gerekçe `_buildScopeChip`).
+                  decoration: BoxDecoration(
+                    color: filtreli
+                        ? context.c.amberFill.withValues(alpha: 0.14)
+                        : context.c.surface2,
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
+                    border: Border.all(
+                      color: filtreli
+                          ? context.c.amberFill.withValues(alpha: 0.55)
+                          : context.c.hairline,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.tune_rounded, size: 15, color: ton),
+                      if (metin != null) ...[
+                        const SizedBox(width: SandikSpace.xs2),
+                        Text(
+                          metin,
+                          maxLines: 1,
+                          style: context.t.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: ton,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Filtre alt sayfası: kişi (yalnız ortak varken), kategori, bugünkü
+  /// portföyle (yalnız grafik araçları açık seviyede — Ayarlar'daki satırla
+  /// aynı kapı).
+  ///
+  /// Hiçbir denetim YENİ değil, yalnız yer değiştirdi: kişi seçici eski
+  /// düzenin ilk satırı (`OrtakSecici`), kategori çipleri eski kapsam
+  /// panelinin (`_typeChip`), anahtar Ayarlar › Görünüm'deki tercihle AYNI
+  /// provider (`bugunkuPortfoyleProvider`) — burada değiştirmek Ayarlar'ı da
+  /// değiştirir, iki kaynak yok. Seçim anında uygulanır (onay düğmesi yok):
+  /// grafik sayfanın arkasında yenilenir, kullanıcı sonucu kapatınca görür.
+  void _filtreSayfasiniAc() {
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface1,
+      shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
+      builder: (_) => StatefulBuilder(
+        builder: (sayfaCtx, yenile) => Consumer(
+          builder: (sayfaCtx, sayfaRef, _) {
+            final l = context.l10n;
+            // Sayfa açıkken ortak listesi değişebilir (gizleme, davet):
+            // provider'dan izlenir, açılıştaki kopyadan değil.
+            final ortaklar = sayfaRef.watch(activePartnersProvider);
+            final araclar =
+                sayfaRef.watch(seviyeGorunurlukProvider).grafikAraclari;
+            final bugunku = sayfaRef.watch(bugunkuPortfoyleProvider);
+            void tazele() => yenile(() {});
+            return SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                    SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: SandikTutamac()),
+                    const SizedBox(height: SandikSpace.md),
+                    Text(
+                      l.s2Filtre,
+                      style: context.t.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text90),
+                    ),
+                    if (ortaklar.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.md),
+                      SandikSectionHeader(title: l.s2FiltreKisi),
+                      const SizedBox(height: SandikSpace.sm),
+                      OrtakSecici(
+                        partners: ortaklar,
+                        selectedId: _view,
+                        // Kapsam değişiminde gün içi tohumu da atılır —
+                        // gerekçe eski satırdaki `OrtakSecici` notunda.
+                        onChanged: (v) {
+                          _guncelle(() {
+                            _view = v;
+                            _gunIciTohumuAt();
+                          });
+                          tazele();
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: SandikSpace.md),
+                    SandikSectionHeader(title: l.s2FiltreKategori),
+                    const SizedBox(height: SandikSpace.sm),
+                    Wrap(
+                      children: [
+                        _typeChip(null, l.allTypes, sonra: tazele),
+                        for (final t in AssetType.values)
+                          _typeChip(t, t.labelOf(l), sonra: tazele),
+                      ],
+                    ),
+                    if (araclar) ...[
+                      const SizedBox(height: SandikSpace.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l.todaysPortfolioSettingTitle,
+                                  style: context.t.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: context.c.text90),
+                                ),
+                                const SizedBox(height: SandikSpace.xxs),
+                                Text(
+                                  l.todaysPortfolioSettingSubtitle,
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: context.c.text58),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: SandikSpace.smd),
+                          Switch.adaptive(
+                            value: bugunku,
+                            activeTrackColor: context.c.amberText,
+                            onChanged: (v) => sayfaRef
+                                .read(bugunkuPortfoyleProvider.notifier)
+                                .set(v),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 

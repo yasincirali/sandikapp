@@ -67,6 +67,15 @@ extension _DetayEylemler on _AssetDetailScreenState {
         reason: 'AssetDetail.sozlesmeTazele');
   }
 
+  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
+  /// eskisi gibi doğrudan [_selectPeriod]'u çağırır). Ortak döneme yazma
+  /// indeks güncellendikten SONRA: `build`'deki dinleyici değişikliği kendi
+  /// seçimimiz olarak tanır, ikinci kez yüklemez.
+  void _ortakDonemSec(int idx) {
+    _selectPeriod(idx);
+    ref.read(seciliDonemProvider.notifier).state = _donemler[idx];
+  }
+
   void _selectPeriod(int idx) {
     // Eski sekme gün içi miydi? Index güncellenmeden ÖNCE okunmalı.
     final oncekiGunIci = _gunIciMi;
