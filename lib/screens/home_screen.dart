@@ -19,6 +19,7 @@ import '../services/notification_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
@@ -48,6 +49,7 @@ import 'portfolio_performance_screen.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/piyasa_seridi.dart';
 import 'add_watchlist_screen.dart';
+import 'genel_arama_screen.dart';
 import '../widgets/tour_anchor.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
@@ -95,6 +97,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context,
       adaptiveRoute<void>(
         builder: (_) => const AddWatchlistScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
+  /// Genel arama (bayrak `genel_arama`): üst çubuktaki büyüteç.
+  ///
+  /// Demo'da piyasa çipiyle AYNI kapı: arama piyasa sembolü için sunucuya
+  /// ve fiyat servisine çıkıyor, eylemlerin çoğu yazma ekranı. Demo
+  /// kullanıcısı "hesap oluştur" sayfasını görür; sunucuya hiçbir şey
+  /// gitmez (`demo_izolasyon_test`).
+  ///
+  /// Tüm hareketler ve bildirim zili ANA EKRANIN açıcılarıdır (ortak
+  /// görünümü, görüldü damgası); arama onları geri çağırır.
+  void _genelAramayiAc({required VoidCallback tumHareketleriAc}) {
+    if (DemoModu.yazmaKapisi('arama')) return;
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) => GenelAramaScreen(
+          tumHareketleriAc: tumHareketleriAc,
+          bildirimleriAc: _scrollToSignals,
+        ),
         fullscreenDialog: true,
       ),
     );
@@ -662,12 +687,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
+                  // Bayrak `genel_arama` açıkken aynı yuvada büyüteç
+                  // (sadeleştirme 2): yenileme zaten aşağı çekmede
+                  // (`RefreshIndicator`, çan listelerini de tazeler) ve
+                  // fiyatlar arka planda güncelleniyor; ayrı bir düğme
+                  // üst çubuğun en değerli yerini "şimdi çek"e veriyordu.
+                  // Düğme sayısı üç kalır (HIG notu aşağıda). Tur hedefi
+                  // aynı anahtar: adım metni bayrağa göre dallanır
+                  // (`onboarding_screen` 'yenile').
                   TourAnchor(
                     target: TourTarget.yenileTusu,
                     // Kilit + gösterge standart bileşende: ikon görünmez
                     // ama yer tutar, gösterge üstünde (eskiden ikonla yer
                     // değiştiriyordu, aynı boy).
-                    child: SandikAsyncTap(
+                    child: RemoteConfigService.instance.genelArama
+                        ? SandikTappable(
+                            key: const ValueKey('genel-arama-dugmesi'),
+                            onTap: () => _genelAramayiAc(
+                              tumHareketleriAc: () => pushGuarded(
+                                context,
+                                adaptiveRoute<void>(
+                                  builder: (_) => AllTransactionsScreen(
+                                    allPartnerAssets: allPartnerAssets,
+                                    partners: partners,
+                                    initialView: _view,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            semanticLabel: context.l10n.s7AraSemantics,
+                            child: _HeaderIconKutusu(
+                              child: Icon(Icons.search_rounded,
+                                  color: context.c.text58, size: 22),
+                            ),
+                          )
+                        : SandikAsyncTap(
                       onTap: _reload,
                       semanticLabel: context.l10n.refreshPrices,
                       // Eski düğme SandikTappable varsayılanıyla titreşirdi.

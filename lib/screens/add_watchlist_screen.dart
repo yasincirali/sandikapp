@@ -118,7 +118,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     // 250 ms: her tuş vuruşunda TEFAS'a gitmemek için. Yerleşik listeler
     // zaten bellekte ama fon araması ağa çıkabiliyor.
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () => _ara(v));
+    _debounce = Timer(aramaGecikmesi, () => _ara(v));
   }
 
   Future<void> _ara(String q) async {
@@ -422,7 +422,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     return SandikTappable(
       onTap: () => showVarlikSayfasi(context, c),
       semanticLabel: context.l10n.vsOpenDetailSemantics(c.name),
-      child: _SatirKutusu(
+      child: AramaSatirKutusu(
         kimlik: c,
         kotasyon: _kotasyon[c.ticker.toUpperCase()],
         sonu: owned
@@ -503,8 +503,13 @@ class _SatirSonu extends StatelessWidget {
 }
 
 /// Satırın gövdesi: tür noktası, ad, sembol · tür, fiyat + günlük değişim.
-class _SatirKutusu extends StatelessWidget {
-  const _SatirKutusu({
+///
+/// Açık (public) çünkü genel arama (bayrak `genel_arama`) "Piyasa" grubunu
+/// AYNI satırla çizer: aynı varlık iki arama yüzeyinde iki farklı satır
+/// (fiyat biçimi, sembol etiketi) göstermesin.
+class AramaSatirKutusu extends StatelessWidget {
+  const AramaSatirKutusu({
+    super.key,
     required this.kimlik,
     required this.kotasyon,
     required this.sonu,

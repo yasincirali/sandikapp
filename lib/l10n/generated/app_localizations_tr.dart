@@ -6815,4 +6815,46 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get pwGeriYukHata =>
       'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.';
+
+  @override
+  String get s7AraSemantics => 'Ara';
+
+  @override
+  String get s7AramaIpucu => 'Varlık, sembol ya da işlem ara';
+
+  @override
+  String get s7VarliklarimUpper => 'VARLIKLARIM';
+
+  @override
+  String get s7PiyasaUpper => 'PİYASA';
+
+  @override
+  String get s7EylemlerUpper => 'EYLEMLER';
+
+  @override
+  String get s7EylemFiyatAlarmlari => 'Fiyat alarmları';
+
+  @override
+  String get s7EylemSinyalAyarlari => 'Sinyal ayarları';
+
+  @override
+  String get s7EylemEkstreAktar => 'Ekstreden aktar (CSV)';
+
+  @override
+  String get s7EylemTopluEkle => 'Toplu ekle';
+
+  @override
+  String get s7EylemTumHareketler => 'Tüm hareketler';
+
+  @override
+  String get s7EylemKarsilastir => 'Karşılaştır';
+
+  @override
+  String get s7EylemTakipListesi => 'Takibe al';
+
+  @override
+  String get s7EylemBildirimler => 'Bildirimler';
+
+  @override
+  String get s7EylemAyarlar => 'Ayarlar';
 }

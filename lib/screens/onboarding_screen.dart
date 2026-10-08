@@ -414,13 +414,29 @@ List<_Adim> _adimlariKur() {
       bitti: (ref) => ref.read(balanceHiddenProvider),
       giris: (_) => _sekmeyeGec(0),
     ),
-    const _Adim(
-      id: 'yenile',
-      hedef: TourTarget.yenileTusu,
-      baslik: 'Fiyatları yenile',
-      govde: 'Fiyatlar zaten arka planda güncelleniyor; bu tuş "şimdi çek" '
-          'demek. Ekranı aşağı çekerek de yapabilirsin.',
-    ),
+    // Bayrak `genel_arama` açıkken aynı yuvada yenile değil büyüteç durur
+    // (`home_screen`, sadeleştirme 2); tur gerçek ekranın üstünde çalıştığı
+    // için metin bayrağa göre dallanır. Bayrak kapalıyken metin birebir eski.
+    // Yenileme bilgisi kaybolmasın: aşağı çekme cümlesi yeni metinde de var.
+    if (RemoteConfigService.instance.genelArama)
+      const _Adim(
+        id: 'yenile',
+        hedef: TourTarget.yenileTusu,
+        rozet: 'YENİ',
+        baslik: 'Her şeyi ara',
+        govde: 'Büyüteçle tek yerden ara: kendi varlıkların, piyasadaki '
+            'hisse, fon ve altınlar, uygulamadaki yerler (fiyat alarmı, '
+            'ekstreden aktar, tüm hareketler, ayarlar…). Fiyatlar arka '
+            'planda güncelleniyor; hemen tazelemek için ekranı aşağı çek.',
+      )
+    else
+      const _Adim(
+        id: 'yenile',
+        hedef: TourTarget.yenileTusu,
+        baslik: 'Fiyatları yenile',
+        govde: 'Fiyatlar zaten arka planda güncelleniyor; bu tuş "şimdi çek" '
+            'demek. Ekranı aşağı çekerek de yapabilirsin.',
+      ),
     // 1.2.0'da eklendi. Tur, uygulamanın GÜNCEL hâlini anlatmalı: yeni
     // kullanıcı yalnızca eski sürümde var olan özellikleri öğrenip en
     // yenisini kaçırmamalı (bkz. `config/surum_notlari.dart` — `onemli`

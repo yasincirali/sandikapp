@@ -6877,4 +6877,46 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pwGeriYukHata =>
       'Restore is not possible right now. Please try again shortly.';
+
+  @override
+  String get s7AraSemantics => 'Search';
+
+  @override
+  String get s7AramaIpucu => 'Search assets, symbols or actions';
+
+  @override
+  String get s7VarliklarimUpper => 'MY ASSETS';
+
+  @override
+  String get s7PiyasaUpper => 'MARKET';
+
+  @override
+  String get s7EylemlerUpper => 'ACTIONS';
+
+  @override
+  String get s7EylemFiyatAlarmlari => 'Price alerts';
+
+  @override
+  String get s7EylemSinyalAyarlari => 'Signal settings';
+
+  @override
+  String get s7EylemEkstreAktar => 'Import statement (CSV)';
+
+  @override
+  String get s7EylemTopluEkle => 'Bulk add';
+
+  @override
+  String get s7EylemTumHareketler => 'All transactions';
+
+  @override
+  String get s7EylemKarsilastir => 'Compare';
+
+  @override
+  String get s7EylemTakipListesi => 'Add to watchlist';
+
+  @override
+  String get s7EylemBildirimler => 'Notifications';
+
+  @override
+  String get s7EylemAyarlar => 'Settings';
 }

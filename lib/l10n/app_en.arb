@@ -4540,5 +4540,19 @@
   "pwHata": "The purchase could not be completed. If you were not charged, you can try again.",
   "pwGeriYuklendi": "Your subscription has been restored.",
   "pwGeriYukBulunamadi": "No active subscription was found for this account.",
-  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly."
+  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly.",
+  "s7AraSemantics": "Search",
+  "s7AramaIpucu": "Search assets, symbols or actions",
+  "s7VarliklarimUpper": "MY ASSETS",
+  "s7PiyasaUpper": "MARKET",
+  "s7EylemlerUpper": "ACTIONS",
+  "s7EylemFiyatAlarmlari": "Price alerts",
+  "s7EylemSinyalAyarlari": "Signal settings",
+  "s7EylemEkstreAktar": "Import statement (CSV)",
+  "s7EylemTopluEkle": "Bulk add",
+  "s7EylemTumHareketler": "All transactions",
+  "s7EylemKarsilastir": "Compare",
+  "s7EylemTakipListesi": "Add to watchlist",
+  "s7EylemBildirimler": "Notifications",
+  "s7EylemAyarlar": "Settings"
 }
