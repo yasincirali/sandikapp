@@ -89,6 +89,11 @@ void main() {
       expect(varsayilan('abd_hisse'), 'false');
     });
 
+    // Varlık ekranında yeni kart; kapalıyken ekran birebir eski.
+    test('varlık masrafları KAPALI doğar', () {
+      expect(varsayilan('varlik_masraflari'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

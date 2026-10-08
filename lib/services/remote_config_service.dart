@@ -251,6 +251,13 @@ class RemoteConfigService {
     // kapalıyken form, arama ve rozetler birebir eski.
     'abd_hisse': false,
 
+    // Varlık ekranında "Masraflar" kartı (2026-10-08, kullanıcı: "her
+    // varlık türü için detaycı olmalıyız, kendine has masraflarını ekranda
+    // gösterebilmeliyiz"). Tutar yalnız kayıtlı komisyondan ya da resmî
+    // orandan (`varlik_masraflari.dart`); aracı kurum makası uydurulmaz.
+    // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
+    'varlik_masraflari': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -505,6 +512,9 @@ class RemoteConfigService {
 
   /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
   bool get abdHisse => _bayrak('abd_hisse');
+
+  /// Varlık ekranında Masraflar kartı. Gerekçe `_defaults`'ta.
+  bool get varlikMasraflari => _bayrak('varlik_masraflari');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

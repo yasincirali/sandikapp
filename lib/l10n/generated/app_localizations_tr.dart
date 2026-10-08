@@ -6737,4 +6737,30 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get usStockCurrencyLocked => 'ABD hissesi dolarla kaydedilir';
+
+  @override
+  String get costsUpper => 'MASRAFLAR';
+
+  @override
+  String get costsPaid => 'Ödenen';
+
+  @override
+  String get costsEstimatedOnSale => 'Satarken tahmini';
+
+  @override
+  String get costTagPaid => 'Ödendi';
+
+  @override
+  String get costTagEstimated => 'Tahmini';
+
+  @override
+  String get costTagInfo => 'Bilgi';
+
+  @override
+  String costsShowAll(int count) {
+    return 'Tümünü gör ($count)';
+  }
+
+  @override
+  String get costsShowLess => 'Daha az göster';
 }

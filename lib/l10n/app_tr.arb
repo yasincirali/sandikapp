@@ -4873,5 +4873,20 @@
       }
     }
   },
-  "usStockCurrencyLocked": "ABD hissesi dolarla kaydedilir"
+  "usStockCurrencyLocked": "ABD hissesi dolarla kaydedilir",
+  "costsUpper": "MASRAFLAR",
+  "costsPaid": "Ödenen",
+  "costsEstimatedOnSale": "Satarken tahmini",
+  "costTagPaid": "Ödendi",
+  "costTagEstimated": "Tahmini",
+  "costTagInfo": "Bilgi",
+  "costsShowAll": "Tümünü gör ({count})",
+  "@costsShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "costsShowLess": "Daha az göster"
 }

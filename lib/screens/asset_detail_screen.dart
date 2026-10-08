@@ -58,6 +58,9 @@ import '../widgets/hacim_radari_karti.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
+import '../widgets/masraf_karti.dart';
+import '../services/varlik_masraflari.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
 import '../services/sozlesme_deposu.dart';
@@ -1593,6 +1596,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 _analizNotu(),
                 if (isOwnAsset) _sozlesmeKarti(),
                 if (isOwnAsset && pState != null) _temettuKarti(pState),
+                if (isOwnAsset &&
+                    pState != null &&
+                    RemoteConfigService.instance.varlikMasraflari)
+                  _masrafKarti(pState),
                 _kapBaglantisi(),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),

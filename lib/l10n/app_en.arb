@@ -4488,5 +4488,13 @@
   "pickUsStockTap": "Tap to pick a US stock...",
   "usSymbolHint": "Type a symbol (e.g. AAPL, BRK-B)",
   "selectedUsStockSemantics": "Selected US stock: {name}. Double tap to change.",
-  "usStockCurrencyLocked": "US stocks are recorded in dollars"
+  "usStockCurrencyLocked": "US stocks are recorded in dollars",
+  "costsUpper": "COSTS",
+  "costsPaid": "Paid",
+  "costsEstimatedOnSale": "Estimated on sale",
+  "costTagPaid": "Paid",
+  "costTagEstimated": "Estimated",
+  "costTagInfo": "Info",
+  "costsShowAll": "Show all ({count})",
+  "costsShowLess": "Show less"
 }

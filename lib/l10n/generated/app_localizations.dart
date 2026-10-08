@@ -11199,6 +11199,54 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'ABD hissesi dolarla kaydedilir'**
   String get usStockCurrencyLocked;
+
+  /// No description provided for @costsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'MASRAFLAR'**
+  String get costsUpper;
+
+  /// No description provided for @costsPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödenen'**
+  String get costsPaid;
+
+  /// No description provided for @costsEstimatedOnSale.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satarken tahmini'**
+  String get costsEstimatedOnSale;
+
+  /// No description provided for @costTagPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödendi'**
+  String get costTagPaid;
+
+  /// No description provided for @costTagEstimated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmini'**
+  String get costTagEstimated;
+
+  /// No description provided for @costTagInfo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgi'**
+  String get costTagInfo;
+
+  /// No description provided for @costsShowAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünü gör ({count})'**
+  String costsShowAll(int count);
+
+  /// No description provided for @costsShowLess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha az göster'**
+  String get costsShowLess;
 }
 
 class _AppLocalizationsDelegate

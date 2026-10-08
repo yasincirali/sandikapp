@@ -6799,4 +6799,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usStockCurrencyLocked => 'US stocks are recorded in dollars';
+
+  @override
+  String get costsUpper => 'COSTS';
+
+  @override
+  String get costsPaid => 'Paid';
+
+  @override
+  String get costsEstimatedOnSale => 'Estimated on sale';
+
+  @override
+  String get costTagPaid => 'Paid';
+
+  @override
+  String get costTagEstimated => 'Estimated';
+
+  @override
+  String get costTagInfo => 'Info';
+
+  @override
+  String costsShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get costsShowLess => 'Show less';
 }
