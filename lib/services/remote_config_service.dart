@@ -221,6 +221,13 @@ class RemoteConfigService {
     // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
     'birikim_serisi': false,
 
+    // Portföy satırından varlık ekranına başlık uçuşu (yol haritası 2.14,
+    // yasin 2026-10-08: "bunları sen yapamıyor musun"). KAPALI doğar: uçuş
+    // iki farklı yazı boyutu arasında ölçekleniyor ve cihazda görülmedi
+    // (bulutta emülatör yok). Kapalıyken `Hero` kurulmaz, geçiş birebir
+    // eski. Gerekçe `varlik_baslik_hero.dart`.
+    'varlik_hero_gecisi': false,
+
     // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
     // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
     // kartında "Tanılama metnini kopyala" çıkar: tablo düzeni korunur, ad/
@@ -484,6 +491,9 @@ class RemoteConfigService {
 
   /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
   bool get birikimSerisi => _bayrak('birikim_serisi');
+
+  /// Varlık başlığı uçuşu. Gerekçe `_defaults`'ta.
+  bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
 
   /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
   bool get ekstreTanilama => _bayrak('ekstre_tanilama');

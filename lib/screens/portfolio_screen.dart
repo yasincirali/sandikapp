@@ -36,6 +36,8 @@ import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/ortak_secici.dart';
 import '../widgets/sandik_segment.dart';
+import '../widgets/varlik_baslik_hero.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
@@ -493,13 +495,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       // detay ekranını iki kez açıyor, Android'de
                                       // de iOS geçişi veriyordu (2026-09-23
                                       // denetimi F21).
-                                      onTap: (p) => pushGuarded(
+                                      heroAcik: RemoteConfigService
+                                          .instance.varlikHeroGecisi,
+                                      onTap: (p, hero) => pushGuarded(
                                         context,
                                         adaptiveRoute<void>(
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,
                                                   lots: p.lots,
+                                                  heroEtiketi: hero,
                                                 )),
                                       ),
                                       onDelete: (p) =>
@@ -915,8 +920,13 @@ class _AssetList {
   final PortfolioState pState;
   final BazPara baz;
   final String? currentUserId;
-  final void Function(Position) onTap;
+
+  /// İkinci argüman başlık uçuşunun etiketi (bayrak kapalı → `null`).
+  final void Function(Position, Object? heroEtiketi) onTap;
   final void Function(Position) onDelete;
+
+  /// `varlik_hero_gecisi` (yol haritası 2.14).
+  final bool heroAcik;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
   // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
   // `void` kalsaydı `await` beklemez, panel yine erken kapanırdı.
@@ -940,6 +950,7 @@ class _AssetList {
     required this.onAdd,
     required this.onRemove,
     required this.onDividend,
+    this.heroAcik = false,
   });
 
   /// Kullanıcının bu satırdaki KENDİ pozisyonu — yoksa `null` (satır
@@ -958,7 +969,11 @@ class _AssetList {
           _kart(position, _kendiParcasi(position)),
       ];
 
-  Widget _kart(Position position, Position? kendi) => _YeniVarlikParlamasi(
+  Widget _kart(Position position, Position? kendi) {
+    // Etiket GÖSTERİLEN satırın anahtarından: tekil (`ValueKey` ile aynı),
+    // açılan pozisyon ortak satırda farklı olsa da.
+    final hero = heroAcik ? varlikHeroEtiketi(position.key) : null;
+    return _YeniVarlikParlamasi(
         key: ValueKey(position.key),
         aktif: position.key == vurgulanan,
         child: _AssetCard(
@@ -967,16 +982,18 @@ class _AssetList {
           pState: pState,
           baz: baz,
           canEdit: kendi != null,
+          heroEtiketi: hero,
           // Varlık ekranı tek sahipli pozisyon bekler; birleşik satırda
           // önce kendi parçası, yoksa ilk sahibinki.
-          onTap: (p) => onTap(kendi ??
-              (p is BirlesikPozisyon ? p.parcalar.first : p)),
+          onTap: (p) => onTap(
+              kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p), hero),
           onDelete: (_) => onDelete(kendi!),
           onAdd: (_) => onAdd(kendi!),
           onRemove: (_) => onRemove(kendi!),
           onDividend: (_) => onDividend(kendi!),
         ),
       );
+  }
 }
 
 /// Yeni eklenen satırın tek seferlik parlaması: amber çerçeve belirir ve
@@ -1326,6 +1343,9 @@ class _AssetCard extends StatefulWidget {
   final PortfolioState pState;
   final BazPara baz;
   final bool canEdit;
+
+  /// Başlık uçuşu etiketi (`varlik_baslik_hero.dart`); `null` → uçuş yok.
+  final Object? heroEtiketi;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
@@ -1341,6 +1361,7 @@ class _AssetCard extends StatefulWidget {
     required this.pState,
     required this.baz,
     required this.canEdit,
+    this.heroEtiketi,
     required this.onTap,
     required this.onDelete,
     required this.onAdd,
@@ -1422,16 +1443,19 @@ class _AssetCardState extends State<_AssetCard>
                             Row(
                               children: [
                                 Flexible(
-                                  child: Text(
-                                    a.showTicker ? a.displayTicker! : a.name,
-                                    maxLines: a.showTicker ? 1 : 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: context.t.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: context.c.text90,
-                                      height: 1.25,
-                                      letterSpacing:
-                                          a.showTicker ? 0.2 : -0.2,
+                                  child: VarlikBaslikHero(
+                                    etiket: widget.heroEtiketi,
+                                    child: Text(
+                                      a.showTicker ? a.displayTicker! : a.name,
+                                      maxLines: a.showTicker ? 1 : 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: context.t.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: context.c.text90,
+                                        height: 1.25,
+                                        letterSpacing:
+                                            a.showTicker ? 0.2 : -0.2,
+                                      ),
                                     ),
                                   ),
                                 ),

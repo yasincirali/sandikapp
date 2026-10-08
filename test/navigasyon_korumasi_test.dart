@@ -75,7 +75,7 @@ void main() {
   test('portföy satırı detayı pushGuarded + adaptiveRoute ile açar', () {
     final src = ekranKaynagiSync('lib/screens/portfolio_screen.dart');
     expect(
-      RegExp(r'onTap: \(p\) => pushGuarded\(\s*context,\s*adaptiveRoute<void>\(')
+      RegExp(r'onTap: \(p, hero\) => pushGuarded\(\s*context,\s*adaptiveRoute<void>\(')
           .hasMatch(src),
       isTrue,
     );
