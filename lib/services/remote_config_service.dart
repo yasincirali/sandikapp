@@ -39,14 +39,25 @@ class RemoteConfigService {
     // için premium özellikleri kapatabilir.
     'premium_enabled': true,
 
-    // Free tier varlık limiti. Launch'ta 20 ile başla, engagement düşükse
-    // gerçek ürün konumlanmasına göre azalt.
-    'free_asset_limit': 20,
+    // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
+    // eklemeyi 7 varlık yapalım … premium istemeli"): 8. varlık paywall'u
+    // açar. Yalnız `paywall_enabled` açıkken; var olan varlıklar silinmez,
+    // yalnız YENİ ekleme durur.
+    'free_asset_limit': 7,
 
     // Takip listesi limiti. Portföy limitinden AYRI ve paywall kapalıyken
     // de geçerli (kullanıcı kararı 2026-09-25: "şimdilik 7, ilerde paywall'la
     // artırılır"). Sunucuya yazılmadan önce istemcide kontrol edilir.
+    // Paywall KAPALIYKEN okunan ürün sınırı budur ve 7 kalır: canlıdaki
+    // kullanıcının listesi daralmaz (ana kural).
     'free_watchlist_limit': 7,
+
+    // Paywall AÇIKKEN Premium olmayanın takip sınırı (yasin, 2026-10-08:
+    // "takip listesini 3 yapalım"). Ayrı anahtar: eski build'ler
+    // `free_watchlist_limit`'i paywall'dan bağımsız okur; o değeri 3'e
+    // çekmek canlıdaki herkesin listesini kısardı. Var olan takipler
+    // silinmez, yalnız yeni ekleme durur.
+    'paywall_watchlist_limit': 3,
 
     // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
     // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
@@ -65,6 +76,13 @@ class RemoteConfigService {
     // kaldırılmıştı, kapıyla geri geldi. Sunucudaki karşılığı
     // `SINYAL_UCRETSIZ_SLOT` secret'ı: ikisi paywall'la birlikte açılır.
     'free_signal_slots_per_day': 1,
+
+    // Ücretsiz sürümde sinyal bildiriminin açık olduğu varlık sayısı (yasin,
+    // 2026-10-08: "sinyal 1 varlıkta ücretsiz, 2. varlık Premium"). 0 =
+    // kapı yok. Bugün yalnız 0/1 anlamlı: seçim tablosu tek satır tutar
+    // (`sinyal_varlik_secimi`, 0126). Yalnız `paywall_enabled` açıkken;
+    // sunucudaki karşılığı `SINYAL_UCRETSIZ_VARLIK` secret'ı.
+    'free_signal_assets': 1,
 
     // Ücretsiz sürümde Karşılaştır grafiğindeki seri sayısı (Premium planı
     // "1 seri ücretsiz" = kendi serisine EK bir kıyas, toplam 2). Premium
@@ -444,6 +462,10 @@ class RemoteConfigService {
       _rc?.getInt('free_signal_slots_per_day') ??
       _defaults['free_signal_slots_per_day'] as int;
 
+  int get freeSignalAssets =>
+      _rc?.getInt('free_signal_assets') ??
+      _defaults['free_signal_assets'] as int;
+
   int get freeCompareSeries =>
       _rc?.getInt('free_compare_series') ??
       _defaults['free_compare_series'] as int;
@@ -455,6 +477,10 @@ class RemoteConfigService {
   int get freeWatchlistLimit =>
       _rc?.getInt('free_watchlist_limit') ??
       _defaults['free_watchlist_limit'] as int;
+
+  int get paywallWatchlistLimit =>
+      _rc?.getInt('paywall_watchlist_limit') ??
+      _defaults['paywall_watchlist_limit'] as int;
 
   String get premiumPriceMonthly =>
       _rc?.getString('premium_price_monthly') ??

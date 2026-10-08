@@ -1573,6 +1573,48 @@ class SupabaseService {
     ];
   }
 
+  /// Ücretsiz planda sinyal bildiriminin açık olduğu TEK varlık (0126);
+  /// seçim yoksa null. Sunucu kapıyı `analyze-signals`'ta uygular.
+  Future<({String tur, String ticker})?> fetchSinyalVarligi(
+      String userId) async {
+    final r = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.fetchSinyalVarligi',
+      table: 'sinyal_varlik_secimi',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('sinyal_varlik_secimi')
+          .select('asset_type, ticker')
+          .eq('user_id', userId)
+          .maybeSingle(),
+    );
+    if (r == null) return null;
+    return (tur: r['asset_type'] as String, ticker: r['ticker'] as String);
+  }
+
+  /// Sinyal varlığını taşır (kullanıcı başına tek satır).
+  Future<void> setSinyalVarligi({
+    required String userId,
+    required String tur,
+    required String ticker,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setSinyalVarligi',
+      table: 'sinyal_varlik_secimi',
+      op: 'UPSERT',
+      request: {'user_id': userId, 'asset_type': tur, 'ticker': ticker},
+      call: () => _db.from('sinyal_varlik_secimi').upsert(
+        {
+          'user_id': userId,
+          'asset_type': tur,
+          'ticker': ticker,
+          'guncellendi': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'user_id',
+      ),
+    );
+  }
+
   /// Kullanıcının bir varlık türü için eşik/gösterge tercihlerini sunucuya
   /// yazar.
   ///
