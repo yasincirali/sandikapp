@@ -1340,6 +1340,12 @@ abstract class AppLocalizations {
   /// **'Kripto'**
   String get assetTypeCrypto;
 
+  /// No description provided for @assetTypeEurobond.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eurobond'**
+  String get assetTypeEurobond;
+
   /// No description provided for @assetTypeCommodity.
   ///
   /// In tr, this message translates to:
@@ -1381,6 +1387,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Listeden seç, örn. BTC, ETH'**
   String get tickerHintCrypto;
+
+  /// No description provided for @tickerHintEurobond.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listeden seç ya da ISIN yaz, örn. US900123DF45'**
+  String get tickerHintEurobond;
 
   /// No description provided for @tickerHintCommodity.
   ///

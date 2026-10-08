@@ -16,6 +16,7 @@
 // ölçeklenir — ücretsiz katmanda kalmanın anahtarı bu.
 
 import { createClient, SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { BF_API, bfGecmisiniCoz, EUROBOND_ONEKI, isinGecerli, TARAYICI_UA } from './eurobond.ts';
 import { kriptoKodu, mumlariCek, tlSerisi } from './kripto.ts';
 
 /// Teknik göstergeler için gereken minimum nokta sayısı.
@@ -156,12 +157,37 @@ export async function fetchKripto(
   return noktalar.map((p) => p[1]).filter((c) => Number.isFinite(c) && c > 0);
 }
 
+/// Eurobond günlük TEMİZ kapanışları (6 ay), Börse Frankfurt.
+///
+/// Grafik (`eurobond-seri`) ile aynı kaynak ve aynı ölçek: sinyal ile grafik
+/// aynı eğriye bakar. Temiz fiyat kullanılır; kirli fiyat kupon günlerinde
+/// testere dişi çizer ve göstergeleri sahte sinyale boğardı.
+export async function fetchEurobond(
+  symbol: string,
+  f: typeof fetch = fetch,
+): Promise<number[]> {
+  const isin = symbol.trim().toUpperCase().slice(EUROBOND_ONEKI.length);
+  if (!symbol.toUpperCase().startsWith(EUROBOND_ONEKI) || !isinGecerli(isin)) return [];
+  const to = Math.floor(Date.now() / 1000);
+  const from = to - 200 * 24 * 60 * 60;
+  const res = await f(
+    `${BF_API}/tradingview/history?symbol=XFRA:${isin}&resolution=1D&from=${from}&to=${to}`,
+    {
+      headers: { 'User-Agent': TARAYICI_UA, Accept: 'application/json' },
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  if (!res.ok) return [];
+  return bfGecmisiniCoz(await res.json()).map((p) => p[1]);
+}
+
 async function fetchFromSource(
   client: SupabaseClient,
   symbol: string,
 ): Promise<number[]> {
   try {
     if (kriptoKodu(symbol)) return await fetchKripto(client, symbol);
+    if (symbol.toUpperCase().startsWith(EUROBOND_ONEKI)) return await fetchEurobond(symbol);
     if (symbol.startsWith(TEFAS_PREFIX)) {
       return await fetchTefas(symbol.slice(TEFAS_PREFIX.length));
     }

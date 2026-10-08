@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
 
@@ -220,6 +221,14 @@ class RemoteConfigService {
     // ana yüzeyde yeni bilgi; önce yasin'in cihazında açılır. Sunucu
     // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
     'birikim_serisi': false,
+
+    // Eurobond varlık türü (2026-10-08, yasin: "varlık tiplerimize eurobond
+    // … eklemeliyiz"). Varlık Ekle çipi, sinyal ayarı ve filtrelerdeki tür
+    // seçeneği buna bağlı. KAPALI doğar: fiyat tablosu (0124) iki sunucuya
+    // dağıtılıp eurobond-fiyat ilk turunu atmadan açılırsa eklenen lot
+    // fiyatsız kalır. Kapalıyken ekranlar birebir eski; kayıtlı eurobond
+    // lotu (bayrak açıkken eklenmiş) yine görünür ve fiyatlanır.
+    'eurobond': false,
 
     // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
     // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
@@ -484,6 +493,16 @@ class RemoteConfigService {
 
   /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
   bool get birikimSerisi => _bayrak('birikim_serisi');
+
+  /// Eurobond türü. Gerekçe `_defaults`'ta.
+  bool get eurobond => _bayrak('eurobond');
+
+  /// Tür SEÇENEK olarak sunulsun mu (ekleme çipi, filtre, sinyal ayarı)?
+  ///
+  /// Bayrağa bağlı türlerin tek kapısı: her yüzey kendi `if`'ini yazarsa
+  /// biri unutulur ve bayrak kapalıyken tür sızar. Kayıtlı veriyi
+  /// göstermek bu kapıya TAKILMAZ — kullanıcının varlığı gizlenmez.
+  bool turSecenegi(AssetType t) => t != AssetType.eurobond || eurobond;
 
   /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
   bool get ekstreTanilama => _bayrak('ekstre_tanilama');

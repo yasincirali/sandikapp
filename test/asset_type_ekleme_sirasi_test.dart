@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/providers/add_asset_form_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/add_asset_screen.dart';
@@ -50,6 +51,7 @@ void main() {
       AssetType.fon,
       AssetType.mevduat,
       AssetType.bes,
+      AssetType.eurobond,
       AssetType.kripto,
       AssetType.emtia,
       AssetType.diger,
@@ -57,6 +59,9 @@ void main() {
   });
 
   testWidgets('Varlık Ekle çipleri bu sırayla çizilir', (tester) async {
+    // Bayrağa bağlı türler (eurobond) dahil EN GENİŞ küme sınanır.
+    RemoteConfigService.testAcik = {'eurobond'};
+    addTearDown(() => RemoteConfigService.testAcik = {});
     await initializeDateFormatting('tr_TR');
     SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(375 * 3, 812 * 3);
@@ -96,6 +101,8 @@ void main() {
   for (final w in <double>[320, 375]) {
     testWidgets('${w.toInt()}pt — tüm tür çipleri kaydırmadan görünür',
         (tester) async {
+      RemoteConfigService.testAcik = {'eurobond'};
+      addTearDown(() => RemoteConfigService.testAcik = {});
       await initializeDateFormatting('tr_TR');
       SharedPreferences.setMockInitialValues({});
       tester.view.physicalSize = Size(w * 3, 812 * 3);
@@ -127,4 +134,30 @@ void main() {
       }
     });
   }
+
+  // Bayrak kapalıyken mağazadaki ekran birebir eski: eurobond çipi yok.
+  testWidgets('eurobond bayrağı kapalıyken çip görünmez', (tester) async {
+    RemoteConfigService.testAcik = {};
+    await initializeDateFormatting('tr_TR');
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(375 * 3, 812 * 3);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        portfolioProvider.overrideWith(() => _BosPortfoy()),
+        addAssetPriceLookupProvider.overrideWithValue(const _NoLookup()),
+      ],
+      child: MaterialApp(theme: ThemeData.dark(), home: const AddAssetScreen()),
+    ));
+    await tester.pump();
+    final secici = find.byWidgetPredicate(
+        (w) => w is TourAnchor && w.target == TourTarget.turSecici);
+    expect(
+        find.descendant(of: secici, matching: find.text(AssetType.eurobond.label)),
+        findsNothing);
+    expect(
+        find.descendant(of: secici, matching: find.text(AssetType.kripto.label)),
+        findsOneWidget);
+  });
 }

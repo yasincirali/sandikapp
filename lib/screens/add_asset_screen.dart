@@ -20,6 +20,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_acilir.dart';
 import '../services/crash_reporter.dart';
+import '../services/remote_config_service.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -1490,7 +1491,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // bırakırdı.
     final types = [
       for (final t in AssetType.eklemeSirasi)
-        if (!t.sozlesmeli || (!widget.cartMode && !_isEditing)) t,
+        if ((!t.sozlesmeli || (!widget.cartMode && !_isEditing)) &&
+            RemoteConfigService.instance.turSecenegi(t))
+          t,
     ];
     // Sarmalı (`Wrap`), yatay kaydırmalı DEĞİL (2026-09-29 emülatör testi
     // #29): kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında kalıyordu ve

@@ -398,7 +398,11 @@ export function shouldNotifyNow(
 /// mumlarından, TL'ye çevrilmiş (`price_history.ts` → `fetchKripto`).
 /// İstemcideki `sinyal_turleri_test` bu kümeyi `AssetType` ile karşılaştırır:
 /// yeni tür eklenince burası da güncellenmezse test kırılır.
-export const ANALYZABLE = new Set(['hisse', 'fon', 'bes', 'altin', 'doviz', 'emtia', 'kripto']);
+///
+/// Eurobond 2026-10-08'de eklendi (aynı kural). Seri Börse Frankfurt günlük
+/// TEMİZ fiyatı (`price_history.ts` → `fetchEurobond`), grafikle aynı kaynak.
+/// Göstergeler varsayılan (hisse dışı) parametrelerle hesaplanır.
+export const ANALYZABLE = new Set(['hisse', 'fon', 'bes', 'altin', 'doviz', 'emtia', 'kripto', 'eurobond']);
 
 /// Göstergelerin hangi tür parametreleriyle hesaplanacağı: BES fonu fon
 /// parametreleriyle (MACD 8/21, MA 10/30). İstemci eşi

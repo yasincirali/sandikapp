@@ -183,7 +183,8 @@ class RecapService {
       // `mevduatci` 2026-09-14'te türle birlikte kalktı; yenisi özet
       // metinleri ister). Şimdilik dengeli sayılır.
       AssetType.mevduat || AssetType.bes => PortfolioCharacter.dengeli,
-      AssetType.diger => PortfolioCharacter.dengeli,
+      // Eurobond ağırlıklı portföy için ayrı karakter yok (mevduat gibi).
+      AssetType.eurobond || AssetType.diger => PortfolioCharacter.dengeli,
     };
   }
 

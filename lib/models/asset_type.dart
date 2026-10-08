@@ -24,6 +24,11 @@ enum AssetType {
   // Fiyatlama: [fiyatlamaTuru].
   mevduat('Mevduat', Icons.account_balance_rounded, Sandik.mevduat, 'TRY'),
   bes('BES', Icons.savings_rounded, Sandik.bes, 'TRY'),
+  // Eurobond (2026-10-08, `eurobond` bayrağı). Çivit — fon mavisinden ve
+  // diğer menekşesinden ayrık. Varsayılan USD: Hazine eurobondlarının
+  // çoğu dolar; miktar NOMİNALDİR, fiyat nominalin yüzdesi/100 (bkz.
+  // `lib/models/eurobond.dart`). Sıra `diger`in ÖNÜNDE (kripto notu).
+  eurobond('Eurobond', Icons.receipt_long_rounded, Color(0xFF6C7FD8), 'USD'),
   diger('Diğer', Icons.more_horiz_rounded, Color(0xFF8D7BE0), 'TRY');      // Soft violet — nötr, ayrık
 
   const AssetType(
@@ -74,6 +79,7 @@ enum AssetType {
         AssetType.kripto => l.assetTypeCrypto,
         AssetType.mevduat => l.assetTypeDeposit,
         AssetType.bes => l.assetTypePension,
+        AssetType.eurobond => l.assetTypeEurobond,
         AssetType.diger => l.assetTypeOther,
       };
 
@@ -87,6 +93,7 @@ enum AssetType {
         AssetType.kripto => l.tickerHintCrypto,
         AssetType.mevduat => l.tickerHintDeposit,
         AssetType.bes => l.tickerHintPension,
+        AssetType.eurobond => l.tickerHintEurobond,
         AssetType.diger => l.tickerHintOther,
       };
 
@@ -130,6 +137,9 @@ enum AssetType {
     // sorusunun birikim ayağı; kripto/emtia/diğer daha seyrek seçilir.
     mevduat,
     bes,
+    // Eurobond (2026-10-08): döviz birikiminin sabit getirili ayağı;
+    // `eurobond` bayrağı kapalıyken ekleme sayfası bunu süzer.
+    eurobond,
     kripto,
     emtia,
     diger,

@@ -139,6 +139,8 @@ String positionKey(Asset a) {
       core = a.ticker.trim().toUpperCase();
       if (core.isEmpty) core = 'name:${a.name.trim().toLowerCase()}';
       break;
+    case AssetType.eurobond:
+      // `EUROBOND:<ISIN>` — ISIN başına bir pozisyon.
     case AssetType.mevduat:
       // `MEVDUAT:<sözleşme id>` — sözleşme başına bir pozisyon.
       core = a.ticker.trim().toUpperCase();

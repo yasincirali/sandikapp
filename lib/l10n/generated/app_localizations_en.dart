@@ -711,6 +711,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assetTypeCrypto => 'Crypto';
 
   @override
+  String get assetTypeEurobond => 'Eurobond';
+
+  @override
   String get assetTypeCommodity => 'Commodities';
 
   @override
@@ -733,6 +736,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tickerHintCrypto => 'Pick from the list, e.g. BTC, ETH';
+
+  @override
+  String get tickerHintEurobond =>
+      'Pick from the list or type an ISIN, e.g. US900123DF45';
 
   @override
   String get tickerHintCommodity =>

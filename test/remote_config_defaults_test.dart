@@ -84,6 +84,12 @@ void main() {
       expect(varsayilan('birikim_serisi'), 'false');
     });
 
+    // 0124 iki sunucuya gidip eurobond-fiyat ilk turunu atmadan açılırsa
+    // eklenen lot fiyatsız kalır.
+    test('eurobond KAPALI doğar', () {
+      expect(varsayilan('eurobond'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

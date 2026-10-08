@@ -214,7 +214,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
               children: [
                 _typeChip(null, context.l10n.allTypes),
                 for (final t in AssetType.values)
-                  _typeChip(t, t.labelOf(context.l10n)),
+                  if (RemoteConfigService.instance.turSecenegi(t))
+                    _typeChip(t, t.labelOf(context.l10n)),
               ],
             ),
             // Gerçek|Simülasyon anahtarı burada YOK (2026-10-04,

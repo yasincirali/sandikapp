@@ -361,6 +361,9 @@ class CsvImportService {
       // Tanınmayan tür olarak satır hatası üretir; kullanıcı kendi formunu
       // kullanır.
       if (v.sozlesmeli) continue;
+      // Eurobond da CSV'den gelmez: nominal × yüzde fiyat ve ISIN kataloğu
+      // ister; serbest satır yanlış ölçekte (adet × fiyat) lot üretirdi.
+      if (v == AssetType.eurobond) continue;
       if (t == _katla(v.name) || t == _katla(v.label)) return v;
     }
     if (t.startsWith('hisse') || t == 'stock') return AssetType.hisse;
@@ -508,6 +511,7 @@ class CsvImportService {
       // eksiksiz kalsın diye burada.
       case AssetType.mevduat:
       case AssetType.bes:
+      case AssetType.eurobond:
         return (
           ticker: t,
           name: raw.trim(),

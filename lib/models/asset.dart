@@ -103,6 +103,9 @@ String birimEtiketi({
       // Birim değerli pay (bkz. `mevduat_hesabi.dart`). Ekranlar mevduatta
       // miktarı değil tutarı gösterir; etiket yalnız ham satırlarda çıkar.
       return 'birim';
+    case AssetType.eurobond:
+      // Miktar nominal tutardır ("10.000 nominal"), adet değil.
+      return 'nominal';
     case AssetType.diger:
       return 'adet';
   }
