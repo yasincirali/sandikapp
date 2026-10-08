@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Kilit ekranı — biyometrik kilit açıkken öne dönüşte ve soğuk açılışta.
@@ -50,7 +53,11 @@ class LockScreen extends StatefulWidget {
 
   /// Oturumu kapat ve giriş ekranına dön — başka hesaba geçmenin yolu.
   /// Kilidi AÇMAZ; sınır aynı yerde durur.
-  final VoidCallback onCikisYap;
+  ///
+  /// `FutureOr`: çağıran (`main.dart`) `logout()`'u bekleyen bir `async`
+  /// kapanış verir; düğme o iş bitene dek yükleniyor gösterir (tek
+  /// yükleniyor davranışı, 2026-10-08). Eşzamanlı kapanış da geçerli.
+  final FutureOr<void> Function() onCikisYap;
 
   @override
   State<LockScreen> createState() => _LockScreenState();
@@ -104,7 +111,7 @@ class _LockScreenState extends State<LockScreen> {
       confirmLabel: l.lockSwitchAccountTitle,
       cancelLabel: l.cancel,
     );
-    if (onay && mounted) widget.onCikisYap();
+    if (onay && mounted) await widget.onCikisYap();
   }
 
   /// Duruma göre alt başlık. İptal ile "cihazda kilit yok" aynı cümleyi
@@ -187,12 +194,17 @@ class _LockScreenState extends State<LockScreen> {
                 // başka hesaba geçmenin tek yolu buydu; Face ID çalışmayan
                 // ya da başkasına ait bir cihazda hiç yolu yoktu.
                 const SizedBox(height: SandikSpace.sm),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: _busy ? null : _cikisiOnayla,
-                    child: Text(context.l10n.lockSwitchAccount),
-                  ),
+                //
+                // Çıkış istek atar → [SandikAsyncButton] (2026-10-08).
+                // Biyometrik doğrulama yerel bir sistem istemidir, istek
+                // değildir: "Kilidi aç" düğmesi ve `_busy` ("Doğrulanıyor…"
+                // metni, diğer düğmeleri kapatma) olduğu gibi kalır.
+                SandikAsyncButton(
+                  tur: SandikAsyncTur.metin,
+                  height: null,
+                  haptic: SandikHaptic.none,
+                  onPressed: _busy ? null : _cikisiOnayla,
+                  child: Text(context.l10n.lockSwitchAccount),
                 ),
               ],
             ),

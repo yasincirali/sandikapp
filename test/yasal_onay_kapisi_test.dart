@@ -122,8 +122,12 @@ void main() {
   Finder sigan(String ilkAday) => find
       .byWidgetPredicate((w) => w is SiganMetin && w.adaylar.first == ilkAday);
 
+  /// Kapının onay düğmesi. Çıkış da [SandikAsyncButton] (istek atar, tek
+  /// yükleniyor davranışı 2026-10-08) ve onaydan SONRA gelir: ilk olan onay.
+  Finder onayDugmesi() => find.byType(SandikAsyncButton).first;
+
   Future<void> onayla(WidgetTester tester) async {
-    final dugme = find.byType(SandikAsyncButton);
+    final dugme = onayDugmesi();
     await tester.ensureVisible(dugme);
     await tester.tap(dugme);
     await tester.pump();
@@ -137,7 +141,7 @@ void main() {
       adimlariOku(tester, l.yasalAdimOkuOnayla, adet: adet);
 
   SandikAsyncButton dugme(WidgetTester tester) =>
-      tester.widget<SandikAsyncButton>(find.byType(SandikAsyncButton));
+      tester.widget<SandikAsyncButton>(onayDugmesi());
 
   /// Kutunun karesine dokunur (cümlede belge bağlantıları var).
   Future<void> kutuyuIsaretle(WidgetTester tester) async {

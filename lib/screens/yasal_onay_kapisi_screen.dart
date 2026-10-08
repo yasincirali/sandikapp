@@ -275,7 +275,10 @@ class _YasalOnayKapisiScreenState extends ConsumerState<YasalOnayKapisiScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          TextButton(
+          // Çıkış istek atar: tek yükleniyor davranışı (2026-10-08).
+          SandikAsyncButton.kompakt(
+            tur: SandikAsyncTur.metin,
+            haptic: SandikHaptic.none,
             onPressed: () => ref.read(authProvider.notifier).logout(),
             child: Text(
               l.yasalKapiCikis,

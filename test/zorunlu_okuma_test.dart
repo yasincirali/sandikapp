@@ -693,8 +693,10 @@ void main() {
         ),
         boyut: const Size(390, 2400),
       );
+      // İlk [SandikAsyncButton] onay; ikincisi çıkış (o da istek atar).
+      final onayDugmesi = find.byType(SandikAsyncButton).first;
       SandikAsyncButton dugme() =>
-          tester.widget<SandikAsyncButton>(find.byType(SandikAsyncButton));
+          tester.widget<SandikAsyncButton>(onayDugmesi);
       expect(dugme().onPressed, isNull);
       expect(find.text(l.yasalAdimKapiBaslik(3)), findsOneWidget);
       expect(find.text(l.yasalAdimOkuOnayla), findsOneWidget);
@@ -721,8 +723,8 @@ void main() {
       await tester.pump();
       expect(find.byIcon(Icons.check_rounded), findsOneWidget);
       expect(dugme().onPressed, isNotNull);
-      await tester.ensureVisible(find.byType(SandikAsyncButton));
-      await tester.tap(find.byType(SandikAsyncButton));
+      await tester.ensureVisible(onayDugmesi);
+      await tester.tap(onayDugmesi);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 

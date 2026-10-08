@@ -1,18 +1,22 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
+        BorderSide,
         Colors,
+        FilledButton,
         Form,
         FormState,
         GlobalKey,
         Icons,
         Material,
+        RoundedRectangleBorder,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Şifremi Unuttum — OTP tabanlı akış.
@@ -327,32 +331,45 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _primaryButton({required String label, VoidCallback? onTap}) {
-    final enabled = onTap != null;
-    return SandikBasma(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: enabled
-              ? context.c.amberFill.withValues(alpha: 0.92)
-              : context.c.amberFill.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border:
-              Border.all(color: context.c.amberFill.withValues(alpha: 0.60), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: context.c.amberFill.withValues(alpha: 0.30),
-              blurRadius: 20,
-              spreadRadius: -4,
-              offset: const Offset(0, 6),
-            ),
-          ],
+  /// Ana eylem düğmesi — tek yükleniyor davranışı (2026-10-08):
+  /// [SandikAsyncButton]; eski cam görünüm (`Container` süslemesi) `style`
+  /// + dış gölge ile birebir. Eski not: CupertinoButton iOS release'te jest
+  /// yarışını kaydırmaya kaptırıyordu; FilledButton düz dokunma tanıyıcısı
+  /// kullanır.
+  ///
+  /// `_loading` KALIR: klavyedeki "Bitti" de isteği tetikler (düğmeden
+  /// geçmez) ve "Başka e-posta dene" istek sürerken kapalıdır. Klavye
+  /// yolunda düğme pasifleşir, gösterge etiketin yerine çizilir; düğmeden
+  /// tetiklenince göstergeyi bileşen çizer (etiket görünmez, çift gösterge
+  /// olmaz).
+  Widget _primaryButton(
+      {required String label, Future<void> Function()? onTap}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: SandikRadius.mdAll,
+        boxShadow: [
+          BoxShadow(
+            color: context.c.amberFill.withValues(alpha: 0.30),
+            blurRadius: 20,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: SandikAsyncButton(
+        onPressed: onTap,
+        haptic: SandikHaptic.none,
+        style: FilledButton.styleFrom(
+          backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
+          foregroundColor: context.c.onAmber,
+          disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.45),
+          disabledForegroundColor: context.c.onAmber,
+          textStyle: context.t.bodyLarge,
+          side: BorderSide(color: context.c.amberFill.withValues(alpha: 0.60)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
         ),
-        alignment: Alignment.center,
         child: _loading
-            ? const CustomLoadingIndicator(size: 22)
+            ? const CustomLoadingIndicator(size: CustomLoadingIndicator.small)
             : Text(
                 label,
                 style: context.t.bodyLarge?.copyWith(

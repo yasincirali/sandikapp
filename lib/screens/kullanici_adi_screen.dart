@@ -293,7 +293,10 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
         if (zorunlu)
           Padding(
             padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
-            child: TextButton(
+            // Çıkış istek atar: tek yükleniyor davranışı (2026-10-08).
+            child: SandikAsyncButton.kompakt(
+              tur: SandikAsyncTur.metin,
+              haptic: SandikHaptic.none,
               onPressed: () => ref.read(authProvider.notifier).logout(),
               child: Text(
                 context.l10n.kullaniciAdiCikis,

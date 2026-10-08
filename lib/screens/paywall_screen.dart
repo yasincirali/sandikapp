@@ -8,7 +8,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart' show parseTrNumber;
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Premium'a geçiş için paywall. Faz 1'de RevenueCat'e bağlanacak;
@@ -618,31 +618,30 @@ class _BottomBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: double.infinity,
+            // Tek yükleniyor davranışı (2026-10-08): kilit ve gösterge
+            // [SandikAsyncButton]'da. `busy` (ekranın `_busy`'si) yalnız
+            // satın alma sürerken "Geri yükle"yi kapatmak için kalır.
+            SandikAsyncButton(
               height: 56,
-              child: FilledButton(
-                onPressed: busy ? null : onSubscribe,
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.c.amberFill,
-                  foregroundColor: context.c.onAmber,
-                  disabledBackgroundColor:
-                      context.c.amberFill.withValues(alpha: 0.35),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(SandikRadius.md)),
-                ),
-                child: busy
-                    ? const CustomLoadingIndicator(size: 22)
-                    : Text(
-                        selectedPlan == _Plan.yearly
-                            ? '7 gün ücretsiz dene'
-                            : 'Premium ol',
-                        // Renk açıkça `onAmber` — `text90` düğme rengini
-                        // ezerdi (açık tema denetimi 2026-10-08).
-                        style: context.t.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: context.c.onAmber),
-                      ),
+              haptic: SandikHaptic.none,
+              onPressed: busy ? null : onSubscribe,
+              style: FilledButton.styleFrom(
+                backgroundColor: context.c.amberFill,
+                foregroundColor: context.c.onAmber,
+                disabledBackgroundColor:
+                    context.c.amberFill.withValues(alpha: 0.35),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(SandikRadius.md)),
+              ),
+              child: Text(
+                selectedPlan == _Plan.yearly
+                    ? '7 gün ücretsiz dene'
+                    : 'Premium ol',
+                // Renk açıkça `onAmber` — `text90` düğme rengini
+                // ezerdi (açık tema denetimi 2026-10-08).
+                style: context.t.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: context.c.onAmber),
               ),
             ),
             const SizedBox(height: 8),
