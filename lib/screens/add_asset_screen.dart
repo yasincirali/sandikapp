@@ -8,12 +8,14 @@ import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/eurobond.dart';
 import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
+import '../providers/eurobond_provider.dart';
 import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/tefas_service.dart';
@@ -209,7 +211,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty = a?.quantity ?? c?.quantity ?? 0;
-    final initPrice = a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
+    // Eurobondda kayıtlı fiyat birim değerdir (kirli/100); alan TEMİZ %
+    // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
+    // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
+    final eurobondKaydi = (a?.type ?? c?.type) == AssetType.eurobond;
+    final initPrice = eurobondKaydi
+        ? 0.0
+        : a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);
@@ -225,7 +233,28 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       if (!mounted) return;
       _hizliSecimiUygula();
       _refreshPricePreview();
+      _eurobondYukle();
     });
+  }
+
+  /// Düzenlenen / sepetteki eurobond lotunun sözleşmesini katalogdan yükler
+  /// ve kayıtlı birim değeri temiz %'ye çevirip fiyat alanına yazar.
+  /// Yüklenemezse kimlik uyarısı kaydı durdurur (gerekçe
+  /// `AddAssetFormState.kimlikEksigi`); kullanıcı seçiciden yeniden seçer.
+  Future<void> _eurobondYukle() async {
+    if (_type != AssetType.eurobond) return;
+    final isin = eurobondIsin(_ticker.text);
+    if (isin == null) return;
+    final birim =
+        widget.editingAsset?.purchasePrice ?? widget.cartInitial?.price;
+    try {
+      final r = await ref.read(eurobondProvider(isin).future);
+      if (!mounted || r == null || _type != AssetType.eurobond) return;
+      _yaz(_n.selectEurobond(r.$1, r.$2,
+          priceEmpty: _price.text.isEmpty, duzenlemeBirimDegeri: birim));
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'add_asset.eurobond_yukle');
+    }
   }
 
   /// [AddAssetScreen.hizliSecim]'i formun KENDİ seçim geçişleriyle uygular:
@@ -480,6 +509,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         Expanded(child: _priceBlock(cs)),
                       ],
                     ),
+                    _eurobondFaizSatiri(),
                     const SizedBox(height: 10),
                     _quantityPresetsRow(cs),
                     const SizedBox(height: 20),
@@ -529,6 +559,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_isDoviz) return context.l10n.identityCurrency;
     if (_type == AssetType.emtia) return context.l10n.identityCommodity;
     if (_type == AssetType.kripto) return context.l10n.identityCrypto;
+    if (_type == AssetType.eurobond) return context.l10n.identityEurobond;
     return context.l10n.assetFallbackName;
   }
 
@@ -573,6 +604,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         KimlikEksigi.altin => context.l10n.pickGoldPrompt,
         KimlikEksigi.doviz => context.l10n.pickCurrencyPrompt,
         KimlikEksigi.kripto => context.l10n.pickCryptoPrompt,
+        KimlikEksigi.eurobond => context.l10n.pickEurobondPrompt,
       };
 
   Widget _kimlikAlani(ColorScheme cs, {required bool hata}) {
@@ -581,6 +613,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_type == AssetType.altin) return _goldChipGrid(cs, hata: hata);
     if (_isDoviz) return _dovizSelector(cs);
     if (_type == AssetType.kripto) return _kriptoSelectorField(cs, hata: hata);
+    if (_type == AssetType.eurobond) {
+      return _eurobondSelectorField(cs, hata: hata);
+    }
     // Emtia / Diğer — manuel ad + opsiyonel sembol
     return Column(
       children: [
@@ -835,32 +870,71 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // Bu blok "Miktar" ile aynı Row'da `Expanded` içinde duruyor, yani
         // ekranın ~yarısı kadar yer var. "Alış Fiyatı · opsiyonel" 375pt'de
         // 138px taşıyordu — NORMAL metin boyutunda, büyük fontta değil.
+        // Eurobond: bankanın kote ettiği TEMİZ fiyat, nominalin yüzdesi
+        // ("98,75"). Zorunlu — tarihli kapanış önizlemesi yok (gerekçe
+        // `AddAssetFormState.resolveTicker`); seçimde piyasa fiyatı ön
+        // doldurulur. Kayıtta kirli birim değere çevrilir.
         Row(
           children: [
-            Flexible(child: _fieldLabel(context.l10n.purchasePrice)),
-            const SizedBox(width: 6),
             Flexible(
-              child: Text(context.l10n.optional,
-                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ),
+                child: _fieldLabel(_s.isEurobond
+                    ? context.l10n.eurobondCleanPrice
+                    : context.l10n.purchasePrice)),
+            if (!_s.isEurobond) ...[
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(context.l10n.optional,
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text36),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 8),
         _brandInput(
           controller: _price,
-          hint: context.l10n.auto,
+          hint: _s.isEurobond ? '98,75' : context.l10n.auto,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [_DecimalFormatter()],
-          validator: (v) =>
-              v != null && v.trim().isNotEmpty && _parse(v) == null
-                  ? context.l10n.invalid
-                  : null,
+          validator: (v) {
+            if (_s.isEurobond && (_parse(v ?? '') ?? 0) <= 0) {
+              return context.l10n.eurobondCleanPriceRequired;
+            }
+            return v != null && v.trim().isNotEmpty && _parse(v) == null
+                ? context.l10n.invalid
+                : null;
+          },
           onChanged: (_) => _schedulePricePreview(),
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
         ),
       ],
+    );
+  }
+
+  /// Fiyat alanının altındaki "İşlemiş faiz · Ödenen" satırı (eurobond).
+  ///
+  /// Kullanıcının cebinden çıkan para temiz fiyat DEĞİL, kirli fiyattır;
+  /// bunu göstermemek maliyeti eksik yazmak olur (bkz. `eurobond.dart`).
+  /// Hesap `AddAssetFormState.eurobondBirimFiyati`'nda; burada yalnız yazılır.
+  /// Sözleşme seçilmediyse satır yok.
+  Widget _eurobondFaizSatiri() {
+    final s = _s.eurobondSozlesmesi;
+    if (!_s.isEurobond || s == null) return const SizedBox.shrink();
+    final faiz = fmtPct(s.islemisFaiz(_addedDate), digits: 3);
+    final qty = _parse(_quantity.text);
+    final birim = _s.eurobondBirimFiyati(_parse(_price.text));
+    final metin = qty != null && qty > 0 && birim != null
+        ? context.l10n
+            .eurobondAccruedLine(faiz, '${fmtNum(qty * birim)} $_currency')
+        : context.l10n.eurobondAccruedOnly(faiz);
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Text(
+        metin,
+        style: context.t.bodySmall?.copyWith(color: context.c.text58),
+      ),
     );
   }
 
@@ -916,6 +990,15 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // ABD hissesi USD'ye kilitli (`AddAssetFormNotifier.setCurrency`):
     // açılır liste yerine sabit "USD" — seçenek sunup reddetmek kafa
     // karıştırırdı.
+    // Eurobond da tahvilin kendi para birimine kilitli (aynı gerekçe).
+    if (_s.isEurobond) {
+      return Tooltip(
+        message: context.l10n.eurobondCurrencyLocked,
+        child: Text(_currency,
+            style: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w700)),
+      );
+    }
     if (_s.isAbd) {
       return Tooltip(
         message: context.l10n.usStockCurrencyLocked,
@@ -957,12 +1040,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // ── Toplam maliyet hero card ───────────────────────────────────────────────
   Widget _totalHero(ColorScheme cs) {
     final qty = _parse(_quantity.text);
-    final price = _parse(_price.text);
-    final isPriceEmpty =
-        _price.text.trim().isEmpty || (price != null && price == 0);
+    // Eurobond: alan temiz %; toplam nominal × kirli birim değerdir. Fiyat
+    // zorunlu olduğundan "boş fiyat otomatik atanır" kartı gösterilmez —
+    // çevrilemeyen fiyatta ipucu kartına düşülür.
+    final eurobond = _s.isEurobond;
+    final price = eurobond
+        ? _s.eurobondBirimFiyati(_parse(_price.text))
+        : _parse(_price.text);
+    final isPriceEmpty = !eurobond &&
+        (_price.text.trim().isEmpty || (price != null && price == 0));
 
     // Miktar yoksa hiçbir şey gösterme
-    if (qty == null || qty <= 0) {
+    if (qty == null || qty <= 0 || (eurobond && price == null)) {
       return SandikCard(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -1063,7 +1152,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       letterSpacing: 0.8,
                     )),
                 const SizedBox(height: 4),
-                Text('${_fmt(qty)} × ${_fmt(price)}',
+                Text(
+                    eurobond
+                        ? context.l10n.eurobondTotalBreakdown(
+                            fmtNumFlex(qty, maxDigits: 2),
+                            fmtNum(price * 100, digits: 3))
+                        : '${_fmt(qty)} × ${_fmt(price)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.bodySmall
@@ -1944,6 +2038,54 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  // ── Eurobond seçici (bayrak `eurobond`) ────────────────────────────────────
+  //
+  // Kripto seçicisiyle aynı alan + alt sayfa. ISIN serbest alana yazılmaz;
+  // seçicinin aramasına yazılır ve katalogda aranır (kontrol hanesi
+  // `isinGecerli`). Böylece her kayıt sunucunun fiyatladığı bir sözleşmeye
+  // bağlanır (fiyat kaynağı sözleşmesi madde 1) ve kupon/vade elle girilmez.
+  // Rozet vade yılı: ISIN 12 hane, rozete sığmaz; ISIN ekran okuyucuda ve
+  // seçici satırında.
+  Widget _eurobondSelectorField(ColorScheme cs, {required bool hata}) {
+    final s = _s.eurobondSozlesmesi;
+    return Semantics(
+      button: true,
+      label: s == null
+          ? context.l10n.pickEurobondTap
+          : context.l10n.eurobondSelectedSemantics('${s.ad} (${s.isin})'),
+      child: SandikBasma(
+        onTap: _showEurobondPicker,
+        child: _selectorContainer(
+          cs: cs,
+          hasValue: s != null,
+          hasError: hata,
+          badgeText: s == null ? null : '${s.vade.year}',
+          mainText: s?.ad ?? context.l10n.pickEurobondTap,
+          color: AssetType.eurobond.color,
+        ),
+      ),
+    );
+  }
+
+  void _showEurobondPicker() {
+    _klavyeyiKapat();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _EurobondPicker(
+        selected: _s.eurobondSozlesmesi?.isin,
+        onSelect: (o) {
+          _yaz(_n.selectEurobond(o.$1, o.$2, priceEmpty: _price.text.isEmpty));
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
   // ── Shared selector container ──────────────────────────────────────────────
 
   Widget _selectorContainer({
@@ -2165,6 +2307,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Future<_KayitSonu> _kaydet() async {
     final qty = _parse(_quantity.text)!;
     var price = _parse(_price.text) ?? 0.0;
+    // Eurobond: alan temiz %, kayıt kirli birim değer (kirli/100) — fiyat
+    // servisi kotasyonuyla aynı ölçek. Sözleşme yoksa kimlik doğrulaması
+    // buraya gelmeden durdurur; yine de çevrilemezse 0 kalır ve aşağıdaki
+    // fiyat çözümü kotasyonu (zaten birim değer) atar — temiz % asla birim
+    // değer diye yazılmaz.
+    if (_s.isEurobond) price = _s.eurobondBirimFiyati(price) ?? 0.0;
 
     final kimlik = _s.resolveIdentity(
       nameText: _name.text,
@@ -2296,7 +2444,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           await ref.read(portfolioProvider.notifier).updateAsset(a);
         }
       } else {
-        final alarmSembol = manual ? null : alarmSembolu(ticker, _subCategory);
+        // Eurobond alarmı yok: sunucu alarm denetimi `EUROBOND:` sembolünü
+        // fiyatlamaz ve fiyat birim değerdir (kirli/100) — kurulan alarm
+        // hiç tetiklenmezdi.
+        final alarmSembol = manual || _s.isEurobond
+            ? null
+            : alarmSembolu(ticker, _subCategory);
         if (alarmSembol != null && price > 0) {
           alarmAdayi = AlarmAdayi(alarmSembol, assetName, price);
         }
@@ -3091,6 +3244,152 @@ class _KriptoPickerState extends ConsumerState<_KriptoPicker> {
                           cs: cs,
                           onTap: () => widget.onSelect(o),
                           kimlik: VarlikKimligi.kripto(o.kod, o.gorunenAd),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Eurobond seçici — katalogdaki USD tahviller (`eklenebilirEurobondlar`;
+/// EUR'nun neden dışarıda olduğu orada). Arama ad ya da ISIN alır; tam bir
+/// ISIN yazıldığında kontrol hanesi ve katalog üyeliği satır içinde söylenir
+/// (`isinAramaSonucu`) — "sonuç yok" yerine nedeni.
+class _EurobondPicker extends ConsumerStatefulWidget {
+  final String? selected;
+  final void Function((EurobondSozlesmesi, EurobondFiyati?) o) onSelect;
+  const _EurobondPicker({required this.selected, required this.onSelect});
+
+  @override
+  ConsumerState<_EurobondPicker> createState() => _EurobondPickerState();
+}
+
+class _EurobondPickerState extends ConsumerState<_EurobondPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  /// Satır alt başlığı: ISIN · vade · temiz fiyat · getiri. Fiyat yoksa
+  /// getiri de yok — uydurulmaz.
+  String _altBaslik((EurobondSozlesmesi, EurobondFiyati?) o, DateTime simdi) {
+    final (s, f) = o;
+    final l = context.l10n;
+    final temiz = f?.temizFiyat;
+    final getiri = temiz == null ? null : s.vadeyeGetiri(temiz, simdi);
+    return [
+      s.isin,
+      l.eurobondMaturityShort(fmtTarihSaat(dayKey(s.vade))),
+      if (temiz != null) fmtNum(temiz),
+      if (getiri != null) l.eurobondYieldShort(fmtPct(getiri * 100)),
+    ].join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final katalog = ref.watch(eurobondKatalogProvider);
+    final simdi = DateTime.now();
+    final eklenebilir = eklenebilirEurobondlar(
+        katalog.valueOrNull ?? const [],
+        simdi: simdi);
+    final liste = eurobondAra(eklenebilir, _q);
+    final isinDurumu = isinAramaSonucu(_q, eklenebilir);
+    final renk = AssetType.eurobond.color;
+    final yatay = SandikSpace.screenH(context);
+
+    return _PickerShell(
+      title: context.l10n.eurobondPickerTitle,
+      count: liste.length,
+      color: renk,
+      searchCtrl: _ctrl,
+      searchHint: context.l10n.tickerHintEurobond,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: katalog.when(
+        loading: () => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CustomLoadingIndicator(),
+              const SizedBox(height: SandikSpace.smd),
+              Text(context.l10n.eurobondLoading,
+                  style: context.t.bodyMedium
+                      ?.copyWith(color: context.c.text58)),
+            ],
+          ),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SandikSpace.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cloud_off_rounded, color: context.c.loss, size: 40),
+                const SizedBox(height: SandikSpace.smd),
+                Text(context.l10n.eurobondLoadFailed,
+                    style: context.t.titleSmall),
+                const SizedBox(height: SandikSpace.xs),
+                Text(friendlyError(e),
+                    textAlign: TextAlign.center,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58)),
+                const SizedBox(height: SandikSpace.md),
+                FilledButton.icon(
+                  onPressed: () => ref.invalidate(eurobondKatalogProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: Text(context.l10n.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+        data: (_) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  yatay, SandikSpace.sm, yatay, SandikSpace.xs),
+              child: Text(context.l10n.eurobondSourceNote,
+                  style:
+                      context.t.bodySmall?.copyWith(color: context.c.text36)),
+            ),
+            if (isinDurumu == IsinAramaSonucu.gecersiz ||
+                isinDurumu == IsinAramaSonucu.katalogdaYok)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                    yatay, SandikSpace.xs, yatay, SandikSpace.xs),
+                child: Text(
+                  isinDurumu == IsinAramaSonucu.gecersiz
+                      ? context.l10n.eurobondIsinInvalid
+                      : context.l10n.eurobondIsinNotListed,
+                  style: context.t.bodySmall?.copyWith(color: context.c.loss),
+                ),
+              ),
+            Expanded(
+              child: liste.isEmpty
+                  ? _emptySearch(context, _q, cs)
+                  : ListView.builder(
+                      itemCount: liste.length,
+                      itemBuilder: (_, i) {
+                        final o = liste[i];
+                        return _PickerRow(
+                          badgeText: '${o.$1.vade.year}',
+                          title: o.$1.ad,
+                          subtitle: _altBaslik(o, simdi),
+                          isSelected: o.$1.isin == widget.selected,
+                          color: renk,
+                          cs: cs,
+                          onTap: () => widget.onSelect(o),
                         );
                       },
                     ),

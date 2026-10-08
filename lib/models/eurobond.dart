@@ -336,3 +336,93 @@ EurobondSozlesmesi? eurobondSozlesmesiFromMap(Map<String, dynamic> m) {
     gunSayimi: para == 'EUR' ? GunSayimi.actAct : GunSayimi.otuz360,
   );
 }
+
+// ─── Ekleme formu aritmetiği (2026-10-08) ────────────────────────────────────
+//
+// Kayıtlı lot `purchasePrice` = 1 NOMİNAL birimin KİRLİ değeri (kirli/100):
+// fiyat servisi kotasyonu aynı ölçekte yazar (`PriceService._fetchEurobond`),
+// alış ile güncel değer aynı birimde karşılaştırılsın diye. Kullanıcı ise
+// bankanın kote ettiği gibi TEMİZ fiyatı nominalin yüzdesi olarak yazar
+// ("98,75"). Çeviri burada, saf fonksiyon: ekranın `build()`'i hesap yapmaz
+// ve iki yön de testle bağlanır (`eurobond_giris_test`).
+
+/// Formdaki temiz fiyat (% nominal) → kayıtlı birim değer (kirli/100).
+/// [gun] alış tarihi: işlemiş faiz o güne göre eklenir.
+double eurobondBirimDegeri(
+        EurobondSozlesmesi s, double temizYuzde, DateTime gun) =>
+    s.kirliFiyat(temizYuzde, gun) / 100;
+
+/// Kayıtlı birim değer (kirli/100) → formda gösterilecek temiz fiyat (%).
+/// Düzenlemede alış tarihi değişmediyse [eurobondBirimDegeri]'nin tersidir.
+double eurobondTemizYuzde(
+        EurobondSozlesmesi s, double birimDeger, DateTime gun) =>
+    birimDeger * 100 - s.islemisFaiz(gun);
+
+/// Ekleme seçicisinde sunulan tahviller: yalnız USD ve vadesi gelmemiş.
+///
+/// USD süzgeci geçici bir kısıt: geçmiş değer serisi
+/// (`FiyatKaynagi.seriyeGirer`, `HistoryService`) yalnız USD/TRY kurunu
+/// bilir. EUR tahvil eklenseydi lot fiyatlanır ama Performans grafiğinde
+/// kursuz kalır — ekran ile seri farklı sayı yazardı (fiyat kaynağı
+/// sözleşmesi madde 2). EUR, seri EUR/TRY'yi öğrenince açılır.
+/// Vadesi geçen tahvil ne kupon ne fiyat üretir; eklenecek bir şey yok.
+List<(EurobondSozlesmesi, EurobondFiyati?)> eklenebilirEurobondlar(
+  List<(EurobondSozlesmesi, EurobondFiyati?)> katalog, {
+  required DateTime simdi,
+}) {
+  final bugun = DateTime.utc(simdi.year, simdi.month, simdi.day);
+  return [
+    for (final e in katalog)
+      if (e.$1.paraBirimi == 'USD' && e.$1.vade.isAfter(bugun)) e,
+  ];
+}
+
+/// Seçici araması: ad ya da ISIN içinde geçen (büyük/küçük harf duyarsız).
+/// Boş sorgu listeyi olduğu gibi döner.
+List<(EurobondSozlesmesi, EurobondFiyati?)> eurobondAra(
+  List<(EurobondSozlesmesi, EurobondFiyati?)> liste,
+  String sorgu,
+) {
+  final q = _katla(sorgu.trim());
+  if (q.isEmpty) return liste;
+  return [
+    for (final e in liste)
+      if (_katla(e.$1.ad).contains(q) || e.$1.isin.toLowerCase().contains(q))
+        e,
+  ];
+}
+
+// Türkçe büyük harfler Dart'ın `toLowerCase`'inde yanlış iner ("İ" → "i̇");
+// ad araması "türkiye" ile "TÜRKİYE"yi eşlesin.
+String _katla(String s) => s.replaceAll('İ', 'i').toLowerCase();
+
+/// Seçici aramasına yazılan metin bir ISIN mi, ve ne durumda?
+enum IsinAramaSonucu {
+  /// ISIN biçiminde değil (ad araması) — ayrıca söylenecek bir şey yok.
+  isinDegil,
+
+  /// ISIN biçiminde ama kontrol hanesi tutmuyor (tek hane yazım hatası).
+  gecersiz,
+
+  /// Geçerli ISIN, eklenebilir listede yok (katalog dışı ya da EUR).
+  katalogdaYok,
+
+  /// Listede var — arama sonucu satırı zaten görünür.
+  bulundu,
+}
+
+final RegExp _isinBicimi = RegExp(r'^[A-Z]{2}[A-Z0-9]{10}$');
+
+/// "Sonuç yok" yerine NEDEN: kullanıcı ISIN'i bankanın ekranından kopyalar;
+/// tek hane hatası ile "biz bu tahvili tanımıyoruz" farklı eylemler ister.
+IsinAramaSonucu isinAramaSonucu(
+  String sorgu,
+  List<(EurobondSozlesmesi, EurobondFiyati?)> liste,
+) {
+  final q = sorgu.trim().toUpperCase();
+  if (!_isinBicimi.hasMatch(q)) return IsinAramaSonucu.isinDegil;
+  if (!isinGecerli(q)) return IsinAramaSonucu.gecersiz;
+  return liste.any((e) => e.$1.isin == q)
+      ? IsinAramaSonucu.bulundu
+      : IsinAramaSonucu.katalogdaYok;
+}

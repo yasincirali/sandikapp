@@ -6,6 +6,7 @@ import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import '../services/price_service.dart';
 import '../services/remote_config_service.dart';
@@ -280,6 +281,8 @@ class AddAssetFormState {
     this.notesExpanded = false,
     this.denendi = false,
     this.abdAcik = false,
+    this.eurobondSozlesmesi,
+    this.eurobondFiyati,
   });
 
   /// Açılış değerleri. Öncelik: düzenlenen kayıt > sepet öğesi > prefill
@@ -373,6 +376,26 @@ class AddAssetFormState {
   /// edilebilir; form açıkken bayrak yenilense de form tutarlı kalır).
   final bool abdAcik;
 
+  /// Seçili eurobondun sözleşmesi (katalogdan). Temiz → kirli çevirisi ve
+  /// işlemiş faiz satırı buna bakar; kupon/vade kullanıcıdan alınmaz
+  /// (yanlış girilirse işlemiş faiz sessizce yanlış çıkar). Düzenlemede
+  /// ekran açılışta katalogdan yükler; yüklenene kadar null.
+  final EurobondSozlesmesi? eurobondSozlesmesi;
+
+  /// Seçili eurobondun son fiyatı — yalnız temiz fiyat ön doldurması için.
+  final EurobondFiyati? eurobondFiyati;
+
+  bool get isEurobond => type == AssetType.eurobond;
+
+  /// Formdaki temiz fiyattan (% nominal) kayıtlı birim değer (kirli/100).
+  /// Sözleşme yoksa ya da fiyat geçersizse null — çevrilemeyen fiyat
+  /// kaydedilmez (bkz. [kimlikEksigi]).
+  double? eurobondBirimFiyati(double? temizYuzde) {
+    final s = eurobondSozlesmesi;
+    if (s == null || temizYuzde == null || temizYuzde <= 0) return null;
+    return eurobondBirimDegeri(s, temizYuzde, addedDate);
+  }
+
   bool get isBist100 =>
       type == AssetType.hisse && subCategory == StockSubCategory.bist100.label;
 
@@ -409,6 +432,12 @@ class AddAssetFormState {
     if (unitType == 'ounce') return const ['0.1', '0.5', '1', '5', '10'];
     // Kripto: tam sayı adet nadirdir; BTC'de 0,001 bile anlamlı tutar.
     if (type == AssetType.kripto) return const ['0,001', '0,01', '0,1', '1', '10'];
+    // Eurobond miktarı NOMİNALDİR; bankalar 1.000'lik katlarla işlem açar
+    // (ihraç asgarisi çoğunlukla 200.000, ama ikincil piyasada banka 1.000
+    // nominalden satar). "1" nominal bir dolarlık tahvil demek, anlamsız.
+    if (type == AssetType.eurobond) {
+      return const ['1.000', '5.000', '10.000', '50.000'];
+    }
     if (type == AssetType.fon) return const ['1', '10', '100', '1000'];
     if (type == AssetType.hisse) return const ['1', '5', '10', '100', '1000'];
     return const ['1', '5', '10', '100'];
@@ -418,6 +447,10 @@ class AddAssetFormState {
   /// emtia ve "diğer" türlerinde anlamlıdır; ötekiler seçimden türer.
   String? resolveTicker(String tickerText) {
     if (isBist100) return bist100Ticker;
+    // Eurobondda tarihli önizleme yok: kotasyon birim değerdir (kirli/100),
+    // form ise temiz % ister — "0,99 USD / birim" kartı kullanıcıyı
+    // yanıltırdı. Temiz fiyat seçimde katalogdan ön doldurulur.
+    if (isEurobond) return null;
     if (isAbd) {
       final t = abdSembolu(tickerText);
       return t.isEmpty ? null : t;
@@ -441,6 +474,12 @@ class AddAssetFormState {
     if (isBist100) {
       ticker = bist100Ticker ?? '';
       name = bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
+    } else if (isEurobond) {
+      // Sembol yalnız katalogdaki sözleşmeden kurulur: serbest ISIN
+      // sunucunun fiyatlamadığı bir tahvile bağlanıp fiyatsız lot üretirdi.
+      final s = eurobondSozlesmesi;
+      ticker = s == null ? '' : eurobondSembolu(s.isin);
+      if (s != null) name = s.ad;
     } else if (isAbd) {
       // Sembol Yahoo biçiminde (`BRK.B` → `BRK-B`); ad boşsa katalogdaki
       // ad, o da yoksa sembol — adsız lot portföyde boş satır olurdu.
@@ -459,7 +498,7 @@ class AddAssetFormState {
     } else if (!isAltin && !isFon && !isDoviz) {
       ticker = isManualPrice ? '' : tickerText.trim().toUpperCase();
     }
-    final manual = isFon
+    final manual = isFon || isEurobond
         ? false
         : isAltin
             ? ticker.isEmpty
@@ -483,6 +522,11 @@ class AddAssetFormState {
   /// sembolsüz ya da elle fiyat bayraklı olabilir; tutarı/tarihi düzeltmek
   /// varlığı yeniden seçmeye zorlamamalı. Kural YENİ kayıt içindir.
   KimlikEksigi? kimlikEksigi({required String tickerText, bool muaf = false}) {
+    // Eurobond düzenlemede de MUAF DEĞİL: fiyat alanı temiz % gösterir ve
+    // kayıtta sözleşmeyle kirli birim değere çevrilir. Sözleşme yüklenemediyse
+    // çeviri yapılamaz; muaf tutmak "98,75"i birim değer diye (100 kat
+    // büyük) yazardı.
+    if (isEurobond && eurobondSozlesmesi == null) return KimlikEksigi.eurobond;
     if (muaf) return null;
     switch (type) {
       case AssetType.hisse:
@@ -520,6 +564,8 @@ class AddAssetFormState {
     bool? notesExpanded,
     bool? denendi,
     bool? abdAcik,
+    Object? eurobondSozlesmesi = _keep,
+    Object? eurobondFiyati = _keep,
   }) =>
       AddAssetFormState(
         type: type ?? this.type,
@@ -545,13 +591,19 @@ class AddAssetFormState {
         notesExpanded: notesExpanded ?? this.notesExpanded,
         denendi: denendi ?? this.denendi,
         abdAcik: abdAcik ?? this.abdAcik,
+        eurobondSozlesmesi: identical(eurobondSozlesmesi, _keep)
+            ? this.eurobondSozlesmesi
+            : eurobondSozlesmesi as EurobondSozlesmesi?,
+        eurobondFiyati: identical(eurobondFiyati, _keep)
+            ? this.eurobondFiyati
+            : eurobondFiyati as EurobondFiyati?,
       );
 }
 
 const _keep = Object();
 
 /// Kaydı engelleyen eksik seçim — ekran uyarı metnini buna göre seçer.
-enum KimlikEksigi { hisse, fon, altin, doviz, kripto }
+enum KimlikEksigi { hisse, fon, altin, doviz, kripto, eurobond }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
 
@@ -613,6 +665,8 @@ class AddAssetFormNotifier
   /// para birimiyle kayıt fiyatı yanlış ölçekte çevirirdi.
   void setCurrency(String v) {
     if (state.isAbd && v != 'USD') return;
+    // Eurobond tahvilin kendi para birimine kilitli (aynı gerekçe).
+    if (state.isEurobond) return;
     _set(state.copyWith(currency: v));
   }
   void setDate(DateTime v) => _set(state.copyWith(addedDate: v));
@@ -632,6 +686,10 @@ class AddAssetFormNotifier
       currency: t.defaultCurrency,
       bist100Ticker: null,
       selectedFund: null,
+      eurobondSozlesmesi: null,
+      eurobondFiyati: null,
+      // Eurobond birimi nominal (`birimEtiketi`); `unitType` 'piece' kalır,
+      // etiket türden türer.
     ));
     return const AlanYazimi(ticker: '', name: '');
   }
@@ -706,6 +764,39 @@ class AddAssetFormNotifier
   AlanYazimi selectAbdHisse(String ticker) {
     _set(state.copyWith(isManualPrice: false));
     return AlanYazimi(ticker: ticker, name: abdHisseleri[ticker] ?? ticker);
+  }
+
+  /// Eurobond katalogdan seçildi (ya da düzenlemede sözleşme yüklendi).
+  ///
+  /// Para birimi tahvilinkine kilitlenir. Temiz fiyat yalnız alan boşsa ve
+  /// piyasa fiyatı biliniyorsa önerilir (fondaki kural: kullanıcının yazdığı
+  /// ezilmez). [duzenlemeBirimDegeri]: düzenlenen lotun kayıtlı birim değeri
+  /// (kirli/100) — alana TEMİZ % olarak geri çevrilip yazılır.
+  AlanYazimi selectEurobond(
+    EurobondSozlesmesi s,
+    EurobondFiyati? f, {
+    required bool priceEmpty,
+    double? duzenlemeBirimDegeri,
+  }) {
+    _set(state.copyWith(
+      eurobondSozlesmesi: s,
+      eurobondFiyati: f,
+      currency: s.paraBirimi,
+      isManualPrice: false,
+    ));
+    String? fiyat;
+    if (duzenlemeBirimDegeri != null && duzenlemeBirimDegeri > 0) {
+      fiyat = fmtInputTr(
+          eurobondTemizYuzde(s, duzenlemeBirimDegeri, state.addedDate),
+          maxDigits: 4);
+    } else if (priceEmpty && f?.temizFiyat != null) {
+      fiyat = fmtInputTr(f!.temizFiyat!, maxDigits: 4);
+    }
+    return AlanYazimi(
+      ticker: eurobondSembolu(s.isin),
+      name: s.ad,
+      price: fiyat,
+    );
   }
 
   /// [priceEmpty]: fon fiyatı yalnızca alış fiyatı boşsa doldurulur —

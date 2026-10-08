@@ -6770,4 +6770,156 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get costsShowLess => 'Daha az göster';
+
+  @override
+  String get identityEurobond => 'Tahvil';
+
+  @override
+  String get pickEurobondTap => 'Tahvil seçmek için dokun';
+
+  @override
+  String get pickEurobondPrompt => 'Bir eurobond seç';
+
+  @override
+  String eurobondSelectedSemantics(String name) {
+    return 'Seçili tahvil: $name. Değiştirmek için çift dokun.';
+  }
+
+  @override
+  String get eurobondPickerTitle => 'Eurobondlar';
+
+  @override
+  String get eurobondLoading => 'Tahvil listesi yükleniyor';
+
+  @override
+  String get eurobondLoadFailed => 'Tahvil listesi yüklenemedi';
+
+  @override
+  String get eurobondSourceNote =>
+      'Şimdilik yalnız USD tahviller. Fiyat temiz fiyattır, nominalin yüzdesi. Yatırım tavsiyesi değildir.';
+
+  @override
+  String eurobondMaturityShort(String date) {
+    return 'Vade $date';
+  }
+
+  @override
+  String eurobondYieldShort(String pct) {
+    return 'Getiri $pct';
+  }
+
+  @override
+  String get eurobondIsinInvalid =>
+      'Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.';
+
+  @override
+  String get eurobondIsinNotListed =>
+      'Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.';
+
+  @override
+  String get eurobondCleanPrice => 'Temiz fiyat (%)';
+
+  @override
+  String get eurobondCleanPriceRequired => 'Temiz fiyatı yaz';
+
+  @override
+  String get eurobondCurrencyLocked => 'Tahvilin para birimi';
+
+  @override
+  String eurobondAccruedLine(String accrued, String paid) {
+    return 'İşlemiş faiz: $accrued · Ödenen: $paid';
+  }
+
+  @override
+  String eurobondAccruedOnly(String accrued) {
+    return 'İşlemiş faiz: $accrued';
+  }
+
+  @override
+  String eurobondTotalBreakdown(String nominal, String dirty) {
+    return '$nominal nominal × kirli $dirty';
+  }
+
+  @override
+  String get bondInfoUpper => 'TAHVİL BİLGİLERİ';
+
+  @override
+  String get bondCleanPrice => 'Temiz fiyat';
+
+  @override
+  String get bondAccrued => 'İşlemiş faiz';
+
+  @override
+  String get bondDirtyPrice => 'Kirli fiyat';
+
+  @override
+  String get bondPerNominalNote => 'Fiyatlar 100 nominal başına.';
+
+  @override
+  String get bondYtm => 'Vadeye getiri';
+
+  @override
+  String get bondCoupon => 'Kupon';
+
+  @override
+  String bondCouponValue(String rate, String count) {
+    return '$rate · yılda $count kez';
+  }
+
+  @override
+  String get bondNextCoupon => 'Sonraki kupon';
+
+  @override
+  String bondNextCouponValue(String date, String amount) {
+    return '$date · $amount';
+  }
+
+  @override
+  String bondWithholding(String rate) {
+    return 'Stopaj $rate';
+  }
+
+  @override
+  String get bondMaturity => 'Vade';
+
+  @override
+  String bondMaturityValue(String date, String days) {
+    return '$date · $days gün kaldı';
+  }
+
+  @override
+  String get bondIssuer => 'İhraççı';
+
+  @override
+  String get bondIssuerTreasury => 'Hazine';
+
+  @override
+  String get bondIssuerCorporate => 'Özel sektör';
+
+  @override
+  String get bondBankSellUpper => 'BANKAYA SATARSAN';
+
+  @override
+  String get bondBankZiraat => 'Ziraat Bankası';
+
+  @override
+  String bondBankUpdated(String bank, String time) {
+    return '$bank · $time';
+  }
+
+  @override
+  String get bondBankBid => 'Banka alış';
+
+  @override
+  String get bondBankAsk => 'Banka satış';
+
+  @override
+  String get bondBankSpread => 'Makas';
+
+  @override
+  String get bondBankProceeds => 'Bugün satarsan eline geçen';
+
+  @override
+  String get bondBankNote =>
+      'Banka fiyatları kirli fiyattır (işlemiş faiz dahil).';
 }

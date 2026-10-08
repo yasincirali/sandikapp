@@ -11259,6 +11259,258 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Daha az göster'**
   String get costsShowLess;
+
+  /// No description provided for @identityEurobond.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil'**
+  String get identityEurobond;
+
+  /// No description provided for @pickEurobondTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil seçmek için dokun'**
+  String get pickEurobondTap;
+
+  /// No description provided for @pickEurobondPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir eurobond seç'**
+  String get pickEurobondPrompt;
+
+  /// No description provided for @eurobondSelectedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili tahvil: {name}. Değiştirmek için çift dokun.'**
+  String eurobondSelectedSemantics(String name);
+
+  /// No description provided for @eurobondPickerTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eurobondlar'**
+  String get eurobondPickerTitle;
+
+  /// No description provided for @eurobondLoading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil listesi yükleniyor'**
+  String get eurobondLoading;
+
+  /// No description provided for @eurobondLoadFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil listesi yüklenemedi'**
+  String get eurobondLoadFailed;
+
+  /// No description provided for @eurobondSourceNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdilik yalnız USD tahviller. Fiyat temiz fiyattır, nominalin yüzdesi. Yatırım tavsiyesi değildir.'**
+  String get eurobondSourceNote;
+
+  /// No description provided for @eurobondMaturityShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade {date}'**
+  String eurobondMaturityShort(String date);
+
+  /// No description provided for @eurobondYieldShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri {pct}'**
+  String eurobondYieldShort(String pct);
+
+  /// No description provided for @eurobondIsinInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.'**
+  String get eurobondIsinInvalid;
+
+  /// No description provided for @eurobondIsinNotListed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.'**
+  String get eurobondIsinNotListed;
+
+  /// No description provided for @eurobondCleanPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temiz fiyat (%)'**
+  String get eurobondCleanPrice;
+
+  /// No description provided for @eurobondCleanPriceRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temiz fiyatı yaz'**
+  String get eurobondCleanPriceRequired;
+
+  /// No description provided for @eurobondCurrencyLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvilin para birimi'**
+  String get eurobondCurrencyLocked;
+
+  /// No description provided for @eurobondAccruedLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlemiş faiz: {accrued} · Ödenen: {paid}'**
+  String eurobondAccruedLine(String accrued, String paid);
+
+  /// No description provided for @eurobondAccruedOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlemiş faiz: {accrued}'**
+  String eurobondAccruedOnly(String accrued);
+
+  /// No description provided for @eurobondTotalBreakdown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{nominal} nominal × kirli {dirty}'**
+  String eurobondTotalBreakdown(String nominal, String dirty);
+
+  /// No description provided for @bondInfoUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'TAHVİL BİLGİLERİ'**
+  String get bondInfoUpper;
+
+  /// No description provided for @bondCleanPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temiz fiyat'**
+  String get bondCleanPrice;
+
+  /// No description provided for @bondAccrued.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlemiş faiz'**
+  String get bondAccrued;
+
+  /// No description provided for @bondDirtyPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kirli fiyat'**
+  String get bondDirtyPrice;
+
+  /// No description provided for @bondPerNominalNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar 100 nominal başına.'**
+  String get bondPerNominalNote;
+
+  /// No description provided for @bondYtm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeye getiri'**
+  String get bondYtm;
+
+  /// No description provided for @bondCoupon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kupon'**
+  String get bondCoupon;
+
+  /// No description provided for @bondCouponValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{rate} · yılda {count} kez'**
+  String bondCouponValue(String rate, String count);
+
+  /// No description provided for @bondNextCoupon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonraki kupon'**
+  String get bondNextCoupon;
+
+  /// No description provided for @bondNextCouponValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} · {amount}'**
+  String bondNextCouponValue(String date, String amount);
+
+  /// No description provided for @bondWithholding.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj {rate}'**
+  String bondWithholding(String rate);
+
+  /// No description provided for @bondMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade'**
+  String get bondMaturity;
+
+  /// No description provided for @bondMaturityValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} · {days} gün kaldı'**
+  String bondMaturityValue(String date, String days);
+
+  /// No description provided for @bondIssuer.
+  ///
+  /// In tr, this message translates to:
+  /// **'İhraççı'**
+  String get bondIssuer;
+
+  /// No description provided for @bondIssuerTreasury.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hazine'**
+  String get bondIssuerTreasury;
+
+  /// No description provided for @bondIssuerCorporate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel sektör'**
+  String get bondIssuerCorporate;
+
+  /// No description provided for @bondBankSellUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'BANKAYA SATARSAN'**
+  String get bondBankSellUpper;
+
+  /// No description provided for @bondBankZiraat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ziraat Bankası'**
+  String get bondBankZiraat;
+
+  /// No description provided for @bondBankUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'{bank} · {time}'**
+  String bondBankUpdated(String bank, String time);
+
+  /// No description provided for @bondBankBid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka alış'**
+  String get bondBankBid;
+
+  /// No description provided for @bondBankAsk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka satış'**
+  String get bondBankAsk;
+
+  /// No description provided for @bondBankSpread.
+  ///
+  /// In tr, this message translates to:
+  /// **'Makas'**
+  String get bondBankSpread;
+
+  /// No description provided for @bondBankProceeds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün satarsan eline geçen'**
+  String get bondBankProceeds;
+
+  /// No description provided for @bondBankNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka fiyatları kirli fiyattır (işlemiş faiz dahil).'**
+  String get bondBankNote;
 }
 
 class _AppLocalizationsDelegate
