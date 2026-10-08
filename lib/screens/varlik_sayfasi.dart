@@ -7,6 +7,8 @@ import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
+import '../providers/preferences_provider.dart' show seviyeGorunurlukProvider;
+import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
@@ -175,7 +177,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   late int _gun = varlikSayfasiDonemleri.contains(widget.baslangicDonemGun)
       ? widget.baslangicDonemGun!
-      : 365;
+      // `donem_hafizasi`: istek yoksa uygulamanın ortak dönemi (Sadeleştirme
+      // 2); bayrak kapalıyken eski varsayılan 1Y. Sayfa her dönemi
+      // gösterebildiği için en yakına düşme gerekmez.
+      : donemHafizasiAcik
+          ? ref.read(seciliDonemProvider).sembolGunu
+          : 365;
 
   /// Grafikte ŞU AN çizilen dönem. Yeni dönem yüklenirken eski çizgi soluk
   /// kalır — boş kutu ya da dönen tekerlek yerine bağlam.
@@ -193,6 +200,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   void initState() {
     super.initState();
+    // `donem_hafizasi`: açılışta istenen dönem (Takip satırı, derin bağlantı)
+    // ortak döneme de yazılır. Sağlayıcı kurulum sırasında değiştirilemez;
+    // kareden sonra yazılır.
+    final istenen = widget.baslangicDonemGun;
+    if (donemHafizasiAcik && varlikSayfasiDonemleri.contains(istenen)) {
+      Future.microtask(() {
+        if (!mounted) return;
+        ref.read(seciliDonemProvider.notifier).state =
+            SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(istenen!)];
+      });
+    }
     CrashReporter.arkaPlan(_ilkYukleme(), reason: 'VarlikSayfasi.ilkYukleme');
     // Arama ekranının "Son baktıkların" şeridi — hangi girişten açıldıysa
     // (arama, takip, karşılaştır, ekleme seçicisi) bakılan varlık odur.
@@ -231,7 +249,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       _yukle(_gun),
       for (final g in varlikSayfasiDonemleri)
         if (g != _gun) _yukle(g),
-      if (widget.seriYukleyici == null && widget.kimlik.ticker.isNotEmpty)
+      // Panel seviye kapısının arkasında (Başlangıç'ta yok) — çizilmeyecek
+      // panelin serisi de istenmez (varlık detayıyla aynı).
+      if (widget.seriYukleyici == null &&
+          widget.kimlik.ticker.isNotEmpty &&
+          ref.read(seviyeGorunurlukProvider).teknikSinyaller)
         HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
             periodDays: kSinyalPenceresiGun),
     ]);
@@ -276,6 +298,15 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     });
     // Hatalı dönem yeniden seçilince yeniden dener — çıkış yolu açık.
     CrashReporter.arkaPlan(_yukle(gun), reason: 'VarlikSayfasi.donemSec');
+  }
+
+  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
+  /// eskisi gibi doğrudan [_donemSec]'i çağırır). Ortak döneme yazma
+  /// `_gun` güncellendikten SONRA: [build]'deki dinleyici değişikliği kendi
+  /// seçimimiz olarak tanır, ikinci kez yüklemez.
+  void _ortakDonemSec(int i) {
+    _donemSec(varlikSayfasiDonemleri[i]);
+    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[i];
   }
 
   void _boyutuDegistir() {
@@ -367,6 +398,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   Widget build(BuildContext context) {
     final k = widget.kimlik;
+    // `donem_hafizasi`: ortak dönem başka yüzeyde değişirse sayfa da geçer.
+    if (donemHafizasiAcik) {
+      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+        final gun = yeni.sembolGunu;
+        if (gun != _gun) _donemSec(gun);
+      });
+    }
     return Semantics(
       label: context.l10n.vsSheetSemantics(k.name),
       container: true,
@@ -489,11 +527,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       AnalizNotuKutusu(tur: k.type, ticker: k.ticker),
       // Sahip olunmayan varlık için de teknik göstergeler hesaplanır; panel
       // bir `Asset` istemez.
-      TechnicalSignalPanel(
-        ticker: k.ticker,
-        type: k.type,
-        subCategory: k.subCategory,
-      ),
+      //
+      // Seviye kapısı (2026-10-08): varlık detayı paneli
+      // `seviyeGorunurlugu(...).teknikSinyaller` ile gizliyordu, bu sayfa
+      // gizlemiyordu — Başlangıç kullanıcısı sinyali Takip'ten ya da
+      // aramadan açınca görüyordu. Aynı kapı burada da.
+      if (ref.watch(seviyeGorunurlukProvider).teknikSinyaller)
+        TechnicalSignalPanel(
+          ticker: k.ticker,
+          type: k.type,
+          subCategory: k.subCategory,
+        ),
       // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır.
       const SizedBox(height: SandikSpace.sm),
       const DisclaimerWidget(),
@@ -585,7 +629,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       getiriler: [
         for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
       ],
-      onSec: (i) => _donemSec(varlikSayfasiDonemleri[i]),
+      onSec: donemHafizasiAcik
+          ? _ortakDonemSec
+          : (i) => _donemSec(varlikSayfasiDonemleri[i]),
     );
   }
 
