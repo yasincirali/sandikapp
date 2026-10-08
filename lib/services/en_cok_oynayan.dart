@@ -44,8 +44,24 @@ EnCokOynayan? enCokOynayanBul(
   PortfolioHistoryBreakdown breakdown, {
   required List<Asset> lotlar,
   required DateTime now,
+}) =>
+    enCokOynayanlar(breakdown, lotlar: lotlar, now: now, enFazla: 1)
+        .firstOrNull;
+
+/// Bugünün en çok oynayanları, |yüzde| büyükten küçüğe — SAF.
+///
+/// Bugün kartının oynayanlar sırası (benchmark revizesi, kullanıcı seçimi
+/// 2026-10-09; Delta'nın "Daily Movers" satırı, en fazla üç çip). Kural
+/// [enCokOynayanBul] ile AYNI: aynı pencere, aynı uçlar, gün içi akışlı
+/// pozisyon elenir, yuvarlanınca sıfır olan sayılmaz. Tek varlık oynadıysa
+/// tek eleman; hiçbiri oynamadıysa boş liste (kart satırı çizmez).
+List<EnCokOynayan> enCokOynayanlar(
+  PortfolioHistoryBreakdown breakdown, {
+  required List<Asset> lotlar,
+  required DateTime now,
+  int enFazla = 3,
 }) {
-  if (breakdown.byPosition.isEmpty) return null;
+  if (breakdown.byPosition.isEmpty || enFazla <= 0) return const [];
   final p = PeriodSummaryService.pencere(SummaryPeriod.gunluk, now,
       seansGunu: breakdown.seansGunu);
   final fromMs = p.start.millisecondsSinceEpoch;
@@ -60,20 +76,24 @@ EnCokOynayan? enCokOynayanBul(
     akisli.add(positionKey(a));
   }
 
-  EnCokOynayan? secilen;
+  final adaylar = <EnCokOynayan>[];
   breakdown.byPosition.forEach((key, seri) {
     if (akisli.contains(key)) return;
     final u = PeriodSummaryService.uclar(seri, fromMs: fromMs, toMs: toMs);
     if (u == null || u.first <= 0 || u.firstTs == u.lastTs) return;
     final pct = (u.last / u.first - 1) * 100;
-    if (secilen != null && pct.abs() <= secilen!.degisimPct.abs()) return;
-    secilen = EnCokOynayan(
+    if (pct.abs() < 0.005) return;
+    adaylar.add(EnCokOynayan(
       positionKey: key,
       tur: breakdown.positionType[key] ?? AssetType.diger,
       degisimPct: pct,
       degisimTRY: u.last - u.first,
-    );
+    ));
   });
-  if (secilen == null || secilen!.degisimPct.abs() < 0.005) return null;
-  return secilen;
+  // Eşitlikte anahtar sırası: aynı veriyle iki build aynı sırayı versin.
+  adaylar.sort((a, b) {
+    final c = b.degisimPct.abs().compareTo(a.degisimPct.abs());
+    return c != 0 ? c : a.positionKey.compareTo(b.positionKey);
+  });
+  return adaylar.length > enFazla ? adaylar.sublist(0, enFazla) : adaylar;
 }

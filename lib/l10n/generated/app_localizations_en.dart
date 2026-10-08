@@ -3911,6 +3911,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get todayGoalNewAction => 'Pick a new one';
 
   @override
+  String get todayVerdictUp => 'Up today';
+
+  @override
+  String get todayVerdictDown => 'Down today';
+
+  @override
+  String get todayVerdictFlat => 'Held steady';
+
+  @override
+  String get todayChipWeek => 'Week';
+
+  @override
+  String get todayChipMonth => 'Month';
+
+  @override
+  String get todayChipYear => 'Year';
+
+  @override
+  String get todayMoversTitle => 'Today\'s movers';
+
+  @override
+  String get todayMoversAll => 'All';
+
+  @override
+  String get todayPurchasingQuestion => 'Is your money keeping up with prices?';
+
+  @override
+  String get todayHundredBefore => 'Last year\'s ₺100 is now worth ';
+
+  @override
+  String todayHundredAmount(String amount) {
+    return '₺$amount';
+  }
+
+  @override
+  String get todayPricesAhead => 'Prices ahead';
+
+  @override
+  String get todayYouAhead => 'You\'re ahead';
+
+  @override
+  String todayPurchasingDetail(String you, String cpi) {
+    return 'Your money grew $you, prices rose $cpi';
+  }
+
+  @override
+  String get todayLast12Months => 'last 12 months';
+
+  @override
   String get todayMoveLabel => 'Today\'s move';
 
   @override

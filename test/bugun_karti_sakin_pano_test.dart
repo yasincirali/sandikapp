@@ -16,7 +16,8 @@ import 'helpers/kaynak.dart';
 
 /// Bugün kartı — katmanlar gerçek ağaçta kurulur ve dar ekranda taşmaz.
 ///
-/// 2026-10-01'de "Sakin pano" (D) olarak yazıldı; 2026-10-04'ten beri kart
+/// 2026-10-01'de "Sakin pano" (D) olarak yazıldı; 2026-10-09'dan beri kart
+/// benchmark düzeninde (`bugun_karti_benchmark_test`); 2026-10-04'ten beri kart
 /// "H · enflasyon kıyası öne" düzeninde (bayrak `bugun_karti_kiyas`,
 /// 2026-10-05'te kalktı). D'ye özgü katman testleri (takvim yaprağı, bilgi
 /// kutusu, haftalık yön kelimesi, enflasyon kutusu) D ile silindi; H'nin
@@ -74,10 +75,13 @@ void main() {
     BugunKarti.anliklariTemizle();
     HistoryService.clearCache();
     HistoryService.seriCekici = (s, r, i) async => const [];
+    // Sabit hafta içi, seans açık: seri yokken hüküm "Gün içi veri geliyor".
+    BugunKarti.saat = () => DateTime(2026, 10, 9, 15);
   });
   tearDown(() {
     HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
     BugunKarti.anliklariTemizle();
+    BugunKarti.saat = DateTime.now;
   });
 
   Future<void> kur(WidgetTester tester, {required double genislik}) async {
@@ -116,13 +120,13 @@ void main() {
           findsOneWidget);
       // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
       // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".
-      expect(
-          sigan('Günün hareketi · sadece fiyat etkisi')
-                  .evaluate()
-                  .isNotEmpty ||
-              sigan('Günün hareketi · fiyat etkisi').evaluate().isNotEmpty ||
-              sigan('Günün hareketi').evaluate().isNotEmpty,
-          isTrue);
+      // Benchmark düzeni (2026-10-09): "sadece fiyat etkisi" notu dönem
+      // çiplerinin sağında.
+      // Not artık düz `Text`; sığmazsa alt satıra düşer (`Wrap`).
+      expect(find.text('sadece fiyat etkisi'), findsOneWidget);
+      // Seri çekici boş dönüyor: gün başı = canlı toplam, hüküm "Yerinde
+      // saydı" (sayı uydurulmaz, ₺0).
+      expect(find.text('Yerinde saydı'), findsOneWidget);
       expect(sigan('Hedef belirle'), findsOneWidget);
       // D'nin dönen bilgi kutuları H'de yok.
       expect(sigan('Artıdaki varlık'), findsNothing);
@@ -141,29 +145,6 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(sigan('Hedefe %41'), findsOneWidget);
     expect(sigan('Hedef belirle'), findsNothing);
-  });
-
-  group('satır içi kıvılcım — tutar öncelikli (3. tur, seçim G)', () {
-    test('artan yer 56pt altındaysa kıvılcım çizilmez', () {
-      expect(kivilcimGenisligi(0), isNull);
-      expect(kivilcimGenisligi(55.9), isNull);
-    });
-    test('56..120 arası artan yer kadar, üstü 120', () {
-      expect(kivilcimGenisligi(56), 56);
-      expect(kivilcimGenisligi(90), 90);
-      expect(kivilcimGenisligi(120), 120);
-      expect(kivilcimGenisligi(400), 120);
-    });
-    test('kaynak: kıvılcım artan yerden ölçülür, tutar ölçülür, rozet sabit',
-        () {
-      final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
-      expect(
-          src.contains('final artan = k.maxWidth - tutarW - rozetW'), isTrue);
-      expect(src.contains('seriCiz ? kivilcimGenisligi(artan) : null'), isTrue);
-      expect(src.contains('_YuzdeRozeti.azamiGenislik'), isTrue);
-      // Eksen satırı (açılış / şimdi) kalktı — yer kazanımının yarısı oydu.
-      expect(src.contains('todayAxisOpen'), isFalse);
-    });
   });
 
   group('her metin tam okunur — SiganMetin (kullanıcı kuralı 2026-10-01)', () {
@@ -214,8 +195,12 @@ void main() {
   group('kaynak sözleşmesi', () {
     final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
 
-    test('enflasyon kıyası geniş blokta (H düzeni)', () {
-      expect(src.contains('_EnflasyonKiyasi('), isTrue);
+    test('enflasyon kıyası alım gücü kutusunda (benchmark düzeni)', () {
+      // 2026-10-09: "Getirin/TÜFE" çubukları ve "puan geride" başlığı
+      // kalktı; soru + "100 liran bugün kaç lira" + dolu çubuk.
+      expect(src.contains('_AlimGucuKutusu('), isTrue);
+      expect(src.contains('_EnflasyonKiyasi('), isFalse,
+          reason: 'H\'nin iki çubuklu kıyası benchmark düzeniyle kalktı');
       expect(src.contains('_EnflasyonCubugu('), isFalse,
           reason: 'D\'nin kutu içi çubuğu D ile kalktı');
     });

@@ -6512,6 +6512,96 @@ abstract class AppLocalizations {
   /// **'Yenisini seç'**
   String get todayGoalNewAction;
 
+  /// No description provided for @todayVerdictUp.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yükseldi'**
+  String get todayVerdictUp;
+
+  /// No description provided for @todayVerdictDown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geriledi'**
+  String get todayVerdictDown;
+
+  /// No description provided for @todayVerdictFlat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yerinde saydı'**
+  String get todayVerdictFlat;
+
+  /// No description provided for @todayChipWeek.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hafta'**
+  String get todayChipWeek;
+
+  /// No description provided for @todayChipMonth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay'**
+  String get todayChipMonth;
+
+  /// No description provided for @todayChipYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl'**
+  String get todayChipYear;
+
+  /// No description provided for @todayMoversTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün en çok oynayanlar'**
+  String get todayMoversTitle;
+
+  /// No description provided for @todayMoversAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü'**
+  String get todayMoversAll;
+
+  /// No description provided for @todayPurchasingQuestion.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paran fiyatlara yetişiyor mu?'**
+  String get todayPurchasingQuestion;
+
+  /// No description provided for @todayHundredBefore.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçen yılki 100 liran bugün '**
+  String get todayHundredBefore;
+
+  /// No description provided for @todayHundredAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{amount} lira'**
+  String todayHundredAmount(String amount);
+
+  /// No description provided for @todayPricesAhead.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar önde'**
+  String get todayPricesAhead;
+
+  /// No description provided for @todayYouAhead.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sen öndesin'**
+  String get todayYouAhead;
+
+  /// No description provided for @todayPurchasingDetail.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paran {you} büyüdü, fiyatlar {cpi} arttı'**
+  String todayPurchasingDetail(String you, String cpi);
+
+  /// No description provided for @todayLast12Months.
+  ///
+  /// In tr, this message translates to:
+  /// **'son 12 ay'**
+  String get todayLast12Months;
+
   /// No description provided for @todayMoveLabel.
   ///
   /// In tr, this message translates to:

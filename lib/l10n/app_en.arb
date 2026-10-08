@@ -2760,6 +2760,38 @@
   "todayClosedShort": "Closed",
   "todayMarketOnlyShort": "price effect",
   "todayGoalNewAction": "Pick a new one",
+  "todayVerdictUp": "Up today",
+  "todayVerdictDown": "Down today",
+  "todayVerdictFlat": "Held steady",
+  "todayChipWeek": "Week",
+  "todayChipMonth": "Month",
+  "todayChipYear": "Year",
+  "todayMoversTitle": "Today's movers",
+  "todayMoversAll": "All",
+  "todayPurchasingQuestion": "Is your money keeping up with prices?",
+  "todayHundredBefore": "Last year's ₺100 is now worth ",
+  "todayHundredAmount": "₺{amount}",
+  "@todayHundredAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "todayPricesAhead": "Prices ahead",
+  "todayYouAhead": "You're ahead",
+  "todayPurchasingDetail": "Your money grew {you}, prices rose {cpi}",
+  "@todayPurchasingDetail": {
+    "placeholders": {
+      "you": {
+        "type": "String"
+      },
+      "cpi": {
+        "type": "String"
+      }
+    }
+  },
+  "todayLast12Months": "last 12 months",
   "todayMoveLabel": "Today's move",
   "todayRealYearly": "yearly",
   "todayGoalSetAction": "Set a goal",

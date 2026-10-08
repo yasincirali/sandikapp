@@ -176,15 +176,18 @@ const List<SurumNotu> surumNotlari = [
             'gelir. Kayıtlı cihazlarını Ayarlar › Hesap & Güvenlik › '
             "Kayıtlı cihazlar'da görüp kaldırabilirsin.",
       ),
-      // 2026-10-01: Bugün kartı "sakin pano" (kullanıcı seçimi D).
+      // 2026-10-01: Bugün kartı "sakin pano" (kullanıcı seçimi D);
+      // 2026-10-09: benchmark düzeni (aynı sürüm, not güncellendi — 1.1.6
+      // henüz yayında değil, iki ayrı madde iki ayrı kartı vaat ederdi).
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Bugün kartı yenilendi',
-        aciklama: 'Günün hareketi büyük rakamla, yanında gün içi eğri; kesik '
-            'çizgi gün başı seviyesi. Enflasyona göre durumun çubukla '
-            '(getirin dolu, TÜFE çizgi) ve hangi aylar arasında ölçüldüğüyle; '
-            'yanında son 7 gün ya da artıdaki varlıklar, günden güne '
-            'değişir. Hedef ve aylık özet sarı kutularda, bir dokunuşla.',
+        aciklama: 'Günün hükmü tek kelimeyle (Yükseldi, Geriledi, Yerinde '
+            'saydı), yanında renkli rozette tutar; altında günün eğrisi ve '
+            'Hafta, Ay, Yıl kısayolları. Bugün en çok oynayan varlıkların '
+            'yan yana. Enflasyon artık soruyla: "Paran fiyatlara yetişiyor '
+            'mu?" Geçen yılki 100 liranın bugün kaç lira ettiği ve dolu '
+            'bir çubuk. En altta hedefine kalan.',
       ),
       // 2026-10-01: tek getiri dili (M1 + D2 + düzen A + kıyas kartı).
       // Ana rakam bu sürümde değişiyor (temettü dahil, para ağırlıklı);

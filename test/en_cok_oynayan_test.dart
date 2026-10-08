@@ -92,14 +92,43 @@ void main() {
     expect(o.positionKey, kThy);
   });
 
+  test('enCokOynayanlar: |yüzde| büyükten küçüğe, en fazla üç, sıfır elenir',
+      () {
+    // Benchmark düzeni (2026-10-09): oynayanlar sırası ≤3 çip.
+    final bd = _bd({
+      kThy: {_ms(10): 1000, _ms(15): 1032}, // +%3,2
+      kAsl: {_ms(10): 2000, _ms(15): 1900}, // −%5
+      kGrn: {_ms(10): 500, _ms(15): 505}, // +%1
+      'd|DUZ': {_ms(10): 100, _ms(15): 100}, // düz → elenir
+    });
+    final sira = enCokOynayanlar(bd, lotlar: [thy, asl, grn], now: _now);
+    expect(sira.map((o) => o.positionKey), [kAsl, kThy, kGrn]);
+    expect(
+        enCokOynayanlar(bd, lotlar: [thy, asl, grn], now: _now, enFazla: 2)
+            .map((o) => o.positionKey),
+        [kAsl, kThy]);
+    // `enCokOynayanBul` sıranın ilki — iki yüzey aynı kuralı paylaşır.
+    expect(enCokOynayanBul(bd, lotlar: [thy, asl, grn], now: _now)!.positionKey,
+        kAsl);
+    expect(enCokOynayanlar(_bd(const {}), lotlar: [thy], now: _now), isEmpty);
+  });
+
   test('düz günde ya da tek noktalı seride kutu yok', () {
     expect(
-        enCokOynayanBul(_bd({kThy: {_ms(10): 1000, _ms(15): 1000}}),
-            lotlar: [thy], now: _now),
+        enCokOynayanBul(
+            _bd({
+              kThy: {_ms(10): 1000, _ms(15): 1000}
+            }),
+            lotlar: [thy],
+            now: _now),
         isNull);
     expect(
-        enCokOynayanBul(_bd({kThy: {_ms(10): 1000}}),
-            lotlar: [thy], now: _now),
+        enCokOynayanBul(
+            _bd({
+              kThy: {_ms(10): 1000}
+            }),
+            lotlar: [thy],
+            now: _now),
         isNull);
     expect(enCokOynayanBul(_bd(const {}), lotlar: [thy], now: _now), isNull);
   });

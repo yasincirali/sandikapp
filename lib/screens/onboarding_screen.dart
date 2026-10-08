@@ -453,12 +453,18 @@ List<_Adim> _adimlariKur() {
       // "fiyat etkisi"; Özet köprüsündeki aynı rakamla tek ad.
       // 2026-10-04 düzen H (bayrak `bugun_karti_kiyas`, 2026-10-05'te
       // kalktı): takvim yaprağı, son 7 gün, aylık özet ve olay ayak notu
-      // yok; metin H düzenini anlatır.
-      govde: 'Üstte gün ve seans durumu. Büyük rakam günün hareketi: sadece '
-          'fiyat etkisi, yatırdığın para sayılmaz; yanındaki eğride kesik '
-          'çizgi gün başı seviyesidir. Altında getirinin enflasyonla '
-          'kıyası: iki çubuk, getirin ve TÜFE, başlıkta hangi aylar '
-          'arasında ölçüldüğü. En altta günün en çok oynayan varlığı ve '
+      // yok.
+      // 2026-10-09 benchmark düzeni (kullanıcı seçimi): hüküm kelimesi +
+      // dolu renkli tutar rozeti, tam genişlik eğri, dönem çipleri,
+      // oynayanlar sırası, "100 liran bugün kaç lira" kutusu, hedef satırı;
+      // Getirin/TÜFE çubukları ve yüzde rozeti yok. Metin bunu anlatır.
+      govde: 'Üstte gün ve seans durumu. Altında günün hükmü tek kelimeyle '
+          '(Yükseldi, Geriledi, Yerinde saydı) ve yanında renkli rozette '
+          'tutar: sadece fiyat etkisi, yatırdığın para sayılmaz. Eğri günün '
+          'seyri, kesik çizgi gün başı seviyesi; Hafta, Ay, Yıl çipleri '
+          'Özet\'in o dönemine götürür. Sonra bugün en çok oynayan '
+          'varlıkların; "Paran fiyatlara yetişiyor mu?" kutusunda geçen '
+          'yılki 100 liranın bugün kaç lira ettiği ve dolu çubuk; en altta '
           'hedefine kalan. Kutuya dokununca ayrıntı açılır. Ortağına ya da '
           'Birlikte\'ye geçince kart o defterin gününü anlatır.',
       rozet: 'YENİ',
