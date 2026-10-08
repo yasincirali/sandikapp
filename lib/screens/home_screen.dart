@@ -698,13 +698,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // (`zilSinyalleriGosterProvider`). 2026-10-04'e kadar zil
                   // Başlangıç'ta tümden gizliydi; bayrak `seviye_anketi`
                   // (ve onu soran `zilGorunurProvider`) 2026-10-05'te kalktı.
+                  // Çıkış düğmesi BURADA DEĞİL (yasin, 2026-10-08: "sadece
+                  // profilden logoff yapılabilsin"). 2026-10-04'te Portföy ve
+                  // Performans çubuklarından kalkmış, ana ekranda kalmıştı;
+                  // artık tek yeri Profil üst çubuğu. Hesap işi Profil'de,
+                  // ana ekran portföyün kendisi — yanlışlıkla dokunuş da
+                  // kalkıyor.
                   TourAnchor(
                     target: TourTarget.bildirimCani,
                     child: _SignalBadgeButton(onTap: _scrollToSignals),
                   ),
-                  const SizedBox(width: SandikSpace.sm),
-                  SandikLogoutButton(
-                      onPressed: () => confirmAndLogout(context, ref)),
                 ],
               ),
             ),

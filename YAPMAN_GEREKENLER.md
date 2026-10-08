@@ -18,7 +18,8 @@ görünümü aynı. **Analitik:** `today_row_shown` olayında `yesil`/`haftalik`
 - [x] PR #110 birleşti (282b7c2).
 - [ ] **PR #111** (aynı dal, 2. tur): 12 kart daha `SandikCard`, 5 seçici
       `SandikSegment` (8pt uzun, seçim amber dolgu yerine nötr kayan zemin),
-      açık tema kontrastı, başlık uçuşu (2.14). Sunucu/migration yok.
+      açık tema kontrastı, başlık uçuşu (2.14), çıkış yalnız Profil'de
+      (ana ekran üst çubuğundan kalktı). Sunucu/migration yok.
       CI yeşil olunca birleştir; cihazda seçicilere ve açık temaya bak.
 - [ ] **Bayrak `varlik_hero_gecisi`** (yeni, varsayılan kapalı): Portföy
       satırından varlık ekranına geçişte kod (THYAO) satırdan başlığa uçar.
