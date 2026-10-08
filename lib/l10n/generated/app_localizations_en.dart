@@ -7231,8 +7231,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s3HalkayiAc => 'Open allocation as a large ring';
 
   @override
-  String s3DigerTurler(int n) {
-    return '+$n more';
+  String s3DigerKatlanan(int n) {
+    return 'Other ($n)';
   }
 
   @override

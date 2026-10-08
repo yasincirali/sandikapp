@@ -546,8 +546,9 @@ List<_Adim> _adimlariKur() {
       // birebir.
       govde: RemoteConfigService.instance.portfoyDagilimCubugu
           ? 'Varlıklarının listesi ve tür dağılımı burada; yandaki bir türe '
-              'dokununca liste o türe süzülür, halkaya dokununca büyür. Bir '
-              'varlığa dokununca '
+              'dokununca liste o türe süzülür, türler sığmazsa lejant '
+              'sayfalara bölünür ve alttaki noktalardan kaydırırsın; halkaya '
+              'dokununca büyür. Bir varlığa dokununca '
               'detayına inersin; alış, satış ve temettüyü oradaki alt '
               'çubuktan kaydedersin.'
           : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '

@@ -4646,7 +4646,14 @@
   "s4RowNote": "Analysis note",
   "s3DagilimBaslik": "Allocation",
   "s3HalkayiAc": "Open allocation as a large ring",
-  "s3DigerTurler": "+{n} more",
+  "s3DigerKatlanan": "Other ({n})",
+  "@s3DigerKatlanan": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "s5OnAyarSoru": "How often should we notify you?",
   "s5OnAyarAz": "Less",
   "s5OnAyarDengeli": "Balanced",
