@@ -22,7 +22,15 @@ import {
 const al = async (u: string, json: boolean) => {
   const t0 = performance.now();
   const r = await fetch(u, { headers: { 'User-Agent': TARAYICI_UA, Accept: json ? 'application/json' : 'text/html' } });
-  const g = json ? await r.json() : await r.text();
+  const metin = await r.text();
+  let g: unknown = metin;
+  if (json) {
+    try {
+      g = JSON.parse(metin);
+    } catch (_) {
+      g = null; // boş gövde (vadesi gelen tahvil) — fonksiyon da null sayar
+    }
+  }
   return { g, ms: Math.round(performance.now() - t0), kod: r.status };
 };
 

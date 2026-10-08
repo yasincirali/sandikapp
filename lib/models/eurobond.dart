@@ -252,3 +252,87 @@ int _gun30360(DateTime a, DateTime b) {
   if (d2 == 31 && d1 == 30) d2 = 30;
   return 360 * (b.year - a.year) + 30 * (b.month - a.month) + (d2 - d1);
 }
+
+/// `eurobond_fiyat` satırı (0124). Temiz fiyat Frankfurt'tan, banka alış/
+/// satışı Ziraat'ten (KİRLİ — işlemiş faiz dahil, bkz. sunucu notu).
+class EurobondFiyati {
+  const EurobondFiyati({
+    required this.isin,
+    this.temizFiyat,
+    this.oncekiKapanis,
+    this.piyasaZamani,
+    this.bankaAlis,
+    this.bankaSatis,
+    this.bankaAlisGetiri,
+    this.bankaSatisGetiri,
+    required this.guncellendi,
+  });
+
+  final String isin;
+  final double? temizFiyat;
+  final double? oncekiKapanis;
+  final DateTime? piyasaZamani;
+  final double? bankaAlis;
+  final double? bankaSatis;
+  final double? bankaAlisGetiri;
+  final double? bankaSatisGetiri;
+  final DateTime guncellendi;
+
+  /// Banka makası (puan). İkisi de bilinmiyorsa null.
+  double? get bankaMakasi =>
+      bankaAlis != null && bankaSatis != null ? bankaSatis! - bankaAlis! : null;
+
+  static double? _pozitif(Object? v) {
+    final d = (v as num?)?.toDouble();
+    return d != null && d > 0 ? d : null;
+  }
+
+  static EurobondFiyati? fromMap(Map<String, dynamic> m) {
+    final isin = (m['isin'] as String?)?.toUpperCase();
+    final g = DateTime.tryParse(m['guncellendi'] as String? ?? '');
+    if (isin == null || !isinGecerli(isin) || g == null) return null;
+    return EurobondFiyati(
+      isin: isin,
+      temizFiyat: _pozitif(m['temiz_fiyat']),
+      oncekiKapanis: _pozitif(m['onceki_kapanis']),
+      piyasaZamani: DateTime.tryParse(m['piyasa_zamani'] as String? ?? ''),
+      bankaAlis: _pozitif(m['banka_alis']),
+      bankaSatis: _pozitif(m['banka_satis']),
+      bankaAlisGetiri: (m['banka_alis_getiri'] as num?)?.toDouble(),
+      bankaSatisGetiri: (m['banka_satis_getiri'] as num?)?.toDouble(),
+      guncellendi: g,
+    );
+  }
+}
+
+/// `eurobond_katalog` satırı → sözleşme. Eksik/bozuk satır null döner;
+/// kuponsuz tahvil için işlemiş faiz uydurulmaz.
+EurobondSozlesmesi? eurobondSozlesmesiFromMap(Map<String, dynamic> m) {
+  final isin = (m['isin'] as String?)?.toUpperCase();
+  final kupon = (m['kupon_orani'] as num?)?.toDouble();
+  final vade = DateTime.tryParse(m['vade'] as String? ?? '');
+  final para = m['para_birimi'] as String?;
+  final siklik = (m['kupon_sikligi'] as num?)?.toInt();
+  if (isin == null || !isinGecerli(isin) || kupon == null || kupon <= 0 ||
+      vade == null || (para != 'USD' && para != 'EUR') ||
+      (siklik != 1 && siklik != 2)) {
+    return null;
+  }
+  final ihracYili = (m['ihrac_yili'] as num?)?.toInt();
+  return EurobondSozlesmesi(
+    isin: isin,
+    ad: (m['ad'] as String?) ?? isin,
+    paraBirimi: para!,
+    kuponOrani: kupon,
+    vade: DateTime.utc(vade.year, vade.month, vade.day),
+    // İhraç günü katalogda yok; yıl biliniyorsa vadenin ay/günü o yıla
+    // taşınır (vadeye hizalı takvim). Yalnız ilk kuponu kırpmak ve
+    // kurumsal stopaj vadesi için kullanılır.
+    ihracTarihi: DateTime.utc(ihracYili ?? vade.year - 10, vade.month, vade.day),
+    ihracci: m['ihracci'] == 'ozel_sektor'
+        ? EurobondIhracci.ozelSektor
+        : EurobondIhracci.hazine,
+    yillikKuponSayisi: siklik!,
+    gunSayimi: para == 'EUR' ? GunSayimi.actAct : GunSayimi.otuz360,
+  );
+}
