@@ -452,8 +452,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             autovalidateMode: _gonderimDenendi
                 ? AutovalidateMode.onUserInteraction
                 : AutovalidateMode.disabled,
-            child: ListView(
+            // Tembel `ListView` DEĞİL: klavye açıkken alt kısımdayken üstteki
+            // alanlar önbellek dışına çıkıp dispose ediliyor, `Form.validate`
+            // onları atlıyordu (add_asset_screen aynı tuzak; klavye denetimi
+            // 2026-10-08).
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+            child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 4),
               Text(
@@ -609,8 +615,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               TextFormField(
                 controller: _passConfirmCtrl,
                 obscureText: _obscure,
-                // Son alan → "Bitti" ve doğrudan gönderim. Kullanıcı klavyeyi
-                // kapatıp butonu aramak zorunda kalmasın.
+                // Son alan → "Bitti" klavyeyi kapatır; gönderim YAPMAZ: altta
+                // yasal adımlar (uyarı, Açık Rıza, kutu) var, kullanıcı onları
+                // görmeden kayıt denenmesin. Eski yorum "doğrudan gönderim"
+                // diyordu, kod hiç göndermiyordu (klavye denetimi 2026-10-08).
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.newPassword],
                 autocorrect: false,
@@ -690,6 +698,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 24),
             ],
+          ),
           ),
         ),
         ),

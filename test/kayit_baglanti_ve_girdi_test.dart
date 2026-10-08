@@ -197,7 +197,7 @@ void main() {
       await tester.pump();
       // Başlıktaki "Kayıt Ol" değil, formdaki düğme.
       await tester.tap(find.descendant(
-          of: find.byType(ListView), matching: find.text(l.register)));
+          of: find.byType(SingleChildScrollView), matching: find.text(l.register)));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(find.text(l.emailInvalid), findsWidgets);

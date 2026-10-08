@@ -2331,6 +2331,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
+      // Klavye + uzun önizleme sayfayı tepeye iterse durum çubuğunun
+      // altına girmesin.
+      useSafeArea: true,
       backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
           borderRadius: SandikRadius.sheetTop),
@@ -2796,8 +2799,18 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
             ),
             onChanged: _updatePreviews,
           ),
+          // Önizleme satırları her yazılan satırla uzar; toplu girişte
+          // (sayfanın asıl işi) metin + klavye ekranı aşıyordu ve
+          // "N varlığı kaydet" klavyenin altında kalıyordu. Liste kalan
+          // yükseklikte kayar; alan ve düğme hep görünür (klavye denetimi
+          // 2026-10-08).
           if (_previews.isNotEmpty) ...[
             const SizedBox(height: 12),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
             ...(_previews.map((e) => Padding(
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
@@ -2823,6 +2836,10 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                     ],
                   ),
                 ))),
+                  ],
+                ),
+              ),
+            ),
           ],
           const SizedBox(height: 16),
           SizedBox(
@@ -3722,7 +3739,17 @@ class _PickerShellState extends State<_PickerShell> {
             ),
           ),
           Divider(height: 1, color: context.c.hairline),
-          Expanded(child: widget.child),
+          // DraggableScrollableSheet klavyeyle küçülmez: sonuç listesinin
+          // alt ~300px'i ve ortalanmış "sonuç yok" metni klavyenin altında
+          // kalıyordu. Liste klavyenin üstünde biter; sürüklemek klavyeyi
+          // kapatır (listelerde `onDrag`). Klavye denetimi 2026-10-08.
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(context).bottom),
+              child: widget.child,
+            ),
+          ),
         ],
       ),
     );

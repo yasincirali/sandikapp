@@ -417,7 +417,7 @@ void main() {
     }
 
     Finder kayitDugmesi() => find.descendant(
-        of: find.byType(ListView), matching: find.text(l.register));
+        of: find.byType(SingleChildScrollView), matching: find.text(l.register));
 
     Future<void> kayitaBas(WidgetTester tester) async {
       await tester.ensureVisible(kayitDugmesi());

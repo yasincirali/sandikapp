@@ -388,6 +388,9 @@ class SandikApp extends ConsumerWidget {
       theme: buildTheme(SandikPalette.light, Brightness.light),
       darkTheme: buildTheme(SandikPalette.dark, Brightness.dark),
       themeMode: themeMode,
+      // Sürüklemek klavyeyi kapatır — her kaydırılabilir yüzeyde (bkz.
+      // `SandikKaydirmaDavranisi`).
+      scrollBehavior: const SandikKaydirmaDavranisi(),
       // Türkçe locale — showDatePicker, showTimePicker vb. tüm Material
       // widget'ları için dd/MM/yyyy formatı, Türkçe ay/gün adları, virgüllü
       // ondalık ayırıcı. Kullanıcı İngilizce seçerse en_US.

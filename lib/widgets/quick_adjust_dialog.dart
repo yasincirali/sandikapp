@@ -319,10 +319,21 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+          // Klavye açıkken (miktar alanı autofocus) diyalog ekranın
+          // yarısına sığmak zorunda: başlık + iki alan + toplam + düğmeler
+          // ~490px, iOS ondalık klavyeyle kalan ~410–490px. Gövde kayar,
+          // düğme satırı DIŞARIDA kalır — Al/Sat hiçbir yükseklikte
+          // kırpılmaz (klavye denetimi 2026-10-08).
           child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+           Flexible(
+            child: SingleChildScrollView(
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             // ── Başlık ────────────────────────────────────────────────
             Row(
               children: [
@@ -551,6 +562,11 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 style: context.t.titleSmall?.copyWith(color: context.c.loss),
               ),
             ],
+
+            ],
+            ),
+            ),
+           ),
 
             const SizedBox(height: 20),
 

@@ -394,6 +394,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 16),
                 TextField(
                   controller: controller,
+                  // Gönder düğmesinin etkinliği `controller.text`'e bakar;
+                  // yeniden çizim olmadan klavye yerleştikten sonra yazılan
+                  // metin düğmeyi açmıyordu (csv_import_screen aynı hata).
+                  onChanged: (_) => setLocal(() {}),
                   maxLines: 6,
                   minLines: 4,
                   style: TextStyle(color: context.c.text90),
