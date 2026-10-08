@@ -10894,6 +10894,30 @@ abstract class AppLocalizations {
   /// **'sınırsız'**
   String get prmSinirsiz;
 
+  /// No description provided for @prmSatirSinyal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal bildirimi'**
+  String get prmSatirSinyal;
+
+  /// No description provided for @prmSinyalUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 varlık'**
+  String get prmSinyalUcretsiz;
+
+  /// No description provided for @prmSinyalPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'tüm varlıklar'**
+  String get prmSinyalPremium;
+
+  /// No description provided for @prmSatirTakip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip listesi'**
+  String get prmSatirTakip;
+
   /// No description provided for @prmYillikTasarruf.
   ///
   /// In tr, this message translates to:
@@ -11191,7 +11215,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzSiklik.
   ///
   /// In tr, this message translates to:
-  /// **'Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)'**
+  /// **'Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta'**
   String get pwOzSiklik;
 
   /// No description provided for @pwOzKarsilastir.
@@ -11209,8 +11233,26 @@ abstract class AppLocalizations {
   /// No description provided for @sgnSlotNotu.
   ///
   /// In tr, this message translates to:
-  /// **'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.'**
+  /// **'Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium\'da tüm varlıkların ve seçtiğin sıklık gelir.'**
   String get sgnSlotNotu;
+
+  /// No description provided for @sgnVarlikAcik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.'**
+  String get sgnVarlikAcik;
+
+  /// No description provided for @sgnVarlikKilit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda sinyal bildirimi tek varlıkta: {ad}. Tüm varlıkların için Premium.'**
+  String sgnVarlikKilit(String ad);
+
+  /// No description provided for @sgnVarlikTasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyali buraya taşı'**
+  String get sgnVarlikTasi;
 
   /// No description provided for @sgnSlotKilitli.
   ///

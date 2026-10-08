@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (yasal metin 1.8, 0127); 2026-10-08 (sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -18,12 +18,32 @@ dokunmaz; kişisel veri işleyişini değiştirmeyen düzeltmede yalnız "Sürü
 artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
 
 - [ ] PR'ı birleştir (CI yeşil olunca).
-- [ ] **Supabase deploy** (`main`, hedef `ikisi`, migrations). 0126 (UI/UX
-      dalı) henüz dağıtılmadıysa ve sonradan gelirse o deploy `include_all`.
+- [ ] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
+      0127 birlikte, sırayla gider.
 - [ ] Paywall'u açmadan önce hâlâ gerekli: hesap silmede RevenueCat
       müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
       kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
       metin esaslı olmayan bir düzeltmeyle güncellenir.
+## ⏳ 2026-10-08 Ücretsiz sınırlar: 7 varlık, 3 takip, sinyal tek varlıkta (0126)
+
+Senin kararın: ücretsizde 7 varlık (8.'si Premium ister), takip listesi 3,
+sinyal bildirimi tek varlıkta (2. varlık Premium). Hepsi yalnız
+`paywall_enabled` açıkken; paywall kapalı canlı kullanıcıda hiçbir şey
+değişmez (takip listesi 7'de kalır). Var olan varlık/takip silinmez, yalnız
+yeni ekleme durur.
+
+- [ ] Migration 0126 (`sinyal_varlik_secimi`, yalnız ekleme) main'e girince
+      "Supabase deploy" ile iki sunucuya (Frankfurt → Tokyo).
+- [ ] Açılış günü, `SINYAL_UCRETSIZ_SLOT` ile birlikte: Supabase secret
+      `SINYAL_UCRETSIZ_VARLIK=1` (iki sunucu) + `analyze-signals` deploy.
+      Ücretsiz kullanıcının bildirimi seçtiği tek varlıktan gelir (seçmediyse
+      en eski eklediği). Secret yoksa sunucu kısmaz.
+- [ ] Remote Config'te `free_asset_limit` ya da `free_watchlist_limit`
+      anahtarlarını daha önce elle girdiysen değerleri kodu ezer:
+      `free_asset_limit` = 7 yap; `free_watchlist_limit` paywall KAPALIYKEN
+      okunan sınırdır, 7 kalsın. Paywall açıkkenki takip sınırı yeni anahtar
+      `paywall_watchlist_limit` (varsayılan 3); sinyal varlık sayısı
+      `free_signal_assets` (varsayılan 1, 0 = kapı yok).
 
 ## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`
 

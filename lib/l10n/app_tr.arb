@@ -4752,6 +4752,10 @@
   "prmSatirNot": "Haftalık not",
   "prmSatirAylik": "Aylık rapor",
   "prmSinirsiz": "sınırsız",
+  "prmSatirSinyal": "Sinyal bildirimi",
+  "prmSinyalUcretsiz": "1 varlık",
+  "prmSinyalPremium": "tüm varlıklar",
+  "prmSatirTakip": "Takip listesi",
   "prmYillikTasarruf": "%{oran} tasarruf",
   "@prmYillikTasarruf": {
     "placeholders": {
@@ -4866,10 +4870,14 @@
   "sgnPremiumGec": "Premium'a geç",
   "pwOzSinirsiz": "Sınırsız varlık ve tüm varlık türleri",
   "pwOzGosterge": "Sinyal analizinde ADX, Williams %R ve CCI",
-  "pwOzSiklik": "Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)",
+  "pwOzSiklik": "Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta",
   "pwOzKarsilastir": "Karşılaştır'da 5 seriye kadar",
   "pwOzOrtak": "Birden fazla ortakla portföy paylaşımı",
-  "sgnSlotNotu": "Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium'da seçtiğin sıklık geri gelir.",
+  "sgnSlotNotu": "Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium'da tüm varlıkların ve seçtiğin sıklık gelir.",
+  "sgnVarlikAcik": "Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.",
+  "sgnVarlikKilit": "Ücretsiz planda sinyal bildirimi tek varlıkta: {ad}. Tüm varlıkların için Premium.",
+  "@sgnVarlikKilit": {"placeholders": {"ad": {"type": "String"}}},
+  "sgnVarlikTasi": "Sinyali buraya taşı",
   "sgnSlotKilitli": "{secenek}, Premium",
   "@sgnSlotKilitli": {
     "placeholders": {

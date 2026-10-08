@@ -6556,6 +6556,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSinirsiz => 'sınırsız';
 
   @override
+  String get prmSatirSinyal => 'Sinyal bildirimi';
+
+  @override
+  String get prmSinyalUcretsiz => '1 varlık';
+
+  @override
+  String get prmSinyalPremium => 'tüm varlıklar';
+
+  @override
+  String get prmSatirTakip => 'Takip listesi';
+
+  @override
   String prmYillikTasarruf(String oran) {
     return '%$oran tasarruf';
   }
@@ -6731,7 +6743,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzSiklik =>
-      'Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)';
+      'Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta';
 
   @override
   String get pwOzKarsilastir => 'Karşılaştır\'da 5 seriye kadar';
@@ -6741,7 +6753,19 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnSlotNotu =>
-      'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.';
+      'Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium\'da tüm varlıkların ve seçtiğin sıklık gelir.';
+
+  @override
+  String get sgnVarlikAcik =>
+      'Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.';
+
+  @override
+  String sgnVarlikKilit(String ad) {
+    return 'Ücretsiz planda sinyal bildirimi tek varlıkta: $ad. Tüm varlıkların için Premium.';
+  }
+
+  @override
+  String get sgnVarlikTasi => 'Sinyali buraya taşı';
 
   @override
   String sgnSlotKilitli(String secenek) {

@@ -6619,6 +6619,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSinirsiz => 'unlimited';
 
   @override
+  String get prmSatirSinyal => 'Signal alerts';
+
+  @override
+  String get prmSinyalUcretsiz => '1 asset';
+
+  @override
+  String get prmSinyalPremium => 'all assets';
+
+  @override
+  String get prmSatirTakip => 'Watchlist';
+
+  @override
   String prmYillikTasarruf(String oran) {
     return 'Save $oran%';
   }
@@ -6793,7 +6805,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzSiklik =>
-      'More than one signal notification a day (hourly, twice a day…)';
+      'Signal alerts for all your assets, at the frequency you choose';
 
   @override
   String get pwOzKarsilastir => 'Up to 5 series in Compare';
@@ -6803,7 +6815,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnSlotNotu =>
-      'On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.';
+      'On the free plan signal alerts cover one asset, once a day per type; you pick the asset on its screen. Premium covers all your assets at the frequency you choose.';
+
+  @override
+  String get sgnVarlikAcik =>
+      'Signal alerts are on for this asset. The free plan covers one asset.';
+
+  @override
+  String sgnVarlikKilit(String ad) {
+    return 'On the free plan signal alerts cover one asset: $ad. Premium covers all your assets.';
+  }
+
+  @override
+  String get sgnVarlikTasi => 'Move signals here';
 
   @override
   String sgnSlotKilitli(String secenek) {

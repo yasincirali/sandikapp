@@ -4373,6 +4373,10 @@
   "prmSatirNot": "Weekly note",
   "prmSatirAylik": "Monthly report",
   "prmSinirsiz": "unlimited",
+  "prmSatirSinyal": "Signal alerts",
+  "prmSinyalUcretsiz": "1 asset",
+  "prmSinyalPremium": "all assets",
+  "prmSatirTakip": "Watchlist",
   "prmYillikTasarruf": "Save {oran}%",
   "@prmYillikTasarruf": {
     "placeholders": {
@@ -4487,10 +4491,14 @@
   "sgnPremiumGec": "Go Premium",
   "pwOzSinirsiz": "Unlimited assets of every type",
   "pwOzGosterge": "ADX, Williams %R and CCI in signal analysis",
-  "pwOzSiklik": "More than one signal notification a day (hourly, twice a day…)",
+  "pwOzSiklik": "Signal alerts for all your assets, at the frequency you choose",
   "pwOzKarsilastir": "Up to 5 series in Compare",
   "pwOzOrtak": "Share your portfolio with more than one partner",
-  "sgnSlotNotu": "On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.",
+  "sgnSlotNotu": "On the free plan signal alerts cover one asset, once a day per type; you pick the asset on its screen. Premium covers all your assets at the frequency you choose.",
+  "sgnVarlikAcik": "Signal alerts are on for this asset. The free plan covers one asset.",
+  "sgnVarlikKilit": "On the free plan signal alerts cover one asset: {ad}. Premium covers all your assets.",
+  "@sgnVarlikKilit": {"placeholders": {"ad": {"type": "String"}}},
+  "sgnVarlikTasi": "Move signals here",
   "sgnSlotKilitli": "{secenek}, Premium",
   "@sgnSlotKilitli": {
     "placeholders": {
