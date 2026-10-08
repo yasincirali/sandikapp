@@ -1,14 +1,63 @@
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
+import 'package:flutter/cupertino.dart' show CupertinoPageRoute;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
+import '../widgets/sandik_async_button.dart' show SandikAsyncTap;
 import 'yukleme_isareti.dart';
+
+/// Uygulamanın TEK alt sayfa (bottom sheet) açıcısı.
+///
+/// Neden (tasarım dili, 2026-10-08 hareket denetimi): 38 alt sayfa çıplak
+/// `showModalBottomSheet` ile açılıyordu; Flutter'ın varsayılanı (250 ms,
+/// `legacyDecelerate`) markanın sheet eğrisini ([SandikMotion.cekmece])
+/// hiç kullanmıyor, "Hareketi azalt" açıkken de kayarak geliyordu.
+/// Diyaloglar ve tam ekran modal zaten marka hareketindeydi; sheet tek
+/// istisnaydı. Parametreler `showModalBottomSheet` ile birebir (yalnız
+/// kullanılanlar) — çağıran tarafta davranış değişmez, yalnız hareket.
+///
+/// Giriş [SandikMotion.surface] + [SandikMotion.cekmece] (çok hızlı başlar,
+/// yumuşak oturur), çıkış [SandikMotion.state] + [SandikMotion.exit]
+/// (ters yuva). Hareketi azalt → animasyonsuz.
+Future<T?> showSandikSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  Color? backgroundColor,
+  ShapeBorder? shape,
+  bool isScrollControlled = false,
+  bool useSafeArea = false,
+  bool? showDragHandle,
+  bool isDismissible = true,
+  bool enableDrag = true,
+  BoxConstraints? constraints,
+}) {
+  final azalt = MediaQuery.disableAnimationsOf(context);
+  return showModalBottomSheet<T>(
+    context: context,
+    builder: builder,
+    backgroundColor: backgroundColor,
+    shape: shape,
+    isScrollControlled: isScrollControlled,
+    useSafeArea: useSafeArea,
+    showDragHandle: showDragHandle,
+    isDismissible: isDismissible,
+    enableDrag: enableDrag,
+    constraints: constraints,
+    sheetAnimationStyle: azalt
+        ? AnimationStyle.noAnimation
+        : const AnimationStyle(
+            duration: SandikMotion.surface,
+            reverseDuration: SandikMotion.state,
+            curve: SandikMotion.cekmece,
+            reverseCurve: SandikMotion.exit,
+          ),
+  );
+}
 
 /// Platforma uygun sayfa geçişi.
 ///
@@ -1049,6 +1098,53 @@ extension SandikPaletteAccess on BuildContext {
   Color signColor(num value) => value >= 0 ? c.gain : c.loss;
 }
 
+/// Bir rengi, verilen zeminde METİN olarak okunur kılar (WCAG 2.1 oranı).
+///
+/// Neden var (açık tema denetimi 2026-10-08): seri renkleri (karşılaştırma
+/// grafiğinin `amberFill`'i, `0xFF4DD0C7` turkuazı…) koyu zemin için
+/// seçildi ve çizgi olarak iki temada da doğru. Ama aynı renk crosshair
+/// hapında / tooltip'te METİN olarak da yazılıyor; açık temanın beyaz
+/// yüzeyinde amber 2,0:1, turkuaz 1,8:1 kalıyordu. Rengi çağıranda iki
+/// kopya tutmak yerine burada yalnızca açıklık (HSL lightness) zeminden
+/// uzağa kaydırılır: ton korunur — "amber çizgi = amber yazı" eşleşmesi
+/// gözde kalır. Eşiği zaten geçen renk AYNEN döner; koyu temadaki çizim
+/// bu yüzden değişmez. `AssetType.onLightSurface` aynı fikrin sabit
+/// eşikli, kategoriye özgü hâlidir.
+extension SandikOkunurRenk on Color {
+  /// Koyu zemin için seçilmiş bir vurgu renginin (kategori rengi) açık
+  /// zeminde METİN/ikon olarak okunan tonu: ton aynı, açıklık en çok 0,28.
+  /// `AssetType.onLightSurface`'in kategoriden bağımsız hâli — Varlık Ekle
+  /// seçicileri rengi `Color` olarak taşıyor, türü bilmiyor (açık tema
+  /// denetimi 2026-10-08: seçili tür çipinin ikonu 1,3–2,6:1 kalıyordu).
+  Color get acikZemindeMetin {
+    final hsl = HSLColor.fromColor(this);
+    return hsl.lightness > 0.28 ? hsl.withLightness(0.28).toColor() : this;
+  }
+
+  /// [acikZemindeMetin] yalnızca açık temada; koyu temada renk AYNEN döner.
+  Color metinTonu(BuildContext context) =>
+      context.isLight ? acikZemindeMetin : this;
+
+  Color okunurUstunde(Color zemin, {double hedef = 4.5}) {
+    double oran(Color a) {
+      final la = Color.alphaBlend(a, zemin).computeLuminance();
+      final lb = zemin.computeLuminance();
+      return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+    }
+
+    if (oran(this) >= hedef) return this;
+    final acikZemin = zemin.computeLuminance() > 0.18;
+    var hsl = HSLColor.fromColor(withValues(alpha: 1));
+    for (var i = 0; i < 50; i++) {
+      final l = (hsl.lightness + (acikZemin ? -0.02 : 0.02)).clamp(0.0, 1.0);
+      hsl = hsl.withLightness(l);
+      final aday = hsl.toColor();
+      if (oran(aday) >= hedef || l == 0.0 || l == 1.0) return aday;
+    }
+    return hsl.toColor();
+  }
+}
+
 /// Moda duyarlı yüzey dekorasyonları.
 ///
 /// [Sandik.surfaceCard] ve kardeşleri `static` olduğu için context göremez;
@@ -1344,8 +1440,13 @@ class SandikLogo extends StatelessWidget {
 /// Tüm ekranlarda kullanılan standart logout butonu.
 /// Tasarım dili: kırmızı/loss tonu, 36×36 rounded icon box — ProfileScreen'deki
 /// _ActionIcon ile aynı görsel dil.
+///
+/// [onPressed] Future döner (onay + oturum kapatma isteği): tek yükleniyor
+/// davranışı (2026-10-08) gereği düğme [SandikAsyncTap] ile iş bitene kadar
+/// kilitli kalır ve ikonun yerinde gösterge döner — çıkış isteği yavaşken
+/// ikinci dokunuş ikinci onay diyaloğunu açmasın.
 class SandikLogoutButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final Future<void> Function() onPressed;
   final bool disabled;
 
   const SandikLogoutButton({
@@ -1364,21 +1465,21 @@ class SandikLogoutButton extends StatelessWidget {
     final color = disabled
         ? Sandik.loss.withValues(alpha: 0.35)
         : Sandik.loss;
-    return CupertinoButton(
-      minimumSize: SandikTouch.minSize,
-      padding: EdgeInsets.zero,
-      onPressed: disabled ? null : onPressed,
+    return SandikAsyncTap(
+      onTap: disabled ? null : onPressed,
+      // Kutu `zemin`de: çıkış sürerken çerçeve yerinde, ikonun yerinde
+      // gösterge.
+      zemin: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: SandikRadius.mdAll,
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
       child: Semantics(
         button: true,
         label: context.l10n.signOutAction,
-        child: Container(
+        child: SizedBox(
           width: SandikTouch.min,
           height: SandikTouch.min,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.10),
-            borderRadius: SandikRadius.mdAll,
-            border: Border.all(color: color.withValues(alpha: 0.18)),
-          ),
           child: Center(
             child: Icon(Icons.logout_rounded, color: color, size: 20),
           ),
@@ -1411,6 +1512,7 @@ class SandikCard extends StatelessWidget {
     this.elevated = false,
     this.bordered = true,
     this.radius,
+    this.shadowed = false,
     this.onTap,
   });
 
@@ -1427,6 +1529,16 @@ class SandikCard extends StatelessWidget {
   /// Varsayılan [SandikRadius.md] — kullanımın çoğunluğu bu.
   final double? radius;
 
+  /// Tema gölgesi (`context.c.cardShadow`). Dark'ta liste boştur (yükseklik
+  /// orada `surface2` tonuyla kurulur), light'ta beyaz kartı zeminden ayırır.
+  ///
+  /// Neden parametre (SandikCard ikinci tur, 2026-10-08): gölgeli kartlar
+  /// (ilk varlık vitrini kutuları) kabuğun geri kalanıyla birebir aynıydı;
+  /// tek fark bu satır için `Container`'a dönmek, "kart nasıl görünür"
+  /// kararını yine iki yere bölerdi. Varsayılan kapalı — mevcut çağıranlar
+  /// değişmez.
+  final bool shadowed;
+
   /// Verilirse kart dokunulabilir olur. Dokunma hedefi HIG #37 gereği
   /// en az 44pt olmalı; kart zaten bundan büyüktür.
   final VoidCallback? onTap;
@@ -1439,6 +1551,7 @@ class SandikCard extends StatelessWidget {
         color: elevated ? context.c.surface2 : context.c.surface1,
         borderRadius: BorderRadius.circular(radius ?? SandikRadius.md),
         border: bordered ? Border.all(color: context.c.hairline) : null,
+        boxShadow: shadowed ? context.c.cardShadow : null,
       ),
       child: child,
     );

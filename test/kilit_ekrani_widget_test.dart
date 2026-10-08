@@ -149,6 +149,20 @@ void main() {
       expect(swift, contains('entries: girdiler,\n'
           '                policy: .after(Date().addingTimeInterval(5 * 60))'));
     });
+
+    // 2026-10-08 (yasin, kart kararı "Yalnız saat damgası"): widget
+    // uygulamanın kaydını gösteriyorsa hangi anın rakamı olduğu yazar;
+    // Canlı Etkinlik'ten okununca saat yok (rakam zaten dakikalık).
+    test('Swift: uygulama kaydından okununca saat damgası', () {
+      expect(swift,
+          contains('asOfText: gizli ? "" : (defaults.string(forKey: WidgetKeys.updatedAt) ?? "")'));
+      expect(swift, contains('itibarıyla'));
+      expect(swift, contains('sparkline: sparkline, asOfText: asOfText)'),
+          reason: '18:00 girdisi saati kaybetmemeli');
+      final dart = _oku('lib/services/home_widget_service.dart');
+      expect(dart, contains("_kUpdatedAt, DateFormat('HH:mm', 'tr_TR')"),
+          reason: 'Swift "HH:mm" bekler');
+    });
   });
 
   group('Swift sözleşmesi', () {

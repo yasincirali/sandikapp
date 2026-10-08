@@ -76,8 +76,10 @@ class MevduatVadeSeridi extends ConsumerWidget {
 
     return Container(
       padding: const EdgeInsets.all(SandikSpace.smd),
+      // Açık temada tint %5: %8'de koyu zemin üstünde `gain` tutarı
+      // 4,49:1'e iniyordu (AA 4,5 — açık tema denetimi 2026-10-08).
       decoration: BoxDecoration(
-        color: renk.withValues(alpha: 0.08),
+        color: renk.withValues(alpha: context.isLight ? 0.05 : 0.08),
         borderRadius: SandikRadius.mdAll,
       ),
       child: Column(
@@ -98,7 +100,11 @@ class MevduatVadeSeridi extends ConsumerWidget {
                     child: Padding(
                       padding: const EdgeInsets.only(right: SandikSpace.xs2),
                       child:
-                          Icon(AssetType.mevduat.icon, size: 16, color: renk),
+                          // İkon `onSurface`: ham çelik mavisi açık temada
+                          // 2,2:1 (açık tema denetimi 2026-10-08).
+                          Icon(AssetType.mevduat.icon,
+                              size: 16,
+                              color: AssetType.mevduat.onSurface(context)),
                     ),
                   ),
                   TextSpan(text: l10n.depositStripRate(oran)),

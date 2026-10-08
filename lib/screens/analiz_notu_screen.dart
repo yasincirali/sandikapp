@@ -14,6 +14,7 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../widgets/para_akisi_karti.dart' show KilitSatiri;
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'hafta_ozeti_screen.dart' show HaftaRozetCipi;
 
@@ -105,30 +106,31 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
     }
   }
 
+  /// İstek sayfanın "Gönder" düğmesinde koşar (tek yükleniyor davranışı,
+  /// 2026-10-08): eskiden sayfa kapanıyor, istek arkada göstergesiz
+  /// gidiyordu; hata olursa yazılan açıklama da kayboluyordu. Şimdi gösterge
+  /// düğmede döner, sayfa yalnız başarıda kapanır, hatada açık kalır.
   Future<void> _yanlisSayi() async {
-    final aciklama = await showModalBottomSheet<String>(
+    final gonderildi = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
-      builder: (_) => const _YanlisSayiSayfasi(),
+      builder: (_) => _YanlisSayiSayfasi(gonder: _yanlisGonder),
     );
-    if (aciklama == null || !mounted) return;
-    try {
-      await SupabaseService.instance.notGeriBildirim(
+    if (gonderildi != true || !mounted) return;
+    setState(() => _yanlisBildirildi = true);
+    sandikSnack(context, context.l10n.anzTesekkur,
+        kind: SandikSnackKind.success);
+  }
+
+  Future<void> _yanlisGonder(String aciklama) =>
+      SupabaseService.instance.notGeriBildirim(
           ticker: widget.ticker,
           tur: widget.tur,
           donem: widget.donem,
           yanlisSayi: true,
           yanlisSayiAciklamasi: aciklama.isEmpty ? null : aciklama);
-      if (!mounted) return;
-      setState(() => _yanlisBildirildi = true);
-      sandikSnack(context, context.l10n.anzTesekkur,
-          kind: SandikSnackKind.success);
-    } catch (e) {
-      if (mounted) showAppError(context, e);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +393,10 @@ class _KanitCipi extends StatelessWidget {
 }
 
 class _YanlisSayiSayfasi extends StatefulWidget {
-  const _YanlisSayiSayfasi();
+  const _YanlisSayiSayfasi({required this.gonder});
+
+  /// Bildirimi sunucuya yazar; fırlatırsa sayfa açık kalır.
+  final Future<void> Function(String aciklama) gonder;
 
   @override
   State<_YanlisSayiSayfasi> createState() => _YanlisSayiSayfasiState();
@@ -431,8 +436,17 @@ class _YanlisSayiSayfasiState extends State<_YanlisSayiSayfasi> {
             decoration: InputDecoration(hintText: l10n.anzYanlisIpucu),
           ),
           const SizedBox(height: SandikSpace.sm),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(_ctrl.text.trim()),
+          SandikAsyncButton.kompakt(
+            onPressed: () async {
+              final nav = Navigator.of(context);
+              try {
+                await widget.gonder(_ctrl.text.trim());
+              } catch (e) {
+                if (context.mounted) showAppError(context, e);
+                return;
+              }
+              if (mounted) nav.pop(true);
+            },
             child: Text(l10n.anzGonder),
           ),
         ],

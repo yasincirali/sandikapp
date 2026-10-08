@@ -114,7 +114,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
       if (!seen.add(a.ticker)) continue;
       choices.add(a);
     }
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: context.c.surface1,
       isScrollControlled: true,

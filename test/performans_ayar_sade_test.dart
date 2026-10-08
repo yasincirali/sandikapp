@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -215,8 +214,8 @@ void main() {
       expect(c.read(bugunkuPortfoyleProvider), isFalse);
       await tester.ensureVisible(satir);
       // Görünüm'deki tek açma/kapama anahtarı bu satırınki.
-      expect(find.byType(CupertinoSwitch), findsOneWidget);
-      await tester.tap(find.byType(CupertinoSwitch));
+      expect(find.byType(Switch), findsOneWidget);
+      await tester.tap(find.byType(Switch));
       await _bekle(tester);
       expect(c.read(bugunkuPortfoyleProvider), isTrue);
 

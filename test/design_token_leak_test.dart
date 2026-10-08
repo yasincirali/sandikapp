@@ -41,9 +41,12 @@ void main() {
 
     // 2026-08-09 denetimi: 80 → 49. Kalanların çoğu kategori renkleri
     // (asset_type.dart) ve hukuki doküman ekranının kendi paleti.
+    // 2026-10-08 açık tema denetimi: 49 → 16. Eşik aradaki turlarda
+    // güncellenmemişti (gerçek sayı 19'du); crosshair hapının üç sabiti
+    // (`0xFF0A1E15`, `0xE1FFFFFF`, `0x8CFFFFFF`) token'a geçti.
     expect(
       hits.length,
-      lessThanOrEqualTo(49),
+      lessThanOrEqualTo(16),
       reason: 'Yeni hardcoded renk eklenmiş. Sandik.* tokenını kullan '
           'veya token yoksa sandik.dart\'a ekle.\n${hits.join('\n')}',
     );

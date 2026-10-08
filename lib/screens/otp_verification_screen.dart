@@ -12,7 +12,7 @@ import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Kodun ne için istendiği.
@@ -556,56 +556,55 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     );
   }
 
+  // Tek yükleniyor davranışı (2026-10-08): istek atan üç hedef (doğrula,
+  // yeni kod iste, yeniden gönder) ve cihaz kipindeki "vazgeç" ortak
+  // bileşenden geçer ([SandikAsyncButton] / [SandikAsyncTap]): kilit, tek
+  // uçuş ve gösterge orada. `_submitting` / `_resending` KALIR: hücreler
+  // doğrulama sürerken salt okunur, geri düğmesi kapalı, geri sayım metni
+  // ve 6. hanede OTOMATİK gönderim (düğmeden geçmez) bu bayraklara bakar.
   Widget _primaryButton() {
+    final stil = FilledButton.styleFrom(
+      backgroundColor: context.c.amberFill,
+      foregroundColor: context.c.onAmber,
+      disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+      ),
+    );
     // Kod expired ise ana buton "Yeni kod iste"ye dönüşür.
     if (_isExpired) {
-      return SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: FilledButton.icon(
-          onPressed: _isBusy ? null : _resend,
-          style: FilledButton.styleFrom(
-            backgroundColor: context.c.amberFill,
-            foregroundColor: context.c.onAmber,
-            disabledBackgroundColor:
-                context.c.amberFill.withValues(alpha: 0.35),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-            ),
-          ),
-          icon: _resending
-              ? const CustomLoadingIndicator(size: 18)
-              : const Icon(Icons.send_rounded, size: 18),
-          label: Text(
-            _resending ? context.l10n.sending : context.l10n.requestNewCode,
-            style: context.t.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+      return SandikAsyncButton(
+        onPressed: _isBusy ? null : _resend,
+        style: stil,
+        icon: const Icon(Icons.send_rounded, size: 18),
+        child: Text(
+          context.l10n.requestNewCode,
+          // Renk AÇIKÇA `onAmber`: `titleLarge` kendi rengini (`text90`)
+          // taşır ve düğmenin `foregroundColor`'ını ezer — koyu temada
+          // amber üstüne beyaz yazı 1,87:1 kalıyordu (açık tema
+          // denetimi 2026-10-08, `acik_tema_ekran_kontrast_test`).
+          // Pasifken (`_isBusy`) eski ton: soluk dolguda koyu yazı
+          // okunmazdı.
+          style: context.t.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: _isBusy ? null : context.c.onAmber,
           ),
         ),
       );
     }
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: _submitting ? null : _submit,
-        style: FilledButton.styleFrom(
-          backgroundColor: context.c.amberFill,
-          foregroundColor: context.c.onAmber,
-          disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.35),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-          ),
+    // Otomatik gönderimde (6. hane) düğme basılmadan meşguldür: `mesgul:`
+    // ile o yolda da gösterge bileşenden çizilir (tek gösterge).
+    return SandikAsyncButton(
+      onPressed: _submit,
+      mesgul: _submitting,
+      style: stil,
+      child: Text(
+        context.l10n.verify,
+        // Renk açıkça `onAmber` — yukarıdaki nota bak.
+        style: context.t.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: context.c.onAmber,
         ),
-        child: _submitting
-            ? const CustomLoadingIndicator(size: 22)
-            : Text(
-                context.l10n.verify,
-                style: context.t.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
       ),
     );
   }
@@ -628,9 +627,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             color: context.c.text58,
           ),
         ),
-        SandikBasma(
+        SandikAsyncTap(
           onTap: canResend ? _resend : null,
-          behavior: HitTestBehavior.opaque,
           child: Text(
             _resending
                 ? context.l10n.sending
@@ -660,7 +658,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          TextButton(
+          SandikAsyncButton.kompakt(
+            tur: SandikAsyncTur.metin,
             onPressed: _submitting ? null : _vazgec,
             // `amberText`: açık temada amber dolgu krem zeminde okunmuyor
             // (emülatörde görüldü, 2026-10-03); metin tonu kontrastlı.

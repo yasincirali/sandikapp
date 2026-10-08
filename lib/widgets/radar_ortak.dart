@@ -68,7 +68,7 @@ Future<void> terimSayfasiniAc(BuildContext context, RadarTerim terim,
     {String? ornek}) {
   final l = context.l10n;
   final (baslik, tanim) = terim.metin(l);
-  return showModalBottomSheet<void>(
+  return showSandikSheet<void>(
     context: context,
     backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
@@ -90,12 +90,12 @@ Future<void> terimSayfasiniAc(BuildContext context, RadarTerim terim,
             Text(tanim, style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58)),
             if (ornek != null) ...[
               const SizedBox(height: SandikSpace.smd),
-              Container(
+              // Gömülü örnek bloğu: kenarsız, küçük köşeli `SandikCard`
+              // (2. tur, 2026-10-08) — piksel aynı.
+              SandikCard(
                 padding: const EdgeInsets.all(SandikSpace.smd),
-                decoration: BoxDecoration(
-                  color: ctx.c.surface1,
-                  borderRadius: SandikRadius.smAll,
-                ),
+                bordered: false,
+                radius: SandikRadius.sm,
                 child: Text(l.rdrTerimOrnek(ornek),
                     style: ctx.t.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600, color: ctx.c.text90)),
@@ -294,7 +294,7 @@ Future<void> radarKocunuGoster(BuildContext context, WidgetRef ref,
   if (!zorla && ref.read(radarKocuGorulduProvider)) return;
   await ref.read(radarKocuGorulduProvider.notifier).set(true);
   if (!context.mounted) return;
-  await showModalBottomSheet<void>(
+  await showSandikSheet<void>(
     context: context,
     backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),

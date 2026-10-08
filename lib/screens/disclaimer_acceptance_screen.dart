@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors, Icons;
+import 'package:flutter/material.dart'
+    show Colors, FilledButton, Icons, RoundedRectangleBorder;
 import '../services/crash_reporter.dart';
 import '../services/disclaimer_service.dart';
 import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/zorunlu_okuma.dart';
 import '../l10n/l10n.dart';
 
@@ -33,7 +36,6 @@ class DisclaimerAcceptanceScreen extends StatefulWidget {
 class _DisclaimerAcceptanceScreenState
     extends State<DisclaimerAcceptanceScreen> {
   bool _accepted = false;
-  bool _loading = false;
   bool _showError = false;
 
   bool _sonaUlasti = false;
@@ -46,8 +48,9 @@ class _DisclaimerAcceptanceScreenState
   static const _altBosluk = SandikSpace.xl;
 
   Future<void> _confirm() async {
-    if (!_accepted || _loading) return;
-    setState(() => _loading = true);
+    // Kilit ve gösterge [SandikAsyncButton]'da (eski `_loading`,
+    // 2026-10-08).
+    if (!_accepted) return;
     // Kayıt hatası olsa bile onayı kabul et — akış kilitlenmez. Hata artık
     // yutulmaz; servis raporlar ve gerçek sürüm/dil/platformu yazar
     // (2026-09-23 denetimi U18).
@@ -63,7 +66,19 @@ class _DisclaimerAcceptanceScreenState
             locale: dil, sonunaKadarOkundu: _sonaUlasti),
         reason: 'YasalOnayService.yatirim_uyarisi');
     if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onAccepted());
+      // Düğme `onAccepted` çalışana dek meşgul kalır: eski `_loading` başarıda
+      // hiç düşmüyordu, kapı ekranı değiştirene kadar ikinci dokunuş ikinci
+      // kaydı atamazdı. `onAccepted` kapıda `setState` yapar; kilit aynı
+      // karede açılır ve o kare bu ekranı zaten kaldırır.
+      final bitti = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        try {
+          widget.onAccepted();
+        } finally {
+          bitti.complete();
+        }
+      });
+      await bitti.future;
     }
   }
 
@@ -175,8 +190,7 @@ class _DisclaimerAcceptanceScreenState
             child: Row(
               children: [
                 AnimatedContainer(
-                  duration: SandikMotion.of(
-                      context, const Duration(milliseconds: 150)),
+                  duration: SandikMotion.stateOf(context),
                   curve: SandikMotion.enter,
                   width: 22,
                   height: 22,
@@ -221,38 +235,41 @@ class _DisclaimerAcceptanceScreenState
         ],
         const SizedBox(height: 28),
 
-        // Onayla butonu
-        CupertinoButton(
-          onPressed: (_loading || !_accepted) ? null : _confirm,
-          padding: EdgeInsets.zero,
-          child: Container(
-            height: 52,
-            decoration: BoxDecoration(
-              color: (_loading || !_accepted)
-                  ? context.c.amberFill.withValues(alpha: 0.45)
-                  : context.c.amberFill.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(
+        // Onayla butonu — tek yükleniyor davranışı (2026-10-08):
+        // [SandikAsyncButton]; eski cam görünüm (`Container` süslemesi)
+        // `style` + dış gölge ile birebir (pasif/meşgul 0.45 dolgu).
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: SandikRadius.mdAll,
+            boxShadow: [
+              BoxShadow(
+                color: context.c.amberFill.withValues(alpha: 0.28),
+                blurRadius: 18,
+                spreadRadius: -4,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: SandikAsyncButton(
+            onPressed: _accepted ? _confirm : null,
+            style: FilledButton.styleFrom(
+              backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
+              foregroundColor: context.c.onAmber,
+              disabledBackgroundColor:
+                  context.c.amberFill.withValues(alpha: 0.45),
+              disabledForegroundColor: context.c.onAmber,
+              textStyle: context.t.bodyLarge,
+              side: BorderSide(
                   color: context.c.amberFill.withValues(alpha: 0.60)),
-              boxShadow: [
-                BoxShadow(
-                  color: context.c.amberFill.withValues(alpha: 0.28),
-                  blurRadius: 18,
-                  spreadRadius: -4,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+              shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
             ),
-            alignment: Alignment.center,
-            child: _loading
-                ? const CustomLoadingIndicator(size: 20)
-                : Text(
-                    context.l10n.accept,
-                    style: context.t.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.onAmber,
-                    ),
-                  ),
+            child: Text(
+              context.l10n.accept,
+              style: context.t.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: context.c.onAmber,
+              ),
+            ),
           ),
         ),
     ];

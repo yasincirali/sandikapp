@@ -921,7 +921,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   }
 
   Future<void> _filtreSayfasiniAc() async {
-    final secim = await showModalBottomSheet<_FiltreSecimi>(
+    final secim = await showSandikSheet<_FiltreSecimi>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -1168,8 +1168,13 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
               // okutuyordu. Anında değişen sayı daha net.
               child: Text(
                 n == 0 ? l.filterNoMatch : l.filterShowN(n),
-                style:
-                    context.t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+                // `titleMedium`'un `text90`'ı düğmenin `foregroundColor`'ını
+                // ezer — koyu temada amber üstüne beyaz 1,87:1. Pasifken
+                // (eşleşme yok) eski ton: soluk dolguda koyu yazı okunmazdı.
+                style: context.t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: n == 0 ? null : context.c.onAmber),
               ),
             ),
           ),

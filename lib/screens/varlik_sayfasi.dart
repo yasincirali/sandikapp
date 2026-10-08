@@ -16,6 +16,7 @@ import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
@@ -82,7 +83,7 @@ Future<void> showVarlikSayfasi(
   if (_acik) return;
   _acik = true;
   try {
-    await showModalBottomSheet<void>(
+    await showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -184,8 +185,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   final Map<int, DonemIstatistigi?> _istatistik = {};
   final Set<int> _yukleniyor = {};
   final Set<int> _hatali = {};
-
-  bool _takipIslemi = false;
 
   /// Açılış kapısı açıldı mı (bkz. `utils/acilis_kapisi.dart`): altı dönem
   /// ve sinyal serisi geldi ya da süre doldu. Bir kez `true` olur.
@@ -717,14 +716,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       label: takipte ? l.vsUnwatchSemantics(k.name) : l.vsWatchSemantics(k.name),
       child: SizedBox(
         height: 48,
-        child: OutlinedButton.icon(
-          onPressed: _takipIslemi ? null : () => _takipDegistir(takipte),
+        // Kilit + gösterge standart bileşende (tek yükleniyor davranışı,
+        // 2026-10-08); eski `_takipIslemi` bayrağı yalnızca düğmeyi
+        // pasifleştiriyordu, gösterge yoktu.
+        child: SandikAsyncButton.kompakt(
+          tur: SandikAsyncTur.cerceve,
+          onPressed: () => _takipDegistir(takipte),
           icon: Icon(takipte ? Icons.star_rounded : Icons.star_border_rounded,
               size: 20, color: takipte ? context.c.gold : context.c.text90),
-          label: Text(
-            takipte ? l.watchlistInListLabel : l.vsWatch,
-            maxLines: 1,
-          ),
           style: OutlinedButton.styleFrom(
             foregroundColor: context.c.text90,
             side: BorderSide(color: context.c.hairline),
@@ -733,6 +732,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.md)),
           ),
+          child: Text(
+            takipte ? l.watchlistInListLabel : l.vsWatch,
+            maxLines: 1,
+          ),
         ),
       ),
     );
@@ -740,14 +743,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   /// Takibe al / takipten çıkar — kural ve mesajlar `takipDegistir`'de
   /// (portföy varlık detayıyla ortak).
-  Future<void> _takipDegistir(bool takipte) async {
-    setState(() => _takipIslemi = true);
-    try {
-      await takipDegistir(context, ref, widget.kimlik, takipte: takipte);
-    } finally {
-      if (mounted) setState(() => _takipIslemi = false);
-    }
-  }
+  Future<void> _takipDegistir(bool takipte) =>
+      takipDegistir(context, ref, widget.kimlik, takipte: takipte);
 }
 
 /// Sayfa tutamacının çizgisi — dokunma hedefi [_VarlikSayfasiState._tutamac]

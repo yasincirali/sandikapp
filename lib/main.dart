@@ -53,6 +53,7 @@ import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/satin_alma_service.dart';
 import 'services/daily_summary.dart';
 import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
@@ -530,11 +531,15 @@ class SandikApp extends ConsumerWidget {
       // dialog + 1 modal popup var; hepsi buradan beslenir.
       cupertinoOverrideTheme: CupertinoThemeData(
         brightness: brightness,
-        primaryColor: p.amberFill,
+        // `primaryColor` CupertinoButton'ın YAZI rengidir (uygulamada
+        // dolgulu Cupertino düğmesi/slider yok) — bu yüzden metin tonu
+        // `amberText`. Koyu temada `amberFill` ile aynı; açık temada amber
+        // beyaz üstünde 2:1 kalıyordu (açık tema denetimi 2026-10-08).
+        primaryColor: p.amberText,
         scaffoldBackgroundColor: p.background,
         barBackgroundColor: p.surface1,
         textTheme: CupertinoTextThemeData(
-          primaryColor: p.amberFill,
+          primaryColor: p.amberText,
           textStyle: sandikFont(color: p.text90, fontSize: 15),
         ),
       ),
@@ -589,11 +594,16 @@ class SandikApp extends ConsumerWidget {
       inputDecorationTheme: sandikGirisTemasi(p, brightness),
 
       // Filled button — Amber CTA
+      //
+      // Köşe `SandikRadius.md` (14), 8 DEĞİL (tasarım dili 2026-10-08):
+      // `SandikAsyncButton` ve açık stil yazan düğmeler 14'tü; stil
+      // yazmayan 17 düğme temadan 8 alıyor, aynı sayfada iki köşe
+      // görünüyordu. Tek düğme köşesi.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: p.amberFill,
           foregroundColor: p.onAmber,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: sandikFont(
               fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
@@ -601,24 +611,44 @@ class SandikApp extends ConsumerWidget {
       ),
 
       // Outlined button
+      //
+      // Yazı rengi `amberText`, `amberFill` DEĞİL (açık tema denetimi
+      // 2026-10-08): `amberFill` dolgu tonudur; açık temanın beyaz
+      // zemininde METİN olarak 1,94:1 kalıyordu (ör. Zirve rıza kartındaki
+      // "Şimdi değil"). Koyu temada iki token aynı renktir — orada değişiklik
+      // yok. Çerçeve dolgu tonunda kalır (metin değil, marka çizgisi).
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: p.amberFill,
+          foregroundColor: p.amberText,
           side: BorderSide(color: p.amberFill, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle:
               sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
-      // Text button
+      // Text button — yazı `amberText` (yukarıdaki outlined notu).
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: p.amberFill,
+          foregroundColor: p.amberText,
           textStyle:
               sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
+      ),
+
+      // Anahtar (Material — Android ve web; iOS `Switch.adaptive` ile
+      // Cupertino çizer). Web ekran görüntüleri 2026-10-08: aynı Bildirimler
+      // listesinde üç ayrı anahtar vardı (amber track + koyu topuz, kahve
+      // track + beyaz topuz, kapalıyken YEŞİL çerçeve — `outline` "Orman"
+      // yeşili). Açık track her çağıranda `activeTrackColor: amberText`
+      // (amberFill beyaz zeminde metin dışı 3:1'i de tutmuyor); topuz ona
+      // göre zemin tonunda, kapalı hâl nötr.
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? p.surface2 : p.text36),
+        trackOutlineColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? Colors.transparent : p.text20),
       ),
 
       // FAB — Amber
@@ -1130,6 +1160,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _dataWaitTimer = null;
         _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
+        // Mağaza kimliğini de bırak: sıradaki hesap öncekinin aboneliğini
+        // görmesin. Bayrak kapalıyken/yapılandırılmamışken no-op.
+        CrashReporter.arkaPlan(SatinAlmaService.instance.cikis(),
+            reason: 'SatinAlmaService.cikis');
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
         // Tercih anahtarlarını BU kullanıcıya bağla — `syncSignalPreferences
@@ -1198,6 +1232,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // veri çoğunlukla hazırdır ve tek loading görünür.
         _warmUpData();
         AnalyticsService.instance.setUserId(user.id);
+        // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
+        // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.
+        // Hak değişince anlık köprü + sunucu haklarını tazele (webhook
+        // `premium_haklari`'na yazınca kalıcı kaynak orası olur).
+        SatinAlmaService.instance.hakDegisti = (aktif) {
+          if (!mounted) return;
+          ref.read(magazaPremiumProvider.notifier).state = aktif;
+          ref.invalidate(premiumHaklariProvider);
+        };
+        CrashReporter.arkaPlan(
+            SatinAlmaService.instance.kullaniciyiBagla(user.id),
+            reason: 'SatinAlmaService.kullaniciyiBagla');
         final isPremium = ref.read(effectivePremiumProvider);
         AnalyticsService.instance.setUserProperty(
           name: 'user_type',

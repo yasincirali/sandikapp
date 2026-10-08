@@ -143,7 +143,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     final kayit = AssetSignalCard.sonSinyal(alerts, widget.asset);
 
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
     final enabledIds = prefs[widget.asset.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
 
@@ -232,40 +232,43 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   /// soldaki ince şerit hâlâ yön rengini kullanıyor. Anlamı renk taşır,
   /// zemin taşımaz.
   Widget _kabuk({required Color renk, required Widget child}) {
-    final govde = Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: SandikSpace.sm),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
-      // `IntrinsicHeight`: sol şerit içeriğin TAM boyunca uzanmalı. Sabit
-      // yükseklik verilseydi büyük sistem yazı tipinde içerik uzayıp şerit
-      // kısa kalırdı (ya da tersi).
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Yön göstergesi: sol kenarda ince dikey şerit. Ekranın
-            // gösterge listesiyle aynı dil — kart nötr, sol şerit renkli.
-            Container(
-              width: 3,
-              decoration: BoxDecoration(
-                color: renk,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(SandikRadius.md),
+    // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı. Alt boşluk
+    // kartın DIŞINDA ama `SandikBasma`'nın İÇİNDE kalır: eski `margin`
+    // dokunma alanına dahildi, öyle kalsın.
+    final govde = Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: SizedBox(
+        width: double.infinity,
+        child: SandikCard(
+          padding: EdgeInsets.zero,
+          // `IntrinsicHeight`: sol şerit içeriğin TAM boyunca uzanmalı. Sabit
+          // yükseklik verilseydi büyük sistem yazı tipinde içerik uzayıp şerit
+          // kısa kalırdı (ya da tersi).
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Yön göstergesi: sol kenarda ince dikey şerit. Ekranın
+                // gösterge listesiyle aynı dil — kart nötr, sol şerit renkli.
+                Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    color: renk,
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(SandikRadius.md),
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: child,
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: child,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -561,7 +564,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   Widget build(BuildContext context) {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
     final enabledIds = prefs[widget.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.type);
 

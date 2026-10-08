@@ -88,7 +88,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
-  bool _exporting = false;
 
   /// Hub'ın "Gelişmiş" grubu açık mı. Kapalı başlar: içindekiler teknik ve
   /// nadir; ilk bakışta yer kaplamasın.
@@ -171,7 +170,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 style: TextStyle(color: context.c.text90),
                 decoration: context.inputDecoration(
                   context.l10n.passwordLabel,
-                  prefixIcon: Icon(Icons.lock_outline,
+                  prefixIcon: Icon(Icons.lock_outline_rounded,
                       color: context.c.text36, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -237,12 +236,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Dokunulan karonun dikdörtgeni — iPad popover'ı buradan açılır.
   final _disaAktarKaroKey = GlobalKey();
 
+  /// Kilit ve gösterge karonun kendisinde (`_SettingsTile.onTapAsync`, tek
+  /// yükleniyor davranışı 2026-10-08); eski `_exporting` bayrağı kalktı.
   Future<void> _exportData() async {
-    if (_exporting) return;
-    // Dikdörtgen setState'ten ÖNCE: karo "yükleniyor" hâline geçtiğinde
-    // trailing değişiyor, ölçüm kararlı hâlden yapılsın.
+    // Dikdörtgen karo "yükleniyor" hâline geçmeden ÖNCE ölçülür: o anda
+    // trailing değişiyor, ölçüm kararlı hâlden yapılsın. (`onTapAsync`
+    // göstergeyi bir sonraki karede çizer; bu satır senkron koşar.)
     final origin = ShareCardService.originOf(_disaAktarKaroKey.currentContext);
-    setState(() => _exporting = true);
     try {
       await DataExportService.instance.exportAndShare(paylasimKaynagi: origin);
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): `exportAndShare`
@@ -254,8 +254,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       CrashReporter.report(e, st, reason: 'SettingsScreen.exportData');
       if (!mounted) return;
       showAppError(context, e);
-    } finally {
-      if (mounted) setState(() => _exporting = false);
     }
   }
 
@@ -343,7 +341,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _openFeedbackSheet() async {
     String type = 'Şikayet';
     final controller = TextEditingController();
-    final result = await showModalBottomSheet<Map<String, String>>(
+    final result = await showSandikSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -694,7 +692,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: context.l10n.signalNotifications,
                 child: Switch.adaptive(
                   value: ref.watch(signalNotificationsProvider),
-                  activeTrackColor: context.c.amberFill,
+                  // `amberText` — öteki dört anahtarla aynı (2026-10-08).
+                  activeTrackColor: context.c.amberText,
                   onChanged: (v) async {
                     await ref.read(signalNotificationsProvider.notifier).set(v);
                     // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
@@ -850,9 +849,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.download_outlined,
               title: context.l10n.downloadMyData,
               subtitle: context.l10n.downloadMyDataSubtitle,
-              trailing:
-                  _exporting ? const CustomLoadingIndicator(size: 18) : null,
-              onTap: _exporting ? null : _exportData,
+              onTap: null,
+              onTapAsync: _exportData,
             ),
             _SettingsTile(
               icon: Icons.delete_forever_outlined,
@@ -1478,11 +1476,21 @@ class _LanguagePicker extends ConsumerWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
+class _SettingsTile extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+
+  /// İstek atan karo (ör. verilerimi indir). Verildiğinde [onTap] yok
+  /// sayılır: iş sürerken karo kilitli, sağdaki ok yerine küçük gösterge
+  /// döner, ikinci dokunuş yutulur — [SandikAsyncButton] / [SandikAsyncTap]
+  /// ile aynı sözleşme (tek yükleniyor davranışı, 2026-10-08). Karonun
+  /// kendi bileşeni olmasının nedeni görünüş: [SandikAsyncTap] göstergeyi
+  /// içeriğin ÜSTÜNE koyar, burada ise satır metni yerinde kalmalı ve
+  /// gösterge yalnız sağ yuvada (eskiden elle yazılan `_exporting` hâli)
+  /// görünmeli. Hata yutulmaz; çağıran kendi yakalar.
+  final Future<void> Function()? onTapAsync;
   final bool destructive;
   final Widget? trailing;
 
@@ -1492,12 +1500,42 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.onTapAsync,
     this.destructive = false,
     this.trailing,
   });
 
   @override
+  State<_SettingsTile> createState() => _SettingsTileState();
+}
+
+class _SettingsTileState extends State<_SettingsTile> {
+  bool _busy = false;
+
+  Future<void> _calistir() async {
+    if (_busy) return;
+    // Haptic kilidin ARDINDAN — [SandikAsyncButton] ile aynı gerekçe.
+    SandikHaptic.medium.perform();
+    setState(() => _busy = true);
+    try {
+      await widget.onTapAsync!();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final icon = widget.icon;
+    final title = widget.title;
+    final subtitle = widget.subtitle;
+    final destructive = widget.destructive;
+    final VoidCallback? onTap = widget.onTapAsync == null
+        ? widget.onTap
+        : (_busy ? null : _calistir);
+    final trailing = _busy
+        ? const CustomLoadingIndicator(size: CustomLoadingIndicator.small)
+        : widget.trailing;
     final color = destructive ? context.c.loss : context.c.text90;
     return Padding(padding: const EdgeInsets.only(bottom: 8), child: SandikCard(
       padding: EdgeInsets.zero,
@@ -1520,27 +1558,27 @@ class _SettingsTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // `context.t` — ham `TextStyle` `CupertinoButton`'ın
+                  // içinde Cupertino yazı ailesini miras alıyordu; satır
+                  // DM Sans yerine dar sistem fontuyla çiziliyor, yanındaki
+                  // `_SwitchTile`'dan ayrışıyordu (2026-10-08). Tema stili
+                  // yazı boyutu ayarıyla da büyür.
                   Text(
                     title,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+                    style: context.t.bodyLarge
+                        ?.copyWith(color: color, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: context.c.text58,
-                      fontSize: 12,
-                    ),
+                    style: context.t.titleSmall?.copyWith(
+                        color: context.c.text58, fontWeight: FontWeight.w400),
                   ),
                 ],
               ),
             ),
             trailing ??
-                Icon(Icons.chevron_right, color: context.c.text36, size: 20),
+                Icon(Icons.chevron_right_rounded, color: context.c.text36, size: 20),
           ],
         ),
       ),
@@ -1916,7 +1954,7 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
   Future<void> _sec() async {
     final l10n = context.l10n;
     final mevcut = _slot ?? 'morning';
-    final secim = await showModalBottomSheet<String>(
+    final secim = await showSandikSheet<String>(
       context: context,
       backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
@@ -2029,7 +2067,7 @@ class _BirikimHatirlatmaTileState
   Future<void> _sec() async {
     final l10n = context.l10n;
     final mevcut = _gun ?? 0;
-    final secim = await showModalBottomSheet<int>(
+    final secim = await showSandikSheet<int>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -2199,8 +2237,10 @@ class _SwitchTile extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
+            // `_SettingsTile` ile aynı ikon kutusu: `overlay` açık temada
+            // görünmüyordu (beyaz kutu), komşu satırlar gri.
             decoration: BoxDecoration(
-              color: context.c.overlay,
+              color: context.c.text90.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
             child: Icon(icon, color: context.c.text90, size: 20),
@@ -2212,24 +2252,22 @@ class _SwitchTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: context.c.text90,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: context.t.bodyLarge?.copyWith(
+                      color: context.c.text90, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: context.c.text58,
-                    fontSize: 12,
-                  ),
+                  style: context.t.titleSmall?.copyWith(
+                      color: context.c.text58, fontWeight: FontWeight.w400),
                 ),
               ],
             ),
           ),
-          CupertinoSwitch(
+          // `Switch.adaptive` — uygulamanın öteki anahtarları gibi (Android'de
+          // Material, iOS'ta Cupertino). Eskiden burada her platformda
+          // Cupertino vardı; aynı listede iki anahtar dili görünüyordu.
+          Switch.adaptive(
             value: value,
             onChanged: onChanged,
             activeTrackColor: context.c.amberText,

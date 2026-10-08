@@ -786,16 +786,26 @@ class _CrosshairOverlay extends StatelessWidget {
                     constraints: const BoxConstraints(minWidth: 120),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 8),
-                    // Tooltip grafiğin ÜSTÜNDE durur; zemini her iki modda
-                    // koyu kalır (açık zeminde de grafik çizgileri arasında
-                    // okunması gerekir). Bu yüzden metni text90 DEĞİL —
-                    // light modda text90 koyudur ve koyu zemine koyu yazı
-                    // olurdu. Tooltip kendi kontrast dünyasını taşır.
+                    // Hap zemini TEMAYA bağlıdır (açık tema denetimi
+                    // 2026-10-08). Eskiden iki modda da sabit koyu
+                    // (`0xFF0A1E15`) idi — "açık zeminde de çizgilerin
+                    // arasında okunsun" diye. Ama alttaki `details`
+                    // satırlarının renkleri çağırandan TEMAYA göre gelir
+                    // (`context.c.gain/loss/text58`); açık temada bunlar
+                    // koyu tonlardır ve koyu hap üstünde okunmuyordu
+                    // (ör. açık `loss` ~2,3:1). Açık temada hap beyaz yüzey +
+                    // kart gölgesi; koyu temada eskisiyle aynı yarı saydam
+                    // koyu zemin (`background` %88 — eski sabit buydu).
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0A1E15).withValues(alpha: 0.88),
+                      color: context.isLight
+                          ? context.c.surface2
+                          : context.c.background.withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(SandikRadius.md),
                       border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.14)),
+                          color: context.isLight
+                              ? context.c.hairline
+                              : Colors.white.withValues(alpha: 0.14)),
+                      boxShadow: context.isLight ? context.c.cardShadow : null,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -806,11 +816,11 @@ class _CrosshairOverlay extends StatelessWidget {
                           // Eşit genişlikli rakam: imleç gezerken fiyat
                           // değiştikçe hap genişliği ve sol kenarı
                           // titremesin (animasyon denetimi 2026-10-01).
-                          style: const TextStyle(
-                            color: Color(0xE1FFFFFF),
+                          style: TextStyle(
+                            color: context.c.text90,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            fontFeatures: [FontFeature.tabularFigures()],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -818,8 +828,8 @@ class _CrosshairOverlay extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           pill!.$2,
-                          style: const TextStyle(
-                            color: Color(0x8CFFFFFF),
+                          style: TextStyle(
+                            color: context.c.text58,
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),
@@ -831,7 +841,11 @@ class _CrosshairOverlay extends StatelessWidget {
                           Container(
                             height: 1,
                             width: 40,
-                            color: context.c.overlay,
+                            // Açık temada `overlay` opak beyazdır — beyaz
+                            // hap üstünde çizgi kaybolurdu.
+                            color: context.isLight
+                                ? context.c.hairline
+                                : context.c.overlay,
                           ),
                           const SizedBox(height: 4),
                           for (final line in details!)
@@ -839,8 +853,15 @@ class _CrosshairOverlay extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 1),
                               child: Text(
                                 line.$1,
+                                // Seri rengi (karşılaştırmada amber/
+                                // turkuaz…) koyu zemin için seçildi; hap
+                                // zemininde metin olarak okunur tona
+                                // kaydırılır. Eşiği geçen renk aynen kalır.
                                 style: TextStyle(
-                                  color: line.$2,
+                                  color: line.$2.okunurUstunde(
+                                      context.isLight
+                                          ? context.c.surface2
+                                          : context.c.background),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                 ),

@@ -1021,12 +1021,12 @@ class _EnflasyonKiyasi extends StatelessWidget {
           '${fmtPct(reel.nominal)}, ${l10n.todayVsInflationCpi} '
           '${fmtPct(reel.inflation)}',
       excludeSemantics: true,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: c.hairline),
-        ),
+      // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı. Dokunma
+      // `SandikCard.onTap`'e (ölçek/solma) TAŞINMADI: kartın kardeş kutuları
+      // (hareket, eylem) ripple kullanıyor; tek kart farklı tepki verirse
+      // aynı panoda iki basma dili olur.
+      child: SandikCard(
+        padding: EdgeInsets.zero,
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
@@ -1487,12 +1487,10 @@ class _BilgiKutusu extends StatelessWidget {
         ],
       ),
     );
-    final kutu = DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: c.hairline),
-      ),
+    // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı; ripple kalır
+    // (bkz. enflasyon kutusu).
+    final kutu = SandikCard(
+      padding: EdgeInsets.zero,
       child: onTap == null
           ? govde
           // Şeffaf Material: mürekkep katmanı ata iskeleye bağlı kalmasın

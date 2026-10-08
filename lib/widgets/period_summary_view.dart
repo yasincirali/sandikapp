@@ -16,6 +16,7 @@ import '../services/tuik_takvimi.dart';
 import '../theme/sandik.dart';
 import 'aralik_cipi.dart';
 import 'sandik_acilir.dart';
+import 'sandik_segment.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
@@ -2269,6 +2270,11 @@ class _KatkiCubugu extends StatelessWidget {
 }
 
 /// Haftalık / Aylık / Yıllık anahtarı.
+///
+/// Kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol haritası
+/// 2.12): eskiden 34pt'lik amber dolgulu bir kopyaydı; zemin yerinde
+/// sönüp yanıyordu, öteki segmentlerde kayıyordu. Seçiliye dokunuş artık
+/// yok sayılır (eskiden aynı değeri yeniden bildiriyordu — etkisizdi).
 class _AralikSecici extends StatelessWidget {
   final ContributionInterval secili;
   final ValueChanged<ContributionInterval> onSec;
@@ -2277,52 +2283,13 @@ class _AralikSecici extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.c;
-    return Container(
-      height: 34,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
-        children: [
-          for (final a in ContributionInterval.values)
-            Expanded(
-              child: Semantics(
-                selected: a == secili,
-                button: true,
-                child: SandikBasma(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onSec(a),
-                  // Zemin ve metin aynı sürede geçer; eskiden zemin 240 ms
-                  // sönerken metin rengi tek karede atlıyordu (animasyon
-                  // denetimi 2026-10-01).
-                  child: AnimatedContainer(
-                    duration: SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
-                    decoration: BoxDecoration(
-                      color: a == secili ? c.amberFill : Colors.transparent,
-                      borderRadius: BorderRadius.circular(SandikRadius.sm),
-                    ),
-                    alignment: Alignment.center,
-                    child: AnimatedDefaultTextStyle(
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
-                      style:
-                          (context.t.labelMedium ?? const TextStyle()).copyWith(
-                        color: a == secili ? c.onAmber : c.text58,
-                        fontWeight:
-                            a == secili ? FontWeight.w700 : FontWeight.w500,
-                      ),
-                      child: Text(a.labelOf(context.l10n)),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
+    const degerler = ContributionInterval.values;
+    return SandikSegment(
+      adet: degerler.length,
+      secili: degerler.indexOf(secili),
+      onSec: (i) => onSec(degerler[i]),
+      metinStili: context.t.labelMedium,
+      oge: (context, i, _) => Text(degerler[i].labelOf(context.l10n)),
     );
   }
 }

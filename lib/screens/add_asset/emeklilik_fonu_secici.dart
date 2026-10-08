@@ -18,7 +18,7 @@ Future<TefasFund?> emeklilikFonuSec(
   BuildContext context, {
   required bool devletKatkisi,
 }) =>
-    showModalBottomSheet<TefasFund>(
+    showSandikSheet<TefasFund>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,

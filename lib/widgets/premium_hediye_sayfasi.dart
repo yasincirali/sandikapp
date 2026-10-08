@@ -20,7 +20,7 @@ class PremiumHediyeSayfasi extends StatelessWidget {
   final DateTime simdi;
 
   static Future<void> goster(BuildContext context, PremiumHakki hak) =>
-      showModalBottomSheet<void>(
+      showSandikSheet<void>(
         context: context,
         backgroundColor: context.c.surface2,
         isScrollControlled: true,

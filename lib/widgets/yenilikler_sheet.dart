@@ -47,7 +47,7 @@ class YeniliklerSheet extends StatefulWidget {
       surum: notlar.first.surum,
       adet: notlar.length,
     ));
-    await showModalBottomSheet<void>(
+    await showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

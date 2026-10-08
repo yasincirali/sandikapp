@@ -122,7 +122,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       await tester.pumpWidget(uygulama(Builder(
         builder: (c) => Column(mainAxisSize: MainAxisSize.min, children: [
-          SandikLogoutButton(onPressed: () {}),
+          SandikLogoutButton(onPressed: () async {}),
           TextButton(
             onPressed: () =>
                 pickSandikDate(c, initialDate: DateTime(2026, 3, 2)),

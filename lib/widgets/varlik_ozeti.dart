@@ -6,6 +6,7 @@ import '../models/varlik_kimligi.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'donem_istatistik.dart' show donemDuzMu;
+import 'varlik_baslik_hero.dart';
 
 /// Varlık yüzeylerinin ORTAK üst özeti: başlık (kısa etiket + "ad · tür")
 /// ve fiyat bloğu (etiket, büyük fiyat, dönem değişimi satırı).
@@ -36,7 +37,12 @@ class VarlikBasligi extends StatelessWidget {
     required this.kimlik,
     this.adTekrariniAtla = false,
     this.semantikEtiket,
+    this.heroEtiketi,
   });
+
+  /// Portföy satırından gelen başlık uçuşunun etiketi (bkz.
+  /// `varlik_baslik_hero.dart`); `null` → uçuş yok. Yalnız kısa etiket uçar.
+  final Object? heroEtiketi;
 
   final VarlikKimligi kimlik;
 
@@ -58,12 +64,15 @@ class VarlikBasligi extends StatelessWidget {
     final kolon = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          kimlik.kisaEtiket,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
+        VarlikBaslikHero(
+          etiket: heroEtiketi,
+          child: Text(
+            kimlik.kisaEtiket,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.t.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700, color: context.c.text90),
+          ),
         ),
         Text(
           adTekrariniAtla && kimlik.kisaEtiket == kimlik.name

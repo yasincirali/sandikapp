@@ -206,6 +206,7 @@ extension _DetayOzet on _AssetDetailScreenState {
   Widget _baslik() => VarlikBasligi(
         kimlik: _kimlik,
         adTekrariniAtla: true,
+        heroEtiketi: widget.heroEtiketi,
         semantikEtiket:
             context.l10n.assetPerformanceSemantics(widget.asset.name),
       );
