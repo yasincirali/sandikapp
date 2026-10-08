@@ -442,8 +442,12 @@ class HalkaArzDetay extends ConsumerWidget {
                   l.ipoParticipate,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.t.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+                  // `titleMedium` kendi rengini (`text90`) taşır ve düğmenin
+                  // `foregroundColor`'ını ezer — koyu temada amber üstüne
+                  // beyaz 1,87:1 kalıyordu.
+                  style: context.t.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800, color: context.c.onAmber),
                 ),
               ),
             ),

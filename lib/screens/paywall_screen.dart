@@ -229,9 +229,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(SandikRadius.md)),
                   ),
+                  // Renk açıkça `onAmber` — `text90` düğme rengini ezerdi
+                  // (açık tema denetimi 2026-10-08).
                   child: Text(context.l10n.greatWord,
                       style: context.t.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w800)),
+                          fontWeight: FontWeight.w800,
+                          color: context.c.onAmber)),
                 ),
               ),
             ],
@@ -634,8 +637,11 @@ class _BottomBar extends StatelessWidget {
                         selectedPlan == _Plan.yearly
                             ? '7 gün ücretsiz dene'
                             : 'Premium ol',
+                        // Renk açıkça `onAmber` — `text90` düğme rengini
+                        // ezerdi (açık tema denetimi 2026-10-08).
                         style: context.t.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800),
+                            fontWeight: FontWeight.w800,
+                            color: context.c.onAmber),
                       ),
               ),
             ),

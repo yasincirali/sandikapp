@@ -776,7 +776,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             children: [
               Icon(Icons.star_rounded,
                   size: 14,
-                  color: selected ? AssetType.altin.color : context.c.text58),
+                  color: selected
+                      ? AssetType.altin.onSurface(context)
+                      : context.c.text58),
               const SizedBox(width: SandikSpace.xs2),
               Text(g.label,
                   style: context.t.bodyMedium?.copyWith(
@@ -1430,8 +1432,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 ? const CustomLoadingIndicator(size: 22)
                 : Text(
                     saveLabel,
+                    // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+                    // `titleLarge` kendi rengini (`text90`) taşır ve düğmenin
+                    // `foregroundColor`'ını ezer — koyu temada amber üstüne
+                    // beyaz "Ekle" 1,87:1 kalıyordu.
                     style: context.t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800, letterSpacing: 0.2),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
+                        color: context.c.onAmber),
                   ),
           ),
         ),
@@ -1544,8 +1552,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // İkon `onSurface`: ham kategori rengi açık temada
+                    // %18'lik kendi dolgusu üstünde 1,3–2,6:1 kalıyordu
+                    // (açık tema denetimi 2026-10-08). Dolgu/çerçeve ham.
                     Icon(t.icon,
-                        size: 18, color: selected ? t.color : context.c.text58),
+                        size: 18,
+                        color: selected ? t.onSurface(context) : context.c.text58),
                     const SizedBox(width: 8),
                     // Flexible: sarmalı satırda çipin azami genişliği satır
                     // genişliğidir (kaydırmalı satırda sınırsızdı). 3× metin
@@ -1621,8 +1633,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color:
-                            selected ? AssetType.doviz.color : context.c.text90,
+                        color: selected
+                            ? AssetType.doviz.onSurface(context)
+                            : context.c.text90,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1630,8 +1643,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       opt.label,
                       style: context.t.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color:
-                            selected ? AssetType.doviz.color : context.c.text58,
+                        color: selected
+                            ? AssetType.doviz.onSurface(context)
+                            : context.c.text58,
                         letterSpacing: 0.6,
                       ),
                     ),
@@ -1899,10 +1913,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 color: color.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
               ),
+              // Rozet METNİ açık temada koyulaştırılmış ton (`metinTonu`);
+              // dolgu ham renkte kalır.
               child: Text(badgeText,
                   style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: color,
+                      color: color.metinTonu(context),
                       letterSpacing: 0.5)),
             ),
             const SizedBox(width: 10),
@@ -2427,9 +2443,11 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.playlist_add_check_rounded),
+                        // Renk açıkça `onAmber` — `_stickyBottomBar` notu.
                         label: Text(context.l10n.saveNAssets(_previews.length),
-                            style: context.t.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
+                            style: context.t.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: context.c.onAmber)),
                       )
                     : FilledButton.icon(
                         onPressed: _previews.isEmpty
@@ -2439,9 +2457,14 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.check_rounded),
+                        // Pasifken (`null`) eski ton kalır: soluk dolguda
+                        // koyu `onAmber` okunmazdı.
                         label: Text(context.l10n.fillTheForm,
-                            style: context.t.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
+                            style: context.t.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: _previews.isEmpty
+                                    ? null
+                                    : context.c.onAmber)),
                       ),
           ),
         ],
@@ -3018,7 +3041,7 @@ class _PickerShellState extends State<_PickerShell> {
                   ),
                   child: Text('${widget.count}',
                       style: context.t.labelLarge
-                          ?.copyWith(color: widget.color)),
+                          ?.copyWith(color: widget.color.metinTonu(context))),
                 ),
               ],
             ),
@@ -3134,7 +3157,7 @@ class _PickerRow extends StatelessWidget {
       maxLines: 1,
       style: context.t.labelLarge?.copyWith(
         fontWeight: FontWeight.w800,
-        color: isSelected ? color : context.c.text90,
+        color: isSelected ? color.metinTonu(context) : context.c.text90,
       ),
     );
     return Semantics(
@@ -3205,7 +3228,8 @@ class _PickerRow extends StatelessWidget {
                 ),
               if (isSelected) ...[
                 const SizedBox(width: SandikSpace.sm),
-                Icon(Icons.check_rounded, size: 22, color: color),
+                Icon(Icons.check_rounded,
+                    size: 22, color: color.metinTonu(context)),
               ],
             ],
           ),

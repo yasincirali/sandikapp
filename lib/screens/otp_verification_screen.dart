@@ -578,8 +578,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               : const Icon(Icons.send_rounded, size: 18),
           label: Text(
             _resending ? context.l10n.sending : context.l10n.requestNewCode,
+            // Renk AÇIKÇA `onAmber`: `titleLarge` kendi rengini (`text90`)
+            // taşır ve düğmenin `foregroundColor`'ını ezer — koyu temada
+            // amber üstüne beyaz yazı 1,87:1 kalıyordu (açık tema
+            // denetimi 2026-10-08, `acik_tema_ekran_kontrast_test`).
+            // Pasifken (`_isBusy`) eski ton: soluk dolguda koyu yazı
+            // okunmazdı.
             style: context.t.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
+              color: _isBusy ? null : context.c.onAmber,
             ),
           ),
         ),
@@ -602,8 +609,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ? const CustomLoadingIndicator(size: 22)
             : Text(
                 context.l10n.verify,
+                // Renk açıkça `onAmber` — yukarıdaki nota bak.
                 style: context.t.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: context.c.onAmber,
                 ),
               ),
       ),

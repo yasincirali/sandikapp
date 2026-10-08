@@ -109,10 +109,15 @@ class _Eylem extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                       borderRadius: SandikRadius.mdAll),
                 ),
+                // Renk açıkça `onAmber`: `bodyMedium` kendi rengini
+                // (`text90`) taşır ve `foregroundColor`'ı ezer — koyu temada
+                // amber üstüne beyaz 1,87:1 kalıyordu (açık tema denetimi
+                // 2026-10-08).
                 child: Text(metin,
                     textAlign: TextAlign.center,
-                    style: context.t.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
+                    style: context.t.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: context.c.onAmber)),
               )
             : OutlinedButton(
                 onPressed: bas,

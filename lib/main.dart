@@ -530,11 +530,15 @@ class SandikApp extends ConsumerWidget {
       // dialog + 1 modal popup var; hepsi buradan beslenir.
       cupertinoOverrideTheme: CupertinoThemeData(
         brightness: brightness,
-        primaryColor: p.amberFill,
+        // `primaryColor` CupertinoButton'ın YAZI rengidir (uygulamada
+        // dolgulu Cupertino düğmesi/slider yok) — bu yüzden metin tonu
+        // `amberText`. Koyu temada `amberFill` ile aynı; açık temada amber
+        // beyaz üstünde 2:1 kalıyordu (açık tema denetimi 2026-10-08).
+        primaryColor: p.amberText,
         scaffoldBackgroundColor: p.background,
         barBackgroundColor: p.surface1,
         textTheme: CupertinoTextThemeData(
-          primaryColor: p.amberFill,
+          primaryColor: p.amberText,
           textStyle: sandikFont(color: p.text90, fontSize: 15),
         ),
       ),
@@ -601,9 +605,15 @@ class SandikApp extends ConsumerWidget {
       ),
 
       // Outlined button
+      //
+      // Yazı rengi `amberText`, `amberFill` DEĞİL (açık tema denetimi
+      // 2026-10-08): `amberFill` dolgu tonudur; açık temanın beyaz
+      // zemininde METİN olarak 1,94:1 kalıyordu (ör. Zirve rıza kartındaki
+      // "Şimdi değil"). Koyu temada iki token aynı renktir — orada değişiklik
+      // yok. Çerçeve dolgu tonunda kalır (metin değil, marka çizgisi).
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: p.amberFill,
+          foregroundColor: p.amberText,
           side: BorderSide(color: p.amberFill, width: 1.5),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -612,10 +622,10 @@ class SandikApp extends ConsumerWidget {
         ),
       ),
 
-      // Text button
+      // Text button — yazı `amberText` (yukarıdaki outlined notu).
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: p.amberFill,
+          foregroundColor: p.amberText,
           textStyle:
               sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
