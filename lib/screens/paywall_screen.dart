@@ -157,7 +157,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   _FeatureList(radar: rc.balinaRadariAcik),
                   if (rc.balinaRadariAcik) ...[
                     const SizedBox(height: 8),
-                    _KarsilastirmaTablosu(varlikSiniri: rc.freeAssetLimit),
+                    _KarsilastirmaTablosu(
+                      varlikSiniri: rc.freeAssetLimit,
+                      takipSiniri: rc.paywallWatchlistLimit,
+                      sinyalTekVarlik: rc.freeSignalAssets > 0,
+                    ),
                   ],
                   const SizedBox(height: 24),
                   _PlanCard(
@@ -511,9 +515,19 @@ class _FeatureList extends StatelessWidget {
 // görür. Satırlar yalnız radar bayrağı açıkken (özellik uygulamada yokken
 // listelenmez; bkz. `_FeatureList` uyarısı).
 class _KarsilastirmaTablosu extends StatelessWidget {
-  const _KarsilastirmaTablosu({required this.varlikSiniri});
+  const _KarsilastirmaTablosu({
+    required this.varlikSiniri,
+    required this.takipSiniri,
+    required this.sinyalTekVarlik,
+  });
 
   final int varlikSiniri;
+
+  /// Ücretsiz takip listesi (paywall açıkken 3; 2026-10-08).
+  final int takipSiniri;
+
+  /// Sinyal bildirimi ücretsizde tek varlıkta mı (`free_signal_assets`).
+  final bool sinyalTekVarlik;
 
   @override
   Widget build(BuildContext context) {
@@ -524,6 +538,9 @@ class _KarsilastirmaTablosu extends StatelessWidget {
     // yok, web'de kutu çiziyordu; ekran okuyucu da "Var/Yok" duysun.
     final satirlar = <(String, String?, String?)>[
       (l.prmSatirVarlik, '$varlikSiniri', l.prmSinirsiz),
+      (l.prmSatirTakip, '$takipSiniri', l.prmSinirsiz),
+      if (sinyalTekVarlik)
+        (l.prmSatirSinyal, l.prmSinyalUcretsiz, l.prmSinyalPremium),
       (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
       (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
       (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),

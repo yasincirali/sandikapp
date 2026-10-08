@@ -202,6 +202,96 @@ export function slotaSigdir<
   return { ...(pref ?? {}), frequency: 'daily', notify_hours: [ilk] } as T;
 }
 
+/// Ücretsiz planın tek sinyal varlığı — `sinyal_varlik_secimi` satırı (0126).
+export interface SinyalVarlikSecimi {
+  user_id: string;
+  asset_type: string;
+  ticker: string;
+}
+
+/// Seçim eşleşme anahtarı: `<tür>|<TICKER>`. Ticker elle girilmiş olabilir
+/// ("thyao ", "THYAO"); lot ve seçim iki tarafta da aynı normalize edilir.
+/// Migration 0126'daki `(asset_type, upper(btrim(ticker)))` ile aynı karar.
+export function sinyalVarlikAnahtari(type: string, ticker: string | null | undefined): string {
+  return `${type}|${(ticker ?? '').trim().toUpperCase()}`;
+}
+
+/// Bir kullanıcının sinyal alacağı TEK varlığın anahtarı.
+///
+/// Seçim satırı varsa ve açık lotlardan biriyle eşleşiyorsa o. Satır yoksa
+/// (eski istemci tabloyu bilmez, ya da kullanıcı henüz seçmedi) ya da seçilen
+/// varlık artık portföyde değilse (satıldı/silindi) yedek: analiz edilebilir açık lotlar içinde EN ESKİ eklenen
+/// (`added_date` null olan sona), eşitlikte en küçük `id`: kullanıcı en uzun
+/// süredir tuttuğu varlığın bildirimini almaya devam eder ve karar turdan
+/// tura değişmez (deterministik). Lot yoksa `null`.
+export function sinyalVarligiSec<
+  T extends { id: string; type: string; ticker?: string | null; added_date?: string | null },
+>(lotlar: readonly T[], secim?: { asset_type: string; ticker: string } | null): string | null {
+  if (secim) {
+    const k = sinyalVarlikAnahtari(secim.asset_type, secim.ticker);
+    // Seçilen varlık artık açık lotlarda yoksa (satıldı/silindi) yedeğe
+    // düşülür; yoksa kullanıcı hiç sinyal almazdı. İstemci aynı kuralı aynalar.
+    if (lotlar.some((a) => sinyalVarlikAnahtari(a.type, a.ticker) === k)) return k;
+  }
+  let enEski: T | undefined;
+  let enEskiZaman = Infinity;
+  for (const a of lotlar) {
+    const z = a.added_date ? Date.parse(a.added_date) : NaN;
+    const zaman = Number.isNaN(z) ? Infinity : z;
+    if (
+      enEski === undefined ||
+      zaman < enEskiZaman ||
+      (zaman === enEskiZaman && a.id < enEski.id)
+    ) {
+      enEski = a;
+      enEskiZaman = zaman;
+    }
+  }
+  return enEski ? sinyalVarlikAnahtari(enEski.type, enEski.ticker) : null;
+}
+
+/// Ücretsiz planın tek varlık kapısı (Premium planı, 2026-10-08).
+///
+/// `limit` 0 ya da tanımsızsa kapı kapalıdır ve dizi olduğu gibi döner —
+/// paywall açılmadan davranış birebir eskisi. Açıkken premium olmayan her
+/// kullanıcının lotlarından yalnız seçtiği (ya da `sinyalVarligiSec`
+/// yedeğinin bulduğu) varlığa ait olanlar kalır; premium kullanıcıya
+/// dokunulmaz. Plan "tek varlık" dediği için `limit` > 0 her değerde tek
+/// varlık demektir (tablo kullanıcı başına tek satır tutar). Seçilen varlık
+/// artık portföyde değilse yedek kural uygulanır (bkz. `sinyalVarligiSec`);
+/// tablodaki satır değiştirilmez — varlık geri alınırsa seçim geri gelir.
+export function ucretsizVarlikFiltresi<
+  T extends {
+    id: string;
+    user_id: string;
+    type: string;
+    ticker?: string | null;
+    added_date?: string | null;
+  },
+>(
+  lotlar: readonly T[],
+  limit: number | undefined,
+  premium: ReadonlySet<string>,
+  secimler: readonly SinyalVarlikSecimi[],
+): T[] {
+  if (!limit || limit <= 0) return [...lotlar];
+  const secimOf = new Map<string, SinyalVarlikSecimi>();
+  for (const s of secimler) secimOf.set(s.user_id, s);
+  const lotlarOf = new Map<string, T[]>();
+  for (const a of lotlar) {
+    if (premium.has(a.user_id)) continue;
+    const l = lotlarOf.get(a.user_id);
+    if (l) l.push(a);
+    else lotlarOf.set(a.user_id, [a]);
+  }
+  const anahtarOf = new Map<string, string | null>();
+  for (const [u, l] of lotlarOf) anahtarOf.set(u, sinyalVarligiSec(l, secimOf.get(u)));
+  return lotlar.filter((a) =>
+    premium.has(a.user_id) ||
+    sinyalVarlikAnahtari(a.type, a.ticker) === anahtarOf.get(a.user_id)
+  );
+}
+
 /// Şu anki TR saati (0-23). Sunucu UTC çalışır; TR sabit UTC+3
 /// (2016'dan beri yaz saati uygulaması yok, bu yüzden ofset sabit).
 function istanbulHour(now: Date): number {
@@ -622,9 +712,12 @@ Deno.serve(async (request) => {
     // gösterir. Premium = `premium_mi_kullanici` ile aynı karar: geçerli
     // hak satırı ya da admin (0116/0123). Tek tek RPC yerine iki toplu okuma.
     const ucretsizSlot = Number(Deno.env.get('SINYAL_UCRETSIZ_SLOT') ?? '0') || 0;
+    // 3c'deki tek varlık kapısı da aynı premium kümesini kullanır; okuma iki
+    // kapıdan biri açıksa yapılır, ikisi de kapalıyken hiç sorgu atılmaz.
+    const ucretsizVarlik = Number(Deno.env.get('SINYAL_UCRETSIZ_VARLIK') ?? '0') || 0;
     const premiumKullanicilar = new Set<string>();
     let premiumOkundu = false;
-    if (ucretsizSlot > 0) {
+    if (ucretsizSlot > 0 || ucretsizVarlik > 0) {
       const simdi = Date.now();
       const [haklar, adminler] = await Promise.all([
         admin.from('premium_haklari').select('user_id, bitis').in('user_id', userIds),
@@ -633,7 +726,7 @@ Deno.serve(async (request) => {
       // Okunamazsa kapı uygulanmaz: abone olmuş birinin bildirimini yanlışlıkla
       // kısmak, ücretsiz birine bir tur fazla göndermekten pahalıdır.
       if (haklar.error || adminler.error) {
-        console.error('[analyze-signals] premium okunamadi, slot kapisi bu tur atlandi');
+        console.error('[analyze-signals] premium okunamadi, ucretsiz kapilar bu tur atlandi');
       } else {
         premiumOkundu = true;
         for (const h of (haklar.data ?? []) as { user_id: string; bitis: string | null }[]) {
@@ -648,6 +741,37 @@ Deno.serve(async (request) => {
     }
     const slotKapisi = ucretsizSlot > 0 && premiumOkundu;
 
+    // ── 3c) Ücretsiz tek varlık kapısı ──────────────────────────────────────
+    //
+    // yasin kararı (2026-10-08): ücretsiz planda sinyal bildirimi yalnız TEK
+    // varlık için; ikincisi Premium. `SINYAL_UCRETSIZ_VARLIK` secret'ı (ör.
+    // "1") tanımlı DEĞİLSE kapı yoktur, seçim tablosu okunmaz ve davranış
+    // birebir eskisidir. Paywall açılırken slot secret'ıyla birlikte konur.
+    //
+    // 4b'den ÖNCE uygulanır: elenen varlıkların fiyat geçmişi hiç çekilmez.
+    // Premium okunamadıysa ya da seçimler okunamadıysa kapı bu tur atlanır —
+    // slot kapısıyla aynı gerekçe: abonenin bildirimini yanlışlıkla kesmek,
+    // ücretsiz birine bir tur fazla göndermekten pahalıdır.
+    let kapiliAssets = assets;
+    let skippedByAssetGate = 0;
+    if (ucretsizVarlik > 0 && premiumOkundu) {
+      const { data: secimRows, error: secimError } = await admin
+        .from('sinyal_varlik_secimi')
+        .select('user_id, asset_type, ticker')
+        .in('user_id', userIds);
+      if (secimError) {
+        console.error('[analyze-signals] sinyal varlik secimi okunamadi, varlik kapisi bu tur atlandi');
+      } else {
+        kapiliAssets = ucretsizVarlikFiltresi(
+          assets,
+          ucretsizVarlik,
+          premiumKullanicilar,
+          (secimRows ?? []) as SinyalVarlikSecimi[],
+        );
+        skippedByAssetGate = assets.length - kapiliAssets.length;
+      }
+    }
+
     const now = new Date();
     // Sıklık/pencere yüzünden atlananlar — teşhiste "neden gönderilmedi"
     // sorusunun cevabı. Bu sayaç olmadan sessiz atlama hata gibi görünür.
@@ -659,7 +783,7 @@ Deno.serve(async (request) => {
     // kapalı varlıkların fiyat geçmişi HİÇ ÇEKİLMEZ. Önceden tüm varlıkların
     // serisi yükleniyor, sonra döngüde atlanıyordu — saatbaşı çalışan cron'da
     // bu, çoğu tur boş yere yapılan iş demekti.
-    const aktifAssets = assets.filter((a) => {
+    const aktifAssets = kapiliAssets.filter((a) => {
       const pref = prefs.get(prefKey(a.user_id, a.type));
       if (pref && !pref.signals_enabled) return false;
       // Kapı yalnız bu kararı etkiler; tercih satırı ve sonraki eşik/
@@ -936,6 +1060,9 @@ Deno.serve(async (request) => {
       tr_hour: istanbulHour(now),
       skipped_by_frequency: skippedByFrequency,
       skipped_by_dedup: skippedByDedup,
+      // Ücretsiz tek varlık kapısının eldiği lotlar (`SINYAL_UCRETSIZ_VARLIK`).
+      // Kapı kapalıyken hep 0.
+      skipped_by_asset_gate: skippedByAssetGate,
       users: userIds.length,
       assets: assets.length,
       // Satış ya da silme ile kapanmış pozisyonların elenen alım lot'ları.
