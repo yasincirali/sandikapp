@@ -1,13 +1,14 @@
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
-import 'package:flutter/cupertino.dart' show CupertinoButton, CupertinoPageRoute;
+import 'package:flutter/cupertino.dart' show CupertinoPageRoute;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback, SystemUiOverlayStyle;
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
+import '../widgets/sandik_async_button.dart' show SandikAsyncTap;
 import 'yukleme_isareti.dart';
 
 /// Platforma uygun sayfa geçişi.
@@ -1391,8 +1392,13 @@ class SandikLogo extends StatelessWidget {
 /// Tüm ekranlarda kullanılan standart logout butonu.
 /// Tasarım dili: kırmızı/loss tonu, 36×36 rounded icon box — ProfileScreen'deki
 /// _ActionIcon ile aynı görsel dil.
+///
+/// [onPressed] Future döner (onay + oturum kapatma isteği): tek yükleniyor
+/// davranışı (2026-10-08) gereği düğme [SandikAsyncTap] ile iş bitene kadar
+/// kilitli kalır ve ikonun yerinde gösterge döner — çıkış isteği yavaşken
+/// ikinci dokunuş ikinci onay diyaloğunu açmasın.
 class SandikLogoutButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final Future<void> Function() onPressed;
   final bool disabled;
 
   const SandikLogoutButton({
@@ -1411,10 +1417,8 @@ class SandikLogoutButton extends StatelessWidget {
     final color = disabled
         ? Sandik.loss.withValues(alpha: 0.35)
         : Sandik.loss;
-    return CupertinoButton(
-      minimumSize: SandikTouch.minSize,
-      padding: EdgeInsets.zero,
-      onPressed: disabled ? null : onPressed,
+    return SandikAsyncTap(
+      onTap: disabled ? null : onPressed,
       child: Semantics(
         button: true,
         label: context.l10n.signOutAction,

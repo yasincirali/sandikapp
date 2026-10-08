@@ -12,6 +12,7 @@ import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/tr_format.dart';
 import '../widgets/sandik_error_view.dart';
@@ -136,9 +137,17 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                         if (context.mounted) showAppError(context, e);
                       }
                     },
-                    onRearm: () => ref
-                        .read(priceAlertsProvider.notifier)
-                        .rearm(liste[i].id),
+                    // Eskiden hata yakalanmıyordu (sahipsiz Future → zone'a
+                    // çökme); düğme artık bekliyor, ret sebebi söylenir.
+                    onRearm: () async {
+                      try {
+                        await ref
+                            .read(priceAlertsProvider.notifier)
+                            .rearm(liste[i].id);
+                      } catch (e) {
+                        if (context.mounted) showAppError(context, e);
+                      }
+                    },
                   ),
                 ),
               ),
@@ -178,7 +187,7 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
 class _AlarmSatiri extends StatelessWidget {
   final PriceAlert alarm;
   final VoidCallback onDelete;
-  final VoidCallback onRearm;
+  final Future<void> Function() onRearm;
 
   const _AlarmSatiri({
     required this.alarm,
@@ -227,8 +236,15 @@ class _AlarmSatiri extends StatelessWidget {
               ],
             ),
           ),
+          // "Yeniden kur" istek atar ve sonucu iyimser değil, sunucu
+          // onayından sonra yazar: tek yükleniyor davranışı (2026-10-08).
+          // Sil iyimser kalır (KapananSatir satırı önce kapatır).
           if (tetiklendi)
-            TextButton(onPressed: onRearm, child: Text(context.l10n.recreateAlert)),
+            SandikAsyncButton.kompakt(
+              tur: SandikAsyncTur.metin,
+              onPressed: onRearm,
+              child: Text(context.l10n.recreateAlert),
+            ),
           IconButton(
             onPressed: onDelete,
             icon: Icon(Icons.delete_outline_rounded, color: c.text36),

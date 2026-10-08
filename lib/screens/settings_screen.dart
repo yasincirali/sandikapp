@@ -88,7 +88,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _deleting = false;
-  bool _exporting = false;
 
   /// Hub'ın "Gelişmiş" grubu açık mı. Kapalı başlar: içindekiler teknik ve
   /// nadir; ilk bakışta yer kaplamasın.
@@ -237,12 +236,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// Dokunulan karonun dikdörtgeni — iPad popover'ı buradan açılır.
   final _disaAktarKaroKey = GlobalKey();
 
+  /// Kilit ve gösterge karonun kendisinde (`_SettingsTile.onTapAsync`, tek
+  /// yükleniyor davranışı 2026-10-08); eski `_exporting` bayrağı kalktı.
   Future<void> _exportData() async {
-    if (_exporting) return;
-    // Dikdörtgen setState'ten ÖNCE: karo "yükleniyor" hâline geçtiğinde
-    // trailing değişiyor, ölçüm kararlı hâlden yapılsın.
+    // Dikdörtgen karo "yükleniyor" hâline geçmeden ÖNCE ölçülür: o anda
+    // trailing değişiyor, ölçüm kararlı hâlden yapılsın. (`onTapAsync`
+    // göstergeyi bir sonraki karede çizer; bu satır senkron koşar.)
     final origin = ShareCardService.originOf(_disaAktarKaroKey.currentContext);
-    setState(() => _exporting = true);
     try {
       await DataExportService.instance.exportAndShare(paylasimKaynagi: origin);
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): `exportAndShare`
@@ -254,8 +254,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       CrashReporter.report(e, st, reason: 'SettingsScreen.exportData');
       if (!mounted) return;
       showAppError(context, e);
-    } finally {
-      if (mounted) setState(() => _exporting = false);
     }
   }
 
@@ -851,9 +849,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               icon: Icons.download_outlined,
               title: context.l10n.downloadMyData,
               subtitle: context.l10n.downloadMyDataSubtitle,
-              trailing:
-                  _exporting ? const CustomLoadingIndicator(size: 18) : null,
-              onTap: _exporting ? null : _exportData,
+              onTap: null,
+              onTapAsync: _exportData,
             ),
             _SettingsTile(
               icon: Icons.delete_forever_outlined,
@@ -1479,11 +1476,21 @@ class _LanguagePicker extends ConsumerWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
+class _SettingsTile extends StatefulWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
+
+  /// İstek atan karo (ör. verilerimi indir). Verildiğinde [onTap] yok
+  /// sayılır: iş sürerken karo kilitli, sağdaki ok yerine küçük gösterge
+  /// döner, ikinci dokunuş yutulur — [SandikAsyncButton] / [SandikAsyncTap]
+  /// ile aynı sözleşme (tek yükleniyor davranışı, 2026-10-08). Karonun
+  /// kendi bileşeni olmasının nedeni görünüş: [SandikAsyncTap] göstergeyi
+  /// içeriğin ÜSTÜNE koyar, burada ise satır metni yerinde kalmalı ve
+  /// gösterge yalnız sağ yuvada (eskiden elle yazılan `_exporting` hâli)
+  /// görünmeli. Hata yutulmaz; çağıran kendi yakalar.
+  final Future<void> Function()? onTapAsync;
   final bool destructive;
   final Widget? trailing;
 
@@ -1493,12 +1500,42 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.onTapAsync,
     this.destructive = false,
     this.trailing,
   });
 
   @override
+  State<_SettingsTile> createState() => _SettingsTileState();
+}
+
+class _SettingsTileState extends State<_SettingsTile> {
+  bool _busy = false;
+
+  Future<void> _calistir() async {
+    if (_busy) return;
+    // Haptic kilidin ARDINDAN — [SandikAsyncButton] ile aynı gerekçe.
+    SandikHaptic.medium.perform();
+    setState(() => _busy = true);
+    try {
+      await widget.onTapAsync!();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final icon = widget.icon;
+    final title = widget.title;
+    final subtitle = widget.subtitle;
+    final destructive = widget.destructive;
+    final VoidCallback? onTap = widget.onTapAsync == null
+        ? widget.onTap
+        : (_busy ? null : _calistir);
+    final trailing = _busy
+        ? const CustomLoadingIndicator(size: CustomLoadingIndicator.small)
+        : widget.trailing;
     final color = destructive ? context.c.loss : context.c.text90;
     return Padding(padding: const EdgeInsets.only(bottom: 8), child: SandikCard(
       padding: EdgeInsets.zero,

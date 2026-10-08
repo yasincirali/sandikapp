@@ -10,6 +10,7 @@ import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/polling.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -344,8 +345,12 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
                 else
                   ..._dolu(context, satirlar),
                 const SizedBox(height: SandikSpace.md),
+                // Onay + rıza geri çekme isteği tek Future: gösterge düğmede
+                // döner, ikinci dokunuş yutulur (tek yükleniyor davranışı,
+                // 2026-10-08). Eskiden onaydan sonra istek göstergesiz gidiyordu.
                 Center(
-                  child: TextButton(
+                  child: SandikAsyncButton.kompakt(
+                    tur: SandikAsyncTur.metin,
                     onPressed: _ayril,
                     child: const Text("Zirvedeki Portföyler'den ayrıl"),
                   ),
