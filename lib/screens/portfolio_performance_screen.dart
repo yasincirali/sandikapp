@@ -10,7 +10,8 @@ import 'package:flutter/material.dart'
         LinearProgressIndicator,
         Icons,
         TextStyle,
-        RefreshIndicator;
+        RefreshIndicator,
+        Switch;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -76,6 +77,7 @@ import 'siralama_screen.dart';
 import '../widgets/ortak_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/tour_anchor.dart';
+import '../widgets/raporlar_kapisi.dart';
 import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
 import '../widgets/gorunum_cipi.dart';
@@ -179,6 +181,17 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
     return DateTime(yil, ay, gun, bitis.hour, bitis.minute, bitis.second);
   }
 
+  /// Performans tek akış mı (bayrak `performans_tek_akis`, sadeleştirme 2
+  /// S2): Grafik | Özet anahtarı yok, tek kaydırma, tek kontrol satırı.
+  ///
+  /// `period_summary_enabled` kapalıyken tek akış AÇILMAZ: akışın yarısı
+  /// Özet'tir; Özet kapatılmışsa bugünkü Grafik düzeni çizilir. Tur da
+  /// (`onboarding_screen.dart`) aynı kararı buradan okur — ekran ile metin
+  /// ayrışmasın.
+  static bool get tekAkisAcik =>
+      RemoteConfigService.instance.performansTekAkis &&
+      RemoteConfigService.instance.periodSummaryEnabled;
+
   @override
   ConsumerState<PortfolioPerformanceScreen> createState() =>
       _PortfolioPerformanceScreenState();
@@ -245,6 +258,10 @@ class _PortfolioPerformanceScreenState
   /// Sekme başına ayrı bir dönem tutmak, aynı ekranda iki farklı "şu anki
   /// dönem" kavramı yaratırdı.
   bool _ozetSekmesi = false;
+
+  /// Bkz. [PortfolioPerformanceScreen.tekAkisAcik]. Açıkken [_ozetSekmesi]
+  /// okunmaz: tek akışta iki yüzey yok, Özet her zaman grafiğin altında.
+  bool get _tekAkis => PortfolioPerformanceScreen.tekAkisAcik;
 
   /// Grafik ↔ Özet en son ne zaman değişti — yeni sekmenin öğeleri yalnız
   /// bu andan kısa süre sonra kurulurken solarak gelir (`_SekmeSolmasi`).
@@ -658,7 +675,20 @@ class _PortfolioPerformanceScreenState
                     // bağımsız bir özellik, giriş noktası da öyle). Küresel
                     // kapalıyken eski kural: opt-in + aktif ortak.
                     // Demo (F1): yarış sunucu havuzudur, demoda yok.
-                    if (!DemoModu.aktif &&
+                    //
+                    // Raporlar kapısı (bayrak `raporlar_kapisi`, S6): kupa
+                    // yerine aynı kabukta "Raporlar"; Sıralama listenin bir
+                    // satırı ve koşulu kupanınkiyle AYNI ifade. Kapalıyken
+                    // aşağıdaki kupa birebir.
+                    if (RemoteConfigService.instance.raporlarKapisi)
+                      RaporlarDugmesi(
+                        siralamaAcik: !DemoModu.aktif &&
+                            (RemoteConfigService
+                                    .instance.globalLeaderboardEnabled ||
+                                (ref.watch(leaderboardOptInProvider) &&
+                                    activePartners.isNotEmpty)),
+                      )
+                    else if (!DemoModu.aktif &&
                         (RemoteConfigService.instance.globalLeaderboardEnabled ||
                             (ref.watch(leaderboardOptInProvider) &&
                                 activePartners.isNotEmpty))) ...[

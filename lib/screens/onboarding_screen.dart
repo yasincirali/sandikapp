@@ -673,7 +673,19 @@ List<_Adim> _adimlariKur() {
       // "Piyasanın kattığı" → "Fiyat etkisi", Özet başlıkları "Ne oldu?" /
       // "Neden böyle?" / "Ayrıntılar" / "Daha fazlası". Tur aynı adları
       // kullanır, yoksa kullanıcı ekranda tarif edileni bulamaz.
-      govde: 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
+      // Tek akış (bayrak `performans_tek_akis`, S2): Grafik | Özet anahtarı
+      // yok, tek kaydırma. Bayrak kapalıyken eski metin birebir.
+      govde: PortfolioPerformanceScreen.tekAkisAcik
+          ? 'Kazancın tek sayfada, yukarıdan aşağı: en üstte seçtiğin '
+              'dönemde paranın getirisi (yüzde yalnızca fiyat etkisidir; '
+              'yatırdığın para alttaki cümlede ayrı yazılır), altında '
+              'grafik, onun altında özet. Özet soru sırasıyla ilerler: '
+              '"Ne oldu?" (enflasyona göre kaç puan önde ya da geride '
+              'olduğun), "Neden böyle?" (nereden geldi, hangi varlıklar, '
+              'türe göre döküm) ve "Ayrıntılar" (birikim düzenin; istersen '
+              '"Daha fazlası"nı açarsın). Her yüzdenin yanındaki mavi çip '
+              'ölçüldüğü aralığı yazar.'
+          : 'Grafikler ve kâr/zarar dökümü. Gün içinden beş yıla kadar her '
           'dönemi görebilirsin. Grafik kartında yüzde yalnızca fiyat '
           'etkisidir; yatırdığın para ayrı yazılır. Özet soru sırasıyla '
           'ilerler: "Ne oldu?" (paranın getirisi ve enflasyona göre kaç puan '
@@ -695,12 +707,29 @@ List<_Adim> _adimlariKur() {
       // Karşılaştır ve varlık ekranlarında da var.
       // 2026-09-28: seçici üç grafik ekranında da grafiğin ÜSTÜNDE
       // (bkz. `kartlar.dart` kontrol yığını notu).
-      govde: 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
-          'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha geniş '
-          'pencereler. Aynı seçici '
-          'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
-          'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
-          'basılı tutarak o anın tarihini, saatini ve değerini okuyabilirsin.',
+      // Tek akış (S2): seçici sayfanın tek kontrol satırında, sağında
+      // Filtre çipi; seçim kartı, grafiği ve özeti birlikte değiştirir.
+      // `donem_hafizasi` açıkken seçim ekranlar arasında taşınır — tur bunu
+      // tek cümleyle söyler (yalnız o bayrak açıkken doğru).
+      govde: (PortfolioPerformanceScreen.tekAkisAcik
+              ? 'Sayfanın en üstündeki seçici: "Bugün" gün içini saat saat '
+                  'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
+                  'geniş pencereler. Seçtiğin dönem üstteki kartı, grafiği '
+                  've altındaki özeti birlikte değiştirir. Aynı seçici '
+                  'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da '
+                  'var. Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+                  'basılı tutarak o anın tarihini, saatini ve değerini '
+                  'okuyabilirsin.'
+              : 'Grafiğin üstündeki seçici: "Bugün" gün içini saat saat '
+                  'çizer; 1 hafta, 1 ay, 3 ay, 6 ay, 1 yıl ve 5 yıl daha '
+                  'geniş pencereler. Aynı seçici '
+                  'aynı yerde Takip, Karşılaştır ve varlık ekranlarında da var. '
+                  'Grafiği iki parmakla yakınlaştırabilir, bir noktaya '
+                  'basılı tutarak o anın tarihini, saatini ve değerini '
+                  'okuyabilirsin.') +
+          (RemoteConfigService.instance.donemHafizasi
+              ? ' Seçtiğin dönem her ekranda geçerli olur.'
+              : ''),
       // 2026-09-15: bu adımın görevi kaldırıldı. Eski ölçüt "Gerçek /
       // Simülasyon anahtarı belirdi mi" idi; o anahtar artık kapsam
       // panelinin içinde, yani dönem değişimini ondan okuyamıyoruz
@@ -718,8 +747,19 @@ List<_Adim> _adimlariKur() {
       // çip yalnız türü yazar, mod açıkken çipin altında "Bugünkü portföyle"
       // rozeti durur. Tur metni gerçek ekranı anlatmalı (tur metni arayüzle
       // değişir kuralı).
-      baslik: 'Kapsam',
-      govde: 'Bu çip hangi varlık türüne baktığını yazar; dokununca türler '
+      baslik: PortfolioPerformanceScreen.tekAkisAcik ? 'Filtre' : 'Kapsam',
+      // Tek akış (S2): hedef Filtre çipi (`_buildFiltreCipi`); kişi, tür ve
+      // "Bugünkü portföyle" tek alt sayfada. Bayrak kapalıyken eski metin.
+      govde: PortfolioPerformanceScreen.tekAkisAcik
+          ? 'Dönem seçicinin sağındaki Filtre çipi neye baktığını belirler; '
+              'dokununca bir sayfa açılır: ortağın varsa kimin portföyü, '
+              'hangi varlık türü ve "Bugünkü portföyle". Varsayılan dışında '
+              'bir seçim varsa çip sayısını yazar ("Filtre · 1").\n\n'
+              'Grafik dönem içindeki her alım ve satımla gerçek geçmişini '
+              'çizer. "Bugünkü portföyümü baştan elimde tutsaydım ne '
+              'olurdu?" diye merak edersen aynı sayfada "Bugünkü portföyle '
+              'göster"i aç; açıkken seçicinin altında rozet görünür.'
+          : 'Bu çip hangi varlık türüne baktığını yazar; dokununca türler '
           'açılır. Kimin portföyü olduğunu başlıktaki kişi çipi '
           'seçer.\n\nGrafik dönem içindeki her alım ve satımla gerçek '
           'geçmişini çizer. "Bugünkü portföyümü baştan elimde tutsaydım '
@@ -743,7 +783,10 @@ List<_Adim> _adimlariKur() {
       // 2026-10-04 (bayrak `yaris_duello_arena`): tek ortaklı yarış liste
       // değil düello arenası; metin arenayı anlatır — tur gerçek ekranın
       // üstünde çalışır. İki bayrak 2026-10-05'te kalktı, metin kalıcı.
-      govde: 'Tür dökümünün altındaki kart, dönemin en iyi seçimlerini yapan '
+      // Tek akış (S2): kart özetin altında, sayfanın sonunda; tür dökümü
+      // artık "Neden böyle?" bölümünde. Konum sözcüğü ona göre.
+      govde: '${PortfolioPerformanceScreen.tekAkisAcik ? 'Sayfanın sonundaki' : 'Tür dökümünün altındaki'}'
+          ' kart, dönemin en iyi seçimlerini yapan '
           'anonim portföyleri gösterir: her gün tutulan varlıklar piyasa '
           'fiyatıyla ölçülür, para ekleme zamanı sonucu değiştirmez. '
           'Dokununca Sıralama sayfasının Zirvedekiler sekmesi açılır: '

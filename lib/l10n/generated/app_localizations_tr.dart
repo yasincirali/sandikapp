@@ -6924,4 +6924,61 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get s5KategoriyeGoreOzellestir => 'Kategoriye göre özelleştir';
+
+  @override
+  String get s2Filtre => 'Filtre';
+
+  @override
+  String s2FiltreSayili(int n) {
+    return 'Filtre · $n';
+  }
+
+  @override
+  String s2FiltreEtkin(int n) {
+    return 'Filtre, $n etkin';
+  }
+
+  @override
+  String get s2FiltreKisi => 'Kişi';
+
+  @override
+  String get s2FiltreKategori => 'Kategori';
+
+  @override
+  String s2BakiyeArttiAlim(String tutar, String alim) {
+    return 'Bakiye $tutar arttı; bunun $alim kadarı yeni alım.';
+  }
+
+  @override
+  String s2BakiyeAzaldiAlim(String tutar, String alim) {
+    return 'Bakiye $tutar azaldı; dönemde $alim yeni alım yaptın.';
+  }
+
+  @override
+  String s2BakiyeArttiSatis(String tutar, String satis) {
+    return 'Bakiye $tutar arttı; dönemde $satis satış yaptın.';
+  }
+
+  @override
+  String s2BakiyeAzaldiSatis(String tutar, String satis) {
+    return 'Bakiye $tutar azaldı; bunun $satis kadarı satış.';
+  }
+
+  @override
+  String get s6Raporlar => 'Raporlar';
+
+  @override
+  String get s6HaftaOzetiAlt => 'Fonlarında ve hisselerinde bu hafta olanlar';
+
+  @override
+  String get s6AylikRapor => 'Aylık rapor';
+
+  @override
+  String get s6YilOzeti => 'Yıl özeti';
+
+  @override
+  String get s6Siralama => 'Sıralama';
+
+  @override
+  String get s6SiralamaAlt => 'Zirvedeki portföyler ve ortaklarınla yarış';
 }
