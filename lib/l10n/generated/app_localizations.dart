@@ -2651,7 +2651,7 @@ abstract class AppLocalizations {
   /// No description provided for @premiumPitch.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi'**
+  /// **'Sınırsız varlık ve premium göstergeler'**
   String get premiumPitch;
 
   /// No description provided for @premiumActive.
@@ -4013,7 +4013,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionTerms.
   ///
   /// In tr, this message translates to:
-  /// **'Abonelik App Store hesabına yansır. Otomatik yenilenir, iptal için Ayarlar → Apple ID → Abonelikler menüsünden yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; iptal etmezsen deneme sonunda ücret tahsil edilir.'**
+  /// **'Ödeme App Store hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Ayarlar › Apple ID › Abonelikler\'den yönetebilir ya da iptal edebilirsin.'**
   String get subscriptionTerms;
 
   /// No description provided for @premiumUnlocked.
@@ -4025,7 +4025,7 @@ abstract class AppLocalizations {
   /// No description provided for @premiumUnlockedBody.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve daha fazlası açıldı.'**
+  /// **'Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.'**
   String get premiumUnlockedBody;
 
   /// No description provided for @greatWord.
@@ -4049,7 +4049,7 @@ abstract class AppLocalizations {
   /// No description provided for @paywallSubhead.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.'**
+  /// **'Sınırsız varlık ve gelişmiş göstergeler. Portföy takibi her zaman ücretsiz.'**
   String get paywallSubhead;
 
   /// No description provided for @restorePurchase.
@@ -11181,6 +11181,138 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Not şu an açılamadı.'**
   String get anzOkunamadi;
+
+  /// No description provided for @sgnPremiumAktif.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium göstergeler açık'**
+  String get sgnPremiumAktif;
+
+  /// No description provided for @sgnPremiumAktifGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'ADX, Williams %R ve CCI sinyal analizine katılıyor.'**
+  String get sgnPremiumAktifGovde;
+
+  /// No description provided for @sgnPremiumKilitBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium göstergeler'**
+  String get sgnPremiumKilitBaslik;
+
+  /// No description provided for @sgnPremiumKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.'**
+  String get sgnPremiumKilitGovde;
+
+  /// No description provided for @sgnPremiumGec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium\'a geç'**
+  String get sgnPremiumGec;
+
+  /// No description provided for @pwOzSinirsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sınırsız varlık ve tüm varlık türleri'**
+  String get pwOzSinirsiz;
+
+  /// No description provided for @pwOzGosterge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal analizinde ADX, Williams %R ve CCI'**
+  String get pwOzGosterge;
+
+  /// No description provided for @pwOzRadar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı'**
+  String get pwOzRadar;
+
+  /// No description provided for @pwFiyatAylik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{fiyat}/ay'**
+  String pwFiyatAylik(String fiyat);
+
+  /// No description provided for @pwFiyatYillik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{fiyat}/yıl'**
+  String pwFiyatYillik(String fiyat);
+
+  /// No description provided for @pwDenemeAltyazi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} gün ücretsiz, sonra otomatik yenilenir'**
+  String pwDenemeAltyazi(int gun);
+
+  /// No description provided for @pwYenilenirAltyazi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik yenilenir, istediğin zaman iptal edebilirsin'**
+  String get pwYenilenirAltyazi;
+
+  /// No description provided for @pwDenemeDugme.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} gün ücretsiz dene'**
+  String pwDenemeDugme(int gun);
+
+  /// No description provided for @pwAboneOl.
+  ///
+  /// In tr, this message translates to:
+  /// **'Abone ol'**
+  String get pwAboneOl;
+
+  /// No description provided for @pwKosulAndroid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödeme Google Play hesabından alınır. Abonelik, dönem bitmeden iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Google Play › Ödemeler ve abonelikler › Abonelikler\'den yönetebilir ya da iptal edebilirsin.'**
+  String get pwKosulAndroid;
+
+  /// No description provided for @pwDenemeKosul.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} günlük ücretsiz deneme bitmeden iptal etmezsen deneme sonunda ücret alınır.'**
+  String pwDenemeKosul(int gun);
+
+  /// No description provided for @pwKullanilamaz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satın alma şu an kullanılamıyor. Biraz sonra yeniden dene.'**
+  String get pwKullanilamaz;
+
+  /// No description provided for @pwBeklemede.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödemen onay bekliyor. Onaylanınca Premium kendiliğinden açılır.'**
+  String get pwBeklemede;
+
+  /// No description provided for @pwHata.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.'**
+  String get pwHata;
+
+  /// No description provided for @pwGeriYuklendi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliğin geri yüklendi.'**
+  String get pwGeriYuklendi;
+
+  /// No description provided for @pwGeriYukBulunamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hesapta etkin bir abonelik bulunamadı.'**
+  String get pwGeriYukBulunamadi;
+
+  /// No description provided for @pwGeriYukHata.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.'**
+  String get pwGeriYukHata;
 }
 
 class _AppLocalizationsDelegate

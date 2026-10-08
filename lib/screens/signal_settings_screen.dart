@@ -20,8 +20,12 @@ class SignalSettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    // Gerçek hak (mağaza/sunucu/admin). Eskiden cihazdaki geliştirici
+    // anahtarıydı ve aşağıdaki kartın "Aç" düğmesi onu açıyordu: paywall
+    // açıkken herkes ödemesiz Premium alırdı (2026-10-06 bulgusu).
+    final premium = ref.watch(effectivePremiumProvider);
     final paywallOn = ref.watch(paywallVisibleProvider);
+    final gelistirici = ref.watch(gelistiriciAnahtariSayilirProvider);
     final thresholds = ref.watch(signalThresholdProvider);
     final schedules = ref.watch(signalScheduleProvider);
     final neutralPush = ref.watch(signalNeutralPushProvider);
@@ -41,8 +45,17 @@ class SignalSettingsScreen extends ConsumerWidget {
           if (paywallOn) ...[
             _PremiumCard(
               unlocked: premium,
-              onToggle: () =>
-                  ref.read(premiumUnlockedProvider.notifier).set(!premium),
+              onUpgrade: () {
+                AnalyticsService.instance
+                    .logPremiumGateShown(feature: 'signal_settings_card');
+                PaywallScreen.show(context, source: 'signal_settings_card');
+              },
+              // Yalnız debug: geliştirici anahtarı (release'te çizilmez).
+              onDevToggle: gelistirici
+                  ? () => ref
+                      .read(premiumUnlockedProvider.notifier)
+                      .set(!ref.read(premiumUnlockedProvider))
+                  : null,
             ),
             const SizedBox(height: 24),
           ],
@@ -151,11 +164,17 @@ class SignalSettingsScreen extends ConsumerWidget {
 
 class _PremiumCard extends StatelessWidget {
   final bool unlocked;
-  final VoidCallback onToggle;
-  const _PremiumCard({required this.unlocked, required this.onToggle});
+  final VoidCallback onUpgrade;
+  final VoidCallback? onDevToggle;
+  const _PremiumCard({
+    required this.unlocked,
+    required this.onUpgrade,
+    this.onDevToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -185,44 +204,48 @@ class _PremiumCard extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  unlocked ? 'Premium aktif' : 'Premium göstergeler',
-                  style: context.t.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: context.c.text90,
+            child: GestureDetector(
+              // Geliştirici anahtarı: yalnız debug'da uzun basış.
+              onLongPress: onDevToggle,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    unlocked ? l10n.sgnPremiumAktif : l10n.sgnPremiumKilitBaslik,
+                    style: context.t.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.text90,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  unlocked
-                      ? 'ADX, Williams %R ve CCI göstergeleri kullanılabilir.'
-                      : 'ADX, Williams %R, CCI göstergelerini açmak için Premium\'a geç.',
-                  style: context.t.bodySmall
-                      ?.copyWith(color: context.c.text58, height: 1.4),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          TextButton(
-            onPressed: onToggle,
-            style: TextButton.styleFrom(
-              backgroundColor:
-                  unlocked ? context.c.overlay : context.c.amberText,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            child: Text(
-              unlocked ? 'Kapat' : 'Aç',
-              style: TextStyle(
-                color: unlocked ? context.c.text90 : context.c.onAmber,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
+                  const SizedBox(height: 2),
+                  Text(
+                    unlocked ? l10n.sgnPremiumAktifGovde : l10n.sgnPremiumKilitGovde,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58, height: 1.4),
+                  ),
+                ],
               ),
             ),
           ),
+          // Premium'daysa eylem yok: iptal/plan değişikliği mağazada yapılır
+          // (Profil › abonelik satırı › Yönet). Değilse paywall'a gider.
+          if (!unlocked) ...[
+            const SizedBox(width: 10),
+            TextButton(
+              onPressed: onUpgrade,
+              style: TextButton.styleFrom(
+                backgroundColor: context.c.amberFill,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              child: Text(
+                l10n.sgnPremiumGec,
+                style: context.t.labelMedium?.copyWith(
+                  color: context.c.onAmber,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

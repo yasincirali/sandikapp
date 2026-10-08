@@ -1,19 +1,31 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart' show Package;
 
-import '../providers/preferences_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/remote_config_service.dart';
+import '../services/satin_alma_service.dart';
+import '../services/yasal_metin_katalogu.dart' show YasalBelge;
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart' show parseTrNumber;
 import '../widgets/custom_loading_indicator.dart';
 import '../l10n/l10n.dart';
+import 'legal_doc_screen.dart' show belgeyiAc;
 
-/// Premium'a geçiş için paywall. Faz 1'de RevenueCat'e bağlanacak;
-/// şu an dummy — [_completePurchase] direkt [premiumUnlockedProvider]'ı
-/// açar (test amaçlı). Fiyatlar Remote Config'ten dinamik gelir.
+/// Premium'a geçiş için paywall (RevenueCat, 2026-10-08).
+///
+/// Satın alma [SatinAlmaService] üzerinden mağazaya gider; başarıda hak
+/// `magazaPremiumProvider` + sunucu (`premium_haklari`, webhook) üzerinden
+/// gelir. Eskiden [_satinAl] 600 ms bekleyip cihazdaki geliştirici anahtarını
+/// açıyordu: parası alınmadan Premium (2026-10-06 bulgusu).
+///
+/// Fiyat ve deneme süresi MAĞAZADAN okunur (`priceString`, [denemeGunu]);
+/// mağaza yanıt vermezse Remote Config fiyatı gösterilir ama deneme vaat
+/// edilmez, düğme "Abone ol" der ve dokununca "kullanılamıyor" söylenir.
 ///
 /// Kullanım:
 ///   PaywallScreen.show(context, source: 'asset_limit_dialog');
@@ -51,14 +63,10 @@ enum _Plan { monthly, yearly }
 /// 12 = 588₺, 349₺ → %40,6 idi; 399₺ ile %32). Yüzde aşağı
 /// yuvarlanır (abartmaz); fiyat okunamazsa ya da tasarruf yoksa rozet
 /// hiç çıkmaz: uydurma sayı yazılmaz.
-String? _tasarrufRozeti(BuildContext context, String aylik, String yillik) {
-  final oran = yillikTasarrufOrani(aylik, yillik);
-  if (oran == null) return null;
-  return context.l10n.prmYillikTasarruf('$oran');
-}
-
+///
 /// Saf hesap (test edilir): '49₺/ay', '399₺/yıl' → 32. Okunamaz ya da
-/// tasarruf 1 puanın altındaysa null.
+/// tasarruf 1 puanın altındaysa null. Mağaza teklifi geldiyse
+/// [tasarrufOrani] sayısal fiyatla çağrılır.
 int? yillikTasarrufOrani(String aylik, String yillik) {
   double? sayi(String m) {
     final e = RegExp(r'\d[\d.,]*').firstMatch(m);
@@ -66,20 +74,59 @@ int? yillikTasarrufOrani(String aylik, String yillik) {
   }
 
   final a = sayi(aylik), y = sayi(yillik);
-  if (a == null || y == null || a <= 0) return null;
-  final oran = ((1 - y / (a * 12)) * 100).floor();
+  if (a == null || y == null) return null;
+  return tasarrufOrani(a, y);
+}
+
+/// Saf: sayısal fiyatlardan aynı oran. Mağaza fiyatı metinden değil buradan
+/// hesaplanır: `priceString` cihaz diline göre biçimlenir ('TRY 49.99'),
+/// metinden okumak İngilizce cihazda 100 kat yanlış oran verirdi.
+int? tasarrufOrani(double aylik, double yillik) {
+  if (aylik <= 0) return null;
+  final oran = ((1 - yillik / (aylik * 12)) * 100).floor();
   return oran >= 1 ? oran : null;
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   _Plan _selected = _Plan.yearly;
   bool _busy = false;
+  MagazaTeklifi? _teklif;
+
+  @override
+  void initState() {
+    super.initState();
+    CrashReporter.arkaPlan(_teklifiYukle(), reason: 'Paywall teklif');
+  }
+
+  Future<void> _teklifiYukle() async {
+    final t = await SatinAlmaService.instance.teklif();
+    if (mounted && t != null) setState(() => _teklif = t);
+  }
+
+  Package? get _seciliPaket =>
+      _selected == _Plan.yearly ? _teklif?.yillik : _teklif?.aylik;
 
   @override
   Widget build(BuildContext context) {
     final rc = RemoteConfigService.instance;
-    final priceMonthly = rc.premiumPriceMonthly;
-    final priceYearly = rc.premiumPriceYearly;
+    final l = context.l10n;
+    final aylikUrun = _teklif?.aylik?.storeProduct;
+    final yillikUrun = _teklif?.yillik?.storeProduct;
+    // Mağaza fiyatı varsa o (gerçek tahsil edilecek tutar); yoksa RC metni.
+    final priceMonthly = aylikUrun != null
+        ? l.pwFiyatAylik(aylikUrun.priceString)
+        : rc.premiumPriceMonthly;
+    final priceYearly = yillikUrun != null
+        ? l.pwFiyatYillik(yillikUrun.priceString)
+        : rc.premiumPriceYearly;
+    final oran = aylikUrun != null && yillikUrun != null
+        ? tasarrufOrani(aylikUrun.price, yillikUrun.price)
+        : yillikTasarrufOrani(rc.premiumPriceMonthly, rc.premiumPriceYearly);
+    final yillikDeneme = yillikUrun == null ? null : denemeGunu(yillikUrun);
+    final aylikDeneme = aylikUrun == null ? null : denemeGunu(aylikUrun);
+    final seciliDeneme =
+        _selected == _Plan.yearly ? yillikDeneme : aylikDeneme;
+    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -96,7 +143,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   const SizedBox(height: 28),
                   _HeroCard(),
                   const SizedBox(height: 24),
-                  const _FeatureList(),
+                  _FeatureList(radar: rc.balinaRadariAcik),
                   if (rc.balinaRadariAcik) ...[
                     const SizedBox(height: 8),
                     _KarsilastirmaTablosu(varlikSiniri: rc.freeAssetLimit),
@@ -104,30 +151,51 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   const SizedBox(height: 24),
                   _PlanCard(
                     plan: _Plan.yearly,
-                    title: context.l10n.planYearly,
+                    title: l.planYearly,
                     price: priceYearly,
-                    subtitle: context.l10n.planYearlySubtitle,
-                    badgeText: _tasarrufRozeti(context, priceMonthly, priceYearly),
+                    subtitle: yillikDeneme != null
+                        ? l.pwDenemeAltyazi(yillikDeneme)
+                        : l.pwYenilenirAltyazi,
+                    badgeText:
+                        oran == null ? null : l.prmYillikTasarruf('$oran'),
                     selected: _selected == _Plan.yearly,
                     onTap: () => setState(() => _selected = _Plan.yearly),
                   ),
                   const SizedBox(height: 12),
                   _PlanCard(
                     plan: _Plan.monthly,
-                    title: context.l10n.planMonthly,
+                    title: l.planMonthly,
                     price: priceMonthly,
-                    subtitle: context.l10n.planMonthlySubtitle,
+                    subtitle: aylikDeneme != null
+                        ? l.pwDenemeAltyazi(aylikDeneme)
+                        : l.planMonthlySubtitle,
                     badgeText: null,
                     selected: _selected == _Plan.monthly,
                     onTap: () => setState(() => _selected = _Plan.monthly),
                   ),
                   const SizedBox(height: 20),
+                  // Mağaza kuralı (App Store 3.1.2, Play abonelik politikası):
+                  // yenileme/iptal bilgisi, varsa deneme koşulu ve Koşullar +
+                  // Gizlilik bağlantıları satın alma ekranında görünür olmalı.
                   Text(
-                    context.l10n.subscriptionTerms,
+                    [
+                      android ? l.pwKosulAndroid : l.subscriptionTerms,
+                      if (seciliDeneme != null) l.pwDenemeKosul(seciliDeneme),
+                    ].join(' '),
                     style: context.t.bodySmall?.copyWith(
                       color: context.c.text36,
                       height: 1.5,
                     ),
+                  ),
+                  const SizedBox(height: SandikSpace.sm),
+                  Wrap(
+                    spacing: SandikSpace.md,
+                    children: [
+                      _BelgeBaglantisi(
+                          metin: l.termsOfUse, belge: YasalBelge.kosullar),
+                      _BelgeBaglantisi(
+                          metin: l.privacyPolicy, belge: YasalBelge.gizlilik),
+                    ],
                   ),
                 ],
               ),
@@ -138,9 +206,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               bottom: 0,
               child: _BottomBar(
                 busy: _busy,
-                selectedPlan: _selected,
-                onSubscribe: _completePurchase,
-                onRestore: _restorePurchases,
+                etiket: seciliDeneme != null
+                    ? l.pwDenemeDugme(seciliDeneme)
+                    : l.pwAboneOl,
+                onSubscribe: _satinAl,
+                onRestore: _geriYukle,
               ),
             ),
           ],
@@ -149,31 +219,62 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  Future<void> _completePurchase() async {
+  Future<void> _satinAl() async {
     if (_busy) return;
+    final paket = _seciliPaket;
+    if (paket == null) {
+      sandikSnack(context, context.l10n.pwKullanilamaz);
+      return;
+    }
     setState(() => _busy = true);
     try {
-      // FAZ 1 TODO: RevenueCat.purchasePackage() burada çağrılacak.
-      // Şu an dummy — direkt premium'u aç ki UI akışını test edebilelim.
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      await ref
-          .read(premiumUnlockedProvider.notifier)
-          .set(true);
-      unawaited(AnalyticsService.instance.logPremiumUpgradeCompleted(
-        plan: _selected == _Plan.yearly ? 'yearly' : 'monthly',
-      ));
+      final sonuc = await SatinAlmaService.instance.satinAl(paket);
       if (!mounted) return;
-      await _showSuccessSheet();
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
+      switch (sonuc) {
+        case SatinAlmaSonucu.basarili:
+          unawaited(AnalyticsService.instance.logPremiumUpgradeCompleted(
+            plan: _selected == _Plan.yearly ? 'yearly' : 'monthly',
+          ));
+          await _showSuccessSheet();
+          if (!mounted) return;
+          Navigator.of(context).pop(true);
+        case SatinAlmaSonucu.vazgecti:
+          break;
+        case SatinAlmaSonucu.beklemede:
+          sandikSnack(context, context.l10n.pwBeklemede);
+        case SatinAlmaSonucu.hata:
+          sandikSnack(context, context.l10n.pwHata);
+        case SatinAlmaSonucu.kullanilamaz:
+          sandikSnack(context, context.l10n.pwKullanilamaz);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _restorePurchases() async {
-    // FAZ 1 TODO: RevenueCat.restorePurchases()
-    sandikSnack(context, 'Geri yükleme yakında (RevenueCat entegrasyonu ile)');
+  Future<void> _geriYukle() async {
+    if (_busy) return;
+    if (!SatinAlmaService.instance.yapilandirildi) {
+      sandikSnack(context, context.l10n.pwKullanilamaz);
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final bulundu = await SatinAlmaService.instance.geriYukle();
+      if (!mounted) return;
+      final l = context.l10n;
+      sandikSnack(
+        context,
+        switch (bulundu) {
+          true => l.pwGeriYuklendi,
+          false => l.pwGeriYukBulunamadi,
+          null => l.pwGeriYukHata,
+        },
+      );
+      if (bulundu == true) Navigator.of(context).pop(true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _showSuccessSheet() {
@@ -326,29 +427,32 @@ class _HeroCard extends StatelessWidget {
 // ── Feature listesi ───────────────────────────────────────────────────────
 
 class _FeatureList extends StatelessWidget {
-  const _FeatureList();
+  const _FeatureList({required this.radar});
 
-  // ⚠️ BURAYA YALNIZCA UYGULAMADA GERÇEKTEN VAR OLAN ÖZELLİK YAZILIR.
-  // Henüz yazılmamış bir özelliği listelemek App Store 2.3.1 (yanıltıcı
-  // tanıtım) ihlalidir ve parası alınıp verilmeyen özellik anlamına gelir.
-  // Kaldırılanlar (yeniden eklemeden ÖNCE implementasyonu yaz):
+  /// Balina Radarı açık mı: radar ayrıntıları ancak o zaman satılır.
+  final bool radar;
+
+  // ⚠️ BURAYA YALNIZCA UYGULAMADA GERÇEKTEN KİLİTLİ OLAN ÖZELLİK YAZILIR.
+  // Listede olup ücretsizde de açık olan şey "parası alınıp verilmeyen"
+  // vaattir; henüz yazılmamış bir özellik App Store 2.3.1 ihlalidir.
+  // Kaldırılanlar (yeniden eklemeden ÖNCE kilidi/implementasyonu yaz):
   //   - "Aylık AI portföy raporu" → hiçbir servis/edge function yok
   //   - "Fiyat alarmları"        → yalnızca bu ekranda geçiyordu
   //   - "Yıllık vergi PDF raporu" → yalnızca bu ekranda geçiyordu
-  static const _features = <(IconData, String)>[
-    (Icons.all_inclusive_rounded, 'Sınırsız varlık ve tüm tipler (fon + emtia dahil)'),
-    (Icons.trending_up_rounded, 'Premium göstergeler: ADX, Williams %R, CCI'),
-    (Icons.notifications_active_outlined, 'Günde 2 sinyal analizi (11:00 + 15:00) + nötr bildirim'),
-    (Icons.groups_2_outlined, 'Sınırsız partner paylaşımı'),
-    (Icons.timeline_rounded, '5 yıl grafik geçmişi'),
-  ];
-
+  //   - "Günde 2 sinyal", "Sınırsız partner", "5 yıl grafik" (2026-10-08)
+  //     → Temmuz planından kalmıştı; ücretsizde de açık, hiçbiri kilitli değil.
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
+    final features = <(IconData, String)>[
+      (Icons.all_inclusive_rounded, l.pwOzSinirsiz),
+      (Icons.trending_up_rounded, l.pwOzGosterge),
+      if (radar) (Icons.radar_rounded, l.pwOzRadar),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final f in _features) ...[
+        for (final f in features) ...[
           Row(
             children: [
               Container(
@@ -589,13 +693,13 @@ class _PlanCard extends StatelessWidget {
 
 class _BottomBar extends StatelessWidget {
   final bool busy;
-  final _Plan selectedPlan;
+  final String etiket;
   final Future<void> Function() onSubscribe;
   final Future<void> Function() onRestore;
 
   const _BottomBar({
     required this.busy,
-    required this.selectedPlan,
+    required this.etiket,
     required this.onSubscribe,
     required this.onRestore,
   });
@@ -631,9 +735,7 @@ class _BottomBar extends StatelessWidget {
                 child: busy
                     ? const CustomLoadingIndicator(size: 22)
                     : Text(
-                        selectedPlan == _Plan.yearly
-                            ? '7 gün ücretsiz dene'
-                            : 'Premium ol',
+                        etiket,
                         style: context.t.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800),
                       ),
@@ -648,6 +750,33 @@ class _BottomBar extends StatelessWidget {
                       fontWeight: FontWeight.w600)),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Koşullar / Gizlilik bağlantısı ───────────────────────────────────────
+
+class _BelgeBaglantisi extends StatelessWidget {
+  const _BelgeBaglantisi({required this.metin, required this.belge});
+
+  final String metin;
+  final YasalBelge belge;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () => belgeyiAc(context, belge),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 44),
+      ),
+      child: Text(
+        metin,
+        style: context.t.bodySmall?.copyWith(
+          color: context.c.text58,
+          decoration: TextDecoration.underline,
         ),
       ),
     );

@@ -8,6 +8,40 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-08 Premium satın alma (RevenueCat) — dal `claude/project-thread-uryvqf`
+
+Uygulama tarafı hazır, hepsi `paywall_enabled` arkasında (bayrak KAPALI kaldıkça
+mağazadaki kullanıcı hiçbir şey görmez; migration ve sunucu değişikliği yok).
+Bu PR'daki düzeltmeler: Sinyal Ayarları'ndaki ödemesiz "Aç" düğmesi release'ten
+kalktı (yalnız debug'da uzun basış), satın alma artık gerçek (taklit 600 ms
+yok), paywall yalnız gerçekten kilitli özellikleri satıyor, premium göstergeler
+gerçek hakka bağlı. Deneme süresi ve fiyat MAĞAZADAN okunur.
+
+Paywall'u açmadan önce sırayla:
+- [ ] App Store Connect: abonelik grubu "sandık Premium", iki ürün — aylık
+      49 ₺, yıllık 399 ₺ (ürün kimlikleri ör. `sandik_premium_aylik`,
+      `sandik_premium_yillik`). Deneme istiyorsan "Introductory Offer → Free".
+      Paid Applications sözleşmesi + banka/vergi bilgisi tamam olmalı.
+- [ ] Play Console: aynı iki abonelik (base plan aylık/yıllık), istersen
+      "free trial" teklifi. Ödeme profili tamam olmalı.
+- [ ] RevenueCat: proje + iOS ve Android uygulaması; entitlement kimliği
+      tam olarak `premium`; "default" offering içinde Monthly ve Annual paket.
+      App Store Connect API anahtarı ve Play servis hesabı JSON'u RevenueCat'e.
+- [ ] GitHub secret'ları (build'e girer): `REVENUECAT_IOS_KEY` (appl_…),
+      `REVENUECAT_ANDROID_KEY` (goog_…). Yoksa satın alma "kullanılamıyor" der.
+- [ ] Supabase secret'ları (iki sunucu): `REVENUECAT_WEBHOOK_SECRET`,
+      `REVENUECAT_API_KEY`; RevenueCat › Integrations › Webhook adresi
+      `https://ybdbzouzhzwthjgwlbmk.supabase.co/functions/v1/revenuecat-webhook`,
+      Authorization başlığı = webhook secret.
+- [ ] Yasal metin: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
+      (Koşullar §2A, Gizlilik §3.6/§5/§6/§7). Açılış yayınında md'ye girer,
+      sürüm artar, migration. Hesap silmede RevenueCat müşterisini silen çağrı
+      (`delete-account`) henüz yok; ya eklenir ya metin bunu söyler.
+- [ ] Sandbox testi: TestFlight'ta kendi cihazında `paywall_enabled` (koşullu)
+      aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.
+- [ ] Açılış günü sırası yukarıdaki 0115–0118 bölümünde (hediye → bayrak →
+      `kapi_acik`).
+
 ## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
 
 Bayraksız gelen iki düzeltme (mağazadaki davranışı yalnız iyileştirir):

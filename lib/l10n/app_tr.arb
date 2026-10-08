@@ -828,7 +828,7 @@
   "rejectRequest": "Ortaklık isteğini reddet",
   "acceptRequest": "Ortaklık isteğini kabul et",
   "sandikPremium": "Sandık Premium",
-  "premiumPitch": "Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi",
+  "premiumPitch": "Sınırsız varlık ve premium göstergeler",
   "premiumActive": "Premium aktif",
   "premiumActiveBody": "Tüm gelişmiş özellikler açık",
   "codeCopied": "Kod üretildi ve panoya kopyalandı",
@@ -1349,13 +1349,13 @@
   "planYearlySubtitle": "7 gün ücretsiz dene, sonra otomatik yenilenir",
   "planMonthly": "Aylık",
   "planMonthlySubtitle": "İstediğin zaman iptal edebilirsin",
-  "subscriptionTerms": "Abonelik App Store hesabına yansır. Otomatik yenilenir, iptal için Ayarlar → Apple ID → Abonelikler menüsünden yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; iptal etmezsen deneme sonunda ücret tahsil edilir.",
+  "subscriptionTerms": "Ödeme App Store hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Ayarlar › Apple ID › Abonelikler'den yönetebilir ya da iptal edebilirsin.",
   "premiumUnlocked": "Premium açıldı",
-  "premiumUnlockedBody": "Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve daha fazlası açıldı.",
+  "premiumUnlockedBody": "Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.",
   "greatWord": "Harika",
   "sandikPremiumUpper": "SANDIK PREMIUM",
   "paywallHeadline": "Portföyünü daha derinlemesine\ntakip et",
-  "paywallSubhead": "Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.",
+  "paywallSubhead": "Sınırsız varlık ve gelişmiş göstergeler. Portföy takibi her zaman ücretsiz.",
   "restorePurchase": "Satın alımı geri yükle",
   "recapTitle": "sandık Özetin",
   "recapInYear": "{year} yılında",
@@ -4863,5 +4863,52 @@
   },
   "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",
   "anzAylikBos": "Bu ayın raporu henüz hazır değil.",
-  "anzOkunamadi": "Not şu an açılamadı."
+  "anzOkunamadi": "Not şu an açılamadı.",
+  "sgnPremiumAktif": "Premium göstergeler açık",
+  "sgnPremiumAktifGovde": "ADX, Williams %R ve CCI sinyal analizine katılıyor.",
+  "sgnPremiumKilitBaslik": "Premium göstergeler",
+  "sgnPremiumKilitGovde": "ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.",
+  "sgnPremiumGec": "Premium'a geç",
+  "pwOzSinirsiz": "Sınırsız varlık ve tüm varlık türleri",
+  "pwOzGosterge": "Sinyal analizinde ADX, Williams %R ve CCI",
+  "pwOzRadar": "Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı",
+  "pwFiyatAylik": "{fiyat}/ay",
+  "@pwFiyatAylik": {
+    "placeholders": {
+      "fiyat": {"type": "String"}
+    }
+  },
+  "pwFiyatYillik": "{fiyat}/yıl",
+  "@pwFiyatYillik": {
+    "placeholders": {
+      "fiyat": {"type": "String"}
+    }
+  },
+  "pwDenemeAltyazi": "{gun} gün ücretsiz, sonra otomatik yenilenir",
+  "@pwDenemeAltyazi": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwYenilenirAltyazi": "Otomatik yenilenir, istediğin zaman iptal edebilirsin",
+  "pwDenemeDugme": "{gun} gün ücretsiz dene",
+  "@pwDenemeDugme": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwAboneOl": "Abone ol",
+  "pwKosulAndroid": "Ödeme Google Play hesabından alınır. Abonelik, dönem bitmeden iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Google Play › Ödemeler ve abonelikler › Abonelikler'den yönetebilir ya da iptal edebilirsin.",
+  "pwDenemeKosul": "{gun} günlük ücretsiz deneme bitmeden iptal etmezsen deneme sonunda ücret alınır.",
+  "@pwDenemeKosul": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwKullanilamaz": "Satın alma şu an kullanılamıyor. Biraz sonra yeniden dene.",
+  "pwBeklemede": "Ödemen onay bekliyor. Onaylanınca Premium kendiliğinden açılır.",
+  "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
+  "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
+  "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
+  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene."
 }

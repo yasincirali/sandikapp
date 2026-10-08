@@ -493,14 +493,28 @@ final liveActivityEndProvider = NotifierProvider<_IntPrefNotifier, int>(
 final liveActivityWeekendProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLiveActivityWeekendKey, true, perUser: true));
 
-// ─── Premium (in-app purchase stub) ───────────────────────────────────────────
-// Şimdilik SharedPreferences ile local toggle. Gerçek IAP entegrasyonu
-// yapılana kadar test amaçlı Ayarlar ekranından açılıp kapatılabilir.
+// ─── Premium ─────────────────────────────────────────────────────────────────
+// `premiumUnlockedProvider` cihazdaki GELİŞTİRİCİ anahtarıdır (SharedPreferences).
+// 2026-10-08'e kadar Sinyal Ayarları'ndaki "Aç" düğmesi ve sahte satın alma
+// onu açıyordu: paywall açıkken herkes tek dokunuşla ödemesiz Premium
+// alırdı. Artık yalnız debug build'de sayılır ([gelistiriciAnahtariSayilirProvider]);
+// gerçek hak mağazadan ([magazaPremiumProvider]) ve sunucudan gelir.
 
 const _kPremiumUnlockedKey = PrefKeys.premiumUnlocked;
 
 final premiumUnlockedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kPremiumUnlockedKey, false));
+
+/// Geliştirici anahtarı sayılır mı. Release'te (TestFlight dahil) HAYIR:
+/// orada Premium'u görmek için sandbox satın alma ya da admin hesabı
+/// (`push_admins`) kullanılır. Provider olması testin release davranışını
+/// sınayabilmesi için.
+final gelistiriciAnahtariSayilirProvider = Provider<bool>((_) => kDebugMode);
+
+/// RevenueCat `CustomerInfo`'sundaki `premium` hakkı (SatinAlmaService
+/// `hakDegisti` ile yazar). Satın alma anı ile webhook'un sunucuya yazması
+/// arasındaki boşluğu kapatır; kalıcı kaynak yine sunucu hakkıdır.
+final magazaPremiumProvider = StateProvider<bool>((_) => false);
 
 /// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
 /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
@@ -519,25 +533,37 @@ final paywallVisibleProvider = Provider<bool>((_) {
 /// edilmediği için bu değerin false olması bir premium özelliği görünür
 /// kılmaz, yalnızca "premium açıldı" state'ini uygulamaz.
 ///
-/// Faz 1'de `premiumUnlockedProvider` RevenueCat CustomerInfo'ya bağlanacak.
-/// Bu provider'ı kullanan kodun değişmesi gerekmez.
+/// Kaynaklar: mağaza (RevenueCat, anlık), sunucu hakkı (abonelik/hediye/
+/// manuel), admin, ve yalnız debug'da geliştirici anahtarı.
 final effectivePremiumProvider = Provider<bool>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return false;
-  final unlocked = ref.watch(premiumUnlockedProvider);
+  final unlocked = ref.watch(gelistiriciAnahtariSayilirProvider) &&
+      ref.watch(premiumUnlockedProvider);
+  final magaza = ref.watch(magazaPremiumProvider);
   // Sunucu hakkı (0116; RevenueCat aboneliği, erken kullanıcı hediyesi,
   // manuel). Cihaz anahtarı test/geliştirici yolu olarak kalır.
   final sunucu = ref.watch(gecerliPremiumHakkiProvider) != null;
   // Admin hesabı Premium alanlarını kilitsiz görür (yasin, 2026-10-05).
   // Sunucuda aynı karar `premium_mi_kullanici` içinde (0123, push_admins).
   final admin = ref.watch(isPushAdminProvider).valueOrNull == true;
-  return (unlocked || sunucu || admin) &&
+  return (unlocked || magaza || sunucu || admin) &&
       RemoteConfigService.instance.premiumEnabled;
 });
 
 /// Free tier varlık limiti — Remote Config'ten dinamik.
 /// Paywall kapalıyken sınırsız (limit devreye girmez).
 /// Premium ise limit yoktur (int.max ile temsil edilir).
+/// Premium göstergeler (ADX, Williams %R, CCI) HESAPLANSIN mı.
+///
+/// Eskiden hesap yalnız cihazdaki geliştirici anahtarına bakıyordu: gerçek
+/// abone (sunucu hakkı) satın aldığı göstergeyi alamazdı. Bayrak kapalıyken
+/// eski davranış birebir: hesaplanmaz (anahtar canlıda kimsede açık değildi).
+final premiumGostergelerHesaplanirProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  return ref.watch(effectivePremiumProvider);
+});
+
 final assetLimitProvider = Provider<int>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return 1 << 30;
