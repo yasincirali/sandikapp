@@ -1979,13 +1979,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showAbdPicker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _AbdPicker(
         selected: abdSembolu(_ticker.text),
         onSelect: (ticker) {
@@ -2165,13 +2165,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showEurobondPicker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _EurobondPicker(
         selected: _s.eurobondSozlesmesi?.isin,
         onSelect: (o) {
