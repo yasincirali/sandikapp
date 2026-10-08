@@ -414,7 +414,8 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
       case AramaEylemi.sinyalAyarlari:
         it((_) => const SignalSettingsScreen());
       case AramaEylemi.ekstreAktar:
-        unawaited(_ekstredenAktar());
+        CrashReporter.arkaPlan(_ekstredenAktar(),
+            reason: 'GenelArama.ekstredenAktar');
       case AramaEylemi.topluEkle:
         it((_) => const BulkAddAssetScreen());
       case AramaEylemi.karsilastir:
