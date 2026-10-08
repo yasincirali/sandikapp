@@ -13,6 +13,8 @@ import '../services/crash_reporter.dart';
 import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import 'review_prompt_sheet.dart';
+import 'sandik_async_button.dart';
+import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
@@ -87,6 +89,12 @@ Future<PriceAlert?> alarmKurAkisi(
     return null;
   }
 
+  // Sunucuya yazma sayfanın "Alarm kur" düğmesinin İÇİNDE koşar (tek
+  // yükleniyor davranışı, 2026-10-08): eskiden sayfa kapanıyor, `create`
+  // ardından göstergesiz sürüyordu. Sayfa yalnızca kayıt başarılıysa
+  // kapanır; hata olursa açık kalır, girilen hedef kaybolmaz ve hata alanın
+  // altında (eski snackbar'ın önekiyle) yazar.
+  PriceAlert? kayit;
   final sonuc = await showModalBottomSheet<AlarmKurulumu>(
     context: context,
     backgroundColor: context.c.surface1,
@@ -94,49 +102,45 @@ Future<PriceAlert?> alarmKurAkisi(
     useSafeArea: true,
     shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (_) => AlarmKurSheet(adaylar: liste, sabit: sabit != null),
+    builder: (_) => AlarmKurSheet(
+      adaylar: liste,
+      sabit: sabit != null,
+      kur: (k) async {
+        final me = ref.read(authProvider).valueOrNull;
+        if (me == null) return;
+        kayit = await ref.read(priceAlertsProvider.notifier).create(PriceAlert(
+          id: '',
+          userId: me.id,
+          symbol: k.aday.sembol,
+          label: k.aday.ad,
+          targetPrice: k.hedef,
+          direction: k.yon,
+          enabled: true,
+          createdAt: DateTime.now(),
+        ));
+      },
+    ),
   );
-  if (sonuc == null || !context.mounted) return null;
-
-  final me = ref.read(authProvider).valueOrNull;
-  if (me == null) return null;
-  try {
-    final kayit = await ref.read(priceAlertsProvider.notifier).create(PriceAlert(
-      id: '',
-      userId: me.id,
-      symbol: sonuc.aday.sembol,
-      label: sonuc.aday.ad,
-      targetPrice: sonuc.hedef,
-      direction: sonuc.yon,
-      enabled: true,
-      createdAt: DateTime.now(),
-    ));
-    unawaited(AnalyticsService.instance
-        .logScreenView(screenName: 'price_alert_created'));
-    if (context.mounted) {
-      sandikSnack(
-        context,
-        sonuc.yon == 'above'
-            ? context.l10n.alertSetAbove(
-                sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef))
-            : context.l10n.alertSetBelow(
-                sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef)),
-        kind: SandikSnackKind.success,
-      );
-      // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
-      // çağıran (varlık ekranı zili) sonucu hemen alsın.
-      // Hata yutulmaz: Crashlytics'e gider (arka_plan_hata_yutma_test).
-      CrashReporter.arkaPlan(
-          ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu),
-          reason: 'alarmKur.degerlendirmeIstemi');
-    }
-    return kayit;
-  } catch (e) {
-    if (context.mounted) {
-      sandikSnackError(context, e, prefix: context.l10n.alertSetFailed);
-    }
-    return null;
+  final kurulan = kayit;
+  if (sonuc == null || kurulan == null) return null;
+  unawaited(AnalyticsService.instance
+      .logScreenView(screenName: 'price_alert_created'));
+  if (context.mounted) {
+    sandikSnack(
+      context,
+      sonuc.yon == 'above'
+          ? context.l10n.alertSetAbove(sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef))
+          : context.l10n.alertSetBelow(sonuc.aday.ad, fmtTRYFiyat(sonuc.hedef)),
+      kind: SandikSnackKind.success,
+    );
+    // Alarm kuruldu — kullanıcı istediğini yaptı. İstem beklenmez:
+    // çağıran (varlık ekranı zili) sonucu hemen alsın.
+    // Hata yutulmaz: Crashlytics'e gider (arka_plan_hata_yutma_test).
+    CrashReporter.arkaPlan(
+        ReviewPromptSheet.belkiGoster(context, ReviewAni.alarmKuruldu),
+        reason: 'alarmKur.degerlendirmeIstemi');
   }
+  return kurulan;
 }
 
 /// Hedef fiyat girişi. Yön SEÇTİRİLMEZ, güncel fiyata göre türetilir ve
@@ -146,7 +150,13 @@ class AlarmKurSheet extends StatefulWidget {
 
   /// `true` → tek aday, seçici çizilmez; başlıkta varlığın adı yazar.
   final bool sabit;
-  const AlarmKurSheet({super.key, required this.adaylar, this.sabit = false});
+
+  /// Verilirse "Alarm kur" düğmesi bu yazmayı bekler (düğmede gösterge);
+  /// başarıda sayfa kurulumla kapanır, hata olursa açık kalır. `null` →
+  /// sayfa kurulumu hemen döndürür (widget testleri).
+  final Future<void> Function(AlarmKurulumu kurulum)? kur;
+  const AlarmKurSheet(
+      {super.key, required this.adaylar, this.sabit = false, this.kur});
 
   @override
   State<AlarmKurSheet> createState() => _AlarmKurSheetState();
@@ -179,7 +189,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
     setState(() => _hata = null);
   }
 
-  void _kaydet() {
+  Future<void> _kaydet() async {
     final hedef = _hedef;
     if (hedef == null) {
       setState(() => _hata = context.l10n.enterValidPrice);
@@ -198,7 +208,21 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
       currentPrice: _secili.guncelFiyat,
       targetPrice: hedef,
     );
-    Navigator.of(context).pop(AlarmKurulumu(_secili, hedef, yon));
+    final kurulum = AlarmKurulumu(_secili, hedef, yon);
+    final kur = widget.kur;
+    if (kur != null) {
+      final l10n = context.l10n;
+      try {
+        await kur(kurulum);
+      } catch (e) {
+        if (!mounted) return;
+        // Snackbar modal sayfanın altında kalırdı; hata alanın altında.
+        setState(() => _hata = '${l10n.alertSetFailed}. ${friendlyError(e)}');
+        return;
+      }
+      if (!mounted) return;
+    }
+    Navigator.of(context).pop(kurulum);
   }
 
   @override
@@ -333,12 +357,14 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
             const SizedBox(height: SandikSpace.lg),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: SandikAsyncButton.kompakt(
                 style: FilledButton.styleFrom(
                   backgroundColor: c.amberFill,
                   foregroundColor: c.onAmber,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
+                // Eski düz FilledButton titreşimsizdi.
+                haptic: SandikHaptic.none,
                 onPressed: _kaydet,
                 child: Text(context.l10n.setAlert),
               ),

@@ -461,6 +461,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             SizedBox(
               width: double.infinity,
               height: 52,
+              // BİLİNÇLİ İSTİSNA (tek yükleniyor davranışı, 2026-10-08):
+              // SandikAsyncButton DEĞİL. Meşgul düğme yalnız gösterge değil
+              // "3/10 kaydediliyor" ilerlemesini de taşır; standart bileşen
+              // etiketi gizleyip yalnız gösterge koyar. `_saving` zaten
+              // ekranın tamamını kilitler (geri tuşu, satır düzenle/sil,
+              // Varlık Ekle) — çift dokunuş koruması oradan gelir.
               child: FilledButton(
                 onPressed: _saving || items.isEmpty ? null : _saveAll,
                 style: FilledButton.styleFrom(

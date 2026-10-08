@@ -30,6 +30,7 @@ import 'csv_import_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
 import 'add_asset/bes_formu.dart';
@@ -1412,35 +1413,36 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             top: BorderSide(color: context.c.overlay, width: 1),
           ),
         ),
-        child: SizedBox(
-          width: double.infinity,
+        // Tek yükleniyor davranışı (2026-10-08): gösterge ve dokunuş kilidi
+        // SandikAsyncButton'da. `saving` bayrağı KALIR — formu salt okunur
+        // tutar ve başarıda ekran kapanırken düğmeyi pasif bırakır (bkz.
+        // `_save` F14 notu); düğme yalnızca `_save` sürerken döner.
+        child: SandikAsyncButton(
           height: 54,
-          child: FilledButton(
-            onPressed: _saving
-                ? null
-                : (_sozlesmeFormuAcik ? _sozlesmeKaydet : _save),
-            style: FilledButton.styleFrom(
-              backgroundColor: context.c.amberFill,
-              foregroundColor: context.c.onAmber,
-              disabledBackgroundColor:
-                  context.c.amberFill.withValues(alpha: 0.25),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md)),
-              elevation: 0,
-            ),
-            child: _saving
-                ? const CustomLoadingIndicator(size: 22)
-                : Text(
-                    saveLabel,
-                    // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
-                    // `titleLarge` kendi rengini (`text90`) taşır ve düğmenin
-                    // `foregroundColor`'ını ezer — koyu temada amber üstüne
-                    // beyaz "Ekle" 1,87:1 kalıyordu.
-                    style: context.t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.2,
-                        color: context.c.onAmber),
-                  ),
+          // Eski düz FilledButton titreşimsizdi.
+          haptic: SandikHaptic.none,
+          onPressed: _saving
+              ? null
+              : (_sozlesmeFormuAcik ? _sozlesmeKaydet : _save),
+          style: FilledButton.styleFrom(
+            backgroundColor: context.c.amberFill,
+            foregroundColor: context.c.onAmber,
+            disabledBackgroundColor:
+                context.c.amberFill.withValues(alpha: 0.25),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SandikRadius.md)),
+            elevation: 0,
+          ),
+          child: Text(
+            saveLabel,
+            // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+            // `titleLarge` kendi rengini (`text90`) taşır ve düğmenin
+            // `foregroundColor`'ını ezer — koyu temada amber üstüne
+            // beyaz "Ekle" 1,87:1 kalıyordu.
+            style: context.t.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+                color: context.c.onAmber),
           ),
         ),
       ),
@@ -1969,9 +1971,26 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           Navigator.pop(ctx);
           _applyParsedEntry(entry);
         },
+        // Toplu kayıt sayfanın düğmesinin İÇİNDE koşar (tek yükleniyor
+        // davranışı, 2026-10-08): eskiden sayfa hemen kapanıyor, kayıtlar
+        // arkada sürerken yalnızca alttaki "Ekle" dönüyordu. Sayfa iş
+        // bitince kapanır, ardından ekran `true` ile kapanır (eski sinyal).
+        // Hata: eskiden kimseye söylenmiyordu (yakalanmamış async hata);
+        // şimdi sayfa kapanır ve hata gösterilir. Sayfa açık kalıp yeniden
+        // denenmez — döngü yarıda kesildiyse ilk satırlar çoktan eklendi,
+        // aynı listeyi yeniden kaydetmek onları çiftlerdi.
         onSaveBatch: (entries) async {
-          Navigator.pop(ctx);
-          await _saveBatch(entries);
+          bool kaydedildi;
+          try {
+            kaydedildi = await _saveBatch(entries);
+          } catch (e) {
+            if (ctx.mounted) Navigator.pop(ctx);
+            if (mounted) showAppError(context, e);
+            return;
+          }
+          if (ctx.mounted) Navigator.pop(ctx);
+          // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
+          if (kaydedildi && mounted) Navigator.pop(context, true);
         },
       ),
     );
@@ -1980,15 +1999,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   void _applyParsedEntry(ParsedEntry entry) =>
       _yaz(_n.applyParsedEntry(entry));
 
-  Future<void> _saveBatch(List<ParsedEntry> entries) async {
+  /// `true` → kayıtlar eklendi (çağıran sayfayı ve ekranı kapatır);
+  /// `false` → tek satır forma uygulandı, kayıt yok.
+  Future<bool> _saveBatch(List<ParsedEntry> entries) async {
     // Sözlük döngüden ÖNCE çözülür: `context` async boşlukların ardında
     // kullanılamaz (`use_build_context_synchronously`), tür adı ise fiyat
     // çekiminden sonra gerekiyor.
     final l = context.l10n;
-    if (entries.isEmpty) return;
+    if (entries.isEmpty) return false;
     if (entries.length == 1) {
       _applyParsedEntry(entries.first);
-      return;
+      return false;
     }
     final lookup = ref.read(addAssetPriceLookupProvider);
     _n.setSaving(true);
@@ -2043,8 +2064,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     } finally {
       _n.setSaving(false);
     }
-    // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
-    if (mounted) Navigator.pop(context, true);
+    return true;
   }
 
   // ── Save ───────────────────────────────────────────────────────────────────
@@ -2331,7 +2351,6 @@ class _QuickEntrySheet extends StatefulWidget {
 
 class _QuickEntrySheetState extends State<_QuickEntrySheet> {
   List<ParsedEntry> _previews = [];
-  bool _saving = false;
 
   void _updatePreviews(String text) {
     final lines = text.split('\n').where((l) => l.trim().isNotEmpty);
@@ -2423,28 +2442,20 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: _saving
-                ? const CustomLoadingView()
-                : isMulti
-                    ? FilledButton.icon(
-                        onPressed: () async {
-                          // Kilit çift kaydı önler. finally olmadan, kaydetme
-                          // hata verirse buton kalıcı olarak spinner'da
-                          // kalıyordu — kullanıcı tekrar deneyemiyordu.
-                          if (_saving) return;
-                          setState(() => _saving = true);
-                          try {
-                            await widget.onSaveBatch(_previews);
-                          } finally {
-                            if (mounted) setState(() => _saving = false);
-                          }
-                        },
+            child: isMulti
+                    // Kilit çift kaydı önler; SandikAsyncButton kilidi
+                    // `finally`'de açar (eskiden elle yazılmış `_saving` +
+                    // tam genişlik döneni; finally'siz sürümde hata verince
+                    // buton kalıcı olarak spinner'da kalıyordu).
+                    ? SandikAsyncButton.kompakt(
+                        onPressed: () => widget.onSaveBatch(_previews),
+                        haptic: SandikHaptic.none,
                         style: FilledButton.styleFrom(
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.playlist_add_check_rounded),
                         // Renk açıkça `onAmber` — `_stickyBottomBar` notu.
-                        label: Text(context.l10n.saveNAssets(_previews.length),
+                        child: Text(context.l10n.saveNAssets(_previews.length),
                             style: context.t.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: context.c.onAmber)),

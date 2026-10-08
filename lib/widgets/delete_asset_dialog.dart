@@ -47,6 +47,11 @@ Future<bool> confirmAndDeletePosition(
 }) async {
   if (DemoModu.yazmaKapisi('sil')) return false; // Demo defteri silinmez (F1).
   final multi = lots.length > 1;
+  // Silme onay düğmesinin İÇİNDE koşar (tek yükleniyor davranışı,
+  // 2026-10-08): eskiden diyalog kapanıyor, `deletePositionLots` ardından
+  // hiçbir gösterge olmadan sürüyordu. Hata yolu aynı kaldı — yakalanır,
+  // "Silinemedi" snackbar'ı gösterilir, diyalog kapanır, `false` döner.
+  var silindi = false;
   final ok = await showSandikConfirm(
     context: context,
     title: context.l10n.deleteAssetTitle,
@@ -71,29 +76,35 @@ Future<bool> confirmAndDeletePosition(
         ),
       ),
     ),
+    islem: () async {
+      try {
+        final notifier = ref.read(portfolioProvider.notifier);
+        // ## Neden "Geri al" toast'ı YOK (kullanıcı kararı, 2026-09-16)
+        //
+        // Önceden silme sonrası "Varlık silindi" + "Geri al" toast'ı
+        // çıkıyordu. Kullanıcı bunu gereksiz buldu: silme ZATEN onay
+        // diyaloğunun arkasında (bu `showSandikConfirm`, yıkıcı buton +
+        // uyarı kutusu), yani kazara silme yolu kapalı. HIG'in geri alma
+        // beklentisi onaysız yıkıcı eylem içindir; burada onay o işlevi
+        // görüyor.
+        //
+        // `deletePositionLots` makbuzu döndürmeye DEVAM ediyor ve
+        // `restorePositionLots` provider'da duruyor — sunucu tarafı geri
+        // alma yeteneği korunuyor (silme yumuşak, `deleted_at`). Yalnızca
+        // UI girişi kaldırıldı; geri alma tekrar istendiğinde sıfırdan
+        // yazılmaz.
+        await notifier.deletePositionLots(lots);
+        silindi = true;
+      } catch (e) {
+        if (context.mounted) sandikSnackError(context, e, prefix: 'Silinemedi');
+      }
+    },
   );
-  if (!ok || !context.mounted) return false;
-  try {
-    final notifier = ref.read(portfolioProvider.notifier);
-    // ## Neden "Geri al" toast'ı YOK (kullanıcı kararı, 2026-09-16)
-    //
-    // Önceden silme sonrası "Varlık silindi" + "Geri al" toast'ı çıkıyordu.
-    // Kullanıcı bunu gereksiz buldu: silme ZATEN onay diyaloğunun arkasında
-    // (yukarıdaki `showSandikConfirm`, yıkıcı buton + uyarı kutusu), yani
-    // kazara silme yolu kapalı. HIG'in geri alma beklentisi onaysız yıkıcı
-    // eylem içindir; burada onay o işlevi görüyor.
-    //
-    // `deletePositionLots` makbuzu döndürmeye DEVAM ediyor ve
-    // `restorePositionLots` provider'da duruyor — sunucu tarafı geri alma
-    // yeteneği korunuyor (silme yumuşak, `deleted_at`). Yalnızca UI girişi
-    // kaldırıldı; geri alma tekrar istendiğinde sıfırdan yazılmaz.
-    await notifier.deletePositionLots(lots);
-    if (context.mounted) await _alarmlariSor(context, ref, lots, name);
-    return true;
-  } catch (e) {
-    if (context.mounted) sandikSnackError(context, e, prefix: 'Silinemedi');
-    return false;
-  }
+  if (!ok || !silindi || !context.mounted) return false;
+  // Alarm sorusu silme diyaloğu KAPANDIKTAN sonra: iki diyalog üst üste
+  // binmesin.
+  await _alarmlariSor(context, ref, lots, name);
+  return true;
 }
 
 /// Silinen varlığın alarmları varsa kullanıcıya sorar, onaylarsa siler.
@@ -115,7 +126,9 @@ Future<void> _alarmlariSor(
 
   final n = alarmlar.length;
   final l10n = context.l10n;
-  final ok = await showSandikConfirm(
+  // Alarm silme de onay düğmesinin içinde (göstergeli) koşar; hata yolu
+  // aynı: snackbar, diyalog kapanır.
+  await showSandikConfirm(
     context: context,
     title: l10n.alarmAlsoDeleteTitle(n),
     message: l10n.alarmAlsoDeleteBody(n, name),
@@ -123,19 +136,19 @@ Future<void> _alarmlariSor(
     // "Vazgeç" YANLIŞ olurdu: silme zaten bitti, vazgeçilecek bir şey yok.
     cancelLabel: l10n.alarmKeep,
     destructive: true,
+    islem: () async {
+      try {
+        final notifier = ref.read(priceAlertsProvider.notifier);
+        for (final a in alarmlar) {
+          await notifier.delete(a.id);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          sandikSnackError(context, e, prefix: l10n.alarmDeleteFailed);
+        }
+      }
+    },
   );
-  if (!ok) return;
-
-  try {
-    final notifier = ref.read(priceAlertsProvider.notifier);
-    for (final a in alarmlar) {
-      await notifier.delete(a.id);
-    }
-  } catch (e) {
-    if (context.mounted) {
-      sandikSnackError(context, e, prefix: l10n.alarmDeleteFailed);
-    }
-  }
 }
 
 /// Silinen lot'ların sembolüne ait alarmlar.

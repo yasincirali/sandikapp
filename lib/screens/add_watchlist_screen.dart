@@ -26,6 +26,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_katla.dart';
+import '../widgets/sandik_async_button.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
@@ -721,15 +722,21 @@ class _CipGovdesi extends StatelessWidget {
 
 /// "+ Takip" — satırın içinde AYRI bir dokunma hedefi. Satırın geri kalanı
 /// önizler; bu düğme önizlemeden geçmeden hemen takibe alır.
+/// Satır sonundaki "+ Takip et". Ekleme iyimser DEĞİL (`add` sunucuyu ve
+/// listeyi yeniden çekmeyi bekler), satır ancak sonra "Takipte"ye döner;
+/// o arada standart kilit + gösterge (tek yükleniyor davranışı,
+/// 2026-10-08) — eskiden hızlı ikinci dokunuş ikinci isteği atıyordu.
 class _HizliTakipDugmesi extends StatelessWidget {
   const _HizliTakipDugmesi({required this.semanticLabel, required this.onTap});
   final String semanticLabel;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
 
   @override
-  Widget build(BuildContext context) => SandikTappable(
+  Widget build(BuildContext context) => SandikAsyncTap(
         onTap: onTap,
         semanticLabel: semanticLabel,
+        // Eski SandikTappable varsayılanı.
+        haptic: SandikHaptic.selection,
         child: Container(
           constraints: const BoxConstraints(
               minWidth: SandikTouch.min, minHeight: SandikTouch.min),
