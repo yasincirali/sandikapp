@@ -1,12 +1,35 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-08 Sadeleştirme kalanları + bulut oturumu kurulumu — PR #110 (dal `claude/project-thread-ad3on0`)
+
+Sunucu, şema ve bayrak değişikliği YOK; dağıtım gerekmez. Bugün kartının
+görünümü aynı. **Analitik:** `today_row_shown` olayında `yesil`/`haftalik`/
+`aylik`/`olay_*` türleri bu sürümden itibaren biter, `oynayan` başlar
+(kart bunları 2026-10-04'ten beri çizmiyordu; sayım yanlıştı).
+
+- [ ] PR #110'u birleştir (CI yeşil olunca).
+- [ ] **Bulut MCP'leri (birleştikten sonra, bir kez):** Project settings ›
+      Cloud environment › ortamın yanındaki dişli › **Setup script**:
+      `bash tool/bulut_kurulum.sh` — Flutter 3.47.2 + `codebase-memory-mcp`,
+      `dart`, `ui-ux-pro-mcp` (Linux yolları, `-s local`). `.mcp.json`
+      değişmez; yerel makinen etkilenmez. Yeni açılan bulut oturumlarında
+      geçerli.
+- [ ] **Skill'ler repoya (bilgisayarında, birleştikten sonra, bir kez):**
+      `git pull && git add .claude/skills && git commit -m "skill'ler repoya" && git push`
+      — `.gitignore` artık yalnız `.claude/skills/`'i içeri alır;
+      `settings.local.json`, hook'lar, yerel bellek dışarıda kalır. Bunu
+      yapana kadar bulut oturumunda CLAUDE.md tablosundaki skill'ler YOK.
+- [ ] Karar: varlık detayı (tam ekran) ile varlık sayfası (alt sayfa) tek
+      grafiğe insin mi? (`TECHNICAL_DEBT.md` "İki varlık yüzeyi")
+- [ ] Gerçek cihazda açık tema: yasal metin ekranı ve grafik ekranları.
 
 ## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
 
@@ -262,7 +285,7 @@ kalıcı, eski (kapalı) yollar silindi: `ilk_varlik_kolay`,
 `tek_onay_kutusu`, `ortak_secimi_tasi`, `yasal_onay_kaydi`,
 `yasal_kapi_en_yeni`, `zorunlu_okuma`.
 
-- [ ] **PR'ı incele ve birleştir — bedeli:** bu PR birleşip yayımlanınca bu
+- [x] **PR'ı incele ve birleştir (#92, birleşti) — bedeli:** bu PR birleşip yayımlanınca bu
       15 özellik artık **Firebase Console'dan kapatılamaz**; geri almak yeni
       sürüm ister. Aşağıdaki bölümlerdeki "Console'a `false` ekleyerek kapat"
       talimatları o sürümden itibaren GEÇERSİZ (yalnız eski sürümlerde
@@ -353,7 +376,7 @@ görülemeyenler — gerçek cihazda bak:
 - [ ] **Zirve rıza kartı** küçük ekranda: sona gelmeden "Katılıyorum" kapalı.
 - [ ] **Firebase Console:** `yeniden_onay_kapisi = false` KALICI kalsın
       (2026-10-04'te yapıldı; geri açma).
-- [ ] **Bayrak temizliği PR'ı** (dal `feat/bayrak-temizligi`): 15 bayrak ve eski
+- [x] **Bayrak temizliği PR'ı** (#92, birleşti) (dal `feat/bayrak-temizligi`): 15 bayrak ve eski
       kod yolları silinir; birleşince bu özellikler artık Console'dan
       KAPATILAMAZ. Yayın sorunsuz oturduktan sonra birleştir.
 - [ ] **Tokyo Auth güvenlik kaydı:** 0105 sonrası 90 günden eski kayıtlar her
