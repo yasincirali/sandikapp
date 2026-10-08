@@ -242,6 +242,32 @@ class RemoteConfigService {
     // eski. Gerekçe `varlik_baslik_hero.dart`.
     'varlik_hero_gecisi': false,
 
+    // Sadeleştirme 2 (2026-10-08, yasin: "featureları koruyarak karmaşıklığı
+    // düşür", hepsi bayrak altında; plan artifact'ı "sandık Sade Ekran
+    // Planı"). Yedisi de KAPALI doğar ve kapalıyken ilgili ekran birebir
+    // eski; sunucu değişikliği yok. Önce yasin'in TestFlight cihazında açılır.
+    //
+    // S1 — tek dönem hafızası: Performans, varlık detayı/sayfası, Takip
+    // listesi ve Karşılaştır aynı seçili dönemi paylaşır (bugün dördünün
+    // varsayılanı farklı: Bugün / 1 hf / 1 ay / 3 ay → sayılar "tutmuyor").
+    'donem_hafizasi': false,
+    // S2 — Performans tek akış: Grafik | Özet sekmesi kalkar, ikisi tek
+    // kaydırmada; kontrol satırı 3 → 1 (dönem + Filtre).
+    'performans_tek_akis': false,
+    // S3 — Portföy: halka yerine tek satır dağılım çubuğu (ilk ekranda
+    // 2 yerine 5–6 varlık); halka bir dokunuşla açılır.
+    'portfoy_dagilim_cubugu': false,
+    // S4 — varlık detayı katmanlı sıra: fiyat+grafik → pozisyonun → analiz
+    // (katlı) → geçmiş ve belgeler.
+    'varlik_detay_katmanli': false,
+    // S5 — sinyal ayarları önce ön ayar (Az / Dengeli / Çok), ayrıntı katlı.
+    'sinyal_on_ayar': false,
+    // S6 — Performans başlığında "Raporlar" kapısı (hafta özeti, aylık
+    // rapor, yıl özeti, Sıralama).
+    'raporlar_kapisi': false,
+    // S7 — Ana ekranda genel arama (Yenile ikonunun yerine; varlık + eylem).
+    'genel_arama': false,
+
     // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
     // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
     // kartında "Tanılama metnini kopyala" çıkar: tablo düzeni korunur, ad/
@@ -520,6 +546,15 @@ class RemoteConfigService {
 
   /// Varlık başlığı uçuşu. Gerekçe `_defaults`'ta.
   bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
+
+  /// Sadeleştirme 2 bayrakları. Gerekçeler `_defaults`'ta.
+  bool get donemHafizasi => _bayrak('donem_hafizasi');
+  bool get performansTekAkis => _bayrak('performans_tek_akis');
+  bool get portfoyDagilimCubugu => _bayrak('portfoy_dagilim_cubugu');
+  bool get varlikDetayKatmanli => _bayrak('varlik_detay_katmanli');
+  bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
+  bool get raporlarKapisi => _bayrak('raporlar_kapisi');
+  bool get genelArama => _bayrak('genel_arama');
 
   /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
   bool get ekstreTanilama => _bayrak('ekstre_tanilama');

@@ -84,6 +84,20 @@ void main() {
       expect(varsayilan('birikim_serisi'), 'false');
     });
 
+    // Sadeleştirme 2 (2026-10-08): ana yüzeyleri değiştirir; önce yasin'in
+    // TestFlight cihazında açılır. Kapalıyken ekranlar birebir eski.
+    for (final b in const [
+      'donem_hafizasi',
+      'performans_tek_akis',
+      'portfoy_dagilim_cubugu',
+      'varlik_detay_katmanli',
+      'sinyal_on_ayar',
+      'raporlar_kapisi',
+      'genel_arama',
+    ]) {
+      test('$b KAPALI doğar', () => expect(varsayilan(b), 'false'));
+    }
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });
