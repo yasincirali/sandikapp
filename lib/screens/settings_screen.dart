@@ -694,7 +694,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 label: context.l10n.signalNotifications,
                 child: Switch.adaptive(
                   value: ref.watch(signalNotificationsProvider),
-                  activeTrackColor: context.c.amberFill,
+                  // `amberText` — öteki dört anahtarla aynı (2026-10-08).
+                  activeTrackColor: context.c.amberText,
                   onChanged: (v) async {
                     await ref.read(signalNotificationsProvider.notifier).set(v);
                     // Sunucuya da yaz: sinyal push'unu sunucu gönderiyor, bu
@@ -1520,21 +1521,21 @@ class _SettingsTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // `context.t` — ham `TextStyle` `CupertinoButton`'ın
+                  // içinde Cupertino yazı ailesini miras alıyordu; satır
+                  // DM Sans yerine dar sistem fontuyla çiziliyor, yanındaki
+                  // `_SwitchTile`'dan ayrışıyordu (2026-10-08). Tema stili
+                  // yazı boyutu ayarıyla da büyür.
                   Text(
                     title,
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+                    style: context.t.bodyLarge
+                        ?.copyWith(color: color, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: context.c.text58,
-                      fontSize: 12,
-                    ),
+                    style: context.t.titleSmall?.copyWith(
+                        color: context.c.text58, fontWeight: FontWeight.w400),
                   ),
                 ],
               ),
@@ -2199,8 +2200,10 @@ class _SwitchTile extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
+            // `_SettingsTile` ile aynı ikon kutusu: `overlay` açık temada
+            // görünmüyordu (beyaz kutu), komşu satırlar gri.
             decoration: BoxDecoration(
-              color: context.c.overlay,
+              color: context.c.text90.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(SandikRadius.md),
             ),
             child: Icon(icon, color: context.c.text90, size: 20),
@@ -2212,24 +2215,22 @@ class _SwitchTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: context.c.text90,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+                  style: context.t.bodyLarge?.copyWith(
+                      color: context.c.text90, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: context.c.text58,
-                    fontSize: 12,
-                  ),
+                  style: context.t.titleSmall?.copyWith(
+                      color: context.c.text58, fontWeight: FontWeight.w400),
                 ),
               ],
             ),
           ),
-          CupertinoSwitch(
+          // `Switch.adaptive` — uygulamanın öteki anahtarları gibi (Android'de
+          // Material, iOS'ta Cupertino). Eskiden burada her platformda
+          // Cupertino vardı; aynı listede iki anahtar dili görünüyordu.
+          Switch.adaptive(
             value: value,
             onChanged: onChanged,
             activeTrackColor: context.c.amberText,

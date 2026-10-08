@@ -752,7 +752,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get companyNameHint =>
-      'Şirket adı (opsiyonel, semboldan otomatik çekilir)';
+      'Şirket adı (opsiyonel, sembolden otomatik çekilir)';
 
   @override
   String goldSemantics(String kind) {
@@ -3103,8 +3103,8 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String betterThanPctInvestors(int pct) {
-    return 'Yatırımcıların %$pct\'inden iyi';
+  String betterThanPctInvestors(int pct, String ek) {
+    return 'Yatırımcıların %$pct\'$ek iyi';
   }
 
   @override
@@ -3664,8 +3664,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get shareCardInvestors => 'Yatırımcıların';
 
   @override
-  String shareCardBetterThanPct(int pct) {
-    return '%$pct\'inden iyi';
+  String shareCardBetterThanPct(int pct, String ek) {
+    return '%$pct\'$ek iyi';
   }
 
   @override

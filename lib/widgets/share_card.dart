@@ -11,6 +11,7 @@ import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import '../utils/tr_iyelik.dart';
 import 'review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 
@@ -181,7 +182,8 @@ class ShareCard extends StatelessWidget {
     if (d.percentile != null) {
       out.add(_Kutu(
         etiket: l.shareCardInvestors,
-        deger: l.shareCardBetterThanPct(100 - d.percentile!),
+        deger: l.shareCardBetterThanPct(100 - d.percentile!,
+            trSayiAyrilmaEki(100 - d.percentile!)),
         renk: p.info,
       ));
     }

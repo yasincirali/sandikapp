@@ -34,3 +34,51 @@ String trIyelik(String ad) {
   final unluyleBitiyor = unluler.contains(kucuk[kucuk.length - 1]);
   return "$t'${unluyleBitiyor ? 'n' : ''}$ek";
 }
+
+/// Sayının iyelik + ayrılma eki, kesmesiz: 30 → "undan" ("%30'undan"),
+/// 20 → "sinden", 3 → "ünden", 100 → "ünden".
+///
+/// Neden var (2026-10-08, web ekran görüntüleri): yüzdelik şeridi ve
+/// paylaşım kartı sabit "'inden" yazıyordu; ek sayının OKUNUŞUNUN son
+/// sözcüğüne göre değişir ("yüzde otuzundan", "yüzde yirmisinden"),
+/// sabit ek 10/30/40/60/90 gibi değerlerde yanlış çıkıyordu. Yalnızca son
+/// sözcük gerekir: birler basamağı, yoksa onlar, yoksa yüz/bin.
+String trSayiAyrilmaEki(int n) {
+  const birler = [
+    '', 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz',
+  ];
+  const onlar = [
+    '', 'on', 'yirmi', 'otuz', 'kırk', 'elli', 'altmış', 'yetmiş', 'seksen',
+    'doksan',
+  ];
+  final m = n.abs();
+  final String soz;
+  if (m == 0) {
+    soz = 'sıfır';
+  } else if (m % 10 != 0) {
+    soz = birler[m % 10];
+  } else if (m % 100 != 0) {
+    soz = onlar[(m % 100) ~/ 10];
+  } else if (m % 1000 != 0) {
+    soz = 'yüz';
+  } else {
+    soz = 'bin';
+  }
+  const unluler = 'aeıioöuü';
+  var sonUnlu = 'e';
+  for (var i = soz.length - 1; i >= 0; i--) {
+    if (unluler.contains(soz[i])) {
+      sonUnlu = soz[i];
+      break;
+    }
+  }
+  final kalin = 'aıou'.contains(sonUnlu);
+  final iyelik = switch (sonUnlu) {
+    'a' || 'ı' => 'ı',
+    'e' || 'i' => 'i',
+    'o' || 'u' => 'u',
+    _ => 'ü',
+  };
+  final unluyleBitiyor = unluler.contains(soz[soz.length - 1]);
+  return '${unluyleBitiyor ? 's' : ''}$iyelik${kalin ? 'ndan' : 'nden'}';
+}

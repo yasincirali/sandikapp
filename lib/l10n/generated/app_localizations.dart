@@ -1433,7 +1433,7 @@ abstract class AppLocalizations {
   /// No description provided for @companyNameHint.
   ///
   /// In tr, this message translates to:
-  /// **'Şirket adı (opsiyonel, semboldan otomatik çekilir)'**
+  /// **'Şirket adı (opsiyonel, sembolden otomatik çekilir)'**
   String get companyNameHint;
 
   /// No description provided for @goldSemantics.
@@ -5312,11 +5312,11 @@ abstract class AppLocalizations {
   /// **'Enflasyonun {pts} puan önünde'**
   String aheadOfInflationPts(String pts);
 
-  /// No description provided for @betterThanPctInvestors.
+  /// ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden
   ///
   /// In tr, this message translates to:
-  /// **'Yatırımcıların %{pct}\'inden iyi'**
-  String betterThanPctInvestors(int pct);
+  /// **'Yatırımcıların %{pct}\'{ek} iyi'**
+  String betterThanPctInvestors(int pct, String ek);
 
   /// No description provided for @nDaysTracked.
   ///
@@ -6176,11 +6176,11 @@ abstract class AppLocalizations {
   /// **'Yatırımcıların'**
   String get shareCardInvestors;
 
-  /// No description provided for @shareCardBetterThanPct.
+  /// ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden
   ///
   /// In tr, this message translates to:
-  /// **'%{pct}\'inden iyi'**
-  String shareCardBetterThanPct(int pct);
+  /// **'%{pct}\'{ek} iyi'**
+  String shareCardBetterThanPct(int pct, String ek);
 
   /// No description provided for @shareCardRange.
   ///

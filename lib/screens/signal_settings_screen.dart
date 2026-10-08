@@ -739,6 +739,10 @@ class _IndicatorRow extends StatelessWidget {
             // Renk notu: burada sabit `Colors.green` (#4CAF50) vardı ve temayı
             // takip etmiyordu — light yüzeyde 2.78:1. Palet `gain`i 5.37:1.
             if (recommended) ...[
+              // Uzun etiket ("MACD (Hareketli Ortalama Yakınsaması)") çipe
+              // yapışıyordu (web ekran görüntüsü 2026-10-08); `Expanded`
+              // metin kırılır ama aralık hiç yoktu.
+              const SizedBox(width: SandikSpace.sm),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(

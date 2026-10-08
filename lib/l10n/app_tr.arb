@@ -405,7 +405,7 @@
   "quickEntryVoice": "Sesli / Hızlı giriş",
   "orNotInList": "veya listede yok",
   "symbolHint": "Sembol yaz (örn: AAPL, THYAO.IS)",
-  "companyNameHint": "Şirket adı (opsiyonel, semboldan otomatik çekilir)",
+  "companyNameHint": "Şirket adı (opsiyonel, sembolden otomatik çekilir)",
   "goldSemantics": "{kind} altın",
   "@goldSemantics": {
     "placeholders": {
@@ -2131,11 +2131,15 @@
       }
     }
   },
-  "betterThanPctInvestors": "Yatırımcıların %{pct}'inden iyi",
+  "betterThanPctInvestors": "Yatırımcıların %{pct}'{ek} iyi",
   "@betterThanPctInvestors": {
+    "description": "ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden",
     "placeholders": {
       "pct": {
         "type": "int"
+      },
+      "ek": {
+        "type": "String"
       }
     }
   },
@@ -2585,11 +2589,15 @@
   "shareCardAllocation": "Dağılım",
   "shareCardTracked": "Takip",
   "shareCardInvestors": "Yatırımcıların",
-  "shareCardBetterThanPct": "%{pct}'inden iyi",
+  "shareCardBetterThanPct": "%{pct}'{ek} iyi",
   "@shareCardBetterThanPct": {
+    "description": "ek = trSayiAyrilmaEki(pct): 30 → undan, 20 → sinden",
     "placeholders": {
       "pct": {
         "type": "int"
+      },
+      "ek": {
+        "type": "String"
       }
     }
   },

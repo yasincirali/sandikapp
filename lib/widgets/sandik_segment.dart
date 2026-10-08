@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoButton;
 
 import '../theme/sandik.dart';
 
@@ -98,6 +99,17 @@ class SandikSegment extends StatelessWidget {
     final boy = yukseklik < SandikTouch.min ? SandikTouch.min : yukseklik;
     final dikeyPay = (boy - yukseklik) / 2;
 
+    // Açık temada `surface1` (#FBFAF6) kabuk üstünde `surface2` (#FFFFFF)
+    // hap görünmüyordu; kart içinde (sinyal eşiği) kabuk da kayboluyordu —
+    // web ekran görüntüleri, 2026-10-08. Açık temada yükseklik `overlay` ile
+    // değil gölgeyle kurulur (palet kuralı): kabuğa saç teli kenar, hapa
+    // kart gölgesi + saç teli. Kabuğun saç teli koyu temada da var: kart
+    // içindeki segment (sinyal eşiği, `surface1` kart) koyuda da kabuksuz
+    // görünüyordu. Hap koyuda kenarsız/gölgesiz — ton farkı yetiyor.
+    final acik = Theme.of(context).brightness == Brightness.light;
+    final kabukKenari = Border.all(color: context.c.hairline);
+    final hapKenari = acik ? kabukKenari : null;
+
     return SizedBox(
       height: boy,
       child: LayoutBuilder(builder: (context, kutu) {
@@ -113,6 +125,7 @@ class SandikSegment extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: context.c.surface1,
+                  border: kabukKenari,
                   borderRadius: BorderRadius.circular(SandikRadius.md),
                 ),
               ),
@@ -128,6 +141,8 @@ class SandikSegment extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: context.c.surface2,
+                    border: hapKenari,
+                    boxShadow: acik ? context.c.cardShadow : null,
                     borderRadius: BorderRadius.circular(SandikRadius.sm),
                   ),
                 ),

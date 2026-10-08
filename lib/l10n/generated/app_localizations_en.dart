@@ -3130,7 +3130,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String betterThanPctInvestors(int pct) {
+  String betterThanPctInvestors(int pct, String ek) {
     return 'Better than $pct% of investors';
   }
 
@@ -3693,7 +3693,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shareCardInvestors => 'Better than';
 
   @override
-  String shareCardBetterThanPct(int pct) {
+  String shareCardBetterThanPct(int pct, String ek) {
     return '$pct% of investors';
   }
 

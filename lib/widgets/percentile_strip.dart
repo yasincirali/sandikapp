@@ -11,6 +11,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
+import '../utils/tr_iyelik.dart';
 
 /// Ana ekranda anonim yüzdelik dilim şeridi.
 ///
@@ -153,7 +154,8 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
                         children: [
                           TextSpan(text: context.l10n.last30DaysLike),
                           TextSpan(
-                            text: "yatırımcıların %$ustundeOlduklari'inden",
+                            text: "yatırımcıların %$ustundeOlduklari'"
+                                "${trSayiAyrilmaEki(ustundeOlduklari)}",
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color:

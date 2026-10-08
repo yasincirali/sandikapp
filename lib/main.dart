@@ -631,6 +631,20 @@ class SandikApp extends ConsumerWidget {
         ),
       ),
 
+      // Anahtar (Material — Android ve web; iOS `Switch.adaptive` ile
+      // Cupertino çizer). Web ekran görüntüleri 2026-10-08: aynı Bildirimler
+      // listesinde üç ayrı anahtar vardı (amber track + koyu topuz, kahve
+      // track + beyaz topuz, kapalıyken YEŞİL çerçeve — `outline` "Orman"
+      // yeşili). Açık track her çağıranda `activeTrackColor: amberText`
+      // (amberFill beyaz zeminde metin dışı 3:1'i de tutmuyor); topuz ona
+      // göre zemin tonunda, kapalı hâl nötr.
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? p.surface2 : p.text36),
+        trackOutlineColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? Colors.transparent : p.text20),
+      ),
+
       // FAB — Amber
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: p.amberFill,

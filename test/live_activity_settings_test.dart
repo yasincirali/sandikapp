@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,7 +61,7 @@ void main() {
   /// "Gün boyu göster" satırındaki anahtar.
   ///
   /// Metne dokunmak İŞE YARAMAZ: `_SwitchTile` başlığı tıklanabilir
-  /// değil, yalnızca `CupertinoSwitch` olayı alır. Ekranda birden fazla
+  /// değil, yalnızca anahtar (`Switch.adaptive`) olayı alır. Ekranda birden fazla
   /// anahtar olduğu için de tür bazlı arama yetmez — anahtar, başlığıyla
   /// aynı satırın içinden seçilir.
   Finder allDaySwitch() => find.descendant(
@@ -70,7 +69,7 @@ void main() {
           of: find.text('Gün boyu göster'),
           matching: find.byType(Row),
         ).last,
-        matching: find.byType(CupertinoSwitch),
+        matching: find.byType(Switch),
       );
 
   /// Ayarlar uzun bir liste — hedef widget'ı görünür alana getirir.
