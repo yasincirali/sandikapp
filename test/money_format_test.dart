@@ -130,10 +130,12 @@ void main() {
     expect(detay, contains('baz: baz'));
     expect(oku('lib/widgets/transaction_row.dart'), contains('final BazPara baz'));
 
-    // Takip listesi BİLİNÇLİ hariç: oradaki fiyat varlığın KENDİ kurundadır
-    // (AAPL için $), TRY tutarı değil — baz birime çevirmek yanlış olurdu.
-    // Sembol kotasyonun para birimi (`kotasyonSembolu`, 2026-09-29): döviz
-    // paritesinde karşı para birimi (USDTRY=X → ₺).
-    expect(oku('lib/screens/watchlist_screen.dart'), contains('kotasyonSembolu('));
+    // Takip listesi BİLİNÇLİ hariç: oradaki fiyat sembol serisinin son
+    // noktasıdır — her sembolde TL BİRİM fiyat (bir tutar değil); baz
+    // birime çevirmek yanlış olurdu. Simge seriyle aynı kaynaktan
+    // (`sembolSerisiSimgesi`, seri denetimi 2026-10-08): eskiden kotasyon
+    // simgesiyle yazılıyor, AAPL'nin TL fiyatı "$" ile görünüyordu.
+    expect(oku('lib/screens/watchlist_screen.dart'),
+        contains('symbol: sembolSerisiSimgesi'));
   });
 }

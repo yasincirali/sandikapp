@@ -63,6 +63,21 @@ gösterim ölçümü yalnız çizilenleri sayar ve çizilen en çok oynayanı
   `kaynak-olcum.yml` (yalnız elle tetiklenir) kaynak değişirse yeniden
   ölçmek için durur; Frankfurt/Ziraat biçimi değişirse canlı sınama
   ayrıştırıcıyı gerçek yanıtla dener.
+- **Eurobond fiyat alarmı kapalı** (seri denetimi 2026-10-08).
+  `alarmSembolu` `EUROBOND:` için null döner, zil görünmez. Sunucu
+  (`check-price-alerts`) tahvili artık kirli/100 ölçeğinde fiyatlayabilir,
+  ama kullanıcı hedefi bankanın temiz fiyatıyla (nominalin yüzdesi) düşünür;
+  hangi ölçeğin hedef olacağı kararı verilmeden açmak yanlış tetik demek.
+  Ne zaman: tahvil alarmı istenirse (hedef = temiz fiyat, sunucuda
+  `temiz_fiyat` ile karşılaştırma).
+- **ABD hissesi alarm sayfası hedefi ₺ simgesiyle yazıyor.** Hedef ve
+  sunucu karşılaştırması USD kotasyonla (doğru), yalnız sayfa
+  `tryFormatter` ile biçimler. Maliyet: alarm sayfasına para birimi
+  geçirmek. Ne zaman: ABD hissesi bayrağı herkese açılmadan önce.
+- **Karşılaştır › "Al" eurobondu formda önceden SEÇMEZ.** Form açılır, tür
+  eurobond olur, ama tahvil seçiciden tekrar seçilir (ön doldurma kataloğu
+  yüklemiyor). Ekleme ekranı ayrı işte yeniden tasarlandığı için
+  dokunulmadı.
 
 ---
 

@@ -176,5 +176,33 @@ void main() {
           '₺38,46');
       expect(takipFiyatMetni(_kalem('x', 'SISE.IS', 'Şişe', null, 0)), '—');
     });
+
+    // Seri denetimi 2026-10-08: `currentPrice` sembol serisinin son
+    // noktasıdır ve seri her sembolde TL. USD kote satır (ABD hissesi,
+    // eurobond, emtia) TL sayıyı "$" ile yazıyordu.
+    test('USD kote varlık da ₺: sayı TL seriden gelir', () {
+      final aapl = WatchlistItem(
+        id: 'a',
+        userId: 'u',
+        ticker: 'AAPL',
+        name: 'Apple',
+        type: AssetType.hisse,
+        currency: 'USD',
+        addedAt: DateTime(2026),
+        currentPrice: 10506,
+      );
+      expect(takipFiyatMetni(aapl), '₺10.506,00');
+      final tahvil = WatchlistItem(
+        id: 'e',
+        userId: 'u',
+        ticker: 'EUROBOND:US900123DF45',
+        name: 'Türkiye %9,875 2028',
+        type: AssetType.eurobond,
+        currency: 'USD',
+        addedAt: DateTime(2026),
+        currentPrice: 43.51,
+      );
+      expect(takipFiyatMetni(tahvil), '₺43,51');
+    });
   });
 }
