@@ -180,15 +180,7 @@ void main() {
 
   group('#26 Bugün kartı haftalık satırı', () {
     // Kartta "Son 7 gün" kutusu D düzeniyle 2026-10-05'te kalktı
-    // (`todayWeekLabel` silindi); hesap hâlâ yapılır (gösterim ölçümü).
-    test('hesap Özet 1H ile aynı pencere (kayan, ucu canlı)', () {
-      final src = ekranKaynagiSync('lib/services/bugun_yukleyici.dart');
-      final i = src.indexOf('static Future<double?> haftalik(');
-      final govde = src.substring(i, src.indexOf('BugunYukleyici.haftalik', i));
-      expect(govde, contains('SummaryPeriod.birHafta'));
-      expect(govde, contains('canliSon:'));
-    });
-
+    // (`todayWeekLabel` silindi); hesabı ve isteği 2026-10-08'de kalktı.
     test('tur adımı etiketle aynı adı kullanır', () {
       final src = ekranKaynagiSync('lib/screens/onboarding_screen.dart');
       expect(src, contains('son 7 gün'));

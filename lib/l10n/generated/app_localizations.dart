@@ -4142,12 +4142,6 @@ abstract class AppLocalizations {
   /// **'medyandan {pts} puan geride'**
   String medianBehind(String pts);
 
-  /// No description provided for @realReturnSemanticsAhead.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son bir yılda portföyün enflasyonu {pts} puan geçti'**
-  String realReturnSemanticsAhead(String pts);
-
   /// No description provided for @lastYearInflation.
   ///
   /// In tr, this message translates to:
@@ -4160,53 +4154,11 @@ abstract class AppLocalizations {
   /// **'{pts} puan önündesin'**
   String pointsAhead(String pts);
 
-  /// No description provided for @realReturnSemanticsBehind.
-  ///
-  /// In tr, this message translates to:
-  /// **'Son bir yılda portföyün enflasyonun {pts} puan gerisinde kaldı'**
-  String realReturnSemanticsBehind(String pts);
-
   /// No description provided for @pointsBehind.
   ///
   /// In tr, this message translates to:
   /// **'{pts} puan gerisindesin'**
   String pointsBehind(String pts);
-
-  /// No description provided for @realReturnPointsUnit.
-  ///
-  /// In tr, this message translates to:
-  /// **'puan'**
-  String get realReturnPointsUnit;
-
-  /// No description provided for @realReturnAheadOfInflation.
-  ///
-  /// In tr, this message translates to:
-  /// **'enflasyonun önündesin'**
-  String get realReturnAheadOfInflation;
-
-  /// No description provided for @realReturnBehindInflation.
-  ///
-  /// In tr, this message translates to:
-  /// **'enflasyonun gerisindesin'**
-  String get realReturnBehindInflation;
-
-  /// No description provided for @realReturnLastYear.
-  ///
-  /// In tr, this message translates to:
-  /// **'son bir yıl'**
-  String get realReturnLastYear;
-
-  /// No description provided for @realReturnYours.
-  ///
-  /// In tr, this message translates to:
-  /// **'Senin'**
-  String get realReturnYours;
-
-  /// No description provided for @realReturnCpi.
-  ///
-  /// In tr, this message translates to:
-  /// **'TÜFE'**
-  String get realReturnCpi;
 
   /// No description provided for @noChangeLower.
   ///

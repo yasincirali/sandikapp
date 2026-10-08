@@ -91,10 +91,5 @@ void main() {
       expect(en.recapPointsAhead('5.2'), contains('beat inflation'));
       expect(en.recapPointsBehind('20.6'), contains('trailed inflation'));
     });
-
-    test('ekran okuyucu metni "yüzde … puan" karışıklığını taşımıyor', () {
-      expect(tr.realReturnSemanticsAhead('5,2'), isNot(contains('yüzde')));
-      expect(tr.realReturnSemanticsBehind('5,2'), isNot(contains('yüzde')));
-    });
   });
 }

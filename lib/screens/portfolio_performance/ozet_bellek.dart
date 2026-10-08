@@ -179,8 +179,7 @@ class _OzetBellek {
 /// Özet'in kanonik serisi — `_OzetSerisi` ve ısıtma AYNI isteği atar.
 ///
 /// Pencere `PeriodSummaryService.pencere`, çözünürlük `pickForSpan(period.days)`
-/// — Ana ekrandaki "Son 7 gün" ile birebir aynı istek
-/// (`BugunYukleyici.haftalik`); gerekçe `_OzetSerisi` notunda.
+/// — gerekçe `_OzetSerisi` notunda.
 Future<PortfolioHistoryBreakdown> _ozetSerisiniCek(
   SummaryPeriod period,
   List<Asset> chartAssets,

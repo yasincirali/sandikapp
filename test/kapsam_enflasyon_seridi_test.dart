@@ -70,7 +70,7 @@ void main() {
     expect(src.contains('WeeklySummaryChip('), isFalse);
   });
 
-  test('reel getiri ve haftalık Bugün kartının satırı, aynı hesap yolu', () {
+  test('reel getiri Bugün kartının satırı, aynı hesap yolu', () {
     // `activeAssets` (2026-10-01): ham defter silinmiş lot'ları taşır, Özet
     // süzüyordu; Ana 5,4 puan derken Özet 4,5 yazdı.
     expect(yukleyici.contains('RealReturnService.yillik(state.activeAssets)'),
@@ -78,16 +78,14 @@ void main() {
         reason: 'aynı hesap yolu — ikinci bir reel getiri hesabı yok');
     expect(yukleyici.contains('RealReturnService.yillik(state.assets)'), isFalse,
         reason: 'ham defter getiri hesabına girmez');
-    expect(yukleyici.contains('PeriodSummaryService.compute('), isTrue);
-    expect(yukleyici.contains('SummaryPeriod.birHafta'), isTrue);
     expect(yukleyici.contains('RemoteConfigService.instance.realReturnEnabled'),
         isTrue,
         reason: 'bayrak kapısı şeritle aynı');
-    expect(yukleyici.contains('RemoteConfigService.instance.periodSummaryEnabled'),
-        isTrue);
     // Kart kendi kopyasını tutmaz — tek kaynak.
     expect(kart.contains('BugunYukleyici.reel(widget.state'), isTrue);
-    expect(kart.contains('BugunYukleyici.haftalik(widget.state'), isTrue);
+    // Haftalık satır 2026-10-08'de kalktı (H düzeni çizmiyordu); istek de
+    // geri gelmesin.
+    expect(kart.contains('BugunYukleyici.haftalik('), isFalse);
     expect(kart.contains('RealReturnService.yillik('), isFalse,
         reason: 'yükleyici mantığı karta geri kopyalanmamalı');
   });

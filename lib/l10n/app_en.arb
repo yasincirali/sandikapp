@@ -1433,25 +1433,9 @@
       }
     }
   },
-  "realReturnSemanticsAhead": "Over the last year your portfolio beat inflation by {pts} points",
-  "@realReturnSemanticsAhead": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
   "lastYearInflation": "Over the last year, inflation-wise you are ",
   "pointsAhead": "{pts} points ahead",
   "@pointsAhead": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "realReturnSemanticsBehind": "Over the last year your portfolio trailed inflation by {pts} points",
-  "@realReturnSemanticsBehind": {
     "placeholders": {
       "pts": {
         "type": "String"
@@ -1466,12 +1450,6 @@
       }
     }
   },
-  "realReturnPointsUnit": "points",
-  "realReturnAheadOfInflation": "ahead of inflation",
-  "realReturnBehindInflation": "behind inflation",
-  "realReturnLastYear": "last year",
-  "realReturnYours": "Yours",
-  "realReturnCpi": "CPI",
   "noChangeLower": "no change",
   "totalNetHidden": "Total net worth hidden",
   "totalNetWorth": "Total net worth {amount}",

@@ -3,59 +3,33 @@ import 'package:portfoy_takip/services/bugun_service.dart';
 import 'package:portfoy_takip/utils/tr_iyelik.dart';
 
 /// Bugün kartı kapsamı izler (2026-09-21, kullanıcı seçimi 3):
-///   · Ortak / Birlikte görünümünde kişisel satırlar (hedef, aylık özet)
-///     üretilmez; kapsamdan bağımsız satırlar kalır.
+///   · Hedef kapsamın KENDİ hedefidir (2026-09-30, `kapsamHedefiProvider`);
+///     Ortak / Birlikte görünümünde de satır kalır.
 ///   · Başlıktaki "Ayşe'nin bugünü" etiketi Türkçe ilgi ekini ünlü
 ///     uyumuyla alır.
 void main() {
-  group('BugunService.hesapla kisisel', () {
-    // 2 Ekim 2026: ayın ilk üç günü → aylık özet girişi adayı.
-    final now = DateTime(2026, 10, 2, 12);
-
-    test('kişisel görünümde hedef ve aylık özet var', () {
+  group('BugunService.hesapla kapsam', () {
+    test('hedef verilen kapsamın hedefi, reel kalır', () {
       final v = BugunService.hesapla(
-        karZararlar: const [1, -1],
         toplamDeger: 1000,
         ozet: null,
         hedefTRY: 5000,
-        now: now,
-      );
-      expect(v.ikincil.whereType<HedefSatiri>(), isNotEmpty);
-      expect(v.aylik, isNotNull);
-    });
-
-    test('kapsam görünümünde aylık özet yok, hedef ve diğerleri kalır', () {
-      final v = BugunService.hesapla(
-        karZararlar: const [1, -1],
-        toplamDeger: 1000,
-        ozet: null,
-        hedefTRY: 5000,
-        now: now,
+        now: DateTime(2026, 10, 2, 12),
         reel: const ReelGetiriSatiri(nominal: 40, inflation: 30),
-        haftalikGetiriPct: 1.2,
-        kisisel: false,
       );
-      // 2026-09-30: hedef kapsamın KENDİ hedefi (`kapsamHedefiProvider`);
-      // kart Birlikte'ye geçince satır kaybolmamalı.
-      expect(v.ikincil.whereType<HedefSatiri>().single.hedefTRY, 5000);
-      expect(v.aylik, isNull, reason: 'aylık özet kendi recap ekranına gider');
-      expect(v.ikincil.whereType<YesilOranSatiri>(), isNotEmpty);
+      // Kart Birlikte'ye geçince satır kaybolmamalı.
+      expect(v.hedef.hedefTRY, 5000);
       expect(v.reel, isNotNull);
-      expect(v.olay, isNotNull, reason: 'ulusal takvim herkese');
     });
 
-    test('kapsam görünümünde hedef 0 ise "hedef belirle" çağrısı görünür',
-        () {
+    test('hedef 0 ise "hedef belirle" çağrısı görünür', () {
       final v = BugunService.hesapla(
-        karZararlar: const [],
         toplamDeger: 1000,
         ozet: null,
         hedefTRY: 0,
         now: DateTime(2026, 9, 21, 12),
-        kisisel: false,
       );
-      expect(v.ikincil.single, isA<HedefSatiri>());
-      expect((v.ikincil.single as HedefSatiri).belirlenmedi, isTrue);
+      expect(v.hedef.belirlenmedi, isTrue);
     });
   });
 

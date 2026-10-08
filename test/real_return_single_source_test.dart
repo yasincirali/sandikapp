@@ -18,8 +18,10 @@ void main() {
       })
       .join('\n');
 
-  test('ana ekran rozeti RealReturnService okur, yarış ROI\'sini değil', () {
-    final src = kod('lib/widgets/real_return_strip.dart');
+  // 2026-10-08: eski rozet (`real_return_strip.dart`) silindi; ana ekrandaki
+  // karşılığı Bugün kartının yükleyicisi (`BugunYukleyici.reel`).
+  test('ana ekran (Bugün kartı) RealReturnService okur, yarış ROI\'sini değil', () {
+    final src = kod('lib/services/bugun_yukleyici.dart');
     expect(src.contains('RealReturnService.yillik('), isTrue);
     expect(src.contains('computeROI'), isFalse,
         reason: 'simülasyon ROI\'si nakit akışını görmez; rozet '

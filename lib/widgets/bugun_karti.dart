@@ -89,7 +89,6 @@ typedef _BugunAnligi = ({
   DateTime at,
   Map<int, double>? seri,
   ReelGetiriSatiri? reel,
-  double? haftalik,
 });
 final Map<String, _BugunAnligi> _bugunSonYukleme = {};
 
@@ -145,7 +144,6 @@ class BugunKarti extends ConsumerStatefulWidget {
 class _BugunKartiState extends ConsumerState<BugunKarti> {
   Map<int, double>? _seri;
   ReelGetiriSatiri? _reel;
-  double? _haftalik;
   bool _istendi = false;
 
   /// [_yukle] ağda mı — bkz. [_seriyiTazele].
@@ -174,7 +172,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         at: DateTime.now(),
         seri: _seri,
         reel: _reel,
-        haftalik: _haftalik,
       );
 
   /// Tek bir yüklemenin üst sınırı. Biri asılı kalırsa kart bu süreden
@@ -222,7 +219,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         DateTime.now().difference(son.at) <= _seriTazelikPenceresi) {
       _seri = son.seri;
       _reel = son.reel;
-      _haftalik = son.haftalik;
       _yuklendi = true;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
@@ -393,10 +389,12 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     return parcalar.join('|');
   }
 
-  /// Üç yükleme birbirinden bağımsız, PARALEL ve tek seferlik (`_istendi`):
+  /// İki yükleme birbirinden bağımsız, PARALEL ve tek seferlik (`_istendi`):
   /// kart her fiyat yenilemesinde yeniden kurulur, ama bu seriler oturumda
-  /// bir kez çekilir — eski `RealReturnStrip` / `WeeklySummaryChip` ile aynı
-  /// disiplin. Her biri kendi try/catch'inde: biri düşerse diğerleri çizilir.
+  /// bir kez çekilir — eski `RealReturnStrip` ile aynı disiplin. Her biri
+  /// kendi try/catch'inde: biri düşerse diğeri çizilir. (Üçüncüsü, son 7
+  /// günün getirisi, 2026-10-08'de kalktı: H düzeni o satırı çizmiyordu,
+  /// istek boşa ağa çıkıyordu — `BugunKartiVerisi`.)
   ///
   /// **Tek yayın (2026-09-21).** Eskiden her yükleme kendi `setState`'ini
   /// çağırıyordu; satırlar birer birer beliriyor, kart üç kez büyüyordu
@@ -411,7 +409,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
     final sonuc = await Future.wait([
       _seriYukle(),
       _reelYukle(),
-      _haftalikYukle(),
     ]);
     _yukleniyor = false;
     if (!mounted) return;
@@ -420,7 +417,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       // `_turBitinceYukle` bu arada yazmış olabilir — ezilmesin.
       _seri = sonuc[0] as Map<int, double>? ?? _seri;
       _reel = sonuc[1] as ReelGetiriSatiri?;
-      _haftalik = sonuc[2] as double?;
       _yuklendi = true;
     });
     _anligiKaydet();
@@ -489,13 +485,6 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   Future<ReelGetiriSatiri?> _reelYukle() =>
       BugunYukleyici.reel(widget.state, enFazla: _yuklemeSuresi);
 
-  /// Son 7 günün (kayan, ucu canlı) piyasa getirisi — eski
-  /// `WeeklySummaryChip` ile aynı hesap (`PeriodSummaryService.compute`, 1H
-  /// penceresi), aynı bayrak. Etiket "Son 7 gün": gerekçe
-  /// `HaftalikOzetSatiri`.
-  Future<double?> _haftalikYukle() =>
-      BugunYukleyici.haftalik(widget.state, enFazla: _yuklemeSuresi);
-
   /// Yükleme bitene kadar kartın yerini tutan iskelet — başlık, hareket
   /// bloğu, iki kutu. Kart tek seferde, tüm veriyle gelir; parça parça
   /// büyümez. Ölçüler gerçek düzenle aynı ki yükleme bitince kart zıplamasın.
@@ -554,15 +543,10 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
         ? null
         : DailySummary.from(state: widget.state, series: seri, now: now);
     // Sahiplik sınırı korunur: Birlikte görünümünde `state.assets` ben +
-    // ortakların BİRLEŞİK defteridir ve `positionKey` sahip taşımaz — tek
-    // havuzda toplanırsa iki kişinin aynı hissesi tek pozisyona düşer,
-    // birinin satışı diğerinin lotunu düşer (bkz. `aggregatePositionsByOwner`).
-    // Kendi görünümünde tek grup çıkar, hesap aynıdır.
+    // ortakların BİRLEŞİK defteridir; toplam sahip başına kurulur
+    // (`ownerScopedTotalValue`). Kendi görünümünde tek grup çıkar.
     final sahipler = lotlarSahibeGore(widget.state.assets);
-    final pozisyonlar = aggregatePositionsByOwner(
-        [for (final lots in sahipler) aktifLotlar(lots)]);
     final veri = BugunService.hesapla(
-      karZararlar: [for (final p in pozisyonlar) p.gainLoss],
       // `sonFiyat` ŞART — aynı kartın içindeki `ozet` (DailySummary.from)
       // bu düşüşü yapıyor, bu toplam yapmıyordu. Ortak lot'unun fiyatı
       // bayatsa toplam onu saymıyor, kâr/zarar sayıyordu: aynı kartta iki
@@ -574,31 +558,33 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       hedefTRY: ref.watch(kapsamHedefiProvider(widget.hedefKapsami)),
       now: now,
       reel: _reel,
-      haftalikGetiriPct: _haftalik,
-      kisisel: widget.kisisel,
       // "Piyasa kapalı" yalnızca tamamen borsa portföyüne (2026-10-01).
       // Kartın gösterdiği KAPSAMIN defteri — Birlikte'de ortağın altını da
       // rakamı hareket ettirir.
       yalnizcaBorsa: yalnizcaBorsaVarliklardan(widget.state.assets),
     );
-    if (veri.bos) return const SizedBox.shrink();
-    _gosterimiOlc(veri, now);
+    // En çok oynayan, gün içi seriyle AYNI önbellek nesnesinden — kart
+    // seriyi bu kümeyle çekti (`BugunYukleyici.seri`), burada ağa çıkılmaz.
+    final kume =
+        widget.state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList();
+    final bd = IntradaySeriesCache.instance.onbellekte(kume);
+    final oynayan =
+        bd == null ? null : enCokOynayanBul(bd, lotlar: kume, now: now);
+    _gosterimiOlc(veri, oynayan != null, now);
 
     final gizli = ref.watch(balanceHiddenProvider);
     final dil = _dil;
 
-    // Düzen H (kullanıcı seçimi 2026-10-04, sadeleştirme listesi madde 7):
-    // hesap AYNI (`BugunService.hesapla`), yalnız çizim. 2026-10-01'den
-    // 2026-10-04'e kadarki "D · Sakin pano" (takvim yaprağı, bilgi/eylem
-    // kutu ızgarası, son 7 gün, artıdaki varlık, aylık özet, olay ayak notu)
-    // bayrak `bugun_karti_kiyas` ile birlikte 2026-10-05'te silindi; o
-    // satırlar hesapta duruyor (gösterim ölçümü `_gosterimiOlc` onları da
-    // sayar), yalnız kartta çizilmiyorlar.
+    // Düzen H (kullanıcı seçimi 2026-10-04, sadeleştirme listesi madde 7).
+    // 2026-10-01'den 2026-10-04'e kadarki "D · Sakin pano" (takvim yaprağı,
+    // bilgi/eylem kutu ızgarası, son 7 gün, artıdaki varlık, aylık özet, olay
+    // ayak notu) bayrak `bugun_karti_kiyas` ile birlikte 2026-10-05'te
+    // silindi; o satırların hesabı ve gösterim ölçümü 2026-10-08'de kalktı.
     return Padding(
       padding: widget.padding,
       child: SandikCard(
         padding: const EdgeInsets.all(SandikSpace.md),
-        child: _kiyasDuzeni(veri, ozet, now, gizli, dil),
+        child: _kiyasDuzeni(veri, ozet, oynayan, now, gizli, dil),
       ),
     );
   }
@@ -654,21 +640,12 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// Kullanıcı şartı (2026-10-04): kartta en çok oynayan, enflasyona göre
   /// kıyas ve hedef BULUNMALI. Son 7 gün, artıdaki varlık, aylık özet ve
   /// olay ayak notu bu düzende yok; o bilgiler Performans'ta duruyor.
-  Widget _kiyasDuzeni(BugunKartiVerisi veri, DailySummary? ozet, DateTime now,
-      bool gizli, String dil) {
-    // En çok oynayan, gün içi seriyle AYNI önbellek nesnesinden — kart
-    // seriyi bu kümeyle çekti (`BugunYukleyici.seri`), burada ağa çıkılmaz.
-    final kume =
-        widget.state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList();
-    final bd = IntradaySeriesCache.instance.onbellekte(kume);
-    final oynayan =
-        bd == null ? null : enCokOynayanBul(bd, lotlar: kume, now: now);
-    final hedefler = veri.ikincil.whereType<HedefSatiri>();
-    final hedef = hedefler.isEmpty ? null : hedefler.first;
+  Widget _kiyasDuzeni(BugunKartiVerisi veri, DailySummary? ozet,
+      EnCokOynayan? oynayan, DateTime now, bool gizli, String dil) {
     final reel = veri.reel;
     final alt = <Widget>[
       if (oynayan != null) _oynayanKutusu(oynayan, gizli),
-      if (hedef != null) _hedefKutusu(hedef, gizli),
+      _hedefKutusu(veri.hedef, gizli),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -696,10 +673,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
                 reel, () => _ozeteGit(periodIdx: SummaryPeriod.birYil.index)),
           ),
         ],
-        if (alt.isNotEmpty) ...[
-          const SizedBox(height: SandikSpace.sm),
-          _Izgara(children: alt),
-        ],
+        const SizedBox(height: SandikSpace.sm),
+        _Izgara(children: alt),
       ],
     );
   }
@@ -827,16 +802,20 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   /// "kaç kez görüldü"yü değil "kaç kez çizildi"yi ölçerdi. Anahtar
   /// uygulama ömrü boyunca statik: aynı gün ikinci açılışta tekrar
   /// sayılmaz, ertesi gün sayılır.
+  ///
+  /// YALNIZ ÇİZİLENLER (2026-10-08): eskiden H düzeninin çizmediği
+  /// `yesil`/`haftalik`/`aylik`/`olay_*` da sayılıyordu; çizilen en çok
+  /// oynayan ise hiç sayılmıyordu (dokunuşu `oynayan` diye ölçülürken).
+  /// `today_row_shown` serisi bu tarihte kırılır: o türler biter, `oynayan`
+  /// başlar.
   static String? _sonOlculen;
 
-  void _gosterimiOlc(BugunKartiVerisi veri, DateTime now) {
+  void _gosterimiOlc(BugunKartiVerisi veri, bool oynayanVar, DateTime now) {
     final turler = [
       if (veri.birincil != null) _tur(veri.birincil!),
       if (veri.reel != null) _tur(veri.reel!),
-      if (veri.haftalik != null) _tur(veri.haftalik!),
-      for (final s in veri.ikincil) _tur(s),
-      if (veri.aylik != null) _tur(veri.aylik!),
-      if (veri.olay != null) _tur(veri.olay!),
+      if (oynayanVar) 'oynayan',
+      _tur(veri.hedef),
     ];
     final anahtar = '${dayKey(now)}|${turler.join(',')}';
     if (_sonOlculen == anahtar) return;
@@ -849,16 +828,8 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
   static String _tur(BugunSatiri s) => switch (s) {
         GunlukDegisimSatiri() => 'degisim',
         PiyasaKapaliSatiri() => 'kapali',
-        YesilOranSatiri() => 'yesil',
         HedefSatiri() => s.belirlenmedi ? 'hedef_yok' : 'hedef',
         ReelGetiriSatiri() => 'reel',
-        HaftalikOzetSatiri() => 'haftalik',
-        YaklasanOlaySatiri() => switch (s.tur) {
-            BugunOlayTuru.tuikAciklamasi => 'olay_tuik',
-            BugunOlayTuru.bistTatili => 'olay_tatil',
-            BugunOlayTuru.aySonu => 'olay_aysonu',
-          },
-        AylikOzetSatiri() => 'aylik',
       };
 
   /// Dokunuş ölçümü — satırın kendi eylemini sarar.
