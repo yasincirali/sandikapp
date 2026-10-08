@@ -584,14 +584,15 @@ class _EslemeKarti extends StatelessWidget {
                 style: context.t.bodySmall?.copyWith(color: c.amberText),
               ),
             ),
-          // AI sütun eşleme (bayrak `ekstre_ai_esleme`): yalnız motor emin
-          // değilken ve henüz AI önerisi alınmamışken. Ne gittiği düğmenin
-          // üstünde yazar (Gizlilik 1.6).
+          // AI sütun eşleme (bayrak `ekstre_ai_esleme`): henüz AI önerisi
+          // alınmamış her ekstrede. Ne gittiği düğmenin üstünde yazar
+          // (Gizlilik 1.6). İlk sürüm yalnız motor emin değilken
+          // gösteriyordu; yasin (2026-10-08) admin hesabıyla "ekstremi ai ile
+          // ayıklatamıyorum" dedi: motorun kendinden emin okuduğu ama
+          // eksik/yanlış çıkardığı ekstrede kullanıcının elinde AI yolu
+          // kalmıyordu. Motor emin olsa da kullanıcı isterse AI'a sorar.
           if (RemoteConfigService.instance.ekstreAiEsleme &&
-              !sonuc.aiOnerisi &&
-              (a == null ||
-                  a.eminDegil ||
-                  sonuc.kanonikMetin().isEmpty)) ...[
+              !sonuc.aiOnerisi) ...[
             const SizedBox(height: SandikSpace.xs),
             if (aiKilitli)
               KilitSatiri(
