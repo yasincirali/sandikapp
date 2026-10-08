@@ -1459,8 +1459,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sandikPremium => 'sandık Premium';
 
   @override
-  String get premiumPitch =>
-      'Unlimited assets, premium indicators, 2 signal analyses a day';
+  String get premiumPitch => 'Unlimited assets and premium indicators';
 
   @override
   String get premiumActive => 'Premium active';
@@ -2272,14 +2271,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionTerms =>
-      'The subscription is billed to your App Store account. It renews automatically; to cancel, manage it under Settings → Apple ID → Subscriptions. The yearly plan starts with a 7-day free trial; unless you cancel, you are charged at the end of the trial.';
+      'Payment is charged to your App Store account. The subscription renews automatically for the same period and price unless cancelled at least 24 hours before the period ends. Manage or cancel it under Settings › Apple ID › Subscriptions.';
 
   @override
   String get premiumUnlocked => 'Premium unlocked';
 
   @override
   String get premiumUnlockedBody =>
-      'Unlimited assets, 2 signal analyses a day, premium indicators and more are now unlocked.';
+      'Unlimited assets, premium indicators and every Premium detail are now unlocked.';
 
   @override
   String get greatWord => 'Great';
@@ -2292,7 +2291,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallSubhead =>
-      'Unlimited assets, advanced indicators and 2 signal analyses a day.';
+      'Unlimited assets and advanced indicators. Portfolio tracking stays free.';
 
   @override
   String get restorePurchase => 'Restore purchase';
@@ -6768,4 +6767,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get anzOkunamadi => 'The note could not be opened right now.';
+
+  @override
+  String get sgnPremiumAktif => 'Premium indicators on';
+
+  @override
+  String get sgnPremiumAktifGovde =>
+      'ADX, Williams %R and CCI are part of the signal analysis.';
+
+  @override
+  String get sgnPremiumKilitBaslik => 'Premium indicators';
+
+  @override
+  String get sgnPremiumKilitGovde =>
+      'With Premium, ADX, Williams %R and CCI join the signal analysis.';
+
+  @override
+  String get sgnPremiumGec => 'Go Premium';
+
+  @override
+  String get pwOzSinirsiz => 'Unlimited assets of every type';
+
+  @override
+  String get pwOzGosterge => 'ADX, Williams %R and CCI in signal analysis';
+
+  @override
+  String get pwOzSiklik =>
+      'More than one signal notification a day (hourly, twice a day…)';
+
+  @override
+  String get pwOzKarsilastir => 'Up to 5 series in Compare';
+
+  @override
+  String get pwOzOrtak => 'Share your portfolio with more than one partner';
+
+  @override
+  String get sgnSlotNotu =>
+      'On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
+  }
+
+  @override
+  String get cmpSinirPremium => 'Up to 5 series with Premium';
+
+  @override
+  String get cmpSinirDolu => 'At most 5 assets';
+
+  @override
+  String get pwOzRadar =>
+      'Full money-flow and volume-radar detail, the whole weekly note';
+
+  @override
+  String pwFiyatAylik(String fiyat) {
+    return '$fiyat/mo';
+  }
+
+  @override
+  String pwFiyatYillik(String fiyat) {
+    return '$fiyat/yr';
+  }
+
+  @override
+  String pwDenemeAltyazi(int gun) {
+    return '$gun days free, then renews automatically';
+  }
+
+  @override
+  String get pwYenilenirAltyazi => 'Renews automatically, cancel anytime';
+
+  @override
+  String pwDenemeDugme(int gun) {
+    return 'Try $gun days free';
+  }
+
+  @override
+  String get pwAboneOl => 'Subscribe';
+
+  @override
+  String get pwKosulAndroid =>
+      'Payment is charged to your Google Play account. The subscription renews automatically for the same period and price unless cancelled before the period ends. Manage or cancel it under Google Play › Payments & subscriptions › Subscriptions.';
+
+  @override
+  String pwDenemeKosul(int gun) {
+    return 'Unless you cancel before the $gun-day free trial ends, you are charged when it ends.';
+  }
+
+  @override
+  String get pwKullanilamaz =>
+      'Purchases are not available right now. Please try again shortly.';
+
+  @override
+  String get pwBeklemede =>
+      'Your payment is pending. Premium turns on by itself once it is approved.';
+
+  @override
+  String get pwHata =>
+      'The purchase could not be completed. If you were not charged, you can try again.';
+
+  @override
+  String get pwGeriYuklendi => 'Your subscription has been restored.';
+
+  @override
+  String get pwGeriYukBulunamadi =>
+      'No active subscription was found for this account.';
+
+  @override
+  String get pwGeriYukHata =>
+      'Restore is not possible right now. Please try again shortly.';
 }

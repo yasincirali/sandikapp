@@ -97,7 +97,7 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
     final indicatorPrefs = ref.read(indicatorPrefsProvider.notifier);
     final thresholds = ref.read(signalThresholdProvider.notifier);
     final neutralPushEnabled = ref.read(signalNeutralPushProvider);
-    final premium = ref.read(premiumUnlockedProvider);
+    final premium = ref.read(premiumGostergelerHesaplanirProvider);
 
     final inserted = <SignalAlert>[];
 

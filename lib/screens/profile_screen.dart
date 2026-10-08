@@ -188,6 +188,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (user == null) return;
     // Kilit ve gösterge düğmede ([SandikAsyncButton]); eski `_generating` /
     // `_busy` bayrakları ve "Kod üretiliyor..." perdesi kalktı (2026-10-08).
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     // Sözlük await'lerden ÖNCE çözülür: `context` async boşluğun ardında
     // kullanılamaz (`use_build_context_synchronously`).
     final kopyalandi = context.l10n.codeCopied;
@@ -211,6 +212,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // formatter'ı atlayan yolları da kapsar.
     final code = PartnerCodeInputFormatter.format(_codeCtrl.text);
     if (code.isEmpty || _submitting) return;
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     setState(() => _submitting = true);
     try {
       final result = await ref.read(partnersProvider.notifier).submitCode(code);
@@ -960,6 +962,7 @@ class _PendingRequestsSectionState
       _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _accept(Map<String, dynamic> invite) async {
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     final kabulEdildi = context.l10n.partnershipAccepted;
     final inviteId = invite['id'] as String;
     try {

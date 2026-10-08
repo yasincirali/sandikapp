@@ -143,7 +143,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     final kayit = AssetSignalCard.sonSinyal(alerts, widget.asset);
 
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
     final enabledIds = prefs[widget.asset.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
 
@@ -564,7 +564,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   Widget build(BuildContext context) {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
     final enabledIds = prefs[widget.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.type);
 

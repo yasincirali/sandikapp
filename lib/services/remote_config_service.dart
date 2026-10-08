@@ -57,10 +57,24 @@ class RemoteConfigService {
     // 20,6 ₺ kalıyordu; hesap /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
     'premium_price_yearly': '399₺/yıl',
 
-    // NOT: `free_signal_slots_per_day` kaldırıldı (2026-10-04, sadeleştirme
-    // C) — ne istemci ne sunucu okuyordu; sinyal slot'u bugün herkese aynı.
-    // Premium planı ücretsiz kullanıcıya slot kapısı koyacak: kapı yazılınca
-    // bayrak (varsayılan 1 = yalnız sabah, Premium 2) geri eklenir.
+    // Ücretsiz sürümde tür başına günde en fazla kaç sinyal bildirimi
+    // (Premium planı, 2026-10-08). Yalnız `paywall_enabled` açıkken ve
+    // Premium olmayana uygulanır; sığmayan sıklık "günde 1 kez"e, seçilen
+    // ilk saate iner (`slotaSigdir`). 2026-10-04'te okuyan yokken
+    // kaldırılmıştı, kapıyla geri geldi. Sunucudaki karşılığı
+    // `SINYAL_UCRETSIZ_SLOT` secret'ı: ikisi paywall'la birlikte açılır.
+    'free_signal_slots_per_day': 1,
+
+    // Ücretsiz sürümde Karşılaştır grafiğindeki seri sayısı (Premium planı
+    // "1 seri ücretsiz" = kendi serisine EK bir kıyas, toplam 2). Premium
+    // eskisi gibi 5 (renk paleti beşte bitiyor). Yalnız paywall açıkken.
+    'free_compare_series': 2,
+
+    // Ücretsiz sürümde en fazla kaç ortaklık (yasin kararı 2026-10-08:
+    // "1 ortak"). Yalnız paywall açıkken; var olan ortaklıklar korunur,
+    // sınır yalnız YENİ ortak eklemeyi (kod üret / kod gir / daveti kabul)
+    // durdurur. Gizlenmiş ortak da sayılır: gizlemek ortaklığı bitirmez.
+    'free_partner_limit': 1,
 
     // NOT: `free_ai_report_enabled` kaldırıldı — AI portföy raporunun hiçbir
     // implementasyonu yoktu, flag var olmayan bir özelliği gate'liyordu.
@@ -392,6 +406,18 @@ class RemoteConfigService {
 
   int get freeAssetLimit =>
       _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
+
+  int get freeSignalSlotsPerDay =>
+      _rc?.getInt('free_signal_slots_per_day') ??
+      _defaults['free_signal_slots_per_day'] as int;
+
+  int get freeCompareSeries =>
+      _rc?.getInt('free_compare_series') ??
+      _defaults['free_compare_series'] as int;
+
+  int get freePartnerLimit =>
+      _rc?.getInt('free_partner_limit') ??
+      _defaults['free_partner_limit'] as int;
 
   int get freeWatchlistLimit =>
       _rc?.getInt('free_watchlist_limit') ??

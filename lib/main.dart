@@ -53,6 +53,7 @@ import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/satin_alma_service.dart';
 import 'services/daily_summary.dart';
 import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
@@ -1159,6 +1160,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _dataWaitTimer = null;
         _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
+        // Mağaza kimliğini de bırak: sıradaki hesap öncekinin aboneliğini
+        // görmesin. Bayrak kapalıyken/yapılandırılmamışken no-op.
+        CrashReporter.arkaPlan(SatinAlmaService.instance.cikis(),
+            reason: 'SatinAlmaService.cikis');
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
         // Tercih anahtarlarını BU kullanıcıya bağla — `syncSignalPreferences
@@ -1227,6 +1232,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // veri çoğunlukla hazırdır ve tek loading görünür.
         _warmUpData();
         AnalyticsService.instance.setUserId(user.id);
+        // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
+        // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.
+        // Hak değişince anlık köprü + sunucu haklarını tazele (webhook
+        // `premium_haklari`'na yazınca kalıcı kaynak orası olur).
+        SatinAlmaService.instance.hakDegisti = (aktif) {
+          if (!mounted) return;
+          ref.read(magazaPremiumProvider.notifier).state = aktif;
+          ref.invalidate(premiumHaklariProvider);
+        };
+        CrashReporter.arkaPlan(
+            SatinAlmaService.instance.kullaniciyiBagla(user.id),
+            reason: 'SatinAlmaService.kullaniciyiBagla');
         final isPremium = ref.read(effectivePremiumProvider);
         AnalyticsService.instance.setUserProperty(
           name: 'user_type',

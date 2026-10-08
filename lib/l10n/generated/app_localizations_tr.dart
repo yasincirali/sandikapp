@@ -1446,8 +1446,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sandikPremium => 'Sandık Premium';
 
   @override
-  String get premiumPitch =>
-      'Sınırsız varlık, premium göstergeler, günde 2 sinyal analizi';
+  String get premiumPitch => 'Sınırsız varlık ve premium göstergeler';
 
   @override
   String get premiumActive => 'Premium aktif';
@@ -2256,14 +2255,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get subscriptionTerms =>
-      'Abonelik App Store hesabına yansır. Otomatik yenilenir, iptal için Ayarlar → Apple ID → Abonelikler menüsünden yönetebilirsin. Yıllık abonelikte ilk 7 gün ücretsiz denemedir; iptal etmezsen deneme sonunda ücret tahsil edilir.';
+      'Ödeme App Store hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Ayarlar › Apple ID › Abonelikler\'den yönetebilir ya da iptal edebilirsin.';
 
   @override
   String get premiumUnlocked => 'Premium açıldı';
 
   @override
   String get premiumUnlockedBody =>
-      'Sınırsız varlık, günde 2 sinyal analizi, premium göstergeler ve daha fazlası açıldı.';
+      'Sınırsız varlık, premium göstergeler ve Premium ayrıntıların hepsi açıldı.';
 
   @override
   String get greatWord => 'Harika';
@@ -2276,7 +2275,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get paywallSubhead =>
-      'Sınırsız varlık, gelişmiş göstergeler ve günde 2 sinyal analizi.';
+      'Sınırsız varlık ve gelişmiş göstergeler. Portföy takibi her zaman ücretsiz.';
 
   @override
   String get restorePurchase => 'Satın alımı geri yükle';
@@ -6706,4 +6705,114 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get anzOkunamadi => 'Not şu an açılamadı.';
+
+  @override
+  String get sgnPremiumAktif => 'Premium göstergeler açık';
+
+  @override
+  String get sgnPremiumAktifGovde =>
+      'ADX, Williams %R ve CCI sinyal analizine katılıyor.';
+
+  @override
+  String get sgnPremiumKilitBaslik => 'Premium göstergeler';
+
+  @override
+  String get sgnPremiumKilitGovde =>
+      'ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.';
+
+  @override
+  String get sgnPremiumGec => 'Premium\'a geç';
+
+  @override
+  String get pwOzSinirsiz => 'Sınırsız varlık ve tüm varlık türleri';
+
+  @override
+  String get pwOzGosterge => 'Sinyal analizinde ADX, Williams %R ve CCI';
+
+  @override
+  String get pwOzSiklik =>
+      'Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)';
+
+  @override
+  String get pwOzKarsilastir => 'Karşılaştır\'da 5 seriye kadar';
+
+  @override
+  String get pwOzOrtak => 'Birden fazla ortakla portföy paylaşımı';
+
+  @override
+  String get sgnSlotNotu =>
+      'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
+  }
+
+  @override
+  String get cmpSinirPremium => 'Premium ile 5 seriye kadar';
+
+  @override
+  String get cmpSinirDolu => 'En fazla 5 varlık';
+
+  @override
+  String get pwOzRadar =>
+      'Para akışı ve hacim radarının ayrıntısı, haftalık notun tamamı';
+
+  @override
+  String pwFiyatAylik(String fiyat) {
+    return '$fiyat/ay';
+  }
+
+  @override
+  String pwFiyatYillik(String fiyat) {
+    return '$fiyat/yıl';
+  }
+
+  @override
+  String pwDenemeAltyazi(int gun) {
+    return '$gun gün ücretsiz, sonra otomatik yenilenir';
+  }
+
+  @override
+  String get pwYenilenirAltyazi =>
+      'Otomatik yenilenir, istediğin zaman iptal edebilirsin';
+
+  @override
+  String pwDenemeDugme(int gun) {
+    return '$gun gün ücretsiz dene';
+  }
+
+  @override
+  String get pwAboneOl => 'Abone ol';
+
+  @override
+  String get pwKosulAndroid =>
+      'Ödeme Google Play hesabından alınır. Abonelik, dönem bitmeden iptal edilmezse aynı süre ve fiyatla otomatik yenilenir. Google Play › Ödemeler ve abonelikler › Abonelikler\'den yönetebilir ya da iptal edebilirsin.';
+
+  @override
+  String pwDenemeKosul(int gun) {
+    return '$gun günlük ücretsiz deneme bitmeden iptal etmezsen deneme sonunda ücret alınır.';
+  }
+
+  @override
+  String get pwKullanilamaz =>
+      'Satın alma şu an kullanılamıyor. Biraz sonra yeniden dene.';
+
+  @override
+  String get pwBeklemede =>
+      'Ödemen onay bekliyor. Onaylanınca Premium kendiliğinden açılır.';
+
+  @override
+  String get pwHata =>
+      'Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.';
+
+  @override
+  String get pwGeriYuklendi => 'Aboneliğin geri yüklendi.';
+
+  @override
+  String get pwGeriYukBulunamadi => 'Bu hesapta etkin bir abonelik bulunamadı.';
+
+  @override
+  String get pwGeriYukHata =>
+      'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.';
 }

@@ -819,7 +819,7 @@
   "rejectRequest": "Reject partner request",
   "acceptRequest": "Accept partner request",
   "sandikPremium": "sandık Premium",
-  "premiumPitch": "Unlimited assets, premium indicators, 2 signal analyses a day",
+  "premiumPitch": "Unlimited assets and premium indicators",
   "premiumActive": "Premium active",
   "premiumActiveBody": "All advanced features unlocked",
   "codeCopied": "Code generated and copied to clipboard",
@@ -1338,13 +1338,13 @@
   "planYearlySubtitle": "7 days free, then renews automatically",
   "planMonthly": "Monthly",
   "planMonthlySubtitle": "Cancel any time",
-  "subscriptionTerms": "The subscription is billed to your App Store account. It renews automatically; to cancel, manage it under Settings → Apple ID → Subscriptions. The yearly plan starts with a 7-day free trial; unless you cancel, you are charged at the end of the trial.",
+  "subscriptionTerms": "Payment is charged to your App Store account. The subscription renews automatically for the same period and price unless cancelled at least 24 hours before the period ends. Manage or cancel it under Settings › Apple ID › Subscriptions.",
   "premiumUnlocked": "Premium unlocked",
-  "premiumUnlockedBody": "Unlimited assets, 2 signal analyses a day, premium indicators and more are now unlocked.",
+  "premiumUnlockedBody": "Unlimited assets, premium indicators and every Premium detail are now unlocked.",
   "greatWord": "Great",
   "sandikPremiumUpper": "SANDIK PREMIUM",
   "paywallHeadline": "Track your portfolio\nin more depth",
-  "paywallSubhead": "Unlimited assets, advanced indicators and 2 signal analyses a day.",
+  "paywallSubhead": "Unlimited assets and advanced indicators. Portfolio tracking stays free.",
   "restorePurchase": "Restore purchase",
   "recapTitle": "Your sandık Recap",
   "recapInYear": "in {year}",
@@ -4479,5 +4479,66 @@
   },
   "anzAylikOzetYok": "None of your assets had a notable month.",
   "anzAylikBos": "This month's report is not ready yet.",
-  "anzOkunamadi": "The note could not be opened right now."
+  "anzOkunamadi": "The note could not be opened right now.",
+  "sgnPremiumAktif": "Premium indicators on",
+  "sgnPremiumAktifGovde": "ADX, Williams %R and CCI are part of the signal analysis.",
+  "sgnPremiumKilitBaslik": "Premium indicators",
+  "sgnPremiumKilitGovde": "With Premium, ADX, Williams %R and CCI join the signal analysis.",
+  "sgnPremiumGec": "Go Premium",
+  "pwOzSinirsiz": "Unlimited assets of every type",
+  "pwOzGosterge": "ADX, Williams %R and CCI in signal analysis",
+  "pwOzSiklik": "More than one signal notification a day (hourly, twice a day…)",
+  "pwOzKarsilastir": "Up to 5 series in Compare",
+  "pwOzOrtak": "Share your portfolio with more than one partner",
+  "sgnSlotNotu": "On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.",
+  "sgnSlotKilitli": "{secenek}, Premium",
+  "@sgnSlotKilitli": {
+    "placeholders": {
+      "secenek": {
+        "type": "String"
+      }
+    }
+  },
+  "cmpSinirPremium": "Up to 5 series with Premium",
+  "cmpSinirDolu": "At most 5 assets",
+  "pwOzRadar": "Full money-flow and volume-radar detail, the whole weekly note",
+  "pwFiyatAylik": "{fiyat}/mo",
+  "@pwFiyatAylik": {
+    "placeholders": {
+      "fiyat": {"type": "String"}
+    }
+  },
+  "pwFiyatYillik": "{fiyat}/yr",
+  "@pwFiyatYillik": {
+    "placeholders": {
+      "fiyat": {"type": "String"}
+    }
+  },
+  "pwDenemeAltyazi": "{gun} days free, then renews automatically",
+  "@pwDenemeAltyazi": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwYenilenirAltyazi": "Renews automatically, cancel anytime",
+  "pwDenemeDugme": "Try {gun} days free",
+  "@pwDenemeDugme": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwAboneOl": "Subscribe",
+  "pwKosulAndroid": "Payment is charged to your Google Play account. The subscription renews automatically for the same period and price unless cancelled before the period ends. Manage or cancel it under Google Play › Payments & subscriptions › Subscriptions.",
+  "pwDenemeKosul": "Unless you cancel before the {gun}-day free trial ends, you are charged when it ends.",
+  "@pwDenemeKosul": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwKullanilamaz": "Purchases are not available right now. Please try again shortly.",
+  "pwBeklemede": "Your payment is pending. Premium turns on by itself once it is approved.",
+  "pwHata": "The purchase could not be completed. If you were not charged, you can try again.",
+  "pwGeriYuklendi": "Your subscription has been restored.",
+  "pwGeriYukBulunamadi": "No active subscription was found for this account.",
+  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly."
 }
