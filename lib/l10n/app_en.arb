@@ -4540,5 +4540,20 @@
   "pwHata": "The purchase could not be completed. If you were not charged, you can try again.",
   "pwGeriYuklendi": "Your subscription has been restored.",
   "pwGeriYukBulunamadi": "No active subscription was found for this account.",
-  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly."
+  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly.",
+  "s2Filtre": "Filter",
+  "s2FiltreSayili": "Filter · {n}",
+  "s2FiltreEtkin": "Filter, {n} active",
+  "s2FiltreKisi": "Person",
+  "s2FiltreKategori": "Category",
+  "s2BakiyeArttiAlim": "Balance up {tutar}; {alim} of that is new buys.",
+  "s2BakiyeAzaldiAlim": "Balance down {tutar}; you bought {alim} in the period.",
+  "s2BakiyeArttiSatis": "Balance up {tutar}; you sold {satis} in the period.",
+  "s2BakiyeAzaldiSatis": "Balance down {tutar}; {satis} of that is sales.",
+  "s6Raporlar": "Reports",
+  "s6HaftaOzetiAlt": "What happened in your funds and stocks this week",
+  "s6AylikRapor": "Monthly report",
+  "s6YilOzeti": "Year in review",
+  "s6Siralama": "Leaderboard",
+  "s6SiralamaAlt": "Top portfolios and the race with your partners"
 }

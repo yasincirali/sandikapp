@@ -6877,4 +6877,62 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pwGeriYukHata =>
       'Restore is not possible right now. Please try again shortly.';
+
+  @override
+  String get s2Filtre => 'Filter';
+
+  @override
+  String s2FiltreSayili(int n) {
+    return 'Filter · $n';
+  }
+
+  @override
+  String s2FiltreEtkin(int n) {
+    return 'Filter, $n active';
+  }
+
+  @override
+  String get s2FiltreKisi => 'Person';
+
+  @override
+  String get s2FiltreKategori => 'Category';
+
+  @override
+  String s2BakiyeArttiAlim(String tutar, String alim) {
+    return 'Balance up $tutar; $alim of that is new buys.';
+  }
+
+  @override
+  String s2BakiyeAzaldiAlim(String tutar, String alim) {
+    return 'Balance down $tutar; you bought $alim in the period.';
+  }
+
+  @override
+  String s2BakiyeArttiSatis(String tutar, String satis) {
+    return 'Balance up $tutar; you sold $satis in the period.';
+  }
+
+  @override
+  String s2BakiyeAzaldiSatis(String tutar, String satis) {
+    return 'Balance down $tutar; $satis of that is sales.';
+  }
+
+  @override
+  String get s6Raporlar => 'Reports';
+
+  @override
+  String get s6HaftaOzetiAlt =>
+      'What happened in your funds and stocks this week';
+
+  @override
+  String get s6AylikRapor => 'Monthly report';
+
+  @override
+  String get s6YilOzeti => 'Year in review';
+
+  @override
+  String get s6Siralama => 'Leaderboard';
+
+  @override
+  String get s6SiralamaAlt => 'Top portfolios and the race with your partners';
 }

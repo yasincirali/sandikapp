@@ -777,6 +777,17 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
         children: [
           Column(
         children: [
+          // Tek akış (`performans_tek_akis`, S2): tip seçici kartın SAĞ ÜST
+          // köşesinde. Kontrol yığını tek satıra indi; grafik artık Özet'le
+          // aynı listede ve kartın dibi bir sonraki bölümün başına yapışık
+          // okunuyordu. Araç yine etkilediği yüzeyin içinde (2026-09-15
+          // kararı korunur), yalnız köşesi değişti. Seviye kapısı aynı.
+          if (_tekAkis &&
+              ref.watch(seviyeGorunurlukProvider).grafikAraclari)
+            const Align(
+              alignment: Alignment.centerRight,
+              child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+            ),
           ZoomableChart(
             fullMinX: minX,
             fullMaxX: maxX,
@@ -1010,7 +1021,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           //
           // Sade Başlangıç'ta (`seviye_anketi`) seçici yok, grafik düz
           // çizgide kalır (bkz. `seviyeGorunurlugu`, grafikAraclari).
-          if (ref.watch(seviyeGorunurlukProvider).grafikAraclari)
+          if (!_tekAkis &&
+              ref.watch(seviyeGorunurlukProvider).grafikAraclari)
             const Align(
               alignment: Alignment.centerLeft,
               child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),

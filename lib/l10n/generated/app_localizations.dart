@@ -11319,6 +11319,96 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.'**
   String get pwGeriYukHata;
+
+  /// No description provided for @s2Filtre.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtre'**
+  String get s2Filtre;
+
+  /// No description provided for @s2FiltreSayili.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtre · {n}'**
+  String s2FiltreSayili(int n);
+
+  /// No description provided for @s2FiltreEtkin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtre, {n} etkin'**
+  String s2FiltreEtkin(int n);
+
+  /// No description provided for @s2FiltreKisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişi'**
+  String get s2FiltreKisi;
+
+  /// No description provided for @s2FiltreKategori.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori'**
+  String get s2FiltreKategori;
+
+  /// No description provided for @s2BakiyeArttiAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} arttı; bunun {alim} kadarı yeni alım.'**
+  String s2BakiyeArttiAlim(String tutar, String alim);
+
+  /// No description provided for @s2BakiyeAzaldiAlim.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} azaldı; dönemde {alim} yeni alım yaptın.'**
+  String s2BakiyeAzaldiAlim(String tutar, String alim);
+
+  /// No description provided for @s2BakiyeArttiSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} arttı; dönemde {satis} satış yaptın.'**
+  String s2BakiyeArttiSatis(String tutar, String satis);
+
+  /// No description provided for @s2BakiyeAzaldiSatis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bakiye {tutar} azaldı; bunun {satis} kadarı satış.'**
+  String s2BakiyeAzaldiSatis(String tutar, String satis);
+
+  /// No description provided for @s6Raporlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporlar'**
+  String get s6Raporlar;
+
+  /// No description provided for @s6HaftaOzetiAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlarında ve hisselerinde bu hafta olanlar'**
+  String get s6HaftaOzetiAlt;
+
+  /// No description provided for @s6AylikRapor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık rapor'**
+  String get s6AylikRapor;
+
+  /// No description provided for @s6YilOzeti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl özeti'**
+  String get s6YilOzeti;
+
+  /// No description provided for @s6Siralama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sıralama'**
+  String get s6Siralama;
+
+  /// No description provided for @s6SiralamaAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zirvedeki portföyler ve ortaklarınla yarış'**
+  String get s6SiralamaAlt;
 }
 
 class _AppLocalizationsDelegate
