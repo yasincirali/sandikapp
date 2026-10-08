@@ -775,6 +775,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Trading commission is added to your cost, so profit/loss shows the real figure.';
 
   @override
+  String totalCostTlEquivalent(String amount, String currency, String rate) {
+    return '≈ $amount · 1 $currency = $rate';
+  }
+
+  @override
   String get costPreviewHint =>
       'Enter a quantity and the total cost appears here.';
 

@@ -406,6 +406,7 @@
     }
   },
   "commissionNote": "Trading commission is added to your cost, so profit/loss shows the real figure.",
+  "totalCostTlEquivalent": "≈ {amount} · 1 {currency} = {rate}",
   "costPreviewHint": "Enter a quantity and the total cost appears here.",
   "totalCostUpper": "TOTAL COST",
   "transactionDate": "Transaction date",

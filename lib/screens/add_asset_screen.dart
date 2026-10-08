@@ -1122,6 +1122,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final formatted = _currency == 'TRY'
         ? fmt.format(total)
         : '${qtyFormatter(maxDigits: 2).format(total)} $_currency';
+    final tlKuru = _tlKuru();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -1179,23 +1180,75 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ),
           const SizedBox(width: SandikSpace.md),
           Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                formatted,
-                // Form özeti toplam tutarı — tabular figür, yazarken
-                // zıplamasın.
-                style: context.t.numLarge.copyWith(
-                  fontSize: 22,
-                  color: context.c.gold,
-                  letterSpacing: -0.5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    formatted,
+                    // Form özeti toplam tutarı — tabular figür, yazarken
+                    // zıplamasın.
+                    style: context.t.numLarge.copyWith(
+                      fontSize: 22,
+                      color: context.c.gold,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                 ),
-              ),
+                // Dövizli alımın TL karşılığı: portföy toplamına giren
+                // maliyet budur (aynı kur kuralı, bkz. `tlKarsiligiKuru`).
+                // Kur bilinmiyorsa satır yok — uydurma tutar yazılmaz.
+                if (tlKuru != null)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      context.l10n.totalCostTlEquivalent(
+                        fmtTRY(total * tlKuru, digits: 2),
+                        _currency,
+                        fmtNum(tlKuru, digits: 4),
+                      ),
+                      key: const ValueKey('toplam-tl-karsiligi'),
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Toplam kartındaki TL satırının kuru; TRY'de ya da kur bilinmiyorken
+  /// `null`. Geriye tarihli alımda alım günü kuru sorgulanır.
+  double? _tlKuru() {
+    if (_currency == 'TRY') return null;
+    final p = ref.watch(portfolioProvider).valueOrNull;
+    final canli = switch (_currency.toUpperCase()) {
+      'USD' => p?.usdTry,
+      'EUR' => p?.eurTry,
+      'GBP' => p?.gbpTry,
+      _ => null,
+    };
+    final simdi = DateTime.now();
+    final geriTarihli = dayKey(_addedDate).isBefore(dayKey(simdi));
+    final tarihli = geriTarihli
+        ? ref
+            .watch(alimGunuKuruProvider(
+                (currency: _currency, gun: dayKey(_addedDate))))
+            .valueOrNull
+        : null;
+    return tlKarsiligiKuru(
+      currency: _currency,
+      tarih: _addedDate,
+      canliKur: canli ?? 0,
+      tarihli: tarihli,
+      now: simdi,
     );
   }
 
