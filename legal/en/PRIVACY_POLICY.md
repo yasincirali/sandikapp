@@ -1,9 +1,9 @@
 # Privacy Policy — sandık
 
-**Effective date:** October 5, 2026
-**Last updated:** October 5, 2026
-**Version:** 1.6
-**Source:** TR 1.6 (translation of the Turkish text; the Turkish version prevails)
+**Effective date:** October 8, 2026
+**Last updated:** October 8, 2026
+**Version:** 1.7
+**Source:** TR 1.7 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -118,7 +118,7 @@ The Privacy Policy and the KVKK Disclosure are for information and do not depend
 | Remote configuration | Google Firebase Remote Config | Random installation ID | Feature settings | Global (Google) |
 | Email delivery | Google (Gmail email infrastructure) | Email address, verification / sign-in code | Delivering code emails | Global (Google) |
 | Sign in with Apple / Google Sign-In (if you choose them) | Apple Inc. / Google LLC | Verification with the provider during sign-in | Authentication | Global |
-| Price and market data | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, CBRT EVDS, EGM, open.er-api.com, yasincirali.github.io (IPO calendar) | No personal data is sent; only symbol / fund-code queries. For requests sent from the device, the provider sees the device's IP address as with any internet request | Price retrieval | Global |
+| Price and market data | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, Börse Frankfurt (eurobond price and chart), Ziraat Bankası (eurobond list and bank bid/ask price), CBRT EVDS, EGM, open.er-api.com, yasincirali.github.io (IPO calendar) | No personal data is sent; only symbol / fund-code / ISIN queries. For requests sent from the device, the provider sees the device's IP address as with any internet request; requests to Börse Frankfurt and Ziraat Bankası are sent only from our server | Price retrieval | Global |
 | Writing asset notes (AI) | Anthropic PBC | No personal data is sent; only the asset's symbol and market metrics (price, trading volume, fund size, money flow and investor count) | Weekly asset note and monthly report text (see §5.3) | USA |
 | Statement column mapping (AI; only if you ask) | Anthropic PBC | An anonymous skeleton of the statement's tables: column headings and generic finance words; names, numbers, amounts and dates masked | Finding which column is the symbol, quantity, price (see §5.4) | USA |
 

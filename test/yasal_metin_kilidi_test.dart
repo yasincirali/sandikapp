@@ -408,8 +408,31 @@ void main() {
     // İskelet kişisel veri değil: rıza metni ve Koşullar aynı kaldı.
     expect(YasalBelge.acikRiza.surum, '1.4');
     expect(YasalBelge.kosullar.surum, '1.5');
-    expect(YasalBelge.gizlilik.surum, '1.6');
-    expect(YasalBelge.kvkk.surum, '1.6');
+    // 1.7 (0125) ikisini yine ilerletti; 1.6 metni korunur, sürüm geri gitmez.
+    for (final b in [YasalBelge.gizlilik, YasalBelge.kvkk]) {
+      expect(
+          YasalOnayService.surumKarsilastir(b.surum, '1.6'),
+          greaterThanOrEqualTo(0),
+          reason: b.kaynak);
+    }
+  });
+
+  test(
+      '1.7: eurobond kaynakları (Börse Frankfurt, Ziraat Bankası) — yalnız '
+      'sunucudan, kişisel veri yok (0124, 0125)', () {
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    for (final m in [gizlilik, kvkk]) {
+      expect(m, contains('Börse Frankfurt'));
+      expect(m, contains('Ziraat Bankası'));
+      expect(m, contains('ISIN'));
+      expect(m, contains('sunucumuzdan'));
+    }
+    // Yeni alıcıya kişisel veri gitmez: rıza metni ve Koşullar aynı kaldı.
+    expect(YasalBelge.acikRiza.surum, '1.4');
+    expect(YasalBelge.kosullar.surum, '1.5');
+    expect(YasalBelge.gizlilik.surum, '1.7');
+    expect(YasalBelge.kvkk.surum, '1.7');
   });
 
   test('kutu 1.1: metnin TAMAMI açık rıza içermez (rıza paketlenmez)', () {

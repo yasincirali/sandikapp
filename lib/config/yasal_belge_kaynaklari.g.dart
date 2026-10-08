@@ -249,9 +249,9 @@ Web: `https://yasincirali.github.io/sandikapp`
 *Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
   'legal/tr/PRIVACY_POLICY.md': r'''# Gizlilik Politikası — sandık
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.6
+**Yürürlük tarihi:** 8 Ekim 2026
+**Son güncelleme:** 8 Ekim 2026
+**Sürüm:** 1.7
 
 ---
 
@@ -366,7 +366,7 @@ Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır ve kab
 | Uzaktan ayarlar | Google Firebase Remote Config | Rastgele kurulum kimliği | Özellik ayarları | Küresel (Google) |
 | E-posta gönderimi | Google (Gmail e-posta altyapısı) | E-posta adresi, doğrulama/giriş kodu | Kod e-postalarının teslimi | Küresel (Google) |
 | Apple ile Giriş / Google ile Giriş (seçerseniz) | Apple Inc. / Google LLC | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | Küresel |
-| Fiyat ve piyasa verisi | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, TCMB EVDS, EGM, open.er-api.com, yasincirali.github.io (halka arz takvimi) | Kişisel veri gönderilmez; yalnızca sembol / fon kodu sorgusu. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür | Fiyat çekme | Küresel |
+| Fiyat ve piyasa verisi | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, Börse Frankfurt (eurobond fiyatı ve grafiği), Ziraat Bankası (eurobond listesi ve banka alış-satış fiyatı), TCMB EVDS, EGM, open.er-api.com, yasincirali.github.io (halka arz takvimi) | Kişisel veri gönderilmez; yalnızca sembol / fon kodu / ISIN sorgusu. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; Börse Frankfurt ve Ziraat Bankası'na istekler yalnızca sunucumuzdan gider | Fiyat çekme | Küresel |
 | Varlık notlarının yazımı (yapay zekâ) | Anthropic PBC | Kişisel veri gönderilmez; yalnızca varlığın sembolü ve piyasa ölçümleri (fiyat, işlem hacmi, fon büyüklüğü, para akışı ve yatırımcı sayısı) | Haftalık varlık notu ve aylık rapor metni (bkz. §5.3) | ABD |
 | Ekstre sütun eşleme (yapay zekâ; yalnızca siz isterseniz) | Anthropic PBC | Ekstredeki tabloların anonim iskeleti: sütun başlıkları ve genel finans kelimeleri; ad, numara, tutar ve tarihler maskeli | Hangi sütunun sembol, adet, fiyat olduğunu bulmak (bkz. §5.4) | ABD |
 
@@ -535,9 +535,9 @@ Veri korumayla ilgili tüm soru, talep ve şikayetler için:
 *Bu politika Türkçe ve İngilizce dillerinde sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*''',
   'legal/tr/KVKK_AYDINLATMA_METNI.md': r'''# KVKK Aydınlatma Metni — sandık
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.6
+**Yürürlük tarihi:** 8 Ekim 2026
+**Son güncelleme:** 8 Ekim 2026
+**Sürüm:** 1.7
 
 ---
 
@@ -656,7 +656,7 @@ Yurt içinde üçüncü kişilere aktarım yapılmamaktadır. Ortaklık kurduğu
 | Apple Inc. (Apple Push Notification service) | ABD / Küresel | Bildirim içeriği, canlı etkinlik token'ı ve kilit ekranı özeti | iPhone'a teslim | KVKK 9(1) — açık rıza |
 | Apple Inc. / Google LLC (Apple ile Giriş, Google ile Giriş — seçerseniz) | ABD / Küresel | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | KVKK 9(1) — açık rıza |
 
-Fiyat ve piyasa verisi sağlayıcılarına (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, TCMB, EGM, open.er-api.com) kişisel veri aktarılmaz; yalnızca sembol / fon kodu sorgusu gönderilir. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür.
+Fiyat ve piyasa verisi sağlayıcılarına (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, Börse Frankfurt, Ziraat Bankası, TCMB, EGM, open.er-api.com) kişisel veri aktarılmaz; yalnızca sembol / fon kodu / ISIN sorgusu gönderilir. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; eurobond verisi (Börse Frankfurt, Ziraat Bankası) yalnızca sunucumuzdan çekilir.
 
 Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthropic PBC, ABD) kişisel veri aktarılmaz: sunucumuz yalnızca varlığın sembolünü ve kamuya açık piyasa ölçümlerini (fiyat, işlem hacmi, fon büyüklüğü, para akışı, yatırımcı sayısı) gönderir; kimin hangi varlığı tuttuğu, miktar ve tutar gönderilmez. Notu okumanız yapay zekâya istek göndermez.
 

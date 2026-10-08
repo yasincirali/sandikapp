@@ -5,16 +5,11 @@
 # (public repo: log herkese açık). Sonuç tablosu iş özetinde.
 name: Kaynak ölçümü (ABD / eurobond)
 
+# Yalnız elle: kaynak biçimi değiştiğinde ayrıştırıcıyı canlı yanıtla dener.
+# Ölçüm dalında push'ta da koşuyordu; main'de her push'ta dış hostlara
+# gitmesi gereksiz.
 on:
   workflow_dispatch:
-  push:
-    branches: [claude/eurobond-abd-borsasi-oe2amo]
-    paths:
-      - tool/kaynak_olcum.py
-      - tool/kaynak_ornek.py
-      - tool/eurobond_canli.ts
-      - supabase/functions/_shared/eurobond.ts
-      - .github/workflows/kaynak-olcum.yml
 
 permissions:
   contents: read

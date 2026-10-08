@@ -115,6 +115,33 @@ const List<SurumNotu> surumNotlari = [
     // kez görüyor.
     baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
+      // 2026-10-08: ABD borsası, eurobond, masraflar. Üçü de kendi
+      // bayrağıyla görünür; kapalıyken madde sayılmaz.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        bayrak: 'abd_hisse',
+        baslik: 'ABD hisseleri ve ETF\'ler',
+        aciklama: 'Hisse eklerken BIST ya da ABD seç: Apple, Nvidia, S&P 500 '
+            'ETF\'leri gibi 200\'ü aşkın sembol listede, olmayanı kodla '
+            'yazabilirsin. Fiyat dolar, portföyde güncel kurla TL.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        bayrak: 'eurobond',
+        baslik: 'Eurobond',
+        aciklama: 'Hazine ve şirket eurobondlarını nominal tutarla ekle. '
+            'Değer işlemiş faiziyle birlikte; varlık sayfasında vadeye '
+            'getiri, sıradaki kupon ve bankaya satarsan alacağın fiyat.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        bayrak: 'varlik_masraflari',
+        baslik: 'Varlığa özgü masraflar',
+        aciklama: 'Varlık sayfasında Masraflar kartı: kaydettiğin '
+            'komisyonlar, ABD hissesinde satışta kesilecek SEC ve FINRA '
+            'ücreti, fonda yönetim ücreti, altın ve dövizde alış-satış '
+            'makası. Tutar yalnızca kaydın ya da resmî orandan.',
+      ),
       // 2026-10-05: Balina radarı (S10-A). Bayrak `balina_radari_acik`
       // açılınca görünür; kapalıyken madde sayılmaz bile.
       Yenilik(
