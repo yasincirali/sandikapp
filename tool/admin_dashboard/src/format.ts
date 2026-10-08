@@ -146,3 +146,21 @@ export function cihazKunye(d: {
   ].filter((x) => x && x.length > 0);
   return p.length ? p.join(' · ') : 'bilinmiyor';
 }
+
+/* ── 0097: huni ──────────────────────────────────────────────────────── */
+
+/** Adımlar arası geçiş: saniyeden güne kadar tek birimle. "3 gün", "14 dk". */
+export function fmtGecis(sn: number | null | undefined): string {
+  if (sn === null || sn === undefined) return '—';
+  if (sn < 60) return `${Math.round(sn)} sn`;
+  if (sn < 3600) return `${Math.round(sn / 60)} dk`;
+  if (sn < 86400) return `${(sn / 3600).toFixed(sn < 36000 ? 1 : 0)} sa`;
+  return `${(sn / 86400).toFixed(sn < 864000 ? 1 : 0)} gün`;
+}
+
+/** Oran: pay/payda yüzde; payda 0 ise "—" (0/0'ı %0 göstermek yanıltır). */
+export function oran(pay: number, payda: number): string {
+  if (payda <= 0) return '—';
+  const v = (100 * pay) / payda;
+  return `%${v >= 10 ? Math.round(v) : v.toFixed(1).replace('.', ',')}`;
+}

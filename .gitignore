@@ -50,6 +50,10 @@ app.*.map.json
 # yine dışarıda. Dizin değil İÇERİK yok sayılır ki `!` istisnası işlesin.
 .claude/*
 !.claude/skills/
+# Brag müzik parçaları repoya girmez: repo herkese açık ve skill'in kendi
+# README'si yeniden dağıtımdan önce lisansın doğrulanmasını istiyor (2026-10-08).
+# Yerel kopya kalır; parça yoksa skill müziksiz devam eder.
+.claude/skills/brag/assets/music/*.mp3
 
 # Secrets — never commit these
 .env

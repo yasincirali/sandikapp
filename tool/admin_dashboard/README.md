@@ -1,7 +1,12 @@
-# sandık · destek paneli
+# sandık · kontrol paneli
 
-Canlı Supabase'e bakan, **yalnızca yerelde çalışan** yönetici paneli. Amacı tek
-bir soruyu hızlı cevaplamak: *"Müşteri X hata alıyor — nerede, ne zaman, neden?"*
+Canlı Supabase'e bakan, **yalnızca yerelde çalışan** yönetici paneli. İki soruyu
+hızlı cevaplar:
+
+- **Büyüme** — *"İndirenlerin kaçı kayıt ekranına geliyor, kaçı kayıt oluyor, ilk
+  girişini yapıyor, ilk varlığını ekliyor; kaybettiklerimiz nerede ve neden?"*
+  (Kayıt hunisi, açılış ekranı — 2026-10-02.)
+- **Destek** — *"Müşteri X hata alıyor — nerede, ne zaman, neden?"*
 
 Mağazaya, sunucuya veya CI'ya **girmez**. `npm run dev` ile açılır, 127.0.0.1'e
 bağlanır, kapatınca biter.
@@ -10,9 +15,25 @@ bağlanır, kapatınca biter.
 
 ## Açmak
 
-**Masaüstündeki `sandık destek paneli` kısayoluna çift tıkla.** Kısayol
-`baslat.cmd`'yi çağırır: bağımlılık eksikse kurar, dev sunucusunu kaldırır ve
-sunucu hazır olunca tarayıcıyı açar.
+**Masaüstündeki `sandık kontrol paneli` kısayoluna çift tıkla.** Panel her
+açılışta **`main`'in son hâliyle** gelir:
+
+1. Kısayol `%LOCALAPPDATA%\sandik-panel\guncel_baslat.ps1`'i çalıştırır.
+2. Betik, yalnızca panele ayrılmış `C:\projects\PortfoyTakip-panel`
+   klasörünü (ayrık HEAD) `origin/main`'e çeker. Klasör yoksa kendisi kurar
+   ve `.env.local`'ı ana klasörden kopyalar. `package-lock.json` değiştiyse
+   bağımlılıkları yeniden kurar. Ağ yoksa mevcut sürümle açılır.
+3. Sonra `baslat.cmd` dev sunucusunu kaldırır ve hazır olunca tarayıcıyı açar.
+
+Neden ayrı klasör: geliştirme klasörü çoğu zaman bir dalda ve işlenmemiş
+değişikliklerle durur; kısayol oradan açsaydı paneli o dalın hâliyle
+görürdün, sıfırlasaydı işini silerdi. Betik bu yüzden **dalda duran ya da
+değişiklik taşıyan klasöre dokunmaz**, yalnızca uyarır.
+
+Neden betik depo dışında: panel klasörünü güncelleyen betik o klasörün
+içinde dursaydı kendi dosyasını değiştirirdi. Depodaki
+`tool/admin_dashboard/guncel_baslat.ps1` asıl kaynaktır; dışarıdaki kopya her
+açılışta ondan tazelenir.
 
 Açılan **konsol penceresi sunucunun kendisidir** — görev çubuğunda simge
 durumunda durur. Paneli kapatmak için o pencereyi kapat; böylece panel arka
@@ -22,18 +43,26 @@ basarsan yeni sunucu açılmaz, var olan sekmeye döner.
 Kısayolu yeniden oluşturmak (taşındıysa veya silindiyse):
 
 ```powershell
+$dir = Join-Path $env:LOCALAPPDATA 'sandik-panel'
+New-Item -ItemType Directory -Force $dir | Out-Null
+Copy-Item 'C:\projects\PortfoyTakip	ooldmin_dashboard\guncel_baslat.ps1' $dir
 $ws = New-Object -ComObject WScript.Shell
-$s = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'sandik destek paneli.lnk'))
-$s.TargetPath = 'C:\projects\PortfoyTakip\tool\admin_dashboard\baslat.cmd'
-$s.WorkingDirectory = 'C:\projects\PortfoyTakip\tool\admin_dashboard'
-$s.IconLocation = 'C:\projects\PortfoyTakip\tool\admin_dashboard\panel.ico,0'
+$s = $ws.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) 'sandik kontrol paneli.lnk'))
+$s.TargetPath = "$env:SystemRoot\System32\WindowsPowerShell1.0\powershell.exe"
+$s.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$dir\guncel_baslat.ps1`""
+$s.WorkingDirectory = $dir
+$s.IconLocation = 'C:\projects\PortfoyTakip-panel	ooldmin_dashboard\panel.ico,0'
 $s.WindowStyle = 7
 $s.Save()
 ```
 
+Yalnızca güncellemek (paneli açmadan):
+`powershell -File "$env:LOCALAPPDATA\sandik-panel\guncel_baslat.ps1" -YalnizGuncelle`
+
 > `baslat.cmd` **CRLF satır sonlarıyla ve saf ASCII** olarak tutulur. LF ile
 > kaydedilirse batch yorumlayıcısı `rem` satırlarını bölüp anlamsız hatalar
-> verir (`'em' is not recognized...`).
+> verir (`'em' is not recognized...`). `guncel_baslat.ps1` de saf ASCII:
+> Windows PowerShell 5.1 BOM'suz dosyayı ANSI okur.
 
 ### Elle kurulum
 
@@ -69,6 +98,7 @@ select id from auth.users where email = 'senin@epostan';
 
 | Ekran | Hangi soruyu cevaplar |
 |---|---|
+| **Kayıt hunisi** | "Kaç kişi indirdi → kayıt ekranına geldi → kayıt oldu → ilk girişini yaptı → ilk varlığını ekledi?" Adım başına sayı, bir önceki adımdan geçiş oranı ve süresi (medyan/p90), ara adımlar (form, kod, yasal onay, ad, tur, ana ekran), gün gün eğri, platform/sürüm/giriş yolu kırılımı, **neden düştüğü** (kayıt sırasındaki hata kodları + ilk 48 saatteki hatalar) ve kişi kişi yolculuklar → satıra tıkla: adım adım zaman çizelgesi → künyeye geç. |
 | **Genel durum** | "Şu an bir şey bozuk mu?" Hata/auth/kilit sayaçları, saatlik eğri, en çok tekrarlayan hatalar. 60 sn'de bir yenilenir. |
 | **Kullanıcılar** | "Bu müşteriye ne oldu?" E-posta / isim / user_id ile ara → künye (hesap, portföy, ortaklık, **cihazlar**) + **push token'ları** + **seans listesi** + istek günlüğü → satıra tıkla: hata tipi/kodu, **stack trace**, üç zaman damgası, ham request/response JSON. |
 | **Seanslar** | "Bu açılışta ne oldu?" Seans listesi (kim, süre, kaç olay, hangi cihaz) → seçince **zaman çizelgesi**: her olay, olaylar arası boşluk, istek→yanıt saatleri. |
@@ -114,6 +144,34 @@ söyler ve OTP/token gibi zamana bağlı akışlarda çoğu zaman asıl sebeptir
 ---
 
 ## Veri kaynakları ve sınırları
+
+### Kayıt hunisi (migration 0097)
+
+İki görünüm, iki farklı soru:
+
+| Görünüm | Kimler | Ne zaman dolu |
+|---|---|---|
+| **Kurulumdan** | Bu dönemde **başlayan** kurulumlar | Yalnızca huni kaydı olan sürümden (0097 istemcisi) itibaren — beş adımın hepsi |
+| **Hesaptan** | Bu dönemde **açılan** hesaplar | Tüm sürümler; kayıt öncesi adımlar yalnızca yeni sürümle gelenlerde |
+
+- **"İndirdi" mağaza sayısı değildir.** Mağaza indirmeleri App Store Connect /
+  Play Console'dadır. Buradaki ilk adım, uygulamayı **en az bir kez açan** yeni
+  kurulumdur. Bu sürüme *güncelleme* ile gelen cihaz huniye girmez.
+- Kayıt (`auth.users`: e-posta onayı ya da Apple/Google), ilk giriş
+  (`auth.audit_log_entries`) ve ilk varlık (`assets.created_at`) **sunucu
+  kayıtlarından** okunur; istemci olayı kaybolsa da sayı düşmez.
+- **İlk varlık "tahmini"** işaretliyse: satır 0095 öncesinden (damga alış
+  tarihi) ya da hesaptan önceki bir tarihten geliyor; hesap açılışına
+  kıstırılır, süre ortalamalarına girmez.
+- **Mevcut hesabıyla dönen** (yeniden yükleme / yeni telefon) kurulumlar yeni
+  kullanıcı sayılmaz; huninin altında ayrı gösterilir.
+- Kayıt öncesi kimlik cihazda üretilen **rastgele kurulum kimliğidir** (cihaz/
+  reklam kimliği yok). Kayıt hatalarında yalnızca *aşama:kod* tutulur
+  (`kayit:auth_weak_password`), mesaj asla. Saklama 400 gün
+  (`cleanup_db_logs`).
+- Yazma ucu `huni_kaydet` oturumsuz çağrılabilir (huninin üst yarısı tanımı
+  gereği giriş öncesi); sınırları migration başlığında: kurulum başına 40,
+  sunucu geneli dakikada 300 satır.
 
 Panel **hiçbir veri yazmaz**. Tüm RPC'ler `stable`, salt okuma.
 
@@ -194,10 +252,11 @@ service-role çağırabilir.
 
 ## Sunucu tarafı
 
-Tüm okuma üç migration'daki **on yedi** RPC üzerinden:
+Tüm okuma dört migration'daki RPC'ler üzerinden:
 `0070_admin_dashboard_rpc.sql` (teşhis), `0071_db_logs_seans_cihaz.sql`
-(seans/cihaz/zaman) ve `0072_db_logs_hata_detayi.sql` (hata detayı,
-stack trace, push token). Her biri:
+(seans/cihaz/zaman), `0072_db_logs_hata_detayi.sql` (hata detayı,
+stack trace, push token) ve `0097_kayit_hunisi.sql` (`admin_huni_*`: özet,
+günlük, kırılım, yolculuklar, hatalar). Her biri:
 
 - `security definer` + sabit `search_path`
 - gövdenin **ilk satırında** `is_push_admin()` → değilse `raise exception 'Yetkisiz'`
@@ -230,6 +289,6 @@ npx tsc -b        # tip denetimi
 npm run build     # üretim derlemesi (dist/, gitignored)
 ```
 
-`src/types.ts` migration 0070/0071/0072'deki `returns table` imzalarının birebir
+`src/types.ts` migration 0070/0071/0072/0097'deki `returns table` imzalarının birebir
 karşılığıdır. SQL'de bir sütun adı değişirse burada da değişmeli — tip hatası
 derlemede yakalar.

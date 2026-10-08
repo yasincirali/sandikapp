@@ -12,7 +12,8 @@
 #   bash tool/bulut_kurulum.sh
 # ya da (repo henüz klonlanmamışsa) bu dosyanın içeriğini yapıştır.
 # Yeni oturumlar sunucuları açılışta görür; kurulumun yapıldığı oturum
-# görmez. Tekrar koşmak güvenli (idempotent).
+# görmez. Tekrar koşmak güvenli (idempotent). Yerel makinede koşulursa
+# hiçbir şey yapmadan çıkar (bkz. adım 0).
 #
 # Sürümler CI ile aynı: Flutter 3.47.2 (`ci.yml`), codebase-memory-mcp 0.9.0
 # (yerel makinedeki sürüm), ui-ux-pro-mcp 1.5.0.
@@ -24,6 +25,21 @@ CBM_VER=0.9.0
 UIUX_VER=1.5.0
 
 log() { echo "[bulut_kurulum] $*"; }
+
+# 0) Yalnız bulut konteynerinde koş. Neden (2026-10-08): betik geliştiricinin
+# Windows makinesinde Git Bash'ten koşuldu; kurulumlar /opt'ta düştü ama
+# `claude mcp add -s local` Linux yollu kayıtlar yazdı ve yerel MCP'yi
+# bozabilirdi. Konteyner işareti: Linux + (CLAUDE_CODE_REMOTE ya da yazılabilir
+# /opt — setup script oturum değişkenlerinden önce koşabilir). Bilerek başka
+# bir Linux'ta koşmak için BULUT_KURULUM_ZORLA=1.
+if [ "${BULUT_KURULUM_ZORLA:-0}" != 1 ]; then
+  if [ "$(uname -s)" != Linux ] \
+     || { [ "${CLAUDE_CODE_REMOTE:-}" != true ] && ! [ -w /opt ]; }; then
+    log "Bu betik yalnız Claude Code bulut konteyneri içindir (Project settings › Cloud environment › Setup script)."
+    log "Bu makinede hiçbir şey kurulmadı ve MCP kaydına dokunulmadı."
+    exit 0
+  fi
+fi
 
 # 1) Flutter (+ dart; dart MCP sunucusu bununla gelir).
 if [ ! -x /opt/flutter/bin/flutter ]; then
