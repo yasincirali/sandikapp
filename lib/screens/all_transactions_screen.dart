@@ -12,10 +12,11 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../services/islem_notu.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
@@ -133,6 +134,30 @@ DateTime _islemTarihi(Asset a) => a.addedDate;
   final birlesik = eskiMezarTaslariniBirlestir(silinen)
     ..sort((a, b) => silinmeAni(b).compareTo(silinmeAni(a)));
   return (aktif: aktif, silinen: birlesik);
+}
+
+/// Ana sayfa "Portföy Hareketleri" akışı: kayıtlar GİRİLDİĞİ ana göre, en
+/// yeni önce.
+///
+/// ## Neden (kullanıcı bildirimi 2026-10-03: "dosyayla eklenenler portföyde
+/// var, hareketlerde yok")
+/// Akış işlem tarihine (`addedDate`) göre sıralıydı ve ilk 3 kaydı
+/// gösteriyordu. Ekstreden içe aktarılan kalem ekstrenin tarihini taşır
+/// (ör. 31.05) — Portföy'de hemen görünür ama akışın ilk üçüne hiç giremez;
+/// kullanıcı az önce yaptığı şeyi göremez. Akış "ne yaptım" sorusunu
+/// yanıtlar: giriş anı (`createdAt`, 0095). Eski satırlarda 0095
+/// `created_at = added_date` yazdığı için sıraları DEĞİŞMEZ; yalnız sonradan
+/// girilen geçmiş tarihli kayıt (içe aktarma, unutulan alış) öne gelir.
+/// `createdAt` yoksa (0095 öncesi kopya) işlem tarihi. Eşitlikte işlem
+/// tarihi. Tüm Hareketler ekranı defterdir: aya gruplu, işlem tarihine göre
+/// kalır (`hareketleriAyir`).
+List<Asset> sonGirilenler(List<Asset> aktif) {
+  DateTime giris(Asset a) => a.createdAt ?? a.addedDate;
+  return List.of(aktif)
+    ..sort((a, b) {
+      final d = giris(b).compareTo(giris(a));
+      return d != 0 ? d : b.addedDate.compareTo(a.addedDate);
+    });
 }
 
 /// ESKİ tip mezar taşlarını tek satırda toplar.
@@ -487,7 +512,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
           if (activePartners.isNotEmpty)
             Padding(
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 0),
-              child: ModernTabSelector(
+              child: OrtakSecici(
                 partners: activePartners,
                 selectedId: _view,
                 onChanged: (v) => setState(() {
@@ -897,7 +922,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   }
 
   Future<void> _filtreSayfasiniAc() async {
-    final secim = await showModalBottomSheet<_FiltreSecimi>(
+    final secim = await showSandikSheet<_FiltreSecimi>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -1106,6 +1131,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                       onTap: () => setState(() => _tur = null),
                     ),
                     for (final t in AssetType.values)
+                      if (RemoteConfigService.instance.turSecenegi(t))
                       _SecimKutusu(
                         etiket: t.labelOf(l),
                         ikon: t.icon,
@@ -1144,8 +1170,13 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
               // okutuyordu. Anında değişen sayı daha net.
               child: Text(
                 n == 0 ? l.filterNoMatch : l.filterShowN(n),
-                style:
-                    context.t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+                // `titleMedium`'un `text90`'ı düğmenin `foregroundColor`'ını
+                // ezer — koyu temada amber üstüne beyaz 1,87:1. Pasifken
+                // (eşleşme yok) eski ton: soluk dolguda koyu yazı okunmazdı.
+                style: context.t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: n == 0 ? null : context.c.onAmber),
               ),
             ),
           ),

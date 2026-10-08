@@ -69,6 +69,80 @@ class AssetSignalCard extends ConsumerStatefulWidget {
   ConsumerState<AssetSignalCard> createState() => _AssetSignalCardState();
 }
 
+/// Ücretsiz planın tek sinyal varlığı şeridi (yasin, 2026-10-08: "sinyal 1
+/// varlıkta ücretsiz, 2. varlık için Premium").
+///
+/// Kapı yalnız BİLDİRİMİ kısar; şerit bunu sinyal kartının hemen altında
+/// söyler. Bu varlık seçiliyse tek sessiz satır; değilse kilit satırı
+/// (Premium'a gider) + "Sinyali buraya taşı". Taşımak serbesttir: plan "bir
+/// varlık" der, "ilk eklediğin varlık" demez. Kapı kapalıyken, ortağın
+/// varlığında ya da sinyal üretilmeyen türde hiç çizilmez.
+class SinyalVarlikSeridi extends ConsumerWidget {
+  const SinyalVarlikSeridi({super.key, required this.asset});
+
+  final Asset asset;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final etkin = ref.watch(etkinSinyalVarligiProvider);
+    final user = ref.watch(authProvider).valueOrNull;
+    if (etkin == null || user == null) return const SizedBox.shrink();
+    if (asset.userId != user.id || !sinyalUretilir(asset)) {
+      return const SizedBox.shrink();
+    }
+    final c = context.c;
+    final l = context.l10n;
+    final anahtar = sinyalVarlikAnahtari(etkin.tur, etkin.ticker);
+    if (sinyalVarlikAnahtari(asset.type, asset.ticker) == anahtar) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+        child: Row(
+          children: [
+            Icon(Icons.notifications_active_rounded,
+                size: SandikSpace.md, color: c.text58),
+            const SizedBox(width: SandikSpace.sm),
+            Expanded(
+              child: Text(l.sgnVarlikAcik,
+                  style: context.t.bodySmall?.copyWith(color: c.text58)),
+            ),
+          ],
+        ),
+      );
+    }
+    // Seçili varlığın adı portföyden; bulunamazsa ticker.
+    final lotlar =
+        ref.watch(portfolioProvider).valueOrNull?.assets ?? const <Asset>[];
+    final ad = lotlar
+            .where((a) =>
+                a.userId == user.id &&
+                sinyalVarlikAnahtari(a.type, a.ticker) == anahtar)
+            .map((a) => a.name)
+            .firstOrNull ??
+        etkin.ticker;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          KilitSatiri(metin: l.sgnVarlikKilit(ad), kaynak: 'sinyal_varlik'),
+          SandikAsyncButton.kompakt(
+            tur: SandikAsyncTur.cerceve,
+            icon: const Icon(Icons.swap_horiz_rounded),
+            onPressed: () async {
+              try {
+                await ref.read(sinyalVarligiProvider.notifier).tasi(asset);
+              } catch (e) {
+                if (context.mounted) showAppError(context, e);
+              }
+            },
+            child: Text(l.sgnVarlikTasi),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Teknik göstergelerin istediği fiyat penceresi (gün).
 ///
 /// ## Neden 90, neden 180 DEĞİL
@@ -143,7 +217,7 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
     final kayit = AssetSignalCard.sonSinyal(alerts, widget.asset);
 
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
     final enabledIds = prefs[widget.asset.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.asset.type);
 
@@ -232,40 +306,43 @@ class _AssetSignalCardState extends ConsumerState<AssetSignalCard> {
   /// soldaki ince şerit hâlâ yön rengini kullanıyor. Anlamı renk taşır,
   /// zemin taşımaz.
   Widget _kabuk({required Color renk, required Widget child}) {
-    final govde = Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: SandikSpace.sm),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
-      // `IntrinsicHeight`: sol şerit içeriğin TAM boyunca uzanmalı. Sabit
-      // yükseklik verilseydi büyük sistem yazı tipinde içerik uzayıp şerit
-      // kısa kalırdı (ya da tersi).
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Yön göstergesi: sol kenarda ince dikey şerit. Ekranın
-            // gösterge listesiyle aynı dil — kart nötr, sol şerit renkli.
-            Container(
-              width: 3,
-              decoration: BoxDecoration(
-                color: renk,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(SandikRadius.md),
+    // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı. Alt boşluk
+    // kartın DIŞINDA ama `SandikBasma`'nın İÇİNDE kalır: eski `margin`
+    // dokunma alanına dahildi, öyle kalsın.
+    final govde = Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: SizedBox(
+        width: double.infinity,
+        child: SandikCard(
+          padding: EdgeInsets.zero,
+          // `IntrinsicHeight`: sol şerit içeriğin TAM boyunca uzanmalı. Sabit
+          // yükseklik verilseydi büyük sistem yazı tipinde içerik uzayıp şerit
+          // kısa kalırdı (ya da tersi).
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Yön göstergesi: sol kenarda ince dikey şerit. Ekranın
+                // gösterge listesiyle aynı dil — kart nötr, sol şerit renkli.
+                Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    color: renk,
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(SandikRadius.md),
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: child,
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: child,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -561,7 +638,7 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
   Widget build(BuildContext context) {
     // Kullanıcı tercihleri değiştikçe otomatik yeniden hesapla
     final prefs = ref.watch(indicatorPrefsProvider);
-    final premium = ref.watch(premiumUnlockedProvider);
+    final premium = ref.watch(premiumGostergelerHesaplanirProvider);
     final enabledIds = prefs[widget.type] ??
         TechnicalAnalysisService.defaultEnabledFor(widget.type);
 
@@ -597,13 +674,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     );
   }
 
-  Widget _panelShell({required Widget child}) => Container(
+  Widget _panelShell({required Widget child}) => SandikCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: child,
       );
 
@@ -703,13 +775,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     // tarafından üretilir. Bu panel sadece göstergelerin özetini gösterir.
 
     if (indicators.isEmpty) {
-      return Container(
+      return SandikCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: Row(
           children: [
             Icon(Icons.tune_rounded, color: context.c.text58, size: 18),
@@ -889,12 +956,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
           const SizedBox(height: SandikSpace.md),
         ],
         // ── Gösterge listesi (düz) ──────────────────────────────────────────
-        Container(
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: context.c.hairline),
-          ),
+        SandikCard(
+          padding: EdgeInsets.zero,
           child: Column(
             children: indicators.asMap().entries.map((entry) {
               final i = entry.key;

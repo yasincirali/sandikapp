@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/birikim_serisi.dart';
 import 'package:portfoy_takip/services/milestone_service.dart';
 
 /// Kilometre taşı hesabı.
@@ -291,6 +292,9 @@ void main() {
         'gold_count',
         'portfolio_age',
         'diversification',
+        // 2026-10-05 (yasin kararı): art arda birikim AYI — süreklilik,
+        // tek bir işlem değil. Tek alım hiçbir eşiği açmaz (3 ay gerekir).
+        'contribution_streak',
       };
       final uretilen = MilestoneService.evaluate(
         assets: [
@@ -300,8 +304,92 @@ void main() {
         ],
         totalTRY: 2000000,
         now: now,
+        seri: _seri(guncel: 12, enUzun: 12, buAy: true),
       ).map((e) => e.kind).toSet();
       expect(uretilen.difference(izinli), isEmpty);
     });
   });
+
+  group('birikim serisi', () {
+    test('seri verilmezse eşik üretilmez (bayrak kapalı)', () {
+      final m = MilestoneService.evaluate(
+        assets: [_lot(id: 'a')],
+        totalTRY: 100,
+        now: now,
+      );
+      expect(m.where((e) => e.kind == 'contribution_streak'), isEmpty);
+    });
+
+    test('ulaşılan eşikler EN UZUN seriye göre', () {
+      final m = MilestoneService.evaluate(
+        assets: [_lot(id: 'a')],
+        totalTRY: 100,
+        now: now,
+        seri: _seri(guncel: 2, enUzun: 7, buAy: true),
+      ).where((e) => e.kind == 'contribution_streak').map((e) => e.value);
+      expect(m, ['3m', '6m']);
+    });
+
+    test('yalnız bu ayın katkısı eşiğe getirdiyse kutlanır', () {
+      final yeniler = MilestoneService.evaluate(
+        assets: [_lot(id: 'a')],
+        totalTRY: 100,
+        now: now,
+        seri: _seri(guncel: 6, enUzun: 6, buAy: true),
+      ).where((e) => e.kind == 'contribution_streak').toList();
+      final ayrim = MilestoneService.ayir(
+        yeniler: yeniler,
+        assets: [_lot(id: 'a')],
+        now: now,
+        girisSonrasi: false,
+        ilkKez: false,
+        seri: _seri(guncel: 6, enUzun: 6, buAy: true),
+      );
+      expect(ayrim.kutla.map((e) => e.value), ['6m']);
+      expect(ayrim.sessiz.map((e) => e.value), ['3m']);
+    });
+
+    test('bu ay katkı yoksa (geriye dönük uzama) sessiz', () {
+      final seri = _seri(guncel: 6, enUzun: 6, buAy: false);
+      final yeniler = MilestoneService.evaluate(
+              assets: [_lot(id: 'a')], totalTRY: 100, now: now, seri: seri)
+          .where((e) => e.kind == 'contribution_streak')
+          .toList();
+      final ayrim = MilestoneService.ayir(
+        yeniler: yeniler,
+        assets: [_lot(id: 'a')],
+        now: now,
+        girisSonrasi: false,
+        ilkKez: false,
+        seri: seri,
+      );
+      expect(ayrim.kutla, isEmpty);
+    });
+
+    test('seri, portföy değerinden önce seçilir', () {
+      final secilen = MilestoneService.pickOne(const [
+        Milestone(
+            kind: 'portfolio_value', value: '100000', title: '', body: '',
+            rank: 100000),
+        Milestone(
+            kind: 'contribution_streak', value: '6m', title: '', body: '',
+            rank: 6),
+      ]);
+      expect(secilen?.kind, 'contribution_streak');
+    });
+  });
 }
+
+BirikimSerisi _seri({
+  required int guncel,
+  required int enUzun,
+  required bool buAy,
+}) =>
+    BirikimSerisi(
+      guncel: guncel,
+      enUzun: enUzun,
+      kalanMola: 1,
+      buAyKatkiVar: buAy,
+      gecmisAy: enUzun + 1,
+      serit: const [],
+    );

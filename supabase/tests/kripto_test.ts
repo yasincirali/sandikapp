@@ -219,6 +219,19 @@ Deno.test('mumlariCek: dolu sayfadan sonra devam eder, eksik sayfada durur', asy
   assert(istenen[1].includes(`startTime=${SAYFA_MUM * dakika}`));
 });
 
+Deno.test('mumlariCek: SONRAKİ sayfa düşerse de null — eksik seri önbelleğe girmez', async () => {
+  // Sayfalar eskiden yeniye gider; ikinci sayfanın düşmesi son haftaları
+  // eksik bir seri demekti ve bir saat boyunca herkese dağıtılıyordu
+  // (grafik geçmişte bitip bugüne düz çizgiyle bağlanıyordu, 2026-10-03).
+  const dakika = 60_000;
+  const tamSayfa = Array.from({ length: SAYFA_MUM }, (_, i) => [i * dakika, '', '', '', '1', '']);
+  const f = sahteFetch([
+    () => new Response(JSON.stringify(tamSayfa), { status: 200 }),
+    () => new Response('', { status: 500 }),
+  ]);
+  assertEquals(await mumlariCek('BTCTRY', '1m', 0, SAYFA_MUM * dakika * 2, f), null);
+});
+
 Deno.test('mumlariCek: ilk sayfada sağlayıcı yanıtsızsa null (boş seriyle karışmaz)', async () => {
   const f = sahteFetch([() => new Response('', { status: 500 })]);
   assertEquals(await mumlariCek('BTCTRY', '1h', 0, 1_000_000, f), null);

@@ -77,6 +77,23 @@ void main() {
     });
   });
 
+  group('Remote Config kayit_hunisi', () {
+    test('bayrak kapalı: ağa çıkılmaz, adımlar kuyrukta bekler; açılınca sırayla gider',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      var acik = false;
+      h.gonderimAcik = () => acik;
+      await h.hazirla();
+      await h.kaydet(HuniAdimi.kayitEkrani);
+      await h.bosalt();
+      expect(giden, isEmpty);
+
+      acik = true;
+      await h.bosalt();
+      expect(giden.map((p) => p['p_adim']), ['ilk_acilis', 'kayit_ekrani']);
+    });
+  });
+
   group('teslim', () {
     setUp(() => SharedPreferences.setMockInitialValues({}));
 

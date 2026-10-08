@@ -239,4 +239,59 @@ void main() {
       expect(olcumAnlari(_now, _now), isEmpty);
     });
   });
+
+  // Düello arenasının lider şeridi (2026-10-04) aynı döngünün ara
+  // toplamlarını okur: seri sıralamadaki sayıdan ayrı bir hesap olamaz.
+  group('gün gün seri', () {
+    List<({int an, double pct})>? seri(List<Asset> defter, {int gun = 365}) =>
+        secimGetirisiSerisi(
+          gecmis: pozisyonGecmisleri(defter, SiralamaKapsami.anonim),
+          birimFiyat: (p, t) {
+            final s = _piyasa[p.sablon.ticker];
+            return s == null ? null : seriDegeriAninda(s, t);
+          },
+          yedekBirimFiyat: (p) => p.sablon.currentPrice,
+          nowMs: _now,
+          gun: gun,
+        );
+
+    test('son nokta = sıralamadaki sayı (dört oyuncu, üç dönem)', () {
+      final y = _hareket('Y.IS', 0, 100000);
+      final defterler = [
+        [_hareket('X.IS', 0, 100000)],
+        [y, _hareket('Y.IS', 6, 0, satis: true, miktar: y.quantity),
+          _hareket('X.IS', 6, 110000)],
+        [_hareket('X.IS', 11, 1000)],
+        [_hareket('Y.IS', 0, 10000), _hareket('X.IS', 11, 200000)],
+      ];
+      for (final d in defterler) {
+        for (final gun in [7, 30, 365]) {
+          final s = seri(d, gun: gun);
+          final pct = _twr(d, gun: gun);
+          expect(s?.last.pct, pct, reason: 'gün $gun');
+        }
+      }
+    });
+
+    test('anlar bugüne hizalı, sıralı; son an bugün', () {
+      final s = seri([_hareket('X.IS', 0, 100000)], gun: 7)!;
+      expect(s.length, 7);
+      expect(s.last.an, _now);
+      for (var i = 1; i < s.length; i++) {
+        expect(s[i].an - s[i - 1].an, _gunMs);
+      }
+    });
+
+    test('birikim ara günde gerçek fiyatı izler (dipte eksi, sonda artı)', () {
+      // X: Ay 0 100 → Ay 6 80 → Ay 12 120. Ay 6 sonunda −%20.
+      final s = seri([_hareket('X.IS', 0, 100000)])!;
+      final ay6 = s.firstWhere((n) => n.an >= _ayAni(6));
+      expect(ay6.pct, closeTo(-20, 1e-9));
+      expect(s.last.pct, closeTo(20, 1e-9));
+    });
+
+    test('kapılar aynı: asgari ölçüm yoksa seri de yok', () {
+      expect(seri([_hareket('X.IS', 6, 100000, girisAyi: 12)]), isNull);
+    });
+  });
 }

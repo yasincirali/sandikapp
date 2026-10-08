@@ -7,8 +7,10 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/analytics_service.dart';
+import 'paywall_screen.dart' show ortakSiniriPaywalliActi;
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_async_button.dart';
 import '../utils/polling.dart';
 import '../utils/sandik_snack.dart';
 import '../l10n/l10n.dart';
@@ -61,6 +63,7 @@ class _PartnershipRequestsScreenState
   }
 
   Future<void> _accept(String inviteId) async {
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     try {
       await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
       // Sunucu turunu BEKLEMEDEN düşür: `refresh()` bir ağ turu sürüyor ve
@@ -128,12 +131,10 @@ class _PartnershipRequestsScreenState
                     SandikSkeletonList(rows: 2, padding: EdgeInsets.zero),
               )
             else if (pendingInvites.isEmpty)
-              Container(
+              SandikCard(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: context.c.surface1,
-                  borderRadius: BorderRadius.circular(SandikRadius.lg),
-                ),
+                radius: SandikRadius.lg,
+                bordered: false,
                 child: Column(
                   children: [
                     Icon(
@@ -170,8 +171,8 @@ class _PartnershipRequestsScreenState
 class _ApprovalInviteCard extends StatelessWidget {
   final Map<String, dynamic> invite;
   final bool highlighted;
-  final VoidCallback onAccept;
-  final VoidCallback onReject;
+  final Future<void> Function() onAccept;
+  final Future<void> Function() onReject;
 
   const _ApprovalInviteCard({
     required this.invite,
@@ -262,10 +263,14 @@ class _ApprovalInviteCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
+          // Tek yükleniyor davranışı (2026-10-08): kabul/ret istek atar;
+          // gösterge düğmenin içinde döner, ikinci dokunuş yutulur. Görünüş
+          // eski `OutlinedButton`/`FilledButton` ile aynı (`style` taşındı).
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: SandikAsyncButton.kompakt(
+                  tur: SandikAsyncTur.cerceve,
                   onPressed: onReject,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: context.c.loss,
@@ -276,10 +281,12 @@ class _ApprovalInviteCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton(
+                child: SandikAsyncButton.kompakt(
                   onPressed: onAccept,
                   style: FilledButton.styleFrom(
                     backgroundColor: context.c.gain,
+                    disabledBackgroundColor:
+                        context.c.gain.withValues(alpha: 0.5),
                     // `onAmber` amber içindir ve iki temada da koyudur;
                     // light'ta koyu yeşil dolgu üstünde 3.02:1 veriyordu.
                     foregroundColor: context.c.onStatus,

@@ -13,8 +13,10 @@ import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/review_prompt_service.dart';
 import '../services/temettu_gecmisi.dart';
-import 'custom_loading_indicator.dart';
+import 'sandik_async_button.dart';
+import 'review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 
 /// Nakit temettü kaydı.
@@ -67,6 +69,11 @@ Future<void> showDividendDialog(
   if (oneri != null) {
     unawaited(AnalyticsService.instance.logDividendSuggestion(
         action: kaydedildi == true ? 'recorded' : 'dismissed'));
+  }
+  // Temettü kaydedildi — eline para geçmiş kullanıcı; diyalog kapandıktan
+  // sonra sorulur. Karar ve sıklık `ReviewPromptService`'te.
+  if (kaydedildi == true && context.mounted) {
+    await ReviewPromptSheet.belkiGoster(context, ReviewAni.temettuKaydi);
   }
 }
 
@@ -317,21 +324,17 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
           onPressed: _saving ? null : () => Navigator.pop(context),
           child: const Text('İptal'),
         ),
-        FilledButton(
+        // Gösterge + çift dokunuş kilidi standart bileşende (tek yükleniyor
+        // davranışı, 2026-10-08; eski elle yazılmış 18pt gösterge kalktı).
+        // `_saving` kalır: kayıt sürerken İptal ve klavye "gönder"i pasif.
+        SandikAsyncButton.kompakt(
           style: FilledButton.styleFrom(
             backgroundColor: context.c.gain,
             foregroundColor: context.c.onStatus,
           ),
-          onPressed: _saving ? null : _save,
-          // Buton kutusuna sığacak boyut verilmeli: CustomLoadingView
-          // varsayılanı `large` ve 18pt'lik kutuyu taşırıyordu.
-          child: _saving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CustomLoadingIndicator(size: 18),
-                )
-              : const Text('Kaydet'),
+          onPressed: _save,
+          mesgul: _saving,
+          child: const Text('Kaydet'),
         ),
       ],
     );

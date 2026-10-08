@@ -127,7 +127,7 @@ void main() {
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF1A1A1A))),
           const SizedBox(height: 4),
-          const Text('Bugünkü birikim değişimi  −₺12.794  (%0,51)',
+          const Text('Bugünkü toplam değişim  −₺12.794  (%0,51)',
               style: TextStyle(fontSize: 12, color: Color(0xFF6B6B6B))),
           const SizedBox(height: 12),
           Expanded(

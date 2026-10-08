@@ -1,18 +1,21 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
+        BorderSide,
         Colors,
+        FilledButton,
         Form,
         FormState,
         GlobalKey,
         Icons,
         Material,
+        RoundedRectangleBorder,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Şifremi Unuttum — OTP tabanlı akış.
@@ -180,7 +183,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 24),
           _primaryButton(
             label: context.l10n.sendCode,
-            onTap: _loading ? null : _sendCode,
+            onTap: _sendCode,
           ),
         ],
       ),
@@ -251,7 +254,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   : AuthService.validatePassword(_passCtrl.text),
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Icon(Icons.lock_outline,
+                child: Icon(Icons.lock_outline_rounded,
                     color: context.c.text36, size: 20),
               ),
               suffixIcon: CupertinoButton(
@@ -293,7 +296,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   : null,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Icon(Icons.lock_outline,
+                child: Icon(Icons.lock_outline_rounded,
                     color: context.c.text36, size: 20),
               ),
             ),
@@ -305,7 +308,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
           _primaryButton(
             label: context.l10n.updatePassword,
-            onTap: _loading ? null : _verifyAndUpdate,
+            onTap: _verifyAndUpdate,
           ),
           const SizedBox(height: 12),
           CupertinoButton(
@@ -327,39 +330,48 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _primaryButton({required String label, VoidCallback? onTap}) {
-    final enabled = onTap != null;
-    return SandikBasma(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          color: enabled
-              ? context.c.amberFill.withValues(alpha: 0.92)
-              : context.c.amberFill.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border:
-              Border.all(color: context.c.amberFill.withValues(alpha: 0.60), width: 1),
-          boxShadow: [
-            BoxShadow(
-              color: context.c.amberFill.withValues(alpha: 0.30),
-              blurRadius: 20,
-              spreadRadius: -4,
-              offset: const Offset(0, 6),
-            ),
-          ],
+  /// Ana eylem düğmesi — tek yükleniyor davranışı (2026-10-08):
+  /// [SandikAsyncButton]; eski cam görünüm (`Container` süslemesi) `style`
+  /// + dış gölge ile birebir. Eski not: CupertinoButton iOS release'te jest
+  /// yarışını kaydırmaya kaptırıyordu; FilledButton düz dokunma tanıyıcısı
+  /// kullanır.
+  ///
+  /// `_loading` KALIR: klavyedeki "Bitti" de isteği tetikler (düğmeden
+  /// geçmez) ve "Başka e-posta dene" istek sürerken kapalıdır. `mesgul:`
+  /// ile klavye yolunda da gösterge bileşenden çizilir (tek gösterge).
+  Widget _primaryButton(
+      {required String label, Future<void> Function()? onTap}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: SandikRadius.mdAll,
+        boxShadow: [
+          BoxShadow(
+            color: context.c.amberFill.withValues(alpha: 0.30),
+            blurRadius: 20,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: SandikAsyncButton(
+        onPressed: onTap,
+        mesgul: _loading,
+        style: FilledButton.styleFrom(
+          backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
+          foregroundColor: context.c.onAmber,
+          disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.45),
+          disabledForegroundColor: context.c.onAmber,
+          textStyle: context.t.bodyLarge,
+          side: BorderSide(color: context.c.amberFill.withValues(alpha: 0.60)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
         ),
-        alignment: Alignment.center,
-        child: _loading
-            ? const CustomLoadingIndicator(size: 22)
-            : Text(
-                label,
-                style: context.t.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: context.c.onAmber,
-                ),
-              ),
+        child: Text(
+          label,
+          style: context.t.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: context.c.onAmber,
+          ),
+        ),
       ),
     );
   }

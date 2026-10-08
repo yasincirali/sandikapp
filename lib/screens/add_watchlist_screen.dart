@@ -26,6 +26,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_katla.dart';
+import '../widgets/sandik_async_button.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
@@ -117,7 +118,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     // 250 ms: her tuş vuruşunda TEFAS'a gitmemek için. Yerleşik listeler
     // zaten bellekte ama fon araması ağa çıkabiliyor.
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () => _ara(v));
+    _debounce = Timer(SymbolSearchService.aramaBeklemesi, () => _ara(v));
   }
 
   Future<void> _ara(String q) async {
@@ -202,8 +203,12 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     final owned =
         aktifLotlar(ref.watch(portfolioProvider).valueOrNull?.assets ?? const []);
     final ownedKeys = <String>{
+      // `varlikAnahtari`: kimlik/takip anahtarıyla TEK kural (formül
+      // eskiden burada satır içi kopyaydı; ABD alt kategorisi istisnası
+      // kopyada ayrışırdı).
       for (final a in owned)
-        '${a.type.name}|${(a.subCategory?.trim().isNotEmpty ?? false) ? 'sub:${a.subCategory!.trim().toUpperCase()}' : a.ticker.trim().toUpperCase()}',
+        varlikAnahtari(
+            type: a.type, ticker: a.ticker, subCategory: a.subCategory),
     };
 
     Widget satir(VarlikKimligi c) => Padding(
@@ -421,7 +426,7 @@ class _AddWatchlistScreenState extends ConsumerState<AddWatchlistScreen> {
     return SandikTappable(
       onTap: () => showVarlikSayfasi(context, c),
       semanticLabel: context.l10n.vsOpenDetailSemantics(c.name),
-      child: _SatirKutusu(
+      child: AramaSatirKutusu(
         kimlik: c,
         kotasyon: _kotasyon[c.ticker.toUpperCase()],
         sonu: owned
@@ -502,8 +507,13 @@ class _SatirSonu extends StatelessWidget {
 }
 
 /// Satırın gövdesi: tür noktası, ad, sembol · tür, fiyat + günlük değişim.
-class _SatirKutusu extends StatelessWidget {
-  const _SatirKutusu({
+///
+/// Açık (public) çünkü genel arama (bayrak `genel_arama`) "Piyasa" grubunu
+/// AYNI satırla çizer: aynı varlık iki arama yüzeyinde iki farklı satır
+/// (fiyat biçimi, sembol etiketi) göstermesin.
+class AramaSatirKutusu extends StatelessWidget {
+  const AramaSatirKutusu({
+    super.key,
     required this.kimlik,
     required this.kotasyon,
     required this.sonu,
@@ -518,74 +528,73 @@ class _SatirKutusu extends StatelessWidget {
     final c = kimlik;
     final fiyat = aramaFiyatMetni(c, kotasyon);
     final pct = aramaGunlukYuzde(c, kotasyon);
-    return Container(
+    // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı; 44pt alt
+    // sınır kartın dışından verilir (eski `Container.constraints`).
+    return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SandikTouch.min),
-      padding: const EdgeInsets.only(left: SandikSpace.smd),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: SandikSpace.sm,
-            height: SandikSpace.sm,
-            decoration:
-                BoxDecoration(color: c.type.color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: SandikSpace.sm2),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(c.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.t.bodyMedium
-                          ?.copyWith(color: context.c.text90)),
-                  Text(
-                      [
-                        if (aramaSembolEtiketi(c) case final e?) e,
-                        c.type.labelOf(context.l10n),
-                      ].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.t.labelSmall
-                          ?.copyWith(color: context.c.text36)),
-                ],
-              ),
+      child: SandikCard(
+        padding: const EdgeInsets.only(left: SandikSpace.smd),
+        child: Row(
+          children: [
+            Container(
+              width: SandikSpace.sm,
+              height: SandikSpace.sm,
+              decoration:
+                  BoxDecoration(color: c.type.color, shape: BoxShape.circle),
             ),
-          ),
-          if (fiyat != null)
-            Padding(
-              padding: const EdgeInsets.only(left: SandikSpace.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(fiyat,
-                      maxLines: 1,
-                      style: context.t.bodySmall?.copyWith(
-                          color: context.c.text90,
-                          fontFeatures: const [FontFeature.tabularFigures()])),
-                  if (pct != null)
-                    Text(fmtPctIsaretli(pct),
+            const SizedBox(width: SandikSpace.sm2),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(c.name,
                         maxLines: 1,
-                        style: context.t.labelSmall?.copyWith(
-                            color: pct.abs() < 0.005
-                                ? context.c.text36
-                                : context.signColor(pct),
-                            fontFeatures: const [
-                              FontFeature.tabularFigures()
-                            ])),
-                ],
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.bodyMedium
+                            ?.copyWith(color: context.c.text90)),
+                    Text(
+                        [
+                          if (aramaSembolEtiketi(c) case final e?) e,
+                          c.type.labelOf(context.l10n),
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.labelSmall
+                            ?.copyWith(color: context.c.text36)),
+                  ],
+                ),
               ),
             ),
-          const SizedBox(width: SandikSpace.xs),
-          sonu,
-        ],
+            if (fiyat != null)
+              Padding(
+                padding: const EdgeInsets.only(left: SandikSpace.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(fiyat,
+                        maxLines: 1,
+                        style: context.t.bodySmall?.copyWith(
+                            color: context.c.text90,
+                            fontFeatures: const [FontFeature.tabularFigures()])),
+                    if (pct != null)
+                      Text(fmtPctIsaretli(pct),
+                          maxLines: 1,
+                          style: context.t.labelSmall?.copyWith(
+                              color: pct.abs() < 0.005
+                                  ? context.c.text36
+                                  : context.signColor(pct),
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ])),
+                  ],
+                ),
+              ),
+            const SizedBox(width: SandikSpace.xs),
+            sonu,
+          ],
+        ),
       ),
     );
   }
@@ -722,15 +731,20 @@ class _CipGovdesi extends StatelessWidget {
 
 /// "+ Takip" — satırın içinde AYRI bir dokunma hedefi. Satırın geri kalanı
 /// önizler; bu düğme önizlemeden geçmeden hemen takibe alır.
+/// Satır sonundaki "+ Takip et". Ekleme iyimser DEĞİL (`add` sunucuyu ve
+/// listeyi yeniden çekmeyi bekler), satır ancak sonra "Takipte"ye döner;
+/// o arada standart kilit + gösterge (tek yükleniyor davranışı,
+/// 2026-10-08) — eskiden hızlı ikinci dokunuş ikinci isteği atıyordu.
 class _HizliTakipDugmesi extends StatelessWidget {
   const _HizliTakipDugmesi({required this.semanticLabel, required this.onTap});
   final String semanticLabel;
-  final VoidCallback onTap;
+  final Future<void> Function() onTap;
 
   @override
-  Widget build(BuildContext context) => SandikTappable(
+  Widget build(BuildContext context) => SandikAsyncTap(
         onTap: onTap,
         semanticLabel: semanticLabel,
+        // Eski SandikTappable varsayılanı.
         child: Container(
           constraints: const BoxConstraints(
               minWidth: SandikTouch.min, minHeight: SandikTouch.min),

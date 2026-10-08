@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/services/birikim_serisi.dart';
 import 'package:portfoy_takip/services/contribution_history_service.dart';
 import 'package:portfoy_takip/services/insight_metrics_service.dart';
 import 'package:portfoy_takip/services/period_summary_service.dart';
@@ -310,6 +311,83 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Katkı yaptığın ay ortalaması'), findsNothing);
+    });
+
+    testWidgets('seri yokken (bayrak kapalı) seri bölümü çizilmez', (t) async {
+      await pump(
+        t,
+        PeriodSummaryView(
+          summary: ozet(period: SummaryPeriod.birAy),
+          katkiKarti: ContributionKarti(
+            ozet: katkiOzeti(netler: [1000, 1500, 1200, 2000, 1800, 500]),
+            aralik: ContributionInterval.aylik,
+          ),
+        ),
+      );
+      expect(find.text('Birikim serin'), findsNothing);
+    });
+
+    testWidgets('seri: sayı, en uzun, mola ve açık ay — kırmızı dil yok',
+        (t) async {
+      final seri = BirikimSerisiService.hesaplaKovalardan([
+        for (var i = 0; i < 12; i++)
+          ContributionBucket(
+            start: DateTime(2024, 11 + i, 1),
+            end: DateTime(2024, 12 + i, 0),
+            // Haziran (i=7) boş → mola; son ay (Ekim) açık.
+            netTRY: i == 7 || i == 11 ? 0 : 1000,
+            kismi: i == 11,
+          ),
+      ])!;
+      await pump(
+        t,
+        PeriodSummaryView(
+          summary: ozet(period: SummaryPeriod.birAy),
+          katkiKarti: ContributionKarti(
+            ozet: katkiOzeti(netler: [1000, 1500, 1200, 2000, 1800, 500]),
+            aralik: ContributionInterval.aylik,
+            seri: seri,
+            besDahil: true,
+          ),
+        ),
+      );
+      expect(find.text('Birikim serin'), findsOneWidget);
+      expect(find.text('10 ay art arda'), findsOneWidget);
+      expect(find.text('En uzun seri'), findsOneWidget);
+      expect(find.text('Kullanıldı · Haziran ayında açılır'), findsOneWidget);
+      expect(
+        find.text('Bu ay henüz ekleme yok; ay sonuna kadar açık.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('BES otomatik katkıları dahil.'),
+          findsOneWidget);
+      expect(find.textContaining('kaybettin'), findsNothing);
+      expect(t.takeException(), isNull);
+    });
+
+    testWidgets('sıfırlanan seri "yeniden başladı" der', (t) async {
+      final seri = BirikimSerisiService.hesaplaKovalardan([
+        for (var i = 0; i < 6; i++)
+          ContributionBucket(
+            start: DateTime(2025, 1 + i, 1),
+            end: DateTime(2025, 2 + i, 0),
+            netTRY: i < 3 ? 1000 : 0,
+            kismi: i == 5,
+          ),
+      ])!;
+      await pump(
+        t,
+        PeriodSummaryView(
+          summary: ozet(period: SummaryPeriod.birAy),
+          katkiKarti: ContributionKarti(
+            ozet: katkiOzeti(netler: [1000, 1000, 1000, 0, 0, 0]),
+            aralik: ContributionInterval.aylik,
+            seri: seri,
+          ),
+        ),
+      );
+      expect(find.text('Seri yeniden başladı'), findsOneWidget);
+      expect(find.text('3 ay'), findsOneWidget);
     });
 
     testWidgets('GÜNLÜK dönemde birikim kartı çizilmez', (t) async {

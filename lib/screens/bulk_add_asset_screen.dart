@@ -6,6 +6,7 @@ import '../models/asset.dart' show Asset, birimEtiketi;
 import '../providers/bulk_cart_provider.dart';
 import '../services/ice_aktarma_satislari.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/sozlesme_provider.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../services/review_prompt_service.dart';
@@ -151,7 +152,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     // Satışlar burada YAZILMAZ (karar 5.4): alımlar defterde olmadan
     // "o gün elde kaç lot vardı" sorusu cevaplanamaz. Onlar 3. adımda.
     bool limitHit = false;
-    await Future.wait(items.where((i) => !i.satis).map((item) async {
+    await Future.wait(
+        items.where((i) => !i.satis && i.mevduat == null).map((item) async {
       try {
         await portfolio.addAsset(
           name: item.name,
@@ -175,6 +177,33 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         failures.add('${item.name}: ${friendlyError(e)}');
       }
     }));
+
+    // ── 2b) Vadeli mevduat (ekstreden): sözleşme + dönem + anapara lotu ──
+    // Lot tek başına anlamsız (birim değer faiz ve vadeden); `addAsset`
+    // değil, mevduat formunun kullandığı `mevduatAc`. Sıralı: her biri üç
+    // tablo yazar ve hatada kendi sözleşmesini geri alır.
+    final sozlesme = ref.read(sozlesmeProvider.notifier);
+    for (final item in items.where((i) => i.mevduat != null)) {
+      final m = item.mevduat!;
+      try {
+        await sozlesme.mevduatAc(
+          kurum: m.kurum,
+          ad: item.name,
+          anapara: item.quantity,
+          yillikFaiz: m.yillikFaiz,
+          stopaj: m.stopaj,
+          baslangic: item.addedDate,
+          vadeGun: m.vadeGun,
+        );
+        sepet.remove(item.id);
+        if (mounted) setState(() => _saved++);
+      } on AssetLimitExceededException {
+        limitHit = true;
+        failures.add(l.assetLimitReachedFor(item.name));
+      } catch (e) {
+        failures.add('${item.name}: ${friendlyError(e)}');
+      }
+    }
 
     // ── 3) Satışlar: güncel defterle planla, tarih sırasıyla yaz ──────────
     // Elde olandan fazla satış ve fiyatı bulunamayan satış YAZILMAZ; sepette
@@ -243,9 +272,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
       //
       // Değerlendirme istemi bu ekran KAPANDIKTAN sonra, kök navigator
       // bağlamında sorulur: kullanıcı portföyünde yeni satırları görürken.
-      // Üç ve üzeri varlık eşiği bilinçli — bir-iki kalemlik ekleme
-      // "aracı kurumdan taşıdım" rahatlaması değil, gündelik iştir.
-      final sayi = items.length;
+      // Varlık sayısı eşiği YOK (2026-10-04'e kadar ≥3'tü): tekli ekleme de
+      // artık bir an (`ReviewAni.varlikEklendi`), iki kalemlik sepeti
+      // dışarıda bırakmak tutarsız olurdu. Sıklığı servis kapıları sınırlar.
       if (mounted) {
         final rootCtx = Navigator.of(context, rootNavigator: true).context;
         // İKİ pop art arda (bu ekran → AddAssetScreen → sekmeler) bitsin,
@@ -254,11 +283,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         // ÖNCE okunur; sonrasında bu State'in bağlamı geçersiz.
         final bekle = SandikMotion.surfaceOf(context) * 2;
         Navigator.of(context).pop(true);
-        if (sayi >= 3) {
-          await Future<void>.delayed(bekle);
-          if (rootCtx.mounted) {
-            await ReviewPromptSheet.belkiGoster(rootCtx, ReviewAni.topluEkleme);
-          }
+        await Future<void>.delayed(bekle);
+        if (rootCtx.mounted) {
+          await ReviewPromptSheet.belkiGoster(rootCtx, ReviewAni.topluEkleme);
         }
       }
     } else {
@@ -385,7 +412,11 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         final it = items[i];
         return _BulkItemTile(
           item: it,
-          onEdit: _saving ? null : () => _openAddForm(existing: it),
+          // Mevduat kalemi formda düzenlenmez: ekleme formu sözleşme
+          // alanlarını (faiz, vade) taşımıyor; silinip yeniden içe aktarılır.
+          onEdit: _saving || it.mevduat != null
+              ? null
+              : () => _openAddForm(existing: it),
           onDelete: _saving
               ? null
               : () => ref.read(bulkCartProvider.notifier).remove(it.id),
@@ -430,6 +461,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
             SizedBox(
               width: double.infinity,
               height: 52,
+              // BİLİNÇLİ İSTİSNA (tek yükleniyor davranışı, 2026-10-08):
+              // SandikAsyncButton DEĞİL. Meşgul düğme yalnız gösterge değil
+              // "3/10 kaydediliyor" ilerlemesini de taşır; standart bileşen
+              // etiketi gizleyip yalnız gösterge koyar. `_saving` zaten
+              // ekranın tamamını kilitler (geri tuşu, satır düzenle/sil,
+              // Varlık Ekle) — çift dokunuş koruması oradan gelir.
               child: FilledButton(
                 onPressed: _saving || items.isEmpty ? null : _saveAll,
                 style: FilledButton.styleFrom(
@@ -457,8 +494,15 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
                         items.isEmpty
                             ? 'Kaydet'
                             : context.l10n.saveAllCount(items.length),
-                        style: context.t.bodyLarge
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        // Renk açıkça `onAmber` (açık tema denetimi
+                        // 2026-10-08): `bodyLarge` kendi rengini (`text90`)
+                        // taşır ve düğmenin `foregroundColor`'ını ezer —
+                        // koyu temada amber üstüne beyaz 1,87:1 kalıyordu.
+                        // Pasifken (boş sepet) eski ton: soluk dolguda koyu
+                        // yazı okunmazdı.
+                        style: context.t.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: items.isEmpty ? null : context.c.onAmber),
                       ),
               ),
             ),
@@ -517,7 +561,14 @@ class _BulkItemTile extends StatelessWidget {
 
     // Satış satırı (karar 5.4) ilk kelimede ve renkte ayrışır: aynı sembolün
     // alışı ve satışı sepette alt alta durur, yön yalnız renkle anlatılmaz.
-    final subtitle = <String>[
+    final m = item.mevduat;
+    final subtitle = m != null
+        ? [
+            context.l10n.cartDepositSubtitle(fmtPct(m.yillikFaiz), m.vadeGun),
+            fmtTRY(item.quantity, digits: 2),
+            if (dateLabel != null) dateLabel,
+          ].join(' · ')
+        : <String>[
       if (item.satis) context.l10n.cartSellTag,
       '${_fmt(item.quantity)} ${_unitLabel()}',
       if (item.price > 0) '${_fmt(item.price)} ${item.currency}',
@@ -529,13 +580,8 @@ class _BulkItemTile extends StatelessWidget {
 
     return SandikBasma(
       onTap: onEdit,
-      child: Container(
+      child: SandikCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: Row(
           children: [
             Container(

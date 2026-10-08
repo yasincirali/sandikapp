@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
-import '../screens/leaderboard_screen.dart';
+import '../screens/siralama_screen.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
@@ -56,9 +56,11 @@ class _SoloHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _HeroShell(
+      // Yarış ekranı (`LeaderboardScreen`) ya da bayrak açıksa Sıralama ›
+      // Ortaklarım — karar `yarisGirisEkrani`'nda.
       onTap: () => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
+        adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()),
       ),
       child: Row(
         children: [
@@ -342,7 +344,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   void _openLeaderboard() {
     pushGuarded(
       context,
-      adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
+      adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()),
     );
   }
 
@@ -453,6 +455,16 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                     ),
                   ),
                 ],
+              ),
+              // Rakamın ölçüsü (2026-10-02 müşteri testi): aynı kullanıcı
+              // Ana'da %37,29, Performans 1Y'de %38,84, burada %23,1
+              // görüyordu; bu "seçimlerinin getirisi"dir (TWR) ve kart bunu
+              // söylemiyordu. Ayrı satır: alt cümleye önek olsaydı kesilirdi.
+              Text(
+                context.l10n.selectedPeriodReturn,
+                style: context.t.labelSmall?.copyWith(
+                  color: context.c.text58,
+                ),
               ),
               const SizedBox(height: 3),
               Text(

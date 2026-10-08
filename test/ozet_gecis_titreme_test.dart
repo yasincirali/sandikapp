@@ -144,7 +144,7 @@ void main() {
     await _yerles(tester);
 
     // ── Özet içinde dönem dokunuşu ─────────────────────────────────────
-    for (final etiket in ['3A', '1Y', '1H', '1A']) {
+    for (final etiket in ['3 ay', '1 yıl', '1 hf', '1 ay']) {
       await tester.tap(find.text(etiket).first);
       await tester.pump();
       expect(_iskeletVar(), isFalse,

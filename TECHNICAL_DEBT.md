@@ -5,7 +5,100 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+
+---
+
+## ✅ KAPANDI — Sadeleştirme bayraklarının eski (kapalı) yolları (2026-10-05, `c0230d7`)
+
+**Ne:** 2026-10-04'te AÇIK doğan 15 Remote Config bayrağının her biri eski
+ekranı/kabuğu kodda tutuyordu ("bayrak kalıcı açılınca eski kabuk silinir"
+notu `EskiOrtakSecici`'de duruyordu; aynı borç kayıt, kapı, Bugün kartı,
+Yarış, grafik tipi ve Ayarlar'da da vardı). Testler bayrakları
+`flutter_test_config`'teki `testKapali` listesiyle KAPALI koşuyor, açık dal
+`testAcik` ile ayrıca sınanıyordu — iki yolun da bakımı.
+
+**KAPANDI:** kullanıcı kararıyla ("önerilerin hepsini uygula") bayraklar,
+kapalı yollar, `testAcik`/`testKapali`/`RC_ACIK` kancaları ve yalnız eski
+yolun kullandığı ~40 l10n anahtarı silindi; `remote_config_defaults_test`
+anahtarların geri gelmesini kilitler. Bedel: bu özellikler Console'dan
+kapatılamaz (YAPMAN_GEREKENLER 2026-10-05).
+
+---
+
+## ✅ KAPANDI — Bugün kartı çizmediği satırları hesaplıyor ve "gösterildi" sayıyor (2026-10-05 → 2026-10-08)
+
+**Ne idi:** Kart 2026-10-04'ten beri "H" düzeninde (hareket, enflasyon kıyası,
+en çok oynayan, hedef) ama `BugunService.hesapla` D düzeninin satırlarını
+(son 7 gün, artıdaki varlık, aylık özet, yaklaşan olay) üretiyor,
+`_haftalikYukle` haftalık getiriyi ağdan çekiyor, `_gosterimiOlc` bunları
+`today_row_shown` ile "gösterildi" sayıyordu.
+
+**KAPANDI (2026-10-08, sadeleştirme kalanları):** hesap H'nin satırlarına
+daraldı (`BugunKartiVerisi`: birincil, hedef, reel); `BugunYukleyici.haftalik`
+ve splash ısıtmasındaki çağrısı kalktı (açılışta bir seri isteği az);
+gösterim ölçümü yalnız çizilenleri sayar ve çizilen en çok oynayanı
+(`oynayan`) artık sayar. **Analitik serisi bu tarihte kırılır:**
+`today_row_shown` içinde `yesil`/`haftalik`/`aylik`/`olay_*` biter,
+`oynayan` başlar. Görünüm birebir aynı.
+
+---
+
+## 🟡 AÇIK — Eurobond ve ABD hissesi v1'de ertelenenler (2026-10-08, 0124)
+
+- **EUR eurobond eklenemiyor.** `HistoryService` geçmiş değeri yalnız USD
+  ve TRY için kurla çevirir (`a.currency == 'USD'`); EUR kote lot seriye
+  girseydi değeri kursuz TL sayılırdı. Ekleme akışı yalnız USD tahvil
+  sunar, `FiyatKaynagi.seriyeGirer` EUR'u dışarıda tutar. Maliyet: geçmiş
+  yollarına EURTRY serisi (7 tür listesi + `_flatFallback`). Ne zaman:
+  kullanıcı EUR tahvil isterse. Katalogda EUR tahviller zaten var.
+- **ABD hissesinde temettü yok.** `temettuSembolu` BIST'e özel: USD temettü
+  ödeme günü kuru ister, stopaj W-8BEN'e bağlı (%20/%30). Ne zaman: ABD
+  hissesi bayrağı herkese açılmadan önce düşünülmeli.
+- **"Borsa açık" BIST saatine bağlı** (widget, Live Activity, alarm turu);
+  ABD seansı (16:30–23:00 TR) ayrı değil. Kripto maddesiyle aynı kök.
+- **Masraf kalemi metinleri Türkçe** ve serviste (`varlik_masraflari.dart`);
+  İngilizce arayüzde Türkçe görünür. Kartın kendi etiketleri çevrili.
+- **`tool/kaynak_olcum.py`, `tool/eurobond_canli.ts`** ve
+  `kaynak-olcum.yml` (yalnız elle tetiklenir) kaynak değişirse yeniden
+  ölçmek için durur; Frankfurt/Ziraat biçimi değişirse canlı sınama
+  ayrıştırıcıyı gerçek yanıtla dener.
+- **Eurobond fiyat alarmı kapalı** (seri denetimi 2026-10-08).
+  `alarmSembolu` `EUROBOND:` için null döner, zil görünmez. Sunucu
+  (`check-price-alerts`) tahvili artık kirli/100 ölçeğinde fiyatlayabilir,
+  ama kullanıcı hedefi bankanın temiz fiyatıyla (nominalin yüzdesi) düşünür;
+  hangi ölçeğin hedef olacağı kararı verilmeden açmak yanlış tetik demek.
+  Ne zaman: tahvil alarmı istenirse (hedef = temiz fiyat, sunucuda
+  `temiz_fiyat` ile karşılaştırma).
+- **ABD hissesi alarm sayfası hedefi ₺ simgesiyle yazıyor.** Hedef ve
+  sunucu karşılaştırması USD kotasyonla (doğru), yalnız sayfa
+  `tryFormatter` ile biçimler. Maliyet: alarm sayfasına para birimi
+  geçirmek. Ne zaman: ABD hissesi bayrağı herkese açılmadan önce.
+- **Karşılaştır › "Al" eurobondu formda önceden SEÇMEZ.** Form açılır, tür
+  eurobond olur, ama tahvil seçiciden tekrar seçilir (ön doldurma kataloğu
+  yüklemiyor). Ekleme ekranı ayrı işte yeniden tasarlandığı için
+  dokunulmadı.
+
+---
+
+## 🟡 AÇIK — Auth güvenlik kaydı 90 gün: panel ve huni 90 günden eskiyi göremiyor (2026-10-05, 0105)
+
+**Ne:** 0105 `auth.audit_log_entries`'i 90 günde siler (Gizlilik §7 / KVKK
+§6, 1.3). İki okuyucu bu defterden daha uzun pencere isteyebiliyor:
+yönetim panelinin Güvenlik ekranı (`admin_auth_*`, 0070) ve kayıt
+hunisinin "ilk giriş" adımı (0097, `p_gun` ≤ 365). 90 günden uzun
+pencerede huni, o tarihten önce kayıt olup giriş yapmış kullanıcıyı "hiç
+giriş yapmadı" sayar.
+
+**Neden ertelendi:** saklama süresi kullanıcı kararı; okuyucuların
+pencereyi kendi başına düzeltmesi ayrı iş. Bugün panel varsayılanı 30 gün,
+yani günlük kullanımda fark yok.
+
+**Maliyet:** yalnız > 90 günlük huni raporunda "ilk giriş" eksik sayılır.
+
+**Ne zaman / nasıl:** huni panelinde 90+ gün seçilince ya (a) `p_gun`'u
+90'a kırp ve ekranda söyle, ya da (b) "ilk giriş" anını kayıt anında
+`huni_olaylari`'na (400 gün) yazıp defterden okumayı bırak.
 
 ---
 
@@ -80,6 +173,47 @@ mutlak değerler birkaç kat küçük, ORANLAR geçerli. Kazançlar
   gerekir — tasarım kararı.
 - Ana toplamın rakamlarının yuvarlanması yapılmadı: günde onlarca kez
   görülen sayı; `DegisimVurgusu` kararı (yalnız renk) korunur.
+
+---
+
+## 🟡 AÇIK — İki varlık yüzeyi: üst özet ortak, grafik ve veri yolu hâlâ iki ayrı (2026-10-04)
+
+**Ne:** Sadeleştirme 2 madde 6 ("aynı varlık sayfası iki kez yazılmış").
+Portföy varlık detayı (`asset_detail_screen.dart` + `asset_detail/`, tam
+ekran) ile varlık sayfası (`varlik_sayfasi.dart`, alt sayfa) için ilk adım
+yapıldı: başlık, fiyat bloğu ve "%x · +₺y · dönem" satırı tek parçaya indi
+(`widgets/varlik_ozeti.dart`, kilit `test/varlik_ozeti_test.dart`). Dönem
+seçici, istatistik ızgarası, aralık çubuğu, iskelet, fon karnesi ve teknik
+panel zaten ortaktı. İki giriş biçimi (tam ekran / alt sayfa) kaldı.
+
+**Bilerek bırakılan — neden:**
+- **Veri yolu.** Detay ekranı BİRİM seriyi pozisyon motorundan
+  (`FiyatKaynagi.birimVarlik` + `...BreakdownAtResolution`) ve canlı birim
+  fiyattan kurar; varlık sayfası `getSymbolHistory` sembol serisini ve son
+  noktasını kullanır. Birleştirmek ya sayfaya `Asset` sokar
+  (`varlik_sayfasi_test`'in yasakladığı sızıntı) ya da detayın "grafik = 1
+  birim, tutar = piyasa etkisi" sözleşmesini bozar. Hesap değişir → yapılmadı.
+- **Grafik.** Detay ~850 satırlık satır içi grafik (MA20, LOG, karşılaştırma,
+  işlem işaretleri, odak daraltma, canlı uç); sayfa `FiyatGrafigi`. Biri
+  ötekinin alt kümesi değil; birleştirme görünür fark doğurur.
+- **Grafik boş/yükleniyor kutusu, istatistik sarmalayıcısı.** Metin stili
+  (bodySmall/bodyMedium) ve aralık kuralı (detayda canlı fiyata genişler,
+  mevduatta/düz seride gizli) farklı; ortaklamak görünür fark.
+- **Takip / eylem.** Detay üst çubukta `TakipYildizi` + alarm zili + alt
+  işlem çubuğu; sayfa alt çubukta Takip et / Portföyüme ekle / Pozisyonuma
+  git. Farklı soru, farklı eylem.
+
+**Maliyet:** Grafikte yapılan bir stil düzeltmesi iki yere yazılır
+(`grafik_stili_birligi_test` ortak stil sabitlerini kilitliyor, yapıyı
+değil).
+
+**Kullanıcı kararı (2026-10-08): olduğu gibi kalır.** Birleştirme kullanıcıya
+fayda getirmiyor, yalnız bakım kolaylığı; görünür fark ve görsel doğrulama
+maliyeti ağır bastı. Aşağıdaki koşul yalnız ileride yeniden açılırsa geçerli.
+
+**Ne zaman:** Detay grafiği `FiyatGrafigi`'ne (ya da tersine) taşınacaksa,
+önce iki grafik `tek_varlik_gorsel_onizleme_test` ile önce/sonra çizilip
+`tek_varlik_sayfasi` bayrağı arkasında denenmeli.
 
 ---
 
@@ -630,23 +764,21 @@ o zaman kullanıcı iki sayıyı yan yana görecek.
 
 ---
 
-## 🟡 AÇIK — `RealReturnStrip` ve `WeeklySummaryChip` ana ekrandan kalktı; widget'lar dosyada duruyor
+## ✅ KAPANDI — `RealReturnStrip` / `WeeklySummaryChip` ana ekrandan kalktı; widget'lar dosyada duruyordu
 
-**Ne.** 2026-09-21 "Bugün kartı kapsamı izler" kararıyla iki şerit ana
-ekrandan tümden çıktı (reel ve haftalık her görünümde kartın satırı). İki
-widget'ın `lib/` içinde artık çağıranı yok; yalnızca kendi testleri
-(`real_return_badge_test`, `weekly_chip_percent_test`, `inflation_display_precision_test`)
-onları kuruyor. Hesap mantığı serviste (`RealReturnService`,
-`PeriodSummaryService`); widget'lar yalnızca sunum.
+**İlk yarı (2026-10-04, `7f2ce77`, sadeleştirme C):** `WeeklySummaryChip`
+ve `weekly_chip_percent_test` silindi.
 
-**Neden ertelendi.** Testler yüzde biçimi ve rozet kuralları gibi
-sunum-bağımsız değişmezleri bu widget'lar üzerinden sınıyor; silmeden önce
-o değişmezlerin karta ya da servise taşınması gerekir. Bu tur kapsam
-değişikliğine sunum temizliği karıştırılmadı.
-
-**Ne zaman.** Bir sonraki sadeleştirme turunda: değişmez testleri
-`bugun_karti` / servis seviyesine taşı, iki widget'ı ve testlerini sil.
-
+**İkinci yarı (2026-10-08, sadeleştirme kalanları):** `real_return_strip.dart`
+(`RealReturnStrip` + `RealReturnBadge`), `real_return_badge_test` ve
+yalnız onların kullandığı 8 l10n anahtarı (`realReturnAheadOfInflation`,
+`realReturnBehindInflation`, `realReturnCpi`, `realReturnLastYear`,
+`realReturnPointsUnit`, `realReturnYours`, `realReturnSemanticsAhead/Behind`)
+silindi. Korunacak değişmez — TÜFE ve nominal iki ondalık, `digits: 0` yok —
+`inflation_display_precision_test`'te Bugün kartının `_EnflasyonKiyasi`
+bloğuna taşındı. Rozetin yerleşim testleri (dar ekranda rakamın bölünmemesi)
+taşınmadı: kart düzeni kendi testinde (`bugun_karti_sakin_pano_test`, 320–430pt
+taşma yok). Puan farkı kartta bilinçli tek ondalık (F3).
 ---
 
 ## 🟡 AÇIK — Universal Links / App Links yok; paylaşılan bağlantı web sayfasına iner
@@ -2471,9 +2603,11 @@ sorusunun cevabı DEĞİLDİR.
    koyu gölge varsayıyor. Light modda cam yüzeyler (hero kart, bazı sheet'ler)
    olması gerekenden soluk görünür. `context.elevatedCard()` yazıldı ama
    glass helper'ları henüz ona taşınmadı.
-2. **`legal_doc_screen.dart` kendi paletini taşıyor** (~29 sabit renk).
-   Hukuki belge render'ı kasten sabit kontrastlı; light modda da koyu kalır.
-   Bilinçli, ama tutarsız görünüyor — ürün kararı.
+2. ~~**`legal_doc_screen.dart` kendi paletini taşıyor**~~ **KAPANDI**
+   (2026-09-10'da tokenlara taşınmıştı — kullanıcı bildirimi: "yasal
+   dokümanların olduğu sayfalar eski ve dark/light mode'a göre değil";
+   bu madde güncellenmemişti). 2026-10-08: iki temada, iki kipte (salt
+   okuma / zorunlu okuma) `acik_tema_ekran_kontrast_test` ile AA'ya bağlandı.
 3. ~~**`asset_type.dart` kategori renkleri tek ton.**~~ **KAPANDI 2026-09-14:**
    `AssetType.onSurface(context)` light'ta açıklığı 0,28'e kısılmış tonu
    verir (hue korunur); 8 ikon/metin sitesi buna geçti, dolgular ham renkte
@@ -2483,16 +2617,55 @@ sorusunun cevabı DEĞİLDİR.
    olarak kullanıldıkları yerde light varyantı gerekiyor.
 4. ~~**`fl_chart` grid/tooltip renkleri** elle verilmiş~~ — 2026-09-14'te
    sayıldı: üç grafikte de grid `context.c.overlay/hairline`, tooltip
-   `surface2`; elle verilen kalmamış. Yalnızca görsel doğrulama eksik; grafik ekranları
-   light modda test edilmedi.
-5. **Varsayılan mod hâlâ `ThemeMode.dark`.** `system` yapmak ürün kararı —
-   marka "dark-first" olduğu için değiştirilmedi.
+   `surface2`; elle verilen kalmamış. **2026-10-08:** grafiklerin asıl
+   açık tema hatası crosshair hapındaydı — `ZoomableChart` hapı iki modda
+   da sabit koyu zemindi (`0xFF0A1E15`), ayrıntı satırlarının renkleri ise
+   temadan geliyordu: açık temada koyu `loss` 2,2:1, koyu `gold` 1,09:1.
+   Hap artık açık temada `surface2` + kart gölgesi; seri renkleri metin
+   olarak `okunurUstunde(zemin)` ile okunur tona kaydırılır (karşılaştırma
+   grafiğinin amber/turkuaz serileri beyaz üstünde 2:1 idi). Test:
+   `acik_tema_ekran_kontrast_test` (karşılaştırma + fiyat grafiği, iki tema).
+5. ~~**Varsayılan mod hâlâ `ThemeMode.dark`.**~~ **KAPANDI:** varsayılan
+   artık `ThemeMode.system` (`ThemeModeNotifier`). Açık temalı telefonlar
+   aşağıdaki ekranları ilk açılışta görüyor — 2026-10-08 denetiminin sebebi.
 
 **Doğrulama notu:** emülatör Flutter'ı render edemiyor (bkz. yukarıdaki
 emülatör maddesi). Light mode gerçek cihazda **kısmen** doğrulandı —
 kullanıcı 2026-08-09'da Profil ve Ana Sayfa ekran görüntüsü gönderdi ve
 iki hata çıktı (aşağıda). Diğer ekranlar (grafik, yarış, auth, mevduat)
-**hâlâ gözle görülmedi**.
+gözle görülmedi; **2026-10-08'de makineyle denetlendi** (aşağıdaki tur).
+Gerçek cihazda göz hâlâ gerekli: denetim gradyan zeminli metni (yarış
+kahraman kartı, giriş ekranı arka planı) ve `Stack` kardeşi olarak çizilen
+zemini ölçemez; ikon dışı grafikler (çizgi, çubuk) kapsam dışı.
+
+### Üçüncü tur — makine denetimi: metin ↔ gerçek zemin (2026-10-08)
+
+`test/helpers/kontrast_denetimi.dart` pompalanmış ağaçtaki her metnin
+rengini, element atalarındaki ilk opak zemine (yarı saydam katmanlar
+harmanlanarak) karşı ölçer: AA 4,5:1, büyük metin ve ikon 3:1. Palet
+testinin göremediği sınıfı yakalar — doğru token, yanlış zemin. İki
+dosya, iki tema: `acik_tema_ekran_kontrast_test` (yasal belge ×2, giriş,
+kayıt, kod, şifre sıfırlama, karşılaştırma + fiyat grafiği hapı) ve
+`acik_tema_ozellik_kontrast_test` (Sıralama ×3, yarış kürsü/düello, zirve
+cetveli, mevduat/BES kartı, vade şeridi, Varlık Ekle'nin 9 tür formu).
+
+| Bulgu | Tema | Kök sebep | Düzeltme |
+|---|---|---|---|
+| Grafik crosshair hapı ayrıntıları okunmuyor | açık | Sabit koyu hap + temadan gelen koyu `gain/loss/gold` (1,09–2,3:1) | Hap temaya bağlı; seri rengi `okunurUstunde` |
+| TextButton / OutlinedButton yazısı ("Şimdi değil") | açık | Tema `foregroundColor: amberFill` — dolgu tonu, beyazda 1,94:1 | `amberText` (koyu temada aynı renk); Cupertino `primaryColor` de |
+| Amber düğmede beyaz yazı ("Ekle", "Doğrula", "Yenile", "Bu ayın katkısını ekle", paywall, halka arz, filtre, toplu ekle) | **koyu** | `context.t.*` stili `text90` taşır ve `FilledButton.foregroundColor`'ı ezer (1,87:1) | Metne açıkça `onAmber`; pasif hâlde eski ton |
+| Varlık Ekle seçili tür çipi ikonu, seçici rozet/✓ | açık | Ham kategori rengi kendi %16-18 dolgusu üstünde (1,3–2,6:1) | `onSurface(context)` / `Color.metinTonu(context)` |
+| Mevduat vade şeridi ikonu ve faiz tutarı | açık | Ham çelik mavisi ikon 2,2:1; %8 tint `gain`'i 4,49'a indiriyor | İkon `onSurface`; açıkta tint %5 |
+
+Bilinçli istisna: boş formda pasif "Kayıt Ol" (koyu temada 2,25:1) —
+WCAG 1.4.3 pasif bileşeni kapsam dışı tutar; testte gerekçesiyle hariç.
+Yasal belge, auth (giriş/kayıt/şifre), Sıralama, yarış, zirve cetveli ve
+BES kartı açık temada temiz çıktı.
+
+**Açık kalan:** Sıralama/Zirve'nin SUNUCU verisiyle dolu hâli (katılımcı
+listesi, kahraman kart) ve Performans/varlık sayfası grafik kabukları
+testte boş/verisiz kuruluyor; hapın kendisi ortak bileşen olduğu için
+kapsandı, kabuk metinleri gerçek cihazda bakılmalı.
 
 ### Ekran görüntüsünden çıkan düzeltmeler (2026-08-09)
 

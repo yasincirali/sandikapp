@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../demo/demo_modu.dart';
 import '../utils/friendly_error.dart' show baglantiHatasiMi;
 import 'crash_reporter.dart';
+import 'remote_config_service.dart';
 
 /// Kayıt hunisinin istemci adımları — sunucudaki `huni_olaylari_adim_chk`
 /// ile BİREBİR (migration 0097; `huni_kaydi_test` iki listeyi karşılaştırır).
@@ -88,6 +89,13 @@ class HuniKaydi {
 
   @visibleForTesting
   DateTime Function() saat = DateTime.now;
+
+  /// Remote Config `kayit_hunisi` (varsayılan KAPALI). Kapalıyken adımlar
+  /// yalnız cihazdaki kuyruğa yazılır; ağa çıkılmaz. Testte değiştirilir.
+  @visibleForTesting
+  bool Function() gonderimAcik = _rcBayragi;
+
+  static bool _rcBayragi() => RemoteConfigService.instance.kayitHunisi;
 
   Future<void>? _hazir;
   Future<void>? _akan;
@@ -187,6 +195,7 @@ class HuniKaydi {
 
   Future<void> _bosalt() async {
     if (!_aktif || _kurulumId == null) return;
+    if (!gonderimAcik()) return;
     final SharedPreferences prefs;
     try {
       prefs = await SharedPreferences.getInstance();
@@ -283,6 +292,7 @@ class HuniKaydi {
     _hataBildirildi = false;
     gonderici = _rpc;
     saat = DateTime.now;
+    gonderimAcik = () => true;
   }
 
   @visibleForTesting

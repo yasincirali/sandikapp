@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
@@ -185,6 +186,64 @@ void main() {
         ['GRAM ALTIN', '', '4.250,00'],
       ]);
     });
+
+    // Banka varlık ekstresi düzeni (2026-10-03): aynı sayfada farklı sütun
+    // düzenli iki tablo + iki satıra taşan fon adı. Belge geneli bantlar
+    // zincirleme örtüşüp her şeyi 2 sütuna çökertiyordu; taşan ad kopuk
+    // satır kalıp kısalıyordu (bu belgelerde fonun tek kimliği adı).
+    test('sayfadaki iki tablo ayrı bantlanır, taşan hücre birleşir', () {
+      final k = [
+        ...satir(700, [('Hesap', 20), ('Bakiye', 120)]),
+        ...satir(688, [('4230-1', 20), ('9.500,00', 120)]),
+        ...satir(620, [('Fon Ismi', 20), ('Pay', 130), ('Fiyat', 180), ('Bakiye', 240)]),
+        ...satir(608, [('IS PORTFOY YARI', 20), ('1.647', 130), ('16,98', 180), ('27.976,21', 240)]),
+        ...satir(596, [('ILETKEN FON', 20)]),
+        ...satir(584, [('YAPI KREDI', 20), ('29', 130), ('1.735,03', 180), ('50.315,80', 240)]),
+      ];
+      expect(sayfadanTablolar(k), [
+        [
+          ['Hesap', 'Bakiye'],
+          ['4230-1', '9.500,00'],
+        ],
+        [
+          ['Fon Ismi', 'Pay', 'Fiyat', 'Bakiye'],
+          ['IS PORTFOY YARI ILETKEN FON', '1.647', '16,98', '27.976,21'],
+          ['YAPI KREDI', '29', '1.735,03', '50.315,80'],
+        ],
+      ]);
+    });
+
+    // Yukarıdaki testler her karaktere AYNI kutuyu verir; gerçek PDFium
+    // (`FPDFText_GetCharBox`) glifin sıkı kutusunu verir — virgül 2,2 pt
+    // ve aşağıda, nokta 1 pt. iOS'ta "okuyor ama yanlış" (2026-10-02):
+    // "4.250,00" → "4 .250 ,00". Fikstür: fpdf2 + Arial ile üretilmiş
+    // ekstre, pypdfium2 ile pdfrx'in yaptığı aynı çağrılarla dökülmüş.
+    test('gerçek PDFium sıkı glif kutuları: noktalama sayıyı bölmez', () {
+      final ham = jsonDecode(File('test/fixtures/ekstre_pdf_kutulari.json')
+          .readAsStringSync()) as List;
+      final k = [
+        for (final e in ham.cast<List<Object?>>())
+          PdfKarakter(e[0] as String, (e[1] as num).toDouble(),
+              (e[2] as num).toDouble(), (e[3] as num).toDouble(),
+              (e[4] as num).toDouble()),
+      ];
+      final s = sayfadanSatirlar(k);
+      expect(s.first.first, 'Portföy Dökümü — 01.10.2026');
+      expect(s.sublist(1, 7), [
+        ['Menkul', 'Adet', 'Ort. Maliyet', 'Son Fiyat', 'Piyasa Değeri', 'K/Z %'],
+        ['THYAO', '100', '312,40', '298,75', '29.875,00', '-4,37'],
+        ['ASELS', '1.250', '45,20', '61,05', '76.312,50', '35,07'],
+        ['GRAM ALTIN', '12,5', '2.850,00', '4.250,00', '53.125,00', '49,12'],
+        ['TCD (Tacirler Fon)', '3.400', '1,234567', '1,456789', '4.953,08', '18,00'],
+        ['Yapı Kredi Bankası', '-', '-', '12,34', '-', '-'],
+      ]);
+      final r = uc([EkstreTablosu(kaynak: 'PDF', satirlar: s)]);
+      expect(r.rows.take(3).map((x) => (x.ticker, x.quantity, x.price)), [
+        ('THYAO.IS', 100.0, 312.40),
+        ('ASELS.IS', 1250.0, 45.20),
+        ('ALTIN_GRAM', 12.5, 2850.0),
+      ]);
+    });
   });
 
   group('güven ve hata', () {
@@ -210,9 +269,9 @@ void main() {
     test('sembol tanınmayan tablo elle eşleme adayı olarak döner (güven 0, metin boş)', () async {
       const metin = 'Ay;Gelir;Gider\nOcak;1000;800\nŞubat;1200;900\n';
       final s = await ekstreyiOku(Uint8List.fromList(utf8.encode(metin)));
-      expect(s.ana.guven, 0);
-      expect(s.ana.eminDegil, isTrue);
-      expect(s.ana.roller.containsKey(EkstreRol.sembol), isFalse);
+      expect(s.ana!.guven, 0);
+      expect(s.ana!.eminDegil, isTrue);
+      expect(s.ana!.roller.containsKey(EkstreRol.sembol), isFalse);
       expect(s.kanonikMetin(), isEmpty);
       // Kullanıcı sütunları gösterince normal yoldan okunur.
       final d = s.anaDuzeltildi({EkstreRol.sembol: 0, EkstreRol.adet: 1});

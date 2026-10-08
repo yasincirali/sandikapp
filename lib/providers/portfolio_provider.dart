@@ -20,12 +20,32 @@ import '../services/crash_reporter.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
 import '../services/portfolio_cache.dart';
+import '../services/remote_config_service.dart';
 import '../services/tazelik_ritmi.dart';
 
 const _uuid = Uuid();
 
 /// Free tier varlık limiti aşıldığında `addAsset` bunu fırlatır. UI yakalayıp
 /// paywall gösterir + `premium_gate_shown` event log'lar.
+/// Ücretsiz varlık kotasının saydığı anahtarlar: kullanıcının KENDİ ve BUGÜN
+/// tuttuğu pozisyonlar (tür|sembol|para birimi). Saf, test edilir.
+///
+/// ## Neden (yasin, 2026-10-08: "aktif 5 varlığı olan eleman 6.'yı
+/// ekleyemiyor")
+/// Kota ham deftere bakıyordu (`isBuy && isActive`): tamamen satılmış
+/// pozisyonun alım satırı defterde durduğu için kapanmış varlıklar da
+/// sayılıyordu; durum ayrıca ortağın lot'larını taşıdığı için (Birlikte
+/// görünümü) ortağın varlıkları da kullanıcının kotasına yazılıyordu. Kota
+/// "bugün kaç varlığın var" sorusudur → `aktifLotlar` + sahibi kendisi.
+@visibleForTesting
+Set<String> kotaAnahtarlari(Iterable<Asset> lotlar, String userId) => {
+      for (final a in aktifLotlar(lotlar.where((a) => a.userId == userId)))
+        if (a.isBuy) kotaAnahtari(a.type, a.ticker, a.currency),
+    };
+
+String kotaAnahtari(AssetType type, String ticker, String currency) =>
+    '${type.name}|$ticker|$currency';
+
 class AssetLimitExceededException implements Exception {
   final int currentCount;
   final int limit;
@@ -248,7 +268,8 @@ class PortfolioState {
   /// Değerlendirme (2026-09) §5.5: satış fiyatı `sell_price`'ta saklanıyor,
   /// satış satırı alım maliyetini (`purchasePrice`, ağırlıklı ortalama) ve
   /// alım kurunu taşıyor — ama hiçbir ekran "sattıklarımdan ne kazandım"
-  /// demiyordu. Hesap: Σ (satış fiyatı − maliyet) × miktar × alım kuru.
+  /// demiyordu. Hesap: Σ satış fiyatı × miktar × satış kuru − maliyet ×
+  /// miktar × alım kuru (satış kuru: `Asset.satisKuru`, 0111).
   /// `sell_price` olmayan eski satış satırları atlanır — uydurmak yerine
   /// eksik bırakılır.
   /// **Komisyon (denetim, 2026-09-22):** satış komisyonu buradan DÜŞER.
@@ -262,8 +283,12 @@ class PortfolioState {
     double t = 0;
     for (final a in activeAssets) {
       if (!a.isSell || a.sellPrice == null) continue;
-      t += (a.sellPrice! - a.purchasePrice) * a.quantity * a.purchaseFxRate;
-      t -= a.commission * a.purchaseFxRate;
+      // Ele geçen satış kuruyla, maliyet alım kuruyla (0111, 2026-10-05):
+      // fark dövizli varlığın kur kazancını da taşır. `sellFxRate` yoksa
+      // `satisKuru == purchaseFxRate` ve formül eskisiyle birebir aynı.
+      t += a.sellPrice! * a.quantity * a.satisKuru -
+          a.purchasePrice * a.quantity * a.purchaseFxRate;
+      t -= a.commission * a.satisKuru;
     }
     return t;
   }
@@ -286,6 +311,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final List<Asset> assets;
     try {
       assets = await SupabaseService.instance.fetchByUser(user.id);
+      _sonDefterOkuma = DateTime.now();
       // Başarılı çekim → son bilinen defteri diske yaz (PortfolioCache).
       CrashReporter.arkaPlan(PortfolioCache.write(user.id, assets), reason: 'portfolio_provider.PortfolioCache.write');
     } catch (e, st) {
@@ -403,15 +429,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // yeni "varlık" sayılmasın (kullanıcı zaten sahip olduğuna ekliyor).
     final limit = ref.read(assetLimitProvider);
     if (limit < (1 << 30)) {
-      final existingKeys = <String>{};
-      for (final a in currentState.assets) {
-        // Silinmiş varlık kotayı işgal etmemeli — kullanıcı sildiği halde
-        // limite takılırdı.
-        if (a.isBuy && a.isActive) {
-          existingKeys.add('${a.type.name}|${a.ticker}|${a.currency}');
-        }
-      }
-      final newKey = '${type.name}|$ticker|$currency';
+      // Silinmiş, tamamen satılmış ve ortağa ait lot kotayı işgal etmez
+      // (gerekçe [kotaAnahtarlari]).
+      final existingKeys = kotaAnahtarlari(currentState.assets, user.id);
+      final newKey = kotaAnahtari(type, ticker, currency);
       if (!existingKeys.contains(newKey) && existingKeys.length >= limit) {
         unawaited(AnalyticsService.instance
             .logPremiumGateShown(feature: 'asset_limit'));
@@ -437,6 +458,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       purchaseFxRate: fxRate,
       kind: AssetKind.buy,
       addedDate: addedDate,
+      // Giriş anı YERELDE de (sunucu `created_at`'i tetikleyiciyle basar,
+      // istemciye dönmez; `toSupabase` yazmaz). Yoksa geriye tarihli kayıt
+      // yeniden yüklemeye kadar ana sayfa akışında eski tarihine düşer
+      // (`sonGirilenler`).
+      createdAt: DateTime.now(),
       currentPrice: initialCurrentPrice,
       commission: commission,
       // Sözleşmeli pozisyona (mevduat/BES) hızlı alım: lot sözleşmesine
@@ -495,12 +521,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final currentState = state.valueOrNull ?? const PortfolioState();
     final limit = ref.read(assetLimitProvider);
     if (limit < (1 << 30)) {
-      final mevcut = <String>{
-        for (final a in currentState.assets)
-          if (a.isBuy && a.isActive) '${a.type.name}|${a.ticker}|${a.currency}',
-      };
+      final userId = ref.read(authProvider).valueOrNull?.id ?? lots.first.userId;
+      final mevcut = kotaAnahtarlari(currentState.assets, userId);
       final yeni = {
-        for (final a in lots) '${a.type.name}|${a.ticker}|${a.currency}',
+        for (final a in lots) kotaAnahtari(a.type, a.ticker, a.currency),
       }.difference(mevcut);
       if (yeni.isNotEmpty && mevcut.length + yeni.length > limit) {
         unawaited(AnalyticsService.instance
@@ -534,6 +558,20 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
 
+    // Satış GÜNÜNÜN kuru (0111, bayrak `satis_gunu_kuru`, KAPALI doğar).
+    // Alımdaki `_alisKuru` ile aynı kural: bugünkü satışta canlı kur,
+    // geriye tarihli satışta o günün kapanışı. Bilinmiyorsa (1.0 yer
+    // tutucu) YAZILMAZ — uydurma kurla satış tutarını bozmak yerine eski
+    // davranışa (alım kuru) düşülür. Bayrak kapalıyken alan hiç yazılmaz
+    // ve gövde birebir eski (0111 sunucuya ulaşmadan da güvenli).
+    double? satisKuru;
+    if (RemoteConfigService.instance.satisGunuKuru &&
+        FxRateMigrationService.fxSembolu(asset.currency) != null) {
+      final s = state.valueOrNull ?? const PortfolioState();
+      final k = await _alisKuru(asset.currency, addedDate, s);
+      if (k > 1.0) satisKuru = k;
+    }
+
     final transaction = Asset(
       id: _uuid.v4(),
       userId: user.id,
@@ -554,8 +592,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       currentPrice: asset.currentPrice,
       lastUpdated: asset.lastUpdated,
       kind: AssetKind.sell,
+      createdAt: DateTime.now(), // bkz. addAsset
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       sellPrice: sellPrice,
+      sellFxRate: satisKuru,
       addedDate: addedDate,
       // Mevduat/BES satışı da sözleşmesine bağlı kalır (net bakiye ve
       // katkı hesapları lotları sözleşmeden toplar).
@@ -610,6 +650,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       purchaseFxRate: fxRate,
       currentPrice: asset.currentPrice,
       kind: AssetKind.dividend,
+      createdAt: DateTime.now(), // bkz. addAsset
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       addedDate: paidAt,
       dividendAmount: amount,
@@ -945,14 +986,128 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// "eski defterle kur" ile "tur bitince kur" arasında buna göre seçer.
   bool get fiyatTuruSuruyor => _surenTur != null;
 
+  /// Defterin sunucudan son okunduğu an (build ya da [_defteriTazele]).
+  DateTime? _sonDefterOkuma;
+
+  /// Nabız turlarında defter en fazla bu sıklıkla yeniden okunur — tek
+  /// SELECT, 30 sn'lik nabzın dörtte biri.
+  static const _defterOmru = Duration(minutes: 2);
+
+  bool _defterBayat() {
+    final son = _sonDefterOkuma;
+    return son == null || DateTime.now().difference(son) >= _defterOmru;
+  }
+
+  /// Defteri sunucudan yeniden okur ve bellekteki canlı fiyatlarla birleştirir.
+  ///
+  /// ## Neden (kullanıcı bildirimi, 2026-10-03)
+  /// "Bir cihazda varlık ekleyince diğerinde kill edip açana kadar
+  /// varlıklar gözükmedi." Defter yalnızca `build()`'de okunuyordu; fiyat
+  /// turları (pull-to-refresh, açılış, 30 sn nabız, öne dönüş) yalnızca
+  /// BELLEKTEKİ listenin fiyatını tazeliyordu. Başka cihazda (ya da
+  /// sunucuda: BES otomatik katkı, sözleşme lotları) eklenen/silinen lot
+  /// süreç ölene kadar görünmüyordu — pull-to-refresh bile göstermiyordu.
+  ///
+  /// Yerel yazımla YARIŞMAZ: okuma sürerken bu cihazda ekleme/silme olduysa
+  /// (`assets` listesi değişti) sunucu yanıtı o yazımdan habersiz olabilir;
+  /// uygulanmaz, bir sonraki tur yeniden okur. Hata yutulur — defter
+  /// tazelenemedi diye fiyat turu düşmesin.
+  Future<PortfolioState> _defteriTazele(PortfolioState s) async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    if (uid == null || (s.ownerId.isNotEmpty && s.ownerId != uid)) return s;
+    final onceki = s.assets;
+    try {
+      final sunucu = await SupabaseService.instance.fetchByUser(uid);
+      _sonDefterOkuma = DateTime.now();
+      final simdiki = state.valueOrNull;
+      if (simdiki == null || !identical(simdiki.assets, onceki)) {
+        return simdiki ?? s;
+      }
+      if (ayniDefter(onceki, sunucu)) return simdiki;
+      final birlesik = defteriBirlestir(sunucu, onceki);
+      final yeni = simdiki.copyWith(assets: birlesik);
+      state = AsyncData(yeni);
+      // Defter değişti: gün içi seri eski deftere aitti (bkz.
+      // [_gunIciSeriyiDusur]); çevrimdışı önbellek de yeni deftere geçsin.
+      _gunIciSeriyiDusur();
+      CrashReporter.arkaPlan(PortfolioCache.write(uid, birlesik),
+          reason: 'portfolio_provider._defteriTazele.PortfolioCache.write');
+      return yeni;
+    } catch (e, st) {
+      if (!baglantiHatasiMi(e)) {
+        CrashReporter.report(e, st, reason: 'PortfolioNotifier._defteriTazele');
+      }
+      return state.valueOrNull ?? s;
+    }
+  }
+
+  /// İki defter aynı lotları aynı defter alanlarıyla mı taşıyor? Fiyat
+  /// alanlarına bakılmaz — onlar turun kendi işi.
+  @visibleForTesting
+  static bool ayniDefter(List<Asset> a, List<Asset> b) {
+    if (a.length != b.length) return false;
+    final byId = {for (final x in a) x.id: x};
+    for (final y in b) {
+      final x = byId[y.id];
+      if (x == null ||
+          x.quantity != y.quantity ||
+          x.purchasePrice != y.purchasePrice ||
+          x.isActive != y.isActive ||
+          x.kind != y.kind ||
+          x.notes != y.notes ||
+          x.addedDate != y.addedDate ||
+          x.isManualPrice != y.isManualPrice ||
+          (x.isManualPrice && x.currentPrice != y.currentPrice)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Sunucu defteri esastır (sıra, miktar, maliyet, silinmişlik); bellekteki
+  /// canlı fiyat sunucudakinden YENİYSE korunur — yoksa her okuma ekrandaki
+  /// fiyatı 5 dk'lık sunucu yazımına geri çekerdi. Elle fiyatlı lotta
+  /// sunucu esastır (başka cihazda elle girilmiş olabilir).
+  @visibleForTesting
+  static List<Asset> defteriBirlestir(List<Asset> sunucu, List<Asset> bellek) {
+    final byId = {for (final x in bellek) x.id: x};
+    for (final y in sunucu) {
+      final x = byId[y.id];
+      if (x == null || y.isManualPrice) continue;
+      final xZaman = x.lastUpdated;
+      final yZaman = y.lastUpdated;
+      if (xZaman != null && (yZaman == null || xZaman.isAfter(yZaman))) {
+        y.currentPrice = x.currentPrice;
+        y.lastUpdated = xZaman;
+      }
+    }
+    return sunucu;
+  }
+
   Future<void> _fiyatTuru({required bool force, required bool nabiz}) async {
     // Build henüz bitmediyse (ya da user null → boş state) — bekle. Aksi
     // halde eski/boş `s.assets`'i alıp await'ten sonra güncel state'in
     // üzerine sıfır yazma race'i oluşur (bkz. varlıkların bir görünüp
     // kaybolma bug'ı).
-    final built = await future;
+    //
+    // Build HATAYLA bittiyse (ör. `fetchByUser` 504, önbellek yok) `future`
+    // o hatayı yeniden fırlatır. Çağıranların bir kısmı bunu beklemiyor:
+    // `RefreshIndicator` `onRefresh` sonucunu bırakır, hata zone handler'ına
+    // düşüp ÇÖKME sayılıyordu (Crashlytics 2026-10-06). Tazelenecek fiyat
+    // zaten yok; hata ekranda build'in kendi AsyncError'ıyla görünüyor.
+    final PortfolioState built;
+    try {
+      built = await future;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'PortfolioNotifier._fiyatTuru.build');
+      return;
+    }
     // future'dan sonra en güncel state artık valid.
-    final s = state.valueOrNull ?? built;
+    var s = state.valueOrNull ?? built;
+    // Defter sunucudan yeniden okunur (bkz. [_defteriTazele]) — boşluk
+    // kontrolünden ÖNCE: başka yerden eklenen İLK varlık boş defterli
+    // cihazda da görünsün.
+    if (!nabiz || _defterBayat()) s = await _defteriTazele(s);
     // Sadece kendi varlıkları boşsa refresh yapılacak bir şey yok.
     if (s.assets.isEmpty) return;
     state = AsyncData(s.copyWith(isLoading: true, clearError: true));
@@ -1020,6 +1175,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
 
       // Kendi varlıklarını güncelle
       final fiyatiDegisenler = <Asset>[];
+      final alisKilitlenen = <String>{};
       final updated = baseAssets.map((asset) {
         // **Silinmiş lot'a YAZMA — dirilirdi (kullanıcı bildirimi,
         // 2026-09-16).** `updateAsset` gövdenin tamamını yazıyor ve
@@ -1038,6 +1194,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
             // Alım fiyatı girilmemişse güncel fiyatı maliyet olarak kilitle
             if (asset.purchasePrice == 0) {
               asset.purchasePrice = price;
+              alisKilitlenen.add(asset.id);
             }
             fiyatiDegisenler.add(asset);
           }
@@ -1061,7 +1218,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
               TazelikRitmi.gunIciSeriOmru;
       if (sunucuyaYaz) {
         _sonSunucuYazimi = DateTime.now();
-        _fiyatlariYaz(fiyatiDegisenler);
+        _fiyatlariYaz(fiyatiDegisenler, alisKilitlenen);
       }
 
       // Ortak varlıkları sadece okunur (RLS) — fiyatları bellekte güncelliyoruz
@@ -1156,7 +1313,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   ///
   /// Eşzamanlılık bilerek korundu: yazmalar eskiden de paralel gidiyordu,
   /// sıraya dizmek 50 lotluk portföyde yenilemeyi dakikaya çıkarırdı.
-  void _fiyatlariYaz(List<Asset> assets) {
+  ///
+  /// Yalnız fiyat sütunları yazılır (`fiyatYaz`, 2026-10-03): tüm satırı
+  /// yazmak bayat bellekteki miktar/maliyeti sunucudakinin üstüne
+  /// geri yazabiliyordu.
+  void _fiyatlariYaz(List<Asset> assets, Set<String> alisKilitlenen) {
     if (assets.isEmpty) return;
     Object? ilkHata;
     StackTrace? ilkStack;
@@ -1164,7 +1325,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     CrashReporter.arkaPlan(
       Future.wait(assets.map((asset) async {
         try {
-          await SupabaseService.instance.updateAsset(asset);
+          await SupabaseService.instance.fiyatYaz(asset,
+              alisFiyatiDa: alisKilitlenen.contains(asset.id));
         } catch (e, st) {
           basarisiz++;
           ilkHata ??= e;

@@ -909,6 +909,15 @@ class IntradaySeriesCache {
     return sonuc;
   }
 
+  /// Kümenin önbellekteki breakdown'ı — ağa ÇIKMAZ.
+  ///
+  /// Bugün kartının "en çok oynayan"ı (2026-10-04) seriyle AYNI nesneden
+  /// okunur: kart seriyi [breakdown] ile zaten çekti; ikinci çekim hem
+  /// boşa ağ turu hem de iki farklı anın verisi olurdu ("gün içi tek
+  /// seri" kuralı).
+  PortfolioHistoryBreakdown? onbellekte(List<Asset> assets) =>
+      _yuvalar[anahtar(assets)]?.breakdown;
+
   /// Oturum kapanışında ve defter değişince çağrılır — bir sonraki
   /// kullanıcı öncekinin grafiğini görmemeli, alım/satım sonrası eski
   /// gün başıyla hesap yapılmamalı.
@@ -919,20 +928,28 @@ class IntradaySeriesCache {
 
   /// Ben yuvasını elle doldurur — sahip/gün kurallarının testi için.
   /// Boş defterin anahtarı `''`: testler `PortfolioState()` ile çağırır.
+  ///
+  /// [kume] verilirse yuva o kümenin anahtarına yazılır — dolu defterle
+  /// `get` çağıran test tohumu ancak böyle bulur (anahtar boş değildir).
+  /// Verilmezse eski davranış: anahtar `''`.
   @visibleForTesting
   void seedForTest({
     required Map<int, double> series,
     required DateTime fetchedAt,
     String ownerId = '',
     DateTime? seansGunu,
+    List<Asset>? kume,
+    Map<String, Map<int, double>> byPosition = const {},
+    Map<String, AssetType> positionType = const {},
   }) {
-    _benAnahtari = '';
-    _yuvalar[''] = _GunIciYuva()
+    final k = kume == null ? '' : anahtar(kume);
+    _benAnahtari = k;
+    _yuvalar[k] = _GunIciYuva()
       ..breakdown = PortfolioHistoryBreakdown(
         total: series,
         byType: const {},
-        byPosition: const {},
-        positionType: const {},
+        byPosition: byPosition,
+        positionType: positionType,
         seansGunu: seansGunu,
       )
       ..fetchedAt = fetchedAt

@@ -10,6 +10,7 @@ import '../config/pref_keys.dart';
 
 import 'notification_service.dart';
 import 'push_message_router.dart';
+import 'remote_config_service.dart';
 import 'supabase_service.dart';
 import 'crash_reporter.dart';
 
@@ -104,7 +105,15 @@ class RemotePushService {
     _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((token) async {
       final userId = _activeUserId;
       if (userId == null) return;
-      await _syncToken(userId, token);
+      // Dinleyici geri çağrısının future'ını kimse beklemez (`listen`'in
+      // onError'ı async gövdeyi kapsamaz): `claim_push_token` 504 verirse
+      // hata zone handler'ına düşüp ÇÖKME sayılırdı (2026-10-06). Token bir
+      // sonraki açılışta `start` içinde yeniden eşitlenir.
+      try {
+        await _syncToken(userId, token);
+      } catch (e, st) {
+        CrashReporter.report(e, st, reason: 'RemotePushService.onTokenRefresh');
+      }
     });
 
     _foregroundSubscription =
@@ -170,12 +179,32 @@ class RemotePushService {
 
     _activeUserId = userId;
 
-    final settings = await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    // İzin GİRİŞTE sorulmaz (2026-10-04, sadeleştirme madde 2): eskiden her
+    // oturum açılışında `requestPermission` çağrılıyordu; bu, ilk varlıktan
+    // sonra bağlamıyla sorma akışını (`push_prompt_after_first_asset`)
+    // fiilen boşa çıkarıyordu — sistem diyaloğu kullanıcı hiçbir değer
+    // görmeden çıkıyordu. Artık izin yoksa token yazılmadan dönülür; izin
+    // ilk varlıktan sonra verilince [izinSonrasiYenidenBaslat] bu akışı
+    // yeniden çalıştırır. Bayrak kapatılırsa eski davranış birebir döner.
+    final mevcut = await _messaging.getNotificationSettings();
+    final izinVar =
+        mevcut.authorizationStatus == AuthorizationStatus.authorized ||
+            mevcut.authorizationStatus == AuthorizationStatus.provisional;
+    if (!izinVar && RemoteConfigService.instance.pushPromptAfterFirstAsset) {
+      try {
+        await FirebaseCrashlytics.instance.log(
+            'push_permission=${mevcut.authorizationStatus.name} → ertelendi');
+      } catch (_) {}
+      return;
+    }
+    final settings = izinVar
+        ? mevcut
+        : await _messaging.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+            provisional: false,
+          );
 
     // Debug: TestFlight'ta gerçekten hangi iznin verildiğini Crashlytics
     // log'una yaz. Firebase Console → Crashlytics → cihazın loglarında
@@ -253,6 +282,18 @@ class RemotePushService {
     await _syncToken(userId, token);
   }
 
+  /// Bildirim izni sonradan (ilk varlıktan sonra) verildiğinde token
+  /// kaydını yeniden dener. Oturum yoksa ya da push kullanılamıyorsa no-op.
+  Future<void> izinSonrasiYenidenBaslat() async {
+    final uid = _activeUserId;
+    if (uid == null) return;
+    try {
+      await start(uid);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'remote_push_izin_sonrasi');
+    }
+  }
+
   Future<void> stop() async {
     final token = _currentToken;
     _activeUserId = null;
@@ -305,6 +346,22 @@ class RemotePushService {
     await prefs.setString(_deviceIdKey, id);
     return id;
   }
+
+  /// Cihazın push kimliği — YOKSA ÜRETMEZ. `oturum_al` (0098) bu kimlik
+  /// dışındaki push satırlarını düşürür; kimlik henüz yoksa temizlik bir
+  /// sonraki açılışa kalır (yanlışlıkla kendi satırını silmesin diye).
+  Future<String?> mevcutCihazKimligi() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final id = prefs.getString(_deviceIdKey);
+      return (id == null || id.isEmpty) ? null : id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Bu süreçte sunucuya yazılmış son token (yoksa null).
+  String? get mevcutToken => _currentToken;
 
   Future<void> _syncToken(String userId, String token) async {
     if (eskiTokenSilinmeli(_currentToken, token)) {

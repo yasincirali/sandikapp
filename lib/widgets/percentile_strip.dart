@@ -11,6 +11,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
+import '../utils/tr_iyelik.dart';
 
 /// Ana ekranda anonim yüzdelik dilim şeridi.
 ///
@@ -122,13 +123,12 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
       padding: widget.padding,
       child: Semantics(
         label: context.l10n.percentileSemantics(ustundeOlduklari, altSatir),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.c.text20.withValues(alpha: 0.25)),
-          ),
+        // `SandikCard` (2. tur, 2026-10-08). Köşe 12 → `SandikRadius.md`
+        // (14), kenar `text20 %25` → saç teli: şerit Profil'deki komşu
+        // kartlarla aynı kabuğu taşısın, tek başına farklı köşe olmasın.
+        child: SandikCard(
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md2, vertical: 11),
           child: Row(
             children: [
               Icon(
@@ -154,7 +154,8 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
                         children: [
                           TextSpan(text: context.l10n.last30DaysLike),
                           TextSpan(
-                            text: "yatırımcıların %$ustundeOlduklari'inden",
+                            text: "yatırımcıların %$ustundeOlduklari'"
+                                "${trSayiAyrilmaEki(ustundeOlduklari)}",
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color:

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -9,21 +10,18 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
-import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../theme/sandik.dart';
 import '../widgets/kripto_gecikme_etiketi.dart';
 import '../widgets/sandik_app_bar.dart';
-import '../widgets/delete_asset_dialog.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/dot_thinning.dart';
 import '../utils/islem_isaretleri.dart';
 import '../utils/spot_lookup.dart';
-import '../widgets/modern_tab_selector.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart';
 import '../models/technical_signal.dart';
@@ -36,6 +34,8 @@ import '../widgets/transaction_segment.dart';
 import 'signal_settings_screen.dart';
 import '../models/signal_alert.dart';
 import '../providers/signal_provider.dart';
+import '../providers/sinyal_varligi_provider.dart';
+import '../utils/friendly_error.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
 import '../services/tazelik_ritmi.dart';
@@ -43,7 +43,6 @@ import '../widgets/custom_loading_indicator.dart';
 import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
-import '../widgets/gorunum_cipi.dart';
 import '../models/varlik_kimligi.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
@@ -51,22 +50,48 @@ import '../widgets/donem_istatistik.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/varlik_iskeleti.dart';
+import '../widgets/varlik_ozeti.dart';
 import '../widgets/grafik_stili.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/para_akisi_karti.dart';
+import '../widgets/sandik_async_button.dart';
+import '../widgets/hacim_radari_karti.dart';
+import '../widgets/sandik_acilir.dart';
+import '../providers/fon_karnesi_provider.dart'
+    show fonKarnesiAcikProvider, fonKarnesiProvider;
+import '../providers/fon_akisi_provider.dart'
+    show
+        balinaRadariAcikProvider,
+        fonAkisiProvider,
+        hisseHacmiProvider,
+        kriptoBaskiProvider;
+import '../providers/analiz_provider.dart'
+    show notAnahtari, varlikNotOzetiProvider;
+import '../services/fon_karnesi.dart' show fonKoduOf;
+import '../services/radar_okuma.dart' show kriptoOkunusu;
+import '../services/remote_config_service.dart';
+import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
+import '../widgets/masraf_karti.dart';
+import '../widgets/eurobond_karti.dart';
+import '../services/varlik_masraflari.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
+import '../providers/secili_donem_provider.dart';
 import '../services/sozlesme_deposu.dart';
+import '../widgets/pozisyon_islemleri.dart';
+import 'comparison_screen.dart';
 
 part 'asset_detail/eylemler.dart';
 part 'asset_detail/sinyal_widgetlari.dart';
 part 'asset_detail/seritler.dart';
 part 'asset_detail/karsilastirma_secici.dart';
 part 'asset_detail/ozet.dart';
+part 'asset_detail/katmanlar.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -103,6 +128,10 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
   /// sessizce YOK SAYILIR ve varsayılan seçilir — bkz. `_gunIciDestekli`.
   final int? initialPeriodDays;
 
+  /// Portföy satırından gelen başlık uçuşunun etiketi (yol haritası 2.14,
+  /// bayrak `varlik_hero_gecisi`). Satır verir; ekran kendisi uydurmaz.
+  final Object? heroEtiketi;
+
   const AssetDetailScreen({
     super.key,
     required this.asset,
@@ -110,6 +139,7 @@ class AssetDetailScreen extends ConsumerStatefulWidget {
     this.lots,
     this.initialScrollOffset = 0,
     this.initialPeriodDays,
+    this.heroEtiketi,
   });
 
   @override
@@ -131,7 +161,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// serisi geldi (ya da `acilisSiniri` doldu). Bir kez `true` olur; dönem
   /// değişimi ve nabız tazelemesi ekranı yeniden iskelete DÖNDÜRMEZ.
   bool _acildi = false;
-  String? _view = ''; // '' = Ben (Default), null = Tümü, uuid = Ortak
   late Future<Map<int, double>> _historyFuture;
   late ScrollController _scrollController;
   // Compare mode: seçili karşılaştırma varlığı (kullanıcının portföyünden).
@@ -173,6 +202,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
   List<({String label, int days})> get _periods =>
       _gunIciDestekli ? _allPeriods : _allPeriods.sublist(1);
+
+  /// [_periods]'un [SummaryPeriod] karşılığı — aynı süzgeç, aynı sıra.
+  /// Ortak dönem (`donem_hafizasi`) ham indeksle değil dönem DEĞERİYLE
+  /// eşlenir: GÜNLÜK'süz listede indeksler bir kayıktır.
+  List<SummaryPeriod> get _donemler => [
+        for (final p in SummaryPeriod.values)
+          if (!p.intraday || _gunIciDestekli) p,
+      ];
+
+  /// Ortak dönemin bu ekrandaki indeksi; yoksa en yakın dönemin.
+  int _ortakDonemIdx(SummaryPeriod d) =>
+      _donemler.indexOf(gosterilebilirDonem(d, _donemler));
 
   /// Alttaki teknik gösterge panelinin konumu.
   ///
@@ -232,6 +273,25 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     if (istenen != null) {
       final idx = _periods.indexWhere((p) => p.days == istenen);
       if (idx >= 0) _selectedPeriodIdx = idx;
+    }
+    // `donem_hafizasi` (Sadeleştirme 2): HAFTALIK varsayılanı yerine
+    // uygulamanın ortak dönemi. Çağıranın isteği (bildirim → GÜNLÜK) yine
+    // önce gelir ve ortak döneme yazılır. Ortak dönem burada yoksa (elle
+    // fiyatlanan varlıkta GÜNLÜK) en yakını gösterilir, ortak değer kalır.
+    if (donemHafizasiAcik) {
+      final istekIdx = istenen == null
+          ? -1
+          : _periods.indexWhere((p) => p.days == istenen);
+      if (istekIdx >= 0) {
+        // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
+        Future.microtask(() {
+          if (mounted) {
+            ref.read(seciliDonemProvider.notifier).state = _donemler[istekIdx];
+          }
+        });
+      } else {
+        _selectedPeriodIdx = _ortakDonemIdx(ref.read(seciliDonemProvider));
+      }
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
@@ -390,7 +450,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   /// `userId` ile, çünkü iki sahibin aynı ürünü aynı pozisyon anahtarını
   /// taşır. Pozisyon artık yoksa (hepsi satıldı/silindi) açılış görünümü
   /// kalır; uydurma yok. Kaynak listeler değişmedikçe yeniden kurulmaz.
-  ({Asset asset, List<Asset> lots}) get _canli {
+  ({Asset asset, List<Asset> lots, bool acik}) get _canli {
     final pState = ref.read(portfolioProvider).valueOrNull;
     final ortaklar = ref.read(allPartnerAssetsProvider).valueOrNull;
     final kendi = pState?.assets;
@@ -408,16 +468,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
           if (a.userId == sahip) a,
     ];
     final p = _positionOf(sahipLotlari);
+    // `acik`: sahibin bu üründe BUGÜN açık pozisyonu var mı
+    // (`aggregatePositions` kapanmışı döndürmez, CLAUDE.md "Kapanmış
+    // pozisyon"). İşlem çubuğu buna bakar — Portföy listesi de yalnız açık
+    // pozisyonu satır yapar, kaydırma yalnız orada vardır.
     final sonuc = p == null
-        ? (asset: widget.asset, lots: widget.lots ?? [widget.asset])
-        : (asset: p.asDisplayAsset(), lots: p.lots);
+        ? (asset: widget.asset, lots: widget.lots ?? [widget.asset], acik: false)
+        : (asset: p.asDisplayAsset(), lots: p.lots, acik: true);
     _canliKendi = kendi;
     _canliOrtaklar = ortaklar;
     _canliOnbellek = sonuc;
     return sonuc;
   }
 
-  ({Asset asset, List<Asset> lots})? _canliOnbellek;
+  ({Asset asset, List<Asset> lots, bool acik})? _canliOnbellek;
   List<Asset>? _canliKendi;
   Map<String, List<Asset>>? _canliOrtaklar;
 
@@ -542,24 +606,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     return null;
   }
 
-  double get _currentQuantity {
-    if (_view == '') return _canli.asset.quantity;
-
-    final allAssetsMap = ref.read(allPartnerAssetsProvider).valueOrNull ?? {};
-
-    if (_view != null) {
-      return _positionOf(allAssetsMap[_view] ?? [])?.totalQuantity ?? 0;
-    }
-
-    // Tümü
-    double total = _canli.asset.quantity;
-    final activePartners = ref.read(activePartnersProvider);
-    for (final p in activePartners) {
-      total += _positionOf(allAssetsMap[p.id] ?? [])?.totalQuantity ?? 0;
-    }
-    return total;
-  }
-
   /// `setState` sarmalayıcısı — part dosyalarındaki extension'lar için.
   ///
   /// Ekran 3.800 satırdı; sinyal widget'ları, şeritler, karşılaştırma seçici
@@ -576,6 +622,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // açıksa bu DEĞER tutarları maskelenir (`gosterimBazParaProvider`,
     // bulgu #3); fiyat bakiye değildir, açık kalır.
     final baz = ref.watch(gosterimBazParaProvider);
+    // `donem_hafizasi`: ortak dönem başka yüzeyde (üstte açılan Karşılaştır
+    // ya da varlık sayfası) değişirse bu ekran da geçer.
+    if (donemHafizasiAcik) {
+      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+        final idx = _ortakDonemIdx(yeni);
+        if (idx != _selectedPeriodIdx) _selectPeriod(idx);
+      });
+    }
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;
@@ -604,15 +658,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
     // Logic moved inside FutureBuilder
 
-    final activePartners = ref.watch(activePartnersProvider);
-    final allPartnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
+    // Ortak lot'ları değişince ekran yeniden kurulsun: ortağın varlığı
+    // açıksa `_canli` onları `ref.read` ile okur, tetikleyici bu izlemedir.
+    //
+    // Ölü kod temizliği (Sadeleştirme 2, madde 11, 2026-10-04): burada bir
+    // de "Ben / ortak / Tümü" sekmesi (`OrtakSecici`, `_view`) ve üst
+    // çubukta "Sil" menüsü vardı; ikisi de `!showBackButton` koşuluyla
+    // çiziliyordu ama ekranı açan HER yol (Ana, Portföy, `pozisyonuAc`,
+    // bildirim) `showBackButton: true` verir — hiç görünmüyorlardı. Silme
+    // Portföy kartının kaydırmasında; ortak görünümü Portföy'ün kendi
+    // seçicisinde.
+    ref.watch(allPartnerAssetsProvider);
     final pState = ref.watch(portfolioProvider).valueOrNull;
-    // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
-    // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
-    ref.listen(activePartnersProvider, (_, next) {
-      final v = GorunumCipi.gecerli(next, _view);
-      if (v != _view) setState(() => _view = v);
-    });
     // Mevduat dönemi eklenince seri yeniden üretilir (bkz.
     // `_sozlesmeSerileriniTazele`). Varlık sayfa ömrü boyunca değişmez,
     // dinleyici koşulu sabittir.
@@ -628,6 +685,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final isOwnAsset = currentUserId != null && widget.asset.userId == currentUserId;
     final pnl = _pnlOzeti(pState);
+    // Katmanlı düzen (S4, `varlik_detay_katmanli`): grafiğin altı
+    // `asset_detail/katmanlar.dart`'ta. Kapalıyken aşağıdaki eski yığın
+    // birebir.
+    final katmanli = RemoteConfigService.instance.varlikDetayKatmanli;
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -662,31 +723,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice),
               ),
             ),
-          if (isOwnAsset && !widget.showBackButton)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: context.c.text90),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md)),
-              onSelected: (v) {
-                if (v == 'delete') _confirmDelete(context);
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline_rounded,
-                          color: context.c.danger, size: 20),
-                      const SizedBox(width: 10),
-                      Text('Sil',
-                          style: TextStyle(color: context.c.danger)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
         ],
       ),
+      bottomNavigationBar: _islemCubugu(isOwnAsset),
       body: SafeArea(
         child: RefreshIndicator.adaptive(
       color: context.c.amberText,
@@ -698,35 +737,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
             padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 24),
             child: Column(
               children: [
-                if (!widget.showBackButton)
-                  allPartnerAssetsAsync.maybeWhen(
-                    data: (allAssetsMap) {
-                      // Sekme yalnızca bu ürüne SAHİP ortaklar için çıkar.
-                      // Eşleşme `ticker` ile değil `positionKey` ile yapılır:
-                      // altın türleri (Gram/Çeyrek/Reşat) `subCategory` ile
-                      // ayrışır ve ticker eşleşmesi farklı türleri aynı sayardı.
-                      final matchingPartners = <AppUser>[
-                        for (final p in activePartners)
-                          if (_positionOf(allAssetsMap[p.id] ?? []) != null) p,
-                      ];
-
-                      if (matchingPartners.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-
-                      return Column(
-                        children: [
-                          ModernTabSelector(
-                            partners: matchingPartners,
-                            selectedId: _view,
-                            onChanged: (v) => setState(() => _view = v),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      );
-                    },
-                    orElse: () => const SizedBox.shrink(),
-                  ),
                 // Başlık + güncel fiyat + pozisyon satırı (A tasarımı).
                 Align(alignment: Alignment.centerLeft, child: _baslik()),
                 const SizedBox(height: SandikSpace.md),
@@ -758,11 +768,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 // Sinyal kartı ve aşağıdaki gösterge paneli Başlangıç
                 // seviyesinde GİZLİ (`seviyeGorunurlugu`): AL/SAT göstergesi
                 // yorumlanmadan okunduğunda yanıltıcıdır. Varsayılan Orta.
-                if (_sinyalYuzeyleri)
+                // Katmanlı düzende kart "Analiz" bölümüne, gösterge
+                // panelinin yanına taşınır (`_analizKatmanlari`).
+                if (_sinyalYuzeyleri && !katmanli)
                   AssetSignalCard(
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
                   ),
+                if (_sinyalYuzeyleri)
+                  SinyalVarlikSeridi(asset: widget.asset),
                 // Kurulu alarmlar (boşken hiç çizilmez; alt boşluğunu kendi
                 // taşır — bkz. AlarmSeridi).
                 if (_alarmSembolu != null)
@@ -845,7 +859,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // aktifken log ignore edilir.
                     final compareOn = _compareAsset != null;
                     final logOnPref = ref.watch(chartLogScaleProvider);
-                    final logOn = compareOn ? false : logOnPref;
+                    // Araçlar gizliyse (sade Başlangıç) önceden açılmış
+                    // MA20/LOG kapatılamaz hâlde kalmasın: etkisiz sayılır.
+                    final araclar =
+                        ref.watch(seviyeGorunurlukProvider).grafikAraclari;
+                    final logOn = compareOn || !araclar ? false : logOnPref;
 
                     final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
@@ -921,7 +939,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     // MA20 overlay: aktif segmentin fiyat serisi üzerinden
                     // hesaplanır. İlk 19 nokta NaN olur (yetersiz veri) →
                     // atlanır. Kullanıcı chip ile açıp kapatır.
-                    final ma20On = ref.watch(chartMA20Provider);
+                    final ma20On = araclar && ref.watch(chartMA20Provider);
                     List<FlSpot>? ma20Spots;
                     if (ma20On && activeSeg.spots.length >= 20) {
                       // MA20 her zaman ham fiyat serisinden hesaplanır;
@@ -1053,6 +1071,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         _donemCipleri(pnl.currentUnitTRY),
                         const SizedBox(height: SandikSpace.sm),
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
+                        // Sade Başlangıç'ta (`seviye_anketi`) gizli.
+                        if (araclar)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -1146,7 +1166,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // verisi değil" hissini korur.
                             return AnimatedOpacity(
                               opacity: isStale ? 0.35 : 1.0,
-                              duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+                              duration: SandikMotion.stateOf(context),
                               curve: SandikMotion.enter,
                               child: Container(
                           // Kart Performans'la AYNI (ortak grafik stili).
@@ -1612,6 +1632,31 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   },
                 ),
                 const SizedBox(height: SandikSpace.lg),
+                if (katmanli)
+                  ..._katmanliGovde(
+                    baz: baz,
+                    pnl: pnl,
+                    isOwnAsset: isOwnAsset,
+                    pState: pState,
+                    // Eski kartın satırları, kabuksuz — "Ayrıntı"da açılır.
+                    // Argümanlar aşağıdaki eski kartla aynı.
+                    ayrinti: _PozisyonKarti(
+                      kabuksuz: true,
+                      baz: baz,
+                      pnl: pnl,
+                      miktarMetni: widget.asset.miktarMetni(
+                          _canli.asset.quantity,
+                          (v, d) => fmtNum(v, digits: d)),
+                      birimEtiketi: widget.asset.unitLabel,
+                      birimBicim: _birimBicimi(pnl.currentUnitTRY),
+                      birimGizli: widget.asset.type == AssetType.mevduat,
+                      donemEtiketi: donemEtiketi(
+                          context.l10n, _periods[_selectedPeriodIdx].label),
+                      donem: _donemDegisimi(period.days, startDate, endDate,
+                          pnl.currentUnitTRY),
+                    ),
+                  )
+                else ...[
                 // ── Pozisyon ── (A tasarımı): grafiğin altında, tek kart.
                 //
                 // 2026-09-28 (kullanıcı): "kaçtan aldığım, toplam kâr/zarar
@@ -1628,9 +1673,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   baz: baz,
                   pnl: pnl,
                   miktarMetni: widget.asset.miktarMetni(
-                      _currentQuantity, (v, d) => fmtNum(v, digits: d)),
+                      _canli.asset.quantity, (v, d) => fmtNum(v, digits: d)),
                   birimEtiketi: widget.asset.unitLabel,
-                  birimBicim: _birimBicim,
+                  birimBicim: _birimBicimi(pnl.currentUnitTRY),
                   birimGizli: widget.asset.type == AssetType.mevduat,
                   donemEtiketi: donemEtiketi(
                       context.l10n, _periods[_selectedPeriodIdx].label),
@@ -1639,11 +1684,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   donem: _donemDegisimi(period.days, startDate, endDate,
                       pnl.currentUnitTRY),
                 ),
+                _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
+                _paraAkisi(),
+                _hacimRadari(),
+                _kriptoBaski(),
+                _analizNotu(),
                 if (isOwnAsset) _sozlesmeKarti(),
                 if (isOwnAsset && pState != null) _temettuKarti(pState),
+                if (isOwnAsset &&
+                    pState != null &&
+                    RemoteConfigService.instance.varlikMasraflari)
+                  _masrafKarti(pState),
                 _kapBaglantisi(),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),
@@ -1656,6 +1710,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
                 ],
+                ], // eski yığın (katmanlı değil)
                 ],
               ],
             ),

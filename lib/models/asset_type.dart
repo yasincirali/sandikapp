@@ -24,6 +24,11 @@ enum AssetType {
   // Fiyatlama: [fiyatlamaTuru].
   mevduat('Mevduat', Icons.account_balance_rounded, Sandik.mevduat, 'TRY'),
   bes('BES', Icons.savings_rounded, Sandik.bes, 'TRY'),
+  // Eurobond (2026-10-08, `eurobond` bayrağı). Çivit — fon mavisinden ve
+  // diğer menekşesinden ayrık. Varsayılan USD: Hazine eurobondlarının
+  // çoğu dolar; miktar NOMİNALDİR, fiyat nominalin yüzdesi/100 (bkz.
+  // `lib/models/eurobond.dart`). Sıra `diger`in ÖNÜNDE (kripto notu).
+  eurobond('Eurobond', Icons.receipt_long_rounded, Color(0xFF6C7FD8), 'USD'),
   diger('Diğer', Icons.more_horiz_rounded, Color(0xFF8D7BE0), 'TRY');      // Soft violet — nötr, ayrık
 
   const AssetType(
@@ -50,14 +55,11 @@ enum AssetType {
       context.isLight ? onLightSurface : color;
 
   /// [onSurface]'in light dalı — test edilebilsin diye `BuildContext`'siz.
-  Color get onLightSurface {
-    // 0,28: amber/gold gibi sıcak, parlak tonların light zeminde 4,5:1'e
-    // ulaştığı en yüksek açıklık (0,32'de altın 4,03:1 kalıyordu).
-    final hsl = HSLColor.fromColor(color);
-    return hsl
-        .withLightness(hsl.lightness > 0.28 ? 0.28 : hsl.lightness)
-        .toColor();
-  }
+  // 0,28: amber/gold gibi sıcak, parlak tonların light zeminde 4,5:1'e
+  // ulaştığı en yüksek açıklık (0,32'de altın 4,03:1 kalıyordu). Hesap
+  // `SandikOkunurRenk.acikZemindeMetin`'de — Varlık Ekle seçicileri aynı
+  // kuralı türü bilmeden (yalnız `Color`) uyguluyor.
+  Color get onLightSurface => color.acikZemindeMetin;
 
   /// Ekranda görünen tür adı — dile göre (3.20).
   ///
@@ -74,6 +76,7 @@ enum AssetType {
         AssetType.kripto => l.assetTypeCrypto,
         AssetType.mevduat => l.assetTypeDeposit,
         AssetType.bes => l.assetTypePension,
+        AssetType.eurobond => l.assetTypeEurobond,
         AssetType.diger => l.assetTypeOther,
       };
 
@@ -87,6 +90,7 @@ enum AssetType {
         AssetType.kripto => l.tickerHintCrypto,
         AssetType.mevduat => l.tickerHintDeposit,
         AssetType.bes => l.tickerHintPension,
+        AssetType.eurobond => l.tickerHintEurobond,
         AssetType.diger => l.tickerHintOther,
       };
 
@@ -130,6 +134,9 @@ enum AssetType {
     // sorusunun birikim ayağı; kripto/emtia/diğer daha seyrek seçilir.
     mevduat,
     bes,
+    // Eurobond (2026-10-08): döviz birikiminin sabit getirili ayağı;
+    // `eurobond` bayrağı kapalıyken ekleme sayfası bunu süzer.
+    eurobond,
     kripto,
     emtia,
     diger,
@@ -288,6 +295,23 @@ String kotasyonSembolu(String ticker, String currency) {
   }
   return _currencySymbols[currency.trim().toUpperCase()] ?? '₺';
 }
+
+/// SEMBOL SERİSİNDEN okunan fiyatın simgesi — her zaman ₺.
+///
+/// ## Neden ayrı (seri denetimi, 2026-10-08)
+/// Takip listesi satırı ve varlık sayfası fiyatı canlı kotasyondan değil
+/// `HistoryService.getSymbolHistory` serisinin SON noktasından okur (aynı
+/// sayı grafiğin ucudur — fiyat kaynağı sözleşmesi madde 2). O seri HER
+/// sembolde TL'dir: TRY kote olanlar olduğu gibi, kalanlar (ABD hissesi,
+/// eurobond, emtia, ons) o günün USD/TRY kuruyla çevrilir. Simge ise
+/// [kotasyonSembolu] ile varlığın kotasyon para biriminden seçiliyordu:
+/// AAPL satırı TL sayıyı "$" ile yazıyordu (kodu okuyarak bulundu: 255
+/// dolarlık hisse TL karşılığıyla "$10.506,00" gibi). ABD hissesi ve eurobond takibe açılınca bu her USD
+/// satırında görünürdü. Sayı ile simge aynı kaynaktan: seri TL ise ₺.
+///
+/// [kotasyonSembolu] CANLI kotasyon gösteren yerde (arama satırı,
+/// `aramaFiyatMetni`) doğru kalır — orada sayı kotasyonun kendi birimidir.
+const String sembolSerisiSimgesi = '₺';
 
 /// BIST endeksi mi (`XU100.IS`, `XU030.IS`, `XUSIN.IS`)?
 ///

@@ -53,7 +53,7 @@ class WidgetInstallSheet extends StatelessWidget {
     if (!context.mounted) return;
 
     unawaited(AnalyticsService.instance.logScreenView(screenName: 'widget_install_sheet'));
-    await showModalBottomSheet<void>(
+    await showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

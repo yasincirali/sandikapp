@@ -9,6 +9,8 @@ import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/premium_provider.dart';
+import '../widgets/premium_abonelik_satiri.dart';
 import 'paywall_screen.dart';
 import '../widgets/sandik_error_view.dart';
 import '../theme/sandik.dart';
@@ -27,6 +29,7 @@ import '../widgets/leaderboard_hero_card.dart';
 import '../widgets/percentile_strip.dart';
 import '../models/yatirimci_seviyesi.dart' show seviyeGorunurlugu;
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
 
@@ -84,9 +87,14 @@ Future<void> _showPartnerMsg(
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _codeCtrl = TextEditingController();
   String? _generatedCode;
-  bool _generating = false;
+
+  /// Gönderim sürüyor mu. Tek yükleniyor davranışı (2026-10-08) düğmenin
+  /// kendi kilidini [SandikAsyncButton]'a verdi; bu bayrak KALIR çünkü klavyenin
+  /// "Bitti" tuşu (`onSubmitted`) düğmeyi atlayarak aynı isteği gönderir —
+  /// iki yol birbirini görsün, düğme klavyeyle başlayan gönderimde de sönük
+  /// kalsın. Eskiden bunu tam ekran `_busy` perdesi de yapıyordu; perde
+  /// kalktı (tek düğmelik istekte bütün ekranı kilitlemek gereksizdi).
   bool _submitting = false;
-  bool _busy = false;
 
   /// Rate limit bitiş anı ve saniyede bir tetiklenen geri sayım.
   /// Kalan süre yalnızca hata diyaloğunda gösterilirse kullanıcı
@@ -127,6 +135,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _showMsg(String msg, {bool isError = false}) =>
       _showPartnerMsg(context, msg, isError: isError);
 
+  /// Davet kartlarındaki hafif dolgulu düğmenin stili (%10 zemin, pasif/meşgul
+  /// %5). Eskiden `CupertinoButton` + elle `Container` idi; tek yükleniyor
+  /// davranışı için [SandikAsyncButton]'a taşınırken görünüş birebir korundu.
+  ButtonStyle _hafifDolguStili(Color renk) => FilledButton.styleFrom(
+        backgroundColor: renk.withValues(alpha: 0.1),
+        disabledBackgroundColor: renk.withValues(alpha: 0.05),
+        foregroundColor: renk,
+        disabledForegroundColor: renk,
+        elevation: 0,
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+      );
+
   /// Ortak davetini sistem paylaşım sayfasına verir.
   ///
   /// Eskiden bu çağrı düğmenin `onPressed`'inde çıplaktı: dikdörtgen YOK,
@@ -165,10 +186,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _generateCode() async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
-    setState(() {
-      _generating = true;
-      _busy = true;
-    });
+    // Kilit ve gösterge düğmede ([SandikAsyncButton]); eski `_generating` /
+    // `_busy` bayrakları ve "Kod üretiliyor..." perdesi kalktı (2026-10-08).
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     // Sözlük await'lerden ÖNCE çözülür: `context` async boşluğun ardında
     // kullanılamaz (`use_build_context_synchronously`).
     final kopyalandi = context.l10n.codeCopied;
@@ -183,13 +203,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await _showMsg(kopyalandi);
     } catch (e) {
       await _showMsg(friendlyError(e), isError: true);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _generating = false;
-          _busy = false;
-        });
-      }
     }
   }
 
@@ -198,11 +211,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // programatik doldurma (yapıştırma, otomatik doldurma, test) gibi
     // formatter'ı atlayan yolları da kapsar.
     final code = PartnerCodeInputFormatter.format(_codeCtrl.text);
-    if (code.isEmpty) return;
-    setState(() {
-      _submitting = true;
-      _busy = true;
-    });
+    if (code.isEmpty || _submitting) return;
+    if (ortakSiniriPaywalliActi(context, ref)) return;
+    setState(() => _submitting = true);
     try {
       final result = await ref.read(partnersProvider.notifier).submitCode(code);
       // Ekran kapandıysa denetleyici de dispose edildi: `clear()` ve
@@ -236,12 +247,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       await _showMsg(friendlyError(e), isError: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          _submitting = false;
-          _busy = false;
-        });
-      }
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -292,8 +298,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _poll = BackoffPoller(
       check: () async {
         if (!mounted) return true;
-        final status =
-            await SupabaseService.instance.getInviteStatus(inviteId);
+        // `check` zamanlayıcıdan sahipsiz çağrılır: hata zone handler'ına
+        // düşüp ÇÖKME sayılırdı (bkz. `PartnersNotifier._tick`). Tur düşerse
+        // yoklama sürer, bir sonraki aralıkta yeniden sorulur.
+        final String? status;
+        try {
+          status = await SupabaseService.instance.getInviteStatus(inviteId);
+        } catch (e, st) {
+          CrashReporter.report(e, st, reason: 'ProfileScreen.inviteStatusPoll');
+          return false;
+        }
         if (status == 'accepted') {
           await ref.read(partnersProvider.notifier).refresh();
           CrashReporter.arkaPlan(
@@ -338,7 +352,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (!confirm) return;
 
     _poll?.cancel();
-    setState(() => _busy = true);
+    // Gösterge "İptal" düğmesinde ([SandikAsyncTap] bu Future'ı bekler).
     try {
       await ref.read(partnersProvider.notifier).rejectInvite(inviteId);
       if (mounted) {
@@ -353,8 +367,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _startPolling(inviteId);
         await _showMsg(friendlyError(e), isError: true);
       }
-    } finally {
-      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -365,11 +377,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = ref.watch(authProvider).valueOrNull;
     final partnersAsync = ref.watch(partnersProvider);
 
-    return PopScope(
-      canPop: !_busy,
-      child: Stack(
-      children: [
-        CupertinoPageScaffold(
+    // Tam ekran `_busy` perdesi (ModalBarrier + "İşleniyor..." kutusu),
+    // `PopScope` ve gövdeyi kilitleyen `AbsorbPointer` 2026-10-08'de kalktı:
+    // hepsi TEK düğmenin isteği için bütün ekranı donduruyordu. Artık her
+    // istek kendi düğmesinde döner ([SandikAsyncButton]/[SandikAsyncTap],
+    // tek yükleniyor davranışı); diğer düğmeler ve geri hareketi serbest.
+    return CupertinoPageScaffold(
           backgroundColor: context.c.background,
           child: SafeArea(
             child: Column(
@@ -392,17 +405,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               ?.copyWith(color: context.c.text90),
                         ),
                       ),
-                      const _ThemeToggleButton(),
-                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
-                      const SizedBox(width: SandikSpace.sm),
+                      // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
+                      // kaldırıldı — tema YALNIZ Ayarlar'daki üçlü seçicide.
+                      // Aynı tercih iki yerde duruyordu ve "sistem" yalnız
+                      // Ayarlar'dan seçilebildiği için ikisi farklı şey
+                      // anlatıyordu.
                       TourAnchor(
                         target: TourTarget.ayarlar,
                         child: CupertinoButton(
                         minimumSize: SandikTouch.minSize,
                         padding: EdgeInsets.zero,
-                        onPressed: _busy
-                            ? null
-                            : () => pushGuarded(
+                        onPressed: () => pushGuarded(
                                   context,
                                   adaptiveRoute<void>(
                                     builder: (_) => const SettingsScreen(),
@@ -411,23 +424,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: _ActionIcon(
                           icon: Icons.settings_outlined,
                           color: context.c.text90,
-                          disabled: _busy,
                           semanticLabel: context.l10n.settingsTitle,
                         ),
                         ),
                       ),
+                      // Düğme aralığı her ekranda `SandikSpace.sm` (2026-09-28).
                       const SizedBox(width: SandikSpace.sm),
-                      SandikLogoutButton(
-                        onPressed: _logout,
-                        disabled: _busy,
-                      ),
+                      SandikLogoutButton(onPressed: _logout),
                     ],
                   ),
                 ),
                 // Body
                 Expanded(
-                  child: AbsorbPointer(
-                    absorbing: _busy,
                     child: RefreshIndicator.adaptive(
       color: context.c.amberText,
       onRefresh: () async {
@@ -502,57 +510,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ],
                     ),
     ),
-                  ),
                 ),
               ],
             ),
           ),
-        ),
-        if (_busy) ...[
-          const ModalBarrier(
-              dismissible: false, color: Color(0xCC000000)),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 24, vertical: 20),
-              decoration: BoxDecoration(
-                color: context.c.surface1,
-                borderRadius: BorderRadius.circular(SandikRadius.md),
-                border: Border.all(
-                    color: context.c.overlay),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CustomLoadingIndicator(size: 22),
-                  const SizedBox(width: 16),
-                  Text(
-                    _submitting
-                        ? 'Ortaklık isteği gönderiliyor...'
-                        : _generating
-                            ? 'Kod üretiliyor...'
-                            : 'İşleniyor...',
-                    style: context.t.titleMedium?.copyWith(
-                        color: context.c.text90),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ],
-      ),
-    );
+        );
   }
 
   Widget _buildUserHeader(AppUser user) {
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: context.c.hairline),
-      ),
+      radius: SandikRadius.lg,
       child: Row(
         children: [
           CircleAvatar(
@@ -596,10 +564,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         // Kod üretme
         TourAnchor(
           target: TourTarget.davetKodu,
-          child: Container(
+          child: SandikCard(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          bordered: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -649,23 +616,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
               ],
-              CupertinoButton(
-                onPressed: _generating ? null : _generateCode,
-                padding: EdgeInsets.zero,
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: _generating
-                        ? context.c.amberFill.withValues(alpha: 0.05)
-                        : context.c.amberFill.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    _generating ? context.l10n.generatingEllipsis : context.l10n.generateCode,
-                    style: context.t.titleMedium?.copyWith(
-                        color: context.c.amberText, fontWeight: FontWeight.w600),
-                  ),
+              // Tek yükleniyor davranışı (2026-10-08): kilit + gösterge
+              // [SandikAsyncButton]'da; "Üretiliyor..." metni ve tam ekran
+              // perde yerine etiketin üstünde küçük gösterge döner. Görünüş
+              // eski kutunun aynısı (46 yükseklik, %10 amber zemin, meşgulken
+              // %5) — `style` ile taşındı.
+              SandikAsyncButton(
+                onPressed: _generateCode,
+                height: 46,
+                style: _hafifDolguStili(context.c.amberFill),
+                child: Text(
+                  context.l10n.generateCode,
+                  style: context.t.titleMedium?.copyWith(
+                      color: context.c.amberText, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -674,10 +637,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 16),
         // Kod girme
-        Container(
+        SandikCard(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          bordered: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -746,32 +708,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ],
                 const SizedBox(height: 16),
-                CupertinoButton(
+                // Tek yükleniyor davranışı (2026-10-08): düğmeden başlayan
+                // gönderimde gösterge etiketin üstünde döner. Klavyeden
+                // (`onSubmitted`) başlayan gönderimde düğme `_submitting` ile
+                // sönük + "Gönderiliyor..." metni — o yolda düğmenin kendi
+                // kilidi devrede değil.
+                SandikAsyncButton(
                   onPressed: (_submitting || _rateLimitRemaining > 0)
                       ? null
                       : _submitCode,
-                  padding: EdgeInsets.zero,
-                  child: Container(
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: (_submitting || _rateLimitRemaining > 0)
-                          ? context.c.gain.withValues(alpha: 0.05)
-                          : context.c.gain.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(SandikRadius.md),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _submitting
-                          ? context.l10n.sendingEllipsis
-                          : (_rateLimitRemaining > 0
-                              ? context.l10n.waitFor(_rateLimitLabel)
-                              : context.l10n.requestPartnership),
-                      style: context.t.titleMedium?.copyWith(
-                          color: _rateLimitRemaining > 0
-                              ? context.c.text36
-                              : context.c.gain,
-                          fontWeight: FontWeight.w600),
-                    ),
+                  height: 46,
+                  style: _hafifDolguStili(context.c.gain),
+                  child: Text(
+                    _submitting
+                        ? context.l10n.sendingEllipsis
+                        : (_rateLimitRemaining > 0
+                            ? context.l10n.waitFor(_rateLimitLabel)
+                            : context.l10n.requestPartnership),
+                    style: context.t.titleMedium?.copyWith(
+                        color: _rateLimitRemaining > 0
+                            ? context.c.text36
+                            : context.c.gain,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -808,13 +766,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          CupertinoButton(
-            onPressed: _cancelPending,
+          // Onay diyaloğu + iptal isteği tek Future: gösterge istek bitene
+          // kadar düğmede döner, ikinci dokunuş yutulur (2026-10-08).
+          SandikAsyncTap(
+            onTap: _cancelPending,
             // HIG 44pt — 13pt metin sıfır padding'de ~17pt hedef veriyordu.
-            minimumSize: const Size(44, 44),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text(context.l10n.cancelWord,
-                style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text(context.l10n.cancelWord,
+                      style: context.t.bodyMedium
+                          ?.copyWith(color: context.c.text36)),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -822,10 +790,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildEmptyPartners() {
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+      bordered: false,
       child: Column(
         children: [
           Icon(Icons.people_outline_rounded,
@@ -842,11 +809,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildPartnerTile(PartnerAccount p) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+    return Padding(padding: const EdgeInsets.only(bottom: 12), child: SandikCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+      bordered: false,
       child: Row(
         children: [
           CircleAvatar(
@@ -879,57 +844,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
           ),
-          CupertinoButton(
-            minimumSize: SandikTouch.minSize,
-            padding: EdgeInsets.zero,
-            onPressed: _busy
-                ? null
-                : () async {
-                    setState(() => _busy = true);
-                    // Ağ hatası `_busy`'yi sonsuza dek açık bırakıyor (tüm
-                    // ortak eylemleri kilitliyor) ve yakalanmayan hata
-                    // Crashlytics'e çökme olarak düşüyordu (2026-09-23
-                    // denetimi F18 ile aynı tur).
-                    try {
-                      await ref
-                          .read(partnersProvider.notifier)
-                          .toggleHidden(p.user.id, p.isActive);
-                    } catch (e, st) {
-                      CrashReporter.report(e, st,
-                          reason: 'ProfileScreen.toggleHidden');
-                      if (mounted) {
-                        await _showMsg(friendlyError(e), isError: true);
-                      }
-                    } finally {
-                      if (mounted) setState(() => _busy = false);
-                    }
-                  },
+          // Tek yükleniyor davranışı (2026-10-08): her ikon kendi isteğinde
+          // kilitlenir ve göstergeyi kendi kutusunda gösterir. Eski ekran
+          // geneli `_busy` + perde kalktı.
+          SandikAsyncTap(
+            onTap: () async {
+              // Ağ hatası eskiden `_busy`'yi sonsuza dek açık bırakıyor (tüm
+              // ortak eylemleri kilitliyor) ve yakalanmayan hata
+              // Crashlytics'e çökme olarak düşüyordu (2026-09-23
+              // denetimi F18 ile aynı tur). Kilit artık [SandikAsyncTap]'in
+              // `finally`'sinde; hata yine burada yakalanır.
+              try {
+                await ref
+                    .read(partnersProvider.notifier)
+                    .toggleHidden(p.user.id, p.isActive);
+              } catch (e, st) {
+                CrashReporter.report(e, st,
+                    reason: 'ProfileScreen.toggleHidden');
+                if (mounted) {
+                  await _showMsg(friendlyError(e), isError: true);
+                }
+              }
+            },
+            zemin: _ActionIcon.kutu(
+                p.isActive ? context.c.text58 : context.c.gain),
             child: _ActionIcon(
+              kutusuz: true,
               icon: p.isActive
                   ? Icons.visibility_off_rounded
                   : Icons.visibility_rounded,
               color: p.isActive ? context.c.text58 : context.c.gain,
-              disabled: _busy,
               semanticLabel: p.isActive ? 'Ortağı gizle' : 'Ortağı göster',
             ),
           ),
           const SizedBox(width: 8),
-          CupertinoButton(
-            minimumSize: SandikTouch.minSize,
-            padding: EdgeInsets.zero,
-            onPressed: _busy
-                ? null
-                : () => _confirmRemove(p.user.id, p.user.displayName),
+          SandikAsyncTap(
+            onTap: () => _confirmRemove(p.user.id, p.user.displayName),
+            zemin: _ActionIcon.kutu(context.c.loss),
             child: _ActionIcon(
+              kutusuz: true,
               icon: Icons.delete_outline_rounded,
               color: context.c.loss,
-              disabled: _busy,
               semanticLabel: context.l10n.removePartnerSemantics,
             ),
           ),
         ],
       ),
-    );
+    ));
   }
 
   Future<void> _confirmRemove(String partnerId, String name) async {
@@ -941,15 +902,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       destructive: true,
     );
     if (confirm && mounted) {
-      setState(() => _busy = true);
-      // Gizle/göster ile aynı gerekçe: hata `_busy`'yi kilitli bırakmasın.
+      // Gizle/göster ile aynı gerekçe: hata yakalanır, kilit (çağıran
+      // [SandikAsyncTap]) `finally`'de açılır.
       try {
         await ref.read(partnersProvider.notifier).removePartner(partnerId);
       } catch (e, st) {
         CrashReporter.report(e, st, reason: 'ProfileScreen.removePartner');
         if (mounted) await _showMsg(friendlyError(e), isError: true);
-      } finally {
-        if (mounted) setState(() => _busy = false);
       }
     }
   }
@@ -1003,6 +962,7 @@ class _PendingRequestsSectionState
       _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _accept(Map<String, dynamic> invite) async {
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     final kabulEdildi = context.l10n.partnershipAccepted;
     final inviteId = invite['id'] as String;
     try {
@@ -1054,8 +1014,8 @@ class _PendingRequestsSectionState
 
 class _PendingInviteTile extends StatefulWidget {
   final Map<String, dynamic> invite;
-  final VoidCallback onAccept;
-  final VoidCallback onReject;
+  final Future<void> Function() onAccept;
+  final Future<void> Function() onReject;
   const _PendingInviteTile(
       {required this.invite, required this.onAccept, required this.onReject});
 
@@ -1129,27 +1089,35 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
             ),
           ),
           // HIG: dokunma hedefi min 44×44pt. İkon 22pt kalır, tıklanabilir
-          // alan görünmez şekilde 44pt'ye genişletilir.
-          CupertinoButton(
-            minimumSize: const Size(44, 44),
-            padding: EdgeInsets.zero,
-            onPressed: widget.onReject,
-            child: Semantics(
-              button: true,
-              label: context.l10n.rejectRequest,
-              child:
-                  Icon(Icons.close_rounded, color: context.c.loss, size: 22),
+          // alan görünmez şekilde 44pt'ye genişletilir. Kabul/ret istek atar:
+          // tek yükleniyor davranışı (2026-10-08) — [SandikAsyncTap] ikonun
+          // yerinde gösterge döndürür, ikinci dokunuşu yutar.
+          SandikAsyncTap(
+            onTap: widget.onReject,
+            child: SizedBox.square(
+              dimension: 44,
+              child: Semantics(
+                button: true,
+                label: context.l10n.rejectRequest,
+                child: Center(
+                  child: Icon(Icons.close_rounded,
+                      color: context.c.loss, size: 22),
+                ),
+              ),
             ),
           ),
-          CupertinoButton(
-            minimumSize: const Size(44, 44),
-            padding: EdgeInsets.zero,
-            onPressed: widget.onAccept,
-            child: Semantics(
-              button: true,
-              label: context.l10n.acceptRequest,
-              child:
-                  Icon(Icons.check_rounded, color: context.c.gain, size: 22),
+          SandikAsyncTap(
+            onTap: widget.onAccept,
+            child: SizedBox.square(
+              dimension: 44,
+              child: Semantics(
+                button: true,
+                label: context.l10n.acceptRequest,
+                child: Center(
+                  child: Icon(Icons.check_rounded,
+                      color: context.c.gain, size: 22),
+                ),
+              ),
             ),
           ),
         ],
@@ -1162,89 +1130,39 @@ class _PendingInviteTileState extends State<_PendingInviteTile> {
 class _ActionIcon extends StatelessWidget {
   final IconData icon;
   final Color color;
-  final bool disabled;
   final String semanticLabel;
 
+  // `disabled` parametresi 2026-10-08'de kalktı: tek kullanıcısı ekran geneli
+  // `_busy` kilidiydi; artık her ikon kendi isteğinde [SandikAsyncTap] ile
+  // kilitlenip gösterge gösteriyor, sönük çizilecek durum kalmadı.
   const _ActionIcon({
     required this.icon,
     required this.color,
-    required this.disabled,
     required this.semanticLabel,
+    this.kutusuz = false,
   });
+
+  /// `true` → kutu [SandikAsyncTap.zemin]'de çizilir: istek sürerken kutu
+  /// yerinde kalır, yalnız ikon göstergeye yer açar.
+  final bool kutusuz;
+
+  static BoxDecoration kutu(Color renk) => BoxDecoration(
+        color: renk.withValues(alpha: 0.10),
+        borderRadius: SandikRadius.mdAll,
+        border: Border.all(color: renk.withValues(alpha: 0.18)),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = disabled ? color.withValues(alpha: 0.35) : color;
+    final iconColor = color;
     return Semantics(
       button: true,
       label: semanticLabel,
       child: Container(
         width: 44,
         height: 44,
-        decoration: BoxDecoration(
-          color: iconColor.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: iconColor.withValues(alpha: 0.18)),
-        ),
+        decoration: kutusuz ? null : kutu(iconColor),
         child: Center(child: Icon(icon, color: iconColor, size: 20)),
-      ),
-    );
-  }
-}
-
-/// Tema modu hızlı geçişi — Profil başlığında.
-///
-/// **Neden burada:** iOS HIG ve Material 3, görünüm ayarını hesap/ayarlar
-/// bölgesine koyar. Ana sayfa başlığına eklemek düşünüldü ama orada zaten
-/// dört aksiyon var ve satır 17px taşıyordu (bkz. `home_screen` yorumu);
-/// beşincisi yerleşimi kırardı. Profil başlığı hem boş hem de kullanıcının
-/// "kendi tercihlerim" diye aradığı yer.
-///
-/// Ayarlar'daki üçlü seçici (`_ThemeModePicker`) kalır — bu onun kısayolu.
-/// Tek dokunuşla **açık ↔ koyu** arasında gider; "sistem" bilinçli bir
-/// tercih olduğu için yalnızca Ayarlar'dan seçilir. Kullanıcı sistemdeyken
-/// dokunursa, o an ekranda ne görüyorsa onun tersine geçer.
-class _ThemeToggleButton extends ConsumerWidget {
-  const _ThemeToggleButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Tercih değişince yeniden çizilmek için izlenir; kararı `context`
-    // verir çünkü `system` modda ekrandaki gerçek parlaklık cihazdan gelir.
-    ref.watch(themeModeProvider);
-    final showingLight = context.isLight;
-    final next = showingLight ? ThemeMode.dark : ThemeMode.light;
-
-    return SandikTappable(
-      semanticLabel:
-          showingLight ? context.l10n.switchToDark : context.l10n.switchToLight,
-      onTap: () => ref.read(themeModeProvider.notifier).set(next),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: context.c.text90.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.text90.withValues(alpha: 0.18)),
-        ),
-        child: Center(
-          // Gösterilen ikon HEDEFI anlatır: açık temadayken ay ikonu
-          // "koyuya geç" der. Mevcut durumu göstermek daha yaygın bir
-          // hata — kullanıcı ikona bakıp ne olacağını bilmek ister.
-          child: AnimatedSwitcher(
-            duration: SandikMotion.stateOf(context),
-            switchInCurve: SandikMotion.enter,
-            switchOutCurve: SandikMotion.exit,
-            child: Icon(
-              showingLight
-                  ? Icons.dark_mode_rounded
-                  : Icons.light_mode_rounded,
-              key: ValueKey(showingLight),
-              color: context.c.text90,
-              size: 20,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -1260,7 +1178,14 @@ class _ProfilePremiumBanner extends ConsumerWidget {
     // Paywall master switch kapalıysa banner hiç gösterilmez.
     if (!ref.watch(paywallVisibleProvider)) return const SizedBox.shrink();
     final premium = ref.watch(effectivePremiumProvider);
-    if (premium) return const _PremiumActiveBadge();
+    if (premium) {
+      // Sunucu hakkı varsa (abonelik, erken kullanıcı hediyesi) türü ve
+      // bitişiyle tek satır (S14-A); yalnız cihaz anahtarı açıksa eski rozet.
+      final hak = ref.watch(gecerliPremiumHakkiProvider);
+      return hak == null
+          ? const _PremiumActiveBadge()
+          : PremiumAbonelikSatiri(hak: hak);
+    }
     return SandikBasma(
       onTap: () {
         AnalyticsService.instance

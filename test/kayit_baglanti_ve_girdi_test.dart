@@ -204,8 +204,12 @@ void main() {
       expect(find.text(l.registerUsernameMissing), findsWidgets);
       // Şifre boş olsa da kurallar görünür (neyin gerektiği söylenir).
       expect(find.text(l.sifreKuralUzunluk), findsOneWidget);
-      expect(find.text('Devam etmek için yasal koşulları kabul etmelisin.'),
-          findsOneWidget);
+      // Yasal adımlar (2026-10-05): eksik okuma adımları adıyla, adım
+      // kartının altında; kutu son adım, sırası gelince sorar.
+      expect(
+          find.text(l.zorunluOkumaEksik(
+              '${l.yasalBelgeYatirimUyarisi}, ${l.yasalBelgeAcikRiza}')),
+          findsWidgets);
       // Uyarının kendisi (tost/diyalog) kapanana kadar bekle.
       await tester.pump(const Duration(seconds: 5));
     });

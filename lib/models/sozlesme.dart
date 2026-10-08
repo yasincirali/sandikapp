@@ -98,9 +98,9 @@ class Sozlesme {
   final DateTime? kapandi;
 
   /// Kaydın yazıldığı an (`created_at`). BES'te bu **açılış anıdır**:
-  /// kullanıcı o güne kadarki ana parayı ve getiriyi o an girdi. Açılıştan
-  /// önceki geçmiş fon serisinden değil, açılış değerinde DÜZ çizilir
-  /// (bkz. `BesAcilis`). Sunucu doldurur; istemcide yeni yazılan kayıtta
+  /// kullanıcı o güne kadarki ana parayı ve getiriyi o an girdi. Seri
+  /// hesabı bunu OKUMAZ (düz çizgi kuralı 2026-10-04'te kalktı, bkz.
+  /// `SozlesmeNotifier.besAc`). Sunucu doldurur; istemcide yeni yazılan kayıtta
   /// `besAc` aynı anı verir. Eski satırda da dolu (sütun 0088'den beri var).
   final DateTime? olusturuldu;
 

@@ -133,12 +133,15 @@ void main() {
       expect(charts.contains('watchlistCountProvider'), isTrue);
     });
 
-    test('sekme 36pt+ dokunma hedefi sağlar', () {
+    test('sekme 44pt dokunma hedefli ortak segmentle çizilir', () {
+      // 2026-10-08 (yol haritası 2.12): eskiden `minHeight: 36` + dikey
+      // dolguyla elle sağlanıyordu. Kabuk artık [SandikSegment]; 44 pt
+      // hedefi bileşenin sözleşmesi (`test/sandik_segment_test.dart`).
       final i = charts.indexOf('class _BodyTabs');
       expect(i, greaterThan(0));
-      final govde = charts.substring(i, i + 4000);
-      expect(govde.contains('minHeight: 36'), isTrue,
-          reason: 'dikey padding ile birlikte HIG minimumunu aşar');
+      final govde = charts.substring(i, i + 2500);
+      expect(govde.contains('SandikSegment('), isTrue,
+          reason: 'gövde sekmesi ortak segment kontrolünü kullanmalı');
     });
   });
 

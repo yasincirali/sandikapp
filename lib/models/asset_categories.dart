@@ -80,9 +80,20 @@ enum FondSubCategory {
 }
 
 /// Hisse alt kategorileri
+///
+/// **Kayıtta yazılan değer üyeden üyeye farklı (bilinçli):** `bist100` ve
+/// `other` geçmişte `label` olarak yazıldı ('BIST Hisseleri' / 'Diğer
+/// Hisseler'); o satırlar sunucuda öyle duruyor, değiştirilmez. `abd`
+/// (2026-10-08, bayrak `abd_hisse`) ise `name` olarak yazılır: `'abd'`.
+/// Etiket Türkçe görünen metindir ve ileride değişebilir; ABD kimliği
+/// (`Asset.abdHissesi`) değişmeyen bir koda dayanmalı. Eski sürüm bu
+/// değeri tanımaz, ama hisse alt kategorisini yalnız `isBist100`
+/// karşılaştırmasında okur — tanımamak ona "BIST seçili değil" demektir,
+/// tam da doğru davranış.
 enum StockSubCategory {
   bist100('BIST Hisseleri', 'Borsa İstanbul\'da işlem gören hisse senetleri'),
-  other('Diğer Hisseler', 'Listede olmayan hisse senetleri');
+  other('Diğer Hisseler', 'Listede olmayan hisse senetleri'),
+  abd('ABD Hisseleri', 'NYSE ve Nasdaq\'ta işlem gören hisse ve ETF\'ler');
 
   const StockSubCategory(this.label, this.description);
   final String label;
@@ -94,6 +105,18 @@ enum StockSubCategory {
         orElse: () => StockSubCategory.other,
       );
 }
+
+/// Takip/kimlik anahtarına ([varlikAnahtari], `WatchlistItem.key`) girecek
+/// alt kategori.
+///
+/// Anahtar alt kategoriyi sembolden ÖNCE kullanır: altında "Çeyrek Altın"
+/// varlığın kimliğidir. ABD hissesinin `'abd'` alt kategorisi ise bir PAZAR
+/// etiketidir, kimlik değil — anahtara girseydi bütün ABD hisseleri tek
+/// anahtara düşer, ikinci ABD hissesi "zaten takipte" görünürdü. ABD'de
+/// kimlik semboldür (sunucu indeksi de sembolü içerir, 0043). Öteki
+/// değerler aynen döner: bayrak kapalıyken anahtar birebir eski.
+String? anahtarAltKategorisi(String? altKategori) =>
+    altKategori == StockSubCategory.abd.name ? null : altKategori;
 
 /// Banka fonları listesi
 const bankFunds = {

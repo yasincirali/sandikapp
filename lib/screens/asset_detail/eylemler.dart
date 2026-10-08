@@ -1,7 +1,9 @@
 part of '../asset_detail_screen.dart';
 
 /// Ekran eylemleri ve seri hazırlığı: sinyal paneline geçiş, dönem seçimi,
-/// karşılaştırma seçici, silme onayı, segment üretimi, eksen yuvarlama.
+/// karşılaştırma seçici, işlem çubuğu, segment üretimi, eksen yuvarlama.
+/// (Silme onayı 2026-10-04'te kalktı: çağıran menü hiç çizilmiyordu, bkz.
+/// `build`'deki ölü kod notu.)
 /// (Dönem çipleri 2026-09-28'de `ozet.dart`'a taşındı.) `asset_detail_screen.dart`'ın part'ı (2026-09-14): aynı
 /// kütüphane, davranış AYNEN; `setState` yerine `_guncelle`.
 extension _DetayEylemler on _AssetDetailScreenState {
@@ -65,6 +67,15 @@ extension _DetayEylemler on _AssetDetailScreenState {
         reason: 'AssetDetail.sozlesmeTazele');
   }
 
+  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
+  /// eskisi gibi doğrudan [_selectPeriod]'u çağırır). Ortak döneme yazma
+  /// indeks güncellendikten SONRA: `build`'deki dinleyici değişikliği kendi
+  /// seçimimiz olarak tanır, ikinci kez yüklemez.
+  void _ortakDonemSec(int idx) {
+    _selectPeriod(idx);
+    ref.read(seciliDonemProvider.notifier).state = _donemler[idx];
+  }
+
   void _selectPeriod(int idx) {
     // Eski sekme gün içi miydi? Index güncellenmeden ÖNCE okunmalı.
     final oncekiGunIci = _gunIciMi;
@@ -98,6 +109,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
   }
 
   void _openComparePicker() {
+    if (_kiyasEkraninaGit()) return;
     final pState = ref.read(portfolioProvider).valueOrNull;
     // `aktifLotlar`: tamamen satılmış pozisyon karşılaştırma listesinde
     // çıkmamalı — kullanıcı artık tutmadığı bir varlıkla kıyas kuramaz.
@@ -111,7 +123,7 @@ extension _DetayEylemler on _AssetDetailScreenState {
       if (!seen.add(a.ticker)) continue;
       choices.add(a);
     }
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: context.c.surface1,
       isScrollControlled: true,
@@ -138,17 +150,54 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
-  void _confirmDelete(BuildContext ctx) {
-    // Bu ekran aggregate edilmiş bir pozisyonla açılabiliyor; o durumda
-    // `widget.asset` sentetik bir görüntü nesnesidir (`id` = "pos:...") ve
-    // DB'de karşılığı yoktur. Silinecek gerçek kayıtlar `lots`'tur.
-    final lots =
-        (widget.lots ?? [widget.asset]).where((l) => !l.isDeleteLog).toList();
-    confirmAndDeletePosition(ctx, ref, name: widget.asset.name, lots: lots)
-        .then((deleted) {
-      // Varlık gitti — bu ekranın konusu kalmadı; listeye dön.
-      if (deleted && mounted) Navigator.pop(context);
-    });
+  /// Tek kıyas yüzeyi (Sadeleştirme 2 madde 8, 2026-10-04; bayrak
+  /// `tek_kiyas_yuzeyi` 2026-10-05'te kalktı): kıyas Karşılaştır ekranında,
+  /// bu varlık ve ekranın SEÇİLİ dönemi hazır açılır. Varlık orada satır
+  /// olamıyorsa (`ComparisonScreen.varligiAcabilir` — mevduat, BES, elle
+  /// fiyat) `false` döner ve grafik içi seçici açılır.
+  ///
+  /// Varlık `_canli.asset`: ekranın kendi birim serisini kuran AYNI
+  /// pozisyon (`_loadHistory`), iki ekranın çizgisi aynı girdiden çıksın.
+  bool _kiyasEkraninaGit() {
+    final varlik = _canli.asset;
+    if (!ComparisonScreen.varligiAcabilir(varlik)) return false;
+    final gun = _periods[_selectedPeriodIdx].days;
+    final donem = SummaryPeriod.values.where((p) => p.days == gun).firstOrNull;
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) =>
+            ComparisonScreen(baslangicVarligi: varlik, baslangicDonemi: donem),
+      ),
+    );
+    return true;
+  }
+
+  /// Alttaki sabit "Al · Sat · Temettü" çubuğu (Sadeleştirme 2, madde 6,
+  /// 2026-10-04; bayrak `varlik_islem_cubugu` 2026-10-05'te kalktı). Çubuk
+  /// çizilmeyecekse `null` — Scaffold'un alt yuvası boş kalır.
+  ///
+  /// Kurallar Portföy kartının kaydırmasıyla AYNI:
+  ///   · Yalnız KENDİ varlığında (`isOwnAsset`). Kaydırma ortağın satırında
+  ///     yoktur (`canEdit: kendi != null`) — ortağın lot'una yazılamaz
+  ///     (RLS). Birlikte satırından açılan ekran zaten kendi parçanla açılır.
+  ///   · Yalnız AÇIK pozisyonda (`_canli.acik`): kapanmış pozisyon Portföy
+  ///     listesinde satır değildir, kaydırılacak kart yoktur. Portföy
+  ///     yüklenirken de çizilmez (açık olduğu henüz bilinmez).
+  ///   · İşlem listesi ve diyalog `pozisyon_islemleri.dart`'tan; varlık
+  ///     CANLI pozisyondur (`_canli.asset`), kaydırmadaki
+  ///     `kendi.asDisplayAsset()`'in eşi.
+  Widget? _islemCubugu(bool isOwnAsset) {
+    if (!isOwnAsset) return null;
+    final canli = _canli;
+    if (!canli.acik) return null;
+    return PozisyonIslemCubugu(
+      islemler: pozisyonIslemleri(canli.asset),
+      // Diyalog açıldığı andaki pozisyonu alır; fiyat turu araya girse de
+      // kayıt diyaloğun gösterdiği miktar/fiyatla yapılır.
+      onIslem: (islem) => pozisyonIslemiAc(context, ref,
+          varlik: _canli.asset, islem: islem),
+    );
   }
 
   List<TransactionSegment> _convertHistoryToSegments(

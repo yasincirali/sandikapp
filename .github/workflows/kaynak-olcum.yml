@@ -1,0 +1,27 @@
+# ABD hissesi / eurobond fiyat kaynaklarının erişim ve hız ölçümü (2026-10-08).
+#
+# Neden: bulut geliştirme kabı finans hostlarını reddediyor; karşılaştırma
+# gerçek bir sunucudan yapılmalı. Salt okunur, anahtarsız, secret kullanmaz
+# (public repo: log herkese açık). Sonuç tablosu iş özetinde.
+name: Kaynak ölçümü (ABD / eurobond)
+
+# Yalnız elle: kaynak biçimi değiştiğinde ayrıştırıcıyı canlı yanıtla dener.
+# Ölçüm dalında push'ta da koşuyordu; main'de her push'ta dış hostlara
+# gitmesi gereksiz.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  olcum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Eurobond ayrıştırıcıları canlı kaynakta
+        run: deno run --allow-net tool/eurobond_canli.ts

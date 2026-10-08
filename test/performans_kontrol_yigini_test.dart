@@ -11,7 +11,7 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_performance_screen.dart';
-import 'package:portfoy_takip/widgets/kapsam_kisi_secici.dart';
+import 'package:portfoy_takip/widgets/ortak_secici.dart';
 
 /// Performans ekranı kontrol yığını — gerçek cihaz bildirimleri (2026-09-15).
 ///
@@ -145,7 +145,7 @@ void main() {
     for (final w in [320.0, 375.0, 430.0]) {
       testWidgets('${w.toInt()}pt: beş dönem de tam görünür', (tester) async {
         await _pump(tester, partners: const [], width: w);
-        for (final d in ['GÜNLÜK', '1H', '1A', '6A', '1Y']) {
+        for (final d in ['Bugün', '1 hf', '1 ay', '6 ay', '1 yıl']) {
           _kirpilmamis(tester, d);
         }
         expect(tester.takeException(), isNull);
@@ -164,7 +164,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       await _pump(tester, partners: const []);
 
-      var node = tester.getSemantics(find.text('GÜNLÜK')).parent;
+      var node = tester.getSemantics(find.text('Bugün')).parent;
       while (node != null) {
         expect(node.tooltip, isNot('Grafiği tam ekran aç'),
             reason: 'dönem düğmeleri tam ekran ipucunun altında');
@@ -177,7 +177,7 @@ void main() {
   group('kişi seçici — kontrol yığınının ilk satırı', () {
     testWidgets('ortak yokken çizilmez', (tester) async {
       await _pump(tester, partners: const []);
-      expect(find.byType(KapsamKisiSecici), findsNothing);
+      expect(find.byType(OrtakSecici), findsNothing);
     });
 
     testWidgets('tek ortak: üç segment, hepsi TEK dokunuş', (tester) async {
@@ -186,7 +186,7 @@ void main() {
         PartnerAccount(user: _ortak(), isActive: true),
       ]);
 
-      expect(find.byType(KapsamKisiSecici), findsOneWidget);
+      expect(find.byType(OrtakSecici), findsOneWidget);
       final ben = find.bySemanticsLabel('Kimin portföyü: Ben');
       final mehmet = find.bySemanticsLabel('Kimin portföyü: Mehmet');
       expect(ben, findsOneWidget);
@@ -234,7 +234,7 @@ void main() {
       await _pump(tester, partners: [
         PartnerAccount(user: _ortak(), isActive: false),
       ]);
-      expect(find.byType(KapsamKisiSecici), findsNothing,
+      expect(find.byType(OrtakSecici), findsNothing,
           reason: 'aktif ortak yok → satır çizilmez');
     });
   });
@@ -260,9 +260,9 @@ void main() {
 
       // Kabuk genişliği ilk ve son segmentin uçlarından ölçülür — araya
       // giren `Container`/`Padding` katmanlarını aramaktan bağımsız.
-      final gunluk = tester.getRect(find.text('GÜNLÜK'));
-      final birY = tester.getRect(find.text('1Y'));
-      final birH = tester.getRect(find.text('1H'));
+      final gunluk = tester.getRect(find.text('Bugün'));
+      final birY = tester.getRect(find.text('1 yıl'));
+      final birH = tester.getRect(find.text('1 hf'));
       final kabukGenislik = birY.right - gunluk.left;
 
       expect(kabukGenislik, greaterThan(280),

@@ -9,7 +9,7 @@ import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
-import 'package:portfoy_takip/screens/leaderboard_screen.dart';
+import 'package:portfoy_takip/screens/siralama_screen.dart';
 
 /// Yarış (leaderboard) ekranının taşma regresyonu.
 ///
@@ -110,7 +110,9 @@ Future<void> _pump(
       ],
       child: MaterialApp(
         theme: ThemeData.dark(),
-        home: const LeaderboardScreen(),
+        // Ayrı Yarış ekranı 2026-10-05'te silindi; aynı gövde Sıralama ›
+        // Ortaklarım'da.
+        home: SiralamaScreen(zirveRizaYukleyici: () async => true),
       ),
     ),
   );

@@ -14,8 +14,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
 
-/// "Sakin pano" düzeni (2026-10-01, kullanıcı seçimi D) — kartın yeni
-/// katmanları gerçek ağaçta kurulur ve dar ekranda taşmaz.
+/// Bugün kartı — katmanlar gerçek ağaçta kurulur ve dar ekranda taşmaz.
+///
+/// 2026-10-01'de "Sakin pano" (D) olarak yazıldı; 2026-10-04'ten beri kart
+/// "H · enflasyon kıyası öne" düzeninde (bayrak `bugun_karti_kiyas`,
+/// 2026-10-05'te kalktı). D'ye özgü katman testleri (takvim yaprağı, bilgi
+/// kutusu, haftalık yön kelimesi, enflasyon kutusu) D ile silindi; H'nin
+/// ayrıntıları `bugun_karti_kiyas_test`'te.
 ///
 /// Emülatör Flutter'ı render edemiyor (CLAUDE.md); yerleşim hatası ancak
 /// burada görünür: `IntrinsicHeight` içindeki `Spacer`, iki sütunlu ızgara,
@@ -104,24 +109,24 @@ void main() {
         (tester) async {
       await kur(tester, genislik: genislik);
       expect(tester.takeException(), isNull);
-      // Başlık: BUGÜN + gün adı; ölçüm bloğu etiketi; eylem kutusu.
-      expect(sigan('BUGÜN'), findsOneWidget);
+      // Başlık: "BUGÜN · <tarih>" (sığmazsa "BUGÜN"); ölçüm bloğu; hedef.
+      expect(
+          find.byWidgetPredicate(
+              (w) => w is SiganMetin && w.adaylar.last == 'BUGÜN'),
+          findsOneWidget);
       // Test yazı tipi (Ahem) gerçek yazıdan ~2 kat geniş: hangi yazımın
       // seçildiği ortama bağlı; kural "adaylardan biri TAM yazılır".
       expect(
-          sigan('Günün hareketi · sadece piyasa etkisi')
+          sigan('Günün hareketi · sadece fiyat etkisi')
                   .evaluate()
                   .isNotEmpty ||
-              sigan('Günün hareketi · piyasa etkisi').evaluate().isNotEmpty ||
+              sigan('Günün hareketi · fiyat etkisi').evaluate().isNotEmpty ||
               sigan('Günün hareketi').evaluate().isNotEmpty,
           isTrue);
       expect(sigan('Hedef belirle'), findsOneWidget);
-      // Bilgi kutusu: dönen yuva artıdaki varlığı (1 / 2) ya da — Çarşamba
-      // sonrası havuza giren — son 7 günü seçer; hangisi geldiyse kutu var.
-      final yesil = sigan('Artıdaki varlık').evaluate().isNotEmpty;
-      final hafta = sigan('Son 7 gün').evaluate().isNotEmpty;
-      expect(yesil || hafta, isTrue, reason: 'bilgi kutusu çizilmedi');
-      if (yesil) expect(find.text('1 / 2'), findsOneWidget);
+      // D'nin dönen bilgi kutuları H'de yok.
+      expect(sigan('Artıdaki varlık'), findsNothing);
+      expect(sigan('Son 7 gün'), findsNothing);
     });
   }
 
@@ -209,24 +214,16 @@ void main() {
   group('kaynak sözleşmesi', () {
     final src = ekranKaynagiSync('lib/widgets/bugun_karti.dart');
 
-    test('enflasyon kutusu çubuk + TÜFE imleci taşır', () {
-      expect(
-          src.contains(
-              '_EnflasyonCubugu(nominal: s.nominal, tufe: s.inflation)'),
-          isTrue);
-      expect(src.contains('todayYourReturn(fmtPct(s.nominal))'), isTrue);
-      expect(src.contains('todayCpiShort(fmtPct(s.inflation))'), isTrue);
+    test('enflasyon kıyası geniş blokta (H düzeni)', () {
+      expect(src.contains('_EnflasyonKiyasi('), isTrue);
+      expect(src.contains('_EnflasyonCubugu('), isFalse,
+          reason: 'D\'nin kutu içi çubuğu D ile kalktı');
     });
 
     test('gün içi eğri açılış seviyesini kesik çizgiyle gösterir', () {
       expect(src.contains('final tabanY = y(seri.first);'), isTrue,
           reason:
               'Açılış seviyesi serinin ilk noktası — DailySummary ile aynı');
-    });
-
-    test('haftalık yön kelimeyle (yükseliş / düşüş), yüzde işaretsiz', () {
-      expect(src.contains('l10n.todayWeekUp(yuzde)'), isTrue);
-      expect(src.contains('l10n.todayWeekDown(yuzde)'), isTrue);
     });
   });
 }

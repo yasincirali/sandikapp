@@ -136,7 +136,9 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
   widget sözleşmesi, önbellek biçimi) eski değeri okuyup taşır; anahtar
   silinip kullanıcının tercihi sıfırlanmaz.
 
-**Tasarım sistemi.** Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
+**Tasarım sistemi.** Tasarım dili ve "bir iş = bir bileşen" tablosu: `docs/TASARIM_DILI.md`
+(yeni ekran/bileşenden önce oku; kilit `tasarim_dili_test`, `yukleniyor_tek_davranis_test`).
+İstek atan düğme `SandikAsyncButton`/`SandikAsyncTap`, alt sayfa `showSandikSheet`. Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
 `SandikSpace`, köşe `SandikRadius`, animasyon `SandikMotion.of(context)`. Ham `Colors.*`,
 `Color(0x…)`, `fontSize:`, `Duration(milliseconds:)` ekleme — `design_token_leak_test` ve
 `spacing_scale_test` sayıları **yalnızca azalabilir**. Kart için `SandikCard`, bölüm başlığı
@@ -186,6 +188,19 @@ gerekiyorsa migration'a yaz. Eşitlik: `python tool/sema_esitlik.py [--ayrinti]`
 bayrağı (geçişe kadar Frankfurt'ta kapalı). `0000_base_schema.sql` Tokyo'nun
 tahminiydi; bir şeyi "Frankfurt'ta var" diye silmeden önce Tokyo'da da var mı bak
 (0077'nin ilk yazımı Tokyo'yu `user_push_tokens` indeksiz bırakacaktı).
+
+**Yasal metin tek kaynak (kullanıcı kuralı, 2026-10-04).** Web ve uygulama yasal
+belgeleri her zaman aynı metindir: kaynak `legal/tr/*.md` (çevirisi `legal/en/*.md`);
+uygulamaya ya da `docs/` HTML'ine elle metin yazılmaz. Değişince: md + "Sürüm" artır →
+`python docs/_build_legal.py` (HTML + `lib/config/yasal_belge_kaynaklari.g.dart`) →
+INSERT üreteci → yeni migration (iki sunucu). `yasal_web_esleme_test` kırılırsa adımları söyler.
+Metin uygulamanın gerçek davranışını yazar; avukata sorulmaz. Yeni kişisel veri, **kişisel
+veri alan** üçüncü taraf, yeni amaç ya da saklama ekleyen her değişiklik aynı değişiklikte
+ilgili md'yi günceller; "Sürüm" **ve** "Onay sürümü" artar, migration yazılır, yeniden onay
+kapısı kullanıcıya sorar. Kişisel veri almayan kaynaklar (fiyat/piyasa verisi) metinde adıyla
+**sayılmaz** — "kamuya açık piyasa verisi sağlayıcıları" grubu kapsar; yeni fiyat kaynağı
+metne dokunmaz (kullanıcı kararı 2026-10-08). Esaslı olmayan düzeltmede yalnız "Sürüm" artar
+(md + migration yine gerekir), kapı açılmaz. Açık Rıza Metni'ne "Onay sürümü" yazılmaz.
 
 **Gizli anahtar.** Repoya asla: `google-services.json`, `GoogleService-Info.plist`,
 `key.properties`, keystore, Vault değerleri, `.env`. `tmp/` gitignore'dadır ve öyle kalır.
@@ -296,8 +311,16 @@ kod keşfi `Grep`/`Glob`/`Read` ile yapılır.
 Oturum başı denetim: `.claude/settings.local.json` `SessionStart` hook'u `tool/mcp_health.sh`
 koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Betik sunucu
 **başlatmaz**; ikinci kopya codebase-memory'nin SQLite kilidiyle çakışır. `.claude/`
-gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
+gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir. İstisna
+(2026-10-08): `.claude/skills/` repoya girer ki bulut oturumu da skill'leri görsün.
+
+### Bulut oturumu (Claude Code web / Projects)
+Üç MCP sunucusu ve Flutter `tool/bulut_kurulum.sh` ile kurulur (Project settings ›
+Cloud environment › Setup script: `bash tool/bulut_kurulum.sh`). Sunucular `-s local`
+kapsamında Linux yollarıyla kaydedilir; `.mcp.json`'a dokunulmaz. Bulut grafiği
+ADR'siz başlar (ADR'ler yerel grafikte). Emülatör yok (KVM yok); doğrulama
+`flutter analyze` + `flutter test`.
 
 ---
-**Son güncelleme:** 2026-10-01 (canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-10-08 (yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).

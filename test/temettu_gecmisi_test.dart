@@ -406,8 +406,14 @@ void main() {
     test('varlık ekranına giriş TEK satır, kart yalnız kendi varlığında', () {
       final ad = ekranKaynagiSync('lib/screens/asset_detail_screen.dart');
       expect(
-          RegExp(r'_temettuKarti\(').allMatches(ad).length, 2,
-          reason: 'tanım (ozet.dart) + tek çağrı (build)');
+          RegExp(r'_temettuKarti\(').allMatches(ad).length, 3,
+          reason: 'tanım (ozet.dart) + düzen başına tek çağrı: eski yığın '
+              '(build) ve katmanlı düzen (katmanlar.dart, bayrak '
+              'varlik_detay_katmanli) — ikisi birbirini dışlar');
+      final katman =
+          ekranKaynagiSync('lib/screens/asset_detail/katmanlar.dart');
+      expect(katman.contains('if (isOwnAsset && pState != null) _temettuKarti(pState)'),
+          isTrue);
       expect(ad.contains('if (isOwnAsset && pState != null) _temettuKarti(pState)'),
           isTrue);
     });

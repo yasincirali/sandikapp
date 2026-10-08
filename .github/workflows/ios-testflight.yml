@@ -84,6 +84,9 @@ jobs:
           # define boş kalır: Google düğmesi görünmez, build kırılmaz.
           GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          # RevenueCat public SDK anahtarı (paywall). Secret yoksa define boş
+          # kalır: satın alma "kullanılamıyor" der, build kırılmaz.
+          REVENUECAT_IOS_KEY: ${{ secrets.REVENUECAT_IOS_KEY }}
         run: |
           flutter build ios --release --no-codesign \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
@@ -91,7 +94,8 @@ jobs:
             --dart-define=SUPABASE_URL_EU=$SUPABASE_URL_EU \
             --dart-define=SUPABASE_ANON_KEY_EU=$SUPABASE_ANON_KEY_EU \
             --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID \
-            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID
+            --dart-define=GOOGLE_IOS_CLIENT_ID=$GOOGLE_IOS_CLIENT_ID \
+            --dart-define=REVENUECAT_IOS_KEY=$REVENUECAT_IOS_KEY
 
       - name: Fastlane beta (match + gym + TestFlight)
         working-directory: ios

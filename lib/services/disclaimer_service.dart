@@ -83,7 +83,7 @@ class DisclaimerService {
     try {
       await recordAcceptance(
         userId: userId,
-        appVersion: await _surumEtiketi(),
+        appVersion: await surumEtiketi(),
         platform: platformEtiketi(defaultTargetPlatform),
         locale: locale,
       );
@@ -98,12 +98,12 @@ class DisclaimerService {
 
   /// `1.1.6+7` — okunamazsa 'unknown' (sütun NOT NULL; uydurma sürüm
   /// yazmaktansa bilinmediğini söylemek doğru).
-  static Future<String> _surumEtiketi() async {
+  static Future<String> surumEtiketi() async {
     try {
       final bilgi = await PackageInfo.fromPlatform();
       return '${bilgi.version}+${bilgi.buildNumber}';
     } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'DisclaimerService._surumEtiketi');
+      CrashReporter.report(e, st, reason: 'DisclaimerService.surumEtiketi');
       return 'unknown';
     }
   }

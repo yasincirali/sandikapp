@@ -17,19 +17,39 @@ import 'sandik_async_button.dart';
 /// kalanı aynen çalışır).
 ///
 /// Metin anlamca değişirse `LeaderboardService.zirveRizaMetniSurumu` da
-/// değişmeli — sunucu hangi sürüme rıza verildiğini saklar.
+/// değişmeli — sunucu hangi sürüme rıza verildiğini saklar. 2026-10-04'ten
+/// beri bu bir TESTLE zorlanır: kartın metni (başlık, açıklama, maddeler,
+/// hukuk notu, düğme) `yasal_metinler`'e (0102) hash'iyle girer;
+/// `yasal_metin_kilidi_test` sürüm artırılmadan değişen metni yakalar.
 class ZirveRizaKarti extends StatelessWidget {
   const ZirveRizaKarti({
     super.key,
     required this.onKatil,
     this.onSimdiDegil,
+    this.katilEtkin = true,
   });
 
   /// Rızayı sunucuya yazar; hata fırlatırsa kart yerinde kalır.
   final Future<void> Function() onKatil;
   final VoidCallback? onSimdiDegil;
 
+  /// Zorunlu okuma (bayrak `zorunlu_okuma`, 2026-10-04): kart rızanın TAM
+  /// metnidir ("Katılıyorum" metnin son satırı); ekran metnin sonuna
+  /// ulaşılana kadar düğmeyi kapalı verir. Metin değişmez — yalnız düğmenin
+  /// ne zaman açıldığı.
+  final bool katilEtkin;
+
   static const baslik = 'Zirvedeki Portföyler\'e katıl';
+
+  /// Başlığın altındaki tek cümle. Sabit olarak burada: yasal metin kataloğu
+  /// (`YasalMetinKatalogu`) kartın gösterdiği metni bu sabitlerden kurar ve
+  /// hash'ler — kart ile veritabanındaki metin ayrışamaz.
+  static const aciklama =
+      'Katılanların portföyleri anonim olarak yan yana konur; en çok '
+      'kazandıranların neye yatırdığını görürsün.';
+
+  /// Rızanın verildiği eylem — kanonik metnin son satırı.
+  static const katilEtiketi = 'Katılıyorum';
 
   /// (başlık, metin) — sırası bilinçli: önce ne verdiğin, sonra ne aldığın.
   static const maddeler = <(String, String)>[
@@ -82,8 +102,7 @@ class ZirveRizaKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.xs),
           Text(
-            'Katılanların portföyleri anonim olarak yan yana konur; en çok '
-            'kazandıranların neye yatırdığını görürsün.',
+            aciklama,
             style: context.t.bodyMedium?.copyWith(color: c.text58, height: 1.4),
           ),
           const SizedBox(height: SandikSpace.md),
@@ -113,8 +132,8 @@ class ZirveRizaKarti extends StatelessWidget {
           ),
           const SizedBox(height: SandikSpace.md),
           SandikAsyncButton(
-            onPressed: onKatil,
-            child: const Text('Katılıyorum'),
+            onPressed: katilEtkin ? onKatil : null,
+            child: const Text(katilEtiketi),
           ),
           if (onSimdiDegil != null) ...[
             const SizedBox(height: SandikSpace.xs),

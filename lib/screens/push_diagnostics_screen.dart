@@ -10,6 +10,7 @@ import '../services/remote_push_service.dart';
 import '../services/surface_theme.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
+import '../widgets/sandik_async_button.dart';
 import '../utils/cron_zamani.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -52,6 +53,12 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
 
   /// Bölüm bazlı hatalar — hepsi patlamadıysa sayfada uyarı olarak gösterilir.
   List<String> _kismiHatalar = const [];
+
+  /// Üç yazma/tetikleme düğmesinin (de-dup sıfırla, prova, gerçek push)
+  /// ORTAK kilidi: biri sürerken öteki ikisi pasif — sıfırlama ile tetikleme
+  /// aynı `signal_state` üstünde yarışmasın. Gösterge ve tıklanan düğmenin
+  /// kendi kilidi [SandikAsyncButton]'da (tek yükleniyor davranışı,
+  /// 2026-10-08); bu bayrak yalnız düğmeler arası dışlama için kaldı.
   bool _tetikleniyor = false;
 
   /// CİHAZ tarafı teşhisi — sunucu sorgularının göremediği halka.
@@ -502,7 +509,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
     // SADECE analyze-signals yanıtlarına bak.
     //
     // `net._http_response` tablosu TÜM cron'ların yanıtlarını taşıyor ve
-    // `live-activity-push` 5 dakikada bir çalıştığı için listeyi domine
+    // `live-activity-push` sık çalıştığı (0100'den beri dakikada bir) için listeyi domine
     // ediyor. Ayrım yapılmadığında ekran onun `{"sent":2}` çıktısını okuyup
     // "zincir çalışıyor, 2 bildirim gönderildi" diyordu — oysa sinyal
     // push'u hiç gönderilmemişti ve kullanıcının iPhone'u kayıtlı bile
@@ -522,7 +529,7 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       return (
         baslik: 'Sinyal turu henüz çalışmamış',
         detay: 'Kayıtlı yanıtların hepsi başka cron\'lara ait (çoğunlukla '
-            'live-activity-push, 5 dk\'da bir). analyze-signals saat başı '
+            'sık çalışan live-activity-push). analyze-signals saat başı '
             've yalnızca bildirim penceresi içinde çalışır.',
         renk: context.c.amberText,
       );
@@ -614,9 +621,17 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
       appBar: SandikAppBar(
         title: 'Push Teşhisi',
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh_rounded, color: context.c.text58),
-            onPressed: _loading ? null : _load,
+          // `_loading` gövdenin tam ekran göstergesini de sürdüğü için kalır;
+          // düğmenin kendisi tek yükleniyor davranışına (2026-10-08)
+          // [SandikAsyncTap] ile bağlı — ikinci dokunuş yutulur.
+          SandikAsyncTap(
+            onTap: _loading ? null : _load,
+            child: SizedBox.square(
+              dimension: kMinInteractiveDimension,
+              child: Center(
+                child: Icon(Icons.refresh_rounded, color: context.c.text58),
+              ),
+            ),
           ),
         ],
         transparent: true,
@@ -802,11 +817,12 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         if (_sinyaller.isNotEmpty) ...[
           const SizedBox(height: 4),
           Center(
-            child: TextButton.icon(
+            child: SandikAsyncButton.kompakt(
+              tur: SandikAsyncTur.metin,
               icon: const Icon(Icons.delete_outline_rounded, size: 16),
               style: TextButton.styleFrom(foregroundColor: context.c.loss),
-              label: const Text('De-dup sıfırla (signal_state + geçmiş)'),
               onPressed: _tetikleniyor ? null : _sinyalGecmisiniTemizle,
+              child: const Text('De-dup sıfırla (signal_state + geçmiş)'),
             ),
           ),
           Text(
@@ -831,14 +847,15 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
         Row(
           children: [
             Expanded(
-              child: OutlinedButton(
+              child: SandikAsyncButton.kompakt(
+                tur: SandikAsyncTur.cerceve,
                 onPressed: _tetikleniyor ? null : () => _tetikle(dryRun: true),
                 child: const Text('Prova (dry-run)'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: FilledButton(
+              child: SandikAsyncButton.kompakt(
                 style: FilledButton.styleFrom(
                     backgroundColor: context.c.amberFill),
                 onPressed: _tetikleniyor ? null : () => _tetikle(dryRun: false),
@@ -957,28 +974,25 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.8)),
           const SizedBox(height: 8),
-          Container(
+          SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
+            child: SandikCard(
+              padding: const EdgeInsets.all(SandikSpace.smd),
+              child: bosMesaj != null
+                  ? Text(bosMesaj,
+                      style: TextStyle(
+                          color: context.c.text36,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic))
+                  : SelectableText(
+                      satirlar.join('\n'),
+                      style: TextStyle(
+                          color: context.c.text58,
+                          fontSize: 11.5,
+                          height: 1.5,
+                          fontFamily: 'monospace'),
+                    ),
             ),
-            child: bosMesaj != null
-                ? Text(bosMesaj,
-                    style: TextStyle(
-                        color: context.c.text36,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic))
-                : SelectableText(
-                    satirlar.join('\n'),
-                    style: TextStyle(
-                        color: context.c.text58,
-                        fontSize: 11.5,
-                        height: 1.5,
-                        fontFamily: 'monospace'),
-                  ),
           ),
         ],
       ),

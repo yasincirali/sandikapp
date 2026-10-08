@@ -827,6 +827,101 @@ class AuthService {
     }
   }
 
+  // ── Yeni cihaz doğrulama (0098) ───────────────────────────────────────────
+
+  /// Oturumdaki hesabın e-postasına 6 haneli giriş kodu gönderir.
+  ///
+  /// `shouldCreateUser: false`: kapı yalnız VAR OLAN oturumun sahibine kod
+  /// yollar; yanlışlıkla yeni hesap açılmaz. Sunucunun "Magic Link" e-posta
+  /// şablonu `{{ .Token }}` içermelidir (YAPMAN_GEREKENLER) — yalnız bağlantı
+  /// içeren şablonda kullanıcıya kod gitmez.
+  Future<void> cihazKoduGonder(String email) async {
+    final normalized = email.toLowerCase().trim();
+    try {
+      await _log.log<void>(
+        source: 'AuthService.cihazKoduGonder',
+        table: 'auth/otp',
+        op: 'RPC',
+        request: {},
+        call: () => _client.auth
+            .signInWithOtp(email: normalized, shouldCreateUser: false),
+      );
+    } on AuthApiException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('rate limit') ||
+          msg.contains('too many') ||
+          msg.contains('security purposes')) {
+        throw const AuthException(
+            'Kod az önce gönderildi. Birkaç dakika bekleyip tekrar dene.');
+      }
+      throw AuthException(friendlyError(e));
+    } catch (e, st) {
+      if (baglantiHatasiMi(e)) throw AuthException(friendlyError(e));
+      CrashReporter.report(e, st, reason: 'AuthService.cihazKoduGonder');
+      throw AuthException('Kod gönderilemedi: ${friendlyError(e)}');
+    }
+  }
+
+  /// Kodu doğrular. Başarılıysa GoTrue YENİ bir oturum açar; JWT'deki `amr`
+  /// artık `otp` taşır ve sunucu (`cihaz_kaydet`) bunu e-posta sahipliği
+  /// kanıtı sayar.
+  Future<void> cihazKoduDogrula({
+    required String email,
+    required String kod,
+  }) async {
+    final temiz = kod.trim();
+    if (temiz.length != 6 || int.tryParse(temiz) == null) {
+      throw const AuthException('Kod 6 haneli olmalı.');
+    }
+    try {
+      await _log.log(
+        source: 'AuthService.cihazKoduDogrula',
+        table: 'auth/verify-otp',
+        op: 'RPC',
+        request: {'type': 'email'},
+        call: () => _client.auth.verifyOTP(
+          email: email.toLowerCase().trim(),
+          token: temiz,
+          type: OtpType.email,
+        ),
+      );
+    } on AuthApiException catch (e) {
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid') || msg.contains('expired') ||
+          msg.contains('token')) {
+        throw const AuthException('Kod hatalı veya süresi doldu.');
+      }
+      throw AuthException(friendlyError(e));
+    } catch (e, st) {
+      if (baglantiHatasiMi(e)) throw AuthException(friendlyError(e));
+      CrashReporter.report(e, st, reason: 'AuthService.cihazKoduDogrula');
+      throw AuthException('Kod doğrulanamadı: ${friendlyError(e)}');
+    }
+  }
+
+  /// Bu cihaz dışındaki TÜM oturumların refresh token'larını iptal eder.
+  ///
+  /// Tek aktif cihaz kuralının sunucu ayağı: Realtime'ı duymayan (kapalı,
+  /// çevrimdışı) eski cihaz en geç access token ömrü dolunca düşer. Ağ
+  /// hatası yutulur — bir sonraki açılışta yeniden denenir; eski cihaz
+  /// zaten `oturum_al`'ın yerinden edilme kuralıyla geri dönemez.
+  Future<void> digerOturumlariKapat() async {
+    try {
+      await _log.log<void>(
+        source: 'AuthService.digerOturumlariKapat',
+        table: 'auth/logout',
+        op: 'RPC',
+        request: {'scope': 'others'},
+        call: () => _client.auth.signOut(scope: SignOutScope.others),
+      );
+    } catch (e, st) {
+      if (!baglantiHatasiMi(e)) {
+        CrashReporter.report(e, st,
+            reason: 'AuthService.digerOturumlariKapat');
+      }
+    }
+  }
+
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {

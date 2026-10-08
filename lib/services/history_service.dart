@@ -7,11 +7,11 @@ import '../models/position.dart';
 import '../models/tefas_nav_gozlem.dart';
 import '../demo/demo_modu.dart';
 import 'analytics_service.dart';
-import 'bes_acilis.dart';
 import 'crash_reporter.dart';
 import 'fiyat_kaynagi.dart';
 import 'price_service.dart';
-import 'sozlesme_deposu.dart';
+import 'remote_config_service.dart';
+import 'seri_disk_depo.dart';
 import 'supabase_service.dart';
 import '../utils/tr_format.dart';
 
@@ -276,6 +276,47 @@ class HistoryService {
     }
   }
 
+  /// Yurt içi kotasyon kaydı (0101) — testler için değiştirilebilir.
+  /// `tefasNavGozlemKaynagi` ile aynı desen.
+  @visibleForTesting
+  static Future<List<(int, double)>> Function(String sembol, DateTime baslangic)
+      yurtIciKaynagi = _sunucuYurtIci;
+
+  /// Yurt içi şekil açık mı (Remote Config `hafta_sonu_yurt_ici_seri`,
+  /// varsayılan kapalı) — testler için değiştirilebilir.
+  @visibleForTesting
+  static bool Function() yurtIciSekilAcik =
+      () => RemoteConfigService.instance.haftaSonuYurtIciSeri;
+
+  static Future<List<(int, double)>> _sunucuYurtIci(
+      String sembol, DateTime baslangic) async {
+    if (DemoModu.aktif) return const [];
+    try {
+      return await SupabaseService.instance
+          .yurtIciKotasyonSerisi(sembol, baslangic: baslangic);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'HistoryService.yurtIciKotasyon');
+      return const [];
+    }
+  }
+
+  // Kayıt beş dakikada bir büyür; gün içi seri 30 sn'de bir yeniden
+  // kuruluyor. Anahtar sembol + gün — gece yarısı kendiliğinden düşer.
+  static final Map<String, (DateTime, List<(int, double)>)> _yurtIciCache = {};
+  static const _yurtIciCacheTtl = Duration(minutes: 2);
+
+  Future<List<(int, double)>> _yurtIciGetir(String sembol, DateTime gun) async {
+    final key = '$sembol|${gun.toIso8601String()}';
+    final c = _yurtIciCache[key];
+    if (c != null && DateTime.now().difference(c.$1) < _yurtIciCacheTtl) {
+      return c.$2;
+    }
+    final seri = await yurtIciKaynagi(sembol, gun);
+    _yurtIciCache.removeWhere((k, _) => !k.endsWith('|${gun.toIso8601String()}'));
+    _yurtIciCache[key] = (DateTime.now(), seri);
+    return seri;
+  }
+
   // Gözlem 5 dk önbellekte: gün içi seri 30 sn'de bir yeniden kuruluyor,
   // gözlem ise günde bir kez değişir. Anahtar kod kümesi — portföye fon
   // eklenince yeniden sorulur.
@@ -363,6 +404,87 @@ class HistoryService {
     _cacheAt.clear();
     _bosYanitAt.clear();
     _ucusanIstekler.clear();
+    _sonIyi.clear();
+    _yurtIciCache.clear();
+  }
+
+  /// TTL'in dolmasını taklit eder: taze önbellek ve negatif önbellek
+  /// silinir, son iyi seri KALIR. Gerçek saatle 15 dk beklemeden "önbellek
+  /// eskidi, ardından çekim düştü" senaryosunu ölçmek için.
+  @visibleForTesting
+  static void onbellegiEskit() {
+    _cache.clear();
+    _cacheAt.clear();
+    _bosYanitAt.clear();
+  }
+
+  // ── SON İYİ SERİ (bayat-ama-ölçülmüş yedek) ───────────────────────────────
+  //
+  // "Kripto varlık fiyatı her zaman çekilemiyor … düz çizgiye dönüyor, tüm
+  // varlıklar için gerekli bu çözüm" (yasin, 2026-10-03). Kök neden TÜRE
+  // değil KAPIYA aitti: [_cache] TTL'i (5/15 dk) dolunca giriş SİLİNİYOR,
+  // ardından gelen çekim düşerse (kripto-seri soğuk başlangıcı 8 sn'yi
+  // aşınca, Yahoo 429, truncgil kesintisi) kapı BOŞ dönüyor ve varlık
+  // `currentPrice` tohumuyla dümdüz çiziliyordu — bir dakika önce elde
+  // doğru seri varken. Üstelik 8 sn'de vazgeçilen yanıt birkaç saniye sonra
+  // gelse bile ATILIYORDU.
+  //
+  // Şimdi: başarılı her seri TTL'siz bir "son iyi" kopyaya da yazılır
+  // (bellek + [kaliciDepo]); çekim boş/hatalı/zaman aşımlı dönerse kapı onu
+  // döndürür. Noktalar ölçülmüş veridir (sözleşme madde 3 ihlal edilmez);
+  // son nokta zaten canlı toplama sabitlenir. Zaman aşımına uğrayan istek
+  // de bırakılmaz: geç gelen yanıt önbelleğe yazılır, sonraki tik onu çizer.
+
+  /// Son başarılı seri — TTL yok, [_cacheMaxEntries] ile LRU sınırlı.
+  static final Map<String, List<(int, double)>> _sonIyi = {};
+
+  /// Diskteki son iyi seri. `null` → yalnız bellek (testler, demo).
+  /// `main()` gerçek depoyu bağlar.
+  static SeriDiskDepo? kaliciDepo;
+
+  static void _sonIyiYaz(String key, String sym, List<(int, double)> pts) {
+    _sonIyi.remove(key);
+    _sonIyi[key] = pts;
+    while (_sonIyi.length > _cacheMaxEntries) {
+      _sonIyi.remove(_sonIyi.keys.first);
+    }
+    // Mevduat serisi ağdan gelmez, sözleşmeden hesaplanır (düşmez) ve
+    // kullanıcıya özeldir — diske yazılmaz. Demo verisi de yazılmaz.
+    if (sym.toUpperCase().startsWith(mevduatOneki) || DemoModu.aktif) return;
+    final depo = kaliciDepo;
+    if (depo != null) {
+      CrashReporter.arkaPlan(depo.yaz(key, pts),
+          reason: 'history_service.sonIyiDiske');
+    }
+  }
+
+  /// Çekim düştüğünde dönülecek seri: bellekteki son iyi → disk → boş.
+  ///
+  /// Gün içi (`1d`) seride yalnızca BUGÜNE ait kopya kullanılır: dünün gün
+  /// içi serisi bugünün grafiğine ve gün başı referansına karışırsa
+  /// "bugün" yüzdesi yanlış güne bağlanır — o durumda düz tohum daha
+  /// dürüsttür (ekranda "gün içi veri yok" rozetiyle açıklanır).
+  static Future<List<(int, double)>> _sonIyiOku(String key, String range) async {
+    var seri = _sonIyi[key];
+    if (seri == null) {
+      final depo = kaliciDepo;
+      if (depo == null || DemoModu.aktif) return const [];
+      seri = await depo.oku(key);
+      if (seri == null) return const [];
+      _sonIyi[key] = seri;
+    }
+    if (range == '1d' && !_bugunIcinde(seri)) return const [];
+    return seri;
+  }
+
+  static bool _bugunIcinde(List<(int, double)> seri) {
+    if (seri.isEmpty) return false;
+    final son = DateTime.fromMillisecondsSinceEpoch(
+        seri.fold<int>(0, (m, p) => p.$1 > m ? p.$1 : m));
+    final simdi = gunIciSaat();
+    return son.year == simdi.year &&
+        son.month == simdi.month &&
+        son.day == simdi.day;
   }
 
   // ── TEK ÇEKİM KAPISI ──────────────────────────────────────────────────────
@@ -444,7 +566,7 @@ class HistoryService {
 
     final bosAt = _bosYanitAt[key];
     if (bosAt != null && DateTime.now().difference(bosAt) <= _bosYanitTtl) {
-      return Future.value(const []);
+      return _sonIyiOku(key, range);
     }
 
     final ucusan = _ucusanIstekler[key];
@@ -458,28 +580,37 @@ class HistoryService {
   Future<List<(int, double)>> _seriCekHam(
       String sym, String range, String? interval, String key) async {
     final sure = Stopwatch()..start();
+    final ham = seriCekici(sym, range, interval);
     try {
-      final pts =
-          await seriCekici(sym, range, interval).timeout(_grafikCekimSuresi);
+      final pts = await ham.timeout(_grafikCekimSuresi);
       _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, pts.length,
           timedOut: false);
       if (pts.isNotEmpty) {
         _cachePut(key, pts);
+        _sonIyiYaz(key, sym, pts);
         _bosYanitAt.remove(key);
-      } else {
-        _bosYanitAt[key] = DateTime.now();
+        return pts;
       }
-      return pts;
+      _bosYanitAt[key] = DateTime.now();
+      return await _sonIyiOku(key, range);
     } on TimeoutException {
-      // Zaman aşımı HATA DEĞİL, bir karar: grafik o kaynak olmadan
-      // çizilir (altında yedek kaynak ya da `currentPrice` seed'i var).
+      // Zaman aşımı HATA DEĞİL, bir karar: grafik bu tikte son iyi seriyle
+      // (yoksa yedek kaynak ya da `currentPrice` seed'iyle) çizilir.
       _cekimSuresiniKaydet(sym, sure.elapsedMilliseconds, 0, timedOut: true);
       _bosYanitAt[key] = DateTime.now();
-      return const [];
+      // Geç gelen yanıt ATILMAZ: kripto-seri'nin soğuk başlangıcı gibi
+      // 8 sn'yi az aşan çekimler sonraki tikte önbellekten çizilir.
+      CrashReporter.arkaPlan(ham.then<void>((gec) {
+        if (gec.isEmpty) return;
+        _cachePut(key, gec);
+        _sonIyiYaz(key, sym, gec);
+        _bosYanitAt.remove(key);
+      }), reason: 'history_service.gecYanit');
+      return _sonIyiOku(key, range);
     } catch (e) {
       if (kDebugMode) debugPrint('seriCek($sym) failed: $e');
       _bosYanitAt[key] = DateTime.now();
-      return const [];
+      return _sonIyiOku(key, range);
     }
   }
 
@@ -534,7 +665,6 @@ class HistoryService {
 
     final groupedPoints = <int, double>{};
     final now = DateTime.now();
-    await _besSozlesmeleriniYukle(assets);
 
     // Her bir varlık için günlük fiyat eşleşmesi tutalım donmuş/gerçek fiyatlar
     final Map<String, Map<int, double>> tickerNormalizedDaily = {};
@@ -583,6 +713,8 @@ class HistoryService {
       if (a.quantity <= 0) continue;
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
           (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
@@ -727,14 +859,16 @@ class HistoryService {
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
+              a.type == AssetType.kripto ||
+              FiyatKaynagi.eurobondSerili(a) ||
               a.type.fiyatlamaTuru == AssetType.fon ||
               a.type == AssetType.doviz) {
             final map = tickerNormalizedDaily[a.ticker] ?? {};
             if (map.isNotEmpty) {
-              // BES: açılıştan önceki gün açılış fiyatıyla — düz çizgi
-              // (bkz. `BesAcilis`). Diğer türlerde `dayTs`'nin kendisi.
-              double price = _getClosestPrice(
-                  map, BesAcilis.fiyatAni(a, dayTs), null);
+              // BES de fonun gerçek serisiyle: açılıştan önce düz çizgi
+              // kuralı kaldırıldı (kullanıcı kararı 2026-10-04, gerekçe
+              // `SozlesmeNotifier.besAc`).
+              double price = _getClosestPrice(map, dayTs, null);
               // Kur: serinin kendi kuru → yoksa canlı kur → yoksa ÖLÇÜM YOK.
               // Sabit 35.0 varsayılanı buradaydı ve kur serisi boş döndüğü
               // her turda portföyü sessizce yanlış gösteriyordu.
@@ -855,14 +989,6 @@ class HistoryService {
     //     oluyordu; ölçülen hata %1,00 yerine %10,02 (9 puan) idi ve aynı
     //     yanlış rakam açıklama satırına da yazılıyordu.
     return clipToPeriod(groupedPoints, periodDays);
-  }
-
-  /// BES açılış anı sözleşmede durur; ortağın sözleşmesi depoda olmayabilir.
-  /// Yüklenemezse kural uygulanmaz (eski yol) — seri yine çizilir.
-  Future<void> _besSozlesmeleriniYukle(List<Asset> assets) async {
-    final eksik = BesAcilis.eksikler(assets);
-    if (eksik.isEmpty) return;
-    await SozlesmeDeposu.instance.eksikleriYukle(eksik);
   }
 
   double _getClosestPrice(
@@ -1240,12 +1366,22 @@ class HistoryService {
         ? getHistorySafe(FiyatKaynagi.xauUsd)
         : Future.value(const <(int, double)>[]);
 
+    // Kripto bu tür listelerinde YOKTU (2026-10-02 müşteri testi): tür
+    // 2026-09-25'te eklendi; `FiyatKaynagi.seriyeGirer` ve `PriceService`
+    // kripto-seri yolunu biliyordu ama bu dosyadaki yedi sabit liste
+    // güncellenmemişti. Kripto hiç çekilmiyor, `currentPrice` ile DÜZ
+    // çiziliyordu: varlık ekranında her dönem %0,0, Bugün kartında günün
+    // hareketi kriptosuz (ONDO −%1,94 iken kart onu saymıyordu). Seri sunucuda
+    // TL'dir (`_isTryQuoted`); boş dönerse hisse gibi tohumla sabit kalır ve
+    // `gunIciVerisiYokTurler`'e düşer — grafik boşalmaz.
     final tickerFutures = <String, Future<List<(int, double)>>>{};
     for (final a in assets) {
       if (!a.isBuy) continue;
       if (a.quantity <= 0) continue;
       if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
         tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
       }
@@ -1330,6 +1466,45 @@ class HistoryService {
         map[normalizeSlot(p.$1)] = p.$2;
       }
       tickerSlots[entry.key] = map;
+    }
+
+    // ── Yurt içi şekil: uluslararası seri sustuysa (0101, bayrak arkasında)
+    //
+    // Hafta sonu altın/dövizin Yahoo serisi Cuma'da bitiyor ve GÜNLÜK dümdüz
+    // çiziliyordu (kullanıcı sorusu 2026-10-03). Seri sustuğunda o sembolün
+    // şekli sunucunun yurt içi kaydından (`yurt_ici_kotasyon`) alınır —
+    // ekranda görünen kotasyonun kendisi; ölçek hizalaması da, ürün bazlı
+    // uç taşıması da gerekmez. Karar `FiyatKaynagi.yurtIciGunIciSekli`'nde.
+    //
+    // Hafta içi seri canlıyken sorgu HİÇ atılmaz; davranış birebir eski.
+    final yurtIciSlots = <String, Map<int, double>>{};
+    if (yurtIciSekilAcik()) {
+      final adaylar = <String, Map<int, double>>{};
+      for (final a in assets) {
+        if (!a.isBuy || a.quantity <= 0) continue;
+        if (!FiyatKaynagi.yurtIciKayitli(a.ticker)) continue;
+        if (a.type == AssetType.altin) {
+          adaylar[a.ticker] = goldSlots;
+        } else if (a.type == AssetType.doviz) {
+          adaylar[a.ticker] = tickerSlots[a.ticker] ?? const {};
+        }
+      }
+      adaylar.removeWhere(
+          (_, seri) => !FiyatKaynagi.uluslararasiSustu(seri, now));
+      final gunBasi = dayKey(now);
+      final kayitlar = await Future.wait([
+        for (final s in adaylar.keys) _yurtIciGetir(s, gunBasi),
+      ]);
+      var i = 0;
+      for (final e in adaylar.entries) {
+        final sekil = FiyatKaynagi.yurtIciGunIciSekli(
+          uluslararasi: e.value,
+          yurtIci: kayitlar[i++],
+          simdi: now,
+          normalize: normalizeSlot,
+        );
+        if (sekil != null) yurtIciSlots[e.key] = sekil;
+      }
     }
 
     // Fon NAV'ları: sembol → (önceki NAV, güncel NAV).
@@ -1668,6 +1843,8 @@ class HistoryService {
         }
       } else if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           a.type == AssetType.doviz) {
         final map = tickerSlots[a.ticker] ?? {};
         double? unitLocal;
@@ -1774,7 +1951,19 @@ class HistoryService {
           expected++;
           double? v;
 
-          if (a.type == AssetType.altin) {
+          final yurtIci = yurtIciSlots[a.ticker];
+          if (yurtIci != null) {
+            // Ekrandaki kotasyonun kendi kaydı: birim fiyat doğrudan TL.
+            // Kayıttan önceki slot (gece yarısını geçen ilk tur gelmeden)
+            // aşağıdaki seed'e düşer — uydurma nokta yok.
+            gunIciBeklenenTurler.add(a.type);
+            final p = pastOrNull(yurtIci, hourTs);
+            if (p != null) {
+              v = p * qty;
+              slotGercekVeri = true;
+              gunIciGercekTurler.add(a.type);
+            }
+          } else if (a.type == AssetType.altin) {
             gunIciBeklenenTurler.add(a.type);
             final gram = pastOrNull(goldSlots, hourTs);
             if (gram != null) {
@@ -1827,6 +2016,8 @@ class HistoryService {
             }
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
+              a.type == AssetType.kripto ||
+              FiyatKaynagi.eurobondSerili(a) ||
               a.type == AssetType.doviz) {
             gunIciBeklenenTurler.add(a.type);
             final map = tickerSlots[a.ticker] ?? {};
@@ -2262,7 +2453,6 @@ class HistoryService {
     bool simulate = false,
   }) async {
     if (assets.isEmpty) return const PortfolioHistoryBreakdown.empty();
-    await _besSozlesmeleriniYukle(assets);
 
     final normalizedFrom = tier.normalizeTs(from.millisecondsSinceEpoch);
     final normalizedTo = tier.normalizeTs(to.millisecondsSinceEpoch);
@@ -2278,6 +2468,8 @@ class HistoryService {
       if (a.quantity <= 0) continue;
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
+          a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
           (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
@@ -2419,11 +2611,12 @@ class HistoryService {
           }
         } else if (a.type == AssetType.hisse ||
             a.type == AssetType.emtia ||
+            a.type == AssetType.kripto ||
+            FiyatKaynagi.eurobondSerili(a) ||
             a.type == AssetType.doviz ||
             a.type.fiyatlamaTuru == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};
-          // BES açılıştan önce düz (bkz. `BesAcilis`).
-          final price = _closestOrNull(map, BesAcilis.fiyatAni(a, cursor));
+          final price = _closestOrNull(map, cursor);
           if (price != null) {
             double p = price;
             var kurVar = true;

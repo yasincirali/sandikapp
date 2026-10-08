@@ -18,9 +18,14 @@ class PrefKeys {
   static const themeMode = 'pref_theme_mode'; // 'system' | 'light' | 'dark'
   /// Arayüz dili — 'tr' | 'en' | 'system' (3.20). Cihaz tercihi, kişiye özel değil.
   static const locale = 'pref_locale';
+
+  /// Uygulama içi yazı boyutu — `YaziBoyutu.index` (0 küçük, 1 normal,
+  /// 2 büyük, 3 çok büyük). Cihaz tercihi: ekran/göz meselesi, hesaba değil.
+  static const yaziBoyutu = 'pref_yazi_boyutu';
   static const signalNotifications = 'pref_signal_notifications';
   static const partnerNotifications = 'pref_partner_notifications';
   static const balanceHidden = 'pref_balance_hidden';
+
   /// Toplam kartı kaydırma ipucu (tek seferlik göz kırpma) gösterildi mi.
   static const kaydirmaIpucu = 'pref_kaydirma_ipucu_gosterildi';
   static const lockScreenAmounts = 'pref_lockscreen_amounts';
@@ -40,8 +45,10 @@ class PrefKeys {
   /// sorulmaz — dayatma olmasın. Kişiye özel (`perUser`): aynı telefonda
   /// ikinci hesap kendi kararını verir.
   static const biometricLockOffered = 'pref_biometric_lock_offered';
+
   /// Baz para birimi — `BaseCurrency.index` (0 TRY, 1 USD, 2 EUR, 3 gram altın).
   static const baseCurrency = 'pref_base_currency';
+
   /// Yatırımcı seviyesi — `YatirimciSeviyesi.index` (0 başlangıç, 1 orta, 2 ileri).
   static const investorLevel = 'pref_investor_level';
   static const surfaceIsLight = 'pref_surface_is_light';
@@ -80,6 +87,15 @@ class PrefKeys {
   /// DEĞİŞİNCE kaydedilir; yoksa her açılış bir "izin verdi" olayı olurdu.
   static const iosPushPermissionLast = 'ios_push_permission_last';
 
+  /// Varlığı olan kullanıcıya ertelenmiş bildirim izni bir kez soruldu mu
+  /// (`NotificationService.varlikliKullaniciyaBirKezSor`).
+  static const pushIzniVarlikliSoruldu = 'push_izni_varlikli_soruldu';
+
+  /// Girişten önceki tanıtım (karşılama) görüldü mü — cihaz başına. Bu
+  /// cihazda herhangi bir hesapla oturum açılınca da `true` yazılır: mevcut
+  /// kullanıcı çıkış yapınca tanıtımı görmesin.
+  static const karsilamaGoruldu = 'karsilama_goruldu';
+
   /// Son bilinen varlık defteri (JSON); kullanıcı kimliği soneklenir.
   static const portfolioCachePrefix = 'portfolio_cache_v1_';
 
@@ -100,4 +116,21 @@ class PrefKeys {
   /// Rozet yalnız bundan SONRA gelen aktif bildirimleri "yeni" sayar.
   /// Kişiye özel (`perUser`): A'nın gördüğü, B'nin rozetini düşürmez.
   static const bildirimSonGorulen = 'pref_bildirim_son_gorulen_ms';
+
+  /// Performans "Bugünkü portföyle" (simülasyon) görünümü — Ayarlar ›
+  /// Görünüm'deki anahtar (2026-10-04, `performans_ayar_sade`). Kişiye özel
+  /// (`perUser`): A'nın görünümü B'nin grafiğini değiştirmez. Modun TEK
+  /// kaynağı (bayrak ve ekranın oturum alanı 2026-10-05'te kalktı).
+  static const performansBugunkuPortfoy = 'pref_performans_bugunku_portfoy';
+
+  /// Balina Radarı "nasıl okunur" gezintisi görüldü (2026-10-05). Kişiye
+  /// özel: aynı telefonda giriş yapan ikinci kullanıcı da bir kez görsün.
+  static const radarKocuGoruldu = 'pref_radar_kocu_goruldu';
+
+  /// Haftanın özetinde sakin geçen varlıklar da listelensin mi (Ayarlar ›
+  /// Bildirimler). Varsayılan açık: "AFT · Sakin" satırı da bilgidir.
+  static const haftaSakinGoster = 'pref_hafta_sakin_goster';
+
+  /// Erken kullanıcı hediyesi sayfası gösterildi (bir kez). Kişiye özel.
+  static const premiumHediyeGosterildi = 'pref_premium_hediye_gosterildi';
 }

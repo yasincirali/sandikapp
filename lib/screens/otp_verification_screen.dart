@@ -3,23 +3,53 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/cihaz_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/auth_service.dart';
+import '../services/crash_reporter.dart';
 import '../services/disclaimer_service.dart';
+import '../services/yasal_onay_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../l10n/l10n.dart';
+
+/// Kodun ne için istendiği.
+enum OtpAmaci {
+  /// Kayıt sonrası e-posta doğrulama (Kayıt ekranından push edilir).
+  kayit,
+
+  /// Kayıtlı olmayan cihazda giriş (0098). `_AuthGate` kök ekran olarak
+  /// gösterir; kodu ekran açılınca kendisi ister, doğrulanınca kapı açılır.
+  cihaz,
+}
 
 /// Register (veya login) sonrası email doğrulama ekranı.
 ///
 /// 6 haneli OTP input + "Doğrula" + timer + "Kodu yeniden gönder".
 /// Timer expire olunca kutular disable, sadece "Yeni kod iste" gösterilir.
 /// Yeni kod istendiğinde kutular yeniden açılır.
+///
+/// Cihaz doğrulama ([OtpAmaci.cihaz]) aynı ekranı kullanır: kod girişi,
+/// süre ve yeniden gönderme aynı davranış; değişen yalnız metin, kodun
+/// hangi uca gittiği ve "geri"nin anlamı (çıkış — gidilecek önceki ekran yok).
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String email;
-  const OtpVerificationScreen({super.key, required this.email});
+  final OtpAmaci amac;
+
+  /// Kayıt ekranında gösterilen onay metinleri (yalnız [OtpAmaci.kayit],
+  /// `RegisterScreen`'den gelir). Doğrulamadan sonra yasal onay kaydına
+  /// gider (`YasalOnayService`, 0102). Null → kayıt
+  /// yazılmaz (ör. ekran başka yoldan açıldıysa); akış aynı.
+  final KayitOnayBaglami? kayitOnayi;
+
+  const OtpVerificationScreen({
+    super.key,
+    required this.email,
+    this.amac = OtpAmaci.kayit,
+    this.kayitOnayi,
+  });
 
   @override
   ConsumerState<OtpVerificationScreen> createState() =>
@@ -46,15 +76,30 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   static const _otpValiditySeconds = 600; // 10 dk
   static const _resendCooldownSeconds = 60;
 
+  bool get _cihaz => widget.amac == OtpAmaci.cihaz;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _focusNodes.first.requestFocus();
+      // Kayıtta kodu sunucu kendisi yolladı; cihaz kapısında kodu bu ekran
+      // ister. Hata (ör. az önce gönderildi) gösterilir ama sayaç işler:
+      // önceki kod hâlâ geçerli olabilir.
+      if (_cihaz && mounted) {
+        ref
+            .read(cihazKapisiProvider.notifier)
+            .kodGonder()
+            .catchError((Object e) {
+          if (mounted) showAppError(context, e);
+        });
+      }
     });
     _startCooldown();
     _startExpiry();
   }
+
+  Future<void> _vazgec() => ref.read(authProvider.notifier).logout();
 
   @override
   void dispose() {
@@ -128,23 +173,65 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // olabilir). U18.
     final etkinDil = Localizations.localeOf(context).toString();
     setState(() => _submitting = true);
+    if (_cihaz) {
+      try {
+        // Başarılıysa kapı `serbest` olur ve `_AuthGate` bu ekranı kaldırır.
+        await ref.read(cihazKapisiProvider.notifier).kodDogrula(code);
+      } catch (e) {
+        if (!mounted) return;
+        showAppError(context, e);
+        for (final c in _controllers) {
+          c.clear();
+        }
+        _focusNodes.first.requestFocus();
+      } finally {
+        if (mounted) setState(() => _submitting = false);
+      }
+      return;
+    }
     try {
       final user = await AuthService.instance.verifyRegistrationOtp(
         email: widget.email,
         token: code,
       );
-      // Sorumluluk reddi KAYIT ekranında zaten onaylandı ("Yasal Koşullar"
-      // kutusu disclaimer metnini içeriyor). Eskiden OTP sonrası
-      // DisclaimerAcceptanceScreen ikinci kez soruyordu — aynı oturumda
-      // iki kez aynı onay. Kaydı burada düşüyoruz ki _AuthGate kapısı
-      // geçsin; hata olursa eski davranış (ekran sorar) yedek olarak kalır.
+      // Sorumluluk reddi KAYIT ekranında onaylandıysa OTP sonrası
+      // DisclaimerAcceptanceScreen ikinci kez sormasın — aynı oturumda iki
+      // kez aynı onay. Kaydı burada düşüyoruz ki _AuthGate kapısı geçsin;
+      // hata olursa eski davranış (ekran sorar) yedek olarak kalır.
       //
       // Gerçek sürüm/dil/platform ve hata raporu serviste (2026-09-23
       // denetimi U18); başarısızlık akışı durdurmaz.
-      final onayKaydedildi = await DisclaimerService.instance.kabulKaydet(
-        userId: user.id,
-        locale: etkinDil,
-      );
+      //
+      // YALNIZ yatırım uyarısının TAM metni kayıt ekranında okunup
+      // onaylandıysa (zorunlu okuma). 2026-10-04'e kadar her kayıtta
+      // yazılıyordu; ama kutuda yalnız ÖZET vardı ve kayıt TAM metnin
+      // (`disclaimerText`) hash'ini taşıyordu — gösterilmemiş metne onay.
+      // Düzeltme: tam metin gösterilmediyse kayıt yazılmaz, `_AuthGate`
+      // uyarıyı `DisclaimerAcceptanceScreen`'de tam metniyle sorar
+      // (Apple/Google ve eski hesapların zaten geçtiği yol). Kayıt ekranı
+      // uyarıyı zorunlu okuttuğu için (bayrak 2026-10-05'te kalktı) e-posta
+      // kaydında bu koşul hep doğrudur; kayıt ekranı dışından gelen
+      // `kayitOnayi` için korunur.
+      final kayitOnayi = widget.kayitOnayi;
+      final onayKaydedildi = kayitOnayi != null &&
+          kayitOnayi.yatirimUyarisiOnaylandi &&
+          await DisclaimerService.instance.kabulKaydet(
+            userId: user.id,
+            locale: etkinDil,
+          );
+      // Kayıt kutularının ve andıkları belgelerin onayı (0102). Oturum
+      // `verifyRegistrationOtp` ile açıldı; RPC `auth.uid()`'yi buradan
+      // okur. Beklenmez ve fırlatmaz: kapı (`disclaimer_acceptances`)
+      // yukarıdaki kayda bağlı, bu yalnız ispat kaydı.
+      // `userId`: yeniden onay kapısı bu
+      // yazımı bekler ve başarıda kapı izini koyar — az önce aynı sürümleri
+      // onaylayan yeni kullanıcı kapıyı görmez.
+      if (kayitOnayi != null) {
+        CrashReporter.arkaPlan(
+            YasalOnayService.instance.kayitOnaylariniKaydet(kayitOnayi,
+                locale: etkinDil, userId: user.id),
+            reason: 'YasalOnayService.kayit');
+      }
       // Kayıt hunisi (F11). Yalnızca olay; akış değişmez.
       // - `disclaimer_accepted` yalnız kayıt BAŞARILIYSA: başarısızsa kapı
       //   ekranı yeniden sorar ve olay oradan (main.dart) gider — iki kez
@@ -179,7 +266,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     if (_cooldown > 0 && !_isExpired) return;
     setState(() => _resending = true);
     try {
-      await AuthService.instance.resendRegistrationOtp(widget.email);
+      if (_cihaz) {
+        await ref.read(cihazKapisiProvider.notifier).kodGonder();
+      } else {
+        await AuthService.instance.resendRegistrationOtp(widget.email);
+      }
       if (!mounted) return;
       // Yeni kod alındı: cooldown + expiry sıfırlan, kutular tekrar aktif.
       _startCooldown();
@@ -204,7 +295,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: SandikAppBar(
-        onBack: _submitting ? null : () => Navigator.of(context).pop(),
+        onBack: _submitting
+            ? null
+            : _cihaz
+                ? _vazgec
+                : () => Navigator.of(context).pop(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -216,7 +311,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               _iconBadge(),
               const SizedBox(height: 28),
               Text(
-                context.l10n.otpTitle,
+                _cihaz ? context.l10n.cihazOtpBaslik : context.l10n.otpTitle,
                 textAlign: TextAlign.center,
                 style: context.t.headlineLarge?.copyWith(
                   fontSize: 26,
@@ -226,6 +321,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 ),
               ),
               const SizedBox(height: 10),
+              if (_cihaz) ...[
+                Text(
+                  context.l10n.cihazOtpAciklama,
+                  textAlign: TextAlign.center,
+                  style: context.t.bodyMedium?.copyWith(
+                    color: context.c.text58,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               _emailIntro(),
               const SizedBox(height: 32),
               _otpRow(),
@@ -235,6 +341,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               _primaryButton(),
               const SizedBox(height: 16),
               _resendRow(canResend: canResend),
+              // Kod e-postası Outlook'ta Gereksiz'e düştü (emülatör testi,
+              // 2026-10-03). Kullanıcı kodu bulamazsa yeni cihazda / kayıtta
+              // takılı kalır; gönderen alan adı doğrulanana kadar ipucu şart.
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.otpSpamIpucu,
+                textAlign: TextAlign.center,
+                style: context.t.bodySmall?.copyWith(color: context.c.text58),
+              ),
               const SizedBox(height: 24),
               _footerHint(),
               const SizedBox(height: 20),
@@ -265,7 +380,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         // Amber dolgunun üzerine gelen içerik rengi tanımı `onAmber`;
         // sabit `black87` her iki temada da doğru olmuyordu.
         child: Icon(
-          Icons.mark_email_read_rounded,
+          _cihaz ? Icons.phonelink_lock_rounded : Icons.mark_email_read_rounded,
           color: context.c.onAmber,
           size: 36,
         ),
@@ -441,56 +556,55 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     );
   }
 
+  // Tek yükleniyor davranışı (2026-10-08): istek atan üç hedef (doğrula,
+  // yeni kod iste, yeniden gönder) ve cihaz kipindeki "vazgeç" ortak
+  // bileşenden geçer ([SandikAsyncButton] / [SandikAsyncTap]): kilit, tek
+  // uçuş ve gösterge orada. `_submitting` / `_resending` KALIR: hücreler
+  // doğrulama sürerken salt okunur, geri düğmesi kapalı, geri sayım metni
+  // ve 6. hanede OTOMATİK gönderim (düğmeden geçmez) bu bayraklara bakar.
   Widget _primaryButton() {
+    final stil = FilledButton.styleFrom(
+      backgroundColor: context.c.amberFill,
+      foregroundColor: context.c.onAmber,
+      disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(SandikRadius.md),
+      ),
+    );
     // Kod expired ise ana buton "Yeni kod iste"ye dönüşür.
     if (_isExpired) {
-      return SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: FilledButton.icon(
-          onPressed: _isBusy ? null : _resend,
-          style: FilledButton.styleFrom(
-            backgroundColor: context.c.amberFill,
-            foregroundColor: context.c.onAmber,
-            disabledBackgroundColor:
-                context.c.amberFill.withValues(alpha: 0.35),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-            ),
-          ),
-          icon: _resending
-              ? const CustomLoadingIndicator(size: 18)
-              : const Icon(Icons.send_rounded, size: 18),
-          label: Text(
-            _resending ? context.l10n.sending : context.l10n.requestNewCode,
-            style: context.t.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+      return SandikAsyncButton(
+        onPressed: _isBusy ? null : _resend,
+        style: stil,
+        icon: const Icon(Icons.send_rounded, size: 18),
+        child: Text(
+          context.l10n.requestNewCode,
+          // Renk AÇIKÇA `onAmber`: `titleLarge` kendi rengini (`text90`)
+          // taşır ve düğmenin `foregroundColor`'ını ezer — koyu temada
+          // amber üstüne beyaz yazı 1,87:1 kalıyordu (açık tema
+          // denetimi 2026-10-08, `acik_tema_ekran_kontrast_test`).
+          // Pasifken (`_isBusy`) eski ton: soluk dolguda koyu yazı
+          // okunmazdı.
+          style: context.t.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: _isBusy ? null : context.c.onAmber,
           ),
         ),
       );
     }
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: FilledButton(
-        onPressed: _submitting ? null : _submit,
-        style: FilledButton.styleFrom(
-          backgroundColor: context.c.amberFill,
-          foregroundColor: context.c.onAmber,
-          disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.35),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-          ),
+    // Otomatik gönderimde (6. hane) düğme basılmadan meşguldür: `mesgul:`
+    // ile o yolda da gösterge bileşenden çizilir (tek gösterge).
+    return SandikAsyncButton(
+      onPressed: _submit,
+      mesgul: _submitting,
+      style: stil,
+      child: Text(
+        context.l10n.verify,
+        // Renk açıkça `onAmber` — yukarıdaki nota bak.
+        style: context.t.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: context.c.onAmber,
         ),
-        child: _submitting
-            ? const CustomLoadingIndicator(size: 22)
-            : Text(
-                context.l10n.verify,
-                style: context.t.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
       ),
     );
   }
@@ -513,9 +627,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             color: context.c.text58,
           ),
         ),
-        SandikBasma(
+        SandikAsyncTap(
           onTap: canResend ? _resend : null,
-          behavior: HitTestBehavior.opaque,
           child: Text(
             _resending
                 ? context.l10n.sending
@@ -533,6 +646,29 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   }
 
   Widget _footerHint() {
+    if (_cihaz) {
+      return Column(
+        children: [
+          Text(
+            context.l10n.cihazOtpIpucu,
+            textAlign: TextAlign.center,
+            style: context.t.bodySmall?.copyWith(
+              color: context.c.text36,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SandikAsyncButton.kompakt(
+            tur: SandikAsyncTur.metin,
+            onPressed: _submitting ? null : _vazgec,
+            // `amberText`: açık temada amber dolgu krem zeminde okunmuyor
+            // (emülatörde görüldü, 2026-10-03); metin tonu kontrastlı.
+            style: TextButton.styleFrom(foregroundColor: context.c.amberText),
+            child: Text(context.l10n.cihazOtpVazgec),
+          ),
+        ],
+      );
+    }
     return Center(
       child: Text(
         context.l10n.otpWrongEmail,

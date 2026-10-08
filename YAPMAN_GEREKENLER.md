@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-02 (kontrol paneli kayıt hunisi — 0097, dağıtım sende; önce: 2026-10-01 gece Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru)
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -8,43 +8,1028 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-02 Kontrol paneli: kayıt hunisi — 0097 + istemci (dal `feat/huni-paneli`)
+## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 
-Panelin açılış ekranı artık **Kayıt hunisi**: indirip açtı → kayıt ekranı →
-kayıt → ilk giriş → ilk varlık; ara adımlar, gün gün, kırılım, kayıt hataları
-ve kişi kişi yolculuk. Worktree: `C:/projects/PortfoyTakip-huni`.
+PR #69 (2 Ekim) main'e hiç girmemişti: 0097 önce dağıtılmalıydı, 3 Ekim'de
+yalnız SQL'i main'e alındı (iki sunucuda canlı), istemci dalda kaldı. Şimdi
+güncel main'le birleşti. Sunucu değişikliği YOK.
 
-- [x] Yerel Supabase'de (PG 17) 0097 uygulandı, doğrulama blokları geçti; sahte
-      veriyle beş `admin_huni_*` RPC'si ve panel ekranı denendi; anon tabloyu /
-      admin RPC'lerini çağıramıyor, admin olmayan "Yetkisiz" alıyor.
-- [x] `flutter analyze lib/ test/` temiz; ilgili 45 test dosyası (606 test) geçti.
-- [x] Tam paket 4219 test geçti; 5554'te güncelleme kurulumu açıldı, çökme yok,
-      `huni_aktif=false` (güncelleme ile gelen cihaz huniye girmiyor — doğru).
-- [ ] **0097'yi iki sunucuya dağıt** — Claude'un `db push`'u otomatik modda
-      reddedildi ("canlı dağıtım"). İki sunucu da 0096'da, yalnızca 0097 bekliyor
-      (kuru çalıştırma: "Would push 0097_kayit_hunisi.sql"). PowerShell'de:
+- [ ] Remote Config'e `kayit_hunisi` (Boolean, varsayılan `false`, TestFlight
+      koşulu `true`). Kapalıyken uygulama ağa çıkmaz; adımlar cihazda
+      kuyrukta bekler, açılınca gönderilir. Yalnız bu sürümle KURULAN
+      cihazlar huniye girer (güncelleme ile gelen girmez).
+- [ ] Panel kısayolu (yerel): `tool/admin_dashboard/README.md` → "Kısayolu
+      yeniden oluşturmak". Yasal metin zaten huniyi anlatıyor (1.2+), dokunulmadı.
+
+## ⏳ 2026-10-08 Sadeleştirme 2 — yedi değişiklik bayrak altında (dal `claude/project-thread-v5c9qb`)
+
+Plan: "sandık Sade Ekran Planı" (https://claude.ai/artifact/GDtX7QQzjB1nxBg5QRr8hW),
+önce/sonra: https://claude.ai/artifact/JTisJaCXH8pH8NiPcnph6m. Sunucu, şema,
+migration YOK; dağıtım gerekmez. Yedi bayrak da kodda KAPALI doğar; kapalıyken
+ekranlar birebir eski. Tek bayraksız değişiklik: varlık sayfasındaki teknik
+sinyal paneli artık yatırımcı seviyesine bakıyor (Başlangıç'ta gizli, varlık
+detayıyla aynı kural — hata düzeltmesi).
+
+- [ ] PR birleşip TestFlight build'i gelince Firebase › Remote Config'e yedi
+      anahtarı **boolean, varsayılan false** ekle ve "TestFlight" koşuluyla
+      `true` yap; telefonda dene:
+      - `donem_hafizasi` — seçtiğin dönem Performans, varlık detayı/sayfası,
+        Takip listesi ve Karşılaştır'da ortak.
+      - `performans_tek_akis` — Performans tek sayfa; Grafik|Özet yok, dönem +
+        Filtre tek satır (yalnız `period_summary_enabled` açıkken).
+      - `portfoy_dagilim_cubugu` — Portföy'de büyük halka yerine küçük
+        halka + lejant (senin seçimin "C"); açılışta dönerek dolar, halkaya
+        dokununca büyük halka açılır.
+      - `varlik_detay_katmanli` — varlık detayı: Pozisyonun (3 rakam +
+        Ayrıntı) → Analiz (katlı) → Geçmiş ve belgeler.
+      - `sinyal_on_ayar` — Sinyal ayarlarında Az / Dengeli / Çok; ayrıntı
+        "Kategoriye göre özelleştir" altında. Dengeli = bugünkü varsayılanlar.
+      - `raporlar_kapisi` — Performans'ta kupa yerine "Raporlar" (hafta özeti,
+        aylık rapor, yıl özeti, Sıralama).
+      - `genel_arama` — Ana ekranda Yenile yerine Ara (varlıklarım, piyasa,
+        eylemler); yenileme aşağı çekerek.
+- [ ] Denedikten sonra hangilerinin herkese açılacağını söyle; açılanlar için
+      sürüm notu + tanıtım turu adımı (CLAUDE.md "Yenilikler") ayrıca yazılır.
+
+## ⏳ 2026-10-08 Yasal metin 1.8: fiyat kaynakları genel, "Onay sürümü", Premium maddesi (0127)
+
+Gizlilik/KVKK 1.8, Koşullar 1.6, Açık Rıza 1.5. Bayraktan bağımsız: yeni
+build'i alan herkes BİR KEZ onaylar (Açık Rıza adımı: RevenueCat eklendi;
+kutu: Koşullar §2A Premium + Gizlilik/KVKK). Eski build daha yeni metni
+görünce kapıyı açmaz. **Bundan sonra** fiyat kaynağı eklemek metne
+dokunmaz; kişisel veri işleyişini değiştirmeyen düzeltmede yalnız "Sürüm"
+artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
+
+- [ ] PR'ı birleştir (CI yeşil olunca).
+- [ ] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
+      0127 birlikte, sırayla gider.
+- [ ] Paywall'u açmadan önce hâlâ gerekli: hesap silmede RevenueCat
+      müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
+      kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
+      metin esaslı olmayan bir düzeltmeyle güncellenir.
+## ⏳ 2026-10-08 Ücretsiz sınırlar: 7 varlık, 3 takip, sinyal tek varlıkta (0126)
+
+Senin kararın: ücretsizde 7 varlık (8.'si Premium ister), takip listesi 3,
+sinyal bildirimi tek varlıkta (2. varlık Premium). Hepsi yalnız
+`paywall_enabled` açıkken; paywall kapalı canlı kullanıcıda hiçbir şey
+değişmez (takip listesi 7'de kalır). Var olan varlık/takip silinmez, yalnız
+yeni ekleme durur.
+
+- [ ] Migration 0126 (`sinyal_varlik_secimi`, yalnız ekleme) main'e girince
+      "Supabase deploy" ile iki sunucuya (Frankfurt → Tokyo).
+- [ ] Açılış günü, `SINYAL_UCRETSIZ_SLOT` ile birlikte: Supabase secret
+      `SINYAL_UCRETSIZ_VARLIK=1` (iki sunucu) + `analyze-signals` deploy.
+      Ücretsiz kullanıcının bildirimi seçtiği tek varlıktan gelir (seçmediyse
+      en eski eklediği). Secret yoksa sunucu kısmaz.
+- [ ] Remote Config'te `free_asset_limit` ya da `free_watchlist_limit`
+      anahtarlarını daha önce elle girdiysen değerleri kodu ezer:
+      `free_asset_limit` = 7 yap; `free_watchlist_limit` paywall KAPALIYKEN
+      okunan sınırdır, 7 kalsın. Paywall açıkkenki takip sınırı yeni anahtar
+      `paywall_watchlist_limit` (varsayılan 3); sinyal varlık sayısı
+      `free_signal_assets` (varsayılan 1, 0 = kapı yok).
+
+## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`
+
+Üç yeni bayrak, hepsi KAPALI doğar (Firebase Console'da anahtarı oluştur):
+`abd_hisse`, `eurobond`, `varlik_masraflari`. Kapalıyken ekranlar birebir
+eski. **Bayraktan bağımsız tek görünür etki:** Gizlilik ve KVKK 1.7 (iki
+yeni fiyat kaynağı: Börse Frankfurt, Ziraat Bankası; yalnız sunucudan,
+kişisel veri yok). Yeni build'i alan herkes metni BİR KEZ kutuyla onaylar
+(rıza değil); eski build 1.7'yi görünce kapıyı açmaz.
+
+Sıra önemli:
+- [ ] PR'ı birleştir (CI yeşil olunca).
+- [ ] **Supabase deploy** (Actions, `main`, hedef `ikisi`): migrations
+      (0124 eurobond tabloları + cron, 0125 belgeler 1.7) ve functions
+      `eurobond-fiyat`, `eurobond-seri` ve ortak kodu değişenler: `analyze-signals`,
+      `check-price-alerts`, `daily-brief`, `fetch-inflation`, `leaderboard-snapshot`,
+      `push-live-activity`, `yurt-ici-kotasyon` (en kolayı: functions = tümü). Yeni secret YOK:
+      eurobond cron'u `KRIPTO_CRON_SECRET`'ı kullanır.
+- [ ] `python tool/sema_esitlik.py` — iki sunucu eşit mi.
+- [ ] İlk fiyat turunu bekle (hafta içi 09:00–19:40 TR, 20 dk'da bir) ya da
+      Tokyo'da elle: `select public.trigger_eurobond_fiyat();` Sonra
+      kontrol: `select count(*), max(guncellendi) from eurobond_fiyat;`
+      (37–38 tahvil beklenir).
+- [ ] Bayrakları önce kendi cihazında (TestFlight koşulu) aç:
+      `abd_hisse` → `varlik_masraflari` → `eurobond`. `eurobond`'u fiyat
+      tablosu dolmadan açma: eklenen lot fiyatsız kalır.
+- [ ] Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI): Varlık
+      Ekle'de arama + gruplu tür ızgarası. Sunucu işi yok; önce kendi
+      cihazında aç, kapalıyken çip satırı birebir eski.
+- [ ] Karar (bende varsayılan): eurobond değeri **piyasa fiyatından**
+      (Frankfurt temiz + işlemiş faiz); Ziraat alış fiyatı yalnız "bankaya
+      satarsan" satırında. Banka alış fiyatıyla değerleme istersen söyle.
+
+Bilinen sınırlar: yalnız USD eurobond eklenebilir (EUR tahvil için geçmiş
+değer yolu kur bilmiyor; `TECHNICAL_DEBT.md`); ABD hissesinde temettü
+otomatik yakalanmaz; Live Activity ve widget'ın "borsa açık" saati BIST'e
+göre.
+
+## ⏳ 2026-10-08 Sadeleştirme kalanları + bulut oturumu kurulumu — PR #110 (dal `claude/project-thread-ad3on0`)
+
+Sunucu, şema ve bayrak değişikliği YOK; dağıtım gerekmez. Bugün kartının
+görünümü aynı. **Analitik:** `today_row_shown` olayında `yesil`/`haftalik`/
+`aylik`/`olay_*` türleri bu sürümden itibaren biter, `oynayan` başlar
+(kart bunları 2026-10-04'ten beri çizmiyordu; sayım yanlıştı).
+
+- [x] PR #110 birleşti (282b7c2).
+- [ ] **PR #111** (aynı dal, 2. tur): 12 kart daha `SandikCard`, 5 seçici
+      `SandikSegment` (8pt uzun, seçim amber dolgu yerine nötr kayan zemin),
+      açık tema kontrastı, başlık uçuşu (2.14), çıkış yalnız Profil'de
+      (ana ekran üst çubuğundan kalktı). Sunucu/migration yok.
+      CI yeşil olunca birleştir; cihazda seçicilere ve açık temaya bak.
+- [ ] **Kilit widget'ı saat damgası** (#111, Swift; CI derlemez, ilk
+      derleme TestFlight koşusunda): seans açıkken widget rakamı
+      uygulamanın kaydından okuyorsa altta "13:05 itibarıyla" (tutar
+      görünürse "· 13:05") yazar. Canlı Etkinlik ile fark kalırsa
+      sebebi görünür olur. TestFlight'ta kilit ekranında bak; derleme
+      kırılırsa iOS koşusu söyler.
+- [ ] **Bayrak `varlik_hero_gecisi`** (yeni, varsayılan kapalı): Portföy
+      satırından varlık ekranına geçişte kod (THYAO) satırdan başlığa uçar.
+      Önce kendi cihazında koşullu aç (TestFlight), push ve geri dönüşte
+      metin bozuluyor mu bak; iyiyse herkese aç.
+- [ ] **Bulut MCP'leri (birleştikten sonra, bir kez):** Project settings ›
+      Cloud environment › ortamın yanındaki dişli › **Setup script**:
+      `bash tool/bulut_kurulum.sh` — Flutter 3.47.2 + `codebase-memory-mcp`,
+      `dart`, `ui-ux-pro-mcp` (Linux yolları, `-s local`). `.mcp.json`
+      değişmez; yerel makinen etkilenmez. Yeni açılan bulut oturumlarında
+      geçerli.
+- [ ] **Skill'ler repoya (bilgisayarında, birleştikten sonra, bir kez):**
+      `git pull && git add .claude/skills && git commit -m "skill'ler repoya" && git push`
+      — `.gitignore` artık yalnız `.claude/skills/`'i içeri alır;
+      `settings.local.json`, hook'lar, yerel bellek dışarıda kalır. Bunu
+      yapana kadar bulut oturumunda CLAUDE.md tablosundaki skill'ler YOK.
+- [x] Karar (2026-10-08): varlık detayı ile varlık sayfası **olduğu gibi
+      kalır** — iki grafik ayrı (`TECHNICAL_DEBT.md` "İki varlık yüzeyi").
+- [ ] Gerçek cihazda açık tema: yasal metin ekranı ve grafik ekranları.
+
+## ⏳ 2026-10-08 Premium satın alma (RevenueCat) — dal `claude/project-thread-uryvqf`
+
+Uygulama tarafı hazır, hepsi `paywall_enabled` arkasında (bayrak KAPALI kaldıkça
+mağazadaki kullanıcı hiçbir şey görmez; migration ve sunucu değişikliği yok).
+Bu PR'daki düzeltmeler: Sinyal Ayarları'ndaki ödemesiz "Aç" düğmesi release'ten
+kalktı (yalnız debug'da uzun basış), satın alma artık gerçek (taklit 600 ms
+yok), paywall yalnız gerçekten kilitli özellikleri satıyor, premium göstergeler
+gerçek hakka bağlı. Deneme süresi ve fiyat MAĞAZADAN okunur.
+
+Paywall'u açmadan önce sırayla:
+- [ ] App Store Connect: abonelik grubu "sandık Premium", iki ürün — aylık
+      49 ₺, yıllık 399 ₺ (ürün kimlikleri ör. `sandik_premium_aylik`,
+      `sandik_premium_yillik`). Deneme istiyorsan "Introductory Offer → Free".
+      Paid Applications sözleşmesi + banka/vergi bilgisi tamam olmalı.
+- [ ] Play Console: aynı iki abonelik (base plan aylık/yıllık), istersen
+      "free trial" teklifi. Ödeme profili tamam olmalı.
+- [ ] RevenueCat: proje + iOS ve Android uygulaması; entitlement kimliği
+      tam olarak `premium`; "default" offering içinde Monthly ve Annual paket.
+      App Store Connect API anahtarı ve Play servis hesabı JSON'u RevenueCat'e.
+- [ ] GitHub secret'ları (build'e girer): `REVENUECAT_IOS_KEY` (appl_…),
+      `REVENUECAT_ANDROID_KEY` (goog_…). Yoksa satın alma "kullanılamıyor" der.
+- [ ] Supabase secret'ları (iki sunucu): `REVENUECAT_WEBHOOK_SECRET`,
+      `REVENUECAT_API_KEY`; RevenueCat › Integrations › Webhook adresi
+      `https://ybdbzouzhzwthjgwlbmk.supabase.co/functions/v1/revenuecat-webhook`,
+      Authorization başlığı = webhook secret.
+- [x] Yasal metin: 2026-10-08 1.8 / Koşullar 1.6 / Açık Rıza 1.5 ile metne girdi (0127). Eski not: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
+      (Koşullar §2A, Gizlilik §3.6/§5/§6/§7). Açılış yayınında md'ye girer,
+      sürüm artar, migration. Hesap silmede RevenueCat müşterisini silen çağrı
+      (`delete-account`) henüz yok; ya eklenir ya metin bunu söyler.
+- [ ] Sandbox testi: TestFlight'ta kendi cihazında `paywall_enabled` (koşullu)
+      aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.
+- [ ] Açılış günü sırası yukarıdaki 0115–0118 bölümünde (hediye → bayrak →
+      `kapi_acik`).
+- [ ] Aynı gün sinyal kapısı: Supabase secret `SINYAL_UCRETSIZ_SLOT=1` (iki
+      sunucu) + `analyze-signals` yeniden deploy. Ücretsiz kullanıcıya tür başına
+      günde 1 bildirim gider (seçtiği ilk saat, periyodikte 11:00); tercihi
+      silinmez, Premium alınca geri gelir. Secret yoksa sunucu kısıtlamaz
+      (uygulama "günde 1" gösterir ama 2 gelir; zararsız ama tutarsız).
+- [ ] İsteğe bağlı Remote Config: `free_signal_slots_per_day` (varsayılan 1),
+      `free_compare_series` (varsayılan 2 = kendi serine ek bir kıyas;
+      Premium 5), `free_partner_limit` (varsayılan 1; var olan ortaklıklar
+      korunur, yalnız yeni ortak eklemek durur). Hepsi yalnız
+      `paywall_enabled` açıkken işler.
+
+## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
+
+Bayraksız gelen iki düzeltme (mağazadaki davranışı yalnız iyileştirir):
+TEFAS fon listesi boş gelince artık "fon listesi alınamadı" yazar (önceden
+banka ekstresindeki fonların hepsi sessizce düşüyordu); "PORTFÖY" geçen fon
+unvanı sembol sanılmaz (üç fonluk banka tablosu hiç anlaşılmıyordu).
+
+Üç yeni bayrak, hepsi KAPALI doğar (Firebase Console'da anahtarı oluştur):
+- `ekstre_hareketleri`: banka ekstresindeki hesap hareketlerinden dönem içi
+  alışların GERÇEK tarih ve fiyatı (yoksa maliyet ekstre günü fiyatı).
+  Sunucu işi yok; önce kendi cihazında aç, kendi Mayıs ekstrenle dene.
+- `ekstre_tanilama`: okunamayan ekstrede "Tanılama metnini kopyala"
+  (ad/numara/tutar maskeli tablo düzeni). Sunucu işi yok.
+- `ekstre_ai_esleme`: "Yapay zekâyla eşle" — **Premium'a özel** (senin
+  kararın). Kapı varlık notlarıyla aynı (`premium_icerik_gorebilir`): paywall
+  kapalıyken herkes kullanır, `paywall_enabled` açılınca yalnız Premium;
+  sunucu da ayrıca denetler (403). Sırası önemli:
+  1. PR birleşince **Supabase deploy** (main, hedef `ikisi`, migrations +
+     fonksiyon `ekstre-esle`) → 0121 + 0122 + 0123 iki sunucuya; şema eşitliği
+     yeşil. Bunu Claude yapar. `ANTHROPIC_API_KEY` zaten iki sunucuda.
+     İsteğe bağlı secret'lar: `EKSTRE_GUNLUK_HAK` (kullanıcı başına günlük
+     istek, yoksa 10), `EKSTRE_AYLIK_TAVAN_USD` (yoksa 10 $; dolunca 429).
+  2. Gizlilik ve KVKK 1.6 (Koşullar 1.5, Açık Rıza 1.4 kalır). 1.6'yı
+     taşıyan build mağazaya 0122'den SONRA çıkar; eski build'ler 1.6'yı
+     görünce kapıyı açmaz, yeni build bir kez sorar.
+  3. Bayrağı önce kendi cihazında aç.
+- **Admin hesabı Premium'u kilitsiz görür** (senin isteğin): admin =
+  `push_admins` tablosundaki hesap (push tanılamasıyla aynı). Sunucu 0123
+  (`premium_mi_kullanici` admin'e true), uygulama `effectivePremiumProvider`
+  (`is_push_admin`). Bayrak yok: admin olmayan herkes için sonuç birebir eski.
+- RevenueCat metne girince sürüm artık **1.7** olacak (1.6 bu iş için kullanıldı).
+
+## ⏳ 2026-10-05 Yasal metin 1.5: varlık notları, geri bildirim, Premium hakkı (0120)
+
+Koşullar, Gizlilik ve KVKK 1.5 oldu (Açık Rıza Metni 1.4'te kaldı: yapay
+zekâya kişisel veri gitmiyor). Yayın sırası:
+1. PR birleşince **Supabase deploy** (main, hedef `ikisi`, migrations) → 0120
+   iki sunucuya; şema eşitliği yeşil olmalı. Bunu Claude yapar.
+2. Ancak ondan sonra 1.5'i taşıyan build mağazaya. Eski build'ler (1.4)
+   sunucuda 1.5'i görünce kapıyı açmaz; yeni build bir kez sorar
+   (kutu + bilgilendirme; rıza yeniden okutulmaz).
+3. Web (`docs/`) main'e girince GitHub Pages'te kendiliğinden yayınlanır.
+4. RevenueCat SDK gelince metne RevenueCat eklenecek (1.6, aynı süreç).
+
+## ⏳ 2026-10-05 Balina radarı tamamlama + yapay zekâ notu + Premium altyapısı (0115–0118) — dal `claude/project-thread-w9jtzj`
+
+Her şey bayrak arkasında: `balina_radari_acik` ve `paywall_enabled`
+KAPALI kaldıkça mağazadaki kullanıcı hiçbir değişiklik görmez. Migration'lar
+yalnız ekler (yeni tablo/kolon/RPC); eski sürümlerin okuduğu hiçbir şey
+değişmedi. 0118 `profiles.haftalik_hareket_satiri` varsayılanı `true`: bugün
+Pazartesi bildirimine giren hareket satırı aynen gelmeye devam eder.
+
+Yayın sırası (sıra önemli):
+- [ ] PR'ı birleştir → Supabase deploy, dal `main`, hedef `ikisi`,
+      migration + fonksiyonlar (`analiz-hazirla`, `analiz-topla`,
+      `revenuecat-webhook`, `weekly-summary`, `kripto-hacim-gozlem`).
+- [ ] Secret'lar (iki sunucuya da): `ANTHROPIC_API_KEY` notları açar.
+      Anahtar yokken haftalık/aylık cron 503 `anahtar_yok` döner, para
+      harcanmaz. Anahtarı ancak notların üretilmesini istediğinde koy.
+      Aylık harcama tavanı `ANALIZ_AYLIK_TAVAN_USD` (yoksa 50 $; aşılınca
+      daha ucuz modele iner).
+- [ ] İlk notları kendi cihazında gör: Pazar 17:00 UTC cron'u ya da
+      Tokyo SQL Editor'da `select public.trigger_analiz_hazirla('haftalik');`
+      → ~1 saat sonra `analiz-topla` toplar. Reddedilen not yayınlanmaz;
+      neden `varlik_analizi.red_nedeni`'nde.
+- [ ] `balina_radari_acik` = true (önce kendi cihazında). Açılınca:
+      Ana sayfa "Bugün" şeridi (yalnız olağandışı hareket varsa), fon/hisse/
+      kripto kartları + ayrıntı ekranları, Haftanın özeti listesi, not
+      kutusu, Ayarlar › Bildirimler'de iki anahtar, tur adımı "radar" ve
+      sürüm notu maddesi görünür.
+- [ ] Yasal metin (bayrak açılmadan ÖNCE, aynı yayında): not geri bildirimi
+      (👍👎 + "yanlış sayı" metni, `not_geri_bildirim`) yeni bir saklama;
+      RevenueCat yeni üçüncü taraf. `legal/tr/*.md` + sürüm + `_build_legal.py`
+      + migration + yeniden onay. Anthropic'e kişisel veri GİTMEZ (yalnız
+      piyasa ölçümleri), yine de alt işleyen listesine yazılması önerilir.
+      Bayrak kapalıyken metne yazmadım: yeniden onay kapısı bugün bütün
+      kullanıcılara görünmeyen bir özellik için açılırdı.
+- [ ] Premium (ayrı karar): uygulamadaki satın alma hâlâ temsili
+      (`paywall_screen.dart`); RevenueCat SDK'sı senin kararını bekliyor.
+      Sunucu hazır: `revenuecat-webhook` için `REVENUECAT_WEBHOOK_SECRET` ve
+      `REVENUECAT_API_KEY`. Açılış günü sırası:
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `paywall_enabled` (Remote Config, yayılsın) →
+      `update public.premium_ayar set kapi_acik = true;`. Sıra önemli:
+      kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu
+      "açılamadı" gibi görür (ekran artık bu durumda kilidi gösteriyor ama
+      kartlar boş kalır).
+      Fiyat (kararın 2026-10-05): aylık 49 ₺, yıllık 399 ₺. Mağaza ürünleri bu
+      fiyatla açılır; Remote Config `premium_price_yearly` = `399₺/yıl` (kod
+      varsayılanı da 399). Apple Small Business Program'a kayıt ol (yoksa ilk
+      yıl %30 kesinti). Hesap: /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
+      Notlar üretilmeden paywall'u açma: karşılaştırma tablosu notu vaat
+      ediyor.
+
+## ⏳ 2026-10-05 Maaş günü birikim hatırlatması (Faz 2, 0119)
+
+Ayarlar › Bildirimler'de "Maaş günü hatırlatması" (yalnız `birikim_serisi`
+bayrağı açıkken görünür): ayın bir günü seçilir, o gün 10:30'da, o ay hiç
+alım yoksa tek push gider; alım varsa gitmez. Varsayılan kapalı (opt-in) —
+migration canlıda kimseye push göndermez. Yasal metin değişmedi: "takvim
+hatırlatmaları" + "bildirim tercihleri" kapsıyor; defter en çok ~2 ay tutulur.
+- [ ] Sıra: PR birleş → Supabase deploy (dal `main`, hedef `ikisi`,
+      migration + `calendar-nudge` fonksiyonu). Uygulama kolonu yalnız
+      bayrak açıkken okur; deploy'dan önce bayrağı açma.
+- [ ] Deneme: kendi cihazında bayrak açık, Ayarlar'da bugünün gününü seç,
+      o ay alımın yoksa Tokyo'da `select public.trigger_calendar_nudge_birikim();`
+      (alımın varsa push gitmez, beklenen bu).
+
+## ⏳ 2026-10-05 Aylık birikim serisi (Faz 1) — bayrak `birikim_serisi` KAPALI
+
+Kararların (5 Ekim): ritim aylık, son 12 ayda 1 mola, BES otomatik katkısı
+sayılır, maaş günü hatırlatması yapılacak (Faz 2, ayrı PR). Rapor:
+https://claude.ai/artifact/SVA5cQaxt5431EMkFmxsdw
+
+Bu PR yalnız uygulama tarafı; **sunucu değişikliği ve deploy yok**. Bayrak
+kapalıyken Özet ve kutlamalar birebir eski. Açınca: Performans › Özet ›
+"Birikim disiplinin" kartının altında "N ay art arda", 12 aylık nokta şeridi,
+en uzun seri, mola hakkı; 3/6/12/24/36 aylık seriler, yalnız o ayın alımı
+seriyi tam eşiğe getirdiğinde kutlanır (ayda en çok bir kutlama kuralı aynı).
+- [ ] PR birleşince Firebase Remote Config'te `birikim_serisi` = true,
+      önce yalnız kendi cihazın (koşul: kullanıcı/cihaz), Özet'e bak.
+- [ ] Herkese açmadan önce: sürüm notu (`surum_notlari.dart`) + Performans
+      tur adımı metnine "birikim serin" eklenmeli (bayrak kapalıyken eklenmedi;
+      tur kapalı özelliği anlatmasın diye).
+- Bilinen sınır: Birlikte görünümünde Özet kartındaki seri ortak defterden
+  sayılır (kartın diğer sayıları gibi); kutlama yalnız kendi lotlarından.
+
+## ⏳ 2026-10-05 Supabase Free plan kotası — cron geçmişi saklama (0112) + kripto 2 dk (0113) + db_logs başarılı satır 1 gün (0114)
+
+Durum (Tokyo, bu dönem): DB 342/500 MB, Log Ingestion 1.22/1 GB, Log Query
+206/100 GB. Log limitleri **2027 başına kadar uygulanmıyor** (yumuşak
+başlangıç); uygulandığında Log Query aşımı yalnızca log ekranını kısar
+(sonraki ay 1 saat saklama + dakikada 10 sorgu), uygulamayı durdurmaz.
+Asıl risk DB boyutu: 500 MB'ı geçen Free proje salt okunur kipe düşer.
+
+Log Query'yi repo üretmiyor (workflow'lar yalnız `database/query` çağırır).
+Taranan log = panelde açık Logs/Edge Functions/Reports sekmeleri, CLI veya
+yerel Claude'un Supabase MCP `get_logs` çağrıları. Açık bırakılan canlı
+log sekmesi saniyelerle yeniden sorgular.
+
+- [ ] PR'ı birleştir → Supabase deploy, dal `main`, hedef `ikisi`,
+      yalnız migration (fonksiyonda yalnız yorum değişti).
+- [ ] Ertesi sabah (03:35 UTC'den sonra), Tokyo SQL Editor, bir kez
+      (silinen yer ancak böyle diske döner; tablo birkaç sn kilitlenir):
+      `vacuum full public.db_logs;` ve `vacuum full cron.job_run_details;`
+- Ölçüm 2026-10-05 (Tokyo): db_logs 198 MB / ~305 bin satır, fon_akis_gunluk
+  42 MB, net._http_response 35 MB, cron.job_run_details 6 MB.
+- [ ] Salt okunur ölçüm (Tokyo SQL Editor), sonucu thread'e yapıştır:
+      ```sql
+      select n.nspname||'.'||c.relname as tablo,
+             pg_size_pretty(pg_total_relation_size(c.oid)) as boyut,
+             c.reltuples::bigint as satir_tahmini
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace
+       where c.relkind = 'r'
+       order by pg_total_relation_size(c.oid) desc limit 15;
       ```
-      cd C:\projects\PortfoyTakip-huni
-      supabase link --project-ref ynwymnpdiwudrlxfrmuo   # Frankfurt
-      supabase db push --linked
-      supabase link --project-ref ybdbzouzhzwthjgwlbmk   # Tokyo
-      supabase db push --linked
-      cd C:\projects\PortfoyTakip && python tool/sema_esitlik.py
+- [ ] Panelde açık Logs / Edge Functions log sekmelerini kapat; log
+      okumayı kısa zaman aralığıyla (son 1 saat) yap.
+
+## ⏳ 2026-10-05 Onay ekranı düzeni (#95) + duman testi (#96)
+
+#95 main'de (TestFlight/Play build'i tetiklendi; sunucu değişikliği yok,
+deploy gerekmez): yasal koşullar kutucuğu büyük ve amber çerçeveli (kayıt +
+kapı), bir adım onaylanınca liste sıradaki adıma kendiliğinden kayar, kapının
+"Neler değişti" notu katlanır ve kapalı gelir. #96: emülatör duman testi
+#92'den beri kırmızıydı (karşılama tanıtımı + koşulsuz yasal kapı); test
+artık "Atla" ve kapı adımlarından geçer.
+- [ ] TestFlight'ta: kapı (eski onaylı hesap) ve kayıt ekranında kutucuk
+      görünür mü, Açık Rıza onaylanınca ekran kutuya kayıyor mu.
+
+## ⏳ 2026-10-05 Dövizli satışta satış günü kuru (0111) — bayrak `satis_gunu_kuru` KAPALI
+
+Sorun: dolar/euro cinsi varlık satılınca ele geçen tutar TL'ye **alım
+kuruyla** çevriliyordu; kur kazancı gerçekleşen kâra ve nakit akışına
+girmiyordu (30 TL'den alınıp 41 TL'den satılan 100 $ → 0 TL kâr). Düzeltme:
+yeni satış satırı satış günü kurunu `assets.sell_fx_rate`'e yazar; maliyet
+alım kuruyla kalır. Geçmiş satışlar değişmez (o günün kuru kayıtlı değil).
+
+> **BİRLEŞTİ VE DAĞITILDI 2026-10-05:** PR #98 main'de (693ad2b); 0111 iki
+> sunucuda (Actions run 37307983966, hedef `ikisi`, yalnız migration), şema
+> parmak izi Tokyo = Frankfurt. Kalan tek adım 4: bayrağı açmak (sende).
+
+**Dağıtım sırası (ters sırada bayrak açıkken dövizli satış PGRST204 ile
+reddedilir):**
+- [x] 1. PR'ı birleştir (bayrak kapalı: davranış birebir eski).
+- [x] 2. Migration `0111_satis_gunu_kuru.sql` → **iki sunucuya**
+      (`supabase-deploy.yml`, hedef `ikisi`). Yalnız boş geçilebilir sütun.
+      Doğrula (salt okunur):
+      `select column_name from information_schema.columns where table_name = 'assets' and column_name = 'sell_fx_rate';`
+- [x] 3. `python tool/sema_esitlik.py` → ŞEMA EŞİT (deploy'un eşitlik kapısı geçti).
+- [ ] 4. ANCAK SONRA Firebase › Remote Config: `satis_gunu_kuru` = `true`
+      (önce kendi cihazına). Dövizli bir varlıktan küçük bir satış yap;
+      Özet'teki "gerçekleşen" satırı kur farkını göstermeli.
+
+## ⏳ 2026-10-05 Eylül TÜFE'si gelmedi — takvim düzeltmesi (0110) — dal `claude/aylik-enflasyon-eylul-358xmm`
+
+Belirti: Eylül TÜFE'si açıklandı, uygulamada aylık enflasyon hâlâ Ağustos.
+Kök neden: `fetch-inflation` yalnız ayın 3'ü/4'ü koşuyordu; Ekim'de ikisi
+de hafta sonu (TÜİK/EVDS iş gününde yayımlar) → tablo Ağustos'ta kaldı,
+sonraki deneme Kasım'dı. Aylık özet push'u da aynı sebeple gitmedi.
+0110: çekim ve aylık özet ayın 3'ü–12'si her gün (çekim 10:05 + 16:05,
+özet 10:30). Yalnız takvim; istemci değişmez, eski sürümler etkilenmez.
+
+- [ ] Teşhisi doğrula (salt okunur, Tokyo SQL Editor):
+      `select max(period) from inflation_index;` → `2026-08-01` beklenir.
+- [ ] PR'ı birleştir → Supabase deploy, dal `main`, hedef `ikisi`,
+      yalnız migration (fonksiyon değişmedi). Numara 0110 doluysa yeniden adlandır.
+- [ ] Bu ayı beklemeden kapatmak istersen (normal cron yolu, push göndermez):
+      `select public.trigger_fetch_inflation();` → birkaç sn sonra
+      `select max(period) from inflation_index;` → `2026-09-01`.
+      Aylık özet push'u ertesi sabah 10:30'da kendiliğinden gider.
+
+## ⏳ 2026-10-05 Okuma sadeleştirme — belgeler 1.4 + kutu 1.1 (0109) — dal `feat/okuma-sadelestir` (yerel, push yok)
+
+Kullanıcı kararı (2026-10-05): *"Tüm hepsini içinden onaylatmak çok uzun bir
+process gibi oldu."* Kayıtta ve kapıda artık YALNIZ **Açık Rıza Metni**
+(sonuna kadar okunur, rıza metnin sonunda) ve **Yatırım Uyarısı** okunur.
+Koşullar / Gizlilik / KVKK salt okunur bağlantı; tek kutu (1.1): "Kullanım
+Koşulları'nı kabul ediyorum ve 18 yaşından büyüğüm. Gizlilik Politikası ve
+KVKK Aydınlatma Metni ile bilgilendirildim." — açık rıza İÇERMEZ.
+
+**⚠️ Migration numarası GEÇİCİ (0109).** Dağıtımdan önce iki sunucunun
+defterini sorgula (`supabase_migrations.schema_migrations`, son numara);
+0109 doluysa dosyayı sıradaki boş numaraya yeniden adlandır (balina dersi).
+İçerik yalnız ekler ve kendini doğrular; numara gövdeyi etkilemez.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı "yasal metin yok:
+kosullar/1.4/tr" ile reddedilir, kapı her açılışta yeniden sorar):**
+- [ ] 1. Migration → **iki sunucuya** (`supabase-deploy.yml`, hedef `ikisi`;
+      Frankfurt → Tokyo). Fonksiyon/şema değişmez, yalnız 6 metin satırı.
+      Doğrula (salt okunur):
+      `select tur, surum, dil from yasal_metinler where surum = '1.4' or (tur = 'kayit_tek_kutu' and surum = '1.1') order by 1, 3;`
+      → 4 belge 1.4 + kutu 1.1 (tr, en); 1.3 ve kutu 1.0 yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). Pages web'i de 1.4 ile yayınlar.
+- **1.3'ü onaylamış herkes 1.4'ü BİR KEZ görür:** bir sonraki açılışta kapıda
+  "Güncellenen belgeler" + "Neler değişti" (1.4); Açık Rıza Metni'ni sonuna
+  kadar okuyup onaylar, kutuyu işaretler, tek dokunuşla biter (tek RPC).
+  Eski kutu 1.0 tamam sayılmaz — kutu o tek seferde alınır, ikinci ekran yok.
+  1.3 taşıyan eski sürümler sunucuda 1.4'ü görünce kapıyı hiç açmaz (çift
+  onay yok — `uygulamaEski`, test `test/yasal_onay_service_test.dart`
+  "0109").
+
+## ⏳ 2026-10-05 Bayrak temizliği — dal `feat/bayrak-temizligi` (yerel, PR senin onayında)
+
+Karar (2026-10-05): *"Önerilerin hepsini uygula."* 2026-10-04'te varsayılanı
+AÇIK yapılan **15 Remote Config bayrağı koddan kaldırıldı**; açık davranış
+kalıcı, eski (kapalı) yollar silindi: `ilk_varlik_kolay`,
+`karsilama_tanitimi`, `seviye_anketi`, `bugun_karti_kiyas`,
+`varlik_islem_cubugu`, `tek_ortak_secici`, `tek_kiyas_yuzeyi`,
+`siralama_tek_sayfa`, `performans_ayar_sade`, `yaris_duello_arena`,
+`tek_onay_kutusu`, `ortak_secimi_tasi`, `yasal_onay_kaydi`,
+`yasal_kapi_en_yeni`, `zorunlu_okuma`.
+
+- [x] **PR'ı incele ve birleştir (#92, birleşti) — bedeli:** bu PR birleşip yayımlanınca bu
+      15 özellik artık **Firebase Console'dan kapatılamaz**; geri almak yeni
+      sürüm ister. Aşağıdaki bölümlerdeki "Console'a `false` ekleyerek kapat"
+      talimatları o sürümden itibaren GEÇERSİZ (yalnız eski sürümlerde
+      çalışır). Birleşene kadar eski talimatlar geçerli.
+- [ ] Birleştikten ve yeni sürüm yaygınlaştıktan sonra (isteğe bağlı):
+      Console'da bu 15 anahtardan tanımlı olanları sil — yeni sürüm okumaz,
+      eski sürümler varsayılanı (açık) kullanır. Acele yok, zararsız.
+- [ ] **`yeniden_onay_kapisi` = `false` KALICI KALIR — silme, değiştirme.**
+      O anahtarı eski sürümler (#85) okuyor; bu PR ona dokunmaz.
+- [ ] Emülatörde bak: karşılama tanıtımı (uygulamayı sil-yükle), kayıt (tek
+      kutu + beş metin zorunlu okuma), Bugün kartı H düzeni, Profil/Performans
+      › Sıralama + tek ortakta düello arenası, Performans kapsam çipi +
+      "Bugünkü portföyle" rozeti (Ayarlar › Görünüm), Ayarlar grupları +
+      Gelişmiş, boş ana ekranda vitrin, varlık ekranında Al · Sat · Temettü.
+
+## ⏳ 2026-10-04 Fon para akışı (Balina B1) — dal `feat/balina-fon-akisi` (yerel, push yok)
+
+Fon/BES sayfasında "Para akışı" kartı: son haftanın net girişi/çıkışı, 8
+haftalık çubuklar, fon büyüklüğü, yatırımcı sayısı ve kurala uyan büyük
+giriş/çıkış günleri. Veri TEFAS'tan sunucuda toplanır (`akis-gozlem`, 0106).
+Bayrak `balina_radari_acik` **KAPALI** doğar; aşağıdaki sıra bitmeden açma.
+
+> **DAĞITILDI 2026-10-05** (Actions run 37238691709, hedef `ikisi`): migration
+> 0106 + 0107 + 0108 ve `akis-gozlem`, `hacim-gozlem`, `kripto-hacim-gozlem`,
+> `weekly-summary` iki sunucuda; ŞEMA EŞİT. Aşağıdaki "deploy" maddeleri
+> tamam; ilk doldurmayı cron kendiliğinden yapar (fon penceresi ~2 günde
+> dolar), beklemek istemezsen tetikleyicileri elle çağır. Numaralar iki kez
+> kaydı: canlıda 0105 zaten PR #90'a aitti; bu dal #90'ın üstüne oturur,
+> **önce #90'ı birleştir**.
+
+- [ ] Dalı incele, uygunsa PR aç / birleştir (birleştirme sende).
+- [ ] **Supabase deploy, hedef `ikisi`:** migration `0106_fon_akisi.sql` +
+      fonksiyon `akis-gozlem`. Yeni secret YOK (`TEFAS_NAV_CRON_SECRET`
+      paylaşılır). Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] İlk doldurma (cron'u beklemeden, etkin sunucuda SQL Editor):
+      `select public.trigger_akis_gozlem();` — 90 sn arayla ~7 kez. Kontrol:
+      `select count(*), min(tarih), max(tarih) from fon_akis_tur where fon_sayisi > 0;`
+      → ~89 gün, `max` son işlem günü.
+- [ ] Yanlış alarm denetimi (R-73): elindeki 10 fonda "Büyük hareketler"
+      listesi makul mü? Kural (2026-10-04): 4 sapma + %3 + fon ≥ ₺250 mn,
+      para piyasası fonları hariç. Yerel ölçüm (29 işlem günü, 1.375 fon):
+      günde ~16 olay, fonların %21'inde en az bir olay; bunların 275'i
+      bildirim kademesinde (≥ %5, ≥ ₺25 mn, penceredeki en büyük akış;
+      203 fon). Oranların paydası akıştan önceki fon büyüklüğü. Eşikler `_shared/balina.ts`'te tek yerde.
+- [ ] **Hisse hacim radarı (B2):** aynı dağıtımda migration
+      `0107_hisse_hacim.sql` + fonksiyon `hacim-gozlem` (hedef `ikisi`; yeni
+      secret YOK, `PRICE_ALERTS_CRON_SECRET` paylaşılır). İlk doldurma tek
+      çağrı: `select public.trigger_hacim_gozlem();` (3 aylık seri tek
+      istekte gelir). Kontrol:
+      `select count(distinct ticker), max(tarih) from hisse_hacim_gunluk;`
+- [ ] **Kripto alıcı baskısı (B3):** migration `0108_kripto_hacim.sql` +
+      fonksiyon `kripto-hacim-gozlem` (yeni secret YOK). İlk doldurma tek
+      çağrı: `select public.trigger_kripto_hacim_gozlem();` Kontrol:
+      `select count(distinct ticker), max(tarih) from kripto_hacim_gunluk;`
+- [ ] **Haftanın özeti akış cümlesi** (kararın 2026-10-04: olay başına ayrı
+      bildirim yok, Pazartesi özeti akışa değinir). `weekly-summary`
+      fonksiyonunu da dağıt (hedef `ikisi`). Cümle KAPALI doğar; bayrağı
+      açtığın gün iki projede function secret olarak yaz:
+      `HAFTALIK_AKIS_SATIRI=1`. Kuru koşu:
+      `select public.trigger_weekly_summary();` yanıtında `flow_sentences`
+      (cümlesi olan kullanıcı) ve `sent_flow_only` (yüzdesi atlanıp yalnız
+      akışla giden) alanları. Kapalıyken haftalık özet birebir eskisi gibi.
+- [ ] Firebase Console › Remote Config: `balina_radari_acik` = `true`
+      (önce kendi cihazına koşulla). Açılışla AYNI sürümde sürüm notu + tur
+      adımı yazılacak (bayrak kapalıyken yazılmadı: görünmeyen özellik
+      duyurulmaz).
+## ✅ 2026-10-04/05 oturumu — cihazda senin bakacakların
+
+Kod ve sunucu tarafı bitti (PR #85–#89, 0102–0105 iki sunucuda). Emülatörde
+görülemeyenler — gerçek cihazda bak:
+
+- [ ] **Kaydı sonuna kadar götür (yeni e-posta hesabı):** beş metin (Koşullar,
+      Gizlilik, KVKK, Açık Rıza, Yatırım Uyarısı) tek tek açılıp sonunda
+      onaylanır → kutu → Kayıt Ol → OTP. OTP sonrası yatırım uyarısı ekranı
+      ÇIKMAMALI. Sunucuda: `select * from yasal_onay_durumu where user_id =
+      '<yeni id>';` → beş tür + kayıt kutusu `guncel_mi = true`; `kayit`
+      kanalında `yatirim_uyarisi` ve `degiskenler.sonuna_kadar_okundu = true`.
+- [ ] **Apple / Google ile ilk giriş (iOS):** onay ekranı → beş satır, her
+      biri sonuna kadar okunup onaylanır → kullanıcı adı ekranı (aynen kalır).
+- [ ] **Eski hesapla giriş (1.3 sürümüyle):** "Güncellenen belgeler" bir kez
+      çıkar, dört belge 1.3; onaydan sonra bir daha sorulmaz. 1.2/1.1 taşıyan
+      eski sürümde kapı HİÇ açılmamalı (çift onay yok kuralı).
+- [ ] **TalkBack / büyük yazı (×2):** Koşullar'ı yalnız kaydırma hareketiyle
+      sona getirip onaylamak mümkün olmalı (kilitlenme yok).
+- [ ] **Yarış düellosu tam hâli:** ortağın da portföyü olan iki hesapla
+      Performans › Yarış › Ortaklarım → taç zıplaması, kıvılcım, lider şeridi;
+      gerçek cihazda avatar parıltısı ve akıcılık.
+- [ ] **Zirve rıza kartı** küçük ekranda: sona gelmeden "Katılıyorum" kapalı.
+- [ ] **Firebase Console:** `yeniden_onay_kapisi = false` KALICI kalsın
+      (2026-10-04'te yapıldı; geri açma).
+- [x] **Bayrak temizliği PR'ı** (#92, birleşti) (dal `feat/bayrak-temizligi`): 15 bayrak ve eski
+      kod yolları silinir; birleşince bu özellikler artık Console'dan
+      KAPATILAMAZ. Yayın sorunsuz oturduktan sonra birleştir.
+- [ ] **Tokyo Auth güvenlik kaydı:** 0105 sonrası 90 günden eski kayıtlar her
+      gece silinir; ilk silme ~2026-10-27/28. Eski IP geçmişi gerekiyorsa
+      önce dışa aktar.
+
+## ⏳ 2026-10-05 Saklama süreleri + belgeler 1.3 (0105) — dal `feat/saklama-1-3` (yerel, push yok)
+
+Kullanıcı kararı (2026-10-05): *"Önerilerin hepsini uygula."* Süresiz iki
+kayıt artık otomatik silinir: **Supabase Auth güvenlik kaydı**
+(`auth.audit_log_entries`: IP, cihaz/tarayıcı) **90 gün**, **anonim hesap
+silme kaydı** (`account_deletion_log`) silmeden sonra **3 yıl**. Koşullar,
+Gizlilik, KVKK ve Açık Rıza Metni **1.3**: yeni süreler + "her onay metni
+tam gösterilir, sonuna kadar okunur, onay en altta verilir" (zorunlu okuma).
+Silme formu (web) ve EN Terms/Privacy (1.3) + GDPR Notice (1.2) aynı.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı reddedilir, kapı her
+açılışta yeniden sorar):**
+- [ ] 1. `supabase/migrations/0105_saklama_sureleri_belgeler_1_3.sql` → **iki
+      sunucuya** (`supabase-deploy.yml`, hedef `ikisi`; Frankfurt → Tokyo).
+      Migration fonksiyon sahibinin (`postgres`) `auth.audit_log_entries`
+      üzerinde DELETE yetkisi yoksa BİLEREK düşer (her gece sessizce hata
+      veren cron yerine). Doğrula (salt okunur):
+      `select jobname, schedule, active from cron.job where jobname in ('auth-guvenlik-kaydi-saklama', 'hesap-silme-kaydi-saklama');`
+      → Tokyo'da ikisi `true`, Frankfurt'ta (tüm cron kapalı kipi) `false`.
+      `select tur, surum from yasal_metinler where surum = '1.3' order by 1;`
+      → 4 satır; 1.2 satırları yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). Pages web'i de 1.3 ile yayınlar.
+      1.2'yi onaylamış herkes bir sonraki açılışta kapıda "Güncellenen
+      belgeler" + yeni "Neler değişti" notunu görür ve dört belgeyi TEK
+      seferde onaylar. 1.2 taşıyan eski sürümler sunucuda 1.3'ü görünce
+      kapıyı hiç açmaz (çift onay yok — `uygulamaEski`, test kanıtı
+      `test/yasal_onay_service_test.dart` "0105").
+
+**⚠️ Tokyo'da ilk silme:** dağıtım günü 90 günden eski güvenlik kaydı yok
+(en eskisi 2026-07-29, 2399 satır). İlk satırlar **2026-10-27/28 gecesi**
+(03:55 UTC) gider, sonra her gece 90 günü dolanlar. Geri alınamaz: o
+tarihten önceki IP/oturum geçmişine ihtiyacın varsa (ör. açık bir kötüye
+kullanım incelemesi) dağıtımdan önce dışa aktar. Frankfurt'ta 0 satır ve
+işler kapalı doğar.
+**Yan etki:** yönetim panelinin Güvenlik ekranı ve kayıt hunisinin "ilk
+giriş" adımı 90 günden eskiyi artık göremez (`TECHNICAL_DEBT.md`).
+
+## ⏳ 2026-10-04 Zorunlu okuma (0104) — dal `feat/zorunlu-okuma` (yerel, push yok)
+
+Onay istenen her metin TAM gösterilir, sonuna kadar kaydırılmadan onay
+açılmaz; bayrak `zorunlu_okuma` (Remote Config, varsayılan AÇIK).
+
+**Dağıtım sırası (ters sıra kayıt onaylarını düşürür):**
+1. `0104_kayitta_yatirim_uyarisi.sql` İKİ sunucuya (`supabase-deploy.yml`,
+   hedef `ikisi`). Yalnız `yasal_onay_kaydet`'in `kayit` kanalına
+   `yatirim_uyarisi` ekler; geriye uyumlu.
+2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+3. ANCAK SONRA bu dalın istemcisi (main'e birleşme). 0104'süz sunucuda yeni
+   istemcinin kayıt onay çağrısı tümüyle reddedilir (tek işlem) — onaylar
+   yazılmaz, yeniden onay kapısı sonraki açılışta sorar.
+
+**Uzaktan kapatma:** Firebase Console → Remote Config → `zorunlu_okuma` =
+`false`. (⚠️ `feat/bayrak-temizligi` birleşip yayımlanınca geçersiz: bayrak koddan kalktı, Console'dan kapatılamaz.) Kapalıyken ekranlar eski hâlinde; tek fark (bayraktan bağımsız):
+e-posta kaydında yatırım uyarısı OTP'den sonra kendi ekranında tam metniyle
+sorulur (eskiden gösterilmemiş tam metne onay kaydı yazılıyordu).
+
+**✅ KAPANDI (0105, belgeler 1.3):** aşağıdaki cümle "Bu uyarının tam
+metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay
+ekranında da) size gösterilir; metni sonuna kadar okuduktan sonra en altta
+onaylarsınız." oldu.
+**Metin notu (sürüm artırmadan bırakıldı):** Koşullar ve Gizlilik §3'teki
+"Bu uyarının özeti kayıt ekranındaki onay kutusunda yer alır; Apple veya
+Google ile ilk girişte tam metni ayrıca gösterilir." cümlesi hâlâ DOĞRU ama
+eksik (artık e-posta kaydında da tam metin gösteriliyor). Bir sonraki metin
+sürümünde "kayıtta ve ilk girişte tam metni gösterilir" diye güncelle;
+yalnız bunun için sürüm artırmak herkese yeniden onay kapısı açardı.
+
+## ⏳ 2026-10-04 Yasal belgeler web ile tek kaynak (0103) — dal `feat/yasal-web-esleme` (yerel, push yok)
+
+Karar: *"Webdekiyle de her zaman eşleyelim."* Uygulama artık web'deki tam
+metni gösterir (`legal/tr/*.md` tek kaynak); Koşullar, Gizlilik, KVKK **1.2**,
+Açık Rıza Metni yeni belge (1.2). Kayıttaki "açık rıza" bağlantısı Açık Rıza
+Metni'ni açar; yeniden onay kapısı dört belgeyi ister. Web ile uygulama
+`test/yasal_web_esleme_test.dart` ile CI'da kilitli.
+
+**Dağıtım sırası (ters sırada yeni istemcinin onayı reddedilir ve kapı her
+açılışta yeniden sorar):**
+- [ ] 1. `supabase/migrations/0103_yasal_web_tek_kaynak.sql` → **iki sunucuya**
+      (`supabase-deploy.yml`, hedef `ikisi`). Doğrula:
+      `select tur, surum from yasal_metinler where surum = '1.2' order by 1;`
+      → 4 satır (`acik_riza_metni`, `gizlilik_politikasi`, `kosullar`,
+      `kvkk_aydinlatma`); 1.1 satırları yerinde.
+- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] 3. ANCAK SONRA uygulama (PR → main). `main`'e girince Pages web'i de
+      yayınlar (docs/ HTML 1.2). Yayınla birlikte 1.1'i onaylamış herkes bir
+      sonraki açılışta kapıda "Güncellenen belgeler"i görür (bayraklar
+      `yasal_onay_kaydi` + `yasal_kapi_en_yeni` açık).
+
+**Karar: metin uygulamaya uyduruldu (2026-10-04).** Kullanıcı kuralı:
+*"mahkemeye bişey sormayacağız, yeni bir versiyon geldiğinde sürüm güncelleyip
+bunu müşteriye onaylatacağız. Ve sözleşmeler ve rızalarda uygulamada ne varsa
+uyumlu olmalı."* Avukat sorusu YOK. 0103 dağıtılmadığı için 1.2 yerinde
+düzeltildi: dört belge + çerez politikası + EN Terms/Privacy/GDPR + hesap
+silme formu kod ve migration'lara karşı denetlendi; yetkili mahkeme şablonu,
+"30 gün önce bildirim" vaadi, IP iddiası (onayda IP yok; oturum açma IP'si
+Supabase Auth güvenlik kaydında), "analitik SDK'sı yok", "SQLite cache",
+`kvkk-history`, Açık Rıza Metni'nin B/C/D kutuları, 365 gün portföy geçmişi
+(gerçeği 730), 30 günde silme (gerçeği anında) düzeltildi; Firebase
+Analytics/Crashlytics/Remote Config, Apple bildirim hizmeti, Gmail e-posta
+altyapısı, Apple/Google ile giriş, Yarış, kayıt hunisi, kayıtlı cihazlar,
+canlı etkinlik ve bildirim kayıtları metne girdi. Uygulamadaki silme
+uyarısı da "30 gün içinde" yerine "hemen" diyor.
+
+**Süreç kuralı (CLAUDE.md "Yasal metin tek kaynak"):** yeni veri işleme,
+üçüncü taraf ya da saklama ekleyen her değişiklik aynı değişiklikte ilgili
+`legal/tr/*.md`'yi günceller → sürüm artar → `python docs/_build_legal.py` →
+INSERT üreteci → yeni migration → yeniden onay kapısı kullanıcıya sorar.
+
+**Kalan, kodla ilgili kararlar (metin bugünkü gerçeği yazıyor):**
+- [x] **Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı):** ~~otomatik silme
+      yok~~ → **KAPANDI (0105):** 90 gün, günlük cron
+      `auth-guvenlik-kaydi-saklama`; metin 1.3.
+- [x] **Anonim silme kaydı** (`account_deletion_log`): ~~0007'deki cron yorum
+      satırında~~ → **KAPANDI (0105):** 3 yıl, günlük cron
+      `hesap-silme-kaydi-saklama`; metin 1.3 süreyi yazıyor.
+- [ ] **E-posta altyapısı:** metin "Google (Gmail)" diyor (bugünkü SMTP).
+      Resend'e geçilirse aynı değişiklikte Gizlilik §5, KVKK §5.2, Açık Rıza
+      A ve EN'leri güncelle → 1.3.
+- [ ] **Kayıtta yatırım uyarısı kaydı:** e-posta kaydında
+      `disclaimer_acceptances` gösterilmeyen tam metnin hash'iyle yazılıyor
+      (kutuda yalnız özet var). Metin "özeti kayıt kutusunda" diyor; kayıt
+      da özete bağlanmalı mı — kod kararı.
+- [ ] **GDPR_NOTICE "yalnız Türkiye mağazasında dağıtılıyor"** iddiası
+      mağaza ayarlarıyla doğrulanmalı (koddan görünmüyor).
+- [ ] İngilizce: KVKK Aydınlatma ve Açık Rıza Metni'nin İngilizcesi YOK
+      (`GDPR_NOTICE` KVKK'nın çevirisi değil, AB'ye özgü ayrı belge).
+      Uygulama İngilizce arayüzde de Türkçe belge gösterir ve onay `tr`
+      yazılır. EN Terms/Privacy "Source: TR 1.2" ile TR 1.2'nin çevirisi.
+
+## ⏳ 2026-10-04 Sadeleştirme 2. parti — dal `feat/sadelestirme-2-tam` (yerel, push yok)
+
+Kaynak: "sandık Sadeleştirme Listesi" artifact'i (11 madde). Sunucu/şema
+değişikliği yalnız **0102 yasal onay kaydı** (dal `feat/yasal-onay-kaydi`,
+aşağıda). **2026-10-04 kullanıcı kararı: bugünün 14 bayrağı AÇIK doğar**
+("bugün yapılan tüm geliştirmeler için flagleri açık olarak mergele maine").
+Bir özelliği uzaktan KAPATMAK için Firebase Console › Remote Config'e o
+anahtarı `false` olarak ekle (uygulama yeniden yayımlanmadan çalışır).
+(⚠️ `feat/bayrak-temizligi` birleşip yayımlanınca geçersiz: bayrak koddan kalktı, Console'dan kapatılamaz.) Aşağıdaki listenin tamamı ve `tek_onay_kutusu` için geçerli.
+Liste ve ne açtıkları:
+  - `ilk_varlik_kolay`: boş ana ekranda **Canlı fiyat vitrini** (₺0 kartı
+    gizlenir), Varlık Ekle'de "Yazarak ekle" / "Ekstreden aktar", komisyon +
+    not "Ayrıntı ekle" altında.
+  - `bugun_karti_kiyas`: Bugün kartı **H** düzeni (hareket + enflasyon kıyası
+    + en çok oynayan + hedef). Son 7 gün / artıdaki varlık / aylık özet /
+    olay bu düzende yok.
+  - `varlik_islem_cubugu`: varlık ekranında Al · Sat · Temettü çubuğu, dönem
+    yüzdesi tek yerde.
+  - `tek_ortak_secici`: Portföy / Hareketler / Takip'te Performans'la aynı
+    segment seçici.
+  - `tek_kiyas_yuzeyi`: varlık ekranının "Karşılaştır"ı Karşılaştır
+    ekranını o varlık + dönemle açar (mevduat/BES eski seçicide kalır).
+  - `siralama_tek_sayfa`: Yarış + Zirve tek "Sıralama" sayfası (Ortaklarım /
+    Zirvedekiler). Havuz küçükken açmak isteğe bağlı.
+  - `yaris_duello_arena`: tam iki kişilik yarışta Düello arenası (halat,
+    taç, lider şeridi; 1H · 1A · 1Y). 3+ kişide kürsü + liste aynen.
+  - `ortak_secimi_tasi`: Ana ekranda Birlikte / ortak seçiliyken Bugün
+    kartından açılan Performans › Özet aynı seçimle açılır (kapalıyken her
+    zaman Ben).
+  - `performans_ayar_sade`: grafik tipi yalnız Çizgi/Mum, "Bugünkü
+    portföyle" Ayarlar › Görünüm'de, Ayarlar grupları + katlanır Gelişmiş.
+  - `karsilama_tanitimi` açıkken giriş ekranında Apple/Google düğmeleri
+    formun ÜSTÜNDE (iOS'ta görünür; Android derlemesinde Google kimliği yok).
+- Bayraksız gelenler: jargon ("Piyasanın kattığı" → "Fiyat etkisi",
+  "Birikim değişimi" → "Toplam değişim", Özet başlıkları "Ne oldu? / Neden
+  böyle? / Ayrıntılar / Daha fazlası", "Dağ" → "Alan", Bugün kartında
+  "sadece fiyat etkisi"); tema yalnız Ayarlar'da (Profil'den kalktı);
+  ölü kod ve okunmayan `paywall_variant` / `free_signal_slots_per_day`
+  bayrakları silindi; köprüde "−₺0" artık "₺0"; Bugün kartında kıvılcım
+  çizilince tutarın küçülmesi düzeltildi.
+- [ ] **Hukuki karar:** kayıttaki iki onay kutusunu
+      (koşullar + KVKK + 18 yaş / yurt dışı aktarım açık rızası) tek kutuya
+      indirmek senin kararın (2026-10-04: avukata sorulmuyor). **Kod hazır,
+      bayrak `tek_onay_kutusu` (dal `feat/sade2-tek-onay`).** Kutudaki
+      cümle: "Yasal Koşulları, KVKK Aydınlatma Metni'ni ve 18+
+      olduğumu kabul ediyorum; verilerimin yurt dışına aktarılmasına açık
+      rıza veriyorum." (üç bağlantı cümle içinde: Koşullar, KVKK Aydınlatma,
+      açık rıza → Açık Rıza Metni, 1.2'den beri). Açık rıza kaydı artık ayrı tutuluyor: 0102
+      (`yasal_onay_kaydi` açıkken) kutu metnini ve belgeleri `yasal_onaylar`'a
+      yazar.
+- [ ] **Yasal metinler + kim neyi onayladı (0102) + yeniden onay kapısı** —
+      dal `feat/yasal-onay-2` (worktree `PortfoyTakip-yasal2`), YEREL, push
+      yok. İstekler: "bu metinleri de db de tutup her müşteri hangilerini
+      onaylamış takip edilebilir olmalı" + (2026-10-04) "Metin değişirse her
+      user'ın onayladığı rıza metni neyse o şekilde tutulması. Metin
+      değiştikçe eski rıza metinleri de DB'de tutulmalı. Eski rıza metnini
+      onaylayanlar için ilk login'de güncel doküman sunulup onay istenmeli."
+      **Dağıtım sırası** (sen koşarsın; Claude canlıya dokunmaz):
+  1. `supabase/migrations/0102_yasal_metin_onaylari.sql`'i **iki sunucuya**
+     dağıt: GitHub Actions › `supabase-deploy.yml`, hedef `ikisi`
+     (Frankfurt → Tokyo). Frankfurt token'ı 403 verirse yerel CLI
+     (bkz. Frankfurt taşıması notları). 0102 `auth.users` üzerine bir
+     BEFORE DELETE tetikleyicisi ve `yasal-onay-saklama` cron işi kurar
+     (Frankfurt "tüm cron kapalı" kipindeyse iş kapalı doğar).
+  2. `python tool/sema_esitlik.py` → "ŞEMA EŞİT" görmeden 3'e geçme.
+  3. Kontrol (SQL Editor, salt okunur):
+     `select tur, surum, dil, govde_hash from yasal_metinler order by tur;`
+     → 9 satır; belgeler (`kosullar`, `gizlilik_politikasi`,
+     `kvkk_aydinlatma`) **1.1**, kutular ve yatırım uyarısı 1.0.
+     `select kanal, count(*) from yasal_onaylar group by 1;` → yalnız
+     `aktarim` (eski yatırım uyarısı + Zirve rızaları).
+     `select jobname, active from cron.job where jobname = 'yasal-onay-saklama';`
+- [ ] **ŞİMDİ — Firebase Console › Remote Config: `yeniden_onay_kapisi` =
+  `false` (KALICI, tüm kullanıcılar).** #85 sürümünün onay kapısı yalnız 1.1'i
+  bilir ve sunucuda 1.2 olsa da 1.1'i onaylatır; #86 gelince kullanıcı ikinci
+  kez onaylardı ("çift onay olmamalı" kuralı). #86'dan itibaren kapı yeni
+  anahtar `yasal_kapi_en_yeni`'yi (varsayılan açık) okur ve sunucuda daha
+  yeni metin varsa eski metni hiç onaylatmaz — kullanıcı yalnız en yeniyi,
+  bir kez onaylar. Eski anahtarı geri açma.
+  ⚠️ 2026-10-04: `yasal_onay_kaydi` ve `yasal_kapi_en_yeni` artık
+  VARSAYILAN AÇIK — 4. ve 6. adımlar Console işi değil, uygulama yayımlanınca
+  kendiliğinden açılır. Bu yüzden **0102 iki sunucuya uygulama mağazaya
+  çıkmadan ÖNCE dağıtılmalı**; kapatmak için Console'a `false` ekle.
+  (⚠️ `feat/bayrak-temizligi` birleşip yayımlanınca geçersiz: bayrak koddan kalktı, Console'dan kapatılamaz.)
+  4. Firebase Console › Remote Config: `yasal_onay_kaydi` = `true` (önce
+     kendi cihazın). Kapalıyken uygulama birebir eski; 0102'den ÖNCE açılırsa
+     her kayıtta "fonksiyon yok" hatası Crashlytics'e düşer.
+  5. Cihazda: yeni hesap aç (OTP'ye kadar) → `select * from yasal_onay_durumu
+     where user_id = '<yeni id>';` → `kayit_kutu_kosullar`, `kayit_kutu_riza`,
+     `kosullar`, `gizlilik_politikasi`, `kvkk_aydinlatma` için `guncel_mi =
+     true`. Zirve'ye katıl → `zirve_riza` true; ayrıl → `geri_cekildi = true`.
+  6. **Sonra** `yasal_kapi_en_yeni` = `true` (önce kendi cihazın). Yalnız
+     `yasal_onay_kaydi` de açıkken etkili. Açılınca girişte: belgelerin
+     güncel sürümüne (1.1) ve kayıt kutusu taahhütlerine onayı olmayan
+     HERKES (yani bugünkü tüm kullanıcılar — sunucuda kanıtları yok) bir kez
+     "Yasal belgeler" ekranını görür; Apple/Google ile ilk kez gelen de.
+  - **Yönetici sorgusu** ("kim neyi onaylamış"):
+    ```sql
+    -- Güncel koşulları onaylamamış kullanıcılar
+    select user_id, onaylanan_surum, guncel_surum, onay_at
+      from yasal_onay_durumu
+     where tur = 'kosullar' and not guncel_mi;
+    -- Bir kullanıcının tam dökümü (metin ve gösterilen ülke dahil)
+    select m.tur, m.surum, m.dil, o.onay_at, o.kanal, o.degiskenler,
+           o.geri_cekildi_at, o.hesap_silindi_at
+      from yasal_onaylar o join yasal_metinler m on m.id = o.metin_id
+     where o.user_id = '<id>' order by o.onay_at;
+    ```
+  - **Metin değişince** (süreç `lib/services/yasal_metin_katalogu.dart`
+    başında): sürümü + meta satırını + kapının "Neler değişti" notunu
+    güncelle → `flutter test --run-skipped --tags arac
+    tool/yasal_metin_uret_test.dart` → çıktıyı YENİ migration'a koy → iki
+    sunucuya dağıt → istemciyi yayınla. Eski sürümü onaylayan herkes bir
+    sonraki açılışta kapıda yenisini görür; eski onay ve eski metin satırı
+    DB'de aynen kalır. Kilit testi sürüm artırılmadan değişen metni CI'da
+    yakalar.
+  - **Çözülen sorular (karar 2026-10-04):**
+    - Hesap silinince onay ispatı → **karar: kalır.** `yasal_onaylar`
+      auth.users'a bağlı değil; silmede `hesap_silindi_at` damgalanır,
+      3 yıl sonra cron siler; Zirve rızası kaydı hemen silinir (Gizlilik
+      §5.1). Yatırım uyarısı onayı (`disclaimer_acceptances`, cascade —
+      dokunulmadı) silmeden önce `yasal_onaylar`'a taşınır.
+    - Eski kullanıcılardan yeniden onay → **karar: evet**, girişte kapı
+      (bayrak `yasal_kapi_en_yeni`).
+    - Belgelerin sürümü → **karar: 1.1** (yürürlük 4 Ekim 2026). "1.0"
+      adıyla birden çok farklı metin yayımlandığı için DB'ye "1.0" arşivi
+      yazılmadı; DB'deki ilk belge sürümü 1.1.
+    - KVKK Aydınlatma bağlantısı → **çözüldü:** kayıtta iki düzende de ayrı
+      bağlantı, `LegalDocs.kvkk`'yı açar; Koşullar bağlantısının başlığı
+      artık "Kullanım Koşulları". Okunan kutu cümlesi harfi harfine aynı
+      (kutu sürümü 1.0'da kaldı).
+    - Apple/Google girişinde kutular → **çözüldü:** kapı ilk girişte
+      belgeleri + kayıt kutularının aynısını (18+, yurt dışı aktarım açık
+      rızası) gösterir; zorunlu kullanıcı adı ekranı ondan SONRA aynen.
+  - **Yasal metin soruları → karar: metin uygulamaya uyduruldu (2026-10-04).**
+    Avukata sorulmuyor (kullanıcı kuralı). Saklama satırı, IP iddiası, "30
+    gün önce bildirim" ve web/uygulama ayrışması 1.2'de gerçeğe göre yazıldı
+    (ayrıntı: yukarıda "Yasal belgeler web ile tek kaynak (0103)"). Açık kalan
+    tek konu kodda: kayıt yolundaki yatırım uyarısı kaydı (aynı bölümde).
+- Not: Karşılaştır ekranındaki "Portföyüm" çizgisi para ağırlıklı değil
+  (dönemde para yatırılırsa sıçrar); Özet'in getirisiyle aynı sayıyı
+  vermez. Tek getiri diline çekmek ayrı bir iş (kıyas hesabı değişir).
+
+## ⏳ 2026-10-04 Sadeleştirme 1. parti — dal `claude/project-thread-jpfk0o`
+
+İstek (yasin): "kullanıcı adı kalsın, diğer değişiklikleri yapalım; onboarding
+öncesi müşteri uygulama yetkinliklerini anlamalı; Performans çelişkili
+olmamalı, seviyeye göre detay." Sunucu değişikliği YOK; iki yeni bayrak
+**kapalı** doğar, kapalıyken uygulama birebir eski.
+
+- [ ] PR'ı birleştir.
+- [ ] TestFlight'ta bildirim izni: uygulamayı SİL-YÜKLE (iOS izni tek sefer
+      sorar). Beklenen: açılışta ve girişte izin penceresi YOK; ilk varlığı
+      ekleyince gelir. İzin ver → birkaç dakika içinde sabah brifingi/alarm
+      push'u gelmeli (token ilk varlıktan sonra yazılıyor). Sorun çıkarsa
+      Firebase'de `push_prompt_after_first_asset` = `false` eski davranışı
+      (açılışta sor) geri getirir.
+- [ ] Firebase Console › Remote Config: `karsilama_tanitimi` = `true` (önce
+      kendi cihazın). (2026-10-04'ten beri varsayılan AÇIK; 2026-10-05 bayrak
+      temizliğiyle koddan kalktı — Console adımı gereksiz.) Görmek için çıkış yap DEĞİL, uygulamayı silip yükle:
+      tanıtım yalnızca bu cihazda hiç oturum açılmadıysa görünür.
+      `demo_mode_enabled` Console'da `false` ise demo düğmesi çıkmaz; açmak
+      önerilir.
+- [ ] `seviye_anketi` = `true` (2026-10-05 bayrak temizliğiyle koddan
+      kalktı — Console adımı gereksiz, davranış kalıcı): turda 3 soruluk anket, Ayarlar › Görünüm'de
+      "3 soruyla seviyemi bul", Başlangıç'ta Performans'ta grafik tipi,
+      "Bugünkü portföyle" anahtarı, MA20/LOG ve Özet › Derinlik gizlenir; zil
+      her seviyede görünür. Orta/İleri değişmez.
+- Bayraksız, herkese gelen: dönem etiketleri "Bugün · 1 hf · 1 ay · 3 ay ·
+  6 ay · 1 yıl · 5 yıl"; "Simülasyon" → "Bugünkü portföyle"; Portföy ve
+  Performans üst barından çıkış düğmesi kalktı (Ana + Profil'de duruyor);
+  "Kayıtlı cihazlar" → "Giriş yaptığın cihazlar"; Performans › Grafik
+  kartının manşeti artık Özet'le aynı "Paranın getirisi" (piyasa kazancı
+  + %), alım/satım dahil bakiye değişimi ikinci satıra indi (karar
+  "İkisi de getiri").
+
+## ⏳ 2026-10-03 Hafta sonu GÜNLÜK'te dolar/altın düz değil (0101) — dal `claude/project-thread-fkhjy1`
+
+Soru (yasin): "Neden düz çizgi peki. Değeri oynak değil mi?" → "Evet bunu
+yapalım ama fiyat tutarlı ve doğru şeyi göstermeli." Uluslararası piyasa hafta
+sonu kapalı, Yahoo serisi Cuma'da bitiyor; yurt içi kotasyon (truncgil) ise
+oynuyor ama geçmişi tutulmuyordu. Sunucu artık 5 dk'da bir kaydediyor
+(`yurt_ici_kotasyon`), GÜNLÜK şekli uluslararası seri sustuğunda oradan çizilir.
+Bayrak **kapalı** doğar; yalnızca EKLER (eski sürümler etkilenmez).
+
+- [ ] PR'ı birleştir.
+- [ ] **Supabase deploy, hedef `ikisi`:** fonksiyon `yurt-ici-kotasyon` + migration
+      0101 (sıra fark etmez; cron ilk turda fonksiyonu bulamazsa 404 yazar, bir
+      sonraki turda düzelir). Yeni secret YOK: `PRICE_ALERTS_CRON_SECRET` /
+      Vault `price_alerts_cron_secret` paylaşılır. Frankfurt'ta cron'lar kapalıysa
+      bu iş de kapalı doğar (0089 deseni).
+- [ ] Bir hafta sonu kayıt biriksin. Kontrol (salt okunur):
+      `select sembol, count(*), min(fiyat), max(fiyat) from yurt_ici_kotasyon
+       where ts > now() - interval '1 day' group by 1;` — Cumartesi
+      min ≠ max ise yurt içi fiyat gerçekten oynuyor demektir.
+- [ ] Firebase Console › Remote Config: `hafta_sonu_yurt_ici_seri` = `true`
+      (önce yalnızca kendi cihazın için). Kapatınca anında eski davranış.
+- Not: hafta sonu GÜNLÜK yüzdesi = yurt içi kotasyonun bugün 00:00'dan beri
+  değişimi. Piyasa bandı ise truncgil'in kendi "Change" yüzdesini gösterir; hafta
+  sonu o yüzdenin neyi ölçtüğü `degisim_pct` kolonundan görülecek.
+
+## ⏳ 2026-10-03 Kilit ekranı dakikada bir = Performans GÜNLÜK (0100) — dal `claude/canli-aktivite-performans-n33jkp`
+
+Karar (yasin, 2026-10-03): "Canlı aktiviteler her zaman 1 dk'da bir performans
+günlükle eş olmalı." Uygulama kapalıyken kilit ekranını sunucu tazeler; eskiden
+istemcinin son yazdığı metni 5 dk'da bir aynen basıyordu (rakam donuyordu).
+Yeni: istemci bir **tarif** yazar, sunucu onu canlı kotasyonla dakikada bir
+ileri taşır (`_shared/canli_etkinlik.ts`). Bayrak **kapalı** doğar.
+
+Dağıtım SIRASI önemli (eski sürümler etkilenmez; tarif yoksa davranış aynı):
+
+- [ ] PR'ı birleştir → yeni iOS build TestFlight'a (Info.plist'e sık güncelleme
+      izni `NSSupportsLiveActivitiesFrequentUpdates` eklendi).
+- [ ] **Supabase deploy, hedef `ikisi`:** ÖNCE fonksiyon `push-live-activity`
+      (migration KAPALI), SONRA migration (0100: cron `*/5` → `* * * * *`).
+      Ters sıra zararsız ama eski fonksiyon dakikalık çağrıda her satırı her
+      dakika aynı metinle push'lar (boşa APNs bütçesi).
+- [ ] Firebase Console › Remote Config: `canli_etkinlik_dakikalik` = `true`
+      (önce yalnızca kendi cihazın için bir koşulla dene). Kapatınca anında
+      eski davranış.
+- [ ] TestFlight'ta: kilit ekranında Canlı Etkinlik açıkken uygulamayı tamamen
+      kapat; seans içinde birkaç dakika bekle, rakam ve "Canlı" saati dakikada
+      bir değişmeli. Uygulamayı aç → Performans › GÜNLÜK ile aynı rakam.
+- Bilinen sınır: sunucu yalnızca uygulamanın o GÜN yazdığı tarifi ileri taşır.
+  Gün içinde uygulama hiç açılmadıysa (ör. sabah 10:00'dan önce açılıp kapandı)
+  yeni günün açılışını bilemez, eski davranışla son yazılı rakamı basar.
+  Grafikte uygulama kapalıyken son noktaya tek çizgi çekilir (ara 5 dk
+  noktaları uygulama açılınca gelir); rakamlar birebir aynıdır.
+
+## ⏳ 2026-10-03 Grafik düz çizgiye dönmesin — dal `claude/fiyat-duz-cizgi-lrmny0`
+
+**Ne:** Fiyat serisi bir an çekilemeyince grafik artık son ölçülmüş seriyle
+çizilir (bellek + disk), düz çizgiye dönmez; tüm türler. Kripto için
+`kripto-seri` fonksiyonu önbellekte seri varsa 5 sn'de bayat seriyi döner,
+tazelemeyi arka planda bitirir; eksik/boş seri önbelleğe yazılmaz.
+
+- [ ] PR birleşince **Supabase deploy**: hedef `ikisi`, migrations **kapalı**,
+      functions **`kripto-seri`** (migration yok). Yanıt biçimi aynı; eski
+      sürümler etkilenmez, onlar da hızlı yanıttan yararlanır.
+- [ ] TestFlight'ta: kripto varlığın 1G/1H grafiğini birkaç kez aç-kapat;
+      uçak modunda uygulamayı yeniden açıp grafiklere bak (son seri çizilmeli).
+
+## ⏳ 2026-10-03 Kod e-postaları için kendi alan adı (SPF/DKIM) — ÖNCELİKLİ
+
+**Neden:** Kayıt, şifre sıfırlama ve yeni cihaz kodu (0098) e-postaları şu an
+**Gmail SMTP** ile `sandikapp.destek@gmail.com`'dan gidiyor. Emülatör testinde
+(2026-10-03) kod **Outlook'ta Gereksiz'e düştü**; ayrıca ücretsiz Gmail'in günde
+**~500 alıcı** sınırı var. Kod bulunamazsa kullanıcı yeni cihazda / kayıtta takılı
+kalır — tek cihaz kuralı yayında olduğu için bu artık giriş yolunun parçası.
+Geçici önlem: kod ekranında "Gereksiz / Spam klasörüne de bak" ipucu (main'de).
+
+- [ ] **1. Alan adı al.** Öneri: `sandik.app` ya da `sandikapp.com`. Kayıt firması
+      fark etmez (Cloudflare Registrar maliyet fiyatına satar; DNS de orada kolay).
+      Alan adını söyle → kalan adımları o ada göre birebir yazarım.
+- [ ] **2. Resend'e alan adını ekle** (resend.com, `sandikapp.destek@gmail.com`
+      hesabı; rehber `docs/SUPABASE_SMTP_SETUP.md` Seçenek B). Bölge: **eu-west-1**
+      (kullanıcılar Türkiye/Avrupa). Resend'in verdiği kayıtları DNS'e gir:
+      - **SPF** — `send` alt alanında TXT (`v=spf1 include:amazonses.com ~all`) + MX
+      - **DKIM** — `resend._domainkey` TXT (uzun anahtar)
+      - **DMARC** — `_dmarc` TXT: `v=DMARC1; p=none; rua=mailto:sandikapp.destek@gmail.com`
+        (birkaç hafta raporlar temizse `p=quarantine`'e çek)
+- [ ] **3. Resend'de "Verify"** — DNS yayılımı dakikalar, en geç 24 saat.
+- [ ] **4. API anahtarı** — Resend › API Keys › Sending access, yalnız bu alan adı.
+- [ ] **5. İKİ projede** (Tokyo + Frankfurt) Supabase › Authentication › SMTP Settings:
+      host `smtp.resend.com`, port `465`, user `resend`, password = API anahtarı,
+      sender `noreply@<alanadı>`, sender name `sandık`. Sonra Auth › Rate Limits'te
+      saatlik e-posta sınırını ihtiyaca göre yükselt.
+- [ ] **6. Dene:** aynı adrese kayıt kodu, şifre sıfırlama kodu ve yeni cihaz kodu —
+      Outlook/Hotmail **ve** Gmail gelen kutusuna düşmeli. İstersen
+      mail-tester.com ile puan al (hedef ≥ 9/10).
+- [ ] **7. Bitince:** `docs/SUPABASE_SMTP_SETUP.md`'ye hangi alan adı/gönderici
+      kullanıldığını yaz; e-posta şablonları (`supabase/templates/`) değişmez.
+
+## ⏳ 2026-10-03 Tek aktif cihaz + kayıtlı cihazlar (0098) — dal `feat/tek-cihaz`
+
+Karar (yasin, 2026-10-03): "Aynı hesap aynı anda 2 cihazda açılamamalı, kayıtlı
+cihaz listesi olmalı, mail OTP ile kontrol; listeden silme." Kod worktree
+`PortfoyTakip-tekcihaz`'da, **push yok** (push onay kuralı). Sunucu kuralları yerel
+Supabase'de gerçek GoTrue token'larıyla doğrulandı (25 SQL senaryosu + uçtan uca).
+
+Dağıtım SIRASI önemli — e-posta şablonu migration'dan ÖNCE:
+
+- [x] (2026-10-03, yasin; marka tasarımlı şablon) **İki projede** (Tokyo + Frankfurt) Supabase → Authentication → Email
+      Templates → **Magic Link** şablonuna kodu ekle: `{{ .Token }}`
+      (örn. "Giriş kodun: {{ .Token }}"). Yeni cihaz kodu bu şablonla gider;
+      yalnız bağlantı içeren varsayılan şablonda kullanıcıya **kod gitmez** ve
+      yeni cihazda giriş yapamaz. Kayıt/şifre sıfırlama şablonları zaten kodlu.
+- [ ] Kod e-postası Outlook'ta Gereksiz'e düşüyor → yukarıdaki **"Kod e-postaları için
+      kendi alan adı"** bölümü.
+- [ ] Aynı yerde "Email OTP expiration" = 600 sn mi? (OTP ekranı 10 dk sayıyor.)
+- [ ] Auth → Rate Limits: saatlik e-posta sınırı geçişte yeterli mi (her yeni
+      cihaz bir e-posta).
+- [ ] **0099'u iki sunucuya gönder** (test.sandikapp@gmail.com muafiyeti; aynı
+      `dagitim0098` yöntemi, klasöre 0099'u kopyala). PR #72 ile birlikte yazıldı.
+- [x] (0099 ile) Mağaza **inceleme hesabı** ve ortak test hesapları muaf tutulmalı (inceleyici
+      e-postayı okuyamaz, aynı hesabı birden çok cihazda açar). İKİ sunucuda:
+      ```sql
+      insert into public.cihaz_kontrol_muafiyeti (user_id, neden)
+      select id, 'magaza inceleme' from auth.users where email = '<inceleme hesabı>';
       ```
-      İstemci sürümünden önce olması iyi; tersi olursa olaylar cihazda kuyrukta
-      bekler, akış bozulmaz.
-- [ ] **Masaüstü kısayolu** — Claude'un kısayol yazması da reddedildi. Başlatıcı
-      ve panel klasörü (`C:\projects\PortfoyTakip-panel`) hazır; yalnızca kısayol
-      eksik: `tool/admin_dashboard/README.md` → "Kısayolu yeniden oluşturmak"
-      bloğunu PowerShell'de çalıştır, eski `sandik destek paneli` kısayolunu sil.
-- [ ] **Gizlilik metni / Data Safety** kontrolü (hukuki adım, sende): yeni
-      veri = cihazda üretilen rastgele kurulum kimliği + adım zamanları +
-      kayıt hata kodları (mesaj yok), oturum açınca hesaba bağlanır, 400 gün
-      saklanır. Firebase Analytics'in beyan ettiği "uygulama etkileşimleri"
-      kapsamında görünüyor; KVKK aydınlatma metninde "birinci taraf kullanım
-      istatistiği" ifadesi yoksa ekle.
-- Panel yalnızca "Kurulumdan" görünümünde yeni sürümün yayılmasını bekler;
-  o zamana kadar **"Hesaptan"** görünümü tüm sürümlerden dolar.
+- [x] 0098 iki sunucuda (2026-10-03, yasin yerel CLI: Frankfurt → Tokyo; `sema_esitlik`
+      ŞEMA EŞİT). Emülatör: 5554 ilk cihaz (kodsuz), 5556 kod ekranına düştü.
+- [ ] Emülatörde kodu gir → 5554 "başka cihazda açıldı" ile çıkmalı; Ayarlar ›
+      Hesap & Güvenlik › Kayıtlı cihazlar'da iki cihaz görünmeli, öbürü kaldırılabilmeli.
+- [ ] Bilinçli kararları onayla: (1) hiç kayıtlı cihazı olmayan hesabın İLK cihazı
+      kodsuz kaydolur (aksi halde güncellemede herkese aynı anda kod giderdi);
+      (2) yeni cihaz kapısı uygulamadadır — şifreyi bilen biri ham API ile veri
+      okuyabilir, kapı şifrenin yerine geçmez (sunucuda gerçek olan: tek aktif
+      oturum ve kodsuz cihaz kaydı reddi).
+- [ ] Not: kendi iki emülatörünü aynı hesapla yan yana kullanamazsın — biri
+      diğerini çıkarır. Geliştirme hesabını muafiyete eklemek bir seçenek.
+## ⏳ 2026-10-02 Müşteri testi düzeltmeleri — dal `fix/musteri-testi-116`, PUSH YOK
+
+Rapor: claude.ai artifact "sandık 1.1.6 müşteri testi". Kod dört yerel
+commit'te (worktree `C:/projects/PortfoyTakip-prodtest`), sunucu değişikliği
+yok. Emülatörde doğrulandı; iPhone'a özgü kısımlar sende.
+
+**Senin kararın gereken (koda dokunulmadı):**
+- [ ] **Açılış logosu:** Android yerel açılış `sandik_icon.png` (eski iki büyük
+      dalga) gösteriyor, Android 12+ bunu daireye kırpıyor; ardından uygulama
+      içi yeni logo geliyor. Hangi logo marka? Seçince `splash_icon.png`
+      dairenin güvenli alanına (çapın ~2/3'ü) sığacak şekilde yeniden üretilir.
+- [ ] **iOS açılış ekranı beyaz:** `ios/Runner/Base.lproj/LaunchScreen.storyboard`
+      arka planı `#FFFFFF`, `LaunchImage` 1×1 boş. Xcode'da: Assets'e
+      `LaunchBackground` renk varlığı (açık `#F4F0E8`, koyu `#13201A` ya da
+      uygulamanın koyu zemini) → storyboard arka planı bu renk. Xcode'suz
+      elle storyboard düzenlemek TestFlight derlemesini kırabilir; bu yüzden
+      yapılmadı.
+- [ ] **"Çıkış yap" düğmesi her sekmenin başında:** onay soruyor, kaza yok;
+      ama en görünür yeri kaplıyor. Yalnız Profil › Hesap'ta kalsın mı?
+      (Mevcut işlevi kaldırmak olduğu için sormadan yapılmadı.)
+- [ ] **Ekstrede komisyon:** motor komisyon sütununu tanımıyor, maliyet birim
+      fiyattan. Komisyon maliyete eklensin mi? (Yeni davranış; sorulmadan
+      eklenmedi.)
+
+**iPhone'da kontrol (yalnız iOS):**
+- [ ] **PrivacyInfo.xcprivacy:** dosya var ama `project.pbxproj`'ta referansı
+      yok, pakete girmiyor olabilir. Son TestFlight yüklemesinden sonra Apple'dan
+      ITMS-91053 "Missing API declaration" e-postası geldiyse Xcode'da dosyayı
+      Runner hedefine ekle (Target Membership). Gelmediyse eklentilerin kendi
+      bildirimleri yetiyor demektir.
 
 ## ⏳ 2026-10-02 ProGuard daraltması — gerçek cihazda 5 dakikalık kontrol
 
@@ -2225,7 +3210,12 @@ grep -rn "\[" legal/ | grep -v "^Binary" | grep -E "\[[A-Z]"
 
 ### 2.3 Hukuki Onay
 
-Hazırladığım belgeler **kapsamlı şablon**. Ama **bir avukatla** mutlaka iki şeyi onaylat:
+> **2026-10-04 kullanıcı kuralı — bu bölümün yerine geçer:** avukata
+> sorulmuyor. Yeni sürüm gelince sürüm artırılır ve müşteriye onaylatılır
+> (yeniden onay kapısı); sözleşme ve rıza metinleri uygulamanın gerçek
+> davranışına uydurulur. Aşağıdaki 2026-05 notu arşivdir.
+
+~~Hazırladığım belgeler **kapsamlı şablon**. Ama **bir avukatla** mutlaka iki şeyi onaylat:~~
 
 1. **Yatırım disclaimer'ı** — SPK avukatına: "Çoklu kullanıcı ortaklık özelliği 'kollektif portföy yönetimi' olarak yorumlanabilir mi?" sorusunu sor. Risk varsa "ortaklık" özelliğini "salt görüntüleme" olarak kısıtla.
 2. **KVKK uygulanabilirliği** — KVKK avukatına: tüzel kişilik kararına göre VERBİS zorunlu mu, açık rıza metni yeterli mi.

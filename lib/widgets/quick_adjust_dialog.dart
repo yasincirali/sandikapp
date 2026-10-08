@@ -5,10 +5,12 @@ import '../demo/demo_modu.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../providers/portfolio_provider.dart';
+import '../services/mevduat_hesabi.dart';
+import '../services/sozlesme_deposu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
-import 'custom_loading_indicator.dart';
+import 'sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
 /// Bir varlığa hızlıca miktar EKLE veya ÇIKAR — form açmadan.
@@ -18,6 +20,9 @@ import '../l10n/l10n.dart';
 ///
 /// Sat: sadece miktar girer; alış fiyatı (birim maliyet) korunur.
 /// Miktar sıfıra düşerse varlık silinir.
+///
+/// Mevduat istisnadır: pay değil TL TUTARI girilir, birim fiyat alanı
+/// yoktur (bkz. [mevduatTutarIslemi]).
 enum QuickAdjustMode { add, remove }
 
 /// Hızlı miktar çiplerinin SAYISAL önerileri — "Hepsi" çipi hariç.
@@ -44,6 +49,10 @@ List<double> hizliMiktarOnerileri({
     taban = const [1, 5, 10, 50];
   } else if (birimTuru == 'ounce' || birimTuru == 'oz') {
     taban = const [0.1, 0.5, 1];
+  } else if (tur == AssetType.mevduat) {
+    // Mevduatta alan TL tutarıdır (`mevduatTutarIslemi`); [eldeki] de
+    // pay değil bakiye (₺) gelir.
+    taban = const [1000, 5000, 10000, 50000];
   } else if (tur == AssetType.kripto) {
     taban = const [0.001, 0.01, 0.1, 1];
   } else if (tur == AssetType.doviz) {
@@ -95,10 +104,28 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
 
   bool get _isAdd => widget.mode == QuickAdjustMode.add;
 
+  /// Mevduat TL tutarıyla girilir (bkz. [mevduatTutarIslemi]).
+  bool get _tutarla => widget.asset.type == AssetType.mevduat;
+
+  /// Mevduatın bugünkü birim değeri. Önce sözleşmeden — sözleşme kartının
+  /// "bugün" değeri ve "Çektim" tutarı da oradan (`sozlesme_karti`); lot'un
+  /// son yazılan fiyatı vade gününde fiyat turundan önce eski kalabilir.
+  late final double _birim = () {
+    final a = widget.asset;
+    final s = SozlesmeDeposu.instance
+        .mevduatBirimDegeri(a.ticker, DateTime.now());
+    if (s != null && s > 0) return s;
+    return a.currentPrice > 0 ? a.currentPrice : a.purchasePrice;
+  }();
+
+  /// Mevduatın eldeki bakiyesi (₺), kuruşa yuvarlı — "Hepsi" çipi ve
+  /// "Mevcut" satırı bunu yazar, `mevduatTutarIslemi` kuruş payıyla eşler.
+  double get _bakiye => (widget.asset.quantity * _birim * 100).round() / 100;
+
   @override
   void initState() {
     super.initState();
-    if (_isAdd) {
+    if (_isAdd && !_tutarla) {
       final currentPrice = widget.asset.currentPrice > 0
           ? widget.asset.currentPrice
           : widget.asset.purchasePrice;
@@ -140,6 +167,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
   }
 
   Future<void> _submit() async {
+    if (_tutarla) return _tutarlaKaydet();
     final qty = _parse(_qtyCtrl.text);
     if (qty == null || qty <= 0) {
       setState(() => _error = context.l10n.enterValidQuantity);
@@ -197,6 +225,67 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
       // Başarı toast'ı YOK (kullanıcı kararı, 2026-09-16): sheet kapanıyor ve
       // varlığın miktarı arkadaki listede anında değişiyor — onay zaten
       // ekranda. Hata yolu sessiz değil; `_error` ile sheet içinde kalır.
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error = context.l10n.transactionFailed(friendlyError(e));
+      });
+    }
+  }
+
+  /// Mevduat: yazılan tutar alışın maliyeti / satışın değeri olur; pay
+  /// tutarın birim değere bölümüdür. Faiz birim değerde kalır, satış
+  /// tutarına ikinci kez binmez (kullanıcı bildirimi, 2026-10-08).
+  Future<void> _tutarlaKaydet() async {
+    final tutar = _parse(_qtyCtrl.text);
+    if (tutar == null || tutar <= 0) {
+      setState(() => _error = context.l10n.enterValidAmount);
+      return;
+    }
+    final islem = mevduatTutarIslemi(
+      tutar: tutar,
+      birim: _birim,
+      eldekiPay: widget.asset.quantity,
+      satis: !_isAdd,
+    );
+    if (islem == null) {
+      setState(() => _error = _isAdd
+          ? context.l10n.enterValidAmount
+          : context.l10n.cannotExceedBalance(fmtTRY(_bakiye, digits: 2)));
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      final asset = widget.asset;
+      final notifier = widget.ref.read(portfolioProvider.notifier);
+      if (_isAdd) {
+        await notifier.addAsset(
+          name: asset.name,
+          ticker: asset.ticker,
+          type: asset.type,
+          quantity: islem.pay,
+          purchasePrice: islem.birim,
+          currency: asset.currency,
+          notes: '',
+          isManualPrice: asset.isManualPrice,
+          subCategory: asset.subCategory,
+          unitType: asset.unitType,
+          sozlesmeId: asset.sozlesmeId,
+        );
+      } else {
+        await notifier.addSellTransaction(
+          asset: asset,
+          quantity: islem.pay,
+          sellPrice: islem.birim,
+        );
+      }
+      if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -303,8 +392,12 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                       style: context.t.bodySmall?.copyWith(color: context.c.text36)),
                   const Spacer(),
                   Text(
-                    '${numFmt.format(asset.quantity)} $_unitLabel · '
-                    '${context.l10n.quickAvgShort('${numFmt.format(asset.purchasePrice)} $_currencySymbol')}',
+                    // Mevduatta pay ve "ort. 1,00 ₺" kullanıcıya bir şey
+                    // söylemez; bakiye söyler.
+                    _tutarla
+                        ? fmtTRY(_bakiye, digits: 2)
+                        : '${numFmt.format(asset.quantity)} $_unitLabel · '
+                            '${context.l10n.quickAvgShort('${numFmt.format(asset.purchasePrice)} $_currencySymbol')}',
                     style: context.t.numSmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -317,7 +410,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             const SizedBox(height: 16),
 
             // ── Miktar ────────────────────────────────────────────────
-            Text(context.l10n.quantity,
+            Text(_tutarla ? context.l10n.depositAmountLabel : context.l10n.quantity,
                 style: context.t.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.c.text58)),
@@ -339,7 +432,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 hintText: '0',
                 hintStyle:
                     context.t.headlineSmall?.copyWith(color: context.c.text36),
-                suffixText: _unitLabel,
+                suffixText: _tutarla ? _currencySymbol : _unitLabel,
                 suffixStyle:
                     context.t.titleMedium?.copyWith(color: context.c.text58),
                 // Dolgu/çerçeve temadan (`inputDecorationTheme` = `inputFill` kuralı).
@@ -351,7 +444,11 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             // Remove modunda tüm miktarı çıkarırken kısa bilgi: bu bir
             // "satış" kaydı; delete değil. Kullanıcı "sattım = sil" diye
             // düşünmesin diye net bir metinle ayrımı vurguluyoruz.
-            if (!_isAdd && qty > 0 && (qty - asset.quantity).abs() < 0.0001)
+            if (!_isAdd &&
+                qty > 0 &&
+                (_tutarla
+                    ? (qty - _bakiye).abs() < 0.01
+                    : (qty - asset.quantity).abs() < 0.0001))
               Padding(
                 padding: const EdgeInsets.only(top: 10),
                 child: Container(
@@ -384,7 +481,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
               ),
 
             // ── Fiyat (sadece ekleme için) ────────────────────────────
-            if (_isAdd) ...[
+            if (_isAdd && !_tutarla) ...[
               const SizedBox(height: 16),
               Text(context.l10n.quickUnitPrice,
                   style: context.t.titleSmall?.copyWith(
@@ -414,7 +511,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
             ],
 
             // ── Toplam önizleme ──────────────────────────────────────
-            if (qty > 0) ...[
+            // Mevduatta toplam yazılan tutarın kendisidir; tekrar etmez.
+            if (qty > 0 && !_tutarla) ...[
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -477,23 +575,25 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                 const SizedBox(width: 10),
                 Expanded(
                   flex: 2,
-                  child: FilledButton(
-                    onPressed: _saving ? null : _submit,
+                  // Gösterge + çift dokunuş kilidi standart bileşende (tek
+                  // yükleniyor davranışı, 2026-10-08). `_saving` kalır:
+                  // kayıt sürerken İptal pasif.
+                  child: SandikAsyncButton.kompakt(
+                    onPressed: _submit,
+                    mesgul: _saving,
                     style: FilledButton.styleFrom(
                       backgroundColor: accent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(SandikRadius.md)),
                     ),
-                    child: _saving
-                        ? const CustomLoadingIndicator(size: 18)
-                        : Text(
-                            _isAdd
-                                ? context.l10n.buyAction
-                                : context.l10n.sellAction,
-                            style: context.t.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: context.c.text90)),
+                    child: Text(
+                        _isAdd
+                            ? context.l10n.buyAction
+                            : context.l10n.sellAction,
+                        style: context.t.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: context.c.text90)),
                   ),
                 ),
               ],
@@ -509,7 +609,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
     // Öneriler `hizliMiktarOnerileri`'nden (saf, testli). Alanın metni ve
     // çipin yazısı AYNI Türkçe biçimde (`_fmt`): eski '0.1' ham yazımı
     // ekranda "0.1" görünüyordu.
-    final eldeki = widget.asset.quantity;
+    // Mevduatta alan tutar olduğu için çipler de bakiyeyle (₺) kurulur.
+    final eldeki = _tutarla ? _bakiye : widget.asset.quantity;
     final chips = <({String deger, String etiket})>[
       for (final v in hizliMiktarOnerileri(
         tur: widget.asset.type,

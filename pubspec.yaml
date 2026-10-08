@@ -45,6 +45,8 @@ dependencies:
   archive: ^4.3.0
   xml: ^7.0.1
   pdfrx: ^2.4.8
+  device_info_plus: ^12.4.0
+  purchases_flutter: ^10.15.0
 
 dev_dependencies:
   flutter_test:

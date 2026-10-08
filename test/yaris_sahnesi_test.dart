@@ -3,8 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/widgets/yaris_sahnesi.dart';
 
-/// Yarış sahnesi (kullanıcı kararı 2026-09-29): canlı liste + 2 kişide
-/// düello, 3+ kişide kürsü. Sahne saf widget; ekransız pump edilir.
+/// Yarış sahnesi (kullanıcı kararı 2026-09-29): canlı liste + 3+ kişide
+/// kürsü; tam 2 kişide düello arenası (2026-10-04, `duello_arenasi_test`).
+/// Eski 2 kişilik düello kartı (`_Duello`, `halatOrani`) bayrak
+/// `yaris_duello_arena` ile 2026-10-05'te silindi; onu sınayan testler de.
+/// Sahne saf widget; ekransız pump edilir.
 YarisKatilimci _k(String id, double? roi,
         {bool ben = false, String? ad, int renk = 1}) =>
     YarisKatilimci(
@@ -60,13 +63,11 @@ void main() {
   setUpAll(() => initializeDateFormatting('tr_TR'));
 
   group('vitrin kuralı', () {
-    test('tam 2 kişi, ikisinin de getirisi var → düello', () {
+    test('tam 2 kişi → arena (biri veri yok olsa da)', () {
       expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', 2)]),
-          YarisVitrini.duello);
-    });
-    test('2 kişiden biri veri yok → vitrin yok (halat bir şey ölçmez)', () {
+          YarisVitrini.arena);
       expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', null)]),
-          YarisVitrini.yok);
+          YarisVitrini.arena);
     });
     test('getirisi olan 3+ kişi → kürsü', () {
       expect(yarisVitrini([_k('sen', 1, ben: true), _k('a', 2), _k('b', -1)]),
@@ -81,32 +82,7 @@ void main() {
     });
   });
 
-  group('halat oranı', () {
-    test('başa baş ortada, öndeysen sağa kayar', () {
-      expect(halatOrani(3, 3), 0.5);
-      expect(halatOrani(-2.7, -3.2), greaterThan(0.5));
-      expect(halatOrani(-3.2, -2.7), lessThan(0.5));
-    });
-    test('uçlara yapışmaz', () {
-      expect(halatOrani(100, -100), closeTo(0.92, 1e-9));
-      expect(halatOrani(-100, 100), closeTo(0.08, 1e-9));
-    });
-  });
-
-  testWidgets('2 kişi: düello kartı ve fark cümlesi', (tester) async {
-    await _pump(tester, [
-      _k('sen', -2.7, ben: true, ad: 'TestUser'),
-      _k('ayse', -3.2, ad: 'Ayşe Nur')
-    ]);
-    await tester.pumpAndSettle();
-    expect(find.text('VS'), findsOneWidget);
-    // İlgi eki addan türetilir: "Ayşe'nin", tek şablon değil.
-    expect(find.text("Ayşe'nin 0,5 puan önündesin"), findsOneWidget);
-    expect(find.text('LİDER'), findsOneWidget);
-    expect(find.text('SEN'), findsOneWidget);
-  });
-
-  testWidgets('3 kişi: kürsü, düello yok', (tester) async {
+  testWidgets('3 kişi: kürsü, arena yok', (tester) async {
     await _pump(tester, [
       _k('sen', 4.1, ben: true, ad: 'Sen Kişi'),
       _k('ayse', 6.3, ad: 'Ayşe'),
@@ -121,12 +97,23 @@ void main() {
 
   testWidgets('canlı yenilemede sıra değişirse ▲/▼ çipi belirir ve söner',
       (tester) async {
-    final once = [_k('sen', -2.7, ben: true), _k('ayse', -3.2)];
+    // 3 kişi: canlı liste yalnız kürsüyle çizilir (2 kişide arena).
+    final once = [
+      _k('sen', -2.7, ben: true),
+      _k('ayse', -3.2),
+      _k('mert', -5.0, renk: 2),
+    ];
     await _pump(tester, once, yenileme: 1);
     await tester.pumpAndSettle();
     expect(find.text('▲1'), findsNothing);
 
-    await _pump(tester, [_k('sen', -3.4, ben: true), _k('ayse', -3.0)],
+    await _pump(
+        tester,
+        [
+          _k('sen', -3.4, ben: true),
+          _k('ayse', -3.0),
+          _k('mert', -5.0, renk: 2),
+        ],
         yenileme: 2);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -139,11 +126,17 @@ void main() {
   });
 
   testWidgets('dönem değişimi canlı olay değildir: çip yok', (tester) async {
-    await _pump(tester, [_k('sen', -2.7, ben: true), _k('ayse', -3.2)],
-        yenileme: 1, donem: 7);
+    await _pump(
+        tester,
+        [_k('sen', -2.7, ben: true), _k('ayse', -3.2), _k('m', -5, renk: 2)],
+        yenileme: 1,
+        donem: 7);
     await tester.pumpAndSettle();
-    await _pump(tester, [_k('sen', 4.1, ben: true), _k('ayse', 6.3)],
-        yenileme: 2, donem: 30);
+    await _pump(
+        tester,
+        [_k('sen', 4.1, ben: true), _k('ayse', 6.3), _k('m', -5, renk: 2)],
+        yenileme: 2,
+        donem: 30);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('▲1'), findsNothing);
@@ -153,19 +146,29 @@ void main() {
 
   testWidgets('liderliği canlı alınca konfeti ve taç zıplaması hatasız',
       (tester) async {
+    // 3 kişi (kürsü): konfeti kürsünün üstünde oynar.
     await _pump(
-        tester, [_k('sen', -3.4, ben: true), _k('ayse', -3.0, ad: 'Ayşe')],
+        tester,
+        [
+          _k('sen', -3.4, ben: true),
+          _k('ayse', -3.0, ad: 'Ayşe'),
+          _k('m', -5, renk: 2),
+        ],
         yenileme: 1);
     await tester.pumpAndSettle();
     await _pump(
-        tester, [_k('sen', -2.0, ben: true), _k('ayse', -3.0, ad: 'Ayşe')],
+        tester,
+        [
+          _k('sen', -2.0, ben: true),
+          _k('ayse', -3.0, ad: 'Ayşe'),
+          _k('m', -5, renk: 2),
+        ],
         yenileme: 2);
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text("Ayşe'nin 1,0 puan önündesin"), findsOneWidget);
   });
 
   testWidgets('hareketi azalt: animasyonsuz kurulur', (tester) async {
@@ -192,7 +195,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       });
-      testWidgets('düello ${w.toInt()}pt × $o', (tester) async {
+      testWidgets('2 kişi (arena) ${w.toInt()}pt × $o', (tester) async {
         await _pump(tester, uzun.take(2).toList(), genislik: w, olcek: o);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);

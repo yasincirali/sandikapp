@@ -3,7 +3,10 @@ part of '../portfolio_performance_screen.dart';
 /// Kontroller: tür çipleri, dönem/yüzey/mod anahtarları, boş durumlar.
 /// `portfolio_performance_screen.dart`'ın part'ı (2026-09-14).
 extension _PerformansKontroller on _PortfolioPerformanceScreenState {
-  Widget _typeChip(AssetType? type, String label) {
+  /// [sonra]: seçimden sonra çağrılır — Filtre alt sayfası (tek akış) kendi
+  /// içeriğini yeniler; sayfa ayrı bir rota, ekranın `setState`'i onu
+  /// yeniden kurmaz.
+  Widget _typeChip(AssetType? type, String label, {VoidCallback? sonra}) {
     final selected = _typeFilter == type;
     final color = type?.color ?? context.c.amberText;
     return Padding(
@@ -18,10 +21,13 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         // Tür filtresi de tohumu atar — kapsamla aynı gerekçe
         // (`_gunIciTohumuAt`): başka bir türün serisi bu türün özeti
         // sanılmamalı.
-        onPressed: () => _guncelle(() {
-          _typeFilter = type;
-          _gunIciTohumuAt();
-        }),
+        onPressed: () {
+          _guncelle(() {
+            _typeFilter = type;
+            _gunIciTohumuAt();
+          });
+          sonra?.call();
+        },
         child: AnimatedContainer(
           duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
@@ -59,7 +65,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Ayrım KULLANIM SIKLIĞINA göre yapıldı, göze göre değil:
   ///   · sık: yüzey (Grafik/Özet) ve dönem → kalıcı satırlarda kaldı
   ///   · seyrek: hangi tür, hangi mod → tek çipin arkasına alındı
-  ///   · kim → aynı gün kendi satırına, en üste (`KapsamKisiSecici`):
+  ///   · kim → aynı gün kendi satırına, en üste (`OrtakSecici`):
   ///     panelin arkasında görünmez kalıyordu, oysa ekranın öznesi
   ///
   /// Çip bunları GİZLEMEZ: seçili kapsamı her zaman yazar ("Fon ·
@@ -87,7 +93,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Kapsamın tek satırlık özeti: "tür · mod".
   ///
   /// "Kim" 2026-09-15'te buradan ÇIKTI — kontrol yığınının ilk satırına
-  /// taşındı (`KapsamKisiSecici`). Kullanıcı bildirimi: "ortakları seçtiğim
+  /// taşındı (`OrtakSecici`). Kullanıcı bildirimi: "ortakları seçtiğim
   /// filtre daha görülebilir olmalı". Panelin arkasında kalınca kimin
   /// portföyüne bakıldığı bir metin parçasına indirgeniyordu; oysa bu bir
   /// filtre ayrıntısı değil, ekranın öznesi.
@@ -103,10 +109,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final l = context.l10n;
     final kategori =
         _typeFilter == null ? l.allTypes : _typeFilter!.labelOf(l);
-    return [
-      l.scopeCategory(kategori),
-      if (_simulate) l.modeSim,
-    ].join(' · ');
+    // Mod bu çipte yazılmaz (2026-10-04, `performans_ayar_sade`; bayrak
+    // 2026-10-05'te kalktı): mod Ayarlar › Görünüm'de, çipte yazmak paneli
+    // açanı boş panelle karşılardı. Mod kapsam çubuğunun altındaki rozette.
+    return l.scopeCategory(kategori);
   }
 
   Widget _buildScopeChip() {
@@ -116,7 +122,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     // Kim seçimi artık başlıktaki kişi çipinde; bu çip yalnız tür + mod
     // filtresini yansıtır. `_view` buraya girince "Ben" seçili her
     // kullanıcıda çip sürekli amber yanıyordu — filtre yokken de.
-    final filtreli = _typeFilter != null || _simulate;
+    final filtreli = _typeFilter != null;
     // Varsayılan (filtresiz) durumda da ton koyu: çip soluk `text58` iken
     // düz bir etiket gibi duruyordu ve dokunulabilir olduğu anlaşılmıyordu
     // (kullanıcı bildirimi 2026-09-15: "kişi seçimi çok efektif olmamış").
@@ -126,6 +132,11 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     return TourAnchor(
       target: TourTarget.kapsamSecici,
       child: Semantics(
+        // Kendi düğümü (2026-10-08): yanındaki yüzey anahtarının segmentleri
+        // birleşik düğüm olunca (`SandikSegment` → `MergeSemantics`) bu
+        // kapsayıcısız yapılandırma satırın düğümüne sızıyordu; "Kapsam: …"
+        // etiketi bütün satırı kaplıyor, ekran okuyucu çipi ayrı bulamıyordu.
+        container: true,
         button: true,
         expanded: acik,
         label: '${context.l10n.scopeLabel}: ${_kapsamOzeti()}',
@@ -192,11 +203,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
-  /// Kapsam paneli — çipe dokununca açılan seyrek kontroller.
-  ///
-  /// Mod anahtarı yalnızca gün dışı dönemde anlamlı (gün içi seride
-  /// simülasyonun karşılığı yok), bu yüzden orada hiç çizilmez.
-  Widget _buildScopePanel(bool isIntraday) {
+  /// Kapsam paneli — çipe dokununca açılan seyrek kontroller (tür çipleri).
+  Widget _buildScopePanel() {
+    // Simülasyon sıfırlaması YOK: tercih Ayarlar'da kalıcıdır ve `_simulate`
+    // grafik araçları gizliyken (sade Başlangıç) onu zaten etkisiz sayar.
     // Ortak katlanır bölüm (animasyon denetimi 2026-10-01).
     return SandikAcilir(
       acik: _kapsamAcik,
@@ -215,13 +225,16 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
               children: [
                 _typeChip(null, context.l10n.allTypes),
                 for (final t in AssetType.values)
-                  _typeChip(t, t.labelOf(context.l10n)),
+                  if (RemoteConfigService.instance.turSecenegi(t))
+                    _typeChip(t, t.labelOf(context.l10n)),
               ],
             ),
-            if (!isIntraday && !_ozetSekmesi) ...[
-              const SizedBox(height: SandikSpace.sm),
-              _buildModeToggle(),
-            ],
+            // Gerçek|Simülasyon anahtarı burada YOK (2026-10-04,
+            // `performans_ayar_sade`, madde 5; bayrak ve eski anahtar
+            // `_buildModeToggle` 2026-10-05'te kalktı): Ayarlar › Görünüm'e
+            // taşındı. Dönemden döneme değiştirilen bir kontrol değil, bir
+            // bakış tercihi; panelde kaldığında her açılışta "Gerçek mi,
+            // Bugünkü mü?" sorusu soruyordu.
           ],
         ),
       ),
@@ -262,7 +275,232 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       onSec: (i) {
         _guncelle(() => _selectedPeriodIdx = i);
         _startIntradayTickIfNeeded();
+        // Tek akışta Özet hep görünür; "Özet görüldü" ölçümü sekme
+        // geçişinden değil dönem seçiminden gelir (eski düzende sekme
+        // anahtarı yazıyordu, bkz. `_buildSurfaceToggle`).
+        if (_tekAkis) {
+          AnalyticsService.instance.logPeriodSummaryViewed(
+            period: SummaryPeriod.fromIndex(i).name,
+          );
+        }
       },
+    );
+  }
+
+  // ── Tek akış kontrolleri (bayrak `performans_tek_akis`, S2) ────────────
+
+  /// Tek akışın TEK kontrol satırı: dönem seçici + Filtre çipi.
+  ///
+  /// Eski yığın üç satırdı (kişi, Grafik|Özet + kapsam çipi, dönem). Tek
+  /// akışta yüzey anahtarı yok; kişi, kategori ve "bugünkü portföyle" ise
+  /// SEYREK değişen üç kapsam ayarı — sıklık ilkesi (`_buildScopeBar` notu)
+  /// aynen geçerli: sık olan (dönem) kalıcı satırda, seyrekler tek çipin
+  /// arkasında. Çip seçili filtre SAYISINI yazar ("Filtre · 1"): görünmeyen
+  /// filtre "portföyüm neden eksik" sınıfı hatanın kaynağıdır, sayı onu
+  /// görünür tutar.
+  Widget _buildTekSatirKontroller(List<AppUser> partners) {
+    return Row(
+      children: [
+        Expanded(child: _buildPeriodRow()),
+        const SizedBox(width: SandikSpace.sm),
+        _buildFiltreCipi(partners),
+      ],
+    );
+  }
+
+  /// Varsayılan dışındaki filtre sayısı: kişi (ortak varken "Ben" dışı),
+  /// kategori ("Tümü" dışı), bugünkü portföyle (etkinse).
+  int _filtreSayisi(List<AppUser> partners) =>
+      (partners.isNotEmpty && _view != '' ? 1 : 0) +
+      (_typeFilter != null ? 1 : 0) +
+      (_simulate ? 1 : 0);
+
+  Widget _buildFiltreCipi(List<AppUser> partners) {
+    final l = context.l10n;
+    final n = _filtreSayisi(partners);
+    final filtreli = n > 0;
+    final ton = filtreli ? context.c.amberText : context.c.text90;
+    // Dar ekranda (320pt) yedi dönem etiketi zaten küçülüyor; çip yalnız
+    // ikon (+ sayı) olur ki dönem seçicinin payı kırpılmasın. Etiket ekran
+    // okuyucuda her genişlikte tam.
+    final dar = MediaQuery.sizeOf(context).width < 360;
+    final metin = filtreli
+        ? (dar ? '$n' : l.s2FiltreSayili(n))
+        : (dar ? null : l.s2Filtre);
+    // Tur hedefi: tek akışta kapsam adımı bu çipi gösterir (eski düzende
+    // kapsam çipi). Aynı hedef iki yerde aynı anda kurulmaz — dallar ayrık.
+    return TourAnchor(
+      target: TourTarget.kapsamSecici,
+      child: Semantics(
+        container: true,
+        button: true,
+        label: filtreli ? l.s2FiltreEtkin(n) : l.s2Filtre,
+        child: ExcludeSemantics(
+          child: CupertinoButton(
+            minimumSize: SandikTouch.minSize,
+            padding: EdgeInsets.zero,
+            onPressed: _filtreSayfasiniAc,
+            child: SizedBox(
+              height: SandikTouch.min,
+              child: Center(
+                child: AnimatedContainer(
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
+                  height: DonemSecici.tekSatirYukseklik,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: SandikSpace.sm2),
+                  // Kapsam çipiyle aynı kabuk: varsayılan `surface2` +
+                  // `hairline`, filtreliyken amber (gerekçe `_buildScopeChip`).
+                  decoration: BoxDecoration(
+                    color: filtreli
+                        ? context.c.amberFill.withValues(alpha: 0.14)
+                        : context.c.surface2,
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
+                    border: Border.all(
+                      color: filtreli
+                          ? context.c.amberFill.withValues(alpha: 0.55)
+                          : context.c.hairline,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.tune_rounded, size: 15, color: ton),
+                      if (metin != null) ...[
+                        const SizedBox(width: SandikSpace.xs2),
+                        Text(
+                          metin,
+                          maxLines: 1,
+                          style: context.t.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: ton,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Filtre alt sayfası: kişi (yalnız ortak varken), kategori, bugünkü
+  /// portföyle (yalnız grafik araçları açık seviyede — Ayarlar'daki satırla
+  /// aynı kapı).
+  ///
+  /// Hiçbir denetim YENİ değil, yalnız yer değiştirdi: kişi seçici eski
+  /// düzenin ilk satırı (`OrtakSecici`), kategori çipleri eski kapsam
+  /// panelinin (`_typeChip`), anahtar Ayarlar › Görünüm'deki tercihle AYNI
+  /// provider (`bugunkuPortfoyleProvider`) — burada değiştirmek Ayarlar'ı da
+  /// değiştirir, iki kaynak yok. Seçim anında uygulanır (onay düğmesi yok):
+  /// grafik sayfanın arkasında yenilenir, kullanıcı sonucu kapatınca görür.
+  void _filtreSayfasiniAc() {
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface1,
+      shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
+      builder: (_) => StatefulBuilder(
+        builder: (sayfaCtx, yenile) => Consumer(
+          builder: (sayfaCtx, sayfaRef, _) {
+            final l = context.l10n;
+            // Sayfa açıkken ortak listesi değişebilir (gizleme, davet):
+            // provider'dan izlenir, açılıştaki kopyadan değil.
+            final ortaklar = sayfaRef.watch(activePartnersProvider);
+            final araclar =
+                sayfaRef.watch(seviyeGorunurlukProvider).grafikAraclari;
+            final bugunku = sayfaRef.watch(bugunkuPortfoyleProvider);
+            void tazele() => yenile(() {});
+            return SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                    SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.lg),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Center(child: SandikTutamac()),
+                    const SizedBox(height: SandikSpace.md),
+                    Text(
+                      l.s2Filtre,
+                      style: context.t.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text90),
+                    ),
+                    if (ortaklar.isNotEmpty) ...[
+                      const SizedBox(height: SandikSpace.md),
+                      SandikSectionHeader(title: l.s2FiltreKisi),
+                      const SizedBox(height: SandikSpace.sm),
+                      OrtakSecici(
+                        partners: ortaklar,
+                        selectedId: _view,
+                        // Kapsam değişiminde gün içi tohumu da atılır —
+                        // gerekçe eski satırdaki `OrtakSecici` notunda.
+                        onChanged: (v) {
+                          _guncelle(() {
+                            _view = v;
+                            _gunIciTohumuAt();
+                          });
+                          tazele();
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: SandikSpace.md),
+                    SandikSectionHeader(title: l.s2FiltreKategori),
+                    const SizedBox(height: SandikSpace.sm),
+                    Wrap(
+                      children: [
+                        _typeChip(null, l.allTypes, sonra: tazele),
+                        for (final t in AssetType.values)
+                          _typeChip(t, t.labelOf(l), sonra: tazele),
+                      ],
+                    ),
+                    if (araclar) ...[
+                      const SizedBox(height: SandikSpace.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l.todaysPortfolioSettingTitle,
+                                  style: context.t.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: context.c.text90),
+                                ),
+                                const SizedBox(height: SandikSpace.xxs),
+                                Text(
+                                  l.todaysPortfolioSettingSubtitle,
+                                  style: context.t.bodySmall
+                                      ?.copyWith(color: context.c.text58),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: SandikSpace.smd),
+                          Switch.adaptive(
+                            value: bugunku,
+                            activeTrackColor: context.c.amberText,
+                            onChanged: (v) => sayfaRef
+                                .read(bugunkuPortfoyleProvider.notifier)
+                                .set(v),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -300,85 +538,73 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     );
   }
 
-  /// Gerçek geçmiş / Simülasyon toggle'ı.
-  /// - Gerçek: her günün o günkü net miktarına göre değer (alım/satışlar
-  ///   tarihlerine göre).
-  /// - Simülasyon: bugünkü net portföy tüm dönem boyunca elde tutulmuş gibi.
-  Widget _buildModeToggle() {
-    final options = [
-      (label: context.l10n.modeReal, sim: false),
-      (label: context.l10n.modeSim, sim: true),
-    ];
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md)),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        children: options.map((o) {
-          final selected = _simulate == o.sim;
-          return Expanded(
-            child: CupertinoButton(
-              minimumSize: SandikTouch.minSize,
-              padding: EdgeInsets.zero,
-              onPressed: () => _guncelle(() => _simulate = o.sim),
-              child: Container(
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  color: selected ? context.c.surface2 : Colors.transparent,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      o.label,
-                      style: context.t.bodyMedium?.copyWith(
-                        fontWeight:
-                            selected ? FontWeight.w600 : FontWeight.w500,
-                        color:
-                            selected ? context.c.amberText : context.c.text36,
+  /// "Bugünkü portföyle" rozeti — mod etkinken kapsam çubuğunun altında
+  /// (2026-10-04, `performans_ayar_sade`).
+  ///
+  /// Anahtar Ayarlar › Görünüm'e taşındı; burada bir şey kalmasa kullanıcı
+  /// gördüğü eğrinin GERÇEK geçmiş olmadığını bilemezdi ("görünmeyen
+  /// filtre", bkz. `_buildScopeBar`). Rozet durum söyler, kontrol değildir:
+  /// dokununca modun ne olduğunu ve nereden kapatılacağını anlatır.
+  Widget _buildBugunkuPortfoyRozeti() {
+    final etiket = context.l10n.todaysPortfolioBadge;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Semantics(
+        button: true,
+        label: context.l10n.modeInfoSemantics(etiket),
+        child: ExcludeSemantics(
+          child: CupertinoButton(
+            minimumSize: SandikTouch.minSize,
+            padding: EdgeInsets.zero,
+            onPressed: _showModeInfoSheet,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.sm2, vertical: SandikSpace.xs),
+              decoration: BoxDecoration(
+                color: context.c.amberFill.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                border: Border.all(
+                    color: context.c.amberFill.withValues(alpha: 0.55)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_toggle_off_rounded,
+                      size: 15, color: context.c.amberText),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Flexible(
+                    child: Text(
+                      etiket,
+                      style: context.t.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: context.c.amberText,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Semantics(
-                      button: true,
-                      label: context.l10n.modeInfoSemantics(o.label),
-                      child: SandikBasma(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _showModeInfoSheet(forSim: o.sim),
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.info_outline_rounded,
-                          size: 15,
-                          color: selected
-                              ? context.c.amberFill.withValues(alpha: 0.85)
-                              : context.c.text36,
-                        ),
-                      ),
-                    )),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Icon(Icons.info_outline_rounded,
+                      size: 15, color: context.c.amberText),
+                ],
               ),
             ),
-          );
-        }).toList(),
+          ),
+        ),
       ),
     );
   }
 
-  void _showModeInfoSheet({required bool forSim}) {
-    final title = forSim ? context.l10n.simModeTitle : context.l10n.realModeTitle;
-    final body = forSim
-        ? context.l10n.simModeBody
-        : context.l10n.realModeBody;
+  /// "Bugünkü portföyle" rozetinin bilgi sayfası. Nereden kapatılacağı da
+  /// yazılır: anahtar bu ekranda değil, Ayarlar › Görünüm'de. (Gerçek mod
+  /// açıklaması `realMode*` eski anahtarın ⓘ'siyle 2026-10-05'te kalktı.)
+  void _showModeInfoSheet() {
+    final title = context.l10n.simModeTitle;
+    final body = context.l10n.simModeBody;
+    final ipucu = context.l10n.todaysPortfolioBadgeHint;
 
     // Uygulamanın öteki ~30 sheet'i gibi Material alt sayfası (animasyon
     // denetimi 2026-10-01): bu tek Cupertino açılır penceresiydi — 335 ms
     // kayıyor, aşağı çekerek KAPANMIYORDU ve köşesi 24'tü (tema 20).
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => DefaultTextStyle(
@@ -418,6 +644,14 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                   body,
                   style: context.t.bodyMedium?.copyWith(
                       color: context.c.text58,
+                      height: 1.5,
+                      decoration: TextDecoration.none),
+                ),
+                const SizedBox(height: SandikSpace.sm),
+                Text(
+                  ipucu,
+                  style: context.t.bodyMedium?.copyWith(
+                      color: context.c.amberText,
                       height: 1.5,
                       decoration: TextDecoration.none),
                 ),

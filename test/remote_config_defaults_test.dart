@@ -73,9 +73,92 @@ void main() {
 
     // Karar 8.1 (2026-09-30): kâr payı stopajı %15 (9286 s. CBK, RG
     // 22.12.2024). Değer değişirse mevzuat değişmiş olmalı — kaynağı yaz.
+    // 0111: açılırsa yeni satış `sell_fx_rate` yazar; sütun sunucuda yokken
+    // açık doğarsa her dövizli satış PGRST204 ile düşer.
+    test('satış günü kuru KAPALI doğar', () {
+      expect(varsayilan('satis_gunu_kuru'), 'false');
+    });
+
+    // Ana yüzeyde yeni bilgi (Özet kartı + kutlama); önce yasin'in cihazı.
+    test('birikim serisi KAPALI doğar', () {
+      expect(varsayilan('birikim_serisi'), 'false');
+    });
+
+    // Sadeleştirme 2 (2026-10-08): ana yüzeyleri değiştirir; önce yasin'in
+    // TestFlight cihazında açılır. Kapalıyken ekranlar birebir eski.
+    for (final b in const [
+      'donem_hafizasi',
+      'performans_tek_akis',
+      'portfoy_dagilim_cubugu',
+      'varlik_detay_katmanli',
+      'sinyal_on_ayar',
+      'raporlar_kapisi',
+      'genel_arama',
+    ]) {
+      test('$b KAPALI doğar', () => expect(varsayilan(b), 'false'));
+    }
+
+    // 0124 iki sunucuya gidip eurobond-fiyat ilk turunu atmadan açılırsa
+    // eklenen lot fiyatsız kalır.
+    test('eurobond KAPALI doğar', () {
+      expect(varsayilan('eurobond'), 'false');
+    });
+
+    // Yeni hisse pazarı: form, arama ve rozetler; kapalıyken birebir eski.
+    test('ABD hissesi KAPALI doğar', () {
+      expect(varsayilan('abd_hisse'), 'false');
+    });
+
+    // Varlık ekranında yeni kart; kapalıyken ekran birebir eski.
+    test('varlık masrafları KAPALI doğar', () {
+      expect(varsayilan('varlik_masraflari'), 'false');
+    });
+
+    // Formun ilk sorusu değişir (arama + gruplu ızgara); kapalıyken çip
+    // `Wrap`'ı birebir eski.
+    test('tür seçici ızgarası KAPALI doğar', () {
+      expect(varsayilan('tur_secici_izgara'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });
+
+    // 2026-10-04'te AÇIK doğan sadeleştirme bayrakları 2026-10-05'te KODDAN
+    // KALDIRILDI (kullanıcı kararı: "önerilerin hepsini uygula"); davranış
+    // kalıcı. Bu kilit anahtarın `_defaults`'a ya da bir okuyucuya
+    // (`'anahtar'` dizgesi) geri gelmesini yakalar: geri gelen bayrak
+    // Console'daki eski `false` değerini yeniden okur ve kalıcı davranışı
+    // sessizce kapatabilir.
+    for (final b in const [
+      'ilk_varlik_kolay',
+      'karsilama_tanitimi',
+      'seviye_anketi',
+      'bugun_karti_kiyas',
+      'varlik_islem_cubugu',
+      'tek_ortak_secici',
+      'tek_kiyas_yuzeyi',
+      'siralama_tek_sayfa',
+      'performans_ayar_sade',
+      'yaris_duello_arena',
+      'tek_onay_kutusu',
+      'ortak_secimi_tasi',
+      'yasal_onay_kaydi',
+      'yasal_kapi_en_yeni',
+      'zorunlu_okuma',
+    ]) {
+      test('$b kaldırıldı: _defaults ve okuyucu kodda yok', () {
+        expect(varsayilan(b), isNull, reason: '_defaults geri gelmiş');
+        final okuyan = [
+          for (final f in Directory('lib').listSync(recursive: true))
+            if (f is File &&
+                f.path.endsWith('.dart') &&
+                f.readAsStringSync().contains("'$b'"))
+              f.path,
+        ];
+        expect(okuyan, isEmpty, reason: '$b anahtarını okuyan kod geri gelmiş');
+      });
+    }
 
     test('paywall_enabled hâlâ kapalı — IAP paketi yok', () {
       expect(varsayilan('paywall_enabled'), 'false');

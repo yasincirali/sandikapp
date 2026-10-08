@@ -2,11 +2,16 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import '../services/crash_reporter.dart';
+import '../services/fx_rate_migration_service.dart';
 import '../services/price_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../utils/tr_format.dart';
 import 'bulk_cart_provider.dart';
@@ -248,6 +253,44 @@ DateTime? haftaSonuKapanisGunu(DateTime secilen, {required bool yediGun}) {
   };
 }
 
+// ─── TL karşılığı ────────────────────────────────────────────────────────────
+
+/// Dövizli alımın formda gösterilen TL karşılığı için kur (yasin
+/// 2026-10-08: "dolar olarak gösteriyor, TL karşılığı da gösterilmeli").
+///
+/// Kayıttaki kuralın aynısı (`PortfolioNotifier._alisKuru`): bugünkü
+/// alımda canlı kur, geriye tarihli alımda ALIM GÜNÜNÜN kuru — portföy
+/// toplamına giren maliyet tam olarak bu sayıyla çevrilir, form başka bir
+/// sayı söylemesin. [tarihli] o günün kapanış kuru (yüklenmediyse `null`).
+/// Kur bilinmiyorsa `null`: TL satırı hiç çizilmez, 1.0 ya da sabit bir
+/// kurla uydurma tutar yazılmaz (fiyat kaynağı sözleşmesi (3)).
+double? tlKarsiligiKuru({
+  required String currency,
+  required DateTime tarih,
+  required double canliKur,
+  required double? tarihli,
+  DateTime? now,
+}) {
+  if (currency.toUpperCase() == 'TRY') return null;
+  final geriTarihli = dayKey(tarih).isBefore(dayKey(now ?? DateTime.now()));
+  final kur = geriTarihli ? tarihli : canliKur;
+  return kur != null && kur > 1.0 ? kur : null;
+}
+
+/// Geriye tarihli dövizli alımın kuru — yalnız form önizlemesi için.
+/// Bugünkü alımda sorgu atılmaz (canlı kur portföy durumunda hazır).
+final alimGunuKuruProvider = FutureProvider.autoDispose
+    .family<double?, ({String currency, DateTime gun})>((ref, k) async {
+  final sembol = FxRateMigrationService.fxSembolu(k.currency);
+  if (sembol == null) return null;
+  try {
+    return await PriceService.instance.fetchHistoricalFxRate(sembol, k.gun);
+  } catch (e, st) {
+    CrashReporter.report(e, st, reason: 'alimGunuKuruProvider');
+    return null;
+  }
+});
+
 // ─── Durum ───────────────────────────────────────────────────────────────────
 
 /// Bir geçişin metin alanlarına yazması gereken değerler. `null` = dokunma,
@@ -277,6 +320,10 @@ class AddAssetFormState {
     this.selectedFund,
     this.notesExpanded = false,
     this.denendi = false,
+    this.abdAcik = false,
+    this.turIzgarasiAcik = false,
+    this.eurobondSozlesmesi,
+    this.eurobondFiyati,
   });
 
   /// Açılış değerleri. Öncelik: düzenlenen kayıt > sepet öğesi > prefill
@@ -288,18 +335,31 @@ class AddAssetFormState {
     AssetType? prefillType,
     DateTime? prefillDate,
     DateTime? now,
+    bool abdAcik = false,
+    bool turIzgarasi = false,
   }) {
     final a = editingAsset;
     final c = cartInitial;
     final type = a?.type ?? c?.type ?? prefillType ?? AssetType.hisse;
     final ticker = a?.ticker ?? c?.ticker ?? prefillTicker ?? '';
+    // ABD kataloğundan gelen prefill (arama → "Portföye ekle"): pazar ABD,
+    // para birimi USD. Kurulmasaydı form TRY açılır ve dolar fiyatı lira
+    // diye kaydedilirdi. Yalnız bayrak açıkken ve katalogdaki sembolde.
+    final abdPrefill = abdAcik &&
+        a == null &&
+        c == null &&
+        prefillType == AssetType.hisse &&
+        abdHisseleri.containsKey(prefillTicker);
     // BIST prefill'inde alt kategori de kurulmalı, yoksa BIST100 seçici boş
     // açılır ve seçili hisse görünmez.
     final subCat = a?.subCategory ??
         c?.subCategory ??
-        (prefillType == AssetType.hisse && (prefillTicker?.endsWith('.IS') ?? false)
-            ? StockSubCategory.bist100.label
-            : null);
+        (abdPrefill
+            ? StockSubCategory.abd.name
+            : prefillType == AssetType.hisse &&
+                    (prefillTicker?.endsWith('.IS') ?? false)
+                ? StockSubCategory.bist100.label
+                : null);
     final isBist100 =
         type == AssetType.hisse && subCat == StockSubCategory.bist100.label;
     TefasFund? fund;
@@ -316,13 +376,21 @@ class AddAssetFormState {
       type: type,
       subCategory: subCat,
       unitType: a?.unitType ?? c?.unitType ?? 'piece',
-      currency: a?.currency ?? c?.currency ?? type.defaultCurrency,
+      currency: a?.currency ??
+          c?.currency ??
+          (abdPrefill ? 'USD' : type.defaultCurrency),
       isManualPrice: a?.isManualPrice ?? (c != null && c.ticker.isEmpty),
       // Halka arz katılımı (F6) tarihi hazır getirir; null iken eski davranış.
       addedDate:
           a?.addedDate ?? c?.addedDate ?? prefillDate ?? now ?? DateTime.now(),
       bist100Ticker: isBist100 && ticker.isNotEmpty ? ticker : null,
       selectedFund: fund,
+      abdAcik: abdAcik,
+      // Izgara yalnız türü henüz belli olmayan YENİ kayıtta açık doğar.
+      // Düzenleme, sepet öğesi ve ön seçim (arama, karşılaştırma, ilk
+      // varlık vitrini) türü zaten söylemiş: tekrar sormak bir adım fazla.
+      turIzgarasiAcik:
+          turIzgarasi && a == null && c == null && prefillType == null,
     );
   }
 
@@ -350,8 +418,49 @@ class AddAssetFormState {
   /// açar açmaz kırmızı göstermek suçlayıcı olurdu.
   final bool denendi;
 
+  /// `abd_hisse` bayrağı form açılırken açık mıydı. Durumda taşınır ki
+  /// geçişler ve kimlik kuralı Remote Config'e değil değere baksın (test
+  /// edilebilir; form açıkken bayrak yenilense de form tutarlı kalır).
+  final bool abdAcik;
+
+  /// Tür ızgarası açık mı (bayrak `tur_secici_izgara`). Açıkken ekran formun
+  /// gövdesini çizmez: önce "ne ekliyorsun", sonra ayrıntı. Seçimden sonra
+  /// ızgara tek satıra katlanır, "Değiştir" yeniden açar. Bayrak kapalıyken
+  /// hep `false` ve hiçbir yerde okunmaz (çip satırı birebir eski).
+  /// `notesExpanded` gibi görünüm durumu burada: ekran `setState` taşımaz
+  /// (Faz 3.10 ratchet).
+  final bool turIzgarasiAcik;
+
+  /// Seçili eurobondun sözleşmesi (katalogdan). Temiz → kirli çevirisi ve
+  /// işlemiş faiz satırı buna bakar; kupon/vade kullanıcıdan alınmaz
+  /// (yanlış girilirse işlemiş faiz sessizce yanlış çıkar). Düzenlemede
+  /// ekran açılışta katalogdan yükler; yüklenene kadar null.
+  final EurobondSozlesmesi? eurobondSozlesmesi;
+
+  /// Seçili eurobondun son fiyatı — yalnız temiz fiyat ön doldurması için.
+  final EurobondFiyati? eurobondFiyati;
+
+  bool get isEurobond => type == AssetType.eurobond;
+
+  /// Formdaki temiz fiyattan (% nominal) kayıtlı birim değer (kirli/100).
+  /// Sözleşme yoksa ya da fiyat geçersizse null — çevrilemeyen fiyat
+  /// kaydedilmez (bkz. [kimlikEksigi]).
+  double? eurobondBirimFiyati(double? temizYuzde) {
+    final s = eurobondSozlesmesi;
+    if (s == null || temizYuzde == null || temizYuzde <= 0) return null;
+    return eurobondBirimDegeri(s, temizYuzde, addedDate);
+  }
+
   bool get isBist100 =>
       type == AssetType.hisse && subCategory == StockSubCategory.bist100.label;
+
+  /// Hisse formu ABD pazarında mı. Bayrak kapalıyken HER ZAMAN `false`:
+  /// eski sürümün ya da bayrağın kapatıldığı bir anda düzenlenen ABD lot'u
+  /// eski serbest sembol yolundan geçer (kural birebir eski).
+  bool get isAbd =>
+      abdAcik &&
+      type == AssetType.hisse &&
+      subCategory == StockSubCategory.abd.name;
   bool get isFon => type == AssetType.fon;
   bool get isDoviz => type == AssetType.doviz;
   bool get isAltin => type == AssetType.altin;
@@ -378,6 +487,12 @@ class AddAssetFormState {
     if (unitType == 'ounce') return const ['0.1', '0.5', '1', '5', '10'];
     // Kripto: tam sayı adet nadirdir; BTC'de 0,001 bile anlamlı tutar.
     if (type == AssetType.kripto) return const ['0,001', '0,01', '0,1', '1', '10'];
+    // Eurobond miktarı NOMİNALDİR; bankalar 1.000'lik katlarla işlem açar
+    // (ihraç asgarisi çoğunlukla 200.000, ama ikincil piyasada banka 1.000
+    // nominalden satar). "1" nominal bir dolarlık tahvil demek, anlamsız.
+    if (type == AssetType.eurobond) {
+      return const ['1.000', '5.000', '10.000', '50.000'];
+    }
     if (type == AssetType.fon) return const ['1', '10', '100', '1000'];
     if (type == AssetType.hisse) return const ['1', '5', '10', '100', '1000'];
     return const ['1', '5', '10', '100'];
@@ -387,6 +502,14 @@ class AddAssetFormState {
   /// emtia ve "diğer" türlerinde anlamlıdır; ötekiler seçimden türer.
   String? resolveTicker(String tickerText) {
     if (isBist100) return bist100Ticker;
+    // Eurobondda tarihli önizleme yok: kotasyon birim değerdir (kirli/100),
+    // form ise temiz % ister — "0,99 USD / birim" kartı kullanıcıyı
+    // yanıltırdı. Temiz fiyat seçimde katalogdan ön doldurulur.
+    if (isEurobond) return null;
+    if (isAbd) {
+      final t = abdSembolu(tickerText);
+      return t.isEmpty ? null : t;
+    }
     if (isFon && selectedFund != null) return 'TEFAS:${selectedFund!.code}';
     if (isAltin && subCategory != null) return goldTickerMap[subCategory!];
     if (isDoviz && subCategory != null) return dovizOptFor(subCategory).ticker;
@@ -406,6 +529,17 @@ class AddAssetFormState {
     if (isBist100) {
       ticker = bist100Ticker ?? '';
       name = bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
+    } else if (isEurobond) {
+      // Sembol yalnız katalogdaki sözleşmeden kurulur: serbest ISIN
+      // sunucunun fiyatlamadığı bir tahvile bağlanıp fiyatsız lot üretirdi.
+      final s = eurobondSozlesmesi;
+      ticker = s == null ? '' : eurobondSembolu(s.isin);
+      if (s != null) name = s.ad;
+    } else if (isAbd) {
+      // Sembol Yahoo biçiminde (`BRK.B` → `BRK-B`); ad boşsa katalogdaki
+      // ad, o da yoksa sembol — adsız lot portföyde boş satır olurdu.
+      ticker = isManualPrice ? '' : abdSembolu(tickerText);
+      if (name.isEmpty) name = abdHisseleri[ticker] ?? ticker;
     } else if (isFon && selectedFund != null) {
       ticker = 'TEFAS:${selectedFund!.code}';
       name = selectedFund!.name;
@@ -419,7 +553,7 @@ class AddAssetFormState {
     } else if (!isAltin && !isFon && !isDoviz) {
       ticker = isManualPrice ? '' : tickerText.trim().toUpperCase();
     }
-    final manual = isFon
+    final manual = isFon || isEurobond
         ? false
         : isAltin
             ? ticker.isEmpty
@@ -443,6 +577,11 @@ class AddAssetFormState {
   /// sembolsüz ya da elle fiyat bayraklı olabilir; tutarı/tarihi düzeltmek
   /// varlığı yeniden seçmeye zorlamamalı. Kural YENİ kayıt içindir.
   KimlikEksigi? kimlikEksigi({required String tickerText, bool muaf = false}) {
+    // Eurobond düzenlemede de MUAF DEĞİL: fiyat alanı temiz % gösterir ve
+    // kayıtta sözleşmeyle kirli birim değere çevrilir. Sözleşme yüklenemediyse
+    // çeviri yapılamaz; muaf tutmak "98,75"i birim değer diye (100 kat
+    // büyük) yazardı.
+    if (isEurobond && eurobondSozlesmesi == null) return KimlikEksigi.eurobond;
     if (muaf) return null;
     switch (type) {
       case AssetType.hisse:
@@ -479,6 +618,10 @@ class AddAssetFormState {
     Object? selectedFund = _keep,
     bool? notesExpanded,
     bool? denendi,
+    bool? abdAcik,
+    bool? turIzgarasiAcik,
+    Object? eurobondSozlesmesi = _keep,
+    Object? eurobondFiyati = _keep,
   }) =>
       AddAssetFormState(
         type: type ?? this.type,
@@ -503,13 +646,21 @@ class AddAssetFormState {
             : selectedFund as TefasFund?,
         notesExpanded: notesExpanded ?? this.notesExpanded,
         denendi: denendi ?? this.denendi,
+        abdAcik: abdAcik ?? this.abdAcik,
+        turIzgarasiAcik: turIzgarasiAcik ?? this.turIzgarasiAcik,
+        eurobondSozlesmesi: identical(eurobondSozlesmesi, _keep)
+            ? this.eurobondSozlesmesi
+            : eurobondSozlesmesi as EurobondSozlesmesi?,
+        eurobondFiyati: identical(eurobondFiyati, _keep)
+            ? this.eurobondFiyati
+            : eurobondFiyati as EurobondFiyati?,
       );
 }
 
 const _keep = Object();
 
 /// Kaydı engelleyen eksik seçim — ekran uyarı metnini buna göre seçer.
-enum KimlikEksigi { hisse, fon, altin, doviz, kripto }
+enum KimlikEksigi { hisse, fon, altin, doviz, kripto, eurobond }
 
 // ─── Notifier ────────────────────────────────────────────────────────────────
 
@@ -551,6 +702,8 @@ class AddAssetFormNotifier
       prefillTicker: arg.prefillTicker,
       prefillType: arg.prefillType,
       prefillDate: arg.prefillDate,
+      abdAcik: RemoteConfigService.instance.abdHisse,
+      turIzgarasi: RemoteConfigService.instance.turSeciciIzgara,
     );
   }
 
@@ -566,11 +719,27 @@ class AddAssetFormNotifier
   void kayitDenendi() {
     if (!state.denendi) _set(state.copyWith(denendi: true));
   }
-  void setCurrency(String v) => _set(state.copyWith(currency: v));
+  /// ABD hissesinde para birimi USD'ye kilitli: kotasyon dolardır, başka
+  /// para birimiyle kayıt fiyatı yanlış ölçekte çevirirdi.
+  void setCurrency(String v) {
+    if (state.isAbd && v != 'USD') return;
+    // Eurobond tahvilin kendi para birimine kilitli (aynı gerekçe).
+    if (state.isEurobond) return;
+    _set(state.copyWith(currency: v));
+  }
   void setDate(DateTime v) => _set(state.copyWith(addedDate: v));
   void setManualPrice(bool v) => _set(state.copyWith(isManualPrice: v));
   void toggleNotes() =>
       _set(state.copyWith(notesExpanded: !state.notesExpanded));
+
+  /// Tür ızgarasını açar/katlar (bayrak `tur_secici_izgara`). Tür seçimi
+  /// bunu KENDİLİĞİNDEN değiştirmez: hızlı giriş ve sepet geçişleri de
+  /// `selectType` çağırıyor; katlamayı seçiciyi çizen ekran söyler.
+  void turIzgarasi({required bool acik}) {
+    if (state.turIzgarasiAcik != acik) {
+      _set(state.copyWith(turIzgarasiAcik: acik));
+    }
+  }
 
   // ── Geçişler ───────────────────────────────────────────────────────────
 
@@ -584,6 +753,10 @@ class AddAssetFormNotifier
       currency: t.defaultCurrency,
       bist100Ticker: null,
       selectedFund: null,
+      eurobondSozlesmesi: null,
+      eurobondFiyati: null,
+      // Eurobond birimi nominal (`birimEtiketi`); `unitType` 'piece' kalır,
+      // etiket türden türer.
     ));
     return const AlanYazimi(ticker: '', name: '');
   }
@@ -591,6 +764,12 @@ class AddAssetFormNotifier
   /// Serbest sembol alanına yazıldı: BIST100 seçimi düşer, alt kategori
   /// "Diğer Hisseler" olur. Alan boşaldıysa fiyat elle girilecek demektir.
   void tickerTyped(String v) {
+    if (state.isAbd) {
+      // ABD pazarında serbest sembol pazarı değiştirmez; alt kategori
+      // `'abd'`, para birimi USD kalır.
+      _set(state.copyWith(isManualPrice: v.isEmpty));
+      return;
+    }
     if (v.isNotEmpty) {
       _set(state.copyWith(
         bist100Ticker: null,
@@ -626,6 +805,64 @@ class AddAssetFormNotifier
     return AlanYazimi(
       ticker: ticker,
       name: bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', ''),
+    );
+  }
+
+  /// Hisse pazarı seçimi (bayrak `abd_hisse`): BIST ↔ ABD. Seçili hisse,
+  /// sembol ve ad temizlenir — BIST sembolü ABD pazarında (ya da tersi)
+  /// fiyatsız/yanlış ölçekli lot üretirdi. ABD: alt kategori `'abd'`, para
+  /// birimi USD. BIST: hisse türünün açılış hâli (alt kategori yok, TRY).
+  AlanYazimi selectHisseBorsasi({required bool abd}) {
+    // Bayrak kapalıyken segment hiç çizilmez; yine de çağrılırsa durum
+    // değişmez (eski form ABD bilmez).
+    if (!state.abdAcik || abd == state.isAbd) return AlanYazimi.yok;
+    _set(state.copyWith(
+      subCategory: abd ? StockSubCategory.abd.name : null,
+      currency: abd ? 'USD' : AssetType.hisse.defaultCurrency,
+      bist100Ticker: null,
+      isManualPrice: false,
+      previewPrice: null,
+    ));
+    return const AlanYazimi(ticker: '', name: '');
+  }
+
+  /// ABD kataloğundan seçim. Sembol alana yazılır ([resolveIdentity] onu
+  /// okur); elle fiyat bayrağı [selectBist100]'deki gerekçeyle iner.
+  AlanYazimi selectAbdHisse(String ticker) {
+    _set(state.copyWith(isManualPrice: false));
+    return AlanYazimi(ticker: ticker, name: abdHisseleri[ticker] ?? ticker);
+  }
+
+  /// Eurobond katalogdan seçildi (ya da düzenlemede sözleşme yüklendi).
+  ///
+  /// Para birimi tahvilinkine kilitlenir. Temiz fiyat yalnız alan boşsa ve
+  /// piyasa fiyatı biliniyorsa önerilir (fondaki kural: kullanıcının yazdığı
+  /// ezilmez). [duzenlemeBirimDegeri]: düzenlenen lotun kayıtlı birim değeri
+  /// (kirli/100) — alana TEMİZ % olarak geri çevrilip yazılır.
+  AlanYazimi selectEurobond(
+    EurobondSozlesmesi s,
+    EurobondFiyati? f, {
+    required bool priceEmpty,
+    double? duzenlemeBirimDegeri,
+  }) {
+    _set(state.copyWith(
+      eurobondSozlesmesi: s,
+      eurobondFiyati: f,
+      currency: s.paraBirimi,
+      isManualPrice: false,
+    ));
+    String? fiyat;
+    if (duzenlemeBirimDegeri != null && duzenlemeBirimDegeri > 0) {
+      fiyat = fmtInputTr(
+          eurobondTemizYuzde(s, duzenlemeBirimDegeri, state.addedDate),
+          maxDigits: 4);
+    } else if (priceEmpty && f?.temizFiyat != null) {
+      fiyat = fmtInputTr(f!.temizFiyat!, maxDigits: 4);
+    }
+    return AlanYazimi(
+      ticker: eurobondSembolu(s.isin),
+      name: s.ad,
+      price: fiyat,
     );
   }
 

@@ -45,7 +45,11 @@ app.*.map.json
 /android/app/release
 
 # Claude Code local memory — never commit
-.claude/
+# 2026-10-08: skill'ler hariç (kullanıcı isteği: bulut oturumu da proje
+# skill'lerini görsün). `settings.local.json`, hook'lar ve yerel bellek
+# yine dışarıda. Dizin değil İÇERİK yok sayılır ki `!` istisnası işlesin.
+.claude/*
+!.claude/skills/
 
 # Secrets — never commit these
 .env

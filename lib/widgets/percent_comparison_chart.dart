@@ -522,7 +522,11 @@ class PercentComparisonChart extends StatelessWidget {
               '${key == null ? '' : labelOf(key)}  '
               '${fmtPctIsaretli(s.y, digits: 1)}',
               TextStyle(
-                color: key == null ? p.text90 : colorOf(key),
+                // Seri rengi metin olarak tooltip zemininde okunur tona
+                // kaydırılır (açık temada amber beyaz üstünde 2:1 idi).
+                color: key == null
+                    ? p.text90
+                    : colorOf(key).okunurUstunde(p.surface2),
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),

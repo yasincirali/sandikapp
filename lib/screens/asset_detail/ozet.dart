@@ -40,6 +40,10 @@ typedef _PnlOzeti = ({
   bool gainPositive,
 });
 
+/// Grafiğin altındaki kartların üst boşluğu (eski yığın). Katmanlı düzen
+/// (`katmanlar.dart`) kendi daha sıkı boşluğunu verir.
+const _kartBoslugu = EdgeInsets.only(top: SandikSpace.lg);
+
 extension _DetayOzet on _AssetDetailScreenState {
   /// Pozisyonun alış → bugün özeti (bkz. [_PnlOzeti]).
   _PnlOzeti _pnlOzeti(PortfolioState? pState) {
@@ -191,42 +195,25 @@ extension _DetayOzet on _AssetDetailScreenState {
 
   /// Birim fiyat biçimi — ₺ kalır: fiyat bir DEĞER değildir, baz para
   /// birimine çevrilmez (`money_format_scope_test` değer/fiyat ayrımı).
-  NumberFormat get _birimBicim => tryFormatter(digits: 2);
+  ///
+  /// Ondalık [fiyatOndaligi]'ndan: 1 ₺ altındaki fiyat 2 haneyle
+  /// okunmuyordu (BES fonu KED ₺0,179147 → "₺0,18", haftalık değişim
+  /// "+₺0,00"; 2026-10-04 kullanıcı bildirimi). 1 ₺ ve üstü yine 2 hane.
+  NumberFormat _birimBicimi(double birimFiyat) =>
+      tryFormatter(digits: fiyatOndaligi(birimFiyat));
 
   // ── Başlık ───────────────────────────────────────────────────────────────
 
-  Widget _baslik() {
-    final a = widget.asset;
-    final l = context.l10n;
-    return Semantics(
-      header: true,
-      label: l.assetPerformanceSemantics(a.name),
-      excludeSemantics: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _kimlik.kisaEtiket,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700, color: context.c.text90),
-          ),
-          // Sembolü olmayan (elle fiyatlanan) varlıkta kısa etiket adın
-          // kendisidir; alt satırda adı tekrarlamak "Kadıköy daire / Kadıköy
-          // daire · Diğer" gibi okunur.
-          Text(
-            _kimlik.kisaEtiket == a.name
-                ? a.type.labelOf(l)
-                : '${a.name} · ${a.type.labelOf(l)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.t.bodySmall?.copyWith(color: context.c.text58),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Başlık — ortak [VarlikBasligi] (varlık sayfasıyla aynı parça,
+  /// Sadeleştirme 2 madde 6). Sembolü olmayan varlıkta alt satır adı
+  /// tekrarlamaz (`adTekrariniAtla`).
+  Widget _baslik() => VarlikBasligi(
+        kimlik: _kimlik,
+        adTekrariniAtla: true,
+        heroEtiketi: widget.heroEtiketi,
+        semantikEtiket:
+            context.l10n.assetPerformanceSemantics(widget.asset.name),
+      );
 
   /// Takip listesi ve varlık sayfasıyla AYNI anahtar (`VarlikKimligi.key`).
   VarlikKimligi get _kimlik {
@@ -251,29 +238,21 @@ extension _DetayOzet on _AssetDetailScreenState {
     final canli = pnl.currentUnitTRY;
     final pct = _donemYuzdesi(days, canli);
     final ilk = _donemIlk[days];
-    final bicim = _birimBicim;
+    final bicim = _birimBicimi(canli);
     // Mevduatta büyük sayı birim değer değil (₺1,37 — iç hesabın payı,
     // 2026-10-01 emülatör testi) pozisyonun bugünkü değeridir; değişim
     // satırı da yalnız yüzdeyi yazar.
     final mevduat = widget.asset.type == AssetType.mevduat;
 
-    final String degisim;
-    final Color degisimRenk;
-    if (pct == null || (ilk == null && !mevduat)) {
-      degisim = ' ';
-      degisimRenk = context.c.text36;
-    } else if (donemDuzMu(pct)) {
-      degisim = l.periodNoChange(etiket);
-      degisimRenk = context.c.text36;
-    } else if (mevduat) {
-      degisim = '${fmtPctIsaretli(pct)} · $etiket';
-      degisimRenk = context.signColor(pct);
-    } else {
-      final fark = canli - ilk!;
-      degisim = '${fmtPctIsaretli(pct)} · '
-          '${fark >= 0 ? '+' : '−'}${bicim.format(fark.abs())} · $etiket';
-      degisimRenk = context.signColor(pct);
-    }
+    // Biçim ve düz-değişim kuralı varlık sayfasıyla ORTAK
+    // (`donemDegisimSatiri`); sayılar burada, birim seriden.
+    final degisim = donemDegisimSatiri(
+      context,
+      pct: ilk == null && !mevduat ? null : pct,
+      donem: etiket,
+      fark: mevduat || ilk == null ? null : canli - ilk,
+      bicim: bicim,
+    );
 
     final pnlDuz =
         pnl.totalPnlTRY.abs().round() == 0 && pnl.pnlPct.abs() < 0.005;
@@ -282,60 +261,30 @@ extension _DetayOzet on _AssetDetailScreenState {
         : (pnl.gainPositive ? context.c.gain : context.c.loss);
     final isaret = pnlDuz ? '' : (pnl.gainPositive ? '+' : '−');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              mevduat ? l.currentValueUpper : l.currentPriceUpper,
-              style: context.t.labelSmall?.copyWith(
-                  letterSpacing: 0.9,
-                  fontWeight: FontWeight.w700,
-                  color: context.c.text36),
-            ),
-            // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
-            // okunduğu yerde (eskiden grafiğin altındaydı).
-            if (widget.asset.type == AssetType.kripto) ...[
-              const SizedBox(width: SandikSpace.sm),
-              Flexible(
-                  child: KriptoGecikmeEtiketi(sembol: widget.asset.ticker)),
-            ],
-          ],
+    return VarlikFiyatBlogu(
+      etiket: mevduat ? l.currentValueUpper : l.currentPriceUpper,
+      // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
+      // okunduğu yerde (eskiden grafiğin altındaydı).
+      etiketYani: widget.asset.type == AssetType.kripto
+          ? KriptoGecikmeEtiketi(sembol: widget.asset.ticker)
+          : null,
+      fiyat: mevduat
+          ? baz.fmt(pnl.currentValueTRY)
+          : (canli > 0 ? bicim.format(canli) : '—'),
+      fiyatRengi: context.c.gold,
+      degisim: degisim,
+      // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
+      // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
+      altSatir: Text(
+        l.adPositionLine(
+          '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
+          pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
         ),
-        const SizedBox(height: SandikSpace.xs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            mevduat
-                ? baz.fmt(pnl.currentValueTRY)
-                : (canli > 0 ? bicim.format(canli) : '—'),
-            maxLines: 1,
-            style: context.t.numLarge.copyWith(color: context.c.gold),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        Text(
-          degisim,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall.copyWith(color: degisimRenk),
-        ),
-        const SizedBox(height: SandikSpace.xs2),
-        // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
-        // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
-        Text(
-          l.adPositionLine(
-            '$isaret${baz.compact(pnl.totalPnlTRY.abs())}',
-            pnlDuz ? fmtPct(0) : fmtPctIsaretli(pnl.pnlPct),
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall
-              .copyWith(color: pnlRenk, fontWeight: FontWeight.w600),
-        ),
-      ],
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.t.numSmall
+            .copyWith(color: pnlRenk, fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -356,7 +305,7 @@ extension _DetayOzet on _AssetDetailScreenState {
       getiriler: [
         for (final p in _periods) _donemYuzdesi(p.days, canliBirim),
       ],
-      onSec: _selectPeriod,
+      onSec: donemHafizasiAcik ? _ortakDonemSec : _selectPeriod,
     );
   }
 
@@ -375,7 +324,14 @@ extension _DetayOzet on _AssetDetailScreenState {
     final days = _periods[_selectedPeriodIdx].days;
     final ist = _donemIstatistikleri[days];
     final pct = _donemYuzdesi(days, canliBirim);
-    if (ist == null || pct == null) return [_istatistikIskeleti()];
+    // Dönem yüzdesi yalnız fiyatın altında (madde 7, 2026-10-04; bayrak
+    // `varlik_islem_cubugu` 2026-10-05'te kalktı); ızgara onu (GÜNLÜK'te
+    // "Bugün"ü de) yazmaz — bkz. `DonemIstatistikIzgarasi.donemGetirisiGizli`.
+    if (ist == null || pct == null) {
+      // İskelet gerçek ızgarayla aynı boyda kalsın (yerleşim oynamasın).
+      final hucre = days == 0 ? 2 : 3;
+      return [_istatistikIskeleti(hucre)];
+    }
     // Aralık canlı fiyatı da kapsar: seri haftalıkken bugünkü fiyat son
     // kapanışın dışına taşabilir; imleç yine çubuğun içinde doğru yerde.
     final canli = canliBirim > 0 ? canliBirim : ist.son;
@@ -388,6 +344,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         gun: days,
         donemPct: pct,
         bugunPct: _gunIciDestekli ? _donemYuzdesi(0, canliBirim) : null,
+        donemGetirisiGizli: true,
       ),
       // Dip = zirve (elle fiyatlanan varlık, dönem boyunca kıpırdamamış
       // seri): çubuk "₺X — ₺X, %50 noktasında" der, yani hiçbir şey. Bilgi
@@ -401,7 +358,7 @@ extension _DetayOzet on _AssetDetailScreenState {
           dusuk: dusuk,
           yuksek: yuksek,
           konum: (canli - dusuk) / aralik,
-          bicim: _birimBicim,
+          bicim: _birimBicimi(canli),
         ),
       ],
     ];
@@ -411,10 +368,40 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// varlık fon değilse ya da karne kurulamıyorsa kart hiç yer kaplamaz
   /// (boşluk `dis` ile kartın içinde; çizilmezse o da yok). Hub'a yalnızca
   /// çağrı satırı girer — gövde bu part'ta (CLAUDE.md: yeni kod part'a).
-  Widget _fonKarnesi() => FonKarnesiKarti(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _fonKarnesi({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      FonKarnesiKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
+
+  /// Para akışı (Balina B1) — fon karnesinin hemen altında: karne "getirisi
+  /// nasıl", bu kart "parası nereye gidiyor" sorusunu yanıtlar. Çizilmeme
+  /// koşulları ve boşluk kuralı karneyle aynı (bkz. `ParaAkisiKarti`).
+  Widget _paraAkisi({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      ParaAkisiKarti(
+          tur: widget.asset.type,
+          ticker: widget.asset.ticker,
+          // Bağlantı yalnız kendi varlığında: "fonlarım" ortağın fonunu
+          // kapsamaz.
+          haftaBaglantisi: widget.asset.userId ==
+              ref.read(portfolioProvider).valueOrNull?.ownerId,
+          dis: dis);
+
+  /// Hacim radarı (Balina B2) — yalnız BIST hissesinde çizilir (koşul
+  /// widget'ta); fon kartıyla aynı bayrak, aynı boşluk kuralı.
+  Widget _hacimRadari({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      HacimRadariKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
+
+  /// Alıcı baskısı (Balina B3) — yalnız kripto varlıkta çizilir.
+  Widget _kriptoBaski({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      KriptoBaskiKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
+
+  /// Haftalık yapay zekâ notu (Balina F2, S15-B) — radar kartlarının hemen
+  /// altında: kartlar sayıyı, not o sayıların hikâyesini verir. Yayında not
+  /// yoksa hiç yer kaplamaz.
+  Widget _analizNotu({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      AnalizNotuKutusu(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   /// "KAP bildirimleri ↗" (karar 7.2, 2026-09-30). Yalnız BIST hissesinde
   /// çizilir (koşul widget'ta); ortağın hissesinde de — KAP sayfası kişiye
@@ -422,12 +409,12 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// Mevduat / BES sözleşme kartı (2026-09-30): dönem, vade, yenileme;
   /// BES'te birikim dökümü, hak ediş ve aylık katkı. Yalnız KENDİ
   /// varlığında — eylemler sözleşmeye yazar, ortak yalnız okur (RLS).
-  Widget _sozlesmeKarti() => SozlesmeKarti(varlik: _canli.asset);
+  Widget _sozlesmeKarti({EdgeInsets dis = _kartBoslugu}) =>
+      SozlesmeKarti(varlik: _canli.asset, dis: dis);
 
-  Widget _kapBaglantisi() => KapBaglantisi(
-      tur: widget.asset.type,
-      ticker: widget.asset.ticker,
-      dis: const EdgeInsets.only(top: SandikSpace.lg));
+  Widget _kapBaglantisi({EdgeInsets dis = _kartBoslugu}) =>
+      KapBaglantisi(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
   // ── Temettü ──────────────────────────────────────────────────────────────
 
@@ -442,9 +429,48 @@ extension _DetayOzet on _AssetDetailScreenState {
         defter: pState.assets,
       );
 
+  // ── Eurobond ─────────────────────────────────────────────────────────────
+
+  /// "Tahvil bilgileri" kartı — pozisyon kartının hemen altında: kullanıcı
+  /// "ne kadar kazandım"dan sonra "bu tahvil ne veriyor, ne zaman, bankaya
+  /// satsam kaç eder" diye sorar. Yalnız eurobond lotunda; tür bayrak
+  /// (`eurobond`) kapalıyken eklenemediğinden bayrakla eski ekran birebir.
+  /// Ortağın varlığında da çizilir — sözleşme kişiye değil tahvile ait.
+  /// Nominal `_canli`'den: açık pozisyonun miktarı.
+  Widget _eurobondKarti() {
+    if (widget.asset.type != AssetType.eurobond) return const SizedBox.shrink();
+    return EurobondBilgiKarti(
+      ticker: widget.asset.ticker,
+      nominal: _canli.asset.quantity,
+    );
+  }
+
+  // ── Masraflar ────────────────────────────────────────────────────────────
+
+  /// "Masraflar" kartı (bayrak `varlik_masraflari`, 2026-10-08). Yalnız
+  /// KENDİ varlığında — komisyon kaydı sahibin defterinden. Hesap servis
+  /// tarafında (`varlikMasraflari`); burada yalnız girdiler toplanır.
+  ///
+  /// Lot'lar `_canli` pozisyonundan: açık pozisyonun alım, satım ve temettü
+  /// satırları — komisyon onların hepsinde ödenmiş olabilir. Kur, durumda
+  /// henüz ölçülmemişse (`usdTry` varsayılanı 1,0) `null` geçer: ABD
+  /// tahmini kalemleri bilinmeyen kurla tutar üretmez, bilgiye iner.
+  Widget _masrafKarti(PortfolioState pState) {
+    final canli = _canli;
+    return MasrafKarti(
+      ozet: varlikMasraflari(
+        varlik: canli.asset,
+        lotlar: canli.lots,
+        usdTry: pState.usdTry > 1.0 ? pState.usdTry : null,
+        temettuStopajOrani: RemoteConfigService.instance.temettuStopajOrani,
+      ),
+    );
+  }
+
   /// [DonemIstatistikIzgarasi] + aralık çubuğunun yer tutucusu — aynı kart
-  /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni).
-  Widget _istatistikIskeleti() {
+  /// kabuğu, aynı boy (`VarlikIskeleti`'nin kart deseni). [hucre] ızgaranın
+  /// çizeceği hücre sayısı: ikişerli satır, tek kalan satırı doldurur.
+  Widget _istatistikIskeleti(int hucre) {
     Widget kart() => Expanded(
           child: Container(
             padding: const EdgeInsets.all(SandikSpace.smd),
@@ -463,9 +489,16 @@ extension _DetayOzet on _AssetDetailScreenState {
       label: context.l10n.loadingEllipsis,
       child: Column(
         children: [
-          Row(children: [kart(), const SizedBox(width: SandikSpace.sm), kart()]),
-          const SizedBox(height: SandikSpace.sm),
-          Row(children: [kart(), const SizedBox(width: SandikSpace.sm), kart()]),
+          for (var i = 0; i < hucre; i += 2) ...[
+            if (i > 0) const SizedBox(height: SandikSpace.sm),
+            Row(children: [
+              kart(),
+              if (i + 1 < hucre) ...[
+                const SizedBox(width: SandikSpace.sm),
+                kart(),
+              ],
+            ]),
+          ],
         ],
       ),
     );

@@ -28,29 +28,6 @@ void main() {
     });
   });
 
-  group('yaklaşan olaylar', () {
-    test('ayın 1\'inde TÜİK 2 gün sonra', () {
-      final o = BugunService.yaklasanOlaylar(DateTime(2026, 9, 1, 9));
-      final tuik = o.firstWhere((e) => e.tur == BugunOlayTuru.tuikAciklamasi);
-      expect(tuik.gunKaldi, 2);
-    });
-
-    test('ayın 3\'ü 10:00 geçince TÜİK gelecek aya kayar ve ufuk dışı kalır', () {
-      final o = BugunService.yaklasanOlaylar(DateTime(2026, 9, 3, 11));
-      expect(o.where((e) => e.tur == BugunOlayTuru.tuikAciklamasi), isEmpty);
-    });
-
-    test('ay sonu son üç günde görünür', () {
-      final o = BugunService.yaklasanOlaylar(DateTime(2026, 9, 29));
-      expect(o.any((e) => e.tur == BugunOlayTuru.aySonu && e.gunKaldi == 1), isTrue);
-    });
-
-    test('BIST tatili hafta içine düşünce listede', () {
-      final o = BugunService.yaklasanOlaylar(DateTime(2026, 10, 26)); // Pzt → 29 Ekim Perş.
-      expect(o.any((e) => e.tur == BugunOlayTuru.bistTatili && e.gunKaldi == 3), isTrue);
-    });
-  });
-
   group('hesapla', () {
     const DailySummary? ozetYok = null;
     final ozetVar = const DailySummary(
@@ -58,7 +35,6 @@ void main() {
 
     test('ölçülmüş değişim varsa birincil satır odur', () {
       final v = BugunService.hesapla(
-        karZararlar: [10, -5],
         toplamDeger: 100000,
         ozet: ozetVar,
         hedefTRY: 0,
@@ -69,7 +45,6 @@ void main() {
 
     test('seri yokken piyasa kapalıysa açılış saati, açıksa satır yok', () {
       final kapali = BugunService.hesapla(
-        karZararlar: const [],
         toplamDeger: 0,
         ozet: ozetYok,
         hedefTRY: 0,
@@ -79,7 +54,6 @@ void main() {
       expect(kapali.birincil, isA<PiyasaKapaliSatiri>());
       expect(kapali.kapaliSoylenir, isTrue);
       final acik = BugunService.hesapla(
-        karZararlar: const [],
         toplamDeger: 0,
         ozet: ozetYok,
         hedefTRY: 0,
@@ -92,7 +66,6 @@ void main() {
       // Kullanıcı kararı: altın/kripto hafta sonu da işler; "kapalı"
       // yalnızca tamamen borsa portföyüne söylenir.
       final karisik = BugunService.hesapla(
-        karZararlar: const [],
         toplamDeger: 0,
         ozet: ozetYok,
         hedefTRY: 0,
@@ -102,57 +75,23 @@ void main() {
       expect(karisik.kapaliSoylenir, isFalse);
     });
 
-    test('içgörüler günden güne döner, aynı gün sabittir', () {
-      // 23–24 Eylül 2026 Çarşamba–Perşembe: haftalık havuzda, yeşil oranla
-      // tek dönen yuvayı paylaşır.
-      BugunKartiVerisi g(int gun) => BugunService.hesapla(
-            karZararlar: [1, 2, -3],
-            toplamDeger: 500000,
-            ozet: ozetVar,
-            hedefTRY: 1000000,
-            now: DateTime(2026, 9, gun, 12),
-            haftalikGetiriPct: 1.2,
-          );
-      final a = g(23), b = g(24), a2 = g(23);
-      expect(a.ikincil.length, BugunService.ikincilSayisi);
-      expect(a.ikincil.first.runtimeType, isNot(b.ikincil.first.runtimeType));
-      expect(a.ikincil.first.runtimeType, a2.ikincil.first.runtimeType);
-    });
-
     // Kullanıcı bulgusu 2026-09-30 (Çarşamba): "hedef belirle kısmı
     // kaybolmuş" — hedef dönüşümle gizleniyordu; tek giriş noktası olduğu
     // için her gün, hedef belirlenmiş de belirlenmemiş de görünmeli.
-    test('hedef satırı her gün görünür, yeri sabit (en alt)', () {
+    test('hedef satırı her gün görünür', () {
       for (final hedefTRY in [0, 1000000]) {
         for (var gun = 21; gun <= 30; gun++) {
           final v = BugunService.hesapla(
-            karZararlar: const [1, 2, -3],
             toplamDeger: 500000,
             ozet: ozetVar,
             hedefTRY: hedefTRY,
             now: DateTime(2026, 9, gun, 12),
-            haftalikGetiriPct: 1.2,
           );
-          expect(v.ikincil.length, BugunService.ikincilSayisi,
+          expect(v.hedef.hedefTRY, hedefTRY,
               reason: '$gun Eylül, hedef $hedefTRY');
-          expect(v.ikincil.last, isA<HedefSatiri>(),
-              reason: '$gun Eylül, hedef $hedefTRY');
-          expect(v.ikincil.whereType<HedefSatiri>().length, 1);
+          expect(v.hedef.deger, 500000);
         }
       }
-    });
-
-    test('aylık özet yalnızca ayın ilk üç günü', () {
-      BugunKartiVerisi g(int gun) => BugunService.hesapla(
-            karZararlar: const [1],
-            toplamDeger: 1,
-            ozet: ozetYok,
-            hedefTRY: 0,
-            now: DateTime(2026, 9, gun, 12),
-          );
-      expect(g(1).aylik?.ay, DateTime(2026, 8, 1));
-      expect(g(3).aylik, isNotNull);
-      expect(g(4).aylik, isNull);
     });
 
     test('hedef: oran, kalan, ulaşıldı', () {
@@ -162,32 +101,6 @@ void main() {
       expect(h.kalan, 233124);
       expect(const HedefSatiri(hedefTRY: 500000, deger: 766876).ulasildi, isTrue);
       expect(const HedefSatiri(hedefTRY: 0, deger: 766876).belirlenmedi, isTrue);
-    });
-
-    test('yeşil oran ömürlük kâr/zarardan sayılır', () {
-      final v = BugunService.hesapla(
-        karZararlar: [5, 0, -2, 9],
-        toplamDeger: 1,
-        ozet: ozetYok,
-        hedefTRY: 0,
-        now: DateTime(2026, 9, 22, 12),
-      );
-      final y = v.ikincil.whereType<YesilOranSatiri>();
-      // Dönüşümde o gün görünmeyebilir; adayın kendisi doğru olmalı.
-      final hepsi = [
-        for (var d = 1; d <= 3; d++)
-          ...BugunService.hesapla(
-            karZararlar: [5, 0, -2, 9],
-            toplamDeger: 1,
-            ozet: ozetYok,
-            hedefTRY: 0,
-            now: DateTime(2026, 9, 21 + d, 12),
-          ).ikincil.whereType<YesilOranSatiri>(),
-      ];
-      expect(y.isNotEmpty || hepsi.isNotEmpty, isTrue);
-      final s = (y.isNotEmpty ? y : hepsi).first;
-      expect(s.yesil, 2);
-      expect(s.toplam, 4);
     });
   });
 }

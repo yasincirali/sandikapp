@@ -45,9 +45,27 @@ void main() {
           xirr: true,
           percentile: true,
           teknikSinyaller: true,
-          ileri: false
+          ileri: false,
+          grafikAraclari: true,
+          derinlik: true,
         ),
       );
+    });
+
+    // Sade Başlangıç kalıcı (bayrak `seviye_anketi` 2026-10-05'te kalktı;
+    // "bayrak kapalı = Başlangıç araçları gizlemez" testi onunla gitti).
+    test('sade Başlangıç grafik araçlarını ve derinliği gizler', () {
+      final b = seviyeGorunurlugu(YatirimciSeviyesi.baslangic);
+      expect(b.grafikAraclari, isFalse);
+      expect(b.derinlik, isFalse);
+    });
+
+    test('Orta ve İleri araçları ve derinliği gösterir (mevcut kullanıcı)',
+        () {
+      for (final s in [YatirimciSeviyesi.orta, YatirimciSeviyesi.ileri]) {
+        expect(seviyeGorunurlugu(s).grafikAraclari, isTrue, reason: s.name);
+        expect(seviyeGorunurlugu(s).derinlik, isTrue, reason: s.name);
+      }
     });
 
     test('Başlangıç yalnızca gizler', () {
@@ -78,6 +96,32 @@ void main() {
       expect(b.teknikSinyaller, isFalse,
           reason: 'ana ekran sinyal zili + tekil varlık sinyal kartı/paneli');
       expect(b.percentile, isFalse, reason: 'ana ekran yüzdelik şeridi');
+    });
+  });
+
+  group('seviyeAnketSonucu', () {
+    test('eşikler: 0–1 Başlangıç, 2–4 Orta, 5–6 İleri', () {
+      expect(seviyeAnketSonucu([0, 0, 0]), YatirimciSeviyesi.baslangic);
+      expect(seviyeAnketSonucu([1, 0, 0]), YatirimciSeviyesi.baslangic);
+      expect(seviyeAnketSonucu([1, 1, 0]), YatirimciSeviyesi.orta);
+      expect(seviyeAnketSonucu([1, 1, 1]), YatirimciSeviyesi.orta);
+      expect(seviyeAnketSonucu([2, 2, 0]), YatirimciSeviyesi.orta);
+      expect(seviyeAnketSonucu([2, 2, 1]), YatirimciSeviyesi.ileri);
+      expect(seviyeAnketSonucu([2, 2, 2]), YatirimciSeviyesi.ileri);
+    });
+
+    test('eksik ya da aralık dışı cevap → null (seviye değişmez)', () {
+      expect(seviyeAnketSonucu([]), isNull);
+      expect(seviyeAnketSonucu([0, 1]), isNull);
+      expect(seviyeAnketSonucu([0, 1, 3]), isNull);
+      expect(seviyeAnketSonucu([-1, 1, 1]), isNull);
+    });
+
+    test('sade açıklama iki dilde de var', () {
+      for (final l in [AppLocalizationsTr(), AppLocalizationsEn()]) {
+        expect(YatirimciSeviyesi.baslangic.aciklamaOf(l).trim(),
+            isNotEmpty);
+      }
     });
   });
 
@@ -132,12 +176,20 @@ void main() {
   // tek bir (ve çoğu kullanıcıda boş kalan) yüzeye bağlı olmasıydı. Bu grup
   // bağlantının kendisini kilitler.
   group('ekranlara bağlı', () {
-    test('ana ekran: sinyal zili seviyeye bakar', () {
+    // 2026-10-04: zil sinyallerin yanında alarm ve davetlerin de kutusu;
+    // seviye artık zili değil zilin SİNYAL satırlarını süzer
+    // (`zilSinyalleriGosterProvider`). Zil her seviyede çizilir —
+    // `zilGorunurProvider` bayrak `seviye_anketi` ile 2026-10-05'te kalktı.
+    test('ana ekran: zil her seviyede, sinyal satırları seviyeye bakar', () {
       final src = ekranKaynagiSync('lib/screens/home_screen.dart');
-      expect(src.contains('seviyeGorunurlugu'), isTrue,
-          reason: 'ana ekran seviye tablosunu okumuyor');
-      expect(src.contains('.teknikSinyaller) ...['), isTrue,
-          reason: 'sinyal zili seviyeye bağlı değil');
+      expect(src.contains('ref.watch(zilGorunurProvider)'), isFalse,
+          reason: 'zil yeniden seviyeye bağlanmış');
+      expect(src.contains('target: TourTarget.bildirimCani'), isTrue);
+      expect(src.contains('zilSinyalleriGosterProvider'), isTrue,
+          reason: 'zil sayfası/rozeti sinyalleri seviyeye göre süzmüyor');
+      final prefs =
+          ekranKaynagiSync('lib/providers/preferences_provider.dart');
+      expect(prefs.contains('.teknikSinyaller'), isTrue);
     });
 
     // 2026-09-21: yüzdelik şeridi ana ekrandan Profil'e (Yarış kartının
@@ -160,8 +212,18 @@ void main() {
       // projede dört test tam olarak böyle kırılmıştı. Testin koruduğu
       // İDDİA aynı: iki yüzey de `_sinyalYuzeyleri` kapısının ARDINDA.
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('if (_sinyalYuzeyleri) AssetSignalCard'), isTrue,
+      // Katmanlı düzende (S4) kart Analiz'e taşınır; üstteki kopya
+      // yalnız eski düzende çizilir — kapı yine `_sinyalYuzeyleri`.
+      expect(
+          tek.contains(
+              'if (_sinyalYuzeyleri && !katmanli) AssetSignalCard'),
+          isTrue,
           reason: 'sinyal kartı seviyeye bağlı değil');
+      final katman = ekranKaynagiSync('lib/screens/asset_detail/katmanlar.dart')
+          .replaceAll(RegExp(r'\s+'), ' ');
+      expect(katman.contains('if (_sinyalYuzeyleri) ( baslik: l.s4RowSignals'),
+          isTrue,
+          reason: 'katmanlı düzende sinyal satırı seviyeye bağlı değil');
       expect(
           tek.contains('if (_sinyalYuzeyleri) ...[ '
               'const SizedBox(height: 24), TechnicalSignalPanel'),

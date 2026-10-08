@@ -10,6 +10,7 @@ import 'fiyat_kaynagi.dart';
 import 'supabase_service.dart';
 import '../demo/demo_modu.dart';
 import '../models/asset_type.dart';
+import '../models/eurobond.dart';
 import 'tefas_service.dart';
 import 'mevduat_hesabi.dart';
 import 'sozlesme_deposu.dart';
@@ -250,7 +251,16 @@ class PriceService {
   ///
   /// Hiç altın fiyatlanmadıysa `false` — karar verecek veri yok.
   bool get altinGunlukYuzdeTam {
-    final altinlar = _sonBilinenFiyat.keys.where(FiyatKaynagi.altinMi);
+    // Yalnızca BU OTURUMDA canlı kotasyonu görülen ayarlar sayılır. Diskten
+    // yüklenen fiyat ([_birincilYukle]) yüzde taşımaz; dünkü oturumda
+    // izlenmiş, bugün hiç istenmeyen bir ayar (ölçüldü: Cumhuriyet) bayrağı
+    // oturum boyunca `false`'ta tutuyor ve açılışın ilk gün içi serisi
+    // altını eski sabit çarpan yoluyla, nabız serisi ürün bazlı yolla
+    // kuruyordu: aynı gün Bugün kartı önce −₺12.295, 30 sn sonra +₺3.175
+    // (2026-10-02 müşteri testi). Ölçek hafızası diskteki fiyatı yine okur.
+    final altinlar = _sonBilinenFiyat.keys
+        .where(FiyatKaynagi.altinMi)
+        .where((s) => !_yalnizDisktenBilinen.contains(s));
     if (altinlar.isEmpty) return false;
     return altinlar.every(_gunlukDegisimPct.containsKey);
   }
@@ -280,6 +290,11 @@ class PriceService {
   /// [_sonBilinenFiyat] ile aynı disiplin: TTL ile düşmez, yalnızca
   /// gerçekten ÖLÇÜLMÜŞ değerleri taşır.
   final Map<String, double> _gunlukDegisimPct = {};
+
+  /// Fiyatı yalnızca diskten ([_birincilYukle]) bilinen, bu oturumda canlı
+  /// kotasyonu henüz gelmemiş semboller — [altinGunlukYuzdeTam] bunları
+  /// saymaz.
+  final Set<String> _yalnizDisktenBilinen = {};
 
   /// Sembol → günlük yüzdenin ölçüldüğü GÜN BAŞI fiyatı.
   ///
@@ -345,6 +360,7 @@ class PriceService {
   void testIcinKotasyonYaz(String symbol, double fiyat, {double? gunlukPct}) {
     final s = symbol.trim().toUpperCase();
     _sonBilinenFiyat[s] = fiyat;
+    _yalnizDisktenBilinen.remove(s);
     _gunlukYaz(s, fiyat, gunlukPct);
   }
 
@@ -354,6 +370,7 @@ class PriceService {
     _sonBilinenFiyat.clear();
     _sonKaynak.clear();
     _gunlukDegisimPct.clear();
+    _yalnizDisktenBilinen.clear();
     _gunlukReferans.clear();
     _gunlukReferansGunu.clear();
     _birincilYukleme = null;
@@ -401,6 +418,7 @@ class PriceService {
         if (_sonBilinenFiyat.containsKey(e.key)) continue;
         _sonBilinenFiyat[e.key] = p;
         _sonKaynak[e.key] = FiyatKaynagiEtiketi.yurtIci;
+        _yalnizDisktenBilinen.add(e.key);
       }
     } catch (_) {
       // Bozuk kayıt — yok say; bir sonraki başarılı çekim üstüne yazar.
@@ -477,12 +495,15 @@ class PriceService {
         cleaned.where((s) => s.startsWith(_tefasPrefix)).toList();
     // Kripto Yahoo'ya DÜŞMEZ: fiyatı sunucu tablosundan (0074).
     final kriptoList = cleaned.where(FiyatKaynagi.kriptoMu).toList();
+    // Eurobond da Yahoo'ya düşmez: fiyatı sunucu tablosundan (0124).
+    final eurobondList = cleaned.where(FiyatKaynagi.eurobondMu).toList();
     final yahooList = cleaned
         .where((s) =>
             !_fxSymbols.contains(s) &&
             !_truncgilGoldKeys.containsKey(s) &&
             !s.startsWith(_tefasPrefix) &&
-            !FiyatKaynagi.kriptoMu(s))
+            !FiyatKaynagi.kriptoMu(s) &&
+            !FiyatKaynagi.eurobondMu(s))
         .toList();
 
     final results = <String, YahooQuote>{};
@@ -525,13 +546,26 @@ class PriceService {
           })
         : Future<Map<String, YahooQuote>>.value({});
 
-    final parallel = await Future.wait(
-        [truncgilFuture, tefasFuture, yahooFuture, kriptoFuture]);
+    final eurobondFuture = eurobondList.isNotEmpty
+        ? _fetchEurobond(eurobondList).catchError((Object e, StackTrace st) {
+            CrashReporter.report(e, st, reason: 'eurobond_fiyat_okunamadi');
+            return <String, YahooQuote>{};
+          })
+        : Future<Map<String, YahooQuote>>.value({});
+
+    final parallel = await Future.wait([
+      truncgilFuture,
+      tefasFuture,
+      yahooFuture,
+      kriptoFuture,
+      eurobondFuture,
+    ]);
 
     final truncgilData = parallel[0];
     final tefasResult  = parallel[1] as Map<String, YahooQuote>;
     final yahooResult  = parallel[2] as Map<String, YahooQuote>;
     final kriptoResult = parallel[3] as Map<String, YahooQuote>;
+    final eurobondResult = parallel[4] as Map<String, YahooQuote>;
 
     // ── FX from truncgil ──────────────────────────────────────────────────
     if (fxList.isNotEmpty && truncgilData.isNotEmpty) {
@@ -580,6 +614,7 @@ class PriceService {
     results.addAll(tefasResult);
     results.addAll(yahooResult);
     results.addAll(kriptoResult);
+    results.addAll(eurobondResult);
 
     // Yalnızca gerçekten fiyat dönen sembolleri önbelleğe al: 0/eksik değer
     // önbelleklenirse TTL boyunca hatalı fiyat gösterilir.
@@ -591,6 +626,7 @@ class PriceService {
         // TTL'siz oturum belleği: grafik yolları kur/fiyat bulamadığında
         // sabit uydurmak yerine buraya bakar (bkz. `sonBilinenFiyat`).
         _sonBilinenFiyat[e.key] = p;
+        _yalnizDisktenBilinen.remove(e.key);
         // Günlük yüzde de saklanır — grafik serisinin uçlarını ÜRÜNÜN
         // kendi hareketine oturtmak için (bkz. `gunlukDegisimPct`).
         _gunlukYaz(e.key, p, e.value.regularMarketChangePercent);
@@ -673,6 +709,93 @@ class PriceService {
   }
 
   final Map<String, DateTime> _kriptoGuncellenme = {};
+
+  /// Fiyat turunda okunan sözleşmeler — seri yolu her noktaya işlemiş faiz
+  /// eklemek için kuponu bilmeli; ikinci bir katalog isteği atmasın.
+  final Map<String, EurobondSozlesmesi> _eurobondSozlesmeleri = {};
+
+  /// Eurobond serisi kotasyonla AYNI ölçekte: her nokta o günün KİRLİ
+  /// fiyatı / 100 (1 nominal birimin değeri). Sunucu temiz fiyat verir
+  /// (Frankfurt kotasyonu öyle); işlemiş faiz noktanın kendi gününe göre
+  /// eklenir. Eklenmeseydi grafiğin son noktası ile ekrandaki değer arasında
+  /// işlemiş faiz kadar fark olurdu (sözleşme madde 2).
+  Future<List<(int, double)>> _eurobondSerisi(
+      String symbol, String range, String interval) async {
+    final isin = eurobondIsin(symbol);
+    if (isin == null) return [];
+    if (DemoModu.aktif) return [];
+    try {
+      var sozlesme = _eurobondSozlesmeleri[isin];
+      if (sozlesme == null) {
+        final r = await SupabaseService.instance.eurobondlar([isin]);
+        sozlesme = r[isin]?.$1;
+        if (sozlesme == null) return [];
+        _eurobondSozlesmeleri[isin] = sozlesme;
+      }
+      final temiz = await SupabaseService.instance.eurobondSerisi(
+        isin: isin,
+        aralik: kriptoAraligi(interval),
+        donem: kriptoDonemi(range),
+      );
+      return [
+        for (final p in temiz)
+          (
+            p.$1,
+            sozlesme.kirliFiyat(
+                    p.$2, DateTime.fromMillisecondsSinceEpoch(p.$1)) /
+                100,
+          ),
+      ];
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'eurobond_seri_okunamadi');
+      return [];
+    }
+  }
+
+  /// Eurobond kotasyonu: 1 NOMİNAL birimin KİRLİ değeri, tahvilin kendi para
+  /// biriminde (USD/EUR; TL çevrimi diğer dövizli varlıklar gibi `toTRY`).
+  ///
+  /// Neden kirli: elindeki tahvilin bugünkü değeri temiz fiyat + işlemiş
+  /// faizdir; satarsan alıcı işlemiş faizi sana öder. Yalnız temiz fiyatla
+  /// değerlemek her kupon döneminde değeri testere dişi gibi düşük
+  /// gösterirdi. Grafik TEMİZ seriye işlemiş faizi ekleyerek aynı ölçeğe
+  /// gelir (sözleşme madde 2). Günlük yüzde TEMİZ fiyattan: işlemiş faizin
+  /// günlük artışı piyasa hareketi değildir.
+  ///
+  /// Piyasa fiyatı yoksa (vadesi dolan, Frankfurt'ta işlem görmeyen tahvil)
+  /// nokta yazılmaz — banka kotasyonu ayrı bir fiyattır, yerine konmaz.
+  Future<Map<String, YahooQuote>> _fetchEurobond(List<String> semboller) async {
+    final isinSembol = <String, String>{};
+    for (final s in semboller) {
+      final isin = eurobondIsin(s);
+      if (isin != null) isinSembol[isin] = s;
+    }
+    if (isinSembol.isEmpty) return {};
+    if (DemoModu.aktif) return {};
+    final satirlar =
+        await SupabaseService.instance.eurobondlar(isinSembol.keys.toList());
+    final bugun = DateTime.now();
+    final out = <String, YahooQuote>{};
+    for (final e in satirlar.entries) {
+      final sym = isinSembol[e.key];
+      final (sozlesme, fiyat) = e.value;
+      _eurobondSozlesmeleri[e.key] = sozlesme;
+      final temiz = fiyat?.temizFiyat;
+      if (sym == null || fiyat == null || temiz == null || temiz <= 0) continue;
+      final onceki = fiyat.oncekiKapanis;
+      _kriptoGuncellenme[sym] = fiyat.piyasaZamani ?? fiyat.guncellendi;
+      out[sym] = YahooQuote(
+        symbol: sym,
+        regularMarketPrice: sozlesme.kirliFiyat(temiz, bugun) / 100,
+        currency: sozlesme.paraBirimi,
+        regularMarketChangePercent: onceki != null && onceki > 0
+            ? (temiz - onceki) / onceki * 100
+            : null,
+        shortName: sozlesme.ad,
+      );
+    }
+    return out;
+  }
 
   /// Kripto fiyatının sunucuda en son yazıldığı an — "gecikmeli" etiketi
   /// için. Bilinmiyorsa `null`.
@@ -1229,6 +1352,21 @@ class PriceService {
       return _kriptoGecmisKapanis(symbol, date);
     }
 
+    // Eurobond: o günün kapanışı; seri kotasyon ölçeğinde (kirli/100).
+    if (FiyatKaynagi.eurobondMu(symbol)) {
+      final seri = await _eurobondSerisi(symbol, '5y', '1d');
+      final hedef = DateTime(date.year, date.month, date.day, 23, 59, 59)
+          .millisecondsSinceEpoch;
+      double? best;
+      var bestTs = -1;
+      for (final p in seri) {
+        if (p.$1 > hedef || p.$1 <= bestTs) continue;
+        bestTs = p.$1;
+        best = p.$2;
+      }
+      return best;
+    }
+
     // Mevduat: o günün sonundaki birim değer (sözleşmeden).
     if (symbol.toUpperCase().startsWith(mevduatOneki)) {
       final id = mevduatSozlesmeId(symbol);
@@ -1408,6 +1546,11 @@ class PriceService {
     // Kripto: sunucunun paylaşılan önbelleği (kripto-seri). TL, TRY kote.
     if (FiyatKaynagi.kriptoMu(symbol)) {
       return _kriptoSerisi(symbol, range, interval);
+    }
+
+    // Eurobond: sunucu önbelleği (eurobond-seri), kotasyonla aynı ölçek.
+    if (FiyatKaynagi.eurobondMu(symbol)) {
+      return _eurobondSerisi(symbol, range, interval);
     }
 
     // Mevduat: ağ yok — sözleşmenin dönemlerinden istenen pencere ve

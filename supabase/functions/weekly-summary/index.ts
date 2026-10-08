@@ -32,6 +32,13 @@
 // uygulamadaki Özet sekmesiyle karşılaştırır, iki rakam çelişir ve
 // uygulamaya olan güvenini kaybeder.
 //
+// ── Para akışı cümlesi (2026-10-04, `HAFTALIK_AKIS_SATIRI=1` ile açılır) ────
+// Kullanıcının tuttuğu fonlarda geçen hafta büyük para girişi/çıkışı olduysa
+// (`balina_olay`, 0106) özet buna değinir. Yüzde kapıları DEĞİŞMEDİ; kapıya
+// takılan haftada cümle varsa yüzdesiz "Haftanın özeti" mesajı gider. Olay
+// başına ayrı push açılmadı (kullanıcı kararı; bkz. `_shared/haftalik_akis.ts`).
+// Bayrak kapalıyken ya da cümle yokken davranış birebir eskisidir.
+//
 // ── Neden `snapshots` (kur itirazı burada GEÇERSİZ) ─────────────────────────
 // `daily-brief` portföy yüzdesi hesaplamayı reddediyor çünkü `assets` +
 // `price_history_cache` üzerinden TRY'ye çevirmek gerekir. Bu fonksiyon
@@ -65,6 +72,20 @@ import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
 import { sessizKullanicilar } from '../_shared/quiet_hours.ts';
+import { acikPozisyonLotlari, PozisyonLot } from '../_shared/positions.ts';
+import { trGun } from '../_shared/tefas_nav.ts';
+import {
+  fonHareketleri,
+  govdeyeAkisEkle,
+  hacimCumlesi,
+  hacimVarliklari,
+  haftalikAkisCumlesi,
+  notEkiyle,
+  HaftaOlayi,
+  ozetCumlesi,
+  varlikKodu,
+  yalnizAkisMesaji,
+} from '../_shared/haftalik_akis.ts';
 
 const corsHeaders = {
   // Tarayıcı çağrısı yok — cron/pg_net sunucudan sunucuya (2026-09 L4);
@@ -305,9 +326,14 @@ export function pickEndpoints(
 ///
 /// [uzunDonemPct] kayıp haftasında bağlam cümlesinin ikinci yarısı
 /// ("Yıl hâlâ +%31,8"). Yoksa yalnızca durum bildirilir.
+///
+/// [akisCumlesi] (2026-10-04): tuttuğu fonlarda geçen hafta büyük para
+/// girişi/çıkışı olduysa gövdenin BAŞINA eklenir (`_shared/haftalik_akis.ts`).
+/// Verilmezse mesaj birebir eski hâlindedir.
 export function buildWeeklyMessage(
   changePct: number,
   uzunDonemPct: number | null,
+  akisCumlesi: string | null = null,
 ): { title: string; body: string } {
   const yukari = changePct >= 0;
   const mutlak = Math.abs(changePct).toFixed(1).replace('.', ',');
@@ -327,7 +353,7 @@ export function buildWeeklyMessage(
     govde = 'Haftalık özetin sandık\'ta hazır. Yatırım tavsiyesi değildir.';
   }
 
-  return { title: baslik, body: govde };
+  return { title: baslik, body: govdeyeAkisEkle(govde, akisCumlesi) };
 }
 
 /// Cihaz başına TEK token — aynı telefona kopya push gitmesin.
@@ -563,6 +589,123 @@ Deno.serve(async (request) => {
       }
     } catch (_) { /* herkes akışlı kalır */ }
 
+    // ── 5c) Tutulan fonlardaki büyük para hareketleri (0106) ────────────────
+    //
+    // Kullanıcı kararı 2026-10-04: olay başına ayrı push yok; haftanın özeti
+    // akışa da değinir. Cümle `balina_olay` satırlarından kurulur — fon
+    // sayfasındaki kartla aynı kaynak.
+    //
+    // KAPALI doğar (`HAFTALIK_AKIS_SATIRI=1` ile açılır): istemci kartı
+    // Remote Config bayrağının arkasında; bildirim, kullanıcının açınca
+    // göremeyeceği bir şeyi anlatmamalı. İkisi birlikte açılır.
+    //
+    // Hata sessizce "cümle yok"a düşer: akış cümlesi ek bilgidir, özetin
+    // kendisini düşürmemeli. Aylık özet bu cümleyi taşımaz.
+    const akisCumleleri = new Map<string, string>();
+    let akisCumlesiHatasi = false;
+    if (!aylik && Deno.env.get('HAFTALIK_AKIS_SATIRI') === '1') {
+      try {
+        const { data: fonRows, error: fonErr } = await admin
+          .from('assets')
+          .select('id, user_id, type, ticker, name, sub_category, currency, quantity, kind, added_date, ref_asset_id')
+          .in('user_id', userIds)
+          // Hisse ve kripto (0107/0108): olağandışı hacim cümlesi için.
+          .in('type', ['fon', 'bes', 'hisse', 'kripto'])
+          .is('deleted_at', null);
+        if (fonErr) throw fonErr;
+        const tutulan = new Map<string, Set<string>>();
+        const hacimTutulan = new Map<string, Set<string>>();
+        for (const lot of acikPozisyonLotlari((fonRows ?? []) as PozisyonLot[])) {
+          const ham = String(lot.ticker ?? '').trim().toUpperCase();
+          if (lot.type === 'hisse' || lot.type === 'kripto') {
+            // `balina_olay.ticker` biçimi: 'THYAO.IS', 'KRIPTO:BTC'.
+            if (!ham.endsWith('.IS') && !ham.startsWith('KRIPTO:')) continue;
+            const hs = hacimTutulan.get(lot.user_id);
+            if (hs) hs.add(ham); else hacimTutulan.set(lot.user_id, new Set([ham]));
+            continue;
+          }
+          const kod = varlikKodu(ham);
+          if (kod.length === 0) continue;
+          const set = tutulan.get(lot.user_id);
+          if (set) set.add(kod); else tutulan.set(lot.user_id, new Set([kod]));
+        }
+        const tumKodlar = [
+          ...new Set([...tutulan.values()].flatMap((k) => [...k]).map((k) => `TEFAS:${k}`)),
+          ...new Set([...hacimTutulan.values()].flatMap((k) => [...k])),
+        ];
+        if (tumKodlar.length > 0) {
+          const { data: olayRows, error: olayErr } = await admin
+            .from('balina_olay')
+            .select('ticker, tarih, tur, tutar, bildirime_deger')
+            .in('ticker', tumKodlar)
+            .gte('tarih', trGun(new Date(fromMs)))
+            .lte('tarih', trGun(new Date(toMs)));
+          if (olayErr) throw olayErr;
+          const olaylar = ((olayRows ?? []) as Array<Record<string, unknown>>).map((r) => ({
+            ticker: String(r.ticker),
+            tarih: String(r.tarih),
+            tutar: Number(r.tutar),
+            bildirime_deger: r.bildirime_deger === true,
+            tur: String(r.tur),
+          } as HaftaOlayi));
+          const bos = new Set<string>();
+          for (const uid of new Set([...tutulan.keys(), ...hacimTutulan.keys()])) {
+            const cumle = ozetCumlesi(
+              haftalikAkisCumlesi(fonHareketleri(olaylar, tutulan.get(uid) ?? bos)),
+              hacimCumlesi(hacimVarliklari(olaylar, hacimTutulan.get(uid) ?? bos)),
+            );
+            if (cumle !== null) akisCumleleri.set(uid, cumle);
+          }
+          // Not eki (S19): bu haftanın yayındaki notları. Sorgu düşerse ek
+          // yok, cümle kalır (ek bilgi, satırı düşürmemeli).
+          if (akisCumleleri.size > 0) {
+            const { data: notRows, error: notErr } = await admin
+              .from('varlik_analizi')
+              .select('ticker')
+              .eq('tur', 'haftalik')
+              .eq('durum', 'yayinda')
+              .in('ticker', tumKodlar)
+              .gte('donem', trGun(new Date(fromMs - 6 * 86_400_000)))
+              .lte('donem', trGun(new Date(toMs)));
+            if (notErr) {
+              console.error('weekly-summary: not eki okunamadi', notErr.code);
+            } else {
+              const notlu = new Set(
+                ((notRows ?? []) as Array<Record<string, unknown>>).map((r) => String(r.ticker)),
+              );
+              for (const [uid, cumle] of akisCumleleri) {
+                const kendi = [
+                  ...[...(tutulan.get(uid) ?? bos)].map((k) => `TEFAS:${k}`),
+                  ...(hacimTutulan.get(uid) ?? bos),
+                ];
+                akisCumleleri.set(uid, notEkiyle(cumle, kendi.some((k) => notlu.has(k))));
+              }
+            }
+          }
+        }
+        // Kullanıcı satırı kapattıysa (0118, Ayarlar › Bildirimler) cümle
+        // eklenmez. Sorgu düşerse cümle KALIR: kolon yeni, varsayılanı açık;
+        // tercihi okuyamamak bugünkü davranıştan sapmamalı.
+        if (akisCumleleri.size > 0) {
+          const { data: kapali, error: tercihErr } = await admin
+            .from('profiles')
+            .select('id')
+            .in('id', [...akisCumleleri.keys()])
+            .eq('haftalik_hareket_satiri', false);
+          if (tercihErr) {
+            console.error('weekly-summary: hareket satiri tercihi okunamadi', tercihErr.code);
+          } else {
+            for (const r of (kapali ?? []) as Array<Record<string, unknown>>) {
+              akisCumleleri.delete(String(r.id));
+            }
+          }
+        }
+      } catch (e) {
+        akisCumlesiHatasi = true;
+        console.error('weekly-summary: akis cumlesi kurulamadi', e);
+      }
+    }
+
     // ── 6) Snapshot'lar ─────────────────────────────────────────────────────
     const { data: snapRows, error: snapError } = await admin
       .from('snapshots')
@@ -592,6 +735,8 @@ Deno.serve(async (request) => {
     let skippedCoverage = 0;
     let skippedQuiet = 0;
     let skippedOptOut = 0;
+    // Yüzdesi gönderilemeyen ama akış cümlesi olan kullanıcıya giden mesaj.
+    let sentFlowOnly = 0;
     const failures: string[] = [];
     // Çan kaydı kullanıcı başına TEK (çok cihaz) — bkz. app_notifications.ts.
     const cankaydi = new Set<string>();
@@ -621,23 +766,43 @@ Deno.serve(async (request) => {
       // AKIŞ KAPISI — en önemlisi. Haftalıkta susturur; aylıkta yüzdeyi
       // düşürür, bildirimi değil (bkz. "Aylık özet" notu).
       const akisVar = akisliKullanicilar.has(uid);
-      if (akisVar && !aylik) { skippedFlow += 1; continue; }
+      // Yüzde kapıları AYNEN duruyor (yanlış sayı gönderilmez). Tek fark:
+      // kapıya takılan kullanıcının tuttuğu fonda büyük para hareketi
+      // varsa hafta sessiz geçmez — YÜZDESİZ, yalnız akışı anlatan mesaj
+      // gider (`yalnizAkis`). Cümle yoksa davranış birebir eski.
+      const akisCumlesi = akisCumleleri.get(uid) ?? null;
+      let yalnizAkis = false;
+      if (akisVar && !aylik) {
+        skippedFlow += 1;
+        if (akisCumlesi === null) continue;
+        yalnizAkis = true;
+      }
 
       const rows = kullaniciSnap.get(uid) ?? [];
       const uclar = pickEndpoints(rows, fromMs, toMs);
       let degisim: number | null = null;
-      if ('reason' in uclar) {
+      if (yalnizAkis) {
+        // Yüzde hesaplanmaz.
+      } else if ('reason' in uclar) {
         if (uclar.reason === 'coverage') skippedCoverage += 1;
         // Aylıkta kapsama yoksa da "hazır" mesajı gider: kullanıcı ayın
         // özetini uygulamada yine görebilir, yalnızca push'ta sayı yok.
-        if (!aylik) continue;
+        if (!aylik) {
+          if (akisCumlesi === null) continue;
+          yalnizAkis = true;
+        }
       } else if (!akisVar) {
         degisim = periodChangePct(uclar.bas, uclar.son);
-        if (degisim === null && !aylik) continue;
+        if (degisim === null && !aylik) {
+          if (akisCumlesi === null) continue;
+          yalnizAkis = true;
+        }
       }
-      if (!aylik && degisim !== null && Math.abs(degisim) < minMovePct) {
+      if (!yalnizAkis && !aylik && degisim !== null &&
+          Math.abs(degisim) < minMovePct) {
         skippedQuiet += 1;
-        continue;
+        if (akisCumlesi === null) continue;
+        yalnizAkis = true;
       }
 
       // Uzun pencere bağlamı — YALNIZCA kayıp haftasında kullanılıyor.
@@ -661,9 +826,15 @@ Deno.serve(async (request) => {
       // aylıkta null olabilir ve mesaj sayısız kurulur.
       const mesaj = aylik
         ? buildMonthlyMessage(ay.ayAdi, degisim, uzunDonemPct, ayTufe)
-        : buildWeeklyMessage(degisim ?? 0, uzunDonemPct);
+        : yalnizAkis
+        ? yalnizAkisMesaji(akisCumlesi!)
+        : buildWeeklyMessage(degisim ?? 0, uzunDonemPct, akisCumlesi);
 
-      if (dryRun) { sent += 1; continue; }
+      if (dryRun) {
+        sent += 1;
+        if (yalnizAkis) sentFlowOnly += 1;
+        continue;
+      }
 
       // Çan sayfası kaydı — push'tan bağımsız (token reddedilse de kalır).
       const kayitHatasi = await recordAppNotification(
@@ -675,7 +846,11 @@ Deno.serve(async (request) => {
           body: mesaj.body,
           // `ay` (2026-10-01): bildirimin anlattığı takvim ayı. Eski
           // sürümler alanı yok sayar.
-          data: aylik ? { sent_on: bugun, ay: ay.donem.slice(0, 7) } : { sent_on: bugun },
+          data: aylik
+            ? { sent_on: bugun, ay: ay.donem.slice(0, 7) }
+            // `akis` (2026-10-04): mesaj fon akışına değiniyor; istemci
+            // dokunuşta "Haftanın özeti"ni açar. Eski sürümler yok sayar.
+            : akisCumlesi !== null ? { sent_on: bugun, akis: '1' } : { sent_on: bugun },
         }),
         cankaydi,
       );
@@ -690,11 +865,14 @@ Deno.serve(async (request) => {
         channelId: CHANNEL_ID,
         data: aylik
           ? { type: bildirimTipi, sent_on: bugun, ay: ay.donem.slice(0, 7) }
+          : akisCumlesi !== null
+          ? { type: bildirimTipi, sent_on: bugun, akis: '1' }
           : { type: bildirimTipi, sent_on: bugun },
       });
 
       if (r.ok) {
         sent += 1;
+        if (yalnizAkis) sentFlowOnly += 1;
         // Log yazılır ama hata yutulur: yazamazsak en kötü ihtimalle
         // yeniden denemede ikinci bildirim gider.
         await admin
@@ -771,6 +949,12 @@ Deno.serve(async (request) => {
       period: donem,
       sent,
       sent_tufe_only: sentTufe,
+      // Yüzde kapısına takılıp yalnız akış cümlesiyle giden mesajlar
+      // (`sent`'e dahil). `skipped_*` sayaçları yüzdenin atlandığını sayar;
+      // akış cümlesi varsa o kullanıcıya yine de mesaj gitmiştir.
+      sent_flow_only: sentFlowOnly,
+      flow_sentences: akisCumleleri.size,
+      flow_sentence_error: akisCumlesiHatasi,
       skipped_flow: skippedFlow,
       skipped_coverage: skippedCoverage,
       skipped_quiet: skippedQuiet,

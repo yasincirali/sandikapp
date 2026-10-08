@@ -4,6 +4,7 @@ import '../../models/asset_categories.dart';
 import '../../utils/tr_katla.dart';
 import '../csv_import_service.dart';
 import 'ekstre_tablosu.dart';
+import 'fon_adi.dart';
 import 'tablo_okuyucular.dart' show sayiMetni;
 
 /// Bir ekstre sütununun anlamı. Sıra, kanonik çıktının sütun sırasıdır.
@@ -22,6 +23,10 @@ extension EkstreRolAdi on EkstreRol {
         EkstreRol.paraBirimi => 'Para birimi',
         EkstreRol.isim => 'Ad',
       };
+
+  /// `ekstre-esle` (AI sütun eşleme) yanıtındaki rol adı
+  /// (`supabase/functions/_shared/ekstre_esleme.ts` `ROLLER`).
+  String get aiAdi => this == EkstreRol.paraBirimi ? 'para_birimi' : name;
 
   /// `CsvImportService.parse`'ın TAM eşleştiği kanonik başlık.
   String get kanonikBaslik => switch (this) {
@@ -51,6 +56,7 @@ class EkstreAnlami {
     required this.notlar,
     required this.stiller,
     this.ayOnce = const [],
+    this.adlaTanimli = false,
   });
 
   final EkstreTablosu tablo;
@@ -79,6 +85,11 @@ class EkstreAnlami {
   /// Sütun başına tarih düzeni (true = aa/gg/yyyy, ABD biçimi).
   final List<bool> ayOnce;
 
+  /// Sembol sütunu KOD değil fon ADI (banka ekstresi). Satır yalnız adı
+  /// TEFAS koduna çözüldüyse kanonik çıktıya girer (`kanonikSatirlar`'ın
+  /// `adKodlari`'ı); çözülmeyen ad asla sembol diye geçmez.
+  final bool adlaTanimli;
+
   static const esik = 0.75;
   bool get eminDegil =>
       guven < esik || !roller.containsKey(EkstreRol.sembol) || !roller.containsKey(EkstreRol.adet);
@@ -95,6 +106,9 @@ class EkstreAnlami {
         notlar: const [],
         stiller: stiller,
         ayOnce: ayOnce,
+        // Kullanıcı sembolü başka sütuna taşıdıysa artık kod sütunudur.
+        adlaTanimli:
+            adlaTanimli && yeni[EkstreRol.sembol] == roller[EkstreRol.sembol],
       );
 
   /// `CsvImportService.parse`'a verilecek sekmeli metin. Satış/tür/fiyat
@@ -109,13 +123,39 @@ class EkstreAnlami {
 
   /// Birden çok tablonun (XLSX sayfaları) ortak çıktı sütunları: rollerin
   /// birleşimi + her zaman yön (eksi adet → satış buradan taşınır).
-  static List<EkstreRol> kanonikSutunlar(Iterable<EkstreAnlami> anlamlar) => [
+  /// [tarihEkle]: belge tarihi tarihsiz satırlara yazılacak. Adla tanımlı
+  /// tablo varsa tür sütunu ("Fon") — üç harfli kod tür çıkarımına kalmasın.
+  static List<EkstreRol> kanonikSutunlar(Iterable<EkstreAnlami> anlamlar,
+          {bool tarihEkle = false}) =>
+      [
         for (final r in EkstreRol.values)
-          if (r == EkstreRol.yon || anlamlar.any((a) => a.roller.containsKey(r))) r,
+          if (r == EkstreRol.yon ||
+              (r == EkstreRol.tarih && tarihEkle) ||
+              (r == EkstreRol.tur && anlamlar.any((a) => a.adlaTanimli)) ||
+              anlamlar.any((a) => a.roller.containsKey(r)))
+            r,
       ];
 
+  /// Adla tanımlı tabloda koda çözülmesi gereken fon adları (adetli satır).
+  Iterable<String> get fonAdlari sync* {
+    if (!adlaTanimli) return;
+    final s = roller[EkstreRol.sembol]!;
+    for (final satir in veri) {
+      if (s < satir.length && satir[s].trim().isNotEmpty) yield satir[s].trim();
+    }
+  }
+
   /// [sutunlar] düzeninde veri satırları (başlıksız).
-  List<String> kanonikSatirlar(List<EkstreRol> ciktiRolleri) {
+  ///
+  /// [adKodlari]: adla tanımlı tabloda `fonAdiAnahtari(ad)` → TEFAS kodu;
+  /// karşılığı olmayan satır ATLANIR. [varsayilanTarih]: tarih sütunu
+  /// olmayan tabloda her satırın tarihi (varlık dökümünün "itibariyle"
+  /// günü — bugün değil).
+  List<String> kanonikSatirlar(
+    List<EkstreRol> ciktiRolleri, {
+    Map<String, String> adKodlari = const {},
+    DateTime? varsayilanTarih,
+  }) {
     final yonVar = roller.containsKey(EkstreRol.yon);
     final out = <String>[];
     for (final satir in veri) {
@@ -124,8 +164,13 @@ class EkstreAnlami {
         return i == null || i >= satir.length ? '' : satir[i];
       }
 
-      final sembol = h(EkstreRol.sembol).trim();
+      var sembol = h(EkstreRol.sembol).trim();
       if (sembol.isEmpty) continue; // çok satırlı hücrenin devamı
+      if (adlaTanimli) {
+        final kod = adKodlari[fonAdiAnahtari(sembol)];
+        if (kod == null) continue; // tanınmadı: tahminle eklenmez
+        sembol = kod;
+      }
       final adet = sayiCoz(h(EkstreRol.adet), turkce: _stil(EkstreRol.adet));
       bool? satis = yonVar ? yonCoz(h(EkstreRol.yon)) : null;
       if (yonVar && satis == null) continue; // alım/satım değil
@@ -145,7 +190,9 @@ class EkstreAnlami {
             hucreler.add(v == null ? h(r) : sayiMetni(v.abs()));
           case EkstreRol.tarih:
             final i = roller[r];
-            final t = tarihCoz(h(r), ayOnce: i != null && i < ayOnce.length && ayOnce[i]);
+            final t = i == null
+                ? varsayilanTarih
+                : tarihCoz(h(r), ayOnce: i < ayOnce.length && ayOnce[i]);
             hucreler.add(t == null
                 ? h(r)
                 : '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}');
@@ -154,6 +201,8 @@ class EkstreAnlami {
           case EkstreRol.paraBirimi:
             final p = trKatla(h(r).trim());
             hucreler.add(p == 'tl' || p == 'ytl' ? 'TRY' : h(r).trim().toUpperCase());
+          case EkstreRol.tur when adlaTanimli:
+            hucreler.add('Fon');
           case EkstreRol.tur:
           case EkstreRol.isim:
             hucreler.add(h(r));
@@ -187,6 +236,8 @@ const _sozluk = <EkstreRol, List<String>>{
   EkstreRol.isim: [
     'ad', 'adi', 'isim', 'unvan', 'sirket', 'sirket adi', 'menkul kiymet adi',
     'fon adi', 'hisse adi', 'urun adi', 'name', 'description', 'security name',
+    // Banka fon tablosu: "Yatırım Fonu İsmi" (2026-10-03).
+    'fon ismi', 'yatirim fonu ismi', 'fon unvani',
   ],
   EkstreRol.adet: [
     'adet', 'miktar', 'lot', 'nominal', 'pay', 'pay adedi', 'bakiye',
@@ -230,7 +281,7 @@ const _olumsuz = <EkstreRol, List<String>>{
   EkstreRol.fiyat: ['son', 'guncel', 'kapanis', 'piyasa', 'anlik', 'cari', 'tutar', 'toplam', 'deger', 'kar', 'zarar'],
   EkstreRol.tutar: ['piyasa', 'guncel', 'son', 'kar', 'zarar', 'komisyon', 'vergi', 'bsmv', 'stopaj', 'deger', 'oran', 'getiri'],
   EkstreRol.adet: ['tutar', 'fiyat', 'deger', 'oran'],
-  EkstreRol.sembol: ['adi', 'turu', 'tipi', 'tur'],
+  EkstreRol.sembol: ['adi', 'turu', 'tipi', 'tur', 'ismi', 'unvani'],
   EkstreRol.tarih: ['vade'],
 };
 
@@ -261,6 +312,19 @@ final _sozlukKok = <EkstreRol, List<String>>{
 final _olumsuzKok = <EkstreRol, Set<String>>{
   for (final e in _olumsuz.entries) e.key: {for (final a in e.value) _kok(a)},
 };
+
+/// Başlık sözlüğünün tüm kelimeleri (katlanmış; kök ve çekimli hâl).
+/// Tanılama iskeleti (`ekstre_iskeleti.dart`) bu kelimeleri maskelemez:
+/// sütun adları kişisel veri değildir ve teşhisin asıl ipucudur.
+final Set<String> ekstreSozlukKelimeleri = {
+  for (final liste in [..._sozluk.values, ..._olumsuz.values])
+    for (final ifade in liste) ..._norm(ifade).split(' '),
+  ..._kokler.keys,
+  ..._kokler.values,
+}..remove('');
+
+/// Katlanmış, noktalamasız biçim — iskeletin sözlük karşılaştırması için.
+String ekstreNormal(String s) => _norm(s);
 
 double baslikPuani(EkstreRol r, String hucre) {
   final h = _kok(_norm(hucre));
@@ -409,6 +473,13 @@ String sembolNormal(String ham) => isindenKod(ham) ?? ham.trim();
 
 /// 0–1: hücre bir sembol gibi mi?
 double sembolPuani(String ham) {
+  // Fon UNVANI kod değildir: "GARANTİ PORTFÖY ALTIN KATILIM FONU" altın
+  // deyimiyle 0,9, "YAPI KREDİ PORTFÖY…" ilk kelimesiyle ("YAPI") 0,7
+  // alıyordu. Üç fonluk bir banka tablosunda ad sütununun sembol oranı
+  // 0,5'i aşıp `isim` rolünü kaybetti ve tablo hiç anlaşılmadı; dört fonda
+  // (gerçek ekstre) eşiğin altında kaldığı için görünmedi (2026-10-05).
+  // Türk fon unvanlarının hepsinde "PORTFÖY" geçer.
+  if (RegExp(r'\bportfoy\b').hasMatch(trKatla(ham))) return 0;
   final s = CsvImportService.sembolAyikla(ham).trim();
   if (s.isEmpty) return 0;
   final u = s.toUpperCase();
@@ -482,6 +553,14 @@ class _Profil {
     }
   }
   return (tr, en);
+}
+
+/// Hücrelerin sayı biçimi Türkçe mi (virgül ondalık)? Kanıt yoksa `true`
+/// (yerli kurum). Mevduat tablosu gibi rol çıkarımına girmeyen okuyucular
+/// için.
+bool sayiStiliTurkceMi(Iterable<String> hucreler) {
+  final (tr, en) = _stilKaniti(hucreler);
+  return tr >= en;
 }
 
 _Profil _profilCikar(List<String> hucreler, {required bool tabloTurkce}) {
@@ -645,7 +724,14 @@ EkstreAnlami? tabloyuAnla(EkstreTablosu tablo) {
       adaylar.add((r, c, b * 1.5 + icerik * 2, b >= 0.6));
     }
   }
-  adaylar.sort((a, b) => b.$3.compareTo(a.$3));
+  // Eşitlikte SOLDAKİ sütun: `List.sort` kararlı değil. Banka fon tablosunda
+  // "Pay Adedi" ve "Bakiye" ikisi de adet sözlüğünde tam eşleşir (aynı
+  // puan); hangisinin seçileceği rastlantıya kalıyordu. Ekstrelerde miktar
+  // tutardan önce gelir.
+  adaylar.sort((a, b) {
+    final d = b.$3.compareTo(a.$3);
+    return d != 0 ? d : a.$2.compareTo(b.$2);
+  });
   final roller = <EkstreRol, int>{};
   final kullanilan = <int>{};
   final baslikla = <EkstreRol>{};
@@ -654,6 +740,17 @@ EkstreAnlami? tabloyuAnla(EkstreTablosu tablo) {
     roller[r] = c;
     kullanilan.add(c);
     if (bb) baslikla.add(r);
+  }
+
+  // Kodu olmayan fon tablosu (banka ekstresi: "Yatırım Fonu İsmi"): ad
+  // sütunu sembolün yerini tutar, satır ADLA TANIMLIDIR. Kod, TEFAS
+  // unvanlarıyla eşleşerek sonradan bulunur (`fon_adi.dart`); bulunamayan
+  // satır içe aktarılmaz — kanonik çıktıya ad olduğu gibi GİRMEZ.
+  var adlaTanimli = false;
+  if (!roller.containsKey(EkstreRol.sembol) &&
+      roller.containsKey(EkstreRol.isim)) {
+    roller[EkstreRol.sembol] = roller[EkstreRol.isim]!;
+    adlaTanimli = true;
   }
 
   // 5) Sayısal roller: adet × fiyat ≈ tutar ilişkisi. Başlık bu rolleri
@@ -731,6 +828,14 @@ EkstreAnlami? tabloyuAnla(EkstreTablosu tablo) {
     }
   }
 
+  // Adla tanımlı tablo yalnız ADETLİ ise pozisyondur. Adetsiz ad + tutar
+  // listesi ("Vadesiz Mevduat 11.173,97", hesap numaraları) bir varlık
+  // dökümü özetidir; her satırı "fon tanınmadı" diye raporlamak gürültü.
+  if (adlaTanimli && !roller.containsKey(EkstreRol.adet)) {
+    roller.remove(EkstreRol.sembol);
+    adlaTanimli = false;
+  }
+
   // 6) Güven.
   var guven = 1.0;
   if (!roller.containsKey(EkstreRol.sembol) || !roller.containsKey(EkstreRol.adet)) {
@@ -778,6 +883,87 @@ EkstreAnlami? tabloyuAnla(EkstreTablosu tablo) {
     notlar: notlar,
     stiller: [for (final p in profiller) p.turkce],
     ayOnce: [for (final p in profiller) p.ayOnce],
+    adlaTanimli: adlaTanimli,
+  );
+}
+
+/// Dışarıdan verilmiş eşlemeyle anlam (AI sütun eşleme, 2026-10-05).
+///
+/// [baslikSatiri] ve [roller] HAM tablonun (`tablo.satirlar`) satır/sütun
+/// numaralarıdır — tanılama iskeletinin numaraları. Veri satırları,
+/// sayı stili ve tarih düzeni [tabloyuAnla] ile aynı kurallarla çıkar;
+/// eşlemeyi yalnız sütun SEÇER, değerleri belge verir.
+///
+/// İçerik kapısı: sembol sütunu boşsa ya da adet sütununun satırlarının
+/// yarısından azı sayıysa `null` — model yanlış sütun gösterdiyse
+/// uydurma satır üretilmez. Sembol sütunu çoğunlukla kod değil AD ise
+/// (fon unvanı) tablo adla tanımlıdır: kod TEFAS unvanından çözülür.
+EkstreAnlami? tabloyuRollerleAnla(
+  EkstreTablosu tablo,
+  int baslikSatiri,
+  Map<EkstreRol, int> roller,
+) {
+  final satirlar = [
+    for (final s in tablo.satirlar) [for (final h in s) h.trim()],
+  ];
+  if (satirlar.isEmpty) return null;
+  final genislik = satirlar.map((s) => s.length).reduce(math.max);
+  for (final s in satirlar) {
+    while (s.length < genislik) {
+      s.add('');
+    }
+  }
+  final sembol = roller[EkstreRol.sembol], adet = roller[EkstreRol.adet];
+  if (sembol == null || adet == null) return null;
+  if (roller.values.any((c) => c < 0 || c >= genislik)) return null;
+  final baslik =
+      baslikSatiri >= 0 && baslikSatiri < satirlar.length ? baslikSatiri : -1;
+  final baslikHucreleri =
+      baslik >= 0 ? satirlar[baslik] : List.filled(genislik, '');
+  final baslikAnahtari = baslikHucreleri.map(_norm).join('|');
+  var atlanan = 0;
+  final veri = <List<String>>[];
+  for (var i = baslik + 1; i < satirlar.length; i++) {
+    final s = satirlar[i];
+    if (s.where((h) => h.isNotEmpty).length < 2) continue;
+    if (baslik >= 0 && s.map(_norm).join('|') == baslikAnahtari) continue;
+    if (_toplamSatiriMi(s)) {
+      atlanan++;
+      continue;
+    }
+    if (s[sembol].isEmpty) continue;
+    veri.add(s);
+  }
+  if (veri.isEmpty) return null;
+  var tabloTr = 0, tabloEn = 0;
+  for (var c = 0; c < genislik; c++) {
+    final (tr, en) = _stilKaniti([for (final s in veri) s[c]]);
+    tabloTr += tr;
+    tabloEn += en;
+  }
+  final profiller = [
+    for (var c = 0; c < genislik; c++)
+      _profilCikar([for (final s in veri) s[c]], tabloTurkce: tabloTr >= tabloEn),
+  ];
+  if (profiller[adet].oran(profiller[adet].sayi) < 0.5) return null;
+  final adla = profiller[sembol].oran(profiller[sembol].sembol) < 0.5;
+  return EkstreAnlami(
+    tablo: tablo,
+    baslikSatiri: baslik,
+    basliklar: [
+      for (var c = 0; c < genislik; c++)
+        baslikHucreleri[c].isNotEmpty ? baslikHucreleri[c] : 'Sütun ${c + 1}',
+    ],
+    roller: Map.unmodifiable(roller),
+    veri: veri,
+    // Eşik üstü: kanonik çıktıya girer. Kart yine de "yapay zekâ önerisi,
+    // kontrol et" der (not) ve "Sütunları düzelt" açık kalır.
+    guven: 0.8,
+    atlanan: atlanan,
+    notlar: const [],
+    stiller: [for (final p in profiller) p.turkce],
+    ayOnce: [for (final p in profiller) p.ayOnce],
+    adlaTanimli: adla,
   );
 }
 

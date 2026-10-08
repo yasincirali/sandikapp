@@ -168,10 +168,10 @@ void main() {
       expect(pozisyonKodu('.IS'), '.IS');
     });
 
-    test('_positionLabel sembol çekirdeğini pozisyonKodu ile sadeleştirir', () {
-      final src =
-          ekranKaynagiSync('lib/screens/portfolio_performance_screen.dart');
-      final i = src.indexOf('String _positionLabel(');
+    // Gövde 2026-10-04'te `pozisyonEtiketi`'ne taşındı (Bugün kartı da okur).
+    test('pozisyonEtiketi sembol çekirdeğini pozisyonKodu ile sadeleştirir', () {
+      final src = ekranKaynagiSync('lib/utils/pozisyon_etiketi.dart');
+      final i = src.indexOf('String pozisyonEtiketi(');
       expect(i, greaterThanOrEqualTo(0));
       final govde = src.substring(i, src.indexOf('\n}', i));
       expect(govde, contains('pozisyonKodu(core)'));
@@ -179,20 +179,8 @@ void main() {
   });
 
   group('#26 Bugün kartı haftalık satırı', () {
-    test('etiket tanımla uyuşur: kayan 7 gün', () {
-      expect(trMetni('todayWeekLabel'), 'Son 7 gün');
-      expect(lookupAppLocalizations(const Locale('en')).todayWeekLabel,
-          'Last 7 days');
-    });
-
-    test('hesap Özet 1H ile aynı pencere (kayan, ucu canlı)', () {
-      final src = ekranKaynagiSync('lib/services/bugun_yukleyici.dart');
-      final i = src.indexOf('static Future<double?> haftalik(');
-      final govde = src.substring(i, src.indexOf('BugunYukleyici.haftalik', i));
-      expect(govde, contains('SummaryPeriod.birHafta'));
-      expect(govde, contains('canliSon:'));
-    });
-
+    // Kartta "Son 7 gün" kutusu D düzeniyle 2026-10-05'te kalktı
+    // (`todayWeekLabel` silindi); hesabı ve isteği 2026-10-08'de kalktı.
     test('tur adımı etiketle aynı adı kullanır', () {
       final src = ekranKaynagiSync('lib/screens/onboarding_screen.dart');
       expect(src, contains('son 7 gün'));

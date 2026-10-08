@@ -60,6 +60,26 @@ curl -i -X POST \
 
 `public.db_logs` — `ON DELETE SET NULL` (logları silmeyiz, sadece user_id null'lar).
 
+## Silmede KALAN: yasal onay kayıtları (0102)
+
+`public.yasal_onaylar` auth.users'a FK taşımaz; cascade ile GİTMEZ.
+Gizlilik Politikası §7 / KVKK Aydınlatma §6: *"Yasal metin onay kayıtları —
+hesap silindikten sonra 3 yıl"*. `auth.users` üzerindeki BEFORE DELETE
+tetikleyicisi (`yasal_onaylar_hesap_silindi`) bu fonksiyonun
+`admin.deleteUser` çağrısında da, panelden silmede de çalışır:
+
+- satırlar kalır, `hesap_silindi_at` damgalanır; RLS onları kimseye
+  göstermez (yalnız service_role);
+- **Zirve rızası** satırları hemen silinir (Gizlilik §5.1: "Hesabınızı
+  sildiğinizde bu kayıtlar ... da silinir");
+- `disclaimer_acceptances` cascade ile gider, ama hash'i katalog metniyle
+  eşleşen yatırım uyarısı onayı silmeden önce `yasal_onaylar`'a taşınır;
+- damgadan 3 yıl sonra `yasal-onay-saklama` cron işi (`45 3 * * *`) siler.
+  Metinlerin kendisi (`yasal_metinler`) hiç silinmez.
+
+Tetikleyici hata verirse silme de düşer (`delete_failed`) — damgasız satır
+kalıp sonsuza dek saklanmasın diye bilerek yutulmuyor.
+
 ## Saklanan Anonim Kayıt
 
 `account_deletion_log`:

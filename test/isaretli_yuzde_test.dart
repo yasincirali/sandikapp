@@ -42,18 +42,14 @@ void main() {
           .where((s) => !s.trimLeft().startsWith('//'))
           .join('\n');
       // 2026-10-01 "sakin pano" (PR #63): kart yüzdeyi işaretsiz yazar ama
-      // YÖN artık renkte kalmıyor — günlük rozette OK (`yon`), haftalıkta
-      // KELİME ("%2,89 düşüş", `todayWeekUp/Down`). 2026-09-29'daki kural
-      // "yön yalnız renkte kalmasın"dı; bu iki yol onu karşılıyor. İşaretsiz
-      // yüzde yalnız bu iki yerde ve ikisi de yönü taşıyarak kalabilir.
+      // YÖN artık renkte kalmıyor — günlük rozette OK (`yon`). 2026-09-29'daki
+      // kural "yön yalnız renkte kalmasın"dı. (Haftalık kutunun yön KELİMESİ
+      // — `todayWeekUp/Down` — D düzeniyle 2026-10-05'te kalktı.)
       expect(RegExp(r'fmtPct\([^)]*\.abs\(\)').allMatches(src).length,
-          lessThanOrEqualTo(2));
+          lessThanOrEqualTo(1));
       expect(src.contains('yuzde = fmtPct(s.changePct.abs());'), isTrue);
       expect(src.contains('yon = s.changeTRY > 0;'), isTrue,
           reason: 'günlük rozet yönü okla söylemeli');
-      expect(src.contains('l10n.todayWeekUp(yuzde)'), isTrue,
-          reason: 'haftalık yön kelimeyle');
-      expect(src.contains('l10n.todayWeekDown(yuzde)'), isTrue);
     });
   });
 
@@ -94,11 +90,6 @@ void main() {
           'Enflasyonun 20,6 puan gerisinde kaldın');
       expect(en.recapPointsAhead('5.2'), contains('beat inflation'));
       expect(en.recapPointsBehind('20.6'), contains('trailed inflation'));
-    });
-
-    test('ekran okuyucu metni "yüzde … puan" karışıklığını taşımıyor', () {
-      expect(tr.realReturnSemanticsAhead('5,2'), isNot(contains('yüzde')));
-      expect(tr.realReturnSemanticsBehind('5,2'), isNot(contains('yüzde')));
     });
   });
 }

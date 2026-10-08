@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_en.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
-import 'package:portfoy_takip/services/bugun_service.dart';
 import 'package:portfoy_takip/services/tufe_koprusu.dart';
 import 'package:portfoy_takip/services/tuik_takvimi.dart';
 import 'package:portfoy_takip/widgets/aralik_cipi.dart';
@@ -32,13 +31,6 @@ void main() {
           DateTime(2026, 10, 3, 10));
       expect(TuikTakvimi.sonrakiAciklama(DateTime(2026, 10, 3, 10, 1)),
           DateTime(2026, 11, 3, 10));
-    });
-
-    test('Bugün kartı aynı kuralı okur (tek kaynak)', () {
-      final olay = BugunService.yaklasanOlaylar(DateTime(2026, 10, 1, 12))
-          .where((o) => o.tur == BugunOlayTuru.tuikAciklamasi)
-          .single;
-      expect(olay.tarih, TuikTakvimi.sonrakiAciklama(DateTime(2026, 10, 1)));
     });
   });
 

@@ -11,7 +11,7 @@ import 'package:flutter/material.dart'
         Icons,
         TextStyle,
         RefreshIndicator,
-        showModalBottomSheet;
+        Switch;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -31,6 +31,7 @@ import 'main_navigation_screen.dart' show MainNavigationScreen;
 import '../utils/chart_line_width.dart';
 import '../utils/chart_axis.dart';
 import '../utils/mum_turetici.dart';
+import '../utils/pozisyon_etiketi.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/islem_noktalari.dart';
@@ -50,12 +51,14 @@ import '../services/tazelik_ritmi.dart';
 import '../services/real_return_service.dart';
 import '../services/tufe_koprusu.dart';
 import '../services/leaderboard_service.dart';
+import '../services/birikim_serisi.dart';
 import '../services/contribution_history_service.dart';
 import '../services/insight_metrics_service.dart';
 import '../services/period_summary_service.dart';
 import '../services/recap_service.dart';
 import '../services/xirr_service.dart';
 import '../services/remote_config_service.dart';
+import '../providers/secili_donem_provider.dart';
 import '../widgets/period_summary_view.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
@@ -65,14 +68,18 @@ import '../models/grafik_tipi.dart';
 import '../widgets/transaction_segment.dart';
 import '../widgets/grafik_tipi_secici.dart';
 import '../providers/preferences_provider.dart'
-    show leaderboardOptInProvider, yatirimciSeviyesiProvider;
-import 'leaderboard_screen.dart';
-import '../widgets/kapsam_kisi_secici.dart';
+    show
+        bugunkuPortfoyleProvider,
+        leaderboardOptInProvider,
+        seviyeGorunurlukProvider,
+        yatirimciSeviyesiProvider;
+import 'siralama_screen.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/tour_anchor.dart';
+import '../widgets/raporlar_kapisi.dart';
 import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
-import 'zirve_portfoyler_screen.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/kiyas_karti.dart';
 import '../services/kiyas_service.dart';
@@ -142,6 +149,19 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
   /// Aynı kanal deseni `MainNavigationScreen.sekmeIstegi` ile birebir.
   static final gunlukIstegi = ValueNotifier<bool?>(null);
 
+  /// Tanıtım turundan: "Zirvedeki Portföyler kartını göster".
+  ///
+  /// **Neden (2026-10-03, kullanıcı bildirimi):** tur adımı yalnızca
+  /// Performans sekmesine geçiyordu; kart Grafik yüzeyinde ve listenin EN
+  /// ALTINDA. Liste tembel kurulduğu için kart ağaçta yoktu, tur kaydıracak
+  /// hedef bulamıyor, metni boşluğun üstünde gösteriyordu. Özet yüzeyi
+  /// açıksa kart hiç kurulmuyordu.
+  ///
+  /// İstek yalnızca Grafik yüzeyine geçirir ve kart kurulana kadar aşağı
+  /// kaydırır; dönem, kapsam ve filtreye DOKUNMAZ. Kanal deseni
+  /// [gunlukIstegi] ile aynı (`false` = bekleyen istek yok).
+  static final zirveIstegi = ValueNotifier<bool>(false);
+
   /// Dönem başlangıcı — takvim ayına göre.
   ///
   /// Kullanıcı isteği (2026-09-12): "1 aylık grafik bir önceki ay aynı
@@ -161,6 +181,17 @@ class PortfolioPerformanceScreen extends ConsumerStatefulWidget {
     return DateTime(yil, ay, gun, bitis.hour, bitis.minute, bitis.second);
   }
 
+  /// Performans tek akış mı (bayrak `performans_tek_akis`, sadeleştirme 2
+  /// S2): Grafik | Özet anahtarı yok, tek kaydırma, tek kontrol satırı.
+  ///
+  /// `period_summary_enabled` kapalıyken tek akış AÇILMAZ: akışın yarısı
+  /// Özet'tir; Özet kapatılmışsa bugünkü Grafik düzeni çizilir. Tur da
+  /// (`onboarding_screen.dart`) aynı kararı buradan okur — ekran ile metin
+  /// ayrışmasın.
+  static bool get tekAkisAcik =>
+      RemoteConfigService.instance.performansTekAkis &&
+      RemoteConfigService.instance.periodSummaryEnabled;
+
   @override
   ConsumerState<PortfolioPerformanceScreen> createState() =>
       _PortfolioPerformanceScreenState();
@@ -176,12 +207,49 @@ class _PortfolioPerformanceScreenState
   /// panel kapalıyken de çipin üstünde yazılı (bkz. `_buildScopeBar`).
   bool _kapsamAcik = false;
 
-  int _selectedPeriodIdx = 0; // Günlük (intraday)
+  int _yerelDonemIdx = 0; // Günlük (intraday)
+
+  /// Açılış isteğiyle gelen dönem, ortak döneme yazılana kadar (bkz.
+  /// [initState]). Sağlayıcı kurulum sırasında değiştirilemediği için yazma
+  /// bir mikro görev sonra olur; o arada ilk kare isteneni çizmeli.
+  int? _bekleyenAcilisDonemi;
+
+  /// Seçili dönem indeksi ([SummaryPeriod.values] sırası).
+  ///
+  /// `donem_hafizasi` (Sadeleştirme 2) açıkken alan değil uygulamanın ortak
+  /// dönemidir ([seciliDonemProvider]); kapalıyken eski ekran alanı
+  /// ([_yerelDonemIdx], varsayılan GÜNLÜK). Erişimci olarak yazıldı ki part
+  /// dosyalarındaki okuma/yazma yerleri (seçici, Bugün kartı isteği) hiç
+  /// değişmeden ortak döneme bağlansın. Yeniden çizim `build`'deki
+  /// `ref.watch` ile gelir.
+  int get _selectedPeriodIdx {
+    if (!donemHafizasiAcik) return _yerelDonemIdx;
+    return _bekleyenAcilisDonemi ?? ref.read(seciliDonemProvider).index;
+  }
+
+  set _selectedPeriodIdx(int i) {
+    if (!donemHafizasiAcik) {
+      _yerelDonemIdx = i;
+      return;
+    }
+    _bekleyenAcilisDonemi = null;
+    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.fromIndex(i);
+  }
   late String? _view;
   late AssetType? _typeFilter;
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
-  bool _simulate = false;
+  //
+  // Tek kaynak: Ayarlar › Görünüm'deki `bugunkuPortfoyleProvider`
+  // (2026-10-04, `performans_ayar_sade`); ekranda anahtar yok, yalnız
+  // etkinken rozet. Sade Başlangıç'ta (grafik araçları gizli) tercih açık
+  // kalsa da etkisizdir — kapatılamayan bir mod olmasın; tercih silinmez,
+  // seviye değişince geri gelir. 2026-10-05'e kadar bayrak kapalıyken
+  // ekranın oturum alanı (`_simulateYerel`) ve kapsam panelindeki
+  // Gerçek|Simülasyon anahtarı vardı; bayrakla birlikte silindi.
+  bool get _simulate =>
+      ref.read(bugunkuPortfoyleProvider) &&
+      ref.read(seviyeGorunurlukProvider).grafikAraclari;
 
   /// Yüzey sekmesi: false = Grafik, true = Özet.
   ///
@@ -190,6 +258,10 @@ class _PortfolioPerformanceScreenState
   /// Sekme başına ayrı bir dönem tutmak, aynı ekranda iki farklı "şu anki
   /// dönem" kavramı yaratırdı.
   bool _ozetSekmesi = false;
+
+  /// Bkz. [PortfolioPerformanceScreen.tekAkisAcik]. Açıkken [_ozetSekmesi]
+  /// okunmaz: tek akışta iki yüzey yok, Özet her zaman grafiğin altında.
+  bool get _tekAkis => PortfolioPerformanceScreen.tekAkisAcik;
 
   /// Grafik ↔ Özet en son ne zaman değişti — yeni sekmenin öğeleri yalnız
   /// bu andan kısa süre sonra kurulurken solarak gelir (`_SekmeSolmasi`).
@@ -289,8 +361,20 @@ class _PortfolioPerformanceScreenState
     // Sınır dışı indeks KIRPILIR, atılmaz: bozuk bir derin bağlantı
     // ekranı hiç açılmaz hale getirmemeli.
     if (widget.initialPeriodIdx != null) {
-      _selectedPeriodIdx =
-          widget.initialPeriodIdx!.clamp(0, _periods.length - 1);
+      final istenen = widget.initialPeriodIdx!.clamp(0, _periods.length - 1);
+      if (donemHafizasiAcik) {
+        // Ortak dönem kurulum sırasında yazılamaz (Riverpod); istek bir
+        // mikro görev sonra ortak döneme geçer, o zamana dek ilk kare onu
+        // çizer.
+        _bekleyenAcilisDonemi = istenen;
+        Future.microtask(() {
+          if (mounted && _bekleyenAcilisDonemi != null) {
+            _selectedPeriodIdx = _bekleyenAcilisDonemi!;
+          }
+        });
+      } else {
+        _selectedPeriodIdx = istenen;
+      }
     }
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
@@ -307,6 +391,10 @@ class _PortfolioPerformanceScreenState
     // Dış yüzey dokunuşu. Soğuk açılışta istek bu ekran KURULMADAN önce
     // yazılmış olur (sekme isteği de öyle), o yüzden dinleyiciyi bağlamakla
     // yetinmeyip mevcut değeri bir kez okuyoruz.
+    PortfolioPerformanceScreen.zirveIstegi.addListener(_zirveIstegiGeldi);
+    if (PortfolioPerformanceScreen.zirveIstegi.value) {
+      Future.microtask(_zirveIstegiGeldi);
+    }
     PortfolioPerformanceScreen.gunlukIstegi.addListener(_gunlukIstegiGeldi);
     if (PortfolioPerformanceScreen.gunlukIstegi.value != null) {
       Future.microtask(_gunlukIstegiGeldi);
@@ -324,6 +412,36 @@ class _PortfolioPerformanceScreenState
   ///
   /// Özet sekmesi de kapatılır: dokunuşun vaadi grafiktir (kilit ekranında
   /// görülen eğrinin büyüğü), tablo değil.
+  /// [PortfolioPerformanceScreen.zirveIstegi] — bkz. orada.
+  void _zirveIstegiGeldi() {
+    if (!PortfolioPerformanceScreen.zirveIstegi.value) return;
+    if (!mounted) return;
+    PortfolioPerformanceScreen.zirveIstegi.value = false;
+    if (_ozetSekmesi) _guncelle(() => _ozetSekmesi = false);
+    _zirveyeKaydir(0);
+  }
+
+  /// Kart kurulana kadar listenin sonuna atlar (tembel liste her atlamada
+  /// birkaç çocuk daha kurar), kurulunca kartı görünür alana getirir.
+  /// Kart hiç gelmiyorsa (bayrak kapalı, demo) birkaç denemeden sonra durur.
+  void _zirveyeKaydir(int deneme) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final kart = TourTargets.context(TourTarget.zirveKarti);
+      if (kart != null) {
+        Scrollable.ensureVisible(kart,
+            alignment: 0.3,
+            duration: SandikMotion.surfaceOf(context),
+            curve: SandikMotion.enter);
+        return;
+      }
+      if (deneme >= 10) return;
+      final pos = _scrollController.position;
+      pos.jumpTo(pos.maxScrollExtent);
+      _zirveyeKaydir(deneme + 1);
+    });
+  }
+
   void _gunlukIstegiGeldi() {
     if (PortfolioPerformanceScreen.gunlukIstegi.value == null) return;
     // `mounted` kontrolü TÜKETMEDEN önce: sökülmüş bir state isteği yutarsa
@@ -334,7 +452,6 @@ class _PortfolioPerformanceScreenState
     _guncelle(() {
       _selectedPeriodIdx = 0; // GÜNLÜK
       _ozetSekmesi = false;
-      _simulate = false;
       _view = ''; // yalnızca kendi portföyü — kilit ekranıyla aynı kapsam
       _typeFilter = null;
       // Gün içi future'ı bilerek düşür: dokunuş "şu anki hâlini göster"
@@ -353,6 +470,7 @@ class _PortfolioPerformanceScreenState
     // yeniden kurulduğunda üst üste birikir ve tek dokunuş birden çok kez
     // işlenir (aynı gerekçe `MainNavigationScreen.dispose`).
     PortfolioPerformanceScreen.gunlukIstegi.removeListener(_gunlukIstegiGeldi);
+    PortfolioPerformanceScreen.zirveIstegi.removeListener(_zirveIstegiGeldi);
     _gorunurluk?.removeListener(_gorunurlukDegisti);
     IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     _nabziBirak?.call();
@@ -445,6 +563,18 @@ class _PortfolioPerformanceScreenState
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
+    // `_simulate` Ayarlar'daki tercihi `ref.read` ile okur (build dışından
+    // da çağrılıyor); değişince ekran yeniden kurulsun diye burada izlenir.
+    ref.watch(bugunkuPortfoyleProvider);
+    ref.watch(seviyeGorunurlukProvider);
+    // `donem_hafizasi`: seçili dönem ortak sağlayıcıda ([_selectedPeriodIdx]
+    // erişimcisi). Başka yüzeyde (varlık detayı, Takip…) değişince ekran
+    // yeniden kurulur ve gün içi nabız yeni döneme göre bağlanır/bırakılır.
+    if (donemHafizasiAcik) {
+      ref.watch(seciliDonemProvider);
+      ref.listen<SummaryPeriod>(
+          seciliDonemProvider, (_, __) => _startIntradayTickIfNeeded());
+    }
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     // Kapsam seçicinin `onChanged`'ı ile aynı yol: gün içi tohumu da atılır.
@@ -536,7 +666,7 @@ class _PortfolioPerformanceScreenState
                     // Kişi seçimi 2026-09-15'te bir süre buradaydı (çip,
                     // sonra avatar şeridi); kullanıcı: "o kadar yukarıda
                     // olması doğru olmadı, aşağıya gelmeli". Artık kontrol
-                    // yığınının ilk satırında (`KapsamKisiSecici`).
+                    // yığınının ilk satırında (`OrtakSecici`).
                     // Yarış bir GEZİNME girişi, grafik aracı değil: eskiden
                     // grafik araç satırında duruyordu ve o satırın tamamı
                     // kaldırıldı. Yeri üst çubuk.
@@ -545,7 +675,20 @@ class _PortfolioPerformanceScreenState
                     // bağımsız bir özellik, giriş noktası da öyle). Küresel
                     // kapalıyken eski kural: opt-in + aktif ortak.
                     // Demo (F1): yarış sunucu havuzudur, demoda yok.
-                    if (!DemoModu.aktif &&
+                    //
+                    // Raporlar kapısı (bayrak `raporlar_kapisi`, S6): kupa
+                    // yerine aynı kabukta "Raporlar"; Sıralama listenin bir
+                    // satırı ve koşulu kupanınkiyle AYNI ifade. Kapalıyken
+                    // aşağıdaki kupa birebir.
+                    if (RemoteConfigService.instance.raporlarKapisi)
+                      RaporlarDugmesi(
+                        siralamaAcik: !DemoModu.aktif &&
+                            (RemoteConfigService
+                                    .instance.globalLeaderboardEnabled ||
+                                (ref.watch(leaderboardOptInProvider) &&
+                                    activePartners.isNotEmpty)),
+                      )
+                    else if (!DemoModu.aktif &&
                         (RemoteConfigService.instance.globalLeaderboardEnabled ||
                             (ref.watch(leaderboardOptInProvider) &&
                                 activePartners.isNotEmpty))) ...[
@@ -558,8 +701,9 @@ class _PortfolioPerformanceScreenState
                             padding: EdgeInsets.zero,
                             onPressed: () => pushGuarded(
                               context,
+                              // Sıralama › Ortaklarım.
                               adaptiveRoute<void>(
-                                  builder: (_) => const LeaderboardScreen()),
+                                  builder: (_) => yarisGirisEkrani()),
                             ),
                             // Üst çubuk düğmeleri her ekranda aynı kabuk
                             // (44pt kutu) ve aynı aralık (`SandikSpace.sm`)
@@ -578,14 +722,10 @@ class _PortfolioPerformanceScreenState
                           ),
                         ),
                       ),
-                      const SizedBox(width: SandikSpace.sm),
                     ],
-                    // Çıkış yalnızca sekme modunda. Push edilmiş alt sayfada
-                    // beklenmeyen bir eylem olurdu.
-                    if (!widget.showBackButton)
-                      SandikLogoutButton(
-                        onPressed: () => confirmAndLogout(context, ref),
-                      ),
+                    // Çıkış düğmesi KALDIRILDI (sadeleştirme 2026-10-04):
+                    // Ana ekran üst barında ve Profil'de duruyor; dört sekmede
+                    // birden olması yanlışlıkla çıkışa davetiye çıkarıyordu.
                   ],
                 ),
               ),
