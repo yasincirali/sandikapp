@@ -98,20 +98,30 @@ void main() {
     test('Tokyo: Japonya — "ABD" Supabase için artık yazmıyor', () {
       SunucuSecimi.instance.testIcinKur(_sec('')!);
       final p = metin(LegalDocs.privacy);
-      expect(p, contains('Japonya (AWS)'));
-      expect(p, contains("Supabase verileri Japonya'da"));
+      expect(p, contains("Supabase veritabanı Japonya'da, Firebase ABD'de"));
+      expect(p, contains('Supabase: Japonya; Firebase ve RevenueCat: ABD'));
       expect(p, isNot(contains('ABD (AWS)')));
       expect(metin(LegalDocs.kvkk), contains('Japonya'));
+      expect(metin(LegalDocs.acikRiza),
+          contains("sunucuları Japonya'da bulunan Supabase Inc."));
     });
 
     test('Frankfurt: Almanya (AB)', () {
       SunucuSecimi.instance.testIcinKur(_sec('frankfurt')!);
-      expect(metin(LegalDocs.privacy), contains("Supabase verileri Almanya'da (AB)"));
+      expect(metin(LegalDocs.privacy),
+          contains("Supabase veritabanı Almanya'da (AB), Firebase ABD'de"));
+      expect(metin(LegalDocs.acikRiza),
+          contains("sunucuları Almanya'da (AB) bulunan Supabase Inc."));
     });
 
     test('yer tutucu hiçbir koşulda ekrana sızmaz', () {
       SunucuSecimi.instance.testIcinKur(_sec('')!);
-      for (final b in [LegalDocs.privacy, LegalDocs.kvkk, LegalDocs.terms]) {
+      for (final b in [
+        LegalDocs.privacy,
+        LegalDocs.kvkk,
+        LegalDocs.terms,
+        LegalDocs.acikRiza,
+      ]) {
         expect(metin(b), isNot(contains('{SUPABASE')));
       }
     });

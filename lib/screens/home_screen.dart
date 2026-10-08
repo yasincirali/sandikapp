@@ -7,24 +7,27 @@ import '../models/app_notification.dart';
 import '../models/price_alert_notification.dart';
 import '../models/bildirim_akisi.dart';
 import '../models/asset.dart';
+import '../models/ilk_varlik_secimi.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
-import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/signal_provider.dart';
 import '../services/notification_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/temettu_gecmisi.dart' show TemettuOnerisi;
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
 import '../models/signal_alert.dart';
 import '../models/technical_signal.dart';
 import '../theme/sandik.dart';
+import '../widgets/radar_seridi.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/bugun_karti.dart';
+import '../widgets/ilk_varlik_vitrini.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/price_alert_tile.dart';
@@ -43,9 +46,10 @@ import 'main_navigation_screen.dart' show MainNavigationScreen;
 import 'all_transactions_screen.dart';
 import 'asset_detail_screen.dart';
 import 'portfolio_performance_screen.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/piyasa_seridi.dart';
 import 'add_watchlist_screen.dart';
+import 'genel_arama_screen.dart';
 import '../widgets/tour_anchor.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
@@ -66,7 +70,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // üçüncü kez taşıyordu ve toplam kartıyla hareket listesinin arasını
   // uzatıyordu. Ana sayfadaki toplam/hareketler artık filtresizdir.
   final _scrollCtrl = ScrollController();
-  bool _reloading = false;
 
   /// Açık Ana sekmesine yeniden dokununca başa dön (bkz. [SekmeBasaDon]).
   late final VoidCallback _basaDonBirak;
@@ -99,18 +102,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _reload() async {
-    if (_reloading) return;
-    setState(() => _reloading = true);
-    // `refreshPrices` hatayı kendi içinde yakalar; finally yalnızca beklenmeyen
-    // bir istisnada döner butonunun sonsuza dek kilitli kalmamasını sağlar
-    // (handler sahipsiz: onPressed future'ı beklemiyor).
-    try {
-      await ref.read(portfolioProvider.notifier).refreshPrices(force: true);
-    } finally {
-      if (mounted) setState(() => _reloading = false);
-    }
+  /// Genel arama (bayrak `genel_arama`): üst çubuktaki büyüteç.
+  ///
+  /// Demo'da piyasa çipiyle AYNI kapı: arama piyasa sembolü için sunucuya
+  /// ve fiyat servisine çıkıyor, eylemlerin çoğu yazma ekranı. Demo
+  /// kullanıcısı "hesap oluştur" sayfasını görür; sunucuya hiçbir şey
+  /// gitmez (`demo_izolasyon_test`).
+  ///
+  /// Tüm hareketler ve bildirim zili ANA EKRANIN açıcılarıdır (ortak
+  /// görünümü, görüldü damgası); arama onları geri çağırır.
+  void _genelAramayiAc({required VoidCallback tumHareketleriAc}) {
+    if (DemoModu.yazmaKapisi('arama')) return;
+    pushGuarded(
+      context,
+      adaptiveRoute<void>(
+        builder: (_) => GenelAramaScreen(
+          tumHareketleriAc: tumHareketleriAc,
+          bildirimleriAc: _scrollToSignals,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
   }
+
+  /// Fiyatları zorla tazeler. Kendi `_reloading` bayrağı YOK (2026-10-08,
+  /// tek yükleniyor davranışı): üst çubuktaki yenile düğmesinin kilidi ve
+  /// döneni [SandikAsyncTap]'te. Bayrağın öteki işi — çift dokunuşta ikinci
+  /// tur atmamak — provider'da: `refreshPrices` süren zorlamalı tura katılır
+  /// (`_surenTur`), şerit "tekrar dene"si ve hata görünümü de böylece tek
+  /// turla kalır. `refreshPrices` hatayı kendi içinde yakalar.
+  Future<void> _reload() =>
+      ref.read(portfolioProvider.notifier).refreshPrices(force: true);
 
   @override
   void initState() {
@@ -156,7 +178,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // bundan sonra gelenleri "yeni" sayar. Kapanışta da yazılır: sayfa
     // açıkken düşen bildirim listede görüldü, rozette yeniden belirmesin.
     _bildirimleriGorulduSay();
-    showModalBottomSheet<void>(
+    // Sayfa açılırken sunucudaki iki listeyi tazele (2026-10-06): uygulama
+    // önde açıkken gelen alarm/özet kaydı başka türlü ancak bir sonraki
+    // öne dönüşte görünürdü. Sheet provider'ı izlediği için satır, liste
+    // açıkken yerine oturur.
+    _sunucuBildirimleriniTazele();
+    showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -198,7 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Portföy listesiyle AYNI nesne: pozisyon görünümü. Ham lot
             // satış/silinmiş kayıtsa grafik boş kalır (bkz. `pozisyonGorunumu`).
             final gorunum = pozisyonGorunumu(assets!, asset);
-            Navigator.push(
+            pushGuarded(
               context,
               adaptiveRoute<void>(
                   builder: (_) => AssetDetailScreen(
@@ -240,6 +267,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  void _sunucuBildirimleriniTazele() {
+    CrashReporter.arkaPlan(
+      ref.read(priceAlertNotificationProvider.notifier).refresh(),
+      reason: 'home.alarmBildirimTazele',
+    );
+    CrashReporter.arkaPlan(
+      ref.read(appNotificationProvider.notifier).refresh(),
+      reason: 'home.genelBildirimTazele',
+    );
+  }
+
   void _bildirimleriGorulduSay() {
     final akis = bildirimAkisi(
       ref.read(signalProvider).valueOrNull ?? const [],
@@ -272,7 +310,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         // gidiyordu; anlatılan hisse ikisinde de yoktu.
         NotificationService.instance.openDailyBrief(b.data);
       case AppNotification.weeklySummary:
-        Navigator.push(
+        // Push'la AYNI kural ve hedef (bkz. `haftaOzetineGider`).
+        if (NotificationService.haftaOzetineGider(b.data)) {
+          NotificationService.instance.openHaftaOzeti();
+          break;
+        }
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -286,7 +329,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         MainNavigationScreen.sekmeIstegi.value = 1;
       case AppNotification.inflationDay:
         // TÜFE günü → Özet: reel getiri kartı orada.
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -297,7 +340,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       case AppNotification.monthlySummary:
         // Aylık özet → 1A dönemi; bildirimin anlattığı ay orada.
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -588,12 +631,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // Hareket listesi ham defteri kullanmaya DEVAM eder — geçmiş orada
     // duruyor ve doğrusu da bu.
     final isEmptyOwn = ownView && aktifLotlar(myState.assets).isEmpty;
+    final toplamYerineVitrin = IlkVarlikVitrini.toplamKartiYerine(
+      bosKendi: isEmptyOwn,
+      ortakVar: allActivePartners.isNotEmpty,
+    );
 
     return RefreshIndicator.adaptive(
       color: context.c.amberText,
       // Kullanıcı yenilemesi — fiyat önbelleği atlanır.
-      onRefresh: () =>
-          ref.read(portfolioProvider.notifier).refreshPrices(force: true),
+      // Çan listeleri de tazelenir (2026-10-06): "aşağı çektim, yeni
+      // bildirim yok" denmesin. Fiyat yenilemesini beklemez.
+      onRefresh: () {
+        _sunucuBildirimleriniTazele();
+        return ref.read(portfolioProvider.notifier).refreshPrices(force: true);
+      },
       child: CustomScrollView(
         controller: _scrollCtrl,
         physics: const BouncingScrollPhysics(
@@ -636,15 +687,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
+                  // Bayrak `genel_arama` açıkken aynı yuvada büyüteç
+                  // (sadeleştirme 2): yenileme zaten aşağı çekmede
+                  // (`RefreshIndicator`, çan listelerini de tazeler) ve
+                  // fiyatlar arka planda güncelleniyor; ayrı bir düğme
+                  // üst çubuğun en değerli yerini "şimdi çek"e veriyordu.
+                  // Düğme sayısı üç kalır (HIG notu aşağıda). Tur hedefi
+                  // aynı anahtar: adım metni bayrağa göre dallanır
+                  // (`onboarding_screen` 'yenile').
                   TourAnchor(
                     target: TourTarget.yenileTusu,
-                    child: _HeaderIconButton(
+                    // Kilit + gösterge standart bileşende: ikon görünmez
+                    // ama yer tutar, gösterge üstünde (eskiden ikonla yer
+                    // değiştiriyordu, aynı boy).
+                    child: RemoteConfigService.instance.genelArama
+                        ? SandikTappable(
+                            key: const ValueKey('genel-arama-dugmesi'),
+                            onTap: () => _genelAramayiAc(
+                              tumHareketleriAc: () => pushGuarded(
+                                context,
+                                adaptiveRoute<void>(
+                                  builder: (_) => AllTransactionsScreen(
+                                    allPartnerAssets: allPartnerAssets,
+                                    partners: partners,
+                                    initialView: _view,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            semanticLabel: context.l10n.s7AraSemantics,
+                            child: _HeaderIconKutusu(
+                              child: Icon(Icons.search_rounded,
+                                  color: context.c.text58, size: 22),
+                            ),
+                          )
+                        : SandikAsyncTap(
                       onTap: _reload,
                       semanticLabel: context.l10n.refreshPrices,
-                      child: _reloading
-                          ? const CustomLoadingIndicator(size: 20)
-                          : Icon(Icons.refresh_rounded,
-                              color: context.c.text58, size: 22),
+                      // Eski düğme SandikTappable varsayılanıyla titreşirdi.
+                      zemin: context.chip(selected: false),
+                      child: _HeaderIconKutusu(
+                        kutusuz: true,
+                        child: Icon(Icons.refresh_rounded,
+                            color: context.c.text58, size: 22),
+                      ),
                     ),
                   ),
                   const SizedBox(width: SandikSpace.sm),
@@ -660,20 +746,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // (Severity: High) çiğniyordu. Takip listesi bir VARLIK
                   // LİSTESİDİR; yeri Portföy sekmesinin gövdesi
                   // (`portfolio_screen.dart`), üst bar değil.
-                  // Teknik sinyal zili Başlangıç seviyesinde GİZLİ
-                  // (`seviyeGorunurlugu`): sinyal, gösterge okumayı bilen
-                  // kullanıcıya hitap eder. Varsayılan Orta olduğu için
-                  // seçim yapmayan hiç kimse bunu kaybetmez.
-                  if (seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider))
-                      .teknikSinyaller) ...[
-                    TourAnchor(
-                      target: TourTarget.bildirimCani,
-                      child: _SignalBadgeButton(onTap: _scrollToSignals),
-                    ),
-                    const SizedBox(width: SandikSpace.sm),
-                  ],
-                  SandikLogoutButton(
-                      onPressed: () => confirmAndLogout(context, ref)),
+                  // Bildirim zili HER seviyede görünür (2026-10-04, sade
+                  // Başlangıç): zil yalnız sinyallerin değil fiyat alarmları
+                  // ve ortak davetlerinin de TEK gelen kutusu; Başlangıç'ta
+                  // yalnızca sinyal satırları süzülür
+                  // (`zilSinyalleriGosterProvider`). 2026-10-04'e kadar zil
+                  // Başlangıç'ta tümden gizliydi; bayrak `seviye_anketi`
+                  // (ve onu soran `zilGorunurProvider`) 2026-10-05'te kalktı.
+                  // Çıkış düğmesi BURADA DEĞİL (yasin, 2026-10-08: "sadece
+                  // profilden logoff yapılabilsin"). 2026-10-04'te Portföy ve
+                  // Performans çubuklarından kalkmış, ana ekranda kalmıştı;
+                  // artık tek yeri Profil üst çubuğu. Hesap işi Profil'de,
+                  // ana ekran portföyün kendisi — yanlışlıkla dokunuş da
+                  // kalkıyor.
+                  TourAnchor(
+                    target: TourTarget.bildirimCani,
+                    child: _SignalBadgeButton(onTap: _scrollToSignals),
+                  ),
                 ],
               ),
             ),
@@ -771,77 +860,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           // Portfolio summary
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: hp),
-              child: TourAnchor(
-                target: TourTarget.heroKart,
-                // Ortak varken kartı sağa/sola kaydırmak sıradaki görünüme
-                // geçer (Ben → ortaklar → Birlikte). Çip ve alt sayfa hedefe
-                // doğrudan gider; kaydırma "bir sonrakine bak" hareketi.
-                // Kart parmağı takip eder, kenarda hedefin adı belirir,
-                // bırakınca kayarak geçer (`KaydirmaliGecis`).
-                child: KaydirmaliGecis(
-                  etkin: allActivePartners.isNotEmpty,
-                  ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
-                  onIpucuGosterildi: () => ref
-                      .read(kaydirmaIpucuGosterildiProvider.notifier)
-                      .set(true),
-                  // Komşu kart: o görünümün toplamı ve çipi, aynı hesapla.
-                  // Tür filtresi uygulanmaz — kart "o kişinin toplamı"dır.
-                  komsu: (ileri) {
-                    final hedef = GorunumCipi.sonraki(allActivePartners, _view,
-                        ileri: ileri);
-                    return PortfolioSummaryWidget(
-                      state: gorunumDurumu(gorunumVarliklari(hedef)),
+          //
+          // Vitrin açıkken (bayrak `ilk_varlik_kolay`, boş defter, ortak yok)
+          // ₺0 kartı ÇİZİLMEZ (kullanıcı 2026-10-04: "bozuk görünüyor").
+          // Yerini vitrinin karşılama başlığı alır; kural
+          // `IlkVarlikVitrini.toplamKartiYerine`'de (tur da onu sorar).
+          if (!toplamYerineVitrin)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hp),
+                child: TourAnchor(
+                  target: TourTarget.heroKart,
+                  // Ortak varken kartı sağa/sola kaydırmak sıradaki görünüme
+                  // geçer (Ben → ortaklar → Birlikte). Çip ve alt sayfa hedefe
+                  // doğrudan gider; kaydırma "bir sonrakine bak" hareketi.
+                  // Kart parmağı takip eder, kenarda hedefin adı belirir,
+                  // bırakınca kayarak geçer (`KaydirmaliGecis`).
+                  child: KaydirmaliGecis(
+                    etkin: allActivePartners.isNotEmpty,
+                    // Çipten seçimde yönlü giriş için (bkz. `sira`).
+                    sira: GorunumCipi.sira(allActivePartners).indexOf(_view),
+                    ipucu: !ref.watch(kaydirmaIpucuGosterildiProvider),
+                    onIpucuGosterildi: () => ref
+                        .read(kaydirmaIpucuGosterildiProvider.notifier)
+                        .set(true),
+                    // Komşu kart: o görünümün toplamı ve çipi, aynı hesapla.
+                    // Tür filtresi uygulanmaz — kart "o kişinin toplamı"dır.
+                    komsu: (ileri) {
+                      final hedef = GorunumCipi.sonraki(allActivePartners, _view,
+                          ileri: ileri);
+                      return PortfolioSummaryWidget(
+                        state: gorunumDurumu(gorunumVarliklari(hedef)),
+                        hideBalance: ref.watch(balanceHiddenProvider),
+                        baz: baz,
+                        trailing: GorunumCipi(
+                          partners: allActivePartners,
+                          selectedId: hedef,
+                          toplamlar: gorunumToplamlari,
+                          gizli: ref.watch(balanceHiddenProvider),
+                          onChanged: (_) {},
+                        ),
+                      );
+                    },
+                    onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
+                        allActivePartners, _view,
+                        ileri: ileri)),
+                    // Sayfa noktaları kartın altında; sürüklerken canlı.
+                    altBilgi: (ctx, ilerleme) {
+                      final sira = GorunumCipi.sira(allActivePartners);
+                      return SayfaNoktalari(
+                        sayi: sira.length,
+                        secili: sira.indexOf(_view).clamp(0, sira.length - 1),
+                        ilerleme: ilerleme,
+                      );
+                    },
+                    child: PortfolioSummaryWidget(
+                      state: displayedState,
                       hideBalance: ref.watch(balanceHiddenProvider),
                       baz: baz,
-                      trailing: GorunumCipi(
-                        partners: allActivePartners,
-                        selectedId: hedef,
-                        toplamlar: gorunumToplamlari,
-                        gizli: ref.watch(balanceHiddenProvider),
-                        onChanged: (_) {},
-                      ),
-                    );
-                  },
-                  onGecis: (ileri) => setState(() => _view = GorunumCipi.sonraki(
-                      allActivePartners, _view,
-                      ileri: ileri)),
-                  // Sayfa noktaları kartın altında; sürüklerken canlı.
-                  altBilgi: (ctx, ilerleme) {
-                    final sira = GorunumCipi.sira(allActivePartners);
-                    return SayfaNoktalari(
-                      sayi: sira.length,
-                      secili: sira.indexOf(_view).clamp(0, sira.length - 1),
-                      ilerleme: ilerleme,
-                    );
-                  },
-                  child: PortfolioSummaryWidget(
-                    state: displayedState,
-                    hideBalance: ref.watch(balanceHiddenProvider),
-                    baz: baz,
-                    // Görünüm değişince toplam vurgusu yakılmaz.
-                    vurguKimligi: _view ?? 'birlikte',
-                    // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
-                    trailing: allActivePartners.isEmpty
-                        ? null
-                        : GorunumCipi(
-                            partners: allActivePartners,
-                            selectedId: _view,
-                            toplamlar: gorunumToplamlari,
-                            gizli: ref.watch(balanceHiddenProvider),
-                            onChanged: (v) => setState(() => _view = v),
-                          ),
+                      // Görünüm değişince toplam vurgusu yakılmaz.
+                      vurguKimligi: _view ?? 'birlikte',
+                      // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
+                      trailing: allActivePartners.isEmpty
+                          ? null
+                          : GorunumCipi(
+                              partners: allActivePartners,
+                              selectedId: _view,
+                              toplamlar: gorunumToplamlari,
+                              gizli: ref.watch(balanceHiddenProvider),
+                              onChanged: (v) => setState(() => _view = v),
+                            ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
           if (isEmptyOwn)
             SliverToBoxAdapter(
+              // Anahtar: üstteki kart koşullu; anahtarsız sliver indeksi
+              // kayınca vitrin yeniden kurulur ve girişi ikinci kez oynardı.
+              key: const ValueKey('bos-portfoy'),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(hp, SandikSpace.lg, hp, 0),
+                // Kart yokken vitrin şeridin hemen altından başlar.
+                padding: EdgeInsets.fromLTRB(hp,
+                    toplamYerineVitrin ? SandikSpace.sm : SandikSpace.lg, hp,
+                    toplamYerineVitrin ? SandikSpace.md : 0),
                 child: const _EmptyPortfolioCta(),
               ),
             ),
@@ -894,6 +997,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   state: benGorunumu ? myState : gorunumDurumu(ledgerAssets),
                   kisisel: benGorunumu,
                   etiket: _bugunEtiketi(allActivePartners),
+                  gorunum: _view,
                   // Her kartın kendi hedefi (2026-09-30): hedef satırı
                   // Birlikte'ye/ortağa geçince kayboluyordu.
                   hedefKapsami: _view == ''
@@ -903,6 +1007,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           : 'ortak_$_view',
                   padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, 0),
                 ),
+              ),
+            ),
+          // Radar şeridi (Balina S7-A, 2026-10-05): yalnız kendi görünümünde
+          // — Haftanın özeti kendi pozisyonlarını anlatır, ortağınkini değil.
+          // Bayrak kapalıyken ya da hareket yokken yer kaplamaz.
+          if (benGorunumu)
+            SliverToBoxAdapter(
+              child: TourAnchor(
+                target: TourTarget.radarSeridi,
+                child: RadarSeridi(
+                    padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, 0)),
               ),
             ),
           // Mini cards
@@ -971,8 +1086,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: Builder(builder: (_) {
                 // Liste ham ledger'dan gelir — her Al/Sat/Temettü kaydı
                 // ayrı satır. Tür filtresi yok (2026-09-28). Silinenler
-                // yok (2026-09-29, yukarıdaki not); sıralı gelir.
-                final recentAssets = hareketler.aktif;
+                // yok (2026-09-29, yukarıdaki not). Sıra GİRİŞ ANI
+                // (2026-10-03): içe aktarılan geçmiş tarihli kayıt da
+                // eklendiği an üstte görünür (`sonGirilenler`).
+                final recentAssets = sonGirilenler(hareketler.aktif);
 
                 // Boşsa hiçbir şey çizme: kendi defterinde CTA ZATEN özetin
                 // hemen altında (_EmptyPortfolioCta); ortak görünümünde
@@ -1240,6 +1357,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
     required String baslik,
     required String mesaj,
     required String eylem,
+    Future<void> Function()? islem,
   }) async {
     return showSandikConfirm(
       context: context,
@@ -1247,6 +1365,7 @@ class _SignalsBottomSheet extends ConsumerWidget {
       message: mesaj,
       confirmLabel: eylem,
       destructive: true,
+      islem: islem,
     );
   }
 
@@ -1310,7 +1429,11 @@ class _SignalsBottomSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final signals = ref.watch(signalProvider).valueOrNull ?? const [];
+    // Başlangıç'ta sinyal satırı yok; zil yine alarm ve genel bildirimlerin
+    // kutusu (zil her seviyede görünür, bkz. üst çubuk).
+    final signals = ref.watch(zilSinyalleriGosterProvider)
+        ? (ref.watch(signalProvider).valueOrNull ?? const [])
+        : const <SignalAlert>[];
     // Fiyat alarmları AYRI tablodan gelir (0065) ve burada tek zaman
     // akışında harmanlanır — ayrılık veri modelinde, birlik sunumda.
     final alarmlar =
@@ -1419,7 +1542,12 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         // Sheet ARTIK HEMEN KAPANMIYOR: eskiden `Navigator.pop`
                         // silme işleminin sonucunu beklemeden çağrılıyordu ve
                         // hata olsa bile kullanıcı temizlenmiş sanıyordu.
+                        //
+                        // İstek onay düğmesinin İÇİNDE koşar (2026-10-08,
+                        // tek yükleniyor davranışı): diyalog göstergeyle
+                        // açık kalır, iş bitince kapanır; hata yolu aynı.
                         onTap: () async {
+                          var temizlendi = false;
                           final onay = await _onayAl(
                             context,
                             baslik: context.l10n.clearAllLower,
@@ -1430,14 +1558,17 @@ class _SignalsBottomSheet extends ConsumerWidget {
                             // "sildim ama duruyor" hissi doğuyordu.
                             mesaj: context.l10n.clearAllSignalsBody(active.length),
                             eylem: context.l10n.clearVerb,
+                            islem: () async {
+                              try {
+                                await onDismissAll();
+                                temizlendi = true;
+                              } catch (_) {
+                                if (context.mounted) _hataGoster(context);
+                              }
+                            },
                           );
-                          if (!onay) return;
-                          try {
-                            await onDismissAll();
-                            if (context.mounted) Navigator.pop(context);
-                          } catch (_) {
-                            if (context.mounted) _hataGoster(context);
-                          }
+                          if (!onay || !temizlendi) return;
+                          if (context.mounted) Navigator.pop(context);
                         },
                         child: Text(
                           context.l10n.clearAllUpper,
@@ -1502,7 +1633,12 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                         decoration: TextDecoration.none),
                                   ),
                                   const Spacer(),
-                                  SandikTappable(
+                                  // SandikAsyncTap: "hepsini sil" yolunda
+                                  // onay diyaloğu yok (kapsam sorusu onay
+                                  // yerine geçer), istek bu düğmede
+                                  // göstergeli koşar; ikinci dokunuş ikinci
+                                  // diyalog/istek açmaz.
+                                  SandikAsyncTap(
                                     semanticLabel:
                                         context.l10n.deleteHistoryCount(history.length),
                                     onTap: () async {
@@ -1519,26 +1655,31 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                             );
                                       if (hepsiniSil == null) return;
                                       if (!context.mounted) return;
-                                      if (!hepsiniSil) {
-                                        final onay = await _onayAl(
-                                          context,
-                                          baslik: context.l10n.deleteHistoryTitle,
-                                          mesaj: context.l10n.deleteHistoryBody(history.length),
-                                          eylem: context.l10n.permanentDeleteUpper,
-                                        );
-                                        if (!onay) return;
-                                      }
-                                      try {
-                                        if (hepsiniSil) {
-                                          await onDeleteAll();
-                                        } else {
-                                          await onDeleteHistory();
-                                        }
-                                      } catch (_) {
-                                        if (context.mounted) {
-                                          _hataGoster(context);
+                                      Future<void> sil() async {
+                                        try {
+                                          if (hepsiniSil) {
+                                            await onDeleteAll();
+                                          } else {
+                                            await onDeleteHistory();
+                                          }
+                                        } catch (_) {
+                                          if (context.mounted) {
+                                            _hataGoster(context);
+                                          }
                                         }
                                       }
+
+                                      if (hepsiniSil) return sil();
+                                      // Yalnız geçmiş: silme onay düğmesinin
+                                      // içinde (diyalog göstergeyle açık
+                                      // kalır, iş bitince kapanır).
+                                      await _onayAl(
+                                        context,
+                                        baslik: context.l10n.deleteHistoryTitle,
+                                        mesaj: context.l10n.deleteHistoryBody(history.length),
+                                        eylem: context.l10n.permanentDeleteUpper,
+                                        islem: sil,
+                                      );
                                     },
                                     // 44pt dokunma hedefi: metin ~18pt,
                                     // dikey padding ile eşiğe çıkar.
@@ -1697,7 +1838,8 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               )
             else if (onDelete != null)
               IconButton(
@@ -1705,7 +1847,8 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               ),
           ],
         ),
@@ -1768,27 +1911,23 @@ class _BalanceToggleButton extends ConsumerWidget {
 
 // ── Header ikon kutusu ────────────────────────────────────────────────────────
 
-class _HeaderIconButton extends StatelessWidget {
-  final VoidCallback onTap;
+/// Üst çubuk ikon kutusu (44×44 çip). Dokunma sarmalayanda
+/// ([SandikAsyncTap]) — yenile düğmesi isteği beklediği için.
+class _HeaderIconKutusu extends StatelessWidget {
   final Widget child;
-  final String semanticLabel;
-  const _HeaderIconButton({
-    required this.onTap,
-    required this.child,
-    required this.semanticLabel,
-  });
+
+  /// `true` → kutu [SandikAsyncTap.zemin]'de (yenile düğmesi): istek
+  /// sürerken kutu yerinde kalır, yalnız ikon göstergeye yer açar.
+  final bool kutusuz;
+  const _HeaderIconKutusu({required this.child, this.kutusuz = false});
 
   @override
   Widget build(BuildContext context) {
-    return SandikTappable(
-      onTap: onTap,
-      semanticLabel: semanticLabel,
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: context.chip(selected: false),
-        child: Center(child: child),
-      ),
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: kutusuz ? null : context.chip(selected: false),
+      child: Center(child: child),
     );
   }
 }
@@ -1808,7 +1947,9 @@ class _SignalBadgeButton extends ConsumerWidget {
     final sonGorulenMs = ref.watch(bildirimSonGorulenProvider);
     final count = yeniBildirimSayisi(
       bildirimAkisi(
-        ref.watch(activeSignalsProvider),
+        ref.watch(zilSinyalleriGosterProvider)
+            ? ref.watch(activeSignalsProvider)
+            : const [],
         ref.watch(activePriceAlertNotificationsProvider),
         ref.watch(activeAppNotificationsProvider),
       ),
@@ -1871,91 +2012,37 @@ class _SignalBadgeButton extends ConsumerWidget {
   }
 }
 
-/// Boş portföy çağrısı. ("Bu türde varlık yok" dili ana sayfadaki tür
-/// filtresiyle birlikte kalktı, 2026-09-28.)
+/// Boş portföy çağrısı: "Canlı fiyat vitrini" ([IlkVarlikVitrini]).
+///
+/// 2026-10-04 (sadeleştirme 2, bayrak `ilk_varlik_kolay`): kumbara,
+/// "Henüz varlık eklenmemiş", "İlk varlığını ekle" düğmesi ve "Ekstreden
+/// yapıştır" bağlantısı vitrine bıraktı — bilgiyi vitrin taşıyor, ekstre
+/// yolu vitrinin alt bağlantısında. Bayrak 2026-10-05'te kalktı; eski ekran
+/// silindi. ("Bu türde varlık yok" dili ana sayfadaki tür filtresiyle
+/// birlikte kalktı, 2026-09-28.)
 class _EmptyPortfolioCta extends StatelessWidget {
   const _EmptyPortfolioCta();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(Icons.savings_outlined, color: context.c.text36, size: 48),
-        const SizedBox(height: SandikSpace.md),
-        Text(
-          context.l10n.noAssetsYet,
-          style: context.t.titleLarge?.copyWith(color: context.c.text90),
+    // Rotalar eski CTA'nınkiyle aynı: ön seçimli form, ön seçimsiz form,
+    // ekstre içe aktarma.
+    return TourAnchor(
+      target: TourTarget.ilkVarlikVitrini,
+      child: IlkVarlikVitrini(
+        onSec: (IlkVarlikSecimi s) => pushGuarded(
+          context,
+          adaptiveRoute<void>(builder: (_) => AddAssetScreen(hizliSecim: s)),
         ),
-        const SizedBox(height: SandikSpace.sm),
-        Text(
-          context.l10n.noAssetsYetHint,
-          textAlign: TextAlign.center,
-          style: context.t.bodyMedium?.copyWith(color: context.c.text36),
+        onDiger: () => pushGuarded(
+          context,
+          adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
         ),
-        const SizedBox(height: SandikSpace.lg),
-        SandikTappable(
-          haptic: SandikHaptic.medium,
-          semanticLabel: context.l10n.addAsset,
-          onTap: () => pushGuarded(
-            context,
-            adaptiveRoute<void>(builder: (_) => const AddAssetScreen()),
-          ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-            decoration: BoxDecoration(
-              color: context.c.amberFill.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border:
-                  Border.all(color: context.c.amberFill.withValues(alpha: 0.5)),
-            ),
-            // 28pt yatay padding + ikon + etiket dar ekranda
-            // sığmıyor. FittedBox içeriği kırpmadan küçültür;
-            // düğme metni her cihazda tam okunur.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, color: context.c.amberText, size: 20),
-                  const SizedBox(width: SandikSpace.sm),
-                  Text(
-                    context.l10n.addFirstAsset,
-                    style: context.t.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: context.c.amberText),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        onEkstre: () => pushGuarded(
+          context,
+          adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
         ),
-        // İkinci yol: ekstre yapıştır (2026-09-20). Portföyünü ilk kez kuran
-        // kullanıcı için en hızlı yol bu; eskiden yalnızca + › Toplu › Yapıştır
-        // ile üç dokunuş derindeydi ve ilk 10 dakikada bulunmuyordu. (Eskiden
-        // `!filtered` koşuluyla gizlenirdi; tür filtresi 2026-09-28'de
-        // kalktı, bu widget artık yalnızca gerçekten boş portföyde çizilir.)
-        ...[
-          const SizedBox(height: SandikSpace.md),
-          TextButton.icon(
-            onPressed: () => pushGuarded(
-              context,
-              adaptiveRoute<bool>(builder: (_) => const CsvImportScreen()),
-            ),
-            icon: Icon(Icons.content_paste_go_rounded,
-                size: 18, color: context.c.text58),
-            label: Text(
-              context.l10n.pasteFromStatement,
-              style: context.t.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600, color: context.c.text58),
-            ),
-          ),
-          Text(
-            context.l10n.emptyPasteHint,
-            textAlign: TextAlign.center,
-            style: context.t.bodySmall?.copyWith(color: context.c.text36),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }

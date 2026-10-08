@@ -89,7 +89,7 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   /// sanıyordu (kod incelemesi, 2026-09-24).
   ({double first, double last})? _endpoints(
       Map<int, double>? series, List<Asset> lotlar) {
-    if (series == null || series.isEmpty) return null;
+    if (series == null || series.isEmpty) return _pencereIciAlim(lotlar);
     final ts = series.keys.toList()..sort();
     double first = 0;
     for (final k in ts) {
@@ -100,6 +100,26 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     final last = widget.canliDeger?.call(lotlar) ?? series[ts.last]!;
     if (first <= 0 && last <= 0) return null;
     return (first: first, last: last);
+  }
+
+  /// Serisi OLMAYAN ama bütün lotları pencere başından SONRA girmiş küme:
+  /// başta elde yoktu (0), sonu canlı değer.
+  ///
+  /// ## Neden (2026-10-02 müşteri testi)
+  /// Haftalık katmanda (6A/1Y/5Y) son slot haftanın başına normalize edilir;
+  /// bu hafta alınan varlığın o slotta değeri yoktur, serisi boş gelir ve
+  /// satır SESSİZCE atlanıyordu (1Y dökümünde ₺237K'lık kripto yoktu, Σ
+  /// satır üst kartı tutmuyordu). Koşul dar tutulur: lotlardan biri bile
+  /// pencere başından önceyse (elde tutuluyordu) boş seri bir ölçüm
+  /// eksikliğidir, uydurma "0 → canlı" satırı yazılmaz. Simülasyonda akış
+  /// sayılmadığı için hiç devreye girmez.
+  ({double first, double last})? _pencereIciAlim(List<Asset> lotlar) {
+    if (widget.simulate || lotlar.isEmpty) return null;
+    final canli = widget.canliDeger?.call(lotlar);
+    if (canli == null || canli <= 0) return null;
+    final hepsiSonra = lotlar
+        .every((a) => a.addedDate.millisecondsSinceEpoch > widget.tabanMs);
+    return hepsiSonra ? (first: 0, last: canli) : null;
   }
 
   /// Dönem içi net para akışı — verilen lot'lar için.
@@ -126,7 +146,14 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
   /// aynı); satırlar da öyle, yoksa Σ satır üst rakamı tutmaz. Sıralama da
   /// bu sayıya göre — ham değişime göre sıralamak gün içinde "en çok
   /// kazandıran üstte" sözünü bozuyordu (kod incelemesi, 2026-09-24).
-  bool get _net => widget.intraday && !widget.simulate;
+  /// Satır her dönemde PİYASANIN KATTIĞINI gösterir (müşteri testi,
+  /// 2026-10-01). Eskiden yalnızca gün içinde arındırılıyor, diğer
+  /// dönemlerde ham birikim değişimi yazılıyordu: 1Y'de "Altın +%364,52",
+  /// "Hisse −%47,21" — altına ₺596K yatırılmış, hisseden ₺265K çıkılmıştı;
+  /// birikimci bunu "altın kazandırdı, hisse kaybettirdi" diye okudu. Şimdi
+  /// tutar ve yüzde piyasanın kattığı; alım/satış ve birikim değişimi alt
+  /// satırda yazılı durur. Simülasyonda akış yok, iki sayı aynı.
+  bool get _net => !widget.simulate;
   double _pnl(_BreakdownRow r) => r.change - (_net ? r.flow : 0);
 
   /// Tür satırları + her türün altındaki ürün satırları.
@@ -160,7 +187,14 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       }
     }
 
-    for (final e in widget.breakdown.byType.entries) {
+    // Serisi olmayan türler de dolaşılır (bkz. [_pencereIciAlim]); sıra:
+    // önce serisi olanlar, sonra yalnız defterde olanlar.
+    final turler = <AssetType>{
+      ...widget.breakdown.byType.keys,
+      ...turLotlari.keys,
+    };
+    for (final tur in turler) {
+      final e = MapEntry(tur, widget.breakdown.byType[tur]);
       final turLot = turLotlari[e.key] ?? const <Asset>[];
       final ep = _endpoints(e.value, turLot);
       if (ep == null) continue;
@@ -178,8 +212,14 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
 
       // Ürün satırları — aynı türe ait pozisyonlar.
       final kids = <_BreakdownRow>[];
-      for (final p in widget.breakdown.byPosition.entries) {
-        if (widget.breakdown.positionType[p.key] != e.key) continue;
+      final pozisyonlar = <String>{
+        for (final p in widget.breakdown.byPosition.keys)
+          if (widget.breakdown.positionType[p] == e.key) p,
+        for (final p in pozisyonLotlari.entries)
+          if (p.value.isNotEmpty && p.value.first.type == e.key) p.key,
+      };
+      for (final pk in pozisyonlar) {
+        final p = MapEntry(pk, widget.breakdown.byPosition[pk]);
         final pozLot = pozisyonLotlari[p.key] ?? const <Asset>[];
         final pep = _endpoints(p.value, pozLot);
         if (pep == null) continue;
@@ -486,20 +526,16 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
     // satıştı, piyasa kaybı değil. Akış varken birikim "artış/azalış" diye
     // okunur. Akış yoksa (ya da gün içinde arındırılmış rakamda) değişim
     // zaten piyasa etkisidir ve "kazanç/kayıp" doğrudur.
-    final birikimli = !_net && !widget.simulate && flow.abs() > 0.5;
+    // Satır artık her dönemde arındırılmış ([_net]); "kazanç/kayıp" doğru.
     final tutar = tryFmt.format(pnl.abs());
     final semanticLabel = [
       label,
       if (isFlat)
         context.l10n.noChangeLower
       else ...[
-        birikimli
-            ? (pnl >= 0
-                ? context.l10n.breakdownUpAmount(tutar)
-                : context.l10n.breakdownDownAmount(tutar))
-            : (pnl >= 0
-                ? context.l10n.gainAmount(tutar)
-                : context.l10n.lossAmount(tutar)),
+        pnl >= 0
+            ? context.l10n.gainAmount(tutar)
+            : context.l10n.lossAmount(tutar),
         if (pct != null) fmtPct(pct.abs(), digits: 2),
       ],
       if (!widget.simulate && flow.abs() > 0.5)
@@ -528,6 +564,13 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
       ),
     );
   }
+
+  /// "+₺619.503" / "−₺174.590" — birikim değişimi işaretli yazılır.
+  /// İşaret ile tutar arasında KELİME BİRLEŞTİRİCİ (U+2060, görünmez):
+  /// dar sütunda satır "birikim −" ile bitip "₺175.809" alt satıra
+  /// düşüyordu (2026-10-02 müşteri testi) — eksi sayıdan kopunca okunmaz.
+  static String _isaretli(ParaBicimi fmt, double v) =>
+      '${v >= 0 ? '+' : '−'}\u2060${fmt.format(v.abs())}';
 
   /// Satırın görsel gövdesi — semantik sarmalayıcıdan ayrı tutulur ki
   /// `ExcludeSemantics` altındaki ağaç sade kalsın.
@@ -566,14 +609,23 @@ class _TypeBreakdownCardState extends State<_TypeBreakdownCard> {
                     ? context.t.bodySmall?.copyWith(color: context.c.text58)
                     : context.t.bodyMedium?.copyWith(color: context.c.text90),
               ),
-              // Gerçek modda dönem içi işlem varsa belirt. Simülasyonda bu
-              // satır hiç çıkmaz — orada miktar sabit sayılır.
+              // Gerçek modda dönem içi işlem varsa belirt: akış + birikim
+              // değişimi ("Alım +₺595.828 · birikim +₺619.503"). Üstteki
+              // sayı piyasanın kattığı; kullanıcı ikisini yan yana görür.
+              // Simülasyonda bu satır hiç çıkmaz — orada miktar sabit.
               if (!widget.simulate && flow.abs() > 0.5)
                 Text(
                   flow > 0
-                      ? context.l10n.flowBuyUpper(tryFmt.format(flow))
-                      : context.l10n.flowSellUpper(tryFmt.format(flow.abs())),
-                  maxLines: 1,
+                      // Şablondaki "+{flow}" / "−{flow}" de bölünmesin.
+                      ? context.l10n.flowBuyBalance(
+                          '\u2060${tryFmt.format(flow)}',
+                          _isaretli(tryFmt, pnl + flow))
+                      : context.l10n.flowSellBalance(
+                          '\u2060${tryFmt.format(flow.abs())}',
+                          _isaretli(tryFmt, pnl + flow)),
+                  // İki satır: "Satış −₺265.048 · birikim −₺174.590" dar
+                  // sütuna sığmıyor, kesilince birikim okunmuyordu.
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.bodySmall
                       ?.copyWith(color: context.c.text36, fontSize: 11),

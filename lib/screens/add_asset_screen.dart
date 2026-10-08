@@ -4,14 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
+import '../models/eurobond.dart';
+import '../models/ilk_varlik_secimi.dart';
 import '../models/altin_kisayollari.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/add_asset_form_provider.dart';
 import '../providers/bulk_cart_provider.dart';
+import '../providers/eurobond_provider.dart';
 import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/tefas_service.dart';
@@ -19,19 +23,25 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_acilir.dart';
 import '../services/crash_reporter.dart';
+import '../services/remote_config_service.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
+import '../widgets/sandik_segment.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
+import 'csv_import_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
 import 'add_asset/bes_formu.dart';
 import 'add_asset/mevduat_formu.dart';
+import 'add_asset/tur_secici_izgara.dart';
+import '../models/tur_secici_duzeni.dart';
 import '../widgets/sozlesme_formu_ortak.dart';
 
 const _addAssetUuid = Uuid();
@@ -97,6 +107,12 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   final double? prefillPrice;
   final DateTime? prefillDate;
 
+  /// Boş ana ekrandaki "Ne biriktiriyorsun?" seçimi (2026-10-04, ilk
+  /// varlık kolaylığı). Tür her zaman, gram altın / dolar / euro'da varlık
+  /// da seçili açılır; kullanıcıya yalnız miktar kalır. Düzenleme ve sepet
+  /// değerleri yine kazanır (prefill kuralı).
+  final IlkVarlikSecimi? hizliSecim;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
@@ -107,6 +123,7 @@ class AddAssetScreen extends ConsumerStatefulWidget {
     this.prefillType,
     this.prefillPrice,
     this.prefillDate,
+    this.hizliSecim,
   });
 
   @override
@@ -130,7 +147,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     editingAsset: widget.editingAsset,
     cartInitial: widget.cartInitial,
     prefillTicker: widget.prefillTicker,
-    prefillType: widget.prefillType,
+    prefillType: widget.prefillType ?? widget.hizliSecim?.tur,
     prefillDate: widget.prefillDate,
   );
   AddAssetFormState get _s => ref.read(addAssetFormProvider(_args));
@@ -197,7 +214,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final initName = a?.name ?? c?.name ?? widget.prefillName ?? '';
     final initTicker = a?.ticker ?? c?.ticker ?? widget.prefillTicker ?? '';
     final initQty = a?.quantity ?? c?.quantity ?? 0;
-    final initPrice = a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
+    // Eurobondda kayıtlı fiyat birim değerdir (kirli/100); alan TEMİZ %
+    // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
+    // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
+    final eurobondKaydi = (a?.type ?? c?.type) == AssetType.eurobond;
+    final initPrice = eurobondKaydi
+        ? 0.0
+        : a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);
@@ -206,9 +229,79 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     _notes = TextEditingController(text: a?.notes ?? '');
     _commission = TextEditingController(
         text: (a?.commission ?? 0) > 0 ? _fmt(a!.commission) : '');
-    // Form açılışında preview'ı bir kere tetikle.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPricePreview());
+    // Form açılışında preview'ı bir kere tetikle. Hızlı seçim AYNI karede ve
+    // önce: seçim geçişleri (`selectGold`, `selectDoviz`) sağlayıcıya yazar,
+    // `initState` içinde yazmak kurulum sırasında değişiklik hatası verir.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _hizliSecimiUygula();
+      _refreshPricePreview();
+      _eurobondYukle();
+    });
   }
+
+  /// Düzenlenen / sepetteki eurobond lotunun sözleşmesini katalogdan yükler
+  /// ve kayıtlı birim değeri temiz %'ye çevirip fiyat alanına yazar.
+  /// Yüklenemezse kimlik uyarısı kaydı durdurur (gerekçe
+  /// `AddAssetFormState.kimlikEksigi`); kullanıcı seçiciden yeniden seçer.
+  Future<void> _eurobondYukle() async {
+    if (_type != AssetType.eurobond) return;
+    final isin = eurobondIsin(_ticker.text);
+    if (isin == null) return;
+    final birim =
+        widget.editingAsset?.purchasePrice ?? widget.cartInitial?.price;
+    try {
+      final r = await ref.read(eurobondProvider(isin).future);
+      if (!mounted || r == null || _type != AssetType.eurobond) return;
+      _yaz(_n.selectEurobond(r.$1, r.$2,
+          priceEmpty: _price.text.isEmpty, duzenlemeBirimDegeri: birim));
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'add_asset.eurobond_yukle');
+    }
+  }
+
+  /// [AddAssetScreen.hizliSecim]'i formun KENDİ seçim geçişleriyle uygular:
+  /// çipe dokunmuş gibi. Ayrı bir ön doldurma yolu yazılmadı; altın birimi
+  /// (gram), döviz para birimi (TRY karşılığı) ve elle fiyat bayrağı o
+  /// geçişlerin kuralı.
+  void _hizliSecimiUygula() {
+    final s = widget.hizliSecim;
+    if (s == null || _isEditing || widget.cartInitial != null) return;
+    if (s.altinAltTuru case final g?) {
+      _yaz(_n.selectGold(g));
+    } else if (s.dovizEtiketi case final etiket?) {
+      _yaz(_n.selectDoviz(dovizOptFor(etiket)));
+    }
+  }
+
+  /// "Ekstreden aktar": içe aktarma sepeti doldurur, onay Toplu Ekle'de.
+  /// Toplu ekleme bitince bu form da kapanır (uygulama çubuğundaki Toplu
+  /// Ekle ile aynı kural: arkada boş formda mahsur kalınmasın).
+  Future<void> _ekstredenAktar() async {
+    final aktarildi = await pushGuarded<bool>(
+      context,
+      adaptiveRoute(builder: (_) => const CsvImportScreen()),
+    );
+    if (aktarildi != true || !mounted) return;
+    final eklendi = await pushGuarded<bool>(
+      context,
+      adaptiveRoute(builder: (_) => const BulkAddAssetScreen()),
+    );
+    if (eklendi == true && mounted) Navigator.of(context).pop(true);
+  }
+
+  /// Sadeleştirme 2 (2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te
+  /// kalktı, davranış kalıcı): yeni kayıtta iki hızlı yol
+  /// görünür düğme, komisyon + not "Ayrıntı ekle" altında. Düzenleme ve
+  /// sepet modunda form eskisi gibi: orada kullanıcı zaten bir kaydın
+  /// ayrıntısındadır.
+  /// Tur hedefi `topluEkle` TEK yerde kurulur: yeni kayıtta formdaki
+  /// "Ekstreden aktar" düğmesinde, düzenleme/sepette uygulama çubuğundaki
+  /// Toplu Ekle ikonunda.
+  Widget _topluCapa(Widget w) =>
+      _kolay ? w : TourAnchor(target: TourTarget.topluEkle, child: w);
+
+  bool get _kolay => !_isEditing && !widget.cartMode;
 
   @override
   void dispose() {
@@ -319,9 +412,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         actions: [
           if (!_isEditing && !widget.cartMode) ...[
-            TourAnchor(
-              target: TourTarget.topluEkle,
-              child: IconButton(
+            _topluCapa(
+              IconButton(
               tooltip: context.l10n.bulkAdd,
               icon: Icon(Icons.playlist_add_rounded, color: context.c.text58),
               // Toplu ekleme başarıyla bittiğinde `true` döner; o zaman bu
@@ -379,12 +471,20 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (_kolay) ...[
+                      _ikiYol(),
+                      const SizedBox(height: SandikSpace.lgs),
+                    ],
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
-                    _typeSelector(cs),
+                    if (_izgara) _turIzgarasi() else _typeSelector(cs),
                     const SizedBox(height: 22),
 
-                    if (_type.sozlesmeli) ...[
+                    // Izgara açıkken form gövdesi yok: önce "ne ekliyorsun"
+                    // (gerekçe `AddAssetFormState.turIzgarasiAcik`).
+                    if (_s.turIzgarasiAcik)
+                      const SizedBox.shrink()
+                    else if (_type.sozlesmeli) ...[
                       if (_sozlesmeFormuAcik)
                         _type == AssetType.mevduat
                             ? MevduatFormu(key: _mevduatFormu)
@@ -416,6 +516,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                         Expanded(child: _priceBlock(cs)),
                       ],
                     ),
+                    _eurobondFaizSatiri(),
                     const SizedBox(height: 10),
                     _quantityPresetsRow(cs),
                     const SizedBox(height: 20),
@@ -432,17 +533,25 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     const SizedBox(height: 16),
 
                     // ── Komisyon / masraf ────────────────────────────────
-                    _commissionBlock(cs),
-                    const SizedBox(height: 16),
+                    // Bayrakta "Ayrıntı ekle" katlanmasının içinde: ilk
+                    // varlığı giren kişi komisyonu çoğu zaman bilmez, boş
+                    // bırakılan alan 0 sayılır (değişmedi).
+                    if (!_kolay) ...[
+                      _commissionBlock(cs),
+                      const SizedBox(height: 16),
+                    ],
 
                     // ── Notlar (collapsible) ─────────────────────────────
-                    _notesCollapsible(cs),
+                    _notesCollapsible(cs, komisyonDahil: _kolay),
                     ],
                   ],
                   ),
                 ),
               ),
-              if (!_type.sozlesmeli || _sozlesmeFormuAcik)
+              // Izgara açıkken "Ekle" de yok: görünmeyen alanların uyarısını
+              // gösteremeyen bir kaydet düğmesi kafa karıştırırdı.
+              if ((!_type.sozlesmeli || _sozlesmeFormuAcik) &&
+                  !_s.turIzgarasiAcik)
                 _stickyBottomBar(saveLabel),
             ],
           ),
@@ -460,6 +569,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_isDoviz) return context.l10n.identityCurrency;
     if (_type == AssetType.emtia) return context.l10n.identityCommodity;
     if (_type == AssetType.kripto) return context.l10n.identityCrypto;
+    if (_type == AssetType.eurobond) return context.l10n.identityEurobond;
     return context.l10n.assetFallbackName;
   }
 
@@ -504,6 +614,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         KimlikEksigi.altin => context.l10n.pickGoldPrompt,
         KimlikEksigi.doviz => context.l10n.pickCurrencyPrompt,
         KimlikEksigi.kripto => context.l10n.pickCryptoPrompt,
+        KimlikEksigi.eurobond => context.l10n.pickEurobondPrompt,
       };
 
   Widget _kimlikAlani(ColorScheme cs, {required bool hata}) {
@@ -512,6 +623,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_type == AssetType.altin) return _goldChipGrid(cs, hata: hata);
     if (_isDoviz) return _dovizSelector(cs);
     if (_type == AssetType.kripto) return _kriptoSelectorField(cs, hata: hata);
+    if (_type == AssetType.eurobond) {
+      return _eurobondSelectorField(cs, hata: hata);
+    }
     // Emtia / Diğer — manuel ad + opsiyonel sembol
     return Column(
       children: [
@@ -540,10 +654,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   //
   // BIST100 seçilirse subCategory = "BIST 100 Hisseleri" yazılır (data korunur).
   // Manuel sembol → subCategory = "Diğer Hisseler".
+  //
+  // ABD (bayrak `abd_hisse`, 2026-10-08): üstte "BIST | ABD" pazar seçimi;
+  // ABD'de seçici `abdHisseleri` kataloğunu açar, serbest sembol Yahoo
+  // biçimine çevrilir (`abdSembolu`). Bayrak kapalıyken segment hiç
+  // kurulmaz ve blok birebir eski.
   Widget _stockIdentityBlock(ColorScheme cs, {required bool hata}) {
+    final abd = _s.isAbd;
     return Column(
       children: [
-        _bist100SelectorField(cs, hata: hata),
+        if (_s.abdAcik) ...[
+          _hissePazariSecici(),
+          const SizedBox(height: SandikSpace.sm2),
+        ],
+        if (abd)
+          _abdSelectorField(cs, hata: hata)
+        else
+          _bist100SelectorField(cs, hata: hata),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -572,7 +699,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         const SizedBox(height: 8),
         _brandInput(
           controller: _ticker,
-          hint: context.l10n.symbolHint,
+          hint: abd ? context.l10n.usSymbolHint : context.l10n.symbolHint,
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
           onChanged: (v) {
@@ -654,13 +781,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showGoldPicker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _GoldPicker(
         selected: _seciliAltin,
         birim: _altinBirimi,
@@ -682,7 +809,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       child: SandikBasma(
         onTap: () => _selectGold(g),
         child: AnimatedContainer(
-          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(
               horizontal: SandikSpace.md2, vertical: SandikSpace.sm2),
@@ -710,7 +837,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             children: [
               Icon(Icons.star_rounded,
                   size: 14,
-                  color: selected ? AssetType.altin.color : context.c.text58),
+                  color: selected
+                      ? AssetType.altin.onSurface(context)
+                      : context.c.text58),
               const SizedBox(width: SandikSpace.xs2),
               Text(g.label,
                   style: context.t.bodyMedium?.copyWith(
@@ -753,32 +882,71 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         // Bu blok "Miktar" ile aynı Row'da `Expanded` içinde duruyor, yani
         // ekranın ~yarısı kadar yer var. "Alış Fiyatı · opsiyonel" 375pt'de
         // 138px taşıyordu — NORMAL metin boyutunda, büyük fontta değil.
+        // Eurobond: bankanın kote ettiği TEMİZ fiyat, nominalin yüzdesi
+        // ("98,75"). Zorunlu — tarihli kapanış önizlemesi yok (gerekçe
+        // `AddAssetFormState.resolveTicker`); seçimde piyasa fiyatı ön
+        // doldurulur. Kayıtta kirli birim değere çevrilir.
         Row(
           children: [
-            Flexible(child: _fieldLabel(context.l10n.purchasePrice)),
-            const SizedBox(width: 6),
             Flexible(
-              child: Text(context.l10n.optional,
-                  style: context.t.bodySmall?.copyWith(color: context.c.text36),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ),
+                child: _fieldLabel(_s.isEurobond
+                    ? context.l10n.eurobondCleanPrice
+                    : context.l10n.purchasePrice)),
+            if (!_s.isEurobond) ...[
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(context.l10n.optional,
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text36),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 8),
         _brandInput(
           controller: _price,
-          hint: context.l10n.auto,
+          hint: _s.isEurobond ? '98,75' : context.l10n.auto,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [_DecimalFormatter()],
-          validator: (v) =>
-              v != null && v.trim().isNotEmpty && _parse(v) == null
-                  ? context.l10n.invalid
-                  : null,
+          validator: (v) {
+            if (_s.isEurobond && (_parse(v ?? '') ?? 0) <= 0) {
+              return context.l10n.eurobondCleanPriceRequired;
+            }
+            return v != null && v.trim().isNotEmpty && _parse(v) == null
+                ? context.l10n.invalid
+                : null;
+          },
           onChanged: (_) => _schedulePricePreview(),
           suffix: _isDoviz ? null : _inlineCurrencyPicker(),
         ),
       ],
+    );
+  }
+
+  /// Fiyat alanının altındaki "İşlemiş faiz · Ödenen" satırı (eurobond).
+  ///
+  /// Kullanıcının cebinden çıkan para temiz fiyat DEĞİL, kirli fiyattır;
+  /// bunu göstermemek maliyeti eksik yazmak olur (bkz. `eurobond.dart`).
+  /// Hesap `AddAssetFormState.eurobondBirimFiyati`'nda; burada yalnız yazılır.
+  /// Sözleşme seçilmediyse satır yok.
+  Widget _eurobondFaizSatiri() {
+    final s = _s.eurobondSozlesmesi;
+    if (!_s.isEurobond || s == null) return const SizedBox.shrink();
+    final faiz = fmtPct(s.islemisFaiz(_addedDate), digits: 3);
+    final qty = _parse(_quantity.text);
+    final birim = _s.eurobondBirimFiyati(_parse(_price.text));
+    final metin = qty != null && qty > 0 && birim != null
+        ? context.l10n
+            .eurobondAccruedLine(faiz, '${fmtNum(qty * birim)} $_currency')
+        : context.l10n.eurobondAccruedOnly(faiz);
+    return Padding(
+      padding: const EdgeInsets.only(top: SandikSpace.sm),
+      child: Text(
+        metin,
+        style: context.t.bodySmall?.copyWith(color: context.c.text58),
+      ),
     );
   }
 
@@ -831,6 +999,26 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   Widget _inlineCurrencyPicker() {
+    // ABD hissesi USD'ye kilitli (`AddAssetFormNotifier.setCurrency`):
+    // açılır liste yerine sabit "USD" — seçenek sunup reddetmek kafa
+    // karıştırırdı.
+    // Eurobond da tahvilin kendi para birimine kilitli (aynı gerekçe).
+    if (_s.isEurobond) {
+      return Tooltip(
+        message: context.l10n.eurobondCurrencyLocked,
+        child: Text(_currency,
+            style: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w700)),
+      );
+    }
+    if (_s.isAbd) {
+      return Tooltip(
+        message: context.l10n.usStockCurrencyLocked,
+        child: Text('USD',
+            style: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w700)),
+      );
+    }
     // `DropdownButton` içeride kendi `Row`'unu kurar ve o Row daralamaz;
     // 320pt × 3.0× ölçekte 10px taşıyordu. İçerik üç harflik bir para
     // birimi kodu ("TRY") olduğu için ölçeği sınırlamak burada güvenli:
@@ -848,7 +1036,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           style: context.t.titleSmall?.copyWith(
               color: context.c.amberText, fontWeight: FontWeight.w700),
           icon:
-              Icon(Icons.arrow_drop_down, color: context.c.amberText, size: 18),
+              Icon(Icons.arrow_drop_down_rounded, color: context.c.amberText, size: 18),
           items: _currencies
               .map((c) => DropdownMenuItem(
                     value: c,
@@ -864,19 +1052,20 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   // ── Toplam maliyet hero card ───────────────────────────────────────────────
   Widget _totalHero(ColorScheme cs) {
     final qty = _parse(_quantity.text);
-    final price = _parse(_price.text);
-    final isPriceEmpty =
-        _price.text.trim().isEmpty || (price != null && price == 0);
+    // Eurobond: alan temiz %; toplam nominal × kirli birim değerdir. Fiyat
+    // zorunlu olduğundan "boş fiyat otomatik atanır" kartı gösterilmez —
+    // çevrilemeyen fiyatta ipucu kartına düşülür.
+    final eurobond = _s.isEurobond;
+    final price = eurobond
+        ? _s.eurobondBirimFiyati(_parse(_price.text))
+        : _parse(_price.text);
+    final isPriceEmpty = !eurobond &&
+        (_price.text.trim().isEmpty || (price != null && price == 0));
 
     // Miktar yoksa hiçbir şey gösterme
-    if (qty == null || qty <= 0) {
-      return Container(
+    if (qty == null || qty <= 0 || (eurobond && price == null)) {
+      return SandikCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: Row(
           children: [
             Icon(Icons.calculate_outlined, color: context.c.text36, size: 18),
@@ -898,8 +1087,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           _addedDate.month == now.month &&
           _addedDate.day == now.day;
       final msg = isToday
-          ? 'Alış fiyatı boş — kaydederken güncel piyasa fiyatı otomatik atanacak.'
-          : 'Alış fiyatı boş — ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
+          ? 'Alış fiyatı boş. Kaydederken güncel piyasa fiyatı otomatik atanacak.'
+          : 'Alış fiyatı boş. ${DateFormat('d MMM yyyy', 'tr_TR').format(_addedDate)} '
               'tarihli kapanış fiyatı otomatik atanacak.';
       return Container(
         padding: const EdgeInsets.all(16),
@@ -933,6 +1122,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     final formatted = _currency == 'TRY'
         ? fmt.format(total)
         : '${qtyFormatter(maxDigits: 2).format(total)} $_currency';
+    final tlKuru = _tlKuru();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
@@ -975,7 +1165,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       letterSpacing: 0.8,
                     )),
                 const SizedBox(height: 4),
-                Text('${_fmt(qty)} × ${_fmt(price)}',
+                Text(
+                    eurobond
+                        ? context.l10n.eurobondTotalBreakdown(
+                            fmtNumFlex(qty, maxDigits: 2),
+                            fmtNum(price * 100, digits: 3))
+                        : '${_fmt(qty)} × ${_fmt(price)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.t.bodySmall
@@ -985,23 +1180,75 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           ),
           const SizedBox(width: SandikSpace.md),
           Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Text(
-                formatted,
-                // Form özeti toplam tutarı — tabular figür, yazarken
-                // zıplamasın.
-                style: context.t.numLarge.copyWith(
-                  fontSize: 22,
-                  color: context.c.gold,
-                  letterSpacing: -0.5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    formatted,
+                    // Form özeti toplam tutarı — tabular figür, yazarken
+                    // zıplamasın.
+                    style: context.t.numLarge.copyWith(
+                      fontSize: 22,
+                      color: context.c.gold,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                 ),
-              ),
+                // Dövizli alımın TL karşılığı: portföy toplamına giren
+                // maliyet budur (aynı kur kuralı, bkz. `tlKarsiligiKuru`).
+                // Kur bilinmiyorsa satır yok — uydurma tutar yazılmaz.
+                if (tlKuru != null)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      context.l10n.totalCostTlEquivalent(
+                        fmtTRY(total * tlKuru, digits: 2),
+                        _currency,
+                        fmtNum(tlKuru, digits: 4),
+                      ),
+                      key: const ValueKey('toplam-tl-karsiligi'),
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Toplam kartındaki TL satırının kuru; TRY'de ya da kur bilinmiyorken
+  /// `null`. Geriye tarihli alımda alım günü kuru sorgulanır.
+  double? _tlKuru() {
+    if (_currency == 'TRY') return null;
+    final p = ref.watch(portfolioProvider).valueOrNull;
+    final canli = switch (_currency.toUpperCase()) {
+      'USD' => p?.usdTry,
+      'EUR' => p?.eurTry,
+      'GBP' => p?.gbpTry,
+      _ => null,
+    };
+    final simdi = DateTime.now();
+    final geriTarihli = dayKey(_addedDate).isBefore(dayKey(simdi));
+    final tarihli = geriTarihli
+        ? ref
+            .watch(alimGunuKuruProvider(
+                (currency: _currency, gun: dayKey(_addedDate))))
+            .valueOrNull
+        : null;
+    return tlKarsiligiKuru(
+      currency: _currency,
+      tarih: _addedDate,
+      canliKur: canli ?? 0,
+      tarihli: tarihli,
+      now: simdi,
     );
   }
 
@@ -1053,7 +1300,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       final islemGunu = haftaSonuKapanisGunu(_addedDate,
           yediGun: _type == AssetType.kripto);
       subtitle = !_previewIsHistorical
-          ? 'Tarihli fiyat bulunamadı — güncel piyasa fiyatı kullanılacak'
+          ? 'Tarihli fiyat bulunamadı, güncel piyasa fiyatı kullanılacak'
           : islemGunu != null
               ? context.l10n.pricePreviewLastTradingClose(
                   DateFormat('d MMM', context.tarihDili).format(islemGunu))
@@ -1062,8 +1309,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       color = context.c.loss.withValues(alpha: 0.8);
       icon = Icons.help_outline_rounded;
       title = 'Fiyat bulunamadı';
-      subtitle = 'İnternet yok ya da bu sembol için veri gelmedi — '
-          'alış fiyatını manuel girmek isteyebilirsin';
+      subtitle = 'İnternet yok ya da bu sembol için veri gelmedi. '
+          'Alış fiyatını elle girebilirsin.';
     }
 
     return Padding(
@@ -1197,14 +1444,60 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  // ── Notlar collapsible ─────────────────────────────────────────────────────
-  Widget _notesCollapsible(ColorScheme cs) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
+  // ── İki hızlı yol (sadeleştirme 2, 2026-10-04) ─────────────────────────────
+  // Hızlı Giriş ("GARAN 500 adet 105 lira") ve ekstre içe aktarma rakiplerden
+  // ayrıştıran iki yol; bugün biri etiketsiz mikrofon ikonu, diğeri Toplu
+  // Ekle'nin içinde. Burada formun en üstünde, adıyla.
+  Widget _ikiYol() {
+    return Row(
+      children: [
+        Expanded(
+          child: _yolDugmesi(
+            ikon: Icons.edit_note_rounded,
+            etiket: context.l10n.addByTyping,
+            onTap: _showQuickEntrySheet,
+          ),
+        ),
+        const SizedBox(width: SandikSpace.sm),
+        Expanded(
+          child: TourAnchor(
+            target: TourTarget.topluEkle,
+            child: _yolDugmesi(
+              ikon: Icons.content_paste_go_rounded,
+              etiket: context.l10n.importFromStatement,
+              onTap: _ekstredenAktar,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _yolDugmesi({
+    required IconData ikon,
+    required String etiket,
+    required VoidCallback onTap,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(ikon, size: 18),
+      // Dar ekranda iki düğme yan yana: metin kırpılmaz, küçülür.
+      label: FittedBox(fit: BoxFit.scaleDown, child: Text(etiket)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: context.c.amberText,
+        side: BorderSide(color: context.c.hairline),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
       ),
+    );
+  }
+
+  // ── Notlar collapsible ─────────────────────────────────────────────────────
+  Widget _notesCollapsible(ColorScheme cs, {bool komisyonDahil = false}) {
+    final doluIcerik = _notes.text.isNotEmpty ||
+        (komisyonDahil && _commission.text.isNotEmpty);
+    return SandikCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           InkWell(
@@ -1220,16 +1513,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   // taşıyordu. Tembel liste bu satırı ekran dışında hiç
                   // kurmadığı için `text_scale_overflow_test` görmüyordu;
                   // form tümüyle kurulunca ortaya çıktı.
-                  Flexible(
-                    child: Text(context.l10n.addNote,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                  //
+                  // Expanded, `Flexible + Spacer` DEĞİL (2026-10-04): ikisi
+                  // eşit pay alıyordu, metin satırın yarısına sıkışıyor ve
+                  // "Ayrıntı ekle (komisyon, not)" 412pt'de kırpılıyordu.
+                  // Kısa "Not ekle"de görünüm aynı; sığmazsa ikinci satıra
+                  // kırılır (metin tam okunur kuralı).
+                  Expanded(
+                    child: Text(
+                        komisyonDahil
+                            ? context.l10n.addDetails
+                            : context.l10n.addNote,
+                        maxLines: 2,
                         style: context.t.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: context.c.text90)),
                   ),
-                  const Spacer(),
-                  if (_notes.text.isNotEmpty && !_notesExpanded)
+                  if (doluIcerik && !_notesExpanded)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: Container(
@@ -1259,12 +1559,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             acik: _notesExpanded,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: TextFormField(
-                controller: _notes,
-                style: context.t.titleMedium?.copyWith(color: context.c.text90),
-                maxLines: 3,
-                onTapOutside: _klavyeyiKapat,
-                decoration: context.inputDecoration(context.l10n.notesHint),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (komisyonDahil) ...[
+                    _commissionBlock(cs),
+                    const SizedBox(height: SandikSpace.smd),
+                  ],
+                  TextFormField(
+                    controller: _notes,
+                    style: context.t.titleMedium
+                        ?.copyWith(color: context.c.text90),
+                    maxLines: 3,
+                    onTapOutside: _klavyeyiKapat,
+                    decoration:
+                        context.inputDecoration(context.l10n.notesHint),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1285,29 +1596,33 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             top: BorderSide(color: context.c.overlay, width: 1),
           ),
         ),
-        child: SizedBox(
-          width: double.infinity,
+        // Tek yükleniyor davranışı (2026-10-08): gösterge ve dokunuş kilidi
+        // SandikAsyncButton'da. `saving` bayrağı KALIR — formu salt okunur
+        // tutar; `mesgul:` ile başarıda ekran kapanırken ve hızlı giriş
+        // partisi sürerken de aynı gösterge döner (bkz. `_save` F14 notu).
+        child: SandikAsyncButton(
           height: 54,
-          child: FilledButton(
-            onPressed: _saving
-                ? null
-                : (_sozlesmeFormuAcik ? _sozlesmeKaydet : _save),
-            style: FilledButton.styleFrom(
-              backgroundColor: context.c.amberFill,
-              foregroundColor: context.c.onAmber,
-              disabledBackgroundColor:
-                  context.c.amberFill.withValues(alpha: 0.25),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md)),
-              elevation: 0,
-            ),
-            child: _saving
-                ? const CustomLoadingIndicator(size: 22)
-                : Text(
-                    saveLabel,
-                    style: context.t.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800, letterSpacing: 0.2),
-                  ),
+          onPressed: _sozlesmeFormuAcik ? _sozlesmeKaydet : _save,
+          mesgul: _saving,
+          style: FilledButton.styleFrom(
+            backgroundColor: context.c.amberFill,
+            foregroundColor: context.c.onAmber,
+            disabledBackgroundColor:
+                context.c.amberFill.withValues(alpha: 0.25),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(SandikRadius.md)),
+            elevation: 0,
+          ),
+          child: Text(
+            saveLabel,
+            // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+            // `titleLarge` kendi rengini (`text90`) taşır ve düğmenin
+            // `foregroundColor`'ını ezer — koyu temada amber üstüne
+            // beyaz "Ekle" 1,87:1 kalıyordu.
+            style: context.t.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+                color: context.c.onAmber),
           ),
         ),
       ),
@@ -1365,7 +1680,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // bırakırdı.
     final types = [
       for (final t in AssetType.eklemeSirasi)
-        if (!t.sozlesmeli || (!widget.cartMode && !_isEditing)) t,
+        if ((!t.sozlesmeli || (!widget.cartMode && !_isEditing)) &&
+            RemoteConfigService.instance.turSecenegi(t))
+          t,
     ];
     // Sarmalı (`Wrap`), yatay kaydırmalı DEĞİL (2026-09-29 emülatör testi
     // #29): kaydırmalı satırda Kripto/Emtia/Diğer ekran dışında kalıyordu ve
@@ -1419,8 +1736,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // İkon `onSurface`: ham kategori rengi açık temada
+                    // %18'lik kendi dolgusu üstünde 1,3–2,6:1 kalıyordu
+                    // (açık tema denetimi 2026-10-08). Dolgu/çerçeve ham.
                     Icon(t.icon,
-                        size: 18, color: selected ? t.color : context.c.text58),
+                        size: 18,
+                        color: selected ? t.onSurface(context) : context.c.text58),
                     const SizedBox(width: 8),
                     // Flexible: sarmalı satırda çipin azami genişliği satır
                     // genişliğidir (kaydırmalı satırda sınırsızdı). 3× metin
@@ -1445,6 +1766,80 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  // ── Tür seçici: arama + gruplu ızgara (bayrak `tur_secici_izgara`) ─────────
+  //
+  // Bayrak kapalıyken yukarıdaki çip satırı birebir eski. Açıkken
+  // `TurSeciciIzgara` çizilir; tür ve kimlik geçişleri burada, formun VAR
+  // OLAN `select*` geçişleriyle yapılır (arama → kimlik kuralı tek yerde:
+  // `AddAssetFormNotifier`). Bayrak form açılırken bir kez okunur
+  // (`abdAcik` ile aynı gerekçe: açık formda Remote Config yenilense de
+  // seçici değişmez).
+  late final bool _izgara = RemoteConfigService.instance.turSeciciIzgara;
+
+  Widget _turIzgarasi() => TourAnchor(
+        target: TourTarget.turSecici,
+        child: TurSeciciIzgara(
+          secili: seciliKutu(_type, isAbd: _s.isAbd),
+          acik: _s.turIzgarasiAcik,
+          sozlesmeliAcik: !widget.cartMode && !_isEditing,
+          onKutu: _kutuSec,
+          onSonuc: _aramaSonucuSec,
+          onDegistir: () => _n.turIzgarasi(acik: true),
+        ),
+      );
+
+  /// Kutuya dokunuldu. Zaten seçili kutu yalnız katlar: "Değiştir"e basıp
+  /// vazgeçen kullanıcının seçtiği hisse/fon silinmesin. ABD kutusu hisse
+  /// türünü ABD pazarıyla açar (`selectHisseBorsasi`, segmentle aynı yol).
+  void _kutuSec(TurKutusu k) {
+    _klavyeyiKapat();
+    if (seciliKutu(_type, isAbd: _s.isAbd) != k) {
+      _yaz(_n.selectType(k.tur));
+      if (k.abd) _yaz(_n.selectHisseBorsasi(abd: true));
+      _schedulePricePreview();
+    }
+    _n.turIzgarasi(acik: false);
+  }
+
+  /// Arama sonucu: tür + kimlik, ilgili seçici sayfasından seçilmiş gibi.
+  void _aramaSonucuSec(TurAramaSonucu s) {
+    _klavyeyiKapat();
+    final bosFiyat = _price.text.isEmpty;
+    _yaz(_n.selectType(s.kutu.tur));
+    switch (s.kutu.tur) {
+      case AssetType.hisse when s.kutu.abd:
+        _yaz(_n.selectHisseBorsasi(abd: true));
+        _yaz(_n.selectAbdHisse(s.ticker!));
+      case AssetType.hisse:
+        _yaz(_n.selectBist100(s.ticker!));
+      case AssetType.fon:
+        _yaz(_n.selectFund(
+          TefasFund(
+            code: s.sembol,
+            name: s.ad,
+            price: 0,
+            fundType: '',
+            managerName: '',
+          ),
+          priceEmpty: bosFiyat,
+        ));
+      case AssetType.kripto:
+        _yaz(_n.selectKripto(KriptoKatalogOgesi(kod: s.sembol, ad: s.ad),
+            priceEmpty: bosFiyat));
+      case AssetType.altin:
+        _yaz(_n.selectGold(s.altin!));
+      case AssetType.doviz:
+        _yaz(_n.selectDoviz(dovizOptFor(s.dovizEtiketi)));
+      case AssetType.eurobond:
+        final (sz, f) = s.eurobond!;
+        _yaz(_n.selectEurobond(sz, f, priceEmpty: bosFiyat));
+      default:
+        break;
+    }
+    _schedulePricePreview();
+    _n.turIzgarasi(acik: false);
+  }
+
   // ── Döviz para birimi seçici (Sandik brand, 4 büyük kart) ──────────────────
 
   Widget _dovizSelector(ColorScheme cs) {
@@ -1465,7 +1860,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               },
               child: AnimatedContainer(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 160)),
+                    SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
@@ -1496,8 +1891,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       style: context.t.headlineLarge?.copyWith(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color:
-                            selected ? AssetType.doviz.color : context.c.text90,
+                        color: selected
+                            ? AssetType.doviz.onSurface(context)
+                            : context.c.text90,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -1505,8 +1901,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                       opt.label,
                       style: context.t.labelLarge?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color:
-                            selected ? AssetType.doviz.color : context.c.text58,
+                        color: selected
+                            ? AssetType.doviz.onSurface(context)
+                            : context.c.text58,
                         letterSpacing: 0.6,
                       ),
                     ),
@@ -1539,7 +1936,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onTap: () => _quantity.text = v,
               child: AnimatedContainer(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 140)),
+                    SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1587,6 +1984,72 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  // ── Hisse pazarı: BIST | ABD (bayrak `abd_hisse`) ───────────────────────────
+  //
+  // Ortak `SandikSegment`: uygulamadaki öteki "birini seç" kontrolleriyle
+  // aynı davranış (kayan zemin, 44 pt dokunma hedefi, hareketi azalt).
+  Widget _hissePazariSecici() {
+    final etiketler = [
+      context.l10n.stockMarketBist,
+      context.l10n.stockMarketUs,
+    ];
+    return SandikSegment(
+      adet: 2,
+      secili: _s.isAbd ? 1 : 0,
+      onSec: (i) {
+        _yaz(_n.selectHisseBorsasi(abd: i == 1));
+        _schedulePricePreview();
+      },
+      semantik: (i) => context.l10n.stockMarketSemantics(etiketler[i]),
+      oge: (context, i, _) => Text(etiketler[i], maxLines: 1),
+    );
+  }
+
+  /// ABD seçicisi — BIST seçicisiyle aynı alan, aynı alt sayfa düzeni.
+  /// Seçili hisse ayrı durumda tutulmaz: kimlik sembol alanıdır
+  /// ([AddAssetFormState.resolveIdentity]), seçici yalnız onu doldurur.
+  Widget _abdSelectorField(ColorScheme cs, {required bool hata}) {
+    final ticker = abdSembolu(_ticker.text);
+    final ad = abdHisseleri[ticker];
+    return Semantics(
+      button: true,
+      label: ad == null
+          ? context.l10n.pickUsStock
+          : context.l10n.selectedUsStockSemantics(ad),
+      child: SandikBasma(
+        onTap: _showAbdPicker,
+        child: _selectorContainer(
+          cs: cs,
+          hasValue: ad != null,
+          hasError: hata,
+          badgeText: ad == null ? null : ticker,
+          mainText: ad ?? context.l10n.pickUsStockTap,
+          color: AssetType.hisse.color,
+        ),
+      ),
+    );
+  }
+
+  void _showAbdPicker() {
+    _klavyeyiKapat();
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: SandikRadius.sheetTop),
+      builder: (ctx) => _AbdPicker(
+        selected: abdSembolu(_ticker.text),
+        onSelect: (ticker) {
+          _yaz(_n.selectAbdHisse(ticker));
+          _schedulePricePreview();
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
   // ── BIST100 seçici ─────────────────────────────────────────────────────────
 
   Widget _bist100SelectorField(ColorScheme cs, {required bool hata}) {
@@ -1617,13 +2080,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showBist100Picker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _Bist100Picker(
         selected: _bist100SelectedTicker,
         onSelect: (ticker) {
@@ -1659,13 +2122,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showTefasPicker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _TefasPicker(
         selected: _selectedFund?.code,
         onSelect: (fund) {
@@ -1706,18 +2169,66 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showKriptoPicker() {
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _KriptoPicker(
         selected: kriptoKodu(_ticker.text),
         onSelect: (o) {
           _yaz(_n.selectKripto(o, priceEmpty: _price.text.isEmpty));
           _schedulePricePreview();
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
+  // ── Eurobond seçici (bayrak `eurobond`) ────────────────────────────────────
+  //
+  // Kripto seçicisiyle aynı alan + alt sayfa. ISIN serbest alana yazılmaz;
+  // seçicinin aramasına yazılır ve katalogda aranır (kontrol hanesi
+  // `isinGecerli`). Böylece her kayıt sunucunun fiyatladığı bir sözleşmeye
+  // bağlanır (fiyat kaynağı sözleşmesi madde 1) ve kupon/vade elle girilmez.
+  // Rozet vade yılı: ISIN 12 hane, rozete sığmaz; ISIN ekran okuyucuda ve
+  // seçici satırında.
+  Widget _eurobondSelectorField(ColorScheme cs, {required bool hata}) {
+    final s = _s.eurobondSozlesmesi;
+    return Semantics(
+      button: true,
+      label: s == null
+          ? context.l10n.pickEurobondTap
+          : context.l10n.eurobondSelectedSemantics('${s.ad} (${s.isin})'),
+      child: SandikBasma(
+        onTap: _showEurobondPicker,
+        child: _selectorContainer(
+          cs: cs,
+          hasValue: s != null,
+          hasError: hata,
+          badgeText: s == null ? null : '${s.vade.year}',
+          mainText: s?.ad ?? context.l10n.pickEurobondTap,
+          color: AssetType.eurobond.color,
+        ),
+      ),
+    );
+  }
+
+  void _showEurobondPicker() {
+    _klavyeyiKapat();
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: SandikRadius.sheetTop),
+      builder: (ctx) => _EurobondPicker(
+        selected: _s.eurobondSozlesmesi?.isin,
+        onSelect: (o) {
+          _yaz(_n.selectEurobond(o.$1, o.$2, priceEmpty: _price.text.isEmpty));
           Navigator.pop(ctx);
         },
       ),
@@ -1774,10 +2285,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                 color: color.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(SandikRadius.sm),
               ),
+              // Rozet METNİ açık temada koyulaştırılmış ton (`metinTonu`);
+              // dolgu ham renkte kalır.
               child: Text(badgeText,
                   style: context.t.labelLarge?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: color,
+                      color: color.metinTonu(context),
                       letterSpacing: 0.5)),
             ),
             const SizedBox(width: 10),
@@ -1815,12 +2328,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   void _showQuickEntrySheet() {
     final ctrl = TextEditingController();
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _QuickEntrySheet(
         ctrl: ctrl,
         parseLine: _parseLine,
@@ -1828,26 +2341,49 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           Navigator.pop(ctx);
           _applyParsedEntry(entry);
         },
+        // Toplu kayıt sayfanın düğmesinin İÇİNDE koşar (tek yükleniyor
+        // davranışı, 2026-10-08): eskiden sayfa hemen kapanıyor, kayıtlar
+        // arkada sürerken yalnızca alttaki "Ekle" dönüyordu. Sayfa iş
+        // bitince kapanır, ardından ekran `true` ile kapanır (eski sinyal).
+        // Hata: eskiden kimseye söylenmiyordu (yakalanmamış async hata);
+        // şimdi sayfa kapanır ve hata gösterilir. Sayfa açık kalıp yeniden
+        // denenmez — döngü yarıda kesildiyse ilk satırlar çoktan eklendi,
+        // aynı listeyi yeniden kaydetmek onları çiftlerdi.
         onSaveBatch: (entries) async {
-          Navigator.pop(ctx);
-          await _saveBatch(entries);
+          bool kaydedildi;
+          try {
+            kaydedildi = await _saveBatch(entries);
+          } catch (e) {
+            if (ctx.mounted) Navigator.pop(ctx);
+            if (mounted) showAppError(context, e);
+            return;
+          }
+          if (ctx.mounted) Navigator.pop(ctx);
+          // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
+          if (kaydedildi && mounted) Navigator.pop(context, true);
         },
       ),
     );
   }
 
-  void _applyParsedEntry(ParsedEntry entry) =>
-      _yaz(_n.applyParsedEntry(entry));
+  /// Hızlı giriş türü de seçer: ızgara açıksa katlanır, yoksa yazılan
+  /// miktar/fiyat gizli formda kalırdı.
+  void _applyParsedEntry(ParsedEntry entry) {
+    _yaz(_n.applyParsedEntry(entry));
+    _n.turIzgarasi(acik: false);
+  }
 
-  Future<void> _saveBatch(List<ParsedEntry> entries) async {
+  /// `true` → kayıtlar eklendi (çağıran sayfayı ve ekranı kapatır);
+  /// `false` → tek satır forma uygulandı, kayıt yok.
+  Future<bool> _saveBatch(List<ParsedEntry> entries) async {
     // Sözlük döngüden ÖNCE çözülür: `context` async boşlukların ardında
     // kullanılamaz (`use_build_context_synchronously`), tür adı ise fiyat
     // çekiminden sonra gerekiyor.
     final l = context.l10n;
-    if (entries.isEmpty) return;
+    if (entries.isEmpty) return false;
     if (entries.length == 1) {
       _applyParsedEntry(entries.first);
-      return;
+      return false;
     }
     final lookup = ref.read(addAssetPriceLookupProvider);
     _n.setSaving(true);
@@ -1902,8 +2438,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     } finally {
       _n.setSaving(false);
     }
-    // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
-    if (mounted) Navigator.pop(context, true);
+    return true;
   }
 
   // ── Save ───────────────────────────────────────────────────────────────────
@@ -1945,6 +2480,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Future<_KayitSonu> _kaydet() async {
     final qty = _parse(_quantity.text)!;
     var price = _parse(_price.text) ?? 0.0;
+    // Eurobond: alan temiz %, kayıt kirli birim değer (kirli/100) — fiyat
+    // servisi kotasyonuyla aynı ölçek. Sözleşme yoksa kimlik doğrulaması
+    // buraya gelmeden durdurur; yine de çevrilemezse 0 kalır ve aşağıdaki
+    // fiyat çözümü kotasyonu (zaten birim değer) atar — temiz % asla birim
+    // değer diye yazılmaz.
+    if (_s.isEurobond) price = _s.eurobondBirimFiyati(price) ?? 0.0;
 
     final kimlik = _s.resolveIdentity(
       nameText: _name.text,
@@ -2063,6 +2604,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
             kind: a.kind,
             refAssetId: a.refAssetId,
             sellPrice: a.sellPrice,
+            sellFxRate: a.sellFxRate,
             commission: a.commission,
             // Bu kopya kaydın TÜM alanlarını taşımalı; eksik bırakılan alan
             // tarih düzenlemesinde sessizce sıfırlanır (temettü tutarı
@@ -2075,7 +2617,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           await ref.read(portfolioProvider.notifier).updateAsset(a);
         }
       } else {
-        final alarmSembol = manual ? null : alarmSembolu(ticker, _subCategory);
+        // Eurobond alarmı yok: sunucu alarm denetimi `EUROBOND:` sembolünü
+        // fiyatlamaz ve fiyat birim değerdir (kirli/100) — kurulan alarm
+        // hiç tetiklenmezdi.
+        final alarmSembol = manual || _s.isEurobond
+            ? null
+            : alarmSembolu(ticker, _subCategory);
         if (alarmSembol != null && price > 0) {
           alarmAdayi = AlarmAdayi(alarmSembol, assetName, price);
         }
@@ -2140,7 +2687,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   DateFormat('d MMM', context.tarihDili).format(islemGunu),
                   fiyatStr)
               : context.l10n.priceAssignedClose(dateStr, fiyatStr))
-          : '$dateStr için geçmiş fiyat bulunamadı — güncel fiyat '
+          : '$dateStr için geçmiş fiyat bulunamadı, güncel fiyat '
               '${fmt.format(price)} $_currency atandı';
       // Tarihli kapanış bulundu → başarı; bulunamadı → uyarı zemini.
       sandikSnack(
@@ -2189,7 +2736,6 @@ class _QuickEntrySheet extends StatefulWidget {
 
 class _QuickEntrySheetState extends State<_QuickEntrySheet> {
   List<ParsedEntry> _previews = [];
-  bool _saving = false;
 
   void _updatePreviews(String text) {
     final lines = text.split('\n').where((l) => l.trim().isNotEmpty);
@@ -2281,29 +2827,22 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: _saving
-                ? const CustomLoadingView()
-                : isMulti
-                    ? FilledButton.icon(
-                        onPressed: () async {
-                          // Kilit çift kaydı önler. finally olmadan, kaydetme
-                          // hata verirse buton kalıcı olarak spinner'da
-                          // kalıyordu — kullanıcı tekrar deneyemiyordu.
-                          if (_saving) return;
-                          setState(() => _saving = true);
-                          try {
-                            await widget.onSaveBatch(_previews);
-                          } finally {
-                            if (mounted) setState(() => _saving = false);
-                          }
-                        },
+            child: isMulti
+                    // Kilit çift kaydı önler; SandikAsyncButton kilidi
+                    // `finally`'de açar (eskiden elle yazılmış `_saving` +
+                    // tam genişlik döneni; finally'siz sürümde hata verince
+                    // buton kalıcı olarak spinner'da kalıyordu).
+                    ? SandikAsyncButton.kompakt(
+                        onPressed: () => widget.onSaveBatch(_previews),
                         style: FilledButton.styleFrom(
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.playlist_add_check_rounded),
-                        label: Text(context.l10n.saveNAssets(_previews.length),
-                            style: context.t.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
+                        // Renk açıkça `onAmber` — `_stickyBottomBar` notu.
+                        child: Text(context.l10n.saveNAssets(_previews.length),
+                            style: context.t.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: context.c.onAmber)),
                       )
                     : FilledButton.icon(
                         onPressed: _previews.isEmpty
@@ -2313,9 +2852,14 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),
                         icon: const Icon(Icons.check_rounded),
+                        // Pasifken (`null`) eski ton kalır: soluk dolguda
+                        // koyu `onAmber` okunmazdı.
                         label: Text(context.l10n.fillTheForm,
-                            style: context.t.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w700)),
+                            style: context.t.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: _previews.isEmpty
+                                    ? null
+                                    : context.c.onAmber)),
                       ),
           ),
         ],
@@ -2389,6 +2933,78 @@ class _Bist100PickerState extends State<_Bist100Picker> {
                   cs: cs,
                   onTap: () => widget.onSelect(e.key),
                   kimlik: VarlikKimligi.hisse(e.key, e.value),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ABD hisse seçici (bayrak `abd_hisse`) — BIST seçicisinin eşi
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AbdPicker extends StatefulWidget {
+  final String? selected;
+  final void Function(String ticker) onSelect;
+  const _AbdPicker({required this.selected, required this.onSelect});
+
+  @override
+  State<_AbdPicker> createState() => _AbdPickerState();
+}
+
+class _AbdPickerState extends State<_AbdPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  /// BIST seçicisiyle aynı kural (ad sırası, ad/sembol içinde arama). Sembol
+  /// sorgusu da Yahoo biçimine çevrilir: "brk.b" `BRK-B`'yi bulur.
+  List<MapEntry<String, String>> get _filtered {
+    final all = abdHisseleri.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    if (_q.isEmpty) return all;
+    final q = _q.toLowerCase();
+    final sembol = abdSembolu(_q).toLowerCase();
+    return all
+        .where((e) =>
+            e.value.toLowerCase().contains(q) ||
+            e.key.toLowerCase().contains(sembol))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final filtered = _filtered;
+    return _PickerShell(
+      title: context.l10n.usStocks,
+      count: filtered.length,
+      color: AssetType.hisse.color,
+      searchCtrl: _ctrl,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: filtered.isEmpty
+          ? _emptySearch(context, _q, cs)
+          : ListView.builder(
+              itemCount: filtered.length,
+              itemBuilder: (_, i) {
+                final e = filtered[i];
+                return _PickerRow(
+                  badgeText: e.key.length > 5 ? e.key.substring(0, 4) : e.key,
+                  title: e.value,
+                  subtitle: e.key,
+                  isSelected: e.key == widget.selected,
+                  color: AssetType.hisse.color,
+                  cs: cs,
+                  onTap: () => widget.onSelect(e.key),
+                  kimlik: VarlikKimligi.abdHisse(e.key, e.value),
                 );
               },
             ),
@@ -2809,6 +3425,152 @@ class _KriptoPickerState extends ConsumerState<_KriptoPicker> {
   }
 }
 
+/// Eurobond seçici — katalogdaki USD tahviller (`eklenebilirEurobondlar`;
+/// EUR'nun neden dışarıda olduğu orada). Arama ad ya da ISIN alır; tam bir
+/// ISIN yazıldığında kontrol hanesi ve katalog üyeliği satır içinde söylenir
+/// (`isinAramaSonucu`) — "sonuç yok" yerine nedeni.
+class _EurobondPicker extends ConsumerStatefulWidget {
+  final String? selected;
+  final void Function((EurobondSozlesmesi, EurobondFiyati?) o) onSelect;
+  const _EurobondPicker({required this.selected, required this.onSelect});
+
+  @override
+  ConsumerState<_EurobondPicker> createState() => _EurobondPickerState();
+}
+
+class _EurobondPickerState extends ConsumerState<_EurobondPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  /// Satır alt başlığı: ISIN · vade · temiz fiyat · getiri. Fiyat yoksa
+  /// getiri de yok — uydurulmaz.
+  String _altBaslik((EurobondSozlesmesi, EurobondFiyati?) o, DateTime simdi) {
+    final (s, f) = o;
+    final l = context.l10n;
+    final temiz = f?.temizFiyat;
+    final getiri = temiz == null ? null : s.vadeyeGetiri(temiz, simdi);
+    return [
+      s.isin,
+      l.eurobondMaturityShort(fmtTarihSaat(dayKey(s.vade))),
+      if (temiz != null) fmtNum(temiz),
+      if (getiri != null) l.eurobondYieldShort(fmtPct(getiri * 100)),
+    ].join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final katalog = ref.watch(eurobondKatalogProvider);
+    final simdi = DateTime.now();
+    final eklenebilir = eklenebilirEurobondlar(
+        katalog.valueOrNull ?? const [],
+        simdi: simdi);
+    final liste = eurobondAra(eklenebilir, _q);
+    final isinDurumu = isinAramaSonucu(_q, eklenebilir);
+    final renk = AssetType.eurobond.color;
+    final yatay = SandikSpace.screenH(context);
+
+    return _PickerShell(
+      title: context.l10n.eurobondPickerTitle,
+      count: liste.length,
+      color: renk,
+      searchCtrl: _ctrl,
+      searchHint: context.l10n.tickerHintEurobond,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: katalog.when(
+        loading: () => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CustomLoadingIndicator(),
+              const SizedBox(height: SandikSpace.smd),
+              Text(context.l10n.eurobondLoading,
+                  style: context.t.bodyMedium
+                      ?.copyWith(color: context.c.text58)),
+            ],
+          ),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SandikSpace.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cloud_off_rounded, color: context.c.loss, size: 40),
+                const SizedBox(height: SandikSpace.smd),
+                Text(context.l10n.eurobondLoadFailed,
+                    style: context.t.titleSmall),
+                const SizedBox(height: SandikSpace.xs),
+                Text(friendlyError(e),
+                    textAlign: TextAlign.center,
+                    style: context.t.bodySmall
+                        ?.copyWith(color: context.c.text58)),
+                const SizedBox(height: SandikSpace.md),
+                FilledButton.icon(
+                  onPressed: () => ref.invalidate(eurobondKatalogProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: Text(context.l10n.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+        data: (_) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  yatay, SandikSpace.sm, yatay, SandikSpace.xs),
+              child: Text(context.l10n.eurobondSourceNote,
+                  style:
+                      context.t.bodySmall?.copyWith(color: context.c.text36)),
+            ),
+            if (isinDurumu == IsinAramaSonucu.gecersiz ||
+                isinDurumu == IsinAramaSonucu.katalogdaYok)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                    yatay, SandikSpace.xs, yatay, SandikSpace.xs),
+                child: Text(
+                  isinDurumu == IsinAramaSonucu.gecersiz
+                      ? context.l10n.eurobondIsinInvalid
+                      : context.l10n.eurobondIsinNotListed,
+                  style: context.t.bodySmall?.copyWith(color: context.c.loss),
+                ),
+              ),
+            Expanded(
+              child: liste.isEmpty
+                  ? _emptySearch(context, _q, cs)
+                  : ListView.builder(
+                      itemCount: liste.length,
+                      itemBuilder: (_, i) {
+                        final o = liste[i];
+                        return _PickerRow(
+                          badgeText: '${o.$1.vade.year}',
+                          title: o.$1.ad,
+                          subtitle: _altBaslik(o, simdi),
+                          isSelected: o.$1.isin == widget.selected,
+                          color: renk,
+                          cs: cs,
+                          onTap: () => widget.onSelect(o),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared picker shell & row widgets
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2892,7 +3654,7 @@ class _PickerShellState extends State<_PickerShell> {
                   ),
                   child: Text('${widget.count}',
                       style: context.t.labelLarge
-                          ?.copyWith(color: widget.color)),
+                          ?.copyWith(color: widget.color.metinTonu(context))),
                 ),
               ],
             ),
@@ -3008,7 +3770,7 @@ class _PickerRow extends StatelessWidget {
       maxLines: 1,
       style: context.t.labelLarge?.copyWith(
         fontWeight: FontWeight.w800,
-        color: isSelected ? color : context.c.text90,
+        color: isSelected ? color.metinTonu(context) : context.c.text90,
       ),
     );
     return Semantics(
@@ -3079,7 +3841,8 @@ class _PickerRow extends StatelessWidget {
                 ),
               if (isSelected) ...[
                 const SizedBox(width: SandikSpace.sm),
-                Icon(Icons.check_rounded, size: 22, color: color),
+                Icon(Icons.check_rounded,
+                    size: 22, color: color.metinTonu(context)),
               ],
             ],
           ),

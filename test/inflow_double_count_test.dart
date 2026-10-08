@@ -104,8 +104,15 @@ void main() {
     expect(s.katkiTRY, 900.0);
     // (2100 − 1000) − 900 = 200 saf piyasa
     expect(s.piyasaTRY, closeTo(200.0, 1e-9));
-    // Payda katkıyı içerir: 200 / (1000 + 900)
-    expect(s.getiriPct, closeTo(200 / 1900 * 100, 1e-9));
+    // Payda ORTALAMA sermaye (2026-10-01): ₺900 dönemde kaldığı süre
+    // oranında (10 Mar → 30 Haz / 15 Oca → 30 Haz) sayılır.
+    final w = DateTime(2026, 6, 30).difference(DateTime(2026, 3, 10)).inMinutes /
+        DateTime(2026, 6, 30).difference(DateTime(2026, 1, 15)).inMinutes;
+    // Sayı KESİN para ağırlıklı getiri (IRR): 1000(1+r) + 900(1+r)^w =
+    // 2100 → %12,535352. Dietz yaklaşığı %12,44 (best practice kıyası,
+    // 2026-10-01).
+    expect(s.getiriPct, closeTo(12.535352, 1e-5));
+    expect(s.getiriPct, closeTo(200 / (1000 + 900 * w) * 100, 0.2));
   });
 
   test('ölçülen arıza: 4 kat büyüyen portföy NEGATİF getiri göstermez', () {
@@ -143,7 +150,12 @@ void main() {
     expect(s.getiriPct, isNotNull);
     expect(s.getiriPct!, greaterThan(0),
         reason: 'portföy 4 kat büyürken getiri negatif olamaz');
-    expect(s.getiriPct!, closeTo(20.73, 0.05));
+    // 20,73 → 31,96 (2026-10-01): katkının ₺256 bini Nisan–Temmuz'da girdi
+    // ve artık yılın tamamında çalışmış sayılmıyor (ortalama sermaye).
+    // 31,96 → 32,84 (aynı gün): Dietz doğrusal yaklaşığı yerine kesin para
+    // ağırlıklı getiri. Bu gerçek portföy şeklinde ~0,9 puan fark — %31,5
+    // TÜFE'nin yanında hükmü çevirebilecek büyüklük.
+    expect(s.getiriPct!, closeTo(32.84, 0.05));
   });
 
   test('pencere başı ile seri başı ÇAKIŞIYORSA davranış değişmez', () {

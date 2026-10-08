@@ -29,7 +29,14 @@ class _PozisyonKarti extends StatelessWidget {
     required this.donemEtiketi,
     required this.donem,
     this.birimGizli = false,
+    this.kabuksuz = false,
   });
+
+  /// Kart kabuğu (`SandikCard`) olmadan yalnız satırlar — katmanlı düzende
+  /// (`varlik_detay_katmanli`) satırlar özet kartın "Ayrıntı" panelinde
+  /// açılır; kart içinde kart çizilmesin diye. Varsayılan `false`: eski
+  /// düzen birebir.
+  final bool kabuksuz;
 
   /// Miktar ve birim fiyat satırları gizlensin mi — mevduatta "250.000
   /// birim × 1,03 ₺/birim" kullanıcıya bir şey söylemez; tutar satırları
@@ -52,47 +59,54 @@ class _PozisyonKarti extends StatelessWidget {
     final tutar = baz.formatter(digits: 0);
     String birim(double v) => '${birimBicim.format(v)} / $birimEtiketi';
 
+    final satirlar = Column(
+      children: [
+        if (!birimGizli) ...[
+          _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
+          _PozisyonSatiri(
+              etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
+          _PozisyonSatiri(
+              etiket: l.posTodayPrice,
+              deger:
+                  pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
+          Divider(height: SandikSpace.sm, color: context.c.hairline),
+        ],
+        _PozisyonSatiri(
+            etiket: l.posTotalCost, deger: tutar.format(pnl.totalCostTRY)),
+        _PozisyonSatiri(
+            etiket: l.posCurrentValue,
+            deger: tutar.format(pnl.currentValueTRY)),
+        _PozisyonSatiri.kazanc(
+          etiket: l.posTotalPnl,
+          tutar: pnl.totalPnlTRY,
+          yuzde: pnl.pnlPct,
+          bicim: tutar,
+          vurgulu: true,
+        ),
+        if (donem case final d?)
+          _PozisyonSatiri.kazanc(
+            etiket: l.posPeriodPnl(donemEtiketi),
+            tutar: d.tutar,
+            yuzde: d.yuzde,
+            bicim: tutar,
+            // Yalnız TUTAR (Sadeleştirme 2, madde 7, 2026-10-04): satırın
+            // yüzdesi ürünün fiyat hareketidir — fiyatın altındaki dönem
+            // yüzdesiyle AYNI sayı (`_donemDegisimi` ile `_donemYuzdesi`
+            // aynı birim seri, aynı dönem başı). Tutar ise sahibin piyasa
+            // etkisidir, başka bir ölçü: o kalır. Bayrak
+            // `varlik_islem_cubugu` 2026-10-05'te kalktı; eski "₺0 · fiyat
+            // −%7,55" yazımı (`posPeriodPriceMove`) onunla gitti.
+            yuzdesiz: true,
+          )
+        else
+          _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
+      ],
+    );
+    if (kabuksuz) return satirlar;
     return SandikCard(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: SandikSpace.xs),
-      child: Column(
-        children: [
-          if (!birimGizli) ...[
-            _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
-            _PozisyonSatiri(
-                etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
-            _PozisyonSatiri(
-                etiket: l.posTodayPrice,
-                deger:
-                    pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
-            Divider(height: SandikSpace.sm, color: context.c.hairline),
-          ],
-          _PozisyonSatiri(
-              etiket: l.posTotalCost, deger: tutar.format(pnl.totalCostTRY)),
-          _PozisyonSatiri(
-              etiket: l.posCurrentValue,
-              deger: tutar.format(pnl.currentValueTRY)),
-          _PozisyonSatiri.kazanc(
-            etiket: l.posTotalPnl,
-            tutar: pnl.totalPnlTRY,
-            yuzde: pnl.pnlPct,
-            bicim: tutar,
-            vurgulu: true,
-          ),
-          if (donem case final d?)
-            _PozisyonSatiri.kazanc(
-              etiket: l.posPeriodPnl(donemEtiketi),
-              tutar: d.tutar,
-              yuzde: d.yuzde,
-              bicim: tutar,
-              // Yüzde ÜRÜNÜN fiyat hareketi, tutar SAHİBİN piyasa etkisi —
-              // farklı tabanlar; etiket bunu söyler ("₺0 · fiyat −%7,55").
-              yuzdeEtiketi: l.posPeriodPriceMove,
-            )
-          else
-            _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
-        ],
-      ),
+      child: satirlar,
     );
   }
 }
@@ -114,14 +128,14 @@ class _PozisyonSatiri extends StatelessWidget {
     required double tutar,
     required double yuzde,
     required ParaBicimi bicim,
-    String Function(String yuzde)? yuzdeEtiketi,
     bool vurgulu = false,
+    bool yuzdesiz = false,
   }) {
     final k = kazancSatiri(
         tutar: tutar,
         yuzde: yuzde,
         tutarMetni: bicim.format,
-        yuzdeEtiketi: yuzdeEtiketi);
+        yuzdesiz: yuzdesiz);
     return _PozisyonSatiri(
       etiket: etiket,
       deger: k?.metin,
@@ -195,8 +209,9 @@ enum _KazancRengi { gain, loss }
 /// `_donemDegisimi`): tutar pozisyonun PİYASA ETKİSİ, yüzde ürünün birim
 /// fiyat hareketi. Bugün alınan fon 1H'de %7,55 düşmüşken piyasa etkisi
 /// ₺0 (≥ 0) olduğu için satır yeşil "+₺0 · +%7,55" yazıyordu — yön tersti.
-/// Şimdi yüzde [fmtPctIsaretli] ile kendi yönünü yazar, [yuzdeEtiketi]
-/// ("fiyat") onun neyi ölçtüğünü söyler.
+/// Şimdi yüzde [fmtPctIsaretli] ile kendi yönünü yazar. 2026-10-04'ten beri
+/// dönem satırı yüzdeyi hiç yazmaz ([yuzdesiz]); "fiyat" etiketi
+/// (`yuzdeEtiketi`) 2026-10-05'te o yolla birlikte kalktı.
 ///
 /// Renk SATIRIN sorusundan gelir — "kâr/zarar" sahibin kazancıdır, yani
 /// TUTARIN yönü. Tutar sıfıra yuvarlanıyorsa renk nötr (yeşil ₺0 "kazandın"
@@ -204,21 +219,32 @@ enum _KazancRengi { gain, loss }
 ///
 /// Toplam satırında yüzde aynı tabandandır (kâr / maliyet), etiket yoktur;
 /// iki sayının işareti zaten aynıdır.
+///
+/// [yuzdesiz]: yalnız tutar (dönem satırı — yüzde fiyatın altında zaten
+/// yazıyor). Tutar sıfıra yuvarlanıyorsa
+/// `null` ("Değişim yok"): satırın sorusu sahibin kazancıdır.
 @visibleForTesting
 ({String metin, int yon})? kazancSatiri({
   required double tutar,
   required double yuzde,
   required String Function(double) tutarMetni,
-  String Function(String yuzde)? yuzdeEtiketi,
+  bool yuzdesiz = false,
 }) {
   final tutarDuz = tutar.abs().round() == 0;
+  if (yuzdesiz) {
+    if (tutarDuz) return null;
+    return (
+      metin: '${tutar > 0 ? '+' : '−'}${tutarMetni(tutar.abs())}',
+      yon: tutar > 0 ? 1 : -1,
+    );
+  }
   if (tutarDuz && donemDuzMu(yuzde)) return null;
   final t = tutarDuz
       ? tutarMetni(0)
       : '${tutar > 0 ? '+' : '−'}${tutarMetni(tutar.abs())}';
   final y = fmtPctIsaretli(yuzde);
   return (
-    metin: '$t · ${yuzdeEtiketi == null ? y : yuzdeEtiketi(y)}',
+    metin: '$t · $y',
     yon: tutarDuz ? 0 : (tutar > 0 ? 1 : -1),
   );
 }
@@ -244,7 +270,7 @@ class _OverlayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         child: AnimatedContainer(
-          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

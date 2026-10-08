@@ -17,21 +17,32 @@ import 'config/supabase_config.dart';
 import 'l10n/l10n.dart';
 import 'l10n/sen_material_localizations.dart';
 import 'models/asset.dart';
+import 'models/asset_type.dart';
 import 'models/user_model.dart';
+import 'providers/premium_provider.dart';
+import 'providers/app_notification_provider.dart';
 import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/cihaz_provider.dart';
+import 'screens/otp_verification_screen.dart';
+import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
 import 'providers/portfolio_provider.dart';
 import 'providers/preferences_provider.dart';
 import 'providers/signal_provider.dart';
+import 'providers/sozlesme_provider.dart';
 import 'screens/disclaimer_acceptance_screen.dart';
+import 'screens/karsilama_screen.dart';
 import 'screens/kullanici_adi_screen.dart';
+import 'screens/yasal_onay_kapisi_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/lock_offer_screen.dart';
+import 'services/tazelik_ritmi.dart';
 import 'services/biometric_lock_service.dart' show KilitYontemi;
 import 'screens/lock_screen.dart';
 import 'utils/sandik_snack.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'widgets/premium_hediye_sayfasi.dart';
 import 'widgets/klavye_kapatici.dart';
 import 'widgets/yenilikler_sheet.dart';
 import 'services/surum_notu_service.dart';
@@ -42,27 +53,33 @@ import 'widgets/sunucu_kapisi.dart';
 import 'services/analytics_service.dart';
 import 'services/auth_service.dart';
 import 'services/remote_config_service.dart';
+import 'services/satin_alma_service.dart';
 import 'services/daily_summary.dart';
 import 'services/bugun_yukleyici.dart';
 import 'services/crash_reporter.dart';
 import 'config/pref_keys.dart';
 import 'services/disclaimer_service.dart';
+import 'services/yasal_onay_service.dart';
 import 'services/ilk_acilis_sirasi.dart';
 import 'models/position.dart' show aktifLotlar;
 import 'services/secure_session_storage.dart';
 import 'services/fx_rate_migration_service.dart';
 import 'services/home_widget_service.dart';
+import 'services/history_service.dart';
+import 'services/seri_disk_depo.dart';
 import 'services/live_activity_service.dart';
 import 'services/notification_service.dart';
 import 'services/leaderboard_service.dart';
 import 'services/partner_invite_listener_service.dart';
 import 'services/remote_push_service.dart';
+import 'services/birikim_serisi.dart';
 import 'services/milestone_repository.dart';
 import 'services/milestone_service.dart';
 import 'services/review_prompt_service.dart';
 import 'services/retention_tracker.dart';
 import 'services/surface_theme.dart';
 import 'theme/sandik.dart';
+import 'theme/yazi_boyutu.dart';
 import 'widgets/sandik_error_view.dart';
 import 'widgets/milestone_sheet.dart';
 import 'widgets/review_prompt_sheet.dart';
@@ -162,6 +179,9 @@ void main() async {
     // SharedPreferences warm-up — _BoolPrefNotifier'lar ilk render'da
     // senkron okuyabilsin, "yarışa katıl" prompt'u flash olmasın.
     await initPreferencesCache();
+    // Grafik serilerinin son iyi kopyası diskte: kaynak geçici olarak
+    // yanıt vermezse grafik düz çizgiye dönmesin (bkz. `SeriDiskDepo`).
+    HistoryService.kaliciDepo = SeriDiskDepo();
     // Uygulama dışı yüzeylerin (kilit ekranı + widget) son tema kararı.
     //
     // Süreç yeniden başladığında servis singleton'ları `false` (koyu)
@@ -180,8 +200,9 @@ void main() async {
 
       // Senkron Flutter framework hataları
       //
-      // `fatal` kararı `CrashReporter.agHatasiMi`'den gelir: timeout/soket
-      // hatası kullanıcının BAĞLANTISIDIR, uygulamanın çökmesi değil. Hepsini
+      // `fatal` kararı `CrashReporter.fatalMi`'den gelir: timeout/soket
+      // hatası kullanıcının BAĞLANTISIDIR, 502/503/504 sunucunun geçici
+      // yokluğudur (2026-10-06); ikisi de uygulamanın çökmesi değil. Hepsini
       // `fatal: true` yazmak "çökmesiz kullanıcı" oranını olmayan çökmelerle
       // düşürüyor ve gerçek çökmeleri gürültüde gizliyordu (2026-09-19).
       FlutterError.onError = (details) {
@@ -192,7 +213,7 @@ void main() async {
           details.exceptionAsString(),
           details.stack,
           reason: details.context?.toDescription() ?? 'FlutterError.onError',
-          fatal: !CrashReporter.agHatasiMi(details.exception),
+          fatal: CrashReporter.fatalMi(details.exception),
         );
       };
 
@@ -202,7 +223,7 @@ void main() async {
           error,
           stack,
           reason: 'PlatformDispatcher.onError',
-          fatal: !CrashReporter.agHatasiMi(error),
+          fatal: CrashReporter.fatalMi(error),
         );
         return true;
       };
@@ -249,7 +270,11 @@ void main() async {
         ),
       ),
     );
-    await NotificationService.instance.init(navigatorKey: appNavigatorKey);
+    await NotificationService.instance.init(
+      navigatorKey: appNavigatorKey,
+      // İzin ilk varlıktan sonra sorulur; açılışta değil (sadeleştirme 2).
+      iosIzniErtele: RemoteConfigService.instance.pushPromptAfterFirstAsset,
+    );
     // Dış kaynaklı sandik:// bağlantıları (3.8). Bildirim servisinden SONRA:
     // hedefe gidiş `openAssetPerformance` üzerinden, o da navigatorKey ister.
     CrashReporter.arkaPlan(DeepLinkService.instance.init(), reason: 'main.DeepLinkService.init');
@@ -265,12 +290,12 @@ void main() async {
   }, (error, stack) {
     // Zone-level: yakalanmayan async hataları.
     // `CrashReporter` Firebase kurulu değilse sessizce no-op'tur; ağ hatası
-    // burada da non-fatal (yukarıdaki gerekçe).
+    // ve geçici sunucu hatası burada da non-fatal (yukarıdaki gerekçe).
     CrashReporter.report(
       error,
       stack,
       reason: 'runZonedGuarded',
-      fatal: !CrashReporter.agHatasiMi(error),
+      fatal: CrashReporter.fatalMi(error),
     );
   });
 }
@@ -343,6 +368,9 @@ class SandikApp extends ConsumerWidget {
     // Arayüz dili (3.20): varsayılan tr_TR; `null` = sistem (kullanıcı
     // seçtiyse). İngilizce BETA — bkz. `LocaleNotifier`.
     final locale = ref.watch(localeProvider);
+    // Ayarlar › Görünüm › Yazı boyutu. "Normal" (varsayılan) cihaz ölçeğini
+    // aynen geçirir; bkz. `YaziBoyutuKapsami`.
+    final yaziBoyutu = ref.watch(yaziBoyutuProvider);
 
     return MaterialApp(
       title: 'sandık',
@@ -375,8 +403,12 @@ class SandikApp extends ConsumerWidget {
       // olursa olsun boşluğa dokununca klavye kapanır (bkz. widget notu).
       // `SunucuKapisi` en dışta: zorunlu güncelleme / sunucu değişimi
       // ekranı her rotanın ve turun ÖNÜNE geçer (köprü sürümü, K1).
-      builder: (context, child) => SunucuKapisi(
-          child: KlavyeKapatici(child: OnboardingTourHost(child: child!))),
+      // `YaziBoyutuKapsami` hepsinin dışında: kapı, tur ve her rota aynı
+      // yazı ölçeğini görür.
+      builder: (context, child) => YaziBoyutuKapsami(
+          boyut: yaziBoyutu,
+          child: SunucuKapisi(
+              child: KlavyeKapatici(child: OnboardingTourHost(child: child!)))),
       home: const _AuthGate(),
     );
   }
@@ -424,9 +456,9 @@ class SandikApp extends ConsumerWidget {
       inverseSurface: p.text90,
       onInverseSurface: p.onAmber,
       inversePrimary: Sandik.brown,
-      // Scrim / shadow
-      scrim: Colors.black,
-      shadow: Colors.black,
+      // Scrim / shadow: tonlu, düz siyah değil (`SandikPalette.golge`).
+      scrim: p.golge,
+      shadow: p.golge,
     );
 
     // ── Typography (DM Sans — tek font) ──────────────────────────────────────
@@ -499,11 +531,15 @@ class SandikApp extends ConsumerWidget {
       // dialog + 1 modal popup var; hepsi buradan beslenir.
       cupertinoOverrideTheme: CupertinoThemeData(
         brightness: brightness,
-        primaryColor: p.amberFill,
+        // `primaryColor` CupertinoButton'ın YAZI rengidir (uygulamada
+        // dolgulu Cupertino düğmesi/slider yok) — bu yüzden metin tonu
+        // `amberText`. Koyu temada `amberFill` ile aynı; açık temada amber
+        // beyaz üstünde 2:1 kalıyordu (açık tema denetimi 2026-10-08).
+        primaryColor: p.amberText,
         scaffoldBackgroundColor: p.background,
         barBackgroundColor: p.surface1,
         textTheme: CupertinoTextThemeData(
-          primaryColor: p.amberFill,
+          primaryColor: p.amberText,
           textStyle: sandikFont(color: p.text90, fontSize: 15),
         ),
       ),
@@ -558,11 +594,16 @@ class SandikApp extends ConsumerWidget {
       inputDecorationTheme: sandikGirisTemasi(p, brightness),
 
       // Filled button — Amber CTA
+      //
+      // Köşe `SandikRadius.md` (14), 8 DEĞİL (tasarım dili 2026-10-08):
+      // `SandikAsyncButton` ve açık stil yazan düğmeler 14'tü; stil
+      // yazmayan 17 düğme temadan 8 alıyor, aynı sayfada iki köşe
+      // görünüyordu. Tek düğme köşesi.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: p.amberFill,
           foregroundColor: p.onAmber,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: sandikFont(
               fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
@@ -570,24 +611,44 @@ class SandikApp extends ConsumerWidget {
       ),
 
       // Outlined button
+      //
+      // Yazı rengi `amberText`, `amberFill` DEĞİL (açık tema denetimi
+      // 2026-10-08): `amberFill` dolgu tonudur; açık temanın beyaz
+      // zemininde METİN olarak 1,94:1 kalıyordu (ör. Zirve rıza kartındaki
+      // "Şimdi değil"). Koyu temada iki token aynı renktir — orada değişiklik
+      // yok. Çerçeve dolgu tonunda kalır (metin değil, marka çizgisi).
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: p.amberFill,
+          foregroundColor: p.amberText,
           side: BorderSide(color: p.amberFill, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle:
               sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
 
-      // Text button
+      // Text button — yazı `amberText` (yukarıdaki outlined notu).
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: p.amberFill,
+          foregroundColor: p.amberText,
           textStyle:
               sandikFont(fontWeight: FontWeight.w600, fontSize: 14),
         ),
+      ),
+
+      // Anahtar (Material — Android ve web; iOS `Switch.adaptive` ile
+      // Cupertino çizer). Web ekran görüntüleri 2026-10-08: aynı Bildirimler
+      // listesinde üç ayrı anahtar vardı (amber track + koyu topuz, kahve
+      // track + beyaz topuz, kapalıyken YEŞİL çerçeve — `outline` "Orman"
+      // yeşili). Açık track her çağıranda `activeTrackColor: amberText`
+      // (amberFill beyaz zeminde metin dışı 3:1'i de tutmuyor); topuz ona
+      // göre zemin tonunda, kapalı hâl nötr.
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? p.surface2 : p.text36),
+        trackOutlineColor: WidgetStateProperty.resolveWith((s) =>
+            s.contains(WidgetState.selected) ? Colors.transparent : p.text20),
       ),
 
       // FAB — Amber
@@ -866,6 +927,14 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
   String? _checkedUserId;
   bool? _disclaimerAccepted; // null = kontrol bekleniyor
+
+  /// Yeniden onay kapısı (2026-10-04; bayrak `yasal_kapi_en_yeni`
+  /// 2026-10-05'te kaldırıldı, kapı koşulsuz) — null = kontrol bekleniyor.
+  YasalKapiDurumu? _yasalKapi;
+
+  /// Yasal kapıların ikisi de geçildi mi (yatırım uyarısı + yeniden onay).
+  bool get _yasalKapilarGecildi =>
+      _disclaimerAccepted == true && _yasalKapi?.gerekli == false;
   bool? _onboardingDone; // null = kontrol bekleniyor
   bool _splashDone = false;
 
@@ -920,6 +989,38 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   ProviderSubscription<AsyncValue<PortfolioState>>? _portfolioWarmUp;
   ProviderSubscription<AsyncValue<Map<String, List<Asset>>>>?
       _partnerAssetsWarmUp;
+
+  /// BES otomatik katkının bu oturumda çalıştığı kullanıcı (0096). Portföy
+  /// her yazımda yeniden yayınlanır; iş kullanıcı başına bir kez tetiklenir,
+  /// sonrası öne dönüşte.
+  String? _besOtomatikKullanici;
+
+  /// Günü gelen BES katkılarını yazar ve bildirir. Sözleşmeli BES lotu yoksa
+  /// sözleşmeler hiç çekilmez (BES'siz kullanıcıya ek istek yok).
+  void _besOtomatikKatki() {
+    final varliklar = ref.read(portfolioProvider).valueOrNull?.assets;
+    if (varliklar == null ||
+        !varliklar.any((a) => a.sozlesmeId != null && a.type == AssetType.bes)) {
+      return;
+    }
+    final l10n = context.l10n;
+    final devletEtiketi = l10n.pensionGovShort;
+    CrashReporter.arkaPlan(
+      () async {
+        final eklenen =
+            await ref.read(sozlesmeProvider.notifier).otomatikKatkilariIsle(
+                  adUret: (s, kod, {required devlet}) => devlet
+                      ? '${s.kurum} · $kod · $devletEtiketi'
+                      : '${s.kurum} · $kod',
+                  not: l10n.pensionAutoLotNote,
+                );
+        if (eklenen.isEmpty || !mounted) return;
+        sandikSnack(context, l10n.pensionAutoSnack(eklenen.length),
+            kind: SandikSnackKind.success);
+      }(),
+      reason: 'main.besOtomatikKatki',
+    );
+  }
   // Ortak listesi de ısıtılmalı. `activePartnersProvider` bunun türevidir ve
   // yüklenirken `valueOrNull ?? []` yüzünden "ortak yok" gibi görünür — splash
   // kapısı ortak varlıklarını beklemeden geçer, sonra liste dolunca HomeScreen
@@ -999,6 +1100,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // Emniyet supabı burada BAŞLATILMAZ — kullanıcı belli olunca
     // `_startDataWaitTimeout()` ile başlar (bkz. _dataWaitTimer).
     WidgetsBinding.instance.addObserver(this);
+    // Gün içi seri tazelenince widget ve Live Activity AYNI karede
+    // yeniden yazılır (bkz. [_gunIciSeriGeldi]).
+    IntradaySeriesCache.instance.surum.addListener(_gunIciSeriGeldi);
     // Diskten okunan tema kararını yüzeylere BİR KEZ hizala (`force`).
     // Servis singleton'ları `false` (koyu) doğar ve karar değişmemiş
     // sayıldığı için normal yolda itilmezdi: açık temalı kullanıcı, ilk
@@ -1028,6 +1132,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
         _onboardingDone = null;
+        _yasalKapi = null;
         _kilometreTasiSessizKullanici = null;
         // Yeniden girişte kilit teklifi yeniden değerlendirilir (F2).
         _kilitTeklifiErtelenen = null;
@@ -1055,6 +1160,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _dataWaitTimer = null;
         _dataWaitExpired = false;
         AnalyticsService.instance.setUserId(null);
+        // Mağaza kimliğini de bırak: sıradaki hesap öncekinin aboneliğini
+        // görmesin. Bayrak kapalıyken/yapılandırılmamışken no-op.
+        CrashReporter.arkaPlan(SatinAlmaService.instance.cikis(),
+            reason: 'SatinAlmaService.cikis');
         if (mounted) setState(() {});
       } else if (user != null && user.id != _checkedUserId) {
         // Tercih anahtarlarını BU kullanıcıya bağla — `syncSignalPreferences
@@ -1111,6 +1220,10 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           });
         }
         _checkedUserId = user.id;
+        // Bu cihazda oturum açıldı: çıkışta tanıtım değil giriş formu gelsin.
+        if (!ref.read(karsilamaGorulduProvider)) {
+          ref.read(karsilamaGorulduProvider.notifier).set(true);
+        }
         // Portföy ve ortak varlıklarını SPLASH sırasında ısıt. Bu provider'lar
         // lazy — eskiden ilk `watch` HomeScreen mount olunca gerçekleşiyordu,
         // yani veri çekimi splash BİTTİKTEN sonra başlıyor ve arka arkaya
@@ -1119,6 +1232,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // veri çoğunlukla hazırdır ve tek loading görünür.
         _warmUpData();
         AnalyticsService.instance.setUserId(user.id);
+        // Mağaza aboneliği (RevenueCat): yalnız `paywall_enabled` açıkken ve
+        // anahtar build'e girmişken bağlanır; değilse hiçbir şey yapmaz.
+        // Hak değişince anlık köprü + sunucu haklarını tazele (webhook
+        // `premium_haklari`'na yazınca kalıcı kaynak orası olur).
+        SatinAlmaService.instance.hakDegisti = (aktif) {
+          if (!mounted) return;
+          ref.read(magazaPremiumProvider.notifier).state = aktif;
+          ref.invalidate(premiumHaklariProvider);
+        };
+        CrashReporter.arkaPlan(
+            SatinAlmaService.instance.kullaniciyiBagla(user.id),
+            reason: 'SatinAlmaService.kullaniciyiBagla');
         final isPremium = ref.read(effectivePremiumProvider);
         AnalyticsService.instance.setUserProperty(
           name: 'user_type',
@@ -1127,6 +1252,15 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         DisclaimerService.instance.hasAccepted(user.id).then((accepted) {
           if (!mounted) return;
           setState(() => _disclaimerAccepted = accepted);
+        });
+        // Yeniden onay kapısı: güncel belge sürümlerine ve kayıt kutusu
+        // taahhütlerine onay var mı. Onayı tam kullanıcıda cihaz izinden
+        // döner (ağ yok); sorgu düşerse kapı yok sayılır (fail-open).
+        _yasalKapi = null;
+        final kapiKullanici = user.id;
+        YasalOnayService.instance.kapiDurumu(kapiKullanici).then((d) {
+          if (!mounted || _checkedUserId != kapiKullanici) return;
+          setState(() => _yasalKapi = d);
         });
         OnboardingScreen.isCompleted(user.id).then((done) {
           if (!mounted) return;
@@ -1137,7 +1271,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Onboarding'den AYRI ve ondan sonra gelir: yeni kullanıcı tanıtım
         // turunu görür, sürüm notunu görmez (`yeniNotlar` ilk kurulumda boş
         // döner). Karar `SurumNotuService`'te; burada yalnızca tetiklenir.
-        CrashReporter.arkaPlan(_yenilikleriKontrolEt(), reason: 'main._yenilikleriKontrolEt');
+        CrashReporter.arkaPlan(
+            _yenilikleriKontrolEt().then((_) => _hediyeyiKontrolEt()),
+            reason: 'main._yenilikleriKontrolEt');
         // Mevcut dövizli varlıklar için tarihsel kur migration'ı arka planda çalıştır
         FxRateMigrationService.instance.runFor(user.id);
         // Leaderboard opt-in server-side hydration: kullanıcı başka bir cihazda
@@ -1161,8 +1297,41 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     _partnersWarmUp?.close();
     _partnerAssetsWarmUp?.close();
     PartnerInviteListenerService.instance.stop();
+    IntradaySeriesCache.instance.surum.removeListener(_gunIciSeriGeldi);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  /// Ortak gün içi önbelleğin Ben yuvasına YENİ seri yazıldı.
+  ///
+  /// ## Neden (kullanıcı kararı 2026-10-02: "Bugün kartı, günlük kartı,
+  /// canlı etkinlik ve widget hepsi senkron olmalı")
+  /// Widget ve Live Activity yalnızca portföy yayınında yazılıyordu. Bugün
+  /// kartı ya da Performans taze seri çektiğinde (nabız, sekmeye dönüş)
+  /// bu iki yüzey bir sonraki fiyat yayınına kadar ESKİ seriyle hesaplanmış
+  /// rakamı tutuyordu (ölçüldü: açılıştan sonra widget +₺335, uygulama
+  /// +₺148). Yeni seri gelince ikisi de hemen yeniden yazılır; hesap aynı
+  /// önbellekten okur, ağa çıkmaz. Yalnız Ben yuvası: widget ve kilit
+  /// ekranı kişisel defteri gösterir.
+  void _gunIciSeriGeldi() {
+    final c = IntradaySeriesCache.instance;
+    if (c.sonGuncellenen != c.benAnahtari) return;
+    final async = ref.read(portfolioProvider);
+    // Yerleşik veri kuralı portföy dinleyicisiyle aynı (kullanıcı
+    // değişiminde AsyncLoading önceki kullanıcının defterini taşır).
+    if (async.isLoading) return;
+    final snapshot = async.valueOrNull;
+    if (snapshot == null || snapshot.assets.isEmpty) return;
+    final hideBalance = ref.read(balanceHiddenProvider);
+    HomeWidgetService.instance.lockScreenAmounts =
+        ref.read(lockScreenAmountsProvider);
+    CrashReporter.arkaPlan(
+        HomeWidgetService.instance
+            .updateWithChart(snapshot, hideBalance: hideBalance),
+        reason: 'main.gunIciSeri.updateWithChart');
+    CrashReporter.arkaPlan(
+        LiveActivityService.instance.sync(snapshot, hideBalance: hideBalance),
+        reason: 'main.gunIciSeri.LiveActivityService.sync');
   }
 
   Future<void> _hydrateLeaderboardOptIn(String userId) async {
@@ -1248,18 +1417,51 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // uygun olduğunda açılmalı.
     for (var deneme = 0; deneme < 20; deneme++) {
       if (!mounted) return;
-      if (_onboardingDone == true &&
-          _disclaimerAccepted == true &&
-          !_locked) {
+      if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) {
         break;
       }
       await Future<void>.delayed(_yenilikYoklamaAraligi);
     }
-    if (!mounted || _locked || _onboardingDone != true) return;
+    if (!mounted ||
+        _locked ||
+        _onboardingDone != true ||
+        !_yasalKapilarGecildi) {
+      return;
+    }
 
     final ctx = appNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) return;
     await YeniliklerSheet.goster(ctx, notlar);
+  }
+
+  /// Erken kullanıcı hediyesi sayfası (Balina S13-A, 2026-10-05): sunucuda
+  /// geçerli bir 'erken_kullanici' hakkı varsa BİR KEZ. Yeniliklerden SONRA
+  /// (zincir `_yenilikleriKontrolEt().then`): iki sheet üst üste açılmasın.
+  /// Paywall kapalıyken `premiumHaklariProvider` sorgu atmaz, boş döner →
+  /// hiçbir şey olmaz.
+  Future<void> _hediyeyiKontrolEt() async {
+    if (!mounted || !ref.read(paywallVisibleProvider)) return;
+    if (ref.read(premiumHediyeGosterildiProvider)) return;
+    await ref.read(premiumHaklariProvider.future);
+    if (!mounted) return;
+    final hak = ref.read(gecerliPremiumHakkiProvider);
+    if (hak == null || !hak.hediye || hak.bitis == null) return;
+    for (var deneme = 0; deneme < 20; deneme++) {
+      if (!mounted) return;
+      if (_onboardingDone == true && _yasalKapilarGecildi && !_locked) break;
+      await Future<void>.delayed(_yenilikYoklamaAraligi);
+    }
+    if (!mounted ||
+        _locked ||
+        _onboardingDone != true ||
+        !_yasalKapilarGecildi) {
+      return;
+    }
+    final ctx = appNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    await ref.read(premiumHediyeGosterildiProvider.notifier).set(true);
+    if (!ctx.mounted) return;
+    await PremiumHediyeSayfasi.goster(ctx, hak);
   }
 
   /// Kutlama sheet'inin açılabileceği TEK yer: ana ekran, üstünde hiçbir
@@ -1270,6 +1472,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   bool _kutlamaYeriUygun() {
     if (!mounted || _locked) return false;
     if (_onboardingDone != true || _disclaimerAccepted != true) return false;
+    if (_yasalKapi?.gerekli != false) return false;
     if (tanitimTuruAktif) return false;
     if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
       return false;
@@ -1303,10 +1506,19 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         mounted && ref.read(authProvider).valueOrNull?.id == user.id;
 
     final now = DateTime.now();
+    // Birikim serisi (bayrak `birikim_serisi`) yalnız KENDİ lotlarından:
+    // Birlikte görünümünde `state.assets` ortağın defterini de taşır ve
+    // ortağın alımı benim serimi uzatmamalı.
+    final seri = RemoteConfigService.instance.birikimSerisi
+        ? BirikimSerisiService.hesapla(
+            [for (final a in state.assets) if (a.userId == user.id) a],
+            now: now)
+        : null;
     final gecilenler = MilestoneService.evaluate(
       assets: state.assets,
       totalTRY: DailySummary.liveTotalTRY(state),
       now: now,
+      seri: seri,
     );
     if (gecilenler.isEmpty) return;
 
@@ -1329,6 +1541,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       girisSonrasi: girisSonrasi,
       // Sunucuda hiç kaydı yok → mevcut portföyünü giriyor, bir şey geçmedi.
       ilkKez: onceden.isEmpty,
+      seri: seri,
     );
     if (ayrim.sessiz.isNotEmpty) await repo.recordReached(user.id, ayrim.sessiz);
     if (ayrim.kutla.isEmpty || !ayniKullanici()) return;
@@ -1453,6 +1666,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       CrashReporter.arkaPlan(_persistBackgroundedAt(_backgroundedAt), reason: 'main._persistBackgroundedAt');
     } else if (state == AppLifecycleState.resumed) {
       CrashReporter.arkaPlan(_persistBackgroundedAt(null), reason: 'main._persistBackgroundedAt');
+      // Uygulama günlerce açık kalabilir: katkı günü öne dönüşte de yakalanır.
+      if (_besOtomatikKullanici != null) _besOtomatikKatki();
       // Remote Config yedek yolu (köprü sürümü, K1): `refresh()` hiçbir yerden
       // çağrılmıyordu; gerçek zamanlı bildirim kaçarsa açık uygulama sunucu
       // değişimini ancak soğuk açılışta görürdü. Prod'da RC'nin saatlik alt
@@ -1524,6 +1739,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           CrashReporter.arkaPlan(
             ref.read(priceAlertNotificationProvider.notifier).refresh(), reason: 'main.ref.read'
           );
+          // Genel bildirimler (aylık/haftalık özet, brifing, TÜFE, takip
+          // listesi, temettü, ortaklık — `app_notifications`, 0066) de
+          // sunucuda yazılır ve uygulama arkadayken gelir. 2026-10-06'ya
+          // kadar bu liste YALNIZCA açılışta okunuyordu: süreç arkada canlı
+          // kaldıysa sabah gelen aylık özet çan sayfasında hiç görünmüyordu
+          // (yasin: "aylık özeti kapattım, bildirim merkezinde göremedim").
+          CrashReporter.arkaPlan(
+            ref.read(appNotificationProvider.notifier).refresh(),
+            reason: 'main.genelBildirimTazele',
+          );
         }
         // Oturum ağ yokluğundan çözülememişse öne dönüldüğünde yeniden dene —
         // kullanıcı uçak modunu kapatıp uygulamaya döndüğünde kaldığı yerden
@@ -1552,16 +1777,41 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
     // Tema tercihi değişince uygulama DIŞI yüzeyleri tazele.
     //
-    // Dinleyici BURADA, tek yerde: tercih iki yerden değiştirilebiliyor
-    // (Ayarlar'daki üçlü seçici ve Profil başlığındaki hızlı geçiş) ve
-    // itişi ekranlara dağıtmak birini atlamak demekti — Profil'deki geçiş
-    // tam olarak bunu yapıyordu, widget ve kilit ekranı bir sonraki
-    // portföy yayınına kadar eski temada kalıyordu.
+    // Dinleyici BURADA, tek yerde: tercih eskiden iki yerden
+    // değiştirilebiliyordu (Ayarlar'daki üçlü seçici ve Profil başlığındaki
+    // hızlı geçiş) ve itişi ekranlara dağıtmak birini atlamak demekti —
+    // Profil'deki geçiş tam olarak bunu yapıyordu, widget ve kilit ekranı
+    // bir sonraki portföy yayınına kadar eski temada kalıyordu. Profil
+    // geçişi 2026-10-04'te kaldırıldı; dinleyici yine burada kalır ki
+    // ileride eklenecek ikinci bir giriş aynı hatayı tekrarlamasın.
     //
     // `_AuthGate` `MaterialApp.home`'dur, yani uygulama yaşadığı sürece
     // mount'tur; üstüne açılan ekranlardan yapılan değişim de buraya düşer.
     ref.listen<ThemeMode>(themeModeProvider, (_, __) {
       _applySurfaceTheme(trustDeviceBrightness: true);
+    });
+
+    // Tek aktif cihaz (0098): hesap başka cihazda açıldı → bu cihaz çıkar.
+    // Dinleyici burada çünkü `_AuthGate` uygulama boyunca mount'tur; kapı
+    // kararı hangi ekran açıkken değişirse değişsin buraya düşer. Çıkış
+    // yerel kapsamlıdır (`signOut` varsayılanı) — aktif cihazın oturumuna
+    // dokunmaz.
+    ref.listen<AsyncValue<CihazKapisi>>(cihazKapisiProvider, (_, next) {
+      if (next.valueOrNull != CihazKapisi.atildi) return;
+      if (ref.read(authProvider).valueOrNull == null) return;
+      _baskaCihazdaBildir();
+      ref.read(authProvider.notifier).logout();
+    });
+
+    // BES otomatik katkı (0096): portföy kullanıcı için İLK kez yerleşince.
+    // `isLoading` karesi atlanır: kullanıcı değişiminde AsyncLoading önceki
+    // kullanıcının portföyünü taşır.
+    ref.listen<AsyncValue<PortfolioState>>(portfolioProvider, (_, next) {
+      final uid = ref.read(authProvider).valueOrNull?.id;
+      if (uid == null || next.isLoading || !next.hasValue) return;
+      if (_besOtomatikKullanici == uid) return;
+      _besOtomatikKullanici = uid;
+      _besOtomatikKatki();
     });
 
     // Portföy varlık sayısı değişince analytics user property'sini güncelle.
@@ -1600,6 +1850,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
           ilkVarlikEklendi) {
         NotificationService.instance
             .requestPermission(promptContext: 'after_first_asset');
+      } else if (RemoteConfigService.instance.pushPromptAfterFirstAsset &&
+          !next.isLoading &&
+          currCount >= 1) {
+        // Açılışta portföyü zaten dolu olan kullanıcı: izin girişte artık
+        // sorulmadığı için hiç sorulmamışsa burada BİR KEZ sorulur (cihaz
+        // başına işaret; izin zaten belirliyse sistem diyalog göstermez).
+        NotificationService.instance.varlikliKullaniciyaBirKezSor();
       }
 
       // Widget kurulum önerisi — aynı an, ama izin isteminden SONRA.
@@ -1656,46 +1913,24 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // güvenli taraf: yazma, son bilinen değer ekranda kalsın.
       final snapshot = yerlesik;
       if (snapshot != null && snapshot.assets.isNotEmpty) {
-        final hideBalance = ref.read(balanceHiddenProvider);
-        // **Tema BURADA ne çözülür ne de itilir.**
-        //
-        // Bu dinleyici her portföy yayınında çalışıyor: fiyat tazeleme,
-        // sekme değişimi, varlık ekleme — dakikada birkaç kez. Eskiden
-        // burada `resolveThemeIsLightNow` çağrılıyor, yani cihaz görünümü
-        // yeniden ÖRNEKLENİYORDU. Tercih "Sistem" iken (varsayılan bu) ve
-        // özellikle iOS arkaya alınan kareyi ters görünümde yakalarken
-        // yanlış değer hem ActivityKit'e hem `live_activity_sessions`
-        // satırına yazılıyor, sunucu onu 5 dakikada bir push'luyordu:
-        // kilit ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
-        //
-        // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
-        // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
-        // kalmadı — itmeyi unutmak mümkün değil.
-        // Kilit ekranı widget'ı Canlı Etkinlik'in tutar tercihini okur
-        // (karar 4.4). Güncellemeden ÖNCE atanır: sonra atansaydı bu yazım
-        // eski değeri taşırdı.
-        HomeWidgetService.instance.lockScreenAmounts =
-            ref.read(lockScreenAmountsProvider);
-        CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
-          snapshot,
-          hideBalance: hideBalance,
-        ), reason: 'main.HomeWidgetService.updateWithChart');
-        // iOS kilit ekranı / Dynamic Island. Aynı dinleyiciye bağlanır çünkü
-        // aynı gerekçe geçerli: portföy 10'dan fazla yerden yazılıyor ve
-        // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
-        // Servis kendi içinde seans saatini ve tekrar eden içeriği eler;
-        // burada koşul yok. Android'de kanal kayıtlı değildir, sessizce geçer.
-        // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
-        // provider okuyamaz (Riverpod'a bağlı değil, singleton).
-        final la = LiveActivityService.instance;
-        la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
-        la.startMinute = ref.read(liveActivityStartProvider);
-        la.endMinute = ref.read(liveActivityEndProvider);
-        la.includeWeekend = ref.read(liveActivityWeekendProvider);
-        CrashReporter.arkaPlan(LiveActivityService.instance.sync(
-          snapshot,
-          hideBalance: hideBalance,
-        ), reason: 'main.LiveActivityService.sync');
+        // Fiyat turu ağdaysa yazım tur SONUNA ertelenir (2026-10-02 müşteri
+        // testi). Bu iki yüzey gün içi seriyi ORTAK önbellekten ister ve
+        // önbellek boşsa onu ÇEKER. Soğuk açılışta ilk yayın veritabanındaki
+        // fiyatla, tur bitmeden geliyordu: seri altının gün başı referansı
+        // yokken kuruluyor ("altın-yüzde altın yok"), "taze" damgasıyla
+        // önbelleğe giriyor; splash ısıtması ve Bugün kartı 30 sn boyunca
+        // aynı yuvayı taze bulup onu kullanıyordu. Ölçüldü: kart açılışta
+        // −₺8.713 / −₺19.183, tur sonrası seriyle +₺6.551 — işaret ters.
+        // Bugün kartı ve Performans bu kuralı zaten uyguluyordu
+        // (`fiyatTurunuVeKareyiBekle`); önbelleği dolduran bu yol dışarıda
+        // kalmıştı. Widget/kilit ekranı birkaç saniye son yazılan değerde
+        // kalır — eski fiyattan rakam üretmekten iyidir.
+        final notifier = ref.read(portfolioProvider.notifier);
+        if (notifier.fiyatTuruSuruyor) {
+          _yuzeyYaziminiTurSonunaBirak(notifier);
+          return;
+        }
+        _gunIciYuzeyleriniYaz(snapshot);
       }
     });
 
@@ -1715,6 +1950,85 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       // sönerken ana ekran altında beliriyor olsun diye aynısı korunur.
       child: _resolveScreen(auth, user),
     );
+  }
+
+  /// Tur sonuna ertelenmiş yazım için tek bekleyici var mı?
+  bool _turSonuYazimBekliyor = false;
+
+  /// Süren fiyat turu bitince (ve yeni defter bir kare sonra yayınlanınca)
+  /// widget ve Live Activity'yi EN GÜNCEL defterle yazar. Tur boyunca gelen
+  /// yayınlar tek bekleyicide birleşir. Bütçe gün içi seri ömrü: asılı tur
+  /// yüzeyleri sonsuza kadar dondurmasın.
+  void _yuzeyYaziminiTurSonunaBirak(PortfolioNotifier notifier) {
+    if (_turSonuYazimBekliyor) return;
+    _turSonuYazimBekliyor = true;
+    CrashReporter.arkaPlan(() async {
+      try {
+        await notifier.fiyatTurunuVeKareyiBekle(
+            enFazla: TazelikRitmi.gunIciSeriOmru);
+      } finally {
+        _turSonuYazimBekliyor = false;
+      }
+      if (!mounted) return;
+      final async = ref.read(portfolioProvider);
+      if (async.isLoading) return; // yükleme bitince dinleyici yeniden çalışır
+      final son = async.valueOrNull;
+      if (son == null || son.assets.isEmpty) return;
+      _gunIciYuzeyleriniYaz(son);
+    }(), reason: 'main.yuzeyYazimiTurSonu');
+  }
+
+  /// Ana ekran widget'ı + Live Activity yazımı (portföy dinleyicisinin
+  /// yaptığı iş; gerekçeler dinleyicide).
+  void _gunIciYuzeyleriniYaz(PortfolioState snapshot) {
+    final hideBalance = ref.read(balanceHiddenProvider);
+    // **Tema BURADA ne çözülür ne de itilir.**
+    //
+    // Bu dinleyici her portföy yayınında çalışıyor: fiyat tazeleme,
+    // sekme değişimi, varlık ekleme — dakikada birkaç kez. Eskiden
+    // burada `resolveThemeIsLightNow` çağrılıyor, yani cihaz görünümü
+    // yeniden ÖRNEKLENİYORDU. Tercih "Sistem" iken (varsayılan bu) ve
+    // özellikle iOS arkaya alınan kareyi ters görünümde yakalarken
+    // yanlış değer hem ActivityKit'e hem `live_activity_sessions`
+    // satırına yazılıyor, sunucu onu 5 dakikada bir push'luyordu:
+    // kilit ekranı rengi kullanıcı hiçbir şey değiştirmeden salınıyordu.
+    //
+    // Karar artık [SurfaceTheme] içinde yaşar; iki servis de onu
+    // getter üzerinden okur (`themeIsLight`), yani atanacak bir alan
+    // kalmadı — itmeyi unutmak mümkün değil.
+    // Kilit ekranı widget'ı Canlı Etkinlik'in tutar tercihini okur
+    // (karar 4.4). Güncellemeden ÖNCE atanır: sonra atansaydı bu yazım
+    // eski değeri taşırdı.
+    HomeWidgetService.instance.lockScreenAmounts =
+        ref.read(lockScreenAmountsProvider);
+    // Kilit widget'ı açık Canlı Etkinlik'in (sunucunun dakikalık) rakamını
+    // okusun mu — etkinliğin dakikalık bayrağıyla aynı.
+    HomeWidgetService.instance.canliEtkinligiIzle =
+        RemoteConfigService.instance.canliEtkinlikDakikalik;
+    CrashReporter.arkaPlan(HomeWidgetService.instance.updateWithChart(
+      snapshot,
+      hideBalance: hideBalance,
+    ), reason: 'main.HomeWidgetService.updateWithChart');
+    // iOS kilit ekranı / Dynamic Island. Aynı dinleyiciye bağlanır çünkü
+    // aynı gerekçe geçerli: portföy 10'dan fazla yerden yazılıyor ve
+    // her birine tek tek çağrı koymak kaçınılmaz olarak birini atlar.
+    // Servis kendi içinde seans saatini ve tekrar eden içeriği eler;
+    // burada koşul yok. Android'de kanal kayıtlı değildir, sessizce geçer.
+    // Kilit ekranında tutar tercihi servise BURADA aktarılır: servis
+    // provider okuyamaz (Riverpod'a bağlı değil, singleton).
+    final la = LiveActivityService.instance;
+    la.showAmountsOnLockScreen = ref.read(lockScreenAmountsProvider);
+    la.startMinute = ref.read(liveActivityStartProvider);
+    la.endMinute = ref.read(liveActivityEndProvider);
+    la.includeWeekend = ref.read(liveActivityWeekendProvider);
+    // Uygulama kapalıyken dakikalık tazeleme (2026-10-03) — bayrak
+    // kapalıyken satıra tarif yazılmaz, sunucu eski davranışı sürdürür.
+    la.dakikalikGuncelleme =
+        RemoteConfigService.instance.canliEtkinlikDakikalik;
+    CrashReporter.arkaPlan(LiveActivityService.instance.sync(
+      snapshot,
+      hideBalance: hideBalance,
+    ), reason: 'main.LiveActivityService.sync');
   }
 
   /// Portföy + ortak verisi ana ekranı çizmeye yetecek kadar hazır mı?
@@ -1765,8 +2079,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     if (!_splashDone ||
         (auth.isLoading && !auth.hasValue) ||
         (user != null &&
-            (_disclaimerAccepted == null || _onboardingDone == null))) {
+            (_disclaimerAccepted == null ||
+                _yasalKapi == null ||
+                _onboardingDone == null))) {
       return const SandikLoadingScreen(key: ValueKey('splash'));
+    }
+
+    // Cihaz kapısı (0098) — yasal onaydan, addan, turdan ve veri
+    // beklemesinden ÖNCE: kayıtlı olmayan cihaz hesabın hiçbir yüzeyini
+    // görmeden e-posta kodunu girer.
+    if (user != null) {
+      final kapi = _cihazKapisi(user);
+      if (kapi != null) return kapi;
     }
 
     // Ana ekrana geçmeden önce portföy verisi de hazır olmalı. Aksi halde
@@ -1778,7 +2102,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     // `_dataWaitExpired` sonrası ana ekrana geç, HomeScreen kendi hata/boş
     // durumunu gösterir.
     if (user != null &&
-        _disclaimerAccepted == true &&
+        _yasalKapilarGecildi &&
         _onboardingDone == true &&
         !_dataWaitExpired &&
         !veriHazir) {
@@ -1810,9 +2134,46 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         _oturumVardi = false;
         _kokeDon();
       }
+      // Girişten önce tanıtım (sadeleştirme 1, 2026-10-04; bayrak
+      // `karsilama_tanitimi` 2026-10-05'te kaldırıldı, davranış kalıcı):
+      // bu cihazda hiç oturum açılmadıysa önce uygulamanın ne yaptığı
+      // anlatılır; giriş formu "Giriş yap"/"Atla" ile gelir.
+      if (!ref.watch(karsilamaGorulduProvider)) {
+        return const KarsilamaScreen(key: ValueKey('karsilama'));
+      }
       return const LoginScreen(key: ValueKey('login'));
     }
     _oturumVardi = true;
+
+    // Yeniden onay kapısı (2026-10-04; bayrağı 2026-10-05'te kalktı) —
+    // yatırım uyarısı kapısıyla AYNI yerde, kullanıcı adından ve turdan
+    // ÖNCE: Apple/Google ile ilk kez gelen kullanıcı Açık Rıza Metni'ni
+    // sonuna kadar okuyup rızasını, kutuyla Koşulların kabulünü (+ 18+,
+    // bilgilendirildim; 1.4) uygulamaya girmeden verir; zorunlu kullanıcı
+    // adı ekranı ondan sonra AYNEN
+    // gelir. İki yasal ekran art arda gelmesin diye yatırım uyarısı da
+    // eksikse o metin bu ekrana girer ve `disclaimer_acceptances` aynı
+    // çağrıyla (`kabulKaydet`) yazılır; yalnız uyarı eksikse aşağıdaki eski
+    // ekran birebir gelir.
+    final yasalKapi = _yasalKapi;
+    if (yasalKapi != null && yasalKapi.gerekli) {
+      final uyariDahil = _disclaimerAccepted == false;
+      return YasalOnayKapisiScreen(
+        key: const ValueKey('yasal-kapi'),
+        userId: user.id,
+        durum: yasalKapi,
+        yatirimUyarisiDahil: uyariDahil,
+        onTamam: () {
+          if (uyariDahil) {
+            AnalyticsService.instance.logSignupStep('disclaimer_accepted');
+          }
+          setState(() {
+            _yasalKapi = YasalKapiDurumu.tamam;
+            if (uyariDahil) _disclaimerAccepted = true;
+          });
+        },
+      );
+    }
 
     if (_disclaimerAccepted == false) {
       return DisclaimerAcceptanceScreen(
@@ -2010,6 +2371,68 @@ class _AuthGateState extends ConsumerState<_AuthGate>
     sandikSnack(context, context.l10n.sessionTimedOut,
         kind: SandikSnackKind.warning);
   }
+
+  /// Tek cihaz çıkışını AÇIKLA — [_zamanAsimiBildir] ile aynı gerekçe:
+  /// sebepsiz giriş ekranı arıza gibi görünür. `logout()` ÖNCESİ çağrılır.
+  void _baskaCihazdaBildir() {
+    if (!mounted) return;
+    sandikSnack(context, context.l10n.baskaCihazdaAcildi,
+        kind: SandikSnackKind.warning);
+  }
+
+  /// Cihaz kapısının ekranı; kapı açıksa null.
+  ///
+  /// Yeniden değerlendirme (kullanıcı değişimi, "Tekrar dene") sırasında
+  /// splash: `AsyncLoading` önceki kullanıcının kararını taşır, ona göre
+  /// içeri almak yanlış hesaba kapı açmak olurdu.
+  Widget? _cihazKapisi(AppUser user) {
+    final kapi = ref.watch(cihazKapisiProvider);
+    if (kapi.isLoading) {
+      return const SandikLoadingScreen(key: ValueKey('splash'));
+    }
+    if (kapi.hasError) return _cihazKapisiHatasi(kapi.error!);
+    switch (kapi.valueOrNull) {
+      case CihazKapisi.otpGerekli:
+        return OtpVerificationScreen(
+          key: const ValueKey('cihaz-otp'),
+          email: user.email,
+          amac: OtpAmaci.cihaz,
+        );
+      case CihazKapisi.hata:
+        return _cihazKapisiHatasi(context.l10n.cihazKapisiHata);
+      case CihazKapisi.atildi:
+        // Dinleyici çıkışı başlattı; giriş ekranı gelene kadar splash.
+        return const SandikLoadingScreen(key: ValueKey('splash'));
+      case CihazKapisi.serbest:
+      case null:
+        return null;
+    }
+  }
+
+  Widget _cihazKapisiHatasi(Object hata) => Scaffold(
+        key: const ValueKey('cihaz-hata'),
+        backgroundColor: context.c.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SandikErrorView(
+                  error: hata,
+                  onRetry: () =>
+                      ref.read(cihazKapisiProvider.notifier).yenidenDene(),
+                ),
+              ),
+              TextButton(
+                onPressed: () => ref.read(authProvider.notifier).logout(),
+                style: TextButton.styleFrom(
+                    foregroundColor: context.c.amberText),
+                child: Text(context.l10n.cihazOtpVazgec),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
 
   /// Soğuk açılışta kilit gerekiyor mu — kullanıcı başına BİR kez sorulur.
   String? _lockAtLaunchFor;

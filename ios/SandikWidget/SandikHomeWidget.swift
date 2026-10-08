@@ -1,3 +1,4 @@
+import ActivityKit
 import SwiftUI
 import WidgetKit
 
@@ -32,6 +33,11 @@ private enum WidgetKeys {
     static let updatedAt = "sandik_updated_at"
     static let date = "sandik_date"
     static let marketOpen = "sandik_market_open"
+    /// Portföy yalnızca borsa ürünü mü (hisse/fon/BES)? "Kapalı" ibaresi
+    /// yalnızca o zaman söylenir (kullanıcı kararı 2026-10-01): karışık
+    /// portföyde altın/döviz/kripto hafta sonu ve gece de işler. Dart'ta
+    /// `yalnizcaBorsa` (utils/piyasa_kapali_etiketi.dart).
+    static let yalnizBorsa = "sandik_yalniz_borsa"
     static let isLightTheme = "sandik_is_light_theme"
     static let sparkSeries = "sandik_spark_series"
 }
@@ -61,8 +67,13 @@ struct SandikEntry: TimelineEntry {
     let updatedAt: String
     let dateLabel: String
     let isMarketOpen: Bool
+    /// Bkz. `WidgetKeys.yalnizBorsa`.
+    let yalnizBorsa: Bool
     let isLight: Bool
     let sparkline: [Double]
+
+    /// "Kapalı" denebilir mi — seans dışı VE portföy yalnızca borsa.
+    var kapaliGoster: Bool { !isMarketOpen && yalnizBorsa }
 
     /// Yön RENKLE anlatılamaz — çağıran ayrıca ▲/▼ gösterir.
     /// Ölçüm yoksa ya da sıfırsa yön YOKTUR (nötr ton).
@@ -83,9 +94,17 @@ struct SandikEntry: TimelineEntry {
         updatedAt: "",
         dateLabel: "",
         isMarketOpen: false,
+        yalnizBorsa: true,
         isLight: false,
         sparkline: []
     )
+}
+
+/// `sandik_yalniz_borsa` — anahtar YOKSA `true` (eski sürümün yazdığı
+/// veride o güne kadarki davranış: seans dışında "Kapalı").
+/// `bool(forKey:)` eksik anahtara `false` döndürür; o yüzden `object`.
+func yalnizBorsaOku(_ defaults: UserDefaults) -> Bool {
+    defaults.object(forKey: WidgetKeys.yalnizBorsa) as? Bool ?? true
 }
 
 struct SandikProvider: TimelineProvider {
@@ -115,6 +134,7 @@ struct SandikProvider: TimelineProvider {
             updatedAt: defaults.string(forKey: WidgetKeys.updatedAt) ?? "",
             dateLabel: defaults.string(forKey: WidgetKeys.date) ?? "",
             isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
+            yalnizBorsa: yalnizBorsaOku(defaults),
             isLight: defaults.bool(forKey: WidgetKeys.isLightTheme),
             sparkline: seri
         )
@@ -163,7 +183,8 @@ struct SandikHomeWidgetView: View {
                     // Dar alanda gradient dolgu gürültüye dönüşüyor —
                     // kilit ekranındaki kompakt görünümle aynı karar.
                     showsFill: family == .systemLarge,
-                    isMarketOpen: entry.isMarketOpen
+                    // Karışık portföyde nokta canlı kalır: rakam işliyor.
+                    isMarketOpen: !entry.kapaliGoster
                 )
                 .frame(height: family == .systemLarge ? 64 : 36)
             }
@@ -174,16 +195,17 @@ struct SandikHomeWidgetView: View {
 
     private var baslik: some View {
         HStack(spacing: 6) {
-            // Boyut `width` ile verilir; `frame` ile ezmek 80:50 oranını
-            // bozardı (yükseklik genişlikten türetiliyor).
+            // Boyut `width` ile verilir (işaret kare, 2026-10-01); `frame`
+            // ile ezmek Canvas ölçeğini bozardı.
             SandikLogoMark(width: 16)
             Text("sandık")
                 .font(.sandikLabel(12, weight: .bold))
                 .foregroundColor(palette.text58)
             Spacer(minLength: 0)
-            if !entry.isMarketOpen && entry.hasData {
+            if entry.kapaliGoster && entry.hasData {
                 // Rakamın neden değişmediğini söyler. Bu olmadan kullanıcı
-                // widget'ı bozuk sanıyor.
+                // widget'ı bozuk sanıyor. Yalnızca borsa portföyünde:
+                // altın/kripto varken rakam gerçekten değişiyor (2026-10-01).
                 Text("Kapalı")
                     .font(.sandikLabel(10, weight: .semibold))
                     .foregroundColor(palette.text36)
@@ -282,11 +304,14 @@ struct SandikHomeWidget: Widget {
 //   geniş widget dikdörtgendir (satırın yarısı).
 // - "Canlı seans kartı" (üçüncü tur: "göz alıcı olmalı, Apple'ın yeni
 //   teknolojilerinden faydalanmalı"):
-//     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`), üstünde
-//       kartın alt yarısına YAYILMIŞ günün eğrisi — sayı grafiğin üstünde.
-//     * Seans açıkken canlı çubuk + kapanışa geri sayım
-//       (`ProgressView/Text(timerInterval:)`): uygulama açılmadan saniye
-//       saniye akar, güncelleme bütçesi harcamaz.
+//     * Sistemin buzlu kart zemini (`AccessoryWidgetBackground`); günün
+//       eğrisi yüzdenin ALTINDA kendi bandında. (İlk hâlinde eğri kartın alt
+//       yarısına yayılıyor, sayı üstüne basılıyordu; 2026-10-01'de "yazı ile
+//       grafik üst üste biniyor" bildirimiyle ayrıldı.)
+//     * Seans açıkken kapanışa geri sayım (`Text(timerInterval:)`):
+//       uygulama açılmadan saniye saniye akar, güncelleme bütçesi
+//       harcamaz. Üstündeki ince seans çubuğu kaldırıldı (kullanıcı
+//       kararı 2026-10-01: "seans çizgisini kaldıralım").
 //     * Zaman çizelgesi 18:00'de ikinci girdiyle kendiliğinden "kapalı"
 //       görünüme geçer; kapalıyken sonraki açılışın günü ve saati.
 //     * Tutar `privacySensitive`: telefon kilitliyken sistem örter, Face ID
@@ -301,6 +326,79 @@ private enum KilitKeys {
     static let lockAmounts = "sandik_lock_amounts"
     static let lockPct = "sandik_lock_pct"
     static let hidden = "sandik_hidden"
+    /// Bkz. `HomeWidgetService._kCanliEtkinligiIzle`.
+    static let canliEtkinligiIzle = "sandik_lock_follow_la"
+}
+
+// MARK: - Canlı Etkinlik ile eşitleme (2026-10-03)
+//
+// yasin: "Canlı aktivite, dinamik ada, kilit ekranı widget, performans
+// günlük aynı değeri göstermeli ve senkron olmalı."
+//
+// Uygulama kapalıyken widget'ı yalnız uygulamanın SON yazımı besliyordu;
+// Canlı Etkinlik (kilit kartı + Dinamik Ada) ise sunucudan dakikada bir
+// ileri taşınıyor. Kilit ekranında ikisi yan yana farklı rakam gösteriyordu.
+// Açık bir etkinlik varken widget rakamı onun SON içeriğinden okur: iki
+// yüzey tek push'tan beslenir, ikinci bir hesap yok.
+//
+// Sınır (Apple): widget'ın ne zaman yeniden çizileceğine sistem karar verir
+// (günlük yenileme bütçesi). Zaman çizelgesi etkinlik açıkken 5 dakika
+// sonrasını ister; sistem bunu seyreltebilir. Dakikalık tazelik yalnız
+// Canlı Etkinlik'e tanınıyor.
+
+/// Kilit widget'ının Canlı Etkinlik'ten aldığı alanlar.
+struct CanliEtkinlikRakami: Equatable {
+    let pctText: String
+    let changeText: String
+    let isPositive: Bool
+    let isFlat: Bool
+    let isMarketOpen: Bool
+    let sparkline: [Double]
+
+    /// Etkinliğin içeriğini kilit widget'ının diline çevirir.
+    ///
+    /// Etkinlik yüzdeyi İŞARETSİZ taşır (yön ayrı alan); widget işaretli
+    /// ister. Kural Dart `fmtPctIsaretli` ile aynı: sıfır yüzdeye işaret
+    /// konmaz, eksi işareti U+2212.
+    static func cevir(
+        pct: String, change: String, isPositive: Bool, isFlatChange: Bool,
+        isMarketOpen: Bool, sparkline: [Double]
+    ) -> CanliEtkinlikRakami {
+        let olcumYok = pct.isEmpty || pct == "—"
+        let sifir = pct == "%0,00"
+        let isaretli: String
+        if olcumYok {
+            isaretli = "—"
+        } else if sifir || isFlatChange {
+            isaretli = pct
+        } else {
+            isaretli = (isPositive ? "+" : "\u{2212}") + pct
+        }
+        return CanliEtkinlikRakami(
+            pctText: isaretli,
+            changeText: olcumYok ? "" : change,
+            isPositive: isPositive,
+            isFlat: olcumYok || sifir || isFlatChange,
+            isMarketOpen: isMarketOpen,
+            sparkline: sparkline)
+    }
+
+    /// Açık ve bayatlamamış etkinliğin son içeriği; yoksa `nil`.
+    ///
+    /// Gizli bakiyeli içerik ALINMAZ: widget gizliliği kendi bayrağından
+    /// okur, maskeli metni rakam sanmamalı.
+    static func oku(simdi: Date = Date()) -> CanliEtkinlikRakami? {
+        guard let etkinlik = Activity<SandikActivityAttributes>.activities
+            .last(where: { $0.activityState == .active }) else { return nil }
+        let icerik = etkinlik.content
+        if let bayat = icerik.staleDate, bayat <= simdi { return nil }
+        let d = icerik.state
+        if d.isHidden { return nil }
+        return cevir(
+            pct: d.changePctText, change: d.changeText,
+            isPositive: d.isPositive, isFlatChange: d.isFlatChange,
+            isMarketOpen: d.isMarketOpen, sparkline: d.sparkline)
+    }
 }
 
 struct SandikKilitEntry: TimelineEntry {
@@ -314,7 +412,19 @@ struct SandikKilitEntry: TimelineEntry {
     let isPositive: Bool
     let isFlat: Bool
     let isMarketOpen: Bool
+    /// Bkz. `WidgetKeys.yalnizBorsa`.
+    let yalnizBorsa: Bool
     let sparkline: [Double]
+    /// Rakamın uygulamadaki saati ("13:05"); yalnız uygulamanın kaydından
+    /// okunduğunda dolu, Canlı Etkinlik'ten okununca boş.
+    ///
+    /// Neden (kullanıcı bildirimi + kararı "Yalnız saat damgası",
+    /// 2026-10-08): kilit ekranında widget +%0,12 / ₺3.383, hemen altındaki
+    /// Canlı Etkinlik +%0,09 / ₺2.703 gösteriyordu. Formül aynı, an farklı:
+    /// Canlı Etkinlik'i sunucu dakikada bir tazeliyor, widget ise uygulamanın
+    /// son ön plan kaydını gösteriyor (zaman çizelgesi `.never`). Sunucudan
+    /// çekme yerine farkı GÖRÜNÜR kılıyoruz: hangi anın rakamı olduğu yazar.
+    var asOfText: String = ""
 
     /// Yön yalnız gerçek, görünür bir hareket varken (ana ekranla aynı kural).
     var hasDirection: Bool { hasData && !isHidden && !isFlat }
@@ -325,7 +435,7 @@ struct SandikKilitEntry: TimelineEntry {
             date: tarih, hasData: hasData, isHidden: isHidden,
             showsAmount: showsAmount, pctText: pctText, changeText: changeText,
             isPositive: isPositive, isFlat: isFlat, isMarketOpen: false,
-            sparkline: sparkline)
+            yalnizBorsa: yalnizBorsa, sparkline: sparkline, asOfText: asOfText)
     }
 
     static let placeholder = SandikKilitEntry(
@@ -338,6 +448,7 @@ struct SandikKilitEntry: TimelineEntry {
         isPositive: true,
         isFlat: true,
         isMarketOpen: false,
+        yalnizBorsa: true,
         sparkline: []
     )
 }
@@ -357,6 +468,23 @@ struct SandikKilitProvider: TimelineProvider {
                 .split(separator: ",")
                 .compactMap { Double($0) }
         let yuzde = defaults.string(forKey: KilitKeys.lockPct) ?? ""
+        // Açık Canlı Etkinlik varsa rakam ondan (bkz. CanliEtkinlikRakami).
+        if !gizli, defaults.bool(forKey: KilitKeys.canliEtkinligiIzle),
+           let canli = CanliEtkinlikRakami.oku() {
+            return SandikKilitEntry(
+                date: Date(),
+                hasData: true,
+                isHidden: false,
+                showsAmount: defaults.bool(forKey: KilitKeys.lockAmounts),
+                pctText: canli.pctText,
+                changeText: canli.changeText,
+                isPositive: canli.isPositive,
+                isFlat: canli.isFlat,
+                isMarketOpen: canli.isMarketOpen,
+                yalnizBorsa: yalnizBorsaOku(defaults),
+                sparkline: canli.sparkline.isEmpty ? seri : canli.sparkline
+            )
+        }
         return SandikKilitEntry(
             date: Date(),
             hasData: true,
@@ -367,7 +495,9 @@ struct SandikKilitProvider: TimelineProvider {
             isPositive: defaults.bool(forKey: WidgetKeys.isPositive),
             isFlat: defaults.bool(forKey: WidgetKeys.isFlat),
             isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
-            sparkline: seri
+            yalnizBorsa: yalnizBorsaOku(defaults),
+            sparkline: seri,
+            asOfText: gizli ? "" : (defaults.string(forKey: WidgetKeys.updatedAt) ?? "")
         )
     }
 
@@ -388,6 +518,17 @@ struct SandikKilitProvider: TimelineProvider {
            bitis > Date() {
             girdiler.append(simdi.kapali(at: bitis))
         }
+        // Canlı Etkinlik'i izlerken widget'ın kendisi de tazelenmeli:
+        // uygulama kapalı, yenilemeyi isteyecek kimse yok. 5 dk sonrası
+        // istenir; sistem bütçeye göre seyreltebilir.
+        let izliyor = UserDefaults(suiteName: WidgetKeys.suite)?
+            .bool(forKey: KilitKeys.canliEtkinligiIzle) ?? false
+        if izliyor, CanliEtkinlikRakami.oku() != nil {
+            completion(Timeline(
+                entries: girdiler,
+                policy: .after(Date().addingTimeInterval(5 * 60))))
+            return
+        }
         completion(Timeline(entries: girdiler, policy: .never))
     }
 }
@@ -397,6 +538,13 @@ struct SandikKilitView: View {
 
     private var ok: String? {
         entry.hasDirection ? directionArrow(entry.isPositive) : nil
+    }
+
+    /// Seans açıkken ve rakam uygulamanın kaydındansa saati yazılır; kapalı
+    /// seansta rakam zaten donmuştur, sağdaki "açılış" bilgisi yeter.
+    private var saatGorunur: Bool {
+        entry.hasData && !entry.isHidden && entry.isMarketOpen
+            && !entry.asOfText.isEmpty
     }
 
     private var tutarGorunur: Bool {
@@ -421,39 +569,54 @@ struct SandikKilitView: View {
     // Başlık satırı kalktı: kart zaten sandık'ın (kilit ekranı düzenleyicisi
     // uygulama adını gösterir), logo alt satırın başına küçük iner. Yüzde
     // ~29 pt, alt satır tek sıra: logo + tutar solda, geri sayım / açılış
-    // sağda; seans çubuğu ikisinin arasında ince bir çizgi.
+    // sağda. Aradaki ince seans çubuğu 2026-10-01'de kaldırıldı (kullanıcı
+    // kararı); kapanış bilgisi sağdaki geri sayımda kalıyor.
+
+    // ## Üst üste binme yok (kullanıcı bildirimi, 2026-10-01)
+    // "Kilit ekranı widget'ında yazılar ve grafikler birbirinin üstüne
+    // biniyor; hepsi net okunabilmeli." Eğri önceden kartın alt yarısına
+    // katman olarak YAYILIYOR, yüzde ve alt satır onun üstüne basılıyordu; tek
+    // renkli (vibrant) kilit ekranında %40 opaklık bile rakamın arkasında
+    // gürültü oluyordu. Artık üç bant alt alta ve ayrı: yüzde, eğri şeridi,
+    // alt satır. Hiçbir metin çizginin üstünde durmaz.
+    //
+    // Yer bütçesi (12 mini ~52 pt): yüzde ~27–29, alt satır ~13; eğri ARTAN
+    // yeri alır (en az 6, en çok 16 pt). `layoutPriority` yüzdeyi ve alt
+    // satırı korur — yer daralırsa önce eğri incelir, rakam küçülmez.
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        VStack(alignment: .leading, spacing: 2) {
+            sayi
+                .layoutPriority(2)
+            egriSeridi
+            altSatir
+                .layoutPriority(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(
             AccessoryWidgetBackground()
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-            // Günün eğrisi kartın alt yarısına yayılır — sayı üstünde durur.
-            if entry.hasData, !entry.isHidden, entry.sparkline.count >= 2 {
-                SandikSparkline(
-                    points: entry.sparkline,
-                    color: .primary,
-                    showsFill: true
-                )
-                .opacity(0.4)
-                .padding(.top, 22)
-                .padding(.bottom, 14)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-
-            // Dikey bütçe 12 mini'de ~52 pt (ölçüldü, 2026-10-01): 4+4 dolgu,
-            // ~13 pt alt satır, kalan ~30 pt yüzdenin — yüzde küçülmeden
-            // ~27 pt kalır (çizim: "sandık kilit ekranı" artifact'ı).
-            VStack(alignment: .leading, spacing: 1) {
-                sayi
-                Spacer(minLength: 0)
-                seansCubugu
-                altSatir
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-        }
+        )
         .accessibilityElement(children: .combine)
+    }
+
+    /// Günün eğrisi — kendi bandında, metinle çakışmadan. Veri yokken ya da
+    /// gizliyken bant yerine boşluk: alt satır yine en alta oturur.
+    @ViewBuilder
+    private var egriSeridi: some View {
+        if entry.hasData, !entry.isHidden, entry.sparkline.count >= 2 {
+            SandikSparkline(
+                points: entry.sparkline,
+                color: .primary,
+                showsFill: true
+            )
+            .opacity(0.7)
+            .frame(maxWidth: .infinity, minHeight: 6, maxHeight: 16)
+        } else {
+            Spacer(minLength: 0)
+        }
     }
 
     @ViewBuilder
@@ -489,27 +652,13 @@ struct SandikKilitView: View {
         }
     }
 
-    /// Seans açıkken kapanışa kadar dolan ince çubuk — uygulama kapalıyken de
-    /// akar (`timerInterval`), güncelleme bütçesi harcamaz.
-    @ViewBuilder
-    private var seansCubugu: some View {
-        if entry.hasData, !entry.isHidden, entry.isMarketOpen,
-           let seans = BistSeans.aralik(), seans.upperBound > entry.date {
-            ProgressView(timerInterval: seans, countsDown: false) {
-                EmptyView()
-            } currentValueLabel: {
-                EmptyView()
-            }
-            .progressViewStyle(.linear)
-            .widgetAccentable()
-        }
-    }
-
     /// Logo + (izin varsa) tutar solda; sağda kapanışa geri sayım ya da
     /// sonraki açılış.
     private var altSatir: some View {
         HStack(spacing: 4) {
-            SandikLogoMark(width: 10)
+            // 12: kare işaret 11 pt rakamın büyük harf yüksekliğiyle hizalı;
+            // 10'da anahtar deliği pikselin altına iniyordu.
+            SandikLogoMark(width: 12)
             if tutarGorunur {
                 Text(entry.changeText)
                     .font(.sandikNumber(11, weight: .semibold))
@@ -517,6 +666,15 @@ struct SandikKilitView: View {
                     .minimumScaleFactor(0.7)
                     // Kilitliyken sistem örter; Face ID ile bakınca açılır.
                     .privacySensitive()
+            }
+            if saatGorunur {
+                // Tutar varken yer dar (12 mini ~157 pt, sağda geri sayım):
+                // yalnız saat. Tutar yokken "itibarıyla" da sığar.
+                Text(tutarGorunur ? "· \(entry.asOfText)"
+                                  : "\(entry.asOfText) itibarıyla")
+                    .font(.sandikNumber(11, weight: .medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             Spacer(minLength: 4)
             seansBilgisi
@@ -535,9 +693,14 @@ struct SandikKilitView: View {
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 58, alignment: .trailing)
-            } else if let acilis = BistSeans.sonrakiAcilis(entry.date) {
+            } else if entry.yalnizBorsa,
+                      let acilis = BistSeans.sonrakiAcilis(entry.date) {
                 // "Seans kapalı ·" öneki kalktı: çubuk yokken "açılış" zaten
                 // kapalı demektir; yer yüzdeye kaldı.
+                //
+                // Yalnızca borsa portföyünde (2026-10-01): karışık portföyde
+                // "açılış" da örtük bir "kapalı" ibaresidir, oysa altın/kripto
+                // işliyor. Orada sağ taraf boş kalır.
                 HStack(spacing: 3) {
                     Text("açılış")
                         .font(.sandikLabel(11, weight: .medium))

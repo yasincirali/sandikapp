@@ -1,0 +1,60 @@
+<!--
+  Yeni cihaz doğrulama kodu — Supabase "Magic link or OTP" şablonu (0098).
+  Konu: sandık · Yeni cihaz doğrulama kodun
+
+  KAYIT KAYNAĞI: canlı şablon panelde (Authentication › Email Templates ›
+  Magic link or OTP) elle tutulur, İKİ projede (Tokyo + Frankfurt) aynı.
+  Burayı değiştirirsen ikisine de yapıştır. Yerel yığın `config.toml`
+  `[auth.email.template.magic_link]` ile bunu okur.
+
+  Bağlantı (ConfirmationURL değişkeni) BİLİNÇLİ yok: uygulama kodu bekler;
+  bağlantı tarayıcıda oturum açar ve kod ekranı boşta kalırdı.
+  Gizli önizleme satırı (display:none) BİLİNÇLİ yok: Outlook ilk denemede
+  kodu Gereksiz'e attı (2026-10-03); gizli metin spam puanı ekler.
+  Kod rakamları koyu (#12241E): amber metin beyaz zeminde ~2:1 kontrast.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F4F1EA;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;background-color:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E6E1D6;">
+        <tr>
+          <td style="background-color:#112E28;padding:24px 32px;">
+            <span style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:24px;font-weight:700;color:#F5C842;letter-spacing:-0.5px;">sandık</span>
+          </td>
+        </tr>
+        <tr><td style="background-color:#F5A623;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
+        <tr>
+          <td style="padding:32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;">
+            <h1 style="margin:0 0 12px 0;font-size:22px;font-weight:700;color:#12241E;">Bu cihazı doğrula</h1>
+            <p style="margin:0 0 24px 0;font-size:15px;line-height:1.55;color:#4A5B54;">
+              Hesabın kayıtlı olmayan bir cihazda açılıyor. Devam etmek için bu kodu uygulamaya gir:
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="background-color:#FEF3DC;border:1px solid #F5A623;border-radius:12px;padding:20px 12px;">
+                  <span style="font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace;font-size:34px;font-weight:700;letter-spacing:10px;color:#12241E;">{{ .Token }}</span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:16px 0 0 0;font-size:13px;color:#566761;text-align:center;">
+              Kod 10 dakika geçerli.
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:28px;">
+              <tr>
+                <td style="border-top:1px solid #E6E1D6;padding-top:20px;font-size:13px;line-height:1.55;color:#4A5B54;">
+                  <strong style="color:#12241E;">Bu sen değilsen</strong> kodu kimseyle paylaşma ve şifreni hemen değiştir.
+                  Kayıtlı cihazlarını <strong style="color:#12241E;">Ayarlar › Hesap &amp; Güvenlik › Kayıtlı cihazlar</strong>'da görüp kaldırabilirsin.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background-color:#FBFAF6;padding:16px 32px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;color:#7E8C86;border-top:1px solid #E6E1D6;">
+            Bu e-postayı sandık hesabında güvenlik için gönderdik. Doğrulama kodunu sandık çalışanları dahil hiç kimse senden istemez.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

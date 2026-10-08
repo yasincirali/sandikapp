@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>KVKK Aydınlatma Metni — sandık</title>
 <meta name="description" content="KVKK Madde 10 aydınlatma yükümlülüğü.">
+<meta name="sandik-kaynak" content="legal/tr/KVKK_AYDINLATMA_METNI.md">
+<meta name="sandik-kaynak-sha256" content="069d0e758d04385deba8a271b21096249ec576bd7cae4525829fda1043d150f6">
+<meta name="sandik-govde-sha256" content="10508bef2c3b9134379a4de679b7a7148bde6aa73c9e872167cb1b07269ea56e">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {
@@ -60,9 +63,12 @@ button:hover { opacity: 0.9; }
   <div class="logo">S</div>
   <div class="brand">sandık<small>KVKK</small></div>
 </header>
-<p>﻿# KVKK Aydınlatma Metni — sandık</p>
-<p><strong>Yürürlük tarihi:</strong> 11 Mayıs 2026
-<strong>Sürüm:</strong> 1.0</p>
+<!-- sandik-govde:basla -->
+<h1>KVKK Aydınlatma Metni — sandık</h1>
+<p><strong>Yürürlük tarihi:</strong> 8 Ekim 2026
+<strong>Son güncelleme:</strong> 8 Ekim 2026
+<strong>Sürüm:</strong> 1.8
+<strong>Onay sürümü:</strong> 1.8</p>
 <hr />
 <h2>1. Veri Sorumlusunun Kimliği</h2>
 <p>6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") Madde 10 uyarınca, kişisel verilerinizin işlenmesine ilişkin olarak veri sorumlusu sıfatıyla aşağıdaki bilgilendirmeyi yaparız.</p>
@@ -109,28 +115,43 @@ button:hover { opacity: 0.9; }
 <h3>2.1 Kimlik Verisi</h3>
 <ul>
 <li>E-posta adresi</li>
-<li>Görünen ad (display name)</li>
+<li>Kullanıcı adı (görünen ad)</li>
+<li>Apple veya Google ile girişte sağlayıcının paylaştığı e-posta ve ad</li>
 </ul>
 <h3>2.2 İletişim Verisi</h3>
 <ul>
 <li>Bildirim için kayıtlı cihaz token'ı (push)</li>
+<li>Kilit ekranı canlı etkinliği token'ı (iOS, açarsanız)</li>
 </ul>
 <h3>2.3 Müşteri İşlem Verisi</h3>
 <ul>
-<li>Portföy varlık kayıtları (sembol, miktar, alış fiyatı, tarih, not)</li>
-<li>Snapshot geçmişi (toplam değer, getiri yüzdesi)</li>
+<li>Portföy varlık kayıtları (sembol, tür, miktar, alış fiyatı, komisyon, para birimi, tarih, not), vadeli mevduat ve BES sözleşme bilgileri, temettü kayıtları</li>
+<li>Takip listesi, fiyat alarmları, bildirim tercihleri, hedef tutarı</li>
+<li>Portföy anlık görüntüleri (saatlik toplam değer)</li>
+<li>Dönemsel getiri yüzdesi, varlık türü payları ve fon kodu bazında paylar (Zirvedeki Portföyler anonim havuzu; yalnızca açık rıza verirseniz)</li>
+<li>Dönemsel getiri yüzdesi ve varlık türü payları (Yarış; yalnızca katılırsanız)</li>
 <li>Ortaklık bağlantıları ve davet kodları</li>
+<li>Varlık notlarına geri bildirim (isteğe bağlı): oy, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama</li>
+<li>Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı (ödeme ve kart bilgisi işlenmez)</li>
+<li>Abonelik verisi (yalnızca Premium satın alırsanız): mağaza işlem kaydı, ürün (aylık ya da yıllık), başlangıç ve bitiş tarihleri, iptal durumu, test satın alımı olup olmadığı</li>
 </ul>
 <h3>2.4 İşlem Güvenliği Verisi</h3>
 <ul>
 <li>Şifre (bcrypt hash — geri çevrilemez)</li>
-<li>Oturum tokenı (JWT)</li>
-<li>Cihaz IP adresi (oturum açma anında)</li>
+<li>Oturum token'ı (JWT)</li>
+<li>IP adresi ve cihaz/tarayıcı bilgisi (oturum açma, kod doğrulama ve oturum yenileme anında; Supabase Auth güvenlik kaydı)</li>
+<li>Kayıtlı cihazlar: cihaz adı (model, iOS sürümü), platform, rastgele cihaz numarası, ilk ve son görülme zamanı</li>
 <li>Cihaz modeli, OS sürümü, uygulama sürümü</li>
+<li>Hata kayıtları ve hata raporları (hassas alanlar maskelenerek)</li>
 </ul>
 <h3>2.5 Hukuki İşlem Verisi</h3>
 <ul>
-<li>Disclaimer (yatırım tavsiyesi reddi) onay zamanı, sürümü, platformu, IP'si</li>
+<li>Yasal metin onay ve bilgilendirme kayıtları: kabul edilen ya da size sunulan metin ve sürümü, zamanı, alındığı ekran, platform, uygulama sürümü, dil, size gösterilen sunucu ülkesi, belgeyi açıp açmadığınız ve metnin sonuna kadar okunup okunmadığı; yatırım uyarısında ayrıca cihaz modeli</li>
+</ul>
+<h3>2.6 Kullanım Verisi</h3>
+<ul>
+<li>Kullanım istatistikleri (Firebase Analytics): hesap numaranız (rastgele kullanıcı kimliği), görüntülenen ekranlar, özellik kullanım olayları, kaba aralıklar, cihaz ve uygulama bilgisi, IP adresinden çıkarılan yaklaşık konum; tutar, miktar ve e-posta gönderilmez</li>
+<li>Kurulum adımları (kayıt hunisi): rastgele kurulum numarası, adım, platform, uygulama sürümü, kayıt hatasının kodu</li>
 </ul>
 <hr />
 <h2>3. Kişisel Verilerin İşlenme Amaçları</h2>
@@ -151,7 +172,23 @@ button:hover { opacity: 0.9; }
 <td>2.3</td>
 </tr>
 <tr>
+<td>Zirvedeki Portföyler — anonim karşılaştırma</td>
+<td>2.3</td>
+</tr>
+<tr>
+<td>Yarış — yüzdelik dilim ve ortakla karşılaştırma</td>
+<td>2.3</td>
+</tr>
+<tr>
 <td>Performans grafiklerinin hesaplanması</td>
+<td>2.3</td>
+</tr>
+<tr>
+<td>Premium aboneliğin doğrulanması ve Premium içeriğe erişimin tanınması</td>
+<td>2.3</td>
+</tr>
+<tr>
+<td>Varlık notlarının doğruluğunun ölçülmesi ve iyileştirilmesi</td>
 <td>2.3</td>
 </tr>
 <tr>
@@ -159,20 +196,24 @@ button:hover { opacity: 0.9; }
 <td>2.1, 2.3</td>
 </tr>
 <tr>
-<td>Push bildirim gönderimi</td>
-<td>2.2</td>
+<td>Push bildirim ve kilit ekranı canlı etkinliği</td>
+<td>2.2, 2.3</td>
 </tr>
 <tr>
-<td>Yasal yükümlülüklerin yerine getirilmesi (disclaimer onayı, mahkeme/savcılık talepleri)</td>
+<td>Yasal yükümlülüklerin yerine getirilmesi ve onayların kanıtlanması (yasal metin onayları, mahkeme/savcılık talepleri)</td>
 <td>2.5, 2.4</td>
 </tr>
 <tr>
-<td>Hata teşhisi ve uygulama güvenliği</td>
+<td>Hata teşhisi ve uygulama güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu)</td>
 <td>2.4</td>
 </tr>
 <tr>
 <td>Kötüye kullanım, sahtekarlık ve siber saldırı tespiti</td>
 <td>2.4</td>
+</tr>
+<tr>
+<td>Ürünün iyileştirilmesi ve kayıt sürecindeki sorunların tespiti</td>
+<td>2.6</td>
 </tr>
 </tbody>
 </table>
@@ -180,8 +221,8 @@ button:hover { opacity: 0.9; }
 <h2>4. Kişisel Verilerin Toplanma Yöntemi ve Hukuki Sebebi</h2>
 <h3>4.1 Toplanma Yöntemi</h3>
 <ul>
-<li><strong>Doğrudan kullanıcıdan:</strong> Kayıt formu, varlık ekleme, profil ayarları</li>
-<li><strong>Otomatik:</strong> Oturum açma anında IP/cihaz bilgisi, push token kaydı, hata logları</li>
+<li><strong>Doğrudan kullanıcıdan:</strong> Kayıt formu, Apple/Google ile giriş, varlık ekleme ve ekstre içe aktarma (ekstre dosyası yalnızca cihazda okunur, sunucuya gönderilmez; "Yapay zekâyla eşle"yi seçerseniz yalnızca tablonun anonim iskeleti gönderilir), profil ve bildirim ayarları</li>
+<li><strong>Otomatik:</strong> Oturum açma anında IP/cihaz bilgisi, push token kaydı, kayıtlı cihaz bilgisi, hata kayıtları ve hata raporları, kullanım istatistikleri, kayıt hunisi adımları</li>
 </ul>
 <h3>4.2 Hukuki Sebep (KVKK Madde 5 ve 6)</h3>
 <table>
@@ -193,7 +234,7 @@ button:hover { opacity: 0.9; }
 </thead>
 <tbody>
 <tr>
-<td>E-posta, şifre, display name</td>
+<td>E-posta, şifre, kullanıcı adı</td>
 <td>KVKK 5(2)(c) — sözleşmenin kurulması ve ifası için zorunlu</td>
 </tr>
 <tr>
@@ -201,19 +242,39 @@ button:hover { opacity: 0.9; }
 <td>KVKK 5(2)(c) — sözleşmenin ifası</td>
 </tr>
 <tr>
+<td>Yarış ölçümleri (getiri %, tür payı %)</td>
+<td>KVKK 5(2)(c) — isteğe bağlı özelliğin ifası (katılırsanız)</td>
+</tr>
+<tr>
+<td>Zirve havuzu ölçümleri (getiri %, tür payı %)</td>
+<td>KVKK 5(1) — açık rıza (uygulama içinde, isteğe bağlı; her an geri alınabilir)</td>
+</tr>
+<tr>
 <td>Push token</td>
-<td>KVKK 5(1) — açık rıza</td>
+<td>KVKK 5(2)(c) — bildirim izni verdiğinizde istediğiniz bildirimlerin teslimi</td>
 </tr>
 <tr>
-<td>IP, cihaz bilgisi</td>
-<td>KVKK 5(2)(f) — meşru menfaat (güvenlik)</td>
+<td>Premium hakkı ve abonelik verisi</td>
+<td>KVKK 5(2)(c) — sözleşmenin kurulması ve ifası</td>
 </tr>
 <tr>
-<td>Disclaimer onayı</td>
-<td>KVKK 5(2)(a) — kanunlarda öngörülmesi (SPK)</td>
+<td>Varlık notlarına geri bildirim</td>
+<td>KVKK 5(2)(f) — meşru menfaat (notların doğruluğu); yalnızca siz gönderirseniz</td>
 </tr>
 <tr>
-<td>Yurt dışı aktarımı (Supabase USA, Firebase)</td>
+<td>IP, cihaz bilgisi, kayıtlı cihazlar, hata kayıtları</td>
+<td>KVKK 5(2)(f) — meşru menfaat (güvenlik ve hata teşhisi)</td>
+</tr>
+<tr>
+<td>Kullanım istatistikleri ve kayıt hunisi</td>
+<td>KVKK 5(2)(f) — meşru menfaat (ürünün iyileştirilmesi)</td>
+</tr>
+<tr>
+<td>Yasal metin onay kayıtları</td>
+<td>KVKK 5(2)(e) — bir hakkın tesisi, kullanılması veya korunması; yatırım uyarısı için KVKK 5(2)(a)</td>
+</tr>
+<tr>
+<td>Yurt dışı aktarımı (Supabase: Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde; Firebase ve RevenueCat: ABD)</td>
 <td>KVKK 5(1) ve 9(1) — açık rıza</td>
 </tr>
 </tbody>
@@ -221,7 +282,7 @@ button:hover { opacity: 0.9; }
 <hr />
 <h2>5. Kişisel Verilerin Aktarıldığı Taraflar ve Aktarım Amacı</h2>
 <h3>5.1 Yurt İçi Aktarım</h3>
-<p>Mevcut işleme faaliyetlerinde <strong>yurt içi üçüncü taraf aktarımı yapılmamaktadır</strong> (Şirket çalışanları ve Şirketin doğrudan denetimindeki teknik destek personeli hariç).</p>
+<p>Yurt içinde üçüncü kişilere aktarım yapılmamaktadır. Ortaklık kurduğunuz kullanıcı, kullanıcı adınızı ve paylaşılan portföyünüzü görür.</p>
 <h3>5.2 Yurt Dışı Aktarım</h3>
 <table>
 <thead>
@@ -236,8 +297,8 @@ button:hover { opacity: 0.9; }
 <tbody>
 <tr>
 <td>Supabase Inc.</td>
-<td>ABD</td>
-<td>Tüm hesap ve uygulama verileri</td>
+<td>Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde</td>
+<td>Tüm hesap ve uygulama verileri, güvenlik kayıtları</td>
 <td>Veritabanı ve kimlik doğrulama altyapısı</td>
 <td>KVKK 9(1) — açık rıza</td>
 </tr>
@@ -249,16 +310,57 @@ button:hover { opacity: 0.9; }
 <td>KVKK 9(1) — açık rıza</td>
 </tr>
 <tr>
-<td>Google LLC (Firebase Crashlytics) - <strong>eklendiğinde</strong></td>
+<td>Google LLC (Firebase Crashlytics)</td>
 <td>ABD / Küresel</td>
-<td>Cihaz modeli, OS, hata stack trace</td>
+<td>Hata kaydı, cihaz modeli, OS ve uygulama sürümü</td>
 <td>Çökme teşhisi</td>
-<td>KVKK 5(2)(f) ve 9(1) — açık rıza</td>
+<td>KVKK 9(1) — açık rıza</td>
+</tr>
+<tr>
+<td>Google LLC (Firebase Analytics ve Remote Config)</td>
+<td>ABD / Küresel</td>
+<td>Kullanım istatistikleri, rastgele kurulum kimliği</td>
+<td>Ürün iyileştirme, özellik ayarları</td>
+<td>KVKK 9(1) — açık rıza</td>
+</tr>
+<tr>
+<td>Google LLC (Gmail e-posta altyapısı)</td>
+<td>ABD / Küresel</td>
+<td>E-posta adresi, doğrulama kodu</td>
+<td>Kod e-postalarının teslimi</td>
+<td>KVKK 9(1) — açık rıza</td>
+</tr>
+<tr>
+<td>Apple Inc. (Apple Push Notification service)</td>
+<td>ABD / Küresel</td>
+<td>Bildirim içeriği, canlı etkinlik token'ı ve kilit ekranı özeti</td>
+<td>iPhone'a teslim</td>
+<td>KVKK 9(1) — açık rıza</td>
+</tr>
+<tr>
+<td>Apple Inc. / Google LLC (Apple ile Giriş, Google ile Giriş — seçerseniz)</td>
+<td>ABD / Küresel</td>
+<td>Giriş sırasında sağlayıcıyla doğrulama</td>
+<td>Kimlik doğrulama</td>
+<td>KVKK 9(1) — açık rıza</td>
+</tr>
+<tr>
+<td>RevenueCat, Inc. (yalnızca Premium satın alırsanız)</td>
+<td>ABD</td>
+<td>Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi</td>
+<td>Satın almanın mağazayla doğrulanması ve Premium hakkının sunucumuza bildirilmesi</td>
+<td>KVKK 9(1) — açık rıza</td>
 </tr>
 </tbody>
 </table>
-<p>ABD, Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde <strong>bulunmamaktadır</strong>. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında <strong>açık rızanıza</strong> dayanmaktadır.</p>
-<p>Açık rızanız, kayıt sırasında onayladığınız "Açık Rıza Metni" içerisinde belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.</p>
+<p>Premium ödemesini Apple ya da Google tahsil eder; kart ve ödeme bilgileriniz bize ulaşmaz, bunları mağaza kendi başına veri sorumlusu olarak işler.</p>
+<p>Kamuya açık piyasa verisi sağlayıcılarına (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) kişisel veri aktarılmaz; yalnızca varlığın sembolü, fon kodu ya da ISIN'i sorulur. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; bazı kaynaklara istekler yalnızca sunucumuzdan gider. Bu sağlayıcılar kişisel veri almadığı için tek tek sayılmaz; yeni bir fiyat kaynağı eklemek bu metni değiştirmez.</p>
+<p>Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthropic PBC, ABD) kişisel veri aktarılmaz: sunucumuz yalnızca varlığın sembolünü ve kamuya açık piyasa ölçümlerini (fiyat, işlem hacmi, fon büyüklüğü, para akışı, yatırımcı sayısı) gönderir; kimin hangi varlığı tuttuğu, miktar ve tutar gönderilmez. Notu okumanız yapay zekâya istek göndermez.</p>
+<p>Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz.</p>
+<p>Aktarım yapılan ülkeler (Supabase: Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde <strong>bulunmamaktadır</strong>. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında <strong>açık rızanıza</strong> dayanmaktadır.</p>
+<p>Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.</p>
+<h3>5.3 Diğer Kullanıcılara Anonim Çıktı (Zirvedeki Portföyler)</h3>
+<p>Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık rıza veren kullanıcıları kapsar. Rıza verdiğinizde, portföyünüz 5 günden, hesabınız 7 günden eskiyse ve portföyünüzde en az 2 farklı varlık bulunuyorsa dönemsel getiriniz (haftalık, aylık, altı aylık, yıllık) ve varlık türü paylarınız (ör. "altın %56, fon %28") günde iki kez sunucuda hesaplanır ve anonim bir karşılaştırma havuzunda tutulur. Havuzda en az 8 portföy varsa, en çok kazanan en fazla 4 portföyün yalnızca sırası, getiri yüzdesi, tür payları ve fon türündeki yatırımların kamuya açık TEFAS fon kodu ile portföy içindeki payı (payı %1'in altındaki ya da kodsuz fonlar toplu olarak) havuza katılan diğer kullanıcılara gösterilir; fon adları resmi TEFAS listesinden gelir. Karşılığında siz de katılan kullanıcıların hangi varlık türlerini hangi oranlarda tuttuğunu ve getirilerini aynı anonim biçimde görürsünüz; bu karşılaştırma hizmeti yalnızca katılanlara açıktır. Ad, e-posta, kullanıcı adı, tutar, miktar, hisse ve diğer varlıkların adı veya sembolü ile varlıklarınıza verdiğiniz ad ve notlar hiçbir koşulda paylaşılmaz; gösterilen bilgi kimliğinizi ortaya koyacak bir veri içermez. Rıza vermezseniz getiriniz bu amaçla hesaplanmaz ve saklanmaz; uygulamanın diğer özellikleri etkilenmez. Rızanızı istediğiniz an Zirvedeki Portföyler ekranından geri alabilirsiniz; geri aldığınızda havuzdaki ölçümleriniz anında silinir. Rızanın verildiği tarih ve size gösterilen metnin sürümü, rızanın ispatı için kayıt altında tutulur. Hesabınızı sildiğinizde bu kayıtlar ve havuzdaki ölçümleriniz de silinir.</p>
 <hr />
 <h2>6. Kişisel Verilerin Saklanma Süresi</h2>
 <table>
@@ -271,43 +373,98 @@ button:hover { opacity: 0.9; }
 </thead>
 <tbody>
 <tr>
-<td>Hesap verileri (e-posta, display name)</td>
+<td>Hesap verileri (e-posta, kullanıcı adı)</td>
 <td>Hesap silinene kadar</td>
 <td>Sözleşme süresi</td>
 </tr>
 <tr>
-<td>Portföy varlık kayıtları</td>
+<td>Portföy varlık kayıtları ve sözleşme bilgileri</td>
 <td>Hesap silinene kadar</td>
 <td>Sözleşme süresi</td>
 </tr>
 <tr>
-<td>Snapshot geçmişi</td>
-<td>Son 365 gün rolling</td>
+<td>Portföy anlık görüntüleri</td>
+<td>Son 2 yıl (730 gün) rolling</td>
 <td>Servis ihtiyacı</td>
 </tr>
 <tr>
-<td>Push token</td>
-<td>Logout veya uninstall'a kadar</td>
+<td>Zirve havuzu ölçümleri</td>
+<td>Son 365 gün rolling; rıza geri alınınca ya da hesap silinince hemen</td>
+<td>Servis ihtiyacı</td>
+</tr>
+<tr>
+<td>Yarış ölçümleri</td>
+<td>Son 365 gün rolling; hesap silinince hemen</td>
+<td>Servis ihtiyacı</td>
+</tr>
+<tr>
+<td>Kayıtlı cihazlar</td>
+<td>Cihazı listeden silene ya da hesap silinene kadar</td>
+<td>KVKK 5(2)(f) meşru menfaat</td>
+</tr>
+<tr>
+<td>Varlık notlarına geri bildirimler</td>
+<td>Hesap silinene kadar</td>
+<td>KVKK 5(2)(f) meşru menfaat</td>
+</tr>
+<tr>
+<td>Ekstre sütun eşleme istek kayıtları (zaman, model, maliyet)</td>
+<td>40 gün</td>
+<td>KVKK 5(2)(f) meşru menfaat (kötüye kullanım ve maliyet sınırı)</td>
+</tr>
+<tr>
+<td>Premium hakkı ve abonelik kayıtları</td>
+<td>Hesap silinene kadar; hesabı silince hemen. RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince, ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır</td>
 <td>Sözleşme süresi</td>
 </tr>
 <tr>
-<td>Disclaimer onay logu</td>
+<td>Push token</td>
+<td>Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar</td>
+<td>Sözleşme süresi</td>
+</tr>
+<tr>
+<td>Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı)</td>
 <td>Hesap silinmesinden sonra <strong>3 yıl</strong></td>
 <td>TBK Madde 146 (zamanaşımı)</td>
 </tr>
 <tr>
-<td>Oturum logları (IP, cihaz)</td>
+<td>Anonim hesap silme kaydı (hesap kimliğinin tek yönlü özeti, e-posta alan adı, silme zamanı ve nedeni)</td>
+<td>Hesap silinmesinden sonra <strong>3 yıl</strong>; süresi dolanlar her gün otomatik silinir</td>
+<td>TBK Madde 146 (zamanaşımı)</td>
+</tr>
+<tr>
+<td>Bildirim kayıtları (uygulama içi, fiyat alarmı)</td>
+<td>90 gün</td>
+<td>Servis ihtiyacı</td>
+</tr>
+<tr>
+<td>Hata kayıtları (db_logs, yalnızca hatalar)</td>
+<td>30 gün</td>
+<td>KVKK 5(2)(f) meşru menfaat</td>
+</tr>
+<tr>
+<td>Hata raporları (Crashlytics)</td>
 <td>90 gün</td>
 <td>KVKK 5(2)(f) meşru menfaat</td>
 </tr>
 <tr>
-<td>Hata logları (error db_logs)</td>
-<td>30 gün</td>
+<td>Kullanım istatistikleri (Firebase Analytics)</td>
+<td>Firebase'deki saklama ayarı kadar, en fazla 14 ay</td>
+<td>KVKK 5(2)(f) meşru menfaat</td>
+</tr>
+<tr>
+<td>Kayıt hunisi adımları</td>
+<td>400 gün</td>
+<td>KVKK 5(2)(f) meşru menfaat</td>
+</tr>
+<tr>
+<td>Oturum açma güvenlik kaydı (IP, cihaz/tarayıcı; Supabase Auth güvenlik kaydı)</td>
+<td>90 gün; eskileri her gün otomatik silinir</td>
 <td>KVKK 5(2)(f) meşru menfaat</td>
 </tr>
 </tbody>
 </table>
-<p>Saklama süresi sona eren veriler <strong>kalıcı olarak silinir veya anonimleştirilir</strong>.</p>
+<p>Saklama süresi sona eren veriler <strong>kalıcı olarak silinir veya anonimleştirilir</strong>. Hesabınızı uygulamadan sildiğinizde hesabınız ve girdiğiniz veriler hemen silinir; yukarıda hesap silindikten sonra da süresi devam eden kayıtlar istisnadır (hata kayıtları ve kayıt hunisi adımları hesapla bağı kaldırılarak tutulur).</p>
 <hr />
 <h2>7. Kişisel Veri Sahibinin KVKK Madde 11 Hakları</h2>
 <p>KVKK Madde 11 uyarınca aşağıdaki haklara sahipsiniz:</p>
@@ -323,10 +480,9 @@ g) İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz edil
 <h3>7.1 Başvuru Yöntemi</h3>
 <p>KVKK Madde 13 ve "Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ" uyarınca taleplerinizi şu yöntemlerden biriyle iletebilirsiniz:</p>
 <ol>
-<li><strong>Uygulama içi:</strong> Profil → Ayarlar → "Hesabımı Sil" / "Verilerimi İndir"</li>
-<li><strong>E-posta:</strong> <code>sandikapp.destek@gmail.com</code> adresine kimlik bilgileri (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileri ve talep konusunu açıkça belirten yazılı başvuru</li>
-<li><strong>KEP:</strong> <code>Yok (bireysel geliştirici)</code> adresine güvenli elektronik imzalı belge</li>
-<li><strong>Posta:</strong> <code>İstanbul, Türkiye</code> adresine ıslak imzalı dilekçe</li>
+<li><strong>Uygulama içi:</strong> Profil → Ayarlar → "Hesabımı Sil" (anında silme) / "Verilerimi İndir" (JSON dosyası)</li>
+<li><strong>E-posta:</strong> <code>sandikapp.destek@gmail.com</code> adresine, sistemimizde kayıtlı e-posta adresinizden, kimlik bilgileriniz (ad-soyad, T.C. kimlik no veya başka kimlik tanımlayıcı), iletişim bilgileriniz ve talep konusunu açıkça belirten yazılı başvuru</li>
+<li><strong>Web formu:</strong> <code>https://yasincirali.github.io/sandikapp/data-request</code></li>
 </ol>
 <p>Başvurunuza <strong>30 gün</strong> içinde ücretsiz olarak yanıt veririz. KVK Kurulu'nun belirlediği tarifedeki ücretler haklı sebeplerle istenebilir (Tebliğ Madde 7).</p>
 <h3>7.2 Şikayet Hakkı</h3>
@@ -344,14 +500,15 @@ E-posta: kvkk@kvkk.gov.tr</p>
 - Bcrypt ile şifre hash'leme
 - Row-Level Security (RLS) ile yetkisiz erişim engeli
 - Rate limiting ile brute-force saldırı koruması
-- 10 dakika idle session timeout
+- Oturum token'ının cihazın güvenli anahtar deposunda saklanması; 10 dakikadan uzun arka planda kalınca kilit ya da oturum kapanışı
+- Hesabın aynı anda tek cihazda açık kalması; yeni cihazda e-posta kodu
 - Production loglarında PII maskeleme</p>
 <p><strong>İdari Önlemler:</strong>
-- Veri işleyenlerle (Supabase, Firebase) yazılı veri işleme sözleşmeleri (DPA)
-- Personel için gizlilik taahhütleri
-- Erişim yetkisi prensibi (least-privilege)
+- Veri işleyenlerin (Supabase, Google, Apple) veri işleme sözleşmeleri (DPA)
+- Bireysel geliştirici: veriye geliştiriciden başka kimse erişmez; erişim yalnızca destek, hata teşhisi ve yasal yükümlülükler için kullanılır
+- Erişim yetkisi prensibi (least-privilege); yönetim paneli yetkisi sunucuda denetlenir
 - Veri ihlali yönetimi süreci (72 saat içinde Kurul'a bildirim)
-- Düzenli güvenlik denetimleri ve testler</p>
+- Düzenli güvenlik denetimleri</p>
 <hr />
 <h2>9. Veri İhlali Durumunda Bildirim</h2>
 <p>KVKK Madde 12(5) uyarınca, kişisel verilerinizin yetkisiz kişilerce ele geçirildiğini tespit etmemiz hâlinde:</p>
@@ -363,16 +520,18 @@ E-posta: kvkk@kvkk.gov.tr</p>
 <hr />
 <h2>10. Politikada Değişiklikler</h2>
 <p>Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
-- Yeni sürüm uygulama içinde gösterilir
+- Yeni sürüm uygulama içinde ve web sitesinde aynı metinle yayımlanır
 - "Sürüm" numarası artırılır
-- Önemli değişikliklerde tekrar onay isteriz
-- Önceki sürümlere <code>https://yasincirali.github.io/sandikapp/legal/kvkk-history</code> adresinden ulaşılabilir</p>
+- Esaslı değişikliklerde (yeni bir kişisel veri, kişisel veri alan yeni bir alıcı, yeni bir amaç ya da saklama süresi) "Onay sürümü" de yeni sürüme çekilir; bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir ve devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
+- Kişisel veri işleyişini değiştirmeyen düzeltmelerde (yazım, açıklama, kişisel veri almayan bir piyasa verisi kaynağı) yalnızca "Sürüm" değişir; yeniden onay istenmez
+- Önceki sürümlerin tam metni ve hangi sürümün size ne zaman sunulduğu kayıt altında tutulur; talep ederseniz e-postayla gönderilir</p>
 <hr />
-<p><em>Bu Aydınlatma Metni'ni okuyup anladığınızı, kayıt sırasında ilgili onay kutusunu işaretleyerek beyan etmektesiniz.</em></p>
+<p><em>Bu Aydınlatma Metni kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında da) size bağlantı olarak sunulur; dokunduğunuzda tam metni açılır. Aydınlatma bilgilendirme amaçlıdır ve onayınıza bağlı değildir: onay kutusunda bu metinle bilgilendirildiğinizi belirtirsiniz ve metnin size sunulduğu kayıt altına alınır. Yurt dışı aktarım için açık rızanız bundan ayrı olarak Açık Rıza Metni ile alınır.</em></p>
 <hr />
 <p><strong><code>Yasin Çıralı</code></strong>
 <strong><code>Türkiye</code></strong>
 <strong><code>sandikapp.destek@gmail.com</code></strong></p>
+<!-- sandik-govde:bitti -->
 <footer>
   sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
 </footer>

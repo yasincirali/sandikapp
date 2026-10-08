@@ -254,7 +254,7 @@ void main() {
       // #12: "ele geçen NET" alanına brüt yazılmaz — tek dokunuş yanlış kayıt.
       expect(alan.controller!.text, isEmpty);
       expect(
-          find.text('Brüt ₺344,20 — stopaj sonrası eline geçeni yaz.'),
+          find.text('Brüt ₺344,20. Stopaj sonrası eline geçeni yaz.'),
           findsOneWidget);
       expect(find.textContaining('varsayıldı'), findsNothing);
       expect(find.textContaining('THYAO · hak tarihi 16/06/2025'),

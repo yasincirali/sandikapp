@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../demo/demo_modu.dart';
@@ -24,21 +25,61 @@ class InflationService {
   /// Endeks ayda bir değişir; gün içinde tekrar sorulması anlamsız.
   static const _cacheTtl = Duration(hours: 12);
 
+  /// Beklenen ay henüz tabloda yokken önbelleğin ömrü ([onbellekTaze]).
+  static const _eksikAyTtl = Duration(minutes: 30);
+
+  /// `seedForTest` ile kurulan endeks ağdan tazelenmez.
+  bool _testVerisi = false;
+
   /// Testler için enjeksiyon — üretimde Supabase'den okunur.
   void seedForTest(Map<DateTime, double> endeks) {
     _endeks = endeks;
     _cekildi = DateTime.now();
+    _testVerisi = true;
   }
 
   void resetForTest() {
     _endeks = null;
     _cekildi = null;
+    _testVerisi = false;
+  }
+
+  /// Önbellekteki endeks hâlâ kullanılabilir mi?
+  ///
+  /// **Neden iki ömür (2026-10-01 Özet testleri).** Aylık özet push'u ayın
+  /// 3'ünde 10:30'da, `fetch-inflation` 10:05'te yeni ayı yazdıktan sonra
+  /// gider (0093). Sabit 12 saatlik önbellekle, aynı sabah 09:00'da
+  /// uygulamayı açmış kullanıcı push'a dokunduğunda Özet ESKİ tabloyu
+  /// okuyordu: push "Eylül" derken reel getiri kartı Ağustos'u ölçüyordu —
+  /// düzeltilen hatanın ta kendisi, bu kez önbellek yüzünden.
+  ///
+  /// Kural: önceki takvim ayı tabloda yoksa (açıklanmayı bekliyoruz) önbellek
+  /// [_eksikAyTtl] yaşar; varsa 12 saat. Ayın 1'i–3'ü arasında yarım saatte
+  /// bir 24 satırlık bir sorgu — maliyeti yok.
+  @visibleForTesting
+  static bool onbellekTaze({
+    required Map<DateTime, double>? endeks,
+    required DateTime? cekildi,
+    required DateTime simdi,
+  }) {
+    if (endeks == null || cekildi == null) return false;
+    final yas = simdi.difference(cekildi);
+    if (yas >= _cacheTtl) return false;
+    final beklenen = DateTime(simdi.year, simdi.month - 1, 1);
+    final sonAy = endeks.isEmpty
+        ? null
+        : endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+    final eksik = sonAy == null || sonAy.isBefore(beklenen);
+    return !eksik || yas < _eksikAyTtl;
   }
 
   Future<Map<DateTime, double>> _yukle() async {
-    final taze = _cekildi != null &&
-        DateTime.now().difference(_cekildi!) < _cacheTtl &&
-        _endeks != null;
+    if (_testVerisi) return _endeks ?? const {};
+    final taze = onbellekTaze(
+      endeks: _endeks,
+      cekildi: _cekildi,
+      simdi: DateTime.now(),
+    );
     if (taze) return _endeks!;
     // Demo sunucuya dokunmaz; TÜFE yoksa reel getiri kartı zaten
     // "veri yok" hâline düşer (önbelleğe yazılmaz — gerçek oturum sorar).
@@ -96,6 +137,19 @@ class InflationService {
   /// verir. Farkın büyüdüğü uçlarda ([realReturnPct]) ayrıca sunulur.
   static double spreadPoints(double nominalPct, double inflationPct) =>
       nominalPct - inflationPct;
+
+  /// Reel getirinin kullanıcıya söylenen HÜKMÜ — "enflasyonu yendi mi".
+  ///
+  /// **Neden ayrı fonksiyon (2026-10-01 Özet testleri).** Kart hükmü
+  /// `reel >= 0` ile veriyordu. Nominal tam TÜFE kadarken (%31,51 / %31,51)
+  /// kayan nokta reel getiriyi −7e−15 hesaplıyor ve kart "▼ %0,00 …
+  /// enflasyonun altında kaldı" yazıyordu; tersine +0,003'te "▲ %0,00 …
+  /// alım gücün arttı". Ekranda görünen sayı (iki ondalık) sıfırsa hüküm
+  /// de başa baştır: kullanıcı "%0,00" ile çelişen bir yön görmemeli.
+  static EnflasyonHukmu hukum(double reelPct) {
+    if (reelPct.abs() < 0.005) return EnflasyonHukmu.basaBas;
+    return reelPct > 0 ? EnflasyonHukmu.ustunde : EnflasyonHukmu.altinda;
+  }
 
   /// Bileşik reel getiri: (1+n)/(1+e) - 1, yüzde olarak.
   static double realReturnPct(double nominalPct, double inflationPct) {
@@ -264,6 +318,47 @@ class InflationService {
     return InflationWindow(ilkAy: ilkAy, sonAy: sonAy, pct: pct);
   }
 
+  /// [pencere] gibi, ama ilk ay endekste YOKSA pencereyi veri olan en
+  /// erken aya (ve varsa [enErken] ayına) çeker.
+  ///
+  /// ## Neden (2026-10-01 emülatör testi, 5Y)
+  /// Beş yıllık dönemde `pencere(1825)` Ağustos 2021'i istiyor; tablo o
+  /// kadar geriye gitmiyor ve kart HİÇ çizilmiyordu — sebep de yazmıyordu.
+  /// Beş yıllık birikimcinin en önemli sorusu ("beş yılda eridim mi?")
+  /// sessizce boş kalıyordu. Uydurma yok: pencere kısaltılır ve bunun
+  /// kısaltıldığı [InflationWindow.kisaltildi] ile söylenir; ekran "veri
+  /// olan en uzun aralık" diye yazar.
+  ///
+  /// [enErken] kullanıcının ilk alım tarihi: ondan önceki aylar portföy
+  /// için anlamsız, pencere en fazla o aya kadar geri gider. Kısaltılmış
+  /// pencere en az bir ay olmalı; değilse `null`.
+  Future<InflationWindow?> pencereKapsayan(int gun,
+      {DateTime? now, DateTime? enErken}) async {
+    final tam = await pencere(gun, now: now);
+    final endeks = await _yukle();
+    if (endeks.isEmpty) return null;
+    final sonAy = endeks.keys.reduce((a, b) => a.isAfter(b) ? a : b);
+    final istenen = DateTime(sonAy.year, sonAy.month - aySayisi(gun), 1);
+    final enEskiEndeks = endeks.keys.reduce((a, b) => a.isBefore(b) ? a : b);
+    var taban = istenen.isBefore(enEskiEndeks) ? enEskiEndeks : istenen;
+    if (enErken != null) {
+      // İlk alımın AYI tabandır: endeks ayın ölçümü, pencere ayın sonundan
+      // başlar; ilk alımdan önceki ay sonu portföy için sıfır noktasıdır.
+      final ilkAlimAyi = DateTime(enErken.year, enErken.month - 1, 1);
+      if (ilkAlimAyi.isAfter(taban)) taban = ilkAlimAyi;
+    }
+    if (tam != null && !taban.isAfter(tam.ilkAy)) return tam;
+    if (!taban.isBefore(sonAy)) return null;
+    final bugun = now ?? DateTime.now();
+    final gecenAy =
+        (bugun.year - sonAy.year) * 12 + (bugun.month - sonAy.month);
+    if (gecenAy > bayatlikEsigiAy) return null;
+    final pct = changePct(endeks, taban, sonAy);
+    if (pct == null) return null;
+    return InflationWindow(
+        ilkAy: taban, sonAy: sonAy, pct: pct, kisaltildi: true);
+  }
+
   /// Son açıklanmış ayın AYLIK TÜFE değişimi (bir önceki aya göre).
   ///
   /// Aylık özetin sorusu yıllıktan farklı: "bu ay eridim mi". Yıllık TÜFE
@@ -289,6 +384,9 @@ class InflationService {
   }
 }
 
+/// Reel getiri hükmü ([InflationService.hukum]).
+enum EnflasyonHukmu { ustunde, basaBas, altinda }
+
 /// Bir TÜFE ölçümü ve ÖLÇÜLDÜĞÜ pencere.
 ///
 /// **Neden uçlar taşınıyor (2026-09-16).** Yüzde tek başına gönderildiğinde
@@ -302,11 +400,17 @@ class InflationWindow {
     required this.ilkAy,
     required this.sonAy,
     required this.pct,
+    this.kisaltildi = false,
   });
 
   /// Pencerenin ilk ayı (endeks anahtarı — ayın 1'i). Bu ayın ENDEKSİ taban
   /// alınır, yani karşılaştırma bu ayın SONUNDAN başlar ([seriBaslangici]).
   final DateTime ilkAy;
+
+  /// İstenen dönem endekste (ya da portföyde) yoktu ve pencere veri olan
+  /// en erken aya çekildi (`InflationService.pencereKapsayan`). Ekran bunu
+  /// söyler; sessizce kısa bir pencereyi uzun dönem diye sunmaz.
+  final bool kisaltildi;
 
   /// Pencerenin son ayı — son açıklanmış TÜFE ayı.
   final DateTime sonAy;

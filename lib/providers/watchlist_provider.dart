@@ -10,6 +10,7 @@ import '../widgets/watchlist_chart.dart' show WatchlistChart;
 import 'auth_provider.dart';
 import 'portfolio_provider.dart';
 import 'preferences_provider.dart';
+import 'secili_donem_provider.dart';
 import '../utils/tr_format.dart';
 
 /// Free tier takip limiti aşıldı.
@@ -194,7 +195,7 @@ Map<String, Map<int, double>> ortakPencereyeHizala(
 
 /// Kıyas çizgisine hangi varlıklar girer?
 ///
-/// `ModernTabSelector` sözleşmesi:
+/// `OrtakSecici` sözleşmesi:
 ///   · `''`   → yalnızca ben
 ///   · uuid   → yalnızca o ortak
 ///   · `null` → Birlikte (ben + tüm aktif ortaklar)
@@ -261,12 +262,20 @@ final watchlistPeriods = <({String label, int days})>[
 ];
 
 /// Seçili dönem indeksi. Varsayılan 1A — ne çok gürültülü ne çok durgun.
-final watchlistPeriodProvider =
-    StateProvider<int>((ref) => SummaryPeriod.birAy.index);
+///
+/// `donem_hafizasi` açıkken (Sadeleştirme 2) değer uygulamanın ortak
+/// dönemidir ([seciliDonemProvider]): ortak değer değişince bu sağlayıcı
+/// yeniden kurulur, okuyanlar (liste, grafik, varlık sayfası açılışı) aynı
+/// adla çalışmaya devam eder. Yazma o zaman ortak sağlayıcıya yapılır
+/// (bkz. `watchlist_screen.dart` `_PeriodToggle`). Takip her dönemi
+/// gösterebildiği için en yakın döneme düşme gerekmez.
+final watchlistPeriodProvider = StateProvider<int>((ref) => donemHafizasiAcik
+    ? ref.watch(seciliDonemProvider).index
+    : SummaryPeriod.birAy.index);
 
 /// Grafikteki portföy çizgisinin KİMİ gösterdiği.
 ///
-/// Uygulamanın geri kalanıyla AYNI sözleşme (`_view`, `ModernTabSelector`):
+/// Uygulamanın geri kalanıyla AYNI sözleşme (`_view`, `OrtakSecici`):
 ///   · `null` → Birlikte (ben + tüm aktif ortaklar)
 ///   · `''`   → yalnızca ben
 ///   · uuid   → yalnızca o ortak

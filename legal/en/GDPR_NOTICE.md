@@ -1,10 +1,10 @@
 # GDPR Notice — sandık
 
-**Effective date:** May 11, 2026
-**Last updated:** September 29, 2026
-**Version:** 1.0
+**Effective date:** October 8, 2026
+**Last updated:** October 8, 2026
+**Version:** 1.4
 
-> This document supplements the [Privacy Policy](PRIVACY_POLICY.md) and [Terms of Service](TERMS_OF_SERVICE.md) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
+> This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
 ---
 
@@ -31,7 +31,7 @@
 
 ## 2. Categories of Personal Data Processed
 
-See [Privacy Policy §3](PRIVACY_POLICY.md#3-data-we-collect) for the detailed inventory.
+See [Privacy Policy §3](https://yasincirali.github.io/sandikapp/privacy-en) for the detailed inventory.
 
 We do **not** process special categories of personal data (Art. 9): no health, racial/ethnic origin, political opinions, religious beliefs, biometric, genetic, sexual orientation data.
 
@@ -42,32 +42,40 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Processing | Legal basis |
 |---|---|
 | Account creation, authentication, providing core service | Art. 6(1)(b) — performance of a contract |
-| Push notifications, marketing emails (if any) | Art. 6(1)(a) — consent |
-| Storing disclaimer acceptance log | Art. 6(1)(c) — legal obligation |
-| Security measures (rate limiting, abuse detection, error logs) | Art. 6(1)(f) — legitimate interests |
-| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(b) — performance of a contract (standard App feature); Art. 6(1)(f) — legitimate interests |
-| International transfer (Supabase/Firebase USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
+| Push notifications (after you grant the operating system's notification permission) | Art. 6(1)(b) — performance of a contract |
+| Storing legal text acceptance records (incl. the investment disclaimer) | Art. 6(1)(f) — legitimate interests (proof of acceptance); Art. 6(1)(c) — legal obligation where applicable |
+| Security measures (single active device, rate limiting, abuse detection, sign-in security log, error logs) | Art. 6(1)(f) — legitimate interests |
+| Crash reports and usage statistics (Firebase Crashlytics, Firebase Analytics); sign-up funnel | Art. 6(1)(f) — legitimate interests (diagnostics, product improvement) |
+| Race (optional; period return %, asset-type shares %) | Art. 6(1)(b) — performance of a contract (feature you turn on) |
+| Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time) |
+| Premium subscription verification (only if you buy Premium; RevenueCat) | Art. 6(1)(b) — performance of a contract |
+| International transfer (Supabase Japan → Germany, Firebase and RevenueCat USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
 ---
 
 ## 4. Recipients (Art. 13(1)(e))
 
-See [Privacy Policy §5](PRIVACY_POLICY.md#5-third-party-recipients-data-processors).
+See [Privacy Policy §5](https://yasincirali.github.io/sandikapp/privacy-en) (Supabase, Google Firebase and Gmail email infrastructure, Apple Push Notification service, Sign in with Apple / Google Sign-In, RevenueCat for Premium subscription verification). Public market-data providers (exchanges, banks, fund platforms, official institutions, exchange-rate and price services) receive no personal data and are therefore not listed individually.
 
 All processors are bound by Data Processing Agreements (DPAs) under Art. 28.
 
-Other users of the App receive only the anonymous output of the Top Portfolios pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](PRIVACY_POLICY.md#51-anonymous-sharing-with-other-users-top-portfolios).
+Other users who have also joined Top Portfolios receive only the anonymous output of the pool — rank, return percentage, asset-type shares and TEFAS fund codes with their shares, with no identity, amounts or quantities — see [Privacy Policy §5.1](https://yasincirali.github.io/sandikapp/privacy-en).
 
 ---
 
 ## 5. International Transfers (Art. 44-49)
 
-Data is transferred to the United States via:
+The database is hosted in Japan (AWS Tokyo), which benefits from the EU adequacy decision for Japan
+(Commission Implementing Decision (EU) 2019/419). It is being migrated to Germany (AWS Frankfurt, EU);
+after the migration, database storage involves no third-country transfer. Supabase Inc. (a U.S.
+company) and Google act as processors under the mechanisms below:
 
 | Service | Mechanism | Reference |
 |---|---|---|
-| Supabase Inc. | EU-U.S. Data Privacy Framework + Standard Contractual Clauses | https://supabase.com/privacy |
-| Google Firebase | EU-U.S. Data Privacy Framework + SCCs | https://firebase.google.com/support/privacy |
+| Supabase Inc. (processor; data in Japan → Germany) | EU adequacy decision for Japan; EU-U.S. Data Privacy Framework + Standard Contractual Clauses for remote access | https://supabase.com/privacy |
+| Google Firebase and Gmail | EU-U.S. Data Privacy Framework + SCCs | https://firebase.google.com/support/privacy |
+| Apple (Push Notification service, Sign in with Apple) | EU-U.S. Data Privacy Framework + SCCs | https://www.apple.com/legal/privacy/ |
+| RevenueCat, Inc. (only if you buy Premium) | SCCs under RevenueCat's Data Processing Addendum | https://www.revenuecat.com/privacy |
 
 **Risk assessment:** The U.S. is a recipient of the EU-U.S. Data Privacy Framework adequacy decision (10 July 2023). However, due to evolving CJEU jurisprudence, we additionally rely on SCCs and supplementary measures (encryption in transit and at rest, access controls, RLS).
 
@@ -77,7 +85,7 @@ You may request a copy of the SCCs by emailing `sandikapp.destek@gmail.com`.
 
 ## 6. Retention Periods (Art. 13(2)(a))
 
-See [Privacy Policy §7](PRIVACY_POLICY.md#7-retention-periods).
+See [Privacy Policy §7](https://yasincirali.github.io/sandikapp/privacy-en).
 
 ---
 
@@ -90,7 +98,7 @@ You may request confirmation that we process your data and obtain a copy in a st
 You may correct inaccurate or incomplete data.
 
 ### 7.3 Right to Erasure / "Right to be Forgotten" (Art. 17)
-You may request deletion. We will erase your data unless retention is required by law (e.g., disclaimer log under Turkish CO Art. 146).
+You may request deletion. In-app deletion takes effect immediately. Legal text acceptance records and the anonymous deletion record (a one-way hash of your account ID and your email domain) are kept for 3 years after deletion (Turkish Code of Obligations Art. 146 limitation period); the sign-in security log (IP, device/browser) is kept for 90 days. Both are deleted automatically when their period ends; other records kept after deletion are listed in Privacy Policy §7.
 
 **In-app:** Profile → Settings → Delete Account.
 **Web:** `https://yasincirali.github.io/sandikapp/data-request`
@@ -133,7 +141,6 @@ Find yours: https://edpb.europa.eu/about-edpb/about-edpb/members_en
 | In-app | Profile → Settings (Delete / Download) |
 | Email | `sandikapp.destek@gmail.com` |
 | Web form | `https://yasincirali.github.io/sandikapp/data-request` |
-| Postal mail | `Istanbul, Türkiye` |
 
 **Identity verification:** We may ask you to verify your identity (e.g., confirm via the email associated with your account). If we have reasonable doubts about your identity, we may request additional information (Art. 12(6)).
 
@@ -160,7 +167,7 @@ Our service is not directed to children under 16. We do not knowingly process da
 
 ## 11. Changes to This Notice
 
-Material changes will be communicated via in-app notification and email at least **30 days in advance**. The current version is always available at `https://yasincirali.github.io/sandikapp/legal/gdpr`.
+Material changes to the legal documents are announced in the App: on the next launch the current documents and a summary of the changes are shown. Your acceptance of the Terms of Service and your explicit consent under the Explicit Consent Notice are requested again; the information documents (Privacy Policy and KVKK Disclosure) are presented to you and you state that you have been informed. The current version of this notice is always available at `https://yasincirali.github.io/sandikapp/legal/gdpr`.
 
 ---
 
@@ -174,4 +181,4 @@ Material changes will be communicated via in-app notification and email at least
 
 ---
 
-*This document is provided in English. A Turkish version is available at [legal/tr/KVKK_AYDINLATMA_METNI.md](../tr/KVKK_AYDINLATMA_METNI.md), which covers Turkish KVKK obligations.*
+*This document is provided in English. The Turkish KVKK Disclosure, which covers Turkish KVKK obligations, is available at https://yasincirali.github.io/sandikapp/legal/kvkk.*

@@ -6,9 +6,11 @@ import 'package:intl/intl.dart';
 
 import '../models/asset.dart';
 import '../providers/portfolio_provider.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'canli_etkinlik_tarifi.dart';
 import 'daily_summary.dart';
 import 'surface_theme.dart';
 
@@ -176,6 +178,20 @@ class LiveActivityService {
   /// taşınır. Varsayılan KAPALI: gizlilik kararlarında güvenli taraf.
   bool showAmountsOnLockScreen = false;
 
+  /// Uygulama kapalıyken sunucu kilit ekranını DAKİKADA BİR Performans
+  /// GÜNLÜK ile aynı hesaba göre tazelesin mi? (Remote Config
+  /// `canli_etkinlik_dakikalik`, varsayılan KAPALI.)
+  ///
+  /// Açıkken özetle birlikte [CanliEtkinlikTarifi] yazılır; sunucu onu
+  /// canlı kotasyonla ileri taşır. Kapalıyken satıra tarif girmez ve sunucu
+  /// eski davranışı birebir sürdürür (yazılı metni 5 dakikada bir basar).
+  /// `main.dart` her senkronda bayraktan atar — [showAmountsOnLockScreen]
+  /// ile aynı desen.
+  bool dakikalikGuncelleme = false;
+
+  /// Son kurulan tarif — [_writeSummary] satıra yazar.
+  Map<String, Object?>? _tarif;
+
   /// Platform desteği + kullanıcı izni.
   ///
   /// Android'de kanal hiç kayıtlı değildir; [MissingPluginException] beklenen
@@ -210,6 +226,8 @@ class LiveActivityService {
     _lastPayloadKey = null;
     _lastSummaryKey = null;
     _summary = null;
+    _tarif = null;
+    dakikalikGuncelleme = false;
     IntradaySeriesCache.instance.clear();
     // Pencere ayarları da sıfırlanır: singleton olduğu için bir testin
     // seçtiği saat aralığı sonrakine taşar ve sessizce yanlış sonuç verir.
@@ -377,7 +395,8 @@ class LiveActivityService {
     final key = '${payload['totalText']}|${payload['changeText']}'
         '|${payload['changePctText']}|${payload['showAmounts']}'
         '|${payload['isFlatChange']}|${payload['axisMinText']}'
-        '|${payload['axisMaxText']}|${payload['isLightTheme']}';
+        '|${payload['axisMaxText']}|${payload['isLightTheme']}'
+        '|${payload['yalnizBorsa']}|${_tarif != null}';
     if (key == _lastSummaryKey) return;
 
     await _db
@@ -407,6 +426,8 @@ class LiveActivityService {
             // önplandayken ActivityKit doğru paleti basar, push gelince
             // eskisine dönerdi — `show_amounts` ile birebir aynı hata.
             'isLightTheme': payload['isLightTheme'],
+            // Sunucu push'u da "kapalı" etiketini aynı kuralla basmalı.
+            'yalnizBorsa': payload['yalnizBorsa'],
             // Özetin hangi ANLAM sürümüyle yazıldığı.
             //
             // v1'de `changeText` ÖMÜRLÜK getiriydi; v2'de günlük değişim.
@@ -415,6 +436,10 @@ class LiveActivityService {
             // uygulamadan kalmadır ve push'lanırsa kullanıcı kilit
             // ekranında yine ömürlük getiriyi "Bugün" diye görür.
             'schema': summarySchemaVersion,
+            // Dakikalık ileri taşıma tarifi — bayrak kapalıyken YOK.
+            // Alan ekleyerek geldi: eski sunucu fonksiyonu tanımadığı
+            // anahtarı okumaz, şema sürümü bu yüzden yükseltilmedi.
+            if (_tarif != null) 'dakikalik': _tarif,
           },
           'show_amounts': showAmountsOnLockScreen,
           'updated_at': DateTime.now().toIso8601String(),
@@ -444,14 +469,24 @@ class LiveActivityService {
   Future<List<double>> _buildSparkline(PortfolioState state,
       {required DateTime now}) async {
     final series = await IntradaySeriesCache.instance.get(state, now: now);
+    final seansGunu = IntradaySeriesCache.instance.seansGunu;
     _summary = DailySummary.from(
       state: state,
       series: series,
       now: now,
       // Çizilen seans bugün olmayabilir (hafta sonu → Cuma). Uygulamanın
       // günlük grafiği de ekseni bu güne kurar.
-      seansGunu: IntradaySeriesCache.instance.seansGunu,
+      seansGunu: seansGunu,
     );
+    _tarif = dakikalikGuncelleme
+        ? CanliEtkinlikTarifi.kur(
+            state: state,
+            ozet: _summary!,
+            series: series,
+            now: now,
+            seansGunu: seansGunu,
+          )
+        : null;
     return DailySummary.normalizeForSparkline(_summary!.sparkline);
   }
 
@@ -466,7 +501,15 @@ class LiveActivityService {
   /// boş gider ve uzantı ekseni hiç çizmez.
   ({String min, String max})? _axisBounds() {
     if (!showAmountsOnLockScreen) return null;
-    final values = _summary?.sparkline ?? const <double>[];
+    return eksenMetinleri(_summary?.sparkline ?? const <double>[]);
+  }
+
+  /// Ham gün içi seriden eksen etiketleri — gizlilik kapısı ÇAĞIRANDA.
+  ///
+  /// Statik ve açık: sunucunun dakikalık ileri taşıması
+  /// (`_shared/canli_etkinlik.ts`) aynı metni üretmek zorunda; parite testi
+  /// iki tarafı buradan karşılaştırır.
+  static ({String min, String max})? eksenMetinleri(List<double> values) {
     if (values.length < 2) return null;
 
     // Sınırlar ORTAK katmandan — widget'la birebir aynı eksen.
@@ -474,6 +517,50 @@ class LiveActivityService {
     final span = b.max - b.min;
 
     return (min: fmtTRYAxis(b.min, span), max: fmtTRYAxis(b.max, span));
+  }
+
+  /// Günlük değişimin kilit ekranı metinleri — [_payload]'ın tutar/yüzde
+  /// dalı. Statik ve açık: [eksenMetinleri] ile aynı gerekçe (sunucu
+  /// paritesi).
+  ///
+  /// **Neden `state.gainLoss` DEĞİL:** o alan varlığın alındığı günden
+  /// bugüne TÜM getiridir (temettü dahil). Kilit ekranındaki etiketler
+  /// "Bugün" / "Bugünkü Net Kazanç" / "Günlük" diyor; oraya ömürlük
+  /// getiriyi basmak doğrudan yanlış bilgidir — kullanıcı %40'lık toplam
+  /// kazancı günlük hareket sanır. Değişim [DailySummary]'den gelir
+  /// (uygulamanın "Bugünkü değişim" kartıyla aynı hesap); seri yoksa
+  /// uydurma rakam yerine "—".
+  static ({
+    String totalText,
+    String changeText,
+    String changePctText,
+    bool isPositive,
+    bool isFlat,
+  }) degisimMetinleri(DailySummary? s) {
+    final today =
+        (s == null || !s.hasChange) ? null : (amount: s.changeTRY!, pct: s.changePct!);
+    // Gün içi seri yoksa yön bilgisi de yok — nötr (pozitif) varsayılır,
+    // tutar/oran "—" olarak gider.
+    final isPos = (today?.amount ?? 0) >= 0;
+    // Ölçüldü ama sıfır: işaret ve yön sunumdan çıkarılır.
+    final isFlat = s?.isFlat ?? false;
+    return (
+      totalText: fmtTRY(s?.totalTRY ?? 0, digits: 2),
+      // GÜNLÜK değişim — ömürlük getiri değil. Seri yoksa uydurma rakam
+      // yerine "—" gider; kilit ekranında yanlış sayı, sayısızlıktan kötü.
+      //
+      // Ölçüm sıfırsa işaret BASILMAZ: sıfır bir yön taşımaz ve kırmızı
+      // bir `-₺0,00` kullanıcı tarafından kayıp olarak okunur. Ana ekran
+      // widget'ıyla aynı kural (`DailySummary.isFlat`).
+      changeText: today == null
+          ? '—'
+          : isFlat
+              ? fmtTRY(0, digits: 2)
+              : '${isPos ? '+' : '-'}${fmtTRY(today.amount.abs(), digits: 2)}',
+      changePctText: today == null ? '—' : fmtPct(today.pct.abs(), digits: 2),
+      isPositive: isPos,
+      isFlat: isFlat,
+    );
   }
 
   /// Kilit ekranı yalnızca kullanıcının KENDİ portföyünü gösterir.
@@ -605,6 +692,9 @@ class LiveActivityService {
 
       // Sparkline seansta 5 dakikada bir tazelenir (push periyoduyla
       // hizalı); aradaki çağrılar önbellekten okur.
+      // Bakiye gizliyken tarif de yazılmaz: sunucu ileri taşıdığı rakamı
+      // basardı, oysa gizlilik kapısı rakamı kaynakta keser.
+      if (hideBalance) _tarif = null;
       final spark =
           hideBalance ? const <double>[] : await _buildSparkline(state, now: ts);
 
@@ -639,11 +729,14 @@ class LiveActivityService {
           '|${payload['isPositive']}|${payload['isHidden']}'
           '|${payload['showAmounts']}|${payload['isMarketOpen']}'
           '|${payload['isFlatChange']}|${payload['axisMinText']}'
-          '|${payload['isLightTheme']}';
+          '|${payload['isLightTheme']}|${payload['yalnizBorsa']}';
       final unchanged = _sessionActive && key == _lastPayloadKey;
 
-      // Özeti sunucuya yaz — push döngüsü (cron, 5 dk) bunu okuyup APNs'e
+      // Özeti sunucuya yaz — push döngüsü (cron) bunu okuyup APNs'e
       // gönderir. Böylece uygulama kapalıyken de kilit ekranı güncellenir.
+      // Tarif varsa ([dakikalikGuncelleme]) sunucu rakamı dakikada bir
+      // canlı kotasyonla ileri taşır; yoksa yazılı metni 5 dakikada bir
+      // olduğu gibi basar.
       //
       // **ActivityKit çağrısından ÖNCE ve ONDAN BAĞIMSIZ yazılır.** Eskiden
       // yalnızca `ok == true` iken yazılıyordu ve iki durumda sessizce
@@ -710,24 +803,6 @@ class LiveActivityService {
     }
   }
 
-  /// Bugünün kâr/zararı — tutar (TRY) ve oran (%).
-  ///
-  /// **Neden `state.gainLoss` DEĞİL:** o alan varlığın alındığı günden
-  /// bugüne TÜM getiridir (temettü dahil). Kilit ekranındaki etiketler
-  /// "Bugün" / "Bugünkü Net Kazanç" / "Günlük" diyor; oraya ömürlük
-  /// getiriyi basmak doğrudan yanlış bilgidir — kullanıcı %40'lık toplam
-  /// kazancı günlük hareket sanır.
-  ///
-  /// Gün içi serinin ilk ve son noktası kullanılır; uygulamanın "Bugünkü
-  /// değişim" kartıyla ([_buildPeriodChangeCard]) aynı mantık: son − ilk.
-  /// Seri yoksa (veri çekilemedi) `null` döner ve çağıran taraf yüzeyi
-  /// uydurma rakamla doldurmaz.
-  ({double amount, double pct})? _todayChange() {
-    final s = _summary;
-    if (s == null || !s.hasChange) return null;
-    return (amount: s.changeTRY!, pct: s.changePct!);
-  }
-
   /// Kilit ekranına gidecek özet. Gizlilik kuralı burada uygulanır.
   Map<String, dynamic> _payload(
     PortfolioState state, {
@@ -735,12 +810,11 @@ class LiveActivityService {
     required DateTime now,
     List<double> sparkline = const [],
   }) {
-    final today = _todayChange();
-    // Gün içi seri yoksa yön bilgisi de yok — nötr (pozitif) varsayılır,
-    // aşağıda tutar/oran zaten "—" olarak gider.
-    final isPos = (today?.amount ?? 0) >= 0;
-    // Ölçüldü ama sıfır: işaret ve yön sunumdan çıkarılır.
-    final isFlat = _summary?.isFlat ?? false;
+    // Tutar/yüzde/yön metinleri TEK yerden ([degisimMetinleri]) — sunucu
+    // dakikalık ileri taşırken aynı kuralı uygular.
+    final m = degisimMetinleri(_summary);
+    final isPos = m.isPositive;
+    final isFlat = m.isFlat;
     final axis = _axisBounds();
     final endsAt = sessionEnd(now);
     final updatedAt = DateFormat('HH:mm', 'tr_TR').format(now);
@@ -770,6 +844,7 @@ class LiveActivityService {
         'axisMaxText': '',
         'isFlatChange': false,
         'isLightTheme': themeIsLight,
+        'yalnizBorsa': yalnizcaBorsaVarliklardan(state.assets),
       };
     }
 
@@ -781,19 +856,9 @@ class LiveActivityService {
       // `state.totalValue` işaretsiz ham toplamdır ve satış yapmış
       // kullanıcıda portföyü olduğundan büyük gösterirdi.
       'totalText': fmtTRY(DailySummary.liveTotalTRY(state), digits: 2),
-      // GÜNLÜK değişim — ömürlük getiri değil. Seri yoksa uydurma rakam
-      // yerine "—" gider; kilit ekranında yanlış sayı, sayısızlıktan kötü.
-      //
-      // Ölçüm sıfırsa işaret BASILMAZ: sıfır bir yön taşımaz ve kırmızı
-      // bir `-₺0,00` kullanıcı tarafından kayıp olarak okunur. Ana ekran
-      // widget'ıyla aynı kural (`DailySummary.isFlat`).
-      'changeText': today == null
-          ? '—'
-          : isFlat
-              ? fmtTRY(0, digits: 2)
-              : '${isPos ? '+' : '-'}${fmtTRY(today.amount.abs(), digits: 2)}',
-      'changePctText':
-          today == null ? '—' : fmtPct(today.pct.abs(), digits: 2),
+      // GÜNLÜK değişim — ömürlük getiri değil; kurallar [degisimMetinleri].
+      'changeText': m.changeText,
+      'changePctText': m.changePctText,
       'isPositive': isPos,
       'isHidden': false,
       'updatedAtText': updatedAt,
@@ -827,6 +892,14 @@ class LiveActivityService {
       // tümden keserdi. Eski istemci bu alanı tanımaz, varsayılan koyu
       // paletle çizer — bugünkü davranış.
       'isLightTheme': themeIsLight,
+      // "Piyasa kapalı" yalnızca portföy TAMAMEN borsa ürünüyse (kullanıcı
+      // kararı 2026-10-01, bkz. `yalnizcaBorsa`). `isMarketOpen` BIST
+      // seansını anlatmaya devam eder (eski sürümlerin seans çubuğu ona
+      // bakar); etiketi
+      // ikisi birlikte belirler. Şema sürümü yükseltilmedi — `isLightTheme`
+      // ile aynı gerekçe: eski alanların anlamı değişmedi, eksik alan eski
+      // davranışa düşer.
+      'yalnizBorsa': yalnizcaBorsaVarliklardan(state.assets),
     };
   }
 
@@ -841,6 +914,7 @@ class LiveActivityService {
       // senkronunda `_todayChange` ÖNCEKİ kullanıcının gününü okur ve
       // aynı metin üretilirse DB yazımı "değişmedi" diye atlanır.
       _summary = null;
+      _tarif = null;
       _lastSummaryKey = null;
       IntradaySeriesCache.instance.clear();
       if (!await _isSupported()) return;

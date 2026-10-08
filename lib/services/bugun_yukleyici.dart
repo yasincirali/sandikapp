@@ -1,4 +1,4 @@
-// Bugün kartının üç veri yükleyicisi — TEK KAYNAK.
+// Bugün kartının veri yükleyicileri — TEK KAYNAK.
 //
 // ## Neden ayrı dosya (kullanıcı isteği, 2026-09-28)
 // *"Uygulamaya tıklandığında GIF başladığında ana sayfa için gereken tüm
@@ -8,8 +8,8 @@
 //
 // Splash zaten portföyü, ortak listesini ve ortak varlıklarını ısıtıyordu
 // (`_AuthGateState._warmUpData`). Ana ekranda kalan tek iskelet Bugün
-// kartıydı: kartın üç yükleyicisi (gün içi seri, reel getiri, haftalık
-// getiri) `BugunKarti` state'inin içindeydi ve ancak kart KURULDUKTAN sonra
+// kartıydı: kartın yükleyicileri (gün içi seri, reel getiri; 2026-10-08'e
+// kadar haftalık getiri de) `BugunKarti` state'inin içindeydi ve ancak kart KURULDUKTAN sonra
 // başlıyordu — fiyat turu da `MainNavigationScreen.initState`'te. Yani
 // splash biter, ana ekran gelir, kart 2–10 sn iskelet çizer.
 //
@@ -26,13 +26,14 @@
 // ayrıdır (`_dataWaitTimer`).
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import 'bugun_service.dart';
 import 'crash_reporter.dart';
 import 'daily_summary.dart';
 import 'history_service.dart';
-import 'period_summary_service.dart';
 import 'real_return_service.dart';
 import 'remote_config_service.dart';
 import 'tazelik_ritmi.dart';
@@ -42,10 +43,11 @@ abstract final class BugunYukleyici {
   /// sonra elindekiyle çizilir; iskelet sonsuza kadar kalmaz.
   static const Duration varsayilanButce = Duration(seconds: 10);
 
-  /// Gün içi seri — kişisel görünümde kilit ekranı ve widget'la ORTAK
-  /// önbellekten (`IntradaySeriesCache`), ortak/Birlikte görünümünde
-  /// doğrudan `HistoryService`'ten (önbellek tek yuvalı ve oturumdaki
-  /// kullanıcıya damgalı; başka defterle doldurulmaz).
+  /// Gün içi seri — her kapsamda ORTAK önbellekten (`IntradaySeriesCache`).
+  ///
+  /// Kişisel görünüm Ben yuvasını (kilit ekranı ve widget'la aynı), ortak/
+  /// Birlikte görünümü kendi kümesinin yuvasını okur; Performans aynı
+  /// kümeyi istediğinde aynı nesneyi alır (2026-10-02, "her yerde aynı").
   ///
   /// [azamiYas] önbellekteki serinin kabul edilen yaşı; [zorla] nabızda
   /// koşulsuz tazeleme.
@@ -58,10 +60,13 @@ abstract final class BugunYukleyici {
   }) async {
     try {
       if (!kisisel) {
-        final bd = await HistoryService.instance
-            .getPortfolioHistoryHourlyBreakdown(
-                state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList(),
-                24)
+        final bd = await IntradaySeriesCache.instance
+            .breakdown(
+              state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList(),
+              ownerId: state.ownerId,
+              azamiYas: azamiYas,
+              zorla: zorla,
+            )
             .timeout(enFazla);
         return bd.total;
       }
@@ -75,55 +80,38 @@ abstract final class BugunYukleyici {
   }
 
   /// Reel getiri satırı — Remote Config kapalıysa `null`.
+  ///
+  /// Lot listesi `activeAssets` (2026-10-01 emülatör testi): `state.assets`
+  /// HAM defterdir ve yumuşak silinmiş lot'ları taşır. Performans › Özet
+  /// `isActive` süzgecinden geçirirken burası ham listeyi veriyordu; aynı
+  /// dakikada Ana ekran "5,4 puan önde", Özet "4,5 puan" yazdı. Getiri
+  /// hesaplayan her yüzey aynı kümeyi okumalı (`PortfolioState.activeAssets`
+  /// notu).
+  /// Testte reel satırını ağsız vermek için (TÜFE ve seri testte ağa
+  /// çıkamaz; `HistoryService.seriCekici` ile aynı desen).
+  @visibleForTesting
+  static ReelGetiriSatiri? Function(PortfolioState state)? reelTest;
+
   static Future<ReelGetiriSatiri?> reel(
     PortfolioState state, {
     Duration enFazla = varsayilanButce,
   }) async {
+    final test = reelTest;
+    if (test != null) return test(state);
     if (!RemoteConfigService.instance.realReturnEnabled) return null;
     try {
-      final r = await RealReturnService.yillik(state.assets).timeout(enFazla);
+      final r =
+          await RealReturnService.yillik(state.activeAssets).timeout(enFazla);
       if (r == null) return null;
-      return ReelGetiriSatiri(nominal: r.nominal, inflation: r.inflation);
+      return ReelGetiriSatiri(
+          nominal: r.nominal, inflation: r.inflation, pencere: r.pencere);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'BugunYukleyici.reel');
       return null;
     }
   }
 
-  /// Haftalık getiri yüzdesi — Remote Config kapalıysa `null`.
-  static Future<double?> haftalik(
-    PortfolioState state, {
-    Duration enFazla = varsayilanButce,
-  }) async {
-    if (!RemoteConfigService.instance.periodSummaryEnabled) return null;
-    try {
-      final now = DateTime.now();
-      final p = PeriodSummaryService.pencere(SummaryPeriod.birHafta, now);
-      final bd = await HistoryService.instance
-          .getPortfolioHistoryBreakdownAtResolution(
-            assets: state.assets,
-            from: p.start,
-            to: p.end,
-            tier: ResolutionTierMeta.pickForSpan(
-                SummaryPeriod.birHafta.days.toDouble()),
-          )
-          .timeout(enFazla);
-      final s = PeriodSummaryService.compute(
-        period: SummaryPeriod.birHafta,
-        assets: state.assets,
-        breakdown: bd,
-        now: now,
-        // Performans › Özet ile aynı sağ uç (bkz. `compute` [canliSon]).
-        canliSon: DailySummary.kapsamToplami(state, state.assets),
-      );
-      return s.getiriPct;
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'BugunYukleyici.haftalik');
-      return null;
-    }
-  }
-
-  /// Splash ısıtması: kartın açılışta ("Ben" görünümü) isteyeceği üç veriyi
+  /// Splash ısıtması: kartın açılışta ("Ben" görünümü) isteyeceği verileri
   /// PARALEL çeker ve önbellekleri doldurur. Sonuç kullanılmaz; kart aynı
   /// çağrıları yapınca önbellekten alır. Hiç fırlatmaz.
   ///
@@ -134,7 +122,6 @@ abstract final class BugunYukleyici {
     await Future.wait<Object?>([
       seri(state, kisisel: true, enFazla: enFazla),
       reel(state, enFazla: enFazla),
-      haftalik(state, enFazla: enFazla),
     ]);
   }
 }

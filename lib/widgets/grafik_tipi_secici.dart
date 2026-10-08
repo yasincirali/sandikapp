@@ -15,7 +15,7 @@ import '../theme/sandik.dart';
 /// olanın yanında tik, seçim oturum boyunca korunuyor.
 ///
 /// ## Neden `PopupMenuButton`, bottom sheet değil
-/// Liste dört kısa satır ve chip'in hemen altında açılması konumsal
+/// Liste iki kısa satır ve chip'in hemen altında açılması konumsal
 /// bağlamı koruyor. Bottom sheet ekranın yarısını kaplar ve grafikle
 /// bağı kopar — kullanıcı seçtiği tipin etkisini göremeden sayfa örtülür.
 class GrafikTipiSecici extends StatelessWidget {
@@ -27,7 +27,10 @@ class GrafikTipiSecici extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<GrafikTipi>(
       valueListenable: grafikTipiNotifier,
-      builder: (context, secili, _) {
+      builder: (context, kayitli, _) {
+        // Yalnız Çizgi ve Mum (gerekçe `GrafikTipi`). Seçici yalnız grafik
+        // araçları görünürken çizilir; seçili tip doğrudan kayıtlı seçim.
+        final secili = kayitli;
         // `Material` ZORUNLU ve POPUP'IN DIŞINDA olmalı.
         //
         // Bu ekran `CupertinoPageScaffold` altında çiziliyor;
@@ -131,14 +134,10 @@ class GrafikTipiSecici extends StatelessWidget {
                   ),
                 ),
               ),
-            GrafikTipiGorunum.cip => Container(
+            GrafikTipiGorunum.cip => SandikCard(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: context.c.surface2,
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(color: context.c.hairline),
-                ),
+                elevated: true,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

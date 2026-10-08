@@ -1,0 +1,81 @@
+# Halka arz takvimi — günlük otomatik güncelleme.
+#
+# Neden: liste (docs/data/halka_arz.json + assets kopyası) docs/README.md
+# prosedürüyle ELLE güncelleniyordu; yeni arz haftalarca eksik kalabiliyordu.
+# Kullanıcı (2026-10-01): "Halka arz güncel olmalı."
+#
+# `tool/halka_arz_guncelle.py` kaynaktan yeni arzları ve boş alanları okur;
+# değişiklik varsa bu iş `otomatik/halka-arz` dalına yazıp PR AÇAR. Main'e
+# doğrudan yazmaz: veri kullanıcıya gösteriliyor ve birleştirme insanda kalır
+# (push onay kuralı, 2026-09-29). Birleşince Pages yayınlar, uygulama en geç
+# 1 saatte görür — sürüm gerekmez.
+#
+# ⚠️ GITHUB_TOKEN ile açılan PR CI iş akışlarını TETİKLEMEZ (GitHub kuralı).
+# Bu yüzden şema testi burada koşar; PR yalnızca test geçtiyse açılır.
+name: Halka arz takvimi
+
+on:
+  schedule:
+    # Her gün 06:30 UTC (TR 09:30) — SPK bülteni ve talep duyuruları sabah.
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: halka-arz
+  cancel-in-progress: false
+
+jobs:
+  guncelle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Kaynaktan güncelle
+        id: guncel
+        run: |
+          set -o pipefail
+          python tool/halka_arz_guncelle.py | tee /tmp/sonuc.txt
+          if grep -q DEGISIKLIK_VAR /tmp/sonuc.txt; then
+            echo "degisti=1" >> "$GITHUB_OUTPUT"
+            echo "ozet=$(grep '^yeni:' /tmp/sonuc.txt | head -1)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: subosito/flutter-action@v2
+        if: steps.guncel.outputs.degisti == '1'
+        with:
+          channel: stable
+          cache: true
+
+      - name: Şema testi (halka_arz_veri_test)
+        if: steps.guncel.outputs.degisti == '1'
+        run: |
+          flutter pub get
+          flutter test test/halka_arz_veri_test.dart
+
+      - name: PR aç
+        if: steps.guncel.outputs.degisti == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OZET: ${{ steps.guncel.outputs.ozet }}
+        run: |
+          dal="otomatik/halka-arz-$(date -u +%Y%m%d)"
+          git config user.name "sandik-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$dal"
+          git add docs/data/halka_arz.json assets/data/halka_arz.json lib/models/asset_categories.dart
+          git commit -m "data(halka-arz): kaynaktan günlük güncelleme — $OZET"
+          git push --force -u origin "$dal"
+          if ! gh pr view "$dal" >/dev/null 2>&1; then
+            gh pr create --base main --head "$dal" \
+              --title "Halka arz takvimi: $OZET" \
+              --body "Kaynak: halkarz.com şirket sayfaları (her kaydın \`kaynak\` alanı). Bilinmeyen alan \`null\`; dolu alanların üstüne yazılmadı. \`halka_arz_veri_test\` bu işte geçti. Birleşince Pages yayınlar."
+          fi

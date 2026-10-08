@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/real_return_service.dart';
 import '../services/recap_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/review_prompt_service.dart';
 import '../services/supabase_service.dart';
+import '../widgets/review_prompt_sheet.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/share_card.dart';
@@ -33,11 +36,18 @@ class RecapScreen extends StatefulWidget {
 
   const RecapScreen({super.key, required this.data, required this.year});
 
-  static Future<void> show(BuildContext context, RecapData d, int year) {
-    AnalyticsService.instance.logRecapViewed(period: d.period);
-    return Navigator.of(context).push(
-      adaptiveRoute(builder: (_) => RecapScreen(data: d, year: year)),
+  static Future<void> show(BuildContext context, RecapData d, int year) async {
+    unawaited(AnalyticsService.instance.logRecapViewed(period: d.period));
+    await Navigator.of(context).push(
+      adaptiveRoute<void>(builder: (_) => RecapScreen(data: d, year: year)),
     );
+    // Özet kapandı. Yıl artıdaysa değerlendirme istemi: kullanıcı az önce
+    // kendi iyi yılını izledi. Ekside ("zor bir yıl" sayfası) sorulmaz;
+    // değişim bilinmiyorsa da sorulmaz — olumlu olduğunu bilmiyoruz.
+    final degisim = d.changePct;
+    if (degisim != null && degisim >= 0 && context.mounted) {
+      await ReviewPromptSheet.belkiGoster(context, ReviewAni.ozetGoruldu);
+    }
   }
 
   @override
@@ -397,53 +407,12 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
     // Takvim kapısı EN BAŞTA: pencere dışındaysa hiçbir sorgu yapılmaz.
     if (!RecapService.isYearlyWindow(simdi)) return;
 
-    final me = ref.read(authProvider).valueOrNull;
-    final state = ref.read(portfolioProvider).valueOrNull;
-    if (me == null || state == null) return;
-
-    // Yılbaşından bu yana. Ocak'ta açılan özet bir önceki yıla ait olduğu
-    // için pencere de o yıldan başlar.
-    final yil = RecapService.yearFor(simdi);
-    final baslangic = DateTime(yil, 1, 1).millisecondsSinceEpoch;
-
-    List<({int ts, Map<String, double> values})> snapshots = const [];
-    try {
-      snapshots = await SupabaseService.instance
-          .fetchSnapshots(baslangic, userId: me.id);
-    } catch (_) {
-      // Snapshot çekilemezse özet yine kurulur; yalnızca değişim sayfası
-      // eksilir. Boş dönmek, özeti tamamen kaçırmaktan iyidir.
-    }
-
-    // TÜFE ve nominal TEK pencereden okunur.
-    //
-    // İki ayrı çağrı (biri `inflationForPeriod`, diğeri kendi penceresini
-    // kuran getiri hesabı) iki FARKLI aralık demekti ve çıkarma ölçülmemiş
-    // bir dönemi içeriyordu — gerekçe `RealReturnService.piyasaGetirisi`
-    // notunda. `yillik` ikisini de aynı pencereden verir.
-    //
-    // Seri kurulamazsa yalnızca enflasyon sayfası eksilir.
-    RealReturn? rr;
-    try {
-      rr = await RealReturnService.yillik(state.assets);
-    } catch (_) {}
-    final enflasyon = rr?.inflation;
-    final piyasa = rr?.nominal;
-
-    final d = RecapService.compute(
-      period: 'yearly',
-      assets: state.assets,
-      snapshots: snapshots,
-      toTRY: state.toTRY,
-      now: simdi,
-      inflationPct: enflasyon,
-      marketReturnPct: piyasa,
-      // Pencere uçları da geçer: sayfa hangi aralığı ölçtüğünü YAZMAK
-      // zorunda. Başlık takvim yılını söylüyor ama bu sayfa son 12 ayın
-      // kayan penceresi (bkz. `RecapData.inflationStart`).
-      inflationStart: rr?.pencere.seriBaslangici,
-      inflationEnd: rr?.pencere.seriBitisi,
+    final d = await yillikOzetVerisi(
+      me: ref.read(authProvider).valueOrNull,
+      state: ref.read(portfolioProvider).valueOrNull,
+      simdi: simdi,
     );
+    if (d == null) return;
     if (!mounted || !d.isMeaningful) return;
     setState(() => _veri = d);
   }
@@ -500,3 +469,80 @@ class _RecapBannerState extends ConsumerState<RecapBanner> {
     );
   }
 }
+
+/// Yıl özetinin verisi — Profil afişi ([RecapBanner]) ile Performans'taki
+/// Raporlar kapısının (bayrak `raporlar_kapisi`, S6; [yilOzetiProvider])
+/// ORTAK hesabı. Kapılar (bayrak, takvim) çağıranda; burası yalnız ölçer.
+/// `null`: oturum ya da portföy henüz yok.
+///
+/// Gövde 2026-10-08'e kadar `_RecapBannerState._yukle` içindeydi, birebir
+/// taşındı: iki giriş noktası aynı yılı iki farklı hesapla anlatmasın.
+Future<RecapData?> yillikOzetVerisi({
+  required AppUser? me,
+  required PortfolioState? state,
+  required DateTime simdi,
+}) async {
+  if (me == null || state == null) return null;
+
+  // Yılbaşından bu yana. Ocak'ta açılan özet bir önceki yıla ait olduğu
+  // için pencere de o yıldan başlar.
+  final yil = RecapService.yearFor(simdi);
+  final baslangic = DateTime(yil, 1, 1).millisecondsSinceEpoch;
+
+  List<({int ts, Map<String, double> values})> snapshots = const [];
+  try {
+    snapshots = await SupabaseService.instance
+        .fetchSnapshots(baslangic, userId: me.id);
+  } catch (_) {
+    // Snapshot çekilemezse özet yine kurulur; yalnızca değişim sayfası
+    // eksilir. Boş dönmek, özeti tamamen kaçırmaktan iyidir.
+  }
+
+  // TÜFE ve nominal TEK pencereden okunur.
+  //
+  // İki ayrı çağrı (biri `inflationForPeriod`, diğeri kendi penceresini
+  // kuran getiri hesabı) iki FARKLI aralık demekti ve çıkarma ölçülmemiş
+  // bir dönemi içeriyordu — gerekçe `RealReturnService.piyasaGetirisi`
+  // notunda. `yillik` ikisini de aynı pencereden verir.
+  //
+  // Seri kurulamazsa yalnızca enflasyon sayfası eksilir.
+  RealReturn? rr;
+  try {
+    rr = await RealReturnService.yillik(state.assets);
+  } catch (_) {}
+  final enflasyon = rr?.inflation;
+  final piyasa = rr?.nominal;
+
+  return RecapService.compute(
+    period: 'yearly',
+    assets: state.assets,
+    snapshots: snapshots,
+    toTRY: state.toTRY,
+    now: simdi,
+    inflationPct: enflasyon,
+    marketReturnPct: piyasa,
+    // Pencere uçları da geçer: sayfa hangi aralığı ölçtüğünü YAZMAK
+    // zorunda. Başlık takvim yılını söylüyor ama bu sayfa son 12 ayın
+    // kayan penceresi (bkz. `RecapData.inflationStart`).
+    inflationStart: rr?.pencere.seriBaslangici,
+    inflationEnd: rr?.pencere.seriBitisi,
+  );
+}
+
+/// Raporlar kapısının yıl özeti satırı: veri ya da `null` (bayrak kapalı,
+/// oturum yok, veri anlamsız).
+///
+/// **Takvim penceresi YOK** (afişten farkı): afiş özeti yılın 11 ayı
+/// görünmesin diye 26 Ara–10 Oca arasında çıkar; kapı ise kullanıcının
+/// BİLEREK açtığı bir liste — yıl içinde "bu yılım nasıl gidiyor" sorusunun
+/// cevabını saklamak için sebep yok (S6 kararı). Yıl `RecapService.yearFor`.
+///
+/// Portföy `read` ile okunur: her fiyat turunda anlık görüntüler yeniden
+/// çekilmesin; değer ekran açıkken bir kez ölçülür (autoDispose).
+final yilOzetiProvider = FutureProvider.autoDispose<RecapData?>((ref) async {
+  if (!RemoteConfigService.instance.recapEnabled) return null;
+  final me = await ref.read(authProvider.future);
+  final state = await ref.read(portfolioProvider.future);
+  final d = await yillikOzetVerisi(me: me, state: state, simdi: DateTime.now());
+  return (d != null && d.isMeaningful) ? d : null;
+});

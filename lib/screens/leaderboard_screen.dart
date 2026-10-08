@@ -9,33 +9,100 @@ import '../providers/preferences_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
+import '../services/zirve_kiyas.dart';
 import '../theme/sandik.dart';
-import '../widgets/sandik_app_bar.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/yaris_sahnesi.dart';
+import '../widgets/zirve_donem_secici.dart';
 import '../utils/polling.dart';
 import '../l10n/l10n.dart';
 
-class LeaderboardScreen extends ConsumerStatefulWidget {
-  const LeaderboardScreen({super.key});
+// NOT: `LeaderboardScreen` (ayrı Yarış ekranı) 2026-10-05'te silindi —
+// yalnız bayrak `siralama_tek_sayfa` kapalıyken açılıyordu. Yarış artık
+// yalnız Sıralama › Ortaklarım'da (`SiralamaScreen`); gövdesi aşağıda.
 
-  @override
-  ConsumerState<LeaderboardScreen> createState() => _LeaderboardScreenState();
+/// Yarış'ın üst çubuk eylemleri: ayrılma menüsü (katılımcıya) ve "Getiri
+/// nasıl hesaplanıyor?" düğmesi.
+///
+/// Fonksiyon olarak ayrıldı (sadeleştirme madde 8, 2026-10-04): tek
+/// "Sıralama" sayfası (`SiralamaScreen`) "Ortaklarım" sekmesindeyken bu
+/// eylemleri çizer.
+List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
+  final optIn = ref.watch(leaderboardOptInProvider);
+  final me = ref.watch(authProvider).valueOrNull;
+  return [
+    // "Yarış'a katıl" anahtarı Ayarlar'dan buraya taşındı (2026-09-14):
+    // katılım bu ekranın CTA'sı, ayrılma da bu ekranın menüsü. Bir
+    // özelliğin açma/kapama yeri özelliğin kendisidir.
+    if (optIn)
+      PopupMenuButton<String>(
+        icon: Icon(Icons.more_vert_rounded, color: context.c.text58),
+        tooltip: context.l10n.raceOptions,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(SandikRadius.md)),
+        onSelected: (v) async {
+          if (v != 'ayril') return;
+          final ok = await showSandikConfirm(
+            context: context,
+            title: context.l10n.leaveRace,
+            message: context.l10n.leaveRaceBody,
+            confirmLabel: context.l10n.leaveWord,
+            destructive: true,
+          );
+          if (ok) {
+            await ref.read(leaderboardOptInProvider.notifier).set(false);
+            LeaderboardService.instance.optInSunucuyaYaz(me?.id, false);
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'ayril', child: Text(context.l10n.leaveRace)),
+        ],
+      ),
+    // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
+    // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
+    // yan yana görünce "hangisi doğru?" diye soruyor — açıklama burada.
+    IconButton(
+      icon: Icon(Icons.info_outline_rounded, color: context.c.text58, size: 22),
+      tooltip: context.l10n.howReturnCalculated,
+      onPressed: () => showSandikSheet<void>(
+        context: context,
+        backgroundColor: context.c.surface1,
+        isScrollControlled: true,
+        useSafeArea: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => const _RoiInfoSheet(),
+      ),
+    ),
+  ];
 }
 
-class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
-  int _periodIdx = 1; // 0=7g, 1=30g, 2=1y
+/// Yarış ekranının gövdesi — katılım daveti ya da sıralama.
+///
+/// `LeaderboardScreen`'den ayrıldı (sadeleştirme madde 8, 2026-10-04; o
+/// kabuk 2026-10-05'te silindi): tek "Sıralama" sayfasının "Ortaklarım"
+/// sekmesi bu gövdeyi çizer. Dönem
+/// dışarıdan yönetilir ki sayfa iki sekmede tek dönem tutsun; metrik ve
+/// hesap burada değişmez (seçimlerinin getirisi, TWR — `secim_getirisi`).
+///
+/// Katılım akışı (opt-in → sunucuya yaz, 0081) gövdede kalır: hangi kapıdan
+/// gelinirse gelinsin rızasız sıralama çizilmez.
+class YarisGovdesi extends ConsumerWidget {
+  const YarisGovdesi({
+    super.key,
+    required this.donemIdx,
+    required this.onDonem,
+  });
 
-  static const _periods = [
-    (label: '7G', days: 7),
-    (label: '30G', days: 30),
-    (label: '1Y', days: 365),
-  ];
+  /// [_YarisDonemleri] içindeki seçili dönem (0=7g, 1=30g, 2=1y).
+  final int donemIdx;
+  final ValueChanged<int> onDonem;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final optIn = ref.watch(leaderboardOptInProvider);
     final kuresel = RemoteConfigService.instance.globalLeaderboardEnabled;
     final me = ref.watch(authProvider).valueOrNull;
@@ -43,156 +110,195 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final myAssets = ref.watch(portfolioProvider).valueOrNull?.assets ?? [];
     final partnerAssets = ref.watch(allPartnerAssetsProvider).valueOrNull ?? {};
     final pState = ref.watch(portfolioProvider).valueOrNull;
+    final periodDays = _YarisDonemleri.gunler[donemIdx];
 
-    return Scaffold(
-      backgroundColor: context.c.background,
-      appBar: SandikAppBar(
-        title: context.l10n.raceTitle,
-        actions: [
-          // "Yarış'a katıl" anahtarı Ayarlar'dan buraya taşındı (2026-09-14):
-          // katılım bu ekranın CTA'sı, ayrılma da bu ekranın menüsü. Bir
-          // özelliğin açma/kapama yeri özelliğin kendisidir.
-          if (optIn)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded, color: context.c.text58),
-              tooltip: context.l10n.raceOptions,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(SandikRadius.md)),
-              onSelected: (v) async {
-                if (v != 'ayril') return;
-                final ok = await showSandikConfirm(
-                  context: context,
-                  title: context.l10n.leaveRace,
-                  message: context.l10n.leaveRaceBody,
-                  confirmLabel: context.l10n.leaveWord,
-                  destructive: true,
-                );
-                if (ok) {
-                  await ref.read(leaderboardOptInProvider.notifier).set(false);
-                  LeaderboardService.instance.optInSunucuyaYaz(me?.id, false);
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(
-                    value: 'ayril', child: Text(context.l10n.leaveRace)),
-              ],
-            ),
-          // Yarıştaki getiri (dönemsel) ile Performans ekranındaki yüzde
-          // (ilk alımdan bugüne toplam) farklı sorulardır. Kullanıcı ikisini
-          // yan yana görünce "hangisi doğru?" diye soruyor — açıklama burada.
-          IconButton(
-            icon: Icon(Icons.info_outline_rounded,
-                color: context.c.text58, size: 22),
-            tooltip: context.l10n.howReturnCalculated,
-            onPressed: () => showModalBottomSheet<void>(
-              context: context,
-              backgroundColor: context.c.surface1,
-              isScrollControlled: true,
-              useSafeArea: true,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              builder: (_) => const _RoiInfoSheet(),
-            ),
+    if (!optIn) {
+      return _OptInPrompt(
+        onEnable: () {
+          ref.read(leaderboardOptInProvider.notifier).set(true);
+          // Sunucu da bilsin: günlük snapshot bu bayrağa bakar (0081).
+          LeaderboardService.instance.optInSunucuyaYaz(me?.id, true);
+        },
+      );
+    }
+    return Column(
+      children: [
+        // Dönem seçici "Herkes" sekmesiyle AYNI bileşen (`ZirveDonemSecici`,
+        // 1H · 1A · 1Y, kayan hap) — sekme değişince seçici yerinde kalır,
+        // etiket ve kabuk değişmez. Eski "7G / 30G" amber seçici
+        // (`_PeriodBar`) düello arenası bayrağıyla birlikte 2026-10-05'te
+        // silindi.
+        Padding(
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+              SandikSpace.sm, SandikSpace.screenH(context), SandikSpace.sm),
+          child: ZirveDonemSecici(
+            secili: ZirveDonem.values[donemIdx],
+            onSec: (d) => onDonem(ZirveDonem.values.indexOf(d)),
           ),
+        ),
+        Expanded(
+          child: activePartners.isEmpty
+              // Küresel sıralama parametrik kapalıyken solo panel
+              // (küresel dilim + en çok kazandıranlar) anlamsız:
+              // ortak ekleme daveti gösterilir (2026-09-21).
+              ? (kuresel
+                  ? _SoloPanel(
+                      me: me,
+                      myAssets: myAssets,
+                      periodDays: periodDays,
+                      pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
+                    )
+                  : Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(SandikSpace.lg),
+                        child: Text(
+                          context.l10n.racePitch,
+                          textAlign: TextAlign.center,
+                          style: context.t.bodyMedium
+                              ?.copyWith(color: context.c.text58),
+                        ),
+                      ),
+                    ))
+              : _LeaderboardList(
+                  me: me,
+                  myAssets: myAssets,
+                  partners: activePartners,
+                  partnerAssets: partnerAssets,
+                  periodDays: periodDays,
+                  pnlToTRY: (val, cur) => pState?.toTRY(val, cur) ?? val,
+                ),
+        ),
+        // Kendi satırının ek bilgisi (R1): paranın getirisi —
+        // Performans ile aynı sayı. Sıralama seçimleri ölçer.
+        if (me != null && pState != null)
+          _ParaninGetirisiSatiri(
+            portfoy: pState,
+            periodDays: periodDays,
+          ),
+        if (kuresel) ...[
+          // Genel sıralama (yüzdelik dilim) GEÇİCİ olarak kapalı
+          // (kullanıcı kararı 2026-09-29): havuz k_min'i geçene kadar
+          // "sıran açılacak" kartı boş vaat. Bayrak yeni değil —
+          // aynı kavramın ana ekran şeridiyle ortak anahtarı
+          // `percentile_strip_enabled`; ikisi birlikte açılır,
+          // yayın gerekmez. Zirve portföyler 2026-09-29'da
+          // Performans sekmesine taşındı (`ZirveKarti` +
+          // `ZirvePortfoylerScreen`): zirve bir kıyas verisi,
+          // yarış değil; kıyas ekranı Performans.
+          if (RemoteConfigService.instance.percentileStripEnabled)
+            _GlobalPercentileTeaser(periodDays: periodDays),
         ],
-        transparent: true,
-      ),
-      body: SafeArea(
-        child: !optIn
-            ? _OptInPrompt(
-                onEnable: () {
-                  ref.read(leaderboardOptInProvider.notifier).set(true);
-                  // Sunucu da bilsin: günlük snapshot bu bayrağa bakar (0081).
-                  LeaderboardService.instance.optInSunucuyaYaz(me?.id, true);
-                },
-              )
-            : Column(
-                children: [
-                  _PeriodBar(
-                    selected: _periodIdx,
-                    onChange: (i) => setState(() => _periodIdx = i),
-                    periods:
-                        _periods.map((p) => p.label).toList(growable: false),
-                  ),
-                  Expanded(
-                    child: activePartners.isEmpty
-                        // Küresel sıralama parametrik kapalıyken solo panel
-                        // (küresel dilim + en çok kazandıranlar) anlamsız:
-                        // ortak ekleme daveti gösterilir (2026-09-21).
-                        ? (kuresel
-                            ? _SoloPanel(
-                                me: me,
-                                myAssets: myAssets,
-                                periodDays: _periods[_periodIdx].days,
-                                pnlToTRY: (val, cur) =>
-                                    pState?.toTRY(val, cur) ?? val,
-                              )
-                            : Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(SandikSpace.lg),
-                                  child: Text(
-                                    context.l10n.racePitch,
-                                    textAlign: TextAlign.center,
-                                    style: context.t.bodyMedium
-                                        ?.copyWith(color: context.c.text58),
-                                  ),
-                                ),
-                              ))
-                        : _LeaderboardList(
-                            me: me,
-                            myAssets: myAssets,
-                            partners: activePartners,
-                            partnerAssets: partnerAssets,
-                            periodDays: _periods[_periodIdx].days,
-                            pnlToTRY: (val, cur) =>
-                                pState?.toTRY(val, cur) ?? val,
-                          ),
-                  ),
-                  if (kuresel) ...[
-                    // Genel sıralama (yüzdelik dilim) GEÇİCİ olarak kapalı
-                    // (kullanıcı kararı 2026-09-29): havuz k_min'i geçene kadar
-                    // "sıran açılacak" kartı boş vaat. Bayrak yeni değil —
-                    // aynı kavramın ana ekran şeridiyle ortak anahtarı
-                    // `percentile_strip_enabled`; ikisi birlikte açılır,
-                    // yayın gerekmez. Zirve portföyler 2026-09-29'da
-                    // Performans sekmesine taşındı (`ZirveKarti` +
-                    // `ZirvePortfoylerScreen`): zirve bir kıyas verisi,
-                    // yarış değil; kıyas ekranı Performans.
-                    if (RemoteConfigService.instance.percentileStripEnabled)
-                      _GlobalPercentileTeaser(
-                        periodDays: _periods[_periodIdx].days,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Text(
+            activePartners.isEmpty
+                ? context.l10n.raceFooterGlobal
+                : context.l10n.raceFooterPartners,
+            style: context.t.labelMedium?.copyWith(
+              letterSpacing: 0,
+              color: context.c.text36,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Yarış dönemleri. Gün sayıları `ZirveDonem` ile BİREBİR (7 · 30 · 365):
+/// tek Sıralama sayfası iki sekmede aynı dönemi indeksle taşır
+/// (`siralama_test` eşitliği kilitler).
+abstract final class _YarisDonemleri {
+  static const gunler = [7, 30, 365];
+}
+
+/// Test kilidi için dışa açık gün listesi (`ZirveDonem` eşitliği).
+@visibleForTesting
+List<int> get yarisDonemGunleri =>
+    _YarisDonemleri.gunler;
+
+/// Kendi satırının ek bilgisi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
+/// Performans › Özet'in aynı dönemdeki sayısı (R1, 2026-10-01).
+///
+/// Sıralama SEÇİMLERİ ölçer (TWR; para ekleme zamanı etkilemez). Kullanıcı
+/// "benim param ne yaptı?" diye de sorar; o sorunun cevabı Performans'taki
+/// rakamdır ve burada AYNI rakam görünür — yeni bir hesap değil
+/// (`LeaderboardService.paraninGetirisiPct`). İki sayı farklıysa nedeni
+/// "Getiri nasıl hesaplanıyor?" sayfasında yazar. Sayı yoksa (yeni
+/// portföy, Özet bayrağı kapalı) satır çizilmez — uydurma yok.
+///
+/// Dönem değişince yeniden hesaplanır; fiyat tiklerinde değil (Özet'in
+/// kendisi de dönem başına bir kez hesaplar).
+class _ParaninGetirisiSatiri extends StatefulWidget {
+  const _ParaninGetirisiSatiri({required this.portfoy, required this.periodDays});
+
+  final PortfolioState portfoy;
+  final int periodDays;
+
+  @override
+  State<_ParaninGetirisiSatiri> createState() => _ParaninGetirisiSatiriState();
+}
+
+class _ParaninGetirisiSatiriState extends State<_ParaninGetirisiSatiri> {
+  Future<double?>? _sonuc;
+  int? _gun;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_gun != widget.periodDays) {
+      _gun = widget.periodDays;
+      _sonuc = LeaderboardService.instance
+          .paraninGetirisiPct(widget.portfoy, widget.periodDays);
+    }
+    return FutureBuilder<double?>(
+      future: _sonuc,
+      builder: (context, snap) {
+        final v = snap.data;
+        if (v == null) return const SizedBox.shrink();
+        final c = context.c;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+              SandikSpace.xs, SandikSpace.screenH(context), 0),
+          child: Row(
+            children: [
+              Icon(Icons.account_balance_wallet_outlined,
+                  size: SandikSpace.md, color: c.text58),
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(
+                      text: context.l10n.raceMoneyReturn(fmtPctIsaretli(v)),
+                      style: context.t.bodySmall?.copyWith(
+                        color: c.text90,
+                        fontWeight: FontWeight.w600,
                       ),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    child: Text(
-                      activePartners.isEmpty
-                          ? context.l10n.raceFooterGlobal
-                          : context.l10n.raceFooterPartners,
-                      style: context.t.labelMedium?.copyWith(
-                        letterSpacing: 0,
-                        color: context.c.text36,
-                      ),
-                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ],
+                    TextSpan(
+                      text: ' · ${context.l10n.raceMoneyReturnHint}',
+                      style: context.t.bodySmall?.copyWith(color: c.text58),
+                    ),
+                  ]),
+                ),
               ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
 /// "Getiri nasıl hesaplanıyor?" açıklaması.
 ///
-/// Yarış metriği seçili dönemin getirisidir:
+/// Yarış metriği 2026-10-01'den (0095) beri SEÇİMLERİNİN GETİRİSİ (zaman
+/// ağırlıklı, TWR; `secim_getirisi.dart`): dönem günlere bölünür, her gün
+/// tutulan varlıklar piyasa fiyatıyla değerlenir, günler çarpılır. Öncesinde
+/// simülasyondu (bugünkü sepet dönem başından beri tutulmuş sayılırdı).
 ///
-///     (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-///
-/// Performans ekranındaki yüzdeden FARKLIDIR (o, ilk alımdan bugüne toplam
-/// kâr/zarardır) — bu sayfa farkı açıklar.
+/// Performans ekranındaki yüzdeden FARKLIDIR — o, paranın getirisidir
+/// (zamanlama dahil); bu sayfa farkı açıklar.
 class _RoiInfoSheet extends StatelessWidget {
   const _RoiInfoSheet();
 
@@ -318,13 +424,9 @@ class _InfoBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.c.surface2,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
+      elevated: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -449,6 +551,7 @@ class _SoloPanelState extends State<_SoloPanel> {
         : LeaderboardService.instance.staleROI(
             userId: widget.me!.id,
             periodDays: widget.periodDays,
+            kapsam: SiralamaKapsami.anonim,
           );
     _refresh();
     _liveTick.start();
@@ -470,6 +573,7 @@ class _SoloPanelState extends State<_SoloPanel> {
           : LeaderboardService.instance.staleROI(
               userId: widget.me!.id,
               periodDays: widget.periodDays,
+              kapsam: SiralamaKapsami.anonim,
             );
       _refresh();
     }
@@ -481,24 +585,19 @@ class _SoloPanelState extends State<_SoloPanel> {
     setState(() => _computing = true);
     final myCurrentTRY = LeaderboardService.instance
         .totalValueTRY(widget.myAssets, widget.pnlToTRY);
+    // Tek başına panel GENEL sıralamanın yanında durur (yüzdelik dilim
+    // sunucudan, anonim): sayı da anonim kuralla ölçülür ki ikisi aynı
+    // şeyi söylesin. Ortaklı liste `ortaklar` kapsamıyla ölçer.
     final roi = await LeaderboardService.instance.computeROI(
       assets: widget.myAssets,
       periodDays: widget.periodDays,
+      kapsam: SiralamaKapsami.anonim,
       currentValueTRY: myCurrentTRY,
       toTRY: widget.pnlToTRY,
       cacheKey: me.id,
     );
-    if (roi != null) {
-      // Fire-and-forget snapshot — global percentile için.
-      CrashReporter.arkaPlan(
-        LeaderboardService.instance.uploadRoiSnapshot(
-          userId: me.id,
-          periodDays: widget.periodDays,
-          roiPct: roi,
-        ),
-        reason: 'LeaderboardScreen.uploadRoiSnapshot',
-      );
-    }
+    // ROI anlık görüntüsü artık YALNIZ sunucuda yazılır (0095): genel
+    // yüzdelik ve Zirve, cron'un TWR'sini okur.
     if (!mounted) return;
     setState(() {
       _myRoi = roi;
@@ -515,13 +614,8 @@ class _SoloPanelState extends State<_SoloPanel> {
         children: [
           _SoloRoiCard(roi: _myRoi, computing: _computing),
           const SizedBox(height: 14),
-          Container(
+          SandikCard(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
-            ),
             child: Row(
               children: [
                 Icon(Icons.people_outline_rounded,
@@ -641,86 +735,6 @@ class _SoloRoiCard extends StatelessWidget {
   }
 }
 
-/// iOS Cupertino-benzeri segmented control. Aktif segment altın gradient
-/// pill ile animate ederek kayar. Sade ama net & rekabet duygusu veren.
-class _PeriodBar extends StatelessWidget {
-  final int selected;
-  final void Function(int) onChange;
-  final List<String> periods;
-  const _PeriodBar({
-    required this.selected,
-    required this.onChange,
-    required this.periods,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Overflow-güvenli tasarım: LayoutBuilder + explicit width yerine
-    // Flex-only. Aktif pill de Stack yerine seçili segment'in Container
-    // BoxDecoration'ı ile yapılır — yuvarlama gap'i yok.
-    return Padding(
-      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 8),
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: context.c.overlay,
-          borderRadius: BorderRadius.circular(SandikRadius.lg),
-          border: Border.all(color: context.c.hairline),
-        ),
-        child: Row(
-          children: List.generate(periods.length, (i) {
-            final active = i == selected;
-            return Expanded(
-              child: SandikBasma(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChange(i),
-                // Token: elle 220 ms + ham eğri yerine seçicilerin ortak
-                // `state`/`enter`'ı (animasyon denetimi 2026-10-01).
-                child: AnimatedContainer(
-                  duration: SandikMotion.stateOf(context),
-                  curve: SandikMotion.enter,
-                  margin: EdgeInsets.symmetric(horizontal: active ? 0 : 2),
-                  decoration: BoxDecoration(
-                    // Seçili pill bir YÜZEY — dolgu token'ı kullanılır.
-                    // (Eskiden `[gold, amberText]` idi; ikisi de metin
-                    // token'ı olduğu için light'ta çöküyordu — bkz.
-                    // `SandikPalette.amberGradient`.)
-                    gradient: active ? context.c.amberGradient : null,
-                    borderRadius: BorderRadius.circular(SandikRadius.md),
-                    boxShadow: active
-                        ? [
-                            BoxShadow(
-                              color:
-                                  context.c.amberFill.withValues(alpha: 0.35),
-                              blurRadius: 10,
-                              offset: const Offset(0, 3),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Center(
-                    child: AnimatedDefaultTextStyle(
-                      duration: SandikMotion.stateOf(context),
-                      curve: SandikMotion.enter,
-                      style: context.t.bodyMedium!.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: active ? context.c.onAmber : context.c.text58,
-                        letterSpacing: 0.6,
-                      ),
-                      child: Text(periods[i]),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
-}
-
 class _LeaderboardList extends StatefulWidget {
   final AppUser? me;
   final List<Asset> myAssets;
@@ -753,6 +767,11 @@ class _LeaderboardListState extends State<_LeaderboardList> {
   /// bunu izler (`YarisSahnesi.yenileme`).
   int _yenileme = 0;
   DateTime? _sonGuncelleme;
+
+  /// Arenanın lider şeridi — satırlarla AYNI turda hesaplanır ve atanır ki
+  /// şeridin "bugün"ü arenadaki lideri anlatsın. Yalnız tam bir ortak
+  /// varken; aksi hâlde hiç hesaplanmaz (maliyet yok).
+  LiderSeridi? _serit;
   // "Anlık" hissi için düzenli tick — her tetikte kendi ROI'sini
   // yeniden hesaplayıp upload eder, sonra partner ROI'lerini
   // Supabase'ten tazeler.
@@ -807,6 +826,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       roi: LeaderboardService.instance.staleROI(
         userId: widget.me!.id,
         periodDays: widget.periodDays,
+        kapsam: SiralamaKapsami.ortaklar,
       ),
     ));
     for (var i = 0; i < widget.partners.length; i++) {
@@ -820,6 +840,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         roi: LeaderboardService.instance.staleROI(
           userId: p.id,
           periodDays: widget.periodDays,
+          kapsam: SiralamaKapsami.ortaklar,
         ),
       ));
     }
@@ -860,20 +881,13 @@ class _LeaderboardListState extends State<_LeaderboardList> {
       myRoi = await LeaderboardService.instance.computeROI(
         assets: widget.myAssets,
         periodDays: widget.periodDays,
+        kapsam: SiralamaKapsami.ortaklar,
         currentValueTRY: myCurrentTRY,
         toTRY: widget.pnlToTRY,
         cacheKey: me.id,
       );
       if (myRoi != null) {
-        // Await ETMİYORUZ, snapshot upload + partner fetch paralel gitsin.
-        CrashReporter.arkaPlan(
-          LeaderboardService.instance.uploadRoiSnapshot(
-            userId: me.id,
-            periodDays: widget.periodDays,
-            roiPct: myRoi,
-          ),
-          reason: 'LeaderboardScreen.uploadRoiSnapshot',
-        );
+        // ROI anlık görüntüsü artık YALNIZ sunucuda yazılır (0095).
         // Top gainers allocation feature'ı için anonim tür dağılımını da
         // gönder — miktar/TL yok, sadece {tür: %}. RPC k-anonymity + min
         // type_count filtreleri ile agregat gösterir.
@@ -902,14 +916,27 @@ class _LeaderboardListState extends State<_LeaderboardList> {
         roi: myRoi,
       ));
     }
+    // Lider şeridi sıralamayla paralel (aynı fiyat serileri; HistoryService
+    // sembol başına önbellekli). Ölçü değişmez: şerit aynı motorun gün gün
+    // birikimidir (`SecimGetirisi.donemSerisi`).
+    final seritIstegi = me != null && widget.partners.length == 1
+        ? LeaderboardService.instance.liderSeridi(
+            benLotlari: widget.myAssets,
+            rakipLotlari: widget.partnerAssets[widget.partners.first.id] ??
+                const [],
+            periodDays: donem,
+          )
+        : Future<LiderSeridi?>.value(null);
     // Ortakların getirisi paralel hesaplanır — her biri kendi fiyat serisini
     // çekiyor; sırayla beklemek ortak sayısıyla doğru orantılı gecikme
     // yaratırdı. `HistoryService` sembol başına önbellekli, yani aynı hisseye
     // sahip iki ortak tek istek eder.
     final partnerRois = await Future.wait(
       widget.partners.map((p) => LeaderboardService.instance.donemGetirisiPct(
-          widget.partnerAssets[p.id] ?? const [], widget.periodDays)),
+          widget.partnerAssets[p.id] ?? const [], widget.periodDays,
+              kapsam: SiralamaKapsami.ortaklar)),
     );
+    final serit = await seritIstegi;
     for (var i = 0; i < widget.partners.length; i++) {
       final p = widget.partners[i];
       rows.add(_LeaderboardRow(
@@ -930,6 +957,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     });
     _yenileme++;
     _sonGuncelleme = DateTime.now();
+    _serit = serit;
     return rows;
   }
 
@@ -975,6 +1003,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
                   yenileme: _yenileme,
                   sonGuncelleme: _sonGuncelleme,
                   donemGun: rows.first.donemGun,
+                  liderSeridi: _serit,
                 ),
               ],
             ),

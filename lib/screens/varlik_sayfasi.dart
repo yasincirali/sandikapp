@@ -7,6 +7,8 @@ import '../l10n/l10n.dart';
 import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
+import '../providers/preferences_provider.dart' show seviyeGorunurlukProvider;
+import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
@@ -16,15 +18,20 @@ import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
 import '../utils/acilis_kapisi.dart';
 import '../utils/tr_format.dart';
+import '../widgets/sandik_async_button.dart';
+import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/donem_istatistik.dart';
 import '../widgets/donem_secici.dart';
 import '../widgets/fiyat_grafigi.dart';
 import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/para_akisi_karti.dart';
+import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
+import '../widgets/varlik_ozeti.dart';
 import 'asset_detail_screen.dart'
     show TechnicalSignalPanel, kSinyalPenceresiGun;
 import 'pozisyona_git.dart';
@@ -78,7 +85,7 @@ Future<void> showVarlikSayfasi(
   if (_acik) return;
   _acik = true;
   try {
-    await showModalBottomSheet<void>(
+    await showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -170,7 +177,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   late int _gun = varlikSayfasiDonemleri.contains(widget.baslangicDonemGun)
       ? widget.baslangicDonemGun!
-      : 365;
+      // `donem_hafizasi`: istek yoksa uygulamanın ortak dönemi (Sadeleştirme
+      // 2); bayrak kapalıyken eski varsayılan 1Y. Sayfa her dönemi
+      // gösterebildiği için en yakına düşme gerekmez.
+      : donemHafizasiAcik
+          ? ref.read(seciliDonemProvider).sembolGunu
+          : 365;
 
   /// Grafikte ŞU AN çizilen dönem. Yeni dönem yüklenirken eski çizgi soluk
   /// kalır — boş kutu ya da dönen tekerlek yerine bağlam.
@@ -181,8 +193,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   final Set<int> _yukleniyor = {};
   final Set<int> _hatali = {};
 
-  bool _takipIslemi = false;
-
   /// Açılış kapısı açıldı mı (bkz. `utils/acilis_kapisi.dart`): altı dönem
   /// ve sinyal serisi geldi ya da süre doldu. Bir kez `true` olur.
   bool _acildi = false;
@@ -190,6 +200,17 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   void initState() {
     super.initState();
+    // `donem_hafizasi`: açılışta istenen dönem (Takip satırı, derin bağlantı)
+    // ortak döneme de yazılır. Sağlayıcı kurulum sırasında değiştirilemez;
+    // kareden sonra yazılır.
+    final istenen = widget.baslangicDonemGun;
+    if (donemHafizasiAcik && varlikSayfasiDonemleri.contains(istenen)) {
+      Future.microtask(() {
+        if (!mounted) return;
+        ref.read(seciliDonemProvider.notifier).state =
+            SummaryPeriod.values[varlikSayfasiDonemleri.indexOf(istenen!)];
+      });
+    }
     CrashReporter.arkaPlan(_ilkYukleme(), reason: 'VarlikSayfasi.ilkYukleme');
     // Arama ekranının "Son baktıkların" şeridi — hangi girişten açıldıysa
     // (arama, takip, karşılaştır, ekleme seçicisi) bakılan varlık odur.
@@ -228,7 +249,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       _yukle(_gun),
       for (final g in varlikSayfasiDonemleri)
         if (g != _gun) _yukle(g),
-      if (widget.seriYukleyici == null && widget.kimlik.ticker.isNotEmpty)
+      // Panel seviye kapısının arkasında (Başlangıç'ta yok) — çizilmeyecek
+      // panelin serisi de istenmez (varlık detayıyla aynı).
+      if (widget.seriYukleyici == null &&
+          widget.kimlik.ticker.isNotEmpty &&
+          ref.read(seviyeGorunurlukProvider).teknikSinyaller)
         HistoryService.instance.getSymbolHistory(widget.kimlik.ticker,
             periodDays: kSinyalPenceresiGun),
     ]);
@@ -273,6 +298,15 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     });
     // Hatalı dönem yeniden seçilince yeniden dener — çıkış yolu açık.
     CrashReporter.arkaPlan(_yukle(gun), reason: 'VarlikSayfasi.donemSec');
+  }
+
+  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
+  /// eskisi gibi doğrudan [_donemSec]'i çağırır). Ortak döneme yazma
+  /// `_gun` güncellendikten SONRA: [build]'deki dinleyici değişikliği kendi
+  /// seçimimiz olarak tanır, ikinci kez yüklemez.
+  void _ortakDonemSec(int i) {
+    _donemSec(varlikSayfasiDonemleri[i]);
+    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[i];
   }
 
   void _boyutuDegistir() {
@@ -364,6 +398,13 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
   @override
   Widget build(BuildContext context) {
     final k = widget.kimlik;
+    // `donem_hafizasi`: ortak dönem başka yüzeyde değişirse sayfa da geçer.
+    if (donemHafizasiAcik) {
+      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+        final gun = yeni.sembolGunu;
+        if (gun != _gun) _donemSec(gun);
+      });
+    }
     return Semantics(
       label: context.l10n.vsSheetSemantics(k.name),
       container: true,
@@ -433,27 +474,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
           SandikSpace.screenH(context), 0, SandikSpace.xs, SandikSpace.xs),
       child: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  k.kisaEtiket,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.t.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700, color: context.c.text90),
-                ),
-                Text(
-                  '${k.name} · ${k.type.labelOf(context.l10n)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style:
-                      context.t.bodySmall?.copyWith(color: context.c.text58),
-                ),
-              ],
-            ),
-          ),
+          // Başlık portföy varlık detayıyla ORTAK parça (Sadeleştirme 2
+          // madde 6); burada yalnız kapatma düğmesi yanına eklenir.
+          Expanded(child: VarlikBasligi(kimlik: k)),
           IconButton(
             tooltip: context.l10n.close,
             onPressed: () => Navigator.pop(context),
@@ -472,10 +495,12 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final k = widget.kimlik;
     final cizilen = _cizilen;
     final ist = cizilen == null ? null : _istatistik[cizilen];
-    // Fiyatın sembolü kotasyonun para birimi: dolar kuru "₺49,00", "$" değil
-    // (2026-09-29 emülatör testi #13; bkz. [kotasyonSembolu]).
-    final bicim =
-        tryFormatter(digits: 2, symbol: kotasyonSembolu(k.ticker, k.currency));
+    // Sayılar sembol serisinden (`getSymbolHistory`) ve o seri her sembolde
+    // TL: simge ₺ ([sembolSerisiSimgesi], seri denetimi 2026-10-08). Eskiden
+    // kotasyonun para biriminden seçiliyordu; ABD hissesi/eurobond/emtia
+    // TL sayıyı "$" ile yazıyordu. Dolar kuru "₺49,00" (2026-09-29
+    // emülatör testi #13) bu kuralın özel hâli.
+    final bicim = tryFormatter(digits: 2, symbol: sembolSerisiSimgesi);
     final bayat = cizilen != null && cizilen != _gun;
 
     if (!_acildi) {
@@ -498,13 +523,23 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         const SizedBox(height: SandikSpace.lg),
       ],
       FonKarnesiKarti(tur: k.type, ticker: k.ticker),
+      ParaAkisiKarti(tur: k.type, ticker: k.ticker),
+      HacimRadariKarti(tur: k.type, ticker: k.ticker),
+      KriptoBaskiKarti(tur: k.type, ticker: k.ticker),
+      AnalizNotuKutusu(tur: k.type, ticker: k.ticker),
       // Sahip olunmayan varlık için de teknik göstergeler hesaplanır; panel
       // bir `Asset` istemez.
-      TechnicalSignalPanel(
-        ticker: k.ticker,
-        type: k.type,
-        subCategory: k.subCategory,
-      ),
+      //
+      // Seviye kapısı (2026-10-08): varlık detayı paneli
+      // `seviyeGorunurlugu(...).teknikSinyaller` ile gizliyordu, bu sayfa
+      // gizlemiyordu — Başlangıç kullanıcısı sinyali Takip'ten ya da
+      // aramadan açınca görüyordu. Aynı kapı burada da.
+      if (ref.watch(seviyeGorunurlukProvider).teknikSinyaller)
+        TechnicalSignalPanel(
+          ticker: k.ticker,
+          type: k.type,
+          subCategory: k.subCategory,
+        ),
       // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır.
       const SizedBox(height: SandikSpace.sm),
       const DisclaimerWidget(),
@@ -519,46 +554,24 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     ];
   }
 
+  /// Fiyat bloğu — portföy varlık detayıyla ORTAK [VarlikFiyatBlogu];
+  /// sayılar burada, sembol serisinin istatistiğinden ([DonemIstatistigi]).
+  /// Düz değişim `isFlat` ile (ızgara ve detay ekranıyla aynı eşik).
   Widget _fiyatBlogu(
       DonemIstatistigi? ist, NumberFormat bicim, int? cizilen) {
-    final renk = ist == null || ist.isFlat
-        ? context.c.text36
-        : context.signColor(ist.degisimPct);
     final donem = cizilen == null ? '' : _donemEtiketi(cizilen);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.currentPriceUpper,
-          style: context.t.labelSmall?.copyWith(
-              letterSpacing: 0.9,
-              fontWeight: FontWeight.w700,
-              color: context.c.text36),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            ist == null ? '—' : bicim.format(ist.son),
-            maxLines: 1,
-            style: context.t.numLarge.copyWith(color: context.c.text90),
-          ),
-        ),
-        const SizedBox(height: SandikSpace.xs),
-        Text(
-          ist == null
-              ? ' '
-              : ist.isFlat
-                  ? context.l10n.periodNoChange(donem)
-                  : '${fmtPctIsaretli(ist.degisimPct)} · '
-                      '${ist.fark >= 0 ? '+' : '−'}'
-                      '${bicim.format(ist.fark.abs())} · $donem',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.numSmall.copyWith(color: renk),
-        ),
-      ],
+    return VarlikFiyatBlogu(
+      etiket: context.l10n.currentPriceUpper,
+      fiyat: ist == null ? '—' : bicim.format(ist.son),
+      fiyatRengi: context.c.text90,
+      degisim: donemDegisimSatiri(
+        context,
+        pct: ist?.degisimPct,
+        donem: donem,
+        fark: ist?.fark,
+        bicim: bicim,
+        duz: ist?.isFlat,
+      ),
     );
   }
 
@@ -618,7 +631,9 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       getiriler: [
         for (final g in varlikSayfasiDonemleri) _istatistik[g]?.degisimPct,
       ],
-      onSec: (i) => _donemSec(varlikSayfasiDonemleri[i]),
+      onSec: donemHafizasiAcik
+          ? _ortakDonemSec
+          : (i) => _donemSec(varlikSayfasiDonemleri[i]),
     );
   }
 
@@ -749,14 +764,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       label: takipte ? l.vsUnwatchSemantics(k.name) : l.vsWatchSemantics(k.name),
       child: SizedBox(
         height: 48,
-        child: OutlinedButton.icon(
-          onPressed: _takipIslemi ? null : () => _takipDegistir(takipte),
+        // Kilit + gösterge standart bileşende (tek yükleniyor davranışı,
+        // 2026-10-08); eski `_takipIslemi` bayrağı yalnızca düğmeyi
+        // pasifleştiriyordu, gösterge yoktu.
+        child: SandikAsyncButton.kompakt(
+          tur: SandikAsyncTur.cerceve,
+          onPressed: () => _takipDegistir(takipte),
           icon: Icon(takipte ? Icons.star_rounded : Icons.star_border_rounded,
               size: 20, color: takipte ? context.c.gold : context.c.text90),
-          label: Text(
-            takipte ? l.watchlistInListLabel : l.vsWatch,
-            maxLines: 1,
-          ),
           style: OutlinedButton.styleFrom(
             foregroundColor: context.c.text90,
             side: BorderSide(color: context.c.hairline),
@@ -765,6 +780,10 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(SandikRadius.md)),
           ),
+          child: Text(
+            takipte ? l.watchlistInListLabel : l.vsWatch,
+            maxLines: 1,
+          ),
         ),
       ),
     );
@@ -772,14 +791,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
 
   /// Takibe al / takipten çıkar — kural ve mesajlar `takipDegistir`'de
   /// (portföy varlık detayıyla ortak).
-  Future<void> _takipDegistir(bool takipte) async {
-    setState(() => _takipIslemi = true);
-    try {
-      await takipDegistir(context, ref, widget.kimlik, takipte: takipte);
-    } finally {
-      if (mounted) setState(() => _takipIslemi = false);
-    }
-  }
+  Future<void> _takipDegistir(bool takipte) =>
+      takipDegistir(context, ref, widget.kimlik, takipte: takipte);
 }
 
 /// Sayfa tutamacının çizgisi — dokunma hedefi [_VarlikSayfasiState._tutamac]

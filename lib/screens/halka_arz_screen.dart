@@ -264,7 +264,7 @@ String? _talepAraligi(BuildContext context, HalkaArz a, {bool yil = false}) {
   if (b == null && s == null) return null;
   if (b == null) return _gunAy(context, s!, yil: yil);
   if (s == null || s == b) return _gunAy(context, b, yil: yil);
-  return '${_gunAy(context, b)} – ${_gunAy(context, s, yil: yil)}';
+  return '${_gunAy(context, b)} - ${_gunAy(context, s, yil: yil)}';
 }
 
 String _gunAy(BuildContext context, DateTime t, {bool yil = false}) =>
@@ -295,7 +295,7 @@ Future<void> halkaArzDetayiniAc(
   HalkaArz arz,
   HalkaArzDurumu durum,
 ) {
-  return showModalBottomSheet<void>(
+  return showSandikSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -442,8 +442,12 @@ class HalkaArzDetay extends ConsumerWidget {
                   l.ipoParticipate,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.t.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                  // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+                  // `titleMedium` kendi rengini (`text90`) taşır ve düğmenin
+                  // `foregroundColor`'ını ezer — koyu temada amber üstüne
+                  // beyaz 1,87:1 kalıyordu.
+                  style: context.t.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800, color: context.c.onAmber),
                 ),
               ),
             ),
@@ -455,7 +459,7 @@ class HalkaArzDetay extends ConsumerWidget {
               minimumSize: SandikTouch.minSize,
               foregroundColor: context.c.amberText,
             ),
-            icon: const Icon(Icons.open_in_new, size: 18),
+            icon: const Icon(Icons.open_in_new_rounded, size: 18),
             label: Text(l.ipoOpenSource),
           ),
         ],
@@ -549,7 +553,7 @@ class HalkaArzProfilSatiri extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: context.c.text58),
+              Icon(Icons.chevron_right_rounded, color: context.c.text58),
             ],
           ),
         ),

@@ -42,11 +42,26 @@
 //   · denetleyici sınırsızdır ve değeri doğrudan kaymadır — ayrı dinleyici
 //     kurulup sökülmez; kesilen animasyon `orCancel` ile temiz biter.
 //
+// ## Görünmez kuyruk (beşinci tur, 2026-10-01)
+// Kullanıcı: "Bugün kartı yüklenmediğinde kart kaydırılamıyor." Ölçüldü
+// (`kaydirmali_gecis_test`): yay varsayılan toleransla (0,001 pt) ~970 ms
+// sürüyordu, kart ise ~350 ms'de yerine OTURMUŞ görünüyordu. Görünüm
+// ([onGecis]) ancak yay bitince değiştiği için aradaki ~0,6 sn'de ekran
+// yeni kartı gösterirken Bugün kartı hâlâ eski görünümdeydi (yeni kapsamın
+// yüklemesi henüz başlamamıştı). Bu pencerede atılan ikinci kaydırma
+// yayı durduruyor, bekleyen geçiş HİÇ işlenmiyor ve kart eski görünümde
+// kalıyordu: iki kaydırma tek geçiş, ya da hiç. Şimdi:
+//   · yay piksel toleransıyla biter ([_yayToleransi]) — görünüm kartın
+//     oturduğu anda değişir, Bugün kartı yüklemeye o an başlar;
+//   · yerleşirken gelen yeni sürükleme bekleyen geçişi ÖNCE işler
+//     ([_bekleyenGecis]), sonra parmağı yeni kartın üstünde sürdürür —
+//     kaydırma hiçbir zaman yüklemeyi ya da animasyonu beklemez.
+//
 // Bu widget görünümün NE olduğunu bilmez: [onGecis] ile yön bildirir,
 // [komsu] ile "o yöndeki kart"ı ister. Böylece ana ekranın kimlik
 // sözleşmesine ('' / id / null) bağlanmaz ve tek başına test edilir.
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart' show SpringSimulation;
+import 'package:flutter/physics.dart' show SpringSimulation, Tolerance;
 
 import '../theme/sandik.dart';
 
@@ -60,6 +75,7 @@ class KaydirmaliGecis extends StatefulWidget {
     this.altBilgi,
     this.ipucu = false,
     this.onIpucuGosterildi,
+    this.sira,
   });
 
   /// Kartın altına çizilen satır (sayfa noktaları); [ilerleme] sürükleme
@@ -87,6 +103,17 @@ class KaydirmaliGecis extends StatefulWidget {
   final bool ipucu;
   final VoidCallback? onIpucuGosterildi;
 
+  /// Gösterilen görünümün sıradaki yeri (Ben 0, ortaklar, Birlikte son).
+  ///
+  /// Görünüm KAYDIRMA DIŞINDA değişirse (başlıktaki çip, alt sayfa) kart
+  /// yönlü kısa bir geçişle gelir: sıra büyüdüyse sağdan, küçüldüyse
+  /// soldan 24 pt kayarak ve solarak (animasyon denetimi 2026-10-01).
+  /// Eskiden çipten seçim kartı tek karede değiştiriyor, kaydırma ise
+  /// karusel oynatıyordu — aynı durum değişimi iki dilde. Karusel burada
+  /// kullanılmaz: çip iki adım atlayabilir (Ben → Birlikte) ve aradaki
+  /// komşu kart yanlış olurdu. `null`: davranış kapalı.
+  final int? sira;
+
   /// Göz kırpma mesafesi (pt) — komşu kartın kenarı okunacak kadar.
   static const double ipucuKayma = 28;
 
@@ -105,7 +132,7 @@ class KaydirmaliGecis extends StatefulWidget {
 }
 
 class _KaydirmaliGecisState extends State<KaydirmaliGecis>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // `late final` ile tembel kurulmaz: hiç sürüklenmeden dispose edilirse
   // ilk erişim dispose içinde olur ve Ticker, ayrılmış ağaçta ata arar
   // ("Looking up a deactivated widget's ancestor") — taşma testinde yaşandı.
@@ -133,6 +160,7 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     // eğrisi de aynı değeri sürer.
     _yay = AnimationController.unbounded(vsync: this)
       ..addListener(() => _dx.value = _yay.value);
+    _giris = AnimationController(vsync: this, value: 1);
     if (widget.ipucu && widget.etkin) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _gozKirp());
     }
@@ -144,10 +172,54 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     // Üst widget yeniden kuruldu: komşu kartın verisi değişmiş olabilir.
     _komsuWidget = null;
     _komsuYon = null;
+    final eski = oldWidget.sira;
+    final yeni = widget.sira;
+    if (eski != null && yeni != null && eski != yeni) {
+      if (_kendiGecisim) {
+        // Kaydırmanın kendisi geçti; karusel zaten oynadı.
+        _kendiGecisim = false;
+      } else {
+        _girisYon = yeni > eski ? 1 : -1;
+        final sure = SandikMotion.stateOf(context);
+        if (sure == Duration.zero) {
+          _giris.value = 1;
+        } else {
+          _giris
+            ..duration = sure
+            ..forward(from: 0);
+        }
+      }
+    }
+  }
+
+  /// Çip/alt sayfa geçişinin girişi (bkz. [KaydirmaliGecis.sira]).
+  /// `late` ama `initState`'te kurulur: tembel kurulsaydı hiç
+  /// kullanılmadan dispose'ta kurulup ata arardı.
+  late final AnimationController _giris;
+  double _girisYon = 0;
+
+  /// Görünümü bu widget'ın kaydırması mı değiştirdi.
+  bool _kendiGecisim = false;
+
+  /// Tamamlanmak üzere yaylanan geçişin yönü; yay bitince ya da araya
+  /// yeni bir sürükleme girince [_gecisiIslet] ile işlenir. `null`:
+  /// bekleyen geçiş yok.
+  bool? _bekleyenGecis;
+
+  /// Yay kart oturduğu anda biter: 0,5 pt göze görünmez. Varsayılan
+  /// tolerans (0,001) ~0,6 sn görünmez kuyruk bırakıyordu — bkz. dosya
+  /// başı "Görünmez kuyruk".
+  static const _yayToleransi = Tolerance(distance: 0.5, velocity: 20);
+
+  void _gecisiIslet(bool ileri) {
+    _bekleyenGecis = null;
+    _kendiGecisim = true;
+    widget.onGecis(ileri);
   }
 
   @override
   void dispose() {
+    _giris.dispose();
     _yay.dispose();
     _dx.dispose();
     super.dispose();
@@ -182,7 +254,8 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
     _yay.value = _dx.value;
     try {
       await _yay
-          .animateWith(SpringSimulation(yay, _dx.value, son, hiz))
+          .animateWith(SpringSimulation(yay, _dx.value, son, hiz,
+              tolerance: _yayToleransi))
           .orCancel;
       if (mounted) _dx.value = son;
       return true;
@@ -212,7 +285,16 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
   }
 
   void _surukle(DragUpdateDetails d) {
+    // Önceki geçiş hâlâ yerleşiyorsa önce onu işle: kayma bir kart
+    // ötelenir, parmak artık YENİ kartı tutuyor. Eskiden yay durduruluyor
+    // ve geçiş kayboluyordu.
+    final bekleyen = _bekleyenGecis;
     if (_yay.isAnimating) _yay.stop();
+    if (bekleyen != null) {
+      final tam = _genislik + KaydirmaliGecis.aralik;
+      _dx.value += bekleyen ? tam : -tam;
+      _gecisiIslet(bekleyen);
+    }
     final sinir = _genislik + KaydirmaliGecis.aralik;
     _dx.value = (_dx.value + d.delta.dx).clamp(-sinir, sinir);
   }
@@ -236,12 +318,14 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
       // değişir ve kayma sıfırlanır — yeni gerçek kart, komşunun durduğu
       // yerde belirir; göz fark etmez.
       SandikHaptic.selection.perform();
+      _bekleyenGecis = ileri;
+      // `false`: araya sürükleme girdi, geçişi `_surukle` işledi.
       if (!await _yayla(ileri ? -tam : tam, hiz, SandikMotion.yayOtur)) {
         return;
       }
-      if (!mounted) return;
+      if (!mounted || _bekleyenGecis != ileri) return;
       _dx.value = 0;
-      widget.onGecis(ileri);
+      _gecisiIslet(ileri);
       return;
     }
     // İptal: parmağın hızıyla yerine yaylan.
@@ -267,7 +351,18 @@ class _KaydirmaliGecisState extends State<KaydirmaliGecis>
 
     // Kart bir kez kurulur ve kendi katmanında yaşar; sürüklerken
     // yalnızca ötelenir.
-    final kart = RepaintBoundary(child: widget.child);
+    final kart = AnimatedBuilder(
+      animation: _giris,
+      child: RepaintBoundary(child: widget.child),
+      builder: (context, cocuk) {
+        final t = SandikMotion.enter.transform(_giris.value);
+        if (t >= 1) return cocuk!;
+        return Transform.translate(
+          offset: Offset(_girisYon * 24 * (1 - t), 0),
+          child: Opacity(opacity: 0.35 + 0.65 * t, child: cocuk),
+        );
+      },
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.translucent,

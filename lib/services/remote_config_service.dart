@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
-
 
 /// Firebase Remote Config wrapper.
 ///
@@ -39,25 +39,61 @@ class RemoteConfigService {
     // için premium özellikleri kapatabilir.
     'premium_enabled': true,
 
-    // Free tier varlık limiti. Launch'ta 20 ile başla, engagement düşükse
-    // gerçek ürün konumlanmasına göre azalt.
-    'free_asset_limit': 20,
+    // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
+    // eklemeyi 7 varlık yapalım … premium istemeli"): 8. varlık paywall'u
+    // açar. Yalnız `paywall_enabled` açıkken; var olan varlıklar silinmez,
+    // yalnız YENİ ekleme durur.
+    'free_asset_limit': 7,
 
     // Takip listesi limiti. Portföy limitinden AYRI ve paywall kapalıyken
     // de geçerli (kullanıcı kararı 2026-09-25: "şimdilik 7, ilerde paywall'la
     // artırılır"). Sunucuya yazılmadan önce istemcide kontrol edilir.
+    // Paywall KAPALIYKEN okunan ürün sınırı budur ve 7 kalır: canlıdaki
+    // kullanıcının listesi daralmaz (ana kural).
     'free_watchlist_limit': 7,
 
-    // Paywall UI variant'ı ('A' | 'B'). A/B test için.
-    'paywall_variant': 'A',
+    // Paywall AÇIKKEN Premium olmayanın takip sınırı (yasin, 2026-10-08:
+    // "takip listesini 3 yapalım"). Ayrı anahtar: eski build'ler
+    // `free_watchlist_limit`'i paywall'dan bağımsız okur; o değeri 3'e
+    // çekmek canlıdaki herkesin listesini kısardı. Var olan takipler
+    // silinmez, yalnız yeni ekleme durur.
+    'paywall_watchlist_limit': 3,
+
+    // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
+    // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
+    // bayrak getter'ıyla birlikte geri eklenir.
 
     // Aylık fiyat gösterimi (paywall'da lokalize göstermek için).
     'premium_price_monthly': '49₺/ay',
-    'premium_price_yearly': '349₺/yıl',
+    // 349 → 399 (yasin, 2026-10-05): yıllıkta KDV + mağaza sonrası aya
+    // 20,6 ₺ kalıyordu; hesap /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
+    'premium_price_yearly': '399₺/yıl',
 
-    // Free kullanıcıya günde kaç sinyal analiz slot'u verilsin (1 = sadece
-    // sabah, 2 = sabah+öğleden sonra). Premium her zaman 2.
+    // Ücretsiz sürümde tür başına günde en fazla kaç sinyal bildirimi
+    // (Premium planı, 2026-10-08). Yalnız `paywall_enabled` açıkken ve
+    // Premium olmayana uygulanır; sığmayan sıklık "günde 1 kez"e, seçilen
+    // ilk saate iner (`slotaSigdir`). 2026-10-04'te okuyan yokken
+    // kaldırılmıştı, kapıyla geri geldi. Sunucudaki karşılığı
+    // `SINYAL_UCRETSIZ_SLOT` secret'ı: ikisi paywall'la birlikte açılır.
     'free_signal_slots_per_day': 1,
+
+    // Ücretsiz sürümde sinyal bildiriminin açık olduğu varlık sayısı (yasin,
+    // 2026-10-08: "sinyal 1 varlıkta ücretsiz, 2. varlık Premium"). 0 =
+    // kapı yok. Bugün yalnız 0/1 anlamlı: seçim tablosu tek satır tutar
+    // (`sinyal_varlik_secimi`, 0126). Yalnız `paywall_enabled` açıkken;
+    // sunucudaki karşılığı `SINYAL_UCRETSIZ_VARLIK` secret'ı.
+    'free_signal_assets': 1,
+
+    // Ücretsiz sürümde Karşılaştır grafiğindeki seri sayısı (Premium planı
+    // "1 seri ücretsiz" = kendi serisine EK bir kıyas, toplam 2). Premium
+    // eskisi gibi 5 (renk paleti beşte bitiyor). Yalnız paywall açıkken.
+    'free_compare_series': 2,
+
+    // Ücretsiz sürümde en fazla kaç ortaklık (yasin kararı 2026-10-08:
+    // "1 ortak"). Yalnız paywall açıkken; var olan ortaklıklar korunur,
+    // sınır yalnız YENİ ortak eklemeyi (kod üret / kod gir / daveti kabul)
+    // durdurur. Gizlenmiş ortak da sayılır: gizlemek ortaklığı bitirmez.
+    'free_partner_limit': 1,
 
     // NOT: `free_ai_report_enabled` kaldırıldı — AI portföy raporunun hiçbir
     // implementasyonu yoktu, flag var olmayan bir özelliği gate'liyordu.
@@ -176,7 +212,201 @@ class RemoteConfigService {
     // uydurma değil, kaynaklı mevzuat değeri; mevzuat değişirse Console'a
     // yeni değer (yayın gerekmez) ve bu satır birlikte güncellenir.
     'temettu_stopaj_orani': 0.15,
+
+    // Kilit ekranı (Live Activity) uygulama KAPALIYKEN de dakikada bir
+    // Performans GÜNLÜK ile aynı rakamı göstersin (2026-10-03, kullanıcı
+    // kararı: "canlı aktiviteler her zaman 1 dk'da bir performans günlükle
+    // eş olmalı"). Açıkken istemci özetle birlikte bir tarif yazar
+    // (`CanliEtkinlikTarifi`), sunucu onu canlı kotasyonla ileri taşır.
+    // KAPALI doğar (CLAUDE.md "riskli yeni davranış bayrakla açılır"):
+    // sunucu fonksiyonu ve dakikalık cron canlıya çıktıktan sonra Console'da
+    // açılır; kapalıyken kilit ekranı birebir eski davranışta kalır.
+    'canli_etkinlik_dakikalik': false,
+
+    // GÜNLÜK grafikte altın/dövizin şekli, uluslararası seri sustuğunda
+    // (hafta sonu) sunucunun yurt içi kotasyon kaydından çizilsin
+    // (2026-10-03, kullanıcı: "fiyat tutarlı ve doğru şeyi göstermeli").
+    // KAPALI doğar: `yurt-ici-kotasyon` fonksiyonu ve 0101 cron'u canlıda
+    // en az bir hafta sonu kayıt biriktirdikten sonra Console'da açılır.
+    // Kapalıyken GÜNLÜK birebir eski davranışta (hafta sonu düz) kalır.
+    'hafta_sonu_yurt_ici_seri': false,
+
+    // Fon sayfasında "Para akışı" kartı ve büyük giriş/çıkış olayları
+    // (Balina B1, 2026-10-04). KAPALI doğar: veri `akis-gozlem` fonksiyonu
+    // ve 0106 cron'u iki sunucuda koşup pencereyi doldurduktan sonra gelir;
+    // tablo boşken kart zaten çizilmez ama bayrak, dağıtım sırasını
+    // uygulama sürümünden bağımsız kılar. Kapalıyken hiçbir istek atılmaz.
+    'balina_radari_acik': false,
+
+    // Dövizli satışta ele geçen tutar SATIŞ GÜNÜNÜN kuruyla TL'ye çevrilsin
+    // (2026-10-05, kullanıcı onayı). Eskiden alım kuruyla çevriliyordu:
+    // dolar varlığın kur kazancı gerçekleşen kâra ve nakit akışına girmiyordu.
+    // KAPALI doğar: açıkken yeni satış satırı `sell_fx_rate` (0111) yazar —
+    // sütun iki sunucuya ulaşmadan açılırsa PostgREST satışı reddeder
+    // (PGRST204). Önce migration, sonra Console. Kapalıyken satış birebir
+    // eski; geçmiş satırlar hiçbir zaman değişmez (kur bilinmiyor).
+    'satis_gunu_kuru': false,
+
+    // Aylık birikim serisi (2026-10-05, yasin kararları: aylık ritim, son 12
+    // ayda 1 mola, BES dahil). Özet › Birikim disiplini kartına seri satırı
+    // ve 12 aylık şerit, `contribution_streak` kilometre taşı. KAPALI doğar:
+    // ana yüzeyde yeni bilgi; önce yasin'in cihazında açılır. Sunucu
+    // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
+    'birikim_serisi': false,
+
+    // Eurobond varlık türü (2026-10-08, yasin: "varlık tiplerimize eurobond
+    // … eklemeliyiz"). Varlık Ekle çipi, sinyal ayarı ve filtrelerdeki tür
+    // seçeneği buna bağlı. KAPALI doğar: fiyat tablosu (0124) iki sunucuya
+    // dağıtılıp eurobond-fiyat ilk turunu atmadan açılırsa eklenen lot
+    // fiyatsız kalır. Kapalıyken ekranlar birebir eski; kayıtlı eurobond
+    // lotu (bayrak açıkken eklenmiş) yine görünür ve fiyatlanır.
+    'eurobond': false,
+
+    // Portföy satırından varlık ekranına başlık uçuşu (yol haritası 2.14,
+    // yasin 2026-10-08: "bunları sen yapamıyor musun"). KAPALI doğar: uçuş
+    // iki farklı yazı boyutu arasında ölçekleniyor ve cihazda görülmedi
+    // (bulutta emülatör yok). Kapalıyken `Hero` kurulmaz, geçiş birebir
+    // eski. Gerekçe `varlik_baslik_hero.dart`.
+    'varlik_hero_gecisi': false,
+
+    // Sadeleştirme 2 (2026-10-08, yasin: "featureları koruyarak karmaşıklığı
+    // düşür", hepsi bayrak altında; plan artifact'ı "sandık Sade Ekran
+    // Planı"). Yedisi de KAPALI doğar ve kapalıyken ilgili ekran birebir
+    // eski; sunucu değişikliği yok. Önce yasin'in TestFlight cihazında açılır.
+    //
+    // S1 — tek dönem hafızası: Performans, varlık detayı/sayfası, Takip
+    // listesi ve Karşılaştır aynı seçili dönemi paylaşır (bugün dördünün
+    // varsayılanı farklı: Bugün / 1 hf / 1 ay / 3 ay → sayılar "tutmuyor").
+    'donem_hafizasi': false,
+    // S2 — Performans tek akış: Grafik | Özet sekmesi kalkar, ikisi tek
+    // kaydırmada; kontrol satırı 3 → 1 (dönem + Filtre).
+    'performans_tek_akis': false,
+    // S3 — Portföy: büyük halka yerine küçük halka + lejant (yasin'in
+    // seçimi "C", 2026-10-08; ilk ekranda daha çok varlık, vitrin hissi
+    // kalır). Ad tarihî: ilk taslak çubuktu, anahtar Console'da aynı kalsın.
+    // Büyük halka küçüğe dokununca açılır.
+    'portfoy_dagilim_cubugu': false,
+    // S4 — varlık detayı katmanlı sıra: fiyat+grafik → pozisyonun → analiz
+    // (katlı) → geçmiş ve belgeler.
+    'varlik_detay_katmanli': false,
+    // S5 — sinyal ayarları önce ön ayar (Az / Dengeli / Çok), ayrıntı katlı.
+    'sinyal_on_ayar': false,
+    // S6 — Performans başlığında "Raporlar" kapısı (hafta özeti, aylık
+    // rapor, yıl özeti, Sıralama).
+    'raporlar_kapisi': false,
+    // S7 — Ana ekranda genel arama (Yenile ikonunun yerine; varlık + eylem).
+    'genel_arama': false,
+    // Paywall yeniden tasarımı (yasin 2026-10-08): sandık başlığı + sonsuz
+    // kart destesi; deste kullanıcının dokunduğu kilidin kartıyla açılır.
+    // Kapalıyken eski paywall birebir.
+    'paywall_deste': false,
+
+    // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
+    // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
+    // kartında "Tanılama metnini kopyala" çıkar: tablo düzeni korunur, ad/
+    // rakam maskelenir (`ekstreIskeleti`), kullanıcı kendisi gönderir. KAPALI
+    // doğar: önce yasin'in cihazında; kapalıyken kart birebir eski.
+    'ekstre_tanilama': false,
+
+    // Ekstre hesap hareketlerinden gerçek alış tarihi/fiyatı (2026-10-05,
+    // yasin: "bunun içinden varlık alım satımları nasıl ayıklarsın").
+    // Varlık satırı dönem içindeki alışlara bölünür; maliyet ekstre günü
+    // fiyatı yerine gerçek alış fiyatı olur (`hareket_tablosu.dart`). KAPALI
+    // doğar: içe aktarılan maliyeti değiştirir; kapalıyken çıktı birebir eski.
+    'ekstre_hareketleri': false,
+
+    // Ekstre AI sütun eşleme (2026-10-05, yasin kararı: "AI sütun eşleme").
+    // Okuyucu emin değilken kartta "Yapay zekâyla eşle": anonim iskelet
+    // `ekstre-esle` (0121) üzerinden Claude'a gider, yalnız sütun numaraları
+    // döner. KAPALI doğar: önce 0121 + fonksiyon iki sunucuya, Gizlilik 1.6
+    // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
+    'ekstre_ai_esleme': false,
+
+    // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
+    // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
+    // tür DEĞİL: `type='hisse'`, `sub_category='abd'`, `currency='USD'`,
+    // sembol Yahoo'nunki (AAPL, BRK-B). Eski sürümler `.IS` olmayan USD
+    // hisseyi zaten Yahoo + USDTRY ile fiyatlıyor; yeni enum değeri eski
+    // build'de "Diğer"e düşer, tam satır yazımı türü ezerdi. KAPALI doğar:
+    // kapalıyken form, arama ve rozetler birebir eski.
+    'abd_hisse': false,
+
+    // Varlık ekranında "Masraflar" kartı (2026-10-08, kullanıcı: "her
+    // varlık türü için detaycı olmalıyız, kendine has masraflarını ekranda
+    // gösterebilmeliyiz"). Tutar yalnız kayıtlı komisyondan ya da resmî
+    // orandan (`varlik_masraflari.dart`); aracı kurum makası uydurulmaz.
+    // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
+    'varlik_masraflari': false,
+
+    // Varlık Ekle tür seçicisi: arama + gruplu ızgara (2026-10-08, yasin:
+    // "göz alıcı ama işlevsel" tür seçici). Tür sayısı 11'e çıktı (ABD,
+    // eurobond); çip yığını sayfanın ilk sorusunu kalabalıklaştırıyordu.
+    // Açıkken üstte arama (THYAO/Apple/BTC/ISIN → tür + kimlik tek dokunuşta),
+    // altında üç gruplu 4 sütunlu ızgara; seçimden sonra tek satıra katlanır.
+    // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
+    'tur_secici_izgara': false,
+
+    // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
+    // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
+    // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
+    // (kullanıcı kararı: "önerilerin hepsini uygula") koddan çıkarıldı;
+    // açık davranış KALICI, kapalı (eski) yollar silindi. Bedeli: bunlar
+    // artık Console'dan kapatılamaz — geri almak yeni sürüm ister. Anahtar
+    // Console'da tanımlıysa artık hiçbir kod okumaz (zararsız).
+    // `remote_config_defaults_test` bu anahtarların geri gelmesini kilitler.
+    //
+    // Her birinin kalıcı davranışı ve gerekçesi kendi yerinde:
+    //   · karsilama_tanitimi  → girişten önce tanıtım (`KarsilamaScreen`,
+    //     `_AuthGate`), giriş ekranında Apple/Google üstte + demo düğmesi.
+    //   · seviye_anketi       → sade Başlangıç (`seviyeGorunurlugu`), turda
+    //     ve Ayarlar'da 3 soruluk anket (`SeviyeAnketi`), zil her seviyede.
+    //   · ilk_varlik_kolay    → boş ana ekranda vitrin
+    //     (`IlkVarlikVitrini`), Varlık Ekle'de iki hızlı yol + "Ayrıntı ekle".
+    //   · varlik_islem_cubugu → varlık ekranında Al · Sat · Temettü çubuğu
+    //     ve dönem yüzdesinin tek yerde kalması.
+    //   · tek_kiyas_yuzeyi    → varlık ekranının kıyası Karşılaştır'da.
+    //   · tek_onay_kutusu     → kayıtta ve yeniden onay kapısında tek kutu
+    //     (avukat görüşü YAPMAN_GEREKENLER "Sadeleştirme 2. parti").
+    //   · yasal_onay_kaydi    → onaylar `yasal_onay_kaydet` (0102) ile yazılır.
+    //   · yasal_kapi_en_yeni  → girişte yeniden onay kapısı, en yeni sürüm.
+    //     Eski anahtar `yeniden_onay_kapisi` Console'da KALICI `false`
+    //     kalır: o anahtarı okuyan eski sürümlerin kapısı açılmasın.
+    //   · zorunlu_okuma       → onay metinleri tam, sona kadar okunur.
+    //   · tek_ortak_secici    → tek `OrtakSecici` kabuğu (`SandikSegment`).
+    //   · bugun_karti_kiyas   → Bugün kartı "H · enflasyon kıyası öne".
+    //   · siralama_tek_sayfa  → Yarış + Zirve tek `SiralamaScreen`.
+    //   · performans_ayar_sade → grafik tipi Çizgi/Mum, "Bugünkü portföyle"
+    //     Ayarlar › Görünüm'de, Ayarlar gruplu + katlanır "Gelişmiş".
+    //   · yaris_duello_arena  → iki kişilik yarışta düello arenası.
+    //   · ortak_secimi_tasi   → karttan açılan ekran kartın ortak seçimiyle.
   };
+
+  /// Yerel deneme anahtarı: `--dart-define=RC_ACIK=a,b` ile verilen bayraklar
+  /// Firebase'e dokunmadan açılır. Yalnız debug/profile derlemede okunur;
+  /// release'de (mağaza, TestFlight) HİÇ etkisi yok, uzak değer tek kaynak.
+  /// Neden: bayrak arkasındaki ekranı emülatörde görmek için Console'da kendi
+  /// cihazına koşul yazmak gerekiyordu; emülatörün Firebase kimliği her
+  /// sıfırlamada değişiyor. (2026-10-05: 15 sadeleştirme bayrağı kalkınca bu
+  /// altyapı da kalkmıştı; `balina_radari_acik` kullandığı için geri geldi.
+  /// Eski 15 bayrağa özgü `testKapali` kancası geri gelmedi.)
+  static const _yerelAcikHam = String.fromEnvironment('RC_ACIK');
+  static final Set<String> _yerelAcik = kReleaseMode || _yerelAcikHam.isEmpty
+      ? const {}
+      : _yerelAcikHam.split(',').map((e) => e.trim()).toSet();
+
+  /// Widget testinde bayrak açmak için (Firebase testte ayağa kalkmaz).
+  @visibleForTesting
+  static Set<String> testAcik = {};
+
+  bool _bayrak(String anahtar) =>
+      testAcik.contains(anahtar) ||
+      _yerelAcik.contains(anahtar) ||
+      (_rc?.getBool(anahtar) ?? _defaults[anahtar] as bool);
+
+  /// Adıyla bayrak (sürüm notu maddesi gibi veri tarafından anılan
+  /// bayraklar için). Varsayılanlarda olmayan ad → kapalı.
+  bool bayrakAcik(String anahtar) =>
+      _defaults[anahtar] is bool && _bayrak(anahtar);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -205,11 +435,19 @@ class RemoteConfigService {
       // bildirir ama ETKİNLEŞTİRMEZ — activate şart.
       _rc!.onConfigUpdated.listen(
         (_) async {
-          await _rc!.activate();
-          _sunucuyaBildir();
+          // `onError` yalnızca akışın hatasını alır, bu async gövdenin
+          // fırlattığını değil — activate düşerse zone'a ÇÖKME olarak
+          // giderdi. Etkinleşmeyen değer saatlik fetch'te yine gelir.
+          try {
+            await _rc!.activate();
+            _sunucuyaBildir();
+          } catch (e, st) {
+            CrashReporter.report(e, st,
+                reason: 'remote_config_service.onConfigUpdated.activate');
+          }
         },
-        onError: (Object e, StackTrace st) =>
-            CrashReporter.report(e, st, reason: 'remote_config_service.onConfigUpdated'),
+        onError: (Object e, StackTrace st) => CrashReporter.report(e, st,
+            reason: 'remote_config_service.onConfigUpdated'),
       );
       _initialized = true;
     } catch (e) {
@@ -241,8 +479,10 @@ class RemoteConfigService {
   /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
   /// edilmez; add-asset limit'i devreye girmez. Store + RevenueCat hazır
   /// olunca Firebase Console'dan true'ya çekilecek.
-  bool get paywallEnabled =>
-      _rc?.getBool('paywall_enabled') ?? _defaults['paywall_enabled'] as bool;
+  // `_bayrak` üstünden: yerel testte RC_ACIK ile açılabilsin (sunucu kapısı
+  // açık bir yığında istemci kilidi kapalı kalınca not "açılamadı" diyordu).
+  // Release'te `_yerelAcik` boş, davranış değişmez.
+  bool get paywallEnabled => _bayrak('paywall_enabled');
 
   bool get premiumEnabled =>
       _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;
@@ -250,13 +490,29 @@ class RemoteConfigService {
   int get freeAssetLimit =>
       _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
 
+  int get freeSignalSlotsPerDay =>
+      _rc?.getInt('free_signal_slots_per_day') ??
+      _defaults['free_signal_slots_per_day'] as int;
+
+  int get freeSignalAssets =>
+      _rc?.getInt('free_signal_assets') ??
+      _defaults['free_signal_assets'] as int;
+
+  int get freeCompareSeries =>
+      _rc?.getInt('free_compare_series') ??
+      _defaults['free_compare_series'] as int;
+
+  int get freePartnerLimit =>
+      _rc?.getInt('free_partner_limit') ??
+      _defaults['free_partner_limit'] as int;
+
   int get freeWatchlistLimit =>
       _rc?.getInt('free_watchlist_limit') ??
       _defaults['free_watchlist_limit'] as int;
 
-  String get paywallVariant =>
-      _rc?.getString('paywall_variant') ??
-      _defaults['paywall_variant'] as String;
+  int get paywallWatchlistLimit =>
+      _rc?.getInt('paywall_watchlist_limit') ??
+      _defaults['paywall_watchlist_limit'] as int;
 
   String get premiumPriceMonthly =>
       _rc?.getString('premium_price_monthly') ??
@@ -265,10 +521,6 @@ class RemoteConfigService {
   String get premiumPriceYearly =>
       _rc?.getString('premium_price_yearly') ??
       _defaults['premium_price_yearly'] as String;
-
-  int get freeSignalSlotsPerDay =>
-      _rc?.getInt('free_signal_slots_per_day') ??
-      _defaults['free_signal_slots_per_day'] as int;
 
   bool get percentileStripEnabled =>
       _rc?.getBool('percentile_strip_enabled') ??
@@ -335,6 +587,70 @@ class RemoteConfigService {
   bool get ipoCalendarEnabled =>
       _rc?.getBool('ipo_calendar_enabled') ??
       _defaults['ipo_calendar_enabled'] as bool;
+
+  /// Kilit ekranının uygulama kapalıyken dakikalık tazelenmesi — bkz.
+  /// `_defaults['canli_etkinlik_dakikalik']`.
+  bool get canliEtkinlikDakikalik =>
+      _rc?.getBool('canli_etkinlik_dakikalik') ??
+      _defaults['canli_etkinlik_dakikalik'] as bool;
+
+  /// Hafta sonu GÜNLÜK şeklinin yurt içi kayıttan çizilmesi — bkz.
+  /// `_defaults['hafta_sonu_yurt_ici_seri']`.
+  bool get haftaSonuYurtIciSeri =>
+      _rc?.getBool('hafta_sonu_yurt_ici_seri') ??
+      _defaults['hafta_sonu_yurt_ici_seri'] as bool;
+
+  /// Fon sayfasında para akışı kartı (0106). Gerekçe `_defaults`'ta.
+  bool get balinaRadariAcik => _bayrak('balina_radari_acik');
+
+  /// Dövizli satışta satış günü kuru (0111). Gerekçe `_defaults`'ta.
+  bool get satisGunuKuru => _bayrak('satis_gunu_kuru');
+
+  /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
+  bool get birikimSerisi => _bayrak('birikim_serisi');
+
+  /// Eurobond türü. Gerekçe `_defaults`'ta.
+  bool get eurobond => _bayrak('eurobond');
+
+  /// Tür SEÇENEK olarak sunulsun mu (ekleme çipi, filtre, sinyal ayarı)?
+  ///
+  /// Bayrağa bağlı türlerin tek kapısı: her yüzey kendi `if`'ini yazarsa
+  /// biri unutulur ve bayrak kapalıyken tür sızar. Kayıtlı veriyi
+  /// göstermek bu kapıya TAKILMAZ — kullanıcının varlığı gizlenmez.
+  bool turSecenegi(AssetType t) => t != AssetType.eurobond || eurobond;
+
+  /// Varlık başlığı uçuşu. Gerekçe `_defaults`'ta.
+  bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
+
+  /// Sadeleştirme 2 bayrakları. Gerekçeler `_defaults`'ta.
+  bool get donemHafizasi => _bayrak('donem_hafizasi');
+  bool get performansTekAkis => _bayrak('performans_tek_akis');
+  bool get portfoyDagilimCubugu => _bayrak('portfoy_dagilim_cubugu');
+  bool get varlikDetayKatmanli => _bayrak('varlik_detay_katmanli');
+  bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
+  bool get raporlarKapisi => _bayrak('raporlar_kapisi');
+  bool get genelArama => _bayrak('genel_arama');
+
+  /// Kart desteli paywall. Gerekçe `_defaults`'ta.
+  bool get paywallDeste => _bayrak('paywall_deste');
+
+  /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
+  bool get ekstreTanilama => _bayrak('ekstre_tanilama');
+
+  /// Ekstre hareketlerinden gerçek alış. Gerekçe `_defaults`'ta.
+  bool get ekstreHareketleri => _bayrak('ekstre_hareketleri');
+
+  /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
+  bool get ekstreAiEsleme => _bayrak('ekstre_ai_esleme');
+
+  /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
+  bool get abdHisse => _bayrak('abd_hisse');
+
+  /// Varlık ekranında Masraflar kartı. Gerekçe `_defaults`'ta.
+  bool get varlikMasraflari => _bayrak('varlik_masraflari');
+
+  /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
+  bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

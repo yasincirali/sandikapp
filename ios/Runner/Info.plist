@@ -63,6 +63,15 @@
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<!--
+	  Sık güncelleme bütçesi (2026-10-03). Uygulama kapalıyken kilit ekranı
+	  sunucudan dakikada bir push alabilir (`canli_etkinlik_dakikalik`
+	  bayrağı, 0100). Bu anahtar YOKSA iOS yüksek öncelikli Live Activity
+	  push'larını kısıtlar ve dakikalık güncellemeler sessizce düşer.
+	  Kullanıcı Ayarlar'dan kapatabilir; o durumda sistem seyreltir.
+	-->
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
+	<!--
 	  `sandik://` derin bağlantı şeması.
 
 	  Ana ekran widget'ı ve Canlı Etkinlik dokunuşu bu şemayı kullanıyor

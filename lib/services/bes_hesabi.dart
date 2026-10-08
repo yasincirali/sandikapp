@@ -1,4 +1,5 @@
 import '../models/sozlesme.dart';
+import '../utils/tr_format.dart';
 
 /// BES kuralları — hak ediş, devlet katkısı oranı ve yıllık sınır.
 ///
@@ -14,9 +15,16 @@ import '../models/sozlesme.dart';
 /// 2026-01-01'den itibaren %20 (Cumhurbaşkanı kararı, RG 2026-01-07;
 /// önce %30). Yıllık üst sınır o yılın brüt asgari ücret toplamının oran
 /// kadarıdır: 2026'da 396.360 × %20 = ₺79.272. Yeni yılın tutarı Ocak'ta
-/// asgari ücretle belli olur ve tabloya EKLENİR; tabloda olmayan yıl için
-/// sınır `null` döner — uydurma sınır uygulanmaz, ekran kullanıcıya
-/// düzenlenebilir tutar gösterir.
+/// asgari ücretle belli olur; tabloda olmayan yıl için sınır `null` döner —
+/// uydurma sınır uygulanmaz, ekran kullanıcıya düzenlenebilir tutar gösterir.
+///
+/// ## Sunucu parametreleri (2026-10-01, kullanıcı: "elle tanımlamam
+/// mantıklı değil")
+/// Yıllık sınır ve oran artık sunucudaki `bes_devlet_katkisi` tablosundan
+/// gelir (0089; `bes-parametre` her gün EGM'nin resmî sayfasından çeker ve
+/// katkı × oran = azami tutarlılığını doğrulamadan yazmaz). İstemci
+/// [uzakParametreler] ile yükler; sunucu cevap vermezse aşağıdaki sabit
+/// tablo ve oran merdiveni YEDEK olarak kalır.
 abstract final class BesHesabi {
   /// Hak ediş basamakları: (tam yıl eşiği, yüzde).
   static const hakEdisBasamaklari = <(int, double)>[
@@ -54,17 +62,51 @@ abstract final class BesHesabi {
     return null;
   }
 
+  /// Bir sonraki basamağa kalan süre, AY hassasiyetinde (aşağı yuvarlanır).
+  ///
+  /// [sonrakiBasamak] tam yıl farkını verir; ekran "4 yıl sonra %60"
+  /// yazıyordu, oysa 15.05.2020 girişte %60 eşiği 15.05.2030 — 2026-10-01'den
+  /// 3 yıl 7 ay sonra (emülatör testi). Son basamaktaysa `null`.
+  static ({int yil, int ay, double oran})? sonrakiBasamakSuresi(
+      DateTime giris, DateTime simdi) {
+    final s = sonrakiBasamak(giris, simdi);
+    if (s == null) return null;
+    final esikYil = tamYil(giris, simdi) + s.yil;
+    final esik = DateTime(giris.year + esikYil, giris.month, giris.day);
+    var ay = (esik.year - simdi.year) * 12 + esik.month - simdi.month;
+    if (simdi.day > esik.day) ay--;
+    if (ay < 0) ay = 0;
+    return (yil: ay ~/ 12, ay: ay % 12, oran: s.oran);
+  }
+
   /// [tarih]'te yapılan katkıya uygulanan devlet katkısı yüzdesi.
   static double devletKatkisiOrani(DateTime tarih) {
+    final uzak = _uzak[tarih.year]?.oran;
+    if (uzak != null) return uzak;
     if (!tarih.isBefore(DateTime(2026))) return 20;
     if (!tarih.isBefore(DateTime(2022))) return 30;
     return 25;
   }
 
-  /// Yıllık devlet katkısı üst sınırı (TL); tabloda olmayan yıl `null`.
+  /// Yedek sınır tablosu — sunucu parametresi yüklenemezse (çevrimdışı ilk
+  /// açılış). Yeni yıl buraya ELLE eklenmez; sunucu getirir.
   static const Map<int, double> yillikSinirTablosu = {2026: 79272};
 
-  static double? yillikSinir(int yil) => yillikSinirTablosu[yil];
+  /// Sunucudan gelen parametreler: yıl → (azami devlet katkısı TL, oran %).
+  static final Map<int, ({double sinir, double oran})> _uzak = {};
+
+  /// `bes_devlet_katkisi` satırlarını yükler (bkz. `BesParametreleri`).
+  /// Önceki yükleme tamamen değiştirilir.
+  static void uzakParametreler(Map<int, ({double sinir, double oran})> m) {
+    _uzak
+      ..clear()
+      ..addAll(m);
+  }
+
+  /// Yıllık devlet katkısı üst sınırı (TL): önce sunucu, sonra yedek tablo;
+  /// ikisinde de yoksa `null` (uydurma sınır yok).
+  static double? yillikSinir(int yil) =>
+      _uzak[yil]?.sinir ?? yillikSinirTablosu[yil];
 
   /// [katki] TL'lik katkının devlet katkısı; yılın kalan sınırına kırpılır.
   ///
@@ -117,6 +159,94 @@ abstract final class BesHesabi {
     return out;
   }
 
+  /// Fon değişikliği planı: bugünkü birikimi [hedef] dağılıma taşır.
+  ///
+  /// [mevcut] fon başına elde kalan pay ve ana para (maliyet), [fiyatlar]
+  /// bugünkü TEFAS fiyatı. Dönen satırlar: azalan fonda SATIŞ (pay, serbest
+  /// kalan ana para), artan fonda ALIŞ (pay, taşınan ana para).
+  ///
+  /// ## Neden ana para taşınır, kâr realize edilmez
+  /// Gerçek BES'te fon değişikliği bir satış değildir: birikim el
+  /// değiştirmez, vergi doğmaz, "ödediğin katkı" aynı kalır. Satıştan
+  /// serbest kalan ana para, alınan fonlara DEĞER oranında dağıtılır;
+  /// böylece değişim anında Σ ana para ve Σ değer aynı kalır, kâr da.
+  /// Ekran satış lotunu maliyet fiyatından yazar (gerçekleşen kâr 0) —
+  /// eski sürümler de kârı çift saymaz.
+  ///
+  /// [esik] TL'den küçük kaymalar yok sayılır (kuruş gürültüsü yeni lot
+  /// açmasın). Değişecek bir şey yoksa boş liste.
+  static List<({String kod, double pay, double maliyet, bool satis})>
+      fonDegisimPlani({
+    required Map<String, ({double pay, double maliyet})> mevcut,
+    required Map<String, double> fiyatlar,
+    required List<FonPayi> hedef,
+    double esik = 1,
+  }) {
+    final toplamOran = hedef.fold<double>(0, (t, f) => t + f.oran);
+    if (toplamOran <= 0) return const [];
+    var toplam = 0.0;
+    final deger = <String, double>{};
+    for (final e in mevcut.entries) {
+      final f = fiyatlar[e.key];
+      if (f == null || f <= 0 || e.value.pay <= 0) continue;
+      deger[e.key] = e.value.pay * f;
+      toplam += e.value.pay * f;
+    }
+    if (toplam <= 0) return const [];
+    final hedefDeger = <String, double>{};
+    for (final f in hedef) {
+      hedefDeger[f.kod] =
+          (hedefDeger[f.kod] ?? 0) + toplam * f.oran / toplamOran;
+    }
+    final kodlar = {...deger.keys, ...hedefDeger.keys};
+    final satislar = <({String kod, double pay, double maliyet, bool satis})>[];
+    final alimFarki = <String, double>{};
+    var serbestMaliyet = 0.0;
+    var serbestDeger = 0.0;
+    for (final k in kodlar) {
+      final fark = (hedefDeger[k] ?? 0) - (deger[k] ?? 0);
+      if (fark.abs() < esik && hedefDeger.containsKey(k)) continue;
+      if (fark < 0) {
+        final m = mevcut[k]!;
+        // Fon dağılımdan çıktıysa payın TAMAMI (kuruş artığı kalmasın).
+        final pay = hedefDeger.containsKey(k)
+            ? -fark / fiyatlar[k]!
+            : m.pay;
+        final maliyet = m.maliyet * pay / m.pay;
+        serbestMaliyet += maliyet;
+        serbestDeger += pay * fiyatlar[k]!;
+        satislar.add((kod: k, pay: pay, maliyet: maliyet, satis: true));
+      } else if (fark > 0) {
+        alimFarki[k] = fark;
+      }
+    }
+    final alimToplam = alimFarki.values.fold<double>(0, (t, x) => t + x);
+    if (satislar.isEmpty || alimToplam <= 0) return const [];
+    // Alımlar satıştan serbest kalan DEĞERE ölçeklenir: eşik altında
+    // atlanan kuruş kaymaları Σ alım ≠ Σ satış yapmasın (değer korunur).
+    final olcek = serbestDeger / alimToplam;
+    return [
+      ...satislar,
+      for (final e in alimFarki.entries)
+        (
+          kod: e.key,
+          pay: e.value * olcek / fiyatlar[e.key]!,
+          maliyet: serbestMaliyet * e.value / alimToplam,
+          satis: false,
+        ),
+    ];
+  }
+
+  /// Bu yıl yapılan fon değişikliği sayısı — katılımcının yılda 12 hakkı
+  /// var (BES Yönetmeliği). [satisAnlari] sözleşmenin satış lotlarının
+  /// anları; aynı dakikadaki satışlar tek değişikliktir. Yalnızca BİLGİ:
+  /// sınır uygulamaya kurala bağlanmaz, şirket uygular.
+  static int buYilFonDegisikligi(Iterable<DateTime> satisAnlari, int yil) => {
+        for (final t in satisAnlari)
+          if (t.year == yil)
+            DateTime(t.year, t.month, t.day, t.hour, t.minute),
+      }.length;
+
   /// Dağılım geçerli mi: en az bir fon, oranlar toplamı %100 (±0,01).
   static bool dagilimGecerli(List<FonPayi> dagilim) {
     if (dagilim.isEmpty) return false;
@@ -134,7 +264,56 @@ abstract final class BesHesabi {
     final gun = s.katkiGunu;
     if (s.aylikKatki == null || gun == null || !s.acik) return false;
     if (simdi.day < gun) return false;
-    return !katkiTarihleri
-        .any((t) => t.year == simdi.year && t.month == simdi.month);
+    return !buAyKatkiVar(katkiTarihleri, simdi);
+  }
+
+  /// Bu takvim ayında katkı yazıldı mı. Kartın düğmesi buna göre "bu ayın
+  /// katkısı" ya da "ek katkı" der: eklendikten sonra da "Bu ayın katkısını
+  /// ekle" yazınca aynı ay ikinci kez ekleniyordu (emülatör testi,
+  /// 2026-10-01).
+  static bool buAyKatkiVar(Iterable<DateTime> katkiTarihleri, DateTime simdi) =>
+      katkiTarihleri
+          .any((t) => t.year == simdi.year && t.month == simdi.month);
+
+  /// Otomatik katkının yazılacağı günler (kullanıcı isteği 2026-10-01:
+  /// *"tarihe göre, miktar değişmediği sürece ekleyelim ve yatırma günü
+  /// de"*).
+  ///
+  /// İmleçten ([Sozlesme.otomatikKatkiSon]) SONRA gelen, bugün dahil her
+  /// ayın katkı günü. O takvim ayında zaten katkı varsa (kullanıcı elle
+  /// eklediyse) ay atlanır: aynı ayın katkısı iki kez yazılmaz. Uygulama
+  /// aylarca açılmadıysa her ay KENDİ günüyle döner, bugüne yığılmaz. En
+  /// çok [enFazla] ay: bozuk bir imleç yıllarca geriye katkı yazmasın.
+  static List<DateTime> otomatikKatkiGunleri({
+    required Sozlesme s,
+    required DateTime simdi,
+    required Iterable<DateTime> katkiTarihleri,
+    int enFazla = 24,
+  }) {
+    final gun = s.katkiGunu;
+    final son = s.otomatikKatkiSon;
+    if (!s.otomatikKatki ||
+        !s.acik ||
+        gun == null ||
+        son == null ||
+        (s.aylikKatki ?? 0) <= 0) {
+      return const [];
+    }
+    final bugun = dayKey(simdi);
+    final imlec = dayKey(son);
+    final dolu = {for (final t in katkiTarihleri) t.year * 12 + t.month};
+    final out = <DateTime>[];
+    var y = son.year;
+    var m = son.month;
+    while (out.length < enFazla) {
+      final d = DateTime(y, m, gun);
+      if (d.isAfter(bugun)) break;
+      if (d.isAfter(imlec) && !dolu.contains(y * 12 + m)) out.add(d);
+      if (++m > 12) {
+        m = 1;
+        y++;
+      }
+    }
+    return out;
   }
 }

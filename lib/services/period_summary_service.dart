@@ -1,10 +1,12 @@
+import 'dart:math' as math;
+
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart' show positionKey;
 import 'daily_summary.dart';
 import 'history_service.dart';
 import 'inflation_service.dart';
-import 'xirr_service.dart' show XirrService;
+import 'para_agirlikli_getiri.dart';
 import 'recap_service.dart' show PortfolioCharacter, RecapAsset, RecapService;
 import '../utils/tr_format.dart';
 
@@ -88,24 +90,53 @@ class PeriodSummary {
   final double? baslangicTRY;
   final double? sonTRY;
 
-  /// Dönem içinde portföye giren NET para (alım +, satış −).
+  /// Dönem içinde portföye giren NET para (alım +, satış −, nakit temettü −).
   ///
-  /// `DailySummary.inflowOnDay` ile aynı işaret kuralı: satışta maliyet
-  /// değil ele geçen tutar (`sellProceedsTRY`) kullanılır — kârla satılan
-  /// pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa etkisi"
-  /// sayılırdı.
+  /// `getiriAkisi` kuralı: satışta maliyet değil ele geçen tutar
+  /// (`sellProceedsTRY`) kullanılır — kârla satılan pozisyonda ikisi
+  /// farklıdır ve fark yanlışlıkla "piyasa etkisi" sayılırdı. Nakit temettü
+  /// 2026-10-01'den beri ÇIKIŞTIR (portföyden cebe giden para; gerekçe
+  /// `getiriAkisi`), ekranda "Net katkın".
   final double? katkiTRY;
 
-  /// Saf getiri (TRY) = (son − baş) − katkı.
+  /// Saf getiri (TRY) = (son − baş) − katkı. Katkı temettüyü çıkış
+  /// saydığı için bu rakam fiyat hareketi + nakit temettüdür.
   final double? piyasaTRY;
 
-  /// Saf getiri yüzdesi = [piyasaTRY] / (başlangıç + max(katkı, 0)).
+  /// Saf getiri yüzdesi = [piyasaTRY] / dönemin ORTALAMA sermayesi
+  /// (bkz. `PeriodSummaryService.ortalamaSermaye`).
   ///
-  /// Payda katkıyı İÇERİR: dönem içinde portföyünü ikiye katlayan kullanıcıda
-  /// yalnızca `baslangicTRY`'yi taban almak yüzdeyi şişirirdi. Negatif katkı
-  /// (net satış) tabana eklenmez — satılan para artık piyasada değil, ondan
-  /// getiri beklenmez.
+  /// **2026-10-01'e kadar** `piyasaTRY / (başlangıç + max(katkı, 0))` idi:
+  /// ay içinde eklenen para ayın BAŞINDAN beri portföydeymiş gibi paydaya
+  /// tam giriyordu. Ölçüldü: ₺100.000 ile başlayıp %3 kazanan, 29'unda
+  /// ₺100.000 ekleyen kullanıcıya %3,00 yerine %1,55 yazıyordu; TÜFE
+  /// kartında enflasyonun "gerisinde" görünüyordu (kullanıcı bildirimi,
+  /// Eylül özeti). Şimdi her akış dönemde kaldığı süre oranında paydaya
+  /// girer; akış yoksa sonuç eski formülle BİREBİR aynıdır.
+  /// Köprünün TRY satırları ([katkiTRY], [piyasaTRY]) değişmedi.
+  ///
+  /// Aynı gün, best practice kıyasından sonra: ortalama sermaye (Modified
+  /// Dietz) doğrusal yaklaşık olarak kaldı, sayının kendisi aynı akış ve
+  /// ağırlıklarla KESİN para ağırlıklı getiri (dönem IRR'ı;
+  /// `PeriodSummaryService.paraAgirlikliGetiri`). İşaret yine `piyasaTRY`'nin.
   final double? getiriPct;
+
+  /// Yıllık getiri oranı (yüzde) — YALNIZCA ölçülen pencere bir yıldan
+  /// uzunsa (5Y), aksi halde `null`.
+  ///
+  /// ## Neden yalnız >1 yıl (GIPS, 2026-10-01 K2)
+  /// Bir yıldan kısa bir dönemin getirisini yıllığa çevirmek, olmamış bir
+  /// geleceği varsaymaktır: üç ayda %8, "yıllık %36" diye okunur. GIPS bu
+  /// yüzden 1 yıldan kısa dönemde yıllıklandırmayı yasaklar; ≤1Y'de
+  /// [getiriPct] (dönem toplamı) tek sayı olarak kalır. Beş yıllık
+  /// toplamda ise tersi yanıltır: %180 "beş yılda" bir yıllık TÜFE ile
+  /// yan yana okunamaz. Orada ana yüzde bu oran, dönem toplamı yanında
+  /// küçük yazılır.
+  ///
+  /// `(1 + getiriPct)^(365 / gün) − 1`; gün, ÖLÇÜLEN pencere (serinin ilk
+  /// dolu noktasından uca) — beş yıl seçili ama portföy 8 aylıksa
+  /// yıllıklandırılmaz.
+  final double? yillikGetiriPct;
 
   /// Dönemin en iyi / en zayıf varlığı — DÖNEME ait, ömürlük değil.
   ///
@@ -126,7 +157,13 @@ class PeriodSummary {
   /// taşınır ki kart üç sayıyı da yazabilsin (nominal, TÜFE, reel).
   final double? tufePct;
 
-  /// Bileşik reel getiri: (1+n)/(1+e) − 1, yüzde.
+  /// Reel getiri, yüzde.
+  ///
+  /// TÜFE endeksi verildiğinde (`compute(tufeEndeksi:)`, Özet ve ana ekran
+  /// yolu) REEL PARA AĞIRLIKLI getiridir (`reelParaAgirlikliGetiriPct`):
+  /// her akış kendi tarihindeki fiyat düzeyine taşınır. Yalnızca dönemin
+  /// toplam TÜFE'si bilindiğinde (`inflationPct`) kapalı formül
+  /// (1+n)/(1+e) − 1; akış yoksa ikisi birebir aynıdır.
   ///
   /// [tufeFarki]'ndan FARKLI bir sayıdır ve ikisi birlikte gösterilir.
   /// Puan farkı gündelik dilin okuduğu şey ("TÜFE'yi 6 puan geçtim"),
@@ -158,10 +195,14 @@ class PeriodSummary {
 
   /// Dönem içinde tahsil edilen nakit temettü (TRY). Yoksa `null`.
   ///
-  /// Akışa (`katkiTRY`) GİRMEZ, `piyasaTRY` içinde ERİR — temettü ödendiğinde
-  /// hisse fiyatı temettü kadar düşer, yani portföy değeri serisinde zaten
-  /// görünür. Ayrı satır olarak gösterilmesi "bu getirinin şu kadarı nakit
-  /// olarak elime geçti" bilgisini verir; toplama İKİNCİ KEZ eklenmez.
+  /// [piyasaTRY]'nin İÇİNDEDİR, [katkiTRY]'de çıkış olarak durur
+  /// (`getiriAkisi`). Ayrı satır "bu getirinin şu kadarı nakit olarak elime
+  /// geçti" bilgisini verir; toplama İKİNCİ KEZ eklenmez.
+  ///
+  /// **2026-10-01'e kadar** buradaki not "piyasaTRY içinde ERİR, çünkü
+  /// fiyat temettü kadar düşer" diyordu — yanlıştı: fiyat düşüşü seride
+  /// vardı, ödenen nakit yoktu; temettü getiriye hiç girmiyordu. Pencere
+  /// [piyasaTRY]'nin akış kapısıyla aynı (`temettuArasi`).
   final double? temettuTRY;
 
   /// Dönem içinde ödenen komisyon (TRY). Yoksa `null`.
@@ -183,15 +224,24 @@ class PeriodSummary {
   /// `null`.
   final ({int artida, int toplam})? gunSayimi;
 
+  /// Kapsamdaki İLK alımın tarihi. Dönem penceresi ([start]) bundan
+  /// ESKİYSE ekran aralık çipini buradan başlatır (2026-10-01 emülatör
+  /// testi: 5Y çipi "1 Eki 21 – bugün · Dönem başı ₺137.500" yazıyordu,
+  /// oysa ilk alım 14 Eyl 2023 — 2021'de portföy yoktu; Grafik kartı
+  /// doğru tarihi yazıyordu, Özet yazmıyordu). Lot yoksa `null`.
+  final DateTime? ilkAlim;
+
   const PeriodSummary({
     required this.period,
     required this.start,
     required this.end,
+    this.ilkAlim,
     this.baslangicTRY,
     this.sonTRY,
     this.katkiTRY,
     this.piyasaTRY,
     this.getiriPct,
+    this.yillikGetiriPct,
     this.enIyi,
     this.enZayif,
     this.tufeFarki,
@@ -244,26 +294,37 @@ class PeriodSummaryService {
   /// ve widget katmanı) — bu projede ons→gram formülünün beş kopyası tam
   /// olarak böyle ayrışmıştı. Yeni hesap buraya bakar.
   ///
-  /// Alım para GİRİŞİ (+), satışta ele geçen tutar ÇIKIŞ (−). Temettü ve
-  /// silinen lot akışa girmez: `isActive` hem mezar taşını hem yumuşak
-  /// silinmiş lot'u eler. Temettü ayrıca miktara hiç girmez.
-  static double flowOf(Asset a) {
-    if (!a.isActive) return 0;
-    if (a.isBuy) return a.totalCostTRY;
-    if (a.isSell) return -a.sellProceedsTRY;
-    return 0;
-  }
+  /// Alım para GİRİŞİ (+), satışta ele geçen tutar ÇIKIŞ (−). Silinen lot
+  /// akışa girmez: `isActive` hem mezar taşını hem yumuşak silinmiş lot'u
+  /// eler.
+  ///
+  /// **Bu KATKI kuralıdır, getiri kuralı değil (2026-10-01).** Soru "bu
+  /// dönem portföye ne kadar para koydum" (birikim disiplini, en iyi/en
+  /// zayıf yarışından elenen akışlı pozisyon): temettü kullanıcının
+  /// koyduğu ya da çektiği para değildir, burada 0'dır. GETİRİ hesabı
+  /// (para ağırlıklı getiri, piyasa etkisi) temettüyü portföyden çıkan
+  /// nakit sayar — `getiriAkisi` (gerekçe orada). Alım/satış kuralı tek
+  /// yerde durur: bu fonksiyon ona delege eder.
+  static double flowOf(Asset a) => a.isDividend ? 0 : getiriAkisi(a);
 
   /// [start]…[end] penceresinde portföye giren net nakit (TRY).
   ///
   /// Pencere GÜN sınırlarına genişletilir: `addedDate` gün içi bir damga
   /// taşıyor ve dönem başı 00:00 alındığında o günün alımı pencereye
   /// girmiyordu.
+  ///
+  /// [temettuCikis] `true` iken akış GETİRİ kuralıyla sayılır
+  /// (`getiriAkisi`: nakit temettü portföyden çıkan para, −). Piyasa etkisi
+  /// ve para ağırlıklı getiri hesabı bunu verir; birikim disiplini
+  /// (`ContributionHistoryService`) vermez — orada soru "ne kadar para
+  /// koydum" ve temettü koyulan para değildir.
   static double netInflow(
     List<Asset> assets,
     DateTime start,
     DateTime end, {
     int? startExclusiveMs,
+    int? endInclusiveMs,
+    bool temettuCikis = false,
   }) {
     // [startExclusiveMs] verildiğinde gün yuvarlaması YAPILMAZ: sayım o
     // damgadan SONRA başlar.
@@ -273,8 +334,12 @@ class PeriodSummaryService {
     // içinde. Aynı günün erken saatindeki bir alım gün yuvarlamasıyla
     // katkıya da girerse iki kez sayılır. Damga sınırı ikisini ayırır.
     final startMs = startExclusiveMs ?? dayKey(start).millisecondsSinceEpoch;
-    final endMs = DateTime(end.year, end.month, end.day, 23, 59, 59)
-        .millisecondsSinceEpoch;
+    // [endInclusiveMs] verildiğinde gün sonuna GENİŞLETİLMEZ: uç değer bir
+    // SLOTTA ölçüldüyse (ör. 31 Ağu 00:00), o slottan sonraki alım uç
+    // değerin içinde yoktur ve katkıya da girmemelidir (bkz. `piyasaEtkisi`).
+    final endMs = endInclusiveMs ??
+        DateTime(end.year, end.month, end.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
 
     var total = 0.0;
     for (final a in assets) {
@@ -285,9 +350,31 @@ class PeriodSummaryService {
         continue;
       }
       if (ms > endMs) continue;
-      total += flowOf(a);
+      total += temettuCikis ? getiriAkisi(a) : flowOf(a);
     }
     return total;
+  }
+
+  /// `(sonrasiMs, sonuMs]` aralığında ödenen nakit temettü (TRY).
+  ///
+  /// Damga kapısı [piyasaEtkisi]'nin akış kapısıyla AYNI — köprünün
+  /// "Bunun nakit temettüsü" satırı tam olarak piyasa rakamına eklenen
+  /// temettüyü söylemeli; gün sınırına genişleyen ayrı bir pencere
+  /// (`XirrService.dividendsInPeriod`) tabandan önceki bir temettüyü de
+  /// sayabilirdi.
+  static double temettuArasi(
+    List<Asset> lotlar, {
+    required int sonrasiMs,
+    required int sonuMs,
+  }) {
+    var toplam = 0.0;
+    for (final a in lotlar) {
+      if (!a.isActive || !a.isDividend) continue;
+      final ms = a.addedDate.millisecondsSinceEpoch;
+      if (ms <= sonrasiMs || ms > sonuMs) continue;
+      toplam += a.dividendTRY;
+    }
+    return toplam;
   }
 
   /// Grafik kartı ve tür dökümünün dönem içi akışı — TEK kural.
@@ -306,7 +393,8 @@ class PeriodSummaryService {
       intraday
           ? DailySummary.gunIciKatki(lotlar,
               acilisMs: tabanMs, seansGunu: start, now: end)
-          : netInflow(lotlar, start, end, startExclusiveMs: tabanMs);
+          : netInflow(lotlar, start, end,
+              startExclusiveMs: tabanMs, temettuCikis: true);
 
   /// [start]…[end] penceresinde ödenen komisyon (TRY).
   ///
@@ -331,7 +419,9 @@ class PeriodSummaryService {
       if (!a.isBuy && !a.isSell) continue;
       final ms = a.addedDate.millisecondsSinceEpoch;
       if (ms < startMs || ms > endMs) continue;
-      toplam += a.commission * a.purchaseFxRate;
+      // Satış komisyonu satışla aynı anda ödenir: satış kuru (0111;
+      // kayıtlı değilse alım kuru — eski davranış).
+      toplam += a.commission * (a.isSell ? a.satisKuru : a.purchaseFxRate);
     }
     return toplam;
   }
@@ -560,6 +650,21 @@ class PeriodSummaryService {
   /// tutarı kadar şişiyordu (ölçüldü: ≈+₺500 yerine +₺41.400 / %102,
   /// 2026-09-24 kod incelemesi).
   ///
+  /// ## Temettü piyasanın İÇİNDE (2026-10-01, "tek getiri dili")
+  /// Katkı GETİRİ akışıdır (`getiriAkisi`): nakit temettü portföyden çıkan
+  /// para (−). Seri ödenen nakdi taşımadığı için `piyasa = brüt − katkı`
+  /// temettüyü otomatik olarak geri ekler; [temettu] o tutarı ayrıca
+  /// taşır (köprünün "Bunun nakit temettüsü" satırı). Köprü değişmezi
+  /// `ilk + katkı + piyasa = son` aynen durur; katkı artık NET akıştır
+  /// (eklenen − satıştan çekilen − nakit alınan temettü).
+  ///
+  /// Neden "piyasa = fiyat + temettü, katkı yalnız alım/satım, köprüye ayrı
+  /// −temettü satırı" değil: kural tek fonksiyonda (`getiriAkisi`) durunca
+  /// Grafik kartı ("Katkın + piyasa = birikim"), tür dökümü, varlık ekranı
+  /// ve GÜNLÜK aynı anda doğru olur; ayrı satır her yüzeye üçüncü bir
+  /// kalem eklemek ve Σ parça == bütün'ü her birinde yeniden kurmak
+  /// demekti. Etiket "Net katkın" olarak düzeltildi.
+  ///
   /// Seri iki uç taşımıyorsa `null` — sayı uydurulmaz.
   static ({
     double ilk,
@@ -569,7 +674,11 @@ class PeriodSummaryService {
     double brut,
     double katki,
     double piyasa,
+    double temettu,
     double taban,
+    double? pct,
+    int olcumSonuMs,
+    int akisSonuMs,
   })? piyasaEtkisi({
     required Map<int, double> seri,
     required List<Asset> lotlar,
@@ -578,18 +687,42 @@ class PeriodSummaryService {
     double? canliSon,
   }) {
     final u = uclar(seri,
-        fromMs: start.millisecondsSinceEpoch,
-        toMs: end.millisecondsSinceEpoch);
+        fromMs: start.millisecondsSinceEpoch, toMs: end.millisecondsSinceEpoch);
     if (u == null) return null;
-    final son = (canliSon != null &&
-            (canliSon > 0 ||
-                (canliSon == 0 &&
-                    lotlar.isNotEmpty &&
-                    DailySummary.acikPozisyonYok(lotlar))))
-        ? canliSon
-        : u.last;
-    final katki = netInflow(lotlar, start, end, startExclusiveMs: u.firstTs);
+    final canli = canliSon != null &&
+        (canliSon > 0 ||
+            (canliSon == 0 &&
+                lotlar.isNotEmpty &&
+                DailySummary.acikPozisyonYok(lotlar)));
+    final son = canli ? canliSon : u.last;
+    // Katkının SAĞ sınırı uç değerin ölçüldüğü an (2026-10-01).
+    //
+    // Uç canlıysa (bugünkü toplam) bugün yapılan her alım içindedir; sınır
+    // gün sonu kalır. Uç bir SLOTSA (TÜFE hizası: 31 Ağu 00:00) o slottan
+    // sonraki alım değerin içinde YOK ama gün sonuna genişleyen sınır onu
+    // katkıya yazıyordu. Ölçüldü: ayın son günü ₺50.000 alan kullanıcının
+    // %3'lük ayı −%31 görünüyordu — alım hem değerden eksik hem katkıdan
+    // düşülmüş.
+    final akisSonuMs = canli ? null : u.lastTs;
+    final katki = netInflow(lotlar, start, end,
+        startExclusiveMs: u.firstTs,
+        endInclusiveMs: akisSonuMs,
+        temettuCikis: true);
     final brut = son - u.first;
+    // Canlı uçta dönem ŞİMDİ biter; slot ucunda son slotta.
+    final sonTs = canli ? end.millisecondsSinceEpoch : u.lastTs;
+    final akisSonu = akisSonuMs ??
+        DateTime(end.year, end.month, end.day, 23, 59, 59)
+            .millisecondsSinceEpoch;
+    // Yüzdenin paydası: dönemin ortalama sermayesi (`ortalamaSermaye`).
+    final sermaye = ortalamaSermaye(
+      lotlar: lotlar,
+      bas: u.first,
+      basTs: u.firstTs,
+      sonTs: sonTs,
+      akisSonuMs: akisSonu,
+    );
+    final piyasa = brut - katki;
     return (
       ilk: u.first,
       son: son,
@@ -597,10 +730,125 @@ class PeriodSummaryService {
       sonTs: u.lastTs,
       brut: brut,
       katki: katki,
-      piyasa: brut - katki,
-      // Payda: dönem başı + POZİTİF katkı (bkz. `PeriodSummary.getiriPct`).
+      piyasa: piyasa,
+      temettu: temettuArasi(lotlar, sonrasiMs: u.firstTs, sonuMs: akisSonu),
+      olcumSonuMs: sonTs,
+      akisSonuMs: akisSonu,
+      // Eski payda (baş + POZİTİF katkı) — yalnızca tutar eşikleri için;
+      // yüzde artık [pct] (para ağırlıklı getiri).
       taban: u.first + (katki > 0 ? katki : 0),
+      pct: sermaye == null
+          ? null
+          : paraAgirlikliGetiri(
+              lotlar: lotlar,
+              bas: u.first,
+              son: son,
+              basTs: u.firstTs,
+              sonTs: sonTs,
+              akisSonuMs: akisSonu,
+              piyasa: piyasa,
+              sermaye: sermaye,
+            ),
     );
+  }
+
+  /// Dönemin PARA AĞIRLIKLI getirisi (yüzde) — dönem içi IRR.
+  ///
+  /// Akış kümesi ve ağırlıklar [ortalamaSermaye] ile AYNI (damga kapısı
+  /// `(basTs, akisSonuMs]`); hesap ve gerekçe `paraAgirlikliGetiriPct`'te
+  /// (best practice kıyası, 2026-10-01). Kök yoksa Dietz sonucu.
+  static double paraAgirlikliGetiri({
+    required List<Asset> lotlar,
+    required double bas,
+    required double son,
+    required int basTs,
+    required int sonTs,
+    required int akisSonuMs,
+    required double piyasa,
+    required double sermaye,
+  }) {
+    final akislar = [
+      for (final a in donemAkislari(
+          lotlar: lotlar,
+          basTs: basTs,
+          sonTs: sonTs,
+          akisSonuMs: akisSonuMs))
+        (f: a.f, w: a.w),
+    ];
+    return paraAgirlikliGetiriPct(bas: bas, son: son, akislar: akislar) ??
+        piyasa / sermaye * 100;
+  }
+
+  /// Dönemin akış kümesi — [ortalamaSermaye], [paraAgirlikliGetiri] ve
+  /// reel getirinin ORTAK girdisi.
+  ///
+  /// Kapı `(basTs, akisSonuMs]`, tutar `getiriAkisi` (temettü çıkış),
+  /// ağırlık akışın dönemde KALDIĞI sürenin payı. Üç hesap bu listeyi ayrı
+  /// ayrı kuruyordu; biri temettüyü alıp öteki almasa yüzde ile payda
+  /// farklı akış kümelerini ölçerdi.
+  static List<({double f, double w, int ms})> donemAkislari({
+    required List<Asset> lotlar,
+    required int basTs,
+    required int sonTs,
+    required int akisSonuMs,
+  }) {
+    final sure = sonTs - basTs;
+    final out = <({double f, double w, int ms})>[];
+    for (final a in lotlar) {
+      final f = getiriAkisi(a);
+      if (f == 0) continue;
+      final ms = a.addedDate.millisecondsSinceEpoch;
+      if (ms <= basTs || ms > akisSonuMs) continue;
+      final w = sure <= 0 ? 0.0 : ((sonTs - ms) / sure).clamp(0.0, 1.0);
+      out.add((f: f, w: w, ms: ms));
+    }
+    return out;
+  }
+
+  /// Dönemin ORTALAMA sermayesi (TRY) — Modified Dietz paydası; yüzde artık
+  /// [paraAgirlikliGetiri] ile kesinleşir, bu payda onun kapısı ve yedeği.
+  ///
+  /// ## Neden (kullanıcı bildirimi ve önerisi, 2026-10-01)
+  /// *"1 ay içerisinde TÜFE'yle karşılaştırılan değerde dönem içi
+  /// eklemeleri de dahil ediyor."* Eski payda `baş + max(katkı, 0)` idi:
+  /// ayın son günü eklenen para ayın TAMAMINDA çalışmış sayılıyor, yüzde
+  /// sıfıra doğru eziliyordu (₺100.000 ile başlayıp %3 kazanan, 29'unda
+  /// ₺100.000 ekleyen kullanıcıya %1,55). Kullanıcının önerisi: piyasa
+  /// etkisi dönem içinde ORTALAMA olarak çalışan sermayeye bölünsün,
+  /// eklenen para piyasanın kazandırdığını bozmasın.
+  ///
+  /// ## Formül
+  ///     sermaye = baş + Σ F_i × (T_son − t_i) / (T_son − T_baş)
+  /// Her akış dönemde KALDIĞI süre oranında sayılır: ayın ilk günü eklenen
+  /// para tam, son günü eklenen neredeyse hiç. Satış (F < 0) da aynı
+  /// ağırlıkla sermayeden düşer — satılan para o günden sonra çalışmadı.
+  /// Nakit temettü de satış gibi ÇIKIŞTIR (`getiriAkisi`, 2026-10-01).
+  ///
+  /// **Neden zaman ağırlıklı (TWR) değil.** TWR her slotu ayrı zincirler
+  /// ve TRY "Piyasa" satırıyla İŞARETİ ayrışabilir (₺ eksi, % artı). Bu
+  /// payda yalnızca ölçeği değiştirir: yüzde her zaman `piyasaTRY`'nin
+  /// işaretini taşır ve köprüyle aynı hikâyeyi anlatır. Akış yoksa payda
+  /// `baş`tır — eski sayıyla birebir.
+  ///
+  /// Damga kapısı `piyasaEtkisi` ile aynı: akış `(T_baş, akisSonuMs]`
+  /// aralığında sayılır. Payda pozitif değilse `null` (tümü satılıp
+  /// yeniden alınmayan dönem gibi) — sayı uydurulmaz.
+  static double? ortalamaSermaye({
+    required List<Asset> lotlar,
+    required double bas,
+    required int basTs,
+    required int sonTs,
+    required int akisSonuMs,
+  }) {
+    var sermaye = bas;
+    for (final a in donemAkislari(
+        lotlar: lotlar,
+        basTs: basTs,
+        sonTs: sonTs,
+        akisSonuMs: akisSonuMs)) {
+      sermaye += a.f * a.w;
+    }
+    return sermaye > 0 ? sermaye : null;
   }
 
   /// TEK pozisyonun piyasa etkisi — BİRİM seriden ve lot miktarlarından.
@@ -636,10 +884,10 @@ class PeriodSummaryService {
     double? canliBirim,
   }) {
     final u = uclar(birimSeri,
-        fromMs: start.millisecondsSinceEpoch,
-        toMs: end.millisecondsSinceEpoch);
+        fromMs: start.millisecondsSinceEpoch, toMs: end.millisecondsSinceEpoch);
     if (u == null) return null;
-    final sonBirim = (canliBirim != null && canliBirim > 0) ? canliBirim : u.last;
+    final sonBirim =
+        (canliBirim != null && canliBirim > 0) ? canliBirim : u.last;
     final endMs = end.millisecondsSinceEpoch;
     var bas = 0.0;
     var son = 0.0;
@@ -651,7 +899,12 @@ class PeriodSummaryService {
       if (ms <= u.firstTs) bas += q;
       if (ms <= endMs) son += q;
     }
-    final katki = netInflow(lotlar, start, end, startExclusiveMs: u.firstTs);
+    // Temettü ÇIKIŞ (`getiriAkisi`): pozisyonun nakit temettüsü piyasa
+    // etkisine eklenir — Performans'ın tür filtresi de aynı kuralla sayar,
+    // Σ parça == bütün korunur (2026-10-01). Yüzde (ürünün birim hareketi)
+    // temettüyü bilmez ve bilmemeli: o, sahibin değil ürünün sorusu.
+    final katki = netInflow(lotlar, start, end,
+        startExclusiveMs: u.firstTs, temettuCikis: true);
     return (
       piyasa: son * sonBirim - bas * u.first - katki,
       katki: katki,
@@ -669,6 +922,18 @@ class PeriodSummaryService {
   /// widget, Live Activity, üst kart ve bu sekme aynı rakamı göstermek
   /// ZORUNDA (bkz. `daily_summary.dart` "Değişmezler"). Burada ayrı bir
   /// formül kurmak o değişmezi sessizce kırardı.
+  /// Kapsamdaki ilk AKTİF alımın tarihi; alım yoksa `null`.
+  /// Grafik kartının "ilk alımdan itibaren çiz" kuralıyla aynı kaynak
+  /// (`effectiveStart`): iki yüzey aynı tarihi yazsın.
+  static DateTime? ilkAlimTarihi(List<Asset> lotlar) {
+    DateTime? ilk;
+    for (final a in lotlar) {
+      if (!a.isBuy || !a.isActive) continue;
+      if (ilk == null || a.addedDate.isBefore(ilk)) ilk = a.addedDate;
+    }
+    return ilk;
+  }
+
   static PeriodSummary compute({
     required SummaryPeriod period,
     required List<Asset> assets,
@@ -676,11 +941,16 @@ class PeriodSummaryService {
     required DateTime now,
     DailySummary? gunlukOzet,
     double? inflationPct,
+    Map<DateTime, double>? tufeEndeksi,
     String Function(String positionKey)? etiket,
     DateTime? pencereBaslangici,
     double? canliSon,
     Map<AssetType, double>? canliDagilim,
   }) {
+    // [tufeEndeksi]: aylık TÜFE endeksi (ay başı → değer). Verilirse
+    // `reelGetiriPct` REEL PARA AĞIRLIKLI getiridir (akışlar kendi
+    // tarihlerinin fiyat düzeyinde); verilmez ama [inflationPct] verilirse
+    // kapalı formül. Gerekçe `reelParaAgirlikliGetiriPct`.
     // [canliSon]: dönemin sağ ucu olarak CANLI kapsam toplamı
     // (`DailySummary.kapsamToplami`). Pencere bugünde bitiyorsa verilmeli —
     // serinin son slotu bugünkü alımları içermez ama katkı onları sayar,
@@ -776,16 +1046,61 @@ class PeriodSummaryService {
     // Temettü ve komisyon: köprünün ALT SATIRLARI, ayrı bileşen değil.
     // İkisi de zaten mevcut sayıların içinde (alan notlarına bakın); burada
     // yalnızca görünür kılınıyorlar. Sıfırsa `null` taşınır ki ekran hiç
-    // olmayan bir satırı "₺0" diye çizmesin.
-    final temettuHam = XirrService.dividendsInPeriod(assets, p.start, p.end);
-    final temettu = temettuHam.abs() < 0.005 ? null : temettuHam;
+    // olmayan bir satırı "₺0" diye çizmesin. Temettü piyasa etkisinin
+    // KENDİ kapısından gelir (`pe.temettu`): satır, piyasa rakamına
+    // gerçekten eklenen tutarı söyler.
+    final temettu = pe.temettu.abs() < 0.005 ? null : pe.temettu;
     final komisyonHam = komisyonInPeriod(assets, p.start, p.end);
     final komisyon = komisyonHam.abs() < 0.005 ? null : komisyonHam;
 
     // Payda: dönem başı + POZİTİF katkı. Negatif katkı (net satış)
     // eklenmez — satılan para artık piyasada değil.
-    final taban = pe.taban;
-    final pct = taban > 0 ? piyasa / taban * 100 : null;
+    // Yüzdenin paydası ORTALAMA sermaye (2026-10-01, `ortalamaSermaye`):
+    // dönem içi eklemeler ayın tamamında çalışmış sayılmaz. TRY köprüsü
+    // aynı kaldı.
+    final pct = pe.pct;
+
+    // Yıllık oran yalnızca ÖLÇÜLEN pencere bir yılı aşınca (GIPS; alan
+    // notu `yillikGetiriPct`). Dönem de 1Y'den uzun olmalı: takvimden
+    // türeyen 1Y penceresi artık yıllarda 366 gün sürer, saat payıyla
+    // 365'i aşar; 1Y'nin toplamı zaten yıllık orandır.
+    final olculenGun =
+        (pe.olcumSonuMs - pe.ilkTs) / Duration.millisecondsPerDay;
+    final yillik = (pct != null &&
+            period.days > SummaryPeriod.birYil.days &&
+            olculenGun > 365 &&
+            pct > -100)
+        ? _sonluVeyaNull(
+            (math.pow(1 + pct / 100, 365 / olculenGun) - 1) * 100)
+        : null;
+
+    // Reel: endeks varsa para ağırlıklı (her akış kendi fiyat düzeyinde),
+    // yoksa ve yalnız toplam TÜFE varsa kapalı formül.
+    double? reel;
+    if (pct != null && tufeEndeksi != null) {
+      reel = reelParaAgirlikliGetiriPct(
+        bas: pe.ilk,
+        son: pe.son,
+        // Uçların fiyat düzeyi PENCERE uçlarında (TÜFE penceresi:
+        // `seriBaslangici`/`seriBitisi`): nominal o pencereye atfedilip
+        // TÜFE ile kıyaslanıyor; haftalık serinin ilk slotu (Pazartesi)
+        // pencere başından bir gün sonra düşebiliyor ve ölçüm anı
+        // alınırsa akışsız portföyde bile kapalı formülden sapardı.
+        basAn: p.start,
+        sonAn: p.end,
+        akislar: [
+          for (final a in donemAkislari(
+              lotlar: assets,
+              basTs: pe.ilkTs,
+              sonTs: pe.olcumSonuMs,
+              akisSonuMs: pe.akisSonuMs))
+            (f: a.f, w: a.w, an: DateTime.fromMillisecondsSinceEpoch(a.ms)),
+        ],
+        endeks: tufeEndeksi,
+      );
+    } else if (pct != null && inflationPct != null) {
+      reel = InflationService.realReturnPct(pct, inflationPct);
+    }
 
     // Dönem içinde AKIŞ görmüş pozisyonlar en iyi/en zayıf yarışından
     // elenir (miktar değişimi getiri sanılmasın).
@@ -811,11 +1126,13 @@ class PeriodSummaryService {
       period: period,
       start: p.start,
       end: p.end,
+      ilkAlim: ilkAlimTarihi(assets),
       baslangicTRY: pe.ilk,
       sonTRY: pe.son,
       katkiTRY: katki,
       piyasaTRY: piyasa,
       getiriPct: pct,
+      yillikGetiriPct: yillik,
       enIyi: uclar2.enIyi,
       enZayif: uclar2.enZayif,
       tufeFarki: (pct != null && inflationPct != null)
@@ -826,9 +1143,7 @@ class PeriodSummaryService {
       // bakın). NaN filtrelenir: −%100 enflasyonda payda sıfırlanıyor ve
       // `realReturnPct` tanımsızı NaN ile bildiriyor — NaN'ı ekrana
       // taşımak "%NaN" yazdırırdı.
-      reelGetiriPct: (pct != null && inflationPct != null)
-          ? _sonluVeyaNull(InflationService.realReturnPct(pct, inflationPct))
-          : null,
+      reelGetiriPct: reel == null ? null : _sonluVeyaNull(reel),
       temettuTRY: temettu,
       komisyonTRY: komisyon,
       dagilimBasi: _dagilim(breakdown.byType, pe.ilkTs),
@@ -987,7 +1302,7 @@ class PeriodSummaryService {
     String g(DateTime t) => '${t.day.toString().padLeft(2, '0')}.'
         '${t.month.toString().padLeft(2, '0')}.'
         '${(t.year % 100).toString().padLeft(2, '0')}';
-    return '${g(bas)} – ${g(bit)}';
+    return '${g(bas)} - ${g(bit)}';
   }
 
   static String? shareText(

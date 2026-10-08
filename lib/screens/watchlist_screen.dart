@@ -20,6 +20,7 @@ import '../models/watchlist_item.dart';
 import '../providers/auth_provider.dart'
     show activePartnersProvider, authProvider;
 import '../providers/preferences_provider.dart' show watchlistLimitProvider;
+import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
@@ -27,7 +28,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/donem_secici.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/watchlist_chart.dart';
 import 'add_asset_screen.dart';
@@ -138,7 +139,16 @@ class _PeriodToggle extends ConsumerWidget {
       child: DonemSecici(
         donemler: SummaryPeriod.values,
         secili: ref.watch(watchlistPeriodProvider),
-        onSec: (i) => ref.read(watchlistPeriodProvider.notifier).state = i,
+        // Bayrak açıkken ortak dönem yazılır; `watchlistPeriodProvider`
+        // ondan türediği için kendiliğinden izler.
+        onSec: (i) {
+          if (donemHafizasiAcik) {
+            ref.read(seciliDonemProvider.notifier).state =
+                SummaryPeriod.values[i];
+          } else {
+            ref.read(watchlistPeriodProvider.notifier).state = i;
+          }
+        },
       ),
     );
   }
@@ -267,13 +277,8 @@ class _ChartCard extends ConsumerWidget {
     final portfolioLabel = _portfolioLabel(view, partners);
     final focused = ref.watch(watchlistFocusProvider);
 
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.fromLTRB(8, 14, 14, 12),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -282,7 +287,7 @@ class _ChartCard extends ConsumerWidget {
           if (partners.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 0, 10),
-              child: ModernTabSelector(
+              child: OrtakSecici(
                 partners: partners,
                 selectedId: view,
                 onChanged: (v) =>
@@ -396,7 +401,7 @@ class _ChartCard extends ConsumerWidget {
     );
   }
 
-  /// Kıyas çizgisinin adı. `ModernTabSelector` ile AYNI sözleşme:
+  /// Kıyas çizgisinin adı. `OrtakSecici` ile AYNI sözleşme:
   /// `null` → Birlikte, `''` → Ben, uuid → o ortak.
   ///
   /// Ortağın adı seçicideki gibi yalnızca İLK ADI — tam ad grafiğin
@@ -821,110 +826,110 @@ class _AddHeader extends ConsumerWidget {
       // düğme 44 pt, etiketler `bodySmall`, şerit 4 pt. Bir ara segment
       // seçicinin 48/40 ölçüsüne indirilmişti; kullanıcı taslağı istedi —
       // kart bir seçici değil, bilgi + eylem kartı; kendi ölçüsü olabilir.
-      child: Container(
+      // Kabuk kenarsız `SandikCard` (2. tur, 2026-10-08) — piksel aynı.
+      child: SizedBox(
         height: 56,
-        padding: const EdgeInsets.only(
-            left: SandikSpace.md2, right: SandikSpace.xs2),
-        decoration: BoxDecoration(
-          color: c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Semantics(
-                label: sinirli
-                    ? context.l10n.watchlistCountOfLimit(n, limit)
-                    : '${context.l10n.watchlistInListLabel} $n',
-                excludeSemantics: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(context.l10n.watchlistInListLabel,
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: c.text58)),
-                        const Spacer(),
-                        Text.rich(
-                          TextSpan(
-                            text: '$n',
-                            style: context.t.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: dolu ? c.loss : c.text90),
-                            children: [
-                              if (sinirli)
-                                TextSpan(
-                                    text: '/$limit',
-                                    style: TextStyle(color: c.text36)),
-                            ],
+        child: SandikCard(
+          bordered: false,
+          padding: const EdgeInsets.only(
+              left: SandikSpace.md2, right: SandikSpace.xs2),
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  label: sinirli
+                      ? context.l10n.watchlistCountOfLimit(n, limit)
+                      : '${context.l10n.watchlistInListLabel} $n',
+                  excludeSemantics: true,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(context.l10n.watchlistInListLabel,
+                              style: context.t.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: c.text58)),
+                          const Spacer(),
+                          Text.rich(
+                            TextSpan(
+                              text: '$n',
+                              style: context.t.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: dolu ? c.loss : c.text90),
+                              children: [
+                                if (sinirli)
+                                  TextSpan(
+                                      text: '/$limit',
+                                      style: TextStyle(color: c.text36)),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      if (sinirli) ...[
+                        const SizedBox(height: SandikSpace.xs2 + 1),
+                        _KapasiteSeridi(dolu: n, toplam: limit),
                       ],
-                    ),
-                    if (sinirli) ...[
-                      const SizedBox(height: SandikSpace.xs2 + 1),
-                      _KapasiteSeridi(dolu: n, toplam: limit),
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: SandikSpace.smd),
-            SandikTappable(
-              semanticLabel: dolu
-                  ? context.l10n.watchlistLimitReached(limit)
-                  : context.l10n.addToWatchlist,
-              onTap: dolu
-                  ? () => sandikSnack(
-                        context,
-                        context.l10n.watchlistLimitReached(limit),
-                        kind: SandikSnackKind.warning,
-                      )
-                  : () => _ekle(context),
-              // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
-              // (taslak), 6 pt dikey pay.
-              child: SizedBox(
-                height: 56,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: SandikSpace.md2),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: dolu ? Colors.transparent : c.amberFill,
-                      borderRadius: BorderRadius.circular(SandikSpace.sm2),
-                      border: dolu ? Border.all(color: c.hairline) : null,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (!dolu) ...[
-                          Icon(Icons.add_rounded,
-                              size: 18, color: c.onStatus),
-                          const SizedBox(width: SandikSpace.xs),
+              const SizedBox(width: SandikSpace.smd),
+              SandikTappable(
+                semanticLabel: dolu
+                    ? context.l10n.watchlistLimitReached(limit)
+                    : context.l10n.addToWatchlist,
+                onTap: dolu
+                    ? () => sandikSnack(
+                          context,
+                          context.l10n.watchlistLimitReached(limit),
+                          kind: SandikSnackKind.warning,
+                        )
+                    : () => _ekle(context),
+                // Dokunma hedefi 56 pt (kartın tamamı); görsel kutu 44 pt
+                // (taslak), 6 pt dikey pay.
+                child: SizedBox(
+                  height: 56,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: SandikSpace.xs2),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: SandikSpace.md2),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: dolu ? Colors.transparent : c.amberFill,
+                        borderRadius: BorderRadius.circular(SandikSpace.sm2),
+                        border: dolu ? Border.all(color: c.hairline) : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (!dolu) ...[
+                            Icon(Icons.add_rounded,
+                                size: 18, color: c.onStatus),
+                            const SizedBox(width: SandikSpace.xs),
+                          ],
+                          Text(
+                            dolu
+                                ? context.l10n.watchlistFullShort
+                                : context.l10n.watchlistAddShort,
+                            style: context.t.titleSmall?.copyWith(
+                                color: dolu ? c.text58 : c.onStatus,
+                                fontWeight: FontWeight.w700),
+                          ),
                         ],
-                        Text(
-                          dolu
-                              ? context.l10n.watchlistFullShort
-                              : context.l10n.watchlistAddShort,
-                          style: context.t.titleSmall?.copyWith(
-                              color: dolu ? c.text58 : c.onStatus,
-                              fontWeight: FontWeight.w700),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1001,16 +1006,17 @@ extension on WatchlistItem {
 
 /// Satırdaki fiyat metni. Endeks puandır: para simgesi ve kuruş yok
 /// (arama satırı ve piyasa bandıyla aynı kural, `bistEndeksiMi`).
-/// Diğerleri kotasyonun kendi para birimiyle — `kotasyonSembolu`: döviz
-/// paritesinde KARŞI para birimi (`USDTRY=X` → ₺49,00; eskiden miktar
-/// sembolüyle "$49,00" yazıyordu — 2026-09-29 emülatör testi #13, arama
-/// satırı ve varlık sayfasıyla aynı kural).
+///
+/// Diğerleri ₺ ile ([sembolSerisiSimgesi], seri denetimi 2026-10-08):
+/// `currentPrice` sembol serisinin son noktasıdır ve seri her sembolde TL'dir
+/// (`WatchlistNotifier._withPrices`). Eskiden simge kotasyonun para
+/// biriminden seçiliyordu (`kotasyonSembolu`) ve USD kote satır TL sayıyı
+/// "$" ile yazıyordu. Döviz paritesi zaten ₺ idi (2026-09-29 emülatör
+/// testi #13); o kural bu genellemenin özel hâli.
 @visibleForTesting
 String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
   if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
-  return tryFormatter(
-          digits: 2, symbol: kotasyonSembolu(item.ticker, item.currency))
-      .format(f);
+  return tryFormatter(digits: 2, symbol: sembolSerisiSimgesi).format(f);
 }

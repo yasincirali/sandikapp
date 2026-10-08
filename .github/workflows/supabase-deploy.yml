@@ -16,8 +16,11 @@
 # kırmızı. Tek hedef yalnız onarım (repair) gibi projeye özgü işler için.
 #
 # Gerekli secret'lar (Settings → Secrets and variables → Actions):
-#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens (iki proje
-#                            aynı hesapta; tek token ikisine de yeter)
+#   SUPABASE_ACCESS_TOKEN  — supabase.com → Account → Access Tokens. Tokyo'yu
+#                            (ve _EU yoksa Frankfurt'u da) gören hesaptan.
+#   SUPABASE_ACCESS_TOKEN_EU — isteğe bağlı: Frankfurt'u gören hesabın token'ı.
+#                            İki proje ayrı hesaptaysa şart (2026-10-01'de ortak
+#                            token Frankfurt'ta 403 aldı); yoksa ortağa düşülür.
 #   SUPABASE_DB_PASSWORD   — yalnız Tokyo, isteğe bağlı: güncel CLI şifre
 #                            yerine token'la geçici giriş rolü kurar
 # Proje ref'leri secret DEĞİL (uygulamada zaten açık, supabase_config.dart);
@@ -82,7 +85,10 @@ jobs:
       matrix:
         hedef: ${{ fromJSON(inputs.hedef == 'ikisi' && '["frankfurt","tokyo"]' || format('["{0}"]', inputs.hedef)) }}
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Frankfurt başka bir Supabase hesabında olabilir (2026-10-01: ortak
+      # token Frankfurt'ta 403 aldı). `_EU` tanımlıysa Frankfurt onu kullanır,
+      # değilse ortak token'a düşer — secret eklenene kadar davranış aynı.
+      SUPABASE_ACCESS_TOKEN: ${{ matrix.hedef == 'frankfurt' && secrets.SUPABASE_ACCESS_TOKEN_EU || secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ matrix.hedef == 'tokyo' && secrets.SUPABASE_DB_PASSWORD || '' }}
       PROJECT_REF: ${{ matrix.hedef == 'tokyo' && 'ybdbzouzhzwthjgwlbmk' || 'ynwymnpdiwudrlxfrmuo' }}
     steps:
@@ -114,10 +120,14 @@ jobs:
                 -d "$body")
           # Erişim hatası "project_url yok" diye raporlanmamalı (2026-09-28:
           # token Frankfurt'a 403 alınca kapı yanlış teşhis yazdı).
-          if [ "$kod" != "200" ]; then
-            echo "::error::${{ matrix.hedef }}: Management API HTTP $kod — token bu projeye erişemiyor olabilir. Yanıt: $(head -c 300 yanit.json)"
-            exit 1
-          fi
+          # Başarı 2xx'tir, yalnız 200 değil: API 2026-10-01'de bu uç için
+          # 201 dönmeye başladı ve kapı başarılı yanıtı ([{"n":1}]) hata saydı.
+          case "$kod" in
+            2??) ;;
+            *)
+              echo "::error::${{ matrix.hedef }}: Management API HTTP $kod — token bu projeye erişemiyor olabilir. Yanıt: $(head -c 300 yanit.json)"
+              exit 1 ;;
+          esac
           n=$(jq -r '.[0].n' yanit.json)
           if [ "$n" != "1" ]; then
             echo "::error::${{ matrix.hedef }}: Vault'ta project_url yok. SQL Editor: select vault.create_secret('https://$PROJECT_REF.supabase.co', 'project_url');"
@@ -126,7 +136,10 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Sabit: `latest` her koşuda GitHub API'sinden çözülür ve paylaşımlı
+          # runner IP'sinde rate limit'e takılıyordu (run 37079068456).
+          # Yükseltme elle; integration.yml + supabase-deploy.yml birlikte.
+          version: 2.119.0
 
       - name: Projeye bağlan
         run: supabase link --project-ref "$PROJECT_REF"
@@ -216,6 +229,7 @@ jobs:
     timeout-minutes: 10
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_ACCESS_TOKEN_EU: ${{ secrets.SUPABASE_ACCESS_TOKEN_EU }}
     steps:
       - uses: actions/checkout@v4
       - name: Şema parmak izi — Tokyo = Frankfurt

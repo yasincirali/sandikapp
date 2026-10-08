@@ -120,7 +120,8 @@ class PriceAlertTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               )
             else if (onDelete != null)
               IconButton(
@@ -128,7 +129,8 @@ class PriceAlertTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               ),
           ],
         ),

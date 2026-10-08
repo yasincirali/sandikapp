@@ -5,11 +5,14 @@ import 'package:portfoy_takip/services/history_service.dart';
 import 'package:portfoy_takip/services/leaderboard_service.dart';
 import 'helpers/kaynak.dart';
 
-/// **Yarışta herkes TEK formülle ölçülür: seçili dönemin getirisi.**
+/// **Yarışta herkes TEK formülle ölçülür: seçimlerinin getirisi (TWR).**
 ///
-/// ```
-///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-/// ```
+/// 2026-10-01'den (0095, kullanıcı kararı R1) beri zaman ağırlıklı getiri:
+/// dönem günlere bölünür, her gün tutulan varlıklar piyasa fiyatıyla
+/// değerlenir, günler çarpılır (`secim_getirisi.dart`; senaryo testleri
+/// `secim_getirisi_test.dart`). Öncesindeki simülasyon (bugünkü sepet dönem
+/// başından beri tutulmuş sayılırdı) satıp başka varlık alanın kararını
+/// görmüyordu. Aşağıdaki "ölçekten bağımsız" özellik TWR'de de geçerli.
 ///
 /// ## Neden bu test var
 /// Önceki hesap İKİ ayrı formül kullanıyordu ve hangisinin çalıştığı KİŞİYE
@@ -20,10 +23,11 @@ import 'helpers/kaynak.dart';
 /// Ölçüldü: aynı işlemi yapan iki kullanıcı **%380,67** ve **%20,00** olarak
 /// sıralanıyordu. Aynı yarışta iki farklı metrik → sıralama anlamsız.
 ///
-/// ## Neden `simulate: true`
+/// ## Neden gerçek geçmiş modu (`simulate: false`) DEĞİL
 /// Gerçek geçmiş modunda `addedDate`'ten önceki slotlara 0 yazılır; dönem
 /// başı 0 olunca bölme tanımsız kalır ve dönem içinde alım yapan HERKES
-/// sıralamadan düşerdi. Simülasyon herkesi aynı pencerede ölçer.
+/// sıralamadan düşerdi. TWR her günü o günün miktarıyla ölçer; geç giren
+/// yalnız tuttuğu günlerle ölçülür.
 ///
 /// ## Bu testin sınırı
 /// `donemGetirisiPct` ağ çağrısı yapar (fiyat geçmişi). Buradaki testler
@@ -120,12 +124,18 @@ void main() {
       expect(oran(a), closeTo(-20.0, 1e-9));
     });
 
-    test('simülasyonun bu özelliği KAYNAKTA belgelenmiş', () async {
-      // Bir sonraki geliştirici "dönem içi alım neden sayılmıyor?" diye
-      // sorup gerçek geçmiş moduna dönmesin.
+    test('ölçü KAYNAKTA tek yerde: seçimlerinin getirisi', () async {
+      // Bir sonraki geliştirici "para eklemek neden yüzdemi değiştirmiyor?"
+      // diye sorup Yarış'a para ağırlıklı ya da gerçek geçmiş moduna
+      // dönmesin — R1 kararı.
       final servis = _yorumsuz(
           await File('lib/services/leaderboard_service.dart').readAsString());
-      expect(servis.contains('simulate: true'), isTrue);
+      expect(
+          servis.contains(
+              'SecimGetirisi.donemPct(assets, periodDays, kapsam: kapsam)'),
+          isTrue);
+      expect(servis.contains('simulate: true'), isFalse,
+          reason: 'simülasyon 0095 ile emekli oldu');
     });
 
     test('KULLANICIYA da anlatılıyor — info sayfası', () async {
@@ -138,14 +148,17 @@ void main() {
       // 3.20: metin sözlükte (`depositsDontChangeRankBody`).
       expect(ekran.contains('l10n.depositsDontChangeRankBody'), isTrue);
       expect(trMetni('depositsDontChangeRankBody'), contains('ETKİLEMEZ'));
-      // Formül de yazılı olmalı.
-      expect(trMetni('selectedPeriodReturnBody'),
-          contains('(dönem sonu − dönem başı) ÷ dönem başı'),
+      // Hesabın kendisi yazılı olmalı.
+      expect(trMetni('selectedPeriodReturnBody'), contains('günlere bölünür'),
           reason: 'hesabın kendisi kullanıcıya gösterilmeli');
-      // Sınır dürüstçe belirtilmeli.
+      // Hile kuralları ve sınır dürüstçe belirtilmeli.
+      expect(trMetni('everyoneMeasuredSameBody'), contains('30 günlük'));
+      expect(trMetni('everyoneMeasuredSameBody'), contains('3 günden fazla'));
       expect(ekran.contains('l10n.rankSwapNote'), isTrue,
-          reason: 'varlık değiştirme sınırı gizlenmemeli');
-      expect(trMetni('rankSwapNote'), contains('senaryosunu gösterir'));
+          reason: 'yeni katılan sınırı gizlenmemeli');
+      expect(trMetni('rankSwapNote'), contains('tuttuğu süre kadar'));
+      // Kendi satırında paranın getirisi — Performans ile aynı sayı.
+      expect(ekran.contains('l10n.raceMoneyReturn('), isTrue);
     });
   });
 
@@ -165,7 +178,8 @@ void main() {
 
   group('boş / geçersiz girdi', () {
     test('boş portföy NULL', () async {
-      expect(await LeaderboardService.instance.donemGetirisiPct(const [], 30),
+      expect(await LeaderboardService.instance
+              .donemGetirisiPct(const [], 30, kapsam: SiralamaKapsami.ortaklar),
           isNull);
     });
 
@@ -175,6 +189,7 @@ void main() {
         periodDays: 30,
         currentValueTRY: 0,
         toTRY: (v, c) => v,
+        kapsam: SiralamaKapsami.ortaklar,
       );
       expect(r.roi, isNull);
       expect(r.usedFallback, isFalse);
@@ -189,20 +204,32 @@ void main() {
           await File('lib/services/leaderboard_service.dart').readAsString());
     });
 
-    test('SİMÜLASYON modu kullanılır', () {
-      // Gerçek geçmiş modu, dönem içinde alım yapan herkesi sıralamadan
-      // düşürürdü (dönem başı 0 → bölme tanımsız).
-      expect(servis.contains('simulate: true'), isTrue,
-          reason: 'gerçek geçmiş modu alım öncesi slotlara 0 yazar');
+    test('Yarış ölçüsü TWR motorundan gelir, simülasyondan değil', () {
+      expect(servis.contains('SecimGetirisi.donemPct('), isTrue);
+      expect(servis.contains('simulate: true'), isFalse);
     });
 
-    test('formül seriden (son − ilk) / ilk olarak hesaplanır', () {
-      expect(servis.contains('((son - ilk) / ilk) * 100.0'), isTrue);
+    test('ROI anlık görüntüsünü istemci YAZMAZ (0095)', () {
+      // Sunucuda istemci INSERT yetkisi geri alındı; yalnız cron yazar.
+      expect(servis.contains("from('user_roi_snapshots').insert"), isFalse);
+      for (final yol in [
+        'lib/screens/leaderboard_screen.dart',
+        'lib/widgets/leaderboard_hero_card.dart',
+        'lib/widgets/percentile_strip.dart',
+        'lib/screens/portfolio_performance/ozet_yan_veri.dart',
+      ]) {
+        expect(ekranKaynagiSync(yol).contains('uploadRoiSnapshot'), isFalse,
+            reason: yol);
+      }
     });
 
-    test('dönem başı ≤ 0 KORUNUR', () {
-      expect(servis.contains('if (ilk <= 0) return null'), isTrue,
-          reason: 'sıfıra bölme sonsuz yüzde üretirdi');
+    test('paranın getirisi Özet yolundan (yeni XIRR yok)', () {
+      final i = servis.indexOf('Future<double?> paraninGetirisiPct(');
+      expect(i, greaterThan(0));
+      final govde = servis.substring(i, i + 1500);
+      expect(govde.contains('PeriodSummaryService.compute('), isTrue);
+      expect(govde.contains('DailySummary.kapsamToplami('), isTrue,
+          reason: 'sağ uç Performans › Özet ile aynı (canlı kapsam toplamı)');
     });
 
     test('kendi hesabım da AYNI fonksiyondan geçer', () {
@@ -210,8 +237,26 @@ void main() {
       final i = servis.indexOf('Future<RoiResult> computeROIDetailed(');
       expect(i, greaterThan(0));
       final govde = servis.substring(i, i + 900);
-      expect(govde.contains('donemGetirisiPct(assets, periodDays)'), isTrue,
+      expect(
+          govde.contains(
+              'donemGetirisiPct(assets, periodDays, kapsam: kapsam)'),
+          isTrue,
           reason: 'kendi değerim de ortaklarla aynı yoldan hesaplanmalı');
+      // Önbellek anahtarı kapsamı taşır: Yarış'ın değeri Zirve'nin yerine
+      // geçmesin (geriye tarihli kayıtta iki kapsam farklı sayı verir).
+      expect(govde.contains(r"'$cacheKey|$periodDays|${kapsam.name}'"), isTrue);
+    });
+
+    test('ortaklar arası Yarış beyan tarihine, Zirve kurala güvenir', () {
+      final ekran = _yorumsuz(ekranKaynagiSync('lib/screens/leaderboard_screen.dart'));
+      final i = ekran.indexOf('final partnerRois = await Future.wait(');
+      expect(i, greaterThan(0));
+      expect(ekran.substring(i, i + 400).contains('SiralamaKapsami.ortaklar'),
+          isTrue);
+      final zirve = _yorumsuz(
+          ekranKaynagiSync('lib/screens/zirve_portfoyler_screen.dart'));
+      expect(zirve.contains('SiralamaKapsami.ortaklar'), isFalse,
+          reason: 'Zirve anonim: sunucuyla aynı geriye tarih kuralı');
     });
   });
 

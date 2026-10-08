@@ -144,8 +144,14 @@ void main() {
       expect(s.piyasaTRY, closeTo(185684 - 168774 - 12000, 0.01),
           reason: 'saf getiri = (son − baş) − katkı');
 
-      // Yüzde payda: başlangıç + POZİTİF katkı.
-      const beklenenPct = 4910 / (168774 + 12000) * 100;
+      // Yüzde payda: dönemin ORTALAMA sermayesi (2026-10-01) — alım
+      // dönemde kaldığı süre oranında sayılır.
+      // Seri slotları 18:00'de: ilk 14 Ağu 18:00, son (now'dan önceki)
+      // 12 Eyl 18:00.
+      final ilk = DateTime(2026, 8, 14, 18), son = DateTime(2026, 9, 12, 18);
+      final w = son.difference(DateTime(2026, 8, 25)).inMinutes /
+          son.difference(ilk).inMinutes;
+      final beklenenPct = 4910 / (168774 + 12000 * w) * 100;
       expect(s.getiriPct, closeTo(beklenenPct, 0.001));
 
       // En kritik iddia: ham değişim yüzdesi (%10,02) ile saf getiri
@@ -190,8 +196,18 @@ void main() {
           reason: 'satışta ele geçen tutar ÇIKIŞ (−sellProceedsTRY)');
       // Ham fark −5.000; bunun −10.000'i para çıkışı → piyasa +5.000.
       expect(s.piyasaTRY, closeTo(5000, 0.01));
-      // Payda yalnızca başlangıç — negatif katkı EKLENMEZ.
-      expect(s.getiriPct, closeTo(5000 / 100000 * 100, 0.001));
+      // Payda ORTALAMA sermaye: satılan para satış gününden sonra
+      // çalışmadı, kaldığı süre oranında sermayeden düşer (2026-10-01).
+      // Seri slotları 18:00'de: ilk 14 Ağu 18:00, son (now'dan önceki)
+      // 12 Eyl 18:00.
+      final ilk = DateTime(2026, 8, 14, 18), son = DateTime(2026, 9, 12, 18);
+      final w = son.difference(DateTime(2026, 8, 25)).inMinutes /
+          son.difference(ilk).inMinutes;
+      // Yüzde kesin para ağırlıklı getiri (IRR, 2026-10-01 best practice
+      // kıyası): 100.000(1+r) − 10.000(1+r)^w = 95.000 → %5,342217.
+      // Dietz yaklaşığı (aşağıda) ondan yalnızca binde birler farklı.
+      expect(s.getiriPct, closeTo(5.342217, 0.0001));
+      expect(s.getiriPct, closeTo(5000 / (100000 - 10000 * w) * 100, 0.01));
       expect(s.isNegative, isFalse,
           reason: 'portföy değeri düştü ama piyasa artıda');
     });
@@ -1030,7 +1046,7 @@ void main() {
       expect(metin.contains('En iyi: THYAO +%82,2'), isTrue);
       expect(metin.contains('En zayıf: SISE −%12,0'), isTrue);
       expect(metin.contains("250 işlem gününün 132'i artıda"), isTrue);
-      expect(metin.contains('Yıllıklandırılmış getiri (XIRR): +%41,2'), isTrue);
+      expect(metin.contains('Yıllık getiri (ilk alımdan beri): +%41,2'), isTrue);
       // Zengin satırlar da tutar kuralına uyar.
       expect(metin.contains('₺'), isFalse);
       expect(RegExp(r'\d{4,}').hasMatch(metin), isFalse);

@@ -11,6 +11,7 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/screens/main_navigation_screen.dart';
 import 'package:portfoy_takip/screens/onboarding_screen.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/widgets/seviye_anketi.dart';
 import 'package:portfoy_takip/widgets/tour_anchor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -122,18 +123,26 @@ class _EvSahibiState extends State<_EvSahibi> {
     return Scaffold(
       body: ListView(
         children: [
-          const TourAnchor(
-            target: TourTarget.heroKart,
-            child: SizedBox(height: 120, child: Text('HERO')),
-          ),
+          // Boş portföyde (ortak yok) ₺0 kartı yerine vitrin — gerçek ana
+          // ekranla aynı kural (`IlkVarlikVitrini.toplamKartiYerine`,
+          // 2026-10-04; bayrak `ilk_varlik_kolay` 2026-10-05'te kalktı).
+          if (widget.bugunVar)
+            const TourAnchor(
+              target: TourTarget.heroKart,
+              child: SizedBox(height: 120, child: Text('HERO')),
+            )
+          else
+            const TourAnchor(
+              target: TourTarget.ilkVarlikVitrini,
+              child: SizedBox(height: 120, child: Text('VİTRİN')),
+            ),
           // "Bugün" kartı — gerçek ekranda hero'nun altında (2026-09-20).
           if (widget.bugunVar) _tus(TourTarget.bugunKarti, 'bugün'),
           _tus(TourTarget.piyasaSeridi, 'piyasa'),
           // Gerçek ana ekranda hareket kabı yalnız kayıt varken çizilir;
           // "Bugün" kartıyla aynı koşul (dolu portföy).
           if (widget.bugunVar) _tus(TourTarget.hareketler, 'hareketler'),
-          // Gerçek ekranda zil Başlangıç seviyesinde gizli; adımın `kosul`u
-          // aynı seviyeye bakar.
+          // Zil 2026-10-04'ten beri her seviyede (gerçek ana ekranla aynı).
           if (widget.zilVar) _tus(TourTarget.bildirimCani, 'zil'),
           Row(
             children: [
@@ -215,7 +224,10 @@ class _SahteVarlikEkle extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Varlık Ekle'),
-        actions: [tus(TourTarget.topluEkle, 'toplu'), tus(TourTarget.hizliGiris, 'mik')],
+        actions: [
+          tus(TourTarget.topluEkle, 'toplu'),
+          tus(TourTarget.hizliGiris, 'mik')
+        ],
       ),
       // Gerçek ekranda tür çipleri gövdenin başında (2026-09-25, kripto adımı).
       body: Align(
@@ -304,7 +316,8 @@ Future<void> _pump(
         home: _EvSahibi(
           davetKoduVar: davetKoduVar,
           bugunVar: bugunVar,
-          zilVar: seviyeGorunurlugu(seviye).teknikSinyaller,
+          // Zil her seviyede (2026-10-04, sade Başlangıç; ana ekranla aynı).
+          zilVar: true,
         ),
       ),
     ),
@@ -449,8 +462,7 @@ void main() {
 
     testWidgets(
         'kısa tur "Bugün" kartını, + tuşunu ve kriptoyu anlatır, göz tuşunu '
-        'anlatmaz',
-        (tester) async {
+        'anlatmaz', (tester) async {
       await _pump(tester, kisa: true);
       var bugun = false, gizle = false, kripto = false;
       for (var i = 0; i < 8; i++) {
@@ -479,12 +491,19 @@ void main() {
   group('seviye sorusu (F2)', () {
     setUp(OnboardingScreen.turuKapatTestIcin);
 
-    testWidgets('bayrak kapalı: soru YOK, kısa tur bugünkü gibi',
+    // 2026-10-05: soru üç soruluk ankettir (`SeviyeAnketi`; bayrak
+    // `seviye_anketi` kalktı). Eski üç segmentli seçici (`_SeviyeSecici`,
+    // "Yatırımda neredesin?") ve onun "seçim tercihe yazılır" testi silindi;
+    // anketin kendisi `sadelestirme_test`'te.
+    testWidgets('seviyeSorusu yokken soru YOK, kısa tur bugünkü gibi',
         (tester) async {
       await _pump(tester, kisa: true);
       var soruldu = false;
       for (var i = 0; i < 10; i++) {
-        if (find.text('Yatırımda neredesin?').evaluate().isNotEmpty) {
+        if (find
+            .text('Ekranları sana göre ayarlayalım')
+            .evaluate()
+            .isNotEmpty) {
           soruldu = true;
         }
         if (find.text('Sandığımı Aç').evaluate().isNotEmpty) break;
@@ -493,40 +512,19 @@ void main() {
       expect(soruldu, isFalse);
     });
 
-    testWidgets('bayrak açık: karşılamadan hemen sonra, varsayılan Orta',
+    testWidgets('karşılamadan hemen sonra anket, varsayılan Orta',
         (tester) async {
       await _pump(tester, kisa: true, seviyeSorusu: true);
       expect(find.text('Sandığına hoş geldin'), findsOneWidget);
       await _devam(tester);
-      expect(find.text('Yatırımda neredesin?'), findsOneWidget);
-      for (final ad in ['Başlangıç', 'Orta', 'İleri']) {
-        expect(find.text(ad), findsOneWidget, reason: ad);
-      }
-      // Seçilenin açıklaması görünür; dokunulmazsa Orta = bugünkü görünüm.
-      expect(find.textContaining('Bugünkü görünüm'), findsOneWidget);
+      expect(find.text('Ekranları sana göre ayarlayalım'), findsOneWidget);
+      expect(find.byType(SeviyeAnketi), findsOneWidget);
+      final kap =
+          ProviderScope.containerOf(tester.element(find.byType(SeviyeAnketi)));
+      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.orta,
+          reason: 'cevaplanmadan seviye değişmez');
       // Zorunlu değil: "Devam" her zaman açık.
       expect(find.text('Devam'), findsOneWidget);
-    });
-
-    testWidgets('seçim GERÇEK tercihe yazılır (Ayarlar ile aynı kaynak)',
-        (tester) async {
-      await _pump(tester, kisa: true, seviyeSorusu: true);
-      await _devam(tester);
-      final kap = ProviderScope.containerOf(
-          tester.element(find.text('Yatırımda neredesin?')));
-      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.orta);
-
-      await tester.tap(find.text('Başlangıç'));
-      await _bekle(tester);
-      expect(kap.read(investorLevelIndexProvider),
-          YatirimciSeviyesi.baslangic.index);
-      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.baslangic);
-      expect(find.textContaining('Sade görünüm'), findsOneWidget,
-          reason: 'Açıklama seçimle birlikte değişmeli.');
-
-      await tester.tap(find.text('İleri'));
-      await _bekle(tester);
-      expect(kap.read(yatirimciSeviyesiProvider), YatirimciSeviyesi.ileri);
     });
 
     testWidgets('yalnızca BİR adım ekler; tur yine "Hazırsın" ile kapanır',
@@ -540,24 +538,20 @@ void main() {
     });
 
     for (final (w, s) in [(320.0, 2.0), (375.0, 1.5)]) {
-      testWidgets('${w.toInt()}pt @ $s× — seviye adımı taşmaz',
-          (tester) async {
+      testWidgets('${w.toInt()}pt @ $s× — seviye adımı taşmaz', (tester) async {
         await _pump(tester,
             kisa: true, seviyeSorusu: true, width: w, textScale: s);
         await _devam(tester);
-        expect(find.text('Yatırımda neredesin?'), findsOneWidget);
+        expect(find.text('Ekranları sana göre ayarlayalım'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }
 
-    test('kaynak: bayrağı yalnızca ilk açılış giriş noktası okur', () {
+    test('kaynak: soruyu yalnızca ilk açılış giriş noktası açar', () {
       final src = ekranKaynagiSync('lib/screens/onboarding_screen.dart');
-      expect(
-          RegExp(r'lockOfferAfterFirstAsset').allMatches(src).length, 1,
-          reason: 'Ayarlar\'dan açılan tam tur ve testler bayraktan '
-              'bağımsız kalmalı.');
-      expect(src, contains('seviyeSorusu: RemoteConfigService.instance'
-          '.lockOfferAfterFirstAsset'));
+      expect(RegExp(r'seviyeSorusu: true').allMatches(src).length, 1,
+          reason: 'Ayarlar\'dan açılan tam tur soruyu sormamalı.');
+      expect(src, isNot(contains('lockOfferAfterFirstAsset')));
     });
   });
 
@@ -671,7 +665,7 @@ void main() {
       await tester.tap(find.text('dönem'));
       await _bekle(tester);
       await _devam(tester);
-      expect(find.text('Kapsam ve mod'), findsOneWidget);
+      expect(find.text('Kapsam'), findsOneWidget);
     });
   });
 
@@ -690,7 +684,8 @@ void main() {
     testWidgets('ilk açılış, boş portföy: "Bugün" kartı hiç görünmeden geçilir',
         (tester) async {
       await _pump(tester, kisa: true, bugunVar: false);
-      await _adimaGit(tester, 'Toplam net varlığın');
+      // Boş portföyde toplam kartı yerine vitrin adımı (2026-10-04).
+      await _adimaGit(tester, 'Neye sahipsin?');
       await tester.tap(_ileri);
       // Hedef bekleme süresinin (1,9s) tamamı boyunca kart görünmemeli.
       for (var i = 0; i < 12; i++) {
@@ -703,7 +698,9 @@ void main() {
       expect(find.text('Varlık ekle'), findsOneWidget);
     });
 
-    testWidgets('Başlangıç seviyesi: bildirim adımı gösterilmez',
+    // 2026-10-04'ten beri zil her seviyede (sade Başlangıç); bildirim adımı
+    // Başlangıç'ta da gösterilir (eski kural: gizli).
+    testWidgets('Başlangıç seviyesi: bildirim adımı da gösterilir',
         (tester) async {
       await _pump(tester, seviye: YatirimciSeviyesi.baslangic);
       await _adimaGit(tester, 'Piyasa bir bakışta');
@@ -714,9 +711,8 @@ void main() {
       await tester.tap(_ileri);
       await tester.pump();
       await tester.pump();
-      expect(find.text('Bildirim merkezi'), findsNothing);
       await _bekle(tester);
-      expect(find.text('Portföy sekmesi'), findsOneWidget);
+      expect(find.text('Bildirim merkezi'), findsOneWidget);
     });
 
     testWidgets('görünen adım dokunuş beklemeden ilerlemez', (tester) async {

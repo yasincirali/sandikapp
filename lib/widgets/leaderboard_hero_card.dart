@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
-import '../screens/leaderboard_screen.dart';
-import '../services/crash_reporter.dart';
+import '../screens/siralama_screen.dart';
 import '../services/leaderboard_service.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
@@ -57,9 +56,11 @@ class _SoloHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _HeroShell(
+      // Yarış ekranı (`LeaderboardScreen`) ya da bayrak açıksa Sıralama ›
+      // Ortaklarım — karar `yarisGirisEkrani`'nda.
       onTap: () => pushGuarded(
         context,
-        adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
+        adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()),
       ),
       child: Row(
         children: [
@@ -262,24 +263,16 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
         LeaderboardService.instance.totalValueTRY(myAssets, pState.toTRY);
 
     Future<_PeriodSnapshot?> compute(int periodDays, String label) async {
-      // Kendi ROI — lokal hesap + upload (fire-and-forget).
+      // Kendi getirin — cihazda (anlık görüntüyü 0095'ten beri yalnız
+      // sunucu yazar).
       final myRoi = await LeaderboardService.instance.computeROI(
         assets: myAssets,
         periodDays: periodDays,
+        kapsam: SiralamaKapsami.ortaklar,
         currentValueTRY: myCurrentTRY,
         toTRY: pState.toTRY,
         cacheKey: me.id,
       );
-      if (myRoi != null) {
-        CrashReporter.arkaPlan(
-          LeaderboardService.instance.uploadRoiSnapshot(
-            userId: me.id,
-            periodDays: periodDays,
-            roiPct: myRoi,
-          ),
-          reason: 'LeaderboardHeroCard.uploadRoiSnapshot',
-        );
-      }
 
       // Ortakların kâr/zararı BURADA hesaplanır — sunucu snapshot'ı beklenmez.
       //
@@ -296,7 +289,8 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
       // Paralel — sırayla beklemek ortak sayısıyla orantılı gecikme yaratır.
       final partnerRois = await Future.wait(
         partners.map((p) => LeaderboardService.instance
-            .donemGetirisiPct(partnerAssets[p.id] ?? const [], periodDays)),
+            .donemGetirisiPct(partnerAssets[p.id] ?? const [], periodDays,
+              kapsam: SiralamaKapsami.ortaklar)),
       );
 
       final rows = <_Row>[
@@ -350,7 +344,7 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
   void _openLeaderboard() {
     pushGuarded(
       context,
-      adaptiveRoute<void>(builder: (_) => const LeaderboardScreen()),
+      adaptiveRoute<void>(builder: (_) => yarisGirisEkrani()),
     );
   }
 
@@ -461,6 +455,16 @@ class _RankPreviewHeroState extends ConsumerState<_RankPreviewHero> {
                     ),
                   ),
                 ],
+              ),
+              // Rakamın ölçüsü (2026-10-02 müşteri testi): aynı kullanıcı
+              // Ana'da %37,29, Performans 1Y'de %38,84, burada %23,1
+              // görüyordu; bu "seçimlerinin getirisi"dir (TWR) ve kart bunu
+              // söylemiyordu. Ayrı satır: alt cümleye önek olsaydı kesilirdi.
+              Text(
+                context.l10n.selectedPeriodReturn,
+                style: context.t.labelSmall?.copyWith(
+                  color: context.c.text58,
+                ),
               ),
               const SizedBox(height: 3),
               Text(
@@ -594,7 +598,7 @@ class _HeroShell extends StatelessWidget {
                 child: Icon(
                   Icons.emoji_events_rounded,
                   size: 110,
-                  color: Colors.black.withValues(alpha: 0.10),
+                  color: context.c.golge.withValues(alpha: 0.10),
                 ),
               ),
               Padding(

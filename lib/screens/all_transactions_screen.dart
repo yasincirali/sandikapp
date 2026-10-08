@@ -12,10 +12,11 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../services/islem_notu.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
@@ -135,6 +136,30 @@ DateTime _islemTarihi(Asset a) => a.addedDate;
   return (aktif: aktif, silinen: birlesik);
 }
 
+/// Ana sayfa "Portföy Hareketleri" akışı: kayıtlar GİRİLDİĞİ ana göre, en
+/// yeni önce.
+///
+/// ## Neden (kullanıcı bildirimi 2026-10-03: "dosyayla eklenenler portföyde
+/// var, hareketlerde yok")
+/// Akış işlem tarihine (`addedDate`) göre sıralıydı ve ilk 3 kaydı
+/// gösteriyordu. Ekstreden içe aktarılan kalem ekstrenin tarihini taşır
+/// (ör. 31.05) — Portföy'de hemen görünür ama akışın ilk üçüne hiç giremez;
+/// kullanıcı az önce yaptığı şeyi göremez. Akış "ne yaptım" sorusunu
+/// yanıtlar: giriş anı (`createdAt`, 0095). Eski satırlarda 0095
+/// `created_at = added_date` yazdığı için sıraları DEĞİŞMEZ; yalnız sonradan
+/// girilen geçmiş tarihli kayıt (içe aktarma, unutulan alış) öne gelir.
+/// `createdAt` yoksa (0095 öncesi kopya) işlem tarihi. Eşitlikte işlem
+/// tarihi. Tüm Hareketler ekranı defterdir: aya gruplu, işlem tarihine göre
+/// kalır (`hareketleriAyir`).
+List<Asset> sonGirilenler(List<Asset> aktif) {
+  DateTime giris(Asset a) => a.createdAt ?? a.addedDate;
+  return List.of(aktif)
+    ..sort((a, b) {
+      final d = giris(b).compareTo(giris(a));
+      return d != 0 ? d : b.addedDate.compareTo(a.addedDate);
+    });
+}
+
 /// ESKİ tip mezar taşlarını tek satırda toplar.
 ///
 /// ## Neden (kullanıcı bildirimi 2026-09-29: "silinenler doğru şekilde
@@ -231,7 +256,20 @@ extension _DateRangeLabel on _DateRange {
   }
 }
 
-class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
+class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
+    with SingleTickerProviderStateMixin {
+  /// Filtre değişiminin görünür işareti (animasyon denetimi 2026-10-01).
+  ///
+  /// "Silinenler", dönem ya da tür değişince liste tek karede başka bir
+  /// sonuç kümesine dönüyordu; yalnız çip değişiyordu, liste "değişti mi?"
+  /// sorusunu bırakıyordu. Liste %35'ten 180 ms'de belirir. Eski ve yeni
+  /// liste ÜST ÜSTE kurulmaz (`AnimatedSwitcher` uzun iki listeyi aynı anda
+  /// kurardı) — yalnız yeni liste solarak gelir. Hareketi azalt'ta yok.
+  late final AnimationController _filtreGecisi =
+      AnimationController(vsync: this, value: 1);
+  late final Animation<double> _filtreSolma = Tween<double>(begin: 0.35, end: 1)
+      .animate(CurvedAnimation(parent: _filtreGecisi, curve: SandikMotion.enter));
+
   static const int _pageSize = 25;
 
   late String? _view;
@@ -264,6 +302,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
 
   @override
   void dispose() {
+    _filtreGecisi.dispose();
     _scrollCtrl.removeListener(_maybeGrow);
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
@@ -292,8 +331,25 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   /// Tüm filtre değişiklikleri bu tek noktadan geçer.
   void _resetPaging() {
     _visible = _pageSize;
+    final sure = SandikMotion.stateOf(context);
+    if (sure != Duration.zero) {
+      _filtreGecisi
+        ..duration = sure
+        ..forward(from: 0);
+    }
     if (_scrollCtrl.hasClients && _scrollCtrl.offset != 0) {
       _scrollCtrl.jumpTo(0);
+      // Kare sonrası bir kez daha (CI kırmızısı 2026-10-02, tarihe bağlı):
+      // `jumpTo` setState İÇİNDE eski içerikte koşuyor; yeni filtrenin
+      // satırları yerleşince konum bir "ballistic" düzeltmeyle eski
+      // ofsete (≈1.750) geri kayıyordu — liste başa dönmüş gibi yapıp
+      // dibe dönüyordu. Ay kapları tarihe göre değiştiği için yalnız bazı
+      // günlerde görünüyordu.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollCtrl.hasClients && _scrollCtrl.offset != 0) {
+          _scrollCtrl.jumpTo(0);
+        }
+      });
     }
   }
 
@@ -456,7 +512,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
           if (activePartners.isNotEmpty)
             Padding(
               padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 0),
-              child: ModernTabSelector(
+              child: OrtakSecici(
                 partners: activePartners,
                 selectedId: _view,
                 onChanged: (v) => setState(() {
@@ -625,7 +681,11 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                       final ayAdi = DateFormat(
                           'LLLL yyyy', Localizations.localeOf(context).languageCode);
                       final tr = Localizations.localeOf(context).languageCode == 'tr';
-                      return ListView.builder(
+                      // Filtre değişince yeni sonuç kısa bir solmayla gelir
+                      // (bkz. `_filtreGecisi`); iki liste üst üste kurulmaz.
+                      return FadeTransition(
+                        opacity: _filtreSolma,
+                        child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
                         controller: _scrollCtrl,
                         padding: EdgeInsets.fromLTRB(hp, 16, hp, 32),
@@ -696,6 +756,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
                             ),
                           );
                         },
+                      ),
                       );
                     }),
                   ),
@@ -861,7 +922,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen> {
   }
 
   Future<void> _filtreSayfasiniAc() async {
-    final secim = await showModalBottomSheet<_FiltreSecimi>(
+    final secim = await showSandikSheet<_FiltreSecimi>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -896,7 +957,7 @@ String _donemEtiketi(
     BuildContext context, _DateRange r, DateTimeRange? customRange) {
   if (r == _DateRange.custom && customRange != null) {
     final f = DateFormat('d MMM', Localizations.localeOf(context).toString());
-    return '${f.format(customRange.start)} – ${f.format(customRange.end)}';
+    return '${f.format(customRange.start)} - ${f.format(customRange.end)}';
   }
   return r.labelOf(context.l10n);
 }
@@ -1070,6 +1131,7 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                       onTap: () => setState(() => _tur = null),
                     ),
                     for (final t in AssetType.values)
+                      if (RemoteConfigService.instance.turSecenegi(t))
                       _SecimKutusu(
                         etiket: t.labelOf(l),
                         ikon: t.icon,
@@ -1108,8 +1170,13 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
               // okutuyordu. Anında değişen sayı daha net.
               child: Text(
                 n == 0 ? l.filterNoMatch : l.filterShowN(n),
-                style:
-                    context.t.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                // Renk açıkça `onAmber` (açık tema denetimi 2026-10-08):
+                // `titleMedium`'un `text90`'ı düğmenin `foregroundColor`'ını
+                // ezer — koyu temada amber üstüne beyaz 1,87:1. Pasifken
+                // (eşleşme yok) eski ton: soluk dolguda koyu yazı okunmazdı.
+                style: context.t.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: n == 0 ? null : context.c.onAmber),
               ),
             ),
           ),

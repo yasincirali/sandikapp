@@ -70,8 +70,72 @@ class RealReturnService {
   static Future<double?> piyasaGetirisi(
     List<Asset> assets,
     InflationWindow w,
+  ) async =>
+      (await hizaliGetiri(assets, w))?.nominal;
+
+  /// [piyasaGetirisi] + aynı pencerede REEL para ağırlıklı getiri.
+  ///
+  /// ## Neden reel ayrıca hesaplanıyor (2026-10-01, K4)
+  /// `(1+n)/(1+e) − 1` yıl içinde eklenen paranın yılın TAMAMININ
+  /// enflasyonunu yaşadığını varsayar. Reel getiri her akışı kendi
+  /// tarihindeki TÜFE düzeyine taşıyıp aynı para ağırlıklı denklemi
+  /// çözer (`reelParaAgirlikliGetiriPct`); akış yoksa iki formül birebir
+  /// aynıdır. Nominal ve TÜFE satırları ile puan farkı DEĞİŞMEZ.
+  ///
+  /// Endeks önbellekten okunur (`indexSeries`, `pencere` ile aynı çekim —
+  /// ek ağ turu yok). Ara ayın endeksi eksikse `reel` `null`: sayı
+  /// uydurulmaz, kart TÜFE satırına düşer.
+  static Future<({double nominal, double? reel})?> hizaliGetiri(
+    List<Asset> assets,
+    InflationWindow w,
   ) async {
     if (assets.isEmpty) return null;
+    // ── Oturum içi hafıza (2026-10-01 emülatör testi) ──────────────────
+    // Pencere tamamen GEÇMİŞTE (son açıklanmış TÜFE ayının sonunda biter);
+    // canlı fiyat bu sayıya giremez. Yine de aynı pencere aynı lot'larla
+    // iki ayrı anda farklı çıkıyordu (+%36,92 → +%36,04): seri önbelleği
+    // 15 dk'da tazelenince altın/kur kalibrasyon çarpanı değişiyor, karışık
+    // portföyde uçların oranı kıpırdıyordu. Kullanıcı bunu "uygulama rakam
+    // uyduruyor" diye okur. Pencere + lot parmak izi başına sonuç bir kez
+    // hesaplanır; Ana kart ve Özet aynı girişi okur. Lot değişince
+    // (alım/satış/silme) parmak izi değişir ve yeniden hesaplanır.
+    final anahtar = _hafizaAnahtari(assets, w);
+    final hazir = _hafiza[anahtar];
+    if (hazir != null) return hazir;
+    final sonuc = await _hizaliGetiriHesapla(assets, w);
+    if (sonuc != null) {
+      _hafiza.remove(anahtar);
+      _hafiza[anahtar] = sonuc;
+      while (_hafiza.length > _hafizaUstSinir) {
+        _hafiza.remove(_hafiza.keys.first);
+      }
+    }
+    return sonuc;
+  }
+
+  static final Map<String, ({double nominal, double? reel})> _hafiza = {};
+  static const _hafizaUstSinir = 24;
+
+  /// Pencere uçları + lot parmak izi (id, tür, miktar, tarih). Fiyat
+  /// girmez: canlı fiyat geçmiş pencerenin sonucunu DEĞİŞTİRMEMELİ, bu
+  /// hafızanın var olma sebebi tam olarak bu.
+  static String _hafizaAnahtari(List<Asset> assets, InflationWindow w) {
+    final ids = [
+      for (final a in assets)
+        '${a.id}:${a.kind.name}:${a.quantity}:'
+            '${a.addedDate.millisecondsSinceEpoch}'
+    ]..sort();
+    return '${w.ilkAy.millisecondsSinceEpoch}|${w.sonAy.millisecondsSinceEpoch}'
+        '|${ids.join(',')}';
+  }
+
+  /// Hafızayı boşaltır — testler ve kullanıcı değişimi için.
+  static void hafizayiTemizle() => _hafiza.clear();
+
+  static Future<({double nominal, double? reel})?> _hizaliGetiriHesapla(
+    List<Asset> assets,
+    InflationWindow w,
+  ) async {
     final tier = ResolutionTierMeta.pickForSpan(
       w.seriBitisi.difference(w.seriBaslangici).inDays.toDouble(),
     );
@@ -82,13 +146,18 @@ class RealReturnService {
       to: w.seriBitisi,
       tier: tier,
     );
-    return PeriodSummaryService.compute(
+    final endeks = await InflationService.instance.indexSeries();
+    final s = PeriodSummaryService.compute(
       period: SummaryPeriod.birYil,
       assets: assets,
       breakdown: bd,
       now: w.seriBitisi,
       pencereBaslangici: w.seriBaslangici,
-    ).getiriPct;
+      tufeEndeksi: endeks,
+    );
+    final nominal = s.getiriPct;
+    if (nominal == null) return null;
+    return (nominal: nominal, reel: s.reelGetiriPct);
   }
 
   /// Nominal + TÜFE çifti. Biri eksikse `null`: eksik veriyle rozet
@@ -102,9 +171,10 @@ class RealReturnService {
     if (w == null) return null;
     // Nominal AYNI pencereden hesaplanır — iki ayrı çağrı iki ayrı pencere
     // demekti ve fark ölçülmemiş bir aralığı içeriyordu.
-    final nominal = await piyasaGetirisi(assets, w);
-    if (nominal == null) return null;
-    return RealReturn(nominal: nominal, inflation: w.pct, pencere: w);
+    final g = await hizaliGetiri(assets, w);
+    if (g == null) return null;
+    return RealReturn(
+        nominal: g.nominal, inflation: w.pct, pencere: w, reel: g.reel);
   }
 }
 
@@ -114,6 +184,7 @@ class RealReturn {
     required this.nominal,
     required this.inflation,
     required this.pencere,
+    this.reel,
   });
 
   final double nominal;
@@ -127,6 +198,12 @@ class RealReturn {
   /// Puan farkı (nominal − TÜFE) — gündelik dilin okuduğu sayı.
   double get puan => InflationService.spreadPoints(nominal, inflation);
 
-  /// Bileşik reel getiri — matematiksel olarak doğru olan.
-  double get reel => InflationService.realReturnPct(nominal, inflation);
+  /// Reel PARA AĞIRLIKLI getiri (yüzde) — her akış kendi tarihinin TÜFE
+  /// düzeyinde (`RealReturnService.hizaliGetiri`). Ara ayın endeksi
+  /// eksikse `null`.
+  ///
+  /// 2026-10-01'e kadar getter'dı: `(1+n)/(1+e) − 1`. O formül yıl içinde
+  /// eklenen paraya yılın tamamının enflasyonunu yüklüyordu; akış yokken
+  /// iki sayı birebir aynıdır.
+  final double? reel;
 }

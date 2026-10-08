@@ -1,17 +1,17 @@
 import 'dart:async' show FutureOr, unawaited;
+import 'dart:math' as math;
 
 import '../widgets/sandik_skeleton.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart'
     show
         RefreshIndicator,
         Material,
         MaterialType,
         ListTile,
-        Divider,
-        showModalBottomSheet;
+        Divider;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
@@ -21,6 +21,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -31,11 +32,14 @@ import '../widgets/sandik_acilir.dart';
 import '../widgets/delete_asset_dialog.dart';
 import '../utils/tr_format.dart';
 import '../widgets/asset_sparkline.dart';
+import '../widgets/mevduat_vade_seridi.dart';
 import '../widgets/tour_anchor.dart';
-import '../widgets/modern_tab_selector.dart';
+import '../widgets/ortak_secici.dart';
+import '../widgets/sandik_segment.dart';
+import '../widgets/varlik_baslik_hero.dart';
+import '../services/remote_config_service.dart';
 import '../widgets/sandik_error_view.dart';
-import '../widgets/dividend_dialog.dart';
-import '../widgets/quick_adjust_dialog.dart';
+import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
 import 'asset_detail_screen.dart';
 import 'watchlist_screen.dart';
@@ -213,6 +217,48 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     }
   }
 
+  /// Küçük halkaya (ya da "+N tür" satırına) dokunuş: büyük halkayı alt
+  /// sayfada açar.
+  ///
+  /// Halkanın dilim dokunuşu sayfanın ARKASINDAKİ listeyi süzer — çiplerle
+  /// aynı `_filteredType`. Halka mevcut süzgeçle açılır ki şeritte seçili
+  /// tür halkada da seçili görünsün. Sayfa dilim seçilince kapanmaz: ortadaki
+  /// tutar/yüzde halkanın asıl bilgisidir, kapanırsa görünmez.
+  void _halkayiAc(List<Asset> varliklar, PortfolioState pState) {
+    showSandikSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: context.c.surface1,
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (sayfa) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.smd,
+            SandikSpace.md, SandikSpace.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SandikTutamac(),
+            const SizedBox(height: SandikSpace.md),
+            SandikSectionHeader(title: sayfa.l10n.s3DagilimBaslik),
+            const SizedBox(height: SandikSpace.md),
+            _AssetTypeDonut(
+              assets: varliklar,
+              pState: pState,
+              baz: ref.read(gosterimBazParaProvider),
+              baslangicTuru: _filteredType,
+              onTypeSelected: (type) {
+                if (mounted) setState(() => _filteredType = type);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Kaydırma → "Sil": pozisyonun TÜM lot'ları gider.
   ///
   /// Kullanıcının gördüğü satır bir kayıt değil, aynı `positionKey`'e düşen
@@ -314,10 +360,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: SandikSpace.sm),
-                    SandikLogoutButton(
-                      onPressed: () => confirmAndLogout(context, ref),
-                    ),
+                    // Çıkış düğmesi KALDIRILDI (sadeleştirme 2026-10-04):
+                    // dört sekmenin dördünde de duruyordu; yanlışlıkla
+                    // dokunulan, işi bitiren bir eylem. Ana ekran üst barında
+                    // (kullanıcı kuralı) ve Profil'de kalır.
                   ],
                 ),
               ),
@@ -344,6 +390,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               else
               Expanded(
                 child: pStateAsync.when(
+                  // Yeniden yüklemede (bağımlılık tazelendi, ör. ortak listesi ya da
+                  // oturum belirteci) önceki veri ekranda KALIR. Varsayılan `when`
+                  // bu anda tam ekran yükleme çizip geri dönüyordu: ekran bir kare
+                  // boşalıp doluyordu (titreme bulgusu 2026-10-02). Ana ekran aynı
+                  // şeyi `valueOrNull` ile baştan beri yapıyor.
+                  skipLoadingOnReload: true,
                   loading: () => const SandikLoadingScreen(),
                   error: (e, _) => SandikErrorView(
                       error: e,
@@ -370,7 +422,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                       padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 80),
                       children: [
                         if (activePartners.isNotEmpty)
-                          ModernTabSelector(
+                          OrtakSecici(
                             partners: activePartners,
                             selectedId: _view,
                             onChanged: (v) => setState(() {
@@ -465,6 +517,28 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     .prefetch(displayAssets);
 
                                 return <Widget>[
+                                    // Sadeleştirme 2 (bayrak
+                                    // `portfoy_dagilim_cubugu`): ~390pt'lik
+                                    // halka listeyi ekranın altına itiyordu;
+                                    // aynı bilgi (tür payı + türe göre süzme)
+                                    // küçük halka + lejantla ~150pt'ye sığar.
+                                    // Büyük halka kaybolmaz: küçük halkaya
+                                    // dokununca alt sayfada açılır. Bayrak
+                                    // kapalıyken eski halka birebir.
+                                    if (RemoteConfigService
+                                        .instance.portfoyDagilimCubugu) ...[
+                                      _KucukHalka(
+                                        dilimler: turDagilimi(
+                                            displayAssets, pState),
+                                        secili: _filteredType,
+                                        baz: ref.watch(gosterimBazParaProvider),
+                                        onTypeSelected: (type) => setState(
+                                            () => _filteredType = type),
+                                        onHalka: () => _halkayiAc(
+                                            displayAssets, pState),
+                                      ),
+                                      const SizedBox(height: SandikSpace.lg),
+                                    ] else ...[
                                     _AssetTypeDonut(
                                       assets: displayAssets,
                                       pState: pState,
@@ -473,6 +547,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                           setState(() => _filteredType = type),
                                     ),
                                     const SizedBox(height: 32),
+                                    ],
                                     ..._AssetList(
                                       vurgulanan: _vurgulanan,
                                       vurguAnahtari: _vurguAnahtari,
@@ -485,28 +560,34 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       // detay ekranını iki kez açıyor, Android'de
                                       // de iOS geçişi veriyordu (2026-09-23
                                       // denetimi F21).
-                                      onTap: (p) => pushGuarded(
+                                      heroAcik: RemoteConfigService
+                                          .instance.varlikHeroGecisi,
+                                      onTap: (p, hero) => pushGuarded(
                                         context,
                                         adaptiveRoute<void>(
                                             builder: (_) => AssetDetailScreen(
                                                   asset: p.asDisplayAsset(),
                                                   showBackButton: true,
                                                   lots: p.lots,
+                                                  heroEtiketi: hero,
                                                 )),
                                       ),
                                       onDelete: (p) =>
                                           _confirmDelete(context, ref, p),
-                                      onAdd: (p) => showQuickAdjustDialog(
+                                      // Varlık ekranının işlem çubuğuyla
+                                      // AYNI kod yolu (`pozisyonIslemiAc`).
+                                      onAdd: (p) => pozisyonIslemiAc(
                                           context, ref,
-                                          asset: p.asDisplayAsset(),
-                                          mode: QuickAdjustMode.add),
-                                      onRemove: (p) => showQuickAdjustDialog(
+                                          varlik: p.asDisplayAsset(),
+                                          islem: PozisyonIslemi.al),
+                                      onRemove: (p) => pozisyonIslemiAc(
                                           context, ref,
-                                          asset: p.asDisplayAsset(),
-                                          mode: QuickAdjustMode.remove),
-                                      onDividend: (p) => showDividendDialog(
-                                          context,
-                                          asset: p.asDisplayAsset()),
+                                          varlik: p.asDisplayAsset(),
+                                          islem: PozisyonIslemi.sat),
+                                      onDividend: (p) => pozisyonIslemiAc(
+                                          context, ref,
+                                          varlik: p.asDisplayAsset(),
+                                          islem: PozisyonIslemi.temettu),
                                     ).kartlar(),
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
@@ -562,93 +643,68 @@ class _BodyTabs extends StatelessWidget {
   final int count;
   final ValueChanged<int> onChanged;
 
+  // Kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol haritası
+  // 2.12). Eskiden amber dolgulu, kendi elle yazılmış bir segmentti; hemen
+  // altındaki ortak seçici (`OrtakSecici`) kayan zeminliydi ve aynı ekranda
+  // iki farklı "birini seç" görünüşü vardı. Dokunma hedefi (≥ 44 pt,
+  // `SandikTouch`), seçili/düğme semantiği ve seçiliye dokunuşun yok
+  // sayılması artık bileşenin sözleşmesi; burada tekrar yazılmaz.
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: context.c.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
+    final etiketler = [context.l10n.myAssets, context.l10n.watchlist];
+    final rozetler = <int?>[null, count > 0 ? count : null];
+    return SandikSegment(
+      adet: 2,
+      secili: selected,
+      onSec: onChanged,
+      // Rozetli sekme sayıyı da okutur ("Takip listesi, 3 varlık").
+      semantik: (i) => rozetler[i] == null
+          ? etiketler[i]
+          : context.l10n.tabSemanticsCount(etiketler[i], rozetler[i]!),
+      oge: (context, i, secili) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _tab(context, 0, context.l10n.myAssets, null),
-          _tab(context, 1, context.l10n.watchlist, count > 0 ? count : null),
+          Flexible(
+            child: Text(
+              etiketler[i],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (rozetler[i] != null) ...[
+            const SizedBox(width: 6),
+            _SayiRozeti(sayi: rozetler[i]!),
+          ],
         ],
       ),
     );
   }
+}
 
-  Widget _tab(BuildContext context, int i, String label, int? rozet) {
-    final secili = i == selected;
-    return Expanded(
-      child: Semantics(
-        button: true,
-        selected: secili,
-        label: rozet == null ? label : context.l10n.tabSemanticsCount(label, rozet),
-        child: ExcludeSemantics(
-          child: SandikBasma(
-            // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın.
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (secili) return;
-              SandikHaptic.selection.perform();
-              onChanged(i);
-            },
-            child: Container(
-              // 44pt HIG dokunma hedefi.
-              constraints: const BoxConstraints(minHeight: 36),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                // Seçili değilken dolgu YOK — `Colors` bu dosyada import
-                // edilmiyor (material yalnızca `show` listesiyle geliyor).
-                color: secili ? context.c.amberFill : null,
-                borderRadius: BorderRadius.circular(SandikRadius.sm),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: context.t.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: secili ? context.c.onAmber : context.c.text58,
-                      ),
-                    ),
-                  ),
-                  if (rozet != null) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: secili
-                            ? context.c.onAmber.withValues(alpha: 0.18)
-                            : context.c.amberFill.withValues(alpha: 0.20),
-                        borderRadius: BorderRadius.circular(SandikRadius.sm),
-                      ),
-                      child: Text(
-                        '$rozet',
-                        style: context.t.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color:
-                              secili ? context.c.onAmber : context.c.amberText,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
+/// Gövde sekmesindeki sayı rozeti. Seçimden bağımsız tek ton: seçim artık
+/// amber dolgu değil kayan nötr zemin olduğu için rozetin seçiliye göre
+/// renk tersinmesi (onAmber) gereksizleşti.
+class _SayiRozeti extends StatelessWidget {
+  const _SayiRozeti({required this.sayi});
+
+  final int sayi;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: context.c.amberFill.withValues(alpha: 0.20),
+          borderRadius: BorderRadius.circular(SandikRadius.sm),
+        ),
+        child: Text(
+          '$sayi',
+          style: context.t.labelSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: context.c.amberText,
           ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 // ── Empty State ───────────────────────────────────────────────────────────────
@@ -674,6 +730,386 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
+// ── Küçük halka (bayrak `portfoy_dagilim_cubugu`) ────────────────────────────
+
+/// Tür başına pay — küçük halkanın verisi, büyükten küçüğe.
+///
+/// Hesap halkanınkiyle AYNI (`pState.toTRY(totalValue, currency)` toplamı):
+/// küçük halka ile büyük halka sayfası aynı yüzdeleri göstermeli. `build()` dışında,
+/// saf fonksiyon olarak durur ki test edilebilsin.
+List<({AssetType tur, double tutar, double pay})> turDagilimi(
+    List<Asset> varliklar, PortfolioState pState) {
+  final toplamlar = <AssetType, double>{};
+  var toplam = 0.0;
+  for (final a in varliklar) {
+    final v = pState.toTRY(a.totalValue, a.currency);
+    toplamlar[a.type] = (toplamlar[a.type] ?? 0) + v;
+    toplam += v;
+  }
+  final sirali = toplamlar.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  return [
+    for (final e in sirali)
+      (tur: e.key, tutar: e.value, pay: toplam > 0 ? e.value / toplam : 0.0),
+  ];
+}
+
+/// Büyük halkanın yerine geçen kompakt kart: solda küçük halka (ortasında
+/// toplam), sağda tür lejantı.
+///
+/// yasin'in seçimi (2026-10-08, "C"): ince dağılım şeridi listeyi öne
+/// alıyordu ama Portföy sekmesinin vitrin hissini kaybettiriyordu; küçük
+/// halka ikisini birden tutar. ~390pt'lik halka ~150pt'ye iner, ilk ekranda
+/// görünen varlık sayısı bugünkü halkaya göre artar.
+///
+/// - Halka ilk kurulumda saat yönünde dönerek dolar (hareketi azalt açıkken
+///   doğrudan dolu çizilir).
+/// - Lejant satırı halka dilimiyle aynı işi yapar (`onTypeSelected`): türe
+///   süzer; seçili satıra yeniden dokunmak süzgeci kaldırır. Seçim durumu
+///   ebeveynin `_filteredType`'ıdır, böylece büyük halkada yapılan seçim de
+///   burada görünür.
+/// - Halkaya dokunmak büyük halkayı alt sayfada açar. Lejant en çok
+///   [_enCokSatir] satır gösterir; fazlası "+N tür" satırında toplanır ve o
+///   satır da büyük halkayı açar — hiçbir tür kaybolmaz.
+class _KucukHalka extends StatefulWidget {
+  const _KucukHalka({
+    required this.dilimler,
+    required this.secili,
+    required this.baz,
+    required this.onTypeSelected,
+    required this.onHalka,
+  });
+
+  final List<({AssetType tur, double tutar, double pay})> dilimler;
+  final AssetType? secili;
+  final BazPara baz;
+  final ValueChanged<AssetType?> onTypeSelected;
+  final VoidCallback onHalka;
+
+  @override
+  State<_KucukHalka> createState() => _KucukHalkaState();
+}
+
+/// Lejantın satır sınırı: 4 satır × 44pt ≈ halkanın boyu. Daha fazlası
+/// kartı uzatıp listeyi yeniden aşağı iterdi.
+const _enCokSatir = 4;
+
+class _KucukHalkaState extends State<_KucukHalka>
+    with SingleTickerProviderStateMixin {
+  /// Dolma süresi: bir durum geçişinden uzun, "akış" ölçeğinde — göz
+  /// halkanın döndüğünü fark etmeli ama listeyi beklememeli.
+  late final AnimationController _dolum = AnimationController(
+    vsync: this,
+    duration: SandikMotion.flow + SandikMotion.surface,
+  );
+  bool _kuruldu = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_kuruldu) return;
+    _kuruldu = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _dolum.value = 1;
+    } else {
+      _dolum.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _dolum.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dilimler = widget.dilimler;
+    if (dilimler.isEmpty) return const SizedBox.shrink();
+    final l10n = context.l10n;
+    final secili = widget.secili;
+    final seciliDilim = secili == null
+        ? null
+        : dilimler.where((d) => d.tur == secili).firstOrNull;
+    final toplam = dilimler.fold<double>(0, (s, d) => s + d.tutar);
+
+    // Fazla tür varsa son satır "+N tür" olur; seçili tür gizlenen
+    // satırlardaysa yine görünsün diye onu öne alırız.
+    final tasma = dilimler.length > _enCokSatir;
+    var gorunen = tasma
+        ? dilimler.take(_enCokSatir - 1).toList()
+        : List.of(dilimler);
+    if (tasma && seciliDilim != null && !gorunen.contains(seciliDilim)) {
+      gorunen = [...gorunen.take(_enCokSatir - 2), seciliDilim];
+    }
+    final gizli = dilimler.length - gorunen.length;
+
+    return SandikCard(
+      padding: const EdgeInsets.fromLTRB(
+          SandikSpace.md, SandikSpace.smd, SandikSpace.sm, SandikSpace.smd),
+      child: Row(
+        children: [
+          Semantics(
+            button: true,
+            label: l10n.s3HalkayiAc,
+            child: SandikBasma(
+              onTap: widget.onHalka,
+              child: SizedBox.square(
+                dimension: 120,
+                child: ExcludeSemantics(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          child: AnimatedBuilder(
+                            animation: _dolum,
+                            builder: (context, _) => CustomPaint(
+                              painter: _KucukHalkaRessami(
+                                dilimler: dilimler,
+                                secili: secili,
+                                ilerleme: SandikMotion.glide
+                                    .transform(_dolum.value),
+                                iz: context.c.overlay,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(SandikSpace.lg),
+                        child: AnimatedSwitcher(
+                          duration: SandikMotion.stateOf(context),
+                          switchInCurve: SandikMotion.enter,
+                          switchOutCurve: SandikMotion.exit,
+                          child: _merkez(context, seciliDilim, toplam),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: SandikSpace.smd),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final d in gorunen)
+                  _LejantSatiri(
+                    renk: d.tur.color,
+                    etiket: d.tur.labelOf(l10n),
+                    deger: fmtPct(d.pay * 100, digits: 1),
+                    secili: secili == d.tur,
+                    soluk: secili != null && secili != d.tur,
+                    onTap: () =>
+                        widget.onTypeSelected(secili == d.tur ? null : d.tur),
+                  ),
+                if (gizli > 0)
+                  _LejantSatiri(
+                    renk: null,
+                    etiket: l10n.s3DigerTurler(gizli),
+                    deger: '›',
+                    secili: false,
+                    soluk: secili != null,
+                    onTap: widget.onHalka,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Halkanın ortası: süzgeç yokken toplam, varken seçili türün payı ve
+  /// tutarı (büyük halkanın ortasıyla aynı mantık).
+  Widget _merkez(
+    BuildContext context,
+    ({AssetType tur, double tutar, double pay})? d,
+    double toplam,
+  ) {
+    final renk = d?.tur.color ?? context.c.gold;
+    return FittedBox(
+      key: ValueKey(d?.tur),
+      fit: BoxFit.scaleDown,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            d == null
+                ? widget.baz.fmt(toplam)
+                : fmtPct(d.pay * 100, digits: 1),
+            style: context.t.numMedium.copyWith(
+              fontWeight: FontWeight.w700,
+              color: renk,
+            ),
+          ),
+          Text(
+            d == null ? context.l10n.total : widget.baz.fmt(d.tutar),
+            style: context.t.labelSmall?.copyWith(color: context.c.text36),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Lejant satırı: görsel ~28pt, dokunma hedefi 44pt (`SandikTouch.min`).
+class _LejantSatiri extends StatelessWidget {
+  const _LejantSatiri({
+    required this.renk,
+    required this.etiket,
+    required this.deger,
+    required this.secili,
+    required this.soluk,
+    required this.onTap,
+  });
+
+  /// `null`: "+N tür" satırı (nokta yok).
+  final Color? renk;
+  final String etiket;
+  final String deger;
+  final bool secili;
+  final bool soluk;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final renk = this.renk;
+    return Semantics(
+      button: true,
+      selected: secili,
+      child: SandikBasma(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: AnimatedOpacity(
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            opacity: soluk ? 0.45 : 1,
+            child: Row(
+              children: [
+                if (renk != null)
+                  AnimatedContainer(
+                    duration: SandikMotion.stateOf(context),
+                    curve: SandikMotion.enter,
+                    width: secili ? SandikSpace.smd : SandikSpace.sm,
+                    height: secili ? SandikSpace.smd : SandikSpace.sm,
+                    decoration:
+                        BoxDecoration(color: renk, shape: BoxShape.circle),
+                  )
+                else
+                  const SizedBox(width: SandikSpace.sm),
+                const SizedBox(width: SandikSpace.sm),
+                // Büyük yazıda etiket kısaltılır, yüzde her zaman görünür.
+                Expanded(
+                  child: Text(
+                    etiket,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.bodyMedium?.copyWith(
+                      fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+                      color: secili ? renk : context.c.text58,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.xs2),
+                Text(
+                  deger,
+                  style: context.t.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: secili ? renk : context.c.text90,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Küçük halkayı çizer. [ilerleme] 0→1: halka tepeden saat yönünde dolarken
+/// bütünü çeyrek tur geriden döner ("dönerek dolma"); 1'de büyük halkayla
+/// aynı yerleşim (tepeden başlar, büyükten küçüğe).
+class _KucukHalkaRessami extends CustomPainter {
+  _KucukHalkaRessami({
+    required this.dilimler,
+    required this.secili,
+    required this.ilerleme,
+    required this.iz,
+  });
+
+  final List<({AssetType tur, double tutar, double pay})> dilimler;
+  final AssetType? secili;
+  final double ilerleme;
+  final Color iz;
+
+  static const _kalinlik = 14.0;
+  static const _seciliKalinlik = 19.0;
+
+  /// Dilimler arası boşluk (radyan); tek dilimde boşluk yok.
+  static const _bosluk = 0.06;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final merkez = size.center(Offset.zero);
+    final yaricap = size.shortestSide / 2 - _seciliKalinlik / 2;
+    final kutu = Rect.fromCircle(center: merkez, radius: yaricap);
+
+    // Boş iz: dolma sırasında halkanın nereye varacağı görünsün.
+    canvas.drawCircle(
+      merkez,
+      yaricap,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _kalinlik
+        ..color = iz,
+    );
+
+    final tam = 2 * math.pi;
+    final bosluk = dilimler.length > 1 ? _bosluk : 0.0;
+    final dolu = tam * ilerleme;
+    var bas = -math.pi / 2 - (math.pi / 2) * (1 - ilerleme);
+    var cizilen = 0.0;
+    for (final d in dilimler) {
+      final aci = tam * d.pay;
+      final kalan = dolu - cizilen;
+      if (kalan <= 0) break;
+      final gorunen = math.min(aci, kalan) - bosluk;
+      if (gorunen > 0) {
+        final secildi = secili == d.tur;
+        canvas.drawArc(
+          kutu,
+          bas + bosluk / 2,
+          gorunen,
+          false,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = secildi ? _seciliKalinlik : _kalinlik
+            ..color = d.tur.color
+                .withValues(alpha: secili == null || secildi ? 1 : 0.3),
+        );
+      }
+      bas += aci;
+      cizilen += aci;
+    }
+  }
+
+  @override
+  bool shouldRepaint(_KucukHalkaRessami eski) =>
+      eski.ilerleme != ilerleme ||
+      eski.secili != secili ||
+      eski.iz != iz ||
+      !listEquals(
+          [for (final d in eski.dilimler) (d.tur, d.pay)],
+          [for (final d in dilimler) (d.tur, d.pay)]);
+}
+
 // ── Donut Chart ───────────────────────────────────────────────────────────────
 
 class _AssetTypeDonut extends StatefulWidget {
@@ -681,11 +1117,17 @@ class _AssetTypeDonut extends StatefulWidget {
   final PortfolioState pState;
   final BazPara baz;
   final void Function(AssetType?) onTypeSelected;
+
+  /// Halka açılırken seçili gelecek tür (küçük halkanın büyük halka
+  /// sayfası; bkz. `_halkayiAc`). Ekrandaki eski halkada verilmez — orada
+  /// seçim halkanın kendi durumudur.
+  final AssetType? baslangicTuru;
   const _AssetTypeDonut(
       {required this.assets,
       required this.pState,
       required this.baz,
-      required this.onTypeSelected});
+      required this.onTypeSelected,
+      this.baslangicTuru});
 
   @override
   State<_AssetTypeDonut> createState() => _AssetTypeDonutState();
@@ -693,6 +1135,10 @@ class _AssetTypeDonut extends StatefulWidget {
 
 class _AssetTypeDonutState extends State<_AssetTypeDonut> {
   int? _touchedIndex;
+
+  /// [_AssetTypeDonut.baslangicTuru] yalnız İLK kurulumda uygulanır; sonra
+  /// seçim kullanıcının dokunuşudur.
+  bool _baslangicUygulandi = false;
 
   /// Son çizilen dilimler (tür → pay) ve seçili dilim. Halka YALNIZ
   /// görünür bir değişimde morf eder (animasyon denetimi 2026-10-01,
@@ -738,6 +1184,13 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
     final sorted = totals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    if (!_baslangicUygulandi) {
+      _baslangicUygulandi = true;
+      final i = widget.baslangicTuru == null
+          ? -1
+          : sorted.indexWhere((e) => e.key == widget.baslangicTuru);
+      if (i >= 0) _touchedIndex = i;
+    }
     final morf = _gorunurDegisti(sorted, totalVal);
     final touched = _touchedIndex != null && _touchedIndex! < sorted.length
         ? sorted[_touchedIndex!]
@@ -862,7 +1315,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
               },
               child: AnimatedOpacity(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 150)),
+                    SandikMotion.stateOf(context),
                 // Eksikti: curve verilmeyince Curves.linear devreye girer.
                 // Lejant sönümlemesi bir DURUM değişimidir → enter.
                 curve: SandikMotion.enter,
@@ -871,8 +1324,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AnimatedContainer(
-                      duration: SandikMotion.of(
-                          context, const Duration(milliseconds: 150)),
+                      duration: SandikMotion.stateOf(context),
                       curve: SandikMotion.enter,
                       width: isTouched ? 10 : 8,
                       height: isTouched ? 10 : 8,
@@ -929,8 +1381,13 @@ class _AssetList {
   final PortfolioState pState;
   final BazPara baz;
   final String? currentUserId;
-  final void Function(Position) onTap;
+
+  /// İkinci argüman başlık uçuşunun etiketi (bayrak kapalı → `null`).
+  final void Function(Position, Object? heroEtiketi) onTap;
   final void Function(Position) onDelete;
+
+  /// `varlik_hero_gecisi` (yol haritası 2.14).
+  final bool heroAcik;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
   // KAPANDIKTAN sonra kapanabilsin diye tip `void` değil `FutureOr<void>`.
   // `void` kalsaydı `await` beklemez, panel yine erken kapanırdı.
@@ -954,6 +1411,7 @@ class _AssetList {
     required this.onAdd,
     required this.onRemove,
     required this.onDividend,
+    this.heroAcik = false,
   });
 
   /// Kullanıcının bu satırdaki KENDİ pozisyonu — yoksa `null` (satır
@@ -972,7 +1430,11 @@ class _AssetList {
           _kart(position, _kendiParcasi(position)),
       ];
 
-  Widget _kart(Position position, Position? kendi) => _YeniVarlikParlamasi(
+  Widget _kart(Position position, Position? kendi) {
+    // Etiket GÖSTERİLEN satırın anahtarından: tekil (`ValueKey` ile aynı),
+    // açılan pozisyon ortak satırda farklı olsa da.
+    final hero = heroAcik ? varlikHeroEtiketi(position.key) : null;
+    return _YeniVarlikParlamasi(
         key: ValueKey(position.key),
         aktif: position.key == vurgulanan,
         child: _AssetCard(
@@ -981,16 +1443,18 @@ class _AssetList {
           pState: pState,
           baz: baz,
           canEdit: kendi != null,
+          heroEtiketi: hero,
           // Varlık ekranı tek sahipli pozisyon bekler; birleşik satırda
           // önce kendi parçası, yoksa ilk sahibinki.
-          onTap: (p) => onTap(kendi ??
-              (p is BirlesikPozisyon ? p.parcalar.first : p)),
+          onTap: (p) => onTap(
+              kendi ?? (p is BirlesikPozisyon ? p.parcalar.first : p), hero),
           onDelete: (_) => onDelete(kendi!),
           onAdd: (_) => onAdd(kendi!),
           onRemove: (_) => onRemove(kendi!),
           onDividend: (_) => onDividend(kendi!),
         ),
       );
+  }
 }
 
 /// Yeni eklenen satırın tek seferlik parlaması: amber çerçeve belirir ve
@@ -1340,6 +1804,9 @@ class _AssetCard extends StatefulWidget {
   final PortfolioState pState;
   final BazPara baz;
   final bool canEdit;
+
+  /// Başlık uçuşu etiketi (`varlik_baslik_hero.dart`); `null` → uçuş yok.
+  final Object? heroEtiketi;
   final void Function(Position) onTap;
   final void Function(Position) onDelete;
   // Bu üçü dialog açar ve `Future` döndürür; kaydırma paneli dialog
@@ -1355,6 +1822,7 @@ class _AssetCard extends StatefulWidget {
     required this.pState,
     required this.baz,
     required this.canEdit,
+    this.heroEtiketi,
     required this.onTap,
     required this.onDelete,
     required this.onAdd,
@@ -1436,16 +1904,19 @@ class _AssetCardState extends State<_AssetCard>
                             Row(
                               children: [
                                 Flexible(
-                                  child: Text(
-                                    a.showTicker ? a.displayTicker! : a.name,
-                                    maxLines: a.showTicker ? 1 : 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: context.t.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      color: context.c.text90,
-                                      height: 1.25,
-                                      letterSpacing:
-                                          a.showTicker ? 0.2 : -0.2,
+                                  child: VarlikBaslikHero(
+                                    etiket: widget.heroEtiketi,
+                                    child: Text(
+                                      a.showTicker ? a.displayTicker! : a.name,
+                                      maxLines: a.showTicker ? 1 : 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: context.t.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: context.c.text90,
+                                        height: 1.25,
+                                        letterSpacing:
+                                            a.showTicker ? 0.2 : -0.2,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1459,9 +1930,7 @@ class _AssetCardState extends State<_AssetCard>
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              a.unitIsPrefix
-                                  ? '${a.unitLabel}${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} · ${a.type.labelOf(context.l10n)}'
-                                  : '${fmtNum(a.quantity, digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2)} ${a.unitLabel} · ${a.type.labelOf(context.l10n)}',
+                              _satirAltMetni(context, a),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: context.t.bodySmall
@@ -1538,7 +2007,9 @@ class _AssetCardState extends State<_AssetCard>
       ),
     );
 
-    final showsDividend = a.supportsDividend;
+    // Kural varlık ekranının çubuğuyla ortak (`pozisyonIslemleri`).
+    final showsDividend =
+        pozisyonIslemleri(a).contains(PozisyonIslemi.temettu);
 
     if (canEdit) {
       card = ClipRRect(
@@ -1734,6 +2205,21 @@ class _AssetDetailsPanel extends StatelessWidget {
 
     final currentValueTRY = pState.toTRY(position.totalValue, rep.currency);
 
+    // Mevduatta miktar (birim) ve ortalama maliyet (1 TRY) iç hesabın
+    // paylarıdır, kullanıcıya bir şey söylemez (2026-10-01 emülatör testi);
+    // panel ilk alış + toplam maliyet + güncel tutar gösterir.
+    final birimsiz = rep.type == AssetType.mevduat;
+    final toplamMaliyet = _DetailItem(
+      label: context.l10n.totalCost,
+      // Alış para biriminde yazılır, `baz`dan geçmez → gizleme
+      // elle (bulgu #3). Ortalama maliyet birim FİYATTIR, açık.
+      value: position.weightedPurchasePrice <= 0
+          ? '—'
+          : baz.gizli
+              ? baz.gizliTutar
+              : '${costFmt2.format(position.totalCost)} ${rep.currency}',
+    );
+
     // Grafiğin rengi satırdaki yüzdeyle aynı kaynaktan gelmeli (temettü dahil),
     // yoksa eğri yeşilken yazı kırmızı olabilir.
     // Tek kaynak: hem kâr/zarar hem de aşağıdaki temettü satırı bunu kullanır.
@@ -1759,7 +2245,13 @@ class _AssetDetailsPanel extends StatelessWidget {
           // telefonlarda 2–22pt'ye düşüyor ve okunmuyordu. Burada panelin
           // tamamını kullanır, yükseklik de 24→48pt'ye çıkar: eğrinin şekli
           // gerçekten görünür.
-          if (SparklineService.supports(rep)) ...[
+          // Mevduat: fiyat eğrisi yerine vade şeridi (2026-10-02). Vadeli
+          // mevduatın değeri vade içinde düzdür; eğri boş/düz kalıyordu.
+          if (rep.type == AssetType.mevduat) ...[
+            MevduatVadeSeridi(
+                temsilci: rep, pay: position.totalQuantity, baz: baz),
+            const SizedBox(height: 14),
+          ] else if (SparklineService.supports(rep)) ...[
             LayoutBuilder(
               builder: (context, c) => AssetSparkline(
                 asset: rep,
@@ -1777,7 +2269,10 @@ class _AssetDetailsPanel extends StatelessWidget {
           ],
           // Tam ad — satırda yalnızca kod (THYAO) gösterilen varlıklar için.
           // Kırpma yok: burada yer var, isim tam okunmalı.
-          if (rep.showTicker) ...[
+          // Ad koddan farksızsa ("TAM ADI: SAHOL") satır bilgi vermez.
+          if (rep.showTicker &&
+              rep.name.trim().toUpperCase() !=
+                  (rep.displayTicker ?? '').toUpperCase()) ...[
             _DetailItem(
                 label: context.l10n.assetFullName, value: rep.name, isText: true),
             const SizedBox(height: 12),
@@ -1794,13 +2289,16 @@ class _AssetDetailsPanel extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: _DetailItem(
-                  label: context.l10n.quantity,
-                  value: qtyDisplay,
-                ),
+                child: birimsiz
+                    ? toplamMaliyet
+                    : _DetailItem(
+                        label: context.l10n.quantity,
+                        value: qtyDisplay,
+                      ),
               ),
             ],
           ),
+          if (!birimsiz) ...[
           const SizedBox(height: 12),
           Row(
             children: [
@@ -1810,20 +2308,10 @@ class _AssetDetailsPanel extends StatelessWidget {
                   value: avgCostStr,
                 ),
               ),
-              Expanded(
-                child: _DetailItem(
-                  label: context.l10n.totalCost,
-                  // Alış para biriminde yazılır, `baz`dan geçmez → gizleme
-                  // elle (bulgu #3). Ortalama maliyet birim FİYATTIR, açık.
-                  value: position.weightedPurchasePrice <= 0
-                      ? '—'
-                      : baz.gizli
-                          ? baz.gizliTutar
-                          : '${costFmt2.format(position.totalCost)} ${rep.currency}',
-                ),
-              ),
+              Expanded(child: toplamMaliyet),
             ],
           ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -2048,7 +2536,7 @@ class _SortButton extends StatelessWidget {
     return CupertinoButton(
       minimumSize: SandikTouch.minSize,
       padding: EdgeInsets.zero,
-      onPressed: () => showModalBottomSheet<void>(
+      onPressed: () => showSandikSheet<void>(
         context: context,
         backgroundColor: context.c.surface1,
         shape: const RoundedRectangleBorder(
@@ -2157,4 +2645,34 @@ class _SortSheet extends StatelessWidget {
         _SortOrder.gainPctDesc => Icons.percent_rounded,
         _SortOrder.gainPctAsc => Icons.percent_rounded,
       };
+}
+
+/// Portföy satırının alt metni: miktar · tür.
+///
+/// Sözleşmeli türlerde miktar anlam taşımaz (2026-10-01 emülatör testi):
+/// mevduatın "250.000 birim"i iç hesabın payıdır, BES'in "318.850,44 pay"ı
+/// da üç ayrı fon satırının hangi sözleşmeye ait olduğunu söylemez. Mevduat
+/// yalnız türünü, BES kurumunu ve katkı tipini yazar
+/// ("Anadolu Hayat · Devlet katkısı").
+String _satirAltMetni(BuildContext context, Asset a) {
+  final l10n = context.l10n;
+  // ABD hissesi (bayrak `abd_hisse`): satırda yalnız sembol (AAPL) var;
+  // pazar yazılmazsa BIST hissesinden ayırt edilmez. Yalnız `'abd'` alt
+  // kategorili lot'ta — o lot ancak bayrak açıkken doğar.
+  final tur = a.abdHissesi
+      ? '${a.type.labelOf(l10n)} · ${l10n.stockMarketUs}'
+      : a.type.labelOf(l10n);
+  if (a.type == AssetType.mevduat) return tur;
+  if (a.type == AssetType.bes) {
+    final kurum = a.besKurumu;
+    final tip = a.subCategory == BesAltKategori.devletKatkisi
+        ? l10n.pensionGov
+        : tur;
+    return kurum == null ? tip : '$kurum · $tip';
+  }
+  final miktar = fmtNum(a.quantity,
+      digits: a.quantity == a.quantity.truncateToDouble() ? 0 : 2);
+  return a.unitIsPrefix
+      ? '${a.unitLabel}$miktar · $tur'
+      : '$miktar ${a.unitLabel} · $tur';
 }

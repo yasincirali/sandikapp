@@ -12,6 +12,7 @@ import '../providers/portfolio_provider.dart';
 import '../screens/main_navigation_screen.dart';
 import '../screens/portfolio_performance_screen.dart';
 import '../theme/sandik.dart';
+import '../utils/piyasa_kapali_etiketi.dart';
 import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'deep_link_router.dart';
@@ -100,6 +101,14 @@ class HomeWidgetService {
   /// BIST işlem saatleri içinde miyiz? Canlılık noktasının rengini sürer.
   static const _kMarketOpen = 'sandik_market_open';
 
+  /// Portföy yalnızca borsa ürünü mü (hisse/fon/BES)? "Piyasa kapalı"
+  /// ibaresi ve gri nokta YALNIZCA o zaman (kullanıcı kararı 2026-10-01,
+  /// bkz. `yalnizcaBorsa`). [_kMarketOpen] BIST seansını anlatmaya devam
+  /// eder — iOS kilit widget'ının kapanış geri sayımı ona bakar (seans
+  /// çubuğu 2026-10-01'de kaldırıldı).
+  /// Native taraf anahtar yoksa `true` varsayar (eski davranış).
+  static const _kYalnizBorsa = 'sandik_yalniz_borsa';
+
   /// Uygulamanın SEÇİLİ teması açık mı? Native taraf paleti buna göre seçer.
   ///
   /// Android widget'ı bugüne kadar `res/values` ↔ `values-night` ile
@@ -127,10 +136,27 @@ class HomeWidgetService {
   /// ekranı açık bir bayrakla karar verir.
   static const _kHidden = 'sandik_hidden';
 
+  /// Kilit widget'ı rakamı Canlı Etkinlik'ten mi okusun (2026-10-03,
+  /// yasin: "Canlı aktivite, dinamik ada, kilit ekranı widget, performans
+  /// günlük aynı değeri göstermeli ve senkron olmalı").
+  ///
+  /// Uygulama kapalıyken widget'ı yalnız bu yazım besliyordu ve son
+  /// rakamda donuyordu; Canlı Etkinlik ise sunucudan dakikada bir ileri
+  /// taşınıyor (`push-live-activity`, `canli_etkinlik_dakikalik`). Açık
+  /// bir etkinlik varken widget onun son içeriğini okur — iki kilit
+  /// ekranı yüzeyi aynı push'tan beslenir. Aynı Remote Config bayrağına
+  /// bağlı: kapalıyken widget bugünkü gibi yalnız bu yazımı okur.
+  static const _kCanliEtkinligiIzle = 'sandik_lock_follow_la';
+
   /// [_kLockAmounts]'ın değeri — servis Riverpod okuyamaz; `main.dart`
   /// portföy dinleyicisi ve Ayarlar anahtarı buraya yazar (Canlı Etkinlik'teki
   /// `showAmountsOnLockScreen` ile aynı desen).
   bool lockScreenAmounts = false;
+
+  /// [_kCanliEtkinligiIzle]'nin değeri — `main.dart` Remote Config'ten
+  /// (`canli_etkinlik_dakikalik`) atar, Canlı Etkinlik'teki
+  /// `dakikalikGuncelleme` ile aynı anda.
+  bool canliEtkinligiIzle = false;
 
   /// Uygulamanın çözülmüş tema tercihi — tek kaynaktan OKUNUR.
   ///
@@ -292,6 +318,11 @@ class HomeWidgetService {
       // çiziliyor ve o da uygulamanın temasını izlemeli.
       await HomeWidget.saveWidgetData<bool>(_kIsLightTheme, themeIsLight);
       await HomeWidget.saveWidgetData<bool>(_kLockAmounts, lockScreenAmounts);
+      await HomeWidget.saveWidgetData<bool>(
+          _kCanliEtkinligiIzle, canliEtkinligiIzle);
+      // Gizliyken de yazılır: gizli widget da "Piyasa kapalı" satırı çizer.
+      final yalnizBorsa = yalnizcaBorsaVarliklardan(state.assets);
+      await HomeWidget.saveWidgetData<bool>(_kYalnizBorsa, yalnizBorsa);
 
       if (hideBalance) {
         // Kullanıcı bakiyeyi uygulama içinde gizlemişse ana ekranda
@@ -384,7 +415,10 @@ class HomeWidgetService {
           // Hareket yoksa çizgi de nötr çizilir: düz kırmızı bir çizgi
           // "bugün kaybettim" diye okunur.
           isFlat: !summary.hasChange || summary.isFlat,
-          isMarketOpen: DailySummary.isMarketOpen(DateTime.now()),
+          // Karışık portföyde nokta canlı kalır: borsa kapalı olsa da
+          // altın/döviz/kripto rakamı hareket ettiriyor.
+          isMarketOpen:
+              DailySummary.isMarketOpen(DateTime.now()) || !yalnizBorsa,
         );
       }
 

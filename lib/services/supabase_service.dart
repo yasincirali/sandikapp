@@ -3,7 +3,9 @@ import '../demo/demo_modu.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
 import '../models/asset.dart';
+import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import '../models/kayitli_cihaz.dart';
 import '../models/kullanici_adi.dart';
 import '../models/signal_alert.dart';
 import '../models/signal_frequency.dart';
@@ -14,6 +16,7 @@ import '../models/user_model.dart';
 import '../models/watchlist_item.dart';
 import 'crash_reporter.dart';
 import 'db_logger.dart';
+import 'ekstre/ekstre_tablosu.dart' show EkstreAiHatasi;
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
 /// RLS kuralları Supabase tarafında uygulandığı için burada
@@ -82,6 +85,399 @@ class SupabaseService {
     }
     return out;
   }
+
+  // ── Yurt içi kotasyon kaydı (0101) ───────────────────────────────────────
+
+  /// [sembol]'ün [baslangic]'tan bu yana kaydedilmiş yurt içi kotasyonu
+  /// (`(ms, TL fiyat)`, artan sırada).
+  ///
+  /// Sembol başına AYRI istek: günde ~288 satır, PostgREST'in varsayılan
+  /// 1.000 satır sınırının altında kalır; birleşik sorgu birkaç sembolde
+  /// sınırı aşıp günün sonunu sessizce keserdi. Tablo yoksa (0101 henüz
+  /// koşmadı) istisna çağırana gider; çağıran Crashlytics'e yazıp eski
+  /// yoldan devam eder.
+  Future<List<(int, double)>> yurtIciKotasyonSerisi(
+    String sembol, {
+    required DateTime baslangic,
+  }) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.yurtIciKotasyonSerisi',
+      table: 'yurt_ici_kotasyon',
+      op: 'SELECT',
+      request: {'sembol': sembol, 'ts_gte': baslangic.toUtc().toIso8601String()},
+      call: () => _db
+          .from('yurt_ici_kotasyon')
+          .select('ts, fiyat')
+          .eq('sembol', sembol)
+          .gte('ts', baslangic.toUtc().toIso8601String())
+          .order('ts', ascending: true)
+          .limit(1000),
+    );
+    final out = <(int, double)>[];
+    for (final r in rows) {
+      final ts = DateTime.tryParse('${r['ts']}');
+      final fiyat = (r['fiyat'] as num?)?.toDouble();
+      if (ts == null || fiyat == null || !fiyat.isFinite || fiyat <= 0) {
+        continue;
+      }
+      out.add((ts.millisecondsSinceEpoch, fiyat));
+    }
+    return out;
+  }
+
+  // ── Fon para akışı (0106) ────────────────────────────────────────────────
+
+  /// [fonKodu]'nun [baslangic]'tan bu yana günlük satırları (HAM, artan
+  /// tarih). Ayrıştırma ve toplama `fon_akisi.dart`'ta (saf, testli).
+  ///
+  /// Kişisel veri değil: tablo oturum açmış herkese okunur (RLS `using
+  /// (true)`), yazma yalnız `akis-gozlem`. 63 günde en çok ~45 satır.
+  /// Tablo yoksa (0106 henüz koşmadı) istisna çağırana gider; çağıran
+  /// Crashlytics'e yazıp kartı çizmez.
+  Future<List<Map<String, dynamic>>> fonAkisGunleri(
+    String fonKodu, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fonAkisGunleri',
+      table: 'fon_akis_gunluk',
+      op: 'SELECT',
+      request: {'fon_kodu': fonKodu, 'tarih_gte': gun},
+      call: () => _db
+          .from('fon_akis_gunluk')
+          .select('tarih, portfoy_degeri, net_akis, yatirimci')
+          .eq('fon_kodu', fonKodu)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// [ticker]'ın ('TEFAS:TTE') [baslangic]'tan bu yana büyük giriş/çıkış
+  /// olayları (HAM, yeniden eskiye). Kuralı sunucu uygular; istemci yalnız
+  /// okur.
+  Future<List<Map<String, dynamic>>> balinaOlaylari(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.balinaOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, buyukluk_orani, sapma_kati')
+          .eq('ticker', ticker)
+          // Tablo 0107'ten beri hisse olaylarını da taşıyor.
+          .inFilter('tur', ['fon_giris', 'fon_cikis'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  /// BIST hissesinin ([sembol] 'THYAO.IS') [baslangic]'tan bu yana günlük
+  /// kapanış ve para hacmi (HAM, artan tarih). Ayrıştırma `hisse_hacmi.dart`.
+  /// Tablo oturum açmış herkese okunur; yazma yalnız `hacim-gozlem` (0107).
+  Future<List<Map<String, dynamic>>> hisseHacimGunleri(
+    String sembol, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.hisseHacimGunleri',
+      table: 'hisse_hacim_gunluk',
+      op: 'SELECT',
+      request: {'ticker': sembol, 'tarih_gte': gun},
+      call: () => _db
+          .from('hisse_hacim_gunluk')
+          .select('tarih, kapanis, para_hacmi')
+          .eq('ticker', sembol)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// [sembol]'ün olağandışı hacim günleri (HAM). `balinaOlaylari`'ndan ayrı:
+  /// hisse olayının sütunları farklı (kat ve fiyat değişimi).
+  Future<List<Map<String, dynamic>>> hacimOlaylari(
+    String sembol, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.hacimOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': sembol, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim')
+          .eq('ticker', sembol)
+          .inFilter('tur', ['hisse_hacim_yukselis', 'hisse_hacim_dusus'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  /// Coin'in ([ticker] 'KRIPTO:BTC') günlük Binance USDT hacmi ve alıcı payı
+  /// (HAM, artan tarih). Yazma yalnız `kripto-hacim-gozlem` (0108).
+  Future<List<Map<String, dynamic>>> kriptoHacimGunleri(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoHacimGunleri',
+      table: 'kripto_hacim_gunluk',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('kripto_hacim_gunluk')
+          .select('tarih, kapanis, para_hacmi, alici_payi')
+          .eq('ticker', ticker)
+          .gte('tarih', gun)
+          .order('tarih', ascending: true)
+          .limit(200),
+    );
+  }
+
+  /// Coin'in olağandışı hacim günleri (HAM).
+  Future<List<Map<String, dynamic>>> kriptoHacimOlaylari(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final gun = _isoGun(baslangic);
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoHacimOlaylari',
+      table: 'balina_olay',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tarih_gte': gun},
+      call: () => _db
+          .from('balina_olay')
+          .select('tarih, tur, tutar, ortalama_kati, fiyat_degisim, alici_payi')
+          .eq('ticker', ticker)
+          .inFilter('tur', ['kripto_hacim_yukselis', 'kripto_hacim_dusus'])
+          .gte('tarih', gun)
+          .order('tarih', ascending: false)
+          .limit(50),
+    );
+  }
+
+  /// Fonun kategorisindeki akış sırası (0115 `fon_kategori_akis_sirasi`):
+  /// ilk 5 + (ilk 5'te değilse) fonun kendisi. Aralık en çok 14 gün.
+  Future<List<Map<String, dynamic>>> fonKategoriSirasi(
+    String fonKodu, {
+    required DateTime baslangic,
+    required DateTime bitis,
+  }) async {
+    final params = {
+      'p_fon_kodu': fonKodu,
+      'p_baslangic': _isoGun(baslangic),
+      'p_bitis': _isoGun(bitis),
+    };
+    final ham = await _log.log<dynamic>(
+      source: 'SupabaseService.fonKategoriSirasi',
+      table: 'rpc/fon_kategori_akis_sirasi',
+      op: 'RPC',
+      request: params,
+      call: () => _db.rpc('fon_kategori_akis_sirasi', params: params),
+    );
+    return [
+      for (final r in (ham as List? ?? const []))
+        Map<String, dynamic>.from(r as Map)
+    ];
+  }
+
+  /// Coinin saatlik mumları (0115 `kripto_hacim_saatlik`), [baslangic]'tan
+  /// bu yana, eskiden yeniye.
+  Future<List<Map<String, dynamic>>> kriptoSaatleri(
+    String ticker, {
+    required DateTime baslangic,
+  }) {
+    final an = baslangic.toUtc().toIso8601String();
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kriptoSaatleri',
+      table: 'kripto_hacim_saatlik',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'saat_gte': an},
+      call: () => _db
+          .from('kripto_hacim_saatlik')
+          .select('saat, para_hacmi, alici_payi')
+          .eq('ticker', ticker)
+          .gte('saat', an)
+          .order('saat', ascending: true)
+          .limit(60),
+    );
+  }
+
+  /// Oturumdaki kullanıcının Premium hakları (0116 `premium_haklari`; RLS
+  /// yalnız kendi satırlarını verir).
+  Future<List<Map<String, dynamic>>> premiumHaklari() {
+    return _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.premiumHaklari',
+      table: 'premium_haklari',
+      op: 'SELECT',
+      request: const {},
+      call: () => _db
+          .from('premium_haklari')
+          .select('kaynak, urun, magaza, bitis, iptal_edildi, baslangic'),
+    );
+  }
+
+  /// Varlıkların en yeni yayındaki notunun başlığı (0117 `analiz_ozetleri`;
+  /// ücretsiz katmanın gördüğü kısım).
+  Future<List<Map<String, dynamic>>> analizOzetleri(
+    List<String> tickerlar, {
+    String tur = 'haftalik',
+  }) async {
+    final params = {'p_tickerlar': tickerlar, 'p_tur': tur};
+    final ham = await _log.log<dynamic>(
+      source: 'SupabaseService.analizOzetleri',
+      table: 'rpc/analiz_ozetleri',
+      op: 'RPC',
+      request: params,
+      call: () => _db.rpc('analiz_ozetleri', params: params),
+    );
+    return [
+      for (final r in (ham as List? ?? const []))
+        Map<String, dynamic>.from(r as Map)
+    ];
+  }
+
+  /// Notun tamamı (0117 `varlik_analizi`). Premium kapısı açıkken RLS
+  /// Premium olmayana satır vermez → `null`.
+  Future<Map<String, dynamic>?> varlikAnalizi(
+    String ticker, {
+    required String tur,
+    required DateTime donem,
+  }) {
+    final gun = _isoGun(donem);
+    return _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.varlikAnalizi',
+      table: 'varlik_analizi',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tur': tur, 'donem': gun},
+      call: () => _db
+          .from('varlik_analizi')
+          .select('ticker, tur, donem, baslik, maddeler, rozet, girdi')
+          .eq('ticker', ticker)
+          .eq('tur', tur)
+          .eq('donem', gun)
+          .maybeSingle(),
+    );
+  }
+
+  /// Kullanıcının bu nota önceki oyu ve yanlış sayı bildirimi; yoksa null.
+  /// Ekran yeniden açıldığında 👍 boş görünmesin.
+  Future<({int? oy, bool yanlisSayi})?> notGeriBildirimim({
+    required String ticker,
+    required String tur,
+    required DateTime donem,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    final r = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.notGeriBildirimim',
+      table: 'not_geri_bildirim',
+      op: 'SELECT',
+      request: {'ticker': ticker, 'tur': tur},
+      call: () => _db
+          .from('not_geri_bildirim')
+          .select('oy, yanlis_sayi')
+          .eq('user_id', uid)
+          .eq('ticker', ticker)
+          .eq('tur', tur)
+          .eq('donem', _isoGun(donem))
+          .maybeSingle(),
+    );
+    if (r == null) return null;
+    return (
+      oy: (r['oy'] as num?)?.toInt(),
+      yanlisSayi: r['yanlis_sayi'] == true,
+    );
+  }
+
+  /// Not geri bildirimi (0117 `not_geri_bildirim`): oy ve/veya "yanlış sayı".
+  ///
+  /// Oy ile "yanlış sayı" bildirimi aynı satırdadır ama AYRI çağrılardır:
+  /// gövde yalnız o çağrının alanlarını taşır (upsert yalnız gönderilen
+  /// kolonları günceller). Tüm kolonları göndermek, yanlış sayı bildirimiyle
+  /// önceki 👍'yu, sonraki oyla da açıklamayı siliyordu (2026-10-05 web
+  /// testi: ekran yeniden açılınca `_oy` boş başlar).
+  Future<void> notGeriBildirim({
+    required String ticker,
+    required String tur,
+    required DateTime donem,
+    NotGeriBildirimi? oy,
+    String? yanlisSayiAciklamasi,
+    bool yanlisSayi = false,
+  }) async {
+    final uid = _uid;
+    if (uid == null) return;
+    final body = {
+      'user_id': uid,
+      'ticker': ticker,
+      'tur': tur,
+      'donem': _isoGun(donem),
+      if (oy != null) 'oy': oy.deger,
+      if (yanlisSayi) ...{
+        'yanlis_sayi': true,
+        'aciklama': yanlisSayiAciklamasi,
+      },
+    };
+    await _log.log<void>(
+      source: 'SupabaseService.notGeriBildirim',
+      table: 'not_geri_bildirim',
+      op: 'UPSERT',
+      request: {
+        'ticker': ticker,
+        'tur': tur,
+        'oy': oy?.deger,
+        'yanlis_sayi': yanlisSayi
+      },
+      call: () => _db
+          .from('not_geri_bildirim')
+          .upsert(body, onConflict: 'user_id,ticker,tur,donem'),
+    );
+  }
+
+  /// Pazartesi özetinde hareket satırı (0118 `profiles.haftalik_hareket_satiri`).
+  Future<bool?> haftalikHareketSatiri(String userId) async {
+    final row = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.haftalikHareketSatiri',
+      table: 'profiles',
+      op: 'SELECT',
+      request: {'id': userId},
+      call: () => _db
+          .from('profiles')
+          .select('haftalik_hareket_satiri')
+          .eq('id', userId)
+          .maybeSingle(),
+    );
+    return row?['haftalik_hareket_satiri'] as bool?;
+  }
+
+  Future<void> setHaftalikHareketSatiri(String userId, bool acik) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setHaftalikHareketSatiri',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'haftalik_hareket_satiri': acik},
+      call: () => _db
+          .from('profiles')
+          .update({'haftalik_hareket_satiri': acik}).eq('id', userId),
+    );
+  }
+
+  static String _isoGun(DateTime t) => '${t.year.toString().padLeft(4, '0')}-'
+      '${t.month.toString().padLeft(2, '0')}-'
+      '${t.day.toString().padLeft(2, '0')}';
 
   // ── Profiles ─────────────────────────────────────────────────────────────
 
@@ -253,6 +649,37 @@ class SupabaseService {
     );
   }
 
+  /// Maaş günü birikim hatırlatması (0119): ayın günü 1–31, `null` = kapalı.
+  ///
+  /// Okuma hatasında `null` (kapalı) döner: sunucu varsayılanı da kapalı;
+  /// ağ hatası anahtarı açık gösterip "açtım" yanılgısı vermesin.
+  Future<int?> getBirikimHatirlatmaGunu(String userId) async {
+    try {
+      final row = await _db
+          .from('profiles')
+          .select('birikim_hatirlatma_gunu')
+          .eq('id', userId)
+          .maybeSingle();
+      final v = row?['birikim_hatirlatma_gunu'];
+      return v is num ? v.toInt() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> setBirikimHatirlatmaGunu(String userId, int? gun) async {
+    assert(gun == null || (gun >= 1 && gun <= 31));
+    await _log.log<void>(
+      source: 'SupabaseService.setBirikimHatirlatmaGunu',
+      table: 'profiles',
+      op: 'UPDATE',
+      request: {'id': userId, 'birikim_hatirlatma_gunu': gun},
+      call: () => _db
+          .from('profiles')
+          .update({'birikim_hatirlatma_gunu': gun}).eq('id', userId),
+    );
+  }
+
   /// Sessiz saatler (0057) — TR saati, null = kapalı.
   Future<({int? start, int? end})> getQuietHours(String userId) async {
     final row = await _log.log<Map<String, dynamic>?>(
@@ -355,6 +782,29 @@ class SupabaseService {
       op: 'UPDATE',
       request: {'id': asset.id, 'ticker': body['ticker']},
       call: () => _db.from('assets').update(body).eq('id', asset.id),
+    );
+  }
+
+  /// Fiyat turunun yazımı — YALNIZ fiyat sütunları.
+  ///
+  /// Eskiden fiyat turu [updateAsset] ile satırın TAMAMINI yazıyordu:
+  /// miktar, maliyet, not… bellekteki kopyadan. Bellekteki defter bayatsa
+  /// (aynı hesap başka cihazda açık, orada miktar düzeltildi; 2026-10-03
+  /// kullanıcı bildirimi) bu cihazın 5 dakikalık fiyat yazımı o düzeltmeyi
+  /// sessizce geri alıyordu — kayıp güncelleme. Fiyat turu yalnızca fiyatın
+  /// sahibidir; [alisFiyatiDa] yalnız maliyeti hiç girilmemiş lotta (tur
+  /// maliyeti güncel fiyata kilitlediğinde) true'dur.
+  Future<void> fiyatYaz(Asset asset, {bool alisFiyatiDa = false}) async {
+    await _log.log<void>(
+      source: 'SupabaseService.fiyatYaz',
+      table: 'assets',
+      op: 'UPDATE',
+      request: {'id': asset.id, 'ticker': asset.ticker},
+      call: () => _db.from('assets').update({
+        'current_price': asset.currentPrice,
+        'last_updated': asset.lastUpdated?.toUtc().toIso8601String(),
+        if (alisFiyatiDa) 'purchase_price': asset.purchasePrice,
+      }).eq('id', asset.id),
     );
   }
 
@@ -512,6 +962,28 @@ class SupabaseService {
     return rows.map(Sozlesme.fromSupabase).toList();
   }
 
+  /// BES devlet katkısı yıllık parametreleri (0089) — referans verisi,
+  /// kullanıcıya bağlı değil. Yıl → (azami devlet katkısı TL, oran %).
+  Future<Map<int, ({double sinir, double oran})>>
+      fetchBesDevletKatkisi() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchBesDevletKatkisi',
+      table: 'bes_devlet_katkisi',
+      op: 'SELECT',
+      request: const {},
+      call: () => _db
+          .from('bes_devlet_katkisi')
+          .select('yil, azami_devlet_katkisi, oran_yuzde'),
+    );
+    return {
+      for (final r in rows)
+        (r['yil'] as num).toInt(): (
+          sinir: (r['azami_devlet_katkisi'] as num).toDouble(),
+          oran: (r['oran_yuzde'] as num).toDouble(),
+        ),
+    };
+  }
+
   Future<List<MevduatDonemi>> fetchMevduatDonemleri(
       List<String> sozlesmeIds) async {
     if (sozlesmeIds.isEmpty) return const [];
@@ -571,6 +1043,22 @@ class SupabaseService {
       op: 'INSERT',
       request: {'sozlesme_id': d.sozlesmeId},
       call: () => _db.from('mevduat_donemleri').insert(body),
+    );
+  }
+
+  /// Dönemin faiz ve stopajını yerinde günceller (vade içi oran değişikliği).
+  /// Başlangıç ve vade DEĞİŞMEZ; yalnız iki oran gönderilir.
+  Future<void> updateMevduatDonemiOrani(MevduatDonemi d, String userId) async {
+    await _log.log<void>(
+      source: 'SupabaseService.updateMevduatDonemiOrani',
+      table: 'mevduat_donemleri',
+      op: 'UPDATE',
+      request: {'id': d.id},
+      call: () => _db
+          .from('mevduat_donemleri')
+          .update({'yillik_faiz': d.yillikFaiz, 'stopaj': d.stopaj})
+          .eq('id', d.id)
+          .eq('user_id', userId),
     );
   }
 
@@ -905,6 +1393,106 @@ class SupabaseService {
     );
   }
 
+  // ── Kayıtlı cihazlar / tek aktif cihaz (0098) ────────────────────────────
+
+  /// Bu cihazın hesaptaki durumu. `null`: sunucu tanımadığı bir değer döndü.
+  Future<CihazDurumu?> cihazDurumu(String cihazId) async {
+    final r = await _log.log<dynamic>(
+      source: 'SupabaseService.cihazDurumu',
+      table: 'kayitli_cihazlar',
+      op: 'RPC',
+      request: {},
+      call: () => _db.rpc<dynamic>('cihaz_durumu',
+          params: {'p_cihaz_id': cihazId}),
+    );
+    return CihazDurumu.parse(r);
+  }
+
+  /// Cihazı güvenilen listeye yazar. Sunucu ilk cihaz dışında son 15 dk'da
+  /// e-posta kodu kanıtı ister; yoksa `otp_gerekli` ile reddeder.
+  Future<void> cihazKaydet({
+    required String cihazId,
+    required String ad,
+    required String platform,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.cihazKaydet',
+      table: 'kayitli_cihazlar',
+      op: 'RPC',
+      request: {'platform': platform},
+      call: () => _db.rpc<dynamic>('cihaz_kaydet', params: {
+        'p_cihaz_id': cihazId,
+        'p_ad': ad,
+        'p_platform': platform,
+      }),
+    );
+  }
+
+  /// Bu cihazı hesabın TEK aktif cihazı yapar; diğer cihazların push
+  /// token'larını düşürür. Başka cihaz bu oturumun girişinden sonra aktif
+  /// olduysa `yerinden_edildi` ile reddeder.
+  Future<void> oturumAl({
+    required String cihazId,
+    String? pushCihazId,
+    String? pushToken,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.oturumAl',
+      table: 'aktif_cihaz',
+      op: 'RPC',
+      request: {},
+      call: () => _db.rpc<dynamic>('oturum_al', params: {
+        'p_cihaz_id': cihazId,
+        'p_push_cihaz_id': pushCihazId,
+        'p_push_token': pushToken,
+      }),
+    );
+  }
+
+  /// Hesabın şu an aktif cihazı. Satır yoksa (muaf ya da henüz alınmadı) null.
+  Future<String?> aktifCihazId(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.aktifCihazId',
+      table: 'aktif_cihaz',
+      op: 'SELECT',
+      request: {},
+      call: () => _db
+          .from('aktif_cihaz')
+          .select('cihaz_id')
+          .eq('user_id', userId)
+          .limit(1),
+    );
+    return rows.isEmpty ? null : rows.first['cihaz_id'] as String?;
+  }
+
+  Future<List<KayitliCihaz>> kayitliCihazlar(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.kayitliCihazlar',
+      table: 'kayitli_cihazlar',
+      op: 'SELECT',
+      request: {},
+      call: () => _db
+          .from('kayitli_cihazlar')
+          .select('cihaz_id, ad, platform, ilk_kayit, son_gorulme')
+          .eq('user_id', userId)
+          .order('son_gorulme', ascending: false),
+    );
+    return rows.map<KayitliCihaz>(KayitliCihaz.fromSupabase).toList();
+  }
+
+  /// Cihazı güvenilen listeden çıkarır. Aktif cihaz silinemez
+  /// (`aktif_cihaz_silinemez`). Dönüş: silinen satır sayısı.
+  Future<int> cihazSil(String cihazId) async {
+    final r = await _log.log<dynamic>(
+      source: 'SupabaseService.cihazSil',
+      table: 'kayitli_cihazlar',
+      op: 'RPC',
+      request: {},
+      call: () => _db.rpc<dynamic>('cihaz_sil', params: {'p_cihaz_id': cihazId}),
+    );
+    return r is int ? r : 0;
+  }
+
   Future<void> deletePushToken(String token) async {
     await _log.log<void>(
       source: 'SupabaseService.deletePushToken',
@@ -913,6 +1501,35 @@ class SupabaseService {
       request: {'token': '[redacted]'},
       call: () => _db.from('user_push_tokens').delete().eq('token', token),
     );
+  }
+
+  /// Bu cihazın anladığı bildirim biçimini token satırına yazar (0092).
+  ///
+  /// Sunucu kart görselini yalnız `bildirim_surumu >= 2` olan cihaza
+  /// gönderir; eski sürümler bu çağrıyı hiç yapmaz ve satırları NULL kalır —
+  /// onlara giden bildirim birebir eskisi gibi (kullanıcı kuralı
+  /// 2026-10-01: store kullanıcıları etkilenmesin).
+  ///
+  /// ASLA fırlatmaz: kart bir süs, token kaydı değil. 0092 o sunucuda henüz
+  /// yoksa sütun bilinmez (PGRST204 / 42703) — sessiz geçilir, bildirim yine
+  /// düz metin gelir. Başka hatalar Crashlytics'e non-fatal.
+  Future<void> setPushBildirimSurumu(String token, int surum) async {
+    try {
+      await _log.log<void>(
+        source: 'SupabaseService.setPushBildirimSurumu',
+        table: 'user_push_tokens',
+        op: 'UPDATE',
+        request: {'bildirim_surumu': surum},
+        call: () => _db
+            .from('user_push_tokens')
+            .update({'bildirim_surumu': surum}).eq('token', token),
+      );
+    } on PostgrestException catch (e, st) {
+      if (e.code == 'PGRST204' || e.code == '42703') return;
+      CrashReporter.report(e, st, reason: 'setPushBildirimSurumu');
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'setPushBildirimSurumu');
+    }
   }
 
   // ── Sinyal tercihleri ─────────────────────────────────────────────────────
@@ -954,6 +1571,48 @@ class SupabaseService {
                   const [11, 15],
         ),
     ];
+  }
+
+  /// Ücretsiz planda sinyal bildiriminin açık olduğu TEK varlık (0126);
+  /// seçim yoksa null. Sunucu kapıyı `analyze-signals`'ta uygular.
+  Future<({String tur, String ticker})?> fetchSinyalVarligi(
+      String userId) async {
+    final r = await _log.log<Map<String, dynamic>?>(
+      source: 'SupabaseService.fetchSinyalVarligi',
+      table: 'sinyal_varlik_secimi',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('sinyal_varlik_secimi')
+          .select('asset_type, ticker')
+          .eq('user_id', userId)
+          .maybeSingle(),
+    );
+    if (r == null) return null;
+    return (tur: r['asset_type'] as String, ticker: r['ticker'] as String);
+  }
+
+  /// Sinyal varlığını taşır (kullanıcı başına tek satır).
+  Future<void> setSinyalVarligi({
+    required String userId,
+    required String tur,
+    required String ticker,
+  }) async {
+    await _log.log<void>(
+      source: 'SupabaseService.setSinyalVarligi',
+      table: 'sinyal_varlik_secimi',
+      op: 'UPSERT',
+      request: {'user_id': userId, 'asset_type': tur, 'ticker': ticker},
+      call: () => _db.from('sinyal_varlik_secimi').upsert(
+        {
+          'user_id': userId,
+          'asset_type': tur,
+          'ticker': ticker,
+          'guncellendi': DateTime.now().toUtc().toIso8601String(),
+        },
+        onConflict: 'user_id',
+      ),
+    );
   }
 
   /// Kullanıcının bir varlık türü için eşik/gösterge tercihlerini sunucuya
@@ -1009,7 +1668,7 @@ class SupabaseService {
 
   // ── Kripto (0074) ─────────────────────────────────────────────────────────
   //
-  // Kripto fiyatını telefon DEĞİL sunucu çeker (kripto-fiyat, dakikada bir);
+  // Kripto fiyatını telefon DEĞİL sunucu çeker (kripto-fiyat, iki dakikada bir — 0113);
   // burası yalnızca tabloyu okur. Gerekçe `supabase/functions/_shared/kripto.ts`.
 
   /// Kod → sunucudaki son TL fiyat satırı. Katalogda olmayan ya da henüz
@@ -1089,7 +1748,119 @@ class SupabaseService {
     return out;
   }
 
+  // ── Eurobond (0124) ──────────────────────────────────────────────────────
+  // Kripto gibi: fiyatı sunucu çeker (eurobond-fiyat, hafta içi 20 dk'da
+  // bir), telefon yalnızca tabloyu okur. Gerekçe `_shared/eurobond.ts`.
+
+  /// Etkin eurobond kataloğu, vadeye göre; son fiyat gömülü gelir.
+  Future<List<(EurobondSozlesmesi, EurobondFiyati?)>> eurobondKatalogu() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.eurobondKatalogu',
+      table: 'eurobond_katalog',
+      op: 'SELECT',
+      request: const {'aktif': true},
+      call: () => _db
+          .from('eurobond_katalog')
+          .select('isin, ad, para_birimi, kupon_orani, vade, ihrac_yili, '
+              'kupon_sikligi, ihracci, eurobond_fiyat(*)')
+          .eq('aktif', true)
+          .order('vade', ascending: true),
+    );
+    final out = <(EurobondSozlesmesi, EurobondFiyati?)>[];
+    for (final r in rows) {
+      final s = eurobondSozlesmesiFromMap(r);
+      if (s == null) continue;
+      final f = r['eurobond_fiyat'];
+      final fm = f is List ? (f.isEmpty ? null : f.first) : f;
+      out.add((s, fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null));
+    }
+    return out;
+  }
+
+  /// [isinler] için katalog + son fiyat (portföydeki eurobondlar).
+  Future<Map<String, (EurobondSozlesmesi, EurobondFiyati?)>> eurobondlar(
+      List<String> isinler) async {
+    if (isinler.isEmpty) return const {};
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.eurobondlar',
+      table: 'eurobond_katalog',
+      op: 'SELECT',
+      request: {'isin': isinler},
+      call: () => _db
+          .from('eurobond_katalog')
+          .select('isin, ad, para_birimi, kupon_orani, vade, ihrac_yili, '
+              'kupon_sikligi, ihracci, eurobond_fiyat(*)')
+          .inFilter('isin', isinler),
+    );
+    final out = <String, (EurobondSozlesmesi, EurobondFiyati?)>{};
+    for (final r in rows) {
+      final s = eurobondSozlesmesiFromMap(r);
+      if (s == null) continue;
+      final f = r['eurobond_fiyat'];
+      final fm = f is List ? (f.isEmpty ? null : f.first) : f;
+      out[s.isin] = (s, fm is Map ? EurobondFiyati.fromMap(Map<String, dynamic>.from(fm)) : null);
+    }
+    return out;
+  }
+
+  /// Grafik noktaları (TEMİZ fiyat) — `eurobond-seri`, paylaşılan önbellekli.
+  /// [aralik]/[donem] Yahoo adlarıdır (kriptoSerisi gibi).
+  Future<List<(int, double)>> eurobondSerisi({
+    required String isin,
+    required String aralik,
+    required String donem,
+  }) async {
+    final res = await _log.log(
+      source: 'SupabaseService.eurobondSerisi',
+      table: 'functions/eurobond-seri',
+      op: 'FUNCTION',
+      request: {'isin': isin, 'aralik': aralik, 'donem': donem},
+      call: () => _db.functions.invoke(
+        'eurobond-seri',
+        body: {'isin': isin, 'aralik': aralik, 'donem': donem},
+      ),
+    );
+    final noktalar = (res.data is Map) ? (res.data as Map)['noktalar'] : null;
+    if (noktalar is! List) return const [];
+    final out = <(int, double)>[];
+    for (final n in noktalar) {
+      if (n is! List || n.length < 2) continue;
+      final t = (n[0] as num?)?.toInt();
+      final v = (n[1] as num?)?.toDouble();
+      if (t != null && v != null && v > 0) out.add((t, v));
+    }
+    return out;
+  }
+
   // ── Edge Functions ────────────────────────────────────────────────────────
+
+  /// Ekstre AI sütun eşleme (0121, `ekstre-esle`). [iskelet] ANONİM
+  /// tanılama iskeletidir (`ekstreIskeleti`); günlüğe yalnız uzunluğu
+  /// yazılır. Yanıt `tablolar` listesi; 2xx dışında `FunctionException`.
+  Future<List<Map<String, dynamic>>> ekstreEsle(String iskelet) async {
+    final FunctionResponse res;
+    try {
+      res = await _log.log(
+        source: 'SupabaseService.ekstreEsle',
+        table: 'functions/ekstre-esle',
+        op: 'FUNCTION',
+        request: {'uzunluk': iskelet.length},
+        timeout: const Duration(seconds: 60),
+        call: () => _db.functions.invoke(
+          'ekstre-esle',
+          body: {'iskelet': iskelet},
+        ),
+      );
+    } on FunctionException catch (e, st) {
+      if (e.status != 429 && e.status != 403) {
+        CrashReporter.report(e, st, reason: 'ekstre_esle_${e.status}');
+      }
+      throw EkstreAiHatasi(kota: e.status == 429, premium: e.status == 403);
+    }
+    final t = (res.data is Map) ? (res.data as Map)['tablolar'] : null;
+    if (t is! List) return const [];
+    return [for (final x in t) if (x is Map) Map<String, dynamic>.from(x)];
+  }
 
   Future<void> sendPartnerInvitePush(String inviteId) async {
     final response = await _log.log(
@@ -1651,4 +2422,14 @@ class SupabaseService {
       return false;
     }
   }
+}
+
+/// Not oyu. `geriAl` oyu kaldırır (NULL); oy hiç gönderilmezse dokunulmaz.
+enum NotGeriBildirimi {
+  yararli(1),
+  yararsiz(-1),
+  geriAl(null);
+
+  const NotGeriBildirimi(this.deger);
+  final int? deger;
 }

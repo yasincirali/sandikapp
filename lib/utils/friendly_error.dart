@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/sandik.dart';
+import '../widgets/sandik_async_button.dart';
+import '../widgets/custom_loading_indicator.dart';
 
 /// Bağlantı hatalarında kullanıcıya gösterilen ortak mesaj.
 ///
@@ -234,6 +236,18 @@ enum SandikDialogKind { error, success, info }
 /// açıklayıcı bir kutu koyar (ör. "bu bir satış değil" uyarısı).
 ///
 /// `true` = onaylandı; kapatma/vazgeçme `false`.
+///
+/// [islem] (isteğe bağlı, 2026-10-08 "tek yükleniyor davranışı"): verilirse
+/// onay düğmesi diyalog kapanmadan ÖNCE bu işi bekler — düğmede
+/// [SandikAsyncTap] göstergesi, ikinci dokunuş yutulur, vazgeç/bariyer/geri
+/// tuşu iş bitene kadar kapalıdır. Eskiden diyalog `true` ile kapanır, istek
+/// (ör. pozisyon silme) ardından hiçbir geri bildirim olmadan sürerdi;
+/// kullanıcı "oldu mu?" diye tekrar dokunuyordu. İş başarıyla biterse diyalog
+/// `true` ile kapanır. Fırlatırsa diyalog AÇIK kalır ve hata [showAppError]
+/// ile gösterilir (kullanıcı yeniden deneyebilir ya da vazgeçer). Kendi hata
+/// mesajını göstermek isteyen çağıran hatayı [islem] içinde yakalar — o
+/// durumda iş "bitti" sayılır ve diyalog kapanır. [islem] verilmeyen eski
+/// çağıranlar için davranış birebir aynıdır.
 Future<bool> showSandikConfirm({
   required BuildContext context,
   required String title,
@@ -243,10 +257,10 @@ Future<bool> showSandikConfirm({
   bool destructive = false,
   Widget? detail,
   bool barrierDismissible = true,
+  Future<void> Function()? islem,
 }) async {
   if (!context.mounted) return false;
   final palette = context.c;
-  final isLight = context.isLight;
   final accent = destructive ? palette.loss : palette.amberText;
   final icon =
       destructive ? Icons.warning_amber_rounded : Icons.help_outline_rounded;
@@ -254,7 +268,7 @@ Future<bool> showSandikConfirm({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierLabel: 'Sandık onay',
-    barrierColor: _barrierColor(isLight),
+    barrierColor: _barrierColor(context),
     transitionDuration: SandikMotion.surface,
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) => _diyalogGecisi(
@@ -266,20 +280,31 @@ Future<bool> showSandikConfirm({
         title: title,
         message: message,
         detail: detail,
-        actions: [
-          _DialogButton(
-            label: cancelLabel,
-            color: palette.text58,
-            filled: false,
-            onTap: () => Navigator.of(ctx).pop(false),
-          ),
-          _DialogButton(
-            label: confirmLabel,
-            color: accent,
-            filled: true,
-            onTap: () => Navigator.of(ctx).pop(true),
-          ),
-        ],
+        actions: islem == null
+            ? [
+                _DialogButton(
+                  label: cancelLabel,
+                  color: palette.text58,
+                  filled: false,
+                  onTap: () => Navigator.of(ctx).pop(false),
+                ),
+                _DialogButton(
+                  label: confirmLabel,
+                  color: accent,
+                  filled: true,
+                  onTap: () => Navigator.of(ctx).pop(true),
+                ),
+              ]
+            : null,
+        asyncActions: islem == null
+            ? null
+            : _OnayIslemEylemleri(
+                cancelLabel: cancelLabel,
+                cancelColor: palette.text58,
+                confirmLabel: confirmLabel,
+                accent: accent,
+                islem: islem,
+              ),
       ),
     ),
   );
@@ -304,7 +329,7 @@ Future<T?> showSandikGecisli<T>({
     context: context,
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: _barrierColor(context.isLight),
+    barrierColor: _barrierColor(context),
     transitionDuration: SandikMotion.surface,
     // `showDialog` gibi güvenli alanda: yatayda çentik diyaloğu kesmesin.
     pageBuilder: (ctx, _, __) => SafeArea(child: Builder(builder: builder)),
@@ -314,8 +339,9 @@ Future<T?> showSandikGecisli<T>({
 }
 
 /// Perde rengi — aydınlıkta hafif, karanlıkta koyu; iki dialog da bunu kullanır.
-Color _barrierColor(bool isLight) =>
-    Colors.black.withValues(alpha: isLight ? 0.32 : 0.55);
+/// Ton düz siyah değil, marka yeşiline çalar (`SandikPalette.golge`).
+Color _barrierColor(BuildContext context) =>
+    context.c.golge.withValues(alpha: context.isLight ? 0.32 : 0.55);
 
 /// Dialog kabuğu — ikon rozeti, başlık, mesaj, isteğe bağlı detay kutusu,
 /// eylem satırı. `_SandikDialog` (tek buton, canlı mesaj) ve onay dialogu
@@ -328,6 +354,7 @@ class _SandikDialogShell extends StatelessWidget {
     required this.message,
     required this.actions,
     this.detail,
+    this.asyncActions,
   });
 
   final Color accent;
@@ -335,7 +362,11 @@ class _SandikDialogShell extends StatelessWidget {
   final String title;
   final String message;
   final Widget? detail;
-  final List<Widget> actions;
+  final List<Widget>? actions;
+
+  /// [actions] yerine: kendi meşgul durumunu taşıyan eylem satırı
+  /// (`showSandikConfirm(islem:)`).
+  final Widget? asyncActions;
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +384,7 @@ class _SandikDialogShell extends StatelessWidget {
               border: Border.all(color: accent.withValues(alpha: 0.30)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black
+                  color: context.c.golge
                       .withValues(alpha: context.isLight ? 0.14 : 0.35),
                   blurRadius: 30,
                   spreadRadius: -6,
@@ -402,19 +433,110 @@ class _SandikDialogShell extends StatelessWidget {
                   detail!,
                 ],
                 const SizedBox(height: 20),
-                Row(
-                  children: [
-                    for (var i = 0; i < actions.length; i++) ...[
-                      if (i > 0) const SizedBox(width: 10),
-                      Expanded(child: actions[i]),
-                    ],
-                  ],
-                ),
+                asyncActions ?? _EylemSatiri(actions: actions ?? const []),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EylemSatiri extends StatelessWidget {
+  const _EylemSatiri({required this.actions});
+
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var i = 0; i < actions.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(child: actions[i]),
+        ],
+      ],
+    );
+  }
+}
+
+/// `showSandikConfirm(islem:)` eylem satırı: onay düğmesi işi bekler.
+///
+/// Meşgulken vazgeç pasif ve [PopScope] geri tuşu/bariyeri tutar — aksi
+/// halde kullanıcı diyalogu kapatır, iş arkada biter ve `pop(true)` YANLIŞ
+/// rotayı (alttaki ekranı) kapatırdı.
+class _OnayIslemEylemleri extends StatefulWidget {
+  const _OnayIslemEylemleri({
+    required this.cancelLabel,
+    required this.cancelColor,
+    required this.confirmLabel,
+    required this.accent,
+    required this.islem,
+  });
+
+  final String cancelLabel;
+  final Color cancelColor;
+  final String confirmLabel;
+  final Color accent;
+  final Future<void> Function() islem;
+
+  @override
+  State<_OnayIslemEylemleri> createState() => _OnayIslemEylemleriState();
+}
+
+class _OnayIslemEylemleriState extends State<_OnayIslemEylemleri> {
+  bool _mesgul = false;
+
+  Future<void> _onayla() async {
+    setState(() => _mesgul = true);
+    try {
+      await widget.islem();
+    } catch (e) {
+      // Hata [SandikAsyncTap]'e iletilmez (dokunma işleyicisinde yakalanmamış
+      // async hata olurdu); diyalog açık kalır, kullanıcı hatayı görür.
+      if (mounted) {
+        setState(() => _mesgul = false);
+        showAppError(context, e);
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _mesgul = false);
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: !_mesgul,
+      child: _EylemSatiri(actions: [
+        Opacity(
+          opacity: _mesgul ? 0.5 : 1,
+          child: _DialogButton(
+            label: widget.cancelLabel,
+            color: widget.cancelColor,
+            filled: false,
+            onTap: _mesgul ? null : () => Navigator.of(context).pop(false),
+          ),
+        ),
+        // Göstergeyi düğme KENDİ kutusunda çizer (`showIndicator: false`):
+        // SandikAsyncTap tüm çocuğu gizler; dolgu ve çerçeve de gidince
+        // "Yine de sil" meşgulken yok olmuş gibi görünüyordu (web ekran
+        // görüntüsü 2026-10-08).
+        SandikAsyncTap(
+          onTap: _onayla,
+          showIndicator: false,
+          child: _DialogButton(
+            label: widget.confirmLabel,
+            color: widget.accent,
+            filled: true,
+            mesgul: _mesgul,
+            // Dokunuşu dıştaki SandikAsyncTap alır.
+            onTap: null,
+          ),
+        ),
+      ]),
     );
   }
 }
@@ -425,12 +547,18 @@ class _DialogButton extends StatelessWidget {
     required this.color,
     required this.filled,
     required this.onTap,
+    this.mesgul = false,
   });
 
   final String label;
   final Color color;
   final bool filled;
-  final VoidCallback onTap;
+
+  /// Kutu (dolgu + çerçeve) yerinde kalır, etiketin yerinde gösterge.
+  final bool mesgul;
+
+  /// `null` → dokunuşu sarmalayan alır (ör. [SandikAsyncTap]).
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -446,17 +574,28 @@ class _DialogButton extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: filled ? color.withValues(alpha: 0.14) : null,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: SandikRadius.mdAll,
               border: Border.all(
                 color: color.withValues(alpha: filled ? 0.45 : 0.25),
               ),
             ),
-            child: Text(
-              label,
-              style: context.t.bodyLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Opacity(
+                  opacity: mesgul ? 0 : 1,
+                  child: Text(
+                    label,
+                    style: context.t.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                  ),
+                ),
+                if (mesgul)
+                  const CustomLoadingIndicator(
+                      size: CustomLoadingIndicator.small),
+              ],
             ),
           ),
         ),
@@ -489,7 +628,6 @@ Future<void> showSandikDialog({
   // Renkler `context`ten okunur: bu dialog light modda da açılıyor ve
   // sabit koyu yüzey + koyu metin okunmaz hale geliyordu.
   final palette = context.c;
-  final bool isLight = context.isLight;
   final Color accent;
   final IconData icon;
   switch (kind) {
@@ -510,7 +648,7 @@ Future<void> showSandikDialog({
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Sandık dialog',
-    barrierColor: _barrierColor(isLight),
+    barrierColor: _barrierColor(context),
     transitionDuration: SandikMotion.surface,
     pageBuilder: (ctx, _, __) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) => _diyalogGecisi(

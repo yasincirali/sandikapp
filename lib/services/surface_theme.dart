@@ -34,8 +34,9 @@ import 'crash_reporter.dart';
 ///      tam olarak bu salınımdır.
 ///
 /// ## Değişmez
-/// Karar YALNIZCA kullanıcının AÇIK tercihiyle değişir: Ayarlar üçlüsü ya
-/// da Profil başlığındaki hızlı geçiş (ikisi de aynı provider'ı yazar).
+/// Karar YALNIZCA kullanıcının AÇIK tercihiyle değişir: Ayarlar üçlüsü
+/// (`themeModeProvider`). Profil başlığındaki hızlı geçiş de aynı provider'ı
+/// yazıyordu; 2026-10-04'te kaldırıldı.
 ///
 /// **"Sistem" artık cihaza düşmüyor** (2026-09-15): tercih belirtilmemişse
 /// yüzeyler KOYU kalır ve cihaz görünümü hiç okunmaz — gerekçe [decide]

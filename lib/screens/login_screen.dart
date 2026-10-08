@@ -3,12 +3,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     show
         Colors,
+        FilledButton,
         Form,
         FormState,
         GestureDetector,
         GlobalKey,
         Icons,
         Material,
+        OutlinedButton,
+        RoundedRectangleBorder,
+        BorderSide,
+        ButtonStyle,
+        Size,
         TextFormField;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_kabugu.dart' show demoyuAc;
@@ -20,7 +26,7 @@ import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
 import 'register_screen.dart';
-import '../widgets/custom_loading_indicator.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/social_sign_in_buttons.dart';
 import '../l10n/l10n.dart';
 
@@ -176,6 +182,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 48),
 
+                    // Sadeleştirme 2 (2026-10-04; bayrak `karsilama_tanitimi`
+                    // 2026-10-05'te kalktı): Apple / Google en üstte. E-posta
+                    // yolu kod doğrulaması ister; sosyal giriş istemez, ilk
+                    // gün için en kısa yol.
+                    const SocialSignInButtons(ustte: true),
+
                     // E-posta
                     TextFormField(
                       controller: _emailCtrl,
@@ -224,7 +236,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         labelText: context.l10n.password,
                         prefixIcon: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Icon(Icons.lock_outline, color: context.c.text36, size: 20),
+                          child: Icon(Icons.lock_outline_rounded, color: context.c.text36, size: 20),
                         ),
                         suffixIcon: SandikTappable(
                           semanticLabel:
@@ -307,7 +319,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.28),
+                                    color: context.c.golge.withValues(alpha: 0.28),
                                     blurRadius: 5,
                                     offset: const Offset(0, 1.5),
                                   ),
@@ -349,50 +361,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Giriş butonu — amber glass
-                    // GestureDetector(opaque) instead of CupertinoButton: on
-                    // iOS release the CupertinoButton was losing the gesture
-                    // arena to the enclosing Scrollable and never firing.
-                    SandikBasma(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _loading ? null : _login,
-                      child: Container(
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: _loading
-                              ? context.c.amberFill.withValues(alpha: 0.45)
-                              : context.c.amberFill.withValues(alpha: 0.92),
-                          borderRadius: BorderRadius.circular(SandikRadius.md),
-                          border: Border.all(
-                            color: context.c.amberFill.withValues(alpha: 0.60),
-                            width: 1.0,
+                    // Giriş butonu — amber glass.
+                    //
+                    // Tek yükleniyor davranışı (2026-10-08): düğme
+                    // [SandikAsyncButton]; cam görünüm `style` + dış gölge
+                    // ile birebir korunur (meşgul/pasif = 0.45 dolgu, eski
+                    // `_loading` rengiyle aynı). Eski not: CupertinoButton
+                    // iOS release'te jest yarışını kaydırmaya kaptırıyordu;
+                    // FilledButton düz dokunma tanıyıcısı kullanır, sorun yok.
+                    //
+                    // `_loading` KALIR: klavyedeki "Bitti" de girişi
+                    // tetikler (düğmeden geçmez); `mesgul:` ile o yolda da
+                    // aynı gösterge bileşenden çizilir.
+                    _AmberCamGolge(
+                      child: SandikAsyncButton(
+                        onPressed: _login,
+                        mesgul: _loading,
+                        style: _amberCamStili(context),
+                        child: Text(
+                          context.l10n.signIn,
+                          style: context.t.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: context.c.onAmber,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.c.amberFill.withValues(alpha: 0.30),
-                              blurRadius: 20,
-                              spreadRadius: -4,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
                         ),
-                        alignment: Alignment.center,
-                        child: _loading
-                            ? const CustomLoadingIndicator(size: 22)
-                            : Text(
-                                context.l10n.signIn,
-                                style: context.t.bodyLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: context.c.onAmber,
-                                ),
-                              ),
                       ),
                     ),
                     const SizedBox(height: 14),
 
-                    // Apple / Google — düğmeler platform ve yapılandırmaya
-                    // göre çizilir; yoksa bu satır boş kalır.
-                    const SocialSignInButtons(),
+                    // Apple / Google formun ÜSTÜNDE (yukarıda); 2026-10-05'e
+                    // kadar bayrak kapalıyken burada, "Kayıt ol"un üstündeydi.
 
                     // Kayıt ol
                     CupertinoButton(
@@ -409,12 +407,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // görmek için. İkincil: kayıt bağlantısının altında,
                     // sönük renkte; birincil yol hâlâ giriş/kayıt. Bayrak
                     // `demo_mode_enabled` kapalıyken hiç çizilmez.
+                    //
+                    // Sadeleştirme (2026-10-04; bayrak `karsilama_tanitimi`
+                    // 2026-10-05'te kalktı): demo hesap açmadan değeri
+                    // görmenin tek yolu; sönük metin bağlantısı yerine
+                    // çerçeveli tam genişlik düğme.
                     if (DemoModu.girisDugmesiAcik())
-                      CupertinoButton(
-                        onPressed: () => demoyuAc(context),
-                        child: Text(
-                          context.l10n.demoTryButton,
-                          style: context.t.bodyLarge?.copyWith(color: context.c.text58),
+                      Padding(
+                        padding: const EdgeInsets.only(top: SandikSpace.xs),
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: context.c.amberText,
+                            side: BorderSide(color: context.c.hairline),
+                            minimumSize: const Size.fromHeight(52),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: SandikRadius.mdAll),
+                          ),
+                          onPressed: () => demoyuAc(context),
+                          child: Text(
+                            context.l10n.welcomeTryDemo,
+                            style: context.t.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: context.c.amberText),
+                          ),
                         ),
                       ),
                     const SizedBox(height: 32),
@@ -429,4 +444,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
+}
+
+/// Giriş/kayıt "amber cam" düğmesinin görünümü — eski `Container`
+/// süslemesinin `ButtonStyle` karşılığı (dolgu 0.92, pasif/meşgul 0.45,
+/// 0.60 kenar). Gölge `ButtonStyle`'da yok; [_AmberCamGolge] çizer.
+ButtonStyle _amberCamStili(BuildContext context) => FilledButton.styleFrom(
+      backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
+      foregroundColor: context.c.onAmber,
+      disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.45),
+      disabledForegroundColor: context.c.onAmber,
+      textStyle: context.t.bodyLarge,
+      side: BorderSide(color: context.c.amberFill.withValues(alpha: 0.60)),
+      shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+    );
+
+/// Eski `Container`'ın `BoxShadow`'u, düğmenin ARKASINDA aynen.
+class _AmberCamGolge extends StatelessWidget {
+  const _AmberCamGolge({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: SandikRadius.mdAll,
+          boxShadow: [
+            BoxShadow(
+              color: context.c.amberFill.withValues(alpha: 0.30),
+              blurRadius: 20,
+              spreadRadius: -4,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: child,
+      );
 }

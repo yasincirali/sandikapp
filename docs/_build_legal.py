@@ -1,19 +1,104 @@
 """
-Legal + landing HTML builder for GitHub Pages (docs/).
+Legal HTML builder for GitHub Pages (docs/) + uygulama içi yasal belge kaynağı.
 
-Reads Markdown files from legal/ and store_listing/, wraps them in the shared
-Sandık-branded HTML layout, and writes them into docs/ at the URL paths
-referenced by app/legal docs.
+Reads Markdown files from legal/, wraps them in the shared Sandık-branded HTML
+layout, and writes them into docs/ at the URL paths referenced by app/legal
+docs. Ayrıca uygulamanın gösterdiği belgelerin kanonik metnini
+`lib/config/yasal_belge_kaynaklari.g.dart`'a yazar.
 
 Run from repo root:
     python docs/_build_legal.py
+
+## Tek kaynak (kullanıcı kararı 2026-10-04: "Webdekiyle de her zaman eşleyelim")
+`legal/tr/*.md` (ve çevirisi `legal/en/*.md`) hem web'in hem uygulamanın tek
+kaynağıdır. Bu betik İKİ çıktıyı birden üretir:
+  1. docs/**/index.html — yer tutucular web'in ifadesiyle doldurulur;
+  2. lib/config/yasal_belge_kaynaklari.g.dart — uygulamadaki belgelerin
+     ŞABLON hâli (yer tutucular doldurulmadan). Uygulama ülkeyi bağlı
+     sunucudan doldurur; veritabanındaki `govde_hash` bu şablonun sha256'sıdır.
+Her HTML başlığına kaynak md'nin hash'i (`sandik-kaynak-sha256`) ve sayfa
+gövdesinin hash'i (`sandik-govde-sha256`) gömülür. `test/yasal_web_esleme_test`
+ikisini de doğrular: md değişip betik koşulmazsa ya da HTML elle düzenlenirse
+CI kırılır. Uygulama belgelerinde `sandik-kaynak-sha256` == veritabanındaki
+`govde_hash`: web sayfası ile onaylanan metin aynı kimliği taşır.
+
+## Kanonik metin
+BOM atılır, satır sonu LF, dosya sonundaki boşluk kırpılır. Dart tarafındaki
+eşi `YasalBelge.kanonik` (lib/services/yasal_belge.dart) — biri değişirse
+öteki de; değişmesi BÜTÜN hash'leri değiştirir (yeni sürüm demektir).
+BOM'un atılması web'deki bir hatayı da kapattı (2026-10-04): BOM'lu md'lerde
+ilk satır başlık olarak tanınmıyor, sayfa "# Kullanım Koşulları — sandık"
+diye düz paragrafla başlıyordu.
 """
+import hashlib
+import re
 from pathlib import Path
+
 import markdown
 
 ROOT = Path(__file__).parent.parent
 DOCS = ROOT / "docs"
 LEGAL = ROOT / "legal"
+DART_CIKTI = ROOT / "lib" / "config" / "yasal_belge_kaynaklari.g.dart"
+
+# Uygulamanın gösterdiği belgeler — `YasalBelge` (lib/services/yasal_belge.dart)
+# ile aynı liste; test ikisini karşılaştırır. İngilizce belgeler uygulamada
+# gösterilmez (gerekçe: yasal_metin_katalogu.dart → "İngilizce").
+UYGULAMA_BELGELERI = [
+    "legal/tr/TERMS_OF_SERVICE.md",
+    "legal/tr/PRIVACY_POLICY.md",
+    "legal/tr/KVKK_AYDINLATMA_METNI.md",
+    "legal/tr/ACIK_RIZA_METNI.md",
+]
+
+# Web'de yer tutucuların değeri. Uygulama aynı yer tutucuyu bağlı sunucunun
+# ülkesiyle doldurur (`LegalDocs.yerTutucuDegerleri`). Web hangi sunucuya
+# bağlı olunduğunu bilemez → iki sunucunun gerçek durumunu yazar (Tokyo
+# canlıda, Frankfurt'a taşınma sürecinde). Taşınma bitince YALNIZ burası
+# değişir; md şablonu ve veritabanındaki metin sürümü aynı kalır.
+YER_TUTUCULAR = {
+    "tr": {
+        "SUPABASE_ULKE": "Japonya (AWS Tokyo); Almanya'ya (AWS Frankfurt, AB) taşınma sürecinde",
+        "SUPABASE_ULKEDE": "Japonya'da (AWS Tokyo; Almanya'ya — AWS Frankfurt, AB — taşınma sürecinde)",
+    },
+    "en": {
+        "SUPABASE_ULKE": "Japan (AWS Tokyo); migrating to Germany (AWS Frankfurt, EU)",
+        "SUPABASE_ULKEDE": "in Japan (AWS Tokyo; migrating to Germany — AWS Frankfurt, EU)",
+    },
+}
+_YER_TUTUCU = re.compile(r"\{SUPABASE_[A-Z_]+\}")
+
+GOVDE_BASLA = "<!-- sandik-govde:basla -->"
+GOVDE_BITTI = "<!-- sandik-govde:bitti -->"
+
+
+def kanonik(md_text: str) -> str:
+    """BOM yok, LF, sondaki boşluk kırpılmış — Dart `YasalBelge.kanonik` eşi."""
+    return md_text.lstrip("﻿").replace("\r\n", "\n").replace("\r", "\n").rstrip()
+
+
+def sha256(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+
+def doldur(sablon: str, lang: str, kaynak: str) -> str:
+    degerler = YER_TUTUCULAR.get(lang, {})
+    for ad, deger in degerler.items():
+        sablon = sablon.replace("{" + ad + "}", deger)
+    kalan = _YER_TUTUCU.findall(sablon)
+    if kalan:
+        raise SystemExit(f"{kaynak}: doldurulmamış yer tutucu {sorted(set(kalan))} "
+                         f"(YER_TUTUCULAR['{lang}']'a ekle)")
+    return sablon
+
+
+def yaz(yol: Path, metin: str) -> None:
+    # newline="\n": Windows'ta write_text CRLF yazardı; gövde hash'i LF
+    # üzerinden alınır (test de CRLF'i LF'e çevirip okur).
+    yol.parent.mkdir(parents=True, exist_ok=True)
+    with open(yol, "w", encoding="utf-8", newline="\n") as f:
+        f.write(metin)
+
 
 # Layout ─ tek CSS, marka renkleri (Sandık amber/gold/dark), mobile-first.
 LAYOUT = """<!DOCTYPE html>
@@ -23,6 +108,9 @@ LAYOUT = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title} — sandık</title>
 <meta name="description" content="{desc}">
+<meta name="sandik-kaynak" content="{kaynak}">
+<meta name="sandik-kaynak-sha256" content="{kaynak_hash}">
+<meta name="sandik-govde-sha256" content="{govde_hash}">
 <link rel="icon" href="/sandikapp/favicon.svg" type="image/svg+xml">
 <style>
 :root {{
@@ -78,7 +166,9 @@ button:hover {{ opacity: 0.9; }}
   <div class="logo">S</div>
   <div class="brand">sandık<small>{subtitle}</small></div>
 </header>
+""" + GOVDE_BASLA + """
 {body}
+""" + GOVDE_BITTI + """
 <footer>
   sandık — <a href="/sandikapp/">Ana Sayfa</a> · <a href="/sandikapp/privacy">Gizlilik</a> · <a href="/sandikapp/terms">Kullanım</a> · <a href="/sandikapp/data-deletion">Hesap Silme</a>
 </footer>
@@ -87,15 +177,42 @@ button:hover {{ opacity: 0.9; }}
 </html>
 """
 
+
 def build(md_path: Path, out_path: Path, title: str, subtitle: str, desc: str, lang: str = "tr"):
-    src = md_path.read_text(encoding="utf-8")
-    html_body = markdown.markdown(src, extensions=["tables", "fenced_code"])
+    kaynak = md_path.relative_to(ROOT).as_posix()
+    sablon = kanonik(md_path.read_text(encoding="utf-8"))
+    html_body = markdown.markdown(doldur(sablon, lang, kaynak), extensions=["tables", "fenced_code"])
     html = LAYOUT.format(
         title=title, subtitle=subtitle, desc=desc, body=html_body, lang=lang,
+        kaynak=kaynak, kaynak_hash=sha256(sablon), govde_hash=sha256(html_body),
     )
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(html, encoding="utf-8")
-    print(f"  -> {out_path.relative_to(ROOT)}")
+    yaz(out_path, html)
+    print(f"  -> {out_path.relative_to(ROOT).as_posix()}")
+
+
+def dart_yaz():
+    """Uygulama belgelerinin şablon hâli → const Dart (elle düzenlenmez)."""
+    satirlar = [
+        "// ÜRETİLDİ — elle düzenleme. Kaynak: legal/tr/*.md; üreten:",
+        "// `python docs/_build_legal.py`. Kayma kilidi: test/yasal_web_esleme_test.dart.",
+        "//",
+        "// Değerler md'nin KANONİK hâlidir (BOM yok, LF, sondaki boşluk kırpılmış;",
+        "// yer tutucular doldurulmamış). Veritabanındaki `govde` ve `govde_hash`",
+        "// bu metinlerdir (`YasalMetinKatalogu`).",
+        "",
+        "/// Uygulamada gösterilen yasal belgelerin kanonik md metni — anahtar",
+        "/// depo köküne göre kaynak yolu.",
+        "const yasalBelgeKaynaklari = <String, String>{",
+    ]
+    for yol in UYGULAMA_BELGELERI:
+        metin = kanonik((ROOT / yol).read_text(encoding="utf-8"))
+        if "'''" in metin or metin.endswith("'"):
+            raise SystemExit(f"{yol}: ''' içeremez / ' ile bitemez (Dart ham dizgisi)")
+        satirlar.append(f"  '{yol}': r'''{metin}''',")
+    satirlar.append("};")
+    yaz(DART_CIKTI, "\n".join(satirlar) + "\n")
+    print(f"  -> {DART_CIKTI.relative_to(ROOT).as_posix()}")
+
 
 # ── Legal HTML pages ────────────────────────────────────────────────────────
 pages = [
@@ -112,113 +229,19 @@ pages = [
     (LEGAL / "DATA_DELETION_REQUEST_FORM.md", DOCS / "data-request/index.html","Data Access Request",   "Data Request",             "Data access/deletion request under GDPR / KVKK.", "en"),
 ]
 
-print("Building legal pages...")
-for src, out, title, subtitle, desc, lang in pages:
-    build(src, out, title, subtitle, desc, lang)
+if __name__ == "__main__":
+    print("Building legal pages...")
+    for src, out, title, subtitle, desc, lang in pages:
+        build(src, out, title, subtitle, desc, lang)
+    print("Writing app legal sources...")
+    dart_yaz()
 
-# ── Landing page ────────────────────────────────────────────────────────────
-LANDING = """<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>sandık — Portföy Takibi</title>
-<meta name="description" content="sandık, tüm yatırımlarını tek ekranda takip et. Hisse, fon, döviz, altın, emtia.">
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
-<style>
-:root {
-  --bg: #0A1E15;
-  --surface: #10281E;
-  --surface-2: #1A3D2E;
-  --border: rgba(255,255,255,0.06);
-  --text: rgba(255,255,255,0.90);
-  --text-58: rgba(255,255,255,0.58);
-  --amber: #F5A623;
-  --gold: #F5C842;
-  --gain: #6BB77B;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'DM Sans', sans-serif; line-height: 1.6; min-height: 100vh; }
-.hero { max-width: 960px; margin: 0 auto; padding: 80px 24px 60px; text-align: center; }
-.logo-hero { width: 96px; height: 96px; background: linear-gradient(135deg, var(--gold), var(--amber)); border-radius: 24px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; color: #0A1E15; font-size: 52px; margin-bottom: 24px; box-shadow: 0 12px 40px rgba(245,166,35,0.25); }
-h1 { font-size: 48px; font-weight: 800; letter-spacing: -1.5px; margin: 0 0 12px; }
-.tagline { font-size: 20px; color: var(--text-58); margin-bottom: 40px; max-width: 560px; margin-left: auto; margin-right: auto; }
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin: 40px 0; }
-.feature { background: var(--surface); padding: 24px 20px; border-radius: 16px; border: 1px solid var(--border); text-align: left; }
-.feature h3 { color: var(--gold); font-size: 16px; margin-bottom: 8px; }
-.feature p { font-size: 14px; color: var(--text-58); }
-.legal-nav { margin-top: 60px; padding: 32px; background: var(--surface); border-radius: 16px; border: 1px solid var(--border); text-align: left; max-width: 640px; margin-left: auto; margin-right: auto; }
-.legal-nav h2 { color: var(--gold); font-size: 16px; margin-bottom: 16px; font-weight: 700; }
-.legal-nav ul { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
-.legal-nav a { color: var(--text); text-decoration: none; font-size: 14px; padding: 6px 0; display: block; border-bottom: 1px solid var(--border); }
-.legal-nav a:hover { color: var(--amber); }
-footer { text-align: center; padding: 40px 20px; font-size: 12px; color: rgba(255,255,255,0.36); }
-@media (max-width: 600px) {
-  h1 { font-size: 32px; }
-  .tagline { font-size: 16px; }
-  .legal-nav ul { grid-template-columns: 1fr; }
-}
-</style>
-</head>
-<body>
-<div class="hero">
-  <div class="logo-hero">S</div>
-  <h1>sandık</h1>
-  <p class="tagline">Hisse, fon, döviz, altın ve emtia varlıklarını tek ekranda takip et. TradingView tarzı profesyonel grafik. KVKK ve GDPR uyumlu.</p>
+    # ── Landing page + favicon: BU BETİK YAZMAZ (2026-10-01) ────────────────
+    # `docs/index.html` ve `docs/favicon.svg` elle bakılır. Eskiden betik ikisini
+    # de kendi içindeki şablondan yeniden basıyordu; şablon eskimişti (akıllı
+    # bant, mağaza düğmesi, güncel özellikler yoktu) ve betiği koşan herkes ana
+    # sayfayı sessizce geriletiyordu (TECHNICAL_DEBT, KAPANDI). Favicon da
+    # gerçek logo yerine "S" harfiydi; artık `assets/images/sandik_logo.svg`'den.
 
-  <div class="features">
-    <div class="feature">
-      <h3>📊 Profesyonel Grafik</h3>
-      <p>Pinch zoom, crosshair, dinamik zaman aralıkları. Portföy performansın anlık ve tarihsel.</p>
-    </div>
-    <div class="feature">
-      <h3>👥 Ortak Paylaşımı</h3>
-      <p>Aile veya iş ortaklarınla portföyünü güvenli paylaş. İstediğin zaman sonlandır.</p>
-    </div>
-    <div class="feature">
-      <h3>🏆 Yarış (Opsiyonel)</h3>
-      <p>Ortaklarınla getiri sıralaması + anonim genel percentile. Sadece opt-in ile aktif.</p>
-    </div>
-    <div class="feature">
-      <h3>🔒 Gizlilik</h3>
-      <p>KVKK + GDPR uyumlu. Uçtan uca şifreli. Hesabını istediğin zaman sil.</p>
-    </div>
-  </div>
-
-  <div class="legal-nav">
-    <h2>Hukuki & Destek</h2>
-    <ul>
-      <li><a href="privacy/">Gizlilik Politikası (TR)</a></li>
-      <li><a href="privacy-en/">Privacy Policy (EN)</a></li>
-      <li><a href="terms/">Kullanım Koşulları</a></li>
-      <li><a href="terms-en/">Terms of Service</a></li>
-      <li><a href="legal/kvkk/">KVKK Aydınlatma</a></li>
-      <li><a href="legal/gdpr/">GDPR Notice</a></li>
-      <li><a href="legal/acik-riza/">Açık Rıza Metni</a></li>
-      <li><a href="legal/depolama/">Depolama Bilgisi</a></li>
-      <li><a href="data-deletion/">Hesap Silme (TR)</a></li>
-      <li><a href="data-request/">Data Request (EN)</a></li>
-    </ul>
-  </div>
-</div>
-
-<footer>
-  © sandık · <a href="mailto:sandikapp.destek@gmail.com" style="color:inherit">sandikapp.destek@gmail.com</a>
-</footer>
-</body>
-</html>
-"""
-
-(DOCS / "index.html").write_text(LANDING, encoding="utf-8")
-print(f"  -> docs/index.html")
-
-# ── Favicon (basic S with amber bg) ────────────────────────────────────────
-FAVICON = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<rect width="64" height="64" rx="12" fill="#F5A623"/>
-<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="40" font-weight="900" fill="#0A1E15">S</text>
-</svg>"""
-(DOCS / "favicon.svg").write_text(FAVICON, encoding="utf-8")
-print(f"  -> docs/favicon.svg")
-
-print("\nDone. To serve locally: python -m http.server 8000 --directory docs")
-print("GitHub Pages settings: Source = main branch / docs folder")
+    print("\nDone. To serve locally: python -m http.server 8000 --directory docs")
+    print("GitHub Pages settings: Source = main branch / docs folder")

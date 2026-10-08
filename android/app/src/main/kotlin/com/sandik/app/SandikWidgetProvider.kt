@@ -130,6 +130,12 @@ class SandikWidgetProvider : AppWidgetProvider() {
                 val updatedAt = data.getString("sandik_updated_at", "") ?: ""
                 val date = data.getString("sandik_date", "") ?: ""
                 val marketOpen = data.getBoolean("sandik_market_open", false)
+                // "Piyasa kapalı" yalnızca portföy TAMAMEN borsa ürünüyse
+                // (kullanıcı kararı 2026-10-01): altın/döviz/kripto hafta
+                // sonu ve gece de işler. Anahtar yoksa `true` — eski
+                // sürümün yazdığı veride o güne kadarki davranış.
+                val yalnizBorsa = data.getBoolean("sandik_yalniz_borsa", true)
+                val canli = marketOpen || !yalnizBorsa
 
                 views.setTextViewText(R.id.widget_total, total)
                 views.setTextViewText(R.id.widget_change, change)
@@ -140,7 +146,7 @@ class SandikWidgetProvider : AppWidgetProvider() {
                 // rakamın neden değişmediğini bilmeli, aksi halde donuk
                 // sayı "uygulama bozuk" olarak okunur.
                 val durum = context.getString(
-                    if (marketOpen) R.string.widget_live
+                    if (canli) R.string.widget_live
                     else R.string.widget_market_closed
                 )
                 views.setTextViewText(R.id.widget_updated, "$durum • $updatedAt")
@@ -151,7 +157,7 @@ class SandikWidgetProvider : AppWidgetProvider() {
                     R.id.widget_live_dot,
                     "setColorFilter",
                     context.getColor(
-                        if (marketOpen) palette.gain else palette.textMuted
+                        if (canli) palette.gain else palette.textMuted
                     )
                 )
 

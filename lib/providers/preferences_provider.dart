@@ -10,11 +10,13 @@ import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
+import 'premium_provider.dart';
 import '../config/pref_keys.dart';
 import '../demo/demo_modu.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../services/biometric_lock_service.dart';
 import '../services/crash_reporter.dart';
+import '../theme/yazi_boyutu.dart';
 
 /// Kullanıcı tercihleri (tema, bildirim, vb.) için merkezi state.
 /// SharedPreferences ile kalıcı.
@@ -325,9 +327,23 @@ final kaydirmaIpucuGosterildiProvider = NotifierProvider<_BoolPrefNotifier, bool
 final baseCurrencyIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.baseCurrency, 0, perUser: true));
 
+/// Uygulama içi yazı boyutu kademesi (`YaziBoyutu.index`). Varsayılan 1 =
+/// "Normal": ayarı hiç açmamış kullanıcı için hiçbir şey değişmez. Kişiye
+/// özel değil — aynı telefonda hesap değişince punto zıplamasın.
+final yaziBoyutuIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.yaziBoyutu, YaziBoyutu.normal.index));
+
+final yaziBoyutuProvider = Provider<YaziBoyutu>(
+    (ref) => YaziBoyutu.indekstenOku(ref.watch(yaziBoyutuIndexProvider)));
+
 /// Yatırımcı seviyesi (Ayarlar › Görünüm) — `YatirimciSeviyesi.index`.
 /// Varsayılan Orta = bugünkü görünüm; tercih sorulmaz, dayatılmaz (bkz.
 /// `models/yatirimci_seviyesi.dart`). Kişiye özel.
+/// Girişten önceki tanıtım ekranı görüldü mü (cihaz tercihi). Bkz.
+/// `PrefKeys.karsilamaGoruldu`, `KarsilamaScreen`.
+final karsilamaGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.karsilamaGoruldu, false));
+
 final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(
         PrefKeys.investorLevel, YatirimciSeviyesi.varsayilan.index,
@@ -335,6 +351,23 @@ final investorLevelIndexProvider = NotifierProvider<_IntPrefNotifier, int>(
 
 final yatirimciSeviyesiProvider = Provider<YatirimciSeviyesi>(
     (ref) => YatirimciSeviyesi.fromIndex(ref.watch(investorLevelIndexProvider)));
+
+/// Seviyenin görünürlük tablosu (sade Başlangıç dahil). Yeni kapılar
+/// (grafik araçları, derinlik) bunu okur.
+final seviyeGorunurlukProvider = Provider<SeviyeGorunurluk>(
+    (ref) => seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)));
+
+// NOT: `zilGorunurProvider` 2026-10-05'te kaldırıldı. Zil yalnız
+// sinyallerin değil fiyat alarmları ve ortak davetleri gibi genel
+// bildirimlerin de TEK gelen kutusu; Başlangıç seviyesi zili tümden
+// gizlediği için o kullanıcı alarm ve davetlerini de göremiyordu
+// (sadeleştirme değerlendirmesi 2026-10-04). `seviye_anketi` ile zil her
+// seviyede görünür oldu; bayrak kalkınca sağlayıcı hep `true` dönüyordu.
+// Başlangıç'ta yalnızca sinyal satırları süzülür ↓.
+
+/// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır).
+final zilSinyalleriGosterProvider = Provider<bool>((ref) =>
+    seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller);
 
 /// Biyometrik / cihaz kilidi — uygulama öne dönünce ve soğuk açılışta
 /// kimlik doğrulaması ister. Varsayılan KAPALI; açarken cihaz destekliyor mu
@@ -460,14 +493,28 @@ final liveActivityEndProvider = NotifierProvider<_IntPrefNotifier, int>(
 final liveActivityWeekendProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kLiveActivityWeekendKey, true, perUser: true));
 
-// ─── Premium (in-app purchase stub) ───────────────────────────────────────────
-// Şimdilik SharedPreferences ile local toggle. Gerçek IAP entegrasyonu
-// yapılana kadar test amaçlı Ayarlar ekranından açılıp kapatılabilir.
+// ─── Premium ─────────────────────────────────────────────────────────────────
+// `premiumUnlockedProvider` cihazdaki GELİŞTİRİCİ anahtarıdır (SharedPreferences).
+// 2026-10-08'e kadar Sinyal Ayarları'ndaki "Aç" düğmesi ve sahte satın alma
+// onu açıyordu: paywall açıkken herkes tek dokunuşla ödemesiz Premium
+// alırdı. Artık yalnız debug build'de sayılır ([gelistiriciAnahtariSayilirProvider]);
+// gerçek hak mağazadan ([magazaPremiumProvider]) ve sunucudan gelir.
 
 const _kPremiumUnlockedKey = PrefKeys.premiumUnlocked;
 
 final premiumUnlockedProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kPremiumUnlockedKey, false));
+
+/// Geliştirici anahtarı sayılır mı. Release'te (TestFlight dahil) HAYIR:
+/// orada Premium'u görmek için sandbox satın alma ya da admin hesabı
+/// (`push_admins`) kullanılır. Provider olması testin release davranışını
+/// sınayabilmesi için.
+final gelistiriciAnahtariSayilirProvider = Provider<bool>((_) => kDebugMode);
+
+/// RevenueCat `CustomerInfo`'sundaki `premium` hakkı (SatinAlmaService
+/// `hakDegisti` ile yazar). Satın alma anı ile webhook'un sunucuya yazması
+/// arasındaki boşluğu kapatır; kalıcı kaynak yine sunucu hakkıdır.
+final magazaPremiumProvider = StateProvider<bool>((_) => false);
 
 /// Kullanıcının göreceği tüm üyelik/ödeme UI'ları buna bağlı. false ise
 /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
@@ -486,24 +533,80 @@ final paywallVisibleProvider = Provider<bool>((_) {
 /// edilmediği için bu değerin false olması bir premium özelliği görünür
 /// kılmaz, yalnızca "premium açıldı" state'ini uygulamaz.
 ///
-/// Faz 1'de `premiumUnlockedProvider` RevenueCat CustomerInfo'ya bağlanacak.
-/// Bu provider'ı kullanan kodun değişmesi gerekmez.
+/// Kaynaklar: mağaza (RevenueCat, anlık), sunucu hakkı (abonelik/hediye/
+/// manuel), admin, ve yalnız debug'da geliştirici anahtarı.
 final effectivePremiumProvider = Provider<bool>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return false;
-  final unlocked = ref.watch(premiumUnlockedProvider);
-  return unlocked && RemoteConfigService.instance.premiumEnabled;
+  final unlocked = ref.watch(gelistiriciAnahtariSayilirProvider) &&
+      ref.watch(premiumUnlockedProvider);
+  final magaza = ref.watch(magazaPremiumProvider);
+  // Sunucu hakkı (0116; RevenueCat aboneliği, erken kullanıcı hediyesi,
+  // manuel). Cihaz anahtarı test/geliştirici yolu olarak kalır.
+  final sunucu = ref.watch(gecerliPremiumHakkiProvider) != null;
+  // Admin hesabı Premium alanlarını kilitsiz görür (yasin, 2026-10-05).
+  // Sunucuda aynı karar `premium_mi_kullanici` içinde (0123, push_admins).
+  final admin = ref.watch(isPushAdminProvider).valueOrNull == true;
+  return (unlocked || magaza || sunucu || admin) &&
+      RemoteConfigService.instance.premiumEnabled;
 });
 
 /// Free tier varlık limiti — Remote Config'ten dinamik.
 /// Paywall kapalıyken sınırsız (limit devreye girmez).
 /// Premium ise limit yoktur (int.max ile temsil edilir).
+/// Premium göstergeler (ADX, Williams %R, CCI) HESAPLANSIN mı.
+///
+/// Eskiden hesap yalnız cihazdaki geliştirici anahtarına bakıyordu: gerçek
+/// abone (sunucu hakkı) satın aldığı göstergeyi alamazdı. Bayrak kapalıyken
+/// eski davranış birebir: hesaplanmaz (anahtar canlıda kimsede açık değildi).
+final premiumGostergelerHesaplanirProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  return ref.watch(effectivePremiumProvider);
+});
+
 final assetLimitProvider = Provider<int>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return 1 << 30;
   final premium = ref.watch(effectivePremiumProvider);
   if (premium) return 1 << 30; // pratik olarak sınırsız
   return RemoteConfigService.instance.freeAssetLimit;
+});
+
+/// Tür başına günlük sinyal bildirimi sınırı — `assetLimitProvider` kalıbı.
+/// Paywall kapalıyken ya da Premium'da pratikte sınırsız: seçilen sıklık
+/// olduğu gibi kalır. Ekranda gösterilen zamanlama `slotaSigdir` ile
+/// hesaplanır; sunucu aynı kuralı `SINYAL_UCRETSIZ_SLOT` ile uygular.
+final sinyalSlotSiniriProvider = Provider<int>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return 1 << 30;
+  if (ref.watch(effectivePremiumProvider)) return 1 << 30;
+  final v = RemoteConfigService.instance.freeSignalSlotsPerDay;
+  return v <= 0 ? 1 << 30 : v;
+});
+
+/// Karşılaştır grafiğindeki en fazla seri. Beş, paletin sınırıdır ve
+/// Premium'un değeridir; ücretsizde `free_compare_series` (varsayılan 2 =
+/// kendi serine ek bir kıyas). Paywall kapalıyken herkese 5, eskisi gibi.
+const kKarsilastirmaEnFazla = 5;
+final karsilastirmaSeriSiniriProvider = Provider<int>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return kKarsilastirmaEnFazla;
+  if (ref.watch(effectivePremiumProvider)) return kKarsilastirmaEnFazla;
+  return RemoteConfigService.instance.freeCompareSeries
+      .clamp(1, kKarsilastirmaEnFazla);
+});
+
+/// Ücretsiz sürümde ortak sınırı dolu mu (yeni ortak eklemek Premium ister).
+///
+/// Paywall kapalıyken ya da Premium'da hep false. Ortak listesi henüz
+/// yüklenmediyse false: bilinmeyen sayı yüzünden birini durdurmayız.
+/// Sınır yalnız istemcide; sunucu ortaklık sayısını denetlemez (eski
+/// sürümler paywall'u zaten göstermiyor, satın alınacak şey yok).
+final ortakSiniriDoluProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  if (ref.watch(effectivePremiumProvider)) return false;
+  final ortaklar = ref.watch(partnersProvider).valueOrNull;
+  if (ortaklar == null) return false;
+  final sinir = RemoteConfigService.instance.freePartnerLimit;
+  return sinir > 0 && ortaklar.length >= sinir;
 });
 
 /// Free tier fiyat alarmı limiti — `assetLimitProvider` ile AYNI kalıp.
@@ -529,10 +632,17 @@ final priceAlertLimitProvider = Provider<int>((ref) {
 /// satış kapısı değil — bu yüzden çıkış yolu paywall değil "birini çıkar"
 /// (`add_watchlist_screen`). Premium yine sınırsız; değer Remote Config'ten
 /// (`free_watchlist_limit`, varsayılan 7) yayın sonrası değiştirilebilir.
+///
+/// **Paywall açıkken ücretsiz sınır 3 (yasin, 2026-10-08: "takip listesini
+/// 3 yapalım").** Ayrı anahtar (`paywall_watchlist_limit`): paywall kapalı
+/// canlı kullanıcılar 7'de kalır; listesi 3'ü aşan kimsenin takibi silinmez,
+/// yalnız yeni ekleme Premium ister.
 final watchlistLimitProvider = Provider<int>((ref) {
   final premium = ref.watch(effectivePremiumProvider);
   if (premium) return 1 << 30;
-  return RemoteConfigService.instance.freeWatchlistLimit;
+  final rc = RemoteConfigService.instance;
+  if (ref.watch(paywallVisibleProvider)) return rc.paywallWatchlistLimit;
+  return rc.freeWatchlistLimit;
 });
 
 // ─── Per-category göstergeler ─────────────────────────────────────────────────
@@ -601,10 +711,15 @@ class IndicatorPrefsNotifier extends Notifier<Map<AssetType, Set<String>>> {
     await _syncSignalPreferenceWith(ref.read, type);
   }
 
-  Future<void> setForType(AssetType type, Set<String> ids) async {
+  /// [senkron] false: yalnız yerel yazılır. Ön ayar (`sinyalOnAyariUygula`)
+  /// eşik + gösterge + sıklığı art arda yazar; her biri ayrı upsert atarsa
+  /// 8 tür × 4 yazma = 32 istek olurdu. Orada sunucuya tür başına BİR kez,
+  /// en sonda yazılır.
+  Future<void> setForType(AssetType type, Set<String> ids,
+      {bool senkron = true}) async {
     state = {...state, type: ids};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Sunucudan gelen değeri yerele uygular.
@@ -740,11 +855,13 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
     } catch (_) {}
   }
 
-  Future<void> setForType(AssetType type, int threshold) async {
+  /// [senkron]: bkz. `IndicatorPrefsNotifier.setForType`.
+  Future<void> setForType(AssetType type, int threshold,
+      {bool senkron = true}) async {
     if (!kSignalThresholdOptions.contains(threshold)) return;
     state = {...state, type: threshold};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Sunucudan gelen eşiği yerele uygular (geri yazmaz).
@@ -853,7 +970,10 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   /// mevcut saat sayısı uymuyorsa makul bir varsayılan atanır — kullanıcı
   /// "günde 2"den "günde 1"e geçince elde 2 saat kalması sunucuda
   /// tutarsızlık yaratırdı.
-  Future<void> setFrequency(AssetType type, SignalFrequency freq) async {
+  ///
+  /// [senkron]: bkz. `IndicatorPrefsNotifier.setForType`.
+  Future<void> setFrequency(AssetType type, SignalFrequency freq,
+      {bool senkron = true}) async {
     final mevcut = state[type] ?? kDefaultSchedule;
     var hours = mevcut.hours;
     if (freq.needsHourPicker && hours.length != freq.hourCount) {
@@ -861,11 +981,14 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
     }
     state = {...state, type: (frequency: freq, hours: hours)};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Seçilen saatleri değiştirir. Pencere dışındaki saatler yok sayılır.
-  Future<void> setHours(AssetType type, List<int> hours) async {
+  ///
+  /// [senkron]: bkz. `IndicatorPrefsNotifier.setForType`.
+  Future<void> setHours(AssetType type, List<int> hours,
+      {bool senkron = true}) async {
     final temiz = hours
         .where((h) => h >= kSignalWindowStart && h <= kSignalWindowEnd)
         .toSet()
@@ -875,7 +998,7 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
     final mevcut = state[type] ?? kDefaultSchedule;
     state = {...state, type: (frequency: mevcut.frequency, hours: temiz)};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Sunucudan gelen değeri yerele uygular (geri yazmaz).
@@ -929,6 +1052,15 @@ Future<void> syncNeutralPushPreference(WidgetRef ref) async {
 /// kalırsa kullanıcı bildirimleri kapatsa bile sunucu göndermeye devam eder.
 Future<void> syncSignalsEnabledPreference(WidgetRef ref) async {
   for (final type in AssetType.values) {
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+}
+
+/// Verilen türlerin sinyal satırlarını sunucuya yazar — yerel yazmaları
+/// `senkron: false` ile toplayan çağıranlar için (sinyal ön ayarı).
+Future<void> syncSignalPreferencesFor(
+    WidgetRef ref, Iterable<AssetType> turler) async {
+  for (final type in turler) {
     await _syncSignalPreferenceWith(ref.read, type);
   }
 }
@@ -1006,6 +1138,35 @@ final chartMA20Provider = NotifierProvider<_BoolPrefNotifier, bool>(
 final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kChartLogScaleKey, false));
 
+/// Performans "Bugünkü portföyle" görünümü (simülasyon: bugünkü net
+/// portföy tüm dönem boyunca elde tutulmuş gibi). TEK KAYNAK — Ayarlar ›
+/// Görünüm yazar, Performans okur (bayrak `performans_ayar_sade`).
+///
+/// Neden kalıcı (eski Performans anahtarı oturumluktu): Ayarlar'daki bir
+/// anahtarın uygulama yeniden açılınca kendiliğinden kapanması "ayar
+/// tutmuyor" diye okunur. Unutulup açık kalma riskine karşı Performans
+/// etkinken rozet gösterir ("görünmeyen filtre" sınıfı hata, bkz.
+/// `_buildScopeBar`). Varsayılan kapalı: gerçek geçmiş.
+final bugunkuPortfoyleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.performansBugunkuPortfoy, false,
+        perUser: true));
+
+// ─── Balina Radarı (2026-10-05) ───────────────────────────────────────────────
+
+/// "Nasıl okunur" gezintisi bir kez (`radar_ortak.dart`).
+final radarKocuGorulduProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.radarKocuGoruldu, false, perUser: true));
+
+/// Haftanın özetinde sakin varlıklar da listelensin mi.
+final haftaSakinGosterProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.haftaSakinGoster, true, perUser: true));
+
+/// Erken kullanıcı hediyesi sayfası gösterildi mi (bir kez).
+final premiumHediyeGosterildiProvider =
+    NotifierProvider<_BoolPrefNotifier, bool>(() => _BoolPrefNotifier(
+        PrefKeys.premiumHediyeGosterildi, false,
+        perUser: true));
+
 // ─── Leaderboard opt-in ───────────────────────────────────────────────────────
 // Kullanıcı yarış (partner leaderboard) özelliğine katılmak için explicit
 // consent verir. Default kapalı (KVKK). Ortakların yarış'ında görünmek için
@@ -1068,4 +1229,8 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   liveActivityWeekendProvider,
   leaderboardOptInProvider,
   bildirimSonGorulenProvider,
+  bugunkuPortfoyleProvider,
+  radarKocuGorulduProvider,
+  haftaSakinGosterProvider,
+  premiumHediyeGosterildiProvider,
 ];

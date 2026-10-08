@@ -216,7 +216,7 @@ void main() {
       final ilk = tester.getTopLeft(find.text('TALEP TOPLANIYOR')).dy;
       final ikinci = tester.getTopLeft(find.text('YAKLAŞAN')).dy;
       expect(ilk, lessThan(ikinci));
-      expect(find.text('Talep: 28 Eyl – 30 Eyl'), findsOneWidget);
+      expect(find.text('Talep: 28 Eyl - 30 Eyl'), findsOneWidget);
       expect(find.text('₺12,50'), findsOneWidget);
       // Fiyatı bilinmeyen kayıt "—" gösterir, 0 değil.
       expect(find.text('—'), findsWidgets);

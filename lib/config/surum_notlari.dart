@@ -29,7 +29,14 @@ class Yenilik {
     required this.baslik,
     required this.aciklama,
     this.ikon = YenilikIkonu.genel,
+    this.bayrak,
   });
+
+  /// Remote Config bayrağı: verilirse madde YALNIZ bayrak açıkken görünür
+  /// (2026-10-05, Balina radarı). Bayrak arkasındaki özellik derlemeyle
+  /// birlikte gelir ama kapalıdır; notu bayraksız yazmak kullanıcıya
+  /// göremeyeceği bir şeyi anlatmak olurdu.
+  final String? bayrak;
 
   final String baslik;
   final String aciklama;
@@ -99,10 +106,132 @@ class SurumNotu {
 const List<SurumNotu> surumNotlari = [
   SurumNotu(
     surum: '1.1.6',
-    tarih: 'Eylül 2026',
+    tarih: 'Ekim 2026',
     onemli: true,
-    baslik: 'Kripto, fiyat alarmları ve bildirim merkezi',
+    // Başlık ve ilk altı madde sürümün asıl hikâyesi (2026-10-02 müşteri
+    // testi): sayfa ilk altıyı gösterir, gerisi katlıdır
+    // (`YeniliklerSheet.oneCikanSayisi`). Kripto ve kilit ekranı bu yüzden
+    // öne alındı — App Store'daki 1.0.5'ten gelen kullanıcı ikisini de ilk
+    // kez görüyor.
+    baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
+      // 2026-10-08: ABD borsası, eurobond, masraflar. Üçü de kendi
+      // bayrağıyla görünür; kapalıyken madde sayılmaz.
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        bayrak: 'tur_secici_izgara',
+        baslik: 'Varlık eklemek daha kolay',
+        aciklama: 'Ekleme sayfasının başında arama: THYAO, Apple, BTC ya da '
+            'ISIN yaz, türü uygulama bulsun. Aranmayanlar üç grupta: Borsa '
+            've fon, Döviz ve değerli, Birikim. Seçince liste tek satıra '
+            'iner.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        bayrak: 'abd_hisse',
+        baslik: 'ABD hisseleri ve ETF\'ler',
+        aciklama: 'Hisse eklerken BIST ya da ABD seç: Apple, Nvidia, S&P 500 '
+            'ETF\'leri gibi 200\'ü aşkın sembol listede, olmayanı kodla '
+            'yazabilirsin. Fiyat dolar, portföyde güncel kurla TL.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        bayrak: 'eurobond',
+        baslik: 'Eurobond',
+        aciklama: 'Hazine ve şirket eurobondlarını nominal tutarla ekle. '
+            'Değer işlemiş faiziyle birlikte; varlık sayfasında vadeye '
+            'getiri, sıradaki kupon ve bankaya satarsan alacağın fiyat.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        bayrak: 'varlik_masraflari',
+        baslik: 'Varlığa özgü masraflar',
+        aciklama: 'Varlık sayfasında Masraflar kartı: kaydettiğin '
+            'komisyonlar, ABD hissesinde satışta kesilecek SEC ve FINRA '
+            'ücreti, fonda yönetim ücreti, altın ve dövizde alış-satış '
+            'makası. Tutar yalnızca kaydın ya da resmî orandan.',
+      ),
+      // 2026-10-05: Balina radarı (S10-A). Bayrak `balina_radari_acik`
+      // açılınca görünür; kapalıyken madde sayılmaz bile.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        bayrak: 'balina_radari_acik',
+        baslik: 'Varlıklarında olağandışı hareket',
+        aciklama: 'Fonuna büyük para girdiğinde ya da çıktığında, hissende '
+            'hacim olağanın çok üstüne çıktığında, kriptoda alıcılar ya da '
+            'satıcılar belirgin biçimde istekli olduğunda ana ekranda bir '
+            'şerit çıkar. Dokununca Haftanın özeti: her varlık tek kelimelik '
+            'etiketiyle. Varlığın sayfasında haftalık seyir; altı noktalı '
+            'terimlere dokununca ne anlama geldiği açılır.',
+      ),
+      // 2026-10-03: tek aktif cihaz + kayıtlı cihazlar (0098). Kullanıcı
+      // ilk kez kod ekranı ya da "başka cihazda açıldı" çıkışı görünce
+      // nedenini buradan öğrenir; sessiz kalsa arıza sanılırdı.
+      Yenilik(
+        ikon: YenilikIkonu.guvenlik,
+        baslik: 'Hesabın tek cihazda açık',
+        aciklama: 'Hesabın artık aynı anda yalnızca bir cihazda açık '
+            'kalır; başka cihazda açılınca öbüründe oturum kapanır. '
+            'Listende olmayan bir cihazdan girişte e-postana 6 haneli kod '
+            'gelir. Kayıtlı cihazlarını Ayarlar › Hesap & Güvenlik › '
+            "Kayıtlı cihazlar'da görüp kaldırabilirsin.",
+      ),
+      // 2026-10-01: Bugün kartı "sakin pano" (kullanıcı seçimi D).
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Bugün kartı yenilendi',
+        aciklama: 'Günün hareketi büyük rakamla, yanında gün içi eğri; kesik '
+            'çizgi gün başı seviyesi. Enflasyona göre durumun çubukla '
+            '(getirin dolu, TÜFE çizgi) ve hangi aylar arasında ölçüldüğüyle; '
+            'yanında son 7 gün ya da artıdaki varlıklar, günden güne '
+            'değişir. Hedef ve aylık özet sarı kutularda, bir dokunuşla.',
+      ),
+      // 2026-10-01: tek getiri dili (M1 + D2 + düzen A + kıyas kartı).
+      // Ana rakam bu sürümde değişiyor (temettü dahil, para ağırlıklı);
+      // not bunu açıkça söylemeli, yoksa kullanıcı farkı hata sanar.
+      // 2026-10-02 (müşteri testi sadeleştirmesi, aynı sürüm): enflasyon
+      // kartı tek sayı (puan farkı), pencere cümlede; Grafik kartında yüzde
+      // yalnızca piyasanın kattığı; köprüde temettü kendi satırında.
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Performans özeti yenilendi',
+        aciklama: 'Ana rakam artık "Paranın getirisi": eklediğin paranın ne '
+            'zaman girdiği hesaba katılır ve nakit temettülerin de getiriye '
+            'dahildir, bu yüzden rakam öncekinden farklı görünebilir. Her '
+            'yüzdenin yanında hangi tarihler arasında ölçüldüğü yazar. '
+            'Enflasyon karşılaştırması tek sayı söyler: kaç puan önde ya da '
+            "geride olduğun, hangi aylar arasında ölçüldüğüyle birlikte; "
+            'ayrıntı "Nasıl hesaplandı" altında. Grafik kartındaki yüzde '
+            'yalnızca fiyat etkisidir; yatırdığın para ve cebine aldığın '
+            'temettü ayrı yazılır. Yeni "Başka yere koysaydın" kartı, aynı '
+            'paraları aynı günlerde dolara, altına ya da BIST 100\'e '
+            'koysaydın ne olacağını gösterir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.grafik,
+        baslik: 'Kilit ekranında sandık (iPhone)',
+        aciklama: 'Kilit ekranına widget olarak ekle: günün yönü, yüzdesi '
+            've eğrisi tek kartta. Tutar yalnız "Kilit ekranında tutar '
+            "göster\" açıksa görünür. Dinamik Ada'da renkli yön halkası "
+            'günün yönünü ve büyüklüğünü tek bakışta gösterir.',
+      ),
+      Yenilik(
+        ikon: YenilikIkonu.para,
+        baslik: 'Kripto ekle',
+        aciklama: 'Varlık Ekle\'de yeni Kripto türü var: listeden coin\'i '
+            'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Türk lirası '
+            'paritesi olan tüm coin\'ler ve en çok işlem gören 250 coin '
+            'listede. Hızlı Giriş\'e "0,05 btc" yazman da yeter.',
+      ),
+      // 2026-10-01: evrensel ekstre motoru (docs/EKSTRE_MOTORU.md).
+      Yenilik(
+        ikon: YenilikIkonu.liste,
+        baslik: 'Ekstreni dosyadan içe aktar',
+        aciklama: "Toplu ekle › Ekstreden içe aktar: aracı kurum ya da "
+            'bankanın PDF, Excel veya CSV ekstresini seç. Sütunların adı ve '
+            'sırası önemli değil; sembol, adet, maliyet, tarih ve alış/satış '
+            'kendiliğinden bulunur. Emin olmadığımız sütunu sana sorarız.',
+      ),
       // 2026-09-30 (çalışma seçenekleri M2 + B3). Sunucu tarafı 0088 iki
       // sunucuya ulaşmadan bu sürüm yayına çıkmamalı (YAPMAN_GEREKENLER).
       Yenilik(
@@ -111,9 +240,10 @@ const List<SurumNotu> surumNotlari = [
         aciklama: "Varlık Ekle'de iki yeni tür. Mevduat: banka, tutar, faiz "
             've vadeyi yaz; net getiriyi stopajıyla birlikte hesaplarız, '
             'vade dolunca varlık sayfasından yeni faizle yenilersin. Günlük '
-            'faizli hesaplar da olur. BES: şirketini, birikimini ve fon '
-            'dağılımını gir; değer her gün emeklilik fonlarının fiyatından '
-            'gelir, devlet katkısı hak ediş oranıyla ayrı durur ve aylık '
+            'faizli hesaplar da olur. BES: şirketini, ana paranı, getirini '
+            've fon dağılımını gir; kârın korunur, grafik ve dönem getirileri '
+            'emeklilik fonlarının gerçek fiyatıyla yürür. Fonunu '
+            'değiştirdiğinde grafik yeni fonlarla devam eder. Devlet katkısı hak ediş oranıyla ayrı durur, aylık '
             'katkını tek dokunuşla eklersin.',
       ),
       Yenilik(
@@ -123,9 +253,9 @@ const List<SurumNotu> surumNotlari = [
             'en çok kazanan anonim portföylerini gösterir. Dokununca yeni '
             'ekran: haftalık, aylık ve yıllık; herkes aynı çizgide, sen de '
             'üstünde. Bir portföye dokun, neye yatırdığını (fonlarda hangi '
-            'fonlar, ne oranda) ve senden farkını oku. Portföyü 5 günden eski '
-            've en az 2 farklı varlığı olan herkes kendiliğinden ve anonim olarak '
-            'havuzda; kimlik, miktar ve TL asla paylaşılmaz.',
+            'fonlar, ne oranda) ve senden farkını oku. Katılım isteğe bağlı '
+            've anonim: katılanlar birbirinin tür dağılımını ve getirisini '
+            'görür; kimlik, miktar ve TL asla paylaşılmaz.',
       ),
       Yenilik(
         ikon: YenilikIkonu.liste,
@@ -175,14 +305,6 @@ const List<SurumNotu> surumNotlari = [
       // `yeniNotlar`); Ayarlar › Yenilikler'de durur. Mağazadan 1.1.6'yı
       // ilk alan kullanıcı hepsini görür.
       Yenilik(
-        ikon: YenilikIkonu.grafik,
-        baslik: 'Kilit ekranında sandık (iPhone)',
-        aciklama: 'Kilit ekranına widget olarak ekle: günün yönü, yüzdesi '
-            've eğrisi tek kartta. Tutar yalnız "Kilit ekranında tutar '
-            "göster\" açıksa görünür. Dinamik Ada'da renkli yön halkası "
-            'günün yönünü ve büyüklüğünü tek bakışta gösterir.',
-      ),
-      Yenilik(
         ikon: YenilikIkonu.liste,
         baslik: 'Aracı kurum ekstresi: alış ve satış',
         aciklama: 'Toplu ekle › yapıştır artık kurumların sütun adlarını '
@@ -209,14 +331,6 @@ const List<SurumNotu> surumNotlari = [
       // 1.1.6 train'i hâlâ açık ve fastlane yalnızca kapalı train'de bump
       // yapıyor, yani derleme 1.1.6 çıkacak. '1.1.7' notu hiç gösterilmezdi
       // (sessiz arıza, dosya başı). Bu yüzden 1.1.6 notuna katıldı.
-      Yenilik(
-        ikon: YenilikIkonu.para,
-        baslik: 'Kripto ekle',
-        aciklama: 'Varlık Ekle\'de yeni Kripto türü var: listeden coin\'i '
-            'seç, fiyatı TL karşılığıyla kendiliğinden gelir. Türk lirası '
-            'paritesi olan tüm coin\'ler ve en çok işlem gören 250 coin '
-            'listede. Hızlı Giriş\'e "0,05 btc" yazman da yeter.',
-      ),
       Yenilik(
         ikon: YenilikIkonu.grafik,
         baslik: 'Toplamda, grafikte, alarmda',
@@ -408,7 +522,7 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.grafik,
         baslik: 'Bildirimden doğrudan varlığa',
         aciklama: 'Alarm bildirimine dokununca o varlığın ekranı GÜNLÜK '
-            'sekmesinde açılır — fiyatın gün içinde ne yaptığını tek bakışta '
+            'sekmesinde açılır; fiyatın gün içinde ne yaptığını tek bakışta '
             'görürsün.',
       ),
       Yenilik(
@@ -422,7 +536,7 @@ const List<SurumNotu> surumNotlari = [
         ikon: YenilikIkonu.grafik,
         baslik: 'Altın grafiğindeki sahte düşüş gitti',
         aciklama: 'Altın grafiğinin son noktası, olmayan bir düşüş gibi '
-            'aşağı iniyordu — üstelik bazen. Sebep iki ayrı fiyat '
+            'aşağı iniyordu, üstelik bazen. Sebep iki ayrı fiyat '
             'kaynağıydı: veri gelmediğinde grafik, spot altın yerine vadeli '
             'sözleşmeye düşüyor ve tüm çizgi biraz yukarı kayıyordu. Artık '
             'tüm dönem sekmeleri aynı kaynağı aynı sırayla kullanıyor ve '

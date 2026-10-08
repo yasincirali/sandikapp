@@ -5,7 +5,17 @@ import 'crash_reporter.dart';
 import 'supabase_service.dart';
 import '../models/asset.dart';
 import '../models/position.dart';
+import '../providers/portfolio_provider.dart' show PortfolioState;
+import 'daily_summary.dart';
 import 'history_service.dart';
+import 'lider_seridi.dart';
+import 'period_summary_service.dart';
+import 'remote_config_service.dart';
+import 'secim_getirisi.dart';
+
+// Çağıranlar kapsamı seçer; enum'ı ayrıca içe aktarmasınlar.
+export 'secim_getirisi.dart' show SiralamaKapsami;
+export 'lider_seridi.dart' show LiderSeridi, SeritLider;
 import 'zirve_kiyas.dart';
 
 /// Kâr/zarar hesabı sonucu.
@@ -122,7 +132,10 @@ class LeaderboardService {
   static final LeaderboardService instance = LeaderboardService._();
   LeaderboardService._();
 
-  // In-memory ROI cache — key: (userId, periodDays). Session boyunca kalır.
+  // In-memory ROI cache — key: (userId, periodDays, kapsam). Kapsam anahtarda
+  // ŞART: ortaklar ve anonim kapsam aynı kişiye farklı sayı verebilir
+  // (geriye tarihli kayıt) ve Yarış'ın değeri Zirve'nin yerine geçmemeli.
+  // Session boyunca kalır.
   // Ekran her açılışta cache'i placeholder olarak gösterir (stale ok),
   // arka planda hemen yeniden hesaplar. Kullanıcı bekletilmez, veri her
   // zaman güncel.
@@ -133,15 +146,18 @@ class LeaderboardService {
   /// Önceki hesaptan cache'te kalan ROI değeri (varsa). Ekran açılırken
   /// spinner yerine placeholder olarak gösterilir; asıl `computeROI`
   /// arka planda çağrılır ve gelen sonuç bunun üstüne yazılır.
-  double? staleROI({required String userId, required int periodDays}) {
-    return _roiCache['$userId|$periodDays']?.roi;
+  double? staleROI({
+    required String userId,
+    required int periodDays,
+    required SiralamaKapsami kapsam,
+  }) {
+    return _roiCache['$userId|$periodDays|${kapsam.name}']?.roi;
   }
 
-  /// Bir kullanıcının SEÇİLİ DÖNEMDEKİ getirisi.
+  /// Bir kullanıcının SEÇİLİ DÖNEMDEKİ seçimlerinin getirisi (TWR).
   ///
-  /// ```
-  ///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-  /// ```
+  /// [kapsam]: ortaklar arası Yarış mı, anonim sıralama mı (Zirve, genel) —
+  /// kaydın tarihine güven buna bağlı (bkz. `SiralamaKapsami`).
   ///
   /// [currentValueTRY] ve [toTRY] artık KULLANILMIYOR (imza geriye dönük
   /// uyumluluk için duruyor): değer de dönem başı da aynı fiyat serisinden
@@ -154,14 +170,15 @@ class LeaderboardService {
     required int periodDays,
     required double currentValueTRY,
     required double Function(double, String) toTRY,
+    required SiralamaKapsami kapsam,
     String? cacheKey,
   }) async {
     if (assets.isEmpty) {
       return const RoiResult(roi: null, usedFallback: false);
     }
 
-    final ck = cacheKey == null ? null : '$cacheKey|$periodDays';
-    final result = await donemGetirisiPct(assets, periodDays);
+    final ck = cacheKey == null ? null : '$cacheKey|$periodDays|${kapsam.name}';
+    final result = await donemGetirisiPct(assets, periodDays, kapsam: kapsam);
 
     if (kDebugMode) {
       // ignore: avoid_print
@@ -176,50 +193,118 @@ class LeaderboardService {
     return RoiResult(roi: result, usedFallback: false);
   }
 
-  /// Bir varlık listesinin SEÇİLİ DÖNEMDEKİ getirisi.
+  /// Bir kişinin defterinin SEÇİLİ DÖNEMDEKİ getirisi — SEÇİMLERİNİN
+  /// GETİRİSİ (zaman ağırlıklı, TWR; 0095, 2026-10-01).
   ///
-  /// ```
-  ///   (dönem sonu değeri − dönem başı değeri) / dönem başı değeri × 100
-  /// ```
+  /// Hesap ve gerekçe `secim_getirisi.dart`'ta; sunucu (`leaderboard-
+  /// snapshot` › `donemTwr`) aynı kuralla Zirve'yi ve genel havuzu ölçer.
   ///
-  /// Takip listesi grafiğindeki `normalizeSeries` ile AYNI soru: "bu dönemde
-  /// yüzde kaç değişti?" Seri `getPortfolioHistory(..., simulate: true)` ile
-  /// üretilir — bugünkü net pozisyon dönemin tamamına yayılır.
-  ///
-  /// ## Neden `simulate: true`
-  /// Gerçek geçmiş modunda bir lot'un `addedDate`'inden önceki slotlara 0
-  /// yazılır; dönem başı 0 olunca bölme tanımsız kalır ve dönem içinde alım
-  /// yapan herkes sıralamadan düşerdi. Simülasyon, herkesi aynı pencerede
-  /// ölçer — "bu varlıkları dönem başından beri tutsaydım" senaryosu.
-  /// (Takip listesi grafiği de aynı gerekçeyle simülasyon kullanıyor.)
+  /// **2026-10-01'e kadar simülasyondu** (`getPortfolioHistory(simulate:
+  /// true)`: bugünkü net pozisyon dönemin tamamına yayılırdı). Kullanıcı
+  /// kararı R1 ("Yarış Ölçüsü Kıyası"): simülasyon satıp başka varlık
+  /// alanın kararını görmüyor, geç girene bütün dönemi veriyordu.
   ///
   /// ## Ortaklar için de aynı yol
   /// Ortağın lot'ları `allPartnerAssetsProvider` üzerinden bu cihazda ZATEN
-  /// var ve `refreshPrices` `currentPrice`'ı canlı kotasyonla güncelliyor
-  /// (RLS DB'ye yazmayı engellese de bellekte günceller). Sunucu snapshot'ı
-  /// beklemek üç soruna yol açıyordu:
+  /// var. Sunucu snapshot'ı beklemek üç soruna yol açıyordu (2026-09-02):
   ///   · ortak uygulamayı hiç açmadıysa → yarışta değeri YOK,
   ///   · eski sürümde açtıysa → eski formülle yazılmış BAYAT değer,
   ///   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
   ///
-  /// Dönem başı ≤ 0 ise `null` — bölme tanımsız.
+  /// [assets] TEK KİŞİNİN defteri (alım + satım). `null`: ölçüm 30 günden
+  /// kısa, kapsama düşük ya da fiyat geçmişi alınamadı.
+  ///
+  /// [kapsam] zorunlu: çağıran hangi sıralamayı çizdiğini bilir. Ortaklar
+  /// arası Yarış beyan edilen tarihe güvenir; Zirve ve genel sıralama
+  /// sunucuyla aynı geriye tarih kuralını uygular.
   Future<double?> donemGetirisiPct(
     List<Asset> assets,
-    int periodDays,
-  ) async {
+    int periodDays, {
+    required SiralamaKapsami kapsam,
+  }) async {
     if (assets.isEmpty) return null;
     try {
-      final seri = await HistoryService.instance
-          .getPortfolioHistory(assets, periodDays, simulate: true);
-      if (seri.length < 2) return null;
-      final ts = seri.keys.toList()..sort();
-      final ilk = seri[ts.first]!;
-      final son = seri[ts.last]!;
-      if (ilk <= 0) return null;
-      return ((son - ilk) / ilk) * 100.0;
-    } catch (_) {
+      return await SecimGetirisi.donemPct(assets, periodDays, kapsam: kapsam);
+    } catch (e, st) {
       // Fiyat geçmişi alınamadı — "veri yok" olarak göster. Uydurma bir
       // sayı basmak sıralamayı sessizce bozardı.
+      CrashReporter.report(e, st, reason: 'LeaderboardService.donemGetirisiPct');
+      return null;
+    }
+  }
+
+  /// Düello arenasının lider şeridi (bayrak `yaris_duello_arena`): iki
+  /// kişinin seçimlerinin getirisini dönemin her günü kıyaslar.
+  ///
+  /// Sıralamayla AYNI motor ve kapsam (`ortaklar`): [donemGetirisiPct]'in
+  /// döngüsünün ara toplamları (`SecimGetirisi.donemSerisi`). İki kişiye
+  /// tek `simdi` verilir ki ölçüm anları hizalansın. Seri yoksa ya da
+  /// hata olursa `null` — şerit çizilmez, uydurma yok.
+  Future<LiderSeridi?> liderSeridi({
+    required List<Asset> benLotlari,
+    required List<Asset> rakipLotlari,
+    required int periodDays,
+  }) async {
+    if (benLotlari.isEmpty || rakipLotlari.isEmpty) return null;
+    try {
+      final simdi = DateTime.now();
+      final seriler = await Future.wait([
+        SecimGetirisi.donemSerisi(benLotlari, periodDays,
+            kapsam: SiralamaKapsami.ortaklar, simdi: simdi),
+        SecimGetirisi.donemSerisi(rakipLotlari, periodDays,
+            kapsam: SiralamaKapsami.ortaklar, simdi: simdi),
+      ]);
+      return liderSeridiKur(
+        ben: seriler[0],
+        rakip: seriler[1],
+        gun: periodDays,
+        nowMs: simdi.millisecondsSinceEpoch,
+      );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'LeaderboardService.liderSeridi');
+      return null;
+    }
+  }
+
+  /// Kendi satırındaki ek bilgi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
+  /// Performans › Özet'in AYNI dönemdeki sayısı (R1, 2026-10-01).
+  ///
+  /// Yeni bir XIRR YAZILMAZ: Özet'in yolu (`PeriodSummaryService.compute`,
+  /// sağ uç canlı kapsam toplamı) olduğu gibi çağrılır. İki yüzey aynı
+  /// dönemde aynı sayıyı söylemeli.
+  ///
+  /// Yarış'ın dönemi Özet'in dönemine eşlenir (30G → 1A: Özet ayı takvimden
+  /// sayar). Eşi olmayan dönemde ya da Özet bayrağı kapalıyken `null`.
+  Future<double?> paraninGetirisiPct(PortfolioState state, int periodDays) async {
+    final period = switch (periodDays) {
+      7 => SummaryPeriod.birHafta,
+      30 => SummaryPeriod.birAy,
+      180 => SummaryPeriod.altiAy,
+      365 => SummaryPeriod.birYil,
+      _ => null,
+    };
+    if (period == null || state.assets.isEmpty) return null;
+    if (!RemoteConfigService.instance.periodSummaryEnabled) return null;
+    try {
+      final now = DateTime.now();
+      final p = PeriodSummaryService.pencere(period, now);
+      final bd = await HistoryService.instance
+          .getPortfolioHistoryBreakdownAtResolution(
+        assets: state.assets,
+        from: p.start,
+        to: p.end,
+        tier: ResolutionTierMeta.pickForSpan(period.days.toDouble()),
+      );
+      return PeriodSummaryService.compute(
+        period: period,
+        assets: state.assets,
+        breakdown: bd,
+        now: now,
+        canliSon: DailySummary.kapsamToplami(state, state.assets),
+      ).getiriPct;
+    } catch (e, st) {
+      CrashReporter.report(e, st,
+          reason: 'LeaderboardService.paraninGetirisiPct');
       return null;
     }
   }
@@ -230,6 +315,7 @@ class LeaderboardService {
     required int periodDays,
     required double currentValueTRY,
     required double Function(double, String) toTRY,
+    required SiralamaKapsami kapsam,
     String? cacheKey,
   }) async {
     final r = await computeROIDetailed(
@@ -237,6 +323,7 @@ class LeaderboardService {
       periodDays: periodDays,
       currentValueTRY: currentValueTRY,
       toTRY: toTRY,
+      kapsam: kapsam,
       cacheKey: cacheKey,
     );
     return r.roi;
@@ -304,24 +391,10 @@ class LeaderboardService {
     }
   }
 
-  /// Client'ın hesapladığı ROI değerini snapshot tablosuna yazar. Opt-in
-  /// kontrolü çağıran yerin sorumluluğu. Hata sessizce yutulur — bu ikincil
-  /// bir operasyon, ana leaderboard'un düşmesine izin vermez.
-  Future<void> uploadRoiSnapshot({
-    required String userId,
-    required int periodDays,
-    required double roiPct,
-  }) async {
-    try {
-      await Supabase.instance.client.from('user_roi_snapshots').insert({
-        'user_id': userId,
-        'period_days': periodDays,
-        'roi_pct': roiPct,
-      });
-    } catch (_) {
-      // Sessizce yut — global percentile "yakında" hâli, kullanıcıyı bozmasın.
-    }
-  }
+  // `uploadRoiSnapshot` 0095'te (2026-10-01) KALDIRILDI: ROI anlık
+  // görüntüsünü yalnız sunucu yazar (cron, TWR). İstemci simülasyon değeri
+  // yüklüyordu; iki ölçü aynı havuzda karışırdı. Sunucuda istemci INSERT
+  // yetkisi de geri alındı — eski sürümlerin denemesi sessizce düşer.
 
   /// Aktif ortakların son ROI snapshot'larını Supabase'ten çeker.
   ///
@@ -564,6 +637,39 @@ class LeaderboardService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Zirvedeki Portföyler açık rıza metninin sürümü (0091). Metin
+  /// (`ZirveRizaKarti`) anlamca değişirse bu da değişir; sunucu hangi
+  /// sürüme rıza verildiğini saklar (ispat yükü veri sorumlusunda).
+  static const zirveRizaMetniSurumu = '2026-10-01';
+
+  /// Çağıranın geçerli zirve rızası var mı (0091 `zirve_rizalari`, RLS: yalnız
+  /// kendi satırı)? Hata → null; ekran "bilinmiyor" der, rıza varsaymaz.
+  Future<bool?> fetchZirveRizasi() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return null;
+      final rows = await Supabase.instance.client
+          .from('zirve_rizalari')
+          .select('geri_cekildi_at')
+          .eq('user_id', uid);
+      if (rows.isEmpty) return false;
+      return rows.first['geri_cekildi_at'] == null;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'zirve_rizasi_okunamadi');
+      return null;
+    }
+  }
+
+  /// Rıza ver ([ver] true) ya da geri çek. Geri çekme sunucuda ölçümleri
+  /// aynı işlemde siler (0091 `zirve_rizasi_ayarla`). Hata çağırana
+  /// fırlatılır — ekran `friendlyError` ile gösterir, durum değişmemiş sayılır.
+  Future<void> setZirveRizasi(bool ver) async {
+    await Supabase.instance.client.rpc<dynamic>(
+      'zirve_rizasi_ayarla',
+      params: {'p_ver': ver, 'p_metin_surumu': zirveRizaMetniSurumu},
+    );
   }
 
   /// k-anonimlik eşiği — `get_percentile_bucket` / `get_top_gainers`

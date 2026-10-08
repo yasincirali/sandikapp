@@ -91,9 +91,14 @@ void main() {
           reason: 'Rozet kaldırılmış ya da sabit metne dönmüş.');
     });
 
-    test('rozet yalnızca kuyruk VARKEN gösterilir', () {
-      expect(ekran.contains('if (kapaliKuyruk)'), isTrue,
-          reason: 'Rozet koşulsuz — hafta içi de görünür.');
+    test('rozet yalnızca kuyruk VARKEN ve portföy yalnızca borsayken', () {
+      // 2026-10-01: karışık portföyde etiket `null` gelir, rozet çizilmez.
+      expect(
+          ekran.contains('kapaliKuyruk ? piyasaKapaliEtiketiVarliklardan('),
+          isTrue,
+          reason: 'Rozet kuyruktan bağımsız — hafta içi de görünür.');
+      expect(ekran.contains('if (kapaliEtiketi != null)'), isTrue,
+          reason: 'Rozet koşulsuz — karışık portföyde de "kapalı" der.');
     });
 
     test('rozet segmentlerden TÜRETİLİR, ikinci kaynak yok', () {

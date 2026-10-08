@@ -65,7 +65,7 @@ class ReviewPromptSheet extends StatelessWidget {
       return;
     }
 
-    final secim = await showModalBottomSheet<_Secim>(
+    final secim = await showSandikSheet<_Secim>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

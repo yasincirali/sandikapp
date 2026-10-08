@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' show ClientException;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthRetryableFetchException, FunctionException, PostgrestException;
 import 'db_logger.dart';
 
 /// Yakalanan ama YUTULAN hataların Crashlytics'e non-fatal olarak gitmesi.
@@ -100,6 +102,57 @@ class CrashReporter {
     }
     return false;
   }
+
+  /// Global handler'ların (`main.dart`) tek fatal kararı.
+  ///
+  /// Bağlantı hatası ([agHatasiMi]) da geçici sunucu hatası
+  /// ([geciciSunucuHatasiMi]) da çökme değildir; ikisi dışındaki her şey
+  /// fatal kalır. İki ayrı soru olarak tutuldu çünkü [agHatasiMi]'yi servisler
+  /// de soruyor (`yasal_onay_service`, `disclaimer_service`…) ve oradaki
+  /// davranışı bu düzeltme değiştirmemeli.
+  static bool fatalMi(Object? error) =>
+      !agHatasiMi(error) && !geciciSunucuHatasiMi(error);
+
+  /// Sunucu tarafı GEÇİCİ olarak yanıt veremedi mi (502/503/504, Cloudflare
+  /// 520–524, PostgREST bağlantı havuzu hataları)?
+  ///
+  /// Üretim raporu (Crashlytics, 2026-10-06, Android): "Fatal Exception:
+  /// FlutterError: PostgrestException(message: , code: 504, details: Gateway
+  /// Timeout) — Error thrown runZonedGuarded". Supabase ağ geçidi isteği
+  /// zaman aşımına uğratmış, kimsenin beklemediği bir sorgu zone handler'ına
+  /// düşmüş ve [agHatasiMi] onu tanımadığı için `fatal: true` yazılmıştı.
+  /// Uygulama çökmüyordu (zone'a düşen async hata süreci öldürmez); rapor
+  /// yine de "çökmesiz kullanıcı" oranını düşürüyor ve gerçek çökmeleri
+  /// gizliyordu — 2026-09-19 timeout raporunun sunucu tarafındaki ikizi.
+  ///
+  /// Kapsam yine DAR: 4xx (RLS, şema, kısıt ihlali) ve 500 (SQL hatası) bizim
+  /// hatamızdır, fatal kalır. Yalnızca "sunucu şu an yok/yetişemedi" imzaları.
+  static bool geciciSunucuHatasiMi(Object? error) {
+    if (error is PostgrestException) {
+      return _geciciKod(error.code);
+    }
+    if (error is FunctionException) {
+      return _geciciKod('${error.status}');
+    }
+    if (error is AuthRetryableFetchException) {
+      // Adı üstünde: auth istemcisinin kendisi "yeniden dene" diyor.
+      return true;
+    }
+    // Tip kaybolmuş, metne çevrilmiş hâl (ör. başka katman `toString()`
+    // yapıp taşımışsa). Kalıp `PostgrestException.toString()` biçimine bağlı.
+    final m = RegExp(r'PostgrestException\(.*code: (\w+)')
+        .firstMatch(error.toString());
+    return m != null && _geciciKod(m.group(1));
+  }
+
+  static bool _geciciKod(String? kod) => const {
+        '502', '503', '504',
+        // Supabase önündeki Cloudflare: kaynak yanıt vermedi / zaman aşımı.
+        '520', '521', '522', '523', '524',
+        // PostgREST: veritabanına bağlanamadı (000–002), havuzdan bağlantı
+        // alınamadan süre doldu (003, HTTP 504 olarak döner).
+        'PGRST000', 'PGRST001', 'PGRST002', 'PGRST003',
+      }.contains(kod);
 
   /// Arka plana bırakılan (await edilmeyen) işin hatasını yakalar.
   ///

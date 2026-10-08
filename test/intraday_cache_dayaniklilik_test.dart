@@ -37,14 +37,14 @@ void main() {
 
   group('azamiYas veriyi silmez', () {
     test('yalnızca tazele bayrağı kurar', () {
-      expect(src.contains('final tazeleZorla = _fetchedAt != null && (zorla || (azamiYas != null'), isTrue,
+      expect(src.contains('final tazeleZorla = y.fetchedAt != null && ((zorla && !zorlaTaze) || (azamiYas != null'), isTrue,
           reason: 'bayrak kurulmalı');
     });
 
     test('bayrak kısa devreyi atlatır — yeni veri GERÇEKTEN çekilir', () {
       expect(
           src.contains(
-              '} else if (!tazeleZorla && ts.difference(_fetchedAt!) < minInterval) {'),
+              '} else if (!tazeleZorla && ts.difference(y.fetchedAt!) < minInterval) {'),
           isTrue,
           reason: 'bayrak kurulup kullanılmazsa tazelik hiç gelmez');
     });
@@ -53,7 +53,7 @@ void main() {
       // Eski hatanın imzası: tazelik kapısının içinde üçlü sıfırlama.
       expect(
           src.contains(
-              'ts.difference(_fetchedAt!) > azamiYas) { _series = null;'),
+              'ts.difference(y.fetchedAt!) > azamiYas) { y.breakdown = null;'),
           isFalse,
           reason: 'eski seri fetch bitene kadar elde kalmalı — '
               'silinirse diğer yüzeyler boş seri alır');
@@ -62,18 +62,18 @@ void main() {
 
   group('eşzamanlı fetch tekilleştirilir', () {
     test('süren fetch alanı var', () {
-      expect(src.contains('Future<Map<int, double>>? _surenFetch;'), isTrue);
+      expect(src.contains('Future<PortfolioHistoryBreakdown>? suren;'), isTrue);
     });
 
     test('ikinci çağıran aynı future\'ı bekler', () {
       expect(
-          src.contains('final suren = _surenFetch; if (suren != null) return suren;'),
+          src.contains('final suren = y.suren; if (suren != null) return suren;'),
           isTrue,
           reason: 'ikinci ağ turu atılmamalı');
     });
 
     test('fetch bitince alan temizlenir (finally)', () {
-      expect(src.contains('} finally { _surenFetch = null; }'), isTrue,
+      expect(src.contains('} finally { y.suren = null; }'), isTrue,
           reason: 'temizlenmezse önbellek kalıcı olarak kilitlenir');
     });
   });
@@ -81,11 +81,11 @@ void main() {
   test('gün ve sahip kapıları KORUNDU', () {
     // Bu iki kural daha önceki arızaların ürünü; tazelik değişikliği
     // onları gölgelememeli.
-    expect(src.contains('final sameDay = _fetchedAt != null'), isTrue,
+    expect(src.contains('final sameDay = y.fetchedAt != null'), isTrue,
         reason: 'gece yarısını geçen oturumda dünün açılışı kullanılamaz');
     expect(
         src.contains(
-            'final sameOwner = state.ownerId.isEmpty || state.ownerId == _ownerId;'),
+            'final sameOwner = ownerId.isEmpty || ownerId == y.ownerId;'),
         isTrue,
         reason: 'başka kullanıcının serisi bu deftere ait değildir');
   });

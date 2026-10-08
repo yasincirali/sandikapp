@@ -35,6 +35,7 @@ void main() {
       'signal_notifications',
       'milestones',
       'live_activity_sessions',
+      'yasal_onaylar',
     ]));
     expect(veri.length, DataExportService.tablolar.length + 1);
     // Süzgeç sütunu tabloya göre: profil `id`, davetler `from_user_id`.

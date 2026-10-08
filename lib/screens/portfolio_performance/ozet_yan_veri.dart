@@ -2,49 +2,271 @@ part of '../portfolio_performance_screen.dart';
 
 /// Özet sekmesinin ağa çıkan yan verileri (TÜFE, yüzdelik, sağlık, XIRR) ve
 /// pozisyon etiketi. `portfolio_performance_screen.dart`'ın part'ı (2026-09-14).
-/// `positionKey` insan-okunur etikete çevrilir.
+/// `positionKey` → insan-okunur etiket. Gövde `lib/utils/pozisyon_etiketi.dart`
+/// (2026-10-04): Bugün kartının "en çok oynayan"ı da aynı adı yazsın diye
+/// ortak dosyaya taşındı; buradaki ad part'ın çağıranları değişmesin diye kaldı.
+String _positionLabel(String key, AssetType type, AppLocalizations l) =>
+    pozisyonEtiketi(key, type, l);
+
+/// Özet'in ağa çıkan yan verilerinin TEK ölçümü — [_yanVeriYukle] üretir,
+/// `_OzetBellek` saklar, `_OzetYanVeriState` çizer.
 ///
-/// Anahtar `type|core|currency` biçimindedir (bkz. `positionKey`); `core`
-/// altında `sub:` öneki altın/döviz alt kategorisini, `name:` öneki
-/// ticker'sız varlığın adını taşır. Ham anahtarı ekrana basmak
-/// "altin|sub:çeyrek|TRY" gibi bir şey gösterirdi.
-///
-/// **Neden üst seviyeye çıktı:** iki yer okuyor — tür dökümü kartı ve Özet
-/// sekmesinin en iyi/en zayıf satırları. Kopyalamak bu projede ons→gram
-/// formülünü beş yere dağıtan sınıf hatanın aynısıydı.
-String _positionLabel(String key, AssetType type, AppLocalizations l) {
-  final parts = key.split('|');
-  var core = parts.length > 1 ? parts[1] : key;
-  if (core.startsWith('sub:')) {
-    core = core.substring(4);
-  } else if (core.startsWith('name:')) {
-    core = core.substring(5);
-  } else {
-    // Sembol çekirdeği: `ARDYZ.IS` / `TEFAS:AFT` / `KRIPTO:BTC` → kod
-    // (`pozisyonKodu`; 2026-09-29 emülatör testinde GÜNLÜK'ün "en çok
-    // hareket eden"i ham `ARDYZ.IS` yazıyordu).
-    core = pozisyonKodu(core);
-  }
-  if (core.isEmpty) return type.labelOf(l);
-  // Alt kategoriler küçük harfle saklanır (`positionKey`), ticker'lar büyük.
-  // İlk harfi büyüterek "çeyrek" → "Çeyrek" yapıyoruz; ticker'a dokunmaz.
-  return core.length > 1
-      ? core[0].toUpperCase() + core.substring(1)
-      : core.toUpperCase();
+/// **Neden ayrı bir değer (2026-10-02, titreme bulgusu):** bu alanlar
+/// eskiden doğrudan State'te yaşıyordu; Özet her yeniden kurulduğunda
+/// (dönem/kapsam dokunuşu, Grafik → Özet) sıfırdan doğup kartlar özetten
+/// SONRA tek tek beliriyordu. Tek değer olunca bellekten eşzamanlı okunur
+/// ve ekran açılmadan arkada ısıtılabilir (`_OzetBellek.isit`).
+@immutable
+class _YanVeri {
+  const _YanVeri({
+    this.tufePencere,
+    this.hizaliNominal,
+    this.hizaliReel,
+    this.tufeKoprusu,
+    this.endeksBos = false,
+    this.uzunDonem,
+    this.drawdown,
+    this.volatilite,
+  });
+
+  /// TÜFE ölçümü ve ÖLÇÜLDÜĞÜ pencere.
+  ///
+  /// Yüzde tek başına tutulmuyor (2026-09-16): ekran nominal getiriyi bu
+  /// pencereye hizalamak ZORUNDA, yoksa çıkarma iki farklı zaman dilimini
+  /// kıyaslar. Gerekçe `InflationService.pencere` notunda.
+  final InflationWindow? tufePencere;
+
+  /// [tufePencere] ile AYNI aralıkta hesaplanmış nominal getiri.
+  ///
+  /// `widget.summary.getiriPct` bunun yerine KULLANILAMAZ: o, takvimden
+  /// türetilen pencerenin (bugünden geriye) getirisi ve TÜFE penceresiyle
+  /// örtüşmüyor — 1A'da hiç kesişmiyordu.
+  final double? hizaliNominal;
+
+  /// [hizaliNominal] ile AYNI pencerede reel para ağırlıklı getiri
+  /// (`RealReturnService.hizaliGetiri`). Ara ayın endeksi eksikse `null`.
+  final double? hizaliReel;
+
+  /// TÜFE penceresinin sonundan BUGÜNE getiri (köprü satırı, D2
+  /// 2026-10-01). Reel getiri kartının ölçmediği ama üst kartın içerdiği
+  /// süre; `null` ise satır çizilmez. Gerekçe `TufeKoprusu` notunda.
+  final TufeKoprusu? tufeKoprusu;
+
+  /// `inflation_index` tablosu tamamen boş mu? (Kurulum eksik.)
+  ///
+  /// `tufePencere == null` ile aynı şey DEĞİL: endeks dolu olup bu dönemin
+  /// ucu eksik de olabilir. Ayrımın gerekçesi `InflationService.isStale`
+  /// notunda.
+  final bool endeksBos;
+
+  /// Son 12 ayın getirisi — kayıp döneminde gösterilen "daha uzun pencere"
+  /// bağlamı. "Bu ay ekside. Daha uzun pencerede hâlâ +%31,8." cümlesinin
+  /// ikinci yarısı. `RETENTION_STRATEJISI.md` §8 kayıp anında ya SUSMAYI ya
+  /// BAĞLAM VERMEYİ şart koşuyor; ekran sustuğunda kullanıcı yalnız bir
+  /// kırmızı rakam görür, o yüzden bağlam tercih edildi.
+  ///
+  /// Her dönemde ÖLÇÜLÜR ama yalnızca kayıptaki kısa dönemde GÖSTERİLİR
+  /// (kapı `_OzetYanVeriState.build`'de). Eskiden yalnız kayıpta
+  /// isteniyordu; ısıtma özetin işaretini bilmeden ölçtüğü için kapı
+  /// gösterime taşındı. Ek ağ turu yok: 1Y serisi haftalık çözünürlükte,
+  /// sembol önbelleğinden gelir.
+  final double? uzunDonem;
+
+  /// 1Y sağlık metrikleri (düşüş / oynaklık) — yalnızca 1Y'de ölçülür.
+  ///
+  /// Ayrı bir istek gerektirmiyor: [uzunDonem] zaten 1Y breakdown'ı
+  /// çekiyor ve metrikler o serinin üzerinde hesaplanıyor. İkinci bir ağ
+  /// turu atmak aynı veriyi iki kez indirmek olurdu.
+  final Drawdown? drawdown;
+  final double? volatilite;
 }
 
-/// Özet sekmesinin AĞA ÇIKAN yan verilerini toplar: TÜFE ve yüzdelik dilim.
-///
-/// **Neden ayrı bir StatefulWidget:** ikisi de ağ çağrısı ve ana ekran her
-/// `setState`'te (30 sn'lik gün içi tick dahil) yeniden çiziliyor. Çağrılar
-/// `_buildOzetSekmesi` içinde yapılsaydı her tick'te tekrar atılırdı. Burada
-/// `initState` bir kez ister; dönem değişince `didUpdateWidget` yeniden
-/// ister.
+/// [_YanVeri]'yi ölçer — saf girdilerle, State'e bağlı değil; böylece hem
+/// ekran hem arkadaki ısıtma aynı fonksiyonu çağırır (iki kopya hesap yok).
 ///
 /// Sessizce başarısız olur: TÜFE tablosu boş doğuyor (`InflationService`
-/// "veri yoksa özellik yoktur" diyor) ve yüzdelik dilim k-anonimlik
-/// eşiğinin altında null döner. İkisi de null iken özet yine gösterilir —
+/// "veri yoksa özellik yoktur" diyor). Alan null iken özet yine gösterilir —
 /// yalnızca o bloklar çizilmez.
+Future<_YanVeri> _yanVeriYukle({
+  required SummaryPeriod period,
+  required List<Asset> assets,
+  required PortfolioState? pState,
+}) async {
+  if (assets.isEmpty) return const _YanVeri();
+
+  // Sağ uç CANLI kapsam toplamı — Özet'in rakamıyla aynı uç (bkz.
+  // `compute` [canliSon]).
+  final canliSon =
+      pState == null ? null : DailySummary.kapsamToplami(pState, assets);
+
+  // ── 1Y penceresi: bağlam cümlesi + sağlık metrikleri ──────────────────
+  //
+  // 1Y penceresini bir kez çeker ve İKİ tüketiciye dağıtır:
+  //   · kayıp döneminde gösterilen bağlam cümlesi (`uzunDonem`)
+  //   · portföy sağlığı metrikleri (`drawdown`, `volatilite`)
+  //
+  // **Neden tek istek:** ikisi de aynı 1Y serisini istiyor. Ayrı ayrı
+  // çekilseydi aynı veri iki kez inerdi ve `HistoryService`'in çözünürlük
+  // önbelleği bunu gizlerdi — pahalı olan ilk açılış, orada iki tur atmak
+  // görünmez bir yavaşlama olurdu.
+  double? uzunDonem;
+  Drawdown? drawdown;
+  double? volatilite;
+  try {
+    final now = DateTime.now();
+    final from = PeriodSummaryService.donemBaslangici(now, 12);
+    final tier =
+        ResolutionTierMeta.pickForSpan(SummaryPeriod.birYil.days.toDouble());
+    final bd = await HistoryService.instance
+        .getPortfolioHistoryBreakdownAtResolution(
+      assets: assets,
+      from: from,
+      to: now,
+      tier: tier,
+    );
+    final yil = PeriodSummaryService.compute(
+      period: SummaryPeriod.birYil,
+      assets: assets,
+      breakdown: bd,
+      now: now,
+      // Özet'in 1Y rakamıyla aynı sağ uç (bkz. `compute` [canliSon]).
+      canliSon: canliSon,
+    );
+    uzunDonem = yil.getiriPct;
+    // Sağlık kartı YALNIZCA 1Y bloğunda çiziliyor.
+    if (period == SummaryPeriod.birYil) {
+      // Oynaklık BAR SÜRESİNE bağlı yıllıklandırılır: 1Y penceresi günlük
+      // değil haftalık bar taşıyabiliyor ve sabit bir √252 çarpanı rakamı
+      // 2,6 kata kadar şişirirdi (bkz. `InsightMetricsService`).
+      final barGun = tier.barSuresi.inMinutes / (60 * 24);
+      drawdown = InsightMetricsService.maxDrawdown(bd.total);
+      // Akıştan arındırılmış (2026-10-01): alım günü "sıçrama"
+      // sayılmasın. Düşüş ham kalır (`maxDrawdown` notu).
+      volatilite = InsightMetricsService.annualizedVolatility(
+        bd.total,
+        barSuresiGun: barGun,
+        lotlar: assets,
+      );
+    }
+  } catch (_) {
+    // Sessizce vazgeç: bağlam cümlesi ve sağlık kartı ikincil. Ana rakam
+    // ve köprü zaten çizilmiş durumda ve kayıp tonu bağlam olmadan da
+    // doğru (`tonCumlesi` uzunDonemPct null iken nötr cümleye düşüyor).
+  }
+
+  // GÜNLÜK ve 1H'de TÜFE sorulmaz: endeks AYLIK yayımlanıyor.
+  //
+  // **1H de kapının ARKASINDA (2026-09-16).** Eskiden yalnızca GÜNLÜK
+  // eleniyordu ve 1H için `inflationForPeriod(7)` çağrılıyordu;
+  // `aySayisi(7)` tabanı 1'e kırptığı için bir HAFTALIK getiri bir AYLIK
+  // TÜFE ile kıyaslanan bir sayı üretiliyordu. Kart 1H'de çizilmediği
+  // için ekranda görünmüyordu ama paylaşım metni enflasyon bağlanmış
+  // özetten üretiliyor: kullanıcı "enflasyonun X puan önündeyim" yazan
+  // bir kartı paylaşabiliyordu. Ölçülmemiş bir karşılaştırma, ekranda
+  // olmasa da paylaşılmamalı.
+  if (period == SummaryPeriod.gunluk || period == SummaryPeriod.birHafta) {
+    return _YanVeri(
+        uzunDonem: uzunDonem, drawdown: drawdown, volatilite: volatilite);
+  }
+
+  // 1A'da pencere BİR AYDIR (son açıklanmış ay), 6A/1Y'de dönemin ayı.
+  //
+  // Yıllık TÜFE'yi bir aylık pencereye uygulamak portföyü haksız yere
+  // kötü gösterirdi: %31,5 yıllık enflasyonu bir ayın getirisinden
+  // düşmek o ayı otomatik kayıp yazar.
+  //
+  // `pencere()` yüzdeyle birlikte UÇLARI da veriyor; nominal getiri
+  // birazdan o uçlara hizalanacak.
+  var w = await InflationService.instance.pencere(
+    period == SummaryPeriod.birAy ? 30 : period.days,
+  );
+  // 5Y: endeks beş yıl geriye gitmiyorsa kart HİÇ çizilmiyordu (müşteri
+  // testi 2026-10-01). Pencere veri olan en erken aya / ilk alıma çekilir
+  // ve kart bunu söyler (`InflationWindow.kisaltildi`).
+  if (w == null && period.days > SummaryPeriod.birYil.days) {
+    w = await InflationService.instance.pencereKapsayan(
+      period.days,
+      enErken: PeriodSummaryService.ilkAlimTarihi(assets),
+    );
+  }
+
+  // Nominal AYNI pencerede yeniden hesaplanır — `widget.summary.getiriPct`
+  // takvimden türetilen (bugünden geriye) pencerenin getirisi ve TÜFE
+  // penceresiyle örtüşmüyor. Gerekçe `RealReturnService.piyasaGetirisi`
+  // notunda; hesap da orada, burada kopyalanmıyor.
+  double? nominal;
+  double? reelHizali;
+  if (w != null) {
+    try {
+      final g = await RealReturnService.hizaliGetiri(assets, w);
+      nominal = g?.nominal;
+      reelHizali = g?.reel;
+    } catch (_) {
+      // Seri kurulamazsa kart hiç çizilmez: hizasız bir farkı göstermek,
+      // hiç göstermemekten kötü.
+    }
+  }
+  final enf = nominal == null ? null : w?.pct;
+
+  // `enf == null` üç sebepten olabilir; ekranın hangisi olduğunu bilmesi
+  // gerekiyor:
+  //
+  //   1. Tablo BOŞ            → sebebi söyle ("veri bekleniyor")
+  //   2. Seri DURMUŞ (bayat)  → sebebi söyle — kullanıcı açısından 1 ile
+  //      aynı sonuç: reel getiri hesaplanamıyor. Ölçüldü: TÜİK Ocak
+  //      2026'da baz yılını değiştirdi, eski seri orada bitti.
+  //   3. Tablo taze ama bu DÖNEMİN ucu yok → sessiz kal; kullanıcıya
+  //      özel ve zamanla kendiliğinden düzelir.
+  //
+  // `isStale` 1 ve 2'yi birlikte kapsıyor, bu yüzden tek çağrı yetiyor.
+  // Maliyetsiz: aynı 12 saatlik önbelleği okuyor, ağ turu atmıyor.
+  final bosMu = enf == null ? await InflationService.instance.isStale() : false;
+
+  // Köprü satırı: TÜFE penceresinin sonu → BUGÜN. Yalnızca reel kart
+  // çizilecekse ölçülür (kartsız bir köprü neyi köprülediğini söyleyemez).
+  // Sağ uç canlı kapsam toplamı — üst kartla aynı uç (bkz. `compute`
+  // [canliSon]); ölçüm `TufeKoprusu.olc`'ta, burada formül yok.
+  TufeKoprusu? kopru;
+  if (enf != null && w != null) {
+    final pct = await TufeKoprusu.olc(
+      assets,
+      pencereSonu: w.seriBitisi,
+      now: DateTime.now(),
+      canliSon: canliSon,
+    );
+    if (pct != null) {
+      kopru = TufeKoprusu(pencereSonu: w.seriBitisi, getiriPct: pct);
+    }
+  }
+
+  return _YanVeri(
+    tufePencere: enf == null ? null : w,
+    hizaliNominal: enf == null ? null : nominal,
+    hizaliReel: enf == null ? null : reelHizali,
+    tufeKoprusu: kopru,
+    endeksBos: bosMu,
+    uzunDonem: uzunDonem,
+    drawdown: drawdown,
+    volatilite: volatilite,
+  );
+}
+
+/// Özet sekmesinin AĞA ÇIKAN yan verilerini çizer: TÜFE, yüzdelik dilim,
+/// 1Y bağlamı, sağlık.
+///
+/// **Neden ayrı bir StatefulWidget:** hepsi ağ çağrısı ve ana ekran her
+/// `setState`'te (30 sn'lik gün içi tick dahil) yeniden çiziliyor. Çağrılar
+/// `_buildOzetSekmesi` içinde yapılsaydı her tick'te tekrar atılırdı. Burada
+/// `initState` bir kez ister; [bellekAnahtari] değişince (dönem, kapsam,
+/// defter) `didUpdateWidget` yeniden ister.
+///
+/// **İlk ölçüm bitene kadar iskelet (2026-10-02, titreme bulgusu):** eskiden
+/// özet hemen çiziliyor, TÜFE/köprü/sağlık kartları SONRA belirip alttaki
+/// kartları itiyordu — kullanıcı bunu "ekran titriyor" diye gördü. Artık
+/// ölçüm bellekte varsa eşzamanlı okunur (bekleme yok); yoksa iskelet
+/// durur ve özet tek seferde, tam hâliyle gelir. Ağ yavaşsa iskelet
+/// [_azamiBekleme]'den uzun tutulmaz: özet çizilir, kartlar geldiğinde
+/// eklenir (iskeletin sonsuza kadar dönmesi titremeden kötüdür).
 class _OzetYanVeri extends ConsumerStatefulWidget {
   final SummaryPeriod period;
   final PeriodSummary summary;
@@ -55,13 +277,37 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
   /// Uzun pencere bağlamı için gereken varlıklar ve akış kuralı.
   final List<Asset> assets;
 
+  /// "Başka yere koysaydın" kartı — `_buildOzetSekmesi` Özet'in girdileriyle
+  /// kurar, burası yalnızca view'a taşır. `null` ise çizilmez.
+  final Widget? kiyasKarti;
+
+  /// Ekranın Özet belleği ve bu ölçümün oradaki anahtarı (dönem + kapsam +
+  /// tür + simülasyon + lot imzası). Bkz. `_OzetBellek`.
+  final _OzetBellek bellek;
+  final String bellekAnahtari;
+
+  /// İlk ölçüm beklenirken çizilen iskelet — `_OzetSerisi` ile AYNI
+  /// (`_ozetIskeleti`), iki bekleme tek ve kesintisiz bir iskelet görünür.
+  final Widget iskelet;
+
+  /// Tek akış (`performans_tek_akis`): ana rakam kartı dönem kartında,
+  /// tür dökümü NEDEN'in sonunda. Bkz. `PeriodSummaryView.anaRakamGizli`.
+  final bool anaRakamGizli;
+  final Widget? nedenEki;
+
   const _OzetYanVeri({
     required this.period,
     required this.summary,
     required this.assets,
+    required this.bellek,
+    required this.bellekAnahtari,
+    required this.iskelet,
+    this.kiyasKarti,
     this.karakter,
     this.enSabirli,
     this.enSabirliGun,
+    this.anaRakamGizli = false,
+    this.nedenEki,
   });
 
   @override
@@ -69,39 +315,19 @@ class _OzetYanVeri extends ConsumerStatefulWidget {
 }
 
 class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
-  /// TÜFE ölçümü ve ÖLÇÜLDÜĞÜ pencere.
-  ///
-  /// Yüzde tek başına tutulmuyor (2026-09-16): ekran nominal getiriyi bu
-  /// pencereye hizalamak ZORUNDA, yoksa çıkarma iki farklı zaman dilimini
-  /// kıyaslar. Gerekçe `InflationService.pencere` notunda.
-  InflationWindow? _tufePencere;
+  /// İskeletin azami süresi. Bellek ve ısıtma çoğu dokunuşu beklemesiz
+  /// yapar; burası yalnız soğuk ağda devreye girer.
+  static const _azamiBekleme = Duration(seconds: 1);
 
-  /// [_tufePencere] ile AYNI aralıkta hesaplanmış nominal getiri.
-  ///
-  /// `widget.summary.getiriPct` bunun yerine KULLANILAMAZ: o, takvimden
-  /// türetilen pencerenin (bugünden geriye) getirisi ve TÜFE penceresiyle
-  /// örtüşmüyor — 1A'da hiç kesişmiyordu.
-  double? _hizaliNominal;
+  _YanVeri _veri = const _YanVeri();
 
-  /// `inflation_index` tablosu tamamen boş mu? (Kurulum eksik.)
-  ///
-  /// `_enflasyon == null` ile aynı şey DEĞİL: endeks dolu olup bu dönemin
-  /// ucu eksik de olabilir. Ayrımın gerekçesi
-  /// `InflationService.isStale` notunda.
-  bool _endeksBos = false;
+  /// İlk ölçüm (ya da bellek) geldi mi / bekleme süresi doldu mu.
+  bool _hazir = false;
+  Timer? _beklemeSayaci;
 
-  /// Kayıp döneminde gösterilen "daha uzun pencere" bağlamı (1Y getirisi).
-  ///
-  /// "Bu ay ekside. Daha uzun pencerede hâlâ +%31,8." cümlesinin ikinci
-  /// yarısı. `RETENTION_STRATEJISI.md` §8 kayıp anında ya SUSMAYI ya BAĞLAM
-  /// VERMEYİ şart koşuyor; ekran sustuğunda kullanıcı yalnız bir kırmızı
-  /// rakam görür, o yüzden bağlam tercih edildi.
-  ///
-  /// Ayrı bir istek: ekranın elindeki `breakdown` yalnızca SEÇİLİ dönemi
-  /// kapsıyor, 1Y rakamı onun içinde yok. Yalnızca gerçekten gerektiğinde
-  /// (kayıptaki kısa dönemde) atılır.
-  double? _uzunDonem;
-  bool _uzunDonemIstendi = false;
+  /// Uçuşan ölçümün anahtarı — eski anahtarın geç gelen sonucu yenisinin
+  /// üstüne yazılmasın.
+  String? _istenen;
 
   /// 6A benchmark şeridinin yüzdelik dilimi. `null` iken şerit çizilmez —
   /// bayrak kapalı, opt-in yok, geçmiş yetersiz ya da k-anonimlik eşiği
@@ -113,126 +339,84 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// kullanıcı 1Y grafiğine bakarken aylık birikimini görebilmeli.
   ContributionInterval _katkiAralik = ContributionInterval.aylik;
 
-  /// 1Y sağlık metrikleri (düşüş / oynaklık / yoğunlaşma).
-  ///
-  /// Ayrı bir istek gerektirmiyor: `_yukleUzunDonem` zaten 1Y breakdown'ı
-  /// çekiyor ve metrikler o serinin üzerinde hesaplanıyor. İkinci bir ağ
-  /// turu atmak aynı veriyi iki kez indirmek olurdu.
-  Drawdown? _drawdown;
-  double? _volatilite;
-
   /// Para ağırlıklı yıllık getiri. Saf hesap, ağa çıkmaz.
   double? _xirr;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
+    _anahtarAc();
   }
 
   @override
   void didUpdateWidget(_OzetYanVeri old) {
     super.didUpdateWidget(old);
-    if (old.period != widget.period) {
-      _tufePencere = null;
-      _hizaliNominal = null;
-      // Endeks boşluğu döneme bağlı değil ama `_yukle` yeniden koşup onu
-      // tazeleyecek; arada eski değeri tutmak yanlış kart göstermez
-      // (boşsa yine boş çıkar) ama sıfırlamak durumu tek yerde tutuyor.
-      _endeksBos = false;
-      // 1Y bağlamı dönemden bağımsız (hep 12 ay geri) ama KAPISI döneme
-      // bağlı: yeni dönem kayıptaysa ve önceki değilse istek hiç
-      // atılmamıştır, bu yüzden bayrak da sıfırlanır.
-      _uzunDonemIstendi = false;
-      // Sağlık metrikleri 1Y'ye bağlı ve aynı bayrağın arkasında; dönem
-      // değişince yeniden hesaplanmaları için temizlenirler. `_uzunDonem`
-      // gibi KORUNMAZLAR: 1Y'den çıkıldığında kart zaten çizilmiyor ve
-      // eski değeri tutmak, geri dönüldüğünde bayat bir rakam gösterirdi.
-      _drawdown = null;
-      _volatilite = null;
-      _xirr = null;
-      // Dilim YALNIZCA 6A'da isteniyor; başka bir dönemden 6A'ya
-      // geçildiğinde istek hiç atılmamış olur. Bayrağı sıfırlamak o
-      // geçişte şeridin görünmesini sağlar. `_dilim`'in kendisi
-      // korunuyor: 6A'ya geri dönen kullanıcı aynı rakamı yeniden
-      // beklemeden görür (havuz 24 saatlik pencerede zaten sabit).
-      _dilimIstendi = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _yukle());
+    if (old.bellekAnahtari != widget.bellekAnahtari) _anahtarAc();
+  }
+
+  @override
+  void dispose() {
+    _beklemeSayaci?.cancel();
+    super.dispose();
+  }
+
+  /// Yeni anahtar için durumu kurar: bellekte varsa EŞZAMANLI okunur
+  /// (iskelet yok), yoksa iskelet + ölçüm. Bellekteki ölçüm bayatsa yine
+  /// gösterilir ve arkada tazelenir.
+  ///
+  /// Dönem değişince eskiden alanlar tek tek sıfırlanıyordu; artık ölçüm
+  /// tek değer ([_YanVeri]) ve anahtara bağlı — başka dönemin TÜFE'si ya da
+  /// sağlık metriği yeni döneme taşınamaz.
+  void _anahtarAc() {
+    final k = widget.bellekAnahtari;
+    final bellekte = widget.bellek.yanVeriler.oku(k);
+    _veri = bellekte ?? const _YanVeri();
+    _beklemeSayaci?.cancel();
+    _hazir = bellekte != null;
+    if (!_hazir) {
+      _beklemeSayaci = Timer(_azamiBekleme, () {
+        if (mounted && !_hazir) setState(() => _hazir = true);
+      });
+    }
+    // Saf hesap: ağ turlarını beklemeden.
+    _xirr = _xirrHesapla();
+    // Dilim YALNIZCA 6A'da isteniyor; başka bir dönemden 6A'ya
+    // geçildiğinde istek hiç atılmamış olur. Bayrağı sıfırlamak o
+    // geçişte şeridin görünmesini sağlar. Son bilinen dilim bellekten
+    // okunur: 6A'ya geri dönen kullanıcı aynı rakamı yeniden beklemeden
+    // görür (havuz 24 saatlik pencerede zaten sabit).
+    _dilimIstendi = false;
+    _dilim = widget.bellek.dilimler[k];
+    if (bellekte == null || !widget.bellek.yanVeriler.taze(k)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _yukle(k));
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _yukleDilim());
     }
   }
 
-  Future<void> _yukle() async {
-    if (!mounted) return;
-
-    // Saf hesap önce: ağ turlarını beklemeden çizilebilir.
-    _hesaplaXirr();
-
-    await _yukleUzunDonem();
+  Future<void> _yukle(String k) async {
+    if (!mounted || k != widget.bellekAnahtari) return;
+    _istenen = k;
+    final assets = widget.assets;
+    final period = widget.period;
+    final pState = ref.read(portfolioProvider).valueOrNull;
+    try {
+      final v = await widget.bellek.yanVeriler.yukle(
+        k,
+        () => _yanVeriYukle(period: period, assets: assets, pState: pState),
+      );
+      if (!mounted || _istenen != k) return;
+      setState(() {
+        _veri = v;
+        _hazir = true;
+      });
+    } catch (e, st) {
+      // Yan veri ikincil: özet onsuz da tam. Sessiz değil.
+      CrashReporter.report(e, st, reason: 'OzetYanVeri.yukle');
+      if (mounted && !_hazir) setState(() => _hazir = true);
+    }
+    _beklemeSayaci?.cancel();
     await _yukleDilim();
-
-    // GÜNLÜK ve 1H'de TÜFE sorulmaz: endeks AYLIK yayımlanıyor.
-    //
-    // **1H de kapının ARKASINDA (2026-09-16).** Eskiden yalnızca GÜNLÜK
-    // eleniyordu ve 1H için `inflationForPeriod(7)` çağrılıyordu;
-    // `aySayisi(7)` tabanı 1'e kırptığı için bir HAFTALIK getiri bir AYLIK
-    // TÜFE ile kıyaslanan bir sayı üretiliyordu. Kart 1H'de çizilmediği
-    // için ekranda görünmüyordu ama paylaşım metni enflasyon bağlanmış
-    // özetten üretiliyor: kullanıcı "enflasyonun X puan önündeyim" yazan
-    // bir kartı paylaşabiliyordu. Ölçülmemiş bir karşılaştırma, ekranda
-    // olmasa da paylaşılmamalı.
-    if (widget.period == SummaryPeriod.gunluk ||
-        widget.period == SummaryPeriod.birHafta) {
-      return;
-    }
-
-    // 1A'da pencere BİR AYDIR (son açıklanmış ay), 6A/1Y'de dönemin ayı.
-    //
-    // Yıllık TÜFE'yi bir aylık pencereye uygulamak portföyü haksız yere
-    // kötü gösterirdi: %31,5 yıllık enflasyonu bir ayın getirisinden
-    // düşmek o ayı otomatik kayıp yazar.
-    //
-    // `pencere()` yüzdeyle birlikte UÇLARI da veriyor; nominal getiri
-    // birazdan o uçlara hizalanacak.
-    final w = await InflationService.instance.pencere(
-      widget.period == SummaryPeriod.birAy ? 30 : widget.period.days,
-    );
-
-    // Nominal AYNI pencerede yeniden hesaplanır — `widget.summary.getiriPct`
-    // takvimden türetilen (bugünden geriye) pencerenin getirisi ve TÜFE
-    // penceresiyle örtüşmüyor. Gerekçe `RealReturnService.piyasaGetirisi`
-    // notunda; hesap da orada, burada kopyalanmıyor.
-    double? nominal;
-    if (w != null) {
-      try {
-        nominal = await RealReturnService.piyasaGetirisi(widget.assets, w);
-      } catch (_) {
-        // Seri kurulamazsa kart hiç çizilmez: hizasız bir farkı göstermek,
-        // hiç göstermemekten kötü.
-      }
-    }
-    final enf = nominal == null ? null : w?.pct;
-
-    // `enf == null` üç sebepten olabilir; ekranın hangisi olduğunu bilmesi
-    // gerekiyor:
-    //
-    //   1. Tablo BOŞ            → sebebi söyle ("veri bekleniyor")
-    //   2. Seri DURMUŞ (bayat)  → sebebi söyle — kullanıcı açısından 1 ile
-    //      aynı sonuç: reel getiri hesaplanamıyor. Ölçüldü: TÜİK Ocak
-    //      2026'da baz yılını değiştirdi, eski seri orada bitti.
-    //   3. Tablo taze ama bu DÖNEMİN ucu yok → sessiz kal; kullanıcıya
-    //      özel ve zamanla kendiliğinden düzelir.
-    //
-    // `isStale` 1 ve 2'yi birlikte kapsıyor, bu yüzden tek çağrı yetiyor.
-    // Maliyetsiz: aynı 12 saatlik önbelleği okuyor, ağ turu atmıyor.
-    final bosMu =
-        enf == null ? await InflationService.instance.isStale() : false;
-
-    if (!mounted) return;
-    setState(() {
-      _tufePencere = enf == null ? null : w;
-      _hizaliNominal = enf == null ? null : nominal;
-      _endeksBos = bosMu;
-    });
   }
 
   /// 6A yüzdelik dilimini çeker — benchmark şeridi için.
@@ -242,137 +426,42 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// oturum açmış olmalı. Sunucudaki k-anonimlik eşiği beşinci kapı —
   /// havuz 8 kişiye ulaşmadıysa RPC boş döner ve şerit hiç çizilmez.
   ///
-  /// **Snapshot burada yükleniyor.** `get_percentile_bucket` yalnızca son
-  /// 24 saatte snapshot atmış kullanıcıları karşılaştırıyor; yüklemeyi
-  /// atlarsak kullanıcı kendi havuzunda görünmez ve kendi dilimini asla
-  /// göremez (`PercentileStrip` içindeki aynı not).
+  /// Bellekten okunan dilim kapılardan biri kapanınca (opt-out, bayrak,
+  /// çıkış) düşürülür — ekranda yalnızca hâlâ geçerli bir dilim kalır.
   ///
   /// 180 kovası migration `0051` ile açıldı; ondan önce RPC bu periyodu
   /// geçersiz sayıp boş dönüyordu.
   Future<void> _yukleDilim() async {
-    if (_dilimIstendi) return;
+    if (!mounted || _dilimIstendi) return;
     if (DemoModu.aktif) return; // Demo sunucuya ROI yüklemez (F1).
     if (widget.period != SummaryPeriod.altiAy) return;
     _dilimIstendi = true;
+    final k = widget.bellekAnahtari;
 
-    if (!RemoteConfigService.instance.percentileStripEnabled) return;
-    if (!ref.read(leaderboardOptInProvider)) return;
     final me = ref.read(authProvider).valueOrNull;
-    if (me == null) return;
-    if (widget.assets.isEmpty) return;
-
-    final pState = ref.read(portfolioProvider).valueOrNull;
-    if (pState == null) return;
+    if (!RemoteConfigService.instance.percentileStripEnabled ||
+        !ref.read(leaderboardOptInProvider) ||
+        me == null ||
+        widget.assets.isEmpty) {
+      widget.bellek.dilimler.remove(k);
+      if (_dilim != null) setState(() => _dilim = null);
+      return;
+    }
 
     try {
       final servis = LeaderboardService.instance;
       const gun = 180;
-      final roi = await servis.computeROI(
-        assets: widget.assets,
-        periodDays: gun,
-        currentValueTRY: servis.totalValueTRY(widget.assets, pState.toTRY),
-        toTRY: pState.toTRY,
-        cacheKey: me.id,
-      );
-      // Geçmiş yetersiz — karşılaştırma yapılamaz, uydurma bir dilim
-      // gösterilmez.
-      if (roi == null || !mounted) return;
-
-      await servis.uploadRoiSnapshot(
-        userId: me.id,
-        periodDays: gun,
-        roiPct: roi,
-      );
+      // Anlık görüntüyü cihaz YAZMAZ (0095): cron yarışa katılan herkes için
+      // TWR yazar; kendi satırı yoksa RPC boş döner ve dilim gösterilmez.
       final data = await servis.fetchPercentile(gun);
       if (!mounted || data == null) return;
 
       unawaited(AnalyticsService.instance
           .logPercentileViewed(bucket: data.percentile, periodDays: gun));
+      widget.bellek.dilimler[k] = data;
       setState(() => _dilim = data);
     } catch (_) {
       // Sessizce vazgeç: şerit ikincil, özet onsuz da tam.
-    }
-  }
-
-  /// 1Y bağlamını çeker — YALNIZCA gerektiğinde.
-  ///
-  /// Üç kapı: dönem kayıpta olmalı, dönem 1Y'nin kendisi olmamalı (bir
-  /// pencereyi kendisiyle karşılaştırmak bilgi taşımaz) ve daha önce
-  /// istenmemiş olmalı. Kapılar olmadan bu istek her sekme geçişinde
-  /// atılırdı; oysa cümle ancak kayıpta gösteriliyor.
-  /// 1Y penceresini bir kez çeker ve İKİ tüketiciye dağıtır:
-  ///   · kayıp döneminde gösterilen bağlam cümlesi (`_uzunDonem`)
-  ///   · portföy sağlığı metrikleri (`_drawdown`, `_volatilite`)
-  ///
-  /// **Neden tek istek:** ikisi de aynı 1Y serisini istiyor. Ayrı ayrı
-  /// çekilseydi aynı veri iki kez inerdi ve `HistoryService`'in çözünürlük
-  /// önbelleği bunu gizlerdi — pahalı olan ilk açılış, orada iki tur atmak
-  /// görünmez bir yavaşlama olurdu.
-  ///
-  /// Kapı GENİŞLEDİ: eskiden yalnızca kayıptaki kısa dönemlerde
-  /// çağrılıyordu. Sağlık kartı 1Y'de gösterildiği için artık 1Y'nin
-  /// kendisi de kapıdan geçmeli; bağlam cümlesinin kendi kapısı aşağıda
-  /// ayrıca duruyor.
-  Future<void> _yukleUzunDonem() async {
-    if (_uzunDonemIstendi) return;
-    if (widget.assets.isEmpty) return;
-
-    // Bağlam cümlesi gerekiyor mu? (Eski kapı — 1Y'nin kendisinde bir
-    // pencereyi kendisiyle karşılaştırmak bilgi taşımaz.)
-    final baglamGerek =
-        widget.summary.isNegative && widget.period != SummaryPeriod.birYil;
-    // Sağlık kartı YALNIZCA 1Y bloğunda çiziliyor.
-    final saglikGerek = widget.period == SummaryPeriod.birYil;
-    if (!baglamGerek && !saglikGerek) return;
-
-    _uzunDonemIstendi = true;
-
-    try {
-      final now = DateTime.now();
-      final from = PeriodSummaryService.donemBaslangici(now, 12);
-      final tier =
-          ResolutionTierMeta.pickForSpan(SummaryPeriod.birYil.days.toDouble());
-      final bd = await HistoryService.instance
-          .getPortfolioHistoryBreakdownAtResolution(
-        assets: widget.assets,
-        from: from,
-        to: now,
-        tier: tier,
-      );
-      if (!mounted) return;
-
-      final pState = ref.read(portfolioProvider).valueOrNull;
-      final yil = PeriodSummaryService.compute(
-        period: SummaryPeriod.birYil,
-        assets: widget.assets,
-        breakdown: bd,
-        now: now,
-        // Özet'in 1Y rakamıyla aynı sağ uç (bkz. `compute` [canliSon]).
-        canliSon: pState == null
-            ? null
-            : DailySummary.kapsamToplami(pState, widget.assets),
-      );
-
-      // Oynaklık BAR SÜRESİNE bağlı yıllıklandırılır: 1Y penceresi günlük
-      // değil haftalık bar taşıyabiliyor ve sabit bir √252 çarpanı rakamı
-      // 2,6 kata kadar şişirirdi (bkz. `InsightMetricsService`).
-      final barGun = tier.barSuresi.inMinutes / (60 * 24);
-
-      if (!mounted) return;
-      setState(() {
-        if (baglamGerek && yil.getiriPct != null) _uzunDonem = yil.getiriPct;
-        if (saglikGerek) {
-          _drawdown = InsightMetricsService.maxDrawdown(bd.total);
-          _volatilite = InsightMetricsService.annualizedVolatility(
-            bd.total,
-            barSuresiGun: barGun,
-          );
-        }
-      });
-    } catch (_) {
-      // Sessizce vazgeç: bağlam cümlesi ve sağlık kartı ikincil. Ana rakam
-      // ve köprü zaten çizilmiş durumda ve kayıp tonu bağlam olmadan da
-      // doğru (`tonCumlesi` uzunDonemPct null iken nötr cümleye düşüyor).
     }
   }
 
@@ -381,12 +470,12 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// 1Y bloğunda gösterilir: yıllıklandırılmış bir oran daha kısa
   /// pencerelerde yanıltıcı olur (`XirrService.minGun` aynı gerekçeyle
   /// 60 günlük bir taban koyuyor).
-  void _hesaplaXirr() {
-    if (widget.period != SummaryPeriod.birYil) return;
-    if (widget.assets.isEmpty) return;
+  double? _xirrHesapla() {
+    if (widget.period != SummaryPeriod.birYil) return null;
+    if (widget.assets.isEmpty) return null;
 
     final pState = ref.read(portfolioProvider).valueOrNull;
-    if (pState == null) return;
+    if (pState == null) return null;
 
     // Bugünkü değer: aktif alım lotlarının toplamı. `totalValueTRY` zaten
     // aynı toplamı `aggregatePositions` üzerinden veriyor ve tek kaynak
@@ -394,27 +483,32 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     // tekrar eden bir hata sınıfı olurdu.
     final deger =
         LeaderboardService.instance.totalValueTRY(widget.assets, pState.toTRY);
-    if (deger <= 0) return;
+    if (deger <= 0) return null;
 
-    final r = XirrService.portfolioXirr(
+    return XirrService.portfolioXirr(
       assets: widget.assets,
       bugunkuDegerTRY: deger,
       now: DateTime.now(),
     );
-    if (r == null || !mounted) return;
-    setState(() => _xirr = r);
   }
 
   @override
   Widget build(BuildContext context) {
+    // İlk ölçüm gelmeden özet çizilmez: kartlar sonradan belirip listeyi
+    // itmesin (sınıf notu). Bekleme [_azamiBekleme] ile sınırlı.
+    if (!_hazir) return widget.iskelet;
+
     // TÜFE farkı burada bağlanır: servis saf ve ağa çıkmıyor, bu yüzden
     // hesabı yapılmış özeti enflasyonla yeniden kurmak yerine yalnızca
     // farkı hesaplayıp view'a veriyoruz.
     final s = widget.summary;
-    final w = _tufePencere;
-    final nominal = _hizaliNominal;
+    final v = _veri;
+    final w = v.tufePencere;
+    final nominal = v.hizaliNominal;
     // İkisi de TÜFE penceresinden: biri eksikse kart hiç çizilmez.
-    final gosterilen = (w != null && nominal != null) ? _tufeIle(s, w, nominal) : s;
+    final gosterilen = (w != null && nominal != null)
+        ? _tufeIle(s, w, nominal, v.hizaliReel)
+        : s;
 
     // Paylaşım metni ENFLASYON BAĞLANDIKTAN SONRAKİ özetten üretilir:
     // `gosterilen` yerine `s` verilirse "enflasyonun X puan önündeyim"
@@ -447,6 +541,13 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       kovaSayisi: 6,
     );
 
+    // Aylık birikim serisi (bayrak `birikim_serisi`, kapalı doğar). Saf
+    // hesap, aynı defterden; kısa geçmişte (`gosterilir`) çizilmez.
+    final seriHam = RemoteConfigService.instance.birikimSerisi
+        ? BirikimSerisiService.hesapla(widget.assets, now: DateTime.now())
+        : null;
+    final seri = (seriHam?.gosterilir ?? false) ? seriHam : null;
+
     // Yoğunlaşma bugünkü portföyden — dönem penceresi almaz.
     final pState = ref.watch(portfolioProvider).valueOrNull;
     final yogunlasma = pState == null
@@ -461,8 +562,8 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     final saglik = widget.period == SummaryPeriod.birYil && gorunur.saglik
         ? SaglikKarti(
             donemEtiketi: 'son 1 yıl',
-            drawdown: _drawdown,
-            volatilite: _volatilite,
+            drawdown: v.drawdown,
+            volatilite: v.volatilite,
             yogunlasma: yogunlasma,
           )
         : null;
@@ -470,16 +571,22 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
     final ileri = widget.period == SummaryPeriod.birYil && gorunur.ileri
         ? IleriMetrikler.hesapla(
             getiriPct: gosterilen.getiriPct,
-            volatilitePct: _volatilite,
+            volatilitePct: v.volatilite,
             xirrPct: _xirr,
-            drawdown: _drawdown,
+            drawdown: v.drawdown,
           )
         : null;
 
     return PeriodSummaryView(
       baz: ref.watch(gosterimBazParaProvider),
       summary: gosterilen,
-      uzunDonemPct: widget.period == SummaryPeriod.birYil ? null : _uzunDonem,
+      kiyasKarti: widget.kiyasKarti,
+      // Bağlam cümlesi YALNIZCA kayıptaki kısa dönemde: 1Y'nin kendisinde
+      // bir pencereyi kendisiyle karşılaştırmak bilgi taşımaz. Ölçüm her
+      // dönemde var (`_YanVeri.uzunDonem` notu); kapı burada.
+      uzunDonemPct: s.isNegative && widget.period != SummaryPeriod.birYil
+          ? v.uzunDonem
+          : null,
       karakter: widget.karakter,
       enSabirli: widget.enSabirli,
       enSabirliGun: widget.enSabirliGun,
@@ -491,7 +598,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
                 paylasimMetni,
                 gosterilen,
                 xirrPct: xirrPaylasim,
-                drawdownPct: gorunur.saglik ? _drawdown?.yuzde : null,
+                drawdownPct: gorunur.saglik ? v.drawdown?.yuzde : null,
                 percentile: gorunur.percentile && RemoteConfigService.instance.globalLeaderboardEnabled ? _dilim?.percentile : null,
               ),
       katkiKarti: katki == null
@@ -501,6 +608,9 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
               ozet: katki,
               aralik: _katkiAralik,
               onAralik: (a) => setState(() => _katkiAralik = a),
+              seri: seri,
+              besDahil: seri != null &&
+                  widget.assets.any((a) => a.type == AssetType.bes),
             ),
       // Tek metrik bile yoksa kart çizilmesin — `hasData` o kapıyı
       // widget'ın içinde tutuyor ama boş bir kabuk geçirmenin de anlamı
@@ -508,11 +618,16 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       saglik: (saglik?.hasData ?? false) ? saglik : null,
       ileriKarti: ileri == null ? null : IleriMetrikKarti(metrikler: ileri),
       xirr: gorunur.xirr ? _xirr : null,
-      enflasyonVerisiBekleniyor: _endeksBos,
+      enflasyonVerisiBekleniyor: v.endeksBos,
+      tufeKoprusu: v.tufeKoprusu,
+      tufePenceresiKisaltildi: w?.kisaltildi ?? false,
       // Derinlik bölümü (XIRR, sağlık, ileri metrikler…) ileri seviyede açık
       // gelir, diğerlerinde katlı: özet önce "bu dönem"i anlatsın.
       derinlikAcik:
           ref.watch(yatirimciSeviyesiProvider) == YatirimciSeviyesi.ileri,
+      derinlikGorunur: ref.watch(seviyeGorunurlukProvider).derinlik,
+      anaRakamGizli: widget.anaRakamGizli,
+      nedenEki: widget.nedenEki,
     );
   }
 
@@ -577,13 +692,18 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
   /// enflasyonun AĞDAN sonradan gelmesinin sonucu (servis saf ve ağa
   /// çıkmıyor). Formüller iki yerde de aynı `InflationService`
   /// fonksiyonlarına bakıyor, kopyalanmıyor.
+  ///
+  /// [reel] servisin REEL PARA AĞIRLIKLI getirisidir (2026-10-01, K4):
+  /// burada `(1+n)/(1+e) − 1` ile yeniden türetilmez — o formül yıl içinde
+  /// eklenen paraya yılın tamamının enflasyonunu yüklüyordu. Nominal, TÜFE
+  /// ve puan farkı aynı kalır.
   PeriodSummary _tufeIle(
     PeriodSummary s,
     InflationWindow w,
     double nominal,
+    double? reel,
   ) {
     final enflasyon = w.pct;
-    final reel = InflationService.realReturnPct(nominal, enflasyon);
 
     return PeriodSummary(
       period: s.period,
@@ -596,11 +716,13 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       // ekranda yazılı.
       start: s.start,
       end: s.end,
+      ilkAlim: s.ilkAlim,
       baslangicTRY: s.baslangicTRY,
       sonTRY: s.sonTRY,
       katkiTRY: s.katkiTRY,
       piyasaTRY: s.piyasaTRY,
       getiriPct: s.getiriPct,
+      yillikGetiriPct: s.yillikGetiriPct,
       enIyi: s.enIyi,
       enZayif: s.enZayif,
       tufeFarki: InflationService.spreadPoints(nominal, enflasyon),
@@ -613,7 +735,7 @@ class _OzetYanVeriState extends ConsumerState<_OzetYanVeri> {
       // NaN filtresi: −%100 enflasyonda payda sıfırlanıyor ve ekrana
       // "%NaN" basılırdı (servis tarafındaki `_sonluVeyaNull` ile aynı
       // kapı).
-      reelGetiriPct: reel.isFinite ? reel : null,
+      reelGetiriPct: (reel != null && reel.isFinite) ? reel : null,
       temettuTRY: s.temettuTRY,
       komisyonTRY: s.komisyonTRY,
       dagilimBasi: s.dagilimBasi,

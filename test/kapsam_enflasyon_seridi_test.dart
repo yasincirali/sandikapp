@@ -70,19 +70,22 @@ void main() {
     expect(src.contains('WeeklySummaryChip('), isFalse);
   });
 
-  test('reel getiri ve haftalık Bugün kartının satırı, aynı hesap yolu', () {
-    expect(yukleyici.contains('RealReturnService.yillik(state.assets)'), isTrue,
+  test('reel getiri Bugün kartının satırı, aynı hesap yolu', () {
+    // `activeAssets` (2026-10-01): ham defter silinmiş lot'ları taşır, Özet
+    // süzüyordu; Ana 5,4 puan derken Özet 4,5 yazdı.
+    expect(yukleyici.contains('RealReturnService.yillik(state.activeAssets)'),
+        isTrue,
         reason: 'aynı hesap yolu — ikinci bir reel getiri hesabı yok');
-    expect(yukleyici.contains('PeriodSummaryService.compute('), isTrue);
-    expect(yukleyici.contains('SummaryPeriod.birHafta'), isTrue);
+    expect(yukleyici.contains('RealReturnService.yillik(state.assets)'), isFalse,
+        reason: 'ham defter getiri hesabına girmez');
     expect(yukleyici.contains('RemoteConfigService.instance.realReturnEnabled'),
         isTrue,
         reason: 'bayrak kapısı şeritle aynı');
-    expect(yukleyici.contains('RemoteConfigService.instance.periodSummaryEnabled'),
-        isTrue);
     // Kart kendi kopyasını tutmaz — tek kaynak.
     expect(kart.contains('BugunYukleyici.reel(widget.state'), isTrue);
-    expect(kart.contains('BugunYukleyici.haftalik(widget.state'), isTrue);
+    // Haftalık satır 2026-10-08'de kalktı (H düzeni çizmiyordu); istek de
+    // geri gelmesin.
+    expect(kart.contains('BugunYukleyici.haftalik('), isFalse);
     expect(kart.contains('RealReturnService.yillik('), isFalse,
         reason: 'yükleyici mantığı karta geri kopyalanmamalı');
   });
@@ -97,10 +100,16 @@ void main() {
     final i = yukleyici.indexOf('static Future<Map<int, double>?> seri(');
     final govde = yukleyici.substring(i, yukleyici.indexOf('catch', i));
     expect(govde.contains('if (!kisisel)'), isTrue);
-    expect(govde.contains('getPortfolioHistoryHourlyBreakdown('), isTrue);
-    expect(govde.indexOf('getPortfolioHistoryHourlyBreakdown('),
-        lessThan(govde.indexOf('IntradaySeriesCache.instance')),
-        reason: 'kapsam dalı önbellekten ÖNCE ayrılmalı');
+    // 2026-10-02 (gün içi tek seri): kapsam dalı da önbellekten okur ama
+    // KENDİ yuvasından (`breakdown(` kümeyle anahtarlı), Ben yuvasını
+    // (`get(`) doldurmaz — kilit ekranı ortağın serisini görmez.
+    expect(govde.contains('IntradaySeriesCache.instance'), isTrue);
+    expect(govde.contains('.breakdown('), isTrue,
+        reason: 'ortak kapsam kendi yuvasını okur');
+    expect(govde.contains('getPortfolioHistoryHourlyBreakdown('), isFalse,
+        reason: 'gün içi seri yalnızca önbellekten (tek kaynak)');
+    expect(govde.indexOf('.breakdown('), lessThan(govde.indexOf('.get(')),
+        reason: 'kapsam dalı Ben yuvasından ÖNCE ayrılmalı');
   });
 
   test('kart boş kapsamda çizilmez', () {

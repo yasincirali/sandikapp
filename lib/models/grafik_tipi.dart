@@ -22,15 +22,6 @@ enum GrafikTipi {
   /// Düz çizgi — varsayılan.
   line('Çizgi', Icons.show_chart_rounded),
 
-  /// Çizgi + altında gradyan dolgu.
-  mountain('Dağ', Icons.landscape_rounded),
-
-  /// Dönem başına göre üstü kazanç, altı kayıp renginde.
-  baseline('Taban', Icons.multiline_chart_rounded),
-
-  /// Her noktada dikey çubuk.
-  bar('Çubuk', Icons.bar_chart_rounded),
-
   /// Kova bazlı mum: gövde açılış→kapanış, fitil en düşük→en yüksek.
   candle('Mum', Icons.candlestick_chart_rounded);
 
@@ -44,6 +35,25 @@ enum GrafikTipi {
 
   /// Uygulamanın açılış varsayılanı.
   static const varsayilan = GrafikTipi.line;
+
+  // ## Yalnız Çizgi ve Mum (sadeleştirme madde 5, 2026-10-04)
+  // Çizgi "değer nasıl gitti"yi, Mum "dönem içinde ne kadar oynadı"yı
+  // söyler — iki ayrı soru. Alan, Çizgi'nin altı boyanmış hâliydi; Taban,
+  // Özet'teki dönem başı kıyasının grafikteki tekrarı; Çubuk ise portföy
+  // değerinde (sürekli bir seri) yanlış bir "adet" çağrışımı yapıyordu. Beş
+  // seçenek yeni kullanıcıya "hangisi doğru?" sorusu sorduruyordu. Bayrak
+  // `performans_ayar_sade` açıkken seçici yalnız bu ikisini listeliyordu;
+  // bayrak 2026-10-05'te kalkınca Alan/Taban/Çubuk enum'dan ve çizimden
+  // silindi (seçim oturumluk, diske yazılmadığı için göç gerekmedi).
+
+  /// Seçimden ÇİZİLECEK tipe — saf eşleme, seçimi DEĞİŞTİRMEZ.
+  ///
+  /// [araclar] false (sade Başlangıç): seçici yok, grafik düz çizgi —
+  /// Orta'da Mum seçip Başlangıç'a geçen kullanıcı kapatamayacağı bir
+  /// Mum'da kalmasın. Seçim ([grafikTipiNotifier]) olduğu gibi kalır;
+  /// seviye geri gelince Mum da geri gelir.
+  static GrafikTipi etkin(GrafikTipi secim, {bool araclar = true}) =>
+      araclar ? secim : GrafikTipi.line;
 }
 
 /// Seçili grafik tipi — OTURUM boyunca yaşar.

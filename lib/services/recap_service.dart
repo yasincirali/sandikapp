@@ -183,7 +183,8 @@ class RecapService {
       // `mevduatci` 2026-09-14'te türle birlikte kalktı; yenisi özet
       // metinleri ister). Şimdilik dengeli sayılır.
       AssetType.mevduat || AssetType.bes => PortfolioCharacter.dengeli,
-      AssetType.diger => PortfolioCharacter.dengeli,
+      // Eurobond ağırlıklı portföy için ayrı karakter yok (mevduat gibi).
+      AssetType.eurobond || AssetType.diger => PortfolioCharacter.dengeli,
     };
   }
 
@@ -371,7 +372,7 @@ class RecapService {
     final satirlar = <String>[baslik, ''];
 
     if (karakter != null) {
-      satirlar.add('${karakter.label} — ${karakter.tagline}');
+      satirlar.add('${karakter.label}: ${karakter.tagline}');
     }
     if (degisimPct != null) {
       satirlar.add('$degisimEtiketi: ${isaretli(degisimPct)}');
@@ -379,12 +380,21 @@ class RecapService {
     if (enflasyonPuan != null) {
       final reel =
           reelGetiriPct == null ? '' : ' (reel ${isaretli(reelGetiriPct)})';
-      satirlar.add(enflasyonPuan >= 0
-          ? 'Enflasyonun ${yuzde(enflasyonPuan)} puan önündeyim$reel'
-          : 'Enflasyonun ${yuzde(enflasyonPuan)} puan gerisindeyim$reel');
+      // "0,0 puan önündeyim/gerisindeyim" yazılmaz: metindeki sayı sıfırsa
+      // hüküm de başa baştır (ekrandaki kartla aynı kural,
+      // `InflationService.hukum`).
+      satirlar.add(yuzde(enflasyonPuan) == yuzde(0)
+          ? 'Enflasyonla başa başım$reel'
+          : enflasyonPuan > 0
+              ? 'Enflasyonun ${yuzde(enflasyonPuan)} puan önündeyim$reel'
+              : 'Enflasyonun ${yuzde(enflasyonPuan)} puan gerisindeyim$reel');
     }
     if (xirrPct != null) {
-      satirlar.add('Yıllıklandırılmış getiri (XIRR): ${isaretli(xirrPct)}');
+      // 2026-10-04 (sadeleştirme 2, jargon): satır "Yıllıklandırılmış
+      // getiri (XIRR)" idi. Paylaşım metnini okuyan çoğu kişi XIRR'ı
+      // bilmez; ekrandaki kart da "Başlangıçtan beri (yıllık)" der.
+      satirlar.add(
+          'Yıllık getiri (ilk alımdan beri): ${isaretli(xirrPct)}');
     }
     if (enIyi != null) {
       satirlar.add('En iyi: ${enIyi.name} ${isaretli(enIyi.changePct)}');
@@ -463,9 +473,12 @@ class RecapService {
       }
     }
     if (xirrPct != null) {
-      aciklama.add('· XIRR: her para giriş/çıkışını tarihiyle '
-          'ağırlıklandıran yıllıklandırılmış getiri. Piyasa getirisinden '
-          'farklı olması normaldir — o dönemi, bu para akışını ölçer.');
+      // Terim (XIRR) açıklamada parantez içinde kalır: bilen okur yöntemi
+      // tanısın, bilmeyen satırı "yıllık getiri" diye okusun.
+      aciklama.add('· Yıllık getiri (XIRR yöntemi): her para giriş/çıkışını '
+          'tarihiyle ağırlıklandıran yıllıklandırılmış getiri. Piyasa '
+          'getirisinden farklı olması normaldir: o dönemi, bu para akışını '
+          'ölçer.');
     }
     if (enIyi != null || enZayif != null) {
       aciklama.add('· En iyi/en zayıf: varlığın ALIŞ fiyatına göre ömürlük '
@@ -518,7 +531,7 @@ class RecapService {
         // okuyan kişi başlıktaki yılı varsayar.
         nominalAralik: (d.inflationStart == null || d.inflationEnd == null)
             ? null
-            : '${_ayYilMetni(d.inflationStart!)} – '
+            : '${_ayYilMetni(d.inflationStart!)} - '
                 '${_ayYilMetni(d.inflationEnd!)}',
       );
 

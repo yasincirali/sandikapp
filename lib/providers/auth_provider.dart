@@ -256,7 +256,17 @@ class PartnersNotifier extends AsyncNotifier<List<PartnerAccount>>
   Future<void> _tick() async {
     final u = ref.read(authProvider).valueOrNull;
     if (u == null) return;
-    final fresh = await _loadPartners(u.id);
+    // `_tick` sahipsiz çağrılır (Timer.periodic + öne dönüş): fırlayan hata
+    // zone handler'ına düşüp ÇÖKME sayılıyordu (Crashlytics 2026-10-06,
+    // PostgrestException 504). Yoklama turu düşerse eldeki liste kalır,
+    // sonraki tur yeniden dener; hata non-fatal kaydedilir.
+    final List<PartnerAccount> fresh;
+    try {
+      fresh = await _loadPartners(u.id);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'PartnersNotifier._tick');
+      return;
+    }
     // Sadece gerçekten değişiklik varsa state güncelle — gereksiz rebuild engellenir
     final current = state.valueOrNull ?? [];
     final changed = fresh.length != current.length ||

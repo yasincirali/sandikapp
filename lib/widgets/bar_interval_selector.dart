@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../services/history_service.dart';
 import '../theme/sandik.dart';
 import '../utils/chart_interval_policy.dart';
+import 'sandik_segment.dart';
 
 /// Grafik bar aralığı seçici (1dk · 5dk · 15dk · 1sa · 1G · 1H).
 ///
@@ -40,75 +40,18 @@ class BarIntervalSelector extends StatelessWidget {
     final barlar = ChartIntervalPolicy.gecerliBarlar(periodDays);
     if (barlar.length < 2) return const SizedBox.shrink();
 
+    // Ortak [SandikSegment] (2026-10-01): seçim zemini kayar, dönem
+    // seçicisiyle aynı dil. 52 pt: eski kabuk 4 pt iç boşluk + 44 pt hedef.
     return Semantics(
       label: 'Grafik bar aralığı',
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-        ),
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          children: [
-            for (final bar in barlar)
-              Expanded(
-                child: _BarDugmesi(
-                  bar: bar,
-                  isSelected: bar == secili,
-                  onPressed: () => onSecim(bar),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BarDugmesi extends StatelessWidget {
-  const _BarDugmesi({
-    required this.bar,
-    required this.isSelected,
-    required this.onPressed,
-  });
-
-  final ResolutionTier bar;
-  final bool isSelected;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoButton(
-      minimumSize: SandikTouch.minSize,
-      padding: EdgeInsets.zero,
-      onPressed: onPressed,
-      child: Semantics(
-        selected: isSelected,
-        button: true,
-        // Seçim zemini ve metin rengi geçişli (animasyon denetimi
-        // 2026-10-01): eskiden tek karede atlıyordu. Dönem seçicisindeki
-        // gibi `state` süresi; hareketi azalt'ta anında.
-        child: AnimatedContainer(
-          duration: SandikMotion.stateOf(context),
-          curve: SandikMotion.enter,
-          // Dokunma hedefi en az 44px yüksekliğinde kalsın (HIG/Material).
-          constraints: const BoxConstraints(minHeight: SandikTouch.min),
-          decoration: BoxDecoration(
-            color: isSelected ? context.c.surface2 : Colors.transparent,
-            borderRadius: BorderRadius.circular(SandikRadius.sm),
-          ),
-          child: Center(
-            child: AnimatedDefaultTextStyle(
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.enter,
-              style: (context.t.bodySmall ?? const TextStyle()).copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? context.c.amberText : context.c.text36,
-              ),
-              child: Text(bar.etiket),
-            ),
-          ),
-        ),
+      child: SandikSegment(
+        adet: barlar.length,
+        secili: barlar.indexOf(secili),
+        onSec: (i) => onSecim(barlar[i]),
+        yukseklik: SandikTouch.min + 8,
+        icBosluk: 4,
+        metinStili: context.t.bodySmall,
+        oge: (_, i, __) => Text(barlar[i].etiket),
       ),
     );
   }

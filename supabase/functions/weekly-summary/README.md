@@ -57,9 +57,17 @@ uyuşmaz ve güveni bozar. Kapsama yoksa `skipped_coverage`.
 
 ## Aylık özet — aynı fonksiyon, `{"period":"month"}` (2026-09-20)
 
-Migration `0067` her ayın 1'i TR 09:30'da (`30 6 1 * *`) aynı fonksiyonu
-`period=month` gövdesiyle çağırır; **geçen takvim ayı** anlatılır
-(`ayPenceresi`, Europe/Istanbul). Haftalıktan farkları:
+Migration `0093` (2026-10-01) her ayın 3'ü ve 4'ü TR 10:30'da (`30 7 3,4 * *`;
+`0110` ile 3'ü–12'si her gün, `30 7 3-12 * *` — 3'ü/4'ü hafta sonuysa TÜFE gelmiyordu)
+aynı fonksiyonu `period=month` gövdesiyle çağırır; **geçen takvim ayı**
+anlatılır (`ayPenceresi`, Europe/Istanbul). İlk hâli (`0067`) ayın 1'iydi ve
+ayın TÜFE'si henüz açıklanmamıştı — Özet'te bir önceki ayın enflasyonu
+çıkıyordu. Şimdi ayın TÜFE'si (`ayinTufesi`) başlığa girer; tabloda yoksa
+hiçbir şey gönderilmez. Ay başına tek koşu `inflation_push_log` kilidiyle;
+özeti kapatan ya da bu ay özeti zaten alan kullanıcıya yalnızca TÜFE mesajı
+(`tufeMesaji`) gider. `fetch-inflation` ve `calendar-nudge` artık TÜFE push'u
+göndermez. "Daha uzun pencerede" cümlesi yalnızca son 365 günde akışı
+olmayan kullanıcıda sayılıdır (snapshot uçları brüt). Haftalıktan farkları:
 
 | | Haftalık | Aylık |
 |---|---|---|
@@ -67,7 +75,7 @@ Migration `0067` her ayın 1'i TR 09:30'da (`30 6 1 * *`) aynı fonksiyonu
 | Kapsama yoksa | gönderilmez | gönderilir, sayısız |
 | Sessiz eşik (`min_move_pct`) | var | yok |
 | `type` | `weekly_summary` | `monthly_summary` |
-| Defter | `weekly_summary_log` | `weekly_summary_log` **+ `daily_brief_log`** |
+| Defter | `weekly_summary_log` | `weekly_summary_log` **+ `daily_brief_log`** + `inflation_push_log` (ay kilidi) |
 
 İkinci defter kaydı bütçe içindir: aylık 09:30'da gider, 09:45'teki
 brifing/haftalık aynı kullanıcıyı "bugün gönderildi" görüp atlar — günde

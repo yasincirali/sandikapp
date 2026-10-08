@@ -11,6 +11,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../l10n/l10n.dart';
+import '../utils/tr_iyelik.dart';
 
 /// Ana ekranda anonim yüzdelik dilim şeridi.
 ///
@@ -77,27 +78,12 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
     final me = ref.read(authProvider).valueOrNull;
     if (me == null) return;
 
-    // Snapshot'ı BURADA tazele.
-    //
-    // `get_percentile_bucket` yalnızca son 24 saatte snapshot atmış
-    // kullanıcıları karşılaştırır. Yükleme eskiden sadece Yarış ekranında
-    // yapılıyordu; ana ekran şeridi ona bağlı kalsaydı yalnızca "bugün
-    // Yarış'a uğramış" kullanıcıda çalışır, yani hiç görünmezdi.
+    // Anlık görüntüyü cihaz YAZMAZ (0095): `leaderboard-snapshot` cron'u
+    // yarışa katılan herkes için günde iki kez TWR yazar. Eskiden şerit
+    // kendi simülasyon değerini yüklüyordu — iki ölçü aynı havuzda
+    // karışırdı. Kendi satırı yoksa (yeni hesap, 30 gün dolmadı) RPC boş
+    // döner ve şerit gizli kalır; uydurma dilim yok.
     final servis = LeaderboardService.instance;
-    final roi = await servis.computeROI(
-      assets: widget.myAssets,
-      periodDays: PercentileStrip.periodDays,
-      currentValueTRY: servis.totalValueTRY(widget.myAssets, widget.toTRY),
-      toTRY: widget.toTRY,
-      cacheKey: me.id,
-    );
-    if (roi == null) return; // geçmiş veri yetersiz — karşılaştırma yapılamaz
-    await servis.uploadRoiSnapshot(
-      userId: me.id,
-      periodDays: PercentileStrip.periodDays,
-      roiPct: roi,
-    );
-
     final data = await servis.fetchPercentile(PercentileStrip.periodDays);
     if (!mounted || data == null) return;
 
@@ -137,13 +123,12 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
       padding: widget.padding,
       child: Semantics(
         label: context.l10n.percentileSemantics(ustundeOlduklari, altSatir),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.c.text20.withValues(alpha: 0.25)),
-          ),
+        // `SandikCard` (2. tur, 2026-10-08). Köşe 12 → `SandikRadius.md`
+        // (14), kenar `text20 %25` → saç teli: şerit Profil'deki komşu
+        // kartlarla aynı kabuğu taşısın, tek başına farklı köşe olmasın.
+        child: SandikCard(
+          padding: const EdgeInsets.symmetric(
+              horizontal: SandikSpace.md2, vertical: 11),
           child: Row(
             children: [
               Icon(
@@ -169,7 +154,8 @@ class _PercentileStripState extends ConsumerState<PercentileStrip> {
                         children: [
                           TextSpan(text: context.l10n.last30DaysLike),
                           TextSpan(
-                            text: "yatırımcıların %$ustundeOlduklari'inden",
+                            text: "yatırımcıların %$ustundeOlduklari'"
+                                "${trSayiAyrilmaEki(ustundeOlduklari)}",
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color:

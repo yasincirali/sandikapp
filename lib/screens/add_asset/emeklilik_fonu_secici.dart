@@ -18,7 +18,7 @@ Future<TefasFund?> emeklilikFonuSec(
   BuildContext context, {
   required bool devletKatkisi,
 }) =>
-    showModalBottomSheet<TefasFund>(
+    showSandikSheet<TefasFund>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -29,10 +29,8 @@ Future<TefasFund?> emeklilikFonuSec(
       builder: (_) => _Secici(devletKatkisi: devletKatkisi),
     );
 
-/// Adı devlet katkısı fonu mu? TEFAS adları büyük harf Türkçe gelir
-/// ("... DEVLET KATKISI FONU"); küçük harfli eski önbellek kaydı da tutsun.
-bool devletKatkisiFonuMu(TefasFund f) =>
-    f.name.toUpperCase().contains('DEVLET KATKI');
+/// Adı devlet katkısı fonu mu? Kural tek yerde: `devletKatkisiAdiMi`.
+bool devletKatkisiFonuMu(TefasFund f) => devletKatkisiAdiMi(f.name);
 
 class _Secici extends StatefulWidget {
   const _Secici({required this.devletKatkisi});
@@ -61,19 +59,25 @@ class _SeciciState extends State<_Secici> {
 
   Future<void> _yukle() async {
     try {
-      final hepsi = await TefasService.instance.fetchAllFunds();
+      // Katkı fonları kataloğa güvenilmeden doğrudan çekilir (bkz.
+      // `fetchDevletKatkisiFonlari`).
+      final fonlar = widget.devletKatkisi
+          ? await TefasService.instance.fetchDevletKatkisiFonlari()
+          : _suz(await TefasService.instance.fetchAllFunds());
       if (!mounted) return;
-      setState(() => _fonlar = [
-            for (final f in hepsi)
-              if (f.fundType == 'EMK' &&
-                  devletKatkisiFonuMu(f) == widget.devletKatkisi)
-                f,
-          ]..sort((a, b) => a.name.compareTo(b.name)));
+      setState(() => _fonlar = fonlar);
     } catch (e, st) {
       CrashReporter.report(e, st, reason: 'emeklilikFonuSec.yukle');
       if (mounted) setState(() => _hata = friendlyError(e));
     }
   }
+
+  List<TefasFund> _suz(List<TefasFund> hepsi) => [
+        for (final f in hepsi)
+          if (f.fundType == 'EMK' &&
+              devletKatkisiFonuMu(f) == widget.devletKatkisi)
+            f,
+      ]..sort((a, b) => a.name.compareTo(b.name));
 
   List<TefasFund> get _suzulmus {
     final q = _ara.text.trim().toLowerCase();

@@ -1,21 +1,32 @@
 part of '../portfolio_performance_screen.dart';
 
-/// Grafik kabı: `LineChartData` üretimi, çubuk/mum/taban tipleri, hacim
+/// Grafik kabı: `LineChartData` üretimi, çizgi/mum tipleri, hacim
 /// çubukları. `portfolio_performance_screen.dart`'tan bölündü (2026-09-14):
 /// part = aynı kütüphane, private alanlara erişim ve davranış AYNEN; yalnızca
 /// dosya sınırı değişti. `setState` yerine `_guncelle` (bkz. ana dosya).
 extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
+  /// Çizilecek grafik tipi: seçim (`grafikTipiNotifier`) seviyenin grafik
+  /// araçlarına göre eşlenir. Eşleme saf ve tek yerde (`GrafikTipi.etkin`);
+  /// seçim değiştirilmez.
+  GrafikTipi get _etkinGrafikTipi => GrafikTipi.etkin(
+        grafikTipiNotifier.value,
+        araclar: ref.read(seviyeGorunurlukProvider).grafikAraclari,
+      );
+
   Widget _buildChartContainer(List<TransactionSegment> segments, DateTime start,
       DateTime end, List<Asset> assets,
       {bool intraday = false, List<Asset>? allTargetAssets}) {
     if (segments.isEmpty) {
-      return Container(
+      // Boş grafik yeri: kenarsız `SandikCard` (2. tur, 2026-10-08) — piksel aynı.
+      return SizedBox(
         height: 280,
-        decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.lg)),
-        child: Center(
-            child: Text(context.l10n.noData, style: TextStyle(color: context.c.text36))),
+        child: SandikCard(
+          padding: EdgeInsets.zero,
+          bordered: false,
+          radius: SandikRadius.lg,
+          child: Center(
+              child: Text(context.l10n.noData, style: TextStyle(color: context.c.text36))),
+        ),
       );
     }
 
@@ -96,15 +107,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       }
       if (minY == double.infinity) minY = 0;
       if (maxY == -double.infinity) maxY = 1000;
-
-      // Çubuk tipinde taban (dönem başı) Y aralığına DAHİL olmalı: çubuklar
-      // o değerden başlıyor ve taban pencerenin dışında kalırsa alt uçları
-      // kırpılır — yarım çubuklar "veri yok" gibi okunur. Diğer tiplerde
-      // aralık dokunulmadan kalır (dar bant gün içi hassasiyeti için şart).
-      if (grafikTipiNotifier.value == GrafikTipi.bar && taban != null) {
-        if (taban.first < minY) minY = taban.first;
-        if (taban.first > maxY) maxY = taban.first;
-      }
 
       final avgY = countY > 0 ? sumY / countY : (minY + maxY) / 2;
       // Bandın cebri `chart_axis.dart`'ta — saf ve testli.
@@ -315,8 +317,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
 
       // Seçili grafik tipi — oturum boyunca yaşar (bkz. `grafikTipiNotifier`).
       // `ValueListenableBuilder` dışarıda: burada okumak yeterli çünkü
-      // seçim değiştiğinde builder tüm grafiği yeniden kuruyor.
-      final tip = grafikTipiNotifier.value;
+      // seçim değiştiğinde builder tüm grafiği yeniden kuruyor. Seçim değil
+      // ETKİN tip çizilir (sade Başlangıç, `_etkinGrafikTipi`).
+      final tip = _etkinGrafikTipi;
 
       return LineChartData(
         minX: viewMinX,
@@ -453,30 +456,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
             ),
           ),
         ),
-        // ── Bar tipi: her nokta için dikey çubuk ──────────────────
-        //
-        // `fl_chart`'ın `BarChart`'ı kullanılamıyor: orada X data-space
-        // değil GRUP indeksi, yani zoom/pan ve tarih ekseni bozulurdu.
-        // Bunun yerine her nokta iki spot'lu ayrı bir `LineChartBarData`
-        // olarak çiziliyor — aynı teknik ekranın karşılaştırma bölümünde
-        // de kullanılıyor.
-        //
-        // Yoğun serilerde (169 nokta) çubuklar birbirine girmesin diye
-        // seyreltiliyor; sınır grafiğin okunabilir kaldığı yoğunluk.
-        //
-        // Taban DÖNEM BAŞI (pencere içindeki ilk dolu nokta, kartla aynı —
-        // bkz. `taban`), pencere dibi değil — gerekçe `_cubukSegmentleri`
-        // doküman yorumunda.
-        lineBarsData: tip == GrafikTipi.bar
-            ? _cubukSegmentleri(
-                context,
-                segments,
-                taban?.first ?? viewMinY,
-                plotWidthPx,
-                viewMinX,
-                viewMaxX,
-              )
-            : tip == GrafikTipi.candle
+        // Mum: `fl_chart`'ın `BarChart`'ı kullanılamıyor (X data-space değil
+        // GRUP indeksi; zoom/pan ve tarih ekseni bozulurdu) — her mum iki
+        // spot'lu ayrı `LineChartBarData`. Çubuk tipi aynı tekniği
+        // kullanıyordu; 2026-10-05'te tiple birlikte kalktı.
+        lineBarsData: tip == GrafikTipi.candle
             ? _mumSegmentleri(
                 context,
                 segments,
@@ -510,29 +494,11 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                     seg.spots.isEmpty ? double.nan : seg.spots.first.x;
                 final lastX = seg.spots.isEmpty ? double.nan : seg.spots.last.x;
 
-                // ── Baseline: dönem başına göre kazanç/kayıp rengi ─────────
-                //
-                // `fl_chart` tek bir çizgiyi iki renge bölemiyor; renk geçişi
-                // gradyan stop'larıyla kuruluyor. Taban, dönemin İLK değeri:
-                // "bugün nerede başladım, şimdi neredeyim" sorusu bu.
-                //
-                // Kapalı kuyruk bu boyamanın DIŞINDA — orası nötr kalmalı.
-                final tabanY = seg.spots.isEmpty ? 0.0 : seg.spots.first.y;
-                final baselineAktif =
-                    tip == GrafikTipi.baseline && !seg.piyasaKapali && isActive;
-
                 return LineChartBarData(
                   spots: seg.spots,
                   isCurved: false,
-                  color: baselineAktif ? null : seg.lineColor,
-                  // Baseline'da renk gradyanla veriliyor; `color` ile birlikte
-                  // kullanılamaz (fl_chart ikisini birden kabul etmez).
-                  gradient: baselineAktif
-                      ? _baselineGradient(context, seg.spots, tabanY)
-                      : null,
-                  // Bar tipinde çizgi GİZLİ: çubuklar ayrı katmanda çiziliyor
-                  // ve üstüne bir de çizgi binmesi grafiği okunamaz yapardı.
-                  barWidth: tip == GrafikTipi.bar ? 0.0 : effectiveBarWidth,
+                  color: seg.lineColor,
+                  barWidth: effectiveBarWidth,
                   // Piyasa kapalıyken taşınan fiyat KESİKLİ çizilir. Rengi
                   // `lineColor` zaten nötr geliyor (bkz. `_convertHistoryToSegments`);
                   // desen, renk körlüğünde de ayırt edilebilsin diye ikinci bir
@@ -610,33 +576,9 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
                       );
                     },
                   ),
-                  // ── Dolgu: grafik TİPİNE göre ───────────────────────────
-                  //
-                  // `line`      → dolgu yok, yalnızca çizgi.
-                  // `mountain`  → gradyan dolgu (eski varsayılan görünüm).
-                  // `baseline`  → dönem başına göre üstü kazanç / altı kayıp.
-                  // `bar`       → çizgi gizli, çubuklar ayrı katmanda.
-                  //
-                  // Kapalı kuyruk HER TİPTE dolgusuz: o bölge birikim değil,
-                  // taşınan son fiyat (bkz. `TransactionSegment.piyasaKapali`).
-                  belowBarData: (tip == GrafikTipi.mountain &&
-                          !seg.piyasaKapali)
-                      ? BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            colors: intraday
-                                ? [
-                                    context.c.amberFill.withValues(alpha: 0.22),
-                                    context.c.amberFill.withValues(alpha: 0.06),
-                                    Colors.transparent,
-                                  ]
-                                : [seg.areaGradientStart, Colors.transparent],
-                            stops: intraday ? const [0.0, 0.5, 1.0] : null,
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        )
-                      : BarAreaData(show: false),
+                  // Dolgu yok: Çizgi tipi yalnızca çizgidir. Alan tipinin
+                  // gradyan dolgusu tiple birlikte 2026-10-05'te kalktı.
+                  belowBarData: BarAreaData(show: false),
                 );
               }).toList(),
         // fl_chart'ın built-in touch'ı kapalı — crosshair TEK KAYNAK.
@@ -835,6 +777,17 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
         children: [
           Column(
         children: [
+          // Tek akış (`performans_tek_akis`, S2): tip seçici kartın SAĞ ÜST
+          // köşesinde. Kontrol yığını tek satıra indi; grafik artık Özet'le
+          // aynı listede ve kartın dibi bir sonraki bölümün başına yapışık
+          // okunuyordu. Araç yine etkilediği yüzeyin içinde (2026-09-15
+          // kararı korunur), yalnız köşesi değişti. Seviye kapısı aynı.
+          if (_tekAkis &&
+              ref.watch(seviyeGorunurlukProvider).grafikAraclari)
+            const Align(
+              alignment: Alignment.centerRight,
+              child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+            ),
           ZoomableChart(
             fullMinX: minX,
             fullMaxX: maxX,
@@ -1065,10 +1018,15 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
           // deneme surface2 + kenarlıklı çipti ve kartın içinde yabancı
           // duruyordu ("bulunduğu layera uygun olmalı") — kart zaten bir
           // yüzey, içine ikinci bir yüzey koymak katman hiyerarşisini bozar.
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
-          ),
+          //
+          // Sade Başlangıç'ta (`seviye_anketi`) seçici yok, grafik düz
+          // çizgide kalır (bkz. `seviyeGorunurlugu`, grafikAraclari).
+          if (!_tekAkis &&
+              ref.watch(seviyeGorunurlukProvider).grafikAraclari)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
+            ),
         ],
           ),
           // Tam ekran çipi KALDIRILDI (kullanıcı kararı, 2026-09-17): "çok
@@ -1093,139 +1051,12 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
   /// [settled] veri isteği sonuçlandı mı (başarı ya da hata farketmez).
   /// `!hasData && settled` → beklenecek bir şey yok; spinner yerine
   /// "alınamadı" durumu çizilir.
-  /// Bar tipi: her noktayı tabandan yukarı uzanan dikey çubuk yapar.
-  ///
-  /// Çubuk yüksekliği görünür Y tabanından (`tabanY`) noktanın değerine
-  /// kadar. Mutlak sıfırdan başlamak yanlış olurdu: portföy 2,5 milyon
-  /// TL'de gezinirken çubukların tamamı ekranı doldurur ve aralarındaki
-  /// fark görünmez olurdu.
-  ///
-  /// Çubuk grafiği: her çubuk DÖNEM BAŞINDAN o ana kadarki değişimi gösterir.
-  ///
-  /// Taban neden `viewMinY` değil: çubuklar görünür pencerenin alt kenarından
-  /// başlayınca, değerler birbirine yakın olduğunda (portföy ₺2,49M–₺2,51M
-  /// arası gezerken) hepsi neredeyse eşit yükseklikte çıkıyor ve grafik
-  /// taralı bir duvara dönüyordu — ₺12.794'lük düşüş grafikte görünmüyordu.
-  /// Dönem başı taban alınınca çubuk yukarı (kazanç) ya da aşağı (kayıp)
-  /// büyür; bar grafiğinin anlattığı şey değişimin YÖNÜ ve BÜYÜKLÜĞÜ olur.
-  /// `baseline` tipi de aynı tabanı kullanıyor (`seg.spots.first.y`).
-  ///
-  /// Çubuk sayısı ve kalınlığı, verinin GERÇEKTE kapladığı piksel
-  /// genişliğinden hesaplanır — grafiğin tamamından değil. Gün içi eksen
-  /// 00:00–24:00 gösterirken seans yalnızca 10:00–18:00 arası olduğu için
-  /// çubuklar grafiğin üçte birine sıkışıyor; tam genişliği varsayan hesap
-  /// onları üst üste bindiriyordu. Eski kod ayrıca segment BAŞINA 60 çubuk
-  /// çiziyordu; sınır artık toplam nokta üzerinden.
-  List<LineChartBarData> _cubukSegmentleri(
-    BuildContext context,
-    List<TransactionSegment> segments,
-    double tabanY,
-    double grafikGenisligi,
-    double viewMinX,
-    double viewMaxX,
-  ) {
-    // Çubuk + boşluk için piksel bütçesi: 6px altında çubuklar bitişik
-    // görünüyor, 22px üstünde seyrek ve kaba duruyor.
-    const minAralikPx = 6.0;
-    const maksAralikPx = 22.0;
-
-    final toplamNokta =
-        segments.fold<int>(0, (t, s) => t + s.spots.length);
-    if (toplamNokta == 0) return const [];
-
-    final genislik = grafikGenisligi.isFinite && grafikGenisligi > 0
-        ? grafikGenisligi
-        : 320.0;
-
-    // Kalınlık, verinin GERÇEKTE kapladığı piksel genişliğinden hesaplanır —
-    // grafiğin tamamından değil.
-    //
-    // Gün içi eksen 00:00–24:00 gösterir ama seans yalnızca 10:00–18:00
-    // arasıdır: çubuklar grafiğin ~üçte birine sıkışır. Genişliğin tamamına
-    // yayıldıklarını varsayan hesap, aralarındaki mesafeyi olduğundan büyük
-    // sanıp çubukları ÜST ÜSTE bindiriyordu (kullanıcı bildirimi, ekran
-    // görüntüsüyle: günlükte dolu kırmızı blok).
-    var veriMinX = double.infinity;
-    var veriMaxX = double.negativeInfinity;
-    for (final seg in segments) {
-      for (final s in seg.spots) {
-        if (s.x < veriMinX) veriMinX = s.x;
-        if (s.x > veriMaxX) veriMaxX = s.x;
-      }
-    }
-    final gorunurAralik = viewMaxX - viewMinX;
-    final veriAralik = veriMaxX - veriMinX;
-    // Veri, görünür pencerenin ne kadarını kaplıyor? (0…1]
-    final kaplamaOrani =
-        (gorunurAralik.isFinite && gorunurAralik > 0 && veriAralik > 0)
-            ? (veriAralik / gorunurAralik).clamp(0.05, 1.0)
-            : 1.0;
-    final veriGenisligiPx = genislik * kaplamaOrani;
-
-    final maksCubuk = (veriGenisligiPx / minAralikPx).floor().clamp(8, 240);
-    final adim = (toplamNokta / maksCubuk).ceil().clamp(1, 1 << 30);
-
-    // Gerçekte kaç çubuk çizileceğinden kalınlığı türet: seyrek veride
-    // kalın ve okunaklı, yoğun veride ince ama bitişik değil.
-    final cizilecek = (toplamNokta / adim).ceil().clamp(1, maksCubuk);
-    final aralikPx =
-        (veriGenisligiPx / cizilecek).clamp(minAralikPx, maksAralikPx);
-    // Çubuklar arasında en az ~%35 boşluk kalsın — bitişik çubuklar
-    // bar grafiğini alan grafiğine çevirir.
-    final cubukKalinligi = (aralikPx * 0.65).clamp(2.0, 14.0);
-
-    final out = <LineChartBarData>[];
-    // Sayaç segmentler ARASINDA sürüyor: her segment kendi başına
-    // seyreltilirse kısa segmentler orantısız çok çubuk alır.
-    var sayac = 0;
-
-    for (final seg in segments) {
-      if (seg.spots.isEmpty) continue;
-
-      final secilen = <FlSpot>[];
-      for (final s in seg.spots) {
-        if (sayac % adim == 0) secilen.add(s);
-        sayac++;
-      }
-      // Son nokta ("şimdi") seyreltmeye kurban gitmemeli.
-      if (secilen.isEmpty || secilen.last.x != seg.spots.last.x) {
-        secilen.add(seg.spots.last);
-      }
-
-      for (final s in secilen) {
-        // Renk değişimin yönünden: taban üstü kazanç, altı kayıp. Kapalı
-        // piyasa segmenti kendi soluk rengini korur (veri yok, tahmin var).
-        final renk = seg.piyasaKapali
-            ? context.c.text36
-            : (s.y >= tabanY ? context.c.gain : context.c.loss);
-
-        out.add(LineChartBarData(
-          spots: [FlSpot(s.x, tabanY), FlSpot(s.x, s.y)],
-          isCurved: false,
-          color: renk,
-          barWidth: cubukKalinligi,
-          // Yuvarlak uç modern bar grafiklerinin okunabilirliğini artırır;
-          // ince çubukta fark etmez, kalın çubukta belirgin.
-          isStrokeCapRound: cubukKalinligi >= 5,
-          dashArray: seg.piyasaKapali ? const [3, 3] : null,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ));
-      }
-    }
-    return out;
-  }
-
-  /// Baseline tipi için dikey gradyan: taban ÜSTÜ kazanç, ALTI kayıp.
-  ///
-  /// `fl_chart` bir çizgiyi iki renge bölemiyor. Çözüm, çizginin kapladığı
-  /// Y aralığında tabanın nereye düştüğünü oran olarak hesaplayıp
-  /// gradyan stop'unu tam oraya koymak. İki stop AYNI noktada olduğu için
-  /// geçiş yumuşamaz — keskin bir sınır oluşur.
-  ///
-  /// Taban aralığın dışındaysa (çizgi tamamen tabanın üstünde ya da
-  /// altında) tek renk döner; yoksa `stops` sıralaması bozulur ve
-  /// `fl_chart` assert atar.
+  // NOT: Çubuk (`_cubukSegmentleri`) ve Taban (`_baselineGradient`)
+  // çizimleri 2026-10-05'te silindi: grafik tipi seçicisi 2026-10-04'ten
+  // beri yalnız Çizgi ve Mum listeliyordu (bayrak `performans_ayar_sade`,
+  // gerekçe `GrafikTipi`); bayrak kalkınca Alan/Taban/Çubuk tiplerine hiçbir
+  // yoldan ulaşılamaz oldu. Çubuk grafiğinin dönem başı tabanı ve piksel
+  // bütçesi kararları için bkz. 433e0e8.
   /// Mum tipi — kova bazlı OHLC (bkz. `utils/mum_turetici.dart`).
   ///
   /// Her mum İKİ `LineChartBarData`: ince FİTİL (en düşük → en yüksek) ve
@@ -1314,44 +1145,6 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
       }
     }
     return out;
-  }
-
-  LinearGradient _baselineGradient(
-    BuildContext context,
-    List<FlSpot> spots,
-    double tabanY,
-  ) {
-    final kazanc = context.c.gain;
-    final kayip = context.c.loss;
-
-    var minY = double.infinity;
-    var maxY = double.negativeInfinity;
-    for (final s in spots) {
-      if (s.y < minY) minY = s.y;
-      if (s.y > maxY) maxY = s.y;
-    }
-
-    // Düz çizgi ya da bozuk aralık: bölmeye gerek yok.
-    if (!minY.isFinite || !maxY.isFinite || (maxY - minY).abs() < 1e-9) {
-      final renk = spots.isNotEmpty && spots.last.y >= tabanY ? kazanc : kayip;
-      return LinearGradient(colors: [renk, renk]);
-    }
-
-    if (tabanY >= maxY) {
-      return LinearGradient(colors: [kayip, kayip]);
-    }
-    if (tabanY <= minY) {
-      return LinearGradient(colors: [kazanc, kazanc]);
-    }
-
-    // Gradyan yukarıdan aşağı akar: 0.0 = maxY, 1.0 = minY.
-    final oran = ((maxY - tabanY) / (maxY - minY)).clamp(0.0, 1.0);
-    return LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [kazanc, kazanc, kayip, kayip],
-      stops: [0.0, oran, oran, 1.0],
-    );
   }
 
   /// Hacim çubukları — işaretlerle AYNI noktalarda (2026-09-24).

@@ -81,3 +81,48 @@ Format `sembol;adet;fiyat;tarih` (Türkçe ondalık virgül, tarih gg.aa.yyyy).
 - [ ] Liste "Varlıklarım" segmentinde (Takip Listesi değil)
 - [ ] Reel getiri rozeti **yeşil** ve "enflasyonu geçti" diyor
 - [ ] Alt menüdeki **+** butonu karede
+
+---
+
+## v4 — 1.1.6 mağaza görselleri (2026-10-03)
+
+`SCREENSHOT_PLAN` v4'ün 10 karesi için. Gerçek iPhone'da **Toplu ekle ›
+Ekstreden içe aktar** ile dosya olarak yüklenir. Bu adım aynı zamanda 5.
+kareyi verir. Dosyayı telefona AirDrop/Dosyalar/e-posta ile at.
+
+| Dosya | Hesap | Ne |
+|---|---|---|
+| `demo_portfoy_v4.csv` | demo (ana) | v3'ün 6 satırı + BTC |
+| `demo_portfoy_v4_ayse.csv` | ikinci hesap "Ayşe" | 24 ayar gram, euro, KCHOL |
+
+**Neden kurum ekstresi biçimi** (`Tarih;İşlem Türü;Menkul Kıymet;Tür;Adet;
+Ortalama Maliyet`): 5. kare "sütun adı ne olursa olsun tanır" iddiasını
+gösteriyor. Kanonik `sembol;adet;fiyat;tarih` başlığı bunu göstermez.
+`test/demo_portfoy_csv_test.dart` iki dosyayı ekstre motorundan geçirir.
+
+**Neden BTC 15.07.2026'da alındı:** Eylül 2025'teki BTCTRY kapanışı
+4.701.396, 02.10.2026'da 4.152.799 (Binance). v3 tarihleriyle alınsaydı
+kripto zararda olurdu (−%12) ve 3. karede ikinci kırmızı satır çıkardı.
+Temmuz 2026 aralığı 2,69–2,98 milyon. 3.000.000 yuvarlak alış yaklaşık
++%38 verir. Satır 12 aylık pencerenin içinde olduğu için getiriye katkı
+olarak girer. Rozetin hâlâ **yeşil** olduğunu çekim öncesi gözle kontrol et.
+
+**Ayşe neden KCHOL da tutuyor:** Birlikte görünümünde aynı varlık tek
+satırda birleşir (d6aa360). 7. kare bunu gösterir.
+
+Alış fiyatlarının dayanağı (Yahoo/Binance, kapanış): 24 ayar gram
+22.09.2025 ≈ 5.058 (XAU 3.809 × USDTRY ÷ 31,1035), EURTRY 24.09.2025
+48,81, KCHOL Eylül sonu ~148. Güncel (02.10.2026): KCHOL 206,80, SAHOL
+86,70, USDTRY 49,11, EURTRY 55,26.
+
+### CSV'ye girmeyenler (formdan)
+
+CSV mevduat ve BES taşımaz (`_typeFromCell`: sözleşmeli türler formdan
+girilir). Demo hesaba elle ekle:
+
+- **Vadeli mevduat:** Varlık ekle › Mevduat. 100.000 TL, 32 gün, faiz için
+  bankanın **güncel** oranını yaz. Sabit oran uydurma.
+- **BES:** Varlık ekle › BES. Tek şirket, birikim yaklaşık 85.000 TL,
+  2–3 fonluk dağılım. Devlet katkısı satırı ayrı görünsün (yedek kare Y2).
+- **KCHOL komisyonu + temettü:** varlık sayfasından (4. kare).
+- **İki fiyat alarmı:** KCHOL ve gram altın (8. kare).

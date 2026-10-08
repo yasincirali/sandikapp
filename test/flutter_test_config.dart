@@ -11,5 +11,8 @@ import 'package:portfoy_takip/theme/yukleme_isareti.dart';
 /// sınayan test bayrağı kendi içinde geçici olarak açar.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   YuklemeIsareti.hareketli = false;
+  // NOT: 2026-10-04 bayraklarını testlerde kapatan `testKapali` listesi
+  // 2026-10-05'te bayraklarla birlikte kalktı; testler kalıcı davranışı
+  // sınar.
   await testMain();
 }

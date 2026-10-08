@@ -1,3 +1,4 @@
+import 'asset_categories.dart';
 import 'asset_type.dart';
 
 /// İşlem türü — audit trail için.
@@ -103,6 +104,9 @@ String birimEtiketi({
       // Birim değerli pay (bkz. `mevduat_hesabi.dart`). Ekranlar mevduatta
       // miktarı değil tutarı gösterir; etiket yalnız ham satırlarda çıkar.
       return 'birim';
+    case AssetType.eurobond:
+      // Miktar nominal tutardır ("10.000 nominal"), adet değil.
+      return 'nominal';
     case AssetType.diger:
       return 'adet';
   }
@@ -146,7 +150,7 @@ class Asset {
   String name;
   String ticker;
   AssetType type;
-  String? subCategory; // Altın: gr22, çeyrek vb. | Fon: bankFund, bist100 vb. | Hisse: bist100, other
+  String? subCategory; // Altın: gr22, çeyrek vb. | Fon: bankFund, bist100 vb. | Hisse: StockSubCategory etiketi ya da abd (bkz. orası)
   String unitType; // Birim: piece, gram, ounce, etc. (varsayılan: piece)
   double quantity;
   double purchasePrice;
@@ -167,6 +171,26 @@ class Asset {
 
   /// Sell işleminde gerçekleşen birim satış fiyatı (raporlama/kar-zarar için).
   final double? sellPrice;
+
+  /// Satış GÜNÜNÜN kuru (1 birim döviz = ? TL) — yalnız dövizli sell
+  /// satırlarında, 0111 sütunu `sell_fx_rate`.
+  ///
+  /// ## Neden (2026-10-05, kullanıcı onayı)
+  /// Satış satırı [purchaseFxRate]'te ALIM kurunu (pozisyonun ağırlıklı alım
+  /// kurunu) taşır; ele geçen tutar da o kurla TL'ye çevriliyordu. 30 TL'den
+  /// alınıp 41 TL'den satılan dolar varlığın kur kazancı gerçekleşen
+  /// kâra ve nakit akışına (para ağırlıklı getiri, XIRR) hiç girmiyordu.
+  /// Maliyet yine alım kuruyla kalır (bankacılık standardı, [totalCostTRY]);
+  /// yalnız SATIŞ TARAFI bu kurla çevrilir.
+  ///
+  /// `null` → eski kayıt ya da `satis_gunu_kuru` bayrağı kapalıyken yazılmış
+  /// satış: hesap birebir eski davranışa (alım kuru) düşer.
+  final double? sellFxRate;
+
+  /// Satış tarafını TL'ye çeviren kur: satış günü kuru varsa o, yoksa alım
+  /// kuru (eski davranış). Komisyon da satışla aynı anda ödendiği için bu
+  /// kurdan çevrilir.
+  double get satisKuru => sellFxRate ?? purchaseFxRate;
 
   /// İşlem komisyonu + masrafı — varlığın PARA BİRİMİNDE (purchasePrice ile
   /// aynı birim), işlem başına toplam (birim başına değil).
@@ -205,6 +229,14 @@ class Asset {
   /// taşır (bkz. `models/sozlesme.dart`).
   final String? sozlesmeId;
 
+  /// Satırın SUNUCUYA girildiği an (0095 `assets.created_at`). İstemci
+  /// yazmaz — tetikleyici her girişte ve ekonomik alan düzenlemesinde
+  /// `now()` basar. Yalnız Yarış'ın "seçimlerinin getirisi" okur:
+  /// [addedDate] bundan 3 günden fazla gerideyse kayıt girildiği anda
+  /// yapılmış sayılır (geriye tarihli kayıtla yarış hilesi; bkz.
+  /// `secim_getirisi.dart`). `null` → sütun öncesi kopya; tarih olduğu gibi.
+  final DateTime? createdAt;
+
   /// Sunucudaki `ticker` sütununun OKUNDUĞU hâli — yalnızca [kanonikTicker]
   /// onu değiştirdiyse dolu (öneksiz eski fon kodu `AFT` → `TEFAS:AFT`).
   ///
@@ -235,11 +267,13 @@ class Asset {
     this.kind = AssetKind.buy,
     this.refAssetId,
     this.sellPrice,
+    this.sellFxRate,
     this.commission = 0,
     this.dividendAmount = 0,
     this.deletedCount = 0,
     this.deletedAt,
     this.sozlesmeId,
+    this.createdAt,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -285,9 +319,10 @@ class Asset {
   /// [sellPrice] yalnızca sell satırlarında ve migration sonrası kayıtlarda
   /// dolu; boşsa maliyete düşülür (eski davranış) — yaklaşık ama sıfırdan
   /// iyi. Komisyon satışta ele geçeni AZALTIR, bu yüzden çıkarılır.
+  /// Kur [satisKuru]: satış günü kuru kayıtlıysa o (0111), yoksa alım kuru.
   double get sellProceedsTRY {
     final unit = sellPrice ?? purchasePrice;
-    return (quantity * unit - commission) * purchaseFxRate;
+    return (quantity * unit - commission) * satisKuru;
   }
 
   /// Toplam maliyet — komisyon DAHİL (gerçekte cebinden çıkan para).
@@ -316,6 +351,15 @@ class Asset {
     return t.isEmpty ? null : t;
   }
 
+  /// BES lotunun sözleşme kurumu. Lot adı `kurum · fon` ya da
+  /// `kurum · fon · Devlet` biçimindedir (`BesFormu` › `adUret`). Ad bu
+  /// biçimde değilse (eski kayıt, elle değiştirilmiş) `null`.
+  String? get besKurumu {
+    if (type != AssetType.bes) return null;
+    final i = name.indexOf(' · ');
+    return i > 0 ? name.substring(0, i).trim() : null;
+  }
+
   /// Fon/Hisse için ticker gösterilmeli mi?
   bool get showTicker =>
       displayTicker != null &&
@@ -324,6 +368,16 @@ class Asset {
           // BES lotunun kodu emeklilik fonudur (AH5); mevduatın sembolü
           // sözleşme id'sidir, gösterilmez.
           type == AssetType.bes);
+
+  /// ABD borsasında işlem gören hisse/ETF mi (2026-10-08, bayrak `abd_hisse`).
+  ///
+  /// Ayrı bir [AssetType] DEĞİL: `type='hisse'`, `sub_category='abd'`,
+  /// `currency='USD'`. Eski sürüm yeni enum değerini "Diğer"e düşürür ve
+  /// tam satır yazımında türü ezerdi; hisse + USD ise eski sürümde de
+  /// Yahoo + USDTRY ile doğru fiyatlanır. Para birimine BAKILMAZ: kimlik
+  /// alt kategoridir, para birimi ondan türer (form USD'ye kilitler).
+  bool get abdHissesi =>
+      type == AssetType.hisse && subCategory == StockSubCategory.abd.name;
 
   /// Kripto ise coin kodu (`BTC`), değilse `null`.
   String? get kriptoKod => type == AssetType.kripto ? kriptoKodu(ticker) : null;
@@ -437,11 +491,13 @@ class Asset {
         kind: kind,
         refAssetId: refAssetId,
         sellPrice: sellPrice,
+        sellFxRate: sellFxRate,
         commission: commission,
         dividendAmount: dividendAmount,
         deletedCount: deletedCount,
         deletedAt: deletedAt,
         sozlesmeId: sozlesmeId,
+        createdAt: createdAt,
       ).._kayitliTicker = _kayitliTicker;
 
   /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
@@ -488,6 +544,9 @@ class Asset {
         // PostgREST bilinmeyen sütun için TÜM varlık yazımlarını reddederdi
         // (PGRST204) — mevduat/BES dışındaki kullanıcı da kaydedemezdi.
         if (sozlesmeId != null) 'sozlesme_id': sozlesmeId,
+        // Aynı gerekçe (0111): yalnız `satis_gunu_kuru` bayrağı açıkken
+        // dolu, bayrak sütun iki sunucuya ulaşınca açılır.
+        if (sellFxRate != null) 'sell_fx_rate': sellFxRate,
       };
 
   /// Sunucu satırından okur — sembolü [kanonikTicker] biçimine çevirerek.
@@ -550,6 +609,8 @@ class Asset {
         kind: AssetKind.fromDb(m['kind'] as String?),
         refAssetId: m['ref_asset_id'] as String?,
         sellPrice: (m['sell_price'] as num?)?.toDouble(),
+        // Migration 0111 öncesi satırlarda sütun yok → null (alım kuru).
+        sellFxRate: (m['sell_fx_rate'] as num?)?.toDouble(),
         // Migration 0019 öncesi kayıtlarda sütun yok → 0.
         commission: (m['commission'] as num?)?.toDouble() ?? 0,
         // Migration 0020 öncesi kayıtlarda sütun yok → 0.
@@ -563,5 +624,10 @@ class Asset {
             : null,
         // Migration 0088 öncesi satırlarda sütun yok → null.
         sozlesmeId: m['sozlesme_id'] as String?,
+        // Migration 0095 öncesi satırlarda sütun yok → null. YAZILMAZ
+        // (`toSupabase`'te yok): giriş anını sunucu basar.
+        createdAt: m['created_at'] != null
+            ? DateTime.parse(m['created_at'] as String).toLocal()
+            : null,
       );
 }

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,7 +7,9 @@ import 'package:flutter/services.dart';
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../services/lider_seridi.dart';
 import '../utils/tr_iyelik.dart';
+import 'duello_arenasi.dart';
 
 /// Yarış ekranının sahnesi — kullanıcı kararı 2026-09-29.
 ///
@@ -20,12 +21,19 @@ import '../utils/tr_iyelik.dart';
 ///     değişen satırda ▲/▼ çipi belirip söner, yeni liderin üstünden bir
 ///     ışık geçer. Eski liste aynı bilgiyi veriyordu ama bir tablo gibi
 ///     duruyordu; yenilenip yenilenmediği bile anlaşılmıyordu.
-///   * **Tam 2 kişide üstte düello kartı.** Yarışların çoğu iki kişilik
-///     (sen ve eşin); iki satırlık liste bu durumda en zayıf biçim. Fark
-///     bir halat çekişi çubuğunda okunur, taç liderin başında durur ve
-///     lider değişince yay çizerek karşı tarafa zıplar.
+///   * **Tam 2 kişide düello** (2026-09-29'da listenin üstünde düello kartı;
+///     2026-10-04'ten beri liste YERİNE arena, aşağıda). Yarışların çoğu iki
+///     kişilik (sen ve eşin); iki satırlık liste bu durumda en zayıf biçim.
 ///   * **3+ kişide üstte kürsü.** İlk üç, yüksekliği sırayı anlatan
 ///     basamaklarda.
+///   * **Düello arenası (2026-10-04, bayrak `yaris_duello_arena`).** Tam
+///     iki kişide düello kartı + liste yerine tek bir arena
+///     (`duello_arenasi.dart`) ve gün gün lider şeridi; ortağın getirisi
+///     yoksa da arena çizilir. Arenada taç gösterisi dönem değişiminde de
+///     oynar (kullanıcının onayladığı prototip) — aşağıdaki "nadir an"
+///     kuralı kürsü içindir; arenanın kendi sıklık kuralı sınıf notunda.
+///     Bayrak 2026-10-05'te kalktı: eski düello kartı (`_Duello`, halat,
+///     `halatOrani`) silindi, iki kişi her zaman arenadır.
 ///
 /// Neşe yalnızca nadir anlara (Emil Kowalski'nin sıklık kuralı): taç
 /// zıplaması ve konfeti yalnızca CANLI yenilemede lider değişince oynar,
@@ -71,28 +79,23 @@ class YarisKatilimci {
 }
 
 /// Listenin üstünde ne duracak.
-enum YarisVitrini { yok, duello, kursu }
+///
+/// [arena]: düello arenası — listenin YERİNE çizilir, üstüne değil.
+enum YarisVitrini { yok, kursu, arena }
 
 /// Vitrin kuralı — saf, test edilir.
 ///
-/// Düello YALNIZCA tam iki kişi ve ikisinin de getirisi varken: biri
-/// "veri yok"ken halat çubuğu bir şey ölçmez. Kürsü getirisi olan en az üç
-/// kişiyle; boş basamak kürsüyü anlamsızlaştırır.
+/// Tam iki kişi HER ZAMAN arenadır — ortağın getirisi henüz yoksa bile:
+/// arena o tarafta "Henüz veri yok" yazar, halat ortada durur. Eski düello
+/// kartı yalnız iki getiri de varken çiziliyor, yoksa vitrinsiz iki
+/// satırlık liste kalıyordu; kullanıcı emülatörde bunu "animasyon
+/// kaldırılmış" sandı (2026-10-04). Kürsü getirisi olan en az üç kişiyle;
+/// boş basamak kürsüyü anlamsızlaştırır.
 YarisVitrini yarisVitrini(List<YarisKatilimci> k) {
+  if (k.length == 2) return YarisVitrini.arena;
   final verili = k.where((x) => x.roi != null).length;
-  if (k.length == 2 && verili == 2) return YarisVitrini.duello;
   if (verili >= 3) return YarisVitrini.kursu;
   return YarisVitrini.yok;
-}
-
-/// Halat çubuğundaki düğümün yeri (0..1; 0,5 başa baş, >0,5 sen öndesin).
-///
-/// Ölçek iki getirinin büyüğüne göre: yüzde 1'lik fark haftalık dönemde
-/// büyük, yıllıkta küçük bir farktır. Uçlara (%8) yapışmasın ki düğüm her
-/// zaman iki rengin arasında görünsün.
-double halatOrani(double ben, double rakip) {
-  final olcek = math.max(2.0, math.max(ben.abs(), rakip.abs()));
-  return 0.5 + ((ben - rakip) / (2 * olcek)).clamp(-0.42, 0.42);
 }
 
 Color yarisciRengi(BuildContext context, YarisKatilimci k) {
@@ -110,7 +113,12 @@ class YarisSahnesi extends StatefulWidget {
     required this.yenileme,
     required this.sonGuncelleme,
     required this.donemGun,
+    this.liderSeridi,
   });
+
+  /// Arenanın altındaki gün gün lider şeridi; `null` → çizilmez (veri
+  /// yok ya da henüz hesaplanmadı — uydurma yok).
+  final LiderSeridi? liderSeridi;
 
   /// Getiriye göre sıralı (null'lar sonda).
   final List<YarisKatilimci> katilimcilar;
@@ -155,15 +163,13 @@ class _YarisSahnesiState extends State<YarisSahnesi> {
   Widget build(BuildContext context) {
     final k = widget.katilimcilar;
     final vitrin = yarisVitrini(k);
+    if (vitrin == YarisVitrini.arena) return _arena(context, k);
     Widget? ust;
     switch (vitrin) {
-      case YarisVitrini.duello:
-        final ben = k.firstWhere((x) => x.ben, orElse: () => k.first);
-        final rakip = k.firstWhere((x) => x.id != ben.id);
-        ust = _Duello(ben: ben, rakip: rakip);
       case YarisVitrini.kursu:
         ust = _Kursu(ilkUc: k.where((x) => x.roi != null).take(3).toList());
       case YarisVitrini.yok:
+      case YarisVitrini.arena:
         ust = null;
     }
     return Column(
@@ -184,6 +190,40 @@ class _YarisSahnesiState extends State<YarisSahnesi> {
           const SizedBox(height: SandikSpace.lg),
         ],
         _CanliListe(katilimcilar: k, donemGun: widget.donemGun),
+      ],
+    );
+  }
+
+  /// Arena düzeni: canlı başlık + arena + lider şeridi. İki satırlık liste
+  /// YOK — aynı iki kişiyi arena zaten gösteriyor (prototip).
+  Widget _arena(BuildContext context, List<YarisKatilimci> k) {
+    final ben = k.firstWhere((x) => x.ben, orElse: () => k.first);
+    final rakip = k.firstWhere((x) => x.id != ben.id);
+    final serit = widget.liderSeridi;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _CanliBaslik(yenileme: widget.yenileme, son: widget.sonGuncelleme),
+        const SizedBox(height: SandikSpace.smd),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            DuelloArenasi(ben: ben, rakip: rakip, donemGun: widget.donemGun),
+            Positioned.fill(
+              child: IgnorePointer(child: _Konfeti(tetik: _konfeti)),
+            ),
+          ],
+        ),
+        // Şerit yalnız AYNI dönemin verisiyse: dönem değişirken eski
+        // dönemin şeridi yeni arenanın altında kalmasın.
+        if (serit != null && serit.donemGun == widget.donemGun) ...[
+          const SizedBox(height: SandikSpace.md),
+          LiderSeridiKarti(
+            serit: serit,
+            benRengi: yarisciRengi(context, ben),
+            rakipRengi: yarisciRengi(context, rakip),
+          ),
+        ],
       ],
     );
   }
@@ -452,8 +492,11 @@ class _Avatar extends StatelessWidget {
 }
 
 /// Taç — küçük altın işaret. İkon setinde taç yok; yolu kendimiz çiziyoruz.
-class _Tac extends StatelessWidget {
-  const _Tac({this.genislik = 24});
+///
+/// Açık (public): düello arenası (`duello_arenasi.dart`) aynı tacı taşır;
+/// kopya yazılmadı.
+class YarisTaci extends StatelessWidget {
+  const YarisTaci({super.key, this.genislik = 24});
   final double genislik;
 
   @override
@@ -551,251 +594,6 @@ class _Madalya extends StatelessWidget {
       ),
       child: metin,
     );
-  }
-}
-
-// ── Düello (tam 2 kişi) ──────────────────────────────────────────────────────
-
-class _Duello extends StatelessWidget {
-  const _Duello({required this.ben, required this.rakip});
-  final YarisKatilimci ben;
-  final YarisKatilimci rakip;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final a = ben.roi!, b = rakip.roi!;
-    final fark = a - b;
-    final benOnde = fark >= 0;
-    final farkMetni = fmtNum(fark.abs(), digits: 1);
-    final String mesaj;
-    final Color mesajRengi;
-    if (fark.abs() < 0.05) {
-      mesaj = l.duelTied;
-      mesajRengi = context.c.text90;
-    } else if (benOnde) {
-      mesaj = l.duelAhead(rakip.kisaAd, trIyelik(rakip.kisaAd), farkMetni);
-      mesajRengi = context.c.gain;
-    } else {
-      mesaj = l.duelBehind(rakip.kisaAd, trIyelik(rakip.kisaAd), farkMetni);
-      mesajRengi = context.c.loss;
-    }
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-          SandikSpace.md, SandikSpace.sm, SandikSpace.md, SandikSpace.md),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [context.c.surface2, context.c.surface1],
-        ),
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: context.c.hairline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          LayoutBuilder(builder: (context, c) {
-            final w = c.maxWidth;
-            const vsW = SandikSpace.xxl;
-            final yuzW = (w - vsW) / 2;
-            final solX = yuzW / 2, sagX = w - yuzW / 2;
-            const tacW = SandikSpace.lg + SandikSpace.xs;
-            return Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: SandikSpace.lg),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      SizedBox(
-                        width: yuzW,
-                        child: _Yuz(k: ben, ad: l.raceYou, lider: benOnde),
-                      ),
-                      SizedBox(
-                        width: vsW,
-                        child: Padding(
-                          padding:
-                              const EdgeInsets.only(bottom: SandikSpace.xl),
-                          child: Text(
-                            l.raceVs,
-                            textAlign: TextAlign.center,
-                            style: context.t.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.6,
-                              color: context.c.text36,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: yuzW,
-                        child:
-                            _Yuz(k: rakip, ad: rakip.kisaAd, lider: !benOnde),
-                      ),
-                    ],
-                  ),
-                ),
-                // Taç lider tarafta. Değer 0 (sen) ↔ 1 (rakip) arasında
-                // akar; yay (sin) ve eğilme değerden türetildiği için
-                // zıplama ayrı bir animasyon değil — geri dönüş de aynı
-                // yolu izler, yarıda kesilirse oradan devam eder.
-                TweenAnimationBuilder<double>(
-                  tween: Tween(end: benOnde ? 0 : 1),
-                  duration: SandikMotion.of(context, SandikMotion.flow * 1.3),
-                  curve: SandikMotion.move,
-                  builder: (_, v, child) {
-                    final kavis = math.sin(math.pi * v);
-                    return Positioned(
-                      left: lerpDouble(solX, sagX, v)! - tacW / 2,
-                      top: -kavis * SandikSpace.lg,
-                      child: Transform.rotate(
-                        angle: kavis * 0.35 * (benOnde ? -1 : 1),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: const _Tac(genislik: tacW),
-                ),
-              ],
-            );
-          }),
-          const SizedBox(height: SandikSpace.md),
-          _Halat(oran: halatOrani(a, b), sagRenk: yarisciRengi(context, rakip)),
-          const SizedBox(height: SandikSpace.smd),
-          AnimatedSwitcher(
-            duration: SandikMotion.stateOf(context),
-            switchInCurve: SandikMotion.enter,
-            child: Text(
-              mesaj,
-              key: ValueKey(mesaj),
-              textAlign: TextAlign.center,
-              style: context.t.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: mesajRengi,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Yuz extends StatelessWidget {
-  const _Yuz({required this.k, required this.ad, required this.lider});
-  final YarisKatilimci k;
-  final String ad;
-  final bool lider;
-
-  @override
-  Widget build(BuildContext context) {
-    final roi = k.roi!;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _Avatar(k: k, cap: SandikSpace.xxl + SandikSpace.sm2, parla: lider),
-        const SizedBox(height: SandikSpace.xs2),
-        Text(
-          ad,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.t.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: context.c.text90,
-          ),
-        ),
-        const SizedBox(height: SandikSpace.xxs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: YuvarlananMetin(
-            _yuzde(roi),
-            stil: context.t.numMedium.copyWith(
-              color: roi >= 0 ? context.c.gain : context.c.loss,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Halat çekişi çubuğu: solda sen (amber), sağda rakip (kendi rengi),
-/// düğüm aradaki farkla orantılı yerde. Düğüm hafif taşarak oturur
-/// (`SandikMotion.spring` — tek, küçük öğe).
-class _Halat extends StatelessWidget {
-  const _Halat({required this.oran, required this.sagRenk});
-  final double oran;
-  final Color sagRenk;
-
-  @override
-  Widget build(BuildContext context) {
-    final amber = context.c.amberFill;
-    const kalin = SandikSpace.smd;
-    const dugum = SandikSpace.lgs + SandikSpace.xxs;
-    return LayoutBuilder(builder: (context, c) {
-      final w = c.maxWidth;
-      return TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.5, end: oran),
-        duration: SandikMotion.of(context, SandikMotion.flow * 1.4),
-        curve: SandikMotion.spring,
-        builder: (_, f, __) {
-          final x = (f * w).clamp(dugum / 2, w - dugum / 2);
-          return SizedBox(
-            height: dugum,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(
-                  left: 0,
-                  width: x,
-                  top: (dugum - kalin) / 2,
-                  height: kalin,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(kalin / 2),
-                      gradient: LinearGradient(
-                        colors: [amber.withValues(alpha: 0.25), amber],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: x,
-                  right: 0,
-                  top: (dugum - kalin) / 2,
-                  height: kalin,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(kalin / 2),
-                      gradient: LinearGradient(
-                        colors: [sagRenk, sagRenk.withValues(alpha: 0.25)],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: x - dugum / 2,
-                  top: 0,
-                  width: dugum,
-                  height: dugum,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: context.c.text90,
-                      border: Border.all(
-                          color: context.c.surface1, width: SandikSpace.xs),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    });
   }
 }
 
@@ -932,7 +730,7 @@ class _KursuSutunu extends StatelessWidget {
             opacity: lider ? 1 : 0,
             duration: SandikMotion.stateOf(context),
             curve: SandikMotion.enter,
-            child: const _Tac(genislik: SandikSpace.lg),
+            child: const YarisTaci(genislik: SandikSpace.lg),
           ),
         ),
         const SizedBox(height: SandikSpace.xs),

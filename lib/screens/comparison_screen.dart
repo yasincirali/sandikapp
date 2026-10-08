@@ -4,29 +4,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/preferences_provider.dart';
+import '../providers/secili_donem_provider.dart';
+import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/donem_secici.dart';
+import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
 import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
+import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
 import '../l10n/l10n.dart';
+
+/// Ortak serisinin arama satırı adındaki ayraç: "Ayşe · tüm portföyü".
+/// Üretildiği yer ve adın ilk parçasını okuyan iki yer aynı sabiti kullanır;
+/// eskiden üçü ayrı ayrı uzun tire yazıyordu (taste-skill, 2026-10-01).
+const _ortakAdAyraci = ' · ';
 
 /// Varlık karşılaştırma — "almadığım şey ne yapardı?"
 ///
@@ -45,7 +57,37 @@ class ComparisonScreen extends ConsumerStatefulWidget {
   /// "bununla karşılaştır" akışı için.
   final List<String> initialTickers;
 
-  const ComparisonScreen({super.key, this.initialTickers = const []});
+  /// Varlık ekranından gelen ön seçim (`tek_kiyas_yuzeyi`, Sadeleştirme 2
+  /// madde 8). Varlık ekranının kendi kıyas seçicisi yerine kıyas BURADA
+  /// yapılır; ekran bu varlık seçili açılır, kullanıcı kısayol çipleriyle
+  /// ya da aramayla ikinci seriyi ekler.
+  ///
+  /// Sembol değil VARLIK alınır: seri `FiyatKaynagi.birimVarlik` ile, varlık
+  /// ekranının çizgisiyle aynı motor ve aynı para birimi kararıyla gelir
+  /// (bkz. [_fetch]). `getSymbolHistory` para birimini TICKER'dan tahmin
+  /// eder; TL kote bir emtiayı kurla çarpıp yüzdeye kur hareketini katardı.
+  /// Yalnız [varligiAcabilir] olan varlıklar için verilir.
+  final Asset? baslangicVarligi;
+
+  /// Açılış dönemi — verilmezse eski varsayılan (3A). Varlık ekranı kendi
+  /// seçili dönemini taşır ki kullanıcı aynı pencereye bakmaya devam etsin.
+  final SummaryPeriod? baslangicDonemi;
+
+  const ComparisonScreen({
+    super.key,
+    this.initialTickers = const [],
+    this.baslangicVarligi,
+    this.baslangicDonemi,
+  });
+
+  /// Bu varlık Karşılaştır ekranında bir satır olarak doğru çizilir mi?
+  ///
+  /// Hayır olanlar: sözleşmeli (mevduat, BES — eğri sözleşmenin
+  /// tahakkukudur, sembolü `MEVDUAT:<uuid>` gibi kullanıcıya gösterilemez
+  /// ve satırın Al/Sat düğmeleri onlara uymaz), elle fiyatlanan ve "diğer"
+  /// (piyasa serisi yok). Bunlarda varlık ekranı kendi seçicisini korur.
+  static bool varligiAcabilir(Asset a) =>
+      !a.type.sozlesmeli && !a.isManualPrice && a.type != AssetType.diger;
 
   @override
   ConsumerState<ComparisonScreen> createState() => _ComparisonScreenState();
@@ -109,6 +151,35 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @override
   void initState() {
     super.initState();
+    final donem = widget.baslangicDonemi;
+    if (donem != null) {
+      _periodIdx = donem.index;
+      _cizilenDonemIdx = donem.index;
+      // `donem_hafizasi`: açılışta istenen dönem ortak döneme de yazılır —
+      // kullanıcı bu pencereye bakarken öteki yüzeyler de aynısını açar.
+      // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
+      if (donemHafizasiAcik) {
+        Future.microtask(() {
+          if (mounted) ref.read(seciliDonemProvider.notifier).state = donem;
+        });
+      }
+    } else if (donemHafizasiAcik) {
+      // Ortak dönem 3A varsayılanının yerine geçer (bayrak kapalıyken 3A).
+      _periodIdx = ref.read(seciliDonemProvider).index;
+      _cizilenDonemIdx = _periodIdx;
+    }
+    // Varlık ekranından gelen satır İLK karede seçili olsun: kare sonrasına
+    // bırakılsaydı ekran bir kare "kıyaslamak için varlık ekle" boş hâlini
+    // gösterirdi. `_add` setState çağırdığı için burada alanlar doğrudan
+    // yazılır, yükleme `_load` ile başlar.
+    final varlik = widget.baslangicVarligi;
+    if (varlik != null) {
+      _selected.add(SymbolHit(
+          ticker: varlik.ticker, name: varlik.name, source: varlik.type.label));
+      _loading.add(varlik.ticker);
+      CrashReporter.arkaPlan(_load(varlik.ticker),
+          reason: 'comparison_screen.baslangicVarligi');
+    }
     // Detay ekranından gelen ön seçimler.
     if (widget.initialTickers.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -131,8 +202,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   Future<void> _add(SymbolHit hit) async {
     if (_selected.any((s) => s.ticker == hit.ticker)) return;
     // Beşten fazla seri grafiği okunamaz hale getirir; renk paleti de
-    // beş renkte bitiyor.
-    if (_selected.length >= 5) return;
+    // beş renkte bitiyor. Ücretsizde sınır daha düşük olabilir
+    // (`karsilastirmaSeriSiniriProvider`, yalnız paywall açıkken); o zaman
+    // dolu grafiğe ekleme isteği paywall'u açar.
+    if (_selected.length >= ref.read(karsilastirmaSeriSiniriProvider)) {
+      if (_premiumSiniri) _paywallAc();
+      return;
+    }
 
     setState(() {
       _selected.add(hit);
@@ -140,6 +216,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       _failed.remove(hit.ticker);
     });
     await _load(hit.ticker);
+  }
+
+  /// Grafik Premium'un sınırında değil, ücretsiz sınırda mı dolu.
+  bool get _premiumSiniri =>
+      ref.read(karsilastirmaSeriSiniriProvider) < kKarsilastirmaEnFazla;
+
+  void _paywallAc() {
+    AnalyticsService.instance.logPremiumGateShown(feature: 'compare_series');
+    PaywallScreen.show(context, source: 'compare_series');
   }
 
   Future<void> _load(String ticker) async {
@@ -163,6 +248,15 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Future<NormalizedSeries?> _fetch(String ticker, int days) async {
+    // Varlık ekranından gelen varlık BİRİM serisiyle çizilir — bkz.
+    // [ComparisonScreen.baslangicVarligi]. Pencere motoru portföy serisiyle
+    // aynı (`getPortfolioHistory`), yani grafikteki öteki satırlarla aynı
+    // eksene oturur.
+    final varlik = widget.baslangicVarligi;
+    if (varlik != null && ticker == varlik.ticker) {
+      return normalizeSeries(await HistoryService.instance
+          .getPortfolioHistory([FiyatKaynagi.birimVarlik(varlik)], days));
+    }
 
     // Portföy serileri piyasada kote DEĞİLDİR — lot'lardan hesaplanır.
     // Bu yüzden sembol geçmişi yerine portföy geçmişi yolundan geçerler.
@@ -242,6 +336,16 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// grafiği iskelete düşürüyor, çizgiler sonra tek tek sıfırdan çiziliyordu
   /// — `LineChart` morfu kayboluyordu. İki dönemin serisi aynı eksende hiç
   /// karışmaz: yazma tek `setState`.
+  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
+  /// eskisi gibi doğrudan [_changePeriod]'u çağırır). Ortak döneme yazma `_changePeriod` alanı güncelledikten SONRA yapılır ki
+  /// [build]'deki dinleyici değişikliği kendi seçimimiz olarak tanıyıp
+  /// ikinci kez çekmesin.
+  void _donemSec(int idx) {
+    CrashReporter.arkaPlan(_changePeriod(idx),
+        reason: 'comparison_screen._donemSec');
+    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[idx];
+  }
+
   Future<void> _changePeriod(int idx) async {
     final nesil = ++_donemNesli;
     final days = _periods[idx].days;
@@ -283,6 +387,16 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.c;
+    // `donem_hafizasi`: ortak dönem başka yüzeyde (bu ekranın üstünde açılan
+    // varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
+    if (donemHafizasiAcik) {
+      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+        if (yeni.index != _periodIdx) {
+          CrashReporter.arkaPlan(_changePeriod(yeni.index),
+              reason: 'comparison_screen.ortakDonem');
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: p.background,
@@ -331,7 +445,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       child: DonemSecici(
         donemler: SummaryPeriod.values,
         secili: _periodIdx,
-        onSec: _changePeriod,
+        onSec: donemHafizasiAcik ? _donemSec : _changePeriod,
       ),
     );
   }
@@ -657,7 +771,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (hit.ticker == PortfolioSeries.mine) return 'Portföyüm';
     if (hit.ticker == PortfolioSeries.together) return 'Birlikte';
     if (PortfolioSeries.partnerIdOf(hit.ticker) != null) {
-      return hit.name.split(' — ').first;
+      return hit.name.split(_ortakAdAyraci).first;
     }
     // "Aylık" etikette DURUR: basamağın neden basamak olduğunu söyler.
     if (TufeSeries.isTufe(hit.ticker)) return 'TÜFE (aylık)';
@@ -700,9 +814,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   static AssetType _typeOf(String ticker) {
     if (ticker.startsWith('TEFAS:')) return AssetType.fon;
     if (ticker.startsWith(kriptoOneki)) return AssetType.kripto;
+    // Eurobond (seri denetimi 2026-10-08): emtiaya düşseydi ekleme formu
+    // tahvili "Emtia" olarak, sembolü serbest metin diye açardı. Form
+    // eurobond türünde açılır; tahvil katalogdan seçilir.
+    if (FiyatKaynagi.eurobondMu(ticker)) return AssetType.eurobond;
     if (ticker.startsWith('ALTIN_')) return AssetType.altin;
     if (ticker.endsWith('TRY=X')) return AssetType.doviz;
     if (ticker.endsWith('.IS')) return AssetType.hisse;
+    // ABD kataloğundaki sembol (bayrak `abd_hisse`) hissedir; ekleme formu
+    // onu ABD pazarı + USD ile açar. Bayrak kapalıyken arama ABD sonucu
+    // getirmez, bu dal hiç işlemez.
+    if (RemoteConfigService.instance.abdHisse &&
+        abdHisseleri.containsKey(ticker)) {
+      return AssetType.hisse;
+    }
     return AssetType.emtia;
   }
 
@@ -790,7 +915,9 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   ];
 
   Widget _benchmarkChips(SandikPalette p) {
-    final full = _selected.length >= 5;
+    final sinir = ref.watch(karsilastirmaSeriSiniriProvider);
+    final full = _selected.length >= sinir;
+    final kilitli = full && sinir < kKarsilastirmaEnFazla;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -802,7 +929,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
             return SandikTappable(
               semanticLabel:
                   on ? '${b.name} zaten kıyasta' : '${b.name} kıyasa ekle',
-              onTap: (on || full) ? null : () => _add(b),
+              onTap: on
+                  ? null
+                  : kilitli
+                      ? _paywallAc
+                      : full
+                          ? null
+                          : () => _add(b),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: SandikSpace.md, vertical: SandikSpace.xs + 2),
@@ -836,13 +969,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Widget _addButton(SandikPalette p) {
-    final full = _selected.length >= 5;
+    final sinir = ref.watch(karsilastirmaSeriSiniriProvider);
+    final full = _selected.length >= sinir;
+    final kilitli = full && sinir < kKarsilastirmaEnFazla;
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: full ? null : _openSearch,
-        icon: const Icon(Icons.add_rounded, size: 18),
-        label: Text(full ? 'En fazla 5 varlık' : 'Varlık ekle'),
+        onPressed: kilitli ? _paywallAc : (full ? null : _openSearch),
+        icon: Icon(kilitli ? Icons.lock_outline_rounded : Icons.add_rounded,
+            size: 18),
+        label: Text(kilitli
+            ? context.l10n.cmpSinirPremium
+            : full
+                ? context.l10n.cmpSinirDolu
+                : 'Varlık ekle'),
         style: OutlinedButton.styleFrom(
           foregroundColor: p.amberText,
           side: BorderSide(color: p.hairline),
@@ -853,7 +993,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Future<void> _openSearch() async {
-    final hit = await showModalBottomSheet<SymbolHit>(
+    final hit = await showSandikSheet<SymbolHit>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -881,7 +1021,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     for (final p in partners) {
       out.add(SymbolHit(
         ticker: '${PortfolioSeries.partnerPrefix}${p.id}',
-        name: '${p.displayName} — tüm portföyü',
+        name: '${p.displayName}${_ortakAdAyraci}tüm portföyü',
         source: 'Ortak',
       ));
     }
@@ -907,7 +1047,10 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
 /// Arama sayfasının `Varlıklar | Ortaklar` seçicisi.
 ///
 /// Periyot seçicisiyle AYNI dil — aynı sayfada iki farklı segment biçimi
-/// görmek "bunlar farklı türde kontroller mi?" sorusunu doğururdu.
+/// görmek "bunlar farklı türde kontroller mi?" sorusunu doğururdu. Bu
+/// yüzden kabuk ortak [SandikSegment] (tek seçici, 2026-10-08 — yol
+/// haritası 2.12); eskiden amber dolgulu elle yazılmış bir kopyaydı ve
+/// periyot seçici `SandikSegment`'e geçince yeniden ayrışmıştı.
 class _SheetTabs extends StatelessWidget {
   const _SheetTabs({required this.selected, required this.onChanged});
 
@@ -917,49 +1060,17 @@ class _SheetTabs extends StatelessWidget {
   static const _labels = ['Varlıklar', 'Ortaklar'];
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.c;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: p.overlay,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-      ),
-      child: Row(
-        children: [
-          for (var i = 0; i < _labels.length; i++)
-            Expanded(
-              child: SandikBasma(
-                // Opaque: sekmenin boş kalan alanı da dokunmayı yakalasın —
-                // yalnızca metnin üstü hedef olsaydı isabet zorlaşırdı.
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  if (i == selected) return;
-                  SandikHaptic.selection.perform();
-                  onChanged(i);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: i == selected ? p.amberFill : Colors.transparent,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  child: Text(
-                    _labels[i],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: i == selected ? p.onAmber : p.text58,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SandikSegment(
+        adet: _labels.length,
+        secili: selected,
+        onSec: onChanged,
+        oge: (_, i, __) => Text(
+          _labels[i],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+      );
 }
 
 // ── Arama sayfası ───────────────────────────────────────────────────────────
@@ -1062,8 +1173,8 @@ class _SymbolSearchSheetState extends State<_SymbolSearchSheet> {
   String _portfolioTitle(SymbolHit h) {
     if (h.ticker == PortfolioSeries.mine) return 'Portföyüm';
     if (h.ticker == PortfolioSeries.together) return 'Birlikte';
-    // Ortak: adı `name` alanının ilk parçasında ("Ayşe — tüm portföyü").
-    return h.name.split(' — ').first;
+    // Ortak: adı `name` alanının ilk parçasında ("Ayşe · tüm portföyü").
+    return h.name.split(_ortakAdAyraci).first;
   }
 
   @override

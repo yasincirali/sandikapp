@@ -221,9 +221,9 @@ class TechnicalAnalysisService {
             : SignalType.neutral;
 
     final desc = current < lower
-        ? 'Alt bantın altında — potansiyel dönüş'
+        ? 'Alt bantın altında: potansiyel dönüş'
         : current > upper
-            ? 'Üst bantın üzerinde — potansiyel düzeltme'
+            ? 'Üst bantın üzerinde: potansiyel düzeltme'
             : '%B: ${fmtNum(pctB * 100, digits: 0)} (bant içi)';
 
     return TechnicalIndicator(
@@ -279,13 +279,13 @@ class TechnicalAnalysisService {
     // TS portu (`supabase/functions/_shared/technical_analysis.ts`) ile
     // birebir — altın vektörler (`ta_golden_vectors`) ikisini de bağlar.
     final desc = signal == SignalType.buy
-        ? 'EMA$shortP > EMA$longP — yükseliş trendi'
+        ? 'EMA$shortP > EMA$longP: yükseliş trendi'
         : signal == SignalType.sell
-            ? 'EMA$shortP < EMA$longP — düşüş trendi'
+            ? 'EMA$shortP < EMA$longP: düşüş trendi'
             : shortEma > longEma
-                ? 'EMA$shortP > EMA$longP, fiyat EMA$shortP altında — teyit yok'
+                ? 'EMA$shortP > EMA$longP, fiyat EMA$shortP altında, teyit yok'
                 : shortEma < longEma
-                    ? 'EMA$shortP < EMA$longP, fiyat EMA$shortP üstünde — teyit yok'
+                    ? 'EMA$shortP < EMA$longP, fiyat EMA$shortP üstünde, teyit yok'
                     : 'Ortalamalarda kesişim bölgesi';
 
     return TechnicalIndicator(

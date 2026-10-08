@@ -23,3 +23,9 @@ tags:
   #   flutter test --run-skipped --update-goldens test/goldens/
   golden:
     skip: "golden — platforma duyarlı, elle koş: flutter test --run-skipped test/goldens/"
+  # `arac`: assert etmeyen, dosya üreten yardımcılar (ör.
+  # `tool/yasal_metin_uret_test.dart` — yasal metin INSERT üreteci). Flutter
+  # bağımlı kodu okudukları için `flutter test` ile koşarlar; CI'da koşmasın:
+  #   flutter test --run-skipped --tags arac tool/yasal_metin_uret_test.dart
+  arac:
+    skip: "araç — elle koş: flutter test --run-skipped --tags arac <dosya>"

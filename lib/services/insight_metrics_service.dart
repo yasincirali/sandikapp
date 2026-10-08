@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import 'para_agirlikli_getiri.dart' show getiriAkisi;
 
 /// Portföy sağlığı metrikleri — düşüş, oynaklık, yoğunlaşma.
 ///
@@ -133,30 +134,64 @@ class InsightMetricsService {
   /// haftalık seride oynaklığı 2,2 kat şişirirdi. Bu yüzden yıllıklandırma
   /// faktörü [barSuresiGun]'den TÜRETİLİR, sabit değildir.
   ///
+  /// ## Akıştan arındırılmış bar getirisi (2026-10-01)
+  /// Getiri ham değer oranından değil, bar içindeki nakit akışı düşülerek
+  /// alınır:  `r_t = (V_t − F_t) / V_{t−1} − 1`, `F_t` = `(t−1, t]`
+  /// aralığındaki `getiriAkisi` toplamı (alım +, satış −, nakit temettü −).
+  /// Ölçüldü: Eylül'deki ₺529.881'lik giriş tek barda +%56 "sıçrama" gibi
+  /// görünüp yıllık oynaklığı %85,2'ye şişiriyordu — kullanıcının kendi
+  /// parası piyasanın sallantısı sayılıyordu. Kapı piyasa etkisiyle aynı:
+  /// slottaki değer `addedDate <= slot` lotları içerir, akış o slota yazılır.
+  ///
+  /// [lotlar] boşsa (akış bilgisi yok) eski ham oran — çağıran
+  /// (`ozet_yan_veri`) her zaman geçirir. [maxDrawdown] bilinçli olarak
+  /// ham kalır (notu orada).
+  ///
   /// `null` döner: örnek az, pencere kısa ya da bar süresi bilinmiyorsa.
   static double? annualizedVolatility(
     Map<int, double> seri, {
     required double barSuresiGun,
+    List<Asset> lotlar = const [],
   }) {
     if (barSuresiGun <= 0) return null;
 
     final ts = seri.keys.toList()..sort();
-    final degerler = <double>[];
+    final noktalar = <({int ts, double v})>[];
     for (final t in ts) {
       final v = seri[t];
       if (v == null || v <= 0) continue;
-      degerler.add(v);
+      noktalar.add((ts: t, v: v));
     }
-    if (degerler.length < minOrnek) return null;
+    if (noktalar.length < minOrnek) return null;
 
     final kapsananGun = (ts.last - ts.first) / Duration.millisecondsPerDay;
     if (kapsananGun < minGunSayisi) return null;
 
+    // Akışları zaman sırasına diz; her bar kendi aralığını tek geçişte alır.
+    final akislar = <({int ms, double f})>[
+      for (final l in lotlar)
+        if (getiriAkisi(l) != 0)
+          (ms: l.addedDate.millisecondsSinceEpoch, f: getiriAkisi(l)),
+    ]..sort((a, b) => a.ms.compareTo(b.ms));
+    var j = 0;
+    while (j < akislar.length && akislar[j].ms <= noktalar.first.ts) {
+      j++;
+    }
+
     // Logaritmik getiri: bileşik büyümede toplanabilir olan tek biçim.
     // Basit yüzde getiride +%50/−%50 ardışığı sıfır sanılır.
     final getiriler = <double>[];
-    for (var i = 1; i < degerler.length; i++) {
-      getiriler.add(math.log(degerler[i] / degerler[i - 1]));
+    for (var i = 1; i < noktalar.length; i++) {
+      var akis = 0.0;
+      while (j < akislar.length && akislar[j].ms <= noktalar[i].ts) {
+        akis += akislar[j].f;
+        j++;
+      }
+      final oran = (noktalar[i].v - akis) / noktalar[i - 1].v;
+      // Oran pozitif değilse bar ölçülemez (veri ile defter çelişiyor):
+      // sayı uydurulmaz, bar atlanır.
+      if (oran <= 0) continue;
+      getiriler.add(math.log(oran));
     }
     if (getiriler.length < 2) return null;
 

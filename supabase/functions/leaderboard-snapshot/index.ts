@@ -11,19 +11,21 @@
 // Kullanıcı kararı: snapshot'ı sunucu her gün, opt-in yapmış herkes için
 // atar; havuz uygulama açılışına bağlı olmaktan çıkar.
 //
-// ## 2026-09-29: zirve havuzu beyana dayanmaz (0083)
-// Portföyü olan HERKES ölçülür ve `zirve_*_snapshots` tablolarına yazılır
+// ## 2026-09-29: zirve havuzu beyana dayanmaz (0083) → 2026-10-01: açık rıza (0091)
+// 0083'te portföyü olan HERKES ölçülüp `zirve_*_snapshots`'a yazılıyordu;
+// 0091'den beri yalnız `zirve_rizalari`'nda geçerli rızası olanlar yazılır
 // (anonim, RLS kapalı kutu; yalnız RPC okur). Yarış tablolarına yine
 // YALNIZ opt-in kullanıcılar yazılır — Yarış ekranının mekaniği değişmesin
 // diye (`yazimPlani`). Aynı hesap iki yere gider; ikinci bir fiyat turu yok.
 //
 // ## Ne hesaplar
-// Her kullanıcının (yarış tablosu için yalnız opt-in, 0081) AÇIK lotları
-// (`_shared/positions.ts`, satış ve silme düşülmüş) bugünkü miktarlarıyla
-// dönem başında ve bugün TL'ye değerlenir; ROI = (bugün − başlangıç) /
-// başlangıç. İstemcinin yarış ROI'si de aynı tanımdır (`HistoryService`
-// `simulate: true`: miktar dönem boyunca sabit, alım tarihi yok sayılır,
-// yalnızca piyasa etkisi). Dağılım: bugünkü TL değerinin tür payı.
+// Getiri 2026-10-01'den (0095) beri SEÇİMLERİNİN GETİRİSİ — zaman
+// ağırlıklı (TWR, `donemTwr`): defterin tamamından günlük miktar geçmişi
+// kurulur, her gün piyasa fiyatıyla değerlenir, günlerin getirisi çarpılır.
+// Öncesinde simülasyondu (bugünkü sepet dönem başından beri tutulmuş
+// sayılırdı); gerekçe `donemTwr` üstünde. İstemci eşi
+// `lib/services/secim_getirisi.dart`. Dağılım: bugünkü TL değerinin tür payı
+// (açık lotlar, `_shared/positions.ts`, satış ve silme düşülmüş).
 //
 // ## Fiyat kaynağı
 // `_shared/dated_history.ts` — Yahoo / TEFAS / Binance, tarihli. Altın:
@@ -308,26 +310,187 @@ export function donemBaslangici(nowMs: number, gun: number): number {
   return nowMs - gun * GUN_MS;
 }
 
-/// Dönem getirisi (%): iki uçta da fiyatlanan lotlar üzerinden. Serisi
-/// olmayan lotlar (`karanlik`, current_price tahmini) bugünkü toplamın
-/// [KAPSAMA_ESIGI] dışında kalan payını aşıyorsa null — yarım portföyün
-/// getirisi yazılmaz. Sonuç tablonun CHECK aralığına kırpılır.
-export function donemRoi(
-  lots: Lot[],
+// ── Seçimlerinin getirisi (TWR, 0095) ───────────────────────────────────────
+//
+// Kullanıcı kararı R1 (2026-10-01, "Yarış Ölçüsü Kıyası"): sıralama ve
+// Zirve ZAMAN AĞIRLIKLI getiriyle. Dönem günlere bölünür; her gün, o günün
+// BAŞINDAKİ miktarlar piyasa fiyatıyla değerlenir ve günün getirisi
+// `Σ q·p(gün sonu) / Σ q·p(gün başı)` olur; günler çarpılır. Para ne zaman,
+// ne kadar eklenmiş sonucu etkilemez — yalnız neyin tutulduğu.
+//
+// Eski ölçü simülasyondu (`donemRoi`: bugünkü sepet dönem başından beri
+// tutulmuş sayılırdı). Satıp başka varlık alan "hep yeniyi tutmuş", ay
+// sonunda giren "bütün yılı kazanmış" görünüyordu. TWR'de satılan varlık
+// satılana kadar sayılır, alınan alındığı günden; geç katılan yalnız
+// tuttuğu süre kadar ölçülür.
+//
+// Kullanıcının girdiği alış/satış FİYATI hiç kullanılmaz (senaryoda
+// "Hakan" fiyatı 1 TL girip %1.439.900 gösterebiliyordu); değerleme her
+// zaman piyasa serisinden. Kayıt TARİHİ ise `yarisAni` kuralıyla sınırlı.
+//
+// İstemci eşi: `lib/services/secim_getirisi.dart` (Yarış'ta ortaklar
+// cihazda ölçülür). İki taraf AYNI senaryo testlerini geçer
+// (`leaderboard_snapshot_test.ts` ↔ `test/secim_getirisi_test.dart`).
+
+/// `added_date` girişten bu kadar gün gerideyse kayıt GİRİLDİĞİ anda
+/// yapılmış sayılır (0095). Pay, "dün aldım bugün giriyorum" kullanıcısını
+/// cezalandırmasın diye.
+export const GERI_TARIH_PAYI_GUN = 3;
+
+/// Sıralamaya girmek için gereken en kısa ölçüm (R1: "yeni kullanıcı hemen
+/// katılır, yalnız tuttuğu süre kadar ölçülür, asgari 30 gün"). İlk alımın
+/// yarış anından bugüne sayılır, dönemden bağımsız: on günlük bir hesap
+/// 7 günlük sıralamada da görünmez.
+export const ASGARI_OLCUM_GUN = 30;
+
+/// Defter satırı + sunucunun giriş anı (0095 `assets.created_at`).
+export interface DefterSatiri extends Lot {
+  created_at?: string | null;
+}
+
+function zamanMs(v: string | null | undefined): number | null {
+  if (!v) return null;
+  const t = new Date(v).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+/// Satırın yarışta sayılan anı: `added_date`; ama girişten
+/// [GERI_TARIH_PAYI_GUN] günden fazla gerideyse giriş anı (`created_at`).
+/// Senaryoda "Gül" Ay 12'de aldığı X'i Ay 6'ya (dip) giriyordu; bu kuralla
+/// alım Ay 12'de sayılır, dipten kazanç yazılmaz. Satış için de aynı:
+/// çöküşten önceye geriye tarihli satış, girildiği gün yapılmış sayılır.
+/// Giriş anı yoksa tarih olduğu gibi (0095 öncesi satırlar ona eşitlendi).
+///
+/// Bu fonksiyonun yazdığı her yüzey ANONİM (Zirve, genel yüzdelik), kural
+/// burada hep uygulanır. Ortaklar arası Yarış cihazda ölçülür ve beyan
+/// edilen tarihe güvenir (kullanıcı kararı 2026-10-01; istemci
+/// `SiralamaKapsami.ortaklar`): herkes birbirini tanır, buna karşılık
+/// geçmişini içe aktaran kullanıcı 30 gün beklemez.
+export function yarisAni(r: DefterSatiri): number | null {
+  const eklenme = zamanMs(r.added_date);
+  const giris = zamanMs(r.created_at);
+  if (eklenme === null) return giris;
+  if (giris === null) return eklenme;
+  return eklenme < giris - GERI_TARIH_PAYI_GUN * GUN_MS ? giris : eklenme;
+}
+
+/// Bir pozisyonun miktar geçmişi: fiyatlama şablonu + zamana göre sıralı
+/// hareketler (alım +, satış −).
+export interface PozisyonGecmisi {
+  sablon: Lot;
+  hareketler: Array<{ an: number; miktar: number }>;
+}
+
+/// Kullanıcının defterini pozisyon geçmişlerine böler. Yalnız buy/sell;
+/// `delete_log` ve temettü miktara girmez (`netLotlar` ile aynı). Şablon
+/// pozisyonun EN YENİ alımı — `netLotlar` ile aynı seçim.
+export function pozisyonGecmisleri<T extends DefterSatiri>(satirlar: T[]): PozisyonGecmisi[] {
+  const gruplar = new Map<string, PozisyonGecmisi>();
+  const sablonTarihi = new Map<string, string>();
+  for (const r of satirlar) {
+    const kind = r.kind ?? 'buy';
+    if (kind !== 'buy' && kind !== 'sell') continue;
+    const q = Number(r.quantity ?? 0);
+    const an = yarisAni(r);
+    if (!Number.isFinite(q) || q <= 0 || an === null) continue;
+    const key = pozisyonAnahtari(r);
+    let g = gruplar.get(key);
+    if (!g) {
+      g = { sablon: r, hareketler: [] };
+      gruplar.set(key, g);
+    }
+    g.hareketler.push({ an, miktar: kind === 'sell' ? -q : q });
+    if (kind === 'buy') {
+      const tarih = String(r.added_date ?? '');
+      const onceki = sablonTarihi.get(key);
+      if (onceki === undefined || tarih > onceki) {
+        sablonTarihi.set(key, tarih);
+        g.sablon = r;
+      }
+    }
+  }
+  for (const g of gruplar.values()) g.hareketler.sort((a, b) => a.an - b.an);
+  return [...gruplar.values()];
+}
+
+/// Pozisyonun `t` anındaki miktarı (`an ≤ t` hareketlerin toplamı, en az 0).
+export function miktarAninda(p: PozisyonGecmisi, tMs: number): number {
+  let q = 0;
+  for (const h of p.hareketler) {
+    if (h.an > tMs) break;
+    q += h.miktar;
+  }
+  return q > 1e-7 ? q : 0;
+}
+
+/// Dönemin ölçüm anları: başlangıç (dönem başı ya da ilk alım, hangisi
+/// sonraysa), sonra bugünden geriye tam günler, en sonda bugün. Izgara
+/// bugüne hizalı: iki koşu aynı günleri aynı anlarda ölçer.
+export function olcumAnlari(basMs: number, nowMs: number): number[] {
+  if (nowMs <= basMs) return [];
+  const anlar = [basMs];
+  for (let k = Math.floor((nowMs - basMs) / GUN_MS); k >= 1; k--) {
+    const t = nowMs - k * GUN_MS;
+    if (t > basMs) anlar.push(t);
+  }
+  anlar.push(nowMs);
+  return anlar;
+}
+
+/// Seçimlerinin getirisi (%) — zaman ağırlıklı, piyasa fiyatıyla.
+///
+/// Kapılar (sayı uydurulmaz):
+///   · ilk alım [ASGARI_OLCUM_GUN] günden yeniyse null;
+///   · bugünkü portföyün [KAPSAMA_ESIGI]'nden azı fiyatlanabiliyorsa null
+///     (yarım portföyün getirisi yazılmaz — eski kural aynen);
+///   · hiçbir gün ölçülemediyse null.
+/// Bir gün yalnız iki ucunda da fiyatı olan pozisyonlarla ölçülür. Elle
+/// fiyatlı ve sözleşmeli (mevduat) lot iki uçta aynı fiyatla girer:
+/// getiriyi sulandırır ama yönünü değiştirmez (eski kuralla aynı).
+/// Sonuç tablonun CHECK aralığına kırpılır.
+export function donemTwr(
+  satirlar: DefterSatiri[],
   seriler: Map<string, Seri>,
   nowMs: number,
   gun: number,
 ): number | null {
-  const simdi = portfoyDegeri(lots, seriler, nowMs);
+  const gecmis = pozisyonGecmisleri(satirlar);
+  let ilk = Infinity;
+  for (const p of gecmis) {
+    for (const h of p.hareketler) if (h.miktar > 0 && h.an < ilk) ilk = h.an;
+  }
+  if (!Number.isFinite(ilk) || nowMs - ilk < ASGARI_OLCUM_GUN * GUN_MS) return null;
+
+  const bugun = gecmis
+    .map((p) => ({ ...p.sablon, quantity: miktarAninda(p, nowMs) }))
+    .filter((l) => l.quantity > 0);
+  const simdi = portfoyDegeri(bugun, seriler, nowMs);
   if (simdi.deger <= 0) return null;
   if (simdi.deger < (simdi.deger + simdi.karanlik) * KAPSAMA_ESIGI) return null;
-  const t0 = donemBaslangici(nowMs, gun);
-  const bas = portfoyDegeri(lots, seriler, t0, simdi.kapsanan);
-  if (bas.kapsanan.size === 0 || bas.deger <= 0) return null;
-  // Ortak küme: iki uçta da fiyatlı lotlar; bugünkü değer o kümeyle.
-  const ortak = portfoyDegeri(lots, seriler, nowMs, bas.kapsanan);
-  if (ortak.deger < simdi.deger * KAPSAMA_ESIGI) return null;
-  const roi = (ortak.deger - bas.deger) / bas.deger * 100;
+
+  const anlar = olcumAnlari(Math.max(donemBaslangici(nowMs, gun), ilk), nowMs);
+  let carpim = 1;
+  let olculdu = false;
+  for (let i = 1; i < anlar.length; i++) {
+    const a = anlar[i - 1];
+    const b = anlar[i];
+    let pay = 0;
+    let payda = 0;
+    for (const p of gecmis) {
+      const q = miktarAninda(p, a);
+      if (q <= 0) continue;
+      const pa = lotTryFiyati(p.sablon, seriler, a);
+      const pb = lotTryFiyati(p.sablon, seriler, b);
+      if (pa === null || pb === null) continue;
+      payda += q * pa;
+      pay += q * pb;
+    }
+    if (payda <= 0) continue;
+    carpim *= pay / payda;
+    olculdu = true;
+  }
+  if (!olculdu) return null;
+  const roi = (carpim - 1) * 100;
   if (!Number.isFinite(roi)) return null;
   return Math.max(-100, Math.min(100000, roi));
 }
@@ -443,7 +606,7 @@ export function varlikSayisi(
   return anahtarlar.size;
 }
 
-type AssetRow = Lot & { deleted_at?: string | null };
+type AssetRow = DefterSatiri & { deleted_at?: string | null };
 
 /// 0073 tetikleyicisinin reddi: dakikada bir snapshot. Mesaj metnine bakılır
 /// çünkü PostgREST hata kodu (P0001) her `raise exception` için aynı.
@@ -451,42 +614,63 @@ export function throttleMu(mesaj: string | null | undefined): boolean {
   return (mesaj ?? '').includes('snapshot_throttled');
 }
 
-/// Hangi satır hangi tabloya (0083, 2026-09-29).
+/// Hangi satır hangi tabloya.
 ///
-/// Zirve havuzu BEYANA DAYANMAZ: ölçülen herkes `zirve_*` tablolarına
-/// yazılır. Yarış tabloları (`user_*_snapshots`) yalnızca yarışa katılanlar
-/// için yazılır — Yarış ekranının mekaniği değişmesin (kullanıcı kararı):
-/// katılmamış bir ortak sıralamada görünmez, genel yüzdelik havuzu
-/// genişlemez.
+/// Zirve havuzu AÇIK RIZAYA dayanır (0091, 2026-10-01; 0083'te beyansızdı):
+/// `zirve_*` tablolarına yalnız [zirveRiza] kümesindekiler yazılır —
+/// rızası olmayanın getirisi ve dağılımı zirve için saklanmaz (veri
+/// minimizasyonu). Yarış tabloları (`user_*_snapshots`) yalnızca yarışa
+/// katılanlar için yazılır — Yarış ekranının mekaniği değişmesin: katılmamış
+/// bir ortak sıralamada görünmez, genel yüzdelik havuzu genişlemez.
 export function yazimPlani<R extends { user_id: string }, A extends { user_id: string }>(
   roiRows: R[],
   allocRows: A[],
   optIn: Set<string>,
+  zirveRiza: Set<string>,
 ): { zirveRoi: R[]; zirveAlloc: A[]; yarisKullanicilari: string[] } {
   const olculen = new Set<string>();
   for (const r of roiRows) olculen.add(r.user_id);
   for (const a of allocRows) olculen.add(a.user_id);
   return {
-    zirveRoi: roiRows,
-    zirveAlloc: allocRows,
+    zirveRoi: roiRows.filter((r) => zirveRiza.has(r.user_id)),
+    zirveAlloc: allocRows.filter((a) => zirveRiza.has(a.user_id)),
     yarisKullanicilari: [...olculen].filter((u) => optIn.has(u)),
   };
 }
 
+/// Tek kullanıcılık ölçüm isteği (0094, 2026-10-01): gövdede geçerli bir
+/// `user_id` varsa yalnız o kullanıcı ölçülür. Geçersiz/boş → null, yani
+/// bildiğimiz tam (cron) koşu — bozuk bir gövde herkesi ölçmeye düşer ama
+/// asla başka birini "tek kullanıcı" diye ölçmez.
+export function tekKullanici(body: unknown): string | null {
+  const v = (body as { user_id?: unknown } | null)?.user_id;
+  if (typeof v !== 'string') return null;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
+    ? v.toLowerCase()
+    : null;
+}
+
+// `created_at` (0095): yarış anı kuralı için. Sütun yoksa sorgu düşer —
+// migration bu fonksiyondan ÖNCE dağıtılır.
 const VARLIK_SUTUNLARI =
-  'id, user_id, name, ticker, type, is_manual_price, current_price, kind, quantity, sub_category, currency, added_date, ref_asset_id';
+  'id, user_id, name, ticker, type, is_manual_price, current_price, kind, quantity, sub_category, currency, added_date, created_at, ref_asset_id';
 
 /// PostgREST tek yanıtta en fazla `max_rows` (varsayılan 1000) satır döner.
 /// Sayfalamasız okuma, defter büyüdükçe kullanıcıları SESSİZCE düşürürdü —
 /// zirve artık yalnız yarışanları değil herkesi okuduğu için sınır yakın.
-async function tumAktifVarliklar(admin: SupabaseClient): Promise<AssetRow[]> {
+async function tumAktifVarliklar(
+  admin: SupabaseClient,
+  yalniz: string | null = null,
+): Promise<AssetRow[]> {
   const SAYFA = 1000;
   const out: AssetRow[] = [];
   for (let bas = 0; ; bas += SAYFA) {
-    const { data, error } = await admin
+    let q = admin
       .from('assets')
       .select(VARLIK_SUTUNLARI)
-      .is('deleted_at', null)
+      .is('deleted_at', null);
+    if (yalniz) q = q.eq('user_id', yalniz);
+    const { data, error } = await q
       .order('id')
       .range(bas, bas + SAYFA - 1);
     if (error) throw new Error(`Varliklar alinamadi: ${error.message}`);
@@ -520,28 +704,46 @@ Deno.serve(async (request) => {
     }
 
     let dryRun = false;
+    // Tek kullanıcı modu (0094): `zirve_rizasi_ayarla` rıza verilince
+    // çağırır ki kullanıcı akşamki cron'u (18:40) beklemeden havuza girsin
+    // (kullanıcı kararı 2026-10-01, "Anında ölçüm"). Bu modda YALNIZ zirve
+    // tablolarına yazılır: Yarış'ın günlük ritmi ve 0073 throttle'ı
+    // değişmesin diye yarış tablosuna dokunulmaz.
+    let tek: string | null = null;
     try {
       const body = await request.json();
       dryRun = body?.dry_run === true;
+      tek = tekKullanici(body);
     } catch (_) { /* gövde yok */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
 
     // 1) Yarışa katılanlar — yalnız Yarış tablolarına kimin yazılacağını
-    // belirler. Ölçülecek küme bu DEĞİL: zirve havuzu beyana dayanmaz
-    // (0083), portföyü olan herkes ölçülür.
+    // belirler. Zirve kümesi ayrı: açık rıza verenler (1b, 0091).
     const { data: profilRows, error: profilError } = await admin
       .from('profiles')
       .select('id')
       .eq('leaderboard_opt_in', true);
     if (profilError) throw new Error(`Profiller alinamadi: ${profilError.message}`);
-    const optIn = new Set((profilRows ?? []).map((r: { id: string }) => String(r.id)));
+    const optIn = tek
+      ? new Set<string>()
+      : new Set((profilRows ?? []).map((r: { id: string }) => String(r.id)));
+
+    // 1b) Zirve açık rızası (0091) — zirve tablolarına kimin yazılacağı.
+    const { data: rizaRows, error: rizaError } = await admin
+      .from('zirve_rizalari')
+      .select('user_id')
+      .is('geri_cekildi_at', null);
+    if (rizaError) throw new Error(`Zirve rizalari alinamadi: ${rizaError.message}`);
+    const zirveRiza = new Set(
+      (rizaRows ?? []).map((r: { user_id: string }) => String(r.user_id)),
+    );
 
     // 2) Herkesin aktif defteri (sayfalı).
     // Mezar taşı YOK: kullanıcının ekranda gördüğü portföy `deleted_at` +
     // buy/sell netlemesidir (istemci `aggregatePositions`); "sil → geri al"
     // sonrası defterde kalan mezar taşı lotu öldürmez (bkz. positions.ts).
-    const tum = await tumAktifVarliklar(admin);
+    const tum = await tumAktifVarliklar(admin, tek);
     const userIds = [...new Set(tum.map((a) => String(a.user_id)))];
     if (userIds.length === 0) {
       return jsonResponse({ ok: true, reason: 'Portfoyu olan kullanici yok.', users: 0 });
@@ -553,10 +755,23 @@ Deno.serve(async (request) => {
       list.push(a);
       lotlariOf.set(a.user_id, list);
     }
+    // TWR için defterin TAMAMI (alım + satış): bugün kapalı bir pozisyon
+    // dönem içinde tutulduğu günlerde sayılır.
+    const defteriOf = new Map<string, AssetRow[]>();
+    for (const a of tum) {
+      const list = defteriOf.get(a.user_id) ?? [];
+      list.push(a);
+      defteriOf.set(a.user_id, list);
+    }
 
-    // 3) Seriler (kullanıcılar arası paylaşımlı).
+    // 3) Seriler (kullanıcılar arası paylaşımlı). Kapalı pozisyonların
+    // serisi de gerekir — dönem içinde tutuldukları günler ölçülür.
     const semboller = new Set<string>();
-    for (const a of acik) for (const s of lotSembolleri(a)) semboller.add(s);
+    for (const a of tum) {
+      const kind = a.kind ?? 'buy';
+      if (kind !== 'buy' && kind !== 'sell') continue;
+      for (const s of lotSembolleri(a)) semboller.add(s);
+    }
     const seriler = await loadDatedHistories(admin, semboller);
 
     // 4) Kullanıcı başına ROI + dağılım.
@@ -577,8 +792,9 @@ Deno.serve(async (request) => {
       const lots = lotlariOf.get(uid) ?? [];
       if (lots.length === 0) { atlanan++; continue; }
       let yazildi = false;
+      const defter = defteriOf.get(uid) ?? [];
       for (const gun of DONEMLER) {
-        const roi = donemRoi(lots, seriler, nowMs, gun);
+        const roi = donemTwr(defter, seriler, nowMs, gun);
         if (roi === null) continue;
         roiRows.push({ user_id: uid, period_days: gun, roi_pct: Math.round(roi * 10000) / 10000 });
         yazildi = true;
@@ -603,7 +819,7 @@ Deno.serve(async (request) => {
     // dakikada attığı istemci snapshot'ı (Yarış ekranı açık) BÜTÜN partiyi
     // düşürüyordu — ilk canlı koşuda görüldü. Throttle "atlandı" sayılır
     // (o dakikadaki değer zaten taze), başka hata yükselir.
-    const plan = yazimPlani(roiRows, zirveAllocRows, optIn);
+    const plan = yazimPlani(roiRows, zirveAllocRows, optIn, zirveRiza);
     let throttled = 0;
     let yazilanRoi = 0;
     let yazilanAlloc = 0;
@@ -651,6 +867,7 @@ Deno.serve(async (request) => {
       symbols: semboller.size,
       series_loaded: seriler.size,
       dry_run: dryRun,
+      tek_kullanici: tek !== null,
     });
   } catch (error) {
     // Ayrıntı yalnızca günlüğe; yanıt tablo/sütun/secret adı sızdırmaz.

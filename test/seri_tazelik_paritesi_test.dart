@@ -49,11 +49,11 @@ void main() {
     // Ama veri SİLİNMEZ: ilk sürüm `_series = null` yapıyordu ve bu,
     // fetch sürerken diğer yüzeylere boş seri veriyordu
     // (bkz. `intraday_cache_dayaniklilik_test`).
-    expect(src.contains('final tazeleZorla = _fetchedAt != null && (zorla || (azamiYas != null'), isTrue,
+    expect(src.contains('final tazeleZorla = y.fetchedAt != null && ((zorla && !zorlaTaze) || (azamiYas != null'), isTrue,
         reason: 'azamiYas aşıldığında tazeleme istenmeli');
     expect(
         src.contains(
-            '} else if (!tazeleZorla && ts.difference(_fetchedAt!) < minInterval) {'),
+            '} else if (!tazeleZorla && ts.difference(y.fetchedAt!) < minInterval) {'),
         isTrue,
         reason: 'bayrak kısa devreyi atlatmalı, yoksa tazelik hiç gelmez');
   });

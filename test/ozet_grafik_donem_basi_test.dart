@@ -241,7 +241,9 @@ void main() {
     // eklenmeli; altına da bugün sadece piyasanın toplam portföye etkisi
     // yazılmalı."* Parite artık ayrı satırda: "Sadece piyasa etkisi"
     // ana sayfa Bugün kartı ve Özet ile aynı formül ve tabandır.
-    test('ana rakam her dönemde HAM birikim', () {
+    // 2026-10-04: birikim değişimi manşetten alt kaleme indi; rakamın
+    // tanımı (ham fark) aynen duruyor.
+    test('birikim kalemi her dönemde HAM birikim', () {
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
@@ -252,28 +254,44 @@ void main() {
 
     test('piyasa satırı ana sayfayla AYNI formül ve taban', () {
       // `DailySummary.from`: piyasa = (son − ilk) − akış;
-      // taban = gün başı + POZİTİF akış.
+      // yüzde para ağırlıklı (`DailySummary.gunIciGetiriPct`).
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
       expect(tek.contains('final piyasa = grossChange - netInflow;'), isTrue);
-      expect(
-          tek.contains(
-              'final piyasaPctBase = firstY + (netInflow > 0 ? netInflow : 0);'),
-          isTrue,
+      // Yüzde para ağırlıklı (2026-10-01): GÜNLÜK'te ana sayfanın
+      // fonksiyonu, 1H ve üstünde Özet'inki — tek hesap, iki çağrı.
+      expect(tek.contains('DailySummary.gunIciGetiriPct('), isTrue,
           reason: 'tutar eşitlenip yüzde ayrışırsa çelişki sürer');
-      expect(tek.contains('context.l10n.marketOnlyRow'), isTrue,
-          reason: 'piyasa etkisi ayrı satır olarak yazılmalı');
+      expect(tek.contains('PeriodSummaryService.paraAgirlikliGetiri('), isTrue,
+          reason: 'dönem yüzdesi Özet ile TEK hesap');
+      expect(tek.contains('netInflow > 0 ? netInflow : 0'), isFalse,
+          reason: 'eski "baş + pozitif akış" paydası geri gelmemeli');
+      // 2026-10-04 ("İkisi de getiri"): piyasa etkisi artık MANŞET —
+      // tutar ve para ağırlıklı yüzde kahraman satırda.
+      expect(tek.contains("'\${piyasa >= 0 ? '+' : '−'}\${tryFmt.format(piyasa.abs())}'"),
+          isTrue,
+          reason: 'manşet piyasa etkisi (paranın getirisi) olmalı');
+      expect(tek.contains('context.l10n.moneyReturnPeriod(periodLabel)'), isTrue,
+          reason: 'başlık Özet ile aynı: "Paranın getirisi · dönem"');
     });
 
-    test('alt kat: Katkın + Sadece piyasa etkisi kalemleri, not yok', () {
+    test('alt kat: Yatırdığın + temettü + birikim kalemleri, not yok', () {
       // "Birikim = katkın + piyasa" yerleşimle anlatılır (2026-09-24,
       // tasarım turu): iki eşit kalem, uzun not satırı kalktı.
       final src =
           ekranKaynagiSync('lib/screens/portfolio_performance/kartlar.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('etiket: context.l10n.yourContribution,'), isTrue);
-      expect(tek.contains('etiket: context.l10n.marketOnlyRow,'), isTrue);
+      // 2026-10-04: "Yatırdığın" (temettü hariç) + "Cebine aldığın temettü"
+      // + "Birikim değişimi (alımlar dahil)". Manşet paranın getirisi
+      // olduğu için kahraman rozeti her zaman getiri yüzdesidir; birikim
+      // kalemine yüzde yazılmaz (yatırılan parayı da saydığı için getiri
+      // sanılıyordu).
+      expect(tek.contains('etiket: context.l10n.investedRow,'), isTrue);
+      expect(tek.contains('etiket: context.l10n.dividendPocketRow,'), isTrue);
+      expect(tek.contains('etiket: context.l10n.balanceChangeInclBuys,'), isTrue);
+      expect(tek.contains('if (piyasaPct != null && !piyasaFlat)'), isTrue,
+          reason: 'kahraman rozeti paranın getirisi yüzdesi');
       expect(tek.contains('IncludedNote('), isFalse,
           reason: 'not satırı kalktı, kalemler anlatıyor');
       expect(tek.contains('ExcludedNote('), isFalse,

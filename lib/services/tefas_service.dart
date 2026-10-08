@@ -6,6 +6,19 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'crash_reporter.dart';
 
+/// Adı devlet katkısı fonu mu?
+///
+/// TEFAS'taki gerçek adlar "… KATKI EMEKLİLİK YATIRIM FONU" ve "… KATILIM
+/// KATKI EMEKLİLİK YATIRIM FONU"dur — "DEVLET" kelimesi GEÇMEZ. İlk sürüm
+/// yalnız "DEVLET KATKI" arıyordu; seçici hiçbir fonu tanımıyor, BES
+/// formunda devlet katkısı girilemiyordu (2026-10-01 emülatör testi).
+/// `toUpperCase` Türkçe değildir (i → I), eski küçük harfli önbellek kaydı
+/// için İ/I ikisi de kabul edilir.
+bool devletKatkisiAdiMi(String ad) =>
+    _devletKatkisiAdi.hasMatch(ad.toUpperCase());
+final RegExp _devletKatkisiAdi =
+    RegExp(r'KATKI EMEKL[İI]L[İI]K|DEVLET KATKI');
+
 class TefasFund {
   final String code;
   final String name;
@@ -274,6 +287,26 @@ class TefasService {
 
   /// 1007+ TEFAS fonunu portföy yönetim şirketi ve performans verileriyle döner.
   /// İlk çağrıda cache boşsa ağdan çeker; sonrasında cache'ten döner.
+  /// Devlet katkısı fonları — doğrudan TEFAS `islem: 0` listesinden.
+  ///
+  /// Katalog (`fetchAllFunds`) üzerinden süzmek yetmedi: emülatör testinde
+  /// (2026-10-01) diskteki katalogda 24 katkı fonu varken seçici boş geldi;
+  /// katalog RAM'de başka yollarla (tek fon fiyatı) yeniden kuruluyor ve
+  /// birleştirmedeki ağ hatası sessizce boş listeye düşüyor. Burada hata
+  /// FIRLATILIR — seçici "eşleşen fon yok" yerine hatayı gösterir.
+  Future<List<TefasFund>> fetchDevletKatkisiFonlari() async {
+    final onbellek = _dkFonlari;
+    if (onbellek != null && onbellek.isNotEmpty) return onbellek;
+    final l = [
+      for (final f in await _fetchFundList('EMK', islem: 0))
+        if (devletKatkisiAdiMi(f.name)) f,
+    ]..sort((a, b) => a.name.compareTo(b.name));
+    _dkFonlari = l;
+    return l;
+  }
+
+  List<TefasFund>? _dkFonlari;
+
   Future<List<TefasFund>> fetchAllFunds({bool forceRefresh = false}) async {
     // RAM cache taze → direkt döndür.
     if (!forceRefresh && _cacheValid) return _cachedFunds!;
@@ -293,6 +326,16 @@ class TefasService {
         _fetchFundList('YAT').catchError((_) => <TefasFund>[]),
         _fetchFundList('EMK').catchError((_) => <TefasFund>[]),
         _fetchFundList('BYF').catchError((_) => <TefasFund>[]),
+        // Devlet katkısı fonları TEFAS'ta İŞLEM GÖRMEZ: `islem: 1` listesinde
+        // yoklar, yalnız `islem: 0`'da (2026-10-01: 24 katkı fonu). Fiyatları
+        // `fonFiyatBilgiGetir`'den normal gelir. Listenin geri kalanı (işlem
+        // görmeyen OKS/grup fonları) fon aramasına karışmasın diye alınmaz.
+        _fetchFundList('EMK', islem: 0)
+            .then((l) => [
+                  for (final f in l)
+                    if (devletKatkisiAdiMi(f.name)) f,
+                ])
+            .catchError((_) => <TefasFund>[]),
       ]);
       final byCode = <String, TefasFund>{};
       for (final list in results) {
@@ -456,6 +499,12 @@ class TefasService {
 
     // Cache'e ekle/güncelle — bir daha aynı kod için fetchAllFunds arasa
     // bulur ve bu sefer FİYATLI bulur.
+    //
+    // Katalog henüz yüklenmediyse ÖNCE diskten yüklenir (2026-10-01):
+    // açılıştaki fiyat turu portföydeki fonları burada ararken RAM boştu;
+    // boş listeye tek fon eklenip `_saveToDisk` ile yazılınca 24 saatlik
+    // katalog o birkaç fonla eziliyordu.
+    if (_cachedFunds == null) await _loadFromDisk();
     final liste = <TefasFund>[...(_cachedFunds ?? const <TefasFund>[])];
     final idx = liste.indexWhere((f) => f.code == normalized);
     if (idx >= 0) {
@@ -465,8 +514,12 @@ class TefasService {
     }
     _cachedFunds = liste;
     // Kurucu-only fonlar da kalıcı olsun — kullanıcı bir kez eklediğinde
-    // sonraki açılışlarda yeniden lookup gerektirmesin.
-    CrashReporter.arkaPlan(_saveToDisk(), reason: 'tefas_service._saveToDisk');
+    // sonraki açılışlarda yeniden lookup gerektirmesin. Yalnız elde TAM
+    // katalog varken (`_cacheTime` dolu): eksik liste diske yazılmaz.
+    if (_cacheTime != null) {
+      CrashReporter.arkaPlan(_saveToDisk(),
+          reason: 'tefas_service._saveToDisk');
+    }
     return fund;
   }
 
@@ -612,14 +665,15 @@ class TefasService {
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
-  Future<List<TefasFund>> _fetchFundList(String fonTipi) async {
+  Future<List<TefasFund>> _fetchFundList(String fonTipi, {int islem = 1}) async {
     final payload = {
       'dil': 'TR',
       'fonTipi': fonTipi,
       'kurucuKodu': null,
       'sfonTurKod': null,
       'fonTurAciklama': null,
-      'islem': 1,
+      // 1 = TEFAS'ta işlem gören fonlar; 0 = görmeyenler (katkı fonları).
+      'islem': islem,
       'fonTurKod': null,
       'fonGrubu': null,
       'donemGetiri1a': '1',

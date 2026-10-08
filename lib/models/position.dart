@@ -47,6 +47,10 @@ class Position {
 
   bool get isSingle => lots.length == 1;
 
+  /// ABD hissesi mi — temsilci lot'tan ([Asset.abdHissesi]). Aynı pozisyonun
+  /// lot'ları aynı sembol ve para birimini taşır ([positionKey]).
+  bool get abdHissesi => representative.abdHissesi;
+
   /// İlk buy lot'un tarihi — grafik "sahip olma dönemi"nin başlangıcı için.
   DateTime get firstBuyDate {
     final buys = lots.where((l) => l.isBuy);
@@ -98,6 +102,11 @@ class Position {
       // Komisyon toplamı taşınmazsa pozisyon Asset'e çevrildiği anda
       // maliyetten düşer ve kâr olduğundan yüksek görünür.
       commission: totalCommission,
+      // Mevduat/BES sözleşme kartı bu kimlikle bulunur (`SozlesmeKarti`).
+      // Taşınmazsa portföy satırından açılan varlık sayfası sözleşmesiz bir
+      // piyasa varlığı gibi görünüyordu: dönem kartı, vade, yenileme yoktu
+      // (2026-10-01 emülatör testi).
+      sozlesmeId: r.sozlesmeId,
     );
   }
 }
@@ -134,6 +143,8 @@ String positionKey(Asset a) {
       core = a.ticker.trim().toUpperCase();
       if (core.isEmpty) core = 'name:${a.name.trim().toLowerCase()}';
       break;
+    case AssetType.eurobond:
+      // `EUROBOND:<ISIN>` — ISIN başına bir pozisyon.
     case AssetType.mevduat:
       // `MEVDUAT:<sözleşme id>` — sözleşme başına bir pozisyon.
       core = a.ticker.trim().toUpperCase();

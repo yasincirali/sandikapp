@@ -10,6 +10,7 @@ import '../models/position.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/chart_axis.dart' show gunIciAsgariBantOrani;
 import 'history_service.dart';
+import 'para_agirlikli_getiri.dart';
 import 'price_service.dart';
 import '../utils/tr_format.dart';
 import 'bist_calendar.dart';
@@ -468,7 +469,10 @@ class DailySummary {
   ///   * satışta maliyet değil `sellProceedsTRY` kullanılır — kârla
   ///     satılan pozisyonda ikisi farklıdır ve fark yanlışlıkla "piyasa
   ///     etkisi" sayılırdı;
-  ///   * temettü ve silinen lot akışa girmez (`isActive` ikisini de eler).
+  ///   * silinen lot akışa girmez (`isActive` eler);
+  ///   * nakit temettü akışa girmez — `gunlukAkis`: ödeme günü hak
+  ///     kullanım gününden ayrıdır, gün ölçeğinde temettü sahte bir
+  ///     "bugünkü kâr" sıçraması üretir (dönemlerde ise girer, `getiriAkisi`).
   static double todayInflow(List<Asset> assets, DateTime now) {
     final dayStart = dayKey(now);
     final dayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
@@ -484,17 +488,13 @@ class DailySummary {
     DateTime dayStart,
     DateTime dayEnd,
   ) {
+    // Kural tek yerde: `gunlukAkis` (gün içi yüzeylerin hepsi aynı).
     var total = 0.0;
     for (final a in assets) {
-      if (!a.isActive) continue;
       if (a.addedDate.isBefore(dayStart) || a.addedDate.isAfter(dayEnd)) {
         continue;
       }
-      if (a.isBuy) {
-        total += a.totalCostTRY;
-      } else if (a.isSell) {
-        total -= a.sellProceedsTRY;
-      }
+      total += gunlukAkis(a);
     }
     return total;
   }
@@ -534,6 +534,45 @@ class DailySummary {
         acilisMs + gunIciSlot.inMilliseconds);
     return inflowOnDay(lotlar, esik,
         DateTime(seansGunu.year, seansGunu.month, seansGunu.day, 23, 59, 59));
+  }
+
+  /// GÜNLÜK piyasa etkisinin yüzdesi — para ağırlıklı (2026-10-01).
+  ///
+  /// Akış kümesi [gunIciKatki] ile AYNI (açılış slotundan sonra, çizilen
+  /// seans günü içinde; geçmiş seansta akış yok). Her akış günün kalanı
+  /// oranında sayılır: kapanışa beş dakika kala eklenen para günün
+  /// getirisini sulandırmaz. Eskiden payda `açılış + pozitif akış` idi —
+  /// aylık özette düzeltilen hatanın gün içi kopyası ("tüm zaman
+  /// aralıklarında uygulanmalı", yasin). Akış yoksa sonuç birebir
+  /// `(son − açılış) / açılış`.
+  static double? gunIciGetiriPct(
+    List<Asset> lotlar, {
+    required double acilis,
+    required double son,
+    required int acilisMs,
+    required DateTime seansGunu,
+    required DateTime now,
+  }) {
+    final akislar = <DonemAkisi>[];
+    if (!dayKey(seansGunu).isBefore(dayKey(now))) {
+      final esikMs = acilisMs + gunIciSlot.inMilliseconds;
+      final bitisMs =
+          DateTime(seansGunu.year, seansGunu.month, seansGunu.day, 23, 59, 59)
+              .millisecondsSinceEpoch;
+      final nowMs = now.millisecondsSinceEpoch;
+      final sure = nowMs - acilisMs;
+      for (final a in lotlar) {
+        final ms = a.addedDate.millisecondsSinceEpoch;
+        if (ms < esikMs || ms > bitisMs) continue;
+        // [gunIciKatki] ile AYNI tutar kuralı (`gunlukAkis`); ikisi
+        // ayrışırsa ₺ ve % farklı akış kümesini ölçer.
+        final f = gunlukAkis(a);
+        if (f == 0) continue;
+        final w = sure <= 0 ? 0.0 : ((nowMs - ms) / sure).clamp(0.0, 1.0);
+        akislar.add((f: f, w: w));
+      }
+    }
+    return paraAgirlikliGetiriPct(bas: acilis, son: son, akislar: akislar);
   }
 
   /// Gün içi serinin açılış ölçümünün damgası — [dayValues]'un ilk
@@ -637,11 +676,19 @@ class DailySummary {
             acilisMs: acilis, seansGunu: cizilenGun, now: now);
     final amount = (last - open) - inflow;
 
-    // Yüzde tabanı: gün başı değer + bugün yatırılan para. Yalnızca `open`
-    // kullanmak, gün içinde portföyünü büyüten kullanıcıda yüzdeyi
-    // şişirirdi. (Kartla aynı taban.)
-    final base = open + (inflow > 0 ? inflow : 0);
-    if (base <= 0) {
+    // Yüzde: para ağırlıklı ([gunIciGetiriPct], 2026-10-01). Eskiden payda
+    // `açılış + pozitif akış` idi: kapanışa yakın eklenen para günün
+    // tamamında çalışmış sayılıyor, yüzde eziliyordu. Grafik kartı aynı
+    // fonksiyonu çağırır (parite).
+    final pct = acilis == null
+        ? amount / open * 100
+        : gunIciGetiriPct(kapsam,
+            acilis: open,
+            son: last,
+            acilisMs: acilis,
+            seansGunu: cizilenGun,
+            now: now);
+    if (pct == null) {
       return DailySummary(
         totalTRY: total,
         changeTRY: null,
@@ -653,20 +700,31 @@ class DailySummary {
     return DailySummary(
       totalTRY: total,
       changeTRY: amount,
-      changePct: amount / base * 100,
+      changePct: pct,
       sparkline: values,
       inflowTRY: inflow,
     );
   }
 }
 
-/// Gün içi serinin ORTAK önbelleği — iki yüzey de buradan okur.
+/// Gün içi serinin ORTAK önbelleği — gün içi seri isteyen HER yüzey buradan
+/// okur.
 ///
-/// **Neden paylaşımlı:** `getPortfolioHistoryHourly` onlarca fiyat serisi
-/// çeken pahalı bir çağrı. İki servis ayrı ayrı önbelleklerse aynı veri
-/// için iki ağ turu atılır ve — daha kötüsü — iki yüzey farklı anlarda
-/// tazelenip aynı anda FARKLI rakam gösterir. Kullanıcı kilit ekranıyla
-/// ana ekranı yan yana gördüğünde bu doğrudan "uygulama bozuk" demektir.
+/// ## Neden tek kaynak (kullanıcı kararı 2026-10-02: "her yerde aynı olmalı")
+/// Önbellek başta "Bugün kartı, widget ve Live Activity aynı rakamı
+/// göstersin" diye tek yuvalı kurulmuştu; Performans ekranı ve kartın
+/// ortak/Birlikte yolu `HistoryService`'e doğrudan gidiyordu. Gün başı
+/// noktası her çekimde canlı kotasyondan türetildiği için (`açılış =
+/// canlı / (1 + günlük %)`, bkz. `gunluk_tek_kaynak_test` "gün başı
+/// referans") farklı saniyede yapılan iki çekim birkaç lira farklı açılış
+/// üretiyor ve "Ben" kapsamında kart ile Performans bir nabız boyunca
+/// ayrışıyordu (ölçüldü 2026-10-02: +₺66 / +₺40, 27 sn). Ortak kapsamında
+/// görülmüyordu çünkü orada iki yüzey de aynı yoldan, aynı anda çekiyordu.
+///
+/// Çözüm: önbellek KAPSAM ANAHTARLI yuvalar tutar (anahtar = varlık kimlik
+/// listesi) ve `total` yerine TAM breakdown saklar (Performans tür dökümü
+/// için `byType`/`byPosition`). Aynı varlık kümesini isteyen her yüzey aynı
+/// nesneyi alır; nabızda ilk isteyen çeker, diğerleri ona katılır.
 class IntradaySeriesCache {
   IntradaySeriesCache._();
   static final instance = IntradaySeriesCache._();
@@ -678,111 +736,117 @@ class IntradaySeriesCache {
   /// daha sık çekmek push'a yansımayacağı için boşuna olur.
   static const minInterval = TazelikRitmi.gunIciSeriOmru;
 
-  Map<int, double>? _series;
-  DateTime? _fetchedAt;
-  DateTime? _seansGunu;
-
-  /// Süren fetch — aynı anda iki yüzey isterse İKİNCİSİ aynı future'ı
-  /// bekler, ikinci bir ağ turu atılmaz.
+  /// `zorla` ile gelen istek seri bundan TAZEYSE yeniden çekmez.
   ///
-  /// Üç yüzey bu önbelleği paylaşıyor (Bugün kartı, ana ekran widget'ı,
-  /// Live Activity) ve açılışta hepsi birden isteyebiliyor. Tekilleştirme
-  /// olmadan iki istek yarışıyor ve GEÇ dönen erken döneni eziyordu —
-  /// rakamın "saçmalayıp düzelmesi"nin ikinci kaynağı buydu
-  /// (kullanıcı bildirimi 2026-09-22).
-  Future<Map<int, double>>? _surenFetch;
+  /// Nabız dinleyicileri (Bugün kartı, Performans) aynı nabızda art arda
+  /// `zorla` ile gelir. İlkinin çekimi ikincisi gelmeden bitmişse ikincisi
+  /// yeniden çeker ve iki yüzey yine farklı anın serisine bakardı — tek
+  /// kaynak olmanın amacı boşa giderdi. Bir nabzın (30 sn) üçte biri:
+  /// aynı nabzın isteklerini birleştirir, bir sonraki nabzı asla tutmaz.
+  static const zorlaEsigi = Duration(seconds: 10);
 
-  /// Serinin ait olduğu defterin sahibi (`PortfolioState.ownerId`).
+  /// Varlık kümesi başına yuva. Anahtar [anahtar].
+  final Map<String, _GunIciYuva> _yuvalar = {};
+
+  /// Bir yuvaya YENİ seri yazıldığında artar; [sonGuncellenen] o yuvanın
+  /// anahtarı.
   ///
-  /// Önbellek süreç ömrüne bağlı, kullanıcıya değil (2026-09-21). Çıkışta
-  /// `clear()` çağrılıyor ama kullanıcı değişiminde önceki defter bir kare
-  /// daha yayınlanabiliyor ve önbelleği yeniden dolduruyordu: yeni
-  /// kullanıcı 5 dakika boyunca ÖNCEKİ kullanıcının gün içi serisiyle
-  /// kendi toplamını kıyaslıyor, kilit ekranı ve widget öncekinin
-  /// kâr/zararını gösteriyordu. Sahip damgası uyuşmazsa seri koşulsuz düşer.
-  String _ownerId = '';
+  /// ## Neden (kullanıcı kararı 2026-10-02: "Bugün kartı, günlük kartı,
+  /// canlı etkinlik ve widget hepsi senkron olmalı")
+  /// Tek önbellek yetmiyordu: bir yüzey taze seri çekince diğerleri bunu
+  /// kendi bir sonraki tazelemesine kadar (≤ 30 sn, soğuk açılışta daha
+  /// uzun) öğrenmiyordu. Ölçüldü: açılıştan hemen sonra Ana kartı ve widget
+  /// +₺335, Performans +₺148 — splash ısıtması seriyi fiyat turu bitmeden
+  /// çekmişti, Performans sonra tazesini çekti. Sinyal sayesinde yeni seri
+  /// AYNI KAREDE Bugün kartına, Performans'a, widget'a ve Live Activity'ye
+  /// ulaşır; dinleyiciler önbellekten okur (yeni ağ turu yok).
+  final ValueNotifier<int> surum = ValueNotifier<int>(0);
 
-  /// Son başarıyla çekilen seri — hiç çekilmediyse boş.
-  Map<int, double> get series => _series ?? const {};
+  /// [surum]'u son artıran yuvanın anahtarı ([anahtar]).
+  String sonGuncellenen = '';
 
-  /// Son çekilen serinin ait olduğu SEANS günü (00:00) — bugün olmak
+  /// Ben kapsamının anahtarı — widget/Live Activity dinleyicisi yalnızca
+  /// bu yuva tazelenince yeniden yazar.
+  String get benAnahtari => _benAnahtari;
+
+  /// [get] ile son istenen (Ben) kümenin anahtarı — widget ve Live Activity
+  /// `series`/`seansGunu`'yu buradan okur; onlar kapsam bilmez.
+  String _benAnahtari = '';
+
+  /// Kümenin önbellek anahtarı: sıralı varlık kimlikleri. Miktar ya da
+  /// fiyat anahtara girmez — onlar değişince seri DÜŞÜRÜLÜR
+  /// (`PortfolioNotifier._gunIciSeriyiDusur` → [clear]), yeni yuva açılmaz.
+  static String anahtar(List<Asset> assets) =>
+      (assets.map((a) => a.id).toList()..sort()).join(',');
+
+  /// Son başarıyla çekilen Ben serisi — hiç çekilmediyse boş.
+  Map<int, double> get series =>
+      _yuvalar[_benAnahtari]?.breakdown?.total ?? const {};
+
+  /// Son çekilen Ben serisinin ait olduğu SEANS günü (00:00) — bugün olmak
   /// zorunda değil.
   ///
   /// Piyasa kapalıyken `HistoryService` son seansı döndürür; yüzeylerin
   /// hem canlı uç kuralı hem nakit akışı penceresi buna dayanır. Bu alan
   /// taşınmadığında iki yüzey de "bugün" varsayıyor ve hafta sonu Cuma'nın
   /// eğrisine bugünün akışını uyguluyordu.
-  DateTime? get seansGunu => _seansGunu;
+  DateTime? get seansGunu => _yuvalar[_benAnahtari]?.breakdown?.seansGunu;
 
-  /// Seriyi gerekiyorsa tazeler ve döner.
+  /// Ben kapsamının serisi (kilit ekranı, widget, Bugün kartı).
   ///
-  /// Sessizce başarısız olur: ağ hatasında son bilinen seri korunur ve
-  /// çağıran taraf yine bir şey gösterebilir.
-  /// [azamiYas] verilirse önbellek bundan eskiyse TAZELENİR.
+  /// Küme kartın/Performans'ın kuralıyla aynı: aktif ve seriye giren lotlar
+  /// (`FiyatKaynagi.seriyeGirer`); Performans "Ben" görünümünde aynı
+  /// anahtara düşer ve aynı nesneyi alır.
   ///
-  /// ## Neden (kullanıcı bildirimi, 2026-09-22)
-  /// "ana sayfa günlük ben tabıyla performans tabındaki günlük ben kâr
-  /// zarar tutarsız."
-  ///
-  /// İki yüzey aynı hesabı yapıyor ama FARKLI YAŞTA serilere bakıyordu:
-  ///   * Bugün kartı → bu önbellek, [minInterval] = 5 dk
-  ///   * Performans  → kendi tick'i, 30 sn (`_startIntradayTickIfNeeded`)
-  ///
-  /// Gün başı (`open`) serinin ilk noktasından gelir; iki seri farklı
-  /// anlarda çekildiğinde o nokta da farklı olabiliyor ve aynı kapsamda
-  /// iki farklı kâr/zarar çıkıyordu.
-  ///
-  /// TTL'yi topluca düşürmek YANLIŞ olurdu: bu önbelleği ana ekran
-  /// widget'ı ve Live Activity de kullanıyor ve onlar 5 dk'lık push
-  /// döngüsüyle hizalı — daha sık çekmek boşuna ağ trafiği olurdu
-  /// ([minInterval] gerekçesi). Bu yüzden tazelik KULLANICININ BAKTIĞI
-  /// yüzeyde istenir, varsayılan korunur.
+  /// [azamiYas] önbellekteki serinin kabul edilen yaşı; [zorla] nabızda
+  /// tazeleme (bkz. [zorlaEsigi]). Sessizce başarısız olur: ağ hatasında
+  /// son bilinen seri korunur.
   Future<Map<int, double>> get(
     PortfolioState state, {
     DateTime? now,
     Duration? azamiYas,
     bool zorla = false,
   }) async {
-    final ts = now ?? DateTime.now();
+    final assets = state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList();
+    _benAnahtari = anahtar(assets);
+    final bd = await breakdown(assets,
+        ownerId: state.ownerId, now: now, azamiYas: azamiYas, zorla: zorla);
+    return bd.total;
+  }
 
-    // Ekranda duran yüzey daha taze isteyebilir.
-    //
-    // **Veri SİLİNMEZ, yalnızca "tazele" denir (2026-09-22, ikinci tur).**
-    // İlk sürümde burada `_series = null` yapılıyordu ve bu, kullanıcının
-    // gördüğü "datalar biraz saçmalayıp düzeliyor" arızasını DOĞURDU:
-    //
-    //   * Önbellek boşaltılıyor, fetch başlıyor.
-    //   * O arada aynı önbelleği çağıran başka bir yüzey (ana ekran
-    //     widget'ı, Live Activity) BOŞ seri alıyor.
-    //   * Fetch başarısız olursa `_series` null kalıyor ve kart gün başı
-    //     olmadan hesap yapıyor.
-    //
-    // Belirti "Ben" kapsamında görülüyordu çünkü `azamiYas`'ı yalnızca o
-    // yol kullanıyor; ortak/Birlikte önbelleğe hiç uğramaz.
-    //
-    // Doğrusu: eski seri fetch BİTENE KADAR elde kalsın. Aşağıdaki
-    // `minInterval` kısa devresi atlanır, yani yeni veri çekilir; ama
-    // çekilene kadar gösterilecek bir şey vardır ve hata hâlinde de
-    // kaybolmaz.
-    //
-    // **[zorla]: nabız tetiklediyse yaş SORULMAZ (2026-09-24).**
-    // Kullanıcı bildirimi: *"Ana sayfa günlük ile Performans günlük ve özet
-    // bir süre farklı değer gösteriyor, sonra aynı değere geliyor, sonra
-    // bir daha farklılaşıyor."*
-    //
-    // Bugün kartı bu önbelleği nabızda `azamiYas: 30 sn` ile istiyordu;
-    // nabız da 30 sn. Ama dinleyiciler fiyat turu BİTİNCE çağrılır
-    // (`TazelikNabzi._at`) ve turun süresi ağa göre oynar: bir tur
-    // öncekinden hızlı bittiyse iki çağrı arası 29,x sn olur, `>` kapısı
-    // geçilmez ve kart ESKİ seriyle kalır. Performans ise her nabızda
-    // koşulsuz yeniden çeker. İki yüzey bir nabız boyunca farklı anın
-    // serisine (farklı gün başına) bakıyor, sonraki nabızda buluşuyordu —
-    // kabaca iki nabızda bir tekrarlayan kayma. Yaş eşiğini esnetmek
-    // (`>=`, pay) aynı yarışı yalnızca kaydırırdı; nabız zaten "şimdi
-    // tazele" demektir, o yol yaşa bakmadan çeker.
-    final tazeleZorla = _fetchedAt != null &&
-        (zorla ||
-            (azamiYas != null && ts.difference(_fetchedAt!) > azamiYas));
+  /// Verilen kümenin gün içi breakdown'ı — her kapsam (Ben, ortak,
+  /// Birlikte, tür filtresi) kendi yuvasında.
+  ///
+  /// ## Tazelik (2026-09-22, ikinci tur)
+  /// **Veri SİLİNMEZ, yalnızca "tazele" denir.** İlk sürümde tazelik
+  /// kapısında `_series = null` yapılıyordu ve bu, "datalar biraz
+  /// saçmalayıp düzeliyor" arızasını DOĞURDU: önbellek boşaltılıyor, fetch
+  /// başlıyor, o arada aynı önbelleği çağıran başka bir yüzey BOŞ seri
+  /// alıyor; fetch başarısız olursa seri hiç gelmiyordu. Doğrusu: eski
+  /// seri fetch BİTENE KADAR elde kalsın.
+  ///
+  /// **[zorla]: nabız tetiklediyse yaş SORULMAZ (2026-09-24)** — [zorlaEsigi]
+  /// dışında. Kullanıcı bildirimi: *"Ana sayfa günlük ile Performans
+  /// günlük bir süre farklı değer gösteriyor, sonra aynı değere geliyor."*
+  /// Bugün kartı `azamiYas: 30 sn` ile istiyordu; nabız da 30 sn ama
+  /// dinleyiciler fiyat turu bitince çağrılır ve iki çağrı arası 29,x sn
+  /// olabilir — `>` kapısı geçilmez, kart eski seride kalırdı. Nabız
+  /// "şimdi tazele" demektir; o yol yaşa bakmadan çeker.
+  Future<PortfolioHistoryBreakdown> breakdown(
+    List<Asset> assets, {
+    required String ownerId,
+    DateTime? now,
+    Duration? azamiYas,
+    bool zorla = false,
+  }) async {
+    final ts = now ?? DateTime.now();
+    final y = _yuvalar.putIfAbsent(anahtar(assets), _GunIciYuva.new);
+
+    final zorlaTaze =
+        y.fetchedAt != null && ts.difference(y.fetchedAt!) < zorlaEsigi;
+    final tazeleZorla = y.fetchedAt != null &&
+        ((zorla && !zorlaTaze) ||
+            (azamiYas != null && ts.difference(y.fetchedAt!) > azamiYas));
 
     // Gün DEĞİŞTİYSE önbellek koşulsuz düşer.
     //
@@ -790,86 +854,132 @@ class IntradaySeriesCache {
     // "N dakika geçti mi" diye soran bir tazelik testi 23:58'de çekilen
     // seriyi 00:01'de hâlâ taze sayar: gün başı değeri DÜNÜN açılışı olarak
     // kalır ve "bugünkü" değişim aslında dünden bugüne farkı gösterir.
-    final sameDay = _fetchedAt != null &&
-        _fetchedAt!.year == ts.year &&
-        _fetchedAt!.month == ts.month &&
-        _fetchedAt!.day == ts.day;
+    final sameDay = y.fetchedAt != null &&
+        y.fetchedAt!.year == ts.year &&
+        y.fetchedAt!.month == ts.month &&
+        y.fetchedAt!.day == ts.day;
 
     // Sahip değiştiyse de düşer: başka bir kullanıcının serisi bu deftere
-    // ait değildir (bkz. `_ownerId`). Sahibi bilinmeyen state (`''`) eski
-    // yolları ve testleri kırmasın diye damgayı olduğu gibi bırakır.
-    final sameOwner = state.ownerId.isEmpty || state.ownerId == _ownerId;
+    // ait değildir. Sahibi bilinmeyen state (`''`) eski yolları ve
+    // testleri kırmasın diye damgayı olduğu gibi bırakır.
+    final sameOwner = ownerId.isEmpty || ownerId == y.ownerId;
 
     if (!sameDay || !sameOwner) {
       // Dünün (ya da başkasının) serisi DERHAL düşer — fetch başarısız olsa
       // bile bayat baseline'la rakam üretilmemeli.
-      _series = null;
-      _seansGunu = null;
-      _fetchedAt = null;
-    } else if (!tazeleZorla && ts.difference(_fetchedAt!) < minInterval) {
-      return _series ?? const {};
+      y.breakdown = null;
+      y.fetchedAt = null;
+    } else if (!tazeleZorla && ts.difference(y.fetchedAt!) < minInterval) {
+      return y.breakdown ?? const PortfolioHistoryBreakdown.empty();
     }
 
     // Süren bir fetch varsa ona katıl — ikinci ağ turu atma.
-    final suren = _surenFetch;
+    //
+    // Yüzeyler açılışta ve her nabızda birden isteyebiliyor. Tekilleştirme
+    // olmadan iki istek yarışıyor ve GEÇ dönen erken döneni eziyordu —
+    // rakamın "saçmalayıp düzelmesi"nin ikinci kaynağı buydu
+    // (kullanıcı bildirimi 2026-09-22).
+    final suren = y.suren;
     if (suren != null) return suren;
 
-    final tamamlayici = Completer<Map<int, double>>();
-    _surenFetch = tamamlayici.future;
+    final tamamlayici = Completer<PortfolioHistoryBreakdown>();
+    y.suren = tamamlayici.future;
     try {
       // Breakdown çağrılır, `getPortfolioHistoryHourly` DEĞİL: ikincisi
-      // yalnızca `.total` döndürür ve `seansGunu`'nu düşürür. O alan
-      // düştüğünde yüzeyler çizilen günü bugün sanıyordu.
-      // Eleme Performans ekranıyla AYNI kuraldan (`FiyatKaynagi.seriyeGirer`).
-      // Bu önbellek "Ben" kapsamını besliyor ve eleme YOKTU: aynı defterden
-      // Performans'tan farklı bir seri üretiyor, iki yüzey farklı kâr/zarar
-      // gösteriyordu (kullanıcı bildirimi 2026-09-22).
+      // yalnızca `.total` döndürür ve `seansGunu`'nu düşürür.
       final fresh = await HistoryService.instance
-          .getPortfolioHistoryHourlyBreakdown(
-              state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList(), 24);
-      _series = fresh.total;
-      _seansGunu = fresh.seansGunu;
+          .getPortfolioHistoryHourlyBreakdown(assets, 24);
+      y.breakdown = fresh;
       // Damga yalnızca fetch BAŞARILI olduğunda atılır. Await'ten önce
       // atmak, ağ hatası alan çağrının da pencereyi yakmasına yol açardı:
       // hata sürekliyse seri saatlerce tazelenmez ve yüzeyler sabahki
       // değerde donar — üstelik "Canlı" etiketiyle.
-      _fetchedAt = ts;
-      _ownerId = state.ownerId;
+      y.fetchedAt = ts;
+      y.ownerId = ownerId;
+      sonGuncellenen = anahtar(assets);
+      surum.value++;
     } catch (e) {
       if (kDebugMode) debugPrint('Gün içi seri çekilemedi: $e');
     } finally {
-      _surenFetch = null;
+      y.suren = null;
     }
 
-    final sonuc = _series ?? const <int, double>{};
+    final sonuc = y.breakdown ?? const PortfolioHistoryBreakdown.empty();
     tamamlayici.complete(sonuc);
     return sonuc;
   }
 
-  /// Oturum kapanışında çağrılır — bir sonraki kullanıcı öncekinin
-  /// grafiğini görmemeli.
+  /// Kümenin önbellekteki breakdown'ı — ağa ÇIKMAZ.
+  ///
+  /// Bugün kartının "en çok oynayan"ı (2026-10-04) seriyle AYNI nesneden
+  /// okunur: kart seriyi [breakdown] ile zaten çekti; ikinci çekim hem
+  /// boşa ağ turu hem de iki farklı anın verisi olurdu ("gün içi tek
+  /// seri" kuralı).
+  PortfolioHistoryBreakdown? onbellekte(List<Asset> assets) =>
+      _yuvalar[anahtar(assets)]?.breakdown;
+
+  /// Oturum kapanışında ve defter değişince çağrılır — bir sonraki
+  /// kullanıcı öncekinin grafiğini görmemeli, alım/satım sonrası eski
+  /// gün başıyla hesap yapılmamalı.
   void clear() {
-    _series = null;
-    _fetchedAt = null;
-    _seansGunu = null;
-    _ownerId = '';
+    _yuvalar.clear();
+    _benAnahtari = '';
   }
 
-  /// Önbelleği elle doldurur — sahip/gün kurallarının testi için.
+  /// Ben yuvasını elle doldurur — sahip/gün kurallarının testi için.
+  /// Boş defterin anahtarı `''`: testler `PortfolioState()` ile çağırır.
+  ///
+  /// [kume] verilirse yuva o kümenin anahtarına yazılır — dolu defterle
+  /// `get` çağıran test tohumu ancak böyle bulur (anahtar boş değildir).
+  /// Verilmezse eski davranış: anahtar `''`.
   @visibleForTesting
   void seedForTest({
     required Map<int, double> series,
     required DateTime fetchedAt,
     String ownerId = '',
     DateTime? seansGunu,
+    List<Asset>? kume,
+    Map<String, Map<int, double>> byPosition = const {},
+    Map<String, AssetType> positionType = const {},
   }) {
-    _series = series;
-    _fetchedAt = fetchedAt;
-    _seansGunu = seansGunu;
-    _ownerId = ownerId;
+    final k = kume == null ? '' : anahtar(kume);
+    _benAnahtari = k;
+    _yuvalar[k] = _GunIciYuva()
+      ..breakdown = PortfolioHistoryBreakdown(
+        total: series,
+        byType: const {},
+        byPosition: byPosition,
+        positionType: positionType,
+        seansGunu: seansGunu,
+      )
+      ..fetchedAt = fetchedAt
+      ..ownerId = ownerId;
   }
 
-  /// Önbellekteki serinin sahibi — test için.
+  /// Ben yuvasındaki serinin sahibi — test için.
   @visibleForTesting
-  String get ownerIdForTest => _ownerId;
+  String get ownerIdForTest => _yuvalar[_benAnahtari]?.ownerId ?? '';
+
+  /// Açık yuva sayısı — test için.
+  @visibleForTesting
+  int get yuvaSayisiForTest => _yuvalar.length;
+}
+
+/// Bir varlık kümesinin gün içi yuvası.
+class _GunIciYuva {
+  PortfolioHistoryBreakdown? breakdown;
+  DateTime? fetchedAt;
+
+  /// Serinin ait olduğu defterin sahibi (`PortfolioState.ownerId`).
+  ///
+  /// Önbellek süreç ömrüne bağlı, kullanıcıya değil (2026-09-21). Çıkışta
+  /// `clear()` çağrılıyor ama kullanıcı değişiminde önceki defter bir kare
+  /// daha yayınlanabiliyor ve önbelleği yeniden dolduruyordu: yeni
+  /// kullanıcı 5 dakika boyunca ÖNCEKİ kullanıcının gün içi serisiyle
+  /// kendi toplamını kıyaslıyordu. Sahip damgası uyuşmazsa seri düşer.
+  String ownerId = '';
+
+  /// Süren fetch — aynı anda iki yüzey isterse İKİNCİSİ aynı future'ı
+  /// bekler, ikinci bir ağ turu atılmaz.
+  Future<PortfolioHistoryBreakdown>? suren;
 }

@@ -21,10 +21,14 @@ Deno.test('TEFAS: öneki fon kaynağına gider, Yahoo\'ya DEĞİL', () => {
 });
 
 Deno.test('her sembol tam olarak bir kaynağa düşer', () => {
-  const girdi = ['ALTIN_CEYREK', 'EURTRY=X', 'TEFAS:AFT', 'KCHOL.IS', 'GC=F', 'KRIPTO:ETH'];
+  const girdi = [
+    'ALTIN_CEYREK', 'EURTRY=X', 'TEFAS:AFT', 'KCHOL.IS', 'GC=F', 'KRIPTO:ETH',
+    'EUROBOND:US900123DF45', 'AAPL',
+  ];
   const r = kaynakAyir(girdi);
   assertEquals(
-    r.truncgil.length + r.tefas.length + r.kripto.length + r.yahoo.length,
+    r.truncgil.length + r.tefas.length + r.kripto.length + r.eurobond.length +
+      r.yahoo.length,
     girdi.length,
   );
 });

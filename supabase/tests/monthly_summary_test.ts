@@ -68,3 +68,51 @@ Deno.test('tutar sızmaz: yalnızca yüzde', () => {
   const m = buildMonthlyMessage('Temmuz', 12.3, null);
   assertEquals(/₺|TL\b/.test(m.title + m.body), false);
 });
+
+// ── Ayın 3'ü, TÜFE ile birleşik (2026-10-01) ────────────────────────────────
+// Kullanıcı bildirimi: 1 Ekim'de giden Eylül özeti Özet'te Ağustos
+// enflasyonuna götürüyordu. Aylık özet artık ayın KENDİ TÜFE'siyle gider;
+// başka ayın enflasyonu bu aya yazılmaz.
+import { ayinTufesi } from '../functions/weekly-summary/index.ts';
+
+const endeks = (sonAy: number) =>
+  Array.from({ length: sonAy }, (_, i) => ({
+    period: `2026-${String(i + 1).padStart(2, '0')}-01`,
+    value: 100 * Math.pow(1.02, i),
+  }));
+
+Deno.test('ayPenceresi tablo anahtarını verir (3 Ekim → 2026-09-01)', () => {
+  assertEquals(ayPenceresi(new Date('2026-10-03T07:30:00Z')).donem, '2026-09-01');
+  assertEquals(ayPenceresi(new Date('2027-01-03T07:30:00Z')).donem, '2026-12-01');
+});
+
+Deno.test('ayın TÜFE\'si yoksa null — Ağustos Eylül diye yazılmaz', () => {
+  // Tabloda son satır Ağustos; Eylül özeti istenirse null.
+  assertEquals(ayinTufesi(endeks(8), '2026-09-01'), null);
+});
+
+Deno.test('ayın TÜFE\'si varsa o ayın aylık oranı', () => {
+  const t = ayinTufesi(endeks(9), '2026-09-01');
+  assertEquals(t !== null, true);
+  assertEquals(Math.abs(t!.aylikPct - 2) < 1e-9, true);
+  // 12 ay öncesi yok → yıllık null (uydurma yok)
+  assertEquals(t!.yillikPct, null);
+});
+
+Deno.test('özetlenen aydan SONRAKİ satırlar karışmaz', () => {
+  const t = ayinTufesi(endeks(10), '2026-09-01');
+  assertEquals(Math.abs(t!.aylikPct - 2) < 1e-9, true);
+});
+
+Deno.test('TÜFE başlıkta: getiri ve enflasyon yan yana', () => {
+  const m = buildMonthlyMessage('Eylül', 3.04, null, { aylikPct: 2.05, yillikPct: 30.2 });
+  assertEquals(m.title, '▲ Eylül: piyasadan %3,0 · enflasyon %2,05');
+  assertStringIncludes(m.body, 'Reel getirin');
+});
+
+Deno.test('akışlı ay + TÜFE: sayısız getiri, ulusal oran var', () => {
+  const m = buildMonthlyMessage('Eylül', null, null, { aylikPct: 2.05, yillikPct: 30.2 });
+  assertEquals(m.title, 'Eylül özetin hazır · enflasyon %2,05');
+  assertStringIncludes(m.body, 'Yıllık enflasyon %30,2');
+  assertEquals(/₺|TL\b/.test(m.title + m.body), false);
+});

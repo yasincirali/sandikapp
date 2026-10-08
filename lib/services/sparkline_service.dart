@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
-import 'fiyat_kaynagi.dart';
-import 'price_service.dart';
+import 'history_service.dart';
 import 'crash_reporter.dart';
 
 /// Varlık satırlarındaki mini trend grafiği (sparkline) için tek-sembol
@@ -51,6 +50,7 @@ class SparklineService {
     if (a.ticker.trim().isEmpty) return false;
     return a.type == AssetType.hisse ||
         a.type == AssetType.kripto ||
+        FiyatKaynagi.eurobondSerili(a) ||
         a.type == AssetType.emtia ||
         a.type == AssetType.doviz ||
         // BES ve mevduat fon yolundan fiyatlanır (`fiyatlamaTuru`).
@@ -133,7 +133,7 @@ class SparklineService {
       kalan--;
       // Hata yutulur: prefetch bir kolaylıktır, başarısızlığı kullanıcıya
       // gösterilecek bir olay değil. Kart açıldığında `seriesFor` yine
-      // denenir (boş cache girişi orada da yazılır).
+      // denenir (boş sonuç önbelleğe alınmaz, bkz. `_fetch`).
       CrashReporter.arkaPlan(seriesFor(a), reason: 'sparkline_service.seriesFor');
     }
   }
@@ -142,18 +142,29 @@ class SparklineService {
     try {
       final raw = symbol == _altinAnahtari
           ? await _altinSerisi()
-          : await PriceService.instance.fetchHistory(symbol, _range);
+          : await _cek(symbol);
       final series = normalize(raw);
-      // Boş sonucu da cache'le: 404 veren sembol için her kaydırmada
-      // yeniden ağa çıkmanın anlamı yok.
-      _cache[symbol] = series;
+      // Boş sonuç uygulama ömrü boyunca ÖNBELLEĞE ALINMAZ (2026-10-03).
+      // Eskiden "404 veren sembol için her kaydırmada ağa çıkmayalım" diye
+      // alınıyordu; ama boşluğun çoğu geçici (kripto-seri soğuk
+      // başlangıcı, Yahoo 429) ve tek bir kötü an satırın grafiğini
+      // yeniden başlatmaya kadar düz/boş bırakıyordu. Tekrar sormanın
+      // maliyetini artık çekim kapısının 60 sn'lik negatif önbelleği taşır.
+      if (series.isNotEmpty) _cache[symbol] = series;
       return series;
     } catch (e) {
       if (kDebugMode) debugPrint('[Sparkline] $symbol başarısız: $e');
-      _cache[symbol] = const [];
       return const [];
     }
   }
+
+  /// Tek sembol — grafiklerle AYNI çekim kapısından
+  /// (`HistoryService.seriCek`): zaman aşımı, tekilleştirme ve kaynak
+  /// düştüğünde son iyi seri burada da geçerli. `interval` verilmeden
+  /// çağrıldığı için kapı `fetchHistory(symbol, _range)` ile aynı isteği
+  /// atar; anahtar da grafiklerin 1A anahtarıyla aynıdır (tek çekim).
+  Future<List<(int, double)>> _cek(String sym) =>
+      HistoryService.instance.seriCek(sym, _range);
 
   /// Altının gram22k TL serisi — uygulamanın geri kalanıyla AYNI merdiven.
   ///
@@ -162,9 +173,7 @@ class SparklineService {
   /// karar verir.
   Future<List<(int, double)>> _altinSerisi() async {
     Future<Map<int, double>> cek(String sym) async => {
-          for (final p
-              in await PriceService.instance.fetchHistory(sym, _range))
-            p.$1: p.$2,
+          for (final p in await _cek(sym)) p.$1: p.$2,
         };
     final sonuc = await Future.wait([
       cek(FiyatKaynagi.xauTry),

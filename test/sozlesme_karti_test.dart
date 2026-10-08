@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/bes_hesabi.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/sozlesme.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/sozlesme_provider.dart';
+import 'package:portfoy_takip/utils/money_format.dart';
+import 'package:portfoy_takip/widgets/mevduat_vade_seridi.dart';
 import 'package:portfoy_takip/widgets/sozlesme_karti.dart';
 
 /// Varlık sayfasındaki sözleşme kartı — mevduat ve BES.
@@ -59,7 +62,26 @@ void main() {
     lot(bid, AssetType.bes, 'TEFAS:AEK', sub: 'dk', qty: 2000, fiyat: 0.025, guncel: 0.03),
   ];
 
-  Future<void> ac(WidgetTester tester, Asset varlik, {double olcek = 1}) async {
+  // Vadesi dolmuş dönem (varsayılan) ve vade içindeki dönem.
+  final dolmus = MevduatDonemi(
+    id: 'd',
+    sozlesmeId: mid,
+    baslangic: gun.subtract(const Duration(days: 40)),
+    vadeSonu: gun.subtract(const Duration(days: 8)),
+    yillikFaiz: 42,
+    stopaj: 17.5,
+  );
+  final vadeIci = MevduatDonemi(
+    id: 'd',
+    sozlesmeId: mid,
+    baslangic: gun.subtract(const Duration(days: 8)),
+    vadeSonu: gun.add(const Duration(days: 24)),
+    yillikFaiz: 42,
+    stopaj: 17.5,
+  );
+
+  Future<void> ac(WidgetTester tester, Asset varlik,
+      {double olcek = 1, MevduatDonemi? donem, Widget? govde}) async {
     await initializeDateFormatting('tr_TR');
     tester.view.physicalSize = const Size(320 * 3, 1400 * 3);
     tester.view.devicePixelRatio = 3.0;
@@ -70,16 +92,7 @@ void main() {
         sozlesmeProvider.overrideWith(() => _Sozlesmeler(SozlesmeState(
               sozlesmeler: {mid: mevduat, bid: bes},
               donemler: {
-                mid: [
-                  MevduatDonemi(
-                    id: 'd',
-                    sozlesmeId: mid,
-                    baslangic: gun.subtract(const Duration(days: 40)),
-                    vadeSonu: gun.subtract(const Duration(days: 8)),
-                    yillikFaiz: 42,
-                    stopaj: 17.5,
-                  ),
-                ],
+                mid: [donem ?? dolmus],
               },
             ))),
       ],
@@ -88,7 +101,8 @@ void main() {
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(olcek)),
           child: Scaffold(
-            body: SingleChildScrollView(child: SozlesmeKarti(varlik: varlik)),
+            body: SingleChildScrollView(
+                child: govde ?? SozlesmeKarti(varlik: varlik)),
           ),
         ),
       ),
@@ -105,13 +119,57 @@ void main() {
     expect(find.textContaining('Enpara'), findsOneWidget);
   });
 
+  testWidgets(
+      'mevduat vade içinde: kazanç vade sonunda, "Oranı güncelle" ve not '
+      '(2026-10-02)', (tester) async {
+    await ac(tester, lotlar[0], donem: vadeIci);
+    expect(find.text('Vade sonunda net faiz'), findsOneWidget);
+    expect(find.text('Bu dönem net'), findsNothing,
+        reason: 'vade içinde ₺0 yazan "bu dönem net" gösterilmez');
+    // 250.000 × %42 × 0,825 × 32 / 365
+    expect(find.text('+₺7.594,52'), findsOneWidget);
+    expect(find.text('Oranı güncelle'), findsOneWidget);
+    expect(find.text('Yenile'), findsNothing);
+    expect(find.textContaining('Faiz vade sonunda eklenir'), findsOneWidget);
+  });
+
+  testWidgets('portföy paneli: mevduat vade şeridi (grafik yerine)',
+      (tester) async {
+    await ac(tester, lotlar[0],
+        donem: vadeIci,
+        govde: MevduatVadeSeridi(
+            temsilci: lotlar[0], pay: 250000, baz: const BazPara.lira()));
+    expect(find.textContaining('%42 brüt faiz', findRichText: true), findsOneWidget);
+    expect(find.text('Vadeye 24 gün'), findsOneWidget);
+    expect(find.text('Vade sonunda net faiz'), findsOneWidget);
+    expect(find.text('+₺7.594,52'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+    await ac(tester, lotlar[0],
+        olcek: 3,
+        donem: vadeIci,
+        govde: MevduatVadeSeridi(
+            temsilci: lotlar[0], pay: 250000, baz: const BazPara.lira()));
+    expect(tester.takeException(), isNull, reason: '320pt x3.0 taşmaz');
+  });
+
   testWidgets('BES: döküm, hak ediş ve bu ayın katkısı', (tester) async {
     await ac(tester, lotlar[1]);
     expect(find.text('Toplam birikim'), findsOneWidget);
     expect(find.text('Senin katkın'), findsOneWidget);
     expect(find.text('Devlet'), findsOneWidget);
-    expect(find.textContaining('3 yıl sonra'), findsOneWidget,
-        reason: '7. yıl: %35, 3 yıl sonra %60');
+    // Kalan süre ay hassasiyetinde (2026-10-01): eski "3 yıl sonra" tam yıl
+    // farkıydı; giriş yıl−7'nin 1 Ocak'ı olduğundan %60 eşiğine çoğu gün
+    // "2 yıl N ay" kalır. Beklenen metin aynı saf hesaptan kurulur.
+    final kalan = BesHesabi.sonrakiBasamakSuresi(
+        DateTime(gun.year - 7, 1, 1), DateTime.now())!;
+    final sure = kalan.ay == 0
+        ? '${kalan.yil} yıl'
+        : kalan.yil == 0
+            ? '${kalan.ay} ay'
+            : '${kalan.yil} yıl ${kalan.ay} ay';
+    expect(find.textContaining('$sure sonra %60'), findsOneWidget,
+        reason: '7. yıl: %35, $sure sonra %60');
     expect(find.text('Bu ayın katkısı henüz eklenmedi.'), findsOneWidget);
     expect(find.text('Bu ayın katkısını ekle'), findsOneWidget);
   });

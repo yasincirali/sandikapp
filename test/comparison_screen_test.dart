@@ -38,7 +38,7 @@ void main() {
     await tester.pumpWidget(_wrap(const ComparisonScreen()));
     await tester.pump();
 
-    for (final label in ['1H', '1A', '3A', '1Y', '5Y']) {
+    for (final label in ['1 hf', '1 ay', '3 ay', '1 yıl', '5 yıl']) {
       expect(find.text(label), findsOneWidget, reason: '$label görünmeli');
     }
   });
@@ -77,7 +77,7 @@ void main() {
     await tester.pumpWidget(_wrap(const ComparisonScreen()));
     await tester.pump();
 
-    await tester.tap(find.text('1Y'));
+    await tester.tap(find.text('1 yıl'));
     await tester.pump();
 
     expect(tester.takeException(), isNull);

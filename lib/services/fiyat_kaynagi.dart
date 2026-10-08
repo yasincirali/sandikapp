@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/eurobond.dart';
 import 'price_service.dart';
 import 'crash_reporter.dart';
+import '../utils/tr_format.dart';
 
 /// **Fiyat kaynağı sözleşmesi — bir varlık HER YERDE aynı yerden beslenir.**
 ///
@@ -50,6 +52,16 @@ class FiyatKaynagi {
   /// vadeli sözleşme spot'un yapısal olarak üstünde işlem görür.
   static const String xauUsd = 'GC=F';
 
+  /// BIST 100 endeksi (puan, TRY kote). Ana sayfa piyasa bandının
+  /// gösterdiği sembolle AYNI (`PiyasaSeridi.semboller`); serisi Yahoo
+  /// `chart` ucundan `.IS` yolunu izler (`HistoryService.getSymbolHistory`).
+  static const String bist100 = 'XU100.IS';
+
+  /// "Gram altın" — 24 ayar (995). Piyasa bandının altını da budur
+  /// (gerekçe `PiyasaSeridi.altinSembolu`): Türkiye'de "gram altın" 24
+  /// ayar demektir. Serisi [altinGramSerisi]'nden ağırlık çarpanıyla türer.
+  static const String gramAltin24 = 'ALTIN_GRAM24';
+
   /// Uygulamanın iç altın sembolleri (`ALTIN_GRAM`, `ALTIN_CEYREK`…)
   /// gerçek bir Yahoo/TEFAS sembolü DEĞİLDİR: hepsi gram22k serisinden
   /// ağırlık çarpanıyla türetilir.
@@ -65,6 +77,20 @@ class FiyatKaynagi {
   /// `currency: 'TRY'` taşır; istemci ikinci bir çevrim YAPMAZ.
   static bool kriptoMu(String ticker) =>
       ticker.trim().toUpperCase().startsWith(kriptoOneki);
+
+  /// Eurobond sembolü mü (`EUROBOND:<ISIN>`)?
+  ///
+  /// Fiyat ve seri SUNUCUDAN gelir (`eurobond_fiyat`, `eurobond-seri`;
+  /// 0124): Frankfurt temiz fiyatı, istemcide işlemiş faizle kirliye çıkar.
+  /// Kotasyon tahvilin kendi para biriminde, 1 nominal birim başına.
+  static bool eurobondMu(String ticker) =>
+      ticker.trim().toUpperCase().startsWith(eurobondOneki);
+
+  /// Eurobond varlığı ticker serisiyle mi değerlenir? Geçmiş değer
+  /// yollarının tür listelerine bu girer: yalnız USD tahvil (bkz.
+  /// [seriyeGirer]); EUR tahvil düz çizgiye bile girmez.
+  static bool eurobondSerili(Asset a) =>
+      a.type == AssetType.eurobond && usdKote(a);
 
   /// Varlık 7/24 işlem görüyor mu? Hafta sonu gün içi ızgarası buna bakar
   /// (`HistoryService.gridSlotlari`).
@@ -109,6 +135,11 @@ class FiyatKaynagi {
       case AssetType.doviz:
       case AssetType.kripto:
         return a.ticker.trim().isNotEmpty;
+      case AssetType.eurobond:
+        // Yalnız USD: geçmiş değer yolları (`HistoryService`) USD ve TRY
+        // dışında kur bilmez; EUR tahvil seriye girseydi değeri kursuz TL
+        // sayılırdı. Ekleme akışı da şimdilik yalnız USD tahvil sunar.
+        return a.ticker.trim().isNotEmpty && usdKote(a);
       case AssetType.fon:
         // Elle fiyatlanan fonun yayımlanmış NAV serisi yoktur.
         return a.ticker.trim().isNotEmpty && !a.isManualPrice;
@@ -205,6 +236,103 @@ class FiyatKaynagi {
         addedDate: DateTime(2000),
         isManualPrice: a.isManualPrice,
       );
+
+  // ── Yurt içi gün içi şekli (0101, 2026-10-03) ───────────────────────────
+  //
+  // Kullanıcı sorusu: "Neden düz çizgi peki. Değeri oynak değil mi?" Hafta
+  // sonu GÜNLÜK'te dolar/altın dümdüzdü: şekil Yahoo'dan, uluslararası
+  // piyasa Cumartesi 00:00 – Pazartesi 00:00 (TR) kapalı, seri Cuma'da
+  // bitiyor. Ekrandaki fiyat ise yurt içi kotasyon (truncgil) ve hafta sonu
+  // da oynuyor; sunucu artık onu beş dakikada bir kaydediyor
+  // (`yurt_ici_kotasyon`). Karar: "fiyat tutarlı ve doğru şeyi göstermeli."
+  //
+  // Bu yüzden yurt içi kayıt, uluslararası seri SUSTUĞUNDA şeklin TEK
+  // kaynağı olur — iki kaynak tek seride birleştirilmez (altın merdiveninin
+  // "karışım yasak" kuralı). Kayıt ekrandaki kotasyonun kendisi olduğundan
+  // ölçek hizalaması gerekmez: grafiğin ucu zaten görünen fiyattır.
+
+  /// Sunucunun gün içi kaydını tuttuğu semboller: tüm altın ayarları ve
+  /// truncgil'den fiyatlanan üç TL dövizi (`_shared/live_prices.ts`
+  /// `YURT_ICI_SEMBOLLER` ile aynı küme).
+  static bool yurtIciKayitli(String ticker) {
+    final t = ticker.trim().toUpperCase();
+    return altinMi(t) || t == usdTry || t == 'EURTRY=X' || t == 'GBPTRY=X';
+  }
+
+  /// Uluslararası seri bu kadar süredir nokta üretmiyorsa SUSMUŞ sayılır.
+  ///
+  /// Hafta içi döviz ve spot altın 5 dakikada bir nokta verir; tek boşluk
+  /// spot altının gece yarısı molası (~1 saat). 90 dakika o molayı atlatır,
+  /// hafta sonunu ise 01:30'dan itibaren yakalar (kayıt 00:00'dan başladığı
+  /// için şekil yine günün başından çizilir).
+  static const Duration uluslararasiSessizlik = Duration(minutes: 90);
+
+  /// Uluslararası seri [simdi] itibarıyla sustu mu? Boş seri de susmuştur
+  /// (Yahoo'nun hafta içi düştüğü tur dahil).
+  static bool uluslararasiSustu(Map<int, double> seri, DateTime simdi) {
+    if (seri.isEmpty) return true;
+    final son = seri.keys.reduce((a, b) => a > b ? a : b);
+    return simdi.millisecondsSinceEpoch - son >=
+        uluslararasiSessizlik.inMilliseconds;
+  }
+
+  /// Gün içi şekli için yurt içi kayıttan BUGÜNÜN serisi; kullanılmayacaksa
+  /// `null` (çağıran eski yoldan devam eder).
+  ///
+  /// Yalnızca bugünün (yerel 00:00 → [simdi]) noktaları alınır: dünün kaydı
+  /// bugünün gün başına karışırsa "bugün" yüzdesi yanlış güne bağlanır
+  /// (`HistoryService._sonIyiOku` ile aynı kural). İki noktadan az kayıt
+  /// şekil değildir. Damgalar [normalize] ile çağıranın ızgarasına oturur.
+  static Map<int, double>? yurtIciGunIciSekli({
+    required Map<int, double> uluslararasi,
+    required List<(int, double)> yurtIci,
+    required DateTime simdi,
+    required int Function(int ms) normalize,
+  }) {
+    if (!uluslararasiSustu(uluslararasi, simdi)) return null;
+    final gunBasi = dayKey(simdi).millisecondsSinceEpoch;
+    final simdiMs = simdi.millisecondsSinceEpoch;
+    final out = <int, double>{};
+    for (final (ts, fiyat) in yurtIci) {
+      if (ts < gunBasi || ts > simdiMs) continue;
+      if (!fiyat.isFinite || fiyat <= 0) continue;
+      out[normalize(ts)] = fiyat;
+    }
+    return out.length >= 2 ? out : null;
+  }
+}
+
+/// "Başka yere koysaydın" kartının kıyas varlıkları — SEMBOL KARARI BURADA.
+///
+/// ## Neden bu dosyada (sözleşme madde 1)
+/// Kıyas kartı yeni bir fiyat yüzeyidir; hangi seriden besleneceğini kendi
+/// dosyasında seçseydi "dolar"ın bir yerde `USDTRY=X`, başka yerde truncgil
+/// `USD` olduğu ayrışma sınıfı geri gelirdi. Yükleyici (`KiyasYukleyici`)
+/// yalnızca [sembol]'ü okur; seri `HistoryService.getSymbolHistory` ile,
+/// takip listesi ve Karşılaştır ekranının kullandığı AYNI yoldan gelir.
+///
+/// ## Ölçek (madde 2) neden burada sorun değil
+/// Kıyas hesabı (kamu piyasası eşdeğeri) yalnızca serinin ORANLARINI
+/// kullanır: alınan birim = tutar ÷ fiyat, son değer = birim × son fiyat.
+/// Serinin tamamını sabit bir çarpanla ölçeklemek sonucu DEĞİŞTİRMEZ —
+/// çarpan sadeleşir. Yine de altın serisi `getSymbolHistory` içinde canlı
+/// kotasyona kalibre edilir (`altinKalibrasyonu`), dolar ve endeks TRY
+/// kotedir; hiçbir yerde ikinci bir kaynak karışmaz.
+///
+/// ## Mevduat YOK (2026-10-01)
+/// Projede piyasa mevduat FAİZİ serisi yok: `MEVDUAT:` sembolleri
+/// kullanıcının kendi sözleşmesinin tahakkukudur, bir piyasa oranı değil.
+/// Sabit bir faiz yazmak (madde 3) uydurma sayıdır; seri eklenene kadar
+/// mevduat kıyası gösterilmez.
+enum KiyasVarligi {
+  dolar(FiyatKaynagi.usdTry),
+  altin(FiyatKaynagi.gramAltin24),
+  bist100(FiyatKaynagi.bist100);
+
+  const KiyasVarligi(this.sembol);
+
+  /// Serinin çekileceği sembol.
+  final String sembol;
 }
 
 /// Altın gram22k serisinin hangi kaynaktan kurulduğu.

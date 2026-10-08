@@ -53,8 +53,11 @@ class PortfolioSummaryWidget extends StatelessWidget {
         ? context.l10n.totalNetHidden
         : [
             context.l10n.totalNetWorth(tryFmt.format(state.totalValue)),
+            // "Maliyetine göre" (2026-10-01): bu rakam MALİYETE göre kâr —
+            // dönem getirisi (Özet, para ağırlıklı) değil. Çıplak "kazanç"
+            // iki sayıyı aynı soru sandırıyordu.
             if (state.totalCost > 0)
-              '${isPos ? context.l10n.gainWord : context.l10n.lossWord} '
+              '${isPos ? context.l10n.costBasisGain : context.l10n.costBasisLoss} '
                   '${tryFmt.format(state.gainLoss.abs())}, '
                   '${fmtPct(state.gainLossPercentage.abs(), digits: 2)}',
             if (state.totalDividend.abs() >= 0.005)
@@ -104,7 +107,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
                     ? context.c.cardShadow
                     : [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.22),
+                          color: context.c.golge.withValues(alpha: 0.22),
                           blurRadius: 28,
                           spreadRadius: -4,
                           offset: const Offset(0, 8),
@@ -115,10 +118,7 @@ class PortfolioSummaryWidget extends StatelessWidget {
               // kaldırıp geri koyar; kart eskiden tek karede kısalıyordu.
               // Yalnız bu satırlar değişince oynar (fiyat tiki yüksekliği
               // değiştirmez → maliyet yok).
-              child: AnimatedSize(
-                duration: SandikMotion.stateOf(context),
-                curve: SandikMotion.move,
-                alignment: Alignment.topCenter,
+              child: _BoyGecisi(
                 child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -171,6 +171,23 @@ class PortfolioSummaryWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  // Satırın ADI (2026-10-01, kullanıcı kararı "tek getiri
+                  // dili"): aşağıdaki tutar ve yüzde MALİYETE göre kâr —
+                  // Özet'in dönem getirisi (para ağırlıklı) başka bir soru.
+                  // Etiketsiz rakam iki sayının aynı şeyi ölçtüğünü
+                  // düşündürüyordu. Hesap değişmedi.
+                  if (state.totalCost > 0) ...[
+                    Text(
+                      isPos
+                          ? context.l10n.costBasisGain
+                          : context.l10n.costBasisLoss,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.t.labelSmall
+                          ?.copyWith(color: context.c.text58),
+                    ),
+                    const SizedBox(height: SandikSpace.xxs),
+                  ],
                   if (state.totalCost > 0)
                     Row(
                       children: [
@@ -280,6 +297,33 @@ class PortfolioSummaryWidget extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Kartın yükseklik geçişi; hareketi azalt açıkken HİÇ `AnimatedSize` kurmaz.
+///
+/// ## Neden (integration kırmızısı, 2026-10-01)
+/// Sıfır süreli `AnimatedSize` boyut değişiminde kendi
+/// `performLayout`'u içinden denetleyiciyi `forward()` eder; sıfır sürede
+/// denetleyici aynı karede biter, dinleyicisi `markNeedsLayout` çağırır ve
+/// Flutter "RenderAnimatedSize was mutated in its own performLayout"
+/// assert'iyle düşer. Animasyonları kapalı CI emülatöründe (ve hareketi
+/// azalt açık cihazda) varlık eklenince kart uzadığı anda duman testi
+/// buradan kırılıyordu. Süre sıfırsa geçiş zaten yok: çocuğu doğrudan koy.
+class _BoyGecisi extends StatelessWidget {
+  const _BoyGecisi({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (SandikMotion.stateOf(context) == Duration.zero) return child;
+    return AnimatedSize(
+      duration: SandikMotion.stateOf(context),
+      curve: SandikMotion.move,
+      alignment: Alignment.topCenter,
+      child: child,
     );
   }
 }

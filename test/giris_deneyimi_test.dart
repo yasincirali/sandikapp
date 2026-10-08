@@ -210,7 +210,10 @@ void main() {
     test('kaynak: LockScreen çıkış geri çağrısı ALIR', () {
       final src = ekranKaynagiSync('lib/screens/lock_screen.dart');
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('final VoidCallback onCikisYap;'), isTrue);
+      // `FutureOr`: çıkış isteği bitene dek düğme yükleniyor gösterir
+      // (tek yükleniyor davranışı, 2026-10-08).
+      expect(tek.contains('final FutureOr<void> Function() onCikisYap;'),
+          isTrue);
       expect(tek.contains('onPressed: _busy ? null : _cikisiOnayla,'), isTrue,
           reason: 'düğme onay akışına bağlı olmalı');
     });

@@ -350,3 +350,35 @@ Deno.test('calendar-nudge defteri YAZIYOR — yalnızca gönderim olduysa', () =
   assertEquals(nudgeSrc.includes('if (sent > 0)'), true);
   assertEquals(nudgeSrc.includes("onConflict: 'occasion,period'"), true);
 });
+
+// ── 0110: hafta sonu telafisi ───────────────────────────────────────────────
+// Ekim 2026'da 3'ü Cumartesi, 4'ü Pazar'dı; iki tur da veri bulamadı ve
+// Eylül TÜFE'si Kasım'a kadar gelmeyecekti. Takvim 3'ü–12'si her gün.
+
+const telafi = Deno.readTextFileSync(
+  new URL('../migrations/0110_tufe_hafta_sonu_telafi.sql', import.meta.url),
+);
+
+Deno.test('TÜFE çekimi ve aylık özet 3–12 arası her gün koşuyor (0110)', () => {
+  for (const [ad, takvim] of [
+    ['fetch-inflation', '5 7 3-12 * *'],
+    ['fetch-inflation-retry', '5 13 3-12 * *'],
+    ['monthly-summary', '30 7 3-12 * *'],
+  ]) {
+    assertEquals(
+      telafi.includes(`schedule := '${takvim}')\n  from cron.job where jobname = '${ad}'`),
+      true,
+      `${ad} → ${takvim}`,
+    );
+  }
+  // Çekim aylık özetten ÖNCE: 07:05 < 07:30.
+  assertEquals(telafi.includes('cron.schedule('), false, 'alter_job: active korunur');
+});
+
+Deno.test('aylık özet ay başına tek push kilidini koruyor', () => {
+  const ozet = Deno.readTextFileSync(
+    new URL('../functions/weekly-summary/index.ts', import.meta.url),
+  );
+  assertEquals(ozet.includes("from('inflation_push_log')"), true);
+  assertEquals(ozet.includes("'zaten gonderildi'"), true);
+});

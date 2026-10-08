@@ -381,6 +381,7 @@ void main() {
         'axisMinText',
         'axisMaxText',
         'isFlatChange',
+        'yalnizBorsa',
       ];
 
       for (final alan in alanlar) {
@@ -433,6 +434,7 @@ void main() {
         'axisMinText',
         'axisMaxText',
         'isFlatChange',
+        'yalnizBorsa',
       ];
 
       for (final alan in alanlar) {
@@ -789,6 +791,11 @@ void main() {
       // yalnız hafta sonları kırılıyordu.
       final gun = DateTime(
           _duringSession.year, _duringSession.month, _duringSession.day);
+      // Tohum defterin KÜMESİNE yazılır (2026-10-03): `''` anahtarıyla
+      // tohumlanan seri `get` tarafından hiç bulunmuyordu (anahtar varlık
+      // kimlik listesi); servis seriyi gerçek saate göre kuruyor, test
+      // hafta sonu yine "—" alıp kırılıyordu.
+      final kume = _state().activeAssets;
       IntradaySeriesCache.instance.seedForTest(
         series: {
           for (var saat = 10; saat <= 14; saat++)
@@ -796,6 +803,7 @@ void main() {
         },
         fetchedAt: _duringSession,
         seansGunu: gun,
+        kume: kume,
       );
       await LiveActivityService.instance
           .sync(_state(), hideBalance: false, now: _duringSession);

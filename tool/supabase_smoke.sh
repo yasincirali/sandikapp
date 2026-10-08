@@ -75,6 +75,158 @@ echo "== 6b) anon RPC'yi cagiramamali"
 HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/claim_push_token"   -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json"   -d "{\"p_token\":\"$TOK-anon-0123456789\",\"p_platform\":\"android\"}")
 [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon claim_push_token HTTP $HTTP"; exit 1; }
 
+echo "== 6c) Yasal onay (0102 + 0103 + 0104 + 0105 + 0109) — metin herkese okunur, dogru hash yazilir, yanlis hash reddedilir, kapi sorgusu, 1.2/1.3/1.4 + acik riza metni + kutu 1.1, saklama fonksiyonlari istemciye kapali"
+# Metin anon ile okunur (belgeler herkese acik). Onay yalniz RPC ile ve
+# yalniz sunucudaki metnin hash'iyle yazilir; doğrudan INSERT yetkisi yok.
+# Satir silinemez (tasarim geregi) — tohum kullanicida kalir; CI yigini taze.
+# Belgeler 1.1'den baslar (0102 ikinci tur): "1.0" adiyla birden cok metin
+# yayimlandi, arsiv satiri uydurulmadi.
+metin_hash() {  # tur surum dil
+  curl -sS -f "$SUPABASE_URL/rest/v1/yasal_metinler?select=govde_hash&tur=eq.$1&surum=eq.$2&dil=eq.$3" \
+    -H "apikey: $SUPABASE_ANON_KEY" | json 'd[0]["govde_hash"] if d else ""'
+}
+HASH=$(metin_hash kosullar 1.1 tr)
+[[ ${#HASH} == 64 ]] || { echo "kosullar/1.1/tr metni okunamadi (hash='$HASH')"; exit 1; }
+ESKI=$(metin_hash kosullar 1.0 tr)
+[[ -z "$ESKI" ]] || { echo "kosullar/1.0/tr satiri olmamali (uydurma arsiv)"; exit 1; }
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kosullar\",\"surum\":\"1.1\",\"dil\":\"tr\",\"hash\":\"$HASH\"}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "yasal_onay_kaydet beklenmeyen donus: $YAZILAN"; exit 1; }
+SATIR=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=id&kanal=eq.kayit" "${AUTH[@]}" | json 'len(d)')
+[[ "$SATIR" -ge 1 ]] || { echo "onay satiri geri okunamadi (adet=$SATIR)"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kosullar\",\"surum\":\"1.1\",\"dil\":\"tr\",\"hash\":\"$(printf '0%.0s' {1..64})\"}],\"p_kanal\":\"kayit\"}")
+[[ "$HTTP" == "400" ]] || { echo "yanlis hash reddedilmedi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/yasal_onaylar" "${AUTH[@]}" \
+  -d "{\"user_id\":\"$UID_SMOKE\",\"metin_id\":1,\"kanal\":\"kayit\"}")
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "yasal_onaylar dogrudan yazilabildi: HTTP $HTTP"; exit 1; }
+
+# Yeniden onay kapisi (bayrak yasal_kapi_en_yeni): yeni kanal belgeyi ve
+# kapi ayni ekranda gosterdiyse yatirim uyarisini yazar; Zirve'yi yazamaz.
+GHASH=$(metin_hash gizlilik_politikasi 1.1 tr)
+YHASH=$(metin_hash yatirim_uyarisi 1.0 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"gizlilik_politikasi\",\"surum\":\"1.1\",\"dil\":\"tr\",\"hash\":\"$GHASH\",\"degiskenler\":{\"onceki_surum\":null}},{\"tur\":\"yatirim_uyarisi\",\"surum\":\"1.0\",\"dil\":\"tr\",\"hash\":\"$YHASH\"}],\"p_kanal\":\"yeniden_onay\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "2" || "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "yeniden_onay beklenmeyen donus: $YAZILAN"; exit 1; }
+ZHASH=$(metin_hash zirve_riza 2026-10-01 tr)
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"zirve_riza\",\"surum\":\"2026-10-01\",\"dil\":\"tr\",\"hash\":\"$ZHASH\"}],\"p_kanal\":\"yeniden_onay\"}")
+[[ "$HTTP" == "400" ]] || { echo "yeniden_onay kanalinda zirve reddedilmedi: HTTP $HTTP"; exit 1; }
+# 0103: belgeler 1.2 (web ile tek kaynak, legal/tr/*.md) + yeni tur
+# acik_riza_metni. Kayit ve kapi kanali acik riza metnini yazar; Zirve
+# kanali yazamaz. 1.1 satirlari yerinde (eski istemci).
+for T in kosullar gizlilik_politikasi kvkk_aydinlatma acik_riza_metni; do
+  H=$(metin_hash "$T" 1.2 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.2/tr metni okunamadi (0103)"; exit 1; }
+done
+[[ ${#GHASH} == 64 ]] || { echo "gizlilik_politikasi/1.1/tr kaybolmus (0103 eski satira dokunmamali)"; exit 1; }
+AHASH=$(metin_hash acik_riza_metni 1.2 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"acik_riza_metni\",\"surum\":\"1.2\",\"dil\":\"tr\",\"hash\":\"$AHASH\",\"degiskenler\":{\"belge_acildi\":true}}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "acik_riza_metni kayit beklenmeyen donus: $YAZILAN"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"acik_riza_metni\",\"surum\":\"1.2\",\"dil\":\"tr\",\"hash\":\"$AHASH\"}],\"p_kanal\":\"zirve\"}")
+[[ "$HTTP" == "400" ]] || { echo "zirve kanalinda acik_riza_metni reddedilmedi: HTTP $HTTP"; exit 1; }
+# 0104: zorunlu okuma — kayit kanali yatirim uyarisinin tam metnini de yazar
+# (yukarida yeniden_onay ile yazildiysa 0 yeni satir; reddedilmemesi yeter).
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"yatirim_uyarisi\",\"surum\":\"1.0\",\"dil\":\"tr\",\"hash\":\"$YHASH\",\"degiskenler\":{\"belge_acildi\":true,\"sonuna_kadar_okundu\":true}}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "kayit kanalinda yatirim_uyarisi beklenmeyen donus: $YAZILAN (0104)"; exit 1; }
+# Istemcinin kapi sorgusu (YasalOnayService._etkinOnaylar) — RLS kendi
+# satiri + yasal_metinler gomulu; yeni RPC gerekmez.
+TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
+  "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
+[[ "$TURLER" == *"kosullar@1.1"* && "$TURLER" == *"gizlilik_politikasi@1.1"* && "$TURLER" == *"yatirim_uyarisi@1.0"* \
+   && "$TURLER" == *"acik_riza_metni@1.2"* ]] \
+  || { echo "kapi sorgusu beklenen turleri dondurmedi: $TURLER"; exit 1; }
+# 0105: belgeler 1.3 (saklama sureleri + zorunlu okuma cumlesi). Dort belge
+# anon ile okunur, 1.2 satirlari yerinde; kapi kanali 1.3'u yazar ve kapi
+# sorgusu en yeni surumu gorur.
+for T in kosullar gizlilik_politikasi kvkk_aydinlatma acik_riza_metni; do
+  H=$(metin_hash "$T" 1.3 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.3/tr metni okunamadi (0105)"; exit 1; }
+  H=$(metin_hash "$T" 1.2 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.2/tr kaybolmus (0105 eski satira dokunmamali)"; exit 1; }
+done
+K13=$(metin_hash kosullar 1.3 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kosullar\",\"surum\":\"1.3\",\"dil\":\"tr\",\"hash\":\"$K13\",\"degiskenler\":{\"sonuna_kadar_okundu\":true}}],\"p_kanal\":\"yeniden_onay\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" == "1" || "$YAZILAN" == "0" ]] || { echo "kosullar/1.3 yeniden_onay beklenmeyen donus: $YAZILAN (0105)"; exit 1; }
+TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
+  "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
+[[ "$TURLER" == *"kosullar@1.3"* ]] || { echo "kapi sorgusu kosullar@1.3'u gormedi: $TURLER"; exit 1; }
+# 0109: okuma sadelestirme — belgeler 1.4 + kayit_tek_kutu 1.1 (tr, en).
+# Dort belge ve iki kutu anon ile okunur; 1.3 ve kutu 1.0 yerinde (degismez).
+# Yeni istemcinin kayit cagrisi TEK cagridir: kutu 1.1 + kosullar (nitelik
+# kabul) + gizlilik/kvkk (nitelik bilgilendirme, sonuna kadar okunmadi) +
+# acik riza (sonuna kadar okundu). Fonksiyon degismedi; eslemenin bu
+# turlerin hepsini kabul ettigi burada da sinanir. Kapi sorgusu en yeni
+# surumleri gorur.
+for T in kosullar gizlilik_politikasi kvkk_aydinlatma acik_riza_metni; do
+  H=$(metin_hash "$T" 1.4 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.4/tr metni okunamadi (0109)"; exit 1; }
+  H=$(metin_hash "$T" 1.3 tr)
+  [[ ${#H} == 64 ]] || { echo "$T/1.3/tr kaybolmus (0109 eski satira dokunmamali)"; exit 1; }
+done
+for D in tr en; do
+  H=$(metin_hash kayit_tek_kutu 1.1 "$D")
+  [[ ${#H} == 64 ]] || { echo "kayit_tek_kutu/1.1/$D metni okunamadi (0109)"; exit 1; }
+  H=$(metin_hash kayit_tek_kutu 1.0 "$D")
+  [[ ${#H} == 64 ]] || { echo "kayit_tek_kutu/1.0/$D kaybolmus (0109 eski satira dokunmamali)"; exit 1; }
+done
+KU11=$(metin_hash kayit_tek_kutu 1.1 tr)
+K14=$(metin_hash kosullar 1.4 tr)
+G14=$(metin_hash gizlilik_politikasi 1.4 tr)
+V14=$(metin_hash kvkk_aydinlatma 1.4 tr)
+A14=$(metin_hash acik_riza_metni 1.4 tr)
+YAZILAN=$(curl -sS -f -X POST "$SUPABASE_URL/rest/v1/rpc/yasal_onay_kaydet" "${AUTH[@]}" \
+  -d "{\"p_ogeler\":[{\"tur\":\"kayit_tek_kutu\",\"surum\":\"1.1\",\"dil\":\"tr\",\"hash\":\"$KU11\",\"degiskenler\":{\"SUPABASE_ULKE\":\"duman\"}},{\"tur\":\"kosullar\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$K14\",\"degiskenler\":{\"nitelik\":\"kabul\",\"belge_acildi\":false,\"sonuna_kadar_okundu\":false}},{\"tur\":\"gizlilik_politikasi\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$G14\",\"degiskenler\":{\"nitelik\":\"bilgilendirme\",\"belge_acildi\":true,\"sonuna_kadar_okundu\":false}},{\"tur\":\"kvkk_aydinlatma\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$V14\",\"degiskenler\":{\"nitelik\":\"bilgilendirme\",\"belge_acildi\":false,\"sonuna_kadar_okundu\":false}},{\"tur\":\"acik_riza_metni\",\"surum\":\"1.4\",\"dil\":\"tr\",\"hash\":\"$A14\",\"degiskenler\":{\"nitelik\":\"acik_riza\",\"belge_acildi\":true,\"sonuna_kadar_okundu\":true}}],\"p_kanal\":\"kayit\",\"p_platform\":\"duman\"}")
+[[ "$YAZILAN" =~ ^[0-5]$ ]] || { echo "0109 kayit cagrisi beklenmeyen donus: $YAZILAN"; exit 1; }
+TURLER=$(curl -sS -f "$SUPABASE_URL/rest/v1/yasal_onaylar?select=yasal_metinler!inner(tur,surum)&user_id=eq.$UID_SMOKE&geri_cekildi_at=is.null" \
+  "${AUTH[@]}" | json '",".join(sorted({r["yasal_metinler"]["tur"]+"@"+r["yasal_metinler"]["surum"] for r in d}))')
+[[ "$TURLER" == *"kayit_tek_kutu@1.1"* && "$TURLER" == *"kosullar@1.4"* && "$TURLER" == *"gizlilik_politikasi@1.4"* \
+   && "$TURLER" == *"kvkk_aydinlatma@1.4"* && "$TURLER" == *"acik_riza_metni@1.4"* ]] \
+  || { echo "kapi sorgusu 0109 surumlerini gormedi: $TURLER"; exit 1; }
+# 0105: iki saklama fonksiyonu (Auth guvenlik kaydi 90 gun, anonim silme
+# kaydi 3 yil) yalniz cron'dan kosar — istemci cagiramaz; silme kaydi
+# tablosu istemciye bos gorunur (RLS, politika yok — 0007).
+for F in auth_guvenlik_kaydi_saklama_temizle hesap_silme_kaydi_saklama_temizle; do
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/$F" "${AUTH[@]}" -d '{}')
+  [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "authenticated $F cagirabildi: HTTP $HTTP (0105)"; exit 1; }
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/$F" \
+    -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json" -d '{}')
+  [[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "anon $F cagirabildi: HTTP $HTTP (0105)"; exit 1; }
+done
+SATIR=$(curl -sS "$SUPABASE_URL/rest/v1/account_deletion_log?select=id" "${AUTH[@]}" | json 'len(d) if isinstance(d, list) else 0')
+[[ "$SATIR" == "0" ]] || { echo "account_deletion_log istemciye gorunuyor (adet=$SATIR)"; exit 1; }
+# Hesap silme (satirlar kalir + damga, Zirve silinir, 3 yil saklama) burada
+# denenmez: tohum kullanici silinemez. Migration'in kendi dogrulama blogu
+# tetikleyiciyi, politikayi ve cron isini kontrol eder.
+
+echo "== 6d) Fon para akisi (0106) — oturum okur, yazamaz; anon okuyamaz; ic tablo ve RPC kapali"
+# Tablolar piyasa verisi: authenticated yalniz SELECT. Taze yiginda bos
+# olmalari normal (veriyi akis-gozlem yazar); sinanan sey yetki siniri.
+for T in fon_akis_gunluk balina_olay hisse_hacim_gunluk kripto_hacim_gunluk; do
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/$T?select=tarih&limit=1" "${AUTH[@]}")
+  [[ "$HTTP" == "200" ]] || { echo "$T oturumla okunamadi: HTTP $HTTP"; exit 1; }
+  HTTP=$(curl -sS -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/$T?select=tarih&limit=1"     -H "apikey: $SUPABASE_ANON_KEY")
+  [[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "$T anon ile okunabildi: HTTP $HTTP"; exit 1; }
+done
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/fon_akis_gunluk" "${AUTH[@]}"   -d '{"fon_kodu":"ZZZ","tarih":"2026-01-02","fon_tipi":"YAT","pay_adedi":1,"portfoy_degeri":1}')
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "fon_akis_gunluk istemciden yazilabildi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/balina_olay" "${AUTH[@]}"   -d '{"ticker":"TEFAS:ZZZ","tarih":"2026-01-02","tur":"fon_giris","tutar":1,"buyukluk_orani":1,"sapma_kati":1}')
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "balina_olay istemciden yazilabildi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/fon_akis_tur?select=tarih&limit=1" "${AUTH[@]}")
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "fon_akis_tur istemciye acik: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/hisse_hacim_gunluk" "${AUTH[@]}" \
+  -d '{"ticker":"ZZZZZ.IS","tarih":"2026-01-02","kapanis":1,"hacim":1,"para_hacmi":1}')
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "hisse_hacim_gunluk istemciden yazilabildi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/kripto_hacim_gunluk" "${AUTH[@]}" \
+  -d '{"ticker":"KRIPTO:ZZZ","tarih":"2026-01-02","kapanis":1,"para_hacmi":1,"alici_payi":0.5}')
+[[ "$HTTP" == "401" || "$HTTP" == "403" ]] || { echo "kripto_hacim_gunluk istemciden yazilabildi: HTTP $HTTP"; exit 1; }
+HTTP=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$SUPABASE_URL/rest/v1/rpc/akis_sapma" "${AUTH[@]}"   -d '{"p_gun":"2026-01-02"}')
+[[ "$HTTP" == "401" || "$HTTP" == "403" || "$HTTP" == "404" ]] || { echo "akis_sapma istemciye acik: HTTP $HTTP"; exit 1; }
+
 echo "== 7) Temizlik"
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/assets?id=eq.$ASSET_ID" "${AUTH[@]}" >/dev/null
 curl -sS -f -X DELETE "$SUPABASE_URL/rest/v1/user_push_tokens?device_id=eq.duman-cihaz-$$" "${AUTH[@]}" >/dev/null

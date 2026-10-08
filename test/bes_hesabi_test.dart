@@ -4,6 +4,7 @@ import 'package:portfoy_takip/services/bes_hesabi.dart';
 
 /// BES kuralları — hak ediş, devlet katkısı ve katkının bölünmesi.
 void main() {
+  _fonDegisimi();
   final giris = DateTime(2019, 5, 10);
 
   test('hak ediş basamakları: %0 / %15 / %35 / %60', () {
@@ -99,5 +100,99 @@ void main() {
             s: s, simdi: ay, katkiTarihleri: [DateTime(2026, 9, 15)]),
         isFalse,
         reason: 'bu ay eklendi');
+  });
+
+  group('sunucu parametreleri (0089) — elle yıl eklemek gerekmez', () {
+    tearDown(() => BesHesabi.uzakParametreler(const {}));
+
+    test('tabloda olmayan yıl sunucudan gelince sınır bilinir', () {
+      expect(BesHesabi.yillikSinir(2027), isNull,
+          reason: 'yedek tabloda 2027 yok — uydurma sınır olmamalı');
+      BesHesabi.uzakParametreler({2027: (sinir: 95000, oran: 20)});
+      expect(BesHesabi.yillikSinir(2027), 95000);
+      final r = BesHesabi.devletKatkisi(
+          katki: 10000, tarih: DateTime(2027, 2, 1), buYilAlinan: 94000);
+      expect(r.tutar, 1000, reason: 'kalan sınıra kırpılır');
+      expect(r.sinirBilinmiyor, isFalse);
+    });
+
+    test('sunucu oranı merdiveni ezer (yıl içi karar değişikliği)', () {
+      BesHesabi.uzakParametreler({2027: (sinir: 95000, oran: 25)});
+      expect(BesHesabi.devletKatkisiOrani(DateTime(2027, 3, 1)), 25);
+      // Başka yıllar etkilenmez.
+      expect(BesHesabi.devletKatkisiOrani(DateTime(2026, 3, 1)), 20);
+    });
+
+    test('sunucu boşsa yedek tablo çalışır', () {
+      BesHesabi.uzakParametreler(const {});
+      expect(BesHesabi.yillikSinir(2026), 79272);
+    });
+  });
+}
+
+void _fonDegisimi() {
+  group('fon değişikliği planı', () {
+    // AAA: 100 pay × 10 = 1000 (ana para 800), BBB: 50 pay × 20 = 1000
+    // (ana para 900). Toplam değer 2000, ana para 1700, kâr 300.
+    final mevcut = {
+      'AAA': (pay: 100.0, maliyet: 800.0),
+      'BBB': (pay: 50.0, maliyet: 900.0),
+    };
+    const fiyatlar = {'AAA': 10.0, 'BBB': 20.0, 'CCC': 5.0};
+
+    test('değer ve ana para korunur, kâr değişmez', () {
+      final plan = BesHesabi.fonDegisimPlani(
+        mevcut: mevcut,
+        fiyatlar: fiyatlar,
+        hedef: const [FonPayi(kod: 'BBB', oran: 25), FonPayi(kod: 'CCC', oran: 75)],
+      );
+      double deger(bool satis) => plan
+          .where((x) => x.satis == satis)
+          .fold(0.0, (t, x) => t + x.pay * fiyatlar[x.kod]!);
+      double maliyet(bool satis) => plan
+          .where((x) => x.satis == satis)
+          .fold(0.0, (t, x) => t + x.maliyet);
+      expect(deger(false), closeTo(deger(true), 1e-6));
+      expect(maliyet(false), closeTo(maliyet(true), 1e-6));
+
+      // AAA dağılımdan çıktı: payın tamamı ve ana parasının tamamı satılır.
+      final aaa = plan.singleWhere((x) => x.kod == 'AAA');
+      expect(aaa.satis, isTrue);
+      expect(aaa.pay, 100);
+      expect(aaa.maliyet, 800);
+      // BBB 1000 → 500: yarısı.
+      final bbb = plan.singleWhere((x) => x.kod == 'BBB');
+      expect(bbb.satis, isTrue);
+      expect(bbb.pay, closeTo(25, 1e-9));
+      expect(bbb.maliyet, closeTo(450, 1e-9));
+      // CCC hedef 1500 → 300 pay, taşınan ana para 800 + 450.
+      final ccc = plan.singleWhere((x) => x.kod == 'CCC');
+      expect(ccc.satis, isFalse);
+      expect(ccc.pay, closeTo(300, 1e-9));
+      expect(ccc.maliyet, closeTo(1250, 1e-9));
+    });
+
+    test('aynı dağılım → boş plan (kuruş kaymaları lot açmaz)', () {
+      final plan = BesHesabi.fonDegisimPlani(
+        mevcut: mevcut,
+        fiyatlar: fiyatlar,
+        hedef: const [FonPayi(kod: 'AAA', oran: 50), FonPayi(kod: 'BBB', oran: 50)],
+      );
+      expect(plan, isEmpty);
+    });
+
+    test('yılda değişiklik sayısı: aynı dakikadaki satışlar tek değişiklik',
+        () {
+      final t = DateTime(2026, 3, 4, 10, 15, 3);
+      expect(
+        BesHesabi.buYilFonDegisikligi([
+          t,
+          t.add(const Duration(seconds: 20)),
+          DateTime(2026, 6, 1, 9),
+          DateTime(2025, 12, 31, 9),
+        ], 2026),
+        2,
+      );
+    });
   });
 }

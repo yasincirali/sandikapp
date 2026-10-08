@@ -30,10 +30,13 @@ extension L10nX on BuildContext {
   /// (grafik eksenleri, widget/Live Activity sözleşmeleri Türkçe kalmalı).
   /// Arayüz metni üreten yerler bu getter'a geçer; `bugun_karti`'ndaki
   /// `_dil` aynı kuralın eski kopyası. Delegate yoksa (test) Türkçe.
-  String get tarihDili =>
-      Localizations.maybeLocaleOf(this)?.languageCode == 'en'
-          ? 'en_US'
-          : 'tr_TR';
+  ///
+  /// Dil [l10n]'dan okunur, `Localizations.maybeLocaleOf`'tan değil
+  /// (2026-10-01): delegate'siz `MaterialApp` locale'i yine `en_US` verir,
+  /// yani metin Türkçe'ye düşerken tarih "Aug 25" yazıyordu — yukarıdaki
+  /// "delegate yoksa Türkçe" sözü tutmuyordu. Metin ile tarih aynı
+  /// kaynaktan dil alınca ikisi ayrışamaz.
+  String get tarihDili => l10n.localeName == 'en' ? 'en_US' : 'tr_TR';
 }
 
 /// Miktar biriminin arayüz dilindeki yazımı.

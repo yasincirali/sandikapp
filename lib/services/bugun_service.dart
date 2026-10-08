@@ -4,7 +4,9 @@
 // uygulamasında kullanıcının yapacak "işi" yok, yalnızca bakacak şeyi var;
 // aynı görünen ekrana ikinci gün gelinmez. Bu kart her açılışta değişen
 // tek bir yüzey verir: bugünün hareketi (ya da piyasa ne zaman açılır),
-// günün içgörüsü (dönüşümlü) ve ayın ilk günlerinde aylık özet girişi.
+// enflasyon kıyası ve hedef. (2026-10-08: H düzeninin çizmediği satırlar —
+// artıdaki varlık, son 7 gün, aylık özet, yaklaşan olay — hesaptan da
+// kalktı; gerekçe `BugunService.hesapla`.)
 //
 // İlkeler (RETENTION_STRATEJISI §3, §8):
 //   · Her satır bir BİLGİ taşır; "bugün de uğra" tarzı boş çağrı yok.
@@ -13,24 +15,11 @@
 //     tekrarlamamak için; kullanıcıyı "kaçırma" hissiyle çekmek için değil.
 //
 // Widget tarafı `widgets/bugun_karti.dart`; burası ağ ve BuildContext bilmez
-// ki `test/bugun_service_test.dart` takvimi ve dönüşümü sınayabilsin.
+// ki `test/bugun_service_test.dart` seansı ve satırları sınayabilsin.
 import '../utils/tr_format.dart' show dayKey;
 import 'bist_calendar.dart';
 import 'daily_summary.dart';
-
-/// Yaklaşan olay türleri — hepsi ULUSAL takvimden, uydurma sebep yok.
-enum BugunOlayTuru {
-  /// TÜİK enflasyonu ayın 3'ünde 10:00'da açıklar; reel getiri rozeti
-  /// o gün değişir.
-  tuikAciklamasi,
-
-  /// BIST resmî tatil (`BistTakvimi`); "neden fiyatlar değişmiyor"
-  /// sorusunu önceden yanıtlar.
-  bistTatili,
-
-  /// Ay sonu — aylık özetin hazır olacağı gün.
-  aySonu,
-}
+import 'inflation_service.dart' show InflationWindow;
 
 sealed class BugunSatiri {
   const BugunSatiri();
@@ -53,13 +42,6 @@ class PiyasaKapaliSatiri extends BugunSatiri {
   final DateTime sonrakiAcilis;
 }
 
-/// Kaç varlık artıda (ömürlük kâr/zarar üzerinden).
-class YesilOranSatiri extends BugunSatiri {
-  const YesilOranSatiri({required this.yesil, required this.toplam});
-  final int yesil;
-  final int toplam;
-}
-
 /// Portföy hedefi: `hedefTRY <= 0` ise "hedef belirle" çağrısıdır.
 class HedefSatiri extends BugunSatiri {
   const HedefSatiri({required this.hedefTRY, required this.deger});
@@ -73,29 +55,6 @@ class HedefSatiri extends BugunSatiri {
       hedefTRY <= 0 ? 0 : (hedefTRY - deger).clamp(0.0, double.infinity);
 }
 
-class YaklasanOlaySatiri extends BugunSatiri {
-  const YaklasanOlaySatiri({
-    required this.tur,
-    required this.tarih,
-    required this.gunKaldi,
-  });
-  final BugunOlayTuru tur;
-  final DateTime tarih;
-
-  /// 0 = bugün, 1 = yarın …
-  final int gunKaldi;
-}
-
-/// Ayın ilk günlerinde: geçen ayın özetine giriş.
-class AylikOzetSatiri extends BugunSatiri {
-  const AylikOzetSatiri({required this.ay});
-
-  /// Özetlenen ayın 1'i.
-  final DateTime ay;
-}
-
-/// Kartın tamamı. [birincil] hareket satırı, [ikincil] günün içgörüleri
-/// (en fazla [BugunService.ikincilSayisi]), [aylik] ayın başında girişi.
 /// Yıllık reel getiri — "eridim mi?" (2026-09-21, sadeleştirme).
 ///
 /// Eskiden ana ekranda ayrı bir şeritti (`RealReturnStrip`); kart aynı
@@ -103,76 +62,59 @@ class AylikOzetSatiri extends BugunSatiri {
 /// girdi — dönüşüme girmez, markanın kalbi her gün görünür. Sayı yine
 /// `RealReturnService.yillik`'ten gelir (tek hesap yolu).
 class ReelGetiriSatiri extends BugunSatiri {
-  const ReelGetiriSatiri({required this.nominal, required this.inflation});
+  const ReelGetiriSatiri(
+      {required this.nominal, required this.inflation, this.pencere});
   final double nominal;
   final double inflation;
+
+  /// İki sayının ölçüldüğü TÜFE penceresi — kutu etiketinde ay aralığı
+  /// olarak yazılır (2026-10-02 müşteri testi: Ana "%37,29", Performans 1Y
+  /// "%38,84" diyordu ve hangisinin hangi aralık olduğu yazmıyordu).
+  /// Bilinmiyorsa etiket "yıllık" der.
+  final InflationWindow? pencere;
 
   /// Puan farkı: getiri − TÜFE.
   double get fark => nominal - inflation;
   bool get onde => fark >= 0;
 }
 
-/// Son 7 günün piyasa getirisi — eski `WeeklySummaryChip`'in satırı.
+/// Kartın tamamı — H düzeninin çizdiği satırlar (2026-10-08).
 ///
-/// **Tanım: KAYAN 7 gün, sağ ucu canlı** (`BugunYukleyici.haftalik` →
-/// `PeriodSummaryService.compute(birHafta, canliSon: …)`). Satır Özet › 1H'ye
-/// götürür ve orada AYNI rakam görünmeli ("tıklanan rakamı bulamayan
-/// kullanıcı", `WeeklySummaryChip._ac`), 1H de bugüne kadarki 7 gündür.
-/// Etiket bir süre "Geçen hafta" yazdı; takvim haftası sanıldı ve oturum
-/// içinde değişen rakam (−%2,51 → −%2,10, 2026-09-29 emülatör testi) hata
-/// gibi göründü. Hesap değil etiket hizalandı: "Son 7 gün".
-///
-/// Haftanın ilk iki günü SABİT satır (haftalık özet bildirimiyle aynı
-/// günler), sonra dönüşüm havuzunda: bilgi kaybolmaz.
-class HaftalikOzetSatiri extends BugunSatiri {
-  const HaftalikOzetSatiri({required this.getiriPct});
-  final double getiriPct;
-}
-
+/// Eskiden D düzeninin satırlarını da taşıyordu (artıdaki varlık, son 7 gün,
+/// aylık özet, yaklaşan olay); kart onları 2026-10-04'ten beri çizmiyordu
+/// ama hesap üretiyor, son 7 gün için ağdan seri çekiyor ve gösterim ölçümü
+/// onları "gösterildi" sayıyordu (`TECHNICAL_DEBT.md`). Çizilmeyen satır
+/// hesaplanmaz. En çok oynayan servis dışında (`enCokOynayanBul`, gün içi
+/// önbellekten) — burada değil.
 class BugunKartiVerisi {
   const BugunKartiVerisi({
     required this.birincil,
-    required this.ikincil,
-    required this.aylik,
+    required this.hedef,
     this.reel,
-    this.haftalik,
-    this.olay,
+    this.kapaliSoylenir = false,
   });
+
+  /// Günün hareketi ya da "piyasa kapalı"; seri yoksa `null`.
   final BugunSatiri? birincil;
-  final List<BugunSatiri> ikincil;
-  final AylikOzetSatiri? aylik;
 
-  /// Sabit satırlar (dönüşüm dışı); veri yoksa null.
+  /// Hedef her gün, her kapsamda (2026-09-30, kullanıcı bulgusu "hedef
+  /// belirle kısmı kaybolmuş"): hedef belirlemenin tek giriş noktası.
+  final HedefSatiri hedef;
+
+  /// Enflasyon kıyası; veri yoksa null.
   final ReelGetiriSatiri? reel;
-  final HaftalikOzetSatiri? haftalik;
 
-  /// Ufuktaki en yakın ulusal olay — kartın AYAK NOTU (2026-09-21 almanak
-  /// düzeni). Eskiden dönüşüm havuzundaydı; bir tarih "bazı günler görünen"
-  /// bir şey olamaz, kalan gün sayısı her gün değişir ve her gün okunur.
-  final YaklasanOlaySatiri? olay;
-
-  bool get bos =>
-      birincil == null &&
-      ikincil.isEmpty &&
-      aylik == null &&
-      reel == null &&
-      haftalik == null &&
-      olay == null;
+  /// Seans dışında "Piyasa kapalı" denebilir mi? Yalnızca portföy TAMAMEN
+  /// borsa ürünüyse (kullanıcı kararı 2026-10-01, bkz. `yalnizcaBorsa`).
+  /// Karışık portföyde altın/döviz/kripto hafta sonu ve gece de işler;
+  /// başlık orada kapalılık değil canlılık söyler.
+  final bool kapaliSoylenir;
 }
 
 abstract final class BugunService {
   /// BIST sürekli işlem: 10:00 – 18:00 (yarım günde 12:30).
   static const seansAcilisDk = 10 * 60;
   static const seansKapanisDk = 18 * 60;
-
-  /// Yaklaşan olay ufku (gün).
-  static const olayUfkuGun = 10;
-
-  /// Aylık özet girişinin göründüğü günler: ayın 1–3'ü.
-  static const aylikOzetGunSayisi = 3;
-
-  /// Kartta aynı anda gösterilen içgörü sayısı.
-  static const ikincilSayisi = 2;
 
   /// Bir işlem günü mü (hafta içi ve tatil değil)?
   static bool islemGunuMu(DateTime t) =>
@@ -205,134 +147,42 @@ abstract final class BugunService {
     return bugunAcilis.add(const Duration(days: 1));
   }
 
-  /// Ufuk içindeki ulusal olaylar, tarihe göre sıralı.
-  static List<YaklasanOlaySatiri> yaklasanOlaylar(DateTime now,
-      {int ufuk = olayUfkuGun}) {
-    final bugun = dayKey(now);
-    final out = <YaklasanOlaySatiri>[];
-
-    // TÜİK: bu ayın 3'ü geçmediyse o, geçtiyse gelecek ayın 3'ü.
-    var tuik = DateTime(now.year, now.month, 3, 10);
-    if (now.isAfter(tuik)) tuik = DateTime(now.year, now.month + 1, 3, 10);
-    final tuikGun = dayKey(tuik);
-    final tuikKalan = tuikGun.difference(bugun).inDays;
-    if (tuikKalan >= 0 && tuikKalan <= ufuk) {
-      out.add(YaklasanOlaySatiri(
-          tur: BugunOlayTuru.tuikAciklamasi, tarih: tuik, gunKaldi: tuikKalan));
-    }
-
-    // BIST tatili: hafta içine düşen ilk tatil.
-    for (var i = 0; i <= ufuk; i++) {
-      final g = DateTime(bugun.year, bugun.month, bugun.day + i);
-      if (g.weekday < DateTime.saturday && BistTakvimi.tatilMi(g)) {
-        out.add(YaklasanOlaySatiri(
-            tur: BugunOlayTuru.bistTatili, tarih: g, gunKaldi: i));
-        break;
-      }
-    }
-
-    // Ay sonu: son 3 gün.
-    final aySonu = DateTime(now.year, now.month + 1, 0);
-    final aySonuKalan = aySonu.difference(bugun).inDays;
-    if (aySonuKalan >= 0 && aySonuKalan <= 2) {
-      out.add(YaklasanOlaySatiri(
-          tur: BugunOlayTuru.aySonu, tarih: aySonu, gunKaldi: aySonuKalan));
-    }
-
-    out.sort((a, b) => a.gunKaldi.compareTo(b.gunKaldi));
-    return out;
-  }
-
   /// Kartı kurar.
   ///
-  /// [karZararlar]: açık pozisyonların ömürlük kâr/zararı (TRY) — yeşil oran
-  /// için. [ozet] gün içi seri henüz gelmediyse `null`; o zaman birincil satır
+  /// [ozet] gün içi seri henüz gelmediyse `null`; o zaman birincil satır
   /// yalnızca "piyasa kapalı" olabilir.
   ///
-  /// Dönüşüm: içgörü adayları günün tarihine göre kaydırılır ki iki ardışık
-  /// günde aynı satır aynı sırada çıkmasın. Tarihe bağlı olması bilinçli —
-  /// rastgele olsaydı aynı gün içinde her açılışta değişir, "az önce
-  /// gördüğüm neredeydi" sorusu doğardı. Hedef satırı dönüşüme girmez
-  /// (tek giriş noktası; bkz. `hedef` gerekçesi).
+  /// [hedefTRY] çağıranın seçtiği KAPSAMIN hedefidir (`kapsamHedefiProvider`,
+  /// 2026-09-30); kendi hedefin birleşik toplama karşı ölçülmez. Piyasa
+  /// hareketi ve reel getiri kapsamdan bağımsız hesaplanır.
   ///
-  /// [kisisel] (2026-09-21, kart kapsamı izler): kart Ortak / Birlikte
-  /// görünümünde o kapsamın defteriyle kurulur; orada aylık özet girişi
-  /// üretilmez — kendi recap ekranına gider. Hedef 2026-09-30'dan beri
-  /// her kapsamda: [hedefTRY] çağıranın seçtiği KAPSAMIN hedefidir
-  /// (`kapsamHedefiProvider`), kendi hedefin birleşik toplama karşı
-  /// ölçülmez. Eskiden hedef de kişisel satırdı ve kart Birlikte'ye
-  /// geçince kayboluyordu (kullanıcı bulgusu "hala arada kayboluyor").
-  /// Piyasa hareketi, artıdaki varlık, reel getiri, haftalık ve ulusal
-  /// takvim kapsamdan bağımsız hesaplanır, hepsi kalır.
+  /// 2026-10-08: dönüşümlü içgörü havuzu (artıdaki varlık, son 7 gün),
+  /// aylık özet girişi ve yaklaşan olay ayak notu kalktı — H düzeni
+  /// (2026-10-04) onları çizmiyordu; o bilgiler Performans › Özet'te.
   static BugunKartiVerisi hesapla({
-    required List<double> karZararlar,
     required double toplamDeger,
     required DailySummary? ozet,
     required int hedefTRY,
     required DateTime now,
     ReelGetiriSatiri? reel,
-    double? haftalikGetiriPct,
-    bool kisisel = true,
+    bool yalnizcaBorsa = false,
   }) {
     BugunSatiri? birincil;
     if (ozet != null && ozet.hasChange) {
       birincil = GunlukDegisimSatiri(
           changeTRY: ozet.changeTRY!, changePct: ozet.changePct!);
-    } else if (!seansAcikMi(now)) {
+    } else if (yalnizcaBorsa && !seansAcikMi(now)) {
+      // Yalnızca borsa portföyü: rakam gerçekten donuk, "kapalı" doğru.
+      // Karışık portföyde bu satır YOK (2026-10-01) — altın/kripto işlerken
+      // "Piyasa kapalı" demek yanlış bilgidir; seri gelince hareket çizilir.
       birincil = PiyasaKapaliSatiri(sonrakiAcilis: sonrakiAcilis(now));
     }
 
-    final adaylar = <BugunSatiri>[];
-    if (karZararlar.isNotEmpty) {
-      adaylar.add(YesilOranSatiri(
-        yesil: karZararlar.where((k) => k > 0).length,
-        toplam: karZararlar.length,
-      ));
-    }
-    // Hedef havuza GİRMEZ, sabit satırdır (2026-09-30, kullanıcı bulgusu
-    // "hedef belirle kısmı kaybolmuş"): hedef belirleme/düzenlemenin tek
-    // giriş noktası bu satır. Havuzdayken Çarşamba'dan sonra haftalık da
-    // havuza girince 3 aday 2 yuvaya düşüyor, bazı günler hedef dönüşümle
-    // gizleniyor ve o gün hedef belirlemek imkânsız oluyordu. Dönüşüm artık
-    // kalan yuvalarda; hedef her gün en altta, yeri değişmez.
-    final hedef = HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger);
-    // Olay havuza girmez — ayak notu (bkz. `BugunKartiVerisi.olay`).
-    final olaylar = yaklasanOlaylar(now);
-
-    // Haftalık: Pazartesi–Salı sabit satır (özet taze), sonra havuzda.
-    HaftalikOzetSatiri? haftalik;
-    if (haftalikGetiriPct != null) {
-      final satir = HaftalikOzetSatiri(getiriPct: haftalikGetiriPct);
-      if (now.weekday <= DateTime.tuesday) {
-        haftalik = satir;
-      } else {
-        adaylar.add(satir);
-      }
-    }
-
-    final ikincil = <BugunSatiri>[];
-    final donenYuva = ikincilSayisi - 1;
-    if (adaylar.isNotEmpty) {
-      final bas = now.difference(DateTime(now.year)).inDays % adaylar.length;
-      for (var i = 0;
-          i < adaylar.length && ikincil.length < donenYuva;
-          i++) {
-        ikincil.add(adaylar[(bas + i) % adaylar.length]);
-      }
-    }
-    ikincil.add(hedef);
-
-    final aylik = kisisel && now.day <= aylikOzetGunSayisi
-        ? AylikOzetSatiri(ay: DateTime(now.year, now.month - 1, 1))
-        : null;
-
     return BugunKartiVerisi(
       birincil: birincil,
-      ikincil: ikincil,
-      aylik: aylik,
+      hedef: HedefSatiri(hedefTRY: hedefTRY, deger: toplamDeger),
       reel: reel,
-      haftalik: haftalik,
-      olay: olaylar.isEmpty ? null : olaylar.first,
+      kapaliSoylenir: yalnizcaBorsa,
     );
   }
 }

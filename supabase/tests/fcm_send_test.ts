@@ -14,7 +14,7 @@ type Yakalanan = { url: string; body: Record<string, unknown> };
 
 async function gonder(
   yanit: { status: number; text: string },
-  ekstra: { priority?: 'high' | 'normal'; badge?: number } = {},
+  ekstra: { priority?: 'high' | 'normal'; badge?: number; gorselUrl?: string } = {},
 ): Promise<{ yakalanan: Yakalanan; sonuc: Awaited<ReturnType<typeof sendFcmNotification>> }> {
   const orijinal = globalThis.fetch;
   let yakalanan: Yakalanan | undefined;
@@ -117,4 +117,27 @@ Deno.test('başarısız gönderim hataKodu taşır', async () => {
   });
   assertEquals(sonuc.ok, false);
   if (!sonuc.ok) assertEquals(sonuc.hataKodu, 'INVALID_ARGUMENT');
+});
+
+// ── 0092: bildirim kartı ────────────────────────────────────────────────────
+//
+// Kullanıcı kuralı (2026-10-01): eski sürümlere giden gövde DEĞİŞMEZ.
+// `gorselUrl` yokken tek bir yeni alan bile eklenmemeli.
+
+Deno.test('kartsız gövde eskisiyle birebir: image / mutable-content / fcm_options yok', async () => {
+  const { yakalanan } = await gonder({ status: 200, text: '{}' });
+  const m = mesaj(yakalanan);
+  assertEquals(m.notification, { title: 'Başlık', body: 'Gövde' });
+  assertEquals(m.apns.payload, { aps: { sound: 'default' } });
+  assertEquals('fcm_options' in m.apns, false);
+  assertEquals('image' in m.android.notification, false);
+});
+
+Deno.test('kartlı gövde: Android notification.image, iOS mutable-content + fcm_options', async () => {
+  const url = 'https://p.supabase.co/functions/v1/bildirim-karti?d=x&s=y';
+  const { yakalanan } = await gonder({ status: 200, text: '{}' }, { gorselUrl: url, badge: 3 });
+  const m = mesaj(yakalanan);
+  assertEquals(m.notification, { title: 'Başlık', body: 'Gövde', image: url });
+  assertEquals(m.apns.payload.aps, { sound: 'default', badge: 3, 'mutable-content': 1 });
+  assertEquals(m.apns.fcm_options, { image: url });
 });

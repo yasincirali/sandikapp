@@ -10,6 +10,8 @@ import '../models/position.dart';
 import '../models/sozlesme.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
+import 'bes_dagilim_editoru.dart';
+import 'sandik_async_button.dart';
 import 'sozlesme_formu_ortak.dart';
 import '../services/bes_hesabi.dart';
 import '../services/crash_reporter.dart';
@@ -45,7 +47,7 @@ class SozlesmeKarti extends ConsumerWidget {
     final lotlar = [
       for (final a in ref.watch(portfolioProvider).valueOrNull?.assets ??
           const <Asset>[])
-        if (a.sozlesmeId == id && a.isActive) a,
+        if (sozlesmeLotuMu(a, s) && a.isActive) a,
     ];
     final govde = s.tur == SozlesmeTuru.mevduat
         ? _MevduatGovdesi(s: s, donemler: sd!.donemleri(id), lotlar: lotlar)
@@ -89,44 +91,66 @@ class _Baslik extends StatelessWidget {
 
 /// Kart içi eylem düğmesi.
 class _Eylem extends StatelessWidget {
-  const _Eylem({required this.metin, required this.bas, this.birincil = false});
+  const _Eylem({
+    required this.metin,
+    this.bas,
+    this.isle,
+    this.birincil = false,
+  }) : assert((bas == null) != (isle == null), 'bas YA DA isle');
   final String metin;
-  final VoidCallback bas;
+
+  /// Eşzamanlı eylem (form doğrula + kapat).
+  final VoidCallback? bas;
+
+  /// İstek atan eylem (tek yükleniyor davranışı, 2026-10-08): düğme
+  /// [SandikAsyncButton.kompakt] olur — iş sürerken pasif, etiketin yerinde
+  /// gösterge, ikinci dokunuş yutulur. Görünüş [bas] ile birebir aynı.
+  final Future<void> Function()? isle;
   final bool birincil;
 
   @override
   // En az 44pt, üstü serbest: büyük metin ölçeğinde etiket iki satıra
   // sarabilsin (sabit yükseklik metni kırpardı).
-  Widget build(BuildContext context) => ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: SandikTouch.min),
-        child: birincil
-            ? FilledButton(
-                onPressed: bas,
-                style: FilledButton.styleFrom(
-                  backgroundColor: context.c.amberFill,
-                  foregroundColor: context.c.onAmber,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: SandikRadius.mdAll),
-                ),
-                child: Text(metin,
-                    textAlign: TextAlign.center,
-                    style: context.t.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-              )
-            : OutlinedButton(
-                onPressed: bas,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: context.c.text90,
-                  side: BorderSide(color: context.c.hairline),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: SandikRadius.mdAll),
-                ),
-                child: Text(metin,
-                    textAlign: TextAlign.center,
-                    style: context.t.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-              ),
-      );
+  Widget build(BuildContext context) {
+    final stil = birincil
+        ? FilledButton.styleFrom(
+            backgroundColor: context.c.amberFill,
+            foregroundColor: context.c.onAmber,
+            shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+          )
+        : OutlinedButton.styleFrom(
+            foregroundColor: context.c.text90,
+            side: BorderSide(color: context.c.hairline),
+            shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
+          );
+    final etiket = birincil
+        // Renk açıkça `onAmber`: `bodyMedium` kendi rengini (`text90`)
+        // taşır ve `foregroundColor`'ı ezer — koyu temada amber üstüne
+        // beyaz 1,87:1 kalıyordu (açık tema denetimi 2026-10-08).
+        ? Text(metin,
+            textAlign: TextAlign.center,
+            style: context.t.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w800, color: context.c.onAmber))
+        : Text(metin,
+            textAlign: TextAlign.center,
+            style:
+                context.t.bodyMedium?.copyWith(fontWeight: FontWeight.w700));
+    final isle = this.isle;
+    final Widget dugme = isle != null
+        ? SandikAsyncButton.kompakt(
+            tur: birincil ? SandikAsyncTur.dolu : SandikAsyncTur.cerceve,
+            style: stil,
+            onPressed: isle,
+            child: etiket,
+          )
+        : birincil
+            ? FilledButton(onPressed: bas, style: stil, child: etiket)
+            : OutlinedButton(onPressed: bas, style: stil, child: etiket);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: SandikTouch.min),
+      child: dugme,
+    );
+  }
 }
 
 // ── Mevduat ──────────────────────────────────────────────────────────────
@@ -147,8 +171,15 @@ class _MevduatGovdesi extends ConsumerWidget {
     final pozisyon = aggregatePositions(lotlar);
     final pay = pozisyon.fold<double>(0, (t, p) => t + p.totalQuantity);
     final bugun = MevduatHesabi.birimDeger(donemler, simdi) ?? 0;
-    final donemBasi = MevduatHesabi.birimDeger(donemler, son.baslangic) ?? 0;
-    final buDonem = pay * (bugun - donemBasi);
+    final buDonem = MevduatHesabi.donemKazanci(
+      donemler,
+      [
+        for (final a in lotlar)
+          if (a.isBuy || a.isSell)
+            (a.addedDate, a.isSell ? -a.quantity : a.quantity),
+      ],
+      simdi,
+    );
     final doldu = MevduatHesabi.vadesiDoldu(donemler, simdi);
     final kalan = MevduatHesabi.vadeyeKalanGun(donemler, simdi);
     final ilerleme = MevduatHesabi.donemIlerlemesi(donemler, simdi);
@@ -158,6 +189,12 @@ class _MevduatGovdesi extends ConsumerWidget {
         : pay * (MevduatHesabi.birimDeger(donemler, vade) ?? 0);
     final tarih = DateFormat.yMMMd(l10n.localeName);
     final acik = s.acik && pay > 1e-9;
+    // Vadeli dönem, vadesi dolmamış: değer anaparada düz, faiz vade sonunda
+    // eklenecek (kullanıcı kararı 2026-10-02). Kazanç "beklenen" olarak
+    // gösterilir; "Bu dönem net" ₺0 yazıp kullanıcıyı korkutmaz.
+    final vadeIci = !son.vadesiz && !doldu;
+    final beklenen =
+        vadeIci ? MevduatHesabi.vadeSonuNetFaizi(donemler, pay) : null;
 
     return SandikCard(
       child: Column(
@@ -171,21 +208,31 @@ class _MevduatGovdesi extends ConsumerWidget {
                 : l10n.depositPeriodN(MevduatHesabi.donemSayisi(donemler)),
           ),
           const SizedBox(height: SandikSpace.smd),
+          // Formun alan etiketleri ("Yıllık faiz (brüt, %)", "Stopaj (%)")
+          // kartta "42 · Stopaj (%) 12" diye okunuyordu (2026-10-01
+          // emülatör testi); kartın kendi etiketi ve değer kalıbı var.
           SozlesmeOzetSatiri(
-            etiket: l10n.depositRate,
-            deger: '${fmtNumFlex(son.yillikFaiz, maxDigits: 2)} · '
-                '${l10n.depositWithholding} '
-                '${fmtNumFlex(son.stopaj, maxDigits: 2)}',
+            etiket: l10n.depositCardRate,
+            deger: l10n.depositCardRateValue(
+                fmtNumFlex(son.yillikFaiz, maxDigits: 2),
+                fmtNumFlex(son.stopaj, maxDigits: 2)),
           ),
           if (vade != null)
             SozlesmeOzetSatiri(
                 etiket: l10n.depositMaturity, deger: tarih.format(vade)),
           if (acik) ...[
-            SozlesmeOzetSatiri(
-              etiket: l10n.depositThisPeriod,
-              deger: '+${fmtTRY(buDonem, digits: 2)}',
-              renk: context.c.gain,
-            ),
+            if (beklenen != null)
+              SozlesmeOzetSatiri(
+                etiket: l10n.depositInterestAtMaturity,
+                deger: '+${fmtTRY(beklenen, digits: 2)}',
+                renk: context.c.gain,
+              )
+            else
+              SozlesmeOzetSatiri(
+                etiket: l10n.depositThisPeriod,
+                deger: '+${fmtTRY(buDonem, digits: 2)}',
+                renk: context.c.gain,
+              ),
             if (vadeDegeri != null && !doldu)
               SozlesmeOzetSatiri(
                 etiket: l10n.depositAtMaturity,
@@ -212,6 +259,7 @@ class _MevduatGovdesi extends ConsumerWidget {
                         ?.copyWith(color: context.c.text58)),
               ),
           ],
+          if (vadeIci && acik) SozlesmeNotu(l10n.depositPaidAtMaturityNote),
           if (doldu && acik) ...[
             const SizedBox(height: SandikSpace.smd),
             Container(
@@ -240,19 +288,26 @@ class _MevduatGovdesi extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
+                  // Vade içinde "Yenile" yerine "Oranı güncelle": banka vade
+                  // içinde faizi değiştirdiyse dönem aynı kalır, vade
+                  // sonundaki kazanç yeni orana göre çıkar (2026-10-02).
                   child: _Eylem(
-                    metin: son.vadesiz
+                    metin: son.vadesiz || vadeIci
                         ? l10n.depositRateUpdate
                         : l10n.depositRenew,
                     birincil: doldu,
-                    bas: () => _yenile(context, ref, son),
+                    // Sayfa açıkken de kilitli: ikinci dokunuş ikinci sayfa
+                    // açmaz; istek sayfa kapanınca bu düğmede döner.
+                    isle: () => vadeIci
+                        ? _faizGuncelle(context, ref, son)
+                        : _yenile(context, ref, son),
                   ),
                 ),
                 const SizedBox(width: SandikSpace.sm),
                 Expanded(
                   child: _Eylem(
                     metin: l10n.depositWithdraw,
-                    bas: () => _cek(context, ref, pay * bugun),
+                    isle: () => _cek(context, ref, pay * bugun),
                   ),
                 ),
               ],
@@ -267,7 +322,7 @@ class _MevduatGovdesi extends ConsumerWidget {
       BuildContext context, WidgetRef ref, MevduatDonemi son) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<_YeniDonem>(
+    final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -288,7 +343,8 @@ class _MevduatGovdesi extends ConsumerWidget {
             sozlesmeId: s.id,
             yillikFaiz: sonuc.faiz,
             stopaj: sonuc.stopaj,
-            vadeGun: sonuc.gun);
+            vadeGun: sonuc.gun,
+            baslangic: sonuc.bas);
       }
       if (context.mounted) {
         sandikSnack(context,
@@ -303,38 +359,84 @@ class _MevduatGovdesi extends ConsumerWidget {
     }
   }
 
+  /// Vade içinde faiz değişikliği — dönem yerinde güncellenir.
+  Future<void> _faizGuncelle(
+      BuildContext context, WidgetRef ref, MevduatDonemi son) async {
+    if (DemoModu.yazmaKapisi('mevduat')) return;
+    final l10n = context.l10n;
+    final sonuc = await showSandikSheet<_YeniDonem>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (_) => _YenilemeSayfasi(onceki: son, vadeIci: true),
+    );
+    if (sonuc == null || !context.mounted) return;
+    try {
+      await ref.read(sozlesmeProvider.notifier).mevduatFaizGuncelle(
+          sozlesmeId: s.id, yillikFaiz: sonuc.faiz, stopaj: sonuc.stopaj);
+      if (context.mounted) {
+        sandikSnack(
+            context,
+            l10n.depositRateSavedMidTerm(
+                fmtNumFlex(sonuc.faiz, maxDigits: 2)),
+            kind: SandikSnackKind.success);
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.faizGuncelle');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+
   Future<void> _cek(BuildContext context, WidgetRef ref, double deger) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
+    var cekildi = false;
     final onay = await showSandikConfirm(
       context: context,
       title: l10n.depositWithdrawTitle,
       message: l10n.depositWithdrawBody(fmtTRY(deger, digits: 2)),
       confirmLabel: l10n.depositWithdrawConfirm,
       cancelLabel: MaterialLocalizations.of(context).cancelButtonLabel,
+      // Çekim onay düğmesinin İÇİNDE koşar (tek yükleniyor davranışı,
+      // 2026-10-08); hata yolu aynı: Crashlytics + snackbar, diyalog kapanır.
+      islem: () async {
+        try {
+          await ref.read(sozlesmeProvider.notifier).mevduatCek(s.id);
+          cekildi = true;
+        } catch (e, st) {
+          CrashReporter.report(e, st, reason: 'SozlesmeKarti.cek');
+          if (context.mounted) {
+            sandikSnack(context, friendlyError(e),
+                kind: SandikSnackKind.error);
+          }
+        }
+      },
     );
-    if (!onay || !context.mounted) return;
-    try {
-      await ref.read(sozlesmeProvider.notifier).mevduatCek(s.id);
-      if (context.mounted) {
-        sandikSnack(context, l10n.depositWithdrawn,
-            kind: SandikSnackKind.success);
-      }
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'SozlesmeKarti.cek');
-      if (context.mounted) {
-        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
-      }
-    }
+    if (!onay || !cekildi || !context.mounted) return;
+    sandikSnack(context, l10n.depositWithdrawn, kind: SandikSnackKind.success);
+    // Çekilen mevduatın sayfasında kalmanın anlamı yok: sayfa açık
+    // pozisyonu (bugünkü değer ₺100.086) göstermeye devam ediyordu
+    // (2026-10-01 emülatör testi). Portföye dönülür; satır kalkmıştır.
+    await Navigator.of(context).maybePop();
   }
 }
 
-typedef _YeniDonem = ({double faiz, double stopaj, int? gun});
+typedef _YeniDonem = ({double faiz, double stopaj, int? gun, DateTime bas});
 
 /// Yenileme / oran güncelleme sayfası.
 class _YenilemeSayfasi extends StatefulWidget {
-  const _YenilemeSayfasi({required this.onceki});
+  const _YenilemeSayfasi({required this.onceki, this.vadeIci = false});
   final MevduatDonemi onceki;
+
+  /// Vadeli dönemde VADE İÇİ oran değişikliği: yalnız faiz ve stopaj
+  /// sorulur; vade ve başlangıç dönemin kendisidir.
+  final bool vadeIci;
 
   @override
   State<_YenilemeSayfasi> createState() => _YenilemeSayfasiState();
@@ -344,9 +446,37 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
   final _form = GlobalKey<FormState>();
   late final _faiz = TextEditingController(
       text: fmtNumFlex(widget.onceki.yillikFaiz, maxDigits: 2));
-  late final _stopaj = TextEditingController(
-      text: fmtNumFlex(widget.onceki.stopaj, maxDigits: 2));
   late int? _gun = widget.onceki.gun;
+
+  // Yeni dönemin stopajı YENİ dönemin açılış gününde yürürlükteki orandır
+  // (stopaj incelemesi, 2026-10-01). Eskiden alan önceki dönemin oranıyla
+  // açılıyor, öneri yalnızca vade çipine dokununca geliyordu: 2025 Şubat'ta
+  // %15'le açılıp Temmuz'dan sonra aynı vadeyle yenilenen mevduat %17,5
+  // yerine %15'le kaydediliyordu.
+  // Vade içi değişiklikte stopaj dönemin kendi stopajıdır (açılış günü ve
+  // vadeye bağlı; ikisi de değişmiyor).
+  late final _stopaj = TextEditingController(
+      text: fmtNumFlex(
+          widget.vadeIci
+              ? widget.onceki.stopaj
+              : onerilenStopaj(_yeniBaslangic, _gun),
+          maxDigits: 2));
+
+  /// Yeni dönemin başı. Varsayılan `mevduatYenile` ile aynı kural (banka
+  /// vadeli hesabı vade gününde yeniler); kullanıcı değiştirebilir.
+  ///
+  /// Neden seçilebilir (2026-10-01 emülatör testi): 7 ay önce vadesi dolup
+  /// kendisi bugün yenileyen kullanıcı, 32 günlük dönemleri tek tek girmek
+  /// zorunda kalıyordu — her biri yine geçmişte kalıp "vadesi doldu"
+  /// diyordu. Seçilen gün ile eski vade arasındaki günler faizsiz, düz.
+  /// Vadesizde (oran değişikliği) yeni oran bugünden işler, seçim yok.
+  late DateTime _yeniBaslangic = widget.onceki.vadesiz
+      ? dayKey(DateTime.now())
+      : dayKey(widget.onceki.vadeSonu ?? DateTime.now());
+
+  /// Kullanıcı stopajı elle değiştirdiyse vade/tarih değişikliği öneriyi
+  /// üstüne yazmaz (formdaki kural).
+  bool _stopajElle = false;
 
   @override
   void dispose() {
@@ -357,14 +487,20 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
 
   void _gunSec(int g) {
     setState(() => _gun = g);
-    final bas = widget.onceki.vadeSonu ?? DateTime.now();
-    _stopaj.text = fmtNumFlex(onerilenStopaj(bas, g), maxDigits: 2);
+    _stopajOner();
+  }
+
+  void _stopajOner() {
+    if (_stopajElle) return;
+    _stopaj.text =
+        fmtNumFlex(onerilenStopaj(_yeniBaslangic, _gun), maxDigits: 2);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final vadesiz = widget.onceki.vadesiz;
+    final vadeIci = widget.vadeIci;
     final renk = AssetType.mevduat.color;
     return Padding(
       padding: EdgeInsets.only(
@@ -377,7 +513,10 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(vadesiz ? l10n.depositRateUpdate : l10n.depositRenewTitle,
+              Text(
+                  vadesiz || vadeIci
+                      ? l10n.depositRateUpdate
+                      : l10n.depositRenewTitle,
                   style: context.t.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700, color: context.c.text90)),
               const SizedBox(height: SandikSpace.md),
@@ -394,7 +533,8 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                       : null;
                 },
               ),
-              if (!vadesiz) ...[
+              if (vadeIci) SozlesmeNotu(l10n.depositRateMidTermHint),
+              if (!vadesiz && !vadeIci) ...[
                 const SizedBox(height: SandikSpace.md),
                 SozlesmeEtiketi(l10n.depositTerm),
                 Wrap(
@@ -407,6 +547,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                     }.toList()
                       ..sort())
                       SozlesmeCipi(
+                        icerigeGore: true,
                         metin: l10n.depositDays(g),
                         secili: _gun == g,
                         renk: renk,
@@ -415,6 +556,20 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                   ],
                 ),
               ],
+              if (!vadesiz && !vadeIci) ...[
+                const SizedBox(height: SandikSpace.md),
+                SozlesmeTarihi(
+                  etiket: l10n.depositStart,
+                  tarih: _yeniBaslangic,
+                  ilk: dayKey(widget.onceki.baslangic)
+                      .add(const Duration(days: 1)),
+                  degisti: (d) => setState(() {
+                    _yeniBaslangic = dayKey(d);
+                    _stopajOner();
+                  }),
+                ),
+                SozlesmeNotu(l10n.depositRenewStartHint),
+              ],
               const SizedBox(height: SandikSpace.md),
               SozlesmeEtiketi(l10n.depositWithholding),
               SozlesmeAlani(
@@ -422,6 +577,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                 ipucu: '0',
                 sonek: '%',
                 sayi: true,
+                degisti: (_) => _stopajElle = true,
                 dogrula: (v) {
                   final x = parseTrNumber(v ?? '');
                   return x == null || x < 0 || x > 100
@@ -439,6 +595,7 @@ class _YenilemeSayfasiState extends State<_YenilemeSayfasi> {
                     faiz: parseTrNumber(_faiz.text)!,
                     stopaj: parseTrNumber(_stopaj.text)!,
                     gun: vadesiz ? null : _gun,
+                    bas: _yeniBaslangic,
                   ));
                 },
               ),
@@ -502,13 +659,19 @@ class _BesGovdesi extends ConsumerWidget {
     final simdi = DateTime.now();
     final d = besDokumu(s, lotlar, simdi);
     final yil = BesHesabi.tamYil(s.baslangic, simdi) + 1;
-    final sonraki = BesHesabi.sonrakiBasamak(s.baslangic, simdi);
+    final sonraki = BesHesabi.sonrakiBasamakSuresi(s.baslangic, simdi);
     final n = ref.read(sozlesmeProvider.notifier);
+    final katkiTarihleri = n.katkiTarihleri(s.id);
     final katkiBekliyor = BesHesabi.katkiBekleniyor(
       s: s,
       simdi: simdi,
-      katkiTarihleri: n.katkiTarihleri(s.id),
+      katkiTarihleri: katkiTarihleri,
     );
+    final buAyEklendi = BesHesabi.buAyKatkiVar(katkiTarihleri, simdi);
+    // Otomatik yazılan, henüz onaylanmamış katkı (0096). Lotu silindiyse
+    // soru da gösterilmez: düzeltilecek bir şey kalmadı.
+    final bekleyen = s.acik ? n.otomatikKatkiLotlari(s.id) : null;
+    final planTam = s.aylikKatki != null && s.katkiGunu != null;
     final parca = d.toplam <= 0
         ? null
         : (
@@ -573,23 +736,74 @@ class _BesGovdesi extends ConsumerWidget {
             etiket: l10n.pensionVesting,
             deger: sonraki == null
                 ? fmtPct(d.hakEdis, digits: 0)
-                : l10n.pensionVestingNext(fmtPct(d.hakEdis, digits: 0),
-                    sonraki.yil, fmtPct(sonraki.oran, digits: 0)),
+                : sonraki.yil == 0 && sonraki.ay == 0
+                    ? l10n.pensionVestingSoon(fmtPct(d.hakEdis, digits: 0),
+                        fmtPct(sonraki.oran, digits: 0))
+                    : l10n.pensionVestingNextIn(
+                        fmtPct(d.hakEdis, digits: 0),
+                        sonraki.ay == 0
+                            ? l10n.pensionYears(sonraki.yil)
+                            : sonraki.yil == 0
+                                ? l10n.pensionMonths(sonraki.ay)
+                                : l10n.pensionYearsMonths(
+                                    sonraki.yil, sonraki.ay),
+                        fmtPct(sonraki.oran, digits: 0)),
           ),
           if (s.dkFonKodu == null) SozlesmeNotu(l10n.pensionNoGovFund),
           if (s.acik) ...[
-            if (katkiBekliyor) ...[
+            if (bekleyen != null) ...[
+              const SizedBox(height: SandikSpace.smd),
+              _OtomatikKatkiSorusu(
+                gun: s.otomatikKatkiBekleyen!,
+                tutar: bekleyen.tutar,
+                dogru: () => _otomatikOnayla(context, ref),
+                guncelle: () => _otomatikGuncelle(context, ref, bekleyen.tutar),
+              ),
+            ] else if (katkiBekliyor) ...[
+              // Otomatik açıkken de gösterilir: bu ayın katkısı yazılamadıysa
+              // (fiyat yok, ağ yok) kullanıcı elle ekleyebilsin.
               const SizedBox(height: SandikSpace.smd),
               Text(l10n.pensionContributionDue,
                   style: context.t.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: context.c.amberText)),
             ],
+            if (planTam) ...[
+              const SizedBox(height: SandikSpace.sm),
+              MergeSemantics(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.pensionAuto,
+                        style: context.t.bodyMedium?.copyWith(
+                            color: context.c.text90,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: s.otomatikKatki,
+                      activeTrackColor: context.c.amberText,
+                      onChanged: (v) => _otomatikAyarla(context, ref, v),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: SandikSpace.smd),
             _Eylem(
-              metin: l10n.pensionAddContribution,
+              // Düğme kalır (ara katkı yapılabilir) ama ay dolduysa adı
+              // değişir.
+              metin: buAyEklendi
+                  ? l10n.pensionAddExtraContribution
+                  : l10n.pensionAddContribution,
               birincil: katkiBekliyor,
-              bas: () => _katkiEkle(context, ref),
+              isle: () => _katkiEkle(context, ref),
+            ),
+            const SizedBox(height: SandikSpace.sm),
+            _Eylem(
+              metin: l10n.pensionSwitchFunds,
+              isle: () => _fonDegistir(context, ref),
             ),
           ],
         ],
@@ -602,7 +816,7 @@ class _BesGovdesi extends ConsumerWidget {
     final l10n = context.l10n;
     final n = ref.read(sozlesmeProvider.notifier);
     final simdi = DateTime.now();
-    final sonuc = await showModalBottomSheet<({double tutar, double dk})>(
+    final sonuc = await showSandikSheet<({double tutar, double dk})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -641,6 +855,373 @@ class _BesGovdesi extends ConsumerWidget {
         sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
       }
     }
+  }
+}
+
+/// Kendi birikiminin bugünkü dağılımı (değer oranı, %) — "Fon değiştir"
+/// sayfası bununla açılır. Devlet katkısı hariç.
+List<FonPayi> besBugunkuDagilim(List<Asset> lotlar) {
+  final p = [
+    for (final x in aggregatePositions(lotlar))
+      if (x.representative.subCategory != BesAltKategori.devletKatkisi) x,
+  ];
+  final toplam = p.fold<double>(0, (t, x) => t + x.totalValue);
+  if (toplam <= 0) return const [];
+  return [
+    for (final x in p)
+      FonPayi(
+        kod: x.representative.ticker.replaceFirst(tefasOneki, ''),
+        // Tam sayıya yuvarlanır (talimatlar tam yüzdeyle verilir); son fon
+        // kalanı alır ki toplam %100 olsun.
+        oran: (x.totalValue / toplam * 100).roundToDouble(),
+      ),
+  ]..sort((a, b) => b.oran.compareTo(a.oran));
+}
+
+/// "Katkın otomatik eklendi, tutarı güncellemek ister misin?" (0096).
+class _OtomatikKatkiSorusu extends StatelessWidget {
+  const _OtomatikKatkiSorusu({
+    required this.gun,
+    required this.tutar,
+    required this.dogru,
+    required this.guncelle,
+  });
+  final DateTime gun;
+  final double tutar;
+  final Future<void> Function() dogru;
+  final Future<void> Function() guncelle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(SandikSpace.smd),
+      decoration: BoxDecoration(
+        color: context.c.amberFill.withValues(alpha: 0.12),
+        borderRadius: SandikRadius.mdAll,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.pensionAutoAdded(
+                DateFormat.MMMMd(l10n.localeName).format(gun), fmtTRY(tutar)),
+            style: context.t.bodySmall?.copyWith(
+                color: context.c.text90, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: SandikSpace.smd),
+          Row(
+            children: [
+              Expanded(
+                  child: _Eylem(metin: l10n.pensionAutoConfirm, isle: dogru)),
+              const SizedBox(width: SandikSpace.sm),
+              Expanded(
+                child: _Eylem(
+                    metin: l10n.pensionAutoUpdate,
+                    birincil: true,
+                    isle: guncelle),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Otomatik katkı eylemleri — sayılar `SozlesmeNotifier`'da.
+extension on _BesGovdesi {
+  Future<void> _otomatikAyarla(
+      BuildContext context, WidgetRef ref, bool acik) async {
+    if (DemoModu.yazmaKapisi('bes')) return;
+    try {
+      await ref.read(sozlesmeProvider.notifier).otomatikKatkiAyarla(s.id, acik);
+      if (!acik || !context.mounted) return;
+      // Açıldığı an bu ayın günü geçmişse hemen yazılsın; beklemesin.
+      final l10n = context.l10n;
+      final devletEtiketi = l10n.pensionGovShort;
+      await ref.read(sozlesmeProvider.notifier).otomatikKatkilariIsle(
+            adUret: (x, kod, {required devlet}) => devlet
+                ? '${x.kurum} · $kod · $devletEtiketi'
+                : '${x.kurum} · $kod',
+            not: l10n.pensionAutoLotNote,
+          );
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.otomatikAyarla');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+
+  Future<void> _otomatikOnayla(BuildContext context, WidgetRef ref) async {
+    if (DemoModu.yazmaKapisi('bes')) return;
+    try {
+      await ref.read(sozlesmeProvider.notifier).otomatikKatkiOnayla(s.id);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.otomatikOnayla');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+
+  Future<void> _otomatikGuncelle(
+      BuildContext context, WidgetRef ref, double tutar) async {
+    if (DemoModu.yazmaKapisi('bes')) return;
+    final l10n = context.l10n;
+    final sonuc = await showSandikSheet<({double tutar, bool plan})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (_) => _OtomatikGuncelleSayfasi(tutar: tutar),
+    );
+    if (sonuc == null || !context.mounted) return;
+    try {
+      await ref.read(sozlesmeProvider.notifier).otomatikKatkiGuncelle(
+            sozlesmeId: s.id,
+            yeniTutar: sonuc.tutar,
+            planiDa: sonuc.plan,
+          );
+      if (context.mounted) {
+        sandikSnack(context, l10n.pensionAutoUpdated,
+            kind: SandikSnackKind.success);
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.otomatikGuncelle');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+}
+
+/// Otomatik yazılan katkının tutarı: yeni tutar + "sonraki aylar da".
+class _OtomatikGuncelleSayfasi extends StatefulWidget {
+  const _OtomatikGuncelleSayfasi({required this.tutar});
+  final double tutar;
+
+  @override
+  State<_OtomatikGuncelleSayfasi> createState() =>
+      _OtomatikGuncelleSayfasiState();
+}
+
+class _OtomatikGuncelleSayfasiState extends State<_OtomatikGuncelleSayfasi> {
+  final _form = GlobalKey<FormState>();
+  late final _tutar =
+      TextEditingController(text: fmtNumFlex(widget.tutar, maxDigits: 2));
+  // Varsayılan açık: tutar değiştiyse çoğunlukla talimat değişmiştir.
+  bool _plan = true;
+
+  @override
+  void dispose() {
+    _tutar.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(SandikSpace.lgs),
+        child: Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.pensionAutoUpdateTitle,
+                  style: context.t.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700, color: context.c.text90)),
+              const SizedBox(height: SandikSpace.md),
+              SozlesmeEtiketi(l10n.pensionContributionAmount),
+              SozlesmeAlani(
+                controller: _tutar,
+                ipucu: '0',
+                sonek: '₺',
+                sayi: true,
+                dogrula: (v) {
+                  final x = parseTrNumber(v ?? '');
+                  return x == null || x <= 0 ? l10n.depositErrorPrincipal : null;
+                },
+              ),
+              const SizedBox(height: SandikSpace.smd),
+              MergeSemantics(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.pensionAutoUpdatePlan,
+                        style: context.t.bodyMedium
+                            ?.copyWith(color: context.c.text90),
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: _plan,
+                      activeTrackColor: context.c.amberText,
+                      onChanged: (v) => setState(() => _plan = v),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: SandikSpace.lg),
+              _Eylem(
+                metin: l10n.save,
+                birincil: true,
+                bas: () {
+                  if (!(_form.currentState?.validate() ?? false)) return;
+                  Navigator.of(context)
+                      .pop((tutar: parseTrNumber(_tutar.text)!, plan: _plan));
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+extension on _BesGovdesi {
+  Future<void> _fonDegistir(BuildContext context, WidgetRef ref) async {
+    if (DemoModu.yazmaKapisi('bes')) return;
+    final l10n = context.l10n;
+    final n = ref.read(sozlesmeProvider.notifier);
+    var bugunku = besBugunkuDagilim(lotlar);
+    if (bugunku.isNotEmpty) {
+      final digerleri = bugunku
+          .skip(1)
+          .fold<double>(0, (t, f) => t + f.oran);
+      bugunku = [
+        FonPayi(kod: bugunku.first.kod, oran: 100 - digerleri),
+        ...bugunku.skip(1),
+      ];
+    }
+    final sonuc =
+        await showSandikSheet<({List<FonPayi> dagilim, bool katki})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.c.surface2,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
+      ),
+      builder: (_) => _FonDegisimSayfasi(
+        bugunku: bugunku,
+        buYil: n.buYilFonDegisikligi(s.id, DateTime.now().year),
+      ),
+    );
+    if (sonuc == null || !context.mounted) return;
+    final kurum = s.kurum;
+    final devletEtiketi = l10n.pensionGovShort;
+    try {
+      final yazilan = await n.besFonDegistir(
+        sozlesmeId: s.id,
+        yeniDagilim: sonuc.dagilim,
+        katkiTalimatiDa: sonuc.katki,
+        adUret: (kod, {required devlet}) =>
+            devlet ? '$kurum · $kod · $devletEtiketi' : '$kurum · $kod',
+        not: l10n.pensionSwitchNote,
+      );
+      if (context.mounted) {
+        sandikSnack(
+            context,
+            yazilan == 0 && !sonuc.katki
+                ? l10n.pensionSwitchSame
+                : l10n.pensionSwitchSaved,
+            kind: SandikSnackKind.success);
+      }
+    } on BesFiyatYokException catch (e) {
+      if (context.mounted) {
+        sandikSnack(context, l10n.pensionPriceMissing(e.kod),
+            kind: SandikSnackKind.error);
+      }
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SozlesmeKarti.fonDegistir');
+      if (context.mounted) {
+        sandikSnack(context, friendlyError(e), kind: SandikSnackKind.error);
+      }
+    }
+  }
+}
+
+class _FonDegisimSayfasi extends StatefulWidget {
+  const _FonDegisimSayfasi({required this.bugunku, required this.buYil});
+  final List<FonPayi> bugunku;
+  final int buYil;
+
+  @override
+  State<_FonDegisimSayfasi> createState() => _FonDegisimSayfasiState();
+}
+
+class _FonDegisimSayfasiState extends State<_FonDegisimSayfasi> {
+  final _editor = GlobalKey<BesDagilimEditoruState>();
+  bool _katkiDa = true;
+  String? _hata;
+
+  void _kaydet() {
+    final l10n = context.l10n;
+    final d = _editor.currentState?.dagilim ?? const <FonPayi>[];
+    final hata = d.isEmpty
+        ? l10n.pensionFundError
+        : !BesHesabi.dagilimGecerli(d)
+            ? l10n.pensionShareError
+            : null;
+    if (hata != null) {
+      setState(() => _hata = hata);
+      return;
+    }
+    Navigator.of(context).pop((dagilim: d, katki: _katkiDa));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(SandikSpace.lgs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(l10n.pensionSwitchTitle,
+                style: context.t.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700, color: context.c.text90)),
+            SozlesmeNotu(l10n.pensionSwitchHint),
+            const SizedBox(height: SandikSpace.md),
+            BesDagilimEditoru(
+              key: _editor,
+              baslangic: widget.bugunku,
+              hata: _hata,
+              degisti: () {
+                if (_hata != null) setState(() => _hata = null);
+              },
+            ),
+            CheckboxListTile(
+              value: _katkiDa,
+              onChanged: (v) => setState(() => _katkiDa = v ?? true),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: Text(l10n.pensionSwitchContributions,
+                  style: context.t.bodyMedium
+                      ?.copyWith(color: context.c.text90)),
+            ),
+            SozlesmeNotu(l10n.pensionSwitchCount(widget.buYil)),
+            const SizedBox(height: SandikSpace.lg),
+            _Eylem(metin: l10n.save, birincil: true, bas: _kaydet),
+          ],
+        ),
+      ),
+    );
   }
 }
 
