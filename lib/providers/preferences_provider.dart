@@ -704,10 +704,15 @@ class IndicatorPrefsNotifier extends Notifier<Map<AssetType, Set<String>>> {
     await _syncSignalPreferenceWith(ref.read, type);
   }
 
-  Future<void> setForType(AssetType type, Set<String> ids) async {
+  /// [senkron] false: yalnız yerel yazılır. Ön ayar (`sinyalOnAyariUygula`)
+  /// eşik + gösterge + sıklığı art arda yazar; her biri ayrı upsert atarsa
+  /// 8 tür × 4 yazma = 32 istek olurdu. Orada sunucuya tür başına BİR kez,
+  /// en sonda yazılır.
+  Future<void> setForType(AssetType type, Set<String> ids,
+      {bool senkron = true}) async {
     state = {...state, type: ids};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Sunucudan gelen değeri yerele uygular.
@@ -843,11 +848,13 @@ class SignalThresholdNotifier extends Notifier<Map<AssetType, int>> {
     } catch (_) {}
   }
 
-  Future<void> setForType(AssetType type, int threshold) async {
+  /// [senkron]: bkz. `IndicatorPrefsNotifier.setForType`.
+  Future<void> setForType(AssetType type, int threshold,
+      {bool senkron = true}) async {
     if (!kSignalThresholdOptions.contains(threshold)) return;
     state = {...state, type: threshold};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Sunucudan gelen eşiği yerele uygular (geri yazmaz).
@@ -956,7 +963,10 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
   /// mevcut saat sayısı uymuyorsa makul bir varsayılan atanır — kullanıcı
   /// "günde 2"den "günde 1"e geçince elde 2 saat kalması sunucuda
   /// tutarsızlık yaratırdı.
-  Future<void> setFrequency(AssetType type, SignalFrequency freq) async {
+  ///
+  /// [senkron]: bkz. `IndicatorPrefsNotifier.setForType`.
+  Future<void> setFrequency(AssetType type, SignalFrequency freq,
+      {bool senkron = true}) async {
     final mevcut = state[type] ?? kDefaultSchedule;
     var hours = mevcut.hours;
     if (freq.needsHourPicker && hours.length != freq.hourCount) {
@@ -964,11 +974,14 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
     }
     state = {...state, type: (frequency: freq, hours: hours)};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Seçilen saatleri değiştirir. Pencere dışındaki saatler yok sayılır.
-  Future<void> setHours(AssetType type, List<int> hours) async {
+  ///
+  /// [senkron]: bkz. `IndicatorPrefsNotifier.setForType`.
+  Future<void> setHours(AssetType type, List<int> hours,
+      {bool senkron = true}) async {
     final temiz = hours
         .where((h) => h >= kSignalWindowStart && h <= kSignalWindowEnd)
         .toSet()
@@ -978,7 +991,7 @@ class SignalScheduleNotifier extends Notifier<Map<AssetType, SignalSchedule>> {
     final mevcut = state[type] ?? kDefaultSchedule;
     state = {...state, type: (frequency: mevcut.frequency, hours: temiz)};
     await _persist();
-    await _syncSignalPreferenceWith(ref.read, type);
+    if (senkron) await _syncSignalPreferenceWith(ref.read, type);
   }
 
   /// Sunucudan gelen değeri yerele uygular (geri yazmaz).
@@ -1032,6 +1045,15 @@ Future<void> syncNeutralPushPreference(WidgetRef ref) async {
 /// kalırsa kullanıcı bildirimleri kapatsa bile sunucu göndermeye devam eder.
 Future<void> syncSignalsEnabledPreference(WidgetRef ref) async {
   for (final type in AssetType.values) {
+    await _syncSignalPreferenceWith(ref.read, type);
+  }
+}
+
+/// Verilen türlerin sinyal satırlarını sunucuya yazar — yerel yazmaları
+/// `senkron: false` ile toplayan çağıranlar için (sinyal ön ayarı).
+Future<void> syncSignalPreferencesFor(
+    WidgetRef ref, Iterable<AssetType> turler) async {
+  for (final type in turler) {
     await _syncSignalPreferenceWith(ref.read, type);
   }
 }

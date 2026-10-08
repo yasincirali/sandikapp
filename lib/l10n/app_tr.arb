@@ -4919,5 +4919,17 @@
   "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
   "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
   "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
-  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene."
+  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.",
+  "s3DagilimBaslik": "Dağılım",
+  "s3HalkaBaglanti": "Halka ›",
+  "s5OnAyarSoru": "Ne sıklıkta haber verelim?",
+  "s5OnAyarAz": "Az",
+  "s5OnAyarDengeli": "Dengeli",
+  "s5OnAyarCok": "Çok",
+  "s5OnAyarOzel": "Özel",
+  "s5OnAyarAzAciklama": "Yalnız güçlü sinyaller (%85 güven), günde 1 kez, RSI ve MACD ile.",
+  "s5OnAyarDengeliAciklama": "Önerilen: %70 güven, günde 2 kez (11:00 ve 15:00), temel göstergelerin tümü.",
+  "s5OnAyarCokAciklama": "%50 güvenden itibaren, 2 saatte bir, temel göstergelerin tümü.",
+  "s5OnAyarOzelAciklama": "Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.",
+  "s5KategoriyeGoreOzellestir": "Kategoriye göre özelleştir"
 }

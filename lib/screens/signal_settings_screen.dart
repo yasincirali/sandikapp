@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/asset_type.dart';
 import '../models/signal_frequency.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/sinyal_on_ayar_provider.dart';
 import '../services/analytics_service.dart';
+import '../services/remote_config_service.dart';
+import '../widgets/sandik_acilir.dart';
 import '../services/technical_analysis_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -33,6 +36,72 @@ class SignalSettingsScreen extends ConsumerWidget {
     // Ücretsiz günlük bildirim kapısı (paywall kapalıyken sınırsız).
     final slot = ref.watch(sinyalSlotSiniriProvider);
 
+    // Sadeleştirme 2 (bayrak `sinyal_on_ayar`): üstte tek soru + üç ön
+    // ayar; kategori başına ayarlar katlanır bölüme taşınır, kaybolmaz.
+    final onAyarAcik = RemoteConfigService.instance.sinyalOnAyar;
+    final kategoriler = <Widget>[
+      Text(
+        'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
+        style: context.t.titleSmall
+            ?.copyWith(color: context.c.text58, height: 1.5),
+      ),
+      const SizedBox(height: 16),
+
+      // TÜM türler (kullanıcı kuralı, 2026-09-28): yeni eklenen her
+      // kategori burada kendi bölümüyle görünür; liste elle tutulmaz.
+      // Kripto önceden sunucu analizinde olmadığı için gizleniyordu —
+      // artık `analyze-signals` ANALYZABLE'da. İki listenin eşitliğini
+      // `sinyal_turleri_test` kilitler.
+      //
+      // Tek istisna mevduat (2026-09-30): piyasa serisi yok, eğrisi
+      // sözleşmenin tahakkukudur; sunucu da analiz etmez. BES fonu
+      // (TEFAS EMK) fon gibi analiz edilir ve burada görünür.
+      for (final type in AssetType.values)
+        if (type != AssetType.mevduat) ...[
+        _CategorySection(
+          type: type,
+          selected: prefs[type] ??
+              TechnicalAnalysisService.defaultEnabledFor(type),
+          // Paywall kapalıyken herkes premium'muş gibi davranır (kilit yok,
+          // "PREMIUM" chip'i yok). Store hazır olunca RC'den açılır.
+          premiumUnlocked: !paywallOn || premium,
+          paywallVisible: paywallOn,
+          threshold: thresholds[type] ?? kSignalThresholdDefault,
+          onToggle: (id) =>
+              ref.read(indicatorPrefsProvider.notifier).toggle(type, id),
+          onThresholdChanged: (v) => ref
+              .read(signalThresholdProvider.notifier)
+              .setForType(type, v),
+          // Ekranda UYGULANAN zamanlama: ücretsizde kapıya sığdırılmış
+          // hâl. Kayıtlı tercih değişmez, Premium'da geri gelir.
+          schedule: slotaSigdir(schedules[type] ?? kDefaultSchedule, slot),
+          slot: slot,
+          onFrequencyChanged: (f) {
+            if (f.gunlukEnFazla > slot) {
+              AnalyticsService.instance
+                  .logPremiumGateShown(feature: 'signal_frequency');
+              PaywallScreen.show(context, source: 'signal_frequency');
+              return;
+            }
+            ref.read(signalScheduleProvider.notifier).setFrequency(type, f);
+          },
+          onHoursChanged: (h) async {
+            // Kısılmış hâlde saat seçmek, gösterilen sıklığı (günde 1)
+            // bilerek seçmektir: kayıt da ona çekilir ki saat sayısı ile
+            // sıklık tutarsız kalmasın.
+            final kayitli = schedules[type] ?? kDefaultSchedule;
+            final notifier = ref.read(signalScheduleProvider.notifier);
+            final gosterilen = slotaSigdir(kayitli, slot);
+            if (gosterilen.frequency != kayitli.frequency) {
+              await notifier.setFrequency(type, gosterilen.frequency);
+            }
+            await notifier.setHours(type, h);
+          },
+        ),
+        const SizedBox(height: 20),
+      ],
+    ];
+
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: const SandikAppBar(
@@ -61,6 +130,18 @@ class SignalSettingsScreen extends ConsumerWidget {
                   : null,
             ),
             const SizedBox(height: 24),
+          ],
+
+          if (onAyarAcik) ...[
+            _OnAyarKarti(
+              slot: slot,
+              onPaywall: () {
+                AnalyticsService.instance
+                    .logPremiumGateShown(feature: 'signal_on_ayar');
+                PaywallScreen.show(context, source: 'signal_on_ayar');
+              },
+            ),
+            const SizedBox(height: SandikSpace.md),
           ],
 
           // â”€â”€ Genel bildirim ayarlarÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -113,66 +194,12 @@ class SignalSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          Text(
-            'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
-            style: context.t.titleSmall
-                ?.copyWith(color: context.c.text58, height: 1.5),
-          ),
-          const SizedBox(height: 16),
-
-          // TÜM türler (kullanıcı kuralı, 2026-09-28): yeni eklenen her
-          // kategori burada kendi bölümüyle görünür; liste elle tutulmaz.
-          // Kripto önceden sunucu analizinde olmadığı için gizleniyordu —
-          // artık `analyze-signals` ANALYZABLE'da. İki listenin eşitliğini
-          // `sinyal_turleri_test` kilitler.
-          //
-          // Tek istisna mevduat (2026-09-30): piyasa serisi yok, eğrisi
-          // sözleşmenin tahakkukudur; sunucu da analiz etmez. BES fonu
-          // (TEFAS EMK) fon gibi analiz edilir ve burada görünür.
-          for (final type in AssetType.values)
-            if (type != AssetType.mevduat) ...[
-            _CategorySection(
-              type: type,
-              selected: prefs[type] ??
-                  TechnicalAnalysisService.defaultEnabledFor(type),
-              // Paywall kapalıyken herkes premium'muş gibi davranır (kilit yok,
-              // "PREMIUM" chip'i yok). Store hazır olunca RC'den açılır.
-              premiumUnlocked: !paywallOn || premium,
-              paywallVisible: paywallOn,
-              threshold: thresholds[type] ?? kSignalThresholdDefault,
-              onToggle: (id) =>
-                  ref.read(indicatorPrefsProvider.notifier).toggle(type, id),
-              onThresholdChanged: (v) => ref
-                  .read(signalThresholdProvider.notifier)
-                  .setForType(type, v),
-              // Ekranda UYGULANAN zamanlama: ücretsizde kapıya sığdırılmış
-              // hâl. Kayıtlı tercih değişmez, Premium'da geri gelir.
-              schedule: slotaSigdir(schedules[type] ?? kDefaultSchedule, slot),
-              slot: slot,
-              onFrequencyChanged: (f) {
-                if (f.gunlukEnFazla > slot) {
-                  AnalyticsService.instance
-                      .logPremiumGateShown(feature: 'signal_frequency');
-                  PaywallScreen.show(context, source: 'signal_frequency');
-                  return;
-                }
-                ref.read(signalScheduleProvider.notifier).setFrequency(type, f);
-              },
-              onHoursChanged: (h) async {
-                // Kısılmış hâlde saat seçmek, gösterilen sıklığı (günde 1)
-                // bilerek seçmektir: kayıt da ona çekilir ki saat sayısı ile
-                // sıklık tutarsız kalmasın.
-                final kayitli = schedules[type] ?? kDefaultSchedule;
-                final notifier = ref.read(signalScheduleProvider.notifier);
-                final gosterilen = slotaSigdir(kayitli, slot);
-                if (gosterilen.frequency != kayitli.frequency) {
-                  await notifier.setFrequency(type, gosterilen.frequency);
-                }
-                await notifier.setHours(type, h);
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
+          // Bayrak kapalıyken kategori listesi eskisi gibi doğrudan
+          // burada; açıkken "Kategoriye göre özelleştir" altında, birebir.
+          if (!onAyarAcik)
+            ...kategoriler
+          else
+            _KategoriAcilir(children: kategoriler),
         ],
       ),
     );
@@ -888,6 +915,154 @@ class _ThresholdSegment extends StatelessWidget {
         onSec: (i) => onChanged(secenekler[i]),
         oge: (_, i, __) => Text('%${secenekler[i]}'),
       ),
+    );
+  }
+}
+
+// ── Ön ayar (bayrak `sinyal_on_ayar`) ────────────────────────────────────────
+
+/// "Ne sıklıkta haber verelim?" — Az · Dengeli · Çok.
+///
+/// Seçim kayıtlı tercihlerden TÜRETİLİR (`sinyalOnAyarProvider`); hiçbir
+/// ön ayara birebir uymayan kullanıcı "Özel" görür ve hiçbir şey
+/// değişmez — Özel dokunulmaz bir etikettir, segment değildir (segmentte
+/// olsaydı dokununca neye döneceği belirsiz kalırdı). Ön ayar seçmek iyimser
+/// bir yazmadır (anahtar gibi): yerel durum anında değişir, sunucu arkadan.
+class _OnAyarKarti extends ConsumerWidget {
+  const _OnAyarKarti({required this.slot, required this.onPaywall});
+
+  final int slot;
+  final VoidCallback onPaywall;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final secili = ref.watch(sinyalOnAyarProvider);
+    final etiketler = [l10n.s5OnAyarAz, l10n.s5OnAyarDengeli, l10n.s5OnAyarCok];
+    final aciklama = switch (secili) {
+      SinyalOnAyar.az => l10n.s5OnAyarAzAciklama,
+      SinyalOnAyar.dengeli => l10n.s5OnAyarDengeliAciklama,
+      SinyalOnAyar.cok => l10n.s5OnAyarCokAciklama,
+      null => l10n.s5OnAyarOzelAciklama,
+    };
+    return SandikCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.s5OnAyarSoru,
+                  style: context.t.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600, color: context.c.text90),
+                ),
+              ),
+              if (secili == null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
+                  decoration: BoxDecoration(
+                    color: context.c.amberFill.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(SandikRadius.sm),
+                    border: Border.all(
+                        color: context.c.amberFill.withValues(alpha: 0.5)),
+                  ),
+                  child: Text(
+                    l10n.s5OnAyarOzel,
+                    style: context.t.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: context.c.amberText,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: SandikSpace.smd),
+          SandikSegment(
+            adet: etiketler.length,
+            // Özel: aralık dışı → zemin çizilmez, üç seçenek de dokunulur.
+            secili: secili?.index ?? -1,
+            onSec: (i) {
+              final a = SinyalOnAyar.values[i];
+              // Kategori satırındaki kapıyla aynı kural: ücretsiz günlük
+              // bildirim sınırını aşan sıklık Premium ister, hiçbir şey
+              // yazılmaz.
+              if (sinyalOnAyarTanimi(a, AssetType.hisse).siklik.gunlukEnFazla >
+                  slot) {
+                onPaywall();
+                return;
+              }
+              sinyalOnAyariUygula(ref, a);
+            },
+            oge: (context, i, _) => Text(etiketler[i]),
+          ),
+          const SizedBox(height: SandikSpace.sm),
+          Text(
+            aciklama,
+            style: context.t.bodySmall
+                ?.copyWith(color: context.c.text58, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Kategoriye göre özelleştir": bugünkü kategori ayarlarının TAMAMI,
+/// katlanmış. Kapalı başlar — ön ayar çoğu kullanıcıya yeter; açınca eski
+/// ekran birebir (aynı `_CategorySection`'lar, aynı geri çağrılar).
+class _KategoriAcilir extends StatefulWidget {
+  const _KategoriAcilir({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  State<_KategoriAcilir> createState() => _KategoriAcilirState();
+}
+
+class _KategoriAcilirState extends State<_KategoriAcilir> {
+  bool _acik = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SandikTappable(
+          selected: _acik,
+          onTap: () => setState(() => _acik = !_acik),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: SandikTouch.min),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    context.l10n.s5KategoriyeGoreOzellestir,
+                    style: context.t.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: context.c.text90,
+                    ),
+                  ),
+                ),
+                SandikAcilirOk(
+                  acik: _acik,
+                  child: Icon(Icons.keyboard_arrow_down_rounded,
+                      color: context.c.text36),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: SandikSpace.sm),
+        SandikAcilir(
+          acik: _acik,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: widget.children,
+          ),
+        ),
+      ],
     );
   }
 }
