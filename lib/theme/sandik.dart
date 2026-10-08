@@ -24,13 +24,21 @@ import 'yukleme_isareti.dart';
 /// Giriş [SandikMotion.surface] + [SandikMotion.cekmece] (çok hızlı başlar,
 /// yumuşak oturur), çıkış [SandikMotion.state] + [SandikMotion.exit]
 /// (ters yuva). Hareketi azalt → animasyonsuz.
+///
+/// [useSafeArea] verilmezse [isScrollControlled] ile aynıdır (klavye
+/// denetimi, 2026-10-08): yükseklik sınırı kalkan sayfa, klavye açılıp
+/// içerik yukarı itilince durum çubuğunun / Dynamic Island'ın ALTINA
+/// giriyordu (sembol arama, BES fon seçici, mevduat yenileme). Kısa
+/// sayfada SafeArea'nın üst payı hiçbir şey değiştirmez; yalnız tepeye
+/// dayanan sayfa durum çubuğunun altında durur. Bilerek tam ekrana
+/// uzanacak sayfa `useSafeArea: false` verir.
 Future<T?> showSandikSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   Color? backgroundColor,
   ShapeBorder? shape,
   bool isScrollControlled = false,
-  bool useSafeArea = false,
+  bool? useSafeArea,
   bool? showDragHandle,
   bool isDismissible = true,
   bool enableDrag = true,
@@ -43,7 +51,7 @@ Future<T?> showSandikSheet<T>({
     backgroundColor: backgroundColor,
     shape: shape,
     isScrollControlled: isScrollControlled,
-    useSafeArea: useSafeArea,
+    useSafeArea: useSafeArea ?? isScrollControlled,
     showDragHandle: showDragHandle,
     isDismissible: isDismissible,
     enableDrag: enableDrag,

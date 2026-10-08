@@ -74,7 +74,7 @@ void main() {
       find.ancestor(of: find.text(etiket), matching: find.byType(TextField));
 
   Finder kayitDugmesi() => find.descendant(
-      of: find.byType(ListView), matching: find.text(l.register));
+      of: find.byType(SingleChildScrollView), matching: find.text(l.register));
 
   Future<void> kayitaBas(WidgetTester tester) async {
     await tester.ensureVisible(kayitDugmesi());

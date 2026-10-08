@@ -44,3 +44,25 @@ class KlavyeKapatici extends StatelessWidget {
     );
   }
 }
+
+/// Uygulama geneli kaydırma davranışı: herhangi bir listeyi/sayfayı
+/// sürüklemek açık klavyeyi kapatır (klavye denetimi, 2026-10-08).
+///
+/// ## Neden `MaterialApp.scrollBehavior`'da, ekran ekran değil
+/// Kural "klavye kapatılabilir olmalı"nın ikinci yarısı: dokunma
+/// [KlavyeKapatici]'da, kaydırma burada. 26 giriş yüzeyinin yalnız 5'i
+/// `keyboardDismissBehavior: onDrag` yazıyordu; Varlık Ekle'nin altı seçici
+/// listesi, kayıt, giriş, şifre sıfırlama, hareket listesi, ekstre ve sözleşme
+/// sayfaları yazmıyordu — klavye listenin alt yarısını kapatıyor, kaydırınca
+/// da inmiyordu. `ScrollView`/`SingleChildScrollView` kendi değeri yoksa
+/// [ScrollBehavior.getKeyboardDismissBehavior]'a düşer; tek satır hepsini
+/// kapsar, yeni ekran unutamaz. Açıkça `manual` yazan ekran yine kendi
+/// kararını verir.
+class SandikKaydirmaDavranisi extends MaterialScrollBehavior {
+  const SandikKaydirmaDavranisi();
+
+  @override
+  ScrollViewKeyboardDismissBehavior getKeyboardDismissBehavior(
+          BuildContext context) =>
+      ScrollViewKeyboardDismissBehavior.onDrag;
+}
