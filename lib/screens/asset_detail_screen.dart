@@ -1096,7 +1096,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             // verisi değil" hissini korur.
                             return AnimatedOpacity(
                               opacity: isStale ? 0.35 : 1.0,
-                              duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+                              duration: SandikMotion.stateOf(context),
                               curve: SandikMotion.enter,
                               child: Container(
                           // Kart Performans'la AYNI (ortak grafik stili).

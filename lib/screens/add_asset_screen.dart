@@ -721,13 +721,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showGoldPicker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _GoldPicker(
         selected: _seciliAltin,
         birim: _altinBirimi,
@@ -749,7 +749,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
       child: SandikBasma(
         onTap: () => _selectGold(g),
         child: AnimatedContainer(
-          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding: const EdgeInsets.symmetric(
               horizontal: SandikSpace.md2, vertical: SandikSpace.sm2),
@@ -917,7 +917,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           style: context.t.titleSmall?.copyWith(
               color: context.c.amberText, fontWeight: FontWeight.w700),
           icon:
-              Icon(Icons.arrow_drop_down, color: context.c.amberText, size: 18),
+              Icon(Icons.arrow_drop_down_rounded, color: context.c.amberText, size: 18),
           items: _currencies
               .map((c) => DropdownMenuItem(
                     value: c,
@@ -1601,7 +1601,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               },
               child: AnimatedContainer(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 160)),
+                    SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
@@ -1677,7 +1677,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
               onTap: () => _quantity.text = v,
               child: AnimatedContainer(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 140)),
+                    SandikMotion.stateOf(context),
                 curve: SandikMotion.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1755,13 +1755,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showBist100Picker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _Bist100Picker(
         selected: _bist100SelectedTicker,
         onSelect: (ticker) {
@@ -1797,13 +1797,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   void _showTefasPicker() {
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _TefasPicker(
         selected: _selectedFund?.code,
         onSelect: (fund) {
@@ -1844,13 +1844,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   void _showKriptoPicker() {
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _KriptoPicker(
         selected: kriptoKodu(_ticker.text),
         onSelect: (o) {
@@ -1955,12 +1955,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   void _showQuickEntrySheet() {
     final ctrl = TextEditingController();
     _klavyeyiKapat();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface1,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius: SandikRadius.sheetTop),
       builder: (ctx) => _QuickEntrySheet(
         ctrl: ctrl,
         parseLine: _parseLine,

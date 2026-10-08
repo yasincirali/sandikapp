@@ -236,7 +236,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         labelText: context.l10n.password,
                         prefixIcon: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          child: Icon(Icons.lock_outline, color: context.c.text36, size: 20),
+                          child: Icon(Icons.lock_outline_rounded, color: context.c.text36, size: 20),
                         ),
                         suffixIcon: SandikTappable(
                           semanticLabel:

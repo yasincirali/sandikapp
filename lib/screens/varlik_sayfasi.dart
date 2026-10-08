@@ -83,7 +83,7 @@ Future<void> showVarlikSayfasi(
   if (_acik) return;
   _acik = true;
   try {
-    await showModalBottomSheet<void>(
+    await showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,

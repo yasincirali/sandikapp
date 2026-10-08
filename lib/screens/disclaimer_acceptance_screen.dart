@@ -190,8 +190,7 @@ class _DisclaimerAcceptanceScreenState
             child: Row(
               children: [
                 AnimatedContainer(
-                  duration: SandikMotion.of(
-                      context, const Duration(milliseconds: 150)),
+                  duration: SandikMotion.stateOf(context),
                   curve: SandikMotion.enter,
                   width: 22,
                   height: 22,

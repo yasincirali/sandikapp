@@ -261,7 +261,7 @@ class _OverlayChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(SandikRadius.md),
         child: AnimatedContainer(
-          duration: SandikMotion.of(context, const Duration(milliseconds: 160)),
+          duration: SandikMotion.stateOf(context),
           curve: SandikMotion.enter,
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

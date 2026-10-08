@@ -10,8 +10,7 @@ import 'package:flutter/material.dart'
         Material,
         MaterialType,
         ListTile,
-        Divider,
-        showModalBottomSheet;
+        Divider;
 import 'package:flutter/material.dart' show Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
@@ -853,7 +852,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
               },
               child: AnimatedOpacity(
                 duration:
-                    SandikMotion.of(context, const Duration(milliseconds: 150)),
+                    SandikMotion.stateOf(context),
                 // Eksikti: curve verilmeyince Curves.linear devreye girer.
                 // Lejant sönümlemesi bir DURUM değişimidir → enter.
                 curve: SandikMotion.enter,
@@ -862,8 +861,7 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AnimatedContainer(
-                      duration: SandikMotion.of(
-                          context, const Duration(milliseconds: 150)),
+                      duration: SandikMotion.stateOf(context),
                       curve: SandikMotion.enter,
                       width: isTouched ? 10 : 8,
                       height: isTouched ? 10 : 8,
@@ -2075,7 +2073,7 @@ class _SortButton extends StatelessWidget {
     return CupertinoButton(
       minimumSize: SandikTouch.minSize,
       padding: EdgeInsets.zero,
-      onPressed: () => showModalBottomSheet<void>(
+      onPressed: () => showSandikSheet<void>(
         context: context,
         backgroundColor: context.c.surface1,
         shape: const RoundedRectangleBorder(

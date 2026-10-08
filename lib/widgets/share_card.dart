@@ -748,7 +748,7 @@ Future<void> showShareSheet(
   // sheet kapandıktan sonra sorar. Sheet'in üstüne açmak iki katman
   // modal olurdu; kullanıcı kartı kapatınca, ekranına dönmüşken sorulur.
   var paylasildi = false;
-  await showModalBottomSheet<void>(
+  await showSandikSheet<void>(
     context: context,
     backgroundColor: context.c.surface1,
     isScrollControlled: true,

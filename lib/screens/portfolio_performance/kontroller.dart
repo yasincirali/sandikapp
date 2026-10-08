@@ -372,7 +372,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     // Uygulamanın öteki ~30 sheet'i gibi Material alt sayfası (animasyon
     // denetimi 2026-10-01): bu tek Cupertino açılır penceresiydi — 335 ms
     // kayıyor, aşağı çekerek KAPANMIYORDU ve köşesi 24'tü (tema 20).
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => DefaultTextStyle(

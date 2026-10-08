@@ -49,7 +49,7 @@ Future<void> showIslemNotuSheet(
   // göstergesiz sürüyordu. Sayfa yalnızca yazma başarılıysa kapanır; hata
   // olursa açık kalır (yazılan not kaybolmaz) ve hata sayfanın üstünde
   // söylenir.
-  final sonuc = await showModalBottomSheet<String>(
+  final sonuc = await showSandikSheet<String>(
     context: context,
     isScrollControlled: true,
     backgroundColor: context.c.surface2,

@@ -273,7 +273,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
   }
 
   void _ayrintiAc(TopGainerAllocation? satir) {
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: context.c.surface1,
       isScrollControlled: true,

@@ -349,7 +349,7 @@ class _FrequencyRow extends StatelessWidget {
     final freq = schedule.frequency;
     final secili = <int>[...schedule.hours];
 
-    final sonuc = await showModalBottomSheet<List<int>>(
+    final sonuc = await showSandikSheet<List<int>>(
       context: context,
       backgroundColor: context.c.surface1,
       isScrollControlled: true,

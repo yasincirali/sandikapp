@@ -11,6 +11,54 @@ import '../l10n/l10n.dart';
 import '../widgets/sandik_async_button.dart' show SandikAsyncTap;
 import 'yukleme_isareti.dart';
 
+/// Uygulamanın TEK alt sayfa (bottom sheet) açıcısı.
+///
+/// Neden (tasarım dili, 2026-10-08 hareket denetimi): 38 alt sayfa çıplak
+/// `showModalBottomSheet` ile açılıyordu; Flutter'ın varsayılanı (250 ms,
+/// `legacyDecelerate`) markanın sheet eğrisini ([SandikMotion.cekmece])
+/// hiç kullanmıyor, "Hareketi azalt" açıkken de kayarak geliyordu.
+/// Diyaloglar ve tam ekran modal zaten marka hareketindeydi; sheet tek
+/// istisnaydı. Parametreler `showModalBottomSheet` ile birebir (yalnız
+/// kullanılanlar) — çağıran tarafta davranış değişmez, yalnız hareket.
+///
+/// Giriş [SandikMotion.surface] + [SandikMotion.cekmece] (çok hızlı başlar,
+/// yumuşak oturur), çıkış [SandikMotion.state] + [SandikMotion.exit]
+/// (ters yuva). Hareketi azalt → animasyonsuz.
+Future<T?> showSandikSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  Color? backgroundColor,
+  ShapeBorder? shape,
+  bool isScrollControlled = false,
+  bool useSafeArea = false,
+  bool? showDragHandle,
+  bool isDismissible = true,
+  bool enableDrag = true,
+  BoxConstraints? constraints,
+}) {
+  final azalt = MediaQuery.disableAnimationsOf(context);
+  return showModalBottomSheet<T>(
+    context: context,
+    builder: builder,
+    backgroundColor: backgroundColor,
+    shape: shape,
+    isScrollControlled: isScrollControlled,
+    useSafeArea: useSafeArea,
+    showDragHandle: showDragHandle,
+    isDismissible: isDismissible,
+    enableDrag: enableDrag,
+    constraints: constraints,
+    sheetAnimationStyle: azalt
+        ? AnimationStyle.noAnimation
+        : const AnimationStyle(
+            duration: SandikMotion.surface,
+            reverseDuration: SandikMotion.state,
+            curve: SandikMotion.cekmece,
+            reverseCurve: SandikMotion.exit,
+          ),
+  );
+}
+
 /// Platforma uygun sayfa geçişi.
 ///
 /// iOS'ta [CupertinoPageRoute] döner: sağdan-sola kayma animasyonu ve

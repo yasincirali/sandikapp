@@ -254,7 +254,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   : AuthService.validatePassword(_passCtrl.text),
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Icon(Icons.lock_outline,
+                child: Icon(Icons.lock_outline_rounded,
                     color: context.c.text36, size: 20),
               ),
               suffixIcon: CupertinoButton(
@@ -296,7 +296,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   : null,
               prefixIcon: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Icon(Icons.lock_outline,
+                child: Icon(Icons.lock_outline_rounded,
                     color: context.c.text36, size: 20),
               ),
             ),

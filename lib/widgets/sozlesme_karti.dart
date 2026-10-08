@@ -322,7 +322,7 @@ class _MevduatGovdesi extends ConsumerWidget {
       BuildContext context, WidgetRef ref, MevduatDonemi son) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<_YeniDonem>(
+    final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -364,7 +364,7 @@ class _MevduatGovdesi extends ConsumerWidget {
       BuildContext context, WidgetRef ref, MevduatDonemi son) async {
     if (DemoModu.yazmaKapisi('mevduat')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<_YeniDonem>(
+    final sonuc = await showSandikSheet<_YeniDonem>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -816,7 +816,7 @@ class _BesGovdesi extends ConsumerWidget {
     final l10n = context.l10n;
     final n = ref.read(sozlesmeProvider.notifier);
     final simdi = DateTime.now();
-    final sonuc = await showModalBottomSheet<({double tutar, double dk})>(
+    final sonuc = await showSandikSheet<({double tutar, double dk})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -970,7 +970,7 @@ extension on _BesGovdesi {
       BuildContext context, WidgetRef ref, double tutar) async {
     if (DemoModu.yazmaKapisi('bes')) return;
     final l10n = context.l10n;
-    final sonuc = await showModalBottomSheet<({double tutar, bool plan})>(
+    final sonuc = await showSandikSheet<({double tutar, bool plan})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -1105,7 +1105,7 @@ extension on _BesGovdesi {
       ];
     }
     final sonuc =
-        await showModalBottomSheet<({List<FonPayi> dagilim, bool katki})>(
+        await showSandikSheet<({List<FonPayi> dagilim, bool katki})>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,

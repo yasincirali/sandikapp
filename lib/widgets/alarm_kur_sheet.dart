@@ -95,7 +95,7 @@ Future<PriceAlert?> alarmKurAkisi(
   // kapanır; hata olursa açık kalır, girilen hedef kaybolmaz ve hata alanın
   // altında (eski snackbar'ın önekiyle) yazar.
   PriceAlert? kayit;
-  final sonuc = await showModalBottomSheet<AlarmKurulumu>(
+  final sonuc = await showSandikSheet<AlarmKurulumu>(
     context: context,
     backgroundColor: context.c.surface1,
     isScrollControlled: true,
@@ -270,7 +270,7 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                     isExpanded: true,
                     dropdownColor: c.surface2,
                     style: context.t.titleMedium?.copyWith(color: c.text90),
-                    icon: Icon(Icons.arrow_drop_down, color: c.amberText),
+                    icon: Icon(Icons.arrow_drop_down_rounded, color: c.amberText),
                     items: [
                       for (final a in widget.adaylar)
                         DropdownMenuItem(

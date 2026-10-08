@@ -563,7 +563,7 @@ class _DialogButton extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: filled ? color.withValues(alpha: 0.14) : null,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: SandikRadius.mdAll,
               border: Border.all(
                 color: color.withValues(alpha: filled ? 0.45 : 0.25),
               ),

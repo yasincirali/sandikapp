@@ -136,7 +136,9 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
   widget sözleşmesi, önbellek biçimi) eski değeri okuyup taşır; anahtar
   silinip kullanıcının tercihi sıfırlanmaz.
 
-**Tasarım sistemi.** Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
+**Tasarım sistemi.** Tasarım dili ve "bir iş = bir bileşen" tablosu: `docs/TASARIM_DILI.md`
+(yeni ekran/bileşenden önce oku; kilit `tasarim_dili_test`, `yukleniyor_tek_davranis_test`).
+İstek atan düğme `SandikAsyncButton`/`SandikAsyncTap`, alt sayfa `showSandikSheet`. Renk yalnızca `context.c.*`, tipografi `context.t.*`, boşluk
 `SandikSpace`, köşe `SandikRadius`, animasyon `SandikMotion.of(context)`. Ham `Colors.*`,
 `Color(0x…)`, `fontSize:`, `Duration(milliseconds:)` ekleme — `design_token_leak_test` ve
 `spacing_scale_test` sayıları **yalnızca azalabilir**. Kart için `SandikCard`, bölüm başlığı

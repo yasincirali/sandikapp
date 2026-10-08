@@ -9,6 +9,7 @@ import 'package:portfoy_takip/screens/legal_doc_screen.dart';
 import 'package:portfoy_takip/screens/register_screen.dart';
 import 'package:portfoy_takip/services/yasal_metin_katalogu.dart';
 import 'package:portfoy_takip/widgets/zorunlu_okuma.dart' show OkumaIpucu;
+import 'package:portfoy_takip/widgets/yasal_adimlar.dart' show YasalAdimListesi;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -220,7 +221,13 @@ void main() {
         'işaretlenir, ikinci basış kaldırır', (tester) async {
       await ac(tester);
       expect(find.byType(YasalOnayKutusu), findsNothing);
-      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+      // Kilitli kutu ikonu yok (şifre alanlarının kilit ikonu sayılmaz:
+      // 2026-10-08'de onlar da `_rounded` ailesine geçti).
+      expect(
+          find.descendant(
+              of: find.byType(YasalAdimListesi),
+              matching: find.byIcon(Icons.lock_outline_rounded)),
+          findsNothing);
       // Açık rızayı vermek (metnin sonunda) kutuyu işaretlemez.
       await okunacaklariOku(tester);
       expect(find.byIcon(Icons.check_rounded), findsNothing);

@@ -66,7 +66,7 @@ List<Widget> yarisEylemleri(BuildContext context, WidgetRef ref) {
     IconButton(
       icon: Icon(Icons.info_outline_rounded, color: context.c.text58, size: 22),
       tooltip: context.l10n.howReturnCalculated,
-      onPressed: () => showModalBottomSheet<void>(
+      onPressed: () => showSandikSheet<void>(
         context: context,
         backgroundColor: context.c.surface1,
         isScrollControlled: true,

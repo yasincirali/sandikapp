@@ -111,7 +111,7 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
   /// gidiyordu; hata olursa yazılan açıklama da kayboluyordu. Şimdi gösterge
   /// düğmede döner, sayfa yalnız başarıda kapanır, hatada açık kalır.
   Future<void> _yanlisSayi() async {
-    final gonderildi = await showModalBottomSheet<bool>(
+    final gonderildi = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,

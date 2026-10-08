@@ -177,7 +177,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 
   Future<void> _showSuccessSheet() {
-    return showModalBottomSheet<void>(
+    return showSandikSheet<void>(
       context: context,
       backgroundColor: context.c.background,
       isScrollControlled: true,

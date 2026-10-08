@@ -272,7 +272,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final e = _ekstre;
     final ana = e?.ana;
     if (e == null || ana == null) return;
-    final yeni = await showModalBottomSheet<Map<EkstreRol, int>>(
+    final yeni = await showSandikSheet<Map<EkstreRol, int>>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,

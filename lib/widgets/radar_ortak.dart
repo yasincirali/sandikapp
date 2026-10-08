@@ -68,7 +68,7 @@ Future<void> terimSayfasiniAc(BuildContext context, RadarTerim terim,
     {String? ornek}) {
   final l = context.l10n;
   final (baslik, tanim) = terim.metin(l);
-  return showModalBottomSheet<void>(
+  return showSandikSheet<void>(
     context: context,
     backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),
@@ -294,7 +294,7 @@ Future<void> radarKocunuGoster(BuildContext context, WidgetRef ref,
   if (!zorla && ref.read(radarKocuGorulduProvider)) return;
   await ref.read(radarKocuGorulduProvider.notifier).set(true);
   if (!context.mounted) return;
-  await showModalBottomSheet<void>(
+  await showSandikSheet<void>(
     context: context,
     backgroundColor: context.c.surface2,
     shape: const RoundedRectangleBorder(borderRadius: SandikRadius.sheetTop),

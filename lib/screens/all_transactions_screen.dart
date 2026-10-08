@@ -921,7 +921,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   }
 
   Future<void> _filtreSayfasiniAc() async {
-    final secim = await showModalBottomSheet<_FiltreSecimi>(
+    final secim = await showSandikSheet<_FiltreSecimi>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,

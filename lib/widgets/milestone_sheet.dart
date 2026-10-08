@@ -21,7 +21,7 @@ class MilestoneSheet extends StatelessWidget {
   static Future<void> show(BuildContext context, Milestone m) {
     AnalyticsService.instance
         .logMilestoneReached(kind: m.kind, value: m.value);
-    return showModalBottomSheet<void>(
+    return showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,

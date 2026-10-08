@@ -915,7 +915,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   }
 
   Future<void> _openSearch() async {
-    final hit = await showModalBottomSheet<SymbolHit>(
+    final hit = await showSandikSheet<SymbolHit>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

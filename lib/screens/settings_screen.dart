@@ -170,7 +170,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 style: TextStyle(color: context.c.text90),
                 decoration: context.inputDecoration(
                   context.l10n.passwordLabel,
-                  prefixIcon: Icon(Icons.lock_outline,
+                  prefixIcon: Icon(Icons.lock_outline_rounded,
                       color: context.c.text36, size: 20),
                   suffixIcon: IconButton(
                     icon: Icon(
@@ -341,7 +341,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _openFeedbackSheet() async {
     String type = 'Şikayet';
     final controller = TextEditingController();
-    final result = await showModalBottomSheet<Map<String, String>>(
+    final result = await showSandikSheet<Map<String, String>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -1578,7 +1578,7 @@ class _SettingsTileState extends State<_SettingsTile> {
               ),
             ),
             trailing ??
-                Icon(Icons.chevron_right, color: context.c.text36, size: 20),
+                Icon(Icons.chevron_right_rounded, color: context.c.text36, size: 20),
           ],
         ),
       ),
@@ -1954,7 +1954,7 @@ class _BriefSlotTileState extends ConsumerState<_BriefSlotTile> {
   Future<void> _sec() async {
     final l10n = context.l10n;
     final mevcut = _slot ?? 'morning';
-    final secim = await showModalBottomSheet<String>(
+    final secim = await showSandikSheet<String>(
       context: context,
       backgroundColor: context.c.surface2,
       shape: const RoundedRectangleBorder(
@@ -2067,7 +2067,7 @@ class _BirikimHatirlatmaTileState
   Future<void> _sec() async {
     final l10n = context.l10n;
     final mevcut = _gun ?? 0;
-    final secim = await showModalBottomSheet<int>(
+    final secim = await showSandikSheet<int>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,

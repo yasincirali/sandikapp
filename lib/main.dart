@@ -593,11 +593,16 @@ class SandikApp extends ConsumerWidget {
       inputDecorationTheme: sandikGirisTemasi(p, brightness),
 
       // Filled button — Amber CTA
+      //
+      // Köşe `SandikRadius.md` (14), 8 DEĞİL (tasarım dili 2026-10-08):
+      // `SandikAsyncButton` ve açık stil yazan düğmeler 14'tü; stil
+      // yazmayan 17 düğme temadan 8 alıyor, aynı sayfada iki köşe
+      // görünüyordu. Tek düğme köşesi.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: p.amberFill,
           foregroundColor: p.onAmber,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: sandikFont(
               fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: 0.2),
@@ -615,7 +620,7 @@ class SandikApp extends ConsumerWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: p.amberText,
           side: BorderSide(color: p.amberFill, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: SandikRadius.mdAll),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle:
               sandikFont(fontWeight: FontWeight.w600, fontSize: 14),

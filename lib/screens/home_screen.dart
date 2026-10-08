@@ -158,7 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // öne dönüşte görünürdü. Sheet provider'ı izlediği için satır, liste
     // açıkken yerine oturur.
     _sunucuBildirimleriniTazele();
-    showModalBottomSheet<void>(
+    showSandikSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -200,7 +200,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Portföy listesiyle AYNI nesne: pozisyon görünümü. Ham lot
             // satış/silinmiş kayıtsa grafik boş kalır (bkz. `pozisyonGorunumu`).
             final gorunum = pozisyonGorunumu(assets!, asset);
-            Navigator.push(
+            pushGuarded(
               context,
               adaptiveRoute<void>(
                   builder: (_) => AssetDetailScreen(
@@ -290,7 +290,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           NotificationService.instance.openHaftaOzeti();
           break;
         }
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -304,7 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         MainNavigationScreen.sekmeIstegi.value = 1;
       case AppNotification.inflationDay:
         // TÜFE günü → Özet: reel getiri kartı orada.
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -315,7 +315,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       case AppNotification.monthlySummary:
         // Aylık özet → 1A dönemi; bildirimin anlattığı ay orada.
-        Navigator.push(
+        pushGuarded(
           context,
           adaptiveRoute<void>(
             builder: (_) => const PortfolioPerformanceScreen(
@@ -1782,7 +1782,8 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               )
             else if (onDelete != null)
               IconButton(
@@ -1790,7 +1791,8 @@ class _SignalTile extends StatelessWidget {
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: const BoxConstraints(
+                    minWidth: SandikTouch.min, minHeight: SandikTouch.min),
               ),
           ],
         ),

@@ -10,8 +10,7 @@ import 'package:flutter/material.dart'
         LinearProgressIndicator,
         Icons,
         TextStyle,
-        RefreshIndicator,
-        showModalBottomSheet;
+        RefreshIndicator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/base_currency_provider.dart';
 import 'package:fl_chart/fl_chart.dart';

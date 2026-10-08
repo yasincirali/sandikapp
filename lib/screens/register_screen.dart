@@ -573,7 +573,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         : AuthService.validatePassword(_passCtrl.text),
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.lock_outline,
+                      child: Icon(Icons.lock_outline_rounded,
                           color: context.c.text36, size: 20),
                     ),
                     suffixIcon: CupertinoButton(
@@ -624,7 +624,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         : null,
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      child: Icon(Icons.lock_outline,
+                      child: Icon(Icons.lock_outline_rounded,
                           color: context.c.text36, size: 20),
                     )),
                 validator: (v) =>
