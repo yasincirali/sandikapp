@@ -721,8 +721,6 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         // pasifleştiriyordu, gösterge yoktu.
         child: SandikAsyncButton.kompakt(
           tur: SandikAsyncTur.cerceve,
-          // Eski düz OutlinedButton titreşimsizdi.
-          haptic: SandikHaptic.none,
           onPressed: () => _takipDegistir(takipte),
           icon: Icon(takipte ? Icons.star_rounded : Icons.star_border_rounded,
               size: 20, color: takipte ? context.c.gold : context.c.text90),

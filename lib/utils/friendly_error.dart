@@ -521,8 +521,6 @@ class _OnayIslemEylemleriState extends State<_OnayIslemEylemleri> {
         ),
         SandikAsyncTap(
           onTap: _onayla,
-          // Eski onay düğmesi (SandikBasma) titreşimsizdi; aynı kalsın.
-          haptic: SandikHaptic.none,
           child: _DialogButton(
             label: widget.confirmLabel,
             color: widget.accent,

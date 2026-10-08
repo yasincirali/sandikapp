@@ -736,7 +736,6 @@ class _HizliTakipDugmesi extends StatelessWidget {
         onTap: onTap,
         semanticLabel: semanticLabel,
         // Eski SandikTappable varsayılanı.
-        haptic: SandikHaptic.selection,
         child: Container(
           constraints: const BoxConstraints(
               minWidth: SandikTouch.min, minHeight: SandikTouch.min),

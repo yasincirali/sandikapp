@@ -575,7 +575,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     if (_isExpired) {
       return SandikAsyncButton(
         onPressed: _isBusy ? null : _resend,
-        haptic: SandikHaptic.none,
         style: stil,
         icon: const Icon(Icons.send_rounded, size: 18),
         child: Text(
@@ -598,7 +597,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     return SandikAsyncButton(
       onPressed: _submit,
       mesgul: _submitting,
-      haptic: SandikHaptic.none,
       style: stil,
       child: Text(
         context.l10n.verify,
@@ -631,7 +629,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         ),
         SandikAsyncTap(
           onTap: canResend ? _resend : null,
-          haptic: SandikHaptic.none,
           child: Text(
             _resending
                 ? context.l10n.sending
@@ -663,7 +660,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           const SizedBox(height: 8),
           SandikAsyncButton.kompakt(
             tur: SandikAsyncTur.metin,
-            haptic: SandikHaptic.none,
             onPressed: _submitting ? null : _vazgec,
             // `amberText`: açık temada amber dolgu krem zeminde okunmuyor
             // (emülatörde görüldü, 2026-10-03); metin tonu kontrastlı.

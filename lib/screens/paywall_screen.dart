@@ -623,7 +623,6 @@ class _BottomBar extends StatelessWidget {
             // satın alma sürerken "Geri yükle"yi kapatmak için kalır.
             SandikAsyncButton(
               height: 56,
-              haptic: SandikHaptic.none,
               onPressed: busy ? null : onSubscribe,
               style: FilledButton.styleFrom(
                 backgroundColor: context.c.amberFill,

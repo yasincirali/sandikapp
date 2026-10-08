@@ -356,7 +356,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: SandikAsyncButton(
         onPressed: onTap,
         mesgul: _loading,
-        haptic: SandikHaptic.none,
         style: FilledButton.styleFrom(
           backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
           foregroundColor: context.c.onAmber,

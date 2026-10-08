@@ -296,7 +296,6 @@ class _KullaniciAdiScreenState extends ConsumerState<KullaniciAdiScreen> {
             // Çıkış istek atar: tek yükleniyor davranışı (2026-10-08).
             child: SandikAsyncButton.kompakt(
               tur: SandikAsyncTur.metin,
-              haptic: SandikHaptic.none,
               onPressed: () => ref.read(authProvider.notifier).logout(),
               child: Text(
                 context.l10n.kullaniciAdiCikis,

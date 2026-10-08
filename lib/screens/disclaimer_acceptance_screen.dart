@@ -253,7 +253,6 @@ class _DisclaimerAcceptanceScreenState
           ),
           child: SandikAsyncButton(
             onPressed: _accepted ? _confirm : null,
-            haptic: SandikHaptic.none,
             style: FilledButton.styleFrom(
               backgroundColor: context.c.amberFill.withValues(alpha: 0.92),
               foregroundColor: context.c.onAmber,

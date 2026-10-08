@@ -202,7 +202,6 @@ class _LockScreenState extends State<LockScreen> {
                 SandikAsyncButton(
                   tur: SandikAsyncTur.metin,
                   height: null,
-                  haptic: SandikHaptic.none,
                   onPressed: _busy ? null : _cikisiOnayla,
                   child: Text(context.l10n.lockSwitchAccount),
                 ),

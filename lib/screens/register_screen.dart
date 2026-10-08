@@ -657,7 +657,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ],
                 ),
                 child: SandikAsyncButton(
-                  haptic: SandikHaptic.none,
                   style: _kayitDugmeStili(context, soluk: !_canSubmit),
                   onPressed: isLoading
                       ? null

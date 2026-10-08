@@ -1415,15 +1415,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         ),
         // Tek yükleniyor davranışı (2026-10-08): gösterge ve dokunuş kilidi
         // SandikAsyncButton'da. `saving` bayrağı KALIR — formu salt okunur
-        // tutar ve başarıda ekran kapanırken düğmeyi pasif bırakır (bkz.
-        // `_save` F14 notu); düğme yalnızca `_save` sürerken döner.
+        // tutar; `mesgul:` ile başarıda ekran kapanırken ve hızlı giriş
+        // partisi sürerken de aynı gösterge döner (bkz. `_save` F14 notu).
         child: SandikAsyncButton(
           height: 54,
-          // Eski düz FilledButton titreşimsizdi.
-          haptic: SandikHaptic.none,
-          onPressed: _saving
-              ? null
-              : (_sozlesmeFormuAcik ? _sozlesmeKaydet : _save),
+          onPressed: _sozlesmeFormuAcik ? _sozlesmeKaydet : _save,
+          mesgul: _saving,
           style: FilledButton.styleFrom(
             backgroundColor: context.c.amberFill,
             foregroundColor: context.c.onAmber,
@@ -2449,7 +2446,6 @@ class _QuickEntrySheetState extends State<_QuickEntrySheet> {
                     // buton kalıcı olarak spinner'da kalıyordu).
                     ? SandikAsyncButton.kompakt(
                         onPressed: () => widget.onSaveBatch(_previews),
-                        haptic: SandikHaptic.none,
                         style: FilledButton.styleFrom(
                             backgroundColor: context.c.amberFill,
                             foregroundColor: context.c.onAmber),

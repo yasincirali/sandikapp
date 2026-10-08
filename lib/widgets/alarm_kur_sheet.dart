@@ -363,8 +363,6 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
                   foregroundColor: c.onAmber,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                // Eski düz FilledButton titreşimsizdi.
-                haptic: SandikHaptic.none,
                 onPressed: _kaydet,
                 child: Text(context.l10n.setAlert),
               ),

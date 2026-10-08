@@ -140,8 +140,6 @@ class _Eylem extends StatelessWidget {
         ? SandikAsyncButton.kompakt(
             tur: birincil ? SandikAsyncTur.dolu : SandikAsyncTur.cerceve,
             style: stil,
-            // Eski düz Filled/OutlinedButton titreşimsizdi.
-            haptic: SandikHaptic.none,
             onPressed: isle,
             child: etiket,
           )

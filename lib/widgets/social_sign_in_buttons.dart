@@ -146,7 +146,6 @@ class _SocialButton extends StatelessWidget {
         child: SandikAsyncButton(
           height: 48,
           tur: SandikAsyncTur.cerceve,
-          haptic: SandikHaptic.none,
           onPressed: enabled ? onTap : null,
           style: OutlinedButton.styleFrom(
             backgroundColor: context.c.surface2,

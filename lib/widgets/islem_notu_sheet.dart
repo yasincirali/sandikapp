@@ -237,8 +237,6 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
           backgroundColor: context.c.amberFill,
           foregroundColor: context.c.onAmber,
         ),
-        // Eski düz FilledButton titreşimsizdi.
-        haptic: SandikHaptic.none,
         onPressed: () => _bitir(_ctrl.text),
         child: Text(l10n.save,
             style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -246,7 +244,6 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
       if (widget.not != null)
         SandikAsyncButton.kompakt(
           tur: SandikAsyncTur.metin,
-          haptic: SandikHaptic.none,
           onPressed: () => _bitir(''),
           child: Text(l10n.noteRemove,
               style: TextStyle(color: context.c.text58)),

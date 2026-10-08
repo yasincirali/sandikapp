@@ -332,9 +332,8 @@ class _DividendDialogState extends ConsumerState<_DividendDialog> {
             backgroundColor: context.c.gain,
             foregroundColor: context.c.onStatus,
           ),
-          // Eski düz FilledButton titreşimsizdi.
-          haptic: SandikHaptic.none,
-          onPressed: _saving ? null : _save,
+          onPressed: _save,
+          mesgul: _saving,
           child: const Text('Kaydet'),
         ),
       ],

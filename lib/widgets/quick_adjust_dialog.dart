@@ -481,9 +481,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   // yükleniyor davranışı, 2026-10-08). `_saving` kalır:
                   // kayıt sürerken İptal pasif.
                   child: SandikAsyncButton.kompakt(
-                    // Eski düz FilledButton titreşimsizdi.
-                    haptic: SandikHaptic.none,
-                    onPressed: _saving ? null : _submit,
+                    onPressed: _submit,
+                    mesgul: _saving,
                     style: FilledButton.styleFrom(
                       backgroundColor: accent,
                       padding: const EdgeInsets.symmetric(vertical: 14),

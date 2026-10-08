@@ -377,7 +377,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: SandikAsyncButton(
                         onPressed: _login,
                         mesgul: _loading,
-                        haptic: SandikHaptic.none,
                         style: _amberCamStili(context),
                         child: Text(
                           context.l10n.signIn,

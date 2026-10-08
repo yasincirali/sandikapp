@@ -605,8 +605,6 @@ class _EslemeKarti extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: SandikAsyncButton.kompakt(
                 tur: SandikAsyncTur.metin,
-                // Eski TextButton titreşimsizdi.
-                haptic: SandikHaptic.none,
                 onPressed: onAi,
                 icon: const Icon(Icons.auto_awesome_rounded, size: 18),
                 child: Text(context.l10n.importAiButton),

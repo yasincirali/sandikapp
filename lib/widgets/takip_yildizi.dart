@@ -97,8 +97,6 @@ class _TakipYildiziState extends ConsumerState<TakipYildizi> {
       message: etiket,
       child: SandikAsyncTap(
         semanticLabel: etiket,
-        // Eski IconButton titreşimsizdi.
-        haptic: SandikHaptic.none,
         onTap: () => takipDegistir(context, ref, k, takipte: true),
         child: SizedBox.square(
           dimension: 48,

@@ -671,7 +671,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onTap: _reload,
                       semanticLabel: context.l10n.refreshPrices,
                       // Eski düğme SandikTappable varsayılanıyla titreşirdi.
-                      haptic: SandikHaptic.selection,
                       child: _HeaderIconKutusu(
                         child: Icon(Icons.refresh_rounded,
                             color: context.c.text58, size: 22),
@@ -1586,7 +1585,6 @@ class _SignalsBottomSheet extends ConsumerWidget {
                                   SandikAsyncTap(
                                     semanticLabel:
                                         context.l10n.deleteHistoryCount(history.length),
-                                    haptic: SandikHaptic.selection,
                                     onTap: () async {
                                       // Aktif sinyal de varsa kullanıcıya
                                       // KAPSAM sorulur: yalnızca geçmiş mi,
