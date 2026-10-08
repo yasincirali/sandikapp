@@ -167,6 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _generateCode() async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     setState(() {
       _generating = true;
       _busy = true;
@@ -201,6 +202,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // formatter'ı atlayan yolları da kapsar.
     final code = PartnerCodeInputFormatter.format(_codeCtrl.text);
     if (code.isEmpty) return;
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     setState(() {
       _submitting = true;
       _busy = true;
@@ -1016,6 +1018,7 @@ class _PendingRequestsSectionState
       _showPartnerMsg(context, msg, isError: isError);
 
   Future<void> _accept(Map<String, dynamic> invite) async {
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     final kabulEdildi = context.l10n.partnershipAccepted;
     final inviteId = invite['id'] as String;
     try {

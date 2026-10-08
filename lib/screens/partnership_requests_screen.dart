@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/analytics_service.dart';
+import 'paywall_screen.dart' show ortakSiniriPaywalliActi;
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/polling.dart';
@@ -61,6 +62,7 @@ class _PartnershipRequestsScreenState
   }
 
   Future<void> _accept(String inviteId) async {
+    if (ortakSiniriPaywalliActi(context, ref)) return;
     try {
       await ref.read(partnersProvider.notifier).acceptInvite(inviteId);
       // Sunucu turunu BEKLEMEDEN düşür: `refresh()` bir ağ turu sürüyor ve

@@ -6757,6 +6757,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get pwOzKarsilastir => 'Karşılaştır\'da 5 seriye kadar';
 
   @override
+  String get pwOzOrtak => 'Birden fazla ortakla portföy paylaşımı';
+
+  @override
   String get sgnSlotNotu =>
       'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.';
 

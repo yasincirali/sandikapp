@@ -11236,6 +11236,12 @@ abstract class AppLocalizations {
   /// **'Karşılaştır\'da 5 seriye kadar'**
   String get pwOzKarsilastir;
 
+  /// No description provided for @pwOzOrtak.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birden fazla ortakla portföy paylaşımı'**
+  String get pwOzOrtak;
+
   /// No description provided for @sgnSlotNotu.
   ///
   /// In tr, this message translates to:

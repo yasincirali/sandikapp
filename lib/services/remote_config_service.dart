@@ -70,6 +70,12 @@ class RemoteConfigService {
     // eskisi gibi 5 (renk paleti beşte bitiyor). Yalnız paywall açıkken.
     'free_compare_series': 2,
 
+    // Ücretsiz sürümde en fazla kaç ortaklık (yasin kararı 2026-10-08:
+    // "1 ortak"). Yalnız paywall açıkken; var olan ortaklıklar korunur,
+    // sınır yalnız YENİ ortak eklemeyi (kod üret / kod gir / daveti kabul)
+    // durdurur. Gizlenmiş ortak da sayılır: gizlemek ortaklığı bitirmez.
+    'free_partner_limit': 1,
+
     // NOT: `free_ai_report_enabled` kaldırıldı — AI portföy raporunun hiçbir
     // implementasyonu yoktu, flag var olmayan bir özelliği gate'liyordu.
     // Özellik yazıldığında flag'i geri ekle.
@@ -401,6 +407,10 @@ class RemoteConfigService {
   int get freeCompareSeries =>
       _rc?.getInt('free_compare_series') ??
       _defaults['free_compare_series'] as int;
+
+  int get freePartnerLimit =>
+      _rc?.getInt('free_partner_limit') ??
+      _defaults['free_partner_limit'] as int;
 
   int get freeWatchlistLimit =>
       _rc?.getInt('free_watchlist_limit') ??

@@ -594,6 +594,21 @@ final karsilastirmaSeriSiniriProvider = Provider<int>((ref) {
       .clamp(1, kKarsilastirmaEnFazla);
 });
 
+/// Ücretsiz sürümde ortak sınırı dolu mu (yeni ortak eklemek Premium ister).
+///
+/// Paywall kapalıyken ya da Premium'da hep false. Ortak listesi henüz
+/// yüklenmediyse false: bilinmeyen sayı yüzünden birini durdurmayız.
+/// Sınır yalnız istemcide; sunucu ortaklık sayısını denetlemez (eski
+/// sürümler paywall'u zaten göstermiyor, satın alınacak şey yok).
+final ortakSiniriDoluProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  if (ref.watch(effectivePremiumProvider)) return false;
+  final ortaklar = ref.watch(partnersProvider).valueOrNull;
+  if (ortaklar == null) return false;
+  final sinir = RemoteConfigService.instance.freePartnerLimit;
+  return sinir > 0 && ortaklar.length >= sinir;
+});
+
 /// Free tier fiyat alarmı limiti — `assetLimitProvider` ile AYNI kalıp.
 ///
 /// Paywall kapalıyken sınırsız: satın alınabilir bir premium yokken

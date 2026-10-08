@@ -48,7 +48,9 @@ Paywall'u açmadan önce sırayla:
       (uygulama "günde 1" gösterir ama 2 gelir; zararsız ama tutarsız).
 - [ ] İsteğe bağlı Remote Config: `free_signal_slots_per_day` (varsayılan 1),
       `free_compare_series` (varsayılan 2 = kendi serine ek bir kıyas;
-      Premium 5). İkisi de yalnız `paywall_enabled` açıkken işler.
+      Premium 5), `free_partner_limit` (varsayılan 1; var olan ortaklıklar
+      korunur, yalnız yeni ortak eklemek durur). Hepsi yalnız
+      `paywall_enabled` açıkken işler.
 
 ## ⏳ 2026-10-05 Ekstre: hareketlerden gerçek alış, tanılama, AI sütun eşleme (0121, 0122), admin Premium (0123) — dal `claude/ekstre-yukleme-3lvw41`
 

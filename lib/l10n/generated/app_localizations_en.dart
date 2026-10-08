@@ -6819,6 +6819,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pwOzKarsilastir => 'Up to 5 series in Compare';
 
   @override
+  String get pwOzOrtak => 'Share your portfolio with more than one partner';
+
+  @override
   String get sgnSlotNotu =>
       'On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.';
 

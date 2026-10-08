@@ -4502,6 +4502,7 @@
   "pwOzGosterge": "ADX, Williams %R and CCI in signal analysis",
   "pwOzSiklik": "More than one signal notification a day (hourly, twice a day…)",
   "pwOzKarsilastir": "Up to 5 series in Compare",
+  "pwOzOrtak": "Share your portfolio with more than one partner",
   "sgnSlotNotu": "On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.",
   "sgnSlotKilitli": "{secenek}, Premium",
   "@sgnSlotKilitli": {

@@ -4873,6 +4873,7 @@
   "pwOzGosterge": "Sinyal analizinde ADX, Williams %R ve CCI",
   "pwOzSiklik": "Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)",
   "pwOzKarsilastir": "Karşılaştır'da 5 seriye kadar",
+  "pwOzOrtak": "Birden fazla ortakla portföy paylaşımı",
   "sgnSlotNotu": "Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium'da seçtiğin sıklık geri gelir.",
   "sgnSlotKilitli": "{secenek}, Premium",
   "@sgnSlotKilitli": {
