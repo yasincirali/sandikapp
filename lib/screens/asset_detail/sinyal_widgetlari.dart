@@ -597,13 +597,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     );
   }
 
-  Widget _panelShell({required Widget child}) => Container(
+  Widget _panelShell({required Widget child}) => SandikCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: child,
       );
 
@@ -703,13 +698,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
     // tarafından üretilir. Bu panel sadece göstergelerin özetini gösterir.
 
     if (indicators.isEmpty) {
-      return Container(
+      return SandikCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: Row(
           children: [
             Icon(Icons.tune_rounded, color: context.c.text58, size: 18),
@@ -889,12 +879,8 @@ class _TechnicalSignalPanelState extends ConsumerState<TechnicalSignalPanel> {
           const SizedBox(height: SandikSpace.md),
         ],
         // ── Gösterge listesi (düz) ──────────────────────────────────────────
-        Container(
-          decoration: BoxDecoration(
-            color: context.c.surface1,
-            borderRadius: BorderRadius.circular(SandikRadius.md),
-            border: Border.all(color: context.c.hairline),
-          ),
+        SandikCard(
+          padding: EdgeInsets.zero,
           child: Column(
             children: indicators.asMap().entries.map((entry) {
               final i = entry.key;

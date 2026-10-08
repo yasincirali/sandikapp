@@ -305,7 +305,15 @@ kod keşfi `Grep`/`Glob`/`Read` ile yapılır.
 Oturum başı denetim: `.claude/settings.local.json` `SessionStart` hook'u `tool/mcp_health.sh`
 koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Betik sunucu
 **başlatmaz**; ikinci kopya codebase-memory'nin SQLite kilidiyle çakışır. `.claude/`
-gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir.
+gitignore'da olduğundan hook bu makineye özgüdür; betik commit'lidir. İstisna
+(2026-10-08): `.claude/skills/` repoya girer ki bulut oturumu da skill'leri görsün.
+
+### Bulut oturumu (Claude Code web / Projects)
+Üç MCP sunucusu ve Flutter `tool/bulut_kurulum.sh` ile kurulur (Project settings ›
+Cloud environment › Setup script: `bash tool/bulut_kurulum.sh`). Sunucular `-s local`
+kapsamında Linux yollarıyla kaydedilir; `.mcp.json`'a dokunulmaz. Bulut grafiği
+ADR'siz başlar (ADR'ler yerel grafikte). Emülatör yok (KVM yok); doğrulama
+`flutter analyze` + `flutter test`.
 
 ---
 **Son güncelleme:** 2026-10-04 (yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat

@@ -371,14 +371,11 @@ class _KanitCipi extends StatelessWidget {
     final kaynak = olcum.tarih == null
         ? olcum.kaynak
         : '${olcum.kaynak} ${gunAy.format(olcum.tarih!)}';
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
-      decoration: BoxDecoration(
-        color: c.surface2,
-        borderRadius: SandikRadius.smAll,
-        border: Border.all(color: c.hairline),
-      ),
+      elevated: true,
+      radius: SandikRadius.sm,
       child: Text.rich(
         TextSpan(children: [
           TextSpan(text: '${olcum.ad} · ', style: TextStyle(color: c.text58)),

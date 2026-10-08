@@ -290,15 +290,11 @@ class _SayfaGovdesi extends StatelessWidget {
                 runSpacing: SandikSpace.sm,
                 children: [
                   for (final e in sayfa.etiketler)
-                    Container(
+                    SandikCard(
                       padding: const EdgeInsets.symmetric(
                           horizontal: SandikSpace.smd,
                           vertical: SandikSpace.xs2),
-                      decoration: BoxDecoration(
-                        color: context.c.surface1,
-                        borderRadius: SandikRadius.lgAll,
-                        border: Border.all(color: context.c.hairline),
-                      ),
+                      radius: SandikRadius.lg,
                       child: Text(
                         e,
                         style: context.t.labelLarge

@@ -334,13 +334,8 @@ class _YasalAdimListesiState extends State<YasalAdimListesi> {
   Widget _digerBelgeler(BuildContext context) {
     final l = context.l10n;
     final belgeler = widget.plan.digerBelgeler;
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: SandikRadius.mdAll,
-        border: Border.all(color: context.c.hairline),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

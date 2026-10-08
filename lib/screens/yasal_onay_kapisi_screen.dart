@@ -360,13 +360,8 @@ class _NelerDegistiState extends State<_NelerDegisti> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.symmetric(horizontal: SandikSpace.md),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: SandikRadius.mdAll,
-        border: Border.all(color: context.c.hairline),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

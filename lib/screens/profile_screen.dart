@@ -559,13 +559,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildUserHeader(AppUser user) {
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.lg),
-        border: Border.all(color: context.c.hairline),
-      ),
+      radius: SandikRadius.lg,
       child: Row(
         children: [
           CircleAvatar(
@@ -609,10 +605,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         // Kod üretme
         TourAnchor(
           target: TourTarget.davetKodu,
-          child: Container(
+          child: SandikCard(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          bordered: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -687,10 +682,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 16),
         // Kod girme
-        Container(
+        SandikCard(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-              color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+          bordered: false,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -835,10 +829,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildEmptyPartners() {
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+      bordered: false,
       child: Column(
         children: [
           Icon(Icons.people_outline_rounded,
@@ -855,11 +848,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildPartnerTile(PartnerAccount p) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+    return Padding(padding: const EdgeInsets.only(bottom: 12), child: SandikCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: context.c.surface1, borderRadius: BorderRadius.circular(SandikRadius.md)),
+      bordered: false,
       child: Row(
         children: [
           CircleAvatar(
@@ -942,7 +933,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Future<void> _confirmRemove(String partnerId, String name) async {

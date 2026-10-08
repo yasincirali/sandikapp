@@ -134,14 +134,10 @@ class GrafikTipiSecici extends StatelessWidget {
                   ),
                 ),
               ),
-            GrafikTipiGorunum.cip => Container(
+            GrafikTipiGorunum.cip => SandikCard(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: context.c.surface2,
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(color: context.c.hairline),
-                ),
+                elevated: true,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

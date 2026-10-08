@@ -424,13 +424,9 @@ class _InfoBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.c.surface2,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
+      elevated: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -618,13 +614,8 @@ class _SoloPanelState extends State<_SoloPanel> {
         children: [
           _SoloRoiCard(roi: _myRoi, computing: _computing),
           const SizedBox(height: 14),
-          Container(
+          SandikCard(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
-            ),
             child: Row(
               children: [
                 Icon(Icons.people_outline_rounded,
