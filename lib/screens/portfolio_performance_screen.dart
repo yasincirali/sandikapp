@@ -57,6 +57,7 @@ import '../services/period_summary_service.dart';
 import '../services/recap_service.dart';
 import '../services/xirr_service.dart';
 import '../services/remote_config_service.dart';
+import '../providers/secili_donem_provider.dart';
 import '../widgets/period_summary_view.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/zoomable_chart.dart';
@@ -193,7 +194,34 @@ class _PortfolioPerformanceScreenState
   /// panel kapalıyken de çipin üstünde yazılı (bkz. `_buildScopeBar`).
   bool _kapsamAcik = false;
 
-  int _selectedPeriodIdx = 0; // Günlük (intraday)
+  int _yerelDonemIdx = 0; // Günlük (intraday)
+
+  /// Açılış isteğiyle gelen dönem, ortak döneme yazılana kadar (bkz.
+  /// [initState]). Sağlayıcı kurulum sırasında değiştirilemediği için yazma
+  /// bir mikro görev sonra olur; o arada ilk kare isteneni çizmeli.
+  int? _bekleyenAcilisDonemi;
+
+  /// Seçili dönem indeksi ([SummaryPeriod.values] sırası).
+  ///
+  /// `donem_hafizasi` (Sadeleştirme 2) açıkken alan değil uygulamanın ortak
+  /// dönemidir ([seciliDonemProvider]); kapalıyken eski ekran alanı
+  /// ([_yerelDonemIdx], varsayılan GÜNLÜK). Erişimci olarak yazıldı ki part
+  /// dosyalarındaki okuma/yazma yerleri (seçici, Bugün kartı isteği) hiç
+  /// değişmeden ortak döneme bağlansın. Yeniden çizim `build`'deki
+  /// `ref.watch` ile gelir.
+  int get _selectedPeriodIdx {
+    if (!donemHafizasiAcik) return _yerelDonemIdx;
+    return _bekleyenAcilisDonemi ?? ref.read(seciliDonemProvider).index;
+  }
+
+  set _selectedPeriodIdx(int i) {
+    if (!donemHafizasiAcik) {
+      _yerelDonemIdx = i;
+      return;
+    }
+    _bekleyenAcilisDonemi = null;
+    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.fromIndex(i);
+  }
   late String? _view;
   late AssetType? _typeFilter;
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
@@ -316,8 +344,20 @@ class _PortfolioPerformanceScreenState
     // Sınır dışı indeks KIRPILIR, atılmaz: bozuk bir derin bağlantı
     // ekranı hiç açılmaz hale getirmemeli.
     if (widget.initialPeriodIdx != null) {
-      _selectedPeriodIdx =
-          widget.initialPeriodIdx!.clamp(0, _periods.length - 1);
+      final istenen = widget.initialPeriodIdx!.clamp(0, _periods.length - 1);
+      if (donemHafizasiAcik) {
+        // Ortak dönem kurulum sırasında yazılamaz (Riverpod); istek bir
+        // mikro görev sonra ortak döneme geçer, o zamana dek ilk kare onu
+        // çizer.
+        _bekleyenAcilisDonemi = istenen;
+        Future.microtask(() {
+          if (mounted && _bekleyenAcilisDonemi != null) {
+            _selectedPeriodIdx = _bekleyenAcilisDonemi!;
+          }
+        });
+      } else {
+        _selectedPeriodIdx = istenen;
+      }
     }
     _scrollController =
         ScrollController(initialScrollOffset: widget.initialScrollOffset);
@@ -510,6 +550,14 @@ class _PortfolioPerformanceScreenState
     // da çağrılıyor); değişince ekran yeniden kurulsun diye burada izlenir.
     ref.watch(bugunkuPortfoyleProvider);
     ref.watch(seviyeGorunurlukProvider);
+    // `donem_hafizasi`: seçili dönem ortak sağlayıcıda ([_selectedPeriodIdx]
+    // erişimcisi). Başka yüzeyde (varlık detayı, Takip…) değişince ekran
+    // yeniden kurulur ve gün içi nabız yeni döneme göre bağlanır/bırakılır.
+    if (donemHafizasiAcik) {
+      ref.watch(seciliDonemProvider);
+      ref.listen<SummaryPeriod>(
+          seciliDonemProvider, (_, __) => _startIntradayTickIfNeeded());
+    }
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     // Kapsam seçicinin `onChanged`'ı ile aynı yol: gün içi tohumu da atılır.

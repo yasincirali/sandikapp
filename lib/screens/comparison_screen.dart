@@ -11,6 +11,7 @@ import '../models/varlik_kimligi.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../providers/secili_donem_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
@@ -152,6 +153,18 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     if (donem != null) {
       _periodIdx = donem.index;
       _cizilenDonemIdx = donem.index;
+      // `donem_hafizasi`: açılışta istenen dönem ortak döneme de yazılır —
+      // kullanıcı bu pencereye bakarken öteki yüzeyler de aynısını açar.
+      // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
+      if (donemHafizasiAcik) {
+        Future.microtask(() {
+          if (mounted) ref.read(seciliDonemProvider.notifier).state = donem;
+        });
+      }
+    } else if (donemHafizasiAcik) {
+      // Ortak dönem 3A varsayılanının yerine geçer (bayrak kapalıyken 3A).
+      _periodIdx = ref.read(seciliDonemProvider).index;
+      _cizilenDonemIdx = _periodIdx;
     }
     // Varlık ekranından gelen satır İLK karede seçili olsun: kare sonrasına
     // bırakılsaydı ekran bir kare "kıyaslamak için varlık ekle" boş hâlini
@@ -321,6 +334,16 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   /// grafiği iskelete düşürüyor, çizgiler sonra tek tek sıfırdan çiziliyordu
   /// — `LineChart` morfu kayboluyordu. İki dönemin serisi aynı eksende hiç
   /// karışmaz: yazma tek `setState`.
+  /// Seçiciden dönem seçimi (`donem_hafizasi` açıkken; kapalıyken seçici
+  /// eskisi gibi doğrudan [_changePeriod]'u çağırır). Ortak döneme yazma `_changePeriod` alanı güncelledikten SONRA yapılır ki
+  /// [build]'deki dinleyici değişikliği kendi seçimimiz olarak tanıyıp
+  /// ikinci kez çekmesin.
+  void _donemSec(int idx) {
+    CrashReporter.arkaPlan(_changePeriod(idx),
+        reason: 'comparison_screen._donemSec');
+    ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.values[idx];
+  }
+
   Future<void> _changePeriod(int idx) async {
     final nesil = ++_donemNesli;
     final days = _periods[idx].days;
@@ -362,6 +385,16 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   @override
   Widget build(BuildContext context) {
     final p = context.c;
+    // `donem_hafizasi`: ortak dönem başka yüzeyde (bu ekranın üstünde açılan
+    // varlık sayfası gibi) değişirse bu ekran da o döneme geçer.
+    if (donemHafizasiAcik) {
+      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+        if (yeni.index != _periodIdx) {
+          CrashReporter.arkaPlan(_changePeriod(yeni.index),
+              reason: 'comparison_screen.ortakDonem');
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: p.background,
@@ -410,7 +443,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
       child: DonemSecici(
         donemler: SummaryPeriod.values,
         secili: _periodIdx,
-        onSec: _changePeriod,
+        onSec: donemHafizasiAcik ? _donemSec : _changePeriod,
       ),
     );
   }

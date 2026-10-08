@@ -60,6 +60,7 @@ import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
+import '../providers/secili_donem_provider.dart';
 import '../services/sozlesme_deposu.dart';
 import '../widgets/pozisyon_islemleri.dart';
 import 'comparison_screen.dart';
@@ -180,6 +181,18 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   List<({String label, int days})> get _periods =>
       _gunIciDestekli ? _allPeriods : _allPeriods.sublist(1);
 
+  /// [_periods]'un [SummaryPeriod] karşılığı — aynı süzgeç, aynı sıra.
+  /// Ortak dönem (`donem_hafizasi`) ham indeksle değil dönem DEĞERİYLE
+  /// eşlenir: GÜNLÜK'süz listede indeksler bir kayıktır.
+  List<SummaryPeriod> get _donemler => [
+        for (final p in SummaryPeriod.values)
+          if (!p.intraday || _gunIciDestekli) p,
+      ];
+
+  /// Ortak dönemin bu ekrandaki indeksi; yoksa en yakın dönemin.
+  int _ortakDonemIdx(SummaryPeriod d) =>
+      _donemler.indexOf(gosterilebilirDonem(d, _donemler));
+
   /// Alttaki teknik gösterge panelinin konumu.
   ///
   /// Üstteki sinyal şeridi yalnızca ÖZET verir (yön + kaç gösterge + güven).
@@ -238,6 +251,25 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     if (istenen != null) {
       final idx = _periods.indexWhere((p) => p.days == istenen);
       if (idx >= 0) _selectedPeriodIdx = idx;
+    }
+    // `donem_hafizasi` (Sadeleştirme 2): HAFTALIK varsayılanı yerine
+    // uygulamanın ortak dönemi. Çağıranın isteği (bildirim → GÜNLÜK) yine
+    // önce gelir ve ortak döneme yazılır. Ortak dönem burada yoksa (elle
+    // fiyatlanan varlıkta GÜNLÜK) en yakını gösterilir, ortak değer kalır.
+    if (donemHafizasiAcik) {
+      final istekIdx = istenen == null
+          ? -1
+          : _periods.indexWhere((p) => p.days == istenen);
+      if (istekIdx >= 0) {
+        // Sağlayıcı kurulum sırasında değiştirilemez; kareden sonra yazılır.
+        Future.microtask(() {
+          if (mounted) {
+            ref.read(seciliDonemProvider.notifier).state = _donemler[istekIdx];
+          }
+        });
+      } else {
+        _selectedPeriodIdx = _ortakDonemIdx(ref.read(seciliDonemProvider));
+      }
     }
     _historyFuture = _loadHistory(_periods[_selectedPeriodIdx].days);
     // Öteki dönemler seçiliyi beklemeden, paralel (çip getirileri).
@@ -568,6 +600,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // açıksa bu DEĞER tutarları maskelenir (`gosterimBazParaProvider`,
     // bulgu #3); fiyat bakiye değildir, açık kalır.
     final baz = ref.watch(gosterimBazParaProvider);
+    // `donem_hafizasi`: ortak dönem başka yüzeyde (üstte açılan Karşılaştır
+    // ya da varlık sayfası) değişirse bu ekran da geçer.
+    if (donemHafizasiAcik) {
+      ref.listen<SummaryPeriod>(seciliDonemProvider, (_, yeni) {
+        final idx = _ortakDonemIdx(yeni);
+        if (idx != _selectedPeriodIdx) _selectPeriod(idx);
+      });
+    }
     final endDate = DateTime.now();
     final period = _periods[_selectedPeriodIdx];
     final isIntraday = period.days == 0;
