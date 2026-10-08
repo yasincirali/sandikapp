@@ -551,14 +551,9 @@ class _Hucre extends StatelessWidget {
         : d < 0
             ? context.c.loss
             : context.c.gain;
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.fromLTRB(
           SandikSpace.smd, SandikSpace.sm, SandikSpace.smd, SandikSpace.sm),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

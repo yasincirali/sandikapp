@@ -270,9 +270,8 @@ class LeaderboardService {
   /// Performans › Özet'in AYNI dönemdeki sayısı (R1, 2026-10-01).
   ///
   /// Yeni bir XIRR YAZILMAZ: Özet'in yolu (`PeriodSummaryService.compute`,
-  /// sağ uç canlı kapsam toplamı) olduğu gibi çağrılır — ana sayfanın
-  /// "Son 7 gün" satırı (`BugunYukleyici.haftalik`) ile aynı desen. İki
-  /// yüzey aynı dönemde aynı sayıyı söylemeli.
+  /// sağ uç canlı kapsam toplamı) olduğu gibi çağrılır. İki yüzey aynı
+  /// dönemde aynı sayıyı söylemeli.
   ///
   /// Yarış'ın dönemi Özet'in dönemine eşlenir (30G → 1A: Özet ayı takvimden
   /// sayar). Eşi olmayan dönemde ya da Özet bayrağı kapalıyken `null`.

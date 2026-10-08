@@ -113,7 +113,6 @@ void main() {
     'lib/widgets/delete_asset_dialog.dart': 0,
     'lib/widgets/dividend_dialog.dart': 1,
     'lib/widgets/quick_adjust_dialog.dart': 0,
-    'lib/widgets/real_return_strip.dart': 0,
     'lib/screens/asset_detail/sinyal_widgetlari.dart': 2,
     'lib/screens/portfolio_performance/ozet_yan_veri.dart': 2,
     'lib/screens/price_alerts_screen.dart': 2,

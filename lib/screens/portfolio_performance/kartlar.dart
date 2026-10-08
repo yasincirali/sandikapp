@@ -1097,8 +1097,8 @@ class _YuzdeRozeti extends StatelessWidget {
 /// değişiyordu (ölçüldü: 1Y'de ₺705.390 → ₺688.073, 1 Eki → 6 Eki). Aynı
 /// dönem iki bakışta iki sayı söylüyordu. Özet artık dönemin KANONİK
 /// serisini ister: pencere `PeriodSummaryService.pencere`, çözünürlük
-/// `pickForSpan(period.days)` — Ana ekrandaki "Son 7 gün" ile birebir aynı
-/// istek (`BugunYukleyici.haftalik`). `HistoryService._tierCache` sayesinde
+/// `pickForSpan(period.days)` (2026-10-08'e kadar Ana ekrandaki "Son 7 gün"
+/// de aynı isteği atıyordu; satır kartla kalktı). `HistoryService._tierCache` sayesinde
 /// varsayılan zoom'da ağa ikinci kez çıkılmaz.
 ///
 /// Anahtar (dönem, kapsam, simülasyon, lot imzası, yenileme sayacı)

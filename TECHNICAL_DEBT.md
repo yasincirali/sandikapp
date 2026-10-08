@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
 
@@ -26,24 +26,21 @@ kapatılamaz (YAPMAN_GEREKENLER 2026-10-05).
 
 ---
 
-## 🟡 AÇIK — Bugün kartı çizmediği satırları hesaplıyor ve "gösterildi" sayıyor (2026-10-05)
+## ✅ KAPANDI — Bugün kartı çizmediği satırları hesaplıyor ve "gösterildi" sayıyor (2026-10-05 → 2026-10-08)
 
-**Ne:** Kart 2026-10-04'ten beri "H" düzeninde (hareket, enflasyon kıyası,
-en çok oynayan, hedef). `BugunService.hesapla` yine D düzeninin satırlarını
-üretiyor (son 7 gün, artıdaki varlık, aylık özet, yaklaşan olay) ve
-`_haftalikYukle` haftalık getiriyi ağdan çekiyor; `_gosterimiOlc` bu
-satırlar için de `today_row_shown` olayı yazıyor — ekranda olmadıkları hâlde.
+**Ne idi:** Kart 2026-10-04'ten beri "H" düzeninde (hareket, enflasyon kıyası,
+en çok oynayan, hedef) ama `BugunService.hesapla` D düzeninin satırlarını
+(son 7 gün, artıdaki varlık, aylık özet, yaklaşan olay) üretiyor,
+`_haftalikYukle` haftalık getiriyi ağdan çekiyor, `_gosterimiOlc` bunları
+`today_row_shown` ile "gösterildi" sayıyordu.
 
-**Neden bırakıldı:** bayrak temizliğinin kuralı "davranış birebir" idi;
-hesap ve analitik bayraktan bağımsızdı, kaldırmak ölçüm serisini değiştirir.
-
-**Maliyet:** bir haftalık seri isteği + yanlış "gösterildi" sayıları
-(`today_row_shown` olayında `haftalik`/`aylik`/`yesil`/`olay_*` türleri
-kartta görünmediği hâlde sayılıyor).
-
-**Ne zaman:** analitik serisi değiştirilebilir olduğunda — hesabı H'nin
-satırlarına daralt (`BugunService.hesapla`), `_haftalikYukle`'yi kaldır,
-`_gosterimiOlc`'yi çizilen satırlarla sınırla.
+**KAPANDI (2026-10-08, sadeleştirme kalanları):** hesap H'nin satırlarına
+daraldı (`BugunKartiVerisi`: birincil, hedef, reel); `BugunYukleyici.haftalik`
+ve splash ısıtmasındaki çağrısı kalktı (açılışta bir seri isteği az);
+gösterim ölçümü yalnız çizilenleri sayar ve çizilen en çok oynayanı
+(`oynayan`) artık sayar. **Analitik serisi bu tarihte kırılır:**
+`today_row_shown` içinde `yesil`/`haftalik`/`aylik`/`olay_*` biter,
+`oynayan` başlar. Görünüm birebir aynı.
 
 ---
 
@@ -172,6 +169,10 @@ panel zaten ortaktı. İki giriş biçimi (tam ekran / alt sayfa) kaldı.
 **Maliyet:** Grafikte yapılan bir stil düzeltmesi iki yere yazılır
 (`grafik_stili_birligi_test` ortak stil sabitlerini kilitliyor, yapıyı
 değil).
+
+**Kullanıcı kararı (2026-10-08): olduğu gibi kalır.** Birleştirme kullanıcıya
+fayda getirmiyor, yalnız bakım kolaylığı; görünür fark ve görsel doğrulama
+maliyeti ağır bastı. Aşağıdaki koşul yalnız ileride yeniden açılırsa geçerli.
 
 **Ne zaman:** Detay grafiği `FiyatGrafigi`'ne (ya da tersine) taşınacaksa,
 önce iki grafik `tek_varlik_gorsel_onizleme_test` ile önce/sonra çizilip
@@ -726,33 +727,21 @@ o zaman kullanıcı iki sayıyı yan yana görecek.
 
 ---
 
-## 🟡 AÇIK (yarısı kapandı) — `RealReturnStrip` ana ekrandan kalktı; widget dosyada duruyor
+## ✅ KAPANDI — `RealReturnStrip` / `WeeklySummaryChip` ana ekrandan kalktı; widget'lar dosyada duruyordu
 
-**Kapanan yarı (2026-10-04, `7f2ce77`, sadeleştirme C).** `WeeklySummaryChip`
-(`lib/widgets/weekly_summary_chip.dart`) ve `weekly_chip_percent_test`
-silindi; yalnız onun kullandığı l10n anahtarları (`pctUp`/`pctDown`,
-`weekly*Semantics`, `thisWeekFromMarket`) da çıktı. Testin kilitlediği
-"çift % işareti" değişmezinin konusu olan şablonlar artık yok; haftalık
-rakam Bugün kartında `PeriodSummaryService` üzerinden yaşıyor. Aşağıdaki
-metin iki widget için yazılmıştı; açık kalan yalnız `RealReturnStrip`.
+**İlk yarı (2026-10-04, `7f2ce77`, sadeleştirme C):** `WeeklySummaryChip`
+ve `weekly_chip_percent_test` silindi.
 
-**Ne.** 2026-09-21 "Bugün kartı kapsamı izler" kararıyla iki şerit ana
-ekrandan tümden çıktı (reel ve haftalık her görünümde kartın satırı). İki
-widget'ın `lib/` içinde artık çağıranı yok; yalnızca kendi testleri
-(`real_return_badge_test`, `weekly_chip_percent_test`, `inflation_display_precision_test`)
-onları kuruyor. Hesap mantığı serviste (`RealReturnService`,
-`PeriodSummaryService`); widget'lar yalnızca sunum.
-
-**Neden ertelendi.** Testler yüzde biçimi ve rozet kuralları gibi
-sunum-bağımsız değişmezleri bu widget'lar üzerinden sınıyor; silmeden önce
-o değişmezlerin karta ya da servise taşınması gerekir. Bu tur kapsam
-değişikliğine sunum temizliği karıştırılmadı.
-
-**Ne zaman.** Bir sonraki sadeleştirme turunda: değişmez testleri
-`bugun_karti` / servis seviyesine taşı, `RealReturnStrip` /
-`RealReturnBadge`'i ve testlerini sil. (Sadeleştirme C'de bilinçli olarak
-dokunulmadı: kural "testten kullanılan dosya ölü sayılmaz".)
-
+**İkinci yarı (2026-10-08, sadeleştirme kalanları):** `real_return_strip.dart`
+(`RealReturnStrip` + `RealReturnBadge`), `real_return_badge_test` ve
+yalnız onların kullandığı 8 l10n anahtarı (`realReturnAheadOfInflation`,
+`realReturnBehindInflation`, `realReturnCpi`, `realReturnLastYear`,
+`realReturnPointsUnit`, `realReturnYours`, `realReturnSemanticsAhead/Behind`)
+silindi. Korunacak değişmez — TÜFE ve nominal iki ondalık, `digits: 0` yok —
+`inflation_display_precision_test`'te Bugün kartının `_EnflasyonKiyasi`
+bloğuna taşındı. Rozetin yerleşim testleri (dar ekranda rakamın bölünmemesi)
+taşınmadı: kart düzeni kendi testinde (`bugun_karti_sakin_pano_test`, 320–430pt
+taşma yok). Puan farkı kartta bilinçli tek ondalık (F3).
 ---
 
 ## 🟡 AÇIK — Universal Links / App Links yok; paylaşılan bağlantı web sayfasına iner

@@ -1499,13 +1499,8 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = destructive ? context.c.loss : context.c.text90;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: SandikCard(
+      padding: EdgeInsets.zero,
       child: CupertinoButton(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         onPressed: onTap,
@@ -1549,7 +1544,7 @@ class _SettingsTile extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -2197,14 +2192,8 @@ class _SwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: SandikCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
       child: Row(
         children: [
           Container(
@@ -2247,7 +2236,7 @@ class _SwitchTile extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 

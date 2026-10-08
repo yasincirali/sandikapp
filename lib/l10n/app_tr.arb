@@ -1444,25 +1444,9 @@
       }
     }
   },
-  "realReturnSemanticsAhead": "Son bir yılda portföyün enflasyonu {pts} puan geçti",
-  "@realReturnSemanticsAhead": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
   "lastYearInflation": "Son bir yılda enflasyonun ",
   "pointsAhead": "{pts} puan önündesin",
   "@pointsAhead": {
-    "placeholders": {
-      "pts": {
-        "type": "String"
-      }
-    }
-  },
-  "realReturnSemanticsBehind": "Son bir yılda portföyün enflasyonun {pts} puan gerisinde kaldı",
-  "@realReturnSemanticsBehind": {
     "placeholders": {
       "pts": {
         "type": "String"
@@ -1477,12 +1461,6 @@
       }
     }
   },
-  "realReturnPointsUnit": "puan",
-  "realReturnAheadOfInflation": "enflasyonun önündesin",
-  "realReturnBehindInflation": "enflasyonun gerisindesin",
-  "realReturnLastYear": "son bir yıl",
-  "realReturnYours": "Senin",
-  "realReturnCpi": "TÜFE",
   "noChangeLower": "değişim yok",
   "totalNetHidden": "Toplam net varlık gizli",
   "totalNetWorth": "Toplam net varlık {amount}",

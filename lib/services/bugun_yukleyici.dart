@@ -1,4 +1,4 @@
-// Bugün kartının üç veri yükleyicisi — TEK KAYNAK.
+// Bugün kartının veri yükleyicileri — TEK KAYNAK.
 //
 // ## Neden ayrı dosya (kullanıcı isteği, 2026-09-28)
 // *"Uygulamaya tıklandığında GIF başladığında ana sayfa için gereken tüm
@@ -8,8 +8,8 @@
 //
 // Splash zaten portföyü, ortak listesini ve ortak varlıklarını ısıtıyordu
 // (`_AuthGateState._warmUpData`). Ana ekranda kalan tek iskelet Bugün
-// kartıydı: kartın üç yükleyicisi (gün içi seri, reel getiri, haftalık
-// getiri) `BugunKarti` state'inin içindeydi ve ancak kart KURULDUKTAN sonra
+// kartıydı: kartın yükleyicileri (gün içi seri, reel getiri; 2026-10-08'e
+// kadar haftalık getiri de) `BugunKarti` state'inin içindeydi ve ancak kart KURULDUKTAN sonra
 // başlıyordu — fiyat turu da `MainNavigationScreen.initState`'te. Yani
 // splash biter, ana ekran gelir, kart 2–10 sn iskelet çizer.
 //
@@ -34,7 +34,6 @@ import 'bugun_service.dart';
 import 'crash_reporter.dart';
 import 'daily_summary.dart';
 import 'history_service.dart';
-import 'period_summary_service.dart';
 import 'real_return_service.dart';
 import 'remote_config_service.dart';
 import 'tazelik_ritmi.dart';
@@ -112,42 +111,7 @@ abstract final class BugunYukleyici {
     }
   }
 
-  /// Haftalık getiri yüzdesi — Remote Config kapalıysa `null`.
-  static Future<double?> haftalik(
-    PortfolioState state, {
-    Duration enFazla = varsayilanButce,
-  }) async {
-    if (!RemoteConfigService.instance.periodSummaryEnabled) return null;
-    try {
-      final now = DateTime.now();
-      // `activeAssets`: Özet ile aynı küme (gerekçe `reel`).
-      final lotlar = state.activeAssets;
-      final p = PeriodSummaryService.pencere(SummaryPeriod.birHafta, now);
-      final bd = await HistoryService.instance
-          .getPortfolioHistoryBreakdownAtResolution(
-            assets: lotlar,
-            from: p.start,
-            to: p.end,
-            tier: ResolutionTierMeta.pickForSpan(
-                SummaryPeriod.birHafta.days.toDouble()),
-          )
-          .timeout(enFazla);
-      final s = PeriodSummaryService.compute(
-        period: SummaryPeriod.birHafta,
-        assets: lotlar,
-        breakdown: bd,
-        now: now,
-        // Performans › Özet ile aynı sağ uç (bkz. `compute` [canliSon]).
-        canliSon: DailySummary.kapsamToplami(state, lotlar),
-      );
-      return s.getiriPct;
-    } catch (e, st) {
-      CrashReporter.report(e, st, reason: 'BugunYukleyici.haftalik');
-      return null;
-    }
-  }
-
-  /// Splash ısıtması: kartın açılışta ("Ben" görünümü) isteyeceği üç veriyi
+  /// Splash ısıtması: kartın açılışta ("Ben" görünümü) isteyeceği verileri
   /// PARALEL çeker ve önbellekleri doldurur. Sonuç kullanılmaz; kart aynı
   /// çağrıları yapınca önbellekten alır. Hiç fırlatmaz.
   ///
@@ -158,7 +122,6 @@ abstract final class BugunYukleyici {
     await Future.wait<Object?>([
       seri(state, kisisel: true, enFazla: enFazla),
       reel(state, enFazla: enFazla),
-      haftalik(state, enFazla: enFazla),
     ]);
   }
 }

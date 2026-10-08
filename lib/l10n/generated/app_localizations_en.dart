@@ -2360,11 +2360,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String realReturnSemanticsAhead(String pts) {
-    return 'Over the last year your portfolio beat inflation by $pts points';
-  }
-
-  @override
   String get lastYearInflation => 'Over the last year, inflation-wise you are ';
 
   @override
@@ -2373,32 +2368,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String realReturnSemanticsBehind(String pts) {
-    return 'Over the last year your portfolio trailed inflation by $pts points';
-  }
-
-  @override
   String pointsBehind(String pts) {
     return '$pts points behind';
   }
-
-  @override
-  String get realReturnPointsUnit => 'points';
-
-  @override
-  String get realReturnAheadOfInflation => 'ahead of inflation';
-
-  @override
-  String get realReturnBehindInflation => 'behind inflation';
-
-  @override
-  String get realReturnLastYear => 'last year';
-
-  @override
-  String get realReturnYours => 'Yours';
-
-  @override
-  String get realReturnCpi => 'CPI';
 
   @override
   String get noChangeLower => 'no change';

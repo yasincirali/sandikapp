@@ -48,13 +48,8 @@ class SignalSettingsScreen extends ConsumerWidget {
           ],
 
           // â”€â”€ Genel bildirim ayarlarÄ± â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-          Container(
+          SandikCard(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -256,12 +251,8 @@ class _CategorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
+    return SandikCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           Padding(
@@ -494,12 +485,10 @@ class _FrequencyRow extends StatelessWidget {
           //
           // Liste düzeni her satırı sabit yükseklikte tutar — seçim değişince
           // hiçbir şey kaymaz. iOS Ayarlar'ın kendi seçim deseni de budur.
-          Container(
-            decoration: BoxDecoration(
-              color: context.c.surface2,
-              borderRadius: BorderRadius.circular(SandikRadius.sm),
-              border: Border.all(color: context.c.hairline),
-            ),
+          SandikCard(
+            padding: EdgeInsets.zero,
+            elevated: true,
+            radius: SandikRadius.sm,
             child: Column(
               children: [
                 for (var i = 0; i < SignalFrequency.values.length; i++) ...[

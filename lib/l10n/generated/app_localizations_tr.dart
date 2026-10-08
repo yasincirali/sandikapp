@@ -2344,11 +2344,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String realReturnSemanticsAhead(String pts) {
-    return 'Son bir yılda portföyün enflasyonu $pts puan geçti';
-  }
-
-  @override
   String get lastYearInflation => 'Son bir yılda enflasyonun ';
 
   @override
@@ -2357,32 +2352,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String realReturnSemanticsBehind(String pts) {
-    return 'Son bir yılda portföyün enflasyonun $pts puan gerisinde kaldı';
-  }
-
-  @override
   String pointsBehind(String pts) {
     return '$pts puan gerisindesin';
   }
-
-  @override
-  String get realReturnPointsUnit => 'puan';
-
-  @override
-  String get realReturnAheadOfInflation => 'enflasyonun önündesin';
-
-  @override
-  String get realReturnBehindInflation => 'enflasyonun gerisindesin';
-
-  @override
-  String get realReturnLastYear => 'son bir yıl';
-
-  @override
-  String get realReturnYours => 'Senin';
-
-  @override
-  String get realReturnCpi => 'TÜFE';
 
   @override
   String get noChangeLower => 'değişim yok';

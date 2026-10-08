@@ -267,13 +267,8 @@ class _ChartCard extends ConsumerWidget {
     final portfolioLabel = _portfolioLabel(view, partners);
     final focused = ref.watch(watchlistFocusProvider);
 
-    return Container(
+    return SandikCard(
       padding: const EdgeInsets.fromLTRB(8, 14, 14, 12),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -128,12 +128,10 @@ class _PartnershipRequestsScreenState
                     SandikSkeletonList(rows: 2, padding: EdgeInsets.zero),
               )
             else if (pendingInvites.isEmpty)
-              Container(
+              SandikCard(
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: context.c.surface1,
-                  borderRadius: BorderRadius.circular(SandikRadius.lg),
-                ),
+                radius: SandikRadius.lg,
+                bordered: false,
                 child: Column(
                   children: [
                     Icon(

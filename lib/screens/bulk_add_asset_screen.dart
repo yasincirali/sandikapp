@@ -567,13 +567,8 @@ class _BulkItemTile extends StatelessWidget {
 
     return SandikBasma(
       onTap: onEdit,
-      child: Container(
+      child: SandikCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: Row(
           children: [
             Container(

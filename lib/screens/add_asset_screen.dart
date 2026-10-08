@@ -936,13 +936,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
     // Miktar yoksa hiçbir şey gösterme
     if (qty == null || qty <= 0) {
-      return Container(
+      return SandikCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.c.surface1,
-          borderRadius: BorderRadius.circular(SandikRadius.md),
-          border: Border.all(color: context.c.hairline),
-        ),
         child: Row(
           children: [
             Icon(Icons.calculate_outlined, color: context.c.text36, size: 18),
@@ -1315,12 +1310,8 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   Widget _notesCollapsible(ColorScheme cs, {bool komisyonDahil = false}) {
     final doluIcerik = _notes.text.isNotEmpty ||
         (komisyonDahil && _commission.text.isNotEmpty);
-    return Container(
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
+    return SandikCard(
+      padding: EdgeInsets.zero,
       child: Column(
         children: [
           InkWell(

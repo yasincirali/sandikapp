@@ -32,39 +32,28 @@ void main() {
     return satirlar.join(' ').replaceAll(RegExp(r'\s+'), ' ');
   }
 
-  test('reel getiri şeridi TÜFE ve nominali iki ondalıkla yazar', () {
-    final src = kodu('lib/widgets/real_return_strip.dart');
+  // 2026-10-08: eski ana ekran şeridi (`RealReturnStrip`/`RealReturnBadge`)
+  // 2026-09-21'den beri çağrılmıyordu ve silindi; aynı iki sayı artık
+  // Bugün kartının enflasyon kıyasında (`_EnflasyonKiyasi`) yazılır, kural
+  // oraya taşındı. Puan farkı kartta bilinçli TEK ondalık (`reelFarkMetni`,
+  // plan F3: "5,2 puan önde"); doğrulanabilirlik iki yüzdeyle sağlanır.
+  String kiyasBlogu() {
+    final src = kodu('lib/widgets/bugun_karti.dart');
+    final i = src.indexOf('class _EnflasyonKiyasi');
+    expect(i, greaterThanOrEqualTo(0));
+    final j = src.indexOf('class ', i + 1);
+    return src.substring(i, j < 0 ? src.length : j);
+  }
 
-    // İfadenin ADINA değil, BİÇİMİNE bakılır: `veri.inflation` 2026-09-15'te
-    // `inflation` oldu (görsel gövde `RealReturnBadge`'e ayrıldı) ve
-    // isme bağlı kalıp davranış hiç değişmediği hâlde testi kırdı.
-    // Korunacak şey tek: o iki sayının iki ondalıkla yazılması.
-    // 2026-09-29: getiri yönlü yüzdeye geçti (`fmtPctIsaretli`, "%-5,00"
-    // yerine "−%5,00"); biçimleyici adı serbest, `digits: 2` şart.
-    RegExp ikiOndalik(String ad) => RegExp(
-        r'(fmtNum|fmtPct|fmtPctIsaretli)\([\w.]*' + ad + r', digits: 2\)');
-    expect(
-      src.contains(ikiOndalik('inflation')),
-      isTrue,
-      reason: 'TÜFE yuvarlanmamalı — TÜİK rakamıyla karşılaştırılabilmeli.',
-    );
-    expect(
-      src.contains(ikiOndalik('nominal')),
-      isTrue,
-      reason: 'Nominal getiri TÜFE ile aynı hassasiyette olmalı.',
-    );
-    expect(
-      src.contains('digits: 0'),
-      isFalse,
-      reason: 'Şeritte tam sayıya yuvarlama YOK — bir arızayı gizlemişti.',
-    );
-  });
-
-  test('puan farkı da yuvarlanmaz — çıkarma elle doğrulanabilmeli', () {
-    final src = kodu('lib/widgets/real_return_strip.dart');
-
-    // Kullanıcı "nominal − TÜFE = puan farkı" çıkarmasını yapıyor; üç sayı
-    // aynı hassasiyette olmazsa çıkarma tutmuyor.
-    expect(src.contains('fmtNum(puan.abs(), digits: 2)'), isTrue);
+  test('Bugün kartı TÜFE ve nominali iki ondalıkla yazar', () {
+    final blok = kiyasBlogu();
+    // Çubuk satırı `fmtPct(v)` (varsayılan 2 hane) ile yazılır; ekran
+    // okuyucu metni de aynı iki sayıyı aynı biçimle okur.
+    expect(blok.contains('fmtPct(v)'), isTrue,
+        reason: 'TÜFE yuvarlanmamalı — TÜİK rakamıyla karşılaştırılabilmeli.');
+    expect(blok.contains('fmtPct(reel.nominal)'), isTrue);
+    expect(blok.contains('fmtPct(reel.inflation)'), isTrue);
+    expect(blok.contains('digits: 0'), isFalse,
+        reason: 'Tam sayıya yuvarlama YOK — bir arızayı gizlemişti.');
   });
 }
