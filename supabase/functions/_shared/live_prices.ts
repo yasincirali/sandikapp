@@ -8,6 +8,7 @@
 // **Kaynaklar istemciyle AYNI seçildi** (`lib/services/price_service.dart`):
 //   · altın + döviz → finans.truncgil.com
 //   · `KRIPTO:`     → `kripto_fiyat` tablosu (kripto-fiyat yazar, Binance)
+//   · `EUROBOND:`   → `eurobond_fiyat` + `eurobond_katalog` (kirli/100)
 //   · geri kalan    → Yahoo chart
 // Bu bir tercih değil zorunluluk: alarm uygulamada GÖRÜNEN sayı üzerinden
 // tetiklenmeli. Farklı kaynak kullansaydık kullanıcı ekranda 5.401 görürken
@@ -17,6 +18,7 @@ import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 import { sonNavSatiri } from './tefas_nav.ts';
 import { KRIPTO_ONEKI, kriptoKodu, kriptoMu } from './kripto.ts';
+import { birimDeger, EUROBOND_ONEKI, isinGecerli, sozlesmeSatiri } from './eurobond.ts';
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
@@ -295,23 +297,88 @@ export function isTefasSymbol(symbol: string): boolean {
 /// 2026-09-25: `KRIPTO:` ayrı kova. Yahoo'da `KRIPTO:BTC` diye bir sembol
 /// yok; ayrılmasaydı fon hatasının aynısı (sessizce hiç tetiklenmeyen
 /// alarm) kriptoda tekrar ederdi.
+///
+/// 2026-10-08 (seri denetimi): `EUROBOND:` ayrı kova. Yahoo'da böyle bir
+/// sembol yok; her kilit ekranı turunda ve takip hareketi taramasında
+/// boşuna bir istek atılıyor ve tahvil hiç fiyatlanmıyordu (kripto/fon
+/// hatasının aynısı). Fiyat uygulamanın okuduğu tablodan gelir.
 export function kaynakAyir(symbols: Iterable<string>): {
   truncgil: string[];
   tefas: string[];
   kripto: string[];
+  eurobond: string[];
   yahoo: string[];
 } {
   const truncgil: string[] = [];
   const tefas: string[] = [];
   const kripto: string[] = [];
+  const eurobond: string[] = [];
   const yahoo: string[] = [];
   for (const s of symbols) {
     if (isGoldSymbol(s) || isFxSymbol(s)) truncgil.push(s);
     else if (isTefasSymbol(s)) tefas.push(s);
     else if (kriptoMu(s)) kripto.push(s);
+    else if (eurobondMu(s)) eurobond.push(s);
     else yahoo.push(s);
   }
-  return { truncgil, tefas, kripto, yahoo };
+  return { truncgil, tefas, kripto, eurobond, yahoo };
+}
+
+export function eurobondMu(symbol: string): boolean {
+  return symbol.trim().toUpperCase().startsWith(EUROBOND_ONEKI);
+}
+
+/// `eurobond_katalog` + gömülü `eurobond_fiyat` satırının kotasyonu — saf.
+///
+/// Ölçek UYGULAMAYLA AYNI: 1 nominal birimin KİRLİ değeri (kirli/100),
+/// tahvilin para biriminde (`PriceService._fetchEurobond`). Günlük yüzde
+/// TEMİZ fiyattan — işlemiş faizin günlük artışı piyasa hareketi değildir
+/// (istemcideki kuralın aynısı). Temiz fiyat yoksa (vadesi dolmuş,
+/// Frankfurt'ta işlem görmeyen) null: banka kotasyonu ayrı bir fiyattır,
+/// yerine konmaz.
+export function eurobondSatiriKotasyon(
+  satir: Record<string, unknown>,
+  simdiMs: number,
+): CanliKotasyon | null {
+  const s = sozlesmeSatiri(satir);
+  if (!s) return null;
+  const ham = satir.eurobond_fiyat;
+  const f = (Array.isArray(ham) ? ham[0] : ham) as Record<string, unknown> | null | undefined;
+  const temiz = Number(f?.temiz_fiyat);
+  if (!f || !Number.isFinite(temiz) || temiz <= 0) return null;
+  const onceki = Number(f.onceki_kapanis);
+  return {
+    price: birimDeger(s, temiz, simdiMs),
+    changePct: f.onceki_kapanis != null && Number.isFinite(onceki) && onceki > 0
+      ? (temiz - onceki) / onceki * 100
+      : null,
+  };
+}
+
+/// Eurobond kotasyonları tek sorguda. `db` yoksa boş (kripto ile aynı).
+async function fetchEurobondQuotes(
+  db: SupabaseClient | undefined,
+  semboller: string[],
+): Promise<Map<string, CanliKotasyon>> {
+  const out = new Map<string, CanliKotasyon>();
+  if (!db || semboller.length === 0) return out;
+  const isinler = semboller
+    .map((s) => s.trim().toUpperCase().slice(EUROBOND_ONEKI.length))
+    .filter(isinGecerli);
+  if (isinler.length === 0) return out;
+  const { data, error } = await db
+    .from('eurobond_katalog')
+    .select(
+      'isin, para_birimi, kupon_orani, vade, ihrac_yili, kupon_sikligi, eurobond_fiyat(temiz_fiyat, onceki_kapanis)',
+    )
+    .in('isin', isinler);
+  if (error || !data) return out;
+  const simdi = Date.now();
+  for (const r of data as unknown as Array<Record<string, unknown>>) {
+    const k = eurobondSatiriKotasyon(r, simdi);
+    if (k) out.set(`${EUROBOND_ONEKI}${String(r.isin).toUpperCase()}`, k);
+  }
+  return out;
 }
 
 /// `kripto_fiyat` satırının alarmda kullanılabilir hâli — saf.
@@ -418,6 +485,7 @@ export async function fetchLiveQuotes(
     truncgil: truncgilList,
     tefas: tefasList,
     kripto: kriptoList,
+    eurobond: eurobondList,
     yahoo: yahooList,
   } = kaynakAyir(symbols);
 
@@ -425,6 +493,12 @@ export async function fetchLiveQuotes(
     for (const [k, v] of await fetchKriptoQuotes(db, kriptoList)) out.set(k, v);
   } catch (_) {
     // Tablo okunamadı — bu turda kripto alarmları atlanır.
+  }
+
+  try {
+    for (const [k, v] of await fetchEurobondQuotes(db, eurobondList)) out.set(k, v);
+  } catch (_) {
+    // Tablo okunamadı — bu turda eurobond parçası sabit kalır (oran 1).
   }
 
   // Fonlar: kod başına tek istek, sınırlı paralellik (TEFAS'ı boğma).

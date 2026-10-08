@@ -668,14 +668,16 @@ void main() {
     test('paywall KAPALIYKEN DE limit uygulanır (kullanıcı kararı 2026-09-25)',
         () {
       // Eski kural "paywall kapalıyken sınırsız"dı; kullanıcı 7'lik bir ÜRÜN
-      // sınırı istedi ("ilerde paywall'la artırırız"). Provider artık
-      // paywall bayrağına bakmaz; çıkış yolu "birini çıkar" mesajıdır.
+      // sınırı istedi ("ilerde paywall'la artırırız"); çıkış yolu "birini
+      // çıkar" mesajıdır. 2026-10-08'den beri paywall'a bakar ama yalnız
+      // HANGİ sınır olduğunu seçmek için (açık 3, kapalı 7); kapalıyken
+      // sınırsıza dönmez. Davranış testi: `sinyal_varligi_test`.
       final i = prefs.indexOf('watchlistLimitProvider');
       expect(i, greaterThan(0), reason: "limit provider'ı tanımlı olmalı");
       final govde = prefs.substring(i, i + 400);
-      expect(govde.contains('paywallVisibleProvider'), isFalse,
-          reason: 'limit paywall açık/kapalı fark etmeden uygulanır');
       expect(govde.contains('if (!paywallOn) return 1 << 30'), isFalse);
+      expect(RegExp(r'return 1 << 30').allMatches(govde).length, 1,
+          reason: 'sınırsız yalnız Premium');
     });
 
     test('premium kullanıcıda limit yok', () {
@@ -695,6 +697,14 @@ void main() {
           _yorumsuz(File('lib/services/remote_config_service.dart')
                   .readAsStringSync())
               .contains("'free_watchlist_limit': 7"),
+          isTrue);
+      // Paywall açıkken ücretsiz 3 (yasin, 2026-10-08); ayrı anahtar ki
+      // paywall kapalı canlı kullanıcı 7'de kalsın.
+      expect(govde.contains('paywallWatchlistLimit'), isTrue);
+      expect(
+          _yorumsuz(File('lib/services/remote_config_service.dart')
+                  .readAsStringSync())
+              .contains("'paywall_watchlist_limit': 3"),
           isTrue);
     });
 

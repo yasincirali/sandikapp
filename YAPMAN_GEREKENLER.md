@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -36,6 +36,80 @@ detayıyla aynı kural — hata düzeltmesi).
         eylemler); yenileme aşağı çekerek.
 - [ ] Denedikten sonra hangilerinin herkese açılacağını söyle; açılanlar için
       sürüm notu + tanıtım turu adımı (CLAUDE.md "Yenilikler") ayrıca yazılır.
+
+## ⏳ 2026-10-08 Yasal metin 1.8: fiyat kaynakları genel, "Onay sürümü", Premium maddesi (0127)
+
+Gizlilik/KVKK 1.8, Koşullar 1.6, Açık Rıza 1.5. Bayraktan bağımsız: yeni
+build'i alan herkes BİR KEZ onaylar (Açık Rıza adımı: RevenueCat eklendi;
+kutu: Koşullar §2A Premium + Gizlilik/KVKK). Eski build daha yeni metni
+görünce kapıyı açmaz. **Bundan sonra** fiyat kaynağı eklemek metne
+dokunmaz; kişisel veri işleyişini değiştirmeyen düzeltmede yalnız "Sürüm"
+artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
+
+- [ ] PR'ı birleştir (CI yeşil olunca).
+- [ ] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
+      0127 birlikte, sırayla gider.
+- [ ] Paywall'u açmadan önce hâlâ gerekli: hesap silmede RevenueCat
+      müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
+      kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
+      metin esaslı olmayan bir düzeltmeyle güncellenir.
+## ⏳ 2026-10-08 Ücretsiz sınırlar: 7 varlık, 3 takip, sinyal tek varlıkta (0126)
+
+Senin kararın: ücretsizde 7 varlık (8.'si Premium ister), takip listesi 3,
+sinyal bildirimi tek varlıkta (2. varlık Premium). Hepsi yalnız
+`paywall_enabled` açıkken; paywall kapalı canlı kullanıcıda hiçbir şey
+değişmez (takip listesi 7'de kalır). Var olan varlık/takip silinmez, yalnız
+yeni ekleme durur.
+
+- [ ] Migration 0126 (`sinyal_varlik_secimi`, yalnız ekleme) main'e girince
+      "Supabase deploy" ile iki sunucuya (Frankfurt → Tokyo).
+- [ ] Açılış günü, `SINYAL_UCRETSIZ_SLOT` ile birlikte: Supabase secret
+      `SINYAL_UCRETSIZ_VARLIK=1` (iki sunucu) + `analyze-signals` deploy.
+      Ücretsiz kullanıcının bildirimi seçtiği tek varlıktan gelir (seçmediyse
+      en eski eklediği). Secret yoksa sunucu kısmaz.
+- [ ] Remote Config'te `free_asset_limit` ya da `free_watchlist_limit`
+      anahtarlarını daha önce elle girdiysen değerleri kodu ezer:
+      `free_asset_limit` = 7 yap; `free_watchlist_limit` paywall KAPALIYKEN
+      okunan sınırdır, 7 kalsın. Paywall açıkkenki takip sınırı yeni anahtar
+      `paywall_watchlist_limit` (varsayılan 3); sinyal varlık sayısı
+      `free_signal_assets` (varsayılan 1, 0 = kapı yok).
+
+## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`
+
+Üç yeni bayrak, hepsi KAPALI doğar (Firebase Console'da anahtarı oluştur):
+`abd_hisse`, `eurobond`, `varlik_masraflari`. Kapalıyken ekranlar birebir
+eski. **Bayraktan bağımsız tek görünür etki:** Gizlilik ve KVKK 1.7 (iki
+yeni fiyat kaynağı: Börse Frankfurt, Ziraat Bankası; yalnız sunucudan,
+kişisel veri yok). Yeni build'i alan herkes metni BİR KEZ kutuyla onaylar
+(rıza değil); eski build 1.7'yi görünce kapıyı açmaz.
+
+Sıra önemli:
+- [ ] PR'ı birleştir (CI yeşil olunca).
+- [ ] **Supabase deploy** (Actions, `main`, hedef `ikisi`): migrations
+      (0124 eurobond tabloları + cron, 0125 belgeler 1.7) ve functions
+      `eurobond-fiyat`, `eurobond-seri` ve ortak kodu değişenler: `analyze-signals`,
+      `check-price-alerts`, `daily-brief`, `fetch-inflation`, `leaderboard-snapshot`,
+      `push-live-activity`, `yurt-ici-kotasyon` (en kolayı: functions = tümü). Yeni secret YOK:
+      eurobond cron'u `KRIPTO_CRON_SECRET`'ı kullanır.
+- [ ] `python tool/sema_esitlik.py` — iki sunucu eşit mi.
+- [ ] İlk fiyat turunu bekle (hafta içi 09:00–19:40 TR, 20 dk'da bir) ya da
+      Tokyo'da elle: `select public.trigger_eurobond_fiyat();` Sonra
+      kontrol: `select count(*), max(guncellendi) from eurobond_fiyat;`
+      (37–38 tahvil beklenir).
+- [ ] Bayrakları önce kendi cihazında (TestFlight koşulu) aç:
+      `abd_hisse` → `varlik_masraflari` → `eurobond`. `eurobond`'u fiyat
+      tablosu dolmadan açma: eklenen lot fiyatsız kalır.
+- [ ] Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI): Varlık
+      Ekle'de arama + gruplu tür ızgarası. Sunucu işi yok; önce kendi
+      cihazında aç, kapalıyken çip satırı birebir eski.
+- [ ] Karar (bende varsayılan): eurobond değeri **piyasa fiyatından**
+      (Frankfurt temiz + işlemiş faiz); Ziraat alış fiyatı yalnız "bankaya
+      satarsan" satırında. Banka alış fiyatıyla değerleme istersen söyle.
+
+Bilinen sınırlar: yalnız USD eurobond eklenebilir (EUR tahvil için geçmiş
+değer yolu kur bilmiyor; `TECHNICAL_DEBT.md`); ABD hissesinde temettü
+otomatik yakalanmaz; Live Activity ve widget'ın "borsa açık" saati BIST'e
+göre.
 
 ## ⏳ 2026-10-08 Sadeleştirme kalanları + bulut oturumu kurulumu — PR #110 (dal `claude/project-thread-ad3on0`)
 
@@ -100,7 +174,7 @@ Paywall'u açmadan önce sırayla:
       `REVENUECAT_API_KEY`; RevenueCat › Integrations › Webhook adresi
       `https://ybdbzouzhzwthjgwlbmk.supabase.co/functions/v1/revenuecat-webhook`,
       Authorization başlığı = webhook secret.
-- [ ] Yasal metin: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
+- [x] Yasal metin: 2026-10-08 1.8 / Koşullar 1.6 / Açık Rıza 1.5 ile metne girdi (0127). Eski not: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
       (Koşullar §2A, Gizlilik §3.6/§5/§6/§7). Açılış yayınında md'ye girer,
       sürüm artar, migration. Hesap silmede RevenueCat müşterisini silen çağrı
       (`delete-account`) henüz yok; ya eklenir ya metin bunu söyler.

@@ -50,6 +50,7 @@ class SparklineService {
     if (a.ticker.trim().isEmpty) return false;
     return a.type == AssetType.hisse ||
         a.type == AssetType.kripto ||
+        FiyatKaynagi.eurobondSerili(a) ||
         a.type == AssetType.emtia ||
         a.type == AssetType.doviz ||
         // BES ve mevduat fon yolundan fiyatlanır (`fiyatlamaTuru`).

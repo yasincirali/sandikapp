@@ -98,6 +98,28 @@ void main() {
       test('$b KAPALI doğar', () => expect(varsayilan(b), 'false'));
     }
 
+    // 0124 iki sunucuya gidip eurobond-fiyat ilk turunu atmadan açılırsa
+    // eklenen lot fiyatsız kalır.
+    test('eurobond KAPALI doğar', () {
+      expect(varsayilan('eurobond'), 'false');
+    });
+
+    // Yeni hisse pazarı: form, arama ve rozetler; kapalıyken birebir eski.
+    test('ABD hissesi KAPALI doğar', () {
+      expect(varsayilan('abd_hisse'), 'false');
+    });
+
+    // Varlık ekranında yeni kart; kapalıyken ekran birebir eski.
+    test('varlık masrafları KAPALI doğar', () {
+      expect(varsayilan('varlik_masraflari'), 'false');
+    });
+
+    // Formun ilk sorusu değişir (arama + gruplu ızgara); kapalıyken çip
+    // `Wrap`'ı birebir eski.
+    test('tür seçici ızgarası KAPALI doğar', () {
+      expect(varsayilan('tur_secici_izgara'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

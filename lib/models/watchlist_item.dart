@@ -1,3 +1,4 @@
+import 'asset_categories.dart';
 import 'asset_type.dart';
 
 /// Takip listesindeki bir varlık — sahip OLMADIĞIN, yalnızca izlediğin.
@@ -61,8 +62,9 @@ class WatchlistItem {
   /// unique index (`watchlist_user_asset_uidx`) bunun karşılığıdır — iki taraf
   /// ayrışırsa istemci "zaten var" derken sunucu kabul eder (ya da tersi).
   String get key {
-    final core = (subCategory?.trim().isNotEmpty ?? false)
-        ? 'sub:${subCategory!.trim().toUpperCase()}'
+    final sub = anahtarAltKategorisi(subCategory);
+    final core = (sub?.trim().isNotEmpty ?? false)
+        ? 'sub:${sub!.trim().toUpperCase()}'
         : ticker.trim().toUpperCase();
     return '${type.name}|$core';
   }

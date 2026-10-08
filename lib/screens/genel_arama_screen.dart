@@ -5,7 +5,6 @@ import 'package:flutter/material.dart' show Icons, Material, Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/arama_eylemleri.dart';
-import '../models/arama_gruplari.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/portfolio_provider.dart';
@@ -32,7 +31,7 @@ import 'varlik_sayfasi.dart';
 /// çubuğundaki büyüteç ise "bir şeyi bul ve oraya git" sorusu: kendi
 /// varlığım, piyasadaki bir sembol ya da uygulamada bir yer (alarm, ekstre…).
 /// Üç grubu tek listede toplar; piyasa araması AYNI servisle
-/// (`SymbolSearchService`, `aramaGecikmesi`) ve AYNI satırla
+/// (`SymbolSearchService`, `aramaBeklemesi`) ve AYNI satırla
 /// (`AramaSatirKutusu`) yapılır ki iki arama yüzeyi ayrışmasın.
 ///
 /// ## Gruplar
@@ -112,7 +111,7 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
       });
       return;
     }
-    _debounce = Timer(aramaGecikmesi, () => _ara(v));
+    _debounce = Timer(SymbolSearchService.aramaBeklemesi, () => _ara(v));
   }
 
   List<VarlikKimligi> _kimlikler(List<SymbolHit> hits) => [

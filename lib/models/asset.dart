@@ -1,3 +1,4 @@
+import 'asset_categories.dart';
 import 'asset_type.dart';
 
 /// İşlem türü — audit trail için.
@@ -103,6 +104,9 @@ String birimEtiketi({
       // Birim değerli pay (bkz. `mevduat_hesabi.dart`). Ekranlar mevduatta
       // miktarı değil tutarı gösterir; etiket yalnız ham satırlarda çıkar.
       return 'birim';
+    case AssetType.eurobond:
+      // Miktar nominal tutardır ("10.000 nominal"), adet değil.
+      return 'nominal';
     case AssetType.diger:
       return 'adet';
   }
@@ -146,7 +150,7 @@ class Asset {
   String name;
   String ticker;
   AssetType type;
-  String? subCategory; // Altın: gr22, çeyrek vb. | Fon: bankFund, bist100 vb. | Hisse: bist100, other
+  String? subCategory; // Altın: gr22, çeyrek vb. | Fon: bankFund, bist100 vb. | Hisse: StockSubCategory etiketi ya da abd (bkz. orası)
   String unitType; // Birim: piece, gram, ounce, etc. (varsayılan: piece)
   double quantity;
   double purchasePrice;
@@ -364,6 +368,16 @@ class Asset {
           // BES lotunun kodu emeklilik fonudur (AH5); mevduatın sembolü
           // sözleşme id'sidir, gösterilmez.
           type == AssetType.bes);
+
+  /// ABD borsasında işlem gören hisse/ETF mi (2026-10-08, bayrak `abd_hisse`).
+  ///
+  /// Ayrı bir [AssetType] DEĞİL: `type='hisse'`, `sub_category='abd'`,
+  /// `currency='USD'`. Eski sürüm yeni enum değerini "Diğer"e düşürür ve
+  /// tam satır yazımında türü ezerdi; hisse + USD ise eski sürümde de
+  /// Yahoo + USDTRY ile doğru fiyatlanır. Para birimine BAKILMAZ: kimlik
+  /// alt kategoridir, para birimi ondan türer (form USD'ye kilitler).
+  bool get abdHissesi =>
+      type == AssetType.hisse && subCategory == StockSubCategory.abd.name;
 
   /// Kripto ise coin kodu (`BTC`), değilse `null`.
   String? get kriptoKod => type == AssetType.kripto ? kriptoKodu(ticker) : null;

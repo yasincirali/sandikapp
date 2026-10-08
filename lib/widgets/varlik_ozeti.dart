@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
+import '../models/asset_categories.dart';
+import '../models/asset_type.dart';
 import '../models/varlik_kimligi.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'donem_istatistik.dart' show donemDuzMu;
@@ -60,7 +63,17 @@ class VarlikBasligi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final tur = kimlik.type.labelOf(l);
+    // ABD hissesi: "Apple · Hisse · ABD". Portföy lot'u alt kategoriyle
+    // (`'abd'`), aramadan açılan kimlik USD kotasyonla tanınır — ikincisi
+    // bayrağa bağlı: bayraktan önce elle USD girilmiş hisse için başlık
+    // birebir eski kalsın.
+    final abd = kimlik.type == AssetType.hisse &&
+        (kimlik.subCategory == StockSubCategory.abd.name ||
+            (RemoteConfigService.instance.abdHisse &&
+                kimlik.currency.toUpperCase() == 'USD'));
+    final tur = abd
+        ? '${kimlik.type.labelOf(l)} · ${l.stockMarketUs}'
+        : kimlik.type.labelOf(l);
     final kolon = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

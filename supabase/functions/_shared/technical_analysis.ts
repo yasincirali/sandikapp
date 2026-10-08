@@ -19,6 +19,7 @@ export type AssetType =
   | 'doviz'
   | 'emtia'
   | 'kripto'
+  | 'eurobond'
   | 'diger';
 
 export interface TechnicalIndicator {

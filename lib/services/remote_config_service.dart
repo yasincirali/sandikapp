@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import '../models/asset_type.dart';
 import 'crash_reporter.dart';
 import 'sunucu_secimi.dart';
 
@@ -38,14 +39,25 @@ class RemoteConfigService {
     // için premium özellikleri kapatabilir.
     'premium_enabled': true,
 
-    // Free tier varlık limiti. Launch'ta 20 ile başla, engagement düşükse
-    // gerçek ürün konumlanmasına göre azalt.
-    'free_asset_limit': 20,
+    // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
+    // eklemeyi 7 varlık yapalım … premium istemeli"): 8. varlık paywall'u
+    // açar. Yalnız `paywall_enabled` açıkken; var olan varlıklar silinmez,
+    // yalnız YENİ ekleme durur.
+    'free_asset_limit': 7,
 
     // Takip listesi limiti. Portföy limitinden AYRI ve paywall kapalıyken
     // de geçerli (kullanıcı kararı 2026-09-25: "şimdilik 7, ilerde paywall'la
     // artırılır"). Sunucuya yazılmadan önce istemcide kontrol edilir.
+    // Paywall KAPALIYKEN okunan ürün sınırı budur ve 7 kalır: canlıdaki
+    // kullanıcının listesi daralmaz (ana kural).
     'free_watchlist_limit': 7,
+
+    // Paywall AÇIKKEN Premium olmayanın takip sınırı (yasin, 2026-10-08:
+    // "takip listesini 3 yapalım"). Ayrı anahtar: eski build'ler
+    // `free_watchlist_limit`'i paywall'dan bağımsız okur; o değeri 3'e
+    // çekmek canlıdaki herkesin listesini kısardı. Var olan takipler
+    // silinmez, yalnız yeni ekleme durur.
+    'paywall_watchlist_limit': 3,
 
     // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
     // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
@@ -64,6 +76,13 @@ class RemoteConfigService {
     // kaldırılmıştı, kapıyla geri geldi. Sunucudaki karşılığı
     // `SINYAL_UCRETSIZ_SLOT` secret'ı: ikisi paywall'la birlikte açılır.
     'free_signal_slots_per_day': 1,
+
+    // Ücretsiz sürümde sinyal bildiriminin açık olduğu varlık sayısı (yasin,
+    // 2026-10-08: "sinyal 1 varlıkta ücretsiz, 2. varlık Premium"). 0 =
+    // kapı yok. Bugün yalnız 0/1 anlamlı: seçim tablosu tek satır tutar
+    // (`sinyal_varlik_secimi`, 0126). Yalnız `paywall_enabled` açıkken;
+    // sunucudaki karşılığı `SINYAL_UCRETSIZ_VARLIK` secret'ı.
+    'free_signal_assets': 1,
 
     // Ücretsiz sürümde Karşılaştır grafiğindeki seri sayısı (Premium planı
     // "1 seri ücretsiz" = kendi serisine EK bir kıyas, toplam 2). Premium
@@ -235,6 +254,14 @@ class RemoteConfigService {
     // değişikliği yok — kapalıyken kart ve kutlamalar birebir eski.
     'birikim_serisi': false,
 
+    // Eurobond varlık türü (2026-10-08, yasin: "varlık tiplerimize eurobond
+    // … eklemeliyiz"). Varlık Ekle çipi, sinyal ayarı ve filtrelerdeki tür
+    // seçeneği buna bağlı. KAPALI doğar: fiyat tablosu (0124) iki sunucuya
+    // dağıtılıp eurobond-fiyat ilk turunu atmadan açılırsa eklenen lot
+    // fiyatsız kalır. Kapalıyken ekranlar birebir eski; kayıtlı eurobond
+    // lotu (bayrak açıkken eklenmiş) yine görünür ve fiyatlanır.
+    'eurobond': false,
+
     // Portföy satırından varlık ekranına başlık uçuşu (yol haritası 2.14,
     // yasin 2026-10-08: "bunları sen yapamıyor musun"). KAPALI doğar: uçuş
     // iki farklı yazı boyutu arasında ölçekleniyor ve cihazda görülmedi
@@ -288,6 +315,30 @@ class RemoteConfigService {
     // döner. KAPALI doğar: önce 0121 + fonksiyon iki sunucuya, Gizlilik 1.6
     // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
     'ekstre_ai_esleme': false,
+
+    // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
+    // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
+    // tür DEĞİL: `type='hisse'`, `sub_category='abd'`, `currency='USD'`,
+    // sembol Yahoo'nunki (AAPL, BRK-B). Eski sürümler `.IS` olmayan USD
+    // hisseyi zaten Yahoo + USDTRY ile fiyatlıyor; yeni enum değeri eski
+    // build'de "Diğer"e düşer, tam satır yazımı türü ezerdi. KAPALI doğar:
+    // kapalıyken form, arama ve rozetler birebir eski.
+    'abd_hisse': false,
+
+    // Varlık ekranında "Masraflar" kartı (2026-10-08, kullanıcı: "her
+    // varlık türü için detaycı olmalıyız, kendine has masraflarını ekranda
+    // gösterebilmeliyiz"). Tutar yalnız kayıtlı komisyondan ya da resmî
+    // orandan (`varlik_masraflari.dart`); aracı kurum makası uydurulmaz.
+    // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
+    'varlik_masraflari': false,
+
+    // Varlık Ekle tür seçicisi: arama + gruplu ızgara (2026-10-08, yasin:
+    // "göz alıcı ama işlevsel" tür seçici). Tür sayısı 11'e çıktı (ABD,
+    // eurobond); çip yığını sayfanın ilk sorusunu kalabalıklaştırıyordu.
+    // Açıkken üstte arama (THYAO/Apple/BTC/ISIN → tür + kimlik tek dokunuşta),
+    // altında üç gruplu 4 sütunlu ızgara; seçimden sonra tek satıra katlanır.
+    // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
+    'tur_secici_izgara': false,
 
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
@@ -437,6 +488,10 @@ class RemoteConfigService {
       _rc?.getInt('free_signal_slots_per_day') ??
       _defaults['free_signal_slots_per_day'] as int;
 
+  int get freeSignalAssets =>
+      _rc?.getInt('free_signal_assets') ??
+      _defaults['free_signal_assets'] as int;
+
   int get freeCompareSeries =>
       _rc?.getInt('free_compare_series') ??
       _defaults['free_compare_series'] as int;
@@ -448,6 +503,10 @@ class RemoteConfigService {
   int get freeWatchlistLimit =>
       _rc?.getInt('free_watchlist_limit') ??
       _defaults['free_watchlist_limit'] as int;
+
+  int get paywallWatchlistLimit =>
+      _rc?.getInt('paywall_watchlist_limit') ??
+      _defaults['paywall_watchlist_limit'] as int;
 
   String get premiumPriceMonthly =>
       _rc?.getString('premium_price_monthly') ??
@@ -544,6 +603,16 @@ class RemoteConfigService {
   /// Aylık birikim serisi. Gerekçe `_defaults`'ta.
   bool get birikimSerisi => _bayrak('birikim_serisi');
 
+  /// Eurobond türü. Gerekçe `_defaults`'ta.
+  bool get eurobond => _bayrak('eurobond');
+
+  /// Tür SEÇENEK olarak sunulsun mu (ekleme çipi, filtre, sinyal ayarı)?
+  ///
+  /// Bayrağa bağlı türlerin tek kapısı: her yüzey kendi `if`'ini yazarsa
+  /// biri unutulur ve bayrak kapalıyken tür sızar. Kayıtlı veriyi
+  /// göstermek bu kapıya TAKILMAZ — kullanıcının varlığı gizlenmez.
+  bool turSecenegi(AssetType t) => t != AssetType.eurobond || eurobond;
+
   /// Varlık başlığı uçuşu. Gerekçe `_defaults`'ta.
   bool get varlikHeroGecisi => _bayrak('varlik_hero_gecisi');
 
@@ -564,6 +633,15 @@ class RemoteConfigService {
 
   /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
   bool get ekstreAiEsleme => _bayrak('ekstre_ai_esleme');
+
+  /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
+  bool get abdHisse => _bayrak('abd_hisse');
+
+  /// Varlık ekranında Masraflar kartı. Gerekçe `_defaults`'ta.
+  bool get varlikMasraflari => _bayrak('varlik_masraflari');
+
+  /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
+  bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

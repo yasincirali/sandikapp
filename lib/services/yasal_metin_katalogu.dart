@@ -169,6 +169,11 @@ enum YasalBelge {
   }
 
   String get surum => yasalMdSurum(md);
+
+  /// Kapının aradığı en eski sürüm (son esaslı değişiklik) — gerekçe
+  /// [yasalMdOnaySurumu]. Açık Rıza Metni'nde satır yazılmaz: rıza metninin
+  /// her değişikliği yeniden rıza ister (`yasal_web_esleme_test` kilitler).
+  String get onaySurumu => yasalMdOnaySurumu(md);
   String? get yururluk => yasalMdYururluk(md);
   String get baslik => yasalMdBaslik(md);
 
@@ -330,7 +335,11 @@ class YasalMetin {
 /// **Belgeler** (Koşullar, Gizlilik, KVKK, Açık Rıza):
 /// 1. `legal/tr/<BELGE>.md`'yi düzenle VE künyesini güncelle: "**Sürüm:**"
 ///    satırını artır (açık rıza metninde iki yerde), "**Yürürlük tarihi:**"
-///    ve "**Son güncelleme:**" o günün tarihi. Çevirisi olan belgelerde
+///    ve "**Son güncelleme:**" o günün tarihi. Esaslı değişiklikse (yeni
+///    kişisel veri, kişisel veri alan yeni alıcı, yeni amaç ya da saklama)
+///    "**Onay sürümü:**" satırını da yeni sürüme çek — kapı yalnız onu
+///    arar ([YasalBelge.onaySurumu]); değilse dokunma, kimseye yeniden
+///    sorulmaz. Açık Rıza Metni'nde bu satır yoktur. Çevirisi olan belgelerde
 ///    `legal/en/<BELGE>.md`'yi de çevir; "**Version:**" ve "**Source:** TR
 ///    x" satırları yeni TR sürümünü yazsın. Kapının "Neler değişti" notunu
 ///    (`yasalKapiDegisiklikNotu`, iki .arb + `flutter gen-l10n`) yaz.

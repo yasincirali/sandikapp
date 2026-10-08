@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/abd_hisseleri.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
+import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import 'supabase_service.dart';
 import 'tefas_service.dart';
 import 'fiyat_kaynagi.dart';
+import 'remote_config_service.dart';
 import '../utils/tr_katla.dart';
 
 /// Portföy serilerinin sanal ticker önekleri.
@@ -85,6 +88,14 @@ class SymbolHit {
 /// odaklıdır ve o varlıkların portföye eklenmesi desteklenmiyor; aramada
 /// çıkmaları kullanıcıyı ekleyemeyeceği bir şeye yönlendirirdi.
 ///
+/// **ABD hisseleri bayrakla listelenir (`abd_hisse`, 2026-10-08).** Bayrak
+/// açıkken ABD portföye eklenebiliyor (hisse + `sub_category='abd'` + USD);
+/// o zaman yukarıdaki gerekçe ("ekleyemeyeceği bir şey") düşer ve katalog
+/// (`abdHisseleri`) aramaya `ABD` etiketiyle girer — BIST sonuçlarının
+/// ARKASINDA: "ARM" araması önce BIST'teki eşleşmeyi göstermeli, yurt içi
+/// kullanıcının varsayılan pazarı orası. Bayrak kapalıyken liste birebir
+/// eski.
+///
 /// **Kripto 2026-09-25'ten beri listelenir** — ama `BTC-USD` Yahoo sembolü
 /// olarak değil, sunucu kataloğundan `KRIPTO:BTC` olarak (portföye
 /// eklenebilen ve fiyatı `kripto_fiyat`'tan gelen tek biçim).
@@ -103,11 +114,61 @@ class SymbolHit {
 ///      önbellekli; hata olursa kriptosuz devam edilir.
 ///   4. **TEFAS tek-fon sorgusu** — liste API'sinde görünmeyen
 ///      kurucu-only fonlar (ALE, YLB gibi) için son çare.
+///   5. **Eurobond kataloğu** (bayrak `eurobond`, seri denetimi
+///      2026-10-08) — `eurobond_katalog`, oturum başına önbellekli.
+///      Portföye eklenebilen eurobond takip listesine EKLENEMİYORDU: arama
+///      tahvili hiç bilmiyordu, `EUROBOND:` sembolü elde edilse bile
+///      `VarlikKimligi` onu BIST hissesi (TRY) sayardı. Yalnız eklenebilir
+///      küme listelenir (`eklenebilirEurobondlar`: USD, vadesi gelmemiş) —
+///      geçmiş değer yolu EUR kurunu bilmez (bkz. `TECHNICAL_DEBT.md`).
 class SymbolSearchService {
   SymbolSearchService._();
   static final instance = SymbolSearchService._();
 
+  /// Yazarken ağ aramasının beklemesi — her tuşta TEFAS'a gitmemek için.
+  /// Takip listesi araması ve ekleme sayfasının tür seçicisi AYNI süreyi
+  /// kullanır (tek kaynak; hareket süresi olmadığı için `SandikMotion` değil).
+  static const aramaBeklemesi = Duration(milliseconds: 250);
+
   static final _cache = <String, List<SymbolHit>>{};
+
+  /// ABD sonucunun köken etiketi; `VarlikKimligi.fromSymbolHit` buna bakıp
+  /// USD kote hisse kimliği kurar.
+  static const abdKaynagi = 'ABD';
+
+  /// ABD kataloğu — yerleşik indeksten AYRI tutulur: bayrak oturum içinde
+  /// açılıp kapanabilir (Remote Config yenilemesi), indeks ise bir kez
+  /// kurulur.
+  static final List<SymbolHit> _abd = [
+    for (final e in abdHisseleri.entries)
+      SymbolHit(ticker: e.key, name: e.value, source: abdKaynagi),
+  ];
+  static final Map<String, String> _abdAnahtar = {
+    for (final h in _abd) h.ticker: trKatla('${h.ticker} ${h.name}'),
+  };
+
+  static bool get _abdAcik => RemoteConfigService.instance.abdHisse;
+
+  /// Eurobond sonucunun köken etiketi; `VarlikKimligi.fromSymbolHit`
+  /// `EUROBOND:` önekine bakar, etiket yalnız satır içindir.
+  static const eurobondKaynagi = 'Eurobond';
+
+  static bool get _eurobondAcik => RemoteConfigService.instance.eurobond;
+
+  /// Eurobond kataloğu kaynağı — testte ağsız verilir.
+  @visibleForTesting
+  static Future<List<(EurobondSozlesmesi, EurobondFiyati?)>> Function()
+      eurobondKatalogKaynagi =
+      () => SupabaseService.instance.eurobondKatalogu();
+
+  static List<(EurobondSozlesmesi, EurobondFiyati?)>? _eurobondKatalog;
+  static DateTime? _eurobondKatalogZamani;
+
+  /// Önbellek anahtarı: bayraklar anahtara girer ki oturum içinde açılan
+  /// bayrak eski (o türsüz) sonucu döndürmesin. İkisi de kapalıyken
+  /// anahtar birebir eski (katlanmış sorgu).
+  static String _anahtar(String k) =>
+      '${_abdAcik ? 'abd|' : ''}${_eurobondAcik ? 'eb|' : ''}$k';
 
   /// Yerleşik listelerin tek seferlik düzleştirilmiş hali.
   ///
@@ -214,7 +275,10 @@ class SymbolSearchService {
     // Kod karşılaştırmaları (fon kodu, kripto kodu) ASCII büyük harfle.
     final q = k.toUpperCase();
 
-    final cached = _cache[k];
+    // Bayrak önbellek anahtarına girer: oturum içinde açılırsa eski
+    // (ABD'siz) sonuç dönmesin. Kapalıyken anahtar birebir eski.
+    final anahtar = _anahtar(k);
+    final cached = _cache[anahtar];
     if (cached != null) return cached;
 
     // Yerleşik listeler + TEFAS fonları PARALEL aranır.
@@ -225,11 +289,17 @@ class SymbolSearchService {
     // `TefasService`'in canlı listesinde bulunur. Sabit listeyi kullanmak
     // aramada fon gösterip grafikte "veri yok" demeye yol açardı.
     final results = await Future.wait([
-      Future.value(_searchBuiltIn(k)),
+      Future.value(_yerlesikVeAbd(k)),
       _searchKripto(q),
       _searchFunds(k),
+      _searchEurobond(k),
     ]);
-    final local = <SymbolHit>[...results[0], ...results[1], ...results[2]];
+    final local = <SymbolHit>[
+      ...results[0],
+      ...results[1],
+      ...results[2],
+      ...results[3],
+    ];
 
     // Sonuç yoksa ve sorgu bir fon koduna benziyorsa TEK-FON sorgusu.
     //
@@ -242,12 +312,12 @@ class SymbolSearchService {
       final fund = await _lookupFund(q);
       if (fund != null) {
         final hit = [fund];
-        _cache[k] = hit;
+        _cache[anahtar] = hit;
         return hit;
       }
     }
 
-    _cache[k] = local;
+    _cache[anahtar] = local;
     return local;
   }
 
@@ -260,7 +330,35 @@ class SymbolSearchService {
   List<SymbolHit> yerelAra(String query) {
     final k = trKatla(query.trim());
     if (k.isEmpty) return defaults;
-    return _cache[k] ?? _searchBuiltIn(k);
+    return _cache[_anahtar(k)] ?? _yerlesikVeAbd(k);
+  }
+
+  /// Yerleşik listeler; bayrak açıksa ARKALARINA ABD kataloğu.
+  static List<SymbolHit> _yerlesikVeAbd(String k) {
+    final yerli = _searchBuiltIn(k);
+    if (!_abdAcik) return yerli;
+    return [...yerli, ..._searchAbd(k)];
+  }
+
+  /// ABD kataloğunda arar. Sıra yerleşik listeyle aynı kural: sembolü
+  /// sorguyla başlayan önde, sonra adı başlayan. Katalog ~200 kâğıt;
+  /// "a" gibi kısa sorguda listeyi boğmasın diye 20 ile sınırlı.
+  static List<SymbolHit> _searchAbd(String k) {
+    final hits = _abd.where((h) => _abdAnahtar[h.ticker]!.contains(k)).toList();
+    int sira(SymbolHit h) {
+      final t = h.ticker.toLowerCase();
+      if (t == k) return 0;
+      if (t.startsWith(k)) return 1;
+      if (trKatla(h.name).startsWith(k)) return 2;
+      return 3;
+    }
+
+    hits.sort((a, b) {
+      final d = sira(a) - sira(b);
+      if (d != 0) return d;
+      return a.ticker.compareTo(b.ticker);
+    });
+    return hits.take(20).toList();
   }
 
   /// TEFAS liste API'sinde görünmeyen bir fon kodunu tek tek sorar.
@@ -302,6 +400,43 @@ class SymbolSearchService {
       ];
     } catch (e) {
       if (kDebugMode) debugPrint('Kripto araması başarısız: $e');
+      return const [];
+    }
+  }
+
+  /// Eurobond kataloğunda ad ya da ISIN ile arar. [k] katlanmış sorgudur.
+  ///
+  /// Bayrak kapalıyken HİÇ istek atılmaz. Katalog günde bir değişir; 30 dk
+  /// önbellek kripto katmanıyla aynı. Hata boş döner — tahvil araması
+  /// hisse/fon aramasını düşürmemeli.
+  Future<List<SymbolHit>> _searchEurobond(String k) async {
+    if (!_eurobondAcik || DemoModu.aktif) return const [];
+    try {
+      final simdi = DateTime.now();
+      if (_eurobondKatalog == null ||
+          simdi.difference(_eurobondKatalogZamani!) >
+              const Duration(minutes: 30)) {
+        _eurobondKatalog = await eurobondKatalogKaynagi();
+        _eurobondKatalogZamani = simdi;
+      }
+      final eklenebilir =
+          eklenebilirEurobondlar(_eurobondKatalog!, simdi: simdi);
+      // Eşleme bu servisin katlamasıyla (`trKatla`): "turkiye" yazan
+      // "Türkiye %9,875 2028"i bulmalı. `eurobondAra` yalnız küçük harfe
+      // indirir; ekleme seçicisinin kuralıdır, aramanın değil.
+      final bulunan = eklenebilir.where((e) =>
+          trKatla(e.$1.ad).contains(k) ||
+          e.$1.isin.toLowerCase().contains(k));
+      return [
+        for (final e in bulunan.take(10))
+          SymbolHit(
+            ticker: eurobondSembolu(e.$1.isin),
+            name: e.$1.ad,
+            source: eurobondKaynagi,
+          ),
+      ];
+    } catch (e) {
+      if (kDebugMode) debugPrint('Eurobond araması başarısız: $e');
       return const [];
     }
   }
@@ -393,5 +528,7 @@ class SymbolSearchService {
     _fonAdKatli.clear();
     _kriptoKatalog = null;
     _kriptoKatalogZamani = null;
+    _eurobondKatalog = null;
+    _eurobondKatalogZamani = null;
   }
 }

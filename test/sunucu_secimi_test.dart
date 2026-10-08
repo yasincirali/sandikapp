@@ -99,7 +99,7 @@ void main() {
       SunucuSecimi.instance.testIcinKur(_sec('')!);
       final p = metin(LegalDocs.privacy);
       expect(p, contains("Supabase veritabanı Japonya'da, Firebase ABD'de"));
-      expect(p, contains('Supabase: Japonya; Firebase: ABD'));
+      expect(p, contains('Supabase: Japonya; Firebase ve RevenueCat: ABD'));
       expect(p, isNot(contains('ABD (AWS)')));
       expect(metin(LegalDocs.kvkk), contains('Japonya'));
       expect(metin(LegalDocs.acikRiza),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -332,6 +333,10 @@ void main() {
       // kategori rengini ikon/metin olarak kullanıyor.
       for (final tur in AssetType.eklemeSirasi) {
         testWidgets('Varlık Ekle: ${tur.label} formu', (tester) async {
+          // Bayrağa bağlı tür (eurobond) çipi bayrak kapalıyken yok;
+          // kontrastı yine denetlensin diye bu test için açılır.
+          RemoteConfigService.testAcik = {'eurobond'};
+          addTearDown(() => RemoteConfigService.testAcik = {});
           await _kur(tester, b, const AddAssetScreen());
           await tester.tap(find.text(tur.label).first);
           for (var i = 0; i < 10; i++) {

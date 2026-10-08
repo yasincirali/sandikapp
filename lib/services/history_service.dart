@@ -714,6 +714,7 @@ class HistoryService {
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
           a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
           (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
@@ -859,6 +860,7 @@ class HistoryService {
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
               a.type == AssetType.kripto ||
+              FiyatKaynagi.eurobondSerili(a) ||
               a.type.fiyatlamaTuru == AssetType.fon ||
               a.type == AssetType.doviz) {
             final map = tickerNormalizedDaily[a.ticker] ?? {};
@@ -1379,6 +1381,7 @@ class HistoryService {
       if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
           a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty)) {
         tickerFutures.putIfAbsent(a.ticker, () => getHistorySafe(a.ticker));
       }
@@ -1841,6 +1844,7 @@ class HistoryService {
       } else if (a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
           a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           a.type == AssetType.doviz) {
         final map = tickerSlots[a.ticker] ?? {};
         double? unitLocal;
@@ -2013,6 +2017,7 @@ class HistoryService {
           } else if (a.type == AssetType.hisse ||
               a.type == AssetType.emtia ||
               a.type == AssetType.kripto ||
+              FiyatKaynagi.eurobondSerili(a) ||
               a.type == AssetType.doviz) {
             gunIciBeklenenTurler.add(a.type);
             final map = tickerSlots[a.ticker] ?? {};
@@ -2464,6 +2469,7 @@ class HistoryService {
       final fetchable = a.type == AssetType.hisse ||
           a.type == AssetType.emtia ||
           a.type == AssetType.kripto ||
+          FiyatKaynagi.eurobondSerili(a) ||
           (a.type == AssetType.doviz && a.ticker.isNotEmpty) ||
           (a.type.fiyatlamaTuru == AssetType.fon && a.ticker.isNotEmpty);
       if (!fetchable) continue;
@@ -2606,6 +2612,7 @@ class HistoryService {
         } else if (a.type == AssetType.hisse ||
             a.type == AssetType.emtia ||
             a.type == AssetType.kripto ||
+            FiyatKaynagi.eurobondSerili(a) ||
             a.type == AssetType.doviz ||
             a.type.fiyatlamaTuru == AssetType.fon) {
           final map = tickerMaps[a.ticker] ?? {};

@@ -379,11 +379,15 @@ void main() {
       expect(m, contains('500 karakter'));
     }
     expect(kosullar, contains('yapay zekâ ile hazırlanan varlık notları'));
-    // Kişisel veri yurt dışına yeni bir alıcıya gitmez: rıza metni aynı.
-    expect(YasalBelge.acikRiza.surum, '1.4');
+    // Kişisel veri yurt dışına yeni bir alıcıya gitmez: rıza metni 1.5'te
+    // değişmedi (1.5'i 0127'de RevenueCat ilerletti, Anthropic değil).
+    expect(YasalOnayService.surumKarsilastir(YasalBelge.acikRiza.surum, '1.4'),
+        greaterThanOrEqualTo(0));
     expect(YasalMetinKatalogu.acikRiza().govde, isNot(contains('Anthropic')));
-    // 1.6 (0122) yalnız Gizlilik ve KVKK'yı ilerletti; Koşullar 1.5'te.
-    expect(YasalBelge.kosullar.surum, '1.5');
+    // 1.6 (0122) yalnız Gizlilik ve KVKK'yı ilerletti; Koşullar 1.5'te kaldı
+    // (1.6'ya 0127'de Premium maddesiyle çıktı).
+    expect(YasalOnayService.surumKarsilastir(YasalBelge.kosullar.surum, '1.5'),
+        greaterThanOrEqualTo(0));
     for (final b in [YasalBelge.gizlilik, YasalBelge.kvkk]) {
       expect(
           YasalOnayService.surumKarsilastir(b.surum, '1.5'), greaterThan(0),
@@ -405,11 +409,70 @@ void main() {
       expect(m, contains('anonim iskelet'));
       expect(m, contains('40 gün'));
     }
-    // İskelet kişisel veri değil: rıza metni ve Koşullar aynı kaldı.
-    expect(YasalBelge.acikRiza.surum, '1.4');
-    expect(YasalBelge.kosullar.surum, '1.5');
-    expect(YasalBelge.gizlilik.surum, '1.6');
-    expect(YasalBelge.kvkk.surum, '1.6');
+    // İskelet kişisel veri değil: rıza metni ve Koşullar o turda aynı kaldı
+    // (sürümleri yalnız ileri gider).
+    expect(YasalOnayService.surumKarsilastir(YasalBelge.acikRiza.surum, '1.4'),
+        greaterThanOrEqualTo(0));
+    expect(YasalOnayService.surumKarsilastir(YasalBelge.kosullar.surum, '1.5'),
+        greaterThanOrEqualTo(0));
+    // 1.7 (0125) ikisini yine ilerletti; 1.6 metni korunur, sürüm geri gitmez.
+    for (final b in [YasalBelge.gizlilik, YasalBelge.kvkk]) {
+      expect(
+          YasalOnayService.surumKarsilastir(b.surum, '1.6'),
+          greaterThanOrEqualTo(0),
+          reason: b.kaynak);
+    }
+  });
+
+  test(
+      '1.7 → 1.8: fiyat kaynakları tek tek sayılmaz — kişisel veri almayan '
+      'kaynak metni değiştirmez (0125, 0127)', () {
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    // Kullanıcı (2026-10-08): "her geliştirmeden neden kvkk değişiyor".
+    // KVKK m.10 alıcı GRUBUNU ister; kaynak adı yazılırsa her yeni kaynak
+    // yeni sürüm demektir.
+    for (final m in [gizlilik, kvkk]) {
+      expect(m, contains('amuya açık piyasa verisi sağlayıcı'));
+      expect(m, contains('ISIN'));
+      expect(m, contains('IP adresini görür'));
+      for (final ad in [
+        'Yahoo', 'Binance', 'truncgil', 'Börse Frankfurt', 'Ziraat', //
+        'open.er-api', 'EVDS',
+      ]) {
+        expect(m, isNot(contains(ad)), reason: ad);
+      }
+    }
+    for (final m in [
+      YasalMetinKatalogu.kosullar().govde,
+      YasalMetinKatalogu.acikRiza().govde,
+    ]) {
+      for (final ad in ['Yahoo', 'Binance', 'truncgil']) {
+        expect(m, isNot(contains(ad)), reason: ad);
+      }
+    }
+  });
+
+  test(
+      '1.8: Premium abonelik — RevenueCat kişisel veri alıcısı olarak '
+      'Gizlilik, KVKK ve Açık Rıza\'da; Koşullar §2A (0127)', () {
+    final kosullar = YasalMetinKatalogu.kosullar().govde;
+    final gizlilik = YasalMetinKatalogu.gizlilik().govde;
+    final kvkk = YasalMetinKatalogu.kvkk().govde;
+    final riza = YasalMetinKatalogu.acikRiza().govde;
+    expect(kosullar, contains('## 2A. Premium Abonelik'));
+    expect(kosullar, contains('Satın alımı geri yükle'));
+    // Fiyat uydurulmaz: tutar mağazadan okunur.
+    expect(kosullar, isNot(contains('49')));
+    expect(kosullar, isNot(contains('399')));
+    expect(gizlilik, contains('### 3.6 Abonelik Verileri'));
+    for (final m in [gizlilik, kvkk, riza]) {
+      expect(m, contains('RevenueCat'), reason: 'yurt dışı alıcı');
+    }
+    // Hesap silme RevenueCat kaydını silmiyor: metin bunu söylemeli.
+    for (final m in [gizlilik, kvkk]) {
+      expect(m, contains("RevenueCat'in saklama süresince"));
+    }
   });
 
   test('kutu 1.1: metnin TAMAMI açık rıza içermez (rıza paketlenmez)', () {

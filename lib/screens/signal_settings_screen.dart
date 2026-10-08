@@ -57,7 +57,8 @@ class SignalSettingsScreen extends ConsumerWidget {
       // sözleşmenin tahakkukudur; sunucu da analiz etmez. BES fonu
       // (TEFAS EMK) fon gibi analiz edilir ve burada görünür.
       for (final type in AssetType.values)
-        if (type != AssetType.mevduat) ...[
+        if (type != AssetType.mevduat &&
+            RemoteConfigService.instance.turSecenegi(type)) ...[
         _CategorySection(
           type: type,
           selected: prefs[type] ??

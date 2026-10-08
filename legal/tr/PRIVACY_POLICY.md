@@ -1,8 +1,9 @@
 # Gizlilik Politikası — sandık
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.6
+**Yürürlük tarihi:** 8 Ekim 2026
+**Son güncelleme:** 8 Ekim 2026
+**Sürüm:** 1.8
+**Onay sürümü:** 1.8
 
 ---
 
@@ -77,6 +78,13 @@ Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır ve kab
 | Kurulum adımları (kayıt hunisi): uygulamanın ürettiği rastgele kurulum numarası, adım (ilk açılış, kayıt ekranı, kod doğrulama vb.), platform, uygulama sürümü, kayıt hatasının kodu; giriş yapınca hesabınıza bağlanır | Kayıt sürecindeki sorunların tespiti |
 | Yapısal hata kayıtları | Yalnızca **hata** durumunda; istek bilgisi ve hata mesajı, hassas alanlar (e-posta, şifre, token, IP) maskelenerek |
 
+### 3.6 Abonelik Verileri (yalnızca Premium satın alırsanız)
+| Veri | Amaç | Hukuki dayanak |
+|---|---|---|
+| Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı, ürün (aylık ya da yıllık), mağaza (App Store ya da Google Play), başlangıç ve bitiş tarihleri, iptal durumu, test satın alımı olup olmadığı | Satın almayı mağazayla doğrulamak, Premium'u hesabınıza bağlamak, yenileme, iptal ve iadeyi uygulamak | KVKK 5(2)(c) — sözleşmenin kurulması ve ifası |
+
+Kart numarası, fatura adresi ve ödeme yöntemi bize **ulaşmaz**: ödemeyi cihazınızın mağazası (Apple ya da Google) tahsil eder ve bu bilgileri kendi gizlilik politikasıyla işler.
+
 ### Toplamadığımız Veriler
 - GPS konumu (uygulama konum izni istemez)
 - Telefon defteri
@@ -100,7 +108,7 @@ Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır ve kab
 8. Hesap güvenliği (tek aktif cihaz, yeni cihazda e-posta kodu) ile kötüye kullanım, sahtekarlık ve siber saldırıların tespiti (KVKK 5(2)(f) meşru menfaat)
 9. Zirvedeki Portföyler: dönemin en çok kazanan portföylerinin getirisini ve varlık türü dağılımını katılımcılar arasında anonim olarak göstermek (KVKK 5(1) — açık rıza; isteğe bağlı, uygulama içinde verilir)
 10. Yarış: katılırsanız dönemsel getirinizi hesaplayıp yüzdelik diliminizi ve ortağınızla karşılaştırmanızı göstermek
-11. Premium: Premium içeriğe (varlık notlarının tamamı, aylık rapor, ekstrenin yapay zekâyla eşlenmesi) erişim hakkınızı doğrulamak
+11. Premium: satın aldığınız aboneliği doğrulamak ve Premium içeriğe erişim hakkınızı tanımak
 12. Varlık notlarına verdiğiniz geri bildirimle notların doğruluğunu ölçmek ve iyileştirmek
 
 ---
@@ -117,11 +125,14 @@ Gizlilik Politikası ve KVKK Aydınlatma Metni bilgilendirme amaçlıdır ve kab
 | Uzaktan ayarlar | Google Firebase Remote Config | Rastgele kurulum kimliği | Özellik ayarları | Küresel (Google) |
 | E-posta gönderimi | Google (Gmail e-posta altyapısı) | E-posta adresi, doğrulama/giriş kodu | Kod e-postalarının teslimi | Küresel (Google) |
 | Apple ile Giriş / Google ile Giriş (seçerseniz) | Apple Inc. / Google LLC | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | Küresel |
-| Fiyat ve piyasa verisi | Yahoo Finance, TEFAS, finans.truncgil.com, Binance, TCMB EVDS, EGM, open.er-api.com, yasincirali.github.io (halka arz takvimi) | Kişisel veri gönderilmez; yalnızca sembol / fon kodu sorgusu. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür | Fiyat çekme | Küresel |
+| Abonelik doğrulama (yalnızca Premium satın alırsanız) | RevenueCat, Inc. | Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi | Satın almayı mağazayla doğrulamak ve Premium hakkını sunucumuza bildirmek (bkz. §3.6) | ABD |
+| Fiyat ve piyasa verisi | Kamuya açık piyasa verisi sağlayıcıları: borsalar, bankalar, fon platformları, resmî kurumlar (ör. TCMB) ile kur ve fiyat veri servisleri | Kişisel veri gönderilmez; yalnızca varlığın sembolü, fon kodu ya da ISIN'i sorulur. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; bazı kaynaklara istekler yalnızca sunucumuzdan gider | Fiyat ve fiyat geçmişi çekme | Küresel |
 | Varlık notlarının yazımı (yapay zekâ) | Anthropic PBC | Kişisel veri gönderilmez; yalnızca varlığın sembolü ve piyasa ölçümleri (fiyat, işlem hacmi, fon büyüklüğü, para akışı ve yatırımcı sayısı) | Haftalık varlık notu ve aylık rapor metni (bkz. §5.3) | ABD |
 | Ekstre sütun eşleme (yapay zekâ; yalnızca siz isterseniz) | Anthropic PBC | Ekstredeki tabloların anonim iskeleti: sütun başlıkları ve genel finans kelimeleri; ad, numara, tutar ve tarihler maskeli | Hangi sütunun sembol, adet, fiyat olduğunu bulmak (bkz. §5.4) | ABD |
 
-**Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.**
+**Bu sağlayıcılar yalnızca veri işleyen (data processor) sıfatıyla, talimatlarımız doğrultusunda hareket eder. Veri sorumlusu sıfatı tarafımızda kalır.** Premium ödemesini tahsil eden Apple ve Google, ödeme bilgileriniz için kendi başına veri sorumlusudur.
+
+Piyasa verisi sağlayıcıları kişisel veri almadığı için tek tek sayılmaz; yeni bir fiyat kaynağı eklemek bu politikayı değiştirmez. Kişisel veri alan yeni bir sağlayıcı ise ancak bu tabloya eklenerek kullanılır.
 
 ### 5.1 Diğer Kullanıcılarla Anonim Paylaşım (Zirvedeki Portföyler)
 
@@ -151,12 +162,12 @@ Basarsanız cihazınız tablonun anonim bir iskeletini çıkarır ve sunucumuz �
 
 ## 6. Yurt Dışına Veri Aktarımı
 
-Supabase veritabanı {SUPABASE_ULKEDE}, Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş ve e-posta hizmetleri de küresel altyapıda çalışır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
+Supabase veritabanı {SUPABASE_ULKEDE}, Firebase ABD'de barındırıldığı için verileriniz Türkiye dışına aktarılır. Uygulama içindeki metin, bağlı olduğunuz sunucunun ülkesini gösterir. Apple ve Google'ın bildirim, giriş, e-posta ve mağaza ödeme hizmetleri de küresel altyapıda çalışır. Premium satın alırsanız abonelik kaydınız RevenueCat (ABD) üzerinden doğrulanır. KVKK Madde 9 ve GDPR Madde 44-49 uyarınca:
 
 - **AB üyesi kullanıcılar için:** Standart Sözleşme Maddeleri (SCC) ve sağlayıcıların GDPR uyumluluk taahhütleri çerçevesinde aktarım yapılır.
 - **Türk kullanıcılar için:** KVKK Madde 9(1) kapsamında **açık rıza** alınmaktadır. Açık rızanızı, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile verirsiniz; bu rıza başka bir beyanla birlikte alınmaz.
 
-Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
+Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), KVK Kurulu'nun ilan ettiği "yeterli korumaya sahip ülkeler" listesinde olmadığından, yurt dışı aktarımı **açık rızanıza** dayanmaktadır.
 
 ---
 
@@ -171,7 +182,7 @@ Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), KVK Kurul
 | Yarış ölçümleri (getiri %, tür payı %) | Son 365 gün rolling; hesap silinince hemen |
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar |
-| Premium hakkı kayıtları | Hesap silinene kadar |
+| Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince, ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır |
 | Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet ve yanıt saklanmaz) | 40 gün |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
 | Push token | Çıkış yapıldığında silinir; uygulama silinirse bir sonraki gönderimde geçersiz bulunup silinir |
@@ -268,8 +279,9 @@ Bu uyarının tam metni kayıt sırasında (Apple veya Google ile ilk girişte a
 Bu politikada değişiklik yaptığımızda:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır
 - "Son güncelleme" tarihi yenilenir
-- Önemli değişikliklerde bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir; devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
-- Yeni bir veri işleme, üçüncü taraf ya da saklama süresi ancak bu metin güncellenerek eklenir
+- Esaslı değişikliklerde (yeni bir kişisel veri, kişisel veri alan yeni bir üçüncü taraf, yeni bir amaç ya da saklama süresi) "Onay sürümü" de yeni sürüme çekilir; bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir ve devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
+- Kişisel veri işleyişini değiştirmeyen düzeltmelerde (yazım, açıklama, kişisel veri almayan bir piyasa verisi kaynağı) yalnızca "Sürüm" ve "Son güncelleme" değişir; yeniden onay istenmez
+- Yeni bir veri işleme, kişisel veri alan bir üçüncü taraf ya da saklama süresi ancak bu metin güncellenerek eklenir
 
 ---
 

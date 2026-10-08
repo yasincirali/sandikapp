@@ -69,6 +69,80 @@ class AssetSignalCard extends ConsumerStatefulWidget {
   ConsumerState<AssetSignalCard> createState() => _AssetSignalCardState();
 }
 
+/// Ücretsiz planın tek sinyal varlığı şeridi (yasin, 2026-10-08: "sinyal 1
+/// varlıkta ücretsiz, 2. varlık için Premium").
+///
+/// Kapı yalnız BİLDİRİMİ kısar; şerit bunu sinyal kartının hemen altında
+/// söyler. Bu varlık seçiliyse tek sessiz satır; değilse kilit satırı
+/// (Premium'a gider) + "Sinyali buraya taşı". Taşımak serbesttir: plan "bir
+/// varlık" der, "ilk eklediğin varlık" demez. Kapı kapalıyken, ortağın
+/// varlığında ya da sinyal üretilmeyen türde hiç çizilmez.
+class SinyalVarlikSeridi extends ConsumerWidget {
+  const SinyalVarlikSeridi({super.key, required this.asset});
+
+  final Asset asset;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final etkin = ref.watch(etkinSinyalVarligiProvider);
+    final user = ref.watch(authProvider).valueOrNull;
+    if (etkin == null || user == null) return const SizedBox.shrink();
+    if (asset.userId != user.id || !sinyalUretilir(asset)) {
+      return const SizedBox.shrink();
+    }
+    final c = context.c;
+    final l = context.l10n;
+    final anahtar = sinyalVarlikAnahtari(etkin.tur, etkin.ticker);
+    if (sinyalVarlikAnahtari(asset.type, asset.ticker) == anahtar) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+        child: Row(
+          children: [
+            Icon(Icons.notifications_active_rounded,
+                size: SandikSpace.md, color: c.text58),
+            const SizedBox(width: SandikSpace.sm),
+            Expanded(
+              child: Text(l.sgnVarlikAcik,
+                  style: context.t.bodySmall?.copyWith(color: c.text58)),
+            ),
+          ],
+        ),
+      );
+    }
+    // Seçili varlığın adı portföyden; bulunamazsa ticker.
+    final lotlar =
+        ref.watch(portfolioProvider).valueOrNull?.assets ?? const <Asset>[];
+    final ad = lotlar
+            .where((a) =>
+                a.userId == user.id &&
+                sinyalVarlikAnahtari(a.type, a.ticker) == anahtar)
+            .map((a) => a.name)
+            .firstOrNull ??
+        etkin.ticker;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          KilitSatiri(metin: l.sgnVarlikKilit(ad), kaynak: 'sinyal_varlik'),
+          SandikAsyncButton.kompakt(
+            tur: SandikAsyncTur.cerceve,
+            icon: const Icon(Icons.swap_horiz_rounded),
+            onPressed: () async {
+              try {
+                await ref.read(sinyalVarligiProvider.notifier).tasi(asset);
+              } catch (e) {
+                if (context.mounted) showAppError(context, e);
+              }
+            },
+            child: Text(l.sgnVarlikTasi),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Teknik göstergelerin istediği fiyat penceresi (gün).
 ///
 /// ## Neden 90, neden 180 DEĞİL

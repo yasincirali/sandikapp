@@ -20,10 +20,6 @@ class AramaGrubu {
   bool get kisaltildi => ogeler.length < toplam;
 }
 
-/// Yazarken aramanın bekleme süresi — her tuş vuruşunda TEFAS'a gitmemek
-/// için. Takibe alma ekranı ve genel arama (bayrak `genel_arama`) AYNI
-/// süreyle arar; tek yerde durur ki iki arama yüzeyi ayrışmasın.
-const aramaGecikmesi = Duration(milliseconds: 250);
 
 /// Grupta varsayılan olarak gösterilen satır sayısı.
 ///

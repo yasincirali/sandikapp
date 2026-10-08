@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
@@ -17,6 +18,7 @@ import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/inflation_service.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/remote_config_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -812,9 +814,20 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
   static AssetType _typeOf(String ticker) {
     if (ticker.startsWith('TEFAS:')) return AssetType.fon;
     if (ticker.startsWith(kriptoOneki)) return AssetType.kripto;
+    // Eurobond (seri denetimi 2026-10-08): emtiaya düşseydi ekleme formu
+    // tahvili "Emtia" olarak, sembolü serbest metin diye açardı. Form
+    // eurobond türünde açılır; tahvil katalogdan seçilir.
+    if (FiyatKaynagi.eurobondMu(ticker)) return AssetType.eurobond;
     if (ticker.startsWith('ALTIN_')) return AssetType.altin;
     if (ticker.endsWith('TRY=X')) return AssetType.doviz;
     if (ticker.endsWith('.IS')) return AssetType.hisse;
+    // ABD kataloğundaki sembol (bayrak `abd_hisse`) hissedir; ekleme formu
+    // onu ABD pazarı + USD ile açar. Bayrak kapalıyken arama ABD sonucu
+    // getirmez, bu dal hiç işlemez.
+    if (RemoteConfigService.instance.abdHisse &&
+        abdHisseleri.containsKey(ticker)) {
+      return AssetType.hisse;
+    }
     return AssetType.emtia;
   }
 

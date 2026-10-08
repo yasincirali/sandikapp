@@ -9330,7 +9330,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir. Açık Rıza Metni değişmedi.'**
+  /// **'Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -10894,6 +10894,30 @@ abstract class AppLocalizations {
   /// **'sınırsız'**
   String get prmSinirsiz;
 
+  /// No description provided for @prmSatirSinyal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal bildirimi'**
+  String get prmSatirSinyal;
+
+  /// No description provided for @prmSinyalUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 varlık'**
+  String get prmSinyalUcretsiz;
+
+  /// No description provided for @prmSinyalPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'tüm varlıklar'**
+  String get prmSinyalPremium;
+
+  /// No description provided for @prmSatirTakip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takip listesi'**
+  String get prmSatirTakip;
+
   /// No description provided for @prmYillikTasarruf.
   ///
   /// In tr, this message translates to:
@@ -11191,7 +11215,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzSiklik.
   ///
   /// In tr, this message translates to:
-  /// **'Günde birden fazla sinyal bildirimi (saatlik, günde 2 kez…)'**
+  /// **'Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta'**
   String get pwOzSiklik;
 
   /// No description provided for @pwOzKarsilastir.
@@ -11209,8 +11233,26 @@ abstract class AppLocalizations {
   /// No description provided for @sgnSlotNotu.
   ///
   /// In tr, this message translates to:
-  /// **'Ücretsiz sürümde her tür için günde 1 bildirim gelir. Premium\'da seçtiğin sıklık geri gelir.'**
+  /// **'Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium\'da tüm varlıkların ve seçtiğin sıklık gelir.'**
   String get sgnSlotNotu;
+
+  /// No description provided for @sgnVarlikAcik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.'**
+  String get sgnVarlikAcik;
+
+  /// No description provided for @sgnVarlikKilit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda sinyal bildirimi tek varlıkta: {ad}. Tüm varlıkların için Premium.'**
+  String sgnVarlikKilit(String ad);
+
+  /// No description provided for @sgnVarlikTasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sinyali buraya taşı'**
+  String get sgnVarlikTasi;
 
   /// No description provided for @sgnSlotKilitli.
   ///
@@ -11319,6 +11361,432 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.'**
   String get pwGeriYukHata;
+
+  /// No description provided for @assetTypeEurobond.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eurobond'**
+  String get assetTypeEurobond;
+
+  /// No description provided for @tickerHintEurobond.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listeden seç ya da ISIN yaz, örn. US900123DF45'**
+  String get tickerHintEurobond;
+
+  /// No description provided for @stockMarketBist.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST'**
+  String get stockMarketBist;
+
+  /// No description provided for @stockMarketUs.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD'**
+  String get stockMarketUs;
+
+  /// No description provided for @stockMarketSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hisse pazarı: {market}'**
+  String stockMarketSemantics(String market);
+
+  /// No description provided for @usStocks.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD Hisseleri'**
+  String get usStocks;
+
+  /// No description provided for @pickUsStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hissesi seç'**
+  String get pickUsStock;
+
+  /// No description provided for @pickUsStockTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hissesi seçmek için dokun...'**
+  String get pickUsStockTap;
+
+  /// No description provided for @usSymbolHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sembol yaz (örn: AAPL, BRK-B)'**
+  String get usSymbolHint;
+
+  /// No description provided for @selectedUsStockSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili ABD hissesi: {name}. Değiştirmek için çift dokun.'**
+  String selectedUsStockSemantics(String name);
+
+  /// No description provided for @usStockCurrencyLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hissesi dolarla kaydedilir'**
+  String get usStockCurrencyLocked;
+
+  /// No description provided for @costsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'MASRAFLAR'**
+  String get costsUpper;
+
+  /// No description provided for @costsPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödenen'**
+  String get costsPaid;
+
+  /// No description provided for @costsEstimatedOnSale.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satarken tahmini'**
+  String get costsEstimatedOnSale;
+
+  /// No description provided for @costTagPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödendi'**
+  String get costTagPaid;
+
+  /// No description provided for @costTagEstimated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmini'**
+  String get costTagEstimated;
+
+  /// No description provided for @costTagInfo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bilgi'**
+  String get costTagInfo;
+
+  /// No description provided for @costsShowAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünü gör ({count})'**
+  String costsShowAll(int count);
+
+  /// No description provided for @costsShowLess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daha az göster'**
+  String get costsShowLess;
+
+  /// No description provided for @identityEurobond.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil'**
+  String get identityEurobond;
+
+  /// No description provided for @pickEurobondTap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil seçmek için dokun'**
+  String get pickEurobondTap;
+
+  /// No description provided for @pickEurobondPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir eurobond seç'**
+  String get pickEurobondPrompt;
+
+  /// No description provided for @eurobondSelectedSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçili tahvil: {name}. Değiştirmek için çift dokun.'**
+  String eurobondSelectedSemantics(String name);
+
+  /// No description provided for @eurobondPickerTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eurobondlar'**
+  String get eurobondPickerTitle;
+
+  /// No description provided for @eurobondLoading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil listesi yükleniyor'**
+  String get eurobondLoading;
+
+  /// No description provided for @eurobondLoadFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvil listesi yüklenemedi'**
+  String get eurobondLoadFailed;
+
+  /// No description provided for @eurobondSourceNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şimdilik yalnız USD tahviller. Fiyat temiz fiyattır, nominalin yüzdesi. Yatırım tavsiyesi değildir.'**
+  String get eurobondSourceNote;
+
+  /// No description provided for @eurobondMaturityShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade {date}'**
+  String eurobondMaturityShort(String date);
+
+  /// No description provided for @eurobondYieldShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Getiri {pct}'**
+  String eurobondYieldShort(String pct);
+
+  /// No description provided for @eurobondIsinInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ISIN geçersiz: kontrol hanesi tutmuyor. Bir haneyi yanlış yazmış olabilirsin.'**
+  String get eurobondIsinInvalid;
+
+  /// No description provided for @eurobondIsinNotListed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ISIN listede yok. Şimdilik yalnız listedeki USD tahvilleri ekleyebilirsin.'**
+  String get eurobondIsinNotListed;
+
+  /// No description provided for @eurobondCleanPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temiz fiyat (%)'**
+  String get eurobondCleanPrice;
+
+  /// No description provided for @eurobondCleanPriceRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temiz fiyatı yaz'**
+  String get eurobondCleanPriceRequired;
+
+  /// No description provided for @eurobondCurrencyLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahvilin para birimi'**
+  String get eurobondCurrencyLocked;
+
+  /// No description provided for @eurobondAccruedLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlemiş faiz: {accrued} · Ödenen: {paid}'**
+  String eurobondAccruedLine(String accrued, String paid);
+
+  /// No description provided for @eurobondAccruedOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlemiş faiz: {accrued}'**
+  String eurobondAccruedOnly(String accrued);
+
+  /// No description provided for @eurobondTotalBreakdown.
+  ///
+  /// In tr, this message translates to:
+  /// **'{nominal} nominal × kirli {dirty}'**
+  String eurobondTotalBreakdown(String nominal, String dirty);
+
+  /// No description provided for @bondInfoUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'TAHVİL BİLGİLERİ'**
+  String get bondInfoUpper;
+
+  /// No description provided for @bondCleanPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temiz fiyat'**
+  String get bondCleanPrice;
+
+  /// No description provided for @bondAccrued.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlemiş faiz'**
+  String get bondAccrued;
+
+  /// No description provided for @bondDirtyPrice.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kirli fiyat'**
+  String get bondDirtyPrice;
+
+  /// No description provided for @bondPerNominalNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatlar 100 nominal başına.'**
+  String get bondPerNominalNote;
+
+  /// No description provided for @bondYtm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vadeye getiri'**
+  String get bondYtm;
+
+  /// No description provided for @bondCoupon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kupon'**
+  String get bondCoupon;
+
+  /// No description provided for @bondCouponValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{rate} · yılda {count} kez'**
+  String bondCouponValue(String rate, String count);
+
+  /// No description provided for @bondNextCoupon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonraki kupon'**
+  String get bondNextCoupon;
+
+  /// No description provided for @bondNextCouponValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} · {amount}'**
+  String bondNextCouponValue(String date, String amount);
+
+  /// No description provided for @bondWithholding.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj {rate}'**
+  String bondWithholding(String rate);
+
+  /// No description provided for @bondMaturity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade'**
+  String get bondMaturity;
+
+  /// No description provided for @bondMaturityValue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} · {days} gün kaldı'**
+  String bondMaturityValue(String date, String days);
+
+  /// No description provided for @bondIssuer.
+  ///
+  /// In tr, this message translates to:
+  /// **'İhraççı'**
+  String get bondIssuer;
+
+  /// No description provided for @bondIssuerTreasury.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hazine'**
+  String get bondIssuerTreasury;
+
+  /// No description provided for @bondIssuerCorporate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel sektör'**
+  String get bondIssuerCorporate;
+
+  /// No description provided for @bondBankSellUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'BANKAYA SATARSAN'**
+  String get bondBankSellUpper;
+
+  /// No description provided for @bondBankZiraat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ziraat Bankası'**
+  String get bondBankZiraat;
+
+  /// No description provided for @bondBankUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'{bank} · {time}'**
+  String bondBankUpdated(String bank, String time);
+
+  /// No description provided for @bondBankBid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka alış'**
+  String get bondBankBid;
+
+  /// No description provided for @bondBankAsk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka satış'**
+  String get bondBankAsk;
+
+  /// No description provided for @bondBankSpread.
+  ///
+  /// In tr, this message translates to:
+  /// **'Makas'**
+  String get bondBankSpread;
+
+  /// No description provided for @bondBankProceeds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün satarsan eline geçen'**
+  String get bondBankProceeds;
+
+  /// No description provided for @bondBankNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka fiyatları kirli fiyattır (işlemiş faiz dahil).'**
+  String get bondBankNote;
+
+  /// No description provided for @typePickerSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara: {examples}…'**
+  String typePickerSearchHint(String examples);
+
+  /// No description provided for @typePickerGroupMarkets.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borsa ve fon'**
+  String get typePickerGroupMarkets;
+
+  /// No description provided for @typePickerGroupFxPrecious.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz ve değerli'**
+  String get typePickerGroupFxPrecious;
+
+  /// No description provided for @typePickerGroupSavings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikim'**
+  String get typePickerGroupSavings;
+
+  /// No description provided for @typePickerUsStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hisse'**
+  String get typePickerUsStock;
+
+  /// No description provided for @typePickerChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değiştir'**
+  String get typePickerChange;
+
+  /// No description provided for @typePickerChangeSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık türünü değiştir'**
+  String get typePickerChangeSemantics;
+
+  /// No description provided for @typePickerHintBistOpen.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST açık'**
+  String get typePickerHintBistOpen;
+
+  /// No description provided for @typePickerHintBistClosed.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST kapalı'**
+  String get typePickerHintBistClosed;
+
+  /// No description provided for @typePickerHint247.
+  ///
+  /// In tr, this message translates to:
+  /// **'7/24'**
+  String get typePickerHint247;
 
   /// No description provided for @s7AraSemantics.
   ///

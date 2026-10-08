@@ -1,8 +1,9 @@
 # KVKK Aydınlatma Metni — sandık
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.6
+**Yürürlük tarihi:** 8 Ekim 2026
+**Son güncelleme:** 8 Ekim 2026
+**Sürüm:** 1.8
+**Onay sürümü:** 1.8
 
 ---
 
@@ -42,6 +43,7 @@
 - Ortaklık bağlantıları ve davet kodları
 - Varlık notlarına geri bildirim (isteğe bağlı): oy, "yanlış sayı var" işareti, en fazla 500 karakterlik açıklama
 - Premium hakkı: kaynağı (hediye, mağaza aboneliği ya da destek), başlangıç ve bitiş zamanı, mağaza ve ürün adı (ödeme ve kart bilgisi işlenmez)
+- Abonelik verisi (yalnızca Premium satın alırsanız): mağaza işlem kaydı, ürün (aylık ya da yıllık), başlangıç ve bitiş tarihleri, iptal durumu, test satın alımı olup olmadığı
 
 ### 2.4 İşlem Güvenliği Verisi
 - Şifre (bcrypt hash — geri çevrilemez)
@@ -69,7 +71,7 @@
 | Zirvedeki Portföyler — anonim karşılaştırma | 2.3 |
 | Yarış — yüzdelik dilim ve ortakla karşılaştırma | 2.3 |
 | Performans grafiklerinin hesaplanması | 2.3 |
-| Premium içeriğe erişimin doğrulanması | 2.3 |
+| Premium aboneliğin doğrulanması ve Premium içeriğe erişimin tanınması | 2.3 |
 | Varlık notlarının doğruluğunun ölçülmesi ve iyileştirilmesi | 2.3 |
 | Ortaklık özelliği (kullanıcılar arası paylaşım) | 2.1, 2.3 |
 | Push bildirim ve kilit ekranı canlı etkinliği | 2.2, 2.3 |
@@ -95,12 +97,12 @@
 | Yarış ölçümleri (getiri %, tür payı %) | KVKK 5(2)(c) — isteğe bağlı özelliğin ifası (katılırsanız) |
 | Zirve havuzu ölçümleri (getiri %, tür payı %) | KVKK 5(1) — açık rıza (uygulama içinde, isteğe bağlı; her an geri alınabilir) |
 | Push token | KVKK 5(2)(c) — bildirim izni verdiğinizde istediğiniz bildirimlerin teslimi |
-| Premium hakkı | KVKK 5(2)(c) — sözleşmenin ifası |
+| Premium hakkı ve abonelik verisi | KVKK 5(2)(c) — sözleşmenin kurulması ve ifası |
 | Varlık notlarına geri bildirim | KVKK 5(2)(f) — meşru menfaat (notların doğruluğu); yalnızca siz gönderirseniz |
 | IP, cihaz bilgisi, kayıtlı cihazlar, hata kayıtları | KVKK 5(2)(f) — meşru menfaat (güvenlik ve hata teşhisi) |
 | Kullanım istatistikleri ve kayıt hunisi | KVKK 5(2)(f) — meşru menfaat (ürünün iyileştirilmesi) |
 | Yasal metin onay kayıtları | KVKK 5(2)(e) — bir hakkın tesisi, kullanılması veya korunması; yatırım uyarısı için KVKK 5(2)(a) |
-| Yurt dışı aktarımı (Supabase: {SUPABASE_ULKE}; Firebase: ABD) | KVKK 5(1) ve 9(1) — açık rıza |
+| Yurt dışı aktarımı (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD) | KVKK 5(1) ve 9(1) — açık rıza |
 
 ---
 
@@ -120,14 +122,17 @@ Yurt içinde üçüncü kişilere aktarım yapılmamaktadır. Ortaklık kurduğu
 | Google LLC (Gmail e-posta altyapısı) | ABD / Küresel | E-posta adresi, doğrulama kodu | Kod e-postalarının teslimi | KVKK 9(1) — açık rıza |
 | Apple Inc. (Apple Push Notification service) | ABD / Küresel | Bildirim içeriği, canlı etkinlik token'ı ve kilit ekranı özeti | iPhone'a teslim | KVKK 9(1) — açık rıza |
 | Apple Inc. / Google LLC (Apple ile Giriş, Google ile Giriş — seçerseniz) | ABD / Küresel | Giriş sırasında sağlayıcıyla doğrulama | Kimlik doğrulama | KVKK 9(1) — açık rıza |
+| RevenueCat, Inc. (yalnızca Premium satın alırsanız) | ABD | Hesap numaranız (rastgele kullanıcı kimliği), mağaza işlem kaydı ve makbuzu, cihaz ve uygulama sürümü, IP adresi | Satın almanın mağazayla doğrulanması ve Premium hakkının sunucumuza bildirilmesi | KVKK 9(1) — açık rıza |
 
-Fiyat ve piyasa verisi sağlayıcılarına (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, TCMB, EGM, open.er-api.com) kişisel veri aktarılmaz; yalnızca sembol / fon kodu sorgusu gönderilir. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür.
+Premium ödemesini Apple ya da Google tahsil eder; kart ve ödeme bilgileriniz bize ulaşmaz, bunları mağaza kendi başına veri sorumlusu olarak işler.
+
+Kamuya açık piyasa verisi sağlayıcılarına (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) kişisel veri aktarılmaz; yalnızca varlığın sembolü, fon kodu ya da ISIN'i sorulur. Cihazdan giden isteklerde sağlayıcı, her internet isteğinde olduğu gibi cihazın IP adresini görür; bazı kaynaklara istekler yalnızca sunucumuzdan gider. Bu sağlayıcılar kişisel veri almadığı için tek tek sayılmaz; yeni bir fiyat kaynağı eklemek bu metni değiştirmez.
 
 Varlık notlarını ve aylık raporu yazan yapay zekâ sağlayıcısına (Anthropic PBC, ABD) kişisel veri aktarılmaz: sunucumuz yalnızca varlığın sembolünü ve kamuya açık piyasa ölçümlerini (fiyat, işlem hacmi, fon büyüklüğü, para akışı, yatırımcı sayısı) gönderir; kimin hangi varlığı tuttuğu, miktar ve tutar gönderilmez. Notu okumanız yapay zekâya istek göndermez.
 
 Ekstre içe aktarmada "Yapay zekâyla eşle"yi seçerseniz aynı sağlayıcıya ekstredeki tabloların anonim iskeleti gönderilir: sütun başlıkları ve genel finans kelimeleri kalır; ad, numara, tutar ve tarihler maskelenir. Bu iskelet kişisel veri içermez ve saklanmaz.
 
-Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
+Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: ABD), Kişisel Verileri Koruma Kurulu'nun (KVK Kurulu) ilan ettiği "yeterli korumaya sahip ülkeler" listesinde **bulunmamaktadır**. Bu nedenle yurt dışı aktarımı KVKK Madde 9(1) kapsamında **açık rızanıza** dayanmaktadır.
 
 Açık rızanız, kayıt sırasında (Apple veya Google ile ilk girişte onay ekranında) sonuna kadar okuyup metnin sonunda onayladığınız "Açık Rıza Metni" ile, başka bir beyanla birleştirilmeden, belirli, bilgilendirilmiş ve özgür iradeyle alınmaktadır.
 
@@ -149,7 +154,7 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Ekstre sütun eşleme istek kayıtları (zaman, model, maliyet) | 40 gün | KVKK 5(2)(f) meşru menfaat (kötüye kullanım ve maliyet sınırı) |
-| Premium hakkı kayıtları | Hesap silinene kadar | Sözleşme süresi |
+| Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince, ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır | Sözleşme süresi |
 | Push token | Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar | Sözleşme süresi |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
 | Anonim hesap silme kaydı (hesap kimliğinin tek yönlü özeti, e-posta alan adı, silme zamanı ve nedeni) | Hesap silinmesinden sonra **3 yıl**; süresi dolanlar her gün otomatik silinir | TBK Madde 146 (zamanaşımı) |
@@ -237,7 +242,8 @@ KVKK Madde 12(5) uyarınca, kişisel verilerinizin yetkisiz kişilerce ele geçi
 Bu Aydınlatma Metni'nde değişiklik yaptığımızda:
 - Yeni sürüm uygulama içinde ve web sitesinde aynı metinle yayımlanır
 - "Sürüm" numarası artırılır
-- Önemli değişikliklerde bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir; devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
+- Esaslı değişikliklerde (yeni bir kişisel veri, kişisel veri alan yeni bir alıcı, yeni bir amaç ya da saklama süresi) "Onay sürümü" de yeni sürüme çekilir; bir sonraki açılışta güncel metin ve değişikliklerin özeti gösterilir ve devam etmeden önce güncel metinle bilgilendirildiğinizi onay kutusunda belirtmeniz istenir
+- Kişisel veri işleyişini değiştirmeyen düzeltmelerde (yazım, açıklama, kişisel veri almayan bir piyasa verisi kaynağı) yalnızca "Sürüm" değişir; yeniden onay istenmez
 - Önceki sürümlerin tam metni ve hangi sürümün size ne zaman sunulduğu kayıt altında tutulur; talep ederseniz e-postayla gönderilir
 
 ---

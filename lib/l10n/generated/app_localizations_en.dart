@@ -5603,7 +5603,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it. The Explicit Consent Notice has not changed.';
+      'Version 1.8: Premium subscription terms were added (price, auto-renewal, cancellation, refunds). If you buy Premium, your subscription is verified through RevenueCat (USA); your card details never reach us. RevenueCat was therefore added to the Explicit Consent Notice. Price sources are no longer listed one by one, because no personal data goes to them. From now on, corrections that do not change how personal data is processed will not ask for a new confirmation. Version 1.7: Two new sources were added for eurobond prices: Börse Frankfurt and Ziraat Bankası. Only our server connects to them and it asks only for the bond\'s ISIN; none of your personal data is sent. Version 1.6: In statement import, if the app is unsure about the columns it offers \"Map with AI\". If you tap it, only an anonymous skeleton of the tables (names, numbers, amounts and dates hidden) goes to AI (Anthropic); the file never leaves your phone and the skeleton is not stored. Version 1.5: asset notes were added. Weekly notes and a monthly report for the assets in your portfolio are written with AI (Anthropic); none of your personal data is sent to the AI, only the asset\'s market metrics. Notes are checked automatically but may contain errors and are not investment advice. Your feedback on notes (vote, \"wrong number\" flag, explanation) and your Premium entitlement are stored with your account and deleted when you delete it.';
 
   @override
   String get yasalBelgeKosullar => 'Terms of Use';
@@ -6619,6 +6619,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSinirsiz => 'unlimited';
 
   @override
+  String get prmSatirSinyal => 'Signal alerts';
+
+  @override
+  String get prmSinyalUcretsiz => '1 asset';
+
+  @override
+  String get prmSinyalPremium => 'all assets';
+
+  @override
+  String get prmSatirTakip => 'Watchlist';
+
+  @override
   String prmYillikTasarruf(String oran) {
     return 'Save $oran%';
   }
@@ -6793,7 +6805,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzSiklik =>
-      'More than one signal notification a day (hourly, twice a day…)';
+      'Signal alerts for all your assets, at the frequency you choose';
 
   @override
   String get pwOzKarsilastir => 'Up to 5 series in Compare';
@@ -6803,7 +6815,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnSlotNotu =>
-      'On the free plan you get 1 notification a day per type. Premium brings back the frequency you chose.';
+      'On the free plan signal alerts cover one asset, once a day per type; you pick the asset on its screen. Premium covers all your assets at the frequency you choose.';
+
+  @override
+  String get sgnVarlikAcik =>
+      'Signal alerts are on for this asset. The free plan covers one asset.';
+
+  @override
+  String sgnVarlikKilit(String ad) {
+    return 'On the free plan signal alerts cover one asset: $ad. Premium covers all your assets.';
+  }
+
+  @override
+  String get sgnVarlikTasi => 'Move signals here';
 
   @override
   String sgnSlotKilitli(String secenek) {
@@ -6877,6 +6901,254 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pwGeriYukHata =>
       'Restore is not possible right now. Please try again shortly.';
+
+  @override
+  String get assetTypeEurobond => 'Eurobond';
+
+  @override
+  String get tickerHintEurobond =>
+      'Pick from the list or type an ISIN, e.g. US900123DF45';
+
+  @override
+  String get stockMarketBist => 'BIST';
+
+  @override
+  String get stockMarketUs => 'US';
+
+  @override
+  String stockMarketSemantics(String market) {
+    return 'Stock market: $market';
+  }
+
+  @override
+  String get usStocks => 'US Stocks';
+
+  @override
+  String get pickUsStock => 'Pick a US stock';
+
+  @override
+  String get pickUsStockTap => 'Tap to pick a US stock...';
+
+  @override
+  String get usSymbolHint => 'Type a symbol (e.g. AAPL, BRK-B)';
+
+  @override
+  String selectedUsStockSemantics(String name) {
+    return 'Selected US stock: $name. Double tap to change.';
+  }
+
+  @override
+  String get usStockCurrencyLocked => 'US stocks are recorded in dollars';
+
+  @override
+  String get costsUpper => 'COSTS';
+
+  @override
+  String get costsPaid => 'Paid';
+
+  @override
+  String get costsEstimatedOnSale => 'Estimated on sale';
+
+  @override
+  String get costTagPaid => 'Paid';
+
+  @override
+  String get costTagEstimated => 'Estimated';
+
+  @override
+  String get costTagInfo => 'Info';
+
+  @override
+  String costsShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get costsShowLess => 'Show less';
+
+  @override
+  String get identityEurobond => 'Bond';
+
+  @override
+  String get pickEurobondTap => 'Tap to pick a bond';
+
+  @override
+  String get pickEurobondPrompt => 'Pick a eurobond';
+
+  @override
+  String eurobondSelectedSemantics(String name) {
+    return 'Selected bond: $name. Double tap to change.';
+  }
+
+  @override
+  String get eurobondPickerTitle => 'Eurobonds';
+
+  @override
+  String get eurobondLoading => 'Loading bonds';
+
+  @override
+  String get eurobondLoadFailed => 'Couldn\'t load the bond list';
+
+  @override
+  String get eurobondSourceNote =>
+      'USD bonds only for now. Prices are clean, as a percentage of nominal. Not investment advice.';
+
+  @override
+  String eurobondMaturityShort(String date) {
+    return 'Matures $date';
+  }
+
+  @override
+  String eurobondYieldShort(String pct) {
+    return 'Yield $pct';
+  }
+
+  @override
+  String get eurobondIsinInvalid =>
+      'This ISIN is invalid: the check digit doesn\'t match. A digit may be mistyped.';
+
+  @override
+  String get eurobondIsinNotListed =>
+      'This ISIN isn\'t in the list. For now you can only add the USD bonds listed here.';
+
+  @override
+  String get eurobondCleanPrice => 'Clean price (%)';
+
+  @override
+  String get eurobondCleanPriceRequired => 'Enter the clean price';
+
+  @override
+  String get eurobondCurrencyLocked => 'The bond\'s currency';
+
+  @override
+  String eurobondAccruedLine(String accrued, String paid) {
+    return 'Accrued interest: $accrued · Paid: $paid';
+  }
+
+  @override
+  String eurobondAccruedOnly(String accrued) {
+    return 'Accrued interest: $accrued';
+  }
+
+  @override
+  String eurobondTotalBreakdown(String nominal, String dirty) {
+    return '$nominal nominal × dirty $dirty';
+  }
+
+  @override
+  String get bondInfoUpper => 'BOND DETAILS';
+
+  @override
+  String get bondCleanPrice => 'Clean price';
+
+  @override
+  String get bondAccrued => 'Accrued interest';
+
+  @override
+  String get bondDirtyPrice => 'Dirty price';
+
+  @override
+  String get bondPerNominalNote => 'Prices per 100 nominal.';
+
+  @override
+  String get bondYtm => 'Yield to maturity';
+
+  @override
+  String get bondCoupon => 'Coupon';
+
+  @override
+  String bondCouponValue(String rate, String count) {
+    return '$rate · $count× a year';
+  }
+
+  @override
+  String get bondNextCoupon => 'Next coupon';
+
+  @override
+  String bondNextCouponValue(String date, String amount) {
+    return '$date · $amount';
+  }
+
+  @override
+  String bondWithholding(String rate) {
+    return 'Withholding $rate';
+  }
+
+  @override
+  String get bondMaturity => 'Maturity';
+
+  @override
+  String bondMaturityValue(String date, String days) {
+    return '$date · $days days left';
+  }
+
+  @override
+  String get bondIssuer => 'Issuer';
+
+  @override
+  String get bondIssuerTreasury => 'Turkish Treasury';
+
+  @override
+  String get bondIssuerCorporate => 'Corporate';
+
+  @override
+  String get bondBankSellUpper => 'IF YOU SELL TO THE BANK';
+
+  @override
+  String get bondBankZiraat => 'Ziraat Bankası';
+
+  @override
+  String bondBankUpdated(String bank, String time) {
+    return '$bank · $time';
+  }
+
+  @override
+  String get bondBankBid => 'Bank bid';
+
+  @override
+  String get bondBankAsk => 'Bank ask';
+
+  @override
+  String get bondBankSpread => 'Spread';
+
+  @override
+  String get bondBankProceeds => 'What you\'d get selling today';
+
+  @override
+  String get bondBankNote =>
+      'Bank prices are dirty prices (accrued interest included).';
+
+  @override
+  String typePickerSearchHint(String examples) {
+    return 'Search: $examples…';
+  }
+
+  @override
+  String get typePickerGroupMarkets => 'Stocks and funds';
+
+  @override
+  String get typePickerGroupFxPrecious => 'FX and precious';
+
+  @override
+  String get typePickerGroupSavings => 'Savings';
+
+  @override
+  String get typePickerUsStock => 'US stock';
+
+  @override
+  String get typePickerChange => 'Change';
+
+  @override
+  String get typePickerChangeSemantics => 'Change asset type';
+
+  @override
+  String get typePickerHintBistOpen => 'BIST open';
+
+  @override
+  String get typePickerHintBistClosed => 'BIST closed';
+
+  @override
+  String get typePickerHint247 => '24/7';
 
   @override
   String get s7AraSemantics => 'Search';

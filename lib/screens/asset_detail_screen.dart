@@ -34,6 +34,8 @@ import '../widgets/transaction_segment.dart';
 import 'signal_settings_screen.dart';
 import '../models/signal_alert.dart';
 import '../providers/signal_provider.dart';
+import '../providers/sinyal_varligi_provider.dart';
+import '../utils/friendly_error.dart';
 import '../models/asset_categories.dart';
 import '../services/tefas_service.dart';
 import '../services/tazelik_ritmi.dart';
@@ -55,6 +57,7 @@ import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
+import '../widgets/sandik_async_button.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
 import '../providers/fon_karnesi_provider.dart'
@@ -73,6 +76,9 @@ import '../services/remote_config_service.dart';
 import '../widgets/analiz_notu_kutusu.dart';
 import '../widgets/kap_baglantisi.dart';
 import '../widgets/temettu_gecmisi_karti.dart';
+import '../widgets/masraf_karti.dart';
+import '../widgets/eurobond_karti.dart';
+import '../services/varlik_masraflari.dart';
 import '../widgets/sozlesme_karti.dart';
 import '../providers/sozlesme_provider.dart';
 import '../providers/secili_donem_provider.dart';
@@ -769,6 +775,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
                   ),
+                if (_sinyalYuzeyleri)
+                  SinyalVarlikSeridi(asset: widget.asset),
                 // Kurulu alarmlar (boşken hiç çizilmez; alt boşluğunu kendi
                 // taşır — bkz. AlarmSeridi).
                 if (_alarmSembolu != null)
@@ -1676,6 +1684,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   donem: _donemDegisimi(period.days, startDate, endDate,
                       pnl.currentUnitTRY),
                 ),
+                _eurobondKarti(),
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
@@ -1685,6 +1694,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 _analizNotu(),
                 if (isOwnAsset) _sozlesmeKarti(),
                 if (isOwnAsset && pState != null) _temettuKarti(pState),
+                if (isOwnAsset &&
+                    pState != null &&
+                    RemoteConfigService.instance.varlikMasraflari)
+                  _masrafKarti(pState),
                 _kapBaglantisi(),
                 if (_sinyalYuzeyleri) ...[
                   const SizedBox(height: 24),

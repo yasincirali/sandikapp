@@ -10,6 +10,7 @@ import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
+import 'sinyal_varligi_provider.dart';
 
 /// Supabase `signal_notifications` tablosunun state'i.
 ///
@@ -91,6 +92,14 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
       if (alimlar.isEmpty) continue;
       alimlar.sort((a, b) => a.id.compareTo(b.id));
       acikVarliklar.add(alimlar.first);
+    }
+    // Ücretsiz planda sinyal tek varlıkta (2026-10-08); sunucudaki
+    // `analyze-signals` kapısıyla aynı anahtar. Kapı kapalıyken null.
+    final tekVarlik = ref.read(etkinSinyalVarligiProvider);
+    if (tekVarlik != null) {
+      final k = sinyalVarlikAnahtari(tekVarlik.tur, tekVarlik.ticker);
+      acikVarliklar
+          .retainWhere((a) => sinyalVarlikAnahtari(a.type, a.ticker) == k);
     }
     if (acikVarliklar.isEmpty) return;
 
