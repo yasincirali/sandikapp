@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -8,6 +8,22 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-08 Yasal metin 1.8: fiyat kaynakları genel, "Onay sürümü", Premium maddesi (0127)
+
+Gizlilik/KVKK 1.8, Koşullar 1.6, Açık Rıza 1.5. Bayraktan bağımsız: yeni
+build'i alan herkes BİR KEZ onaylar (Açık Rıza adımı: RevenueCat eklendi;
+kutu: Koşullar §2A Premium + Gizlilik/KVKK). Eski build daha yeni metni
+görünce kapıyı açmaz. **Bundan sonra** fiyat kaynağı eklemek metne
+dokunmaz; kişisel veri işleyişini değiştirmeyen düzeltmede yalnız "Sürüm"
+artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
+
+- [ ] PR'ı birleştir (CI yeşil olunca).
+- [ ] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
+      0127 birlikte, sırayla gider.
+- [ ] Paywall'u açmadan önce hâlâ gerekli: hesap silmede RevenueCat
+      müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
+      kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
+      metin esaslı olmayan bir düzeltmeyle güncellenir.
 ## ⏳ 2026-10-08 Ücretsiz sınırlar: 7 varlık, 3 takip, sinyal tek varlıkta (0126)
 
 Senin kararın: ücretsizde 7 varlık (8.'si Premium ister), takip listesi 3,
@@ -129,7 +145,7 @@ Paywall'u açmadan önce sırayla:
       `REVENUECAT_API_KEY`; RevenueCat › Integrations › Webhook adresi
       `https://ybdbzouzhzwthjgwlbmk.supabase.co/functions/v1/revenuecat-webhook`,
       Authorization başlığı = webhook secret.
-- [ ] Yasal metin: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
+- [x] Yasal metin: 2026-10-08 1.8 / Koşullar 1.6 / Açık Rıza 1.5 ile metne girdi (0127). Eski not: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
       (Koşullar §2A, Gizlilik §3.6/§5/§6/§7). Açılış yayınında md'ye girer,
       sürüm artar, migration. Hesap silmede RevenueCat müşterisini silen çağrı
       (`delete-account`) henüz yok; ya eklenir ya metin bunu söyler.

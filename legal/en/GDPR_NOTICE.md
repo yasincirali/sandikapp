@@ -1,8 +1,8 @@
 # GDPR Notice — sandık
 
-**Effective date:** October 5, 2026
-**Last updated:** October 5, 2026
-**Version:** 1.3
+**Effective date:** October 8, 2026
+**Last updated:** October 8, 2026
+**Version:** 1.4
 
 > This document supplements the [Privacy Policy](https://yasincirali.github.io/sandikapp/privacy-en) and [Terms of Service](https://yasincirali.github.io/sandikapp/terms-en) with EU/EEA-specific information required by the General Data Protection Regulation (Regulation (EU) 2016/679).
 
@@ -48,13 +48,14 @@ We do **not** process special categories of personal data (Art. 9): no health, r
 | Crash reports and usage statistics (Firebase Crashlytics, Firebase Analytics); sign-up funnel | Art. 6(1)(f) — legitimate interests (diagnostics, product improvement) |
 | Race (optional; period return %, asset-type shares %) | Art. 6(1)(b) — performance of a contract (feature you turn on) |
 | Top Portfolios anonymous pool (period return %, asset-type shares %, per-fund-code shares %) | Art. 6(1)(a) — consent (opt-in in the App; withdrawable at any time) |
-| International transfer (Supabase Japan → Germany, Firebase USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
+| Premium subscription verification (only if you buy Premium; RevenueCat) | Art. 6(1)(b) — performance of a contract |
+| International transfer (Supabase Japan → Germany, Firebase and RevenueCat USA) | Art. 49(1)(a) — explicit consent + Art. 46(2)(c) SCCs |
 
 ---
 
 ## 4. Recipients (Art. 13(1)(e))
 
-See [Privacy Policy §5](https://yasincirali.github.io/sandikapp/privacy-en) (Supabase, Google Firebase and Gmail email infrastructure, Apple Push Notification service, Sign in with Apple / Google Sign-In).
+See [Privacy Policy §5](https://yasincirali.github.io/sandikapp/privacy-en) (Supabase, Google Firebase and Gmail email infrastructure, Apple Push Notification service, Sign in with Apple / Google Sign-In, RevenueCat for Premium subscription verification). Public market-data providers (exchanges, banks, fund platforms, official institutions, exchange-rate and price services) receive no personal data and are therefore not listed individually.
 
 All processors are bound by Data Processing Agreements (DPAs) under Art. 28.
 
@@ -74,6 +75,7 @@ company) and Google act as processors under the mechanisms below:
 | Supabase Inc. (processor; data in Japan → Germany) | EU adequacy decision for Japan; EU-U.S. Data Privacy Framework + Standard Contractual Clauses for remote access | https://supabase.com/privacy |
 | Google Firebase and Gmail | EU-U.S. Data Privacy Framework + SCCs | https://firebase.google.com/support/privacy |
 | Apple (Push Notification service, Sign in with Apple) | EU-U.S. Data Privacy Framework + SCCs | https://www.apple.com/legal/privacy/ |
+| RevenueCat, Inc. (only if you buy Premium) | SCCs under RevenueCat's Data Processing Addendum | https://www.revenuecat.com/privacy |
 
 **Risk assessment:** The U.S. is a recipient of the EU-U.S. Data Privacy Framework adequacy decision (10 July 2023). However, due to evolving CJEU jurisprudence, we additionally rely on SCCs and supplementary measures (encryption in transit and at rest, access controls, RLS).
 

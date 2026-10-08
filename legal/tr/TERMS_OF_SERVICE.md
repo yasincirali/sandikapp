@@ -1,8 +1,9 @@
 # Kullanım Koşulları — sandık
 
-**Yürürlük tarihi:** 5 Ekim 2026
-**Son güncelleme:** 5 Ekim 2026
-**Sürüm:** 1.5
+**Yürürlük tarihi:** 8 Ekim 2026
+**Son güncelleme:** 8 Ekim 2026
+**Sürüm:** 1.6
+**Onay sürümü:** 1.6
 
 ---
 
@@ -23,7 +24,8 @@ Kayıt sırasında (Apple veya Google ile ilk girişte açılan onay ekranında 
 
 sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bir kişisel portföy izleme aracıdır:
 
-- BIST hisse senetleri
+- Hisse senetleri (Borsa İstanbul ve yurt dışı borsalar)
+- Tahviller (eurobond)
 - TEFAS yatırım fonları
 - Döviz (USD, EUR, GBP, vb.)
 - Altın ve diğer emtialar
@@ -41,6 +43,30 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 
 ---
 
+## 2A. Premium Abonelik
+
+Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
+
+**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. ek teknik göstergeler, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
+
+**Fiyat ve ödeme.** Abonelik aylık ya da yıllık dönemlidir. Fiyat, satın alma ekranında App Store ya da Google Play'in gösterdiği tutardır (vergiler dahil). Ödemeyi Şirket değil, cihazınızın mağazası (Apple ya da Google) tahsil eder; kart bilgileriniz Şirket'e ulaşmaz.
+
+**Otomatik yenileme.** Abonelik, dönem bitmeden iptal edilmezse (Apple'da dönem bitmeden en az 24 saat önce) aynı süre ve o anki fiyatla kendiliğinden yenilenir. Fiyat artarsa mağaza sizi önceden bilgilendirir ve gerekirse onayınızı ister.
+
+**Ücretsiz deneme.** Mağazada deneme tanımlıysa süresi satın alma ekranında yazar; tanımlı değilse deneme vaat edilmez. Deneme bitmeden iptal etmezseniz deneme sonunda ilk dönem ücreti alınır. Deneme hakkı mağazanın kurallarına göre hesap başına bir kez kullanılabilir.
+
+**İptal.** Aboneliği istediğiniz zaman mağazadan iptal edebilirsiniz (iPhone: Ayarlar › Apple Kimliği › Abonelikler; Android: Google Play › Ödemeler ve abonelikler › Abonelikler). İptal, ödenmiş dönemin sonunda geçerli olur; Premium o güne kadar açık kalır. Uygulamayı silmek ya da hesabınızı silmek aboneliği iptal **etmez**; önce mağazadan iptal edin.
+
+**İade ve cayma hakkı.** İade talepleri mağazanın kendi süreciyle değerlendirilir (Apple: reportaproblem.apple.com; Google: Google Play'deki sipariş geçmişi). Mesafeli Sözleşmeler Yönetmeliği Madde 15(1)(ğ) uyarınca, elektronik ortamda anında ifa edilen hizmetlerde ve tüketiciye anında teslim edilen gayrimaddi mallarda, ifaya onayınızla başlandığında cayma hakkı kullanılamaz; satın alma ekranında aboneliği başlatmanız bu onay sayılır. TKHK'dan doğan devredilemez haklarınız saklıdır (bkz. Madde 12).
+
+**Hakkın tanınması.** Satın alma tamamlandığında mağaza işlemi abonelik altyapı sağlayıcımız RevenueCat üzerinden doğrulanır ve Premium hesabınıza bağlanır. Aynı hesapla girdiğiniz başka cihazda da açılır; cihaz değiştirdiyseniz satın alma ekranındaki "Satın alımı geri yükle" ile yeniden bağlayabilirsiniz.
+
+**Hediye Premium.** Şirket, belirli kullanıcılara (ör. belirli bir tarihten önce kayıt olanlara) bir defaya mahsus, ücretsiz ve otomatik yenilenmeyen süreli Premium tanıyabilir. Süre bitince ödeme alınmaz; Premium kendiliğinden kapanır.
+
+**Değişiklik.** Premium kapsamı değişirse içinde bulunulan dönem için ödediğiniz özellikler dönem sonuna kadar korunur. Fiyat değişikliği yalnızca sonraki dönemlere uygulanır.
+
+---
+
 ## 3. ÖNEMLİ UYARI — Yatırım Tavsiyesi Reddi
 
 **sandık BİR YATIRIM DANIŞMANI, ARACI KURUM VEYA PORTFÖY YÖNETİM ŞİRKETİ DEĞİLDİR.**
@@ -49,7 +75,7 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 - Uygulamada gösterilen fiyatlar, performans rakamları, sinyal ve grafikler **yalnızca bilgilendirme** amaçlıdır.
 - Hiçbir içerik **yatırım tavsiyesi, alım-satım önerisi veya finansal danışmanlık** niteliği taşımaz.
 - Piyasa hareketi ölçümleri (para akışı, hacim radarı, alıcı baskısı) ve **yapay zekâ ile hazırlanan varlık notları** geçmiş piyasa verisini anlatır, geleceği öngörmez. Notlar otomatik üretilir ve bir insan tarafından tek tek kontrol edilmez; sayılar kaynak veriyle otomatik karşılaştırılsa da hata içerebilir. Bir notu yatırım kararının tek dayanağı yapmayınız.
-- Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf veri sağlayıcılarının (Yahoo Finance, TEFAS, finans.truncgil.com, Binance vb.) verileri olduğu gibi sunulur.
+- Verilerin doğruluğu, güncelliği ve eksiksizliği için garanti vermiyoruz; üçüncü taraf piyasa verisi sağlayıcılarının verileri olduğu gibi sunulur.
 - Yatırım kararlarınızı **SPK lisanslı bir aracı kurum veya yatırım danışmanına danışarak** veriniz.
 - Uygulamada görüntülenen verilere dayanarak verdiğiniz yatırım kararlarından doğan **hiçbir kâr/zarardan Şirket sorumlu tutulamaz**.
 
@@ -115,9 +141,9 @@ Bu kuralların ihlali halinde **hesabınız bildirimsiz kapatılabilir**.
 
 ## 7. Üçüncü Taraf Servisleri
 
-Uygulama; Supabase (sunucu, veritabanı ve kimlik doğrulama), Google Firebase (bildirim, hata raporu, kullanım istatistiği, uzaktan ayar), Apple (iOS bildirimleri ve kilit ekranı canlı etkinliği), Apple ile Giriş ve Google ile Giriş (seçerseniz), Google'ın e-posta altyapısı (doğrulama kodları), Anthropic (varlık notlarının yapay zekâ ile yazımı; kişisel veri gönderilmez) ve fiyat verisi sağlayıcıları (Yahoo Finance, TEFAS, finans.truncgil.com, Binance, TCMB, EGM vb.) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
+Uygulama; Supabase (sunucu, veritabanı ve kimlik doğrulama), Google Firebase (bildirim, hata raporu, kullanım istatistiği, uzaktan ayar), Apple (iOS bildirimleri ve kilit ekranı canlı etkinliği), Apple ile Giriş ve Google ile Giriş (seçerseniz), Google'ın e-posta altyapısı (doğrulama kodları), Anthropic (varlık notlarının yapay zekâ ile yazımı; kişisel veri gönderilmez), RevenueCat (Premium abonelik doğrulaması), App Store ve Google Play (Premium ödemesi) ve kamuya açık piyasa verisi sağlayıcıları (borsalar, bankalar, fon platformları, resmî kurumlar ile kur ve fiyat veri servisleri) gibi üçüncü taraf servisleri kullanır. Bu servislerin kesintileri, gecikmeleri veya hataları nedeniyle oluşacak sorunlardan **Şirket sorumlu değildir**.
 
-Yahoo Finance, TEFAS gibi veri kaynaklarının sağladığı bilgiler dahil olmak üzere üçüncü taraf veri sağlayıcılarının kendi kullanım koşulları geçerlidir. Veri çekiminin geçici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri girişi seçenekleri sunulabilir.
+Piyasa verisi kaynaklarının sağladığı bilgiler dahil olmak üzere üçüncü taraf veri sağlayıcılarının kendi kullanım koşulları geçerlidir. Veri çekiminin geçici olarak engellenmesi durumunda, alternatif kaynaklar veya manuel veri girişi seçenekleri sunulabilir.
 
 ---
 
@@ -221,8 +247,9 @@ AB üyesi tüketiciler için Roma I Tüzüğü uyarınca yerleşim yeri ülkesin
 
 Bu Koşulları ve diğer yasal belgeleri değiştirdiğimizde:
 - Yeni metin yeni bir sürüm numarasıyla yayımlanır; web sitesindeki ve uygulamadaki metin her zaman aynıdır.
-- Önemli değişiklikler uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız metnin sonunda yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
-- Onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
+- Esaslı değişiklikler ("Onay sürümü" de yeni sürüme çekilir) uygulama içinde bildirilir: bir sonraki açılışta güncel belgeler ve değişikliklerin özeti gösterilir. Kullanım Koşulları için kabulünüz onay kutusuyla, Açık Rıza Metni için rızanız metnin sonunda yeniden istenir; Gizlilik Politikası ve KVKK Aydınlatma Metni'nin güncel hâliyle bilgilendirildiğinizi aynı kutuda belirtirsiniz.
+- Hak ve yükümlülüklerinizi ya da kişisel veri işleyişini değiştirmeyen düzeltmelerde yalnızca "Sürüm" değişir; yeniden onay istenmez.
+- Esaslı bir değişikliği onaylamadan uygulamayı kullanmaya devam edemezsiniz; değişikliği kabul etmiyorsanız hesabınızı silebilirsiniz (Profil → Ayarlar → Hesabımı Sil).
 - Hangi sürümü ne zaman kabul ettiğiniz ya da hangi sürümün size ne zaman sunulduğu kayıt altında tutulur.
 
 ---
