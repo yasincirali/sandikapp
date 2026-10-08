@@ -14,6 +14,20 @@ import 'custom_loading_indicator.dart';
 /// - Hata yutulmaz; [onPressed] fırlatırsa istisna çağırana geri iletilir.
 ///   Sarmalayıcı yalnızca kilidi `finally` içinde serbest bırakır.
 /// - [onPressed] null ise buton pasif — mevcut `FilledButton` semantiği aynen.
+///
+/// ## Tek yükleniyor davranışı (yasin, 2026-10-08: "arkasında istek giden
+/// buton kliklerini tespit edelim ve hepsinde aynı loading aksiyonu
+/// alınsın")
+/// İstek atan HER düğme bu bileşenden (ya da düğme olmayan hedefte
+/// [SandikAsyncTap]'ten) geçer: iş sürerken düğme pasif, etiketin yerinde
+/// küçük [CustomLoadingIndicator], ikinci dokunuş sessizce yutulur, düğmenin
+/// boyu değişmez. Görünüş [tur] ile seçilir (dolu / çerçeve / metin); ekran
+/// kendi `_busy` bayrağını ve kendi döneni yazmaz. İstisnalar (bilinçli):
+/// iyimser güncellemeler (anahtar, oy, kaydırarak silme — sonuç anında
+/// görünür, hata olursa geri alınır) ve hesap silme tam ekran perdesi.
+/// Kilit `test/yukleniyor_tek_davranis_test.dart`.
+enum SandikAsyncTur { dolu, cerceve, metin }
+
 class SandikAsyncButton extends StatefulWidget {
   const SandikAsyncButton({
     super.key,
@@ -23,7 +37,30 @@ class SandikAsyncButton extends StatefulWidget {
     this.expand = true,
     this.height = 52,
     this.haptic = SandikHaptic.medium,
+    this.tur = SandikAsyncTur.dolu,
+    this.icon,
   });
+
+  /// Kompakt düğme (diyalog, kart içi eylem): boy ve genişlik içerikten.
+  /// [tur] varsayılanı burada [SandikAsyncTur.metin] değil, çağıran seçer.
+  const SandikAsyncButton.kompakt({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.style,
+    this.haptic = SandikHaptic.medium,
+    this.tur = SandikAsyncTur.dolu,
+    this.icon,
+  })  : expand = false,
+        height = null;
+
+  /// Görünüş. Varsayılan dolu amber (form altı ana eylem). Çerçeve/metin
+  /// temanın `OutlinedButton`/`TextButton` stiline düşer.
+  final SandikAsyncTur tur;
+
+  /// Etiketin önündeki ikon (`FilledButton.icon` karşılığı). Meşgulken
+  /// ikon + etiketin tamamı göstergeyle yer değiştirir.
+  final Widget? icon;
 
   /// Asenkron iş. Devam ederken buton kilitlidir.
   final Future<void> Function()? onPressed;
@@ -40,7 +77,8 @@ class SandikAsyncButton extends StatefulWidget {
   /// true ise satırın tamamını kaplar (form altı ana eylem).
   final bool expand;
 
-  final double height;
+  /// `null` → içerikten (kompakt).
+  final double? height;
 
   @override
   State<SandikAsyncButton> createState() => _SandikAsyncButtonState();
@@ -67,39 +105,60 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
 
   @override
   Widget build(BuildContext context) {
-    final button = SizedBox(
-      height: widget.height,
-      child: FilledButton(
-        // Meşgulken null → Flutter'ın kendi pasif görünümü devreye girer.
-        onPressed: widget.onPressed == null || _busy ? null : _handleTap,
-        style: widget.style ??
-            FilledButton.styleFrom(
-              backgroundColor: context.c.amberFill,
-              foregroundColor: context.c.onAmber,
-              disabledBackgroundColor: context.c.amberFill.withValues(alpha: 0.5),
-              disabledForegroundColor: context.c.onAmber.withValues(alpha: 0.7),
-              shape: RoundedRectangleBorder(
-                borderRadius: SandikRadius.mdAll,
-              ),
-            ),
-        child: AnimatedSwitcher(
+    // Meşgulken null → Flutter'ın kendi pasif görünümü devreye girer.
+    final basinca = widget.onPressed == null || _busy ? null : _handleTap;
+    final ikon = widget.icon;
+    final etiket = ikon == null
+        ? widget.child
+        : Row(mainAxisSize: MainAxisSize.min, children: [
+            ikon,
+            const SizedBox(width: SandikSpace.sm),
+            Flexible(child: widget.child),
+          ]);
+    // Gösterge etiketle AYNI kutuda: düğmenin boyu meşgulken değişmez
+    // (etiket görünmez ama yer tutar), satır zıplamaz.
+    final icerik = Stack(
+      alignment: Alignment.center,
+      children: [
+        AnimatedOpacity(
+          opacity: _busy ? 0 : 1,
           duration: SandikMotion.stateOf(context),
-          switchInCurve: SandikMotion.enter,
-          switchOutCurve: SandikMotion.exit,
-          child: _busy
-              ? const CustomLoadingIndicator(
-                  key: ValueKey('busy'),
-                  size: CustomLoadingIndicator.small,
-                )
-              : KeyedSubtree(
-                  key: const ValueKey('idle'),
-                  child: widget.child,
-                ),
+          child: etiket,
         ),
-      ),
+        if (_busy)
+          const CustomLoadingIndicator(
+            key: ValueKey('busy'),
+            size: CustomLoadingIndicator.small,
+          ),
+      ],
     );
-
-    return widget.expand ? SizedBox(width: double.infinity, child: button) : button;
+    final Widget dugme = switch (widget.tur) {
+      SandikAsyncTur.dolu => FilledButton(
+          onPressed: basinca,
+          style: widget.style ??
+              FilledButton.styleFrom(
+                backgroundColor: context.c.amberFill,
+                foregroundColor: context.c.onAmber,
+                disabledBackgroundColor:
+                    context.c.amberFill.withValues(alpha: 0.5),
+                disabledForegroundColor:
+                    context.c.onAmber.withValues(alpha: 0.7),
+                shape: RoundedRectangleBorder(
+                  borderRadius: SandikRadius.mdAll,
+                ),
+              ),
+          child: icerik,
+        ),
+      SandikAsyncTur.cerceve =>
+        OutlinedButton(onPressed: basinca, style: widget.style, child: icerik),
+      SandikAsyncTur.metin =>
+        TextButton(onPressed: basinca, style: widget.style, child: icerik),
+    };
+    final h = widget.height;
+    final kutulu = h == null ? dugme : SizedBox(height: h, child: dugme);
+    return widget.expand
+        ? SizedBox(width: double.infinity, child: kutulu)
+        : kutulu;
   }
 }
 
@@ -157,9 +216,18 @@ class _SandikAsyncTapState extends State<SandikAsyncTap> {
       // yutulan ikinci dokunuş sessiz kalır, bu doğru davranış.
       haptic: widget.haptic,
       semanticLabel: widget.semanticLabel,
-      child: _busy && widget.showIndicator
-          ? Center(child: CustomLoadingIndicator(size: widget.indicatorSize))
-          : widget.child,
+      // Gösterge içeriğin ÜSTÜNDE, içerik görünmez ama yer tutar: hedefin
+      // boyu meşgulken değişmez ([SandikAsyncButton] ile aynı kural).
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Opacity(
+              opacity: _busy && widget.showIndicator ? 0 : 1,
+              child: widget.child),
+          if (_busy && widget.showIndicator)
+            CustomLoadingIndicator(size: widget.indicatorSize),
+        ],
+      ),
     );
   }
 }
