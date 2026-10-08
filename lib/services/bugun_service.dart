@@ -76,6 +76,19 @@ class ReelGetiriSatiri extends BugunSatiri {
   /// Puan farkı: getiri − TÜFE.
   double get fark => nominal - inflation;
   bool get onde => fark >= 0;
+
+  /// "Geçen yılki 100 liran bugün kaç lira?" — alım gücü, tek sayı.
+  ///
+  /// **Neden (benchmark revizesi, kullanıcı seçimi 2026-10-09):** sekiz
+  /// uygulamanın hiçbiri enflasyon kıyası göstermiyor; gösterdiğimizde de
+  /// "24,2 puan geride" finans dışı kullanıcıya hiçbir şey söylemiyordu
+  /// (2026-10-09 müşteri gözüyle inceleme). Alım gücü araçlarının ortak
+  /// çerçevesi "paran bugün ne alır": 100 lira pencerenin başında
+  /// yatırılsaydı, nominal getiriyle büyür, aynı dönemin TÜFE'siyle
+  /// bölünür. `(1+n)/(1+e)` Performans'taki bileşik reel getiriyle aynı
+  /// formül (akış yokken `RealReturnService.hizaliGetiri` ile birebir);
+  /// iki yüzey iki farklı sayı söylemez.
+  double get yuzLiraBugun => 100 * (1 + nominal / 100) / (1 + inflation / 100);
 }
 
 /// Kartın tamamı — H düzeninin çizdiği satırlar (2026-10-08).

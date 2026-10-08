@@ -3882,6 +3882,55 @@ class AppLocalizationsTr extends AppLocalizations {
   String get todayGoalNewAction => 'Yenisini seç';
 
   @override
+  String get todayVerdictUp => 'Yükseldi';
+
+  @override
+  String get todayVerdictDown => 'Geriledi';
+
+  @override
+  String get todayVerdictFlat => 'Yerinde saydı';
+
+  @override
+  String get todayChipWeek => 'Hafta';
+
+  @override
+  String get todayChipMonth => 'Ay';
+
+  @override
+  String get todayChipYear => 'Yıl';
+
+  @override
+  String get todayMoversTitle => 'Bugün en çok oynayanlar';
+
+  @override
+  String get todayMoversAll => 'Tümü';
+
+  @override
+  String get todayPurchasingQuestion => 'Paran fiyatlara yetişiyor mu?';
+
+  @override
+  String get todayHundredBefore => 'Geçen yılki 100 liran bugün ';
+
+  @override
+  String todayHundredAmount(String amount) {
+    return '$amount lira';
+  }
+
+  @override
+  String get todayPricesAhead => 'Fiyatlar önde';
+
+  @override
+  String get todayYouAhead => 'Sen öndesin';
+
+  @override
+  String todayPurchasingDetail(String you, String cpi) {
+    return 'Paran $you büyüdü, fiyatlar $cpi arttı';
+  }
+
+  @override
+  String get todayLast12Months => 'son 12 ay';
+
+  @override
   String get todayMoveLabel => 'Günün hareketi';
 
   @override

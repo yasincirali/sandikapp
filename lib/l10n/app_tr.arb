@@ -2833,6 +2833,38 @@
   "todayClosedShort": "Kapalı",
   "todayMarketOnlyShort": "fiyat etkisi",
   "todayGoalNewAction": "Yenisini seç",
+  "todayVerdictUp": "Yükseldi",
+  "todayVerdictDown": "Geriledi",
+  "todayVerdictFlat": "Yerinde saydı",
+  "todayChipWeek": "Hafta",
+  "todayChipMonth": "Ay",
+  "todayChipYear": "Yıl",
+  "todayMoversTitle": "Bugün en çok oynayanlar",
+  "todayMoversAll": "Tümü",
+  "todayPurchasingQuestion": "Paran fiyatlara yetişiyor mu?",
+  "todayHundredBefore": "Geçen yılki 100 liran bugün ",
+  "todayHundredAmount": "{amount} lira",
+  "@todayHundredAmount": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "todayPricesAhead": "Fiyatlar önde",
+  "todayYouAhead": "Sen öndesin",
+  "todayPurchasingDetail": "Paran {you} büyüdü, fiyatlar {cpi} arttı",
+  "@todayPurchasingDetail": {
+    "placeholders": {
+      "you": {
+        "type": "String"
+      },
+      "cpi": {
+        "type": "String"
+      }
+    }
+  },
+  "todayLast12Months": "son 12 ay",
   "todayMoveLabel": "Günün hareketi",
   "todayRealYearly": "yıllık",
   "todayGoalSetAction": "Hedef belirle",

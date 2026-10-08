@@ -45,11 +45,12 @@ void main() {
       // YÖN artık renkte kalmıyor — günlük rozette OK (`yon`). 2026-09-29'daki
       // kural "yön yalnız renkte kalmasın"dı. (Haftalık kutunun yön KELİMESİ
       // — `todayWeekUp/Down` — D düzeniyle 2026-10-05'te kalktı.)
-      expect(RegExp(r'fmtPct\([^)]*\.abs\(\)').allMatches(src).length,
-          lessThanOrEqualTo(1));
-      expect(src.contains('yuzde = fmtPct(s.changePct.abs());'), isTrue);
-      expect(src.contains('yon = s.changeTRY > 0;'), isTrue,
-          reason: 'günlük rozet yönü okla söylemeli');
+      // 2026-10-09 benchmark düzeni: yüzde rozeti yok; yüzde ekran
+      // okuyucuya İŞARETLİ gider (`isaretliYuzde`), kartta işaretsiz
+      // `fmtPct(x.abs())` kalmadı.
+      expect(RegExp(r'fmtPct\([^)]*\.abs\(\)').allMatches(src).length, 0);
+      expect(src.contains('yuzde = isaretliYuzde(s.changePct);'), isTrue,
+          reason: 'günlük yüzde yönü işaretle söylemeli');
     });
   });
 

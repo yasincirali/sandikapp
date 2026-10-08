@@ -34,12 +34,13 @@ void main() {
 
   // 2026-10-08: eski ana ekran şeridi (`RealReturnStrip`/`RealReturnBadge`)
   // 2026-09-21'den beri çağrılmıyordu ve silindi; aynı iki sayı artık
-  // Bugün kartının enflasyon kıyasında (`_EnflasyonKiyasi`) yazılır, kural
-  // oraya taşındı. Puan farkı kartta bilinçli TEK ondalık (`reelFarkMetni`,
-  // plan F3: "5,2 puan önde"); doğrulanabilirlik iki yüzdeyle sağlanır.
+  // Bugün kartında yazılır, kural oraya taşındı. 2026-10-09 benchmark
+  // düzeni: blok `_AlimGucuKutusu` — ana satır "100 liran bugün 81 lira"
+  // bilinçli TAM SAYI (okunurluk; yüzde değil, lira), iki yüzde alt satırda
+  // iki ondalıkla; doğrulanabilirlik o iki yüzdeyle sağlanır.
   String kiyasBlogu() {
     final src = kodu('lib/widgets/bugun_karti.dart');
-    final i = src.indexOf('class _EnflasyonKiyasi');
+    final i = src.indexOf('class _AlimGucuKutusu');
     expect(i, greaterThanOrEqualTo(0));
     final j = src.indexOf('class ', i + 1);
     return src.substring(i, j < 0 ? src.length : j);
@@ -47,13 +48,14 @@ void main() {
 
   test('Bugün kartı TÜFE ve nominali iki ondalıkla yazar', () {
     final blok = kiyasBlogu();
-    // Çubuk satırı `fmtPct(v)` (varsayılan 2 hane) ile yazılır; ekran
+    // Ayrıntı satırı `fmtPct` (varsayılan 2 hane) ile yazılır; ekran
     // okuyucu metni de aynı iki sayıyı aynı biçimle okur.
-    expect(blok.contains('fmtPct(v)'), isTrue,
+    expect(blok.contains('fmtPct(reel.nominal)'), isTrue,
         reason: 'TÜFE yuvarlanmamalı — TÜİK rakamıyla karşılaştırılabilmeli.');
-    expect(blok.contains('fmtPct(reel.nominal)'), isTrue);
     expect(blok.contains('fmtPct(reel.inflation)'), isTrue);
     expect(blok.contains('digits: 0'), isFalse,
-        reason: 'Tam sayıya yuvarlama YOK — bir arızayı gizlemişti.');
+        reason: 'Yüzdede tam sayıya yuvarlama YOK — bir arızayı gizlemişti.');
+    expect(RegExp(r'fmtNum\(reel\.(nominal|inflation)').hasMatch(blok), isFalse,
+        reason: 'İki yüzde fmtPct ile, hane düşürülmeden.');
   });
 }
