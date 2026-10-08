@@ -158,3 +158,25 @@ export function yanitiDogrula(arac: unknown, tablolar: TabloBoyutu[]): Esleme[] 
   }
   return out;
 }
+
+// Log satırı için hata özeti (2026-10-08). İlk sürüm yalnız `e.name`
+// yazıyordu; Anthropic SDK hataları `name` ezmediği için log "ekstre-esle
+// Error" diyordu ve bakiye bitmesi, geçersiz anahtar, model adı birbirinden
+// ayrılamadı (yasin'in iki 500'ü). Durum kodu + API hata türü yeter; ham
+// mesaj loga da yazılmaz (istek kimliği/hesap ayrıntısı taşıyabilir), yanıta
+// zaten hiç girmez.
+export function hataOzeti(e: unknown): string {
+  if (e && typeof e === 'object') {
+    const o = e as Record<string, unknown>;
+    if (typeof o.status === 'number') {
+      const govde = o.error as Record<string, unknown> | undefined;
+      const ic = govde?.error as Record<string, unknown> | undefined;
+      const tur = ic?.type ?? govde?.type ?? o.type;
+      return `api ${o.status}${typeof tur === 'string' ? ' ' + tur : ''}`;
+    }
+    // PostgrestError düz nesne (Error değil): yalnız kodu.
+    if (typeof o.code === 'string') return `db ${o.code}`;
+    if (e instanceof Error) return e.name;
+  }
+  return 'hata';
+}
