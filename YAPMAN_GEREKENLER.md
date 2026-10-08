@@ -21,7 +21,9 @@ Sıra önemli:
 - [ ] PR'ı birleştir (CI yeşil olunca).
 - [ ] **Supabase deploy** (Actions, `main`, hedef `ikisi`): migrations
       (0124 eurobond tabloları + cron, 0125 belgeler 1.7) ve functions
-      `eurobond-fiyat`, `eurobond-seri`, `analyze-signals`. Yeni secret YOK:
+      `eurobond-fiyat`, `eurobond-seri` ve ortak kodu değişenler: `analyze-signals`,
+      `check-price-alerts`, `daily-brief`, `fetch-inflation`, `leaderboard-snapshot`,
+      `push-live-activity`, `yurt-ici-kotasyon` (en kolayı: functions = tümü). Yeni secret YOK:
       eurobond cron'u `KRIPTO_CRON_SECRET`'ı kullanır.
 - [ ] `python tool/sema_esitlik.py` — iki sunucu eşit mi.
 - [ ] İlk fiyat turunu bekle (hafta içi 09:00–19:40 TR, 20 dk'da bir) ya da
