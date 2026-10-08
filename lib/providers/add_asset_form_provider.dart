@@ -281,6 +281,7 @@ class AddAssetFormState {
     this.notesExpanded = false,
     this.denendi = false,
     this.abdAcik = false,
+    this.turIzgarasiAcik = false,
     this.eurobondSozlesmesi,
     this.eurobondFiyati,
   });
@@ -295,6 +296,7 @@ class AddAssetFormState {
     DateTime? prefillDate,
     DateTime? now,
     bool abdAcik = false,
+    bool turIzgarasi = false,
   }) {
     final a = editingAsset;
     final c = cartInitial;
@@ -344,6 +346,11 @@ class AddAssetFormState {
       bist100Ticker: isBist100 && ticker.isNotEmpty ? ticker : null,
       selectedFund: fund,
       abdAcik: abdAcik,
+      // Izgara yalnız türü henüz belli olmayan YENİ kayıtta açık doğar.
+      // Düzenleme, sepet öğesi ve ön seçim (arama, karşılaştırma, ilk
+      // varlık vitrini) türü zaten söylemiş: tekrar sormak bir adım fazla.
+      turIzgarasiAcik:
+          turIzgarasi && a == null && c == null && prefillType == null,
     );
   }
 
@@ -375,6 +382,14 @@ class AddAssetFormState {
   /// geçişler ve kimlik kuralı Remote Config'e değil değere baksın (test
   /// edilebilir; form açıkken bayrak yenilense de form tutarlı kalır).
   final bool abdAcik;
+
+  /// Tür ızgarası açık mı (bayrak `tur_secici_izgara`). Açıkken ekran formun
+  /// gövdesini çizmez: önce "ne ekliyorsun", sonra ayrıntı. Seçimden sonra
+  /// ızgara tek satıra katlanır, "Değiştir" yeniden açar. Bayrak kapalıyken
+  /// hep `false` ve hiçbir yerde okunmaz (çip satırı birebir eski).
+  /// `notesExpanded` gibi görünüm durumu burada: ekran `setState` taşımaz
+  /// (Faz 3.10 ratchet).
+  final bool turIzgarasiAcik;
 
   /// Seçili eurobondun sözleşmesi (katalogdan). Temiz → kirli çevirisi ve
   /// işlemiş faiz satırı buna bakar; kupon/vade kullanıcıdan alınmaz
@@ -564,6 +579,7 @@ class AddAssetFormState {
     bool? notesExpanded,
     bool? denendi,
     bool? abdAcik,
+    bool? turIzgarasiAcik,
     Object? eurobondSozlesmesi = _keep,
     Object? eurobondFiyati = _keep,
   }) =>
@@ -591,6 +607,7 @@ class AddAssetFormState {
         notesExpanded: notesExpanded ?? this.notesExpanded,
         denendi: denendi ?? this.denendi,
         abdAcik: abdAcik ?? this.abdAcik,
+        turIzgarasiAcik: turIzgarasiAcik ?? this.turIzgarasiAcik,
         eurobondSozlesmesi: identical(eurobondSozlesmesi, _keep)
             ? this.eurobondSozlesmesi
             : eurobondSozlesmesi as EurobondSozlesmesi?,
@@ -646,6 +663,7 @@ class AddAssetFormNotifier
       prefillType: arg.prefillType,
       prefillDate: arg.prefillDate,
       abdAcik: RemoteConfigService.instance.abdHisse,
+      turIzgarasi: RemoteConfigService.instance.turSeciciIzgara,
     );
   }
 
@@ -673,6 +691,15 @@ class AddAssetFormNotifier
   void setManualPrice(bool v) => _set(state.copyWith(isManualPrice: v));
   void toggleNotes() =>
       _set(state.copyWith(notesExpanded: !state.notesExpanded));
+
+  /// Tür ızgarasını açar/katlar (bayrak `tur_secici_izgara`). Tür seçimi
+  /// bunu KENDİLİĞİNDEN değiştirmez: hızlı giriş ve sepet geçişleri de
+  /// `selectType` çağırıyor; katlamayı seçiciyi çizen ekran söyler.
+  void turIzgarasi({required bool acik}) {
+    if (state.turIzgarasiAcik != acik) {
+      _set(state.copyWith(turIzgarasiAcik: acik));
+    }
+  }
 
   // ── Geçişler ───────────────────────────────────────────────────────────
 

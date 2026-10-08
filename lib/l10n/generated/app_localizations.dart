@@ -11511,6 +11511,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Banka fiyatları kirli fiyattır (işlemiş faiz dahil).'**
   String get bondBankNote;
+
+  /// No description provided for @typePickerSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara: {examples}…'**
+  String typePickerSearchHint(String examples);
+
+  /// No description provided for @typePickerGroupMarkets.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borsa ve fon'**
+  String get typePickerGroupMarkets;
+
+  /// No description provided for @typePickerGroupFxPrecious.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz ve değerli'**
+  String get typePickerGroupFxPrecious;
+
+  /// No description provided for @typePickerGroupSavings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birikim'**
+  String get typePickerGroupSavings;
+
+  /// No description provided for @typePickerUsStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD hisse'**
+  String get typePickerUsStock;
+
+  /// No description provided for @typePickerChange.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değiştir'**
+  String get typePickerChange;
+
+  /// No description provided for @typePickerChangeSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık türünü değiştir'**
+  String get typePickerChangeSemantics;
+
+  /// No description provided for @typePickerHintBistOpen.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST açık'**
+  String get typePickerHintBistOpen;
+
+  /// No description provided for @typePickerHintBistClosed.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST kapalı'**
+  String get typePickerHintBistClosed;
+
+  /// No description provided for @typePickerHint247.
+  ///
+  /// In tr, this message translates to:
+  /// **'7/24'**
+  String get typePickerHint247;
 }
 
 class _AppLocalizationsDelegate

@@ -6984,4 +6984,36 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get bondBankNote =>
       'Bank prices are dirty prices (accrued interest included).';
+
+  @override
+  String typePickerSearchHint(String examples) {
+    return 'Search: $examples…';
+  }
+
+  @override
+  String get typePickerGroupMarkets => 'Stocks and funds';
+
+  @override
+  String get typePickerGroupFxPrecious => 'FX and precious';
+
+  @override
+  String get typePickerGroupSavings => 'Savings';
+
+  @override
+  String get typePickerUsStock => 'US stock';
+
+  @override
+  String get typePickerChange => 'Change';
+
+  @override
+  String get typePickerChangeSemantics => 'Change asset type';
+
+  @override
+  String get typePickerHintBistOpen => 'BIST open';
+
+  @override
+  String get typePickerHintBistClosed => 'BIST closed';
+
+  @override
+  String get typePickerHint247 => '24/7';
 }

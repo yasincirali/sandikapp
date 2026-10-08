@@ -100,6 +100,12 @@ void main() {
       expect(varsayilan('varlik_masraflari'), 'false');
     });
 
+    // Formun ilk sorusu değişir (arama + gruplu ızgara); kapalıyken çip
+    // `Wrap`'ı birebir eski.
+    test('tür seçici ızgarası KAPALI doğar', () {
+      expect(varsayilan('tur_secici_izgara'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

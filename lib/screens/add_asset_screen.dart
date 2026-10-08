@@ -39,6 +39,8 @@ import '../widgets/tour_anchor.dart';
 import '../l10n/l10n.dart';
 import 'add_asset/bes_formu.dart';
 import 'add_asset/mevduat_formu.dart';
+import 'add_asset/tur_secici_izgara.dart';
+import '../models/tur_secici_duzeni.dart';
 import '../widgets/sozlesme_formu_ortak.dart';
 
 const _addAssetUuid = Uuid();
@@ -474,10 +476,14 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                     ],
                     _sectionLabel(context.l10n.assetType),
                     const SizedBox(height: 10),
-                    _typeSelector(cs),
+                    if (_izgara) _turIzgarasi() else _typeSelector(cs),
                     const SizedBox(height: 22),
 
-                    if (_type.sozlesmeli) ...[
+                    // Izgara açıkken form gövdesi yok: önce "ne ekliyorsun"
+                    // (gerekçe `AddAssetFormState.turIzgarasiAcik`).
+                    if (_s.turIzgarasiAcik)
+                      const SizedBox.shrink()
+                    else if (_type.sozlesmeli) ...[
                       if (_sozlesmeFormuAcik)
                         _type == AssetType.mevduat
                             ? MevduatFormu(key: _mevduatFormu)
@@ -541,7 +547,10 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   ),
                 ),
               ),
-              if (!_type.sozlesmeli || _sozlesmeFormuAcik)
+              // Izgara açıkken "Ekle" de yok: görünmeyen alanların uyarısını
+              // gösteremeyen bir kaydet düğmesi kafa karıştırırdı.
+              if ((!_type.sozlesmeli || _sozlesmeFormuAcik) &&
+                  !_s.turIzgarasiAcik)
                 _stickyBottomBar(saveLabel),
             ],
           ),
@@ -1693,6 +1702,80 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  // ── Tür seçici: arama + gruplu ızgara (bayrak `tur_secici_izgara`) ─────────
+  //
+  // Bayrak kapalıyken yukarıdaki çip satırı birebir eski. Açıkken
+  // `TurSeciciIzgara` çizilir; tür ve kimlik geçişleri burada, formun VAR
+  // OLAN `select*` geçişleriyle yapılır (arama → kimlik kuralı tek yerde:
+  // `AddAssetFormNotifier`). Bayrak form açılırken bir kez okunur
+  // (`abdAcik` ile aynı gerekçe: açık formda Remote Config yenilense de
+  // seçici değişmez).
+  late final bool _izgara = RemoteConfigService.instance.turSeciciIzgara;
+
+  Widget _turIzgarasi() => TourAnchor(
+        target: TourTarget.turSecici,
+        child: TurSeciciIzgara(
+          secili: seciliKutu(_type, isAbd: _s.isAbd),
+          acik: _s.turIzgarasiAcik,
+          sozlesmeliAcik: !widget.cartMode && !_isEditing,
+          onKutu: _kutuSec,
+          onSonuc: _aramaSonucuSec,
+          onDegistir: () => _n.turIzgarasi(acik: true),
+        ),
+      );
+
+  /// Kutuya dokunuldu. Zaten seçili kutu yalnız katlar: "Değiştir"e basıp
+  /// vazgeçen kullanıcının seçtiği hisse/fon silinmesin. ABD kutusu hisse
+  /// türünü ABD pazarıyla açar (`selectHisseBorsasi`, segmentle aynı yol).
+  void _kutuSec(TurKutusu k) {
+    _klavyeyiKapat();
+    if (seciliKutu(_type, isAbd: _s.isAbd) != k) {
+      _yaz(_n.selectType(k.tur));
+      if (k.abd) _yaz(_n.selectHisseBorsasi(abd: true));
+      _schedulePricePreview();
+    }
+    _n.turIzgarasi(acik: false);
+  }
+
+  /// Arama sonucu: tür + kimlik, ilgili seçici sayfasından seçilmiş gibi.
+  void _aramaSonucuSec(TurAramaSonucu s) {
+    _klavyeyiKapat();
+    final bosFiyat = _price.text.isEmpty;
+    _yaz(_n.selectType(s.kutu.tur));
+    switch (s.kutu.tur) {
+      case AssetType.hisse when s.kutu.abd:
+        _yaz(_n.selectHisseBorsasi(abd: true));
+        _yaz(_n.selectAbdHisse(s.ticker!));
+      case AssetType.hisse:
+        _yaz(_n.selectBist100(s.ticker!));
+      case AssetType.fon:
+        _yaz(_n.selectFund(
+          TefasFund(
+            code: s.sembol,
+            name: s.ad,
+            price: 0,
+            fundType: '',
+            managerName: '',
+          ),
+          priceEmpty: bosFiyat,
+        ));
+      case AssetType.kripto:
+        _yaz(_n.selectKripto(KriptoKatalogOgesi(kod: s.sembol, ad: s.ad),
+            priceEmpty: bosFiyat));
+      case AssetType.altin:
+        _yaz(_n.selectGold(s.altin!));
+      case AssetType.doviz:
+        _yaz(_n.selectDoviz(dovizOptFor(s.dovizEtiketi)));
+      case AssetType.eurobond:
+        final (sz, f) = s.eurobond!;
+        _yaz(_n.selectEurobond(sz, f, priceEmpty: bosFiyat));
+      default:
+        break;
+    }
+    _schedulePricePreview();
+    _n.turIzgarasi(acik: false);
+  }
+
   // ── Döviz para birimi seçici (Sandik brand, 4 büyük kart) ──────────────────
 
   Widget _dovizSelector(ColorScheme cs) {
@@ -2198,8 +2281,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
-  void _applyParsedEntry(ParsedEntry entry) =>
-      _yaz(_n.applyParsedEntry(entry));
+  /// Hızlı giriş türü de seçer: ızgara açıksa katlanır, yoksa yazılan
+  /// miktar/fiyat gizli formda kalırdı.
+  void _applyParsedEntry(ParsedEntry entry) {
+    _yaz(_n.applyParsedEntry(entry));
+    _n.turIzgarasi(acik: false);
+  }
 
   Future<void> _saveBatch(List<ParsedEntry> entries) async {
     // Sözlük döngüden ÖNCE çözülür: `context` async boşlukların ardında

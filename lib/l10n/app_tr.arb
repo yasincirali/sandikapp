@@ -4943,5 +4943,22 @@
   "bondBankAsk": "Banka satış",
   "bondBankSpread": "Makas",
   "bondBankProceeds": "Bugün satarsan eline geçen",
-  "bondBankNote": "Banka fiyatları kirli fiyattır (işlemiş faiz dahil)."
+  "bondBankNote": "Banka fiyatları kirli fiyattır (işlemiş faiz dahil).",
+  "typePickerSearchHint": "Ara: {examples}…",
+  "@typePickerSearchHint": {
+    "placeholders": {
+      "examples": {
+        "type": "String"
+      }
+    }
+  },
+  "typePickerGroupMarkets": "Borsa ve fon",
+  "typePickerGroupFxPrecious": "Döviz ve değerli",
+  "typePickerGroupSavings": "Birikim",
+  "typePickerUsStock": "ABD hisse",
+  "typePickerChange": "Değiştir",
+  "typePickerChangeSemantics": "Varlık türünü değiştir",
+  "typePickerHintBistOpen": "BIST açık",
+  "typePickerHintBistClosed": "BIST kapalı",
+  "typePickerHint247": "7/24"
 }

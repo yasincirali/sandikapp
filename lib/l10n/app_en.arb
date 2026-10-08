@@ -4540,5 +4540,15 @@
   "bondBankAsk": "Bank ask",
   "bondBankSpread": "Spread",
   "bondBankProceeds": "What you'd get selling today",
-  "bondBankNote": "Bank prices are dirty prices (accrued interest included)."
+  "bondBankNote": "Bank prices are dirty prices (accrued interest included).",
+  "typePickerSearchHint": "Search: {examples}…",
+  "typePickerGroupMarkets": "Stocks and funds",
+  "typePickerGroupFxPrecious": "FX and precious",
+  "typePickerGroupSavings": "Savings",
+  "typePickerUsStock": "US stock",
+  "typePickerChange": "Change",
+  "typePickerChangeSemantics": "Change asset type",
+  "typePickerHintBistOpen": "BIST open",
+  "typePickerHintBistClosed": "BIST closed",
+  "typePickerHint247": "24/7"
 }

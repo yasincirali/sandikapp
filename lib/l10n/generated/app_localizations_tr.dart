@@ -6922,4 +6922,36 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get bondBankNote =>
       'Banka fiyatları kirli fiyattır (işlemiş faiz dahil).';
+
+  @override
+  String typePickerSearchHint(String examples) {
+    return 'Ara: $examples…';
+  }
+
+  @override
+  String get typePickerGroupMarkets => 'Borsa ve fon';
+
+  @override
+  String get typePickerGroupFxPrecious => 'Döviz ve değerli';
+
+  @override
+  String get typePickerGroupSavings => 'Birikim';
+
+  @override
+  String get typePickerUsStock => 'ABD hisse';
+
+  @override
+  String get typePickerChange => 'Değiştir';
+
+  @override
+  String get typePickerChangeSemantics => 'Varlık türünü değiştir';
+
+  @override
+  String get typePickerHintBistOpen => 'BIST açık';
+
+  @override
+  String get typePickerHintBistClosed => 'BIST kapalı';
+
+  @override
+  String get typePickerHint247 => '7/24';
 }

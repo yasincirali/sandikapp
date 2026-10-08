@@ -31,6 +31,9 @@ Sıra önemli:
 - [ ] Bayrakları önce kendi cihazında (TestFlight koşulu) aç:
       `abd_hisse` → `varlik_masraflari` → `eurobond`. `eurobond`'u fiyat
       tablosu dolmadan açma: eklenen lot fiyatsız kalır.
+- [ ] Console'da `tur_secici_izgara` anahtarını oluştur (KAPALI): Varlık
+      Ekle'de arama + gruplu tür ızgarası. Sunucu işi yok; önce kendi
+      cihazında aç, kapalıyken çip satırı birebir eski.
 - [ ] Karar (bende varsayılan): eurobond değeri **piyasa fiyatından**
       (Frankfurt temiz + işlemiş faiz); Ziraat alış fiyatı yalnız "bankaya
       satarsan" satırında. Banka alış fiyatıyla değerleme istersen söyle.

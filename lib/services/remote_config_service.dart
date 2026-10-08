@@ -267,6 +267,14 @@ class RemoteConfigService {
     // KAPALI doğar: ana yüzeyde yeni kart; kapalıyken ekran birebir eski.
     'varlik_masraflari': false,
 
+    // Varlık Ekle tür seçicisi: arama + gruplu ızgara (2026-10-08, yasin:
+    // "göz alıcı ama işlevsel" tür seçici). Tür sayısı 11'e çıktı (ABD,
+    // eurobond); çip yığını sayfanın ilk sorusunu kalabalıklaştırıyordu.
+    // Açıkken üstte arama (THYAO/Apple/BTC/ISIN → tür + kimlik tek dokunuşta),
+    // altında üç gruplu 4 sütunlu ızgara; seçimden sonra tek satıra katlanır.
+    // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
+    'tur_secici_izgara': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -534,6 +542,9 @@ class RemoteConfigService {
 
   /// Varlık ekranında Masraflar kartı. Gerekçe `_defaults`'ta.
   bool get varlikMasraflari => _bayrak('varlik_masraflari');
+
+  /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
+  bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {
