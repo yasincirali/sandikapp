@@ -21,6 +21,12 @@ görünümü aynı. **Analitik:** `today_row_shown` olayında `yesil`/`haftalik`
       açık tema kontrastı, başlık uçuşu (2.14), çıkış yalnız Profil'de
       (ana ekran üst çubuğundan kalktı). Sunucu/migration yok.
       CI yeşil olunca birleştir; cihazda seçicilere ve açık temaya bak.
+- [ ] **Kilit widget'ı saat damgası** (#111, Swift; CI derlemez, ilk
+      derleme TestFlight koşusunda): seans açıkken widget rakamı
+      uygulamanın kaydından okuyorsa altta "13:05 itibarıyla" (tutar
+      görünürse "· 13:05") yazar. Canlı Etkinlik ile fark kalırsa
+      sebebi görünür olur. TestFlight'ta kilit ekranında bak; derleme
+      kırılırsa iOS koşusu söyler.
 - [ ] **Bayrak `varlik_hero_gecisi`** (yeni, varsayılan kapalı): Portföy
       satırından varlık ekranına geçişte kod (THYAO) satırdan başlığa uçar.
       Önce kendi cihazında koşullu aç (TestFlight), push ve geri dönüşte
