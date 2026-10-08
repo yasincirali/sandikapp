@@ -4919,5 +4919,14 @@
   "pwHata": "Satın alma tamamlanamadı. Ücret alınmadıysa yeniden deneyebilirsin.",
   "pwGeriYuklendi": "Aboneliğin geri yüklendi.",
   "pwGeriYukBulunamadi": "Bu hesapta etkin bir abonelik bulunamadı.",
-  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene."
+  "pwGeriYukHata": "Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.",
+  "s4AnalysisUpper": "ANALİZ",
+  "s4HistoryDocsUpper": "GEÇMİŞ VE BELGELER",
+  "s4Details": "Ayrıntı",
+  "s4RowSignals": "Teknik sinyaller",
+  "s4RowFundReport": "Fon karnesi",
+  "s4RowFlow": "Para akışı",
+  "s4RowVolume": "Hacim radarı",
+  "s4RowCrypto": "Alıcı baskısı",
+  "s4RowNote": "Analiz notu"
 }

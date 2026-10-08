@@ -29,7 +29,14 @@ class _PozisyonKarti extends StatelessWidget {
     required this.donemEtiketi,
     required this.donem,
     this.birimGizli = false,
+    this.kabuksuz = false,
   });
+
+  /// Kart kabuğu (`SandikCard`) olmadan yalnız satırlar — katmanlı düzende
+  /// (`varlik_detay_katmanli`) satırlar özet kartın "Ayrıntı" panelinde
+  /// açılır; kart içinde kart çizilmesin diye. Varsayılan `false`: eski
+  /// düzen birebir.
+  final bool kabuksuz;
 
   /// Miktar ve birim fiyat satırları gizlensin mi — mevduatta "250.000
   /// birim × 1,03 ₺/birim" kullanıcıya bir şey söylemez; tutar satırları
@@ -52,52 +59,54 @@ class _PozisyonKarti extends StatelessWidget {
     final tutar = baz.formatter(digits: 0);
     String birim(double v) => '${birimBicim.format(v)} / $birimEtiketi';
 
+    final satirlar = Column(
+      children: [
+        if (!birimGizli) ...[
+          _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
+          _PozisyonSatiri(
+              etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
+          _PozisyonSatiri(
+              etiket: l.posTodayPrice,
+              deger:
+                  pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
+          Divider(height: SandikSpace.sm, color: context.c.hairline),
+        ],
+        _PozisyonSatiri(
+            etiket: l.posTotalCost, deger: tutar.format(pnl.totalCostTRY)),
+        _PozisyonSatiri(
+            etiket: l.posCurrentValue,
+            deger: tutar.format(pnl.currentValueTRY)),
+        _PozisyonSatiri.kazanc(
+          etiket: l.posTotalPnl,
+          tutar: pnl.totalPnlTRY,
+          yuzde: pnl.pnlPct,
+          bicim: tutar,
+          vurgulu: true,
+        ),
+        if (donem case final d?)
+          _PozisyonSatiri.kazanc(
+            etiket: l.posPeriodPnl(donemEtiketi),
+            tutar: d.tutar,
+            yuzde: d.yuzde,
+            bicim: tutar,
+            // Yalnız TUTAR (Sadeleştirme 2, madde 7, 2026-10-04): satırın
+            // yüzdesi ürünün fiyat hareketidir — fiyatın altındaki dönem
+            // yüzdesiyle AYNI sayı (`_donemDegisimi` ile `_donemYuzdesi`
+            // aynı birim seri, aynı dönem başı). Tutar ise sahibin piyasa
+            // etkisidir, başka bir ölçü: o kalır. Bayrak
+            // `varlik_islem_cubugu` 2026-10-05'te kalktı; eski "₺0 · fiyat
+            // −%7,55" yazımı (`posPeriodPriceMove`) onunla gitti.
+            yuzdesiz: true,
+          )
+        else
+          _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
+      ],
+    );
+    if (kabuksuz) return satirlar;
     return SandikCard(
       padding: const EdgeInsets.symmetric(
           horizontal: SandikSpace.md, vertical: SandikSpace.xs),
-      child: Column(
-        children: [
-          if (!birimGizli) ...[
-            _PozisyonSatiri(etiket: l.posQuantity, deger: miktarMetni),
-            _PozisyonSatiri(
-                etiket: l.posBuyPrice, deger: birim(pnl.anchorUnitTRY)),
-            _PozisyonSatiri(
-                etiket: l.posTodayPrice,
-                deger:
-                    pnl.currentUnitTRY > 0 ? birim(pnl.currentUnitTRY) : '—'),
-            Divider(height: SandikSpace.sm, color: context.c.hairline),
-          ],
-          _PozisyonSatiri(
-              etiket: l.posTotalCost, deger: tutar.format(pnl.totalCostTRY)),
-          _PozisyonSatiri(
-              etiket: l.posCurrentValue,
-              deger: tutar.format(pnl.currentValueTRY)),
-          _PozisyonSatiri.kazanc(
-            etiket: l.posTotalPnl,
-            tutar: pnl.totalPnlTRY,
-            yuzde: pnl.pnlPct,
-            bicim: tutar,
-            vurgulu: true,
-          ),
-          if (donem case final d?)
-            _PozisyonSatiri.kazanc(
-              etiket: l.posPeriodPnl(donemEtiketi),
-              tutar: d.tutar,
-              yuzde: d.yuzde,
-              bicim: tutar,
-              // Yalnız TUTAR (Sadeleştirme 2, madde 7, 2026-10-04): satırın
-              // yüzdesi ürünün fiyat hareketidir — fiyatın altındaki dönem
-              // yüzdesiyle AYNI sayı (`_donemDegisimi` ile `_donemYuzdesi`
-              // aynı birim seri, aynı dönem başı). Tutar ise sahibin piyasa
-              // etkisidir, başka bir ölçü: o kalır. Bayrak
-              // `varlik_islem_cubugu` 2026-10-05'te kalktı; eski "₺0 · fiyat
-              // −%7,55" yazımı (`posPeriodPriceMove`) onunla gitti.
-              yuzdesiz: true,
-            )
-          else
-            _PozisyonSatiri(etiket: l.posPeriodPnl(donemEtiketi), deger: '—'),
-        ],
-      ),
+      child: satirlar,
     );
   }
 }

@@ -11319,6 +11319,60 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Geri yükleme şu an yapılamadı. Biraz sonra yeniden dene.'**
   String get pwGeriYukHata;
+
+  /// No description provided for @s4AnalysisUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'ANALİZ'**
+  String get s4AnalysisUpper;
+
+  /// No description provided for @s4HistoryDocsUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'GEÇMİŞ VE BELGELER'**
+  String get s4HistoryDocsUpper;
+
+  /// No description provided for @s4Details.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrıntı'**
+  String get s4Details;
+
+  /// No description provided for @s4RowSignals.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik sinyaller'**
+  String get s4RowSignals;
+
+  /// No description provided for @s4RowFundReport.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon karnesi'**
+  String get s4RowFundReport;
+
+  /// No description provided for @s4RowFlow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para akışı'**
+  String get s4RowFlow;
+
+  /// No description provided for @s4RowVolume.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hacim radarı'**
+  String get s4RowVolume;
+
+  /// No description provided for @s4RowCrypto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alıcı baskısı'**
+  String get s4RowCrypto;
+
+  /// No description provided for @s4RowNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Analiz notu'**
+  String get s4RowNote;
 }
 
 class _AppLocalizationsDelegate

@@ -51,6 +51,7 @@ void main() {
     'lib/screens/add_watchlist_screen.dart': 0,
     'lib/screens/asset_detail/eylemler.dart': 0,
     'lib/screens/asset_detail/ozet.dart': 0,
+    'lib/screens/asset_detail/katmanlar.dart': 0,
     'lib/screens/csv_import_screen.dart': 0,
     'lib/screens/disclaimer_acceptance_screen.dart': 0,
     'lib/screens/forgot_password_screen.dart': 0,

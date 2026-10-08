@@ -212,8 +212,18 @@ void main() {
       // projede dört test tam olarak böyle kırılmıştı. Testin koruduğu
       // İDDİA aynı: iki yüzey de `_sinyalYuzeyleri` kapısının ARDINDA.
       final tek = src.replaceAll(RegExp(r'\s+'), ' ');
-      expect(tek.contains('if (_sinyalYuzeyleri) AssetSignalCard'), isTrue,
+      // Katmanlı düzende (S4) kart Analiz'e taşınır; üstteki kopya
+      // yalnız eski düzende çizilir — kapı yine `_sinyalYuzeyleri`.
+      expect(
+          tek.contains(
+              'if (_sinyalYuzeyleri && !katmanli) AssetSignalCard'),
+          isTrue,
           reason: 'sinyal kartı seviyeye bağlı değil');
+      final katman = ekranKaynagiSync('lib/screens/asset_detail/katmanlar.dart')
+          .replaceAll(RegExp(r'\s+'), ' ');
+      expect(katman.contains('if (_sinyalYuzeyleri) ( baslik: l.s4RowSignals'),
+          isTrue,
+          reason: 'katmanlı düzende sinyal satırı seviyeye bağlı değil');
       expect(
           tek.contains('if (_sinyalYuzeyleri) ...[ '
               'const SizedBox(height: 24), TechnicalSignalPanel'),

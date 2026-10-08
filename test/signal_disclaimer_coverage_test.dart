@@ -64,7 +64,11 @@ void main() {
       test('$yol paneli gösterir ve ibareyi TEK kez taşır', () {
         final k = oku(yol);
         expect(k.contains('TechnicalSignalPanel'), isTrue);
-        expect(sayi(k), 1);
+        // Varlık detayında iki düzen var (S4, bayrak `varlik_detay_katmanli`):
+        // eski yığın ve katmanlı düzen birbirini dışlar, her biri ibareyi
+        // bir kez basar. Çalışırken tek ibare olduğunu
+        // `varlik_detay_katmanli_test` iki düzende de sayar.
+        expect(sayi(k), yol.endsWith('asset_detail_screen.dart') ? 2 : 1);
       });
     }
   });

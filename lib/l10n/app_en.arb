@@ -4540,5 +4540,14 @@
   "pwHata": "The purchase could not be completed. If you were not charged, you can try again.",
   "pwGeriYuklendi": "Your subscription has been restored.",
   "pwGeriYukBulunamadi": "No active subscription was found for this account.",
-  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly."
+  "pwGeriYukHata": "Restore is not possible right now. Please try again shortly.",
+  "s4AnalysisUpper": "ANALYSIS",
+  "s4HistoryDocsUpper": "HISTORY & DOCUMENTS",
+  "s4Details": "Details",
+  "s4RowSignals": "Technical signals",
+  "s4RowFundReport": "Fund report card",
+  "s4RowFlow": "Money flow",
+  "s4RowVolume": "Volume radar",
+  "s4RowCrypto": "Buyer pressure",
+  "s4RowNote": "Analysis note"
 }
