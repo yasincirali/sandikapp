@@ -123,6 +123,7 @@ class _SandikAsyncButtonState extends State<SandikAsyncButton> {
         AnimatedOpacity(
           opacity: _busy ? 0 : 1,
           duration: SandikMotion.stateOf(context),
+          curve: SandikMotion.enter,
           child: etiket,
         ),
         if (_busy)
