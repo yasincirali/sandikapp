@@ -22,7 +22,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import Anthropic from 'npm:@anthropic-ai/sdk@0';
 import { maliyetUsd } from '../_shared/analiz.ts';
-import { ARAC, istekGovdesi, iskeletiDogrula, yanitiDogrula } from '../_shared/ekstre_esleme.ts';
+import { ARAC, hataOzeti, istekGovdesi, iskeletiDogrula, yanitiDogrula } from '../_shared/ekstre_esleme.ts';
 
 const MODEL = 'claude-sonnet-5-5';
 
@@ -123,7 +123,7 @@ Deno.serve(async (req: Request) => {
     });
     return jsonResponse({ ok: true, tablolar });
   } catch (e) {
-    console.error('ekstre-esle', e instanceof Error ? e.name : 'hata');
+    console.error('ekstre-esle', hataOzeti(e));
     return jsonResponse({ ok: false, neden: 'sunucu' }, 500);
   }
 });

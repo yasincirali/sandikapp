@@ -10,7 +10,7 @@
 //   deno test --allow-all supabase/tests/ekstre_esleme_test.ts
 
 import { assertEquals } from 'jsr:@std/assert@1';
-import { ILK_SATIR, istekGovdesi, iskeletiDogrula, yanitiDogrula } from '../functions/_shared/ekstre_esleme.ts';
+import { hataOzeti, ILK_SATIR, istekGovdesi, iskeletiDogrula, yanitiDogrula } from '../functions/_shared/ekstre_esleme.ts';
 
 const iskelet = [
   ILK_SATIR,
@@ -82,4 +82,17 @@ Deno.test('istek: zorunlu araç, iskelet kullanıcı mesajı', () => {
   };
   assertEquals(g.tool_choice.name, 'sutun_eslemesi');
   assertEquals(g.messages[0].content, iskelet);
+});
+
+Deno.test('hata özeti: API durumu ve türü, db kodu; mesaj yok', () => {
+  // Anthropic SDK APIError biçimi: status + error.error.type, name "Error".
+  const api = Object.assign(new Error('credit balance is too low'), {
+    status: 400,
+    error: { type: 'error', error: { type: 'invalid_request_error', message: 'gizli' } },
+  });
+  assertEquals(hataOzeti(api), 'api 400 invalid_request_error');
+  assertEquals(hataOzeti({ status: 401 }), 'api 401');
+  assertEquals(hataOzeti({ code: '42P01', message: 'x' }), 'db 42P01');
+  assertEquals(hataOzeti(new TypeError('x')), 'TypeError');
+  assertEquals(hataOzeti('x'), 'hata');
 });
