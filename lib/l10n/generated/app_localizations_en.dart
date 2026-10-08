@@ -6946,4 +6946,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get s4RowNote => 'Analysis note';
+
+  @override
+  String get s3DagilimBaslik => 'Allocation';
+
+  @override
+  String get s3HalkaBaglanti => 'Ring ›';
+
+  @override
+  String get s5OnAyarSoru => 'How often should we notify you?';
+
+  @override
+  String get s5OnAyarAz => 'Less';
+
+  @override
+  String get s5OnAyarDengeli => 'Balanced';
+
+  @override
+  String get s5OnAyarCok => 'More';
+
+  @override
+  String get s5OnAyarOzel => 'Custom';
+
+  @override
+  String get s5OnAyarAzAciklama =>
+      'Only strong signals (85% confidence), once a day, with RSI and MACD.';
+
+  @override
+  String get s5OnAyarDengeliAciklama =>
+      'Recommended: 70% confidence, twice a day (11:00 and 15:00), all core indicators.';
+
+  @override
+  String get s5OnAyarCokAciklama =>
+      'From 50% confidence, every 2 hours, all core indicators.';
+
+  @override
+  String get s5OnAyarOzelAciklama =>
+      'Your categories have their own settings. Picking an option applies it to every category.';
+
+  @override
+  String get s5KategoriyeGoreOzellestir => 'Customise by category';
 }

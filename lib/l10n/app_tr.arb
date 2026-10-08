@@ -4942,5 +4942,17 @@
   "s4RowFlow": "Para akışı",
   "s4RowVolume": "Hacim radarı",
   "s4RowCrypto": "Alıcı baskısı",
-  "s4RowNote": "Analiz notu"
+  "s4RowNote": "Analiz notu",
+  "s3DagilimBaslik": "Dağılım",
+  "s3HalkaBaglanti": "Halka ›",
+  "s5OnAyarSoru": "Ne sıklıkta haber verelim?",
+  "s5OnAyarAz": "Az",
+  "s5OnAyarDengeli": "Dengeli",
+  "s5OnAyarCok": "Çok",
+  "s5OnAyarOzel": "Özel",
+  "s5OnAyarAzAciklama": "Yalnız güçlü sinyaller (%85 güven), günde 1 kez, RSI ve MACD ile.",
+  "s5OnAyarDengeliAciklama": "Önerilen: %70 güven, günde 2 kez (11:00 ve 15:00), temel göstergelerin tümü.",
+  "s5OnAyarCokAciklama": "%50 güvenden itibaren, 2 saatte bir, temel göstergelerin tümü.",
+  "s5OnAyarOzelAciklama": "Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.",
+  "s5KategoriyeGoreOzellestir": "Kategoriye göre özelleştir"
 }

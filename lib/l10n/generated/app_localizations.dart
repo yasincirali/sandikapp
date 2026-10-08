@@ -11457,6 +11457,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Analiz notu'**
   String get s4RowNote;
+
+  /// No description provided for @s3DagilimBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılım'**
+  String get s3DagilimBaslik;
+
+  /// No description provided for @s3HalkaBaglanti.
+  ///
+  /// In tr, this message translates to:
+  /// **'Halka ›'**
+  String get s3HalkaBaglanti;
+
+  /// No description provided for @s5OnAyarSoru.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne sıklıkta haber verelim?'**
+  String get s5OnAyarSoru;
+
+  /// No description provided for @s5OnAyarAz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Az'**
+  String get s5OnAyarAz;
+
+  /// No description provided for @s5OnAyarDengeli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dengeli'**
+  String get s5OnAyarDengeli;
+
+  /// No description provided for @s5OnAyarCok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok'**
+  String get s5OnAyarCok;
+
+  /// No description provided for @s5OnAyarOzel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel'**
+  String get s5OnAyarOzel;
+
+  /// No description provided for @s5OnAyarAzAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız güçlü sinyaller (%85 güven), günde 1 kez, RSI ve MACD ile.'**
+  String get s5OnAyarAzAciklama;
+
+  /// No description provided for @s5OnAyarDengeliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önerilen: %70 güven, günde 2 kez (11:00 ve 15:00), temel göstergelerin tümü.'**
+  String get s5OnAyarDengeliAciklama;
+
+  /// No description provided for @s5OnAyarCokAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'%50 güvenden itibaren, 2 saatte bir, temel göstergelerin tümü.'**
+  String get s5OnAyarCokAciklama;
+
+  /// No description provided for @s5OnAyarOzelAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.'**
+  String get s5OnAyarOzelAciklama;
+
+  /// No description provided for @s5KategoriyeGoreOzellestir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategoriye göre özelleştir'**
+  String get s5KategoriyeGoreOzellestir;
 }
 
 class _AppLocalizationsDelegate

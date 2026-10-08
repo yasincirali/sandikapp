@@ -6884,4 +6884,44 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get s4RowNote => 'Analiz notu';
+
+  @override
+  String get s3DagilimBaslik => 'Dağılım';
+
+  @override
+  String get s3HalkaBaglanti => 'Halka ›';
+
+  @override
+  String get s5OnAyarSoru => 'Ne sıklıkta haber verelim?';
+
+  @override
+  String get s5OnAyarAz => 'Az';
+
+  @override
+  String get s5OnAyarDengeli => 'Dengeli';
+
+  @override
+  String get s5OnAyarCok => 'Çok';
+
+  @override
+  String get s5OnAyarOzel => 'Özel';
+
+  @override
+  String get s5OnAyarAzAciklama =>
+      'Yalnız güçlü sinyaller (%85 güven), günde 1 kez, RSI ve MACD ile.';
+
+  @override
+  String get s5OnAyarDengeliAciklama =>
+      'Önerilen: %70 güven, günde 2 kez (11:00 ve 15:00), temel göstergelerin tümü.';
+
+  @override
+  String get s5OnAyarCokAciklama =>
+      '%50 güvenden itibaren, 2 saatte bir, temel göstergelerin tümü.';
+
+  @override
+  String get s5OnAyarOzelAciklama =>
+      'Kategorilerde kendi ayarların var. Bir seçenek seçersen tüm kategorilere uygulanır.';
+
+  @override
+  String get s5KategoriyeGoreOzellestir => 'Kategoriye göre özelleştir';
 }
