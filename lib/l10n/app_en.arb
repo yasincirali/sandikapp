@@ -1622,6 +1622,15 @@
       }
     }
   },
+  "depositAmountLabel": "Amount",
+  "cannotExceedBalance": "You can't exceed the current balance ({amount})",
+  "@cannotExceedBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "boughtAmount": "Bought {qty} {unit}",
   "@boughtAmount": {
     "placeholders": {

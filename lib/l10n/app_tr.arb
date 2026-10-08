@@ -1633,6 +1633,15 @@
       }
     }
   },
+  "depositAmountLabel": "Tutar",
+  "cannotExceedBalance": "Mevcut bakiyeyi ({amount}) aşamazsın",
+  "@cannotExceedBalance": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "boughtAmount": "{qty} {unit} alındı",
   "@boughtAmount": {
     "placeholders": {
