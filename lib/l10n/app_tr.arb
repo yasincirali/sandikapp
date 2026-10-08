@@ -5185,5 +5185,116 @@
   "s6AylikRapor": "Aylık rapor",
   "s6YilOzeti": "Yıl özeti",
   "s6Siralama": "Sıralama",
-  "s6SiralamaAlt": "Zirvedeki portföyler ve ortaklarınla yarış"
+  "s6SiralamaAlt": "Zirvedeki portföyler ve ortaklarınla yarış",
+  "pwdSlogan": "Sandığının içini aç.",
+  "pwdOnceki": "Önceki özellik",
+  "pwdSonraki": "Sonraki özellik",
+  "pwdIpucu": "Sağa ya da sola kaydırarak diğer Premium özelliklerine geç",
+  "pwdUcretsiz": "Ücretsiz: {deger}",
+  "@pwdUcretsiz": {
+    "placeholders": {
+      "deger": {"type": "String"}
+    }
+  },
+  "pwdPremium": "Premium: {deger}",
+  "@pwdPremium": {
+    "placeholders": {
+      "deger": {"type": "String"}
+    }
+  },
+  "pwdVarlikEtiket": "VARLIK SINIRI",
+  "pwdVarlikBaslik": "{sayi} varlık ücretsiz. Gerisi Premium'da.",
+  "@pwdVarlikBaslik": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "pwdVarlikCubuk": "Ücretsiz sınır",
+  "pwdVarlikUcretsiz": "{varlik} varlık, {takip} takip",
+  "@pwdVarlikUcretsiz": {
+    "placeholders": {
+      "varlik": {"type": "int"}, "takip": {"type": "int"}
+    }
+  },
+  "pwdSinyalEtiket": "SİNYAL",
+  "pwdSinyalBaslik": "Seçtiğin saatlerde haber al, üç göstergeyi daha kat.",
+  "pwdSinyalUcretsiz": "günde {sayi}",
+  "@pwdSinyalUcretsiz": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "pwdSinyalUcretsizTek": "günde {sayi}, tek varlık",
+  "@pwdSinyalUcretsizTek": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "pwdSinyalPremium": "istediğin sıklık",
+  "pwdKarsEtiket": "KARŞILAŞTIR",
+  "pwdKarsRozet": "{ucretsiz} → {premium} seri",
+  "@pwdKarsRozet": {
+    "placeholders": {
+      "ucretsiz": {"type": "int"}, "premium": {"type": "int"}
+    }
+  },
+  "pwdKarsBaslik": "Portföyünü altın, dolar ve endeksle aynı grafikte gör.",
+  "pwdSeri": "{sayi} seri",
+  "@pwdSeri": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "pwdOrtakEtiket": "ORTAK",
+  "pwdOrtakBaslik": "Eşinle, ailenle, ortağınla; birden fazla ortak.",
+  "pwdOrtakSayi": "{sayi} ortak",
+  "@pwdOrtakSayi": {
+    "placeholders": {
+      "sayi": {"type": "int"}
+    }
+  },
+  "pwdAkisEtiket": "PARA AKIŞI",
+  "pwdAkisBaslik": "Fonuna para giriyor mu, 8 haftada gör.",
+  "pwdHacimEtiket": "HACİM RADARI",
+  "pwdHacimBaslik": "Bugünkü hacim olağandışı mı, 20 günle kıyasla.",
+  "pwdNotEtiket": "HAFTALIK NOT",
+  "pwdNotBaslik": "Haftalık notun devamı Premium'da.",
+  "pwdNotIlk": "Bu hafta portföyündeki fonlara para girişi sürdü.",
+  "pwdNotDevam": " Hangisinin öne çıktığı ve bunun ne anlattığı notun devamında okunur hâle gelir…",
+  "pwdEkstreEtiket": "EKSTRE",
+  "pwdEkstreBaslik": "Ekstreni yükle, satırları yapay zekâ eşlesin.",
+  "pwdEkstrePremium": "yapay zekâyla eşleme",
+  "pwdYillikAlt": "Yılda bir kez ödenir · ayda {aylik}",
+  "@pwdYillikAlt": {
+    "placeholders": {
+      "aylik": {"type": "String"}
+    }
+  },
+  "pwdYillikAltSade": "Yılda bir kez ödenir",
+  "pwdYillikDenemeAlt": "{gun} gün ücretsiz, sonra yılda bir kez {fiyat}",
+  "@pwdYillikDenemeAlt": {
+    "placeholders": {
+      "gun": {"type": "int"}, "fiyat": {"type": "String"}
+    }
+  },
+  "pwdAylikAlt": "Her ay yenilenir, istediğin ay bırakırsın",
+  "pwdAylikDenemeAlt": "{gun} gün ücretsiz, sonra ayda {fiyat}",
+  "@pwdAylikDenemeAlt": {
+    "placeholders": {
+      "gun": {"type": "int"}, "fiyat": {"type": "String"}
+    }
+  },
+  "pwdBugun": "Bugün",
+  "pwdHerSeyAcik": "Her şey açık",
+  "pwdGun": "{gun}. gün",
+  "@pwdGun": {
+    "placeholders": {
+      "gun": {"type": "int"}
+    }
+  },
+  "pwdIlkOdeme": "İlk ödeme",
+  "pwdGuvenTakip": "Portföy takibin her zaman ücretsiz",
+  "pwdGuvenIptal": "İstediğin an iptal, dönem sonuna kadar açık",
+  "pwdYillikAboneOl": "Yıllık abone ol",
+  "pwdAylikAboneOl": "Aylık abone ol"
 }

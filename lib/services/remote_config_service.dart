@@ -296,6 +296,10 @@ class RemoteConfigService {
     'raporlar_kapisi': false,
     // S7 — Ana ekranda genel arama (Yenile ikonunun yerine; varlık + eylem).
     'genel_arama': false,
+    // Paywall yeniden tasarımı (yasin 2026-10-08): sandık başlığı + sonsuz
+    // kart destesi; deste kullanıcının dokunduğu kilidin kartıyla açılır.
+    // Kapalıyken eski paywall birebir.
+    'paywall_deste': false,
 
     // Ekstre tanılama iskeleti (2026-10-05, yasin: "tüm banka ve aracı
     // kurumları kapsamalıyız"). Motor bir ekstreyi tam anlayamadığında eşleme
@@ -626,6 +630,9 @@ class RemoteConfigService {
   bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
   bool get raporlarKapisi => _bayrak('raporlar_kapisi');
   bool get genelArama => _bayrak('genel_arama');
+
+  /// Kart desteli paywall. Gerekçe `_defaults`'ta.
+  bool get paywallDeste => _bayrak('paywall_deste');
 
   /// Ekstre tanılama iskeleti düğmesi. Gerekçe `_defaults`'ta.
   bool get ekstreTanilama => _bayrak('ekstre_tanilama');

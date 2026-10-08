@@ -12093,6 +12093,282 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Zirvedeki portföyler ve ortaklarınla yarış'**
   String get s6SiralamaAlt;
+
+  /// No description provided for @pwdSlogan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sandığının içini aç.'**
+  String get pwdSlogan;
+
+  /// No description provided for @pwdOnceki.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önceki özellik'**
+  String get pwdOnceki;
+
+  /// No description provided for @pwdSonraki.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonraki özellik'**
+  String get pwdSonraki;
+
+  /// No description provided for @pwdIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sağa ya da sola kaydırarak diğer Premium özelliklerine geç'**
+  String get pwdIpucu;
+
+  /// No description provided for @pwdUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz: {deger}'**
+  String pwdUcretsiz(String deger);
+
+  /// No description provided for @pwdPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Premium: {deger}'**
+  String pwdPremium(String deger);
+
+  /// No description provided for @pwdVarlikEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'VARLIK SINIRI'**
+  String get pwdVarlikEtiket;
+
+  /// No description provided for @pwdVarlikBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} varlık ücretsiz. Gerisi Premium\'da.'**
+  String pwdVarlikBaslik(int sayi);
+
+  /// No description provided for @pwdVarlikCubuk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz sınır'**
+  String get pwdVarlikCubuk;
+
+  /// No description provided for @pwdVarlikUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'{varlik} varlık, {takip} takip'**
+  String pwdVarlikUcretsiz(int varlik, int takip);
+
+  /// No description provided for @pwdSinyalEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'SİNYAL'**
+  String get pwdSinyalEtiket;
+
+  /// No description provided for @pwdSinyalBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin saatlerde haber al, üç göstergeyi daha kat.'**
+  String get pwdSinyalBaslik;
+
+  /// No description provided for @pwdSinyalUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'günde {sayi}'**
+  String pwdSinyalUcretsiz(int sayi);
+
+  /// No description provided for @pwdSinyalUcretsizTek.
+  ///
+  /// In tr, this message translates to:
+  /// **'günde {sayi}, tek varlık'**
+  String pwdSinyalUcretsizTek(int sayi);
+
+  /// No description provided for @pwdSinyalPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'istediğin sıklık'**
+  String get pwdSinyalPremium;
+
+  /// No description provided for @pwdKarsEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'KARŞILAŞTIR'**
+  String get pwdKarsEtiket;
+
+  /// No description provided for @pwdKarsRozet.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ucretsiz} → {premium} seri'**
+  String pwdKarsRozet(int ucretsiz, int premium);
+
+  /// No description provided for @pwdKarsBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyünü altın, dolar ve endeksle aynı grafikte gör.'**
+  String get pwdKarsBaslik;
+
+  /// No description provided for @pwdSeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} seri'**
+  String pwdSeri(int sayi);
+
+  /// No description provided for @pwdOrtakEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'ORTAK'**
+  String get pwdOrtakEtiket;
+
+  /// No description provided for @pwdOrtakBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşinle, ailenle, ortağınla; birden fazla ortak.'**
+  String get pwdOrtakBaslik;
+
+  /// No description provided for @pwdOrtakSayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} ortak'**
+  String pwdOrtakSayi(int sayi);
+
+  /// No description provided for @pwdAkisEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'PARA AKIŞI'**
+  String get pwdAkisEtiket;
+
+  /// No description provided for @pwdAkisBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonuna para giriyor mu, 8 haftada gör.'**
+  String get pwdAkisBaslik;
+
+  /// No description provided for @pwdHacimEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'HACİM RADARI'**
+  String get pwdHacimEtiket;
+
+  /// No description provided for @pwdHacimBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü hacim olağandışı mı, 20 günle kıyasla.'**
+  String get pwdHacimBaslik;
+
+  /// No description provided for @pwdNotEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'HAFTALIK NOT'**
+  String get pwdNotEtiket;
+
+  /// No description provided for @pwdNotBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık notun devamı Premium\'da.'**
+  String get pwdNotBaslik;
+
+  /// No description provided for @pwdNotIlk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu hafta portföyündeki fonlara para girişi sürdü.'**
+  String get pwdNotIlk;
+
+  /// No description provided for @pwdNotDevam.
+  ///
+  /// In tr, this message translates to:
+  /// **' Hangisinin öne çıktığı ve bunun ne anlattığı notun devamında okunur hâle gelir…'**
+  String get pwdNotDevam;
+
+  /// No description provided for @pwdEkstreEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'EKSTRE'**
+  String get pwdEkstreEtiket;
+
+  /// No description provided for @pwdEkstreBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekstreni yükle, satırları yapay zekâ eşlesin.'**
+  String get pwdEkstreBaslik;
+
+  /// No description provided for @pwdEkstrePremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'yapay zekâyla eşleme'**
+  String get pwdEkstrePremium;
+
+  /// No description provided for @pwdYillikAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılda bir kez ödenir · ayda {aylik}'**
+  String pwdYillikAlt(String aylik);
+
+  /// No description provided for @pwdYillikAltSade.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılda bir kez ödenir'**
+  String get pwdYillikAltSade;
+
+  /// No description provided for @pwdYillikDenemeAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} gün ücretsiz, sonra yılda bir kez {fiyat}'**
+  String pwdYillikDenemeAlt(int gun, String fiyat);
+
+  /// No description provided for @pwdAylikAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her ay yenilenir, istediğin ay bırakırsın'**
+  String get pwdAylikAlt;
+
+  /// No description provided for @pwdAylikDenemeAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun} gün ücretsiz, sonra ayda {fiyat}'**
+  String pwdAylikDenemeAlt(int gun, String fiyat);
+
+  /// No description provided for @pwdBugun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün'**
+  String get pwdBugun;
+
+  /// No description provided for @pwdHerSeyAcik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her şey açık'**
+  String get pwdHerSeyAcik;
+
+  /// No description provided for @pwdGun.
+  ///
+  /// In tr, this message translates to:
+  /// **'{gun}. gün'**
+  String pwdGun(int gun);
+
+  /// No description provided for @pwdIlkOdeme.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk ödeme'**
+  String get pwdIlkOdeme;
+
+  /// No description provided for @pwdGuvenTakip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy takibin her zaman ücretsiz'**
+  String get pwdGuvenTakip;
+
+  /// No description provided for @pwdGuvenIptal.
+  ///
+  /// In tr, this message translates to:
+  /// **'İstediğin an iptal, dönem sonuna kadar açık'**
+  String get pwdGuvenIptal;
+
+  /// No description provided for @pwdYillikAboneOl.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık abone ol'**
+  String get pwdYillikAboneOl;
+
+  /// No description provided for @pwdAylikAboneOl.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık abone ol'**
+  String get pwdAylikAboneOl;
 }
 
 class _AppLocalizationsDelegate

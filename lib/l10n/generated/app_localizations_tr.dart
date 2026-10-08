@@ -7258,4 +7258,173 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get s6SiralamaAlt => 'Zirvedeki portföyler ve ortaklarınla yarış';
+
+  @override
+  String get pwdSlogan => 'Sandığının içini aç.';
+
+  @override
+  String get pwdOnceki => 'Önceki özellik';
+
+  @override
+  String get pwdSonraki => 'Sonraki özellik';
+
+  @override
+  String get pwdIpucu =>
+      'Sağa ya da sola kaydırarak diğer Premium özelliklerine geç';
+
+  @override
+  String pwdUcretsiz(String deger) {
+    return 'Ücretsiz: $deger';
+  }
+
+  @override
+  String pwdPremium(String deger) {
+    return 'Premium: $deger';
+  }
+
+  @override
+  String get pwdVarlikEtiket => 'VARLIK SINIRI';
+
+  @override
+  String pwdVarlikBaslik(int sayi) {
+    return '$sayi varlık ücretsiz. Gerisi Premium\'da.';
+  }
+
+  @override
+  String get pwdVarlikCubuk => 'Ücretsiz sınır';
+
+  @override
+  String pwdVarlikUcretsiz(int varlik, int takip) {
+    return '$varlik varlık, $takip takip';
+  }
+
+  @override
+  String get pwdSinyalEtiket => 'SİNYAL';
+
+  @override
+  String get pwdSinyalBaslik =>
+      'Seçtiğin saatlerde haber al, üç göstergeyi daha kat.';
+
+  @override
+  String pwdSinyalUcretsiz(int sayi) {
+    return 'günde $sayi';
+  }
+
+  @override
+  String pwdSinyalUcretsizTek(int sayi) {
+    return 'günde $sayi, tek varlık';
+  }
+
+  @override
+  String get pwdSinyalPremium => 'istediğin sıklık';
+
+  @override
+  String get pwdKarsEtiket => 'KARŞILAŞTIR';
+
+  @override
+  String pwdKarsRozet(int ucretsiz, int premium) {
+    return '$ucretsiz → $premium seri';
+  }
+
+  @override
+  String get pwdKarsBaslik =>
+      'Portföyünü altın, dolar ve endeksle aynı grafikte gör.';
+
+  @override
+  String pwdSeri(int sayi) {
+    return '$sayi seri';
+  }
+
+  @override
+  String get pwdOrtakEtiket => 'ORTAK';
+
+  @override
+  String get pwdOrtakBaslik =>
+      'Eşinle, ailenle, ortağınla; birden fazla ortak.';
+
+  @override
+  String pwdOrtakSayi(int sayi) {
+    return '$sayi ortak';
+  }
+
+  @override
+  String get pwdAkisEtiket => 'PARA AKIŞI';
+
+  @override
+  String get pwdAkisBaslik => 'Fonuna para giriyor mu, 8 haftada gör.';
+
+  @override
+  String get pwdHacimEtiket => 'HACİM RADARI';
+
+  @override
+  String get pwdHacimBaslik => 'Bugünkü hacim olağandışı mı, 20 günle kıyasla.';
+
+  @override
+  String get pwdNotEtiket => 'HAFTALIK NOT';
+
+  @override
+  String get pwdNotBaslik => 'Haftalık notun devamı Premium\'da.';
+
+  @override
+  String get pwdNotIlk => 'Bu hafta portföyündeki fonlara para girişi sürdü.';
+
+  @override
+  String get pwdNotDevam =>
+      ' Hangisinin öne çıktığı ve bunun ne anlattığı notun devamında okunur hâle gelir…';
+
+  @override
+  String get pwdEkstreEtiket => 'EKSTRE';
+
+  @override
+  String get pwdEkstreBaslik => 'Ekstreni yükle, satırları yapay zekâ eşlesin.';
+
+  @override
+  String get pwdEkstrePremium => 'yapay zekâyla eşleme';
+
+  @override
+  String pwdYillikAlt(String aylik) {
+    return 'Yılda bir kez ödenir · ayda $aylik';
+  }
+
+  @override
+  String get pwdYillikAltSade => 'Yılda bir kez ödenir';
+
+  @override
+  String pwdYillikDenemeAlt(int gun, String fiyat) {
+    return '$gun gün ücretsiz, sonra yılda bir kez $fiyat';
+  }
+
+  @override
+  String get pwdAylikAlt => 'Her ay yenilenir, istediğin ay bırakırsın';
+
+  @override
+  String pwdAylikDenemeAlt(int gun, String fiyat) {
+    return '$gun gün ücretsiz, sonra ayda $fiyat';
+  }
+
+  @override
+  String get pwdBugun => 'Bugün';
+
+  @override
+  String get pwdHerSeyAcik => 'Her şey açık';
+
+  @override
+  String pwdGun(int gun) {
+    return '$gun. gün';
+  }
+
+  @override
+  String get pwdIlkOdeme => 'İlk ödeme';
+
+  @override
+  String get pwdGuvenTakip => 'Portföy takibin her zaman ücretsiz';
+
+  @override
+  String get pwdGuvenIptal => 'İstediğin an iptal, dönem sonuna kadar açık';
+
+  @override
+  String get pwdYillikAboneOl => 'Yıllık abone ol';
+
+  @override
+  String get pwdAylikAboneOl => 'Aylık abone ol';
 }

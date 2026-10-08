@@ -7321,4 +7321,182 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get s6SiralamaAlt => 'Top portfolios and the race with your partners';
+
+  @override
+  String get pwdSlogan => 'Open up your sandık.';
+
+  @override
+  String get pwdOnceki => 'Previous feature';
+
+  @override
+  String get pwdSonraki => 'Next feature';
+
+  @override
+  String get pwdIpucu =>
+      'Swipe left or right to see the other Premium features';
+
+  @override
+  String pwdUcretsiz(String deger) {
+    return 'Free: $deger';
+  }
+
+  @override
+  String pwdPremium(String deger) {
+    return 'Premium: $deger';
+  }
+
+  @override
+  String get pwdVarlikEtiket => 'ASSET LIMIT';
+
+  @override
+  String pwdVarlikBaslik(int sayi) {
+    return '$sayi assets are free. The rest is Premium.';
+  }
+
+  @override
+  String get pwdVarlikCubuk => 'Free limit';
+
+  @override
+  String pwdVarlikUcretsiz(int varlik, int takip) {
+    return '$varlik assets, $takip watchlist';
+  }
+
+  @override
+  String get pwdSinyalEtiket => 'SIGNALS';
+
+  @override
+  String get pwdSinyalBaslik =>
+      'Get alerts at the hours you pick, plus three more indicators.';
+
+  @override
+  String pwdSinyalUcretsiz(int sayi) {
+    return '$sayi a day';
+  }
+
+  @override
+  String pwdSinyalUcretsizTek(int sayi) {
+    return '$sayi a day, one asset';
+  }
+
+  @override
+  String get pwdSinyalPremium => 'any frequency';
+
+  @override
+  String get pwdKarsEtiket => 'COMPARE';
+
+  @override
+  String pwdKarsRozet(int ucretsiz, int premium) {
+    return '$ucretsiz → $premium series';
+  }
+
+  @override
+  String get pwdKarsBaslik =>
+      'See your portfolio next to gold, the dollar and the index.';
+
+  @override
+  String pwdSeri(int sayi) {
+    return '$sayi series';
+  }
+
+  @override
+  String get pwdOrtakEtiket => 'PARTNERS';
+
+  @override
+  String get pwdOrtakBaslik =>
+      'Your spouse, family and partners, more than one.';
+
+  @override
+  String pwdOrtakSayi(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi partners',
+      one: '1 partner',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pwdAkisEtiket => 'FUND FLOW';
+
+  @override
+  String get pwdAkisBaslik => 'Is money flowing into your fund? See 8 weeks.';
+
+  @override
+  String get pwdHacimEtiket => 'VOLUME RADAR';
+
+  @override
+  String get pwdHacimBaslik =>
+      'Is today\'s volume unusual? Compare with 20 days.';
+
+  @override
+  String get pwdNotEtiket => 'WEEKLY NOTE';
+
+  @override
+  String get pwdNotBaslik => 'The rest of your weekly note is Premium.';
+
+  @override
+  String get pwdNotIlk =>
+      'Money kept flowing into the funds in your portfolio this week.';
+
+  @override
+  String get pwdNotDevam =>
+      ' Which one stood out and what that tells you becomes readable in the rest of the note…';
+
+  @override
+  String get pwdEkstreEtiket => 'STATEMENT';
+
+  @override
+  String get pwdEkstreBaslik =>
+      'Upload your statement and let AI match the lines.';
+
+  @override
+  String get pwdEkstrePremium => 'AI matching';
+
+  @override
+  String pwdYillikAlt(String aylik) {
+    return 'Billed once a year · $aylik a month';
+  }
+
+  @override
+  String get pwdYillikAltSade => 'Billed once a year';
+
+  @override
+  String pwdYillikDenemeAlt(int gun, String fiyat) {
+    return '$gun days free, then $fiyat once a year';
+  }
+
+  @override
+  String get pwdAylikAlt => 'Renews monthly, stop in any month';
+
+  @override
+  String pwdAylikDenemeAlt(int gun, String fiyat) {
+    return '$gun days free, then $fiyat a month';
+  }
+
+  @override
+  String get pwdBugun => 'Today';
+
+  @override
+  String get pwdHerSeyAcik => 'Everything unlocked';
+
+  @override
+  String pwdGun(int gun) {
+    return 'Day $gun';
+  }
+
+  @override
+  String get pwdIlkOdeme => 'First payment';
+
+  @override
+  String get pwdGuvenTakip => 'Portfolio tracking stays free';
+
+  @override
+  String get pwdGuvenIptal => 'Cancel anytime, access until the period ends';
+
+  @override
+  String get pwdYillikAboneOl => 'Subscribe yearly';
+
+  @override
+  String get pwdAylikAboneOl => 'Subscribe monthly';
 }
