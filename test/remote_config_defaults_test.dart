@@ -84,6 +84,11 @@ void main() {
       expect(varsayilan('birikim_serisi'), 'false');
     });
 
+    // Yeni hisse pazarı: form, arama ve rozetler; kapalıyken birebir eski.
+    test('ABD hissesi KAPALI doğar', () {
+      expect(varsayilan('abd_hisse'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

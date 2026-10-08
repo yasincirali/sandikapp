@@ -47,6 +47,10 @@ class Position {
 
   bool get isSingle => lots.length == 1;
 
+  /// ABD hissesi mi — temsilci lot'tan ([Asset.abdHissesi]). Aynı pozisyonun
+  /// lot'ları aynı sembol ve para birimini taşır ([positionKey]).
+  bool get abdHissesi => representative.abdHissesi;
+
   /// İlk buy lot'un tarihi — grafik "sahip olma dönemi"nin başlangıcı için.
   DateTime get firstBuyDate {
     final buys = lots.where((l) => l.isBuy);

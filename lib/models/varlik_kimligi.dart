@@ -126,6 +126,12 @@ class VarlikKimligi {
       return VarlikKimligi(
           ticker: t, name: h.name, type: AssetType.emtia, currency: 'USD');
     }
+    if (h.source == SymbolSearchService.abdKaynagi) {
+      // ABD hissesi (bayrak `abd_hisse`): sembol Yahoo'nunki, kotasyon USD.
+      // Aşağıdaki BIST düşüşüne bırakılsaydı TRY sayılır, dolar fiyatı lira
+      // gibi gösterilirdi.
+      return abdHisse(t, h.name);
+    }
     // Kalanlar BIST: hisseler ve endeksler (`XU100.IS`).
     return VarlikKimligi(
         ticker: t, name: h.name, type: AssetType.hisse, currency: 'TRY');
@@ -146,6 +152,11 @@ class VarlikKimligi {
   /// olurdu.
   static VarlikKimligi hisse(String ticker, String ad) => VarlikKimligi(
       ticker: ticker, name: ad, type: AssetType.hisse, currency: 'TRY');
+
+  /// ABD hissesi. Alt kategori kimliğe YAZILMAZ: `'abd'` pazar etiketidir
+  /// (bkz. `anahtarAltKategorisi`); takip kaydı sembolle tanınır.
+  static VarlikKimligi abdHisse(String ticker, String ad) => VarlikKimligi(
+      ticker: ticker, name: ad, type: AssetType.hisse, currency: 'USD');
 
   static VarlikKimligi fon(String kod, String ad) => VarlikKimligi(
       ticker: 'TEFAS:$kod', name: ad, type: AssetType.fon, currency: 'TRY');
@@ -177,8 +188,9 @@ String varlikAnahtari({
   required String ticker,
   String? subCategory,
 }) {
-  final core = (subCategory?.trim().isNotEmpty ?? false)
-      ? 'sub:${subCategory!.trim().toUpperCase()}'
+  final sub = anahtarAltKategorisi(subCategory);
+  final core = (sub?.trim().isNotEmpty ?? false)
+      ? 'sub:${sub!.trim().toUpperCase()}'
       : ticker.trim().toUpperCase();
   return '${type.name}|$core';
 }

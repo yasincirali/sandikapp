@@ -50,8 +50,19 @@ bool yalnizcaBorsa(Iterable<AssetType> turler) {
 ///
 /// Satılıp kapanmış bir kripto pozisyonu portföyü "karışık" yapmaz:
 /// kullanıcı artık ondan tutmuyor, rakamı hafta sonu hareket etmez.
-bool yalnizcaBorsaVarliklardan(Iterable<Asset> varliklar) =>
-    yalnizcaBorsa(aktifLotlar(varliklar).map((a) => a.type));
+///
+/// **ABD hissesi (2026-10-08, bayrak `abd_hisse`) portföyü karışık sayar.**
+/// Türü hisse ama takvimi BIST değil: "kapalı" kararı BIST seansıyla
+/// verilir (`seansAcikMi`, `DailySummary.isMarketOpen`) ve ABD seansı
+/// TR saatiyle BIST kapandıktan sonra da sürer — o saatte "BORSA KAPALI"
+/// yanlış bilgi olurdu. ABD takvimi bilinmediği için kapalılık hiç
+/// söylenmez (uydurma kapalılık yok). ABD lot'u olmayan portföyde kural
+/// birebir eski.
+bool yalnizcaBorsaVarliklardan(Iterable<Asset> varliklar) {
+  final aktif = aktifLotlar(varliklar);
+  if (aktif.any((a) => a.abdHissesi)) return false;
+  return yalnizcaBorsa(aktif.map((a) => a.type));
+}
 
 /// Rozet metni; portföy yalnızca borsaysa `'BORSA KAPALI'`, değilse `null`
 /// (rozet çizilmez).

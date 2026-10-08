@@ -242,6 +242,15 @@ class RemoteConfigService {
     // (0122) yayına; sonra açılır. Kapalıyken hiçbir istek atılmaz.
     'ekstre_ai_esleme': false,
 
+    // ABD hissesi (2026-10-08). Hisse türünde "BIST | ABD" seçimi, ABD
+    // kataloğu (`abd_hisseleri.dart`) ve aramada ABD sonuçları. Veri yeni
+    // tür DEĞİL: `type='hisse'`, `sub_category='abd'`, `currency='USD'`,
+    // sembol Yahoo'nunki (AAPL, BRK-B). Eski sürümler `.IS` olmayan USD
+    // hisseyi zaten Yahoo + USDTRY ile fiyatlıyor; yeni enum değeri eski
+    // build'de "Diğer"e düşer, tam satır yazımı türü ezerdi. KAPALI doğar:
+    // kapalıyken form, arama ve rozetler birebir eski.
+    'abd_hisse': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -493,6 +502,9 @@ class RemoteConfigService {
 
   /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
   bool get ekstreAiEsleme => _bayrak('ekstre_ai_esleme');
+
+  /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
+  bool get abdHisse => _bayrak('abd_hisse');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

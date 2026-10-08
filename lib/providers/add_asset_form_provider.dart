@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/kripto_fiyat.dart';
 import '../services/price_service.dart';
+import '../services/remote_config_service.dart';
 import '../services/tefas_service.dart';
 import '../utils/tr_format.dart';
 import 'bulk_cart_provider.dart';
@@ -277,6 +279,7 @@ class AddAssetFormState {
     this.selectedFund,
     this.notesExpanded = false,
     this.denendi = false,
+    this.abdAcik = false,
   });
 
   /// Açılış değerleri. Öncelik: düzenlenen kayıt > sepet öğesi > prefill
@@ -288,18 +291,30 @@ class AddAssetFormState {
     AssetType? prefillType,
     DateTime? prefillDate,
     DateTime? now,
+    bool abdAcik = false,
   }) {
     final a = editingAsset;
     final c = cartInitial;
     final type = a?.type ?? c?.type ?? prefillType ?? AssetType.hisse;
     final ticker = a?.ticker ?? c?.ticker ?? prefillTicker ?? '';
+    // ABD kataloğundan gelen prefill (arama → "Portföye ekle"): pazar ABD,
+    // para birimi USD. Kurulmasaydı form TRY açılır ve dolar fiyatı lira
+    // diye kaydedilirdi. Yalnız bayrak açıkken ve katalogdaki sembolde.
+    final abdPrefill = abdAcik &&
+        a == null &&
+        c == null &&
+        prefillType == AssetType.hisse &&
+        abdHisseleri.containsKey(prefillTicker);
     // BIST prefill'inde alt kategori de kurulmalı, yoksa BIST100 seçici boş
     // açılır ve seçili hisse görünmez.
     final subCat = a?.subCategory ??
         c?.subCategory ??
-        (prefillType == AssetType.hisse && (prefillTicker?.endsWith('.IS') ?? false)
-            ? StockSubCategory.bist100.label
-            : null);
+        (abdPrefill
+            ? StockSubCategory.abd.name
+            : prefillType == AssetType.hisse &&
+                    (prefillTicker?.endsWith('.IS') ?? false)
+                ? StockSubCategory.bist100.label
+                : null);
     final isBist100 =
         type == AssetType.hisse && subCat == StockSubCategory.bist100.label;
     TefasFund? fund;
@@ -316,13 +331,16 @@ class AddAssetFormState {
       type: type,
       subCategory: subCat,
       unitType: a?.unitType ?? c?.unitType ?? 'piece',
-      currency: a?.currency ?? c?.currency ?? type.defaultCurrency,
+      currency: a?.currency ??
+          c?.currency ??
+          (abdPrefill ? 'USD' : type.defaultCurrency),
       isManualPrice: a?.isManualPrice ?? (c != null && c.ticker.isEmpty),
       // Halka arz katılımı (F6) tarihi hazır getirir; null iken eski davranış.
       addedDate:
           a?.addedDate ?? c?.addedDate ?? prefillDate ?? now ?? DateTime.now(),
       bist100Ticker: isBist100 && ticker.isNotEmpty ? ticker : null,
       selectedFund: fund,
+      abdAcik: abdAcik,
     );
   }
 
@@ -350,8 +368,21 @@ class AddAssetFormState {
   /// açar açmaz kırmızı göstermek suçlayıcı olurdu.
   final bool denendi;
 
+  /// `abd_hisse` bayrağı form açılırken açık mıydı. Durumda taşınır ki
+  /// geçişler ve kimlik kuralı Remote Config'e değil değere baksın (test
+  /// edilebilir; form açıkken bayrak yenilense de form tutarlı kalır).
+  final bool abdAcik;
+
   bool get isBist100 =>
       type == AssetType.hisse && subCategory == StockSubCategory.bist100.label;
+
+  /// Hisse formu ABD pazarında mı. Bayrak kapalıyken HER ZAMAN `false`:
+  /// eski sürümün ya da bayrağın kapatıldığı bir anda düzenlenen ABD lot'u
+  /// eski serbest sembol yolundan geçer (kural birebir eski).
+  bool get isAbd =>
+      abdAcik &&
+      type == AssetType.hisse &&
+      subCategory == StockSubCategory.abd.name;
   bool get isFon => type == AssetType.fon;
   bool get isDoviz => type == AssetType.doviz;
   bool get isAltin => type == AssetType.altin;
@@ -387,6 +418,10 @@ class AddAssetFormState {
   /// emtia ve "diğer" türlerinde anlamlıdır; ötekiler seçimden türer.
   String? resolveTicker(String tickerText) {
     if (isBist100) return bist100Ticker;
+    if (isAbd) {
+      final t = abdSembolu(tickerText);
+      return t.isEmpty ? null : t;
+    }
     if (isFon && selectedFund != null) return 'TEFAS:${selectedFund!.code}';
     if (isAltin && subCategory != null) return goldTickerMap[subCategory!];
     if (isDoviz && subCategory != null) return dovizOptFor(subCategory).ticker;
@@ -406,6 +441,11 @@ class AddAssetFormState {
     if (isBist100) {
       ticker = bist100Ticker ?? '';
       name = bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
+    } else if (isAbd) {
+      // Sembol Yahoo biçiminde (`BRK.B` → `BRK-B`); ad boşsa katalogdaki
+      // ad, o da yoksa sembol — adsız lot portföyde boş satır olurdu.
+      ticker = isManualPrice ? '' : abdSembolu(tickerText);
+      if (name.isEmpty) name = abdHisseleri[ticker] ?? ticker;
     } else if (isFon && selectedFund != null) {
       ticker = 'TEFAS:${selectedFund!.code}';
       name = selectedFund!.name;
@@ -479,6 +519,7 @@ class AddAssetFormState {
     Object? selectedFund = _keep,
     bool? notesExpanded,
     bool? denendi,
+    bool? abdAcik,
   }) =>
       AddAssetFormState(
         type: type ?? this.type,
@@ -503,6 +544,7 @@ class AddAssetFormState {
             : selectedFund as TefasFund?,
         notesExpanded: notesExpanded ?? this.notesExpanded,
         denendi: denendi ?? this.denendi,
+        abdAcik: abdAcik ?? this.abdAcik,
       );
 }
 
@@ -551,6 +593,7 @@ class AddAssetFormNotifier
       prefillTicker: arg.prefillTicker,
       prefillType: arg.prefillType,
       prefillDate: arg.prefillDate,
+      abdAcik: RemoteConfigService.instance.abdHisse,
     );
   }
 
@@ -566,7 +609,12 @@ class AddAssetFormNotifier
   void kayitDenendi() {
     if (!state.denendi) _set(state.copyWith(denendi: true));
   }
-  void setCurrency(String v) => _set(state.copyWith(currency: v));
+  /// ABD hissesinde para birimi USD'ye kilitli: kotasyon dolardır, başka
+  /// para birimiyle kayıt fiyatı yanlış ölçekte çevirirdi.
+  void setCurrency(String v) {
+    if (state.isAbd && v != 'USD') return;
+    _set(state.copyWith(currency: v));
+  }
   void setDate(DateTime v) => _set(state.copyWith(addedDate: v));
   void setManualPrice(bool v) => _set(state.copyWith(isManualPrice: v));
   void toggleNotes() =>
@@ -591,6 +639,12 @@ class AddAssetFormNotifier
   /// Serbest sembol alanına yazıldı: BIST100 seçimi düşer, alt kategori
   /// "Diğer Hisseler" olur. Alan boşaldıysa fiyat elle girilecek demektir.
   void tickerTyped(String v) {
+    if (state.isAbd) {
+      // ABD pazarında serbest sembol pazarı değiştirmez; alt kategori
+      // `'abd'`, para birimi USD kalır.
+      _set(state.copyWith(isManualPrice: v.isEmpty));
+      return;
+    }
     if (v.isNotEmpty) {
       _set(state.copyWith(
         bist100Ticker: null,
@@ -627,6 +681,31 @@ class AddAssetFormNotifier
       ticker: ticker,
       name: bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', ''),
     );
+  }
+
+  /// Hisse pazarı seçimi (bayrak `abd_hisse`): BIST ↔ ABD. Seçili hisse,
+  /// sembol ve ad temizlenir — BIST sembolü ABD pazarında (ya da tersi)
+  /// fiyatsız/yanlış ölçekli lot üretirdi. ABD: alt kategori `'abd'`, para
+  /// birimi USD. BIST: hisse türünün açılış hâli (alt kategori yok, TRY).
+  AlanYazimi selectHisseBorsasi({required bool abd}) {
+    // Bayrak kapalıyken segment hiç çizilmez; yine de çağrılırsa durum
+    // değişmez (eski form ABD bilmez).
+    if (!state.abdAcik || abd == state.isAbd) return AlanYazimi.yok;
+    _set(state.copyWith(
+      subCategory: abd ? StockSubCategory.abd.name : null,
+      currency: abd ? 'USD' : AssetType.hisse.defaultCurrency,
+      bist100Ticker: null,
+      isManualPrice: false,
+      previewPrice: null,
+    ));
+    return const AlanYazimi(ticker: '', name: '');
+  }
+
+  /// ABD kataloğundan seçim. Sembol alana yazılır ([resolveIdentity] onu
+  /// okur); elle fiyat bayrağı [selectBist100]'deki gerekçeyle iner.
+  AlanYazimi selectAbdHisse(String ticker) {
+    _set(state.copyWith(isManualPrice: false));
+    return AlanYazimi(ticker: ticker, name: abdHisseleri[ticker] ?? ticker);
   }
 
   /// [priceEmpty]: fon fiyatı yalnızca alış fiyatı boşsa doldurulur —

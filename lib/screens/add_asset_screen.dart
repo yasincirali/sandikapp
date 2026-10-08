@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+import '../models/abd_hisseleri.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/asset_categories.dart';
@@ -24,6 +25,7 @@ import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../widgets/h_scroll_with_fade.dart';
+import '../widgets/sandik_segment.dart';
 import 'paywall_screen.dart';
 import 'bulk_add_asset_screen.dart';
 import 'csv_import_screen.dart';
@@ -606,10 +608,23 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   //
   // BIST100 seçilirse subCategory = "BIST 100 Hisseleri" yazılır (data korunur).
   // Manuel sembol → subCategory = "Diğer Hisseler".
+  //
+  // ABD (bayrak `abd_hisse`, 2026-10-08): üstte "BIST | ABD" pazar seçimi;
+  // ABD'de seçici `abdHisseleri` kataloğunu açar, serbest sembol Yahoo
+  // biçimine çevrilir (`abdSembolu`). Bayrak kapalıyken segment hiç
+  // kurulmaz ve blok birebir eski.
   Widget _stockIdentityBlock(ColorScheme cs, {required bool hata}) {
+    final abd = _s.isAbd;
     return Column(
       children: [
-        _bist100SelectorField(cs, hata: hata),
+        if (_s.abdAcik) ...[
+          _hissePazariSecici(),
+          const SizedBox(height: SandikSpace.sm2),
+        ],
+        if (abd)
+          _abdSelectorField(cs, hata: hata)
+        else
+          _bist100SelectorField(cs, hata: hata),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -638,7 +653,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         const SizedBox(height: 8),
         _brandInput(
           controller: _ticker,
-          hint: context.l10n.symbolHint,
+          hint: abd ? context.l10n.usSymbolHint : context.l10n.symbolHint,
           textCapitalization: TextCapitalization.characters,
           autocorrect: false,
           onChanged: (v) {
@@ -897,6 +912,17 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   }
 
   Widget _inlineCurrencyPicker() {
+    // ABD hissesi USD'ye kilitli (`AddAssetFormNotifier.setCurrency`):
+    // açılır liste yerine sabit "USD" — seçenek sunup reddetmek kafa
+    // karıştırırdı.
+    if (_s.isAbd) {
+      return Tooltip(
+        message: context.l10n.usStockCurrencyLocked,
+        child: Text('USD',
+            style: context.t.titleSmall?.copyWith(
+                color: context.c.text58, fontWeight: FontWeight.w700)),
+      );
+    }
     // `DropdownButton` içeride kendi `Row`'unu kurar ve o Row daralamaz;
     // 320pt × 3.0× ölçekte 10px taşıyordu. İçerik üç harflik bir para
     // birimi kodu ("TRY") olduğu için ölçeği sınırlamak burada güvenli:
@@ -1712,6 +1738,72 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     );
   }
 
+  // ── Hisse pazarı: BIST | ABD (bayrak `abd_hisse`) ───────────────────────────
+  //
+  // Ortak `SandikSegment`: uygulamadaki öteki "birini seç" kontrolleriyle
+  // aynı davranış (kayan zemin, 44 pt dokunma hedefi, hareketi azalt).
+  Widget _hissePazariSecici() {
+    final etiketler = [
+      context.l10n.stockMarketBist,
+      context.l10n.stockMarketUs,
+    ];
+    return SandikSegment(
+      adet: 2,
+      secili: _s.isAbd ? 1 : 0,
+      onSec: (i) {
+        _yaz(_n.selectHisseBorsasi(abd: i == 1));
+        _schedulePricePreview();
+      },
+      semantik: (i) => context.l10n.stockMarketSemantics(etiketler[i]),
+      oge: (context, i, _) => Text(etiketler[i], maxLines: 1),
+    );
+  }
+
+  /// ABD seçicisi — BIST seçicisiyle aynı alan, aynı alt sayfa düzeni.
+  /// Seçili hisse ayrı durumda tutulmaz: kimlik sembol alanıdır
+  /// ([AddAssetFormState.resolveIdentity]), seçici yalnız onu doldurur.
+  Widget _abdSelectorField(ColorScheme cs, {required bool hata}) {
+    final ticker = abdSembolu(_ticker.text);
+    final ad = abdHisseleri[ticker];
+    return Semantics(
+      button: true,
+      label: ad == null
+          ? context.l10n.pickUsStock
+          : context.l10n.selectedUsStockSemantics(ad),
+      child: SandikBasma(
+        onTap: _showAbdPicker,
+        child: _selectorContainer(
+          cs: cs,
+          hasValue: ad != null,
+          hasError: hata,
+          badgeText: ad == null ? null : ticker,
+          mainText: ad ?? context.l10n.pickUsStockTap,
+          color: AssetType.hisse.color,
+        ),
+      ),
+    );
+  }
+
+  void _showAbdPicker() {
+    _klavyeyiKapat();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => _AbdPicker(
+        selected: abdSembolu(_ticker.text),
+        onSelect: (ticker) {
+          _yaz(_n.selectAbdHisse(ticker));
+          _schedulePricePreview();
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
   // ── BIST100 seçici ─────────────────────────────────────────────────────────
 
   Widget _bist100SelectorField(ColorScheme cs, {required bool hata}) {
@@ -2515,6 +2607,78 @@ class _Bist100PickerState extends State<_Bist100Picker> {
                   cs: cs,
                   onTap: () => widget.onSelect(e.key),
                   kimlik: VarlikKimligi.hisse(e.key, e.value),
+                );
+              },
+            ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ABD hisse seçici (bayrak `abd_hisse`) — BIST seçicisinin eşi
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AbdPicker extends StatefulWidget {
+  final String? selected;
+  final void Function(String ticker) onSelect;
+  const _AbdPicker({required this.selected, required this.onSelect});
+
+  @override
+  State<_AbdPicker> createState() => _AbdPickerState();
+}
+
+class _AbdPickerState extends State<_AbdPicker> {
+  final _ctrl = TextEditingController();
+  String _q = '';
+
+  /// BIST seçicisiyle aynı kural (ad sırası, ad/sembol içinde arama). Sembol
+  /// sorgusu da Yahoo biçimine çevrilir: "brk.b" `BRK-B`'yi bulur.
+  List<MapEntry<String, String>> get _filtered {
+    final all = abdHisseleri.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    if (_q.isEmpty) return all;
+    final q = _q.toLowerCase();
+    final sembol = abdSembolu(_q).toLowerCase();
+    return all
+        .where((e) =>
+            e.value.toLowerCase().contains(q) ||
+            e.key.toLowerCase().contains(sembol))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final filtered = _filtered;
+    return _PickerShell(
+      title: context.l10n.usStocks,
+      count: filtered.length,
+      color: AssetType.hisse.color,
+      searchCtrl: _ctrl,
+      onSearch: (v) => setState(() => _q = v),
+      query: _q,
+      cs: cs,
+      child: filtered.isEmpty
+          ? _emptySearch(context, _q, cs)
+          : ListView.builder(
+              itemCount: filtered.length,
+              itemBuilder: (_, i) {
+                final e = filtered[i];
+                return _PickerRow(
+                  badgeText: e.key.length > 5 ? e.key.substring(0, 4) : e.key,
+                  title: e.value,
+                  subtitle: e.key,
+                  isSelected: e.key == widget.selected,
+                  color: AssetType.hisse.color,
+                  cs: cs,
+                  onTap: () => widget.onSelect(e.key),
+                  kimlik: VarlikKimligi.abdHisse(e.key, e.value),
                 );
               },
             ),
