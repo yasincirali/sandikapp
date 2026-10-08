@@ -1411,6 +1411,7 @@ class SandikCard extends StatelessWidget {
     this.elevated = false,
     this.bordered = true,
     this.radius,
+    this.shadowed = false,
     this.onTap,
   });
 
@@ -1427,6 +1428,16 @@ class SandikCard extends StatelessWidget {
   /// Varsayılan [SandikRadius.md] — kullanımın çoğunluğu bu.
   final double? radius;
 
+  /// Tema gölgesi (`context.c.cardShadow`). Dark'ta liste boştur (yükseklik
+  /// orada `surface2` tonuyla kurulur), light'ta beyaz kartı zeminden ayırır.
+  ///
+  /// Neden parametre (SandikCard ikinci tur, 2026-10-08): gölgeli kartlar
+  /// (ilk varlık vitrini kutuları) kabuğun geri kalanıyla birebir aynıydı;
+  /// tek fark bu satır için `Container`'a dönmek, "kart nasıl görünür"
+  /// kararını yine iki yere bölerdi. Varsayılan kapalı — mevcut çağıranlar
+  /// değişmez.
+  final bool shadowed;
+
   /// Verilirse kart dokunulabilir olur. Dokunma hedefi HIG #37 gereği
   /// en az 44pt olmalı; kart zaten bundan büyüktür.
   final VoidCallback? onTap;
@@ -1439,6 +1450,7 @@ class SandikCard extends StatelessWidget {
         color: elevated ? context.c.surface2 : context.c.surface1,
         borderRadius: BorderRadius.circular(radius ?? SandikRadius.md),
         border: bordered ? Border.all(color: context.c.hairline) : null,
+        boxShadow: shadowed ? context.c.cardShadow : null,
       ),
       child: child,
     );

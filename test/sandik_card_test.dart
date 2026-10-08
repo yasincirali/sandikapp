@@ -96,6 +96,27 @@ void main() {
       expect((box.decoration! as BoxDecoration).border, isNull);
     });
 
+    // `shadowed` 2. turda (2026-10-08) eklendi: varsayılan kapalı kalmalı ki
+    // mevcut ~70 çağıran gölge kazanmasın; açıkken temanın gölgesini taşır.
+    testWidgets('shadowed varsayılan kapalı, açıkken tema gölgesi', (t) async {
+      await pump(t, const SandikCard(child: Text('içerik')));
+      BoxDecoration dec() => t
+          .widget<Container>(find.ancestor(
+              of: find.text('içerik'), matching: find.byType(Container)))
+          .decoration! as BoxDecoration;
+      expect(dec().boxShadow, isNull);
+
+      late List<BoxShadow> beklenen;
+      await pump(
+        t,
+        Builder(builder: (context) {
+          beklenen = context.c.cardShadow;
+          return const SandikCard(shadowed: true, child: Text('içerik'));
+        }),
+      );
+      expect(dec().boxShadow, beklenen);
+    });
+
     testWidgets('onTap verilince dokunulabilir olur', (t) async {
       var tapped = 0;
       await pump(

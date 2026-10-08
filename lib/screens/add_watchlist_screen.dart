@@ -518,74 +518,73 @@ class _SatirKutusu extends StatelessWidget {
     final c = kimlik;
     final fiyat = aramaFiyatMetni(c, kotasyon);
     final pct = aramaGunlukYuzde(c, kotasyon);
-    return Container(
+    // Kabuk `SandikCard` (2. tur, 2026-10-08) — piksel aynı; 44pt alt
+    // sınır kartın dışından verilir (eski `Container.constraints`).
+    return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: SandikTouch.min),
-      padding: const EdgeInsets.only(left: SandikSpace.smd),
-      decoration: BoxDecoration(
-        color: context.c.surface1,
-        borderRadius: BorderRadius.circular(SandikRadius.md),
-        border: Border.all(color: context.c.hairline),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: SandikSpace.sm,
-            height: SandikSpace.sm,
-            decoration:
-                BoxDecoration(color: c.type.color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: SandikSpace.sm2),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(c.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.t.bodyMedium
-                          ?.copyWith(color: context.c.text90)),
-                  Text(
-                      [
-                        if (aramaSembolEtiketi(c) case final e?) e,
-                        c.type.labelOf(context.l10n),
-                      ].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.t.labelSmall
-                          ?.copyWith(color: context.c.text36)),
-                ],
-              ),
+      child: SandikCard(
+        padding: const EdgeInsets.only(left: SandikSpace.smd),
+        child: Row(
+          children: [
+            Container(
+              width: SandikSpace.sm,
+              height: SandikSpace.sm,
+              decoration:
+                  BoxDecoration(color: c.type.color, shape: BoxShape.circle),
             ),
-          ),
-          if (fiyat != null)
-            Padding(
-              padding: const EdgeInsets.only(left: SandikSpace.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(fiyat,
-                      maxLines: 1,
-                      style: context.t.bodySmall?.copyWith(
-                          color: context.c.text90,
-                          fontFeatures: const [FontFeature.tabularFigures()])),
-                  if (pct != null)
-                    Text(fmtPctIsaretli(pct),
+            const SizedBox(width: SandikSpace.sm2),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(c.name,
                         maxLines: 1,
-                        style: context.t.labelSmall?.copyWith(
-                            color: pct.abs() < 0.005
-                                ? context.c.text36
-                                : context.signColor(pct),
-                            fontFeatures: const [
-                              FontFeature.tabularFigures()
-                            ])),
-                ],
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.bodyMedium
+                            ?.copyWith(color: context.c.text90)),
+                    Text(
+                        [
+                          if (aramaSembolEtiketi(c) case final e?) e,
+                          c.type.labelOf(context.l10n),
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.t.labelSmall
+                            ?.copyWith(color: context.c.text36)),
+                  ],
+                ),
               ),
             ),
-          const SizedBox(width: SandikSpace.xs),
-          sonu,
-        ],
+            if (fiyat != null)
+              Padding(
+                padding: const EdgeInsets.only(left: SandikSpace.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(fiyat,
+                        maxLines: 1,
+                        style: context.t.bodySmall?.copyWith(
+                            color: context.c.text90,
+                            fontFeatures: const [FontFeature.tabularFigures()])),
+                    if (pct != null)
+                      Text(fmtPctIsaretli(pct),
+                          maxLines: 1,
+                          style: context.t.labelSmall?.copyWith(
+                              color: pct.abs() < 0.005
+                                  ? context.c.text36
+                                  : context.signColor(pct),
+                              fontFeatures: const [
+                                FontFeature.tabularFigures()
+                              ])),
+                  ],
+                ),
+              ),
+            const SizedBox(width: SandikSpace.xs),
+            sonu,
+          ],
+        ),
       ),
     );
   }

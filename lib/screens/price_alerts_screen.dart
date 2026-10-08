@@ -190,13 +190,11 @@ class _AlarmSatiri extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.c;
     final tetiklendi = alarm.triggeredAt != null;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: c.surface1,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.text20.withValues(alpha: 0.22)),
-      ),
+    // Düz kart: kenar `text20 %22` idi, kartlar arası tek kenar dili
+    // saç teli olsun diye `SandikCard`'a geçti (SandikCard 2. tur, 2026-10-08).
+    return SandikCard(
+      padding: const EdgeInsets.symmetric(
+          horizontal: SandikSpace.md2, vertical: SandikSpace.smd),
       child: Row(
         children: [
           // Yön RENKLE anlatılmaz — ok her zaman var.

@@ -957,28 +957,25 @@ class _PushDiagnosticsScreenState extends State<PushDiagnosticsScreen> {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.8)),
           const SizedBox(height: 8),
-          Container(
+          SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: context.c.surface1,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              border: Border.all(color: context.c.hairline),
+            child: SandikCard(
+              padding: const EdgeInsets.all(SandikSpace.smd),
+              child: bosMesaj != null
+                  ? Text(bosMesaj,
+                      style: TextStyle(
+                          color: context.c.text36,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic))
+                  : SelectableText(
+                      satirlar.join('\n'),
+                      style: TextStyle(
+                          color: context.c.text58,
+                          fontSize: 11.5,
+                          height: 1.5,
+                          fontFamily: 'monospace'),
+                    ),
             ),
-            child: bosMesaj != null
-                ? Text(bosMesaj,
-                    style: TextStyle(
-                        color: context.c.text36,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic))
-                : SelectableText(
-                    satirlar.join('\n'),
-                    style: TextStyle(
-                        color: context.c.text58,
-                        fontSize: 11.5,
-                        height: 1.5,
-                        fontFamily: 'monospace'),
-                  ),
           ),
         ],
       ),
