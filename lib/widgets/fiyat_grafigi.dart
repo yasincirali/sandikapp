@@ -34,6 +34,8 @@ class FiyatGrafigi extends StatelessWidget {
     required this.bicim,
     required this.semanticLabel,
     this.height = GrafikStili.grafikYuksekligi,
+    this.imlecEtiketi,
+    this.ucTitresimi = false,
   });
 
   /// `epoch ms → fiyat`.
@@ -49,6 +51,14 @@ class FiyatGrafigi extends StatelessWidget {
 
   final String semanticLabel;
   final double height;
+
+  /// Bkz. [ZoomableChart.imlecEtiketi]. Varlık sayfası bayrak `goz_alici`
+  /// açıkken verir: büyük fiyat parmağı izler.
+  final ValueNotifier<(String, String)?>? imlecEtiketi;
+
+  /// `true` → imleç dönemin zirvesine ve dibine oturunca hafif titreşim
+  /// (bayrak `goz_alici`; bkz. [ZoomableChart.titresimNoktalari]).
+  final bool ucTitresimi;
 
   /// Eksen bantları ortak grafik stilinden — `rightTitles.reservedSize`
   /// ile [ZoomableChart.plotPaddingRight] aynı (crosshair banda girmez).
@@ -89,6 +99,8 @@ class FiyatGrafigi extends StatelessWidget {
       fullMaxX: eksenX.max + (eksenX.max - eksenX.min) * 0.04,
       bottomAxisHeight: _altEksenYuksekligi,
       plotPaddingRight: _yEkseniGenisligi,
+      imlecEtiketi: imlecEtiketi,
+      titresimNoktalari: ucTitresimi ? donemUclariX(spots) : const {},
       crosshairSnapX: (x) {
         // Clamp EKSENE, seriye değil — seans dışı saatler ölü bölge olmasın
         // (bkz. PercentComparisonChart.crosshairSnapX).
@@ -273,4 +285,17 @@ class FiyatGrafigi extends StatelessWidget {
     }
     return tam.sublist(bas, son + 1);
   }
+}
+
+/// Serinin en yüksek ve en düşük noktasının X'i (ilk rastlanan). Düz ya da
+/// tek noktalı seride tek X döner; boş seride boş küme.
+Set<double> donemUclariX(List<FlSpot> spots) {
+  if (spots.isEmpty) return const {};
+  var ust = spots.first;
+  var alt = spots.first;
+  for (final s in spots) {
+    if (s.y > ust.y) ust = s;
+    if (s.y < alt.y) alt = s;
+  }
+  return {ust.x, alt.x};
 }

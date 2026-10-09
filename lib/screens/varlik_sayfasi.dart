@@ -13,6 +13,7 @@ import '../providers/watchlist_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/history_service.dart';
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../services/remote_config_service.dart';
 import '../services/son_bakilanlar.dart';
 import '../services/varlik_istatistik.dart';
 import '../theme/sandik.dart';
@@ -223,9 +224,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     }
   }
 
+  /// Grafikteki imlecin `(fiyat, tarih)`ı — büyük fiyat parmağı izlesin
+  /// diye (bayrak `goz_alici`; kapalıyken kimse dinlemez, yazılmaz).
+  final _imlec = ValueNotifier<(String, String)?>(null);
+
   @override
   void dispose() {
     _sayfa.dispose();
+    _imlec.dispose();
     super.dispose();
   }
 
@@ -563,6 +569,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     return VarlikFiyatBlogu(
       etiket: context.l10n.currentPriceUpper,
       kimlik: widget.kimlik.key,
+      imlec: RemoteConfigService.instance.gozAlici ? _imlec : null,
       fiyat: ist == null ? '—' : bicim.format(ist.son),
       fiyatRengi: context.c.text90,
       degisim: donemDegisimSatiri(
@@ -615,6 +622,8 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
         seri: seri,
         periodDays: cizilen!,
         bicim: bicim,
+        imlecEtiketi: RemoteConfigService.instance.gozAlici ? _imlec : null,
+        ucTitresimi: RemoteConfigService.instance.gozAlici,
         semanticLabel: context.l10n
             .vsChartSemantics(widget.kimlik.name, _donemEtiketi(cizilen)),
       ),

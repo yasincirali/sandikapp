@@ -796,6 +796,41 @@ class _KucukHalka extends StatefulWidget {
 /// kartı uzatıp listeyi yeniden aşağı iterdi.
 const _enCokSatir = 4;
 
+/// Küçük halkanın kutusu (pt).
+const double _halkaCapi = 120;
+
+/// Küçük halkada [konum]un altındaki dilimin türü; ortaya (ya da kutu
+/// dışına) düşen dokunuş → `null`.
+///
+/// Yerleşim `_KucukHalkaRessami`nın dolu hâliyle aynı: tepeden başlar,
+/// saat yönünde, [dilimler] sırasıyla. Halka bandı parmak için cömert
+/// tutulur (çizgi 14pt, kabul bandı iç kenardan bir çizgi kalınlığı daha
+/// içeri): 14pt'lik çizgiye isabet etmek 44pt hedef kuralını karşılamaz.
+AssetType? kucukHalkaDilimi(
+  List<({AssetType tur, double pay})> dilimler,
+  Offset? konum,
+  Size boyut,
+) {
+  if (konum == null || dilimler.isEmpty) return null;
+  final merkez = boyut.center(Offset.zero);
+  final v = konum - merkez;
+  final r = v.distance;
+  final dis = boyut.shortestSide / 2;
+  final ic = dis - _KucukHalkaRessami._seciliKalinlik -
+      _KucukHalkaRessami._kalinlik;
+  if (r < ic || r > dis) return null;
+  // Ekran koordinatında y aşağı: atan2 saat yönünde artar. Tepeye göre aç.
+  var aci = math.atan2(v.dy, v.dx) + math.pi / 2;
+  if (aci < 0) aci += 2 * math.pi;
+  final oran = aci / (2 * math.pi);
+  var birikim = 0.0;
+  for (final d in dilimler) {
+    birikim += d.pay;
+    if (oran < birikim) return d.tur;
+  }
+  return dilimler.last.tur;
+}
+
 class _KucukHalkaState extends State<_KucukHalka>
     with SingleTickerProviderStateMixin {
   /// Dolma süresi: bir durum geçişinden uzun, "akış" ölçeğinde — göz
@@ -805,6 +840,38 @@ class _KucukHalkaState extends State<_KucukHalka>
     duration: SandikMotion.flow + SandikMotion.surface,
   );
   bool _kuruldu = false;
+
+  /// Son parmak inişinin halka içindeki yeri (bayrak `goz_alici`): dokunma
+  /// `SandikBasma`'dan konumsuz gelir; `Listener` jest yarışına girmeden
+  /// konumu saklar.
+  Offset? _sonDokunus;
+
+  /// Halkaya dokunuş. Bayrak kapalıyken birebir eski: büyük halka açılır.
+  ///
+  /// Bayrak `goz_alici` açıkken (göz alıcılık B, 2026-10-09): dilime dokunmak
+  /// o türü seçer (lejant satırıyla AYNI iş, `onTypeSelected`) — dilim
+  /// kalınlaşıp öne çıkar, ortadaki tutar o dilime geçer. Seçili dilime
+  /// ikinci dokunuş ya da ortaya dokunuş büyük halkayı açar. Neden: halka
+  /// dokunulabilir görünüyordu ama hangi dilime basılırsa basılsın aynı alt
+  /// sayfayı açıyordu; parmağın altındaki dilim tepki vermiyordu. Ekran
+  /// okuyucu için düğüm değişmedi ("halkayı aç"); tür seçimi lejantta.
+  void _halkayaDokunuldu() {
+    if (!RemoteConfigService.instance.gozAlici) {
+      widget.onHalka();
+      return;
+    }
+    final d = kucukHalkaDilimi(
+      [for (final x in widget.dilimler) (tur: x.tur, pay: x.pay)],
+      _sonDokunus,
+      const Size.square(_halkaCapi),
+    );
+    if (d == null || d == widget.secili) {
+      widget.onHalka();
+      return;
+    }
+    SandikHaptic.selection.perform();
+    widget.onTypeSelected(d);
+  }
 
   @override
   void didChangeDependencies() {
@@ -855,39 +922,59 @@ class _KucukHalkaState extends State<_KucukHalka>
             button: true,
             label: l10n.s3HalkayiAc,
             child: SandikBasma(
-              onTap: widget.onHalka,
-              child: SizedBox.square(
-                dimension: 120,
-                child: ExcludeSemantics(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Positioned.fill(
-                        child: RepaintBoundary(
-                          child: AnimatedBuilder(
-                            animation: _dolum,
-                            builder: (context, _) => CustomPaint(
-                              painter: _KucukHalkaRessami(
-                                dilimler: dilimler,
-                                secili: secili,
-                                ilerleme: SandikMotion.glide
-                                    .transform(_dolum.value),
-                                iz: context.c.overlay,
+              onTap: _halkayaDokunuldu,
+              child: Listener(
+                onPointerDown: (e) => _sonDokunus = e.localPosition,
+                child: SizedBox.square(
+                  dimension: _halkaCapi,
+                  child: ExcludeSemantics(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned.fill(
+                          child: RepaintBoundary(
+                            child: AnimatedBuilder(
+                              animation: _dolum,
+                              builder: (context, _) =>
+                                  // Bayrak `goz_alici`: seçilen dilim bir anda
+                                  // değil, `state` süresinde kalınlaşır;
+                                  // ötekiler aynı sürede söner. Kapalıyken
+                                  // `secim` hep 1 → birebir eski çizim.
+                                  TweenAnimationBuilder<double>(
+                                key: ValueKey(secili),
+                                tween: Tween(
+                                    begin: RemoteConfigService
+                                            .instance.gozAlici
+                                        ? 0
+                                        : 1,
+                                    end: 1),
+                                duration: SandikMotion.stateOf(context),
+                                curve: SandikMotion.enter,
+                                builder: (context, secim, _) => CustomPaint(
+                                  painter: _KucukHalkaRessami(
+                                    dilimler: dilimler,
+                                    secili: secili,
+                                    ilerleme: SandikMotion.glide
+                                        .transform(_dolum.value),
+                                    iz: context.c.overlay,
+                                    secim: secim,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(SandikSpace.lg),
-                        child: AnimatedSwitcher(
-                          duration: SandikMotion.stateOf(context),
-                          switchInCurve: SandikMotion.enter,
-                          switchOutCurve: SandikMotion.exit,
-                          child: _merkez(context, seciliDilim, toplam),
+                        Padding(
+                          padding: const EdgeInsets.all(SandikSpace.lg),
+                          child: AnimatedSwitcher(
+                            duration: SandikMotion.stateOf(context),
+                            switchInCurve: SandikMotion.enter,
+                            switchOutCurve: SandikMotion.exit,
+                            child: _merkez(context, seciliDilim, toplam),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1056,12 +1143,17 @@ class _KucukHalkaRessami extends CustomPainter {
     required this.secili,
     required this.ilerleme,
     required this.iz,
+    this.secim = 1,
   });
 
   final List<({AssetType tur, double tutar, double pay})> dilimler;
   final AssetType? secili;
   final double ilerleme;
   final Color iz;
+
+  /// Seçim geçişinin ilerlemesi 0→1: seçili dilim [_kalinlik]'tan
+  /// [_seciliKalinlik]'a kalınlaşır, ötekiler tam renkten 0,3'e söner.
+  final double secim;
 
   static const _kalinlik = 14.0;
   static const _seciliKalinlik = 19.0;
@@ -1104,9 +1196,11 @@ class _KucukHalkaRessami extends CustomPainter {
           false,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = secildi ? _seciliKalinlik : _kalinlik
-            ..color = d.tur.color
-                .withValues(alpha: secili == null || secildi ? 1 : 0.3),
+            ..strokeWidth = secildi
+                ? _kalinlik + (_seciliKalinlik - _kalinlik) * secim
+                : _kalinlik
+            ..color = d.tur.color.withValues(
+                alpha: secili == null || secildi ? 1 : 1 - 0.7 * secim),
         );
       }
       bas += aci;
@@ -1118,6 +1212,7 @@ class _KucukHalkaRessami extends CustomPainter {
   bool shouldRepaint(_KucukHalkaRessami eski) =>
       eski.ilerleme != ilerleme ||
       eski.secili != secili ||
+      eski.secim != secim ||
       eski.iz != iz ||
       !listEquals(
           [for (final d in eski.dilimler) (d.tur, d.pay)],

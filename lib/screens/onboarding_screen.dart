@@ -550,7 +550,16 @@ List<_Adim> _adimlariKur() {
       // halka + lejanta bırakır (büyük halka küçüğe dokununca alt sayfada);
       // metin hangi yüzey görünüyorsa onu anlatır. Kapalıyken eski metin
       // birebir.
-      govde: RemoteConfigService.instance.portfoyDagilimCubugu
+      // Bayrak `goz_alici` (2026-10-09): halkada dilime dokunmak o türü
+      // seçer, seçili dilime ya da ortaya dokunmak büyütür.
+      govde: RemoteConfigService.instance.portfoyDagilimCubugu &&
+              RemoteConfigService.instance.gozAlici
+          ? 'Varlıklarının listesi ve tür dağılımı burada; halkadaki bir '
+              'dilime ya da yandaki türe dokununca liste o türe süzülür, '
+              'halkanın ortasına dokununca büyür. Bir varlığa dokununca '
+              'detayına inersin; alış, satış ve temettüyü oradaki alt '
+              'çubuktan kaydedersin.'
+          : RemoteConfigService.instance.portfoyDagilimCubugu
           ? 'Varlıklarının listesi ve tür dağılımı burada; yandaki bir türe '
               'dokununca liste o türe süzülür, halkaya dokununca büyür. Bir '
               'varlığa dokununca '

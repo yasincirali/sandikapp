@@ -22,6 +22,19 @@ kartına dokunulmadı.
       `portfoy_dagilim_cubugu` da açık olmalı.
 - [ ] TestFlight'ta dene: piyasa açıkken bir hisse sayfasında fiyat yenilenince
       yalnız değişen hane dönmeli; iOS'ta "Hareketi azalt" açıkken dönmemeli.
+- 2026-10-09 B paketi + rozet yayılımı aynı bayrağa eklendi (yeni bayrak
+  YOK). Açıkken ek olarak:
+  - [ ] Takip listesi, genel arama ve "takibe al" arama satırlarında da
+        sembol rozeti (tür noktasının yerine).
+  - [ ] Varlık sayfası (aramadan/takipten açılan): grafikte parmağı basılı
+        gezdirince büyük fiyat o noktanın fiyatını, altındaki satır tarihini
+        yazar; bırakınca güncel fiyata döner. Dönemin zirvesine ve dibine
+        gelince hafif titreşim.
+  - [ ] Fiyatın arkasında dönem yönünün renginde çok hafif hare (düz dönemde
+        yok).
+  - [ ] Portföy küçük halkası: dilime dokununca o tür seçilir (liste süzülür),
+        seçili dilime ya da ortaya dokununca büyük halka açılır. Tur metni
+        buna göre değişir.
 
 ## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 

@@ -26,6 +26,7 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_katla.dart';
+import '../widgets/varlik_rozeti.dart';
 import '../widgets/sandik_async_button.dart';
 import 'paywall_screen.dart';
 import 'varlik_sayfasi.dart';
@@ -536,12 +537,8 @@ class AramaSatirKutusu extends StatelessWidget {
         padding: const EdgeInsets.only(left: SandikSpace.smd),
         child: Row(
           children: [
-            Container(
-              width: SandikSpace.sm,
-              height: SandikSpace.sm,
-              decoration:
-                  BoxDecoration(color: c.type.color, shape: BoxShape.circle),
-            ),
+            // Bayrak `goz_alici`: sembol rozeti; kapalıyken tür noktası.
+            VarlikRozeti(type: c.type, ticker: c.ticker),
             const SizedBox(width: SandikSpace.sm2),
             Expanded(
               child: Padding(
