@@ -106,11 +106,11 @@ void main() {
           isFalse);
     });
 
-    test('ücretsiz sınırlar: 7 varlık, paywall açıkken 3 takip', () {
-      expect(RemoteConfigService.instance.freeAssetLimit, 7);
+    test('ücretsiz sınırlar: 10 varlık, paywall açıkken 5 takip', () {
+      expect(RemoteConfigService.instance.freeAssetLimit, 10);
       expect(RemoteConfigService.instance.freeSignalAssets, 1);
-      expect(kap(paywall: true).read(assetLimitProvider), 7);
-      expect(kap(paywall: true).read(watchlistLimitProvider), 3);
+      expect(kap(paywall: true).read(assetLimitProvider), 10);
+      expect(kap(paywall: true).read(watchlistLimitProvider), 5);
       // Paywall kapalı canlı kullanıcı 7'de kalır (ana kural).
       expect(kap(paywall: false).read(watchlistLimitProvider), 7);
       expect(kap(paywall: false).read(assetLimitProvider), greaterThan(1000));

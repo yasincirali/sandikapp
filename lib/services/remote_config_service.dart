@@ -40,10 +40,13 @@ class RemoteConfigService {
     'premium_enabled': true,
 
     // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
-    // eklemeyi 7 varlık yapalım … premium istemeli"): 8. varlık paywall'u
-    // açar. Yalnız `paywall_enabled` açıkken; var olan varlıklar silinmez,
-    // yalnız YENİ ekleme durur.
-    'free_asset_limit': 7,
+    // eklemeyi 7 varlık yapalım … premium istemeli"). 7 → 10 (yasin,
+    // 2026-10-09, kıyas sonrası "evet devam et"): Sharesight, Snowball ve
+    // Delta'nın ücretsiz planı 10, Stock Events 15; altın + dolar + euro +
+    // 2 fon + 2 hisse olan tipik sepet 7'yi daha ilk gün dolduruyordu.
+    // 11. varlık paywall'u açar. Yalnız `paywall_enabled` açıkken; var olan
+    // varlıklar silinmez, yalnız YENİ ekleme durur.
+    'free_asset_limit': 10,
 
     // Takip listesi limiti. Portföy limitinden AYRI ve paywall kapalıyken
     // de geçerli (kullanıcı kararı 2026-09-25: "şimdilik 7, ilerde paywall'la
@@ -56,8 +59,10 @@ class RemoteConfigService {
     // "takip listesini 3 yapalım"). Ayrı anahtar: eski build'ler
     // `free_watchlist_limit`'i paywall'dan bağımsız okur; o değeri 3'e
     // çekmek canlıdaki herkesin listesini kısardı. Var olan takipler
-    // silinmez, yalnız yeni ekleme durur.
-    'paywall_watchlist_limit': 3,
+    // silinmez, yalnız yeni ekleme durur. 3 → 5 (yasin, 2026-10-09): takip
+    // ürüne giriş kapısı; paywall açılınca 7'den 3'e inmek canlı kullanıcıya
+    // geri adım gibi okunuyordu, 5 aradaki denge.
+    'paywall_watchlist_limit': 5,
 
     // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
     // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
