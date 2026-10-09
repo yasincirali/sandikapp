@@ -10,9 +10,6 @@ name: Kaynak ölçümü (ABD / eurobond)
 # gitmesi gereksiz.
 on:
   workflow_dispatch:
-  push:
-    branches: [claude/project-thread-cwtgkn]
-    paths: [tool/mevduat_kaynak_olcum.py, .github/workflows/kaynak-olcum.yml]
 
 permissions:
   contents: read
@@ -27,10 +24,4 @@ jobs:
         with:
           deno-version: v2.x
       - name: Eurobond ayrıştırıcıları canlı kaynakta
-        if: ${{ !startsWith(github.ref_name, 'claude/project-thread-cwtgkn') }}
         run: deno run --allow-net tool/eurobond_canli.ts
-      - name: Mevduat banka/faiz kaynakları
-        if: ${{ startsWith(github.ref_name, 'claude/project-thread-cwtgkn') }}
-        run: |
-          pip install -q pandas openpyxl xlrd pypdf
-          python tool/mevduat_kaynak_olcum.py
