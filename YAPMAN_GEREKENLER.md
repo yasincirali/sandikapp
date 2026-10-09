@@ -8,6 +8,27 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-09 Sıralama asgari süresi ayarlanabilir + edinme tarihinden (0128)
+
+Senin kararın: "30 günü parametrik yapalım, 30 gün ilk varlığın edinme
+tarihinden sayılsın". Neden: Zirve havuzu 4'te kalıyordu; rıza veren 6
+kişinin 2'si yalnız bu şarta takılıyordu (biri geçmişini içe aktarmıştı,
+sayaç uygulamaya giriş gününden başlıyordu).
+
+- Süre `siralama_ayar` tablosunda (varsayılan 30). Değiştirmek için SQL
+  Editor'da iki sunucuda da (ya da yeni migration):
+  `update public.siralama_ayar set asgari_olcum_gun = 14, guncellendi = now();`
+  Sunucu bir sonraki snapshot'ta, uygulama bir sonraki açılışta okur.
+- Sayaç ilk varlığın edinme tarihinden (`added_date`) başlar. Getiri hâlâ
+  hile kuralıyla ölçülür: 3 günden eski tarihli girilen kaydın getirisi
+  girildiği günden sayılır (dipten kazanç yazılmaz). Yani içe aktaran
+  kullanıcı hemen sıralamaya girer ama ilk günlerde kısa bir dönemle
+  ölçülür.
+- Kapsam: Zirve, genel yüzdelik ve ortaklar arası Yarış aynı süreyi kullanır.
+- Eski sürüm: RPC'yi bilmeyen build 30 günle devam eder; sunucu tablo
+  yoksa 30'a düşer. Sıra: önce 0128, sonra `leaderboard-snapshot`.
+- [ ] Dağıtım (Claude, birleşince): 0128 + `leaderboard-snapshot`, iki sunucu.
+
 ## ⏳ 2026-10-09 Göz alıcılık paketi A: varlık rozeti + akan rakam (dal `claude/project-thread-a743z9`)
 
 Rapor: "sandık Cazibe Raporu" (https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU),

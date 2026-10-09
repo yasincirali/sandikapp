@@ -65,11 +65,9 @@ void main() {
   group('senaryo (sunucuyla aynı sayılar)', () {
     test('Ayşe, Burak, Cem: para zamanlaması sonucu değiştirmez (%20)', () {
       expect(_twr([_hareket('X.IS', 0, 100000)]), closeTo(20, 1e-9));
-      expect(
-          _twr([_hareket('X.IS', 0, 100000), _hareket('X.IS', 6, 100000)]),
+      expect(_twr([_hareket('X.IS', 0, 100000), _hareket('X.IS', 6, 100000)]),
           closeTo(20, 1e-9));
-      expect(
-          _twr([_hareket('X.IS', 0, 100000), _hareket('X.IS', 3, 100000)]),
+      expect(_twr([_hareket('X.IS', 0, 100000), _hareket('X.IS', 3, 100000)]),
           closeTo(20, 1e-9));
     });
 
@@ -95,16 +93,17 @@ void main() {
         _hareket('Y.IS', 0, 10000),
         _hareket('X.IS', 11, 200000),
       ])!;
-      final bekl = (1.05 *
-                  ((100 * 105 + (200000 / 118) * 120) / (100 * 105 + 200000)) -
-              1) *
-          100;
+      final bekl =
+          (1.05 * ((100 * 105 + (200000 / 118) * 120) / (100 * 105 + 200000)) -
+                  1) *
+              100;
       expect(v, closeTo(bekl, 1e-9));
       expect(v, closeTo(6.69, 0.01));
     });
 
     test('Gül: Ay 12\'de girilen "Ay 6" alımı girildiği an sayılır', () {
-      // Giriş bugün → ilk alım bugün → 30 günlük asgari ölçüm yok.
+      // Edinme Ay 6 → süre kapısı açık (2026-10-09); ama getiri giriş
+      // anından (bugün) ölçülür → ölçülecek gün yok.
       expect(_twr([_hareket('X.IS', 6, 100000, girisAyi: 12)]), isNull);
       // Eski bir hesaba eklenen geriye tarihli dip alımı sonucu değiştirmez.
       expect(
@@ -120,7 +119,7 @@ void main() {
     test('ortaklar kapsamı beyan edilen tarihe güvenir (kullanıcı kararı)', () {
       // İçe aktarılan geçmiş: Ay 12'de girilen Ay 6 alımı. Ortaklar arası
       // Yarış'ta beyan geçerli (%50, dipten beri); anonimde girildiği an
-      // sayılır ve 30 günlük ölçüm olmadığı için sıralamada yok.
+      // sayılır; girişten bu yana ölçülecek gün olmadığı için yok.
       final ice = [_hareket('X.IS', 6, 100000, girisAyi: 12)];
       expect(_twr(ice, kapsam: SiralamaKapsami.ortaklar), closeTo(50, 1e-9));
       expect(_twr(ice, kapsam: SiralamaKapsami.anonim), isNull);
@@ -141,12 +140,11 @@ void main() {
             purchasePrice: 1,
             currency: 'TRY',
             notes: '',
-            addedDate: DateTime.fromMillisecondsSinceEpoch(
-                _now - eklenmeGun * _gunMs),
+            addedDate:
+                DateTime.fromMillisecondsSinceEpoch(_now - eklenmeGun * _gunMs),
             createdAt: girisGun == null
                 ? null
-                : DateTime.fromMillisecondsSinceEpoch(
-                    _now - girisGun * _gunMs),
+                : DateTime.fromMillisecondsSinceEpoch(_now - girisGun * _gunMs),
           );
       expect(yarisAni(r(2, 0), SiralamaKapsami.anonim), _now - 2 * _gunMs);
       expect(yarisAni(r(3, 0), SiralamaKapsami.anonim), _now - 3 * _gunMs);
@@ -172,6 +170,43 @@ void main() {
           );
       expect(_twr([alim(20)], gun: 7), isNull);
       expect(_twr([alim(31)], gun: 7), closeTo((120 / 118 - 1) * 100, 1e-9));
+    });
+
+    test('asgari süre edinme tarihinden, getiri giriş anından (2026-10-09)',
+        () {
+      // Sunucu eşi: leaderboard_snapshot_test.ts aynı senaryo.
+      Asset ice(int edinmeGunOnce, int girisGunOnce) => Asset(
+            id: 'i$edinmeGunOnce',
+            userId: 'u1',
+            name: 'X',
+            ticker: 'X.IS',
+            type: AssetType.hisse,
+            quantity: 10,
+            purchasePrice: 1,
+            currency: 'TRY',
+            notes: '',
+            addedDate: DateTime.fromMillisecondsSinceEpoch(
+                _now - edinmeGunOnce * _gunMs),
+            createdAt: DateTime.fromMillisecondsSinceEpoch(
+                _now - girisGunOnce * _gunMs),
+          );
+      // 40 gün önce edinilmiş, 10 gün önce girilmiş: kapı açık, getiri
+      // yalnız son 10 günden (118 → 120).
+      expect(
+          _twr([ice(40, 10)], gun: 30), closeTo((120 / 118 - 1) * 100, 1e-9));
+      // Edinme 20 gün önce: 30 günlük kapı kapalı, ayar 14 ise açık.
+      final genc = pozisyonGecmisleri([ice(20, 10)], SiralamaKapsami.anonim);
+      double? olc(int asgari) => secimGetirisiPct(
+            gecmis: genc,
+            birimFiyat: (p, t) => seriDegeriAninda(_piyasa['X.IS']!, t),
+            yedekBirimFiyat: (p) => 0,
+            nowMs: _now,
+            gun: 30,
+            asgariGun: asgari,
+          );
+      expect(olc(30), isNull);
+      expect(olc(14), isNotNull);
+      expect(ilkEdinmeAni(genc), _now - 20 * _gunMs);
     });
 
     test('kapsama: serisi olmayan lot bugünkü değerin %20\'sini aşarsa null',
@@ -259,8 +294,11 @@ void main() {
       final y = _hareket('Y.IS', 0, 100000);
       final defterler = [
         [_hareket('X.IS', 0, 100000)],
-        [y, _hareket('Y.IS', 6, 0, satis: true, miktar: y.quantity),
-          _hareket('X.IS', 6, 110000)],
+        [
+          y,
+          _hareket('Y.IS', 6, 0, satis: true, miktar: y.quantity),
+          _hareket('X.IS', 6, 110000)
+        ],
         [_hareket('X.IS', 11, 1000)],
         [_hareket('Y.IS', 0, 10000), _hareket('X.IS', 11, 200000)],
       ];

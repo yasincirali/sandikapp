@@ -367,7 +367,8 @@ class _RoiInfoSheet extends StatelessWidget {
             _InfoBlock(
               icon: Icons.groups_outlined,
               title: context.l10n.everyoneMeasuredSame,
-              body: context.l10n.everyoneMeasuredSameBody,
+              body: context.l10n
+                  .everyoneMeasuredSameBody(LeaderboardService.instance.asgariGun),
             ),
             const SizedBox(height: 16),
             Container(

@@ -26,7 +26,9 @@
 //     kandırır; buna karşılık geçmişini CSV/ekstreyle dürüstçe içe aktaran
 //     kullanıcı 30 gün beklemeden sıralanır. Hile riski, kimliği bilinmeyen
 //     portföyün herkesin önüne çıktığı anonim yüzeylerdedir.
-//   · En az 30 günlük ölçüm ([asgariOlcumGun]).
+//   · En az 30 gün ([asgariOlcumGun]; gerçek değer sunucudan, 0128) —
+//     ilk varlığın EDİNME tarihinden (`addedDate`) sayılır, girişten değil
+//     (kullanıcı kararı 2026-10-09). Getiri yine yarış anından ölçülür.
 //   · Bugünkü portföyün %80'i fiyatlanamıyorsa sayı yok (uydurma yasağı).
 //
 // ## İki motor, tek kural
@@ -45,8 +47,11 @@ import 'history_service.dart';
 /// yapılmış sayılır. Sunucu eşi `GERI_TARIH_PAYI_GUN`.
 const int geriTarihPayiGun = 3;
 
-/// Sıralamaya girmek için gereken en kısa ölçüm (gün). Sunucu eşi
-/// `ASGARI_OLCUM_GUN`. İlk alımın yarış anından bugüne, dönemden bağımsız.
+/// Sıralamaya girmek için gereken en kısa süre (gün) — VARSAYILAN. Gerçek
+/// değer sunucudaki `siralama_ayar` (0128, `siralama_asgari_olcum_gun`
+/// RPC'si); okunamazsa bu. Sunucu eşi `ASGARI_OLCUM_GUN`. İlk varlığın
+/// edinme tarihinden bugüne, dönemden bağımsız (2026-10-09; önce yarış
+/// anından sayılıyordu, içe aktarılan geçmiş 30 gün bekliyordu).
 const int asgariOlcumGun = 30;
 
 /// Bugünkü değerin bu payı fiyatlanamıyorsa getiri yazılmaz. Sunucu eşi
@@ -85,6 +90,10 @@ class PozisyonGecmisi {
   Asset sablon;
   final List<({int an, double miktar})> hareketler = [];
 
+  /// Pozisyonun ilk alımının EDİNME anı (`addedDate`, epoch ms) — asgari
+  /// süre kapısı bununla sayılır (sunucu eşi `ilkEdinmeAni`).
+  int? ilkEdinme;
+
   /// `an ≤ t` hareketlerin toplamı; en az 0.
   double miktarAninda(int tMs) {
     var q = 0.0;
@@ -114,6 +123,8 @@ List<PozisyonGecmisi> pozisyonGecmisleri(
     g.hareketler.add((an: yarisAni(a, kapsam), miktar: a.isSell ? -q : q));
     if (a.isBuy) {
       final t = a.addedDate.millisecondsSinceEpoch;
+      final e = g.ilkEdinme;
+      if (e == null || t < e) g.ilkEdinme = t;
       final onceki = sablonTarihi[key];
       if (onceki == null || t > onceki) {
         sablonTarihi[key] = t;
@@ -125,6 +136,16 @@ List<PozisyonGecmisi> pozisyonGecmisleri(
     g.hareketler.sort((a, b) => a.an.compareTo(b.an));
   }
   return gruplar.values.toList();
+}
+
+/// Defterdeki ilk varlığın edinme anı; alım yoksa `null`.
+int? ilkEdinmeAni(List<PozisyonGecmisi> gecmis) {
+  int? ilk;
+  for (final p in gecmis) {
+    final e = p.ilkEdinme;
+    if (e != null && (ilk == null || e < ilk)) ilk = e;
+  }
+  return ilk;
 }
 
 /// Ölçüm anları: başlangıç, sonra bugünden geriye tam günler, en sonda
@@ -155,6 +176,7 @@ double? secimGetirisiPct({
   required double Function(PozisyonGecmisi p) yedekBirimFiyat,
   required int nowMs,
   required int gun,
+  int asgariGun = asgariOlcumGun,
 }) =>
     secimGetirisiSerisi(
       gecmis: gecmis,
@@ -162,6 +184,7 @@ double? secimGetirisiPct({
       yedekBirimFiyat: yedekBirimFiyat,
       nowMs: nowMs,
       gun: gun,
+      asgariGun: asgariGun,
     )?.last.pct;
 
 /// Seçimlerinin getirisinin GÜN GÜN birikimi: her ölçüm anında dönem
@@ -183,14 +206,18 @@ List<({int an, double pct})>? secimGetirisiSerisi({
   required double Function(PozisyonGecmisi p) yedekBirimFiyat,
   required int nowMs,
   required int gun,
+  int asgariGun = asgariOlcumGun,
 }) {
+  final edinme = ilkEdinmeAni(gecmis);
+  if (edinme == null || nowMs - edinme < asgariGun * _gunMs) return null;
+  // Ölçümün başladığı an: ilk alımın YARIŞ anı (geriye tarih kuralı).
   var ilk = -1;
   for (final p in gecmis) {
     for (final h in p.hareketler) {
       if (h.miktar > 0 && (ilk < 0 || h.an < ilk)) ilk = h.an;
     }
   }
-  if (ilk < 0 || nowMs - ilk < asgariOlcumGun * _gunMs) return null;
+  if (ilk < 0) return null;
 
   var deger = 0.0;
   var karanlik = 0.0;
@@ -272,8 +299,10 @@ abstract final class SecimGetirisi {
     int gun, {
     required SiralamaKapsami kapsam,
     DateTime? simdi,
+    int asgariGun = asgariOlcumGun,
   }) async =>
-      (await donemSerisi(lotlar, gun, kapsam: kapsam, simdi: simdi))
+      (await donemSerisi(lotlar, gun,
+              kapsam: kapsam, simdi: simdi, asgariGun: asgariGun))
           ?.last
           .pct;
 
@@ -285,23 +314,18 @@ abstract final class SecimGetirisi {
     int gun, {
     required SiralamaKapsami kapsam,
     DateTime? simdi,
+    int asgariGun = asgariOlcumGun,
   }) async {
     final gecmis = pozisyonGecmisleri(lotlar, kapsam);
     if (gecmis.isEmpty) return null;
     final now = simdi ?? DateTime.now();
     final nowMs = now.millisecondsSinceEpoch;
-    // Ağa çıkmadan önce ucuz kapı: ölçüm kısaysa seri çekmeye gerek yok.
-    final ilkAlim = [
-      for (final p in gecmis)
-        for (final h in p.hareketler)
-          if (h.miktar > 0) h.an,
-    ];
-    if (ilkAlim.isEmpty) return null;
-    final ilk = ilkAlim.reduce((a, b) => a < b ? a : b);
-    if (nowMs - ilk < asgariOlcumGun * _gunMs) return null;
+    // Ağa çıkmadan önce ucuz kapı: süre kısaysa seri çekmeye gerek yok.
+    final edinme = ilkEdinmeAni(gecmis);
+    if (edinme == null || nowMs - edinme < asgariGun * _gunMs) return null;
 
-    final bd = await HistoryService.instance
-        .getPortfolioHistoryBreakdownAtResolution(
+    final bd =
+        await HistoryService.instance.getPortfolioHistoryBreakdownAtResolution(
       assets: [for (final p in gecmis) FiyatKaynagi.birimVarlik(p.sablon)],
       from: now.subtract(Duration(days: gun + 1)),
       to: now,
@@ -329,6 +353,7 @@ abstract final class SecimGetirisi {
           p.sablon.currency.toUpperCase() == 'TRY' ? p.sablon.currentPrice : 0,
       nowMs: nowMs,
       gun: gun,
+      asgariGun: asgariGun,
     );
   }
 }

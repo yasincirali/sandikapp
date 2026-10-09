@@ -131,8 +131,8 @@ void main() {
       final servis = _yorumsuz(
           await File('lib/services/leaderboard_service.dart').readAsString());
       expect(
-          servis.contains(
-              'SecimGetirisi.donemPct(assets, periodDays, kapsam: kapsam)'),
+          RegExp(r'SecimGetirisi\.donemPct\(assets, periodDays,\s*kapsam: kapsam')
+              .hasMatch(servis),
           isTrue);
       expect(servis.contains('simulate: true'), isFalse,
           reason: 'simülasyon 0095 ile emekli oldu');
@@ -152,7 +152,9 @@ void main() {
       expect(trMetni('selectedPeriodReturnBody'), contains('günlere bölünür'),
           reason: 'hesabın kendisi kullanıcıya gösterilmeli');
       // Hile kuralları ve sınır dürüstçe belirtilmeli.
-      expect(trMetni('everyoneMeasuredSameBody'), contains('30 günlük'));
+      // Süre sunucudan (0128) — sayı yer tutucuyla, edinme tarihinden.
+      expect(trMetni('everyoneMeasuredSameBody'), contains('en az {gun} gün'));
+      expect(trMetni('everyoneMeasuredSameBody'), contains('edinmenin'));
       expect(trMetni('everyoneMeasuredSameBody'), contains('3 günden fazla'));
       expect(ekran.contains('l10n.rankSwapNote'), isTrue,
           reason: 'yeni katılan sınırı gizlenmemeli');

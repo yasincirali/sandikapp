@@ -131,6 +131,10 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     super.initState();
     _tik.start();
     WidgetsBinding.instance.addPostFrameCallback((_) => _senYenile());
+    // Metinlerdeki asgari süre sunucudan (0128); gelince yeniden çiz.
+    LeaderboardService.instance.asgariGunuGetir().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -926,15 +930,17 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                // 30 gün: seçimlerinin getirisi (TWR, 0095) en az 30 günlük
-                // ölçüm ister; havuzun 5 günlük şartından önce o dolmalı.
-                'Havuzda yalnız katılmayı kabul edenler var; portföyü 30 '
-                'günden eski ve en az 2 farklı varlığı olan katılımcılar '
-                'sayılır. Sıralama seçimlerinin getirisidir: her gün '
+                // Süre sunucudan (0128, varsayılan 30): ilk varlığın edinme
+                // tarihinden sayılır (2026-10-09); havuzun 5 günlük
+                // şartından önce o dolmalı.
+                'Havuzda yalnız katılmayı kabul edenler var; ilk varlığını '
+                'edinmesinin üzerinden en az '
+                '${LeaderboardService.instance.asgariGun} gün geçmiş ve en '
+                'az 2 farklı varlığı olan katılımcılar sayılır. Sıralama seçimlerinin getirisidir: her gün '
                 'tutulan varlıklar piyasa fiyatıyla ölçülür, para ekleme '
                 'zamanı etkilemez. Bugünden 3 günden fazla geriye tarihli '
-                'girilen kayıt (içe aktarılan geçmiş dahil) girildiği gün '
-                'sayılır. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
+                'girilen kaydın (içe aktarılan geçmiş dahil) getirisi '
+                'girildiği günden ölçülür. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
                 'tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
@@ -1105,9 +1111,11 @@ class _PortfoyAyrintisi extends StatelessWidget {
                         'getirini, tür payını ve fonlarının TEFAS kodu ile '
                         'payını görür; kimliğin, tutarın ve diğer varlıkların '
                         'asla görünmez.'
-                    : 'Portföyün henüz havuzda değil: katıldın, ama portföy '
-                        '30 günden eski olmalı ve en az 2 farklı varlık '
-                        'içermeli. Şart sağlanınca anonim olarak girer.')
+                    : 'Portföyün henüz havuzda değil: katıldın, ama ilk '
+                        'varlığını edinmenin üzerinden en az '
+                        '${LeaderboardService.instance.asgariGun} gün geçmeli '
+                        've en az 2 farklı varlık içermeli. Şart sağlanınca '
+                        'anonim olarak girer.')
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '
                     'payı. Fon adları resmi TEFAS listesinden.',
