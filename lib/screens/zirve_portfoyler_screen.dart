@@ -131,6 +131,10 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     super.initState();
     _tik.start();
     WidgetsBinding.instance.addPostFrameCallback((_) => _senYenile());
+    // Metinlerdeki asgari süre sunucudan (0128); gelince yeniden çiz.
+    LeaderboardService.instance.asgariGunuGetir().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -174,9 +178,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       _senFonDetay = servis.computeFonDetay(p.assets, p.toTRY);
       // Zirve anonim: sunucuyla aynı geriye tarih kuralı (`SiralamaKapsami`).
       _senRoi = servis.staleROI(
-          userId: me.id,
-          periodDays: donem.gun,
-          kapsam: SiralamaKapsami.anonim);
+          userId: me.id, periodDays: donem.gun, kapsam: SiralamaKapsami.anonim);
     });
     final sonuc = await Future.wait<Object?>([
       servis.fetchZirveBenim(periodDays: donem.gun),
@@ -223,8 +225,8 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     // kapı; bu ispat kaydı —
     // beklenmez, fırlatmaz. Geri çekme sunucuda aynı işlemde damgalanır.
     CrashReporter.arkaPlan(
-        YasalOnayService.instance.zirveRizasiniKaydet(
-            locale: dil, sonunaKadarOkundu: true),
+        YasalOnayService.instance
+            .zirveRizasiniKaydet(locale: dil, sonunaKadarOkundu: true),
         reason: 'YasalOnayService.zirve');
     if (!mounted) return;
     setState(() {
@@ -302,7 +304,8 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       builder: (context, rizaSnap) {
         if (rizaSnap.connectionState != ConnectionState.done) {
           return ListView(
-            padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+            padding:
+                EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
             children: const [_Iskelet()],
           );
         }
@@ -327,38 +330,37 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
 
   Widget _liste(double hp) {
     return FutureBuilder<List<TopGainerAllocation>>(
-          future: _satirlar,
-          builder: (context, snap) {
-            final satirlar = snap.data ?? const <TopGainerAllocation>[];
-            final yukleniyor =
-                snap.connectionState == ConnectionState.waiting &&
-                    satirlar.isEmpty;
-            return ListView(
-              padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
-              children: [
-                ZirveDonemSecici(secili: _donem, onSec: _donemSec),
-                const SizedBox(height: SandikSpace.md),
-                if (yukleniyor)
-                  const _Iskelet()
-                else if (satirlar.isEmpty)
-                  _BosDurum(havuz: _havuz)
-                else
-                  ..._dolu(context, satirlar),
-                const SizedBox(height: SandikSpace.md),
-                // Onay + rıza geri çekme isteği tek Future: gösterge düğmede
-                // döner, ikinci dokunuş yutulur (tek yükleniyor davranışı,
-                // 2026-10-08). Eskiden onaydan sonra istek göstergesiz gidiyordu.
-                Center(
-                  child: SandikAsyncButton.kompakt(
-                    tur: SandikAsyncTur.metin,
-                    onPressed: _ayril,
-                    child: const Text("Zirvedeki Portföyler'den ayrıl"),
-                  ),
-                ),
-              ],
-            );
-          },
+      future: _satirlar,
+      builder: (context, snap) {
+        final satirlar = snap.data ?? const <TopGainerAllocation>[];
+        final yukleniyor =
+            snap.connectionState == ConnectionState.waiting && satirlar.isEmpty;
+        return ListView(
+          padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+          children: [
+            ZirveDonemSecici(secili: _donem, onSec: _donemSec),
+            const SizedBox(height: SandikSpace.md),
+            if (yukleniyor)
+              const _Iskelet()
+            else if (satirlar.isEmpty)
+              _BosDurum(havuz: _havuz)
+            else
+              ..._dolu(context, satirlar),
+            const SizedBox(height: SandikSpace.md),
+            // Onay + rıza geri çekme isteği tek Future: gösterge düğmede
+            // döner, ikinci dokunuş yutulur (tek yükleniyor davranışı,
+            // 2026-10-08). Eskiden onaydan sonra istek göstergesiz gidiyordu.
+            Center(
+              child: SandikAsyncButton.kompakt(
+                tur: SandikAsyncTur.metin,
+                onPressed: _ayril,
+                child: const Text("Zirvedeki Portföyler'den ayrıl"),
+              ),
+            ),
+          ],
         );
+      },
+    );
   }
 
   List<Widget> _dolu(BuildContext context, List<TopGainerAllocation> satirlar) {
@@ -394,18 +396,18 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     final seciliPay = seciliSatir?.allocation ?? _senPay;
     final seciliFon = seciliSatir?.fonDetay ?? _senFonDetay;
     final seciliRoi = seciliSatir?.roiPct ?? senRoi;
-    final getiriEki =
-        seciliRoi == null ? '' : ' ${_donem.ad} ${ZirveKiyas.getiriParcasi(seciliRoi)}.';
+    final getiriEki = seciliRoi == null
+        ? ''
+        : ' ${_donem.ad} ${ZirveKiyas.getiriParcasi(seciliRoi)}.';
     // Ayna kıyasının karşısı: seçili işaret bir zirveyse o; kendin
     // seçiliysen son seçtiğin zirve; hiç seçmediysen senden olmayan ilk sıra.
     final adaylar = satirlar.where((s) => !s.ben).toList();
     final hedefAnahtari = seciliSatir != null && !seciliSatir.ben
         ? '${seciliSatir.rank}'
         : _kiyasHedefi;
-    final hedef = adaylar
-            .where((s) => '${s.rank}' == hedefAnahtari)
-            .firstOrNull ??
-        adaylar.firstOrNull;
+    final hedef =
+        adaylar.where((s) => '${s.rank}' == hedefAnahtari).firstOrNull ??
+            adaylar.firstOrNull;
 
     return [
       _Hero(
@@ -926,15 +928,17 @@ class _BosDurum extends StatelessWidget {
               ],
               const SizedBox(height: SandikSpace.sm),
               Text(
-                // 30 gün: seçimlerinin getirisi (TWR, 0095) en az 30 günlük
-                // ölçüm ister; havuzun 5 günlük şartından önce o dolmalı.
-                'Havuzda yalnız katılmayı kabul edenler var; portföyü 30 '
-                'günden eski ve en az 2 farklı varlığı olan katılımcılar '
-                'sayılır. Sıralama seçimlerinin getirisidir: her gün '
+                // Süre sunucudan (0128, varsayılan 30): ilk varlığın edinme
+                // tarihinden sayılır (2026-10-09); havuzun 5 günlük
+                // şartından önce o dolmalı.
+                'Havuzda yalnız katılmayı kabul edenler var; ilk varlığını '
+                'edinmesinin üzerinden en az '
+                '${LeaderboardService.instance.asgariGun} gün geçmiş ve en '
+                'az 2 farklı varlığı olan katılımcılar sayılır. Sıralama seçimlerinin getirisidir: her gün '
                 'tutulan varlıklar piyasa fiyatıyla ölçülür, para ekleme '
                 'zamanı etkilemez. Bugünden 3 günden fazla geriye tarihli '
-                'girilen kayıt (içe aktarılan geçmiş dahil) girildiği gün '
-                'sayılır. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
+                'girilen kaydın (içe aktarılan geçmiş dahil) getirisi '
+                'girildiği günden ölçülür. Kimlik, miktar ve TL paylaşılmaz; yalnız getiri, '
                 'tür payı ve fon payları.',
                 style: context.t.labelMedium?.copyWith(
                   letterSpacing: 0,
@@ -1014,8 +1018,8 @@ class _PortfoyAyrintisi extends StatelessWidget {
     final turler = ZirveKiyas.sirali(pay);
 
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(SandikSpace.lg, SandikSpace.sm,
-          SandikSpace.lg, SandikSpace.lg),
+      padding: EdgeInsets.fromLTRB(
+          SandikSpace.lg, SandikSpace.sm, SandikSpace.lg, SandikSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -1105,9 +1109,11 @@ class _PortfoyAyrintisi extends StatelessWidget {
                         'getirini, tür payını ve fonlarının TEFAS kodu ile '
                         'payını görür; kimliğin, tutarın ve diğer varlıkların '
                         'asla görünmez.'
-                    : 'Portföyün henüz havuzda değil: katıldın, ama portföy '
-                        '30 günden eski olmalı ve en az 2 farklı varlık '
-                        'içermeli. Şart sağlanınca anonim olarak girer.')
+                    : 'Portföyün henüz havuzda değil: katıldın, ama ilk '
+                        'varlığını edinmenin üzerinden en az '
+                        '${LeaderboardService.instance.asgariGun} gün geçmeli '
+                        've en az 2 farklı varlık içermeli. Şart sağlanınca '
+                        'anonim olarak girer.')
                 : 'Anonim: bu portföyün kimliği, tutarı ve miktarları '
                     'paylaşılmaz; yalnız tür payı ve fonların TEFAS kodu ile '
                     'payı. Fon adları resmi TEFAS listesinden.',

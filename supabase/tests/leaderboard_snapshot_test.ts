@@ -17,6 +17,7 @@ import {
   DefterSatiri,
   donemTwr,
   GUN_MS,
+  ilkEdinmeAni,
   Lot,
   lotSembolleri,
   lotTryFiyati,
@@ -203,6 +204,26 @@ Deno.test('TWR: asgari 30 gün ölçüm; dönemden bağımsız', () => {
   // 31 gün önce alındı: 7 günlük dönemde yalnız son 7 gün ölçülür
   // (X 118 → bugün 120); 31 günün tamamı değil.
   assertAlmostEquals(donemTwr(yetiskin, PIYASA, NOW, 7)!, (120 / 118 - 1) * 100, 1e-9);
+});
+
+Deno.test('TWR: asgari süre edinme tarihinden; getiri giriş anından (2026-10-09)', () => {
+  // 40 gün önce alınmış, 10 gün önce uygulamaya girilmiş (içe aktarım).
+  // Eskiden giriş anından sayılırdı → null. Şimdi kapı açık; getiri yalnız
+  // girildiği günden beri ölçülür (geriye tarih kuralı korunur).
+  const r: DefterSatiri = {
+    id: 'ia', user_id: 'u1', type: 'hisse', ticker: 'X.IS', kind: 'buy',
+    quantity: 10, currency: 'TRY',
+    added_date: new Date(NOW - 40 * G).toISOString(),
+    created_at: new Date(NOW - 10 * G).toISOString(),
+  };
+  assertEquals(ilkEdinmeAni([r]), NOW - 40 * G);
+  // X son 10 günde 118 → 120 (Ay 11 → Ay 12 arası doğrusal değil; seri
+  // basamaklı: 10 gün önce 118). 40 gün öncesinin 110'u getiriye girmez.
+  assertAlmostEquals(donemTwr([r], PIYASA, NOW, 30)!, (120 / 118 - 1) * 100, 1e-9);
+  // Edinme 20 gün önce → 30 günlük kapı kapalı; ayar 14 ise açık.
+  const genc = { ...r, added_date: new Date(NOW - 20 * G).toISOString() };
+  assertEquals(donemTwr([genc], PIYASA, NOW, 30), null);
+  assertEquals(donemTwr([genc], PIYASA, NOW, 30, 14) !== null, true);
 });
 
 Deno.test('TWR kapsama: serisi olmayan lot bugünkü değerin %20\'sini aşarsa null', () => {
