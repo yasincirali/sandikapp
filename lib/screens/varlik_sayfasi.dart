@@ -562,6 +562,7 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     final donem = cizilen == null ? '' : _donemEtiketi(cizilen);
     return VarlikFiyatBlogu(
       etiket: context.l10n.currentPriceUpper,
+      kimlik: widget.kimlik.key,
       fiyat: ist == null ? '—' : bicim.format(ist.son),
       fiyatRengi: context.c.text90,
       degisim: donemDegisimSatiri(

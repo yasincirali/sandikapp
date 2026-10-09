@@ -354,6 +354,19 @@ class RemoteConfigService {
     // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
     'tur_secici_izgara': false,
 
+    // Göz alıcılık (2026-10-09, yasin: "uygulamayı göz alıcı hale
+    // getirelim, fonksiyonelitesinden hiçbir şey kaybetmeden"; rapor
+    // https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU). TEK bayrak, bütün
+    // paketler (A, B, C…) bunun arkasına girer — yasin: "aşırı fazla flag
+    // olmasın, yönetimi karmaşıklaşıyor". Paket A:
+    //  · satır rozeti: hisse/fon/kripto satırında tür ikonu yerine sembolün
+    //    kendisi (ASE, DLY, BTC) tür renginde (`varlik_monogrami.dart`);
+    //  · akan rakam: büyük fiyat değişince yalnız değişen hane döner, ₺ ve
+    //    kuruş geri çekilir (`para_metni.dart`). Ana ekran toplam kartına
+    //    DOKUNMAZ (yasin: "ana sayfa toplam kartına çok dokunma").
+    // KAPALI doğar: ana yüzeylerin görünüşü; kapalıyken birebir eski.
+    'goz_alici': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -662,6 +675,9 @@ class RemoteConfigService {
 
   /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
   bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
+
+  /// Göz alıcılık paketleri (tek bayrak). Gerekçe `_defaults`'ta.
+  bool get gozAlici => _bayrak('goz_alici');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

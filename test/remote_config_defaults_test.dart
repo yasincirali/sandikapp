@@ -120,6 +120,12 @@ void main() {
       expect(varsayilan('tur_secici_izgara'), 'false');
     });
 
+    // Göz alıcılık (tek bayrak): ana listenin ve fiyatın görünüşü değişir;
+    // kapalıyken birebir eski.
+    test('göz alıcılık KAPALI doğar', () {
+      expect(varsayilan('goz_alici'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

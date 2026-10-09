@@ -21,6 +21,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/varlik_monogrami.dart';
 import '../models/sozlesme.dart';
 import '../models/position.dart';
 import '../providers/auth_provider.dart';
@@ -37,6 +38,7 @@ import '../widgets/tour_anchor.dart';
 import '../widgets/ortak_secici.dart';
 import '../widgets/sandik_segment.dart';
 import '../widgets/varlik_baslik_hero.dart';
+import '../widgets/para_metni.dart';
 import '../services/remote_config_service.dart';
 import '../widgets/sandik_error_view.dart';
 import '../widgets/pozisyon_islemleri.dart';
@@ -937,15 +939,27 @@ class _KucukHalkaState extends State<_KucukHalka>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            d == null
-                ? widget.baz.fmt(toplam)
-                : fmtPct(d.pay * 100, digits: 1),
-            style: context.t.numMedium.copyWith(
-              fontWeight: FontWeight.w700,
-              color: renk,
+          // Bayrak `goz_alici`: toplam fiyat turunda değişince haneler
+          // döner (gerekçe `para_metni.dart`). Seçili dilimin yüzdesi düz
+          // kalır: dilim değişimi "artış" değildir.
+          if (d == null && RemoteConfigService.instance.gozAlici)
+            ParaMetni(
+              widget.baz.fmt(toplam),
+              stil: context.t.numMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: renk,
+              ),
+            )
+          else
+            Text(
+              d == null
+                  ? widget.baz.fmt(toplam)
+                  : fmtPct(d.pay * 100, digits: 1),
+              style: context.t.numMedium.copyWith(
+                fontWeight: FontWeight.w700,
+                color: renk,
+              ),
             ),
-          ),
           Text(
             d == null ? context.l10n.total : widget.baz.fmt(d.tutar),
             style: context.t.labelSmall?.copyWith(color: context.c.text36),
@@ -1699,7 +1713,13 @@ class _AssetLeadingIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = asset.currencySymbol;
+    // Bayrak `goz_alici`: sembolü olan türde (hisse/fon/kripto) sembolün
+    // kendisi döviz sembolüyle AYNI tür renkli kutuya yazılır; kapalıyken
+    // birebir eski ikon (gerekçe `varlik_monogrami.dart`).
+    final symbol = asset.currencySymbol ??
+        (RemoteConfigService.instance.gozAlici
+            ? varlikMonogrami(type: asset.type, ticker: asset.ticker)
+            : null);
     if (symbol == null) {
       // İkonu da 28×28 kutuya oturt: sembollü ve sembolsüz satırlarda
       // başlık bloğu aynı x konumundan başlasın.
@@ -1719,14 +1739,21 @@ class _AssetLeadingIcon extends StatelessWidget {
         color: asset.type.color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(SandikRadius.sm),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
       child: Center(
-        child: Text(
-          symbol,
-          style: context.t.bodyMedium!.copyWith(
-            fontSize: symbol.length > 1 ? 9 : 13,
-            fontWeight: FontWeight.w800,
-            color: asset.type.onSurface(context),
-            height: 1,
+        // Üç harfli rozet (ASE, BTC) 28pt'ye ancak sığar; yazı büyütülünce
+        // kırpılmasın diye küçülür (bir harfli $ etkilenmez).
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            symbol,
+            maxLines: 1,
+            style: context.t.bodyMedium!.copyWith(
+              fontSize: symbol.length > 1 ? 9 : 13,
+              fontWeight: FontWeight.w800,
+              color: asset.type.onSurface(context),
+              height: 1,
+            ),
           ),
         ),
       ),
