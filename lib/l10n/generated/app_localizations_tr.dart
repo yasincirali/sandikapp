@@ -6941,6 +6941,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get stockMarketUs => 'ABD';
 
   @override
+  String get portfolioGroupBistStock => 'BIST Hisse';
+
+  @override
+  String get portfolioGroupUsStock => 'ABD Hisse';
+
+  @override
   String stockMarketSemantics(String market) {
     return 'Hisse pazarı: $market';
   }

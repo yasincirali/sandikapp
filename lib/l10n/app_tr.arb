@@ -4991,6 +4991,8 @@
   "tickerHintEurobond": "Listeden seç ya da ISIN yaz, örn. US900123DF45",
   "stockMarketBist": "BIST",
   "stockMarketUs": "ABD",
+  "portfolioGroupBistStock": "BIST Hisse",
+  "portfolioGroupUsStock": "ABD Hisse",
   "stockMarketSemantics": "Hisse pazarı: {market}",
   "@stockMarketSemantics": {
     "placeholders": {
