@@ -35,6 +35,14 @@ kartına dokunulmadı.
   - [ ] Portföy küçük halkası: dilime dokununca o tür seçilir (liste süzülür),
         seçili dilime ya da ortaya dokununca büyük halka açılır. Tur metni
         buna göre değişir.
+- 2026-10-09 C paketi (sandık karakteri) aynı bayrağa eklendi (yeni bayrak
+  YOK). Açıkken: boş ekranlarda (Portföy, takip listesi, işlemler, fiyat
+  alarmları, haftanın özeti, aylık rapor, analiz notu) ikon yerine kapalı
+  sandık; kilometre taşı sayfasında rozet yerine açılan sandık. Bayraksız
+  düzeltme: haftanın özeti, aylık rapor ve analiz notu hata alınca artık
+  "boş" yazmıyor, nedeni ve "Tekrar dene" düğmesini gösteriyor.
+  - [ ] TestFlight'ta: hiç varlığı olmayan test hesabında Portföy ve takip
+        listesi boş ekranına bak; kilometre taşı ilk eşikte görünür.
 
 ## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 

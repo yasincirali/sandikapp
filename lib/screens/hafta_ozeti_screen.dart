@@ -8,6 +8,9 @@ import '../providers/hafta_ozeti_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../services/fon_akisi.dart' show fonHaftaOrani;
 import '../services/varlik_analizi.dart';
+import '../widgets/sandik_bos_durum.dart';
+import '../widgets/sandik_error_view.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import '../widgets/para_akisi_karti.dart' show isaretliTutar;
@@ -58,8 +61,12 @@ class HaftaOzetiScreen extends ConsumerWidget {
           child: SandikSkeletonList(rows: 3),
         ),
         // Provider hata fırlatmaz (alt provider null döner); yine de düşerse
-        // boş durumla aynı ekran — ham hata gösterilmez.
-        error: (_, __) => _Bos(metin: l10n.weekEmptyNoData),
+        // hata BOŞ gibi gösterilmez (TASARIM_DILI §6.1): dostça neden
+        // (`friendlyError`, ham hata yok) ve yeniden dene.
+        error: (e, _) => SandikErrorView(
+          error: e,
+          onRetry: () => ref.invalidate(haftaOzetiProvider),
+        ),
         data: (tum) {
           if (tum.isEmpty) return _Bos(metin: l10n.weekEmptyNoData);
           final anahtarlar = [for (final s in tum) s.anahtar];
@@ -126,17 +133,20 @@ class _Bos extends StatelessWidget {
   const _Bos({required this.metin});
   final String metin;
 
+  // Bayrak `goz_alici`: ortak boş durum (kapalı sandık); kapalıyken eski
+  // düz metin birebir.
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SandikSpace.lg),
-          child: Text(
-            metin,
-            textAlign: TextAlign.center,
-            style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+  Widget build(BuildContext context) => RemoteConfigService.instance.gozAlici
+      ? SandikBosDurum(metin: metin)
+      : Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SandikSpace.lg),
+            child: Text(metin,
+                textAlign: TextAlign.center,
+                style:
+                    context.t.bodyMedium?.copyWith(color: context.c.text58)),
           ),
-        ),
-      );
+        );
 }
 
 /// Rozet çipi: kelime her zaman, renk yalnız yönde.

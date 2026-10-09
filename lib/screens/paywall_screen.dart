@@ -17,6 +17,7 @@ import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart' show parseTrNumber;
 import '../widgets/kart_destesi.dart';
 import '../widgets/sandik_async_button.dart';
+import '../widgets/sandik_cizimi.dart';
 import '../l10n/l10n.dart';
 import 'legal_doc_screen.dart' show belgeyiAc;
 

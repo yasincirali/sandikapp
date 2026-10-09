@@ -25,6 +25,7 @@ import '../providers/secili_donem_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/history_service.dart' show NormalizedSeries;
 import '../services/period_summary_service.dart' show SummaryPeriod;
+import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -705,7 +706,8 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
       child: Column(
         children: [
-          Icon(Icons.visibility_outlined, size: 40, color: context.c.text36),
+          // Bayrak `goz_alici`: kapalı sandık; kapalıyken eski ikon.
+          const SandikBosIkonu(ikon: Icons.visibility_outlined, boyut: 40),
           const SizedBox(height: SandikSpace.md),
           Text(
             context.l10n.noWatchlistYet,

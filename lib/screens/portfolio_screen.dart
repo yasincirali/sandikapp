@@ -27,6 +27,7 @@ import '../models/position.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../services/sparkline_service.dart';
+import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../widgets/sekme_basa_don.dart';
 import '../widgets/sandik_acilir.dart';
@@ -722,7 +723,8 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.inbox_rounded, size: 64, color: context.c.text36),
+          // Bayrak `goz_alici`: kapalı sandık; kapalıyken eski ikon.
+          const SandikBosIkonu(ikon: Icons.inbox_rounded, boyut: 64),
           const SizedBox(height: 16),
           Text(context.l10n.noAssetsYet,
               style: context.t.bodyMedium?.copyWith(color: context.c.text36)),
