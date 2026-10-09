@@ -82,16 +82,21 @@ kartına dokunulmadı.
   aynı kabukta (görünüm aynı). Şirket/fon logoları: monogram rozette
   kalındı (karar 2026-10-09), logo işi yok.
   - [ ] TestFlight'ta: Portföy › bir hisse › grafikte basılı gezdir.
-- 2026-10-09 widget ve Canlı Etkinlik (1, 3, 6) aynı bayrağa eklendi (yeni
-  bayrak YOK, sunucu değişikliği YOK). Açıkken: kilit ekranı kartında ve
+- 2026-10-09 widget ve Canlı Etkinlik (1, 3, 4, 6) aynı bayrağa eklendi
+  (yeni bayrak YOK; 4 için `push-live-activity` fonksiyonu güncellendi,
+  migration YOK). Açıkken: kilit ekranı kartında ve
   Ada'nın açık hâlinde çizgide gün başı kesik çizgisi ve (gün eksiye
   indiyse) günün dibi halkası, altında "┄ gün başı ◯ günün dibi"; ana ekran
   widget'ında (iOS + Android) ₺ ve kuruş küçük. Bayrak Canlı Etkinliğe
   oturum AÇILIRKEN geçer: açıkken yeni görünüm bir sonraki oturumda (ertesi
-  seans) başlar. 4 (günü sürükleyen) yapılmadı, karar bekliyor (kilit
-  ekranına varlık adı yazmamak bilinçli bir gizlilik kuralı).
+  seans) başlar. 4: kilit ekranı kartında "Günü sürükleyen THYAO ▲ %3,81
+  +₺1.910" satırı (lejantın yerine), YALNIZ Ayarlar'da "Tutarları göster"
+  açıkken (karar 2026-10-09 "Yalnız izin verene"); uygulama kapalıyken
+  sunucu dakikada bir ileri taşır, sürükleyenin kimliği uygulama açılınca
+  tazelenir. Claude fonksiyonu birleşmeden sonra iki sunucuya dağıttı.
   - [ ] TestFlight'ta: ertesi seans kilit ekranı kartı ve Ada'ya uzun basış;
-        ana ekran widget'ında toplam (uygulamayı bir kez açınca yenilenir).
+        ana ekran widget'ında toplam (uygulamayı bir kez açınca yenilenir);
+        "Tutarları göster" açıkken kartın altında sürükleyen satırı.
 
 ## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 
