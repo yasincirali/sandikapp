@@ -21,6 +21,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/portfoy_grubu.dart';
 import '../models/varlik_monogrami.dart';
 import '../models/sozlesme.dart';
 import '../models/position.dart';
@@ -137,7 +138,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     _kaydirma.dispose();
     super.dispose();
   }
-  AssetType? _filteredType;
+  /// Liste süzgeci: halka dilimi / lejant satırı. Tür değil [PortfoyGrubu]:
+  /// bayrak `abd_hisse` açıkken BIST ve ABD hissesi ayrı süzülür.
+  PortfoyGrubu? _filteredType;
   _SortOrder _sortOrder = _SortOrder.valueDesc;
 
   /// Gövde sekmesi: 0 = Varlıklarım, 1 = Takip Listesi.
@@ -227,7 +230,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   /// aynı `_filteredType`. Halka mevcut süzgeçle açılır ki şeritte seçili
   /// tür halkada da seçili görünsün. Sayfa dilim seçilince kapanmaz: ortadaki
   /// tutar/yüzde halkanın asıl bilgisidir, kapanırsa görünmez.
-  void _halkayiAc(List<Asset> varliklar, PortfolioState pState) {
+  void _halkayiAc(
+      List<Asset> varliklar, PortfolioState pState, bool pazarAyir) {
     showSandikSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -252,6 +256,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
               pState: pState,
               baz: ref.read(gosterimBazParaProvider),
               baslangicTuru: _filteredType,
+              pazarAyir: pazarAyir,
               onTypeSelected: (type) {
                 if (mounted) setState(() => _filteredType = type);
               },
@@ -496,21 +501,34 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                   return const <Widget>[_EmptyState()];
                                 }
 
-                                final filteredPositions =
-                                    _applyPositionSortOrder(
-                                  _filteredType != null
-                                      ? positions
-                                          .where((p) =>
-                                              p.representative.type ==
-                                              _filteredType)
-                                          .toList()
-                                      : List<Position>.from(positions),
-                                  pState,
-                                );
                                 final displayAssets = positions
                                     .map(
                                         (position) => position.asDisplayAsset())
                                     .toList();
+                                // BIST/ABD hisse ayrımı (bayrak `abd_hisse`,
+                                // bkz. `PortfoyGrubu`). Ayrım kalkınca (son
+                                // ABD hissesi satıldı) pazarlı süzgeç türe
+                                // döner ki seçili dilim halkada kaybolmasın.
+                                final pazarAyir = PortfoyGrubu.pazarAyrimi(
+                                    displayAssets,
+                                    bayrak: RemoteConfigService
+                                        .instance.abdHisse);
+                                final filtre = _filteredType;
+                                final secili = filtre == null ||
+                                        pazarAyir ||
+                                        filtre.abd == null
+                                    ? filtre
+                                    : PortfoyGrubu(filtre.tur);
+                                final filteredPositions =
+                                    _applyPositionSortOrder(
+                                  secili != null
+                                      ? positions
+                                          .where((p) =>
+                                              secili.kapsar(p.representative))
+                                          .toList()
+                                      : List<Position>.from(positions),
+                                  pState,
+                                );
 
                                 // Sparkline serilerini şimdiden hazırla.
                                 // Kart açıldığında ağ beklemesi olmasın —
@@ -532,13 +550,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                         .instance.portfoyDagilimCubugu) ...[
                                       _KucukHalka(
                                         dilimler: turDagilimi(
-                                            displayAssets, pState),
-                                        secili: _filteredType,
+                                            displayAssets, pState,
+                                            pazarAyir: pazarAyir),
+                                        secili: secili,
                                         baz: ref.watch(gosterimBazParaProvider),
                                         onTypeSelected: (type) => setState(
                                             () => _filteredType = type),
                                         onHalka: () => _halkayiAc(
-                                            displayAssets, pState),
+                                            displayAssets, pState, pazarAyir),
                                       ),
                                       const SizedBox(height: SandikSpace.lg),
                                     ] else ...[
@@ -546,6 +565,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       assets: displayAssets,
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
+                                      pazarAyir: pazarAyir,
                                       onTypeSelected: (type) =>
                                           setState(() => _filteredType = type),
                                     ),
@@ -741,20 +761,25 @@ class _EmptyState extends StatelessWidget {
 /// Hesap halkanınkiyle AYNI (`pState.toTRY(totalValue, currency)` toplamı):
 /// küçük halka ile büyük halka sayfası aynı yüzdeleri göstermeli. `build()` dışında,
 /// saf fonksiyon olarak durur ki test edilebilsin.
-List<({AssetType tur, double tutar, double pay})> turDagilimi(
-    List<Asset> varliklar, PortfolioState pState) {
-  final toplamlar = <AssetType, double>{};
+///
+/// [pazarAyir] (bayrak `abd_hisse`): hisse BIST ve ABD diye iki dilime
+/// bölünür (`PortfoyGrubu`); kapalıyken birebir tür başına.
+List<({PortfoyGrubu grup, double tutar, double pay})> turDagilimi(
+    List<Asset> varliklar, PortfolioState pState,
+    {bool pazarAyir = false}) {
+  final toplamlar = <PortfoyGrubu, double>{};
   var toplam = 0.0;
   for (final a in varliklar) {
     final v = pState.toTRY(a.totalValue, a.currency);
-    toplamlar[a.type] = (toplamlar[a.type] ?? 0) + v;
+    final g = PortfoyGrubu.of(a, pazarAyir: pazarAyir);
+    toplamlar[g] = (toplamlar[g] ?? 0) + v;
     toplam += v;
   }
   final sirali = toplamlar.entries.toList()
     ..sort((a, b) => b.value.compareTo(a.value));
   return [
     for (final e in sirali)
-      (tur: e.key, tutar: e.value, pay: toplam > 0 ? e.value / toplam : 0.0),
+      (grup: e.key, tutar: e.value, pay: toplam > 0 ? e.value / toplam : 0.0),
   ];
 }
 
@@ -784,10 +809,10 @@ class _KucukHalka extends StatefulWidget {
     required this.onHalka,
   });
 
-  final List<({AssetType tur, double tutar, double pay})> dilimler;
-  final AssetType? secili;
+  final List<({PortfoyGrubu grup, double tutar, double pay})> dilimler;
+  final PortfoyGrubu? secili;
   final BazPara baz;
-  final ValueChanged<AssetType?> onTypeSelected;
+  final ValueChanged<PortfoyGrubu?> onTypeSelected;
   final VoidCallback onHalka;
 
   @override
@@ -808,8 +833,9 @@ const double _halkaCapi = 120;
 /// saat yönünde, [dilimler] sırasıyla. Halka bandı parmak için cömert
 /// tutulur (çizgi 14pt, kabul bandı iç kenardan bir çizgi kalınlığı daha
 /// içeri): 14pt'lik çizgiye isabet etmek 44pt hedef kuralını karşılamaz.
-AssetType? kucukHalkaDilimi(
-  List<({AssetType tur, double pay})> dilimler,
+/// Anahtar türü serbest ([T]): ekran [PortfoyGrubu] verir.
+T? kucukHalkaDilimi<T>(
+  List<({T tur, double pay})> dilimler,
   Offset? konum,
   Size boyut,
 ) {
@@ -863,7 +889,7 @@ class _KucukHalkaState extends State<_KucukHalka>
       return;
     }
     final d = kucukHalkaDilimi(
-      [for (final x in widget.dilimler) (tur: x.tur, pay: x.pay)],
+      [for (final x in widget.dilimler) (tur: x.grup, pay: x.pay)],
       _sonDokunus,
       const Size.square(_halkaCapi),
     );
@@ -901,7 +927,7 @@ class _KucukHalkaState extends State<_KucukHalka>
     final secili = widget.secili;
     final seciliDilim = secili == null
         ? null
-        : dilimler.where((d) => d.tur == secili).firstOrNull;
+        : dilimler.where((d) => d.grup == secili).firstOrNull;
     final toplam = dilimler.fold<double>(0, (s, d) => s + d.tutar);
 
     // Fazla tür varsa son satır "+N tür" olur; seçili tür gizlenen
@@ -989,13 +1015,13 @@ class _KucukHalkaState extends State<_KucukHalka>
               children: [
                 for (final d in gorunen)
                   _LejantSatiri(
-                    renk: d.tur.color,
-                    etiket: d.tur.labelOf(l10n),
+                    renk: d.grup.color,
+                    etiket: d.grup.labelOf(l10n),
                     deger: fmtPct(d.pay * 100, digits: 1),
-                    secili: secili == d.tur,
-                    soluk: secili != null && secili != d.tur,
+                    secili: secili == d.grup,
+                    soluk: secili != null && secili != d.grup,
                     onTap: () =>
-                        widget.onTypeSelected(secili == d.tur ? null : d.tur),
+                        widget.onTypeSelected(secili == d.grup ? null : d.grup),
                   ),
                 if (gizli > 0)
                   _LejantSatiri(
@@ -1018,12 +1044,12 @@ class _KucukHalkaState extends State<_KucukHalka>
   /// tutarı (büyük halkanın ortasıyla aynı mantık).
   Widget _merkez(
     BuildContext context,
-    ({AssetType tur, double tutar, double pay})? d,
+    ({PortfoyGrubu grup, double tutar, double pay})? d,
     double toplam,
   ) {
-    final renk = d?.tur.color ?? context.c.gold;
+    final renk = d?.grup.color ?? context.c.gold;
     return FittedBox(
-      key: ValueKey(d?.tur),
+      key: ValueKey(d?.grup),
       fit: BoxFit.scaleDown,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1148,8 +1174,8 @@ class _KucukHalkaRessami extends CustomPainter {
     this.secim = 1,
   });
 
-  final List<({AssetType tur, double tutar, double pay})> dilimler;
-  final AssetType? secili;
+  final List<({PortfoyGrubu grup, double tutar, double pay})> dilimler;
+  final PortfoyGrubu? secili;
   final double ilerleme;
   final Color iz;
 
@@ -1190,7 +1216,7 @@ class _KucukHalkaRessami extends CustomPainter {
       if (kalan <= 0) break;
       final gorunen = math.min(aci, kalan) - bosluk;
       if (gorunen > 0) {
-        final secildi = secili == d.tur;
+        final secildi = secili == d.grup;
         canvas.drawArc(
           kutu,
           bas + bosluk / 2,
@@ -1201,7 +1227,7 @@ class _KucukHalkaRessami extends CustomPainter {
             ..strokeWidth = secildi
                 ? _kalinlik + (_seciliKalinlik - _kalinlik) * secim
                 : _kalinlik
-            ..color = d.tur.color.withValues(
+            ..color = d.grup.color.withValues(
                 alpha: secili == null || secildi ? 1 : 1 - 0.7 * secim),
         );
       }
@@ -1217,8 +1243,8 @@ class _KucukHalkaRessami extends CustomPainter {
       eski.secim != secim ||
       eski.iz != iz ||
       !listEquals(
-          [for (final d in eski.dilimler) (d.tur, d.pay)],
-          [for (final d in dilimler) (d.tur, d.pay)]);
+          [for (final d in eski.dilimler) (d.grup, d.pay)],
+          [for (final d in dilimler) (d.grup, d.pay)]);
 }
 
 // ── Donut Chart ───────────────────────────────────────────────────────────────
@@ -1227,17 +1253,21 @@ class _AssetTypeDonut extends StatefulWidget {
   final List<Asset> assets;
   final PortfolioState pState;
   final BazPara baz;
-  final void Function(AssetType?) onTypeSelected;
+  final void Function(PortfoyGrubu?) onTypeSelected;
+
+  /// Hisse BIST/ABD diye iki dilim mi (bayrak `abd_hisse`, `PortfoyGrubu`).
+  final bool pazarAyir;
 
   /// Halka açılırken seçili gelecek tür (küçük halkanın büyük halka
   /// sayfası; bkz. `_halkayiAc`). Ekrandaki eski halkada verilmez — orada
   /// seçim halkanın kendi durumudur.
-  final AssetType? baslangicTuru;
+  final PortfoyGrubu? baslangicTuru;
   const _AssetTypeDonut(
       {required this.assets,
       required this.pState,
       required this.baz,
       required this.onTypeSelected,
+      this.pazarAyir = false,
       this.baslangicTuru});
 
   @override
@@ -1257,10 +1287,11 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
   /// kurulumu "yeni veri" sayıyor, fiyatı değişmeyen her 30 sn tikinde
   /// 12 kare boşuna boyuyordu. Paydaki binde birin altındaki oynama da
   /// gözle görülmez; o da anında uygulanır.
-  List<(AssetType, double)>? _oncekiPaylar;
+  List<(PortfoyGrubu, double)>? _oncekiPaylar;
   int? _oncekiDokunulan;
 
-  bool _gorunurDegisti(List<MapEntry<AssetType, double>> dilimler, double toplam) {
+  bool _gorunurDegisti(
+      List<MapEntry<PortfoyGrubu, double>> dilimler, double toplam) {
     final paylar = [
       for (final d in dilimler) (d.key, toplam > 0 ? d.value / toplam : 0.0),
     ];
@@ -1284,11 +1315,12 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
 
   @override
   Widget build(BuildContext context) {
-    final totals = <AssetType, double>{};
+    final totals = <PortfoyGrubu, double>{};
     double totalVal = 0;
     for (final a in widget.assets) {
       final val = widget.pState.toTRY(a.totalValue, a.currency);
-      totals[a.type] = (totals[a.type] ?? 0) + val;
+      final g = PortfoyGrubu.of(a, pazarAyir: widget.pazarAyir);
+      totals[g] = (totals[g] ?? 0) + val;
       totalVal += val;
     }
     if (totals.isEmpty) return const SizedBox.shrink();
@@ -1817,6 +1849,11 @@ class _AssetLeadingIcon extends StatelessWidget {
         (RemoteConfigService.instance.gozAlici
             ? varlikMonogrami(type: asset.type, ticker: asset.ticker)
             : null);
+    // Bayrak `abd_hisse`: ABD hissesinin kutusu halkadaki ABD diliminin
+    // renginde — satır ile dilim aynı rengi konuşur, BIST hissesinin
+    // amberinden ilk bakışta ayrılır. Kapalıyken grup türün kendisi.
+    final grup = PortfoyGrubu.of(asset,
+        pazarAyir: RemoteConfigService.instance.abdHisse);
     if (symbol == null) {
       // İkonu da 28×28 kutuya oturt: sembollü ve sembolsüz satırlarda
       // başlık bloğu aynı x konumundan başlasın.
@@ -1825,7 +1862,7 @@ class _AssetLeadingIcon extends StatelessWidget {
         height: 28,
         child: Center(
           child: Icon(asset.type.icon,
-              color: asset.type.onSurface(context), size: 22),
+              color: grup.onSurface(context), size: 22),
         ),
       );
     }
@@ -1833,7 +1870,7 @@ class _AssetLeadingIcon extends StatelessWidget {
       width: 28,
       height: 28,
       decoration: BoxDecoration(
-        color: asset.type.color.withValues(alpha: 0.15),
+        color: grup.color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(SandikRadius.sm),
       ),
       padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xxs),
@@ -1848,7 +1885,7 @@ class _AssetLeadingIcon extends StatelessWidget {
             style: context.t.bodyMedium!.copyWith(
               fontSize: symbol.length > 1 ? 9 : 13,
               fontWeight: FontWeight.w800,
-              color: asset.type.onSurface(context),
+              color: grup.onSurface(context),
               height: 1,
             ),
           ),

@@ -11542,6 +11542,18 @@ abstract class AppLocalizations {
   /// **'ABD'**
   String get stockMarketUs;
 
+  /// No description provided for @portfolioGroupBistStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST Hisse'**
+  String get portfolioGroupBistStock;
+
+  /// No description provided for @portfolioGroupUsStock.
+  ///
+  /// In tr, this message translates to:
+  /// **'ABD Hisse'**
+  String get portfolioGroupUsStock;
+
   /// No description provided for @stockMarketSemantics.
   ///
   /// In tr, this message translates to:

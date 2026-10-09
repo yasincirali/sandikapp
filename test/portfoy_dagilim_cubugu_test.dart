@@ -216,7 +216,7 @@ void main() {
   test('turDagilimi: büyükten küçüğe, paylar toplamı 1', () {
     final d = turDagilimi(_varliklar,
         PortfolioState(assets: _varliklar, usdTry: 42, eurTry: 46, gbpTry: 54));
-    expect(d.map((e) => e.tur), [AssetType.hisse, AssetType.fon]);
+    expect(d.map((e) => e.grup.tur), [AssetType.hisse, AssetType.fon]);
     expect(d.first.pay, closeTo(0.75, 1e-9));
     expect(d.fold<double>(0, (s, e) => s + e.pay), closeTo(1, 1e-9));
   });

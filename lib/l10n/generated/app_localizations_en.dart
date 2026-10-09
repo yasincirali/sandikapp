@@ -7003,6 +7003,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get stockMarketUs => 'US';
 
   @override
+  String get portfolioGroupBistStock => 'BIST stocks';
+
+  @override
+  String get portfolioGroupUsStock => 'US stocks';
+
+  @override
   String stockMarketSemantics(String market) {
     return 'Stock market: $market';
   }

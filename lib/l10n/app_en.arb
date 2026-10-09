@@ -4608,6 +4608,8 @@
   "tickerHintEurobond": "Pick from the list or type an ISIN, e.g. US900123DF45",
   "stockMarketBist": "BIST",
   "stockMarketUs": "US",
+  "portfolioGroupBistStock": "BIST stocks",
+  "portfolioGroupUsStock": "US stocks",
   "stockMarketSemantics": "Stock market: {market}",
   "usStocks": "US Stocks",
   "pickUsStock": "Pick a US stock",

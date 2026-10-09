@@ -1332,6 +1332,13 @@ class Sandik {
   static const Color mevduat   = Color(0xFF8FA3B8); // Çelik mavisi
   static const Color bes       = Color(0xFFB5C25A); // Zeytin sarısı
 
+  // ABD hissesi (2026-10-09, bayrak `abd_hisse`): Portföy dağılımında BIST
+  // hissesinden ayrı dilim/süzgeç. Ayrı bir tür DEĞİL (bkz.
+  // `Asset.abdHissesi`), yalnız görünüm grubu (`PortfoyGrubu`). Gül tonu:
+  // hisse amberinden, kripto orkidesinden ve loss mercanından ayrık; light
+  // zemin tonu `acikZemindeMetin`den gelir.
+  static const Color abdHisse  = Color(0xFFE8799A); // Gül
+
   // ── Madalya (leaderboard) ──────────────────────────────────────────────────
   //
   // Madalya rozetleri gradient'tir ve üzerlerinde sıra numarası yazar. Metin
