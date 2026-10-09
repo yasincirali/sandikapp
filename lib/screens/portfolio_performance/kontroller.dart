@@ -530,8 +530,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Kullanıcı isteği: "basitlik ve anlaşılırlık ön planda, göze hitap
   /// eden". Denetimler AYNI (kişi, kategori, bugünkü portföyle); değişen
   /// okunuş:
-  ///   · Kategori metin çipi değil, sayılı/paylı döşeme
-  ///     ([TurFiltreIzgarasi]): seçmeden önce "bende ne var" görünür.
+  ///   · Kategori metin çipi değil, tür halkası + sayılı satırlar
+  ///     ([TurFiltreHalkasi]): seçmeden önce "bende ne var" görünür.
   ///   · Başlıkta "Sıfırla": varsayılana tek dokunuş (yalnız filtre varken).
   ///   · "Bugünkü portföyle" kart içinde, ikonuyla — bir mod olduğu belli.
   ///   · Dipte tek ana eylem "N varlığı göster": seçim yine ANINDA uygulanır
@@ -628,7 +628,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       const SizedBox(height: SandikSpace.md),
       SandikSectionHeader(title: l.s2FiltreKategori),
       const SizedBox(height: SandikSpace.sm),
-      TurFiltreIzgarasi(
+      TurFiltreHalkasi(
         secili: _typeFilter,
         ozet: ozet,
         turlar: turlar,
@@ -646,9 +646,9 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
           padding: const EdgeInsets.all(SandikSpace.smd),
           child: Row(
             children: [
-              Icon(Icons.history_toggle_off_rounded,
-                  size: 20,
-                  color: bugunku ? context.c.amberText : context.c.text58),
+              // Modun küçük çizimi: kesik çizgi gerçek geçmiş, düz çizgi
+              // bugünkü portföy. "Ne değişir" sorusunu metinden önce söyler.
+              BugunkuPortfoyCizimi(acik: bugunku),
               const SizedBox(width: SandikSpace.sm2),
               Expanded(
                 child: Column(

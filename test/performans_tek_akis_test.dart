@@ -18,6 +18,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/ortak_secici.dart';
 import 'package:portfoy_takip/widgets/period_summary_view.dart';
 import 'package:portfoy_takip/widgets/raporlar_kapisi.dart';
+import 'package:portfoy_takip/widgets/tur_filtre_halkasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -237,20 +238,23 @@ void main() {
     });
   });
 
-  group('Filtre sayfası — goz_alici açık: kategori döşemeleri', () {
+  group('Filtre sayfası — goz_alici açık: tür halkası', () {
     setUp(() => RemoteConfigService.testAcik = {
           'performans_tek_akis',
           'goz_alici',
         });
 
-    testWidgets('döşeme sayı yazar; elde olmayan tür "Yok" ama seçilebilir',
+    testWidgets('satır sayı yazar; elde olmayan tür "Elinde yok"ta, seçilebilir',
         (tester) async {
       await _pump(tester);
       await tester.tap(find.text(_tr.s2Filtre));
       await tester.pumpAndSettle();
       // Tümü + Hisse: tek varlık (THYAO).
       expect(find.text(_tr.s2FiltreVarlikSayisi(1)), findsNWidgets(2));
-      expect(find.text(_tr.s2FiltreYok), findsWidgets);
+      expect(find.text(_tr.s2FiltreElindeYok), findsOneWidget);
+      // Halka çizilir (fiyat biliniyor), ortada toplam varlık sayısı.
+      expect(find.byType(TurFiltreHalkasi), findsOneWidget);
+      expect(find.text(_tr.s2FiltreTumTurler), findsOneWidget);
       // Filtre yokken Sıfırla tıklanamaz; dip düğmesi sonucu söyler.
       expect(find.text(_tr.s2FiltreGoster(1)), findsOneWidget);
 
@@ -284,16 +288,11 @@ void main() {
       expect(find.text(_tr.s2Filtre), findsOneWidget);
     });
 
-    testWidgets('320pt: sayfa taşmaz, döşemeler 2 sütun', (tester) async {
+    testWidgets('320pt: sayfa taşmaz', (tester) async {
       await _pump(tester, width: 320);
       await tester.tap(find.bySemanticsLabel(_tr.s2Filtre));
       await tester.pumpAndSettle();
-      final hisse = tester.getCenter(find.text(AssetType.hisse.labelOf(_tr)).last);
-      final fon = tester.getCenter(find.text(AssetType.fon.labelOf(_tr)).last);
-      final doviz =
-          tester.getCenter(find.text(AssetType.doviz.labelOf(_tr)).last);
-      expect((hisse.dy - fon.dy).abs(), lessThan(2));
-      expect(doviz.dy, greaterThan(hisse.dy + 20));
+      expect(find.text(_tr.s2FiltreElindeYok), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

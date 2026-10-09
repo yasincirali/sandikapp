@@ -7408,6 +7408,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s2FiltreTamam => 'Done';
 
   @override
+  String get s2FiltreElindeYok => 'Not held:';
+
+  @override
+  String get s2FiltreTumTurler => 'assets';
+
+  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Balance up $tutar; $alim of that is new buys.';
   }

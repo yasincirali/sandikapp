@@ -4725,6 +4725,8 @@
   "s2FiltreGoster": "{n, plural, =1{Show 1 asset} other{Show {n} assets}}",
   "@s2FiltreGoster": {"placeholders": {"n": {"type": "int"}}},
   "s2FiltreTamam": "Done",
+  "s2FiltreElindeYok": "Not held:",
+  "s2FiltreTumTurler": "assets",
   "s2BakiyeArttiAlim": "Balance up {tutar}; {alim} of that is new buys.",
   "s2BakiyeAzaldiAlim": "Balance down {tutar}; you bought {alim} in the period.",
   "s2BakiyeArttiSatis": "Balance up {tutar}; you sold {satis} in the period.",
