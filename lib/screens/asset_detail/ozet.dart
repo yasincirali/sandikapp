@@ -274,6 +274,9 @@ extension _DetayOzet on _AssetDetailScreenState {
           : (canli > 0 ? bicim.format(canli) : '—'),
       fiyatRengi: context.c.gold,
       degisim: degisim,
+      // Grafikte gezinirken fiyat ve tarih imleçten (bayrak `goz_alici`);
+      // mevduatta başlık pozisyon değeri, imleç bağlanmaz.
+      imlec: RemoteConfigService.instance.gozAlici && !mevduat ? _imlec : null,
       // B'den alınan satır: en önemli sayı ("param ne durumda") ilk bakışta.
       // Ayrıntısı aşağıdaki pozisyon bölümünde, aynı sayılarla.
       altSatir: Text(

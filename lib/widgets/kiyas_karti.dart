@@ -41,8 +41,17 @@ class KiyasKarti extends ConsumerWidget {
     return durum.when(
       skipLoadingOnReload: true,
       loading: () => _Kabuk(girdi: girdi, child: const _Iskelet()),
-      // Seri hatası `KiyasYukleyici`'de Crashlytics'e gitti; burada boş hâl.
-      error: (_, __) => _Kabuk(girdi: girdi, child: const _VeriYok()),
+      // Seri hatası `KiyasYukleyici`'de Crashlytics'e gitti. Hata BOŞ
+      // değildir (TASARIM_DILI §6.1): metin aynı ("şu an alınamadı"), yanında
+      // kart içi "Tekrar dene". Eskiden kullanıcı sayfayı kapatıp açmadan
+      // yeniden deneyemiyordu. Tam ekran `SandikErrorView` kart içinde fazla
+      // büyük; aynı iş küçük ölçekte.
+      error: (_, __) => _Kabuk(
+        girdi: girdi,
+        child: _VeriYok(
+          onRetry: () => ref.invalidate(kiyasSerileriProvider(girdi.period)),
+        ),
+      ),
       data: (ozet) {
         if (ozet == null) return const SizedBox.shrink();
         if (ozet.satirlar.isEmpty) {
@@ -263,11 +272,29 @@ class _Iskelet extends StatelessWidget {
 }
 
 class _VeriYok extends StatelessWidget {
-  const _VeriYok();
+  const _VeriYok({this.onRetry});
+
+  /// Yalnız hata hâlinde: veri gerçekten eksikse (satır yok) yeniden denemek
+  /// aynı sonucu verir, düğme konmaz.
+  final VoidCallback? onRetry;
 
   @override
-  Widget build(BuildContext context) => Text(
-        context.l10n.kiyasVeriYok,
-        style: context.t.bodySmall?.copyWith(color: context.c.text36),
-      );
+  Widget build(BuildContext context) {
+    final metin = Text(
+      context.l10n.kiyasVeriYok,
+      style: context.t.bodySmall?.copyWith(color: context.c.text36),
+    );
+    final onRetry = this.onRetry;
+    if (onRetry == null) return metin;
+    return Row(
+      children: [
+        Expanded(child: metin),
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: SandikTouch.minSize),
+          onPressed: onRetry,
+          child: Text(context.l10n.retryLower),
+        ),
+      ],
+    );
+  }
 }

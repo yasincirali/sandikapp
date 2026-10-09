@@ -27,6 +27,7 @@ import '../services/period_summary_service.dart';
 import '../models/technical_signal.dart';
 import '../services/technical_analysis_service.dart';
 import '../widgets/disclaimer_widget.dart';
+import '../widgets/fiyat_grafigi.dart' show donemUclariX;
 import '../widgets/zoomable_chart.dart';
 import '../models/yatirimci_seviyesi.dart';
 import '../providers/preferences_provider.dart';
@@ -168,6 +169,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   // periyotta fetch edilir, ilk nokta 100 kabul edilip % normalize edilir.
   Asset? _compareAsset;
   Future<Map<int, double>>? _compareHistoryFuture;
+
+  /// Grafikte gezinen imlecin (fiyat, tarih) etiketi; başlıktaki büyük
+  /// fiyat bunu dinler (bayrak `goz_alici`, varlık sayfasıyla aynı).
+  final _imlec = ValueNotifier<(String, String)?>(null);
 
   /// Periyot sekmeleri. `days: 0` → GÜN İÇİ (5 dakikalık çözünürlük).
   ///
@@ -516,6 +521,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
 
   @override
   void dispose() {
+    _imlec.dispose();
     _nabziBirak?.call();
     _scrollController.dispose();
     super.dispose();
@@ -864,6 +870,14 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     final araclar =
                         ref.watch(seviyeGorunurlukProvider).grafikAraclari;
                     final logOn = compareOn || !araclar ? false : logOnPref;
+                    // Göz alıcılık (bayrak `goz_alici`): büyük fiyat imleci
+                    // izler. Karşılaştırmada YOK — çizgi % ölçeğinde, başlık
+                    // ise birim fiyat; % değeri fiyat yerine yazılırsa
+                    // "₺" başlığında "+%12" okunurdu. Mevduatta başlık birim
+                    // değil pozisyon değeri, seri onu çizmiyor.
+                    final imlecAcik = RemoteConfigService.instance.gozAlici &&
+                        !compareOn &&
+                        widget.asset.type != AssetType.mevduat;
 
                     final rawSegments = _convertHistoryToSegments(
                         historyMap, startDate, endDate,
@@ -1561,6 +1575,32 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               // kaydığında çağrılıyor (bkz. nearestSpotIndex).
                               return spots[nearestSpotIndex(spots, clamped)].x;
                             },
+                            imlecEtiketi: imlecAcik ? _imlec : null,
+                            // Başlıktaki biçimle (varlığın hane sayısı) —
+                            // grafik etiketi iki hanede kalır.
+                            imlecEtiketiBuilder: imlecAcik
+                                ? (x) {
+                                    final spots = activeSeg.spots;
+                                    if (spots.isEmpty) return null;
+                                    final snapped =
+                                        spots[nearestSpotIndex(spots, x)];
+                                    final date = startDate.add(Duration(
+                                        minutes: (snapped.x * 1440).round()));
+                                    return (
+                                      _birimBicimi(currentUnitTRY)
+                                          .format(fromY(snapped.y)),
+                                      isIntraday
+                                          ? DateFormat('d MMM · HH:mm', 'tr_TR')
+                                              .format(date)
+                                          : fmtTarihSaat(date),
+                                    );
+                                  }
+                                : null,
+                            // Dönemin zirvesi ve dibinde hafif titreşim (log
+                            // ölçek tekdüze: uçlar aynı noktalar).
+                            titresimNoktalari: imlecAcik
+                                ? donemUclariX(activeSeg.spots)
+                                : const {},
                             crosshairLabelBuilder: (x) {
                               // x zaten snap edildi — spot'u bul.
                               final spots = activeSeg.spots;
