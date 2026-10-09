@@ -9,7 +9,7 @@ import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/widgets/para_metni.dart';
 import 'package:portfoy_takip/widgets/transaction_row.dart';
 
-/// Göz alıcılık paketi A (2026-10-09): `varlik_rozeti` + `akan_rakam`.
+/// Göz alıcılık paketi A (2026-10-09): bayrak `goz_alici` (satır rozeti + akan rakam).
 ///
 /// Sözleşme: bayrak kapalıyken görünüş birebir eski; açıkken satırda
 /// sembolün kendisi, büyük fiyatta yalnız değişen hane döner, ekran okuyucu
@@ -94,7 +94,7 @@ void main() {
     });
   });
 
-  group('varlik_rozeti — hareket satırı', () {
+  group('satır rozeti — hareket satırı', () {
     testWidgets('kapalıyken tür ikonu, sembol yazılmaz', (tester) async {
       await _satir(tester, _asset());
       expect(find.byIcon(AssetType.hisse.icon), findsOneWidget);
@@ -102,14 +102,14 @@ void main() {
     });
 
     testWidgets('açıkken sembol rozeti, ikon yok', (tester) async {
-      RemoteConfigService.testAcik = {'varlik_rozeti'};
+      RemoteConfigService.testAcik = {'goz_alici'};
       await _satir(tester, _asset());
       expect(find.text('ASE'), findsOneWidget);
       expect(find.byIcon(AssetType.hisse.icon), findsNothing);
     });
 
     testWidgets('açıkken de altın ikonda kalır', (tester) async {
-      RemoteConfigService.testAcik = {'varlik_rozeti'};
+      RemoteConfigService.testAcik = {'goz_alici'};
       await _satir(
           tester, _asset(ticker: 'ALTIN_GRAM', type: AssetType.altin));
       expect(find.byIcon(AssetType.altin.icon), findsOneWidget);

@@ -4,7 +4,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 
 /// Büyük para/fiyat metni: hane hane akan rakam + simge/kuruş hiyerarşisi
-/// (bayrak `akan_rakam`; çağıran bayrağa bakar, kapalıyken düz `Text`).
+/// (bayrak `goz_alici`; çağıran bayrağa bakar, kapalıyken düz `Text`).
 ///
 /// ## Neden (göz alıcılık paketi A, yasin 2026-10-09)
 /// Fiyat yenilenince yeni değere sessizce atlıyordu; ₺, tam kısım ve kuruş

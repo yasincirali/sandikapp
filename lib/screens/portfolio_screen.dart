@@ -939,10 +939,10 @@ class _KucukHalkaState extends State<_KucukHalka>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Bayrak `akan_rakam`: toplam fiyat turunda değişince haneler
+          // Bayrak `goz_alici`: toplam fiyat turunda değişince haneler
           // döner (gerekçe `para_metni.dart`). Seçili dilimin yüzdesi düz
           // kalır: dilim değişimi "artış" değildir.
-          if (d == null && RemoteConfigService.instance.akanRakam)
+          if (d == null && RemoteConfigService.instance.gozAlici)
             ParaMetni(
               widget.baz.fmt(toplam),
               stil: context.t.numMedium.copyWith(
@@ -1713,11 +1713,11 @@ class _AssetLeadingIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Bayrak `varlik_rozeti`: sembolü olan türde (hisse/fon/kripto) sembolün
+    // Bayrak `goz_alici`: sembolü olan türde (hisse/fon/kripto) sembolün
     // kendisi döviz sembolüyle AYNI tür renkli kutuya yazılır; kapalıyken
     // birebir eski ikon (gerekçe `varlik_monogrami.dart`).
     final symbol = asset.currencySymbol ??
-        (RemoteConfigService.instance.varlikRozeti
+        (RemoteConfigService.instance.gozAlici
             ? varlikMonogrami(type: asset.type, ticker: asset.ticker)
             : null);
     if (symbol == null) {

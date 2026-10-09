@@ -1,6 +1,6 @@
 import 'asset_type.dart';
 
-/// Satır rozetinde gösterilecek kısa sembol (bayrak `varlik_rozeti`).
+/// Satır rozetinde gösterilecek kısa sembol (bayrak `goz_alici`).
 ///
 /// ## Neden (göz alıcılık paketi A, yasin 2026-10-09)
 /// Satır başı ikonu türden geliyordu: beş hisse beş aynı çizgi işareti,

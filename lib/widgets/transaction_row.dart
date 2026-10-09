@@ -303,11 +303,11 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Bayrak `varlik_rozeti`: hisse/fon/kripto satırında sembolün kendisi
+    // Bayrak `goz_alici`: hisse/fon/kripto satırında sembolün kendisi
     // (gerekçe `varlik_monogrami.dart`); tür rengi dairede kaldığı için tür
     // bilgisi kaybolmaz. Kapalıyken birebir eski ikon.
     final symbol = asset.currencySymbol ??
-        (RemoteConfigService.instance.varlikRozeti
+        (RemoteConfigService.instance.gozAlici
             ? varlikMonogrami(type: asset.type, ticker: asset.ticker)
             : null);
     final Color on = asset.type.onSurface(context);

@@ -205,9 +205,9 @@ class VarlikFiyatBlogu extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          // Bayrak `akan_rakam`: değişen hane döner, ₺ ve kuruş geri çekilir
+          // Bayrak `goz_alici`: değişen hane döner, ₺ ve kuruş geri çekilir
           // (gerekçe `para_metni.dart`). Kapalıyken düz metin, birebir eski.
-          child: RemoteConfigService.instance.akanRakam
+          child: RemoteConfigService.instance.gozAlici
               ? ParaMetni(
                   fiyat,
                   kimlik: kimlik,
