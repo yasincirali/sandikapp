@@ -9,15 +9,16 @@ import '../theme/sandik.dart';
 /// Yıllık "sandık Özeti" (`RecapScreen`) hikâye biçimindeydi ve işliyordu:
 /// her rakam kendi anını alıyor. Aylık rapor ise tek uzun listeydi; ayın
 /// en çok ne söylediği listenin içinde kayboluyordu. Aylık hikâye bu
-/// kabukla açılır. `RecapScreen` kendi kopyasını taşımaya devam ediyor
-/// (yılda 16 gün görünür, şimdi doğrulanamaz; taşıma `TECHNICAL_DEBT.md`).
+/// kabukla açılır. Yıllık özet de (2026-10-09) aynı kabuğa taşındı: iki
+/// hikâye tek davranış, çubuk/düğme bir yerde düzelince ikisinde düzelir.
 ///
 /// ## Kurallar
 /// - Çubuklar parmakla dolar (`PageController.page` kesirli değeri):
 ///   sürüklerken çubuk da sürüklenir (animasyon denetimi 2026-10-01).
 /// - Sayfa değişince hafif seçim titreşimi: hikâyede bir adım.
 /// - Geçiş yüzey hareketidir (`surfaceOf`): "hareketi azalt"ta anında.
-/// - [onAtla] → sağ üstte "Atla"; hikâye zorla izletilmez.
+/// - [onAtla] → sağ üstte "Atla"; hikâye zorla izletilmez. Kendi üst
+///   eylemi olan çağıran (yıllık özetin kapat düğmesi) [ustEylem] verir.
 class HikayeAkisi extends StatefulWidget {
   const HikayeAkisi({
     super.key,
@@ -27,6 +28,7 @@ class HikayeAkisi extends StatefulWidget {
     required this.onBitti,
     this.atlaMetni,
     this.onAtla,
+    this.ustEylem,
   });
 
   final List<Widget> sayfalar;
@@ -37,6 +39,9 @@ class HikayeAkisi extends StatefulWidget {
   final VoidCallback onBitti;
   final String? atlaMetni;
   final VoidCallback? onAtla;
+
+  /// Sağ üstte "Atla" yerine çizilir.
+  final Widget? ustEylem;
 
   @override
   State<HikayeAkisi> createState() => _HikayeAkisiState();
@@ -102,7 +107,9 @@ class _HikayeAkisiState extends State<HikayeAkisi> {
             },
           ),
         ),
-        if (atlaMetni != null && onAtla != null)
+        if (widget.ustEylem case final ustEylem?)
+          Align(alignment: AlignmentDirectional.centerEnd, child: ustEylem)
+        else if (atlaMetni != null && onAtla != null)
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
@@ -135,6 +142,7 @@ class _HikayeAkisiState extends State<HikayeAkisi> {
                   backgroundColor: c.amberFill,
                   foregroundColor: c.onAmber,
                   minimumSize: SandikTouch.minSize,
+                  padding: const EdgeInsets.symmetric(vertical: SandikSpace.md2),
                 ),
                 onPressed: sonSayfa
                     ? widget.onBitti

@@ -15,6 +15,7 @@ import '../services/supabase_service.dart';
 import '../widgets/review_prompt_sheet.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
+import '../widgets/hikaye_akisi.dart';
 import '../widgets/share_card.dart';
 import '../l10n/l10n.dart';
 
@@ -55,15 +56,6 @@ class RecapScreen extends StatefulWidget {
 }
 
 class _RecapScreenState extends State<RecapScreen> {
-  final _controller = PageController();
-  int _index = 0;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   List<_Sayfa> _sayfalar(BuildContext context) {
     final d = widget.data;
     final c = context.c;
@@ -201,109 +193,26 @@ class _RecapScreenState extends State<RecapScreen> {
     );
   }
 
+  // Kabuk (ilerleme çubukları, kaydırma, alt düğme) aylık hikâyeyle ORTAK
+  // `HikayeAkisi` (2026-10-09). Görünüm ve davranış birebir eski kopyayla
+  // aynı: çubuklar parmakla dolar, sayfa değişince seçim titreşimi, geçiş
+  // `surfaceOf` (hareketi azalt), son sayfada "Paylaş".
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    final sayfalar = _sayfalar(context);
-    final sonSayfa = _index == sayfalar.length - 1;
-
     return Scaffold(
       backgroundColor: c.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            // İlerleme çubukları — hikâye biçiminin en tanınan işareti;
-            // kullanıcı kaç sayfa kaldığını bilmeden ilerlemez.
-            //
-            // Çubuklar PARMAKLA dolar (animasyon denetimi 2026-10-01):
-            // eskiden sayfa yarıyı geçince (`onPageChanged`) bir sonraki
-            // çubuk tek karede boyanıyordu. Artık `PageController.page`
-            // kesirli değerinden doldurulur — sürüklerken çubuk da sürüklenir.
-            // Yalnız bu şerit yeniden kurulur (AnimatedBuilder), sayfalar
-            // değil; dolgu `FractionallySizedBox` ile ölçekte değil boyda.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  final sayfa = _controller.hasClients &&
-                          _controller.position.haveDimensions
-                      ? (_controller.page ?? _index.toDouble())
-                      : _index.toDouble();
-                  return Row(
-                    children: [
-                      for (var i = 0; i < sayfalar.length; i++)
-                        Expanded(
-                          child: Container(
-                            height: 3,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: c.text20,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            alignment: Alignment.centerLeft,
-                            child: FractionallySizedBox(
-                              widthFactor: (sayfa - i + 1).clamp(0.0, 1.0),
-                              heightFactor: 1,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: c.amberFill,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(Icons.close_rounded, color: c.text58),
-                tooltip: 'Kapat',
-              ),
-            ),
-            Expanded(
-              child: PageView.builder(
-                controller: _controller,
-                itemCount: sayfalar.length,
-                // Sayfa değişince hafif dokunsal onay — hikâyede bir adım.
-                onPageChanged: (i) {
-                  SandikHaptic.selection.perform();
-                  setState(() => _index = i);
-                },
-                itemBuilder: (_, i) => sayfalar[i],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: c.amberFill,
-                    foregroundColor: c.onAmber,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: sonSayfa
-                      ? _paylas
-                      // Sayfa geçişi bir YÜZEY hareketidir → `surface` (240ms).
-                      // Çıplak süre yerine token: `design_token_leak_test`
-                      // bunu kovalıyor ve `surfaceOf` "hareketi azalt"
-                      // ayarına da uyuyor (çıplak Duration uymuyordu).
-                      : () => _controller.nextPage(
-                            duration: SandikMotion.surfaceOf(context),
-                            curve: SandikMotion.enter,
-                          ),
-                  child: Text(sonSayfa ? context.l10n.shareWord : 'Devam'),
-                ),
-              ),
-            ),
-          ],
+        child: HikayeAkisi(
+          sayfalar: _sayfalar(context),
+          devamMetni: context.l10n.hkyDevam,
+          sonEylemMetni: context.l10n.shareWord,
+          onBitti: _paylas,
+          ustEylem: IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: Icon(Icons.close_rounded, color: c.text58),
+            tooltip: 'Kapat',
+          ),
         ),
       ),
     );
@@ -336,38 +245,13 @@ class _Sayfa extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(ikon, size: 40, color: renk),
-          const SizedBox(height: 24),
-          Text(
-            ustBaslik,
-            style: context.t.titleMedium?.copyWith(color: c.text58),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            baslik,
-            style: context.t.displaySmall?.copyWith(
-              color: renk,
-              fontWeight: FontWeight.w800,
-              height: 1.05,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            altBaslik,
-            style: context.t.bodyLarge?.copyWith(color: c.text58, height: 1.4),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => HikayeSayfasi(
+        bas: Icon(ikon, size: 40, color: renk),
+        ust: ustBaslik,
+        baslik: baslik,
+        alt: altBaslik,
+        renk: renk,
+      );
 }
 
 // ── Giriş noktası ────────────────────────────────────────────────────────────

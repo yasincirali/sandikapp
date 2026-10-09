@@ -136,6 +136,26 @@ void main() {
     expect(find.text('Kıyas için fiyat verisi şu an alınamadı.'),
         findsOneWidget);
     expect(find.text('Senin portföyün'), findsNothing);
+    // Veri gerçekten yok: yeniden denemek aynı sonucu verir, düğme yok.
+    expect(find.text('Tekrar dene'), findsNothing);
+  });
+
+  testWidgets('hata boş değildir: "Tekrar dene" seriyi yeniden ister',
+      (t) async {
+    var cagri = 0;
+    await kur(t, girdi(), seriler: () {
+      cagri++;
+      if (cagri == 1) return Future.error(Exception('ağ'));
+      return Future.value({
+        KiyasVarligi.bist100: {t0: 100.0, t1: 110.0},
+      });
+    });
+    expect(find.text('Kıyas için fiyat verisi şu an alınamadı.'),
+        findsOneWidget);
+    await t.tap(find.text('Tekrar dene'));
+    await t.pumpAndSettle();
+    expect(cagri, 2);
+    expect(find.text('Senin portföyün'), findsOneWidget);
   });
 
   testWidgets('kullanıcının getirisi yoksa kart hiç çizilmez', (t) async {

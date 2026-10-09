@@ -9,7 +9,7 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
-## 🟡 AÇIK — Yıllık özet (`RecapScreen`) ortak hikâye kabuğunu kullanmıyor (2026-10-09)
+## ✅ KAPANDI — Yıllık özet (`RecapScreen`) ortak hikâye kabuğunu kullanmıyor (2026-10-09 → aynı gün; görüntü piksel piksel aynı, `goz_alicilik_kalanlar_test`)
 
 **Ne:** Göz alıcılık D'de aylık hikâye için `HikayeAkisi`/`HikayeSayfasi`
 yazıldı (ilerleme çubukları, sayfa, tek düğme). `RecapScreen` aynı düzenin
