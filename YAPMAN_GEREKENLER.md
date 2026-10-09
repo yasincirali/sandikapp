@@ -53,6 +53,14 @@ kartına dokunulmadı.
   derlenemiyor.
   - [ ] TestFlight'ta: Performans › Raporlar › Aylık rapor; hikâye bir kez
         oynamalı, ikinci açılışta doğrudan liste.
+- 2026-10-09 kalanlar (PR #134) aynı bayrağa eklendi (yeni bayrak YOK).
+  Açıkken Portföy'den açılan varlık detayında da grafikte parmağı gezdirince
+  büyük fiyat ve tarih o noktayı yazar, zirve/dipte hafif titreşim
+  (Karşılaştır modunda ve mevduatta yok). Bayraksız: "Başka yere koysaydın"
+  kartı hata alınca "Tekrar dene" gösteriyor; yıllık özet aylık hikâyeyle
+  aynı kabukta (görünüm aynı). Şirket/fon logoları: monogram rozette
+  kalındı (karar 2026-10-09), logo işi yok.
+  - [ ] TestFlight'ta: Portföy › bir hisse › grafikte basılı gezdir.
 
 ## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 
