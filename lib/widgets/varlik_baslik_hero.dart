@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 /// 2.14 "iki uçtaki boyut farkında bozuk görünür" diye cihazsız
 /// yapılmamıştı: satırda `titleMedium`, ekranda `headlineSmall`. Varsayılan
 /// `Hero` uçuşu HEDEF metni büyüyen kutuya koyar; kutu küçükken metin
-/// kırpılır ya da satır kırar. Bu yüzden uçuşta iki uç da `FittedBox` ile
-/// kutuya ÖLÇEKLENİR (yeniden dizilmez) ve çapraz solar — metin hiçbir
-/// karede kırılmaz, iki uçtaki yazı farklıysa (döviz satırı adı, ekran
-/// kodu) yumuşak geçer. Yine de son söz cihazda; bayrak kapalıyken hiçbir
+/// kırpılır ya da satır kırar. Bu yüzden uçuşta iki uç da kendi boyunda
+/// kalır, birlikte kayarak çapraz solar — metin hiçbir karede kırılmaz, iki
+/// uçtaki yazı farklıysa (döviz satırı adı, ekran kodu) yumuşak geçer.
+/// (İlk sürüm ölçekliyordu; neden bırakıldı `_ucus`'ta.) Yine de son söz cihazda; bayrak kapalıyken hiçbir
 /// `Hero` kurulmaz, geçiş birebir eski.
 ///
 /// "Hareketi azalt" açıkken uçuş yok (`MediaQuery.disableAnimations`).
@@ -54,24 +54,37 @@ class VarlikBaslikHero extends StatelessWidget {
     // değil uca bağla: satır = 1−v, ekran = v.
     final satir = yon == HeroFlightDirection.push ? kaynak : hedef;
     final ekran = yon == HeroFlightDirection.push ? hedef : kaynak;
-    Widget olcekli(Widget w) => FittedBox(
-          fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
-          child: w,
+    // İki uç da KENDİ boyunda, sola yaslı çizilir; uçuş kutusu büyürken
+    // metin ölçeklenmez. İlk sürüm (2026-10-08) iki ucu `FittedBox` ile her
+    // karede kutuya ölçekliyordu: yazı her karede yeni bir boyda
+    // rasterleşti ve TestFlight'ta uçuş kare düşürdü (yasin 2026-10-09:
+    // "çok düşük fps ile gidiyor"). Şimdi metin tek kez dizilir
+    // (`OverflowBox` sabit kısıt verir, kutu boyu değişse de yeniden
+    // dizilmez), kare başına yalnız konum ve opaklık değişir; opaklık
+    // `FadeTransition` ile katmanda — her karede widget yeniden kurulmaz.
+    // Kesim yok: kutu küçükken büyük uç taşar ama kırpılmaz, satır kırmaz.
+    Widget uc(Widget w, Animation<double> opaklik) => FadeTransition(
+          opacity: opaklik,
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            minWidth: 0,
+            maxWidth: double.infinity,
+            minHeight: 0,
+            maxHeight: double.infinity,
+            child: w,
+          ),
         );
     // Uçuş katmanında `DefaultTextStyle`/`Material` yok; metin sarı alt
     // çizgiyle çizilmesin.
     return Material(
       type: MaterialType.transparency,
-      child: AnimatedBuilder(
-        animation: animasyon,
-        builder: (_, __) => Stack(
-          fit: StackFit.expand,
-          children: [
-            Opacity(opacity: 1 - animasyon.value, child: olcekli(satir)),
-            Opacity(opacity: animasyon.value, child: olcekli(ekran)),
-          ],
-        ),
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          uc(satir, ReverseAnimation(animasyon)),
+          uc(ekran, animasyon),
+        ],
       ),
     );
   }

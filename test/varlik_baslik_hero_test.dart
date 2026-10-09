@@ -63,15 +63,20 @@ void main() {
     ));
     await t.pump();
     await t.pump(const Duration(milliseconds: 120));
-    // Uçuşta iki uç da ölçeklenmiş hâlde, üst üste.
-    expect(find.byType(FittedBox), findsNWidgets(2));
+    // Uçuşta iki uç üst üste, kendi boylarında: metin ölçeklenmez
+    // (2026-10-09: her karede ölçeklenen yazı TestFlight'ta kare düşürdü).
+    expect(find.byType(OverflowBox), findsNWidgets(2));
+    expect(find.byType(FittedBox), findsNothing);
+    final buyuk = t.widget<Text>(find.text('Türk Hava Yolları').last);
+    expect(buyuk.style?.fontSize, 28);
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
 
     nav.currentState!.pop();
     await t.pump();
     await t.pump(const Duration(milliseconds: 120));
-    expect(find.byType(FittedBox), findsNWidgets(2));
+    expect(find.byType(OverflowBox), findsNWidgets(2));
+    expect(find.byType(FittedBox), findsNothing);
     await t.pumpAndSettle();
     expect(t.takeException(), isNull);
     expect(find.text('THYAO'), findsOneWidget);
