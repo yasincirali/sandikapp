@@ -12525,6 +12525,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Aylık abone ol'**
   String get pwdAylikAboneOl;
+
+  /// No description provided for @depositBankPick.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bankanı seç'**
+  String get depositBankPick;
+
+  /// No description provided for @depositBankSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka ara'**
+  String get depositBankSearchHint;
+
+  /// No description provided for @depositBankUseTyped.
+  ///
+  /// In tr, this message translates to:
+  /// **'\"{ad}\" olarak kullan'**
+  String depositBankUseTyped(String ad);
+
+  /// No description provided for @depositBankSectionDeposit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bankalar'**
+  String get depositBankSectionDeposit;
+
+  /// No description provided for @depositBankSectionParticipation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katılım bankaları'**
+  String get depositBankSectionParticipation;
+
+  /// No description provided for @depositBankListUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Liste şu an yüklenemedi. Bankanın adını yazıp kullanabilirsin.'**
+  String get depositBankListUnavailable;
+
+  /// No description provided for @depositRateAnnualGross.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık brüt (%)'**
+  String get depositRateAnnualGross;
+
+  /// No description provided for @depositRateMonthlyGross.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık brüt (%)'**
+  String get depositRateMonthlyGross;
+
+  /// No description provided for @depositRateMarketAverage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Piyasa ortalaması (TCMB, {date} haftası), bankaya özel değil. Sana farklı bir oran verildiyse değiştir.'**
+  String depositRateMarketAverage(String date);
+
+  /// No description provided for @depositRateOwn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu oranı sen girdin; banka ya da vade değişince ortalama üstüne yazılmaz.'**
+  String get depositRateOwn;
+
+  /// No description provided for @depositRateParticipation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Katılım bankasında kâr payı önceden belli değil; bankanın bildirdiği oranı yaz.'**
+  String get depositRateParticipation;
+
+  /// No description provided for @depositNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not'**
+  String get depositNote;
+
+  /// No description provided for @depositNoteHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn. kampanya faizi, hedef, şube'**
+  String get depositNoteHint;
 }
 
 class _AppLocalizationsDelegate

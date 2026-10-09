@@ -372,6 +372,21 @@ class RemoteConfigService {
     // KAPALI doğar: ana yüzeylerin görünüşü; kapalıyken birebir eski.
     'goz_alici': false,
 
+    // Mevduat banka seçici (2026-10-09, yasin: "banka listesi yasal
+    // yollardan ve ücretsiz bir API'den performansı etkilemeyecek şekilde
+    // çekilsin; seçilen bankanın aylık/yıllık brüt faizi varsayılan
+    // yazılsın, müşteriye özel oran verildiyse değiştirebilsin; mevduata
+    // not eklenebilsin"). TEK bayrak, üçü birden:
+    //  · banka listeden seçilir (0129 `mevduat_bankalari`, harf rozeti,
+    //    logo YOK — marka hakkı);
+    //  · yıllık brüt faiz vadeye göre TCMB haftalık ağırlıklı ortalamasıyla
+    //    dolar (0129 `mevduat_faiz_ortalama`; bankaya özel kaynak yok),
+    //    yanında aylık brüt; elle yazılan oranın üstüne bir daha yazılmaz;
+    //  · not alanı (lotun `notes` sütunu; şema değişmez).
+    // KAPALI doğar: 0129 + `mevduat-faiz` ilk turu iki sunucuda koşmadan
+    // açılırsa liste boş gelir ve form bugünkü serbest metne düşer.
+    'mevduat_banka_secici': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -706,6 +721,10 @@ class RemoteConfigService {
 
   /// Göz alıcılık paketleri (tek bayrak). Gerekçe `_defaults`'ta.
   bool get gozAlici => _bayrak('goz_alici');
+
+  /// Mevduat formunda banka seçici + faiz varsayılanı + not. Gerekçe
+  /// `_defaults`'ta.
+  bool get mevduatBankaSecici => _bayrak('mevduat_banka_secici');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

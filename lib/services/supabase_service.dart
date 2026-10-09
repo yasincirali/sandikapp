@@ -5,6 +5,7 @@ import '../models/app_notification.dart';
 import '../models/asset.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import '../models/mevduat_bankasi.dart';
 import '../models/kayitli_cihaz.dart';
 import '../models/kullanici_adi.dart';
 import '../models/signal_alert.dart';
@@ -1746,6 +1747,48 @@ class SupabaseService {
       if (t != null && v != null && v > 0) out.add((t, v));
     }
     return out;
+  }
+
+  // ── Mevduat banka seçici (0129) ─────────────────────────────────────────
+  // Banka listesi elle tutulur, faiz ortalamasını sunucu haftada bir TCMB
+  // EVDS'den çeker (`mevduat-faiz`); telefon yalnız iki küçük tabloyu okur.
+
+  /// Etkin bankalar, sıraya göre.
+  Future<List<MevduatBankasi>> mevduatBankalari() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.mevduatBankalari',
+      table: 'mevduat_bankalari',
+      op: 'SELECT',
+      request: const {'aktif': true},
+      call: () => _db
+          .from('mevduat_bankalari')
+          .select('kod, ad, tur, diger_adlar')
+          .order('sira', ascending: true)
+          .order('ad', ascending: true),
+    );
+    return [
+      for (final r in rows)
+        if (MevduatBankasi.fromMap(r) case final b?) b,
+    ];
+  }
+
+  /// Vade dilimi → TCMB haftalık ortalaması (yalnız geçerli ve taze olanlar).
+  Future<Map<String, MevduatFaizOrtalamasi>> mevduatFaizOrtalamalari() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.mevduatFaizOrtalamalari',
+      table: 'mevduat_faiz_ortalama',
+      op: 'SELECT',
+      request: const {},
+      call: () => _db
+          .from('mevduat_faiz_ortalama')
+          .select('vade_dilimi, yillik_faiz, veri_tarihi, durum'),
+    );
+    final simdi = DateTime.now();
+    return {
+      for (final r in rows)
+        if (MevduatFaizOrtalamasi.fromMap(r, simdi: simdi) case final o?)
+          o.dilim: o,
+    };
   }
 
   // ── Eurobond (0124) ──────────────────────────────────────────────────────
