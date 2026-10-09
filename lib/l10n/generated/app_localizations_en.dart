@@ -6832,6 +6832,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get anzAylikBos => 'This month\'s report is not ready yet.';
 
   @override
+  String get hkyDevam => 'Continue';
+
+  @override
+  String get hkyAtla => 'Skip';
+
+  @override
+  String get hkyAylikAcilis => 'Your month';
+
+  @override
+  String get hkyAylikAcilisAlt => 'Your assets\' month, card by card.';
+
+  @override
+  String get hkyAylikSayiUst => 'Assets with a note this month';
+
+  @override
+  String hkyAylikHareketli(String sayi) {
+    return '$sayi of them had a notable month.';
+  }
+
+  @override
+  String get hkyAylikSakin => 'None had a notable move; a calm month.';
+
+  @override
+  String get hkyAylikOneCikan => 'Highlight of the month';
+
+  @override
+  String get hkyAylikRaporuAc => 'Open the report';
+
+  @override
+  String get hkyAylikTekrar => 'Watch as a story';
+
+  @override
   String get anzOkunamadi => 'The note could not be opened right now.';
 
   @override

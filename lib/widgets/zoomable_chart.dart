@@ -192,6 +192,13 @@ class ZoomableChart extends StatefulWidget {
   /// parmağı izlemesi için (göz alıcılık B, bayrak çağıranda).
   final ValueNotifier<(String, String)?>? imlecEtiketi;
 
+  /// [imlecEtiketi]'ne yazılacak etiket; yoksa [crosshairLabelBuilder].
+  ///
+  /// Neden ayrı: grafiğin kendi etiketi sabit iki haneli olabilir, sayfa
+  /// başlığındaki büyük fiyat ise varlığın kendi hane sayısıyla yazılır
+  /// (fonda ₺0,123456). Başlık parmakla değişirken biçimi zıplamamalı.
+  final (String, String)? Function(double x)? imlecEtiketiBuilder;
+
   /// İmleç bu X'lerden birine oturunca hafif titreşim (ör. dönemin zirvesi
   /// ve dibi). Boş → yalnız imlecin belirdiği anki titreşim (eski davranış).
   ///
@@ -219,6 +226,7 @@ class ZoomableChart extends StatefulWidget {
     this.swapDuration = SandikMotion.state,
     this.swapCurve = SandikMotion.enter,
     this.imlecEtiketi,
+    this.imlecEtiketiBuilder,
     this.titresimNoktalari = const {},
   });
 
@@ -525,7 +533,9 @@ class _ZoomableChartState extends State<ZoomableChart> {
     });
     final dinleyen = widget.imlecEtiketi;
     if (dinleyen != null) {
-      dinleyen.value = widget.crosshairLabelBuilder?.call(xData);
+      dinleyen.value =
+          (widget.imlecEtiketiBuilder ?? widget.crosshairLabelBuilder)
+              ?.call(xData);
     }
   }
 

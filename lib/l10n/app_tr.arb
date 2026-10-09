@@ -4899,6 +4899,21 @@
   },
   "anzAylikOzetYok": "Bu ay varlıklarında belirgin bir hareket olmadı.",
   "anzAylikBos": "Bu ayın raporu henüz hazır değil.",
+  "hkyDevam": "Devam",
+  "hkyAtla": "Atla",
+  "hkyAylikAcilis": "Ayın hikâyesi",
+  "hkyAylikAcilisAlt": "Varlıklarının bu ayı, kart kart.",
+  "hkyAylikSayiUst": "Bu ay notu çıkan varlığın",
+  "hkyAylikHareketli": "{sayi} tanesinde belirgin hareket oldu.",
+  "@hkyAylikHareketli": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "hkyAylikSakin": "Hiçbirinde belirgin hareket yok; sakin bir ay.",
+  "hkyAylikOneCikan": "Ayın öne çıkanı",
+  "hkyAylikRaporuAc": "Raporu aç",
+  "hkyAylikTekrar": "Hikâye olarak izle",
   "anzOkunamadi": "Not şu an açılamadı.",
   "sgnPremiumAktif": "Premium göstergeler açık",
   "sgnPremiumAktifGovde": "ADX, Williams %R ve CCI sinyal analizine katılıyor.",

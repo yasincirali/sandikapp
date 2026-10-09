@@ -5,9 +5,22 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
+
+## ✅ KAPANDI — Yıllık özet (`RecapScreen`) ortak hikâye kabuğunu kullanmıyor (2026-10-09 → aynı gün; görüntü piksel piksel aynı, `goz_alicilik_kalanlar_test`)
+
+**Ne:** Göz alıcılık D'de aylık hikâye için `HikayeAkisi`/`HikayeSayfasi`
+yazıldı (ilerleme çubukları, sayfa, tek düğme). `RecapScreen` aynı düzenin
+eski kopyasını taşıyor (ham `16, 12`, `height: 3` vb.).
+**Neden ertelendi:** yıllık özet yalnız 26 Ara–10 Oca afişinden ve Raporlar
+kapısından açılır; görsel birebirliği şimdi gerçek veriyle doğrulanamadı ve
+paket bayraklı değişiklik içindi, bayraksız refactor değil.
+**Maliyet:** iki kopya ayrışabilir (çubuk/düğme davranışı bir yerde düzelip
+öbüründe kalır); ham sayılar ratchet'te sayılmaya devam eder.
+**Ne zaman:** Aralık özet penceresi açılmadan önce; `RecapScreen` sayfalarını
+`HikayeSayfasi`'na, kabuğu `HikayeAkisi`'na taşı (son düğme paylaşım).
 
 ## ✅ KAPANDI — Sadeleştirme bayraklarının eski (kapalı) yolları (2026-10-05, `c0230d7`)
 
