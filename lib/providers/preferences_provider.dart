@@ -520,8 +520,22 @@ final magazaPremiumProvider = StateProvider<bool>((_) => false);
 /// paywall, premium banner, kilit overlay, "Premium" chip'leri hiç render
 /// edilmez. Store + RevenueCat entegrasyonu hazır olunca Remote Config'ten
 /// true'ya çekilir.
-final paywallVisibleProvider = Provider<bool>((_) {
+///
+/// RC etkinleşince yeniden hesaplanır (`rcEtkinlesmeProvider`): açılış
+/// fetch'i ilk kareden sonra bittiğinde de yeni değer aynı oturumda yansır.
+final paywallVisibleProvider = Provider<bool>((ref) {
+  ref.watch(rcEtkinlesmeProvider);
   return RemoteConfigService.instance.paywallEnabled;
+});
+
+/// Remote Config her etkinleştiğinde değişir; RC değerini önbelleğe alan
+/// provider'lar bunu izler (`RemoteConfigService.etkinlesmeSayaci`).
+final rcEtkinlesmeProvider = Provider<int>((ref) {
+  final sayac = RemoteConfigService.instance.etkinlesmeSayaci;
+  void degisti() => ref.invalidateSelf();
+  sayac.addListener(degisti);
+  ref.onDispose(() => sayac.removeListener(degisti));
+  return sayac.value;
 });
 
 /// UI'da kullanılması gereken effective premium bayrağı:

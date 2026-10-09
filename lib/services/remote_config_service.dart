@@ -23,6 +23,14 @@ class RemoteConfigService {
   RemoteConfigService._();
   static final RemoteConfigService instance = RemoteConfigService._();
 
+  /// Her etkinleştirmede (açılıştaki fetch, ön plana dönüş, gerçek zamanlı
+  /// güncelleme) bir artar. Değeri bir `Provider`'da önbelleğe alınan
+  /// bayraklar (`paywallVisibleProvider`) bunu dinler. Neden (2026-10-09):
+  /// açılış fetch'i beklenmeden ilk kare çiziliyor; provider o anki ESKİ
+  /// değeri okuyup süreç boyunca tutuyordu. Console'da `paywall_enabled`
+  /// true yapılınca paywall ancak ikinci soğuk açılışta görünüyordu.
+  final ValueNotifier<int> etkinlesmeSayaci = ValueNotifier<int>(0);
+
   FirebaseRemoteConfig? _rc;
   bool _initialized = false;
 
@@ -530,6 +538,7 @@ class RemoteConfigService {
   void _sunucuyaBildir() {
     final rc = _rc;
     if (rc == null) return;
+    etkinlesmeSayaci.value++;
     SunucuSecimi.instance.rcGuncellendi(
       istenen: rc.getString(SunucuSecimi.anahtar),
       minBuild: rc.getInt(SunucuSecimi.minBuildAnahtari),
