@@ -32,5 +32,5 @@ jobs:
       - name: Mevduat banka/faiz kaynakları
         if: ${{ startsWith(github.ref_name, 'claude/project-thread-cwtgkn') }}
         run: |
-          pip install -q pandas openpyxl xlrd
+          pip install -q pandas openpyxl xlrd pypdf
           python tool/mevduat_kaynak_olcum.py

@@ -4,7 +4,6 @@ Neden: bulut kabı TCMB/BDDK/TBB hostlarını reddediyor. Salt okunur,
 anahtarsız; secret kullanmaz (public repo, log herkese açık).
 """
 import re
-import subprocess
 import urllib.request
 
 UA = {"User-Agent": "Mozilla/5.0 (sandik kaynak olcum)"}
@@ -23,9 +22,10 @@ def al(url):
 
 
 def pdf_metin(b, n=6000):
-    open("/tmp/x.pdf", "wb").write(b)
-    out = subprocess.run(["pdftotext", "-layout", "/tmp/x.pdf", "-"], capture_output=True, text=True)
-    print(out.stdout[:n] or out.stderr[:500])
+    import io
+    from pypdf import PdfReader
+    t = "\n".join(p.extract_text() or "" for p in PdfReader(io.BytesIO(b)).pages)
+    print(t[:n])
 
 
 T = "https://www.tcmb.gov.tr"
