@@ -7520,4 +7520,50 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdAylikAboneOl => 'Aylık abone ol';
+
+  @override
+  String get depositBankPick => 'Bankanı seç';
+
+  @override
+  String get depositBankSearchHint => 'Banka ara';
+
+  @override
+  String depositBankUseTyped(String ad) {
+    return '\"$ad\" olarak kullan';
+  }
+
+  @override
+  String get depositBankSectionDeposit => 'Bankalar';
+
+  @override
+  String get depositBankSectionParticipation => 'Katılım bankaları';
+
+  @override
+  String get depositBankListUnavailable =>
+      'Liste şu an yüklenemedi. Bankanın adını yazıp kullanabilirsin.';
+
+  @override
+  String get depositRateAnnualGross => 'Yıllık brüt (%)';
+
+  @override
+  String get depositRateMonthlyGross => 'Aylık brüt (%)';
+
+  @override
+  String depositRateMarketAverage(String date) {
+    return 'Piyasa ortalaması (TCMB, $date haftası), bankaya özel değil. Sana farklı bir oran verildiyse değiştir.';
+  }
+
+  @override
+  String get depositRateOwn =>
+      'Bu oranı sen girdin; banka ya da vade değişince ortalama üstüne yazılmaz.';
+
+  @override
+  String get depositRateParticipation =>
+      'Katılım bankasında kâr payı önceden belli değil; bankanın bildirdiği oranı yaz.';
+
+  @override
+  String get depositNote => 'Not';
+
+  @override
+  String get depositNoteHint => 'Örn. kampanya faizi, hedef, şube';
 }

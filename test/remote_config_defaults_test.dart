@@ -126,6 +126,12 @@ void main() {
       expect(varsayilan('goz_alici'), 'false');
     });
 
+    // Sunucu tabloları (0129) ve ilk faiz turu olmadan açılırsa liste boş
+    // gelir; kapalıyken mevduat formu birebir eski.
+    test('mevduat banka seçici KAPALI doğar', () {
+      expect(varsayilan('mevduat_banka_secici'), 'false');
+    });
+
     test('temettü stopaj oranı %15 (mevzuat, kaynaklı)', () {
       expect(varsayilan('temettu_stopaj_orani'), '0.15');
     });

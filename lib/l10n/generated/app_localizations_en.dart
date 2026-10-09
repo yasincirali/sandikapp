@@ -7592,4 +7592,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdAylikAboneOl => 'Subscribe monthly';
+
+  @override
+  String get depositBankPick => 'Choose your bank';
+
+  @override
+  String get depositBankSearchHint => 'Search banks';
+
+  @override
+  String depositBankUseTyped(String ad) {
+    return 'Use \"$ad\"';
+  }
+
+  @override
+  String get depositBankSectionDeposit => 'Banks';
+
+  @override
+  String get depositBankSectionParticipation => 'Participation banks';
+
+  @override
+  String get depositBankListUnavailable =>
+      'The list couldn\'t be loaded right now. Type your bank\'s name to use it.';
+
+  @override
+  String get depositRateAnnualGross => 'Annual gross (%)';
+
+  @override
+  String get depositRateMonthlyGross => 'Monthly gross (%)';
+
+  @override
+  String depositRateMarketAverage(String date) {
+    return 'Market average (CBRT, week of $date), not bank-specific. Change it if you were offered a different rate.';
+  }
+
+  @override
+  String get depositRateOwn =>
+      'You entered this rate; changing the bank or term won\'t overwrite it.';
+
+  @override
+  String get depositRateParticipation =>
+      'Participation banks don\'t fix the profit share in advance; enter the rate your bank quoted.';
+
+  @override
+  String get depositNote => 'Note';
+
+  @override
+  String get depositNoteHint => 'e.g. campaign rate, goal, branch';
 }

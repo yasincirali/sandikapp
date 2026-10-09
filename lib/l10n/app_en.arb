@@ -4773,5 +4773,18 @@
   "pwdGuvenTakip": "Portfolio tracking stays free",
   "pwdGuvenIptal": "Cancel anytime, access until the period ends",
   "pwdYillikAboneOl": "Subscribe yearly",
-  "pwdAylikAboneOl": "Subscribe monthly"
+  "pwdAylikAboneOl": "Subscribe monthly",
+  "depositBankPick": "Choose your bank",
+  "depositBankSearchHint": "Search banks",
+  "depositBankUseTyped": "Use \"{ad}\"",
+  "depositBankSectionDeposit": "Banks",
+  "depositBankSectionParticipation": "Participation banks",
+  "depositBankListUnavailable": "The list couldn't be loaded right now. Type your bank's name to use it.",
+  "depositRateAnnualGross": "Annual gross (%)",
+  "depositRateMonthlyGross": "Monthly gross (%)",
+  "depositRateMarketAverage": "Market average (CBRT, week of {date}), not bank-specific. Change it if you were offered a different rate.",
+  "depositRateOwn": "You entered this rate; changing the bank or term won't overwrite it.",
+  "depositRateParticipation": "Participation banks don't fix the profit share in advance; enter the rate your bank quoted.",
+  "depositNote": "Note",
+  "depositNoteHint": "e.g. campaign rate, goal, branch"
 }
