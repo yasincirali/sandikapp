@@ -38,6 +38,26 @@ export interface Tarif {
   /// Gün içi seri, canlı uç UYGULANMADAN önce (TRY).
   seri: number[];
   sonSlotMs: number;
+  /// Günü sürükleyen pozisyon (goz_alici madde 4) — yalnız kullanıcı
+  /// "Tutarları göster"i açtıysa yazılır. `a0` gün başı, `v` yazım anındaki
+  /// değer (TRY); `i` varsa `parcalar[i]`'nin kotasyon oranı `v`'ye uygulanır.
+  /// Alan ekleyerek geldi: sürüm aynı, eski istemcinin tarifinde yoktur.
+  sr?: Surukleyen;
+}
+
+export interface Surukleyen {
+  ad: string;
+  a0: number;
+  v: number;
+  i?: number;
+}
+
+/// Kilit ekranının "günü sürükleyen" satırı — push gövdesine giden metinler.
+export interface SurukleyenMetni {
+  surukleyenAd: string;
+  surukleyenPctText: string;
+  surukleyenTutarText: string;
+  surukleyenPozitif: boolean;
 }
 
 export const TARIF_SURUMU = 1;
@@ -74,6 +94,8 @@ export interface IleriOzet {
   sparkline: number[];
   axisMinText: string;
   axisMaxText: string;
+  /// Tarifte sürükleyen varsa ve tutar gösterimi açıksa dolu.
+  surukleyen: SurukleyenMetni | null;
 }
 
 /// Tarifte geçen bütün kotasyon sembolleri (parça + kur).
@@ -108,6 +130,19 @@ export function tarifCoz(raw: unknown): Tarif | null {
   }
   for (const a of t.akislar as Array<Record<string, unknown>>) {
     if (!sayi(a?.f) || !sayi(a?.ms)) return null;
+  }
+  // Sürükleyen İSTEĞE BAĞLI: bozuksa yalnız o düşer, toplam yine taşınır.
+  if (t.sr !== undefined) {
+    const r = t.sr as Record<string, unknown> | null;
+    const parcaSayisi = (t.parcalar as unknown[]).length;
+    const gecerli = !!r && typeof r === 'object' && typeof r.ad === 'string' &&
+      r.ad.length > 0 && sayi(r.a0) && (r.a0 as number) > 0 && sayi(r.v) &&
+      (r.i === undefined ||
+        (Number.isInteger(r.i) && (r.i as number) >= 0 && (r.i as number) < parcaSayisi));
+    if (!gecerli) {
+      const { sr: _sr, ...geri } = t;
+      return geri as unknown as Tarif;
+    }
   }
   return t as unknown as Tarif;
 }
@@ -144,12 +179,13 @@ export function ileriTasi(
   if (t.gun !== bugun) return null;
   if (simdiMs - t.yazildiMs < TAZE_YAZIM_MS) return null;
 
+  const parcaOrani = (p: Tarif['parcalar'][number]) => {
+    let r = oran(kotasyonlar.get(p.s), p.p);
+    if (p.k && p.kf) r *= oran(kotasyonlar.get(p.k), p.kf);
+    return r;
+  };
   let toplam = t.sabit;
-  for (const p of t.parcalar) {
-    let d = p.d * oran(kotasyonlar.get(p.s), p.p);
-    if (p.k && p.kf) d *= oran(kotasyonlar.get(p.k), p.kf);
-    toplam += d;
-  }
+  for (const p of t.parcalar) toplam += p.d * parcaOrani(p);
   if (!(toplam > 0)) return null;
 
   const degerler = gunlukDegerler(t.seri, t.sonSlotMs, simdiMs, toplam);
@@ -196,6 +232,46 @@ export function ileriTasi(
     sparkline: normalizeSparkline(degerler),
     axisMinText,
     axisMaxText,
+    // Sürükleyen yalnız tutar gösterimi açıkken — gizlilik kapısı BURADA da.
+    surukleyen: tutarGoster && t.sr
+      ? surukleyenMetinleri(
+        t.sr.ad,
+        t.sr.a0,
+        t.sr.v * (t.sr.i !== undefined ? parcaOrani(t.parcalar[t.sr.i]) : 1),
+      )
+      : null,
+  };
+}
+
+/// `KilitSurukleyen.surukleyenMetinleri` (live_activity_service.dart) —
+/// aynı vektörler iki tarafta test edilir. Yuvarlanınca sıfır olan değişim
+/// satır üretmez.
+export function surukleyenMetinleri(ad: string, a0: number, v: number): SurukleyenMetni | null {
+  if (!(a0 > 0) || !Number.isFinite(v)) return null;
+  const pct = (v / a0 - 1) * 100;
+  if (!Number.isFinite(pct) || Math.abs(pct) < 0.005) return null;
+  const tutar = v - a0;
+  const pozitif = tutar >= 0;
+  return {
+    surukleyenAd: ad,
+    surukleyenPctText: fmtPct(Math.abs(pct), 2),
+    surukleyenTutarText: `${pozitif ? '+' : '-'}${fmtTRY(Math.abs(tutar), 0)}`,
+    surukleyenPozitif: pozitif,
+  };
+}
+
+/// İstemcinin özete yazdığı sürükleyen alanları (ileri taşınamayan satır).
+export function satirSurukleyeni(row: Record<string, unknown>): SurukleyenMetni | null {
+  const ad = row.surukleyenAd;
+  if (typeof ad !== 'string' || ad.length === 0) return null;
+  const pct = row.surukleyenPctText;
+  const tutar = row.surukleyenTutarText;
+  if (typeof pct !== 'string' || typeof tutar !== 'string') return null;
+  return {
+    surukleyenAd: ad,
+    surukleyenPctText: pct,
+    surukleyenTutarText: tutar,
+    surukleyenPozitif: row.surukleyenPozitif !== false,
   };
 }
 

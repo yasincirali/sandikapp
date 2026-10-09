@@ -28,6 +28,7 @@ import {
   type IleriOzet,
   istanbulGunMetni,
   type Tarif,
+  satirSurukleyeni,
   tarifCoz,
   tarifSembolleri,
 } from '../_shared/canli_etkinlik.ts';
@@ -332,6 +333,13 @@ Deno.serve(async (request) => {
 
     const isPositive = ileri ? ileri.isPositive : row.isPositive === true;
 
+    // Günü sürükleyen (goz_alici madde 4): sembol taşır, bu yüzden YALNIZ
+    // tutar gösterimine izin veren kullanıcıya. Bayrak kapalı istemci
+    // alanı yazmaz; o satırda hiçbir şey gitmez — eski davranış.
+    const surukleyen = showAmounts
+      ? (ileri ? ileri.surukleyen : satirSurukleyeni(row))
+      : null;
+
     // GİZLİLİK: tutar yalnızca kullanıcı izin verdiyse gönderilir.
     // Maskeleme sunum katmanında değil BURADA yapılır — rakam cihaza
     // hiç ulaşmasın.
@@ -396,6 +404,12 @@ Deno.serve(async (request) => {
       // Sıfır değişimde yön/renk bastırılır. Gizlilik kapısına TABİ
       // DEĞİL: yalnızca "bugün hareket yok" bilgisi, tutar taşımaz.
       isFlatChange: ileri ? ileri.isFlatChange : row.isFlatChange === true,
+      // Eski uzantı tanımadığı anahtarı yok sayar; yeni uzantı boşsa satırı
+      // çizmez.
+      surukleyenAd: surukleyen?.surukleyenAd ?? '',
+      surukleyenPctText: surukleyen?.surukleyenPctText ?? '',
+      surukleyenTutarText: surukleyen?.surukleyenTutarText ?? '',
+      surukleyenPozitif: surukleyen?.surukleyenPozitif ?? true,
       // Uygulamanın SEÇİLİ teması. Sunucu temaya karar VERMEZ, taşır.
       //
       // **Önce SÜTUN, sonra özet.** İkisi de istemcinin yazdığı değerdir

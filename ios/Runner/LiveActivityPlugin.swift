@@ -298,7 +298,8 @@ enum LiveActivityChannel {
             // ⚠️ Argüman sırası `ContentState` alan sırasıyla AYNI olmak
             // zorunda (memberwise initializer): showAmounts → axisMinText
             // → axisMaxText → isFlatChange → isMarketOpen → isLightTheme
-            // → yalnizBorsa.
+            // → yalnizBorsa → surukleyenAd → surukleyenPctText
+            // → surukleyenTutarText → surukleyenPozitif.
             axisMinText: args["axisMinText"] as? String ?? "",
             axisMaxText: args["axisMaxText"] as? String ?? "",
             // Ölçüldü ama sıfır mı? Yön oku ve kâr/zarar rengi buna göre
@@ -323,7 +324,14 @@ enum LiveActivityChannel {
             isLightTheme: args["isLightTheme"] as? Bool ?? false,
             // Varsayılan `true`: bayrak eksikse o güne kadarki davranış
             // (seans dışında "Piyasa kapalı"). ContentState ile AYNI.
-            yalnizBorsa: args["yalnizBorsa"] as? Bool ?? true
+            yalnizBorsa: args["yalnizBorsa"] as? Bool ?? true,
+            // Günü sürükleyen (goz_alici madde 4). Varsayılan BOŞ: satır
+            // çizilmez. Gizlilik kapısı Dart'ta ve sunucuda — buraya ancak
+            // "Tutarları göster" açıkken dolu gelir.
+            surukleyenAd: args["surukleyenAd"] as? String ?? "",
+            surukleyenPctText: args["surukleyenPctText"] as? String ?? "",
+            surukleyenTutarText: args["surukleyenTutarText"] as? String ?? "",
+            surukleyenPozitif: args["surukleyenPozitif"] as? Bool ?? true
         )
     }
 }

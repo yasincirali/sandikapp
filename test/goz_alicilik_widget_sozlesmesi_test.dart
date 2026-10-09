@@ -30,4 +30,24 @@ void main() {
     expect(oku('ios/SandikWidget/SandikAttributes.swift'),
         contains('decodeIfPresent(Bool.self, forKey: .gozAlici) ?? false'));
   });
+
+  test('günü sürükleyen alanları Dart, eklenti, uzantı ve sunucuda aynı', () {
+    // Ayrışan bir anahtar satırı sessizce hiç göstermez (madde 4).
+    const alanlar = [
+      'surukleyenAd',
+      'surukleyenPctText',
+      'surukleyenTutarText',
+      'surukleyenPozitif',
+    ];
+    final dart = oku('lib/services/live_activity_service.dart');
+    final eklenti = oku('ios/Runner/LiveActivityPlugin.swift');
+    final tip = oku('ios/SandikWidget/SandikAttributes.swift');
+    final sunucu = oku('supabase/functions/push-live-activity/index.ts');
+    for (final a in alanlar) {
+      expect(dart, contains("'$a'"), reason: a);
+      expect(eklenti, contains('args["$a"]'), reason: a);
+      expect(tip, contains('forKey: .$a)'), reason: a);
+      expect(sunucu, contains('$a:'), reason: a);
+    }
+  });
 }

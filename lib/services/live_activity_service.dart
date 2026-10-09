@@ -1,17 +1,25 @@
 import 'dart:async';
 
+import 'dart:ui' show Locale;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/generated/app_localizations.dart';
 import '../models/asset.dart';
+import '../models/position.dart' show positionKey;
 import '../providers/portfolio_provider.dart';
 import '../utils/piyasa_kapali_etiketi.dart';
+import '../utils/pozisyon_etiketi.dart';
 import '../utils/tr_format.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'canli_etkinlik_tarifi.dart';
 import 'daily_summary.dart';
+import 'en_cok_oynayan.dart';
+import 'fiyat_kaynagi.dart';
+import 'history_service.dart' show PortfolioHistoryBreakdown;
 import 'remote_config_service.dart';
 import 'surface_theme.dart';
 
@@ -193,6 +201,11 @@ class LiveActivityService {
   /// Son kurulan tarif — [_writeSummary] satıra yazar.
   Map<String, Object?>? _tarif;
 
+  /// Günü sürükleyen pozisyon (goz_alici madde 4) — [_buildSparkline]
+  /// kurar, [_payload] metne çevirir. Yalnız bayrak açık VE kullanıcı
+  /// "Tutarları göster"e izin verdiyse dolu (bkz. [KilitSurukleyen]).
+  KilitSurukleyen? _surukleyen;
+
   /// Platform desteği + kullanıcı izni.
   ///
   /// Android'de kanal hiç kayıtlı değildir; [MissingPluginException] beklenen
@@ -228,6 +241,7 @@ class LiveActivityService {
     _lastSummaryKey = null;
     _summary = null;
     _tarif = null;
+    _surukleyen = null;
     dakikalikGuncelleme = false;
     IntradaySeriesCache.instance.clear();
     // Pencere ayarları da sıfırlanır: singleton olduğu için bir testin
@@ -397,7 +411,9 @@ class LiveActivityService {
         '|${payload['changePctText']}|${payload['showAmounts']}'
         '|${payload['isFlatChange']}|${payload['axisMinText']}'
         '|${payload['axisMaxText']}|${payload['isLightTheme']}'
-        '|${payload['yalnizBorsa']}|${_tarif != null}';
+        '|${payload['yalnizBorsa']}|${_tarif != null}'
+        '|${payload['surukleyenAd']}|${payload['surukleyenTutarText']}'
+        '|${payload['surukleyenPctText']}';
     if (key == _lastSummaryKey) return;
 
     await _db
@@ -429,6 +445,13 @@ class LiveActivityService {
             'isLightTheme': payload['isLightTheme'],
             // Sunucu push'u da "kapalı" etiketini aynı kuralla basmalı.
             'yalnizBorsa': payload['yalnizBorsa'],
+            // Günü sürükleyen (goz_alici madde 4). Boşsa satır çizilmez;
+            // sunucu da yalnız `show_amounts` açıkken iletir. Alan
+            // ekleyerek geldi — eski sunucu okumaz, şema sürümü aynı.
+            'surukleyenAd': payload['surukleyenAd'],
+            'surukleyenPctText': payload['surukleyenPctText'],
+            'surukleyenTutarText': payload['surukleyenTutarText'],
+            'surukleyenPozitif': payload['surukleyenPozitif'],
             // Özetin hangi ANLAM sürümüyle yazıldığı.
             //
             // v1'de `changeText` ÖMÜRLÜK getiriydi; v2'de günlük değişim.
@@ -488,6 +511,27 @@ class LiveActivityService {
             seansGunu: seansGunu,
           )
         : null;
+    _surukleyen = null;
+    if (RemoteConfigService.instance.gozAlici && showAmountsOnLockScreen) {
+      final kume =
+          state.activeAssets.where(FiyatKaynagi.seriyeGirer).toList();
+      final bd = IntradaySeriesCache.instance.onbellekte(kume);
+      if (bd != null) {
+        _surukleyen = KilitSurukleyen.kur(
+          state: state,
+          kume: kume,
+          breakdown: bd,
+          now: now,
+          parcalar: (_tarif?['parcalar'] as List?)
+                  ?.cast<Map<String, Object?>>() ??
+              const [],
+        );
+      }
+      // Tarif varsa sunucu satırı da dakikada bir ileri taşır.
+      if (_tarif != null && _surukleyen != null) {
+        _tarif = {..._tarif!, 'sr': _surukleyen!.tarif()};
+      }
+    }
     return DailySummary.normalizeForSparkline(_summary!.sparkline);
   }
 
@@ -695,7 +739,10 @@ class LiveActivityService {
       // hizalı); aradaki çağrılar önbellekten okur.
       // Bakiye gizliyken tarif de yazılmaz: sunucu ileri taşıdığı rakamı
       // basardı, oysa gizlilik kapısı rakamı kaynakta keser.
-      if (hideBalance) _tarif = null;
+      if (hideBalance) {
+        _tarif = null;
+        _surukleyen = null;
+      }
       final spark =
           hideBalance ? const <double>[] : await _buildSparkline(state, now: ts);
 
@@ -730,7 +777,9 @@ class LiveActivityService {
           '|${payload['isPositive']}|${payload['isHidden']}'
           '|${payload['showAmounts']}|${payload['isMarketOpen']}'
           '|${payload['isFlatChange']}|${payload['axisMinText']}'
-          '|${payload['isLightTheme']}|${payload['yalnizBorsa']}';
+          '|${payload['isLightTheme']}|${payload['yalnizBorsa']}'
+          '|${payload['surukleyenAd']}|${payload['surukleyenTutarText']}'
+          '|${payload['surukleyenPctText']}';
       final unchanged = _sessionActive && key == _lastPayloadKey;
 
       // Özeti sunucuya yaz — push döngüsü (cron) bunu okuyup APNs'e
@@ -852,8 +901,12 @@ class LiveActivityService {
         'isFlatChange': false,
         'isLightTheme': themeIsLight,
         'yalnizBorsa': yalnizcaBorsaVarliklardan(state.assets),
+        // Sürükleyenin adı bile portföy içeriğini ele verir — gizliyken yok.
+        ...KilitSurukleyen.bos,
       };
     }
+
+    final sr = _surukleyen?.metinler();
 
     return {
       // Türkçe biçim TEK yerde üretilir (tr_format) ve hazır metin olarak
@@ -907,6 +960,11 @@ class LiveActivityService {
       // ile aynı gerekçe: eski alanların anlamı değişmedi, eksik alan eski
       // davranışa düşer.
       'yalnizBorsa': yalnizcaBorsaVarliklardan(state.assets),
+      // Günü sürükleyen (goz_alici madde 4). Kapı [_buildSparkline]'da:
+      // bayrak + "Tutarları göster". Kapalıysa boş gider, uzantı satırı
+      // çizmez. Yeni alan: eski uzantı tanımadığı anahtarı yok sayar.
+      ...?sr,
+      if (sr == null) ...KilitSurukleyen.bos,
     };
   }
 
@@ -922,6 +980,7 @@ class LiveActivityService {
       // aynı metin üretilirse DB yazımı "değişmedi" diye atlanır.
       _summary = null;
       _tarif = null;
+      _surukleyen = null;
       _lastSummaryKey = null;
       IntradaySeriesCache.instance.clear();
       if (!await _isSupported()) return;
@@ -953,5 +1012,125 @@ class LiveActivityService {
       return true;
     }
     return uid == null || uid == state.ownerId;
+  }
+}
+
+/// Kilit ekranının "günü sürükleyen" satırı (goz_alici madde 4).
+///
+/// ## Gizlilik (kullanıcı seçimi 2026-10-09: "Yalnız izin verene")
+/// Live Activity'nin sözleşmesi şuydu: kilit ekranına sembol GİTMEZ, telefonu
+/// açmadan görülebilen yüzey portföyün ne içerdiğini söylemez. Bu satır o
+/// kuralın TEK bilinçli istisnasıdır ve yalnızca kullanıcı "Tutarları
+/// göster"i açtıysa kurulur — tutarı zaten kilit ekranında gösteren kullanıcı
+/// için sembol ek bir ifşa değildir. Bakiye gizliyken hiç kurulmaz; sunucu da
+/// `show_amounts` kapalıysa iletmez.
+///
+/// ## Seçim
+/// [gununSurukleyeni]: |TRY katkısı| en büyük pozisyon, Bugün kartıyla aynı
+/// aday kümesi.
+///
+/// ## Uygulama kapalıyken
+/// [a0] pozisyonun gün başı değeri, [v] şimdiki değeri; [i] tarifteki
+/// parçanın sırası. Sunucu dakikalık ileri taşırken `v`'ye o parçanın
+/// kotasyon oranını uygular (`_shared/canli_etkinlik.ts` › `surukleyenIleri`).
+/// Sürükleyenin KİMLİĞİ uygulama açılana kadar sabit kalır — sunucu
+/// pozisyonları yeniden sıralamaz (portföyü değerlemez kararı).
+class KilitSurukleyen {
+  const KilitSurukleyen({
+    required this.ad,
+    required this.a0,
+    required this.v,
+    this.i,
+  });
+
+  final String ad;
+  final double a0;
+  final double v;
+  final int? i;
+
+  /// Satır yokken giden alanlar — anahtarlar her zaman var, uzantı
+  /// `decodeIfPresent` ile okur.
+  static const bos = <String, Object>{
+    'surukleyenAd': '',
+    'surukleyenPctText': '',
+    'surukleyenTutarText': '',
+    'surukleyenPozitif': true,
+  };
+
+  /// Sunucu tarifindeki biçim (`Tarif.sr`).
+  Map<String, Object?> tarif() =>
+      {'ad': ad, 'a0': a0, 'v': v, if (i != null) 'i': i};
+
+  /// Payload alanları; değişim ölçülemiyorsa `null`.
+  Map<String, Object>? metinler() {
+    final m = surukleyenMetinleri(a0, v);
+    if (m == null) return null;
+    return {
+      'surukleyenAd': ad,
+      'surukleyenPctText': m.pctText,
+      'surukleyenTutarText': m.tutarText,
+      'surukleyenPozitif': m.pozitif,
+    };
+  }
+
+  /// Gün başı [a0] ve şimdiki [v] değerden metinler — SAF; sunucu eşi
+  /// `surukleyenMetinleri` (canli_etkinlik.ts), aynı vektörlerle iki
+  /// taraftan test edilir.
+  ///
+  /// Yuvarlanınca sıfır olan değişim satır üretmez ([enCokOynayanlar]'ın
+  /// 0,005 eşiği): "%0,00 ile sürükleyen" bilgi taşımaz.
+  static ({String pctText, String tutarText, bool pozitif})?
+      surukleyenMetinleri(double a0, double v) {
+    if (!(a0 > 0) || !v.isFinite) return null;
+    final pct = (v / a0 - 1) * 100;
+    if (!pct.isFinite || pct.abs() < 0.005) return null;
+    final tutar = v - a0;
+    final pozitif = tutar >= 0;
+    return (
+      pctText: fmtPct(pct.abs()),
+      tutarText: '${pozitif ? '+' : '-'}${fmtTRY(tutar.abs())}',
+      pozitif: pozitif,
+    );
+  }
+
+  /// [breakdown]'dan sürükleyeni kurar — SAF (değer `kapsamToplami`'dan).
+  ///
+  /// [v] grafiğin son slotu değil, pozisyonun CANLI değeridir: tarifin
+  /// parça fiyatı (`p`) da canlıdır; sunucunun oranı ancak böyle aynı ana
+  /// uygulanır.
+  static KilitSurukleyen? kur({
+    required PortfolioState state,
+    required List<Asset> kume,
+    required PortfolioHistoryBreakdown breakdown,
+    required DateTime now,
+    List<Map<String, Object?>> parcalar = const [],
+  }) {
+    final o = gununSurukleyeni(breakdown, lotlar: kume, now: now);
+    if (o == null || !(o.acilisTRY > 0)) return null;
+    final lotlar = kume.where((a) => positionKey(a) == o.positionKey).toList();
+    if (lotlar.isEmpty) return null;
+    final v = DailySummary.kapsamToplami(state, lotlar);
+    if (!(v > 0)) return null;
+
+    int? i;
+    final temsil =
+        lotlar.where((a) => a.currentPrice > 0 && !a.isManualPrice).firstOrNull;
+    if (temsil != null) {
+      final sembol = temsil.ticker.trim().toUpperCase();
+      final kur = CanliEtkinlikTarifi
+          .kurSembolleri[temsil.currency.trim().toUpperCase()];
+      final j = parcalar.indexWhere((p) => p['s'] == sembol && p['k'] == kur);
+      if (j >= 0) i = j;
+    }
+
+    final s = KilitSurukleyen(
+      // Kilit ekranı Türkçe yazar (uzantının sabit metinleri gibi).
+      ad: pozisyonEtiketi(
+          o.positionKey, o.tur, lookupAppLocalizations(const Locale('tr'))),
+      a0: o.acilisTRY,
+      v: v,
+      i: i,
+    );
+    return s.metinler() == null ? null : s;
   }
 }

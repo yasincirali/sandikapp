@@ -517,6 +517,42 @@ struct SandikLockScreenView: View {
         .accessibilityHidden(true)
     }
 
+    /// Günü sürükleyen satırı gösterilsin mi (goz_alici madde 4)?
+    ///
+    /// Sembol kilit ekranına yalnız "Tutarları göster" açıkken gelir
+    /// (kullanıcı seçimi 2026-10-09); kapı kaynakta da var, burada ikinci
+    /// kez sorulur ki eski bir push'tan kalan alan gizli bakiyede çizilmesin.
+    private var surukleyenGorunur: Bool {
+        gozAlici && tutarGorunur && !state.surukleyenAd.isEmpty
+            && !state.surukleyenTutarText.isEmpty
+    }
+
+    /// "Günü sürükleyen  THYAO  ▲ %3,81  +₺1.910" — portföyün bugünkü
+    /// hareketini en çok kimin taşıdığı. Renk pozisyonun kendi yönü:
+    /// portföy düşerken yükselen bir sürükleyen de olabilir.
+    private var surukleyenSatiri: some View {
+        HStack(spacing: 6) {
+            Text("Günü sürükleyen")
+                .font(.sandikLabel(10, weight: .medium))
+                .foregroundStyle(palette.text58)
+            Text(state.surukleyenAd)
+                .font(.sandikLabel(11, weight: .bold))
+                .foregroundStyle(palette.text90)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 4)
+            Text("\(directionArrow(state.surukleyenPozitif)) \(state.surukleyenPctText)")
+                .font(.sandikNumber(11, weight: .semibold))
+                .monospacedDigit()
+            Text(state.surukleyenTutarText)
+                .font(.sandikNumber(11, weight: .bold))
+                .monospacedDigit()
+        }
+        .foregroundStyle(palette.statusColor(isPositive: state.surukleyenPozitif))
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             baslik
@@ -538,9 +574,14 @@ struct SandikLockScreenView: View {
                 // Lejant satırına yer: kilit ekranı kartı 160pt'yi aşarsa
                 // sistem alttan keser.
                 .frame(height: gozAlici ? 34 : 40)
-                if gozAlici {
+                // Sürükleyen satırı lejantın YERİNE geçer: ikisi birden
+                // 160pt sınırını aşar ve satır bilgi taşıyan taraftır.
+                if gozAlici && !surukleyenGorunur {
                     lejant
                 }
+            }
+            if surukleyenGorunur {
+                surukleyenSatiri
             }
         }
         .padding(.horizontal, 16)
@@ -659,8 +700,12 @@ struct SandikLockScreenView: View {
                 + "Son güncelleme \(state.updatedAtText)."
         }
 
+        let surukleyen = surukleyenGorunur
+            ? "Günü sürükleyen \(state.surukleyenAd), \(state.surukleyenTutarText). "
+            : ""
         return "Sandık. \(gun)Toplam portföy \(state.totalText). "
             + "Bugün \(state.changeText), yüzde \(state.changePctText) \(yon). "
+            + surukleyen
             + "Son güncelleme \(state.updatedAtText)."
     }
 }
