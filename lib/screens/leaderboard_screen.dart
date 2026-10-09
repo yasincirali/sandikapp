@@ -215,7 +215,8 @@ abstract final class _YarisDonemleri {
 
 /// Test kilidi için dışa açık gün listesi (`ZirveDonem` eşitliği).
 @visibleForTesting
-List<int> get yarisDonemGunleri => _YarisDonemleri.gunler;
+List<int> get yarisDonemGunleri =>
+    _YarisDonemleri.gunler;
 
 /// Kendi satırının ek bilgisi: PARANIN GETİRİSİ (para ağırlıklı, XIRR) —
 /// Performans › Özet'in aynı dönemdeki sayısı (R1, 2026-10-01).
@@ -230,8 +231,7 @@ List<int> get yarisDonemGunleri => _YarisDonemleri.gunler;
 /// Dönem değişince yeniden hesaplanır; fiyat tiklerinde değil (Özet'in
 /// kendisi de dönem başına bir kez hesaplar).
 class _ParaninGetirisiSatiri extends StatefulWidget {
-  const _ParaninGetirisiSatiri(
-      {required this.portfoy, required this.periodDays});
+  const _ParaninGetirisiSatiri({required this.portfoy, required this.periodDays});
 
   final PortfolioState portfoy;
   final int periodDays;
@@ -307,8 +307,7 @@ class _RoiInfoSheet extends StatelessWidget {
     return SafeArea(
       top: false,
       child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(
-            SandikSpace.screenH(context), 14, SandikSpace.screenH(context), 24),
+        padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 14, SandikSpace.screenH(context), 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,8 +367,8 @@ class _RoiInfoSheet extends StatelessWidget {
             _InfoBlock(
               icon: Icons.groups_outlined,
               title: context.l10n.everyoneMeasuredSame,
-              body: context.l10n.everyoneMeasuredSameBody(
-                  LeaderboardService.instance.asgariGun),
+              body: context.l10n
+                  .everyoneMeasuredSameBody(LeaderboardService.instance.asgariGun),
             ),
             const SizedBox(height: 16),
             Container(
@@ -610,8 +609,7 @@ class _SoloPanelState extends State<_SoloPanel> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-          SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 16),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -925,8 +923,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     final seritIstegi = me != null && widget.partners.length == 1
         ? LeaderboardService.instance.liderSeridi(
             benLotlari: widget.myAssets,
-            rakipLotlari:
-                widget.partnerAssets[widget.partners.first.id] ?? const [],
+            rakipLotlari: widget.partnerAssets[widget.partners.first.id] ??
+                const [],
             periodDays: donem,
           )
         : Future<LiderSeridi?>.value(null);
@@ -937,7 +935,7 @@ class _LeaderboardListState extends State<_LeaderboardList> {
     final partnerRois = await Future.wait(
       widget.partners.map((p) => LeaderboardService.instance.donemGetirisiPct(
           widget.partnerAssets[p.id] ?? const [], widget.periodDays,
-          kapsam: SiralamaKapsami.ortaklar)),
+              kapsam: SiralamaKapsami.ortaklar)),
     );
     final serit = await seritIstegi;
     for (var i = 0; i < widget.partners.length; i++) {
@@ -989,11 +987,8 @@ class _LeaderboardListState extends State<_LeaderboardList> {
             // Sahne (canlı liste + düello/kürsü) `widgets/yaris_sahnesi.dart`
             // — kullanıcı kararı 2026-09-29, gerekçe orada.
             ListView(
-              padding: EdgeInsets.fromLTRB(
-                  SandikSpace.screenH(context),
-                  SandikSpace.smd,
-                  SandikSpace.screenH(context),
-                  SandikSpace.lgs),
+              padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                  SandikSpace.smd, SandikSpace.screenH(context), SandikSpace.lgs),
               children: [
                 YarisSahnesi(
                   katilimcilar: [
@@ -1130,8 +1125,7 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-          SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 4),
+      padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 4, SandikSpace.screenH(context), 4),
       child: FutureBuilder<_BestPercentile?>(
         future: _future,
         builder: (_, snap) {
@@ -1176,10 +1170,10 @@ class _GlobalPercentileTeaserState extends State<_GlobalPercentileTeaser> {
     // k-anonymity altında veya yeterli veri yok
     if (data == null) {
       return _row(
-        badge:
-            _Badge(text: context.l10n.comingSoonUpper, color: context.c.gain),
+        badge: _Badge(text: context.l10n.comingSoonUpper, color: context.c.gain),
         title: context.l10n.globalRanking,
-        subtitle: context.l10n.globalRankingSoon,
+        subtitle:
+            context.l10n.globalRankingSoon,
         icon: Icons.public_rounded,
         iconColor: context.c.gain,
       );

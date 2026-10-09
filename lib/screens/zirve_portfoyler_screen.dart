@@ -178,7 +178,9 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       _senFonDetay = servis.computeFonDetay(p.assets, p.toTRY);
       // Zirve anonim: sunucuyla aynı geriye tarih kuralı (`SiralamaKapsami`).
       _senRoi = servis.staleROI(
-          userId: me.id, periodDays: donem.gun, kapsam: SiralamaKapsami.anonim);
+          userId: me.id,
+          periodDays: donem.gun,
+          kapsam: SiralamaKapsami.anonim);
     });
     final sonuc = await Future.wait<Object?>([
       servis.fetchZirveBenim(periodDays: donem.gun),
@@ -225,8 +227,8 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     // kapı; bu ispat kaydı —
     // beklenmez, fırlatmaz. Geri çekme sunucuda aynı işlemde damgalanır.
     CrashReporter.arkaPlan(
-        YasalOnayService.instance
-            .zirveRizasiniKaydet(locale: dil, sonunaKadarOkundu: true),
+        YasalOnayService.instance.zirveRizasiniKaydet(
+            locale: dil, sonunaKadarOkundu: true),
         reason: 'YasalOnayService.zirve');
     if (!mounted) return;
     setState(() {
@@ -304,8 +306,7 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
       builder: (context, rizaSnap) {
         if (rizaSnap.connectionState != ConnectionState.done) {
           return ListView(
-            padding:
-                EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+            padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
             children: const [_Iskelet()],
           );
         }
@@ -330,37 +331,38 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
 
   Widget _liste(double hp) {
     return FutureBuilder<List<TopGainerAllocation>>(
-      future: _satirlar,
-      builder: (context, snap) {
-        final satirlar = snap.data ?? const <TopGainerAllocation>[];
-        final yukleniyor =
-            snap.connectionState == ConnectionState.waiting && satirlar.isEmpty;
-        return ListView(
-          padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
-          children: [
-            ZirveDonemSecici(secili: _donem, onSec: _donemSec),
-            const SizedBox(height: SandikSpace.md),
-            if (yukleniyor)
-              const _Iskelet()
-            else if (satirlar.isEmpty)
-              _BosDurum(havuz: _havuz)
-            else
-              ..._dolu(context, satirlar),
-            const SizedBox(height: SandikSpace.md),
-            // Onay + rıza geri çekme isteği tek Future: gösterge düğmede
-            // döner, ikinci dokunuş yutulur (tek yükleniyor davranışı,
-            // 2026-10-08). Eskiden onaydan sonra istek göstergesiz gidiyordu.
-            Center(
-              child: SandikAsyncButton.kompakt(
-                tur: SandikAsyncTur.metin,
-                onPressed: _ayril,
-                child: const Text("Zirvedeki Portföyler'den ayrıl"),
-              ),
-            ),
-          ],
+          future: _satirlar,
+          builder: (context, snap) {
+            final satirlar = snap.data ?? const <TopGainerAllocation>[];
+            final yukleniyor =
+                snap.connectionState == ConnectionState.waiting &&
+                    satirlar.isEmpty;
+            return ListView(
+              padding: EdgeInsets.fromLTRB(hp, SandikSpace.sm, hp, SandikSpace.lg),
+              children: [
+                ZirveDonemSecici(secili: _donem, onSec: _donemSec),
+                const SizedBox(height: SandikSpace.md),
+                if (yukleniyor)
+                  const _Iskelet()
+                else if (satirlar.isEmpty)
+                  _BosDurum(havuz: _havuz)
+                else
+                  ..._dolu(context, satirlar),
+                const SizedBox(height: SandikSpace.md),
+                // Onay + rıza geri çekme isteği tek Future: gösterge düğmede
+                // döner, ikinci dokunuş yutulur (tek yükleniyor davranışı,
+                // 2026-10-08). Eskiden onaydan sonra istek göstergesiz gidiyordu.
+                Center(
+                  child: SandikAsyncButton.kompakt(
+                    tur: SandikAsyncTur.metin,
+                    onPressed: _ayril,
+                    child: const Text("Zirvedeki Portföyler'den ayrıl"),
+                  ),
+                ),
+              ],
+            );
+          },
         );
-      },
-    );
   }
 
   List<Widget> _dolu(BuildContext context, List<TopGainerAllocation> satirlar) {
@@ -396,18 +398,18 @@ class _ZirveGovdesiState extends ConsumerState<ZirveGovdesi> {
     final seciliPay = seciliSatir?.allocation ?? _senPay;
     final seciliFon = seciliSatir?.fonDetay ?? _senFonDetay;
     final seciliRoi = seciliSatir?.roiPct ?? senRoi;
-    final getiriEki = seciliRoi == null
-        ? ''
-        : ' ${_donem.ad} ${ZirveKiyas.getiriParcasi(seciliRoi)}.';
+    final getiriEki =
+        seciliRoi == null ? '' : ' ${_donem.ad} ${ZirveKiyas.getiriParcasi(seciliRoi)}.';
     // Ayna kıyasının karşısı: seçili işaret bir zirveyse o; kendin
     // seçiliysen son seçtiğin zirve; hiç seçmediysen senden olmayan ilk sıra.
     final adaylar = satirlar.where((s) => !s.ben).toList();
     final hedefAnahtari = seciliSatir != null && !seciliSatir.ben
         ? '${seciliSatir.rank}'
         : _kiyasHedefi;
-    final hedef =
-        adaylar.where((s) => '${s.rank}' == hedefAnahtari).firstOrNull ??
-            adaylar.firstOrNull;
+    final hedef = adaylar
+            .where((s) => '${s.rank}' == hedefAnahtari)
+            .firstOrNull ??
+        adaylar.firstOrNull;
 
     return [
       _Hero(
@@ -1018,8 +1020,8 @@ class _PortfoyAyrintisi extends StatelessWidget {
     final turler = ZirveKiyas.sirali(pay);
 
     return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(
-          SandikSpace.lg, SandikSpace.sm, SandikSpace.lg, SandikSpace.lg),
+      padding: EdgeInsets.fromLTRB(SandikSpace.lg, SandikSpace.sm,
+          SandikSpace.lg, SandikSpace.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
