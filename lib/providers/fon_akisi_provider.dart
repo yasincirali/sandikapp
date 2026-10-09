@@ -8,13 +8,17 @@ import '../services/hisse_hacmi.dart';
 import '../services/radar_okuma.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
+import 'premium_provider.dart' show premiumOzellikleriGorunurProvider;
 
-/// Para akışı kartı bayrağı — `balina_radari_acik` (varsayılan KAPALI).
+/// Balina Radarı görünür mü. Karar `premiumOzellikleriGorunurProvider`'da
+/// (tek anahtar `paywall_enabled`, paywall kapalıyken yalnız admin;
+/// 2026-10-09). Eskiden ayrı `balina_radari_acik` bayrağıydı.
 ///
 /// Provider olarak sarıldı ki widget testi bayrağı override edebilsin
 /// (emsal: `fonKarnesiAcikProvider`).
-final balinaRadariAcikProvider =
-    Provider<bool>((ref) => RemoteConfigService.instance.balinaRadariAcik);
+final balinaRadariAcikProvider = Provider<bool>((ref) =>
+    ref.watch(premiumOzellikleriGorunurProvider) ||
+    RemoteConfigService.instance.balinaRadariAcik);
 
 /// Bir fonun para akışı özeti. Hesap `build()` dışında, burada bir kez.
 ///

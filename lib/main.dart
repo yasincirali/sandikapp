@@ -1803,6 +1803,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       _applySurfaceTheme(trustDeviceBrightness: true);
     });
 
+    // Admin hesabı Premium özellikleri paywall kapalıyken de görür
+    // (2026-10-09). Provider'ı olmayan yerler (bildirim yönlendirmesi)
+    // kararı `RemoteConfigService.yonetici`'den okur; burada yazılır.
+    ref.listen<AsyncValue<bool>>(isPushAdminProvider, (_, next) {
+      RemoteConfigService.instance.yonetici = next.valueOrNull == true;
+    });
+
     // Tek aktif cihaz (0098): hesap başka cihazda açıldı → bu cihaz çıkar.
     // Dinleyici burada çünkü `_AuthGate` uygulama boyunca mount'tur; kapı
     // kararı hangi ekran açıkken değişirse değişsin buraya düşer. Çıkış

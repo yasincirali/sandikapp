@@ -89,6 +89,13 @@ final gecerliPremiumHakkiProvider = Provider<PremiumHakki?>((ref) {
   return gecerli.isEmpty ? null : gecerli.first;
 });
 
+/// Premium'a özgü özellikler (radar, ekstre AI) görünür mü: paywall açıksa
+/// herkese (ücretsizde kilitli), kapalıyken yalnız admin hesabına. Gerekçe
+/// `RemoteConfigService.premiumOzellikleriGorunur`.
+final premiumOzellikleriGorunurProvider = Provider<bool>((ref) =>
+    ref.watch(paywallVisibleProvider) ||
+    ref.watch(isPushAdminProvider).valueOrNull == true);
+
 /// Radar ve not içeriği kilitli mi: paywall açık VE kullanıcı Premium değil.
 /// Paywall kapalıyken hiçbir şey kilitlenmez (sunucu kapısı `premium_ayar`
 /// da kapalı: herkes görür).

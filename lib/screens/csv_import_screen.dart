@@ -151,8 +151,7 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
 
   /// Önizleme tarihi — ekstredeki biçimle aynı (`21.01.2026`); yerel ayar
   /// verisine bağlı değil.
-  static String _tarih(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}.'
+  static String _tarih(DateTime d) => '${d.day.toString().padLeft(2, '0')}.'
       '${d.month.toString().padLeft(2, '0')}.${d.year}';
 
   /// Satırda gösterilen kod: iç önek/sonek olmadan (`ASELS.IS` → `ASELS`,
@@ -234,7 +233,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
     final l = context.l10n;
     setState(() => _kartMesaji = null);
     try {
-      final yanit = await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
+      final yanit =
+          await SupabaseService.instance.ekstreEsle(ekstreIskeleti(e));
       final yeni = e.aiEslemesiyle(yanit);
       if (!mounted) return;
       if (yeni == null) {
@@ -251,8 +251,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       if (h.premium) {
         await PaywallScreen.show(context, source: 'ekstre_ai');
       } else {
-        setState(() =>
-            _kartMesaji = h.kota ? l.importAiLimit : l.importAiFailed);
+        setState(
+            () => _kartMesaji = h.kota ? l.importAiLimit : l.importAiFailed);
       }
     } catch (err, st) {
       CrashReporter.report(err, st, reason: 'ekstre_ai_esleme');
@@ -308,7 +308,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
       appBar: SandikAppBar(title: context.l10n.csvImportTitle),
       body: SafeArea(
         child: ListView(
-          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12, SandikSpace.screenH(context), 32),
+          padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 12,
+              SandikSpace.screenH(context), 32),
           children: [
             Text(
               context.l10n.csvImportBody,
@@ -340,6 +341,8 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                 // Premium'a özel (yasin, 2026-10-05). Kilitliyken düğme yerine
                 // paywall'a götüren kilit satırı; sunucu da ayrıca denetler.
                 aiKilitli: ref.watch(radarKilitliProvider),
+                aiGorunur: ref.watch(premiumOzellikleriGorunurProvider) ||
+                    RemoteConfigService.instance.ekstreAiEsleme,
                 mesaj: _kartMesaji,
                 onKopyala: _iskeletiKopyala,
               ),
@@ -432,15 +435,15 @@ class _CsvImportScreenState extends ConsumerState<CsvImportScreen> {
                                   fmtPct(row.mevduat!.yillikFaiz),
                                   row.mevduat!.vadeGun)
                               : '${row.satis ? '${context.l10n.cartSellTag} · ' : ''}'
-                          '${_gorunenKod(row.ticker)} · ${fmtNumFlex(row.quantity)} '
-                          '${row.unitType == 'piece' ? context.l10n.unitPiece : row.unitType}'
-                          ' · ${row.price > 0 ? (row.currency == 'TRY' ? '₺${fmtNumFlex(row.price)}' : '${fmtNumFlex(row.price)} ${row.currency}') : context.l10n.closePriceWillBeFetched}'
-                          // İşlem tarihi: ekstre alış ve satışları kendi
-                          // tarihiyle deftere yazar; kullanıcı önizlemede
-                          // doğru okunduğunu görmeli.
-                          ' · ${_tarih(row.addedDate)}',
-                          style: context.t.bodySmall?.copyWith(
-                              color: row.satis ? c.loss : c.text90),
+                                  '${_gorunenKod(row.ticker)} · ${fmtNumFlex(row.quantity)} '
+                                  '${row.unitType == 'piece' ? context.l10n.unitPiece : row.unitType}'
+                                  ' · ${row.price > 0 ? (row.currency == 'TRY' ? '₺${fmtNumFlex(row.price)}' : '${fmtNumFlex(row.price)} ${row.currency}') : context.l10n.closePriceWillBeFetched}'
+                                  // İşlem tarihi: ekstre alış ve satışları kendi
+                                  // tarihiyle deftere yazar; kullanıcı önizlemede
+                                  // doğru okunduğunu görmeli.
+                                  ' · ${_tarih(row.addedDate)}',
+                          style: context.t.bodySmall
+                              ?.copyWith(color: row.satis ? c.loss : c.text90),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -476,6 +479,7 @@ class _EslemeKarti extends StatelessWidget {
     required this.onDuzelt,
     required this.onAi,
     required this.aiKilitli,
+    required this.aiGorunur,
     required this.mesaj,
     required this.onKopyala,
   });
@@ -485,6 +489,9 @@ class _EslemeKarti extends StatelessWidget {
   final VoidCallback onDuzelt;
   final Future<void> Function() onAi;
   final bool aiKilitli;
+
+  /// Ekstre AI eşleme görünür mü (paywall açık ya da admin; 2026-10-09).
+  final bool aiGorunur;
   final String? mesaj;
   final VoidCallback onKopyala;
 
@@ -513,13 +520,13 @@ class _EslemeKarti extends StatelessWidget {
           if (a != null)
             for (final r in EkstreRol.values)
               if (a.roller[r] != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: SandikSpace.xxs),
-                child: Text(
-                  '${r.ad} ← ${a.basliklar[a.roller[r]!]}',
-                  style: context.t.bodySmall?.copyWith(color: c.text90),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: SandikSpace.xxs),
+                  child: Text(
+                    '${r.ad} ← ${a.basliklar[a.roller[r]!]}',
+                    style: context.t.bodySmall?.copyWith(color: c.text90),
+                  ),
                 ),
-              ),
           if (a != null && a.eminDegil) ...[
             const SizedBox(height: SandikSpace.sm),
             Text(
@@ -537,7 +544,9 @@ class _EslemeKarti extends StatelessWidget {
             ),
           // Tarih sütunu olmayan döküm: satırlar ekstre gününü aldı ve maliyet
           // o günün fiyatı — kullanıcı K/Z'nin nereden başladığını bilsin.
-          if (tarih != null && a != null && !a.roller.containsKey(EkstreRol.tarih))
+          if (tarih != null &&
+              a != null &&
+              !a.roller.containsKey(EkstreRol.tarih))
             Padding(
               padding: const EdgeInsets.only(top: SandikSpace.xs),
               child: Text(
@@ -591,26 +600,25 @@ class _EslemeKarti extends StatelessWidget {
           // ayıklatamıyorum" dedi: motorun kendinden emin okuduğu ama
           // eksik/yanlış çıkardığı ekstrede kullanıcının elinde AI yolu
           // kalmıyordu. Motor emin olsa da kullanıcı isterse AI'a sorar.
-          if (RemoteConfigService.instance.ekstreAiEsleme &&
-              !sonuc.aiOnerisi) ...[
+          if (aiGorunur && !sonuc.aiOnerisi) ...[
             const SizedBox(height: SandikSpace.xs),
             if (aiKilitli)
               KilitSatiri(
                   metin: context.l10n.prmKilitEkstreAi, kaynak: 'ekstre_ai')
             else ...[
-            Text(
-              context.l10n.importAiHint,
-              style: context.t.bodySmall?.copyWith(color: c.text58),
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SandikAsyncButton.kompakt(
-                tur: SandikAsyncTur.metin,
-                onPressed: onAi,
-                icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                child: Text(context.l10n.importAiButton),
+              Text(
+                context.l10n.importAiHint,
+                style: context.t.bodySmall?.copyWith(color: c.text58),
               ),
-            ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: SandikAsyncButton.kompakt(
+                  tur: SandikAsyncTur.metin,
+                  onPressed: onAi,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  child: Text(context.l10n.importAiButton),
+                ),
+              ),
             ],
           ],
           // Tanılama (bayrak `ekstre_tanilama`, 2026-10-05): motor dosyayı
@@ -668,7 +676,9 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
     final ornek = a.veri
         .map((s) => sutun < s.length ? s[sutun] : '')
         .firstWhere((h) => h.trim().isNotEmpty, orElse: () => '');
-    return ornek.isEmpty ? a.basliklar[sutun] : '${a.basliklar[sutun]} · $ornek';
+    return ornek.isEmpty
+        ? a.basliklar[sutun]
+        : '${a.basliklar[sutun]} · $ornek';
   }
 
   @override
@@ -676,8 +686,11 @@ class _EslemeSayfasiState extends State<_EslemeSayfasi> {
     final a = widget.anlam;
     final l10n = context.l10n;
     return Padding(
-      padding: EdgeInsets.fromLTRB(SandikSpace.md, SandikSpace.md,
-          SandikSpace.md, SandikSpace.md + MediaQuery.viewInsetsOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(
+          SandikSpace.md,
+          SandikSpace.md,
+          SandikSpace.md,
+          SandikSpace.md + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -419,6 +419,27 @@ class RemoteConfigService {
   @visibleForTesting
   static Set<String> testAcik = {};
 
+  /// Admin hesabı mı (`push_admins`). Uygulama kökü (`_AuthGate`)
+  /// `isPushAdminProvider`'dan yazar; provider'ı olmayan yerler
+  /// (bildirim yönlendirmesi) buradan okur. Oturum yokken false.
+  bool yonetici = false;
+
+  /// Premium'a özgü özellikler (Balina Radarı ve ekstre AI eşleme)
+  /// görünür mü. TEK anahtar `paywall_enabled` (yasin 2026-10-09: "Tek
+  /// flag"; "adminde hepsi açık olmalı, geri kalan userlar için paywall
+  /// gerektiren işlemleri kapatabiliriz"). Ödeme hazır olmadan bu
+  /// özellikler herkese ücretsiz açılırsa sonra kilitlemek alınan şeyi
+  /// geri almak olur; bu yüzden paywall kapalıyken yalnız admin görür.
+  /// Eskiden beri ücretsiz olanlar (sınırsız varlık, sinyal sıklığı,
+  /// göstergeler, 5 seri, ortaklar) bu kapıya bağlı DEĞİL: canlıdaki
+  /// kullanıcının kullandığı şey elinden alınmaz.
+  /// `balina_radari_acik` / `ekstre_ai_esleme` Console değerleri artık
+  /// okunmaz (yalnız yerel `RC_ACIK` ve test kancası).
+  bool get premiumOzellikleriGorunur => paywallEnabled || yonetici;
+
+  bool _yerelVeyaTest(String anahtar) =>
+      testAcik.contains(anahtar) || _yerelAcik.contains(anahtar);
+
   bool _bayrak(String anahtar) =>
       testAcik.contains(anahtar) ||
       _yerelAcik.contains(anahtar) ||
@@ -622,7 +643,8 @@ class RemoteConfigService {
       _defaults['hafta_sonu_yurt_ici_seri'] as bool;
 
   /// Fon sayfasında para akışı kartı (0106). Gerekçe `_defaults`'ta.
-  bool get balinaRadariAcik => _bayrak('balina_radari_acik');
+  bool get balinaRadariAcik =>
+      _yerelVeyaTest('balina_radari_acik') || premiumOzellikleriGorunur;
 
   /// Dövizli satışta satış günü kuru (0111). Gerekçe `_defaults`'ta.
   bool get satisGunuKuru => _bayrak('satis_gunu_kuru');
@@ -665,7 +687,8 @@ class RemoteConfigService {
   bool get ekstreHareketleri => _bayrak('ekstre_hareketleri');
 
   /// Ekstre AI sütun eşleme. Gerekçe `_defaults`'ta.
-  bool get ekstreAiEsleme => _bayrak('ekstre_ai_esleme');
+  bool get ekstreAiEsleme =>
+      _yerelVeyaTest('ekstre_ai_esleme') || premiumOzellikleriGorunur;
 
   /// ABD hissesi ekleme/arama. Gerekçe `_defaults`'ta.
   bool get abdHisse => _bayrak('abd_hisse');

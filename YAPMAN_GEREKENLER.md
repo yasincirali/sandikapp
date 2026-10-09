@@ -48,6 +48,22 @@ güncel main'le birleşti. Sunucu değişikliği YOK.
       cihazlar huniye girer (güncelleme ile gelen girmez).
 - [ ] Panel kısayolu (yerel): `tool/admin_dashboard/README.md` → "Kısayolu
       yeniden oluşturmak". Yasal metin zaten huniyi anlatıyor (1.2+), dokunulmadı.
+## ⏳ 2026-10-09 Premium özellikler tek anahtara bağlandı: `paywall_enabled`
+
+Kararın (2026-10-09): "Tek flag; adminde hepsi açık, diğerlerinde paywall
+gerektiren işlemler kapalı". Balina Radarı (para akışı, hacim radarı, kripto
+baskı, haftalık not, radar ayarları) ve ekstre AI eşleme artık yalnız
+`paywall_enabled` açıkken herkese görünür; kapalıyken yalnız admin hesabında
+(`push_admins`) görünür. Eskiden beri ücretsiz olanlar (sınırsız varlık,
+sinyal sıklığı, göstergeler, 5 seri, ortaklar) değişmedi.
+- [ ] Console'daki `balina_radari_acik` ve `ekstre_ai_esleme` artık OKUNMAZ;
+      istersen silebilirsin, kalmaları zarar vermez.
+- [ ] Ödeme hazır olana kadar `paywall_enabled` canlıda kapalı kalsın.
+      TestFlight koşulunda açıksa admin olmayan test hesapları radar ve
+      ekstre AI'ı kilitli görür (beklenen).
+- [ ] Sunucu: `HAFTALIK_AKIS_SATIRI` secret'ını paywall açılana kadar
+      yazma (Pazartesi özetindeki akış cümlesi uygulamadaki kapıyı bilmez).
+
 ## ⏳ 2026-10-08 Yeni paywall: sandık + kart destesi (dal `claude/project-thread-uryvqf`)
 
 Yeni tasarım bayrak arkasında; bayrak kapalıyken eski paywall birebir.
