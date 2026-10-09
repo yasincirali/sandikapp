@@ -143,9 +143,10 @@ artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
       müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
       kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
       metin esaslı olmayan bir düzeltmeyle güncellenir.
-## ⏳ 2026-10-08 Ücretsiz sınırlar: 7 varlık, 3 takip, sinyal tek varlıkta (0126)
+## ⏳ 2026-10-08 Ücretsiz sınırlar: 10 varlık, 5 takip, sinyal tek varlıkta (0126)
 
-Senin kararın: ücretsizde 7 varlık (8.'si Premium ister), takip listesi 3,
+Senin kararın: ücretsizde 10 varlık (11.'si Premium ister), takip listesi 5
+(2026-10-09 rakip kıyasıyla 7/3'ten yükseltildi),
 sinyal bildirimi tek varlıkta (2. varlık Premium). Hepsi yalnız
 `paywall_enabled` açıkken; paywall kapalı canlı kullanıcıda hiçbir şey
 değişmez (takip listesi 7'de kalır). Var olan varlık/takip silinmez, yalnız
@@ -159,9 +160,9 @@ yeni ekleme durur.
       en eski eklediği). Secret yoksa sunucu kısmaz.
 - [ ] Remote Config'te `free_asset_limit` ya da `free_watchlist_limit`
       anahtarlarını daha önce elle girdiysen değerleri kodu ezer:
-      `free_asset_limit` = 7 yap; `free_watchlist_limit` paywall KAPALIYKEN
+      `free_asset_limit` = 10 yap; `free_watchlist_limit` paywall KAPALIYKEN
       okunan sınırdır, 7 kalsın. Paywall açıkkenki takip sınırı yeni anahtar
-      `paywall_watchlist_limit` (varsayılan 3); sinyal varlık sayısı
+      `paywall_watchlist_limit` (varsayılan 5; Console'a girdiysen 5 yap); sinyal varlık sayısı
       `free_signal_assets` (varsayılan 1, 0 = kapı yok).
 
 ## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`

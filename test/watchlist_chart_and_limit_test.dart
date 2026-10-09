@@ -698,13 +698,13 @@ void main() {
                   .readAsStringSync())
               .contains("'free_watchlist_limit': 7"),
           isTrue);
-      // Paywall açıkken ücretsiz 3 (yasin, 2026-10-08); ayrı anahtar ki
+      // Paywall açıkken ücretsiz 5 (yasin, 2026-10-08: 3; 2026-10-09: 5); ayrı anahtar ki
       // paywall kapalı canlı kullanıcı 7'de kalsın.
       expect(govde.contains('paywallWatchlistLimit'), isTrue);
       expect(
           _yorumsuz(File('lib/services/remote_config_service.dart')
                   .readAsStringSync())
-              .contains("'paywall_watchlist_limit': 3"),
+              .contains("'paywall_watchlist_limit': 5"),
           isTrue);
     });
 

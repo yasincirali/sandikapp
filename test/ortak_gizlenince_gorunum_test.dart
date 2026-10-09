@@ -116,6 +116,13 @@ void main() {
     tester.view.physicalSize = const Size(390 * 3, 900 * 3);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
+    // BIST seansı açıkken (cihaz/CI saati 10:00–18:00) Bugün kartının canlı
+    // noktası sürekli nabız atar ve pumpAndSettle hiç oturmaz; CI'nin gün
+    // içi koşuları bu yüzden kırılıyordu (2026-10-09). Hareketi azalt açık:
+    // nokta sabit durur, test saatten bağımsızlaşır.
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
 
     final container = ProviderContainer(overrides: [
       authProvider.overrideWith(_FakeAuth.new),
