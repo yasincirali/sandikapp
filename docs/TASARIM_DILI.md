@@ -81,6 +81,8 @@ Süre ve eğri **birlikte** seçilir:
 | Satır kalkışı | `KapananSatir` |
 | Değer değişim vurgusu | `DegisimVurgusu` |
 | Büyük fiyat/tutar metni (hane döner, ₺ ve kuruş geri çekilir) | `ParaMetni` (bayrak `goz_alici`; Ana toplam kartında kullanılmaz) |
+| Grafik imleci → büyük fiyat | `ZoomableChart.imlecEtiketi` + `VarlikFiyatBlogu.imlec` (bayrak `goz_alici`; imleçte hane dönmez) |
+| Grafikte anlamlı nokta titreşimi | `ZoomableChart.titresimNoktalari` (zirve/dip); nokta başına titreşim yok |
 | Satır → ekran başlık uçuşu | `VarlikBaslikHero` (bayrak `varlik_hero_gecisi`) |
 | Kaydırmalı kart geçişi | `KaydirmaliGecis` |
 
@@ -139,6 +141,10 @@ Tutar `fmtTRY`, yüzde `fmtPct`, girdi `parseTrNumber`. Hitap "sen".
 ### İkonlar
 Hisse/fon/kripto satırının başında sembol rozeti (`varlikMonogrami`, bayrak
 `goz_alici`); sembolü anlamsız türler (altın, mevduat…) tür ikonunda kalır.
+Liste satırının başındaki tür noktası `VarlikRozeti`'dir (takip listesi,
+arama): bayrak açıkken aynı rozet, kapalıyken 8pt nokta. Yeni varlık listesi
+kendi noktasını çizmez. Varlık sayfası başlığına rozet konmaz (sembol zaten
+büyük yazılı).
 Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Gezinti oku
 `chevron_right_rounded`, rengi `text36`.
 

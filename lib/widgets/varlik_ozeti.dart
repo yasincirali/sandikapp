@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -155,9 +156,20 @@ class VarlikFiyatBlogu extends StatelessWidget {
     this.etiketYani,
     this.altSatir,
     this.kimlik,
+    this.imlec,
   });
 
   final String etiket;
+
+  /// Grafikte imleç gezinirken `(fiyat, tarih)`; boşta `null`. Verilirse
+  /// büyük fiyat parmağın altındaki noktayı yazar, değişim satırının yerine
+  /// o noktanın tarihi geçer; parmak kalkınca güncel fiyata döner (göz
+  /// alıcılık B, bayrak `goz_alici` — çağıran yalnız açıkken verir).
+  ///
+  /// Neden: imleçteki fiyat yalnız küçük hapta duruyordu; göz grafiğin
+  /// tepesindeki büyük rakama gidiyor ve o rakam kıpırdamıyordu. Biçim
+  /// aynı: hap ile büyük fiyat aynı biçimleyiciden gelir (`FiyatGrafigi.bicim`).
+  final ValueListenable<(String, String)?>? imlec;
 
   /// Fiyatın ait olduğu varlık; değişirse akan rakam dönmez (başka
   /// varlığın fiyatı "artış" değildir).
@@ -179,6 +191,21 @@ class VarlikFiyatBlogu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imlec = this.imlec;
+    if (imlec == null) return _kur(context, fiyat, degisim, kimlik);
+    return ValueListenableBuilder<(String, String)?>(
+      valueListenable: imlec,
+      builder: (context, v, _) => v == null
+          ? _kur(context, fiyat, degisim, kimlik)
+          // İmleçte rakam DÖNMEZ (her adımda yeni kimlik): parmak hızlı
+          // gezerken dönen haneler parmağın gerisinde kalır, okunmaz.
+          : _kur(context, v.$1, (metin: v.$2, renk: context.c.text58),
+              (kimlik, v)),
+    );
+  }
+
+  Widget _kur(BuildContext context, String fiyat,
+      DonemDegisimSatiri degisim, Object? kimlik) {
     final ust = Text(
       etiket,
       style: context.t.labelSmall?.copyWith(
@@ -188,7 +215,7 @@ class VarlikFiyatBlogu extends StatelessWidget {
     );
     final yan = etiketYani;
     final alt = altSatir;
-    return Column(
+    final blok = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (yan == null)
@@ -232,5 +259,60 @@ class VarlikFiyatBlogu extends StatelessWidget {
         ],
       ],
     );
+    if (!RemoteConfigService.instance.gozAlici) return blok;
+    // Yön ışığı (bayrak `goz_alici`, göz alıcılık B): fiyatın arkasında
+    // dönem yönünün rengiyle çok hafif bir hare. Neden: dönem değişimi
+    // yalnız küçük satırın renginde duruyordu; göz büyük fiyata bakarken
+    // yönü kenardan sezsin. Düz ya da bilinmeyen dönemde hare YOK (nötr
+    // gri hare "kötü" okunur). Tam ekran kırmızı/yeşil zemin bilinçli
+    // olarak reddedildi (rapor "yapmayalım" listesi): hare yalnız fiyatın
+    // başında, kenarları sönük, renk geçişi `flowOf` (hareketi azalt → anında).
+    // Hare dönemin yönüdür: imleç gezinirken (değişim satırı tarihe
+    // dönünce) sönmez.
+    final yonlu =
+        this.degisim.renk == context.c.gain || this.degisim.renk == context.c.loss;
+    final hedef = this.degisim.renk;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Hare blokla değil, fiyatın kendisiyle hizalı sabit bir kutuda:
+        // blok üst düzende uzarsa (sınırlı yükseklik) hare fiyattan kopup
+        // aşağı kayıyordu. Kutu fiyatın baş hanelerinin arkasında; daire
+        // kutu kenarına varmadan söner → hiçbir yerde kesik kenar yok.
+        Positioned(
+          // Merkez ≈ büyük fiyatın ilk hanesi (etiket + boşluk aşağıda).
+          left: -_yonIsigiCapi / 2 + SandikSpace.lg,
+          top: -_yonIsigiCapi / 2 + SandikSpace.xl,
+          width: _yonIsigiCapi,
+          height: _yonIsigiCapi,
+          child: IgnorePointer(
+            child: TweenAnimationBuilder<Color?>(
+              tween: ColorTween(
+                  end: hedef.withValues(alpha: yonlu ? _yonIsigiOpakligi : 0)),
+              duration: SandikMotion.flowOf(context),
+              curve: SandikMotion.glide,
+              builder: (context, renk, _) => DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      renk ?? hedef.withValues(alpha: 0),
+                      (renk ?? hedef).withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        blok,
+      ],
+    );
   }
 }
+
+/// Harenin kutusu (pt): büyük fiyatın ilk 3–4 hanesini ve etiketini örter.
+const double _yonIsigiCapi = 160;
+
+/// Yön ışığının merkez opaklığı: koyu ve açık temada fark edilir ama
+/// rakamın kontrastını düşürmez (fiyat metni `text90`/altın, üstte durur).
+const double _yonIsigiOpakligi = 0.12;

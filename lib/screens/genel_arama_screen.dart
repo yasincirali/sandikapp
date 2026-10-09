@@ -12,6 +12,7 @@ import '../services/crash_reporter.dart';
 import '../services/price_service.dart';
 import '../services/symbol_search_service.dart';
 import '../theme/sandik.dart';
+import '../widgets/varlik_rozeti.dart';
 import '../l10n/l10n.dart';
 import 'add_watchlist_screen.dart';
 import 'asset_detail_screen.dart';
@@ -329,7 +330,7 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
           ),
         ),
         child: _SatirKabugu(
-          nokta: a.type.color,
+          bas: VarlikRozeti(type: a.type, ticker: a.ticker),
           baslik: a.name,
           alt: [
             if (kod.isNotEmpty && kod != a.name) kod,
@@ -477,13 +478,15 @@ class _SatirKabugu extends StatelessWidget {
   const _SatirKabugu({
     required this.baslik,
     this.alt,
-    this.nokta,
+    this.bas,
     this.ikon,
   });
 
   final String baslik;
   final String? alt;
-  final Color? nokta;
+
+  /// Varlık satırının başı (tür noktası ya da `goz_alici` rozeti).
+  final Widget? bas;
   final IconData? ikon;
 
   @override
@@ -493,13 +496,8 @@ class _SatirKabugu extends StatelessWidget {
           padding: const EdgeInsets.only(left: SandikSpace.smd),
           child: Row(
             children: [
-              if (nokta != null)
-                Container(
-                  width: SandikSpace.sm,
-                  height: SandikSpace.sm,
-                  decoration:
-                      BoxDecoration(color: nokta, shape: BoxShape.circle),
-                )
+              if (bas != null)
+                bas!
               else if (ikon != null)
                 Icon(ikon, size: 18, color: context.c.text58),
               const SizedBox(width: SandikSpace.sm2),

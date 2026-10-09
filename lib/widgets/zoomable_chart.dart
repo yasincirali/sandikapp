@@ -187,6 +187,19 @@ class ZoomableChart extends StatefulWidget {
   /// Morf eğrisi. `ease-out` hızlı başlar: değişim hemen algılanır.
   final Curve swapCurve;
 
+  /// Verilirse imlecin etiketi ([crosshairLabelBuilder] çıktısı) buraya da
+  /// yazılır; imleç kalkınca `null`. Sayfa başlığındaki büyük fiyatın
+  /// parmağı izlemesi için (göz alıcılık B, bayrak çağıranda).
+  final ValueNotifier<(String, String)?>? imlecEtiketi;
+
+  /// İmleç bu X'lerden birine oturunca hafif titreşim (ör. dönemin zirvesi
+  /// ve dibi). Boş → yalnız imlecin belirdiği anki titreşim (eski davranış).
+  ///
+  /// Neden: nokta başına titreşim yorucu (bkz. `_updateCrosshair`), hiç
+  /// titreşim yoksa parmak "en yüksek burada" anını kaçırıyor. Yalnız
+  /// anlamlı noktalarda — Robinhood/Apple Stocks yaklaşımı.
+  final Set<double> titresimNoktalari;
+
   const ZoomableChart({
     super.key,
     required this.fullMinX,
@@ -205,6 +218,8 @@ class ZoomableChart extends StatefulWidget {
     this.semanticLabel = 'Fiyat grafiği',
     this.swapDuration = SandikMotion.state,
     this.swapCurve = SandikMotion.enter,
+    this.imlecEtiketi,
+    this.titresimNoktalari = const {},
   });
 
   @override
@@ -500,14 +515,22 @@ class _ZoomableChartState extends State<ZoomableChart> {
     // İmleç belirdiği an hafif dokunsal onay: uzun basış tuttu, artık
     // parmak grafiği okuyor. Nokta başına DEĞİL — yoğun seride (1Y ≈ 250
     // nokta) sürekli titreşim yorucu olur.
-    if (_crosshairPx == null) SandikHaptic.selection.perform();
+    if (_crosshairPx == null ||
+        (xData != _crosshairX && widget.titresimNoktalari.contains(xData))) {
+      SandikHaptic.selection.perform();
+    }
     setState(() {
       _crosshairPx = px;
       _crosshairX = xData;
     });
+    final dinleyen = widget.imlecEtiketi;
+    if (dinleyen != null) {
+      dinleyen.value = widget.crosshairLabelBuilder?.call(xData);
+    }
   }
 
   void _clearCrosshair() {
+    widget.imlecEtiketi?.value = null;
     if (_crosshairPx == null) return;
     setState(() {
       _crosshairPx = null;

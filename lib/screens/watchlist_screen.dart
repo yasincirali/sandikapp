@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../demo/demo_modu.dart';
+import '../widgets/varlik_rozeti.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/material.dart'
     show
@@ -562,12 +563,9 @@ class _Row extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                        color: item.type.color, shape: BoxShape.circle),
-                  ),
+                  // Bayrak `goz_alici` açıkken sembol rozeti, kapalıyken
+                  // birebir eski tür noktası.
+                  VarlikRozeti(type: item.type, ticker: item.ticker),
                   const SizedBox(width: 10),
                   Expanded(
                     child: ExcludeSemantics(
