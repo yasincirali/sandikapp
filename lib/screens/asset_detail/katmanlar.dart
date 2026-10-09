@@ -56,6 +56,11 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
                 _canli.asset.quantity, (v, d) => fmtNum(v, digits: d)),
         ayrinti: ayrinti,
       ),
+      // Eski yığındaki yeri: pozisyonun hemen altı. #113 (eurobond) ile #116
+      // (bu düzen) aynı gün ayrı dallarda yazıldı; katmanlı gövdeye
+      // taşınmamıştı ve iki bayrak birlikte açılınca tahvil kartı
+      // kayboluyordu (2026-10-09, bulut denemesi).
+      _eurobondKarti(),
       const SizedBox(height: SandikSpace.lg),
       ..._istatistikler(pnl.currentUnitTRY),
 
@@ -75,6 +80,14 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
           ),
         ],
       ],
+
+      // Masraflar (bayrak `varlik_masraflari`) kendi başlığıyla gelir;
+      // Analiz'den sonra, belgelerden önce — eski yığında da sözleşme ve
+      // temettünün yanındaydı. Eurobond kartıyla aynı nedenle eksikti.
+      if (isOwnAsset &&
+          pState != null &&
+          RemoteConfigService.instance.varlikMasraflari)
+        _masrafKarti(pState),
 
       // ── 4. Geçmiş ve belgeler ──
       // Kartların üçü de kendini gizleyebilir ve ikisi (temettü, KAP)
