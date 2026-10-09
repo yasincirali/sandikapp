@@ -46,23 +46,31 @@ def tablo_dok(b, ad):
 
 TCMB = "https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Main+Menu/Istatistikler/Faiz+Istatistikleri/"
 sayfalar = [
-    TCMB + "Mevzuat/",
-    TCMB + "Mevduat+Faiz+Oranlari/",
-    TCMB,
-    "https://tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/File+Resources/YFA/Metaveri_Bankalar+Mevduat+Fiilen+Uygulanan+Faiz",
+    TCMB + "Mevzuat/Banka+Mevduat+Azami+Faiz/",
+    TCMB + "Mevzuat/Kamu+Banka+Mevduat+Azami+Faiz/",
 ]
 indirilecek = []
 for u in sayfalar:
     b = al(u)
     if not b:
         continue
-    for t, h in linkler(b, r"xls|xlsx|csv|mevduat|fiilen|azami|banka"):
+    metin = re.sub(r"<script.*?</script>|<style.*?</style>", " ", b.decode("utf-8", "ignore"), flags=re.S)
+    metin = re.sub(r"<[^>]+>", " ", metin)
+    metin = re.sub(r"\s+", " ", metin)
+    i = metin.find("Azami Faiz")
+    print("  METIN:", metin[max(0, i - 200): i + 2500])
+    for t, h in linkler(b, r"xls|xlsx|csv|AJPERES|html"):
         print(f"  {t!r} -> {h}")
         if re.search(r"xls|csv", h, re.I) or re.search(r"\.xls|excel", t, re.I):
             if h.startswith("/"):
                 h = "https://www.tcmb.gov.tr" + h
             indirilecek.append((t, h))
 
+for t, h in [("TRLtum_html", "https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/File+Resources/YFA/TRLtum_html")]:
+    b = al(h)
+    if b:
+        m = re.sub(r"<[^>]+>", " | ", b.decode("utf-8", "ignore"))
+        print(re.sub(r"(\s*\|\s*)+", " | ", m)[:3000])
 for t, h in indirilecek[:8]:
     b = al(h)
     if b:
@@ -72,18 +80,17 @@ for t, h in indirilecek[:8]:
 for u in [
     "https://www.bddk.org.tr/Kurulus/Liste/77",
     "https://www.tbb.org.tr/tr/bankacilik/banka-ve-sube-bilgileri/bankalarimiz/22",
-    "https://www.tbb.org.tr/en/banks-and-banking-sector-information/banks/22",
-    "https://www.tbb.org.tr/tr/bankacilik/banka-ve-sube-bilgileri/banka-bilgileri/22",
 ]:
     b = al(u)
     if b:
         s = b.decode("utf-8", "ignore")
-        adlar = sorted(set(re.findall(r">\s*([A-ZÇĞİÖŞÜ][^<>]{3,80}?(?:A\.Ş\.|BANK[^<>]{0,40}))\s*<", s)))
+        adlar = sorted(set(re.findall(r"([^<>\"]{2,80}(?:Bank|BANK|Bankası|BANKASI)[^<>\"]{0,40})", s)))
         print(f"  banka benzeri ad: {len(adlar)}")
-        for a in adlar[:80]:
-            print("   ", a)
+        for a in adlar[:120]:
+            print("   ", a.strip()[:120])
+        for t, h in linkler(b, r"bank")[:40]:
+            print(f"  L {t!r} -> {h}")
 
 # EVDS anahtarsız uç (yalnız erişim)
-al("https://evds3.tcmb.gov.tr/")
-al("https://evds2.tcmb.gov.tr/")
+
 sys.exit(0)
