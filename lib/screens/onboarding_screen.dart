@@ -639,8 +639,11 @@ List<_Adim> _adimlariKur() {
       baslik: 'Mevduat ve BES',
       // Izgarada (bayrak `tur_secici_izgara`) Mevduat ve BES "Birikim"
       // grubunda; yalnız ilk cümlenin yeri söylenir, gerisi aynı.
+      // 2026-10-09 (bayrak `mevduat_banka_secici`): banka listeden seçilir,
+      // faiz vadeye göre piyasa ortalamasıyla önerilir, not yazılır — ilk
+      // cümle buna göre; kapalıyken birebir eski.
       govde: '${RemoteConfigService.instance.turSeciciIzgara ? 'Birikim grubunda ' : ''}'
-          "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "
+          '${RemoteConfigService.instance.mevduatBankaSecici ? "Mevduat'ı seç: bankanı listeden seç, tutarı ve vadeyi yaz; faiz piyasa ortalamasıyla gelir, sana özel oran verildiyse değiştirirsin, istersen not eklersin. Net getiriyi " : "Mevduat'ı seç: banka, tutar, faiz ve vadeyi yaz; net getiriyi "}'
           'stopajıyla birlikte biz hesaplarız. Faiz vade sonunda (günlük faizli '
           'hesapta her gün sonunda) eklenir; '
           'banka vade içinde oranı değiştirirse karttan güncellersin, kazanç '

@@ -8,6 +8,38 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-09 Mevduat: banka listesi, faiz önerisi, not (0129, `mevduat-faiz`)
+
+Senin isteğin: banka listesi yasal + ücretsiz kaynaktan, performansı
+etkilemeden; seçilen bankanın aylık/yıllık brüt faizi varsayılan, müşteriye
+özel oran değiştirilebilir; mevduata not. TEK bayrak `mevduat_banka_secici`.
+
+- Kaynak kararı: bankaya özel tabela faizini yasal ve ücretsiz veren kaynak
+  yok. Faiz önerisi TCMB'nin haftalık **ağırlıklı ortalaması** (vade
+  dilimine göre, EVDS). Formda "Piyasa ortalaması (TCMB, … haftası),
+  bankaya özel değil" yazar. TCMB oranı bileşik; forma vadeye göre basit
+  yıllığa çevrilmiş olarak girer (32 günde %45 bileşik ≈ %37,8 basit).
+- Logo yok, harf rozeti var (marka hakkı / App Review 5.2). Banka adı sorun değil.
+- Katılım bankasında kâr payı önceden belli olmadığı için öneri yazılmaz.
+- Not, mevduatın anapara kaydına yazılır; Portföy kartındaki NOTLAR'da görünür.
+  Şema değişmedi.
+- [ ] Dağıtım (Claude, birleşince): 0129 + `mevduat-faiz`, iki sunucu. Yeni
+      secret YOK (EVDS anahtarı ve TÜFE cron secret'ı kullanılır).
+- [ ] İlk tur (Claude, dağıtımdan sonra; SQL Editor'da da olur):
+      `select public.trigger_mevduat_faiz();` → birkaç saniye sonra
+      `select vade_dilimi, seri_kodu, yillik_faiz, veri_tarihi, durum from public.mevduat_faiz_ortalama;`
+      Beş satırda `durum = ok` ve %30–50 bandında faiz görmeliyiz. `seri_bos`
+      çıkan satırın seri kodu TCMB'de farklıdır; doğru kod EVDS katalogundan
+      okunup tek UPDATE ile düzeltilir (deploy gerekmez). O satır düzelene
+      kadar o vadede öneri yazılmaz, form bugünkü gibi boş gelir.
+- [ ] Remote Config'e `mevduat_banka_secici` (Boolean, varsayılan `false`,
+      TestFlight koşulu `true`). İlk tur `ok` vermeden açma: liste gelir ama
+      faiz önerisi boş kalır.
+- [ ] TestFlight'ta dene: Varlık Ekle → Mevduat → Banka alanına dokun →
+      listeden seç; faiz ve aylık dolsun; vadeyi değiştir, faiz değişsin;
+      kendi oranını yaz, banka/vade değişince üstüne yazılmasın; not yaz,
+      kaydet, Portföy'de kartı açınca NOTLAR'da görünsün.
+
 ## ⏳ 2026-10-09 Sıralama asgari süresi ayarlanabilir + edinme tarihinden (0128)
 
 Senin kararın: "30 günü parametrik yapalım, 30 gün ilk varlığın edinme

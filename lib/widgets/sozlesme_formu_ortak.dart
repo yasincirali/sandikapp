@@ -99,6 +99,10 @@ class SozlesmeAlani extends StatelessWidget {
     this.degisti,
     this.buyukHarf = false,
     this.isaretli = false,
+    this.dokununca,
+    this.onek,
+    this.enFazlaSatir = 1,
+    this.enFazlaKarakter,
   });
 
   final TextEditingController controller;
@@ -112,15 +116,38 @@ class SozlesmeAlani extends StatelessWidget {
   final String? Function(String?)? dogrula;
   final void Function(String)? degisti;
 
+  /// Verilirse alan yazılmaz, dokununca seçici açılır (mevduat banka
+  /// seçicisi). Doğrulama ve görünüş yazılan alanla aynı kalır.
+  final VoidCallback? dokununca;
+
+  /// Alanın başındaki küçük öğe (seçilen bankanın harf rozeti).
+  final Widget? onek;
+
+  /// Çok satırlı serbest metin (not) için.
+  final int enFazlaSatir;
+  final int? enFazlaKarakter;
+
   @override
   Widget build(BuildContext context) => TextFormField(
         controller: controller,
+        readOnly: dokununca != null,
+        onTap: dokununca,
+        maxLines: enFazlaSatir,
+        minLines: 1,
+        maxLength: enFazlaKarakter,
         style: context.t.bodyLarge
             ?.copyWith(color: context.c.text90, fontWeight: FontWeight.w500),
         decoration: context.inputDecoration(ipucu).copyWith(
               suffixText: sonek,
               suffixStyle: context.t.titleSmall?.copyWith(
                   color: context.c.text58, fontWeight: FontWeight.w700),
+              suffixIcon: dokununca == null
+                  ? null
+                  : Icon(Icons.expand_more_rounded, color: context.c.text58),
+              prefixIcon: onek,
+              // Sayaç yalnız sınıra yaklaşınca anlamlı; her an "0/300"
+              // yazmak not alanını kalabalıklaştırırdı.
+              counterText: '',
             ),
         keyboardType: sayi
             ? TextInputType.numberWithOptions(decimal: true, signed: isaretli)
@@ -128,8 +155,11 @@ class SozlesmeAlani extends StatelessWidget {
         inputFormatters: sayi
             ? (isaretli ? sozlesmeIsaretliSuzgeci : sozlesmeSayiSuzgeci)
             : null,
-        textCapitalization:
-            buyukHarf ? TextCapitalization.words : TextCapitalization.none,
+        textCapitalization: buyukHarf
+            ? TextCapitalization.words
+            : (enFazlaSatir > 1
+                ? TextCapitalization.sentences
+                : TextCapitalization.none),
         validator: dogrula,
         onChanged: degisti,
         onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -191,8 +221,7 @@ class SozlesmeTarihi extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: context.t.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: context.c.amberText)),
+                      fontWeight: FontWeight.w700, color: context.c.amberText)),
             ),
             const SizedBox(width: SandikSpace.xs),
             Icon(Icons.chevron_right_rounded,
@@ -294,8 +323,8 @@ class SozlesmeOzetSatiri extends StatelessWidget {
             Expanded(
               flex: 5,
               child: Text(etiket,
-                  style: context.t.bodyMedium
-                      ?.copyWith(color: context.c.text58)),
+                  style:
+                      context.t.bodyMedium?.copyWith(color: context.c.text58)),
             ),
             const SizedBox(width: SandikSpace.sm),
             Flexible(

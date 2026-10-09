@@ -145,6 +145,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     required double stopaj,
     required DateTime baslangic,
     required int? vadeGun,
+    String not = '',
   }) async {
     final uid = _kullanici();
     final bas = dayKey(baslangic);
@@ -174,7 +175,10 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       quantity: anapara,
       purchasePrice: 1.0,
       currency: 'TRY',
-      notes: '',
+      // Mevduat notu (bayrak `mevduat_banka_secici`) anapara lotuna yazılır:
+      // işlem notu altyapısı (`islemNotu`) onu hareket satırında ve Portföy
+      // kartının NOTLAR bölümünde zaten gösteriyor; şema değişmez.
+      notes: not.trim(),
       isManualPrice: false,
       currentPrice: bugunkuBirim,
       lastUpdated: DateTime.now(),

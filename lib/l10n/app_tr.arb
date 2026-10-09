@@ -5355,5 +5355,20 @@
   "pwdGuvenTakip": "Portföy takibin her zaman ücretsiz",
   "pwdGuvenIptal": "İstediğin an iptal, dönem sonuna kadar açık",
   "pwdYillikAboneOl": "Yıllık abone ol",
-  "pwdAylikAboneOl": "Aylık abone ol"
+  "pwdAylikAboneOl": "Aylık abone ol",
+  "depositBankPick": "Bankanı seç",
+  "depositBankSearchHint": "Banka ara",
+  "depositBankUseTyped": "\"{ad}\" olarak kullan",
+  "@depositBankUseTyped": {"placeholders": {"ad": {"type": "String"}}},
+  "depositBankSectionDeposit": "Bankalar",
+  "depositBankSectionParticipation": "Katılım bankaları",
+  "depositBankListUnavailable": "Liste şu an yüklenemedi. Bankanın adını yazıp kullanabilirsin.",
+  "depositRateAnnualGross": "Yıllık brüt (%)",
+  "depositRateMonthlyGross": "Aylık brüt (%)",
+  "depositRateMarketAverage": "Piyasa ortalaması (TCMB, {date} haftası), bankaya özel değil. Sana farklı bir oran verildiyse değiştir.",
+  "@depositRateMarketAverage": {"placeholders": {"date": {"type": "String"}}},
+  "depositRateOwn": "Bu oranı sen girdin; banka ya da vade değişince ortalama üstüne yazılmaz.",
+  "depositRateParticipation": "Katılım bankasında kâr payı önceden belli değil; bankanın bildirdiği oranı yaz.",
+  "depositNote": "Not",
+  "depositNoteHint": "Örn. kampanya faizi, hedef, şube"
 }
