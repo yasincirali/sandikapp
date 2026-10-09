@@ -11,6 +11,7 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/services/daily_summary.dart'
     show IntradaySeriesCache;
 import 'package:portfoy_takip/services/live_activity_service.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 
 /// iOS Live Activity — seans yaşam döngüsü ve gizlilik değişmezleri.
 ///
@@ -298,6 +299,22 @@ void main() {
 
       expect(channel.calls.single.method, 'start');
       expect(channel.calls.single.args['sessionName'], 'Piyasa Seansı');
+    });
+
+    // Göz alıcılık (2026-10-09): bayrak oturumun SABİT özniteliği olarak
+    // gider; kapalıyken `false` → kilit ekranı bugünkü görünüm.
+    test('START bayrak kapalıyken gozAlici=false taşır', () async {
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+      expect(channel.calls.single.args['gozAlici'], isFalse);
+    });
+
+    test('START bayrak açıkken gozAlici=true taşır', () async {
+      RemoteConfigService.testAcik = {'goz_alici'};
+      addTearDown(() => RemoteConfigService.testAcik = {});
+      await LiveActivityService.instance
+          .sync(_state(), hideBalance: false, now: _duringSession);
+      expect(channel.calls.single.args['gozAlici'], isTrue);
     });
 
     test('gösterim penceresi DIŞINDA hiç oturum açılmaz', () async {

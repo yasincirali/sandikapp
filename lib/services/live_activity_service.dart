@@ -12,6 +12,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'canli_etkinlik_tarifi.dart';
 import 'daily_summary.dart';
+import 'remote_config_service.dart';
 import 'surface_theme.dart';
 
 /// iOS Live Activity — kilit ekranı + Dynamic Island "piyasa seansı" yüzeyi.
@@ -773,7 +774,13 @@ class LiveActivityService {
 
       final ok = await _invoke(
         _sessionActive ? 'update' : 'start',
-        {...payload, 'sessionName': _sessionName},
+        {
+          ...payload,
+          'sessionName': _sessionName,
+          // Oturumun SABİT özniteliği (bkz. `SandikActivityAttributes
+          // .gozAlici`): yalnız 'start'ta okunur, sunucu push'u ezmez.
+          'gozAlici': RemoteConfigService.instance.gozAlici,
+        },
       );
 
       if (ok) {

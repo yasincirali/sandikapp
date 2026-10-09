@@ -63,6 +63,31 @@ struct SandikSparkline: View {
     /// bir grafikte iki yatay çizgi + veri çizgisi birbirine karışır.
     var showsGuides: Bool = false
 
+    /// Gün başı kesik çizgisi (göz alıcılık 1, bayrak `goz_alici`).
+    ///
+    /// Serinin İLK noktası günün açılış ölçümüdür (`DailySummary.dayValues`);
+    /// onun hizasındaki kesik çizgi "günün başından yukarıda mıyım"
+    /// sorusunu çizgide yanıtlar. Yeni veri gerekmez: normalize seri zaten
+    /// taşıyor, sunucu push'u da aynı seriyi gönderiyor.
+    var baslangicCizgisi: Bool = false
+
+    /// Günün dibi halkası (göz alıcılık 3). Konumu [dipIndeksi] verir.
+    var dipHalkasi: Bool = false
+
+    /// Halkanın çizileceği nokta — yoksa `nil`.
+    ///
+    /// Dip yalnızca gün başının ALTINA inildiyse ve canlı uç değilse
+    /// işaretlenir: hiç eksiye düşmemiş günde "dip" yoktur, uçtaki dip ise
+    /// canlılık noktasıyla üst üste biner.
+    static func dipIndeksi(_ points: [Double]) -> Int? {
+        guard points.count >= 3, let enDusuk = points.min(),
+              let i = points.firstIndex(of: enDusuk) else { return nil }
+        guard i > 0, i < points.count - 1, enDusuk < points[0] - 0.02 else {
+            return nil
+        }
+        return i
+    }
+
     /// Eksen etiketlerine ayrılan sol şerit.
     ///
     /// Yalnızca ETİKET varken pay bırakılır; çizgiler tek başınayken
@@ -180,12 +205,38 @@ struct SandikSparkline: View {
                 )
             }
 
+            // Gün başı çizgisi verinin ALTINDA: veri çizgisi onu keser,
+            // tersi değil.
+            if baslangicCizgisi {
+                let y = point(0).y
+                var taban = Path()
+                taban.move(to: CGPoint(x: plotX, y: y))
+                taban.addLine(to: CGPoint(x: plotX + usableW, y: y))
+                context.stroke(
+                    taban,
+                    with: .color(palette.text58),
+                    style: StrokeStyle(lineWidth: 0.8, dash: [3, 3])
+                )
+            }
+
             context.stroke(
                 line,
                 with: .color(color),
                 style: StrokeStyle(
                     lineWidth: 1.8, lineCap: .round, lineJoin: .round)
             )
+
+            // İçi boş halka: renk tek başına anlam taşımasın (kilit ekranı
+            // tek renge döndüğünde de "halka" okunur). Zemin rengiyle çeper,
+            // canlılık noktasıyla aynı teknik.
+            if dipHalkasi, let i = SandikSparkline.dipIndeksi(points) {
+                let p = point(i)
+                let r: CGFloat = 3.2
+                let halka = CGRect(x: p.x - r, y: p.y - r, width: r * 2, height: r * 2)
+                context.fill(Path(ellipseIn: halka), with: .color(palette.background))
+                context.stroke(
+                    Path(ellipseIn: halka), with: .color(palette.loss), lineWidth: 1.4)
+            }
 
             // ---- Serinin ucundaki canlılık noktası ----
             //

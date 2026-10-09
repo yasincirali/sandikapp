@@ -52,6 +52,7 @@ enum LiveActivityBridge {
     @discardableResult
     static func start(
         sessionName: String,
+        gozAlici: Bool = false,
         state: SandikActivityAttributes.ContentState
     ) -> Bool {
         guard isEnabled else { return false }
@@ -61,7 +62,8 @@ enum LiveActivityBridge {
         }
 
         do {
-            let attributes = SandikActivityAttributes(sessionName: sessionName)
+            let attributes = SandikActivityAttributes(
+                sessionName: sessionName, gozAlici: gozAlici)
             let content = ActivityContent(
                 state: state,
                 // Sistem, seans bitiminde oturumu kendiliğinden "eskimiş"
@@ -210,7 +212,10 @@ enum LiveActivityChannel {
                     return
                 }
                 let name = args["sessionName"] as? String ?? "Piyasa Seansı"
-                result(LiveActivityBridge.start(sessionName: name, state: state))
+                // Yoksa (eski Dart) `false`: bugünkü görünüm.
+                let gozAlici = args["gozAlici"] as? Bool ?? false
+                result(LiveActivityBridge.start(
+                    sessionName: name, gozAlici: gozAlici, state: state))
 
             case "update":
                 guard let args = call.arguments as? [String: Any],

@@ -17,6 +17,7 @@ import '../utils/tr_format.dart';
 import 'daily_summary.dart';
 import 'deep_link_router.dart';
 import 'notification_service.dart';
+import 'remote_config_service.dart';
 import 'retention_tracker.dart';
 import 'surface_theme.dart';
 import 'crash_reporter.dart';
@@ -108,6 +109,12 @@ class HomeWidgetService {
   /// çubuğu 2026-10-01'de kaldırıldı).
   /// Native taraf anahtar yoksa `true` varsayar (eski davranış).
   static const _kYalnizBorsa = 'sandik_yalniz_borsa';
+
+  /// Göz alıcılık (Remote Config `goz_alici`, 2026-10-09): widget'taki
+  /// toplamda ₺ ve kuruş küçük — uygulamadaki büyük fiyatla aynı yazım.
+  /// Native taraf anahtar yoksa `false` varsayar: eski sürümün yazdığı
+  /// veride bugünkü görünüm.
+  static const _kGozAlici = 'sandik_goz_alici';
 
   /// Uygulamanın SEÇİLİ teması açık mı? Native taraf paleti buna göre seçer.
   ///
@@ -323,6 +330,8 @@ class HomeWidgetService {
       // Gizliyken de yazılır: gizli widget da "Piyasa kapalı" satırı çizer.
       final yalnizBorsa = yalnizcaBorsaVarliklardan(state.assets);
       await HomeWidget.saveWidgetData<bool>(_kYalnizBorsa, yalnizBorsa);
+      await HomeWidget.saveWidgetData<bool>(
+          _kGozAlici, RemoteConfigService.instance.gozAlici);
 
       if (hideBalance) {
         // Kullanıcı bakiyeyi uygulama içinde gizlemişse ana ekranda

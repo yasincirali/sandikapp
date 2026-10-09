@@ -192,7 +192,9 @@ struct SandikLiveActivity: Widget {
                                     : palette.text58,
                                 showsFill: !tutarAcik,
                                 isMarketOpen: tutarAcik
-                                    ? nil : !context.state.kapaliGoster
+                                    ? nil : !context.state.kapaliGoster,
+                                baslangicCizgisi: context.attributes.gozAlici,
+                                dipHalkasi: context.attributes.gozAlici
                             )
                             .frame(height: tutarAcik ? 26 : 40)
                         }
@@ -496,6 +498,25 @@ struct SandikLockScreenView: View {
 
     private var tutarGorunur: Bool { state.showAmounts && !state.isHidden }
 
+    /// Göz alıcılık görünümü — oturum açılırken uygulamadan gelir.
+    private var gozAlici: Bool { context.attributes.gozAlici }
+
+    /// Çizgideki iki yeni işaretin adı. Yalnız SEKİL anlatır, rakam yok:
+    /// dip yüzdesi ve saati normalize seriden çıkarılamaz, uydurma yok.
+    private var lejant: some View {
+        HStack(spacing: 10) {
+            Text("┄ gün başı")
+            if SandikSparkline.dipIndeksi(state.sparkline) != nil {
+                Text("◯ günün dibi")
+            }
+            Spacer(minLength: 0)
+        }
+        .font(.sandikLabel(10, weight: .medium))
+        .foregroundStyle(palette.text58)
+        .lineLimit(1)
+        .accessibilityHidden(true)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             baslik
@@ -510,9 +531,16 @@ struct SandikLockScreenView: View {
                     // çizgisi çizilir, büyüklük yazılmaz.
                     axisMin: state.axisMinText,
                     axisMax: state.axisMaxText,
-                    showsGuides: true
+                    showsGuides: true,
+                    baslangicCizgisi: gozAlici,
+                    dipHalkasi: gozAlici
                 )
-                .frame(height: 40)
+                // Lejant satırına yer: kilit ekranı kartı 160pt'yi aşarsa
+                // sistem alttan keser.
+                .frame(height: gozAlici ? 34 : 40)
+                if gozAlici {
+                    lejant
+                }
             }
         }
         .padding(.horizontal, 16)

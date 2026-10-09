@@ -178,6 +178,30 @@ struct SandikActivityAttributes: ActivityAttributes {
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.
     var sessionName: String
+
+    /// Göz alıcılık görünümü (Remote Config `goz_alici`, 2026-10-09):
+    /// çizgide gün başı kesik çizgisi ve günün dibi halkası.
+    ///
+    /// **Neden `ContentState`'te değil de burada:** içerik her dakika
+    /// sunucu push'uyla BÜTÜNÜYLE değişir ve sunucu bu bayrağı bilmez;
+    /// orada olsaydı push gelen her dakika görünüm eskiye dönüp gelirdi.
+    /// Öznitelikler oturum açılırken uygulamadan bir kez gelir ve push'la
+    /// değişmez. Bedeli: bayrak değişince yeni görünüm bir SONRAKİ oturumda
+    /// başlar. Eski sürümün açtığı oturumda alan yoktur → `false`, bugünkü
+    /// görünüm (çözümleme aşağıda toleranslı).
+    var gozAlici: Bool = false
+}
+
+@available(iOS 17.0, *)
+extension SandikActivityAttributes {
+    /// Eksik alana toleranslı çözümleme — gerekçe `ContentState.init(from:)`
+    /// notunda: ActivityKit yürüyen oturumun özniteliklerini saklar ve
+    /// güncellemeden sonra yeni ikili eski kaydı çözebilmeli.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sessionName = try c.decode(String.self, forKey: .sessionName)
+        gozAlici = try c.decodeIfPresent(Bool.self, forKey: .gozAlici) ?? false
+    }
 }
 
 @available(iOS 17.0, *)
