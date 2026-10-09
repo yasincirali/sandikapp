@@ -131,6 +131,7 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Hata (ekran/kart) | `SandikErrorView` (yeniden dene düğmeli) |
 | Boş ("henüz bir şey yok") | `SandikBosDurum` (kapalı sandık + metin) ya da kendi düzeni olan ekranda yalnız ikon yerine `SandikBosIkonu` (bayrak `goz_alici`; kapalıyken eski ikon). Hata boş gibi gösterilmez. |
 | Sandık çizimi | `SandikCizimi` (paywall, boş durum, kilometre taşı); zemin `amber`/`yuzey` |
+| Kart kart anlatım (hikâye) | `HikayeAkisi` + `HikayeSayfasi` (aylık hikâye; sayfa başına tek büyük öğe). `RecapScreen` kendi kopyasında, taşıma `TECHNICAL_DEBT.md`. |
 | Hata (eylem sonrası) | `showAppError` |
 | Kısa bilgi / geri al | `sandikSnack` |
 | Kullanıcıya metin | `friendlyError(e)`; ham `$e` yok |
