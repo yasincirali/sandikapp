@@ -80,6 +80,7 @@ Süre ve eğri **birlikte** seçilir:
 | Aç/kapa bölüm | `SandikAcilir` + `SandikAcilirOk` |
 | Satır kalkışı | `KapananSatir` |
 | Değer değişim vurgusu | `DegisimVurgusu` |
+| Büyük fiyat/tutar metni (hane döner, ₺ ve kuruş geri çekilir) | `ParaMetni` (bayrak `akan_rakam`; Ana toplam kartında kullanılmaz) |
 | Satır → ekran başlık uçuşu | `VarlikBaslikHero` (bayrak `varlik_hero_gecisi`) |
 | Kaydırmalı kart geçişi | `KaydirmaliGecis` |
 
@@ -136,6 +137,8 @@ Tutar `fmtTRY`, yüzde `fmtPct`, girdi `parseTrNumber`. Hitap "sen".
 (`trSayiAyrilmaEki`: %30'undan, %20'sinden).
 
 ### İkonlar
+Hisse/fon/kripto satırının başında sembol rozeti (`varlikMonogrami`, bayrak
+`varlik_rozeti`); sembolü anlamsız türler (altın, mevduat…) tür ikonunda kalır.
 Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Gezinti oku
 `chevron_right_rounded`, rengi `text36`.
 

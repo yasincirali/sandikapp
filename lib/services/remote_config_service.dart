@@ -354,6 +354,25 @@ class RemoteConfigService {
     // KAPALI doğar: formun ilk sorusu; kapalıyken çip `Wrap`'ı birebir eski.
     'tur_secici_izgara': false,
 
+    // Göz alıcılık paketi A (2026-10-09, yasin: "uygulamayı göz alıcı hale
+    // getirelim, fonksiyonelitesinden hiçbir şey kaybetmeden"; rapor
+    // https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU, seçim "A · Sayılar").
+    //
+    // `varlik_rozeti`: listede beş hisse beş aynı çizgi ikonuyla duruyordu
+    // (ASELS = THYAO). Açıkken hisse/fon/kripto satırının başında sembolün
+    // kendisi (ASE, DLY, BTC) tür renginde rozet olur; tür rengi kaldığı için
+    // tür bilgisi kaybolmaz. Sembolsüz türler (altın, mevduat…) ikonda kalır.
+    // KAPALI doğar: ana listenin görünüşü; kapalıyken ikon birebir eski.
+    'varlik_rozeti': false,
+
+    // `akan_rakam`: büyük fiyat/tutar değişince yalnız değişen haneler
+    // kayarak döner (artışta yukarı, düşüşte aşağı); ₺ simgesi ve kuruş
+    // küçük ve soluk, rakam öne çıkar. Ana ekran toplam kartına DOKUNMAZ
+    // (yasin 2026-10-09: "ana sayfa toplam kartına çok dokunma"); varlık
+    // fiyat bloğu ve Portföy halkasının ortası. KAPALI doğar; kapalıyken
+    // düz `Text` birebir eski.
+    'akan_rakam': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -662,6 +681,10 @@ class RemoteConfigService {
 
   /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
   bool get turSeciciIzgara => _bayrak('tur_secici_izgara');
+
+  /// Göz alıcılık paketi A. Gerekçeler `_defaults`'ta.
+  bool get varlikRozeti => _bayrak('varlik_rozeti');
+  bool get akanRakam => _bayrak('akan_rakam');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

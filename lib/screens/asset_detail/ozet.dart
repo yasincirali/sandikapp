@@ -263,6 +263,7 @@ extension _DetayOzet on _AssetDetailScreenState {
 
     return VarlikFiyatBlogu(
       etiket: mevduat ? l.currentValueUpper : l.currentPriceUpper,
+      kimlik: widget.asset.id,
       // Kripto fiyatı gecikmeli olabilir — etiket fiyatın yanında,
       // okunduğu yerde (eskiden grafiğin altındaydı).
       etiketYani: widget.asset.type == AssetType.kripto

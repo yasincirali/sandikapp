@@ -10,6 +10,7 @@ import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'donem_istatistik.dart' show donemDuzMu;
 import 'varlik_baslik_hero.dart';
+import 'para_metni.dart';
 
 /// Varlık yüzeylerinin ORTAK üst özeti: başlık (kısa etiket + "ad · tür")
 /// ve fiyat bloğu (etiket, büyük fiyat, dönem değişimi satırı).
@@ -153,9 +154,14 @@ class VarlikFiyatBlogu extends StatelessWidget {
     required this.degisim,
     this.etiketYani,
     this.altSatir,
+    this.kimlik,
   });
 
   final String etiket;
+
+  /// Fiyatın ait olduğu varlık; değişirse akan rakam dönmez (başka
+  /// varlığın fiyatı "artış" değildir).
+  final Object? kimlik;
 
   /// Etiketin yanında duran parça (detay: kripto gecikme etiketi).
   final Widget? etiketYani;
@@ -199,11 +205,19 @@ class VarlikFiyatBlogu extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(
-            fiyat,
-            maxLines: 1,
-            style: context.t.numLarge.copyWith(color: fiyatRengi),
-          ),
+          // Bayrak `akan_rakam`: değişen hane döner, ₺ ve kuruş geri çekilir
+          // (gerekçe `para_metni.dart`). Kapalıyken düz metin, birebir eski.
+          child: RemoteConfigService.instance.akanRakam
+              ? ParaMetni(
+                  fiyat,
+                  kimlik: kimlik,
+                  stil: context.t.numLarge.copyWith(color: fiyatRengi),
+                )
+              : Text(
+                  fiyat,
+                  maxLines: 1,
+                  style: context.t.numLarge.copyWith(color: fiyatRengi),
+                ),
         ),
         const SizedBox(height: SandikSpace.xs),
         Text(

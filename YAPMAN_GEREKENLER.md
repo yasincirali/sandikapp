@@ -1,12 +1,27 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-09 (göz alıcılık paketi A bayrakları `varlik_rozeti`, `akan_rakam`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-09 Göz alıcılık paketi A: varlık rozeti + akan rakam (dal `claude/project-thread-a743z9`)
+
+Rapor: "sandık Cazibe Raporu" (https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU),
+seçim "A · Sayılar". Sunucu değişikliği ve migration yok. Ana ekran toplam
+kartına dokunulmadı.
+- [ ] Remote Config'e `varlik_rozeti` (Boolean, varsayılan `false`, TestFlight
+      koşulu `true`): Portföy listesinde ve hareketlerde hisse/fon/kripto
+      satırının başında tür ikonu yerine sembol (ASE, DLY, BTC) rozeti.
+- [ ] Remote Config'e `akan_rakam` (Boolean, varsayılan `false`, TestFlight
+      koşulu `true`): varlık sayfasındaki büyük fiyatta ve Portföy'deki küçük
+      halkanın ortasında değişen hane döner; ₺ ve kuruş küçük ve soluk.
+      Halka için `portfoy_dagilim_cubugu` da açık olmalı.
+- [ ] TestFlight'ta dene: piyasa açıkken bir hisse sayfasında fiyat yenilenince
+      yalnız değişen hane dönmeli; iOS'ta "Hareketi azalt" açıkken dönmemeli.
 
 ## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 

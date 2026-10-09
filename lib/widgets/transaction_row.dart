@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/varlik_monogrami.dart';
+import '../services/remote_config_service.dart';
 import '../providers/portfolio_provider.dart';
 import '../utils/money_format.dart';
 import '../theme/sandik.dart';
@@ -301,7 +303,13 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final symbol = asset.currencySymbol;
+    // Bayrak `varlik_rozeti`: hisse/fon/kripto satırında sembolün kendisi
+    // (gerekçe `varlik_monogrami.dart`); tür rengi dairede kaldığı için tür
+    // bilgisi kaybolmaz. Kapalıyken birebir eski ikon.
+    final symbol = asset.currencySymbol ??
+        (RemoteConfigService.instance.varlikRozeti
+            ? varlikMonogrami(type: asset.type, ticker: asset.ticker)
+            : null);
     final Color on = asset.type.onSurface(context);
     return Container(
       width: TransactionRow.avatarCap,
@@ -313,18 +321,27 @@ class _Avatar extends StatelessWidget {
       child: Center(
         child: symbol == null
             ? Icon(asset.type.icon, size: 18, color: on)
-            : Text(
-                symbol,
-                // Tek karakter ($, €) rahat okunur; "CHF" gibi üç harfli
-                // sembol daireye ancak etiket boyutunda sığar.
-                style: (symbol.length > 1
-                        ? context.t.labelSmall
-                        : context.t.titleSmall)
-                    ?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0,
-                  height: 1,
-                  color: on,
+            : Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    symbol,
+                    maxLines: 1,
+                    // Tek karakter ($, €) rahat okunur; "CHF" gibi üç
+                    // harfli sembol daireye ancak etiket boyutunda sığar.
+                    // Büyük yazıda kırpılmasın diye küçülür.
+                    style: (symbol.length > 1
+                            ? context.t.labelSmall
+                            : context.t.titleSmall)
+                        ?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
+                      height: 1,
+                      color: on,
+                    ),
+                  ),
                 ),
               ),
       ),
