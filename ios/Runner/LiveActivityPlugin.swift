@@ -52,6 +52,7 @@ enum LiveActivityBridge {
     @discardableResult
     static func start(
         sessionName: String,
+        gozAlici: Bool = false,
         state: SandikActivityAttributes.ContentState
     ) -> Bool {
         guard isEnabled else { return false }
@@ -61,7 +62,8 @@ enum LiveActivityBridge {
         }
 
         do {
-            let attributes = SandikActivityAttributes(sessionName: sessionName)
+            let attributes = SandikActivityAttributes(
+                sessionName: sessionName, gozAlici: gozAlici)
             let content = ActivityContent(
                 state: state,
                 // Sistem, seans bitiminde oturumu kendiliğinden "eskimiş"
@@ -210,7 +212,10 @@ enum LiveActivityChannel {
                     return
                 }
                 let name = args["sessionName"] as? String ?? "Piyasa Seansı"
-                result(LiveActivityBridge.start(sessionName: name, state: state))
+                // Yoksa (eski Dart) `false`: bugünkü görünüm.
+                let gozAlici = args["gozAlici"] as? Bool ?? false
+                result(LiveActivityBridge.start(
+                    sessionName: name, gozAlici: gozAlici, state: state))
 
             case "update":
                 guard let args = call.arguments as? [String: Any],
@@ -293,7 +298,8 @@ enum LiveActivityChannel {
             // ⚠️ Argüman sırası `ContentState` alan sırasıyla AYNI olmak
             // zorunda (memberwise initializer): showAmounts → axisMinText
             // → axisMaxText → isFlatChange → isMarketOpen → isLightTheme
-            // → yalnizBorsa.
+            // → yalnizBorsa → surukleyenAd → surukleyenPctText
+            // → surukleyenTutarText → surukleyenPozitif.
             axisMinText: args["axisMinText"] as? String ?? "",
             axisMaxText: args["axisMaxText"] as? String ?? "",
             // Ölçüldü ama sıfır mı? Yön oku ve kâr/zarar rengi buna göre
@@ -318,7 +324,14 @@ enum LiveActivityChannel {
             isLightTheme: args["isLightTheme"] as? Bool ?? false,
             // Varsayılan `true`: bayrak eksikse o güne kadarki davranış
             // (seans dışında "Piyasa kapalı"). ContentState ile AYNI.
-            yalnizBorsa: args["yalnizBorsa"] as? Bool ?? true
+            yalnizBorsa: args["yalnizBorsa"] as? Bool ?? true,
+            // Günü sürükleyen (goz_alici madde 4). Varsayılan BOŞ: satır
+            // çizilmez. Gizlilik kapısı Dart'ta ve sunucuda — buraya ancak
+            // "Tutarları göster" açıkken dolu gelir.
+            surukleyenAd: args["surukleyenAd"] as? String ?? "",
+            surukleyenPctText: args["surukleyenPctText"] as? String ?? "",
+            surukleyenTutarText: args["surukleyenTutarText"] as? String ?? "",
+            surukleyenPozitif: args["surukleyenPozitif"] as? Bool ?? true
         )
     }
 }

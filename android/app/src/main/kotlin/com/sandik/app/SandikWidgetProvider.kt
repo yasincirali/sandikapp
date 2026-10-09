@@ -7,6 +7,9 @@ import android.content.res.ColorStateList
 import android.os.Build
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
 import android.view.View
 import android.widget.RemoteViews
 import android.net.Uri
@@ -137,7 +140,15 @@ class SandikWidgetProvider : AppWidgetProvider() {
                 val yalnizBorsa = data.getBoolean("sandik_yalniz_borsa", true)
                 val canli = marketOpen || !yalnizBorsa
 
-                views.setTextViewText(R.id.widget_total, total)
+                // Göz alıcılık (bayrak `goz_alici`, 2026-10-09): ₺ işareti ve
+                // kuruş küçük — uygulamadaki büyük fiyatla aynı yazım, göz
+                // önce liraya gider. Anahtar yoksa (eski sürümün yazdığı
+                // veri) düz metin: bugünkü görünüm birebir.
+                views.setTextViewText(
+                    R.id.widget_total,
+                    if (data.getBoolean("sandik_goz_alici", false)) paraYazimi(total)
+                    else total
+                )
                 views.setTextViewText(R.id.widget_change, change)
                 views.setTextViewText(R.id.widget_date, date)
 
@@ -330,3 +341,21 @@ private fun android.content.SharedPreferences.readIntCompat(key: String): Int =
     } catch (e: Exception) {
         0
     }
+
+/**
+ * "₺284.910,42" → ₺ ve ",42" %62 boyutta. Biçim tanınmazsa (gizli
+ * "••••••", "—") metin olduğu gibi döner — uydurma bölme yok.
+ */
+private fun paraYazimi(metin: String): CharSequence {
+    if (!metin.startsWith("₺")) return metin
+    val virgul = metin.lastIndexOf(',')
+    val s = SpannableString(metin)
+    s.setSpan(RelativeSizeSpan(0.62f), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    if (virgul > 1) {
+        s.setSpan(
+            RelativeSizeSpan(0.62f), virgul, metin.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+    }
+    return s
+}

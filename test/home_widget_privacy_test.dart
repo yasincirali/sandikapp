@@ -5,6 +5,7 @@ import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/services/home_widget_service.dart';
+import 'package:portfoy_takip/services/remote_config_service.dart';
 
 /// Ana ekran widget'ı — gizlilik değişmezleri.
 ///
@@ -90,6 +91,24 @@ void main() {
   });
 
   tearDown(() => channel.remove());
+
+  // Göz alıcılık 6 (2026-10-09): native taraf ₺/kuruş yazımını bu
+  // anahtardan okur; yoksa ya da false ise bugünkü düz metin.
+  group('goz_alici anahtarı', () {
+    test('bayrak kapalıyken false yazılır', () async {
+      await HomeWidgetService.instance
+          .update(_stateWithValue(), hideBalance: false);
+      expect(channel.saved['sandik_goz_alici'], isFalse);
+    });
+
+    test('bayrak açıkken true yazılır', () async {
+      RemoteConfigService.testAcik = {'goz_alici'};
+      addTearDown(() => RemoteConfigService.testAcik = {});
+      await HomeWidgetService.instance
+          .update(_stateWithValue(), hideBalance: false);
+      expect(channel.saved['sandik_goz_alici'], isTrue);
+    });
+  });
 
   group('bakiye gizliyken', () {
     test('TUTAR widget\'a yazılmaz', () async {

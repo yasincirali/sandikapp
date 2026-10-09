@@ -11,6 +11,10 @@ import Foundation
 /// görebileceği bir yüzeyde durur. `HomeWidgetService`'teki kuralın aynısı
 /// burada daha da sıkı geçerlidir: yalnızca ÖZET yazılır. Varlık listesi,
 /// ticker, adet, kullanıcı kimliği veya e-posta ASLA bu tipe girmez.
+/// TEK bilinçli istisna `surukleyenAd` (goz_alici madde 4, kullanıcı seçimi
+/// 2026-10-09 "Yalnız izin verene"): yalnızca kullanıcı "Tutarları göster"i
+/// açtıysa ve bakiye gizli değilse dolu gelir — hem uygulama hem sunucu
+/// kaynakta keser.
 /// Kullanıcı bakiyeyi gizlediyse ([isHidden]) tutar hiç gönderilmez —
 /// maskeleme sunum katmanında değil, KAYNAKTA yapılır ki veri cihazda
 /// hiç bulunmasın.
@@ -174,10 +178,44 @@ struct SandikActivityAttributes: ActivityAttributes {
         /// Eski sürümden/eski sunucudan gelen durumda alan yoktur;
         /// varsayılan `true` — o güne kadarki davranış.
         var yalnizBorsa: Bool = true
+
+        /// Günü sürükleyen pozisyon — portföyün bugünkü değişimine TUTAR
+        /// olarak en çok katkı veren (goz_alici madde 4). Boşsa satır
+        /// çizilmez. Gizlilik: yukarıdaki istisna notu.
+        var surukleyenAd: String = ""
+        /// Pozisyonun gün içi yüzdesi, işaretsiz — ör. `%3,81`.
+        var surukleyenPctText: String = ""
+        /// Pozisyonun bugünkü katkısı, işaretli — ör. `+₺1.910`.
+        var surukleyenTutarText: String = ""
+        var surukleyenPozitif: Bool = true
     }
 
     /// Seans etiketi — ör. `BIST Seansı`. Oturum boyunca sabittir.
     var sessionName: String
+
+    /// Göz alıcılık görünümü (Remote Config `goz_alici`, 2026-10-09):
+    /// çizgide gün başı kesik çizgisi ve günün dibi halkası.
+    ///
+    /// **Neden `ContentState`'te değil de burada:** içerik her dakika
+    /// sunucu push'uyla BÜTÜNÜYLE değişir ve sunucu bu bayrağı bilmez;
+    /// orada olsaydı push gelen her dakika görünüm eskiye dönüp gelirdi.
+    /// Öznitelikler oturum açılırken uygulamadan bir kez gelir ve push'la
+    /// değişmez. Bedeli: bayrak değişince yeni görünüm bir SONRAKİ oturumda
+    /// başlar. Eski sürümün açtığı oturumda alan yoktur → `false`, bugünkü
+    /// görünüm (çözümleme aşağıda toleranslı).
+    var gozAlici: Bool = false
+}
+
+@available(iOS 17.0, *)
+extension SandikActivityAttributes {
+    /// Eksik alana toleranslı çözümleme — gerekçe `ContentState.init(from:)`
+    /// notunda: ActivityKit yürüyen oturumun özniteliklerini saklar ve
+    /// güncellemeden sonra yeni ikili eski kaydı çözebilmeli.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sessionName = try c.decode(String.self, forKey: .sessionName)
+        gozAlici = try c.decodeIfPresent(Bool.self, forKey: .gozAlici) ?? false
+    }
 }
 
 @available(iOS 17.0, *)
@@ -248,6 +286,15 @@ extension SandikActivityAttributes.ContentState {
         // Varsayılan `true` — eski davranış (bkz. alan notu).
         yalnizBorsa =
             try c.decodeIfPresent(Bool.self, forKey: .yalnizBorsa) ?? true
+        // Varsayılan BOŞ — satır yok, bugünkü görünüm.
+        surukleyenAd =
+            try c.decodeIfPresent(String.self, forKey: .surukleyenAd) ?? ""
+        surukleyenPctText =
+            try c.decodeIfPresent(String.self, forKey: .surukleyenPctText) ?? ""
+        surukleyenTutarText =
+            try c.decodeIfPresent(String.self, forKey: .surukleyenTutarText) ?? ""
+        surukleyenPozitif =
+            try c.decodeIfPresent(Bool.self, forKey: .surukleyenPozitif) ?? true
     }
 
     /// "Kapalı" denebilir mi — seans dışı VE portföy yalnızca borsa.

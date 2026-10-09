@@ -12,6 +12,7 @@ class EnCokOynayan {
     required this.tur,
     required this.degisimPct,
     required this.degisimTRY,
+    this.acilisTRY = 0,
   });
 
   final String positionKey;
@@ -22,6 +23,11 @@ class EnCokOynayan {
 
   /// Aynı iki uç arasındaki tutar farkı (TRY) — pozisyonun bugünkü katkısı.
   final double degisimTRY;
+
+  /// Pozisyonun pencere başındaki değeri (TRY) — [degisimTRY]'nin tabanı.
+  /// Kilit ekranının "günü sürükleyen" satırı sunucuda dakikalık ileri
+  /// taşınırken tutarı bu tabana göre yeniden kurar (goz_alici madde 4).
+  final double acilisTRY;
 
   bool get artida => degisimPct >= 0;
 }
@@ -88,6 +94,7 @@ List<EnCokOynayan> enCokOynayanlar(
       tur: breakdown.positionType[key] ?? AssetType.diger,
       degisimPct: pct,
       degisimTRY: u.last - u.first,
+      acilisTRY: u.first,
     ));
   });
   // Eşitlikte anahtar sırası: aynı veriyle iki build aynı sırayı versin.
@@ -96,4 +103,27 @@ List<EnCokOynayan> enCokOynayanlar(
     return c != 0 ? c : a.positionKey.compareTo(b.positionKey);
   });
   return adaylar.length > enFazla ? adaylar.sublist(0, enFazla) : adaylar;
+}
+
+/// Günü sürükleyen — portföyün bugünkü değişimine TUTAR olarak en çok katkı
+/// veren pozisyon; SAF.
+///
+/// Kilit ekranı satırı (goz_alici madde 4, kullanıcı seçimi 2026-10-09).
+/// Bugün kartının oynayanları |yüzde| ile sıralanır: küçük bir hissenin %8'i
+/// orada öne çıkar ama portföyü sürüklemez. Kilit ekranı tek satır gösterir
+/// ve "portföyüm bugün neden bu kadar oynadı?" sorusunu yanıtlar; o yüzden
+/// |TRY| büyük olan seçilir. Aday kümesi [enCokOynayanlar] ile AYNI (aynı
+/// pencere, gün içi akışlı pozisyon elenir) — iki yüzey farklı kural kursaydı
+/// kart bir pozisyonu "oynamadı" sayarken kilit ekranı onu sürükleyen derdi.
+/// Eşitlikte [enCokOynayanlar] sırası korunur.
+EnCokOynayan? gununSurukleyeni(
+  PortfolioHistoryBreakdown breakdown, {
+  required List<Asset> lotlar,
+  required DateTime now,
+}) {
+  final adaylar = enCokOynayanlar(breakdown,
+      lotlar: lotlar, now: now, enFazla: breakdown.byPosition.length);
+  if (adaylar.isEmpty) return null;
+  return adaylar
+      .reduce((a, b) => b.degisimTRY.abs() > a.degisimTRY.abs() ? b : a);
 }

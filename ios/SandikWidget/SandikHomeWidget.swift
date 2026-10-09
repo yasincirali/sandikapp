@@ -40,6 +40,9 @@ private enum WidgetKeys {
     static let yalnizBorsa = "sandik_yalniz_borsa"
     static let isLightTheme = "sandik_is_light_theme"
     static let sparkSeries = "sandik_spark_series"
+    /// Göz alıcılık (Remote Config `goz_alici`): ₺ ve kuruş küçük.
+    /// Anahtar yoksa `false` — bugünkü görünüm.
+    static let gozAlici = "sandik_goz_alici"
 }
 
 /// Widget dokunuşunun taşıdığı URI.
@@ -71,6 +74,8 @@ struct SandikEntry: TimelineEntry {
     let yalnizBorsa: Bool
     let isLight: Bool
     let sparkline: [Double]
+    /// Bkz. `WidgetKeys.gozAlici`.
+    var gozAlici: Bool = false
 
     /// "Kapalı" denebilir mi — seans dışı VE portföy yalnızca borsa.
     var kapaliGoster: Bool { !isMarketOpen && yalnizBorsa }
@@ -136,7 +141,8 @@ struct SandikProvider: TimelineProvider {
             isMarketOpen: defaults.bool(forKey: WidgetKeys.marketOpen),
             yalnizBorsa: yalnizBorsaOku(defaults),
             isLight: defaults.bool(forKey: WidgetKeys.isLightTheme),
-            sparkline: seri
+            sparkline: seri,
+            gozAlici: defaults.bool(forKey: WidgetKeys.gozAlici)
         )
     }
 
@@ -215,7 +221,7 @@ struct SandikHomeWidgetView: View {
 
     private var tutar: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(entry.total)
+            toplamMetni
                 .font(.sandikNumber(family == .systemSmall ? 20 : 26))
                 .foregroundColor(palette.text90)
                 .minimumScaleFactor(0.6)
@@ -243,6 +249,26 @@ struct SandikHomeWidgetView: View {
                 }
             }
         }
+    }
+
+    /// Toplam tutar. Göz alıcılık açıkken ₺ işareti ve kuruş küçük ve
+    /// soluk — uygulamadaki büyük fiyatla aynı yazım, göz liraya gider.
+    /// Biçim tanınmazsa (gizli, "—") düz metin: uydurma bölme yok.
+    private var toplamMetni: Text {
+        let t = entry.total
+        guard entry.gozAlici, t.hasPrefix("₺"), t.count > 1 else {
+            return Text(t)
+        }
+        let govdeVeKurus = String(t.dropFirst())
+        let kucuk = Font.sandikNumber(family == .systemSmall ? 13 : 16)
+        let isaret = Text("₺").font(kucuk).foregroundColor(palette.text58)
+        guard let virgul = govdeVeKurus.lastIndex(of: ",") else {
+            return isaret + Text(govdeVeKurus)
+        }
+        return isaret
+            + Text(String(govdeVeKurus[..<virgul]))
+            + Text(String(govdeVeKurus[virgul...]))
+                .font(kucuk).foregroundColor(palette.text58)
     }
 
     private var altBilgi: some View {
