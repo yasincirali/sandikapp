@@ -179,6 +179,34 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   });
 
+  testWidgets('masraflar bayrağıyla birlikte: Masraflar kartı katmanlı düzende de',
+      (tester) async {
+    // 2026-10-09: #113 kartı yalnız eski yığına eklemişti; iki bayrak
+    // birlikte açılınca kart kayboluyordu.
+    RemoteConfigService.testAcik = {_bayrak, 'varlik_masraflari'};
+    await _ac(tester);
+    expect(find.text('MASRAFLAR'), findsOneWidget);
+    expect(_y(tester, find.text('POZİSYONUN')),
+        lessThan(_y(tester, find.text('MASRAFLAR'))));
+    expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 10));
+  });
+
+  test('eski yığındaki kartlar katmanlı gövdede de çağrılır', () {
+    // Eski yığına sonradan eklenen kart katmanlı gövdeye taşınmazsa iki
+    // bayrak birlikte açıkken sessizce kaybolur; bu bekçi onu yakalar.
+    final govde = ekranKaynagiSync('lib/screens/asset_detail/katmanlar.dart');
+    for (final kart in [
+      '_eurobondKarti(',
+      '_masrafKarti(',
+      '_sozlesmeKarti(',
+      '_temettuKarti(',
+      '_kapBaglantisi(',
+    ]) {
+      expect(govde, contains(kart), reason: '$kart katmanlı düzende yok');
+    }
+  });
+
   testWidgets('bayrak AÇIK, Başlangıç: sinyal yok → Analiz başlığı da yok',
       (tester) async {
     // Bu varlıkta (radar kapalı, fon değil) analiz kartı yalnız sinyaldir;
