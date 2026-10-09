@@ -6770,6 +6770,38 @@ class AppLocalizationsTr extends AppLocalizations {
   String get anzAylikBos => 'Bu ayın raporu henüz hazır değil.';
 
   @override
+  String get hkyDevam => 'Devam';
+
+  @override
+  String get hkyAtla => 'Atla';
+
+  @override
+  String get hkyAylikAcilis => 'Ayın hikâyesi';
+
+  @override
+  String get hkyAylikAcilisAlt => 'Varlıklarının bu ayı, kart kart.';
+
+  @override
+  String get hkyAylikSayiUst => 'Bu ay notu çıkan varlığın';
+
+  @override
+  String hkyAylikHareketli(String sayi) {
+    return '$sayi tanesinde belirgin hareket oldu.';
+  }
+
+  @override
+  String get hkyAylikSakin => 'Hiçbirinde belirgin hareket yok; sakin bir ay.';
+
+  @override
+  String get hkyAylikOneCikan => 'Ayın öne çıkanı';
+
+  @override
+  String get hkyAylikRaporuAc => 'Raporu aç';
+
+  @override
+  String get hkyAylikTekrar => 'Hikâye olarak izle';
+
+  @override
   String get anzOkunamadi => 'Not şu an açılamadı.';
 
   @override

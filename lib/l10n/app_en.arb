@@ -4516,6 +4516,21 @@
   },
   "anzAylikOzetYok": "None of your assets had a notable month.",
   "anzAylikBos": "This month's report is not ready yet.",
+  "hkyDevam": "Continue",
+  "hkyAtla": "Skip",
+  "hkyAylikAcilis": "Your month",
+  "hkyAylikAcilisAlt": "Your assets' month, card by card.",
+  "hkyAylikSayiUst": "Assets with a note this month",
+  "hkyAylikHareketli": "{sayi} of them had a notable month.",
+  "@hkyAylikHareketli": {
+    "placeholders": {
+      "sayi": {"type": "String"}
+    }
+  },
+  "hkyAylikSakin": "None had a notable move; a calm month.",
+  "hkyAylikOneCikan": "Highlight of the month",
+  "hkyAylikRaporuAc": "Open the report",
+  "hkyAylikTekrar": "Watch as a story",
   "anzOkunamadi": "The note could not be opened right now.",
   "sgnPremiumAktif": "Premium indicators on",
   "sgnPremiumAktifGovde": "ADX, Williams %R and CCI are part of the signal analysis.",

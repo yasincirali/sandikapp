@@ -43,6 +43,16 @@ kartına dokunulmadı.
   "boş" yazmıyor, nedeni ve "Tekrar dene" düğmesini gösteriyor.
   - [ ] TestFlight'ta: hiç varlığı olmayan test hesabında Portföy ve takip
         listesi boş ekranına bak; kilometre taşı ilk eşikte görünür.
+- 2026-10-09 D paketi (aylık hikâye) aynı bayrağa eklendi (yeni bayrak YOK).
+  Açıkken aylık rapor her ayın ilk açılışında kart kart açılır: açılan
+  sandık, notu çıkan varlık sayısı, belirgin hareketli en çok üç varlık;
+  "Atla" ya da "Raporu aç" ile liste. Sonra listenin başında "Hikâye olarak
+  izle". Paylaşım kartı bilinçli olarak YOK (rapor tuttuğun varlıkların
+  adlarını taşır). Widget ve Live Activity'ye bu pakette dokunulmadı:
+  widget tasarımı ayrı bir açık kararda bekliyor ve Swift/Kotlin burada
+  derlenemiyor.
+  - [ ] TestFlight'ta: Performans › Raporlar › Aylık rapor; hikâye bir kez
+        oynamalı, ikinci açılışta doğrudan liste.
 
 ## ⏳ 2026-10-08 Kayıt hunisi istemcisi + panel ekranı (PR #69, bayrak `kayit_hunisi`)
 

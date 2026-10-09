@@ -11260,6 +11260,66 @@ abstract class AppLocalizations {
   /// **'Bu ayın raporu henüz hazır değil.'**
   String get anzAylikBos;
 
+  /// No description provided for @hkyDevam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam'**
+  String get hkyDevam;
+
+  /// No description provided for @hkyAtla.
+  ///
+  /// In tr, this message translates to:
+  /// **'Atla'**
+  String get hkyAtla;
+
+  /// No description provided for @hkyAylikAcilis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayın hikâyesi'**
+  String get hkyAylikAcilis;
+
+  /// No description provided for @hkyAylikAcilisAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıklarının bu ayı, kart kart.'**
+  String get hkyAylikAcilisAlt;
+
+  /// No description provided for @hkyAylikSayiUst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ay notu çıkan varlığın'**
+  String get hkyAylikSayiUst;
+
+  /// No description provided for @hkyAylikHareketli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} tanesinde belirgin hareket oldu.'**
+  String hkyAylikHareketli(String sayi);
+
+  /// No description provided for @hkyAylikSakin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hiçbirinde belirgin hareket yok; sakin bir ay.'**
+  String get hkyAylikSakin;
+
+  /// No description provided for @hkyAylikOneCikan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayın öne çıkanı'**
+  String get hkyAylikOneCikan;
+
+  /// No description provided for @hkyAylikRaporuAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporu aç'**
+  String get hkyAylikRaporuAc;
+
+  /// No description provided for @hkyAylikTekrar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hikâye olarak izle'**
+  String get hkyAylikTekrar;
+
   /// No description provided for @anzOkunamadi.
   ///
   /// In tr, this message translates to:
