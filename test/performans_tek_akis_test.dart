@@ -237,6 +237,67 @@ void main() {
     });
   });
 
+  group('Filtre sayfası — goz_alici açık: kategori döşemeleri', () {
+    setUp(() => RemoteConfigService.testAcik = {
+          'performans_tek_akis',
+          'goz_alici',
+        });
+
+    testWidgets('döşeme sayı yazar; elde olmayan tür "Yok" ama seçilebilir',
+        (tester) async {
+      await _pump(tester);
+      await tester.tap(find.text(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      // Tümü + Hisse: tek varlık (THYAO).
+      expect(find.text(_tr.s2FiltreVarlikSayisi(1)), findsNWidgets(2));
+      expect(find.text(_tr.s2FiltreYok), findsWidgets);
+      // Filtre yokken Sıfırla tıklanamaz; dip düğmesi sonucu söyler.
+      expect(find.text(_tr.s2FiltreGoster(1)), findsOneWidget);
+
+      await tester.tap(find.text(AssetType.fon.labelOf(_tr)));
+      await _bekle(tester);
+      // Fon elde yok → sonuç 0 → düğme "Tamam".
+      expect(find.text(_tr.s2FiltreTamam), findsOneWidget);
+      await tester.tap(find.text(_tr.s2FiltreTamam));
+      await _bekle(tester);
+      // Çip sayıyı değil NEYİ yazar.
+      expect(find.text(AssetType.fon.labelOf(_tr)), findsOneWidget);
+      expect(find.bySemanticsLabel(_tr.s2FiltreEtkin(1)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Sıfırla kategoriyi ve "bugünkü portföyle"yi varsayılana alır',
+        (tester) async {
+      final c = await _pump(tester);
+      await tester.tap(find.text(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AssetType.hisse.labelOf(_tr)).last);
+      await _bekle(tester);
+      await tester.tap(find.byType(Switch));
+      await _bekle(tester);
+      expect(c.read(bugunkuPortfoyleProvider), isTrue);
+      await tester.tap(find.text(_tr.s2FiltreSifirla));
+      await _bekle(tester);
+      expect(c.read(bugunkuPortfoyleProvider), isFalse);
+      Navigator.of(tester.element(find.text(_tr.s2FiltreKategori))).pop();
+      await _bekle(tester);
+      expect(find.text(_tr.s2Filtre), findsOneWidget);
+    });
+
+    testWidgets('320pt: sayfa taşmaz, döşemeler 2 sütun', (tester) async {
+      await _pump(tester, width: 320);
+      await tester.tap(find.bySemanticsLabel(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      final hisse = tester.getCenter(find.text(AssetType.hisse.labelOf(_tr)).last);
+      final fon = tester.getCenter(find.text(AssetType.fon.labelOf(_tr)).last);
+      final doviz =
+          tester.getCenter(find.text(AssetType.doviz.labelOf(_tr)).last);
+      expect((hisse.dy - fon.dy).abs(), lessThan(2));
+      expect(doviz.dy, greaterThan(hisse.dy + 20));
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('S2 dönem kartı ikincil cümlesi (saf)', () {
     String fmt(double v) => '₺${v.round()}';
 
