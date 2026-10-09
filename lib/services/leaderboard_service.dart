@@ -143,6 +143,27 @@ class LeaderboardService {
 
   void clearCache() => _roiCache.clear();
 
+  /// Sıralamaya girmek için gereken en kısa süre (gün), sunucudaki
+  /// `siralama_ayar`'dan (0128, kullanıcı kararı 2026-10-09: "parametrik
+  /// olsun"). Son bilinen değer — ekran metinleri senkron okur; ilk
+  /// okumadan önce ya da hata olursa varsayılan [asgariOlcumGun].
+  int asgariGun = asgariOlcumGun;
+  Future<int>? _asgariGunIstegi;
+
+  /// [asgariGun]'ü sunucudan tazeler (oturumda bir kez). Hata → varsayılan
+  /// kalır: RPC'si olmayan sunucu (0128 öncesi) eski 30 günle çalışır.
+  Future<int> asgariGunuGetir() => _asgariGunIstegi ??= () async {
+        try {
+          final r = await Supabase.instance.client
+              .rpc<dynamic>('siralama_asgari_olcum_gun');
+          final v = (r as num?)?.toInt();
+          if (v != null && v >= 0) asgariGun = v;
+        } catch (_) {
+          _asgariGunIstegi = null; // sonraki ekran açılışında yeniden dene
+        }
+        return asgariGun;
+      }();
+
   /// Önceki hesaptan cache'te kalan ROI değeri (varsa). Ekran açılırken
   /// spinner yerine placeholder olarak gösterilir; asıl `computeROI`
   /// arka planda çağrılır ve gelen sonuç bunun üstüne yazılır.
@@ -211,8 +232,9 @@ class LeaderboardService {
   ///   · eski sürümde açtıysa → eski formülle yazılmış BAYAT değer,
   ///   · bugün açmadıysa → dünkü fiyatlarla hesaplanmış değer.
   ///
-  /// [assets] TEK KİŞİNİN defteri (alım + satım). `null`: ölçüm 30 günden
-  /// kısa, kapsama düşük ya da fiyat geçmişi alınamadı.
+  /// [assets] TEK KİŞİNİN defteri (alım + satım). `null`: ilk varlığın
+  /// edinilmesinden bu yana [asgariGun] geçmemiş, kapsama düşük ya da fiyat
+  /// geçmişi alınamadı.
   ///
   /// [kapsam] zorunlu: çağıran hangi sıralamayı çizdiğini bilir. Ortaklar
   /// arası Yarış beyan edilen tarihe güvenir; Zirve ve genel sıralama
@@ -224,11 +246,14 @@ class LeaderboardService {
   }) async {
     if (assets.isEmpty) return null;
     try {
-      return await SecimGetirisi.donemPct(assets, periodDays, kapsam: kapsam);
+      final asgari = await asgariGunuGetir();
+      return await SecimGetirisi.donemPct(assets, periodDays,
+          kapsam: kapsam, asgariGun: asgari);
     } catch (e, st) {
       // Fiyat geçmişi alınamadı — "veri yok" olarak göster. Uydurma bir
       // sayı basmak sıralamayı sessizce bozardı.
-      CrashReporter.report(e, st, reason: 'LeaderboardService.donemGetirisiPct');
+      CrashReporter.report(e, st,
+          reason: 'LeaderboardService.donemGetirisiPct');
       return null;
     }
   }
@@ -248,11 +273,12 @@ class LeaderboardService {
     if (benLotlari.isEmpty || rakipLotlari.isEmpty) return null;
     try {
       final simdi = DateTime.now();
+      final asgari = await asgariGunuGetir();
       final seriler = await Future.wait([
         SecimGetirisi.donemSerisi(benLotlari, periodDays,
-            kapsam: SiralamaKapsami.ortaklar, simdi: simdi),
+            kapsam: SiralamaKapsami.ortaklar, simdi: simdi, asgariGun: asgari),
         SecimGetirisi.donemSerisi(rakipLotlari, periodDays,
-            kapsam: SiralamaKapsami.ortaklar, simdi: simdi),
+            kapsam: SiralamaKapsami.ortaklar, simdi: simdi, asgariGun: asgari),
       ]);
       return liderSeridiKur(
         ben: seriler[0],
@@ -275,7 +301,8 @@ class LeaderboardService {
   ///
   /// Yarış'ın dönemi Özet'in dönemine eşlenir (30G → 1A: Özet ayı takvimden
   /// sayar). Eşi olmayan dönemde ya da Özet bayrağı kapalıyken `null`.
-  Future<double?> paraninGetirisiPct(PortfolioState state, int periodDays) async {
+  Future<double?> paraninGetirisiPct(
+      PortfolioState state, int periodDays) async {
     final period = switch (periodDays) {
       7 => SummaryPeriod.birHafta,
       30 => SummaryPeriod.birAy,
@@ -563,8 +590,8 @@ class LeaderboardService {
   /// çizilir, hata değil.
   Future<PercentileBucket?> fetchPercentile(int periodDays) async {
     try {
-      final result =
-          await Supabase.instance.client.rpc<dynamic>('get_percentile_bucket', params: {
+      final result = await Supabase.instance.client
+          .rpc<dynamic>('get_percentile_bucket', params: {
         'p_period_days': periodDays,
       });
       if (result == null) return null;
@@ -684,7 +711,8 @@ class LeaderboardService {
   /// yazmaz (uydurma sayı yok).
   Future<int?> fetchPoolSize() async {
     try {
-      final r = await Supabase.instance.client.rpc<dynamic>('leaderboard_pool_size');
+      final r =
+          await Supabase.instance.client.rpc<dynamic>('leaderboard_pool_size');
       return (r as num?)?.toInt();
     } catch (_) {
       return null;

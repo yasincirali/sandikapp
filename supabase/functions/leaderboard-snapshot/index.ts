@@ -337,11 +337,33 @@ export function donemBaslangici(nowMs: number, gun: number): number {
 /// cezalandırmasın diye.
 export const GERI_TARIH_PAYI_GUN = 3;
 
-/// Sıralamaya girmek için gereken en kısa ölçüm (R1: "yeni kullanıcı hemen
-/// katılır, yalnız tuttuğu süre kadar ölçülür, asgari 30 gün"). İlk alımın
-/// yarış anından bugüne sayılır, dönemden bağımsız: on günlük bir hesap
-/// 7 günlük sıralamada da görünmez.
+/// Sıralamaya girmek için gereken en kısa süre — VARSAYILAN (R1: "asgari
+/// 30 gün"). Gerçek değer `siralama_ayar.asgari_olcum_gun`'dan okunur
+/// (0128, kullanıcı kararı 2026-10-09: "parametrik olsun"); tablo yoksa
+/// ya da okunamazsa bu. Dönemden bağımsız: on günlük bir hesap 7 günlük
+/// sıralamada da görünmez.
+///
+/// Sayaç ilk varlığın EDİNME tarihinden (`added_date`) başlar, uygulamaya
+/// giriş anından değil (2026-10-09, aynı karar: "uygulamaya değil varlığı
+/// elde ediş tarihi"). 0095–0127 arası [yarisAni]'ndan sayılıyordu; geçmişini
+/// içe aktaran kullanıcı 30 gün bekliyordu (Tokyo'da 6 rızalıdan 2'si).
+/// Getiri yine [yarisAni]'ndan ölçülür: geriye tarih hilesi kapıyı açar ama
+/// dipten kazanç yazdırmaz.
 export const ASGARI_OLCUM_GUN = 30;
+
+/// Defterdeki ilk alımın edinme anı (`added_date`, epoch ms); yoksa null.
+/// Satılmış pozisyon da sayılır — "ilk varlık" ne zaman edinildiyse odur.
+export function ilkEdinmeAni(satirlar: DefterSatiri[]): number | null {
+  let ilk: number | null = null;
+  for (const r of satirlar) {
+    if ((r.kind ?? 'buy') !== 'buy') continue;
+    const q = Number(r.quantity ?? 0);
+    if (!Number.isFinite(q) || q <= 0) continue;
+    const t = zamanMs(r.added_date) ?? zamanMs(r.created_at);
+    if (t !== null && (ilk === null || t < ilk)) ilk = t;
+  }
+  return ilk;
+}
 
 /// Defter satırı + sunucunun giriş anı (0095 `assets.created_at`).
 export interface DefterSatiri extends Lot {
@@ -440,7 +462,8 @@ export function olcumAnlari(basMs: number, nowMs: number): number[] {
 /// Seçimlerinin getirisi (%) — zaman ağırlıklı, piyasa fiyatıyla.
 ///
 /// Kapılar (sayı uydurulmaz):
-///   · ilk alım [ASGARI_OLCUM_GUN] günden yeniyse null;
+///   · ilk varlığın edinme tarihi [asgariGun] günden yeniyse null
+///     ([ilkEdinmeAni]; varsayılan [ASGARI_OLCUM_GUN]);
 ///   · bugünkü portföyün [KAPSAMA_ESIGI]'nden azı fiyatlanabiliyorsa null
 ///     (yarım portföyün getirisi yazılmaz — eski kural aynen);
 ///   · hiçbir gün ölçülemediyse null.
@@ -453,13 +476,17 @@ export function donemTwr(
   seriler: Map<string, Seri>,
   nowMs: number,
   gun: number,
+  asgariGun: number = ASGARI_OLCUM_GUN,
 ): number | null {
+  const edinme = ilkEdinmeAni(satirlar);
+  if (edinme === null || nowMs - edinme < asgariGun * GUN_MS) return null;
   const gecmis = pozisyonGecmisleri(satirlar);
+  // Ölçümün başladığı an: ilk alımın YARIŞ anı (geriye tarih kuralı).
   let ilk = Infinity;
   for (const p of gecmis) {
     for (const h of p.hareketler) if (h.miktar > 0 && h.an < ilk) ilk = h.an;
   }
-  if (!Number.isFinite(ilk) || nowMs - ilk < ASGARI_OLCUM_GUN * GUN_MS) return null;
+  if (!Number.isFinite(ilk)) return null;
 
   const bugun = gecmis
     .map((p) => ({ ...p.sablon, quantity: miktarAninda(p, nowMs) }))
@@ -658,6 +685,21 @@ const VARLIK_SUTUNLARI =
 /// PostgREST tek yanıtta en fazla `max_rows` (varsayılan 1000) satır döner.
 /// Sayfalamasız okuma, defter büyüdükçe kullanıcıları SESSİZCE düşürürdü —
 /// zirve artık yalnız yarışanları değil herkesi okuduğu için sınır yakın.
+/// `siralama_ayar.asgari_olcum_gun` (0128); okunamazsa [ASGARI_OLCUM_GUN].
+async function asgariOlcumGunu(admin: SupabaseClient): Promise<number> {
+  const { data, error } = await admin
+    .from('siralama_ayar')
+    .select('asgari_olcum_gun')
+    .eq('tek', true)
+    .maybeSingle();
+  const v = Number((data as { asgari_olcum_gun?: unknown } | null)?.asgari_olcum_gun);
+  if (error || !Number.isFinite(v) || v < 0) {
+    if (error) console.warn('siralama_ayar okunamadi; varsayilan kullaniliyor');
+    return ASGARI_OLCUM_GUN;
+  }
+  return v;
+}
+
 async function tumAktifVarliklar(
   admin: SupabaseClient,
   yalniz: string | null = null,
@@ -717,6 +759,10 @@ Deno.serve(async (request) => {
     } catch (_) { /* gövde yok */ }
 
     const admin: SupabaseClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // 0b) Asgari ölçüm süresi (0128). Okunamazsa varsayılan — koşu durmaz:
+    // tablo henüz yoksa (migration fonksiyondan sonra gittiyse) eski 30 gün.
+    const asgariGun = await asgariOlcumGunu(admin);
 
     // 1) Yarışa katılanlar — yalnız Yarış tablolarına kimin yazılacağını
     // belirler. Zirve kümesi ayrı: açık rıza verenler (1b, 0091).
@@ -794,7 +840,7 @@ Deno.serve(async (request) => {
       let yazildi = false;
       const defter = defteriOf.get(uid) ?? [];
       for (const gun of DONEMLER) {
-        const roi = donemTwr(defter, seriler, nowMs, gun);
+        const roi = donemTwr(defter, seriler, nowMs, gun, asgariGun);
         if (roi === null) continue;
         roiRows.push({ user_id: uid, period_days: gun, roi_pct: Math.round(roi * 10000) / 10000 });
         yazildi = true;
@@ -865,6 +911,7 @@ Deno.serve(async (request) => {
       skipped: atlanan,
       throttled,
       symbols: semboller.size,
+      asgari_olcum_gun: asgariGun,
       series_loaded: seriler.size,
       dry_run: dryRun,
       tek_kullanici: tek !== null,

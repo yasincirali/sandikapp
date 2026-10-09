@@ -3989,8 +3989,8 @@ abstract class AppLocalizations {
   /// No description provided for @everyoneMeasuredSameBody.
   ///
   /// In tr, this message translates to:
-  /// **'Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için en az 30 günlük geçmiş gerekir. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satış, girildiği gün yapılmış sayılır.'**
-  String get everyoneMeasuredSameBody;
+  /// **'Sen ve ortakların aynı formülle, aynı fiyatlarla hesaplanırsınız; hesap bu cihazda yapılır. Ortaklar arasında girdiğin tarih geçerlidir: CSV ya da ekstreyle içe aktardığın geçmiş hemen sayılır.\n\nSıralamaya girmek için ilk varlığını edinmenin üzerinden en az {gun} gün geçmiş olmalı. Anonim sıralamalarda (Zirve, genel) bugünden 3 günden fazla geriye tarihli girilen alım ya da satışın getirisi girildiği günden ölçülür.'**
+  String everyoneMeasuredSameBody(int gun);
 
   /// No description provided for @planYearly.
   ///

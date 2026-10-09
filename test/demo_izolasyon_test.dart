@@ -220,6 +220,13 @@ void main() {
       'götürür', (tester) async {
     // Uzun ekran: hareket satırları alt menünün altında kalmasın.
     await _telefon(tester, boy: 2400);
+    // BIST seansı açıkken (cihaz/CI saati 10:00–18:00) Bugün kartının canlı
+    // noktası sürekli nabız atar ve pumpAndSettle hiç oturmaz; CI'nin gün
+    // içi koşuları bu yüzden kırılıyordu (2026-10-09). Hareketi azalt açık:
+    // nokta sabit durur, test saatten bağımsızlaşır.
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [authProvider.overrideWith(_OturumYok.new)],

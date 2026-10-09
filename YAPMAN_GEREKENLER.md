@@ -8,6 +8,27 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-09 Sıralama asgari süresi ayarlanabilir + edinme tarihinden (0128)
+
+Senin kararın: "30 günü parametrik yapalım, 30 gün ilk varlığın edinme
+tarihinden sayılsın". Neden: Zirve havuzu 4'te kalıyordu; rıza veren 6
+kişinin 2'si yalnız bu şarta takılıyordu (biri geçmişini içe aktarmıştı,
+sayaç uygulamaya giriş gününden başlıyordu).
+
+- Süre `siralama_ayar` tablosunda (varsayılan 30). Değiştirmek için SQL
+  Editor'da iki sunucuda da (ya da yeni migration):
+  `update public.siralama_ayar set asgari_olcum_gun = 14, guncellendi = now();`
+  Sunucu bir sonraki snapshot'ta, uygulama bir sonraki açılışta okur.
+- Sayaç ilk varlığın edinme tarihinden (`added_date`) başlar. Getiri hâlâ
+  hile kuralıyla ölçülür: 3 günden eski tarihli girilen kaydın getirisi
+  girildiği günden sayılır (dipten kazanç yazılmaz). Yani içe aktaran
+  kullanıcı hemen sıralamaya girer ama ilk günlerde kısa bir dönemle
+  ölçülür.
+- Kapsam: Zirve, genel yüzdelik ve ortaklar arası Yarış aynı süreyi kullanır.
+- Eski sürüm: RPC'yi bilmeyen build 30 günle devam eder; sunucu tablo
+  yoksa 30'a düşer. Sıra: önce 0128, sonra `leaderboard-snapshot`.
+- [ ] Dağıtım (Claude, birleşince): 0128 + `leaderboard-snapshot`, iki sunucu.
+
 ## ⏳ 2026-10-09 Göz alıcılık paketi A: varlık rozeti + akan rakam (dal `claude/project-thread-a743z9`)
 
 Rapor: "sandık Cazibe Raporu" (https://claude.ai/artifact/8Wuo6BMHugYnb2Z6LbC5RU),
@@ -151,9 +172,10 @@ artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
       müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
       kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
       metin esaslı olmayan bir düzeltmeyle güncellenir.
-## ⏳ 2026-10-08 Ücretsiz sınırlar: 7 varlık, 3 takip, sinyal tek varlıkta (0126)
+## ⏳ 2026-10-08 Ücretsiz sınırlar: 10 varlık, 5 takip, sinyal tek varlıkta (0126)
 
-Senin kararın: ücretsizde 7 varlık (8.'si Premium ister), takip listesi 3,
+Senin kararın: ücretsizde 10 varlık (11.'si Premium ister), takip listesi 5
+(2026-10-09 rakip kıyasıyla 7/3'ten yükseltildi),
 sinyal bildirimi tek varlıkta (2. varlık Premium). Hepsi yalnız
 `paywall_enabled` açıkken; paywall kapalı canlı kullanıcıda hiçbir şey
 değişmez (takip listesi 7'de kalır). Var olan varlık/takip silinmez, yalnız
@@ -167,9 +189,9 @@ yeni ekleme durur.
       en eski eklediği). Secret yoksa sunucu kısmaz.
 - [ ] Remote Config'te `free_asset_limit` ya da `free_watchlist_limit`
       anahtarlarını daha önce elle girdiysen değerleri kodu ezer:
-      `free_asset_limit` = 7 yap; `free_watchlist_limit` paywall KAPALIYKEN
+      `free_asset_limit` = 10 yap; `free_watchlist_limit` paywall KAPALIYKEN
       okunan sınırdır, 7 kalsın. Paywall açıkkenki takip sınırı yeni anahtar
-      `paywall_watchlist_limit` (varsayılan 3); sinyal varlık sayısı
+      `paywall_watchlist_limit` (varsayılan 5; Console'a girdiysen 5 yap); sinyal varlık sayısı
       `free_signal_assets` (varsayılan 1, 0 = kapı yok).
 
 ## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`

@@ -633,9 +633,10 @@ final priceAlertLimitProvider = Provider<int>((ref) {
 /// (`add_watchlist_screen`). Premium yine sınırsız; değer Remote Config'ten
 /// (`free_watchlist_limit`, varsayılan 7) yayın sonrası değiştirilebilir.
 ///
-/// **Paywall açıkken ücretsiz sınır 3 (yasin, 2026-10-08: "takip listesini
-/// 3 yapalım").** Ayrı anahtar (`paywall_watchlist_limit`): paywall kapalı
-/// canlı kullanıcılar 7'de kalır; listesi 3'ü aşan kimsenin takibi silinmez,
+/// **Paywall açıkken ücretsiz sınır 5 (yasin, 2026-10-08: "takip listesini
+/// 3 yapalım"; 2026-10-09 rakip kıyasıyla 5).** Ayrı anahtar
+/// (`paywall_watchlist_limit`): paywall kapalı canlı kullanıcılar 7'de
+/// kalır; listesi sınırı aşan kimsenin takibi silinmez,
 /// yalnız yeni ekleme Premium ister.
 final watchlistLimitProvider = Provider<int>((ref) {
   final premium = ref.watch(effectivePremiumProvider);
