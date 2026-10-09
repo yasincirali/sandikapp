@@ -9,6 +9,9 @@ import '../providers/premium_provider.dart';
 import '../services/crash_reporter.dart';
 import '../services/supabase_service.dart';
 import '../services/varlik_analizi.dart';
+import '../widgets/sandik_bos_durum.dart';
+import '../widgets/sandik_error_view.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
@@ -173,7 +176,12 @@ class _AnalizNotuScreenState extends ConsumerState<AnalizNotuScreen> {
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
         ),
-        error: (_, __) => _Bos(metin: l10n.anzOkunamadi),
+        // Hata BOŞ değildir (TASARIM_DILI §6.1): neden ve yeniden dene.
+        error: (e, _) => SandikErrorView(
+          error: e,
+          onRetry: () => ref.invalidate(varlikNotuProvider(
+              (widget.ticker, widget.tur, widget.donem))),
+        ),
         data: (n) => n == null
             ? _Bos(metin: l10n.anzOkunamadi)
             : _Not(
@@ -197,15 +205,20 @@ class _Bos extends StatelessWidget {
   const _Bos({required this.metin});
   final String metin;
 
+  // Bayrak `goz_alici`: ortak boş durum (kapalı sandık); kapalıyken eski
+  // düz metin birebir.
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SandikSpace.lg),
-          child: Text(metin,
-              textAlign: TextAlign.center,
-              style: context.t.bodyMedium?.copyWith(color: context.c.text58)),
-        ),
-      );
+  Widget build(BuildContext context) => RemoteConfigService.instance.gozAlici
+      ? SandikBosDurum(metin: metin)
+      : Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SandikSpace.lg),
+            child: Text(metin,
+                textAlign: TextAlign.center,
+                style:
+                    context.t.bodyMedium?.copyWith(color: context.c.text58)),
+          ),
+        );
 }
 
 class _Not extends StatelessWidget {

@@ -7,6 +7,7 @@ import '../providers/portfolio_provider.dart';
 import '../providers/price_alert_provider.dart';
 import '../providers/watchlist_provider.dart';
 import '../services/analytics_service.dart';
+import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../widgets/kapanan_satir.dart';
@@ -164,7 +165,11 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.notifications_none_rounded, size: 44, color: c.text36),
+              // Bayrak `goz_alici`: kapalı sandık; kapalıyken eski ikon.
+              SandikBosIkonu(
+                  ikon: Icons.notifications_none_rounded,
+                  boyut: 44,
+                  renk: c.text36),
               const SizedBox(height: 14),
               Text(
                 context.l10n.noAlertsYet,

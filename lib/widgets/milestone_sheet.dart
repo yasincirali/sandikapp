@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../services/analytics_service.dart';
 import '../services/milestone_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
+import 'sandik_cizimi.dart';
 
 /// Kilometre taşı kutlaması.
 ///
@@ -55,7 +57,15 @@ class MilestoneSheet extends StatelessWidget {
             child: const SandikTutamac(),
           ),
           const SizedBox(height: 24),
-          Center(child: _Rozet(ikon: _ikon)),
+          // Bayrak `goz_alici` (göz alıcılık C, 2026-10-09): rozetin yerine
+          // sandık'ın kendisi açılır, içinden çubuklar yükselir — "kasana
+          // bir şey eklendi". Ton kuralı aynı: tek öğe, konfeti yok.
+          // Kapalıyken eski rozet birebir.
+          Center(
+            child: RemoteConfigService.instance.gozAlici
+                ? const _SandikAni()
+                : _Rozet(ikon: _ikon),
+          ),
           const SizedBox(height: 16),
           Text(
             milestone.title,
@@ -182,4 +192,31 @@ class _RozetState extends State<_Rozet> with SingleTickerProviderStateMixin {
       ),
     );
   }
+}
+
+/// Kilometre taşı anında açılan sandık (bayrak `goz_alici`). Rozetle aynı
+/// dokunsal onay: sayfa oturduktan sonra tek, orta şiddette titreşim.
+/// Çizim kendi açılışını oynar; "hareketi azalt" açıkken açık çizilir.
+class _SandikAni extends StatefulWidget {
+  const _SandikAni();
+
+  @override
+  State<_SandikAni> createState() => _SandikAniState();
+}
+
+class _SandikAniState extends State<_SandikAni> {
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(SandikMotion.surface, () {
+      if (mounted) SandikHaptic.medium.perform();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const SandikCizimi(
+        zemin: SandikZemini.yuzey,
+        dokunulabilir: false,
+        olcek: 0.7,
+      );
 }

@@ -6,6 +6,9 @@ import '../l10n/l10n.dart';
 import '../providers/analiz_provider.dart';
 import '../providers/hafta_ozeti_provider.dart';
 import '../services/varlik_analizi.dart';
+import '../widgets/sandik_bos_durum.dart';
+import '../widgets/sandik_error_view.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_skeleton.dart';
@@ -45,7 +48,12 @@ class AylikRaporScreen extends ConsumerWidget {
           padding: EdgeInsets.all(SandikSpace.md),
           child: SandikSkeletonList(rows: 3),
         ),
-        error: (_, __) => _Bos(metin: l10n.anzAylikBos),
+        // Hata BOŞ değildir (TASARIM_DILI §6.1): neden ve yeniden dene.
+        error: (e, _) => SandikErrorView(
+          error: e,
+          onRetry: () => ref.invalidate(
+              notOzetleriProvider(notKumesi(anahtarlar, 'aylik'))),
+        ),
         data: (m) {
           final buAy = [
             for (final n in m.values)
@@ -103,15 +111,20 @@ class _Bos extends StatelessWidget {
   const _Bos({required this.metin});
   final String metin;
 
+  // Bayrak `goz_alici`: ortak boş durum (kapalı sandık); kapalıyken eski
+  // düz metin birebir.
   @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(SandikSpace.lg),
-          child: Text(metin,
-              textAlign: TextAlign.center,
-              style: context.t.bodyMedium?.copyWith(color: context.c.text58)),
-        ),
-      );
+  Widget build(BuildContext context) => RemoteConfigService.instance.gozAlici
+      ? SandikBosDurum(metin: metin)
+      : Center(
+          child: Padding(
+            padding: const EdgeInsets.all(SandikSpace.lg),
+            child: Text(metin,
+                textAlign: TextAlign.center,
+                style:
+                    context.t.bodyMedium?.copyWith(color: context.c.text58)),
+          ),
+        );
 }
 
 class _VarlikKarti extends StatelessWidget {

@@ -129,6 +129,8 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 |---|---|
 | İçerik yükleniyor | iskelet (`SandikSkeleton*`, `VarlikIskeleti`); spinner yalnız küçük seçici listede |
 | Hata (ekran/kart) | `SandikErrorView` (yeniden dene düğmeli) |
+| Boş ("henüz bir şey yok") | `SandikBosDurum` (kapalı sandık + metin) ya da kendi düzeni olan ekranda yalnız ikon yerine `SandikBosIkonu` (bayrak `goz_alici`; kapalıyken eski ikon). Hata boş gibi gösterilmez. |
+| Sandık çizimi | `SandikCizimi` (paywall, boş durum, kilometre taşı); zemin `amber`/`yuzey` |
 | Hata (eylem sonrası) | `showAppError` |
 | Kısa bilgi / geri al | `sandikSnack` |
 | Kullanıcıya metin | `friendlyError(e)`; ham `$e` yok |
@@ -170,10 +172,12 @@ Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Gezinti oku
 Öncelik sırasıyla. Her biri yapıldığında buradan silinir ve kilit testi
 eklenir.
 
-1. **Boş durum bileşeni.** Ortak `SandikBosDurum` yok. Altı ekran farklı
-   ikon boyu ve yazıyla çiziyor. Dört yerde (`analiz_notu`, `aylik_rapor`,
-   `hafta_ozeti`, `kiyas_karti`) **hata "boş" gibi görünüyor**; yeniden dene
-   yok. Güvenilirlik için en önemli madde.
+1. **Boş durum bileşeni.** `SandikBosDurum` / `SandikBosIkonu` geldi
+   (2026-10-09, bayrak `goz_alici`); `analiz_notu`, `aylik_rapor`,
+   `hafta_ozeti` hatada artık `SandikErrorView` gösteriyor. Kalan:
+   `kiyas_karti` hatada hâlâ "veri yok" yazıyor (kart içi küçük yeniden dene
+   satırı için yeni metin anahtarı gerekir); bayrak herkese açılınca eski
+   ikon dalları silinir.
 2. **Tek basma ilkeli.** `SandikTappable` (54), `SandikBasma` (32) ve
    Material dalga (`InkWell`, 26) yan yana. Hedef: hepsi `SandikTappable`.
 3. **Sheet içeriği standardı.** Hareket artık tek (`showSandikSheet`), ama

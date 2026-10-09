@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
@@ -844,7 +845,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_rounded, size: 52, color: context.c.text36),
+            // Bayrak `goz_alici`: hiç kayıt yokken kapalı sandık; süzgeç
+            // sonucu boşsa ("eşleşme yok") ikon kalır.
+            if (_hasActiveFilter)
+              Icon(Icons.inbox_rounded, size: 52, color: context.c.text36)
+            else
+              const SandikBosIkonu(ikon: Icons.inbox_rounded, boyut: 52),
             const SizedBox(height: 12),
             Text(
               _hasActiveFilter ? context.l10n.noMatchingRecords : context.l10n.noTransactionsYet,
