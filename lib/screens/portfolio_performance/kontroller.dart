@@ -530,10 +530,12 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Kullanıcı isteği: "basitlik ve anlaşılırlık ön planda, göze hitap
   /// eden". Denetimler AYNI (kişi, kategori, bugünkü portföyle); değişen
   /// okunuş:
-  ///   · Kategori metin çipi değil, tür halkası + sayılı satırlar
-  ///     ([TurFiltreHalkasi]): seçmeden önce "bende ne var" görünür.
+  ///   · Kategori metin çipi değil, 3×3 eşit ikonlu kare ızgara
+  ///     ([TurFiltreIzgarasi]); renk yalnız seçili karede. Gerekçe ve üç
+  ///     turluk tasarım geçmişi widget'ın notunda.
   ///   · Başlıkta "Sıfırla": varsayılana tek dokunuş (yalnız filtre varken).
-  ///   · "Bugünkü portföyle" kart içinde, ikonuyla — bir mod olduğu belli.
+  ///   · "Bugünkü portföyle" ince bir çizgiyle ayrılmış düz satır (kart ve
+  ///     çizim "göz yoruyor" geri bildirimiyle kalktı).
   ///   · Dipte tek ana eylem "N varlığı göster": seçim yine ANINDA uygulanır
   ///     (grafik arkada yenilenir); düğme yalnız sayfayı kapatır ve sonucun
   ///     kaç varlık olduğunu önceden söyler. Aşağı çekip kapatmak da olur.
@@ -628,7 +630,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       const SizedBox(height: SandikSpace.md),
       SandikSectionHeader(title: l.s2FiltreKategori),
       const SizedBox(height: SandikSpace.sm),
-      TurFiltreHalkasi(
+      TurFiltreIzgarasi(
         secili: _typeFilter,
         ozet: ozet,
         turlar: turlar,
@@ -642,42 +644,36 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       ),
       if (araclar) ...[
         const SizedBox(height: SandikSpace.md),
-        SandikCard(
-          padding: const EdgeInsets.all(SandikSpace.smd),
-          child: Row(
-            children: [
-              // Modun küçük çizimi: kesik çizgi gerçek geçmiş, düz çizgi
-              // bugünkü portföy. "Ne değişir" sorusunu metinden önce söyler.
-              BugunkuPortfoyCizimi(acik: bugunku),
-              const SizedBox(width: SandikSpace.sm2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l.todaysPortfolioSettingTitle,
-                      style: context.t.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: context.c.text90),
-                    ),
-                    const SizedBox(height: SandikSpace.xxs),
-                    Text(
-                      l.todaysPortfolioSettingSubtitle,
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text58),
-                    ),
-                  ],
-                ),
+        Divider(height: 1, thickness: 1, color: context.c.hairline),
+        const SizedBox(height: SandikSpace.smd),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.todaysPortfolioSettingTitle,
+                    style: context.t.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600, color: context.c.text90),
+                  ),
+                  const SizedBox(height: SandikSpace.xxs),
+                  Text(
+                    l.todaysPortfolioSettingSubtitle,
+                    style:
+                        context.t.bodySmall?.copyWith(color: context.c.text58),
+                  ),
+                ],
               ),
-              const SizedBox(width: SandikSpace.sm),
-              Switch.adaptive(
-                value: bugunku,
-                activeTrackColor: context.c.amberText,
-                onChanged: (v) =>
-                    sayfaRef.read(bugunkuPortfoyleProvider.notifier).set(v),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: SandikSpace.smd),
+            Switch.adaptive(
+              value: bugunku,
+              activeTrackColor: context.c.amberText,
+              onChanged: (v) =>
+                  sayfaRef.read(bugunkuPortfoyleProvider.notifier).set(v),
+            ),
+          ],
         ),
       ],
       const SizedBox(height: SandikSpace.lg),

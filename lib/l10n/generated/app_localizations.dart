@@ -12232,18 +12232,6 @@ abstract class AppLocalizations {
   /// **'Tamam'**
   String get s2FiltreTamam;
 
-  /// No description provided for @s2FiltreElindeYok.
-  ///
-  /// In tr, this message translates to:
-  /// **'Elinde yok:'**
-  String get s2FiltreElindeYok;
-
-  /// No description provided for @s2FiltreTumTurler.
-  ///
-  /// In tr, this message translates to:
-  /// **'varlık'**
-  String get s2FiltreTumTurler;
-
   /// No description provided for @s2BakiyeArttiAlim.
   ///
   /// In tr, this message translates to:

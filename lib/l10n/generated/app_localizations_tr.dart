@@ -7334,12 +7334,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s2FiltreTamam => 'Tamam';
 
   @override
-  String get s2FiltreElindeYok => 'Elinde yok:';
-
-  @override
-  String get s2FiltreTumTurler => 'varlık';
-
-  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Bakiye $tutar arttı; bunun $alim kadarı yeni alım.';
   }

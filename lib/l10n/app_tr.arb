@@ -5240,8 +5240,6 @@
   "s2FiltreGoster": "{n} varlığı göster",
   "@s2FiltreGoster": {"placeholders": {"n": {"type": "int"}}},
   "s2FiltreTamam": "Tamam",
-  "s2FiltreElindeYok": "Elinde yok:",
-  "s2FiltreTumTurler": "varlık",
   "s2BakiyeArttiAlim": "Bakiye {tutar} arttı; bunun {alim} kadarı yeni alım.",
   "@s2BakiyeArttiAlim": {"placeholders": {"tutar": {"type": "String"}, "alim": {"type": "String"}}},
   "s2BakiyeAzaldiAlim": "Bakiye {tutar} azaldı; dönemde {alim} yeni alım yaptın.",

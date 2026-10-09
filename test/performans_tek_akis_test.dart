@@ -18,7 +18,7 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/ortak_secici.dart';
 import 'package:portfoy_takip/widgets/period_summary_view.dart';
 import 'package:portfoy_takip/widgets/raporlar_kapisi.dart';
-import 'package:portfoy_takip/widgets/tur_filtre_halkasi.dart';
+import 'package:portfoy_takip/widgets/tur_filtre_izgarasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -238,23 +238,27 @@ void main() {
     });
   });
 
-  group('Filtre sayfası — goz_alici açık: tür halkası', () {
+  group('Filtre sayfası — goz_alici açık: 3×3 tür ızgarası', () {
     setUp(() => RemoteConfigService.testAcik = {
           'performans_tek_akis',
           'goz_alici',
         });
 
-    testWidgets('satır sayı yazar; elde olmayan tür "Elinde yok"ta, seçilebilir',
+    testWidgets('ızgara: tüm türler eşit kare, elde olmayan seçilebilir',
         (tester) async {
       await _pump(tester);
       await tester.tap(find.text(_tr.s2Filtre));
       await tester.pumpAndSettle();
-      // Tümü + Hisse: tek varlık (THYAO).
-      expect(find.text(_tr.s2FiltreVarlikSayisi(1)), findsNWidgets(2));
-      expect(find.text(_tr.s2FiltreElindeYok), findsOneWidget);
-      // Halka çizilir (fiyat biliniyor), ortada toplam varlık sayısı.
-      expect(find.byType(TurFiltreHalkasi), findsOneWidget);
-      expect(find.text(_tr.s2FiltreTumTurler), findsOneWidget);
+      expect(find.byType(TurFiltreIzgarasi), findsOneWidget);
+      // Kareler simetrik: Hisse/Fon/Döviz aynı satırda, aynı genişlikte.
+      final kare = find.descendant(
+          of: find.byType(TurFiltreIzgarasi),
+          matching: find.text(AssetType.fon.labelOf(_tr)));
+      final hisse = find.descendant(
+          of: find.byType(TurFiltreIzgarasi),
+          matching: find.text(AssetType.hisse.labelOf(_tr)));
+      expect((tester.getCenter(kare).dy - tester.getCenter(hisse).dy).abs(),
+          lessThan(1));
       // Filtre yokken Sıfırla tıklanamaz; dip düğmesi sonucu söyler.
       expect(find.text(_tr.s2FiltreGoster(1)), findsOneWidget);
 
@@ -288,11 +292,31 @@ void main() {
       expect(find.text(_tr.s2Filtre), findsOneWidget);
     });
 
+    testWidgets('eurobond açık (10 tür): artan kare Tümü satırına geçer',
+        (tester) async {
+      RemoteConfigService.testAcik = {
+        'performans_tek_akis',
+        'goz_alici',
+        'eurobond',
+      };
+      await _pump(tester);
+      await tester.tap(find.text(_tr.s2Filtre));
+      await tester.pumpAndSettle();
+      final izgara = find.byType(TurFiltreIzgarasi);
+      Offset merkez(String t) => tester.getCenter(
+          find.descendant(of: izgara, matching: find.text(t)));
+      final tumu = merkez(_tr.allTypes);
+      // Artan kare listenin SONUNDAKİ tür (Diğer); Eurobond ızgarada.
+      final euro = merkez(AssetType.diger.labelOf(_tr));
+      expect((tumu.dy - euro.dy).abs(), lessThan(2));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('320pt: sayfa taşmaz', (tester) async {
       await _pump(tester, width: 320);
       await tester.tap(find.bySemanticsLabel(_tr.s2Filtre));
       await tester.pumpAndSettle();
-      expect(find.text(_tr.s2FiltreElindeYok), findsOneWidget);
+      expect(find.byType(TurFiltreIzgarasi), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
