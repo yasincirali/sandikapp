@@ -213,9 +213,9 @@ void main() {
           },
           ek: gorunur);
     });
-    testWidgets('sonra: kilitli (paywall açık, ücretsiz) ($donem)',
+    testWidgets('sonra: ücretsiz kullanıcı, mum + EMA açık, ƒx kilitli ($donem)',
         (tester) async {
-      await ciz(tester, 'katman_sonra_kilitli_$d',
+      await ciz(tester, 'katman_sonra_ucretsiz_$d',
           donem: donem,
           tercih: {'pref_chart_ema50': true, 'pref_chart_candle': true},
           ek: [

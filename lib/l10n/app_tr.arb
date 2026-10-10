@@ -4816,8 +4816,8 @@
   "prmSatirAylik": "Aylık rapor",
   "prmSinirsiz": "sınırsız",
   "prmSatirSinyal": "Teknik sinyaller",
-  "prmSinyalUcretsiz": "1 varlık",
-  "prmSinyalPremium": "8 gösterge, tüm varlıklar",
+  "prmSinyalUcretsiz": "3 gösterge, ekranda",
+  "prmSinyalPremium": "8 gösterge, periyot, bildirim",
   "prmSatirTakip": "Takip listesi",
   "prmYillikTasarruf": "%{oran} tasarruf",
   "@prmYillikTasarruf": {
@@ -4947,8 +4947,6 @@
   "sgnPremiumKilitGovde": "EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.",
   "sgnPremiumGec": "Premium'a geç",
   "pwOzSinirsiz": "Sınırsız varlık ve tüm varlık türleri",
-  "pwOzGosterge": "Sinyal analizinde ADX, Williams %R ve CCI",
-  "pwOzSiklik": "Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta",
   "pwOzKarsilastir": "Karşılaştır'da 5 seriye kadar",
   "pwOzOrtak": "Birden fazla ortakla portföy paylaşımı",
   "cmpSinirPremium": "Premium ile 5 seriye kadar",
@@ -5287,20 +5285,8 @@
     }
   },
   "pwdSinyalEtiket": "SİNYAL",
-  "pwdSinyalBaslik": "Sekiz gösterge ve her varlığında, seçtiğin saatte bildirim.",
-  "pwdSinyalUcretsiz": "günde {sayi}",
-  "@pwdSinyalUcretsiz": {
-    "placeholders": {
-      "sayi": {"type": "int"}
-    }
-  },
-  "pwdSinyalUcretsizTek": "günde {sayi}, tek varlık",
-  "@pwdSinyalUcretsizTek": {
-    "placeholders": {
-      "sayi": {"type": "int"}
-    }
-  },
-  "pwdSinyalPremium": "8 gösterge, tüm varlıklar",
+  "pwdSinyalBaslik": "Sekiz gösterge, kendi periyotların ve her varlığında bildirim.",
+  "pwdSinyalPremium": "8 gösterge, bildirim",
   "pwdKarsEtiket": "KARŞILAŞTIR",
   "pwdKarsRozet": "{ucretsiz} → {premium} seri",
   "@pwdKarsRozet": {
@@ -5436,7 +5422,7 @@
   "ttKural": "Tahmin tek bir kurala dayanır: son 12 ayda gerçekleşen temettü, bugünkü lotunla aynı aylarda tekrarlansa. Şirket kararları, bölünme ve bedelsiz hesaba katılmaz. Yalnız BIST hisseleri; yatırım tavsiyesi değildir.",
   "pwOzRapor": "Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar",
   "pwOzTemettu": "Önümüzdeki 12 ayın temettü tahmini, ay ay",
-  "pwOzSinyalTam": "Teknik sinyaller: 8 gösterge, her varlığında seçtiğin sıklıkta bildirim",
+  "pwOzSinyalTam": "Teknik sinyaller: 8 gösterge, kendi periyotların ve her varlığında sinyal bildirimi",
   "pwOzMasraf": "Varlık başına kalem kalem masraf dökümü",
   "prmSatirAlarm": "Fiyat alarmı",
   "prmSatirYillik": "Yıllık rapor",
@@ -5450,8 +5436,8 @@
   "prmSatirKars": "Karşılaştır",
   "prmSatirOrtak": "Ortak",
   "pwdRaporEtiket": "YILLIK RAPOR",
-  "pwdRaporBaslik": "Yılın kârı, temettüsü ve stopajı tek belgede; müşavirine gönder.",
-  "pwdRaporPremium": "PDF ve Excel",
+  "pwdRaporBaslik": "Aylık ve yıllık rapor: kâr, temettü ve stopaj tek belgede; müşavirine gönder.",
+  "pwdRaporPremium": "aylık, yıllık, PDF, Excel",
   "pwdTemettuEtiket": "TEMETTÜ TAHMİNİ",
   "pwdTemettuBaslik": "Önümüzdeki 12 ayda ne kadar temettü gelir, ay ay gör.",
   "pwdTemettuPremium": "12 aylık tahmin",
@@ -5511,7 +5497,7 @@
   "prmSatirXray": "Fon X-Ray",
   "pwdXrayEtiket": "FON X-RAY",
   "pwdXrayBaslik": "Fonlarının içinde ne var, paran gerçekte nerede gör.",
-  "pwdXrayPremium": "Fon ve portföy X-Ray",
+  "pwdXrayPremium": "X-Ray ve masraf dökümü",
   "portfoyTumu": "Tümü",
   "portfoyAna": "Ana",
   "portfoyAnaUzun": "Ana portföy",
@@ -5548,13 +5534,8 @@
   "portfoyKaynakSec": "Hangi portföydeki pozisyon taşınsın?",
   "pwOzPortfoy": "Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı; aralarında kısmi aktarım ve ortağın hangisini göreceğini seçme",
   "prmSatirPortfoy": "Portföy",
-  "pwdGrafikEtiket": "GRAFİK",
-  "pwdGrafikBaslik": "Mum grafik, EMA50 ve EMA200; trendi tek bakışta gör.",
-  "pwdGrafikPremium": "mum, EMA50, EMA200",
   "pwdPortfoyPremium": "sınırsız, kısmi aktarım",
-  "pwOzGrafik": "Grafikte mum görünümü, EMA50 ve EMA200 çizgileri",
   "pwOzEkstre": "Banka ve aracı kurum ekstreni yapay zekâyla eşleme",
-  "prmSatirGrafik": "Mum · EMA50 · EMA200",
   "pwdPortfoyEtiket": "PORTFÖY",
   "pwdPortfoyBaslik": "Her amaca ayrı portföy; toplamın hep yerinde.",
   "pwdPortfoySayi": "{sayi} portföy",
@@ -5656,7 +5637,7 @@
   "ozgNotFazlaCizgi": "İlk {sayi} çizgi gösterilir.",
   "@ozgNotFazlaCizgi": {"placeholders": {"sayi": {"type": "int"}}},
   "ozgNotPaneldeIsaret": "Ayrı paneldeki işaretler (plotshape) gösterilmez.",
-  "pwOzOzelGosterge": "Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında",
+  "pwOzOzelGosterge": "Kendi göstergeni yaz: Pine Script ile, seçtiğin zaman aralığında",
   "varlikGuncelleBaslik": "Varlığı güncelle",
   "varlikGuncelleIpucu": "Varlığı güncelle",
   "varlikGuncelleUyariBaslik": "Tek kayıt olarak yeniden yazılır",
@@ -5679,5 +5660,13 @@
   "sgnParametreArtir": "Artır",
   "sgnParametreKilitli": "Periyot ayarı Premium'da",
   "sgnParametreAyarla": "{ad} ayarları",
-  "@sgnParametreAyarla": {"placeholders": {"ad": {"type": "String"}}}
+  "@sgnParametreAyarla": {"placeholders": {"ad": {"type": "String"}}},
+  "prmSatirOzelGosterge": "Kendi göstergen (Pine)",
+  "pwdOzelEtiket": "KENDİ GÖSTERGEN",
+  "pwdOzelBaslik": "Pine Script ile kendi göstergeni yaz, grafiğinde çalıştır.",
+  "pwdOzelPremium": "20 gösterge, her aralıkta",
+  "alarmLimitReached": "En fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.",
+  "@alarmLimitReached": {"placeholders": {"n": {"type": "int"}}},
+  "alarmLimitFree": "Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.",
+  "@alarmLimitFree": {"placeholders": {"n": {"type": "int"}}}
 }

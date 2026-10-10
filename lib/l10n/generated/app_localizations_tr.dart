@@ -6672,10 +6672,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirSinyal => 'Teknik sinyaller';
 
   @override
-  String get prmSinyalUcretsiz => '1 varlık';
+  String get prmSinyalUcretsiz => '3 gösterge, ekranda';
 
   @override
-  String get prmSinyalPremium => '8 gösterge, tüm varlıklar';
+  String get prmSinyalPremium => '8 gösterge, periyot, bildirim';
 
   @override
   String get prmSatirTakip => 'Takip listesi';
@@ -6882,13 +6882,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzSinirsiz => 'Sınırsız varlık ve tüm varlık türleri';
-
-  @override
-  String get pwOzGosterge => 'Sinyal analizinde ADX, Williams %R ve CCI';
-
-  @override
-  String get pwOzSiklik =>
-      'Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta';
 
   @override
   String get pwOzKarsilastir => 'Karşılaştır\'da 5 seriye kadar';
@@ -7442,20 +7435,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdSinyalBaslik =>
-      'Sekiz gösterge ve her varlığında, seçtiğin saatte bildirim.';
+      'Sekiz gösterge, kendi periyotların ve her varlığında bildirim.';
 
   @override
-  String pwdSinyalUcretsiz(int sayi) {
-    return 'günde $sayi';
-  }
-
-  @override
-  String pwdSinyalUcretsizTek(int sayi) {
-    return 'günde $sayi, tek varlık';
-  }
-
-  @override
-  String get pwdSinyalPremium => '8 gösterge, tüm varlıklar';
+  String get pwdSinyalPremium => '8 gösterge, bildirim';
 
   @override
   String get pwdKarsEtiket => 'KARŞILAŞTIR';
@@ -7782,7 +7765,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzSinyalTam =>
-      'Teknik sinyaller: 8 gösterge, her varlığında seçtiğin sıklıkta bildirim';
+      'Teknik sinyaller: 8 gösterge, kendi periyotların ve her varlığında sinyal bildirimi';
 
   @override
   String get pwOzMasraf => 'Varlık başına kalem kalem masraf dökümü';
@@ -7825,10 +7808,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdRaporBaslik =>
-      'Yılın kârı, temettüsü ve stopajı tek belgede; müşavirine gönder.';
+      'Aylık ve yıllık rapor: kâr, temettü ve stopaj tek belgede; müşavirine gönder.';
 
   @override
-  String get pwdRaporPremium => 'PDF ve Excel';
+  String get pwdRaporPremium => 'aylık, yıllık, PDF, Excel';
 
   @override
   String get pwdTemettuEtiket => 'TEMETTÜ TAHMİNİ';
@@ -8009,7 +7992,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Fonlarının içinde ne var, paran gerçekte nerede gör.';
 
   @override
-  String get pwdXrayPremium => 'Fon ve portföy X-Ray';
+  String get pwdXrayPremium => 'X-Ray ve masraf dökümü';
 
   @override
   String get portfoyTumu => 'Tümü';
@@ -8121,26 +8104,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirPortfoy => 'Portföy';
 
   @override
-  String get pwdGrafikEtiket => 'GRAFİK';
-
-  @override
-  String get pwdGrafikBaslik =>
-      'Mum grafik, EMA50 ve EMA200; trendi tek bakışta gör.';
-
-  @override
-  String get pwdGrafikPremium => 'mum, EMA50, EMA200';
-
-  @override
   String get pwdPortfoyPremium => 'sınırsız, kısmi aktarım';
 
   @override
-  String get pwOzGrafik => 'Grafikte mum görünümü, EMA50 ve EMA200 çizgileri';
-
-  @override
   String get pwOzEkstre => 'Banka ve aracı kurum ekstreni yapay zekâyla eşleme';
-
-  @override
-  String get prmSatirGrafik => 'Mum · EMA50 · EMA200';
 
   @override
   String get pwdPortfoyEtiket => 'PORTFÖY';
@@ -8434,7 +8401,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzOzelGosterge =>
-      'Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında';
+      'Kendi göstergeni yaz: Pine Script ile, seçtiğin zaman aralığında';
 
   @override
   String get varlikGuncelleBaslik => 'Varlığı güncelle';
@@ -8522,5 +8489,28 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String sgnParametreAyarla(String ad) {
     return '$ad ayarları';
+  }
+
+  @override
+  String get prmSatirOzelGosterge => 'Kendi göstergen (Pine)';
+
+  @override
+  String get pwdOzelEtiket => 'KENDİ GÖSTERGEN';
+
+  @override
+  String get pwdOzelBaslik =>
+      'Pine Script ile kendi göstergeni yaz, grafiğinde çalıştır.';
+
+  @override
+  String get pwdOzelPremium => '20 gösterge, her aralıkta';
+
+  @override
+  String alarmLimitReached(int n) {
+    return 'En fazla $n aktif alarm kurabilirsin. Yeni kurmak için birini kapat.';
+  }
+
+  @override
+  String alarmLimitFree(int n) {
+    return 'Ücretsiz planda en fazla $n aktif alarm kurabilirsin.';
   }
 }

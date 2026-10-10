@@ -7,9 +7,13 @@ part of '../asset_detail_screen.dart';
 /// `screens/ozel_gosterge_screen.dart`. Burada yalnız grafiğe bağlama.
 ///
 /// ## Kim görür
-/// EMA/Mum ile AYNI kapı (`_katmanlarGorunur`, `_katmanlarKilitli`): tek
-/// anahtar `paywall_enabled`, yeni bayrak yok. Görünmüyorsa çip yok, liste
-/// okunmaz, grafik birebir eskisi (canlıdaki kullanıcı etkilenmez).
+/// Görünürlük EMA/Mum ile AYNI (`_katmanlarGorunur`): tek anahtar
+/// `paywall_enabled`, yeni bayrak yok. Görünmüyorsa çip yok, liste okunmaz,
+/// grafik birebir eskisi (canlıdaki kullanıcı etkilenmez).
+///
+/// Kilit yalnız burada (`_ozelGostergeKilitli`): yasin 2026-10-10 — *"pine
+/// kodu girip kendi göstergesini çalıştırmak ücretli olmalı"*; Mum ve EMA
+/// ücretsiz. Sunucu eşi 0141 (`premium_icerik_gorebilir()` yazma kapısı).
 ///
 /// ## Hangi çubuklar
 /// Varlığın gerçek mumu varsa (hisse, döviz, altın, emtia Yahoo; kripto
@@ -58,7 +62,7 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   /// Grafikte açık, derlenebilen göstergeler. Kapı kapalıysa ya da
   /// kilitliyse boş — sağlayıcı hiç izlenmez.
   List<OzelGosterge> get _acikOzelGostergeler {
-    if (!_katmanlarGorunur || _katmanlarKilitli) return const [];
+    if (!_katmanlarGorunur || _ozelGostergeKilitli) return const [];
     final liste = ref.watch(ozelGostergelerProvider).valueOrNull ?? const [];
     return [
       for (final g in liste)
@@ -296,7 +300,7 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   /// Araç çubuğundaki `ƒx` çipi. Kilitliyse paywall; değilse göstergeler
   /// sayfası (grafiğin o anki çubuklarıyla — düzenleyici önizlemesi için).
   Widget _ozelGostergeCipi(int acikSayi) {
-    final kilitli = _katmanlarKilitli;
+    final kilitli = _ozelGostergeKilitli;
     return Semantics(
       label: context.l10n.ozgCipSemantik,
       child: _OverlayChip(

@@ -23,11 +23,12 @@ void main() {
         'asset_limit_dialog': PaywallKarti.varlik,
         'bulk_add_asset_limit': PaywallKarti.varlik,
         'watchlist_limit': PaywallKarti.varlik,
-        'signal_frequency': PaywallKarti.sinyal,
-        'signal_settings_card': PaywallKarti.sinyal,
-        'signal_on_ayar': PaywallKarti.sinyal,
-        'signal_settings_42': PaywallKarti.sinyal,
-        'sinyal_varlik': PaywallKarti.sinyal,
+        'alarm_limit': PaywallKarti.varlik,
+        // Sinyal üç katman (2026-10-10 20:38): kilitli gösterge, paneldeki
+        // "5 gösterge daha", periyot ayarı.
+        'signal_settings_adx': PaywallKarti.sinyal,
+        'sinyal_gosterge': PaywallKarti.sinyal,
+        'gosterge_parametre': PaywallKarti.sinyal,
         'compare_series': PaywallKarti.karsilastir,
         'partner_limit': PaywallKarti.ortak,
         'para_akisi_karti': PaywallKarti.akis,
@@ -38,24 +39,36 @@ void main() {
         'sinyal_kilit': PaywallKarti.sinyal,
         'yillik_rapor': PaywallKarti.rapor,
         'portfoy_disa_aktar': PaywallKarti.rapor,
-        'masraf_dokumu': PaywallKarti.rapor,
+        // Masraf dökümü X-Ray'in yanında; aylık rapor rapor kartında
+        // (radar kapalıyken haftalık not kartı destede yoktu).
+        'masraf_dokumu': PaywallKarti.xray,
         'temettu_tahmini': PaywallKarti.temettu,
-        'aylik_rapor': PaywallKarti.not,
+        'aylik_rapor': PaywallKarti.rapor,
         // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
         'fon_xray': PaywallKarti.xray,
         'portfoy_xray': PaywallKarti.xray,
         'portfoy_limit': PaywallKarti.portfoy,
         // #148/#150 kilitleri (2026-10-10): kısmi aktarım ve ortağın
-        // göreceği portföy → portföy kartı; mum/EMA → grafik kartı.
+        // göreceği portföy → portföy kartı.
         'portfoy_kismi_aktar': PaywallKarti.portfoy,
         'ortak_paylasim': PaywallKarti.portfoy,
-        'grafik_mum': PaywallKarti.grafik,
-        'grafik_ema': PaywallKarti.grafik,
+        // Kendi göstergeni yaz (0141); mum/EMA ücretsiz, kaynakları yok.
+        'grafik_ozel_gosterge': PaywallKarti.ozelGosterge,
       };
       beklenen.forEach((kaynak, kart) {
         expect(kaynaktanKart(kaynak), kart, reason: kaynak);
       });
       expect(kaynaktanKart('profile_banner'), isNull);
+      // Sökülen kapılar (2026-10-10): artık kartları da yok.
+      for (final eski in [
+        'signal_frequency',
+        'signal_on_ayar',
+        'sinyal_varlik',
+        'grafik_mum',
+        'grafik_ema',
+      ]) {
+        expect(kaynaktanKart(eski), isNull, reason: eski);
+      }
     });
 
     test('koddaki her paywall kaynağı bir karta düşer ya da bilinçli null', () {
@@ -91,20 +104,29 @@ void main() {
         'lib/screens/portfoy_yonetimi_screen.dart',
         'lib/widgets/kismi_aktarim_sayfasi.dart',
         'lib/widgets/ortak_paylasim_sayfasi.dart',
-        // Grafik katmanları (#150): kaynak `dokun(..., 'grafik_mum')`
-        // konumsal argümanla geçer; ikinci desen onu yakalar.
-        'lib/screens/asset_detail/grafik_katmanlari.dart',
+        // Kendi göstergeni yaz (0141) ve ortak sınır uyarısı (takip, alarm).
+        'lib/screens/asset_detail/ozel_gostergeler.dart',
+        'lib/widgets/sinir_uyarisi.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
             in RegExp(r"(?:source|kaynak): '([a-z_]+)").allMatches(src)) {
           kaynaklar.add(m.group(1)!);
         }
-        for (final m in RegExp(r"'(grafik_[a-z]+)'").allMatches(src)) {
-          kaynaklar.add(m.group(1)!);
-        }
       }
-      expect(kaynaklar, containsAll(['grafik_mum', 'grafik_ema']));
+      expect(
+          kaynaklar,
+          containsAll([
+            'grafik_ozel_gosterge',
+            'watchlist_limit',
+            'alarm_limit',
+            'sinyal_gosterge',
+            'gosterge_parametre',
+          ]));
+      // Mum/EMA ücretsiz (yasin 2026-10-10 20:38): grafik katmanları paywall
+      // açmaz.
+      expect(ekranKaynagiSync('lib/screens/asset_detail/grafik_katmanlari.dart'),
+          isNot(contains('PaywallScreen')));
       kaynaklar.remove('invite'); // mağaza bağlantısı kaynağı, paywall değil
       for (final k in kaynaklar) {
         if (bilerekGenel.contains(k)) continue;
@@ -149,7 +171,7 @@ void main() {
           PaywallKarti.temettu,
           PaywallKarti.xray,
           PaywallKarti.sinyal,
-          PaywallKarti.grafik,
+          PaywallKarti.ozelGosterge,
           PaywallKarti.ortak,
         ],
       );

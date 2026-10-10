@@ -15,6 +15,7 @@ import '../services/review_prompt_service.dart';
 import '../theme/sandik.dart';
 import 'review_prompt_sheet.dart';
 import 'sandik_async_button.dart';
+import 'sinir_uyarisi.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
@@ -97,8 +98,8 @@ Future<PriceAlert?> alarmKurAkisi(
   final mevcut = ref.read(priceAlertsProvider).valueOrNull ?? const [];
   final limit = ref.read(priceAlertLimitProvider);
   if (mevcut.where((a) => a.isActive).length >= limit) {
-    sandikSnack(context, 'En fazla $limit aktif alarm kurabilirsin.',
-        kind: SandikSnackKind.warning);
+    // Paywall açıkken sınır satış kapısıdır: Premium yolu da gösterilir.
+    alarmSiniriUyarisi(context, ref, limit);
     return null;
   }
 

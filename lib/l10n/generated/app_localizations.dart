@@ -11102,13 +11102,13 @@ abstract class AppLocalizations {
   /// No description provided for @prmSinyalUcretsiz.
   ///
   /// In tr, this message translates to:
-  /// **'1 varlık'**
+  /// **'3 gösterge, ekranda'**
   String get prmSinyalUcretsiz;
 
   /// No description provided for @prmSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, tüm varlıklar'**
+  /// **'8 gösterge, periyot, bildirim'**
   String get prmSinyalPremium;
 
   /// No description provided for @prmSatirTakip.
@@ -11464,18 +11464,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Sınırsız varlık ve tüm varlık türleri'**
   String get pwOzSinirsiz;
-
-  /// No description provided for @pwOzGosterge.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyal analizinde ADX, Williams %R ve CCI'**
-  String get pwOzGosterge;
-
-  /// No description provided for @pwOzSiklik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tüm varlıklarında sinyal bildirimi, seçtiğin sıklıkta'**
-  String get pwOzSiklik;
 
   /// No description provided for @pwOzKarsilastir.
   ///
@@ -12422,25 +12410,13 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Sekiz gösterge ve her varlığında, seçtiğin saatte bildirim.'**
+  /// **'Sekiz gösterge, kendi periyotların ve her varlığında bildirim.'**
   String get pwdSinyalBaslik;
-
-  /// No description provided for @pwdSinyalUcretsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'günde {sayi}'**
-  String pwdSinyalUcretsiz(int sayi);
-
-  /// No description provided for @pwdSinyalUcretsizTek.
-  ///
-  /// In tr, this message translates to:
-  /// **'günde {sayi}, tek varlık'**
-  String pwdSinyalUcretsizTek(int sayi);
 
   /// No description provided for @pwdSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, tüm varlıklar'**
+  /// **'8 gösterge, bildirim'**
   String get pwdSinyalPremium;
 
   /// No description provided for @pwdKarsEtiket.
@@ -13004,7 +12980,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzSinyalTam.
   ///
   /// In tr, this message translates to:
-  /// **'Teknik sinyaller: 8 gösterge, her varlığında seçtiğin sıklıkta bildirim'**
+  /// **'Teknik sinyaller: 8 gösterge, kendi periyotların ve her varlığında sinyal bildirimi'**
   String get pwOzSinyalTam;
 
   /// No description provided for @pwOzMasraf.
@@ -13088,13 +13064,13 @@ abstract class AppLocalizations {
   /// No description provided for @pwdRaporBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Yılın kârı, temettüsü ve stopajı tek belgede; müşavirine gönder.'**
+  /// **'Aylık ve yıllık rapor: kâr, temettü ve stopaj tek belgede; müşavirine gönder.'**
   String get pwdRaporBaslik;
 
   /// No description provided for @pwdRaporPremium.
   ///
   /// In tr, this message translates to:
-  /// **'PDF ve Excel'**
+  /// **'aylık, yıllık, PDF, Excel'**
   String get pwdRaporPremium;
 
   /// No description provided for @pwdTemettuEtiket.
@@ -13406,7 +13382,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdXrayPremium.
   ///
   /// In tr, this message translates to:
-  /// **'Fon ve portföy X-Ray'**
+  /// **'X-Ray ve masraf dökümü'**
   String get pwdXrayPremium;
 
   /// No description provided for @portfoyTumu.
@@ -13601,47 +13577,17 @@ abstract class AppLocalizations {
   /// **'Portföy'**
   String get prmSatirPortfoy;
 
-  /// No description provided for @pwdGrafikEtiket.
-  ///
-  /// In tr, this message translates to:
-  /// **'GRAFİK'**
-  String get pwdGrafikEtiket;
-
-  /// No description provided for @pwdGrafikBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mum grafik, EMA50 ve EMA200; trendi tek bakışta gör.'**
-  String get pwdGrafikBaslik;
-
-  /// No description provided for @pwdGrafikPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'mum, EMA50, EMA200'**
-  String get pwdGrafikPremium;
-
   /// No description provided for @pwdPortfoyPremium.
   ///
   /// In tr, this message translates to:
   /// **'sınırsız, kısmi aktarım'**
   String get pwdPortfoyPremium;
 
-  /// No description provided for @pwOzGrafik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Grafikte mum görünümü, EMA50 ve EMA200 çizgileri'**
-  String get pwOzGrafik;
-
   /// No description provided for @pwOzEkstre.
   ///
   /// In tr, this message translates to:
   /// **'Banka ve aracı kurum ekstreni yapay zekâyla eşleme'**
   String get pwOzEkstre;
-
-  /// No description provided for @prmSatirGrafik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Mum · EMA50 · EMA200'**
-  String get prmSatirGrafik;
 
   /// No description provided for @pwdPortfoyEtiket.
   ///
@@ -14114,7 +14060,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzOzelGosterge.
   ///
   /// In tr, this message translates to:
-  /// **'Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında'**
+  /// **'Kendi göstergeni yaz: Pine Script ile, seçtiğin zaman aralığında'**
   String get pwOzOzelGosterge;
 
   /// No description provided for @varlikGuncelleBaslik.
@@ -14218,6 +14164,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{ad} ayarları'**
   String sgnParametreAyarla(String ad);
+
+  /// No description provided for @prmSatirOzelGosterge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi göstergen (Pine)'**
+  String get prmSatirOzelGosterge;
+
+  /// No description provided for @pwdOzelEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'KENDİ GÖSTERGEN'**
+  String get pwdOzelEtiket;
+
+  /// No description provided for @pwdOzelBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pine Script ile kendi göstergeni yaz, grafiğinde çalıştır.'**
+  String get pwdOzelBaslik;
+
+  /// No description provided for @pwdOzelPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'20 gösterge, her aralıkta'**
+  String get pwdOzelPremium;
+
+  /// No description provided for @alarmLimitReached.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.'**
+  String alarmLimitReached(int n);
+
+  /// No description provided for @alarmLimitFree.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.'**
+  String alarmLimitFree(int n);
 }
 
 class _AppLocalizationsDelegate

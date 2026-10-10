@@ -779,11 +779,12 @@ final priceAlertLimitProvider = Provider<int>((ref) {
 /// (`add_watchlist_screen`). Premium yine sınırsız; değer Remote Config'ten
 /// (`free_watchlist_limit`, varsayılan 7) yayın sonrası değiştirilebilir.
 ///
-/// **Paywall açıkken ücretsiz sınır 5 (yasin, 2026-10-08: "takip listesini
-/// 3 yapalım"; 2026-10-09 rakip kıyasıyla 5).** Ayrı anahtar
-/// (`paywall_watchlist_limit`): paywall kapalı canlı kullanıcılar 7'de
-/// kalır; listesi sınırı aşan kimsenin takibi silinmez,
-/// yalnız yeni ekleme Premium ister.
+/// **Paywall açıkken ücretsiz sınır 10 (yasin, 2026-10-08: "takip listesini
+/// 3 yapalım"; 2026-10-09 rakip kıyasıyla 5; 2026-10-10 "pinti
+/// görünmeyelim" → 10).** Ayrı anahtar (`paywall_watchlist_limit`): paywall
+/// kapalı canlı kullanıcılar 7'de kalır; listesi sınırı aşan kimsenin takibi
+/// silinmez, yalnız yeni ekleme Premium ister. Uyarı tek yerde
+/// (`widgets/sinir_uyarisi.dart`).
 final watchlistLimitProvider = Provider<int>((ref) {
   final premium = ref.watch(premiumErisimProvider);
   if (premium) return 1 << 30;

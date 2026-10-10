@@ -6735,10 +6735,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirSinyal => 'Technical signals';
 
   @override
-  String get prmSinyalUcretsiz => '1 asset';
+  String get prmSinyalUcretsiz => '3 indicators, on screen';
 
   @override
-  String get prmSinyalPremium => '8 indicators, all assets';
+  String get prmSinyalPremium => '8 indicators, periods, alerts';
 
   @override
   String get prmSatirTakip => 'Watchlist';
@@ -6944,13 +6944,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzSinirsiz => 'Unlimited assets of every type';
-
-  @override
-  String get pwOzGosterge => 'ADX, Williams %R and CCI in signal analysis';
-
-  @override
-  String get pwOzSiklik =>
-      'Signal alerts for all your assets, at the frequency you choose';
 
   @override
   String get pwOzKarsilastir => 'Up to 5 series in Compare';
@@ -7505,20 +7498,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdSinyalBaslik =>
-      'Eight indicators and alerts on every asset, at the hours you pick.';
+      'Eight indicators, your own periods and alerts on every asset.';
 
   @override
-  String pwdSinyalUcretsiz(int sayi) {
-    return '$sayi a day';
-  }
-
-  @override
-  String pwdSinyalUcretsizTek(int sayi) {
-    return '$sayi a day, one asset';
-  }
-
-  @override
-  String get pwdSinyalPremium => '8 indicators, all assets';
+  String get pwdSinyalPremium => '8 indicators, alerts';
 
   @override
   String get pwdKarsEtiket => 'COMPARE';
@@ -7858,7 +7841,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzSinyalTam =>
-      'Technical signals: 8 indicators, alerts on every asset at the frequency you choose';
+      'Technical signals: 8 indicators, your own periods and signal alerts on every asset';
 
   @override
   String get pwOzMasraf => 'Item-by-item fee breakdown per asset';
@@ -7901,10 +7884,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdRaporBaslik =>
-      'The year\'s gains, dividends and withholding in one document; send it to your accountant.';
+      'Monthly and annual reports: gains, dividends and withholding in one document; send it to your accountant.';
 
   @override
-  String get pwdRaporPremium => 'PDF and Excel';
+  String get pwdRaporPremium => 'monthly, annual, PDF, Excel';
 
   @override
   String get pwdTemettuEtiket => 'DIVIDEND FORECAST';
@@ -8085,7 +8068,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'See what\'s inside your funds and where your money really is.';
 
   @override
-  String get pwdXrayPremium => 'Fund and portfolio X-Ray';
+  String get pwdXrayPremium => 'X-Ray and fee breakdown';
 
   @override
   String get portfoyTumu => 'All';
@@ -8198,26 +8181,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirPortfoy => 'Portfolios';
 
   @override
-  String get pwdGrafikEtiket => 'CHART';
-
-  @override
-  String get pwdGrafikBaslik =>
-      'Candlesticks, EMA50 and EMA200; see the trend at a glance.';
-
-  @override
-  String get pwdGrafikPremium => 'candles, EMA50, EMA200';
-
-  @override
   String get pwdPortfoyPremium => 'unlimited, partial transfer';
 
   @override
-  String get pwOzGrafik => 'Candlestick view, EMA50 and EMA200 lines on charts';
-
-  @override
   String get pwOzEkstre => 'AI matching for your bank and brokerage statements';
-
-  @override
-  String get prmSatirGrafik => 'Candles · EMA50 · EMA200';
 
   @override
   String get pwdPortfoyEtiket => 'PORTFOLIOS';
@@ -8518,7 +8485,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzOzelGosterge =>
-      'Write your own indicators, on any chart interval';
+      'Write your own indicators in Pine Script, on any chart interval';
 
   @override
   String get varlikGuncelleBaslik => 'Update asset';
@@ -8606,5 +8573,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sgnParametreAyarla(String ad) {
     return '$ad settings';
+  }
+
+  @override
+  String get prmSatirOzelGosterge => 'Your own indicators (Pine)';
+
+  @override
+  String get pwdOzelEtiket => 'YOUR INDICATOR';
+
+  @override
+  String get pwdOzelBaslik =>
+      'Write your own indicator in Pine Script and run it on your chart.';
+
+  @override
+  String get pwdOzelPremium => '20 indicators, any interval';
+
+  @override
+  String alarmLimitReached(int n) {
+    return 'You can have up to $n active alerts. Turn one off to add another.';
+  }
+
+  @override
+  String alarmLimitFree(int n) {
+    return 'On the free plan you can have up to $n active alerts.';
   }
 }

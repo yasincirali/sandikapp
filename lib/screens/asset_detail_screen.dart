@@ -1044,15 +1044,15 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             .add(FlSpot(rawActive.spots[i].x, toY(sma[i])));
                       }
                     }
-                    // EMA50 / EMA200 ve mum — Premium katmanlar
+                    // EMA50 / EMA200 ve mum — ücretsiz katmanlar
                     // (`asset_detail/grafik_katmanlari.dart`). Görünmüyorsa
-                    // ya da kilitliyse hiçbiri çizilmez; eski grafik birebir.
+                    // (paywall kapalı, admin değil) hiçbiri çizilmez; eski
+                    // grafik birebir. Kendi göstergeni yaz ayrıca kilitli
+                    // (`_acikOzelGostergeler`).
                     // Karşılaştırmada mum yok (çizgi % ölçeğinde, iki seri
                     // aynı eksende kıyaslanır); EMA da yok — ikinci serinin
                     // ortalaması çizilmediği için yalnız birine ait olurdu.
-                    final katmanAcik = araclar &&
-                        _katmanlarGorunur &&
-                        !_katmanlarKilitli;
+                    final katmanAcik = araclar && _katmanlarGorunur;
                     final mumOn = katmanAcik &&
                         !compareOn &&
                         ref.watch(chartCandleProvider);
