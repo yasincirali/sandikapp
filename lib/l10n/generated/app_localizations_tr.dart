@@ -3623,6 +3623,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get chartTypeTooltip => 'Grafik tipi';
 
   @override
+  String get chartCandleChip => 'MUM';
+
+  @override
   String get fullscreenChart => 'Grafiği tam ekran aç';
 
   @override

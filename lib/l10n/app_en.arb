@@ -2499,6 +2499,7 @@
   "scopeWho": "Whose portfolio",
   "scopePartners": "Partners",
   "chartTypeTooltip": "Chart type",
+  "chartCandleChip": "CANDLE",
   "fullscreenChart": "Open chart full screen",
   "whatsNewTitle": "What's New",
   "@whatsNewTitle": {},

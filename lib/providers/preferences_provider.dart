@@ -1197,6 +1197,21 @@ final chartMA20Provider = NotifierProvider<_BoolPrefNotifier, bool>(
 final chartLogScaleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(_kChartLogScaleKey, false));
 
+/// EMA50 (yeşil) / EMA200 (kırmızı) katmanları ve mum görünümü — varlık
+/// detayı grafiği (yasin 2026-10-10). Premium: görünürlük ve kilit ekranda
+/// (`premiumOzellikleriGorunurProvider` / `premiumKilitliProvider`); burası
+/// yalnız kullanıcının seçimi. Kalıcı (MA20/LOG ile aynı): araç çubuğundaki
+/// komşu çiplerden biri oturumluk olsaydı "ayar tutmuyor" diye okunurdu.
+/// Performans'ın grafik tipi (`grafikTipiNotifier`) ayrı kalır: orada Mum
+/// ücretsiz ve oturumluk; paylaşılsaydı bir ekrandaki seçim diğerindeki
+/// Premium kapısını delerdi.
+final chartEma50Provider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.chartEma50, false));
+final chartEma200Provider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.chartEma200, false));
+final chartCandleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
+    () => _BoolPrefNotifier(PrefKeys.chartCandle, false));
+
 /// Performans "Bugünkü portföyle" görünümü (simülasyon: bugünkü net
 /// portföy tüm dönem boyunca elde tutulmuş gibi). TEK KAYNAK — Ayarlar ›
 /// Görünüm yazar, Performans okur (bayrak `performans_ayar_sade`).

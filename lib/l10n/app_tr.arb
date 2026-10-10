@@ -2567,6 +2567,7 @@
   "scopeWho": "Kimin portföyü",
   "scopePartners": "Ortaklar",
   "chartTypeTooltip": "Grafik tipi",
+  "chartCandleChip": "MUM",
   "fullscreenChart": "Grafiği tam ekran aç",
   "whatsNewTitle": "Yenilikler",
   "@whatsNewTitle": {},

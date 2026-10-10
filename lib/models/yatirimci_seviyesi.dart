@@ -77,7 +77,7 @@ enum YatirimciSeviyesi {
 /// oluşturmamalı; yatırımcı seviyesine göre detaylı bilgiler sergilenebilir."*
 /// Başlangıç ayrıca şunları gizler:
 ///   * [grafikAraclari] — grafik tipi seçici (Alan/Taban/çubuk/mum),
-///     Gerçek|Simülasyon anahtarı, varlık grafiğinde MA20/LOG çipleri.
+///     Gerçek|Simülasyon anahtarı, varlık grafiğinde MA20/LOG ve (Premium) MUM/EMA50/EMA200 çipleri.
 ///     Grafik düz çizgide kalır, rakamlar gerçek geçmişten gelir.
 ///   * [derinlik] — Özet'in "Daha fazlası" bölümü (eski adı DERİNLİK:
 ///     endeks kıyası, XIRR, sağlık, karakter, sabır). "Ne oldu?" /

@@ -3652,6 +3652,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chartTypeTooltip => 'Chart type';
 
   @override
+  String get chartCandleChip => 'CANDLE';
+
+  @override
   String get fullscreenChart => 'Open chart full screen';
 
   @override

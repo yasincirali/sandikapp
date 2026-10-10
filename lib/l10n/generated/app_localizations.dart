@@ -6098,6 +6098,12 @@ abstract class AppLocalizations {
   /// **'Grafik tipi'**
   String get chartTypeTooltip;
 
+  /// No description provided for @chartCandleChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'MUM'**
+  String get chartCandleChip;
+
   /// No description provided for @fullscreenChart.
   ///
   /// In tr, this message translates to:
