@@ -1055,6 +1055,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
     final canliSon =
         pState == null ? null : DailySummary.kapsamToplami(pState, targetAssets);
 
+    // Pozisyon → varlık adı: sembolü anlamsız pozisyon (mevduat: sözleşme
+    // UUID'si) en iyi/en zayıf satırında adıyla yazılır (`pozisyonEtiketi`).
+    final pozisyonAdi = <String, String>{
+      for (final a in targetAssets) positionKey(a): a.name,
+    };
     final summary = PeriodSummaryService.compute(
       period: period,
       assets: targetAssets,
@@ -1069,7 +1074,7 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
       // yoksa ekranda "altin|sub:çeyrek|TRY" görünürdü.
       etiket: (k) =>
           _positionLabel(k, breakdown.positionType[k] ?? AssetType.diger,
-              context.l10n),
+              context.l10n, ad: pozisyonAdi[k]),
     );
 
     // Tür dağılımı ve "en sabırlı" AÇIK pozisyonlardan okunur.

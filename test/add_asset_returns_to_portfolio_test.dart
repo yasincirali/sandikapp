@@ -85,14 +85,20 @@ void main() {
   test('AddAssetScreen kayıt sonrası `true` döndürür', () {
     // `_save()` 2026-09-20'den beri `alarmAdayi ?? true` döndürür (alarm
     // önerisi); `true` sinyali yine korunur — aday yoksa `true`.
+    //
+    // 2026-10-10: kayıt kapanışı `_kayitBitti(sonuç)`'tan geçer — sonucu
+    // döndürmeden ÖNCE `VarlikEklendi`'yi duyurur (ekleme nereden
+    // yapılırsa yapılsın Portföy açılır). Sonuç aynen `pop`'a gider.
     expect(
-      RegExp(r'Navigator\.pop\(context,\s*(true|alarmAdayi \?\? true)\)')
+      RegExp(r'_kayitBitti\((true|alarmAdayi \?\? true)\)')
           .allMatches(add)
           .length,
       greaterThanOrEqualTo(2),
       reason: 'Hem `_save()` hem hızlı giriş kaydı sinyal döndürmeli. '
           'Sonuçsuz `pop` sinyali yutar ve sekme geçişi sessizce çalışmaz.',
     );
+    expect(add.contains('Navigator.pop(context, sonuc);'), isTrue,
+        reason: '`_kayitBitti` sonucu çağırana döndürmüyor.');
   });
 
   test('sepet modu sinyal SIZDIRMAZ', () {

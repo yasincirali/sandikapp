@@ -45,11 +45,16 @@ void main() {
       expect(etiket, '12 Eyl 18:45');
     });
 
-    test('eşik tam 1 günde tarih BASMAZ', () {
-      // Sınır davranışı: `> 1` kuralı. Tam bir günlük eksen hâlâ tek
-      // gündür.
+    test('eşik sağ payı aşar — tek gün 24 saati geçse de tarih BASMAZ', () {
+      // Eşik 1 iken (2026-10-10'a kadar) gün içi sağ pay (`/ 0,82`) akşam
+      // 19:41'den sonra tek günlük pencereyi 24 saatin üstüne taşıyor ve
+      // her etikete tarih basılıyordu: AAPL varlık sayfasında "9 Eki 04:00
+      // 9 Eki 08:00…" üst üste (TestFlight bulgusu). Sağ payın varabileceği
+      // en geniş pencere ≈ 1,22 gün; hafta sonu kuyruğu hep onun üstünde.
       expect(zamanEtiketi(t, spanGun: 1.0, gunIci: true), '18:45');
-      expect(zamanEtiketi(t, spanGun: 1.01, gunIci: true).contains('Eyl'),
+      expect(zamanEtiketi(t, spanGun: 1.2, gunIci: true), '18:45');
+      expect(zamanEtiketi(t, spanGun: gunIciCokGunEsigi + 0.01, gunIci: true)
+              .contains('Eyl'),
           isTrue);
     });
   });

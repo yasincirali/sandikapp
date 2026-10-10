@@ -24,6 +24,7 @@ import '../widgets/custom_loading_indicator.dart';
 import '../widgets/review_prompt_sheet.dart';
 import '../l10n/l10n.dart';
 import '../services/crash_reporter.dart';
+import '../services/varlik_eklendi.dart';
 
 class BulkAddAssetScreen extends ConsumerStatefulWidget {
   const BulkAddAssetScreen({super.key});
@@ -306,6 +307,12 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         // açardı. Süre yüzey geçişinin iki katı: iki geçiş var. Pop'tan
         // ÖNCE okunur; sonrasında bu State'in bağlamı geçersiz.
         final bekle = SandikMotion.surfaceOf(context) * 2;
+        // Portföy "Tümü"de açılır (`VarlikEklendi`). Tek kalemse o satır
+        // parlar; birden çok satırda hangisinin parlayacağı belirsiz.
+        VarlikEklendi.duyur(
+            pozisyonAnahtari: _saved == 1
+                ? ref.read(portfolioProvider.notifier).sonEklenenPozisyon
+                : null);
         Navigator.of(context).pop(true);
         await Future<void>.delayed(bekle);
         if (rootCtx.mounted) {

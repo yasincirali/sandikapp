@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/services/ekstre/ekstre_ice_aktarma.dart';
 import 'package:portfoy_takip/services/ekstre/ekstre_iskeleti.dart';
@@ -65,4 +67,82 @@ void main() {
     final iskelet = ekstreIskeleti(sonuc, tabloBasinaSatir: 10);
     expect(iskelet, contains('… 90 satır daha'));
   });
+
+  // 2026-10-10 (TestFlight: "Yapay zekâ eşlemesi şu an yapılamadı"): çok
+  // sayfalı PDF'te her sayfa ayrı tablo; tablo başına 60 satırla iskelet
+  // `ekstre-esle`nin 40.000 karakter sınırını aşıyor, sunucu 400 `uzun`
+  // dönüyordu. İskelet sınıra sığdırılır, tablo numaraları değişmez.
+  test('çok sayfalı ekstre sunucu sınırına sığar, tablo sırası korunur', () {
+    final tablolar = [
+      for (var s = 0; s < 12; s++)
+        EkstreTablosu(kaynak: 'PDF', satirlar: [
+          ['İşlem Tarihi', 'Menkul Kıymet', 'İşlem', 'Adet', 'Fiyat',
+              'Tutar', 'Komisyon', 'Açıklama'],
+          for (var i = 0; i < 50; i++)
+            ['0${i % 9 + 1}.10.2026', 'THYAO', 'Alış', '1.250', '312,45',
+                '390.562,50', '78,11', 'Yatırım hesabı virmanı $i'],
+        ]),
+    ];
+    final sonuc = ekstreyiAnla(EkstreBicimi.pdf, tablolar, '');
+    final iskelet = ekstreIskeleti(sonuc);
+
+    expect(iskelet.length, lessThanOrEqualTo(iskeletAzamiUzunluk));
+    for (var t = 1; t <= 12; t++) {
+      expect(iskelet, contains('## tablo $t (PDF) · 51 satır × 8 sütun'));
+    }
+    // Başlık satırı her tabloda kalır: model sütunu adından tanır.
+    expect('\n0\tİşlem Tarihi'.allMatches(iskelet).length, 12);
+    _sunucuKabulEder(iskelet);
+  });
+
+  test('satır azaltmak yetmezse sondaki tablolar düşer, numaralar kaymaz', () {
+    final tablolar = [
+      for (var s = 0; s < 400; s++)
+        EkstreTablosu(kaynak: 'PDF', satirlar: [
+          ['Menkul Kıymet', 'Adet', 'Fiyat', 'Tutar'],
+          for (var i = 0; i < 5; i++)
+            ['THYAO', '1.250', '312,45', '390.562,50'],
+        ]),
+    ];
+    final iskelet =
+        ekstreIskeleti(ekstreyiAnla(EkstreBicimi.pdf, tablolar, ''));
+
+    expect(iskelet, contains('## tablo 1 (PDF)'));
+    expect(iskelet, contains('sığmayan tablo: '));
+    expect(iskelet, isNot(contains('## tablo 400 ')));
+    _sunucuKabulEder(iskelet);
+  });
+
+  test('istemci sınırı sunucununkiyle aynı', () {
+    final ts = File('supabase/functions/_shared/ekstre_esleme.ts')
+        .readAsStringSync();
+    final m = RegExp(r'AZAMI_UZUNLUK = ([\d_]+);').firstMatch(ts);
+    expect(m, isNotNull);
+    expect(int.parse(m!.group(1)!.replaceAll('_', '')), iskeletAzamiUzunluk);
+  });
+}
+
+/// `_shared/ekstre_esleme.ts` `iskeletiDogrula`nın Dart karşılığı: uzunluk,
+/// ilk satır, tablo sırası, maskesiz rakam. İstemcinin ürettiği iskelet
+/// sunucuda 400 almasın.
+void _sunucuKabulEder(String iskelet) {
+  expect(iskelet.length, lessThanOrEqualTo(iskeletAzamiUzunluk));
+  final satirlar = iskelet.split('\n');
+  expect(satirlar.first, 'sandık ekstre iskeleti v1');
+  final baslik =
+      RegExp(r'^## tablo (\d+) \(.*\) · (\d+) satır × (\d+) sütun$');
+  final veri = RegExp(r'^(\d+)\t(.*)$');
+  var tablo = 0;
+  for (final s in satirlar) {
+    final b = baslik.firstMatch(s);
+    if (b != null) {
+      expect(int.parse(b.group(1)!), ++tablo);
+      continue;
+    }
+    final v = veri.firstMatch(s);
+    if (v == null) continue;
+    expect(tablo, greaterThan(0));
+    expect(RegExp('[0-8]').hasMatch(v.group(2)!), isFalse, reason: s);
+  }
+  expect(tablo, greaterThan(0));
 }

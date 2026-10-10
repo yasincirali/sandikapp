@@ -1392,6 +1392,27 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                       value >= meta.max - edge) {
                                     return const SizedBox.shrink();
                                   }
+                                  // Ekran genişliğine sığmayan ara
+                                  // etiketler atlanır (`xEtiketiAtlanir`,
+                                  // TestFlight bulgusu 2026-10-10).
+                                  final xStil =
+                                      GrafikStili.eksenYazisi(context);
+                                  if (xEtiketiAtlanir(value,
+                                      aralik: meta.max - meta.min,
+                                      tickAraligi: meta.appliedInterval,
+                                      eksenPx: meta.parentAxisSize,
+                                      etiketPx: GrafikStili.xEtiketAraligi(
+                                        isIntraday
+                                            ? '20:48'
+                                            : zamanEtiketiOrnegi(
+                                                spanGun: span,
+                                                gunIci: false),
+                                        stil: xStil,
+                                        olcek:
+                                            MediaQuery.textScalerOf(context),
+                                      ))) {
+                                    return const SizedBox.shrink();
+                                  }
                                   final date = startDate.add(Duration(
                                       minutes:
                                           (value * 60 * 24).round()));
@@ -1411,7 +1432,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   // Sabit genişlik + ortalama: taşan metin
                                   // ellipsis olur, komşu etiketle çakışmaz.
                                   return GrafikStili.xEtiketi(label,
-                                      stil: GrafikStili.eksenYazisi(context));
+                                      stil: xStil);
                                 },
                               ),
                             ),

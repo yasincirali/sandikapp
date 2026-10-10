@@ -52,12 +52,14 @@ import '../providers/watchlist_provider.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../providers/portfoy_provider.dart';
+import '../providers/preferences_provider.dart' show seciliPortfoyProvider;
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/transaction_row.dart' show hareketTurEtiketi;
+import '../services/varlik_eklendi.dart';
 
 enum _SortOrder {
   valueDesc,
@@ -108,6 +110,10 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
   String? _vurgulanan;
   final _vurguAnahtari = GlobalKey();
 
+  /// Parlamanın tetik sayacı — aynı satır ikinci kez vurgulanınca (aynı
+  /// pozisyona art arda alış) parlama yeniden oynasın.
+  int _vurguNo = 0;
+
   void _yeniSatiriBul(List<Position> positions, String portfoy) {
     final anahtarlar = {for (final p in positions) p.key};
     final onceki = _gorulenAnahtarlar;
@@ -121,9 +127,16 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     if (onceki == null || !ayniGorunum) return;
     final yeni = anahtarlar.difference(onceki);
     if (yeni.length != 1) return;
+    if (_vurgulanan == yeni.single) return; // duyuru zaten vurguladı
     _vurgulanan = yeni.single;
-    // Build içindeyiz: kaydırma kareden sonra. Satır liste dışındaysa
-    // (filtre) bağlam yoktur, sessizce geçer.
+    _vurguNo++;
+    _vurguyaKaydir();
+  }
+
+  /// Vurgulanan satıra kaydırır. Build içinden de çağrılır: kaydırma
+  /// kareden sonra. Satır henüz kurulmamışsa (tembel liste) bağlam yoktur,
+  /// sessizce geçer.
+  void _vurguyaKaydir() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final c = _vurguAnahtari.currentContext;
       if (!mounted || c == null) return;
@@ -141,10 +154,47 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     super.initState();
     _basaDonBirak = SekmeBasaDon.dinle(
         1, () => SekmeBasaDon.basaKaydir(context, _kaydirma));
+    VarlikEklendi.kanal.addListener(_varlikEklendi);
+  }
+
+  /// Kayıttan sonra — ekleme NEREDEN yapılırsa yapılsın (`VarlikEklendi`) —
+  /// tüm portföy görünür: tür süzgeci "Tümü"ye döner, ortak görünümündeysen
+  /// "Ben"e (yeni varlık senin; ortağın listesinde yoktur). "Birlikte" yeni
+  /// satırı zaten içerir, ona dokunulmaz.
+  ///
+  /// Eklenen satır duyurudaki anahtarla DOĞRUDAN vurgulanır. Eski yol
+  /// (`_yeniSatiriBul`, anahtar kümesi farkı) iki durumda kaçırıyordu:
+  /// var olan pozisyona alışta yeni anahtar çıkmıyor; görünüm "Ben"e
+  /// dönünce de "görünüm değişti" deyip parlamayı siliyordu.
+  void _varlikEklendi() {
+    final olay = VarlikEklendi.kanal.value;
+    if (!mounted || olay == null) return;
+    final ortakGorunumu = _view != null && _view != '';
+    // Portföy seçiliyse (0133) yeni lot başka portföye gitmiş olabilir:
+    // "tüm portföy görünür" kuralı portföy seçimini de Tümü'ye çeker.
+    // Seçim yalnız özellik görünürken Tümü dışında olabilir; kapalıyken
+    // bu dal hiç çalışmaz.
+    if (ref.read(portfoyKapsamiProvider).secim != PortfoySecimi.tumu) {
+      unawaited(ref.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.tumu));
+    }
+    setState(() {
+      _filteredType = null;
+      if (ortakGorunumu) _view = '';
+      _gorulenPortfoy = PortfoySecimi.tumu;
+      // Görünüm değişimini `_yeniSatiriBul` "kullanıcı geçti" sanıp
+      // vurguyu silmesin.
+      _gorulenGorunum = _view;
+      if (olay.anahtar != null) {
+        _vurgulanan = olay.anahtar;
+        _vurguNo++;
+      }
+    });
+    if (olay.anahtar != null) _vurguyaKaydir();
   }
 
   @override
   void dispose() {
+    VarlikEklendi.kanal.removeListener(_varlikEklendi);
     _basaDonBirak();
     _kaydirma.dispose();
     super.dispose();
@@ -593,6 +643,8 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                       pState: pState,
                                       baz: ref.watch(gosterimBazParaProvider),
                                       pazarAyir: pazarAyir,
+                                      secili: secili,
+                                      denetimli: true,
                                       onTypeSelected: (type) =>
                                           setState(() => _filteredType = type),
                                     ),
@@ -600,6 +652,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                     ],
                                     ..._AssetList(
                                       vurgulanan: _vurgulanan,
+                                      vurguNo: _vurguNo,
                                       vurguAnahtari: _vurguAnahtari,
                                       positions: filteredPositions,
                                       pState: pState,
@@ -828,9 +881,30 @@ List<({PortfoyGrubu grup, double tutar, double pay})> turDagilimi(
 ///   süzer; seçili satıra yeniden dokunmak süzgeci kaldırır. Seçim durumu
 ///   ebeveynin `_filteredType`'ıdır, böylece büyük halkada yapılan seçim de
 ///   burada görünür.
-/// - Halkaya dokunmak büyük halkayı alt sayfada açar. Lejant en çok
-///   [_enCokSatir] satır gösterir; fazlası "+N tür" satırında toplanır ve o
-///   satır da büyük halkayı açar — hiçbir tür kaybolmaz.
+/// - Halkaya dokunmak büyük halkayı alt sayfada açar.
+///
+/// Lejant (2026-10-09, yasin: "çeşit az da çok da olsa eşit büyüklükte alan
+/// kaplamalı … müşteri kaydırabileceğini anlamalı"). İlk sürüm en çok 4
+/// satır gösterip fazlasını "+N tür" satırına saklıyordu: on türlü portföyde
+/// yedi tür tek satırın arkasında kalıyor, üç türlü portföyde sağ sütun boş
+/// görünüyordu. Şimdi:
+/// - Yükseklik SABİT ([_lejantSatirSayisi] × [SandikTouch.min] + nokta
+///   satırı); tür sayısı kartın boyunu değiştirmez, liste hep aynı yerden
+///   başlar.
+/// - Genişlik elverince iki sütun; hücre iki satır (ad üstte, yüzde altta)
+///   ki ad hiç kısalmasın. Dar alanda ya da büyük metin ayarında tek sütun,
+///   tek satırlık hücre.
+/// - Sığmayan tür SAKLANMAZ: lejant yatay sayfalara bölünür, altında sayfa
+///   noktaları (`SayfaNoktalari`) durur — kaydırılabileceğini nokta söyler.
+///   Dikey kaydırma bilerek yok: dış liste zaten dikey, iç kaydırma onunla
+///   çakışırdı. Büyük halkada (alt sayfa) seçilen tür başka sayfadaysa
+///   lejant o sayfaya kayar.
+/// - Küçük türler KATLANMAZ (kullanıcı kuralı 2026-10-10: "hâlâ Diğer
+///   var"). İlk sürüm %2'nin altındakileri "Diğer (N)" diye tek öğeye
+///   topluyordu; adı görünmeyen tür, "+N tür" satırıyla aynı saklamaydı.
+///   Her tür kendi hücresinde; sığmayan sonraki sayfaya geçer. Bedeli:
+///   14pt halkada %1'lik dilim ince görünür — seçimi lejanttan yapılır.
+///   `lejantKatla` eşiği bu yüzden 0.
 class _KucukHalka extends StatefulWidget {
   const _KucukHalka({
     required this.dilimler,
@@ -850,9 +924,68 @@ class _KucukHalka extends StatefulWidget {
   State<_KucukHalka> createState() => _KucukHalkaState();
 }
 
-/// Lejantın satır sınırı: 4 satır × 44pt ≈ halkanın boyu. Daha fazlası
-/// kartı uzatıp listeyi yeniden aşağı iterdi.
-const _enCokSatir = 4;
+/// Lejant öğesi. [tur] `null` ise birden çok küçük türün katlandığı
+/// "Diğer (N)" öğesidir; [sayi] katlanan tür adedi.
+class LejantOgesi {
+  const LejantOgesi({
+    required this.tur,
+    required this.tutar,
+    required this.pay,
+    this.sayi = 1,
+  });
+
+  final PortfoyGrubu? tur;
+  final double tutar;
+  final double pay;
+  final int sayi;
+
+  bool get katlanmis => tur == null;
+}
+
+/// Payı [esik]in altındaki dilimleri tek "Diğer" öğesine katlar; sıra
+/// korunur (katlanan öğe sonda). Tek küçük dilim olduğu gibi kalır:
+/// katlamak hiçbir şey kazandırmaz, adını saklardı. `build()` dışında saf
+/// fonksiyon ki test edilebilsin.
+///
+/// Varsayılan eşik 0 = HİÇBİR tür katlanmaz (kullanıcı kuralı 2026-10-10,
+/// bkz. [_KucukHalka]); ilk sürümde 0,02 idi.
+List<LejantOgesi> lejantKatla(
+  List<({PortfoyGrubu grup, double tutar, double pay})> dilimler, {
+  double esik = 0,
+}) {
+  final kucuk = dilimler.where((d) => d.pay < esik).toList();
+  final sonuc = <LejantOgesi>[
+    for (final d in dilimler)
+      if (d.pay >= esik || kucuk.length == 1)
+        LejantOgesi(tur: d.grup, tutar: d.tutar, pay: d.pay),
+  ];
+  if (kucuk.length > 1) {
+    sonuc.add(LejantOgesi(
+      tur: null,
+      tutar: kucuk.fold(0.0, (s, d) => s + d.tutar),
+      pay: kucuk.fold(0.0, (s, d) => s + d.pay),
+      sayi: kucuk.length,
+    ));
+  }
+  return sonuc;
+}
+
+/// [adet] öğe, sayfada [sayfaBasina] öğeyle kaç sayfa eder (en az 1).
+int lejantSayfaSayisi(int adet, int sayfaBasina) =>
+    adet <= 0 ? 1 : (adet + sayfaBasina - 1) ~/ sayfaBasina;
+
+/// Lejantın satır sayısı: 4 × 44pt dokunma hedefi ≈ halkanın boyu + nokta
+/// satırı. Tür sayısından bağımsız; az türde satırlar boşluğu eşit paylaşır.
+const _lejantSatirSayisi = 4;
+
+/// İki sütun için gereken en az genişlik. Hücre iki satır (ad + yüzde);
+/// en uzun tür adı ("Eurobond", 13pt) ~60pt + nokta ve boşluklar ~75pt;
+/// iki hücre + ara boşluk 150pt'nin altında sığmaz, tek sütuna düşülür.
+const _ikiSutunEnAz = 150.0;
+
+/// Bu ölçeğin üstünde iki satırlı hücre 44pt'ye sığmaz; tek sütun + tek
+/// satır (yüzde adın yanında) kullanılır.
+const _ikiSutunMetinOlcegi = 1.3;
 
 /// Küçük halkanın kutusu (pt).
 const double _halkaCapi = 120;
@@ -910,7 +1043,12 @@ class _KucukHalkaState extends State<_KucukHalka>
   /// Bayrak `goz_alici` açıkken (göz alıcılık B, 2026-10-09): dilime dokunmak
   /// o türü seçer (lejant satırıyla AYNI iş, `onTypeSelected`) — dilim
   /// kalınlaşıp öne çıkar, ortadaki tutar o dilime geçer. Seçili dilime
-  /// ikinci dokunuş ya da ortaya dokunuş büyük halkayı açar. Neden: halka
+  /// ikinci dokunuş seçimi KALDIRIR ("Tümü"ye döner; lejant satırının ve
+  /// büyük halkanın ikinci dokunuşuyla aynı). Ortaya dokunuş büyük halkayı
+  /// açar. İlk sürümde ikinci dokunuş da büyük halkayı açıyordu; kullanıcı
+  /// filtreden çıkmak isterken detay sayfasına düşüyordu (TestFlight
+  /// 2026-10-10: "tekrar tıklayınca Tümü default state'e geçmesi lazım ama
+  /// detaylı sayfa açıyor"). Neden: halka
   /// dokunulabilir görünüyordu ama hangi dilime basılırsa basılsın aynı alt
   /// sayfayı açıyordu; parmağın altındaki dilim tepki vermiyordu. Ekran
   /// okuyucu için düğüm değişmedi ("halkayı aç"); tür seçimi lejantta.
@@ -919,17 +1057,19 @@ class _KucukHalkaState extends State<_KucukHalka>
       widget.onHalka();
       return;
     }
+    // Çizilen dilimlerle aynı küme: katlanmış "Diğer" dilimi `null` döner
+    // → büyük halka açılır (orada türler tek tek).
     final d = kucukHalkaDilimi(
-      [for (final x in widget.dilimler) (tur: x.grup, pay: x.pay)],
+      [for (final o in lejantKatla(widget.dilimler)) (tur: o.tur, pay: o.pay)],
       _sonDokunus,
       const Size.square(_halkaCapi),
     );
-    if (d == null || d == widget.secili) {
+    if (d == null) {
       widget.onHalka();
       return;
     }
     SandikHaptic.selection.perform();
-    widget.onTypeSelected(d);
+    widget.onTypeSelected(d == widget.secili ? null : d);
   }
 
   @override
@@ -961,16 +1101,20 @@ class _KucukHalkaState extends State<_KucukHalka>
         : dilimler.where((d) => d.grup == secili).firstOrNull;
     final toplam = dilimler.fold<double>(0, (s, d) => s + d.tutar);
 
-    // Fazla tür varsa son satır "+N tür" olur; seçili tür gizlenen
-    // satırlardaysa yine görünsün diye onu öne alırız.
-    final tasma = dilimler.length > _enCokSatir;
-    var gorunen = tasma
-        ? dilimler.take(_enCokSatir - 1).toList()
-        : List.of(dilimler);
-    if (tasma && seciliDilim != null && !gorunen.contains(seciliDilim)) {
-      gorunen = [...gorunen.take(_enCokSatir - 2), seciliDilim];
-    }
-    final gizli = dilimler.length - gorunen.length;
+    final ogeler = lejantKatla(dilimler);
+    // Seçili tür katlanmış gruptaysa (büyük halkada seçildi) halkada ve
+    // lejantta "Diğer (N)" vurgulanır — seçim görünmez kalmasın.
+    final seciliKatlanmis =
+        secili != null && !ogeler.any((o) => o.tur == secili);
+    final katlanmisRenk = context.c.text36;
+    final halkaDilimleri = [
+      for (final o in ogeler)
+        (
+          renk: o.tur?.color ?? katlanmisRenk,
+          pay: o.pay,
+          secili: o.katlanmis ? seciliKatlanmis : o.tur == secili,
+        ),
+    ];
 
     return SandikCard(
       padding: const EdgeInsets.fromLTRB(
@@ -1011,8 +1155,8 @@ class _KucukHalkaState extends State<_KucukHalka>
                                 curve: SandikMotion.enter,
                                 builder: (context, secim, _) => CustomPaint(
                                   painter: _KucukHalkaRessami(
-                                    dilimler: dilimler,
-                                    secili: secili,
+                                    dilimler: halkaDilimleri,
+                                    herhangiSecili: secili != null,
                                     ilerleme: SandikMotion.glide
                                         .transform(_dolum.value),
                                     iz: context.c.overlay,
@@ -1041,29 +1185,14 @@ class _KucukHalkaState extends State<_KucukHalka>
           ),
           const SizedBox(width: SandikSpace.smd),
           Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final d in gorunen)
-                  _LejantSatiri(
-                    renk: d.grup.color,
-                    etiket: d.grup.labelOf(l10n),
-                    deger: fmtPct(d.pay * 100, digits: 1),
-                    secili: secili == d.grup,
-                    soluk: secili != null && secili != d.grup,
-                    onTap: () =>
-                        widget.onTypeSelected(secili == d.grup ? null : d.grup),
-                  ),
-                if (gizli > 0)
-                  _LejantSatiri(
-                    renk: null,
-                    etiket: l10n.s3DigerTurler(gizli),
-                    deger: '›',
-                    secili: false,
-                    soluk: secili != null,
-                    onTap: widget.onHalka,
-                  ),
-              ],
+            child: _Lejant(
+              key: const ValueKey('kucuk-halka-lejant'),
+              ogeler: ogeler,
+              secili: secili,
+              seciliKatlanmis: seciliKatlanmis,
+              katlanmisRenk: katlanmisRenk,
+              onTypeSelected: widget.onTypeSelected,
+              onHalka: widget.onHalka,
             ),
           ),
         ],
@@ -1116,7 +1245,175 @@ class _KucukHalkaState extends State<_KucukHalka>
   }
 }
 
-/// Lejant satırı: görsel ~28pt, dokunma hedefi 44pt (`SandikTouch.min`).
+/// Sabit boylu, sayfalı tür lejantı (gerekçe `_KucukHalka`).
+class _Lejant extends StatefulWidget {
+  const _Lejant({
+    super.key,
+    required this.ogeler,
+    required this.secili,
+    required this.seciliKatlanmis,
+    required this.katlanmisRenk,
+    required this.onTypeSelected,
+    required this.onHalka,
+  });
+
+  final List<LejantOgesi> ogeler;
+  final PortfoyGrubu? secili;
+  final bool seciliKatlanmis;
+  final Color katlanmisRenk;
+  final ValueChanged<PortfoyGrubu?> onTypeSelected;
+  final VoidCallback onHalka;
+
+  @override
+  State<_Lejant> createState() => _LejantState();
+}
+
+class _LejantState extends State<_Lejant> {
+  final PageController _sayfa = PageController();
+  int _sayfaNo = 0;
+
+  /// Son yerleşimde sayfa başına öğe (sütun × satır). `didUpdateWidget`
+  /// `LayoutBuilder` dışında çalıştığı için buradan okur.
+  int _sayfaBasina = _lejantSatirSayisi;
+
+  @override
+  void didUpdateWidget(_Lejant eski) {
+    super.didUpdateWidget(eski);
+    final s = widget.secili;
+    if (s == null || s == eski.secili) return;
+    final i = widget.ogeler.indexWhere((o) => o.tur == s);
+    // Seçili grup katlanmışsa (lejantta yok) "Diğer" son öğedir.
+    final hedef = (i < 0 ? widget.ogeler.length - 1 : i) ~/ _sayfaBasina;
+    if (hedef != _sayfaNo && _sayfa.hasClients) {
+      _sayfa.animateToPage(
+        hedef,
+        duration: SandikMotion.stateOf(context),
+        curve: SandikMotion.enter,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _sayfa.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, k) {
+      final buyukMetin =
+          MediaQuery.textScalerOf(context).scale(1) > _ikiSutunMetinOlcegi;
+      final sutun = !buyukMetin && k.maxWidth >= _ikiSutunEnAz ? 2 : 1;
+      final sayfaBasina = sutun * _lejantSatirSayisi;
+      _sayfaBasina = sayfaBasina;
+      final sayfaSayisi = lejantSayfaSayisi(widget.ogeler.length, sayfaBasina);
+      final sayfaNo = _sayfaNo.clamp(0, sayfaSayisi - 1);
+
+      Widget sayfaKur(int s) => _LejantSayfasi(
+            ogeler: widget.ogeler.skip(s * sayfaBasina).take(sayfaBasina).toList(),
+            sutun: sutun,
+            secili: widget.secili,
+            seciliKatlanmis: widget.seciliKatlanmis,
+            katlanmisRenk: widget.katlanmisRenk,
+            onTypeSelected: widget.onTypeSelected,
+            onHalka: widget.onHalka,
+          );
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: _lejantSatirSayisi * SandikTouch.min,
+            child: sayfaSayisi == 1
+                ? sayfaKur(0)
+                : PageView.builder(
+                    controller: _sayfa,
+                    itemCount: sayfaSayisi,
+                    onPageChanged: (i) => setState(() => _sayfaNo = i),
+                    itemBuilder: (_, i) => sayfaKur(i),
+                  ),
+          ),
+          // Nokta satırı tek sayfada da yer tutar: kartın boyu sayfa
+          // sayısıyla oynamasın.
+          SizedBox(
+            height: SandikSpace.sm,
+            child: Center(
+              child: SayfaNoktalari(sayi: sayfaSayisi, secili: sayfaNo),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+}
+
+/// Bir lejant sayfası: [_lejantSatirSayisi] satır, [sutun] sütun; öğeler
+/// satır satır dolar, boş yuvalar yer tutar.
+class _LejantSayfasi extends StatelessWidget {
+  const _LejantSayfasi({
+    required this.ogeler,
+    required this.sutun,
+    required this.secili,
+    required this.seciliKatlanmis,
+    required this.katlanmisRenk,
+    required this.onTypeSelected,
+    required this.onHalka,
+  });
+
+  final List<LejantOgesi> ogeler;
+  final int sutun;
+  final PortfoyGrubu? secili;
+  final bool seciliKatlanmis;
+  final Color katlanmisRenk;
+  final ValueChanged<PortfoyGrubu?> onTypeSelected;
+  final VoidCallback onHalka;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    Widget hucre(int i) {
+      if (i >= ogeler.length) return const Expanded(child: SizedBox.shrink());
+      final o = ogeler[i];
+      final tur = o.tur;
+      final secildi = tur == null ? seciliKatlanmis : tur == secili;
+      return Expanded(
+        child: _LejantSatiri(
+          renk: tur?.color ?? katlanmisRenk,
+          etiket:
+              tur == null ? l10n.s3DigerKatlanan(o.sayi) : tur.labelOf(l10n),
+          deger: fmtPct(o.pay * 100, digits: 1),
+          secili: secildi,
+          soluk: (secili != null || seciliKatlanmis) && !secildi,
+          ikiSatir: sutun > 1,
+          onTap: tur == null
+              ? onHalka
+              : () => onTypeSelected(secili == tur ? null : tur),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        for (var r = 0; r < _lejantSatirSayisi; r++)
+          if (r * sutun < ogeler.length)
+            Row(
+              children: [
+                for (var c = 0; c < sutun; c++) ...[
+                  if (c > 0) const SizedBox(width: SandikSpace.sm),
+                  hucre(r * sutun + c),
+                ],
+              ],
+            ),
+      ],
+    );
+  }
+}
+
+/// Lejant hücresi: görsel ~28pt, dokunma hedefi 44pt (`SandikTouch.min`).
+/// [ikiSatir] iki sütunlu lejantta: yüzde adın altına iner ki dar hücrede
+/// ad kısalmasın ("metin tam okunur" kuralı).
 class _LejantSatiri extends StatelessWidget {
   const _LejantSatiri({
     required this.renk,
@@ -1125,19 +1422,29 @@ class _LejantSatiri extends StatelessWidget {
     required this.secili,
     required this.soluk,
     required this.onTap,
+    this.ikiSatir = false,
   });
 
-  /// `null`: "+N tür" satırı (nokta yok).
-  final Color? renk;
+  final Color renk;
   final String etiket;
   final String deger;
   final bool secili;
   final bool soluk;
+  final bool ikiSatir;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final renk = this.renk;
+    final etiketStili = context.t.bodyMedium?.copyWith(
+      fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+      color: secili ? renk : context.c.text58,
+    );
+    final degerStili = (ikiSatir ? context.t.bodySmall : context.t.bodyMedium)
+        ?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: secili ? renk : context.c.text90,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
     return Semantics(
       button: true,
       selected: secili,
@@ -1151,39 +1458,42 @@ class _LejantSatiri extends StatelessWidget {
             opacity: soluk ? 0.45 : 1,
             child: Row(
               children: [
-                if (renk != null)
-                  AnimatedContainer(
-                    duration: SandikMotion.stateOf(context),
-                    curve: SandikMotion.enter,
-                    width: secili ? SandikSpace.smd : SandikSpace.sm,
-                    height: secili ? SandikSpace.smd : SandikSpace.sm,
-                    decoration:
-                        BoxDecoration(color: renk, shape: BoxShape.circle),
-                  )
-                else
-                  const SizedBox(width: SandikSpace.sm),
+                AnimatedContainer(
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
+                  width: secili ? SandikSpace.smd : SandikSpace.sm,
+                  height: secili ? SandikSpace.smd : SandikSpace.sm,
+                  decoration:
+                      BoxDecoration(color: renk, shape: BoxShape.circle),
+                ),
                 const SizedBox(width: SandikSpace.sm),
-                // Büyük yazıda etiket kısaltılır, yüzde her zaman görünür.
-                Expanded(
-                  child: Text(
-                    etiket,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.t.bodyMedium?.copyWith(
-                      fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
-                      color: secili ? renk : context.c.text58,
+                if (ikiSatir)
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(etiket,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: etiketStili),
+                        Text(deger, style: degerStili),
+                      ],
+                    ),
+                  )
+                else ...[
+                  // Büyük yazıda etiket kısaltılır, yüzde her zaman görünür.
+                  Expanded(
+                    child: Text(
+                      etiket,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: etiketStili,
                     ),
                   ),
-                ),
-                const SizedBox(width: SandikSpace.xs2),
-                Text(
-                  deger,
-                  style: context.t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: secili ? renk : context.c.text90,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
+                  const SizedBox(width: SandikSpace.xs2),
+                  Text(deger, style: degerStili),
+                ],
               ],
             ),
           ),
@@ -1195,18 +1505,19 @@ class _LejantSatiri extends StatelessWidget {
 
 /// Küçük halkayı çizer. [ilerleme] 0→1: halka tepeden saat yönünde dolarken
 /// bütünü çeyrek tur geriden döner ("dönerek dolma"); 1'de büyük halkayla
-/// aynı yerleşim (tepeden başlar, büyükten küçüğe).
+/// aynı yerleşim (tepeden başlar, büyükten küçüğe). Dilimler lejantla
+/// birebir (her tür kendi dilimi; katlama yok).
 class _KucukHalkaRessami extends CustomPainter {
   _KucukHalkaRessami({
     required this.dilimler,
-    required this.secili,
+    required this.herhangiSecili,
     required this.ilerleme,
     required this.iz,
     this.secim = 1,
   });
 
-  final List<({PortfoyGrubu grup, double tutar, double pay})> dilimler;
-  final PortfoyGrubu? secili;
+  final List<({Color renk, double pay, bool secili})> dilimler;
+  final bool herhangiSecili;
   final double ilerleme;
   final Color iz;
 
@@ -1219,6 +1530,10 @@ class _KucukHalkaRessami extends CustomPainter {
 
   /// Dilimler arası boşluk (radyan); tek dilimde boşluk yok.
   static const _bosluk = 0.06;
+
+  /// Bu payın altındaki dilimde boşluk bırakılmaz: boşluk (≈%1) dilimi
+  /// yutar, dilim hiç çizilmezdi.
+  static const _boslukEsigi = 0.015;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1237,7 +1552,6 @@ class _KucukHalkaRessami extends CustomPainter {
     );
 
     final tam = 2 * math.pi;
-    final bosluk = dilimler.length > 1 ? _bosluk : 0.0;
     final dolu = tam * ilerleme;
     var bas = -math.pi / 2 - (math.pi / 2) * (1 - ilerleme);
     var cizilen = 0.0;
@@ -1245,9 +1559,10 @@ class _KucukHalkaRessami extends CustomPainter {
       final aci = tam * d.pay;
       final kalan = dolu - cizilen;
       if (kalan <= 0) break;
+      final bosluk =
+          dilimler.length > 1 && d.pay >= _boslukEsigi ? _bosluk : 0.0;
       final gorunen = math.min(aci, kalan) - bosluk;
       if (gorunen > 0) {
-        final secildi = secili == d.grup;
         canvas.drawArc(
           kutu,
           bas + bosluk / 2,
@@ -1255,11 +1570,11 @@ class _KucukHalkaRessami extends CustomPainter {
           false,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = secildi
+            ..strokeWidth = d.secili
                 ? _kalinlik + (_seciliKalinlik - _kalinlik) * secim
                 : _kalinlik
-            ..color = d.grup.color.withValues(
-                alpha: secili == null || secildi ? 1 : 1 - 0.7 * secim),
+            ..color = d.renk.withValues(
+                alpha: !herhangiSecili || d.secili ? 1 : 1 - 0.7 * secim),
         );
       }
       bas += aci;
@@ -1270,12 +1585,10 @@ class _KucukHalkaRessami extends CustomPainter {
   @override
   bool shouldRepaint(_KucukHalkaRessami eski) =>
       eski.ilerleme != ilerleme ||
-      eski.secili != secili ||
+      eski.herhangiSecili != herhangiSecili ||
       eski.secim != secim ||
       eski.iz != iz ||
-      !listEquals(
-          [for (final d in eski.dilimler) (d.grup, d.pay)],
-          [for (final d in dilimler) (d.grup, d.pay)]);
+      !listEquals(eski.dilimler, dilimler);
 }
 
 // ── Donut Chart ───────────────────────────────────────────────────────────────
@@ -1293,13 +1606,22 @@ class _AssetTypeDonut extends StatefulWidget {
   /// sayfası; bkz. `_halkayiAc`). Ekrandaki eski halkada verilmez — orada
   /// seçim halkanın kendi durumudur.
   final PortfoyGrubu? baslangicTuru;
+
+  /// Ekranın liste süzgeci — verilirse halkanın seçili dilimi ONA uyar
+  /// ([denetimli]). Halka seçimi kendi içinde tutuyordu; ekleme sonrası
+  /// süzgeç "Tümü"ye dönünce (`VarlikEklendi`) liste tüm portföyü
+  /// gösterirken halkada "Altın" seçili kalıyordu (TestFlight 2026-10-10).
+  final PortfoyGrubu? secili;
+  final bool denetimli;
   const _AssetTypeDonut(
       {required this.assets,
       required this.pState,
       required this.baz,
       required this.onTypeSelected,
       this.pazarAyir = false,
-      this.baslangicTuru});
+      this.baslangicTuru,
+      this.secili,
+      this.denetimli = false});
 
   @override
   State<_AssetTypeDonut> createState() => _AssetTypeDonutState();
@@ -1311,6 +1633,10 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
   /// [_AssetTypeDonut.baslangicTuru] yalnız İLK kurulumda uygulanır; sonra
   /// seçim kullanıcının dokunuşudur.
   bool _baslangicUygulandi = false;
+
+  /// Son uyulan [_AssetTypeDonut.secili] — yalnız DEĞİŞİNCE seçim ona
+  /// çekilir; arada kullanıcının dokunuşu geçerli kalır.
+  PortfoyGrubu? _uyulanSecili;
 
   /// Son çizilen dilimler (tür → pay) ve seçili dilim. Halka YALNIZ
   /// görünür bir değişimde morf eder (animasyon denetimi 2026-10-01,
@@ -1364,6 +1690,13 @@ class _AssetTypeDonutState extends State<_AssetTypeDonut> {
           ? -1
           : sorted.indexWhere((e) => e.key == widget.baslangicTuru);
       if (i >= 0) _touchedIndex = i;
+    }
+    if (widget.denetimli && widget.secili != _uyulanSecili) {
+      _uyulanSecili = widget.secili;
+      final i = widget.secili == null
+          ? -1
+          : sorted.indexWhere((e) => e.key == widget.secili);
+      _touchedIndex = i >= 0 ? i : null;
     }
     final morf = _gorunurDegisti(sorted, totalVal);
     final touched = _touchedIndex != null && _touchedIndex! < sorted.length
@@ -1574,10 +1907,12 @@ class _AssetList {
 
   /// Bir kez parlayacak yeni satırın anahtarı (bkz. `_yeniSatiriBul`).
   final String? vurgulanan;
+  final int vurguNo;
   final GlobalKey vurguAnahtari;
 
   const _AssetList({
     required this.vurgulanan,
+    required this.vurguNo,
     required this.vurguAnahtari,
     required this.positions,
     required this.pState,
@@ -1615,6 +1950,7 @@ class _AssetList {
     return _YeniVarlikParlamasi(
         key: ValueKey(position.key),
         aktif: position.key == vurgulanan,
+        tetik: vurguNo,
         child: _AssetCard(
           key: position.key == vurgulanan ? vurguAnahtari : null,
           position: position,
@@ -1647,10 +1983,15 @@ class _YeniVarlikParlamasi extends StatefulWidget {
   const _YeniVarlikParlamasi({
     super.key,
     required this.aktif,
+    this.tetik = 0,
     required this.child,
   });
 
   final bool aktif;
+
+  /// Değişince (ve [aktif]se) parlama yeniden oynar — kart zaten listedeyken
+  /// vurgulanan satır (var olan pozisyona alış, `VarlikEklendi`).
+  final int tetik;
   final Widget child;
 
   @override
@@ -1678,6 +2019,18 @@ class _YeniVarlikParlamasiState extends State<_YeniVarlikParlamasi>
     }
   }
 
+  @override
+  void didUpdateWidget(_YeniVarlikParlamasi old) {
+    super.didUpdateWidget(old);
+    if (!widget.aktif || (old.aktif && old.tetik == widget.tetik)) return;
+    _c ??= AnimationController(
+      vsync: this,
+      duration: SandikMotion.flow * 2,
+      value: 1,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bekleVeYak());
+  }
+
   void _bekleVeYak() {
     if (!mounted) return;
     final g = TickerMode.getValuesNotifier(context);
@@ -1685,6 +2038,7 @@ class _YeniVarlikParlamasiState extends State<_YeniVarlikParlamasi>
       _yak();
       return;
     }
+    _gorunurluk?.removeListener(_gorunurlukDegisti); // tekrar tetikte çift olmasın
     _gorunurluk = g..addListener(_gorunurlukDegisti);
   }
 

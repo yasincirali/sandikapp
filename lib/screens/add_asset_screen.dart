@@ -45,6 +45,7 @@ import 'add_asset/mevduat_formu.dart';
 import 'add_asset/tur_secici_izgara.dart';
 import '../models/tur_secici_duzeni.dart';
 import '../widgets/sozlesme_formu_ortak.dart';
+import '../services/varlik_eklendi.dart';
 
 const _addAssetUuid = Uuid();
 
@@ -172,6 +173,18 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   static const _currencies = ['TRY', 'USD', 'EUR', 'GBP'];
   bool get _isEditing => widget.editingAsset != null;
 
+  /// Kayıt başarıyla bitti: ekleme ise duyurulur (Portföy "Tümü"de açılır,
+  /// yeni satır parlar — `VarlikEklendi`), sonra form [sonuc] ile kapanır.
+  /// Düzenleme ve sepet modu yeni varlık eklemez, duyurmaz.
+  void _kayitBitti(Object sonuc) {
+    if (!_isEditing && !widget.cartMode) {
+      VarlikEklendi.duyur(
+          pozisyonAnahtari:
+              ref.read(portfolioProvider.notifier).sonEklenenPozisyon);
+    }
+    Navigator.pop(context, sonuc);
+  }
+
   // Sözleşmeli türler (mevduat, BES) kendi formlarıyla girilir; bkz.
   // `add_asset/sozlesme_formu_ortak.dart`. Genel formun durumu onlara hiç
   // dokunmaz — tür çipi yalnızca gövdeyi değiştirir.
@@ -204,7 +217,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (tamam) {
       // Bayrak açık kalır: kapanış animasyonunda buton yeniden basılmasın
       // (genel `_save` ile aynı gerekçe).
-      Navigator.of(context).pop(true);
+      _kayitBitti(true);
       return;
     }
     _n.setSaving(false);
@@ -2395,7 +2408,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
           }
           if (ctx.mounted) Navigator.pop(ctx);
           // Hızlı giriş de bir kayıttır — `_save()` ile aynı sinyali döndürür.
-          if (kaydedildi && mounted) Navigator.pop(context, true);
+          if (kaydedildi && mounted) _kayitBitti(true);
         },
       ),
     );
@@ -2747,7 +2760,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // geldiyse ayrıca "Alarm kur" eylemli bir bildirim gösterir. Sonuçsuz
     // `pop` edilirse kullanıcı hangi sekmedeyse orada kalır ve eklediği
     // varlığı göremez.
-    Navigator.pop(context, alarmAdayi ?? true);
+    _kayitBitti(alarmAdayi ?? true);
     return _KayitSonu.kapandi;
   }
 }

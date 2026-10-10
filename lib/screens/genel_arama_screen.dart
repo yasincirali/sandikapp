@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' show Icons, Material, Colors;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/arama_eylemleri.dart';
+import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/varlik_kimligi.dart';
 import '../providers/portfolio_provider.dart';
@@ -314,7 +315,11 @@ class _GenelAramaScreenState extends ConsumerState<GenelAramaScreen> {
   /// "tutarları gizle" burada ayrıca düşünülmesin, satır yalnızca bulur.
   Widget _varlikSatiri(BuildContext context, Position p) {
     final a = p.representative;
-    final kod = pozisyonKodu(a.ticker);
+    // Mevduatın sembolü sözleşme UUID'si (`MEVDUAT:<id>`) — kullanıcıya bir
+    // şey söylemez, alt satıra yazılmaz (tür dökümündeki GUID bulgusunun
+    // eşi, TestFlight 2026-10-10; bkz. `pozisyonEtiketi`).
+    final kod =
+        mevduatSozlesmeId(a.ticker) != null ? '' : pozisyonKodu(a.ticker);
     return Padding(
       padding: const EdgeInsets.only(bottom: SandikSpace.sm),
       child: SandikTappable(

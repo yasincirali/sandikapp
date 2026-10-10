@@ -7257,8 +7257,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s3HalkayiAc => 'Dağılımı büyük halkada aç';
 
   @override
-  String s3DigerTurler(int n) {
-    return '+$n tür';
+  String s3DigerKatlanan(int n) {
+    return 'Diğer ($n)';
   }
 
   @override

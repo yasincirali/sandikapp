@@ -518,6 +518,11 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ]));
     _gunIciSeriyiDusur();
   }
+  /// Son eklenen lotun pozisyon anahtarı (`positionKey`) — ekleme akışı
+  /// bunu `VarlikEklendi.duyur`'a geçirir, Portföy o satırı parlatır.
+  /// Ekleme ekranı kimlik döndürmüyordu; anahtarı yeniden kurmak (tür, alt
+  /// kategori, para birimi) `positionKey` kuralının kopyası olurdu.
+  String? sonEklenenPozisyon;
 
   Future<void> addAsset({
     required String name,
@@ -596,6 +601,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
 
     await SupabaseService.instance.insertAsset(asset);
+    sonEklenenPozisyon = positionKey(asset);
 
     unawaited(AnalyticsService.instance.logAssetAdded(
       type: type.name,
@@ -672,6 +678,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
 
     await SupabaseService.instance.insertAssets(lots);
+    sonEklenenPozisyon = positionKey(lots.first);
 
     for (final a in {for (final l in lots) l.type}) {
       unawaited(AnalyticsService.instance.logAssetAdded(type: a.name));

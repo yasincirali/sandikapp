@@ -192,7 +192,8 @@ class PercentComparisonChart extends StatelessWidget {
               colorOf(ciz.cizilenler[i])
             ),
       ],
-      builder: (minX, maxX) => _data(p, ciz, minX, maxX),
+      builder: (minX, maxX) =>
+          _data(p, ciz, minX, maxX, MediaQuery.textScalerOf(context)),
     );
   }
 
@@ -366,10 +367,18 @@ class PercentComparisonChart extends StatelessWidget {
     );
   }
 
-  LineChartData _data(
-      SandikPalette p, _CizimVerisi ciz, double minX, double maxX) {
+  LineChartData _data(SandikPalette p, _CizimVerisi ciz, double minX,
+      double maxX, TextScaler olcek) {
     final eksen = ciz.eksen;
     final span = maxX - minX;
+    final spanGun = span / const Duration(days: 1).inMilliseconds;
+    // Etiketler ekran genişliğine göre seyrelir (`xEtiketiAtlanir`).
+    final xStil = TextStyle(fontSize: 9, color: p.text36);
+    final etiketPx = GrafikStili.xEtiketAraligi(
+      zamanEtiketiOrnegi(spanGun: spanGun, gunIci: ciz.eksenX.gunIci),
+      stil: xStil,
+      olcek: olcek,
+    );
 
     return LineChartData(
       minX: minX,
@@ -448,16 +457,20 @@ class PercentComparisonChart extends StatelessWidget {
               // `value <= meta.min` kontrolü zoom'da yetmiyordu: adım artık
               // sınırlara denk gelmediği için kenara bir tık uzak bir tick
               // etiketi çizim alanının dışına taşıyordu.
-              if (eksenKenarinda(value, meta.min, meta.max)) {
+              if (eksenKenarinda(value, meta.min, meta.max) ||
+                  xEtiketiAtlanir(value,
+                      aralik: meta.max - meta.min,
+                      tickAraligi: meta.appliedInterval,
+                      eksenPx: meta.parentAxisSize,
+                      etiketPx: etiketPx,
+                      taban: ciz.eksenX.baseline)) {
                 return const SizedBox.shrink();
               }
               final t = DateTime.fromMillisecondsSinceEpoch(value.round());
               return GrafikStili.xEtiketi(
-                zamanEtiketi(t,
-                    spanGun: span / const Duration(days: 1).inMilliseconds,
-                    gunIci: ciz.eksenX.gunIci),
+                zamanEtiketi(t, spanGun: spanGun, gunIci: ciz.eksenX.gunIci),
                 dolgu: const EdgeInsets.only(top: 6),
-                stil: TextStyle(fontSize: 9, color: p.text36),
+                stil: xStil,
               );
             },
           ),

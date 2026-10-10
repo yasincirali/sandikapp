@@ -342,9 +342,11 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
       }
       if (!mounted) return;
       final yeni = await _seriYukle(nabiz: true);
-      if (!mounted || yeni == null) return;
-      setState(() => _seri = yeni);
-      _anligiKaydet();
+      if (!mounted) return;
+      // Seri gelmediyse de yeniden çiz: eğri iskeleti `_turBekleniyor`a
+      // bağlı, aksi halde bir sonraki fiyat tikine kadar asılı kalırdı.
+      setState(() => _seri = yeni ?? _seri);
+      if (yeni != null) _anligiKaydet();
     }(), reason: 'BugunKarti.turBitinceYukle');
   }
 
@@ -701,6 +703,14 @@ class _BugunKartiState extends ConsumerState<BugunKarti> {
             // 30 sn'lik tazelemeler yalnız yeni noktayı ekler.
             anahtar: dayKey(now),
           ),
+        ] else if (!gizli && _seri == null && (_yukleniyor || _turBekleniyor)) ...[
+          // Seri açılış fiyat turunu bekliyor (`_turBitinceYukle`): eğrinin
+          // yeri İSKELETLE tutulur. Eskiden hiç yer ayrılmıyordu; tur bitince
+          // eğri araya giriyor, kart büyüyüp altındaki her şey aşağı
+          // kayıyordu (TestFlight bulgusu 2026-10-10, "grafik geç çiziliyor").
+          // Eski fiyatla eğri ÇİZİLMEZ — kural `_seriYukle` notunda.
+          const SizedBox(height: SandikSpace.sm2),
+          const SandikSkeleton(height: _egriYuksekligi),
         ],
         const SizedBox(height: SandikSpace.sm2),
         _DonemCipleri(onSec: (p) => _ozeteGit(periodIdx: p.index)),

@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
@@ -130,6 +130,33 @@ abstract final class GrafikStili {
         ),
       );
 
+  /// [xEtiketi] kutusunun varsayılan genişliği.
+  static const xEtiketGenisligi = 74.0;
+
+  /// İki X etiketinin çakışmaması için tick'ler arasında gereken piksel —
+  /// `xEtiketiAtlanir`'ın `etiketPx`'i (bkz. `chart_axis.dart`).
+  ///
+  /// Metin [olcek] (kullanıcının yazı boyutu) ile ÖLÇÜLÜR: büyük yazı
+  /// ayarında aynı etiket daha geniştir ve seyreltme bunu hesaba katmalı.
+  /// Kutu [genislik]'ten geniş metni "…" ile keser; o yüzden üst sınır
+  /// kutu. Aradaki [SandikSpace.sm] etiketlerin birbirine değmemesi için.
+  static double xEtiketAraligi(
+    String ornek, {
+    required TextStyle stil,
+    required TextScaler olcek,
+    double genislik = xEtiketGenisligi,
+  }) {
+    final tp = TextPainter(
+      text: TextSpan(text: ornek, style: stil),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+      textScaler: olcek,
+    )..layout();
+    final w = tp.width;
+    tp.dispose();
+    return (w < genislik ? w : genislik) + SandikSpace.sm;
+  }
+
   /// Zaman (X) ekseni etiketi — SABİT genişlikte kutu, tick'e ortalı, tek
   /// satır; sığmayan metin "…" olur.
   ///
@@ -141,7 +168,7 @@ abstract final class GrafikStili {
   static Widget xEtiketi(
     String metin, {
     required TextStyle stil,
-    double genislik = 74,
+    double genislik = xEtiketGenisligi,
     EdgeInsets dolgu = const EdgeInsets.only(top: SandikSpace.sm2),
   }) =>
       Padding(
