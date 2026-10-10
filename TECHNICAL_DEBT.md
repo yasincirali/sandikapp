@@ -5,7 +5,7 @@ Ertelenmiş **kod** kararları. Kullanıcının elden yapacağı işler
 
 Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
-**Son güncelleme:** 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
+**Son güncelleme:** 2026-10-10 (Fon X-Ray uygulandı; kalan dört borç maddesi Olgun Premium 1. bentte); 2026-10-09 (yıllık özet ortak hikâye kabuğuna taşınmadı); 2026-10-08 (Bugün kartı ölü satırları ve `RealReturnStrip` KAPANDI); 2026-10-05 (Auth güvenlik kaydı 90 gün: panel/huni penceresi; sadeleştirme bayrakları kaldırıldı; Bugün kartı çizmediği satırları ölçüyor); 2026-10-04 (iki varlık yüzeyi: grafik/veri yolu ayrı); 2026-10-01 (animasyon denetimi ertelenenleri); 2026-09-30 (mevduat/BES v1 ertelenenleri); 2026-09-26 (`_build_legal.py` ana sayfayı eskitiyor); 2026-09-25 (giriş alanı dolgusu; kripto: gece alarmı, widget "piyasa açık" bayrağı, toz miktar)
 
 ---
 
@@ -19,11 +19,23 @@ adlandırıldığını buldu: `POST /api/funds/dagilimSiraliGetirT`, günlük 57
 varlık sınıfı yüzdesi (YAT/EMK/BYF), tek fon süzgeci `fonKod` (yalnız
 `fonKodu` tüm evreni döndürür), istek başına ≤1 ay, geriye ≤5 yıl,
 ~6 istek/dk, belgesiz. Kalem bazlı veri yalnız KAP Portföy Dağılım Raporu
-PDF'lerinde (aylık, T+~6 iş günü, kurucuya göre değişen düzen). Plan:
-v1 sunucu cron'u TEFAS sınıf dağılımı, v2 KAP PDF ayrıştırma (her sayı
-kaynakta aynen). Tahmin (stil analizi) yazılmaz. Önce TEFAS/KAP kullanım
-koşulları elle okunmalı. Maliyet: Premium listesinde güçlü bir kalem
-eksik. Ne zaman: kullanıcı v1'i onaylayınca.
+PDF'lerinde (aylık, T+~6 iş günü, kurucuya göre değişen düzen). Tahmin
+(stil analizi) yazılmaz.
+**UYGULANDI (2026-10-10, dal `feat/fon-xray`):** Katman B — 0131
+`fon_dagilimlari` + `fon-dagilim` cron'u, varlık kartı
+(`FonDagilimiKarti`) ve Performans › Raporlar › Portföy X-Ray
+(`PortfoyXrayScreen`), Premium tek anahtarına bağlı. Katman A — 0132
+`fon_kalemleri` + `fon-kalem-raporu` (KAP PDF → pdfjs metni → model →
+beş kontrol, biri düşerse belge reddedilir), sunucuda `FON_KALEM_ACIK`,
+istemcide `fon_xray_kalem` ile varsayılan KAPALI. Kalan borç:
+(a) KAP liste ucu günü 2.000 satırda kesiyor, süzgeç yok — yoğun günün
+erken raporları kaçabilir (`fon_kalem_taramasi.kesik`); fon başına ayrı
+bir liste ucu bulunursa oraya geçilmeli. (b) Fon sepeti/hisse fonunun
+tuttuğu fon payları özyinelemeli açılmıyor ("Fon / BYF payı" kovasında
+kalır); kalem katmanı açılınca alt fonun kendi raporu ile açılabilir.
+(c) Yasal bant (Katman C) ayrı bir gösterim olarak yok; yalnız Katman A
+kontrolünde kullanılıyor. (d) TEFAS/KAP kullanım koşulları hâlâ birebir
+okunmadı (YAPMAN_GEREKENLER "Fon X-Ray"); Katman A bu yüzden kapalı.
 
 **2. Çoklu portföy (sepetler).** Yapılmadı: "Ben / Birlikte" süzgeci merkezi
 bir görünüm sağlayıcısı değil, her ekranda ayrı (`_view`, `OrtakSecici`);

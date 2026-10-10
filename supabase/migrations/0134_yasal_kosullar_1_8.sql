@@ -1,4 +1,39 @@
-# Kullanım Koşulları — sandık
+-- 0134 — Yasal metin: Kullanım Koşulları 1.8 (2026-10-10)
+--
+-- ## Neden
+-- Fon X-Ray (dal feat/fon-xray): fonun içindeki varlık sınıfları (TEFAS
+-- günlük dağılımı) ve Portföy X-Ray Premium'a eklendi. Koşullar §2A kapsam
+-- örneklerine "fon içerik dağılımı (X-Ray)" yazıldı. Kişisel veri işleyişi
+-- değişmedi: TEFAS ve KAP kişisel veri ALMAZ (kamuya açık piyasa verisi
+-- sağlayıcıları grubu, kullanıcı kararı 2026-10-08); yeni alıcı, amaç ya da
+-- saklama yok. Bu yüzden ESASLI DEĞİL: yalnız "Sürüm" 1.7 → 1.8; "Onay
+-- sürümü" 1.6 kalır, kimseye yeniden onay sorulmaz (CLAUDE.md "Yasal metin
+-- tek kaynak"). Gizlilik metnine dokunulmadı.
+--
+-- ## Numara
+-- 0133 başka bir dala ayrıldı; bu dal onu kullanmaz. 0131/0132 Fon X-Ray
+-- tablolarıdır.
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: tek metin satırı. Fonksiyon, tablo, RLS ve GRANT'a
+-- DOKUNULMAZ. Onay sürümü değişmediği için eski ve yeni istemcide kapı
+-- açılmaz.
+--
+-- ## Dağıtım sırası
+-- İKİ sunucuya (Frankfurt → Tokyo) → `python tool/sema_esitlik.py`.
+--
+-- ## Metin ekleme
+-- INSERT `tool/yasal_metin_uret_test.dart` çıktısıdır; gövdeye elle
+-- dokunma (hash check'i tutmaz).
+
+-- ── 1) Metin (tool/yasal_metin_uret_test.dart çıktısı)
+
+-- kosullar/1.8/tr  (Kullanım Koşulları)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kosullar', '1.8', 'tr', 'Kullanım Koşulları', date '2026-10-08',
+  'ac80d68b9512ace86d5e9262a5ccefd0e1c24b70130e2019e22900fe422a4040',
+  replace($yasal$# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 10 Ekim 2026
@@ -263,4 +298,28 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- ── 2) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+begin
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity) then
+    raise exception '0134: yasal_metinler RLS (enable + force) kapali';
+  end if;
+  if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
+    raise exception '0134: yasal_metinler istemciden yazilabilir';
+  end if;
+  if not exists (select 1 from public.yasal_metinler
+                  where tur = 'kosullar' and surum = '1.8' and dil = 'tr') then
+    raise exception '0134: kosullar/1.8/tr metni yok';
+  end if;
+  if exists (select 1 from public.yasal_metinler
+              where tur = 'kosullar' and surum = '1.8'
+                and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
+    raise exception '0134: govde_hash tutmuyor';
+  end if;
+  raise notice '0134 tamam: Kosullar 1.8 (onay surumu 1.6).';
+end $$;

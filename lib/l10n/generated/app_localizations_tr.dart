@@ -7796,4 +7796,172 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdSinyalRozet => '8 gösterge';
+
+  @override
+  String get xrKartBaslikUpper => 'FONUN İÇİNDE NE VAR';
+
+  @override
+  String get xrSatirFonunIci => 'Fonun içi';
+
+  @override
+  String xrKaynakTefas(String tarih) {
+    return 'TEFAS · $tarih';
+  }
+
+  @override
+  String xrToplamSapiyor(String toplam) {
+    return 'Kaynaktaki sınıfların toplamı $toplam; fark hiçbir sınıfa eklenmedi.';
+  }
+
+  @override
+  String get xrKilitBaslik => 'Fon X-Ray';
+
+  @override
+  String get xrKilitGovde =>
+      'Fonun parası nerede duruyor: hisse, devlet tahvili, mevduat, altın, döviz… TEFAS\'ın günlük dağılımından, tarih ve kaynakla.';
+
+  @override
+  String get xrKilitSatir => 'Fonun içinde ne var Premium\'da';
+
+  @override
+  String xrKalemlerBaslik(int n) {
+    return 'En büyük $n kalem';
+  }
+
+  @override
+  String xrKaynakKap(String donem) {
+    return 'KAP Portföy Dağılım Raporu · $donem sonu';
+  }
+
+  @override
+  String get xrKapAc => 'Raporu KAP\'ta aç';
+
+  @override
+  String get xrKovaBistHisse => 'BIST hisse';
+
+  @override
+  String get xrKovaYabanciHisse => 'Yabancı hisse';
+
+  @override
+  String get xrKovaDevlet => 'Devlet borçlanması (TL)';
+
+  @override
+  String get xrKovaOzel => 'Özel sektör borçlanması';
+
+  @override
+  String get xrKovaDovizBorc => 'Döviz / dış borçlanma';
+
+  @override
+  String get xrKovaParaPiyasasi => 'Para piyasası / repo';
+
+  @override
+  String get xrKovaMevduat => 'Mevduat / katılma hesabı';
+
+  @override
+  String get xrKovaMaden => 'Kıymetli maden';
+
+  @override
+  String get xrKovaFon => 'Fon / BYF payı';
+
+  @override
+  String get xrKovaGayrimenkul => 'Gayrimenkul / girişim';
+
+  @override
+  String get xrKovaDiger => 'Diğer';
+
+  @override
+  String get xrKovaEtiketsiz => 'Etiketsiz sınıf';
+
+  @override
+  String get xrKovaDoviz => 'Döviz';
+
+  @override
+  String get xrKovaKripto => 'Kripto';
+
+  @override
+  String get xrKovaEmtia => 'Emtia';
+
+  @override
+  String get xrEkranBaslik => 'Portföy X-Ray';
+
+  @override
+  String get xrRaporAlt => 'Fonlarının içi dahil, paran gerçekte nerede';
+
+  @override
+  String get xrToplamEtiket => 'Bugünkü portföyün';
+
+  @override
+  String get xrDagilimUpper => 'GERÇEK DAĞILIM';
+
+  @override
+  String get xrDisi => 'X-Ray dışı';
+
+  @override
+  String get xrDisiAciklama =>
+      'Dağılımı bulunamayan fonlar ve kaynak toplamının %100\'ü tutmadığı fonlardaki fark. Başka sınıflara dağıtılmadı.';
+
+  @override
+  String xrDisiFonlar(String fonlar) {
+    return 'Dağılımı bulunamayan: $fonlar';
+  }
+
+  @override
+  String xrKaynakFonlar(String tarih) {
+    return 'Fonlar: TEFAS günlük dağılımı · $tarih';
+  }
+
+  @override
+  String get xrKaynakDogrudan =>
+      'Doğrudan tuttukların bugünkü fiyatla; ortaklarının varlıkları dahil değil.';
+
+  @override
+  String get xrBos => 'X-Ray\'lenecek bir varlığın yok';
+
+  @override
+  String get xrBosAlt =>
+      'Varlık ekleyince fonlarının içi dahil gerçek dağılımın burada görünür.';
+
+  @override
+  String get xrEkranKilitGovde =>
+      'Fonlarının içindeki hisse, tahvil, mevduat ve altın, doğrudan tuttuklarınla birlikte: paran gerçekte nerede. TEFAS\'ın günlük dağılımından, tarih ve kaynakla.';
+
+  @override
+  String get xrEkranKilitSatir => 'Portföy X-Ray Premium\'da';
+
+  @override
+  String get xrOrtusmeUpper => 'BİRDEN ÇOK YERDEN TUTTUKLARIN';
+
+  @override
+  String get xrOrtusmeAciklama =>
+      'Aynı hisseyi birden çok fonunda (ya da hem fonunda hem doğrudan) tutuyorsan toplam payın.';
+
+  @override
+  String xrOrtusmeKaynak(int n) {
+    return '$n yerden';
+  }
+
+  @override
+  String get xrDogrudan => 'doğrudan';
+
+  @override
+  String xrKaynakKalemler(String donem) {
+    return 'Kalemler: KAP Portföy Dağılım Raporları · $donem sonu';
+  }
+
+  @override
+  String get pwOzXray =>
+      'Fon X-Ray: fonlarının içi ve portföyünün gerçek dağılımı';
+
+  @override
+  String get prmSatirXray => 'Fon X-Ray';
+
+  @override
+  String get pwdXrayEtiket => 'FON X-RAY';
+
+  @override
+  String get pwdXrayBaslik =>
+      'Fonlarının içinde ne var, paran gerçekte nerede gör.';
+
+  @override
+  String get pwdXrayPremium => 'Fon ve portföy X-Ray';
 }

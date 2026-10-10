@@ -12,7 +12,7 @@ const yasalBelgeKaynaklari = <String, String>{
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 10 Ekim 2026
-**Sürüm:** 1.7
+**Sürüm:** 1.8
 **Onay sürümü:** 1.6
 
 ---
@@ -57,7 +57,7 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 
 Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 
-**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. teknik analiz sinyalleri ve bildirimleri, yıllık kâr, temettü ve masraf raporu, PDF ve Excel dışa aktarma, temettü tahmini, kalem kalem masraf dökümü, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
+**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. teknik analiz sinyalleri ve bildirimleri, yıllık kâr, temettü ve masraf raporu, PDF ve Excel dışa aktarma, temettü tahmini, fon içerik dağılımı (X-Ray), kalem kalem masraf dökümü, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
 
 **Fiyat ve ödeme.** Abonelik aylık ya da yıllık dönemlidir. Fiyat, satın alma ekranında App Store ya da Google Play'in gösterdiği tutardır (vergiler dahil). Ödemeyi Şirket değil, cihazınızın mağazası (Apple ya da Google) tahsil eder; kart bilgileriniz Şirket'e ulaşmaz.
 

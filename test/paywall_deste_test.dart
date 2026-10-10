@@ -41,6 +41,9 @@ void main() {
         'masraf_dokumu': PaywallKarti.rapor,
         'temettu_tahmini': PaywallKarti.temettu,
         'aylik_rapor': PaywallKarti.not,
+        // Fon X-Ray (2026-10-10): varlık kartı ve portföy ekranı.
+        'fon_xray': PaywallKarti.xray,
+        'portfoy_xray': PaywallKarti.xray,
       };
       beklenen.forEach((kaynak, kart) {
         expect(kaynaktanKart(kaynak), kart, reason: kaynak);
@@ -72,6 +75,9 @@ void main() {
         'lib/screens/temettu_tahmini_screen.dart',
         'lib/screens/aylik_rapor_screen.dart',
         'lib/screens/settings_screen.dart',
+        // Fon X-Ray (2026-10-10).
+        'lib/widgets/fon_dagilimi_karti.dart',
+        'lib/screens/portfoy_xray_screen.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -99,6 +105,7 @@ void main() {
           PaywallKarti.varlik,
           PaywallKarti.rapor,
           PaywallKarti.temettu,
+          PaywallKarti.xray,
           PaywallKarti.sinyal,
           PaywallKarti.ortak,
         ],

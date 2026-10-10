@@ -2,9 +2,9 @@
 
 **Effective date:** October 8, 2026
 **Last updated:** October 10, 2026
-**Version:** 1.7
+**Version:** 1.8
 **Consent version:** 1.6
-**Source:** TR 1.7 (translation of the Turkish text; the Turkish version prevails)
+**Source:** TR 1.8 (translation of the Turkish text; the Turkish version prevails)
 
 ---
 
@@ -48,7 +48,7 @@ The App shows portfolio value, allocation and performance and, optionally, techn
 
 This section applies once Premium is offered for sale in the App.
 
-**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. technical analysis signals and alerts, the annual gains, dividends and fees report, PDF and Excel export, the dividend forecast, the itemized fee breakdown, the full asset notes and monthly report, reading statements with AI). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
+**Scope.** Portfolio tracking is free. Premium includes features that are limited in the free tier or available only to subscribers (e.g. technical analysis signals and alerts, the annual gains, dividends and fees report, PDF and Excel export, the dividend forecast, fund content breakdown (X-Ray), the itemized fee breakdown, the full asset notes and monthly report, reading statements with AI). Which features are Premium is shown on the purchase screen before you buy. Some Premium features may appear in limited form in the free tier (e.g. the first sentence of a note).
 
 **Price and payment.** The subscription is monthly or yearly. The price is the amount shown by the App Store or Google Play on the purchase screen (taxes included). Payment is collected by your device's store (Apple or Google), not by the Company; your card details never reach the Company.
 

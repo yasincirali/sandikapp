@@ -18,6 +18,7 @@ import '../models/watchlist_item.dart';
 import 'crash_reporter.dart';
 import 'db_logger.dart';
 import 'ekstre/ekstre_tablosu.dart' show EkstreAiHatasi;
+import 'fon_dagilimi.dart' show FonDagilimi, FonKalemleri;
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
 /// RLS kuralları Supabase tarafında uygulandığı için burada
@@ -1789,6 +1790,63 @@ class SupabaseService {
         if (MevduatFaizOrtalamasi.fromMap(r, simdi: simdi) case final o?)
           o.dilim: o,
     };
+  }
+
+  // ── Fon X-Ray (0131, 0132) ───────────────────────────────────────────────
+  // Sunucu TEFAS'tan günlük sınıf dağılımını (`fon-dagilim`) ve KAP'tan aylık
+  // kalemleri (`fon-kalem-raporu`, bayraklı) yazar; telefon yalnız kendi
+  // fonlarının satırlarını okur. Okuma RLS'te `premium_icerik_gorebilir()`:
+  // sunucu kapısı açık + Premium değilse boş liste döner (hata değil).
+
+  /// [kodlar] fonlarının en yeni TEFAS dağılımı. Okunamayan satır atlanır.
+  Future<List<FonDagilimi>> fonDagilimlari(Iterable<String> kodlar) async {
+    final liste = kodlar.toSet().toList()..sort();
+    if (liste.isEmpty) return const [];
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fonDagilimlari',
+      table: 'fon_dagilimlari',
+      op: 'SELECT',
+      request: {'fon_kodu_in': liste.length},
+      call: () => _db
+          .from('fon_dagilimlari')
+          .select('fon_kodu, fon_tipi, tarih, dagilim')
+          .inFilter('fon_kodu', liste)
+          .limit(liste.length),
+    );
+    return [
+      for (final r in rows)
+        if (FonDagilimi.satirdan(r) case final d?) d,
+    ];
+  }
+
+  /// [kodlar] fonlarının en yeni (beş kontrolden geçmiş) KAP kalem listesi.
+  /// Son iki ay okunur: rapor ay sonundan ~6 iş günü sonra geldiği için
+  /// ayın ilk haftasında en yeni geçerli rapor iki ay öncesinindir.
+  Future<List<FonKalemleri>> fonKalemleri(Iterable<String> kodlar) async {
+    final liste = kodlar.toSet().toList()..sort();
+    if (liste.isEmpty) return const [];
+    final simdi = DateTime.now();
+    final esik = _isoGun(DateTime(simdi.year, simdi.month - 2, 1));
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fonKalemleri',
+      table: 'fon_kalemleri',
+      op: 'SELECT',
+      request: {'fon_kodu_in': liste.length, 'donem_gte': esik},
+      call: () => _db
+          .from('fon_kalemleri')
+          .select('fon_kodu, donem, kalemler, kaynak_url')
+          .inFilter('fon_kodu', liste)
+          .eq('durum', 'gecti')
+          .gte('donem', esik)
+          .order('donem', ascending: false)
+          .limit(liste.length * 3),
+    );
+    final enYeni = <String, FonKalemleri>{};
+    for (final r in rows) {
+      final k = FonKalemleri.satirdan(r);
+      if (k != null) enYeni.putIfAbsent(k.fonKodu, () => k);
+    }
+    return enYeni.values.toList();
   }
 
   // ── Eurobond (0124) ──────────────────────────────────────────────────────

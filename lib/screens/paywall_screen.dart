@@ -510,6 +510,8 @@ class _FeatureList extends StatelessWidget {
       (Icons.all_inclusive_rounded, l.pwOzSinirsiz),
       (Icons.receipt_long_rounded, l.pwOzRapor),
       (Icons.event_repeat_rounded, l.pwOzTemettu),
+      // Fon X-Ray (2026-10-10): kilit `FonDagilimiKarti` + `PortfoyXrayScreen`.
+      (Icons.donut_large_rounded, l.pwOzXray),
       (Icons.insights_rounded, l.pwOzSinyalTam),
       (Icons.payments_outlined, l.pwOzMasraf),
       (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
@@ -597,6 +599,7 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirYillik, null, null),
       (l.prmSatirDisaAktar, l.prmDisaAktarUcretsiz, l.prmDisaAktarPremium),
       (l.prmSatirTemettu, null, null),
+      (l.prmSatirXray, null, null),
       (l.prmSatirMasraf, l.prmMasrafUcretsiz, l.prmMasrafPremium),
       (l.prmSatirSinyal, null, l.prmSinyalPremium),
       (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),

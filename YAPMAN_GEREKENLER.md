@@ -1,12 +1,91 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-10 Fon X-Ray (dal `feat/fon-xray`, migration 0131, 0132, 0134)
+
+Senin isteğin: Premium'a "fonumun içinde ne var, param gerçekte nerede".
+Araştırma: `tmp/arastirma/reports/Fon XRay veri kaynakları.md`. İki katman:
+
+- **Katman B (açılmaya hazır):** TEFAS'ın günlük varlık sınıfı dağılımı.
+  Varlık ekranında fon/BES kartı ("Fonun içinde ne var") + Performans ›
+  Raporlar › **Portföy X-Ray** (fonların içi açılmış gerçek dağılım,
+  dağılımı olmayan fonlar "X-Ray dışı"). Premium tek anahtarına
+  (`paywall_enabled`) bağlı: paywall kapalıyken yalnız admin görür,
+  canlıdaki kullanıcı hiçbir şey görmez.
+- **Katman A (bayrak, varsayılan KAPALI):** KAP aylık Portföy Dağılım
+  Raporu'ndan tek tek kalemler (ilk 10) ve fonlar arası örtüşme ("THYAO'yu
+  3 yerden tutuyorsun"). PDF'ten yapay zekâyla ayıklanır; beş kontrolden
+  biri düşerse o rapor hiç gösterilmez. İki ayrı anahtar: sunucuda
+  `FON_KALEM_ACIK=1` secret'ı, istemcide `fon_xray_kalem` Remote Config.
+
+Dağıtım sırası:
+
+- [ ] PR'ı aç, CI yeşil olunca birleştir (push/birleştirme sende).
+- [ ] **Supabase deploy** (hedef `ikisi`, Frankfurt → Tokyo):
+      migration **0131** (`fon_dagilimlari` + cron `fon-dagilim` hafta içi
+      TR 21:00, yedek ertesi sabah 07:30), **0132** (`fon_kalemleri`,
+      `fon_kalem_taramasi` + cron `fon-kalem-raporu` ayın 8-12'si günde dört
+      tur), **0134** (Koşullar 1.8, yalnız metin; "Onay sürümü" 1.6 kalır,
+      kimseye yeniden sorulmaz). 0133 bu dalda YOK (başka dala ayrıldı);
+      numara boşluğu bilinçli, iki dal birbirinin tablolarına dokunmuyor.
+- [ ] **Fonksiyonlar** (iki sunucu): `fon-dagilim` ve `fon-kalem-raporu`.
+      Yeni secret gerekmez: `fon-dagilim` mevcut `TEFAS_NAV_CRON_SECRET`
+      (Vault `tefas_nav_cron_secret`), `fon-kalem-raporu` mevcut
+      `PRICE_ALERTS_CRON_SECRET` (Vault `price_alerts_cron_secret`) ve
+      `ANTHROPIC_API_KEY` kullanır. Kontrol: iki projede secret listesinde
+      bu adlar var mı.
+- [ ] İlk tur elle (iki sunucuda): `select public.trigger_fon_dagilim();`
+      → ~30 sn sonra
+      `select fon_tipi, count(*), max(tarih) from public.fon_dagilimlari group by 1;`
+      (beklenen: YAT ~2.000, EMK ~390, BYF birkaç düzine; tarih son iş
+      günü). Boşsa `net._http_response`'a bak (cron gateway tuzağı).
+      İstersen önce kuru deneme: fonksiyonu `{"dry_run": true}` gövdesiyle
+      çağır (yazmaz, ilk üç fonun örneğini döndürür).
+- [ ] **Katman A'yı açmadan ÖNCE (hukuki, sende):**
+      1. KAP ve TEFAS kullanım koşullarını TARAYICIDAN oku ve kaydet
+         (araştırmada `/tr/kullanim-kosullari` 404, TEFAS sayfaları WAF
+         arkasındaydı; birebir metin okunamadı). Belirsizse Takasbank
+         (TEFAS) ve MKK'ya (KAP, kapdestek@mkk.com.tr) yazılı sor: "ücretli
+         bir uygulamada, kullanıcıların tuttuğu fonlar için aylık Portföy
+         Dağılım Raporu kalemlerini kaynak ve tarihle göstermek" serbest
+         mi, KAP Veri Yayın Servisi lisansı mı gerekir, ücreti ne.
+      2. ⚠️ Eski karar çelişkisi: `KapBaglantisi` (karar 7.1, 2026-09-30)
+         "uygulama KAP verisi göstermez (lisans)" diyor. Katman A tam olarak
+         KAP verisi gösterir. Bu yüzden kalem katmanı kod olarak hazır ama
+         iki anahtarla kapalı; yanıt gelmeden açma.
+      3. Açınca Kullanım Koşulları §7'deki Anthropic parantezi ("varlık
+         notlarının yapay zekâ ile yazımı") "ve fon raporlarının okunması"
+         diye genişletilmeli (kişisel veri gitmez; esaslı değil, yalnız
+         Sürüm artar, yeni migration).
+- [ ] Katman A açılışı: ayın 8'inden önce `FON_KALEM_ACIK=1` function
+      secret'ı (iki proje), sonra Remote Config `fon_xray_kalem = true`
+      (önce admin koşuluyla). Aylık model harcama tavanı
+      `FON_KALEM_AYLIK_TAVAN_USD` (varsayılan 10 $), tur başına
+      `FON_KALEM_TUR_USTU` (varsayılan 3 fon). Kontrol:
+      `select durum, dogrulama->>'kontrol', count(*) from public.fon_kalemleri group by 1, 2;`
+      Reddedilenlerin çoğu `metin_yok` (İş Portföy gibi metinsiz PDF) ya da
+      `tefas` olmalı; `sema`/`metin` çoksa bana yaz.
+- [ ] Bilinen sınır: KAP liste ucu günü 2.000 satırda kesiyor ve süzgeç
+      kabul etmiyor (2026-10-10'da `fundCode`, `subjectList`, `index`
+      denendi). Yoğun günün erken saatlerinde yayımlanan raporlar
+      görünmeyebilir; yanıttaki `kesik_gunler` bunu söyler. O fonlar
+      Katman B'de kalır.
+- [ ] TestFlight'ta dene. Paywall koşullu açık, admin OLMAYAN test hesabı:
+      fon varlık ekranında "Fonun içinde ne var Premium'da" kilit kartı
+      (sayı yok); Performans › Raporlar'da "Portföy X-Ray" satırında kilit,
+      açınca kilit kartı. Admin ya da Premium hesapla: fon ekranında
+      yığılmış çubuk + sınıf listesi + "TEFAS · tarih"; BES fonunda da;
+      Portföy X-Ray'de toplam ana sayfa toplamına yakın mı (fiyatı olmayan
+      varlık ikisinde de dışarıda), fonlar sınıflara bölünmüş mü, dağılımı
+      olmayan fon "X-Ray dışı" satırında adıyla mı. Paywall kapalı + admin
+      olmayan hesapta HİÇBİR yeni yüzey görünmemeli.
 
 ## ⏳ 2026-10-10 Olgun Premium seti (dal `feat/premium-olgun`, migration 0130)
 
