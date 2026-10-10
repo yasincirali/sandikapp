@@ -117,10 +117,16 @@ export const ARAC = {
 export function istekGovdesi(iskelet: string, model: string): Record<string, unknown> {
   return {
     model,
-    max_tokens: 1024,
+    // Sonnet 5.5 zorunlu araç seçimini (tool_choice any/tool) 400
+    // invalid_request_error ile reddeder (canlı log, 2026-10-10). `auto` +
+    // sistem talimatındaki "yalnız sutun_eslemesi aracıyla ver" yeterli;
+    // araç bloğu gelmezse yanitiDogrula boş döner, istemci "eşleşme yok" der.
+    // Uyarlanabilir düşünme varsayılan açık olduğundan bütçe 1024'ten geniş.
+    max_tokens: 4096,
+    output_config: { effort: 'low' },
     system: SISTEM_TALIMATI,
     tools: [ARAC],
-    tool_choice: { type: 'tool', name: ARAC.name },
+    tool_choice: { type: 'auto', disable_parallel_tool_use: true },
     messages: [{ role: 'user', content: iskelet }],
   };
 }
