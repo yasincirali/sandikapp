@@ -8280,6 +8280,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ortakGorurHicbiriKisa => 'None';
 
   @override
+  String compareRemoveSemantics(String name) {
+    return 'Remove $name comparison';
+  }
+
+  @override
+  String get chartPriceSemantics => 'Price chart';
+
+  @override
+  String get chartPortfolioSemantics => 'Portfolio value chart';
+
+  @override
+  String chartAssetSemantics(String name) {
+    return '$name price chart';
+  }
+
+  @override
   String cihazHesapAcikKalir(String ad) {
     return '$ad stays signed in. Sign in or sign up with the new account; then switch between accounts from Profile.';
   }

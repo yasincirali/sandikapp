@@ -573,8 +573,14 @@ class SandikTappable extends StatefulWidget {
     this.scale = 0.97,
     this.semanticLabel,
     this.selected,
-    this.haptic = SandikHaptic.selection,
+    this.haptic,
   });
+
+  /// `true` dönerse [haptic] verilmemiş, seçim kavramı olmayan dokunuş
+  /// titreşmez. `main` Remote Config `goz_alici`'ye bağlar; bayrak kapalıyken
+  /// eski davranış (her dokunuşta `selection`) birebir sürer.
+  static bool Function() sessizVarsayilan = _hayir;
+  static bool _hayir() => false;
 
   final Widget child;
   final VoidCallback? onTap;
@@ -591,10 +597,13 @@ class SandikTappable extends StatefulWidget {
 
   /// Dokunuşta verilecek dokunsal geri bildirim.
   ///
-  /// Varsayılan [SandikHaptic.selection] — ölçeğin en hafif tonu. Ana
-  /// eylemler ([SandikHaptic.medium]) ve yıkıcı onaylar için yükseltilir;
-  /// [SandikHaptic.none] ile tamamen kapatılabilir.
-  final SandikHaptic haptic;
+  /// Verilmezse: seçim öğesinde ([selected] dolu) [SandikHaptic.selection];
+  /// düz gezinme dokunuşunda da `selection`, ama [sessizVarsayilan] açıkken
+  /// (bayrak `goz_alici`) titreşim yok. HIG titreşimi seyrek ve anlamlı
+  /// ister: seçim değişimi, başarı, hata. 63 satır/kartın her dokunuşta
+  /// titremesi gürültüydü (HIG denetimi 2026-10-10). Ana eylemler
+  /// ([SandikHaptic.medium]) ve yıkıcı onaylar açıkça yükseltir.
+  final SandikHaptic? haptic;
 
   @override
   State<SandikTappable> createState() => _SandikTappableState();
@@ -637,7 +646,12 @@ class _SandikTappableState extends State<SandikTappable> {
       onTap: widget.onTap == null
           ? null
           : () {
-              widget.haptic.perform();
+              (widget.haptic ??
+                      (widget.selected == null &&
+                              SandikTappable.sessizVarsayilan()
+                          ? SandikHaptic.none
+                          : SandikHaptic.selection))
+                  .perform();
               widget.onTap!();
             },
       onLongPress: widget.onLongPress == null

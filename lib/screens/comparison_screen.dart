@@ -655,12 +655,13 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                   tooltip: context.l10n.vsOpenDetailSemantics(_displayTicker(hit)),
                   icon: Icon(Icons.insights_rounded, size: 18, color: p.text58),
                   onPressed: () => showVarlikSayfasi(context, kimlik),
-                  visualDensity: VisualDensity.compact,
                 ),
+              // `VisualDensity.compact` kaldırıldı (HIG denetimi 2026-10-10):
+              // M3'te dokunma hedefini 48'den 40'a indiriyordu, 44 altı.
               IconButton(
+                tooltip: context.l10n.removeWord,
                 icon: Icon(Icons.close_rounded, size: 18, color: p.text36),
                 onPressed: () => _remove(hit.ticker),
-                visualDensity: VisualDensity.compact,
               ),
             ],
           ),

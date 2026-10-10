@@ -255,11 +255,14 @@ class _AlarmKurSheetState extends State<AlarmKurSheet> {
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-            SandikSpace.lg, SandikSpace.md, SandikSpace.lg, SandikSpace.lg),
+            SandikSpace.lg, SandikSpace.sm2, SandikSpace.lg, SandikSpace.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
+            const Center(child: SandikTutamac()),
+            const SizedBox(height: SandikSpace.sm),
             Text(widget.sabit ? context.l10n.alertForAsset(_secili.ad) : 'Alarm kur',
                 style: context.t.headlineSmall?.copyWith(color: c.text90),
                 maxLines: 1,

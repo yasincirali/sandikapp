@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme/sandik.dart';
+import '../l10n/l10n.dart';
 
 /// Birden fazla grafik (ana + volume subchart) aynı X viewport'unu paylaşsın
 /// diye kullanılan ChangeNotifier. Ana grafikte pinch/pan olur, viewport
@@ -133,8 +134,9 @@ class ZoomableChart extends StatefulWidget {
 
   /// Ekran okuyucu özeti. Grafik dokunmatik bir yüzey; içindeki çizgiler
   /// TalkBack/VoiceOver için anlamsız. Çağıran "portföy değeri, 30 gün, %x"
-  /// gibi bir cümle verir; vermezse jenerik etiket okunur.
-  final String semanticLabel;
+  /// gibi bir cümle verir; vermezse jenerik etiket okunur (çevrilmiş;
+  /// eskiden sabit Türkçe "Fiyat grafiği" idi — HIG denetimi 2026-10-10).
+  final String? semanticLabel;
   final LineChartData Function(double minX, double maxX) builder;
   final double height;
 
@@ -222,7 +224,7 @@ class ZoomableChart extends StatefulWidget {
     this.bottomAxisHeight = 32,
     this.plotPaddingRight = 0,
     this.plotPaddingLeft = 0,
-    this.semanticLabel = 'Fiyat grafiği',
+    this.semanticLabel,
     this.swapDuration = SandikMotion.state,
     this.swapCurve = SandikMotion.enter,
     this.imlecEtiketi,
@@ -590,7 +592,7 @@ class _ZoomableChartState extends State<ZoomableChart> {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: widget.semanticLabel,
+      label: widget.semanticLabel ?? context.l10n.chartPriceSemantics,
       image: true,
       child: LayoutBuilder(builder: (context, constraints) {
       _chartWidth = constraints.maxWidth <= 0 ? 1.0 : constraints.maxWidth;

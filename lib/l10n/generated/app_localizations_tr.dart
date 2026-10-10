@@ -8197,6 +8197,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get ortakGorurHicbiriKisa => 'Hiçbiri';
 
   @override
+  String compareRemoveSemantics(String name) {
+    return '$name karşılaştırmasını kaldır';
+  }
+
+  @override
+  String get chartPriceSemantics => 'Fiyat grafiği';
+
+  @override
+  String get chartPortfolioSemantics => 'Portföy değeri grafiği';
+
+  @override
+  String chartAssetSemantics(String name) {
+    return '$name fiyat grafiği';
+  }
+
+  @override
   String cihazHesapAcikKalir(String ad) {
     return '$ad açık kalır. Yeni hesaba giriş yap ya da kayıt ol; sonra Profil\'den hesaplar arasında geçebilirsin.';
   }

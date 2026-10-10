@@ -183,7 +183,7 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         SandikSpace.screenH(context),
-        SandikSpace.lg,
+        SandikSpace.sm2,
         SandikSpace.screenH(context),
         MediaQuery.of(context).viewInsets.bottom + SandikSpace.lg,
       ),
@@ -191,6 +191,9 @@ class _IslemNotuSheetState extends State<IslemNotuSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
+          const Center(child: SandikTutamac()),
+          const SizedBox(height: SandikSpace.md),
           Text(
             baslik,
             maxLines: 2,

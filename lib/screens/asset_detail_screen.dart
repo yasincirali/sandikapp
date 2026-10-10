@@ -1236,7 +1236,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     logCip,
                                   ],
                                 ),
-                                const SizedBox(height: 6),
+                                // Satır arası boşluk yok: çiplerin 44pt
+                                // dokunma payı (HIG, 2026-10-10) zaten
+                                // aralık bırakıyor.
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
@@ -1366,6 +1368,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               for (final t in islemler) t.x,
                             ];
                             return ZoomableChart(
+                            semanticLabel: context.l10n
+                                .chartAssetSemantics(_kimlik.kisaEtiket),
                             fullMinX: focusMin,
                             fullMaxX: focusMax,
                             height: GrafikStili.grafikYuksekligi,

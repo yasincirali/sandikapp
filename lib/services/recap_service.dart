@@ -2,6 +2,8 @@ import '../config/magaza.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
+import 'para_agirlikli_getiri.dart';
+import 'period_summary_service.dart';
 
 /// Portföyün karakteri — paylaşılabilirliğin çekirdeği.
 ///
@@ -41,7 +43,9 @@ class RecapData {
   final double? startTotalTRY;
   final double? endTotalTRY;
 
-  /// Dönem içindeki değişim yüzdesi. Uçlardan biri yoksa null.
+  /// Dönemin PARA AĞIRLIKLI getirisi (yüzde) — yıl içinde eklenen/çekilen
+  /// para getiri sayılmaz (2026-10-10; Özet'le aynı hesap). Uçlardan biri
+  /// yoksa ya da ortalama sermaye pozitif değilse null.
   final double? changePct;
 
   /// Portföydeki en çok kazandıran / kaybettiren varlık.
@@ -64,9 +68,10 @@ class RecapData {
   final int typeCount;
 
   /// Son 12 ayın nakit akışı düzeltmeli PİYASA getirisi (yüzde) —
-  /// `RealReturnService.yillikPiyasaGetirisi`. [changePct]'ten farkı:
-  /// o portföy DEĞERİNİN değişimi (katkı dahil), bu piyasanın varlıklara
-  /// ne yaptığı. Enflasyon karşılaştırması BUNUN üzerinden yapılır ki ana
+  /// `RealReturnService.yillikPiyasaGetirisi`. [changePct]'ten farkı
+  /// penceredir: o takvim yılı (1 Ocak'tan beri), bu TÜFE'ye hizalı son 12
+  /// ay. (2026-10-10'a kadar [changePct] katkı dahil değer değişimiydi.)
+  /// Enflasyon karşılaştırması BUNUN üzerinden yapılır ki ana
   /// ekran rozeti ve Performans kartıyla aynı puan çıksın. Seri yoksa null.
   final double? marketReturnPct;
 
@@ -245,9 +250,31 @@ class RecapService {
     final sirali = [...snapshots]..sort((a, b) => a.ts.compareTo(b.ts));
     final basTotal = sirali.isEmpty ? null : snapshotTotal(sirali.first.values);
     final sonTotal = sirali.isEmpty ? null : snapshotTotal(sirali.last.values);
+    // ## Neden basit oran DEĞİL (yasin, 2026-10-10)
+    // Eski hesap `son / baş − 1` idi: yıl içinde eklenen para "büyüme"
+    // sayılıyordu. Yılın ilk anlık görüntüsü küçükken (yıl ortasında
+    // başlayan, ilk gün tek varlık giren kullanıcı) hikâye sayfası
+    // "Portföyün +%243.626,4 — Bu yıl böyle büyüdün." yazdı: yatırılan
+    // para getiri gibi okunuyordu.
+    //
+    // Artık Özet'in her dönemiyle AYNI hesap (para ağırlıklı getiri, PR
+    // #48): akışlar ham defterden (geçmişi soran yer, `aktifLotlar` değil)
+    // `PeriodSummaryService.donemAkislari` ile, kapı `(baş, son]`. Böylece
+    // sayı "param ne kazandırdı" der ve Özet 1Y ile aynı yöntemi kullanır.
+    // Ortalama sermaye pozitif değilse `null` — sayfa hiç kurulmaz, sayı
+    // uydurulmaz.
     double? degisim;
-    if (basTotal != null && sonTotal != null && basTotal > 0) {
-      degisim = (sonTotal / basTotal - 1) * 100;
+    if (basTotal != null && sonTotal != null && sirali.length >= 2) {
+      final basTs = sirali.first.ts;
+      final sonTs = sirali.last.ts;
+      final akislar = [
+        for (final a in PeriodSummaryService.donemAkislari(
+            lotlar: assets, basTs: basTs, sonTs: sonTs, akisSonuMs: sonTs))
+          (f: a.f, w: a.w),
+      ];
+      final r =
+          paraAgirlikliGetiriPct(bas: basTotal, son: sonTotal, akislar: akislar);
+      if (r != null && r.isFinite) degisim = r;
     }
 
     // ── En iyi / en kötü ────────────────────────────────────────────────
