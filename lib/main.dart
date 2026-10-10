@@ -126,6 +126,10 @@ bool splashVeriHazir({
 /// Arka planda sırayla kurulur; biri patlarsa diğerleri yine denenir ve
 /// hata Crashlytics'e düşer — `main` içinde sessizce yutulmaz.
 Future<void> _initDeferredServices() async {
+  // Tema katmanı Remote Config'i bilmez; bayrak her dokunuşta buradan okunur
+  // (RC canlı güncellenince de geçerli). `goz_alici`: gezinme dokunuşu
+  // titreşmez (HIG denetimi 2026-10-10, bkz. `SandikTappable.haptic`).
+  SandikTappable.sessizVarsayilan = () => RemoteConfigService.instance.gozAlici;
   for (final step in <(String, Future<void> Function())>[
     ('RemotePushService', () => RemotePushService.instance.init()),
     ('AnalyticsService', () async {

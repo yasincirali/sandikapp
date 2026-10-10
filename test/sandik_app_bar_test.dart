@@ -9,12 +9,17 @@ import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 /// 2026-09 denetimi: 14 ekranda `AppBar(` ayrı kurulmuştu (3 zemin, 3 başlık
 /// stili, 5 kopya geri ikonu). Bu test kopyaların geri gelmesini ve geri
 /// okunun davranışını kilitler.
+///
+/// Geri etiketi sistem çevirisinden gelir (HIG denetimi 2026-10-10; sabit
+/// "Geri" İngilizcede de Türkçe okunuyordu). Testte yerel ayar yok → varsayılan.
+final _geri = const DefaultMaterialLocalizations().backButtonTooltip;
+
 void main() {
   testWidgets('kök ekranda geri oku yok, push edilen ekranda var', (t) async {
     await t.pumpWidget(const MaterialApp(
       home: Scaffold(appBar: SandikAppBar(title: 'Kök'), body: SizedBox()),
     ));
-    expect(find.byTooltip('Geri'), findsNothing);
+    expect(find.byTooltip(_geri), findsNothing);
 
     await t.pumpWidget(MaterialApp(
       home: Builder(
@@ -33,8 +38,8 @@ void main() {
     ));
     await t.tap(find.text('git'));
     await t.pumpAndSettle();
-    expect(find.byTooltip('Geri'), findsOneWidget);
-    await t.tap(find.byTooltip('Geri'));
+    expect(find.byTooltip(_geri), findsOneWidget);
+    await t.tap(find.byTooltip(_geri));
     await t.pumpAndSettle();
     expect(find.text('Alt'), findsNothing);
   });

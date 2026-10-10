@@ -1499,23 +1499,29 @@ class _SignalsBottomSheet extends ConsumerWidget {
                         adaptiveRoute<void>(
                             builder: (_) => const PriceAlertsScreen()),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_alert_outlined,
-                                size: 16, color: context.c.amberText),
-                            const SizedBox(width: SandikSpace.xs),
-                            Text(
-                              context.l10n.myAlarms,
-                              style: context.t.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: context.c.amberText,
-                                  decoration: TextDecoration.none),
-                            ),
-                          ],
+                      // En az 44pt (HIG denetimi 2026-10-10): ince metin
+                      // bağlantısı ~28pt'ydi. Görsel aynı, pay şeffaf.
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(minHeight: SandikTouch.min),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: SandikSpace.sm, vertical: SandikSpace.xs),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_alert_outlined,
+                                  size: 16, color: context.c.amberText),
+                              const SizedBox(width: SandikSpace.xs),
+                              Text(
+                                context.l10n.myAlarms,
+                                style: context.t.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: context.c.amberText,
+                                    decoration: TextDecoration.none),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -1750,6 +1756,9 @@ class _SignalTile extends StatelessWidget {
             : Icons.horizontal_rule_rounded);
     final int count = isBuy ? alert.buyCount : (isSell ? alert.sellCount : 0);
 
+    // Soluk satırda METİN opaklıkla değil ton basamağıyla iner (HIG denetimi
+    // 2026-10-10): %45 opak text58 açık temada 2,1:1 idi. İkon ve zemin
+    // (metin dışı) opaklıkla solmaya devam eder.
     final double alphaFactor = faded ? 0.45 : 1.0;
     final double bgAlpha = faded ? 0.05 : 0.10;
     final double borderAlpha = faded ? 0.12 : 0.28;
@@ -1789,8 +1798,7 @@ class _SignalTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: context.c.text90
-                                  .withValues(alpha: alphaFactor),
+                              color: faded ? context.c.text58 : context.c.text90,
                               decoration: TextDecoration.none),
                         ),
                       ),
@@ -1805,7 +1813,7 @@ class _SignalTile extends StatelessWidget {
                         child: Text(label,
                             style: context.t.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: color.withValues(alpha: alphaFactor),
+                                color: faded ? context.c.text36 : color,
                                 decoration: TextDecoration.none)),
                       ),
                     ],
@@ -1816,7 +1824,7 @@ class _SignalTile extends StatelessWidget {
                         ? context.l10n.signalDeletedAt(_formatDate(alert.detectedAt))
                         : context.l10n.signalConfidence(count, fmtPct(alert.confidence, digits: 0)),
                     style: context.t.bodySmall?.copyWith(
-                        color: context.c.text58.withValues(alpha: alphaFactor),
+                        color: faded ? context.c.text36 : context.c.text58,
                         decoration: TextDecoration.none),
                   ),
                 ],
@@ -1824,6 +1832,7 @@ class _SignalTile extends StatelessWidget {
             ),
             if (onDismiss != null)
               IconButton(
+                tooltip: context.l10n.close,
                 icon: Icon(Icons.close_rounded,
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
@@ -1833,6 +1842,7 @@ class _SignalTile extends StatelessWidget {
               )
             else if (onDelete != null)
               IconButton(
+                tooltip: context.l10n.delete,
                 icon: Icon(Icons.delete_outline_rounded,
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,

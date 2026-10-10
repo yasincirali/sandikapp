@@ -806,6 +806,8 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
               child: GrafikTipiSecici(gorunum: GrafikTipiGorunum.duz),
             ),
           ZoomableChart(
+            // Ekran okuyucu: portföy grafiği "fiyat grafiği" değildir.
+            semanticLabel: context.l10n.chartPortfolioSemantics,
             fullMinX: minX,
             fullMaxX: maxX,
             // 328'den 296'ya (2026-09-15, "grafik layoutunun yüksekliği

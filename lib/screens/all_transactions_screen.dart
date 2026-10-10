@@ -537,6 +537,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
+                        tooltip: context.l10n.clearSearch,
                         icon: Icon(Icons.close_rounded,
                             size: 18, color: context.c.text36),
                         onPressed: () => setState(() {

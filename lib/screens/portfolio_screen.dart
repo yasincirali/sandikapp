@@ -2298,12 +2298,17 @@ class _GainLossLine extends StatelessWidget {
     required this.totalCostTRY,
     required this.isPositive,
     required this.tryFmt,
+    this.olcekle = true,
   });
 
   final double gainLossTRY;
   final double totalCostTRY;
   final bool isPositive;
   final ParaBicimi tryFmt;
+
+  /// `false`: büyük yazı düzeni (satırın altında, tam genişlik) — küçültme
+  /// yok, metin gerekirse alt satıra kayar.
+  final bool olcekle;
 
   @override
   Widget build(BuildContext context) {
@@ -2330,6 +2335,20 @@ class _GainLossLine extends StatelessWidget {
         : '${isPositive ? '+' : '\u2212'}${tryFmt.format(gainLossTRY.abs())}'
             ' · ${fmtPctIsaretli(pct)}';
 
+    final stil = context.t.numSmall.copyWith(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: color,
+    );
+    if (!olcekle) {
+      return Row(
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 2),
+          Flexible(child: Text(label, style: stil)),
+        ],
+      );
+    }
     return FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerRight,
@@ -2338,15 +2357,7 @@ class _GainLossLine extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 14),
           const SizedBox(width: 2),
-          Text(
-            label,
-            maxLines: 1,
-            style: context.t.numSmall.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
+          Text(label, maxLines: 1, style: stil),
         ],
       ),
     );
@@ -2440,6 +2451,31 @@ class _AssetCardState extends State<_AssetCard>
                 builder: (context, rowConstraints) {
                   final m = _AssetCardMetrics.resolve(rowConstraints.maxWidth);
                   final valueW = m.value;
+                  // Büyük yazıda (Dynamic Type > ×1,3) tutar sütunu 108pt'ye
+                  // sığmak için FittedBox ile küçülüyor, kullanıcının
+                  // büyüttüğü rakamlar yine ufak kalıyordu. Bayrak
+                  // `goz_alici` açıkken tutar ve kâr/zarar başlığın ALTINA
+                  // dizilir, küçültülmez — lejanttaki `_ikiSutunMetinOlcegi`
+                  // deseninin aynısı (HIG denetimi 2026-10-10). Kapalıyken
+                  // satır birebir eski.
+                  final buyukYazi = RemoteConfigService.instance.gozAlici &&
+                      MediaQuery.textScalerOf(context).scale(1) >
+                          _ikiSutunMetinOlcegi;
+                  final tutarMetni = Text(
+                    tryFmt.format(pState.toTRY(a.totalValue, a.currency)),
+                    maxLines: 1,
+                    style: context.t.numMedium.copyWith(
+                        fontWeight: FontWeight.w700, color: context.c.text90),
+                  );
+                  final karZarar = a.purchasePrice > 0 && a.currentPrice > 0
+                      ? _GainLossLine(
+                          gainLossTRY: gainLossTRY,
+                          totalCostTRY: position.totalCostTRY,
+                          isPositive: isPos,
+                          tryFmt: tryFmt,
+                          olcekle: !buyukYazi,
+                        )
+                      : null;
                   return
                       // crossAxisAlignment.center: ikon, başlık bloğu, sparkline ve
                       // tutar kolonu ortak bir yatay eksende hizalanır. Satır
@@ -2495,6 +2531,14 @@ class _AssetCardState extends State<_AssetCard>
                               style: context.t.bodySmall
                                   ?.copyWith(color: context.c.text36),
                             ),
+                            if (buyukYazi) ...[
+                              const SizedBox(height: SandikSpace.xs),
+                              tutarMetni,
+                              if (karZarar != null) ...[
+                                const SizedBox(height: SandikSpace.xxs),
+                                karZarar,
+                              ],
+                            ],
                           ],
                         ),
                       ),
@@ -2511,37 +2555,27 @@ class _AssetCardState extends State<_AssetCard>
                       // belirler ve isim alanını yer: büyük portföyde isimler
                       // daha çok kırpılırdı. Sabit genişlik hem bunu önler hem
                       // de tüm satırların sağ kenarını hizalar.
-                      const SizedBox(width: SandikSpace.sm),
-                      SizedBox(
-                        width: valueW,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                tryFmt.format(
-                                    pState.toTRY(a.totalValue, a.currency)),
-                                maxLines: 1,
-                                style: context.t.numMedium.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: context.c.text90),
+                      if (!buyukYazi) ...[
+                        const SizedBox(width: SandikSpace.sm),
+                        SizedBox(
+                          width: valueW,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: tutarMetni,
                               ),
-                            ),
-                            if (a.purchasePrice > 0 && a.currentPrice > 0) ...[
-                              const SizedBox(height: 4),
-                              _GainLossLine(
-                                gainLossTRY: gainLossTRY,
-                                totalCostTRY: position.totalCostTRY,
-                                isPositive: isPos,
-                                tryFmt: tryFmt,
-                              ),
+                              if (karZarar != null) ...[
+                                const SizedBox(height: 4),
+                                karZarar,
+                              ],
                             ],
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                       const SizedBox(width: 4),
                       _ExpandChevron(
                         expanded: _expanded,

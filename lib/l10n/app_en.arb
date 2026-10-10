@@ -5002,5 +5002,11 @@
   "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}},
   "ortakGorurOnizleme": "{ad} will see",
   "@ortakGorurOnizleme": {"placeholders": {"ad": {"type": "String"}}},
-  "ortakGorurHicbiriKisa": "None"
+  "ortakGorurHicbiriKisa": "None",
+  "compareRemoveSemantics": "Remove {name} comparison",
+  "@compareRemoveSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "chartPriceSemantics": "Price chart",
+  "chartPortfolioSemantics": "Portfolio value chart",
+  "chartAssetSemantics": "{name} price chart",
+  "@chartAssetSemantics": {"placeholders": {"name": {"type": "String"}}}
 }

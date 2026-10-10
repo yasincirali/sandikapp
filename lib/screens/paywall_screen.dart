@@ -406,6 +406,7 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         IconButton(
+          tooltip: context.l10n.close,
           icon: Icon(Icons.close_rounded, color: context.c.text90),
           onPressed: () => Navigator.of(context).pop(false),
         ),

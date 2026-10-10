@@ -276,6 +276,16 @@ class _OverlayChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Görsel çip ~26pt; dokunma alanı [_GenisDokunma] ile 44pt (HIG
+    // denetimi 2026-10-10). `toggled`: VoiceOver "MA20, açık/kapalı" okur;
+    // kilitliyken anahtar değil, paywall'u açan düğmedir.
+    return _GenisDokunma(
+      onTap: onTap,
+      child: Semantics(toggled: kilitli ? null : active, child: _cip(context)),
+    );
+  }
+
+  Widget _cip(BuildContext context) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -336,6 +346,33 @@ class _OverlayChip extends StatelessWidget {
   }
 }
 
+/// Görseli büyütmeden dokunma alanını 44pt'ye çıkarır (HIG denetimi
+/// 2026-10-10). Çipin kendi `InkWell`'i içte kalır ve kendi alanında
+/// kazanır; çevresindeki şeffaf pay aynı eylemi çağırır. Semantik düğüm
+/// içteki öğeden gelir, burada ikinci bir düğme üretilmez.
+class _GenisDokunma extends StatelessWidget {
+  const _GenisDokunma({required this.onTap, required this.child});
+
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: SandikTouch.min,
+          minHeight: SandikTouch.min,
+        ),
+        child: Center(widthFactor: 1, heightFactor: 1, child: child),
+      ),
+    );
+  }
+}
+
 /// Grafik container'ının üstünde: legend (rozet) + "Karşılaştır" ekle butonu.
 /// Compare seçili değilse sadece + butonu görünür; seçiliyken rozet ve ✕.
 class _CompareStrip extends StatelessWidget {
@@ -357,11 +394,13 @@ class _CompareStrip extends StatelessWidget {
     // (TEFAS:YKT gibi) veya karşılaştırma rozeti eklenince satır taşıyordu
     // (15px). Yatay kaydırma, rozetleri kırpmadan sığdırır — hiçbir bilgi
     // gizlenmez, yalnızca gerekirse kaydırılır.
-    return SizedBox(
-      height: 32,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const ClampingScrollPhysics(),
+    // Sabit 32pt yükseklik kalktı (HIG denetimi 2026-10-10): dokunma alanı
+    // 32'de kalıyor, büyük yazıda rozet metni kesiliyordu. Satır artık
+    // içeriğinin boyunda (en az 44pt), yatay kaydırma aynen duruyor.
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const ClampingScrollPhysics(),
+      child: Row(
         children: [
           // Ana varlık rozeti — renk = context.c.amberText
           _LegendBadge(
@@ -377,41 +416,44 @@ class _CompareStrip extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onAddPressed,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(SandikRadius.md),
-                  border: Border.all(
-                    color: context.c.overlay,
-                    style: BorderStyle.solid,
+          _GenisDokunma(
+            onTap: onAddPressed,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onAddPressed,
+                borderRadius: BorderRadius.circular(SandikRadius.md),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(SandikRadius.md),
+                    border: Border.all(
+                      color: context.c.overlay,
+                      style: BorderStyle.solid,
+                    ),
                   ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      compare == null
-                          ? Icons.add_rounded
-                          : Icons.swap_horiz_rounded,
-                      size: 14,
-                      color: context.c.text58,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      compare == null ? 'Karşılaştır' : 'Değiştir',
-                      style: context.t.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        compare == null
+                            ? Icons.add_rounded
+                            : Icons.swap_horiz_rounded,
+                        size: 14,
                         color: context.c.text58,
-                        letterSpacing: 0.4,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        compare == null ? 'Karşılaştır' : 'Değiştir',
+                        style: context.t.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: context.c.text58,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -434,9 +476,23 @@ class _LegendBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rozet = _rozet(context);
+    if (onRemove == null) return rozet;
+    // Kaldırma: eskiden yalnız 12pt ✕ (≈20pt hedef, etiketsiz). Şimdi
+    // rozetin tamamı en az 44pt hedef, ✕ göstergeye döndü (HIG denetimi
+    // 2026-10-10).
+    return Semantics(
+      button: true,
+      label: context.l10n.compareRemoveSemantics(label),
+      excludeSemantics: true,
+      child: _GenisDokunma(onTap: onRemove, child: rozet),
+    );
+  }
+
+  Widget _rozet(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-          left: 10, right: onRemove == null ? 10 : 4, top: 5, bottom: 5),
+          left: 10, right: onRemove == null ? 10 : 6, top: 5, bottom: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(SandikRadius.md),
@@ -463,16 +519,8 @@ class _LegendBadge extends StatelessWidget {
             ),
           ),
           if (onRemove != null) ...[
-            const SizedBox(width: 2),
-            InkWell(
-              onTap: onRemove,
-              borderRadius: BorderRadius.circular(SandikRadius.md),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child:
-                    Icon(Icons.close_rounded, size: 12, color: color),
-              ),
-            ),
+            const SizedBox(width: 6),
+            Icon(Icons.close_rounded, size: 12, color: color),
           ],
         ],
       ),
