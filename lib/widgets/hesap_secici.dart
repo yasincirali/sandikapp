@@ -10,6 +10,7 @@ import '../services/hesap_gecisi.dart';
 import '../services/hesap_kasasi.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
+import '../utils/tr_format.dart' show dayKey;
 import 'uygulama_kabugu.dart' show HesapAvatari;
 
 /// Çoklu hesap arayüzü (bayrak `coklu_hesap`, 2026-10-10).
@@ -399,9 +400,7 @@ String goreliZaman(DateTime t, DateTime simdi) {
   final fark = simdi.difference(t);
   if (fark.inMinutes < 1) return 'az önce';
   if (fark.inHours < 1) return '${fark.inMinutes} dk önce';
-  final bugun = DateTime(simdi.year, simdi.month, simdi.day);
-  final gun = DateTime(t.year, t.month, t.day);
-  final gunFarki = bugun.difference(gun).inDays;
+  final gunFarki = dayKey(simdi).difference(dayKey(t)).inDays;
   if (gunFarki == 0) return 'bugün';
   if (gunFarki == 1) return 'dün';
   if (gunFarki < 7) return '$gunFarki gün önce';

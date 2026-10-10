@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/hesap_gecisi.dart';
 import '../services/notification_service.dart';
 import '../theme/sandik.dart';
+import 'custom_loading_indicator.dart';
 
 /// Kök sağlayıcı kapsamı + hesap geçiş perdesi.
 ///
@@ -98,8 +98,8 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
             ),
           if (perde != null || _bosKare)
             Positioned.fill(
-                child: HesapGecisPerdesiGorunumu(
-                    perde: perde, tema: widget.tema)),
+                child:
+                    HesapGecisPerdesiGorunumu(perde: perde, tema: widget.tema)),
         ],
       ),
     );
@@ -138,9 +138,9 @@ class HesapGecisPerdesiGorunumu extends StatelessWidget {
               child: ColoredBox(
                 color: context.c.background,
                 child: Center(
-                  child: p == null
-                      ? const CupertinoActivityIndicator()
-                      : Padding(
+                  // Perde yokken (boş kare) yalnız gösterge; düğme değil.
+                  child: p != null
+                      ? Padding(
                           padding: const EdgeInsets.all(SandikSpace.xl),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -161,10 +161,13 @@ class HesapGecisPerdesiGorunumu extends StatelessWidget {
                                     ?.copyWith(color: context.c.text58),
                               ),
                               const SizedBox(height: SandikSpace.lg),
-                              const CupertinoActivityIndicator(),
+                              const CustomLoadingIndicator(
+                                  size: CustomLoadingIndicator.small),
                             ],
                           ),
-                        ),
+                        )
+                      : const CustomLoadingIndicator(
+                          size: CustomLoadingIndicator.small),
                 ),
               ),
             );
@@ -210,10 +213,12 @@ class HesapAvatari extends StatelessWidget {
           decoration: BoxDecoration(color: zemin, shape: BoxShape.circle),
           child: Text(
             harf,
-            style: context.t.titleMedium?.copyWith(
-              color: ton % 3 == 0 ? c.onAmber : c.onStatus,
-              fontWeight: FontWeight.w700,
-            ).apply(fontSizeFactor: cap / 40),
+            style: context.t.titleMedium
+                ?.copyWith(
+                  color: ton % 3 == 0 ? c.onAmber : c.onStatus,
+                  fontWeight: FontWeight.w700,
+                )
+                .apply(fontSizeFactor: cap / 40),
           ),
         ),
       ),
