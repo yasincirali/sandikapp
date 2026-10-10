@@ -20,6 +20,10 @@ import {
   buildInflationMessage,
   endeksAyGeri,
   formatPct,
+  hediyeBitisTarihi,
+  hediyeHedefleri,
+  hediyeMesaji,
+  hediyePenceresi,
   monthlyInflation,
 } from '../functions/calendar-nudge/index.ts';
 
@@ -160,4 +164,38 @@ Deno.test('birikim: mesaj rakam ve korku dili taşımaz', () => {
   const metin = `${m.title} ${m.body}`;
   assertEquals(/\d/.test(metin), false, 'kişiye özel rakam yok');
   assertEquals(/bozul|kaybet|son şans|kaçırma/i.test(metin), false);
+});
+
+// ── Premium hediyesi bitiyor (0142) ─────────────────────────────────────────
+
+Deno.test('hediye penceresi: 9–11 gün sonrası', () => {
+  const now = new Date('2026-12-01T09:15:00Z');
+  const { bas, son } = hediyePenceresi(now);
+  assertEquals(bas, '2026-12-10T09:15:00.000Z');
+  assertEquals(son, '2026-12-12T09:15:00.000Z');
+});
+
+Deno.test('hediye hedefleri: abone ve zaten hatırlatılan çıkar', () => {
+  const b = '2026-12-11T00:00:00.000Z';
+  const hedef = hediyeHedefleri(
+    [
+      { user_id: 'a', bitis: b },
+      { user_id: 'abone', bitis: b },
+      { user_id: 'eski', bitis: b },
+      { user_id: 'yeni_hediye', bitis: b },
+    ],
+    new Set(['abone']),
+    // Aynı kullanıcının ÖNCEKİ hediyesi için kayıt yeni hediyeyi durdurmaz.
+    new Set([`eski|${b}`, 'yeni_hediye|2026-09-01T00:00:00.000Z']),
+  );
+  assertEquals(hedef.map((h) => h.user_id), ['a', 'yeni_hediye']);
+});
+
+Deno.test('hediye mesajı: TR tarihi, rakam ya da tehdit yok', () => {
+  // 21:30 UTC = ertesi gün 00:30 TR → 12 Ocak.
+  const m = hediyeMesaji(new Date('2027-01-11T21:30:00Z'));
+  assertEquals(m.title, 'Premium hediyen bitiyor');
+  assertEquals(m.body.includes('12 Ocak'), true);
+  assertEquals(m.body.includes('olduğu gibi kalır'), true);
+  assertEquals(hediyeBitisTarihi(new Date('2026-02-28T12:00:00Z')), '28 Şubat');
 });
