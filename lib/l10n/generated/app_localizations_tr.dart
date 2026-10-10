@@ -8113,6 +8113,26 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirGrafik => 'Mum · EMA50 · EMA200';
 
   @override
+  String get pwdHesapEtiket => 'HESAPLAR';
+
+  @override
+  String get pwdHesapBaslik =>
+      'Kendi hesabın, şirketin, ailen; tek dokunuşla geç.';
+
+  @override
+  String get pwdHesapUcretsiz => '1 hesap';
+
+  @override
+  String get pwdHesapPremium => 'ek hesap ve geçiş';
+
+  @override
+  String get pwOzHesap =>
+      'Aynı telefonda birden çok hesap, aralarında tek dokunuşla geçiş';
+
+  @override
+  String get prmSatirHesap => 'Hesap';
+
+  @override
   String get pwdPortfoyEtiket => 'PORTFÖY';
 
   @override

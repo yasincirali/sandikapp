@@ -51,6 +51,7 @@ void main() {
         'ortak_paylasim': PaywallKarti.portfoy,
         'grafik_mum': PaywallKarti.grafik,
         'grafik_ema': PaywallKarti.grafik,
+        'coklu_hesap': PaywallKarti.hesap,
       };
       beklenen.forEach((kaynak, kart) {
         expect(kaynaktanKart(kaynak), kart, reason: kaynak);
@@ -91,6 +92,7 @@ void main() {
         'lib/screens/portfoy_yonetimi_screen.dart',
         'lib/widgets/kismi_aktarim_sayfasi.dart',
         'lib/widgets/ortak_paylasim_sayfasi.dart',
+        'lib/widgets/hesap_secici.dart',
         // Grafik katmanları (#150): kaynak `dokun(..., 'grafik_mum')`
         // konumsal argümanla geçer; ikinci desen onu yakalar.
         'lib/screens/asset_detail/grafik_katmanlari.dart',
@@ -112,11 +114,21 @@ void main() {
       }
     });
 
-    test('varsayılan sıra, radar, ekstre ve portföy açıkken tüm kartlar', () {
+    test('varsayılan sıra, radar, ekstre, portföy ve hesap açıkken tüm kartlar',
+        () {
       expect(
           desteSirasi('profile_banner',
-              radar: true, ekstreAi: true, portfoy: true),
+              radar: true, ekstreAi: true, portfoy: true, hesap: true),
           PaywallKarti.values);
+    });
+
+    test('hesap kartı yalnız coklu_hesap açıkken', () {
+      expect(desteSirasi('coklu_hesap', radar: true, ekstreAi: true),
+          isNot(contains(PaywallKarti.hesap)));
+      expect(
+          desteSirasi('coklu_hesap', radar: false, ekstreAi: false, hesap: true)
+              .first,
+          PaywallKarti.hesap);
     });
 
     test('portföy kartı yalnız coklu_portfoy açıkken (varsayılan yok)', () {

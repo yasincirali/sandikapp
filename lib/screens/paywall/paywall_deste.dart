@@ -36,6 +36,9 @@ enum PaywallKarti {
   ortak,
   // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
   portfoy,
+  // Çoklu hesap (0137): bir cihazda birden çok hesap; yalnız `coklu_hesap`
+  // açıkken destede.
+  hesap,
   akis,
   hacim,
   not,
@@ -65,6 +68,7 @@ PaywallKarti? kaynaktanKart(String source) {
     'aylik_rapor' => PaywallKarti.not,
     'grafik_mum' || 'grafik_ema' => PaywallKarti.grafik,
     'compare_series' => PaywallKarti.karsilastir,
+    'coklu_hesap' => PaywallKarti.hesap,
     'partner_limit' => PaywallKarti.ortak,
     // Kısmi aktarım ve ortağın göreceği portföyü seçmek de çoklu portföyün
     // Premium yarısı (#148); kart aynı.
@@ -88,6 +92,7 @@ List<PaywallKarti> desteSirasi(
   required bool ekstreAi,
   // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
   bool portfoy = false,
+  bool hesap = false,
 }) {
   final acik = [
     for (final k in PaywallKarti.values)
@@ -95,6 +100,7 @@ List<PaywallKarti> desteSirasi(
         PaywallKarti.akis || PaywallKarti.hacim || PaywallKarti.not => radar,
         PaywallKarti.ekstre => ekstreAi,
         PaywallKarti.portfoy => portfoy,
+        PaywallKarti.hesap => hesap,
         _ => true,
       })
         k,
@@ -187,7 +193,8 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     final sira = desteSirasi(widget.source,
         radar: rc.balinaRadariAcik,
         ekstreAi: rc.ekstreAiEsleme,
-        portfoy: rc.cokluPortfoy);
+        portfoy: rc.cokluPortfoy,
+        hesap: rc.cokluHesap);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
 
@@ -291,6 +298,18 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
               renk: _KartRengi.koyu),
           l.pwdPortfoySayi(1),
           l.pwdPortfoyPremium,
+        ),
+      // Çoklu hesap: ücretsizde tek hesap, Premium'da ek hesap ve geçiş
+      // (`hesapEklemeKilitliProvider`). Geçiş ücretsizde de çalışır —
+      // eklenmiş hesaba dönebilmek kilitlenmez; satılan ŞEY eklemedir.
+      PaywallKarti.hesap => (
+          _KartRengi.krem,
+          l.pwdHesapEtiket,
+          l.pwdHesapBaslik,
+          null,
+          _OrtakGorseli(renk: _KartRengi.krem),
+          l.pwdHesapUcretsiz,
+          l.pwdHesapPremium,
         ),
       PaywallKarti.akis => (
           _KartRengi.amber,
