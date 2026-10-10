@@ -115,6 +115,15 @@ const List<SurumNotu> surumNotlari = [
     // kez görüyor.
     baslik: 'Yeni Bugün kartı, paranın getirisi, kripto ve mevduat',
     yenilikler: [
+      // 2026-10-10: çoklu hesap (#152) + tek yükleme / tek Face ID geçişi.
+      Yenilik(
+        ikon: YenilikIkonu.guvenlik,
+        bayrak: 'coklu_hesap',
+        baslik: 'Hesapların arasında geç',
+        aciklama: 'Profil\'de üstteki adına dokun: bu telefondaki hesapların '
+            'listelenir, birine dokununca o hesaba geçersin. Öbür hesaplar '
+            'açık kalır, şifre sorulmaz. "Hesap ekle" ile 5 hesaba kadar.',
+      ),
       // 2026-10-08: ABD borsası, eurobond, masraflar. Üçü de kendi
       // bayrağıyla görünür; kapalıyken madde sayılmaz.
       Yenilik(
