@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
-import '../models/asset_type.dart';
+import '../models/portfoy_grubu.dart';
 import '../services/tur_filtre_ozeti.dart';
 import '../theme/sandik.dart';
 
@@ -24,6 +24,11 @@ import '../theme/sandik.dart';
 /// İstisna: seçili tür elde değilse (eski seçim, satılmış pozisyon) çip
 /// pasif DEĞİL ve seçili görünür — görünmeyen ya da kaldırılamayan bir
 /// filtre olmasın.
+///
+/// Anahtar [PortfoyGrubu] (yasin 2026-10-10: "varlık filtresi olan her
+/// yere portföydeki filtreleri koymalıyız"): Portföy halkasının kümesi,
+/// hisse ayrımı açıkken "BIST Hisse" / "ABD Hisse". Aynı bileşen
+/// Performans › Filtre ve Portföy hareketleri › Filtrele'de.
 class TurFiltreCipleri extends StatelessWidget {
   const TurFiltreCipleri({
     super.key,
@@ -33,17 +38,17 @@ class TurFiltreCipleri extends StatelessWidget {
     required this.onSec,
   });
 
-  final AssetType? secili;
+  final PortfoyGrubu? secili;
   final TurFiltreOzeti ozet;
 
   /// Gösterilecek türler (bayrakla kapalı tür çağıranda elenir).
-  final List<AssetType> turlar;
-  final ValueChanged<AssetType?> onSec;
+  final List<PortfoyGrubu> turlar;
+  final ValueChanged<PortfoyGrubu?> onSec;
 
   /// Çip sırası: elde olanlar değeri büyükten küçüğe (eşitse adet, sonra
   /// enum sırası), ardından elde olmayanlar enum sırasıyla. Saf — test eder.
-  static ({List<AssetType> eldeki, List<AssetType> olmayan}) sirala(
-      List<AssetType> turlar, TurFiltreOzeti ozet) {
+  static ({List<PortfoyGrubu> eldeki, List<PortfoyGrubu> olmayan}) sirala(
+      List<PortfoyGrubu> turlar, TurFiltreOzeti ozet) {
     final eldeki = [
       for (final t in turlar)
         if ((ozet.adet[t] ?? 0) > 0) t,
@@ -52,7 +57,7 @@ class TurFiltreCipleri extends StatelessWidget {
         if (d != 0) return d;
         final n = (ozet.adet[b] ?? 0).compareTo(ozet.adet[a] ?? 0);
         if (n != 0) return n;
-        return a.index.compareTo(b.index);
+        return turlar.indexOf(a).compareTo(turlar.indexOf(b));
       });
     final olmayan = [
       for (final t in turlar)

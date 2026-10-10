@@ -6,7 +6,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// [sonra]: seçimden sonra çağrılır — Filtre alt sayfası (tek akış) kendi
   /// içeriğini yeniler; sayfa ayrı bir rota, ekranın `setState`'i onu
   /// yeniden kurmaz.
-  Widget _typeChip(AssetType? type, String label, {VoidCallback? sonra}) {
+  Widget _typeChip(PortfoyGrubu? type, String label, {VoidCallback? sonra}) {
     final selected = _typeFilter == type;
     final color = type?.color ?? context.c.amberText;
     return Padding(
@@ -226,7 +226,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                 _typeChip(null, context.l10n.allTypes),
                 for (final t in AssetType.values)
                   if (RemoteConfigService.instance.turSecenegi(t))
-                    _typeChip(t, t.labelOf(context.l10n)),
+                    _typeChip(PortfoyGrubu(t), t.labelOf(context.l10n)),
               ],
             ),
             // Gerçek|Simülasyon anahtarı burada YOK (2026-10-04,
@@ -490,7 +490,8 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                       children: [
                         _typeChip(null, l.allTypes, sonra: tazele),
                         for (final t in AssetType.values)
-                          _typeChip(t, t.labelOf(l), sonra: tazele),
+                          _typeChip(PortfoyGrubu(t), t.labelOf(l),
+                              sonra: tazele),
                       ],
                     ),
                     if (araclar) ...[
@@ -569,23 +570,38 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
     final pState = sayfaRef.watch(portfolioProvider).valueOrNull;
     final ortakVarliklari =
         sayfaRef.watch(allPartnerAssetsProvider).valueOrNull ?? const {};
+    // Portföy seçimi de sayılır (2026-10-10): sayfaya portföy seçici geldi;
+    // çipler seçili portföyde ne olduğunu söylemeli — grafikle aynı kapsam
+    // (`kapsamSahipDefterleri`, ekranın `ownerLots`'u).
+    final portfoyKapsami = sayfaRef.watch(portfoyKapsamiProvider);
     final List<List<Asset>> sahipLotlari = pState == null
         ? const []
-        : _view == ''
-            ? [pState.assets]
-            : _view != null
-                ? [ortakVarliklari[_view] ?? const []]
-                : [pState.assets, ...ortakVarliklari.values];
+        : kapsamSahipDefterleri(
+            kisi: _view,
+            benim: pState.assets,
+            ortaklar: ortakVarliklari,
+            portfoy: portfoyKapsami.secim,
+            bilinenPortfoyler: portfoyKapsami.bilinen,
+          );
+    // Portföy halkasının kümesi (yasin 2026-10-10: "varlık filtresi olan
+    // her yere portföydeki filtreleri koymalıyız"): ABD hissesi tutuluyorsa
+    // ve `abd_hisse` açıksa hisse BIST + ABD diye ikiye bölünür.
+    final pazarAyir = PortfoyGrubu.pazarAyrimi(
+        [for (final l in sahipLotlari) ...l.where((a) => a.isActive)],
+        bayrak: RemoteConfigService.instance.abdHisse);
     final ozet = TurFiltreOzeti.hesapla(
-        sahipLotlari, pState?.toTRY ?? (t, _) => t);
+        sahipLotlari, pState?.toTRY ?? (t, _) => t,
+        pazarAyir: pazarAyir);
+    final secili = _typeFilter?.uyarla(pazarAyir: pazarAyir);
     final turlar = [
-      for (final t in AssetType.values)
+      for (final g in PortfoyGrubu.listesi(AssetType.values,
+          pazarAyir: pazarAyir))
         // Bayrakla kapalı tür gizlenir — elde varsa ya da seçiliyse kalır
         // (seçimi görünmeyen filtre olmasın).
-        if (RemoteConfigService.instance.turSecenegi(t) ||
-            (ozet.adet[t] ?? 0) > 0 ||
-            _typeFilter == t)
-          t,
+        if (RemoteConfigService.instance.turSecenegi(g.tur) ||
+            (ozet.adet[g] ?? 0) > 0 ||
+            secili == g)
+          g,
     ];
     final n = _filtreSayisi(ortaklar);
 
@@ -641,11 +657,19 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
           },
         ),
       ],
+      // Çoklu portföy (0133): Portföy ekranındaki seçici burada da — yalnız
+      // "Ben"de ve özellik görünürken (eski panelle aynı kural).
+      if (_view == '' && sayfaRef.watch(cokluPortfoyGorunurProvider)) ...[
+        const SizedBox(height: SandikSpace.md),
+        SandikSectionHeader(title: l.portfoySeciciEtiketi),
+        const SizedBox(height: SandikSpace.sm),
+        PortfoySecici(onDegisti: tazele),
+      ],
       const SizedBox(height: SandikSpace.md),
       SandikSectionHeader(title: l.s2FiltreKategori),
       const SizedBox(height: SandikSpace.sm),
       TurFiltreCipleri(
-        secili: _typeFilter,
+        secili: secili,
         ozet: ozet,
         turlar: turlar,
         onSec: (t) {
@@ -869,7 +893,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
 
     if (!holdsSelectedType) {
       return _ChartPlaceholder(
-        icon: type?.icon ?? Icons.inbox_rounded,
+        icon: type?.tur.icon ?? Icons.inbox_rounded,
         iconColor: type?.color,
         title: type == null
             ? context.l10n.noAssetsYetTitle

@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:portfoy_takip/l10n/generated/app_localizations_tr.dart';
 import 'package:portfoy_takip/models/asset.dart';
 import 'package:portfoy_takip/models/asset_type.dart';
+import 'package:portfoy_takip/models/portfoy_grubu.dart';
 import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
@@ -310,16 +311,19 @@ void main() {
 
     test('sıra: elde olanlar değerce büyükten küçüğe, olmayanlar enum sırası',
         () {
-      const ozet = TurFiltreOzeti(
-        adet: {AssetType.hisse: 2, AssetType.altin: 1, AssetType.kripto: 1},
-        deger: {AssetType.hisse: 100, AssetType.altin: 900},
+      const h = PortfoyGrubu(AssetType.hisse);
+      const a = PortfoyGrubu(AssetType.altin);
+      const k = PortfoyGrubu(AssetType.kripto);
+      final ozet = TurFiltreOzeti(
+        adet: {h: 2, a: 1, k: 1},
+        deger: {h: 100, a: 900},
       );
-      final s = TurFiltreCipleri.sirala(AssetType.values, ozet);
+      final hepsi = PortfoyGrubu.listesi(AssetType.values, pazarAyir: false);
+      final s = TurFiltreCipleri.sirala(hepsi, ozet);
       // Kripto'nun değeri bilinmiyor (0) → elde ama en sonda.
-      expect(s.eldeki, [AssetType.altin, AssetType.hisse, AssetType.kripto]);
-      expect(s.olmayan.first, AssetType.values
-          .firstWhere((t) => !s.eldeki.contains(t)));
-      expect(s.olmayan.contains(AssetType.hisse), isFalse);
+      expect(s.eldeki, [a, h, k]);
+      expect(s.olmayan.first, hepsi.firstWhere((t) => !s.eldeki.contains(t)));
+      expect(s.olmayan.contains(h), isFalse);
     });
 
     testWidgets('320pt: sayfa taşmaz', (tester) async {
