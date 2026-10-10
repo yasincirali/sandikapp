@@ -101,7 +101,9 @@ void main() {
     expect(ad.contains('baz.formatter(digits: 0)'), isTrue,
         reason: 'dönem değişim tutarı portföy değeridir');
     expect(ad.contains('tryFormatter(digits: 0)'), isFalse);
-    expect(ad.contains('tryFormatter(digits: fiyatOndaligi('), isTrue,
-        reason: 'fiyat ipucu (₺; 1 ₺ ve üstü 2 ondalık) çevrilmez');
+    // 2026-10-10: birim fiyat ortak `fiyatBicimi`'nden (kaynak hassasiyeti,
+    // `fiyat_hassasiyeti_test`); simgesi ₺ kalır, baz paraya çevrilmez.
+    expect(ad.contains('fiyatBicimi(birimFiyat'), isTrue,
+        reason: 'fiyat ipucu (₺) ortak fiyat biçiminden, çevrilmez');
   });
 }

@@ -199,8 +199,10 @@ extension _DetayOzet on _AssetDetailScreenState {
   /// Ondalık [fiyatOndaligi]'ndan: 1 ₺ altındaki fiyat 2 haneyle
   /// okunmuyordu (BES fonu KED ₺0,179147 → "₺0,18", haftalık değişim
   /// "+₺0,00"; 2026-10-04 kullanıcı bildirimi). 1 ₺ ve üstü yine 2 hane.
-  NumberFormat _birimBicimi(double birimFiyat) =>
-      tryFormatter(digits: fiyatOndaligi(birimFiyat));
+  ///
+  /// `goz_alici` açıkken kaynak hassasiyeti ([fiyatBicimi]): fon ₺1,234567.
+  NumberFormat _birimBicimi(double birimFiyat) => fiyatBicimi(birimFiyat,
+      azami: widget.asset.type.fiyatHassasiyeti);
 
   // ── Başlık ───────────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 
 enum AssetType {
@@ -79,6 +80,32 @@ enum AssetType {
         AssetType.eurobond => l.assetTypeEurobond,
         AssetType.diger => l.assetTypeOther,
       };
+
+  /// Birim fiyatta gösterilecek EN ÇOK ondalık — türün piyasa standardı
+  /// (yasin, 2026-10-10). Kaynak bu kadar haneyle gelir; sondaki sıfırlar
+  /// `fiyatBicimi`'nde atılır, en az 2 hane kalır.
+  ///
+  /// · hisse 4 — BIST adımı 0,01 (veri 2 haneyle gelir); ABD'de $1 altı
+  ///   0,0001.
+  /// · fon / BES 6 — TEFAS birim pay fiyatını 6 haneyle yayımlar.
+  /// · döviz 6 — kur kaynakları 4–6 hane kote eder.
+  /// · altın / emtia / eurobond 4 — gram ve ons fiyatı 2, eurobond puanı 3.
+  /// · kripto / diğer 8 — 1 satoshi; Binance TRY paritesi değişken adımlı.
+  int get fiyatAzamiOndalik => switch (this) {
+        AssetType.fon || AssetType.bes || AssetType.doviz => 6,
+        AssetType.hisse ||
+        AssetType.altin ||
+        AssetType.emtia ||
+        AssetType.eurobond => 4,
+        AssetType.mevduat => 2,
+        AssetType.kripto || AssetType.diger => 8,
+      };
+
+  /// `fiyatBicimi`'ne geçen hassasiyet: `goz_alici` açıkken
+  /// [fiyatAzamiOndalik], kapalıyken null (eski kural birebir).
+  int? get fiyatHassasiyeti => RemoteConfigService.instance.gozAlici
+      ? fiyatAzamiOndalik
+      : null;
 
   /// Sembol alanının ipucu — dile göre.
   String tickerHintOf(AppLocalizations l) => switch (this) {

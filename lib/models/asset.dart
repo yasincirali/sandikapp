@@ -446,16 +446,26 @@ class Asset {
   /// Kriptoda küsurat 2 haneye SIĞMAZ (0,0045 BTC) — gereken kadar hane,
   /// en çok 8 (kullanıcı isteği 2026-09-25: "kripto varlıkları da gerekli
   /// ondalık basamaklarla tut"). Diğer türlerde kural değişmedi.
+  ///
+  /// `goz_alici` açıkken (yasin, 2026-10-10: "yuvarlama yapmayalım") her
+  /// türde girilen kadar hane, en çok 8: 10,7538 pay "10,75" değil; 2,5 gr
+  /// "2,50 gr" değil. Portföy paneli ve hareket satırı [azamiOndalik] ile
+  /// zaten sıfır atarak 4 hane yazıyordu; iki yüzey aynı metne iner.
   int _ondalikFor(double miktar) {
     if (_tamSayiMi(miktar)) return 0;
-    if (type == AssetType.kripto) return gerekenOndalik(miktar);
+    if (type == AssetType.kripto || RemoteConfigService.instance.gozAlici) {
+      return gerekenOndalik(miktar);
+    }
     return 2;
   }
 
   /// `qtyFormatter`'ın (sondaki sıfırları atan) üst sınırı: kriptoda 8,
   /// diğerlerinde 4. Miktar ve birim maliyet satırları bunu kullanır; 4
   /// haneye kesilen 0,00012345 BTC "0,0001" okunuyordu.
-  int get azamiOndalik => type == AssetType.kripto ? kriptoAzamiOndalik : 4;
+  int get azamiOndalik =>
+      type == AssetType.kripto || RemoteConfigService.instance.gozAlici
+          ? kriptoAzamiOndalik
+          : 4;
 
   /// Değer tam sayı mı? Kayan nokta gürültüsüne karşı toleranslı.
   ///

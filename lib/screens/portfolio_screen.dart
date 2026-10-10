@@ -2795,9 +2795,18 @@ class _AssetDetailsPanel extends StatelessWidget {
       ..sort((a, b) => a.addedDate.compareTo(b.addedDate));
     final firstBuyDate = buyLots.isNotEmpty ? buyLots.first.addedDate : null;
 
-    final avgCostStr = position.weightedPurchasePrice > 0
-        ? '${numFmt.format(position.weightedPurchasePrice)} ${rep.currency}'
-        : '—';
+    // `goz_alici` açıkken (2026-10-10) ortalama maliyet bir birim FİYATTIR
+    // ve fiyat biçimiyle yazılır: fon "1,2346 TRY" değil "₺1,234567" —
+    // miktar biçimi 4 haneye kesiyordu, "TRY" de uygulamanın ₺ diline
+    // uymuyordu. Bayrak kapalıyken eski metin birebir.
+    final gozAlici = RemoteConfigService.instance.gozAlici;
+    final paraSimgesi = kotasyonSembolu('', rep.currency);
+    final avgCostStr = position.weightedPurchasePrice <= 0
+        ? '—'
+        : gozAlici
+            ? fmtFiyat(position.weightedPurchasePrice,
+                azami: rep.type.fiyatHassasiyeti, symbol: paraSimgesi)
+            : '${numFmt.format(position.weightedPurchasePrice)} ${rep.currency}';
 
     final qty = position.totalQuantity;
     final qtyStr = qty == qty.truncateToDouble()
@@ -2821,7 +2830,10 @@ class _AssetDetailsPanel extends StatelessWidget {
           ? '—'
           : baz.gizli
               ? baz.gizliTutar
-              : '${costFmt2.format(position.totalCost)} ${rep.currency}',
+              : gozAlici
+                  ? tryFormatter(digits: 2, symbol: paraSimgesi)
+                      .format(position.totalCost)
+                  : '${costFmt2.format(position.totalCost)} ${rep.currency}',
     );
 
     // Grafiğin rengi satırdaki yüzdeyle aynı kaynaktan gelmeli (temettü dahil),
