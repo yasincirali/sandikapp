@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
+import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -355,18 +356,14 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   }
 
   /// Sahiplik sekmesine göre ham ledger.
-  List<Asset> get _ledger {
-    final myAssets =
-        ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
-    if (_view == '') return myAssets;
-    if (_view != null && _view!.isNotEmpty) {
-      return widget.allPartnerAssets[_view!] ?? const [];
-    }
-    return [
-      ...myAssets,
-      for (final list in widget.allPartnerAssets.values) ...list,
-    ];
-  }
+  ///
+  /// Kapsam tek kaynaktan (`gorunum_kapsami.dart`). Hareketler ana sayfadan
+  /// açılır; portföy süzgeci taşımaz (kullanıcı toplamı).
+  List<Asset> get _ledger => kapsamDefteri(
+        kisi: _view,
+        benim: ref.read(portfolioProvider).valueOrNull?.assets ?? const [],
+        ortaklar: widget.allPartnerAssets,
+      );
 
   /// Seçili dönemin sınırları — sayfa taslağı için de aynı kural.
   static (DateTime?, DateTime?) _sinirlar(

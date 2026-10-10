@@ -20,6 +20,7 @@ import '../widgets/alarm_kur_sheet.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:intl/intl.dart';
 import '../models/asset.dart';
+import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
 import '../models/portfoy_grubu.dart';
 import '../models/varlik_monogrami.dart';
@@ -476,18 +477,12 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                 // iki kişi tek pozisyonda birleşir ve kâr/zarar
                                 // tekil sekmelerin toplamıyla tutarsız çıkar.
                                 // Ayrıntı: aggregatePositionsByOwner dökümantasyonu.
-                                final List<List<Asset>> ownerLots;
-                                if (_view == '') {
-                                  ownerLots = [pState.assets];
-                                } else if (_view != null) {
-                                  ownerLots = [partnerMap[_view] ?? const []];
-                                } else {
-                                  // Birlikte
-                                  ownerLots = [
-                                    pState.assets,
-                                    ...partnerMap.values,
-                                  ];
-                                }
+                                // Kapsam tek kaynaktan (`gorunum_kapsami`).
+                                final ownerLots = kapsamSahipDefterleri(
+                                  kisi: _view,
+                                  benim: pState.assets,
+                                  ortaklar: partnerMap,
+                                );
 
                                 // Birlikte'de aynı varlık TEK satır: hesap
                                 // sahip başına kalır, satır parçaların

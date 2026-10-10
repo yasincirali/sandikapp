@@ -18,6 +18,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
+import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
@@ -756,14 +757,12 @@ class _PortfolioPerformanceScreenState
                       // `targetAssets` ham ledger olarak akmaya devam eder
                       // (HistoryService buy/sell tarihlerini kendisi yorumlar),
                       // ancak aggregate edilirken sahipler ayrı tutulur.
-                      final List<List<Asset>> ownerLots;
-                      if (_view == '') {
-                        ownerLots = [pState.assets];
-                      } else if (_view != null) {
-                        ownerLots = [partnerMap[_view] ?? const []];
-                      } else {
-                        ownerLots = [pState.assets, ...partnerMap.values];
-                      }
+                      // Kapsam tek kaynaktan (`gorunum_kapsami`).
+                      final ownerLots = kapsamSahipDefterleri(
+                        kisi: _view,
+                        benim: pState.assets,
+                        ortaklar: partnerMap,
+                      );
                       List<Asset> targetAssets = [
                         for (final l in ownerLots) ...l
                       ];
