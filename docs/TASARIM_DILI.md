@@ -119,6 +119,7 @@ perdesi, CSV "Okunuyor…" aşaması, toplu eklemede "n/N kaydediliyor".
 | Bölüm başlığı | `SandikSectionHeader` |
 | Üst çubuk | `SandikAppBar` |
 | 2–4 seçenekli seçici | `SandikSegment` |
+| Varlık türü süzgeci (sade çipler; elde olan önde, olmayan sonda pasif) | `TurFiltreCipleri` (Performans › Filtre; bayrak `goz_alici`) |
 | Açma/kapama | `Switch.adaptive` (açık track `amberText`) |
 | Sheet tutamacı | `SandikTutamac` |
 | Tarih seçici | `pickSandikDate` |

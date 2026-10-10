@@ -7377,6 +7377,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get s2FiltreKategori => 'Category';
 
   @override
+  String get s2FiltreSifirla => 'Reset';
+
+  @override
+  String get s2FiltreUygula => 'Apply';
+
+  @override
+  String get s2FiltreYok => 'None';
+
+  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Balance up $tutar; $alim of that is new buys.';
   }

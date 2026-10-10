@@ -7315,6 +7315,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s2FiltreKategori => 'Kategori';
 
   @override
+  String get s2FiltreSifirla => 'Sıfırla';
+
+  @override
+  String get s2FiltreUygula => 'Uygula';
+
+  @override
+  String get s2FiltreYok => 'Yok';
+
+  @override
   String s2BakiyeArttiAlim(String tutar, String alim) {
     return 'Bakiye $tutar arttı; bunun $alim kadarı yeni alım.';
   }
