@@ -10,6 +10,7 @@ import '../config/pref_keys.dart';
 
 import 'notification_service.dart';
 import 'push_message_router.dart';
+import 'hesap_gecisi.dart';
 import 'remote_config_service.dart';
 import 'supabase_service.dart';
 import 'crash_reporter.dart';
@@ -118,6 +119,22 @@ class RemotePushService {
 
     _foregroundSubscription =
         FirebaseMessaging.onMessage.listen((message) async {
+      // Çoklu hesap (0137): bu cihazda PASİF duran bir hesabın bildirimi.
+      // Aktif hesabın eylemlerine (analiz tetiği, davet) karışmaz; yalnız
+      // görünür bildirim gösterilir (Android ön planda kendisi göstermez).
+      // Başlık sunucudan hesap adıyla gelir.
+      final hesap = message.data['hesap_uid']?.toString();
+      if (hesap != null && hesap.isNotEmpty && hesap != _activeUserId) {
+        final n = message.notification;
+        if (n != null && Platform.isAndroid) {
+          await NotificationService.instance.showSignalNotification(
+            title: n.title ?? 'sandık',
+            body: n.body ?? '',
+            assetId: '',
+          );
+        }
+        return;
+      }
       // Yönlendirme kuralları saf `pushMesajiniYonlendir`'de (test edilir);
       // burada yalnızca eylem yürütülür.
       final eylem = pushMesajiniYonlendir(
@@ -157,17 +174,29 @@ class RemotePushService {
     });
 
     _openedAppSubscription =
-        FirebaseMessaging.onMessageOpenedApp.listen((message) {
+        FirebaseMessaging.onMessageOpenedApp.listen((message) async {
+      // Pasif hesabın bildirimi: önce o hesaba geçilir, bildirim geçişten
+      // sonra işlenir (`UygulamaKabugu`).
+      if (await HesapGecisi.instance
+          .bildirimHesabinaGec(message.data, _activeUserId)) {
+        return;
+      }
       NotificationService.instance.handleRemoteMessageData(message.data);
     });
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
       CrashReporter.arkaPlan(Future<void>.microtask(
-        () => NotificationService.instance.handleRemoteMessageData(
-          initialMessage.data,
-          fromColdStart: true,
-        ),
+        () async {
+          if (await HesapGecisi.instance
+              .bildirimHesabinaGec(initialMessage.data, null)) {
+            return;
+          }
+          NotificationService.instance.handleRemoteMessageData(
+            initialMessage.data,
+            fromColdStart: true,
+          );
+        },
       ), reason: 'remote_push_service.getInitialMessage');
     }
 

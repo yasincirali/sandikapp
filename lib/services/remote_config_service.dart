@@ -422,6 +422,14 @@ class RemoteConfigService {
     // doğar: 0133 iki sunucuya ulaşmadan açılırsa her varlık yazımı
     // PGRST204 alır. Kapalıyken toplamlar, seriler ve ekranlar birebir eski.
     'coklu_portfoy': false,
+    // Çoklu hesap (2026-10-10, yasin: "hesap ekleme ve aralarında session
+    // switch, instagramdaki gibi"). Profil başlığında hesap seçici, giriş
+    // ekranında cihazdaki hesaplar, iki seçenekli çıkış, pasif hesabın
+    // bildirimi (0137). Görünürlük bu bayrak VE (Premium görünür ya da
+    // cihazda zaten 2+ hesap: hesaba geçen kullanıcı geri dönebilmeli).
+    // Ekleme Premium'dur (paywall açıkken). KAPALI doğar: kapalıyken kasa
+    // hiç yazılmaz, giriş/çıkış birebir eski yoldan yürür.
+    'coklu_hesap': false,
 
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
@@ -778,6 +786,9 @@ class RemoteConfigService {
   /// Kullanıcıya görünürlük ayrıca `premiumOzellikleriGorunur` ister
   /// (`cokluPortfoyGorunurProvider`).
   bool get cokluPortfoy => _bayrak('coklu_portfoy');
+
+  /// Çoklu hesap ve hesaplar arası geçiş. Gerekçe `_defaults`'ta.
+  bool get cokluHesap => _bayrak('coklu_hesap');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

@@ -20,6 +20,9 @@ export type TokenRow = {
   updated_at?: string | null;
   /// 0092: cihazın anladığı bildirim biçimi (yeni istemci yazar; eski NULL).
   bildirim_surumu?: number | null;
+  /// 0137 çoklu hesap: satır cihazın PASİF hesabına aitse (o an başka hesap
+  /// açık) bildirim başlığına konacak hesap adı. Birincil satırda yok.
+  hesap_etiketi?: string | null;
 };
 
 /// Gönderen fonksiyonların okuduğu sütunlar.
@@ -90,4 +93,46 @@ export function dedupeTokensByDevice(
     tokensByUser.set(r.user_id, list);
   }
   return { tokensByUser, skipped: rows.length - tek.length };
+}
+
+/// `SupabaseClient` yapısal olarak uyar; test sahte istemci verir.
+type RpcIstemcisi = {
+  rpc: (fn: string, args?: Record<string, unknown>) => unknown;
+};
+
+/// Cihazlardaki PASİF hesapların token satırları (0137,
+/// `push_ek_hesap_hedefleri`). Çoklu hesap kullanan cihazda token'ın birincil
+/// sahibi o an açık hesaptır; öteki hesapların bildirimi bu satırlarla gider.
+///
+/// `userIds` verilirse yalnız o kullanıcılar. Hata (RPC henüz dağıtılmamış,
+/// 42883/PGRST202 vb.) boş liste döner: ek hesap bildirimi bir süstür, onun
+/// yüzünden birincil gönderim düşmemeli. Tablo boşken (bayrak kapalı, kimse
+/// hesap eklememiş) sonuç boştur — mevcut gönderim birebir aynı kalır.
+export async function ekHesapSatirlari(
+  admin: RpcIstemcisi,
+  userIds: string[] | null = null,
+): Promise<TokenRow[]> {
+  if (userIds !== null && userIds.length === 0) return [];
+  try {
+    const { data, error } = (await admin.rpc(
+      'push_ek_hesap_hedefleri',
+      userIds === null ? {} : { p_user_ids: userIds },
+    )) as SorguSonucu;
+    if (error) {
+      console.warn('push_ek_hesap_hedefleri', error.code ?? 'hata');
+      return [];
+    }
+    return Array.isArray(data) ? (data as TokenRow[]) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+/// `sendFcmNotification({ hesap })` değeri: pasif hesap satırıysa hesap
+/// kimliği + etiketi, birincil satırsa `undefined` (gövde birebir eskisi).
+export function ekHesap(
+  row: Pick<TokenRow, 'user_id' | 'hesap_etiketi'>,
+): { uid: string; etiket: string } | undefined {
+  const etiket = row.hesap_etiketi?.trim();
+  return etiket ? { uid: row.user_id, etiket } : undefined;
 }

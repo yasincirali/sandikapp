@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/sandik.dart';
 import '../theme/yazi_boyutu.dart';
+import '../widgets/hesap_secici.dart' show profilSekmesiUzunBasildi;
 import '../widgets/sekme_basa_don.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
@@ -409,6 +410,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       child: SandikBasma(
         behavior: HitTestBehavior.opaque,
         onTap: () => _onItemTapped(index),
+        // Çoklu hesap: Profil sekmesine uzun basma hesap listesini açar
+        // (Instagram). Çubuğun görünüşü değişmez; bayrak kapalıyken no-op.
+        onLongPress: index == 4
+            ? () => profilSekmesiUzunBasildi(context, ref)
+            : null,
         child: Semantics(
           button: true,
           selected: isSelected,

@@ -67,7 +67,7 @@ import {
 } from '../_shared/app_notifications.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
 import { enflasyonOranlari, tufeMesaji } from '../_shared/tufe_push.ts';
-import { collapseTokens, TokenRow } from '../_shared/push_tokens.ts';
+import { collapseTokens, ekHesap, ekHesapSatirlari, TokenRow } from '../_shared/push_tokens.ts';
 
 // Testler bu modülden okuyor; kaynağı `_shared/push_tokens.ts`.
 export { collapseTokens };
@@ -468,7 +468,11 @@ Deno.serve(async (request) => {
     if (tokenError) {
       throw new Error(`Push tokenlari alinamadi: ${tokenError.message}`);
     }
-    const tokens = collapseTokens((tokenRows ?? []) as TokenRow[])
+    // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+    const tokens = collapseTokens([
+      ...((tokenRows ?? []) as TokenRow[]),
+      ...await ekHesapSatirlari(admin),
+    ])
       .filter((t) => sadece === null || sadece.has(t.user_id));
     if (tokens.length === 0) {
       return jsonResponse({
@@ -860,6 +864,7 @@ Deno.serve(async (request) => {
         accessToken,
         projectId: fcmProjectId,
         token: tokenRow.token,
+        hesap: ekHesap(tokenRow),
         title: mesaj.title,
         body: mesaj.body,
         channelId: CHANNEL_ID,
@@ -927,6 +932,7 @@ Deno.serve(async (request) => {
           accessToken,
           projectId: fcmProjectId,
           token: t.token,
+          hesap: ekHesap(t),
           title: tm.title,
           body: tm.body,
           channelId: CHANNEL_ID,

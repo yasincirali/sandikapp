@@ -17,7 +17,7 @@
 // kalbi); sessiz saatlere uyar.
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { createAccessToken, sendFcmNotification, ServiceAccount } from './fcm.ts';
-import { collapseTokens, TokenRow } from './push_tokens.ts';
+import { collapseTokens, ekHesap, ekHesapSatirlari, TokenRow } from './push_tokens.ts';
 import { sessizKullanicilar } from './quiet_hours.ts';
 import { appNotificationRow, recordAppNotification } from './app_notifications.ts';
 
@@ -94,7 +94,11 @@ export async function tufeGunuPushu(
   const { data: tokenRows } = await admin
     .from('user_push_tokens')
     .select('token, user_id, device_id, platform, updated_at');
-  const tokens = collapseTokens((tokenRows ?? []) as TokenRow[]);
+  // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+  const tokens = collapseTokens([
+    ...((tokenRows ?? []) as TokenRow[]),
+    ...await ekHesapSatirlari(admin),
+  ]);
   if (tokens.length === 0) return { ok: true, reason: 'Kayitli push token yok.', sent: 0 };
   const userIds = [...new Set(tokens.map((t) => t.user_id))];
   const sessiz = await sessizKullanicilar(admin, userIds);
@@ -129,6 +133,7 @@ export async function tufeGunuPushu(
       accessToken,
       projectId: args.fcm.projectId,
       token: t.token,
+      hesap: ekHesap(t),
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,
