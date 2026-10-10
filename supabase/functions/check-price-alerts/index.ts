@@ -21,7 +21,13 @@ import {
   type KanaryaSonucu,
 } from '../_shared/kanarya.ts';
 import { cronSecretZorunlu, cronYetkisiVarMi } from '../_shared/cron_auth.ts';
-import { collapseTokens, TokenRow, tokenSatirlariniOku } from '../_shared/push_tokens.ts';
+import {
+  collapseTokens,
+  ekHesap,
+  ekHesapSatirlari,
+  TokenRow,
+  tokenSatirlariniOku,
+} from '../_shared/push_tokens.ts';
 import {
   kartGorseli,
   KartAyari,
@@ -253,7 +259,11 @@ Deno.serve(async (request) => {
     const { data: tokenRows } = await tokenSatirlariniOku((s) =>
       admin.from('user_push_tokens').select(s).in('user_id', userIds)
     );
-    const tokens = collapseTokens(tokenRows ?? []);
+    // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+    const tokens = collapseTokens([
+      ...(tokenRows ?? []),
+      ...await ekHesapSatirlari(admin, userIds),
+    ]);
 
     const tokensByUser = new Map<string, TokenRow[]>();
     for (const t of tokens) {
@@ -351,6 +361,7 @@ Deno.serve(async (request) => {
           accessToken,
           projectId: fcmProjectId,
           token: t.token,
+          hesap: ekHesap(t),
           title: mesaj.title,
           body: mesaj.body,
           channelId: CHANNEL_ID,

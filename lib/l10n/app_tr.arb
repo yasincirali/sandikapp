@@ -5581,5 +5581,13 @@
   "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}},
   "ortakGorurOnizleme": "{ad} görecek",
   "@ortakGorurOnizleme": {"placeholders": {"ad": {"type": "String"}}},
-  "ortakGorurHicbiriKisa": "Hiçbiri"
+  "ortakGorurHicbiriKisa": "Hiçbiri",
+  "cihazHesapAcikKalir": "{ad} açık kalır. Yeni hesaba giriş yap ya da kayıt ol; sonra Profil'den hesaplar arasında geçebilirsin.",
+  "@cihazHesapAcikKalir": {"placeholders": {"ad": {"type": "String"}}},
+  "cihazHesaplari": "Bu cihazdaki hesaplar",
+  "cihazHesapGeriDon": "Geri dön",
+  "cihazHesapDevamEt": "Devam et",
+  "cihazHesapTekrarGiris": "Tekrar giriş gerekli · {eposta}",
+  "@cihazHesapTekrarGiris": {"placeholders": {"eposta": {"type": "String"}}},
+  "cihazHesapBaskaHesapla": "ya da başka bir hesapla giriş yap"
 }

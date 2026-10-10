@@ -9,6 +9,9 @@ import '../services/auth_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/social_auth_service.dart';
 import '../services/disclaimer_service.dart';
+import '../services/hesap_gecisi.dart';
+import '../services/hesap_kasasi.dart';
+import '../widgets/hesap_secici.dart' show cokluHesapCikisi;
 import '../services/remote_push_service.dart';
 import '../services/supabase_service.dart';
 import 'bulk_cart_provider.dart';
@@ -148,6 +151,7 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> logout() async {
+    final uid = state.valueOrNull?.id;
     unawaited(AnalyticsService.instance.logLogout());
     // `finally`: push durdurma ya da çıkış adımlarından biri hata verse de
     // uygulama giriş ekranına dönmeli ve sepet boşalmalı. Eskiden hata
@@ -161,6 +165,12 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
       DisclaimerService.instance.clearCache();
       ref.read(bulkCartProvider.notifier).clear();
       state = const AsyncData(null);
+      // Çoklu hesap: çıkılan hesabın saklı oturumu sunucuda iptal edildi;
+      // cihazdaki kopyası da gider (kasada yoksa no-op).
+      if (uid != null) {
+        await HesapKasasi.instance.sil(uid);
+        await HesapGecisi.instance.listeyiTazele();
+      }
     }
   }
 
@@ -168,7 +178,12 @@ class AuthNotifier extends AsyncNotifier<AppUser?> {
   /// Başarılıysa state'i null'a çeker → AuthGate LoginScreen'e döner.
   Future<void> deleteAccount({String? password}) async {
     await RemotePushService.instance.stop();
+    final uid = state.valueOrNull?.id;
     await AuthService.instance.deleteAccount(password: password);
+    if (uid != null) {
+      await HesapKasasi.instance.sil(uid);
+      await HesapGecisi.instance.listeyiTazele();
+    }
     DisclaimerService.instance.clearCache();
     ref.read(bulkCartProvider.notifier).clear();
     state = const AsyncData(null);
@@ -381,6 +396,10 @@ final activePartnersProvider = Provider<List<AppUser>>((ref) {
 /// Onay dialogu gösterir, onaylanırsa logout yapar.
 /// _AuthGate authProvider'ı dinlediği için LoginScreen yönlendirmesi otomatik olur.
 Future<void> confirmAndLogout(BuildContext context, WidgetRef ref) async {
+  // Çoklu hesap (bayrak `coklu_hesap`): cihazda başka hesap da varsa
+  // "bu hesaptan / tüm hesaplardan" sorulur; yoksa bugünkü soru.
+  if (await cokluHesapCikisi(context, ref)) return;
+  if (!context.mounted) return;
   final confirm = await showSandikConfirm(
     context: context,
     title: 'Çıkış yap',

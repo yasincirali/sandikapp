@@ -5002,5 +5002,13 @@
   "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}},
   "ortakGorurOnizleme": "{ad} will see",
   "@ortakGorurOnizleme": {"placeholders": {"ad": {"type": "String"}}},
-  "ortakGorurHicbiriKisa": "None"
+  "ortakGorurHicbiriKisa": "None",
+  "cihazHesapAcikKalir": "{ad} stays signed in. Sign in or sign up with the new account; then switch between accounts from Profile.",
+  "@cihazHesapAcikKalir": {"placeholders": {"ad": {"type": "String"}}},
+  "cihazHesaplari": "Accounts on this device",
+  "cihazHesapGeriDon": "Go back",
+  "cihazHesapDevamEt": "Continue",
+  "cihazHesapTekrarGiris": "Sign in again · {eposta}",
+  "@cihazHesapTekrarGiris": {"placeholders": {"eposta": {"type": "String"}}},
+  "cihazHesapBaskaHesapla": "or sign in with another account"
 }

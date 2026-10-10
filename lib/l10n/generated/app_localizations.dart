@@ -13701,6 +13701,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hiçbiri'**
   String get ortakGorurHicbiriKisa;
+
+  /// No description provided for @cihazHesapAcikKalir.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} açık kalır. Yeni hesaba giriş yap ya da kayıt ol; sonra Profil\'den hesaplar arasında geçebilirsin.'**
+  String cihazHesapAcikKalir(String ad);
+
+  /// No description provided for @cihazHesaplari.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihazdaki hesaplar'**
+  String get cihazHesaplari;
+
+  /// No description provided for @cihazHesapGeriDon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri dön'**
+  String get cihazHesapGeriDon;
+
+  /// No description provided for @cihazHesapDevamEt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam et'**
+  String get cihazHesapDevamEt;
+
+  /// No description provided for @cihazHesapTekrarGiris.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar giriş gerekli · {eposta}'**
+  String cihazHesapTekrarGiris(String eposta);
+
+  /// No description provided for @cihazHesapBaskaHesapla.
+  ///
+  /// In tr, this message translates to:
+  /// **'ya da başka bir hesapla giriş yap'**
+  String get cihazHesapBaskaHesapla;
 }
 
 class _AppLocalizationsDelegate

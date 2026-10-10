@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../widgets/hesap_secici.dart';
 import '../widgets/sandik_skeleton.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/magaza.dart';
 import '../models/user_model.dart';
+import '../providers/hesap_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/preferences_provider.dart';
@@ -396,15 +398,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       vertical: SandikSpace.xs),
                   child: Row(
                     children: [
+                      // Çoklu hesap (bayrak `coklu_hesap`): başlık aktif
+                      // hesabın adı + ok, dokununca hesap listesi
+                      // (Instagram yerleşimi). Kapalıyken birebir "Profil".
                       Expanded(
-                        child: Text(
-                          'Profil',
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.fade,
-                          style: context.t.headlineMedium
-                              ?.copyWith(color: context.c.text90),
-                        ),
+                        child: ref.watch(cokluHesapGorunurProvider)
+                            ? Align(
+                                alignment: Alignment.centerLeft,
+                                child: HesapBasligi(
+                                  stil: context.t.headlineMedium
+                                      ?.copyWith(color: context.c.text90),
+                                ),
+                              )
+                            : Text(
+                                'Profil',
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.fade,
+                                style: context.t.headlineMedium
+                                    ?.copyWith(color: context.c.text90),
+                              ),
                       ),
                       // Tema hızlı geçişi buradaydı; 2026-10-04 sadeleştirmede
                       // kaldırıldı — tema YALNIZ Ayarlar'daki üçlü seçicide.

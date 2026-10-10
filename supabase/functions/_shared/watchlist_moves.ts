@@ -19,7 +19,7 @@
 // ekranda 6.200 görürken sunucu başka bir seriye bakardı.
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { createAccessToken, sendFcmNotification, ServiceAccount } from './fcm.ts';
-import { collapseTokens, tokenSatirlariniOku } from './push_tokens.ts';
+import { collapseTokens, ekHesap, ekHesapSatirlari, tokenSatirlariniOku } from './push_tokens.ts';
 import { degisimKarti, kartGorseli, KartAyari, KartVerisi } from './bildirim_karti.ts';
 import { fetchLiveQuotes } from './live_prices.ts';
 import { sessizKullanicilar } from './quiet_hours.ts';
@@ -150,7 +150,11 @@ export async function takipListesiHareketleri(
   const { data: tokenRows } = await tokenSatirlariniOku((s) =>
     admin.from('user_push_tokens').select(s).in('user_id', userIds)
   );
-  const tokens = collapseTokens(tokenRows ?? []);
+  // 0137: cihazın pasif hesaplarının satırları da (başlıkta hesap adı).
+  const tokens = collapseTokens([
+    ...(tokenRows ?? []),
+    ...await ekHesapSatirlari(admin, userIds),
+  ]);
 
   let sent = 0;
   let skippedQuietHours = 0;
@@ -187,6 +191,7 @@ export async function takipListesiHareketleri(
       accessToken,
       projectId: args.fcm.projectId,
       token: t.token,
+      hesap: ekHesap(t),
       title: mesaj.title,
       body: mesaj.body,
       channelId: CHANNEL_ID,

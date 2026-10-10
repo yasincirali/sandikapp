@@ -1661,6 +1661,41 @@ class SupabaseService {
     return r is int ? r : 0;
   }
 
+  /// Çoklu hesap Faz 2 (0137): ÇAĞIRAN hesap bu cihaz token'ında pasif
+  /// alıcı olur. Hesaptan ayrılmadan hemen önce, hâlâ o hesabın oturumuyla.
+  /// 0137 sunucuda yoksa PGRST202 fırlar; çağıran yutar.
+  Future<void> ekHesapPushBagla({
+    required String token,
+    required String platform,
+    required String cihazId,
+    String? deviceId,
+    int? bildirimSurumu,
+  }) =>
+      _log.log<void>(
+        source: 'SupabaseService.ekHesapPushBagla',
+        table: 'push_ek_hesaplar',
+        op: 'RPC',
+        request: {'platform': platform},
+        call: () => _db.rpc<dynamic>('ek_hesap_push_bagla', params: {
+          'p_token': token,
+          'p_platform': platform,
+          'p_cihaz_id': cihazId,
+          'p_device_id':
+              (deviceId != null && deviceId.isNotEmpty) ? deviceId : null,
+          'p_bildirim_surumu': bildirimSurumu,
+        }),
+      );
+
+  /// Çağıran hesabın bu token'daki pasif bağını çözer (0137).
+  Future<void> ekHesapPushCoz(String token) => _log.log<void>(
+        source: 'SupabaseService.ekHesapPushCoz',
+        table: 'push_ek_hesaplar',
+        op: 'RPC',
+        request: const {},
+        call: () =>
+            _db.rpc<dynamic>('ek_hesap_push_coz', params: {'p_token': token}),
+      );
+
   Future<void> deletePushToken(String token) async {
     await _log.log<void>(
       source: 'SupabaseService.deletePushToken',

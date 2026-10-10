@@ -103,8 +103,9 @@ Deno.test('token listesi indirgemeden GEÇİYOR', async () => {
     new URL('../functions/analyze-signals/index.ts', import.meta.url),
   );
 
+  // 0137: pasif hesap satırları (`ekSatirlar`) da aynı indirgemeden geçer.
   assertEquals(
-    src.includes('dedupeTokensByDevice(tokenRows)'),
+    /dedupeTokensByDevice\((\[\.\.\.\()?tokenRows/.test(src),
     true,
     '`tokensByUser` `dedupeTokensByDevice`’tan gelmeli — ham `tokenRows` ' +
       'üzerinden kurulursa aynı cihaza KOPYA push gider.',

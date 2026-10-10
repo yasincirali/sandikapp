@@ -42,7 +42,7 @@ import {
   ServiceAccount,
   shortLabel,
 } from '../_shared/fcm.ts';
-import { dedupeTokensByDevice } from '../_shared/push_tokens.ts';
+import { dedupeTokensByDevice, ekHesap, ekHesapSatirlari, TokenRow } from '../_shared/push_tokens.ts';
 
 // Testler (`device_token_dedup_test`) bu modülden okuyor; kaynağı `_shared`.
 export { dedupeTokensByDevice, shortLabel };
@@ -626,8 +626,15 @@ Deno.serve(async (request) => {
     // `device_id` null olan satırlar `platform` ile gruplanır: aynı kullanıcı
     // + aynı platform büyük olasılıkla aynı cihazdır. En TAZE token kazanır —
     // FCM rotasyonda eskisini geçersiz kılar.
+    //
+    // 0137 çoklu hesap: cihazın PASİF hesaplarının satırları da eklenir
+    // (tablo boşken hiçbir şey değişmez); başlıklarında hesap adı olur.
+    const ekSatirlar = await ekHesapSatirlari(admin);
+    const ekEtiket = new Map<string, TokenRow>(
+      ekSatirlar.map((r) => [`${r.user_id}|${r.token}`, r]),
+    );
     const { tokensByUser, skipped: skippedStaleTokens } =
-      dedupeTokensByDevice(tokenRows);
+      dedupeTokensByDevice([...(tokenRows as TokenRow[]), ...ekSatirlar]);
     const userIds = [...tokensByUser.keys()];
 
     // ── 2) Varlıklar ────────────────────────────────────────────────────────
@@ -1014,6 +1021,10 @@ Deno.serve(async (request) => {
           // Sinyal acil: yüksek öncelik + APNs 10; rozet okunmamış sayısı.
           priority: 'high',
           badge: unreadBadge,
+          hesap: (() => {
+            const ek = ekEtiket.get(`${asset.user_id}|${token}`);
+            return ek ? ekHesap(ek) : undefined;
+          })(),
         });
         if (r.ok) {
           sent++;

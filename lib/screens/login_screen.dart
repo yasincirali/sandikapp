@@ -27,6 +27,8 @@ import '../utils/friendly_error.dart';
 import 'forgot_password_screen.dart';
 import 'otp_verification_screen.dart';
 import 'register_screen.dart';
+import '../services/hesap_gecisi.dart';
+import '../widgets/hesap_secici.dart' show CihazdakiHesaplar;
 import '../widgets/sandik_async_button.dart';
 import '../widgets/social_sign_in_buttons.dart';
 import '../l10n/l10n.dart';
@@ -56,7 +58,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _loadSavedEmail();
   }
 
+  /// Oturumu düşmüş saklı hesap: e-postası forma yazılır, şifreye geçilir.
+  void _epostayiYaz(String eposta) {
+    _emailCtrl.text = eposta;
+    _passFocus.requestFocus();
+  }
+
   Future<void> _loadSavedEmail() async {
+    final onerilen = HesapGecisi.instance.onerilenEposta;
+    if (onerilen != null) {
+      HesapGecisi.instance.onerilenEposta = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _epostayiYaz(onerilen);
+      });
+      return;
+    }
+    // Hesap eklerken önceki hesabın hatırlanan e-postası forma gelmesin.
+    if (HesapGecisi.instance.eklemedenDonulecek.value != null) return;
     final saved = await AuthService.instance.getSavedEmail();
     if (saved != null && mounted) {
       _emailCtrl.text = saved;
@@ -185,6 +203,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 48),
+
+                    // Çoklu hesap (bayrak `coklu_hesap`): cihazdaki hesaplar
+                    // ve "hesap eklerken geri dön". Kapalıyken çizilmez.
+                    CihazdakiHesaplar(epostaSec: _epostayiYaz),
 
                     // Sadeleştirme 2 (2026-10-04; bayrak `karsilama_tanitimi`
                     // 2026-10-05'te kalktı): Apple / Google en üstte. E-posta
