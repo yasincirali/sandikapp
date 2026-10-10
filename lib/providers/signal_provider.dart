@@ -10,7 +10,6 @@ import '../services/supabase_service.dart';
 import '../services/technical_analysis_service.dart';
 import 'auth_provider.dart';
 import 'preferences_provider.dart';
-import 'sinyal_varligi_provider.dart';
 
 /// Supabase `signal_notifications` tablosunun state'i.
 ///
@@ -54,6 +53,10 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
     if (assets.isEmpty) return;
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
+    // Sinyal bildirimi paywall açıkken Premium (yasin 2026-10-10): zil
+    // satırı da bir bildirimdir; ücretsiz kullanıcıya yazılmaz. Ekrandaki
+    // üç ücretsiz göstergenin sinyali panelde yine görünür.
+    if (ref.read(sinyalBildirimiKilitliProvider)) return;
 
     // ── SADECE AÇIK POZİSYONLAR ─────────────────────────────────────────────
     //
@@ -93,20 +96,12 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
       alimlar.sort((a, b) => a.id.compareTo(b.id));
       acikVarliklar.add(alimlar.first);
     }
-    // Ücretsiz planda sinyal tek varlıkta (2026-10-08); sunucudaki
-    // `analyze-signals` kapısıyla aynı anahtar. Kapı kapalıyken null.
-    final tekVarlik = ref.read(etkinSinyalVarligiProvider);
-    if (tekVarlik != null) {
-      final k = sinyalVarlikAnahtari(tekVarlik.tur, tekVarlik.ticker);
-      acikVarliklar
-          .retainWhere((a) => sinyalVarlikAnahtari(a.type, a.ticker) == k);
-    }
     if (acikVarliklar.isEmpty) return;
 
     final indicatorPrefs = ref.read(indicatorPrefsProvider.notifier);
     final thresholds = ref.read(signalThresholdProvider.notifier);
     final neutralPushEnabled = ref.read(signalNeutralPushProvider);
-    final premium = ref.read(premiumGostergelerHesaplanirProvider);
+    final izinli = ref.read(izinliGostergelerProvider);
 
     final inserted = <SignalAlert>[];
 
@@ -131,7 +126,8 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
         asset,
         prices,
         enabledIds: enabledIds,
-        premiumUnlocked: premium,
+        izinli: izinli,
+        parametreler: ref.read(etkinGostergeParametreleriProvider(asset.type)),
       );
       if (indicators.isEmpty) continue;
 

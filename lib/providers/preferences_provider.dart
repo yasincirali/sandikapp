@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -366,38 +367,34 @@ final seviyeGorunurlukProvider = Provider<SeviyeGorunurluk>(
 // Başlangıç'ta yalnızca sinyal satırları süzülür ↓.
 
 /// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır;
-/// paywall açıkken Premium olmayanda da hayır — bkz. [sinyalYuzeyiProvider]).
-final zilSinyalleriGosterProvider =
-    Provider<bool>((ref) => ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik);
+/// paywall açıkken Premium olmayanda da hayır — sinyal bildirimi Premium,
+/// bkz. [sinyalBildirimiKilitliProvider]).
+final zilSinyalleriGosterProvider = Provider<bool>((ref) =>
+    ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
+    !ref.watch(sinyalBildirimiKilitliProvider));
 
-/// Teknik sinyal yüzeylerinin (varlık paneli, sinyal kartı, zildeki sinyal
-/// satırları, sinyal ayarları) bu kullanıcıdaki hâli.
+/// Teknik sinyal yüzeylerinin (varlık paneli, sinyal kartı, sinyal
+/// ayarları) bu kullanıcıdaki hâli.
 ///
-/// ## Neden tek karar (yasin, 2026-10-10: "varlık gösterge sinyali özelliği
-/// tamamen premiuma geçsin")
-/// Sinyal eskiden ücretsizde 1 varlıkta ve 5 göstergeyle açıktı; artık
-/// paywall açıkken bütünüyle Premium. Seviye kapısı (Başlangıç'ta gizli)
-/// önce gelir: sinyal görmek istemeyen kullanıcıya kilit de gösterilmez.
-/// Seviye izin verip kullanıcı Premium değilse yüzeylerin YERİNE tek kilit
-/// satırı çizilir — özellik görünmez olursa satış anı da kaybolur.
-/// Paywall kapalıyken davranış birebir eski (canlıdaki kullanıcı etkilenmez).
-/// Sunucu aynı kararı `analyze-signals`'ta `premium_ayar.kapi_acik` ile verir.
+/// ## Karar geçmişi
+/// 2026-10-10 sabah: "varlık gösterge sinyali özelliği tamamen premiuma
+/// geçsin" — paywall açıkken yüzeylerin yerine tek kilit kartı çiziliyordu.
+/// 2026-10-10 akşam (yasin): "teknik göstergelerden en yaygın 3 tanesi
+/// ücretsiz gösterilmeli". Artık yüzey ücretsizde de AÇIK; kilit gösterge
+/// düzeyinde (`izinliGostergelerProvider`) ve bildirimde
+/// (`sinyalBildirimiKilitliProvider`). Tek kalan kapı seviye: Başlangıç'ta
+/// sinyal hiç çizilmez. Paywall kapalıyken davranış birebir eski.
 final sinyalYuzeyiProvider = Provider<SinyalYuzeyi>((ref) {
   if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller) {
     return SinyalYuzeyi.gizli;
   }
-  return ref.watch(premiumKilitliProvider)
-      ? SinyalYuzeyi.kilitli
-      : SinyalYuzeyi.acik;
+  return SinyalYuzeyi.acik;
 });
 
 /// [sinyalYuzeyiProvider] değerleri.
 enum SinyalYuzeyi {
   /// Seviye kapısı: hiç çizilmez.
   gizli,
-
-  /// Paywall açık, Premium değil: yüzeyin yerine kilit satırı.
-  kilitli,
 
   /// Bugünkü davranış.
   acik,
@@ -572,27 +569,16 @@ final rcEtkinlesmeProvider = Provider<int>((ref) {
   return sayac.value;
 });
 
-/// UI'da kullanılması gereken effective premium bayrağı:
-///  - Paywall açık mı (master switch)? AND
-///  - Kullanıcı premium mu (satın aldı / test toggle açık)? AND
-///  - Remote Config premium_enabled kill switch true mu?
-///
-/// Paywall kapalıyken herkes free olarak davranır — kilit UI'ları render
-/// edilmediği için bu değerin false olması bir premium özelliği görünür
-/// kılmaz, yalnızca "premium açıldı" state'ini uygulamaz.
+/// Kullanıcının GERÇEK Premium hakkı var mı (paywall açıkken).
 ///
 /// Kaynaklar: mağaza (RevenueCat, anlık), sunucu hakkı (abonelik/hediye/
-/// manuel), admin, ve yalnız debug'da geliştirici anahtarı.
-/// Premium'a özgü bir yüzey bu kullanıcıda kilitli mi: paywall açık VE
-/// Premium değil. Bütün Premium kilitlerinin TEK kaynağı (radar, notlar,
-/// aylık rapor, sinyaller, masraf dökümü, yıllık rapor, dışa aktarma,
-/// temettü tahmini, fon dağılımı, portföyler). Paywall kapalıyken hiçbir
-/// şey kilitlenmez; "kim görür" sorusu ayrıca
-/// `RemoteConfigService.premiumOzellikleriGorunur`'dadır (tek anahtar
-/// `paywall_enabled`, yasin 2026-10-09).
-final premiumKilitliProvider = Provider<bool>((ref) =>
-    ref.watch(paywallVisibleProvider) && !ref.watch(effectivePremiumProvider));
-
+/// manuel), admin, ve yalnız debug'da geliştirici anahtarı. Paywall
+/// kapalıyken false: Premium sistemi yok sayılır.
+///
+/// Bu "hak var mı" sorusudur, "kilit görünür mü" değil. Kilit ve sınır
+/// kararları [premiumErisimProvider] / [premiumKilitliProvider] üstünden
+/// verilir; ikisinin farkı [kilitlerAskidaProvider]. Profil'deki "Premium
+/// aktif" rozeti bunu okur: acil durum anahtarı herkese Premium yazmasın.
 final effectivePremiumProvider = Provider<bool>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return false;
@@ -605,41 +591,143 @@ final effectivePremiumProvider = Provider<bool>((ref) {
   // Admin hesabı Premium alanlarını kilitsiz görür (yasin, 2026-10-05).
   // Sunucuda aynı karar `premium_mi_kullanici` içinde (0123, push_admins).
   final admin = ref.watch(isPushAdminProvider).valueOrNull == true;
-  return (unlocked || magaza || sunucu || admin) &&
-      RemoteConfigService.instance.premiumEnabled;
+  return unlocked || magaza || sunucu || admin;
 });
+
+/// Paywall açık olsa da kilitler bu kullanıcıda ASKIDA mı.
+///
+/// İki durum (Premium netleştirmesi, 2026-10-10, kritik bulgu Y1):
+///
+/// 1. **Acil durum anahtarı** `premium_enabled` = false. Eskiden bu anahtar
+///    TERS çalışıyordu: `effectivePremium`'u false yapıp ödeyenler dahil
+///    herkesi kilitliyordu, yani "bir şey ters giderse kapatırım" düğmesi
+///    yangını büyütüyordu. Artık false olunca kimse kilit görmez; sınırlar
+///    kalkar, satış ekranları açık kalır ama hiçbir şey alınmaz.
+/// 2. **Hediye güvencesi.** Mevcut kullanıcıların 90 günlük hediyesi elle
+///    verilir (`erken_kullanici_hediyesi_ver`, 0116). Paywall hediyeden önce
+///    açılırsa o arada herkes kilitlenirdi. Kural: hesabı hediye kesiminden
+///    (`premium_hediye_kesim`) ESKİ olan ve sunucuda HİÇ hak satırı olmayan
+///    kullanıcı kilit görmez. Kesim boşsa her hesap "eski" sayılır: kesim
+///    girilene kadar satırsız kimse kilitlenmez (güvenli taraf). Haklar
+///    henüz okunmadıysa ya da okunamadıysa da kilit yok — sunucu cevabı
+///    gelene kadar mevcut kullanıcıyı kilitlememek, bir yeni kullanıcıya
+///    birkaç saniye kilitsiz ekran göstermekten ucuz. Ücretli içerik yine
+///    sunucuda `premium_ayar.kapi_acik` ile korunur.
+///
+/// Saf karar [kilitlerAskidaMi]'da (test edilir).
+final kilitlerAskidaProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  ref.watch(rcEtkinlesmeProvider);
+  final rc = RemoteConfigService.instance;
+  // Oturum yokken hediye güvencesinin sorusu da yok (kilitli yüzey de yok).
+  final kullanici = ref.watch(authProvider).valueOrNull;
+  if (kullanici == null) return !rc.premiumEnabled;
+  final haklar = ref.watch(premiumHaklariProvider);
+  return kilitlerAskidaMi(
+    premiumEnabled: rc.premiumEnabled,
+    haklar: haklar.hasValue && !haklar.hasError ? haklar.value : null,
+    hesapOlusturma: kullanici.createdAt,
+    hediyeKesimi: rc.premiumHediyeKesim,
+  );
+});
+
+/// [kilitlerAskidaProvider]'ın saf kararı. [haklar] null = henüz bilinmiyor.
+bool kilitlerAskidaMi({
+  required bool premiumEnabled,
+  required List<PremiumHakki>? haklar,
+  required DateTime? hesapOlusturma,
+  required DateTime? hediyeKesimi,
+}) {
+  if (!premiumEnabled) return true;
+  // Kesimden sonra açılmış hesap hediye almaz; normal kurallar.
+  if (hediyeKesimi != null &&
+      hesapOlusturma != null &&
+      !hesapOlusturma.isBefore(hediyeKesimi)) {
+    return false;
+  }
+  // Eski hesap: hak satırı (geçerli ya da bitmiş) varsa hediye verilmiştir.
+  if (haklar != null && haklar.isNotEmpty) return false;
+  return true;
+}
+
+/// Premium yüzeylere ve sınırsız kullanıma erişim: Premium hakkı ya da
+/// askıdaki kilitler. Bütün sınır provider'ları bunu okur.
+final premiumErisimProvider = Provider<bool>((ref) =>
+    ref.watch(effectivePremiumProvider) || ref.watch(kilitlerAskidaProvider));
+
+/// Premium'a özgü bir yüzey bu kullanıcıda kilitli mi: paywall açık VE
+/// Premium erişimi yok. Bütün Premium kilitlerinin TEK kaynağı (radar,
+/// notlar, aylık rapor, sinyal bildirimleri ve Premium göstergeler, masraf
+/// dökümü, yıllık rapor, dışa aktarma, temettü tahmini, fon dağılımı,
+/// portföyler, kendi göstergen). Paywall kapalıyken hiçbir şey kilitlenmez;
+/// "kim görür" sorusu ayrıca `RemoteConfigService.premiumOzellikleriGorunur`'
+/// dadır (tek anahtar `paywall_enabled`, yasin 2026-10-09).
+final premiumKilitliProvider = Provider<bool>((ref) =>
+    ref.watch(paywallVisibleProvider) && !ref.watch(premiumErisimProvider));
 
 /// Free tier varlık limiti — Remote Config'ten dinamik.
 /// Paywall kapalıyken sınırsız (limit devreye girmez).
 /// Premium ise limit yoktur (int.max ile temsil edilir).
-/// Premium göstergeler (ADX, Williams %R, CCI) HESAPLANSIN mı.
+/// Bu kullanıcıda HESAPLANAN sinyal göstergeleri (ekran ve uygulama içi
+/// analiz). Karar `IndicatorId.izinli`: paywall kapalıyken bugünkü beşli
+/// (ileri üçü hesaplanmaz, birebir eski davranış); açıkken Premium erişimi
+/// olana sekizi, ücretsize en yaygın üçü (RSI, MACD, Bollinger — yasin
+/// 2026-10-10). Sunucu push'u yalnız Premium'a gönderir
+/// (`analyze-signals`, `premium_ayar.kapi_acik`) ve orada sekizini hesaplar.
+final izinliGostergelerProvider = Provider<Set<String>>((ref) =>
+    IndicatorId.izinli(
+      paywall: ref.watch(paywallVisibleProvider),
+      premium: ref.watch(premiumErisimProvider),
+    ));
+
+/// Gösterge parametrelerinin (periyot vb.) bu kullanıcıdaki hâli.
 ///
-/// Eskiden hesap yalnız cihazdaki geliştirici anahtarına bakıyordu: gerçek
-/// abone (sunucu hakkı) satın aldığı göstergeyi alamazdı. Bayrak kapalıyken
-/// eski davranış birebir: hesaplanmaz (anahtar canlıda kimsede açık değildi).
-final premiumGostergelerHesaplanirProvider = Provider<bool>((ref) {
-  if (!ref.watch(paywallVisibleProvider)) return false;
-  return ref.watch(effectivePremiumProvider);
+/// Yeni Premium özelliği (yasin 2026-10-10). Paywall kapalıyken yalnız
+/// admin görür — `premiumOzellikleriGorunur` kuralı: ödeme hazır olmadan
+/// herkese açılan şeyi sonra kilitlemek, verileni geri almak olur.
+/// Paywall açıkken herkes görür; Premium erişimi olmayana kilitli.
+final gostergeParametreDurumuProvider = Provider<OzellikDurumu>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) {
+    return ref.watch(isPushAdminProvider).valueOrNull == true
+        ? OzellikDurumu.acik
+        : OzellikDurumu.gizli;
+  }
+  return ref.watch(premiumErisimProvider)
+      ? OzellikDurumu.acik
+      : OzellikDurumu.kilitli;
 });
+
+/// Premium'a özgü bir özelliğin bir kullanıcıdaki hâli.
+enum OzellikDurumu {
+  /// Hiç çizilmez.
+  gizli,
+
+  /// Görünür, dokununca paywall.
+  kilitli,
+
+  /// Kullanılabilir.
+  acik,
+}
+
+/// Sinyal bildirimleri (push + uygulama içi zil satırları) bu kullanıcıda
+/// kilitli mi. Paywall açıkken bildirim Premium'dadır (yasin 2026-10-10:
+/// "kalanları ve custom gösterge bununla push bildirimi feature'ı premium
+/// olmalı"); ekrandaki üç ücretsiz göstergenin sinyali yine görünür.
+final sinyalBildirimiKilitliProvider =
+    Provider<bool>((ref) => ref.watch(premiumKilitliProvider));
 
 final assetLimitProvider = Provider<int>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return 1 << 30;
-  final premium = ref.watch(effectivePremiumProvider);
+  final premium = ref.watch(premiumErisimProvider);
   if (premium) return 1 << 30; // pratik olarak sınırsız
   return RemoteConfigService.instance.freeAssetLimit;
 });
 
-/// Tür başına günlük sinyal bildirimi sınırı — `assetLimitProvider` kalıbı.
-/// Paywall kapalıyken ya da Premium'da pratikte sınırsız: seçilen sıklık
-/// olduğu gibi kalır. Ekranda gösterilen zamanlama `slotaSigdir` ile
-/// hesaplanır; sunucu aynı kuralı `SINYAL_UCRETSIZ_SLOT` ile uygular.
-final sinyalSlotSiniriProvider = Provider<int>((ref) {
-  if (!ref.watch(paywallVisibleProvider)) return 1 << 30;
-  if (ref.watch(effectivePremiumProvider)) return 1 << 30;
-  final v = RemoteConfigService.instance.freeSignalSlotsPerDay;
-  return v <= 0 ? 1 << 30 : v;
-});
+// NOT (2026-10-10): `sinyalSlotSiniriProvider` (ücretsizde tür başına günde
+// 1 bildirim) kaldırıldı. Yeni modelde sinyal bildirimi paywall açıkken
+// bütünüyle Premium, kapalıyken sınırsız; arada bir "slot" kalmadı. Sunucu
+// tarafı `SINYAL_UCRETSIZ_SLOT` / `SINYAL_UCRETSIZ_VARLIK` de söküldü.
 
 /// Karşılaştır grafiğindeki en fazla seri. Beş, paletin sınırıdır ve
 /// Premium'un değeridir; ücretsizde `free_compare_series` (varsayılan 2 =
@@ -647,7 +735,7 @@ final sinyalSlotSiniriProvider = Provider<int>((ref) {
 const kKarsilastirmaEnFazla = 5;
 final karsilastirmaSeriSiniriProvider = Provider<int>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return kKarsilastirmaEnFazla;
-  if (ref.watch(effectivePremiumProvider)) return kKarsilastirmaEnFazla;
+  if (ref.watch(premiumErisimProvider)) return kKarsilastirmaEnFazla;
   return RemoteConfigService.instance.freeCompareSeries
       .clamp(1, kKarsilastirmaEnFazla);
 });
@@ -660,7 +748,7 @@ final karsilastirmaSeriSiniriProvider = Provider<int>((ref) {
 /// sürümler paywall'u zaten göstermiyor, satın alınacak şey yok).
 final ortakSiniriDoluProvider = Provider<bool>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return false;
-  if (ref.watch(effectivePremiumProvider)) return false;
+  if (ref.watch(premiumErisimProvider)) return false;
   final ortaklar = ref.watch(partnersProvider).valueOrNull;
   if (ortaklar == null) return false;
   final sinir = RemoteConfigService.instance.freePartnerLimit;
@@ -674,7 +762,7 @@ final ortakSiniriDoluProvider = Provider<bool>((ref) {
 final priceAlertLimitProvider = Provider<int>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return 1 << 30;
-  final premium = ref.watch(effectivePremiumProvider);
+  final premium = ref.watch(premiumErisimProvider);
   if (premium) return 1 << 30;
   return RemoteConfigService.instance.freePriceAlertLimit;
 });
@@ -697,7 +785,7 @@ final priceAlertLimitProvider = Provider<int>((ref) {
 /// kalır; listesi sınırı aşan kimsenin takibi silinmez,
 /// yalnız yeni ekleme Premium ister.
 final watchlistLimitProvider = Provider<int>((ref) {
-  final premium = ref.watch(effectivePremiumProvider);
+  final premium = ref.watch(premiumErisimProvider);
   if (premium) return 1 << 30;
   final rc = RemoteConfigService.instance;
   if (ref.watch(paywallVisibleProvider)) return rc.paywallWatchlistLimit;
@@ -801,6 +889,86 @@ final indicatorPrefsProvider =
   IndicatorPrefsNotifier.new,
 );
 
+/// Gösterge parametreleri: tür → gösterge id → ayar (Premium, 2026-10-10).
+///
+/// Durum haritasında bir türün ANAHTARI olması "kullanıcı bu türde
+/// parametreye dokundu" demektir (boş harita = varsayılana döndü): sunucuya
+/// yalnız o türler yazılır, dokunulmamış satır eskisiyle aynı kalır.
+/// Kullanılıp kullanılmayacağına `gostergeParametreDurumuProvider` karar
+/// verir; Premium biten kullanıcının ayarı silinmez, Premium'da geri gelir.
+class GostergeParametreNotifier
+    extends Notifier<Map<AssetType, Map<String, GostergeAyari>>> {
+  @override
+  Map<AssetType, Map<String, GostergeAyari>> build() {
+    _load();
+    return const {};
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_userKey(PrefKeys.gostergeParametreleri));
+      if (raw == null) return;
+      final ham = jsonDecode(raw);
+      if (ham is! Map) return;
+      final next = <AssetType, Map<String, GostergeAyari>>{};
+      ham.forEach((tur, v) {
+        if (tur is! String) return;
+        next[AssetType.fromString(tur)] = gostergeParametreleriniOku(v) ?? {};
+      });
+      state = next;
+    } catch (_) {}
+  }
+
+  Future<void> _persist() async {
+    if (DemoModu.aktif) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _userKey(PrefKeys.gostergeParametreleri),
+        jsonEncode({for (final e in state.entries) e.key.name: e.value}),
+      );
+    } catch (_) {}
+  }
+
+  /// [ayar] null ya da varsayılana eşitse o göstergenin ayarı silinir.
+  Future<void> ayarla(AssetType tur, String id, GostergeAyari? ayar) async {
+    final tip = Map<String, GostergeAyari>.from(state[tur] ?? const {});
+    final dogru = GostergeParametreleri.dogrula(id, ayar);
+    final varsayilan = GostergeParametreleri.varsayilan(id, tur);
+    if (dogru == null ||
+        dogru.entries.every((e) => varsayilan[e.key] == e.value)) {
+      tip.remove(id);
+    } else {
+      tip[id] = dogru;
+    }
+    state = {...state, tur: tip};
+    await _persist();
+    await _syncSignalPreferenceWith(ref.read, tur);
+  }
+
+  Future<void> applyFromServer(
+      AssetType tur, Map<String, Map<String, int>>? ayar) async {
+    if (ayar == null && !state.containsKey(tur)) return;
+    state = {...state, tur: ayar ?? {}};
+    await _persist();
+  }
+}
+
+final gostergeParametreleriProvider = NotifierProvider<GostergeParametreNotifier,
+    Map<AssetType, Map<String, GostergeAyari>>>(GostergeParametreNotifier.new);
+
+/// Bu kullanıcıda HESAPTA kullanılacak parametreler: özellik açıksa
+/// kayıtlı ayar, değilse null (varsayılanlar).
+final etkinGostergeParametreleriProvider =
+    Provider.family<Map<String, GostergeAyari>?, AssetType>((ref, tur) {
+  if (ref.watch(gostergeParametreDurumuProvider) != OzellikDurumu.acik) {
+    return null;
+  }
+  final ayar = ref.watch(gostergeParametreleriProvider)[tur];
+  return ayar == null || ayar.isEmpty ? null : ayar;
+});
+
 /// Bir varlık türünün sinyal tercihini sunucuya yazar.
 ///
 /// Sinyal analizi sunucuda çalıştığı için (bkz. `analyze-signals` edge
@@ -831,6 +999,7 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
     final signalsEnabled = read(signalNotificationsProvider);
 
     final schedule = read(signalScheduleProvider)[type] ?? kDefaultSchedule;
+    final parametreler = read(gostergeParametreleriProvider);
 
     await SupabaseService.instance.upsertSignalPreference(
       userId: user.id,
@@ -841,6 +1010,8 @@ Future<void> _syncSignalPreferenceWith(_Reader read, AssetType type) async {
       signalsEnabled: signalsEnabled,
       frequency: schedule.frequency,
       notifyHours: schedule.hours,
+      parametreYaz: parametreler.containsKey(type),
+      parametreler: parametreler[type],
     );
   } catch (e, st) {
     // Sunucu senkronu başarısız olsa da yerel tercih geçerli kalır —
@@ -1158,12 +1329,14 @@ Future<void> syncSignalPreferencesOnLogin(WidgetRef ref) async {
     final thresholds = ref.read(signalThresholdProvider.notifier);
     final indicators = ref.read(indicatorPrefsProvider.notifier);
     final schedules = ref.read(signalScheduleProvider.notifier);
+    final parametreler = ref.read(gostergeParametreleriProvider.notifier);
 
     for (final row in remote) {
       final type = AssetType.fromString(row.assetType);
       await thresholds.applyFromServer(type, row.threshold);
       await indicators.applyFromServer(type, row.indicators);
       await schedules.applyFromServer(type, row.frequency, row.notifyHours);
+      await parametreler.applyFromServer(type, row.parametreler);
     }
 
     // `neutralPush` ve `signalsEnabled` tür başına DEĞİL, uygulama genelinde

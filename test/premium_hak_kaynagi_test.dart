@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:portfoy_takip/services/technical_analysis_service.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
@@ -49,7 +50,7 @@ void main() {
       await c.read(premiumUnlockedProvider.notifier).set(true);
       expect(c.read(premiumUnlockedProvider), isTrue);
       expect(c.read(effectivePremiumProvider), isFalse);
-      expect(c.read(premiumGostergelerHesaplanirProvider), isFalse);
+      expect(c.read(izinliGostergelerProvider), IndicatorId.ucretsiz);
     });
 
     test('debug: geliştirici anahtarı sayılır', () async {
@@ -61,7 +62,7 @@ void main() {
     test('mağaza hakkı Premium sayılır', () {
       final c = kap(magaza: true);
       expect(c.read(effectivePremiumProvider), isTrue);
-      expect(c.read(premiumGostergelerHesaplanirProvider), isTrue);
+      expect(c.read(izinliGostergelerProvider), IndicatorId.all.toSet());
     });
 
     test('paywall kapalı: kimse Premium değil, göstergeler hesaplanmaz',
@@ -69,7 +70,10 @@ void main() {
       final c = kap(paywall: false, gelistirici: true, magaza: true);
       await c.read(premiumUnlockedProvider.notifier).set(true);
       expect(c.read(effectivePremiumProvider), isFalse);
-      expect(c.read(premiumGostergelerHesaplanirProvider), isFalse);
+      // Paywall kapalı: bugünkü beşli, ileri üçü hesaplanmaz.
+      expect(c.read(izinliGostergelerProvider).intersection(IndicatorId.ileri),
+          isEmpty);
+      expect(c.read(izinliGostergelerProvider).length, 5);
     });
   });
 

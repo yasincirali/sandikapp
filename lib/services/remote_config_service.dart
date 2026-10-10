@@ -43,9 +43,19 @@ class RemoteConfigService {
     // + store onayları tamamlanana kadar kapalı tutulur.
     'paywall_enabled': false,
 
-    // Premium feature kill switch: paywall açık olsa bile emergency rollback
-    // için premium özellikleri kapatabilir.
+    // ACİL DURUM anahtarı (2026-10-10 düzeltmesi, kritik bulgu Y1): false
+    // olunca paywall açık kalsa da KİMSE kilit görmez, sınırlar kalkar.
+    // Eskiden ters çalışıyordu (false = ödeyenler dahil herkes kilitli).
+    // Karar `kilitlerAskidaProvider`'da.
     'premium_enabled': true,
+
+    // Erken kullanıcı hediyesinin KESİM anı (ISO tarih, ör. "2026-11-01").
+    // `erken_kullanici_hediyesi_ver(kesim, 90)` çağrısına verilen değerle
+    // AYNI girilir. Bu andan önce açılmış ve sunucuda hiç hak satırı olmayan
+    // hesap kilit görmez (hediye henüz verilmemiş demektir); boşken her
+    // hesap "eski" sayılır, yani satırsız kimse kilitlenmez. Güvenli taraf:
+    // sıra karışsa bile mevcut kullanıcı bir sabah kilit görmez.
+    'premium_hediye_kesim': '',
 
     // Free tier varlık limiti. 20 → 7 (yasin, 2026-10-08: "ilk varlık
     // eklemeyi 7 varlık yapalım … premium istemeli"). 7 → 10 (yasin,
@@ -91,20 +101,10 @@ class RemoteConfigService {
     // 349 → 399 (2026-10-05) → 649,99 (2026-10-10). Yıllık %32 tasarruf.
     'premium_price_yearly': '649,99₺/yıl',
 
-    // Ücretsiz sürümde tür başına günde en fazla kaç sinyal bildirimi
-    // (Premium planı, 2026-10-08). Yalnız `paywall_enabled` açıkken ve
-    // Premium olmayana uygulanır; sığmayan sıklık "günde 1 kez"e, seçilen
-    // ilk saate iner (`slotaSigdir`). 2026-10-04'te okuyan yokken
-    // kaldırılmıştı, kapıyla geri geldi. Sunucudaki karşılığı
-    // `SINYAL_UCRETSIZ_SLOT` secret'ı: ikisi paywall'la birlikte açılır.
-    'free_signal_slots_per_day': 1,
-
-    // Ücretsiz sürümde sinyal bildiriminin açık olduğu varlık sayısı (yasin,
-    // 2026-10-08: "sinyal 1 varlıkta ücretsiz, 2. varlık Premium"). 0 =
-    // kapı yok. Bugün yalnız 0/1 anlamlı: seçim tablosu tek satır tutar
-    // (`sinyal_varlik_secimi`, 0126). Yalnız `paywall_enabled` açıkken;
-    // sunucudaki karşılığı `SINYAL_UCRETSIZ_VARLIK` secret'ı.
-    'free_signal_assets': 1,
+    // NOT (2026-10-10): `free_signal_slots_per_day` ve `free_signal_assets`
+    // kaldırıldı. Sinyal modeli değişti (yasin): paywall açıkken en yaygın
+    // üç gösterge ekranda ücretsiz, bildirim ve kalan göstergeler Premium.
+    // "Günde 1 bildirim" ve "1 varlıkta bildirim" kapılarının konusu kalmadı.
 
     // Ücretsiz sürümde Karşılaştır grafiğindeki seri sayısı (Premium planı
     // "1 seri ücretsiz" = kendi serisine EK bir kıyas, toplam 2). Premium
@@ -499,9 +499,13 @@ class RemoteConfigService {
   /// gerektiren işlemleri kapatabiliriz"). Ödeme hazır olmadan bu
   /// özellikler herkese ücretsiz açılırsa sonra kilitlemek alınan şeyi
   /// geri almak olur; bu yüzden paywall kapalıyken yalnız admin görür.
-  /// Eskiden beri ücretsiz olanlar (sınırsız varlık, sinyal sıklığı,
-  /// göstergeler, 5 seri, ortaklar) bu kapıya bağlı DEĞİL: canlıdaki
-  /// kullanıcının kullandığı şey elinden alınmaz.
+  /// Bu getter yalnız "YENİ Premium özelliği kim görür" sorusunu yanıtlar
+  /// (radar, ekstre AI, gösterge parametreleri, kendi göstergen). Eskiden
+  /// beri var olan yüzeylerin paywall açılınca nasıl sınırlandığı (varlık/
+  /// takip/alarm sınırı, sinyal bildirimi ve ileri göstergeler, 5 seri,
+  /// ortaklar) kendi provider'larında `paywallVisibleProvider` +
+  /// `premiumErisimProvider` ile verilir; paywall kapalıyken hiçbiri
+  /// sınırlanmaz. Premium setinin tamamı: docs/MONETIZATION_ROADMAP.md.
   /// `balina_radari_acik` / `ekstre_ai_esleme` Console değerleri artık
   /// okunmaz (yalnız yerel `RC_ACIK` ve test kancası).
   bool get premiumOzellikleriGorunur => paywallEnabled || yonetici;
@@ -599,16 +603,17 @@ class RemoteConfigService {
   bool get premiumEnabled =>
       _rc?.getBool('premium_enabled') ?? _defaults['premium_enabled'] as bool;
 
+  /// Hediye kesimi (bkz. `_defaults['premium_hediye_kesim']`); boş ya da
+  /// okunamazsa null.
+  DateTime? get premiumHediyeKesim {
+    final ham = (_rc?.getString('premium_hediye_kesim') ??
+            _defaults['premium_hediye_kesim'] as String)
+        .trim();
+    return ham.isEmpty ? null : DateTime.tryParse(ham);
+  }
+
   int get freeAssetLimit =>
       _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
-
-  int get freeSignalSlotsPerDay =>
-      _rc?.getInt('free_signal_slots_per_day') ??
-      _defaults['free_signal_slots_per_day'] as int;
-
-  int get freeSignalAssets =>
-      _rc?.getInt('free_signal_assets') ??
-      _defaults['free_signal_assets'] as int;
 
   int get freeCompareSeries =>
       _rc?.getInt('free_compare_series') ??

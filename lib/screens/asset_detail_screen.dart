@@ -39,8 +39,6 @@ import '../widgets/transaction_segment.dart';
 import 'signal_settings_screen.dart';
 import '../models/signal_alert.dart';
 import '../providers/signal_provider.dart';
-import '../providers/sinyal_varligi_provider.dart';
-import '../utils/friendly_error.dart';
 import '../services/tefas_service.dart';
 import '../services/tazelik_ritmi.dart';
 import '../widgets/custom_loading_indicator.dart';
@@ -67,8 +65,6 @@ import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
-import '../widgets/sinyal_kilit_karti.dart';
-import '../widgets/sandik_async_button.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
 import '../providers/fon_karnesi_provider.dart'
@@ -250,8 +246,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   final GlobalKey _sinyalPaneliKey = GlobalKey();
 
   /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
-  /// Yatırımcı seviyesi Başlangıç ise ya da paywall açıkken Premium değilse
-  /// hayır — bkz. `sinyalYuzeyiProvider`.
+  /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `sinyalYuzeyiProvider`.
+  /// Paywall açıkken ücretsizde de çizilir (üç gösterge, 2026-10-10).
   bool get _sinyalYuzeyleri =>
       ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
       // Mevduatın piyasa serisi yok; eğrisi sözleşmenin tahakkukudur ve
@@ -259,12 +255,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       // BES de öyle (2026-10-01 emülatör testi): katılımcı fonu alıp
       // satamaz, yalnız dağılımı değiştirir; devlet katkısı fonunda o da
       // yok. AL/SAT göstergesi orada yanıltıcıdır.
-      !widget.asset.type.sozlesmeli;
-
-  /// Sinyal Premium'da (paywall açık, Premium değil): panelin yerine tek
-  /// kilit kartı. Sözleşmeli türlerde sinyal hiç olmadığı için kilit de yok.
-  bool get _sinyalKilidi =>
-      ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli &&
       !widget.asset.type.sozlesmeli;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
@@ -858,8 +848,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     asset: widget.asset,
                     onTap: _sinyalPaneline,
                   ),
-                if (_sinyalYuzeyleri)
-                  SinyalVarlikSeridi(asset: widget.asset),
                 // Kurulu alarmlar (boşken hiç çizilmez; alt boşluğunu kendi
                 // taşır — bkz. AlarmSeridi).
                 if (_alarmSembolu != null)
@@ -2076,9 +2064,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // tekrarlanıyordu).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
-                ] else if (_sinyalKilidi) ...[
-                  const SizedBox(height: 24),
-                  const SinyalKilitKarti(),
                 ],
                 ], // eski yığın (katmanlı değil)
                 ],

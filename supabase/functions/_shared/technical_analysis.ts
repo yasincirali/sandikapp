@@ -40,6 +40,9 @@ export const IndicatorId = {
   cci: 'cci',
 } as const;
 
+/// İleri göstergeler (ADX, W%R, CCI): Dart `IndicatorId.ileri`. Kapı
+/// kapalıyken hesaplanmaz (birebir eski davranış); kapı açıkken push yalnız
+/// Premium'a gittiği için sekizi de hesaplanır.
 export const PREMIUM_INDICATORS = new Set<string>([
   IndicatorId.adx,
   IndicatorId.williamsR,
@@ -53,6 +56,44 @@ export const DEFAULT_INDICATORS = [
   IndicatorId.ema,
   IndicatorId.stochastic,
 ];
+
+/// Bir göstergenin kullanıcı ayarı (0142 `signal_preferences.parametreler`):
+/// anahtar → tam sayı. Dart `GostergeAyari` + `GostergeParametreleri`.
+export type GostergeAyari = Record<string, number>;
+
+const PARAMETRE_TANIMLARI: Record<string, [string, number, number][]> = {
+  rsi: [['periyot', 2, 50]],
+  macd: [['hizli', 2, 50], ['yavas', 3, 100], ['sinyal', 2, 50]],
+  bollinger: [['periyot', 5, 60]],
+  ema: [['kisa', 2, 60], ['uzun', 3, 120]],
+  stochastic: [['periyot', 3, 50]],
+  adx: [['periyot', 3, 50]],
+  williams_r: [['periyot', 3, 50]],
+  cci: [['periyot', 5, 60]],
+};
+
+/// Dart `GostergeParametreleri.dogrula` ile birebir: bilinmeyen anahtar
+/// atılır, değer sınıra kırpılır, kısa ≥ uzun çiftinde ayarın tümü yok
+/// sayılır. Boş sonuç undefined.
+export function parametreDogrula(
+  id: string,
+  ham: unknown,
+): GostergeAyari | undefined {
+  if (!ham || typeof ham !== 'object') return undefined;
+  const tanim = PARAMETRE_TANIMLARI[id];
+  if (!tanim) return undefined;
+  const out: GostergeAyari = {};
+  for (const [k, enAz, enCok] of tanim) {
+    const v = (ham as Record<string, unknown>)[k];
+    if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+    out[k] = Math.min(enCok, Math.max(enAz, Math.round(v)));
+  }
+  if (Object.keys(out).length === 0) return undefined;
+  const ters = (a: string, b: string) =>
+    out[a] !== undefined && out[b] !== undefined && out[a] >= out[b];
+  if (ters('hizli', 'yavas') || ters('kisa', 'uzun')) return undefined;
+  return out;
+}
 
 // Dart `fmtNum(value, digits: n)` — tr_TR biçimi (ondalık ayırıcı virgül).
 // Açıklama metinleri kullanıcıya gösterildiği için biçim de birebir olmalı.
@@ -81,8 +122,8 @@ function ema(prices: number[], period: number): number {
 }
 
 // ── 1. RSI ──────────────────────────────────────────────────────────────────
-export function rsi(prices: number[], type: AssetType): TechnicalIndicator {
-  const period = type === 'doviz' ? 9 : 14;
+export function rsi(prices: number[], type: AssetType, par?: GostergeAyari): TechnicalIndicator {
+  const period = par?.periyot ?? (type === 'doviz' ? 9 : 14);
   const label = `RSI (${period})`;
 
   if (prices.length < period + 1) {
@@ -117,10 +158,10 @@ export function rsi(prices: number[], type: AssetType): TechnicalIndicator {
 }
 
 // ── 2. MACD ─────────────────────────────────────────────────────────────────
-export function macd(prices: number[], type: AssetType): TechnicalIndicator {
-  const fast = type === 'fon' ? 8 : 12;
-  const slow = type === 'fon' ? 21 : 26;
-  const sig = 9;
+export function macd(prices: number[], type: AssetType, par?: GostergeAyari): TechnicalIndicator {
+  const fast = par?.hizli ?? (type === 'fon' ? 8 : 12);
+  const slow = par?.yavas ?? (type === 'fon' ? 21 : 26);
+  const sig = par?.sinyal ?? 9;
   const label = `MACD (${fast},${slow},${sig})`;
 
   if (prices.length < slow + sig) {
@@ -155,8 +196,9 @@ export function macd(prices: number[], type: AssetType): TechnicalIndicator {
 export function bollingerBands(
   prices: number[],
   type: AssetType,
+  par?: GostergeAyari,
 ): TechnicalIndicator {
-  const period = type === 'altin' ? 14 : 20;
+  const period = par?.periyot ?? (type === 'altin' ? 14 : 20);
   const mult = type === 'doviz' ? 1.5 : 2.0;
   // Dart `double` her zaman ondalık basar (2.0 → "2.0"); JS `Number` basmaz
   // (2.0 → "2"). Etiket kullanıcıya görünüyor, birebir eşleşmeli.
@@ -194,6 +236,7 @@ export function bollingerBands(
 export function movingAverage(
   prices: number[],
   type: AssetType,
+  par?: GostergeAyari,
 ): TechnicalIndicator {
   let shortP: number;
   let longP: number;
@@ -202,6 +245,8 @@ export function movingAverage(
   else if (type === 'altin') { shortP = 14; longP = 40; }
   else if (type === 'doviz') { shortP = 7; longP = 21; }
   else { shortP = 20; longP = 50; }
+  shortP = par?.kisa ?? shortP;
+  longP = par?.uzun ?? longP;
 
   const label = `EMA Kesişim (${shortP}/${longP})`;
 
@@ -242,8 +287,9 @@ export function movingAverage(
 export function stochastic(
   prices: number[],
   type: AssetType,
+  par?: GostergeAyari,
 ): TechnicalIndicator {
-  const period = type === 'doviz' ? 9 : 14;
+  const period = par?.periyot ?? (type === 'doviz' ? 9 : 14);
   const overbought = 80;
   const oversold = 20;
   const label = `Stokastik %K (${period})`;
@@ -273,8 +319,8 @@ export function stochastic(
 }
 
 // ── 6. ADX (proxy — Dart ile aynı basitleştirme) ────────────────────────────
-export function adx(prices: number[], _type: AssetType): TechnicalIndicator {
-  const period = 14;
+export function adx(prices: number[], _type: AssetType, par?: GostergeAyari): TechnicalIndicator {
+  const period = par?.periyot ?? 14;
   const label = `ADX (${period})`;
 
   if (prices.length < period + 1) {
@@ -313,8 +359,9 @@ export function adx(prices: number[], _type: AssetType): TechnicalIndicator {
 export function williamsR(
   prices: number[],
   _type: AssetType,
+  par?: GostergeAyari,
 ): TechnicalIndicator {
-  const period = 14;
+  const period = par?.periyot ?? 14;
   const label = `Williams %R (${period})`;
 
   if (prices.length < period) {
@@ -341,8 +388,8 @@ export function williamsR(
 }
 
 // ── 8. CCI ──────────────────────────────────────────────────────────────────
-export function cci(prices: number[], _type: AssetType): TechnicalIndicator {
-  const period = 20;
+export function cci(prices: number[], _type: AssetType, par?: GostergeAyari): TechnicalIndicator {
+  const period = par?.periyot ?? 20;
   const label = `CCI (${period})`;
 
   if (prices.length < period) {
@@ -374,16 +421,17 @@ function computeById(
   id: string,
   prices: number[],
   type: AssetType,
+  par?: GostergeAyari,
 ): TechnicalIndicator | null {
   switch (id) {
-    case IndicatorId.rsi: return rsi(prices, type);
-    case IndicatorId.macd: return macd(prices, type);
-    case IndicatorId.bollinger: return bollingerBands(prices, type);
-    case IndicatorId.ema: return movingAverage(prices, type);
-    case IndicatorId.stochastic: return stochastic(prices, type);
-    case IndicatorId.adx: return adx(prices, type);
-    case IndicatorId.williamsR: return williamsR(prices, type);
-    case IndicatorId.cci: return cci(prices, type);
+    case IndicatorId.rsi: return rsi(prices, type, par);
+    case IndicatorId.macd: return macd(prices, type, par);
+    case IndicatorId.bollinger: return bollingerBands(prices, type, par);
+    case IndicatorId.ema: return movingAverage(prices, type, par);
+    case IndicatorId.stochastic: return stochastic(prices, type, par);
+    case IndicatorId.adx: return adx(prices, type, par);
+    case IndicatorId.williamsR: return williamsR(prices, type, par);
+    case IndicatorId.cci: return cci(prices, type, par);
     default: return null;
   }
 }
@@ -399,13 +447,14 @@ export function analyze(
   type: AssetType,
   enabledIds: string[],
   premiumUnlocked: boolean,
+  parametreler?: Record<string, unknown> | null,
 ): TechnicalIndicator[] {
   if (prices.length === 0) return [];
 
   const result: TechnicalIndicator[] = [];
   for (const id of enabledIds) {
     if (PREMIUM_INDICATORS.has(id) && !premiumUnlocked) continue;
-    const ind = computeById(id, prices, type);
+    const ind = computeById(id, prices, type, parametreDogrula(id, parametreler?.[id]));
     if (ind) result.push(ind);
   }
   return result;

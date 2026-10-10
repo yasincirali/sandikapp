@@ -1816,7 +1816,7 @@ class SupabaseService {
       call: () => _db
           .from('signal_preferences')
           .select(
-              'asset_type, threshold, indicators, neutral_push, signals_enabled, frequency, notify_hours')
+              'asset_type, threshold, indicators, neutral_push, signals_enabled, frequency, notify_hours, parametreler')
           .eq('user_id', userId),
     );
 
@@ -1836,50 +1836,9 @@ class SupabaseService {
               (r['notify_hours'] as List?)?.map((e) => (e as num).toInt())
                       .toList() ??
                   const [11, 15],
+          parametreler: gostergeParametreleriniOku(r['parametreler']),
         ),
     ];
-  }
-
-  /// Ücretsiz planda sinyal bildiriminin açık olduğu TEK varlık (0126);
-  /// seçim yoksa null. Sunucu kapıyı `analyze-signals`'ta uygular.
-  Future<({String tur, String ticker})?> fetchSinyalVarligi(
-      String userId) async {
-    final r = await _log.log<Map<String, dynamic>?>(
-      source: 'SupabaseService.fetchSinyalVarligi',
-      table: 'sinyal_varlik_secimi',
-      op: 'SELECT',
-      request: {'user_id': userId},
-      call: () => _db
-          .from('sinyal_varlik_secimi')
-          .select('asset_type, ticker')
-          .eq('user_id', userId)
-          .maybeSingle(),
-    );
-    if (r == null) return null;
-    return (tur: r['asset_type'] as String, ticker: r['ticker'] as String);
-  }
-
-  /// Sinyal varlığını taşır (kullanıcı başına tek satır).
-  Future<void> setSinyalVarligi({
-    required String userId,
-    required String tur,
-    required String ticker,
-  }) async {
-    await _log.log<void>(
-      source: 'SupabaseService.setSinyalVarligi',
-      table: 'sinyal_varlik_secimi',
-      op: 'UPSERT',
-      request: {'user_id': userId, 'asset_type': tur, 'ticker': ticker},
-      call: () => _db.from('sinyal_varlik_secimi').upsert(
-        {
-          'user_id': userId,
-          'asset_type': tur,
-          'ticker': ticker,
-          'guncellendi': DateTime.now().toUtc().toIso8601String(),
-        },
-        onConflict: 'user_id',
-      ),
-    );
   }
 
   /// Kullanıcının bir varlık türü için eşik/gösterge tercihlerini sunucuya
@@ -1901,6 +1860,8 @@ class SupabaseService {
     required bool signalsEnabled,
     SignalFrequency? frequency,
     List<int>? notifyHours,
+    bool parametreYaz = false,
+    Map<String, Map<String, int>>? parametreler,
   }) async {
     await _log.log<void>(
       source: 'SupabaseService.upsertSignalPreference',
@@ -1926,6 +1887,11 @@ class SupabaseService {
           // kullanıcının seçtiği sıklığı varsayılana döndürmesine yol açardı.
           if (frequency != null) 'frequency': frequency.id,
           if (notifyHours != null) 'notify_hours': notifyHours,
+          // 0142. Yalnız kullanıcı parametreye dokunduysa yazılır: hiç
+          // dokunmamış kullanıcının satırı eskisiyle aynı kalır.
+          if (parametreYaz)
+            'parametreler':
+                parametreler == null || parametreler.isEmpty ? null : parametreler,
           'updated_at': DateTime.now().toUtc().toIso8601String(),
         },
         onConflict: 'user_id,asset_type',
@@ -2846,4 +2812,20 @@ enum NotGeriBildirimi {
 
   const NotGeriBildirimi(this.deger);
   final int? deger;
+}
+
+/// `signal_preferences.parametreler` (jsonb) → gösterge id → ayar. Bozuk
+/// ya da boş değer null: uydurma bir ayarla hesap yapılmaz.
+Map<String, Map<String, int>>? gostergeParametreleriniOku(Object? ham) {
+  if (ham is! Map) return null;
+  final out = <String, Map<String, int>>{};
+  ham.forEach((id, v) {
+    if (id is! String || v is! Map) return;
+    final ayar = <String, int>{};
+    v.forEach((k, d) {
+      if (k is String && d is num && d.isFinite) ayar[k] = d.round();
+    });
+    if (ayar.isNotEmpty) out[id] = ayar;
+  });
+  return out.isEmpty ? null : out;
 }

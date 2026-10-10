@@ -19,10 +19,10 @@ enum SinyalOnAyar { az, dengeli, cok }
 
 /// Bir ön ayarın bir türe yazdığı değerler.
 ///
-/// [gostergeler] yalnız Premium OLMAYAN göstergeleri kapsar: Premium
-/// göstergeler ön ayarın konusu değildir — kullanıcının açtığı ADX/CCI/
-/// Williams %R olduğu gibi kalır, kilidi de eskisi gibi ekranda
-/// (`premiumUnlocked: !paywallOn || premium`). [saatler] `null`: periyodik
+/// [gostergeler] yalnız ileri OLMAYAN göstergeleri kapsar: ileri
+/// göstergeler (ADX/CCI/Williams %R, `IndicatorId.ileri`) ön ayarın konusu
+/// değildir — kullanıcının açtığı olduğu gibi kalır. Hesaplanıp
+/// hesaplanmadığına `izinliGostergelerProvider` karar verir. [saatler] `null`: periyodik
 /// sıklık, saat seçilmez (kayıtlı saatlere dokunulmaz).
 typedef SinyalOnAyarTanimi = ({
   int esik,
@@ -42,7 +42,7 @@ List<AssetType> get sinyalOnAyarTurleri =>
 const kSinyalCekirdekGostergeler = <String>{IndicatorId.rsi, IndicatorId.macd};
 
 Set<String> _premiumsuz(Iterable<String> ids) =>
-    ids.where((id) => !IndicatorId.premium.contains(id)).toSet();
+    ids.where((id) => !IndicatorId.ileri.contains(id)).toSet();
 
 /// Ön ayarın [tur] için değerleri.
 ///
@@ -137,7 +137,7 @@ Future<void> sinyalOnAyariUygula(WidgetRef ref, SinyalOnAyar a) async {
         TechnicalAnalysisService.defaultEnabledFor(t);
     await gosterge.setForType(
       t,
-      {...tanim.gostergeler, ...mevcut.where(IndicatorId.premium.contains)},
+      {...tanim.gostergeler, ...mevcut.where(IndicatorId.ileri.contains)},
       senkron: false,
     );
     await zaman.setFrequency(t, tanim.siklik, senkron: false);

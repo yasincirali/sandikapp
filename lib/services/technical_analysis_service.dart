@@ -4,7 +4,14 @@ import '../models/asset_type.dart';
 import '../models/technical_signal.dart';
 import '../utils/tr_format.dart';
 
-/// Gösterge kimlikleri — per-category seçim ve premium gating için stable key.
+/// Gösterge kimlikleri — per-category seçim ve Premium kapısı için stable key.
+///
+/// ## Premium modeli (yasin, 2026-10-10)
+/// *"teknik göstergelerden en yaygın 3 tanesi ücretsiz gösterilmeli, ancak
+/// kalanları ve custom gösterge bununla push bildirimi feature'ı premium
+/// olmalı; ayrıca var olan göstergeler de parametrik kullanılabilmeli
+/// premiumda."* Üç küme bu kararı taşır; hangi kümenin hesaplanacağına
+/// [izinli] karar verir (provider: `izinliGostergelerProvider`).
 class IndicatorId {
   static const rsi = 'rsi';
   static const macd = 'macd';
@@ -12,7 +19,7 @@ class IndicatorId {
   static const ema = 'ema';
   static const stochastic = 'stochastic';
 
-  // Premium göstergeler
+  // İleri göstergeler
   static const adx = 'adx';
   static const williamsR = 'williams_r';
   static const cci = 'cci';
@@ -28,7 +35,27 @@ class IndicatorId {
     cci,
   ];
 
-  static const premium = <String>{adx, williamsR, cci};
+  /// Paywall açıkken ücretsiz olan üç gösterge: en yaygın üçü (RSI, MACD,
+  /// Bollinger — rakiplerin ücretsiz planlarındaki ortak küme).
+  static const ucretsiz = <String>{rsi, macd, bollinger};
+
+  /// İleri göstergeler: paywall KAPALIYKEN hiç hesaplanmaz ve ayar
+  /// ekranında görünmez (bugünkü canlı davranış; anahtarları hiçbir şey
+  /// yapmıyordu, "ölü anahtar" bulgusu). Paywall açıkken Premium'dadır.
+  static const ileri = <String>{adx, williamsR, cci};
+
+  /// Bu kullanıcıda HESAPLANAN göstergeler.
+  ///
+  /// * Paywall kapalı: ileri üçü hariç beşi (birebir eski davranış).
+  /// * Paywall açık, Premium erişimi var: sekizi.
+  /// * Paywall açık, ücretsiz: [ucretsiz] üçü.
+  static Set<String> izinli({required bool paywall, required bool premium}) {
+    if (!paywall) return all.where((id) => !ileri.contains(id)).toSet();
+    return premium ? all.toSet() : ucretsiz;
+  }
+
+  /// Paywall açıkken Premium isteyen göstergeler ([ucretsiz] dışındakiler).
+  static bool premiumMu(String id) => !ucretsiz.contains(id);
 
   static Set<String> recommendedFor(AssetType type) =>
       // BES fonu fon gibi analiz edilir (`fiyatlamaTuru`).
@@ -61,6 +88,107 @@ class IndicatorId {
         return 'CCI (Commodity Channel Index)';
     }
     return id;
+  }
+}
+
+/// Bir göstergenin kullanıcı ayarı: parametre anahtarı → tam sayı değer
+/// (ör. `{'periyot': 21}`). Eksik anahtar türün varsayılanıyla hesaplanır.
+typedef GostergeAyari = Map<String, int>;
+
+/// Bir gösterge parametresinin tanımı (ayar ekranı ve doğrulama).
+class GostergeParametresi {
+  const GostergeParametresi(this.anahtar, this.etiket,
+      {required this.enAz, required this.enCok});
+
+  /// Saklama anahtarı — sunucu portuyla (`_shared/technical_analysis.ts`)
+  /// aynı ad.
+  final String anahtar;
+  final String etiket;
+  final int enAz;
+  final int enCok;
+}
+
+/// Göstergelerin ayarlanabilir parametreleri (Premium, yasin 2026-10-10:
+/// "var olan göstergeler de parametrik kullanılabilmeli premiumda").
+///
+/// Neden yalnız pencere uzunlukları: göstergelerin eşikleri (RSI 70/30,
+/// CCI ±100) yorumun kendisidir ve türüne göre zaten ayarlı; kullanıcıya
+/// açılan şey TradingView'deki "Length" alanının karşılığı. Sınırlar sinyal
+/// penceresine (180 gün) sığacak biçimde dar: 200 günlük RSI'ın seride
+/// tek noktası kalmazdı.
+class GostergeParametreleri {
+  GostergeParametreleri._();
+
+  static const tanimlar = <String, List<GostergeParametresi>>{
+    IndicatorId.rsi: [GostergeParametresi('periyot', 'Periyot', enAz: 2, enCok: 50)],
+    IndicatorId.macd: [
+      GostergeParametresi('hizli', 'Hızlı', enAz: 2, enCok: 50),
+      GostergeParametresi('yavas', 'Yavaş', enAz: 3, enCok: 100),
+      GostergeParametresi('sinyal', 'Sinyal', enAz: 2, enCok: 50),
+    ],
+    IndicatorId.bollinger: [
+      GostergeParametresi('periyot', 'Periyot', enAz: 5, enCok: 60)
+    ],
+    IndicatorId.ema: [
+      GostergeParametresi('kisa', 'Kısa', enAz: 2, enCok: 60),
+      GostergeParametresi('uzun', 'Uzun', enAz: 3, enCok: 120),
+    ],
+    IndicatorId.stochastic: [
+      GostergeParametresi('periyot', 'Periyot', enAz: 3, enCok: 50)
+    ],
+    IndicatorId.adx: [GostergeParametresi('periyot', 'Periyot', enAz: 3, enCok: 50)],
+    IndicatorId.williamsR: [
+      GostergeParametresi('periyot', 'Periyot', enAz: 3, enCok: 50)
+    ],
+    IndicatorId.cci: [GostergeParametresi('periyot', 'Periyot', enAz: 5, enCok: 60)],
+  };
+
+  /// Türün varsayılan değerleri — ayar ekranı alanı bununla doldurur.
+  /// Hesap fonksiyonlarındaki varsayılanlarla aynı (tek doğruluk testi
+  /// `gosterge_parametre_test`).
+  static GostergeAyari varsayilan(String id, AssetType type) {
+    final fon = type.fiyatlamaTuru == AssetType.fon;
+    return switch (id) {
+      IndicatorId.rsi => {'periyot': type == AssetType.doviz ? 9 : 14},
+      IndicatorId.macd => {
+          'hizli': fon ? 8 : 12,
+          'yavas': fon ? 21 : 26,
+          'sinyal': 9
+        },
+      IndicatorId.bollinger => {'periyot': type == AssetType.altin ? 14 : 20},
+      IndicatorId.ema => switch (type) {
+          AssetType.hisse => {'kisa': 20, 'uzun': 50},
+          AssetType.altin => {'kisa': 14, 'uzun': 40},
+          AssetType.doviz => {'kisa': 7, 'uzun': 21},
+          _ when fon => {'kisa': 10, 'uzun': 30},
+          _ => {'kisa': 20, 'uzun': 50},
+        },
+      IndicatorId.stochastic => {'periyot': type == AssetType.doviz ? 9 : 14},
+      IndicatorId.adx || IndicatorId.williamsR => {'periyot': 14},
+      IndicatorId.cci => {'periyot': 20},
+      _ => const {},
+    };
+  }
+
+  /// Bilinmeyen anahtarı atar, değeri sınıra kırpar; kısa ≥ uzun gibi
+  /// anlamsız çiftte (MACD hızlı ≥ yavaş, EMA kısa ≥ uzun) ayarın TÜMÜ
+  /// yok sayılır — yarım uygulanan ayar kullanıcının görmediği bir
+  /// göstergeyi hesaplardı. Boş sonuç null. Sunucu portu aynı kuralı uygular.
+  static GostergeAyari? dogrula(String id, GostergeAyari? ham) {
+    if (ham == null || ham.isEmpty) return null;
+    final tanim = tanimlar[id];
+    if (tanim == null) return null;
+    final out = <String, int>{};
+    for (final t in tanim) {
+      final v = ham[t.anahtar];
+      if (v == null) continue;
+      out[t.anahtar] = v.clamp(t.enAz, t.enCok);
+    }
+    if (out.isEmpty) return null;
+    bool ters(String a, String b) =>
+        out[a] != null && out[b] != null && out[a]! >= out[b]!;
+    if (ters('hizli', 'yavas') || ters('kisa', 'uzun')) return null;
+    return out;
   }
 }
 
@@ -125,8 +253,9 @@ class TechnicalAnalysisService {
 
   // ── 1. RSI ────────────────────────────────────────────────────────────────
 
-  static TechnicalIndicator rsi(List<double> prices, AssetType type) {
-    final period = type == AssetType.doviz ? 9 : 14;
+  static TechnicalIndicator rsi(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final period = par?['periyot'] ?? (type == AssetType.doviz ? 9 : 14);
     final label = 'RSI ($period)';
     if (prices.length < period + 1) {
       return TechnicalIndicator(
@@ -170,10 +299,13 @@ class TechnicalAnalysisService {
 
   // ── 2. MACD ───────────────────────────────────────────────────────────────
 
-  static TechnicalIndicator macd(List<double> prices, AssetType type) {
-    final fast = type.fiyatlamaTuru == AssetType.fon ? 8 : 12;
-    final slow = type.fiyatlamaTuru == AssetType.fon ? 21 : 26;
-    const sig = 9;
+  static TechnicalIndicator macd(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final fast =
+        par?['hizli'] ?? (type.fiyatlamaTuru == AssetType.fon ? 8 : 12);
+    final slow =
+        par?['yavas'] ?? (type.fiyatlamaTuru == AssetType.fon ? 21 : 26);
+    final sig = par?['sinyal'] ?? 9;
     final label = 'MACD ($fast,$slow,$sig)';
 
     if (prices.length < slow + sig) {
@@ -213,8 +345,9 @@ class TechnicalAnalysisService {
   // ── 3. Bollinger Bantları ─────────────────────────────────────────────────
 
   static TechnicalIndicator bollingerBands(
-      List<double> prices, AssetType type) {
-    final period = type == AssetType.altin ? 14 : 20;
+      List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final period = par?['periyot'] ?? (type == AssetType.altin ? 14 : 20);
     final mult = type == AssetType.doviz ? 1.5 : 2.0;
     final label = 'Bollinger ($period, $multσ)';
 
@@ -256,8 +389,9 @@ class TechnicalAnalysisService {
 
   // ── 4. Hareketli Ortalama (EMA Kesişimi) ─────────────────────────────────
 
-  static TechnicalIndicator movingAverage(List<double> prices, AssetType type) {
-    final int shortP, longP;
+  static TechnicalIndicator movingAverage(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    int shortP, longP;
     if (type == AssetType.hisse) {
       shortP = 20;
       longP = 50;
@@ -274,6 +408,8 @@ class TechnicalAnalysisService {
       shortP = 20;
       longP = 50;
     }
+    shortP = par?['kisa'] ?? shortP;
+    longP = par?['uzun'] ?? longP;
     final label = 'EMA Kesişim ($shortP/$longP)';
 
     if (prices.length < longP) {
@@ -318,8 +454,9 @@ class TechnicalAnalysisService {
 
   // ── 5. Stokastik Osilatör ─────────────────────────────────────────────────
 
-  static TechnicalIndicator stochastic(List<double> prices, AssetType type) {
-    final period = type == AssetType.doviz ? 9 : 14;
+  static TechnicalIndicator stochastic(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final period = par?['periyot'] ?? (type == AssetType.doviz ? 9 : 14);
     const overbought = 80.0;
     const oversold = 20.0;
     final label = 'Stokastik %K ($period)';
@@ -360,9 +497,10 @@ class TechnicalAnalysisService {
   // Basitleştirilmiş ADX: |ΔP| ortalamasının fiyat range'ine oranı. Klasik ADX
   // için OHLC gerekli; bizde sadece close var — proxy hesap kullanılır.
 
-  static TechnicalIndicator adx(List<double> prices, AssetType type) {
-    const period = 14;
-    const label = 'ADX ($period)';
+  static TechnicalIndicator adx(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final period = par?['periyot'] ?? 14;
+    final label = 'ADX ($period)';
 
     if (prices.length < period + 1) {
       return TechnicalIndicator(
@@ -408,9 +546,10 @@ class TechnicalAnalysisService {
 
   // ── 7. Williams %R — aşırı alım/satım osilatörü (PREMIUM) ─────────────────
 
-  static TechnicalIndicator williamsR(List<double> prices, AssetType type) {
-    const period = 14;
-    const label = 'Williams %R ($period)';
+  static TechnicalIndicator williamsR(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final period = par?['periyot'] ?? 14;
+    final label = 'Williams %R ($period)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
@@ -445,9 +584,10 @@ class TechnicalAnalysisService {
 
   // ── 8. CCI (Commodity Channel Index) (PREMIUM) ────────────────────────────
 
-  static TechnicalIndicator cci(List<double> prices, AssetType type) {
-    const period = 20;
-    const label = 'CCI ($period)';
+  static TechnicalIndicator cci(List<double> prices, AssetType type,
+      {GostergeAyari? par}) {
+    final period = par?['periyot'] ?? 20;
+    final label = 'CCI ($period)';
 
     if (prices.length < period) {
       return TechnicalIndicator(
@@ -484,13 +624,15 @@ class TechnicalAnalysisService {
 
   /// [priceHistory]: gerçek fiyat geçmişi (eski→yeni sıralı). Boşsa simülasyon.
   /// [enabledIds]: null ise varsayılan set (temel 5). Aksi halde bu set'teki
-  /// göstergeler hesaplanır. Premium olmayanlar için premium ID'ler
-  /// [premiumUnlocked=false] ise atlanır.
+  /// göstergeler hesaplanır; [izinli] dışındakiler atlanır (bkz.
+  /// [IndicatorId.izinli]). [parametreler]: Premium'da kullanıcının
+  /// gösterge ayarları (bkz. [GostergeParametreleri]); null = varsayılan.
   static List<TechnicalIndicator> analyze(
     Asset asset,
     List<double> priceHistory, {
     Set<String>? enabledIds,
-    bool premiumUnlocked = false,
+    Set<String>? izinli,
+    Map<String, GostergeAyari>? parametreler,
 
     /// Fiyat geçmişi boşken UYDURMA seri üretilsin mi? Varsayılan `false`.
     /// Yalnızca demo/önizleme yüzeyleri için `true` verilmeli — gerçek
@@ -517,7 +659,8 @@ class TechnicalAnalysisService {
       prices,
       asset.type,
       enabledIds: enabledIds,
-      premiumUnlocked: premiumUnlocked,
+      izinli: izinli,
+      parametreler: parametreler,
     );
   }
 
@@ -538,39 +681,43 @@ class TechnicalAnalysisService {
     List<double> prices,
     AssetType type, {
     Set<String>? enabledIds,
-    bool premiumUnlocked = false,
+    Set<String>? izinli,
+    Map<String, GostergeAyari>? parametreler,
   }) {
     if (prices.isEmpty) return const [];
     final ids = enabledIds ?? defaultEnabledFor(type);
+    // Varsayılan: paywall kapalı kümesi (ileri üçü hesaplanmaz).
+    final izin = izinli ?? IndicatorId.izinli(paywall: false, premium: false);
 
     final result = <TechnicalIndicator>[];
     for (final id in ids) {
-      if (IndicatorId.premium.contains(id) && !premiumUnlocked) continue;
-      final ind = _computeById(id, prices, type);
+      if (!izin.contains(id)) continue;
+      final ind = _computeById(id, prices, type,
+          GostergeParametreleri.dogrula(id, parametreler?[id]));
       if (ind != null) result.add(ind);
     }
     return result;
   }
 
   static TechnicalIndicator? _computeById(
-      String id, List<double> prices, AssetType type) {
+      String id, List<double> prices, AssetType type, GostergeAyari? par) {
     switch (id) {
       case IndicatorId.rsi:
-        return rsi(prices, type);
+        return rsi(prices, type, par: par);
       case IndicatorId.macd:
-        return macd(prices, type);
+        return macd(prices, type, par: par);
       case IndicatorId.bollinger:
-        return bollingerBands(prices, type);
+        return bollingerBands(prices, type, par: par);
       case IndicatorId.ema:
-        return movingAverage(prices, type);
+        return movingAverage(prices, type, par: par);
       case IndicatorId.stochastic:
-        return stochastic(prices, type);
+        return stochastic(prices, type, par: par);
       case IndicatorId.adx:
-        return adx(prices, type);
+        return adx(prices, type, par: par);
       case IndicatorId.williamsR:
-        return williamsR(prices, type);
+        return williamsR(prices, type, par: par);
       case IndicatorId.cci:
-        return cci(prices, type);
+        return cci(prices, type, par: par);
     }
     return null;
   }

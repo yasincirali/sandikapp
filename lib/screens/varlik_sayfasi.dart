@@ -31,7 +31,6 @@ import '../widgets/para_akisi_karti.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/grafik_stili.dart';
 import '../widgets/sandik_skeleton.dart';
-import '../widgets/sinyal_kilit_karti.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/varlik_iskeleti.dart';
 import '../widgets/varlik_ozeti.dart';
@@ -547,16 +546,14 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
       // gizlemiyordu — Başlangıç kullanıcısı sinyali Takip'ten ya da
       // aramadan açınca görüyordu. Aynı kapı burada da.
       //
-      // Paywall açıkken sinyal Premium'da (`sinyalYuzeyiProvider`): panelin
-      // yerine kilit kartı.
+      // Paywall açıkken ücretsizde üç gösterge (2026-10-10); panel kalan
+      // göstergelerin kilidini kendi altında gösterir.
       if (ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik)
         TechnicalSignalPanel(
           ticker: k.ticker,
           type: k.type,
           subCategory: k.subCategory,
-        )
-      else if (ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli)
-        const SinyalKilitKarti(),
+        ),
       // AL/SAT sinyali gösteren her yüzey yasal ibareyi de taşır.
       const SizedBox(height: SandikSpace.sm),
       const DisclaimerWidget(),

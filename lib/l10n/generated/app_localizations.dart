@@ -11432,13 +11432,13 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumAktif.
   ///
   /// In tr, this message translates to:
-  /// **'Premium göstergeler açık'**
+  /// **'Premium sinyaller açık'**
   String get sgnPremiumAktif;
 
   /// No description provided for @sgnPremiumAktifGovde.
   ///
   /// In tr, this message translates to:
-  /// **'ADX, Williams %R ve CCI sinyal analizine katılıyor.'**
+  /// **'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.'**
   String get sgnPremiumAktifGovde;
 
   /// No description provided for @sgnPremiumKilitBaslik.
@@ -11450,7 +11450,7 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumKilitGovde.
   ///
   /// In tr, this message translates to:
-  /// **'ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.'**
+  /// **'EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.'**
   String get sgnPremiumKilitGovde;
 
   /// No description provided for @sgnPremiumGec.
@@ -11488,36 +11488,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Birden fazla ortakla portföy paylaşımı'**
   String get pwOzOrtak;
-
-  /// No description provided for @sgnSlotNotu.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium\'da tüm varlıkların ve seçtiğin sıklık gelir.'**
-  String get sgnSlotNotu;
-
-  /// No description provided for @sgnVarlikAcik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.'**
-  String get sgnVarlikAcik;
-
-  /// No description provided for @sgnVarlikKilit.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ücretsiz planda sinyal bildirimi tek varlıkta: {ad}. Tüm varlıkların için Premium.'**
-  String sgnVarlikKilit(String ad);
-
-  /// No description provided for @sgnVarlikTasi.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyali buraya taşı'**
-  String get sgnVarlikTasi;
-
-  /// No description provided for @sgnSlotKilitli.
-  ///
-  /// In tr, this message translates to:
-  /// **'{secenek}, Premium'**
-  String sgnSlotKilitli(String secenek);
 
   /// No description provided for @cmpSinirPremium.
   ///
@@ -12740,19 +12710,19 @@ abstract class AppLocalizations {
   /// No description provided for @sgnKilitBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Teknik sinyaller'**
+  /// **'Sinyal bildirimleri'**
   String get sgnKilitBaslik;
 
   /// No description provided for @sgnKilitGovde.
   ///
   /// In tr, this message translates to:
-  /// **'RSI, MACD, Bollinger, EMA, Stokastik, ADX, Williams %R ve CCI: sekiz gösterge, tuttuğun her varlıkta seçtiğin sıklıkta bildirim ve varlık ekranında tam gösterge paneli.'**
+  /// **'RSI, MACD ve Bollinger ekranda ücretsiz. Premium\'da sekiz göstergenin tamamı, kendi periyot ayarların ve tuttuğun her varlıkta seçtiğin sıklıkta bildirim.'**
   String get sgnKilitGovde;
 
   /// No description provided for @sgnKilitSatir.
   ///
   /// In tr, this message translates to:
-  /// **'Teknik sinyaller Premium\'da'**
+  /// **'Sinyal bildirimleri Premium\'da'**
   String get sgnKilitSatir;
 
   /// No description provided for @prmAylikKilitBaslik.
@@ -14182,6 +14152,72 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{n, plural, =1{\"{name}\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.} other{\"{name}\" için {n} hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.}}'**
   String varlikGuncelleOnayGovde(String name, int n);
+
+  /// No description provided for @sgnPremiumGostergeSatiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'EMA, Stokastik, ADX, Williams %R, CCI ve bildirimler Premium\'da'**
+  String get sgnPremiumGostergeSatiri;
+
+  /// No description provided for @sgnAyarAciklamaUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her varlık türü için ekranda hangi göstergelerin hesaplanacağını seç. RSI, MACD ve Bollinger ücretsiz.'**
+  String get sgnAyarAciklamaUcretsiz;
+
+  /// No description provided for @sgnParametreAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tur} için. Değiştirdiğin değer ekranda ve bildirimlerde kullanılır.'**
+  String sgnParametreAciklama(String tur);
+
+  /// No description provided for @sgnParametreSiraHatasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kısa/hızlı değer, uzun/yavaş değerden küçük olmalı.'**
+  String get sgnParametreSiraHatasi;
+
+  /// No description provided for @sgnParametreVarsayilan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varsayılana dön'**
+  String get sgnParametreVarsayilan;
+
+  /// No description provided for @sgnParametreKaydet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get sgnParametreKaydet;
+
+  /// No description provided for @sgnParametreVarsayilanDeger.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varsayılan {deger}'**
+  String sgnParametreVarsayilanDeger(int deger);
+
+  /// No description provided for @sgnParametreAzalt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Azalt'**
+  String get sgnParametreAzalt;
+
+  /// No description provided for @sgnParametreArtir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Artır'**
+  String get sgnParametreArtir;
+
+  /// No description provided for @sgnParametreKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Periyot ayarı Premium\'da'**
+  String get sgnParametreKilitli;
+
+  /// No description provided for @sgnParametreAyarla.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} ayarları'**
+  String sgnParametreAyarla(String ad);
 }
 
 class _AppLocalizationsDelegate

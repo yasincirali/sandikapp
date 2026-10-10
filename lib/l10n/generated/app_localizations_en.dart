@@ -6926,18 +6926,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get anzOkunamadi => 'The note could not be opened right now.';
 
   @override
-  String get sgnPremiumAktif => 'Premium indicators on';
+  String get sgnPremiumAktif => 'Premium signals on';
 
   @override
   String get sgnPremiumAktifGovde =>
-      'ADX, Williams %R and CCI are part of the signal analysis.';
+      'All eight indicators, period settings and alerts are on.';
 
   @override
   String get sgnPremiumKilitBaslik => 'Premium indicators';
 
   @override
   String get sgnPremiumKilitGovde =>
-      'With Premium, ADX, Williams %R and CCI join the signal analysis.';
+      'EMA Crossover, Stochastic, ADX, Williams %R and CCI join the analysis with Premium. RSI, MACD and Bollinger are free.';
 
   @override
   String get sgnPremiumGec => 'Go Premium';
@@ -6957,27 +6957,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzOrtak => 'Share your portfolio with more than one partner';
-
-  @override
-  String get sgnSlotNotu =>
-      'On the free plan signal alerts cover one asset, once a day per type; you pick the asset on its screen. Premium covers all your assets at the frequency you choose.';
-
-  @override
-  String get sgnVarlikAcik =>
-      'Signal alerts are on for this asset. The free plan covers one asset.';
-
-  @override
-  String sgnVarlikKilit(String ad) {
-    return 'On the free plan signal alerts cover one asset: $ad. Premium covers all your assets.';
-  }
-
-  @override
-  String get sgnVarlikTasi => 'Move signals here';
-
-  @override
-  String sgnSlotKilitli(String secenek) {
-    return '$secenek, Premium';
-  }
 
   @override
   String get cmpSinirPremium => 'Up to 5 series with Premium';
@@ -7707,14 +7686,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get depositNoteHint => 'e.g. campaign rate, goal, branch';
 
   @override
-  String get sgnKilitBaslik => 'Technical signals';
+  String get sgnKilitBaslik => 'Signal alerts';
 
   @override
   String get sgnKilitGovde =>
-      'RSI, MACD, Bollinger, EMA, Stochastic, ADX, Williams %R and CCI: eight indicators, alerts on every asset you hold at the frequency you choose, and the full indicator panel on the asset screen.';
+      'RSI, MACD and Bollinger are free on screen. Premium adds all eight indicators, your own period settings and alerts for every asset you hold at the frequency you choose.';
 
   @override
-  String get sgnKilitSatir => 'Technical signals are part of Premium';
+  String get sgnKilitSatir => 'Signal alerts are in Premium';
 
   @override
   String get prmAylikKilitBaslik => 'Monthly report';
@@ -8585,5 +8564,47 @@ class AppLocalizationsEn extends AppLocalizations {
           '\"$name\" will be deleted and added again with these details. This can\'t be undone.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get sgnPremiumGostergeSatiri =>
+      'EMA, Stochastic, ADX, Williams %R, CCI and alerts are in Premium';
+
+  @override
+  String get sgnAyarAciklamaUcretsiz =>
+      'Choose which indicators are calculated on screen for each asset type. RSI, MACD and Bollinger are free.';
+
+  @override
+  String sgnParametreAciklama(String tur) {
+    return 'For $tur. The value you set is used on screen and in alerts.';
+  }
+
+  @override
+  String get sgnParametreSiraHatasi =>
+      'The short/fast value must be smaller than the long/slow value.';
+
+  @override
+  String get sgnParametreVarsayilan => 'Reset to default';
+
+  @override
+  String get sgnParametreKaydet => 'Save';
+
+  @override
+  String sgnParametreVarsayilanDeger(int deger) {
+    return 'Default $deger';
+  }
+
+  @override
+  String get sgnParametreAzalt => 'Decrease';
+
+  @override
+  String get sgnParametreArtir => 'Increase';
+
+  @override
+  String get sgnParametreKilitli => 'Period settings are in Premium';
+
+  @override
+  String sgnParametreAyarla(String ad) {
+    return '$ad settings';
   }
 }

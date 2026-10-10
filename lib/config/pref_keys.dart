@@ -34,6 +34,8 @@ class PrefKeys {
   static const liveActivityWeekend = 'pref_live_activity_weekend';
   static const premiumUnlocked = 'pref_premium_unlocked';
   static const indicatorsByType = 'pref_indicators_by_type_v1';
+  // Gösterge parametreleri (periyot vb.), tür başına JSON (2026-10-10; Premium).
+  static const gostergeParametreleri = 'pref_gosterge_parametreleri_v1';
   static const chartOverlayMa20 = 'pref_chart_overlay_ma20';
   static const chartLogScale = 'pref_chart_log_scale';
   // EMA50/EMA200 ve mum (varlık detayı, 2026-10-10; Premium).

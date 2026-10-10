@@ -56,7 +56,7 @@ bool tasinacakPortfoyVar(List<Portfoy>? adlandirilmis) =>
 /// abonelik bitti diye ortağa açılmaz), bölünmüş pozisyonu da olduğu yerde.
 final portfoyPremiumKilitliProvider = Provider<bool>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return false;
-  return !ref.watch(effectivePremiumProvider);
+  return !ref.watch(premiumErisimProvider);
 });
 
 /// Toplam portföy sınırı (Ana DAHİL) — `assetLimitProvider` deseni.
@@ -65,7 +65,7 @@ final portfoyPremiumKilitliProvider = Provider<bool>((ref) {
 /// kullanıcı verisini kaybetmez); yalnız yenisi açılamaz.
 final portfoyLimitProvider = Provider<int>((ref) {
   if (!ref.watch(paywallVisibleProvider)) return 1 << 30;
-  if (ref.watch(effectivePremiumProvider)) return 1 << 30;
+  if (ref.watch(premiumErisimProvider)) return 1 << 30;
   return 1;
 });
 

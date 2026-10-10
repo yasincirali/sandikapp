@@ -6864,18 +6864,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get anzOkunamadi => 'Not şu an açılamadı.';
 
   @override
-  String get sgnPremiumAktif => 'Premium göstergeler açık';
+  String get sgnPremiumAktif => 'Premium sinyaller açık';
 
   @override
   String get sgnPremiumAktifGovde =>
-      'ADX, Williams %R ve CCI sinyal analizine katılıyor.';
+      'Sekiz göstergenin tamamı, periyot ayarları ve bildirimler açık.';
 
   @override
   String get sgnPremiumKilitBaslik => 'Premium göstergeler';
 
   @override
   String get sgnPremiumKilitGovde =>
-      'ADX, Williams %R ve CCI, Premium ile sinyal analizine katılır.';
+      'EMA Kesişim, Stokastik, ADX, Williams %R ve CCI Premium ile analize katılır. RSI, MACD ve Bollinger ücretsiz.';
 
   @override
   String get sgnPremiumGec => 'Premium\'a geç';
@@ -6895,27 +6895,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzOrtak => 'Birden fazla ortakla portföy paylaşımı';
-
-  @override
-  String get sgnSlotNotu =>
-      'Ücretsiz sürümde sinyal bildirimi tek varlıkta ve her tür için günde 1 kez gelir; varlığı, varlığın ekranından seçersin. Premium\'da tüm varlıkların ve seçtiğin sıklık gelir.';
-
-  @override
-  String get sgnVarlikAcik =>
-      'Sinyal bildirimi bu varlıkta açık. Ücretsiz planda tek varlıkta gelir.';
-
-  @override
-  String sgnVarlikKilit(String ad) {
-    return 'Ücretsiz planda sinyal bildirimi tek varlıkta: $ad. Tüm varlıkların için Premium.';
-  }
-
-  @override
-  String get sgnVarlikTasi => 'Sinyali buraya taşı';
-
-  @override
-  String sgnSlotKilitli(String secenek) {
-    return '$secenek, Premium';
-  }
 
   @override
   String get cmpSinirPremium => 'Premium ile 5 seriye kadar';
@@ -7635,14 +7614,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get depositNoteHint => 'Örn. kampanya faizi, hedef, şube';
 
   @override
-  String get sgnKilitBaslik => 'Teknik sinyaller';
+  String get sgnKilitBaslik => 'Sinyal bildirimleri';
 
   @override
   String get sgnKilitGovde =>
-      'RSI, MACD, Bollinger, EMA, Stokastik, ADX, Williams %R ve CCI: sekiz gösterge, tuttuğun her varlıkta seçtiğin sıklıkta bildirim ve varlık ekranında tam gösterge paneli.';
+      'RSI, MACD ve Bollinger ekranda ücretsiz. Premium\'da sekiz göstergenin tamamı, kendi periyot ayarların ve tuttuğun her varlıkta seçtiğin sıklıkta bildirim.';
 
   @override
-  String get sgnKilitSatir => 'Teknik sinyaller Premium\'da';
+  String get sgnKilitSatir => 'Sinyal bildirimleri Premium\'da';
 
   @override
   String get prmAylikKilitBaslik => 'Aylık rapor';
@@ -8501,5 +8480,47 @@ class AppLocalizationsTr extends AppLocalizations {
           '\"$name\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String get sgnPremiumGostergeSatiri =>
+      'EMA, Stokastik, ADX, Williams %R, CCI ve bildirimler Premium\'da';
+
+  @override
+  String get sgnAyarAciklamaUcretsiz =>
+      'Her varlık türü için ekranda hangi göstergelerin hesaplanacağını seç. RSI, MACD ve Bollinger ücretsiz.';
+
+  @override
+  String sgnParametreAciklama(String tur) {
+    return '$tur için. Değiştirdiğin değer ekranda ve bildirimlerde kullanılır.';
+  }
+
+  @override
+  String get sgnParametreSiraHatasi =>
+      'Kısa/hızlı değer, uzun/yavaş değerden küçük olmalı.';
+
+  @override
+  String get sgnParametreVarsayilan => 'Varsayılana dön';
+
+  @override
+  String get sgnParametreKaydet => 'Kaydet';
+
+  @override
+  String sgnParametreVarsayilanDeger(int deger) {
+    return 'Varsayılan $deger';
+  }
+
+  @override
+  String get sgnParametreAzalt => 'Azalt';
+
+  @override
+  String get sgnParametreArtir => 'Artır';
+
+  @override
+  String get sgnParametreKilitli => 'Periyot ayarı Premium\'da';
+
+  @override
+  String sgnParametreAyarla(String ad) {
+    return '$ad ayarları';
   }
 }

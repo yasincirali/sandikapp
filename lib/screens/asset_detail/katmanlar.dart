@@ -188,9 +188,7 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
                   key: _sinyalPaneliKey, detayli: true),
             ],
           ),
-        )
-      else if (_sinyalKilidi)
-        (baslik: l.s4RowSignals, kart: const SinyalKilitKarti()),
+        ),
       if (fonKarnesiVar())
         (baslik: l.s4RowFundReport, kart: _fonKarnesi(dis: dis)),
       // Fon X-Ray: koşul kartın kendisinden (`FonDagilimiKarti.cizilir`) —
