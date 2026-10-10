@@ -167,6 +167,7 @@ Future<void> pozisyonuTasiAkisi(
     context,
     gorunum: gorunum,
     toplam: toplam,
+    kaynakAdi: _ad(liste, l, kaynak),
     hedefAdi: hedefAdi,
     aktar: (miktar) {
       // Yuvarlama payı: "hepsini" yazan kullanıcı bölme değil taşıma ister.

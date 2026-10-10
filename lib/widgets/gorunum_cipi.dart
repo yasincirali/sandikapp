@@ -167,6 +167,17 @@ class GorunumCipi extends StatelessWidget {
     return renkler[id.hashCode.abs() % renkler.length];
   }
 
+  /// Ortağın baş harfli avatarı — görünüm çipiyle aynı renk ve biçim
+  /// (ortak paylaşım sayfası ve Portföyler ekranı da kullanır ki aynı kişi
+  /// her yüzeyde aynı görünsün).
+  static Widget avatar(BuildContext context, AppUser ortak,
+          {double boy = 32}) =>
+      _Avatar(
+        harf: basHarf(ortak.displayName),
+        renk: ortakRengi(context, ortak.id),
+        boy: boy,
+      );
+
   Future<void> _ac(BuildContext context) async {
     // Sheet `null` döndürünce iptal; Birlikte (id null) ' ' ile taşınır.
     final secim = await showSandikSheet<String>(

@@ -5548,7 +5548,7 @@
   "@pwdPortfoySayi": {"placeholders": {"sayi": {"type": "int"}}},
   "ortakGorurBaslik": "{ad} neyi görsün?",
   "@ortakGorurBaslik": {"placeholders": {"ad": {"type": "String"}}},
-  "ortakGorurAciklama": "{ad} yalnız seçtiğin portföylerdeki varlıkları, işlemleri ve toplamları görür. Seçmediklerin onun telefonuna hiç gitmez.",
+  "ortakGorurAciklama": "{ad} seçtiklerini tek liste olarak görür, portföy adlarını görmez. Seçmediklerin onun telefonuna hiç gitmez.",
   "@ortakGorurAciklama": {"placeholders": {"ad": {"type": "String"}}},
   "ortakGorurHepsi": "Hepsi",
   "ortakGorurSecilenler": "Seçtiklerim",
@@ -5577,5 +5577,8 @@
   "portfoyAktarDugme": "Aktar",
   "portfoyAktarPremium": "Bir kısmını aktarmak Premium'a özel.",
   "portfoyAktarildi": "{miktar}, {hedef} portföyüne aktarıldı.",
-  "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}}
+  "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}},
+  "ortakGorurOnizleme": "{ad} görecek",
+  "@ortakGorurOnizleme": {"placeholders": {"ad": {"type": "String"}}},
+  "ortakGorurHicbiriKisa": "Hiçbiri"
 }

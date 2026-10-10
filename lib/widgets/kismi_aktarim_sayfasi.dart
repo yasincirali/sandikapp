@@ -29,6 +29,7 @@ Future<void> showKismiAktarimSayfasi(
   BuildContext context, {
   required Asset gorunum,
   required double toplam,
+  required String kaynakAdi,
   required String hedefAdi,
   required Future<bool> Function(double miktar) aktar,
 }) =>
@@ -43,6 +44,7 @@ Future<void> showKismiAktarimSayfasi(
       builder: (_) => KismiAktarimIcerik(
         gorunum: gorunum,
         toplam: toplam,
+        kaynakAdi: kaynakAdi,
         hedefAdi: hedefAdi,
         aktar: aktar,
       ),
@@ -54,6 +56,7 @@ class KismiAktarimIcerik extends ConsumerStatefulWidget {
     super.key,
     required this.gorunum,
     required this.toplam,
+    required this.kaynakAdi,
     required this.hedefAdi,
     required this.aktar,
     this.ilkKismi = false,
@@ -61,6 +64,7 @@ class KismiAktarimIcerik extends ConsumerStatefulWidget {
 
   final Asset gorunum;
   final double toplam;
+  final String kaynakAdi;
   final String hedefAdi;
   final Future<bool> Function(double miktar) aktar;
 
@@ -80,6 +84,21 @@ class _KismiAktarimIcerikState extends ConsumerState<KismiAktarimIcerik> {
   void dispose() {
     _ctrl.dispose();
     super.dispose();
+  }
+
+  /// Önizlemenin miktarı: Tamamı'nda hepsi, Bir kısmı'nda yazılan (geçersizse
+  /// 0 — önizleme uydurmaz).
+  double get _giden {
+    if (!_kismi) return widget.toplam;
+    final v = parseTrNumber(_ctrl.text);
+    if (v == null || v <= 0 || v > widget.toplam) return 0;
+    return v;
+  }
+
+  void _oranla(double oran) {
+    final v = widget.toplam * oran;
+    _ctrl.text = fmtNum(v, digits: v == v.roundToDouble() ? 0 : 2);
+    setState(() => _hata = null);
   }
 
   String _miktar(double v) =>
@@ -121,6 +140,14 @@ class _KismiAktarimIcerikState extends ConsumerState<KismiAktarimIcerik> {
             Text(
               l.portfoyAktarAciklama(widget.hedefAdi, _miktar(widget.toplam)),
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+            ),
+            const SizedBox(height: SandikSpace.md),
+            _AkisOnizleme(
+              kaynakAdi: widget.kaynakAdi,
+              kalan: _miktar(widget.toplam - _giden),
+              hedefAdi: widget.hedefAdi,
+              gelen: _miktar(_giden),
+              oran: widget.toplam <= 0 ? 0 : _giden / widget.toplam,
             ),
             const SizedBox(height: SandikSpace.md),
             SandikSegment(
@@ -165,15 +192,42 @@ class _KismiAktarimIcerikState extends ConsumerState<KismiAktarimIcerik> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 style: TextStyle(color: context.c.text90),
-                onChanged: (_) {
-                  if (_hata != null) setState(() => _hata = null);
-                },
+                onChanged: (_) => setState(() => _hata = null),
                 decoration: InputDecoration(
                   labelText: l.portfoyAktarMiktar,
                   hintText: _miktar(widget.toplam / 2),
                   errorText: _hata,
                   // Dolgu/çerçeve temadan (`inputDecorationTheme`).
                 ),
+              ),
+              const SizedBox(height: SandikSpace.sm),
+              Row(
+                children: [
+                  for (final (i, o) in const [0.25, 0.5, 0.75].indexed) ...[
+                    if (i > 0) const SizedBox(width: SandikSpace.sm),
+                    Expanded(
+                      child: SandikTappable(
+                        key: ValueKey('kismi-aktarim-oran-$o'),
+                        onTap: () => _oranla(o),
+                        semanticLabel: fmtPct(o * 100, digits: 0),
+                        child: Container(
+                          constraints:
+                              const BoxConstraints(minHeight: SandikTouch.min),
+                          alignment: Alignment.center,
+                          decoration: context.chip(
+                              selected: (_giden - widget.toplam * o).abs() <
+                                  1e-9 *
+                                      widget.toplam.clamp(1, double.infinity),
+                              radius: SandikRadius.sm),
+                          child: Text(fmtPct(o * 100, digits: 0),
+                              style: context.t.labelLarge?.copyWith(
+                                  color: context.c.text90,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: SandikSpace.sm),
               Text(
@@ -196,6 +250,93 @@ class _KismiAktarimIcerikState extends ConsumerState<KismiAktarimIcerik> {
               },
               child: Text(l.portfoyAktarDugme),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kaynak → hedef önizlemesi: aktarımın SONUCU iki kutuda, yazdıkça değişir.
+/// Hedef kutusu taşınan pay kadar amber dolar; "ne kadar gidiyor" okumadan
+/// görünür.
+class _AkisOnizleme extends StatelessWidget {
+  const _AkisOnizleme({
+    required this.kaynakAdi,
+    required this.kalan,
+    required this.hedefAdi,
+    required this.gelen,
+    required this.oran,
+  });
+
+  final String kaynakAdi;
+  final String kalan;
+  final String hedefAdi;
+  final String gelen;
+  final double oran;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    // Her kutunun altında payını gösteren ince çubuk: kaynakta kalan,
+    // hedefte gelen. Yazdıkça ikisi birlikte kayar (toplam sabit).
+    Widget kutu(String ad, String miktar, double pay, {required bool hedef}) =>
+        Expanded(
+          child: AnimatedContainer(
+            duration: SandikMotion.stateOf(context),
+            curve: SandikMotion.enter,
+            padding: const EdgeInsets.all(SandikSpace.smd),
+            decoration: context.chip(
+                selected: hedef && pay > 0, radius: SandikRadius.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(ad,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.labelMedium?.copyWith(
+                        color: c.text58, fontWeight: FontWeight.w600)),
+                const SizedBox(height: SandikSpace.xxs),
+                Text(miktar,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.t.titleMedium?.copyWith(
+                        color: hedef && pay > 0 ? c.amberText : c.text90,
+                        fontWeight: FontWeight.w700)),
+                const SizedBox(height: SandikSpace.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(SandikRadius.sm),
+                  child: Container(
+                    height: 4,
+                    color: c.text20,
+                    alignment: Alignment.centerLeft,
+                    child: AnimatedFractionallySizedBox(
+                      duration: SandikMotion.stateOf(context),
+                      curve: SandikMotion.enter,
+                      widthFactor: pay.clamp(0.0, 1.0),
+                      heightFactor: 1,
+                      child: ColoredBox(color: hedef ? c.amberFill : c.text58),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+    return Semantics(
+      label: '$kaynakAdi $kalan, $hedefAdi $gelen',
+      excludeSemantics: true,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            kutu(kaynakAdi, kalan, 1 - oran, hedef: false),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+              child:
+                  Icon(Icons.arrow_forward_rounded, size: 20, color: c.text36),
+            ),
+            kutu(hedefAdi, gelen, oran, hedef: true),
           ],
         ),
       ),

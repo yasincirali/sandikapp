@@ -151,18 +151,31 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                   children: [
                     SandikSectionHeader(title: l.portfoyOrtakBolum),
                     for (final o in ortaklar)
-                      Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                top: SandikSpace.sm, right: SandikSpace.sm),
-                            child: Text(GorunumCipi.ilkAd(o.displayName),
-                                style: context.t.bodyMedium?.copyWith(
-                                    color: context.c.text90,
-                                    fontWeight: FontWeight.w700)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+                        child: SandikCard(
+                          padding: const EdgeInsets.fromLTRB(SandikSpace.md,
+                              SandikSpace.sm, SandikSpace.sm, SandikSpace.xs),
+                          child: Row(
+                            children: [
+                              GorunumCipi.avatar(context, o, boy: 32),
+                              const SizedBox(width: SandikSpace.smd),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(GorunumCipi.ilkAd(o.displayName),
+                                        style: context.t.titleSmall?.copyWith(
+                                            color: context.c.text90,
+                                            fontWeight: FontWeight.w700)),
+                                    OrtakPaylasimSatiri(
+                                        ortak: o, ustBosluk: false),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          Expanded(child: OrtakPaylasimSatiri(ortak: o)),
-                        ],
+                        ),
                       ),
                   ],
                 ),
@@ -310,25 +323,36 @@ class _Satir extends StatelessWidget {
                   ),
                 ],
                 if (ortakDurumu case final d?) ...[
-                  const SizedBox(height: SandikSpace.xxs),
-                  Row(
-                    children: [
-                      Icon(
-                        d.gizli
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 14,
-                        color: d.gizli ? context.c.amberText : context.c.text36,
-                      ),
-                      const SizedBox(width: SandikSpace.xxs),
-                      Text(
-                        d.metin,
-                        style: context.t.bodySmall?.copyWith(
-                            color: d.gizli
-                                ? context.c.amberText
-                                : context.c.text36),
-                      ),
-                    ],
+                  const SizedBox(height: SandikSpace.sm),
+                  // Hap: gördüğü portföy sakin, gizlenen amber — liste
+                  // taranınca "neyi gizliyorum" tek bakışta okunur.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
+                    decoration: context.chip(
+                        selected: d.gizli, radius: SandikRadius.sm),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          d.gizli
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 14,
+                          color:
+                              d.gizli ? context.c.amberText : context.c.text58,
+                        ),
+                        const SizedBox(width: SandikSpace.xs),
+                        Text(
+                          d.metin,
+                          style: context.t.labelMedium?.copyWith(
+                              color: d.gizli
+                                  ? context.c.amberText
+                                  : context.c.text58,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],

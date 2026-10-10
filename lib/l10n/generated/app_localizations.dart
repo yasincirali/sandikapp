@@ -13555,7 +13555,7 @@ abstract class AppLocalizations {
   /// No description provided for @ortakGorurAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'{ad} yalnız seçtiğin portföylerdeki varlıkları, işlemleri ve toplamları görür. Seçmediklerin onun telefonuna hiç gitmez.'**
+  /// **'{ad} seçtiklerini tek liste olarak görür, portföy adlarını görmez. Seçmediklerin onun telefonuna hiç gitmez.'**
   String ortakGorurAciklama(String ad);
 
   /// No description provided for @ortakGorurHepsi.
@@ -13683,6 +13683,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{miktar}, {hedef} portföyüne aktarıldı.'**
   String portfoyAktarildi(String miktar, String hedef);
+
+  /// No description provided for @ortakGorurOnizleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} görecek'**
+  String ortakGorurOnizleme(String ad);
+
+  /// No description provided for @ortakGorurHicbiriKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hiçbiri'**
+  String get ortakGorurHicbiriKisa;
 }
 
 class _AppLocalizationsDelegate

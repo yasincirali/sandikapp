@@ -8185,7 +8185,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String ortakGorurAciklama(String ad) {
-    return '$ad only sees the holdings, transactions and totals in the portfolios you pick. The rest never reaches their phone.';
+    return '$ad sees what you pick as one list, without portfolio names. The rest never reaches their phone.';
   }
 
   @override
@@ -8267,4 +8267,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String portfoyAktarildi(String miktar, String hedef) {
     return '$miktar moved to $hedef.';
   }
+
+  @override
+  String ortakGorurOnizleme(String ad) {
+    return '$ad will see';
+  }
+
+  @override
+  String get ortakGorurHicbiriKisa => 'None';
 }

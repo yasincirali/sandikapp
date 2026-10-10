@@ -4969,7 +4969,7 @@
   "@pwdPortfoySayi": {"placeholders": {"sayi": {"type": "int"}}},
   "ortakGorurBaslik": "What can {ad} see?",
   "@ortakGorurBaslik": {"placeholders": {"ad": {"type": "String"}}},
-  "ortakGorurAciklama": "{ad} only sees the holdings, transactions and totals in the portfolios you pick. The rest never reaches their phone.",
+  "ortakGorurAciklama": "{ad} sees what you pick as one list, without portfolio names. The rest never reaches their phone.",
   "@ortakGorurAciklama": {"placeholders": {"ad": {"type": "String"}}},
   "ortakGorurHepsi": "Everything",
   "ortakGorurSecilenler": "Selected",
@@ -4998,5 +4998,8 @@
   "portfoyAktarDugme": "Move",
   "portfoyAktarPremium": "Moving part of a position is Premium.",
   "portfoyAktarildi": "{miktar} moved to {hedef}.",
-  "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}}
+  "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}},
+  "ortakGorurOnizleme": "{ad} will see",
+  "@ortakGorurOnizleme": {"placeholders": {"ad": {"type": "String"}}},
+  "ortakGorurHicbiriKisa": "None"
 }

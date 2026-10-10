@@ -287,6 +287,7 @@ void main() {
               child: KismiAktarimIcerik(
                 gorunum: _benim[3],
                 toplam: 20,
+                kaynakAdi: 'Emeklilik',
                 hedefAdi: 'Çocuğum için',
                 aktar: (_) async => false,
                 ilkKismi: kismi,

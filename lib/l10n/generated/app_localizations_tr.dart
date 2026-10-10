@@ -8102,7 +8102,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String ortakGorurAciklama(String ad) {
-    return '$ad yalnız seçtiğin portföylerdeki varlıkları, işlemleri ve toplamları görür. Seçmediklerin onun telefonuna hiç gitmez.';
+    return '$ad seçtiklerini tek liste olarak görür, portföy adlarını görmez. Seçmediklerin onun telefonuna hiç gitmez.';
   }
 
   @override
@@ -8184,4 +8184,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String portfoyAktarildi(String miktar, String hedef) {
     return '$miktar, $hedef portföyüne aktarıldı.';
   }
+
+  @override
+  String ortakGorurOnizleme(String ad) {
+    return '$ad görecek';
+  }
+
+  @override
+  String get ortakGorurHicbiriKisa => 'Hiçbiri';
 }

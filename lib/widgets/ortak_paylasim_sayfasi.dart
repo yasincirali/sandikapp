@@ -97,20 +97,27 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
     final ozet = ref.watch(portfoyOzetleriProvider);
     final baz = ref.watch(gosterimBazParaProvider);
     final hp = SandikSpace.screenH(context);
+    final kimlikler = <String?>[null, for (final p in liste) p.id];
     final hicbiri = !_secim.tumu &&
         _secim.gorunenSayisi([for (final p in liste) p.id]) == 0;
+    double deger(String? id) => ozet[id]?.deger ?? 0;
+    final gorunen = [
+      for (final id in kimlikler)
+        if (_secim.gorur(id)) id,
+    ];
 
     Widget satir(String? id, String baslik) => _PortfoySatiri(
           key: ValueKey('ortak-paylasim-${id ?? 'ana'}'),
           ad: baslik,
-          deger: baz.fmt(ozet[id]?.deger ?? 0),
+          ana: id == null,
+          deger: baz.fmt(deger(id)),
           acik: _secim.gorur(id),
           etkin: !_secim.tumu,
           onChanged: (v) => _anahtar(id, v),
         );
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(hp, SandikSpace.md, hp, SandikSpace.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -118,15 +125,38 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
           children: [
             const Center(child: SandikTutamac()),
             const SizedBox(height: SandikSpace.md),
-            Text(
-              l.ortakGorurBaslik(ad),
-              style: context.t.titleLarge?.copyWith(
-                  color: context.c.text90, fontWeight: FontWeight.w700),
+            Row(
+              children: [
+                GorunumCipi.avatar(context, widget.ortak, boy: 40),
+                const SizedBox(width: SandikSpace.smd),
+                Expanded(
+                  child: Text(
+                    l.ortakGorurBaslik(ad),
+                    style: context.t.titleLarge?.copyWith(
+                        color: context.c.text90, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: SandikSpace.xs),
+            const SizedBox(height: SandikSpace.sm),
             Text(
               l.ortakGorurAciklama(ad),
               style: context.t.bodyMedium?.copyWith(color: context.c.text58),
+            ),
+            const SizedBox(height: SandikSpace.md),
+            _Onizleme(
+              baslik: l.ortakGorurOnizleme(ad),
+              toplam: gorunen.fold(0.0, (t, id) => t + deger(id)),
+              bicim: baz.fmt,
+              sayi: hicbiri
+                  ? l.ortakGorurHicbiriKisa
+                  : _secim.tumu
+                      ? l.ortakGorurHepsi
+                      : l.ortakGorurSayi(gorunen.length, kimlikler.length),
+              dilimler: [
+                for (final id in kimlikler)
+                  (pay: deger(id), acik: _secim.gorur(id)),
+              ],
             ),
             const SizedBox(height: SandikSpace.md),
             SandikSegment(
@@ -144,14 +174,16 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
               style: context.t.bodySmall?.copyWith(color: context.c.text36),
             ),
             const SizedBox(height: SandikSpace.sm),
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    satir(null, l.portfoyAnaUzun),
-                    for (final p in liste) satir(p.id, p.ad),
+            SandikCard(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: SandikSpace.md, vertical: SandikSpace.xs),
+              child: Column(
+                children: [
+                  for (final (i, id) in kimlikler.indexed) ...[
+                    if (i > 0) Divider(height: 1, color: context.c.hairline),
+                    satir(id, id == null ? l.portfoyAnaUzun : _ad(liste, id)),
                   ],
-                ),
+                ],
               ),
             ),
             if (hicbiri) ...[
@@ -162,7 +194,7 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
                     context.t.bodySmall?.copyWith(color: context.c.amberText),
               ),
             ],
-            const SizedBox(height: SandikSpace.md),
+            const SizedBox(height: SandikSpace.lg),
             SandikAsyncButton(
               key: const ValueKey('ortak-paylasim-kaydet'),
               onPressed: () async {
@@ -195,12 +227,103 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
       ),
     );
   }
+
+  static String _ad(List<Portfoy> liste, String id) {
+    for (final p in liste) {
+      if (p.id == id) return p.ad;
+    }
+    return id;
+  }
+}
+
+/// "Ayşe görecek" önizlemesi: seçimin SONUCU, kaydetmeden önce. Toplam
+/// akarak değişir; çubuk her portföyün payını gösterir, gizlenen dilim
+/// söner. Kullanıcı anahtarı çevirdiğinde "ne değişti"yi okumadan görür.
+class _Onizleme extends StatelessWidget {
+  const _Onizleme({
+    required this.baslik,
+    required this.toplam,
+    required this.bicim,
+    required this.sayi,
+    required this.dilimler,
+  });
+
+  final String baslik;
+  final double toplam;
+  final String Function(double) bicim;
+  final String sayi;
+  final List<({double pay, bool acik})> dilimler;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final hepsi = dilimler.fold(0.0, (t, d) => t + d.pay);
+    return SandikCard(
+      elevated: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(baslik,
+                    style: context.t.labelMedium?.copyWith(
+                        color: c.text58, fontWeight: FontWeight.w600)),
+              ),
+              Text(sayi,
+                  style: context.t.labelMedium?.copyWith(
+                      color: c.amberText, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: SandikSpace.xs),
+          TweenAnimationBuilder<double>(
+            tween: Tween(end: toplam),
+            duration: SandikMotion.flowOf(context),
+            curve: SandikMotion.glide,
+            builder: (context, v, _) => Text(
+              bicim(v),
+              style: context.t.headlineSmall
+                  ?.copyWith(color: c.text90, fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(height: SandikSpace.smd),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(SandikRadius.sm),
+            child: SizedBox(
+              height: 8,
+              child: Row(
+                children: [
+                  for (final (i, d) in dilimler.indexed)
+                    if (hepsi <= 0 || d.pay > 0)
+                      Expanded(
+                        flex: hepsi <= 0
+                            ? 1
+                            : (d.pay / hepsi * 1000).round().clamp(1, 1000),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              left: i == 0 ? 0 : SandikSpace.xxs),
+                          child: AnimatedContainer(
+                            duration: SandikMotion.stateOf(context),
+                            curve: SandikMotion.enter,
+                            color: d.acik ? c.amberFill : c.text20,
+                          ),
+                        ),
+                      ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PortfoySatiri extends StatelessWidget {
   const _PortfoySatiri({
     super.key,
     required this.ad,
+    required this.ana,
     required this.deger,
     required this.acik,
     required this.etkin,
@@ -208,6 +331,7 @@ class _PortfoySatiri extends StatelessWidget {
   });
 
   final String ad;
+  final bool ana;
   final String deger;
   final bool acik;
 
@@ -217,23 +341,37 @@ class _PortfoySatiri extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
+    final c = context.c;
+    return AnimatedOpacity(
       opacity: etkin ? 1 : 0.55,
+      duration: SandikMotion.stateOf(context),
+      curve: SandikMotion.enter,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: SandikSpace.xxs),
+        padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
         child: Row(
           children: [
+            AnimatedContainer(
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              width: 36,
+              height: 36,
+              decoration: context.chip(selected: acik, radius: SandikRadius.sm),
+              child: Icon(
+                ana ? Icons.home_outlined : Icons.folder_outlined,
+                size: 20,
+                color: acik ? c.amberText : c.text36,
+              ),
+            ),
+            const SizedBox(width: SandikSpace.smd),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(ad,
                       style: context.t.titleSmall?.copyWith(
-                          color: context.c.text90,
-                          fontWeight: FontWeight.w600)),
+                          color: c.text90, fontWeight: FontWeight.w600)),
                   Text(deger,
-                      style: context.t.bodySmall
-                          ?.copyWith(color: context.c.text58)),
+                      style: context.t.bodySmall?.copyWith(color: c.text58)),
                 ],
               ),
             ),
@@ -241,7 +379,7 @@ class _PortfoySatiri extends StatelessWidget {
               label: ad,
               child: Switch.adaptive(
                 value: acik,
-                activeTrackColor: context.c.amberText,
+                activeTrackColor: c.amberText,
                 onChanged: etkin ? onChanged : null,
               ),
             ),
@@ -255,9 +393,14 @@ class _PortfoySatiri extends StatelessWidget {
 /// Ortak kartındaki "Görebildiği portföyler · Hepsi ›" satırı. Seçim
 /// sunulmuyorsa (bayrak, portföy ya da ortak yok) hiç yer kaplamaz.
 class OrtakPaylasimSatiri extends ConsumerWidget {
-  const OrtakPaylasimSatiri({super.key, required this.ortak});
+  const OrtakPaylasimSatiri(
+      {super.key, required this.ortak, this.ustBosluk = true});
 
   final AppUser ortak;
+
+  /// Profil kartında satır kartın altına eklenir (üst boşluk); Portföyler
+  /// ekranında kendi kartının içinde, ad satırının hemen altında.
+  final bool ustBosluk;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -276,7 +419,7 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
                 paylasim.gorunenSayisi([for (final p in liste) p.id]),
                 liste.length + 1);
     return Padding(
-        padding: const EdgeInsets.only(top: SandikSpace.sm),
+        padding: EdgeInsets.only(top: ustBosluk ? SandikSpace.sm : 0),
         child: SandikTappable(
           key: ValueKey('ortak-paylasim-satiri-${ortak.id}'),
           // Değiştirmek Premium (paywall açıkken); görmek serbest — mevcut
