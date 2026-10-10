@@ -5,6 +5,7 @@ import 'package:portfoy_takip/models/asset_type.dart';
 import 'package:portfoy_takip/models/gorunum_kapsami.dart';
 import 'package:portfoy_takip/models/portfoy.dart';
 import 'package:portfoy_takip/models/position.dart';
+import 'package:portfoy_takip/models/user_model.dart';
 import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfoy_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
@@ -434,6 +435,7 @@ void main() {
       bool premium = false,
       bool admin = false,
       List<Portfoy> liste = const [],
+      String oturum = 'me',
     }) {
       final c = ProviderContainer(overrides: [
         paywallVisibleProvider.overrideWithValue(paywall),
@@ -442,6 +444,7 @@ void main() {
         gecerliPremiumHakkiProvider.overrideWithValue(null),
         isPushAdminProvider.overrideWith((_) async => admin),
         portfoylerProvider.overrideWith(() => _SabitPortfoyler(liste)),
+        authProvider.overrideWith(() => _SabitOturum(oturum)),
       ]);
       addTearDown(c.dispose);
       return c;
@@ -456,6 +459,7 @@ void main() {
         () async {
       final c = kap(paywall: true, liste: iki);
       await c.read(seciliPortfoyProvider.notifier).set(_a);
+      await c.read(authProvider.future);
       await c.read(portfoylerProvider.future);
       expect(c.read(cokluPortfoyGorunurProvider), isFalse);
       expect(c.read(portfoyKapsamiProvider).secim, PortfoySecimi.tumu);
@@ -466,6 +470,7 @@ void main() {
       RemoteConfigService.testAcik = {'coklu_portfoy'};
       final c = kap(paywall: false, liste: iki);
       await c.read(seciliPortfoyProvider.notifier).set(_a);
+      await c.read(authProvider.future);
       await c.read(portfoylerProvider.future);
       expect(c.read(cokluPortfoyGorunurProvider), isFalse);
       expect(c.read(portfoyKapsamiProvider).secim, PortfoySecimi.tumu);
@@ -475,6 +480,7 @@ void main() {
         () async {
       RemoteConfigService.testAcik = {'coklu_portfoy'};
       final c = kap(paywall: true, liste: iki);
+      await c.read(authProvider.future);
       await c.read(portfoylerProvider.future);
       await c.read(seciliPortfoyProvider.notifier).set(_b);
       expect(c.read(cokluPortfoyGorunurProvider), isTrue);
@@ -498,6 +504,7 @@ void main() {
         () async {
       RemoteConfigService.testAcik = {'coklu_portfoy'};
       final c = kap(paywall: true);
+      await c.read(authProvider.future);
       await c.read(portfoylerProvider.future);
       await c.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.ana);
       expect(c.read(portfoyKapsamiProvider).secim, PortfoySecimi.tumu);
@@ -517,10 +524,32 @@ void main() {
       expect(kapali.read(portfoyLimitProvider), greaterThan(1000));
     });
 
+    test('kullanıcı değişimi karesi: liste başkasınınsa kapsam Tümü', () async {
+      RemoteConfigService.testAcik = {'coklu_portfoy'};
+      final c = kap(paywall: true, liste: iki, oturum: 'baskasi');
+      await c.read(authProvider.future);
+      await c.read(authProvider.future);
+      await c.read(portfoylerProvider.future);
+      await c.read(seciliPortfoyProvider.notifier).set(_a);
+      expect(c.read(portfoyKapsamiProvider).secim, PortfoySecimi.tumu);
+    });
+
     test('seçili portföy kullanıcıya özel ve listede', () {
       expect(kullaniciyaOzelTercihler, contains(seciliPortfoyProvider));
     });
   });
+}
+
+class _SabitOturum extends AuthNotifier {
+  _SabitOturum(this.id);
+  final String id;
+  @override
+  Future<AppUser?> build() async => AppUser(
+        id: id,
+        email: 'test@example.com',
+        displayName: 'Test',
+        createdAt: DateTime(2026, 1, 1),
+      );
 }
 
 class _SabitPortfoyler extends PortfoylerNotifier {

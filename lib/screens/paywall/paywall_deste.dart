@@ -28,6 +28,8 @@ enum PaywallKarti {
   sinyal,
   karsilastir,
   ortak,
+  // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
+  portfoy,
   akis,
   hacim,
   not,
@@ -56,6 +58,7 @@ PaywallKarti? kaynaktanKart(String source) {
     'aylik_rapor' => PaywallKarti.not,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
+    'portfoy_limit' => PaywallKarti.portfoy,
     'para_akisi_karti' => PaywallKarti.akis,
     'hacim_radari' || 'kripto_baski' => PaywallKarti.hacim,
     'analiz_notu' => PaywallKarti.not,
@@ -70,12 +73,15 @@ List<PaywallKarti> desteSirasi(
   String source, {
   required bool radar,
   required bool ekstreAi,
+  // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
+  bool portfoy = false,
 }) {
   final acik = [
     for (final k in PaywallKarti.values)
       if (switch (k) {
         PaywallKarti.akis || PaywallKarti.hacim || PaywallKarti.not => radar,
         PaywallKarti.ekstre => ekstreAi,
+        PaywallKarti.portfoy => portfoy,
         _ => true,
       })
         k,
@@ -166,7 +172,9 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     _dil = dil;
     final rc = RemoteConfigService.instance;
     final sira = desteSirasi(widget.source,
-        radar: rc.balinaRadariAcik, ekstreAi: rc.ekstreAiEsleme);
+        radar: rc.balinaRadariAcik,
+        ekstreAi: rc.ekstreAiEsleme,
+        portfoy: rc.cokluPortfoy);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
 
@@ -233,6 +241,21 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           null,
           _OrtakGorseli(renk: _KartRengi.yesil),
           l.pwdOrtakSayi(rc.freePartnerLimit),
+          l.prmSinirsiz,
+        ),
+      // Çoklu portföy: ücretsizde 1 (Ana), Premium sınırsız
+      // (`portfoyLimitProvider`).
+      PaywallKarti.portfoy => (
+          _KartRengi.koyu,
+          l.pwdPortfoyEtiket,
+          l.pwdPortfoyBaslik,
+          null,
+          _Cubuklar(
+              degerler: const [34, 58, 82, 46],
+              vurgulu: 1,
+              aralik: SandikSpace.sm,
+              renk: _KartRengi.koyu),
+          l.pwdPortfoySayi(1),
           l.prmSinirsiz,
         ),
       PaywallKarti.akis => (

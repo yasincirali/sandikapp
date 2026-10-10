@@ -76,6 +76,8 @@ import '../providers/preferences_provider.dart'
         yatirimciSeviyesiProvider;
 import 'siralama_screen.dart';
 import '../widgets/ortak_secici.dart';
+import '../providers/portfoy_provider.dart';
+import '../widgets/portfoy_secici.dart';
 import '../widgets/zoom_data_controller.dart';
 import '../widgets/tour_anchor.dart';
 import '../widgets/raporlar_kapisi.dart';
@@ -238,6 +240,11 @@ class _PortfolioPerformanceScreenState
   }
   late String? _view;
   late AssetType? _typeFilter;
+
+  /// Çoklu portföy (0133) kapsamının önbellek anahtarı parçası: "Tümü"de
+  /// BOŞ — zoom ve Özet anahtarları bayrak öncesiyle birebir aynı metin
+  /// kalır; portföy seçiliyse `|p:<seçim>`. `build` her karede yazar.
+  String _portfoyAnahtari = '';
   // Grafik modu: false = gerçek geçmiş (alım/satışlara göre),
   //             true  = simülasyon (bugünkü net pozisyon tüm dönem boyunca).
   //
@@ -576,6 +583,17 @@ class _PortfolioPerformanceScreenState
       ref.listen<SummaryPeriod>(
           seciliDonemProvider, (_, __) => _startIntradayTickIfNeeded());
     }
+    // Portföy kapsamı (0133): "Ben"de uygulanır; görünmüyorsa HEP Tümü.
+    // Değişince gün içi tohumu atılır — kişi kapsamıyla aynı gerekçe
+    // (`_gunIciTohumuAt`): başka bir kümenin karesi bu kümenin özeti
+    // sanılmasın.
+    final portfoyKapsami = ref.watch(portfoyKapsamiProvider);
+    _portfoyAnahtari = portfoyKapsami.secim == PortfoySecimi.tumu
+        ? ''
+        : '|p:${portfoyKapsami.secim}';
+    ref.listen(portfoyKapsamiProvider, (onceki, sonraki) {
+      if (onceki?.secim != sonraki.secim) _guncelle(_gunIciTohumuAt);
+    });
     // Gizlenen/çıkarılan ortak seçili görünümde KALMASIN: toplam ₺0'a düşer
     // (bkz. `GorunumCipi.gecerli`, 2026-09-28).
     // Kapsam seçicinin `onChanged`'ı ile aynı yol: gün içi tohumu da atılır.
@@ -757,11 +775,16 @@ class _PortfolioPerformanceScreenState
                       // `targetAssets` ham ledger olarak akmaya devam eder
                       // (HistoryService buy/sell tarihlerini kendisi yorumlar),
                       // ancak aggregate edilirken sahipler ayrı tutulur.
-                      // Kapsam tek kaynaktan (`gorunum_kapsami`).
+                      // Kapsam tek kaynaktan (`gorunum_kapsami`); portföy
+                      // süzgeci LOT düzeyinde, yalnız "Ben"de: seri, özet,
+                      // XIRR ve tür dökümü motorları değişmeden o alt
+                      // kümeyi hesaplar.
                       final ownerLots = kapsamSahipDefterleri(
                         kisi: _view,
                         benim: pState.assets,
                         ortaklar: partnerMap,
+                        portfoy: portfoyKapsami.secim,
+                        bilinenPortfoyler: portfoyKapsami.bilinen,
                       );
                       List<Asset> targetAssets = [
                         for (final l in ownerLots) ...l

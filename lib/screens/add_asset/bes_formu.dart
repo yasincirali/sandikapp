@@ -93,7 +93,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
   }
 
   @override
-  Future<bool> kaydet() async {
+  Future<bool> kaydet({String? portfoyId}) async {
     if (DemoModu.yazmaKapisi('bes')) return false;
     final l10n = context.l10n;
     final formGecerli = _form.currentState?.validate() ?? false;
@@ -128,6 +128,7 @@ class BesFormuState extends ConsumerState<BesFormu> implements SozlesmeFormu {
             dkFonKodu: _dkFonu?.code,
             aylikKatki: parseTrNumber(_aylik.text),
             katkiGunu: int.tryParse(_gun.text.trim()),
+            portfoyId: portfoyId,
             otomatikKatki: _otomatik,
           );
       return true;

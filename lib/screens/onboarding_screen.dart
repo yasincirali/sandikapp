@@ -354,6 +354,17 @@ bool _vitrinKartYerine(WidgetRef ref) => IlkVarlikVitrini.toplamKartiYerine(
 /// Kapalı bayrakların özellikleri ANLATILMAZ; ekranda olmayan bir hedefe
 /// spot düşürülemez zaten — hedefi bulunamayan adım kendiliğinden atlanır
 /// (bkz. [_TurKatmaniState._tik]).
+/// Çoklu portföy turda anlatılsın mı: `cokluPortfoyGorunurProvider` ile
+/// aynı karar (bayrak VE paywall/admin). Tur sağlayıcı dışından kurulur;
+/// değer RC'den okunur.
+bool get _cokluPortfoyGorunur =>
+    RemoteConfigService.instance.cokluPortfoy &&
+    RemoteConfigService.instance.premiumOzellikleriGorunur;
+
+const _portfoySeridiCumlesi = ' Üstteki portföy şeridiyle Tümü, Ana ya da '
+    'adlandırdığın bir portföye bakarsın; yenisini şeridin sonundaki '
+    '"Yeni portföy"den açarsın. Toplam görünümün hep "Tümü"dür.';
+
 List<_Adim> _adimlariKur() {
   // Vadeli mevduat 2026-09-14'te kaldırıldı; tür listesi artık sabit metin.
   return [
@@ -560,7 +571,7 @@ List<_Adim> _adimlariKur() {
       // birebir.
       // Bayrak `goz_alici` (2026-10-09): halkada dilime dokunmak o türü
       // seçer, seçili dilime ya da ortaya dokunmak büyütür.
-      govde: RemoteConfigService.instance.portfoyDagilimCubugu &&
+      govde: (RemoteConfigService.instance.portfoyDagilimCubugu &&
               RemoteConfigService.instance.gozAlici
           ? 'Varlıklarının listesi ve tür dağılımı burada; halkadaki bir '
               'dilime ya da yandaki türe dokununca liste o türe süzülür, '
@@ -575,7 +586,12 @@ List<_Adim> _adimlariKur() {
               'çubuktan kaydedersin.'
           : 'Varlıklarının listesi ve dağılım halkası burada. Bir varlığa '
           'dokununca detayına inersin; alış, satış ve temettüyü oradaki '
-          'alt çubuktan kaydedersin.',
+          'alt çubuktan kaydedersin.') +
+          // Çoklu portföy (0133): "Ben"in altına portföy şeridi gelir —
+          // tur metni arayüzle birlikte değişir (2026-09-21 kuralı). Üç
+          // düzenin üçüne de eklenir; özellik görünmüyorsa metin birebir
+          // eski.
+          (_cokluPortfoyGorunur ? _portfoySeridiCumlesi : ''),
       gorev: 'Portföy sekmesine dokun',
       gorevBitti: 'Portföy açıldı',
       bitti: (_) => _sekmede(1),
@@ -795,6 +811,7 @@ List<_Adim> _adimlariKur() {
       govde: PortfolioPerformanceScreen.tekAkisAcik
           ? 'Dönem seçicinin sağındaki Filtre çipi neye baktığını belirler; '
               'dokununca bir sayfa açılır: ortağın varsa kimin portföyü, '
+              '${_cokluPortfoyGorunur ? 'hangi portföyün, ' : ''}'
               'hangi varlık türü ve "Bugünkü portföyle". Varsayılan dışında '
               'bir seçim varsa çip sayısını yazar ("Filtre · 1").\n\n'
               'Grafik dönem içindeki her alım ve satımla gerçek geçmişini '
@@ -803,7 +820,10 @@ List<_Adim> _adimlariKur() {
               'göster"i aç; açıkken seçicinin altında rozet görünür.'
           : 'Bu çip hangi varlık türüne baktığını yazar; dokununca türler '
           'açılır. Kimin portföyü olduğunu başlıktaki kişi çipi '
-          'seçer.\n\nGrafik dönem içindeki her alım ve satımla gerçek '
+          'seçer.'
+          '${_cokluPortfoyGorunur ? ' Hangi portföyüne baktığını üstteki '
+              'portföy şeridi seçer.' : ''}'
+          '\n\nGrafik dönem içindeki her alım ve satımla gerçek '
           'geçmişini çizer. "Bugünkü portföyümü baştan elimde tutsaydım '
           'ne olurdu?" diye merak edersen Ayarlar › Görünüm\'de '
           '"Bugünkü portföyle göster"i aç; açıkken bu çipin altında '

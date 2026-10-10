@@ -13029,6 +13029,216 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'8 gösterge'**
   String get pwdSinyalRozet;
+
+  /// No description provided for @portfoyTumu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü'**
+  String get portfoyTumu;
+
+  /// No description provided for @portfoyAna.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana'**
+  String get portfoyAna;
+
+  /// No description provided for @portfoyAnaUzun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ana portföy'**
+  String get portfoyAnaUzun;
+
+  /// No description provided for @portfoyYeni.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni portföy'**
+  String get portfoyYeni;
+
+  /// No description provided for @portfoyYonet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyleri yönet'**
+  String get portfoyYonet;
+
+  /// No description provided for @portfoySeciciEtiketi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy'**
+  String get portfoySeciciEtiketi;
+
+  /// No description provided for @portfoyAdi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy adı'**
+  String get portfoyAdi;
+
+  /// No description provided for @portfoyAdiIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'ör. Emeklilik, Çocuğum için'**
+  String get portfoyAdiIpucu;
+
+  /// No description provided for @portfoyAdiGecersiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ad 1 ile 40 karakter arasında olmalı.'**
+  String get portfoyAdiGecersiz;
+
+  /// No description provided for @portfoyAdiKullaniliyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu adda bir portföyün zaten var.'**
+  String get portfoyAdiKullaniliyor;
+
+  /// No description provided for @portfoyOlustur.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oluştur'**
+  String get portfoyOlustur;
+
+  /// No description provided for @portfoyYenidenAdlandir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeniden adlandır'**
+  String get portfoyYenidenAdlandir;
+
+  /// No description provided for @portfoySil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyü sil'**
+  String get portfoySil;
+
+  /// No description provided for @portfoySilBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silinsin mi?'**
+  String portfoySilBaslik(String ad);
+
+  /// No description provided for @portfoySilAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıkların silinmez. Bu portföydeki {sayi} kayıt Ana portföye döner; toplamın değişmez.'**
+  String portfoySilAciklama(int sayi);
+
+  /// No description provided for @portfoySilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silindi, varlıkları Ana portföyde.'**
+  String portfoySilindi(String ad);
+
+  /// No description provided for @portfoySilinemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy silinemedi'**
+  String get portfoySilinemedi;
+
+  /// No description provided for @portfoyKaydedilemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy kaydedilemedi'**
+  String get portfoyKaydedilemedi;
+
+  /// No description provided for @portfoyYonetimiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyler'**
+  String get portfoyYonetimiBaslik;
+
+  /// No description provided for @portfoyYonetimiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıklarını amacına göre ayır: emeklilik, çocuğun için, deneme. Tümü görünümü ve ana sayfa toplamı değişmez; widget ve kilit ekranı da toplamı gösterir.'**
+  String get portfoyYonetimiAciklama;
+
+  /// No description provided for @portfoyAnaAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy seçmeden eklediklerin burada.'**
+  String get portfoyAnaAciklama;
+
+  /// No description provided for @portfoySiralaIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sırayı değiştirmek için basılı tutup sürükle.'**
+  String get portfoySiralaIpucu;
+
+  /// No description provided for @portfoyIslemSec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi portföydeki pozisyon?'**
+  String get portfoyIslemSec;
+
+  /// No description provided for @portfoyIslemSecAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu varlık birden çok portföyde. İşlem seçtiğin portföyün pozisyonuna, onun maliyetiyle yazılır.'**
+  String get portfoyIslemSecAciklama;
+
+  /// No description provided for @portfoyTasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Taşı'**
+  String get portfoyTasi;
+
+  /// No description provided for @portfoyTasiBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi portföye taşınsın?'**
+  String get portfoyTasiBaslik;
+
+  /// No description provided for @portfoyTasiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.'**
+  String get portfoyTasiAciklama;
+
+  /// No description provided for @portfoyTasindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} portföyüne taşındı.'**
+  String portfoyTasindi(String ad);
+
+  /// No description provided for @portfoyTasinamadi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Taşınamadı'**
+  String get portfoyTasinamadi;
+
+  /// No description provided for @portfoyKaynakSec.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi portföydeki pozisyon taşınsın?'**
+  String get portfoyKaynakSec;
+
+  /// No description provided for @pwOzPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı'**
+  String get pwOzPortfoy;
+
+  /// No description provided for @prmSatirPortfoy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy'**
+  String get prmSatirPortfoy;
+
+  /// No description provided for @pwdPortfoyEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'PORTFÖY'**
+  String get pwdPortfoyEtiket;
+
+  /// No description provided for @pwdPortfoyBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her amaca ayrı portföy; toplamın hep yerinde.'**
+  String get pwdPortfoyBaslik;
+
+  /// No description provided for @pwdPortfoySayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} portföy'**
+  String pwdPortfoySayi(int sayi);
 }
 
 class _AppLocalizationsDelegate

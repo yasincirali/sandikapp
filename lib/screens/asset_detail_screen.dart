@@ -9,7 +9,10 @@ import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/asset_type.dart';
+import '../models/gorunum_kapsami.dart';
+import '../models/portfoy.dart';
 import '../models/position.dart';
+import '../providers/portfoy_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
@@ -472,13 +475,33 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
       return _canliOnbellek!;
     }
     final sahip = widget.asset.userId;
-    final sahipLotlari = <Asset>[
+    var sahipLotlari = <Asset>[
       for (final a in kendi ?? const <Asset>[])
         if (a.userId == sahip) a,
       for (final lots in (ortaklar ?? const <String, List<Asset>>{}).values)
         for (final a in lots)
           if (a.userId == sahip) a,
     ];
+    // Çoklu portföy (0133): ekran bir PORTFÖYÜN pozisyonundan açıldıysa
+    // (görünüm karışık değil) canlı pozisyon da o portföyün lotlarından
+    // kurulur — yoksa "Emeklilik"teki ASELS'e girip Al/Sat'a basan kullanıcı
+    // bütün portföylerin havuzunu görür ve satış yanlış maliyetle yazılırdı.
+    // Yalnız KENDİ lotlarında (ortağın portföy kimliği bu kullanıcıda
+    // anlamsız) ve bayrak açıkken; kapalıyken bu blok hiç koşmaz.
+    if (RemoteConfigService.instance.cokluPortfoy &&
+        !widget.asset.portfoyKarisik &&
+        sahip == pState?.ownerId) {
+      final bilinen = {
+        for (final p in ref.read(portfoylerProvider).valueOrNull ??
+            const <Portfoy>[])
+          p.id,
+      };
+      final hedef = lotunPortfoyu(widget.asset, bilinen);
+      sahipLotlari = [
+        for (final a in sahipLotlari)
+          if (lotunPortfoyu(a, bilinen) == hedef) a,
+      ];
+    }
     final p = _positionOf(sahipLotlari);
     // `acik`: sahibin bu üründe BUGÜN açık pozisyonu var mı
     // (`aggregatePositions` kapanmışı döndürmez, CLAUDE.md "Kapanmış

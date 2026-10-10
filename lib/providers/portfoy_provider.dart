@@ -186,6 +186,11 @@ final portfoyKapsamiProvider = Provider<PortfoyKapsami>((ref) {
   if (!ref.watch(cokluPortfoyGorunurProvider)) return tumu;
   final liste = ref.watch(portfoylerProvider).valueOrNull;
   if (liste == null || liste.isEmpty) return tumu;
+  // Kullanıcı değişimi (A çıktı, B girdi): Riverpod yeniden kurulum
+  // karesinde `valueOrNull` A'nın listesini taşır (bkz. kullanıcı değişimi
+  // tuzakları). Liste oturum sahibinin değilse kapsam kurulmaz.
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  if (liste.any((p) => p.userId != uid)) return tumu;
   final bilinen = {for (final p in liste) p.id};
   final secim = ref.watch(seciliPortfoyProvider);
   if (secim == PortfoySecimi.ana || bilinen.contains(secim)) {
@@ -200,4 +205,25 @@ final portfoyKapsamiProvider = Provider<PortfoyKapsami>((ref) {
 final varsayilanYeniPortfoyProvider = Provider<String?>((ref) {
   final k = ref.watch(portfoyKapsamiProvider);
   return k.bilinen.contains(k.secim) ? k.secim : null;
+});
+
+/// Yönetim sayfasının portföy özetleri (anahtar `null` = Ana): güncel değer
+/// ve kayıt sayısı. Değer `PortfolioState.totalValue`'nun KENDİSİ — Portföy
+/// ekranında o portföy seçiliyken görünen toplamla aynı yol; Σ değer ==
+/// Tümü (`test/coklu_portfoy_test.dart`). Kayıt sayısı silme onayında
+/// "kaç kayıt Ana'ya döner" sorusunun cevabı.
+typedef PortfoyOzeti = ({double deger, int kayit});
+
+final portfoyOzetleriProvider = Provider<Map<String?, PortfoyOzeti>>((ref) {
+  final s = ref.watch(portfolioProvider).valueOrNull;
+  final liste = ref.watch(portfoylerProvider).valueOrNull;
+  if (s == null || liste == null) return const {};
+  final bilinen = {for (final p in liste) p.id};
+  return {
+    for (final e in portfoyeGoreBol(s.assets, bilinen).entries)
+      e.key: (
+        deger: s.copyWith(assets: e.value).totalValue,
+        kayit: e.value.length,
+      ),
+  };
 });

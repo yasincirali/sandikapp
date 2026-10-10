@@ -7,6 +7,9 @@ import '../providers/bulk_cart_provider.dart';
 import '../services/ice_aktarma_satislari.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/sozlesme_provider.dart';
+import '../models/gorunum_kapsami.dart';
+import '../providers/portfoy_provider.dart';
+import '../widgets/portfoy_secici.dart';
 import '../services/price_service.dart';
 import '../services/tefas_service.dart';
 import '../services/review_prompt_service.dart';
@@ -37,6 +40,13 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
   // "3 / 2" gibi saçma bir oran gösterirdi (2026-09-23 denetimi F13).
   int _toplam = 0;
 
+  /// Sepetin portföyü (çoklu portföy, 0133): sepet düzeyinde TEK seçim.
+  /// Seçilmediyse o an seçili portföy, o da yoksa Ana (`null`).
+  String? _portfoy;
+  bool _portfoySecildi = false;
+  String? get _hedefPortfoy =>
+      _portfoySecildi ? _portfoy : ref.read(varsayilanYeniPortfoyProvider);
+
   Future<void> _openAddForm({BulkCartItem? existing}) async {
     await pushGuarded(
       context,
@@ -56,6 +66,9 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     if (_saving) return;
     final items = ref.read(bulkCartProvider);
     if (items.isEmpty) return;
+    // Portföy kayıt başında sabitlenir: kayıt sürerken seçici kilitli, ama
+    // alım ve satışlar aynı portföye yazılmalı.
+    final hedef = _hedefPortfoy;
 
     setState(() {
       _saving = true;
@@ -167,6 +180,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           subCategory: item.subCategory,
           unitType: item.unitType,
           addedDate: item.addedDate,
+          portfoyId: hedef,
         );
         sepet.remove(item.id);
         if (mounted) setState(() => _saved++);
@@ -194,6 +208,7 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
           stopaj: m.stopaj,
           baslangic: item.addedDate,
           vadeGun: m.vadeGun,
+          portfoyId: hedef,
         );
         sepet.remove(item.id);
         if (mounted) setState(() => _saved++);
@@ -211,8 +226,16 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
     // düştüğü miktarı görmeli (plan bunu zaten hesaplıyor, yazım da sırayla).
     final satislar = items.where((i) => i.satis).toList();
     if (satislar.isNotEmpty) {
-      final defter =
+      final tumDefter =
           ref.read(portfolioProvider).valueOrNull?.assets ?? const <Asset>[];
+      // Satış hedef portföyün DEFTERİYLE planlanır (0133): "o gün elde kaç
+      // lot vardı" ve ağırlıklı maliyet o portföyün lotlarından; başka
+      // portföydeki lotlar satışı karşılamaz. Özellik görünmüyorsa bütün
+      // defter (bugünkü davranış).
+      final pk = ref.read(portfoyKapsamiProvider);
+      final defter = ref.read(cokluPortfoyGorunurProvider)
+          ? portfoyLotlari(tumDefter, hedef ?? PortfoySecimi.ana, pk.bilinen)
+          : tumDefter;
       final plan =
           IceAktarmaSatislari.planla(defter: defter, satislar: satislar);
       for (final r in plan.reddedilen) {
@@ -226,7 +249,8 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         }
         try {
           await portfolio.addSellTransaction(
-            asset: IceAktarmaSatislari.pozisyonGorunumu(p, fiyat),
+            asset: IceAktarmaSatislari.pozisyonGorunumu(p, fiyat)
+                .copyWithPortfoy(hedef),
             quantity: p.kalem.quantity,
             sellPrice: fiyat,
             addedDate: p.kalem.addedDate,
@@ -437,6 +461,18 @@ class _BulkAddAssetScreenState extends ConsumerState<BulkAddAssetScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Sepetin portföyü (0133) — özellik görünmüyorsa sıfır boy.
+            if (items.isNotEmpty && !_saving)
+              PortfoyFormSecici(
+                secili: _portfoySecildi
+                    ? _portfoy
+                    : ref.watch(varsayilanYeniPortfoyProvider),
+                onSec: (v) => setState(() {
+                  _portfoy = v;
+                  _portfoySecildi = true;
+                }),
+                bosluk: const EdgeInsets.only(bottom: SandikSpace.smd),
+              ),
             SizedBox(
               width: double.infinity,
               height: 48,

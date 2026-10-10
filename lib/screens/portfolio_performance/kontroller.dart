@@ -312,6 +312,9 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// kategori ("Tümü" dışı), bugünkü portföyle (etkinse).
   int _filtreSayisi(List<AppUser> partners) =>
       (partners.isNotEmpty && _view != '' ? 1 : 0) +
+      // Portföy seçimi (0133): yalnız "Ben"de ve Tümü dışındayken; bayrak
+      // kapalıyken anahtar hep boş, sayı birebir eski.
+      (_view == '' && _portfoyAnahtari.isNotEmpty ? 1 : 0) +
       (_typeFilter != null ? 1 : 0) +
       (_simulate ? 1 : 0);
 
@@ -449,6 +452,15 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
                           tazele();
                         },
                       ),
+                    ],
+                    // Çoklu portföy (0133): yalnız "Ben"de ve özellik
+                    // görünürken. Seçim anında uygulanır (sayfanın kuralı).
+                    if (_view == '' &&
+                        sayfaRef.watch(cokluPortfoyGorunurProvider)) ...[
+                      const SizedBox(height: SandikSpace.md),
+                      SandikSectionHeader(title: l.portfoySeciciEtiketi),
+                      const SizedBox(height: SandikSpace.sm),
+                      PortfoySecici(onDegisti: tazele),
                     ],
                     const SizedBox(height: SandikSpace.md),
                     SandikSectionHeader(title: l.s2FiltreKategori),

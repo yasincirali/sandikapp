@@ -10,6 +10,7 @@ import '../services/sozlesme_deposu.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart';
+import 'portfoy_secim_sayfasi.dart';
 import 'sandik_async_button.dart';
 import '../l10n/l10n.dart';
 
@@ -74,6 +75,16 @@ Future<void> showQuickAdjustDialog(
   required QuickAdjustMode mode,
 }) async {
   if (DemoModu.yazmaKapisi('miktar')) return; // Demo: kaydetmek hesap ister (F1).
+  // Çoklu portföy (0133): lotları birden çok portföyde olan pozisyonda önce
+  // hangi portföyün pozisyonu olduğu sorulur; miktar sınırı ve maliyet o
+  // pozisyondan. Karışık değilse (bayrak kapalıyken hep) [asset] aynen.
+  // Karışık değilken araya hiçbir `await` girmez: açılış eskisiyle aynı
+  // karede.
+  if (asset.portfoyKarisik) {
+    final pozisyon = await islemIcinPozisyon(context, asset);
+    if (pozisyon == null || !context.mounted) return;
+    asset = pozisyon;
+  }
   return showSandikGecisli<void>(
     context: context,
     barrierDismissible: true,
@@ -212,6 +223,8 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           subCategory: asset.subCategory,
           unitType: asset.unitType,
           sozlesmeId: asset.sozlesmeId,
+          // Alış pozisyonun portföyüne (0133; bayrak kapalıyken yok sayılır).
+          portfoyId: asset.portfoyId,
         );
       } else {
         await notifier.addSellTransaction(
@@ -277,6 +290,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
           subCategory: asset.subCategory,
           unitType: asset.unitType,
           sozlesmeId: asset.sozlesmeId,
+          portfoyId: asset.portfoyId,
         );
       } else {
         await notifier.addSellTransaction(

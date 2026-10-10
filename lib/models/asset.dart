@@ -494,15 +494,23 @@ class Asset {
   /// çünkü Asset'i elle yeniden kurmak alan atlamaya çok müsait —
   /// `dividendAmount` bir kez böyle düşmüştü. Buradaki liste TÜM alanları
   /// taşır; yeni alan eklendiğinde buraya da eklenmeli.
-  Asset copyWithDeletedAt(DateTime? deletedAt) =>
-      _kopya(deletedAt: deletedAt, portfoyId: portfoyId);
+  Asset copyWithDeletedAt(DateTime? deletedAt) => _kopya(
+      deletedAt: deletedAt,
+      portfoyId: portfoyId,
+      portfoyKarisik: portfoyKarisik);
 
   /// Yalnızca portföyü değiştiren kopya — pozisyon taşıma
-  /// (`PortfolioNotifier.pozisyonuTasi`). Tam alan listesi [_kopya]'da.
+  /// (`PortfolioNotifier.pozisyonuTasi`) ve karışık pozisyonda seçilen
+  /// portföyün görünümü. Portföyü BELLİ olan kayıt karışık değildir.
+  /// Tam alan listesi [_kopya]'da.
   Asset copyWithPortfoy(String? portfoyId) =>
-      _kopya(deletedAt: deletedAt, portfoyId: portfoyId);
+      _kopya(deletedAt: deletedAt, portfoyId: portfoyId, portfoyKarisik: false);
 
-  Asset _kopya({required DateTime? deletedAt, required String? portfoyId}) =>
+  Asset _kopya({
+    required DateTime? deletedAt,
+    required String? portfoyId,
+    required bool portfoyKarisik,
+  }) =>
       Asset(
         id: id,
         userId: userId,

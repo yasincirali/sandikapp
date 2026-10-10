@@ -445,6 +445,11 @@ extension _PerformansKartlar on _PortfolioPerformanceScreenState {
           ),
           const SizedBox(height: SandikSpace.sm),
         ],
+        // Çoklu portföy (0133): "Ben"in altında portföy seçici. Bayrak
+        // kapalıyken sıfır boy; tohum `build`'deki dinleyiciyle atılır.
+        if (_view == '')
+          const PortfoySecici(
+              bosluk: EdgeInsets.only(bottom: SandikSpace.sm)),
         _buildScopeBar(),
         _buildScopePanel(),
         // Mod Ayarlar'da (`performans_ayar_sade`, 2026-10-04) olduğu için

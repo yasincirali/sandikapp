@@ -990,6 +990,14 @@ class AddAssetFormNotifier
   }
 }
 
+/// Varlık Ekle formunda kullanıcının SEÇTİĞİ portföy (çoklu portföy, 0133).
+/// `null` → henüz seçilmedi, kayıt varsayılana gider
+/// (`varsayilanYeniPortfoyProvider`: o an seçili portföy, yoksa Ana);
+/// `(id: null)` → Ana açıkça seçildi. Ekran durumu taşımaz (Faz 3.10
+/// ratchet): seçim burada, ekran sayfası kapanınca düşer.
+final formPortfoyuProvider =
+    StateProvider.autoDispose<({String? id})?>((_) => null);
+
 final addAssetFormProvider = NotifierProvider.autoDispose
     .family<AddAssetFormNotifier, AddAssetFormState, AddAssetFormArgs>(
   AddAssetFormNotifier.new,

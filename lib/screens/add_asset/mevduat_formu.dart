@@ -184,7 +184,7 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
   }
 
   @override
-  Future<bool> kaydet() async {
+  Future<bool> kaydet({String? portfoyId}) async {
     if (DemoModu.yazmaKapisi('mevduat')) return false;
     if (!(_form.currentState?.validate() ?? false)) {
       setState(() => _denendi = true);
@@ -203,6 +203,7 @@ class MevduatFormuState extends ConsumerState<MevduatFormu>
             baslangic: _baslangic,
             vadeGun: _gun,
             not: _secici ? _not.text : '',
+            portfoyId: portfoyId,
           );
       return true;
     } catch (e, st) {
