@@ -5030,5 +5030,15 @@
   "cihazHesapDevamEt": "Continue",
   "cihazHesapTekrarGiris": "Sign in again · {eposta}",
   "@cihazHesapTekrarGiris": {"placeholders": {"eposta": {"type": "String"}}},
-  "cihazHesapBaskaHesapla": "or sign in with another account"
+  "cihazHesapBaskaHesapla": "or sign in with another account",
+  "varlikGuncelleBaslik": "Update asset",
+  "varlikGuncelleIpucu": "Update asset",
+  "varlikGuncelleKilitli": "Update asset, Premium",
+  "varlikGuncelleUyariBaslik": "Rewritten as a single record",
+  "varlikGuncelleUyariGovde": "{n, plural, =1{This asset's record is deleted and added again with the details below. Same as deleting and re-adding the asset.} other{This asset's {n} transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.}}",
+  "@varlikGuncelleUyariGovde": {"placeholders": {"n": {"type": "int"}}},
+  "varlikGuncelleOnayBaslik": "{n, plural, =1{Rewrite the record?} other{Delete {n} transactions?}}",
+  "@varlikGuncelleOnayBaslik": {"placeholders": {"n": {"type": "int"}}},
+  "varlikGuncelleOnayGovde": "{n, plural, =1{\"{name}\" will be deleted and added again with these details. This can't be undone.} other{{n} transactions of \"{name}\" will be deleted and replaced by a single record with these details. This can't be undone.}}",
+  "@varlikGuncelleOnayGovde": {"placeholders": {"name": {"type": "String"}, "n": {"type": "int"}}}
 }

@@ -8362,4 +8362,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cihazHesapBaskaHesapla => 'or sign in with another account';
+
+  @override
+  String get varlikGuncelleBaslik => 'Update asset';
+
+  @override
+  String get varlikGuncelleIpucu => 'Update asset';
+
+  @override
+  String get varlikGuncelleKilitli => 'Update asset, Premium';
+
+  @override
+  String get varlikGuncelleUyariBaslik => 'Rewritten as a single record';
+
+  @override
+  String varlikGuncelleUyariGovde(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          'This asset\'s $n transactions (buys, sells, dividends) are deleted and a single record with the details below takes their place. The step-by-step history no longer shows on this asset. Same as deleting and re-adding the asset.',
+      one:
+          'This asset\'s record is deleted and added again with the details below. Same as deleting and re-adding the asset.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String varlikGuncelleOnayBaslik(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: 'Delete $n transactions?',
+      one: 'Rewrite the record?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String varlikGuncelleOnayGovde(String name, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          '$n transactions of \"$name\" will be deleted and replaced by a single record with these details. This can\'t be undone.',
+      one:
+          '\"$name\" will be deleted and added again with these details. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
 }

@@ -12,6 +12,22 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Varlığı güncelle (bayrak `goz_alici`, Premium)
+
+Senin isteğin: "eklenen varlığın direkt düzeltme amacıyla varlık güncelleme
+eklemeliyiz … silme ve yeniden ekleme gibi davranması gerekmektedir."
+Portföy kartını sola kaydırınca Sil'in yanında **Güncelle**, varlık
+sayfasının üst çubuğunda kalem ikonu. Form pozisyonun net miktarı,
+ortalama maliyeti ve ilk alış tarihiyle dolu açılır; üstte "N hareket
+silinir, yerine tek kayıt kalır" uyarısı, kayıtta sayılı onay. Arkada
+yeni sunucu yolu YOK: Sil + Ekle (ekleme düşerse silme geri alınır).
+Migration yok, deploy yok.
+
+- [ ] Görmek için Remote Config'te `goz_alici` açık olmalı. Paywall
+      kapalıyken yalnız admin hesabı görür (tek anahtar kuralı); paywall
+      açıkken ücretsiz kullanıcı kilitli görür. Düzeltme aracını ücretsiz
+      bırakmak istersen söyle — tek satırlık değişiklik.
+
 ## ⏳ 2026-10-10 Borsadaki tüm hisseler, liste her gün sunucudan (migration 0139)
 
 Senin isteğin: "eksik varlık olmasını istemiyorum, borsada işlem gören tüm

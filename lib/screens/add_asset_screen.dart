@@ -40,6 +40,7 @@ import '../widgets/alarm_kur_sheet.dart' show AlarmAdayi, alarmSembolu;
 import '../widgets/custom_loading_indicator.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/tour_anchor.dart';
+import '../widgets/varlik_guncelle.dart' show VarlikGuncelleUyarisi;
 import '../l10n/l10n.dart';
 import 'add_asset/bes_formu.dart';
 import 'add_asset/mevduat_formu.dart';
@@ -117,9 +118,18 @@ class AddAssetScreen extends ConsumerStatefulWidget {
   /// değerleri yine kazanır (prefill kuralı).
   final IlkVarlikSecimi? hizliSecim;
 
+  /// "Varlığı güncelle" kipi (`varlik_guncelle.dart`, bayrak `goz_alici`):
+  /// [editingAsset] pozisyonun görünümüdür (net miktar, ağırlıklı maliyet,
+  /// ilk alış tarihi), bunlar ise yerine geçilecek lotlar. Kayıt bir
+  /// DÜZENLEME değildir: onaydan sonra lotlar Sil gibi gider, form tek alım
+  /// olarak eklenir (`PortfolioNotifier.pozisyonuYenidenKur`). `null` iken
+  /// form birebir eskisi.
+  final List<Asset>? yerineGecenLotlar;
+
   const AddAssetScreen({
     super.key,
     this.editingAsset,
+    this.yerineGecenLotlar,
     this.cartMode = false,
     this.cartInitial,
     this.prefillTicker,
@@ -173,6 +183,13 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   static const _currencies = ['TRY', 'USD', 'EUR', 'GBP'];
   bool get _isEditing => widget.editingAsset != null;
+
+  /// Güncelleme kipi — düzenleme gibi görünür (dolu form, portföy seçici
+  /// yok), ama kayıt sil + ekle'dir.
+  bool get _yenidenKur => widget.yerineGecenLotlar != null;
+
+  /// Güncelleme onayı açık mı (görünüm durumu değil; `setState` gerekmez).
+  bool _onaySoruluyor = false;
 
   /// Kayıt başarıyla bitti: ekleme ise duyurulur (Portföy "Tümü"de açılır,
   /// yeni satır parlar — `VarlikEklendi`), sonra form [sonuc] ile kapanır.
@@ -242,9 +259,16 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // gösterir. Sözleşme yüklenince `_eurobondYukle` çevirip yazar — o
     // zamana kadar boş (0,9873'ü "temiz fiyat" diye göstermek yanlış olurdu).
     final eurobondKaydi = (a?.type ?? c?.type) == AssetType.eurobond;
-    final initPrice = eurobondKaydi
+    final hamFiyat = eurobondKaydi
         ? 0.0
         : a?.purchasePrice ?? c?.price ?? widget.prefillPrice ?? 0;
+    // Güncellemede gelen fiyat lotların AĞIRLIKLI ortalamasıdır — kaynağın
+    // gönderdiği bir sayı değil, uygulamanın hesabı. Uygulama hesabı 4
+    // haneye kırpılır (#158 kuralı); 275,66181818 gibi bir ön değer
+    // kullanıcıya "bunu ben mi girdim?" dedirtirdi.
+    final initPrice = widget.yerineGecenLotlar != null
+        ? (hamFiyat * 10000).roundToDouble() / 10000
+        : hamFiyat;
 
     _name = TextEditingController(text: initName);
     _ticker = TextEditingController(text: initTicker);
@@ -424,7 +448,9 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
         : (_isEditing ? context.l10n.update : context.l10n.add);
     final title = widget.cartMode
         ? (widget.cartInitial != null ? 'Sepette Düzenle' : 'Sepete Ekle')
-        : (_isEditing ? context.l10n.editAsset : context.l10n.addAssetTitle);
+        : _yenidenKur
+            ? context.l10n.varlikGuncelleBaslik
+            : (_isEditing ? context.l10n.editAsset : context.l10n.addAssetTitle);
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -497,6 +523,12 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
                   children: [
                     if (_kolay) ...[
                       _ikiYol(),
+                      const SizedBox(height: SandikSpace.lgs),
+                    ],
+                    if (_yenidenKur) ...[
+                      const SizedBox(height: SandikSpace.sm),
+                      VarlikGuncelleUyarisi(
+                          hareketSayisi: widget.yerineGecenLotlar!.length),
                       const SizedBox(height: SandikSpace.lgs),
                     ],
                     _sectionLabel(context.l10n.assetType),
@@ -2507,6 +2539,21 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     if (_saving) return;
     _n.kayitDenendi();
     if (!_formKey.currentState!.validate()) return;
+    // Güncelleme geri dönüşü olmayan bir silme içerir: kayıttan ÖNCE sayıyla
+    // sorulur. Onay `islem:` almaz — iş (fiyat çözümü + sil + ekle) formun
+    // kaydet düğmesinde döner; `_kaydet` başarıda ekranı kapattığı için
+    // diyalog içinde koşsaydı kapanan diyalog olurdu, ekran değil.
+    if (_yenidenKur) {
+      if (_onaySoruluyor) return; // diyalog açılırken ikinci dokunuş
+      _onaySoruluyor = true;
+      final bool onay;
+      try {
+        onay = await _yenidenKurOnayi();
+      } finally {
+        _onaySoruluyor = false;
+      }
+      if (!onay || !mounted || _saving) return;
+    }
     _n.setSaving(true);
     var sonu = _KayitSonu.kaldi;
     try {
@@ -2617,7 +2664,29 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     }
 
     try {
-      if (_isEditing) {
+      if (_yenidenKur) {
+        final notifier = ref.read(portfolioProvider.notifier);
+        await notifier.pozisyonuYenidenKur(
+          widget.yerineGecenLotlar!,
+          () => notifier.addAsset(
+            name: assetName,
+            ticker: ticker,
+            type: _type,
+            quantity: qty,
+            purchasePrice: price,
+            currency: _currency,
+            notes: _notes.text.trim(),
+            isManualPrice: manual,
+            subCategory: _subCategory,
+            unitType: _unitType,
+            addedDate: _addedDate,
+            commission: _parse(_commission.text) ?? 0,
+            // Eski pozisyonun portföyünde kalır (karışık pozisyon bu kipe
+            // hiç gelmez, `varlikGuncellenebilir`).
+            portfoyId: widget.editingAsset!.portfoyId,
+          ),
+        );
+      } else if (_isEditing) {
         final a = widget.editingAsset!;
         a
           ..name = assetName
@@ -2763,6 +2832,22 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
     // varlığı göremez.
     _kayitBitti(alarmAdayi ?? true);
     return _KayitSonu.kapandi;
+  }
+}
+
+extension on _AddAssetScreenState {
+  /// Kayıt öncesi son söz: kaç hareketin gideceği ve yerine ne kalacağı.
+  Future<bool> _yenidenKurOnayi() {
+    final l = context.l10n;
+    return showSandikConfirm(
+      context: context,
+      title: l.varlikGuncelleOnayBaslik(widget.yerineGecenLotlar!.length),
+      message: l.varlikGuncelleOnayGovde(
+          widget.editingAsset!.name, widget.yerineGecenLotlar!.length),
+      confirmLabel: l.update,
+      cancelLabel: l.cancelWord,
+      destructive: true,
+    );
   }
 }
 

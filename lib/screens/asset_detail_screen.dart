@@ -90,6 +90,7 @@ import '../providers/sozlesme_provider.dart';
 import '../providers/secili_donem_provider.dart';
 import '../services/sozlesme_deposu.dart';
 import '../widgets/pozisyon_islemleri.dart';
+import '../widgets/varlik_guncelle.dart';
 import 'comparison_screen.dart';
 import 'paywall_screen.dart';
 import '../providers/premium_provider.dart'
@@ -775,6 +776,11 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                     _alarmSembolu!, widget.asset.name, _canli.asset.currentPrice),
               ),
             ),
+          // "Varlığı güncelle" (`varlik_guncelle.dart`): kaydırmadaki
+          // eylemle aynı akış, aynı kurallar — yalnız KENDİ açık
+          // pozisyonunda (işlem çubuğuyla aynı kapı) ve güncellenebilir
+          // türde. Kilitliyken kilit ikonu, dokunuş paywall'a gider.
+          if (_guncelleDugmesi(isOwnAsset) case final d?) d,
         ],
       ),
       bottomNavigationBar: _islemCubugu(isOwnAsset),

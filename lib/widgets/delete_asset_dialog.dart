@@ -103,11 +103,16 @@ Future<bool> confirmAndDeletePosition(
   if (!ok || !silindi || !context.mounted) return false;
   // Alarm sorusu silme diyaloğu KAPANDIKTAN sonra: iki diyalog üst üste
   // binmesin.
-  await _alarmlariSor(context, ref, lots, name);
+  await sahipsizAlarmlariSor(context, ref, lots, name);
   return true;
 }
 
 /// Silinen varlığın alarmları varsa kullanıcıya sorar, onaylarsa siler.
+///
+/// "Varlığı güncelle" de çağırır (`varlik_guncelle.dart`): güncelleme bir
+/// silme + eklemedir; sembol aynı kaldıysa yeni kayıt alarmı sahiplenir ve
+/// soru çıkmaz (aşağıdaki "hâlâ sahip olunan" elemesi), değiştiyse eski
+/// sembolün alarmı Sil'deki gibi sorulur.
 ///
 /// SİLMEDEN SONRA sorulur: alarm sorusu yüzünden varlık silinmemesi
 /// olmaz. Silme başarılıysa asıl iş bitmiştir; bu bir temizlik adımı.
@@ -115,7 +120,7 @@ Future<bool> confirmAndDeletePosition(
 /// Alarm silme başarısız olursa sessiz kalınmaz ama silme de geri
 /// alınmaz — varlık gitti, alarm kaldı; kullanıcı Alarmlar ekranından
 /// silebilir ve mesaj onu oraya yönlendirir.
-Future<void> _alarmlariSor(
+Future<void> sahipsizAlarmlariSor(
   BuildContext context,
   WidgetRef ref,
   List<Asset> lots,
