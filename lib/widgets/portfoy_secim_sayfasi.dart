@@ -42,6 +42,7 @@ Future<Asset?> islemIcinPozisyon(BuildContext context, Asset varlik) async {
   final defter = kap.read(portfolioProvider).valueOrNull?.assets ?? const [];
   final liste = kap.read(portfoylerProvider).valueOrNull ?? const <Portfoy>[];
   final bilinen = _bilinen(liste);
+  final ana = kap.read(anaPortfoyAdiProvider);
   final parcalar = portfoyParcalari(defter, varlik, bilinen);
   if (parcalar.isEmpty) return null;
   Asset gorunum(String? id) =>
@@ -57,7 +58,7 @@ Future<Asset?> islemIcinPozisyon(BuildContext context, Asset varlik) async {
       for (final e in parcalar.entries)
         _Secenek(
           anahtar: e.key ?? PortfoySecimi.ana,
-          ad: _ad(liste, l, e.key),
+          ad: _ad(liste, l, e.key, ana),
           alt: e.value.asDisplayAsset().miktarMetni(
               e.value.totalQuantity, (v, d) => fmtNum(v, digits: d)),
         ),
@@ -81,6 +82,7 @@ Future<void> pozisyonuTasiAkisi(
   final defter = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
   final liste = ref.read(portfoylerProvider).valueOrNull ?? const <Portfoy>[];
   final bilinen = _bilinen(liste);
+  final ana = ref.read(anaPortfoyAdiProvider);
 
   String? kaynak = lotunPortfoyu(varlik, bilinen);
   if (varlik.portfoyKarisik) {
@@ -92,7 +94,7 @@ Future<void> pozisyonuTasiAkisi(
         for (final e in parcalar.entries)
           _Secenek(
             anahtar: e.key ?? PortfoySecimi.ana,
-            ad: _ad(liste, l, e.key),
+            ad: _ad(liste, l, e.key, ana),
             alt: e.value.asDisplayAsset().miktarMetni(
                 e.value.totalQuantity, (v, d) => fmtNum(v, digits: d)),
           ),
@@ -104,7 +106,7 @@ Future<void> pozisyonuTasiAkisi(
 
   final hedefler = <_Secenek>[
     if (kaynak != null)
-      _Secenek(anahtar: PortfoySecimi.ana, ad: l.portfoyAnaUzun),
+      _Secenek(anahtar: PortfoySecimi.ana, ad: ana ?? l.portfoyAnaUzun),
     for (final p in liste)
       if (p.id != kaynak) _Secenek(anahtar: p.id, ad: p.ad),
   ];
@@ -127,8 +129,8 @@ Future<void> pozisyonuTasiAkisi(
 
   final lotlar = tasinacakLotlar(defter, varlik, kaynak, bilinen);
   final hedefAdi = hedef == null
-      ? l.portfoyAnaUzun
-      : _ad(ref.read(portfoylerProvider).valueOrNull ?? liste, l, hedef);
+      ? (ana ?? l.portfoyAnaUzun)
+      : _ad(ref.read(portfoylerProvider).valueOrNull ?? liste, l, hedef, ana);
 
   /// Tamamı (`pozisyonuTasi`) ya da orantılı pay (`pozisyonuKismiTasi`,
   /// Premium, 0136). Başarıda `true`; hata snack'le söylenir.
@@ -167,7 +169,7 @@ Future<void> pozisyonuTasiAkisi(
     context,
     gorunum: gorunum,
     toplam: toplam,
-    kaynakAdi: _ad(liste, l, kaynak),
+    kaynakAdi: _ad(liste, l, kaynak, ana),
     hedefAdi: hedefAdi,
     aktar: (miktar) {
       // Yuvarlama payı: "hepsini" yazan kullanıcı bölme değil taşıma ister.
@@ -184,15 +186,38 @@ Future<void> pozisyonuTasiAkisi(
   );
 }
 
+/// Silinecek [silinen] portföyün varlıkları nereye aktarılsın: Ana ve
+/// öbür portföyler arasından sorar. Dönen değer hedef ([PortfoySecimi.ana]
+/// ya da portföy kimliği) ya da vazgeçilirse `null`.
+Future<String?> aktarimHedefiSor(
+  BuildContext context,
+  WidgetRef ref,
+  Portfoy silinen,
+) {
+  final l = context.l10n;
+  final liste = ref.read(portfoylerProvider).valueOrNull ?? const <Portfoy>[];
+  final ana = ref.read(anaPortfoyAdiProvider);
+  return _portfoySor(
+    context,
+    baslik: l.portfoyAktarHedefBaslik,
+    aciklama: l.portfoyAktarHedefAciklama(silinen.ad),
+    secenekler: [
+      _Secenek(anahtar: PortfoySecimi.ana, ad: ana ?? l.portfoyAnaUzun),
+      for (final p in liste)
+        if (p.id != silinen.id) _Secenek(anahtar: p.id, ad: p.ad),
+    ],
+  );
+}
+
 Set<String> _bilinen(List<Portfoy> liste) => {for (final p in liste) p.id};
 
 /// Portföyün adı; `null` ya da listede olmayan kimlik Ana
-/// (`lotunPortfoyu` ile aynı kural).
-String _ad(List<Portfoy> liste, AppLocalizations l, String? id) {
+/// (`lotunPortfoyu` ile aynı kural). [ana]: Ana'nın kullanıcı verdiği adı.
+String _ad(List<Portfoy> liste, AppLocalizations l, String? id, String? ana) {
   for (final p in liste) {
     if (p.id == id) return p.ad;
   }
-  return l.portfoyAnaUzun;
+  return ana ?? l.portfoyAnaUzun;
 }
 
 class _Secenek {

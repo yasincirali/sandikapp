@@ -13526,14 +13526,68 @@ abstract class AppLocalizations {
   /// No description provided for @portfoySilAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Varlıkların silinmez. Bu portföydeki {sayi} kayıt Ana portföye döner; toplamın değişmez.'**
-  String portfoySilAciklama(int sayi);
+  /// **'Aşağıdaki varlıklar portföyle birlikte silinir ve toplamından düşer. Geri alınamaz.'**
+  String get portfoySilAciklama;
 
   /// No description provided for @portfoySilindi.
   ///
   /// In tr, this message translates to:
-  /// **'{ad} silindi, varlıkları Ana portföyde.'**
+  /// **'{ad} içindeki varlıklarla silindi.'**
   String portfoySilindi(String ad);
+
+  /// No description provided for @portfoyVarliklarlaSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyü ve varlıkları sil'**
+  String get portfoyVarliklarlaSil;
+
+  /// No description provided for @portfoyAktarVeSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıkları aktarıp sil'**
+  String get portfoyAktarVeSil;
+
+  /// No description provided for @portfoyAktarHedefBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıklar nereye aktarılsın?'**
+  String get portfoyAktarHedefBaslik;
+
+  /// No description provided for @portfoyAktarHedefAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silinmeden önce bütün varlıkları ve geçmişi seçtiğin portföye geçer.'**
+  String portfoyAktarHedefAciklama(String ad);
+
+  /// No description provided for @portfoyAktarilipSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silindi. Varlıkları şurada: {hedef}.'**
+  String portfoyAktarilipSilindi(String ad, String hedef);
+
+  /// No description provided for @portfoySilBosAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu portföyde varlık yok.'**
+  String get portfoySilBosAciklama;
+
+  /// No description provided for @portfoySilGecmisAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapanmış pozisyonlara ait {sayi} geçmiş kayıt da silinir.'**
+  String portfoySilGecmisAciklama(int sayi);
+
+  /// No description provided for @portfoySilVarliklar.
+  ///
+  /// In tr, this message translates to:
+  /// **'İçindeki varlıklar · {sayi}'**
+  String portfoySilVarliklar(int sayi);
+
+  /// No description provided for @portfoySilindiBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silindi.'**
+  String portfoySilindiBos(String ad);
 
   /// No description provided for @portfoySilinemedi.
   ///
@@ -13562,7 +13616,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfoyAnaAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Portföy seçmeden eklediklerin burada.'**
+  /// **'Portföy seçmeden eklediklerin burada. Silinemez, adını değiştirebilirsin.'**
   String get portfoyAnaAciklama;
 
   /// No description provided for @portfoySiralaIpucu.
@@ -13726,6 +13780,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yeni açtığın portföy, sen seçene kadar gizli kalır.'**
   String get ortakGorurSeciliAciklama;
+
+  /// No description provided for @ortakGorurYeniAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hepsi açıkken sonradan açacağın portföyler de görünür. Birini kapatırsan yeni portföyler sen açana kadar gizli kalır.'**
+  String get ortakGorurYeniAciklama;
 
   /// No description provided for @ortakGorurHicbiri.
   ///

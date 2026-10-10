@@ -8154,13 +8154,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String portfoySilAciklama(int sayi) {
-    return 'Your assets are not deleted. The $sayi records in this portfolio move back to the main portfolio; your total stays the same.';
-  }
+  String get portfoySilAciklama =>
+      'The assets below are deleted with the portfolio and leave your total. This can\'t be undone.';
 
   @override
   String portfoySilindi(String ad) {
-    return '$ad deleted; its assets are in the main portfolio.';
+    return '$ad deleted with its assets.';
+  }
+
+  @override
+  String get portfoyVarliklarlaSil => 'Delete portfolio and assets';
+
+  @override
+  String get portfoyAktarVeSil => 'Move assets, then delete';
+
+  @override
+  String get portfoyAktarHedefBaslik => 'Where should the assets go?';
+
+  @override
+  String portfoyAktarHedefAciklama(String ad) {
+    return 'Before $ad is deleted, all its assets and history move to the portfolio you pick.';
+  }
+
+  @override
+  String portfoyAktarilipSilindi(String ad, String hedef) {
+    return '$ad deleted. Its assets are now in: $hedef.';
+  }
+
+  @override
+  String get portfoySilBosAciklama => 'This portfolio has no assets.';
+
+  @override
+  String portfoySilGecmisAciklama(int sayi) {
+    return '$sayi past records of closed positions are deleted too.';
+  }
+
+  @override
+  String portfoySilVarliklar(int sayi) {
+    return 'Assets inside · $sayi';
+  }
+
+  @override
+  String portfoySilindiBos(String ad) {
+    return '$ad deleted.';
   }
 
   @override
@@ -8178,7 +8214,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portfoyAnaAciklama =>
-      'Anything you add without choosing a portfolio lives here.';
+      'Anything you add without choosing a portfolio lives here. It can\'t be deleted, but you can rename it.';
 
   @override
   String get portfoySiralaIpucu => 'Press and hold, then drag to reorder.';
@@ -8281,6 +8317,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ortakGorurSeciliAciklama =>
       'A new portfolio stays hidden until you pick it.';
+
+  @override
+  String get ortakGorurYeniAciklama =>
+      'While all are on, portfolios you open later are visible too. Turn one off and new portfolios stay hidden until you turn them on.';
 
   @override
   String ortakGorurHicbiri(String ad) {

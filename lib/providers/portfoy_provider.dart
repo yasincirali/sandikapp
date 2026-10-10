@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/portfoy.dart';
+import '../models/position.dart';
 import '../services/analytics_service.dart';
 import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
@@ -106,6 +108,14 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
 
   static String _anahtar(String ad) => ad.trim().toLowerCase();
 
+  /// Ad, Ana'nın kullanıcı verdiği adıyla çakışıyor mu (Ana yeniden
+  /// adlandırılabilir; seçicide iki aynı ad hangisinin Ana olduğunu
+  /// söylemez).
+  bool _anaAdi(String ad) {
+    final ana = ref.read(anaPortfoyAdiProvider);
+    return ana != null && _anahtar(ana) == _anahtar(ad);
+  }
+
   /// Yeni portföy. Sınır doluysa [PortfoyLimitiAsildi], ad başka bir
   /// portföyde varsa [PortfoyAdiKullaniliyor] fırlatır (sunucuya gitmeden).
   Future<Portfoy> olustur(String ad) async {
@@ -117,7 +127,7 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
       throw const PortfoyLimitiAsildi();
     }
     if (!Portfoy.adGecerli(ad)) throw ArgumentError.value(ad, 'ad');
-    if (_liste.any((p) => _anahtar(p.ad) == _anahtar(ad))) {
+    if (_liste.any((p) => _anahtar(p.ad) == _anahtar(ad)) || _anaAdi(ad)) {
       throw const PortfoyAdiKullaniliyor();
     }
     final sira = _liste.fold<int>(0, (m, p) => p.sira > m ? p.sira : m) + 1;
@@ -135,7 +145,8 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
 
   Future<void> yenidenAdlandir(String id, String ad) async {
     if (!Portfoy.adGecerli(ad)) throw ArgumentError.value(ad, 'ad');
-    if (_liste.any((p) => p.id != id && _anahtar(p.ad) == _anahtar(ad))) {
+    if (_liste.any((p) => p.id != id && _anahtar(p.ad) == _anahtar(ad)) ||
+        _anaAdi(ad)) {
       throw const PortfoyAdiKullaniliyor();
     }
     final eski = _liste.firstWhere((p) => p.id == id);
@@ -170,10 +181,52 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
     }
   }
 
-  /// Portföyü siler. Lotları sunucuda FK ile Ana'ya döner; bellekteki
-  /// defter de aynı anda Ana'ya çekilir (yeniden yükleme beklenmez). Seçili
-  /// portföy buysa seçim "Tümü"ye döner.
+  /// Silmeden önce varlıkları [hedef]'e (`null` = Ana) aktarır, sonra
+  /// portföyü siler (yasin 2026-10-10: "aktarma yolunu önerebiliriz onay
+  /// sayfasında"). Aktarım, Taşı'nın "Tamamı" yolu (`pozisyonuTasi`):
+  /// portföyün BÜTÜN satırları (alım, satım, temettü, silinmiş kayıtlar,
+  /// mezar taşları) geçmişiyle geçer, böylece ardından gelen [sil] silecek
+  /// bir şey bulmaz. Aktarım düşerse portföy silinmez.
+  Future<void> aktarVeSil(String id, String? hedef) async {
+    if (hedef == id) throw ArgumentError.value(hedef, 'hedef');
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    final defter = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final lotlar = [
+      for (final a
+          in portfoyeGoreBol(defter, {for (final p in _liste) p.id})[id] ??
+              const <Asset>[])
+        if (uid == null || a.userId == uid) a,
+    ];
+    await ref.read(portfolioProvider.notifier).pozisyonuTasi(lotlar, hedef);
+    await sil(id);
+  }
+
+  /// Portföyü İÇİNDEKİ VARLIKLARLA siler (yasin 2026-10-10: "taşıma
+  /// yapmamalıyız, bir portföy siliniyorsa onay ekranında gösterilen
+  /// varlıklarla birlikte silinmeli").
+  ///
+  /// ## Neden varlık silme yolu, sunucuda yeni bir şey değil
+  /// Her pozisyon, kullanıcının Portföy'de kaydırıp sildiği yoldan gider
+  /// (`deletePositionLots`: yumuşak silme damgası + tek "Silindi" satırı).
+  /// Böylece toplamlar, grafik, Zirve ve hareket geçmişi bir varlık
+  /// silmesini nasıl görüyorsa bunu da öyle görür; ayrı bir "portföyle
+  /// silinme" kuralı doğmaz. Kapanmış pozisyonların geçmiş kayıtları da
+  /// silinir (yoksa Ana'ya taşınırdı). Sunucu FK'si (`on delete set null`,
+  /// 0133) yerinde kalır: eski sürümün sildiği portföyün lotları Ana'ya
+  /// döner, yalnız damgalı satırlar ve mezar taşları Ana'ya düşer, hiçbiri
+  /// toplama girmez.
+  ///
+  /// Sıra: önce varlıklar, sonra portföy. Bir pozisyon silinemezse portföy
+  /// silinmez ve hata yukarı çıkar; tekrar denemek kalanları siler (silinmiş
+  /// lot yeniden seçilmez).
   Future<void> sil(String id) async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    final defter = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final portfolio = ref.read(portfolioProvider.notifier);
+    for (final grup in portfoyunSilinecekGruplari(
+        defter, id, {for (final p in _liste) p.id}, uid)) {
+      await portfolio.deletePositionLots(grup);
+    }
     await SupabaseService.instance.deletePortfoy(id);
     state = AsyncData([
       for (final p in _liste)
@@ -184,6 +237,26 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
       await ref.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.tumu);
     }
   }
+}
+
+/// Portföy silinirken silinecek kayıtlar, pozisyon başına bir grup (saf,
+/// test edilir): sahibin bu portföydeki SİLİNMEMİŞ lotları (alım, satım,
+/// temettü; mezar taşları hariç), `positionKey`'e göre. Açık pozisyonlar ve
+/// kapanmış pozisyonların geçmişi birlikte gelir.
+List<List<Asset>> portfoyunSilinecekGruplari(
+  List<Asset> defter,
+  String portfoyId,
+  Set<String> bilinen,
+  String? sahipId,
+) {
+  final m = <String, List<Asset>>{};
+  for (final a
+      in portfoyeGoreBol(defter, bilinen)[portfoyId] ?? const <Asset>[]) {
+    if (!a.isActive) continue;
+    if (sahipId != null && a.userId != sahipId) continue;
+    m.putIfAbsent(positionKey(a), () => []).add(a);
+  }
+  return m.values.toList();
 }
 
 final portfoylerProvider =
@@ -244,4 +317,65 @@ final portfoyOzetleriProvider = Provider<Map<String?, PortfoyOzeti>>((ref) {
         kayit: e.value.length,
       ),
   };
+});
+
+/// Ana portföyün kullanıcı verdiği adı; `null` = varsayılan ("Ana
+/// portföy" / kısa "Ana"). Kaynak `user_metadata` (gerekçe
+/// `SupabaseService.anaPortfoyAdi`). Oturum değişince yeniden okunur
+/// (çoklu hesap: her hesabın kendi adı).
+class AnaPortfoyAdiNotifier extends Notifier<String?> {
+  @override
+  String? build() {
+    ref.watch(authProvider);
+    if (DemoModu.aktif) return null;
+    try {
+      return SupabaseService.instance.anaPortfoyAdi();
+    } catch (_) {
+      // Supabase başlatılmamış (test) ya da oturum yok: varsayılan ad.
+      return null;
+    }
+  }
+
+  /// Yeniden adlandır. Ad kuralı ve tekillik adlandırılmış portföylerle
+  /// AYNI: seçicide iki "Emeklilik" hangisinin Ana olduğunu söylemez.
+  Future<void> yenidenAdlandir(String ad) async {
+    if (!Portfoy.adGecerli(ad)) throw ArgumentError.value(ad, 'ad');
+    final liste = ref.read(portfoylerProvider).valueOrNull ?? const [];
+    final k = ad.trim().toLowerCase();
+    if (liste.any((p) => p.ad.trim().toLowerCase() == k)) {
+      throw const PortfoyAdiKullaniliyor();
+    }
+    await SupabaseService.instance.anaPortfoyAdiniYaz(ad);
+    state = ad.trim();
+  }
+}
+
+final anaPortfoyAdiProvider =
+    NotifierProvider<AnaPortfoyAdiNotifier, String?>(AnaPortfoyAdiNotifier.new);
+
+/// Silme onayında portföyün AÇIK pozisyonları (yasin 2026-10-10: "içinde
+/// varlık olan portföyü silerken varlıklar listelenip öyle onay alınmalı").
+/// Değer en büyükten; her satırın değeri `PortfolioState.totalValue` yolu
+/// (Portföy ekranındaki toplamla aynı hesap). Boş liste = portföyde açık
+/// pozisyon yok, onay kısa sorulur.
+typedef PortfoyPozisyonu = ({Position pozisyon, double deger});
+
+final portfoyPozisyonlariProvider =
+    Provider.family<List<PortfoyPozisyonu>, String?>((ref, portfoyId) {
+  final s = ref.watch(portfolioProvider).valueOrNull;
+  final liste = ref.watch(portfoylerProvider).valueOrNull;
+  if (s == null || liste == null) return const [];
+  final bilinen = {for (final p in liste) p.id};
+  final lotlar = portfoyeGoreBol(s.assets, bilinen)[portfoyId] ?? const [];
+  final out = <PortfoyPozisyonu>[
+    for (final p in aggregatePositions(lotlar))
+      (
+        pozisyon: p,
+        deger: s.copyWith(assets: [
+          for (final a in lotlar)
+            if (positionKey(a) == p.key) a
+        ]).totalValue,
+      ),
+  ]..sort((a, b) => b.deger.compareTo(a.deger));
+  return out;
 });

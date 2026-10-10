@@ -209,7 +209,9 @@ void main() {
       expect(find.text('2 / 3 portföy'), findsOneWidget);
     });
 
-    testWidgets('seçim sayfası: Seçtiklerim → Çocuk kapat → kaydet', (t) async {
+    // yasin 2026-10-10: "tab tasarımı yerine direkt bir switch" — segment
+    // yok, anahtar doğrudan çevrilir; hepsi açıksa kayıt "Hepsi" (tumu).
+    testWidgets('seçim sayfası: segment yok, Çocuk kapat → kaydet', (t) async {
       RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
       final p = _SahtePaylasimlar(const []);
       await _yonetim(t, p);
@@ -220,8 +222,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Ayşe neyi görsün?'), findsOneWidget);
 
-      await t.tap(find.text('Seçtiklerim'));
-      await t.pump();
+      expect(find.text('Seçtiklerim'), findsNothing);
       await t.tap(find.descendant(
           of: find.byKey(const ValueKey('ortak-paylasim-$_b')),
           matching: find.byType(Switch)));
@@ -238,6 +239,33 @@ void main() {
       expect(k.portfoyIdler, {_a});
       expect(find.text('2 / 3 portföy'), findsOneWidget);
     });
+
+    testWidgets('satıra dokunmak anahtarı çevirir; hepsi açık = Hepsi',
+        (t) async {
+      RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
+      final p = _SahtePaylasimlar(const [
+        OrtakPaylasimi(
+            sahipId: _uid,
+            ortakId: _ortakId,
+            tumu: false,
+            ana: true,
+            portfoyIdler: {_a}),
+      ]);
+      await _yonetim(t, p);
+      await t
+          .tap(find.byKey(const ValueKey('ortak-paylasim-satiri-$_ortakId')));
+      await t.pumpAndSettle();
+      // Satırın adına dokun (anahtarın kendisine değil): Çocuk açılır.
+      await t.tap(find.descendant(
+          of: find.byKey(const ValueKey('ortak-paylasim-$_b')),
+          matching: find.text('Çocuk')));
+      await t.pump();
+      await t.tap(find.byKey(const ValueKey('ortak-paylasim-kaydet')));
+      await t.pumpAndSettle();
+      expect(p.kaydedilen.single.tumu, isTrue,
+          reason: 'Ana + bütün portföyler açık: yeni portföy de görünür');
+    });
+
     testWidgets('Premium yokken satır kilitli: değer görünür, sayfa açılmaz',
         (t) async {
       RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
