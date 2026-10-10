@@ -4817,7 +4817,7 @@
   "prmSinirsiz": "sınırsız",
   "prmSatirSinyal": "Teknik sinyaller",
   "prmSinyalUcretsiz": "3 gösterge, günde 1 bildirim",
-  "prmSinyalPremium": "8 gösterge, periyot, sınırsız",
+  "prmSinyalPremium": "8 gösterge, sınırsız",
   "prmSatirTakip": "Takip listesi",
   "prmYillikTasarruf": "%{oran} tasarruf",
   "@prmYillikTasarruf": {

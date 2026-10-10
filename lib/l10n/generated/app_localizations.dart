@@ -11108,7 +11108,7 @@ abstract class AppLocalizations {
   /// No description provided for @prmSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, periyot, sınırsız'**
+  /// **'8 gösterge, sınırsız'**
   String get prmSinyalPremium;
 
   /// No description provided for @prmSatirTakip.

@@ -4432,7 +4432,7 @@
   "prmSinirsiz": "unlimited",
   "prmSatirSinyal": "Technical signals",
   "prmSinyalUcretsiz": "3 indicators, 1 alert a day",
-  "prmSinyalPremium": "8 indicators, periods, unlimited",
+  "prmSinyalPremium": "8 indicators, unlimited",
   "prmSatirTakip": "Watchlist",
   "prmYillikTasarruf": "Save {oran}%",
   "@prmYillikTasarruf": {

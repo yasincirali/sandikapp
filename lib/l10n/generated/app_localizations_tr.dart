@@ -6675,7 +6675,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSinyalUcretsiz => '3 gösterge, günde 1 bildirim';
 
   @override
-  String get prmSinyalPremium => '8 gösterge, periyot, sınırsız';
+  String get prmSinyalPremium => '8 gösterge, sınırsız';
 
   @override
   String get prmSatirTakip => 'Takip listesi';

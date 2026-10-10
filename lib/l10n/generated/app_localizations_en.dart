@@ -6738,7 +6738,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSinyalUcretsiz => '3 indicators, 1 alert a day';
 
   @override
-  String get prmSinyalPremium => '8 indicators, periods, unlimited';
+  String get prmSinyalPremium => '8 indicators, unlimited';
 
   @override
   String get prmSatirTakip => 'Watchlist';
