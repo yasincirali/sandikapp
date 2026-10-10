@@ -8029,13 +8029,49 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String portfoySilAciklama(int sayi) {
-    return 'Varlıkların silinmez. Bu portföydeki $sayi kayıt Ana portföye döner; toplamın değişmez.';
-  }
+  String get portfoySilAciklama =>
+      'Aşağıdaki varlıklar portföyle birlikte silinir ve toplamından düşer. Geri alınamaz.';
 
   @override
   String portfoySilindi(String ad) {
-    return '$ad silindi, varlıkları Ana portföyde.';
+    return '$ad içindeki varlıklarla silindi.';
+  }
+
+  @override
+  String get portfoyVarliklarlaSil => 'Portföyü ve varlıkları sil';
+
+  @override
+  String get portfoyAktarVeSil => 'Varlıkları aktarıp sil';
+
+  @override
+  String get portfoyAktarHedefBaslik => 'Varlıklar nereye aktarılsın?';
+
+  @override
+  String portfoyAktarHedefAciklama(String ad) {
+    return '$ad silinmeden önce bütün varlıkları ve geçmişi seçtiğin portföye geçer.';
+  }
+
+  @override
+  String portfoyAktarilipSilindi(String ad, String hedef) {
+    return '$ad silindi. Varlıkları şurada: $hedef.';
+  }
+
+  @override
+  String get portfoySilBosAciklama => 'Bu portföyde varlık yok.';
+
+  @override
+  String portfoySilGecmisAciklama(int sayi) {
+    return 'Kapanmış pozisyonlara ait $sayi geçmiş kayıt da silinir.';
+  }
+
+  @override
+  String portfoySilVarliklar(int sayi) {
+    return 'İçindeki varlıklar · $sayi';
+  }
+
+  @override
+  String portfoySilindiBos(String ad) {
+    return '$ad silindi.';
   }
 
   @override
@@ -8052,7 +8088,8 @@ class AppLocalizationsTr extends AppLocalizations {
       'Varlıklarını amacına göre ayır: emeklilik, çocuğun için, deneme. Tümü görünümü ve ana sayfa toplamı değişmez; widget ve kilit ekranı da toplamı gösterir.';
 
   @override
-  String get portfoyAnaAciklama => 'Portföy seçmeden eklediklerin burada.';
+  String get portfoyAnaAciklama =>
+      'Portföy seçmeden eklediklerin burada. Silinemez, adını değiştirebilirsin.';
 
   @override
   String get portfoySiralaIpucu =>
@@ -8134,6 +8171,10 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get ortakGorurSeciliAciklama =>
       'Yeni açtığın portföy, sen seçene kadar gizli kalır.';
+
+  @override
+  String get ortakGorurYeniAciklama =>
+      'Hepsi açıkken sonradan açacağın portföyler de görünür. Birini kapatırsan yeni portföyler sen açana kadar gizli kalır.';
 
   @override
   String ortakGorurHicbiri(String ad) {
