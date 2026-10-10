@@ -4,10 +4,12 @@ import 'package:intl/intl.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
+import '../models/portfoy_grubu.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/portfolio_provider.dart';
+import '../providers/portfoy_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../widgets/sandik_bos_durum.dart';
 import '../theme/sandik.dart';
@@ -15,6 +17,7 @@ import '../widgets/sandik_app_bar.dart';
 import '../utils/tr_format.dart';
 import '../utils/tr_iyelik.dart';
 import '../widgets/ortak_secici.dart';
+import '../widgets/portfoy_secici.dart';
 import '../widgets/h_scroll_with_fade.dart';
 import '../widgets/transaction_row.dart';
 import '../services/islem_notu.dart';
@@ -275,7 +278,12 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
   static const int _pageSize = 25;
 
   late String? _view;
-  AssetType? _typeFilter;
+
+  /// Tür süzgeci — Portföy halkasının kümesi ([PortfoyGrubu]): bayrak
+  /// `goz_alici` açıkken ayrım varsa BIST/ABD hisse ayrı seçilir (yasin
+  /// 2026-10-10: "abd hisse portföyde var ancak hareketlerde yok … alım
+  /// satım yapıldı mı kontrol edemedim"). Kapalıyken grup = tür, eski.
+  PortfoyGrubu? _typeFilter;
   _DateRange _range = _DateRange.all;
   DateTimeRange? _customRange;
   String _query = '';
@@ -296,7 +304,10 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     // Ana ekrandan gelen görünüm gizlenmiş bir ortağı işaret edebilir.
     _view = GorunumCipi.gecerli(
         ref.read(activePartnersProvider), widget.initialView ?? '');
-    _typeFilter = widget.initialTypeFilter;
+    _typeFilter = switch (widget.initialTypeFilter) {
+      final t? => PortfoyGrubu(t),
+      null => null,
+    };
     // Kullanıcı listenin sonuna yaklaşınca sessizce büyüt — "daha fazla
     // yükle" düğmesi log okumada akışı bölerdi.
     _scrollCtrl.addListener(_maybeGrow);
@@ -357,13 +368,51 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
 
   /// Sahiplik sekmesine göre ham ledger.
   ///
-  /// Kapsam tek kaynaktan (`gorunum_kapsami.dart`). Hareketler ana sayfadan
-  /// açılır; portföy süzgeci taşımaz (kullanıcı toplamı).
-  List<Asset> get _ledger => kapsamDefteri(
-        kisi: _view,
-        benim: ref.read(portfolioProvider).valueOrNull?.assets ?? const [],
-        ortaklar: widget.allPartnerAssets,
-      );
+  /// Kapsam tek kaynaktan (`gorunum_kapsami.dart`). Portföy süzgeci
+  /// (0133) 2026-10-10'dan beri burada da: yasin "varlık filtresi olan her
+  /// yere portföydeki filtreleri koymalıyız". Eskiden ana sayfadan açıldığı
+  /// için kullanıcı toplamı gösteriyordu; seçici yalnız "Ben"de ve özellik
+  /// görünürken çizilir, görünmüyorsa kapsam HEP Tümü (birebir eski).
+  List<Asset> get _ledger {
+    final k = ref.read(portfoyKapsamiProvider);
+    return kapsamDefteri(
+      kisi: _view,
+      benim: ref.read(portfolioProvider).valueOrNull?.assets ?? const [],
+      ortaklar: widget.allPartnerAssets,
+      portfoy: k.secim,
+      bilinenPortfoyler: k.bilinen,
+    );
+  }
+
+  /// Filtre sayfasının tür seçenekleri.
+  ///
+  /// `goz_alici` açıkken Portföy'ün kümesi: defterde (bu kapsamda) hareketi
+  /// OLAN türler — satılıp bitmiş varlığın geçmişi de aranabilsin diye
+  /// elde tutulanlar değil, defterdekiler — ve ABD hissesi varsa hisse
+  /// BIST + ABD diye ikiye bölünür. Seçili grup listede yoksa da kalır
+  /// (kaldırılamayan filtre olmasın). Kapalıyken eski liste: bayrağı açık
+  /// her tür.
+  List<PortfoyGrubu> _turSecenekleri(List<Asset> defter) {
+    final rc = RemoteConfigService.instance;
+    if (!rc.gozAlici) {
+      return [
+        for (final t in AssetType.values)
+          if (rc.turSecenegi(t)) PortfoyGrubu(t),
+      ];
+    }
+    final kayitlar = [for (final a in defter) if (!a.isDeleteLog) a];
+    final pazarAyir =
+        PortfoyGrubu.pazarAyrimi(kayitlar, bayrak: rc.abdHisse);
+    final olan = {
+      for (final a in kayitlar) PortfoyGrubu.of(a, pazarAyir: pazarAyir),
+    };
+    final secili = _typeFilter?.uyarla(pazarAyir: pazarAyir);
+    return [
+      for (final g
+          in PortfoyGrubu.listesi(AssetType.values, pazarAyir: pazarAyir))
+        if (olan.contains(g) || g == secili) g,
+    ];
+  }
 
   /// Seçili dönemin sınırları — sayfa taslağı için de aynı kural.
   static (DateTime?, DateTime?) _sinirlar(
@@ -405,7 +454,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     final out = <Asset>[];
     final ledger = _ledger;
     for (final a in ledger) {
-      if (secim.tur != null && a.type != secim.tur) continue;
+      if (secim.tur case final g? when !g.kapsar(a)) continue;
       if (from != null && a.addedDate.isBefore(from)) continue;
       if (to != null && a.addedDate.isAfter(to)) continue;
       if (q.isNotEmpty) {
@@ -478,6 +527,8 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
     final activePartners = ref.watch(activePartnersProvider);
     final pState = ref.watch(portfolioProvider).valueOrNull;
     final hideBalance = ref.watch(balanceHiddenProvider);
+    // `_ledger` kapsamı `read` ile okur; seçim değişince yeniden kur.
+    ref.watch(portfoyKapsamiProvider);
     // Not görünürlüğü (eski kopya ayıklaması) tüm defterle karar verir,
     // filtrelenmiş sayfayla değil — bkz. `islemNotu`.
     final ledger = _ledger;
@@ -518,6 +569,15 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
                   _resetPaging();
                 }),
               ),
+            ),
+          // Çoklu portföy (0133): Portföy ekranındaki şerit, aynı seçim
+          // (`seciliPortfoyProvider` ortak). Yalnız "Ben"de; görünmüyorsa
+          // yer kaplamaz.
+          if (_view == '')
+            PortfoySecici(
+              bosluk: EdgeInsets.fromLTRB(SandikSpace.screenH(context),
+                  SandikSpace.sm, SandikSpace.screenH(context), 0),
+              onDegisti: () => setState(_resetPaging),
             ),
 
           // ── Arama ────────────────────────────────────────────────────
@@ -938,6 +998,7 @@ class _AllTransactionsScreenState extends ConsumerState<AllTransactionsScreen>
       ),
       builder: (_) => _FiltreSayfasi(
         ilk: _FiltreSecimi(_range, _customRange, _typeFilter),
+        turlar: _turSecenekleri(_ledger),
         // Görünen listeyle aynı küme: silinenler açıksa silinenleri sayar.
         sayac: (x) {
           final ayr = hareketleriAyir(_suz(x));
@@ -971,7 +1032,7 @@ class _FiltreSecimi {
   const _FiltreSecimi(this.range, this.customRange, this.tur);
   final _DateRange range;
   final DateTimeRange? customRange;
-  final AssetType? tur;
+  final PortfoyGrubu? tur;
 }
 
 /// Satırdaki etkin filtre: rengini taşır, dokununca kalkar.
@@ -1020,9 +1081,16 @@ class _EtkinCip extends StatelessWidget {
 /// DEĞİL: ekrandaki çipinden tek dokunuşla açılıp kapanır (kullanıcı kararı
 /// 2026-09-29) — iki yerden yönetilen tek bir anahtar kafa karıştırırdı.
 class _FiltreSayfasi extends StatefulWidget {
-  const _FiltreSayfasi({required this.ilk, required this.sayac});
+  const _FiltreSayfasi({
+    required this.ilk,
+    required this.sayac,
+    required this.turlar,
+  });
 
   final _FiltreSecimi ilk;
+
+  /// Tür seçenekleri ([_AllTransactionsScreenState._turSecenekleri]).
+  final List<PortfoyGrubu> turlar;
   final int Function(_FiltreSecimi) sayac;
 
   @override
@@ -1032,7 +1100,7 @@ class _FiltreSayfasi extends StatefulWidget {
 class _FiltreSayfasiState extends State<_FiltreSayfasi> {
   late _DateRange _range = widget.ilk.range;
   late DateTimeRange? _custom = widget.ilk.customRange;
-  late AssetType? _tur = widget.ilk.tur;
+  late PortfoyGrubu? _tur = widget.ilk.tur;
 
   _FiltreSecimi get _taslak => _FiltreSecimi(_range, _custom, _tur);
 
@@ -1134,14 +1202,13 @@ class _FiltreSayfasiState extends State<_FiltreSayfasi> {
                       renk: context.c.amberText,
                       onTap: () => setState(() => _tur = null),
                     ),
-                    for (final t in AssetType.values)
-                      if (RemoteConfigService.instance.turSecenegi(t))
+                    for (final g in widget.turlar)
                       _SecimKutusu(
-                        etiket: t.labelOf(l),
-                        ikon: t.icon,
-                        secili: _tur == t,
-                        renk: t.color,
-                        onTap: () => setState(() => _tur = t),
+                        etiket: g.labelOf(l),
+                        ikon: g.tur.icon,
+                        secili: _tur == g,
+                        renk: g.color,
+                        onTap: () => setState(() => _tur = g),
                       ),
                   ],
                 ),

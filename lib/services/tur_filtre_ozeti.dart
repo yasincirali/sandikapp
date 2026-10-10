@@ -1,5 +1,5 @@
 import '../models/asset.dart';
-import '../models/asset_type.dart';
+import '../models/portfoy_grubu.dart';
 import '../models/position.dart';
 
 /// Filtre alt sayfasındaki kategori döşemelerinin sayısı ve payı.
@@ -15,34 +15,39 @@ import '../models/position.dart';
 /// bilinmeyen (değeri 0) pozisyon sayıya girer, paya girmez; toplam değer
 /// 0 ise pay hiç yoktur ([TurFiltreOzeti.payVar] false) — uydurma oran
 /// çizilmez.
+///
+/// Anahtar [PortfoyGrubu] (2026-10-10): ayrım açıkken ([pazarAyir]) hisse
+/// BIST ve ABD diye ayrı sayılır — Portföy halkasıyla aynı küme.
 class TurFiltreOzeti {
   const TurFiltreOzeti({required this.adet, required this.deger});
 
-  final Map<AssetType, int> adet;
-  final Map<AssetType, double> deger;
+  final Map<PortfoyGrubu, int> adet;
+  final Map<PortfoyGrubu, double> deger;
 
   int get toplamAdet => adet.values.fold(0, (a, b) => a + b);
   double get toplamDeger => deger.values.fold(0.0, (a, b) => a + b);
   bool get payVar => toplamDeger > 0;
 
   /// [tur]'ün değer payı (0–1); pay yoksa 0.
-  double pay(AssetType tur) =>
+  double pay(PortfoyGrubu tur) =>
       payVar ? (deger[tur] ?? 0) / toplamDeger : 0;
 
   static TurFiltreOzeti hesapla(
     List<List<Asset>> sahipLotlari,
-    double Function(double tutar, String paraBirimi) toTRY,
-  ) {
-    final adet = <AssetType, int>{};
-    final deger = <AssetType, double>{};
+    double Function(double tutar, String paraBirimi) toTRY, {
+    bool pazarAyir = false,
+  }) {
+    final adet = <PortfoyGrubu, int>{};
+    final deger = <PortfoyGrubu, double>{};
     final aktif = [
       for (final l in sahipLotlari) [for (final a in l) if (a.isActive) a],
     ];
     for (final p in aggregatePositionsByOwner(aktif)) {
       final a = p.asDisplayAsset();
-      adet[a.type] = (adet[a.type] ?? 0) + 1;
+      final g = PortfoyGrubu.of(a, pazarAyir: pazarAyir);
+      adet[g] = (adet[g] ?? 0) + 1;
       final v = toTRY(a.totalValue, a.currency);
-      if (v > 0) deger[a.type] = (deger[a.type] ?? 0) + v;
+      if (v > 0) deger[g] = (deger[g] ?? 0) + v;
     }
     return TurFiltreOzeti(adet: adet, deger: deger);
   }

@@ -201,4 +201,30 @@ void main() {
     expect(_satir('THYAO'), findsNothing);
     expect(_satir('AAPL'), findsWidgets);
   });
+
+  group('süzgeç kümesi her ekranda aynı (Hareketler, Performans)', () {
+    test('listesi: ayrımda hisse BIST + ABD, sıra tür sırası', () {
+      final g = PortfoyGrubu.listesi(
+          [AssetType.hisse, AssetType.fon], pazarAyir: true);
+      expect(g, [
+        const PortfoyGrubu(AssetType.hisse, abd: false),
+        const PortfoyGrubu(AssetType.hisse, abd: true),
+        const PortfoyGrubu(AssetType.fon),
+      ]);
+      expect(
+          PortfoyGrubu.listesi([AssetType.hisse], pazarAyir: false),
+          [const PortfoyGrubu(AssetType.hisse)]);
+    });
+    test('uyarla: ayrım kalkınca seçili ABD grubu türe döner', () {
+      const abd = PortfoyGrubu(AssetType.hisse, abd: true);
+      expect(abd.uyarla(pazarAyir: true), abd);
+      expect(abd.uyarla(pazarAyir: false),
+          const PortfoyGrubu(AssetType.hisse));
+    });
+    test('anahtar: ayrımsız grup türün adı (önbellek anahtarı değişmez)', () {
+      expect(const PortfoyGrubu(AssetType.fon).anahtar, 'fon');
+      expect(const PortfoyGrubu(AssetType.hisse, abd: true).anahtar,
+          'hisse.abd');
+    });
+  });
 }
