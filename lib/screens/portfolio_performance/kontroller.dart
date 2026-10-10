@@ -542,15 +542,20 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
   /// Kullanıcı isteği: "basitlik ve anlaşılırlık ön planda, göze hitap
   /// eden". Denetimler AYNI (kişi, kategori, bugünkü portföyle); değişen
   /// okunuş:
-  ///   · Kategori metin çipi değil, 3×3 eşit ikonlu kare ızgara
-  ///     ([TurFiltreIzgarasi]); renk yalnız seçili karede. Gerekçe ve üç
-  ///     turluk tasarım geçmişi widget'ın notunda.
+  ///   · Kategori sade çipler ([TurFiltreCipleri]): elde olan türler önde,
+  ///     olmayanlar sonda ve pasif; seçili çip amber + onay. 3×3 ikonlu
+  ///     ızgara (PR #140) 2026-10-10'da bununla değişti — gerekçe ve tasarım
+  ///     geçmişi widget'ın notunda.
   ///   · Başlıkta "Sıfırla": varsayılana tek dokunuş (yalnız filtre varken).
   ///   · "Bugünkü portföyle" ince bir çizgiyle ayrılmış düz satır (kart ve
   ///     çizim "göz yoruyor" geri bildirimiyle kalktı).
-  ///   · Dipte tek ana eylem "N varlığı göster": seçim yine ANINDA uygulanır
-  ///     (grafik arkada yenilenir); düğme yalnız sayfayı kapatır ve sonucun
-  ///     kaç varlık olduğunu önceden söyler. Aşağı çekip kapatmak da olur.
+  ///     Açıklama satırı yok (2026-10-10, sade tasarım "D"): anahtarın
+  ///     anlamı Ayarlar › Görünüm'deki aynı tercihte ve tur adımında yazılı.
+  ///   · Dipte tek ana eylem "Uygula": seçim yine ANINDA uygulanır (grafik
+  ///     arkada yenilenir); düğme sayfayı kapatır. Aşağı çekip kapatmak da
+  ///     olur. #140'taki "N varlığı göster" sayısı kalktı: filtre ne
+  ///     süzdüğünü söyler, sayım yapmaz (kullanıcı: "filtre mantığının
+  ///     üstüne çıkmamalı").
   List<Widget> _filtreSayfasiYeni(
     BuildContext sayfaCtx,
     WidgetRef sayfaRef,
@@ -583,9 +588,6 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
           t,
     ];
     final n = _filtreSayisi(ortaklar);
-    final sonuc = _typeFilter == null
-        ? ozet.toplamAdet
-        : (ozet.adet[_typeFilter!] ?? 0);
 
     return [
       const Center(child: SandikTutamac()),
@@ -642,7 +644,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       const SizedBox(height: SandikSpace.md),
       SandikSectionHeader(title: l.s2FiltreKategori),
       const SizedBox(height: SandikSpace.sm),
-      TurFiltreIzgarasi(
+      TurFiltreCipleri(
         secili: _typeFilter,
         ozet: ozet,
         turlar: turlar,
@@ -661,21 +663,10 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
         Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.todaysPortfolioSettingTitle,
-                    style: context.t.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600, color: context.c.text90),
-                  ),
-                  const SizedBox(height: SandikSpace.xxs),
-                  Text(
-                    l.todaysPortfolioSettingSubtitle,
-                    style:
-                        context.t.bodySmall?.copyWith(color: context.c.text58),
-                  ),
-                ],
+              child: Text(
+                l.todaysPortfolioSettingTitle,
+                style: context.t.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600, color: context.c.text90),
               ),
             ),
             const SizedBox(width: SandikSpace.smd),
@@ -691,7 +682,7 @@ extension _PerformansKontroller on _PortfolioPerformanceScreenState {
       const SizedBox(height: SandikSpace.lg),
       FilledButton(
         onPressed: () => Navigator.of(sayfaCtx).pop(),
-        child: Text(sonuc > 0 ? l.s2FiltreGoster(sonuc) : l.s2FiltreTamam),
+        child: Text(l.s2FiltreUygula),
       ),
     ];
   }

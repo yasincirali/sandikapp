@@ -18,7 +18,8 @@ import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/ortak_secici.dart';
 import 'package:portfoy_takip/widgets/period_summary_view.dart';
 import 'package:portfoy_takip/widgets/raporlar_kapisi.dart';
-import 'package:portfoy_takip/widgets/tur_filtre_izgarasi.dart';
+import 'package:portfoy_takip/services/tur_filtre_ozeti.dart';
+import 'package:portfoy_takip/widgets/tur_filtre_cipleri.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/kaynak.dart';
@@ -238,38 +239,53 @@ void main() {
     });
   });
 
-  group('Filtre sayfası — goz_alici açık: 3×3 tür ızgarası', () {
+  group('Filtre sayfası — goz_alici açık: sade tür çipleri', () {
     setUp(() => RemoteConfigService.testAcik = {
           'performans_tek_akis',
           'goz_alici',
         });
 
-    testWidgets('ızgara: tüm türler eşit kare, elde olmayan seçilebilir',
+    Finder cip(AssetType t) => find.descendant(
+        of: find.byType(TurFiltreCipleri), matching: find.text(t.labelOf(_tr)));
+
+    testWidgets('elde olan önde; olmayan sonda ve pasif (dokunulmaz)',
         (tester) async {
       await _pump(tester);
       await tester.tap(find.text(_tr.s2Filtre));
       await tester.pumpAndSettle();
-      expect(find.byType(TurFiltreIzgarasi), findsOneWidget);
-      // Kareler simetrik: Hisse/Fon/Döviz aynı satırda, aynı genişlikte.
-      final kare = find.descendant(
-          of: find.byType(TurFiltreIzgarasi),
-          matching: find.text(AssetType.fon.labelOf(_tr)));
-      final hisse = find.descendant(
-          of: find.byType(TurFiltreIzgarasi),
-          matching: find.text(AssetType.hisse.labelOf(_tr)));
-      expect((tester.getCenter(kare).dy - tester.getCenter(hisse).dy).abs(),
-          lessThan(1));
-      // Filtre yokken Sıfırla tıklanamaz; dip düğmesi sonucu söyler.
-      expect(find.text(_tr.s2FiltreGoster(1)), findsOneWidget);
+      expect(find.byType(TurFiltreCipleri), findsOneWidget);
+      // Sıra: Tümü, elde olan Hisse, sonra elde olmayanlar (Fon…).
+      final tumu = tester.getTopLeft(find.descendant(
+          of: find.byType(TurFiltreCipleri),
+          matching: find.text(_tr.allTypes)));
+      final hisse = tester.getTopLeft(cip(AssetType.hisse));
+      final fon = tester.getTopLeft(cip(AssetType.fon));
+      bool once(Offset a, Offset b) =>
+          a.dy < b.dy - 1 || ((a.dy - b.dy).abs() <= 1 && a.dx < b.dx);
+      expect(once(tumu, hisse), isTrue);
+      expect(once(hisse, fon), isTrue, reason: 'elde olan tür önde değil');
+      // Ekran okuyucu pasifi "Fon, Yok" diye okur.
+      expect(find.bySemanticsLabel('${AssetType.fon.labelOf(_tr)}, ${_tr.s2FiltreYok}'),
+          findsOneWidget);
 
-      await tester.tap(find.text(AssetType.fon.labelOf(_tr)));
+      // Pasif çipe dokunmak filtreyi değiştirmez.
+      await tester.tap(cip(AssetType.fon), warnIfMissed: false);
       await _bekle(tester);
-      // Fon elde yok → sonuç 0 → düğme "Tamam".
-      expect(find.text(_tr.s2FiltreTamam), findsOneWidget);
-      await tester.tap(find.text(_tr.s2FiltreTamam));
+      expect(find.text(_tr.s2FiltreSifirla), findsOneWidget);
+      final sifirla = tester.widget<AnimatedOpacity>(find
+          .ancestor(
+              of: find.text(_tr.s2FiltreSifirla),
+              matching: find.byType(AnimatedOpacity))
+          .first);
+      expect(sifirla.opacity, 0, reason: 'pasif çip filtre açtı');
+
+      // Elde olan türü seç → Uygula → çip türün adını yazar.
+      await tester.tap(cip(AssetType.hisse));
       await _bekle(tester);
-      // Çip sayıyı değil NEYİ yazar.
-      expect(find.text(AssetType.fon.labelOf(_tr)), findsOneWidget);
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      await tester.tap(find.text(_tr.s2FiltreUygula));
+      await _bekle(tester);
+      expect(find.text(AssetType.hisse.labelOf(_tr)), findsWidgets);
       expect(find.bySemanticsLabel(_tr.s2FiltreEtkin(1)), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -279,7 +295,7 @@ void main() {
       final c = await _pump(tester);
       await tester.tap(find.text(_tr.s2Filtre));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(AssetType.hisse.labelOf(_tr)).last);
+      await tester.tap(cip(AssetType.hisse));
       await _bekle(tester);
       await tester.tap(find.byType(Switch));
       await _bekle(tester);
@@ -292,31 +308,25 @@ void main() {
       expect(find.text(_tr.s2Filtre), findsOneWidget);
     });
 
-    testWidgets('eurobond açık (10 tür): artan kare Tümü satırına geçer',
-        (tester) async {
-      RemoteConfigService.testAcik = {
-        'performans_tek_akis',
-        'goz_alici',
-        'eurobond',
-      };
-      await _pump(tester);
-      await tester.tap(find.text(_tr.s2Filtre));
-      await tester.pumpAndSettle();
-      final izgara = find.byType(TurFiltreIzgarasi);
-      Offset merkez(String t) => tester.getCenter(
-          find.descendant(of: izgara, matching: find.text(t)));
-      final tumu = merkez(_tr.allTypes);
-      // Artan kare listenin SONUNDAKİ tür (Diğer); Eurobond ızgarada.
-      final euro = merkez(AssetType.diger.labelOf(_tr));
-      expect((tumu.dy - euro.dy).abs(), lessThan(2));
-      expect(tester.takeException(), isNull);
+    test('sıra: elde olanlar değerce büyükten küçüğe, olmayanlar enum sırası',
+        () {
+      const ozet = TurFiltreOzeti(
+        adet: {AssetType.hisse: 2, AssetType.altin: 1, AssetType.kripto: 1},
+        deger: {AssetType.hisse: 100, AssetType.altin: 900},
+      );
+      final s = TurFiltreCipleri.sirala(AssetType.values, ozet);
+      // Kripto'nun değeri bilinmiyor (0) → elde ama en sonda.
+      expect(s.eldeki, [AssetType.altin, AssetType.hisse, AssetType.kripto]);
+      expect(s.olmayan.first, AssetType.values
+          .firstWhere((t) => !s.eldeki.contains(t)));
+      expect(s.olmayan.contains(AssetType.hisse), isFalse);
     });
 
     testWidgets('320pt: sayfa taşmaz', (tester) async {
       await _pump(tester, width: 320);
       await tester.tap(find.bySemanticsLabel(_tr.s2Filtre));
       await tester.pumpAndSettle();
-      expect(find.byType(TurFiltreIzgarasi), findsOneWidget);
+      expect(find.byType(TurFiltreCipleri), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

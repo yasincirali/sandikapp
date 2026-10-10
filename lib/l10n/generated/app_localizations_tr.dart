@@ -7318,20 +7318,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get s2FiltreSifirla => 'Sıfırla';
 
   @override
-  String s2FiltreVarlikSayisi(int n) {
-    return '$n varlık';
-  }
+  String get s2FiltreUygula => 'Uygula';
 
   @override
   String get s2FiltreYok => 'Yok';
-
-  @override
-  String s2FiltreGoster(int n) {
-    return '$n varlığı göster';
-  }
-
-  @override
-  String get s2FiltreTamam => 'Tamam';
 
   @override
   String s2BakiyeArttiAlim(String tutar, String alim) {

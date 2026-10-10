@@ -87,7 +87,7 @@ import '../widgets/raporlar_kapisi.dart';
 import '../widgets/zirve_karti.dart';
 import '../services/zirve_kiyas.dart';
 import '../widgets/gorunum_cipi.dart';
-import '../widgets/tur_filtre_izgarasi.dart';
+import '../widgets/tur_filtre_cipleri.dart';
 import '../services/tur_filtre_ozeti.dart';
 import '../widgets/kiyas_karti.dart';
 import '../services/kiyas_service.dart';

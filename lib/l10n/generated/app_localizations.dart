@@ -12208,29 +12208,17 @@ abstract class AppLocalizations {
   /// **'Sıfırla'**
   String get s2FiltreSifirla;
 
-  /// No description provided for @s2FiltreVarlikSayisi.
+  /// No description provided for @s2FiltreUygula.
   ///
   /// In tr, this message translates to:
-  /// **'{n} varlık'**
-  String s2FiltreVarlikSayisi(int n);
+  /// **'Uygula'**
+  String get s2FiltreUygula;
 
   /// No description provided for @s2FiltreYok.
   ///
   /// In tr, this message translates to:
   /// **'Yok'**
   String get s2FiltreYok;
-
-  /// No description provided for @s2FiltreGoster.
-  ///
-  /// In tr, this message translates to:
-  /// **'{n} varlığı göster'**
-  String s2FiltreGoster(int n);
-
-  /// No description provided for @s2FiltreTamam.
-  ///
-  /// In tr, this message translates to:
-  /// **'Tamam'**
-  String get s2FiltreTamam;
 
   /// No description provided for @s2BakiyeArttiAlim.
   ///
