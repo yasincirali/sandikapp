@@ -11,6 +11,9 @@ import {
   kriptoKodu,
   kriptoMu,
   mumlariCek,
+  ohlcCek,
+  ohlcCoz,
+  tlMumlari,
   mumlariCoz,
   SAYFA_MUM,
   seriAnahtari,
@@ -235,4 +238,47 @@ Deno.test('mumlariCek: SONRAKİ sayfa düşerse de null — eksik seri önbelle�
 Deno.test('mumlariCek: ilk sayfada sağlayıcı yanıtsızsa null (boş seriyle karışmaz)', async () => {
   const f = sahteFetch([() => new Response('', { status: 500 })]);
   assertEquals(await mumlariCek('BTCTRY', '1h', 0, 1_000_000, f), null);
+});
+
+// ── Gerçek mum (ohlc: true, 2026-10-10) ────────────────────────────────────
+
+Deno.test('ohlc: istek alanı yalnız true iken taşınır; eski istek ve anahtar birebir', () => {
+  assertEquals(seriIstegiCoz({ kod: 'BTC', aralik: '4h', donem: '1mo', ohlc: true }), {
+    kod: 'BTC', aralik: '4h', donem: '1mo', ohlc: true,
+  });
+  assertEquals(seriIstegiCoz({ kod: 'BTC', aralik: '1h', donem: '1mo', ohlc: 'evet' }), {
+    kod: 'BTC', aralik: '1h', donem: '1mo',
+  });
+  assertEquals(seriIstegiCoz({ kod: 'BTC', aralik: '1mo', donem: 'max', ohlc: true })?.aralik, '1mo');
+  assertEquals(seriAnahtari({ kod: 'BTC', aralik: '1h', donem: '1mo' }), 'BTC|1h|1mo');
+  assertEquals(
+    seriAnahtari({ kod: 'BTC', aralik: '1h', donem: '1mo', ohlc: true }),
+    'BTC|1h|1mo|ohlc',
+  );
+});
+
+Deno.test('ohlc: bozuk satır atlanır; TL çevrimi dört fiyatı aynı kurla çarpar, hacmi değil', () => {
+  const coin = ohlcCoz([
+    [1000, '10', '12', '9', '11', '5'],
+    [2000, '10', '', '9', '11', '5'],
+    [3000, '11', '13', '10', '12', '7'],
+  ]);
+  assertEquals(coin, [[1000, 10, 12, 9, 11, 5], [3000, 11, 13, 10, 12, 7]]);
+  const kur = ohlcCoz([[1000, '39', '41', '38', '40', '0']]);
+  // 3000'in kuru yok → mum yok (madde 3).
+  assertEquals(tlMumlari(coin, kur), [[1000, 400, 480, 360, 440, 5]]);
+});
+
+Deno.test('ohlcCek: aylık mumda sonraki sayfa son mumun hemen ardından', async () => {
+  const ay = 30 * 86_400_000;
+  const tamSayfa = Array.from({ length: SAYFA_MUM }, (_, i) => [i * ay, '1', '2', '1', '1', '0']);
+  const istenen: string[] = [];
+  const f = sahteFetch([
+    (u) => { istenen.push(u); return Response.json(tamSayfa); },
+    (u) => { istenen.push(u); return Response.json([]); },
+  ]);
+  const seri = await ohlcCek('BTCTRY', '1mo', 0, SAYFA_MUM * ay * 2, f);
+  assertEquals(seri?.length, SAYFA_MUM);
+  assert(istenen[0].includes('interval=1M'));
+  assert(istenen[1].includes(`startTime=${(SAYFA_MUM - 1) * ay + 1}`));
 });

@@ -21,7 +21,10 @@ arkasında." + "benzeri değil, birebir Pine olsun." Varlık grafiğinde `ƒx`
 olduğu gibi yapıştır ya da şablondan başla (EMA kesişimi, RSI, Bollinger,
 MACD, Yükseliş serisi), grafikte aç/kapa. Betik telefonda kendi
 yorumlayıcımızda çalışır, sunucu yalnız metni saklar (en fazla 20.000
-karakter). Bilerek çalışmayan: başka sembol/aralıktan veri, diziler,
+karakter). Hisse, döviz, altın, emtia ve kriptoda betik gerçek mumlarda
+(açılış/yüksek/düşük/hacim) ve mum grafiğinin seçili aralığında çalışır;
+ATR/Supertrend gibi göstergeler veri bulur. Fon/BES/eurobondda yalnız
+kapanış vardır. Bilerek çalışmayan: başka sembol/aralıktan veri, diziler,
 import; label/line/box/table ve bgcolor çalışır ama çizilmez. Görünürlük EMA/Mum ile aynı:
 `paywall_enabled` kapalıyken yalnız admin, açıkken herkes (ücretsizde kilitli).
 
@@ -29,6 +32,20 @@ import; label/line/box/table ve bgcolor çalışır ama çizilmez. Görünürlü
       **0141**. Fonksiyon/secret YOK. 0141'den önce admin hesabında çip
       görünür ama liste "yüklenemedi" der (tablo yok); grafik etkilenmez.
 - [ ] Kontrol: `select count(*) from pg_policies where tablename = 'kullanici_gostergeleri';` → 4.
+
+## ⏳ 2026-10-10 Mum grafiğinde aralık seçici (gerçek OHLC, Premium)
+
+Senin isteğin: "mum grafik de TradingView'deki gibi çalışmalı: 1 dk, 1 saat,
+4 saat, günlük, haftalık, aylık". Varlık sayfasında MUM açıkken aralık
+seçicisi çıkar; mumlar artık sağlayıcının gerçek açılış/en yüksek/en düşük/
+kapanışı (hisse, döviz, altın, emtia Yahoo; kripto Binance). Fon, BES ve
+eurobond günde tek fiyat yayımladığı için yalnız gün/hafta/ay. Yeni bayrak
+yok: MUM zaten Premium (`paywall_enabled` ya da admin).
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): yalnız
+      fonksiyon `kripto-seri`. Migration ve secret YOK. Sıra serbest:
+      eski uygulama yeni alanı göndermez, yanıtı birebir aynı; yeni uygulama
+      fonksiyon gitmeden önce kriptoda kapanıştan türetilen muma düşer.
 
 ## ⏳ 2026-10-10 Varlığı güncelle (bayrak `goz_alici`, Premium)
 

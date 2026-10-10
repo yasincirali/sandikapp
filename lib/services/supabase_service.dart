@@ -9,6 +9,7 @@ import '../models/asset.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
 import '../models/mevduat_bankasi.dart';
+import '../models/ohlc.dart';
 import '../models/kayitli_cihaz.dart';
 import '../models/kullanici_adi.dart';
 import '../models/signal_alert.dart';
@@ -22,6 +23,7 @@ import 'crash_reporter.dart';
 import 'db_logger.dart';
 import 'ekstre/ekstre_tablosu.dart' show EkstreAiHatasi;
 import 'fon_dagilimi.dart' show FonDagilimi, FonKalemleri;
+import 'mum_verisi.dart' show kriptoMumlariCoz;
 
 /// Tüm Supabase veri erişimi bu sınıf üzerinden geçer.
 /// RLS kuralları Supabase tarafında uygulandığı için burada
@@ -2035,6 +2037,30 @@ class SupabaseService {
       if (t != null && v != null && v > 0) out.add((t, v));
     }
     return out;
+  }
+
+  /// Gerçek kripto mumları (OHLC, TL) — `kripto-seri` `ohlc: true`
+  /// (2026-10-10). Aynı fonksiyon, aynı paylaşılan önbellek (anahtar
+  /// `|ohlc` ekiyle ayrı). Eski sunucu `mumlar` alanını bilmez: o durumda
+  /// boş liste döner ve ekran kapanıştan türetilen muma düşer.
+  Future<List<OhlcBar>> kriptoMumlari({
+    required String kod,
+    required String aralik,
+    required String donem,
+  }) async {
+    final res = await _log.log(
+      source: 'SupabaseService.kriptoMumlari',
+      table: 'functions/kripto-seri',
+      op: 'FUNCTION',
+      request: {'kod': kod, 'aralik': aralik, 'donem': donem, 'ohlc': true},
+      call: () => _db.functions.invoke(
+        'kripto-seri',
+        body: {'kod': kod, 'aralik': aralik, 'donem': donem, 'ohlc': true},
+        headers: const {'x-region': 'eu-central-1'},
+      ),
+    );
+    final data = res.data;
+    return kriptoMumlariCoz(data is Map ? data['mumlar'] : null);
   }
 
   // ── Mevduat banka seçici (0129) ─────────────────────────────────────────

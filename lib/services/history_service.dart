@@ -2965,17 +2965,7 @@ class HistoryService {
   /// pariteleri `TRY=X` ile biter, kripto `KRIPTO:` önekli (sunucu TL
   /// verir). Kalan her şey (ABD hisseleri, emtia) USD kabul edilir —
   /// Yahoo'nun varsayılanı budur.
-  static bool _isTryQuoted(String sym) =>
-      sym.endsWith('.IS') ||
-      sym.startsWith('TEFAS:') ||
-      // Kripto serisi sunucuda TL'ye çevrilmiş gelir (kripto-seri); burada
-      // USD sayılsaydı bir kez daha kurla çarpılırdı.
-      FiyatKaynagi.kriptoMu(sym) ||
-      // Mevduat birim değeri TL'dir (sözleşmeden); USD sayılsaydı kurla
-      // çarpılırdı.
-      sym.startsWith(mevduatOneki) ||
-      sym.endsWith('TRY=X') ||
-      sym.startsWith('ALTIN_');
+  static bool _isTryQuoted(String sym) => FiyatKaynagi.tlKote(sym);
 
   /// Periyoda uygun Yahoo range.
   ///

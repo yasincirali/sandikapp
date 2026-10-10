@@ -1212,6 +1212,14 @@ final chartEma200Provider = NotifierProvider<_BoolPrefNotifier, bool>(
 final chartCandleProvider = NotifierProvider<_BoolPrefNotifier, bool>(
     () => _BoolPrefNotifier(PrefKeys.chartCandle, false));
 
+/// Mumun aralığı (TradingView'in zaman dilimi; yasin 2026-10-10) —
+/// `MumAraligi.index`, `-1` = otomatik (dönemde ~80 muma en yakın aralık,
+/// `etkinAralik`). Kalıcı, Mum çipiyle aynı gerekçe. Seçim o dönemde
+/// geçerli değilse (1 dk × 5Y) ekran otomatiğe düşer, tercih SİLİNMEZ:
+/// kullanıcı GÜNLÜK'e dönünce 1 dk geri gelir.
+final chartMumAraligiProvider = NotifierProvider<_IntPrefNotifier, int>(
+    () => _IntPrefNotifier(PrefKeys.chartMumAraligi, -1));
+
 /// Performans "Bugünkü portföyle" görünümü (simülasyon: bugünkü net
 /// portföy tüm dönem boyunca elde tutulmuş gibi). TEK KAYNAK — Ayarlar ›
 /// Görünüm yazar, Performans okur (bayrak `performans_ayar_sade`).

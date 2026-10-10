@@ -12,13 +12,20 @@ part of '../asset_detail_screen.dart';
 /// okunmaz, grafik birebir eskisi (canlıdaki kullanıcı etkilenmez).
 ///
 /// ## Hangi çubuklar
-/// Betik grafiğin ÇİZDİĞİ noktalarda çalışır — EMA ile aynı seri ve aynı
-/// ısınma (`_emaOnSeriniIste`, dönem öncesi ~200 çubuk). Böylece gösterge
-/// seçili dönemin/zaman aralığının çubuklarıdır (TradingView'deki gibi) ve
-/// ölçeği çizgiyle birebir (fiyat kaynağı sözleşmesi madde 2). Bugün seri
-/// yalnız kapanış taşır; açılış/yüksek/düşük/hacim `na` kalır ve düzenleyici
-/// bunu söyler. Gerçek OHLC katmanı geldiğinde tek değişecek yer
-/// [_betikVerisi].
+/// Varlığın gerçek mumu varsa (hisse, döviz, altın, emtia Yahoo; kripto
+/// Binance — `MumKaynagi.gercekOhlc`) betik o mumlarda çalışır: aralık mum
+/// grafiğinin aralığıdır (seçici, yoksa otomatik), açılış/yüksek/düşük/hacim
+/// gerçek. ATR, Supertrend, Stokastik, VWAP gibi göstergeler ancak böyle
+/// veri bulur (yasin 2026-10-10: "TradingView'deki gibi, zaman aralığıyla
+/// kombine"). Isınma için pencerenin öncesinden de mum istenir
+/// (`_betikIsinmaCubugu`), EMA200 dönemin başında da çizilir. Mum katmanı
+/// kapalıyken de istenir: gösterge mumu değil veriyi ister.
+///
+/// Gerçek mum yoksa (fon, BES, eurobond) ya da mumlar henüz gelmediyse
+/// betik grafiğin ÇİZDİĞİ noktalarda çalışır — EMA ile aynı seri ve ısınma
+/// (`_emaOnSeriniIste`). O zaman açılış/yüksek/düşük/hacim `na` kalır ve
+/// düzenleyici bunu söyler (uydurma yok). İki yolda da ölçek ekrandaki
+/// fiyatla aynı (fiyat kaynağı sözleşmesi madde 2; mumlar `canliyaHizala`).
 ///
 /// Karşılaştırma açıkken çizilmez (EMA ile aynı gerekçe: çizgi % ölçeğinde).
 
@@ -41,6 +48,9 @@ DerlenmisBetik? _derlenmisBetik(String kod) {
   }();
   return v is DerlenmisBetik ? v : null;
 }
+
+/// Gerçek mumda ısınma: EMA200'ün dönem başında da çizilmesi için.
+const int _betikIsinmaCubugu = 200;
 
 typedef _OzelSonuc = ({OzelGosterge g, BetikSonucu s, BetikVerisi v});
 
@@ -80,6 +90,78 @@ extension _OzelGostergeler on _AssetDetailScreenState {
       zamanDilimi: BetikVerisi.aralikTahmini(zaman),
       sembol: _kimlik.kisaEtiket,
     );
+  }
+
+  /// Gerçek mumdan betik girdisi. X mumun ortası (grafikteki mumla aynı
+  /// yer), `time` mumun açılış anı (Pine'daki gibi). Hacmi olmayan barda
+  /// (endeks, parite) `volume` `na`.
+  BetikVerisi _betikVerisiMumdan(
+      List<OhlcBar> barlar, MumAraligi aralik, DateTime baslangic) {
+    final mumlar = _ohlcMumlari(barlar, aralik, baslangic);
+    return BetikVerisi(
+      x: [for (final m in mumlar) m.merkezX],
+      zaman: [for (final b in barlar) b.t.toDouble()],
+      acilis: [for (final b in barlar) b.acilis],
+      yuksek: [for (final b in barlar) b.enYuksek],
+      dusuk: [for (final b in barlar) b.enDusuk],
+      kapanis: [for (final b in barlar) b.kapanis],
+      hacim: [for (final b in barlar) b.hacim ?? double.nan],
+      zamanDilimi: switch (aralik) {
+        MumAraligi.dk1 => '1',
+        MumAraligi.saat1 => '60',
+        MumAraligi.saat4 => '240',
+        MumAraligi.gun1 => 'D',
+        MumAraligi.hafta1 => 'W',
+        MumAraligi.ay1 => 'M',
+      },
+      sembol: _kimlik.kisaEtiket,
+    );
+  }
+
+  /// Betiğin mumları: [aralik] ile, pencereden [_betikIsinmaCubugu] mum
+  /// önceden başlayarak. Mum katmanının isteğinden AYRI tutulur (başlangıcı
+  /// farklı; aynı alana yazsalar birbirini sürekli yeniden isterdi).
+  /// `_ohlcBarlari` ile aynı desen: build sırasında ister, eldekini döndürür,
+  /// gelmediyse null (çağıran kapanış çizgisine düşer).
+  List<OhlcBar>? _betikMumlari(MumAraligi aralik, bool gunIci, DateTime bas,
+      DateTime son, double canliBirim) {
+    // Seansı olan piyasada gün içi mum gece/hafta sonu yoktur: duvar
+    // saatinde daha geriye gidilir ki ısınma yine ~200 mum olsun.
+    final carpan = aralik.gunIci ? 4 : 1.5;
+    final isinmaBas = bas.subtract(Duration(
+        minutes: (aralik.dakika * _betikIsinmaCubugu * carpan).round()));
+    final basMs = isinmaBas.millisecondsSinceEpoch;
+    final adim = aralik.gunIci ? 60000 : 600000;
+    final anahtar = '${aralik.name}|${bas.millisecondsSinceEpoch}|'
+        '${DateTime.now().millisecondsSinceEpoch ~/ adim}';
+    if (_betikOhlcIstenen != anahtar) {
+      _betikOhlcIstenen = anahtar;
+      final pencereSonu = gunIci ? bas.add(const Duration(days: 1)) : son;
+      final simdi = DateTime.now();
+      final yukleme = MumVerisi.instance
+          .mumlar(
+            a: _canli.asset,
+            aralik: aralik,
+            bas: isinmaBas,
+            son: pencereSonu.isAfter(simdi) ? simdi : pencereSonu,
+            canliBirim: canliBirim,
+          )
+          .then<void>((barlar) {
+        if (!mounted || _betikOhlcIstenen != anahtar) return;
+        if (barlar.isEmpty &&
+            _betikOhlc?.aralik == aralik &&
+            _betikOhlc?.basMs == basMs) {
+          return;
+        }
+        _guncelle(() =>
+            _betikOhlc = (aralik: aralik, basMs: basMs, barlar: barlar));
+      });
+      CrashReporter.arkaPlan(yukleme, reason: 'AssetDetail.betikOhlc');
+    }
+    final o = _betikOhlc;
+    if (o == null || o.aralik != aralik || o.basMs != basMs) return null;
+    // Yorumlayıcı son kBetikAzamiCubuk çubuğu alır; fazlası ısınmadan düşer.
+    return o.barlar.length >= 2 ? o.barlar : null;
   }
 
   /// Açık göstergeleri çalıştırır. Çalışma hatası (bütçe aşımı) o
@@ -147,7 +229,8 @@ extension _OzelGostergeler on _AssetDetailScreenState {
             for (final c in r.s.cizgiler)
               if (!c.gizli)
                 for (var i = 0; i < r.s.x.length; i++)
-                  if (c.degerler[i].isFinite)
+                  // Isınma çubukları (X < 0, dönem öncesi) bandı genişletmez.
+                  if (c.degerler[i].isFinite && r.s.x[i] >= 0)
                     FlSpot(r.s.x[i], toY(c.degerler[i])),
       ];
 
