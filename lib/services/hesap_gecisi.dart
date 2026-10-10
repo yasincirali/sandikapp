@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart' show Rect;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/user_model.dart';
@@ -31,8 +32,24 @@ class HesapGecisPerdesi {
   final String basHarf;
   final String ad;
   final String alt;
-  const HesapGecisPerdesi(
-      {required this.basHarf, required this.ad, required this.alt});
+
+  /// Seçicideki avatarın rengi (sıra tonu) — perdede aynı renk kalsın;
+  /// eskiden perde hep amber çiziyordu, ikinci hesap yeşilken geçişte
+  /// başka bir hesaba gidiliyormuş gibi görünüyordu.
+  final int ton;
+
+  /// Dokunulan avatarın ekrandaki yeri. Perde avatarı buradan ortaya
+  /// taşır (Instagram'daki gibi "bu hesaba gidiyorum" okunur). Yoksa
+  /// avatar yerinde belirir.
+  final Rect? kaynak;
+
+  const HesapGecisPerdesi({
+    required this.basHarf,
+    required this.ad,
+    required this.alt,
+    this.ton = 0,
+    this.kaynak,
+  });
 }
 
 /// Geçilmek istenen hesabın saklı oturumu sunucuda geçersiz.
@@ -87,6 +104,40 @@ class HesapGecisi {
   /// "Vazgeç" buna döner. Süreç ölürse kaybolur; giriş ekranı yine kasadaki
   /// hesapları listeler, kullanıcı oradan döner.
   final ValueNotifier<KayitliHesap?> eklemedenDonulecek = ValueNotifier(null);
+
+  /// `false` iken geçiş perdesi yeni kapsamın İLK GERÇEK ekranını bekler
+  /// (splash değil: ana ekran, kilit, giriş…). `UygulamaKabugu` geçişte
+  /// düşürür, `_AuthGate` splash dışı bir ekran çizince kaldırır.
+  ///
+  /// Neden (yasin, 2026-10-10: "session switch yaparken çift loading"):
+  /// perde sabit bir süre sonra kalkıyordu; arkasından yeni kapsamın açılış
+  /// GIF'i veri beklerken ikinci bir yükleme olarak görünüyordu. Instagram /
+  /// Gmail'de geçiş tek bekleme ekranıdır; burada da avatarlı perde tek
+  /// yükleme olur. Emniyet supabı kabukta (GIF'in 10 sn'lik supabından uzun).
+  final ValueNotifier<bool> yeniEkranHazir = ValueNotifier(true);
+
+  /// Bu süreçte cihazın sahibi kilit ekranından (Face ID / cihaz şifresi)
+  /// geçti mi. Hesap geçişinde yeni kapsam bunu okur ve kilidi ikinci kez
+  /// sormaz.
+  ///
+  /// Neden (yasin, 2026-10-10: "ilk girişte bir Face ID yapmışız, session
+  /// switch'te 2. bir Face ID'ye gerek var mı"): kilit HESABI değil
+  /// CİHAZIN BAŞINDAKİ KİŞİYİ doğrular. Instagram, Gmail, Slack, Discord
+  /// geçişte bir şey sormaz; Telegram'ın şifre kilidi de hesaba değil
+  /// uygulamaya aittir. Az önce doğrulanmış kişiye aynı soruyu sormak
+  /// güvenlik eklemez, yalnızca sürtünme ekler.
+  ///
+  /// Kilidi hiç açılmamış oturumda (aktif hesabın kilidi kapalı) bu `false`
+  /// kalır: kilidi açık hesaba geçerken BİR kez sorulur — o hesabın sahibi
+  /// koruma istemiş ve cihazdaki kişi henüz doğrulanmamış. 30 sn'den uzun
+  /// arka plan dönüşü ve çıkış bunu sıfırlar (`_AuthGate`).
+  bool cihazDogrulandi = false;
+
+  /// Kapı kuruluşunda kilit ekranı gösterilsin mi. [kilitAcik] = bu
+  /// hesabın biyometrik kilit tercihi. Bayrak kapalıyken birebir eski
+  /// kural (yalnız tercih).
+  bool acilisKilidiGerekli({required bool kilitAcik}) =>
+      kilitAcik && !(acik && cihazDogrulandi);
 
   /// Kasadaki hesaplar — seçici ve giriş ekranı izler.
   final ValueNotifier<List<KayitliHesap>> hesaplar = ValueNotifier(const []);
@@ -163,7 +214,10 @@ class HesapGecisi {
 
   /// [hedefUid] hesabına geçer. [aktif] şu anki kullanıcı (yoksa oturumsuz
   /// hâlden geçiş: "Vazgeç" ya da çıkış sonrası sıradaki hesap).
-  Future<void> gec(String hedefUid, {AppUser? aktif}) async {
+  ///
+  /// [kaynak] ve [ton] yalnız perdenin görünüşü içindir (seçicideki avatar).
+  Future<void> gec(String hedefUid,
+      {AppUser? aktif, Rect? kaynak, int ton = 0}) async {
     if (_mesgul) return;
     final liste = await _kasa.liste();
     final hedef = liste.where((h) => h.uid == hedefUid).firstOrNull;
@@ -171,7 +225,11 @@ class HesapGecisi {
     if (aktif?.id == hedefUid) return;
     _mesgul = true;
     perde.value = HesapGecisPerdesi(
-        basHarf: hedef.basHarf, ad: hedef.ad, alt: 'hesabına geçiliyor');
+        basHarf: hedef.basHarf,
+        ad: hedef.ad,
+        alt: 'hesabına geçiliyor',
+        ton: ton,
+        kaynak: kaynak);
     String? oncekiJson;
     try {
       if (aktif != null) oncekiJson = await _ayril(aktif);
@@ -385,9 +443,8 @@ class HesapGecisi {
     final s = _auth.currentSession;
     if (s == null || s.user.id != aktif.id) return null;
     final json = jsonEncode(s.toJson());
-    final mevcut = (await _kasa.liste())
-        .where((h) => h.uid == aktif.id)
-        .firstOrNull;
+    final mevcut =
+        (await _kasa.liste()).where((h) => h.uid == aktif.id).firstOrNull;
     final ad = _meta(aktif).ad;
     final ok = await _kasa.kaydet(
       (mevcut ?? _meta(aktif)).kopya(
