@@ -51,7 +51,7 @@ seçilir; ikisi de gerekiyorsa ikisini de çağır ama çakışma kuralına (aş
 | Dokümansız kodu çözme | `spec-miner` |
 | Bir kararı zorlatma / pre-mortem | `the-fool` |
 | Video / tanıtım filmi / motion graphics | `remotion-motion-graphics` (**her video talebinde**; araç Remotion, npm'den) |
-| Anlatımlı tanıtım / launch videosu ("brag") | `brag` → Hyperframes (`npx hyperframes`); çıktı `store_listing/preview_video/brag-output/`. Türkçe ses Kokoro'da yok → edge-tts `tr-TR-*Neural` |
+| Anlatımlı tanıtım / launch videosu ("brag") | `brag` → Hyperframes (`npx hyperframes`); çıktı `store_listing/preview_video/brag-output/`. Türkçe ses Kokoro'da yok → **EMA Lightning** (yerel, Apache 2.0; `store_listing/preview_video/scripts/seslendir_ema.py`, 2026-10-10), edge-tts `tr-TR-*Neural` yalnız yedek. **Anlatım metni önce `store_listing/preview_video/ANLATIM_KURALLARI.md`** (kullanıcı kuralı 2026-10-10: doğal, basit, açıklayıcı; vurgu cümle kuruluşuyla) |
 | Uygulamayı çalıştırıp görme | `/run`, `tool/deploy_emulators.sh` |
 
 **Çakışma kuralı — skill CLAUDE.md'yi asla ezmez.** Skill ile bu dosya çeliştiğinde
@@ -293,8 +293,8 @@ başka bilgisayar) **geçerli değildir** ve buradaki yollar bulunamazsa bu bir 
   ```
 
 ### MCP sunucuları (`.mcp.json`, proje kapsamlı)
-Bu makinede üç sunucu bağlıdır; başka ortamda bağlanamazlar ve bu beklenen durumdur —
-kod keşfi `Grep`/`Glob`/`Read` ile yapılır.
+Bu makinede üç yerel sunucu + bir uzak sunucu (heygen) vardır; yereller başka ortamda
+bağlanamaz ve bu beklenen durumdur — kod keşfi `Grep`/`Glob`/`Read` ile yapılır.
 
 - **codebase-memory-mcp** (v0.9.0, `C:\Users\vasin\AppData\Local\Programs\codebase-memory-mcp\…exe`,
   graph adı `C-projects-PortfoyTakip`). Kod keşfinde önce graph (`search_graph`, `query_graph`,
@@ -307,6 +307,12 @@ kod keşfi `Grep`/`Glob`/`Read` ile yapılır.
   sandık amber/gold/gain/loss/surface + DM Sans korunur.
 - **dart** (`dart mcp-server --force-roots-fallback`; bayrağı kaldırma). Analiz/test/pub
   için ham kabuk çıktısı yerine bu sunucunun yapılandırılmış sonuçlarını tercih et.
+- **heygen** (uzak HTTP, `https://mcp.heygen.com/mcp/v1/`, 2026-10-10). OAuth: ilk
+  kullanımda kullanıcı `/mcp` → heygen → giriş yapar; token yereldedir, repoda yok.
+  Video işleri için (avatar/sahne/ses); `media-use` skill'inin HeyGen yolu da aynı hesabı
+  kullanır. ⚠️ Gönderilen her şey HeyGen'e gider: gerçek hesap ekranı, kullanıcı adı,
+  ham kayıt (`public/shots/`) **gönderme** — demo verisiyle çalış. Türkçe anlatımın
+  varsayılanı yine yerel EMA Lightning (`ANLATIM_KURALLARI.md`).
 
 Oturum başı denetim: `.claude/settings.local.json` `SessionStart` hook'u `tool/mcp_health.sh`
 koşar (çalıştırılabilir yerinde mi, indeks son commit'ten geride mi). Betik sunucu

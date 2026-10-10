@@ -56,6 +56,11 @@ except Exception as e:
     sorunlar.append('.mcp.json okunamadı: %s' % e)
 
 for ad, s in cfg.items():
+    # Uzak sunucu (heygen, 2026-10-10): yerelde binary yok, OAuth'u Claude
+    # Code yönetir; buradan denetlenecek bir şey yok — "command tanımsız"
+    # diye sahte sorun bildirmesin.
+    if s.get('type') in ('http', 'sse') or s.get('url'):
+        continue
     komut = s.get('command', '')
     if not komut:
         sorunlar.append('%s: command tanımsız' % ad)

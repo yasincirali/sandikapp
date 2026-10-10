@@ -272,9 +272,11 @@ skills` ile `~/.claude/skills/` altına kuruldu.
 - Bu projede: mağaza önizlemesinin anlatımlı sürümü
   `store_listing/preview_video/brag-output/` (README orada). Remotion kurgusu
   (`src/`) olduğu gibi duruyor; iki hat birbirinden bağımsız.
-- ⚠️ `--voice` Kokoro'ya bağlı ve **Türkçe ses yok**. Anlatım için
-  `python -m edge_tts --voice tr-TR-AhmetNeural` (veya EmelNeural) kullan,
-  WAV'ı `assets/vo/` altına koy; brag'in "let the voice set the pace" kuralı aynen.
+- ⚠️ `--voice` Kokoro'ya bağlı ve **Türkçe ses yok**. Anlatım (2026-10-10'dan
+  beri) **EMA Lightning** ile: `scripts/seslendir_ema.py` (yerel GPU, Apache 2.0,
+  kurulum betiğin başında) → `assets/vo/m_*.wav`. edge-tts
+  (`tr-TR-AhmetNeural`/`EmelNeural`) yalnız yedek — lisansı belirsiz.
+  brag'in "let the voice set the pace" kuralı aynen.
 - ⚠️ Hyperframes `ffmpeg`'i PATH'te ister; Remotion'un compositor ffmpeg'i **olmaz**
   (kısıtlı build). `composition/tools/` altındaki ffmpeg-static'i PATH'e ekle.
 - ⚠️ Müzik lisansı skill README'sinde "yayınlamadan önce doğrula" diyor —

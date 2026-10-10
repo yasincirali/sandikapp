@@ -1,7 +1,10 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (çoklu portföy, 0133, bayrak `coklu_portfoy`); 2026-10-10 (olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (çoklu portföy, 0133, bayrak `coklu_portfoy`; Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130; video anlatım kuralları + EMA Lightning + HeyGen MCP); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+
+> **Dağıtım durumu 2026-10-10:** 0130–0134 ve `analyze-signals`, `fon-dagilim`, `fon-kalem-raporu` iki sunucuda BEKLİYOR (dry_run 38020117037 planı; bkz. "Tek PR … ORTAK SIRA"). Aşağıdaki 2026-10-09 notu o günün durumudur.
+>
+> **Dağıtım durumu 2026-10-09 (Claude, dry_run 37845572925):** iki sunucuda bekleyen migration YOK ("Remote database is up to date"), tüm fonksiyonlar 08.10 run 37805378394 ile ikisine gitti, ŞEMA EŞİT; `eurobond_fiyat` 37 satır. Aşağıdaki Supabase deploy kutuları buna göre işaretlendi; Remote Config anahtarları hâlâ Console'da oluşturulmayı bekliyor.
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
@@ -427,7 +430,7 @@ dokunmaz; kişisel veri işleyişini değiştirmeyen düzeltmede yalnız "Sürü
 artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
 
 - [ ] PR'ı birleştir (CI yeşil olunca).
-- [ ] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
+- [x] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
       0127 birlikte, sırayla gider.
 - [ ] Paywall'u açmadan önce hâlâ gerekli: hesap silmede RevenueCat
       müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
@@ -466,14 +469,14 @@ kişisel veri yok). Yeni build'i alan herkes metni BİR KEZ kutuyla onaylar
 
 Sıra önemli:
 - [ ] PR'ı birleştir (CI yeşil olunca).
-- [ ] **Supabase deploy** (Actions, `main`, hedef `ikisi`): migrations
+- [x] **Supabase deploy** (Actions, `main`, hedef `ikisi`): migrations
       (0124 eurobond tabloları + cron, 0125 belgeler 1.7) ve functions
       `eurobond-fiyat`, `eurobond-seri` ve ortak kodu değişenler: `analyze-signals`,
       `check-price-alerts`, `daily-brief`, `fetch-inflation`, `leaderboard-snapshot`,
       `push-live-activity`, `yurt-ici-kotasyon` (en kolayı: functions = tümü). Yeni secret YOK:
       eurobond cron'u `KRIPTO_CRON_SECRET`'ı kullanır.
-- [ ] `python tool/sema_esitlik.py` — iki sunucu eşit mi.
-- [ ] İlk fiyat turunu bekle (hafta içi 09:00–19:40 TR, 20 dk'da bir) ya da
+- [x] `python tool/sema_esitlik.py` — iki sunucu eşit mi.
+- [x] İlk fiyat turunu bekle (hafta içi 09:00–19:40 TR, 20 dk'da bir) ya da
       Tokyo'da elle: `select public.trigger_eurobond_fiyat();` Sonra
       kontrol: `select count(*), max(guncellendi) from eurobond_fiyat;`
       (37–38 tahvil beklenir).
@@ -807,7 +810,7 @@ kosullar/1.4/tr" ile reddedilir, kapı her açılışta yeniden sorar):**
       Doğrula (salt okunur):
       `select tur, surum, dil from yasal_metinler where surum = '1.4' or (tur = 'kayit_tek_kutu' and surum = '1.1') order by 1, 3;`
       → 4 belge 1.4 + kutu 1.1 (tr, en); 1.3 ve kutu 1.0 yerinde.
-- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [x] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
 - [ ] 3. ANCAK SONRA uygulama (PR → main). Pages web'i de 1.4 ile yayınlar.
 - **1.3'ü onaylamış herkes 1.4'ü BİR KEZ görür:** bir sonraki açılışta kapıda
   "Güncellenen belgeler" + "Neler değişti" (1.4); Açık Rıza Metni'ni sonuna
@@ -947,7 +950,7 @@ açılışta yeniden sorar):**
       → Tokyo'da ikisi `true`, Frankfurt'ta (tüm cron kapalı kipi) `false`.
       `select tur, surum from yasal_metinler where surum = '1.3' order by 1;`
       → 4 satır; 1.2 satırları yerinde.
-- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [x] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
 - [ ] 3. ANCAK SONRA uygulama (PR → main). Pages web'i de 1.3 ile yayınlar.
       1.2'yi onaylamış herkes bir sonraki açılışta kapıda "Güncellenen
       belgeler" + yeni "Neler değişti" notunu görür ve dört belgeyi TEK
@@ -1009,7 +1012,7 @@ açılışta yeniden sorar):**
       `select tur, surum from yasal_metinler where surum = '1.2' order by 1;`
       → 4 satır (`acik_riza_metni`, `gizlilik_politikasi`, `kosullar`,
       `kvkk_aydinlatma`); 1.1 satırları yerinde.
-- [ ] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [x] 2. `python tool/sema_esitlik.py` → ŞEMA EŞİT.
 - [ ] 3. ANCAK SONRA uygulama (PR → main). `main`'e girince Pages web'i de
       yayınlar (docs/ HTML 1.2). Yayınla birlikte 1.1'i onaylamış herkes bir
       sonraki açılışta kapıda "Güncellenen belgeler"i görür (bayraklar
@@ -1242,7 +1245,7 @@ oynuyor ama geçmişi tutulmuyordu. Sunucu artık 5 dk'da bir kaydediyor
 Bayrak **kapalı** doğar; yalnızca EKLER (eski sürümler etkilenmez).
 
 - [ ] PR'ı birleştir.
-- [ ] **Supabase deploy, hedef `ikisi`:** fonksiyon `yurt-ici-kotasyon` + migration
+- [x] **Supabase deploy, hedef `ikisi`:** fonksiyon `yurt-ici-kotasyon` + migration
       0101 (sıra fark etmez; cron ilk turda fonksiyonu bulamazsa 404 yazar, bir
       sonraki turda düzelir). Yeni secret YOK: `PRICE_ALERTS_CRON_SECRET` /
       Vault `price_alerts_cron_secret` paylaşılır. Frankfurt'ta cron'lar kapalıysa
@@ -1269,7 +1272,7 @@ Dağıtım SIRASI önemli (eski sürümler etkilenmez; tarif yoksa davranış ay
 
 - [ ] PR'ı birleştir → yeni iOS build TestFlight'a (Info.plist'e sık güncelleme
       izni `NSSupportsLiveActivitiesFrequentUpdates` eklendi).
-- [ ] **Supabase deploy, hedef `ikisi`:** ÖNCE fonksiyon `push-live-activity`
+- [x] **Supabase deploy, hedef `ikisi`:** ÖNCE fonksiyon `push-live-activity`
       (migration KAPALI), SONRA migration (0100: cron `*/5` → `* * * * *`).
       Ters sıra zararsız ama eski fonksiyon dakikalık çağrıda her satırı her
       dakika aynı metinle push'lar (boşa APNs bütçesi).

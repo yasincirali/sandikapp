@@ -11,6 +11,10 @@
     "ui-ux-pro-mcp": {
       "command": "C:\\Users\\vasin\\AppData\\Roaming\\npm\\ui-ux-pro-mcp.cmd",
       "args": []
+    },
+    "heygen": {
+      "type": "http",
+      "url": "https://mcp.heygen.com/mcp/v1/"
     }
   }
 }
