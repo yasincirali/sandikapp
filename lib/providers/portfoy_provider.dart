@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../demo/demo_modu.dart';
+import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/portfoy.dart';
 import '../models/position.dart';
@@ -180,10 +181,32 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
     }
   }
 
-  /// Portföyü siler. Lotları sunucuda FK ile Ana'ya döner; bellekteki
-  /// defter de aynı anda Ana'ya çekilir (yeniden yükleme beklenmez). Seçili
-  /// portföy buysa seçim "Tümü"ye döner.
+  /// Portföyü İÇİNDEKİ VARLIKLARLA siler (yasin 2026-10-10: "taşıma
+  /// yapmamalıyız, bir portföy siliniyorsa onay ekranında gösterilen
+  /// varlıklarla birlikte silinmeli").
+  ///
+  /// ## Neden varlık silme yolu, sunucuda yeni bir şey değil
+  /// Her pozisyon, kullanıcının Portföy'de kaydırıp sildiği yoldan gider
+  /// (`deletePositionLots`: yumuşak silme damgası + tek "Silindi" satırı).
+  /// Böylece toplamlar, grafik, Zirve ve hareket geçmişi bir varlık
+  /// silmesini nasıl görüyorsa bunu da öyle görür; ayrı bir "portföyle
+  /// silinme" kuralı doğmaz. Kapanmış pozisyonların geçmiş kayıtları da
+  /// silinir (yoksa Ana'ya taşınırdı). Sunucu FK'si (`on delete set null`,
+  /// 0133) yerinde kalır: eski sürümün sildiği portföyün lotları Ana'ya
+  /// döner, yalnız damgalı satırlar ve mezar taşları Ana'ya düşer, hiçbiri
+  /// toplama girmez.
+  ///
+  /// Sıra: önce varlıklar, sonra portföy. Bir pozisyon silinemezse portföy
+  /// silinmez ve hata yukarı çıkar; tekrar denemek kalanları siler (silinmiş
+  /// lot yeniden seçilmez).
   Future<void> sil(String id) async {
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    final defter = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final portfolio = ref.read(portfolioProvider.notifier);
+    for (final grup in portfoyunSilinecekGruplari(
+        defter, id, {for (final p in _liste) p.id}, uid)) {
+      await portfolio.deletePositionLots(grup);
+    }
     await SupabaseService.instance.deletePortfoy(id);
     state = AsyncData([
       for (final p in _liste)
@@ -194,6 +217,26 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
       await ref.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.tumu);
     }
   }
+}
+
+/// Portföy silinirken silinecek kayıtlar, pozisyon başına bir grup (saf,
+/// test edilir): sahibin bu portföydeki SİLİNMEMİŞ lotları (alım, satım,
+/// temettü; mezar taşları hariç), `positionKey`'e göre. Açık pozisyonlar ve
+/// kapanmış pozisyonların geçmişi birlikte gelir.
+List<List<Asset>> portfoyunSilinecekGruplari(
+  List<Asset> defter,
+  String portfoyId,
+  Set<String> bilinen,
+  String? sahipId,
+) {
+  final m = <String, List<Asset>>{};
+  for (final a
+      in portfoyeGoreBol(defter, bilinen)[portfoyId] ?? const <Asset>[]) {
+    if (!a.isActive) continue;
+    if (sahipId != null && a.userId != sahipId) continue;
+    m.putIfAbsent(positionKey(a), () => []).add(a);
+  }
+  return m.values.toList();
 }
 
 final portfoylerProvider =

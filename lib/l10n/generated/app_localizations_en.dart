@@ -8154,21 +8154,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String portfoySilAciklama(String ana) {
-    return 'These assets are not deleted; they move to: $ana. Your total stays the same.';
+  String get portfoySilAciklama =>
+      'The assets below are deleted with the portfolio and leave your total. This can\'t be undone.';
+
+  @override
+  String portfoySilindi(String ad) {
+    return '$ad deleted with its assets.';
   }
 
   @override
-  String portfoySilindi(String ad, String ana) {
-    return '$ad deleted. Its assets are now in: $ana.';
-  }
+  String get portfoyVarliklarlaSil => 'Delete portfolio and assets';
 
   @override
   String get portfoySilBosAciklama => 'This portfolio has no assets.';
 
   @override
-  String portfoySilGecmisAciklama(int sayi, String ana) {
-    return '$sayi past records move to: $ana.';
+  String portfoySilGecmisAciklama(int sayi) {
+    return '$sayi past records of closed positions are deleted too.';
   }
 
   @override

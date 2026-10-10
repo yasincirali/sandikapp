@@ -116,6 +116,17 @@ class _SahteAnaAdi extends AnaPortfoyAdiNotifier {
   }
 }
 
+/// Varlık silme çağrılarını kaydeder (sunucuya gitmez).
+class _KayitliPortfolio extends _FakePortfolio {
+  _KayitliPortfolio(super.assets);
+  final silinen = <List<Asset>>[];
+  @override
+  Future<SilinenPozisyon?> deletePositionLots(List<Asset> lots) async {
+    silinen.add(lots);
+    return null;
+  }
+}
+
 List<Override> _ortak({bool premium = true}) => [
       authProvider.overrideWith(_FakeAuth.new),
       portfolioProvider.overrideWith(() => _FakePortfolio(_defter)),
@@ -329,8 +340,46 @@ void main() {
       expect(find.descendant(of: liste, matching: find.text('THYAO')),
           findsNothing, reason: 'THYAO Ana\'da');
       expect(find.text('İçindeki varlıklar · 2'), findsOneWidget);
-      expect(find.textContaining('şuraya taşınır: Ana portföy'),
+      expect(find.textContaining('portföyle birlikte silinir'),
           findsOneWidget);
+      expect(find.text('Portföyü ve varlıkları sil'), findsOneWidget);
+    });
+
+    // yasin 2026-10-10: "taşıma yapmamalıyız" — silme, portföyün her
+    // pozisyonunu varlık silme yolundan (deletePositionLots) geçirir, SONRA
+    // portföyü siler. Testte sunucu yok: portföy silme çağrısı düşer ama
+    // varlık silmeleri ondan önce koşmuş olmalı (sıra sözleşmesi).
+    test('sil: önce portföyün pozisyonları silinir, Ana ve öbürü dokunulmaz',
+        () async {
+      RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
+      final kayit = _KayitliPortfolio(_defter);
+      final c = ProviderContainer(overrides: [
+        ..._ortak(),
+        portfolioProvider.overrideWith(() => kayit),
+      ]);
+      addTearDown(c.dispose);
+      await c.read(authProvider.future);
+      await c.read(portfolioProvider.future);
+      await c.read(portfoylerProvider.future);
+      await expectLater(
+          c.read(portfoylerProvider.notifier).sil(_a), throwsA(anything));
+      expect(
+          [for (final g in kayit.silinen) g.map((a) => a.id).toList()]..sort(
+              (x, y) => x.first.compareTo(y.first)),
+          [
+            ['1'],
+            ['4'],
+          ],
+          reason: 'Emeklilik: ASELS lotu 1 ve SISE lotu 4; THYAO (Ana) ve '
+              'ASELS lotu 2 (Çocuk) silinmez');
+    });
+
+    test('silinecek gruplar: silinmiş lot ve mezar taşı yeniden seçilmez', () {
+      final silinmis = _lot('5', 'KCHOL', 3, 100, portfoy: _a)
+          .copyWithDeletedAt(DateTime(2026, 4, 1));
+      final gruplar = portfoyunSilinecekGruplari(
+          [..._defter, silinmis], _a, {_a, _b}, _uid);
+      expect(gruplar.expand((g) => g).map((a) => a.id).toSet(), {'1', '4'});
     });
 
     testWidgets('boş portföy: liste yok, kısa onay', (t) async {

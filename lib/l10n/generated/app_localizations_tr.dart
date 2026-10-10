@@ -8077,21 +8077,23 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String portfoySilAciklama(String ana) {
-    return 'Bu varlıklar silinmez, şuraya taşınır: $ana. Toplamın değişmez.';
+  String get portfoySilAciklama =>
+      'Aşağıdaki varlıklar portföyle birlikte silinir ve toplamından düşer. Geri alınamaz.';
+
+  @override
+  String portfoySilindi(String ad) {
+    return '$ad içindeki varlıklarla silindi.';
   }
 
   @override
-  String portfoySilindi(String ad, String ana) {
-    return '$ad silindi. Varlıkları şurada: $ana.';
-  }
+  String get portfoyVarliklarlaSil => 'Portföyü ve varlıkları sil';
 
   @override
   String get portfoySilBosAciklama => 'Bu portföyde varlık yok.';
 
   @override
-  String portfoySilGecmisAciklama(int sayi, String ana) {
-    return '$sayi geçmiş kaydı şuraya taşınır: $ana.';
+  String portfoySilGecmisAciklama(int sayi) {
+    return 'Kapanmış pozisyonlara ait $sayi geçmiş kayıt da silinir.';
   }
 
   @override

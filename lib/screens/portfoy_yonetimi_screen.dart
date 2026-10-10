@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
+import '../models/position.dart';
 import '../models/portfoy.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/ortak_paylasimi_provider.dart';
+import '../providers/portfolio_provider.dart';
 import '../providers/portfoy_provider.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
@@ -23,9 +25,10 @@ import '../widgets/sandik_async_button.dart';
 /// sırala, sil.
 ///
 /// "Ana" bir satır değildir (`portfoy_id IS NULL`); listenin başında sabit
-/// durur, yeri değişmez, silinemez — silinen her portföyün lotları oraya
-/// döner. Adı değişir (`anaPortfoyAdiProvider`, yasin 2026-10-10). Silme lotları SİLMEZ (FK `on delete set null`), onay
-/// sayfası kaç kaydın Ana'ya döneceğini söyler. Değerler
+/// durur, yeri değişmez, silinemez; adı değişir (`anaPortfoyAdiProvider`,
+/// yasin 2026-10-10). Bir portföy İÇİNDEKİ VARLIKLARLA silinir
+/// (`PortfoylerNotifier.sil`); onay sayfası silinecek varlıkları listeler.
+/// Değerler
 /// `portfoyOzetleriProvider`'dan (hesap build'de değil).
 class PortfoyYonetimiScreen extends ConsumerWidget {
   const PortfoyYonetimiScreen({super.key});
@@ -150,8 +153,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                             .read(portfoylerProvider.notifier)
                             .yenidenAdlandir(p.id, ad),
                       ),
-                      onSil: () => _silOnayi(
-                          context, ref, p, ozet[p.id]?.kayit ?? 0, anaAdi),
+                      onSil: () => _silOnayi(context, ref, p),
                     ),
                   );
                 },
@@ -214,21 +216,35 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
   /// Silme onayı alt sayfada (`showSandikSheet`).
   ///
   /// yasin 2026-10-10: içinde varlık olan portföyde varlıklar LİSTELENİR ve
-  /// onay öyle alınır (kullanıcı neyin nereye gittiğini görerek karar
-  /// verir); boş portföyde yalnız kısa "emin misin". İki durumda da lotlar
-  /// silinmez, Ana'ya döner (FK `on delete set null`) — metin Ana'nın
-  /// GÜNCEL adını söyler. Silme düğmenin İÇİNDE koşar; hata sayfanın
-  /// üstünde söylenir ve sayfa açık kalır.
+  /// onay öyle alınır (kullanıcı neyin silineceğini görerek karar verir);
+  /// boş portföyde yalnız kısa "emin misin". Varlıklar portföyle birlikte
+  /// silinir, Ana'ya taşınmaz ("taşıma yapmamalıyız"); listede görünmeyen
+  /// kapanmış pozisyon geçmişi de silindiği için sayısı ayrıca söylenir.
+  /// Silme düğmenin İÇİNDE koşar; hata sayfanın üstünde söylenir ve sayfa
+  /// açık kalır.
   Future<void> _silOnayi(
     BuildContext context,
     WidgetRef ref,
     Portfoy p,
-    int kayit,
-    String anaAdi,
   ) async {
     final l = context.l10n;
     final pozisyonlar = ref.read(portfoyPozisyonlariProvider(p.id));
     final baz = ref.read(gosterimBazParaProvider);
+    // Kapanmış pozisyonların geçmişi de silinir; listede görünmediği için
+    // sayısı ayrıca söylenir.
+    final acik = {for (final v in pozisyonlar) v.pozisyon.key};
+    final gecmis = [
+      for (final g in portfoyunSilinecekGruplari(
+          ref.read(portfolioProvider).valueOrNull?.assets ?? const [],
+          p.id,
+          {
+            for (final x in ref.read(portfoylerProvider).valueOrNull ??
+                const <Portfoy>[])
+              x.id
+          },
+          ref.read(authProvider).valueOrNull?.id))
+        if (!acik.contains(positionKey(g.first))) ...g,
+    ].length;
     final silindi = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -254,12 +270,13 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
               ),
               const SizedBox(height: SandikSpace.sm),
               Text(
-                pozisyonlar.isNotEmpty
-                    ? l.portfoySilAciklama(anaAdi)
-                    : kayit > 0
-                        ? '${l.portfoySilBosAciklama} '
-                            '${l.portfoySilGecmisAciklama(kayit, anaAdi)}'
-                        : l.portfoySilBosAciklama,
+                [
+                  if (pozisyonlar.isNotEmpty)
+                    l.portfoySilAciklama
+                  else
+                    l.portfoySilBosAciklama,
+                  if (gecmis > 0) l.portfoySilGecmisAciklama(gecmis),
+                ].join(' '),
                 style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58),
               ),
               if (pozisyonlar.isNotEmpty) ...[
@@ -306,7 +323,10 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                   }
                   if (ctx.mounted) Navigator.pop(ctx, true);
                 },
-                child: Text(l.portfoySil,
+                child: Text(
+                    pozisyonlar.isNotEmpty
+                        ? l.portfoyVarliklarlaSil
+                        : l.portfoySil,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
               TextButton(
@@ -322,7 +342,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
       sandikSnack(
           context,
           pozisyonlar.isNotEmpty
-              ? l.portfoySilindi(p.ad, anaAdi)
+              ? l.portfoySilindi(p.ad)
               : l.portfoySilindiBos(p.ad),
           kind: SandikSnackKind.success);
     }

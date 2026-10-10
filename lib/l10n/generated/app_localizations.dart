@@ -13526,14 +13526,20 @@ abstract class AppLocalizations {
   /// No description provided for @portfoySilAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Bu varlıklar silinmez, şuraya taşınır: {ana}. Toplamın değişmez.'**
-  String portfoySilAciklama(String ana);
+  /// **'Aşağıdaki varlıklar portföyle birlikte silinir ve toplamından düşer. Geri alınamaz.'**
+  String get portfoySilAciklama;
 
   /// No description provided for @portfoySilindi.
   ///
   /// In tr, this message translates to:
-  /// **'{ad} silindi. Varlıkları şurada: {ana}.'**
-  String portfoySilindi(String ad, String ana);
+  /// **'{ad} içindeki varlıklarla silindi.'**
+  String portfoySilindi(String ad);
+
+  /// No description provided for @portfoyVarliklarlaSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyü ve varlıkları sil'**
+  String get portfoyVarliklarlaSil;
 
   /// No description provided for @portfoySilBosAciklama.
   ///
@@ -13544,8 +13550,8 @@ abstract class AppLocalizations {
   /// No description provided for @portfoySilGecmisAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'{sayi} geçmiş kaydı şuraya taşınır: {ana}.'**
-  String portfoySilGecmisAciklama(int sayi, String ana);
+  /// **'Kapanmış pozisyonlara ait {sayi} geçmiş kayıt da silinir.'**
+  String portfoySilGecmisAciklama(int sayi);
 
   /// No description provided for @portfoySilVarliklar.
   ///
