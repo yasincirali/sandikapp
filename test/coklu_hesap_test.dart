@@ -228,6 +228,96 @@ void main() {
     });
   });
 
+  // yasin (2026-10-10): "session switch yaparken çift loading görülüyor".
+  // Avatarlı perde, yeni kapsamın ilk gerçek ekranına kadar tek yükleme.
+  group('UygulamaKabugu — tek yükleme', () {
+    Widget kok({required bool hazirBekle}) => UygulamaKabugu(
+          hazirBekle: hazirBekle,
+          uygulama: const MaterialApp(home: Text('yeni hesap')),
+        );
+
+    Future<void> gec(WidgetTester tester) async {
+      HesapGecisi.instance.perde.value = const HesapGecisPerdesi(
+          basHarf: 'A', ad: 'ayse', alt: 'hesabına geçiliyor');
+      HesapGecisi.instance.nesil.value++;
+      await tester.pump(); // boş kare
+      await tester.pump(); // yeni kapsam
+    }
+
+    tearDown(() {
+      HesapGecisi.instance.perde.value = null;
+      HesapGecisi.instance.yeniEkranHazir.value = true;
+    });
+
+    testWidgets('perde, kapı "hazır" deyene dek kalır', (tester) async {
+      await tester.pumpWidget(kok(hazirBekle: true));
+      await gec(tester);
+      expect(HesapGecisi.instance.yeniEkranHazir.value, isFalse);
+      // Eski sabit süre ve açılış GIF'inin tipik veri beklemesi geçti:
+      // perde hâlâ üstte, ikinci bir yükleme görünmez.
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('ayse'), findsOneWidget);
+
+      HesapGecisi.instance.yeniEkranHazir.value = true;
+      await tester.pump(SandikMotion.modal);
+      expect(HesapGecisi.instance.perde.value, isNull);
+      await tester.pump();
+      expect(find.text('ayse'), findsNothing);
+      expect(find.text('yeni hesap'), findsOneWidget);
+    });
+
+    testWidgets('kapı hiç "hazır" demezse emniyet supabı perdeyi kaldırır',
+        (tester) async {
+      await tester.pumpWidget(kok(hazirBekle: true));
+      await gec(tester);
+      await tester.pump(const Duration(seconds: 12));
+      await tester.pump(SandikMotion.modal);
+      expect(HesapGecisi.instance.perde.value, isNull);
+    });
+
+    testWidgets('hazirBekle kapalıyken eski sabit süre (bekçi kökleri)',
+        (tester) async {
+      await tester.pumpWidget(kok(hazirBekle: false));
+      await gec(tester);
+      expect(HesapGecisi.instance.yeniEkranHazir.value, isTrue);
+      await tester.pump(SandikMotion.modal);
+      expect(HesapGecisi.instance.perde.value, isNull);
+    });
+  });
+
+  // yasin (2026-10-10): "ilk girişte bir Face ID yapmışız, session switch'te
+  // 2. bir Face ID'ye gerek var mı". Kilit cihazın başındaki kişiyi doğrular.
+  group('geçişte kilit', () {
+    final g = HesapGecisi.instance;
+    tearDown(() {
+      g.cihazDogrulandi = false;
+      RemoteConfigService.testAcik = {};
+    });
+
+    test('bu süreçte kilit açıldıysa yeni hesap için tekrar sorulmaz', () {
+      RemoteConfigService.testAcik = {'coklu_hesap'};
+      g.cihazDogrulandi = true;
+      expect(g.acilisKilidiGerekli(kilitAcik: true), isFalse);
+    });
+
+    test('kilit hiç açılmadıysa kilitli hesaba geçerken bir kez sorulur', () {
+      RemoteConfigService.testAcik = {'coklu_hesap'};
+      g.cihazDogrulandi = false;
+      expect(g.acilisKilidiGerekli(kilitAcik: true), isTrue);
+    });
+
+    test('kilidi kapalı hesap hiç sormaz', () {
+      RemoteConfigService.testAcik = {'coklu_hesap'};
+      expect(g.acilisKilidiGerekli(kilitAcik: false), isFalse);
+    });
+
+    test('bayrak kapalıyken birebir eski kural (yalnız tercih)', () {
+      RemoteConfigService.testAcik = {};
+      g.cihazDogrulandi = true;
+      expect(g.acilisKilidiGerekli(kilitAcik: true), isTrue);
+    });
+  });
+
   group('hesap seçici', () {
     Future<void> ac(WidgetTester tester, List<KayitliHesap> l) async {
       await tester.pumpWidget(ProviderScope(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,10 +23,30 @@ import 'custom_loading_indicator.dart';
 /// bir kare yalnız perde çizilir (eski ağaç tamamen söner), sonraki karede
 /// yeni kapsam kurulur.
 ///
+/// ## Perde ne zaman kalkar — tek yükleme
+/// [hazirBekle] açıkken (uygulama) perde, yeni kapsamın ilk gerçek ekranı
+/// çizilene dek kalır ([HesapGecisi.yeniEkranHazir]); açılış GIF'i perdenin
+/// ARKASINDA kalır ve görünmez. Eskiden perde sabit [SandikMotion.modal]
+/// sonra kalkıyor, ardından GIF veri beklerken ikinci kez yükleme
+/// gösteriyordu (yasin, 2026-10-10). [_emniyet] GIF'in 10 sn'lik veri
+/// supabından uzun: ağ yoksa kullanıcı perdede takılı kalmaz, ana ekran kendi
+/// hata durumunu gösterir.
+///
 /// Bayrak kapalıyken [HesapGecisi.nesil] hiç değişmez: ağaç birebir
 /// `ProviderScope(child: SandikApp())`.
 class UygulamaKabugu extends StatefulWidget {
-  const UygulamaKabugu({super.key, required this.uygulama, this.tema});
+  const UygulamaKabugu({
+    super.key,
+    required this.uygulama,
+    this.tema,
+    this.hazirBekle = false,
+  });
+
+  /// Perde yeni kapsamın "hazırım" demesini bekler mi. Bunu söyleyen
+  /// `_AuthGate`; onu kurmayan kök (test) için sabit kısa süre.
+  final bool hazirBekle;
+
+  static const _emniyet = Duration(seconds: 12);
 
   /// Kapsamın içindeki uygulama (`SandikApp`). Test başka kök verir.
   final Widget uygulama;
@@ -47,12 +69,15 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
     super.initState();
     _gecis.nesil.addListener(_nesilDegisti);
     _gecis.perde.addListener(_yenile);
+    _gecis.yeniEkranHazir.addListener(_ekranHazirDegisti);
   }
 
   @override
   void dispose() {
     _gecis.nesil.removeListener(_nesilDegisti);
     _gecis.perde.removeListener(_yenile);
+    _gecis.yeniEkranHazir.removeListener(_ekranHazirDegisti);
+    _emniyetSayaci?.cancel();
     super.dispose();
   }
 
@@ -60,8 +85,12 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
     if (mounted) setState(() {});
   }
 
+  Timer? _emniyetSayaci;
+
   void _nesilDegisti() {
     if (!mounted) return;
+    // Yeni kapsam kurulmadan ÖNCE: kapı ilk build'inde bunu okur.
+    if (widget.hazirBekle) _gecis.yeniEkranHazir.value = false;
     setState(() => _bosKare = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -69,18 +98,36 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
         _bosKare = false;
         _kurulanNesil = _gecis.nesil.value;
       });
-      // Yeni kapsam ilk karesini çizdi; açılış kendi yükleme ekranını
-      // gösterir. Perde kısa bir an daha kalır ki geçiş tek hareket
-      // gibi okunsun (sert bir boş kare görünmesin).
-      Future<void>.delayed(SandikMotion.modal, () {
-        _gecis.perdeyiKaldir();
-        final bildirim = _gecis.bekleyenBildirim;
-        if (bildirim == null) return;
-        _gecis.bekleyenBildirim = null;
-        // Soğuk açılış yolu: navigator hazır olana dek bekler.
-        NotificationService.instance
-            .handleRemoteMessageData(bildirim, fromColdStart: true);
+      if (!widget.hazirBekle) {
+        _perdeyiKaldirSonra();
+        return;
+      }
+      _emniyetSayaci?.cancel();
+      _emniyetSayaci = Timer(UygulamaKabugu._emniyet, () {
+        _gecis.yeniEkranHazir.value = true;
       });
+    });
+  }
+
+  void _ekranHazirDegisti() {
+    if (!_gecis.yeniEkranHazir.value) return;
+    _emniyetSayaci?.cancel();
+    _emniyetSayaci = null;
+    if (_gecis.perde.value != null) _perdeyiKaldirSonra();
+  }
+
+  /// Perde kısa bir an daha kalır: kapının splash → ekran geçişi
+  /// (`AnimatedSwitcher`) perdenin arkasında biter, kullanıcı GIF'in
+  /// sönüşünü görmez; geçiş tek hareket gibi okunur.
+  void _perdeyiKaldirSonra() {
+    Future<void>.delayed(SandikMotion.modal, () {
+      _gecis.perdeyiKaldir();
+      final bildirim = _gecis.bekleyenBildirim;
+      if (bildirim == null) return;
+      _gecis.bekleyenBildirim = null;
+      // Soğuk açılış yolu: navigator hazır olana dek bekler.
+      NotificationService.instance
+          .handleRemoteMessageData(bildirim, fromColdStart: true);
     });
   }
 

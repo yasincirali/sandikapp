@@ -88,6 +88,40 @@ class HesapGecisi {
   /// hesapları listeler, kullanıcı oradan döner.
   final ValueNotifier<KayitliHesap?> eklemedenDonulecek = ValueNotifier(null);
 
+  /// `false` iken geçiş perdesi yeni kapsamın İLK GERÇEK ekranını bekler
+  /// (splash değil: ana ekran, kilit, giriş…). `UygulamaKabugu` geçişte
+  /// düşürür, `_AuthGate` splash dışı bir ekran çizince kaldırır.
+  ///
+  /// Neden (yasin, 2026-10-10: "session switch yaparken çift loading"):
+  /// perde sabit bir süre sonra kalkıyordu; arkasından yeni kapsamın açılış
+  /// GIF'i veri beklerken ikinci bir yükleme olarak görünüyordu. Instagram /
+  /// Gmail'de geçiş tek bekleme ekranıdır; burada da avatarlı perde tek
+  /// yükleme olur. Emniyet supabı kabukta (GIF'in 10 sn'lik supabından uzun).
+  final ValueNotifier<bool> yeniEkranHazir = ValueNotifier(true);
+
+  /// Bu süreçte cihazın sahibi kilit ekranından (Face ID / cihaz şifresi)
+  /// geçti mi. Hesap geçişinde yeni kapsam bunu okur ve kilidi ikinci kez
+  /// sormaz.
+  ///
+  /// Neden (yasin, 2026-10-10: "ilk girişte bir Face ID yapmışız, session
+  /// switch'te 2. bir Face ID'ye gerek var mı"): kilit HESABI değil
+  /// CİHAZIN BAŞINDAKİ KİŞİYİ doğrular. Instagram, Gmail, Slack, Discord
+  /// geçişte bir şey sormaz; Telegram'ın şifre kilidi de hesaba değil
+  /// uygulamaya aittir. Az önce doğrulanmış kişiye aynı soruyu sormak
+  /// güvenlik eklemez, yalnızca sürtünme ekler.
+  ///
+  /// Kilidi hiç açılmamış oturumda (aktif hesabın kilidi kapalı) bu `false`
+  /// kalır: kilidi açık hesaba geçerken BİR kez sorulur — o hesabın sahibi
+  /// koruma istemiş ve cihazdaki kişi henüz doğrulanmamış. 30 sn'den uzun
+  /// arka plan dönüşü ve çıkış bunu sıfırlar (`_AuthGate`).
+  bool cihazDogrulandi = false;
+
+  /// Kapı kuruluşunda kilit ekranı gösterilsin mi. [kilitAcik] = bu
+  /// hesabın biyometrik kilit tercihi. Bayrak kapalıyken birebir eski
+  /// kural (yalnız tercih).
+  bool acilisKilidiGerekli({required bool kilitAcik}) =>
+      kilitAcik && !(acik && cihazDogrulandi);
+
   /// Kasadaki hesaplar — seçici ve giriş ekranı izler.
   final ValueNotifier<List<KayitliHesap>> hesaplar = ValueNotifier(const []);
 

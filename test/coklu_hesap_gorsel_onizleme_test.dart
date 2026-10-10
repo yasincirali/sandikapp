@@ -1,6 +1,7 @@
 @Tags(['gorsel'])
 library;
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -19,8 +20,10 @@ import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/providers/signal_provider.dart';
+import 'package:portfoy_takip/screens/lock_screen.dart';
 import 'package:portfoy_takip/screens/login_screen.dart';
 import 'package:portfoy_takip/screens/profile_screen.dart';
+import 'package:portfoy_takip/services/biometric_lock_service.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/hesap_gecisi.dart';
 import 'package:portfoy_takip/services/hesap_kasasi.dart';
@@ -80,6 +83,18 @@ class _FakePartners extends PartnersNotifier {
 class _FakeSignals extends SignalNotifier {
   @override
   Future<List<SignalAlert>> build() async => const [];
+}
+
+/// Face ID sistem diyaloğu açıkken kilit ekranı: doğrulama hiç bitmez.
+class _BekleyenKilit extends BiometricLockService {
+  _BekleyenKilit() : super.forTest();
+  @override
+  Future<bool> get available async => true;
+  @override
+  Future<KilitYontemi?> get yontem async => KilitYontemi.faceId;
+  @override
+  Future<BiyometrikSonuc> authenticate({String reason = ''}) =>
+      Completer<BiyometrikSonuc>().future;
 }
 
 void main() {
@@ -229,4 +244,17 @@ void main() {
               basHarf: 'C',
               ad: 'cirali_holding',
               alt: 'hesabına geçiliyor'))));
+
+  // Geçiş akışı kareleri (tek yükleme / tek Face ID, 2026-10-10). Önce:
+  // perde → açılış GIF'i → kilit ekranı; sonra: yalnız perde.
+  testWidgets('geçiş: açılış GIF\'i (eski ikinci yükleme)', (t) => ciz(
+      t, 'gecis_2_acilis_gif',
+      ekran: const SandikLoadingScreen()));
+  testWidgets('geçiş: ikinci Face ID (eski)', (t) {
+    BiometricLockService.resetForTest(_BekleyenKilit());
+    addTearDown(BiometricLockService.resetForTest);
+    return ciz(t, 'gecis_3_kilit',
+        ekran: LockScreen(
+            onUnlocked: () {}, onKilidiKapat: () {}, onCikisYap: () {}));
+  });
 }
