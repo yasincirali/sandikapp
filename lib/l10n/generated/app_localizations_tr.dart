@@ -8330,4 +8330,53 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cihazHesapBaskaHesapla => 'ya da başka bir hesapla giriş yap';
+
+  @override
+  String get varlikGuncelleBaslik => 'Varlığı güncelle';
+
+  @override
+  String get varlikGuncelleIpucu => 'Varlığı güncelle';
+
+  @override
+  String get varlikGuncelleKilitli => 'Varlığı güncelle, Premium';
+
+  @override
+  String get varlikGuncelleUyariBaslik => 'Tek kayıt olarak yeniden yazılır';
+
+  @override
+  String varlikGuncelleUyariGovde(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          'Bu varlığın $n hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.',
+      one:
+          'Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String varlikGuncelleOnayBaslik(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n hareket silinsin mi?',
+      one: 'Kayıt yeniden yazılsın mı?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String varlikGuncelleOnayGovde(String name, int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other:
+          '\"$name\" için $n hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.',
+      one:
+          '\"$name\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.',
+    );
+    return '$_temp0';
+  }
 }

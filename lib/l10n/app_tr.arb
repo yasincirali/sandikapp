@@ -5626,5 +5626,15 @@
   "cihazHesapDevamEt": "Devam et",
   "cihazHesapTekrarGiris": "Tekrar giriş gerekli · {eposta}",
   "@cihazHesapTekrarGiris": {"placeholders": {"eposta": {"type": "String"}}},
-  "cihazHesapBaskaHesapla": "ya da başka bir hesapla giriş yap"
+  "cihazHesapBaskaHesapla": "ya da başka bir hesapla giriş yap",
+  "varlikGuncelleBaslik": "Varlığı güncelle",
+  "varlikGuncelleIpucu": "Varlığı güncelle",
+  "varlikGuncelleKilitli": "Varlığı güncelle, Premium",
+  "varlikGuncelleUyariBaslik": "Tek kayıt olarak yeniden yazılır",
+  "varlikGuncelleUyariGovde": "{n, plural, =1{Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.} other{Bu varlığın {n} hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.}}",
+  "@varlikGuncelleUyariGovde": {"placeholders": {"n": {"type": "int"}}},
+  "varlikGuncelleOnayBaslik": "{n, plural, =1{Kayıt yeniden yazılsın mı?} other{{n} hareket silinsin mi?}}",
+  "@varlikGuncelleOnayBaslik": {"placeholders": {"n": {"type": "int"}}},
+  "varlikGuncelleOnayGovde": "{n, plural, =1{\"{name}\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.} other{\"{name}\" için {n} hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.}}",
+  "@varlikGuncelleOnayGovde": {"placeholders": {"name": {"type": "String"}, "n": {"type": "int"}}}
 }
