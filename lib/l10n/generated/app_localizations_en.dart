@@ -8177,4 +8177,63 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String ortakGorurBaslik(String ad) {
+    return 'What can $ad see?';
+  }
+
+  @override
+  String ortakGorurAciklama(String ad) {
+    return '$ad only sees the holdings, transactions and totals in the portfolios you pick. The rest never reaches their phone.';
+  }
+
+  @override
+  String get ortakGorurHepsi => 'Everything';
+
+  @override
+  String get ortakGorurSecilenler => 'Selected';
+
+  @override
+  String get ortakGorurHepsiAciklama =>
+      'All your portfolios, including ones you add later.';
+
+  @override
+  String get ortakGorurSeciliAciklama =>
+      'A new portfolio stays hidden until you pick it.';
+
+  @override
+  String ortakGorurHicbiri(String ad) {
+    return 'If you pick none, $ad sees none of your holdings; the partnership stays.';
+  }
+
+  @override
+  String get ortakGorurKaydedilemedi => 'Couldn\'t save the selection';
+
+  @override
+  String get ortakGorurSatir => 'Portfolios they can see';
+
+  @override
+  String ortakGorurSayi(int n, int toplam) {
+    return '$n of $toplam portfolios';
+  }
+
+  @override
+  String portfoyOrtakGoruyor(String ad) {
+    return '$ad can see this';
+  }
+
+  @override
+  String portfoyOrtakGizli(String ad) {
+    return 'Hidden from $ad';
+  }
+
+  @override
+  String get portfoyOrtakBolum => 'WHAT YOUR PARTNER SEES';
+
+  @override
+  String get ortakKismiNot => 'Only the portfolios they share';
+
+  @override
+  String get birlikteKismiNot => 'Includes only what your partner shares';
 }

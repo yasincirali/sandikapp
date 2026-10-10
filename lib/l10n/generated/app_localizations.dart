@@ -13545,6 +13545,96 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{sayi} portföy'**
   String pwdPortfoySayi(int sayi);
+
+  /// No description provided for @ortakGorurBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} neyi görsün?'**
+  String ortakGorurBaslik(String ad);
+
+  /// No description provided for @ortakGorurAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} yalnız seçtiğin portföylerdeki varlıkları, işlemleri ve toplamları görür. Seçmediklerin onun telefonuna hiç gitmez.'**
+  String ortakGorurAciklama(String ad);
+
+  /// No description provided for @ortakGorurHepsi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hepsi'**
+  String get ortakGorurHepsi;
+
+  /// No description provided for @ortakGorurSecilenler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiklerim'**
+  String get ortakGorurSecilenler;
+
+  /// No description provided for @ortakGorurHepsiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bütün portföylerin, sonradan açacakların dahil.'**
+  String get ortakGorurHepsiAciklama;
+
+  /// No description provided for @ortakGorurSeciliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni açtığın portföy, sen seçene kadar gizli kalır.'**
+  String get ortakGorurSeciliAciklama;
+
+  /// No description provided for @ortakGorurHicbiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hiçbirini seçmezsen {ad} varlıklarını göremez; ortaklık sürer.'**
+  String ortakGorurHicbiri(String ad);
+
+  /// No description provided for @ortakGorurKaydedilemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçim kaydedilemedi'**
+  String get ortakGorurKaydedilemedi;
+
+  /// No description provided for @ortakGorurSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görebildiği portföyler'**
+  String get ortakGorurSatir;
+
+  /// No description provided for @ortakGorurSayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} / {toplam} portföy'**
+  String ortakGorurSayi(int n, int toplam);
+
+  /// No description provided for @portfoyOrtakGoruyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} görüyor'**
+  String portfoyOrtakGoruyor(String ad);
+
+  /// No description provided for @portfoyOrtakGizli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} görmüyor'**
+  String portfoyOrtakGizli(String ad);
+
+  /// No description provided for @portfoyOrtakBolum.
+  ///
+  /// In tr, this message translates to:
+  /// **'ORTAĞIN NE GÖRÜR'**
+  String get portfoyOrtakBolum;
+
+  /// No description provided for @ortakKismiNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yalnız paylaştığı portföyler'**
+  String get ortakKismiNot;
+
+  /// No description provided for @birlikteKismiNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortağının yalnız paylaştıkları dahil'**
+  String get birlikteKismiNot;
 }
 
 class _AppLocalizationsDelegate

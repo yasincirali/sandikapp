@@ -68,6 +68,10 @@ bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migratio
 - *Ortak portföy görmez.* Ortağın lotları hiçbir portföye girmez; ortak
   görünümü ve Birlikte kullanıcı toplamıdır (0133 `portfoyler_partner_read`
   hazır, istemci okumuyor). Ne zaman: ortak tarafında portföy isteği olursa.
+  2026-10-10 (0135): sahip artık ortağa HANGİ portföylerin gideceğini seçer
+  (`ortak_paylasimlari`, RLS); ortak tarafında kısıtlı paylaşım yalnız ana
+  sayfa kartında not olarak söylenir — Portföy/Performans sekmesinde not
+  yok (istenirse aynı `ortakKisitliProvider` ile tek satır).
 - *Portföy başına yıl özeti / widget / kilit ekranı yok.* Hepsi kullanıcı
   toplamı; widget sözleşmesi ve Live Activity tek defter taşır. Ne zaman:
   widget'ta portföy seçimi istenirse (sözleşme değişikliği, iki platform).

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../demo/demo_modu.dart';
+import '../models/ortak_paylasimi.dart';
 import '../models/portfoy.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
@@ -997,6 +998,41 @@ class SupabaseService {
       call: () => _db.from('portfoyler').delete().eq('id', id).select('id'),
     );
     if (rows.isEmpty) throw StateError('Portföy silinemedi.');
+  }
+
+  // ── Ortak portföy paylaşımı (0135) ────────────────────────────────────────
+  //
+  // Yalnız `coklu_portfoy` görünürken çağrılır. Sahibin yazdığı ve ortağın
+  // kendisi hakkında okuduğu satırlar tek sorguda (RLS ikisini de verir).
+
+  Future<List<OrtakPaylasimi>> fetchOrtakPaylasimlari(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchOrtakPaylasimlari',
+      table: 'ortak_paylasimlari',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('ortak_paylasimlari')
+          .select('sahip_id, ortak_id, tumu, ana, portfoy_idler')
+          .or('sahip_id.eq.$userId,ortak_id.eq.$userId'),
+    );
+    return [for (final r in rows) OrtakPaylasimi.fromSupabase(r)];
+  }
+
+  /// Seçimi yazar (sahip, ortak başına tek satır). Dönen satırla
+  /// doğrulanır: RLS reddi sessiz 0 satır olabilir.
+  Future<void> upsertOrtakPaylasimi(OrtakPaylasimi p) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.upsertOrtakPaylasimi',
+      table: 'ortak_paylasimlari',
+      op: 'UPSERT',
+      request: {'ortak_id': p.ortakId, 'tumu': p.tumu},
+      call: () => _db
+          .from('ortak_paylasimlari')
+          .upsert(p.toSupabase(), onConflict: 'sahip_id,ortak_id')
+          .select('sahip_id'),
+    );
+    if (rows.isEmpty) throw StateError('Paylaşım kaydedilemedi.');
   }
 
   /// Lotların portföyünü yazar (pozisyon taşıma). YALNIZ bu sütun:

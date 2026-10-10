@@ -8094,4 +8094,63 @@ class AppLocalizationsTr extends AppLocalizations {
   String pwdPortfoySayi(int sayi) {
     return '$sayi portföy';
   }
+
+  @override
+  String ortakGorurBaslik(String ad) {
+    return '$ad neyi görsün?';
+  }
+
+  @override
+  String ortakGorurAciklama(String ad) {
+    return '$ad yalnız seçtiğin portföylerdeki varlıkları, işlemleri ve toplamları görür. Seçmediklerin onun telefonuna hiç gitmez.';
+  }
+
+  @override
+  String get ortakGorurHepsi => 'Hepsi';
+
+  @override
+  String get ortakGorurSecilenler => 'Seçtiklerim';
+
+  @override
+  String get ortakGorurHepsiAciklama =>
+      'Bütün portföylerin, sonradan açacakların dahil.';
+
+  @override
+  String get ortakGorurSeciliAciklama =>
+      'Yeni açtığın portföy, sen seçene kadar gizli kalır.';
+
+  @override
+  String ortakGorurHicbiri(String ad) {
+    return 'Hiçbirini seçmezsen $ad varlıklarını göremez; ortaklık sürer.';
+  }
+
+  @override
+  String get ortakGorurKaydedilemedi => 'Seçim kaydedilemedi';
+
+  @override
+  String get ortakGorurSatir => 'Görebildiği portföyler';
+
+  @override
+  String ortakGorurSayi(int n, int toplam) {
+    return '$n / $toplam portföy';
+  }
+
+  @override
+  String portfoyOrtakGoruyor(String ad) {
+    return '$ad görüyor';
+  }
+
+  @override
+  String portfoyOrtakGizli(String ad) {
+    return '$ad görmüyor';
+  }
+
+  @override
+  String get portfoyOrtakBolum => 'ORTAĞIN NE GÖRÜR';
+
+  @override
+  String get ortakKismiNot => 'Yalnız paylaştığı portföyler';
+
+  @override
+  String get birlikteKismiNot => 'Ortağının yalnız paylaştıkları dahil';
 }

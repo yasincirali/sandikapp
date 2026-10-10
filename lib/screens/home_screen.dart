@@ -55,6 +55,7 @@ import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../l10n/l10n.dart';
 import '../models/gorunum_kapsami.dart';
+import '../providers/ortak_paylasimi_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -164,6 +165,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (ad.isEmpty) return l10n.scopeTogether;
     final tr = Localizations.localeOf(context).languageCode != 'en';
     return l10n.todayScopeOf(tr ? trIyelik(ad) : ad);
+  }
+
+  /// Toplam kartının "kısmi toplam" notu (0135): ortak bana yalnız bazı
+  /// portföylerini gösteriyorsa onun görünümünde ve Birlikte'de tek satır.
+  /// Kendi görünümünde YOK: ana sayfa kendi toplamında hep bütün
+  /// portföyleri gösterir (Portföy sekmesindeki seçim buraya taşınmaz), ve
+  /// toplam kartı "çok dokunulmasın" (yasin 2026-10-09). Bayrak kapalıyken
+  /// sağlayıcı boş → not yok, kart birebir eski.
+  String? _kapsamNotu(String? view, List<AppUser> partners) {
+    if (view == '') return null;
+    final l10n = context.l10n;
+    if (view != null) {
+      return ref.watch(ortakKisitliProvider(view)) ? l10n.ortakKismiNot : null;
+    }
+    final kisitli = partners.any((p) => ref.watch(ortakKisitliProvider(p.id)));
+    return kisitli ? l10n.birlikteKismiNot : null;
   }
 
   void _scrollToSignals() {
@@ -883,6 +900,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         state: gorunumDurumu(gorunumVarliklari(hedef)),
                         hideBalance: ref.watch(balanceHiddenProvider),
                         baz: baz,
+                        kapsamNotu: _kapsamNotu(hedef, allActivePartners),
                         trailing: GorunumCipi(
                           partners: allActivePartners,
                           selectedId: hedef,
@@ -910,6 +928,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       baz: baz,
                       // Görünüm değişince toplam vurgusu yakılmaz.
                       vurguKimligi: _view ?? 'birlikte',
+                      kapsamNotu: _kapsamNotu(_view, allActivePartners),
                       // Ben / ortak / Birlikte — kartın başlığında (2026-09-21).
                       trailing: allActivePartners.isEmpty
                           ? null
