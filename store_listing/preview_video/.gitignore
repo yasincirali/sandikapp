@@ -5,3 +5,5 @@ public/shots/*.mov
 public/shots/*.mp4
 # Sentetik ses üretilebilir (npm run sfx), commit gereksiz
 public/sfx/
+# EMA Lightning TTS ortamı (torch ~3 GB) — scripts/seslendir_ema.py kurulumla yeniden kurar
+.venv-ema/
