@@ -40,10 +40,11 @@ void main() {
 
   test('anahtar seriyi belirleyen her girdiyi taşır (yanlış sayı yok)', () {
     expect(
-        src.contains("'\$_view|\${_typeFilter?.name}|\$_simulate|"
+        src.contains("'\$_view|\${_typeFilter?.anahtar}|\$_simulate|"
             "\$_ozetYenileme'"),
         isTrue,
-        reason: 'kapsam, tür, simülasyon ve yenileme anahtarda olmalı');
+        reason: 'kapsam, tür (BIST/ABD pazarı dahil), simülasyon ve '
+            'yenileme anahtarda olmalı');
     // Kimlik tek başına yetmez: miktarı düzeltilen lot aynı kimliği taşır.
     expect(src.contains("'\${a.id}:\${a.quantity}:"), isTrue);
   });
