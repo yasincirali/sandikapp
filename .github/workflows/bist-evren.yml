@@ -1,0 +1,21 @@
+# BIST hisse evreni ölçümü (2026-10-10) — tool/bist_evren_olc.py. Salt okunur,
+# anahtarsız, secret yok. Yalnız elle (ve ölçüm dalında push'ta).
+name: BIST hisse evreni
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/project-thread-3l8j1h]
+    paths: [tool/bist_evren_olc.py, .github/workflows/bist-evren.yml]
+permissions:
+  contents: read
+jobs:
+  olcum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tool/bist_evren_olc.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bist-evren
+          path: bist_evren.json
