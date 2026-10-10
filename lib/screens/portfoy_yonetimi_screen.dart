@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../models/portfoy.dart';
+import '../models/user_model.dart';
+import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
+import '../providers/ortak_paylasimi_provider.dart';
 import '../providers/portfoy_provider.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
+import '../widgets/gorunum_cipi.dart';
+import '../widgets/ortak_paylasim_sayfasi.dart';
 import '../widgets/portfoy_secici.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
@@ -30,6 +35,31 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
     final ozet = ref.watch(portfoyOzetleriProvider);
     final baz = ref.watch(gosterimBazParaProvider);
     final hp = SandikSpace.screenH(context);
+    // Ortak görünürlüğü (0135). Tek ortakta her satır "Ayşe görüyor /
+    // görmüyor" der — kararı portföyün yanında görmek "neyi paylaşıyorum"
+    // sorusunun en kısa cevabı. Birden çok ortakta satır sessiz kalır
+    // (kimin neyi gördüğü tek satıra sığmaz); alttaki ortak satırları söyler.
+    final paylasimVar = ref.watch(ortakPaylasimSecimiVarProvider);
+    final ortaklar = paylasimVar
+        ? [
+            for (final p in ref.watch(partnersProvider).valueOrNull ??
+                const <PartnerAccount>[])
+              p.user
+          ]
+        : const <AppUser>[];
+    final tekOrtak = ortaklar.length == 1 ? ortaklar.single : null;
+    final tekPaylasim = tekOrtak == null
+        ? null
+        : ref.watch(benimPaylasimimProvider(tekOrtak.id));
+    ({String metin, bool gizli})? durum(String? id) {
+      if (tekOrtak == null || tekPaylasim == null) return null;
+      final ad = GorunumCipi.ilkAd(tekOrtak.displayName);
+      final gorur = tekPaylasim.gorur(id);
+      return (
+        metin: gorur ? l.portfoyOrtakGoruyor(ad) : l.portfoyOrtakGizli(ad),
+        gizli: !gorur,
+      );
+    }
 
     return Scaffold(
       backgroundColor: context.c.background,
@@ -53,6 +83,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                 ad: l.portfoyAnaUzun,
                 alt: l.portfoyAnaAciklama,
                 deger: baz.fmt(ozet[null]?.deger ?? 0),
+                ortakDurumu: durum(null),
               ),
             ),
             const SizedBox(height: SandikSpace.sm),
@@ -95,6 +126,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                     child: _Satir(
                       ad: p.ad,
                       deger: baz.fmt(ozet[p.id]?.deger ?? 0),
+                      ortakDurumu: durum(p.id),
                       onYenidenAdlandir: () => showPortfoyAdiSayfasi(
                         context,
                         baslik: l.portfoyYenidenAdlandir,
@@ -111,6 +143,43 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                 },
               ),
             ),
+            if (ortaklar.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SandikSectionHeader(title: l.portfoyOrtakBolum),
+                    for (final o in ortaklar)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: SandikSpace.sm),
+                        child: SandikCard(
+                          padding: const EdgeInsets.fromLTRB(SandikSpace.md,
+                              SandikSpace.sm, SandikSpace.sm, SandikSpace.xs),
+                          child: Row(
+                            children: [
+                              GorunumCipi.avatar(context, o, boy: 32),
+                              const SizedBox(width: SandikSpace.smd),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(GorunumCipi.ilkAd(o.displayName),
+                                        style: context.t.titleSmall?.copyWith(
+                                            color: context.c.text90,
+                                            fontWeight: FontWeight.w700)),
+                                    OrtakPaylasimSatiri(
+                                        ortak: o, ustBosluk: false),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             Padding(
               padding: EdgeInsets.fromLTRB(hp, 0, hp, SandikSpace.md),
               child: FilledButton.icon(
@@ -210,6 +279,7 @@ class _Satir extends StatelessWidget {
     required this.ad,
     required this.deger,
     this.alt,
+    this.ortakDurumu,
     this.onYenidenAdlandir,
     this.onSil,
   });
@@ -217,6 +287,9 @@ class _Satir extends StatelessWidget {
   final String ad;
   final String deger;
   final String? alt;
+
+  /// Tek ortakta "Ayşe görüyor / görmüyor" (0135); yoksa satır yok.
+  final ({String metin, bool gizli})? ortakDurumu;
   final VoidCallback? onYenidenAdlandir;
   final VoidCallback? onSil;
 
@@ -247,6 +320,39 @@ class _Satir extends StatelessWidget {
                     alt!,
                     style:
                         context.t.bodySmall?.copyWith(color: context.c.text36),
+                  ),
+                ],
+                if (ortakDurumu case final d?) ...[
+                  const SizedBox(height: SandikSpace.sm),
+                  // Hap: gördüğü portföy sakin, gizlenen amber — liste
+                  // taranınca "neyi gizliyorum" tek bakışta okunur.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: SandikSpace.sm, vertical: SandikSpace.xxs),
+                    decoration: context.chip(
+                        selected: d.gizli, radius: SandikRadius.sm),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          d.gizli
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 14,
+                          color:
+                              d.gizli ? context.c.amberText : context.c.text58,
+                        ),
+                        const SizedBox(width: SandikSpace.xs),
+                        Text(
+                          d.metin,
+                          style: context.t.labelMedium?.copyWith(
+                              color: d.gizli
+                                  ? context.c.amberText
+                                  : context.c.text58,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],

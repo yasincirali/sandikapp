@@ -13495,7 +13495,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfoyTasiAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.'**
+  /// **'Geçmişiyle birlikte taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.'**
   String get portfoyTasiAciklama;
 
   /// No description provided for @portfoyTasindi.
@@ -13545,6 +13545,156 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{sayi} portföy'**
   String pwdPortfoySayi(int sayi);
+
+  /// No description provided for @ortakGorurBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} neyi görsün?'**
+  String ortakGorurBaslik(String ad);
+
+  /// No description provided for @ortakGorurAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} seçtiklerini tek liste olarak görür, portföy adlarını görmez. Seçmediklerin onun telefonuna hiç gitmez.'**
+  String ortakGorurAciklama(String ad);
+
+  /// No description provided for @ortakGorurHepsi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hepsi'**
+  String get ortakGorurHepsi;
+
+  /// No description provided for @ortakGorurSecilenler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiklerim'**
+  String get ortakGorurSecilenler;
+
+  /// No description provided for @ortakGorurHepsiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bütün portföylerin, sonradan açacakların dahil.'**
+  String get ortakGorurHepsiAciklama;
+
+  /// No description provided for @ortakGorurSeciliAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni açtığın portföy, sen seçene kadar gizli kalır.'**
+  String get ortakGorurSeciliAciklama;
+
+  /// No description provided for @ortakGorurHicbiri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hiçbirini seçmezsen {ad} varlıklarını göremez; ortaklık sürer.'**
+  String ortakGorurHicbiri(String ad);
+
+  /// No description provided for @ortakGorurKaydedilemedi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçim kaydedilemedi'**
+  String get ortakGorurKaydedilemedi;
+
+  /// No description provided for @ortakGorurSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Görebildiği portföyler'**
+  String get ortakGorurSatir;
+
+  /// No description provided for @ortakGorurSayi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} / {toplam} portföy'**
+  String ortakGorurSayi(int n, int toplam);
+
+  /// No description provided for @portfoyOrtakGoruyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} görüyor'**
+  String portfoyOrtakGoruyor(String ad);
+
+  /// No description provided for @portfoyOrtakGizli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} görmüyor'**
+  String portfoyOrtakGizli(String ad);
+
+  /// No description provided for @portfoyOrtakBolum.
+  ///
+  /// In tr, this message translates to:
+  /// **'ORTAĞIN NE GÖRÜR'**
+  String get portfoyOrtakBolum;
+
+  /// No description provided for @portfoyAktarBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne kadarı aktarılsın?'**
+  String get portfoyAktarBaslik;
+
+  /// No description provided for @portfoyAktarAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{hedef} portföyüne. Bu portföyde {miktar} var.'**
+  String portfoyAktarAciklama(String hedef, String miktar);
+
+  /// No description provided for @portfoyAktarTamami.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamamı'**
+  String get portfoyAktarTamami;
+
+  /// No description provided for @portfoyAktarBirKismi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kısmı'**
+  String get portfoyAktarBirKismi;
+
+  /// No description provided for @portfoyAktarMiktar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktarılacak miktar'**
+  String get portfoyAktarMiktar;
+
+  /// No description provided for @portfoyAktarNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alımlar, satışlar ve temettüler aynı oranla bölünür. Ortalama maliyet ve getiri iki portföyde de aynı kalır, toplamın değişmez.'**
+  String get portfoyAktarNot;
+
+  /// No description provided for @portfoyAktarGecersiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'0 ile {miktar} arasında bir miktar yaz.'**
+  String portfoyAktarGecersiz(String miktar);
+
+  /// No description provided for @portfoyAktarDugme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktar'**
+  String get portfoyAktarDugme;
+
+  /// No description provided for @portfoyAktarPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kısmını aktarmak Premium\'a özel.'**
+  String get portfoyAktarPremium;
+
+  /// No description provided for @portfoyAktarildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{miktar}, {hedef} portföyüne aktarıldı.'**
+  String portfoyAktarildi(String miktar, String hedef);
+
+  /// No description provided for @ortakGorurOnizleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} görecek'**
+  String ortakGorurOnizleme(String ad);
+
+  /// No description provided for @ortakGorurHicbiriKisa.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hiçbiri'**
+  String get ortakGorurHicbiriKisa;
 }
 
 class _AppLocalizationsDelegate

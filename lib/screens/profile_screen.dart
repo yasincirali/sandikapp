@@ -26,6 +26,7 @@ import '../utils/friendly_error.dart';
 import '../utils/partner_code_formatter.dart';
 import 'settings_screen.dart';
 import '../widgets/leaderboard_hero_card.dart';
+import '../widgets/ortak_paylasim_sayfasi.dart';
 import '../widgets/percentile_strip.dart';
 import '../models/yatirimci_seviyesi.dart' show seviyeGorunurlugu;
 import '../widgets/custom_loading_indicator.dart';
@@ -812,7 +813,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Padding(padding: const EdgeInsets.only(bottom: 12), child: SandikCard(
       padding: const EdgeInsets.all(16),
       bordered: false,
-      child: Row(
+      // Kartın altında "Görebildiği portföyler" satırı (0135, çoklu portföy
+      // görünür ve adlandırılmış portföy varken; yoksa sıfır boy — kart
+      // birebir eski). Gizle/göster BENİM ekranımı, bu satır ONUN ekranını
+      // yönetir; ikisi ayrı sorular, bu yüzden ayrı satır.
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+      Row(
         children: [
           CircleAvatar(
             backgroundColor: p.isActive
@@ -888,6 +896,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               semanticLabel: context.l10n.removePartnerSemantics,
             ),
           ),
+        ],
+      ),
+      OrtakPaylasimSatiri(ortak: p.user),
         ],
       ),
     ));

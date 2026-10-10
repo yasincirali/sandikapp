@@ -57,17 +57,24 @@ tek satırla döner. Maliyet: okunmayan kod + test. Ne zaman: paywall açıldık
 bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migration).
 
 **4. Çoklu portföy v1 sınırları (2026-10-10, bilinçli).**
-- *Kısmi taşıma yok.* Portföyler arası taşıma bütün pozisyonu geçmişiyle
-  (alım, satış, temettü, silinmiş kayıtlar) taşır. Kısmi taşıma ya alım
-  lotlarını bölmek (satışların hangi lottan düştüğü belirsiz, ağırlıklı
-  maliyet uydurulur) ya da kaynakta satış + hedefte alım yazmak demekti;
-  ikincisi taşıma gününde sahte çıkış/giriş üretir, dönem getirisi ve XIRR
-  para hareketi olmayan bir olayı nakit akışı sayar. Maliyet: "yarısını
-  emekliliğe ayır" isteyen kullanıcı satıp yeniden almak zorunda. Ne
-  zaman: talep gelirse, "taşıma" kind'ı (nakit akışı sayılmayan) ile.
+- *Kısmi taşıma* — 2026-10-10 KAPANIYOR (0136, Premium): ne lot seçerek
+  bölme ne satış + alım; pozisyonun HER satırı aynı oranla bölünür
+  (`pozisyon_kismi_aktar`), iki portföyün geçmişi de "bu pay baştan beri
+  buradaydı" der, nakit akışı oluşmaz. Kalan: sözleşmeli (BES/mevduat)
+  pozisyon bölünmez (sözleşme tek portföyde); bölünen satırlar hareket
+  listesinde her işlem iki satır olur (biri her portföyde). Ne zaman:
+  BES'i portföylere bölme isteği gelirse sözleşme modeliyle birlikte.
 - *Ortak portföy görmez.* Ortağın lotları hiçbir portföye girmez; ortak
   görünümü ve Birlikte kullanıcı toplamıdır (0133 `portfoyler_partner_read`
   hazır, istemci okumuyor). Ne zaman: ortak tarafında portföy isteği olursa.
+  2026-10-10 (0135): sahip artık ortağa HANGİ portföylerin gideceğini seçer
+  (`ortak_paylasimlari`, RLS); ortak tek liste görür ve portföy olduğunu
+  bilmemeli (kullanıcı kararı) — ortak portföy adlarını ve paylaşım satırını
+  okuyamaz, istemci `fetchOrtakLotlari` ile `portfoy_id`'yi siler. KALAN:
+  ham API'de paylaşılan lotun `portfoy_id` uuid'i ortağa hâlâ gider (eski
+  sürümler `assets`'i doğrudan okuduğu için kolon gizlenemez). Ne zaman:
+  eski sürümler düşünce ortak okumasını kolonsuz bir RPC/görünüme taşı ve
+  `assets_partner_read`'i kaldır (ayrı, kırıcı migration).
 - *Portföy başına yıl özeti / widget / kilit ekranı yok.* Hepsi kullanıcı
   toplamı; widget sözleşmesi ve Live Activity tek defter taşır. Ne zaman:
   widget'ta portföy seçimi istenirse (sözleşme değişikliği, iki platform).

@@ -207,6 +207,24 @@ export function briefVerisi(
 /// geçseydi kilit ekranında omzunun üstünden bakan biri ortağın ne aldığını
 /// görürdü; uygulama içinde zaten görünen bir bilgi, kilit ekranında
 /// görünmek zorunda değil.
+/// Sahibin ortağa paylaşım seçimi (0135 `ortak_paylasimlari`). Satır yoksa
+/// `undefined`: ortak her şeyi görür.
+export interface OrtakPaylasimi {
+  tumu: boolean;
+  ana: boolean;
+  portfoyIdler: string[];
+}
+
+/// `public.ortak_portfoyu_gorur` ile AYNI kural (RLS eşi): service-role
+/// sorgusu RLS'i atladığı için süzgeç burada tekrar uygulanır.
+export function ortakLotuGorur(
+  p: OrtakPaylasimi | undefined,
+  portfoyId: string | null,
+): boolean {
+  if (!p || p.tumu) return true;
+  return portfoyId == null ? p.ana : p.portfoyIdler.includes(portfoyId);
+}
+
 export function buildPartnerMessage(
   partnerName: string,
   eklemeSayisi: number,
@@ -442,22 +460,41 @@ Deno.serve(async (request) => {
         const dun = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const { data: yeniLotlar } = await admin
           .from('assets')
-          .select('user_id')
+          .select('user_id, portfoy_id')
           .in('user_id', tumOrtaklar)
           .eq('kind', 'buy')
           .is('deleted_at', null)
           .gte('added_date', dun);
 
-        const sayac = new Map<string, number>();
-        for (const r of (yeniLotlar ?? []) as Array<Record<string, unknown>>) {
-          const u = String(r.user_id);
-          sayac.set(u, (sayac.get(u) ?? 0) + 1);
+        // Sahip, ortağa yalnız bazı portföylerini gösteriyorsa (0135) gizli
+        // portföye eklenen lot SAYILMAZ: service-role RLS'i atlar, "ortağın
+        // 3 varlık ekledi" gizli portföyün varlığını ele verirdi. Okunamazsa
+        // (tablo yok) hiç kısıt yok sayılır — 0135 öncesi davranış.
+        const { data: paylasimRows } = await admin
+          .from('ortak_paylasimlari')
+          .select('sahip_id, ortak_id, tumu, ana, portfoy_idler')
+          .in('sahip_id', tumOrtaklar);
+        const paylasimlar = new Map<string, OrtakPaylasimi>();
+        for (const r of (paylasimRows ?? []) as Array<Record<string, unknown>>) {
+          paylasimlar.set(`${r.sahip_id}|${r.ortak_id}`, {
+            tumu: r.tumu !== false,
+            ana: r.ana !== false,
+            portfoyIdler: ((r.portfoy_idler ?? []) as unknown[]).map(String),
+          });
         }
+        const lotlar = (yeniLotlar ?? []) as Array<Record<string, unknown>>;
 
         for (const [alici, liste] of ortaklar) {
           if (profiller.get(alici)?.ister === false) continue;
           for (const ortak of liste) {
-            const adet = sayac.get(ortak) ?? 0;
+            const paylasim = paylasimlar.get(`${ortak}|${alici}`);
+            const adet = lotlar.filter((r) =>
+              String(r.user_id) === ortak &&
+              ortakLotuGorur(
+                paylasim,
+                r.portfoy_id == null ? null : String(r.portfoy_id),
+              )
+            ).length;
             if (adet === 0) continue;
             const onceki = ortakHareketi.get(alici);
             // Birden çok ortak hareket ettiyse en ÇOK ekleyeni anlat —
