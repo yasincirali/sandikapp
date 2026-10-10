@@ -90,8 +90,7 @@ class HesapSeciciSayfasi extends ConsumerStatefulWidget {
   final BuildContext ustContext;
 
   @override
-  ConsumerState<HesapSeciciSayfasi> createState() =>
-      _HesapSeciciSayfasiState();
+  ConsumerState<HesapSeciciSayfasi> createState() => _HesapSeciciSayfasiState();
 }
 
 class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
@@ -159,7 +158,7 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
                     ? 'Tekrar giriş gerekli'
                     : 'Son açılış ${goreliZaman(h.sonKullanim, DateTime.now())}',
                 uyari: h.oturumDustu,
-                onTap: _duzenle ? null : () => _gec(h),
+                onTap: _duzenle ? null : (kaynak) => _gec(h, i + 1, kaynak),
                 kaldir: _duzenle ? () => _kaldir(h) : null,
               ),
             Divider(color: context.c.hairline, height: SandikSpace.lg),
@@ -178,7 +177,7 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
     );
   }
 
-  Future<void> _gec(KayitliHesap h) async {
+  Future<void> _gec(KayitliHesap h, int ton, Rect? kaynak) async {
     final aktif = ref.read(authProvider).valueOrNull;
     final ust = widget.ustContext;
     Navigator.of(context).pop();
@@ -187,7 +186,8 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
       return;
     }
     try {
-      await HesapGecisi.instance.gec(h.uid, aktif: aktif);
+      await HesapGecisi.instance
+          .gec(h.uid, aktif: aktif, kaynak: kaynak, ton: ton);
     } on HesapOturumuDustu catch (e) {
       if (!ust.mounted) return;
       final tekrar = await showSandikConfirm(
@@ -270,19 +270,31 @@ class _HesapSatiri extends StatelessWidget {
   final String alt;
   final bool secili;
   final bool uyari;
-  final VoidCallback? onTap;
+
+  /// Dokunulan satırın avatar dikdörtgeniyle (geçiş perdesi oradan başlar).
+  final void Function(Rect? kaynak)? onTap;
   final VoidCallback? kaldir;
+
+  static Rect? _yer(BuildContext? ctx) {
+    final kutu = ctx?.findRenderObject();
+    if (kutu is! RenderBox || !kutu.hasSize || !kutu.attached) return null;
+    return kutu.localToGlobal(Offset.zero) & kutu.size;
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    BuildContext? avatarBaglami;
     final satir = ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 56),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
         child: Row(
           children: [
-            HesapAvatari(harf: harf, ton: ton, soluk: uyari),
+            Builder(builder: (ctx) {
+              avatarBaglami = ctx;
+              return HesapAvatari(harf: harf, ton: ton, soluk: uyari);
+            }),
             const SizedBox(width: SandikSpace.md),
             Expanded(
               child: Column(
@@ -306,8 +318,7 @@ class _HesapSatiri extends StatelessWidget {
               TextButton(
                 onPressed: kaldir,
                 style: TextButton.styleFrom(
-                    foregroundColor: c.loss,
-                    minimumSize: SandikTouch.minSize),
+                    foregroundColor: c.loss, minimumSize: SandikTouch.minSize),
                 child: const Text('Kaldır'),
               )
             else
@@ -321,7 +332,10 @@ class _HesapSatiri extends StatelessWidget {
       button: onTap != null,
       label: '$ad, $alt',
       excludeSemantics: kaldir == null,
-      child: onTap == null ? satir : SandikTappable(onTap: onTap, child: satir),
+      child: onTap == null
+          ? satir
+          : SandikTappable(
+              onTap: () => onTap!(_yer(avatarBaglami)), child: satir),
     );
   }
 }
@@ -362,8 +376,7 @@ class _EylemSatiri extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: c.text36, width: 1.5),
                 ),
-                child: Icon(ikon,
-                    color: pasif ? c.text36 : c.text90, size: 22),
+                child: Icon(ikon, color: pasif ? c.text36 : c.text90, size: 22),
               ),
               const SizedBox(width: SandikSpace.md),
               Expanded(
@@ -376,8 +389,7 @@ class _EylemSatiri extends StatelessWidget {
                             color: pasif ? c.text36 : c.text90,
                             fontWeight: FontWeight.w600)),
                     Text(alt,
-                        style:
-                            context.t.bodySmall?.copyWith(color: c.text58)),
+                        style: context.t.bodySmall?.copyWith(color: c.text58)),
                   ],
                 ),
               ),
@@ -442,8 +454,8 @@ class CokluCikisSayfasi extends StatelessWidget {
               header: true,
               child: Text('Çıkış yap',
                   textAlign: TextAlign.center,
-                  style: context.t.titleMedium?.copyWith(
-                      color: c.text90, fontWeight: FontWeight.w700)),
+                  style: context.t.titleMedium
+                      ?.copyWith(color: c.text90, fontWeight: FontWeight.w700)),
             ),
             const SizedBox(height: SandikSpace.xs),
             Text('Bu cihazda $hesapSayisi hesap açık.',
@@ -487,10 +499,8 @@ Future<bool> cokluHesapCikisi(BuildContext context, WidgetRef ref) async {
   if (!ref.read(cokluHesapGorunurProvider)) return false;
   final aktif = ref.read(authProvider).valueOrNull;
   if (aktif == null) return false;
-  final digerleri = ref
-      .read(kayitliHesaplarProvider)
-      .where((h) => h.uid != aktif.id)
-      .length;
+  final digerleri =
+      ref.read(kayitliHesaplarProvider).where((h) => h.uid != aktif.id).length;
   if (digerleri == 0) return false;
   final secim = await cokluCikisSor(context, hesapAdi(aktif), digerleri + 1);
   if (secim == null) return true;
@@ -550,8 +560,7 @@ class CihazdakiHesaplar extends ConsumerWidget {
                   ),
                   child: Text(
                     context.l10n.cihazHesapAcikKalir(donulecek.ad),
-                    style:
-                        context.t.bodySmall?.copyWith(color: c.amberText),
+                    style: context.t.bodySmall?.copyWith(color: c.amberText),
                   ),
                 ),
                 const SizedBox(height: SandikSpace.sm),
@@ -573,13 +582,14 @@ class CihazdakiHesaplar extends ConsumerWidget {
                           ? context.l10n.cihazHesapGeriDon
                           : context.l10n.cihazHesapDevamEt,
                   uyari: h.oturumDustu,
-                  onTap: () async {
+                  onTap: (kaynak) async {
                     if (h.oturumDustu) {
                       epostaSec(h.eposta);
                       return;
                     }
                     try {
-                      await HesapGecisi.instance.gec(h.uid);
+                      await HesapGecisi.instance
+                          .gec(h.uid, kaynak: kaynak, ton: i);
                     } on HesapOturumuDustu {
                       epostaSec(h.eposta);
                     } catch (e) {

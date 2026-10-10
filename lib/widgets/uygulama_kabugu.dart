@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/hesap_gecisi.dart';
 import '../services/notification_service.dart';
+import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import 'custom_loading_indicator.dart';
 
@@ -68,21 +69,17 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
   void initState() {
     super.initState();
     _gecis.nesil.addListener(_nesilDegisti);
-    _gecis.perde.addListener(_yenile);
+    _gecis.perde.addListener(_perdeDegisti);
     _gecis.yeniEkranHazir.addListener(_ekranHazirDegisti);
   }
 
   @override
   void dispose() {
     _gecis.nesil.removeListener(_nesilDegisti);
-    _gecis.perde.removeListener(_yenile);
+    _gecis.perde.removeListener(_perdeDegisti);
     _gecis.yeniEkranHazir.removeListener(_ekranHazirDegisti);
     _emniyetSayaci?.cancel();
     super.dispose();
-  }
-
-  void _yenile() {
-    if (mounted) setState(() {});
   }
 
   Timer? _emniyetSayaci;
@@ -131,9 +128,40 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
     });
   }
 
+  /// Ekranda tutulan perde. [HesapGecisi.perde] boşalınca da kapanış
+  /// hareketi bitene dek burada kalır ([_kapaniyor]).
+  late HesapGecisPerdesi? _gosterilen = _gecis.perde.value;
+  bool _kapaniyor = false;
+
+  /// Geçiş hareketi (`goz_alici`, 2026-10-10). Kapalıyken perde eskisi
+  /// gibi sert girer/çıkar — bayrak kapalı = bugünkü davranış birebir.
+  bool get _hareketli => RemoteConfigService.instance.gozAlici;
+
+  void _perdeDegisti() {
+    if (!mounted) return;
+    final yeni = _gecis.perde.value;
+    setState(() {
+      if (yeni == null && _gosterilen != null && _hareketli) {
+        _kapaniyor = true;
+      } else {
+        _gosterilen = yeni;
+        _kapaniyor = false;
+      }
+    });
+  }
+
+  void _kapandi() {
+    if (!mounted || _gecis.perde.value != null) return;
+    setState(() {
+      _gosterilen = null;
+      _kapaniyor = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final perde = _gecis.perde.value;
+    final perde = _gosterilen;
+    final hareketli = _hareketli;
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Stack(
@@ -145,8 +173,15 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
             ),
           if (perde != null || _bosKare)
             Positioned.fill(
-                child:
-                    HesapGecisPerdesiGorunumu(perde: perde, tema: widget.tema)),
+              key: const ValueKey('hesap-perdesi'),
+              child: HesapGecisPerdesiGorunumu(
+                perde: perde,
+                tema: widget.tema,
+                hareketli: hareketli,
+                kapaniyor: _kapaniyor,
+                onKapandi: _kapandi,
+              ),
+            ),
         ],
       ),
     );
@@ -155,11 +190,130 @@ class _UygulamaKabuguState extends State<UygulamaKabugu> {
 
 /// Geçiş perdesi — uygulamanın temasının DIŞINDA çizilir (kapsam o an
 /// yeniden kuruluyor), bu yüzden kendi temasını cihaz parlaklığından kurar.
-class HesapGecisPerdesiGorunumu extends StatelessWidget {
-  const HesapGecisPerdesiGorunumu({super.key, required this.perde, this.tema});
+///
+/// ## Hareket ([hareketli], bayrak `goz_alici`; yasin 2026-10-10: "geçiş
+/// animasyonu üstüne biraz düşünülmesi gerek")
+/// Amaç SÜS değil, "hangi hesaba gidiyorum" sorusunu cevaplamak (mekânsal
+/// süreklilik): dokunulan avatar seçicideki yerinden kalkıp ortaya taşınır,
+/// rengi aynı kalır; ad onun altında belirir. Instagram'ın hesap geçişiyle
+/// aynı okuma.
+/// - Giriş [SandikMotion.modal] (320 ms): zemin ilk %60'ta [SandikMotion.enter]
+///   ile solar; avatar [SandikMotion.cekmece] (iOS sheet eğrisi) ile taşınır;
+///   ad ve alt satır %40'tan sonra 8 pt aşağıdan gelir (küçük kademe, hepsi
+///   aynı anda girmesin).
+/// - Gösterge [_gostergeGecikmesi] (~640 ms) sonra belirir: hızlı geçişte hiç
+///   görünmez, yükleme yanıp sönmez. Yavaşsa "bekliyorum" der.
+/// - Çıkış [SandikMotion.surface] (240 ms): perde solar, avatar %4 büyüyerek
+///   "içine girilen" hissini verir; altında yeni hesabın dolu ekranı durur.
+///   Altındaki uygulamayı ayrıca ölçeklemek bilerek yok: bütün ağacı saran
+///   bir dönüşüm, kapsam kimliğine dokunmadan eklenemiyordu ve kazancı
+///   perdenin solmasının yanında küçük kalıyordu.
+/// - Hareketi azalt: süreler sıfır, avatar yerinde; anlık değişim.
+/// Bayrak kapalıyken hiçbir hareket yok: eski sert giriş/çıkış birebir.
+class HesapGecisPerdesiGorunumu extends StatefulWidget {
+  const HesapGecisPerdesiGorunumu({
+    super.key,
+    required this.perde,
+    this.tema,
+    this.hareketli = false,
+    this.kapaniyor = false,
+    this.onKapandi,
+  });
 
   final HesapGecisPerdesi? perde;
   final ThemeData Function(Brightness)? tema;
+  final bool hareketli;
+  final bool kapaniyor;
+  final VoidCallback? onKapandi;
+
+  static const double avatarCapi = 64;
+  // İki modal süresi: giriş hareketi bitip bir o kadar daha beklenir.
+  static final _gostergeGecikmesi = SandikMotion.modal * 2;
+
+  @override
+  State<HesapGecisPerdesiGorunumu> createState() =>
+      _HesapGecisPerdesiGorunumuState();
+}
+
+class _HesapGecisPerdesiGorunumuState extends State<HesapGecisPerdesiGorunumu>
+    with TickerProviderStateMixin {
+  late final AnimationController _giris =
+      AnimationController(vsync: this, duration: SandikMotion.modal);
+  late final AnimationController _cikis =
+      AnimationController(vsync: this, duration: SandikMotion.surface);
+  final _avatarAnahtari = GlobalKey();
+
+  /// Avatarın hedef yerinden kaynağa uzaklığı ve ölçeği (ölçülünce dolar).
+  Offset _fark = Offset.zero;
+  double _olcek = 1;
+  bool _olculdu = false;
+  bool _gosterge = false;
+  Timer? _gostergeSayaci;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.hareketli) {
+      _giris.value = 1;
+      _olculdu = true;
+      _gosterge = true;
+      return;
+    }
+    _gostergeSayaci = Timer(HesapGecisPerdesiGorunumu._gostergeGecikmesi,
+        () => mounted ? setState(() => _gosterge = true) : null);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _baslat());
+  }
+
+  void _baslat() {
+    if (!mounted) return;
+    final azalt = _azalt;
+    final kaynak = widget.perde?.kaynak;
+    final kutu = _avatarAnahtari.currentContext?.findRenderObject();
+    if (!azalt && kaynak != null && kutu is RenderBox && kutu.hasSize) {
+      final hedef = kutu.localToGlobal(Offset.zero) & kutu.size;
+      _fark = kaynak.center - hedef.center;
+      _olcek = kaynak.width / hedef.width;
+    }
+    setState(() => _olculdu = true);
+    if (azalt) {
+      _giris.value = 1;
+    } else {
+      _giris.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(HesapGecisPerdesiGorunumu eski) {
+    super.didUpdateWidget(eski);
+    if (widget.kapaniyor && !eski.kapaniyor) {
+      final azalt = _azalt;
+      if (azalt) {
+        // didUpdateWidget build içinde: ebeveyn kare sonunda güncellenir.
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => widget.onKapandi?.call());
+      } else {
+        _cikis.forward(from: 0).whenComplete(() => widget.onKapandi?.call());
+      }
+    } else if (!widget.kapaniyor && eski.kapaniyor) {
+      // Kapanırken yeni bir geçiş başladı: perde geri gelir.
+      _cikis.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _gostergeSayaci?.cancel();
+    _giris.dispose();
+    _cikis.dispose();
+    super.dispose();
+  }
+
+  /// Perde uygulamanın MediaQuery'sinin ÜSTÜNDE yaşar; ayar görünümden okunur.
+  bool get _azalt =>
+      MediaQueryData.fromView(View.of(context)).disableAnimations;
+
+  static double _aralik(double t, double bas, double son, Curve egri) =>
+      egri.transform(((t - bas) / (son - bas)).clamp(0.0, 1.0));
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +321,7 @@ class HesapGecisPerdesiGorunumu extends StatelessWidget {
       view: View.of(context),
       child: Builder(builder: (context) {
         final parlaklik = MediaQuery.platformBrightnessOf(context);
-        final kur = tema;
+        final kur = widget.tema;
         final data = kur != null
             ? kur(parlaklik)
             : ThemeData(brightness: parlaklik, extensions: [
@@ -178,44 +332,112 @@ class HesapGecisPerdesiGorunumu extends StatelessWidget {
         return Theme(
           data: data,
           child: Builder(builder: (context) {
-            final p = perde;
+            final p = widget.perde;
+            final gosterge = AnimatedOpacity(
+              opacity: _gosterge ? 1 : 0,
+              duration: SandikMotion.stateOf(context),
+              curve: SandikMotion.enter,
+              child: const CustomLoadingIndicator(
+                  size: CustomLoadingIndicator.small),
+            );
             return Semantics(
               liveRegion: true,
               label: p == null ? 'Yükleniyor' : '${p.ad} ${p.alt}',
-              child: ColoredBox(
-                color: context.c.background,
-                child: Center(
-                  // Perde yokken (boş kare) yalnız gösterge; düğme değil.
-                  child: p != null
-                      ? Padding(
-                          padding: const EdgeInsets.all(SandikSpace.xl),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              HesapAvatari(harf: p.basHarf, cap: 64),
-                              const SizedBox(height: SandikSpace.md),
-                              Text(
-                                p.ad,
-                                textAlign: TextAlign.center,
-                                style: context.t.titleLarge
-                                    ?.copyWith(color: context.c.text90),
-                              ),
-                              const SizedBox(height: SandikSpace.xs),
-                              Text(
-                                p.alt,
-                                textAlign: TextAlign.center,
-                                style: context.t.bodyMedium
-                                    ?.copyWith(color: context.c.text58),
-                              ),
-                              const SizedBox(height: SandikSpace.lg),
-                              const CustomLoadingIndicator(
-                                  size: CustomLoadingIndicator.small),
-                            ],
-                          ),
-                        )
-                      : const CustomLoadingIndicator(
-                          size: CustomLoadingIndicator.small),
-                ),
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_giris, _cikis]),
+                builder: (context, _) {
+                  final t = _giris.value;
+                  final c = SandikMotion.enter.transform(_cikis.value);
+                  final zemin = _aralik(t, 0, 0.6, SandikMotion.enter);
+                  final tasi = _aralik(t, 0, 1, SandikMotion.cekmece);
+                  final yazi = _aralik(t, 0.4, 1, SandikMotion.enter);
+                  final kaynakYok = widget.perde?.kaynak == null;
+                  // Zemin solarak gelir; avatar SOLMAZ (seçicideki yerinden
+                  // "kalkar"). Çıkışta hepsi birlikte solar.
+                  return Opacity(
+                    opacity: 1 - c,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Opacity(
+                          opacity: zemin,
+                          child: ColoredBox(color: context.c.background),
+                        ),
+                        Center(
+                          // Perde yokken (boş kare) yalnız gösterge.
+                          child: p == null
+                              ? gosterge
+                              : Padding(
+                                  padding: const EdgeInsets.all(SandikSpace.xl),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Opacity(
+                                        opacity: !_olculdu
+                                            ? 0
+                                            : kaynakYok
+                                                ? zemin
+                                                : 1,
+                                        child: Transform.translate(
+                                          offset: _fark * (1 - tasi),
+                                          child: Transform.scale(
+                                            scale:
+                                                (_olcek + (1 - _olcek) * tasi) *
+                                                    (kaynakYok
+                                                        ? 0.92 + 0.08 * tasi
+                                                        : 1) *
+                                                    (1 + 0.04 * c),
+                                            child: HesapAvatari(
+                                                key: _avatarAnahtari,
+                                                harf: p.basHarf,
+                                                ton: p.ton,
+                                                cap: HesapGecisPerdesiGorunumu
+                                                    .avatarCapi),
+                                          ),
+                                        ),
+                                      ),
+                                      Opacity(
+                                        opacity: yazi,
+                                        child: Transform.translate(
+                                          offset: Offset(
+                                              0, SandikSpace.sm * (1 - yazi)),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const SizedBox(
+                                                  height: SandikSpace.md),
+                                              Text(
+                                                p.ad,
+                                                textAlign: TextAlign.center,
+                                                style: context.t.titleLarge
+                                                    ?.copyWith(
+                                                        color:
+                                                            context.c.text90),
+                                              ),
+                                              const SizedBox(
+                                                  height: SandikSpace.xs),
+                                              Text(
+                                                p.alt,
+                                                textAlign: TextAlign.center,
+                                                style: context.t.bodyMedium
+                                                    ?.copyWith(
+                                                        color:
+                                                            context.c.text58),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: SandikSpace.lg),
+                                      gosterge,
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             );
           }),

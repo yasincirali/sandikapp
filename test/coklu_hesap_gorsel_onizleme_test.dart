@@ -257,4 +257,81 @@ void main() {
         ekran: LockScreen(
             onUnlocked: () {}, onKilidiKapat: () {}, onCikisYap: () {}));
   });
+
+  // Geçiş hareketi kareleri (goz_alici, 2026-10-10): seçicide dokunulan
+  // avatar ortaya taşınır. Alttaki uygulama demo; gerçekte yeni hesabın
+  // ekranı kurulur.
+  testWidgets('geçiş hareketi kareleri', (tester) async {
+    RemoteConfigService.testAcik = {'paywall_enabled', 'coklu_hesap', 'goz_alici'};
+    tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+    addTearDown(() => HesapGecisi.instance.perde.value = null);
+    const k = ValueKey('kok');
+    // Sahte sağlayıcılar kabuğun DIŞINDA: kabuğun kendi kapsamı onların
+    // çocuğu olur (iç kapsamda geçersiz kılma Riverpod'da bağımlılık ister).
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        authProvider.overrideWith(_FakeAuth.new),
+        portfolioProvider.overrideWith(_FakePortfolio.new),
+        partnersProvider.overrideWith(_FakePartners.new),
+        signalProvider.overrideWith(_FakeSignals.new),
+        kayitliHesaplarProvider.overrideWithValue(_hesaplar),
+        isPushAdminProvider.overrideWith((_) async => false),
+        gelistiriciAnahtariSayilirProvider.overrideWithValue(false),
+        magazaPremiumProvider.overrideWith((_) => true),
+        gecerliPremiumHakkiProvider.overrideWithValue(null),
+      ],
+      child: RepaintBoundary(
+        key: k,
+        child: UygulamaKabugu(
+          tema: (b) => SandikApp.buildTheme(SandikPalette.dark, b),
+          uygulama: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: SandikApp.buildTheme(SandikPalette.dark, Brightness.dark),
+            home: const Material(
+                type: MaterialType.transparency, child: ProfileScreen()),
+          ),
+        ),
+      ),
+    ));
+    await bekle(tester, 40);
+    await seciciyiAc(tester);
+    await bekle(tester, 30);
+
+    Future<void> kaydet(String ad) => tester.runAsync(() async {
+          final b = tester.renderObject<RenderRepaintBoundary>(find.byKey(k));
+          final img = await b.toImage(pixelRatio: 1.0);
+          final bytes = await img.toByteData(format: ui.ImageByteFormat.png);
+          Directory('build/gorsel').createSync(recursive: true);
+          File('build/gorsel/$ad.png')
+              .writeAsBytesSync(bytes!.buffer.asUint8List());
+        });
+
+    await kaydet('hareket_0_secici');
+    final avatar = find.byType(HesapAvatari).at(1);
+    final kaynak = tester.getRect(avatar);
+    HesapGecisi.instance.perde.value = HesapGecisPerdesi(
+        basHarf: 'C',
+        ad: 'cirali_holding',
+        alt: 'hesabına geçiliyor',
+        ton: 1,
+        kaynak: kaynak);
+    await tester.pump();
+    await tester.pump();
+    var onceki = 0;
+    for (final ms in [60, 120, 200, 320]) {
+      await tester.pump(Duration(milliseconds: ms - onceki));
+      onceki = ms;
+      await kaydet('hareket_1_giris_$ms');
+    }
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 200));
+    await kaydet('hareket_2_bekleme');
+    HesapGecisi.instance.perde.value = null;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 110));
+    await kaydet('hareket_3_cikis');
+    await tester.pump(const Duration(milliseconds: 400));
+  });
 }
