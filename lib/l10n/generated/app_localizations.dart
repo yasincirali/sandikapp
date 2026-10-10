@@ -6110,6 +6110,97 @@ abstract class AppLocalizations {
   /// **'MUM'**
   String get chartCandleChip;
 
+  /// No description provided for @chartIntervalM1.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 dk'**
+  String get chartIntervalM1;
+
+  /// No description provided for @chartIntervalH1.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 sa'**
+  String get chartIntervalH1;
+
+  /// No description provided for @chartIntervalH4.
+  ///
+  /// In tr, this message translates to:
+  /// **'4 sa'**
+  String get chartIntervalH4;
+
+  /// No description provided for @chartIntervalD1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gün'**
+  String get chartIntervalD1;
+
+  /// No description provided for @chartIntervalW1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hafta'**
+  String get chartIntervalW1;
+
+  /// No description provided for @chartIntervalMo1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay'**
+  String get chartIntervalMo1;
+
+  /// No description provided for @chartIntervalM1Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 dakikalık'**
+  String get chartIntervalM1Long;
+
+  /// No description provided for @chartIntervalH1Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 saatlik'**
+  String get chartIntervalH1Long;
+
+  /// No description provided for @chartIntervalH4Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'4 saatlik'**
+  String get chartIntervalH4Long;
+
+  /// No description provided for @chartIntervalD1Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'günlük'**
+  String get chartIntervalD1Long;
+
+  /// No description provided for @chartIntervalW1Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'haftalık'**
+  String get chartIntervalW1Long;
+
+  /// No description provided for @chartIntervalMo1Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'aylık'**
+  String get chartIntervalMo1Long;
+
+  /// Mum aralığı seçicisi, ekran okuyucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mum aralığı: {aralik} mumlar'**
+  String chartIntervalSemantics(String aralik);
+
+  /// No description provided for @chartCandleFromCloses.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu varlık günde tek fiyat yayımlar; mumlar günlük fiyatlardan kurulur.'**
+  String get chartCandleFromCloses;
+
+  /// Crosshair: imlecin altındaki mumun açılış, en yüksek, en düşük, kapanış fiyatı.
+  ///
+  /// In tr, this message translates to:
+  /// **'A {acilis} · Y {yuksek} · D {dusuk} · K {kapanis}'**
+  String chartOhlcLine(
+      String acilis, String yuksek, String dusuk, String kapanis);
+
   /// No description provided for @fullscreenChart.
   ///
   /// In tr, this message translates to:

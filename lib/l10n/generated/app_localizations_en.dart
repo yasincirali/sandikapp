@@ -3659,6 +3659,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chartCandleChip => 'CANDLE';
 
   @override
+  String get chartIntervalM1 => '1m';
+
+  @override
+  String get chartIntervalH1 => '1h';
+
+  @override
+  String get chartIntervalH4 => '4h';
+
+  @override
+  String get chartIntervalD1 => '1D';
+
+  @override
+  String get chartIntervalW1 => '1W';
+
+  @override
+  String get chartIntervalMo1 => '1M';
+
+  @override
+  String get chartIntervalM1Long => '1-minute';
+
+  @override
+  String get chartIntervalH1Long => '1-hour';
+
+  @override
+  String get chartIntervalH4Long => '4-hour';
+
+  @override
+  String get chartIntervalD1Long => 'daily';
+
+  @override
+  String get chartIntervalW1Long => 'weekly';
+
+  @override
+  String get chartIntervalMo1Long => 'monthly';
+
+  @override
+  String chartIntervalSemantics(String aralik) {
+    return 'Candle interval: $aralik candles';
+  }
+
+  @override
+  String get chartCandleFromCloses =>
+      'This asset publishes one price a day; candles are built from daily prices.';
+
+  @override
+  String chartOhlcLine(
+      String acilis, String yuksek, String dusuk, String kapanis) {
+    return 'O $acilis · H $yuksek · L $dusuk · C $kapanis';
+  }
+
+  @override
   String get fullscreenChart => 'Open chart full screen';
 
   @override

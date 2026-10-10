@@ -306,4 +306,71 @@ abstract final class GrafikStili {
     }
     return out;
   }
+
+  /// [mumCubuklari]'nın çok mumlu hâli — gerçek OHLC mumları (aralık
+  /// seçicisi, 2026-10-10). Mum başına iki çubuk yerine TOPLAM beş seri:
+  /// yükselen/düşen fitil, yükselen/düşen gövde, doji. Mumlar aynı serinin
+  /// içinde `FlSpot.nullSpot` ile ayrılır (fl_chart boş noktada çizgiyi
+  /// keser). 1.500 mumda 3.000 yerine 5 seri: GÜNLÜK × 1 dk kriptoda da
+  /// akıcı kalır.
+  ///
+  /// Gövde genişliği mumların ORTANCA kovasından (ay 28–31 gün; tek bir
+  /// kısa ay bütün gövdeleri inceltmesin). Yoğun aralıkta gövde 1 px'e kadar
+  /// incelir: 2 px tabanı 1 dk mumlarını birbirine yapıştırıyordu.
+  /// Görünüm [mumCubuklari] ile aynı renk ve oran.
+  static List<LineChartBarData> mumCubuklariToplu(
+    BuildContext context,
+    List<Mum> mumlar, {
+    required double genislik,
+    required double? gorunurAralik,
+  }) {
+    if (mumlar.isEmpty) return const [];
+    final kovalar = [for (final m in mumlar) m.kovaMs]..sort();
+    final kova = kovalar[kovalar.length ~/ 2];
+    final kovaPx = gorunurAralik == null || gorunurAralik <= 0
+        ? 8.0
+        : genislik * (kova / gorunurAralik);
+    final govde = (kovaPx * 0.65).clamp(1.0, 14.0);
+    final fitil = (govde * 0.25).clamp(0.8, 2.0);
+
+    final fitilArtan = <FlSpot>[], fitilAzalan = <FlSpot>[];
+    final govdeArtan = <FlSpot>[], govdeAzalan = <FlSpot>[];
+    final dojiler = <FlSpot>[];
+    void ekle(List<FlSpot> l, double x, double a, double b) {
+      if (l.isNotEmpty) l.add(FlSpot.nullSpot);
+      l
+        ..add(FlSpot(x, a))
+        ..add(FlSpot(x, b));
+    }
+
+    for (final m in mumlar) {
+      final x = m.merkezX;
+      ekle(m.yukselen ? fitilArtan : fitilAzalan, x, m.enDusuk, m.enYuksek);
+      if (m.doji) {
+        ekle(dojiler, x, m.acilis, m.kapanis);
+      } else {
+        ekle(m.yukselen ? govdeArtan : govdeAzalan, x, m.acilis, m.kapanis);
+      }
+    }
+    LineChartBarData seri(List<FlSpot> spots, Color renk, double kalinlik,
+            {bool yuvarlak = false}) =>
+        LineChartBarData(
+          spots: spots,
+          isCurved: false,
+          color: renk,
+          barWidth: kalinlik,
+          isStrokeCapRound: yuvarlak,
+          dotData: const FlDotData(show: false),
+          belowBarData: BarAreaData(show: false),
+        );
+    return [
+      if (fitilArtan.isNotEmpty) seri(fitilArtan, context.c.gain, fitil),
+      if (fitilAzalan.isNotEmpty) seri(fitilAzalan, context.c.loss, fitil),
+      if (govdeArtan.isNotEmpty) seri(govdeArtan, context.c.gain, govde),
+      if (govdeAzalan.isNotEmpty) seri(govdeAzalan, context.c.loss, govde),
+      // Doji yükselen sayılır (kapanış ≥ açılış): yeşil nokta.
+      if (dojiler.isNotEmpty)
+        seri(dojiler, context.c.gain, govde, yuvarlak: true),
+    ];
+  }
 }

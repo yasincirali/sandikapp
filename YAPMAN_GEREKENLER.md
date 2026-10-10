@@ -12,6 +12,20 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Mum grafiğinde aralık seçici (gerçek OHLC, Premium)
+
+Senin isteğin: "mum grafik de TradingView'deki gibi çalışmalı: 1 dk, 1 saat,
+4 saat, günlük, haftalık, aylık". Varlık sayfasında MUM açıkken aralık
+seçicisi çıkar; mumlar artık sağlayıcının gerçek açılış/en yüksek/en düşük/
+kapanışı (hisse, döviz, altın, emtia Yahoo; kripto Binance). Fon, BES ve
+eurobond günde tek fiyat yayımladığı için yalnız gün/hafta/ay. Yeni bayrak
+yok: MUM zaten Premium (`paywall_enabled` ya da admin).
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): yalnız
+      fonksiyon `kripto-seri`. Migration ve secret YOK. Sıra serbest:
+      eski uygulama yeni alanı göndermez, yanıtı birebir aynı; yeni uygulama
+      fonksiyon gitmeden önce kriptoda kapanıştan türetilen muma düşer.
+
 ## ⏳ 2026-10-10 Borsadaki tüm hisseler, liste her gün sunucudan (migration 0139)
 
 Senin isteğin: "eksik varlık olmasını istemiyorum, borsada işlem gören tüm
