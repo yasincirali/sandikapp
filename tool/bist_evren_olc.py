@@ -84,3 +84,9 @@ for r in sorted(out.get('tv_hepsi', []), key=lambda r: r[0]):
     y = out['yahoo'].get(r[0], [None, None])
     print('|'.join(str(v) for v in [r[0], r[2], r[3], int(r[0] in x100), int(bool(y[0])), r[1], y[1]]))
 print('=== DÖKÜM SONU ===')
+
+# KAP sayfasının biçimini görmek için THYAO çevresi.
+for url, html in out.get('kap', {}).items():
+    for kod in ('THYAO', 'AYGAZ'):
+        k = html.find(kod)
+        print('KAP ÖRNEK', kod, repr(html[max(0, k - 400):k + 400]))
