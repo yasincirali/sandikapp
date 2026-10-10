@@ -213,10 +213,6 @@ void main() {
   testWidgets('sonra: kaydırma', (t) async {
     await ciz(t, 'kaydirma_sonra', const PortfolioScreen(), sonra: kaydir(t));
   });
-  testWidgets('sonra: kaydırma kilitli (ücretsiz)', (t) async {
-    await ciz(t, 'kaydirma_kilitli', const PortfolioScreen(),
-        durum: VarlikGuncellemeDurumu.kilitli, sonra: kaydir(t));
-  });
   testWidgets('sonra: kaydırma açık tema', (t) async {
     await ciz(t, 'kaydirma_sonra_acik', const PortfolioScreen(),
         acik: true, sonra: kaydir(t));

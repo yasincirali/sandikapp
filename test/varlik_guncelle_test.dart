@@ -97,34 +97,19 @@ class _Fiyatsiz implements AddAssetPriceLookup {
 
 void main() {
   group('görünürlük', () {
-    VarlikGuncellemeDurumu d({
-      bool bayrak = true,
-      bool demo = false,
-      bool paywall = true,
-      bool admin = false,
-      bool kilitli = false,
-    }) =>
-        varlikGuncellemeDurumu(
-            bayrak: bayrak,
-            demo: demo,
-            paywall: paywall,
-            admin: admin,
-            premiumKilitli: kilitli);
-
     test('bayrak kapalıyken herkes için gizli (canlı birebir eski)', () {
-      expect(d(bayrak: false), VarlikGuncellemeDurumu.gizli);
-      expect(d(bayrak: false, admin: true), VarlikGuncellemeDurumu.gizli);
+      expect(varlikGuncellemeDurumu(bayrak: false, demo: false),
+          VarlikGuncellemeDurumu.gizli);
     });
     test('demo modunda gizli', () {
-      expect(d(demo: true), VarlikGuncellemeDurumu.gizli);
+      expect(varlikGuncellemeDurumu(bayrak: true, demo: true),
+          VarlikGuncellemeDurumu.gizli);
     });
-    test('paywall kapalıyken yalnız admin görür (tek anahtar kuralı)', () {
-      expect(d(paywall: false), VarlikGuncellemeDurumu.gizli);
-      expect(d(paywall: false, admin: true), VarlikGuncellemeDurumu.acik);
-    });
-    test('paywall açık: ücretsizde kilitli, Premium\'da açık', () {
-      expect(d(kilitli: true), VarlikGuncellemeDurumu.kilitli);
-      expect(d(), VarlikGuncellemeDurumu.acik);
+    test('bayrak açıkken HERKESE açık: Premium değil (yasin 2026-10-10)', () {
+      expect(varlikGuncellemeDurumu(bayrak: true, demo: false),
+          VarlikGuncellemeDurumu.acik);
+      expect(VarlikGuncellemeDurumu.values, hasLength(2),
+          reason: 'Kilitli durum kalktı; paywall\'a giden yol yok');
     });
   });
 

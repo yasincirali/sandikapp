@@ -8241,26 +8241,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirGrafik => 'Candles · EMA50 · EMA200';
 
   @override
-  String get pwdHesapEtiket => 'ACCOUNTS';
-
-  @override
-  String get pwdHesapBaslik =>
-      'Your own, your company\'s, your family\'s; switch with one tap.';
-
-  @override
-  String get pwdHesapUcretsiz => '1 account';
-
-  @override
-  String get pwdHesapPremium => 'extra accounts and switching';
-
-  @override
-  String get pwOzHesap =>
-      'Several accounts on one phone, switch between them with one tap';
-
-  @override
-  String get prmSatirHesap => 'Account';
-
-  @override
   String get pwdPortfoyEtiket => 'PORTFOLIOS';
 
   @override
@@ -8566,9 +8546,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get varlikGuncelleIpucu => 'Update asset';
-
-  @override
-  String get varlikGuncelleKilitli => 'Update asset, Premium';
 
   @override
   String get varlikGuncelleUyariBaslik => 'Rewritten as a single record';

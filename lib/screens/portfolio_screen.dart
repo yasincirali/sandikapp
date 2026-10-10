@@ -366,8 +366,14 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     final currentUserId = ref.watch(authProvider).valueOrNull?.id;
     final portfoyKapsami = ref.watch(portfoyKapsamiProvider);
     // Portföyler arası taşıma yalnız özellik görünürken (bayrak + Premium
-    // görünürlüğü); kapalıyken kaydırma paneli birebir eski.
-    final tasimaAcik = ref.watch(cokluPortfoyGorunurProvider);
+    // görünürlüğü); kapalıyken kaydırma paneli birebir eski. Ve yalnız
+    // taşınacak İKİNCİ bir portföy varken (yasin 2026-10-10: "2. portföyü
+    // olmayana Taşı çıkmalı mı?"): yalnız Ana'sı olan kullanıcıya Taşı
+    // gidecek yeri olmayan bir düğmeydi; dokununca yeni portföy açma
+    // akışına (ücretsizde paywall'a) düşüyordu. Portföy açmanın yeri Portföy
+    // Yönetimi; ilk adlandırılmış portföy açılınca Taşı kendiliğinden gelir.
+    final tasimaAcik = ref.watch(cokluPortfoyGorunurProvider) &&
+        tasinacakPortfoyVar(ref.watch(portfoylerProvider).valueOrNull);
     final guncelleDurumu = ref.watch(varlikGuncellemeProvider);
 
     return CupertinoPageScaffold(
@@ -707,8 +713,6 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                               context, ref,
                                               gorunum: p.asDisplayAsset(),
                                               lotlar: p.lots),
-                                      guncelleKilitli: guncelleDurumu ==
-                                          VarlikGuncellemeDurumu.kilitli,
                                     ).kartlar(),
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
@@ -1921,7 +1925,6 @@ class _AssetList {
 
   /// "Varlığı güncelle" (`varlik_guncelle.dart`); `null` → eylem yok.
   final FutureOr<void> Function(Position)? onGuncelle;
-  final bool guncelleKilitli;
 
   /// Bir kez parlayacak yeni satırın anahtarı (bkz. `_yeniSatiriBul`).
   final String? vurgulanan;
@@ -1943,7 +1946,6 @@ class _AssetList {
     required this.onDividend,
     this.onTasi,
     this.onGuncelle,
-    this.guncelleKilitli = false,
     this.heroAcik = false,
   });
 
@@ -1994,7 +1996,6 @@ class _AssetList {
                   !varlikGuncellenebilir(kendi.asDisplayAsset(), kendi.lots)
               ? null
               : (_) => onGuncelle!(kendi),
-          guncelleKilitli: guncelleKilitli,
         ),
       );
   }
@@ -2419,10 +2420,6 @@ class _AssetCard extends StatefulWidget {
   /// "Varlığı güncelle"; `null` → eylem yok, panel birebir eski.
   final FutureOr<void> Function(Position)? onGuncelle;
 
-  /// Paywall açık, kullanıcı ücretsiz: düğme kilit ikonuyla durur, dokunuş
-  /// paywall'a gider (akış `varligiGuncelleAkisi` içinde).
-  final bool guncelleKilitli;
-
   const _AssetCard({
     super.key,
     required this.position,
@@ -2437,7 +2434,6 @@ class _AssetCard extends StatefulWidget {
     required this.onDividend,
     this.onTasi,
     this.onGuncelle,
-    this.guncelleKilitli = false,
   });
 
   @override
@@ -2727,13 +2723,9 @@ class _AssetCardState extends State<_AssetCard>
                   onPressed: () => onGuncelle(position),
                   background: context.c.surface2,
                   foreground: context.c.text90,
-                  icon: widget.guncelleKilitli
-                      ? Icons.lock_outline_rounded
-                      : Icons.edit_note_rounded,
+                  icon: Icons.edit_note_rounded,
                   label: context.l10n.update,
-                  semanticLabel: widget.guncelleKilitli
-                      ? context.l10n.varlikGuncelleKilitli
-                      : context.l10n.varlikGuncelleIpucu,
+                  semanticLabel: context.l10n.varlikGuncelleIpucu,
                 ),
               if (onTasi != null)
                 _rowAction(

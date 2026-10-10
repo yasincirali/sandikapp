@@ -41,6 +41,13 @@ final cokluPortfoyGorunurProvider = Provider<bool>((ref) {
   return ref.watch(paywallVisibleProvider) || admin;
 });
 
+/// Taşı'nın gidecek yeri var mı: en az bir ADLANDIRILMIŞ portföy (Ana her
+/// zaman vardır; Ana + bir portföy = iki hedef). Liste yüklenmemişse yok
+/// sayılır — düğme listeyle birlikte gelir, "yok" yerine geç gelmek
+/// gidecek yeri olmayan bir düğmeden iyidir.
+bool tasinacakPortfoyVar(List<Portfoy>? adlandirilmis) =>
+    (adlandirilmis?.length ?? 0) >= 1;
+
 /// Çoklu portföyün Premium yüzeyleri (ortağa portföy seçimi, kısmi
 /// aktarım) kilitli mi. yasin 2026-10-10: "yeni ekranlar ve özellikler
 /// paywall arkasında". Paywall kapalıyken kilit yok (çoklu portföyü zaten

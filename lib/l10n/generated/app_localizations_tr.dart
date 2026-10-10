@@ -8164,26 +8164,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirGrafik => 'Mum · EMA50 · EMA200';
 
   @override
-  String get pwdHesapEtiket => 'HESAPLAR';
-
-  @override
-  String get pwdHesapBaslik =>
-      'Kendi hesabın, şirketin, ailen; tek dokunuşla geç.';
-
-  @override
-  String get pwdHesapUcretsiz => '1 hesap';
-
-  @override
-  String get pwdHesapPremium => 'ek hesap ve geçiş';
-
-  @override
-  String get pwOzHesap =>
-      'Aynı telefonda birden çok hesap, aralarında tek dokunuşla geçiş';
-
-  @override
-  String get prmSatirHesap => 'Hesap';
-
-  @override
   String get pwdPortfoyEtiket => 'PORTFÖY';
 
   @override
@@ -8482,9 +8462,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get varlikGuncelleIpucu => 'Varlığı güncelle';
-
-  @override
-  String get varlikGuncelleKilitli => 'Varlığı güncelle, Premium';
 
   @override
   String get varlikGuncelleUyariBaslik => 'Tek kayıt olarak yeniden yazılır';

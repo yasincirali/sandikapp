@@ -4,10 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../demo/demo_modu.dart';
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
-import '../providers/auth_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../screens/add_asset_screen.dart';
-import '../screens/paywall_screen.dart';
 import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import 'delete_asset_dialog.dart' show sahipsizAlarmlariSor;
@@ -35,35 +33,26 @@ export '../services/varlik_yeniden_kur.dart' show silVeYenidenEkle;
 ///
 /// ## Kim görür
 /// Bayrak `goz_alici` (varsayılan kapalı; yeni bayrak açılmadı, yasin
-/// 2026-10-09 "aşırı fazla flag olmasın"). Yeni özellikler Premium'dur
-/// (yasin 2026-10-10): paywall açıkken ücretsiz kullanıcı eylemi kilitli
-/// görür ve paywall'a gider; paywall kapalıyken Premium özellikleri gibi
-/// yalnız admin görür (tek anahtar kuralı, `premiumOzellikleriGorunur`).
-enum VarlikGuncellemeDurumu { gizli, acik, kilitli }
+/// 2026-10-09 "aşırı fazla flag olmasın"). İlk sürümde (#159) Premium'du;
+/// yasin 2026-10-10 akşam: "portföyde varlık güncelle Premium dışına
+/// çıkmalı". Yanlış girilen kaydı düzeltmek temel bir işlev, Sil gibi
+/// herkesin: bayrak açıkken her kullanıcı görür, paywall'a bağlı değil.
+enum VarlikGuncellemeDurumu { gizli, acik }
 
 /// Görünürlük kararı — SAF (test: `varlik_guncelle_test`).
 VarlikGuncellemeDurumu varlikGuncellemeDurumu({
   required bool bayrak,
   required bool demo,
-  required bool paywall,
-  required bool admin,
-  required bool premiumKilitli,
-}) {
-  if (demo || !bayrak) return VarlikGuncellemeDurumu.gizli;
-  if (!paywall && !admin) return VarlikGuncellemeDurumu.gizli;
-  return premiumKilitli
-      ? VarlikGuncellemeDurumu.kilitli
-      : VarlikGuncellemeDurumu.acik;
-}
+}) =>
+    demo || !bayrak
+        ? VarlikGuncellemeDurumu.gizli
+        : VarlikGuncellemeDurumu.acik;
 
 final varlikGuncellemeProvider = Provider<VarlikGuncellemeDurumu>((ref) {
   ref.watch(rcEtkinlesmeProvider);
   return varlikGuncellemeDurumu(
     bayrak: RemoteConfigService.instance.gozAlici,
     demo: DemoModu.aktif,
-    paywall: ref.watch(paywallVisibleProvider),
-    admin: ref.watch(isPushAdminProvider).valueOrNull == true,
-    premiumKilitli: ref.watch(premiumKilitliProvider),
   );
 });
 
@@ -81,7 +70,7 @@ bool varlikGuncellenebilir(Asset gorunum, List<Asset> lotlar) =>
 
 /// Portföy kaydırması ve varlık ekranının üst çubuğu bunu çağırır.
 ///
-/// Kilitliyse paywall; değilse Varlık Ekle formu "güncelle" kipinde, lotlar
+/// Varlık Ekle formu "güncelle" kipinde, lotlar
 /// [lotlar] ile açılır. Form kayıttan sonra kapanınca, sembol değiştiyse
 /// sahipsiz kalan alarmlar Sil'deki gibi sorulur (aynı fonksiyon).
 Future<void> varligiGuncelleAkisi(
@@ -93,10 +82,6 @@ Future<void> varligiGuncelleAkisi(
   if (DemoModu.yazmaKapisi('varlik_guncelle')) return;
   final durum = ref.read(varlikGuncellemeProvider);
   if (durum == VarlikGuncellemeDurumu.gizli) return;
-  if (durum == VarlikGuncellemeDurumu.kilitli) {
-    await PaywallScreen.show(context, source: 'varlik_guncelle');
-    return;
-  }
   final silinecek = [
     for (final l in lotlar)
       if (!l.isDeleteLog) l,

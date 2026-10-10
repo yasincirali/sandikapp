@@ -162,13 +162,11 @@ void main() {
           isFalse);
     });
 
-    test('bayrak açık: paywall kapalı + tek hesap → yalnız admin görür', () async {
+    test('bayrak açık: paywall kapalı, admin değil, tek hesap → yine görünür '
+        '(Premium değil, yasin 2026-10-10)', () {
       RemoteConfigService.testAcik = {'coklu_hesap'};
-      expect(kur([]).read(cokluHesapGorunurProvider), isFalse);
+      expect(kur([]).read(cokluHesapGorunurProvider), isTrue);
       expect(kur([], paywall: true).read(cokluHesapGorunurProvider), isTrue);
-      final adminC = kur([], admin: true);
-      await adminC.read(isPushAdminProvider.future);
-      expect(adminC.read(cokluHesapGorunurProvider), isTrue);
     });
 
     test('cihazda 2+ hesap varsa her zaman görünür (geri dönüş yolu)', () {
@@ -231,13 +229,11 @@ void main() {
   });
 
   group('hesap seçici', () {
-    Future<void> ac(WidgetTester tester, List<KayitliHesap> l,
-        {bool kilitli = false}) async {
+    Future<void> ac(WidgetTester tester, List<KayitliHesap> l) async {
       await tester.pumpWidget(ProviderScope(
         overrides: [
           authProvider.overrideWith(_SabitAuth.new),
           kayitliHesaplarProvider.overrideWithValue(l),
-          hesapEklemeKilitliProvider.overrideWithValue(kilitli),
         ],
         child: MaterialApp(
           theme: SandikApp.buildTheme(SandikPalette.light, Brightness.light),
@@ -265,10 +261,11 @@ void main() {
       expect(find.text('Mevcut hesabın açık kalır'), findsOneWidget);
     });
 
-    testWidgets('Premium kilidi ve sınır', (tester) async {
-      await ac(tester, [_h('yasin'), _h('ayse')], kilitli: true);
-      expect(find.text('Premium ile'), findsOneWidget);
-      expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+    testWidgets('ekleme kilitsiz (Premium değil) ve sınır', (tester) async {
+      await ac(tester, [_h('yasin'), _h('ayse')]);
+      expect(find.text('Premium ile'), findsNothing);
+      expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+      expect(find.byIcon(Icons.add_rounded), findsOneWidget);
 
       await ac(tester, [for (var i = 0; i < 5; i++) _h('h$i')]);
       expect(find.text('En fazla 5 hesap'), findsOneWidget);

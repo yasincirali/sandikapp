@@ -527,9 +527,6 @@ class _FeatureList extends StatelessWidget {
       // açıkken satılır.
       if (RemoteConfigService.instance.cokluPortfoy)
         (Icons.folder_copy_outlined, l.pwOzPortfoy),
-      // Çoklu hesap (0137): kilidi `hesapEklemeKilitliProvider`.
-      if (RemoteConfigService.instance.cokluHesap)
-        (Icons.switch_account_outlined, l.pwOzHesap),
       if (radar) (Icons.radar_rounded, l.pwOzRadar),
       // Ekstreyi yapay zekâyla okutma (0121): tabloyla aynı koşul.
       if (RemoteConfigService.instance.ekstreAiEsleme)
@@ -626,8 +623,7 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.
       if (RemoteConfigService.instance.cokluPortfoy)
         (l.prmSatirPortfoy, '1', l.pwdPortfoyPremium),
-      if (RemoteConfigService.instance.cokluHesap)
-        (l.prmSatirHesap, '1', l.prmSinirsiz),
+      // Çoklu hesap satırı kalktı: ekleme/geçiş ücretsiz (yasin 2026-10-10).
       (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
       (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
       (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),

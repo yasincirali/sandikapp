@@ -211,15 +211,9 @@ extension _DetayEylemler on _AssetDetailScreenState {
     if (!canli.acik || !varlikGuncellenebilir(canli.asset, canli.lots)) {
       return null;
     }
-    final kilitli = durum == VarlikGuncellemeDurumu.kilitli;
     return IconButton(
-      tooltip: kilitli
-          ? context.l10n.varlikGuncelleKilitli
-          : context.l10n.varlikGuncelleIpucu,
-      icon: Icon(
-        kilitli ? Icons.lock_outline_rounded : Icons.edit_note_rounded,
-        color: context.c.text90,
-      ),
+      tooltip: context.l10n.varlikGuncelleIpucu,
+      icon: Icon(Icons.edit_note_rounded, color: context.c.text90),
       onPressed: () => varligiGuncelleAkisi(context, ref,
           gorunum: _canli.asset, lotlar: _canli.lots),
     );

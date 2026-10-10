@@ -430,9 +430,9 @@ class RemoteConfigService {
     // Çoklu hesap (2026-10-10, yasin: "hesap ekleme ve aralarında session
     // switch, instagramdaki gibi"). Profil başlığında hesap seçici, giriş
     // ekranında cihazdaki hesaplar, iki seçenekli çıkış, pasif hesabın
-    // bildirimi (0137). Görünürlük bu bayrak VE (Premium görünür ya da
-    // cihazda zaten 2+ hesap: hesaba geçen kullanıcı geri dönebilmeli).
-    // Ekleme Premium'dur (paywall açıkken). KAPALI doğar: kapalıyken kasa
+    // bildirimi (0137). Bayrak açıkken herkese; ekleme ve geçiş ücretsiz
+    // (yasin 2026-10-10 akşam: "session switch özelliği de premium
+    // olmamalı"; #152'de Premium'du). KAPALI doğar: kapalıyken kasa
     // hiç yazılmaz, giriş/çıkış birebir eski yoldan yürür.
     'coklu_hesap': false,
 

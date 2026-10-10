@@ -5,7 +5,6 @@ import '../l10n/l10n.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/hesap_provider.dart';
-import '../screens/paywall_screen.dart';
 import '../services/hesap_gecisi.dart';
 import '../services/hesap_kasasi.dart';
 import '../theme/sandik.dart';
@@ -102,7 +101,6 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
   Widget build(BuildContext context) {
     final aktif = ref.watch(authProvider).valueOrNull;
     final kayitli = ref.watch(kayitliHesaplarProvider);
-    final kilitli = ref.watch(hesapEklemeKilitliProvider);
     final digerleri = [
       for (final h in kayitli)
         if (h.uid != aktif?.id) h,
@@ -167,14 +165,12 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
             Divider(color: context.c.hairline, height: SandikSpace.lg),
             if (!_duzenle)
               _EylemSatiri(
-                ikon: kilitli ? Icons.lock_outline_rounded : Icons.add_rounded,
+                ikon: Icons.add_rounded,
                 etiket: 'Hesap ekle',
                 alt: dolu
                     ? 'En fazla ${HesapKasasi.enCok} hesap'
-                    : kilitli
-                        ? 'Premium ile'
-                        : 'Mevcut hesabın açık kalır',
-                onTap: dolu ? null : () => _ekle(kilitli),
+                    : 'Mevcut hesabın açık kalır',
+                onTap: dolu ? null : _ekle,
               ),
           ],
         ),
@@ -220,14 +216,12 @@ class _HesapSeciciSayfasiState extends ConsumerState<HesapSeciciSayfasi> {
     }
   }
 
-  Future<void> _ekle(bool kilitli) async {
+  // Ekleme ücretsiz (yasin 2026-10-10 akşam: "session switch özelliği de
+  // premium olmamalı"); #152'deki paywall dalı kalktı.
+  Future<void> _ekle() async {
     final aktif = ref.read(authProvider).valueOrNull;
     final ust = widget.ustContext;
     Navigator.of(context).pop();
-    if (kilitli) {
-      await PaywallScreen.show(ust, source: 'coklu_hesap');
-      return;
-    }
     if (aktif == null) return;
     try {
       await HesapGecisi.instance.eklemeyiBaslat(aktif);
