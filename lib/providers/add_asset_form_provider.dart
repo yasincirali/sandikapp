@@ -8,6 +8,7 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import '../services/bist_hisse_katalogu.dart';
 import '../services/crash_reporter.dart';
 import '../services/fx_rate_migration_service.dart';
 import '../services/price_service.dart';
@@ -528,7 +529,7 @@ class AddAssetFormState {
     var name = nameText.trim();
     if (isBist100) {
       ticker = bist100Ticker ?? '';
-      name = bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', '');
+      name = BistHisseKatalogu.instance.hisseler[ticker] ?? ticker.replaceAll('.IS', '');
     } else if (isEurobond) {
       // Sembol yalnız katalogdaki sözleşmeden kurulur: serbest ISIN
       // sunucunun fiyatlamadığı bir tahvile bağlanıp fiyatsız lot üretirdi.
@@ -804,7 +805,7 @@ class AddAssetFormNotifier
     _set(state.copyWith(bist100Ticker: ticker, isManualPrice: false));
     return AlanYazimi(
       ticker: ticker,
-      name: bist100StocksMap[ticker] ?? ticker.replaceAll('.IS', ''),
+      name: BistHisseKatalogu.instance.hisseler[ticker] ?? ticker.replaceAll('.IS', ''),
     );
   }
 

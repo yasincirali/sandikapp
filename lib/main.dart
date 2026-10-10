@@ -25,6 +25,7 @@ import 'providers/price_alert_notification_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cihaz_provider.dart';
 import 'screens/otp_verification_screen.dart';
+import 'services/bist_hisse_katalogu.dart';
 import 'services/hesap_gecisi.dart';
 import 'widgets/uygulama_kabugu.dart';
 import 'services/cihaz_oturumu_service.dart' show CihazKapisi;
@@ -1316,6 +1317,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // yalnızca kullanıcının Katıl/Ayrıl eylemlerinde (`optInSunucuyaYaz`),
         // tercih sıfırlanması (hesap değişimi) sunucuya "ayrıldı" yazmasın.
         _hydrateLeaderboardOptIn(user.id);
+        // BIST hisse kataloğu (0139): borsadaki tüm hisseler, sunucu her
+        // sabah tazeler. Önbellek anında, sunucu yarım günde bir; hata
+        // gömülü listede bırakır. Açılışı bekletmez.
+        CrashReporter.arkaPlan(BistHisseKatalogu.instance.yukle(),
+            reason: 'main.BistHisseKatalogu.yukle');
       }
 
       _syncInviteDelivery(user?.id);

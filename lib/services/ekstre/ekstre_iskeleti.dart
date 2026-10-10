@@ -1,4 +1,4 @@
-import '../../models/asset_categories.dart';
+import '../bist_hisse_katalogu.dart';
 import 'ekstre_ice_aktarma.dart';
 import 'tablo_anlama.dart';
 
@@ -130,7 +130,7 @@ bool _korunur(String cekirdek) {
   // (Kanada doları) değildir.
   final u = cekirdek;
   if (RegExp(r'^[A-Z]{3,6}$').hasMatch(u) &&
-      (bistKoduMu(u) || _dovizKodlari.contains(u))) {
+      (BistHisseKatalogu.instance.kodMu(u) || _dovizKodlari.contains(u))) {
     return true;
   }
   final n = ekstreNormal(cekirdek);
