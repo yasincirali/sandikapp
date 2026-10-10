@@ -6,6 +6,7 @@ import '../models/asset_categories.dart';
 import '../models/asset_type.dart';
 import '../models/eurobond.dart';
 import '../models/kripto_fiyat.dart';
+import 'bist_hisse_katalogu.dart';
 import 'supabase_service.dart';
 import 'tefas_service.dart';
 import 'fiyat_kaynagi.dart';
@@ -168,22 +169,41 @@ class SymbolSearchService {
   /// bayrak eski (o türsüz) sonucu döndürmesin. İkisi de kapalıyken
   /// anahtar birebir eski (katlanmış sorgu).
   static String _anahtar(String k) =>
+      '${_katalogSurumu > 0 ? 'b$_katalogSurumu|' : ''}'
       '${_abdAcik ? 'abd|' : ''}${_eurobondAcik ? 'eb|' : ''}$k';
+
+  /// BIST kataloğu sunucudan tazelenince (yeni halka arz) yerleşik dizin
+  /// ve sonuç önbelleği eskir; sürüm anahtara girer, dizin yeniden kurulur.
+  static int get _katalogSurumu => BistHisseKatalogu.instance.surum;
 
   /// Yerleşik listelerin tek seferlik düzleştirilmiş hali.
   ///
-  /// `static final` alan Dart'ta zaten tembel başlatılır: ilk erişimde
-  /// kurulur, sonraki aramalar hazır listeyi kullanır. ~500 sembolü her
-  /// tuş vuruşunda yeniden düzleştirmek gereksiz iş olurdu.
-  static final List<SymbolHit> _builtIn = _buildBuiltInIndex();
+  /// İlk erişimde kurulur, sonraki aramalar hazır listeyi kullanır; ~800
+  /// sembolü her tuş vuruşunda yeniden düzleştirmek gereksiz iş olurdu.
+  /// BIST kataloğu değişince (sürüm) bir kez yeniden kurulur.
+  static List<SymbolHit> get _builtIn {
+    if (_builtInSurumu != _katalogSurumu || _builtInListe == null) {
+      _builtInListe = _buildBuiltInIndex();
+      _builtInAnahtarListe = {
+        for (final h in _builtInListe!)
+          h.ticker:
+              trKatla('${h.ticker} ${h.name} ${_takmaAdlar[h.ticker] ?? ''}'),
+      };
+      _builtInSurumu = _katalogSurumu;
+    }
+    return _builtInListe!;
+  }
+
+  static List<SymbolHit>? _builtInListe;
+  static Map<String, String> _builtInAnahtarListe = const {};
+  static int _builtInSurumu = -1;
 
   /// Yerleşik sembolün aranabilir anahtarı: katlanmış ticker + ad + takma
   /// adlar. Bir kez kurulur (her tuşta ~500 adı yeniden katlamak gereksiz).
-  static final Map<String, String> _builtInAnahtar = {
-    for (final h in _builtIn)
-      h.ticker: trKatla(
-          '${h.ticker} ${h.name} ${_takmaAdlar[h.ticker] ?? ''}'),
-  };
+  static Map<String, String> get _builtInAnahtar {
+    _builtIn; // sürüm değiştiyse dizinle birlikte kurulur
+    return _builtInAnahtarListe;
+  }
 
   /// Gündelik adlar — kullanıcının yazdığı, resmî adda geçmeyen kelimeler.
   ///
@@ -210,8 +230,8 @@ class SymbolSearchService {
   static List<SymbolHit> _buildBuiltInIndex() {
     final out = <SymbolHit>[];
 
-    // BIST — `bist100StocksMap` kod→isim yönünde.
-    bist100StocksMap.forEach((ticker, name) {
+    // BIST — katalog kod→isim yönünde (sunucu → önbellek → gömülü liste).
+    BistHisseKatalogu.instance.hisseler.forEach((ticker, name) {
       out.add(SymbolHit(ticker: ticker, name: name, source: 'BIST'));
     });
 

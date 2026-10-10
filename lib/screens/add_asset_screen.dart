@@ -20,6 +20,7 @@ import '../providers/kripto_provider.dart';
 import '../providers/portfolio_provider.dart';
 import '../providers/portfoy_provider.dart';
 import '../widgets/portfoy_secici.dart';
+import '../services/bist_hisse_katalogu.dart';
 import '../services/tefas_service.dart';
 import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -2099,7 +2100,7 @@ class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
 
   Widget _bist100SelectorField(ColorScheme cs, {required bool hata}) {
     final selectedName = _bist100SelectedTicker != null
-        ? bist100StocksMap[_bist100SelectedTicker!] ?? _bist100SelectedTicker!
+        ? BistHisseKatalogu.instance.hisseler[_bist100SelectedTicker!] ?? _bist100SelectedTicker!
         : null;
     final ticker = _bist100SelectedTicker?.replaceAll('.IS', '');
 
@@ -2955,8 +2956,22 @@ class _Bist100PickerState extends State<_Bist100Picker> {
   final _ctrl = TextEditingController();
   String _q = '';
 
+  // Liste sunucudan tazelenirse (yeni halka arz) açık seçici de güncellenir.
+  // Açılışta yüklenmiş olur; burada yalnız bayatsa sorulur (2026-10-10).
+  @override
+  void initState() {
+    super.initState();
+    BistHisseKatalogu.instance.addListener(_katalogDegisti);
+    CrashReporter.arkaPlan(BistHisseKatalogu.instance.yukle(),
+        reason: '_Bist100Picker.yukle');
+  }
+
+  void _katalogDegisti() {
+    if (mounted) setState(() {});
+  }
+
   List<MapEntry<String, String>> get _filtered {
-    final all = bist100StocksMap.entries.toList()
+    final all = BistHisseKatalogu.instance.hisseler.entries.toList()
       ..sort((a, b) => a.value.compareTo(b.value));
     if (_q.isEmpty) return all;
     final q = _q.toLowerCase();
@@ -2969,6 +2984,7 @@ class _Bist100PickerState extends State<_Bist100Picker> {
 
   @override
   void dispose() {
+    BistHisseKatalogu.instance.removeListener(_katalogDegisti);
     _ctrl.dispose();
     super.dispose();
   }

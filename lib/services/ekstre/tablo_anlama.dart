@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import '../../models/asset_categories.dart';
+import '../bist_hisse_katalogu.dart';
 import '../../utils/tr_katla.dart';
 import '../csv_import_service.dart';
 import 'ekstre_tablosu.dart';
@@ -462,7 +462,7 @@ String? isindenKod(String s) {
   for (final n in const [5, 4, 6]) {
     if (3 + n > u.length) continue;
     final aday = u.substring(3, 3 + n);
-    if (bistKoduMu(aday)) return aday;
+    if (BistHisseKatalogu.instance.kodMu(aday)) return aday;
   }
   return null;
 }
@@ -483,7 +483,7 @@ double sembolPuani(String ham) {
   final s = CsvImportService.sembolAyikla(ham).trim();
   if (s.isEmpty) return 0;
   final u = s.toUpperCase();
-  if (bistKoduMu(u)) return 1;
+  if (BistHisseKatalogu.instance.kodMu(u)) return 1;
   if (isindenKod(u) != null) return 1;
   if (CsvImportService.kriptoKodunuCoz(u) != null && u.length <= 12) return 0.8;
   final k = trKatla(s);

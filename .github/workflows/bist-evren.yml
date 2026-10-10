@@ -13,6 +13,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      # Sunucu görevinin (bist-hisse-katalog) ayrıştırıcıları canlı kaynakta.
+      - run: deno run --allow-net --allow-read tool/bist_katalog_canli.ts
       - run: python3 tool/bist_evren_olc.py
       - uses: actions/upload-artifact@v4
         with:

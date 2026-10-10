@@ -44,7 +44,7 @@ class _CompareChoice {
 List<_CompareChoice> _catalogChoices() {
   final out = <_CompareChoice>[];
   // BIST100 hisseleri
-  bist100StocksMap.forEach((ticker, name) {
+  BistHisseKatalogu.instance.hisseler.forEach((ticker, name) {
     out.add(_CompareChoice(
       ticker: ticker,
       name: name,

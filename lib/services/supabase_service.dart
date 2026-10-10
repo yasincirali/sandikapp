@@ -1896,6 +1896,30 @@ class SupabaseService {
     return out;
   }
 
+  /// Borsada bugün işlem gören BIST hisseleri — `'THYAO.IS'` → ad (0139,
+  /// `bist-hisse-katalog` her sabah tazeler). Pasif (kodu değişmiş ya da
+  /// borsadan çıkmış) satır gelmez. Önbellek ve gömülü listeye düşme
+  /// `BistHisseKatalogu`'nda.
+  Future<Map<String, String>> bistHisseleri() async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.bistHisseleri',
+      table: 'bist_hisse',
+      op: 'SELECT',
+      request: const {'aktif': true},
+      call: () => _db
+          .from('bist_hisse')
+          .select('kod, ad')
+          .eq('aktif', true)
+          // PostgREST varsayılan üst sınırı 1000; borsa ~630 kâğıt.
+          .limit(2000),
+    );
+    return {
+      for (final r in rows)
+        if (r['kod'] is String && r['ad'] is String)
+          '${r['kod']}.IS': r['ad'] as String,
+    };
+  }
+
   /// Etkin kripto kataloğu, hacim sırasıyla; son fiyat gömülü gelir
   /// (tek istek). Pasif (listeden düşmüş) coin aramada çıkmaz; onu tutan
   /// kullanıcının kaydı `kripto_fiyat`'tan okunmaya devam eder.
