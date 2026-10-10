@@ -70,14 +70,14 @@ seri motoru, gün içi önbellek (kapsam anahtarı zaten lot kimlikleri),
 BİLİNÇLİ olarak kullanıcı toplamında kaldı (aşağıdaki v1 sınırları).
 Bayrak açılıp TestFlight'ta doğrulanınca bu madde KAPANDI tablosuna taşınır.
 
-**3. Tek varlık sinyal kapısı artık ölü yol.** Sinyal paywall açıkken
-bütünüyle Premium olduğu için `sinyalVarlikKapisiAcikProvider`,
-`SinyalVarlikSeridi`, `sinyal_varlik_secimi` (0126), sunucuda
-`ucretsizVarlikFiltresi` ve slot kapısı (`SINYAL_UCRETSIZ_*`,
-`free_signal_slots_per_day`, `free_signal_assets`) hiçbir kullanıcıda
-devreye girmez. Bilerek bırakıldı: karar geri alınırsa ("1 varlık ücretsiz")
-tek satırla döner. Maliyet: okunmayan kod + test. Ne zaman: paywall açıldıktan
-bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migration).
+**3. ~~Tek varlık sinyal kapısı artık ölü yol.~~** KAPANDI (2026-10-10,
+Premium seti netleştirme PR'ı): `SinyalVarlikSeridi`, slot kapısı,
+`free_signal_slots_per_day`/`free_signal_assets`, sunucuda
+`ucretsizVarlikFiltresi` ve slot zamanlaması koddan kalktı. **Kalan:**
+`sinyal_varlik_secimi` tablosu (0126) DB'de duruyor — mağazadaki eski
+sürümler onu okuyup yazıyor (ana kural: eski istemcinin kullandığı tablo
+kaldırılmaz). Ne zaman: 0126'yı okuyan son sürüm kullanımdan düşünce ayrı
+bir migration ile `drop table`.
 
 **4. Çoklu portföy v1 sınırları (2026-10-10, bilinçli).**
 - *Kısmi taşıma* — 2026-10-10 KAPANIYOR (0136, Premium): ne lot seçerek
