@@ -9,6 +9,29 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Tek PR: olgun Premium + Fon X-Ray + çoklu portföy — ORTAK SIRA
+
+Üç iş aynı PR'da main'e gider (dal `feat/premium-olgun`). Ayrıntı aşağıdaki
+üç bölümde; burada yalnız ortak sıra. main'e birleşmek istemciyi mağazaya
+götürür ama canlıdaki kullanıcı hiçbir şey görmez: her yeni yüzey
+`paywall_enabled` (kapalı) ya da kendi bayrağı (`coklu_portfoy`,
+`fon_xray_kalem`, kapalı) arkasında; yalnız admin hesabı görür.
+
+- [ ] **Supabase deploy** (hedef `ikisi`, Frankfurt → Tokyo), migration
+      sırası: 0130 (Koşullar 1.7) → 0131 (fon_dagilimlari + cron) → 0132
+      (fon_kalemleri + cron) → 0133 (çoklu portföy) → 0134 (Koşullar 1.8).
+      Hepsi yalnız ekler. Sonra `python tool/sema_esitlik.py`.
+- [ ] **Edge function deploy** (iki sunucu): `analyze-signals` (yalnız
+      Premium kapısı; `premium_ayar.kapi_acik` kapalıyken birebir eski),
+      `fon-dagilim`, `fon-kalem-raporu` (ikincisi `FON_KALEM_ACIK` secret'ı
+      olmadan hiçbir şey yapmaz).
+- [ ] Admin hesabıyla TestFlight'ta üç bölümün deneme adımları.
+- [ ] Kontrol (ayrı, bu PR'ın işi değil): X-Ray geliştirmesi sırasında fark
+      edildi; mevcut `ekstre-esle` fonksiyonu `claude-sonnet-5-5` ile zorunlu
+      `tool_choice` kullanıyor ve bu model zorunlu araç seçimine 400
+      dönebilir. Canlıda ekstre yapay zekâ eşlemesi bayrak arkasında; açmadan
+      önce bir ekstreyle dene, 400 görürsen düzeltilmeli.
+
 ## ⏳ 2026-10-10 Fon X-Ray (dal `feat/fon-xray`, migration 0131, 0132, 0134)
 
 Senin isteğin: Premium'a "fonumun içinde ne var, param gerçekte nerede".
