@@ -514,6 +514,9 @@ class _FeatureList extends StatelessWidget {
       // Fon X-Ray (2026-10-10): kilit `FonDagilimiKarti` + `PortfoyXrayScreen`.
       (Icons.donut_large_rounded, l.pwOzXray),
       (Icons.insights_rounded, l.pwOzSinyalTam),
+      // Mum + EMA50/EMA200 (#150): kilit `premiumKilitliProvider`
+      // (`grafik_katmanlari.dart`).
+      (Icons.candlestick_chart_rounded, l.pwOzGrafik),
       (Icons.payments_outlined, l.pwOzMasraf),
       (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
       (Icons.group_outlined, l.pwOzOrtak),
@@ -521,7 +524,13 @@ class _FeatureList extends StatelessWidget {
       // açıkken satılır.
       if (RemoteConfigService.instance.cokluPortfoy)
         (Icons.folder_copy_outlined, l.pwOzPortfoy),
+      // Çoklu hesap (0137): kilidi `hesapEklemeKilitliProvider`.
+      if (RemoteConfigService.instance.cokluHesap)
+        (Icons.switch_account_outlined, l.pwOzHesap),
       if (radar) (Icons.radar_rounded, l.pwOzRadar),
+      // Ekstreyi yapay zekâyla okutma (0121): tabloyla aynı koşul.
+      if (RemoteConfigService.instance.ekstreAiEsleme)
+        (Icons.document_scanner_outlined, l.pwOzEkstre),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -607,11 +616,15 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirXray, null, null),
       (l.prmSatirMasraf, l.prmMasrafUcretsiz, l.prmMasrafPremium),
       (l.prmSatirSinyal, null, l.prmSinyalPremium),
+      // Grafik katmanları (#150): çizgi grafik ücretsiz, katmanlar Premium.
+      (l.prmSatirGrafik, null, null),
       (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),
       (l.prmSatirOrtak, '$ortakSiniri', l.prmSinirsiz),
       // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.
       if (RemoteConfigService.instance.cokluPortfoy)
-        (l.prmSatirPortfoy, '1', l.prmSinirsiz),
+        (l.prmSatirPortfoy, '1', l.pwdPortfoyPremium),
+      if (RemoteConfigService.instance.cokluHesap)
+        (l.prmSatirHesap, '1', l.prmSinirsiz),
       (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
       (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
       (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),

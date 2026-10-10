@@ -124,7 +124,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final firstConfirm = await showSandikConfirm(
       context: context,
       title: context.l10n.deleteAccountTitle,
-      message: context.l10n.deleteAccountBody,
+      // Mağaza aboneliği hesapla birlikte bitmez (sunucu RevenueCat kaydını
+      // siler ama yenilemeyi yalnız App Store / Play kapatır). Apple 5.1.1(v)
+      // kullanıcıya bunun söylenmesini ister; abonesi olmayana gürültü.
+      message: ref.read(magazaPremiumProvider)
+          ? '${context.l10n.deleteAccountBody}\n\n'
+              '${context.l10n.deleteAccountSubscriptionNote}'
+          : context.l10n.deleteAccountBody,
       confirmLabel: context.l10n.continueAction,
       destructive: true,
       barrierDismissible: false,

@@ -1,8 +1,8 @@
 # KVKK Aydınlatma Metni — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 8 Ekim 2026
-**Sürüm:** 1.8
+**Son güncelleme:** 10 Ekim 2026
+**Sürüm:** 1.9
 **Onay sürümü:** 1.8
 
 ---
@@ -154,7 +154,7 @@ Zirvedeki Portföyler isteğe bağlıdır ve yalnızca uygulama içinde açık r
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar | KVKK 5(2)(f) meşru menfaat |
 | Ekstre sütun eşleme istek kayıtları (zaman, model, maliyet) | 40 gün | KVKK 5(2)(f) meşru menfaat (kötüye kullanım ve maliyet sınırı) |
-| Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince, ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır | Sözleşme süresi |
+| Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız | Sözleşme süresi |
 | Push token | Çıkış yapılana ya da token geçersizleşene (uygulama silinene) kadar | Sözleşme süresi |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silinmesinden sonra **3 yıl** | TBK Madde 146 (zamanaşımı) |
 | Anonim hesap silme kaydı (hesap kimliğinin tek yönlü özeti, e-posta alan adı, silme zamanı ve nedeni) | Hesap silinmesinden sonra **3 yıl**; süresi dolanlar her gün otomatik silinir | TBK Madde 146 (zamanaşımı) |

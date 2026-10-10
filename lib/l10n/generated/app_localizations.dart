@@ -2138,6 +2138,12 @@ abstract class AppLocalizations {
   /// **'Güvenliğin için şifrenle onay vermen gerekiyor.'**
   String get confirmWithPasswordBody;
 
+  /// No description provided for @deleteAccountSubscriptionNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not: App Store / Google Play aboneliğin hesap silinince kendiliğinden iptal olmaz. Yenilemeyi mağazanın abonelikler sayfasından kapat.'**
+  String get deleteAccountSubscriptionNote;
+
   /// No description provided for @deleteAccountUpper.
   ///
   /// In tr, this message translates to:
@@ -9432,7 +9438,7 @@ abstract class AppLocalizations {
   /// Kapının 'Neler değişti' kartı. Belge sürümü (legal/tr/*.md 'Sürüm' satırı) her arttığında yeni sürümün değişikliklerine göre yeniden yazılır; uydurma iddia yazılmaz.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
+  /// **'Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.'**
   String get yasalKapiDegisiklikNotu;
 
   /// No description provided for @yasalBelgeKosullar.
@@ -13525,7 +13531,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzPortfoy.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı'**
+  /// **'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı; aralarında kısmi aktarım ve ortağın hangisini göreceğini seçme'**
   String get pwOzPortfoy;
 
   /// No description provided for @prmSatirPortfoy.
@@ -13533,6 +13539,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Portföy'**
   String get prmSatirPortfoy;
+
+  /// No description provided for @pwdGrafikEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'GRAFİK'**
+  String get pwdGrafikEtiket;
+
+  /// No description provided for @pwdGrafikBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mum grafik, EMA50 ve EMA200; trendi tek bakışta gör.'**
+  String get pwdGrafikBaslik;
+
+  /// No description provided for @pwdGrafikPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'mum, EMA50, EMA200'**
+  String get pwdGrafikPremium;
+
+  /// No description provided for @pwdPortfoyPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'sınırsız, kısmi aktarım'**
+  String get pwdPortfoyPremium;
+
+  /// No description provided for @pwOzGrafik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grafikte mum görünümü, EMA50 ve EMA200 çizgileri'**
+  String get pwOzGrafik;
+
+  /// No description provided for @pwOzEkstre.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka ve aracı kurum ekstreni yapay zekâyla eşleme'**
+  String get pwOzEkstre;
+
+  /// No description provided for @prmSatirGrafik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mum · EMA50 · EMA200'**
+  String get prmSatirGrafik;
+
+  /// No description provided for @pwdHesapEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'HESAPLAR'**
+  String get pwdHesapEtiket;
+
+  /// No description provided for @pwdHesapBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi hesabın, şirketin, ailen; tek dokunuşla geç.'**
+  String get pwdHesapBaslik;
+
+  /// No description provided for @pwdHesapUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 hesap'**
+  String get pwdHesapUcretsiz;
+
+  /// No description provided for @pwdHesapPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'ek hesap ve geçiş'**
+  String get pwdHesapPremium;
+
+  /// No description provided for @pwOzHesap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı telefonda birden çok hesap, aralarında tek dokunuşla geçiş'**
+  String get pwOzHesap;
+
+  /// No description provided for @prmSatirHesap.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap'**
+  String get prmSatirHesap;
 
   /// No description provided for @pwdPortfoyEtiket.
   ///

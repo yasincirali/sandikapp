@@ -10,6 +10,8 @@
 // 2. Service-role client ile auth.admin.deleteUser() çağır
 // 3. ON DELETE CASCADE ile bağlı tablolardaki tüm veri silinir
 // 4. account_deletion_log'a anonim kayıt (KVKK kanıtı)
+// 5. RevenueCat abone kaydı silinir (en iyi çaba, `REVENUECAT_API_KEY`
+//    varsa; gerekçe `_shared/premium.ts` → revenueCatKaydiniSil)
 //
 // Yasal dayanak: KVKK Madde 11(e), GDPR Article 17,
 // Play Console 2024+ ve App Store Guideline 5.1.1(v) zorunluluğu.
@@ -23,6 +25,7 @@
 //     https://<project>.supabase.co/functions/v1/delete-account
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { revenueCatKaydiniSil } from "../_shared/premium.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -34,6 +37,9 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // hesaplayabildiği bir değere düşürüyordu — anonim kayıt anonim olmaktan
 // çıkıyordu. Secret yoksa fonksiyon istek anında 503 döner.
 const HASH_SALT = Deno.env.get("DELETION_HASH_SALT");
+
+// İsteğe bağlı: RevenueCat henüz kurulmadıysa yoktur, silme yine çalışır.
+const REVENUECAT_API_KEY = Deno.env.get("REVENUECAT_API_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -170,6 +176,13 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to delete user:", deleteError);
       return jsonResponse({ error: "delete_failed" }, 500);
     }
+
+    // 5. RevenueCat kaydı — Supabase silmesi BAŞARILI olduktan sonra: tersi
+    //    sırada silme başarısız olursa hesap kalır ama Premium kaydı giderdi.
+    //    Sonuç istemciye dönmez; yalnız günlük (kimlik yazılmaz).
+    const rc = await revenueCatKaydiniSil(user.id, REVENUECAT_API_KEY);
+    if (rc === "hata") console.error("delete-account: RevenueCat kaydi silinemedi");
+
 
     return jsonResponse({ success: true, deleted_at: new Date().toISOString() });
   } catch (e) {

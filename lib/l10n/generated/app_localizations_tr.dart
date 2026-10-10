@@ -1166,6 +1166,10 @@ class AppLocalizationsTr extends AppLocalizations {
       'Güvenliğin için şifrenle onay vermen gerekiyor.';
 
   @override
+  String get deleteAccountSubscriptionNote =>
+      'Not: App Store / Google Play aboneliğin hesap silinince kendiliğinden iptal olmaz. Yenilemeyi mağazanın abonelikler sayfasından kapat.';
+
+  @override
   String get deleteAccountUpper => 'HESABI SİL';
 
   @override
@@ -5608,7 +5612,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get yasalKapiDegisiklikNotu =>
-      'Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.';
+      'Sürüm 1.9: Hesabını silince RevenueCat\'teki abone kaydının da silinmesi istenir. Hesap silmek mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play\'den kapatırsın. Sürüm 1.8: Premium abonelik koşulları eklendi (fiyat, otomatik yenileme, iptal, iade). Premium satın alırsan aboneliğin RevenueCat (ABD) üzerinden doğrulanır; kart bilgin bize ulaşmaz. Bu yüzden Açık Rıza Metni\'ne RevenueCat eklendi. Fiyat kaynakları artık tek tek sayılmıyor, çünkü onlara kişisel veri gitmez. Bundan sonra kişisel veri işleyişini değiştirmeyen düzeltmeler için yeniden onay istenmeyecek. Sürüm 1.7: Eurobond fiyatları için iki yeni kaynak eklendi: Börse Frankfurt ve Ziraat Bankası. Bu kaynaklara yalnızca sunucumuz bağlanır ve yalnızca tahvilin ISIN kodunu sorar; kişisel bilgilerin gönderilmez. Sürüm 1.6: Ekstre içe aktarmada uygulama sütunlardan emin olamazsa \"Yapay zekâyla eşle\" seçeneği çıkar. Basarsan tablonun yalnızca anonim iskeleti (ad, numara, tutar ve tarihler gizli) yapay zekâya (Anthropic) gider; dosya telefonundan çıkmaz ve iskelet saklanmaz. Sürüm 1.5: Varlık notları eklendi. Portföyündeki varlıklar için haftalık notlar ve aylık rapor yapay zekâyla (Anthropic) yazılır; yapay zekâya kişisel verilerin gönderilmez, yalnızca varlığın piyasa ölçümleri gider. Notlar otomatik denetlenir ama hata içerebilir ve yatırım tavsiyesi değildir. Notlara verdiğin geri bildirim (oy, \"yanlış sayı\" işareti, açıklama) ve Premium hakkın hesabınla saklanır, hesabını silince silinir.';
 
   @override
   String get yasalBelgeKosullar => 'Kullanım Koşulları';
@@ -8081,10 +8085,52 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzPortfoy =>
-      'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı';
+      'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı; aralarında kısmi aktarım ve ortağın hangisini göreceğini seçme';
 
   @override
   String get prmSatirPortfoy => 'Portföy';
+
+  @override
+  String get pwdGrafikEtiket => 'GRAFİK';
+
+  @override
+  String get pwdGrafikBaslik =>
+      'Mum grafik, EMA50 ve EMA200; trendi tek bakışta gör.';
+
+  @override
+  String get pwdGrafikPremium => 'mum, EMA50, EMA200';
+
+  @override
+  String get pwdPortfoyPremium => 'sınırsız, kısmi aktarım';
+
+  @override
+  String get pwOzGrafik => 'Grafikte mum görünümü, EMA50 ve EMA200 çizgileri';
+
+  @override
+  String get pwOzEkstre => 'Banka ve aracı kurum ekstreni yapay zekâyla eşleme';
+
+  @override
+  String get prmSatirGrafik => 'Mum · EMA50 · EMA200';
+
+  @override
+  String get pwdHesapEtiket => 'HESAPLAR';
+
+  @override
+  String get pwdHesapBaslik =>
+      'Kendi hesabın, şirketin, ailen; tek dokunuşla geç.';
+
+  @override
+  String get pwdHesapUcretsiz => '1 hesap';
+
+  @override
+  String get pwdHesapPremium => 'ek hesap ve geçiş';
+
+  @override
+  String get pwOzHesap =>
+      'Aynı telefonda birden çok hesap, aralarında tek dokunuşla geçiş';
+
+  @override
+  String get prmSatirHesap => 'Hesap';
 
   @override
   String get pwdPortfoyEtiket => 'PORTFÖY';

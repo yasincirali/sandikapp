@@ -526,10 +526,9 @@ artar, kimseye yeniden sorulmaz ("Onay sürümü" satırı).
 - [ ] PR'ı birleştir (CI yeşil olunca).
 - [x] **Supabase deploy** (`main`, hedef `ikisi`, migrations) — 0126 ile
       0127 birlikte, sırayla gider.
-- [ ] Paywall'u açmadan önce hâlâ gerekli: hesap silmede RevenueCat
-      müşterisini silen çağrı yok — metin şimdilik "RevenueCat'teki işlem
-      kaydı RevenueCat'in saklama süresince kalır" diyor. Çağrı eklenince
-      metin esaslı olmayan bir düzeltmeyle güncellenir.
+- [x] Hesap silmede RevenueCat kaydı (2026-10-10): `delete-account` artık
+      `REVENUECAT_API_KEY` varsa RevenueCat abone kaydını da siler; metin
+      Gizlilik/KVKK 1.9 (0138, esaslı değil, yeniden onay yok).
 ## ⏳ 2026-10-08 Ücretsiz sınırlar: 10 varlık, 5 takip, sinyal tek varlıkta (0126)
 
 Senin kararın: ücretsizde 10 varlık (11.'si Premium ister), takip listesi 5
@@ -654,8 +653,9 @@ Paywall'u açmadan önce sırayla:
       Authorization başlığı = webhook secret.
 - [x] Yasal metin: 2026-10-08 1.8 / Koşullar 1.6 / Açık Rıza 1.5 ile metne girdi (0127). Eski not: taslak `/mnt/project-files/paywall/abonelik_maddesi_taslak.md`
       (Koşullar §2A, Gizlilik §3.6/§5/§6/§7). Açılış yayınında md'ye girer,
-      sürüm artar, migration. Hesap silmede RevenueCat müşterisini silen çağrı
-      (`delete-account`) henüz yok; ya eklenir ya metin bunu söyler.
+      sürüm artar, migration. Hesap silmede RevenueCat kaydını silen çağrı
+      2026-10-10'da eklendi (Gizlilik/KVKK 1.9, 0138); `REVENUECAT_API_KEY`
+      secret'ı aynı zamanda bu silmeyi de açar.
 - [ ] Sandbox testi: TestFlight'ta kendi cihazında `paywall_enabled` (koşullu)
       aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.
 - [ ] Açılış günü sırası yukarıdaki 0115–0118 bölümünde (hediye → bayrak →

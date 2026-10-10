@@ -44,6 +44,13 @@ class SatinAlmaService {
   String? _bagliKullanici;
   Future<void>? _kurulum;
 
+  /// Oturumdaki kullanıcı — bağlanmamış olsa da. `paywall_enabled` oturum
+  /// ORTASINDA açılırsa (Remote Config sonradan etkinleşir, #141) girişte
+  /// no-op olan bağlama burada yeniden denenir; yoksa satın alma düğmesi
+  /// uygulama yeniden açılana kadar "kullanılamıyor" kalıyordu.
+  String? _istenenKullanici;
+  bool _rcDinleniyor = false;
+
   /// Hak değişince çağrılır (satın alma, iade, başka cihazdan geri yükleme).
   /// `main.dart` bağlar: istemci durumu + sunucu haklarını tazeler.
   void Function(bool aktif)? hakDegisti;
@@ -70,6 +77,8 @@ class SatinAlmaService {
   /// webhook UUID olmayan kimliği yazmaz (bkz. `etkilenenKullanicilar`).
   /// Bayrak kapalıysa ya da anahtar yoksa hiçbir şey yapmaz.
   Future<void> kullaniciyiBagla(String uid) async {
+    _istenenKullanici = uid;
+    _rcDinle();
     if (!kullanilabilir) return;
     try {
       if (!_yapilandirildi) {
@@ -86,6 +95,17 @@ class SatinAlmaService {
     }
   }
 
+  void _rcDinle() {
+    if (_rcDinleniyor) return;
+    _rcDinleniyor = true;
+    RemoteConfigService.instance.etkinlesmeSayaci.addListener(() {
+      final uid = _istenenKullanici;
+      if (uid == null || _bagliKullanici == uid || !kullanilabilir) return;
+      CrashReporter.arkaPlan(kullaniciyiBagla(uid),
+          reason: 'SatinAlmaService.kullaniciyiBagla(rc)');
+    });
+  }
+
   Future<void> _yapilandir(String uid) async {
     final cfg = PurchasesConfiguration(_anahtar!)..appUserID = uid;
     await Purchases.configure(cfg);
@@ -97,6 +117,7 @@ class SatinAlmaService {
   /// Çıkışta anonim kullanıcıya düş: sonraki hesap öncekinin aboneliğini
   /// görmesin. Yapılandırılmamışsa no-op.
   Future<void> cikis() async {
+    _istenenKullanici = null;
     if (!_yapilandirildi || _bagliKullanici == null) return;
     try {
       await Purchases.logOut();

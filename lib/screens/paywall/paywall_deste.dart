@@ -29,10 +29,16 @@ enum PaywallKarti {
   temettu,
   xray,
   sinyal,
+  // Mum + EMA50/EMA200 (#150, 2026-10-10): sinyalin yanında — ikisi de
+  // "fiyat nereye gidiyor" sorusunun teknik cevabı.
+  grafik,
   karsilastir,
   ortak,
   // Çoklu portföy (0133): yalnız `coklu_portfoy` açıkken destede.
   portfoy,
+  // Çoklu hesap (0137): bir cihazda birden çok hesap; yalnız `coklu_hesap`
+  // açıkken destede.
+  hesap,
   akis,
   hacim,
   not,
@@ -60,9 +66,16 @@ PaywallKarti? kaynaktanKart(String source) {
     'temettu_tahmini' => PaywallKarti.temettu,
     'fon_xray' || 'portfoy_xray' => PaywallKarti.xray,
     'aylik_rapor' => PaywallKarti.not,
+    'grafik_mum' || 'grafik_ema' => PaywallKarti.grafik,
     'compare_series' => PaywallKarti.karsilastir,
+    'coklu_hesap' => PaywallKarti.hesap,
     'partner_limit' => PaywallKarti.ortak,
-    'portfoy_limit' => PaywallKarti.portfoy,
+    // Kısmi aktarım ve ortağın göreceği portföyü seçmek de çoklu portföyün
+    // Premium yarısı (#148); kart aynı.
+    'portfoy_limit' ||
+    'portfoy_kismi_aktar' ||
+    'ortak_paylasim' =>
+      PaywallKarti.portfoy,
     'para_akisi_karti' => PaywallKarti.akis,
     'hacim_radari' || 'kripto_baski' => PaywallKarti.hacim,
     'analiz_notu' => PaywallKarti.not,
@@ -79,6 +92,7 @@ List<PaywallKarti> desteSirasi(
   required bool ekstreAi,
   // Varsayılan kapalı: bayrak açılmadan satılmaz (açılmamış şey satılmaz).
   bool portfoy = false,
+  bool hesap = false,
 }) {
   final acik = [
     for (final k in PaywallKarti.values)
@@ -86,6 +100,7 @@ List<PaywallKarti> desteSirasi(
         PaywallKarti.akis || PaywallKarti.hacim || PaywallKarti.not => radar,
         PaywallKarti.ekstre => ekstreAi,
         PaywallKarti.portfoy => portfoy,
+        PaywallKarti.hesap => hesap,
         _ => true,
       })
         k,
@@ -178,7 +193,8 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
     final sira = desteSirasi(widget.source,
         radar: rc.balinaRadariAcik,
         ekstreAi: rc.ekstreAiEsleme,
-        portfoy: rc.cokluPortfoy);
+        portfoy: rc.cokluPortfoy,
+        hesap: rc.cokluHesap);
     return _kartlar = [for (final k in sira) _kart(context, k)];
   }
 
@@ -239,6 +255,17 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           null,
           l.pwdSinyalPremium,
         ),
+      // Grafik katmanları bütünüyle Premium: ücretsiz satırı yok (çizgi
+      // grafik ücretsizde aynen kalır, yalnız katmanlar kilitli).
+      PaywallKarti.grafik => (
+          _KartRengi.koyu,
+          l.pwdGrafikEtiket,
+          l.pwdGrafikBaslik,
+          'EMA50 · EMA200',
+          const _MumGorseli(),
+          null,
+          l.pwdGrafikPremium,
+        ),
       PaywallKarti.karsilastir => (
           _KartRengi.krem,
           l.pwdKarsEtiket,
@@ -270,7 +297,19 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
               aralik: SandikSpace.sm,
               renk: _KartRengi.koyu),
           l.pwdPortfoySayi(1),
-          l.prmSinirsiz,
+          l.pwdPortfoyPremium,
+        ),
+      // Çoklu hesap: ücretsizde tek hesap, Premium'da ek hesap ve geçiş
+      // (`hesapEklemeKilitliProvider`). Geçiş ücretsizde de çalışır —
+      // eklenmiş hesaba dönebilmek kilitlenmez; satılan ŞEY eklemedir.
+      PaywallKarti.hesap => (
+          _KartRengi.krem,
+          l.pwdHesapEtiket,
+          l.pwdHesapBaslik,
+          null,
+          _OrtakGorseli(renk: _KartRengi.krem),
+          l.pwdHesapUcretsiz,
+          l.pwdHesapPremium,
         ),
       PaywallKarti.akis => (
           _KartRengi.amber,
@@ -963,6 +1002,91 @@ class _CizgiBoyasi extends CustomPainter {
   @override
   bool shouldRepaint(_CizgiBoyasi old) =>
       old.ana != ana || old.ikinci != ikinci || old.soluk != soluk;
+}
+
+/// Mum grafik + iki EMA (temsilî): yükselen mum yeşil, düşen kırmızı;
+/// EMA50 yeşil, EMA200 kırmızı çizgi — uygulamadaki grafikle aynı renk
+/// anlamı (`grafik_katmanlari.dart`). Koyu kartta okunsun diye koyu palet.
+class _MumGorseli extends StatelessWidget {
+  const _MumGorseli();
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        painter: _MumBoyasi(
+          artis: SandikPalette.dark.gain,
+          dusus: SandikPalette.dark.loss,
+        ),
+      );
+}
+
+class _MumBoyasi extends CustomPainter {
+  const _MumBoyasi({required this.artis, required this.dusus});
+
+  final Color artis;
+  final Color dusus;
+
+  // (açılış, kapanış, en yüksek, en düşük); 0 üst, 100 alt.
+  static const _mumlar = [
+    (88.0, 70.0, 62.0, 96.0),
+    (70.0, 80.0, 64.0, 90.0),
+    (80.0, 58.0, 50.0, 84.0),
+    (58.0, 66.0, 52.0, 76.0),
+    (66.0, 42.0, 34.0, 70.0),
+    (42.0, 50.0, 36.0, 60.0),
+    (50.0, 30.0, 22.0, 54.0),
+    (30.0, 38.0, 24.0, 46.0),
+    (38.0, 12.0, 4.0, 42.0),
+  ];
+  static const _ema50 = <double>[86, 80, 74, 68, 60, 54, 46, 40, 30];
+  static const _ema200 = <double>[96, 93, 89, 85, 81, 77, 72, 68, 63];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final n = _mumlar.length;
+    final adim = size.width / n;
+    double y(double v) => size.height * v / 100;
+    double x(int i) => adim * (i + 0.5);
+
+    for (final (seri, renk) in [(_ema200, dusus), (_ema50, artis)]) {
+      final yol = Path();
+      for (var i = 0; i < seri.length; i++) {
+        i == 0 ? yol.moveTo(x(i), y(seri[i])) : yol.lineTo(x(i), y(seri[i]));
+      }
+      canvas.drawPath(
+        yol,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..color = renk.withValues(alpha: 0.75),
+      );
+    }
+
+    for (var i = 0; i < n; i++) {
+      final (ac, kap, yuk, dus) = _mumlar[i];
+      // Ekran koordinatı ters: kapanış yukarıdaysa (küçük sayı) yükseliş.
+      final renk = kap < ac ? artis : dusus;
+      final boya = Paint()..color = renk;
+      canvas.drawLine(
+        Offset(x(i), y(yuk)),
+        Offset(x(i), y(dus)),
+        boya..strokeWidth = 2,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(x(i) - adim * 0.28, y(ac < kap ? ac : kap),
+              x(i) + adim * 0.28, y(ac < kap ? kap : ac)),
+          const Radius.circular(2),
+        ),
+        boya,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MumBoyasi old) =>
+      old.artis != artis || old.dusus != dusus;
 }
 
 class _OrtakGorseli extends StatelessWidget {

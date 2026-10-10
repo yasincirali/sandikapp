@@ -1,8 +1,8 @@
 # Gizlilik Politikası — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 8 Ekim 2026
-**Sürüm:** 1.8
+**Son güncelleme:** 10 Ekim 2026
+**Sürüm:** 1.9
 **Onay sürümü:** 1.8
 
 ---
@@ -182,7 +182,7 @@ Aktarım yapılan ülkeler (Supabase: {SUPABASE_ULKE}; Firebase ve RevenueCat: A
 | Yarış ölçümleri (getiri %, tür payı %) | Son 365 gün rolling; hesap silinince hemen |
 | Kayıtlı cihazlar | Cihazı listeden silene ya da hesap silinene kadar |
 | Varlık notlarına geri bildirimler | Hesap silinene kadar |
-| Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. RevenueCat'teki işlem kaydı RevenueCat'in saklama süresince, ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır |
+| Premium hakkı ve abonelik kayıtları | Hesap silinene kadar; hesabı silince hemen. Aynı anda RevenueCat'teki abone kaydınızın silinmesi RevenueCat'ten istenir; ödeme ve fatura kayıtları Apple ya da Google'da kendi sürelerince kalır. Hesap silme mağaza aboneliğini iptal etmez; yenilemeyi App Store ya da Google Play'den kapatırsınız |
 | Ekstre sütun eşleme istek kayıtları (yalnızca zaman, model ve maliyet; iskelet ve yanıt saklanmaz) | 40 gün |
 | Yasal metin onay kayıtları (Kullanım Koşulları, Gizlilik Politikası, KVKK Aydınlatma Metni, Açık Rıza Metni, yatırım uyarısı) | Hesap silindikten sonra **3 yıl** (TBK Madde 146 zamanaşımı) |
 | Push token | Çıkış yapıldığında silinir; uygulama silinirse bir sonraki gönderimde geçersiz bulunup silinir |
