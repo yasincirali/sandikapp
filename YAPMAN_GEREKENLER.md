@@ -12,6 +12,77 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Premium seti netleşti + PAYWALL AÇILIŞ GÜNÜ (tek liste, migration 0142)
+
+Senin kararların (10 Ekim akşam): varlığı güncelle ücretsiz; mum, aralık
+seçici, EMA50, EMA200 ücretsiz; kendi göstergeni yaz (Pine) Premium; sinyalde
+en yaygın 3 gösterge (RSI, MACD, Bollinger) ekranda ücretsiz, kalan 5
+gösterge + gösterge periyotlarını değiştirmek + sinyal bildirimi Premium;
+alarm sınırında paywall. Ayrıntı ve ekranlar PR'daki artifact'te.
+
+**Bu listedeki sıra zorunlu.** Aşağıdaki eski bölümlerde dağınık duran
+açılış adımlarının (0116, 0126, 0130 bölümleri, `SINYAL_UCRETSIZ_*`
+secret'ları) yerine BU geçer.
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration
+      **0142** + fonksiyonlar `analyze-signals` ve `calendar-nudge`. 0142
+      yalnız ekler (`signal_preferences.parametreler` kolonu, hediye
+      hatırlatma defteri ve cron'u); hiçbir kullanıcının sinyali ya da
+      bildirimi değişmez. Sıra serbest.
+- [ ] Kontrol: `select jobname, schedule, active from cron.job where jobname = 'calendar-nudge-premium-hediye';`
+      → Tokyo'da `active = true`, Frankfurt'ta `false`.
+
+- [ ] **Şimdiki sandbox testin için (açılıştan önce):** hediye koruması
+      yüzünden, `premium_hediye_kesim` boşken hak satırı olmayan hiçbir
+      hesap kilit görmez. TestFlight koşulunda `premium_hediye_kesim` =
+      test hesabının açıldığı günden ÖNCEKİ bir tarih yaz (ör.
+      `2026-10-01T00:00:00+03`); o hesap kilitleri görür, satın almayı
+      deneyebilirsin. Koşulsuz (herkese) değeri boş kalsın.
+
+**Açılış günü (ödeme hazır olunca):**
+
+1. [ ] **Hediyeyi ver** (Supabase SQL Editor, önce Tokyo sonra Frankfurt —
+       iki sunucu birebir):
+       `select public.erken_kullanici_hediyesi_ver('<KESİM>', 90);`
+       `<KESİM>` = açılış anı, ör. `2026-11-01T00:00:00+03`. Dönen sayı
+       yaklaşık kayıtlı kullanıcı sayın olmalı.
+2. [ ] **Aynı kesimi Remote Config'e yaz:** `premium_hediye_kesim` (String)
+       = `2026-11-01T00:00:00+03` (1. adımdaki değerin AYNISI). Uygulama
+       bu tarihten eski hesapta hak satırı göremezse kilit göstermez; kesim
+       boşsa hak satırı olmayan HERKES (yeni hesaplar dahil) kilitsiz kalır
+       ve paywall hiçbir şey satmaz. Kesim SQL'dekinden geç olursa arada
+       kaydolanlar hediyesiz ama kilitsiz kalır; erken olursa sorun yok.
+3. [ ] **`paywall_enabled`** (Remote Config): önce yalnız TestFlight
+       koşulu. Admin OLMAYAN iki hesapla bak:
+       · kesimden ÖNCE açılmış hesap → her şey açık, Profil'de "Hediye
+         Premium … tarihine kadar" satırı;
+       · kesimden SONRA açılmış yeni hesap → kilitler görünür (ƒx, sinyalde
+         5 gösterge + periyot + bildirim, Raporlar, X-Ray…), 11. varlıkta
+         formun üstünde sınır satırı, 21. alarmda Premium düğmeli uyarı.
+       Sonra %20, sonra herkes.
+4. [ ] **En son sunucu kapısı:** `update public.premium_ayar set kapi_acik = true;`
+       (iki sunucu). Önce açılırsa uygulama kilit göstermeden sunucu radar
+       notunu ve sinyal bildirimini keser.
+5. [ ] Mağaza abonelik açıklamasındaki Premium listesini paywall'daki
+       listeyle eşle (Premium: 5 ileri gösterge + periyot + sinyal bildirimi,
+       kendi göstergen, aylık/yıllık rapor + PDF/Excel, temettü tahmini,
+       X-Ray + masraf dökümü, radar ayrıntısı, haftalık notun tamamı, AI
+       ekstre, çoklu portföy, sınırsız varlık/takip/alarm, 5 seri, ortak).
+
+**Acil durum:** bir şey ters giderse Remote Config `premium_enabled` =
+`false`. Artık kilitleri KALDIRIR (eskiden ödeyenler dahil herkesi
+kilitliyordu); satın alınmış haklar korunur. Paywall'u tamamen gizlemek
+istersen `paywall_enabled` = `false`.
+
+**Hediye bitişi:** 80. günde (bitişe 10 gün kala, 12:15) "Premium hediyen
+bitiyor" bildirimi kendiliğinden gider; abone olmuş kullanıcıya gitmez,
+kişi başına bir kez.
+
+- Bilerek yapılmayan: varlığı güncelle ücretsiz ama `goz_alici` bayrağının
+  arkasında kaldı — TestFlight'taki "varlık silinmiyor" sorusu ("Varlığı
+  düzeltme amaçlı güncelleme" thread'i) çözülmeden güncelleme (silip yeniden
+  ekler) herkese açılmasın.
+
 ## ⏳ 2026-10-10 Kendi göstergeni yaz (migration 0141, Premium, yeni bayrak YOK)
 
 Senin isteğin: "traderlar TradingView'e kendi kodlarını ekleyerek kendi
@@ -26,7 +97,8 @@ karakter). Hisse, döviz, altın, emtia ve kriptoda betik gerçek mumlarda
 ATR/Supertrend gibi göstergeler veri bulur. Fon/BES/eurobondda yalnız
 kapanış vardır. Bilerek çalışmayan: başka sembol/aralıktan veri, diziler,
 import; label/line/box/table ve bgcolor çalışır ama çizilmez. Görünürlük EMA/Mum ile aynı:
-`paywall_enabled` kapalıyken yalnız admin, açıkken herkes (ücretsizde kilitli).
+`paywall_enabled` kapalıyken yalnız admin, açıkken herkes (ücretsizde
+kilitli; mum/EMA 2026-10-10'dan beri ücretsiz, kilit yalnız `ƒx`'te).
 
 - [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration
       **0141**. Fonksiyon/secret YOK. 0141'den önce admin hesabında çip
@@ -40,7 +112,9 @@ Senin isteğin: "mum grafik de TradingView'deki gibi çalışmalı: 1 dk, 1 saat
 seçicisi çıkar; mumlar artık sağlayıcının gerçek açılış/en yüksek/en düşük/
 kapanışı (hisse, döviz, altın, emtia Yahoo; kripto Binance). Fon, BES ve
 eurobond günde tek fiyat yayımladığı için yalnız gün/hafta/ay. Yeni bayrak
-yok: MUM zaten Premium (`paywall_enabled` ya da admin).
+yok: MUM'la aynı görünürlük (`paywall_enabled` ya da admin). 2026-10-10
+akşamından beri mum, aralık ve EMA ücretsiz (yukarıdaki "Premium seti
+netleşti" bölümü).
 
 - [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): yalnız
       fonksiyon `kripto-seri`. Migration ve secret YOK. Sıra serbest:
@@ -371,8 +445,9 @@ o koşmalı.
       `paywall_enabled` (Remote Config, yayılsın) →
       `update public.premium_ayar set kapi_acik = true;`. Kapı artık
       sinyali de keser: açıkken yalnız Premium (hak ya da admin) sinyal alır.
-      `SINYAL_UCRETSIZ_SLOT` / `SINYAL_UCRETSIZ_VARLIK` secret'ları artık
-      gerekmez (koymazsan bir şey değişmez).
+      ~~`SINYAL_UCRETSIZ_SLOT` / `SINYAL_UCRETSIZ_VARLIK` secret'ları~~
+      2026-10-10'da koddan kalktı. **Güncel sıra: en üstteki "PAYWALL
+      AÇILIŞ GÜNÜ" listesi.**
 - [ ] Remote Config: `free_price_alert_limit` ya da `paywall_watchlist_limit`
       Console'da elle girildiyse yeni varsayılanları (20, 10) ezer; sil ya da
       20 / 10 yap.
@@ -612,16 +687,16 @@ yeni ekleme durur.
 
 - [ ] Migration 0126 (`sinyal_varlik_secimi`, yalnız ekleme) main'e girince
       "Supabase deploy" ile iki sunucuya (Frankfurt → Tokyo).
-- [ ] Açılış günü, `SINYAL_UCRETSIZ_SLOT` ile birlikte: Supabase secret
-      `SINYAL_UCRETSIZ_VARLIK=1` (iki sunucu) + `analyze-signals` deploy.
-      Ücretsiz kullanıcının bildirimi seçtiği tek varlıktan gelir (seçmediyse
-      en eski eklediği). Secret yoksa sunucu kısmaz.
+- [x] ~~Açılış günü `SINYAL_UCRETSIZ_VARLIK=1` secret'ı~~ GEREKMİYOR:
+      tek sinyal varlığı kapısı 2026-10-10'da koddan kalktı (sinyal
+      bildirimi paywall açıkken bütünüyle Premium). Secret konduysa
+      etkisizdir. Güncel sıra en üstteki "PAYWALL AÇILIŞ GÜNÜ" listesi.
 - [ ] Remote Config'te `free_asset_limit` ya da `free_watchlist_limit`
       anahtarlarını daha önce elle girdiysen değerleri kodu ezer:
       `free_asset_limit` = 10 yap; `free_watchlist_limit` paywall KAPALIYKEN
       okunan sınırdır, 7 kalsın. Paywall açıkkenki takip sınırı yeni anahtar
-      `paywall_watchlist_limit` (varsayılan 5; Console'a girdiysen 5 yap); sinyal varlık sayısı
-      `free_signal_assets` (varsayılan 1, 0 = kapı yok).
+      `paywall_watchlist_limit` (varsayılan 10; Console'a girdiysen 10 yap).
+      ~~`free_signal_assets`~~ 2026-10-10'da kalktı.
 
 ## ⏳ 2026-10-08 Eurobond, ABD borsası, varlık masrafları (0124, 0125) — dal `claude/eurobond-abd-borsasi-oe2amo`
 
@@ -732,14 +807,10 @@ Paywall'u açmadan önce sırayla:
       secret'ı aynı zamanda bu silmeyi de açar.
 - [ ] Sandbox testi: TestFlight'ta kendi cihazında `paywall_enabled` (koşullu)
       aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.
-- [ ] Açılış günü sırası yukarıdaki 0115–0118 bölümünde (hediye → bayrak →
-      `kapi_acik`).
-- [ ] Aynı gün sinyal kapısı: Supabase secret `SINYAL_UCRETSIZ_SLOT=1` (iki
-      sunucu) + `analyze-signals` yeniden deploy. Ücretsiz kullanıcıya tür başına
-      günde 1 bildirim gider (seçtiği ilk saat, periyodikte 11:00); tercihi
-      silinmez, Premium alınca geri gelir. Secret yoksa sunucu kısıtlamaz
-      (uygulama "günde 1" gösterir ama 2 gelir; zararsız ama tutarsız).
-- [ ] İsteğe bağlı Remote Config: `free_signal_slots_per_day` (varsayılan 1),
+- [ ] ~~Açılış günü sırası 0115–0118 bölümünde; `SINYAL_UCRETSIZ_SLOT`~~
+      2026-10-10: slot kapısı koddan kalktı; güncel sıra en üstteki
+      "PAYWALL AÇILIŞ GÜNÜ" listesi.
+- [ ] İsteğe bağlı Remote Config (~~`free_signal_slots_per_day`~~ kalktı):
       `free_compare_series` (varsayılan 2 = kendi serine ek bir kıyas;
       Premium 5), `free_partner_limit` (varsayılan 1; var olan ortaklıklar
       korunur, yalnız yeni ortak eklemek durur). Hepsi yalnız

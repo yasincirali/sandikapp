@@ -19,6 +19,7 @@ import {
   cci,
   macd,
   movingAverage,
+  parametreDogrula,
   rsi,
   SignalType,
   stochastic,
@@ -177,4 +178,28 @@ Deno.test('premium göstergeler kilitliyken atlanır', () => {
 
   const unlocked = analyze(prices, 'hisse', ['rsi', 'adx', 'cci'], true);
   assertEquals(unlocked.length, 3);
+});
+
+// ── Gösterge periyotları (Premium, 0142) ────────────────────────────────────
+// Dart `gosterge_parametre_test` ile aynı kurallar: geçerli ayar uygulanır,
+// aralık dışı kırpılır, anlamsız çift (hızlı ≥ yavaş) varsayılana düşer.
+Deno.test('parametreler: RSI periyodu sonucu değiştirir, ters çift yok sayılır', () => {
+  const fiyat: number[] = [];
+  let p = 100;
+  for (let i = 0; i < 200; i++) {
+    p = p * (1 + Math.sin(i / 7) * 0.02);
+    fiyat.push(p);
+  }
+  const varsayilan = analyze(fiyat, 'hisse', ['rsi', 'macd'], false);
+  const ayarli = analyze(fiyat, 'hisse', ['rsi', 'macd'], false, {
+    rsi: { periyot: 5 },
+    macd: { hizli: 30, yavas: 20, sinyal: 9 },
+  });
+  const rsi = (l: typeof varsayilan) => l.find((x) => x.name.startsWith('RSI'))!;
+  const macd = (l: typeof varsayilan) => l.find((x) => x.name.startsWith('MACD'))!;
+  assertEquals(Math.abs(rsi(varsayilan).value - rsi(ayarli).value) > 1e-6, true);
+  assertEquals(macd(ayarli).value, macd(varsayilan).value);
+  assertEquals(parametreDogrula('rsi', { periyot: 999 }), { periyot: 50 });
+  assertEquals(parametreDogrula('ema', { kisa: 50, uzun: 50 }), undefined);
+  assertEquals(parametreDogrula('rsi', 'x'), undefined);
 });

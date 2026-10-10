@@ -63,9 +63,14 @@ class PremiumHakki {
 
 /// Oturumdaki kullanıcının hakları. autoDispose DEĞİL: kalıcı
 /// `effectivePremiumProvider` bunu izler; oturum değişince `authProvider`
-/// üzerinden yenilenir. Hata → boş liste + Crashlytics non-fatal: okuyamadığımız hak "Premium değil" sayılır (kilit görünür,
-/// satın alma ekranı açılır); bu, ücretli içeriği yanlışlıkla açmaktan
-/// daha güvenli taraf.
+/// üzerinden yenilenir. Hata → boş liste + Crashlytics non-fatal:
+/// okuyamadığımız hak "Premium değil" sayılır. Kilit kararı ama bunun
+/// üstünde (`kilitlerAskidaProvider`, 2026-10-10): hesap hediye kesiminden
+/// eskiyse ve hak satırı okunamadıysa kilit GÖSTERİLMEZ — hediyesini almış
+/// olabilecek kullanıcıyı bir ağ hatası yüzünden kilitlemek, ücretli içeriği
+/// birkaç dakika açık bırakmaktan pahalı. Yeni hesap (kesimden sonra) yine
+/// kilit görür. Liste süresi geçmiş satırları da içerir: hediyesi biten
+/// hesap "satırı var" sayılır ve kilit döner.
 final premiumHaklariProvider = FutureProvider<List<PremiumHakki>>((ref) async {
   if (!ref.watch(paywallVisibleProvider)) return const [];
   final uid = ref.watch(authProvider).valueOrNull?.id;
