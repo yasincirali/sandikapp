@@ -516,6 +516,10 @@ class _FeatureList extends StatelessWidget {
       (Icons.payments_outlined, l.pwOzMasraf),
       (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
       (Icons.group_outlined, l.pwOzOrtak),
+      // Çoklu portföy (0133): kilidi `portfoyLimitProvider`; yalnız bayrak
+      // açıkken satılır.
+      if (RemoteConfigService.instance.cokluPortfoy)
+        (Icons.folder_copy_outlined, l.pwOzPortfoy),
       if (radar) (Icons.radar_rounded, l.pwOzRadar),
     ];
     return Column(
@@ -604,6 +608,9 @@ class _KarsilastirmaTablosu extends StatelessWidget {
       (l.prmSatirSinyal, null, l.prmSinyalPremium),
       (l.prmSatirKars, l.pwdSeri(seriSiniri), l.pwdSeri(kKarsilastirmaEnFazla)),
       (l.prmSatirOrtak, '$ortakSiniri', l.prmSinirsiz),
+      // Çoklu portföy (0133): ücretsiz 1 (Ana), yalnız bayrak açıkken.
+      if (RemoteConfigService.instance.cokluPortfoy)
+        (l.prmSatirPortfoy, '1', l.prmSinirsiz),
       (l.prmSatirAkis, l.prmAkisUcretsiz, l.prmAkisPremium),
       (l.prmSatirHacim, l.prmHacimUcretsiz, l.prmHacimPremium),
       (l.prmSatirNot, l.prmNotUcretsiz, l.prmNotPremium),

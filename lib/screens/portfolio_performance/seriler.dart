@@ -410,7 +410,7 @@ extension _PerformansSeriler on _PortfolioPerformanceScreenState {
     required DateTime to,
     required bool intraday,
   }) {
-    final key = '${_view ?? "all"}|${_typeFilter?.name ?? "*"}'
+    final key = '${_view ?? "all"}$_portfoyAnahtari|${_typeFilter?.name ?? "*"}'
         '|$_selectedPeriodIdx|$_simulate|${chartAssets.length}'
         '|${chartAssets.map((a) => a.id).join(",")}';
     if (_zoomKey == key && _zoomController != null) return;

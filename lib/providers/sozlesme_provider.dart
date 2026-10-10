@@ -146,6 +146,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     required DateTime baslangic,
     required int? vadeGun,
     String not = '',
+    String? portfoyId,
   }) async {
     final uid = _kullanici();
     final bas = dayKey(baslangic);
@@ -185,6 +186,9 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
       addedDate: bas,
       sozlesmeId: s.id,
       createdAt: DateTime.now(), // bkz. PortfolioNotifier.addAsset
+      // Yeni sözleşmenin portföyü (formda seçilen; 0133). Sonraki her lot
+      // sözleşmenin portföyünü izler (`sozlesmeLotlariniEkle`).
+      portfoyId: portfoyId,
     );
 
     await SupabaseService.instance.insertSozlesme(s);
@@ -357,6 +361,7 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
     double? aylikKatki,
     int? katkiGunu,
     bool otomatikKatki = false,
+    String? portfoyId,
   }) async {
     final uid = _kullanici();
     final an = DateTime.now();
@@ -424,7 +429,11 @@ class SozlesmeNotifier extends AsyncNotifier<SozlesmeState> {
 
     await SupabaseService.instance.insertSozlesme(s);
     try {
-      await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle(lotlar);
+      // Yeni sözleşmenin portföyü (formda seçilen; 0133).
+      await ref.read(portfolioProvider.notifier).sozlesmeLotlariniEkle([
+        for (final l in lotlar)
+          portfoyId == null ? l : l.copyWithPortfoy(portfoyId),
+      ]);
     } catch (_) {
       await _geriAl(s.id);
       rethrow;

@@ -56,6 +56,50 @@ String kotaAnahtari(AssetType type, String ticker, String currency,
         ? 'sozlesme|$sozlesmeId'
         : '${type.name}|$ticker|$currency';
 
+/// Yeni satırın portföyü (0133) — saf, test edilir.
+///
+/// Bayrak (`coklu_portfoy`) kapalıyken HEP `null` (Ana): eski davranış
+/// birebir, gövde değişmez. Sözleşmeli lot (BES/mevduat) sözleşmesinin
+/// defterdeki portföyünü izler — fonlar ve sonraki katkılar tek
+/// sözleşmede, tek portföyde kalır; yoksa verilen değer.
+String? yeniSatirPortfoyu({
+  required bool bayrak,
+  String? portfoyId,
+  String? sozlesmeId,
+  Iterable<Asset> defter = const [],
+}) {
+  if (!bayrak) return null;
+  if (sozlesmeId != null) {
+    for (final a in defter) {
+      if (a.sozlesmeId == sozlesmeId && a.isActive) return a.portfoyId;
+    }
+  }
+  return portfoyId;
+}
+
+/// Bir pozisyona yazılan işlemin (satış, temettü) portföyü: pozisyon
+/// görünümünün portföyü. Karışık pozisyon (lotları birden çok portföyde,
+/// "Tümü" görünümü) REDDEDİLİR — arayüz önce portföyü sorar
+/// (`portfoy_secim_sayfasi.dart`). Satış Ana'ya düşseydi Ana'da eksi, öbür
+/// portföyde fazla miktar kalır ve "Σ portföy == Tümü" kırılırdı.
+String? islemPortfoyu(
+  Asset pozisyon, {
+  required bool bayrak,
+  Iterable<Asset> defter = const [],
+}) {
+  if (!bayrak) return null;
+  if (pozisyon.portfoyKarisik) {
+    throw ArgumentError(
+        'Karışık portföylü pozisyona işlem: önce portföy seçilmeli.');
+  }
+  return yeniSatirPortfoyu(
+    bayrak: bayrak,
+    portfoyId: pozisyon.portfoyId,
+    sozlesmeId: pozisyon.sozlesmeId,
+    defter: defter,
+  );
+}
+
 class AssetLimitExceededException implements Exception {
   final int currentCount;
   final int limit;
@@ -413,6 +457,68 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// gösterilmeye devam eder ve sahte kâr o pencerede sürerdi.)
   void _gunIciSeriyiDusur() => IntradaySeriesCache.instance.clear();
 
+  // ---- Çoklu portföy (0133) ------------------------------------------------
+
+  String? _yazilacakPortfoy({
+    String? portfoyId,
+    String? sozlesmeId,
+    PortfolioState? s,
+  }) =>
+      yeniSatirPortfoyu(
+        bayrak: RemoteConfigService.instance.cokluPortfoy,
+        portfoyId: portfoyId,
+        sozlesmeId: sozlesmeId,
+        defter: s?.assets ?? const [],
+      );
+
+  String? _islemPortfoyu(Asset pozisyon) => islemPortfoyu(
+        pozisyon,
+        bayrak: RemoteConfigService.instance.cokluPortfoy,
+        defter: state.valueOrNull?.assets ?? const [],
+      );
+
+  static Asset _portfoyuAyarla(Asset a, String? portfoyId) =>
+      a.portfoyId == portfoyId ? a : a.copyWithPortfoy(portfoyId);
+
+  /// Portföy silindi (sunucuda lotları FK ile Ana'ya döndü): bellekteki
+  /// defter de aynı anda Ana'ya çekilir, yeniden yükleme beklenmez.
+  void portfoySilindi(String portfoyId) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    if (!current.assets.any((a) => a.portfoyId == portfoyId)) return;
+    state = AsyncData(current.copyWith(assets: [
+      for (final a in current.assets)
+        a.portfoyId == portfoyId ? a.copyWithPortfoy(null) : a,
+    ]));
+    _gunIciSeriyiDusur();
+  }
+
+  /// Pozisyonu BÜTÜNÜYLE başka portföye taşır: [lotlar] (alım, satım,
+  /// temettü, silinmiş kayıtlar, mezar taşları — geçmişiyle) hedefe geçer.
+  /// Çağıran kümeyi `tasinacakLotlar` ile kurar.
+  ///
+  /// ## Neden kısmi taşıma yok (v1)
+  /// Pozisyonun bir kısmını taşımak, ya alım lotlarını bölmek (satışların
+  /// hangi lottan düştüğü belirsizleşir, iki portföyün ağırlıklı maliyeti
+  /// uydurulur) ya da kaynakta satış + hedefte alım yazmak demekti. İkincisi
+  /// taşıma gününde kaynakta sahte ÇIKIŞ, hedefte sahte GİRİŞ üretir:
+  /// dönem getirisi ve XIRR para hareketi olmayan bir olayı nakit akışı
+  /// sayar. Bütün pozisyon geçmişiyle taşınınca iki portföyün serisi de
+  /// "pozisyon baştan beri hedefteydi" der — hiçbir dönem hesabı bozulmaz,
+  /// Tümü zaten değişmez.
+  Future<void> pozisyonuTasi(List<Asset> lotlar, String? hedef) async {
+    if (!RemoteConfigService.instance.cokluPortfoy || lotlar.isEmpty) return;
+    final ids = {for (final a in lotlar) a.id};
+    await SupabaseService.instance.lotlarinPortfoyunuYaz(ids.toList(), hedef);
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(assets: [
+      for (final a in current.assets)
+        ids.contains(a.id) ? a.copyWithPortfoy(hedef) : a,
+    ]));
+    _gunIciSeriyiDusur();
+  }
+
   Future<void> addAsset({
     required String name,
     required String ticker,
@@ -428,6 +534,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     double? initialCurrentPrice,
     double commission = 0,
     String? sozlesmeId,
+    String? portfoyId,
   }) async {
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
@@ -479,6 +586,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // Sözleşmeli pozisyona (mevduat/BES) hızlı alım: lot sözleşmesine
       // bağlı kalır, yoksa kart ve "Çektim" onu görmez (2026-10-01).
       sozlesmeId: sozlesmeId,
+      // Seçilen portföy (form / pozisyonun portföyü); sözleşmeli lot
+      // sözleşmesinin portföyünde kalır. Bayrak kapalıyken hep Ana (null).
+      portfoyId: _yazilacakPortfoy(
+          portfoyId: portfoyId, sozlesmeId: sozlesmeId, s: currentState),
     );
     if (asset.purchasePrice == 0 && asset.currentPrice > 0) {
       asset.purchasePrice = asset.currentPrice;
@@ -527,9 +638,24 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// kapısı, yazım ve durum güncellemesi yapılır. Kota anahtarı [addAsset]
   /// ile aynı formüldür — BES'in üç fonu üç varlık sayılır, aynı fona
   /// sonraki katkı yeni varlık sayılmaz.
+  ///
+  /// Portföy (0133): lot sözleşmesinin portföyünde kalır — sözleşmenin
+  /// defterde bir lotu varsa onun portföyü; yoksa (yeni sözleşme) lotun
+  /// taşıdığı (formda seçilen) portföy. BES'in sonraki katkısı, otomatik
+  /// katkı ve fon değişimi böylece başka bir ekrandan seçim istemeden
+  /// sözleşmeyi izler.
   Future<void> sozlesmeLotlariniEkle(List<Asset> lots) async {
     if (lots.isEmpty) return;
     final currentState = state.valueOrNull ?? const PortfolioState();
+    lots = [
+      for (final a in lots)
+        _portfoyuAyarla(
+            a,
+            _yazilacakPortfoy(
+                portfoyId: a.portfoyId,
+                sozlesmeId: a.sozlesmeId,
+                s: currentState)),
+    ];
     final limit = ref.read(assetLimitProvider);
     if (limit < (1 << 30)) {
       final userId = ref.read(authProvider).valueOrNull?.id ?? lots.first.userId;
@@ -612,6 +738,10 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // Mevduat/BES satışı da sözleşmesine bağlı kalır (net bakiye ve
       // katkı hesapları lotları sözleşmeden toplar).
       sozlesmeId: asset.sozlesmeId,
+      // Satış pozisyonun portföyünde (0133): portföy defteri kendi içinde
+      // kapanır, satış portföy dışına taşmaz. Maliyet de [asset]'ten — yani
+      // portföy kapsamındaki pozisyonun ağırlıklı ortalaması.
+      portfoyId: _islemPortfoyu(asset),
     );
 
     await SupabaseService.instance.insertAsset(transaction);
@@ -666,6 +796,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       refAssetId: asset.id.startsWith('pos:') ? null : asset.id,
       addedDate: paidAt,
       dividendAmount: amount,
+      // Temettü pozisyonun portföyünün getirisidir (0133).
+      portfoyId: _islemPortfoyu(asset),
     );
 
     await SupabaseService.instance.insertAsset(transaction);
@@ -741,6 +873,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         lastUpdated: deleted.lastUpdated,
         kind: AssetKind.deleteLog,
         refAssetId: deleted.id,
+        // Mezar taşı silinen lotun portföyünde (hareket listesi kapsamı).
+        portfoyId: _yazilacakPortfoy(portfoyId: deleted.portfoyId),
       );
       await SupabaseService.instance.insertAsset(transaction);
       unawaited(AnalyticsService.instance.logAssetDeleted(type: deleted.type.name));
@@ -830,6 +964,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         // referans vermek yanıltıcı olurdu.
         refAssetId: removed.length == 1 ? removed.first.id : null,
         deletedCount: removed.length,
+        portfoyId: _yazilacakPortfoy(portfoyId: rep.portfoyId),
       );
 
       await SupabaseService.instance.insertAsset(log);

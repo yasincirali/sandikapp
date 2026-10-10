@@ -199,7 +199,9 @@ Future<PortfolioHistoryBreakdown> _ozetSerisiniCek(
 extension _OzetBellekKullanimi on _PortfolioPerformanceScreenState {
   /// Anahtarın dönem dışındaki parçası: kapsam, tür, simülasyon, yenileme.
   String get _ozetKapsami =>
-      '$_view|${_typeFilter?.name}|$_simulate|$_ozetYenileme';
+      '$_view|${_typeFilter?.name}|$_simulate|$_ozetYenileme'
+      // Portföy (0133) — "Tümü"de boş, anahtar bayrak öncesiyle aynı metin.
+      '$_portfoyAnahtari';
 
   String _ozetSeriAnahtari(SummaryPeriod p, List<Asset> chartAssets) =>
       'seri|${p.name}|$_ozetKapsami|${_OzetBellek.imza(chartAssets)}';

@@ -412,6 +412,16 @@ class RemoteConfigService {
     // ve kapsamı hiçbir zaman %100 olmayacak (metinsiz PDF'ler); kapalıyken
     // kart ve ekran yalnız sınıf dağılımını gösterir.
     'fon_xray_kalem': false,
+    // Çoklu portföy (2026-10-10, yasin: "aile/emeklilik ayrı" isteği; olgun
+    // Premium setinin ertelenen 2. maddesi). Lot başına `portfoy_id` (0133),
+    // Portföy ve Performans'ta "Ben"in altında portföy seçici, yönetim
+    // sayfası, eklemede portföy seçimi. Ücretsiz 1 (Ana), Premium sınırsız.
+    // Görünürlük bu bayrak VE `premiumOzellikleriGorunur` (paywall ya da
+    // admin). Bayrak AYRICA şema hazırlığının işaretidir: kapalıyken
+    // `portfoy_id` hiçbir gövdeye yazılmaz (`Asset.toSupabase`). KAPALI
+    // doğar: 0133 iki sunucuya ulaşmadan açılırsa her varlık yazımı
+    // PGRST204 alır. Kapalıyken toplamlar, seriler ve ekranlar birebir eski.
+    'coklu_portfoy': false,
 
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
@@ -764,6 +774,10 @@ class RemoteConfigService {
 
   /// Fon X-Ray kalemleri ve örtüşme (Katman A). Gerekçe `_defaults`'ta.
   bool get fonXrayKalem => _bayrak('fon_xray_kalem');
+  /// Çoklu portföy: şema hazır mı (yazım kapısı). Gerekçe `_defaults`'ta.
+  /// Kullanıcıya görünürlük ayrıca `premiumOzellikleriGorunur` ister
+  /// (`cokluPortfoyGorunurProvider`).
+  bool get cokluPortfoy => _bayrak('coklu_portfoy');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

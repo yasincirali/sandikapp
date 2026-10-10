@@ -7964,4 +7964,125 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdXrayPremium => 'Fon ve portföy X-Ray';
+
+  @override
+  String get portfoyTumu => 'Tümü';
+
+  @override
+  String get portfoyAna => 'Ana';
+
+  @override
+  String get portfoyAnaUzun => 'Ana portföy';
+
+  @override
+  String get portfoyYeni => 'Yeni portföy';
+
+  @override
+  String get portfoyYonet => 'Portföyleri yönet';
+
+  @override
+  String get portfoySeciciEtiketi => 'Portföy';
+
+  @override
+  String get portfoyAdi => 'Portföy adı';
+
+  @override
+  String get portfoyAdiIpucu => 'ör. Emeklilik, Çocuğum için';
+
+  @override
+  String get portfoyAdiGecersiz => 'Ad 1 ile 40 karakter arasında olmalı.';
+
+  @override
+  String get portfoyAdiKullaniliyor => 'Bu adda bir portföyün zaten var.';
+
+  @override
+  String get portfoyOlustur => 'Oluştur';
+
+  @override
+  String get portfoyYenidenAdlandir => 'Yeniden adlandır';
+
+  @override
+  String get portfoySil => 'Portföyü sil';
+
+  @override
+  String portfoySilBaslik(String ad) {
+    return '$ad silinsin mi?';
+  }
+
+  @override
+  String portfoySilAciklama(int sayi) {
+    return 'Varlıkların silinmez. Bu portföydeki $sayi kayıt Ana portföye döner; toplamın değişmez.';
+  }
+
+  @override
+  String portfoySilindi(String ad) {
+    return '$ad silindi, varlıkları Ana portföyde.';
+  }
+
+  @override
+  String get portfoySilinemedi => 'Portföy silinemedi';
+
+  @override
+  String get portfoyKaydedilemedi => 'Portföy kaydedilemedi';
+
+  @override
+  String get portfoyYonetimiBaslik => 'Portföyler';
+
+  @override
+  String get portfoyYonetimiAciklama =>
+      'Varlıklarını amacına göre ayır: emeklilik, çocuğun için, deneme. Tümü görünümü ve ana sayfa toplamı değişmez; widget ve kilit ekranı da toplamı gösterir.';
+
+  @override
+  String get portfoyAnaAciklama => 'Portföy seçmeden eklediklerin burada.';
+
+  @override
+  String get portfoySiralaIpucu =>
+      'Sırayı değiştirmek için basılı tutup sürükle.';
+
+  @override
+  String get portfoyIslemSec => 'Hangi portföydeki pozisyon?';
+
+  @override
+  String get portfoyIslemSecAciklama =>
+      'Bu varlık birden çok portföyde. İşlem seçtiğin portföyün pozisyonuna, onun maliyetiyle yazılır.';
+
+  @override
+  String get portfoyTasi => 'Taşı';
+
+  @override
+  String get portfoyTasiBaslik => 'Hangi portföye taşınsın?';
+
+  @override
+  String get portfoyTasiAciklama =>
+      'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.';
+
+  @override
+  String portfoyTasindi(String ad) {
+    return '$ad portföyüne taşındı.';
+  }
+
+  @override
+  String get portfoyTasinamadi => 'Taşınamadı';
+
+  @override
+  String get portfoyKaynakSec => 'Hangi portföydeki pozisyon taşınsın?';
+
+  @override
+  String get pwOzPortfoy =>
+      'Sınırsız portföy: emeklilik, çocuğun için, deneme ayrı ayrı';
+
+  @override
+  String get prmSatirPortfoy => 'Portföy';
+
+  @override
+  String get pwdPortfoyEtiket => 'PORTFÖY';
+
+  @override
+  String get pwdPortfoyBaslik =>
+      'Her amaca ayrı portföy; toplamın hep yerinde.';
+
+  @override
+  String pwdPortfoySayi(int sayi) {
+    return '$sayi portföy';
+  }
 }

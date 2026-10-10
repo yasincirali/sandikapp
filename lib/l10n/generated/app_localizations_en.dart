@@ -8040,4 +8040,132 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdXrayPremium => 'Fund and portfolio X-Ray';
+
+  @override
+  String get portfoyTumu => 'All';
+
+  @override
+  String get portfoyAna => 'Main';
+
+  @override
+  String get portfoyAnaUzun => 'Main portfolio';
+
+  @override
+  String get portfoyYeni => 'New portfolio';
+
+  @override
+  String get portfoyYonet => 'Manage portfolios';
+
+  @override
+  String get portfoySeciciEtiketi => 'Portfolio';
+
+  @override
+  String get portfoyAdi => 'Portfolio name';
+
+  @override
+  String get portfoyAdiIpucu => 'e.g. Retirement, For my kid';
+
+  @override
+  String get portfoyAdiGecersiz => 'The name must be 1 to 40 characters.';
+
+  @override
+  String get portfoyAdiKullaniliyor =>
+      'You already have a portfolio with this name.';
+
+  @override
+  String get portfoyOlustur => 'Create';
+
+  @override
+  String get portfoyYenidenAdlandir => 'Rename';
+
+  @override
+  String get portfoySil => 'Delete portfolio';
+
+  @override
+  String portfoySilBaslik(String ad) {
+    return 'Delete $ad?';
+  }
+
+  @override
+  String portfoySilAciklama(int sayi) {
+    return 'Your assets are not deleted. The $sayi records in this portfolio move back to the main portfolio; your total stays the same.';
+  }
+
+  @override
+  String portfoySilindi(String ad) {
+    return '$ad deleted; its assets are in the main portfolio.';
+  }
+
+  @override
+  String get portfoySilinemedi => 'Couldn\'t delete the portfolio';
+
+  @override
+  String get portfoyKaydedilemedi => 'Couldn\'t save the portfolio';
+
+  @override
+  String get portfoyYonetimiBaslik => 'Portfolios';
+
+  @override
+  String get portfoyYonetimiAciklama =>
+      'Split your assets by goal: retirement, for your kid, experiments. The All view and the home total stay the same; the widget and lock screen also show the total.';
+
+  @override
+  String get portfoyAnaAciklama =>
+      'Anything you add without choosing a portfolio lives here.';
+
+  @override
+  String get portfoySiralaIpucu => 'Press and hold, then drag to reorder.';
+
+  @override
+  String get portfoyIslemSec => 'Which portfolio\'s position?';
+
+  @override
+  String get portfoyIslemSecAciklama =>
+      'This asset is in more than one portfolio. The transaction goes to the position in the portfolio you pick, at its cost.';
+
+  @override
+  String get portfoyTasi => 'Move';
+
+  @override
+  String get portfoyTasiBaslik => 'Move to which portfolio?';
+
+  @override
+  String get portfoyTasiAciklama =>
+      'The whole position moves with its history: buys, sells and dividends. Your total stays the same.';
+
+  @override
+  String portfoyTasindi(String ad) {
+    return 'Moved to $ad.';
+  }
+
+  @override
+  String get portfoyTasinamadi => 'Couldn\'t move';
+
+  @override
+  String get portfoyKaynakSec => 'Move the position from which portfolio?';
+
+  @override
+  String get pwOzPortfoy =>
+      'Unlimited portfolios: retirement, your kid, experiments kept apart';
+
+  @override
+  String get prmSatirPortfoy => 'Portfolios';
+
+  @override
+  String get pwdPortfoyEtiket => 'PORTFOLIOS';
+
+  @override
+  String get pwdPortfoyBaslik =>
+      'A portfolio for every goal; your total stays in view.';
+
+  @override
+  String pwdPortfoySayi(int sayi) {
+    String _temp0 = intl.Intl.pluralLogic(
+      sayi,
+      locale: localeName,
+      other: '$sayi portfolios',
+      one: '1 portfolio',
+    );
+    return '$_temp0';
+  }
 }

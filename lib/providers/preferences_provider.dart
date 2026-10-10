@@ -1255,6 +1255,47 @@ final leaderboardOptInProvider = NotifierProvider<_BoolPrefNotifier, bool>(
 final bildirimSonGorulenProvider = NotifierProvider<_IntPrefNotifier, int>(
     () => _IntPrefNotifier(PrefKeys.bildirimSonGorulen, 0, perUser: true));
 
+/// Portföy ve Performans'ta seçili portföy (çoklu portföy, 0133).
+///
+/// Kodlama `PortfoySecimi` ile aynı: `''` Tümü (varsayılan), `ana` Ana,
+/// uuid adlandırılmış portföy. İki ekran AYNI seçimi okur: Portföy'de
+/// "Emeklilik"e bakıp Performans'a geçen kullanıcı aynı kümenin grafiğini
+/// görür. Kişiye özel ve kullanıcı değişiminde düşer (liste aşağıda):
+/// portföy kimliği hesaba aittir. Geçerlilik (bayrak, görünürlük, portföy
+/// hâlâ var mı) burada DEĞİL, `etkinPortfoySecimiProvider`'da — kayıtlı
+/// değer silinmez, koşul dönünce seçim geri gelir.
+class SeciliPortfoyNotifier extends Notifier<String> {
+  String get _key => _userKey(PrefKeys.seciliPortfoy);
+
+  @override
+  String build() {
+    final prefs = _prefsSync;
+    if (prefs != null) return prefs.getString(_key) ?? '';
+    _loadAsync();
+    return '';
+  }
+
+  Future<void> _loadAsync() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getString(_key);
+      if (v != null) state = v;
+    } catch (_) {}
+  }
+
+  Future<void> set(String value) async {
+    state = value;
+    if (DemoModu.aktif) return; // Demo (F1): yalnızca bellekte.
+    try {
+      final prefs = _prefsSync ?? await SharedPreferences.getInstance();
+      await prefs.setString(_key, value);
+    } catch (_) {}
+  }
+}
+
+final seciliPortfoyProvider =
+    NotifierProvider<SeciliPortfoyNotifier, String>(SeciliPortfoyNotifier.new);
+
 // ─── Kullanıcıya özel tercihlerin TAM listesi ─────────────────────────────────
 //
 // `setPreferencesUser` yalnızca anahtar ÖN EKİNİ değiştirir; provider'ın
@@ -1292,4 +1333,5 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   radarKocuGorulduProvider,
   haftaSakinGosterProvider,
   premiumHediyeGosterildiProvider,
+  seciliPortfoyProvider,
 ];
