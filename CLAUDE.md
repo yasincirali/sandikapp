@@ -145,6 +145,17 @@ Geliştirme, mağazadaki sürümü kullanan müşterilerin deneyimini bozmayacak
 için `SandikSectionHeader`; yeni `_SectionTitle` klonu yazma.
 Giriş alanı dolgusu/çerçevesi temadan gelir; ekranda `fillColor` yazma, kendi kutusundaki alana `filled: false` ver (`input_fill_consistency_test`).
 
+**Apple HIG kontrolü (kullanıcı kuralı, 2026-10-10).** Her UI değişikliğinde
+(yeni/değişen bileşen, ekran, sheet, etkileşim) `docs/TASARIM_DILI.md` §7'deki
+11 maddelik HIG listesi sorulur: dokunma alanı ≥44 pt, Dynamic Type (×2),
+kontrast, renk körlüğü (yalnız renkle anlam yok), güvenli alan, standart
+gezinme/geri kaydırma, sheet/modal, haptic, erişilebilirlik etiketi, hareketi
+azalt, sistem kalıbı. Android'de Material karşılığı bozulmaz. PR açıklamasına
+ve yasin'e gösterilen önce/sonra artifact'ine kısa **"HIG kontrolü"** bölümü
+yazılır: neye bakıldı, ne uygun, neyden bilerek sapıldı ve neden. Ölçülebilen
+kısım `hig_ortak_bilesen_test` + `touch_target_size_test`'te kilitli; yeni
+ortak bileşen o testin vitrinine eklenir.
+
 **Para ve tarih.** Tutar `fmtTRY`, yüzde `fmtPct`, kullanıcı girdisi `parseTrNumber`
 (`lib/utils/tr_format.dart`). `NumberFormat.currency(locale:'tr_TR')` ve `toStringAsFixed`
 UI kodunda kullanılmaz.
@@ -328,5 +339,5 @@ ADR'siz başlar (ADR'ler yerel grafikte). Emülatör yok (KVM yok); doğrulama
 `flutter analyze` + `flutter test`.
 
 ---
-**Son güncelleme:** 2026-10-08 (yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
+**Son güncelleme:** 2026-10-10 (Apple HIG kontrolü kuralı; 2026-10-08: yasal metin: kişisel veri almayan kaynak sayılmaz, "Onay sürümü"; 2026-10-04: yasal metin tek kaynak kuralı; 2026-10-01: canlıdaki kullanıcı etkilenmez ana kuralı; 2026-09-28: iki sunucu birebir kuralı; 2026-09-25: giriş alanı dolgusu temadan kuralı; 2026-09-21: tur metni arayüzle birlikte değişir kuralı; 2026-09-17: brag/Hyperframes satırı + ffmpeg notu; 2026-09-15: Yenilikler/tanıtım kuralı eklendi; 2026-09-14: vadeli mevduat
 kaldırıldı, Apple/Google giriş eklendi; sqflite/Provider/emülatör-ilk-kurulum bölümleri kaldırıldı).

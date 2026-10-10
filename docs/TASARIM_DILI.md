@@ -1,6 +1,6 @@
 # sandık tasarım dili ve bileşen standartları
 
-Sürüm 1 · 2026-10-08 · PR #111
+Sürüm 1.1 · 2026-10-10 (§7 Apple HIG kontrol listesi) · ilk sürüm 2026-10-08, PR #111
 
 > yasin, 2026-10-08: "Tutarlı, smooth animasyonları olan rigid bir app
 > istiyoruz; güvenilir ve tutarlı, aynı zamanda göze de hoş gelmeli."
@@ -160,7 +160,8 @@ Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Gezinti oku
 | Boşluk ölçeği | `spacing_scale_test` |
 | Eğrisiz animasyon yok, ters yuvada `exit` | `animasyon_denetimi_test`, `design_token_leak_test` |
 | Hareketi azalt kapsamı | `reduce_motion_coverage_test` |
-| 44 pt hedef | `touch_target_size_test` |
+| 44 pt hedef | `touch_target_size_test` (kaynak), `hig_ortak_bilesen_test` (çizilmiş bileşen) |
+| Ortak bileşenlerde etiket, kontrast, yazı ×2; etiketsiz `IconButton` yalnız azalır | `hig_ortak_bilesen_test` |
 | Çift dokunma koruması | `navigasyon_korumasi_test` |
 | Tek yükleniyor davranışı | `yukleniyor_tek_davranis_test` |
 | Tek sheet açıcı, platform diyaloğu yok, düğme köşesi, ölçek dışı süre yok | `tasarim_dili_test` |
@@ -211,3 +212,41 @@ eklenir.
     kullanıyor (başlık 17/w600, geri ikonu farklı). `SandikAppBar`'a taşınsın.
 13. **Düğme yüksekliği:** istek atmayan ana düğmeler 36–56 pt arasında
     dağınık. Kural önerisi: tam genişlik ana eylem 52, sheet/kart içi 48.
+
+## 7. Apple HIG kontrol listesi (her UI değişikliğinde)
+
+> yasin, 2026-10-10: "komponentleri apple'ın hig prensiplerine göre gözden
+> geçiriyor muyuz, bişey değiştirirken bunu standart olarak sorgulayalım."
+
+Bir bileşen ya da ekran eklenir/değişirken aşağıdaki liste **tek tek**
+sorulur; PR açıklamasına ve yasin'e gösterilen önce/sonra artifact'ine kısa
+bir **"HIG kontrolü"** bölümü yazılır: neye bakıldı, ne uygun, neyden bilerek
+sapıldı ve neden. Uymayan madde "sonra bakarız" diye geçilmez; ya düzeltilir
+ya da sapma gerekçesiyle yazılır. Android'de Material karşılığı bozulmaz
+(sütun 3).
+
+| # | Soru | Bizde nasıl | Material karşılığı |
+|---|---|---|---|
+| 1 | **Dokunma alanı** en az 44×44 pt mi? Görsel küçükse şeffaf pay var mı? | `SandikTouch.min`; `SandikSegment` görsel kabuktan bağımsız 44 | Material düğmeleri 48 dp `padded` alır; ortak bileşenlerde tek eşik 44 (bilinçli) |
+| 2 | **Dynamic Type**: yazı ×2'de taşma, kesilme, üst üste binme yok mu? Sabit `height:` metni sıkıştırıyor mu? | `context.t.*`; `TextScaler.noScaling` yasak; `text_scale_overflow_test` | Android "Yazı tipi boyutu" aynı yoldan gelir |
+| 3 | **Kontrast**: metin açık ve koyu temada okunur mu (gövde 4.5:1, büyük 3:1)? `text36`/`text20` anlam taşıyan metinde mi? | `text90`/`text58` anlam, `text36` yardımcı, `text20` yalnız pasif; `light_mode_contrast_test` | aynı |
+| 4 | **Renk körlüğü**: kazanç/kayıp yalnız renkle mi anlatılıyor? İşaret (+/−), ok ya da metin de var mı? | yön taşıyan yüzde `fmtPctIsaretli` (+%/−%), tutar U+2212 ile; işaret ya da ok renkle birlikte | aynı |
+| 5 | **Güvenli alan**: alt düğme, sheet içeriği, tam ekran içerik çentiğe/ana çubuğa girmiyor mu? Klavye açılınca eylem görünür mü? | `SafeArea`, `showSandikSheet`, `MediaQuery.viewInsets` | sistem gezinme çubuğu aynı |
+| 6 | **Standart gezinme**: geri kaydırma çalışıyor mu? `PopScope(canPop: false)` yalnız kaydedilmemiş veri/ödeme gibi gerçek risklerde mi? | `pushGuarded(adaptiveRoute)`; özel geri oku yok (`SandikAppBar`) | sistem geri tuşu/jesti aynı yolu izler |
+| 7 | **Sheet ve modal**: kısa, bağlamdan kopmayan iş sheet'te mi? Tutamaç ve aşağı kaydırarak kapama var mı? Tam ekran modal yalnız odak isteyen akışta mı? | `showSandikSheet` + `SandikTutamac`; tam ekran `modal` hareketi | Material bottom sheet aynı |
+| 8 | **Haptic**: titreşim anlamlı anda mı (seçim, başarı, hata, eşik)? Kaydırma/imleç her adımda titretmiyor mu? | yalnız `SandikHaptic`; grafikte yalnız zirve/dip | Android titreşimi aynı çağrıdan |
+| 9 | **Erişilebilirlik etiketi**: yalnız ikonlu düğme/dokunulabilir öğe ne yaptığını söylüyor mu? Grafik/sayı kartı tek cümleyle okunuyor mu? Süs ikon `excludeSemantics` mi? | `IconButton.tooltip`, `SandikTappable.semanticLabel`, `SandikAsyncTap.semanticLabel`, `Semantics(label:)` | TalkBack aynı ağacı okur |
+| 10 | **Hareketi azalt**: "Hareketi azalt" açıkken kayma/ölçek kalkıyor mu? | `SandikMotion.*Of(context)`; `reduce_motion_coverage_test` | "Animasyonları kaldır" aynı bayrak |
+| 11 | **Sistem kalıbı**: iOS'ta beklenen kontrol mü (anahtar `Switch.adaptive`, tarih `pickSandikDate`, onay `showSandikConfirm`)? Kendi icadımız sistem davranışını bozuyor mu? | §4 tablosu | `.adaptive` Android'de Material çizer |
+
+**Otomatik denetlenen:** 1 (kaynak + çizilmiş ortak bileşen), 2 (ortak
+bileşen ve seçili ekranlar ×2), 3 (açık tema ve ortak bileşen kontrastı),
+9 (ortak bileşenlerde etiket; etiketsiz `IconButton` sayısı yalnız azalır),
+10. Geri kalanı (4–8, 11) incelemeyle sorulur; o yüzden PR'daki "HIG
+kontrolü" bölümü atlanmaz.
+
+**Bilinçli sapmalar** (gerekçesiyle; değişirse burası güncellenir):
+- Dokunma eşiği platformdan bağımsız 44 (Material 48 dp önerir). Segment ve
+  liste satırları 44'te; Material düğmeleri temadan zaten 48 alır.
+- Gezinme çubuğu (alt sekme) değişmez — yasin kuralı; HIG tab bar
+  kalıbıyla zaten uyumlu.
