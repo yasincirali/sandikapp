@@ -356,20 +356,20 @@ void main() {
       expect(find.text('KARŞILAŞTIR'), findsOneWidget);
 
       // Mağaza yanıt vermedi: RC fiyatı, deneme vaadi yok.
-      expect(find.text('399₺/yıl'), findsOneWidget);
+      expect(find.text('649,99₺/yıl'), findsOneWidget);
       expect(find.text('Bugün'), findsNothing);
       expect(find.text('Yıllık abone ol'), findsOneWidget);
       // Geri yükle başlıkta bir kez.
       expect(find.text('Satın alımı geri yükle'), findsOneWidget);
 
-      final fiyat = t.widget<Text>(find.text('399₺/yıl')).style!.fontSize!;
+      final fiyat = t.widget<Text>(find.text('649,99₺/yıl')).style!.fontSize!;
       final slogan =
           t.widget<Text>(find.text('Sandığının içini aç.')).style!.fontSize!;
       expect(fiyat, greaterThan(slogan));
 
       await t.tap(find.text('Aylık'));
       await t.pumpAndSettle();
-      expect(find.text('49₺/ay'), findsOneWidget);
+      expect(find.text('79,99₺/ay'), findsOneWidget);
       expect(find.text('Aylık abone ol'), findsOneWidget);
     });
   });

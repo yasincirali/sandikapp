@@ -81,10 +81,15 @@ class RemoteConfigService {
     // bayrak getter'ıyla birlikte geri eklenir.
 
     // Aylık fiyat gösterimi (paywall'da lokalize göstermek için).
-    'premium_price_monthly': '49₺/ay',
-    // 349 → 399 (yasin, 2026-10-05): yıllıkta KDV + mağaza sonrası aya
-    // 20,6 ₺ kalıyordu; hesap /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
-    'premium_price_yearly': '399₺/yıl',
+    // 49 → 79,99 ve 399 → 649,99 (yasin, 2026-10-10): 49/399'da ayda
+    // ~3.600 ₺ sabit gider (yapay zekâ + Supabase Pro + Apple, dolar
+    // bazlı) ancak 130–200 aboneyle karşılanıyordu; yeni fiyatta 80–120.
+    // Türk rakiplerin çoğunun (Portfoy 199,99, İyi Gelir 559,99) altında.
+    // Analiz https://claude.ai/artifact/MnDNN3LJW3kU1jyUkWtPKv. Gerçek fiyat
+    // mağazadan okunur; bu metin yalnız mağaza yanıt vermezse görünür.
+    'premium_price_monthly': '79,99₺/ay',
+    // 349 → 399 (2026-10-05) → 649,99 (2026-10-10). Yıllık %32 tasarruf.
+    'premium_price_yearly': '649,99₺/yıl',
 
     // Ücretsiz sürümde tür başına günde en fazla kaç sinyal bildirimi
     // (Premium planı, 2026-10-08). Yalnız `paywall_enabled` açıkken ve

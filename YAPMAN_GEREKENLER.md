@@ -637,8 +637,10 @@ gerçek hakka bağlı. Deneme süresi ve fiyat MAĞAZADAN okunur.
 
 Paywall'u açmadan önce sırayla:
 - [ ] App Store Connect: abonelik grubu "sandık Premium", iki ürün — aylık
-      49 ₺, yıllık 399 ₺ (ürün kimlikleri ör. `sandik_premium_aylik`,
-      `sandik_premium_yillik`). Deneme istiyorsan "Introductory Offer → Free".
+      79,99 ₺, yıllık 649,99 ₺ (karar 2026-10-10; ürün kimlikleri ör.
+      `sandik_premium_aylik`, `sandik_premium_yillik`). Yıllıkta 7 gün
+      deneme ("Introductory Offer → Free"); açılışta ilk yıl 499,99 ₺
+      tanıtım teklifi ("Pay up front", Play'de "introductory price").
       Paid Applications sözleşmesi + banka/vergi bilgisi tamam olmalı.
 - [ ] Play Console: aynı iki abonelik (base plan aylık/yıllık), istersen
       "free trial" teklifi. Ödeme profili tamam olmalı.
@@ -758,10 +760,12 @@ Yayın sırası (sıra önemli):
       kapı önce açılırsa bayrağı henüz almamış ücretsiz kullanıcı notu
       "açılamadı" gibi görür (ekran artık bu durumda kilidi gösteriyor ama
       kartlar boş kalır).
-      Fiyat (kararın 2026-10-05): aylık 49 ₺, yıllık 399 ₺. Mağaza ürünleri bu
-      fiyatla açılır; Remote Config `premium_price_yearly` = `399₺/yıl` (kod
-      varsayılanı da 399). Apple Small Business Program'a kayıt ol (yoksa ilk
-      yıl %30 kesinti). Hesap: /mnt/project-files/balina/premium_fiyat_hesabi_2026-10-05.md.
+      Fiyat (kararın 2026-10-10, 49/399'un yerine): aylık 79,99 ₺, yıllık
+      649,99 ₺. Mağaza ürünleri bu fiyatla açılır; Remote Config
+      `premium_price_monthly` = `79,99₺/ay`, `premium_price_yearly` =
+      `649,99₺/yıl` (kod varsayılanı da bu; Console'da eski 49/399 girdiysen
+      güncelle). Apple Small Business Program'a kayıt ol (yoksa ilk yıl %30
+      kesinti). Analiz: https://claude.ai/artifact/MnDNN3LJW3kU1jyUkWtPKv.
       Notlar üretilmeden paywall'u açma: karşılaştırma tablosu notu vaat
       ediyor.
 
