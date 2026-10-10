@@ -173,33 +173,68 @@ const PERIOD_HOURS: Partial<Record<SignalFrequency, number>> = {
   every_3h: 3,
 };
 
-// NOT (2026-10-10, Premium netleştirmesi): ücretsiz planın "günde 1
-// bildirim" (`slotaSigdir`, secret `SINYAL_UCRETSIZ_SLOT`) ve "tek varlıkta
-// bildirim" (`ucretsizVarlikFiltresi`, secret `SINYAL_UCRETSIZ_VARLIK`,
-// tablo `sinyal_varlik_secimi` 0126) kapıları söküldü. İkisinin secret'ı
-// canlıda hiç konmamıştı (davranış değişmez). Yeni model (yasin): sinyal
-// bildirimi kapı açıkken bütünüyle Premium (`yalnizPremiumFiltresi`);
-// arada bir "ücretsiz bildirim" kalmadı. Tablo eski build'ler yazabildiği
-// için yerinde; burada artık okunmaz.
+// NOT (2026-10-10, Premium netleştirmesi): "tek varlıkta bildirim"
+// (`ucretsizVarlikFiltresi`, secret `SINYAL_UCRETSIZ_VARLIK`, tablo
+// `sinyal_varlik_secimi` 0126) kapısı söküldü; secret canlıda hiç
+// konmamıştı. Tablo eski build'ler yazabildiği için yerinde; burada okunmaz.
 
-/// Sinyal BİLDİRİMİ yalnız Premium'da (yasin, 2026-10-10: önce "varlık
-/// gösterge sinyali özelliği tamamen premiuma geçsin", akşam "en yaygın 3
-/// tanesi ücretsiz gösterilmeli, ancak kalanları ve … push bildirimi
-/// feature'ı premium olmalı" — üç göstergenin sinyali ekranda ücretsiz,
-/// push Premium).
+/// 10:00–18:00 penceresinde günde en fazla kaç tur. İstemcideki
+/// `SignalFrequency.gunlukEnFazla` ile birebir (`sinyal_slot_kapisi_test`).
+export const GUNLUK_EN_FAZLA: Record<SignalFrequency, number> = {
+  hourly: 9,
+  every_2h: 5,
+  every_3h: 3,
+  twice_daily: 2,
+  daily: 1,
+};
+
+/// Ücretsiz sürümün günlük bildirim kapısı (Premium planı, 2026-10-08;
+/// 2026-10-10 akşam yeniden: yasin "olur ama limitli sayıda yapabilmeli").
 ///
-/// `kapiAcik` = `premium_ayar.kapi_acik` (0116), paywall'la birlikte açılan
-/// SUNUCU kapısı; Premium notlarını koruyan anahtarla aynısı, ayrı secret
-/// yok. Kapalıyken dizi olduğu gibi döner: davranış birebir eskisi. Açıkken
-/// yalnız Premium (geçerli hak ya da admin) kullanıcıların lotları kalır.
-/// İstemcideki eşi `sinyalBildirimiKilitliProvider`.
-export function yalnizPremiumFiltresi<T extends { user_id: string }>(
-  lotlar: readonly T[],
-  kapiAcik: boolean,
-  premium: ReadonlySet<string>,
-): T[] {
-  if (!kapiAcik) return [...lotlar];
-  return lotlar.filter((a) => premium.has(a.user_id));
+/// Tercih satırı DEĞİŞTİRİLMEZ: kullanıcının seçtiği sıklık saklı kalır,
+/// Premium alınca kendiliğinden geri gelir. Yalnız bu turun kararı için
+/// sığdırılmış bir kopya döner: sığmayan sıklık "günde 1 kez"e, saati
+/// seçtiği İLK saate (yoksa 11:00, yani sabah) iner. `slot` 0 ya da
+/// tanımsızsa kapı kapalıdır ve tercih olduğu gibi döner.
+export function slotaSigdir<
+  T extends { frequency?: SignalFrequency; notify_hours?: number[] },
+>(pref: T | undefined, slot: number | undefined): T | undefined {
+  if (!slot || slot <= 0) return pref;
+  const freq = pref?.frequency ?? DEFAULT_FREQUENCY;
+  if (GUNLUK_EN_FAZLA[freq] <= slot) return pref;
+  // Periyodik sıklıkta `notify_hours` eski bir seçimden kalmış olabilir;
+  // orada anlamlı tek saat varsayılanın ilkidir.
+  const saatli = freq === 'daily' || freq === 'twice_daily';
+  const ilk = (saatli ? pref?.notify_hours?.[0] : undefined)
+    ?? DEFAULT_NOTIFY_HOURS[0];
+  return { ...(pref ?? {}), frequency: 'daily', notify_hours: [ilk] } as T;
+}
+
+/// Ücretsiz bildirimin göstergeleri (yasin, 2026-10-10 akşam): en yaygın
+/// üçü. İstemcideki `IndicatorId.ucretsiz` ile birebir
+/// (`sinyal_ucretsiz_bildirim_test`).
+export const UCRETSIZ_GOSTERGELER: readonly string[] = ['rsi', 'macd', 'bollinger'];
+
+/// Bir kullanıcının bu turdaki bildirim kuralı, sunucu kapısı açıkken
+/// (`premium_ayar.kapi_acik`, paywall'la birlikte açılır).
+///
+///  - Premium (geçerli hak ya da admin): seçtiği göstergeler (ileri üçü
+///    dahil), periyotları, sıklığı.
+///  - Ücretsiz: seçtiği göstergelerin yalnız ücretsiz üçü, varsayılan
+///    periyotlar, günde [slot] tur. Seçtiği göstergelerin hiçbiri ücretsiz
+///    değilse bildirim yok (null).
+///
+/// Kapı kapalıyken çağrılmaz: davranış birebir eskisi. İstemci eşi
+/// `sinyalBildirimiSiniriProvider`.
+export function bildirimKurali(
+  gostergeler: readonly string[],
+  premium: boolean,
+  slot: number,
+): { gostergeler: string[]; ileri: boolean; parametre: boolean; slot: number } | null {
+  if (premium) return { gostergeler: [...gostergeler], ileri: true, parametre: true, slot: 0 };
+  const ucretsiz = gostergeler.filter((g) => UCRETSIZ_GOSTERGELER.includes(g));
+  if (ucretsiz.length === 0) return null;
+  return { gostergeler: ucretsiz, ileri: false, parametre: false, slot };
 }
 
 /// Şu anki TR saati (0-23). Sunucu UTC çalışır; TR sabit UTC+3
@@ -620,13 +655,14 @@ Deno.serve(async (request) => {
       }
     }
 
-    // ── 3b) Yalnız Premium kapısı ───────────────────────────────────────────
+    // ── 3b) Sunucu Premium kapısı ───────────────────────────────────────────
     //
     // `premium_ayar.kapi_acik` (0116) paywall'la birlikte açılan SUNUCU
-    // kapısı. Kapalıyken davranış birebir eskisi: herkes sinyal alır, ileri
-    // göstergeler hesaplanmaz. Açıkken yalnız Premium (geçerli hak satırı ya
-    // da admin; `premium_mi_kullanici` ile aynı karar) bildirim alır ve onlar
-    // için sekiz göstergenin tamamı hesaplanır.
+    // kapısı. Kapalıyken davranış birebir eskisi: herkes seçtiği sıklıkta
+    // sinyal alır, ileri göstergeler hesaplanmaz. Açıkken kural
+    // `bildirimKurali`: Premium her şeyi alır; ücretsiz kullanıcı yalnız
+    // RSI/MACD/Bollinger'den, günde `SINYAL_UCRETSIZ_SLOT` (yoksa 1) tur.
+    // Premium = `premium_mi_kullanici` ile aynı karar (hak satırı ya da admin).
     // Okunamazsa kapı uygulanmaz: abone olmuş birinin bildirimini yanlışlıkla
     // kesmek, ücretsiz birine bir tur fazla göndermekten pahalıdır.
     const { data: ayarSatiri, error: ayarHatasi } = await admin
@@ -635,19 +671,19 @@ Deno.serve(async (request) => {
       .eq('tek', true)
       .maybeSingle();
     if (ayarHatasi) {
-      console.error('[analyze-signals] premium_ayar okunamadi, yalniz-premium kapisi bu tur atlandi');
+      console.error('[analyze-signals] premium_ayar okunamadi, premium kapisi bu tur atlandi');
     }
-    const yalnizPremium = !ayarHatasi && ayarSatiri?.kapi_acik === true;
+    const kapiAcik = !ayarHatasi && ayarSatiri?.kapi_acik === true;
     const premiumKullanicilar = new Set<string>();
     let premiumOkundu = false;
-    if (yalnizPremium) {
+    if (kapiAcik) {
       const simdi = Date.now();
       const [haklar, adminler] = await Promise.all([
         admin.from('premium_haklari').select('user_id, bitis').in('user_id', userIds),
         admin.from('push_admins').select('user_id').in('user_id', userIds),
       ]);
       if (haklar.error || adminler.error) {
-        console.error('[analyze-signals] premium okunamadi, yalniz-premium kapisi bu tur atlandi');
+        console.error('[analyze-signals] premium okunamadi, premium kapisi bu tur atlandi');
       } else {
         premiumOkundu = true;
         for (const h of (haklar.data ?? []) as { user_id: string; bitis: string | null }[]) {
@@ -660,13 +696,19 @@ Deno.serve(async (request) => {
         }
       }
     }
-    const kapiliAssets = yalnizPremium && premiumOkundu
-      ? yalnizPremiumFiltresi(assets, true, premiumKullanicilar)
-      : assets;
-    const skippedByPremiumGate = assets.length - kapiliAssets.length;
-    // Kapı açık ve okunduysa elde yalnız Premium kalmıştır: ileri göstergeler
-    // (ADX, W%R, CCI) de hesaplanır. İstemci eşi `izinliGostergelerProvider`.
-    const ileriGostergeler = yalnizPremium && premiumOkundu;
+    const kapiUygulanir = kapiAcik && premiumOkundu;
+    const ucretsizSlot = Number(Deno.env.get('SINYAL_UCRETSIZ_SLOT') ?? '1') || 1;
+    /// Kullanıcı + tür için bu turun kuralı. Kapı uygulanmıyorsa eski davranış
+    /// (seçilen göstergeler, ileri üçü yok, satırdaki periyotlar, sıklık aynen).
+    const kuralOf = (userId: string, gostergeler: readonly string[]) =>
+      kapiUygulanir
+        ? bildirimKurali(gostergeler, premiumKullanicilar.has(userId), ucretsizSlot)
+        : { gostergeler: [...gostergeler], ileri: false, parametre: true, slot: 0 };
+    const gostergelerOf = (pref: PrefRow | undefined) =>
+      pref?.indicators?.length ? pref.indicators : DEFAULT_INDICATORS;
+    // Ücretsiz göstergesi olmayan (yalnız ileri göstergeleri seçmiş) ücretsiz
+    // kullanıcı — teşhis sayacı.
+    let skippedByPremiumGate = 0;
 
     const now = new Date();
     // Sıklık/pencere yüzünden atlananlar — teşhiste "neden gönderilmedi"
@@ -679,10 +721,17 @@ Deno.serve(async (request) => {
     // kapalı varlıkların fiyat geçmişi HİÇ ÇEKİLMEZ. Önceden tüm varlıkların
     // serisi yükleniyor, sonra döngüde atlanıyordu — saatbaşı çalışan cron'da
     // bu, çoğu tur boş yere yapılan iş demekti.
-    const aktifAssets = kapiliAssets.filter((a) => {
+    const aktifAssets = assets.filter((a) => {
       const pref = prefs.get(prefKey(a.user_id, a.type));
       if (pref && !pref.signals_enabled) return false;
-      if (!dryRun && !shouldNotifyNow(pref, now)) {
+      const kural = kuralOf(a.user_id, gostergelerOf(pref));
+      if (!kural) {
+        skippedByPremiumGate++;
+        return false;
+      }
+      // Kapı yalnız bu turun zamanlamasını kısar; tercih satırı değişmez.
+      const zamanlama = kural.slot > 0 ? slotaSigdir(pref, kural.slot) : pref;
+      if (!dryRun && !shouldNotifyNow(zamanlama, now)) {
         skippedByFrequency++;
         return false;
       }
@@ -753,25 +802,24 @@ Deno.serve(async (request) => {
 
       const pref = prefs.get(prefKey(asset.user_id, asset.type));
       const threshold = pref?.threshold ?? DEFAULT_THRESHOLD;
-      const indicators = pref?.indicators?.length
-        ? pref.indicators
-        : DEFAULT_INDICATORS;
+      const kural = kuralOf(asset.user_id, gostergelerOf(pref));
+      if (!kural) continue;
       const neutralPush = pref?.neutral_push ?? false;
       // De-dup hafızası POZİSYON anahtarıyla (bkz. `positionKeyOf`).
       const posKey = positionKeyOf(asset);
       const durumAnahtari = signalStateKey(asset.user_id, posKey);
       const oncekiSinyal = lastSignalOf.get(durumAnahtari);
 
-      // İleri göstergeler yalnız kapı açıkken (elde yalnız Premium varken)
-      // hesaplanır; kapalıyken eski davranış (temel beşli). Parametreler
-      // (0142) satırda varsa uygulanır: onları yalnız Premium/admin istemci
-      // yazar; Premium'u biten kullanıcı kapı açıkken zaten push almaz.
+      // Kural (`bildirimKurali`): Premium'da ileri göstergeler ve periyotlar
+      // (0142) uygulanır; ücretsizde üç gösterge, varsayılan periyot. Kapı
+      // kapalıyken ileri üçü yok, satırdaki periyot (yalnız admin/Premium
+      // istemci yazar) uygulanır.
       const inds = analyze(
         prices,
         analizTuru(asset.type),
-        indicators,
-        ileriGostergeler,
-        pref?.parametreler ?? null,
+        kural.gostergeler,
+        kural.ileri,
+        kural.parametre ? pref?.parametreler ?? null : null,
       );
       if (inds.length === 0) continue;
 

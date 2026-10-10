@@ -95,6 +95,9 @@ Future<_KayitliPortfolio> _ac(WidgetTester t, Asset varlik,
       gelistiriciAnahtariSayilirProvider.overrideWithValue(false),
       magazaPremiumProvider.overrideWith((_) => premium),
       gecerliPremiumHakkiProvider.overrideWithValue(null),
+      // Hediye güvencesi (2026-10-10): eski hesap + okunamayan hak = kilit yok;
+      // burada kilidin kendisi sınanıyor.
+      kilitlerAskidaProvider.overrideWithValue(false),
     ],
     child: MaterialApp(
       theme: ThemeData.dark(),

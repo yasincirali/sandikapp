@@ -109,6 +109,9 @@ List<Override> _ortak(_SahtePaylasimlar paylasimlar, {bool premium = true}) => [
       gelistiriciAnahtariSayilirProvider.overrideWithValue(false),
       magazaPremiumProvider.overrideWith((_) => premium),
       gecerliPremiumHakkiProvider.overrideWithValue(null),
+      // Hediye güvencesi (2026-10-10): eski hesap + okunamayan hak = kilit yok;
+      // burada kilidin kendisi sınanıyor.
+      kilitlerAskidaProvider.overrideWithValue(false),
     ];
 
 Future<void> _yonetim(WidgetTester t, _SahtePaylasimlar p,

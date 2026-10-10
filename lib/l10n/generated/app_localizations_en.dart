@@ -6735,10 +6735,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSatirSinyal => 'Technical signals';
 
   @override
-  String get prmSinyalUcretsiz => '3 indicators, on screen';
+  String get prmSinyalUcretsiz => '3 indicators, 1 alert a day';
 
   @override
-  String get prmSinyalPremium => '8 indicators, periods, alerts';
+  String get prmSinyalPremium => '8 indicators, periods, unlimited';
 
   @override
   String get prmSatirTakip => 'Watchlist';
@@ -7501,7 +7501,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Eight indicators, your own periods and alerts on every asset.';
 
   @override
-  String get pwdSinyalPremium => '8 indicators, alerts';
+  String get pwdSinyalPremium => '8 indicators, unlimited alerts';
 
   @override
   String get pwdKarsEtiket => 'COMPARE';
@@ -7669,16 +7669,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get depositNoteHint => 'e.g. campaign rate, goal, branch';
 
   @override
-  String get sgnKilitBaslik => 'Signal alerts';
-
-  @override
-  String get sgnKilitGovde =>
-      'RSI, MACD and Bollinger are free on screen. Premium adds all eight indicators, your own period settings and alerts for every asset you hold at the frequency you choose.';
-
-  @override
-  String get sgnKilitSatir => 'Signal alerts are in Premium';
-
-  @override
   String get prmAylikKilitBaslik => 'Monthly report';
 
   @override
@@ -7841,7 +7831,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwOzSinyalTam =>
-      'Technical signals: 8 indicators, your own periods and signal alerts on every asset';
+      'Technical signals: 8 indicators, your own periods and alerts at the frequency you choose';
 
   @override
   String get pwOzMasraf => 'Item-by-item fee breakdown per asset';
@@ -8535,11 +8525,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sgnPremiumGostergeSatiri =>
-      'EMA, Stochastic, ADX, Williams %R, CCI and alerts are in Premium';
+      'EMA, Stochastic, ADX, Williams %R, CCI and unlimited alerts in Premium';
 
   @override
   String get sgnAyarAciklamaUcretsiz =>
-      'Choose which indicators are calculated on screen for each asset type. RSI, MACD and Bollinger are free.';
+      'Pick which indicators produce signals for each asset type. RSI, MACD and Bollinger are free, with one alert a day.';
 
   @override
   String sgnParametreAciklama(String tur) {
@@ -8606,5 +8596,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String varlikKotasiDolu(int sinir) {
     return 'You\'ve used all $sinir assets on the free plan. You can still add to assets you hold; new assets need Premium.';
+  }
+
+  @override
+  String get sgnSlotNotu =>
+      'On the free plan RSI, MACD and Bollinger signals are sent once a day per type. Premium covers all eight indicators at the frequency you choose.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
   }
 }

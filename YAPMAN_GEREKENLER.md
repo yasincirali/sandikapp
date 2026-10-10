@@ -16,9 +16,10 @@
 
 Senin kararların (10 Ekim akşam): varlığı güncelle ücretsiz; mum, aralık
 seçici, EMA50, EMA200 ücretsiz; kendi göstergeni yaz (Pine) Premium; sinyalde
-en yaygın 3 gösterge (RSI, MACD, Bollinger) ekranda ücretsiz, kalan 5
-gösterge + gösterge periyotlarını değiştirmek + sinyal bildirimi Premium;
-alarm sınırında paywall. Ayrıntı ve ekranlar PR'daki artifact'te.
+en yaygın 3 gösterge (RSI, MACD, Bollinger) ücretsiz ve bildirimi de gelir
+ama tür başına günde 1 kez ("limitli sayıda"); kalan 5 gösterge, gösterge
+periyotlarını değiştirmek ve sınırsız bildirim Premium; alarm sınırında
+paywall. Ayrıntı ve ekranlar PR'daki artifact'te.
 
 **Bu listedeki sıra zorunlu.** Aşağıdaki eski bölümlerde dağınık duran
 açılış adımlarının (0116, 0126, 0130 bölümleri, `SINYAL_UCRETSIZ_*`
@@ -62,7 +63,10 @@ secret'ları) yerine BU geçer.
        Sonra %20, sonra herkes.
 4. [ ] **En son sunucu kapısı:** `update public.premium_ayar set kapi_acik = true;`
        (iki sunucu). Önce açılırsa uygulama kilit göstermeden sunucu radar
-       notunu ve sinyal bildirimini keser.
+       notunu keser ve ücretsiz kullanıcının bildirimini günde 1'e, üç
+       göstergeye indirir. Günlük sayı Supabase secret
+       `SINYAL_UCRETSIZ_SLOT` ile değişir (koymazsan 1); Remote Config
+       `free_signal_slots_per_day` aynı sayıya ayarlanmalı (varsayılan 1).
 5. [ ] Mağaza abonelik açıklamasındaki Premium listesini paywall'daki
        listeyle eşle (Premium: 5 ileri gösterge + periyot + sinyal bildirimi,
        kendi göstergen, aylık/yıllık rapor + PDF/Excel, temettü tahmini,
@@ -445,9 +449,9 @@ o koşmalı.
       `paywall_enabled` (Remote Config, yayılsın) →
       `update public.premium_ayar set kapi_acik = true;`. Kapı artık
       sinyali de keser: açıkken yalnız Premium (hak ya da admin) sinyal alır.
-      ~~`SINYAL_UCRETSIZ_SLOT` / `SINYAL_UCRETSIZ_VARLIK` secret'ları~~
-      2026-10-10'da koddan kalktı. **Güncel sıra: en üstteki "PAYWALL
-      AÇILIŞ GÜNÜ" listesi.**
+      ~~`SINYAL_UCRETSIZ_VARLIK`~~ 2026-10-10'da koddan kalktı;
+      `SINYAL_UCRETSIZ_SLOT` isteğe bağlı (yoksa 1). **Güncel sıra: en
+      üstteki "PAYWALL AÇILIŞ GÜNÜ" listesi.**
 - [ ] Remote Config: `free_price_alert_limit` ya da `paywall_watchlist_limit`
       Console'da elle girildiyse yeni varsayılanları (20, 10) ezer; sil ya da
       20 / 10 yap.
@@ -807,10 +811,10 @@ Paywall'u açmadan önce sırayla:
       secret'ı aynı zamanda bu silmeyi de açar.
 - [ ] Sandbox testi: TestFlight'ta kendi cihazında `paywall_enabled` (koşullu)
       aç → satın al, geri yükle, iptal; `premium_haklari`'nda satır `sandbox=true`.
-- [ ] ~~Açılış günü sırası 0115–0118 bölümünde; `SINYAL_UCRETSIZ_SLOT`~~
-      2026-10-10: slot kapısı koddan kalktı; güncel sıra en üstteki
-      "PAYWALL AÇILIŞ GÜNÜ" listesi.
-- [ ] İsteğe bağlı Remote Config (~~`free_signal_slots_per_day`~~ kalktı):
+- [ ] ~~Açılış günü sırası 0115–0118 bölümünde~~ 2026-10-10: güncel sıra
+      en üstteki "PAYWALL AÇILIŞ GÜNÜ" listesi; `SINYAL_UCRETSIZ_SLOT`
+      artık isteğe bağlı (kapı açıkken yoksa 1).
+- [ ] İsteğe bağlı Remote Config: `free_signal_slots_per_day` (varsayılan 1),
       `free_compare_series` (varsayılan 2 = kendi serine ek bir kıyas;
       Premium 5), `free_partner_limit` (varsayılan 1; var olan ortaklıklar
       korunur, yalnız yeni ortak eklemek durur). Hepsi yalnız

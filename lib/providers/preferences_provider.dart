@@ -366,12 +366,11 @@ final seviyeGorunurlukProvider = Provider<SeviyeGorunurluk>(
 // seviyede görünür oldu; bayrak kalkınca sağlayıcı hep `true` dönüyordu.
 // Başlangıç'ta yalnızca sinyal satırları süzülür ↓.
 
-/// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır;
-/// paywall açıkken Premium olmayanda da hayır — sinyal bildirimi Premium,
-/// bkz. [sinyalBildirimiKilitliProvider]).
-final zilSinyalleriGosterProvider = Provider<bool>((ref) =>
-    ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
-    !ref.watch(sinyalBildirimiKilitliProvider));
+/// Zil sayfası ve rozeti teknik sinyalleri saysın mı (Başlangıç'ta hayır).
+/// Ücretsizde de evet: üç ücretsiz göstergenin bildirimi günde sınırlı
+/// sayıda gider (yasin 2026-10-10 akşam, [sinyalSlotSiniriProvider]).
+final zilSinyalleriGosterProvider = Provider<bool>(
+    (ref) => ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik);
 
 /// Teknik sinyal yüzeylerinin (varlık paneli, sinyal kartı, sinyal
 /// ayarları) bu kullanıcıdaki hâli.
@@ -381,8 +380,8 @@ final zilSinyalleriGosterProvider = Provider<bool>((ref) =>
 /// geçsin" — paywall açıkken yüzeylerin yerine tek kilit kartı çiziliyordu.
 /// 2026-10-10 akşam (yasin): "teknik göstergelerden en yaygın 3 tanesi
 /// ücretsiz gösterilmeli". Artık yüzey ücretsizde de AÇIK; kilit gösterge
-/// düzeyinde (`izinliGostergelerProvider`) ve bildirimde
-/// (`sinyalBildirimiKilitliProvider`). Tek kalan kapı seviye: Başlangıç'ta
+/// düzeyinde (`izinliGostergelerProvider`) ve bildirim sıklığında
+/// (`sinyalSlotSiniriProvider`). Tek kalan kapı seviye: Başlangıç'ta
 /// sinyal hiç çizilmez. Paywall kapalıyken davranış birebir eski.
 final sinyalYuzeyiProvider = Provider<SinyalYuzeyi>((ref) {
   if (!seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller) {
@@ -709,13 +708,6 @@ enum OzellikDurumu {
   acik,
 }
 
-/// Sinyal bildirimleri (push + uygulama içi zil satırları) bu kullanıcıda
-/// kilitli mi. Paywall açıkken bildirim Premium'dadır (yasin 2026-10-10:
-/// "kalanları ve custom gösterge bununla push bildirimi feature'ı premium
-/// olmalı"); ekrandaki üç ücretsiz göstergenin sinyali yine görünür.
-final sinyalBildirimiKilitliProvider =
-    Provider<bool>((ref) => ref.watch(premiumKilitliProvider));
-
 final assetLimitProvider = Provider<int>((ref) {
   final paywallOn = ref.watch(paywallVisibleProvider);
   if (!paywallOn) return 1 << 30;
@@ -724,10 +716,22 @@ final assetLimitProvider = Provider<int>((ref) {
   return RemoteConfigService.instance.freeAssetLimit;
 });
 
-// NOT (2026-10-10): `sinyalSlotSiniriProvider` (ücretsizde tür başına günde
-// 1 bildirim) kaldırıldı. Yeni modelde sinyal bildirimi paywall açıkken
-// bütünüyle Premium, kapalıyken sınırsız; arada bir "slot" kalmadı. Sunucu
-// tarafı `SINYAL_UCRETSIZ_SLOT` / `SINYAL_UCRETSIZ_VARLIK` de söküldü.
+/// Tür başına günlük sinyal bildirimi sınırı — `assetLimitProvider` kalıbı.
+/// Paywall kapalıyken ya da Premium erişiminde pratikte sınırsız: seçilen
+/// sıklık olduğu gibi kalır. Ekranda gösterilen zamanlama `slotaSigdir` ile
+/// hesaplanır; sunucu aynı kuralı `SINYAL_UCRETSIZ_SLOT` (yoksa 1) ile
+/// uygular. Ücretsizde bildirim yalnız RSI/MACD/Bollinger'den gelir
+/// (`izinliGostergelerProvider`; sunucuda `bildirimKurali`).
+///
+/// Karar geçmişi: 2026-10-08 günde 1 → 2026-10-10 sabah bildirim bütünüyle
+/// Premium (kapı söküldü) → aynı akşam yasin "olur ama limitli sayıda
+/// yapabilmeli": üç ücretsiz göstergenin bildirimi günde 1 turla geri geldi.
+final sinyalSlotSiniriProvider = Provider<int>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return 1 << 30;
+  if (ref.watch(premiumErisimProvider)) return 1 << 30;
+  final v = RemoteConfigService.instance.freeSignalSlotsPerDay;
+  return v <= 0 ? 1 << 30 : v;
+});
 
 /// Karşılaştır grafiğindeki en fazla seri. Beş, paletin sınırıdır ve
 /// Premium'un değeridir; ücretsizde `free_compare_series` (varsayılan 2 =
@@ -1530,5 +1534,6 @@ final kullaniciyaOzelTercihler = <ProviderOrFamily>[
   radarKocuGorulduProvider,
   haftaSakinGosterProvider,
   premiumHediyeGosterildiProvider,
+  gostergeParametreleriProvider,
   seciliPortfoyProvider,
 ];

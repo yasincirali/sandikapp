@@ -11102,13 +11102,13 @@ abstract class AppLocalizations {
   /// No description provided for @prmSinyalUcretsiz.
   ///
   /// In tr, this message translates to:
-  /// **'3 gösterge, ekranda'**
+  /// **'3 gösterge, günde 1 bildirim'**
   String get prmSinyalUcretsiz;
 
   /// No description provided for @prmSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, periyot, bildirim'**
+  /// **'8 gösterge, periyot, sınırsız'**
   String get prmSinyalPremium;
 
   /// No description provided for @prmSatirTakip.
@@ -12416,7 +12416,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'8 gösterge, bildirim'**
+  /// **'8 gösterge, sınırsız bildirim'**
   String get pwdSinyalPremium;
 
   /// No description provided for @pwdKarsEtiket.
@@ -12682,24 +12682,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Örn. kampanya faizi, hedef, şube'**
   String get depositNoteHint;
-
-  /// No description provided for @sgnKilitBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyal bildirimleri'**
-  String get sgnKilitBaslik;
-
-  /// No description provided for @sgnKilitGovde.
-  ///
-  /// In tr, this message translates to:
-  /// **'RSI, MACD ve Bollinger ekranda ücretsiz. Premium\'da sekiz göstergenin tamamı, kendi periyot ayarların ve tuttuğun her varlıkta seçtiğin sıklıkta bildirim.'**
-  String get sgnKilitGovde;
-
-  /// No description provided for @sgnKilitSatir.
-  ///
-  /// In tr, this message translates to:
-  /// **'Sinyal bildirimleri Premium\'da'**
-  String get sgnKilitSatir;
 
   /// No description provided for @prmAylikKilitBaslik.
   ///
@@ -12980,7 +12962,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwOzSinyalTam.
   ///
   /// In tr, this message translates to:
-  /// **'Teknik sinyaller: 8 gösterge, kendi periyotların ve her varlığında sinyal bildirimi'**
+  /// **'Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim'**
   String get pwOzSinyalTam;
 
   /// No description provided for @pwOzMasraf.
@@ -14102,13 +14084,13 @@ abstract class AppLocalizations {
   /// No description provided for @sgnPremiumGostergeSatiri.
   ///
   /// In tr, this message translates to:
-  /// **'EMA, Stokastik, ADX, Williams %R, CCI ve bildirimler Premium\'da'**
+  /// **'EMA, Stokastik, ADX, Williams %R, CCI ve sınırsız bildirim Premium\'da'**
   String get sgnPremiumGostergeSatiri;
 
   /// No description provided for @sgnAyarAciklamaUcretsiz.
   ///
   /// In tr, this message translates to:
-  /// **'Her varlık türü için ekranda hangi göstergelerin hesaplanacağını seç. RSI, MACD ve Bollinger ücretsiz.'**
+  /// **'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.'**
   String get sgnAyarAciklamaUcretsiz;
 
   /// No description provided for @sgnParametreAciklama.
@@ -14212,6 +14194,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium\'da.'**
   String varlikKotasiDolu(int sinir);
+
+  /// No description provided for @sgnSlotNotu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz sürümde RSI, MACD ve Bollinger sinyalleri her tür için günde 1 kez bildirilir. Premium\'da sekiz göstergenin tamamı, seçtiğin sıklıkta gelir.'**
+  String get sgnSlotNotu;
+
+  /// No description provided for @sgnSlotKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'{secenek}, Premium'**
+  String sgnSlotKilitli(String secenek);
 }
 
 class _AppLocalizationsDelegate

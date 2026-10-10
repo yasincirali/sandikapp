@@ -55,12 +55,14 @@ PaywallKarti? kaynaktanKart(String source) {
       source == 'alarm_limit') {
     return PaywallKarti.varlik;
   }
-  // Sinyal: ayarlardaki kilitli gösterge (`signal_settings_<id>`), paneldeki
-  // "5 gösterge daha" satırı, periyot ayarı ve bildirim kilit kartı.
+  // Sinyal: ayarlardaki kilitli gösterge (`signal_settings_<id>`), kilitli
+  // sıklık ve ön ayar (günde 1 bildirim kapısı), paneldeki "5 gösterge
+  // daha" satırı ve periyot ayarı.
   if (source.startsWith('signal_settings_') ||
+      source == 'signal_frequency' ||
+      source == 'signal_on_ayar' ||
       source == 'sinyal_gosterge' ||
-      source == 'gosterge_parametre' ||
-      source == 'sinyal_kilit') {
+      source == 'gosterge_parametre') {
     return PaywallKarti.sinyal;
   }
   return switch (source) {
@@ -262,7 +264,7 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           _KartRengi.koyu,
           l.pwdOzelEtiket,
           l.pwdOzelBaslik,
-          'Pine v4–v6',
+          'Pine v4, v5, v6',
           const _MumGorseli(),
           null,
           l.pwdOzelPremium,

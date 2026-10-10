@@ -6672,10 +6672,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get prmSatirSinyal => 'Teknik sinyaller';
 
   @override
-  String get prmSinyalUcretsiz => '3 gösterge, ekranda';
+  String get prmSinyalUcretsiz => '3 gösterge, günde 1 bildirim';
 
   @override
-  String get prmSinyalPremium => '8 gösterge, periyot, bildirim';
+  String get prmSinyalPremium => '8 gösterge, periyot, sınırsız';
 
   @override
   String get prmSatirTakip => 'Takip listesi';
@@ -7438,7 +7438,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Sekiz gösterge, kendi periyotların ve her varlığında bildirim.';
 
   @override
-  String get pwdSinyalPremium => '8 gösterge, bildirim';
+  String get pwdSinyalPremium => '8 gösterge, sınırsız bildirim';
 
   @override
   String get pwdKarsEtiket => 'KARŞILAŞTIR';
@@ -7595,16 +7595,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get depositNoteHint => 'Örn. kampanya faizi, hedef, şube';
-
-  @override
-  String get sgnKilitBaslik => 'Sinyal bildirimleri';
-
-  @override
-  String get sgnKilitGovde =>
-      'RSI, MACD ve Bollinger ekranda ücretsiz. Premium\'da sekiz göstergenin tamamı, kendi periyot ayarların ve tuttuğun her varlıkta seçtiğin sıklıkta bildirim.';
-
-  @override
-  String get sgnKilitSatir => 'Sinyal bildirimleri Premium\'da';
 
   @override
   String get prmAylikKilitBaslik => 'Aylık rapor';
@@ -7765,7 +7755,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwOzSinyalTam =>
-      'Teknik sinyaller: 8 gösterge, kendi periyotların ve her varlığında sinyal bildirimi';
+      'Teknik sinyaller: 8 gösterge, kendi periyotların ve seçtiğin sıklıkta bildirim';
 
   @override
   String get pwOzMasraf => 'Varlık başına kalem kalem masraf dökümü';
@@ -8451,11 +8441,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get sgnPremiumGostergeSatiri =>
-      'EMA, Stokastik, ADX, Williams %R, CCI ve bildirimler Premium\'da';
+      'EMA, Stokastik, ADX, Williams %R, CCI ve sınırsız bildirim Premium\'da';
 
   @override
   String get sgnAyarAciklamaUcretsiz =>
-      'Her varlık türü için ekranda hangi göstergelerin hesaplanacağını seç. RSI, MACD ve Bollinger ücretsiz.';
+      'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini seç. RSI, MACD ve Bollinger ücretsiz; bildirimi günde 1 kez gelir.';
 
   @override
   String sgnParametreAciklama(String tur) {
@@ -8522,5 +8512,14 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String varlikKotasiDolu(int sinir) {
     return 'Ücretsiz plandaki $sinir varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium\'da.';
+  }
+
+  @override
+  String get sgnSlotNotu =>
+      'Ücretsiz sürümde RSI, MACD ve Bollinger sinyalleri her tür için günde 1 kez bildirilir. Premium\'da sekiz göstergenin tamamı, seçtiğin sıklıkta gelir.';
+
+  @override
+  String sgnSlotKilitli(String secenek) {
+    return '$secenek, Premium';
   }
 }

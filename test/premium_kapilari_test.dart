@@ -11,7 +11,8 @@ import 'helpers/kaynak.dart';
 
 /// Ödeme öncesi iki kapı (Premium planı, 2026-10-08):
 ///  1. Sinyal bildirimi: ücretsizde tür başına günde 1 (yalnız sabah ya da
-///     seçilen ilk saat); Premium seçtiği sıklığı alır.
+///     seçilen ilk saat) ve yalnız üç ücretsiz göstergeden; Premium seçtiği
+///     sıklığı alır (2026-10-08; 2026-10-10 akşam yeniden).
 ///  2. Karşılaştır: ücretsizde 2 seri (kendi serine ek bir kıyas), Premium 5.
 ///  3. Ortak: ücretsizde 1 (yasin kararı 2026-10-08); var olan korunur,
 ///     yalnız yeni ortak eklemek (kod üret / kod gir / kabul) durur.
@@ -43,19 +44,19 @@ void main() {
   group('sınırlar', () {
     test('paywall kapalı: kapı yok', () {
       final c = kap(paywall: false);
-      expect(c.read(sinyalBildirimiKilitliProvider), isFalse);
+      expect(c.read(sinyalSlotSiniriProvider), greaterThan(1000));
       expect(c.read(karsilastirmaSeriSiniriProvider), kKarsilastirmaEnFazla);
     });
 
-    test('paywall açık, ücretsiz: bildirim Premium, 2 seri', () {
+    test('paywall açık, ücretsiz: günde 1 bildirim, 2 seri', () {
       final c = kap(paywall: true);
-      expect(c.read(sinyalBildirimiKilitliProvider), isTrue);
+      expect(c.read(sinyalSlotSiniriProvider), 1);
       expect(c.read(karsilastirmaSeriSiniriProvider), 2);
     });
 
     test('paywall açık, Premium: kapı yok', () {
       final c = kap(paywall: true, magaza: true);
-      expect(c.read(sinyalBildirimiKilitliProvider), isFalse);
+      expect(c.read(sinyalSlotSiniriProvider), greaterThan(1000));
       expect(c.read(karsilastirmaSeriSiniriProvider), kKarsilastirmaEnFazla);
     });
   });
@@ -95,12 +96,13 @@ void main() {
     expect(src.contains('karsilastirmaSeriSiniriProvider'), isTrue);
   });
 
-  test('Sinyal Ayarları eski "günde 1 bildirim" kapısını taşımaz', () {
-    // 2026-10-10: bildirim paywall açıkken bütünüyle Premium; slot kalktı.
+  test('Sinyal Ayarları günlük bildirim kapısını sağlayıcıdan okur', () {
+    // 2026-10-10 akşam (yasin): üç ücretsiz göstergenin bildirimi
+    // "limitli sayıda" — günde 1 kapısı geri geldi.
     final src = ekranKaynagiSync('lib/screens/signal_settings_screen.dart');
-    expect(src.contains('sinyalSlotSiniriProvider'), isFalse);
-    expect(src.contains('slotaSigdir('), isFalse);
-    expect(src.contains('sinyalBildirimiKilitliProvider'), isTrue);
+    expect(src.contains('sinyalSlotSiniriProvider'), isTrue);
+    expect(src.contains('slotaSigdir('), isTrue);
+    expect(src.contains("'signal_frequency'"), isTrue);
   });
 }
 

@@ -11,7 +11,6 @@ import 'package:portfoy_takip/screens/temettu_tahmini_screen.dart';
 import 'package:portfoy_takip/screens/yillik_rapor_screen.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/premium_kilit_karti.dart';
-import 'package:portfoy_takip/widgets/sinyal_kilit_karti.dart';
 
 import 'helpers/kontrast_denetimi.dart';
 
@@ -73,11 +72,4 @@ void main() {
       });
     }
   }
-
-  testWidgets('sinyal kilit kartı sekiz göstergeyi sayar', (tester) async {
-    await _kur(tester, Brightness.dark,
-        const Scaffold(body: SinyalKilitKarti()));
-    expect(find.text("Teknik sinyaller Premium'da"), findsOneWidget);
-    expect(find.textContaining('Williams %R'), findsOneWidget);
-  });
 }

@@ -27,6 +27,8 @@ void main() {
         // Sinyal üç katman (2026-10-10 20:38): kilitli gösterge, paneldeki
         // "5 gösterge daha", periyot ayarı.
         'signal_settings_adx': PaywallKarti.sinyal,
+        'signal_frequency': PaywallKarti.sinyal,
+        'signal_on_ayar': PaywallKarti.sinyal,
         'sinyal_gosterge': PaywallKarti.sinyal,
         'gosterge_parametre': PaywallKarti.sinyal,
         'compare_series': PaywallKarti.karsilastir,
@@ -36,7 +38,6 @@ void main() {
         'kripto_baski': PaywallKarti.hacim,
         'analiz_notu': PaywallKarti.not,
         'ekstre_ai': PaywallKarti.ekstre,
-        'sinyal_kilit': PaywallKarti.sinyal,
         'yillik_rapor': PaywallKarti.rapor,
         'portfoy_disa_aktar': PaywallKarti.rapor,
         // Masraf dökümü X-Ray'in yanında; aylık rapor rapor kartında
@@ -61,9 +62,8 @@ void main() {
       expect(kaynaktanKart('profile_banner'), isNull);
       // Sökülen kapılar (2026-10-10): artık kartları da yok.
       for (final eski in [
-        'signal_frequency',
-        'signal_on_ayar',
         'sinyal_varlik',
+        'sinyal_kilit',
         'grafik_mum',
         'grafik_ema',
       ]) {
@@ -89,7 +89,6 @@ void main() {
         'lib/widgets/hacim_radari_karti.dart',
         'lib/screens/asset_detail/sinyal_widgetlari.dart',
         // Olgun Premium seti (2026-10-10).
-        'lib/widgets/sinyal_kilit_karti.dart',
         'lib/widgets/masraf_karti.dart',
         'lib/screens/yillik_rapor_screen.dart',
         'lib/screens/temettu_tahmini_screen.dart',

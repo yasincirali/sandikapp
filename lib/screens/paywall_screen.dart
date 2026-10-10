@@ -502,9 +502,10 @@ class _FeatureList extends StatelessWidget {
   // (`YillikRaporScreen`, Ayarlar › Portföyü dışa aktar), temettü tahmini
   // (`TemettuTahminiScreen`), masraf dökümü (`MasrafKarti.kilitli`) ve
   // sinyal kilitleriyle birlikte girdi. Sinyal 2026-10-10 20:38'de üç
-  // katmana ayrıldı: RSI/MACD/Bollinger ekranda ücretsiz; kalan beş gösterge,
-  // periyot ayarı ve bildirim Premium (`izinliGostergelerProvider`,
-  // `gostergeParametreDurumuProvider`, `sinyalBildirimiKilitliProvider`).
+  // katmana ayrıldı: RSI/MACD/Bollinger ücretsiz (bildirimi günde 1); kalan
+  // beş gösterge, periyot ayarı ve sınırsız bildirim Premium
+  // (`izinliGostergelerProvider`, `gostergeParametreDurumuProvider`,
+  // `sinyalSlotSiniriProvider`).
   // Sıra araştırmaya göre: para ödenen işler (sınır, rapor, temettü) önde.
   @override
   Widget build(BuildContext context) {

@@ -101,10 +101,14 @@ class RemoteConfigService {
     // 349 → 399 (2026-10-05) → 649,99 (2026-10-10). Yıllık %32 tasarruf.
     'premium_price_yearly': '649,99₺/yıl',
 
-    // NOT (2026-10-10): `free_signal_slots_per_day` ve `free_signal_assets`
-    // kaldırıldı. Sinyal modeli değişti (yasin): paywall açıkken en yaygın
-    // üç gösterge ekranda ücretsiz, bildirim ve kalan göstergeler Premium.
-    // "Günde 1 bildirim" ve "1 varlıkta bildirim" kapılarının konusu kalmadı.
+    // Ücretsiz sürümde tür başına günde en fazla kaç sinyal bildirimi
+    // (Premium planı, 2026-10-08; 2026-10-10 akşam yasin: üç ücretsiz
+    // göstergenin bildirimi "limitli sayıda"). Yalnız `paywall_enabled`
+    // açıkken ve Premium olmayana uygulanır; sığmayan sıklık "günde 1
+    // kez"e, seçilen ilk saate iner (`slotaSigdir`). Sunucudaki karşılığı
+    // `SINYAL_UCRETSIZ_SLOT` (yoksa 1; yalnız `premium_ayar.kapi_acik`
+    // açıkken). `free_signal_assets` (tek varlık kapısı) 2026-10-10'da kalktı.
+    'free_signal_slots_per_day': 1,
 
     // Ücretsiz sürümde Karşılaştır grafiğindeki seri sayısı (Premium planı
     // "1 seri ücretsiz" = kendi serisine EK bir kıyas, toplam 2). Premium
@@ -614,6 +618,10 @@ class RemoteConfigService {
 
   int get freeAssetLimit =>
       _rc?.getInt('free_asset_limit') ?? _defaults['free_asset_limit'] as int;
+
+  int get freeSignalSlotsPerDay =>
+      _rc?.getInt('free_signal_slots_per_day') ??
+      _defaults['free_signal_slots_per_day'] as int;
 
   int get freeCompareSeries =>
       _rc?.getInt('free_compare_series') ??

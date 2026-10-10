@@ -12,7 +12,6 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_segment.dart';
-import '../widgets/sinyal_kilit_karti.dart';
 import 'paywall_screen.dart';
 import '../l10n/l10n.dart';
 
@@ -43,18 +42,20 @@ class SignalSettingsScreen extends ConsumerWidget {
     final schedules = ref.watch(signalScheduleProvider);
     final neutralPush = ref.watch(signalNeutralPushProvider);
     final izinli = ref.watch(izinliGostergelerProvider);
-    final bildirimKilitli = ref.watch(sinyalBildirimiKilitliProvider);
+    // Ücretsiz günlük bildirim kapısı (paywall kapalıyken / Premium'da
+    // sınırsız). yasin 2026-10-10 akşam: üç ücretsiz göstergenin bildirimi
+    // ücretsizde de gider, "limitli sayıda".
+    final slot = ref.watch(sinyalSlotSiniriProvider);
+    final kilitli = ref.watch(premiumKilitliProvider);
     final parametreDurumu = ref.watch(gostergeParametreDurumuProvider);
     final parametreler = ref.watch(gostergeParametreleriProvider);
 
     // Sadeleştirme 2 (bayrak `sinyal_on_ayar`): üstte tek soru + üç ön
     // ayar; kategori başına ayarlar katlanır bölüme taşınır, kaybolmaz.
-    // Ön ayar bildirim sıklığını yazar; bildirim kilitliyken gösterilmez.
-    final onAyarAcik =
-        RemoteConfigService.instance.sinyalOnAyar && !bildirimKilitli;
+    final onAyarAcik = RemoteConfigService.instance.sinyalOnAyar;
     final kategoriler = <Widget>[
       Text(
-        bildirimKilitli
+        kilitli
             ? context.l10n.sgnAyarAciklamaUcretsiz
             : 'Her varlık türü için hangi göstergelerin sinyal üretmesini istediğini ve bildirim güven eşiğini seç.',
         style: context.t.titleSmall
@@ -80,7 +81,6 @@ class SignalSettingsScreen extends ConsumerWidget {
               TechnicalAnalysisService.defaultEnabledFor(type),
           izinli: izinli,
           paywallVisible: paywallOn,
-          bildirimKilitli: bildirimKilitli,
           parametreDurumu: parametreDurumu,
           parametreler: parametreler[type] ?? const {},
           threshold: thresholds[type] ?? kSignalThresholdDefault,
@@ -89,11 +89,31 @@ class SignalSettingsScreen extends ConsumerWidget {
           onThresholdChanged: (v) => ref
               .read(signalThresholdProvider.notifier)
               .setForType(type, v),
-          schedule: schedules[type] ?? kDefaultSchedule,
-          onFrequencyChanged: (f) =>
-              ref.read(signalScheduleProvider.notifier).setFrequency(type, f),
-          onHoursChanged: (h) =>
-              ref.read(signalScheduleProvider.notifier).setHours(type, h),
+          // Ekranda UYGULANAN zamanlama: ücretsizde kapıya sığdırılmış
+          // hâl. Kayıtlı tercih değişmez, Premium'da geri gelir.
+          schedule: slotaSigdir(schedules[type] ?? kDefaultSchedule, slot),
+          slot: slot,
+          onFrequencyChanged: (f) {
+            if (f.gunlukEnFazla > slot) {
+              AnalyticsService.instance
+                  .logPremiumGateShown(feature: 'signal_frequency');
+              PaywallScreen.show(context, source: 'signal_frequency');
+              return;
+            }
+            ref.read(signalScheduleProvider.notifier).setFrequency(type, f);
+          },
+          onHoursChanged: (h) async {
+            // Kısılmış hâlde saat seçmek, gösterilen sıklığı (günde 1)
+            // bilerek seçmektir: kayıt da ona çekilir ki saat sayısı ile
+            // sıklık tutarsız kalmasın.
+            final kayitli = schedules[type] ?? kDefaultSchedule;
+            final notifier = ref.read(signalScheduleProvider.notifier);
+            final gosterilen = slotaSigdir(kayitli, slot);
+            if (gosterilen.frequency != kayitli.frequency) {
+              await notifier.setFrequency(type, gosterilen.frequency);
+            }
+            await notifier.setHours(type, h);
+          },
           onParametre: (id, ayar) => ref
               .read(gostergeParametreleriProvider.notifier)
               .ayarla(type, id, ayar),
@@ -114,8 +134,9 @@ class SignalSettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ── Premium kartı (paywall kapalıysa hiç gösterilmez) ────────────
-          // Ücretsizde bildirimlerin tek kilidi `SinyalKilitKarti` (aşağıda);
-          // bu kart Premium'daki hâli ("açık") ya da debug anahtarını taşır.
+          // Ücretsizde kilitler satırlarda (Premium gösterge, sıklık,
+          // periyot); bu kart Premium'daki hâli ("açık") ya da debug
+          // anahtarını taşır.
           if (paywallOn && premium) ...[
             _PremiumCard(
               unlocked: true,
@@ -130,18 +151,19 @@ class SignalSettingsScreen extends ConsumerWidget {
             const SizedBox(height: 24),
           ],
 
-          if (bildirimKilitli) ...[
-            const SinyalKilitKarti(),
-            const SizedBox(height: 24),
-          ],
-
           if (onAyarAcik) ...[
-            const _OnAyarKarti(),
+            _OnAyarKarti(
+              slot: slot,
+              onPaywall: () {
+                AnalyticsService.instance
+                    .logPremiumGateShown(feature: 'signal_on_ayar');
+                PaywallScreen.show(context, source: 'signal_on_ayar');
+              },
+            ),
             const SizedBox(height: SandikSpace.md),
           ],
 
           // ── Genel bildirim ayarları ──────────────────────────────────────
-          if (!bildirimKilitli) ...[
           SandikCard(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -190,7 +212,6 @@ class SignalSettingsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          ],
 
           // Bayrak kapalıyken kategori listesi eskisi gibi doğrudan
           // burada; açıkken "Kategoriye göre özelleştir" altında, birebir.
@@ -302,9 +323,8 @@ class _CategorySection extends StatelessWidget {
   final Set<String> izinli;
   final bool paywallVisible;
 
-  /// Bildirim Premium'da ve kullanıcı ücretsiz: eşik ve sıklık satırları
-  /// (yalnız bildirime yarar) çizilmez; kilit ekranın üstünde tek kartta.
-  final bool bildirimKilitli;
+  /// Ücretsiz günlük bildirim sınırı; bunu aşan sıklıklar kilitli çizilir.
+  final int slot;
   final OzellikDurumu parametreDurumu;
   final Map<String, GostergeAyari> parametreler;
   final int threshold;
@@ -320,7 +340,7 @@ class _CategorySection extends StatelessWidget {
     required this.selected,
     required this.izinli,
     required this.paywallVisible,
-    required this.bildirimKilitli,
+    required this.slot,
     required this.parametreDurumu,
     required this.parametreler,
     required this.threshold,
@@ -354,39 +374,38 @@ class _CategorySection extends StatelessWidget {
               ],
             ),
           ),
-          if (!bildirimKilitli) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: Row(
-                children: [
-                  Text(
-                    'Bildirim eşiği',
-                    style: context.t.titleSmall?.copyWith(
-                        color: context.c.text58, fontWeight: FontWeight.w600),
-                  ),
-                  const Spacer(),
-                  _ThresholdSegment(
-                    value: threshold,
-                    onChanged: onThresholdChanged,
-                  ),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Row(
+              children: [
+                Text(
+                  'Bildirim eşiği',
+                  style: context.t.titleSmall?.copyWith(
+                      color: context.c.text58, fontWeight: FontWeight.w600),
+                ),
+                const Spacer(),
+                _ThresholdSegment(
+                  value: threshold,
+                  onChanged: onThresholdChanged,
+                ),
+              ],
             ),
-            Divider(
-              height: 1,
-              color: context.c.overlay,
-            ),
-            _FrequencyRow(
-              type: type,
-              schedule: schedule,
-              onFrequencyChanged: onFrequencyChanged,
-              onHoursChanged: onHoursChanged,
-            ),
-            Divider(
-              height: 1,
-              color: context.c.overlay,
-            ),
-          ],
+          ),
+          Divider(
+            height: 1,
+            color: context.c.overlay,
+          ),
+          _FrequencyRow(
+            type: type,
+            schedule: schedule,
+            slot: slot,
+            onFrequencyChanged: onFrequencyChanged,
+            onHoursChanged: onHoursChanged,
+          ),
+          Divider(
+            height: 1,
+            color: context.c.overlay,
+          ),
           // İleri göstergeler (ADX, W%R, CCI) paywall kapalıyken hiç
           // hesaplanmadığı için listelenmez: anahtar bir şey yapmıyordu
           // ("ölü anahtar" bulgusu, 2026-10-10). Kayıtlı seçim silinmez.
@@ -636,12 +655,16 @@ class _Adimlayici extends StatelessWidget {
 class _FrequencyRow extends StatelessWidget {
   final AssetType type;
   final SignalSchedule schedule;
+
+  /// Günlük bildirim sınırı; bunu aşan sıklıklar kilitli çizilir.
+  final int slot;
   final void Function(SignalFrequency freq) onFrequencyChanged;
   final void Function(List<int> hours) onHoursChanged;
 
   const _FrequencyRow({
     required this.type,
     required this.schedule,
+    required this.slot,
     required this.onFrequencyChanged,
     required this.onHoursChanged,
   });
@@ -805,6 +828,7 @@ class _FrequencyRow extends StatelessWidget {
                   _FrequencyOption(
                     frequency: SignalFrequency.values[i],
                     secili: SignalFrequency.values[i] == freq,
+                    kilitli: SignalFrequency.values[i].gunlukEnFazla > slot,
                     // Saat gerektiren sıklıkta seçili satırın altında
                     // saatler gösterilir — ayrı bir kutu aramaya gerek kalmaz.
                     hoursLabel: SignalFrequency.values[i] == freq &&
@@ -819,6 +843,15 @@ class _FrequencyRow extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          if (SignalFrequency.values.any((f) => f.gunlukEnFazla > slot))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                context.l10n.sgnSlotNotu,
+                style: context.t.bodySmall
+                    ?.copyWith(color: context.c.text58, height: 1.4),
+              ),
+            ),
           if (!freq.needsHourPicker)
             Text(
               '${freq.description}, '
@@ -845,6 +878,10 @@ class _FrequencyOption extends StatelessWidget {
   final SignalFrequency frequency;
   final bool secili;
 
+  /// Ücretsiz günlük sınırı aşıyor: kilit simgesiyle çizilir, dokunuş
+  /// paywall'u açar (karar üst katmanda, `onFrequencyChanged`).
+  final bool kilitli;
+
   /// Seçili ve saat gerektiren sıklıkta gösterilecek saat metni.
   /// null ise saat satırı çizilmez.
   final String? hoursLabel;
@@ -854,6 +891,7 @@ class _FrequencyOption extends StatelessWidget {
   const _FrequencyOption({
     required this.frequency,
     required this.secili,
+    this.kilitli = false,
     required this.hoursLabel,
     required this.onTap,
     required this.onHoursTap,
@@ -865,6 +903,9 @@ class _FrequencyOption extends StatelessWidget {
       inMutuallyExclusiveGroup: true,
       selected: secili,
       button: true,
+      label: kilitli
+          ? context.l10n.sgnSlotKilitli(frequency.label)
+          : null,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -892,12 +933,17 @@ class _FrequencyOption extends StatelessWidget {
                         style: context.t.bodyMedium?.copyWith(
                           color: secili
                               ? context.c.amberText
-                              : context.c.text90,
+                              : kilitli
+                                  ? context.c.text36
+                                  : context.c.text90,
                           // Ağırlık BİLİNÇLİ olarak sabit — bkz. sınıf notu.
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
+                    if (kilitli)
+                      Icon(Icons.lock_outline_rounded,
+                          size: 16, color: context.c.amberText),
                   ],
                 ),
               ),
@@ -1182,7 +1228,10 @@ class _ThresholdSegment extends StatelessWidget {
 /// olsaydı dokununca neye döneceği belirsiz kalırdı). Ön ayar seçmek iyimser
 /// bir yazmadır (anahtar gibi): yerel durum anında değişir, sunucu arkadan.
 class _OnAyarKarti extends ConsumerWidget {
-  const _OnAyarKarti();
+  const _OnAyarKarti({required this.slot, required this.onPaywall});
+
+  final int slot;
+  final VoidCallback onPaywall;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1233,9 +1282,18 @@ class _OnAyarKarti extends ConsumerWidget {
             adet: etiketler.length,
             // Özel: aralık dışı → zemin çizilmez, üç seçenek de dokunulur.
             secili: secili?.index ?? -1,
-            // Bildirim kilitliyken kart hiç çizilmez (üst katman); burada
-            // kapı yok. Eski "günde 1 bildirim" kapısı 2026-10-10'da kalktı.
-            onSec: (i) => sinyalOnAyariUygula(ref, SinyalOnAyar.values[i]),
+            onSec: (i) {
+              final a = SinyalOnAyar.values[i];
+              // Kategori satırındaki kapıyla aynı kural: ücretsiz günlük
+              // bildirim sınırını aşan sıklık Premium ister, hiçbir şey
+              // yazılmaz.
+              if (sinyalOnAyarTanimi(a, AssetType.hisse).siklik.gunlukEnFazla >
+                  slot) {
+                onPaywall();
+                return;
+              }
+              sinyalOnAyariUygula(ref, a);
+            },
             oge: (context, i, _) => Text(etiketler[i]),
           ),
           const SizedBox(height: SandikSpace.sm),

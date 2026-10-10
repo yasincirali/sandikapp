@@ -31,8 +31,7 @@ enum SignalFrequency {
 
   /// TR 10:00–18:00 penceresinde günde en fazla kaç bildirim turu.
   ///
-  /// (Eski ücretsiz "günde 1 bildirim" kapısı bununla kıyaslardı; kapı
-  /// 2026-10-10'da kalktı, değer ekran metinleri için duruyor.)
+  /// Ücretsiz "günde 1 bildirim" kapısı bununla kıyaslar ([slotaSigdir]).
   int get gunlukEnFazla => switch (this) {
         SignalFrequency.hourly => 9, // 10..18
         SignalFrequency.every2h => 5, // 10, 12, 14, 16, 18
@@ -56,3 +55,21 @@ const kSignalWindowEnd = 18;
 List<int> get signalSelectableHours =>
     [for (var h = kSignalWindowStart; h <= kSignalWindowEnd; h++) h];
 
+/// Ücretsiz sürümün günlük bildirim kapısı (Premium planı, 2026-10-08;
+/// 2026-10-10 akşam yeniden, yasin: üç ücretsiz göstergenin bildirimi
+/// "limitli sayıda"). [slot] = tür başına günde en fazla tur.
+///
+/// Kayıtlı tercih DEĞİŞMEZ; bu yalnız gösterilen/uygulanan hâldir ve Premium
+/// alınınca kullanıcının kendi seçimi geri gelir. Sığmayan sıklık "günde 1
+/// kez"e iner; saat, saat seçilen sıklıkta seçilen İLK saat, periyodikte
+/// 11:00 (sabah). Sunucudaki `slotaSigdir` (analyze-signals) ile aynı kural.
+({SignalFrequency frequency, List<int> hours}) slotaSigdir(
+  ({SignalFrequency frequency, List<int> hours}) s,
+  int slot,
+) {
+  if (slot <= 0 || s.frequency.gunlukEnFazla <= slot) return s;
+  final ilk = s.frequency.needsHourPicker && s.hours.isNotEmpty
+      ? s.hours.first
+      : 11;
+  return (frequency: SignalFrequency.daily, hours: [ilk]);
+}

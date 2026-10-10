@@ -53,10 +53,9 @@ class SignalNotifier extends AsyncNotifier<List<SignalAlert>> {
     if (assets.isEmpty) return;
     final user = ref.read(authProvider).valueOrNull;
     if (user == null) return;
-    // Sinyal bildirimi paywall açıkken Premium (yasin 2026-10-10): zil
-    // satırı da bir bildirimdir; ücretsiz kullanıcıya yazılmaz. Ekrandaki
-    // üç ücretsiz göstergenin sinyali panelde yine görünür.
-    if (ref.read(sinyalBildirimiKilitliProvider)) return;
+    // Ücretsizde yalnız üç ücretsiz gösterge hesaplanır
+    // (`izinliGostergelerProvider`, aşağıda); bildirim sıklığı sunucuda
+    // günde sınırlı (`sinyalSlotSiniriProvider`, 2026-10-10 akşam).
 
     // ── SADECE AÇIK POZİSYONLAR ─────────────────────────────────────────────
     //

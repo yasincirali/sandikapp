@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/models/yatirimci_seviyesi.dart';
@@ -12,17 +14,19 @@ import 'helpers/kaynak.dart';
 /// Sinyal Premium modeli (yasin, 2026-10-10 akşam): "teknik göstergelerden
 /// en yaygın 3 tanesi ücretsiz gösterilmeli, ancak kalanları ve custom
 /// gösterge bununla push bildirimi feature'ı premium olmalı; ayrıca var olan
-/// göstergeler de parametrik kullanılabilmeli premiumda".
+/// göstergeler de parametrik kullanılabilmeli premiumda". Ardından üç
+/// ücretsiz göstergenin bildirimi için: "olur ama limitli sayıda".
 ///
 /// Kilitler:
 ///  - Paywall kapalıyken davranış birebir eski: beş gösterge, bildirim açık,
 ///    ileri üçü hesaplanmaz, parametreler yalnız admin'de.
 ///  - Paywall açık + ücretsiz: yüzey açık, üç gösterge (RSI, MACD,
-///    Bollinger), bildirim ve zil satırları kilitli, parametre kilitli.
-///  - Premium (mağaza ya da admin): sekiz gösterge, bildirim, parametre.
+///    Bollinger), bildirim tür başına günde 1, parametre kilitli.
+///  - Premium (mağaza ya da admin): sekiz gösterge, sınırsız bildirim,
+///    parametre.
 ///  - Başlangıç seviyesi her durumda gizler.
-///  - Sunucu eşi `analyze-signals` → `yalnizPremiumFiltresi` + ileri
-///    göstergeler yalnız kapı açıkken (supabase/tests/sinyal_yalniz_premium_test.ts).
+///  - Sunucu eşi `analyze-signals` → `bildirimKurali` + `slotaSigdir`
+///    (supabase/tests/sinyal_ucretsiz_bildirim_test.ts).
 void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -52,7 +56,7 @@ void main() {
     expect(c.read(premiumKilitliProvider), isFalse);
     expect(c.read(sinyalYuzeyiProvider), SinyalYuzeyi.acik);
     expect(c.read(zilSinyalleriGosterProvider), isTrue);
-    expect(c.read(sinyalBildirimiKilitliProvider), isFalse);
+    expect(c.read(sinyalSlotSiniriProvider), greaterThan(1000));
     expect(c.read(izinliGostergelerProvider), {
       IndicatorId.rsi,
       IndicatorId.macd,
@@ -63,22 +67,23 @@ void main() {
     expect(c.read(gostergeParametreDurumuProvider), OzellikDurumu.gizli);
   });
 
-  test('paywall açık, ücretsiz: üç gösterge ekranda, bildirim kilitli', () {
+  test('paywall açık, ücretsiz: üç gösterge, günde 1 bildirim', () {
     final c = kap(paywall: true);
     expect(c.read(premiumKilitliProvider), isTrue);
     expect(c.read(sinyalYuzeyiProvider), SinyalYuzeyi.acik);
     expect(c.read(izinliGostergelerProvider), IndicatorId.ucretsiz);
-    expect(c.read(sinyalBildirimiKilitliProvider), isTrue);
-    expect(c.read(zilSinyalleriGosterProvider), isFalse);
+    expect(c.read(sinyalSlotSiniriProvider), 1);
+    expect(c.read(zilSinyalleriGosterProvider), isTrue);
     expect(c.read(gostergeParametreDurumuProvider), OzellikDurumu.kilitli);
     expect(c.read(radarKilitliProvider), isTrue);
   });
 
-  test('paywall açık, Premium: sekiz gösterge, bildirim, parametre', () {
+  test('paywall açık, Premium: sekiz gösterge, sınırsız bildirim, parametre',
+      () {
     final c = kap(paywall: true, magaza: true);
     expect(c.read(premiumKilitliProvider), isFalse);
     expect(c.read(izinliGostergelerProvider), IndicatorId.all.toSet());
-    expect(c.read(sinyalBildirimiKilitliProvider), isFalse);
+    expect(c.read(sinyalSlotSiniriProvider), greaterThan(1000));
     expect(c.read(gostergeParametreDurumuProvider), OzellikDurumu.acik);
   });
 
@@ -96,6 +101,16 @@ void main() {
         .read(sinyalYuzeyiProvider), SinyalYuzeyi.gizli);
   });
 
+  test('sunucunun ücretsiz bildirim kümesi istemciyle aynı', () {
+    final ts = File('supabase/functions/analyze-signals/index.ts')
+        .readAsStringSync();
+    final m = RegExp(r'UCRETSIZ_GOSTERGELER[^=]*= \[([^\]]*)\]')
+        .firstMatch(ts)!;
+    final sunucu =
+        RegExp(r"'(\w+)'").allMatches(m.group(1)!).map((e) => e.group(1)).toSet();
+    expect(sunucu, IndicatorId.ucretsiz);
+  });
+
   test('ücretsiz küme en yaygın üçü; Premium kalan beşi', () {
     expect(IndicatorId.ucretsiz,
         {IndicatorId.rsi, IndicatorId.macd, IndicatorId.bollinger});
@@ -107,9 +122,9 @@ void main() {
     expect(panel.contains('izinliGostergelerProvider'), isTrue);
     expect(panel.contains('sgnPremiumGostergeSatiri'), isTrue);
     final ayar = ekranKaynagiSync('lib/screens/signal_settings_screen.dart');
-    expect(ayar.contains('sinyalBildirimiKilitliProvider'), isTrue);
+    expect(ayar.contains('sinyalSlotSiniriProvider'), isTrue);
     expect(ayar.contains('gostergeParametreDurumuProvider'), isTrue);
     final analiz = ekranKaynagiSync('lib/providers/signal_provider.dart');
-    expect(analiz.contains('sinyalBildirimiKilitliProvider'), isTrue);
+    expect(analiz.contains('izinliGostergelerProvider'), isTrue);
   });
 }
