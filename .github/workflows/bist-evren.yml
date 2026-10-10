@@ -5,9 +5,6 @@
 name: BIST hisse evreni
 on:
   workflow_dispatch:
-  push:
-    branches: [claude/project-thread-3l8j1h]
-    paths: [tool/bist_katalog_canli.ts]
 permissions:
   contents: read
 jobs:
