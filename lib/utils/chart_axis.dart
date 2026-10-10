@@ -227,7 +227,22 @@ const double gunIciEksenAdimiDk = 240.0;
 ///
 /// [sonNoktaDk] serinin son noktasının gün başından dakika cinsinden uzaklığı.
 double gunIciEksenSonuDk(double sonNoktaDk) =>
-    sonNoktaDk > 0 ? sonNoktaDk / 0.82 : 240.0;
+    sonNoktaDk > 0 ? sonNoktaDk / _gunIciSonNoktaKonumu : 240.0;
+
+/// Son noktanın gün içi viewport'taki yeri — bkz. [gunIciEksenSonuDk].
+const double _gunIciSonNoktaKonumu = 0.82;
+
+/// Gün içi eksenin "çok günlü" sayıldığı genişlik — gün.
+///
+/// **Neden 1 değil (TestFlight bulgusu 2026-10-10):** [gunIciEksenSonuDk]
+/// sağ ucu son noktanın 1/0,82 katına uzatır. ABD hissesi, kripto, döviz
+/// gibi akşama kadar işleyen bir seride son nokta ~19:41'i geçince TEK
+/// günlük pencere 24 saati aşıyordu; eşik 1 olduğundan her etikete tarih
+/// basılıyor ("9 Eki 04:00") ve sabit 4 saatlik adımda etiketler üst üste
+/// biniyordu (AAPL varlık sayfası, saat 22:25). Uzatmanın varabileceği en
+/// geniş pencere 1440/0,82 dk ≈ 1,22 gün; hafta sonu kuyruğu (Cuma 00:00 →
+/// Cumartesi) ise her zaman bunun ÜSTÜNDE başlar. Eşik ikisini kesin ayırır.
+const double gunIciCokGunEsigi = 1 / _gunIciSonNoktaKonumu;
 
 /// Zaman (X) ekseninin ORTAK kuralı — performans ekranı ile
 /// Takip/Karşılaştır grafiği aynı cebri paylaşsın diye.
@@ -304,8 +319,11 @@ String zamanEtiketi(
     // Kullanıcı isteği (2026-09-12): "tüm zaman aralıkları için hafta
     // sonundaysam çizilen son grafik için tarih bulunduğum an olmalı."
     //
-    // Eşik 1 günden BÜYÜK: tek günlük eksen (hafta içi) etkilenmez.
-    if (spanGun > 1) return DateFormat('d MMM HH:mm', 'tr_TR').format(t);
+    // Eşik [gunIciCokGunEsigi] (≈1,22 gün): tek günlük eksen — sağ payıyla
+    // 24 saati aşsa bile — etkilenmez.
+    if (spanGun > gunIciCokGunEsigi) {
+      return DateFormat('d MMM HH:mm', 'tr_TR').format(t);
+    }
     return DateFormat('HH:mm', 'tr_TR').format(t);
   }
   // Kısa yıl KESME İŞARETİYLE: "Oca '26". Çıplak "Oca 26" gün gibi
@@ -329,4 +347,42 @@ String zamanEtiketi(
 bool eksenKenarinda(double deger, double min, double max) {
   final pay = (max - min).abs() * 0.06;
   return deger <= min + pay || deger >= max - pay;
+}
+
+/// En geniş zaman etiketi örneği — [xEtiketiAtlanir]'ın `etiketPx`'i bunun
+/// genişliğinden ölçülür. Her tick'in kendi metni ölçülmez: komşu iki
+/// etiket farklı uzunlukta olunca biri "sığar" der öteki demez ve seyreltme
+/// tutarsızlaşırdı. Ağustos 28, 20:48 — iki haneli gün, en geniş rakamlar.
+String zamanEtiketiOrnegi({required double spanGun, required bool gunIci}) =>
+    zamanEtiketi(DateTime(DateTime.now().year, 8, 28, 20, 48),
+        spanGun: spanGun, gunIci: gunIci);
+
+/// X ekseni etiketi ÇİZİLMESİN mi — komşusuyla üst üste binecekse `true`.
+///
+/// **Neden (TestFlight bulgusu 2026-10-10):** her grafik adımını veriden
+/// seçiyor (4 saat, span/5…) ama ekranın GENİŞLİĞİNİ bilmiyordu; 320pt
+/// telefonda, büyük yazı boyutunda ya da uzun etiketli modda (çok günlü
+/// "12 Eyl 18:45") aynı adım etiketleri birbirine yapıştırıyordu. fl_chart
+/// her etikete eksenin piksel boyunu veriyor (`TitleMeta.parentAxisSize`);
+/// iki tick arası piksel [etiketPx]'ten darsa her `k`'inci tick çizilir.
+///
+/// Seçim tick'in [taban]'dan (fl_chart `baselineX`) SIRA numarasına göre:
+/// kaydırırken (pan) aynı tick'ler görünür kalır, etiketler zıplamaz.
+///
+/// [aralik] görünür eksen genişliği (`meta.max - meta.min`), [tickAraligi]
+/// `meta.appliedInterval`, [eksenPx] `meta.parentAxisSize`.
+bool xEtiketiAtlanir(
+  double deger, {
+  required double aralik,
+  required double tickAraligi,
+  required double eksenPx,
+  required double etiketPx,
+  double taban = 0,
+}) {
+  if (aralik <= 0 || tickAraligi <= 0 || eksenPx <= 0) return false;
+  final adimPx = tickAraligi / aralik * eksenPx;
+  final k = (etiketPx / adimPx).ceil();
+  if (k <= 1) return false;
+  final sira = ((deger - taban) / tickAraligi).round();
+  return sira % k != 0;
 }

@@ -10,6 +10,7 @@ import 'package:portfoy_takip/providers/auth_provider.dart';
 import 'package:portfoy_takip/providers/portfolio_provider.dart';
 import 'package:portfoy_takip/screens/portfolio_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
+import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Sadeleştirme 2 — Portföy küçük halkası (bayrak `portfoy_dagilim_cubugu`).
@@ -104,6 +105,12 @@ Finder _satir(String ticker) => find.textContaining(ticker);
 /// Küçük halkanın düğmesi (anlam etiketi `s3HalkayiAc`).
 final _kucukHalka = find.bySemanticsLabel('Dağılımı büyük halkada aç');
 
+/// Küçük halka kartının içinde metin (varlık satırındaki tür etiketiyle
+/// karışmasın).
+Finder _lejant(String metin) => find.descendant(
+    of: find.byKey(const ValueKey('kucuk-halka-lejant')),
+    matching: find.text(metin));
+
 // Altı tür, her biri farklı tutarda: lejant 3 satır + "+3 tür".
 final _altiTur = [
   _lot('a', 'THYAO', AssetType.hisse, 10, 600),
@@ -112,6 +119,17 @@ final _altiTur = [
   _lot('d', 'USD', AssetType.doviz, 1, 3000),
   _lot('e', 'BTC', AssetType.kripto, 1, 2000),
   _lot('f', 'BRENT', AssetType.emtia, 1, 1000),
+];
+
+/// On tür; son ikisi %2'nin altında (300 ve 200 / 23.200). Katlanmazlar
+/// (2026-10-10). Varsayılan test yüzeyinde (800pt) lejant iki sütun = 8
+/// yuva; 10 öğe iki sayfa eder.
+final _onTur = [
+  ..._altiTur,
+  _lot('g', 'BES', AssetType.bes, 1, 900),
+  _lot('h', 'VADELI', AssetType.mevduat, 1, 800),
+  _lot('i', 'EURB', AssetType.eurobond, 1, 300),
+  _lot('j', 'DGR', AssetType.diger, 1, 200),
 ];
 
 void main() {
@@ -184,14 +202,53 @@ void main() {
     expect(_satir('AFT'), findsWidgets);
   });
 
-  testWidgets('dörtten fazla tür: üç satır + "+N tür", o da halkayı açar',
+  // 2026-10-09 (yasin): tür sığmayınca saklanmaz, lejant sayfalara bölünür;
+  // "+N tür" satırı kalktı.
+  testWidgets('altı tür tek sayfada, hepsi görünür, nokta yok',
       (tester) async {
     RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
     await _pump(tester, varliklar: _altiTur);
-    expect(find.text('+3 tür'), findsOneWidget);
-    await tester.tap(find.text('+3 tür'));
+    for (final ad in ['Hisse', 'Fon', 'Altın', 'Döviz', 'Kripto', 'Emtia']) {
+      expect(_lejant(ad), findsOneWidget, reason: ad);
+    }
+    expect(find.byType(PageView), findsNothing);
+    expect(find.byKey(const ValueKey('nokta-0')), findsNothing);
+  });
+
+  testWidgets(
+      'on tür: küçükler katlanmaz, lejant iki sayfa + noktalar; '
+      'kaydırınca küçük türler adıyla görünür', (tester) async {
+    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
+    await _pump(tester, varliklar: _onTur);
+    expect(find.byType(PageView), findsOneWidget);
+    expect(find.byKey(const ValueKey('nokta-0')), findsOneWidget);
+    expect(find.byKey(const ValueKey('nokta-1')), findsOneWidget);
+    // İlk sayfa: en büyük sekiz tür; küçük ikisi sonraki sayfada.
+    expect(_lejant('Hisse'), findsOneWidget);
+    expect(_lejant('Mevduat'), findsOneWidget);
+    expect(_lejant('Eurobond'), findsNothing);
+
+    await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
-    expect(find.byType(PieChart), findsOneWidget);
+    // Kullanıcı kuralı 2026-10-10 ("hâlâ Diğer var"): küçük türler
+    // "Diğer (2)"ye katlanmaz, kendi adıyla durur.
+    expect(_lejant('Eurobond'), findsOneWidget);
+    expect(_lejant('Diğer'), findsOneWidget); // gerçek "Diğer" türü
+    expect(_lejant('Diğer (2)'), findsNothing);
+  });
+
+  testWidgets('kartın boyu tür sayısından bağımsız', (tester) async {
+    RemoteConfigService.testAcik = {'portfoy_dagilim_cubugu'};
+    Size kart() => tester.getSize(find
+        .ancestor(
+            of: find.byKey(const ValueKey('kucuk-halka-lejant')),
+            matching: find.byType(SandikCard))
+        .first);
+    await _pump(tester);
+    final az = kart();
+    await tester.pumpWidget(const SizedBox());
+    await _pump(tester, varliklar: _onTur);
+    expect(kart().height, az.height);
   });
 
   testWidgets('halka dönerek dolar; hareketi azalt açıkken anında dolu',

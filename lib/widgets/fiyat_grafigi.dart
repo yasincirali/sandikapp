@@ -169,6 +169,14 @@ class FiyatGrafigi extends StatelessWidget {
     final eksenBicimi =
         tryFormatter(digits: ondalik, symbol: bicim.currencySymbol);
     final span = maxX - minX;
+    final spanGun = span / const Duration(days: 1).inMilliseconds;
+    // Etiketler ekran genişliğine göre seyrelir (`xEtiketiAtlanir`).
+    final xStil = GrafikStili.eksenYazisi(context);
+    final etiketPx = GrafikStili.xEtiketAraligi(
+      zamanEtiketiOrnegi(spanGun: spanGun, gunIci: eksenX.gunIci),
+      stil: xStil,
+      olcek: MediaQuery.textScalerOf(context),
+    );
 
     return LineChartData(
       minX: minX,
@@ -248,15 +256,19 @@ class FiyatGrafigi extends StatelessWidget {
             reservedSize: _altEksenYuksekligi,
             interval: eksenX.interval,
             getTitlesWidget: (value, meta) {
-              if (eksenKenarinda(value, meta.min, meta.max)) {
+              if (eksenKenarinda(value, meta.min, meta.max) ||
+                  xEtiketiAtlanir(value,
+                      aralik: meta.max - meta.min,
+                      tickAraligi: meta.appliedInterval,
+                      eksenPx: meta.parentAxisSize,
+                      etiketPx: etiketPx,
+                      taban: eksenX.baseline)) {
                 return const SizedBox.shrink();
               }
               final t = DateTime.fromMillisecondsSinceEpoch(value.round());
               return GrafikStili.xEtiketi(
-                zamanEtiketi(t,
-                    spanGun: span / const Duration(days: 1).inMilliseconds,
-                    gunIci: eksenX.gunIci),
-                stil: GrafikStili.eksenYazisi(context),
+                zamanEtiketi(t, spanGun: spanGun, gunIci: eksenX.gunIci),
+                stil: xStil,
               );
             },
           ),

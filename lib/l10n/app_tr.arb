@@ -5208,8 +5208,8 @@
   "s4RowNote": "Analiz notu",
   "s3DagilimBaslik": "Dağılım",
   "s3HalkayiAc": "Dağılımı büyük halkada aç",
-  "s3DigerTurler": "+{n} tür",
-  "@s3DigerTurler": {
+  "s3DigerKatlanan": "Diğer ({n})",
+  "@s3DigerKatlanan": {
     "placeholders": {
       "n": {
         "type": "int"

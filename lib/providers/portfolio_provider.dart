@@ -403,6 +403,12 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// gösterilmeye devam eder ve sahte kâr o pencerede sürerdi.)
   void _gunIciSeriyiDusur() => IntradaySeriesCache.instance.clear();
 
+  /// Son eklenen lotun pozisyon anahtarı (`positionKey`) — ekleme akışı
+  /// bunu `VarlikEklendi.duyur`'a geçirir, Portföy o satırı parlatır.
+  /// Ekleme ekranı kimlik döndürmüyordu; anahtarı yeniden kurmak (tür, alt
+  /// kategori, para birimi) `positionKey` kuralının kopyası olurdu.
+  String? sonEklenenPozisyon;
+
   Future<void> addAsset({
     required String name,
     required String ticker,
@@ -474,6 +480,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
 
     await SupabaseService.instance.insertAsset(asset);
+    sonEklenenPozisyon = positionKey(asset);
 
     unawaited(AnalyticsService.instance.logAssetAdded(
       type: type.name,
@@ -534,6 +541,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     }
 
     await SupabaseService.instance.insertAssets(lots);
+    sonEklenenPozisyon = positionKey(lots.first);
 
     for (final a in {for (final l in lots) l.type}) {
       unawaited(AnalyticsService.instance.logAssetAdded(type: a.name));
