@@ -84,11 +84,6 @@ enum TourTarget {
   /// olanları değil.
   bildirimCani,
 
-  /// Profil: üst çubuktaki hesap adı (çoklu hesap, bayrak `coklu_hesap`).
-  /// Dokununca bu cihazdaki hesapların listesi açılır. Bayrak kapalıyken
-  /// çizilmez; tur adımı `kosul` ile atlanır.
-  hesapBasligi,
-
   /// Profil: davet kodu bölümü.
   davetKodu,
 

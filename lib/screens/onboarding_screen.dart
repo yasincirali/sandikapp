@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/position.dart' show aktifLotlar;
 import '../providers/auth_provider.dart' show activePartnersProvider;
-import '../providers/hesap_provider.dart' show cokluHesapGorunurProvider;
 import '../providers/hafta_ozeti_provider.dart'
     show haftaOlagandisiSayisiProvider;
 import '../providers/portfolio_provider.dart';
@@ -889,24 +888,6 @@ List<_Adim> _adimlariKur() {
       gorevBitti: 'Profil açıldı',
       bitti: (_) => _sekmede(4),
       devam: (_) => _sekmeyeGec(4),
-    ),
-    // Çoklu hesap (bayrak `coklu_hesap`, 2026-10-10; yasin: "session
-    // switch'i de tanıtım turuna ekleyelim"). Başlık yalnız bayrak açıkken
-    // çizilir; koşul seçicinin görünürlüğüyle aynı sağlayıcıdan okunur.
-    // Face ID cümlesi `HesapGecisi.cihazDogrulandi` kuralını anlatır.
-    _Adim(
-      id: 'hesap_gecisi',
-      hedef: TourTarget.hesapBasligi,
-      rozet: 'YENİ',
-      baslik: 'Hesapların arasında geç',
-      govde: 'Üstteki adına dokun: bu telefondaki hesapların listelenir, '
-          'birine dokununca o hesaba geçersin. Öbür hesaplar açık kalır; '
-          'şifre sorulmaz, Face ID ile girdiysen tekrar sorulmaz. '
-          '"Hesap ekle" ile 5 hesaba kadar ekleyebilirsin. Alttaki Profil '
-          'tuşuna uzun basmak da aynı listeyi açar.',
-      giris: (_) => _sekmeyeGec(4),
-      dokunulabilir: false,
-      kosul: (ref) => ref.read(cokluHesapGorunurProvider),
     ),
     _Adim(
       id: 'ortaklik',
