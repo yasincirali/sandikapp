@@ -41,6 +41,17 @@ final cokluPortfoyGorunurProvider = Provider<bool>((ref) {
   return ref.watch(paywallVisibleProvider) || admin;
 });
 
+/// Çoklu portföyün Premium yüzeyleri (ortağa portföy seçimi, kısmi
+/// aktarım) kilitli mi. yasin 2026-10-10: "yeni ekranlar ve özellikler
+/// paywall arkasında". Paywall kapalıyken kilit yok (çoklu portföyü zaten
+/// yalnız admin görür). Kilit yalnız YENİ değişikliği durdurur: Premium
+/// biten kullanıcının ortak seçimi sunucuda geçerli kalır (gizlenen portföy
+/// abonelik bitti diye ortağa açılmaz), bölünmüş pozisyonu da olduğu yerde.
+final portfoyPremiumKilitliProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  return !ref.watch(effectivePremiumProvider);
+});
+
 /// Toplam portföy sınırı (Ana DAHİL) — `assetLimitProvider` deseni.
 /// Paywall kapalıyken ya da Premium'da pratikte sınırsız; ücretsizde 1
 /// (yalnız Ana). Var olan portföyler sınır düşünce SİLİNMEZ (Premium biten

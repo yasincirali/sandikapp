@@ -8066,7 +8066,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get portfoyTasiAciklama =>
-      'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.';
+      'Geçmişiyle birlikte taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.';
 
   @override
   String portfoyTasindi(String ad) {
@@ -8097,4 +8097,102 @@ class AppLocalizationsTr extends AppLocalizations {
   String pwdPortfoySayi(int sayi) {
     return '$sayi portföy';
   }
+
+  @override
+  String ortakGorurBaslik(String ad) {
+    return '$ad neyi görsün?';
+  }
+
+  @override
+  String ortakGorurAciklama(String ad) {
+    return '$ad seçtiklerini tek liste olarak görür, portföy adlarını görmez. Seçmediklerin onun telefonuna hiç gitmez.';
+  }
+
+  @override
+  String get ortakGorurHepsi => 'Hepsi';
+
+  @override
+  String get ortakGorurSecilenler => 'Seçtiklerim';
+
+  @override
+  String get ortakGorurHepsiAciklama =>
+      'Bütün portföylerin, sonradan açacakların dahil.';
+
+  @override
+  String get ortakGorurSeciliAciklama =>
+      'Yeni açtığın portföy, sen seçene kadar gizli kalır.';
+
+  @override
+  String ortakGorurHicbiri(String ad) {
+    return 'Hiçbirini seçmezsen $ad varlıklarını göremez; ortaklık sürer.';
+  }
+
+  @override
+  String get ortakGorurKaydedilemedi => 'Seçim kaydedilemedi';
+
+  @override
+  String get ortakGorurSatir => 'Görebildiği portföyler';
+
+  @override
+  String ortakGorurSayi(int n, int toplam) {
+    return '$n / $toplam portföy';
+  }
+
+  @override
+  String portfoyOrtakGoruyor(String ad) {
+    return '$ad görüyor';
+  }
+
+  @override
+  String portfoyOrtakGizli(String ad) {
+    return '$ad görmüyor';
+  }
+
+  @override
+  String get portfoyOrtakBolum => 'ORTAĞIN NE GÖRÜR';
+
+  @override
+  String get portfoyAktarBaslik => 'Ne kadarı aktarılsın?';
+
+  @override
+  String portfoyAktarAciklama(String hedef, String miktar) {
+    return '$hedef portföyüne. Bu portföyde $miktar var.';
+  }
+
+  @override
+  String get portfoyAktarTamami => 'Tamamı';
+
+  @override
+  String get portfoyAktarBirKismi => 'Bir kısmı';
+
+  @override
+  String get portfoyAktarMiktar => 'Aktarılacak miktar';
+
+  @override
+  String get portfoyAktarNot =>
+      'Alımlar, satışlar ve temettüler aynı oranla bölünür. Ortalama maliyet ve getiri iki portföyde de aynı kalır, toplamın değişmez.';
+
+  @override
+  String portfoyAktarGecersiz(String miktar) {
+    return '0 ile $miktar arasında bir miktar yaz.';
+  }
+
+  @override
+  String get portfoyAktarDugme => 'Aktar';
+
+  @override
+  String get portfoyAktarPremium => 'Bir kısmını aktarmak Premium\'a özel.';
+
+  @override
+  String portfoyAktarildi(String miktar, String hedef) {
+    return '$miktar, $hedef portföyüne aktarıldı.';
+  }
+
+  @override
+  String ortakGorurOnizleme(String ad) {
+    return '$ad görecek';
+  }
+
+  @override
+  String get ortakGorurHicbiriKisa => 'Hiçbiri';
 }

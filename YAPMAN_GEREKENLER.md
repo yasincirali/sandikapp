@@ -1,6 +1,6 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (çoklu portföy, 0133, bayrak `coklu_portfoy`; Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130; video anlatım kuralları + EMA Lightning + HeyGen MCP); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (ortak hangi portföyleri görür, 0135; çoklu portföy, 0133, bayrak `coklu_portfoy`; Fon X-Ray, 0131/0132, Koşullar 1.8, 0134; olgun Premium seti, Koşullar 1.7, 0130; video anlatım kuralları + EMA Lightning + HeyGen MCP); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 
 > **Dağıtım durumu 2026-10-10:** 0130–0134 ve `analyze-signals`, `fon-dagilim`, `fon-kalem-raporu` iki sunucuda BEKLİYOR (dry_run 38020117037 planı; bkz. "Tek PR … ORTAK SIRA"). Aşağıdaki 2026-10-09 notu o günün durumudur.
 >
@@ -11,6 +11,66 @@
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-10 Ortak hangi portföyleri görür (migration 0135, bayrak `coklu_portfoy`, Premium)
+
+Senin isteğin: "çoklu portföyde ortağıma hangisinin gözükeceğini
+seçebilmeliyim" + revizyon (11:39): ortak paylaştıklarını TEK LİSTE görür,
+birden çok portföyün olduğunu bilmez, ana sayfa kartı değişmez, yeni yüzey
+Premium. Profil › Ortaklarım kartında "Görebildiği portföyler · Hepsi ›" →
+alt sayfa "Ayşe neyi görsün?" (Hepsi / Seçtiklerim + portföy başına
+anahtar). Portföyler ekranında her satırda "Ayşe görüyor / görmüyor".
+`paywall_enabled` açıkken Premium olmayan kullanıcı satırı kilitli görür
+(mevcut seçim yazar, dokununca paywall). Ortak tarafında HİÇBİR yazı yok:
+paylaşılan lotlar tek liste, portföy adı/sayısı gitmez. Sınır sunucuda
+(RLS, süzgeç API'de görünmeyen `ozel` şemasında): gizli portföyün lotu,
+portföy adları, paylaşım satırı ve gizli lota bağlı BES/mevduat sözleşmesi
+ortağın telefonuna hiç gitmez; sabah brifingindeki "ortağın N varlık
+ekledi" sayımı da gizliyi saymaz.
+
+- [ ] Önce 0133 iki sunucuda olmalı (aşağıdaki ORTAK SIRA). Sonra
+      **Supabase deploy** (hedef `ikisi`): migration **0135** + fonksiyon
+      `daily-brief`. 0135 yalnız ekler: satır yoksa ortak bugünkü gibi her
+      şeyi görür. Tek fark: ortak artık portföy ADLARINI okuyamaz (0133'te
+      açılmıştı, istemci hiç okumuyordu). Sonra `python tool/sema_esitlik.py`
+      → ŞEMA EŞİT.
+- [ ] ⚠️ `coklu_portfoy` bayrağını **0133 VE 0135** iki sunucuda da
+      uygulandıktan sonra aç.
+- [ ] TestFlight'ta iki hesapla dene (sen + ortak hesabı): Portföyler'de
+      "Çocuğum için" aç, içine bir varlık koy → Profil › Ortaklarım › Ayşe ›
+      Görebildiği portföyler → Seçtiklerim → "Çocuğum için"i kapat → Kaydet.
+      Ortak hesapta ana sayfayı yenile → senin kartında o varlık ve tutarı
+      yok, kalanlar tek liste. Hepsi'ne dön → geri gelir.
+- Bilinen sınırlar: Yarış/Zirve sunucu anlık görüntüleri kullanıcı
+  TOPLAMINDAN kalır (ayrı açık rıza; ortak orada yalnız yüzde görür).
+  Ortaklar arası Yarış cihazda ölçüldüğü için yalnız paylaşılan kısmı
+  karşılaştırır. Ham API'yi elle sorgulayan bir ortak, paylaşılan lotta
+  `portfoy_id` kimliğini (ad değil, rastgele uuid) görebilir; uygulama bunu
+  siler. Tam kapanış eski sürümler düşünce (TECHNICAL_DEBT).
+- Yasal metin: değişiklik yok — yeni veri, alıcı ya da amaç yok; tersine
+  ortağa giden veri daralıyor.
+
+## ⏳ 2026-10-10 Portföyler arası kısmi aktarım (migration 0136, `coklu_portfoy`, Premium)
+
+Senin isteğin: "premiuma özel, portföyler arası klonlama aktarım". Klon
+yapılmadı: aynı varlık iki portföyde birden olunca ana sayfa toplamı iki
+kez sayardı. Onun yerine Taşı akışına miktar adımı geldi: "Tamamı"
+(bugünkü taşıma, ücretsiz) ya da "Bir kısmı" (Premium). Kısmi aktarımda
+pozisyonun her alımı, satışı ve temettüsü aynı oranla bölünür; ortalama
+maliyet, tarih ve getiri iki portföyde de aynı kalır, toplam değişmez.
+BES/mevduat sözleşmeli pozisyonlar bölünmez (miktar sorulmaz).
+
+- [ ] **Supabase deploy** (hedef `ikisi`): migration **0136** (0133'ten
+      sonra; 0135 ile aynı turda olabilir). Yalnız ekler: yeni RPC
+      `pozisyon_kismi_aktar` + 0095 giriş anı tetikleyicisine "bölmede
+      Yarış giriş anını koru" dalı (ayar yokken birebir eski davranış).
+      Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] TestFlight'ta dene: Portföy › bir pozisyon › Taşı → Çocuğum için →
+      Bir kısmı → 8 yaz → Aktar. Emeklilik'te 12, Çocuğum için'de 8 kalır;
+      ikisinde de ortalama maliyet aynı, Tümü'de toplam değişmez. Premium
+      olmayan hesapta "Bir kısmı" kilitli, Tamamı çalışır.
+- Bilinen: Premium kapısı istemcide (sunucuda `premium_ayar.kapi_acik`
+  kapalıyken herkes kendi verisini bölebilir; zararı yok, kendi defteri).
 
 ## ⏳ 2026-10-10 Tek PR: olgun Premium + Fon X-Ray + çoklu portföy — ORTAK SIRA
 

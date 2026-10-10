@@ -172,7 +172,8 @@ Map<String?, Position> portfoyParcalari(
 /// gelir: BES'in fonları tek sözleşmedir, ayrı portföylere bölünmez (sonraki
 /// katkı sözleşmenin portföyünü izler, bkz. `sozlesmeLotlariniEkle`).
 ///
-/// Kısmi taşıma yok — gerekçe `PortfolioNotifier.pozisyonuTasi`.
+/// Bütün pozisyonun taşınması; kısmi aktarım bu kümeyi orantılı böler
+/// (`PortfolioNotifier.pozisyonuKismiTasi`, 0136; sözleşmeli lot bölünmez).
 List<Asset> tasinacakLotlar(
   List<Asset> defter,
   Asset varlik,

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../demo/demo_modu.dart';
+import '../models/ortak_paylasimi.dart';
 import '../models/portfoy.dart';
 import '../models/price_alert_notification.dart';
 import '../models/app_notification.dart';
@@ -738,6 +739,20 @@ class SupabaseService {
     return rows.map<Asset>((r) => Asset.fromSupabase(r)).toList();
   }
 
+  /// Ortağın lotları — [fetchByUser] + portföy izinin silinmesi.
+  ///
+  /// Ortak, sahibin portföylerini BİLMEMELİ (yasin 2026-10-10: "ortağım
+  /// benim 2 portföyüm olduğunu bilmemeli, paylaştıklarımı tek liste
+  /// olarak görmeli"). Gizli portföyün lotları zaten sunucudan gelmez
+  /// (0135 RLS); paylaşılanların `portfoy_id`'si burada atılır ki ortağın
+  /// uygulamasında hiçbir yüzey (pozisyon parçalama, işlem sorusu) onları
+  /// ayrı kümeler olarak ele alamasın. Pozisyonlar sahip başına tek havuzda
+  /// birleşir (`aggregatePositionsByOwner`).
+  Future<List<Asset>> fetchOrtakLotlari(String ortakId) async => [
+        for (final a in await fetchByUser(ortakId))
+          a.portfoyId == null ? a : a.copyWithPortfoy(null),
+      ];
+
   Future<void> insertAsset(Asset asset) async {
     final body = asset.toSupabase();
     await _log.log<void>(
@@ -999,6 +1014,41 @@ class SupabaseService {
     if (rows.isEmpty) throw StateError('Portföy silinemedi.');
   }
 
+  // ── Ortak portföy paylaşımı (0135) ────────────────────────────────────────
+  //
+  // Yalnız `coklu_portfoy` görünürken çağrılır. Yalnız SAHİBİN satırları:
+  // ortak kendisi hakkındaki satırı okuyamaz (0135, politika yok).
+
+  Future<List<OrtakPaylasimi>> fetchOrtakPaylasimlari(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchOrtakPaylasimlari',
+      table: 'ortak_paylasimlari',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('ortak_paylasimlari')
+          .select('sahip_id, ortak_id, tumu, ana, portfoy_idler')
+          .eq('sahip_id', userId),
+    );
+    return [for (final r in rows) OrtakPaylasimi.fromSupabase(r)];
+  }
+
+  /// Seçimi yazar (sahip, ortak başına tek satır). Dönen satırla
+  /// doğrulanır: RLS reddi sessiz 0 satır olabilir.
+  Future<void> upsertOrtakPaylasimi(OrtakPaylasimi p) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.upsertOrtakPaylasimi',
+      table: 'ortak_paylasimlari',
+      op: 'UPSERT',
+      request: {'ortak_id': p.ortakId, 'tumu': p.tumu},
+      call: () => _db
+          .from('ortak_paylasimlari')
+          .upsert(p.toSupabase(), onConflict: 'sahip_id,ortak_id')
+          .select('sahip_id'),
+    );
+    if (rows.isEmpty) throw StateError('Paylaşım kaydedilemedi.');
+  }
+
   /// Lotların portföyünü yazar (pozisyon taşıma). YALNIZ bu sütun:
   /// [updateAsset] bütün gövdeyi yazar ve bayat bir fiyat/miktarı geri
   /// alabilirdi. `null` → Ana. Dönen satır sayısı istenenle tutmazsa atar
@@ -1024,6 +1074,32 @@ class SupabaseService {
       throw StateError(
           'Taşıma yarım kaldı (${rows.length}/${ids.length} kayıt).');
     }
+  }
+
+  /// Pozisyonun [oran] kadarını [portfoyId]'ye orantılı bölerek aktarır
+  /// (0136 `pozisyon_kismi_aktar`; gerekçe migration başlığında). Tek
+  /// işlem: ya hepsi bölünür ya hiçbiri. Dönen satırlar hedefe yazılan yeni
+  /// lotlar + kaynakta küçülen lotlardır.
+  Future<List<Asset>> pozisyonKismiAktar(
+      List<String> ids, double oran, String? portfoyId) async {
+    final rows = await _log.log<List<dynamic>>(
+      source: 'SupabaseService.pozisyonKismiAktar',
+      table: 'assets',
+      op: 'RPC',
+      request: {
+        'ids': ids.length,
+        'portfoy': portfoyId == null ? 'ana' : 'id',
+      },
+      call: () async =>
+          await _db.rpc<List<dynamic>>('pozisyon_kismi_aktar', params: {
+        'p_ids': ids,
+        'p_oran': oran,
+        'p_hedef': portfoyId,
+      }),
+    );
+    return [
+      for (final r in rows) Asset.fromSupabase(r as Map<String, dynamic>),
+    ];
   }
 
   // ── Sözleşmeler (mevduat / BES, 0088) ─────────────────────────────────────

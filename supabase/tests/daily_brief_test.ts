@@ -18,6 +18,7 @@ import {
   buildBriefMessage,
   buildPartnerMessage,
   collapseTokens,
+  ortakLotuGorur,
   lastChangePct,
 } from '../functions/daily-brief/index.ts';
 
@@ -243,4 +244,22 @@ Deno.test('NE eklendiği söylenmez — kilit ekranı mahremiyeti', () => {
 Deno.test('tutar ya da miktar sızmaz', () => {
   const m = buildPartnerMessage('Ayşe', 2);
   assertEquals(/\d+[.,]\d/.test(`${m.title}${m.body}`), false);
+});
+
+// Ortak portföy paylaşımı (0135): gizli portföye eklenen lot "ortağın N
+// varlık ekledi" sayımına girmez. RLS eşi `ortak_portfoyu_gorur`.
+Deno.test('ortakLotuGorur: satır yoksa ya da tümü ise her lot sayılır', () => {
+  assertEquals(ortakLotuGorur(undefined, null), true);
+  assertEquals(ortakLotuGorur(undefined, 'p1'), true);
+  const tumu = { tumu: true, ana: false, portfoyIdler: [] };
+  assertEquals(ortakLotuGorur(tumu, 'p1'), true);
+});
+
+Deno.test('ortakLotuGorur: seçili modda yalnız Ana ve seçilenler', () => {
+  const p = { tumu: false, ana: true, portfoyIdler: ['p1'] };
+  assertEquals(ortakLotuGorur(p, null), true);
+  assertEquals(ortakLotuGorur(p, 'p1'), true);
+  assertEquals(ortakLotuGorur(p, 'p2'), false);
+  const anasiz = { tumu: false, ana: false, portfoyIdler: [] };
+  assertEquals(ortakLotuGorur(anasiz, null), false);
 });
