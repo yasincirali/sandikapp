@@ -17,6 +17,7 @@ import '../utils/friendly_error.dart';
 import '../utils/money_format.dart';
 import '../utils/tr_format.dart';
 import '../services/crash_reporter.dart';
+import '../services/varlik_yeniden_kur.dart';
 import '../services/daily_summary.dart';
 import '../services/fx_rate_migration_service.dart';
 import '../services/portfolio_cache.dart';
@@ -1057,6 +1058,28 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ));
     _gunIciSeriyiDusur();
   }
+
+  /// "Varlığı güncelle" (`varlik_guncelle.dart`): pozisyonun lotları Sil
+  /// gibi gider, yerine [yeniKayit] (bir [addAsset] çağrısı) tek kayıt yazar.
+  ///
+  /// Yeni bir sunucu yolu yok — kullanıcı kuralı: "silme ve yeniden ekleme
+  /// gibi davranmalı". Ekleme düşerse silme [restorePositionLots] ile geri
+  /// alınır; geri alma da düşerse defter sunucudan tazelenir ki ekran
+  /// sunucuda olmayan bir durumu göstermesin.
+  Future<void> pozisyonuYenidenKur(
+    List<Asset> lotlar,
+    Future<void> Function() yeniKayit,
+  ) =>
+      silVeYenidenEkle<SilinenPozisyon>(
+        sil: () => deletePositionLots(lotlar),
+        ekle: yeniKayit,
+        geriAl: restorePositionLots,
+        geriAlmaHatasi: (e, st) {
+          CrashReporter.report(e, st,
+              reason: 'PortfolioNotifier.pozisyonuYenidenKur.geriAl');
+          ref.invalidateSelf();
+        },
+      );
 
   Future<void> updateManualPrice(Asset asset, double price) async {
     asset.currentPrice = price;

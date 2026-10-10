@@ -14091,6 +14091,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında'**
   String get pwOzOzelGosterge;
+
+  /// No description provided for @varlikGuncelleBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlığı güncelle'**
+  String get varlikGuncelleBaslik;
+
+  /// No description provided for @varlikGuncelleIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlığı güncelle'**
+  String get varlikGuncelleIpucu;
+
+  /// No description provided for @varlikGuncelleKilitli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlığı güncelle, Premium'**
+  String get varlikGuncelleKilitli;
+
+  /// No description provided for @varlikGuncelleUyariBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tek kayıt olarak yeniden yazılır'**
+  String get varlikGuncelleUyariBaslik;
+
+  /// No description provided for @varlikGuncelleUyariGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{Bu varlığın kaydı silinir ve buradaki bilgilerle yeniden eklenir. Varlığı silip yeniden eklemekle aynıdır.} other{Bu varlığın {n} hareketi (alış, satış, temettü) silinir, yerine buradaki bilgilerle tek bir kayıt kalır. Adım adım geçmiş artık bu varlıkta görünmez. Varlığı silip yeniden eklemekle aynıdır.}}'**
+  String varlikGuncelleUyariGovde(int n);
+
+  /// No description provided for @varlikGuncelleOnayBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{Kayıt yeniden yazılsın mı?} other{{n} hareket silinsin mi?}}'**
+  String varlikGuncelleOnayBaslik(int n);
+
+  /// No description provided for @varlikGuncelleOnayGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n, plural, =1{\"{name}\" silinip bu bilgilerle yeniden eklenecek. Bu işlem geri alınamaz.} other{\"{name}\" için {n} hareket silinecek, yerine bu bilgilerle tek bir kayıt eklenecek. Bu işlem geri alınamaz.}}'**
+  String varlikGuncelleOnayGovde(String name, int n);
 }
 
 class _AppLocalizationsDelegate

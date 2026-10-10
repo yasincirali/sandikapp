@@ -200,6 +200,31 @@ extension _DetayEylemler on _AssetDetailScreenState {
     );
   }
 
+  /// Üst çubuktaki "Varlığı güncelle" düğmesi; çizilmeyecekse `null`.
+  /// Kapı [_islemCubugu] ile aynı (kendi + açık pozisyon) artı özellik
+  /// durumu ve `varlikGuncellenebilir`.
+  Widget? _guncelleDugmesi(bool isOwnAsset) {
+    if (!isOwnAsset) return null;
+    final durum = ref.watch(varlikGuncellemeProvider);
+    if (durum == VarlikGuncellemeDurumu.gizli) return null;
+    final canli = _canli;
+    if (!canli.acik || !varlikGuncellenebilir(canli.asset, canli.lots)) {
+      return null;
+    }
+    final kilitli = durum == VarlikGuncellemeDurumu.kilitli;
+    return IconButton(
+      tooltip: kilitli
+          ? context.l10n.varlikGuncelleKilitli
+          : context.l10n.varlikGuncelleIpucu,
+      icon: Icon(
+        kilitli ? Icons.lock_outline_rounded : Icons.edit_note_rounded,
+        color: context.c.text90,
+      ),
+      onPressed: () => varligiGuncelleAkisi(context, ref,
+          gorunum: _canli.asset, lotlar: _canli.lots),
+    );
+  }
+
   List<TransactionSegment> _convertHistoryToSegments(
     Map<int, double> history,
     DateTime startDate,

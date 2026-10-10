@@ -56,6 +56,7 @@ import '../services/crash_reporter.dart';
 import '../providers/preferences_provider.dart' show seciliPortfoyProvider;
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
+import '../widgets/varlik_guncelle.dart';
 import '../services/islem_notu.dart';
 import '../widgets/islem_notu_sheet.dart';
 import '../widgets/fon_karnesi_karti.dart';
@@ -367,6 +368,7 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     // Portföyler arası taşıma yalnız özellik görünürken (bayrak + Premium
     // görünürlüğü); kapalıyken kaydırma paneli birebir eski.
     final tasimaAcik = ref.watch(cokluPortfoyGorunurProvider);
+    final guncelleDurumu = ref.watch(varlikGuncellemeProvider);
 
     return CupertinoPageScaffold(
       backgroundColor: context.c.background,
@@ -698,6 +700,15 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
                                           ? (p) => pozisyonuTasiAkisi(
                                               context, ref, p.asDisplayAsset())
                                           : null,
+                                      onGuncelle: guncelleDurumu ==
+                                              VarlikGuncellemeDurumu.gizli
+                                          ? null
+                                          : (p) => varligiGuncelleAkisi(
+                                              context, ref,
+                                              gorunum: p.asDisplayAsset(),
+                                              lotlar: p.lots),
+                                      guncelleKilitli: guncelleDurumu ==
+                                          VarlikGuncellemeDurumu.kilitli,
                                     ).kartlar(),
                                 ];
                               })(partnerAssetsAsync.valueOrNull!)),
@@ -1908,6 +1919,10 @@ class _AssetList {
   /// Portföyler arası taşıma (0133); `null` → eylem yok (bayrak kapalı).
   final FutureOr<void> Function(Position)? onTasi;
 
+  /// "Varlığı güncelle" (`varlik_guncelle.dart`); `null` → eylem yok.
+  final FutureOr<void> Function(Position)? onGuncelle;
+  final bool guncelleKilitli;
+
   /// Bir kez parlayacak yeni satırın anahtarı (bkz. `_yeniSatiriBul`).
   final String? vurgulanan;
   final int vurguNo;
@@ -1927,6 +1942,8 @@ class _AssetList {
     required this.onRemove,
     required this.onDividend,
     this.onTasi,
+    this.onGuncelle,
+    this.guncelleKilitli = false,
     this.heroAcik = false,
   });
 
@@ -1970,6 +1987,14 @@ class _AssetList {
           onRemove: (_) => onRemove(kendi!),
           onDividend: (_) => onDividend(kendi!),
           onTasi: onTasi == null ? null : (_) => onTasi!(kendi!),
+          // Sözleşmeli ya da portföyleri karışık pozisyonda yok (gerekçe
+          // `varlikGuncellenebilir`); karar KENDİ parçasına bakar.
+          onGuncelle: onGuncelle == null ||
+                  kendi == null ||
+                  !varlikGuncellenebilir(kendi.asDisplayAsset(), kendi.lots)
+              ? null
+              : (_) => onGuncelle!(kendi),
+          guncelleKilitli: guncelleKilitli,
         ),
       );
   }
@@ -2114,6 +2139,8 @@ Widget _rowAction(
   required Color foreground,
   required IconData icon,
   required String label,
+  /// Ekran okuyucu etiketi; `null` → görünen [label] okunur.
+  String? semanticLabel,
 }) {
   return Expanded(
     // `Slidable.of` bir InheritedWidget aramasıdır: yalnızca `Slidable`'ın
@@ -2146,7 +2173,11 @@ Widget _rowAction(
           color: background,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          child: FittedBox(
+          child: Semantics(
+            label: semanticLabel,
+            excludeSemantics: semanticLabel != null,
+            button: true,
+            child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2164,6 +2195,7 @@ Widget _rowAction(
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),
@@ -2384,6 +2416,13 @@ class _AssetCard extends StatefulWidget {
   /// Portföyler arası taşıma (0133); `null` → eylem yok, panel birebir eski.
   final FutureOr<void> Function(Position)? onTasi;
 
+  /// "Varlığı güncelle"; `null` → eylem yok, panel birebir eski.
+  final FutureOr<void> Function(Position)? onGuncelle;
+
+  /// Paywall açık, kullanıcı ücretsiz: düğme kilit ikonuyla durur, dokunuş
+  /// paywall'a gider (akış `varligiGuncelleAkisi` içinde).
+  final bool guncelleKilitli;
+
   const _AssetCard({
     super.key,
     required this.position,
@@ -2397,6 +2436,8 @@ class _AssetCard extends StatefulWidget {
     required this.onRemove,
     required this.onDividend,
     this.onTasi,
+    this.onGuncelle,
+    this.guncelleKilitli = false,
   });
 
   @override
@@ -2418,6 +2459,7 @@ class _AssetCardState extends State<_AssetCard>
     final onDelete = widget.onDelete;
     final onDividend = widget.onDividend;
     final onTasi = widget.onTasi;
+    final onGuncelle = widget.onGuncelle;
 
     final a = position.asDisplayAsset();
     final tryFmt = widget.baz.formatter(digits: 0);
@@ -2667,9 +2709,32 @@ class _AssetCardState extends State<_AssetCard>
           endActionPane: ActionPane(
             motion: const DrawerMotion(),
             // Taşı eylemi (çoklu portföy) yalnız özellik görünürken; yoksa
-            // pane eskisi gibi tek düğme, 0.28.
-            extentRatio: onTasi != null ? 0.5 : 0.28,
+            // pane eskisi gibi tek düğme, 0.28. Güncelle de eklenince üç
+            // düğme 0.66: 375pt'de düğme başına ~82pt (HIG 44pt), satıra
+            // ~127pt kalır — başlangıç panelindeki 0.62 ile aynı denge.
+            extentRatio: switch ((onTasi != null ? 1 : 0) +
+                (onGuncelle != null ? 1 : 0)) {
+              0 => 0.28,
+              1 => 0.5,
+              _ => 0.66,
+            },
             children: [
+              // Güncelle önde (en sakin eylem, Sil en dışta kalır): Sil'in
+              // yeri ve rengi kas hafızasında değişmez.
+              if (onGuncelle != null)
+                _rowAction(
+                  context,
+                  onPressed: () => onGuncelle(position),
+                  background: context.c.surface2,
+                  foreground: context.c.text90,
+                  icon: widget.guncelleKilitli
+                      ? Icons.lock_outline_rounded
+                      : Icons.edit_note_rounded,
+                  label: context.l10n.update,
+                  semanticLabel: widget.guncelleKilitli
+                      ? context.l10n.varlikGuncelleKilitli
+                      : context.l10n.varlikGuncelleIpucu,
+                ),
               if (onTasi != null)
                 _rowAction(
                   context,
