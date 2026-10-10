@@ -624,8 +624,10 @@ String? aramaFiyatMetni(VarlikKimligi c, YahooQuote? q) {
   if (bistEndeksiMi(c.ticker)) {
     return fmtNum(f, digits: 0);
   }
-  return tryFormatter(digits: 2, symbol: kotasyonSembolu(c.ticker, c.currency))
-      .format(f);
+  // Ondalık [fiyatBicimi]'nden (sabit 2 hane: SHIB "₺0,00").
+  return fmtFiyat(f,
+      azami: c.type.fiyatHassasiyeti,
+      symbol: kotasyonSembolu(c.ticker, c.currency));
 }
 
 /// Satırda gösterilecek günlük yüzde; bilinmiyorsa `null`.

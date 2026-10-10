@@ -508,7 +508,11 @@ class _VarlikSayfasiState extends ConsumerState<VarlikSayfasi> {
     // kotasyonun para biriminden seçiliyordu; ABD hissesi/eurobond/emtia
     // TL sayıyı "$" ile yazıyordu. Dolar kuru "₺49,00" (2026-09-29
     // emülatör testi #13) bu kuralın özel hâli.
-    final bicim = tryFormatter(digits: 2, symbol: sembolSerisiSimgesi);
+    //
+    // Ondalık [fiyatBicimi]'nden (2026-10-10): sabit 2 hane SHIB'i ₺0,00,
+    // BES fonunu ₺0,18 yazıyordu; `goz_alici` açıkken kaynak hassasiyeti.
+    final bicim = fiyatBicimi(ist?.son ?? 0,
+        azami: k.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
     final bayat = cizilen != null && cizilen != _gun;
 
     if (!_acildi) {

@@ -1018,5 +1018,7 @@ String takipFiyatMetni(WatchlistItem item) {
   final f = item.currentPrice;
   if (f == null) return '—';
   if (bistEndeksiMi(item.ticker)) return fmtNum(f, digits: 0);
-  return tryFormatter(digits: 2, symbol: sembolSerisiSimgesi).format(f);
+  // Sabit 2 hane SHIB'i "₺0,00" yazıyordu — ondalık [fiyatBicimi]'nden.
+  return fmtFiyat(f,
+      azami: item.type.fiyatHassasiyeti, symbol: sembolSerisiSimgesi);
 }

@@ -1706,7 +1706,6 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               fitInsideHorizontally: true,
                               fitInsideVertically: true,
                               getTooltipItems: (touchedSpots) {
-                                final valueFmt = fixedFormatter(3);
                                 // Passive + active segmentler anchor noktasında
                                 // aynı (x, y) spot'unu paylaşır → aynı tooltip
                                 // iki kere görünür. Yakın olanları filtrele.
@@ -1722,7 +1721,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   final dateLabel = fmtTarihSaat(date);
                                   final tipText = compareOn
                                       ? fmtPctIsaretli(spot.y - 100)
-                                      : '${valueFmt.format(fromY(spot.y))} ₺';
+                                      : _birimBicimi(currentUnitTRY)
+                                          .format(fromY(spot.y));
                                   return LineTooltipItem(
                                     tipText,
                                     context.t.numSmall.copyWith(
@@ -1820,7 +1820,10 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     final spots = activeSeg.spots;
                                     if (spots.isEmpty) return const [];
                                     final i = nearestSpotIndex(spots, x);
-                                    final fiyatFmt = tryFormatter(digits: 2);
+                                    // İşlemin birim fiyatı da ekrandaki
+                                    // birim fiyatla aynı hassasiyette.
+                                    final fiyatFmt =
+                                        _birimBicimi(currentUnitTRY);
                                     return [
                                       for (final t in islemler)
                                         if (nearestSpotIndex(spots, t.x) == i)

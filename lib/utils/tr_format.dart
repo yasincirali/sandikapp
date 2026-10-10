@@ -88,6 +88,33 @@ int fiyatOndaligi(double value) {
   return 2;
 }
 
+/// Birim fiyat biçimleyicisi — fiyat gösteren HER yüzey buradan.
+///
+/// [azami] null → eski kural ([fiyatOndaligi]: 1 ₺ üstü 2 hane, altı 4
+/// anlamlı hane). Takip listesi, varlık sayfası ve arama satırı sabit 2
+/// haneydi; SHIB ₺0,00, BES fonu ₺0,18 okunuyordu (varlık detayında
+/// ₺0,1791) — bayrak kapalıyken de bu kurala bağlandılar.
+///
+/// [azami] verilirse KAYNAK HASSASİYETİ (yasin, 2026-10-10: "yuvarlama
+/// yapmayalım, fiyat kaynaktan nasıl geliyorsa öyle; 1.23000 ise 1,23
+/// olsun, 1.00000012 ise öyle kalsın"): en az 2 hane, en çok [azami];
+/// sondaki sıfırlar atılır. [azami] türün standardıdır
+/// (`AssetType.fiyatAzamiOndalik`): kaynak veri onu hiç aşmaz; aşan yalnız
+/// HESAPLANMIŞ fiyattır (USD × kur, ortalama maliyet) ve oradaki ek
+/// haneler kayan nokta/çarpım artığıdır, kaynağın söylediği bir şey değil.
+NumberFormat fiyatBicimi(double ornek, {int? azami, String symbol = '₺'}) {
+  if (azami == null) {
+    return tryFormatter(digits: fiyatOndaligi(ornek), symbol: symbol);
+  }
+  return tryFormatter(digits: 2, symbol: symbol)
+    ..minimumFractionDigits = 2
+    ..maximumFractionDigits = math.max(2, azami);
+}
+
+/// [fiyatBicimi] ile tek fiyat metni.
+String fmtFiyat(double value, {int? azami, String symbol = '₺'}) =>
+    fiyatBicimi(value, azami: azami, symbol: symbol).format(value);
+
 /// Kısa TRY: `₺1.5K` yerine `₺1,5K`, `₺2.3M` yerine `₺2,3M`. Sadece grafik
 /// eksen etiketleri gibi dar alanlarda kullanılmalı; genel değerler `fmtTRY`.
 ///
