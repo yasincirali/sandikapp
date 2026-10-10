@@ -8534,4 +8534,9 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get chartIntervalM15Long => '15 dakikalık';
+
+  @override
+  String cmpKatmanHedefi(String ad) {
+    return 'Mum ve ortalamalar: $ad. Başka seriye dokunarak değiştir.';
+  }
 }

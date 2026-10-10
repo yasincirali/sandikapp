@@ -5090,5 +5090,6 @@
   "chartIntervalM5": "5m",
   "chartIntervalM15": "15m",
   "chartIntervalM5Long": "5-minute",
-  "chartIntervalM15Long": "15-minute"
+  "chartIntervalM15Long": "15-minute",
+  "cmpKatmanHedefi": "Candles and averages: {ad}. Tap another line to switch."
 }

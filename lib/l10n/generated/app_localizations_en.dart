@@ -8618,4 +8618,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chartIntervalM15Long => '15-minute';
+
+  @override
+  String cmpKatmanHedefi(String ad) {
+    return 'Candles and averages: $ad. Tap another line to switch.';
+  }
 }

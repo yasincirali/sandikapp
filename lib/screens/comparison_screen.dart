@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fl_chart/fl_chart.dart' show FlSpot;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -28,6 +29,15 @@ import '../widgets/sandik_segment.dart';
 import '../widgets/sandik_skeleton.dart';
 import '../utils/chart_axis.dart';
 import '../utils/tr_format.dart';
+import '../models/ohlc.dart';
+import '../providers/premium_provider.dart' show premiumOzellikleriGorunurProvider;
+import '../services/mum_verisi.dart';
+import '../services/mum_yukleyici.dart';
+import '../services/technical_analysis_service.dart';
+import '../utils/hareketli_ortalama.dart';
+import '../utils/mum_turetici.dart';
+import '../widgets/fiyat_grafigi.dart' show FiyatOrtalamasi;
+import '../widgets/grafik_arac_cubugu.dart';
 import '../widgets/percent_comparison_chart.dart';
 import '../widgets/quick_adjust_dialog.dart';
 import 'add_asset_screen.dart';
@@ -147,6 +157,19 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         const Color(0xFF9B8AFB),
         const Color(0xFF4DD0C7),
       ];
+
+  /// Odaktaki serinin gerçek mumları (araç çubuğu, 2026-10-10 gece).
+  late final _mum = MumYukleyici(
+      onDegisti: () {
+        if (mounted) setState(() {});
+      },
+      neden: 'Karsilastir.ohlc');
+
+  @override
+  void dispose() {
+    _mum.kapat();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -467,7 +490,28 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
     int seciliIndeks(String ticker) =>
         _selected.indexWhere((s) => s.ticker == ticker);
 
-    return AnimatedOpacity(
+    final kat = _katman();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (kat != null) ...[
+          kat.cubuk,
+          if (kat.hedefAdi case final ad?)
+            Padding(
+              padding: const EdgeInsets.only(
+                  top: SandikSpace.xxs, bottom: SandikSpace.xs),
+              child: Text(
+                context.l10n.cmpKatmanHedefi(ad),
+                textAlign: TextAlign.end,
+                style:
+                    context.t.labelSmall?.copyWith(color: context.c.text58),
+              ),
+            )
+          else
+            const SizedBox(height: SandikSpace.sm),
+        ],
+        AnimatedOpacity(
       // Eski dönem soluk: sayılar tazeleniyor (bkz. [_changePeriod]).
       opacity: bekliyor ? 0.5 : 1,
       duration: SandikMotion.stateOf(context),
@@ -496,8 +540,151 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
           for (final s in _selected)
             if (TufeSeries.isTufe(s.ticker)) s.ticker,
         },
+        katman: kat?.katman,
       ),
       ),
+    ),
+      ],
+    );
+  }
+
+  // ── Araç çubuğu (yasin 2026-10-10 gece: "bu 3 ekran tutarlı olmalı") ──
+
+  /// Katmanların uygulanacağı seri: odaktaki seri; odak yoksa ilk VARLIK
+  /// serisi. Portföy ve TÜFE birer varlık değil (mumu, kotasyonu yok).
+  SymbolHit? _katmanHedefi() {
+    final adaylar = _focused == null
+        ? _selected
+        : _selected.where((s) => s.ticker == _focused);
+    for (final h in adaylar) {
+      if (_series[h.ticker] != null &&
+          VarlikKimligi.fromSymbolHit(h) != null) {
+        return h;
+      }
+    }
+    return null;
+  }
+
+  /// Araç çubuğu ve odaktaki serinin katmanları — varlık detayı ve varlık
+  /// sayfasıyla aynı çipler ve aynı tercihler ([GrafikAracCubugu]).
+  ///
+  /// Karşılaştır'a özgü varsayılanlar (artifact'te yazılı):
+  ///  · Katmanlar TEK seriye uygulanır — odaktaki, yoksa ilk varlık.
+  ///    Beş serinin mumu ve ortalaması aynı eksende okunmaz. Hangi seri
+  ///    olduğu çubuğun altında yazar (yalnız renkle anlam yok, HIG).
+  ///  · LOG yok: eksen dönem başına göre yüzde, eksi değerin logaritması
+  ///    tanımsız.
+  ///  · `ƒx` yok: kendi göstergen fiyat ölçeğinde çalışır (ATR, VWAP gibi
+  ///    mutlak değerler); yüzde eksenine oturmaz. Varlık sayfasında var.
+  ///  · Mumlar ve ortalamalar yüzde uzayında: aynı seri, aynı taban
+  ///    (dönemin ilk fiyatı) — çizgiyle birebir hizalı.
+  ///
+  /// Görünürlük varlık detayıyla aynı kapı (paywall kapalıyken yalnız
+  /// admin, sade Başlangıç'ta yok); görünmüyorsa ekran BİREBİR eskisi.
+  ({Widget cubuk, YuzdeKatmani? katman, String? hedefAdi})? _katman() {
+    final gorunur = ref.watch(seviyeGorunurlukProvider).grafikAraclari &&
+        ref.watch(premiumOzellikleriGorunurProvider);
+    if (!gorunur) return null;
+    final ma20On = ref.watch(chartMA20Provider);
+    final mumOn = ref.watch(chartCandleProvider);
+    final ema50On = ref.watch(chartEma50Provider);
+    final ema200On = ref.watch(chartEma200Provider);
+
+    final hedef = _katmanHedefi();
+    final norm = hedef == null ? null : _series[hedef.ticker];
+    final kimlik = hedef == null ? null : VarlikKimligi.fromSymbolHit(hedef);
+    MumAraligi? aralik;
+    var gecerli = const <MumAraligi>[];
+    var kapanistan = false;
+    YuzdeKatmani? katman;
+    if (hedef != null && norm != null && kimlik != null) {
+      final keys = norm.points.keys.toList()..sort();
+      final spots = [
+        for (final k in keys) FlSpot(k.toDouble(), norm.points[k]!),
+      ];
+      final ortalamalar = <FiyatOrtalamasi>[
+        if (ma20On && spots.length >= 20)
+          () {
+            final sma = TechnicalAnalysisService.smaSeries(
+                [for (final s in spots) s.y], 20);
+            return FiyatOrtalamasi(
+              spots: [
+                for (var i = 0; i < sma.length; i++)
+                  if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
+              ],
+              renk: context.c.text58,
+              kesikli: true,
+            );
+          }(),
+        for (final (acik, periyot, renk) in [
+          (ema50On, kEmaKisa, context.c.gain),
+          (ema200On, kEmaUzun, context.c.loss),
+        ])
+          if (acik)
+            FiyatOrtalamasi(
+                spots: emaNoktalari(spots, periyot: periyot), renk: renk),
+      ];
+      var mumlar = const <Mum>[];
+      if (mumOn && spots.length >= 2) {
+        final a = FiyatKaynagi.gozlemVarligi(
+          ticker: kimlik.ticker,
+          type: kimlik.type,
+          currency: kimlik.currency,
+          subCategory: kimlik.subCategory,
+          name: kimlik.name,
+        );
+        kapanistan = !FiyatKaynagi.mumKaynagi(a).gercekOhlc;
+        final gun = _periods[_cizilenDonemIdx].days;
+        final gunIci = gun <= 1;
+        final bas = DateTime.fromMillisecondsSinceEpoch(keys.first);
+        final son = DateTime.now();
+        final span =
+            gunIci ? 1440.0 : son.difference(bas).inMinutes.toDouble();
+        aralik = etkinAralik(
+            a, span, MumAraligi.sirayla(ref.watch(chartMumAraligiProvider)));
+        gecerli = gecerliAraliklar(a, span);
+        final barlar = aralik == null
+            ? null
+            : _mum.mumlar(
+                a: a,
+                aralik: aralik,
+                bas: bas,
+                son: son,
+                canliBirim: norm.lastPrice,
+                gunIci: gunIci,
+              );
+        final taban = norm.firstPrice;
+        double yuzde(double v) => (v / taban - 1) * 100;
+        mumlar = (barlar != null && aralik != null && taban > 0)
+            ? grafikMumlari([
+                for (final b in barlar)
+                  OhlcBar(
+                    t: b.t,
+                    acilis: yuzde(b.acilis),
+                    enYuksek: yuzde(b.enYuksek),
+                    enDusuk: yuzde(b.enDusuk),
+                    kapanis: yuzde(b.kapanis),
+                    hacim: b.hacim,
+                  ),
+              ], aralik: aralik, baslangicMs: 0, birimMs: 1)
+            : mumlariGrafikUzayinda(spots, baslangicMs: 0, birimMs: 1);
+      }
+      katman = YuzdeKatmani(
+          anahtar: hedef.ticker, ortalamalar: ortalamalar, mumlar: mumlar);
+    }
+    return (
+      cubuk: GrafikAracCubugu(
+        katmanlar: true,
+        ma20Acik: ma20On,
+        mumAcik: mumOn,
+        ema50Acik: ema50On,
+        ema200Acik: ema200On,
+        aralik: aralik,
+        gecerliAraliklar: gecerli,
+        kapanistan: kapanistan,
+      ),
+      katman: katman,
+      hedefAdi: hedef == null ? null : _displayTicker(hedef),
     );
   }
 

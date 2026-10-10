@@ -33,30 +33,11 @@ part of '../asset_detail_screen.dart';
 ///
 /// Karşılaştırma açıkken çizilmez (EMA ile aynı gerekçe: çizgi % ölçeğinde).
 
-/// Kod → derlenmiş betik ya da hatası. Her zoom/fiyat turunda yeniden
-/// ayrıştırmamak için; kod metni anahtar olduğu için düzenleme kendiliğinden
-/// yeni kayıt açar. Sınırlı: 20 gösterge × birkaç sürüm.
-final Map<String, Object> _betikOnbellegi = {};
+// Derleyici ve sonuç önbelleği, çalıştırıcı: `services/ozel_gosterge_calistirici.dart`
+// (varlık sayfasıyla ortak, 2026-10-10 gece).
+const int _betikIsinmaCubugu = betikIsinmaCubugu;
 
-/// Kod + veri parmak izi → sonuç (bkz. `_ozelGostergeleriCalistir`).
-final Map<String, BetikSonucu> _sonucOnbellegi = {};
-
-DerlenmisBetik? _derlenmisBetik(String kod) {
-  final v = _betikOnbellegi[kod] ??= () {
-    if (_betikOnbellegi.length > 64) _betikOnbellegi.clear();
-    try {
-      return GostergeBetigi.derle(kod);
-    } on BetikHatasi catch (e) {
-      return e;
-    }
-  }();
-  return v is DerlenmisBetik ? v : null;
-}
-
-/// Gerçek mumda ısınma: EMA200'ün dönem başında da çizilmesi için.
-const int _betikIsinmaCubugu = 200;
-
-typedef _OzelSonuc = ({OzelGosterge g, BetikSonucu s, BetikVerisi v});
+typedef _OzelSonuc = OzelSonuc;
 
 extension _OzelGostergeler on _AssetDetailScreenState {
   /// Grafikte açık, derlenebilen göstergeler. Kapı kapalıysa ya da
@@ -64,10 +45,7 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   List<OzelGosterge> get _acikOzelGostergeler {
     if (!_katmanlarGorunur || _ozelGostergeKilitli) return const [];
     final liste = ref.watch(ozelGostergelerProvider).valueOrNull ?? const [];
-    return [
-      for (final g in liste)
-        if (g.grafikte && _derlenmisBetik(g.kod) != null) g
-    ];
+    return grafiktekiGostergeler(liste);
   }
 
   /// Grafiğin çubukları → betik girdisi. [onSeri] dönem öncesi ısınma
@@ -96,32 +74,13 @@ extension _OzelGostergeler on _AssetDetailScreenState {
     );
   }
 
-  /// Gerçek mumdan betik girdisi. X mumun ortası (grafikteki mumla aynı
-  /// yer), `time` mumun açılış anı (Pine'daki gibi). Hacmi olmayan barda
-  /// (endeks, parite) `volume` `na`.
+  /// Gerçek mumdan betik girdisi (ortak `betikVerisiMumdan`); X mumun
+  /// grafikteki ortası.
   BetikVerisi _betikVerisiMumdan(
       List<OhlcBar> barlar, MumAraligi aralik, DateTime baslangic) {
     final mumlar = _ohlcMumlari(barlar, aralik, baslangic);
-    return BetikVerisi(
-      x: [for (final m in mumlar) m.merkezX],
-      zaman: [for (final b in barlar) b.t.toDouble()],
-      acilis: [for (final b in barlar) b.acilis],
-      yuksek: [for (final b in barlar) b.enYuksek],
-      dusuk: [for (final b in barlar) b.enDusuk],
-      kapanis: [for (final b in barlar) b.kapanis],
-      hacim: [for (final b in barlar) b.hacim ?? double.nan],
-      zamanDilimi: switch (aralik) {
-        MumAraligi.dk1 => '1',
-        MumAraligi.dk5 => '5',
-        MumAraligi.dk15 => '15',
-        MumAraligi.saat1 => '60',
-        MumAraligi.saat4 => '240',
-        MumAraligi.gun1 => 'D',
-        MumAraligi.hafta1 => 'W',
-        MumAraligi.ay1 => 'M',
-      },
-      sembol: _kimlik.kisaEtiket,
-    );
+    return betikVerisiMumdan(barlar, aralik,
+        x: [for (final m in mumlar) m.merkezX], sembol: _kimlik.kisaEtiket);
   }
 
   /// Betiğin mumları: [aralik] ile, pencereden [_betikIsinmaCubugu] mum
@@ -170,75 +129,20 @@ extension _OzelGostergeler on _AssetDetailScreenState {
     return o.barlar.length >= 2 ? o.barlar : null;
   }
 
-  /// Açık göstergeleri çalıştırır. Çalışma hatası (bütçe aşımı) o
-  /// göstergeyi atlar; düzenleyici aynı hatayı satırıyla gösterir.
-  /// Sonuç kod + veri parmak izine göre saklanır: Pine betiği çubuk çubuk
-  /// çalışır ve her build'de (crosshair, zoom) yeniden koşmasın.
   List<_OzelSonuc> _ozelGostergeleriCalistir(
-      List<OzelGosterge> acik, BetikVerisi veri) {
-    if (acik.isEmpty || veri.uzunluk == 0) return const [];
-    final iz = Object.hash(veri.uzunluk, veri.x.first, veri.x.last,
-        veri.kapanis.last, veri.kapanis[veri.uzunluk ~/ 2]);
-    final out = <_OzelSonuc>[];
-    for (final g in acik) {
-      final d = _derlenmisBetik(g.kod);
-      if (d == null) continue;
-      final anahtar = '${g.kod.hashCode}|$iz';
-      final hazir = _sonucOnbellegi[anahtar];
-      if (hazir != null) {
-        out.add((g: g, s: hazir, v: veri));
-        continue;
-      }
-      try {
-        final s = d.calistir(veri);
-        if (_sonucOnbellegi.length > 32) _sonucOnbellegi.clear();
-        _sonucOnbellegi[anahtar] = s;
-        out.add((g: g, s: s, v: veri));
-      } on BetikHatasi {
-        continue;
-      }
-    }
-    return out;
-  }
+          List<OzelGosterge> acik, BetikVerisi veri) =>
+      ozelGostergeleriCalistir(acik, veri);
 
-  /// Fiyatın üstündeki göstergelerin çubukları ve dolguları (grafiğin Y
-  /// uzayında; LOG açıkken [toY] ile taşınır — EMA ile aynı kural).
-  /// [ofset]: bu çubuklardan önce ana grafikte kaç çubuk var (dolgu
-  /// dizinleri ona göre kayar).
+  /// Fiyatın üstündeki çizimler ve bant noktaları ortak
+  /// (`widgets/gosterge_cizimi.dart`, varlık sayfasıyla aynı).
   ({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
       _ozelCubuklar(List<_OzelSonuc> sonuclar, double Function(double) toY,
-          {required int ofset}) {
-    final bars = <LineChartBarData>[];
-    final dolgular = <BetweenBarsData>[];
-    for (final r in sonuclar) {
-      if (!r.s.fiyatUstunde) continue;
-      final kayma = r.v.uzunluk - r.s.x.length;
-      final fiyatY = [
-        for (var i = kayma; i < r.v.uzunluk; i++) toY(r.v.kapanis[i])
-      ];
-      final c = betikCizimleri(context, r.s,
-          toY: toY, fiyatY: fiyatY, ofset: ofset + bars.length);
-      bars.addAll(c.bars);
-      dolgular.addAll(c.dolgular);
-    }
-    return (bars: bars, dolgular: dolgular);
-  }
+              {required int ofset}) =>
+          fiyatUstuCizimleri(context, sonuclar, toY, ofset: ofset);
 
-  /// Y bandına girecek noktalar (fiyatın üstündeki görünür çizgiler) — EMA
-  /// gibi: banda girmeyen çizgi kartın dışında kalır ve "çalışmıyor" diye
-  /// okunur.
   List<FlSpot> _ozelBantNoktalari(
           List<_OzelSonuc> sonuclar, double Function(double) toY) =>
-      [
-        for (final r in sonuclar)
-          if (r.s.fiyatUstunde)
-            for (final c in r.s.cizgiler)
-              if (!c.gizli)
-                for (var i = 0; i < r.s.x.length; i++)
-                  // Isınma çubukları (X < 0, dönem öncesi) bandı genişletmez.
-                  if (c.degerler[i].isFinite && r.s.x[i] >= 0)
-                    FlSpot(r.s.x[i], toY(c.degerler[i])),
-      ];
+      fiyatUstuBantNoktalari(sonuclar, toY);
 
   /// Ana grafiğin odak penceresi değişti (dönem, veri). Build içinden
   /// çağrılır; bildirim kare sonrasına ertelenir (build sırasında dinleyici
@@ -255,49 +159,10 @@ extension _OzelGostergeler on _AssetDetailScreenState {
   void _ozelGorunumuYaz(double minX, double maxX) =>
       _ozelGorunum.value = (min: minX, max: maxX);
 
-  /// Grafiğin altındaki bölüm: fiyatın üstündeki göstergelerin adları
-  /// (lejant) ve ayrı panel göstergeleri.
-  List<Widget> _ozelAltBolum(List<_OzelSonuc> sonuclar) {
-    if (sonuclar.isEmpty) return const [];
-    final ust = [
-      for (final r in sonuclar)
-        if (r.s.fiyatUstunde) r
-    ];
-    final panel = [
-      for (final r in sonuclar)
-        if (!r.s.fiyatUstunde) r
-    ];
-    return [
-      if (ust.isNotEmpty) ...[
-        const SizedBox(height: SandikSpace.sm),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final r in ust)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: SandikSpace.xxs),
-                  child: BetikLejandi(baslik: r.g.ad, sonuc: r.s),
-                ),
-            ],
-          ),
-        ),
-      ],
-      for (final r in panel) ...[
-        const SizedBox(height: SandikSpace.sm),
-        ValueListenableBuilder<({double min, double max})?>(
-          valueListenable: _ozelGorunum,
-          builder: (_, g, __) => BetikPaneli(
-            baslik: r.g.ad,
-            sonuc: r.s,
-            minX: g?.min ?? r.s.x.first,
-            maxX: g?.max ?? r.s.x.last,
-          ),
-        ),
-      ],
-    ];
-  }
+  /// Grafiğin altındaki bölüm (lejant + paneller) — ortak widget.
+  List<Widget> _ozelAltBolum(List<_OzelSonuc> sonuclar) => sonuclar.isEmpty
+      ? const []
+      : [OzelGostergeAltBolumu(sonuclar: sonuclar, gorunum: _ozelGorunum)];
 
   /// Araç çubuğundaki `ƒx` çipi. Kilitliyse paywall; değilse göstergeler
   /// sayfası (grafiğin o anki çubuklarıyla — düzenleyici önizlemesi için).

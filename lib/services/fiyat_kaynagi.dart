@@ -317,6 +317,40 @@ class FiyatKaynagi {
         isManualPrice: a.isManualPrice,
       );
 
+  /// Portföyde OLMAYAN bir sembolün (varlık sayfası: arama, takip, ekleme
+  /// seçicisi; Karşılaştır satırı) mum ve aralık kararı için birim varlık.
+  ///
+  /// ## Neden (yasin 2026-10-10 gece)
+  /// *"aramadan gidilen varlık kartı, portföyden varlık performans ekranı ve
+  /// karşılaştırma ekranı … mum ve yenileme sıklığı olmalı ve bu 3 ekran
+  /// tutarlı olmalı."* Mum kaynağı ([mumKaynagi]), seans ve aralık seçimi
+  /// (`gecerliAraliklar`) bir `Asset` ister; varlık sayfası ise sahte
+  /// `Asset` KURMAZ (`varlik_sayfasi_test`). Bu nesne burada, kaynak
+  /// katmanında kurulur ve yalnız fiyat/mum çekimine verilir — [birimVarlik]
+  /// ile aynı desen: miktar 1, hiçbir toplamın parçası değildir; ekran onu
+  /// görmez, portföy listesine geçemez.
+  static Asset gozlemVarligi({
+    required String ticker,
+    required AssetType type,
+    required String currency,
+    String? subCategory,
+    String name = '',
+  }) =>
+      Asset(
+        id: 'gozlem:$ticker',
+        userId: '',
+        name: name,
+        ticker: ticker,
+        type: type,
+        quantity: 1,
+        purchasePrice: 0,
+        currency: currency,
+        notes: '',
+        subCategory: subCategory,
+        addedDate: DateTime(2000),
+        isManualPrice: false,
+      );
+
   // ── Yurt içi gün içi şekli (0101, 2026-10-03) ───────────────────────────
   //
   // Kullanıcı sorusu: "Neden düz çizgi peki. Değeri oynak değil mi?" Hafta

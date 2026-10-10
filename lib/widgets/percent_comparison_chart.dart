@@ -8,6 +8,8 @@ import '../utils/chart_axis.dart';
 import '../utils/chart_line_width.dart';
 import '../utils/spot_lookup.dart';
 import '../utils/tr_format.dart';
+import '../utils/mum_turetici.dart' show Mum;
+import 'fiyat_grafigi.dart' show FiyatOrtalamasi;
 import 'grafik_stili.dart';
 import 'zoomable_chart.dart';
 
@@ -57,7 +59,12 @@ class PercentComparisonChart extends StatelessWidget {
     this.onFocusChanged,
     this.height = 210,
     this.steppedKeys = const {},
+    this.katman,
   });
+
+  /// Bir serinin araç çubuğu katmanları (Karşılaştır, yasin 2026-10-10
+  /// gece: "bu 3 ekran tutarlı olmalı"). `null` → grafik BİREBİR eskisi.
+  final YuzdeKatmani? katman;
 
   /// BASAMAKLI çizilecek seriler. Aylık yayımlanan bir gösterge (TÜFE) iki
   /// nokta arasında doğrusal çizilirse ara günler için var olmayan bir değer
@@ -192,8 +199,9 @@ class PercentComparisonChart extends StatelessWidget {
               colorOf(ciz.cizilenler[i])
             ),
       ],
-      builder: (minX, maxX) =>
-          _data(p, ciz, minX, maxX, MediaQuery.textScalerOf(context)),
+      builder: (minX, maxX) => _data(
+          p, ciz, minX, maxX, MediaQuery.textScalerOf(context),
+          katmanCubuklari: _katmanCubuklari(context, ciz, minX, maxX)),
     );
   }
 
@@ -315,11 +323,18 @@ class PercentComparisonChart extends StatelessWidget {
       final odakVar = focused != null;
       final buOdakta = focused == key;
 
+      // Mum açıkken o serinin çizgisi mumların YERİNE geçer (varlık detayı
+      // gibi); çubuk yine listede kalır ki crosshair değeri okunsun.
+      final mumlu = katman != null &&
+          katman!.anahtar == key &&
+          katman!.mumlar.isNotEmpty;
       bars.add(LineChartBarData(
         spots: spots,
-        color: odakVar && !buOdakta
-            ? temelRenk.withValues(alpha: 0.18)
-            : temelRenk,
+        color: mumlu
+            ? temelRenk.withValues(alpha: 0)
+            : odakVar && !buOdakta
+                ? temelRenk.withValues(alpha: 0.18)
+                : temelRenk,
         // **Kalınlık DÖNEME bağlı** — performans ekranıyla birebir aynı
         // merdiven ([donemCizgiKalinligi]). Eskiden sabitti (1,8 / vurgulu 3)
         // ve gün içi 288 noktalık seride komşu noktaların arasını doldurup
@@ -346,6 +361,26 @@ class PercentComparisonChart extends StatelessWidget {
 
     if (bars.isEmpty) return null;
 
+    // Ortalamalar ve mum fitilleri de banda girer (girmezse kartın dışında
+    // kalır ve "çalışmıyor" diye okunur — varlık detayıyla aynı kural).
+    final k = katman;
+    if (k != null && cizilenler.contains(k.anahtar)) {
+      void kat(double y) {
+        if (!y.isFinite) return;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+      for (final o in k.ortalamalar) {
+        for (final s in o.spots) {
+          kat(s.y);
+        }
+      }
+      for (final m in k.mumlar) {
+        kat(m.enYuksek);
+        kat(m.enDusuk);
+      }
+    }
+
     // Y ekseninde nefes payı; düz çizgide (minY == maxY) sıfıra bölme olmasın.
     final span = (maxY - minY).abs() < 1e-9 ? 1.0 : (maxY - minY);
     final pad = span * 0.12;
@@ -367,8 +402,39 @@ class PercentComparisonChart extends StatelessWidget {
     );
   }
 
+  /// [katman]ın çubukları: ortalamalar (MA20 kesikli, EMA çip renginde)
+  /// ve mumlar. Seri çizilmiyorsa (yüklenmedi) hiçbiri.
+  List<LineChartBarData> _katmanCubuklari(
+      BuildContext context, _CizimVerisi ciz, double minX, double maxX) {
+    final k = katman;
+    if (k == null || !ciz.cizilenler.contains(k.anahtar)) return const [];
+    return [
+      for (final o in k.ortalamalar)
+        if (o.spots.length >= 2)
+          LineChartBarData(
+            spots: _gorunurSpots(o.spots, minX, maxX),
+            isCurved: false,
+            color: o.renk,
+            barWidth: o.kesikli ? 1.4 : 1.6,
+            isStrokeCapRound: true,
+            dashArray: o.kesikli ? const [3, 3] : null,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(show: false),
+          ),
+      if (k.mumlar.isNotEmpty)
+        ...GrafikStili.mumCubuklariToplu(
+          context,
+          k.mumlar,
+          genislik:
+              (MediaQuery.sizeOf(context).width - 60 - 40).clamp(120.0, 2000.0),
+          gorunurAralik: maxX > minX ? maxX - minX : null,
+        ),
+    ];
+  }
+
   LineChartData _data(SandikPalette p, _CizimVerisi ciz, double minX,
-      double maxX, TextScaler olcek) {
+      double maxX, TextScaler olcek,
+      {List<LineChartBarData> katmanCubuklari = const []}) {
     final eksen = ciz.eksen;
     final span = maxX - minX;
     final spanGun = span / const Duration(days: 1).inMilliseconds;
@@ -403,6 +469,7 @@ class PercentComparisonChart extends StatelessWidget {
       lineBarsData: [
         for (final b in ciz.bars)
           b.copyWith(spots: _gorunurSpots(b.spots, minX, maxX)),
+        ...katmanCubuklari,
       ],
       // Sıfır çizgisi = dönem başı. Olmadan yüzdelerin neye göre okunacağı
       // belirsiz kalır.
@@ -583,4 +650,19 @@ class _CizimVerisi {
   double get maxX => eksenX.max;
 
   final ({double min, double max, double interval, int ondalik}) eksen;
+}
+
+/// [PercentComparisonChart]'ta TEK serinin katmanları — yüzde uzayında
+/// (X epoch ms, Y dönem başına göre %). Karşılaştır'da katmanlar odaktaki
+/// seriye (odak yoksa ilk varlığa) uygulanır: birden çok serinin mumu ve
+/// ortalaması aynı eksende okunmaz.
+class YuzdeKatmani {
+  const YuzdeKatmani({
+    required this.anahtar,
+    this.ortalamalar = const [],
+    this.mumlar = const [],
+  });
+  final String anahtar;
+  final List<FiyatOrtalamasi> ortalamalar;
+  final List<Mum> mumlar;
 }

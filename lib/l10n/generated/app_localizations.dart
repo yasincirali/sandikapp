@@ -14230,6 +14230,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'15 dakikalık'**
   String get chartIntervalM15Long;
+
+  /// Karşılaştır: araç çubuğu katmanlarının uygulandığı seri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mum ve ortalamalar: {ad}. Başka seriye dokunarak değiştir.'**
+  String cmpKatmanHedefi(String ad);
 }
 
 class _AppLocalizationsDelegate

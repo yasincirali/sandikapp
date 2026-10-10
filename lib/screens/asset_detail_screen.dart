@@ -49,6 +49,7 @@ import '../models/varlik_kimligi.dart';
 import '../models/ozel_gosterge.dart';
 import '../providers/ozel_gosterge_provider.dart';
 import '../services/gosterge_betigi/betik.dart';
+import '../services/ozel_gosterge_calistirici.dart';
 import '../widgets/gosterge_cizimi.dart';
 import 'ozel_gosterge_screen.dart';
 import '../services/crash_reporter.dart';

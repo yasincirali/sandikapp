@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n/l10n.dart';
 import '../services/gosterge_betigi/betik.dart';
+import '../services/ozel_gosterge_calistirici.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
 import 'grafik_stili.dart';
@@ -530,6 +532,108 @@ class BetikOnizleme extends StatelessWidget {
           duration: Duration.zero,
         ),
       ),
+    );
+  }
+}
+
+// ── Fiyat grafiğine bağlama (varlık detayı + varlık sayfası) ───────────────
+
+/// Fiyatın üstündeki göstergelerin çubukları ve dolguları (grafiğin Y
+/// uzayında; LOG açıkken [toY] ile taşınır — EMA ile aynı kural).
+/// [ofset]: bu çubuklardan önce ana grafikte kaç çubuk var (dolgu
+/// dizinleri ona göre kayar).
+({List<LineChartBarData> bars, List<BetweenBarsData> dolgular})
+    fiyatUstuCizimleri(BuildContext context, List<OzelSonuc> sonuclar,
+        double Function(double) toY,
+        {required int ofset}) {
+  final bars = <LineChartBarData>[];
+  final dolgular = <BetweenBarsData>[];
+  for (final r in sonuclar) {
+    if (!r.s.fiyatUstunde) continue;
+    final kayma = r.v.uzunluk - r.s.x.length;
+    final fiyatY = [
+      for (var i = kayma; i < r.v.uzunluk; i++) toY(r.v.kapanis[i])
+    ];
+    final c = betikCizimleri(context, r.s,
+        toY: toY, fiyatY: fiyatY, ofset: ofset + bars.length);
+    bars.addAll(c.bars);
+    dolgular.addAll(c.dolgular);
+  }
+  return (bars: bars, dolgular: dolgular);
+}
+
+/// Y bandına girecek noktalar (fiyatın üstündeki görünür çizgiler) — EMA
+/// gibi: banda girmeyen çizgi kartın dışında kalır ve "çalışmıyor" diye
+/// okunur. Isınma çubukları ([enAzX]'ten önce) bandı genişletmez.
+List<FlSpot> fiyatUstuBantNoktalari(
+        List<OzelSonuc> sonuclar, double Function(double) toY,
+        {double enAzX = 0}) =>
+    [
+      for (final r in sonuclar)
+        if (r.s.fiyatUstunde)
+          for (final c in r.s.cizgiler)
+            if (!c.gizli)
+              for (var i = 0; i < r.s.x.length; i++)
+                if (c.degerler[i].isFinite && r.s.x[i] >= enAzX)
+                  FlSpot(r.s.x[i], toY(c.degerler[i])),
+    ];
+
+/// Grafiğin altındaki bölüm: fiyatın üstündeki göstergelerin adları
+/// (lejant) ve ayrı panel göstergeleri. Paneller ana grafiğin görünür
+/// penceresine ([gorunum]) oturur.
+class OzelGostergeAltBolumu extends StatelessWidget {
+  const OzelGostergeAltBolumu({
+    super.key,
+    required this.sonuclar,
+    required this.gorunum,
+  });
+
+  final List<OzelSonuc> sonuclar;
+  final ValueListenable<({double min, double max})?> gorunum;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sonuclar.isEmpty) return const SizedBox.shrink();
+    final ust = [
+      for (final r in sonuclar)
+        if (r.s.fiyatUstunde) r
+    ];
+    final panel = [
+      for (final r in sonuclar)
+        if (!r.s.fiyatUstunde) r
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (ust.isNotEmpty) ...[
+          const SizedBox(height: SandikSpace.sm),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: SandikSpace.xs),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final r in ust)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: SandikSpace.xxs),
+                    child: BetikLejandi(baslik: r.g.ad, sonuc: r.s),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        for (final r in panel) ...[
+          const SizedBox(height: SandikSpace.sm),
+          ValueListenableBuilder<({double min, double max})?>(
+            valueListenable: gorunum,
+            builder: (_, g, __) => BetikPaneli(
+              baslik: r.g.ad,
+              sonuc: r.s,
+              minX: g?.min ?? r.s.x.first,
+              maxX: g?.max ?? r.s.x.last,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

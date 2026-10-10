@@ -130,6 +130,18 @@ enum MumAraligi {
 
   int get ms => dakika * 60 * 1000;
 
+  /// Pine `timeframe.period` değeri.
+  String get pineDilimi => switch (this) {
+        dk1 => '1',
+        dk5 => '5',
+        dk15 => '15',
+        saat1 => '60',
+        saat4 => '240',
+        gun1 => 'D',
+        hafta1 => 'W',
+        ay1 => 'M',
+      };
+
   /// Gün içi (gün altı) aralık mı? Seansı olan piyasada gece boşluğu
   /// bırakır; günlük ve üstü bırakmaz.
   bool get gunIci => dakika < 1440;
