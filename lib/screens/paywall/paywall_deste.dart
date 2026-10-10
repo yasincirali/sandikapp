@@ -257,16 +257,18 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           l.prmSinyalUcretsiz,
           l.pwdSinyalPremium,
         ),
-      // Kendi göstergeni yaz bütünüyle Premium: ücretsiz satırı yok (mum,
-      // EMA ve hazır göstergeler ücretsiz). Görsel: göstergenin grafikteki
-      // çıktısı (mum + iki çizgi).
+      // Kendi göstergeni yaz bütünüyle Premium. Ücretsiz satırı grafiğin
+      // ücretsiz kalan yarısını söyler (mum, 1 dk–1 ay aralık, EMA; yasin
+      // 2026-10-10 gece: "paywall desteyi de uygun şekilde değiştir") —
+      // araç çubuğu artık varlık detayı, varlık sayfası ve Karşılaştır'da
+      // aynı. Görsel: göstergenin grafikteki çıktısı (mum + iki çizgi).
       PaywallKarti.ozelGosterge => (
           _KartRengi.koyu,
           l.pwdOzelEtiket,
           l.pwdOzelBaslik,
           'Pine v4, v5, v6',
           const _MumGorseli(),
-          null,
+          l.pwdOzelUcretsiz,
           l.pwdOzelPremium,
         ),
       PaywallKarti.karsilastir => (

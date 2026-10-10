@@ -279,7 +279,9 @@ List<Mum> grafikMumlari(
 /// 2.500'e çıktı (2026-10-10 gece, yasin: "1 dk'lık datayı göremiyorum"):
 /// BIST'te 1H × 1 dk ≈ 2.400 mum; 1.500'de 1 dk yalnız GÜNLÜK'te
 /// çıkıyordu. TradingView 1 dk'yı bir haftalık pencerede de açar.
-const int azamiMum = 2500;
+/// 3.000'e çıktı (aynı gece): varlık detayının 1H penceresi ≈ 7,9 gün →
+/// BIST 1 dk ≈ 2.700 mum; 2.500 yine 1 dk'yı eliyordu.
+const int azamiMum = 3000;
 
 /// En az mum: iki mum "grafik" değil.
 const int asgariMum = 3;

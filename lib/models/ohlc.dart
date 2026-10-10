@@ -107,12 +107,15 @@ enum MumAraligi {
     ..sort((a, b) => a.dakika.compareTo(b.dakika));
 
   /// Yahoo'nun bu aralıkta geriye verdiği en uzun pencere (gün); `null` →
-  /// sınır yok. 1 dk ~7 gün ve 1 sa/4 sa ~730 gün ölçüldü (2026-10-10,
-  /// `tool/ohlc_olcum.py`); 5/15 dk için ~60 gün Yahoo'nun bilinen sınırı
+  /// sınır yok. 1 sa/4 sa ~730 gün ölçüldü (2026-10-10,
+  /// `tool/ohlc_olcum.py`). 1 dk: Yahoo tek istekte 8 güne kadar verir (son
+  /// 30 gün içinde); ilk ölçüm 7 gün dediği için varlık detayının 1H
+  /// penceresi (`_donemBaslangici(7)` ≈ 7,9 gün) 1 dk'yı kaybediyordu
+  /// (yasin 2026-10-10 gece, "1 dk'lık datayı göremiyorum") → 8. 5/15 dk için ~60 gün Yahoo'nun bilinen sınırı
   /// (ölçülmedi, Actions'ta doğrulanmalı). Pencere bunu aşarsa istek boş
   /// döner ve seçici boşuna bir aralık sunmuş olurdu.
   int? get yahooGecmisGun => switch (this) {
-        dk1 => 7,
+        dk1 => 8,
         dk5 || dk15 => 60,
         saat1 || saat4 => 730,
         _ => null,

@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:portfoy_takip/main.dart';
+import 'package:portfoy_takip/models/ohlc.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/widgets/grafik_arac_cubugu.dart';
 import 'package:portfoy_takip/widgets/sandik_app_bar.dart';
 import 'package:portfoy_takip/widgets/sandik_async_button.dart';
 import 'package:portfoy_takip/widgets/sandik_error_view.dart';
@@ -95,6 +97,26 @@ void main() {
                     const Expanded(child: Text('Bildirimler')),
                     Switch.adaptive(value: true, onChanged: (_) {}),
                   ]),
+                ),
+                const SizedBox(height: SandikSpace.md),
+                // Grafik araç çubuğu: varlık detayı, varlık sayfası ve
+                // Karşılaştır aynı bileşeni kurar (2026-10-10 gece).
+                GrafikAracCubugu(
+                  katmanlar: true,
+                  ma20Acik: true,
+                  logAcik: false,
+                  mumAcik: true,
+                  ema50Acik: false,
+                  ema200Acik: false,
+                  ozel: GrafikOzelCipi(acikSayi: 0, kilitli: true, onTap: () {}),
+                  aralik: MumAraligi.dk5,
+                  gecerliAraliklar: const [
+                    MumAraligi.dk1,
+                    MumAraligi.dk5,
+                    MumAraligi.dk15,
+                    MumAraligi.saat1,
+                  ],
+                  kapanistan: false,
                 ),
                 const SizedBox(height: SandikSpace.md),
                 SandikSectionHeader(title: 'Bölüm'),

@@ -5660,7 +5660,7 @@
   "@sgnParametreAyarla": {"placeholders": {"ad": {"type": "String"}}},
   "prmSatirOzelGosterge": "Kendi göstergen (Pine)",
   "pwdOzelEtiket": "KENDİ GÖSTERGEN",
-  "pwdOzelBaslik": "Pine Script ile kendi göstergeni yaz, grafiğinde çalıştır.",
+  "pwdOzelBaslik": "Pine Script ile kendi göstergeni yaz, her varlıkta seçtiğin mum aralığında çalıştır.",
   "pwdOzelPremium": "20 gösterge, her aralıkta",
   "alarmLimitReached": "En fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.",
   "@alarmLimitReached": {"placeholders": {"n": {"type": "int"}}},
@@ -5678,5 +5678,7 @@
   "chartIntervalM5Long": "5 dakikalık",
   "chartIntervalM15Long": "15 dakikalık",
   "cmpKatmanHedefi": "Mum ve ortalamalar: {ad}. Başka seriye dokunarak değiştir.",
-  "@cmpKatmanHedefi": {"description": "Karşılaştır: araç çubuğu katmanlarının uygulandığı seri.", "placeholders": {"ad": {"type": "String"}}}
+  "@cmpKatmanHedefi": {"description": "Karşılaştır: araç çubuğu katmanlarının uygulandığı seri.", "placeholders": {"ad": {"type": "String"}}},
+  "pwdOzelUcretsiz": "mum, 1 dk ile 1 ay arası aralık, EMA",
+  "@pwdOzelUcretsiz": {"description": "Paywall destesi, kendi göstergen kartı: ücretsiz kalan grafik araçları (başına 'Ücretsiz:' eklenir)."}
 }

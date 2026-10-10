@@ -612,7 +612,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
                 for (var i = 0; i < sma.length; i++)
                   if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
               ],
-              renk: context.c.text58,
+              cizgiRengi: context.c.text58,
               kesikli: true,
             );
           }(),
@@ -622,7 +622,7 @@ class _ComparisonScreenState extends ConsumerState<ComparisonScreen> {
         ])
           if (acik)
             FiyatOrtalamasi(
-                spots: emaNoktalari(spots, periyot: periyot), renk: renk),
+                spots: emaNoktalari(spots, periyot: periyot), cizgiRengi: renk),
       ];
       var mumlar = const <Mum>[];
       if (mumOn && spots.length >= 2) {

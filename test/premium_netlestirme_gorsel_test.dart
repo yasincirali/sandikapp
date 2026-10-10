@@ -34,6 +34,12 @@ import 'package:portfoy_takip/screens/add_asset_screen.dart';
 import 'package:portfoy_takip/screens/paywall_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
+import 'package:portfoy_takip/models/ohlc.dart';
+import 'package:portfoy_takip/models/varlik_kimligi.dart';
+import 'package:portfoy_takip/screens/comparison_screen.dart';
+import 'package:portfoy_takip/screens/varlik_sayfasi.dart';
+import 'package:portfoy_takip/services/mum_verisi.dart';
+import 'package:portfoy_takip/services/period_summary_service.dart' show SummaryPeriod;
 
 /// Premium seti netleştirme (2026-10-10) — önce/sonra GÖRSEL önizlemesi,
 /// `build/gorsel/pn_*.png`. Assert etmez; `gorsel` etiketi CI'da atlanır.
@@ -173,6 +179,8 @@ void main() {
   });
   tearDownAll(() => DbLogger.silentInTests = false);
   tearDown(() {
+    MumVerisi.testCekici = null;
+    MumVerisi.instance.onbellegiTemizle();
     HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
     RemoteConfigService.testAcik = {};
   });
@@ -286,5 +294,128 @@ void main() {
   testWidgets('klasik paywall: liste ve tablo', (t) async {
     await ciz(t, 'pn_paywall_tablo', const PaywallScreen(source: 'settings'),
         ek: _ucretsiz(), boy: 2600, deste: false);
+  });
+
+  // ── Üç ekran tutarlılığı (2026-10-10 gece) ────────────────────────────
+  // Gerçek mum yerine yapay OHLC (ağ yok): yapay serinin aynı yürüyüşü.
+  void yapayMum() {
+    MumVerisi.testCekici = (a, aralik, bas, son) async {
+      final r = math.Random(aralik.dakika);
+      final out = <OhlcBar>[];
+      var f = _sonFiyat * 0.97;
+      for (var t = bas.millisecondsSinceEpoch;
+          t < son.millisecondsSinceEpoch;
+          t += aralik.ms) {
+        final d = DateTime.fromMillisecondsSinceEpoch(t);
+        // BIST seansı: hafta içi 10:00–18:00 (gün içi aralıklarda).
+        if (aralik.gunIci &&
+            (d.weekday > 5 || d.hour < 10 || d.hour >= 18)) {
+          continue;
+        }
+        final ac = f;
+        final ka = ac * (1 + (r.nextDouble() - 0.48) * 0.01);
+        out.add(OhlcBar(
+          t: t,
+          acilis: ac,
+          enYuksek: math.max(ac, ka) * (1 + r.nextDouble() * 0.004),
+          enDusuk: math.min(ac, ka) * (1 - r.nextDouble() * 0.004),
+          kapanis: ka,
+          hacim: 1000,
+        ));
+        f = ka;
+      }
+      return out;
+    };
+  }
+
+  const kimlik = VarlikKimligi(
+    ticker: 'THYAO.IS',
+    name: 'Türk Hava Yolları',
+    type: AssetType.hisse,
+    currency: 'TRY',
+  );
+  Future<Map<int, double>> sembolSerisi(String t, int gun) async {
+    final simdi = DateTime.now();
+    final bas = simdi.subtract(Duration(days: gun <= 1 ? 1 : gun));
+    final tum = _yapaySeri();
+    final m = <int, double>{
+      for (final (k, v) in tum)
+        if (k >= bas.millisecondsSinceEpoch) k: v,
+    };
+    if (gun <= 7) {
+      // Gün içi ve 1H: saatlik ara noktalar (yapay seri günlük).
+      final out = <int, double>{};
+      final keys = m.keys.toList()..sort();
+      for (var i = 0; i + 1 < keys.length; i++) {
+        for (var h = 0; h < 24; h += gun <= 1 ? 1 : 2) {
+          final t = keys[i] + h * 3600000;
+          out[t] = m[keys[i]]! +
+              (m[keys[i + 1]]! - m[keys[i]]!) * h / 24 +
+              math.sin(t / 3.6e6) * 0.3;
+        }
+      }
+      return out;
+    }
+    return m;
+  }
+
+  for (final (ad, ek) in [('ucretsiz', _ucretsiz), ('premium', _premium)]) {
+    testWidgets('arama varlık sayfası 1H, mum + EMA50: $ad', (t) async {
+      yapayMum();
+      await ciz(
+        t,
+        'pn_arama_varlik_$ad',
+        Scaffold(
+          body: VarlikSayfasi(
+            kimlik: kimlik,
+            tamAcilis: true,
+            baslangicDonemGun: 7,
+            seriYukleyici: sembolSerisi,
+          ),
+        ),
+        ek: ek(),
+        boy: 1300,
+        tercih: {'pref_chart_candle': true, 'pref_chart_ema50': true},
+      );
+    });
+  }
+
+  testWidgets('varlık detayı 1H, mum: 1 dk dahil aralıklar', (t) async {
+    yapayMum();
+    await ciz(t, 'pn_varlik_1h_mum',
+        AssetDetailScreen(asset: _lot(), showBackButton: true),
+        ek: _ucretsiz(),
+        boy: 1100,
+        tercih: {
+          'pref_chart_candle': true,
+          'pref_chart_mum_araligi': MumAraligi.dk15.index,
+        });
+  });
+
+  testWidgets('karşılaştır, mum + MA20 (odak yok: ilk varlık)', (t) async {
+    yapayMum();
+    await ciz(
+        t,
+        'pn_karsilastir',
+        ComparisonScreen(
+            baslangicVarligi: _lot(), baslangicDonemi: SummaryPeriod.birAy),
+        ek: _ucretsiz(),
+        boy: 1100,
+        tercih: {
+          'pref_chart_candle': true,
+          'pref_chart_overlay_ma20': true,
+        });
+  });
+
+  testWidgets('sinyal parametresi sayfası (Premium, MACD)', (t) async {
+    await ciz(t, 'pn_parametre_sheet', const SignalSettingsScreen(),
+        ek: _premium(), boy: 1100, sonra: (t) async {
+      await t.tap(find.byIcon(Icons.tune_rounded).at(1));
+    });
+  });
+
+  testWidgets('sinyal parametresi, ücretsiz: kilitli satır', (t) async {
+    await ciz(t, 'pn_parametre_ucretsiz', const SignalSettingsScreen(),
+        ek: _ucretsiz(), boy: 1500);
   });
 }

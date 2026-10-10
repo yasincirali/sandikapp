@@ -14162,7 +14162,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdOzelBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Pine Script ile kendi göstergeni yaz, grafiğinde çalıştır.'**
+  /// **'Pine Script ile kendi göstergeni yaz, her varlıkta seçtiğin mum aralığında çalıştır.'**
   String get pwdOzelBaslik;
 
   /// No description provided for @pwdOzelPremium.
@@ -14236,6 +14236,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Mum ve ortalamalar: {ad}. Başka seriye dokunarak değiştir.'**
   String cmpKatmanHedefi(String ad);
+
+  /// Paywall destesi, kendi göstergen kartı: ücretsiz kalan grafik araçları (başına 'Ücretsiz:' eklenir).
+  ///
+  /// In tr, this message translates to:
+  /// **'mum, 1 dk ile 1 ay arası aralık, EMA'**
+  String get pwdOzelUcretsiz;
 }
 
 class _AppLocalizationsDelegate

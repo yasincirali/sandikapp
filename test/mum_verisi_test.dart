@@ -334,6 +334,13 @@ void main() {
       ]);
     });
 
+    // Varlık detayının 1H penceresi `_donemBaslangici(7)`: 7 gün önceki
+    // günün başından şimdiye ≈ 7,9 gün. 2.500 tavan + 7 günlük Yahoo
+    // sınırı 1 dk'yı burada eliyordu (görselde 1 dk yoktu).
+    test('varlık detayı 1H (≈7,9 gün): 1 dk yine sunulur', () {
+      expect(gecerliAraliklar(bist, 7.9 * 1440).first, MumAraligi.dk1);
+    });
+
     test('Yahoo geçmiş sınırı: 3A\'da 5/15 dk yok (~60 gün), 1A\'da var', () {
       expect(gecerliAraliklar(bist, ay),
           containsAll([MumAraligi.dk5, MumAraligi.dk15]));

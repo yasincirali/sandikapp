@@ -5079,7 +5079,7 @@
   "sgnParametreAyarla": "{ad} settings",
   "prmSatirOzelGosterge": "Your own indicators (Pine)",
   "pwdOzelEtiket": "YOUR INDICATOR",
-  "pwdOzelBaslik": "Write your own indicator in Pine Script and run it on your chart.",
+  "pwdOzelBaslik": "Write your own indicator in Pine Script and run it on any asset, at the candle interval you pick.",
   "pwdOzelPremium": "20 indicators, any interval",
   "alarmLimitReached": "You can have up to {n} active alerts. Turn one off to add another.",
   "alarmLimitFree": "On the free plan you can have up to {n} active alerts.",
@@ -5091,5 +5091,6 @@
   "chartIntervalM15": "15m",
   "chartIntervalM5Long": "5-minute",
   "chartIntervalM15Long": "15-minute",
-  "cmpKatmanHedefi": "Candles and averages: {ad}. Tap another line to switch."
+  "cmpKatmanHedefi": "Candles and averages: {ad}. Tap another line to switch.",
+  "pwdOzelUcretsiz": "candles, 1m to 1M intervals, EMA"
 }

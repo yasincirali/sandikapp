@@ -8489,7 +8489,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get pwdOzelBaslik =>
-      'Pine Script ile kendi göstergeni yaz, grafiğinde çalıştır.';
+      'Pine Script ile kendi göstergeni yaz, her varlıkta seçtiğin mum aralığında çalıştır.';
 
   @override
   String get pwdOzelPremium => '20 gösterge, her aralıkta';
@@ -8539,4 +8539,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String cmpKatmanHedefi(String ad) {
     return 'Mum ve ortalamalar: $ad. Başka seriye dokunarak değiştir.';
   }
+
+  @override
+  String get pwdOzelUcretsiz => 'mum, 1 dk ile 1 ay arası aralık, EMA';
 }

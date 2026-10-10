@@ -256,9 +256,10 @@ class FiyatGrafigi extends StatelessWidget {
     // (<1 → 2, <10 → 1) 0,005'lik adımda komşu etiketleri aynı metne
     // düşürebiliyordu (2026-09-29 emülatör testi #7, "₺1 | ₺1"). LOG'da
     // adım log biriminde; hane komşu iki etiketin GERÇEK farkından.
-    final ondalik = eksenOndaligi(log
-        ? (fromY(bant.minY + bant.interval) - fromY(bant.minY)).abs()
-        : bant.interval);
+    final ondalik = log
+        ? eksenOndaligi(
+            (fromY(bant.minY + bant.interval) - fromY(bant.minY)).abs())
+        : eksenOndaligi(bant.interval);
     // Eksende para simgesi var (₺320) — Performans ve varlık detayıyla aynı.
     final eksenBicimi =
         tryFormatter(digits: ondalik, symbol: bicim.currencySymbol);
@@ -295,7 +296,7 @@ class FiyatGrafigi extends StatelessWidget {
           LineChartBarData(
             spots: o.spots,
             isCurved: false,
-            color: o.o.renk,
+            color: o.o.cizgiRengi,
             barWidth: o.o.kesikli ? 1.4 : 1.6,
             isStrokeCapRound: true,
             dashArray: o.o.kesikli ? const [3, 3] : null,
@@ -486,8 +487,8 @@ class FiyatKatmanlari {
 /// kırmızı — çipteki renkle aynı, çip lejanttır).
 class FiyatOrtalamasi {
   const FiyatOrtalamasi(
-      {required this.spots, required this.renk, this.kesikli = false});
+      {required this.spots, required this.cizgiRengi, this.kesikli = false});
   final List<FlSpot> spots;
-  final Color renk;
+  final Color cizgiRengi;
   final bool kesikli;
 }

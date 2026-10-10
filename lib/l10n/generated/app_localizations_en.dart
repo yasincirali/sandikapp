@@ -8573,7 +8573,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdOzelBaslik =>
-      'Write your own indicator in Pine Script and run it on your chart.';
+      'Write your own indicator in Pine Script and run it on any asset, at the candle interval you pick.';
 
   @override
   String get pwdOzelPremium => '20 indicators, any interval';
@@ -8623,4 +8623,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String cmpKatmanHedefi(String ad) {
     return 'Candles and averages: $ad. Tap another line to switch.';
   }
+
+  @override
+  String get pwdOzelUcretsiz => 'candles, 1m to 1M intervals, EMA';
 }

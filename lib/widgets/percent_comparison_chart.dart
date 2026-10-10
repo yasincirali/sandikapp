@@ -414,7 +414,7 @@ class PercentComparisonChart extends StatelessWidget {
           LineChartBarData(
             spots: _gorunurSpots(o.spots, minX, maxX),
             isCurved: false,
-            color: o.renk,
+            color: o.cizgiRengi,
             barWidth: o.kesikli ? 1.4 : 1.6,
             isStrokeCapRound: true,
             dashArray: o.kesikli ? const [3, 3] : null,

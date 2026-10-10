@@ -169,7 +169,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         if (acik)
           FiyatOrtalamasi(
             spots: emaNoktalari(spots, periyot: periyot, onSeri: onSpots),
-            renk: renk,
+            cizgiRengi: renk,
           ),
     ];
 
@@ -315,7 +315,7 @@ class _KatmanliFiyatGrafigiState extends ConsumerState<KatmanliFiyatGrafigi> {
         for (var i = 0; i < sma.length; i++)
           if (!sma[i].isNaN) FlSpot(spots[i].x, sma[i]),
       ],
-      renk: renk,
+      cizgiRengi: renk,
       kesikli: true,
     );
   }
