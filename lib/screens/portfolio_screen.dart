@@ -52,6 +52,7 @@ import '../providers/watchlist_provider.dart';
 import '../l10n/l10n.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../providers/portfoy_provider.dart';
+import '../services/crash_reporter.dart';
 import '../providers/preferences_provider.dart' show seciliPortfoyProvider;
 import '../widgets/portfoy_secici.dart';
 import '../widgets/portfoy_secim_sayfasi.dart';
@@ -175,7 +176,9 @@ class _PortfolioScreenState extends ConsumerState<PortfolioScreen> {
     // Seçim yalnız özellik görünürken Tümü dışında olabilir; kapalıyken
     // bu dal hiç çalışmaz.
     if (ref.read(portfoyKapsamiProvider).secim != PortfoySecimi.tumu) {
-      unawaited(ref.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.tumu));
+      CrashReporter.arkaPlan(
+          ref.read(seciliPortfoyProvider.notifier).set(PortfoySecimi.tumu),
+          reason: 'Portfoy.varlikEklendi.tumu');
     }
     setState(() {
       _filteredType = null;
