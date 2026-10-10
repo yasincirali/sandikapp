@@ -8362,4 +8362,131 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cihazHesapBaskaHesapla => 'or sign in with another account';
+
+  @override
+  String get ozgCipSemantik => 'Your indicators';
+
+  @override
+  String get ozgBaslik => 'My indicators';
+
+  @override
+  String get ozgAciklama =>
+      'Write your own formula. It runs on the bars of the interval shown on the chart.';
+
+  @override
+  String get ozgBos =>
+      'You have not written an indicator yet. Start from a template.';
+
+  @override
+  String get ozgYeni => 'New indicator';
+
+  @override
+  String get ozgSablondan => 'Start from a template';
+
+  @override
+  String get ozgFiyatUstunde => 'On the price';
+
+  @override
+  String get ozgAyriPanel => 'Separate pane';
+
+  @override
+  String get ozgHatali => 'Has an error, edit';
+
+  @override
+  String get ozgEditorYeni => 'Write an indicator';
+
+  @override
+  String get ozgEditorDuzenle => 'Edit indicator';
+
+  @override
+  String get ozgAdEtiket => 'Name';
+
+  @override
+  String get ozgAdIpucu => 'e.g. Fast EMA crossover';
+
+  @override
+  String get ozgKodEtiket => 'Formula';
+
+  @override
+  String ozgGecerli(int sayi, String yer) {
+    return 'Valid · $sayi lines · $yer';
+  }
+
+  @override
+  String ozgHataSatir(int satir, String mesaj) {
+    return 'Line $satir: $mesaj';
+  }
+
+  @override
+  String get ozgEksikVeri =>
+      'This chart has no high, low or volume data yet. Lines that use them stay empty.';
+
+  @override
+  String ozgOnizleme(String varlik, int sayi) {
+    return 'Preview · $varlik · last $sayi bars';
+  }
+
+  @override
+  String get ozgOnizlemeYok => 'Open from an asset chart to see a preview.';
+
+  @override
+  String get ozgFonksiyonlar => 'Functions';
+
+  @override
+  String get ozgGuvenlik =>
+      'Your formula runs only on your phone, in a closed language. It cannot reach the internet, files or your account.';
+
+  @override
+  String get ozgKaydet => 'Save';
+
+  @override
+  String get ozgSil => 'Delete indicator';
+
+  @override
+  String get ozgSilBaslik => 'Delete this indicator?';
+
+  @override
+  String ozgSilMesaj(String ad) {
+    return '$ad will be deleted permanently.';
+  }
+
+  @override
+  String get ozgSilOnay => 'Delete';
+
+  @override
+  String get ozgVazgecBaslik => 'Changes not saved';
+
+  @override
+  String get ozgVazgecMesaj => 'If you leave, your changes are lost.';
+
+  @override
+  String get ozgVazgecOnay => 'Leave';
+
+  @override
+  String get ozgVazgecIptal => 'Keep editing';
+
+  @override
+  String ozgSinir(int sayi) {
+    return 'You can save up to $sayi indicators.';
+  }
+
+  @override
+  String get ozgAdGerekli => 'Enter a name (up to 40 characters).';
+
+  @override
+  String ozgGrafikteGoster(String ad) {
+    return '$ad, show on chart';
+  }
+
+  @override
+  String ozgPanelSemantik(String ad) {
+    return '$ad indicator, separate pane';
+  }
+
+  @override
+  String get ozgKaydedildi => 'Indicator saved';
+
+  @override
+  String get pwOzOzelGosterge =>
+      'Write your own indicators, on any chart interval';
 }

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../demo/demo_modu.dart';
+import '../models/ozel_gosterge.dart';
 import '../models/ortak_paylasimi.dart';
 import '../models/portfoy.dart';
 import '../models/price_alert_notification.dart';
@@ -1012,6 +1013,67 @@ class SupabaseService {
       call: () => _db.from('portfoyler').delete().eq('id', id).select('id'),
     );
     if (rows.isEmpty) throw StateError('Portföy silinemedi.');
+  }
+
+  // ── Kullanıcı göstergeleri (0141) ─────────────────────────────────────────
+  //
+  // Yalnız Premium göstergeleri gören hesapta çağrılır
+  // (`ozelGostergelerProvider`). Tablo sunucuda yoksa okuma hatası yukarı
+  // çıkar; çip sayfası hatayı söyler, grafik etkilenmez.
+
+  Future<List<OzelGosterge>> fetchOzelGostergeler(String userId) async {
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.fetchOzelGostergeler',
+      table: 'kullanici_gostergeleri',
+      op: 'SELECT',
+      request: {'user_id': userId},
+      call: () => _db
+          .from('kullanici_gostergeleri')
+          .select('id, user_id, ad, kod, grafikte, olusturuldu')
+          .eq('user_id', userId)
+          .order('olusturuldu'),
+    );
+    return [for (final r in rows) OzelGosterge.fromSupabase(r)];
+  }
+
+  Future<void> insertOzelGosterge(OzelGosterge g) async {
+    await _log.log<void>(
+      source: 'SupabaseService.insertOzelGosterge',
+      table: 'kullanici_gostergeleri',
+      op: 'INSERT',
+      request: {'id': g.id},
+      call: () => _db.from('kullanici_gostergeleri').insert(g.toSupabase()),
+    );
+  }
+
+  /// Dönen satırla doğrulanır: RLS eşleşmeyen UPDATE'i (Premium bitti)
+  /// hata vermeden 0 satırla geçer, kullanıcı "kaydedildi" sanardı.
+  Future<void> updateOzelGosterge(OzelGosterge g) async {
+    final body = g.toSupabase()
+      ..remove('id')
+      ..remove('user_id');
+    final rows = await _log.log<List<Map<String, dynamic>>>(
+      source: 'SupabaseService.updateOzelGosterge',
+      table: 'kullanici_gostergeleri',
+      op: 'UPDATE',
+      request: {'id': g.id},
+      call: () => _db
+          .from('kullanici_gostergeleri')
+          .update(body)
+          .eq('id', g.id)
+          .select('id'),
+    );
+    if (rows.isEmpty) throw StateError('Gösterge kaydedilemedi.');
+  }
+
+  Future<void> deleteOzelGosterge(String id) async {
+    await _log.log<void>(
+      source: 'SupabaseService.deleteOzelGosterge',
+      table: 'kullanici_gostergeleri',
+      op: 'DELETE',
+      request: {'id': id},
+      call: () => _db.from('kullanici_gostergeleri').delete().eq('id', id),
+    );
   }
 
   // ── Ortak portföy paylaşımı (0135) ────────────────────────────────────────

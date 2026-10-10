@@ -8279,4 +8279,130 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get cihazHesapBaskaHesapla => 'ya da başka bir hesapla giriş yap';
+
+  @override
+  String get ozgCipSemantik => 'Kendi göstergelerin';
+
+  @override
+  String get ozgBaslik => 'Göstergelerim';
+
+  @override
+  String get ozgAciklama =>
+      'Kendi formülünü yaz. Grafikte seçili aralığın çubuklarında çalışır.';
+
+  @override
+  String get ozgBos => 'Henüz gösterge yazmadın. Bir şablonla başlayabilirsin.';
+
+  @override
+  String get ozgYeni => 'Yeni gösterge';
+
+  @override
+  String get ozgSablondan => 'Şablondan başla';
+
+  @override
+  String get ozgFiyatUstunde => 'Fiyatın üstünde';
+
+  @override
+  String get ozgAyriPanel => 'Ayrı panel';
+
+  @override
+  String get ozgHatali => 'Hatalı, düzenle';
+
+  @override
+  String get ozgEditorYeni => 'Gösterge yaz';
+
+  @override
+  String get ozgEditorDuzenle => 'Göstergeyi düzenle';
+
+  @override
+  String get ozgAdEtiket => 'Adı';
+
+  @override
+  String get ozgAdIpucu => 'Ör. Hızlı EMA kesişimi';
+
+  @override
+  String get ozgKodEtiket => 'Formül';
+
+  @override
+  String ozgGecerli(int sayi, String yer) {
+    return 'Geçerli · $sayi çizgi · $yer';
+  }
+
+  @override
+  String ozgHataSatir(int satir, String mesaj) {
+    return 'Satır $satir: $mesaj';
+  }
+
+  @override
+  String get ozgEksikVeri =>
+      'Bu grafikte henüz yüksek, düşük ve hacim verisi yok. Bunları kullanan çizgiler boş kalır.';
+
+  @override
+  String ozgOnizleme(String varlik, int sayi) {
+    return 'Önizleme · $varlik · son $sayi çubuk';
+  }
+
+  @override
+  String get ozgOnizlemeYok => 'Önizleme için bir varlığın grafiğinden aç.';
+
+  @override
+  String get ozgFonksiyonlar => 'Fonksiyonlar';
+
+  @override
+  String get ozgGuvenlik =>
+      'Formülün yalnız telefonunda, kapalı bir dilde çalışır. İnternete, dosyalara ya da hesabına erişemez.';
+
+  @override
+  String get ozgKaydet => 'Kaydet';
+
+  @override
+  String get ozgSil => 'Göstergeyi sil';
+
+  @override
+  String get ozgSilBaslik => 'Gösterge silinsin mi?';
+
+  @override
+  String ozgSilMesaj(String ad) {
+    return '$ad kalıcı olarak silinir.';
+  }
+
+  @override
+  String get ozgSilOnay => 'Sil';
+
+  @override
+  String get ozgVazgecBaslik => 'Değişiklikler kaydedilmedi';
+
+  @override
+  String get ozgVazgecMesaj => 'Çıkarsan yazdıkların kaybolur.';
+
+  @override
+  String get ozgVazgecOnay => 'Çık';
+
+  @override
+  String get ozgVazgecIptal => 'Düzenlemeye dön';
+
+  @override
+  String ozgSinir(int sayi) {
+    return 'En fazla $sayi gösterge kaydedebilirsin.';
+  }
+
+  @override
+  String get ozgAdGerekli => 'Bir ad yaz (en fazla 40 karakter).';
+
+  @override
+  String ozgGrafikteGoster(String ad) {
+    return '$ad, grafikte göster';
+  }
+
+  @override
+  String ozgPanelSemantik(String ad) {
+    return '$ad göstergesi, ayrı panel';
+  }
+
+  @override
+  String get ozgKaydedildi => 'Gösterge kaydedildi';
+
+  @override
+  String get pwOzOzelGosterge =>
+      'Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında';
 }

@@ -12,6 +12,21 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Kendi göstergeni yaz (migration 0141, Premium, yeni bayrak YOK)
+
+Senin isteğin: "traderlar TradingView'e kendi kodlarını ekleyerek kendi
+göstergelerini kullanabiliyorlar; zaman aralığıyla kombine, paywall
+arkasında." Varlık grafiğinde `ƒx` çipi → "Göstergelerim": formül yaz,
+şablondan başla (EMA kesişimi, RSI, Bollinger, MACD, Momentum), grafikte
+aç/kapa. Dil Python değil, Pine benzeri kapalı bir dil; betik telefonda
+çalışır, sunucu yalnız metni saklar. Görünürlük EMA/Mum ile aynı:
+`paywall_enabled` kapalıyken yalnız admin, açıkken herkes (ücretsizde kilitli).
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration
+      **0141**. Fonksiyon/secret YOK. 0141'den önce admin hesabında çip
+      görünür ama liste "yüklenemedi" der (tablo yok); grafik etkilenmez.
+- [ ] Kontrol: `select count(*) from pg_policies where tablename = 'kullanici_gostergeleri';` → 4.
+
 ## ⏳ 2026-10-10 Borsadaki tüm hisseler, liste her gün sunucudan (migration 0139)
 
 Senin isteğin: "eksik varlık olmasını istemiyorum, borsada işlem gören tüm

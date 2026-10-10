@@ -13845,6 +13845,222 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'ya da başka bir hesapla giriş yap'**
   String get cihazHesapBaskaHesapla;
+
+  /// No description provided for @ozgCipSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi göstergelerin'**
+  String get ozgCipSemantik;
+
+  /// No description provided for @ozgBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Göstergelerim'**
+  String get ozgBaslik;
+
+  /// No description provided for @ozgAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi formülünü yaz. Grafikte seçili aralığın çubuklarında çalışır.'**
+  String get ozgAciklama;
+
+  /// No description provided for @ozgBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz gösterge yazmadın. Bir şablonla başlayabilirsin.'**
+  String get ozgBos;
+
+  /// No description provided for @ozgYeni.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni gösterge'**
+  String get ozgYeni;
+
+  /// No description provided for @ozgSablondan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şablondan başla'**
+  String get ozgSablondan;
+
+  /// No description provided for @ozgFiyatUstunde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyatın üstünde'**
+  String get ozgFiyatUstunde;
+
+  /// No description provided for @ozgAyriPanel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrı panel'**
+  String get ozgAyriPanel;
+
+  /// No description provided for @ozgHatali.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hatalı, düzenle'**
+  String get ozgHatali;
+
+  /// No description provided for @ozgEditorYeni.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gösterge yaz'**
+  String get ozgEditorYeni;
+
+  /// No description provided for @ozgEditorDuzenle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Göstergeyi düzenle'**
+  String get ozgEditorDuzenle;
+
+  /// No description provided for @ozgAdEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adı'**
+  String get ozgAdEtiket;
+
+  /// No description provided for @ozgAdIpucu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ör. Hızlı EMA kesişimi'**
+  String get ozgAdIpucu;
+
+  /// No description provided for @ozgKodEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Formül'**
+  String get ozgKodEtiket;
+
+  /// No description provided for @ozgGecerli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçerli · {sayi} çizgi · {yer}'**
+  String ozgGecerli(int sayi, String yer);
+
+  /// No description provided for @ozgHataSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satır {satir}: {mesaj}'**
+  String ozgHataSatir(int satir, String mesaj);
+
+  /// No description provided for @ozgEksikVeri.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu grafikte henüz yüksek, düşük ve hacim verisi yok. Bunları kullanan çizgiler boş kalır.'**
+  String get ozgEksikVeri;
+
+  /// No description provided for @ozgOnizleme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önizleme · {varlik} · son {sayi} çubuk'**
+  String ozgOnizleme(String varlik, int sayi);
+
+  /// No description provided for @ozgOnizlemeYok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önizleme için bir varlığın grafiğinden aç.'**
+  String get ozgOnizlemeYok;
+
+  /// No description provided for @ozgFonksiyonlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonksiyonlar'**
+  String get ozgFonksiyonlar;
+
+  /// No description provided for @ozgGuvenlik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Formülün yalnız telefonunda, kapalı bir dilde çalışır. İnternete, dosyalara ya da hesabına erişemez.'**
+  String get ozgGuvenlik;
+
+  /// No description provided for @ozgKaydet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get ozgKaydet;
+
+  /// No description provided for @ozgSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Göstergeyi sil'**
+  String get ozgSil;
+
+  /// No description provided for @ozgSilBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gösterge silinsin mi?'**
+  String get ozgSilBaslik;
+
+  /// No description provided for @ozgSilMesaj.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} kalıcı olarak silinir.'**
+  String ozgSilMesaj(String ad);
+
+  /// No description provided for @ozgSilOnay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sil'**
+  String get ozgSilOnay;
+
+  /// No description provided for @ozgVazgecBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değişiklikler kaydedilmedi'**
+  String get ozgVazgecBaslik;
+
+  /// No description provided for @ozgVazgecMesaj.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkarsan yazdıkların kaybolur.'**
+  String get ozgVazgecMesaj;
+
+  /// No description provided for @ozgVazgecOnay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çık'**
+  String get ozgVazgecOnay;
+
+  /// No description provided for @ozgVazgecIptal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Düzenlemeye dön'**
+  String get ozgVazgecIptal;
+
+  /// No description provided for @ozgSinir.
+  ///
+  /// In tr, this message translates to:
+  /// **'En fazla {sayi} gösterge kaydedebilirsin.'**
+  String ozgSinir(int sayi);
+
+  /// No description provided for @ozgAdGerekli.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir ad yaz (en fazla 40 karakter).'**
+  String get ozgAdGerekli;
+
+  /// No description provided for @ozgGrafikteGoster.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad}, grafikte göster'**
+  String ozgGrafikteGoster(String ad);
+
+  /// No description provided for @ozgPanelSemantik.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} göstergesi, ayrı panel'**
+  String ozgPanelSemantik(String ad);
+
+  /// No description provided for @ozgKaydedildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gösterge kaydedildi'**
+  String get ozgKaydedildi;
+
+  /// No description provided for @pwOzOzelGosterge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendi göstergeni yaz: formülün, seçtiğin zaman aralığında'**
+  String get pwOzOzelGosterge;
 }
 
 class _AppLocalizationsDelegate
