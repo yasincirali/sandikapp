@@ -75,3 +75,12 @@ with cf.ThreadPoolExecutor(12) as ex:
     out['yahoo'] = {s: [p, n] for s, p, n in ex.map(yahoo, semboller)}
 print('Yahoo fiyatlı:', sum(1 for v in out['yahoo'].values() if v[0]), '/', len(semboller))
 json.dump(out, open('bist_evren.json', 'w'), ensure_ascii=False)
+
+# Log dökümü (eser indirilemeyen ortamlar için): sembol|tür|alt tür|XU100|yahoo fiyat|TV adı|Yahoo adı
+x100 = set(out.get('xu100', []))
+print('KAP durumları:', {k: len(v) for k, v in out.get('kap', {}).items()})
+print('=== DÖKÜM BAŞI ===')
+for r in sorted(out.get('tv_hepsi', []), key=lambda r: r[0]):
+    y = out['yahoo'].get(r[0], [None, None])
+    print('|'.join(str(v) for v in [r[0], r[2], r[3], int(r[0] in x100), int(bool(y[0])), r[1], y[1]]))
+print('=== DÖKÜM SONU ===')
