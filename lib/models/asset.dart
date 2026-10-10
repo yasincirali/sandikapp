@@ -1,3 +1,4 @@
+import '../services/remote_config_service.dart';
 import 'asset_categories.dart';
 import 'asset_type.dart';
 
@@ -237,6 +238,26 @@ class Asset {
   /// `secim_getirisi.dart`). `null` → sütun öncesi kopya; tarih olduğu gibi.
   final DateTime? createdAt;
 
+  /// Lotun portföyü (`portfoyler.id`, 0133). `null` = **Ana portföy** —
+  /// çoklu portföy öncesi bütün satırlar ve eski sürümün yazdığı her satır.
+  ///
+  /// ## Neden lot başına (çoklu portföy, 2026-10-10)
+  /// Portföy bir GÖRÜNÜM süzgecidir: kapsamın lotları portföye göre süzülür,
+  /// toplam/seri/getiri motorları değişmeden o alt kümeyi hesaplar (bkz.
+  /// `gorunum_kapsami.dart`). Satış/temettü/silme kaydı pozisyonun
+  /// portföyünü taşır ki portföy defteri kendi içinde kapansın (satış
+  /// portföy dışına taşmaz). Ortağın lotundaki değer bu kullanıcı için
+  /// anlamsızdır; ortak görünümü portföy süzgecine hiç girmez.
+  final String? portfoyId;
+
+  /// YALNIZ ekran görünümü ([Position.asDisplayAsset]): pozisyonun lotları
+  /// birden çok portföye dağılmış mı ("Tümü" görünümünde aynı sembol iki
+  /// portföyde). Sunucuya yazılmaz. Doğruysa [portfoyId] anlamsızdır
+  /// (`null`); al/sat/temettü önce hangi portföyün pozisyonu olduğunu sorar
+  /// (`portfoy_secim_sayfasi.dart`) — aksi hâlde satış Ana'ya düşer ve
+  /// Ana'da eksi, öbür portföyde fazla miktar kalırdı.
+  final bool portfoyKarisik;
+
   /// Sunucudaki `ticker` sütununun OKUNDUĞU hâli — yalnızca [kanonikTicker]
   /// onu değiştirdiyse dolu (öneksiz eski fon kodu `AFT` → `TEFAS:AFT`).
   ///
@@ -274,6 +295,8 @@ class Asset {
     this.deletedAt,
     this.sozlesmeId,
     this.createdAt,
+    this.portfoyId,
+    this.portfoyKarisik = false,
   })  : currentPrice = currentPrice ?? purchasePrice,
         addedDate = addedDate ?? DateTime.now(),
         isManualPrice = isManualPrice ?? ticker.trim().isEmpty;
@@ -471,7 +494,16 @@ class Asset {
   /// çünkü Asset'i elle yeniden kurmak alan atlamaya çok müsait —
   /// `dividendAmount` bir kez böyle düşmüştü. Buradaki liste TÜM alanları
   /// taşır; yeni alan eklendiğinde buraya da eklenmeli.
-  Asset copyWithDeletedAt(DateTime? deletedAt) => Asset(
+  Asset copyWithDeletedAt(DateTime? deletedAt) =>
+      _kopya(deletedAt: deletedAt, portfoyId: portfoyId);
+
+  /// Yalnızca portföyü değiştiren kopya — pozisyon taşıma
+  /// (`PortfolioNotifier.pozisyonuTasi`). Tam alan listesi [_kopya]'da.
+  Asset copyWithPortfoy(String? portfoyId) =>
+      _kopya(deletedAt: deletedAt, portfoyId: portfoyId);
+
+  Asset _kopya({required DateTime? deletedAt, required String? portfoyId}) =>
+      Asset(
         id: id,
         userId: userId,
         name: name,
@@ -498,6 +530,8 @@ class Asset {
         deletedAt: deletedAt,
         sozlesmeId: sozlesmeId,
         createdAt: createdAt,
+        portfoyId: portfoyId,
+        portfoyKarisik: portfoyKarisik,
       ).._kayitliTicker = _kayitliTicker;
 
   /// Yalnızca notu değiştiren kopya — [copyWithDeletedAt] ile aynı gerekçe
@@ -547,6 +581,14 @@ class Asset {
         // Aynı gerekçe (0111): yalnız `satis_gunu_kuru` bayrağı açıkken
         // dolu, bayrak sütun iki sunucuya ulaşınca açılır.
         if (sellFxRate != null) 'sell_fx_rate': sellFxRate,
+        // Aynı gerekçe (0133) + bayrak: `coklu_portfoy` ANCAK sütun iki
+        // sunucuya ulaşınca açılır. Değer sunucudan okunmuş olsa bile bayrak
+        // kapalıyken yazılmaz: uygulama sunucu değiştirirse (Tokyo ↔
+        // Frankfurt) öbür projede sütun henüz olmayabilir. Yazılmaması
+        // değeri SİLMEZ — UPDATE yalnız gövdedeki sütunlara dokunur; INSERT'te
+        // NULL kalır ve 0133 tetikleyicisi referans lottan miras alır.
+        if (portfoyId != null && RemoteConfigService.instance.cokluPortfoy)
+          'portfoy_id': portfoyId,
       };
 
   /// Sunucu satırından okur — sembolü [kanonikTicker] biçimine çevirerek.
@@ -629,5 +671,7 @@ class Asset {
         createdAt: m['created_at'] != null
             ? DateTime.parse(m['created_at'] as String).toLocal()
             : null,
+        // Migration 0133 öncesi satırlarda sütun yok → null = Ana portföy.
+        portfoyId: m['portfoy_id'] as String?,
       );
 }

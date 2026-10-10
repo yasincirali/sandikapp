@@ -107,8 +107,18 @@ class Position {
       // piyasa varlığı gibi görünüyordu: dönem kartı, vade, yenileme yoktu
       // (2026-10-01 emülatör testi).
       sozlesmeId: r.sozlesmeId,
+      // Pozisyonun portföyü (0133): lotların ORTAK portföyü. Al/Sat/Temettü
+      // bu görünümden yazılır; satış satırı portföyü buradan miras alır,
+      // yoksa portföy defteri kendi içinde kapanmaz. Lotlar birden çok
+      // portföye dağılmışsa ("Tümü" görünümü) tek değer yoktur: karışık
+      // işaretlenir, işlem önce portföyü sorar.
+      portfoyId: _portfoyler.length == 1 ? _portfoyler.single : null,
+      portfoyKarisik: _portfoyler.length > 1,
     );
   }
+
+  /// Lotların taşıdığı farklı portföy kimlikleri (`null` = Ana).
+  Set<String?> get _portfoyler => {for (final l in lots) l.portfoyId};
 }
 
 /// Aggregation kimliği — hangi lot'lar aynı pozisyonda toplanır.

@@ -403,6 +403,17 @@ class RemoteConfigService {
     // açılırsa liste boş gelir ve form bugünkü serbest metne düşer.
     'mevduat_banka_secici': false,
 
+    // Çoklu portföy (2026-10-10, yasin: "aile/emeklilik ayrı" isteği; olgun
+    // Premium setinin ertelenen 2. maddesi). Lot başına `portfoy_id` (0133),
+    // Portföy ve Performans'ta "Ben"in altında portföy seçici, yönetim
+    // sayfası, eklemede portföy seçimi. Ücretsiz 1 (Ana), Premium sınırsız.
+    // Görünürlük bu bayrak VE `premiumOzellikleriGorunur` (paywall ya da
+    // admin). Bayrak AYRICA şema hazırlığının işaretidir: kapalıyken
+    // `portfoy_id` hiçbir gövdeye yazılmaz (`Asset.toSupabase`). KAPALI
+    // doğar: 0133 iki sunucuya ulaşmadan açılırsa her varlık yazımı
+    // PGRST204 alır. Kapalıyken toplamlar, seriler ve ekranlar birebir eski.
+    'coklu_portfoy': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -751,6 +762,11 @@ class RemoteConfigService {
   /// Mevduat formunda banka seçici + faiz varsayılanı + not. Gerekçe
   /// `_defaults`'ta.
   bool get mevduatBankaSecici => _bayrak('mevduat_banka_secici');
+
+  /// Çoklu portföy: şema hazır mı (yazım kapısı). Gerekçe `_defaults`'ta.
+  /// Kullanıcıya görünürlük ayrıca `premiumOzellikleriGorunur` ister
+  /// (`cokluPortfoyGorunurProvider`).
+  bool get cokluPortfoy => _bayrak('coklu_portfoy');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {
