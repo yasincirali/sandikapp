@@ -583,6 +583,60 @@ List<Asset> gosterilecekVarliklar(Iterable<Asset> assets) =>
   return null;
 }
 
+/// Açık pozisyonun YÜRÜYEN ağırlıklı ortalama maliyeti (birim fiyat, kur).
+///
+/// ## Neden (kullanıcı bildirimi, 2026-10-10: "BES'te ana para kayıyor")
+/// Eskiden ortalama, defterdeki TÜM alımların ortalamasıydı
+/// (Σ alım maliyeti ÷ Σ alım adedi) ve elde kalan adetle çarpılıyordu.
+/// Satıştan SONRA alım gelince bu yanlıştır: satılan adetler o anki
+/// ortalamayla çıkmıştır, sonraki alım yalnız elde kalanların ortalamasına
+/// karışır. BES'te her "Fon değiştir" bir satış, her aylık katkı ondan
+/// sonra gelen bir alımdır; ölçülen örnekte (açılış ana para ₺100, iki
+/// fon değişimi + 12 katkı ₺10) kart ana parayı ₺199,14 gösteriyordu,
+/// yatırılan ₺220 — aradaki ₺20,86 kâra yazılıyordu. Tamamen satılıp
+/// yeniden alınan hissede de eski alımlar yeni ortalamaya karışıyordu.
+///
+/// Yöntem (aracı kurumların "ortalama maliyet"i): lot'lar tarih sırasıyla
+/// gezilir; alım maliyete eklenir, satış maliyetten o anki ortalamayla
+/// düşer. Satıştan sonra alım yoksa sonuç eskisiyle BİREBİR aynıdır
+/// (orantılı düşüş ortalamayı değiştirmez) — fark yalnız bozuk vakada.
+///
+/// Aynı anlı alım ve satışta alım önce sayılır (gün hassasiyetli elle
+/// girişte "aynı gün al-sat"). Sıralamada elde olandan fazla satış çıkarsa
+/// (tarihi tutarsız defter) `null` döner ve çağıran eski ortalamaya düşer:
+/// uydurma bir maliyet yazmaktansa bilinen davranış.
+({double fiyat, double kur})? _yuruyenOrtalama(List<Asset> lots) {
+  final sirali = [
+    for (final l in lots)
+      if (!l.isDividend) l,
+  ]..sort((a, b) {
+      final t = a.addedDate.compareTo(b.addedDate);
+      if (t != 0) return t;
+      return (a.isSell ? 1 : 0) - (b.isSell ? 1 : 0);
+    });
+  var adet = 0.0, maliyet = 0.0, kurluMaliyet = 0.0;
+  for (final l in sirali) {
+    if (l.isSell) {
+      if (l.quantity > adet + 0.0000001) return null;
+      final kalan = adet - l.quantity;
+      final oran = adet > 0 ? kalan / adet : 0.0;
+      maliyet *= oran;
+      kurluMaliyet *= oran;
+      adet = kalan <= 0.0000001 ? 0 : kalan;
+      if (adet == 0) maliyet = kurluMaliyet = 0;
+      continue;
+    }
+    adet += l.quantity;
+    maliyet += l.quantity * l.purchasePrice;
+    kurluMaliyet += l.quantity * l.purchasePrice * l.purchaseFxRate;
+  }
+  if (adet <= 0.0000001) return null;
+  return (
+    fiyat: maliyet / adet,
+    kur: maliyet > 0 ? kurluMaliyet / maliyet : 1.0,
+  );
+}
+
 List<Position> aggregatePositions(List<Asset> assets) {
   final map = <String, List<Asset>>{};
   for (final a in assets) {
@@ -644,8 +698,13 @@ List<Position> aggregatePositions(List<Asset> assets) {
     final totalQty = buyQty - soldQty;
     if (totalQty <= 0.0000001) return;
 
-    final weightedPrice = buyQty > 0 ? buyCostSum / buyQty : 0.0;
-    final weightedFxRate = buyCostSum > 0 ? buyFxCostSum / buyCostSum : 1.0;
+    var weightedPrice = buyQty > 0 ? buyCostSum / buyQty : 0.0;
+    var weightedFxRate = buyCostSum > 0 ? buyFxCostSum / buyCostSum : 1.0;
+    final yuruyen = _yuruyenOrtalama(lots);
+    if (yuruyen != null) {
+      weightedPrice = yuruyen.fiyat;
+      weightedFxRate = yuruyen.kur;
+    }
     final representative = buyLots.first;
     positions.add(Position(
       key: key,
