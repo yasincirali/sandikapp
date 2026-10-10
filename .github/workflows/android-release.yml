@@ -43,9 +43,16 @@ on:
     tags:
       - 'v*'
 
+# cancel-in-progress KAPALI (2026-10-10). Açıkken her yeni main push'u
+# koşan derlemeyi iptal ediyordu; Android koşusu tam test paketi + AAB ile
+# ~20 dk sürdüğü için (iOS ~birkaç dk, test koşmaz) arka arkaya birleşmelerde
+# Android hiç bitemiyordu: 10 Ekim'de #155/#156/#157 ve #161 koşuları iptal
+# oldu, TestFlight giderken kapalı teste build çıkmadı. Kapalıyken koşan
+# derleme biter; bekleyen tek bir koşu kalır (GitHub aradakileri yenisiyle
+# değiştirir), yani kuyruk birikmez ve her zaman en güncel main de gider.
 concurrency:
   group: android-release-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
