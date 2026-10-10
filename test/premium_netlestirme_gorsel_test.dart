@@ -297,12 +297,23 @@ void main() {
   });
 
   // ── Üç ekran tutarlılığı (2026-10-10 gece) ────────────────────────────
-  // Gerçek mum yerine yapay OHLC (ağ yok): yapay serinin aynı yürüyüşü.
+  // Gerçek mum yerine yapay OHLC (ağ yok): mum yapay serinin (çizgi,
+  // MA, EMA bununla hesaplanır) etrafında küçük gürültüyle salınır ki
+  // görselde mum ile çizgi/ortalama aynı yerde dursun.
   void yapayMum() {
+    final seri = _yapaySeri();
+    double seriDegeri(int t) {
+      // Günlük seride doğrusal ara değer.
+      final i = seri.indexWhere((e) => e.$1 > t);
+      if (i <= 0) return i == 0 ? seri.first.$2 : seri.last.$2;
+      final (t0, v0) = seri[i - 1];
+      final (t1, v1) = seri[i];
+      return v0 + (v1 - v0) * (t - t0) / (t1 - t0);
+    }
+
     MumVerisi.testCekici = (a, aralik, bas, son) async {
       final r = math.Random(aralik.dakika);
       final out = <OhlcBar>[];
-      var f = _sonFiyat * 0.97;
       for (var t = bas.millisecondsSinceEpoch;
           t < son.millisecondsSinceEpoch;
           t += aralik.ms) {
@@ -312,8 +323,9 @@ void main() {
             (d.weekday > 5 || d.hour < 10 || d.hour >= 18)) {
           continue;
         }
-        final ac = f;
-        final ka = ac * (1 + (r.nextDouble() - 0.48) * 0.01);
+        final ac = seriDegeri(t) * (1 + (r.nextDouble() - 0.5) * 0.006);
+        final ka =
+            seriDegeri(t + aralik.ms) * (1 + (r.nextDouble() - 0.5) * 0.006);
         out.add(OhlcBar(
           t: t,
           acilis: ac,
@@ -322,7 +334,6 @@ void main() {
           kapanis: ka,
           hacim: 1000,
         ));
-        f = ka;
       }
       return out;
     };
