@@ -30,9 +30,10 @@ import 'package:portfoy_takip/screens/profile_screen.dart';
 import 'package:portfoy_takip/services/db_logger.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
 import 'package:portfoy_takip/theme/sandik.dart';
+import 'package:portfoy_takip/widgets/kismi_aktarim_sayfasi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Ortak portföy paylaşımı (0135) GÖRSEL önizlemesi — `build/gorsel/`
+/// Ortak portföy paylaşımı (0135) ve kısmi aktarım (0136) GÖRSEL önizlemesi — `build/gorsel/`
 /// altına PNG, önce/sonra. Assert etmez; `gorsel` etiketi CI'da atlanır.
 ///   flutter test --run-skipped test/ortak_paylasim_gorsel_onizleme_test.dart
 ///
@@ -272,4 +273,32 @@ void main() {
       sonra: true,
       ortakLotlari: _ayseAna,
       hazirla: ortagaGec));
+
+  Widget aktarimSayfasi({required bool kismi}) => Builder(
+        builder: (ctx) => ColoredBox(
+          color: ctx.c.background,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: Material(
+              color: ctx.c.surface2,
+              shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(SandikRadius.lg))),
+              child: KismiAktarimIcerik(
+                gorunum: _benim[3],
+                toplam: 20,
+                hedefAdi: 'Çocuğum için',
+                aktar: (_) async => false,
+                ilkKismi: kismi,
+              ),
+            ),
+          ),
+        ),
+      );
+  testWidgets('aktarım kısmi', (t) => ciz(t, 'ortak_aktarim_kismi',
+      ekran: aktarimSayfasi(kismi: true), sonra: true,
+      hazirla: (t) => t.enterText(
+          find.byKey(const ValueKey('kismi-aktarim-miktar')), '8')));
+  testWidgets('aktarım kilitli', (t) => ciz(t, 'ortak_aktarim_kilitli',
+      ekran: aktarimSayfasi(kismi: false), sonra: true, premium: false));
 }

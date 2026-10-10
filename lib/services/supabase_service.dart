@@ -1076,6 +1076,32 @@ class SupabaseService {
     }
   }
 
+  /// Pozisyonun [oran] kadarını [portfoyId]'ye orantılı bölerek aktarır
+  /// (0136 `pozisyon_kismi_aktar`; gerekçe migration başlığında). Tek
+  /// işlem: ya hepsi bölünür ya hiçbiri. Dönen satırlar hedefe yazılan yeni
+  /// lotlar + kaynakta küçülen lotlardır.
+  Future<List<Asset>> pozisyonKismiAktar(
+      List<String> ids, double oran, String? portfoyId) async {
+    final rows = await _log.log<List<dynamic>>(
+      source: 'SupabaseService.pozisyonKismiAktar',
+      table: 'assets',
+      op: 'RPC',
+      request: {
+        'ids': ids.length,
+        'portfoy': portfoyId == null ? 'ana' : 'id',
+      },
+      call: () async =>
+          await _db.rpc<List<dynamic>>('pozisyon_kismi_aktar', params: {
+        'p_ids': ids,
+        'p_oran': oran,
+        'p_hedef': portfoyId,
+      }),
+    );
+    return [
+      for (final r in rows) Asset.fromSupabase(r as Map<String, dynamic>),
+    ];
+  }
+
   // ── Sözleşmeler (mevduat / BES, 0088) ─────────────────────────────────────
 
   /// Sözleşmeleri id ile okur — kendi ya da ortağın (RLS iki politikayla

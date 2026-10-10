@@ -13495,7 +13495,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfoyTasiAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.'**
+  /// **'Geçmişiyle birlikte taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.'**
   String get portfoyTasiAciklama;
 
   /// No description provided for @portfoyTasindi.
@@ -13623,6 +13623,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'ORTAĞIN NE GÖRÜR'**
   String get portfoyOrtakBolum;
+
+  /// No description provided for @portfoyAktarBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne kadarı aktarılsın?'**
+  String get portfoyAktarBaslik;
+
+  /// No description provided for @portfoyAktarAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{hedef} portföyüne. Bu portföyde {miktar} var.'**
+  String portfoyAktarAciklama(String hedef, String miktar);
+
+  /// No description provided for @portfoyAktarTamami.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamamı'**
+  String get portfoyAktarTamami;
+
+  /// No description provided for @portfoyAktarBirKismi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kısmı'**
+  String get portfoyAktarBirKismi;
+
+  /// No description provided for @portfoyAktarMiktar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktarılacak miktar'**
+  String get portfoyAktarMiktar;
+
+  /// No description provided for @portfoyAktarNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alımlar, satışlar ve temettüler aynı oranla bölünür. Ortalama maliyet ve getiri iki portföyde de aynı kalır, toplamın değişmez.'**
+  String get portfoyAktarNot;
+
+  /// No description provided for @portfoyAktarGecersiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'0 ile {miktar} arasında bir miktar yaz.'**
+  String portfoyAktarGecersiz(String miktar);
+
+  /// No description provided for @portfoyAktarDugme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktar'**
+  String get portfoyAktarDugme;
+
+  /// No description provided for @portfoyAktarPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir kısmını aktarmak Premium\'a özel.'**
+  String get portfoyAktarPremium;
+
+  /// No description provided for @portfoyAktarildi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{miktar}, {hedef} portföyüne aktarıldı.'**
+  String portfoyAktarildi(String miktar, String hedef);
 }
 
 class _AppLocalizationsDelegate

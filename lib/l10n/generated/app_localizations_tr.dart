@@ -8063,7 +8063,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get portfoyTasiAciklama =>
-      'Pozisyonun tamamı geçmişiyle taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.';
+      'Geçmişiyle birlikte taşınır: alımlar, satışlar ve temettüler. Toplamın değişmez.';
 
   @override
   String portfoyTasindi(String ad) {
@@ -8147,4 +8147,41 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get portfoyOrtakBolum => 'ORTAĞIN NE GÖRÜR';
+
+  @override
+  String get portfoyAktarBaslik => 'Ne kadarı aktarılsın?';
+
+  @override
+  String portfoyAktarAciklama(String hedef, String miktar) {
+    return '$hedef portföyüne. Bu portföyde $miktar var.';
+  }
+
+  @override
+  String get portfoyAktarTamami => 'Tamamı';
+
+  @override
+  String get portfoyAktarBirKismi => 'Bir kısmı';
+
+  @override
+  String get portfoyAktarMiktar => 'Aktarılacak miktar';
+
+  @override
+  String get portfoyAktarNot =>
+      'Alımlar, satışlar ve temettüler aynı oranla bölünür. Ortalama maliyet ve getiri iki portföyde de aynı kalır, toplamın değişmez.';
+
+  @override
+  String portfoyAktarGecersiz(String miktar) {
+    return '0 ile $miktar arasında bir miktar yaz.';
+  }
+
+  @override
+  String get portfoyAktarDugme => 'Aktar';
+
+  @override
+  String get portfoyAktarPremium => 'Bir kısmını aktarmak Premium\'a özel.';
+
+  @override
+  String portfoyAktarildi(String miktar, String hedef) {
+    return '$miktar, $hedef portföyüne aktarıldı.';
+  }
 }

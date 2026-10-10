@@ -8140,7 +8140,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portfoyTasiAciklama =>
-      'The whole position moves with its history: buys, sells and dividends. Your total stays the same.';
+      'It moves with its history: buys, sells and dividends. Your total stays the same.';
 
   @override
   String portfoyTasindi(String ad) {
@@ -8230,4 +8230,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portfoyOrtakBolum => 'WHAT YOUR PARTNER SEES';
+
+  @override
+  String get portfoyAktarBaslik => 'How much should move?';
+
+  @override
+  String portfoyAktarAciklama(String hedef, String miktar) {
+    return 'To $hedef. You hold $miktar here.';
+  }
+
+  @override
+  String get portfoyAktarTamami => 'All';
+
+  @override
+  String get portfoyAktarBirKismi => 'Part';
+
+  @override
+  String get portfoyAktarMiktar => 'Amount to move';
+
+  @override
+  String get portfoyAktarNot =>
+      'Buys, sells and dividends are split by the same ratio. Average cost and return stay the same in both portfolios; your total doesn\'t change.';
+
+  @override
+  String portfoyAktarGecersiz(String miktar) {
+    return 'Enter an amount between 0 and $miktar.';
+  }
+
+  @override
+  String get portfoyAktarDugme => 'Move';
+
+  @override
+  String get portfoyAktarPremium => 'Moving part of a position is Premium.';
+
+  @override
+  String portfoyAktarildi(String miktar, String hedef) {
+    return '$miktar moved to $hedef.';
+  }
 }

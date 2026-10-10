@@ -57,14 +57,13 @@ tek satırla döner. Maliyet: okunmayan kod + test. Ne zaman: paywall açıldık
 bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migration).
 
 **4. Çoklu portföy v1 sınırları (2026-10-10, bilinçli).**
-- *Kısmi taşıma yok.* Portföyler arası taşıma bütün pozisyonu geçmişiyle
-  (alım, satış, temettü, silinmiş kayıtlar) taşır. Kısmi taşıma ya alım
-  lotlarını bölmek (satışların hangi lottan düştüğü belirsiz, ağırlıklı
-  maliyet uydurulur) ya da kaynakta satış + hedefte alım yazmak demekti;
-  ikincisi taşıma gününde sahte çıkış/giriş üretir, dönem getirisi ve XIRR
-  para hareketi olmayan bir olayı nakit akışı sayar. Maliyet: "yarısını
-  emekliliğe ayır" isteyen kullanıcı satıp yeniden almak zorunda. Ne
-  zaman: talep gelirse, "taşıma" kind'ı (nakit akışı sayılmayan) ile.
+- *Kısmi taşıma* — 2026-10-10 KAPANIYOR (0136, Premium): ne lot seçerek
+  bölme ne satış + alım; pozisyonun HER satırı aynı oranla bölünür
+  (`pozisyon_kismi_aktar`), iki portföyün geçmişi de "bu pay baştan beri
+  buradaydı" der, nakit akışı oluşmaz. Kalan: sözleşmeli (BES/mevduat)
+  pozisyon bölünmez (sözleşme tek portföyde); bölünen satırlar hareket
+  listesinde her işlem iki satır olur (biri her portföyde). Ne zaman:
+  BES'i portföylere bölme isteği gelirse sözleşme modeliyle birlikte.
 - *Ortak portföy görmez.* Ortağın lotları hiçbir portföye girmez; ortak
   görünümü ve Birlikte kullanıcı toplamıdır (0133 `portfoyler_partner_read`
   hazır, istemci okumuyor). Ne zaman: ortak tarafında portföy isteği olursa.

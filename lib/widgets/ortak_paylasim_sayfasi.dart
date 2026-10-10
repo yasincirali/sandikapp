@@ -266,7 +266,7 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
     }
     final l = context.l10n;
     final paylasim = ref.watch(benimPaylasimimProvider(ortak.id));
-    final kilitli = ref.watch(ortakPaylasimKilitliProvider);
+    final kilitli = ref.watch(portfoyPremiumKilitliProvider);
     final liste = ref.watch(portfoylerProvider).valueOrNull ?? const [];
     final deger = paylasim == null
         ? ''

@@ -13,6 +13,7 @@ import '../services/remote_config_service.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import '../utils/tr_format.dart';
+import 'kismi_aktarim_sayfasi.dart';
 import 'portfoy_secici.dart';
 
 /// Pozisyon işlemlerinde portföy sorusu (çoklu portföy, 0133).
@@ -66,8 +67,10 @@ Future<Asset?> islemIcinPozisyon(BuildContext context, Asset varlik) async {
   return gorunum(secim == PortfoySecimi.ana ? null : secim);
 }
 
-/// Pozisyonu BÜTÜNÜYLE başka portföye taşır (kaynak karışıksa önce sorar).
-/// Gerekçe ve kısmi taşımanın neden olmadığı `PortfolioNotifier.pozisyonuTasi`.
+/// Pozisyonu başka portföye taşır (kaynak karışıksa önce sorar): hedef
+/// seçilince miktar sorulur — "Tamamı" bütün pozisyonu geçmişiyle taşır
+/// (`PortfolioNotifier.pozisyonuTasi`), "Bir kısmı" Premium ve orantılı
+/// böler (`pozisyonuKismiTasi`, 0136).
 Future<void> pozisyonuTasiAkisi(
   BuildContext context,
   WidgetRef ref,
@@ -126,18 +129,58 @@ Future<void> pozisyonuTasiAkisi(
   final hedefAdi = hedef == null
       ? l.portfoyAnaUzun
       : _ad(ref.read(portfoylerProvider).valueOrNull ?? liste, l, hedef);
-  try {
-    await ref.read(portfolioProvider.notifier).pozisyonuTasi(lotlar, hedef);
-    if (!context.mounted) return;
-    sandikSnack(context, l.portfoyTasindi(hedefAdi),
-        kind: SandikSnackKind.success);
-  } catch (e, st) {
-    CrashReporter.report(e, st, reason: 'pozisyonuTasiAkisi');
-    // Yarım taşıma (bkz. `lotlarinPortfoyunuYaz`) defteri sunucudan tazeler.
-    ref.invalidate(portfolioProvider);
-    if (!context.mounted) return;
-    sandikSnackError(context, e, prefix: l.portfoyTasinamadi);
+
+  /// Tamamı (`pozisyonuTasi`) ya da orantılı pay (`pozisyonuKismiTasi`,
+  /// Premium, 0136). Başarıda `true`; hata snack'le söylenir.
+  Future<bool> tasi(double? oran, String bildiri) async {
+    final n = ref.read(portfolioProvider.notifier);
+    try {
+      oran == null
+          ? await n.pozisyonuTasi(lotlar, hedef)
+          : await n.pozisyonuKismiTasi(lotlar, oran, hedef);
+      if (context.mounted) {
+        sandikSnack(context, bildiri, kind: SandikSnackKind.success);
+      }
+      return true;
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'pozisyonuTasiAkisi');
+      // Yarım taşıma (bkz. `lotlarinPortfoyunuYaz`) defteri sunucudan
+      // tazeler; kısmi aktarım sunucuda tek işlem, yarım kalmaz.
+      if (oran == null) ref.invalidate(portfolioProvider);
+      if (context.mounted) {
+        sandikSnackError(context, e, prefix: l.portfoyTasinamadi);
+      }
+      return false;
+    }
   }
+
+  // Sözleşmeli (BES/mevduat) pozisyon bölünmez: miktar sorulmaz.
+  final parca = portfoyParcalari(defter, varlik, bilinen)[kaynak];
+  final toplam = parca?.totalQuantity ?? 0;
+  if (lotlar.any((a) => a.sozlesmeId != null) || parca == null || toplam <= 0) {
+    await tasi(null, l.portfoyTasindi(hedefAdi));
+    return;
+  }
+  if (!context.mounted) return;
+  final gorunum = parca.asDisplayAsset();
+  await showKismiAktarimSayfasi(
+    context,
+    gorunum: gorunum,
+    toplam: toplam,
+    hedefAdi: hedefAdi,
+    aktar: (miktar) {
+      // Yuvarlama payı: "hepsini" yazan kullanıcı bölme değil taşıma ister.
+      if (miktar >= toplam * (1 - 1e-9)) {
+        return tasi(null, l.portfoyTasindi(hedefAdi));
+      }
+      return tasi(
+        miktar / toplam,
+        l.portfoyAktarildi(
+            gorunum.miktarMetni(miktar, (v, d) => fmtNum(v, digits: d)),
+            hedefAdi),
+      );
+    },
+  );
 }
 
 Set<String> _bilinen(List<Portfoy> liste) => {for (final p in liste) p.id};

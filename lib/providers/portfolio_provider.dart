@@ -497,7 +497,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
   /// temettü, silinmiş kayıtlar, mezar taşları — geçmişiyle) hedefe geçer.
   /// Çağıran kümeyi `tasinacakLotlar` ile kurar.
   ///
-  /// ## Neden kısmi taşıma yok (v1)
+  /// ## Neden burada kısmi taşıma yok (kısmisi: [pozisyonuKismiTasi])
   /// Pozisyonun bir kısmını taşımak, ya alım lotlarını bölmek (satışların
   /// hangi lottan düştüğü belirsizleşir, iki portföyün ağırlıklı maliyeti
   /// uydurulur) ya da kaynakta satış + hedefte alım yazmak demekti. İkincisi
@@ -518,6 +518,36 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     ]));
     _gunIciSeriyiDusur();
   }
+  /// Pozisyonun [oran] kadarını hedefe aktarır (Premium, 0136). v1'de
+  /// olmayan kısmi taşıma, yukarıdaki iki yolun ikisine de düşmeden:
+  /// [lotlar]'ın HER satırı aynı oranla bölünür, iki portföyün geçmişi de
+  /// "bu pay baştan beri buradaydı" der (gerekçe 0136 başlığı). Sözleşmeli
+  /// (BES/mevduat) pozisyon bölünmez, çağıran tamamını taşır.
+  /// Bölme sunucuda TEK işlemdir; dönen satırlar defterde id ile
+  /// değiştirilir/eklenir, yeniden yükleme beklenmez.
+  Future<void> pozisyonuKismiTasi(
+      List<Asset> lotlar, double oran, String? hedef) async {
+    if (!RemoteConfigService.instance.cokluPortfoy || lotlar.isEmpty) return;
+    if (!(oran > 0 && oran < 1)) {
+      throw ArgumentError.value(oran, 'oran', '0 ile 1 arasında olmalı');
+    }
+    if (lotlar.any((a) => a.sozlesmeId != null)) {
+      throw StateError('Sözleşmeli pozisyon bölünmez.');
+    }
+    final donen = await SupabaseService.instance
+        .pozisyonKismiAktar([for (final a in lotlar) a.id], oran, hedef);
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final yeni = {for (final a in donen) a.id: a};
+    final eski = {for (final a in current.assets) a.id};
+    state = AsyncData(current.copyWith(assets: [
+      for (final a in current.assets) yeni[a.id] ?? a,
+      for (final a in donen)
+        if (!eski.contains(a.id)) a,
+    ]));
+    _gunIciSeriyiDusur();
+  }
+
   /// Son eklenen lotun pozisyon anahtarı (`positionKey`) — ekleme akışı
   /// bunu `VarlikEklendi.duyur`'a geçirir, Portföy o satırı parlatır.
   /// Ekleme ekranı kimlik döndürmüyordu; anahtarı yeniden kurmak (tür, alt

@@ -4,7 +4,6 @@ import '../models/ortak_paylasimi.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 import 'portfoy_provider.dart';
-import 'preferences_provider.dart';
 
 /// Ortak portföy paylaşımı (0135) — sağlayıcılar.
 ///
@@ -66,21 +65,11 @@ final benimPaylasimimProvider =
 /// Ortak paylaşım seçimi bu kullanıcıya GÖSTERİLİR mi: çoklu portföy
 /// görünür, en az bir adlandırılmış portföy var (yalnız Ana varken seçecek
 /// bir şey yok) ve en az bir ortak var. Değiştirmek Premium ister
-/// ([ortakPaylasimKilitliProvider]); görmek istemez.
+/// ([portfoyPremiumKilitliProvider]); görmek istemez.
 final ortakPaylasimSecimiVarProvider = Provider<bool>((ref) {
   if (!ref.watch(cokluPortfoyGorunurProvider)) return false;
   final liste = ref.watch(portfoylerProvider).valueOrNull ?? const [];
   if (liste.isEmpty) return false;
   final ortaklar = ref.watch(partnersProvider).valueOrNull ?? const [];
   return ortaklar.isNotEmpty;
-});
-
-/// Seçimi DEĞİŞTİRMEK Premium ister (yasin 2026-10-10: "yeni ekranlar ve
-/// özellikler paywall arkasında"). Paywall kapalıyken kilit yok (admin
-/// görür, herkes kullanır). Premium biten kullanıcının mevcut seçimi
-/// SUNUCUDA geçerli kalır — gizlenen portföy, abonelik bitti diye ortağa
-/// açılmaz; yalnız yeni değişiklik kilitlenir.
-final ortakPaylasimKilitliProvider = Provider<bool>((ref) {
-  if (!ref.watch(paywallVisibleProvider)) return false;
-  return !ref.watch(effectivePremiumProvider);
 });

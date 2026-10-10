@@ -50,6 +50,28 @@ ekledi" sayımı da gizliyi saymaz.
 - Yasal metin: değişiklik yok — yeni veri, alıcı ya da amaç yok; tersine
   ortağa giden veri daralıyor.
 
+## ⏳ 2026-10-10 Portföyler arası kısmi aktarım (migration 0136, `coklu_portfoy`, Premium)
+
+Senin isteğin: "premiuma özel, portföyler arası klonlama aktarım". Klon
+yapılmadı: aynı varlık iki portföyde birden olunca ana sayfa toplamı iki
+kez sayardı. Onun yerine Taşı akışına miktar adımı geldi: "Tamamı"
+(bugünkü taşıma, ücretsiz) ya da "Bir kısmı" (Premium). Kısmi aktarımda
+pozisyonun her alımı, satışı ve temettüsü aynı oranla bölünür; ortalama
+maliyet, tarih ve getiri iki portföyde de aynı kalır, toplam değişmez.
+BES/mevduat sözleşmeli pozisyonlar bölünmez (miktar sorulmaz).
+
+- [ ] **Supabase deploy** (hedef `ikisi`): migration **0136** (0133'ten
+      sonra; 0135 ile aynı turda olabilir). Yalnız ekler: yeni RPC
+      `pozisyon_kismi_aktar` + 0095 giriş anı tetikleyicisine "bölmede
+      Yarış giriş anını koru" dalı (ayar yokken birebir eski davranış).
+      Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] TestFlight'ta dene: Portföy › bir pozisyon › Taşı → Çocuğum için →
+      Bir kısmı → 8 yaz → Aktar. Emeklilik'te 12, Çocuğum için'de 8 kalır;
+      ikisinde de ortalama maliyet aynı, Tümü'de toplam değişmez. Premium
+      olmayan hesapta "Bir kısmı" kilitli, Tamamı çalışır.
+- Bilinen: Premium kapısı istemcide (sunucuda `premium_ayar.kapi_acik`
+  kapalıyken herkes kendi verisini bölebilir; zararı yok, kendi defteri).
+
 ## ⏳ 2026-10-10 Tek PR: olgun Premium + Fon X-Ray + çoklu portföy — ORTAK SIRA
 
 Üç iş aynı PR'da main'e gider (dal `feat/premium-olgun`). Ayrıntı aşağıdaki
