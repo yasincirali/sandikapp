@@ -1,12 +1,68 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (çoklu portföy, 0133, bayrak `coklu_portfoy`); 2026-10-10 (olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-10 Çoklu portföy (dal `feat/coklu-portfoy`, migration 0133, bayrak `coklu_portfoy`)
+
+Olgun Premium setinin ertelenen 2. maddesi. Kullanıcı kendi varlıklarını
+adlandırılmış portföylere ayırır ("Emeklilik", "Çocuğum için"); ücretsizde
+yalnız Ana, Premium'da sınırsız. Portföy ve Performans'ta "Ben"in altında
+portföy şeridi (Tümü / Ana / adlar / + Yeni portföy / yönet), Varlık Ekle ve
+Toplu Ekle'de portföy seçimi, Portföy satırını sola kaydırınca "Taşı"
+(bütün pozisyon geçmişiyle), yönetim sayfası (oluştur, yeniden adlandır,
+sürükleyip sırala, sil → varlıklar Ana'ya döner).
+
+Değişmeyenler (bilerek): ana sayfa toplamı ve Bugün kartı, hareketler,
+widget, kilit ekranı (Live Activity), yıl özeti, Yarış/Zirve, ortak
+görünümü ve Birlikte, bütün sunucu fonksiyonları KULLANICI TOPLAMI olarak
+kalır. "Tümü" görünümü bugünkü hesabın aynısıdır.
+
+Bayrak kapalıyken hiçbir yeni yüzey çizilmez, `portfoy_id` hiçbir isteğe
+yazılmaz, portföy tablosu okunmaz; toplamlar, seriler ve ekranlar birebir
+eski (testler: `gorunum_kapsami_test`, `coklu_portfoy_test`,
+`coklu_portfoy_ui_test`).
+
+- [ ] PR'ı aç, CI yeşil olunca birleştir (push/birleştirme sende).
+- [ ] **Supabase deploy** (hedef `ikisi`): migration **0133** — yalnız
+      ekler: `portfoyler` tablosu (RLS + GRANT, doğrulama bloğu), `assets`'e
+      boş geçilebilir `portfoy_id` sütunu, bileşik FK (portföy silinince
+      lotlar Ana'ya döner), eski sürümün lot bazlı satışı için miras
+      tetikleyicisi. Eski sürümler etkilenmez; bayrak kapalı kaldıkça yeni
+      sürüm de etkilenmez. Sonra `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+- [ ] ⚠️ **Remote Config `coklu_portfoy` (Boolean, varsayılan `false`)
+      ANCAK 0133 İKİ sunucuda da uygulandıktan sonra açılır.** Bayrak hem
+      görünürlüğü hem yazımı açar: sütun olmayan sunucuya `portfoy_id`
+      giderse o kullanıcının BÜTÜN varlık yazımları PGRST204 alır.
+      Görünürlük ayrıca paywall'a bağlı: paywall kapalıyken yalnız admin
+      görür (Premium özelliklerinin tek anahtar kuralı).
+- [ ] TestFlight'ta dene (önce admin hesabı, bayrak koşullu açık):
+      Portföy → şeritte "+ Yeni portföy" → "Emeklilik" oluştur (seçili
+      gelir, liste boş) → Varlık Ekle'de "Portföy: Emeklilik" seçili →
+      bir hisse ekle → Emeklilik'te görünür, Ana'da görünmez, Tümü'de
+      görünür. Aynı hisseyi Ana'ya da farklı fiyattan ekle → Tümü'de satırı
+      kaydırıp Sat → "Hangi portföydeki pozisyon?" sorulur → Emeklilik'i
+      seç → miktar sınırı Emeklilik'in miktarı. Performans'ta Emeklilik
+      seçiliyken grafik/özet yalnız o portföy; Tümü'ye dön → rakamlar eski.
+      Ana sayfa toplamı, widget ve kilit ekranı HİÇ değişmez. Satırı
+      kaydır → Taşı → Ana → hareketleriyle Ana'ya geçer. Yönet → Emeklilik'i
+      sil → "N kayıt Ana portföye döner" → varlıklar Ana'da, toplam aynı.
+      Sonra admin OLMAYAN, Premium olmayan test hesabıyla (paywall koşullu
+      açık): "+ Yeni portföy" paywall'u açar, deste "Portföy" kartıyla
+      başlar.
+- Bilinen v1 sınırları (TECHNICAL_DEBT.md "Çoklu portföy v1 sınırları"):
+  kısmi taşıma yok; ortak portföyleri görmez; portföy başına yıl özeti ve
+  widget yok; eski sürümden pozisyon satırıyla yapılan satış Ana'ya düşer;
+  aynı sembol iki portföydeyse Tümü'nün açık maliyeti havuz ortalamasıdır.
+- Yasal metin: değişiklik yok. Portföy adı mevcut "portföy verisi"
+  kapsamında, yeni alıcı yok (ortak zaten bütün lotları görüyordu);
+  Koşullar §2A'nın "ör." listesi kapsayıcı (başka dal 0134'te Koşullar
+  1.8'i yazıyor, çakışma olmasın diye dokunulmadı).
 
 ## ⏳ 2026-10-10 Olgun Premium seti (dal `feat/premium-olgun`, migration 0130)
 
@@ -61,7 +117,8 @@ o koşmalı.
       paywall'daki listeyle eşle.
 - Ertelenen (TECHNICAL_DEBT.md): fon X-Ray (TEFAS dağılım ucu
   `dagilimSiraliGetirT` 2026-10-10 araştırmasında bulundu; v1 senin
-  onayını bekliyor), çoklu portföy (kapsam görünümü merkezi değil; ayrı tasarım).
+  onayını bekliyor). Çoklu portföy aynı gün ayrı dalda yapıldı
+  (`feat/coklu-portfoy`, yukarıdaki bölüm).
 
 ## ⏳ 2026-10-09 Mevduat: banka listesi, faiz önerisi, not (0129, `mevduat-faiz`)
 
