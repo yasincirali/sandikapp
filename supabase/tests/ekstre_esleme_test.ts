@@ -75,12 +75,14 @@ Deno.test('yanıt: geçerli eşleme kalır, uydurma düşer', () => {
   assertEquals(yanitiDogrula({ tablolar: 'x' }, boyut), []);
 });
 
-Deno.test('istek: zorunlu araç, iskelet kullanıcı mesajı', () => {
+Deno.test('istek: zorunlu araç seçimi yok (Sonnet 5.5 400), iskelet kullanıcı mesajı', () => {
   const g = istekGovdesi(iskelet, 'claude-sonnet-5-5') as {
-    tool_choice: { name: string };
+    tool_choice: { type: string };
+    tools: { name: string }[];
     messages: { content: string }[];
   };
-  assertEquals(g.tool_choice.name, 'sutun_eslemesi');
+  assertEquals(g.tool_choice.type, 'auto');
+  assertEquals(g.tools[0].name, 'sutun_eslemesi');
   assertEquals(g.messages[0].content, iskelet);
 });
 
