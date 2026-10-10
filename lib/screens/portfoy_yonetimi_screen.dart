@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
+import '../models/asset.dart';
 import '../models/portfoy.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -11,6 +12,7 @@ import '../providers/portfoy_provider.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
+import '../utils/tr_format.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/ortak_paylasim_sayfasi.dart';
 import '../widgets/portfoy_secici.dart';
@@ -21,8 +23,8 @@ import '../widgets/sandik_async_button.dart';
 /// sırala, sil.
 ///
 /// "Ana" bir satır değildir (`portfoy_id IS NULL`); listenin başında sabit
-/// durur, adı ve yeri değişmez, silinemez — silinen her portföyün lotları
-/// oraya döner. Silme lotları SİLMEZ (FK `on delete set null`), onay
+/// durur, yeri değişmez, silinemez — silinen her portföyün lotları oraya
+/// döner. Adı değişir (`anaPortfoyAdiProvider`, yasin 2026-10-10). Silme lotları SİLMEZ (FK `on delete set null`), onay
 /// sayfası kaç kaydın Ana'ya döneceğini söyler. Değerler
 /// `portfoyOzetleriProvider`'dan (hesap build'de değil).
 class PortfoyYonetimiScreen extends ConsumerWidget {
@@ -35,6 +37,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
     final ozet = ref.watch(portfoyOzetleriProvider);
     final baz = ref.watch(gosterimBazParaProvider);
     final hp = SandikSpace.screenH(context);
+    final anaAdi = ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAnaUzun;
     // Ortak görünürlüğü (0135). Tek ortakta her satır "Ayşe görüyor /
     // görmüyor" der — kararı portföyün yanında görmek "neyi paylaşıyorum"
     // sorusunun en kısa cevabı. Birden çok ortakta satır sessiz kalır
@@ -78,12 +81,23 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
             const SizedBox(height: SandikSpace.md),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hp),
+              // Ana silinemez (silinen portföylerin lotları oraya döner)
+              // ama adı değişir (yasin 2026-10-10).
               child: _Satir(
                 key: const ValueKey('portfoy-satir-ana'),
-                ad: l.portfoyAnaUzun,
+                ad: anaAdi,
                 alt: l.portfoyAnaAciklama,
                 deger: baz.fmt(ozet[null]?.deger ?? 0),
                 ortakDurumu: durum(null),
+                onYenidenAdlandir: () => showPortfoyAdiSayfasi(
+                  context,
+                  baslik: l.portfoyYenidenAdlandir,
+                  dugme: l.save,
+                  baslangic: anaAdi,
+                  kaydet: (ad) => ref
+                      .read(anaPortfoyAdiProvider.notifier)
+                      .yenidenAdlandir(ad),
+                ),
               ),
             ),
             const SizedBox(height: SandikSpace.sm),
@@ -136,8 +150,8 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                             .read(portfoylerProvider.notifier)
                             .yenidenAdlandir(p.id, ad),
                       ),
-                      onSil: () =>
-                          _silOnayi(context, ref, p, ozet[p.id]?.kayit ?? 0),
+                      onSil: () => _silOnayi(
+                          context, ref, p, ozet[p.id]?.kayit ?? 0, anaAdi),
                     ),
                   );
                 },
@@ -197,16 +211,24 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
     );
   }
 
-  /// Silme onayı alt sayfada (`showSandikSheet`): sonucu (lotlar Ana'ya
-  /// döner, toplam değişmez) okuyup karar verilsin. Silme düğmenin İÇİNDE
-  /// koşar; hata sayfanın üstünde söylenir.
+  /// Silme onayı alt sayfada (`showSandikSheet`).
+  ///
+  /// yasin 2026-10-10: içinde varlık olan portföyde varlıklar LİSTELENİR ve
+  /// onay öyle alınır (kullanıcı neyin nereye gittiğini görerek karar
+  /// verir); boş portföyde yalnız kısa "emin misin". İki durumda da lotlar
+  /// silinmez, Ana'ya döner (FK `on delete set null`) — metin Ana'nın
+  /// GÜNCEL adını söyler. Silme düğmenin İÇİNDE koşar; hata sayfanın
+  /// üstünde söylenir ve sayfa açık kalır.
   Future<void> _silOnayi(
     BuildContext context,
     WidgetRef ref,
     Portfoy p,
     int kayit,
+    String anaAdi,
   ) async {
     final l = context.l10n;
+    final pozisyonlar = ref.read(portfoyPozisyonlariProvider(p.id));
+    final baz = ref.read(gosterimBazParaProvider);
     final silindi = await showSandikSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -216,7 +238,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
             BorderRadius.vertical(top: Radius.circular(SandikRadius.lg)),
       ),
       builder: (ctx) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(SandikSpace.screenH(ctx), SandikSpace.md,
               SandikSpace.screenH(ctx), SandikSpace.lg),
           child: Column(
@@ -232,9 +254,39 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
               ),
               const SizedBox(height: SandikSpace.sm),
               Text(
-                l.portfoySilAciklama(kayit),
+                pozisyonlar.isNotEmpty
+                    ? l.portfoySilAciklama(anaAdi)
+                    : kayit > 0
+                        ? '${l.portfoySilBosAciklama} '
+                            '${l.portfoySilGecmisAciklama(kayit, anaAdi)}'
+                        : l.portfoySilBosAciklama,
                 style: ctx.t.bodyMedium?.copyWith(color: ctx.c.text58),
               ),
+              if (pozisyonlar.isNotEmpty) ...[
+                const SizedBox(height: SandikSpace.md),
+                Text(
+                  l.portfoySilVarliklar(pozisyonlar.length),
+                  style: ctx.t.labelLarge?.copyWith(color: ctx.c.text58),
+                ),
+                const SizedBox(height: SandikSpace.sm),
+                SandikCard(
+                  key: const ValueKey('portfoy-sil-varliklar'),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: SandikSpace.md, vertical: SandikSpace.xs),
+                  child: Column(
+                    children: [
+                      for (final (i, v) in pozisyonlar.indexed) ...[
+                        if (i > 0) Divider(height: 1, color: ctx.c.hairline),
+                        _SilinecekVarlik(
+                          gorunum: v.pozisyon.asDisplayAsset(),
+                          miktar: v.pozisyon.totalQuantity,
+                          deger: baz.fmt(v.deger),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: SandikSpace.lg),
               SandikAsyncButton.kompakt(
                 key: const ValueKey('portfoy-sil-onay'),
@@ -267,9 +319,66 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
       ),
     );
     if (silindi == true && context.mounted) {
-      sandikSnack(context, l.portfoySilindi(p.ad),
+      sandikSnack(
+          context,
+          pozisyonlar.isNotEmpty
+              ? l.portfoySilindi(p.ad, anaAdi)
+              : l.portfoySilindiBos(p.ad),
           kind: SandikSnackKind.success);
     }
+  }
+}
+
+/// Silme onayındaki tek varlık satırı: ad, miktar, güncel değer. Metin
+/// tam okunur (çok satıra kayar, kesilmez); ekran okuyucu tek cümle duyar.
+class _SilinecekVarlik extends StatelessWidget {
+  const _SilinecekVarlik({
+    required this.gorunum,
+    required this.miktar,
+    required this.deger,
+  });
+
+  final Asset gorunum;
+  final double miktar;
+  final String deger;
+
+  @override
+  Widget build(BuildContext context) {
+    final miktarMetni =
+        gorunum.miktarMetni(miktar, (v, d) => fmtNum(v, digits: d));
+    // Ad önde (Portföy satırıyla aynı); kod yalnız fon/hissede, miktarın
+    // yanında — ham `TEFAS:AFT` / `ALTIN_GRAM` gösterilmez.
+    final ad = gorunum.name.trim().isNotEmpty ? gorunum.name : gorunum.ticker;
+    final alt = gorunum.showTicker
+        ? '${gorunum.displayTicker} · $miktarMetni'
+        : miktarMetni;
+    return MergeSemantics(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(ad,
+                      style: context.t.titleSmall?.copyWith(
+                          color: context.c.text90,
+                          fontWeight: FontWeight.w600)),
+                  Text(alt,
+                      style: context.t.bodySmall
+                          ?.copyWith(color: context.c.text58)),
+                ],
+              ),
+            ),
+            const SizedBox(width: SandikSpace.sm),
+            Text(deger,
+                style: context.t.bodyMedium?.copyWith(
+                    color: context.c.text90, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
   }
 }
 

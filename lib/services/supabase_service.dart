@@ -1017,6 +1017,37 @@ class SupabaseService {
     if (rows.isEmpty) throw StateError('Portföy silinemedi.');
   }
 
+  /// Ana portföyün kullanıcı verdiği adı (yasin 2026-10-10: "Ana silinemez
+  /// ama ismi değiştirilebilir olmalı").
+  ///
+  /// ## Neden `user_metadata`, tablo değil
+  /// Ana bir satır değildir (`assets.portfoy_id IS NULL`, 0133); adı için
+  /// `portfoyler`'e sahte satır açmak "Ana = NULL" değişmezini bozardı.
+  /// `profiles` sütunu da olmaz: ortak `profiles`'ı okur ve sahibin birden
+  /// çok portföyü olduğunu ad üzerinden öğrenirdi (0135 kuralı: ortak tek
+  /// birleşik liste görür). `user_metadata` yalnız kullanıcının kendisine
+  /// (ve service_role'e) açık, cihazlar arası taşınır, göç istemez; eski
+  /// sürüm anahtarı bilmez ve "Ana" yazmaya devam eder.
+  String? anaPortfoyAdi() {
+    final v = _db.auth.currentUser?.userMetadata?['ana_portfoy_adi'];
+    if (v is! String) return null;
+    final t = v.trim();
+    return t.isEmpty ? null : t;
+  }
+
+  /// [ad] `null` ya da boşsa varsayılana ("Ana portföy") döner.
+  Future<void> anaPortfoyAdiniYaz(String? ad) async {
+    final t = ad?.trim();
+    await _log.log<void>(
+      source: 'SupabaseService.anaPortfoyAdiniYaz',
+      table: 'auth/update-user',
+      op: 'UPDATE',
+      request: const {'alan': 'ana_portfoy_adi'},
+      call: () => _db.auth.updateUser(UserAttributes(
+          data: {'ana_portfoy_adi': (t == null || t.isEmpty) ? null : t})),
+    );
+  }
+
   // ── Kullanıcı göstergeleri (0141) ─────────────────────────────────────────
   //
   // Yalnız Premium göstergeleri gören hesapta çağrılır

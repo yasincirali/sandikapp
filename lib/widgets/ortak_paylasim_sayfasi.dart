@@ -15,19 +15,20 @@ import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
 import 'gorunum_cipi.dart';
 import 'sandik_async_button.dart';
-import 'sandik_segment.dart';
 
 /// "Ortağın neyi görsün?" — sahibin bir ortağa hangi portföylerini
 /// gösterdiğini seçtiği alt sayfa (0135).
 ///
-/// ## Neden Hepsi / Seçtiklerim + anahtar listesi
-/// İki ayrı karar var ve ikisi de görünür olmalı: (1) bugünkü portföyler
-/// arasından hangileri, (2) YARIN açılacak portföy ne olsun. "Hepsi" ikinci
-/// soruya "görünsün" der (bugünkü davranış, satır yazılmazsa da bu);
-/// "Seçtiklerim" "gizli başlasın" der. Tek bir anahtar listesi (2) yi
-/// söylemezdi ve kullanıcı yeni "Kendi birikimim" portföyünü ortağına
-/// istemeden açabilirdi. Segment 2 seçenek (`SandikSegment`), portföyler
-/// `Switch.adaptive` (tasarım dili: açma/kapama).
+/// ## Neden yalnız anahtar listesi (segment yok)
+/// İlk sürümde üstte "Hepsi / Seçtiklerim" segmenti vardı; anahtarlar
+/// "Hepsi"de sönük ve dokunulmazdı. yasin 2026-10-10: "tab tasarımı yerine
+/// direkt bir switch" — kullanıcı önce sekme değiştirmek zorunda kalmadan
+/// portföyü doğrudan açıp kapatır. Sunucu sözleşmesi (0135) aynı kalır:
+/// HEPSİ açıksa `tumu = true` yazılır (yarın açılacak portföy de görünür,
+/// eski "Hepsi"); biri kapalıysa `tumu = false` (yeni portföy gizli başlar,
+/// eski "Seçtiklerim"). Bu ikinci kural altta tek cümleyle söylenir ki
+/// kullanıcı yeni "Kendi birikimim" portföyünü istemeden açmasın.
+/// Anahtarlar `Switch.adaptive` (tasarım dili: açma/kapama).
 ///
 /// Kayıt düğmeyle tek istek (`SandikAsyncButton`); her anahtar ayrı istek
 /// atsaydı yarım seçim bir an ortağa gidebilirdi.
@@ -76,17 +77,23 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
     }
   }
 
+  /// Anahtar her zaman açık seçim kümesini düzenler; `tumu` kayıtta
+  /// kümeden türetilir ([_hepsiAcik]).
   void _anahtar(String? portfoyId, bool acik) {
     setState(() {
       if (portfoyId == null) {
-        _secim = _secim.kopya(ana: acik);
+        _secim = _secim.kopya(tumu: false, ana: acik);
       } else {
         final s = {..._secim.portfoyIdler};
         acik ? s.add(portfoyId) : s.remove(portfoyId);
-        _secim = _secim.kopya(portfoyIdler: s);
+        _secim = _secim.kopya(tumu: false, portfoyIdler: s);
       }
     });
   }
+
+  /// Bütün portföyler (Ana dahil) açık mı — öyleyse kayıt "Hepsi"dir.
+  static bool _hepsiAcik(OrtakPaylasimi s, List<Portfoy> liste) =>
+      s.tumu || (s.ana && liste.every((p) => s.portfoyIdler.contains(p.id)));
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +105,7 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
     final baz = ref.watch(gosterimBazParaProvider);
     final hp = SandikSpace.screenH(context);
     final kimlikler = <String?>[null, for (final p in liste) p.id];
+    final hepsi = _hepsiAcik(_secim, liste);
     final hicbiri = !_secim.tumu &&
         _secim.gorunenSayisi([for (final p in liste) p.id]) == 0;
     double deger(String? id) => ozet[id]?.deger ?? 0;
@@ -112,7 +120,6 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
           ana: id == null,
           deger: baz.fmt(deger(id)),
           acik: _secim.gorur(id),
-          etkin: !_secim.tumu,
           onChanged: (v) => _anahtar(id, v),
         );
 
@@ -150,7 +157,7 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
               bicim: baz.fmt,
               sayi: hicbiri
                   ? l.ortakGorurHicbiriKisa
-                  : _secim.tumu
+                  : hepsi
                       ? l.ortakGorurHepsi
                       : l.ortakGorurSayi(gorunen.length, kimlikler.length),
               dilimler: [
@@ -159,21 +166,6 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
               ],
             ),
             const SizedBox(height: SandikSpace.md),
-            SandikSegment(
-              adet: 2,
-              secili: _secim.tumu ? 0 : 1,
-              onSec: (i) => setState(() => _secim = _secim.kopya(tumu: i == 0)),
-              oge: (_, i, __) =>
-                  Text(i == 0 ? l.ortakGorurHepsi : l.ortakGorurSecilenler),
-            ),
-            const SizedBox(height: SandikSpace.xs),
-            Text(
-              _secim.tumu
-                  ? l.ortakGorurHepsiAciklama
-                  : l.ortakGorurSeciliAciklama,
-              style: context.t.bodySmall?.copyWith(color: context.c.text36),
-            ),
-            const SizedBox(height: SandikSpace.sm),
             SandikCard(
               padding: const EdgeInsets.symmetric(
                   horizontal: SandikSpace.md, vertical: SandikSpace.xs),
@@ -181,10 +173,20 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
                 children: [
                   for (final (i, id) in kimlikler.indexed) ...[
                     if (i > 0) Divider(height: 1, color: context.c.hairline),
-                    satir(id, id == null ? l.portfoyAnaUzun : _ad(liste, id)),
+                    satir(
+                        id,
+                        id == null
+                            ? (ref.watch(anaPortfoyAdiProvider) ??
+                                l.portfoyAnaUzun)
+                            : _ad(liste, id)),
                   ],
                 ],
               ),
+            ),
+            const SizedBox(height: SandikSpace.xs),
+            Text(
+              l.ortakGorurYeniAciklama,
+              style: context.t.bodySmall?.copyWith(color: context.c.text58),
             ),
             if (hicbiri) ...[
               const SizedBox(height: SandikSpace.xs),
@@ -205,7 +207,7 @@ class _OrtakPaylasimIcerikState extends ConsumerState<OrtakPaylasimIcerik> {
                         OrtakPaylasimi(
                           sahipId: uid,
                           ortakId: widget.ortak.id,
-                          tumu: _secim.tumu,
+                          tumu: hepsi,
                           ana: _secim.ana,
                           portfoyIdler: _secim.portfoyIdler,
                         ),
@@ -326,7 +328,6 @@ class _PortfoySatiri extends StatelessWidget {
     required this.ana,
     required this.deger,
     required this.acik,
-    required this.etkin,
     required this.onChanged,
   });
 
@@ -334,56 +335,59 @@ class _PortfoySatiri extends StatelessWidget {
   final bool ana;
   final String deger;
   final bool acik;
-
-  /// "Hepsi"de anahtarlar bilgi amaçlı (hepsi açık) ve dokunulmaz.
-  final bool etkin;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
-    return AnimatedOpacity(
-      opacity: etkin ? 1 : 0.55,
-      duration: SandikMotion.stateOf(context),
-      curve: SandikMotion.enter,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: SandikMotion.stateOf(context),
-              curve: SandikMotion.enter,
-              width: 36,
-              height: 36,
-              decoration: context.chip(selected: acik, radius: SandikRadius.sm),
-              child: Icon(
-                ana ? Icons.home_outlined : Icons.folder_outlined,
-                size: 20,
-                color: acik ? c.amberText : c.text36,
-              ),
+    // Bütün satır anahtarı çevirir: iOS anahtarı 31 pt yüksekliğinde,
+    // satır ≥44 pt dokunma alanı verir (HIG). Ekran okuyucu satırı tek
+    // anahtar olarak duyar (MergeSemantics: ad + açık/kapalı).
+    return MergeSemantics(
+      child: SandikTappable(
+        onTap: () => onChanged(!acik),
+        scale: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: SandikTouch.min),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: SandikSpace.sm),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: SandikMotion.stateOf(context),
+                  curve: SandikMotion.enter,
+                  width: 36,
+                  height: 36,
+                  decoration:
+                      context.chip(selected: acik, radius: SandikRadius.sm),
+                  child: Icon(
+                    ana ? Icons.home_outlined : Icons.folder_outlined,
+                    size: 20,
+                    color: acik ? c.amberText : c.text36,
+                  ),
+                ),
+                const SizedBox(width: SandikSpace.smd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(ad,
+                          style: context.t.titleSmall?.copyWith(
+                              color: c.text90, fontWeight: FontWeight.w600)),
+                      Text(deger,
+                          style:
+                              context.t.bodySmall?.copyWith(color: c.text58)),
+                    ],
+                  ),
+                ),
+                Switch.adaptive(
+                  value: acik,
+                  activeTrackColor: c.amberText,
+                  onChanged: onChanged,
+                ),
+              ],
             ),
-            const SizedBox(width: SandikSpace.smd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(ad,
-                      style: context.t.titleSmall?.copyWith(
-                          color: c.text90, fontWeight: FontWeight.w600)),
-                  Text(deger,
-                      style: context.t.bodySmall?.copyWith(color: c.text58)),
-                ],
-              ),
-            ),
-            Semantics(
-              label: ad,
-              child: Switch.adaptive(
-                value: acik,
-                activeTrackColor: c.amberText,
-                onChanged: etkin ? onChanged : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

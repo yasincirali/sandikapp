@@ -8154,13 +8154,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String portfoySilAciklama(int sayi) {
-    return 'Your assets are not deleted. The $sayi records in this portfolio move back to the main portfolio; your total stays the same.';
+  String portfoySilAciklama(String ana) {
+    return 'These assets are not deleted; they move to: $ana. Your total stays the same.';
   }
 
   @override
-  String portfoySilindi(String ad) {
-    return '$ad deleted; its assets are in the main portfolio.';
+  String portfoySilindi(String ad, String ana) {
+    return '$ad deleted. Its assets are now in: $ana.';
+  }
+
+  @override
+  String get portfoySilBosAciklama => 'This portfolio has no assets.';
+
+  @override
+  String portfoySilGecmisAciklama(int sayi, String ana) {
+    return '$sayi past records move to: $ana.';
+  }
+
+  @override
+  String portfoySilVarliklar(int sayi) {
+    return 'Assets inside · $sayi';
+  }
+
+  @override
+  String portfoySilindiBos(String ad) {
+    return '$ad deleted.';
   }
 
   @override
@@ -8178,7 +8196,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portfoyAnaAciklama =>
-      'Anything you add without choosing a portfolio lives here.';
+      'Anything you add without choosing a portfolio lives here. It can\'t be deleted, but you can rename it.';
 
   @override
   String get portfoySiralaIpucu => 'Press and hold, then drag to reorder.';
@@ -8281,6 +8299,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get ortakGorurSeciliAciklama =>
       'A new portfolio stays hidden until you pick it.';
+
+  @override
+  String get ortakGorurYeniAciklama =>
+      'While all are on, portfolios you open later are visible too. Turn one off and new portfolios stay hidden until you turn them on.';
 
   @override
   String ortakGorurHicbiri(String ad) {

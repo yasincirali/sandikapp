@@ -13526,14 +13526,38 @@ abstract class AppLocalizations {
   /// No description provided for @portfoySilAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Varlıkların silinmez. Bu portföydeki {sayi} kayıt Ana portföye döner; toplamın değişmez.'**
-  String portfoySilAciklama(int sayi);
+  /// **'Bu varlıklar silinmez, şuraya taşınır: {ana}. Toplamın değişmez.'**
+  String portfoySilAciklama(String ana);
 
   /// No description provided for @portfoySilindi.
   ///
   /// In tr, this message translates to:
-  /// **'{ad} silindi, varlıkları Ana portföyde.'**
-  String portfoySilindi(String ad);
+  /// **'{ad} silindi. Varlıkları şurada: {ana}.'**
+  String portfoySilindi(String ad, String ana);
+
+  /// No description provided for @portfoySilBosAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu portföyde varlık yok.'**
+  String get portfoySilBosAciklama;
+
+  /// No description provided for @portfoySilGecmisAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{sayi} geçmiş kaydı şuraya taşınır: {ana}.'**
+  String portfoySilGecmisAciklama(int sayi, String ana);
+
+  /// No description provided for @portfoySilVarliklar.
+  ///
+  /// In tr, this message translates to:
+  /// **'İçindeki varlıklar · {sayi}'**
+  String portfoySilVarliklar(int sayi);
+
+  /// No description provided for @portfoySilindiBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silindi.'**
+  String portfoySilindiBos(String ad);
 
   /// No description provided for @portfoySilinemedi.
   ///
@@ -13562,7 +13586,7 @@ abstract class AppLocalizations {
   /// No description provided for @portfoyAnaAciklama.
   ///
   /// In tr, this message translates to:
-  /// **'Portföy seçmeden eklediklerin burada.'**
+  /// **'Portföy seçmeden eklediklerin burada. Silinemez, adını değiştirebilirsin.'**
   String get portfoyAnaAciklama;
 
   /// No description provided for @portfoySiralaIpucu.
@@ -13726,6 +13750,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yeni açtığın portföy, sen seçene kadar gizli kalır.'**
   String get ortakGorurSeciliAciklama;
+
+  /// No description provided for @ortakGorurYeniAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hepsi açıkken sonradan açacağın portföyler de görünür. Birini kapatırsan yeni portföyler sen açana kadar gizli kalır.'**
+  String get ortakGorurYeniAciklama;
 
   /// No description provided for @ortakGorurHicbiri.
   ///

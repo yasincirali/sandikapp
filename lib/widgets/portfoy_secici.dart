@@ -71,7 +71,7 @@ class PortfoySecici extends ConsumerWidget {
       if (liste.isNotEmpty)
         PortfoyCipi(
           key: const ValueKey('portfoy-cip-ana'),
-          etiket: l.portfoyAna,
+          etiket: ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAna,
           secili: secim == PortfoySecimi.ana,
           onTap: () => sec(PortfoySecimi.ana),
         ),
@@ -376,7 +376,7 @@ class PortfoyFormSecici extends ConsumerWidget {
     final cipler = <Widget>[
       PortfoyCipi(
         key: const ValueKey('form-portfoy-ana'),
-        etiket: l.portfoyAna,
+        etiket: ref.watch(anaPortfoyAdiProvider) ?? l.portfoyAna,
         secili: secili == null,
         onTap: () => onSec(null),
       ),

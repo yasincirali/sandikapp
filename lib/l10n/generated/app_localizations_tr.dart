@@ -8077,13 +8077,31 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String portfoySilAciklama(int sayi) {
-    return 'Varlıkların silinmez. Bu portföydeki $sayi kayıt Ana portföye döner; toplamın değişmez.';
+  String portfoySilAciklama(String ana) {
+    return 'Bu varlıklar silinmez, şuraya taşınır: $ana. Toplamın değişmez.';
   }
 
   @override
-  String portfoySilindi(String ad) {
-    return '$ad silindi, varlıkları Ana portföyde.';
+  String portfoySilindi(String ad, String ana) {
+    return '$ad silindi. Varlıkları şurada: $ana.';
+  }
+
+  @override
+  String get portfoySilBosAciklama => 'Bu portföyde varlık yok.';
+
+  @override
+  String portfoySilGecmisAciklama(int sayi, String ana) {
+    return '$sayi geçmiş kaydı şuraya taşınır: $ana.';
+  }
+
+  @override
+  String portfoySilVarliklar(int sayi) {
+    return 'İçindeki varlıklar · $sayi';
+  }
+
+  @override
+  String portfoySilindiBos(String ad) {
+    return '$ad silindi.';
   }
 
   @override
@@ -8100,7 +8118,8 @@ class AppLocalizationsTr extends AppLocalizations {
       'Varlıklarını amacına göre ayır: emeklilik, çocuğun için, deneme. Tümü görünümü ve ana sayfa toplamı değişmez; widget ve kilit ekranı da toplamı gösterir.';
 
   @override
-  String get portfoyAnaAciklama => 'Portföy seçmeden eklediklerin burada.';
+  String get portfoyAnaAciklama =>
+      'Portföy seçmeden eklediklerin burada. Silinemez, adını değiştirebilirsin.';
 
   @override
   String get portfoySiralaIpucu =>
@@ -8198,6 +8217,10 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get ortakGorurSeciliAciklama =>
       'Yeni açtığın portföy, sen seçene kadar gizli kalır.';
+
+  @override
+  String get ortakGorurYeniAciklama =>
+      'Hepsi açıkken sonradan açacağın portföyler de görünür. Birini kapatırsan yeni portföyler sen açana kadar gizli kalır.';
 
   @override
   String ortakGorurHicbiri(String ad) {
