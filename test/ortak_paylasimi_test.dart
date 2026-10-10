@@ -15,7 +15,6 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/screens/portfoy_yonetimi_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
-import 'package:portfoy_takip/widgets/ortak_paylasim_sayfasi.dart';
 import 'package:portfoy_takip/widgets/portfolio_summary_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
