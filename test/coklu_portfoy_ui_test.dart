@@ -120,10 +120,22 @@ class _SahteAnaAdi extends AnaPortfoyAdiNotifier {
 class _KayitliPortfolio extends _FakePortfolio {
   _KayitliPortfolio(super.assets);
   final silinen = <List<Asset>>[];
+  final tasinan = <(List<Asset>, String?)>[];
   @override
   Future<SilinenPozisyon?> deletePositionLots(List<Asset> lots) async {
     silinen.add(lots);
     return null;
+  }
+
+  @override
+  Future<void> pozisyonuTasi(List<Asset> lotlar, String? hedef) async {
+    tasinan.add((lotlar, hedef));
+    final s = state.valueOrNull!;
+    final ids = {for (final a in lotlar) a.id};
+    state = AsyncData(s.copyWith(assets: [
+      for (final a in s.assets)
+        ids.contains(a.id) ? a.copyWithPortfoy(hedef) : a,
+    ]));
   }
 }
 
@@ -338,11 +350,39 @@ void main() {
       expect(find.descendant(of: liste, matching: find.text('SISE')),
           findsOneWidget);
       expect(find.descendant(of: liste, matching: find.text('THYAO')),
-          findsNothing, reason: 'THYAO Ana\'da');
+          findsNothing,
+          reason: 'THYAO Ana\'da');
       expect(find.text('İçindeki varlıklar · 2'), findsOneWidget);
-      expect(find.textContaining('portföyle birlikte silinir'),
-          findsOneWidget);
+      expect(find.textContaining('portföyle birlikte silinir'), findsOneWidget);
       expect(find.text('Portföyü ve varlıkları sil'), findsOneWidget);
+
+      // Aktarma yolu: hedef sorusu Ana ve öbür portföyü sunar, silineni değil.
+      await t.tap(find.byKey(const ValueKey('portfoy-aktar-sil')));
+      await t.pumpAndSettle();
+      expect(find.text('Varlıklar nereye aktarılsın?'), findsOneWidget);
+      expect(find.byKey(const ValueKey('portfoy-secenek-ana')), findsOneWidget);
+      expect(find.byKey(const ValueKey('portfoy-secenek-$_b')), findsOneWidget);
+      expect(find.byKey(const ValueKey('portfoy-secenek-$_a')), findsNothing);
+    });
+
+    test('aktarVeSil: portföyün bütün satırları hedefe geçer, sonra silinir',
+        () async {
+      RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
+      final kayit = _KayitliPortfolio(_defter);
+      final c = ProviderContainer(overrides: [
+        ..._ortak(),
+        portfolioProvider.overrideWith(() => kayit),
+      ]);
+      addTearDown(c.dispose);
+      await c.read(authProvider.future);
+      await c.read(portfolioProvider.future);
+      await c.read(portfoylerProvider.future);
+      // Sunucu yok: portföy silme düşer; aktarım ondan önce koşmuş olmalı.
+      await expectLater(c.read(portfoylerProvider.notifier).aktarVeSil(_a, _b),
+          throwsA(anything));
+      expect(kayit.tasinan.single.$1.map((a) => a.id).toSet(), {'1', '4'});
+      expect(kayit.tasinan.single.$2, _b);
+      expect(kayit.silinen, isEmpty, reason: 'aktarılan varlık silinmez');
     });
 
     // yasin 2026-10-10: "taşıma yapmamalıyız" — silme, portföyün her
@@ -364,8 +404,8 @@ void main() {
       await expectLater(
           c.read(portfoylerProvider.notifier).sil(_a), throwsA(anything));
       expect(
-          [for (final g in kayit.silinen) g.map((a) => a.id).toList()]..sort(
-              (x, y) => x.first.compareTo(y.first)),
+          [for (final g in kayit.silinen) g.map((a) => a.id).toList()]
+            ..sort((x, y) => x.first.compareTo(y.first)),
           [
             ['1'],
             ['4'],
@@ -426,7 +466,8 @@ void main() {
       await t.pump(const Duration(milliseconds: 100));
       final anaSatir = find.byKey(const ValueKey('portfoy-satir-ana'));
       expect(
-          find.descendant(of: anaSatir, matching: find.byTooltip('Portföyü sil')),
+          find.descendant(
+              of: anaSatir, matching: find.byTooltip('Portföyü sil')),
           findsNothing);
       await t.tap(find.descendant(
           of: anaSatir, matching: find.byTooltip('Yeniden adlandır')));

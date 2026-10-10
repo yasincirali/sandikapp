@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../models/asset.dart';
+import '../models/gorunum_kapsami.dart';
 import '../models/position.dart';
 import '../models/portfoy.dart';
 import '../models/user_model.dart';
@@ -18,6 +19,7 @@ import '../utils/tr_format.dart';
 import '../widgets/gorunum_cipi.dart';
 import '../widgets/ortak_paylasim_sayfasi.dart';
 import '../widgets/portfoy_secici.dart';
+import '../widgets/portfoy_secim_sayfasi.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/sandik_async_button.dart';
 
@@ -245,7 +247,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
           ref.read(authProvider).valueOrNull?.id))
         if (!acik.contains(positionKey(g.first))) ...g,
     ].length;
-    final silindi = await showSandikSheet<bool>(
+    final secim = await showSandikSheet<_SilmeSecimi>(
       context: context,
       isScrollControlled: true,
       backgroundColor: context.c.surface2,
@@ -321,7 +323,7 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                     }
                     return;
                   }
-                  if (ctx.mounted) Navigator.pop(ctx, true);
+                  if (ctx.mounted) Navigator.pop(ctx, _SilmeSecimi.silindi);
                 },
                 child: Text(
                     pozisyonlar.isNotEmpty
@@ -329,8 +331,19 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
                         : l.portfoySil,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
+              // Silmek yerine aktarmak isteyen için ikinci yol (yasin
+              // 2026-10-10). Hedef bu sayfa kapandıktan sonra sorulur: iki
+              // sayfa üst üste binmesin.
+              if (pozisyonlar.isNotEmpty) ...[
+                const SizedBox(height: SandikSpace.sm),
+                OutlinedButton(
+                  key: const ValueKey('portfoy-aktar-sil'),
+                  onPressed: () => Navigator.pop(ctx, _SilmeSecimi.aktar),
+                  child: Text(l.portfoyAktarVeSil),
+                ),
+              ],
               TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
+                onPressed: () => Navigator.pop(ctx),
                 child: Text(l.cancel),
               ),
             ],
@@ -338,7 +351,11 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
         ),
       ),
     );
-    if (silindi == true && context.mounted) {
+    if (secim == _SilmeSecimi.aktar && context.mounted) {
+      await _aktarVeSil(context, ref, p);
+      return;
+    }
+    if (secim == _SilmeSecimi.silindi && context.mounted) {
       sandikSnack(
           context,
           pozisyonlar.isNotEmpty
@@ -347,7 +364,41 @@ class PortfoyYonetimiScreen extends ConsumerWidget {
           kind: SandikSnackKind.success);
     }
   }
+
+  /// "Varlıkları aktarıp sil": hedef sorulur, varlıklar oraya geçer, portföy
+  /// silinir. Hata snack'le söylenir; aktarım yarım kaldıysa defter
+  /// sunucudan tazelenir (`pozisyonuTasiAkisi` ile aynı kural).
+  Future<void> _aktarVeSil(
+      BuildContext context, WidgetRef ref, Portfoy p) async {
+    final l = context.l10n;
+    final s = await aktarimHedefiSor(context, ref, p);
+    if (s == null || !context.mounted) return;
+    final hedef = s == PortfoySecimi.ana ? null : s;
+    final hedefAdi = hedef == null
+        ? (ref.read(anaPortfoyAdiProvider) ?? l.portfoyAnaUzun)
+        : (ref.read(portfoylerProvider).valueOrNull ?? const <Portfoy>[])
+            .firstWhere((x) => x.id == hedef)
+            .ad;
+    try {
+      await ref.read(portfoylerProvider.notifier).aktarVeSil(p.id, hedef);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'portfoyYonetimi.aktarVeSil');
+      ref.invalidate(portfolioProvider);
+      if (context.mounted) {
+        sandikSnackError(context, e, prefix: l.portfoySilinemedi);
+      }
+      return;
+    }
+    if (context.mounted) {
+      sandikSnack(context, l.portfoyAktarilipSilindi(p.ad, hedefAdi),
+          kind: SandikSnackKind.success);
+    }
+  }
 }
+
+/// Silme sayfasının sonucu: silindi ya da "önce aktar" seçildi
+/// (vazgeçilirse `null`).
+enum _SilmeSecimi { silindi, aktar }
 
 /// Silme onayındaki tek varlık satırı: ad, miktar, güncel değer. Metin
 /// tam okunur (çok satıra kayar, kesilmez); ekran okuyucu tek cümle duyar.

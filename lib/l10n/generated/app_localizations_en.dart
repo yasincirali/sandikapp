@@ -8166,6 +8166,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portfoyVarliklarlaSil => 'Delete portfolio and assets';
 
   @override
+  String get portfoyAktarVeSil => 'Move assets, then delete';
+
+  @override
+  String get portfoyAktarHedefBaslik => 'Where should the assets go?';
+
+  @override
+  String portfoyAktarHedefAciklama(String ad) {
+    return 'Before $ad is deleted, all its assets and history move to the portfolio you pick.';
+  }
+
+  @override
+  String portfoyAktarilipSilindi(String ad, String hedef) {
+    return '$ad deleted. Its assets are now in: $hedef.';
+  }
+
+  @override
   String get portfoySilBosAciklama => 'This portfolio has no assets.';
 
   @override

@@ -13541,6 +13541,30 @@ abstract class AppLocalizations {
   /// **'Portföyü ve varlıkları sil'**
   String get portfoyVarliklarlaSil;
 
+  /// No description provided for @portfoyAktarVeSil.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıkları aktarıp sil'**
+  String get portfoyAktarVeSil;
+
+  /// No description provided for @portfoyAktarHedefBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıklar nereye aktarılsın?'**
+  String get portfoyAktarHedefBaslik;
+
+  /// No description provided for @portfoyAktarHedefAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silinmeden önce bütün varlıkları ve geçmişi seçtiğin portföye geçer.'**
+  String portfoyAktarHedefAciklama(String ad);
+
+  /// No description provided for @portfoyAktarilipSilindi.
+  ///
+  /// In tr, this message translates to:
+  /// **'{ad} silindi. Varlıkları şurada: {hedef}.'**
+  String portfoyAktarilipSilindi(String ad, String hedef);
+
   /// No description provided for @portfoySilBosAciklama.
   ///
   /// In tr, this message translates to:

@@ -181,6 +181,26 @@ class PortfoylerNotifier extends AsyncNotifier<List<Portfoy>> {
     }
   }
 
+  /// Silmeden önce varlıkları [hedef]'e (`null` = Ana) aktarır, sonra
+  /// portföyü siler (yasin 2026-10-10: "aktarma yolunu önerebiliriz onay
+  /// sayfasında"). Aktarım, Taşı'nın "Tamamı" yolu (`pozisyonuTasi`):
+  /// portföyün BÜTÜN satırları (alım, satım, temettü, silinmiş kayıtlar,
+  /// mezar taşları) geçmişiyle geçer, böylece ardından gelen [sil] silecek
+  /// bir şey bulmaz. Aktarım düşerse portföy silinmez.
+  Future<void> aktarVeSil(String id, String? hedef) async {
+    if (hedef == id) throw ArgumentError.value(hedef, 'hedef');
+    final uid = ref.read(authProvider).valueOrNull?.id;
+    final defter = ref.read(portfolioProvider).valueOrNull?.assets ?? const [];
+    final lotlar = [
+      for (final a
+          in portfoyeGoreBol(defter, {for (final p in _liste) p.id})[id] ??
+              const <Asset>[])
+        if (uid == null || a.userId == uid) a,
+    ];
+    await ref.read(portfolioProvider.notifier).pozisyonuTasi(lotlar, hedef);
+    await sil(id);
+  }
+
   /// Portföyü İÇİNDEKİ VARLIKLARLA siler (yasin 2026-10-10: "taşıma
   /// yapmamalıyız, bir portföy siliniyorsa onay ekranında gösterilen
   /// varlıklarla birlikte silinmeli").

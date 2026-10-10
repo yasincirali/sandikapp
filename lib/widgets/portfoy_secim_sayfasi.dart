@@ -186,6 +186,29 @@ Future<void> pozisyonuTasiAkisi(
   );
 }
 
+/// Silinecek [silinen] portföyün varlıkları nereye aktarılsın: Ana ve
+/// öbür portföyler arasından sorar. Dönen değer hedef ([PortfoySecimi.ana]
+/// ya da portföy kimliği) ya da vazgeçilirse `null`.
+Future<String?> aktarimHedefiSor(
+  BuildContext context,
+  WidgetRef ref,
+  Portfoy silinen,
+) {
+  final l = context.l10n;
+  final liste = ref.read(portfoylerProvider).valueOrNull ?? const <Portfoy>[];
+  final ana = ref.read(anaPortfoyAdiProvider);
+  return _portfoySor(
+    context,
+    baslik: l.portfoyAktarHedefBaslik,
+    aciklama: l.portfoyAktarHedefAciklama(silinen.ad),
+    secenekler: [
+      _Secenek(anahtar: PortfoySecimi.ana, ad: ana ?? l.portfoyAnaUzun),
+      for (final p in liste)
+        if (p.id != silinen.id) _Secenek(anahtar: p.id, ad: p.ad),
+    ],
+  );
+}
+
 Set<String> _bilinen(List<Portfoy> liste) => {for (final p in liste) p.id};
 
 /// Portföyün adı; `null` ya da listede olmayan kimlik Ana

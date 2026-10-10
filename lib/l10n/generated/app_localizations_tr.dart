@@ -8089,6 +8089,22 @@ class AppLocalizationsTr extends AppLocalizations {
   String get portfoyVarliklarlaSil => 'Portföyü ve varlıkları sil';
 
   @override
+  String get portfoyAktarVeSil => 'Varlıkları aktarıp sil';
+
+  @override
+  String get portfoyAktarHedefBaslik => 'Varlıklar nereye aktarılsın?';
+
+  @override
+  String portfoyAktarHedefAciklama(String ad) {
+    return '$ad silinmeden önce bütün varlıkları ve geçmişi seçtiğin portföye geçer.';
+  }
+
+  @override
+  String portfoyAktarilipSilindi(String ad, String hedef) {
+    return '$ad silindi. Varlıkları şurada: $hedef.';
+  }
+
+  @override
   String get portfoySilBosAciklama => 'Bu portföyde varlık yok.';
 
   @override
