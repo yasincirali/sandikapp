@@ -4,7 +4,6 @@ import '../demo/demo_modu.dart';
 import '../services/hesap_gecisi.dart';
 import '../services/hesap_kasasi.dart';
 import '../services/remote_config_service.dart';
-import 'auth_provider.dart';
 import 'preferences_provider.dart';
 
 /// Cihazda oturumu saklı hesaplar (çoklu hesap, bayrak `coklu_hesap`).
@@ -17,23 +16,14 @@ final kayitliHesaplarProvider = Provider<List<KayitliHesap>>((ref) {
   return n.value;
 });
 
-/// Hesap seçici kullanıcıya görünür mü.
+/// Hesap seçici kullanıcıya görünür mü: bayrak açıksa herkese (demo hariç).
 ///
-/// Bayrak VE şunlardan biri: Premium yüzeyleri görünür (paywall açık ya da
-/// admin — çoklu portföyle aynı kural) YA DA cihazda zaten 2+ hesap var.
-/// İkinci koşul şart: admin hesabından normal bir hesaba geçen kullanıcı,
-/// paywall kapalıyken seçiciyi kaybedip geri dönemezdi.
+/// İlk sürümde (#152) Premium'du: seçici yalnız paywall açıkken ya da
+/// adminde görünür, ekleme Premium isterdi. yasin 2026-10-10 akşam:
+/// "session switch özelliği de premium olmamalı". Hesap ekleme ve geçiş
+/// artık ücretsiz; tek sınır cihaz başına [HesapKasasi.enCok] hesap.
 final cokluHesapGorunurProvider = Provider<bool>((ref) {
   ref.watch(rcEtkinlesmeProvider);
   if (DemoModu.aktif) return false;
-  if (!RemoteConfigService.instance.cokluHesap) return false;
-  if (ref.watch(kayitliHesaplarProvider).length >= 2) return true;
-  final admin = ref.watch(isPushAdminProvider).valueOrNull == true;
-  return ref.watch(paywallVisibleProvider) || admin;
+  return RemoteConfigService.instance.cokluHesap;
 });
-
-/// Yeni hesap EKLEME Premium mu istiyor (yasin 2026-10-10: "yeni ekranlar
-/// ve özellikler paywall arkasında"). Geçiş ve çıkış her zaman serbest:
-/// Premium'u biten kullanıcı kendi hesaplarına kilitli kalmamalı.
-final hesapEklemeKilitliProvider =
-    Provider<bool>((ref) => ref.watch(premiumKilitliProvider));

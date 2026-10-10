@@ -13673,42 +13673,6 @@ abstract class AppLocalizations {
   /// **'Mum · EMA50 · EMA200'**
   String get prmSatirGrafik;
 
-  /// No description provided for @pwdHesapEtiket.
-  ///
-  /// In tr, this message translates to:
-  /// **'HESAPLAR'**
-  String get pwdHesapEtiket;
-
-  /// No description provided for @pwdHesapBaslik.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kendi hesabın, şirketin, ailen; tek dokunuşla geç.'**
-  String get pwdHesapBaslik;
-
-  /// No description provided for @pwdHesapUcretsiz.
-  ///
-  /// In tr, this message translates to:
-  /// **'1 hesap'**
-  String get pwdHesapUcretsiz;
-
-  /// No description provided for @pwdHesapPremium.
-  ///
-  /// In tr, this message translates to:
-  /// **'ek hesap ve geçiş'**
-  String get pwdHesapPremium;
-
-  /// No description provided for @pwOzHesap.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aynı telefonda birden çok hesap, aralarında tek dokunuşla geçiş'**
-  String get pwOzHesap;
-
-  /// No description provided for @prmSatirHesap.
-  ///
-  /// In tr, this message translates to:
-  /// **'Hesap'**
-  String get prmSatirHesap;
-
   /// No description provided for @pwdPortfoyEtiket.
   ///
   /// In tr, this message translates to:
@@ -14194,12 +14158,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Varlığı güncelle'**
   String get varlikGuncelleIpucu;
-
-  /// No description provided for @varlikGuncelleKilitli.
-  ///
-  /// In tr, this message translates to:
-  /// **'Varlığı güncelle, Premium'**
-  String get varlikGuncelleKilitli;
 
   /// No description provided for @varlikGuncelleUyariBaslik.
   ///

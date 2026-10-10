@@ -47,7 +47,7 @@ yok: MUM zaten Premium (`paywall_enabled` ya da admin).
       eski uygulama yeni alanı göndermez, yanıtı birebir aynı; yeni uygulama
       fonksiyon gitmeden önce kriptoda kapanıştan türetilen muma düşer.
 
-## ⏳ 2026-10-10 Varlığı güncelle (bayrak `goz_alici`, Premium)
+## ⏳ 2026-10-10 Varlığı güncelle (bayrak `goz_alici`, ücretsiz)
 
 Senin isteğin: "eklenen varlığın direkt düzeltme amacıyla varlık güncelleme
 eklemeliyiz … silme ve yeniden ekleme gibi davranması gerekmektedir."
@@ -58,10 +58,12 @@ silinir, yerine tek kayıt kalır" uyarısı, kayıtta sayılı onay. Arkada
 yeni sunucu yolu YOK: Sil + Ekle (ekleme düşerse silme geri alınır).
 Migration yok, deploy yok.
 
-- [ ] Görmek için Remote Config'te `goz_alici` açık olmalı. Paywall
-      kapalıyken yalnız admin hesabı görür (tek anahtar kuralı); paywall
-      açıkken ücretsiz kullanıcı kilitli görür. Düzeltme aracını ücretsiz
-      bırakmak istersen söyle — tek satırlık değişiklik.
+- [ ] Görmek için Remote Config'te `goz_alici` açık olmalı. Senin
+      kararınla (2026-10-10 akşam) Premium DEĞİL: bayrak açıkken herkes
+      görür. Aynı turda kaydırmadaki **Taşı** yalnız ikinci (adlandırılmış)
+      portföyü olana görünür; tek portföylü kullanıcıda taşıyacak yer yok.
+      Sil akışı #159 sonrası gerçek Portföy ekranında test edildi
+      (`test/portfoy_kaydirma_eylemleri_test.dart`), bozulma yok.
 
 ## ⏳ 2026-10-10 Borsadaki tüm hisseler, liste her gün sunucudan (migration 0139)
 
@@ -81,7 +83,7 @@ sürümler tabloyu hiç okumaz.
       kontrol: `select count(*) filter (where aktif), count(*) filter (where xu100), max(guncellendi) from public.bist_hisse;`
       (≈630 / 100 / bugün).
 
-## ⏳ 2026-10-10 Çoklu hesap ve hesaplar arası geçiş (migration 0137, bayrak `coklu_hesap`, Premium)
+## ⏳ 2026-10-10 Çoklu hesap ve hesaplar arası geçiş (migration 0137, bayrak `coklu_hesap`, ücretsiz)
 
 Senin isteğin: "hesap ekleme ve aralarında session switch, Instagram'daki
 gibi". Profil başlığı hesap adına döner ("yasin ⌄"); dokununca (ya da
@@ -90,8 +92,9 @@ tek dokunuşla geçiş, "Hesap ekle" (mevcut hesap açık kalır, en fazla 5).
 Çıkışta "X hesabından çık / Tüm hesaplardan çık". Giriş ekranında "Bu
 cihazdaki hesaplar". Hesap değişince uygulamanın bütün durumu baştan kurulur
 — bir hesabın verisi ötekine geçmez (`test/coklu_hesap_test.dart` bekçisi).
-`paywall_enabled` açıkken hesap EKLEMEK Premium; geçiş ve çıkış her zaman
-serbest. Pasif hesabın bildirimi de gelir, başlıkta hesap adıyla
+Senin kararınla (2026-10-10 akşam: "session switch özelliği de premium
+olmamalı") ekleme ve geçiş ücretsiz: bayrak açıkken herkes görür, paywall
+destesinde ve Premium tablosunda hesap satırı yok. Pasif hesabın bildirimi de gelir, başlıkta hesap adıyla
 ("cirali_holding · THYAO alım sinyali"); dokununca o hesaba geçer.
 
 - [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration

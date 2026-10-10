@@ -193,7 +193,7 @@ void main() {
         await bekle(t, 20);
         await t.tap(find.text('Düzenle'));
       }));
-  testWidgets('seçici kilitli', (t) => ciz(t, 'hesap_secici_kilitli',
+  testWidgets('seçici ücretsiz kullanıcı', (t) => ciz(t, 'hesap_secici_ucretsiz',
       ekran: const ProfileScreen(),
       premium: false,
       hesaplar: [_hesaplar.first],
