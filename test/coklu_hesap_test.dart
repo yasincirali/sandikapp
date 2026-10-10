@@ -13,6 +13,7 @@ import 'package:portfoy_takip/services/secure_session_storage.dart'
     show SessionVault;
 import 'package:portfoy_takip/theme/sandik.dart';
 import 'package:portfoy_takip/widgets/hesap_secici.dart';
+import 'package:portfoy_takip/widgets/custom_loading_indicator.dart';
 import 'package:portfoy_takip/widgets/uygulama_kabugu.dart';
 
 /// Çoklu hesap (bayrak `coklu_hesap`, 2026-10-10).
@@ -114,7 +115,11 @@ void main() {
 
   group('saf kurallar', () {
     test('siradakiHesap: düşmemiş, en son kullanılan', () {
-      final l = [_h('a', gunOnce: 1), _h('b', dustu: true), _h('c', gunOnce: 3)];
+      final l = [
+        _h('a', gunOnce: 1),
+        _h('b', dustu: true),
+        _h('c', gunOnce: 3)
+      ];
       expect(siradakiHesap(l, 'x')?.uid, 'a');
       expect(siradakiHesap(l, 'a')?.uid, 'c');
       expect(siradakiHesap([_h('a')], 'a'), isNull);
@@ -136,7 +141,8 @@ void main() {
     test('göreli zaman', () {
       final s = DateTime(2026, 10, 10, 14);
       expect(goreliZaman(s, s), 'az önce');
-      expect(goreliZaman(s.subtract(const Duration(minutes: 5)), s), '5 dk önce');
+      expect(
+          goreliZaman(s.subtract(const Duration(minutes: 5)), s), '5 dk önce');
       expect(goreliZaman(DateTime(2026, 10, 9, 23), s), 'dün');
       expect(goreliZaman(DateTime(2026, 10, 6), s), '4 gün önce');
       expect(goreliZaman(DateTime(2026, 9, 20), s), '2 hafta önce');
@@ -158,11 +164,14 @@ void main() {
     }
 
     test('bayrak kapalıyken hiçbir koşulda görünmez (canlı birebir)', () {
-      expect(kur([_h('a'), _h('b')], paywall: true).read(cokluHesapGorunurProvider),
+      expect(
+          kur([_h('a'), _h('b')], paywall: true)
+              .read(cokluHesapGorunurProvider),
           isFalse);
     });
 
-    test('bayrak açık: paywall kapalı, admin değil, tek hesap → yine görünür '
+    test(
+        'bayrak açık: paywall kapalı, admin değil, tek hesap → yine görünür '
         '(Premium değil, yasin 2026-10-10)', () {
       RemoteConfigService.testAcik = {'coklu_hesap'};
       expect(kur([]).read(cokluHesapGorunurProvider), isTrue);
@@ -228,6 +237,193 @@ void main() {
     });
   });
 
+  // yasin (2026-10-10): "session switch yaparken çift loading görülüyor".
+  // Avatarlı perde, yeni kapsamın ilk gerçek ekranına kadar tek yükleme.
+  group('UygulamaKabugu — tek yükleme', () {
+    Widget kok({required bool hazirBekle}) => UygulamaKabugu(
+          hazirBekle: hazirBekle,
+          uygulama: const MaterialApp(home: Text('yeni hesap')),
+        );
+
+    Future<void> gec(WidgetTester tester) async {
+      HesapGecisi.instance.perde.value = const HesapGecisPerdesi(
+          basHarf: 'A', ad: 'ayse', alt: 'hesabına geçiliyor');
+      HesapGecisi.instance.nesil.value++;
+      await tester.pump(); // boş kare
+      await tester.pump(); // yeni kapsam
+    }
+
+    tearDown(() {
+      HesapGecisi.instance.perde.value = null;
+      HesapGecisi.instance.yeniEkranHazir.value = true;
+    });
+
+    testWidgets('perde, kapı "hazır" deyene dek kalır', (tester) async {
+      await tester.pumpWidget(kok(hazirBekle: true));
+      await gec(tester);
+      expect(HesapGecisi.instance.yeniEkranHazir.value, isFalse);
+      // Eski sabit süre ve açılış GIF'inin tipik veri beklemesi geçti:
+      // perde hâlâ üstte, ikinci bir yükleme görünmez.
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('ayse'), findsOneWidget);
+
+      HesapGecisi.instance.yeniEkranHazir.value = true;
+      await tester.pump(SandikMotion.modal);
+      expect(HesapGecisi.instance.perde.value, isNull);
+      await tester.pump();
+      expect(find.text('ayse'), findsNothing);
+      expect(find.text('yeni hesap'), findsOneWidget);
+    });
+
+    testWidgets('kapı hiç "hazır" demezse emniyet supabı perdeyi kaldırır',
+        (tester) async {
+      await tester.pumpWidget(kok(hazirBekle: true));
+      await gec(tester);
+      await tester.pump(const Duration(seconds: 12));
+      await tester.pump(SandikMotion.modal);
+      expect(HesapGecisi.instance.perde.value, isNull);
+    });
+
+    testWidgets('hazirBekle kapalıyken eski sabit süre (bekçi kökleri)',
+        (tester) async {
+      await tester.pumpWidget(kok(hazirBekle: false));
+      await gec(tester);
+      expect(HesapGecisi.instance.yeniEkranHazir.value, isTrue);
+      await tester.pump(SandikMotion.modal);
+      expect(HesapGecisi.instance.perde.value, isNull);
+    });
+  });
+
+  // yasin (2026-10-10): "geçiş animasyonu üstüne biraz düşünülmesi gerek".
+  // Bayrak `goz_alici`: avatar seçicideki yerinden ortaya taşınır, gösterge
+  // gecikir, perde solarak çıkar. Kapalıyken sert giriş/çıkış (yukarıdaki).
+  group('geçiş hareketi (goz_alici)', () {
+    const kaynak = Rect.fromLTWH(24, 600, 40, 40);
+    Widget kok() => UygulamaKabugu(
+          uygulama: const MaterialApp(home: Text('yeni hesap')),
+        );
+    Offset avatarMerkezi(WidgetTester t) =>
+        t.getCenter(find.byType(HesapAvatari));
+
+    setUp(() => RemoteConfigService.testAcik = {'goz_alici'});
+    tearDown(() {
+      RemoteConfigService.testAcik = {};
+      HesapGecisi.instance.perde.value = null;
+    });
+
+    testWidgets('avatar dokunulan yerden ortaya taşınır, rengi korunur',
+        (tester) async {
+      await tester.pumpWidget(kok());
+      HesapGecisi.instance.perde.value = const HesapGecisPerdesi(
+          basHarf: 'C',
+          ad: 'cirali',
+          alt: 'hesabına geçiliyor',
+          ton: 1,
+          kaynak: kaynak);
+      await tester.pump(); // ölçüm karesi
+      await tester.pump(); // hareket başlar
+      final bas = avatarMerkezi(tester);
+      expect((bas - kaynak.center).distance, lessThan(4),
+          reason: 'ilk karede avatar seçicideki yerinde');
+      await tester.pump(SandikMotion.modal);
+      final son = avatarMerkezi(tester);
+      expect(
+          son.dx,
+          closeTo(
+              tester.view.physicalSize.width / tester.view.devicePixelRatio / 2,
+              1));
+      expect(son.dy, lessThan(bas.dy), reason: 'ortaya çıktı');
+      expect(tester.widget<HesapAvatari>(find.byType(HesapAvatari)).ton, 1);
+    });
+
+    testWidgets('gösterge hızlı geçişte görünmez, yavaşta belirir',
+        (tester) async {
+      await tester.pumpWidget(kok());
+      HesapGecisi.instance.perde.value = const HesapGecisPerdesi(
+          basHarf: 'C', ad: 'cirali', alt: 'hesabına geçiliyor');
+      await tester.pump();
+      double gosterge() => tester
+          .widget<AnimatedOpacity>(find.ancestor(
+              of: find.byType(CustomLoadingIndicator),
+              matching: find.byType(AnimatedOpacity)))
+          .opacity;
+      await tester.pump(SandikMotion.modal);
+      expect(gosterge(), 0);
+      await tester.pump(SandikMotion.modal * 2);
+      expect(gosterge(), 1);
+    });
+
+    testWidgets('perde solarak çıkar, sonra ağaçtan kalkar', (tester) async {
+      await tester.pumpWidget(kok());
+      HesapGecisi.instance.perde.value = const HesapGecisPerdesi(
+          basHarf: 'C', ad: 'cirali', alt: 'hesabına geçiliyor');
+      await tester.pump();
+      await tester.pump(SandikMotion.modal);
+      HesapGecisi.instance.perde.value = null;
+      await tester.pump();
+      await tester.pump(SandikMotion.surface ~/ 2);
+      expect(find.text('cirali'), findsOneWidget, reason: 'hâlâ soluyor');
+      await tester.pump(SandikMotion.surface);
+      await tester.pump();
+      expect(find.text('cirali'), findsNothing);
+      expect(find.text('yeni hesap'), findsOneWidget);
+    });
+
+    testWidgets('hareketi azalt: avatar yerinde, anlık', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          FakeAccessibilityFeatures.allOn;
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await tester.pumpWidget(kok());
+      HesapGecisi.instance.perde.value = const HesapGecisPerdesi(
+          basHarf: 'C',
+          ad: 'cirali',
+          alt: 'hesabına geçiliyor',
+          kaynak: kaynak);
+      await tester.pump();
+      await tester.pump();
+      expect((avatarMerkezi(tester) - kaynak.center).distance, greaterThan(100),
+          reason: 'taşıma yok, doğrudan ortada');
+      HesapGecisi.instance.perde.value = null;
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('cirali'), findsNothing);
+    });
+  });
+
+  // yasin (2026-10-10): "ilk girişte bir Face ID yapmışız, session switch'te
+  // 2. bir Face ID'ye gerek var mı". Kilit cihazın başındaki kişiyi doğrular.
+  group('geçişte kilit', () {
+    final g = HesapGecisi.instance;
+    tearDown(() {
+      g.cihazDogrulandi = false;
+      RemoteConfigService.testAcik = {};
+    });
+
+    test('bu süreçte kilit açıldıysa yeni hesap için tekrar sorulmaz', () {
+      RemoteConfigService.testAcik = {'coklu_hesap'};
+      g.cihazDogrulandi = true;
+      expect(g.acilisKilidiGerekli(kilitAcik: true), isFalse);
+    });
+
+    test('kilit hiç açılmadıysa kilitli hesaba geçerken bir kez sorulur', () {
+      RemoteConfigService.testAcik = {'coklu_hesap'};
+      g.cihazDogrulandi = false;
+      expect(g.acilisKilidiGerekli(kilitAcik: true), isTrue);
+    });
+
+    test('kilidi kapalı hesap hiç sormaz', () {
+      RemoteConfigService.testAcik = {'coklu_hesap'};
+      expect(g.acilisKilidiGerekli(kilitAcik: false), isFalse);
+    });
+
+    test('bayrak kapalıyken birebir eski kural (yalnız tercih)', () {
+      RemoteConfigService.testAcik = {};
+      g.cihazDogrulandi = true;
+      expect(g.acilisKilidiGerekli(kilitAcik: true), isTrue);
+    });
+  });
+
   group('hesap seçici', () {
     Future<void> ac(WidgetTester tester, List<KayitliHesap> l) async {
       await tester.pumpWidget(ProviderScope(
@@ -238,8 +434,8 @@ void main() {
         child: MaterialApp(
           theme: SandikApp.buildTheme(SandikPalette.light, Brightness.light),
           home: Scaffold(
-            body: Builder(
-                builder: (ctx) => HesapSeciciSayfasi(ustContext: ctx)),
+            body:
+                Builder(builder: (ctx) => HesapSeciciSayfasi(ustContext: ctx)),
           ),
         ),
       ));
@@ -250,8 +446,8 @@ void main() {
         (tester) async {
       await ac(tester, [
         _h('yasin'),
-        _h('ayse', gunOnce: 1).kopya(sonKullanim: DateTime.now()
-            .subtract(const Duration(days: 1))),
+        _h('ayse', gunOnce: 1).kopya(
+            sonKullanim: DateTime.now().subtract(const Duration(days: 1))),
         _h('sirket', dustu: true),
       ]);
       expect(find.text('Hesaplar'), findsOneWidget);

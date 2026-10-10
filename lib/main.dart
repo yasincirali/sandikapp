@@ -311,6 +311,8 @@ void main() async {
     // kapalıyken ağaç birebir `ProviderScope(child: SandikApp())`.
     runApp(UygulamaKabugu(
       uygulama: const SandikApp(),
+      // Geçiş perdesi `_AuthGate`'in ilk gerçek ekranını bekler (tek yükleme).
+      hazirBekle: true,
       tema: (b) => SandikApp.buildTheme(
           b == Brightness.dark ? SandikPalette.dark : SandikPalette.light, b),
     ));
@@ -1124,9 +1126,16 @@ class _AuthGateState extends ConsumerState<_AuthGate>
   @override
   void initState() {
     super.initState();
-    Future.delayed(_splashMinimum, () {
-      if (mounted) setState(() => _splashDone = true);
-    });
+    // Hesap geçişinden sonra kurulan kapı: avatarlı geçiş perdesi zaten
+    // ekranda, marka karesinin "algılanma" alt sınırı burada anlamsız —
+    // yalnız veriyi bekleriz (bkz. `UygulamaKabugu`, tek yükleme).
+    if (!HesapGecisi.instance.yeniEkranHazir.value) {
+      _splashDone = true;
+    } else {
+      Future.delayed(_splashMinimum, () {
+        if (mounted) setState(() => _splashDone = true);
+      });
+    }
     // Emniyet supabı burada BAŞLATILMAZ — kullanıcı belli olunca
     // `_startDataWaitTimeout()` ile başlar (bkz. _dataWaitTimer).
     WidgetsBinding.instance.addObserver(this);
@@ -1161,6 +1170,8 @@ class _AuthGateState extends ConsumerState<_AuthGate>
 
       if (user == null && !next.isLoading) {
         _checkedUserId = null;
+        // Çıkış: sıradaki hesap (kilidi açıksa) Face ID'yi yeniden sorar.
+        HesapGecisi.instance.cihazDogrulandi = false;
         _onboardingDone = null;
         _yasalKapi = null;
         _kilometreTasiSessizKullanici = null;
@@ -1738,6 +1749,9 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Ayrıca `LockScreen`, cihaz artık kimseyi doğrulayamıyorsa
         // (ekran kilidi kaldırılmış) tercihi kapatıp içeri alıyor — yani
         // kullanıcı dışarıda kilitli kalmaz.
+        // Uzun boşluk: cihazın başındaki kişi yeniden doğrulanmalı; hesap
+        // geçişi bu doğrulamaya güvenemez (`HesapGecisi.cihazDogrulandi`).
+        HesapGecisi.instance.cihazDogrulandi = false;
         final biyometrikAcik = ref.read(biometricLockProvider);
         if (biyometrikAcik && ref.read(authProvider).valueOrNull != null) {
           setState(() => _locked = true);
@@ -1764,6 +1778,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
             DateTime.now().difference(bg) >= _lockAfter &&
             ref.read(biometricLockProvider) &&
             ref.read(authProvider).valueOrNull != null) {
+          HesapGecisi.instance.cihazDogrulandi = false;
           setState(() => _locked = true);
         }
         _backgroundedAt = null;
@@ -1994,8 +2009,18 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       switchOutCurve: SandikMotion.exit,
       // Varsayılan layoutBuilder giren/çıkan çocuğu üst üste bindirir; splash
       // sönerken ana ekran altında beliriyor olsun diye aynısı korunur.
-      child: _resolveScreen(auth, user),
+      child: _ekranHazirBildir(_resolveScreen(auth, user)),
     );
+  }
+
+  /// Hesap geçişi perdesi bekliyorsa ve çizilen ekran splash değilse
+  /// perdeye "hazırım" de (kare sonunda; build'de yan etki olmasın).
+  Widget _ekranHazirBildir(Widget ekran) {
+    final hazir = HesapGecisi.instance.yeniEkranHazir;
+    if (!hazir.value && ekran.key != const ValueKey('splash')) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => hazir.value = true);
+    }
+    return ekran;
   }
 
   /// Tur sonuna ertelenmiş yazım için tek bekleyici var mı?
@@ -2271,7 +2296,12 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       _kilitDurumu(true);
       return LockScreen(
         key: const ValueKey('lock'),
-        onUnlocked: () => setState(() => _locked = false),
+        onUnlocked: () {
+          // Cihazın sahibi doğrulandı: hesap geçişinde yeni kapı kilidi
+          // ikinci kez sormaz (bkz. `HesapGecisi.cihazDogrulandi`).
+          HesapGecisi.instance.cihazDogrulandi = true;
+          setState(() => _locked = false);
+        },
         // Cihaz artık kimseyi doğrulayamıyorsa (ekran kilidi kaldırılmış)
         // kilit koruma sağlamıyor, yalnızca sahibini dışarıda tutuyor.
         // Tercihi kapat ve içeri al — bkz. `LockScreen` dokümanı.
@@ -2407,6 +2437,7 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Teklifi az önce doğrulayarak geçti; hemen kilit ekranı
         // göstermek aynı doğrulamayı iki kez sormak olurdu.
         _lockAtLaunchFor = userId;
+        HesapGecisi.instance.cihazDogrulandi = true;
         setState(() {});
       },
       onRet: () async {
@@ -2493,7 +2524,13 @@ class _AuthGateState extends ConsumerState<_AuthGate>
       );
 
   /// Soğuk açılışta kilit gerekiyor mu — kullanıcı başına BİR kez sorulur.
+  ///
+  /// Hesap geçişi kapıyı baştan kurar; cihazın sahibi bu süreçte kilitten
+  /// zaten geçtiyse yeni hesap için ikinci kez sorulmaz (yasin, 2026-10-10;
+  /// gerekçe `HesapGecisi.cihazDogrulandi`). Bayrak kapalıyken hesap geçişi
+  /// yok: koşul birebir eski (`acik` false).
   String? _lockAtLaunchFor;
-  bool _lockAtLaunchNeeded() => ref.read(biometricLockProvider);
+  bool _lockAtLaunchNeeded() => HesapGecisi.instance
+      .acilisKilidiGerekli(kilitAcik: ref.read(biometricLockProvider));
 }
 
