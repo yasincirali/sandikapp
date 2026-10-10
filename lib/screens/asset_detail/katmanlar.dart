@@ -193,6 +193,10 @@ extension _DetayKatmanlar on _AssetDetailScreenState {
         (baslik: l.s4RowSignals, kart: const SinyalKilitKarti()),
       if (fonKarnesiVar())
         (baslik: l.s4RowFundReport, kart: _fonKarnesi(dis: dis)),
+      // Fon X-Ray: koşul kartın kendisinden (`FonDagilimiKarti.cizilir`) —
+      // kilitliyken de satır var (satış anı), Premium görünmüyorsa yok.
+      if (FonDagilimiKarti.cizilir(ref, tur, ticker))
+        (baslik: l.xrSatirFonunIci, kart: _fonDagilimi(dis: dis)),
       if (paraAkisiVar()) (baslik: l.s4RowFlow, kart: _paraAkisi(dis: dis)),
       if (hacimVar()) (baslik: l.s4RowVolume, kart: _hacimRadari(dis: dis)),
       if (kriptoVar()) (baslik: l.s4RowCrypto, kart: _kriptoBaski(dis: dis)),

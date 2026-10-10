@@ -21,10 +21,13 @@ part of '../paywall_screen.dart';
 ///
 /// Sıra (2026-10-10, olgun Premium seti): araştırmada para ödenen işler
 /// önde — sınır, rapor/vergi, temettü — sonra alışkanlık ve analiz.
+/// Fon X-Ray (2026-10-10) temettünün hemen ardında: o da "param gerçekte
+/// ne yapıyor" sorusunun ücretli cevabı (getquin/Parqet'te ücretli).
 enum PaywallKarti {
   varlik,
   rapor,
   temettu,
+  xray,
   sinyal,
   karsilastir,
   ortak,
@@ -53,6 +56,7 @@ PaywallKarti? kaynaktanKart(String source) {
     'masraf_dokumu' =>
       PaywallKarti.rapor,
     'temettu_tahmini' => PaywallKarti.temettu,
+    'fon_xray' || 'portfoy_xray' => PaywallKarti.xray,
     'aylik_rapor' => PaywallKarti.not,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
@@ -205,6 +209,16 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
               renk: _KartRengi.yesil),
           null,
           l.pwdTemettuPremium,
+        ),
+      // Fon X-Ray bütünüyle Premium: ücretsiz satırı yok.
+      PaywallKarti.xray => (
+          _KartRengi.koyu,
+          l.pwdXrayEtiket,
+          l.pwdXrayBaslik,
+          null,
+          _YiginGorseli(renk: _KartRengi.koyu),
+          null,
+          l.pwdXrayPremium,
         ),
       // Sinyal paywall açıkken bütünüyle Premium (2026-10-10): ücretsiz
       // satırı yok.
@@ -1037,6 +1051,51 @@ class _BelgeGorseli extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [satir(0.9, 0.7), satir(0.6, 0.5), satir(0.8, 0.9)],
+    );
+  }
+}
+
+/// Fon X-Ray kartı: üç yığılmış çubuk (iki fonun içi ve portföyün
+/// toplamı). Oranlar temsilîdir, gerçek veri değil — öteki kart
+/// görselleri gibi yalnız biçimi anlatır.
+class _YiginGorseli extends StatelessWidget {
+  const _YiginGorseli({required this.renk});
+
+  final _KartRengi renk;
+
+  @override
+  Widget build(BuildContext context) {
+    final tonlar = [
+      renk.vurgu,
+      renk.vurgu.withValues(alpha: 0.6),
+      renk.vurgu.withValues(alpha: 0.3),
+      renk.soluk,
+    ];
+    Widget satir(List<int> paylar) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(SandikSpace.xs),
+            child: SizedBox(
+              height: SandikSpace.smd,
+              child: Row(
+                children: [
+                  for (var i = 0; i < paylar.length; i++)
+                    Expanded(
+                      flex: paylar[i],
+                      child: ColoredBox(color: tonlar[i % tonlar.length]),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        satir(const [62, 18, 12, 8]),
+        satir(const [20, 45, 25, 10]),
+        satir(const [38, 30, 20, 12]),
+      ],
     );
   }
 }

@@ -403,6 +403,16 @@ class RemoteConfigService {
     // açılırsa liste boş gelir ve form bugünkü serbest metne düşer.
     'mevduat_banka_secici': false,
 
+    // Fon X-Ray Katman A (2026-10-10): varlık kartında fonun ilk 10 kalemi
+    // (KAP aylık Portföy Dağılım Raporu, beş kontrolden geçenler, 0132) ve
+    // Portföy X-Ray'de fonlar arası örtüşme ("THYAO'yu 3 fonundan
+    // tutuyorsun"). Katman B (TEFAS sınıf dağılımı) bu bayrağa bağlı DEĞİL;
+    // yalnız Premium tek anahtarına (`premiumOzellikleriGorunur`). KAPALI
+    // doğar: kalem verisi sunucuda da `FON_KALEM_ACIK` secret'ıyla açılır
+    // ve kapsamı hiçbir zaman %100 olmayacak (metinsiz PDF'ler); kapalıyken
+    // kart ve ekran yalnız sınıf dağılımını gösterir.
+    'fon_xray_kalem': false,
+
     // ── Sadeleştirme (2026-10-04) — bayraklar KALDIRILDI (2026-10-05) ────
     // 2026-10-04'te "bugün yapılan tüm geliştirmeler için flagleri açık
     // olarak mergele maine" kararıyla AÇIK doğan 15 bayrak 2026-10-05'te
@@ -751,6 +761,9 @@ class RemoteConfigService {
   /// Mevduat formunda banka seçici + faiz varsayılanı + not. Gerekçe
   /// `_defaults`'ta.
   bool get mevduatBankaSecici => _bayrak('mevduat_banka_secici');
+
+  /// Fon X-Ray kalemleri ve örtüşme (Katman A). Gerekçe `_defaults`'ta.
+  bool get fonXrayKalem => _bayrak('fon_xray_kalem');
 
   /// Temettü stopaj oranı; `null` = bilinmiyor (öneri brüt kalır).
   double? get temettuStopajOrani {

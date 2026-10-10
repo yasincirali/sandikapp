@@ -7872,4 +7872,172 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdSinyalRozet => '8 indicators';
+
+  @override
+  String get xrKartBaslikUpper => 'WHAT\'S INSIDE THE FUND';
+
+  @override
+  String get xrSatirFonunIci => 'Inside the fund';
+
+  @override
+  String xrKaynakTefas(String tarih) {
+    return 'TEFAS · $tarih';
+  }
+
+  @override
+  String xrToplamSapiyor(String toplam) {
+    return 'The source\'s classes add up to $toplam; the gap isn\'t assigned to any class.';
+  }
+
+  @override
+  String get xrKilitBaslik => 'Fund X-Ray';
+
+  @override
+  String get xrKilitGovde =>
+      'Where the fund\'s money sits: stocks, government bonds, deposits, gold, FX… From TEFAS\'s daily allocation, with date and source.';
+
+  @override
+  String get xrKilitSatir => 'What\'s inside the fund is in Premium';
+
+  @override
+  String xrKalemlerBaslik(int n) {
+    return 'Top $n holdings';
+  }
+
+  @override
+  String xrKaynakKap(String donem) {
+    return 'KAP Portfolio Allocation Report · end of $donem';
+  }
+
+  @override
+  String get xrKapAc => 'Open the report on KAP';
+
+  @override
+  String get xrKovaBistHisse => 'BIST stocks';
+
+  @override
+  String get xrKovaYabanciHisse => 'Foreign stocks';
+
+  @override
+  String get xrKovaDevlet => 'Government debt (TRY)';
+
+  @override
+  String get xrKovaOzel => 'Corporate debt';
+
+  @override
+  String get xrKovaDovizBorc => 'FX & external debt';
+
+  @override
+  String get xrKovaParaPiyasasi => 'Money market / repo';
+
+  @override
+  String get xrKovaMevduat => 'Deposits';
+
+  @override
+  String get xrKovaMaden => 'Precious metals';
+
+  @override
+  String get xrKovaFon => 'Fund / ETF units';
+
+  @override
+  String get xrKovaGayrimenkul => 'Real estate / venture';
+
+  @override
+  String get xrKovaDiger => 'Other';
+
+  @override
+  String get xrKovaEtiketsiz => 'Unlabelled class';
+
+  @override
+  String get xrKovaDoviz => 'Foreign currency';
+
+  @override
+  String get xrKovaKripto => 'Crypto';
+
+  @override
+  String get xrKovaEmtia => 'Commodities';
+
+  @override
+  String get xrEkranBaslik => 'Portfolio X-Ray';
+
+  @override
+  String get xrRaporAlt => 'Where your money really is, inside your funds too';
+
+  @override
+  String get xrToplamEtiket => 'Your portfolio today';
+
+  @override
+  String get xrDagilimUpper => 'LOOK-THROUGH ALLOCATION';
+
+  @override
+  String get xrDisi => 'Not covered';
+
+  @override
+  String get xrDisiAciklama =>
+      'Funds with no allocation data, and the gap in funds whose source doesn\'t add up to 100%. Not spread over other classes.';
+
+  @override
+  String xrDisiFonlar(String fonlar) {
+    return 'No allocation data: $fonlar';
+  }
+
+  @override
+  String xrKaynakFonlar(String tarih) {
+    return 'Funds: TEFAS daily allocation · $tarih';
+  }
+
+  @override
+  String get xrKaynakDogrudan =>
+      'Direct holdings at today\'s prices; partners\' holdings aren\'t included.';
+
+  @override
+  String get xrBos => 'Nothing to X-ray yet';
+
+  @override
+  String get xrBosAlt =>
+      'Add a holding and your real allocation, inside funds too, shows up here.';
+
+  @override
+  String get xrEkranKilitGovde =>
+      'The stocks, bonds, deposits and gold inside your funds, together with what you hold directly: where your money really is. From TEFAS\'s daily allocation, with date and source.';
+
+  @override
+  String get xrEkranKilitSatir => 'Portfolio X-Ray is in Premium';
+
+  @override
+  String get xrOrtusmeUpper => 'HELD IN MORE THAN ONE PLACE';
+
+  @override
+  String get xrOrtusmeAciklama =>
+      'If you hold the same stock through several funds (or a fund and directly), your total exposure.';
+
+  @override
+  String xrOrtusmeKaynak(int n) {
+    return 'via $n holdings';
+  }
+
+  @override
+  String get xrDogrudan => 'directly';
+
+  @override
+  String xrKaynakKalemler(String donem) {
+    return 'Holdings: KAP Portfolio Allocation Reports · end of $donem';
+  }
+
+  @override
+  String get pwOzXray =>
+      'Fund X-Ray: inside your funds and your real allocation';
+
+  @override
+  String get prmSatirXray => 'Fund X-Ray';
+
+  @override
+  String get pwdXrayEtiket => 'FUND X-RAY';
+
+  @override
+  String get pwdXrayBaslik =>
+      'See what\'s inside your funds and where your money really is.';
+
+  @override
+  String get pwdXrayPremium => 'Fund and portfolio X-Ray';
 }

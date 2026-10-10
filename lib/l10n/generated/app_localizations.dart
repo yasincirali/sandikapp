@@ -13029,6 +13029,294 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'8 gösterge'**
   String get pwdSinyalRozet;
+
+  /// No description provided for @xrKartBaslikUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'FONUN İÇİNDE NE VAR'**
+  String get xrKartBaslikUpper;
+
+  /// No description provided for @xrSatirFonunIci.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonun içi'**
+  String get xrSatirFonunIci;
+
+  /// No description provided for @xrKaynakTefas.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEFAS · {tarih}'**
+  String xrKaynakTefas(String tarih);
+
+  /// No description provided for @xrToplamSapiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaynaktaki sınıfların toplamı {toplam}; fark hiçbir sınıfa eklenmedi.'**
+  String xrToplamSapiyor(String toplam);
+
+  /// No description provided for @xrKilitBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon X-Ray'**
+  String get xrKilitBaslik;
+
+  /// No description provided for @xrKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonun parası nerede duruyor: hisse, devlet tahvili, mevduat, altın, döviz… TEFAS\'ın günlük dağılımından, tarih ve kaynakla.'**
+  String get xrKilitGovde;
+
+  /// No description provided for @xrKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonun içinde ne var Premium\'da'**
+  String get xrKilitSatir;
+
+  /// No description provided for @xrKalemlerBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'En büyük {n} kalem'**
+  String xrKalemlerBaslik(int n);
+
+  /// No description provided for @xrKaynakKap.
+  ///
+  /// In tr, this message translates to:
+  /// **'KAP Portföy Dağılım Raporu · {donem} sonu'**
+  String xrKaynakKap(String donem);
+
+  /// No description provided for @xrKapAc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporu KAP\'ta aç'**
+  String get xrKapAc;
+
+  /// No description provided for @xrKovaBistHisse.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST hisse'**
+  String get xrKovaBistHisse;
+
+  /// No description provided for @xrKovaYabanciHisse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yabancı hisse'**
+  String get xrKovaYabanciHisse;
+
+  /// No description provided for @xrKovaDevlet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devlet borçlanması (TL)'**
+  String get xrKovaDevlet;
+
+  /// No description provided for @xrKovaOzel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özel sektör borçlanması'**
+  String get xrKovaOzel;
+
+  /// No description provided for @xrKovaDovizBorc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz / dış borçlanma'**
+  String get xrKovaDovizBorc;
+
+  /// No description provided for @xrKovaParaPiyasasi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para piyasası / repo'**
+  String get xrKovaParaPiyasasi;
+
+  /// No description provided for @xrKovaMevduat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevduat / katılma hesabı'**
+  String get xrKovaMevduat;
+
+  /// No description provided for @xrKovaMaden.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kıymetli maden'**
+  String get xrKovaMaden;
+
+  /// No description provided for @xrKovaFon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon / BYF payı'**
+  String get xrKovaFon;
+
+  /// No description provided for @xrKovaGayrimenkul.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gayrimenkul / girişim'**
+  String get xrKovaGayrimenkul;
+
+  /// No description provided for @xrKovaDiger.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get xrKovaDiger;
+
+  /// No description provided for @xrKovaEtiketsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Etiketsiz sınıf'**
+  String get xrKovaEtiketsiz;
+
+  /// No description provided for @xrKovaDoviz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Döviz'**
+  String get xrKovaDoviz;
+
+  /// No description provided for @xrKovaKripto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kripto'**
+  String get xrKovaKripto;
+
+  /// No description provided for @xrKovaEmtia.
+  ///
+  /// In tr, this message translates to:
+  /// **'Emtia'**
+  String get xrKovaEmtia;
+
+  /// No description provided for @xrEkranBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy X-Ray'**
+  String get xrEkranBaslik;
+
+  /// No description provided for @xrRaporAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlarının içi dahil, paran gerçekte nerede'**
+  String get xrRaporAlt;
+
+  /// No description provided for @xrToplamEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü portföyün'**
+  String get xrToplamEtiket;
+
+  /// No description provided for @xrDagilimUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'GERÇEK DAĞILIM'**
+  String get xrDagilimUpper;
+
+  /// No description provided for @xrDisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'X-Ray dışı'**
+  String get xrDisi;
+
+  /// No description provided for @xrDisiAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılımı bulunamayan fonlar ve kaynak toplamının %100\'ü tutmadığı fonlardaki fark. Başka sınıflara dağıtılmadı.'**
+  String get xrDisiAciklama;
+
+  /// No description provided for @xrDisiFonlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılımı bulunamayan: {fonlar}'**
+  String xrDisiFonlar(String fonlar);
+
+  /// No description provided for @xrKaynakFonlar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlar: TEFAS günlük dağılımı · {tarih}'**
+  String xrKaynakFonlar(String tarih);
+
+  /// No description provided for @xrKaynakDogrudan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrudan tuttukların bugünkü fiyatla; ortaklarının varlıkları dahil değil.'**
+  String get xrKaynakDogrudan;
+
+  /// No description provided for @xrBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'X-Ray\'lenecek bir varlığın yok'**
+  String get xrBos;
+
+  /// No description provided for @xrBosAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık ekleyince fonlarının içi dahil gerçek dağılımın burada görünür.'**
+  String get xrBosAlt;
+
+  /// No description provided for @xrEkranKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlarının içindeki hisse, tahvil, mevduat ve altın, doğrudan tuttuklarınla birlikte: paran gerçekte nerede. TEFAS\'ın günlük dağılımından, tarih ve kaynakla.'**
+  String get xrEkranKilitGovde;
+
+  /// No description provided for @xrEkranKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy X-Ray Premium\'da'**
+  String get xrEkranKilitSatir;
+
+  /// No description provided for @xrOrtusmeUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'BİRDEN ÇOK YERDEN TUTTUKLARIN'**
+  String get xrOrtusmeUpper;
+
+  /// No description provided for @xrOrtusmeAciklama.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aynı hisseyi birden çok fonunda (ya da hem fonunda hem doğrudan) tutuyorsan toplam payın.'**
+  String get xrOrtusmeAciklama;
+
+  /// No description provided for @xrOrtusmeKaynak.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n} yerden'**
+  String xrOrtusmeKaynak(int n);
+
+  /// No description provided for @xrDogrudan.
+  ///
+  /// In tr, this message translates to:
+  /// **'doğrudan'**
+  String get xrDogrudan;
+
+  /// No description provided for @xrKaynakKalemler.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kalemler: KAP Portföy Dağılım Raporları · {donem} sonu'**
+  String xrKaynakKalemler(String donem);
+
+  /// No description provided for @pwOzXray.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon X-Ray: fonlarının içi ve portföyünün gerçek dağılımı'**
+  String get pwOzXray;
+
+  /// No description provided for @prmSatirXray.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon X-Ray'**
+  String get prmSatirXray;
+
+  /// No description provided for @pwdXrayEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'FON X-RAY'**
+  String get pwdXrayEtiket;
+
+  /// No description provided for @pwdXrayBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fonlarının içinde ne var, paran gerçekte nerede gör.'**
+  String get pwdXrayBaslik;
+
+  /// No description provided for @pwdXrayPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fon ve portföy X-Ray'**
+  String get pwdXrayPremium;
 }
 
 class _AppLocalizationsDelegate

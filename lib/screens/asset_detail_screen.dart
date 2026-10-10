@@ -57,6 +57,7 @@ import '../utils/acilis_kapisi.dart';
 import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
+import '../widgets/fon_dagilimi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
 import '../widgets/sinyal_kilit_karti.dart';
 import '../widgets/sandik_async_button.dart';
@@ -1735,6 +1736,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                 const SizedBox(height: SandikSpace.lg),
                 ..._istatistikler(pnl.currentUnitTRY),
                 _fonKarnesi(),
+                _fonDagilimi(),
                 _paraAkisi(),
                 _hacimRadari(),
                 _kriptoBaski(),

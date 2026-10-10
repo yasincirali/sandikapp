@@ -376,6 +376,14 @@ extension _DetayOzet on _AssetDetailScreenState {
       FonKarnesiKarti(
           tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
 
+  /// Fon X-Ray (Premium, 2026-10-10) — fon karnesinin hemen altında: karne
+  /// "kategorisinde nerede", bu kart "parası nerede duruyor". Premium
+  /// özellikleri görünmüyorsa (paywall kapalı, admin değil) hiç yer
+  /// kaplamaz; çizilme koşulları kartta (`FonDagilimiKarti`).
+  Widget _fonDagilimi({EdgeInsetsGeometry dis = _kartBoslugu}) =>
+      FonDagilimiKarti(
+          tur: widget.asset.type, ticker: widget.asset.ticker, dis: dis);
+
   /// Para akışı (Balina B1) — fon karnesinin hemen altında: karne "getirisi
   /// nasıl", bu kart "parası nereye gidiyor" sorusunu yanıtlar. Çizilmeme
   /// koşulları ve boşluk kuralı karneyle aynı (bkz. `ParaAkisiKarti`).

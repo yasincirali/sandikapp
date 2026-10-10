@@ -10,6 +10,7 @@ import '../providers/preferences_provider.dart' show premiumKilitliProvider;
 import '../providers/raporlar_provider.dart';
 import '../screens/aylik_rapor_screen.dart';
 import '../screens/hafta_ozeti_screen.dart';
+import '../screens/portfoy_xray_screen.dart';
 import '../screens/recap_screen.dart';
 import '../screens/siralama_screen.dart' show yarisGirisEkrani;
 import '../screens/temettu_tahmini_screen.dart';
@@ -33,9 +34,9 @@ import '../theme/sandik.dart';
 /// ## Satır kuralı
 /// Bir satır yalnızca o rapor BUGÜN başka bir yerden açılabiliyorsa görünür
 /// (koşullar `raporlar_provider.dart` ve [yilOzetiProvider] notlarında);
-/// kapı yeni bir erişim icat etmez. İstisna Yıllık rapor ve Temettü
-/// tahmini (Premium, 2026-10-10): yalnız bu kapıdan açılır ve Premium
-/// özellikleri görünürken hep vardır. Hiç satır yoksa düğme de yok. Demoda
+/// kapı yeni bir erişim icat etmez. İstisna Yıllık rapor, Temettü
+/// tahmini ve Portföy X-Ray (Premium, 2026-10-10): yalnız bu kapıdan
+/// açılır ve Premium özellikleri görünürken hep vardır. Hiç satır yoksa düğme de yok. Demoda
 /// düğme hiç çizilmez: kupa da demoda yoktu (yarış sunucu havuzudur) ve
 /// öteki üç rapor da sunucu notlarından/anlık görüntülerden okunur.
 class RaporlarDugmesi extends ConsumerWidget {
@@ -153,6 +154,17 @@ class _RaporlarSayfasi extends ConsumerWidget {
               ekran,
               adaptiveRoute<void>(
                   builder: (_) => const TemettuTahminiScreen()))),
+        ),
+        // Portföy X-Ray (Premium, 2026-10-10): aynı kural — yalnız bu
+        // kapıdan açılır, kilitliyken satır var, ekran kilit kartı çizer.
+        _RaporSatiri(
+          ikon: Icons.donut_large_rounded,
+          baslik: l.xrEkranBaslik,
+          alt: l.xrRaporAlt,
+          kilitli: kilitli,
+          onTap: () => ac((ekran) => pushGuarded(
+              ekran,
+              adaptiveRoute<void>(builder: (_) => const PortfoyXrayScreen()))),
         ),
       ],
       if (aylik != null)
