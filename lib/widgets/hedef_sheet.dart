@@ -84,7 +84,7 @@ class _HedefSheetState extends State<_HedefSheet> {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         SandikSpace.screenH(context),
-        SandikSpace.lg,
+        SandikSpace.sm2,
         SandikSpace.screenH(context),
         MediaQuery.of(context).viewInsets.bottom + SandikSpace.lg,
       ),
@@ -92,6 +92,9 @@ class _HedefSheetState extends State<_HedefSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Tutamaç (HIG denetimi 2026-10-10): aşağı kaydırarak kapandığı görünsün.
+          const Center(child: SandikTutamac()),
+          const SizedBox(height: SandikSpace.md),
           if (widget.etiket != null)
             Padding(
               padding: const EdgeInsets.only(bottom: SandikSpace.xs),

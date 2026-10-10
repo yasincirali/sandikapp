@@ -251,15 +251,11 @@ class _ComparePickerSheetState extends State<_ComparePickerSheet>
           heightFactor: 0.78,
           child: Column(
             children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.c.overlay,
-                  borderRadius: BorderRadius.circular(SandikRadius.sm),
-                ),
+              // Ortak tutamaç (HIG denetimi 2026-10-10): `overlay` tonunda
+              // 40pt çizgi neredeyse görünmüyordu; her sheet aynı tutamaç.
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: SandikSpace.sm),
+                child: SandikTutamac(),
               ),
               Padding(
                 padding: EdgeInsets.fromLTRB(SandikSpace.screenH(context), 8, SandikSpace.screenH(context), 8),

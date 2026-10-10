@@ -8278,4 +8278,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ortakGorurHicbiriKisa => 'None';
+
+  @override
+  String compareRemoveSemantics(String name) {
+    return 'Remove $name comparison';
+  }
+
+  @override
+  String get chartPriceSemantics => 'Price chart';
+
+  @override
+  String get chartPortfolioSemantics => 'Portfolio value chart';
+
+  @override
+  String chartAssetSemantics(String name) {
+    return '$name price chart';
+  }
 }

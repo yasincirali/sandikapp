@@ -8195,4 +8195,20 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ortakGorurHicbiriKisa => 'Hiçbiri';
+
+  @override
+  String compareRemoveSemantics(String name) {
+    return '$name karşılaştırmasını kaldır';
+  }
+
+  @override
+  String get chartPriceSemantics => 'Fiyat grafiği';
+
+  @override
+  String get chartPortfolioSemantics => 'Portföy değeri grafiği';
+
+  @override
+  String chartAssetSemantics(String name) {
+    return '$name fiyat grafiği';
+  }
 }

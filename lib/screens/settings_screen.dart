@@ -178,6 +178,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   prefixIcon: Icon(Icons.lock_outline_rounded,
                       color: context.c.text36, size: 20),
                   suffixIcon: IconButton(
+                    tooltip: obscure
+                        ? context.l10n.passwordShow
+                        : context.l10n.passwordHide,
                     icon: Icon(
                       obscure
                           ? Icons.visibility_outlined

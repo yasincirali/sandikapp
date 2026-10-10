@@ -13701,6 +13701,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Hiçbiri'**
   String get ortakGorurHicbiriKisa;
+
+  /// No description provided for @compareRemoveSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} karşılaştırmasını kaldır'**
+  String compareRemoveSemantics(String name);
+
+  /// No description provided for @chartPriceSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat grafiği'**
+  String get chartPriceSemantics;
+
+  /// No description provided for @chartPortfolioSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföy değeri grafiği'**
+  String get chartPortfolioSemantics;
+
+  /// No description provided for @chartAssetSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} fiyat grafiği'**
+  String chartAssetSemantics(String name);
 }
 
 class _AppLocalizationsDelegate

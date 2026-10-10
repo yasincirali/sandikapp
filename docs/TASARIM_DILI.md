@@ -161,7 +161,7 @@ Material `*_rounded` ailesi. Aynı glif iki ailede yazılmaz. Gezinti oku
 | Eğrisiz animasyon yok, ters yuvada `exit` | `animasyon_denetimi_test`, `design_token_leak_test` |
 | Hareketi azalt kapsamı | `reduce_motion_coverage_test` |
 | 44 pt hedef | `touch_target_size_test` (kaynak), `hig_ortak_bilesen_test` (çizilmiş bileşen) |
-| Ortak bileşenlerde etiket, kontrast, yazı ×2; etiketsiz `IconButton` yalnız azalır | `hig_ortak_bilesen_test` |
+| Ortak bileşenlerde etiket, kontrast, yazı ×2; etiketsiz `IconButton` yok | `hig_ortak_bilesen_test` |
 | Çift dokunma koruması | `navigasyon_korumasi_test` |
 | Tek yükleniyor davranışı | `yukleniyor_tek_davranis_test` |
 | Tek sheet açıcı, platform diyaloğu yok, düğme köşesi, ölçek dışı süre yok | `tasarim_dili_test` |
@@ -241,7 +241,7 @@ ya da sapma gerekçesiyle yazılır. Android'de Material karşılığı bozulmaz
 
 **Otomatik denetlenen:** 1 (kaynak + çizilmiş ortak bileşen), 2 (ortak
 bileşen ve seçili ekranlar ×2), 3 (açık tema ve ortak bileşen kontrastı),
-9 (ortak bileşenlerde etiket; etiketsiz `IconButton` sayısı yalnız azalır),
+9 (ortak bileşenlerde etiket; etiketsiz `IconButton` yok),
 10. Geri kalanı (4–8, 11) incelemeyle sorulur; o yüzden PR'daki "HIG
 kontrolü" bölümü atlanmaz.
 

@@ -5581,5 +5581,11 @@
   "@portfoyAktarildi": {"placeholders": {"miktar": {"type": "String"}, "hedef": {"type": "String"}}},
   "ortakGorurOnizleme": "{ad} görecek",
   "@ortakGorurOnizleme": {"placeholders": {"ad": {"type": "String"}}},
-  "ortakGorurHicbiriKisa": "Hiçbiri"
+  "ortakGorurHicbiriKisa": "Hiçbiri",
+  "compareRemoveSemantics": "{name} karşılaştırmasını kaldır",
+  "@compareRemoveSemantics": {"placeholders": {"name": {"type": "String"}}},
+  "chartPriceSemantics": "Fiyat grafiği",
+  "chartPortfolioSemantics": "Portföy değeri grafiği",
+  "chartAssetSemantics": "{name} fiyat grafiği",
+  "@chartAssetSemantics": {"placeholders": {"name": {"type": "String"}}}
 }

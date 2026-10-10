@@ -141,14 +141,15 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
-  test('ikon düğmesinde ekran okuyucu etiketi (tooltip) — yalnız azalır', () {
+  test('ikon düğmesinde ekran okuyucu etiketi (tooltip) var', () {
     // HIG "Accessibility": yalnız ikondan oluşan düğme VoiceOver'da "düğme"
     // diye okunur, ne yaptığı söylenmez. `IconButton.tooltip` hem uzun
-    // basma ipucu hem semantik etikettir. 2026-10-10 sayımı: 39 düğmenin
-    // 13'ü etiketsiz. Sayı yalnız azalır; yeni IconButton etiketsiz girmez.
-    const tavan = 13;
+    // basma ipucu hem semantik etikettir. 2026-10-10 denetiminde 11 düğme
+    // etiketsizdi, hepsi etiketlendi; yeni IconButton etiketsiz girmez.
+    // `IconButton.styleFrom(` bir stil yardımcısıdır, düğme değil.
     final etiketsiz = <String>[];
-    final desen = RegExp(r'\bIconButton(\.\w+)?\s*\(');
+    final desen =
+        RegExp(r'\bIconButton(\.(filled|filledTonal|outlined))?\s*\(');
     for (final f in Directory('lib').listSync(recursive: true)) {
       if (f is! File || !f.path.endsWith('.dart')) continue;
       final src = f.readAsStringSync();
@@ -168,7 +169,7 @@ void main() {
         }
       }
     }
-    expect(etiketsiz.length, lessThanOrEqualTo(tavan),
+    expect(etiketsiz, isEmpty,
         reason: 'IconButton\'a `tooltip:` ver (l10n\'lu ekranda '
             'context.l10n).\n${etiketsiz.join('\n')}');
   });

@@ -61,7 +61,8 @@ class SandikAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       leading: canPop
           ? IconButton(
-              tooltip: 'Geri',
+              // Sistem çevirisi (EN "Back"); sabit "Geri" idi (HIG, 2026-10-10).
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               icon: Icon(Icons.arrow_back_ios_new_rounded,
                   size: 20, color: context.c.text90),
               onPressed: onBack ?? () => Navigator.of(context).pop(),

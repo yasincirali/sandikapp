@@ -3692,13 +3692,10 @@ class _PickerShellState extends State<_PickerShell> {
       maxChildSize: 0.95,
       builder: (ctx, sc) => Column(
         children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: SandikSpace.sm2),
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-                color: context.c.text20,
-                borderRadius: BorderRadius.circular(SandikRadius.sm)),
+          // Ortak tutamaç (HIG denetimi 2026-10-10; elle çizilmiş kopyaydı).
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: SandikSpace.sm2),
+            child: SandikTutamac(),
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(yatay, 0, yatay, SandikSpace.smd),

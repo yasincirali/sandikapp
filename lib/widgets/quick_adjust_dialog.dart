@@ -395,6 +395,7 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   ),
                 ),
                 IconButton(
+                  tooltip: context.l10n.close,
                   icon: Icon(Icons.close_rounded,
                       color: context.c.text58, size: 22),
                   onPressed: () => Navigator.pop(context),
@@ -654,10 +655,12 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
         (deger: _fmt(eldeki), etiket: context.l10n.quickAllChip(_fmt(eldeki))),
     ];
 
-    return SizedBox(
-      height: 32,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
+    // Sabit 32pt şerit kalktı (HIG denetimi 2026-10-10): hedef 32pt'de
+    // kalıyor, büyük yazıda çip metni kesiliyordu. Çip görseli aynı; dokunma
+    // alanı en az 44pt, satır içeriğin boyunda.
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
         children: [
           for (final chip in chips)
             Padding(
@@ -667,20 +670,26 @@ class _QuickAdjustDialogState extends State<_QuickAdjustDialog> {
                   _qtyCtrl.text = chip.deger;
                   _error = null;
                 }),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: context.c.overlay,
-                    borderRadius: BorderRadius.circular(SandikRadius.sm),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    chip.etiket,
-                    style: context.t.numSmall.copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.c.text90,
+                child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minHeight: SandikTouch.min),
+                  child: Center(
+                    heightFactor: 1,
+                    child: Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: context.c.overlay,
+                        borderRadius: BorderRadius.circular(SandikRadius.sm),
+                      ),
+                      child: Text(
+                        chip.etiket,
+                        style: context.t.numSmall.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: context.c.text90,
+                        ),
+                      ),
                     ),
                   ),
                 ),

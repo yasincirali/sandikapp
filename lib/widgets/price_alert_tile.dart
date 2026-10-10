@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/price_alert_notification.dart';
 import '../theme/sandik.dart';
 import '../utils/tr_format.dart';
@@ -39,6 +40,9 @@ class PriceAlertTile extends StatelessWidget {
         ? Icons.notifications_active_rounded
         : Icons.notifications_active_outlined;
 
+    // Soluk satırda METİN opaklıkla değil ton basamağıyla iner (HIG denetimi
+    // 2026-10-10): %45 opak text58 açık temada 2,1:1 idi. İkon ve zemin
+    // (metin dışı) opaklıkla solmaya devam eder.
     final double alphaFactor = faded ? 0.45 : 1.0;
     final double bgAlpha = faded ? 0.05 : 0.10;
     final double borderAlpha = faded ? 0.12 : 0.28;
@@ -78,8 +82,7 @@ class PriceAlertTile extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: context.t.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: context.c.text90
-                                  .withValues(alpha: alphaFactor),
+                              color: faded ? context.c.text58 : context.c.text90,
                               decoration: TextDecoration.none),
                         ),
                       ),
@@ -94,7 +97,7 @@ class PriceAlertTile extends StatelessWidget {
                         child: Text('ALARM',
                             style: context.t.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: color.withValues(alpha: alphaFactor),
+                                color: faded ? context.c.text36 : color,
                                 decoration: TextDecoration.none)),
                       ),
                     ],
@@ -108,7 +111,7 @@ class PriceAlertTile extends StatelessWidget {
                         : '${fmtTRYFiyat(bildirim.triggeredPrice)} · hedef '
                             '${fmtTRYFiyat(bildirim.targetPrice)}',
                     style: context.t.bodySmall?.copyWith(
-                        color: context.c.text58.withValues(alpha: alphaFactor),
+                        color: faded ? context.c.text36 : context.c.text58,
                         decoration: TextDecoration.none),
                   ),
                 ],
@@ -116,6 +119,7 @@ class PriceAlertTile extends StatelessWidget {
             ),
             if (onDismiss != null)
               IconButton(
+                tooltip: context.l10n.close,
                 icon: Icon(Icons.close_rounded,
                     size: 18, color: context.c.text36),
                 onPressed: onDismiss,
@@ -125,6 +129,7 @@ class PriceAlertTile extends StatelessWidget {
               )
             else if (onDelete != null)
               IconButton(
+                tooltip: context.l10n.delete,
                 icon: Icon(Icons.delete_outline_rounded,
                     size: 18, color: context.c.text36),
                 onPressed: onDelete,
