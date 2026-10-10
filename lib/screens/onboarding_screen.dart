@@ -221,9 +221,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 // (sekme değiştir, ekranı aç) o zaman tur kendisi yapar. Zorlamak,
 // tanıtımı bir an önce geçmek isteyen kullanıcıyı cezalandırırdı.
 
-/// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken teknik sinyaller
-/// Premium'da (2026-10-10, `sinyalYuzeyiProvider`): ücretsiz kullanıcının
-/// zilinde sinyal satırı yok, metin onu vaat etmesin.
+/// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken sinyal
+/// bildirimi Premium'da (2026-10-10, `zilSinyalleriGosterProvider`; ekrandaki
+/// üç gösterge ücretsiz ama zile düşmez): ücretsiz kullanıcının zilinde
+/// sinyal satırı yok, metin onu vaat etmesin.
 const _zilBasi = 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
     'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
 const _zilPremiumBasi =

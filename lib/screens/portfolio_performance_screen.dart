@@ -576,6 +576,12 @@ class _PortfolioPerformanceScreenState
     final pStateAsync = ref.watch(portfolioProvider);
     final partnerAssetsAsync = ref.watch(allPartnerAssetsProvider);
     final activePartners = ref.watch(activePartnersProvider);
+    // Sıralama (kupa) koşulu: küresel yarış açıkken herkes, kapalıyken
+    // opt-in + aktif ortak; demoda yok. Raporlar satırı da aynı ifadeyi alır.
+    final siralamaAcik = !DemoModu.aktif &&
+        (RemoteConfigService.instance.globalLeaderboardEnabled ||
+            (ref.watch(leaderboardOptInProvider) &&
+                activePartners.isNotEmpty));
     // `_simulate` Ayarlar'daki tercihi `ref.read` ile okur (build dışından
     // da çağrılıyor); değişince ekran yeniden kurulsun diye burada izlenir.
     ref.watch(bugunkuPortfoyleProvider);
@@ -700,22 +706,20 @@ class _PortfolioPerformanceScreenState
                     // kapalıyken eski kural: opt-in + aktif ortak.
                     // Demo (F1): yarış sunucu havuzudur, demoda yok.
                     //
-                    // Raporlar kapısı (bayrak `raporlar_kapisi`, S6): kupa
-                    // yerine aynı kabukta "Raporlar"; Sıralama listenin bir
-                    // satırı ve koşulu kupanınkiyle AYNI ifade. Kapalıyken
-                    // aşağıdaki kupa birebir.
+                    // Raporlar kapısı (bayrak `raporlar_kapisi`, S6): aynı
+                    // kabukta "Raporlar"; Sıralama listenin de bir satırı ve
+                    // koşulu kupanınkiyle AYNI ifade (`siralamaAcik`).
+                    // Kapalıyken yalnız kupa, birebir eskisi.
+                    // Kupa Raporlar'ın YANINDA kalır (2026-10-10, Premium
+                    // netleştirme Y9): Raporlar açıkken kupa kayboluyor ve
+                    // Sıralama bir alt sayfa satırına iniyordu; yarışa her
+                    // gün bakan kullanıcı iki dokunuşa düşüyordu. Raporlar
+                    // satırı da yerinde (iki yol, aynı ekran).
                     if (RemoteConfigService.instance.raporlarKapisi)
-                      RaporlarDugmesi(
-                        siralamaAcik: !DemoModu.aktif &&
-                            (RemoteConfigService
-                                    .instance.globalLeaderboardEnabled ||
-                                (ref.watch(leaderboardOptInProvider) &&
-                                    activePartners.isNotEmpty)),
-                      )
-                    else if (!DemoModu.aktif &&
-                        (RemoteConfigService.instance.globalLeaderboardEnabled ||
-                            (ref.watch(leaderboardOptInProvider) &&
-                                activePartners.isNotEmpty))) ...[
+                      RaporlarDugmesi(siralamaAcik: siralamaAcik),
+                    if (siralamaAcik) ...[
+                      if (RemoteConfigService.instance.raporlarKapisi)
+                        const SizedBox(width: SandikSpace.sm),
                       Semantics(
                         button: true,
                         label: context.l10n.raceTitle,

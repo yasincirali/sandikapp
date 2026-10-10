@@ -5668,5 +5668,9 @@
   "alarmLimitReached": "En fazla {n} aktif alarm kurabilirsin. Yeni kurmak için birini kapat.",
   "@alarmLimitReached": {"placeholders": {"n": {"type": "int"}}},
   "alarmLimitFree": "Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.",
-  "@alarmLimitFree": {"placeholders": {"n": {"type": "int"}}}
+  "@alarmLimitFree": {"placeholders": {"n": {"type": "int"}}},
+  "varlikKotasiKalan": "Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).",
+  "@varlikKotasiKalan": {"placeholders": {"kalan": {"type": "int"}, "sinir": {"type": "int"}}},
+  "varlikKotasiDolu": "Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium'da.",
+  "@varlikKotasiDolu": {"placeholders": {"sinir": {"type": "int"}}}
 }

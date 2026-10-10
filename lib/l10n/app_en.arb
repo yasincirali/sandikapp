@@ -5085,5 +5085,7 @@
   "pwdOzelBaslik": "Write your own indicator in Pine Script and run it on your chart.",
   "pwdOzelPremium": "20 indicators, any interval",
   "alarmLimitReached": "You can have up to {n} active alerts. Turn one off to add another.",
-  "alarmLimitFree": "On the free plan you can have up to {n} active alerts."
+  "alarmLimitFree": "On the free plan you can have up to {n} active alerts.",
+  "varlikKotasiKalan": "You have {kalan} new assets left on the free plan ({sinir} assets).",
+  "varlikKotasiDolu": "You've used all {sinir} assets on the free plan. You can still add to assets you hold; new assets need Premium."
 }

@@ -8513,4 +8513,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String alarmLimitFree(int n) {
     return 'Ücretsiz planda en fazla $n aktif alarm kurabilirsin.';
   }
+
+  @override
+  String varlikKotasiKalan(int kalan, int sinir) {
+    return 'Ücretsiz planda $kalan yeni varlık hakkın kaldı ($sinir varlık).';
+  }
+
+  @override
+  String varlikKotasiDolu(int sinir) {
+    return 'Ücretsiz plandaki $sinir varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium\'da.';
+  }
 }

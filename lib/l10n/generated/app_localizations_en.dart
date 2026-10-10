@@ -8597,4 +8597,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String alarmLimitFree(int n) {
     return 'On the free plan you can have up to $n active alerts.';
   }
+
+  @override
+  String varlikKotasiKalan(int kalan, int sinir) {
+    return 'You have $kalan new assets left on the free plan ($sinir assets).';
+  }
+
+  @override
+  String varlikKotasiDolu(int sinir) {
+    return 'You\'ve used all $sinir assets on the free plan. You can still add to assets you hold; new assets need Premium.';
+  }
 }

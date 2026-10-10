@@ -51,6 +51,20 @@ Set<String> kotaAnahtarlari(Iterable<Asset> lotlar, String userId) => {
           kotaAnahtari(a.type, a.ticker, a.currency, sozlesmeId: a.sozlesmeId),
     };
 
+/// Ücretsiz varlık kotası (Premium seti netleştirme, 2026-10-10): Varlık
+/// Ekle formu sınır dolmadan ÖNCE söyler. Eskiden kullanıcı formu doldurup
+/// "Kaydet"e basınca paywall'la karşılaşıyordu — girdiği emek boşa gidiyor
+/// hissi. Sınırsızsa (paywall kapalı, Premium, kilitler askıda) null.
+/// Sayım `addAsset` kapısıyla AYNI fonksiyon ([kotaAnahtarlari]).
+final varlikKotasiProvider = Provider<({int kullanilan, int sinir})?>((ref) {
+  final sinir = ref.watch(assetLimitProvider);
+  if (sinir >= (1 << 30)) return null;
+  final uid = ref.watch(authProvider).valueOrNull?.id;
+  if (uid == null) return null;
+  final lotlar = ref.watch(portfolioProvider).valueOrNull?.assets ?? const [];
+  return (kullanilan: kotaAnahtarlari(lotlar, uid).length, sinir: sinir);
+});
+
 String kotaAnahtari(AssetType type, String ticker, String currency,
         {String? sozlesmeId}) =>
     sozlesmeId != null && sozlesmeId.isNotEmpty

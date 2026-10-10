@@ -14200,6 +14200,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ücretsiz planda en fazla {n} aktif alarm kurabilirsin.'**
   String alarmLimitFree(int n);
+
+  /// No description provided for @varlikKotasiKalan.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz planda {kalan} yeni varlık hakkın kaldı ({sinir} varlık).'**
+  String varlikKotasiKalan(int kalan, int sinir);
+
+  /// No description provided for @varlikKotasiDolu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz plandaki {sinir} varlık doldu. Var olan varlığına alım ekleyebilirsin; yeni varlık Premium\'da.'**
+  String varlikKotasiDolu(int sinir);
 }
 
 class _AppLocalizationsDelegate
