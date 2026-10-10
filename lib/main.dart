@@ -1749,9 +1749,11 @@ class _AuthGateState extends ConsumerState<_AuthGate>
         // Ayrıca `LockScreen`, cihaz artık kimseyi doğrulayamıyorsa
         // (ekran kilidi kaldırılmış) tercihi kapatıp içeri alıyor — yani
         // kullanıcı dışarıda kilitli kalmaz.
+        // Uzun boşluk: cihazın başındaki kişi yeniden doğrulanmalı; hesap
+        // geçişi bu doğrulamaya güvenemez (`HesapGecisi.cihazDogrulandi`).
+        HesapGecisi.instance.cihazDogrulandi = false;
         final biyometrikAcik = ref.read(biometricLockProvider);
         if (biyometrikAcik && ref.read(authProvider).valueOrNull != null) {
-          HesapGecisi.instance.cihazDogrulandi = false;
           setState(() => _locked = true);
         } else {
           // **Kilitsiz kullanıcı: çıkış SESSİZ olmasın** (kullanıcı

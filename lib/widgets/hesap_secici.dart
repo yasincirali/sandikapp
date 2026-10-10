@@ -10,6 +10,7 @@ import '../services/hesap_kasasi.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/tr_format.dart' show dayKey;
+import 'tour_anchor.dart';
 import 'uygulama_kabugu.dart' show HesapAvatari;
 
 /// Çoklu hesap arayüzü (bayrak `coklu_hesap`, 2026-10-10).
@@ -36,7 +37,7 @@ class HesapBasligi extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).valueOrNull;
     final ad = user == null ? 'Profil' : hesapAdi(user);
-    return Semantics(
+    final baslik = Semantics(
       button: true,
       label: '$ad, hesap değiştir',
       excludeSemantics: true,
@@ -64,6 +65,9 @@ class HesapBasligi extends ConsumerWidget {
         ),
       ),
     );
+    // Tanıtım turu bu başlığı işaret eder (yasin 2026-10-10: "session
+    // switch'i de tanıtım turuna ekleyelim").
+    return TourAnchor(target: TourTarget.hesapBasligi, child: baslik);
   }
 }
 
