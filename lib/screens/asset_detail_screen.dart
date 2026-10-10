@@ -48,6 +48,11 @@ import '../providers/price_alert_provider.dart';
 import '../widgets/alarm_kur_sheet.dart';
 import '../widgets/alarm_seridi.dart';
 import '../models/varlik_kimligi.dart';
+import '../models/ozel_gosterge.dart';
+import '../providers/ozel_gosterge_provider.dart';
+import '../services/gosterge_betigi/betik.dart';
+import '../widgets/gosterge_cizimi.dart';
+import 'ozel_gosterge_screen.dart';
 import '../services/crash_reporter.dart';
 import '../services/varlik_istatistik.dart';
 import '../widgets/donem_istatistik.dart';
@@ -108,6 +113,7 @@ part 'asset_detail/karsilastirma_secici.dart';
 part 'asset_detail/ozet.dart';
 part 'asset_detail/katmanlar.dart';
 part 'asset_detail/grafik_katmanlari.dart';
+part 'asset_detail/ozel_gostergeler.dart';
 
 // ── Models ───────────────────────────────────────────────────────────────────
 
@@ -563,6 +569,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   @override
   void dispose() {
     _imlec.dispose();
+    _ozelGorunum.dispose();
     _nabziBirak?.call();
     _scrollController.dispose();
     super.dispose();
@@ -670,6 +677,16 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   ({int gun, Map<int, double> seri})? _mumSerisi;
   int? _mumSerisiGun;
 
+  /// Kendi göstergeni yaz — `asset_detail/ozel_gostergeler.dart`. Alt
+  /// panellerin X penceresi (ana grafikle aynı), son bildirilen odak ve
+  /// düzenleyici önizlemesine giden son çubuklar.
+  final _ozelGorunum = ValueNotifier<({double min, double max})?>(null);
+  ({double min, double max})? _ozelOdak;
+  BetikVerisi? _ozelVeri;
+
+  /// Göstergelerin gerçek mumları (ısınmalı) ve istek anahtarı — aynı part.
+  ({MumAraligi aralik, int basMs, List<OhlcBar> barlar})? _betikOhlc;
+  String? _betikOhlcIstenen;
   /// Gerçek mumlar (OHLC, aralık seçicisi) ve hangi istek için geldikleri
   /// — aynı dosya. [_ohlcIstenen] aynı isteği ikinci kez başlatmamak için.
   ({MumAraligi aralik, int basMs, List<OhlcBar> barlar})? _ohlc;
@@ -1094,6 +1111,32 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ema200: ema200On,
                           )
                         : const <({List<FlSpot> spots, Color renk})>[];
+                    // Kendi göstergeni yaz: EMA ile aynı seri ve ısınma.
+                    final ozelAcik = katmanAcik && !compareOn
+                        ? _acikOzelGostergeler
+                        : const <OzelGosterge>[];
+                    if (ozelAcik.isNotEmpty) _emaOnSeriniIste(seciliGun);
+                    // Gerçek mum varsa betik onda çalışır (OHLCV); aralık
+                    // mum grafiğininki. Gelene kadar kapanış çizgisi.
+                    final betikAr = ozelAcik.isEmpty ||
+                            !FiyatKaynagi.mumKaynagi(_canli.asset).gercekOhlc
+                        ? null
+                        : (mumAr ?? _mumAraligi(isIntraday, startDate, endDate))
+                            .aralik;
+                    final betikMumlari = betikAr == null
+                        ? null
+                        : _betikMumlari(betikAr, isIntraday, startDate,
+                            endDate, currentUnitTRY);
+                    if (katmanAcik && !compareOn) {
+                      _ozelVeri = betikMumlari != null && betikAr != null
+                          ? _betikVerisiMumdan(betikMumlari, betikAr, startDate)
+                          : _betikVerisi(hamAktif,
+                              _emaOnNoktalari(seciliGun, startDate), startDate);
+                    }
+                    final ozelVeri = _ozelVeri;
+                    final ozelSonuclar = ozelVeri == null
+                        ? const <_OzelSonuc>[]
+                        : _ozelGostergeleriCalistir(ozelAcik, ozelVeri);
                     final anchorY = anchorSpot?.y ?? 0.0;
 
                     // İşlem işaretleri — GERÇEK işlem anında, ÇİZGİNİN
@@ -1262,6 +1305,8 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     k.mum,
                                     const SizedBox(width: 6),
                                     logCip,
+                                    const SizedBox(width: 6),
+                                    _ozelGostergeCipi(ozelAcik.length),
                                   ],
                                 ),
                                 // Satır arası boşluk yok: çiplerin 44pt
@@ -1394,6 +1439,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                     .clamp(focusMin + 0.5, maxX * 1.08);
                               }
                             }
+                            _ozelOdagiBildir(focusMin, focusMax);
                             // Seyreltme adayları viewport'a bağlı DEĞİL —
                             // yalnızca segment'lere ve lot günlerine bağlı.
                             // Builder içinde bırakılırsa her pinch/pan
@@ -1410,6 +1456,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             fullMaxX: focusMax,
                             height: GrafikStili.grafikYuksekligi,
                             plotPaddingRight: GrafikStili.yEkseniGenisligi,
+                            onViewportChanged: _ozelGorunumuYaz,
                             builder: (viewMinX, viewMaxX) {
                               final yBounds = computeY(
                                 viewMinX,
@@ -1426,6 +1473,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   ...?compareBar?.spots,
                                   ...islemSpots,
                                   for (final e in emaCizgileri) ...e.spots,
+                                  ..._ozelBantNoktalari(ozelSonuclar, toY),
                                   ..._ohlcUclari(ohlcMumlar, toY),
                                 ],
                               );
@@ -1472,7 +1520,20 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                                   if (lastSpot != null) lastSpot.x,
                                 },
                               );
+                              // Kendi göstergelerinin dolguları ana listede
+                              // kendilerinden önceki çubuk sayısı kadar kayar.
+                              final ozelCizim = _ozelCubuklar(
+                                ozelSonuclar,
+                                toY,
+                                ofset: (ma20Spots != null &&
+                                            ma20Spots.length >= 2
+                                        ? 1
+                                        : 0) +
+                                    (compareBar != null ? 1 : 0) +
+                                    emaCizgileri.length,
+                              );
                               return LineChartData(
+                          betweenBarsData: ozelCizim.dolgular,
                           minX: viewMinX,
                           maxX: viewMaxX,
                           minY: viewMinY,
@@ -1635,6 +1696,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                               ),
                             if (compareBar != null) compareBar,
                             for (final e in emaCizgileri) _emaCubugu(e),
+                            ...ozelCizim.bars,
                             // Mum: aktif (açık piyasa) çizginin yerine;
                             // kapalı piyasa kesikli çizgisi aynen kalır.
                             if (mumOn && ohlcMumlar.isNotEmpty)
@@ -1930,6 +1992,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                             ); // AnimatedOpacity (bayat seri solukluğu)
                           },
                         ),
+                        ..._ozelAltBolum(ozelSonuclar),
                       ],
                     );
                   },

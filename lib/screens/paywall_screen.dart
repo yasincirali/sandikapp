@@ -517,6 +517,9 @@ class _FeatureList extends StatelessWidget {
       // Mum + EMA50/EMA200 (#150): kilit `premiumKilitliProvider`
       // (`grafik_katmanlari.dart`).
       (Icons.candlestick_chart_rounded, l.pwOzGrafik),
+      // Kendi göstergeni yaz (0141): kilit `premiumKilitliProvider`
+      // (`asset_detail/ozel_gostergeler.dart`).
+      (Icons.functions_rounded, l.pwOzOzelGosterge),
       (Icons.payments_outlined, l.pwOzMasraf),
       (Icons.stacked_line_chart_rounded, l.pwOzKarsilastir),
       (Icons.group_outlined, l.pwOzOrtak),

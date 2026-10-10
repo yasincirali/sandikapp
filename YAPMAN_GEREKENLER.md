@@ -12,6 +12,27 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
+## ⏳ 2026-10-10 Kendi göstergeni yaz (migration 0141, Premium, yeni bayrak YOK)
+
+Senin isteğin: "traderlar TradingView'e kendi kodlarını ekleyerek kendi
+göstergelerini kullanabiliyorlar; zaman aralığıyla kombine, paywall
+arkasında." + "benzeri değil, birebir Pine olsun." Varlık grafiğinde `ƒx`
+çipi → "Göstergelerim": TradingView'deki Pine Script kodunu (v4/v5/v6)
+olduğu gibi yapıştır ya da şablondan başla (EMA kesişimi, RSI, Bollinger,
+MACD, Yükseliş serisi), grafikte aç/kapa. Betik telefonda kendi
+yorumlayıcımızda çalışır, sunucu yalnız metni saklar (en fazla 20.000
+karakter). Hisse, döviz, altın, emtia ve kriptoda betik gerçek mumlarda
+(açılış/yüksek/düşük/hacim) ve mum grafiğinin seçili aralığında çalışır;
+ATR/Supertrend gibi göstergeler veri bulur. Fon/BES/eurobondda yalnız
+kapanış vardır. Bilerek çalışmayan: başka sembol/aralıktan veri, diziler,
+import; label/line/box/table ve bgcolor çalışır ama çizilmez. Görünürlük EMA/Mum ile aynı:
+`paywall_enabled` kapalıyken yalnız admin, açıkken herkes (ücretsizde kilitli).
+
+- [ ] Birleştirmeden sonra **Supabase deploy** (hedef `ikisi`): migration
+      **0141**. Fonksiyon/secret YOK. 0141'den önce admin hesabında çip
+      görünür ama liste "yüklenemedi" der (tablo yok); grafik etkilenmez.
+- [ ] Kontrol: `select count(*) from pg_policies where tablename = 'kullanici_gostergeleri';` → 4.
+
 ## ⏳ 2026-10-10 Mum grafiğinde aralık seçici (gerçek OHLC, Premium)
 
 Senin isteğin: "mum grafik de TradingView'deki gibi çalışmalı: 1 dk, 1 saat,
