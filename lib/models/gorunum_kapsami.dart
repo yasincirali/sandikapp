@@ -1,4 +1,5 @@
 import 'asset.dart';
+import 'position.dart';
 
 /// "Bu ekranda HANGİ lotlar görünür?" sorusunun TEK cevabı — kişi kapsamı
 /// (Ben / ortak / Birlikte) ve portföy.
@@ -140,4 +141,64 @@ List<Asset> kapsamDefteri({
   );
   if (gruplar.length == 1) return gruplar.single;
   return [for (final l in gruplar) ...l];
+}
+
+/// [varlik]'ın pozisyonunun portföy başına parçaları (anahtar `null` = Ana):
+/// her biri YALNIZ o portföyün lotlarından kurulu pozisyon — kendi ağırlıklı
+/// maliyeti, kendi netlemesi. Karışık pozisyonda al/sat/temettü bunlardan
+/// birine yazılır (`portfoy_secim_sayfasi.dart`); açık olmayan (net 0)
+/// parça listede yoktur.
+Map<String?, Position> portfoyParcalari(
+  List<Asset> defter,
+  Asset varlik,
+  Set<String> bilinen,
+) {
+  final anahtar = positionKey(varlik);
+  final sahip = varlik.userId;
+  final out = <String?, Position>{};
+  for (final e in portfoyeGoreBol(
+      defter.where((a) => a.userId == sahip && positionKey(a) == anahtar),
+      bilinen).entries) {
+    final p = aggregatePositions(e.value);
+    if (p.isNotEmpty) out[e.key] = p.single;
+  }
+  return out;
+}
+
+/// Bir pozisyonu portföyler arası taşırken taşınacak lotlar: aynı sahibin,
+/// aynı pozisyon anahtarlı, KAYNAK portföydeki BÜTÜN satırları — alım,
+/// satım, temettü, yumuşak silinmiş kayıtlar ve mezar taşları. Lot
+/// sözleşmeliyse (BES/mevduat) sözleşmenin bu portföydeki bütün lotları da
+/// gelir: BES'in fonları tek sözleşmedir, ayrı portföylere bölünmez (sonraki
+/// katkı sözleşmenin portföyünü izler, bkz. `sozlesmeLotlariniEkle`).
+///
+/// Kısmi taşıma yok — gerekçe `PortfolioNotifier.pozisyonuTasi`.
+List<Asset> tasinacakLotlar(
+  List<Asset> defter,
+  Asset varlik,
+  String? kaynak,
+  Set<String> bilinen,
+) {
+  final anahtar = positionKey(varlik);
+  final sahip = varlik.userId;
+  bool kaynakta(Asset a) =>
+      a.userId == sahip && lotunPortfoyu(a, bilinen) == kaynak;
+  final secilen = [
+    for (final a in defter)
+      if (kaynakta(a) && positionKey(a) == anahtar) a,
+  ];
+  final sozlesmeler = {
+    for (final a in secilen)
+      if (a.sozlesmeId != null) a.sozlesmeId!,
+  };
+  if (sozlesmeler.isEmpty) return secilen;
+  final ids = {for (final a in secilen) a.id};
+  return [
+    ...secilen,
+    for (final a in defter)
+      if (!ids.contains(a.id) &&
+          kaynakta(a) &&
+          sozlesmeler.contains(a.sozlesmeId))
+        a,
+  ];
 }

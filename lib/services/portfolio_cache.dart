@@ -27,7 +27,17 @@ abstract final class PortfolioCache {
       final payload = jsonEncode({
         'v': 1,
         'at': DateTime.now().toUtc().toIso8601String(),
-        'assets': assets.map((a) => a.toSupabase()).toList(),
+        // `portfoy_id` önbellekte bayraktan BAĞIMSIZ saklanır: `toSupabase`
+        // onu yalnız `coklu_portfoy` açıkken yazar (sunucu şeması kapısı),
+        // önbellek ise yalnız bu cihazda okunur. Yoksa bayrak açık bir
+        // kullanıcı çevrimdışı açılışta bütün lotlarını Ana'da görürdü.
+        'assets': [
+          for (final a in assets)
+            {
+              ...a.toSupabase(),
+              if (a.portfoyId != null) 'portfoy_id': a.portfoyId,
+            },
+        ],
       });
       await prefs.setString(_key(userId), payload);
     } catch (e) {

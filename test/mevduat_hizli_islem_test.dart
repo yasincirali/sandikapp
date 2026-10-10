@@ -59,6 +59,7 @@ class _KaydedenPortfoy extends PortfolioNotifier {
     double? initialCurrentPrice,
     double commission = 0,
     String? sozlesmeId,
+    String? portfoyId,
   }) async {
     k
       ..alisPay = quantity
