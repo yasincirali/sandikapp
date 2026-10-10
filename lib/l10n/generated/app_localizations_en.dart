@@ -8606,4 +8606,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String sgnSlotKilitli(String secenek) {
     return '$secenek, Premium';
   }
+
+  @override
+  String get chartIntervalM5 => '5m';
+
+  @override
+  String get chartIntervalM15 => '15m';
+
+  @override
+  String get chartIntervalM5Long => '5-minute';
+
+  @override
+  String get chartIntervalM15Long => '15-minute';
 }

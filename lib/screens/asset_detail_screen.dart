@@ -99,7 +99,7 @@ import '../providers/premium_provider.dart'
 import '../utils/hareketli_ortalama.dart';
 import '../utils/mum_turetici.dart' show Mum, mumlariGrafikUzayinda;
 import '../models/ohlc.dart';
-import '../widgets/sandik_segment.dart';
+import '../widgets/grafik_arac_cubugu.dart';
 import '../services/mum_verisi.dart';
 
 part 'asset_detail/eylemler.dart';
@@ -1239,88 +1239,28 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                         // Grafik overlay chip'leri (MA20 vb.). Basit toggle.
                         // Sade Başlangıç'ta (`seviye_anketi`) gizli.
                         if (araclar)
-                          Builder(builder: (_) {
-                            final ma20Cip = _OverlayChip(
-                              label: 'MA20',
-                              active: ma20On,
-                              onTap: () {
-                                ref
-                                    .read(chartMA20Provider.notifier)
-                                    .set(!ma20On);
-                              },
-                            );
-                            final logCip = _OverlayChip(
-                              label: 'LOG',
-                              active: logOn,
-                              onTap: () {
-                                ref
-                                    .read(chartLogScaleProvider.notifier)
-                                    .set(!logOn);
-                              },
-                            );
-                            // Tam ekran çipi KALDIRILDI (kullanıcı kararı,
-                            // 2026-09-17): "çok da bir avantajı yok gibi,
-                            // ilerde talep edilirse yaparız." Geçmiş
-                            // uygulama ve yön davranışı git geçmişinde
-                            // (ea7bc0a).
-                            if (!_katmanlarGorunur) {
-                              // Premium katmanlar görünmüyor: satır BİREBİR
-                              // eskisi (canlıdaki kullanıcı etkilenmez).
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  ma20Cip,
-                                  const SizedBox(width: 6),
-                                  logCip,
-                                ],
-                              );
-                            }
-                            // Beş çip 375pt'ye tek satırda sığmıyor (Wrap
-                            // LOG'u tek başına alta düşürüyordu). İki
-                            // anlamlı satır: üstte GÖRÜNÜM (mum, ölçek),
-                            // altta ORTALAMALAR (MA20, EMA50, EMA200).
-                            final k = _katmanCipleri(
-                              mumOn: mumOn,
-                              ema50On: ema50On,
-                              ema200On: ema200On,
-                            );
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    k.mum,
-                                    const SizedBox(width: 6),
-                                    logCip,
-                                    const SizedBox(width: 6),
-                                    _ozelGostergeCipi(ozelAcik.length),
-                                  ],
-                                ),
-                                // Satır arası boşluk yok: çiplerin 44pt
-                                // dokunma payı (HIG, 2026-10-10) zaten
-                                // aralık bırakıyor.
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    ma20Cip,
-                                    const SizedBox(width: 6),
-                                    k.ema50,
-                                    const SizedBox(width: 6),
-                                    k.ema200,
-                                  ],
-                                ),
-                                // Mum açıkken aralık seçicisi (1 dk … ay).
-                                if (mumAr != null &&
-                                    mumAr.aralik != null &&
-                                    mumAr.gecerli.length >= 2)
-                                  _aralikSecici(
-                                    aralik: mumAr.aralik!,
-                                    gecerli: mumAr.gecerli,
-                                  ),
-                              ],
-                            );
-                          }),
+                          // Ortak araç çubuğu (`widgets/grafik_arac_cubugu.dart`):
+                          // varlık sayfası ve Karşılaştır aynı çipleri, aynı
+                          // sırada gösterir (yasin 2026-10-10, üç ekran
+                          // tutarlı). Katmanlar görünmüyorsa satır BİREBİR
+                          // eskisi: MA20 · LOG (canlıdaki kullanıcı etkilenmez).
+                          // Tam ekran çipi KALDIRILDI (kullanıcı kararı,
+                          // 2026-09-17; geçmiş uygulama ea7bc0a).
+                          GrafikAracCubugu(
+                            katmanlar: _katmanlarGorunur,
+                            ma20Acik: ma20On,
+                            logAcik: logOn,
+                            mumAcik: mumOn,
+                            ema50Acik: ema50On,
+                            ema200Acik: ema200On,
+                            ozel: _ozelGostergeCipi(ozelAcik.length),
+                            aralik: mumAr?.aralik,
+                            gecerliAraliklar:
+                                mumAr?.gecerli ?? const <MumAraligi>[],
+                            kapanistan:
+                                !FiyatKaynagi.mumKaynagi(_canli.asset)
+                                    .gercekOhlc,
+                          ),
                         const SizedBox(height: 8),
                         // Karşılaştırma gün içinde de açık — seri
                         // `_karsilastirmaSerisi` ile ana varlıkla aynı

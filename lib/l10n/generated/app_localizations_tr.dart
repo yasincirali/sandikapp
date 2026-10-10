@@ -8522,4 +8522,16 @@ class AppLocalizationsTr extends AppLocalizations {
   String sgnSlotKilitli(String secenek) {
     return '$secenek, Premium';
   }
+
+  @override
+  String get chartIntervalM5 => '5 dk';
+
+  @override
+  String get chartIntervalM15 => '15 dk';
+
+  @override
+  String get chartIntervalM5Long => '5 dakikalık';
+
+  @override
+  String get chartIntervalM15Long => '15 dakikalık';
 }

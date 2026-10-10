@@ -275,7 +275,11 @@ List<Mum> grafikMumlari(
 /// mum başına iki çubuk değil dört seri toplam çizilir; 1.500 mum (kriptoda
 /// GÜNLÜK × 1 dk: 1.440) akıcı kalır. Üstü (1H × 1 dk = 10.080) hem
 /// okunmaz hem ağır — o aralık o dönemde sunulmaz.
-const int azamiMum = 1500;
+///
+/// 2.500'e çıktı (2026-10-10 gece, yasin: "1 dk'lık datayı göremiyorum"):
+/// BIST'te 1H × 1 dk ≈ 2.400 mum; 1.500'de 1 dk yalnız GÜNLÜK'te
+/// çıkıyordu. TradingView 1 dk'yı bir haftalık pencerede de açar.
+const int azamiMum = 2500;
 
 /// En az mum: iki mum "grafik" değil.
 const int asgariMum = 3;
@@ -326,7 +330,12 @@ List<MumAraligi> gecerliAraliklar(Asset a, double spanDakika) {
     for (final ar in k.araliklar)
       if (beklenenMumSayisi(a, ar, spanDakika) case final n
           when n >= asgariMum && n <= azamiMum)
-        ar,
+        // Yahoo'nun geriye verdiği pencere ([MumAraligi.yahooGecmisGun]):
+        // aşan aralık sunulmaz, istek boş dönerdi. Binance'te sınır yok.
+        if (k.tur != MumKaynakTuru.yahoo ||
+            ar.yahooGecmisGun == null ||
+            spanDakika <= ar.yahooGecmisGun! * 1440)
+          ar,
   ];
 }
 

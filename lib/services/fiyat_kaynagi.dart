@@ -1054,7 +1054,7 @@ class MumKaynagi {
 
   /// Bu kaynağın verebildiği aralıklar. Kapanış kaynağı gün içi vermez.
   List<MumAraligi> get araliklar => switch (tur) {
-        MumKaynakTuru.yahoo || MumKaynakTuru.kripto => MumAraligi.values,
+        MumKaynakTuru.yahoo || MumKaynakTuru.kripto => MumAraligi.sirali,
         MumKaynakTuru.kapanis => const [
             MumAraligi.gun1,
             MumAraligi.hafta1,

@@ -5672,5 +5672,9 @@
   "@varlikKotasiDolu": {"placeholders": {"sinir": {"type": "int"}}},
   "sgnSlotNotu": "Ücretsiz sürümde RSI, MACD ve Bollinger sinyalleri her tür için günde 1 kez bildirilir. Premium'da sekiz göstergenin tamamı, seçtiğin sıklıkta gelir.",
   "sgnSlotKilitli": "{secenek}, Premium",
-  "@sgnSlotKilitli": {"placeholders": {"secenek": {"type": "String"}}}
+  "@sgnSlotKilitli": {"placeholders": {"secenek": {"type": "String"}}},
+  "chartIntervalM5": "5 dk",
+  "chartIntervalM15": "15 dk",
+  "chartIntervalM5Long": "5 dakikalık",
+  "chartIntervalM15Long": "15 dakikalık"
 }

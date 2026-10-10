@@ -89,9 +89,34 @@ enum MumAraligi {
   hafta1(7 * 1440, '1wk', '1wk'),
   // Ay 30 gün sayılır: yalnız SEÇİM ve beklenen mum sayısı için. Çizimde
   // her ayın gerçek uzunluğu kullanılır (`ayUzunluguMs`).
-  ay1(30 * 1440, '1mo', '1mo');
+  ay1(30 * 1440, '1mo', '1mo'),
+  // 5 dk ve 15 dk (yasin 2026-10-10 gece: "1 dk'lık, 5 dk'lık, 1 saatlik
+  // datayı göremiyorum … TradingView'i örnek alabilirsin"). TradingView'in
+  // varsayılan sık kullanılanları 1m · 5m · 15m · 1h · 4h · D · W · M.
+  // SONA eklendi: tercih (`chartMumAraligiProvider`) sıra numarasını
+  // saklar; araya eklemek kayıtlı seçimi başka bir aralığa kaydırırdı.
+  // Ekranda sıra [sirali]'dan gelir. Binance ikisini de doğrudan verir
+  // (`_shared/kripto.ts` › ARALIK), Yahoo `5m`/`15m` son ~60 günü.
+  dk5(5, '5m', '5m'),
+  dk15(15, '15m', '15m');
 
   const MumAraligi(this.dakika, this.yahooInterval, this.kriptoAraligi);
+
+  /// Küçükten büyüğe — seçicinin ve kaynak listelerinin sırası.
+  static final List<MumAraligi> sirali = [...values]
+    ..sort((a, b) => a.dakika.compareTo(b.dakika));
+
+  /// Yahoo'nun bu aralıkta geriye verdiği en uzun pencere (gün); `null` →
+  /// sınır yok. 1 dk ~7 gün ve 1 sa/4 sa ~730 gün ölçüldü (2026-10-10,
+  /// `tool/ohlc_olcum.py`); 5/15 dk için ~60 gün Yahoo'nun bilinen sınırı
+  /// (ölçülmedi, Actions'ta doğrulanmalı). Pencere bunu aşarsa istek boş
+  /// döner ve seçici boşuna bir aralık sunmuş olurdu.
+  int? get yahooGecmisGun => switch (this) {
+        dk1 => 7,
+        dk5 || dk15 => 60,
+        saat1 || saat4 => 730,
+        _ => null,
+      };
 
   /// Bir barın (yaklaşık) süresi, dakika.
   final int dakika;

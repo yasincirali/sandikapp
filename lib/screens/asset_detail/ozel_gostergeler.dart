@@ -112,6 +112,8 @@ extension _OzelGostergeler on _AssetDetailScreenState {
       hacim: [for (final b in barlar) b.hacim ?? double.nan],
       zamanDilimi: switch (aralik) {
         MumAraligi.dk1 => '1',
+        MumAraligi.dk5 => '5',
+        MumAraligi.dk15 => '15',
         MumAraligi.saat1 => '60',
         MumAraligi.saat4 => '240',
         MumAraligi.gun1 => 'D',
@@ -299,26 +301,22 @@ extension _OzelGostergeler on _AssetDetailScreenState {
 
   /// Araç çubuğundaki `ƒx` çipi. Kilitliyse paywall; değilse göstergeler
   /// sayfası (grafiğin o anki çubuklarıyla — düzenleyici önizlemesi için).
-  Widget _ozelGostergeCipi(int acikSayi) {
+  GrafikOzelCipi _ozelGostergeCipi(int acikSayi) {
     final kilitli = _ozelGostergeKilitli;
-    return Semantics(
-      label: context.l10n.ozgCipSemantik,
-      child: _OverlayChip(
-        label: acikSayi > 0 ? 'ƒx $acikSayi' : 'ƒx',
-        active: acikSayi > 0,
-        kilitli: kilitli,
-        onTap: () {
-          if (kilitli) {
-            PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
-            return;
-          }
-          showOzelGostergeSayfasi(
-            context,
-            onizleme: _ozelVeri,
-            varlikAdi: _kimlik.kisaEtiket,
-          );
-        },
-      ),
+    return GrafikOzelCipi(
+      acikSayi: acikSayi,
+      kilitli: kilitli,
+      onTap: () {
+        if (kilitli) {
+          PaywallScreen.show(context, source: 'grafik_ozel_gosterge');
+          return;
+        }
+        showOzelGostergeSayfasi(
+          context,
+          onizleme: _ozelVeri,
+          varlikAdi: _kimlik.kisaEtiket,
+        );
+      },
     );
   }
 }

@@ -5086,5 +5086,9 @@
   "varlikKotasiKalan": "You have {kalan} new assets left on the free plan ({sinir} assets).",
   "varlikKotasiDolu": "You've used all {sinir} assets on the free plan. You can still add to assets you hold; new assets need Premium.",
   "sgnSlotNotu": "On the free plan RSI, MACD and Bollinger signals are sent once a day per type. Premium covers all eight indicators at the frequency you choose.",
-  "sgnSlotKilitli": "{secenek}, Premium"
+  "sgnSlotKilitli": "{secenek}, Premium",
+  "chartIntervalM5": "5m",
+  "chartIntervalM15": "15m",
+  "chartIntervalM5Long": "5-minute",
+  "chartIntervalM15Long": "15-minute"
 }

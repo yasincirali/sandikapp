@@ -14206,6 +14206,30 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{secenek}, Premium'**
   String sgnSlotKilitli(String secenek);
+
+  /// No description provided for @chartIntervalM5.
+  ///
+  /// In tr, this message translates to:
+  /// **'5 dk'**
+  String get chartIntervalM5;
+
+  /// No description provided for @chartIntervalM15.
+  ///
+  /// In tr, this message translates to:
+  /// **'15 dk'**
+  String get chartIntervalM15;
+
+  /// No description provided for @chartIntervalM5Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'5 dakikalık'**
+  String get chartIntervalM5Long;
+
+  /// No description provided for @chartIntervalM15Long.
+  ///
+  /// In tr, this message translates to:
+  /// **'15 dakikalık'**
+  String get chartIntervalM15Long;
 }
 
 class _AppLocalizationsDelegate
