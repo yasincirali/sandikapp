@@ -405,9 +405,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: ref.watch(cokluHesapGorunurProvider)
                             ? Align(
                                 alignment: Alignment.centerLeft,
-                                child: HesapBasligi(
-                                  stil: context.t.headlineMedium
-                                      ?.copyWith(color: context.c.text90),
+                                child: TourAnchor(
+                                  target: TourTarget.hesapBasligi,
+                                  child: HesapBasligi(
+                                    stil: context.t.headlineMedium
+                                        ?.copyWith(color: context.c.text90),
+                                  ),
                                 ),
                               )
                             : Text(

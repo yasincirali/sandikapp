@@ -87,6 +87,10 @@ enum TourTarget {
   /// Profil: davet kodu bölümü.
   davetKodu,
 
+  /// Profil üst çubuğu: aktif hesabın adı + ok (çoklu hesap, bayrak
+  /// `coklu_hesap`); dokununca hesap listesi açılır.
+  hesapBasligi,
+
   /// Profil: Ayarlar tuşu.
   ayarlar,
 }
