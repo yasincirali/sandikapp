@@ -18,8 +18,13 @@ part of '../paywall_screen.dart';
 //    bir servis yok).
 
 /// Destedeki Premium kartları, varsayılan sırasıyla.
+///
+/// Sıra (2026-10-10, olgun Premium seti): araştırmada para ödenen işler
+/// önde — sınır, rapor/vergi, temettü — sonra alışkanlık ve analiz.
 enum PaywallKarti {
   varlik,
+  rapor,
+  temettu,
   sinyal,
   karsilastir,
   ortak,
@@ -37,10 +42,18 @@ PaywallKarti? kaynaktanKart(String source) {
       source == 'watchlist_limit') {
     return PaywallKarti.varlik;
   }
-  if (source.startsWith('signal_') || source == 'sinyal_varlik') {
+  if (source.startsWith('signal_') ||
+      source == 'sinyal_varlik' ||
+      source == 'sinyal_kilit') {
     return PaywallKarti.sinyal;
   }
   return switch (source) {
+    'yillik_rapor' ||
+    'portfoy_disa_aktar' ||
+    'masraf_dokumu' =>
+      PaywallKarti.rapor,
+    'temettu_tahmini' => PaywallKarti.temettu,
+    'aylik_rapor' => PaywallKarti.not,
     'compare_series' => PaywallKarti.karsilastir,
     'partner_limit' => PaywallKarti.ortak,
     'para_akisi_karti' => PaywallKarti.akis,
@@ -171,15 +184,37 @@ class _DesteGovdesiState extends State<_DesteGovdesi> {
           l.pwdVarlikUcretsiz(rc.freeAssetLimit, rc.paywallWatchlistLimit),
           l.prmSinirsiz,
         ),
+      PaywallKarti.rapor => (
+          _KartRengi.krem,
+          l.pwdRaporEtiket,
+          l.pwdRaporBaslik,
+          'PDF · Excel',
+          _BelgeGorseli(renk: _KartRengi.krem),
+          null,
+          l.pwdRaporPremium,
+        ),
+      PaywallKarti.temettu => (
+          _KartRengi.yesil,
+          l.pwdTemettuEtiket,
+          l.pwdTemettuBaslik,
+          null,
+          _Cubuklar(
+              degerler: const [8, 18, 8, 64, 8, 8, 22, 8, 40, 8, 30, 92],
+              vurgulu: 1,
+              aralik: SandikSpace.xs,
+              renk: _KartRengi.yesil),
+          null,
+          l.pwdTemettuPremium,
+        ),
+      // Sinyal paywall açıkken bütünüyle Premium (2026-10-10): ücretsiz
+      // satırı yok.
       PaywallKarti.sinyal => (
           _KartRengi.amber,
           l.pwdSinyalEtiket,
           l.pwdSinyalBaslik,
-          'ADX · W%R · CCI',
+          l.pwdSinyalRozet,
           _SaatGorseli(renk: _KartRengi.amber),
-          rc.freeSignalAssets > 0
-              ? l.pwdSinyalUcretsizTek(rc.freeSignalSlotsPerDay)
-              : l.pwdSinyalUcretsiz(rc.freeSignalSlotsPerDay),
+          null,
           l.pwdSinyalPremium,
         ),
       PaywallKarti.karsilastir => (
@@ -966,6 +1001,42 @@ class _NotGorseli extends StatelessWidget {
         ]),
         overflow: TextOverflow.fade,
       ),
+    );
+  }
+}
+
+/// Yıllık rapor kartı: üç satırlık belge — sol etiket, sağ tutar sütunu.
+class _BelgeGorseli extends StatelessWidget {
+  const _BelgeGorseli({required this.renk});
+
+  final _KartRengi renk;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget cubuk(double oran, Color c) => FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: oran,
+          child: Container(
+            height: 10,
+            decoration: BoxDecoration(
+              color: c,
+              borderRadius: BorderRadius.circular(SandikSpace.xs),
+            ),
+          ),
+        );
+    Widget satir(double sol, double sag) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: SandikSpace.xs),
+          child: Row(
+            children: [
+              Expanded(flex: 3, child: cubuk(sol, renk.soluk)),
+              const SizedBox(width: SandikSpace.sm2),
+              Expanded(flex: 2, child: cubuk(sag, renk.vurgu)),
+            ],
+          ),
+        );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [satir(0.9, 0.7), satir(0.6, 0.5), satir(0.8, 0.9)],
     );
   }
 }

@@ -1,12 +1,67 @@
 # sandık — Senin Yapman Gerekenler (Detaylı Rehber)
 
-**Tarih:** 2026-05-11 · **Son ek:** 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
+**Tarih:** 2026-05-11 · **Son ek:** 2026-10-10 (olgun Premium seti, Koşullar 1.7, 0130); 2026-10-09 (göz alıcılık paketi A, tek bayrak `goz_alici`); 2026-10-08 (yasal metin 1.8, 0127; ücretsiz sınırlar 7/3/tek sinyal varlığı, 0126; sadeleştirme kalanları + bulut MCP/skill kurulumu, PR #110); 2026-10-05 (okuma sadeleştirme — belgeler 1.4 + kutu 1.1, 0109 geçici numara; balina radarı 0106–0108; saklama süreleri + belgeler 1.3, 0105; bayrak temizliği — 15 sadeleştirme bayrağı koddan kalktı, Console'dan kapatılamaz); önce 2026-10-03 (hafta sonu GÜNLÜK yurt içi seri, 0101; kilit ekranı dakikalık = Performans GÜNLÜK, 0100; kod e-postası alan adı/SPF-DKIM; Tek aktif cihaz 0098 — şablon + muafiyet + dağıtım); önce: 2026-10-02 (müşteri testi düzeltmeleri; önce: 2026-10-01 gece (Yarış/Zirve TWR — 0095 iki sunucuda; Frankfurt eşlendi: 0092–0094; önce: BES otomatik, Zirve açık rıza, halka arz otomasyonu, ekstre motoru))
 > **📱 Android/Play tarafı için güncel dosya:**
 > [`PLAY_STORE_YAYIN_REHBERI.md`](PLAY_STORE_YAYIN_REHBERI.md) (2026-09-05).
 > Aşağıdaki §4 (keystore) ve §6 (Play Console) bölümleri 2026-05 tarihli;
 > Play'in kuralları o tarihten sonra değişti (targetSdk 36, 16 KB sayfa
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
+
+## ⏳ 2026-10-10 Olgun Premium seti (dal `feat/premium-olgun`, migration 0130)
+
+Senin kararın: "varlık gösterge sinyali tamamen Premium'a geçsin; premium
+özellik setini olgun hâle getirelim; pinti görünmeyelim ama ödeyene
+karşılığını verelim." Hepsi TEK anahtar `paywall_enabled` arkasında. Paywall
+kapalı kaldıkça canlıdaki kullanıcıda hiçbir şey değişmez; yeni yüzeyler
+(yıllık rapor, temettü tahmini, masraf dökümü, Raporlar kapısı) yalnız admin
+hesabında görünür.
+
+Paywall açılınca Premium'da olanlar: sınırsız varlık (ücretsiz 10), teknik
+sinyallerin TAMAMI (panel, 8 gösterge, bildirim, sinyal ayarları), yıllık
+kâr/temettü/stopaj/masraf raporu (PDF + Excel), portföyü PDF/Excel dışa
+aktarma (Ayarlar; JSON indirme herkese açık kalır), 12 aylık temettü
+tahmini, kalem kalem masraf dökümü (toplamlar ücretsiz), aylık rapor
+(artık gerçekten kilitli; eskiden ekran ücretsiz açılıyordu, paywall
+tablosu yanlış söylüyordu), radar ayrıntısı, ekstre yapay zekâ, 5 seri,
+birden fazla ortak. Ücretsizde gevşeyenler: takip listesi 5 → 10, fiyat
+alarmı 3 → 20, BES sözleşmesi kotada tek varlık (üç fon üç değil).
+
+⚠️ **Kırıcı (paywall açıldığı gün):** ücretsiz kullanıcı teknik sinyali
+kaybeder: varlık ekranında panel yerine kilit kartı, zilde sinyal satırı
+yok, bildirim gelmez. Kayıtlı sinyal tercihleri silinmez, Premium'da aynen
+döner. Erken kullanıcı hediyesi (90 gün) bu geçişi yumuşatır; açılışta İLK
+o koşmalı.
+
+- [ ] PR'ı aç, CI yeşil olunca birleştir (push/birleştirme sende).
+- [ ] **Supabase deploy** (hedef `ikisi`): migration 0130 (Koşullar 1.7,
+      yalnız metin ekler; "Onay sürümü" 1.6'da kaldı, kimseye yeniden
+      sorulmaz) + `analyze-signals` fonksiyonu. Fonksiyon
+      `premium_ayar.kapi_acik` kapalıyken birebir eski davranır; erken
+      dağıtmak güvenli.
+- [ ] Açılış sırası (değişmedi, kapının görevi büyüdü):
+      `select public.erken_kullanici_hediyesi_ver('<kesim>', 90);` →
+      `paywall_enabled` (Remote Config, yayılsın) →
+      `update public.premium_ayar set kapi_acik = true;`. Kapı artık
+      sinyali de keser: açıkken yalnız Premium (hak ya da admin) sinyal alır.
+      `SINYAL_UCRETSIZ_SLOT` / `SINYAL_UCRETSIZ_VARLIK` secret'ları artık
+      gerekmez (koymazsan bir şey değişmez).
+- [ ] Remote Config: `free_price_alert_limit` ya da `paywall_watchlist_limit`
+      Console'da elle girildiyse yeni varsayılanları (20, 10) ezer; sil ya da
+      20 / 10 yap.
+- [ ] TestFlight'ta dene (paywall koşullu açık, admin OLMAYAN test hesabı):
+      varlık ekranında "Teknik sinyaller Premium'da" kartı; Ayarlar › Sinyal
+      ayarları kilitli; Performans › Raporlar'da Yıllık rapor ve Temettü
+      tahmini satırlarında kilit; masraf kartında "… kalemlik döküm
+      Premium'da". Sonra Premium (sandbox) ya da admin hesabıyla: Yıllık
+      rapor → PDF ve Excel paylaş (kendine e-postayla gönder; Excel'de
+      tutarlar toplanabilir sayı mı, PDF'te ı/ş/ğ doğru mu), Ayarlar ›
+      Portföyü dışa aktar, Temettü tahmini ay çubukları.
+- [ ] Paywall açılınca mağaza abonelik açıklamasındaki Premium listesini
+      paywall'daki listeyle eşle.
+- Ertelenen (TECHNICAL_DEBT.md): fon X-Ray (TEFAS dağılım ucu
+  `dagilimSiraliGetirT` 2026-10-10 araştırmasında bulundu; v1 senin
+  onayını bekliyor), çoklu portföy (kapsam görünümü merkezi değil; ayrı tasarım).
 
 ## ⏳ 2026-10-09 Mevduat: banka listesi, faiz önerisi, not (0129, `mevduat-faiz`)
 

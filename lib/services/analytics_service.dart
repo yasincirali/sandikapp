@@ -127,6 +127,11 @@ class AnalyticsService {
   Future<void> logPremiumUpgradeCompleted({required String plan}) =>
       _log('premium_upgrade_completed', {'plan': plan});
 
+  /// Premium dışa aktarım (2026-10-10): hangi belge, hangi biçim. Tutar ya
+  /// da içerik gönderilmez.
+  Future<void> logDisaAktarim({required String tur, required String bicim}) =>
+      _log('disa_aktarim', {'tur': tur, 'bicim': bicim});
+
   // ── Sosyal ──────────────────────────────────────────────────────────────
   Future<void> logPartnerInviteSent() => _log('partner_invite_sent');
   Future<void> logPartnerInviteAccepted() => _log('partner_invite_accepted');

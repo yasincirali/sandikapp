@@ -11,8 +11,8 @@ const yasalBelgeKaynaklari = <String, String>{
   'legal/tr/TERMS_OF_SERVICE.md': r'''# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
-**Son güncelleme:** 8 Ekim 2026
-**Sürüm:** 1.6
+**Son güncelleme:** 10 Ekim 2026
+**Sürüm:** 1.7
 **Onay sürümü:** 1.6
 
 ---
@@ -43,7 +43,7 @@ sandık, kullanıcıların aşağıdaki varlık türlerini takip edebileceği bi
 - Vadeli mevduat ve bireysel emeklilik (BES) sözleşmeleri
 - Elle tanımladığınız diğer varlıklar
 
-Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini, fiyat alarmlarını ve dönemsel özetleri gösterir. Varlıklarınızı elle, toplu olarak ya da banka/aracı kurum ekstresinden içe aktararak girebilirsiniz. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
+Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağlı olarak teknik analiz sinyallerini (Premium), fiyat alarmlarını ve dönemsel özetleri gösterir. Varlıklarınızı elle, toplu olarak ya da banka/aracı kurum ekstresinden içe aktararak girebilirsiniz. Çoklu kullanıcı ortaklığı özelliğiyle iki kullanıcı portföylerini paylaşabilir.
 
 **Zirvedeki Portföyler (isteğe bağlı):** Uygulama içinde açık rıza verirseniz dönemsel getiriniz ve varlık türü paylarınız anonim bir karşılaştırma havuzunda değerlendirilir (portföy 5 günden eski, en az 2 farklı varlık); en çok kazanan portföylerin yalnızca sırası, getirisi, tür payları ve fonların TEFAS kodu ile payları, kimlik ve tutar olmadan diğer katılımcılara gösterilir; karşılığında siz de katılımcıların aynı anonim bilgilerini görürsünüz (ayrıntı: Gizlilik Politikası §5.1). İstediğiniz an ayrılabilirsiniz; katılmamak başka hiçbir özelliği etkilemez.
 
@@ -57,7 +57,7 @@ Uygulama; portföy değerini, dağılımını, performansını ve isteğe bağl�
 
 Bu bölüm, Premium uygulamada satışa sunulduğunda geçerlidir.
 
-**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. ek teknik göstergeler, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
+**Kapsam.** Portföy takibi ücretsizdir. Premium, ücretsiz katmanda sınırlı olan ya da yalnızca abonelere açık olan özellikleri (ör. teknik analiz sinyalleri ve bildirimleri, yıllık kâr, temettü ve masraf raporu, PDF ve Excel dışa aktarma, temettü tahmini, kalem kalem masraf dökümü, varlık notlarının ve aylık raporun tamamı, ekstrenin yapay zekâyla okunması) içerir. Hangi özelliğin Premium olduğu satın alma ekranında, satın almadan önce gösterilir. Ücretsiz katmanda Premium özelliklerin bir kısmı sınırlı biçimde görünebilir (ör. notun ilk cümlesi).
 
 **Fiyat ve ödeme.** Abonelik aylık ya da yıllık dönemlidir. Fiyat, satın alma ekranında App Store ya da Google Play'in gösterdiği tutardır (vergiler dahil). Ödemeyi Şirket değil, cihazınızın mağazası (Apple ya da Google) tahsil eder; kart bilgileriniz Şirket'e ulaşmaz.
 

@@ -35,6 +35,12 @@ void main() {
         'kripto_baski': PaywallKarti.hacim,
         'analiz_notu': PaywallKarti.not,
         'ekstre_ai': PaywallKarti.ekstre,
+        'sinyal_kilit': PaywallKarti.sinyal,
+        'yillik_rapor': PaywallKarti.rapor,
+        'portfoy_disa_aktar': PaywallKarti.rapor,
+        'masraf_dokumu': PaywallKarti.rapor,
+        'temettu_tahmini': PaywallKarti.temettu,
+        'aylik_rapor': PaywallKarti.not,
       };
       beklenen.forEach((kaynak, kart) {
         expect(kaynaktanKart(kaynak), kart, reason: kaynak);
@@ -59,6 +65,13 @@ void main() {
         'lib/widgets/para_akisi_karti.dart',
         'lib/widgets/hacim_radari_karti.dart',
         'lib/screens/asset_detail/sinyal_widgetlari.dart',
+        // Olgun Premium seti (2026-10-10).
+        'lib/widgets/sinyal_kilit_karti.dart',
+        'lib/widgets/masraf_karti.dart',
+        'lib/screens/yillik_rapor_screen.dart',
+        'lib/screens/temettu_tahmini_screen.dart',
+        'lib/screens/aylik_rapor_screen.dart',
+        'lib/screens/settings_screen.dart',
       ]) {
         final src = ekranKaynagiSync(yol);
         for (final m
@@ -84,6 +97,8 @@ void main() {
         [
           PaywallKarti.karsilastir,
           PaywallKarti.varlik,
+          PaywallKarti.rapor,
+          PaywallKarti.temettu,
           PaywallKarti.sinyal,
           PaywallKarti.ortak,
         ],

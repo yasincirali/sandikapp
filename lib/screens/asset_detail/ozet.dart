@@ -468,6 +468,7 @@ extension _DetayOzet on _AssetDetailScreenState {
         usdTry: pState.usdTry > 1.0 ? pState.usdTry : null,
         temettuStopajOrani: RemoteConfigService.instance.temettuStopajOrani,
       ),
+      kilitli: ref.watch(premiumKilitliProvider),
     );
   }
 

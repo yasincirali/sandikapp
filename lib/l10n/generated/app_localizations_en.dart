@@ -2297,7 +2297,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallSubhead =>
-      'Unlimited assets and advanced indicators. Portfolio tracking stays free.';
+      'Unlimited assets, annual report, dividend forecast and technical signals. Portfolio tracking stays free.';
 
   @override
   String get restorePurchase => 'Restore purchase';
@@ -6674,13 +6674,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prmSinirsiz => 'unlimited';
 
   @override
-  String get prmSatirSinyal => 'Signal alerts';
+  String get prmSatirSinyal => 'Technical signals';
 
   @override
   String get prmSinyalUcretsiz => '1 asset';
 
   @override
-  String get prmSinyalPremium => 'all assets';
+  String get prmSinyalPremium => '8 indicators, all assets';
 
   @override
   String get prmSatirTakip => 'Watchlist';
@@ -7459,7 +7459,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pwdSinyalBaslik =>
-      'Get alerts at the hours you pick, plus three more indicators.';
+      'Eight indicators and alerts on every asset, at the hours you pick.';
 
   @override
   String pwdSinyalUcretsiz(int sayi) {
@@ -7472,7 +7472,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pwdSinyalPremium => 'any frequency';
+  String get pwdSinyalPremium => '8 indicators, all assets';
 
   @override
   String get pwdKarsEtiket => 'COMPARE';
@@ -7638,4 +7638,238 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get depositNoteHint => 'e.g. campaign rate, goal, branch';
+
+  @override
+  String get sgnKilitBaslik => 'Technical signals';
+
+  @override
+  String get sgnKilitGovde =>
+      'RSI, MACD, Bollinger, EMA, Stochastic, ADX, Williams %R and CCI: eight indicators, alerts on every asset you hold at the frequency you choose, and the full indicator panel on the asset screen.';
+
+  @override
+  String get sgnKilitSatir => 'Technical signals are part of Premium';
+
+  @override
+  String get prmAylikKilitBaslik => 'Monthly report';
+
+  @override
+  String get prmAylikKilitGovde =>
+      'Every asset\'s note for the month in one report: which assets moved, the month\'s story and the full notes. The weekly summary stays free.';
+
+  @override
+  String get prmAylikKilitSatir => 'The monthly report is part of Premium';
+
+  @override
+  String costsBreakdownLocked(int count) {
+    return 'The $count-item breakdown is part of Premium';
+  }
+
+  @override
+  String get yrBaslik => 'Annual report';
+
+  @override
+  String get yrSatirAlt =>
+      'Gains, dividends, withholding and fees; PDF or Excel';
+
+  @override
+  String get yrKilitBaslik => 'Annual gains, dividends and fees report';
+
+  @override
+  String get yrKilitGovde =>
+      'Realized gains from the year\'s sales, net and gross dividends, withholding tax and commissions in one report. Send it to your accountant as PDF or Excel.';
+
+  @override
+  String get yrKilitSatir => 'The annual report is part of Premium';
+
+  @override
+  String get yrBos => 'Nothing to report yet';
+
+  @override
+  String get yrBosAlt =>
+      'Once you record a sale, a dividend or a purchase with commission, that year\'s report appears here.';
+
+  @override
+  String get yrGerceklesen => 'Realized gain/loss';
+
+  @override
+  String get yrYurtDisi => 'Foreign (US) stocks part';
+
+  @override
+  String get yrYurtDisiEtiket => 'Foreign';
+
+  @override
+  String get yrTemettuNet => 'Dividends (net)';
+
+  @override
+  String get yrStopaj => 'Dividend withholding';
+
+  @override
+  String get yrStopajBilinmiyor => 'rate unknown';
+
+  @override
+  String yrStopajSatir(String tutar) {
+    return 'withholding $tutar';
+  }
+
+  @override
+  String get yrMasraf => 'Transaction fees';
+
+  @override
+  String get yrPdf => 'PDF';
+
+  @override
+  String get yrExcel => 'Excel';
+
+  @override
+  String get yrSatislarUpper => 'SALES';
+
+  @override
+  String get yrTemettulerUpper => 'DIVIDENDS';
+
+  @override
+  String yrFiyatsiz(int count) {
+    return '$count older sales without a recorded sale price are not included.';
+  }
+
+  @override
+  String get yrDipnot =>
+      'Prepared from your records; not a tax return or tax advice. Ask your accountant about filing. Your partner\'s transactions are not included.';
+
+  @override
+  String get dsBicimBaslik => 'Which format?';
+
+  @override
+  String get dsPdf => 'PDF';
+
+  @override
+  String get dsPdfAlt => 'To read and send';
+
+  @override
+  String get dsExcel => 'Excel';
+
+  @override
+  String get dsExcelAlt => 'Amounts as numbers; ready to sum and filter';
+
+  @override
+  String get dsPortfoyBaslik => 'Export portfolio';
+
+  @override
+  String get dsPortfoyAlt =>
+      'Your assets and transaction history; PDF or Excel';
+
+  @override
+  String get ttBaslik => 'Dividend forecast';
+
+  @override
+  String get ttRaporAlt =>
+      'Expected dividends over the next 12 months, month by month';
+
+  @override
+  String get ttKilitGovde =>
+      'What your BIST stocks\' dividends from the last 12 months would add up to next year at today\'s holdings: monthly bars, per-asset list, net after withholding.';
+
+  @override
+  String get ttKilitSatir => 'The dividend forecast is part of Premium';
+
+  @override
+  String get ttBos => 'No dividends to forecast';
+
+  @override
+  String get ttBosAlt =>
+      'The forecast appears once you hold a BIST stock that paid dividends in the last 12 months.';
+
+  @override
+  String get ttToplamEtiket => 'Next 12 months, estimated';
+
+  @override
+  String get ttBrutNot =>
+      'Gross; net not calculated because the withholding rate is unknown.';
+
+  @override
+  String ttNetNot(String brut) {
+    return 'Net after withholding · gross $brut';
+  }
+
+  @override
+  String get ttVarliklarUpper => 'ASSETS';
+
+  @override
+  String ttSatirAlt(String pay, String aylar) {
+    return '$pay per share · $aylar';
+  }
+
+  @override
+  String get ttKural =>
+      'The forecast follows one rule: the dividends paid over the last 12 months, repeated in the same months at today\'s holdings. Company decisions, splits and bonus issues are not taken into account. BIST stocks only; not investment advice.';
+
+  @override
+  String get pwOzRapor =>
+      'Annual gains, dividends and withholding report; export your portfolio as PDF or Excel';
+
+  @override
+  String get pwOzTemettu =>
+      'Dividend forecast for the next 12 months, month by month';
+
+  @override
+  String get pwOzSinyalTam =>
+      'Technical signals: 8 indicators, alerts on every asset at the frequency you choose';
+
+  @override
+  String get pwOzMasraf => 'Item-by-item fee breakdown per asset';
+
+  @override
+  String get prmSatirAlarm => 'Price alerts';
+
+  @override
+  String get prmSatirYillik => 'Annual report';
+
+  @override
+  String get prmSatirDisaAktar => 'Export';
+
+  @override
+  String get prmDisaAktarUcretsiz => 'JSON';
+
+  @override
+  String get prmDisaAktarPremium => 'PDF + Excel';
+
+  @override
+  String get prmSatirTemettu => 'Dividend forecast';
+
+  @override
+  String get prmSatirMasraf => 'Fees';
+
+  @override
+  String get prmMasrafUcretsiz => 'totals';
+
+  @override
+  String get prmMasrafPremium => 'itemized';
+
+  @override
+  String get prmSatirKars => 'Compare';
+
+  @override
+  String get prmSatirOrtak => 'Partners';
+
+  @override
+  String get pwdRaporEtiket => 'ANNUAL REPORT';
+
+  @override
+  String get pwdRaporBaslik =>
+      'The year\'s gains, dividends and withholding in one document; send it to your accountant.';
+
+  @override
+  String get pwdRaporPremium => 'PDF and Excel';
+
+  @override
+  String get pwdTemettuEtiket => 'DIVIDEND FORECAST';
+
+  @override
+  String get pwdTemettuBaslik =>
+      'See how much dividend income the next 12 months bring, month by month.';
+
+  @override
+  String get pwdTemettuPremium => '12-month forecast';
+
+  @override
+  String get pwdSinyalRozet => '8 indicators';
 }

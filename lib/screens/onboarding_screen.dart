@@ -221,6 +221,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 // (sekme değiştir, ekranı aç) o zaman tur kendisi yapar. Zorlamak,
 // tanıtımı bir an önce geçmek isteyen kullanıcıyı cezalandırırdı.
 
+/// "Bildirim merkezi" adımının ilk cümlesi. Paywall açıkken teknik sinyaller
+/// Premium'da (2026-10-10, `sinyalYuzeyiProvider`): ücretsiz kullanıcının
+/// zilinde sinyal satırı yok, metin onu vaat etmesin.
+const _zilBasi = 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
+    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
+const _zilPremiumBasi =
+    'Tetiklenen fiyat alarmların (Premium\'da teknik sinyaller de) burada '
+    'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir ';
+
 class _Adim {
   const _Adim({
     required this.id,
@@ -529,8 +538,7 @@ List<_Adim> _adimlariKur() {
       hedef: TourTarget.bildirimCani,
       rozet: 'YENİ',
       baslik: 'Bildirim merkezi',
-      govde: 'Teknik sinyaller ve tetiklenen fiyat alarmların burada '
-          'toplanır; üstteki "Alarmlarım" tüm alarmlarını listeler. Bir '
+      govde: '${RemoteConfigService.instance.paywallEnabled ? _zilPremiumBasi : _zilBasi}'
           'varlığın ekranındaki zilden fiyat alarmı '
           'kurabilirsin: hedeflediğin fiyata gelince haber verir, '
           'uygulama kapalıyken de çalışır.',

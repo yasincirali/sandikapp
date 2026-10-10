@@ -9,6 +9,42 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Olgun Premium setinde ertelenenler (2026-10-10, dal `feat/premium-olgun`)
+
+**1. Fon içerik dağılımı (X-Ray).** Araştırmada güçlü ödeme sebebi
+(Fintables şikâyeti, Parqet X-Ray ücretli). İlk denemede yapılmadı çünkü
+eski uç (`BindHistoryAllocation`) kapalıydı. Derin araştırma (2026-10-10,
+tmp/arastirma/reports/Fon XRay veri kaynakları.md) ucun yeniden
+adlandırıldığını buldu: `POST /api/funds/dagilimSiraliGetirT`, günlük 57
+varlık sınıfı yüzdesi (YAT/EMK/BYF), tek fon süzgeci `fonKod` (yalnız
+`fonKodu` tüm evreni döndürür), istek başına ≤1 ay, geriye ≤5 yıl,
+~6 istek/dk, belgesiz. Kalem bazlı veri yalnız KAP Portföy Dağılım Raporu
+PDF'lerinde (aylık, T+~6 iş günü, kurucuya göre değişen düzen). Plan:
+v1 sunucu cron'u TEFAS sınıf dağılımı, v2 KAP PDF ayrıştırma (her sayı
+kaynakta aynen). Tahmin (stil analizi) yazılmaz. Önce TEFAS/KAP kullanım
+koşulları elle okunmalı. Maliyet: Premium listesinde güçlü bir kalem
+eksik. Ne zaman: kullanıcı v1'i onaylayınca.
+
+**2. Çoklu portföy (sepetler).** Yapılmadı: "Ben / Birlikte" süzgeci merkezi
+bir görünüm sağlayıcısı değil, her ekranda ayrı (`_view`, `OrtakSecici`);
+portföy süzgeci aynı yerlere, ayrıca seri motoruna (`HistoryService`),
+gün içi önbelleğe (kapsam anahtarlı `IntradaySeriesCache`), widget ve kilit
+ekranına girmeli; lot başına portföy (`assets.portfoy_id`) iki sunucuda
+şema değişikliği ister ve aynı sembolün iki portföyde ayrı maliyeti satış
+eşlemesini değiştirir. Yarım yapılırsa canlıdaki toplamlar bozulabilir.
+Maliyet: "aile/emeklilik ayrı" isteyen kullanıcı (Fonum yorumları) bugün
+ortaklıkla yetiniyor. Ne zaman: önce kapsam görünümü tek sağlayıcıya
+toplanır (ayrı iş), sonra portföy süzgeci ona eklenir.
+
+**3. Tek varlık sinyal kapısı artık ölü yol.** Sinyal paywall açıkken
+bütünüyle Premium olduğu için `sinyalVarlikKapisiAcikProvider`,
+`SinyalVarlikSeridi`, `sinyal_varlik_secimi` (0126), sunucuda
+`ucretsizVarlikFiltresi` ve slot kapısı (`SINYAL_UCRETSIZ_*`,
+`free_signal_slots_per_day`, `free_signal_assets`) hiçbir kullanıcıda
+devreye girmez. Bilerek bırakıldı: karar geri alınırsa ("1 varlık ücretsiz")
+tek satırla döner. Maliyet: okunmayan kod + test. Ne zaman: paywall açıldıktan
+bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migration).
+
 ## ✅ KAPANDI — Yıllık özet (`RecapScreen`) ortak hikâye kabuğunu kullanmıyor (2026-10-09 → aynı gün; görüntü piksel piksel aynı, `goz_alicilik_kalanlar_test`)
 
 **Ne:** Göz alıcılık D'de aylık hikâye için `HikayeAkisi`/`HikayeSayfasi`

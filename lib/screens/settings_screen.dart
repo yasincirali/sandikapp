@@ -24,6 +24,11 @@ import '../services/surum_notu_service.dart';
 import '../services/review_prompt_service.dart';
 import '../services/crash_reporter.dart';
 import '../services/data_export_service.dart';
+import '../services/disa_aktarim/disa_aktarim_service.dart';
+import '../services/disa_aktarim/rapor_belgeleri.dart';
+import '../services/analytics_service.dart';
+import '../widgets/disa_aktarim_bicim_sayfasi.dart';
+import 'paywall_screen.dart';
 import '../services/share_card_service.dart';
 import '../services/auth_service.dart';
 import '../services/social_auth_service.dart';
@@ -252,6 +257,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Sessiz kalmasın: "verilerimi indir" sahada hata verdiğinde elimizde
       // tek iz yoktu (CLAUDE.md "servis catch'leri sessiz kalmasın").
       CrashReporter.report(e, st, reason: 'SettingsScreen.exportData');
+      if (!mounted) return;
+      showAppError(context, e);
+    }
+  }
+
+  final _portfoyKaroKey = GlobalKey();
+
+  /// Portföy dökümü (Premium): biçim sorulur, belge kurulur, paylaşılır.
+  Future<void> _portfoyuDisaAktar() async {
+    if (ref.read(premiumKilitliProvider)) {
+      unawaited(AnalyticsService.instance
+          .logPremiumGateShown(feature: 'portfoy_disa_aktar'));
+      await PaywallScreen.show(context, source: 'portfoy_disa_aktar');
+      return;
+    }
+    final origin = ShareCardService.originOf(_portfoyKaroKey.currentContext);
+    final bicim = await disaAktarimBicimiSor(context);
+    if (bicim == null || !mounted) return;
+    final durum = ref.read(portfolioProvider).valueOrNull;
+    final kullanici = ref.read(authProvider).valueOrNull;
+    if (durum == null || kullanici == null) return;
+    final belge = portfoyBelgesi(
+      lotlar: [
+        for (final a in durum.assets)
+          if (a.userId == kullanici.id) a
+      ],
+      tlYap: durum.toTRY,
+      kim: kullanici.username ?? kullanici.email,
+      olusturma: DateTime.now(),
+    );
+    try {
+      await DisaAktarimService.instance
+          .paylas(belge, bicim: bicim, tur: 'portfoy', kaynak: origin);
+    } catch (e, st) {
+      CrashReporter.report(e, st, reason: 'SettingsScreen.portfoyuDisaAktar');
       if (!mounted) return;
       showAppError(context, e);
     }
@@ -856,6 +896,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: null,
               onTapAsync: _exportData,
             ),
+            // Premium dışa aktarım (2026-10-10): biçimli PDF/Excel. Üstteki
+            // JSON indirme KVKK md. 11 gereği herkese açık kalır; bu satır
+            // okunabilir belge içindir ve kilitliyken paywall'a götürür.
+            // Tek anahtar: paywall kapalıyken yalnız admin görür — bugün
+            // herkese ücretsiz verip yarın kilitlemek geri almak olurdu.
+            if (RemoteConfigService.instance.premiumOzellikleriGorunur)
+              _SettingsTile(
+                key: _portfoyKaroKey,
+                icon: Icons.ios_share_rounded,
+                title: context.l10n.dsPortfoyBaslik,
+                subtitle: context.l10n.dsPortfoyAlt,
+                trailing: ref.watch(premiumKilitliProvider)
+                    ? Icon(Icons.lock_outline_rounded,
+                        color: context.c.amberText, size: SandikSpace.md)
+                    : null,
+                onTap: null,
+                onTapAsync: _portfoyuDisaAktar,
+              ),
             _SettingsTile(
               icon: Icons.delete_forever_outlined,
               title: context.l10n.deleteMyAccount,

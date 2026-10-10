@@ -77,11 +77,15 @@ void main() {
     HistoryService.seriCekici = (s, r, i) async => const [];
     // Sabit hafta içi, seans açık: seri yokken hüküm "Gün içi veri geliyor".
     BugunKarti.saat = () => DateTime(2026, 10, 9, 15);
+    // Gün içi motoru da aynı ana: duvar saatinde kaldığında cumartesi
+    // (2026-10-10) koşan test "Yerinde saydı" hükmünü bulamıyordu.
+    HistoryService.gunIciSaat = () => DateTime(2026, 10, 9, 15);
   });
   tearDown(() {
     HistoryService.seriCekici = HistoryService.varsayilanSeriCekici;
     BugunKarti.anliklariTemizle();
     BugunKarti.saat = DateTime.now;
+    HistoryService.gunIciSaat = DateTime.now;
   });
 
   Future<void> kur(WidgetTester tester, {required double genislik}) async {

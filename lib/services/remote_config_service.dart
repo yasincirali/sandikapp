@@ -70,7 +70,11 @@ class RemoteConfigService {
     // silinmez, yalnız yeni ekleme durur. 3 → 5 (yasin, 2026-10-09): takip
     // ürüne giriş kapısı; paywall açılınca 7'den 3'e inmek canlı kullanıcıya
     // geri adım gibi okunuyordu, 5 aradaki denge.
-    'paywall_watchlist_limit': 5,
+    // 5 → 10 (yasin, 2026-10-10: "pinti de gözükmemeliyiz"): rakiplerin
+    // hiçbiri izleme listesini kilitlemiyor; 10, varlık sınırıyla aynı sayı
+    // ("10 varlık, 10 takip") ve canlıdaki 7'nin üstünde — paywall açılınca
+    // ücretsiz kullanıcı geri adım değil ileri adım görür.
+    'paywall_watchlist_limit': 10,
 
     // NOT: `paywall_variant` kaldırıldı (2026-10-04, sadeleştirme C) — hiçbir
     // kod okumuyordu; paywall tek tasarımla çiziliyor. A/B testi yazılınca
@@ -164,7 +168,11 @@ class RemoteConfigService {
     // Free tier fiyat alarmı limiti. Alarm kullanıcının KENDİ istediği
     // bildirim olduğu için cömert bir sınır: 3 alarm gündelik kullanımı
     // karşılar, üstü premium için doğal bir kanca.
-    'free_price_alert_limit': 3,
+    // 3 → 20 (yasin, 2026-10-10: "pinti de gözükmemeliyiz"): incelenen
+    // rakiplerin hiçbiri fiyat alarmını ücretli listelemiyor (araştırma
+    // tmp/arastirma, Soru 2). 20 gündelik kullanımda sınırsız gibidir; üstü
+    // sunucu cron maliyetine karşı Premium'da kalır.
+    'free_price_alert_limit': 20,
 
     // Kilometre taşı kutlamaları. Ayda en fazla bir kutlama yapılır;
     // bayrak, tonun kullanıcıda karşılık bulup bulmadığını ölçmek için.
@@ -703,7 +711,11 @@ class RemoteConfigService {
   bool get portfoyDagilimCubugu => _bayrak('portfoy_dagilim_cubugu');
   bool get varlikDetayKatmanli => _bayrak('varlik_detay_katmanli');
   bool get sinyalOnAyar => _bayrak('sinyal_on_ayar');
-  bool get raporlarKapisi => _bayrak('raporlar_kapisi');
+  /// Premium planıyla (2026-10-10) tek anahtara bağlandı: Yıllık rapor
+  /// (Premium) bu kapının satırı olduğu için kapı paywall'la birlikte
+  /// herkese açılır; kapalıyken yalnız admin. Console değeri de okunur.
+  bool get raporlarKapisi =>
+      _bayrak('raporlar_kapisi') || premiumOzellikleriGorunur;
   bool get genelArama => _bayrak('genel_arama');
 
   /// Kart desteli paywall. Gerekçe `_defaults`'ta.
@@ -723,7 +735,12 @@ class RemoteConfigService {
   bool get abdHisse => _bayrak('abd_hisse');
 
   /// Varlık ekranında Masraflar kartı. Gerekçe `_defaults`'ta.
-  bool get varlikMasraflari => _bayrak('varlik_masraflari');
+  /// Premium planıyla (2026-10-10) tek anahtara bağlandı: kart, döküm
+  /// kilidiyle birlikte paywall açılınca herkese gelir (toplam ücretsiz,
+  /// döküm Premium); kapalıyken yalnız admin. Console değeri de okunur ki
+  /// daha önce açılmışsa canlıdaki kullanıcıdan geri alınmasın.
+  bool get varlikMasraflari =>
+      _bayrak('varlik_masraflari') || premiumOzellikleriGorunur;
 
   /// Varlık Ekle'de arama + gruplu tür ızgarası. Gerekçe `_defaults`'ta.
   bool get turSeciciIzgara => _bayrak('tur_secici_izgara');

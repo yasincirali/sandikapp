@@ -4055,7 +4055,7 @@ abstract class AppLocalizations {
   /// No description provided for @paywallSubhead.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız varlık ve gelişmiş göstergeler. Portföy takibi her zaman ücretsiz.'**
+  /// **'Sınırsız varlık, yıllık rapor, temettü tahmini ve teknik sinyaller. Portföy takibi her zaman ücretsiz.'**
   String get paywallSubhead;
 
   /// No description provided for @restorePurchase.
@@ -10993,7 +10993,7 @@ abstract class AppLocalizations {
   /// No description provided for @prmSatirSinyal.
   ///
   /// In tr, this message translates to:
-  /// **'Sinyal bildirimi'**
+  /// **'Teknik sinyaller'**
   String get prmSatirSinyal;
 
   /// No description provided for @prmSinyalUcretsiz.
@@ -11005,7 +11005,7 @@ abstract class AppLocalizations {
   /// No description provided for @prmSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'tüm varlıklar'**
+  /// **'8 gösterge, tüm varlıklar'**
   String get prmSinyalPremium;
 
   /// No description provided for @prmSatirTakip.
@@ -12331,7 +12331,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalBaslik.
   ///
   /// In tr, this message translates to:
-  /// **'Seçtiğin saatlerde haber al, üç göstergeyi daha kat.'**
+  /// **'Sekiz gösterge ve her varlığında, seçtiğin saatte bildirim.'**
   String get pwdSinyalBaslik;
 
   /// No description provided for @pwdSinyalUcretsiz.
@@ -12349,7 +12349,7 @@ abstract class AppLocalizations {
   /// No description provided for @pwdSinyalPremium.
   ///
   /// In tr, this message translates to:
-  /// **'istediğin sıklık'**
+  /// **'8 gösterge, tüm varlıklar'**
   String get pwdSinyalPremium;
 
   /// No description provided for @pwdKarsEtiket.
@@ -12615,6 +12615,420 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Örn. kampanya faizi, hedef, şube'**
   String get depositNoteHint;
+
+  /// No description provided for @sgnKilitBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik sinyaller'**
+  String get sgnKilitBaslik;
+
+  /// No description provided for @sgnKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'RSI, MACD, Bollinger, EMA, Stokastik, ADX, Williams %R ve CCI: sekiz gösterge, tuttuğun her varlıkta seçtiğin sıklıkta bildirim ve varlık ekranında tam gösterge paneli.'**
+  String get sgnKilitGovde;
+
+  /// No description provided for @sgnKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik sinyaller Premium\'da'**
+  String get sgnKilitSatir;
+
+  /// No description provided for @prmAylikKilitBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık rapor'**
+  String get prmAylikKilitBaslik;
+
+  /// No description provided for @prmAylikKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tuttuğun her varlığın o ayki notu tek raporda: hangi varlıkta belirgin hareket oldu, ayın hikâyesi ve notların tamamı. Haftanın özeti ücretsiz kalır.'**
+  String get prmAylikKilitGovde;
+
+  /// No description provided for @prmAylikKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık rapor Premium\'da'**
+  String get prmAylikKilitSatir;
+
+  /// No description provided for @costsBreakdownLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} kalemlik döküm Premium\'da'**
+  String costsBreakdownLocked(int count);
+
+  /// No description provided for @yrBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık rapor'**
+  String get yrBaslik;
+
+  /// No description provided for @yrSatirAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kâr, temettü, stopaj ve masraf; PDF ya da Excel'**
+  String get yrSatirAlt;
+
+  /// No description provided for @yrKilitBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık kâr, temettü ve masraf raporu'**
+  String get yrKilitBaslik;
+
+  /// No description provided for @yrKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seçtiğin yılın satışlarından gerçekleşen kâr/zarar, temettülerin net ve brüt tutarı, stopaj ve komisyonlar tek raporda. Mali müşavirine PDF ya da Excel olarak gönderebilirsin.'**
+  String get yrKilitGovde;
+
+  /// No description provided for @yrKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık rapor Premium\'da'**
+  String get yrKilitSatir;
+
+  /// No description provided for @yrBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporlanacak kayıt yok'**
+  String get yrBos;
+
+  /// No description provided for @yrBosAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış, temettü ya da komisyonlu alım girdiğinde o yılın raporu burada çıkar.'**
+  String get yrBosAlt;
+
+  /// No description provided for @yrGerceklesen.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gerçekleşen kâr/zarar'**
+  String get yrGerceklesen;
+
+  /// No description provided for @yrYurtDisi.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yurt dışı (ABD) hisse kısmı'**
+  String get yrYurtDisi;
+
+  /// No description provided for @yrYurtDisiEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yurt dışı'**
+  String get yrYurtDisiEtiket;
+
+  /// No description provided for @yrTemettuNet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü (net)'**
+  String get yrTemettuNet;
+
+  /// No description provided for @yrStopaj.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü stopajı'**
+  String get yrStopaj;
+
+  /// No description provided for @yrStopajBilinmiyor.
+  ///
+  /// In tr, this message translates to:
+  /// **'oran bilinmiyor'**
+  String get yrStopajBilinmiyor;
+
+  /// No description provided for @yrStopajSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'stopaj {tutar}'**
+  String yrStopajSatir(String tutar);
+
+  /// No description provided for @yrMasraf.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem masrafları'**
+  String get yrMasraf;
+
+  /// No description provided for @yrPdf.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF'**
+  String get yrPdf;
+
+  /// No description provided for @yrExcel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Excel'**
+  String get yrExcel;
+
+  /// No description provided for @yrSatislarUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'SATIŞLAR'**
+  String get yrSatislarUpper;
+
+  /// No description provided for @yrTemettulerUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEMETTÜLER'**
+  String get yrTemettulerUpper;
+
+  /// No description provided for @yrFiyatsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satış fiyatı kayıtlı olmayan {count} eski satış rapora alınmadı.'**
+  String yrFiyatsiz(int count);
+
+  /// No description provided for @yrDipnot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıtlarından hazırlanır; vergi beyannamesi ya da vergi tavsiyesi değildir. Beyan için mali müşavirine danış. Ortağının işlemleri dahil değildir.'**
+  String get yrDipnot;
+
+  /// No description provided for @dsBicimBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi biçimde?'**
+  String get dsBicimBaslik;
+
+  /// No description provided for @dsPdf.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF'**
+  String get dsPdf;
+
+  /// No description provided for @dsPdfAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okumak ve göndermek için'**
+  String get dsPdfAlt;
+
+  /// No description provided for @dsExcel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Excel'**
+  String get dsExcel;
+
+  /// No description provided for @dsExcelAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutarlar sayı olarak; toplanabilir, süzülebilir'**
+  String get dsExcelAlt;
+
+  /// No description provided for @dsPortfoyBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Portföyü dışa aktar'**
+  String get dsPortfoyBaslik;
+
+  /// No description provided for @dsPortfoyAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlıkların ve işlem geçmişin; PDF ya da Excel'**
+  String get dsPortfoyAlt;
+
+  /// No description provided for @ttBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini'**
+  String get ttBaslik;
+
+  /// No description provided for @ttRaporAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki 12 ayda beklenen temettü, ay ay'**
+  String get ttRaporAlt;
+
+  /// No description provided for @ttKilitGovde.
+  ///
+  /// In tr, this message translates to:
+  /// **'BIST hisselerinin son 12 ayda dağıttığı temettü, bugünkü lotunla tekrarlansa önümüzdeki yıl ne kadar eder: ay ay çubuklar, varlık varlık liste, stopaj sonrası net.'**
+  String get ttKilitGovde;
+
+  /// No description provided for @ttKilitSatir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini Premium\'da'**
+  String get ttKilitSatir;
+
+  /// No description provided for @ttBos.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin edilecek temettü yok'**
+  String get ttBos;
+
+  /// No description provided for @ttBosAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son 12 ayda temettü dağıtmış bir BIST hissen olduğunda tahmin burada çıkar.'**
+  String get ttBosAlt;
+
+  /// No description provided for @ttToplamEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki 12 ay, tahmini'**
+  String get ttToplamEtiket;
+
+  /// No description provided for @ttBrutNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Brüt; stopaj oranı bilinmediği için net hesaplanmadı.'**
+  String get ttBrutNot;
+
+  /// No description provided for @ttNetNot.
+  ///
+  /// In tr, this message translates to:
+  /// **'Stopaj sonrası net · brüt {brut}'**
+  String ttNetNot(String brut);
+
+  /// No description provided for @ttVarliklarUpper.
+  ///
+  /// In tr, this message translates to:
+  /// **'VARLIKLAR'**
+  String get ttVarliklarUpper;
+
+  /// No description provided for @ttSatirAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'pay başına {pay} · {aylar}'**
+  String ttSatirAlt(String pay, String aylar);
+
+  /// No description provided for @ttKural.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tahmin tek bir kurala dayanır: son 12 ayda gerçekleşen temettü, bugünkü lotunla aynı aylarda tekrarlansa. Şirket kararları, bölünme ve bedelsiz hesaba katılmaz. Yalnız BIST hisseleri; yatırım tavsiyesi değildir.'**
+  String get ttKural;
+
+  /// No description provided for @pwOzRapor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık kâr, temettü ve stopaj raporu; portföyünü PDF ya da Excel olarak dışa aktar'**
+  String get pwOzRapor;
+
+  /// No description provided for @pwOzTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki 12 ayın temettü tahmini, ay ay'**
+  String get pwOzTemettu;
+
+  /// No description provided for @pwOzSinyalTam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teknik sinyaller: 8 gösterge, her varlığında seçtiğin sıklıkta bildirim'**
+  String get pwOzSinyalTam;
+
+  /// No description provided for @pwOzMasraf.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varlık başına kalem kalem masraf dökümü'**
+  String get pwOzMasraf;
+
+  /// No description provided for @prmSatirAlarm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fiyat alarmı'**
+  String get prmSatirAlarm;
+
+  /// No description provided for @prmSatirYillik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık rapor'**
+  String get prmSatirYillik;
+
+  /// No description provided for @prmSatirDisaAktar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dışa aktarma'**
+  String get prmSatirDisaAktar;
+
+  /// No description provided for @prmDisaAktarUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'JSON'**
+  String get prmDisaAktarUcretsiz;
+
+  /// No description provided for @prmDisaAktarPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF + Excel'**
+  String get prmDisaAktarPremium;
+
+  /// No description provided for @prmSatirTemettu.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temettü tahmini'**
+  String get prmSatirTemettu;
+
+  /// No description provided for @prmSatirMasraf.
+  ///
+  /// In tr, this message translates to:
+  /// **'Masraflar'**
+  String get prmSatirMasraf;
+
+  /// No description provided for @prmMasrafUcretsiz.
+  ///
+  /// In tr, this message translates to:
+  /// **'toplam'**
+  String get prmMasrafUcretsiz;
+
+  /// No description provided for @prmMasrafPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'kalem kalem'**
+  String get prmMasrafPremium;
+
+  /// No description provided for @prmSatirKars.
+  ///
+  /// In tr, this message translates to:
+  /// **'Karşılaştır'**
+  String get prmSatirKars;
+
+  /// No description provided for @prmSatirOrtak.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak'**
+  String get prmSatirOrtak;
+
+  /// No description provided for @pwdRaporEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'YILLIK RAPOR'**
+  String get pwdRaporEtiket;
+
+  /// No description provided for @pwdRaporBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılın kârı, temettüsü ve stopajı tek belgede; müşavirine gönder.'**
+  String get pwdRaporBaslik;
+
+  /// No description provided for @pwdRaporPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'PDF ve Excel'**
+  String get pwdRaporPremium;
+
+  /// No description provided for @pwdTemettuEtiket.
+  ///
+  /// In tr, this message translates to:
+  /// **'TEMETTÜ TAHMİNİ'**
+  String get pwdTemettuEtiket;
+
+  /// No description provided for @pwdTemettuBaslik.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki 12 ayda ne kadar temettü gelir, ay ay gör.'**
+  String get pwdTemettuBaslik;
+
+  /// No description provided for @pwdTemettuPremium.
+  ///
+  /// In tr, this message translates to:
+  /// **'12 aylık tahmin'**
+  String get pwdTemettuPremium;
+
+  /// No description provided for @pwdSinyalRozet.
+  ///
+  /// In tr, this message translates to:
+  /// **'8 gösterge'**
+  String get pwdSinyalRozet;
 }
 
 class _AppLocalizationsDelegate

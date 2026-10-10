@@ -99,7 +99,5 @@ final premiumOzellikleriGorunurProvider = Provider<bool>((ref) =>
 /// Radar ve not içeriği kilitli mi: paywall açık VE kullanıcı Premium değil.
 /// Paywall kapalıyken hiçbir şey kilitlenmez (sunucu kapısı `premium_ayar`
 /// da kapalı: herkes görür).
-final radarKilitliProvider = Provider<bool>((ref) {
-  if (!ref.watch(paywallVisibleProvider)) return false;
-  return !ref.watch(effectivePremiumProvider);
-});
+final radarKilitliProvider =
+    Provider<bool>((ref) => ref.watch(premiumKilitliProvider));

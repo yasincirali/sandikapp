@@ -58,6 +58,7 @@ import '../utils/chart_axis.dart';
 import '../widgets/takip_yildizi.dart';
 import '../widgets/fon_karnesi_karti.dart';
 import '../widgets/para_akisi_karti.dart';
+import '../widgets/sinyal_kilit_karti.dart';
 import '../widgets/sandik_async_button.dart';
 import '../widgets/hacim_radari_karti.dart';
 import '../widgets/sandik_acilir.dart';
@@ -229,14 +230,21 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
   final GlobalKey _sinyalPaneliKey = GlobalKey();
 
   /// Teknik sinyal yüzeyleri (kart + gösterge paneli) çizilsin mi?
-  /// Yatırımcı seviyesi Başlangıç ise hayır — bkz. `seviyeGorunurlugu`.
+  /// Yatırımcı seviyesi Başlangıç ise ya da paywall açıkken Premium değilse
+  /// hayır — bkz. `sinyalYuzeyiProvider`.
   bool get _sinyalYuzeyleri =>
-      seviyeGorunurlugu(ref.watch(yatirimciSeviyesiProvider)).teknikSinyaller &&
+      ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
       // Mevduatın piyasa serisi yok; eğrisi sözleşmenin tahakkukudur ve
       // teknik sinyal anlamsızdır (sunucu da analiz etmez, ANALYZABLE).
       // BES de öyle (2026-10-01 emülatör testi): katılımcı fonu alıp
       // satamaz, yalnız dağılımı değiştirir; devlet katkısı fonunda o da
       // yok. AL/SAT göstergesi orada yanıltıcıdır.
+      !widget.asset.type.sozlesmeli;
+
+  /// Sinyal Premium'da (paywall açık, Premium değil): panelin yerine tek
+  /// kilit kartı. Sözleşmeli türlerde sinyal hiç olmadığı için kilit de yok.
+  bool get _sinyalKilidi =>
+      ref.watch(sinyalYuzeyiProvider) == SinyalYuzeyi.kilitli &&
       !widget.asset.type.sozlesmeli;
 
   /// Gün içi serinin çizildiği günün 00:00'ı.
@@ -307,8 +315,7 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
     // ve paneli aynı sembol serisini okur; burada aynı anda istenir,
     // `HistoryService` önbelleği onlara ağa çıkmadan verir.
     final sinyalSerisi =
-        seviyeGorunurlugu(ref.read(yatirimciSeviyesiProvider))
-                    .teknikSinyaller &&
+        ref.read(sinyalYuzeyiProvider) == SinyalYuzeyi.acik &&
                 widget.asset.ticker.trim().isNotEmpty
             ? HistoryService.instance.getSymbolHistory(widget.asset.ticker,
                 periodDays: kSinyalPenceresiGun)
@@ -1749,6 +1756,9 @@ class _AssetDetailScreenState extends ConsumerState<AssetDetailScreen> {
                   // tekrarlanıyordu).
                   const SizedBox(height: SandikSpace.sm),
                   const DisclaimerWidget(),
+                ] else if (_sinyalKilidi) ...[
+                  const SizedBox(height: 24),
+                  const SinyalKilitKarti(),
                 ],
                 ], // eski yığın (katmanlı değil)
                 ],

@@ -12,6 +12,7 @@ import '../theme/sandik.dart';
 import '../widgets/sandik_app_bar.dart';
 import '../widgets/disclaimer_widget.dart';
 import '../widgets/sandik_segment.dart';
+import '../widgets/sinyal_kilit_karti.dart';
 import 'paywall_screen.dart';
 import '../l10n/l10n.dart';
 
@@ -21,8 +22,27 @@ import '../l10n/l10n.dart';
 class SignalSettingsScreen extends ConsumerWidget {
   const SignalSettingsScreen({super.key});
 
+  /// Ekran başlığı — kilitli ve açık gövde aynı metni kullanır.
+  static const _baslik = 'Sinyal Ayarları';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Sinyal paywall açıkken bütünüyle Premium (`sinyalYuzeyiProvider`).
+    // Ayarlar'dan ya da aramadan gelen ücretsiz kullanıcı ayar listesi
+    // yerine kilidi görür: ayarlayıp da bildirim alamayacağı bir ekran
+    // vaat eder gibi dururdu. Kayıtlı tercihler silinmez, Premium'da aynen
+    // geri gelir.
+    if (ref.watch(premiumKilitliProvider)) {
+      return Scaffold(
+        backgroundColor: context.c.background,
+        appBar: const SandikAppBar(title: _baslik),
+        body: ListView(
+          padding: EdgeInsets.symmetric(
+              horizontal: SandikSpace.screenH(context), vertical: 12),
+          children: const [SinyalKilitKarti()],
+        ),
+      );
+    }
     final prefs = ref.watch(indicatorPrefsProvider);
     // Gerçek hak (mağaza/sunucu/admin). Eskiden cihazdaki geliştirici
     // anahtarıydı ve aşağıdaki kartın "Aç" düğmesi onu açıyordu: paywall
@@ -106,7 +126,7 @@ class SignalSettingsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: context.c.background,
       appBar: const SandikAppBar(
-        title: 'Sinyal Ayarları',
+        title: _baslik,
       ),
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: SandikSpace.screenH(context), vertical: 12),

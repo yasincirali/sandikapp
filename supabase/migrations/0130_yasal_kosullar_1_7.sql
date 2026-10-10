@@ -1,4 +1,35 @@
-# Kullanım Koşulları — sandık
+-- 0130 — Yasal metin: Kullanım Koşulları 1.7 (2026-10-10)
+--
+-- ## Neden
+-- Olgun Premium seti (dal feat/premium-olgun): teknik sinyaller paywall
+-- açıkken bütünüyle Premium; yıllık kâr/temettü/masraf raporu, PDF/Excel
+-- dışa aktarma, temettü tahmini ve kalem kalem masraf dökümü eklendi.
+-- Koşullar §1 sinyalleri "(Premium)" diye, §2A kapsam örnekleri yeni
+-- listeyle güncellendi. Kişisel veri işleyişi değişmedi; yeni alıcı yok
+-- (PDF/Excel cihazda üretilir, paylaşımı kullanıcı yapar). Bu yüzden
+-- ESASLI DEĞİL: yalnız "Sürüm" 1.6 → 1.7; "Onay sürümü" 1.6 kalır,
+-- kimseye yeniden onay sorulmaz (CLAUDE.md "Yasal metin tek kaynak").
+--
+-- ## Eski istemciler
+-- Yalnız EKLER: tek metin satırı. Fonksiyon, tablo, RLS ve GRANT'a
+-- DOKUNULMAZ. Onay sürümü değişmediği için eski ve yeni istemcide kapı
+-- açılmaz.
+--
+-- ## Dağıtım sırası
+-- İKİ sunucuya (Frankfurt → Tokyo) → `python tool/sema_esitlik.py`.
+--
+-- ## Metin ekleme
+-- INSERT `tool/yasal_metin_uret_test.dart` çıktısıdır; gövdeye elle
+-- dokunma (hash check'i tutmaz).
+
+-- ── 1) Metin (tool/yasal_metin_uret_test.dart çıktısı)
+
+-- kosullar/1.7/tr  (Kullanım Koşulları)
+insert into public.yasal_metinler
+  (tur, surum, dil, baslik, yururluk_tarihi, govde_hash, govde)
+values ('kosullar', '1.7', 'tr', 'Kullanım Koşulları', date '2026-10-08',
+  '705aa9aa32ab34c276c661d99254aaea5fbdcc6e8bd40ff354d2861079b07425',
+  replace($yasal$# Kullanım Koşulları — sandık
 
 **Yürürlük tarihi:** 8 Ekim 2026
 **Son güncelleme:** 10 Ekim 2026
@@ -263,4 +294,28 @@ Web: `https://yasincirali.github.io/sandikapp`
 
 ---
 
-*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*
+*Bu Koşullar Türkçe ve İngilizce olarak sunulmaktadır. Yorum farklılığı durumunda Türkçe versiyon esas alınır.*$yasal$, chr(13), ''))
+on conflict (tur, surum, dil) do nothing;
+
+-- ── 2) Doğrulama ────────────────────────────────────────────────────────────
+do $$
+begin
+  if not exists (select 1 from pg_class
+                  where oid = 'public.yasal_metinler'::regclass
+                    and relrowsecurity and relforcerowsecurity) then
+    raise exception '0130: yasal_metinler RLS (enable + force) kapali';
+  end if;
+  if has_table_privilege('authenticated', 'public.yasal_metinler', 'INSERT') then
+    raise exception '0130: yasal_metinler istemciden yazilabilir';
+  end if;
+  if not exists (select 1 from public.yasal_metinler
+                  where tur = 'kosullar' and surum = '1.7' and dil = 'tr') then
+    raise exception '0130: kosullar/1.7/tr metni yok';
+  end if;
+  if exists (select 1 from public.yasal_metinler
+              where tur = 'kosullar' and surum = '1.7'
+                and govde_hash <> encode(sha256(convert_to(govde, 'UTF8')), 'hex')) then
+    raise exception '0130: govde_hash tutmuyor';
+  end if;
+  raise notice '0130 tamam: Kosullar 1.7 (onay surumu 1.6).';
+end $$;

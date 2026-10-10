@@ -37,14 +37,24 @@ const _uuid = Uuid();
 /// sayılıyordu; durum ayrıca ortağın lot'larını taşıdığı için (Birlikte
 /// görünümü) ortağın varlıkları da kullanıcının kotasına yazılıyordu. Kota
 /// "bugün kaç varlığın var" sorusudur → `aktifLotlar` + sahibi kendisi.
+///
+/// ## Sözleşme tek varlık (yasin, 2026-10-10: "pinti de gözükmemeliyiz")
+/// BES sözleşmesi üç fonla gelir ve her fon ayrı anahtar sayılınca tek
+/// sözleşme 10'luk ücretsiz kotanın üçünü yiyordu. Kullanıcı bir BES'i bir
+/// varlık olarak düşünür; sözleşmeye bağlı lotlar (`sozlesmeId`) tek
+/// anahtarda toplanır. Aynı sözleşmeye sonraki katkı da yeni varlık sayılmaz.
 @visibleForTesting
 Set<String> kotaAnahtarlari(Iterable<Asset> lotlar, String userId) => {
       for (final a in aktifLotlar(lotlar.where((a) => a.userId == userId)))
-        if (a.isBuy) kotaAnahtari(a.type, a.ticker, a.currency),
+        if (a.isBuy)
+          kotaAnahtari(a.type, a.ticker, a.currency, sozlesmeId: a.sozlesmeId),
     };
 
-String kotaAnahtari(AssetType type, String ticker, String currency) =>
-    '${type.name}|$ticker|$currency';
+String kotaAnahtari(AssetType type, String ticker, String currency,
+        {String? sozlesmeId}) =>
+    sozlesmeId != null && sozlesmeId.isNotEmpty
+        ? 'sozlesme|$sozlesmeId'
+        : '${type.name}|$ticker|$currency';
 
 class AssetLimitExceededException implements Exception {
   final int currentCount;
@@ -432,7 +442,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       // Silinmiş, tamamen satılmış ve ortağa ait lot kotayı işgal etmez
       // (gerekçe [kotaAnahtarlari]).
       final existingKeys = kotaAnahtarlari(currentState.assets, user.id);
-      final newKey = kotaAnahtari(type, ticker, currency);
+      final newKey =
+          kotaAnahtari(type, ticker, currency, sozlesmeId: sozlesmeId);
       if (!existingKeys.contains(newKey) && existingKeys.length >= limit) {
         unawaited(AnalyticsService.instance
             .logPremiumGateShown(feature: 'asset_limit'));
@@ -524,7 +535,8 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
       final userId = ref.read(authProvider).valueOrNull?.id ?? lots.first.userId;
       final mevcut = kotaAnahtarlari(currentState.assets, userId);
       final yeni = {
-        for (final a in lots) kotaAnahtari(a.type, a.ticker, a.currency),
+        for (final a in lots)
+          kotaAnahtari(a.type, a.ticker, a.currency, sozlesmeId: a.sozlesmeId),
       }.difference(mevcut);
       if (yeni.isNotEmpty && mevcut.length + yeni.length > limit) {
         unawaited(AnalyticsService.instance
