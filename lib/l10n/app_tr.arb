@@ -5564,7 +5564,5 @@
   "@portfoyOrtakGoruyor": {"placeholders": {"ad": {"type": "String"}}},
   "portfoyOrtakGizli": "{ad} görmüyor",
   "@portfoyOrtakGizli": {"placeholders": {"ad": {"type": "String"}}},
-  "portfoyOrtakBolum": "ORTAĞIN NE GÖRÜR",
-  "ortakKismiNot": "Yalnız paylaştığı portföyler",
-  "birlikteKismiNot": "Ortağının yalnız paylaştıkları dahil"
+  "portfoyOrtakBolum": "ORTAĞIN NE GÖRÜR"
 }

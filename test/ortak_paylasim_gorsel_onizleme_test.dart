@@ -187,6 +187,7 @@ void main() {
     List<Asset>? ortakLotlari,
     Future<void> Function(WidgetTester t)? hazirla,
     double boy = 844,
+    bool premium = true,
   }) async {
     RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
     tester.view.physicalSize = Size(390 * 2, boy * 2);
@@ -207,7 +208,7 @@ void main() {
         if (!sonra) ortakPaylasimSecimiVarProvider.overrideWithValue(false),
         isPushAdminProvider.overrideWith((_) async => false),
         gelistiriciAnahtariSayilirProvider.overrideWithValue(false),
-        magazaPremiumProvider.overrideWith((_) => true),
+        magazaPremiumProvider.overrideWith((_) => premium),
         gecerliPremiumHakkiProvider.overrideWithValue(null),
       ],
       child: RepaintBoundary(
@@ -262,8 +263,8 @@ void main() {
       ekran: const PortfoyYonetimiScreen(), sonra: false));
   testWidgets('portföyler sonra', (t) => ciz(t, 'ortak_portfoyler_sonra',
       ekran: const PortfoyYonetimiScreen(), sonra: true));
-  testWidgets('ana ben sonra', (t) => ciz(t, 'ortak_ana_ben_sonra',
-      ekran: const HomeScreen(), sonra: true, ortakLotlari: _ayseAna));
+  testWidgets('profil kilitli', (t) => ciz(t, 'ortak_profil_kilitli',
+      ekran: const ProfileScreen(), sonra: true, boy: 1500, premium: false));
   testWidgets('ana ortak önce', (t) => ciz(t, 'ortak_ana_ortak_once',
       ekran: const HomeScreen(), sonra: false, hazirla: ortagaGec));
   testWidgets('ana ortak sonra', (t) => ciz(t, 'ortak_ana_ortak_sonra',

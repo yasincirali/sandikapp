@@ -13623,18 +13623,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'ORTAĞIN NE GÖRÜR'**
   String get portfoyOrtakBolum;
-
-  /// No description provided for @ortakKismiNot.
-  ///
-  /// In tr, this message translates to:
-  /// **'Yalnız paylaştığı portföyler'**
-  String get ortakKismiNot;
-
-  /// No description provided for @birlikteKismiNot.
-  ///
-  /// In tr, this message translates to:
-  /// **'Ortağının yalnız paylaştıkları dahil'**
-  String get birlikteKismiNot;
 }
 
 class _AppLocalizationsDelegate

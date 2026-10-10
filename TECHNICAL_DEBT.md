@@ -69,9 +69,13 @@ bir sürüm sonra karar kesinleşince kaldırılır (0126 tablosu ayrı migratio
   görünümü ve Birlikte kullanıcı toplamıdır (0133 `portfoyler_partner_read`
   hazır, istemci okumuyor). Ne zaman: ortak tarafında portföy isteği olursa.
   2026-10-10 (0135): sahip artık ortağa HANGİ portföylerin gideceğini seçer
-  (`ortak_paylasimlari`, RLS); ortak tarafında kısıtlı paylaşım yalnız ana
-  sayfa kartında not olarak söylenir — Portföy/Performans sekmesinde not
-  yok (istenirse aynı `ortakKisitliProvider` ile tek satır).
+  (`ortak_paylasimlari`, RLS); ortak tek liste görür ve portföy olduğunu
+  bilmemeli (kullanıcı kararı) — ortak portföy adlarını ve paylaşım satırını
+  okuyamaz, istemci `fetchOrtakLotlari` ile `portfoy_id`'yi siler. KALAN:
+  ham API'de paylaşılan lotun `portfoy_id` uuid'i ortağa hâlâ gider (eski
+  sürümler `assets`'i doğrudan okuduğu için kolon gizlenemez). Ne zaman:
+  eski sürümler düşünce ortak okumasını kolonsuz bir RPC/görünüme taşı ve
+  `assets_partner_read`'i kaldır (ayrı, kırıcı migration).
 - *Portföy başına yıl özeti / widget / kilit ekranı yok.* Hepsi kullanıcı
   toplamı; widget sözleşmesi ve Live Activity tek defter taşır. Ne zaman:
   widget'ta portföy seçimi istenirse (sözleşme değişikliği, iki platform).

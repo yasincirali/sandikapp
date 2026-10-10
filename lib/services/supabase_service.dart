@@ -739,6 +739,20 @@ class SupabaseService {
     return rows.map<Asset>((r) => Asset.fromSupabase(r)).toList();
   }
 
+  /// Ortağın lotları — [fetchByUser] + portföy izinin silinmesi.
+  ///
+  /// Ortak, sahibin portföylerini BİLMEMELİ (yasin 2026-10-10: "ortağım
+  /// benim 2 portföyüm olduğunu bilmemeli, paylaştıklarımı tek liste
+  /// olarak görmeli"). Gizli portföyün lotları zaten sunucudan gelmez
+  /// (0135 RLS); paylaşılanların `portfoy_id`'si burada atılır ki ortağın
+  /// uygulamasında hiçbir yüzey (pozisyon parçalama, işlem sorusu) onları
+  /// ayrı kümeler olarak ele alamasın. Pozisyonlar sahip başına tek havuzda
+  /// birleşir (`aggregatePositionsByOwner`).
+  Future<List<Asset>> fetchOrtakLotlari(String ortakId) async => [
+        for (final a in await fetchByUser(ortakId))
+          a.portfoyId == null ? a : a.copyWithPortfoy(null),
+      ];
+
   Future<void> insertAsset(Asset asset) async {
     final body = asset.toSupabase();
     await _log.log<void>(
@@ -1002,8 +1016,8 @@ class SupabaseService {
 
   // ── Ortak portföy paylaşımı (0135) ────────────────────────────────────────
   //
-  // Yalnız `coklu_portfoy` görünürken çağrılır. Sahibin yazdığı ve ortağın
-  // kendisi hakkında okuduğu satırlar tek sorguda (RLS ikisini de verir).
+  // Yalnız `coklu_portfoy` görünürken çağrılır. Yalnız SAHİBİN satırları:
+  // ortak kendisi hakkındaki satırı okuyamaz (0135, politika yok).
 
   Future<List<OrtakPaylasimi>> fetchOrtakPaylasimlari(String userId) async {
     final rows = await _log.log<List<Map<String, dynamic>>>(
@@ -1014,7 +1028,7 @@ class SupabaseService {
       call: () => _db
           .from('ortak_paylasimlari')
           .select('sahip_id, ortak_id, tumu, ana, portfoy_idler')
-          .or('sahip_id.eq.$userId,ortak_id.eq.$userId'),
+          .eq('sahip_id', userId),
     );
     return [for (final r in rows) OrtakPaylasimi.fromSupabase(r)];
   }

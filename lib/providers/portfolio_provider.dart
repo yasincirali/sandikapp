@@ -1299,7 +1299,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
     // başarısızlığı "fiyatlar güncellenemedi" mesajına dönüşmeli.
     try {
       for (final partner in activePartners) {
-        final assets = await SupabaseService.instance.fetchByUser(partner.id);
+        final assets = await SupabaseService.instance.fetchOrtakLotlari(partner.id);
         partnerAssetsMap[partner.id] = assets;
         for (final a in assets) {
           if (a.ticker.isNotEmpty && !a.isManualPrice) {
@@ -1576,7 +1576,7 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     final activePartners = ref.watch(activePartnersProvider);
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      final lots = await SupabaseService.instance.fetchByUser(p.id);
+      final lots = await SupabaseService.instance.fetchOrtakLotlari(p.id);
       for (final a in lots) {
         if (a.currentPrice > 0) continue;
         // 1) Bu oturumda bu LOT için ölçülmüş fiyat.
@@ -1651,7 +1651,7 @@ class PartnerAssetsNotifier extends AsyncNotifier<Map<String, List<Asset>>> {
     // Mevcut veriyi koru, loading state'e GEÇMEDEn arka planda yenile
     final map = <String, List<Asset>>{};
     for (final p in activePartners) {
-      map[p.id] = await SupabaseService.instance.fetchByUser(p.id);
+      map[p.id] = await SupabaseService.instance.fetchOrtakLotlari(p.id);
     }
     state = AsyncData(map);
   }

@@ -4985,7 +4985,5 @@
   "@portfoyOrtakGoruyor": {"placeholders": {"ad": {"type": "String"}}},
   "portfoyOrtakGizli": "Hidden from {ad}",
   "@portfoyOrtakGizli": {"placeholders": {"ad": {"type": "String"}}},
-  "portfoyOrtakBolum": "WHAT YOUR PARTNER SEES",
-  "ortakKismiNot": "Only the portfolios they share",
-  "birlikteKismiNot": "Includes only what your partner shares"
+  "portfoyOrtakBolum": "WHAT YOUR PARTNER SEES"
 }

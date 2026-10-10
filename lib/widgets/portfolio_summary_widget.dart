@@ -21,15 +21,6 @@ class PortfolioSummaryWidget extends StatelessWidget {
   /// değer vurgusu YAKILMAZ — görünüm değişimi fiyat hareketi değildir.
   final Object? vurguKimligi;
 
-  /// Toplamın KISMİ olduğunu söyleyen tek satır (0135): ortak bu kullanıcıya
-  /// yalnız bazı portföylerini gösteriyorsa ortak/Birlikte görünümünde
-  /// "Yalnız paylaştığı portföyler". Yoksa satır yok, kart birebir eski.
-  ///
-  /// Neden: kısmi toplam etiketsiz kalırsa ortağın BÜTÜN varlığı sanılır
-  /// (ve Birlikte "hanenin toplamı" diye okunur). Kendi görünümünde hiç
-  /// çizilmez — ana sayfa kendi toplamında hep bütün portföyleri gösterir.
-  final String? kapsamNotu;
-
   const PortfolioSummaryWidget({
     super.key,
     required this.state,
@@ -37,7 +28,6 @@ class PortfolioSummaryWidget extends StatelessWidget {
     this.baz = const BazPara.lira(),
     this.trailing,
     this.vurguKimligi,
-    this.kapsamNotu,
   });
 
   @override
@@ -63,7 +53,6 @@ class PortfolioSummaryWidget extends StatelessWidget {
         ? context.l10n.totalNetHidden
         : [
             context.l10n.totalNetWorth(tryFmt.format(state.totalValue)),
-            if (kapsamNotu != null) kapsamNotu!,
             // "Maliyetine göre" (2026-10-01): bu rakam MALİYETE göre kâr —
             // dönem getirisi (Özet, para ağırlıklı) değil. Çıplak "kazanç"
             // iki sayıyı aynı soru sandırıyordu.
@@ -181,26 +170,6 @@ class PortfolioSummaryWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (kapsamNotu != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: SandikSpace.xxs),
-                      child: Row(
-                        children: [
-                          Icon(Icons.visibility_off_outlined,
-                              size: 14, color: context.c.text58),
-                          const SizedBox(width: SandikSpace.xxs),
-                          Flexible(
-                            child: Text(
-                              kapsamNotu!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.t.bodySmall
-                                  ?.copyWith(color: context.c.text58),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   const SizedBox(height: 10),
                   // Satırın ADI (2026-10-01, kullanıcı kararı "tek getiri
                   // dili"): aşağıdaki tutar ve yüzde MALİYETE göre kâr —

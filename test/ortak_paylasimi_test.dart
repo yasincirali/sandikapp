@@ -15,7 +15,6 @@ import 'package:portfoy_takip/providers/preferences_provider.dart';
 import 'package:portfoy_takip/providers/premium_provider.dart';
 import 'package:portfoy_takip/screens/portfoy_yonetimi_screen.dart';
 import 'package:portfoy_takip/services/remote_config_service.dart';
-import 'package:portfoy_takip/widgets/portfolio_summary_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Ortak hangi portföyleri görür (0135). Asıl sınır sunucuda (RLS,
@@ -100,7 +99,7 @@ class _SahtePaylasimlar extends OrtakPaylasimlariNotifier {
   }
 }
 
-List<Override> _ortak(_SahtePaylasimlar paylasimlar) => [
+List<Override> _ortak(_SahtePaylasimlar paylasimlar, {bool premium = true}) => [
       authProvider.overrideWith(_FakeAuth.new),
       portfolioProvider.overrideWith(_FakePortfolio.new),
       partnersProvider.overrideWith(_FakePartners.new),
@@ -108,16 +107,17 @@ List<Override> _ortak(_SahtePaylasimlar paylasimlar) => [
       ortakPaylasimlariProvider.overrideWith(() => paylasimlar),
       isPushAdminProvider.overrideWith((_) async => false),
       gelistiriciAnahtariSayilirProvider.overrideWithValue(false),
-      magazaPremiumProvider.overrideWith((_) => true),
+      magazaPremiumProvider.overrideWith((_) => premium),
       gecerliPremiumHakkiProvider.overrideWithValue(null),
     ];
 
-Future<void> _yonetim(WidgetTester t, _SahtePaylasimlar p) async {
+Future<void> _yonetim(WidgetTester t, _SahtePaylasimlar p,
+    {bool premium = true}) async {
   t.view.physicalSize = const Size(390 * 3, 1200 * 3);
   t.view.devicePixelRatio = 3.0;
   addTearDown(t.view.reset);
   await t.pumpWidget(ProviderScope(
-    overrides: _ortak(p),
+    overrides: _ortak(p, premium: premium),
     child: MaterialApp(
         theme: ThemeData.dark(), home: const PortfoyYonetimiScreen()),
   ));
@@ -176,8 +176,8 @@ void main() {
     });
 
     test('eksik sütunlu satır (null) = hepsi, güvenli olmayan yöne düşmez', () {
-      final p = OrtakPaylasimi.fromSupabase(
-          {'sahip_id': _uid, 'ortak_id': _ortakId});
+      final p =
+          OrtakPaylasimi.fromSupabase({'sahip_id': _uid, 'ortak_id': _ortakId});
       expect(p.tumu, isTrue);
     });
   });
@@ -209,14 +209,14 @@ void main() {
       expect(find.text('2 / 3 portföy'), findsOneWidget);
     });
 
-    testWidgets('seçim sayfası: Seçtiklerim → Çocuk kapat → kaydet',
-        (t) async {
+    testWidgets('seçim sayfası: Seçtiklerim → Çocuk kapat → kaydet', (t) async {
       RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
       final p = _SahtePaylasimlar(const []);
       await _yonetim(t, p);
       expect(find.text('Hepsi'), findsOneWidget, reason: 'satır yok = hepsi');
 
-      await t.tap(find.byKey(const ValueKey('ortak-paylasim-satiri-$_ortakId')));
+      await t
+          .tap(find.byKey(const ValueKey('ortak-paylasim-satiri-$_ortakId')));
       await t.pumpAndSettle();
       expect(find.text('Ayşe neyi görsün?'), findsOneWidget);
 
@@ -238,31 +238,26 @@ void main() {
       expect(k.portfoyIdler, {_a});
       expect(find.text('2 / 3 portföy'), findsOneWidget);
     });
-  });
-
-  group('toplam kartı notu', () {
-    Future<void> ciz(WidgetTester t, String? not) async {
-      await t.pumpWidget(MaterialApp(
-        theme: ThemeData.dark(),
-        home: Scaffold(
-          body: PortfolioSummaryWidget(
-            state: PortfolioState(assets: _defter, ownerId: _uid),
-            kapsamNotu: not,
-          ),
-        ),
-      ));
-      await t.pump();
-    }
-
-    testWidgets('not yoksa satır yok (kart birebir eski)', (t) async {
-      await ciz(t, null);
-      expect(find.byIcon(Icons.visibility_off_outlined), findsNothing);
-    });
-
-    testWidgets('not varsa tek satır', (t) async {
-      await ciz(t, 'Yalnız paylaştığı portföyler');
-      expect(find.text('Yalnız paylaştığı portföyler'), findsOneWidget);
-      expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
+    testWidgets('Premium yokken satır kilitli: değer görünür, sayfa açılmaz',
+        (t) async {
+      RemoteConfigService.testAcik = {'coklu_portfoy', 'paywall_enabled'};
+      await _yonetim(
+          t,
+          _SahtePaylasimlar(const [
+            OrtakPaylasimi(
+                sahipId: _uid, ortakId: _ortakId, tumu: false, ana: true),
+          ]),
+          premium: false);
+      final satir =
+          find.byKey(const ValueKey('ortak-paylasim-satiri-$_ortakId'));
+      expect(satir, findsOneWidget,
+          reason: 'mevcut seçim görünür; Premium biten kullanıcı neyin '
+              'gizli olduğunu bilmeli');
+      expect(
+          find.descendant(
+              of: satir, matching: find.byIcon(Icons.lock_outline_rounded)),
+          findsOneWidget);
+      expect(find.text('1 / 3 portföy'), findsOneWidget);
     });
   });
 }

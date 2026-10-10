@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../demo/demo_modu.dart';
 import '../models/ortak_paylasimi.dart';
-import '../services/remote_config_service.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 import 'portfoy_provider.dart';
@@ -10,24 +8,19 @@ import 'preferences_provider.dart';
 
 /// Ortak portföy paylaşımı (0135) — sağlayıcılar.
 ///
-/// Tek okuma iki yönü getirir: benim ortaklarıma yazdığım seçimler
-/// ([benimPaylasimimProvider]) ve ortaklarımın bana yaptığı seçimler
-/// ([ortakKisitliProvider], ana ekran notu için).
+/// Yalnız SAHİP tarafı: benim ortaklarıma yazdığım seçimler. Ortak, kendisi
+/// hakkındaki seçimi göremez (yasin 2026-10-10: "ortağım portföylerim
+/// olduğunu bilmemeli"); sunucu onun için paylaşılmayan lotları hiç
+/// göndermez, istemci paylaşılanları tek havuzda gösterir
+/// (`SupabaseService.fetchOrtakLotlari`). Ana sayfa kartı ve ortak
+/// görünümü bu yüzden hiçbir not taşımaz.
 ///
-/// Bayrak (`coklu_portfoy`) kapalıyken ya da demoda BOŞ: tablo okunmaz
-/// (0135 sunucuda olmayabilir), hiçbir yeni yüzey çizilmez. Okuma yalnız
-/// BAYRAĞA bağlı, Premium görünürlüğüne değil: ortağı kısıtlı paylaşan
-/// ücretsiz kullanıcı da "yalnız paylaştıkları" notunu görmeli (yoksa
-/// kısmi toplamı ortağının bütün varlığı sanar). Seçim yüzeyi ise
-/// [ortakPaylasimSecimiVarProvider] ile çoklu portföy görünürlüğüne bağlı.
-/// Ortak tarafındaki süzme bundan bağımsız olarak RLS'te.
+/// Çoklu portföy görünmüyorsa (bayrak kapalı, paywall kapalı ve admin
+/// değil, demo) BOŞ: tablo okunmaz (0135 sunucuda olmayabilir).
 class OrtakPaylasimlariNotifier extends AsyncNotifier<List<OrtakPaylasimi>> {
   @override
   Future<List<OrtakPaylasimi>> build() async {
-    ref.watch(rcEtkinlesmeProvider);
-    if (DemoModu.aktif || !RemoteConfigService.instance.cokluPortfoy) {
-      return const [];
-    }
+    if (!ref.watch(cokluPortfoyGorunurProvider)) return const [];
     final user = ref.watch(authProvider).valueOrNull;
     if (user == null) return const [];
     // Ortaklık değişince (yeni ortak, ayrılma) yeniden oku. Kimlik
@@ -70,22 +63,24 @@ final benimPaylasimimProvider =
   );
 });
 
-/// [ortakId] bana yalnız BAZI portföylerini mi gösteriyor. Ana ekran
-/// kartının ortak/Birlikte görünümündeki "yalnız paylaştıkları" notu.
-final ortakKisitliProvider = Provider.family<bool, String>((ref, ortakId) {
-  final uid = ref.watch(authProvider).valueOrNull?.id;
-  if (uid == null) return false;
-  final liste = ref.watch(ortakPaylasimlariProvider).valueOrNull ?? const [];
-  return liste.any((p) => p.sahipId == ortakId && p.ortakId == uid && p.kisitli);
-});
-
-/// Ortak paylaşım seçimi bu kullanıcıya sunulur mu: çoklu portföy görünür,
-/// en az bir adlandırılmış portföy var (yalnız Ana varken seçecek bir şey
-/// yok) ve en az bir ortak var.
+/// Ortak paylaşım seçimi bu kullanıcıya GÖSTERİLİR mi: çoklu portföy
+/// görünür, en az bir adlandırılmış portföy var (yalnız Ana varken seçecek
+/// bir şey yok) ve en az bir ortak var. Değiştirmek Premium ister
+/// ([ortakPaylasimKilitliProvider]); görmek istemez.
 final ortakPaylasimSecimiVarProvider = Provider<bool>((ref) {
   if (!ref.watch(cokluPortfoyGorunurProvider)) return false;
   final liste = ref.watch(portfoylerProvider).valueOrNull ?? const [];
   if (liste.isEmpty) return false;
   final ortaklar = ref.watch(partnersProvider).valueOrNull ?? const [];
   return ortaklar.isNotEmpty;
+});
+
+/// Seçimi DEĞİŞTİRMEK Premium ister (yasin 2026-10-10: "yeni ekranlar ve
+/// özellikler paywall arkasında"). Paywall kapalıyken kilit yok (admin
+/// görür, herkes kullanır). Premium biten kullanıcının mevcut seçimi
+/// SUNUCUDA geçerli kalır — gizlenen portföy, abonelik bitti diye ortağa
+/// açılmaz; yalnız yeni değişiklik kilitlenir.
+final ortakPaylasimKilitliProvider = Provider<bool>((ref) {
+  if (!ref.watch(paywallVisibleProvider)) return false;
+  return !ref.watch(effectivePremiumProvider);
 });

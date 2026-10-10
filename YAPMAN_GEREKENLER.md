@@ -12,38 +12,41 @@
 > boyutu, finansal özellik beyanı, geliştirici doğrulama). Çakışma olursa
 > yeni rehber geçerlidir.
 
-## ⏳ 2026-10-10 Ortak hangi portföyleri görür (migration 0135, bayrak `coklu_portfoy`)
+## ⏳ 2026-10-10 Ortak hangi portföyleri görür (migration 0135, bayrak `coklu_portfoy`, Premium)
 
 Senin isteğin: "çoklu portföyde ortağıma hangisinin gözükeceğini
-seçebilmeliyim." Profil › Ortaklarım kartında yeni satır "Görebildiği
-portföyler · Hepsi ›" → alt sayfa "Ayşe neyi görsün?" (Hepsi / Seçtiklerim +
-portföy başına anahtar). Portföyler ekranında her satırda "Ayşe görüyor /
-görmüyor". Ortağın ana sayfa kartında, kısıtlı paylaşımda tek satır
-"Yalnız paylaştığı portföyler" (Birlikte'de "Ortağının yalnız paylaştıkları
-dahil"). Kendi ana sayfa kartın DEĞİŞMEZ. Sınır sunucuda (RLS): gizli
-portföyün lotu, adı ve ona bağlı BES/mevduat sözleşmesi ortağın telefonuna
-hiç gitmez; sabah brifingindeki "ortağın N varlık ekledi" sayımı da gizliyi
-saymaz.
+seçebilmeliyim" + revizyon (11:39): ortak paylaştıklarını TEK LİSTE görür,
+birden çok portföyün olduğunu bilmez, ana sayfa kartı değişmez, yeni yüzey
+Premium. Profil › Ortaklarım kartında "Görebildiği portföyler · Hepsi ›" →
+alt sayfa "Ayşe neyi görsün?" (Hepsi / Seçtiklerim + portföy başına
+anahtar). Portföyler ekranında her satırda "Ayşe görüyor / görmüyor".
+`paywall_enabled` açıkken Premium olmayan kullanıcı satırı kilitli görür
+(mevcut seçim yazar, dokununca paywall). Ortak tarafında HİÇBİR yazı yok:
+paylaşılan lotlar tek liste, portföy adı/sayısı gitmez. Sınır sunucuda
+(RLS, süzgeç API'de görünmeyen `ozel` şemasında): gizli portföyün lotu,
+portföy adları, paylaşım satırı ve gizli lota bağlı BES/mevduat sözleşmesi
+ortağın telefonuna hiç gitmez; sabah brifingindeki "ortağın N varlık
+ekledi" sayımı da gizliyi saymaz.
 
-- [ ] Önce 0133 iki sunucuda olmalı (yukarıdaki ORTAK SIRA). Sonra
+- [ ] Önce 0133 iki sunucuda olmalı (aşağıdaki ORTAK SIRA). Sonra
       **Supabase deploy** (hedef `ikisi`): migration **0135** + fonksiyon
       `daily-brief`. 0135 yalnız ekler: satır yoksa ortak bugünkü gibi her
-      şeyi görür, eski sürümler hiçbir fark görmez. Sonra
-      `python tool/sema_esitlik.py` → ŞEMA EŞİT.
+      şeyi görür. Tek fark: ortak artık portföy ADLARINI okuyamaz (0133'te
+      açılmıştı, istemci hiç okumuyordu). Sonra `python tool/sema_esitlik.py`
+      → ŞEMA EŞİT.
 - [ ] ⚠️ `coklu_portfoy` bayrağını **0133 VE 0135** iki sunucuda da
-      uygulandıktan sonra aç (bayrak paylaşım tablosunu da okur; tablo
-      yoksa seçim satırı hiç çıkmaz, hata yalnız günlüğe düşer).
+      uygulandıktan sonra aç.
 - [ ] TestFlight'ta iki hesapla dene (sen + ortak hesabı): Portföyler'de
       "Çocuğum için" aç, içine bir varlık koy → Profil › Ortaklarım › Ayşe ›
       Görebildiği portföyler → Seçtiklerim → "Çocuğum için"i kapat → Kaydet.
       Ortak hesapta ana sayfayı yenile → senin kartında o varlık ve tutarı
-      yok, altında "Yalnız paylaştığı portföyler" yazıyor. Hepsi'ne dön →
-      geri gelir.
+      yok, kalanlar tek liste. Hepsi'ne dön → geri gelir.
 - Bilinen sınırlar: Yarış/Zirve sunucu anlık görüntüleri kullanıcı
   TOPLAMINDAN kalır (ayrı açık rıza; ortak orada yalnız yüzde görür).
-  Ortaklar arası Yarış cihazda ölçüldüğü için artık yalnız paylaşılan kısmı
-  karşılaştırır. Ortağın Portföy/Performans sekmesinde ayrıca not yok
-  (yalnız ana sayfa kartında).
+  Ortaklar arası Yarış cihazda ölçüldüğü için yalnız paylaşılan kısmı
+  karşılaştırır. Ham API'yi elle sorgulayan bir ortak, paylaşılan lotta
+  `portfoy_id` kimliğini (ad değil, rastgele uuid) görebilir; uygulama bunu
+  siler. Tam kapanış eski sürümler düşünce (TECHNICAL_DEBT).
 - Yasal metin: değişiklik yok — yeni veri, alıcı ya da amaç yok; tersine
   ortağa giden veri daralıyor.
 

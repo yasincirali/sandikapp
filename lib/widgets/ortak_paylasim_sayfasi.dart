@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/base_currency_provider.dart';
 import '../providers/ortak_paylasimi_provider.dart';
 import '../providers/portfoy_provider.dart';
+import '../screens/paywall_screen.dart';
 import '../services/crash_reporter.dart';
 import '../theme/sandik.dart';
 import '../utils/sandik_snack.dart';
@@ -265,6 +266,7 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
     }
     final l = context.l10n;
     final paylasim = ref.watch(benimPaylasimimProvider(ortak.id));
+    final kilitli = ref.watch(ortakPaylasimKilitliProvider);
     final liste = ref.watch(portfoylerProvider).valueOrNull ?? const [];
     final deger = paylasim == null
         ? ''
@@ -277,7 +279,11 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
         padding: const EdgeInsets.only(top: SandikSpace.sm),
         child: SandikTappable(
           key: ValueKey('ortak-paylasim-satiri-${ortak.id}'),
-          onTap: () => showOrtakPaylasimSayfasi(context, ortak: ortak),
+          // Değiştirmek Premium (paywall açıkken); görmek serbest — mevcut
+          // seçim kilitliyken de sunucuda geçerli.
+          onTap: () => kilitli
+              ? PaywallScreen.show(context, source: 'ortak_paylasim')
+              : showOrtakPaylasimSayfasi(context, ortak: ortak),
           semanticLabel: '${l.ortakGorurSatir}: $deger',
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: SandikTouch.min),
@@ -297,7 +303,11 @@ class OrtakPaylasimSatiri extends ConsumerWidget {
                             ? context.c.amberText
                             : context.c.text90,
                         fontWeight: FontWeight.w600)),
-                Icon(Icons.chevron_right_rounded, color: context.c.text36),
+                Icon(
+                    kilitli
+                        ? Icons.lock_outline_rounded
+                        : Icons.chevron_right_rounded,
+                    color: context.c.text36),
               ],
             ),
           ),

@@ -19,14 +19,23 @@
 --     mahremiyet için güvenli taraf; sayfa bunu yazar.
 --   · Silinmiş portföyün kimliği dizide kalabilir: lotu FK ile Ana'ya
 --     döndüğü için hiçbir şeyi açmaz, zararsız.
---   · Ortak, kendisi hakkındaki satırı OKUR (ekranında "yalnız paylaştığı
---     portföyler" notu için); yazamaz.
+--   · Ortak, sahibin portföyleri olduğunu BİLMEZ (yasin 2026-10-10: "ortağım
+--     benim 2 portföyüm olduğunu bilmemeli; paylaştıklarımı tek liste olarak
+--     görmeli"). Bu yüzden ortak: paylaşım satırını okuyamaz, portföy ADLARINI
+--     okuyamaz (`portfoyler_partner_read` kalkar), süzgeç fonksiyonları API'de
+--     görünmeyen `ozel` şemasındadır (çağırıp "kısıt var mı" yoklayamasın).
+--     İstemci ortağın lotlarındaki `portfoy_id`'yi atar
+--     (`SupabaseService.fetchOrtakLotlari`). Kalan iz: ham API'de paylaşılan
+--     lotların `portfoy_id` sütunu; tam kapatma eski sürümler düşünce ortak
+--     okumasını sütunsuz bir RPC'ye taşıyan ayrı migration'la
+--     (TECHNICAL_DEBT "Çoklu portföy v1 sınırları").
 --   · Ortaklık bitip yeniden kurulursa seçim korunur (gizlenen yeniden
 --     açılmaz).
 --
 -- ## Etkilenen okumalar
 --   · `assets_partner_read`: lot yalnız paylaşılan portföydeyse.
---   · `portfoyler_partner_read`: yalnız paylaşılan portföyün ADI.
+--   · `portfoyler_partner_read`: KALDIRILIR (ortak hiçbir portföy adı
+--     okumaz). 0133'ten beri istemci bunu hiç okumadı; eski sürüm etkilenmez.
 --   · `sozlesmeler_partner_read`, `mevduat_donemleri_partner_read`:
 --     kısıtlı ortak sözleşmeyi ancak görebildiği bir lotu bağlıysa okur
 --     (BES/mevduat sözleşmesi banka, faiz, tutar taşır).
@@ -78,23 +87,30 @@ create policy "ortak_paylasimlari_own" on public.ortak_paylasimlari
   for all using (auth.uid() = sahip_id)
   with check (auth.uid() = sahip_id);
 
+-- Ortak okuma politikası YOK: kısıtın varlığı bile ortağa söylenmez.
 drop policy if exists "ortak_paylasimlari_ortak_read" on public.ortak_paylasimlari;
-create policy "ortak_paylasimlari_ortak_read" on public.ortak_paylasimlari
-  for select using (auth.uid() = ortak_id);
 
 revoke all on table public.ortak_paylasimlari from anon;
 grant select, insert, update, delete on table public.ortak_paylasimlari
   to authenticated;
 
 -- ── 2) Süzgeç fonksiyonları ────────────────────────────────────────────────
--- SECURITY INVOKER (varsayılan): ortak kendi satırını RLS altında okur.
+-- `ozel` şeması PostgREST'e açık DEĞİL (config: schemas = public,
+-- graphql_public): fonksiyon yalnız politika içinden çalışır, ortak RPC ile
+-- yoklayamaz. SECURITY DEFINER: ortağın paylaşım satırını okuma yetkisi yok
+-- (yukarıda); fonksiyon yalnız ÇAĞIRANIN (`auth.uid()`) evet/hayırını döner.
 -- Satır yoksa ya da `tumu` ise true — bugünkü davranış.
-create or replace function public.ortak_portfoyu_gorur(
+create schema if not exists ozel;
+revoke all on schema ozel from public, anon;
+grant usage on schema ozel to authenticated;
+
+create or replace function ozel.ortak_portfoyu_gorur(
   p_sahip uuid,
   p_portfoy uuid
 ) returns boolean
 language sql
 stable
+security definer
 set search_path = public, pg_temp
 as $$
   select coalesce((
@@ -108,10 +124,11 @@ as $$
 $$;
 
 -- Bu sahip, çağıran ortağa KISITLI mı paylaşıyor (sözleşme politikaları).
-create or replace function public.ortak_paylasimi_kisitli(p_sahip uuid)
+create or replace function ozel.ortak_paylasimi_kisitli(p_sahip uuid)
 returns boolean
 language sql
 stable
+security definer
 set search_path = public, pg_temp
 as $$
   select exists (
@@ -122,10 +139,10 @@ as $$
   );
 $$;
 
-revoke all on function public.ortak_portfoyu_gorur(uuid, uuid) from public, anon;
-revoke all on function public.ortak_paylasimi_kisitli(uuid) from public, anon;
-grant execute on function public.ortak_portfoyu_gorur(uuid, uuid) to authenticated;
-grant execute on function public.ortak_paylasimi_kisitli(uuid) to authenticated;
+revoke all on function ozel.ortak_portfoyu_gorur(uuid, uuid) from public, anon;
+revoke all on function ozel.ortak_paylasimi_kisitli(uuid) from public, anon;
+grant execute on function ozel.ortak_portfoyu_gorur(uuid, uuid) to authenticated;
+grant execute on function ozel.ortak_paylasimi_kisitli(uuid) to authenticated;
 
 -- ── 3) Politikalar ─────────────────────────────────────────────────────────
 -- Ortaklık koşulu 0000/0088/0133 ile birebir; yalnız sona süzgeç eklenir.
@@ -138,20 +155,10 @@ create policy "assets_partner_read" on public.assets
         and ((p.user_id_1 = auth.uid() and p.user_id_2 = assets.user_id)
           or (p.user_id_2 = auth.uid() and p.user_id_1 = assets.user_id))
     )
-    and public.ortak_portfoyu_gorur(assets.user_id, assets.portfoy_id)
+    and ozel.ortak_portfoyu_gorur(assets.user_id, assets.portfoy_id)
   );
 
 drop policy if exists "portfoyler_partner_read" on public.portfoyler;
-create policy "portfoyler_partner_read" on public.portfoyler
-  for select using (
-    exists (
-      select 1 from public.partnerships p
-      where p.active = true
-        and ((p.user_id_1 = auth.uid() and p.user_id_2 = portfoyler.user_id)
-          or (p.user_id_2 = auth.uid() and p.user_id_1 = portfoyler.user_id))
-    )
-    and public.ortak_portfoyu_gorur(portfoyler.user_id, portfoyler.id)
-  );
 
 -- Sözleşme: kısıtsızsa bugünkü gibi; kısıtlıysa ancak GÖREBİLDİĞİ bir lot
 -- (iç sorgu `assets` RLS'ine tabi) bu sözleşmeye bağlıysa.
@@ -165,7 +172,7 @@ create policy "sozlesmeler_partner_read" on public.sozlesmeler
           or (p.user_id_2 = auth.uid() and p.user_id_1 = sozlesmeler.user_id))
     )
     and (
-      not public.ortak_paylasimi_kisitli(sozlesmeler.user_id)
+      not ozel.ortak_paylasimi_kisitli(sozlesmeler.user_id)
       or exists (
         select 1 from public.assets a
          where a.sozlesme_id = sozlesmeler.id
@@ -184,7 +191,7 @@ create policy "mevduat_donemleri_partner_read" on public.mevduat_donemleri
           or (p.user_id_2 = auth.uid() and p.user_id_1 = mevduat_donemleri.user_id))
     )
     and (
-      not public.ortak_paylasimi_kisitli(mevduat_donemleri.user_id)
+      not ozel.ortak_paylasimi_kisitli(mevduat_donemleri.user_id)
       or exists (
         select 1 from public.assets a
          where a.sozlesme_id = mevduat_donemleri.sozlesme_id
@@ -209,8 +216,8 @@ begin
   if g <> 4 then
     raise exception '0135: ortak_paylasimlari GRANT eksik: % / 4', g;
   end if;
-  if p <> 2 then
-    raise exception '0135: ortak_paylasimlari RLS politikasi eksik: % / 2', p;
+  if p <> 1 then
+    raise exception '0135: ortak_paylasimlari RLS politikasi % / 1 (ortak okumasi olmamali)', p;
   end if;
   if has_table_privilege('anon', 'public.ortak_paylasimlari', 'SELECT') then
     raise exception '0135: anon ortak_paylasimlari okuyabiliyor';
@@ -230,11 +237,25 @@ begin
   ) then
     raise exception '0135: assets_partner_read suzgecsiz';
   end if;
-  if has_function_privilege('anon', 'public.ortak_portfoyu_gorur(uuid, uuid)', 'EXECUTE') then
+  if has_function_privilege('anon', 'ozel.ortak_portfoyu_gorur(uuid, uuid)', 'EXECUTE') then
     raise exception '0135: anon ortak_portfoyu_gorur cagirabiliyor';
+  end if;
+  -- SECURITY DEFINER fonksiyonun sahibi FORCE RLS'li paylaşım tablosunu
+  -- okuyabilmeli; okuyamazsa satır hiç bulunmaz ve fonksiyon "hepsi" der
+  -- (seçim sessizce yok sayılır). 0102'deki kontrolün aynısı.
+  if not exists (
+    select 1 from pg_proc f join pg_roles r on r.oid = f.proowner
+     where f.oid = 'ozel.ortak_portfoyu_gorur(uuid, uuid)'::regprocedure
+       and (r.rolsuper or r.rolbypassrls)
+  ) then
+    raise exception '0135: suzgec fonksiyonunun sahibi RLS asamiyor';
+  end if;
+  if exists (select 1 from pg_policies where schemaname = 'public'
+              and tablename = 'portfoyler' and policyname = 'portfoyler_partner_read') then
+    raise exception '0135: ortak portfoy adlarini okuyabiliyor';
   end if;
 end $$;
 
 comment on table public.ortak_paylasimlari is
   'Sahibin ortagina hangi portfoyleri gosterdigi (0135). Satir yoksa ya da '
-  'tumu=true ise ortak her seyi gorur (0133 oncesi davranis).';
+  'tumu=true ise ortak her seyi gorur. Ortak bu tabloyu okuyamaz.';

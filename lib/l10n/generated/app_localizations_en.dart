@@ -8230,10 +8230,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portfoyOrtakBolum => 'WHAT YOUR PARTNER SEES';
-
-  @override
-  String get ortakKismiNot => 'Only the portfolios they share';
-
-  @override
-  String get birlikteKismiNot => 'Includes only what your partner shares';
 }

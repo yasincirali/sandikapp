@@ -8147,10 +8147,4 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get portfoyOrtakBolum => 'ORTAĞIN NE GÖRÜR';
-
-  @override
-  String get ortakKismiNot => 'Yalnız paylaştığı portföyler';
-
-  @override
-  String get birlikteKismiNot => 'Ortağının yalnız paylaştıkları dahil';
 }
