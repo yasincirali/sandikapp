@@ -320,10 +320,19 @@ void main() {
       }
     });
 
-    test('ana sayfa, hareketler ve kıyas portföy süzgeci TAŞIMAZ (toplam)', () {
+    // Hareketler 2026-10-10'dan beri süzgeci taşır (yasin: "varlık filtresi
+    // olan her yere portföydeki filtreleri koymalıyız"); Filtre sayfasında
+    // aynı seçici, kapsam yine tek sağlayıcıdan.
+    test('Hareketler portföy kapsamını tek sağlayıcıdan okur', () {
+      final k = ekranKaynagiSync('lib/screens/all_transactions_screen.dart');
+      expect(k, contains('ref.watch(portfoyKapsamiProvider)'));
+      expect(k, contains('bilinenPortfoyler: k.bilinen'));
+      expect(k, contains('PortfoySecici('));
+    });
+
+    test('ana sayfa ve kıyas portföy süzgeci TAŞIMAZ (toplam)', () {
       for (final d in [
         'lib/screens/home_screen.dart',
-        'lib/screens/all_transactions_screen.dart',
         'lib/providers/watchlist_provider.dart',
       ]) {
         expect(ekranKaynagiSync(d).contains('portfoyKapsami'), isFalse,

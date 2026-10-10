@@ -23,6 +23,7 @@ import '../l10n/l10n.dart';
 import '../models/asset.dart';
 import '../models/gorunum_kapsami.dart';
 import '../models/asset_type.dart';
+import '../models/portfoy_grubu.dart';
 import '../models/position.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
@@ -244,7 +245,9 @@ class _PortfolioPerformanceScreenState
     ref.read(seciliDonemProvider.notifier).state = SummaryPeriod.fromIndex(i);
   }
   late String? _view;
-  late AssetType? _typeFilter;
+  /// Tür süzgeci — Portföy halkasının kümesi ([PortfoyGrubu]; ayrım açıkken
+  /// BIST/ABD hisse ayrı, yasin 2026-10-10).
+  late PortfoyGrubu? _typeFilter;
 
   /// Çoklu portföy (0133) kapsamının önbellek anahtarı parçası: "Tümü"de
   /// BOŞ — zoom ve Özet anahtarları bayrak öncesiyle birebir aynı metin
@@ -369,7 +372,10 @@ class _PortfolioPerformanceScreenState
     // Derin bağlantı / önceki ekran gizlenmiş bir ortağı işaret edebilir.
     _view = GorunumCipi.gecerli(
         ref.read(activePartnersProvider), widget.initialView);
-    _typeFilter = widget.initialTypeFilter;
+    _typeFilter = switch (widget.initialTypeFilter) {
+      final t? => PortfoyGrubu(t),
+      null => null,
+    };
     _ozetSekmesi = widget.initialOzet;
     // Sınır dışı indeks KIRPILIR, atılmaz: bozuk bir derin bağlantı
     // ekranı hiç açılmaz hale getirmemeli.
@@ -812,7 +818,7 @@ class _PortfolioPerformanceScreenState
                       // grafiğe girmez — silinen varlık hiç olmamış sayılır.
                       bool keep(Asset a) =>
                           a.isActive &&
-                          (_typeFilter == null || a.type == _typeFilter);
+                          (_typeFilter?.kapsar(a) ?? true);
 
                       targetAssets = targetAssets.where(keep).toList();
                       final filteredOwnerLots = [

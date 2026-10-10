@@ -71,6 +71,38 @@ String kotaAnahtari(AssetType type, String ticker, String currency,
         ? 'sozlesme|$sozlesmeId'
         : '${type.name}|$ticker|$currency';
 
+/// "Silindi" mezar taşının miktarı ve birim fiyatı — saf, test edilir.
+///
+/// Sunucu `assets` üzerinde `quantity >= 0` ve `purchase_price >= 0`
+/// ister (0008). Eskiden birim fiyat "net maliyet / net miktar" idi ve
+/// satışlar maliyetten SATIŞ fiyatıyla düşülüyordu: kârla satılmış bir
+/// pozisyonda (10 al @100, 5 sat @300 → net maliyet −500) fiyat EKSİ
+/// çıkıyor, mezar taşı INSERT'i kısıtta düşüyor ve Sil "Veri işlemi
+/// başarısız oldu" diyordu (TestFlight, 2026-10-10). Artık birim fiyat
+/// ALIMLARIN ağırlıklı ortalaması — pozisyon satırının gösterdiği maliyetle
+/// aynı ölçü, eksi olamaz. Miktar yuvarlama artığına (0.1+0.2−0.3) karşı
+/// sıfıra çekilir.
+(double, double) mezarTasiDegerleri(List<Asset> lotlar, Asset temsilci) {
+  double netQty = 0;
+  double alisAdet = 0;
+  double alisTutar = 0;
+  for (final l in lotlar) {
+    if (l.isDividend || l.isDeleteLog) continue;
+    if (l.isSell) {
+      netQty -= l.quantity;
+      continue;
+    }
+    netQty += l.quantity;
+    if (l.purchasePrice > 0) {
+      alisAdet += l.quantity;
+      alisTutar += l.quantity * l.purchasePrice;
+    }
+  }
+  final miktar = netQty > 1e-9 ? netQty : 0.0;
+  final fiyat = alisAdet > 0 ? alisTutar / alisAdet : temsilci.purchasePrice;
+  return (miktar, fiyat.isFinite && fiyat > 0 ? fiyat : 0.0);
+}
+
 /// Yeni satırın portföyü (0133) — saf, test edilir.
 ///
 /// Bayrak (`coklu_portfoy`) kapalıyken HEP `null` (Ana): eski davranış
@@ -978,21 +1010,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         ..sort((a, b) => b.addedDate.compareTo(a.addedDate));
       final rep = buys.isNotEmpty ? buys.first : removed.first;
 
-      // Net miktar ve net maliyet — satışlar düşülür, temettü miktara
-      // girmez (nakit hareketidir).
-      double netQty = 0;
-      double netCost = 0;
-      for (final l in removed) {
-        if (l.isDividend) continue;
-        if (l.isSell) {
-          netQty -= l.quantity;
-          netCost -= l.quantity * (l.sellPrice ?? l.purchasePrice);
-          continue;
-        }
-        netQty += l.quantity;
-        netCost += l.quantity * l.purchasePrice;
-      }
-      final unitPrice = netQty > 0 ? netCost / netQty : rep.purchasePrice;
+      final (netQty, unitPrice) = mezarTasiDegerleri(removed, rep);
 
       log = Asset(
         id: _uuid.v4(),
@@ -1000,7 +1018,7 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         name: rep.name,
         ticker: rep.ticker,
         type: rep.type,
-        quantity: netQty > 0 ? netQty : 0,
+        quantity: netQty,
         purchasePrice: unitPrice,
         currency: rep.currency,
         // Silme kaydı (mezar taşı) not taşımaz — `addSellTransaction` notu.
@@ -1018,18 +1036,34 @@ class PortfolioNotifier extends AsyncNotifier<PortfolioState> {
         deletedCount: removed.length,
         portfoyId: _yazilacakPortfoy(portfoyId: rep.portfoyId),
       );
-
-      await SupabaseService.instance.insertAsset(log);
-      unawaited(AnalyticsService.instance.logAssetDeleted(type: rep.type.name));
     }
 
     // YUMUŞAK silme: lot'lar yerinde kalır, damgalanır. Fiziksel DELETE
     // kullanılsaydı bu varlığın Alım/Satım/Temettü satırları hareket
     // geçmişinden de silinirdi ve geriye yalnızca "Silindi" mezar taşı
     // kalırdı — kullanıcı ne aldığını/sattığını okuyamazdı.
+    //
+    // SIRA (2026-10-10): önce damga, sonra mezar taşı. Silmenin kendisi
+    // damgadır — toplamlar, grafik, Zirve damgalı lotu yok sayar. Mezar
+    // taşı yalnız hareket geçmişindeki "Silindi" satırıdır. Eskiden önce
+    // mezar taşı yazılıyordu; o INSERT düşünce (kârla satılmış pozisyonda
+    // eksi fiyat, `mezarTasiDegerleri`) silme HİÇ olmuyordu. yasin: "silme
+    // zaten o varlığı tamamen yok sayması gerekiyordu". Artık gösterim
+    // satırı yazılamazsa silme yine tamamdır; hata Crashlytics'e gider.
     final stampedAt = DateTime.now();
     await SupabaseService.instance
         .softDeleteAssets(ids.toList(), stampedAt);
+    if (log != null) {
+      unawaited(
+          AnalyticsService.instance.logAssetDeleted(type: log.type.name));
+      try {
+        await SupabaseService.instance.insertAsset(log);
+      } catch (e, st) {
+        CrashReporter.report(e, st,
+            reason: 'PortfolioNotifier.deletePositionLots.mezarTasi');
+        log = null;
+      }
+    }
 
     if (current != null) {
       state = AsyncData(current.copyWith(

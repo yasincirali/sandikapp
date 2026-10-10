@@ -46,6 +46,34 @@ class PortfoyGrubu {
   bool kapsar(Asset a) =>
       a.type == tur && (abd == null || a.abdHissesi == abd);
 
+  /// Seçili süzgeç, ayrım kalkınca (son ABD hissesi satıldı, bayrak
+  /// kapandı) türe döner — görünmeyen bir çip seçili kalmasın. Portföy
+  /// ekranının kuralı; Hareketler ve Performans da bunu kullanır.
+  PortfoyGrubu uyarla({required bool pazarAyir}) =>
+      pazarAyir || abd == null ? this : PortfoyGrubu(tur);
+
+  /// Önbellek/denetleyici anahtarı: türün adı, ayrımda pazar eki.
+  String get anahtar => switch (abd) {
+        null => tur.name,
+        true => '${tur.name}.abd',
+        false => '${tur.name}.bist',
+      };
+
+  /// Süzgeç çiplerinin grupları, [turlar] sırasıyla: ayrım açıkken hisse
+  /// "BIST Hisse" + "ABD Hisse" diye ikiye bölünür (Portföy halkasının
+  /// kümesi). yasin 2026-10-10: "varlık filtresi olan her yere portföydeki
+  /// filtreleri koymalıyız".
+  static List<PortfoyGrubu> listesi(Iterable<AssetType> turlar,
+          {required bool pazarAyir}) =>
+      [
+        for (final t in turlar)
+          if (pazarAyir && t == AssetType.hisse) ...[
+            PortfoyGrubu(t, abd: false),
+            PortfoyGrubu(t, abd: true),
+          ] else
+            PortfoyGrubu(t),
+      ];
+
   /// Dolgu/nokta rengi. BIST hissesi hisse amberinde kalır: bugüne kadarki
   /// "amber = hisse" kimliği bozulmaz, yeni olan ABD diliminin tonudur.
   Color get color => abd == true ? Sandik.abdHisse : tur.color;
