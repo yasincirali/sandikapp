@@ -256,10 +256,22 @@ class _OverlayChip extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
+  /// Katmanın grafikteki rengi (EMA50 yeşil, EMA200 kırmızı). Verilirse
+  /// açıkken tik yerine o renkte kısa bir çizgi çizilir: çip aynı zamanda
+  /// lejanttır — iki renkli çizginin hangisi hangisi, grafiğe bakarken
+  /// çipten okunur.
+  final Color? renk;
+
+  /// Premium kilidi (paywall açık, kullanıcı Premium değil): kilit simgesi,
+  /// dokunuş paywall'u açar (çağıran karar verir).
+  final bool kilitli;
+
   const _OverlayChip({
     required this.label,
     required this.active,
     required this.onTap,
+    this.renk,
+    this.kilitli = false,
   });
 
   @override
@@ -288,13 +300,25 @@ class _OverlayChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                active
-                    ? Icons.check_rounded
-                    : Icons.horizontal_rule_rounded,
-                size: 12,
-                color: active ? context.c.amberText : context.c.text58,
-              ),
+              if (kilitli)
+                Icon(Icons.lock_rounded, size: 12, color: context.c.text58)
+              else if (active && renk != null)
+                Container(
+                  width: 12,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: renk,
+                    borderRadius: SandikRadius.smAll,
+                  ),
+                )
+              else
+                Icon(
+                  active
+                      ? Icons.check_rounded
+                      : Icons.horizontal_rule_rounded,
+                  size: 12,
+                  color: active ? context.c.amberText : context.c.text58,
+                ),
               const SizedBox(width: 4),
               Text(
                 label,

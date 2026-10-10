@@ -1128,38 +1128,10 @@ extension _PerformansGrafikKabi on _PortfolioPerformanceScreenState {
     for (final (spots, kapali) in [(acikSpots, false), (kapaliSpots, true)]) {
       final mumlar = mumlariGrafikUzayinda(spots,
           baslangicMs: baslangicMs, birimMs: birimMs);
-      for (final m in mumlar) {
-        // Gövde: kovanın piksel karşılığının %65'i (2–14 px) — çubuk tipiyle
-        // aynı oran. Kova artık görünür aralıkla aynı birimde; aylık kova
-        // ay uzunluğuna göre değiştiği için mum başına hesaplanır.
-        final kovaPx = gorunurAralik == null
-            ? 8.0
-            : genislik * (m.kovaMs / gorunurAralik);
-        final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
-        final fitil = (govde * 0.25).clamp(1.0, 2.0);
-        final renk = kapali
-            ? context.c.text36
-            : (m.yukselen ? context.c.gain : context.c.loss);
-        out.add(LineChartBarData(
-          spots: [FlSpot(m.merkezX, m.enDusuk), FlSpot(m.merkezX, m.enYuksek)],
-          isCurved: false,
-          color: renk,
-          barWidth: fitil,
-          dashArray: kapali ? const [3, 3] : null,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ));
-        out.add(LineChartBarData(
-          spots: [FlSpot(m.merkezX, m.acilis), FlSpot(m.merkezX, m.kapanis)],
-          isCurved: false,
-          color: renk,
-          barWidth: govde,
-          isStrokeCapRound: m.doji,
-          dashArray: kapali ? const [3, 3] : null,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(show: false),
-        ));
-      }
+      // Gövde/fitil oranları ortak çizimde (`GrafikStili.mumCubuklari`) —
+      // varlık detayının mumu da aynı fonksiyondan çizilir.
+      out.addAll(GrafikStili.mumCubuklari(context, mumlar,
+          genislik: genislik, gorunurAralik: gorunurAralik, kapali: kapali));
     }
     return out;
   }

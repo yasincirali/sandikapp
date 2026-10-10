@@ -9,6 +9,23 @@ Her madde: neden ertelendi, ertelemenin maliyeti ne, ne zaman ele alınmalı.
 
 ---
 
+## 🟡 AÇIK — Varlık grafiği EMA/mum v1'de ertelenenler (2026-10-10)
+
+- **LOG bandı düzeltmesi yalnız Premium katmanları gören hesapta.**
+  `gorunurYBandi`'nin 1'lik asgari aralığı log10 biriminde bir ONLUK demek:
+  LOG açıkken %10'luk hareket ₺100–₺1.000 bandına yayılıp düz görünüyor.
+  `asgariAralik: 1e-3` şimdilik `_katmanlarGorunur` iken veriliyor ki ücretsiz
+  LOG ekranı canlıda birebir kalsın. Maliyet: ücretsiz LOG kullanıcısı düz
+  grafik görmeye devam ediyor. Ne zaman: paywall açılınca koşulu kaldır
+  (hata düzeltmesi, bayrak gerekmez).
+- **Gerçek OHLC yok.** Mum, kapanışlardan kova bazında türetiliyor
+  (`mum_turetici.dart`); fitil gün içi uçları değil, örneklenmiş kapanışların
+  uçlarını gösterir. Yahoo `indicators.quote` içinde open/high/low da geliyor;
+  `HistoryService` yalnız close saklıyor. Ne zaman: kullanıcı "fitil yanlış"
+  derse ya da gerçek OHLC başka bir ihtiyaçla gelirse.
+- **1A/3A'da az mum.** Günlük seriden haftalık mum: 1A'da 4–5, 3A'da ~13 mum.
+  Daha ince katman (saatlik) motorda 1A için yok.
+
 ## 🟡 AÇIK — Olgun Premium setinde ertelenenler (2026-10-10, dal `feat/premium-olgun`)
 
 **1. Fon içerik dağılımı (X-Ray).** Araştırmada güçlü ödeme sebebi

@@ -99,6 +99,30 @@ class TechnicalAnalysisService {
     return out;
   }
 
+  /// Üssel hareketli ortalama SERİSİ (grafik katmanı, EMA50/EMA200).
+  ///
+  /// Tohum ilk [period] noktanın basit ortalamasıdır (TradingView ile aynı
+  /// tanım); ilk (period-1) eleman NaN döner — yetersiz veriyle çizilen bir
+  /// EMA200 aslında 30 noktanın ortalamasıdır ve "uzun vadeli trend" diye
+  /// okunurdu. [smaSeries] ile aynı sözleşme: çizen NaN'ı atlar.
+  static List<double> emaSeries(List<double> prices, int period) {
+    final n = prices.length;
+    final out = List<double>.filled(n, double.nan);
+    if (n < period || period <= 0) return out;
+    double sum = 0;
+    for (int i = 0; i < period; i++) {
+      sum += prices[i];
+    }
+    var ema = sum / period;
+    out[period - 1] = ema;
+    final k = 2 / (period + 1);
+    for (int i = period; i < n; i++) {
+      ema = prices[i] * k + ema * (1 - k);
+      out[i] = ema;
+    }
+    return out;
+  }
+
   // ── 1. RSI ────────────────────────────────────────────────────────────────
 
   static TechnicalIndicator rsi(List<double> prices, AssetType type) {

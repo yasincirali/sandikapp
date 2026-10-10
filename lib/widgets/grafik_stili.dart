@@ -5,6 +5,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import '../l10n/l10n.dart';
 import '../theme/sandik.dart';
+import '../utils/mum_turetici.dart';
 
 /// Fiyat ve değer grafiklerinin ORTAK görünümü — "Performans stili".
 ///
@@ -254,4 +255,55 @@ abstract final class GrafikStili {
           labelResolver: (_) => context.l10n.chartNowLabel,
         ),
       );
+
+  /// Mum çubukları — Performans ve varlık detayı AYNI çizimi kullanır
+  /// (2026-10-10; önce yalnız Performans'ta `_mumSegmentleri` içindeydi).
+  ///
+  /// Her mum İKİ `LineChartBarData`: ince FİTİL (en düşük → en yüksek) ve
+  /// kalın GÖVDE (açılış → kapanış). fl_chart 0.68'de mum çizimi yok, aynı
+  /// x'te iki noktalı dikey çizgi mumun kendisidir. Doji (açılış = kapanış)
+  /// yuvarlak uçlu sıfır uzunluklu gövde, yani bir nokta olarak görünür.
+  ///
+  /// Gövde kovanın piksel karşılığının %65'i (2–14 px); [gorunurAralik]
+  /// [mumlar] ile aynı X biriminde. [kapali] piyasa kapalı noktalarının
+  /// mumları: gri ve kesikli.
+  static List<LineChartBarData> mumCubuklari(
+    BuildContext context,
+    List<Mum> mumlar, {
+    required double genislik,
+    required double? gorunurAralik,
+    bool kapali = false,
+  }) {
+    final out = <LineChartBarData>[];
+    for (final m in mumlar) {
+      final kovaPx = gorunurAralik == null
+          ? 8.0
+          : genislik * (m.kovaMs / gorunurAralik);
+      final govde = (kovaPx * 0.65).clamp(2.0, 14.0);
+      final fitil = (govde * 0.25).clamp(1.0, 2.0);
+      final renk = kapali
+          ? context.c.text36
+          : (m.yukselen ? context.c.gain : context.c.loss);
+      out.add(LineChartBarData(
+        spots: [FlSpot(m.merkezX, m.enDusuk), FlSpot(m.merkezX, m.enYuksek)],
+        isCurved: false,
+        color: renk,
+        barWidth: fitil,
+        dashArray: kapali ? const [3, 3] : null,
+        dotData: const FlDotData(show: false),
+        belowBarData: BarAreaData(show: false),
+      ));
+      out.add(LineChartBarData(
+        spots: [FlSpot(m.merkezX, m.acilis), FlSpot(m.merkezX, m.kapanis)],
+        isCurved: false,
+        color: renk,
+        barWidth: govde,
+        isStrokeCapRound: m.doji,
+        dashArray: kapali ? const [3, 3] : null,
+        dotData: const FlDotData(show: false),
+        belowBarData: BarAreaData(show: false),
+      ));
+    }
+    return out;
+  }
 }
