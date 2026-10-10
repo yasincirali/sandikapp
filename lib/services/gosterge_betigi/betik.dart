@@ -1275,8 +1275,8 @@ class _Yorumlayici {
       final c0 = c.arg.length;
       if (c0 < az || c0 > (cok ?? az)) {
         throw _hata(
-            '$ad ${cok == null || cok == az ? '$az' : '$az–$cok'} değer alır.',
-            '$ad takes ${cok == null || cok == az ? '$az' : '$az–$cok'} arguments.',
+            '$ad ${cok == null || cok == az ? '$az' : '$az-$cok'} değer alır.',
+            '$ad takes ${cok == null || cok == az ? '$az' : '$az-$cok'} arguments.',
             c.j);
       }
     }
@@ -1384,7 +1384,7 @@ class _Yorumlayici {
             [_sayisal(c.arg[0])], c.j, (v) => v[0].isNaN ? 1 : 0);
       case 'max' || 'min' || 'avg':
         if (c.arg.length < 2 || c.arg.length > 8) {
-          throw _hata('$ad 2–8 değer alır.', '$ad takes 2–8 arguments.', c.j);
+          throw _hata('$ad 2-8 değer alır.', '$ad takes 2-8 arguments.', c.j);
         }
         return _eleman([for (final a in c.arg) _sayisal(a)], c.j, (v) {
           if (v.any((x) => x.isNaN)) return double.nan;

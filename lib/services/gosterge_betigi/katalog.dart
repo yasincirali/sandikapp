@@ -38,7 +38,7 @@ const List<BetikFonksiyonu> kBetikFonksiyonlari = [
   BetikFonksiyonu('ema(x, n)', 'Üssel hareketli ortalama.', 'Exponential moving average.'),
   BetikFonksiyonu('wma(x, n) · rma(x, n)', 'Ağırlıklı ve Wilder ortalaması.',
       'Weighted and Wilder moving average.'),
-  BetikFonksiyonu('rsi(x, n)', 'Göreceli güç endeksi (0–100).', 'Relative strength index (0–100).'),
+  BetikFonksiyonu('rsi(x, n)', 'Göreceli güç endeksi (0-100).', 'Relative strength index (0-100).'),
   BetikFonksiyonu('stdev(x, n)', 'Standart sapma (Bollinger için).', 'Standard deviation.'),
   BetikFonksiyonu('highest(x, n) · lowest(x, n)', 'Son n çubuğun en yükseği / en düşüğü.',
       'Highest / lowest of the last n bars.'),

@@ -11,6 +11,7 @@ import '../services/gosterge_betigi/katalog.dart';
 import '../theme/sandik.dart';
 import '../utils/friendly_error.dart';
 import '../utils/sandik_snack.dart';
+import '../widgets/custom_loading_indicator.dart';
 import '../widgets/gosterge_cizimi.dart';
 import '../widgets/sandik_acilir.dart';
 import '../widgets/sandik_app_bar.dart';
@@ -106,7 +107,7 @@ class OzelGostergeListesi extends ConsumerWidget {
               else if (durum.isLoading && liste.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(SandikSpace.lg),
-                  child: Center(child: CircularProgressIndicator.adaptive()),
+                  child: Center(child: CustomLoadingIndicator()),
                 )
               else if (liste.isEmpty)
                 Padding(
@@ -355,15 +356,21 @@ class _OzelGostergeEditorScreenState
     final g = widget.gosterge;
     if (g == null) return;
     final l = context.l10n;
-    final tamam = await showSandikConfirm(
-      context: context,
-      title: l.ozgSilBaslik,
-      message: l.ozgSilMesaj(g.ad),
-      confirmLabel: l.ozgSilOnay,
-      destructive: true,
-      islem: () => ref.read(ozelGostergelerProvider.notifier).sil(g.id),
-    );
-    if (tamam && mounted) Navigator.of(context).pop();
+    try {
+      // Silme hatası diyalogda kalır (`showSandikConfirm(islem:)`); buraya
+      // düşen yalnız diyalog dışı beklenmedik hata.
+      final tamam = await showSandikConfirm(
+        context: context,
+        title: l.ozgSilBaslik,
+        message: l.ozgSilMesaj(g.ad),
+        confirmLabel: l.ozgSilOnay,
+        destructive: true,
+        islem: () => ref.read(ozelGostergelerProvider.notifier).sil(g.id),
+      );
+      if (tamam && mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) showAppError(context, e);
+    }
   }
 
   Future<void> _cikisSor() async {

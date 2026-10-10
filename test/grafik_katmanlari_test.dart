@@ -137,7 +137,8 @@ void main() {
   testWidgets('kilitli (paywall açık, Premium değil): dokunuş tercihi değiştirmez',
       (tester) async {
     await _pump(tester, gorunur: true, kilitli: true);
-    expect(find.byIcon(Icons.lock_rounded), findsNWidgets(3));
+    // MUM · EMA50 · EMA200 + kendi göstergeni yaz (ƒx).
+    expect(find.byIcon(Icons.lock_rounded), findsNWidgets(4));
     final container = ProviderScope.containerOf(
         tester.element(find.byType(AssetDetailScreen)));
     await tester.tap(find.text('EMA50'));
