@@ -123,6 +123,63 @@ void main() {
     });
   });
 
+  group('yıl getirisi (para ağırlıklı, 2026-10-10)', () {
+    // yasin'in ekranı: "Portföyün +%243.626,4 — Bu yıl böyle büyüdün."
+    // Yılın ilk anlık görüntüsü küçükken yıl içinde büyük para eklendi;
+    // eski `son / baş − 1` eklenen parayı büyüme sayıyordu.
+    test('yıl içinde eklenen para getiri sayılmaz', () {
+      final d = run(
+        assets: [
+          _lot(
+              id: 'a',
+              purchasePrice: 1200000,
+              currentPrice: 1260000,
+              addedDate: DateTime(2026, 3, 1)),
+        ],
+        snapshots: [
+          _snap(DateTime(2026, 1, 2), 50),
+          _snap(DateTime(2026, 12, 20), 1260050),
+        ],
+      );
+      // Eski hesap: 1260050 / 50 − 1 ≈ %2.520.000.
+      expect(d.changePct, isNotNull);
+      expect(d.changePct!, greaterThan(0));
+      expect(d.changePct!, lessThan(10));
+    });
+
+    test('akış yoksa kesin oran — eski hesapla aynı', () {
+      final d = run(snapshots: [
+        _snap(DateTime(2026, 1, 2), 100),
+        _snap(DateTime(2026, 12, 20), 150),
+      ]);
+      expect(d.changePct, closeTo(50, 1e-9));
+    });
+
+    test('para ekleyip piyasada kaybeden eksi görür', () {
+      // ₺100.000 → Temmuz'da ₺100.000 eklendi → yıl sonu ₺190.000.
+      // Değer %90 arttı ama piyasa ₺10.000 kaybettirdi.
+      final d = run(
+        assets: [
+          _lot(
+              id: 'b',
+              purchasePrice: 100000,
+              currentPrice: 95000,
+              addedDate: DateTime(2026, 7, 1)),
+        ],
+        snapshots: [
+          _snap(DateTime(2026, 1, 2), 100000),
+          _snap(DateTime(2026, 12, 20), 190000),
+        ],
+      );
+      expect(d.changePct!, lessThan(0));
+    });
+
+    test('tek anlık görüntü: sayfa kurulmaz', () {
+      final d = run(snapshots: [_snap(DateTime(2026, 6, 1), 100)]);
+      expect(d.changePct, isNull);
+    });
+  });
+
   group('takip edilen gün', () {
     test('GÜN sayılır, kayıt değil', () {
       // Uygulamayı bir günde on kez açan kullanıcı "10 gün" görmemeli.
